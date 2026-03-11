@@ -1,0 +1,9 @@
+numpy
+torch
+torchviz
+matplotlib
+datasets
+scikit-learn
+pandas
+vector_quantize_pytorch
+torchvision

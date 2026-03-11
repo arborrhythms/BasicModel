@@ -1,0 +1,1827 @@
+import math, os, warnings
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import random
+from torchviz import make_dot
+from matplotlib import pyplot as plt
+from datasets import load_dataset
+from gensim.models import Word2Vec
+from gensim.models import KeyedVectors
+#from transformers import BertTokenizer
+from sklearn.metrics import classification_report
+from sklearn.decomposition import PCA
+import pandas as pd
+from vector_quantize_pytorch import ResidualVQ, VectorQuantize
+from Model import Layer, PiLayer, SigmaLayer, ReversibleSigmaLayer, ReversiblePiLayer # Import custom layers from Model.py
+from Model import VQLayer, NormLayer, LinearLayer, ReversibleLinearLayer, AttentionLayer, SoftMap
+from Model import GammaMem, ColumnUsageTracker, LiftingLayer, epsilon
+from functools import partial
+
+BASE_DIR = os.path.dirname(__file__)
+OUTPUT_DIR = os.path.join(BASE_DIR, "output")
+
+def ensure_output_dir():
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    return OUTPUT_DIR
+
+def output_path(filename):
+    return os.path.join(ensure_output_dir(), filename)
+
+def output_stem(stem):
+    return os.path.join(ensure_output_dir(), stem)
+
+class PositionalEncoding(nn.Module):
+    nDim   = 2
+    index  = [-4, -3]
+    #index = [embeddingSize-4, embeddingSize-3]
+    p      = 0
+    maxP   = 0
+    period = [65521, 65537]
+
+    def __init__(self, maxP=0):
+        print("Creating positional encoding ...")
+        super(PositionalEncoding, self).__init__()
+        self.p    = 0
+        self.maxP = maxP
+        self.div_term = 2*math.pi / maxP
+    def forward(self, x):
+        batch = x.shape[0]
+        n     = x.shape[1] if len(x.shape) > 1 else 1
+        embeddingSize = x.shape[-1]
+        index = np.add([embeddingSize, embeddingSize], self.index)
+        # write to the last elements of the array
+        position = torch.arange(self.p, self.p+batch*n, dtype=torch.float32) * self.div_term
+        p1 = torch.sin(position * self.div_term).unsqueeze(0).unsqueeze(0)
+        p2 = torch.cos(position * self.div_term).unsqueeze(0).unsqueeze(0)
+        pos = torch.concatenate((p1, p2), dim=2)
+        # normalize the positional encodings so that they do not overwhelm the data
+        # pos = pos/ torch.norm(pos, dim=-1, keepdim=True)
+        y = x.clone()
+        y[:, :, index] = pos.reshape(batch, n, self.nDim)
+        self.p += batch
+        assert self.p < self.maxP, "Overflow in object embedding"
+        return y
+    def reverse(self, y): # from a positional encoding, retrieve indices
+        embeddingSize = y.shape[-1]
+        index = np.add([embeddingSize, embeddingSize], self.index)
+        pos = y[:,:, index]
+        y[:, :, index] = 0
+        return y, pos
+    @staticmethod
+    def test():
+        x=  torch.zeros([2,4,100])
+        pe= PositionalEncoding(100)
+        y = pe.forward(x)
+        z = pe.reverse(y)
+        print(z)
+class TemporalEncoding(nn.Module):
+    nDim= 2
+    index  = [-2, -1]
+    period = [1193, 2000147]
+    t      = 0 #nn.Parameter(torch.zeros(1))
+
+    def __init__(self, maxT=0):
+        super().__init__()
+        self.t    = 0
+        self.maxT = maxT
+    def forward(self, x):
+        batch = x.shape[0]
+        n = x.shape[1] if len(x.shape) > 1 else 1
+        embeddingSize = x.shape[-1]
+        index = np.add([embeddingSize, embeddingSize], self.index)
+        # write to the last elements of the array
+        # add in proportion to the norm of the existing features
+        t1 = ( 0.5*(1+torch.cos(math.pi + 2*math.pi * torch.tensor(range(self.t, self.t+batch))/self.period[0] )) ).unsqueeze(0).unsqueeze(0)
+        t2 = ( 0.5*(1+torch.cos(math.pi + 2*math.pi * torch.tensor(range(self.t, self.t+batch))/self.period[0] )) ).unsqueeze(0).unsqueeze(0)
+        time = torch.concatenate((t1, t2), dim=2)
+        y = x.clone()
+        y[:, :, index] = time.reshape(batch, 1, self.nDim)
+        return y
+
+    def increment(self, batch):
+        self.t += batch
+
+    def reverse(self, y): # from a positional encoding, retrieve indices
+        batch = y.shape[0]
+        embeddingSize = y.shape[-1]
+        index = np.add([embeddingSize, embeddingSize], self.index)
+        t =  y[:, :, index]
+        y[:, :, index] = 0
+        return y, t
+    @staticmethod
+    def test():
+        x=  torch.zeros([2,4,10])
+        te= TemporalEncoding(4, 10)
+        y = te.forward(x)
+        z = te.reverse(y)
+        print(z)
+class ObjectEncoding(nn.Module):
+    #nWhat        = the "what" is encoded as a dimensionality that varies by subspace
+    nWhere       = PositionalEncoding.nDim
+    nWhen        = TemporalEncoding.nDim
+
+    inputDim     = 0
+    perceptDim   = 0
+    conceptDim   = 0
+    symbolDim    = 0
+    outputDim    = 0
+
+    nInput    = 2 ** 3  # the size of the context window
+    nPercepts = 2 ** 4
+    nConcepts = 2 ** 4  #
+    nSymbols  = 2 ** 3  # must be equal to nConcepts (currently)
+    nOutput   = 1  # The output (prediction) size
+
+    objectSize = nWhere + nWhen
+    nObjects   = 100*(nInput + nPercepts + nConcepts + nSymbols + nOutput)
+    what       = lambda x : True
+    where      = PositionalEncoding(nObjects)
+    when       = TemporalEncoding(nObjects)
+
+    def setDimensions(self, inputDim, perceptDim, conceptDim, outputDim):
+        assert inputDim == perceptDim, "The input and percept dimensions do not match" # they are both input to concepts
+        TheObjectEncoding.setInputDim(inputDim)
+        TheObjectEncoding.setPerceptDim(perceptDim)
+        TheObjectEncoding.setConceptDim(conceptDim)
+        TheObjectEncoding.setSymbolDim(1)
+        TheObjectEncoding.setOutputDim(outputDim)
+    def setInputDim(self, nDim):
+        assert self.nObjects != 0, "nObjects was not set"
+        self.inputDim = nDim
+    def setPerceptDim(self, nDim):
+        assert self.nObjects != 0, "nObjects was not set"
+        self.perceptDim = nDim
+    def setConceptDim(self, nDim):
+        assert self.nObjects != 0, "nObjects was not set"
+        self.conceptDim = nDim
+    def setSymbolDim(self, nDim):
+        assert self.nObjects != 0, "nObjects was not set"
+        #assert (nDim==0), "Symbols are zero-dimensional"
+        self.symbolDim = nDim
+    def setOutputDim(self, nDim):
+        assert self.nObjects != 0, "nObjects was not set"
+        self.outputDim = nDim
+
+    def getEmbeddingSize(self, nDim):
+        return nDim + self.objectSize
+    def getInputEmbedding(self):
+        return self.getEmbeddingSize(self.inputDim)
+    def getPerceptEmbedding(self):
+        return self.getEmbeddingSize(self.perceptDim)
+    def getConceptEmbedding(self):
+        return self.getEmbeddingSize(self.conceptDim)
+    def getSymbolEmbedding(self):
+        return self.getEmbeddingSize(self.symbolDim)
+    def getOutputEmbedding(self):
+        return self.outputDim # the output is not embedded
+
+    def pad(self, objects, where=True, when=True):
+        size = 0
+        size += self.nWhere if where else 0
+        size += self.nWhen if when else 0
+        objects = F.pad(objects, (0, size))
+        return objects
+    def slice(self, object, where=True, when=True):
+        size = 0
+        size += self.nWhere if where else 0
+        size += self.nWhen if when else 0
+        objects = object[0:-size]
+        return objects
+
+    def forward(self, objects, what=False, where=True, when=True, pad=False):
+        if self.nObjects == 1: # no positional encoding if there is only one object
+            return objects
+        if pad:
+            objects = self.pad(objects)
+        if what:
+            objects = self.what(objects)
+        if where:
+            objects = self.where(objects)
+        if when:
+            objects = self.when(objects)
+        return objects
+    def reverse(self, objects):
+        objects, space = self.where.reverse(objects)
+        objects, time  = self.when.reverse(objects)
+        return objects, space, time
+    #@staticmethod
+    #def removeEncoding(x):
+    #    e = x.shape[-1]
+    #    e -= TheObjectEncoding.objectSize
+    #    if len(x.shape) == 2:
+    #       x = x[:, 0:e]
+    #   else:
+    #        x = x[:, :, 0:e]
+    #    return x
+TheObjectEncoding = ObjectEncoding()
+
+
+class Data():
+    train_input       = []
+    train_output      = []
+    validation_input  = []
+    validation_output = []
+    test_input        = []
+    test_output       = []
+
+    inputLength       = 128
+    combinedTokens    = []
+
+    def load(self, dataset):
+        if dataset == "mnist":
+            self.loadMNist()
+        if dataset == "xor":
+            self.loadXOR()
+        if dataset == "tomatoes":
+            self.loadTomatoes()
+    def loadMNist(self):
+        df = pd.read_csv('data/mnist_train.csv')
+        train = df.values
+        df = pd.read_csv('data/mnist_test.csv')
+        test = df.values
+        self.train_input = train[:, 1:]
+        self.train_output = torch.tensor(train[:, 0:1], dtype=torch.float)
+        #self.train_labels = self.train_labels.unsqueeze(0)
+        self.test_input  = test[:, 1:]
+        self.test_output  = torch.tensor(test[:, 0:1], dtype=torch.float)
+        #self.test_labels = self.test_labels.unsqueeze(0)
+        self.validation_input = test[:, 1:]
+        self.validation_output = torch.tensor(test[:, 0:1], dtype=torch.float)
+    def loadXOR(self):
+        data = {
+            "train": {
+                "text": ["hello world", "hello there", "loving world", "loving there" ], # nPercepts = 3
+                "label": [[0], [1], [1], [0]]
+                #"label": [[0, 1], [1, 0], [1, 0], [0, 1]]
+            },
+            "validation": {
+                "text": ["hello world", "hello there", "loving world", "loving there" ], # nPercepts = 3
+                "label": [[0], [1], [1], [0]]
+                #"label": [[0, 1], [1, 0], [1, 0], [0, 1]]
+            },
+            "test": {
+                "text": ["hello world", "hello there", "loving world", "loving there" ], # nPercepts = 3
+                "label": [[0], [1], [1], [0]]
+                #"label": [[0, 1], [1, 0], [1, 0], [0, 1]]
+            }
+        }
+        self.train_input      = data["train"]["text"]
+        self.train_output      = data["train"]["label"]
+        self.validation_input = data["validation"]["text"]
+        self.validation_output = data["validation"]["label"]
+        self.test_input       = data["test"]["text"]
+        self.test_output       = data["test"]["label"]
+        self.processLM(data)
+    def loadTomatoes(self):
+        cache_file = "data/rottenTomatoes.data"
+
+        # Load or cache the pre-trained Word2Vec model
+        if os.path.exists(cache_file):
+            print("Loading cached data...")
+            data = torch.load(cache_file, weights_only=False)
+        else:
+            print("Downloading data...")
+            data = load_dataset("rotten_tomatoes")
+            torch.save(data, cache_file)
+        self.processLM(data)
+    def processLM(self, data, permute=True):
+        # tokenize the sentences
+        train_tokens      = data["train"]["text"]
+        train_labels      = data["train"]["label"]
+        validation_tokens = data["validation"]["text"]
+        validation_labels = data["validation"]["label"]
+        test_tokens       = data["test"]["text"]
+        test_labels       = data["test"]["label"]
+
+        self.combinedTokens = train_tokens + validation_tokens + test_tokens
+        self.combinedTokens = list(set(self.combinedTokens))
+
+        for i in range(len(self.train_input)):
+            self.train_input[i]       = self.stringTensor(train_tokens[i])
+            self.validation_input[i]  = self.stringTensor(validation_tokens[i])
+            self.test_input[i]        = self.stringTensor(test_tokens[i])
+            self.train_output[i]      = torch.tensor(train_labels[i], dtype=torch.float)
+            self.validation_output[i] = torch.tensor(validation_labels[i], dtype=torch.float)
+            self.test_output[i]       = torch.tensor(test_labels[i], dtype=torch.float)
+
+        if permute:
+            rand_indx = torch.randperm(len(self.train_output))
+            self.train_input  = [self.train_input[i] for i in rand_indx]
+            self.train_output = [self.train_output[i] for i in rand_indx]
+
+    def tokenize(self, TheLanguageModel):
+        self.train_input      = TheLanguageModel.tokenize(self.train_input)
+        self.validation_input = TheLanguageModel.tokenize(self.validation_input)
+        self.test_input       = TheLanguageModel.tokenize(self.test_input)
+    def data(self):
+        data = {
+            "train": {
+                "text": self.train_input,
+                "label": self.train_output
+            },
+            "validation": {
+                "text":self.validation_input,
+                "label": self.validation_output
+            },
+            "test": {
+                "text": self.test_input,
+                "label": self.test_output
+            }
+        }
+    def getEmbeddingSize(self):
+        return self.getInputSize(), self.getOutputSize()
+    def getInputSize(self):
+        inShape = len(self.train_input)
+        inputEmbeddingSize  = self.train_input[0].shape[0]
+        return inputEmbeddingSize
+    def getOutputSize(self):
+        outShape = len(self.train_output)
+        outputEmbeddingSize = self.train_output[0].shape[0]
+        return outputEmbeddingSize
+    def stringTensor(self, string):
+        ascii_values = [ord(char) for char in string]
+        tensor = torch.tensor(ascii_values, dtype=torch.int8)
+        #zero   = torch.tensor(0, dtype=torch.int8)
+        tensor = F.pad(tensor, (0, self.inputLength - tensor.size(0)), 'constant', 0) #ord(" "))
+        assert tensor.shape[0]==self.inputLength
+        return tensor
+TheData = Data()
+class Message():
+    def __call__(self, txt, newline="\n"):
+        print(txt, end=newline)
+message = Message()
+
+
+# A set of prototype vectors for each space
+class VectorSet(nn.Module):
+    nInput           = 0  # the number of inputs passed to the forward method
+    nVectors         = 0  # the number of outputs expected from the forward method
+    nDim             = 0  # the latent dimensionality
+    embeddingSize    = 0  # this is the dimensionality and the objectEncoding for each vector
+    vectors          = nn.Parameter(torch.randn([nVectors, embeddingSize]))  # this is the actual matrix of vectors
+    snapDistance     = 0.1  # vectors at or below this distance snap to their corresponding prototypes
+    eta              = 0.9
+    codebookAct      = GammaMem(nVectors)
+    frozen           = []
+    returnOnlyFrozen = False
+    freezingTemp     = 0.25
+    # linear = nn.Linear(10, 5)
+    # tracker = ColumnUsageTracker(linear, freezeThreshold=0.01)
+
+    def getSize(self):
+        return self.nVectors
+
+    def create(self, nInput, nVectors, nDim, customVQ=True, signed=False):
+        self.nInput    = nInput
+        self.nVectors  = nVectors
+        self.nDim      = nDim
+        self.nVectors  = nVectors
+        self.customVQ  = customVQ
+        self.signed    = signed
+        if nDim != None:
+            self.embeddingSize = TheObjectEncoding.getEmbeddingSize(nDim)
+    def updateWeights(self, embed_sum, cluster_size):
+        # Zero out gradients for frozen indices
+        weights = torch.ones(self.vq.codebook_size)
+        if len(self.frozen) > 0:
+            weights[self.frozen] = 0
+            if not self.customVQ:
+                self.vectors.grad[self.frozen,:] = 0
+        return weights
+    def freeze(self, activations = None):
+        if activations is not None:
+            # set the activations that are already frozen
+            #unfrozenAct = [a if a not in self.frozen else 0 for a in activations ]
+            unfrozenAct = [activations[a].detach().numpy() if a not in self.frozen else 0 for a in range(self.codebookSize)]
+            #unfrozenAct = activations[unfrozen]
+            #if len(unfrozen) > 0:
+            indexMax = np.argmax(unfrozenAct)
+            if unfrozenAct[indexMax] > self.freezingTemp:
+                if not indexMax in self.frozen:
+                    self.frozen.append(indexMax)
+                    message(f"Frozen activation at {indexMax}")
+    def addVectors(self, nVec=1, decay = 0.9):
+        self.codebookSize = nVec
+        self.codebookAct  = GammaMem(nVec)
+        self.frozen       = [] #np.zeros(nVec)
+        if self.customVQ:
+            self.vq = VectorQuantize(
+                dim = self.embeddingSize,
+                codebook_size = nVec,
+                threshold_ema_dead_code = 1,
+                #num_quantizers=1,         # Return the N nearest quantized vectors
+                decay = decay,              # the exponential moving average decay, lower means the dictionary will change faster
+                commitment_weight = 1.0,   # the weight on the commitment loss
+                #sample_codebook_temp=0.0, #
+                #use_cosine_sim=True,
+                #learnable_codebook=True,
+                #ema_update=False,
+                rotation_trick = True      # Set False to use the STE gradient estimator or True to use the rotation trick.
+            )
+        else:
+            # self.vq = VQLayer(
+            #    nDim          = nDim,
+            #    codebookSize  = nVectors,
+            #    numQuantizers = nVectors)
+            vec = torch.randn([nVec, self.embeddingSize])
+            for i in range(0, nVec):
+                vec[i, :] = F.normalize(TheObjectEncoding(vec[i, :].unsqueeze(0).unsqueeze(0)), p=2, dim=1)
+            self.vectors = vec[:, :]
+    def forward(self, input, t=0):
+        # X should be of size batch x nInput x nDim
+        # Pad X if necessary
+        x     = input
+        batch = input.shape[0]
+        act   = torch.zeros([batch, self.codebookSize])
+        if self.customVQ:
+            if x.shape[-1] == self.nDim:
+                x = torch.cat([x, torch.zeros([x.shape[0], x.shape[1], TheObjectEncoding.objectSize])], dim=2)
+            y   = torch.reshape(x, [-1, self.embeddingSize])
+
+            quantized, indices, commit_loss = self.vq(y, ema_update_weight=self.updateWeights)
+
+            err = torch.norm(y-quantized, dim=1)
+            err = torch.reshape(err, x.shape[0:2])
+            quantized = torch.reshape(quantized, x.shape)
+            # pick the nVector symbols with the smallest reconstruction error
+            # Get the top nVectors smallest reconstruction errors
+            values_smallest, indices_smallest = torch.topk(err, k=self.nVectors, dim=1, largest=False)
+            for i in range(0, indices_smallest.shape[0]):
+                for j in range(0, indices_smallest.shape[1]):
+                    if err[i,j] <= self.snapDistance:
+                        cosSim = self.unsignedAngle(x[i, j, :].clone(), quantized[i, indices_smallest[i, j], :].clone())
+                        x[i, j, :] = quantized[i, indices_smallest[i, j], :]
+                        # Is this filling the entire activation matrix properly (on the LHS)?
+                        assert torch.all(indices_smallest < self.codebookSize), "activation dimension is not correct."
+                        act[i, indices_smallest[i, j]] = cosSim + t * random.random()
+                    else:
+                        #message("codebook miss")
+                        x[i, j, :] = quantized[i, indices_smallest[i, j], :]
+                        #x[i, j, :] = torch.zeros( [1, 1, self.embeddingSize])
+        else:
+            dists = self.codebookDistance(x)
+            x = torch.cat([x, torch.zeros([x.shape[0], x.shape[1], TheObjectEncoding.objectSize])], dim=2)
+            # Project the set of input vectors onto the basis vectors (the vector set).
+            # Then compute the column norm of the basis, which result in activations (neuron power).
+            # The top of those activations become the "Conscious" set of the current space.
+            for b in range(0, x.shape[0]):
+                for v in range(0, x.shape[1]):
+                    nearestDist, nearestIdx = torch.topk(dists[b,v,:], 1, dim =-1, largest=True)
+                    err = nearestDist[0]
+                    if err <= self.snapDistance:
+                        #message("Using prototype vector")
+                        x[b,v,:] = self.vectors[nearestIdx,:]
+                        act[b, v] = nearestDist[v]
+                    #else:
+                    #    x[b,v,:] = x[b,v,:]
+                    # Update the codebook
+                    # Train the closest vector even if it is not used.
+                    if self.training:
+                        self.vectors[nearestIdx, :] = self.eta * (self.vectors[nearestIdx, :]) + (1-self.eta) *  x[b,v,:]
+                        #self.vectors[nearestIdx, :] = F.normalize(self.vectors[nearestIdx, :], p=2, dim=1)
+        for b in range(0, x.shape[0]):
+            self.codebookAct.delta(act[b,:])
+            if self.returnOnlyFrozen:
+                unfrozen = [a for a in range(self.codebookSize) if a not in self.frozen]
+                act[b, unfrozen] = 0
+            self.freeze(activations = self.codebookAct.get())
+        return x
+
+    # The following routine needs also to check if the inner product is positive,
+    # otherwise the intersection of the hyperplanes outside of the unit circle
+    # may indicate that the two regions are disjoint rather than parts of one another.
+    # Therefore, there are three possible results:
+    # part(a,b), part(b,a), or disjoint(a,b)
+    def conceptParthood(A: torch.Tensor, B: torch.Tensor) -> float:
+        # Normalize vectors A and B
+        A_norm = A / A.norm()
+        B_norm = B / B.norm()
+        # Find orthogonal vector to both A and B (cross product for 3D, generalized for nD)
+        cross_prod = torch.linalg.cross(A_norm, B_norm)
+        orthogonal_vector = cross_prod / cross_prod.norm()
+        # Calculate distance of intersection hyperplane from origin
+        distance = orthogonal_vector.norm()
+        # Normalize distance to get a measure between 0 and 1
+        measure = torch.clamp(distance, 0, 1)
+        return measure
+
+        # Example usage
+        A = torch.tensor([1.0, 2.0, 3.0])
+        B = torch.tensor([3.0, 2.0, 1.0])
+        measure = hyperplaneParthood(A, B)
+
+    # The following should be replaced with a mereological framework
+    # that operates on the voronoi cells of the LVQ as atoms.
+    def perceptParthood(A: torch.Tensor, B: torch.Tensor) -> float:
+        """
+        Computes the directional parthood ratio: how much of A is contained within B.
+
+        Both A and B must be in [0, 1]^n and define axis-aligned hyperrectangles with origin.
+
+        Parameters:
+            A (torch.Tensor): vector defining hyperrectangle A (outer corner)
+            B (torch.Tensor): vector defining hyperrectangle B (outer corner)
+            eps (float): small value to avoid division by zero
+
+        Returns:
+            float: parthood ratio in [0, 1]
+        """
+        A, B = A.clamp(0, 1), B.clamp(0, 1)
+        ratio = torch.minimum(A / (B + epsilon), torch.ones_like(A))
+        return torch.prod(ratio).item()
+
+       # Example usage
+        A = torch.tensor([1.0, 2.0, 3.0])
+        B = torch.tensor([3.0, 2.0, 1.0])
+        measure = hyperrectParthood(A, B)
+
+    def learn(self, x, target_idx, lr=0.01):
+        """
+        Simple LVQ prototype update
+        x: (batch, nDim) input vectors
+        target_idx: (batch,) indices of the "correct" prototype
+        lr: learning rate
+        """
+        x = F.normalize(x, p=2, dim=-1)
+        selected_vectors = self.vectors[target_idx]  # (batch, nDim )
+
+        # LVQ update: move prototypes toward or away from inputs
+        # We will implement "attraction" only for now (classic LVQ1)
+        delta = lr * (x - selected_vectors)
+        self.vectors.data[target_idx] += delta
+
+        # Optional normalization to keep vectors on the sphere
+        self.normalize()
+    # --- Vector Insertion ---
+    def replace(self, new_vectors):
+        #assert(self.nVectors == self.vectors.shape[0])
+        if self.customVQ:
+            self.vq.codebook = torch.stack(new_vectors, dim=0)
+        else:
+            #vec = torch.randn([nVec, self.embeddingSize])
+            #for i in range(0, nVec):
+            #    vec[i, :] = F.normalize(TheObjectEncoding(vec[i, :].unsqueeze(0).unsqueeze(0)), p=2, dim=1)
+            self.vectors = new_vectors
+    def insert(self, new_vectors):
+        """
+        Insert one or more new vectors
+        new_vectors: (nNew, nDim  )
+        """
+        new_vectors = F.normalize(new_vectors, p=2, dim =-1)
+        for i in range(0, new_vectors.shape[0]):
+            new_vectors[i, :] = TheObjectEncoding(new_vectors[i, :])
+        self.vectors = nn.Parameter(torch.cat([self.vectors.data, new_vectors], dim =0))
+        self.nVectors = self.vectors.shape[0]
+    # --- Vector Removal ---
+    def remove(self, indices):
+        """
+        Remove vectors by index
+        indices: list or tensor of indices to remove
+        """
+        mask = torch.ones(self.vectors.shape[0], dtype=torch.bool, device=self.vectors.device)
+        mask[indices] = False
+        self.vectors = nn.Parameter(self.vectors.data[mask])
+        self.nVectors = self.vectors.shape[0]
+    # --- Fuzzy / Mereology Methods ---
+    def norm(self, x):
+        return torch.norm(x, dim=-1)
+    def normalize(self, x=None):
+        if x is None:
+            with torch.no_grad():
+                if self.signed:
+                    self.vectors.data = F.normalize(self.vectors.data, p=2, dim =-1)
+                else:
+                    self.vectors.data = torch.maximum(torch.minimum(self.vectors.data, 1), 0)
+                    self.vectors.data = F.normalize(self.vectors.data, p=2, dim =-1)
+        else:
+            if self.signed:
+                x = F.normalize(x, p=2, dim=-1)
+            else:
+                x = torch.maximum(torch.minimum(x, torch.tensor(1.0)), torch.tensor(0.0))
+                x = F.normalize(x, p=2, dim=-1)
+            return x
+    def negate(self, x):
+        return 1 - x
+    def distance(self, x, y):
+        N = self.codebookSize
+        dist = (x.T @ y) / N
+        return dist
+    def codebookDistance(self, x):
+        vec = self.vectors[:, 0:-TheObjectEncoding.objectSize]
+        # dist = self.angle(x.unsqueeze(2), vec.unsqueeze(0).unsqueeze(0))  # (batch, nInput, nFeatures)
+        dist = x @ vec.T / self.nDim
+        return dist
+    def unsignedAngle(self, x, y, dim=-1):
+        #xShape = x.shape
+        #yShape = y.shape
+        #x = torch.reshape(x, (-1, xShape[-1]))
+        #y = torch.reshape(y, (-1, yShape[-1]))
+        cos_sim = F.cosine_similarity(x, y, dim=-1)
+        #dot = torch.sum(x * y, dim=dim)
+        #norm_x = torch.norm(x, p=2, dim=dim)
+        #norm_y = torch.norm(y, p=2, dim=dim)
+        #cos_sim =  dot / (norm_x * norm_y + epsilon)
+        # scale 0-1
+        return 0.5 * (1-cos_sim) # scale [0-1]
+    def equal(self, x, y):
+        return 1.0 - self.angle(x, y)
+    def part(self, x, y):
+        return 1.0 - self.angle(x, y)
+    def whole(self, x, y):
+        return 1.0 - self.angle(y, x)
+    def boundary(self, x, y):
+        return torch.abs(self.part(x, y) - self.whole(x, y))
+    def overlap(self, x, y):
+        return torch.min(self.part(x, y), self.whole(x, y))
+    def union(self, x, y):
+        return torch.max(x, y)
+    def intersection(self, x, y):
+        return torch.min(x, y)
+
+# In PassThrough, the perceptual space comes directly from the input space: percepts are not used.
+class PassThrough(VectorSet):
+    def create(self, nInput, nVectors, nDim):
+        super().create(nInput, nVectors, nDim)
+    def forward(self, x, t=0):
+        batch = x.shape[0]
+        y = np.zeros([batch, self.nVectors, self.embeddingSize])
+        embeddingZeroPad = TheObjectEncoding.objectSize
+        for b in range(batch):
+            for n in range(0, self.nInput+1):
+                data = np.concatenate((x[b:b + 1, :], np.zeros([1, embeddingZeroPad])), axis=1)
+                data = TheObjectEncoding.forward(data)
+                y[b, n, 0:self.embeddingSize] = data
+            data = np.zeros([1, self.embeddingSize])
+            for n in range(self.nInput, self.nVectors):
+                y[b, n, 0:self.embeddingSize] = data
+        y =  torch.from_numpy(np.array(y, dtype=np.float32))
+        return y
+    def reverse(self, y, t):
+        x = y
+        return x
+# An LVQ implementation with an inverse.
+class ReversibleDictionary(VectorSet):
+    talking = True
+    def addVectors(self, nVec=1, LM=None):
+        super().addVectors(nVec=nVec, decay = 1.0)
+        self.LM = LM
+        dict    = LM.getDictionary()
+        self.replace(list(dict.values()))
+        self.words = list(dict.keys())
+    def lookup(self, x):
+        y = x
+        for b in range(len(x)):
+            for i in range(len(x[b])):
+                y[b][i] =self.words.index(x[b][i])
+        return y
+    def forward(self, input, t):
+        batch = input.shape[0]
+        input = input.squeeze()
+        # percepts are Batch x nVectors x nFeatures
+        tokenized = self.LM.tokenize(input)
+        indices   = self.lookup(tokenized)
+        words     = self.vq.codebook[indices, :]
+        if words.shape[1] < self.nVectors:
+            words = torch.concatenate( (words, torch.zeros([batch, self.nVectors-words.shape[1], self.embeddingSize])), dim=1)
+        return words
+    def flatten(self, words):
+        s = ""
+        for w in words:
+            s += str(w) + " "
+        s = s.rstrip(" ")
+        return s
+    def reverse(self, y, t):
+        batch = y.shape[0]
+        nVec  = y.shape[1]
+
+        untokenizedWords = [["" for _ in range(nVec)] for _ in range(batch)]
+        for b in range(batch):
+            for v in range(nVec):
+                vec = y[b,v,:].unsqueeze(0)
+                quant, index, _ = self.vq(vec)
+                word = self.words[index]
+                untokenizedWords[b][v] = word #[0][0]
+                if self.talking:
+                    message(word, newline = " " if v!=nVec-1 else "\n")
+        words = self.LM.untokenize(untokenizedWords)
+
+        #p = []
+        #for b in range(batch):
+        #    s = []
+        #    for v in range(nVec):
+        #        vec = y[b,v,:].unsqueeze(0)
+        #       quant, index, _ = self.vq( vec,  )
+        #        s.append(self.words[index])
+        #    p.append(self.flatten(s))
+        #words = p # self.LM.untokenize(p)
+        #if self.talking:
+        #    message(words)
+        return  words
+# This class assumes that the perceptual space is a dictionary full of word embeddings.
+class LanguageModel(VectorSet):
+    maxTokens = 0
+    talking   = True
+
+    def tokenize(self, data):
+        tokenized = []
+        for b in range(len(data)):
+            sentence = "".join(chr(i) for i in data[b].tolist())
+            sentence = sentence.rstrip("\x00")
+            t = sentence.split(" ")
+            #tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+            #t = tokenizer.tokenize(sentence)
+            # compute the maximum number of tokens in a sentence
+            self.maxTokens = max(self.maxTokens, len(t))
+            tokenized.append(t)
+        # if self.maxTokens > self.nInput:
+        #    assert("word was clipped")
+        return tokenized  # tokenize the sentences, and compute the maximum number of tokens
+    def tokenizeList(self, data):
+        tokenized = []
+        for b in range(len(data)):
+            sentence = data[b]
+            t = sentence.split(" ")
+            for w in t:
+                tokenized.append(w)
+        vocab = list(set(tokenized))
+        vocab.append(" ")
+        vocab.append("\x00")
+        return vocab
+    def untokenize(self, tokenized):
+        data = []
+        speech = ""
+        for b in range(len(tokenized)):
+            sentence = ""
+            for w in range(self.nVectors):
+                sentence += tokenized[b][w]
+                if w < self.nVectors - 1:
+                    sentence += " "
+            data.append(TheData.stringTensor(sentence))
+            speech += sentence
+        #if self.talking:
+        #    message(speech)
+        data = torch.stack(data)
+        return data.unsqueeze(1)
+    def getVectors(self):
+        vec = self.model.wv.get_normed_vectors()
+        return vec
+    def getSize(self):
+        return self.model.wv.__len__()
+    def getDictionary(self):
+        dictionary = dict({})
+        words = list(w for w in self.model.wv.index_to_key)
+        for idx, key in enumerate(words):
+            word = torch.reshape( torch.tensor(self.model.wv[key]), [1,1,self.nDim])
+            dictionary[key] = TheObjectEncoding.forward(word, pad=True).squeeze()
+            # Or my_dict[key] = model.wv.get_vector(key)
+            # Or my_dict[key] = model.wv.word_vec(key, use_norm=False)
+        return dictionary
+    def create(self, untokenized, nInput=None, nVectors=None, nDim=None, pretrained=True):
+        super().create(nInput, nVectors, nDim)
+        tokenized = self.tokenizeList(untokenized)
+        if pretrained:
+            self.model_path = f"embeddings/word2vec_custom_pretrained"
+            super().create(nInput, nVectors, 100)
+            try:
+                print(f"Loading {self.model_path}...")
+                self.model = Word2Vec.load(self.model_path)
+            except:
+                print("Training pretrained model...")
+                # Step 1: Load Pre-trained Word2Vec Embeddings
+                pretrained_vectors = KeyedVectors.load_word2vec_format('embeddings/enwiki_20180420_100d.txt',
+                                                                       binary=False)
+                # pretrained_vectors = KeyedVectors.load_word2vec_format("embeddings/GoogleNews-vectors-negative300.bin", binary=True)
+                # en-wikipedia is 4530030 x 100
+                # Step 2: Initialize a new Word2Vec model with the same settings
+                self.model = Word2Vec(vector_size=pretrained_vectors.vector_size, window=5, min_count=1, workers=4)
+                # Step 3: Build the Word2Vec vocabulary using the pre-trained model's vocab
+                # Ensure it has all words
+                # self.model.build_vocab_from_freq( {word: 1 for word in pretrained_vectors.index_to_key} )
+                # Ensure it has necessary words
+                # self.model.build_vocab_from_freq({word: 1 for word in tokenized})
+                # Step 4: Assign Pre-trained Vectors to Word2Vec Model
+                self.model.wv = pretrained_vectors  # Replace the randomly initialized vectors
+                # self.model.wv.fill_norms()  # Normalize if needed
+                # if (self.embed_dim != self.model.vector_size):
+                #    print("Error loading word2Vec model.")
+                vec = self.getVectors()
+                nDim= len(vec[0])
+                # the following only tells us how many unique percepts there are.
+                nVectors = len(vec)
+                super().create(nInput, nVectors, nDim)
+        else:
+            self.model_path = f"embeddings/word2vec_custom"
+            super().create(nInput, nVectors, 20)
+            try:
+                print(f"Loading {self.model_path}...")
+                self.model = Word2Vec.load(self.model_path)
+            except:
+                print("Training new Word2Vec model...")
+                nDim = 20
+                super().create(nInput, nVectors, nDim)
+                self.model = Word2Vec(sentences=tokenized, vector_size=nDim, window=5, min_count=1, workers=4)
+                self.model.build_vocab_from_freq({word: 1 for word in tokenized})
+                vec = self.getVectors()
+                nDim = len(vec[0])
+                # the following only tells us how many unique percepts there are.
+                nVectors = len(vec)
+                super().create(nInput, nVectors, nDim)
+        self.model.save(self.model_path)
+        print(f"Saving Word2Vec model {self.model_path}")
+    def forward(self, input, t=0):
+        input = input.squeeze()
+        self.batch =len(input)
+
+        # it would make sense to tokenize the data here, but since our datasets are all stored, we need not.
+        tokenized = self.tokenize(input)
+
+        # normalize the percepts, since words either occur or don't occur.
+        embeddings = []
+        embeddingZeroPad = TheObjectEncoding.objectSize
+        for sentence in tokenized:
+            sentence_embeddings = []
+            nTokens = 0
+            for token in sentence:
+                if token in self.model.wv.key_to_index:
+                    t = np.concatenate((self.model.wv[token], np.zeros([embeddingZeroPad])), axis=0)
+                    t = t / np.linalg.norm(t)
+                    sentence_embeddings.append(t)
+                else:
+                    t = np.concatenate((np.random.randn(self.nDim), np.zeros([embeddingZeroPad])), axis=0)
+                    t = t / np.linalg.norm(t)
+                    sentence_embeddings.append(t)
+                    warnings.warn('unknown token "{0}"'.format(token))
+                nTokens += 1
+                if nTokens >= self.nVectors:
+                    break
+            while len(sentence_embeddings) < self.nVectors:
+                sentence_embeddings.append(np.zeros(self.embeddingSize))
+
+            embeddings.append(sentence_embeddings)
+
+        e =  torch.from_numpy(np.array(embeddings, dtype=np.float32))
+        # Shape: ( batch_size, seq_length, embedding_dim)
+        return e
+    def reverse(self, y, t=0.0):
+        #x = np.array(y.clone().detach().numpy(), dtype='f')
+        similarWords = [["" for _ in range(self.nVectors)] for _ in range(self.batch)]
+        for b in range(self.batch):
+            for w in range(self.nVectors):
+                embedding = TheObjectEncoding.slice(y[b,w])
+                word = self.model.wv.most_similar(positive=embedding.detach().numpy(), topn=1) # we lose the gradient here, so training cant be done past this point
+                similarWords[b][w] = word[0][0]
+        similarWords = self.untokenize(similarWords)
+        return similarWords
+
+
+class Space(nn.Module):
+    name         = ""
+    vectorSet    = []
+    activation   = None
+    processSymbols = False
+
+    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=False, customVQ=True, nPrototypes=0, reversePass=False, processSymbols=False):
+        super(Space, self).__init__()
+        self.inputShape   = inputShape
+        self.outputShape  = outputShape
+        self.nVectors     = nVectors
+        self.nDim         = nDim # the latent dimensionality
+        self.embeddingSize = TheObjectEncoding.getEmbeddingSize(self.nDim)
+        self.batch        = 0
+        self.vectorSet    = []
+        self.useVQ        = useVQ
+        self.customVQ     = customVQ
+        self.nPrototypes  = nPrototypes
+        self.reversePass = reversePass
+        self.processSymbols = processSymbols
+
+    def getEmbeddedIO(self):
+        input  = TheObjectEncoding.getEmbeddingSize(self.inputShape[1])
+        output = TheObjectEncoding.getEmbeddingSize(self.outputShape[1])
+        return input, output
+    def lookup(self, x):
+        activation = x[0]
+        x = x.unsqueeze(0).unsqueeze(0)
+        x = torch.cat([torch.zeros([1,1, TheObjectEncoding.conceptDim]), x[:,:,1:]], dim=2)
+        output, index, _ = self.vectors().vq(x)
+        #output[:,:,0:TheObjectEncoding.conceptDim] = output[:,:,0:TheObjectEncoding.conceptDim] * activation  # multiply the codebook vector by the activation
+        return output
+    def dereference(self, symbols):
+        # we get [ batch x nConcepts x symbolEmbedding ],
+        # and must compute [ batch x nConcepts x conceptEmbedding ]
+        assert list(symbols.shape) == [self.batch, self.nVectors, TheObjectEncoding.getSymbolEmbedding()], "Incorrect input size for dereference"
+        input,_ = self.getEmbeddedIO()
+        objects = torch.zeros(self.batch, self.nVectors, self.embeddingSize)
+        for b in range(self.batch):
+            for s in range(self.nVectors):
+                x = self.lookup(symbols[b,s,:])
+                objects[b,s,:] = x
+        assert list(objects.shape) == [self.batch, self.nVectors, self.embeddingSize], "Incorrect output size for dereference"
+        return objects
+
+    def stats(self, x):
+        #codebookUse = self.vectors().codebookUse
+        #message(f"{self.name} Codebook activation: { np.sum(self.vectors().codebookAct.get()) }")
+        return
+    def vectors(self):
+        # this is done to store by reference, since lists are mutable entities (?)
+        return self.vectorSet[0]
+    def createVectorSet(self):
+        self.vectorSet.append(VectorSet())
+        self.vectors().create(self.inputShape[0], self.nVectors, self.nDim, self.customVQ) # can be bigger than nVectors, cannot be smaller
+        self.vectors().addVectors(nVec=self.nPrototypes)
+    def forwardBegin(self, x, t=0.0, reshape=False):
+        self.batch = x.shape[0]
+        if reshape:
+            x = self.flatten(x, True)
+            # assert list(x.shape) == [self.batch, self.inputShape[0] *self.inputShape[1]]
+        else:
+            input, _ = self.getEmbeddedIO()
+            assert list(x.shape) == [self.batch, self.inputShape[0], input]
+        return x
+    def forwardEnd(self, x, t=0.0, reshape=False):
+        if reshape:
+            x = self.reshape(x, True)
+        else:
+        #    if x.shape[-1] == self.nDim: # zero-pad vectors without a position.
+        #        # x = TheObjectEncoding.forward(x)
+        #        x = torch.cat([x, torch.zeros([x.shape[0], x.shape[1], TheObjectEncoding.objectSize])], dim=2)
+            _, output = self.getEmbeddedIO()
+            assert list(x.shape)==[self.batch, self.outputShape[0], output]
+        return x
+    def reverseBegin(self, y, t=0.0, reshape=False):
+        self.batch = y.shape[0]
+        if reshape:
+            y = self.flatten(y, False)
+        else:
+            _, output = self.getEmbeddedIO()
+            assert list(y.shape) == [self.batch, self.outputShape[0], output]
+        return y
+    def reverseEnd(self, y, t=0.0, reshape=False):
+        if reshape:
+            y = self.reshape(y, False)
+        else:
+            input, _ = self.getEmbeddedIO()
+            assert list(y.shape) == [self.batch, self.inputShape[0], input]
+        return y
+    def flatten(self, x, forward=True):
+        input, output = self.getEmbeddedIO()
+        if forward:
+            x = x.reshape(self.batch, self.inputShape[0] * input)
+        else:
+            x = x.reshape(self.batch, self.outputShape[0] * self.outputShape[1])
+        return x
+    def reshape(self, y, forward=True):
+        input, output = self.getEmbeddedIO()
+        if forward:
+            y = y.reshape(self.batch, self.outputShape[0], self.outputShape[1])
+        else:
+            y = y.reshape(self.batch, self.inputShape[0], input)
+        return y
+class InputSpace(Space):
+    name = "Inputs"
+    def __init__(self, inputShape, outputShape, nVectors, nDim=None, LM=None, tokenizedInput=False, useVQ=True):
+        super(InputSpace, self).__init__(inputShape, outputShape, nVectors, nDim, useVQ=useVQ)
+        if LM is not None:
+            self.nDim = LM.nDim
+            if True:
+                self.vectorSet.append(ReversibleDictionary())
+                self.vectors().create(self.inputShape[0], self.nVectors, self.nDim, customVQ=True)
+                self.vectors().addVectors(nVec=LM.getSize(), LM=LM)
+            else:
+                self.vectorSet.append(LM)
+                #self.vectors().create(self.inputShape[0], self.nVectors, self.nDim)
+                #self.vectors().addVectors(nVec=LM.getSize(), LM=LM)
+        else:
+            self.createVectorSet()
+        # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
+        self.input          = torch.FloatTensor
+        self.tokenizedInput = tokenizedInput
+        fullSize  = outputShape[0]*outputShape[1]
+        self.lift = LiftingLayer(fullSize, fullSize)
+    # The world presenting itself
+    def forward(self, input, t=0, mask=None):
+        self.batch = input.shape[0]
+        assert list(input.shape) == [self.batch, self.inputShape[0], self.inputShape[1]]
+        self.input = self.vectors().forward(input, t)
+        #self.input = self.lift.forward(self.input)
+        _, output = self.getEmbeddedIO()
+        assert list(self.input.shape) == [self.batch, self.outputShape[0], output]
+        return self.input
+    def reverse(self, y, t=0):
+        y = self.reverseBegin(y, t)
+        #y = self.lift.reverse(y)
+        #x = x.unsqueeze(0).unsqueeze(0)
+        #x = torch.cat([torch.zeros([1, 1, TheObjectEncoding.conceptDim]), x[:, :, 1:]], dim=2)
+        #output[:, :, 0:TheObjectEncoding.conceptDim] = output[:, :, 0:TheObjectEncoding.conceptDim] * activation  # multiply the codebook vector by the activation
+        self.input = self.vectors().reverse(y, t)
+        #where, when = TheObjectEncoding.reverse(self.percepts)
+        #self.input = self.reverseEnd(self.input, t)
+        return self.input
+class PerceptualSpace(Space):
+    name = "Percepts"
+    hasAttention = True
+
+    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False):
+        super(PerceptualSpace, self).__init__(inputShape, outputShape, nVectors, nDim, useVQ=useVQ, nPrototypes=nPrototypes, reversePass=reversePass, processSymbols=processSymbols)
+        input, output = self.getEmbeddedIO()
+        self.attention = AttentionLayer(self.nDim, self.nDim)
+        if reversePass:
+            if inputShape[0]*2 == nVectors:
+                self.pi  = ReversiblePiLayer(input, self.nDim, permuteInput=False)  # Hidden layer using PiLayer
+                self.forwardPi, self.reversePi = self.pi.forward, self.pi.reverse
+            else:
+                self.pi1      = PiLayer(input, self.nDim, permuteInput=False)  # Hidden layer using PiLayer
+                self.pi2      = PiLayer(self.nDim, input, permuteInput=False)  # Hidden layer using PiLayer
+                self.forwardPi, self.reversePi = self.pi1.forward, self.pi2.forward
+        else:
+            self.pi        = PiLayer(input, self.nDim, permuteInput=False)  # Hidden layer using PiLayer
+            self.forwardPi = self.pi.forward
+        # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
+        self.createVectorSet()
+    def distance(self, x, y):
+        # This is a product distance that looks roughly like a star.
+        # It has an orthogonalizing effect on its inputs.
+        # it is not immediately clear what certainty looks like in this domain,
+        # but the suggestion is to use a tunable transfer function whose slope represents certainty.
+        return torch.prod( [1-x, 1-y] )
+    def certainty(self, x):
+        pass
+    # Perception
+    def forward(self, x, t=0):
+        x = self.forwardBegin(x, t)
+        x = self.forwardPi(x, t)
+        if self.hasAttention:
+            x = self.attention.forward(x, t)
+        if self.useVQ:
+            x  = self.vectors().forward(x , t)
+        if self.processSymbols:
+            # Turn the percept dimensionality into the symbol dimensionality, but preserve the codebook's positional encoding
+            encoding = x[:,:,-TheObjectEncoding.objectSize:]
+            x = torch.norm( x[:,:,0:-TheObjectEncoding.objectSize], dim=2 ) / (2*self.nVectors)
+            x = x.unsqueeze(-1)
+            x = torch.concatenate((x, encoding), dim=2)
+        self.percepts = self.forwardEnd(x,t)
+        #self.stats(x)
+        return self.percepts
+    # Manifesting
+    def reverse(self, y, t=0):
+        assert False, "Perceptual layer is not currently invertible"
+        self.percepts = self.reverseBegin(y, t)
+        if self.processSymbols:
+            self.percepts = self.dereference(self.percepts)
+        # preserve the codebook's positional encoding
+        encoding = self.percepts[:, :, -TheObjectEncoding.objectSize:]
+        if self.useVQ:
+            y = y[:,:,0:-TheObjectEncoding.objectSize]
+        if self.hasAttention:
+            y = self.attention.reverse(y, t)
+        x = self.reversePi(y, t)
+        #self.concepts = torch.concatenate((self.concepts, encoding), dim=2)
+        x = self.reverseEnd(x, t)
+        return x
+    @staticmethod
+    def test():
+        pass
+class ConceptualSpace(Space):
+    name = "Concepts"
+    hasAttention = False
+
+    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False):
+        super(ConceptualSpace, self).__init__(inputShape, outputShape, nVectors, nDim, useVQ=useVQ, nPrototypes=nPrototypes, reversePass=reversePass, processSymbols=processSymbols)
+        input, output = self.getEmbeddedIO()
+        self.attention = AttentionLayer(output, output)
+        if reversePass:
+            self.sigma1 = SigmaLayer(input, self.nDim, permuteInput=False)
+            self.sigma2 = SigmaLayer(self.nDim, input, permuteInput=False)
+            self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.forward
+            #self.sigma = ReversibleSigmaLayer(input, self.nDim, permuteInput=False)
+            #self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
+        else:
+            self.sigma = SigmaLayer(input, self.nDim, permuteInput=False)
+            self.forwardSigma = self.sigma.forward
+        self.createVectorSet()
+    def distance(self, x, y):
+        # This is a dot-product distance that assumes the X are normalized.
+        # However, if the X are not normalized, the magnitudes may be taken as a degree of certainty or knowing.
+        # In which case, how do they grow from ignorance to certainty?
+        # They would do so naturally if the input vectors are normalized.
+        # It would also be possible to use a tunable transfer function.
+        return x.T @ y
+    def certainty(self, x):
+        return x.T @ x
+    # Knowing
+    def forward(self, x, t=0):
+        x = self.forwardBegin(x, t)
+        y = self.forwardSigma(x, t) # Pass through SigmaLayer
+        if self.hasAttention:
+            y = self.attention.forward(y, t)
+        # Get the concept vectors from the codebook
+        # replace some of the Dynamic Percepts with Static Percepts if their distance is low
+        if self.useVQ:
+            y = self.vectors().forward(y, t) # This must be 4x8x24
+        if self.processSymbols:
+            # Turn the concept dimensionality into the symbol dimensionality, but preserve the codebook's positional encoding
+            encoding = y[:,:,-TheObjectEncoding.objectSize:]
+            y = torch.sum(y[:,:,0:-TheObjectEncoding.objectSize], dim=2) / (2*self.nVectors)
+            y = y.unsqueeze(-1)
+            y = torch.concatenate((y, encoding), dim=2)
+        # Reshape the output tensor
+        self.concepts = self.forwardEnd(y, t)
+        #self.stats(x)
+        return self.concepts
+    # Visualizing
+    def reverse(self, y, t=0):
+        self.concepts = self.reverseBegin(y, t)
+        # we are receiving symbols, and we turn them into concepts.
+        if self.processSymbols:
+            self.concepts = self.dereference(self.concepts)
+        if self.hasAttention:
+            self.concepts = self.attention.reverse(self.concepts, t)
+        # preserve the codebook's positional encoding
+        encoding = self.concepts[:, :, -TheObjectEncoding.objectSize:]
+        self.concepts = self.reverseSigma(self.concepts[:,:,0:-TheObjectEncoding.objectSize], t)
+        #self.concepts = torch.concatenate((self.concepts, encoding), dim=2)
+        self.concepts = self.reverseEnd(self.concepts, t)
+        return self.concepts
+    @staticmethod
+    def test():
+        pass
+class SymbolicSpace(Space):
+    name = "Symbols"
+    threshold        = 0
+    serialActivation = False
+    symbols          = None
+
+    # The current implementation merely symbolizes all concepts.
+    # Therefore, no symbol learning is necessary.
+    def __init__(self, inputShape, outputShape, nVectors, nDim, reversePass=False, conceptualSpace=None, processSymbols=False):
+        super(SymbolicSpace, self).__init__( inputShape, outputShape, nVectors, nDim, customVQ=True, reversePass=reversePass, processSymbols=processSymbols)
+        assert(inputShape[0] == nVectors) # 1:1 mapping
+        self.conceptualSpace = conceptualSpace
+        #self.mapping     = SoftMap(inputShape[1], nDim, soft=False)
+        #self.createVectorSet()
+    def distance(self, x, y):
+        return x == y
+    def certainty(self, x):
+        return x.T @ x
+    def discretize(self, symbols):
+        batch = symbols.shape[0]
+        if self.serialActivation:
+            for b in range(0,batch):
+                top, indices = torch.topk(symbols[b,:], k=1)
+                symbols[b,:] = 0
+                symbols[b,indices] = top[indices]
+        elif self.threshold:
+            symbols[symbols > self.threshold] =  1
+            symbols[symbols < self.threshold] = -1
+        return symbols
+    def computeActivation(self, x):
+        # we get [ batch x nConcepts x conceptEmbedding ],
+        # and must compute [ batch x nConcepts x symbolEmbedding ]
+        activations = torch.norm( x[:,:,0:self.outputShape[1]] , dim=2)
+        activations = activations.unsqueeze(2)
+        activations = torch.concatenate((activations, x[:,:,self.inputShape[1]:]), dim=2)
+        return activations
+
+    # Naming
+    def forward(self, x, t=0):
+        self.symbols = self.forwardBegin(x, t)
+        if self.processSymbols: # reduce the embedding vector to the symbolic encoding
+            self.symbols = self.computeActivation(self.symbols)
+        self.symbols = self.discretize(self.symbols)
+        self.symbols = self.forwardEnd(self.symbols, t)
+        if self.useVQ:
+            self.symbols  = self.vectors().forward(self.symbols , t)
+        return self.symbols
+    # Interpretation
+    def reverse(self, y, t=0):
+        self.symbols = self.reverseBegin(y,t)
+        if self.processSymbols: # map the symbolic encoding to the embedding vector
+            self.symbols = self.conceptualSpace.dereference(self.symbols)
+        self.symbols = self.reverseEnd(self.symbols, t)
+        return self.symbols
+
+    @staticmethod
+    def test():
+        pass
+class SyntacticSpace(Space):
+    name  = "Syntactic"
+    words = None
+
+    # The current implementation merely symbolizes all concepts.
+    # Therefore, no symbol learning is necessary.
+    def __init__(self, inputShape, outputShape, nVectors, nDim, reversePass=False, conceptualSpace=None):
+        super(SyntacticSpace, self).__init__( inputShape, outputShape, nVectors, nDim, customVQ=False, reversePass=reversePass, processSymbols=True)
+        assert(inputShape[0] == nVectors) # 1:1 mapping
+        self.conceptualSpace = conceptualSpace
+        #self.mapping     = SoftMap(inputShape[1], nDim, soft=False)
+        #self.createVectorSet()
+    def distance(self, x, y):
+        return x == y
+    def certainty(self, x):
+        return x.T @ x
+    def computeActivation(self, x):
+        # we get [ batch x nConcepts x conceptEmbedding ],
+        # and must compute [ batch x nConcepts x symbolEmbedding ]
+        if x.size(-1) != TheObjectEncoding.symbolDim:
+            activations = torch.norm( x[:,:,0:self.outputShape[1]] , dim=2)
+            activations = activations.unsqueeze(2)
+            activations = torch.concatenate((activations, x[:,:,self.inputShape[1]:]), dim=2)
+        else:
+            activations = x
+        return activations
+    # Naming
+    def forward(self, x, t=0):
+        self.symbols = self.forwardBegin(x, t)
+        #self.symbols = self.computeActivation(self.symbols)
+        self.symbols = self.forwardEnd(self.symbols, t)
+        return self.symbols
+    # Interpretation
+    def reverse(self, y, t=0):
+        self.symbols = self.reverseBegin(y,t)
+        self.symbols = self.reverseEnd(self.symbols, t)
+        return self.symbols
+
+    @staticmethod
+    def test():
+        pass
+class OutputSpace(Space):
+    name = "Outputs"
+    def __init__(self, inputShape, outputShape, nVectors, nDim, reversePass=False):
+        super(OutputSpace, self).__init__(inputShape, outputShape, nVectors, nDim)
+        input, output = self.getEmbeddedIO()
+        # the output is reshaped, so we can't use the above formula
+        input  = self.inputShape[0]  * input
+        output = self.outputShape[0] * self.outputShape[1]
+
+        # output is 0 of reshaped and not embedded
+        if reversePass:
+            self.linear1 = LinearLayer(input, output)
+            self.linear2 = LinearLayer(output, input)
+            self.forwardLinear, self.reverseLinear = self.linear1.forward, self.linear2.forward
+            #self.linear = ReversibleLinearLayer(input, output)
+            #self.forwardLinear, self.reverseLinear = self.linear.forward, self.linear.reverse
+        else:
+            self.forwardLinear = LinearLayer(input, output)
+    # Acting
+    def forward(self, x, t=0):
+        y = super().forwardBegin(x, t, reshape=True)
+        # input is batch x nConcepts
+        output = self.forwardLinear(y)
+        output = self.forwardEnd(output, t, reshape=True)
+        if self.useVQ:
+            self.output  = self.vectors().output(self.percepts , t)
+        return output
+    # Being acted upon
+    def reverse(self, y, t=0):
+        y = self.reverseBegin(y, t, reshape=True)
+        #assert list(y.shape) == [self.batch, self.outputShape[0], self.outputShape[1]]
+        y = self.reverseLinear(y)
+        output = self.reverseEnd(y, t, reshape=True)
+        return output
+
+
+class BasicModel(nn.Module):
+    nSubThoughts   = 1
+    nThoughts      = 0
+    spaces         = []
+    processSymbols = False
+
+    def create(self, nInput=32,  nPercepts = 64, nConcepts=256, nSymbols=2, nWords=16, nOutput=32, reversePass=True, LM=None):
+        self.reversePass      = reversePass
+        self.nInput           = nInput
+        self.nOutput          = nOutput
+        self.nPercepts        = nPercepts
+        self.nConcepts        = nConcepts
+        self.nSymbols         = nSymbols
+        self.nWords           = nWords
+
+        symbolicOutputDim     = TheObjectEncoding.symbolDim if self.processSymbols else TheObjectEncoding.conceptDim
+
+        self.inputSpace       = InputSpace([1, TheData.inputLength],
+                                           [self.nInput, TheObjectEncoding.inputDim],
+                                           self.nInput, nDim=TheObjectEncoding.inputDim, LM=LM)
+        self.conceptualSpace  = ConceptualSpace([self.nInput, TheObjectEncoding.inputDim],
+                                               [self.nConcepts, TheObjectEncoding.conceptDim],
+                                               self.nConcepts, TheObjectEncoding.conceptDim,
+                                               reversePass=reversePass,
+                                               nPrototypes=2 * self.nConcepts)
+        self.symbolicSpace    = SymbolicSpace([self.nConcepts, TheObjectEncoding.conceptDim],
+                                              [self.nSymbols, symbolicOutputDim],
+                                              self.nSymbols, TheObjectEncoding.symbolDim,
+                                              reversePass = reversePass,
+                                              conceptualSpace = self.conceptualSpace,
+                                              processSymbols = self.processSymbols)
+        self.spaces.extend([self.inputSpace, self.conceptualSpace, self.symbolicSpace])
+        if self.nSubThoughts == 1:
+            self.perceptualSpace2 = PerceptualSpace([self.nConcepts, symbolicOutputDim],
+                                                    [self.nPercepts, TheObjectEncoding.perceptDim],
+                                                    self.nPercepts, TheObjectEncoding.perceptDim,
+                                                    reversePass = reversePass,
+                                                    nPrototypes = 2*self.nPercepts)
+            self.conceptualSpace2 = ConceptualSpace([self.nPercepts, TheObjectEncoding.perceptDim],
+                                                    [self.nConcepts, TheObjectEncoding.conceptDim],
+                                                    self.nConcepts, TheObjectEncoding.conceptDim,
+                                                    reversePass = reversePass,
+                                                    nPrototypes = 2*self.nConcepts)
+            self.symbolicSpace2 = SymbolicSpace([self.nConcepts, TheObjectEncoding.conceptDim],
+                                                [self.nSymbols, symbolicOutputDim],
+                                                self.nSymbols, TheObjectEncoding.symbolDim,
+                                                reversePass = reversePass,
+                                                conceptualSpace = self.conceptualSpace2,
+                                                processSymbols = self.processSymbols)
+            self.spaces.extend([self.perceptualSpace2, self.conceptualSpace2, self.symbolicSpace2])
+        if self.nThoughts == 1:
+            self.syntacticSpace3    = SyntacticSpace([self.nSymbols, symbolicOutputDim],
+                                               [self.nWords, symbolicOutputDim],
+                                                self.nWords, TheObjectEncoding.symbolDim,
+                                                reversePass = reversePass)
+            self.symbolicSpace3 = SymbolicSpace([self.nWords, symbolicOutputDim],
+                                                [self.nWords, symbolicOutputDim],
+                                                self.nWords, TheObjectEncoding.symbolDim,
+                                                reversePass = reversePass)
+            self.spaces.extend([self.syntacticSpace3, self.symbolicSpace3])
+        # The input dimensionality of the output layer must be equal to the sum of the output dimensionalities of the symbolic layers.
+        self.outputSpace     = OutputSpace([ (self.nSubThoughts+self.nThoughts+1) * self.nSymbols, symbolicOutputDim],
+                                           [self.nOutput, TheObjectEncoding.outputDim],
+                                           self.nOutput, TheObjectEncoding.outputDim,
+                                           reversePass = reversePass)
+        self.spaces.extend([self.outputSpace])
+
+        # The output dimensionality of the input layer must be equal to the output dimensionality of the perceptual layer, since the conceptual layer operates on both.
+        #assert self.inputSpace.outputShape[1] == self.perceptualSpace2.outputShape[1] # inputDim == perceptDim
+        # The input dimensionality of the symbolic layer must be equal to the input dimensionality of the perceptual layer, since they both operate on the output of the conceptual layer.
+        #assert self.symbolicSpace.inputShape[1] == self.perceptualSpace2.inputShape[1] == self.conceptualSpace.outputShape[1]#  conceptDim = conceptDim
+        # The output shape of the symbolic space is equal to the input shape of the output space
+        #assert self.symbolicSpace.outputShape[1] == self.outputSpace.inputShape[1] # these are in conceptual space, or symbolic space if symbols emit objectSize symbols (processSymbols == True)
+
+    def Start(self, data, t=0.0):
+        input = self.inputSpace(data, t)
+        concepts = self.conceptualSpace(input, t)
+        symbols = self.symbolicSpace(concepts, t)
+        if self.plot:
+            self.plotActivations(figure=1, concepts=concepts)
+        return concepts, input, symbols
+    def StartReverse(self, concepts, input, symbols, t=0.0):
+        concepts = self.symbolicSpace.reverse(symbols, t)
+        input = self.conceptualSpace.reverse(concepts, t)
+        data  = self.inputSpace.reverse(input, t)
+        return data, input
+    def SubsymbolicThought(self, data, t=0.0):
+        percepts = self.perceptualSpace2(data, t)
+        concepts = self.conceptualSpace2(percepts, t)
+        symbols  = self.symbolicSpace2(concepts, t)
+        if self.plot:
+            self.plotActivations(figure=1, percepts=percepts, concepts=concepts)
+        return concepts, symbols
+    def SubsymbolicThoughtReverse(self, concepts, symbols, t=0.0):
+        concepts = self.symbolicSpace2.reverse(symbols, t)
+        percepts = self.conceptualSpace2.reverse(concepts, t)
+        #data = self.perceptualSpace2.reverse(percepts, t)
+        data = None
+        return data
+    def SymbolicThought(self, data, t=0.0):
+        words   = self.syntacticSpace3(data, t)
+        symbols = self.symbolicSpace3(words, t)
+        if self.plot:
+            self.plotActivations(figure=1, symbols=symbols)
+        return symbols, words
+    def SymbolicThoughtReverse(self, symbols, words, t=0.0):
+        symbols = self.syntacticSpace3.reverse(words, t)
+        data    = self.symbolicSpace3.reverse(symbols, t)
+        return data
+    def Finish(self, symbols, t=0.0):
+            self.words = symbols
+            data = self.outputSpace(symbols, t)
+            if self.plot:
+                self.plotActivations(figure=1, symbols=symbols)
+            return data
+    def FinishReverse(self, data, t=0.0):
+            # cache this non-invertible step, since we watn to reverse our behavior based on our understanding,
+            # not based on the action that we emitted.
+            symbols = self.words.detach()
+            #symbols = self.outputSpace.reverse(data, t)
+            return symbols
+    def forward(self, data, t=0.0):
+        # We may at some point wish to combine concepts over symbolic and subsymbolic pathways
+        # concepts = (alpha) * concepts1 + (1 - alpha) * concepts2
+        symbols = None
+        data, input, symbols = self.Start(data, t)
+        for n in range(self.nSubThoughts):
+            data, symbols1 = self.SubsymbolicThought(data, t)
+            symbols = torch.cat((symbols, symbols1), dim=1)
+        for n in range(self.nThoughts):
+            data, symbols2 = self.SymbolicThought(data, t)
+            symbols = torch.cat((symbols, symbols2), dim=1)
+        data = self.Finish(symbols, t)
+        batch = input.shape[0]
+        TheObjectEncoding.when.increment(batch)
+        return data, input
+    def reverse(self, data, t=0.0):
+        symbols = self.FinishReverse(data, t)
+        nSym = round(self.nSymbols)
+        symbolIndex = 0
+        for n in range(self.nThoughts):
+            symbols1 = symbols[:, symbolIndex*nSym:(symbolIndex+1)*nSym]
+            symbolIndex += 1
+            data = self.SymbolicThoughtReverse(data, symbols1, t)
+        for n in range(self.nSubThoughts):
+            symbols1 = symbols[:, symbolIndex*nSym:(symbolIndex+1)*nSym]
+            symbolIndex += 1
+            data = self.SubsymbolicThoughtReverse(data, symbols1, t)
+        symbols1 = symbols[:, symbolIndex * nSym:(symbolIndex + 1) * nSym]
+        data, input = self.StartReverse(data, None, symbols1, t)
+        return data, input
+
+    def run(self, numEpochs=1, batchSize=10, temperature=0.0001, lr=0.01, stoppingCriterion=0.1):
+        """
+        Runs the Transformer model.
+        """
+
+        trainLosses       = [[],[]]
+        validationLosses  = [[],[]]
+        minValidationLoss = math.inf
+        testLosses        = [[],[]]
+        self.plot         = False
+
+        for epoch in range(numEpochs):
+            if epoch % 10 == 0:
+                print(f"Epoch [{epoch + 1}/{numEpochs}]")
+
+            outErr,inErr,_,_ = self.runTrain(TheData.train_input, TheData.train_output, temperature=temperature, lr=lr, batchSize=batchSize)
+            trainLosses[0].append(outErr)
+            trainLosses[1].append(inErr)
+            print(f"Train Loss: {outErr:.4f},  {inErr:.4f}")
+
+            outErr,inErr,_,_ = self.runTest(TheData.validation_input, TheData.validation_output)
+            validationLosses[0].append(outErr)
+            validationLosses[1].append(inErr)
+            #print(f"Validation Loss: {outErr:.4f},  {inErr:.4f}")
+
+            outErr,inErr,_,_ = self.runTest(TheData.test_input, TheData.test_output)
+            testLosses[0].append(outErr)
+            testLosses[1].append(inErr)
+            #print(f"Test Loss: {outErr:.4f},  {inErr:.4f}")
+
+            if outErr > minValidationLoss + stoppingCriterion:
+                temperature = temperature/2
+                print(f"Validation increasing, dropping temperature to {temperature}")
+                minValidationLoss = outErr
+            if outErr < minValidationLoss:
+                minValidationLoss = outErr
+            if epoch < (numEpochs / 2):
+                temperature = 0 # This will stop the temperature from being used.
+                # It might better be eliminated by the optimizer
+
+        # Plot the loss over time
+        self.plot = True
+        self.runTest(TheData.test_input, TheData.test_output)
+        self.plotLoss(trainLosses, validationLosses, testLosses)
+        #self.plotNetwork()
+    def runTrain(self, input, output, temperature=0.00001, lr=0.01, batchSize=10):
+        """
+        Trains the Transformer model using labeled training data.
+        """
+        optimizer1 = torch.optim.Adam(self.parameters(), lr=lr)
+        optimizer2 = torch.optim.Adam(self.parameters(), lr=lr)
+
+        # Define LRscheduler
+        #scheduler = ReduceLROnPlateau(optimizer1, 'min', patience=5, factor=0.1, verbose=True)
+        #scheduler.step(val_loss)
+
+        lossFnOutput = nn.MSELoss()
+        lossFnInput = nn.MSELoss()
+
+        allOutput = []
+        allInput  = []
+        outErr    = 0
+        inErr     = 0
+        self.train()
+        for i in range(0, len(input), batchSize):
+            inputBatch  = input[i:i + batchSize]
+            outputBatch = output[i:i + batchSize]
+            batchSize   = len(inputBatch)
+
+            # train only one layer at a time
+            #layer = i % 5
+            #self.inputSpace.freeze(layer==0)
+            #self.perceptualSpace.freeze(layer==1)
+            #self.conceptualSpace.freeze(layer==2)
+            #self.symbolicSpace.freeze(layer==3)
+            #self.outputSpace.freeze(layer==4)
+
+            # Combine the padded tensors
+            inputTensor  = torch.stack(inputBatch, dim=0)
+            inputTensor  = inputTensor.unsqueeze(1)
+            outputTensor = torch.stack(outputBatch, dim=0)
+            outputTensor = outputTensor.unsqueeze(1)
+
+            # First run forward
+            optimizer1.zero_grad()
+            eOutput, aInput  = self.forward(inputTensor, temperature)
+            lossOut  = lossFnOutput(eOutput.squeeze(), outputTensor.squeeze())
+            outErr   = lossOut.item()
+            lossOut.backward()
+            #list(map(lambda obj: obj.zeroGradient(), self.spaces))
+            optimizer1.step()
+            out = eOutput.clone().detach()
+            for i in range(0, batchSize):
+                allOutput.append(out[i,:,:].numpy())
+
+            # Next run reverse
+            if self.reversePass:
+                optimizer2.zero_grad()
+                eInput, aOutput  = self.reverse(eOutput.detach(), temperature)
+                #lossIn = lossFnInput(eInput.squeeze().float(), inputTensor.squeeze().float())
+                lossIn  = lossFnInput(aOutput, aInput)
+                inErr   = lossIn.item()
+                lossIn.backward()
+                #list(map(lambda obj: obj.zeroGradient(), self.spaces))
+                optimizer2.step()
+                inp = eInput.clone().detach()
+                for i in range(0, batchSize):
+                    allInput.append(inp[i,:,:].numpy())
+        return outErr, inErr, allOutput, allInput
+    def runTest(self, input, output, batchSize=10):
+        lossFnOutput = nn.MSELoss()
+        lossFnInput = nn.MSELoss()
+
+        allOutput = []
+        allInput  = []
+        outErr    = 0
+        inErr     = 0
+        self.eval()
+        with torch.no_grad():
+            for i in range(0, len(input), batchSize):
+                inputBatch   = input[i:i + batchSize]
+                outputBatch  = output[i:i + batchSize]
+                batchSize    = len(inputBatch)
+                # Combine the padded tensors
+                inputTensor  = torch.stack(inputBatch, dim=0)
+                inputTensor  = inputTensor.unsqueeze(1)
+                outputTensor = torch.stack(outputBatch, dim=0)
+                outputTensor = outputTensor.unsqueeze(1)
+                eOutput,pIn  = self.forward(inputTensor)
+                lossOut      = lossFnOutput(eOutput.squeeze(), outputTensor.squeeze())
+                outErr       = lossOut.item()
+                out = eOutput.clone().detach()
+                for i in range(0, batchSize):
+                    allOutput.append(out[i, :, :].numpy())
+
+                # Next run reverse
+                if self.reversePass:
+                    eInput, pOut = self.reverse(eOutput.detach())
+                    lossIn    = lossFnInput(pOut, pIn)
+                    inErr     = lossIn.item()
+                    inp       = eInput.clone().detach()
+                    for i in range(0, batchSize):
+                        allInput.append(inp[i,:,:].numpy())
+        return outErr, inErr, allOutput, allInput
+
+    def classificationReport(self, min=0, max=1):
+        _, _, y_pred, x_pred = self.runTest(TheData.test_input, TheData.test_output)
+        y_actual = TheData.test_output
+        y_pred_sat = np.maximum(min, np.minimum(max, np.round(np.array(y_pred)).squeeze()))
+        performance = classification_report(
+            y_actual, y_pred_sat,
+            target_names=["Negative Review", "Positive Review"]
+        )
+        print(performance)
+    def plotLoss(model, trainErr, valErr, testErr):
+        """
+        Plots the training, validation, and test losses over time.
+        """
+        plt.figure(figsize=(10, 5))
+
+        plt.plot(range(1, len(trainErr[0]) + 1), trainErr[0], label="Training Error (Input)", marker='o')
+        plt.plot(range(1, len(trainErr[1]) + 1), trainErr[1], label="Training Error (Output)", marker='o')
+
+        if testErr:
+            plt.plot(range(1, len(testErr[0]) + 1), testErr[0], label="Test Error (Input)", marker='x')
+            plt.plot(range(1, len(testErr[1]) + 1), testErr[1], label="Test Error (Output)", marker='x')
+
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title("Loss over Time")
+        plt.legend()
+        plt.grid(True)
+
+        # Save the plot as a high-resolution PNG (300 DPI)
+        plt.savefig(output_path("basicModelError.png"), dpi=300, bbox_inches='tight')
+        plt.show()
+    def plotActivations(model, figure=1, percepts=None, concepts=None, symbols=None):
+
+        # Plot training loss and some activation norms.
+        fig = plt.figure(figure, figsize=(12, 4))
+        fig.clf()
+
+        if percepts is not None:
+            p = percepts[-1, :, :].squeeze()
+            pAct = torch.norm(p, dim=1).detach().numpy()
+            plt.plot(pAct, marker='o', color='r')
+            plt.xlabel("Activation")
+            plt.ylabel("Percepts")
+            plt.title("Perceptual Activation")
+
+        if concepts is not None:
+            c = concepts[-1, :, :].squeeze()
+            cAct = torch.norm(c, dim=-1).detach().numpy()
+            plt.plot(cAct, marker='o', color='b')
+            plt.xlabel("Epoch")
+            plt.ylabel("Concepts")
+            plt.title("Conceptual Activation")
+
+        if symbols is not None:
+            s = symbols[-1, :, 0].squeeze()
+            sAct = s.detach().numpy()
+            plt.plot(sAct, marker='o', color='g')
+            plt.xlabel("Epoch")
+            plt.ylabel("Symbols")
+            plt.title("Symbolic Activations")
+
+        plt.tight_layout()
+        plt.show()
+    def plotSpace(model):
+        """
+        Visualizes only the learned weight parameters.
+        - For the perceptual layer, plots the 64 prototype weight vectors (each 64-d)
+          projected via PCA to 2D.
+        - For the conceptual mapping (fc_p of the ConceptualLayer, shape (16,64)),
+          uses the same PCA transform and, for each of the 16 weight vectors,
+          draws a hyperplane in 2D. Each hyperplane is taken to be the line orthogonal
+          to the projected weight vector and passing through the mean of the projected
+          perceptual prototypes.
+        - For the symbolic branch, computes the L2 norm of each of its 8 weight vectors (from fc_symbolic)
+          and displays a lollipop plot.
+        """
+        # ----- Perceptual prototypes -----
+        # prototypes: (64, 64)
+        perc_weights = model.prototypes.data.cpu().numpy()  # shape (64,64)
+        pca = PCA(n_components=2)
+        perc_2d = pca.fit_transform(perc_weights)  # (64,2)
+
+        plt.figure(figsize=(18, 5))
+
+        plt.subplot(1, 3, 1)
+        plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
+        plt.xlabel("PC1")
+        plt.ylabel("PC2")
+        plt.title("Perceptual Space Prototypes (64 points)")
+        plt.legend()
+
+        # Compute the mean of the projected prototypes.
+        perc_mean = perc_2d.mean(axis=0)
+
+        # ----- Conceptual hyperplanes -----
+        # Use the fc_p weights from the ConceptualSpace (shape (16,64))
+        conc_weights = model.conceptual.fc_p.weight.data.cpu().numpy()  # (16,64)
+        # Project these 16 weight vectors using the same PCA (note: they are in the same space as prototypes).
+        conc_proj = pca.transform(conc_weights)  # (16,2)
+
+        plt.subplot(1, 3, 2)
+        plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
+        # For each conceptual weight vector, draw its corresponding hyperplane.
+        x_vals = np.linspace(np.min(perc_2d[:, 0]) - 1, np.max(perc_2d[:, 0]) + 1, 100)
+        for i in range(conc_proj.shape[0]):
+            n = conc_proj[i]  # this is the projected weight vector (treated as normal)
+            # Define hyperplane: n . (x - perc_mean) = 0, i.e.
+            # n0*(x - m0) + n1*(y - m1) = 0  => y = m1 - (n0/n1)*(x - m0), provided n1 != 0.
+            if np.abs(n[1]) > 1e-3:
+                y_vals = perc_mean[1] - (n[0] / n[1]) * (x_vals - perc_mean[0])
+                plt.plot(x_vals, y_vals, '--', label=f"Hyperplane {i + 1}" if i == 0 else None, alpha=0.7)
+            else:
+                # Vertical line at x = perc_mean[0]
+                plt.axvline(x=perc_mean[0], linestyle='--', alpha=0.7, label=f"Hyperplane {i + 1}" if i == 0 else None)
+        plt.xlabel("PC1")
+        plt.ylabel("PC2")
+        plt.title("Conceptual Hyperplanes (16 lines)")
+        plt.legend()
+
+        # ----- Symbolic branch: Lollipop plot -----
+        # fc_symbolic: Linear(784,8) has weight of shape (8,784)
+        symb_weights = model.fc_symbolic.weight.data.cpu().numpy()  # (8,784)
+        symb_norms = np.linalg.norm(symb_weights, axis=1)  # (8,)
+        x_symb = np.arange(8)
+
+        plt.subplot(1, 3, 3)
+        plt.vlines(x_symb, 0, symb_norms, color='k', alpha=0.7)
+        plt.scatter(x_symb, symb_norms, color='red', s=100, zorder=3)
+        plt.xlabel("Symbolic Feature Index")
+        plt.ylabel("L2 Norm")
+        plt.title("Symbolic Weights (Lollipop Plot)")
+
+        plt.tight_layout()
+        plt.show()
+    def plotNetwork(model):
+        """
+        Uses Torchviz to create a visualization of the network's computation graph.
+        The visualization is saved as 'BasicModel_graph.png'.
+        """
+        model.eval()
+        #dummy_input = torch.randn(1, 28, 28)
+        output, input, _, _ = model.runTest(TheData.test_input, TheData.test_output)
+        dot = make_dot(output, params=dict(model.named_parameters()))
+        dot.format = "png"
+        graph_path = dot.render(output_stem("BasicModel_graph"))
+        print(f"Saved network graph as {graph_path}")
+TheBasicModel = BasicModel()
+
+
+def createLMModel(dataset, pretrained=False):
+    nInput    = 2 ** 3  # the size of the context window
+    nPercepts = 2 ** 3  # the number of percepts cannot be greater than the number of inputs
+    nConcepts = 2 ** 3  # the number of concepts may vary freely
+    nSymbols  = 2 ** 3  # must be equal to nConcepts
+    nWords    = 2 ** 3
+    nOutput   = 1       # The output (prediction) size
+
+    TheData.load(dataset)
+    # load the langauge model, which will determine the number of inputs
+    languageModel = LanguageModel()
+    languageModel.create(TheData.combinedTokens, nInput=0, nVectors=nInput, pretrained=pretrained)
+
+    # pre-tokenization for speed
+    #TheData.tokenize(languageModel)
+
+    inputDim     = languageModel.nDim
+    outputDim    = TheData.getOutputSize()
+    perceptDim   = inputDim
+    conceptDim   = inputDim
+    TheObjectEncoding.setDimensions(inputDim, perceptDim, conceptDim, outputDim)
+
+    TheBasicModel.create(nInput=nInput, nPercepts=nPercepts, nConcepts=nConcepts, nSymbols=nSymbols, nWords=nWords, nOutput=nOutput,
+                         LM=languageModel)
+def createVQModel():
+    nInput    = 2 ** 7  #
+    nPercepts = 2 ** 8  #
+    nConcepts = 2 ** 5  #
+    nSymbols  = 2 ** 5  #
+    nOutput   = 1  # The output (prediction) size
+
+    inputDim  = TheData.getInputSize()
+    outputDim = TheData.getOutputSize()
+    TheObjectEncoding.setInputDim(inputDim)
+    TheObjectEncoding.setPerceptDim(inputDim)
+    TheObjectEncoding.setConceptDim(inputDim)
+    TheObjectEncoding.setSymbolDim(0)
+    TheObjectEncoding.setOutputDim(outputDim)
+
+    vectorSet = VectorSet()
+    vectorSet.create(nInput=nInput, nOutput=nPercepts, nDim =inputDim, nVectors=nInput)
+
+    TheBasicModel.create(nInput=nInput, nPercepts=nPercepts, nConcepts=nConcepts, nSymbols=nSymbols, nOutput=nOutput,
+                         reversePass=False, LM=vectorSet)
+def createPassThroughModel(dataset):
+    nInput    = 1       #
+    nPercepts = 2 ** 3  #
+    nConcepts = 2 ** 3  #
+    nSymbols  = 2 ** 3  #
+    nOutput   = 1       # The output (prediction) size
+
+    TheData.load(dataset)
+    # Set the network's dimensionality
+    inputDim = TheData.getInputSize()
+    outputDim = TheData.getOutputSize()
+    TheObjectEncoding.setInputDim(inputDim)
+    TheObjectEncoding.setPerceptDim(inputDim)
+    TheObjectEncoding.setConceptDim(inputDim)
+    TheObjectEncoding.setSymbolDim(0)
+    TheObjectEncoding.setOutputDim(outputDim)
+
+
+    passThrough = PassThrough()
+    passThrough.create(nInput=nInput, nOutput=nPercepts, nDim=TheObjectEncoding.inputDim)
+
+    TheBasicModel.create(nInput=nInput, nPercepts=nPercepts, nConcepts=nConcepts, nSymbols=nSymbols, nOutput=nOutput,
+                         reversePass=False, LM=passThrough)
+
+
+def test():
+    PositionalEncoding.test()
+    TemporalEncoding.test()
+
+    # test XOR
+    createLMModel('xor', pretrained=False, reversePass=True)
+    TheBasicModel.run(numEpochs=200, stoppingCriterion=1, temperature=0.01, lr=0.01)
+    TheBasicModel.classificationReport()
+
+# Standalone execution entry point
+if __name__ == "__main__":
+    dataset = "xor"
+    #warnings.filterwarnings('ignore', message='urllib3') #NotOpenSSLWarning')
+    if dataset == "tomatoes":
+        createLMModel('tomatoes', pretrained=True)
+        TheBasicModel.run(numEpochs=100, stoppingCriterion=.2, temperature=0.001, lr=0.00001)
+        TheBasicModel.classificationReport()
+    if dataset == "mnist":
+        createPassThroughModel('mnist')
+        TheBasicModel.run(numEpochs=10, stoppingCriterion=1)
+        TheBasicModel.classificationReport(min=0, max=9)
+    if dataset == "xor":
+        torch.autograd.set_detect_anomaly(True)
+        createLMModel('xor', pretrained=False)
+        TheBasicModel.run(numEpochs=800, stoppingCriterion=.1, temperature=0.0001, lr=0.001)
+        TheBasicModel.classificationReport()
