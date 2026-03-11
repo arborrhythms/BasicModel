@@ -1,0 +1,331 @@
+@startuml
+class PositionalEncoding {
+    forward()
+    reverse()
+    test()
+        p
+    maxP
+    div_term
+    __init__()
+}
+class TemporalEncoding {
+    forward()
+    increment()
+    reverse()
+    test()
+        t
+    maxT
+    __init__()
+}
+class ObjectEncoding {
+    setDimensions()
+    setInputDim()
+    setPerceptDim()
+    setConceptDim()
+    setSymbolDim()
+    setOutputDim()
+    getEmbeddingSize()
+    getInputEmbedding()
+    getPerceptEmbedding()
+    getConceptEmbedding()
+    getSymbolEmbedding()
+    getOutputEmbedding()
+    pad()
+    slice()
+    forward()
+    reverse()
+        inputDim
+    perceptDim
+    conceptDim
+    symbolDim
+    outputDim
+    __init__()
+}
+class Data {
+    load()
+    loadMNist()
+    loadXOR()
+    loadTomatoes()
+    processLM()
+    tokenize()
+    data()
+    getEmbeddingSize()
+    getInputSize()
+    getOutputSize()
+    stringTensor()
+        train_input
+    train_output
+    test_input
+    test_output
+    validation_input
+    validation_output
+    train_input
+    train_output
+    validation_input
+    validation_output
+    test_input
+    test_output
+    combinedTokens
+    combinedTokens
+    train_input
+    validation_input
+    test_input
+    __init__()
+}
+class Message {
+    __call__()
+        __init__()
+}
+class VectorSet {
+    getSize()
+    create()
+    updateWeights()
+    freeze()
+    addVectors()
+    forward()
+    conceptParthood()
+    perceptParthood()
+    learn()
+    replace()
+    insert()
+    remove()
+    norm()
+    normalize()
+    negate()
+    distance()
+    codebookDistance()
+    unsignedAngle()
+    equal()
+    part()
+    whole()
+    boundary()
+    overlap()
+    union()
+    intersection()
+        nInput
+    nVectors
+    nDim
+    nVectors
+    customVQ
+    signed
+    embeddingSize
+    codebookSize
+    codebookAct
+    vq
+    vectors
+    vectors
+    vectors
+    nVectors
+    vectors
+    nVectors
+    __init__()
+}
+class PassThrough {
+    create()
+    forward()
+    reverse()
+        __init__()
+}
+class ReversibleDictionary {
+    addVectors()
+    lookup()
+    forward()
+    flatten()
+    reverse()
+        LM
+    words
+    __init__()
+}
+class LanguageModel {
+    tokenize()
+    tokenizeList()
+    untokenize()
+    getVectors()
+    getSize()
+    getDictionary()
+    create()
+    forward()
+    reverse()
+        maxTokens
+    model_path
+    model
+    model
+    model_path
+    model
+    model
+    batch
+    __init__()
+}
+class Space {
+    getEmbeddedIO()
+    lookup()
+    dereference()
+    stats()
+    vectors()
+    createVectorSet()
+    forwardBegin()
+    forwardEnd()
+    reverseBegin()
+    reverseEnd()
+    flatten()
+    reshape()
+        inputShape
+    outputShape
+    nVectors
+    nDim
+    embeddingSize
+    batch
+    useVQ
+    customVQ
+    nPrototypes
+    reversePass
+    processSymbols
+    batch
+    batch
+    __init__()
+}
+class InputSpace {
+    forward()
+    reverse()
+        nDim
+    input
+    tokenizedInput
+    lift
+    batch
+    input
+    input
+    __init__()
+}
+class PerceptualSpace {
+    distance()
+    certainty()
+    forward()
+    reverse()
+    test()
+        attention
+    pi
+    pi1
+    pi2
+    pi
+    forwardPi
+    percepts
+    percepts
+    percepts
+    __init__()
+}
+class ConceptualSpace {
+    distance()
+    certainty()
+    forward()
+    reverse()
+    test()
+        attention
+    sigma1
+    sigma2
+    sigma
+    forwardSigma
+    concepts
+    concepts
+    concepts
+    concepts
+    concepts
+    concepts
+    __init__()
+}
+class SymbolicSpace {
+    distance()
+    certainty()
+    discretize()
+    computeActivation()
+    forward()
+    reverse()
+    test()
+        conceptualSpace
+    symbols
+    symbols
+    symbols
+    symbols
+    symbols
+    symbols
+    symbols
+    symbols
+    __init__()
+}
+class SyntacticSpace {
+    distance()
+    certainty()
+    computeActivation()
+    forward()
+    reverse()
+    test()
+        conceptualSpace
+    symbols
+    symbols
+    symbols
+    symbols
+    __init__()
+}
+class OutputSpace {
+    forward()
+    reverse()
+        linear1
+    linear2
+    forwardLinear
+    output
+    __init__()
+}
+class BasicModel {
+    create()
+    Start()
+    StartReverse()
+    SubsymbolicThought()
+    SubsymbolicThoughtReverse()
+    SymbolicThought()
+    SymbolicThoughtReverse()
+    Finish()
+    FinishReverse()
+    forward()
+    reverse()
+    run()
+    runTrain()
+    runTest()
+    classificationReport()
+    plotLoss()
+    plotActivations()
+    plotSpace()
+    plotNetwork()
+    createLMModel()
+    createVQModel()
+    createPassThroughModel()
+    test()
+        reversePass
+    nInput
+    nOutput
+    nPercepts
+    nConcepts
+    nSymbols
+    nWords
+    inputSpace
+    conceptualSpace
+    symbolicSpace
+    perceptualSpace2
+    conceptualSpace2
+    symbolicSpace2
+    syntacticSpace3
+    symbolicSpace3
+    outputSpace
+    words
+    plot
+    plot
+    __init__()
+}
+VectorSet <|-- PassThrough
+VectorSet <|-- ReversibleDictionary
+VectorSet <|-- LanguageModel
+Space <|-- InputSpace
+Space <|-- PerceptualSpace
+Space <|-- ConceptualSpace
+Space <|-- SymbolicSpace
+Space <|-- SyntacticSpace
+Space <|-- OutputSpace
+@enduml
