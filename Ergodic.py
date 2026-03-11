@@ -15,6 +15,19 @@ from Model import message, SigmaLayer, ReversibleSigmaLayer
 from Model import NormLayer, LinearLayer, AttentionLayer
 from Model import GammaMem, CertaintyWeightedCrossEntropy, epsilon
 
+BASE_DIR = os.path.dirname(__file__)
+OUTPUT_DIR = os.path.join(BASE_DIR, "output")
+
+def ensure_output_dir():
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    return OUTPUT_DIR
+
+def output_path(filename):
+    return os.path.join(ensure_output_dir(), filename)
+
+def output_stem(stem):
+    return os.path.join(ensure_output_dir(), stem)
+
 class Data():
     train_input       = []
     train_output      = []
@@ -705,7 +718,7 @@ class BaseModel(nn.Module):
             print(f"\nTrial [{trial + 1}/{numTrials}]")
             self.create(nInput=self.nInput, nConcepts=self.nConcepts, nOutput=self.nOutput)
             acc[trial, :] = self.run(numEpochs=numEpochs, batchSize=batchSize, lr=lr)
-        np.savetxt(f"{self.name}.csv", np.array(acc), delimiter=",")
+        np.savetxt(output_path(f"{self.name}.csv"), np.array(acc), delimiter=",")
         return acc
     def run(self, numEpochs=1, batchSize=10, lr=0.001, stoppingCriterion=0.1):
         """
@@ -781,7 +794,7 @@ class BaseModel(nn.Module):
         plt.legend()
         plt.grid(True)
         # Save the plot as a high-resolution PNG (300 DPI)
-        filename = model.name + "Accuracy.png"
+        filename = output_path(model.name + "Accuracy.png")
         plt.savefig(filename, dpi=300, bbox_inches='tight')
         plt.show(block=False)
     def plotLoss(model, trainErr, valErr, testErr):
@@ -804,7 +817,7 @@ class BaseModel(nn.Module):
         plt.grid(True)
 
         # Save the plot as a high-resolution PNG (300 DPI)
-        filename = model.name + "Error.png"
+        filename = output_path(model.name + "Error.png")
         plt.savefig(filename, dpi=300, bbox_inches='tight')
         plt.show(block=False)
     def plotActivations(model, figure=1, percepts=None, concepts=None, symbols=None):
@@ -919,8 +932,8 @@ class BaseModel(nn.Module):
         _, _, output, input = model.runEpoch(TheData.test_input, TheData.test_output, lr=0)
         dot = make_dot(output, params=dict(model.named_parameters()))
         dot.format = "png"
-        dot.render(f"graph_{model.name}")
-        print(f"Saved network graph as {model.name}_graph.png")
+        graph_path = dot.render(output_stem(f"graph_{model.name}"))
+        print(f"Saved network graph as {graph_path}")
     def plotErrorbars(model, acc):
         x = list(range(1, 10))
         y = np.array(np.mean(acc, axis=1))
@@ -1101,7 +1114,7 @@ class ErgodicModel(BaseModel):
         plt.legend()
         plt.grid(True)
         # Save the plot as a high-resolution PNG (300 DPI)
-        filename = model.name + "Accuracy.png"
+        filename = output_path(model.name + "Accuracy.png")
         plt.savefig(filename, dpi=300, bbox_inches='tight')
         plt.show(block=False)
 
@@ -1114,13 +1127,13 @@ class ErgodicModel(BaseModel):
                 image = last_x_pred[9-i, :]
                 image = np.reshape(image, (28, 28))
                 plt.imshow(image)
-                filename = model.name + f"_{num}_Reconstruction.png"
+                filename = output_path(model.name + f"_{num}_Reconstruction.png")
                 plt.savefig(filename, dpi=300, bbox_inches='tight')
                 plt.show(block=False)
 
 def plotErrorbars(fn):
     x = list(range(1, 10))
-    acc = np.loadtxt(f"{fn}.csv", delimiter=",")
+    acc = np.loadtxt(output_path(f"{fn}.csv"), delimiter=",")
     #acc = acc.T
     y = np.array(np.mean(acc, axis=1))
     y = np.expand_dims(y, axis=1)
@@ -1144,7 +1157,7 @@ def plotComparison():
 
     # Display the plot
     plt.grid(True)
-    filename = "ModelComparison.png"
+    filename = output_path("ModelComparison.png")
     plt.savefig(filename, dpi=300, bbox_inches='tight')
     plt.show(block=False)
 

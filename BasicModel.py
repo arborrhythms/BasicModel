@@ -19,6 +19,19 @@ from Model import VQLayer, NormLayer, LinearLayer, ReversibleLinearLayer, Attent
 from Model import GammaMem, ColumnUsageTracker, LiftingLayer, epsilon
 from functools import partial
 
+BASE_DIR = os.path.dirname(__file__)
+OUTPUT_DIR = os.path.join(BASE_DIR, "output")
+
+def ensure_output_dir():
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    return OUTPUT_DIR
+
+def output_path(filename):
+    return os.path.join(ensure_output_dir(), filename)
+
+def output_stem(stem):
+    return os.path.join(ensure_output_dir(), stem)
+
 class PositionalEncoding(nn.Module):
     nDim   = 2
     index  = [-4, -3]
@@ -1597,7 +1610,7 @@ class BasicModel(nn.Module):
         plt.grid(True)
 
         # Save the plot as a high-resolution PNG (300 DPI)
-        plt.savefig("basicModelError.png", dpi=300, bbox_inches='tight')
+        plt.savefig(output_path("basicModelError.png"), dpi=300, bbox_inches='tight')
         plt.show()
     def plotActivations(model, figure=1, percepts=None, concepts=None, symbols=None):
 
@@ -1712,8 +1725,8 @@ class BasicModel(nn.Module):
         output, input, _, _ = model.runTest(TheData.test_input, TheData.test_output)
         dot = make_dot(output, params=dict(model.named_parameters()))
         dot.format = "png"
-        dot.render("BasicModel_graph")
-        print("Saved network graph as BasicModel_graph.png")
+        graph_path = dot.render(output_stem("BasicModel_graph"))
+        print(f"Saved network graph as {graph_path}")
 TheBasicModel = BasicModel()
 
 
@@ -1812,4 +1825,3 @@ if __name__ == "__main__":
         createLMModel('xor', pretrained=False)
         TheBasicModel.run(numEpochs=800, stoppingCriterion=.1, temperature=0.0001, lr=0.001)
         TheBasicModel.classificationReport()
-

@@ -12,6 +12,16 @@ import time
 
 epsilon = 1e-7  # to avoid log(0)
 
+def has_signal(value):
+    if isinstance(value, torch.Tensor):
+        return bool(torch.any(value != 0).item())
+    return bool(value)
+
+def sample_noise(reference, shape=None):
+    if shape is None:
+        shape = tuple(reference.shape)
+    return torch.randn(shape, device=reference.device, dtype=reference.dtype)
+
 class Message():
     def __call__(self, txt, newline="\n"):
         print(txt, end=newline)
@@ -56,48 +66,141 @@ class Layer(nn.Module):
 class ErgodicLayer(Layer):
     def __init__(self, nInput, nOutput, permuteInput=False):
         super().__init__(nInput, nOutput, permuteInput)
+        # Alpha controls bias-variance tradeoff: bias = alpha, temp = 1 - alpha
+        # Start at full exploration (alpha=0): bias=0, temp=1
+        self.alpha       = nn.Parameter(torch.tensor(0.0), requires_grad=False)
         self.bias        = nn.Parameter(torch.tensor(0.0), requires_grad=False)
         self.temperature = nn.Parameter(torch.tensor(1.0), requires_grad=True)
-        self.register_buffer('m', torch.tensor(0.0))               # shape: []
-        self.register_buffer('v', torch.tensor(0.0))               # shape: []
-        self.register_buffer('t', torch.tensor(0))                 # shape: []
-        self.lr      = 0.01
-        self.beta1   = 0.9
-        self.beta2   = 0.999
-        self.epsilon = 1e-8
-        self.dropoutRate = 1.0 # was erroneously set to 0.75
+        # Modified Adam: second moment only (gradient is zero-mean)
+        self.register_buffer('v', torch.tensor(0.0))
+        self.register_buffer('t_step', torch.tensor(0))            # step counter for bias correction
+        self.register_buffer('certainty', torch.ones(nOutput))
+        self.register_buffer('certainty_v', torch.zeros(nOutput))
+        self.register_buffer('certainty_forward_ema', torch.zeros(nOutput))
+        self.register_buffer('certainty_step', torch.tensor(0))
+        self.register_buffer('certainty_forward_step', torch.tensor(0))
+        self.global_temp = 1.0                                     # sensitivity knob
+        self.beta = 0.999
+        self.certainty_beta = 0.99
+        self.certainty_forward_beta = 0.9
+        self.certainty_scale = 1.0
+        self.certainty_forward_weight = 0.5
+        self.certainty_gradient_weight = 0.5
+        self.dropoutRate = 0.0
 
     def getParameters(self):
         params = [p for n, p in self.named_parameters() if n != "temperature"]
-        #params = [p for n, p in self.named_parameters()]
         return params
-    def setBias(self, bias=0.0):
+    def setAlpha(self, alpha):
         with torch.no_grad():
-            self.bias.copy_(bias)
-            self.temperature.copy_(1-bias)
+            self.alpha.fill_(alpha)
+            self.bias.fill_(alpha)
+            self.temperature.fill_(1.0 - alpha)
     def setTemperature(self, temp=0.0):
         with torch.no_grad():
-            self.bias.copy_(1-temp)
-            self.temperature.copy_(temp)
+            self.global_temp = temp
+            self.setAlpha(1.0 - temp)
+    def local_tradeoff(self):
+        certainty = self.certainty.to(device=self.bias.device, dtype=self.bias.dtype)
+        local_bias = self.bias * certainty
+        local_temp = self.temperature * torch.ones_like(certainty) + self.bias * (1.0 - certainty)
+        return local_bias, local_temp.clamp(0.0, 1.0)
     @torch.no_grad()
-    def temperature_update(self):
+    def reduce_certainty_signal(self, signal):
+        if signal is None:
+            return None
+        signal = signal.detach()
+        if signal.ndim == 0 or signal.shape[-1] != self.nOutput:
+            return None
+        signal = signal.abs()
+        if signal.ndim > 1:
+            signal = signal.mean(dim=tuple(range(signal.ndim - 1)))
+        return torch.tanh(signal).clamp(0.0, 1.0)
+    @torch.no_grad()
+    def observe_forward_certainty(self, signal):
+        signal = self.reduce_certainty_signal(signal)
+        if signal is None:
+            return
+        self.certainty_forward_ema.mul_(self.certainty_forward_beta).add_((1 - self.certainty_forward_beta) * signal)
+        self.certainty_forward_step += 1
+    @torch.no_grad()
+    def forward_certainty(self):
+        if self.certainty_forward_step.item() == 0:
+            return None
+        forward = self.certainty_forward_ema / (1 - self.certainty_forward_beta ** self.certainty_forward_step.item())
+        return forward.clamp(0.0, 1.0)
+    @torch.no_grad()
+    def certainty_gradient_energy(self):
+        grad_energy = None
+        for name, param in self.named_parameters():
+            if param.grad is None or not param.requires_grad:
+                continue
+            if name in {"alpha", "bias", "temperature"}:
+                continue
+            if "noise" in name.lower():
+                continue
+            if param.ndim == 0 or param.shape[-1] != self.nOutput:
+                continue
+            energy = param.grad.detach().pow(2)
+            if energy.ndim > 1:
+                energy = energy.mean(dim=tuple(range(energy.ndim - 1)))
+            grad_energy = energy if grad_energy is None else grad_energy + energy
+        return grad_energy
+    @torch.no_grad()
+    def gradient_certainty(self):
+        grad_energy = self.certainty_gradient_energy()
+        if grad_energy is None:
+            return None
+        self.certainty_v.mul_(self.certainty_beta).add_((1 - self.certainty_beta) * grad_energy)
+        self.certainty_step += 1
+        v_hat = self.certainty_v / (1 - self.certainty_beta ** self.certainty_step.item())
+        certainty = 1.0 / (1.0 + self.certainty_scale * torch.sqrt(v_hat + epsilon))
+        return certainty.clamp(0.0, 1.0)
+    @torch.no_grad()
+    def combine_certainty_sources(self, forward_certainty=None, gradient_certainty=None):
+        combined = None
+        total_weight = 0.0
+        if forward_certainty is not None:
+            combined = self.certainty_forward_weight * forward_certainty
+            total_weight += self.certainty_forward_weight
+        if gradient_certainty is not None:
+            term = self.certainty_gradient_weight * gradient_certainty
+            combined = term if combined is None else combined + term
+            total_weight += self.certainty_gradient_weight
+        if combined is None or total_weight == 0:
+            return None
+        return (combined / total_weight).clamp(0.0, 1.0)
+    @torch.no_grad()
+    def certainty_update(self):
+        certainty = self.combine_certainty_sources(
+            forward_certainty=self.forward_certainty(),
+            gradient_certainty=self.gradient_certainty(),
+        )
+        if certainty is not None:
+            self.certainty.copy_(certainty)
+    @torch.no_grad()
+    def alpha_update(self):
         if self.temperature.grad is None:
-            return  # Nothing to do if no grad computed
-        self.t += 1
+            return
         grad = self.temperature.grad.item()
-        self.m = self.beta1 * self.m + (1 - self.beta1) * grad
-        self.v = self.beta2 * self.v + (1 - self.beta2) * (grad ** 2)
-        m_hat = self.m / (1 - self.beta1 ** self.t.item())
-        v_hat = self.v / (1 - self.beta2 ** self.t.item())
-        update = self.lr * m_hat / (v_hat.sqrt() + self.epsilon)
-        self.temperature.data -= update
+        # Modified Adam: EMA of gradient energy (second moment only)
+        self.v = self.beta * self.v + (1 - self.beta) * (grad ** 2)
+        self.t_step += 1
+        # Bias correction (same as Adam)
+        v_hat = self.v / (1 - self.beta ** self.t_step)
+        # Alpha = sensor output: high gradient energy → low alpha (explore)
+        self.alpha.fill_(1.0 / (1.0 + self.global_temp * v_hat.sqrt()))
+        # Derive bias and temp from alpha
+        alpha = self.alpha.item()
+        if random.random() < self.dropoutRate:
+            self.bias.fill_(0.0)
+        else:
+            self.bias.fill_(alpha)
+        self.temperature.fill_(1.0 - alpha)
         self.temperature.grad.zero_()
-        self.setBias(1.0 - self.temperature)
-        if random.random() > self.dropoutRate:
-            self.setBias(0.0)
-            self.setTemperature(0.0)
     def paramUpdate(self):
-        self.temperature_update()
+        self.certainty_update()
+        self.alpha_update()
 
 class LinearLayer(Layer):
     def __init__(self, nInput, nOutput, hasBias=True, W=None):
@@ -106,16 +209,22 @@ class LinearLayer(Layer):
         if W == None:
             W = torch.eye(self.nInput, self.nOutput)
         self.W      = nn.Parameter(W)
-        self.noise  = nn.Parameter(torch.randn(self.nInput, self.nOutput))
+        self.register_buffer('noise', torch.randn(self.nInput, self.nOutput))
         self.bias   = nn.Parameter(torch.zeros(1,nOutput))
+        self.register_buffer('biasNoise', torch.randn(1, nOutput))
+
+    def resample_noise(self):
+        self.noise = sample_noise(self.W)
+        if self.hasBias:
+            self.biasNoise = sample_noise(self.bias)
 
     def forward(self, x, bias=1.0, temp=0.0):
-        if temp:
-            self.noise = nn.Parameter(torch.randn(self.nInput, self.nOutput))
-        W = bias*self.W + temp*self.noise
+        if has_signal(temp):
+            self.resample_noise()
+        W = bias * self.W + temp * self.noise
         output = x @ W
         if self.hasBias:
-            output += self.bias
+            output += bias * self.bias + temp * self.biasNoise
         return output
 
     @staticmethod
@@ -138,7 +247,7 @@ class ReversibleRotationLayer(Layer):
             theta = torch.randn(dim - 1) * 2 * torch.pi
         self.theta = nn.Parameter(theta)
         # For simplicity, we initialize noise deterministically.
-        self.noise = nn.Parameter(torch.zeros(dim - 1))
+        self.register_buffer('noise', torch.zeros(dim - 1, dtype=self.theta.dtype))
 
     def givens_rotation(self, i, j, theta):
         # Build a rotation matrix of size (dim x dim) that rotates in the (i,j) plane.
@@ -238,10 +347,8 @@ class ReversibleRotationLayer(Layer):
         x      = torch.tensor([[1, 2, 3, 4]], dtype=torch.float32)
 
         # Test forward pass
-        b = 1
-        t = 0
-        nrotated_x = nlayer.forward(x, b, t)
-        rotated_x = layer.forward(x, b, t)
+        nrotated_x = nlayer.forward(x)
+        rotated_x = layer.forward(x)
         print(f"Layer Weights: {layer.rotation_matrix()}")
         print(f"Original: {x}")
         print(f"Rotated Naive: {nrotated_x}")
@@ -249,8 +356,8 @@ class ReversibleRotationLayer(Layer):
         print(f"Naive - Non-naive difference: {torch.norm(nrotated_x - rotated_x)}")
 
         # Test reverse pass
-        ninverse_x = nlayer.reverse(nrotated_x, b, t)
-        inverse_x = layer.reverse(rotated_x, b, t)
+        ninverse_x = nlayer.reverse(nrotated_x)
+        inverse_x = layer.reverse(rotated_x)
         print(f"Inverse Naive Rotation: {ninverse_x}")
         print(f"Inverse Rotation: {inverse_x}")
         print(f"Forward-Reverse check (naive): {torch.norm(x - ninverse_x)}")
@@ -263,7 +370,7 @@ class ReversibleDiagonalLayer(Layer):
         self.rank = min(nInput, nOutput)
         # Store the nonzero singular values (for the effective rank).
         self.lamda = nn.Parameter(torch.ones(self.rank))
-        self.noise = nn.Parameter(torch.zeros(self.rank))
+        self.register_buffer('noise', torch.zeros(self.rank))
 
     def stabilize(self):
         self.lamda.data = torch.minimum(self.lamda, torch.ones_like(self.lamda))
@@ -305,9 +412,8 @@ class ReversibleDiagonalLayer(Layer):
         nInput, nOutput = 4, 4
         layer = ReversibleDiagonalLayer(nInput, nOutput)
         x = torch.rand((10, nInput))
-        b,t = 1,0
-        y = layer.forward(x, b, t)
-        x_rec = layer.reverse(y, b, t)
+        y = layer.forward(x)
+        x_rec = layer.reverse(y)
         assert torch.allclose(x, x_rec, atol=1e-5), (
             f"Square test failed for nInput={nInput}, nOutput={nOutput}\n"
             f"x: {x}\nx_rec: {x_rec}"
@@ -318,10 +424,8 @@ class ReversibleDiagonalLayer(Layer):
         nInput, nOutput = 3, 5
         layer = ReversibleDiagonalLayer(nInput, nOutput)
         x = torch.rand((10, nInput))
-        # For wide output, all nInput coordinates are used.
-        b,t = 1,0
-        y = layer.forward(x, b, t)
-        x_rec = layer.reverse(y, b, t)
+        y = layer.forward(x)
+        x_rec = layer.reverse(y)
         assert torch.allclose(x, x_rec, atol=1e-5), (
             f"Wide output test failed for nInput={nInput}, nOutput={nOutput}\n"
             f"x: {x}\nx_rec: {x_rec}"
@@ -335,8 +439,8 @@ class ReversibleDiagonalLayer(Layer):
         # For the mapping to be invertible, force the extra dimensions (nOutput: nInput) to zero.
         if nInput > nOutput:
             x[:, nOutput:] = 0.0
-        y = layer.forward(x, b, t)
-        x_rec = layer.reverse(y, b, t)
+        y = layer.forward(x)
+        x_rec = layer.reverse(y)
         assert torch.allclose(x, x_rec, atol=1e-5), (
             f"Tall input test failed for nInput={nInput}, nOutput={nOutput}\n"
             f"x: {x}\nx_rec: {x_rec}"
@@ -349,9 +453,8 @@ class ReversibleDiagonalLayer(Layer):
         x = torch.rand((7, nInput))
         if nInput > nOutput:
             x[:, nOutput:] = 0.0
-        b,t=1,0
-        y = layer.forward(x,b,t)
-        x_rec = layer.reverse(y,b,t)
+        y = layer.forward(x)
+        x_rec = layer.reverse(y)
         assert torch.allclose(x, x_rec, atol=1e-5), (
             f"Batch behavior test failed for nInput={nInput}, nOutput={nOutput}\n"
             f"x: {x}\nx_rec: {x_rec}"
@@ -375,10 +478,17 @@ class ReversibleLinearLayer(Layer):
         self.Sigma = ReversibleDiagonalLayer(nInput, nOutput)
 
         if self.naive:
-            self.noise = nn.Parameter(torch.randn(nInput, nOutput))
+            self.register_buffer('noise', torch.randn(nInput, nOutput))
         if self.hasBias:
             self.bias = nn.Parameter(torch.zeros(1, nOutput))
-            self.biasNoise = nn.Parameter(torch.randn(1, nOutput))
+            self.register_buffer('biasNoise', torch.randn(1, nOutput))
+
+    def resample_naive_noise(self):
+        self.noise = sample_noise(self.Sigma.lamda, shape=(self.nInput, self.nOutput))
+
+    def resample_bias_noise(self):
+        if self.hasBias:
+            self.biasNoise = sample_noise(self.bias)
 
     def compute_W(self):
         # Compute full weight: W = U · Σ · Vᵀ.
@@ -407,7 +517,7 @@ class ReversibleLinearLayer(Layer):
         if self.stable:
             self.Sigma.stabilize()
         if self.naive:
-            self.noise = nn.Parameter(torch.randn(self.nInput, self.nOutput))
+            self.resample_naive_noise()
             W = bias * self.compute_W() + temp * self.noise
             # Naive forward: y = x @ W
             y = x @ W
@@ -417,40 +527,32 @@ class ReversibleLinearLayer(Layer):
             xShape[-1] = self.nOutput
             x = x.reshape(-1, self.nInput)
             x1 = self.U.forward(x, bias, temp)  # shape: (batch, nInput)
-            x2 = self.Sigma.forward(x1, bias, temp)  # shape: (batch, nOutput); note: Σ.forward does x1 @ S where S ∈ ℝ^(nInput×nOutput)
+            x2 = self.Sigma.forward(x1, bias, temp)  # shape: (batch, nOutput)
             y = self.V.forward(x2, bias, temp)
-            # Now apply Vᵀ: since V is square, we multiply on the right by Vᵀ.
-            #V_matrix = self.V.rotation_matrix()  # shape: (nOutput, nOutput)
-            #y = x2 @ V_matrix.T  # shape: (batch, nOutput)
             y = y.reshape(xShape)
         if self.hasBias:
-            self.biasNoise = nn.Parameter(torch.randn(1, self.nOutput))
-            y += self.bias + temp * self.biasNoise
+            self.resample_bias_noise()
+            y += bias * self.bias + temp * self.biasNoise
         return y
     def reverse(self, y, bias=1.0, temp=0.0):
         if self.hasBias:
-            y -= self.bias + temp * self.biasNoise
+            y -= bias * self.bias + temp * self.biasNoise
         if self.naive:
-            W_inv = self.compute_Winverse() + temp * self.noise.T
+            W_inv = bias * self.compute_Winverse() + temp * self.noise.T
             # Naive reverse: x = y @ W_inv
             x = y @ W_inv
-            self.noise = nn.Parameter(torch.randn(self.nInput, self.nOutput))
+            self.resample_naive_noise()
         else:
             yShape = list(y.shape)
             yShape[-1] = self.nInput
             y = y.reshape(-1, self.nOutput)
             # Non-naive reverse: undo Vᵀ, then Σ, then U.
             x2 = self.V.reverse(y, bias, temp)
-            # Undo Vᵀ: multiply by V.
-            #V_matrix = self.V.rotation_matrix()  # shape: (nOutput, nOutput)
-            #x2 = y @ V_matrix  # shape: (batch, nOutput)
-            # Undo Σ: recover x1 using Σ.reverse
             x1 = self.Sigma.reverse(x2, bias, temp)  # shape: (batch, nInput)
-            # Undo U: x = U.reverse(x1)
             x = self.U.reverse(x1, bias, temp)  # shape: (batch, nInput)
             x = x.reshape(yShape)
         if self.hasBias:
-            self.biasNoise = nn.Parameter(torch.randn(1, self.nOutput))
+            self.resample_bias_noise()
         return x
 
     @staticmethod
@@ -505,13 +607,17 @@ class SigmaLayer(ErgodicLayer):
         self.saturate    = True
         self.activation  = torch.zeros(1,nOutput,1)
 
+    def layer_tradeoff(self):
+        return self.local_tradeoff()
+
     def forward(self, x):
-        bias, temp = self.bias, self.temperature
+        bias, temp = self.layer_tradeoff()
         x = self.permute(x)
         y = self.layer.forward(x, bias, temp)   # (batch_size, output_dim)
         if self.saturate:
             self.activation = torch.tanh(y)
             y = self.activation.clone()
+        self.observe_forward_certainty(y)
         y = self.unpermute(y)
         return y
 
@@ -539,6 +645,10 @@ class ReversibleSigmaLayer(SigmaLayer):
     def __init__(self, nInput, nOutput, naive=False, permuteInput=False):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
         self.layer          = ReversibleLinearLayer(nInput, nOutput, naive=naive, hasBias=True)
+    def layer_tradeoff(self):
+        if self.layer.naive:
+            return self.local_tradeoff()
+        return self.bias, self.temperature
     def reverse(self, y):
         y  = self.permute(y)
         y = y.squeeze(0)
@@ -577,24 +687,27 @@ class PiLayer(ErgodicLayer):
     def __init__(self, nInput, nOutput, permuteInput=False):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
         self.weights          = nn.Parameter(torch.zeros(nInput, nOutput))
-        self.noise            = nn.Parameter(torch.randn(nInput, nOutput))
+        self.register_buffer('noise', torch.randn(nInput, nOutput))
         self.biasWeight       = nn.Parameter(torch.zeros(1, 1, self.nOutput))  # Per-output-feature bias
-        self.biasWeightNoise  = nn.Parameter(torch.randn(1, 1, self.nOutput))  # Per-output-feature bias
+        self.register_buffer('biasWeightNoise', torch.randn(1, self.nInput, self.nOutput))  # Per-output-feature bias
 
         self.saturate      = True
         self.hasBiasWeight = True
         self.useEpsilon    = True
 
+    def resample_noise(self):
+        self.noise = sample_noise(self.weights)
+        self.biasWeightNoise = sample_noise(self.weights, shape=(1, self.nInput, self.nOutput))
+
     def forward(self, x):
-        bias, temp = self.bias, self.temperature
+        bias, temp = self.local_tradeoff()
         x = self.permute(x)
         # This method implements PI(1+wx)
         # Tried to implement as exp( SIGMA(log(e) * log(wx)) ) so that we could invert with standard methods,
         # but the matrix log(e) is not invertible. If we try simply PI(w+x), we get a weight matrix with negative values,
         # so we can't take it into the log domain.
-        if temp:
-            self.noise = nn.Parameter(torch.randn(self.nInput, self.nOutput))
-            self.biasWeightNoise = nn.Parameter(torch.randn(1, self.nInput, self.nOutput))  # Per-output-feature bias
+        if has_signal(temp):
+            self.resample_noise()
         w = bias * self.weights + temp * self.noise
         ndim = len(x.shape)
         assert self.nInput == x.shape[-1], "Incorrect shape in piLayer"
@@ -602,14 +715,13 @@ class PiLayer(ErgodicLayer):
         # Expand x to (N, J, K, 1) and w to (1, 1, K, L) so they can broadcast together:
         if ndim == 2:
             WX = x.unsqueeze(-1) * w.unsqueeze(0)
-            if self.hasBias:
+            if self.hasBiasWeight:
                 WX += (bias * self.biasWeight + temp * self.biasWeightNoise)
             if self.saturate:
                 term = 1 + torch.tanh(WX)  # shape (N, J, K)
             else:
                 term = 1 + WX
-            output = (self.certainty.squeeze(0)+ temp * self.certaintyNoise.squeeze(0)) * torch.prod(term, dim=1)  # result has shape (N, K, L)
-            output = self.unpermute(output)
+            output = torch.prod(term, dim=1)  # result has shape (N, L)
         else:
             # x: shape (N, J, K), w: shape (K, L)
             # Expand x to (N, J, K, 1) and w to (1, 1, K, L) so they can broadcast together:
@@ -626,7 +738,8 @@ class PiLayer(ErgodicLayer):
                 term  = 1 + WX
             # Compute the product along the J dimension:
             output   =  torch.prod(term, dim=2)  # result has shape (N, K, L)
-            output = self.unpermute(output)
+        self.observe_forward_certainty(output)
+        output = self.unpermute(output)
         return output
 
     @staticmethod
@@ -701,11 +814,19 @@ class ReversiblePiLayer(ErgodicLayer):
         # W: shape (out_features, in_features)
         if naive:
             self.W      = nn.Parameter(torch.randn(nInput, nOutput))
-            self.noise  = nn.Parameter(torch.randn(nInput, nOutput))
+            self.register_buffer('noise', torch.randn(nInput, nOutput))
         else:
             self.layer  = ReversibleLinearLayer(nInput, nOutput, naive=True)
+            self.register_buffer('noise', torch.randn(nOutput, nInput))
         self.biasWeight       = nn.Parameter(torch.zeros(1, 1, self.nOutput))  # Per-output-feature bias
-        self.biasNoise        = nn.Parameter(torch.randn(1, 1, self.nOutput))  # Per-output-feature bias
+        self.register_buffer('biasNoise', torch.randn(1, 1, self.nOutput))  # Per-output-feature bias
+
+    def resample_noise(self):
+        if self.naive:
+            self.noise = sample_noise(self.W)
+        else:
+            self.noise = sample_noise(self.biasWeight, shape=(self.nOutput, self.nInput))
+        self.biasNoise = sample_noise(self.biasWeight, shape=(1, 1, self.nOutput))
 
     def forward(self, x):
         bias, temp = self.bias, self.temperature
@@ -717,9 +838,7 @@ class ReversiblePiLayer(ErgodicLayer):
         z_j = b_j * prod_i (1 + tanh(w_{ji} * x_i))
         """
         if temp != 0:
-            if self.naive:
-                self.noise = nn.Parameter(torch.randn(self.nInput, self.nOutput))
-            self.biasNoise = nn.Parameter(torch.randn(1, 1, self.nOutput))  # Per-output-feature bias
+            self.resample_noise()
         x = self.permute(x)
 
         if not self.naive:
@@ -771,8 +890,9 @@ class ReversiblePiLayer(ErgodicLayer):
         x = self.unpermute(x)
         if temp != 0:
             if self.naive:
-                self.noise = nn.Parameter(torch.randn(self.nInput, self.nOutput))
-            self.biasNoise = nn.Parameter(torch.randn(1, 1, self.nOutput))  # Per-output-feature bias
+                self.resample_noise()
+            else:
+                self.biasNoise = sample_noise(self.biasWeight, shape=(1, 1, self.nOutput))
         return x
 
     @staticmethod
@@ -836,11 +956,11 @@ class DecisionBoundaryLayer(Layer):
         super(DecisionBoundaryLayer, self).__init__(nInput, nOutput)
         self.learning_rate = learning_rate
         self.weight        = nn.Parameter(torch.zeros(nInput, nOutput))
-        self.noise         = nn.Parameter(torch.randn(nInput, nOutput))
+        self.register_buffer('noise', torch.randn(nInput, nOutput))
 
     def forward(self, x, t=0):
         if t != 0:
-            self.noise = nn.Parameter(torch.randn(self.nInput, self.nOutput))
+            self.noise = sample_noise(self.weight)
 
         W = self.weight + t*self.noise
         dot_product = torch.matmul(x, W)
