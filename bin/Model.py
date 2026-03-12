@@ -600,6 +600,130 @@ class ReversibleLinearLayer(Layer):
         assert givens_error < 0.001, f"Givens implementation failed with error {givens_error}"
         print("All tests passed!")
 
+# A layer to map between row and column operations of other layers
+class LiftingLayer(ReversibleLinearLayer):
+    def __init__(self, nInput, nOutput, init='orthogonal'):
+        super(LiftingLayer, self).__init__(nInput, nOutput, naive=False, hasBias=False, stable=True)
+
+class ColumnUsageTracker:
+    def __init__(self, linearLayer, freezeThreshold=0.01, window=10):
+        self.linear = linearLayer
+        self.freezeThreshold = freezeThreshold
+        self.window = window
+        self.grad_history = []
+        self.frozen_columns = torch.zeros(linearLayer.weight.shape[1], dtype=torch.bool)
+        # Register backward hook to capture gradients
+        self.linear.weight.register_hook(self._save_grad)
+    def _save_grad(self, grad):
+        # grad shape: (out_features, in_features)
+        # Transpose to get per-column: shape (in_features, out_features)
+        grad_columns = grad.t().detach().clone()
+        self.grad_history.append(grad_columns)
+        # Keep fixed window size
+        if len(self.grad_history) > self.window:
+            self.grad_history.pop(0)
+    def freeze(self):
+        if len(self.grad_history) < self.window:
+            return  # not enough history yet
+        # Stack history and compute norm per column
+        stacked = torch.stack(self.grad_history, dim=0)  # (window, in_features, out_features)
+        norms = stacked.norm(dim=-1).mean(dim=0)  # (in_features,)
+        # Freeze columns with low average gradient norm
+        to_freeze = norms < self.freezeThreshold
+        self.frozen_columns |= to_freeze
+        # Zero out gradients of frozen columns
+        with torch.no_grad():
+            self.linear.weight.grad[:, self.frozen_columns] = 0.0
+    def freezeMask(self):
+        return self.frozen_columns
+
+# Create a differentiable map between spaces using quantized vectors in each domain.
+class SoftMap(Layer):
+    def __init__(self, nInput, nOutput, nInputCodes=None, nOutputCodes=None, soft=False, beta=10.0):
+        super().__init__(nInput, nOutput)
+        self.nInputCodes  = nInputCodes if nInputCodes is not None else 2*nInput
+        self.nOutputCodes = nOutputCodes if nOutputCodes is not None else 2*nOutput
+        self.soft         = soft
+        self.beta         = beta
+        self.codebookX = nn.Parameter(torch.randn(nInput, self.nInputCodes))   # (nInput, nInputCodes)
+        self.codebookY = nn.Parameter(torch.randn(nOutput, self.nOutputCodes)) # (nOutput, nOutputCodes)
+        self.penalty = nn.Parameter(torch.zeros(1))
+        self.SVD = ReversibleLinearLayer(nInput, nOutput, naive=True)
+
+    def quantize(self, v, codebook):
+        dist = torch.cdist(v.reshape(-1, v.shape[-1]), codebook.T) ** 2  # (batch*seq, nCodes)
+        if self.soft:
+            weights = F.softmax(-self.beta * dist, dim=-1)  # (batch*seq, nCodes)
+            quantized = weights @ codebook.T  # (batch*seq, dim)
+        else:
+            indices = torch.argmin(dist, dim=-1)  # (batch*seq,)
+            quantized = codebook.T[indices]  # (batch*seq, dim)
+        return quantized.view(*v.shape)
+
+    def forward(self, x, t=0.0):
+        qx = self.quantize(x, self.codebookX)
+        y  = self.SVD.forward(qx, t)
+        qy = self.quantize(y, self.codebookY)
+        return qy, qx
+        #rx = self.SVD.reverse(qy, 0)
+        #self.penalty[:] = torch.norm(qx - rx)
+        #return qy + self.penalty, qx
+
+    def reverse(self, y, t=0.0):
+        qy = self.quantize(y, self.codebookY)
+        x  = self.SVD.reverse(qy, t) # Calling reverse before forward will not maintain the weights here ...
+        qx = self.quantize(x, self.codebookX)
+        #ry = self.SVD.forward(qx, 0)
+        #penalty = torch.norm(qy - ry)
+        return qx, qy
+
+    def codebook_regularization(self):
+        normX = F.normalize(self.codebookX, dim=0)
+        normY = F.normalize(self.codebookY, dim=0)
+        simX = torch.matmul(normX.T, normX)
+        simY = torch.matmul(normY.T, normY)
+        lossX = ((simX - torch.eye(simX.shape[0], device=simX.device))**2).sum()
+        lossY = ((simY - torch.eye(simY.shape[0], device=simY.device))**2).sum()
+        return lossX + lossY
+
+    def normalize_codebooks(self):
+        with torch.no_grad():
+            self.codebookX.data = F.normalize(self.codebookX.data, dim=0)
+            self.codebookY.data = F.normalize(self.codebookY.data, dim=0)
+
+    @staticmethod
+    def test():
+        torch.manual_seed(0)
+        nInput  = 4
+        nOutput = 5
+        mapper = SoftMap(nInput=nInput, nOutput=nOutput, beta=10.0)
+        criterion = nn.MSELoss()
+        optimizer = optim.Adam(mapper.parameters(), lr=0.001)
+        epochs = 1000
+        t = 0.0001
+        for epoch in range(epochs):
+            optimizer.zero_grad()
+            xc = mapper.codebookX[:, 1]
+            x = torch.rand([2, 3, nInput])
+            # ---------- Training pass (soft) ----------
+            qy, qx = mapper.forward(x)
+            qx_rec, qy_rec = mapper.reverse(qy)
+            loss = criterion(x, qx_rec) + criterion(qy, qy_rec) + 0.01 * mapper.codebook_regularization()
+            #y = 2*x
+            #loss = criterion(x, qx_rec)
+            loss.backward()
+            optimizer.step()
+            mapper.normalize_codebooks()
+            if epoch % 10 == 0:
+                print(f'Epoch {epoch}/{epochs}, MSE: {loss.item():.6f}')
+        # ---------- Evaluation (invertibility) using hard quantization ----------
+        x[0, 0, :] = xc
+        qy, qx = mapper.forward(x)
+        qx_rec, qy_rec = mapper.reverse(qy)
+        error = (x[0, 0, :] - qx_rec[0, 0, :]).norm(p=2).item()
+        print("Reconstruction error (L2 norm):", error)
+        assert error < 1e-3, f"Reconstruction error too high: {error}"
+
 class SigmaLayer(ErgodicLayer):
     def __init__(self, nInput, nOutput, permuteInput=False):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)

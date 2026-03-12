@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+<model>
+  <architecture>
+    <nInput>1</nInput>
+    <nPercepts>8</nPercepts>
+    <nConcepts>8</nConcepts>
+    <nSymbols>8</nSymbols>
+    <nOutput>1</nOutput>
+  </architecture>
+
+  <training>
+    <dataset>mnist</dataset>
+    <modelType>passthrough</modelType>
+    <numEpochs>10</numEpochs>
+    <stoppingCriterion>1</stoppingCriterion>
+    <classificationMin>0</classificationMin>
+    <classificationMax>9</classificationMax>
+  </training>
+
+  <weights>
+    <path>output/mnist_weights.pt</path>
+    <autosave>true</autosave>
+  </weights>
+</model>

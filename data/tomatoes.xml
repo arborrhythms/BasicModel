@@ -1,0 +1,26 @@
+<?xml version="1.0" ?>
+<model>
+  <architecture>
+    <nInput>8</nInput>
+    <nPercepts>8</nPercepts>
+    <nConcepts>8</nConcepts>
+    <nSymbols>8</nSymbols>
+    <nWords>8</nWords>
+    <nOutput>1</nOutput>
+  </architecture>
+
+  <training>
+    <dataset>tomatoes</dataset>
+    <modelType>lm</modelType>
+    <pretrained>true</pretrained>
+    <numEpochs>100</numEpochs>
+    <stoppingCriterion>0.2</stoppingCriterion>
+    <temperature>0.001</temperature>
+    <learningRate>0.00001</learningRate>
+  </training>
+
+  <weights>
+    <path>output/tomatoes_weights.pt</path>
+    <autosave>true</autosave>
+  </weights>
+</model>

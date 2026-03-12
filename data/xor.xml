@@ -1,0 +1,27 @@
+<?xml version="1.0" ?>
+<model>
+  <architecture>
+    <nInput>8</nInput>
+    <nPercepts>8</nPercepts>
+    <nConcepts>8</nConcepts>
+    <nSymbols>8</nSymbols>
+    <nWords>8</nWords>
+    <nOutput>1</nOutput>
+  </architecture>
+
+  <training>
+    <dataset>xor</dataset>
+    <modelType>lm</modelType>
+    <pretrained>false</pretrained>
+    <numEpochs>800</numEpochs>
+    <stoppingCriterion>0.1</stoppingCriterion>
+    <temperature>0.0001</temperature>
+    <learningRate>0.001</learningRate>
+    <detectAnomaly>true</detectAnomaly>
+  </training>
+
+  <weights>
+    <path>output/xor_weights.pt</path>
+    <autosave>true</autosave>
+  </weights>
+</model>

@@ -16,7 +16,9 @@ from Model import NormLayer, LinearLayer, AttentionLayer
 from Model import GammaMem, CertaintyWeightedCrossEntropy, epsilon
 
 BASE_DIR = os.path.dirname(__file__)
-OUTPUT_DIR = os.path.join(BASE_DIR, "output")
+PROJECT_DIR = os.path.dirname(BASE_DIR)
+DATA_DIR = os.path.join(PROJECT_DIR, "data")
+OUTPUT_DIR = os.path.join(PROJECT_DIR, "output")
 
 def ensure_output_dir():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -51,9 +53,9 @@ class Data():
         self.train_input = self.train_input[rand_indx][:]
         self.train_output = self.train_output[rand_indx][:]
     def loadMNist(self):
-        df = pd.read_csv('./data/mnist_train.csv')
+        df = pd.read_csv(os.path.join(DATA_DIR, 'mnist_train.csv'))
         train = df.values
-        df = pd.read_csv('./data/mnist_test.csv')
+        df = pd.read_csv(os.path.join(DATA_DIR, 'mnist_test.csv'))
         test = df.values
         self.train_input  = torch.tensor(train[:, 1:]/255.0, dtype=torch.float)
         mnistMean = torch.mean(self.train_input)
@@ -104,7 +106,7 @@ class Data():
         self.test_output       = data["test"]["label"]
         self.processLM(data)
     def loadTomatoes(self):
-        cache_file = "data/rottenTomatoes.data"
+        cache_file = os.path.join(DATA_DIR, "rottenTomatoes.data")
 
         # Load or cache the pre-trained Word2Vec model
         if os.path.exists(cache_file):
@@ -1161,55 +1163,67 @@ def plotComparison():
     plt.savefig(filename, dpi=300, bbox_inches='tight')
     plt.show(block=False)
 
+def ErgodicModelFactory(config_path):
+    """Create, train, and evaluate ergodic models from an XML config file.
+
+    Reads architecture and training parameters from the given XML,
+    loads the dataset, and runs each enabled model variant
+    (traditional, ergodic, normed, reverse, invert).
+    """
+    from BasicModel import BasicModel
+    cfg = BasicModel.load_config(config_path)
+    arch = cfg.get("architecture", {})
+    train = cfg.get("training", {})
+
+    dataset = train.get("dataset", "mnist")
+    TheData.load(dataset)
+
+    nInput = TheData.getInputSize()
+    nConcepts = arch.get("nConcepts", 20)
+    nOutput = TheData.getOutputSize()
+
+    numTrials = train.get("numTrials", 1)
+    numEpochs = train.get("numEpochs", 3)
+    batchSize = train.get("batchSize", 10)
+
+    if train.get("traditional", False):
+        m = SimpleModel()
+        m.create(nInput=nInput, nConcepts=nConcepts, nOutput=nOutput)
+        m.name = "SimpleModel"
+        m.runTrials(numTrials, numEpochs, batchSize)
+
+    if train.get("ergodic", False):
+        m = ErgodicModel()
+        m.create(nInput=nInput, nConcepts=nConcepts, nOutput=nOutput)
+        m.name = "ErgodicModel"
+        m.runTrials(numTrials, numEpochs, batchSize)
+
+    if train.get("normed", False):
+        m = ErgodicModel()
+        m.create(nInput=nInput, nConcepts=nConcepts, nOutput=nOutput)
+        m.hasNorm = True
+        m.name = "Ergodic - Normed"
+        m.runTrials(numTrials, numEpochs, batchSize)
+
+    if train.get("reverse", False):
+        m = ErgodicModel()
+        m.create(nInput=nInput, nConcepts=nConcepts, nOutput=nOutput)
+        m.reversePass = True
+        m.name = "Ergodic - Reversible"
+        m.runTrials(numTrials, numEpochs, batchSize)
+
+    if train.get("invert", False):
+        m = ErgodicModel()
+        m.create(nInput=nInput, nConcepts=nConcepts, nOutput=nOutput)
+        m.reversePass = True
+        m.invertible = True
+        m.name = "Ergodic - Invertible"
+        m.runTrials(numTrials, numEpochs, batchSize)
+
+
 if __name__ == "__main__":
-    TheData.load('mnist')
-
-    # Set the network's dimensionality
-    nInput      = TheData.getInputSize()
-    inputDim    = 1
-    nConcepts   = 20
-    conceptDim  = 1
-    nOutput     = TheData.getOutputSize()
-    outputDim   = 1
-
-    numTrials   = 1
-    numEpochs   = 3
-    batchSize   = 10
-
-    Traditional = True
-    Ergodic     = True
-    Normed      = False
-    Reverse     = False
-    Invert      = False
-
-    if Traditional:
-        TheSimpleModel = SimpleModel()
-        TheSimpleModel.create(nInput=nInput, nConcepts=nConcepts, nOutput=nOutput)
-        TheSimpleModel.name = "SimpleModel"
-        TheSimpleModel.runTrials(numTrials, numEpochs, batchSize)
-    if Ergodic:
-        TheErgodicModel = ErgodicModel()
-        TheErgodicModel.create(nInput=nInput, nConcepts=nConcepts, nOutput=nOutput)
-        TheErgodicModel.name = "ErgodicModel"
-        TheErgodicModel.runTrials(numTrials, numEpochs, batchSize)
-    if Normed:
-        TheErgodicModel = ErgodicModel()
-        TheErgodicModel.create(nInput=nInput, nConcepts=nConcepts, nOutput=nOutput)
-        TheErgodicModel.hasNorm = True
-        TheErgodicModel.name = "Ergodic - Normed"
-        TheErgodicModel.runTrials(numTrials, numEpochs, batchSize)
-    if Reverse:
-        TheErgodicModel = ErgodicModel()
-        TheErgodicModel.create(nInput=nInput, nConcepts=nConcepts, nOutput=nOutput)
-        TheErgodicModel.reversePass=True
-        TheErgodicModel.name = "Ergodic - Reversible"
-        TheErgodicModel.runTrials(numTrials, numEpochs, batchSize)
-    if Invert:
-        TheErgodicModel = ErgodicModel()
-        TheErgodicModel.create(nInput=nInput, nConcepts=nConcepts, nOutput=nOutput)
-        TheErgodicModel.reversePass=True
-        TheErgodicModel.invertible=True
-        TheErgodicModel.name = "Ergodic - Invertible"
-        TheErgodicModel.runTrials(numTrials, numEpochs, batchSize)
-
-    #plotComparison()
+    import sys
+    xml = sys.argv[1] if len(sys.argv) > 1 else os.path.join(PROJECT_DIR, "data", "ergodic.xml")
+    if not os.path.isabs(xml):
+        xml = os.path.join(PROJECT_DIR, xml)
+    ErgodicModelFactory(xml)

@@ -7,20 +7,21 @@ import random
 from torchviz import make_dot
 from matplotlib import pyplot as plt
 from datasets import load_dataset
-from gensim.models import Word2Vec
-from gensim.models import KeyedVectors
+from wordvectors import WordVectors
 #from transformers import BertTokenizer
 from sklearn.metrics import classification_report
 from sklearn.decomposition import PCA
 import pandas as pd
 from vector_quantize_pytorch import ResidualVQ, VectorQuantize
 from Model import Layer, PiLayer, SigmaLayer, ReversibleSigmaLayer, ReversiblePiLayer # Import custom layers from Model.py
-from Model import VQLayer, NormLayer, LinearLayer, ReversibleLinearLayer, AttentionLayer, SoftMap
-from Model import GammaMem, ColumnUsageTracker, LiftingLayer, epsilon
+from Model import VQLayer, NormLayer, LinearLayer, ReversibleLinearLayer, AttentionLayer
+from Model import GammaMem, ColumnUsageTracker, LiftingLayer, SoftMap, epsilon
 from functools import partial
 
 BASE_DIR = os.path.dirname(__file__)
-OUTPUT_DIR = os.path.join(BASE_DIR, "output")
+PROJECT_DIR = os.path.dirname(BASE_DIR)  # basicmodel/ root
+DATA_DIR = os.path.join(PROJECT_DIR, "data")
+OUTPUT_DIR = os.path.join(PROJECT_DIR, "output")
 
 def ensure_output_dir():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -113,7 +114,7 @@ class TemporalEncoding(nn.Module):
     @staticmethod
     def test():
         x=  torch.zeros([2,4,10])
-        te= TemporalEncoding(4, 10)
+        te= TemporalEncoding(4)
         y = te.forward(x)
         z = te.reverse(y)
         print(z)
@@ -237,9 +238,9 @@ class Data():
         if dataset == "tomatoes":
             self.loadTomatoes()
     def loadMNist(self):
-        df = pd.read_csv('data/mnist_train.csv')
+        df = pd.read_csv(os.path.join(DATA_DIR, 'mnist_train.csv'))
         train = df.values
-        df = pd.read_csv('data/mnist_test.csv')
+        df = pd.read_csv(os.path.join(DATA_DIR, 'mnist_test.csv'))
         test = df.values
         self.train_input = train[:, 1:]
         self.train_output = torch.tensor(train[:, 0:1], dtype=torch.float)
@@ -275,7 +276,7 @@ class Data():
         self.test_output       = data["test"]["label"]
         self.processLM(data)
     def loadTomatoes(self):
-        cache_file = "data/rottenTomatoes.data"
+        cache_file = os.path.join(DATA_DIR, "rottenTomatoes.data")
 
         # Load or cache the pre-trained Word2Vec model
         if os.path.exists(cache_file):
@@ -765,87 +766,63 @@ class LanguageModel(VectorSet):
         data = torch.stack(data)
         return data.unsqueeze(1)
     def getVectors(self):
-        vec = self.model.wv.get_normed_vectors()
-        return vec
+        return self.wv.get_normed_vectors()
     def getSize(self):
-        return self.model.wv.__len__()
+        return len(self.wv)
     def getDictionary(self):
         dictionary = dict({})
-        words = list(w for w in self.model.wv.index_to_key)
-        for idx, key in enumerate(words):
-            word = torch.reshape( torch.tensor(self.model.wv[key]), [1,1,self.nDim])
+        for key in self.wv.index_to_key:
+            word = torch.reshape(torch.tensor(self.wv[key]), [1, 1, self.nDim])
             dictionary[key] = TheObjectEncoding.forward(word, pad=True).squeeze()
-            # Or my_dict[key] = model.wv.get_vector(key)
-            # Or my_dict[key] = model.wv.word_vec(key, use_norm=False)
         return dictionary
     def create(self, untokenized, nInput=None, nVectors=None, nDim=None, pretrained=True):
         super().create(nInput, nVectors, nDim)
         tokenized = self.tokenizeList(untokenized)
+        embeddings_dir = os.path.join(PROJECT_DIR, "embeddings")
+        os.makedirs(embeddings_dir, exist_ok=True)
         if pretrained:
-            self.model_path = f"embeddings/word2vec_custom_pretrained"
+            self.model_path = os.path.join(embeddings_dir, "word2vec_custom_pretrained.pt")
             super().create(nInput, nVectors, 100)
-            try:
+            if os.path.exists(self.model_path):
                 print(f"Loading {self.model_path}...")
-                self.model = Word2Vec.load(self.model_path)
-            except:
-                print("Training pretrained model...")
-                # Step 1: Load Pre-trained Word2Vec Embeddings
-                pretrained_vectors = KeyedVectors.load_word2vec_format('embeddings/enwiki_20180420_100d.txt',
-                                                                       binary=False)
-                # pretrained_vectors = KeyedVectors.load_word2vec_format("embeddings/GoogleNews-vectors-negative300.bin", binary=True)
-                # en-wikipedia is 4530030 x 100
-                # Step 2: Initialize a new Word2Vec model with the same settings
-                self.model = Word2Vec(vector_size=pretrained_vectors.vector_size, window=5, min_count=1, workers=4)
-                # Step 3: Build the Word2Vec vocabulary using the pre-trained model's vocab
-                # Ensure it has all words
-                # self.model.build_vocab_from_freq( {word: 1 for word in pretrained_vectors.index_to_key} )
-                # Ensure it has necessary words
-                # self.model.build_vocab_from_freq({word: 1 for word in tokenized})
-                # Step 4: Assign Pre-trained Vectors to Word2Vec Model
-                self.model.wv = pretrained_vectors  # Replace the randomly initialized vectors
-                # self.model.wv.fill_norms()  # Normalize if needed
-                # if (self.embed_dim != self.model.vector_size):
-                #    print("Error loading word2Vec model.")
-                vec = self.getVectors()
-                nDim= len(vec[0])
-                # the following only tells us how many unique percepts there are.
-                nVectors = len(vec)
-                super().create(nInput, nVectors, nDim)
+                self.wv = WordVectors.load(self.model_path)
+            else:
+                print("Loading pretrained embeddings...")
+                pretrained_file = os.path.join(embeddings_dir, "enwiki_20180420_100d.txt")
+                self.wv = WordVectors.load_word2vec_format(pretrained_file)
+            vec = self.getVectors()
+            nDim = len(vec[0])
+            nVectors = len(vec)
+            super().create(nInput, nVectors, nDim)
         else:
-            self.model_path = f"embeddings/word2vec_custom"
-            super().create(nInput, nVectors, 20)
-            try:
+            self.model_path = os.path.join(embeddings_dir, "word2vec_custom.pt")
+            nDim = 20
+            super().create(nInput, nVectors, nDim)
+            if os.path.exists(self.model_path):
                 print(f"Loading {self.model_path}...")
-                self.model = Word2Vec.load(self.model_path)
-            except:
-                print("Training new Word2Vec model...")
-                nDim = 20
-                super().create(nInput, nVectors, nDim)
-                self.model = Word2Vec(sentences=tokenized, vector_size=nDim, window=5, min_count=1, workers=4)
-                self.model.build_vocab_from_freq({word: 1 for word in tokenized})
-                vec = self.getVectors()
-                nDim = len(vec[0])
-                # the following only tells us how many unique percepts there are.
-                nVectors = len(vec)
-                super().create(nInput, nVectors, nDim)
-        self.model.save(self.model_path)
-        print(f"Saving Word2Vec model {self.model_path}")
+                self.wv = WordVectors.load(self.model_path)
+            else:
+                print("Building vocabulary embeddings...")
+                self.wv = WordVectors.from_vocab(tokenized, vector_size=nDim)
+            vec = self.getVectors()
+            nDim = len(vec[0])
+            nVectors = len(vec)
+            super().create(nInput, nVectors, nDim)
+        self.wv.save(self.model_path)
+        print(f"Saved embeddings to {self.model_path}")
     def forward(self, input, t=0):
         input = input.squeeze()
-        self.batch =len(input)
-
-        # it would make sense to tokenize the data here, but since our datasets are all stored, we need not.
+        self.batch = len(input)
         tokenized = self.tokenize(input)
 
-        # normalize the percepts, since words either occur or don't occur.
         embeddings = []
         embeddingZeroPad = TheObjectEncoding.objectSize
         for sentence in tokenized:
             sentence_embeddings = []
             nTokens = 0
             for token in sentence:
-                if token in self.model.wv.key_to_index:
-                    t = np.concatenate((self.model.wv[token], np.zeros([embeddingZeroPad])), axis=0)
+                if token in self.wv:
+                    t = np.concatenate((self.wv[token], np.zeros([embeddingZeroPad])), axis=0)
                     t = t / np.linalg.norm(t)
                     sentence_embeddings.append(t)
                 else:
@@ -858,20 +835,17 @@ class LanguageModel(VectorSet):
                     break
             while len(sentence_embeddings) < self.nVectors:
                 sentence_embeddings.append(np.zeros(self.embeddingSize))
-
             embeddings.append(sentence_embeddings)
 
-        e =  torch.from_numpy(np.array(embeddings, dtype=np.float32))
-        # Shape: ( batch_size, seq_length, embedding_dim)
+        e = torch.from_numpy(np.array(embeddings, dtype=np.float32))
         return e
     def reverse(self, y, t=0.0):
-        #x = np.array(y.clone().detach().numpy(), dtype='f')
         similarWords = [["" for _ in range(self.nVectors)] for _ in range(self.batch)]
         for b in range(self.batch):
             for w in range(self.nVectors):
-                embedding = TheObjectEncoding.slice(y[b,w])
-                word = self.model.wv.most_similar(positive=embedding.detach().numpy(), topn=1) # we lose the gradient here, so training cant be done past this point
-                similarWords[b][w] = word[0][0]
+                embedding = TheObjectEncoding.slice(y[b, w])
+                word, score = self.wv.most_similar(embedding.detach().numpy(), topn=1)[0]
+                similarWords[b][w] = word
         similarWords = self.untokenize(similarWords)
         return similarWords
 
@@ -1289,6 +1263,65 @@ class BasicModel(nn.Module):
     nThoughts      = 0
     spaces         = []
     processSymbols = False
+
+    @staticmethod
+    def load_config(config_path=None):
+        """Load model settings from model.xml.
+
+        Returns a dict with architecture, training, weights, and server
+        settings.  Missing fields use defaults from the create() signature.
+        """
+        import xml.etree.ElementTree as ET
+        if config_path is None:
+            config_path = os.path.join(PROJECT_DIR, "model.xml")
+        if not os.path.exists(config_path):
+            return {}
+        tree = ET.parse(config_path)
+        root = tree.getroot()
+        cfg = {}
+        for section in root:
+            sec = {}
+            for child in section:
+                text = child.text.strip() if child.text else ""
+                if text.lower() in ("true", "false"):
+                    sec[child.tag] = text.lower() == "true"
+                else:
+                    try:
+                        sec[child.tag] = int(text)
+                    except ValueError:
+                        try:
+                            sec[child.tag] = float(text)
+                        except ValueError:
+                            sec[child.tag] = text
+            cfg[section.tag] = sec
+        return cfg
+
+    def create_from_config(self, config_path=None, LM=None):
+        """Create the model using settings from model.xml.
+
+        Loads architecture parameters from config, creates the model,
+        and optionally loads saved weights if autoload is true.
+        """
+        cfg = self.load_config(config_path)
+        arch = cfg.get("architecture", {})
+        self.create(
+            nInput=arch.get("nInput", 32),
+            nPercepts=arch.get("nPercepts", 64),
+            nConcepts=arch.get("nConcepts", 256),
+            nSymbols=arch.get("nSymbols", 2),
+            nWords=arch.get("nWords", 16),
+            nOutput=arch.get("nOutput", 32),
+            reversePass=arch.get("reversePass", True),
+            LM=LM,
+        )
+        # Auto-load weights if configured
+        wcfg = cfg.get("weights", {})
+        if wcfg.get("autoload", True):
+            wpath = wcfg.get("path", "output/weights.pt")
+            if not os.path.isabs(wpath):
+                wpath = os.path.join(PROJECT_DIR, wpath)
+            self.load_weights(wpath)
+        return cfg
 
     def create(self, nInput=32,  nPercepts = 64, nConcepts=256, nSymbols=2, nWords=16, nOutput=32, reversePass=True, LM=None):
         self.reversePass      = reversePass
@@ -1727,6 +1760,35 @@ class BasicModel(nn.Module):
         dot.format = "png"
         graph_path = dot.render(output_stem("BasicModel_graph"))
         print(f"Saved network graph as {graph_path}")
+
+    def save_weights(self, path=None):
+        """Persist model weights and ergodic state to disk.
+
+        Saves the full state_dict (weights, biases, alpha, temperature,
+        certainty buffers) so training can resume across sessions.
+        """
+        if path is None:
+            path = os.path.join(OUTPUT_DIR, "weights.pt")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        torch.save(self.state_dict(), path)
+        print(f"[BasicModel] Weights saved to {path}")
+
+    def load_weights(self, path=None, strict=False):
+        """Load model weights from disk.
+
+        Uses strict=False by default so that architecture changes
+        (added/removed layers) don't prevent loading compatible weights.
+        """
+        if path is None:
+            path = os.path.join(OUTPUT_DIR, "weights.pt")
+        if not os.path.exists(path):
+            print(f"[BasicModel] No weights found at {path}")
+            return False
+        state = torch.load(path, map_location="cpu", weights_only=True)
+        self.load_state_dict(state, strict=strict)
+        print(f"[BasicModel] Weights loaded from {path}")
+        return True
+
 TheBasicModel = BasicModel()
 
 
@@ -1808,20 +1870,61 @@ def test():
     TheBasicModel.run(numEpochs=200, stoppingCriterion=1, temperature=0.01, lr=0.01)
     TheBasicModel.classificationReport()
 
+def BasicModelFactory(config_path):
+    """Create, train, and evaluate a BasicModel from an XML config file.
+
+    Reads architecture, training, and weight parameters from the given XML,
+    creates the appropriate model (LM or passthrough), trains it, runs the
+    classification report, and optionally saves weights.
+    """
+    cfg = BasicModel.load_config(config_path)
+    train = cfg.get("training", {})
+    weights = cfg.get("weights", {})
+
+    dataset = train.get("dataset", "xor")
+    model_type = train.get("modelType", "lm")
+
+    if train.get("detectAnomaly", False):
+        torch.autograd.set_detect_anomaly(True)
+
+    if model_type == "passthrough":
+        createPassThroughModel(dataset)
+    else:
+        createLMModel(dataset, pretrained=train.get("pretrained", False))
+
+    # Build run() kwargs from training config
+    run_kwargs = {}
+    if "numEpochs" in train:
+        run_kwargs["numEpochs"] = train["numEpochs"]
+    if "stoppingCriterion" in train:
+        run_kwargs["stoppingCriterion"] = train["stoppingCriterion"]
+    if "temperature" in train:
+        run_kwargs["temperature"] = train["temperature"]
+    if "learningRate" in train:
+        run_kwargs["lr"] = train["learningRate"]
+
+    TheBasicModel.run(**run_kwargs)
+
+    # Build classificationReport() kwargs
+    report_kwargs = {}
+    if "classificationMin" in train:
+        report_kwargs["min"] = train["classificationMin"]
+    if "classificationMax" in train:
+        report_kwargs["max"] = train["classificationMax"]
+    TheBasicModel.classificationReport(**report_kwargs)
+
+    # Auto-save weights if configured
+    if weights.get("autosave", False):
+        wpath = weights.get("path", "output/weights.pt")
+        if not os.path.isabs(wpath):
+            wpath = os.path.join(PROJECT_DIR, wpath)
+        TheBasicModel.save_weights(wpath)
+
+
 # Standalone execution entry point
 if __name__ == "__main__":
-    dataset = "xor"
-    #warnings.filterwarnings('ignore', message='urllib3') #NotOpenSSLWarning')
-    if dataset == "tomatoes":
-        createLMModel('tomatoes', pretrained=True)
-        TheBasicModel.run(numEpochs=100, stoppingCriterion=.2, temperature=0.001, lr=0.00001)
-        TheBasicModel.classificationReport()
-    if dataset == "mnist":
-        createPassThroughModel('mnist')
-        TheBasicModel.run(numEpochs=10, stoppingCriterion=1)
-        TheBasicModel.classificationReport(min=0, max=9)
-    if dataset == "xor":
-        torch.autograd.set_detect_anomaly(True)
-        createLMModel('xor', pretrained=False)
-        TheBasicModel.run(numEpochs=800, stoppingCriterion=.1, temperature=0.0001, lr=0.001)
-        TheBasicModel.classificationReport()
+    import sys
+    xml = sys.argv[1] if len(sys.argv) > 1 else os.path.join(PROJECT_DIR, "data", "xor.xml")
+    if not os.path.isabs(xml):
+        xml = os.path.join(PROJECT_DIR, xml)
+    BasicModelFactory(xml)

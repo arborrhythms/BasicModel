@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<model>
+  <architecture>
+    <nConcepts>20</nConcepts>
+  </architecture>
+
+  <training>
+    <dataset>mnist</dataset>
+    <numTrials>1</numTrials>
+    <numEpochs>3</numEpochs>
+    <batchSize>10</batchSize>
+    <traditional>true</traditional>
+    <ergodic>false</ergodic>
+    <normed>false</normed>
+    <reverse>false</reverse>
+    <invert>false</invert>
+  </training>
+</model>
