@@ -201,6 +201,10 @@ class ErgodicLayer(Layer):
     def paramUpdate(self):
         self.certainty_update()
         self.alpha_update()
+    def global_temp_anneal(self, progress):
+        """Anneal global_temp from 1.0→0.0 over training.
+        progress: float 0..1 (fraction of training complete)."""
+        self.global_temp = max(0.0, 1.0 - progress)
 
 class LinearLayer(Layer):
     def __init__(self, nInput, nOutput, hasBias=True, W=None):
@@ -736,6 +740,8 @@ class SigmaLayer(ErgodicLayer):
 
     def forward(self, x):
         bias, temp = self.layer_tradeoff()
+        if not self.training:
+            bias, temp = 1.0, 0.0      # pure learned weights, no noise
         x = self.permute(x)
         y = self.layer.forward(x, bias, temp)   # (batch_size, output_dim)
         if self.saturate:

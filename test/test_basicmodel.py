@@ -192,18 +192,37 @@ class TestSymPercept(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Ergodic.py — Ergodic model construction
+# DerivedModel construction (now in BasicModel.py)
 # ---------------------------------------------------------------------------
-class TestErgodicModel(unittest.TestCase):
-    def test_simple_model_creation(self):
-        from Ergodic import SimpleModel
-        model = SimpleModel()
+class TestDerivedModel(unittest.TestCase):
+    def test_derived_model_creation(self):
+        from BasicModel import DerivedModel
+        model = DerivedModel()
         self.assertIsNotNone(model)
 
-    def test_ergodic_model_creation(self):
-        from Ergodic import ErgodicModel
-        model = ErgodicModel()
-        self.assertIsNotNone(model)
+    def test_derived_model_traditional(self):
+        """DerivedModel with ergodic=False, certainty=False produces valid output."""
+        from BasicModel import DerivedModel
+        model = DerivedModel()
+        model.ergodic   = False
+        model.certainty = False
+        model.quantized = False
+        model.create(nInput=28*28, nConcepts=20, nOutput=10)
+        x = torch.randn(2, 28*28, 1)  # batch of 2, flattened MNIST, dim=1
+        out, concepts = model.forward(x)
+        self.assertEqual(out.shape[0], 2)  # batch size preserved
+
+    def test_derived_model_ergodic(self):
+        """DerivedModel with ergodic=True uses SigmaLayer path."""
+        from BasicModel import DerivedModel
+        model = DerivedModel()
+        model.ergodic   = True
+        model.certainty = True
+        model.quantized = False
+        model.create(nInput=28*28, nConcepts=20, nOutput=10)
+        x = torch.randn(2, 28*28, 1)
+        out, concepts = model.forward(x)
+        self.assertEqual(out.shape[0], 2)
 
 
 # ---------------------------------------------------------------------------

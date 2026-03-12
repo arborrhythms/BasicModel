@@ -1,2 +1,8 @@
 bin/__pycache__/*
 test/__init__.py
+test/__pycache__/
+data/MNIST/
+data/embeddings/
+output/*
+.DS_Store
+*/.DS_Store

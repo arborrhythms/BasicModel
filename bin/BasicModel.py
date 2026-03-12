@@ -4,7 +4,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import random
-from torchviz import make_dot
+try:
+    from torchviz import make_dot
+except ImportError:
+    make_dot = None
 from matplotlib import pyplot as plt
 from datasets import load_dataset
 from wordvectors import WordVectors
@@ -15,8 +18,11 @@ import pandas as pd
 from vector_quantize_pytorch import ResidualVQ, VectorQuantize
 from Model import Layer, PiLayer, SigmaLayer, ReversibleSigmaLayer, ReversiblePiLayer # Import custom layers from Model.py
 from Model import VQLayer, NormLayer, LinearLayer, ReversibleLinearLayer, AttentionLayer
-from Model import GammaMem, ColumnUsageTracker, LiftingLayer, SoftMap, epsilon
+from Model import GammaMem, ColumnUsageTracker, LiftingLayer, SoftMap, CertaintyWeightedCrossEntropy, epsilon
+import torch.optim as optim
 from functools import partial
+
+from datetime import datetime
 
 BASE_DIR = os.path.dirname(__file__)
 PROJECT_DIR = os.path.dirname(BASE_DIR)  # basicmodel/ root
@@ -32,6 +38,72 @@ def output_path(filename):
 
 def output_stem(stem):
     return os.path.join(ensure_output_dir(), stem)
+
+
+class Report:
+    """Collects timestamped SVG figures and XML configs, then writes an HTML report."""
+    def __init__(self):
+        self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        self.figures = []       # list of (title, svg_path)
+        self.xml_configs = []   # list of (name, xml_content)
+
+    def save_figure(self, fig, title):
+        """Save a matplotlib figure as a timestamped SVG and register it."""
+        safe = title.replace(" ", "_").replace("/", "-")
+        filename = f"{self.timestamp}_{safe}.svg"
+        path = output_path(filename)
+        fig.savefig(path, format='svg', bbox_inches='tight')
+        self.figures.append((title, filename))
+        return path
+
+    def add_xml(self, config_path):
+        """Register an XML config file for inclusion in the report."""
+        name = os.path.basename(config_path)
+        with open(config_path, 'r') as f:
+            self.xml_configs.append((name, f.read()))
+
+    def write_html(self):
+        """Write the collected figures and configs into a single HTML file."""
+        if not self.figures:
+            return None
+        html_path = output_path(f"{self.timestamp}_report.html")
+        lines = [
+            '<!DOCTYPE html>',
+            '<html><head>',
+            f'<title>BasicModel Report {self.timestamp}</title>',
+            '<style>',
+            '  body { font-family: system-ui, sans-serif; max-width: 1200px; margin: 2em auto; padding: 0 1em; }',
+            '  h1 { border-bottom: 2px solid #333; padding-bottom: .3em; }',
+            '  h2 { margin-top: 2em; color: #444; }',
+            '  .figure { margin: 1.5em 0; }',
+            '  .figure img { max-width: 100%; border: 1px solid #ddd; }',
+            '  pre { background: #f5f5f5; padding: 1em; overflow-x: auto; border-radius: 4px; }',
+            '  .meta { color: #888; font-size: 0.9em; }',
+            '</style>',
+            '</head><body>',
+            f'<h1>BasicModel Report</h1>',
+            f'<p class="meta">Generated {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>',
+        ]
+        # Figures
+        lines.append('<h2>Figures</h2>')
+        for title, svg_file in self.figures:
+            lines.append(f'<div class="figure"><h3>{title}</h3>')
+            lines.append(f'<img src="{svg_file}" alt="{title}"></div>')
+        # XML configs
+        if self.xml_configs:
+            lines.append('<h2>Configurations</h2>')
+            for name, content in self.xml_configs:
+                escaped = content.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                lines.append(f'<h3>{name}</h3><pre>{escaped}</pre>')
+        lines.append('</body></html>')
+        with open(html_path, 'w') as f:
+            f.write('\n'.join(lines))
+        from urllib.parse import quote
+        file_url = "file://" + quote(os.path.abspath(html_path))
+        print(f"Report saved to {file_url}")
+        return html_path
+
+TheReport = Report()
 
 class PositionalEncoding(nn.Module):
     nDim   = 2
@@ -237,19 +309,33 @@ class Data():
             self.loadXOR()
         if dataset == "tomatoes":
             self.loadTomatoes()
+    def shuffle(self):
+        rand_indx = torch.randperm(len(self.train_output))
+        self.train_input = self.train_input[rand_indx][:]
+        self.train_output = self.train_output[rand_indx][:]
     def loadMNist(self):
         df = pd.read_csv(os.path.join(DATA_DIR, 'mnist_train.csv'))
         train = df.values
         df = pd.read_csv(os.path.join(DATA_DIR, 'mnist_test.csv'))
         test = df.values
-        self.train_input = train[:, 1:]
-        self.train_output = torch.tensor(train[:, 0:1], dtype=torch.float)
-        #self.train_labels = self.train_labels.unsqueeze(0)
-        self.test_input  = test[:, 1:]
-        self.test_output  = torch.tensor(test[:, 0:1], dtype=torch.float)
-        #self.test_labels = self.test_labels.unsqueeze(0)
-        self.validation_input = test[:, 1:]
-        self.validation_output = torch.tensor(test[:, 0:1], dtype=torch.float)
+        self.train_input  = torch.tensor(train[:, 1:]/255.0, dtype=torch.float)
+        mnistMean = torch.mean(self.train_input)
+        self.train_input = self.train_input - mnistMean
+        mnistSTD = torch.std(self.train_input)
+        self.train_input = self.train_input / mnistSTD
+        self.train_output = torch.zeros((train.shape[0],10), dtype=torch.float)
+        for i, ndx in enumerate(train[:, 0]):
+            self.train_output[i][ndx:ndx+1] = 1.0
+        self.test_input  = torch.tensor(test[:, 1:]/255.0, dtype=torch.float)
+        self.test_input  = (self.test_input - mnistMean) / mnistSTD
+        self.test_output = torch.zeros((test.shape[0],10), dtype=torch.float)
+        for i, ndx in enumerate(test[:, 0]):
+            self.test_output[i][ndx:ndx+1] = 1.0
+        self.validation_input  = torch.tensor(test[:, 1:]/255.0, dtype=torch.float)
+        self.validation_output = torch.zeros((test.shape[0],10), dtype=torch.float)
+        for i, ndx in enumerate(test[:, 0]):
+            self.validation_output[i][ndx:ndx+1] = 1.0
+        self.inputLength = 28 * 28
     def loadXOR(self):
         data = {
             "train": {
@@ -662,6 +748,15 @@ class PassThrough(VectorSet):
     def reverse(self, y, t):
         x = y
         return x
+class UnquantizedVSet(VectorSet):
+    """Pass-through VectorSet that skips quantization entirely."""
+    def create(self, nInput, nVectors, nDim):
+        super().create(nInput, nVectors, nDim)
+    def forward(self, x):
+        return x
+    def reverse(self, y):
+        return y
+
 # An LVQ implementation with an inverse.
 class ReversibleDictionary(VectorSet):
     talking = True
@@ -778,24 +873,25 @@ class LanguageModel(VectorSet):
     def create(self, untokenized, nInput=None, nVectors=None, nDim=None, pretrained=True):
         super().create(nInput, nVectors, nDim)
         tokenized = self.tokenizeList(untokenized)
-        embeddings_dir = os.path.join(PROJECT_DIR, "embeddings")
-        os.makedirs(embeddings_dir, exist_ok=True)
+        data_embeddings_dir = os.path.join(PROJECT_DIR, "data", "embeddings")
+        output_embeddings_dir = os.path.join(PROJECT_DIR, "output", "embeddings")
+        os.makedirs(output_embeddings_dir, exist_ok=True)
         if pretrained:
-            self.model_path = os.path.join(embeddings_dir, "word2vec_custom_pretrained.pt")
+            self.model_path = os.path.join(output_embeddings_dir, "word2vec_custom_pretrained.pt")
             super().create(nInput, nVectors, 100)
             if os.path.exists(self.model_path):
                 print(f"Loading {self.model_path}...")
                 self.wv = WordVectors.load(self.model_path)
             else:
                 print("Loading pretrained embeddings...")
-                pretrained_file = os.path.join(embeddings_dir, "enwiki_20180420_100d.txt")
+                pretrained_file = os.path.join(data_embeddings_dir, "enwiki_20180420_100d.txt")
                 self.wv = WordVectors.load_word2vec_format(pretrained_file)
             vec = self.getVectors()
             nDim = len(vec[0])
             nVectors = len(vec)
             super().create(nInput, nVectors, nDim)
         else:
-            self.model_path = os.path.join(embeddings_dir, "word2vec_custom.pt")
+            self.model_path = os.path.join(output_embeddings_dir, "word2vec_custom.pt")
             nDim = 20
             super().create(nInput, nVectors, nDim)
             if os.path.exists(self.model_path):
@@ -1063,16 +1159,20 @@ class ConceptualSpace(Space):
     name = "Concepts"
     hasAttention = False
 
-    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False):
+    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False, invertible=False, hasNorm=False):
         super(ConceptualSpace, self).__init__(inputShape, outputShape, nVectors, nDim, useVQ=useVQ, nPrototypes=nPrototypes, reversePass=reversePass, processSymbols=processSymbols)
         input, output = self.getEmbeddedIO()
+        self.hasNorm = hasNorm
         self.attention = AttentionLayer(output, output)
-        if reversePass:
+        if hasNorm:
+            self.norm = NormLayer(input, input)
+        if invertible:
+            self.sigma = ReversibleSigmaLayer(input, self.nDim, permuteInput=False)
+            self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
+        elif reversePass:
             self.sigma1 = SigmaLayer(input, self.nDim, permuteInput=False)
             self.sigma2 = SigmaLayer(self.nDim, input, permuteInput=False)
             self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.forward
-            #self.sigma = ReversibleSigmaLayer(input, self.nDim, permuteInput=False)
-            #self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
         else:
             self.sigma = SigmaLayer(input, self.nDim, permuteInput=False)
             self.forwardSigma = self.sigma.forward
@@ -1089,6 +1189,8 @@ class ConceptualSpace(Space):
     # Knowing
     def forward(self, x, t=0):
         x = self.forwardBegin(x, t)
+        if self.hasNorm:
+            x = self.norm.forward(x)
         y = self.forwardSigma(x, t) # Pass through SigmaLayer
         if self.hasAttention:
             y = self.attention.forward(y, t)
@@ -1117,6 +1219,8 @@ class ConceptualSpace(Space):
         # preserve the codebook's positional encoding
         encoding = self.concepts[:, :, -TheObjectEncoding.objectSize:]
         self.concepts = self.reverseSigma(self.concepts[:,:,0:-TheObjectEncoding.objectSize], t)
+        if self.hasNorm:
+            self.concepts = self.norm.reverse(self.concepts)
         #self.concepts = torch.concatenate((self.concepts, encoding), dim=2)
         self.concepts = self.reverseEnd(self.concepts, t)
         return self.concepts
@@ -1258,15 +1362,219 @@ class OutputSpace(Space):
         return output
 
 
-class BasicModel(nn.Module):
-    nSubThoughts   = 1
-    nThoughts      = 0
+# ---------------------------------------------------------------------------
+# Ergodic Space hierarchy — plain-tensor Spaces without ObjectEncoding.
+# Kept separate from the canonical Space hierarchy so both can coexist
+# until a future unification pass.
+# ---------------------------------------------------------------------------
+
+class DerivedSpace(nn.Module):
+    """Base space operating on raw tensors (no ObjectEncoding overhead)."""
+    name         = ""
+    vectorSet    = []
+    activation   = None
+    params       = []
+    layers       = []
+
+    def __init__(self, inputShape, nVectors, nDim, nOutput, vSet=None, reversePass=False):
+        super().__init__()
+        self.inputShape  = inputShape
+        self.outputShape = [nVectors, nDim]
+        self.nVectors    = nVectors
+        self.nDim        = nDim
+        self.nOutput     = nOutput
+        self.reversePass = reversePass
+        self.batchSize   = 0
+        self.vectorSet   = nn.ModuleList()
+        self.params      = []
+        self.layers      = []
+    def lookup(self, x):
+        x = x.unsqueeze(0).unsqueeze(0)
+        return self.vectorSet[0](x)
+    def stats(self, x):
+        pass
+    def vectors(self):
+        return self.vectorSet[0]
+    def createVectorSet(self, quantized=False):
+        if quantized:
+            vs = VectorSet()
+            vs.create(self.inputShape[0], self.nVectors, self.nDim, customVQ=False)
+            vs.addVectors(nVec=self.nOutput)
+            self.vectorSet.append(vs)
+        else:
+            vs = UnquantizedVSet()
+            vs.create(self.inputShape[0], self.nVectors, self.nDim)
+            self.vectorSet.append(vs)
+    def forwardBegin(self, x, reshape=False):
+        self.batchSize = x.shape[0]
+        if reshape:
+            x = x.reshape(self.batchSize, self.inputShape[0] * self.inputShape[1])
+        else:
+            assert list(x.shape[1:]) == self.inputShape
+        return x
+    def forwardEnd(self, x, reshape=False):
+        if reshape:
+            x = x.reshape(self.batchSize, self.outputShape[0], self.outputShape[1])
+        else:
+            assert list(x.shape[1:]) == self.outputShape
+        return x
+    def reverseBegin(self, y, reshape=False):
+        self.batchSize = y.shape[0]
+        if reshape:
+            y = y.reshape(self.batchSize, self.outputShape[0] * self.outputShape[1])
+        else:
+            assert list(y.shape[1:]) == self.outputShape
+        return y
+    def reverseEnd(self, y, reshape=False):
+        if reshape:
+            y = y.reshape(self.batchSize, self.inputShape[0], self.inputShape[1])
+        else:
+            assert list(y.shape[1:]) == self.inputShape
+        return y
+    def flatten(self, x, forward=True):
+        if forward:
+            return x.reshape(self.batchSize, self.inputShape[0] * self.inputShape[1])
+        else:
+            return x.reshape(self.batchSize, self.outputShape[0] * self.outputShape[1])
+    def reshape(self, y, forward=True):
+        if forward:
+            return y.reshape(self.batchSize, self.outputShape[0], self.outputShape[1])
+        else:
+            return y.reshape(self.batchSize, self.inputShape[0], self.inputShape[1])
+    def getParameters(self):
+        return self.params
+    def paramUpdate(self):
+        for l in self.layers:
+            l.paramUpdate()
+
+
+class DerivedInputSpace(DerivedSpace):
+    name = "ErgodicInputs"
+
+    def __init__(self, inputShape, nVectors, nDim, nOutput, vSet=None, tokenizedInput=False):
+        super().__init__(inputShape, nVectors, nDim, nOutput, vSet=vSet)
+        self.createVectorSet()
+        self.tokenizedInput = tokenizedInput
+    def forward(self, input):
+        self.batchSize = input.shape[0]
+        assert list(input.shape[1:]) == self.inputShape
+        output = self.vectors().forward(input)
+        assert list(output.shape[1:]) == self.outputShape
+        return output
+    def reverse(self, y):
+        y = self.reverseBegin(y)
+        output = self.vectors().reverse(y)
+        return output
+
+
+class DerivedConceptualSpace(DerivedSpace):
+    name = "ErgodicConcepts"
+    hasAttention = False
+
+    def __init__(self, inputShape, nVectors, nDim, nOutput, vSet=None, reversePass=False, invertible=False, hasNorm=False, ergodic=True):
+        super().__init__(inputShape, nVectors, nDim, nOutput, vSet=vSet, reversePass=reversePass)
+        self.hasNorm    = hasNorm
+        self.invertible = invertible
+        self.ergodic    = ergodic
+        input  = self.inputShape[0] * self.inputShape[1]
+        output = self.outputShape[0] * self.outputShape[1]
+        if self.hasAttention:
+            self.attention = AttentionLayer(self.outputShape[1], self.outputShape[1])
+        if hasNorm:
+            self.norm = NormLayer(input, input+2)
+            input += 2
+        if not ergodic:
+            # Traditional path: LinearLayer + Tanh (no certainty/temperature mechanism)
+            self._linear = LinearLayer(input, output, hasBias=True)
+            self._tanh = nn.Tanh()
+            self.forwardSigma = lambda x: self._tanh(self._linear(x))
+            self.params = list(self._linear.parameters())
+            self.layers = []  # Nothing needs paramUpdate
+            if reversePass:
+                self._linear_rev = LinearLayer(output, input, hasBias=True)
+                self._tanh_rev = nn.Tanh()
+                self.reverseSigma = lambda x: self._tanh_rev(self._linear_rev(x))
+                self.params += list(self._linear_rev.parameters())
+        elif invertible:
+            self.sigma = ReversibleSigmaLayer(input, output, permuteInput=False)
+            self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
+            self.params  = self.sigma.getParameters()
+            self.layers += [self.sigma]
+        elif reversePass:
+            self.sigma1 = SigmaLayer(input, output, permuteInput=False)
+            self.sigma2 = SigmaLayer(output, input, permuteInput=False)
+            self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.forward
+            self.params  = self.sigma1.getParameters() + self.sigma2.getParameters()
+            self.layers += [self.sigma1, self.sigma2]
+        else:
+            self.sigma = SigmaLayer(input, output, permuteInput=False)
+            self.forwardSigma = self.sigma.forward
+            self.params  = self.sigma.getParameters()
+            self.layers += [self.sigma]
+        self.createVectorSet()
+    def distance(self, x, y):
+        return x.T @ y
+    def certainty(self, x):
+        return x.T @ x
+    def forward(self, x):
+        x = self.forwardBegin(x, reshape=True)
+        if self.hasNorm:
+            x = self.norm.forward(x)
+        y = self.forwardSigma(x)
+        if self.hasAttention:
+            y = self.attention.forward(y)
+        y = self.vectors().forward(y)
+        y = self.forwardEnd(y, reshape=True)
+        return y
+    def reverse(self, y):
+        y = self.reverseBegin(y, reshape=True)
+        if self.hasAttention:
+            y = self.attention.reverse(y)
+        y = self.reverseSigma(y)
+        if self.hasNorm:
+            y = self.norm.reverse(y)
+        y = self.reverseEnd(y, reshape=True)
+        return y
+    @staticmethod
+    def test():
+        pass
+
+
+class DerivedOutputSpace(DerivedSpace):
+    name = "ErgodicOutput"
+
+    def __init__(self, inputShape, nVectors, nDim, nOutput, vSet=None, reversePass=False):
+        super().__init__(inputShape, nVectors, nDim, nOutput, vSet=vSet, reversePass=reversePass)
+        input  = self.inputShape[0] * self.inputShape[1]
+        output = self.outputShape[0] * self.outputShape[1]
+        self.linear = LinearLayer(input, output, hasBias=True)
+        if reversePass:
+            self.reverseLinear = LinearLayer(output, input, hasBias=True)
+        self.createVectorSet()
+        self.params = list(self.parameters())
+        self.layers = [self.linear]
+    def forward(self, x):
+        x = self.forwardBegin(x, reshape=True)
+        output = self.linear(x)
+        output = self.forwardEnd(output, reshape=True)
+        return output
+    def reverse(self, y):
+        y = self.reverseBegin(y, reshape=True)
+        y = self.reverseLinear(y)
+        output = self.reverseEnd(y, reshape=True)
+        return output
+
+
+class BaseModel(nn.Module):
+    """Shared training, plotting, and persistence infrastructure for all models."""
+    name           = "BaseModel"
     spaces         = []
-    processSymbols = False
+    reversePass    = False
+    plot           = False
 
     @staticmethod
     def load_config(config_path=None):
-        """Load model settings from model.xml.
+        """Load model settings from an XML config file.
 
         Returns a dict with architecture, training, weights, and server
         settings.  Missing fields use defaults from the create() signature.
@@ -1295,6 +1603,398 @@ class BasicModel(nn.Module):
                             sec[child.tag] = text
             cfg[section.tag] = sec
         return cfg
+
+    def create(self, **kwargs):
+        """Override in subclasses to build model architecture."""
+        pass
+
+    def runTrials(self, numTrials=1, numEpochs=1, batchSize=10, lr=0.001):
+        acc = np.zeros([numTrials, numEpochs])
+        print(f"\n\n==== {self.name} ====")
+        for trial in range(numTrials):
+            print(f"\nTrial [{trial + 1}/{numTrials}]")
+            self.create(nInput=self.nInput, nConcepts=self.nConcepts, nOutput=self.nOutput)
+            acc[trial, :] = self.run(numEpochs=numEpochs, batchSize=batchSize, lr=lr)
+        np.savetxt(output_path(f"{self.name}.csv"), np.array(acc), delimiter=",")
+        return acc
+
+    def paramUpdate(self):
+        for s in self.spaces:
+            s.paramUpdate()
+
+    def save_weights(self, path=None):
+        """Persist model weights and ergodic state to disk."""
+        if path is None:
+            path = os.path.join(OUTPUT_DIR, "weights.pt")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        torch.save(self.state_dict(), path)
+        print(f"[{self.name}] Weights saved to {path}")
+
+    def load_weights(self, path=None, strict=False):
+        """Load model weights from disk."""
+        if path is None:
+            path = os.path.join(OUTPUT_DIR, "weights.pt")
+        if not os.path.exists(path):
+            print(f"[{self.name}] No weights found at {path}")
+            return False
+        state = torch.load(path, map_location="cpu", weights_only=True)
+        self.load_state_dict(state, strict=strict)
+        print(f"[{self.name}] Weights loaded from {path}")
+        return True
+
+    def mnistReport(model):
+        _, _, y_pred, last_x_pred = model.runEpoch(TheData.test_input, TheData.test_output, lr=0)
+        _, predicted = torch.max(y_pred, 1)
+        _, actual = torch.max(TheData.test_output, 1)
+
+        rCorrect = torch.zeros((10))
+        for i in range(0,10):
+            total    = (actual == i).sum().item()
+            correct  = (actual==i) & (predicted==actual)
+            nCorrect = correct.sum().item()
+            rCorrect[i] = nCorrect / total
+            print(f"Correctly predicted {i}: {rCorrect[i]}")
+
+        fig = plt.figure(figsize=(10, 5))
+        plt.plot(range(0, 10), rCorrect, label="Error (per Input)", marker='o')
+        plt.xlabel("Digit")
+        plt.ylabel("Accuracy")
+        plt.title(f"Accuracy per Digit: {model.name}")
+        plt.legend()
+        plt.grid(True)
+        TheReport.save_figure(fig, f"{model.name} Accuracy")
+        plt.show(block=False)
+        return rCorrect
+
+    def plotLoss(model, trainErr, valErr, testErr):
+        """Plots the training, validation, and test losses over time."""
+        fig = plt.figure(figsize=(10, 5))
+
+        # Training starts at epoch 2 (epoch 1 is test-only), so offset by +2
+        plt.plot(range(2, len(trainErr[0]) + 2), trainErr[0], label="Training Error", marker='o')
+        if len(trainErr) > 1 and trainErr[1]:
+            plt.plot(range(2, len(trainErr[1]) + 2), trainErr[1], label="Training Error (Input)", marker='o')
+
+        if testErr:
+            plt.plot(range(1, len(testErr[0]) + 1), testErr[0], label="Test Error", marker='x')
+            if len(testErr) > 1 and testErr[1]:
+                plt.plot(range(1, len(testErr[1]) + 1), testErr[1], label="Test Error (Input)", marker='x')
+
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title(f"Error per Epoch: {model.name}")
+        plt.legend()
+        plt.grid(True)
+
+        TheReport.save_figure(fig, f"{model.name} Error")
+        plt.show(block=False)
+
+    def plotActivations(model, figure=1, percepts=None, concepts=None, symbols=None):
+        fig = plt.figure(figure, figsize=(12, 4))
+        fig.clf()
+
+        if percepts is not None:
+            p = percepts[-1, :, :].squeeze()
+            pAct = torch.norm(p, dim=1).detach().numpy()
+            plt.plot(pAct, marker='o', color='r')
+            plt.xlabel("Activation")
+            plt.ylabel("Percepts")
+            plt.title("Perceptual Activation")
+
+        if concepts is not None:
+            c = concepts[-1, :, :].squeeze()
+            cAct = torch.norm(c, dim=-1).detach().numpy()
+            plt.plot(cAct, marker='o', color='b')
+            plt.xlabel("Epoch")
+            plt.ylabel("Concepts")
+            plt.title("Conceptual Activation")
+
+        if symbols is not None:
+            s = symbols[-1, :, 0].squeeze()
+            sAct = s.detach().numpy()
+            plt.plot(sAct, marker='o', color='g')
+            plt.xlabel("Epoch")
+            plt.ylabel("Symbols")
+            plt.title("Symbolic Activations")
+
+        plt.tight_layout()
+        plt.show(block=False)
+
+    def plotSpace(model):
+        """Visualizes learned weight parameters via PCA projections."""
+        perc_weights = model.prototypes.data.cpu().numpy()
+        pca = PCA(n_components=2)
+        perc_2d = pca.fit_transform(perc_weights)
+
+        plt.figure(figsize=(18, 5))
+
+        plt.subplot(1, 3, 1)
+        plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
+        plt.xlabel("PC1")
+        plt.ylabel("PC2")
+        plt.title("Perceptual Space Prototypes")
+        plt.legend()
+
+        perc_mean = perc_2d.mean(axis=0)
+
+        conc_weights = model.conceptual.fc_p.weight.data.cpu().numpy()
+        conc_proj = pca.transform(conc_weights)
+
+        plt.subplot(1, 3, 2)
+        plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
+        x_vals = np.linspace(np.min(perc_2d[:, 0]) - 1, np.max(perc_2d[:, 0]) + 1, 100)
+        for i in range(conc_proj.shape[0]):
+            n = conc_proj[i]
+            if np.abs(n[1]) > 1e-3:
+                y_vals = perc_mean[1] - (n[0] / n[1]) * (x_vals - perc_mean[0])
+                plt.plot(x_vals, y_vals, '--', label=f"Hyperplane {i + 1}" if i == 0 else None, alpha=0.7)
+            else:
+                plt.axvline(x=perc_mean[0], linestyle='--', alpha=0.7, label=f"Hyperplane {i + 1}" if i == 0 else None)
+        plt.xlabel("PC1")
+        plt.ylabel("PC2")
+        plt.title("Conceptual Hyperplanes")
+        plt.legend()
+
+        symb_weights = model.fc_symbolic.weight.data.cpu().numpy()
+        symb_norms = np.linalg.norm(symb_weights, axis=1)
+        x_symb = np.arange(len(symb_norms))
+
+        plt.subplot(1, 3, 3)
+        plt.vlines(x_symb, 0, symb_norms, color='k', alpha=0.7)
+        plt.scatter(x_symb, symb_norms, color='red', s=100, zorder=3)
+        plt.xlabel("Symbolic Feature Index")
+        plt.ylabel("L2 Norm")
+        plt.title("Symbolic Weights (Lollipop Plot)")
+
+        plt.tight_layout()
+        plt.show(block=False)
+
+    def plotNetwork(model):
+        """Uses Torchviz to visualize the computation graph."""
+        model.eval()
+        output, input, _, _ = model.runTest(TheData.test_input, TheData.test_output)
+        dot = make_dot(output, params=dict(model.named_parameters()))
+        dot.format = "png"
+        graph_path = dot.render(output_stem(f"graph_{model.name}"))
+        print(f"Saved network graph as {graph_path}")
+
+    def plotErrorbars(model, acc):
+        x = list(range(1, len(acc[0]) + 1))
+        y = np.array(np.mean(acc, axis=0))
+        y_err = np.std(acc, axis=0)
+        plt.errorbar(x, y, yerr=y_err, fmt='-o', label=model.name, capsize=4)
+
+
+
+class DerivedModel(BaseModel):
+    """Unified parameterized model: InputSpace → ConceptualSpace → OutputSpace.
+
+    Three independent levers:
+      ergodic   – SigmaLayer (with temperature/alpha adaptation) vs LinearLayer+Tanh
+      certainty – CertaintyWeightedCrossEntropy vs nn.CrossEntropyLoss
+      quantized – VectorSet codebook snapping vs pass-through
+    """
+    name       = "DerivedModel"
+    vSet       = None
+    invertible = False
+    hasNorm    = False
+    ergodic    = True
+    certainty  = True
+    quantized  = False
+
+    def create(self, nInput=32, nConcepts=256, nOutput=32):
+        self.nInput    = nInput
+        self.nConcepts = nConcepts
+        self.nOutput   = nOutput
+
+        inputDim   = 1
+        conceptDim = 1
+        outputDim  = 1
+
+        self.inputSpace = DerivedInputSpace([self.nInput, inputDim],
+                                            self.nInput, inputDim,
+                                            nOutput=self.nInput, vSet=self.vSet)
+        self.conceptualSpace = DerivedConceptualSpace([self.nInput, inputDim],
+                                                      self.nConcepts, conceptDim,
+                                                      nOutput=self.nConcepts,
+                                                      reversePass=self.reversePass,
+                                                      invertible=self.invertible,
+                                                      hasNorm=self.hasNorm,
+                                                      ergodic=self.ergodic)
+        self.outputSpace = DerivedOutputSpace([self.nConcepts, conceptDim],
+                                              self.nOutput, outputDim,
+                                              nOutput=self.nOutput,
+                                              reversePass=False)
+
+        self.spaces = [self.inputSpace, self.conceptualSpace, self.outputSpace]
+    def forward(self, data):
+        percepts = self.inputSpace(data)
+        concepts = self.conceptualSpace(percepts)
+        symbols  = self.outputSpace(concepts)
+        return symbols, concepts
+    def reverse(self, concepts):
+        percepts = self.conceptualSpace.reverse(concepts)
+        data     = self.inputSpace.reverse(percepts)
+        return data, percepts
+    def getOptimizer(self, lr=0.01):
+        if self.ergodic:
+            # Filtered params: excludes temperature (managed by alpha_update, not Adam)
+            params = self.inputSpace.getParameters() + self.conceptualSpace.getParameters() + self.outputSpace.getParameters()
+        else:
+            # Traditional path: all parameters via standard PyTorch
+            params = list(self.parameters())
+        optimizer = optim.Adam(params, lr=lr)
+        return optimizer
+    def runEpoch(self, input, output, lr=0.01, batchSize=10):
+        if lr:
+            optimizer = self.getOptimizer(lr=lr)
+
+        if self.certainty:
+            criterionOutput = CertaintyWeightedCrossEntropy()
+        else:
+            criterionOutput = nn.CrossEntropyLoss()
+        criterionInput  = nn.MSELoss()
+
+        allOutput = []
+        allInput  = []
+        outErr    = 0
+        inErr     = 0
+        self.train(lr != 0)
+        for i in range(0, len(input), batchSize):
+            inputBatch  = input[i:i + batchSize]
+            outputBatch = output[i:i + batchSize]
+            batchSize   = len(inputBatch)
+
+            inputTensor  = inputBatch
+            inputTensor  = inputTensor.unsqueeze(2)
+            outputTensor = outputBatch
+            outputTensor = outputTensor.unsqueeze(2)
+
+            if lr:
+                optimizer.zero_grad()
+            outputPred, concepts = self.forward(inputTensor)
+            lossOut = criterionOutput(outputPred.squeeze(), outputTensor.squeeze())
+            if lr:
+                lossOut.backward()
+                if self.ergodic:
+                    self.paramUpdate()
+                optimizer.step()
+            outErr = lossOut.item()
+            outputPred = outputPred.clone().detach().squeeze()
+            if i == 0:
+                allOutput = outputPred
+            else:
+                allOutput = torch.concat((allOutput, outputPred), dim=0)
+
+            # Next run reverse
+            if self.reversePass:
+                if lr:
+                    optimizer.zero_grad()
+                inputPred, percepts = self.reverse(concepts.detach())
+                lossIn = criterionInput(inputPred.squeeze(), inputTensor.squeeze())
+                if lr:
+                    lossIn.backward()
+                    if self.ergodic:
+                        self.paramUpdate()
+                    optimizer.step()
+                inErr   = lossIn.item()
+                inputPred = inputPred.clone().detach().squeeze()
+                allInput = inputPred
+        return outErr, inErr, allOutput, allInput
+
+    def mnistReport(model):
+        _, _, y_pred, last_x_pred = model.runEpoch(TheData.test_input, TheData.test_output, lr=0)
+        _, predicted = torch.max(y_pred, 1)
+        _, actual = torch.max(TheData.test_output, 1)
+
+        norms = torch.linalg.norm(model.outputSpace.linear.W, dim=0)
+        rCorrect = torch.zeros_like(norms)
+        for i in range(0,10):
+            total    = (actual == i).sum().item()
+            correct  = (actual==i) & (predicted==actual)
+            nCorrect = correct.sum().item()
+            rCorrect[i] = nCorrect / total
+            print(f"Correctly predicted {i}: {rCorrect[i]}")
+            print(f"Weight norm: {norms[i]}")
+
+        input_matrix = torch.stack((rCorrect, norms))
+        correlation_matrix = torch.corrcoef(input_matrix)
+        correlation_value = correlation_matrix[0, 1]
+        print(f"Pearson Correlation: {correlation_value}")
+
+        fig = plt.figure(figsize=(10, 5))
+        plt.plot(range(0, 10), rCorrect, label="Error (per Input)", marker='o')
+        plt.xlabel("Digit")
+        plt.ylabel("Accuracy & Certainty")
+        plt.title(f"Accuracy and Certainty: {model.name}")
+        plt.legend()
+        plt.grid(True)
+        TheReport.save_figure(fig, f"{model.name} Accuracy")
+        plt.show(block=False)
+
+        if model.reversePass:
+            for i in range(0, 10):
+                fig = plt.figure(figsize=(10, 5))
+                j = TheData.test_output[-i-1]
+                _, num = torch.max(j, axis=0)
+                plt.title(f"Reconstruction {num}: {model.name}")
+                image = last_x_pred[9-i, :]
+                image = np.reshape(image, (28, 28))
+                plt.imshow(image)
+                TheReport.save_figure(fig, f"{model.name} Reconstruction {num}")
+                plt.show(block=False)
+        return rCorrect
+
+    def run(self, numEpochs=1, batchSize=10, lr=0.001, stoppingCriterion=0.1):
+        trainLosses       = [[],[]]
+        validationLosses  = [[],[]]
+        minValidationLoss = math.inf
+        testLosses        = [[],[]]
+        self.plot         = True
+        accuracy          = []
+        for epoch in range(numEpochs):
+            print(f"Epoch [{epoch + 1}/{numEpochs}]")
+            if epoch != 0:
+                outErr,inErr,allOut,lastIn = self.runEpoch(TheData.train_input, TheData.train_output, lr=lr, batchSize=batchSize)
+                trainLosses[0].append(outErr)
+                trainLosses[1].append(inErr)
+                print(f"Train Loss: {outErr:.4f},  {inErr:.4f}")
+                # Anneal global temperature: force convergence over training
+                if self.ergodic and numEpochs > 1:
+                    progress = epoch / (numEpochs - 1)
+                    for s in self.spaces:
+                        for l in s.layers:
+                            if hasattr(l, 'global_temp_anneal'):
+                                l.global_temp_anneal(progress)
+            outErr,inErr,allOut,lastIn = self.runEpoch(TheData.test_input, TheData.test_output, lr=0, batchSize=batchSize)
+            testLosses[0].append(outErr)
+            testLosses[1].append(inErr)
+            _, predicted = torch.max(allOut, 1)
+            _, actual = torch.max(TheData.test_output, 1)
+            total   = predicted.size(0)
+            correct = (predicted == actual).sum().item()
+            accuracy += [correct / total]
+            print(f"Test Accuracy: {100 * correct / total:.2f}%")
+            TheData.shuffle()
+            if outErr > minValidationLoss + stoppingCriterion:
+                print(f"Validation increasing")
+                minValidationLoss = outErr
+            if outErr < minValidationLoss:
+                minValidationLoss = outErr
+        if self.plot:
+            print(f"Final Stats:")
+            self.plotLoss(trainLosses, validationLosses, testLosses)
+            self.rCorrect = self.mnistReport()
+        self.trainLosses = trainLosses
+        self.testLosses  = testLosses
+        return accuracy
+
+
+class BasicModel(BaseModel):
+    nSubThoughts   = 1
+    nThoughts      = 0
+    processSymbols = False
+    name           = "BasicModel"
 
     def create_from_config(self, config_path=None, LM=None):
         """Create the model using settings from model.xml.
@@ -1623,171 +2323,6 @@ class BasicModel(nn.Module):
             target_names=["Negative Review", "Positive Review"]
         )
         print(performance)
-    def plotLoss(model, trainErr, valErr, testErr):
-        """
-        Plots the training, validation, and test losses over time.
-        """
-        plt.figure(figsize=(10, 5))
-
-        plt.plot(range(1, len(trainErr[0]) + 1), trainErr[0], label="Training Error (Input)", marker='o')
-        plt.plot(range(1, len(trainErr[1]) + 1), trainErr[1], label="Training Error (Output)", marker='o')
-
-        if testErr:
-            plt.plot(range(1, len(testErr[0]) + 1), testErr[0], label="Test Error (Input)", marker='x')
-            plt.plot(range(1, len(testErr[1]) + 1), testErr[1], label="Test Error (Output)", marker='x')
-
-        plt.xlabel("Epoch")
-        plt.ylabel("Loss")
-        plt.title("Loss over Time")
-        plt.legend()
-        plt.grid(True)
-
-        # Save the plot as a high-resolution PNG (300 DPI)
-        plt.savefig(output_path("basicModelError.png"), dpi=300, bbox_inches='tight')
-        plt.show()
-    def plotActivations(model, figure=1, percepts=None, concepts=None, symbols=None):
-
-        # Plot training loss and some activation norms.
-        fig = plt.figure(figure, figsize=(12, 4))
-        fig.clf()
-
-        if percepts is not None:
-            p = percepts[-1, :, :].squeeze()
-            pAct = torch.norm(p, dim=1).detach().numpy()
-            plt.plot(pAct, marker='o', color='r')
-            plt.xlabel("Activation")
-            plt.ylabel("Percepts")
-            plt.title("Perceptual Activation")
-
-        if concepts is not None:
-            c = concepts[-1, :, :].squeeze()
-            cAct = torch.norm(c, dim=-1).detach().numpy()
-            plt.plot(cAct, marker='o', color='b')
-            plt.xlabel("Epoch")
-            plt.ylabel("Concepts")
-            plt.title("Conceptual Activation")
-
-        if symbols is not None:
-            s = symbols[-1, :, 0].squeeze()
-            sAct = s.detach().numpy()
-            plt.plot(sAct, marker='o', color='g')
-            plt.xlabel("Epoch")
-            plt.ylabel("Symbols")
-            plt.title("Symbolic Activations")
-
-        plt.tight_layout()
-        plt.show()
-    def plotSpace(model):
-        """
-        Visualizes only the learned weight parameters.
-        - For the perceptual layer, plots the 64 prototype weight vectors (each 64-d)
-          projected via PCA to 2D.
-        - For the conceptual mapping (fc_p of the ConceptualLayer, shape (16,64)),
-          uses the same PCA transform and, for each of the 16 weight vectors,
-          draws a hyperplane in 2D. Each hyperplane is taken to be the line orthogonal
-          to the projected weight vector and passing through the mean of the projected
-          perceptual prototypes.
-        - For the symbolic branch, computes the L2 norm of each of its 8 weight vectors (from fc_symbolic)
-          and displays a lollipop plot.
-        """
-        # ----- Perceptual prototypes -----
-        # prototypes: (64, 64)
-        perc_weights = model.prototypes.data.cpu().numpy()  # shape (64,64)
-        pca = PCA(n_components=2)
-        perc_2d = pca.fit_transform(perc_weights)  # (64,2)
-
-        plt.figure(figsize=(18, 5))
-
-        plt.subplot(1, 3, 1)
-        plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
-        plt.xlabel("PC1")
-        plt.ylabel("PC2")
-        plt.title("Perceptual Space Prototypes (64 points)")
-        plt.legend()
-
-        # Compute the mean of the projected prototypes.
-        perc_mean = perc_2d.mean(axis=0)
-
-        # ----- Conceptual hyperplanes -----
-        # Use the fc_p weights from the ConceptualSpace (shape (16,64))
-        conc_weights = model.conceptual.fc_p.weight.data.cpu().numpy()  # (16,64)
-        # Project these 16 weight vectors using the same PCA (note: they are in the same space as prototypes).
-        conc_proj = pca.transform(conc_weights)  # (16,2)
-
-        plt.subplot(1, 3, 2)
-        plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
-        # For each conceptual weight vector, draw its corresponding hyperplane.
-        x_vals = np.linspace(np.min(perc_2d[:, 0]) - 1, np.max(perc_2d[:, 0]) + 1, 100)
-        for i in range(conc_proj.shape[0]):
-            n = conc_proj[i]  # this is the projected weight vector (treated as normal)
-            # Define hyperplane: n . (x - perc_mean) = 0, i.e.
-            # n0*(x - m0) + n1*(y - m1) = 0  => y = m1 - (n0/n1)*(x - m0), provided n1 != 0.
-            if np.abs(n[1]) > 1e-3:
-                y_vals = perc_mean[1] - (n[0] / n[1]) * (x_vals - perc_mean[0])
-                plt.plot(x_vals, y_vals, '--', label=f"Hyperplane {i + 1}" if i == 0 else None, alpha=0.7)
-            else:
-                # Vertical line at x = perc_mean[0]
-                plt.axvline(x=perc_mean[0], linestyle='--', alpha=0.7, label=f"Hyperplane {i + 1}" if i == 0 else None)
-        plt.xlabel("PC1")
-        plt.ylabel("PC2")
-        plt.title("Conceptual Hyperplanes (16 lines)")
-        plt.legend()
-
-        # ----- Symbolic branch: Lollipop plot -----
-        # fc_symbolic: Linear(784,8) has weight of shape (8,784)
-        symb_weights = model.fc_symbolic.weight.data.cpu().numpy()  # (8,784)
-        symb_norms = np.linalg.norm(symb_weights, axis=1)  # (8,)
-        x_symb = np.arange(8)
-
-        plt.subplot(1, 3, 3)
-        plt.vlines(x_symb, 0, symb_norms, color='k', alpha=0.7)
-        plt.scatter(x_symb, symb_norms, color='red', s=100, zorder=3)
-        plt.xlabel("Symbolic Feature Index")
-        plt.ylabel("L2 Norm")
-        plt.title("Symbolic Weights (Lollipop Plot)")
-
-        plt.tight_layout()
-        plt.show()
-    def plotNetwork(model):
-        """
-        Uses Torchviz to create a visualization of the network's computation graph.
-        The visualization is saved as 'BasicModel_graph.png'.
-        """
-        model.eval()
-        #dummy_input = torch.randn(1, 28, 28)
-        output, input, _, _ = model.runTest(TheData.test_input, TheData.test_output)
-        dot = make_dot(output, params=dict(model.named_parameters()))
-        dot.format = "png"
-        graph_path = dot.render(output_stem("BasicModel_graph"))
-        print(f"Saved network graph as {graph_path}")
-
-    def save_weights(self, path=None):
-        """Persist model weights and ergodic state to disk.
-
-        Saves the full state_dict (weights, biases, alpha, temperature,
-        certainty buffers) so training can resume across sessions.
-        """
-        if path is None:
-            path = os.path.join(OUTPUT_DIR, "weights.pt")
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        torch.save(self.state_dict(), path)
-        print(f"[BasicModel] Weights saved to {path}")
-
-    def load_weights(self, path=None, strict=False):
-        """Load model weights from disk.
-
-        Uses strict=False by default so that architecture changes
-        (added/removed layers) don't prevent loading compatible weights.
-        """
-        if path is None:
-            path = os.path.join(OUTPUT_DIR, "weights.pt")
-        if not os.path.exists(path):
-            print(f"[BasicModel] No weights found at {path}")
-            return False
-        state = torch.load(path, map_location="cpu", weights_only=True)
-        self.load_state_dict(state, strict=strict)
-        print(f"[BasicModel] Weights loaded from {path}")
-        return True
 
 TheBasicModel = BasicModel()
 
@@ -1870,14 +2405,135 @@ def test():
     TheBasicModel.run(numEpochs=200, stoppingCriterion=1, temperature=0.01, lr=0.01)
     TheBasicModel.classificationReport()
 
-def BasicModelFactory(config_path):
-    """Create, train, and evaluate a BasicModel from an XML config file.
+def plotErrorbarsFromFile(fn):
+    """Load a CSV of trial accuracies and add an errorbar series to the current plot."""
+    acc = np.loadtxt(output_path(f"{fn}.csv"), delimiter=",")
+    y = np.mean(acc, axis=0)
+    y_err = np.std(acc, axis=0)
+    x = list(range(1, len(y) + 1))
+    plt.errorbar(x, y, yerr=y_err, fmt='-o', label=fn, capsize=4)
 
-    Reads architecture, training, and weight parameters from the given XML,
-    creates the appropriate model (LM or passthrough), trains it, runs the
-    classification report, and optionally saves weights.
+def plotComparison(models):
+    """Plot per-digit accuracy comparison across model variants.
+
+    Args:
+        models: list of (name, rCorrect_tensor) tuples
     """
-    cfg = BasicModel.load_config(config_path)
+    digits = list(range(10))
+    n = len(models)
+    width = 0.8 / n
+    fig = plt.figure(figsize=(12, 6))
+    for i, (name, rCorrect) in enumerate(models):
+        offsets = [d + (i - n/2 + 0.5) * width for d in digits]
+        vals = rCorrect.detach().cpu().numpy() if hasattr(rCorrect, 'detach') else rCorrect
+        plt.bar(offsets, vals, width, label=name)
+    plt.xlabel("Digit")
+    plt.ylabel("Accuracy")
+    plt.title("Per-Digit Accuracy Comparison")
+    plt.xticks(digits)
+    plt.ylim(0, 1.05)
+    plt.legend()
+    plt.grid(True, axis='y', alpha=0.3)
+    path = TheReport.save_figure(fig, "Digit Comparison")
+    plt.show(block=False)
+    print(f"Comparison saved to {path}")
+
+def plotCombinedLoss(models):
+    """Overlay training and test loss curves from multiple models on shared axes.
+
+    Args:
+        models: list of DerivedModel instances with .trainLosses and .testLosses.
+    """
+    fig = plt.figure(figsize=(12, 6))
+    colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple']
+    for i, m in enumerate(models):
+        color = colors[i % len(colors)]
+        if hasattr(m, 'trainLosses') and m.trainLosses[0]:
+            train = m.trainLosses[0]
+            # Training starts at epoch 2 (epoch 1 is test-only)
+            plt.plot(range(2, len(train) + 2), train,
+                     label=f"{m.name} - Training",
+                     marker='o', color=color, linestyle='-')
+        if hasattr(m, 'testLosses') and m.testLosses[0]:
+            test = m.testLosses[0]
+            plt.plot(range(1, len(test) + 1), test,
+                     label=f"{m.name} - Test",
+                     marker='x', color=color, linestyle='--')
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Error per Epoch: Model Comparison")
+    plt.legend()
+    plt.grid(True)
+    TheReport.save_figure(fig, "Combined Error Comparison")
+    plt.show(block=False)
+
+def plotCombinedAccuracy(models):
+    """Overlay per-digit accuracy curves from multiple models on shared axes.
+
+    Args:
+        models: list of (name, rCorrect_tensor) tuples.
+    """
+    fig = plt.figure(figsize=(12, 6))
+    digits = list(range(10))
+    for name, rCorrect in models:
+        vals = rCorrect.detach().cpu().numpy() if hasattr(rCorrect, 'detach') else rCorrect
+        plt.plot(digits, vals, label=name, marker='o')
+    plt.xlabel("Digit")
+    plt.ylabel("Accuracy")
+    plt.title("Accuracy per Digit: Model Comparison")
+    plt.xticks(digits)
+    plt.ylim(0, 1.05)
+    plt.legend()
+    plt.grid(True)
+    TheReport.save_figure(fig, "Combined Accuracy Comparison")
+    plt.show(block=False)
+
+def plotEpochComparison():
+    """Plot epoch-level accuracy comparison from saved CSV files."""
+    fig = plt.figure(figsize=(10, 5))
+    for fn in ["SimpleModel", "ErgodicModel", "Ergodic - Normed", "Ergodic - Reversible"]:
+        csv_path = output_path(f"{fn}.csv")
+        if os.path.exists(csv_path):
+            plotErrorbarsFromFile(fn)
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.title("Model Comparison")
+    plt.legend()
+    plt.grid(True)
+    TheReport.save_figure(fig, "Model Comparison")
+    plt.show(block=False)
+
+def _derived_name(ergodic, certainty, quantized, normed=False, reverse=False, invert=False):
+    """Generate a human-readable model name from its flags."""
+    if not ergodic and not certainty and not quantized:
+        return "SimpleModel"
+    parts = []
+    if ergodic:
+        parts.append("Ergodic")
+    if certainty:
+        parts.append("Certainty")
+    if quantized:
+        parts.append("Quantized")
+    if normed:
+        parts.append("Normed")
+    if invert:
+        parts.append("Invertible")
+    elif reverse:
+        parts.append("Reversible")
+    return " + ".join(parts) if parts else "DerivedModel"
+
+
+def BasicModelFactory(config_path):
+    """Create, train, and evaluate models from an XML config file.
+
+    Dispatches to the right model class based on <architecture> flags:
+      - modelType=lm         → BasicModel (language model path)
+      - modelType=passthrough → BasicModel (passthrough path)
+      - Otherwise             → DerivedModel parameterized by:
+            ergodic, certainty, quantized, normed, reverse, invert
+    """
+    cfg = BaseModel.load_config(config_path)
+    arch = cfg.get("architecture", {})
     train = cfg.get("training", {})
     weights = cfg.get("weights", {})
 
@@ -1887,6 +2543,58 @@ def BasicModelFactory(config_path):
     if train.get("detectAnomaly", False):
         torch.autograd.set_detect_anomaly(True)
 
+    # --- DerivedModel path ---
+    # All flags live in <architecture>
+    ergodic   = arch.get("ergodic", False)
+    certainty = arch.get("certainty", False)
+    quantized = arch.get("quantized", False)
+    normed    = arch.get("normed", False)
+    reverse   = arch.get("reverse", False)
+    invert    = arch.get("invert", False)
+
+    is_derived = ergodic or certainty or quantized or normed or reverse or invert \
+                 or "ergodic" in arch or "certainty" in arch or "quantized" in arch
+
+    if is_derived:
+        TheData.load(dataset)
+        nInput = TheData.getInputSize()
+        nConcepts = arch.get("nConcepts", 20)
+        nOutput = TheData.getOutputSize()
+
+        # Set ObjectEncoding dimensions for the derived path
+        dim = 1
+        TheObjectEncoding.setInputDim(dim)
+        TheObjectEncoding.setPerceptDim(dim)
+        TheObjectEncoding.setConceptDim(dim)
+        TheObjectEncoding.setSymbolDim(0)
+        TheObjectEncoding.setOutputDim(dim)
+
+        numTrials = train.get("numTrials", 1)
+        numEpochs = train.get("numEpochs", 3)
+        batchSize = train.get("batchSize", 10)
+        completed_models = []
+
+        m = DerivedModel()
+        m.ergodic   = ergodic
+        m.certainty = certainty
+        m.quantized = quantized
+        m.hasNorm   = normed
+        if reverse or invert:
+            m.reversePass = True
+        if invert:
+            m.invertible = True
+        m.create(nInput=nInput, nConcepts=nConcepts, nOutput=nOutput)
+        m.name = _derived_name(ergodic, certainty, quantized, normed, reverse, invert)
+        m.runTrials(numTrials, numEpochs, batchSize)
+        if hasattr(m, 'rCorrect'):
+            completed_models.append((m.name, m.rCorrect, m))
+
+        if len(completed_models) > 1:
+            plotComparison([(name, rc) for name, rc, _ in completed_models])
+
+        return completed_models
+
+    # --- BasicModel path (LM or passthrough) ---
     if model_type == "passthrough":
         createPassThroughModel(dataset)
     else:
@@ -1920,11 +2628,35 @@ def BasicModelFactory(config_path):
             wpath = os.path.join(PROJECT_DIR, wpath)
         TheBasicModel.save_weights(wpath)
 
+    return []
+
+
+def _resolve_xml(path):
+    """Resolve an XML path relative to PROJECT_DIR if not absolute."""
+    if not os.path.isabs(path):
+        return os.path.join(PROJECT_DIR, path)
+    return path
+
 
 # Standalone execution entry point
 if __name__ == "__main__":
     import sys
-    xml = sys.argv[1] if len(sys.argv) > 1 else os.path.join(PROJECT_DIR, "data", "xor.xml")
-    if not os.path.isabs(xml):
-        xml = os.path.join(PROJECT_DIR, xml)
-    BasicModelFactory(xml)
+
+    if len(sys.argv) > 1 and sys.argv[1] == "--compare":
+        # Compare mode: run two XML configs and plot per-digit accuracy side by side
+        xml1 = _resolve_xml(sys.argv[2])
+        xml2 = _resolve_xml(sys.argv[3])
+        TheReport.add_xml(xml1)
+        TheReport.add_xml(xml2)
+        results = BasicModelFactory(xml1) + BasicModelFactory(xml2)
+        if len(results) >= 2:
+            plotComparison([(name, rc) for name, rc, _ in results])
+            plotCombinedAccuracy([(name, rc) for name, rc, _ in results])
+            plotCombinedLoss([m for _, _, m in results])
+    else:
+        # Single run mode
+        xml = _resolve_xml(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(PROJECT_DIR, "data", "xor.xml")
+        TheReport.add_xml(xml)
+        BasicModelFactory(xml)
+
+    TheReport.write_html()

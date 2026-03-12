@@ -3,7 +3,7 @@
   <architecture>
     <nConcepts>20</nConcepts>
     <ergodic>true</ergodic>
-    <certainty>true</certainty>
+    <certainty>false</certainty>
     <quantized>false</quantized>
     <normed>false</normed>
     <reverse>false</reverse>

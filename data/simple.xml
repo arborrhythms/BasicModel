@@ -2,17 +2,18 @@
 <model>
   <architecture>
     <nConcepts>20</nConcepts>
+    <ergodic>false</ergodic>
+    <certainty>false</certainty>
+    <quantized>false</quantized>
+    <normed>false</normed>
+    <reverse>false</reverse>
+    <invert>false</invert>
   </architecture>
 
   <training>
     <dataset>mnist</dataset>
     <numTrials>1</numTrials>
-    <numEpochs>3</numEpochs>
+    <numEpochs>20</numEpochs>
     <batchSize>10</batchSize>
-    <traditional>true</traditional>
-    <ergodic>false</ergodic>
-    <normed>false</normed>
-    <reverse>false</reverse>
-    <invert>false</invert>
   </training>
 </model>
