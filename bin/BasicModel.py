@@ -1,4 +1,5 @@
 import math, os, warnings
+from contextlib import nullcontext
 import numpy as np
 import torch
 import torch.nn as nn
@@ -24,27 +25,32 @@ from functools import partial
 
 from datetime import datetime
 
-BASE_DIR = os.path.dirname(__file__)
-PROJECT_DIR = os.path.dirname(BASE_DIR)  # basicmodel/ root
-DATA_DIR = os.path.join(PROJECT_DIR, "data")
-OUTPUT_DIR = os.path.join(PROJECT_DIR, "output")
+class ProjectPaths:
+    """Centralized path resolution for the basicmodel project."""
+    BASE_DIR    = os.path.dirname(__file__)
+    PROJECT_DIR = os.path.dirname(BASE_DIR)  # basicmodel/ root
+    DATA_DIR    = os.path.join(PROJECT_DIR, "data")
+    OUTPUT_DIR  = os.path.join(PROJECT_DIR, "output")
 
-def ensure_output_dir():
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    return OUTPUT_DIR
+    @classmethod
+    def ensure_output_dir(cls):
+        os.makedirs(cls.OUTPUT_DIR, exist_ok=True)
+        return cls.OUTPUT_DIR
 
-def output_path(filename):
-    return os.path.join(ensure_output_dir(), filename)
+    @classmethod
+    def output_path(cls, filename):
+        return os.path.join(cls.ensure_output_dir(), filename)
 
-def output_stem(stem):
-    return os.path.join(ensure_output_dir(), stem)
+    @classmethod
+    def output_stem(cls, stem):
+        return os.path.join(cls.ensure_output_dir(), stem)
 
-def output_resolve_xml(path):
-    """Resolve an XML path relative to PROJECT_DIR if not absolute."""
-    if not os.path.isabs(path):
-        return os.path.join(PROJECT_DIR, path)
-    return path
-
+    @classmethod
+    def resolve_xml(cls, path):
+        """Resolve an XML path relative to PROJECT_DIR if not absolute."""
+        if not os.path.isabs(path):
+            return os.path.join(cls.PROJECT_DIR, path)
+        return path
 
 class Report:
     """Collects timestamped SVG figures and XML configs, then writes an HTML report."""
@@ -53,11 +59,20 @@ class Report:
         self.figures = []       # list of (title, svg_path)
         self.xml_configs = []   # list of (name, xml_content)
 
+    def show_figure(self, fig=None):
+        """Display figures only on interactive backends; otherwise close them."""
+        backend = str(plt.get_backend()).lower()
+        if "agg" in backend or backend == "template":
+            if fig is not None:
+                plt.close(fig)
+            return
+        plt.show(block=False)
+
     def save_figure(self, fig, title):
         """Save a matplotlib figure as a timestamped SVG and register it."""
         safe = title.replace(" ", "_").replace("/", "-")
         filename = f"{self.timestamp}_{safe}.svg"
-        path = output_path(filename)
+        path = ProjectPaths.output_path(filename)
         fig.savefig(path, format='svg', bbox_inches='tight')
         self.figures.append((title, filename))
         return path
@@ -72,7 +87,7 @@ class Report:
         """Write the collected figures and configs into a single HTML file."""
         if not self.figures:
             return None
-        html_path = output_path(f"{self.timestamp}_report.html")
+        html_path = ProjectPaths.output_path(f"{self.timestamp}_report.html")
         lines = [
             '<!DOCTYPE html>',
             '<html><head>',
@@ -121,7 +136,7 @@ class Report:
         plt.legend()
         plt.grid(True)
         self.save_figure(fig, f"{model_name} Accuracy")
-        plt.show(block=False)
+        self.show_figure(fig)
 
     def plotAccuracyAndCertainty(self, model_name, rCorrect, reversePass=False, last_x_pred=None):
         """Plot per-digit accuracy with certainty, and optionally reconstruction images."""
@@ -133,7 +148,7 @@ class Report:
         plt.legend()
         plt.grid(True)
         self.save_figure(fig, f"{model_name} Accuracy")
-        plt.show(block=False)
+        self.show_figure(fig)
 
         if reversePass and last_x_pred is not None:
             for i in range(0, 10):
@@ -145,7 +160,7 @@ class Report:
                 image = np.reshape(image, (28, 28))
                 plt.imshow(image)
                 self.save_figure(fig, f"{model_name} Reconstruction {num}")
-                plt.show(block=False)
+                self.show_figure(fig)
 
     def plotLoss(self, model_name, trainErr, valErr, testErr):
         """Plots the training, validation, and test losses over time."""
@@ -168,11 +183,15 @@ class Report:
         plt.grid(True)
 
         self.save_figure(fig, f"{model_name} Error")
-        plt.show(block=False)
+        self.show_figure(fig)
 
     def plotActivations(self, figure=1, percepts=None, concepts=None, symbols=None):
-        fig = plt.figure(figure, figsize=(12, 4))
-        fig.clf()
+        if plt.fignum_exists(figure):
+            fig = plt.figure(figure)
+            fig.set_size_inches(12, 4, forward=True)
+            fig.clf()
+        else:
+            fig = plt.figure(figure, figsize=(12, 4))
 
         if percepts is not None:
             p = percepts[-1, :, :].squeeze()
@@ -199,7 +218,7 @@ class Report:
             plt.title("Symbolic Activations")
 
         plt.tight_layout()
-        plt.show(block=False)
+        self.show_figure(fig)
 
     def plotSpace(self, model):
         """Visualizes learned weight parameters via PCA projections."""
@@ -207,7 +226,7 @@ class Report:
         pca = PCA(n_components=2)
         perc_2d = pca.fit_transform(perc_weights)
 
-        plt.figure(figsize=(18, 5))
+        fig = plt.figure(figsize=(18, 5))
 
         plt.subplot(1, 3, 1)
         plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
@@ -248,7 +267,7 @@ class Report:
         plt.title("Symbolic Weights (Lollipop Plot)")
 
         plt.tight_layout()
-        plt.show(block=False)
+        self.show_figure(fig)
 
     def plotNetwork(self, model):
         """Uses Torchviz to visualize the computation graph."""
@@ -256,7 +275,7 @@ class Report:
         output, input, _, _ = model.runTest(TheData.test_input, TheData.test_output)
         dot = make_dot(output, params=dict(model.named_parameters()))
         dot.format = "png"
-        graph_path = dot.render(output_stem(f"graph_{model.name}"))
+        graph_path = dot.render(ProjectPaths.output_stem(f"graph_{model.name}"))
         print(f"Saved network graph as {graph_path}")
 
     def plotErrorbars(self, model_name, acc):
@@ -267,7 +286,7 @@ class Report:
 
     def plotErrorbarsFromFile(self, fn):
         """Load a CSV of trial accuracies and add an errorbar series to the current plot."""
-        acc = np.loadtxt(output_path(f"{fn}.csv"), delimiter=",")
+        acc = np.loadtxt(ProjectPaths.output_path(f"{fn}.csv"), delimiter=",")
         y = np.mean(acc, axis=0)
         y_err = np.std(acc, axis=0)
         x = list(range(1, len(y) + 1))
@@ -295,7 +314,7 @@ class Report:
         plt.legend()
         plt.grid(True, axis='y', alpha=0.3)
         path = self.save_figure(fig, "Digit Comparison")
-        plt.show(block=False)
+        self.show_figure(fig)
         print(f"Comparison saved to {path}")
 
     def plotCombinedLoss(self, models):
@@ -325,7 +344,7 @@ class Report:
         plt.legend()
         plt.grid(True)
         self.save_figure(fig, "Combined Error Comparison")
-        plt.show(block=False)
+        self.show_figure(fig)
 
     def plotCombinedAccuracy(self, models):
         """Overlay per-digit accuracy curves from multiple models on shared axes.
@@ -346,13 +365,13 @@ class Report:
         plt.legend()
         plt.grid(True)
         self.save_figure(fig, "Combined Accuracy Comparison")
-        plt.show(block=False)
+        self.show_figure(fig)
 
     def plotEpochComparison(self):
         """Plot epoch-level accuracy comparison from saved CSV files."""
         fig = plt.figure(figsize=(10, 5))
         for fn in ["SimpleModel", "ErgodicModel", "Ergodic - Normed", "Ergodic - Reversible"]:
-            csv_path = output_path(f"{fn}.csv")
+            csv_path = ProjectPaths.output_path(f"{fn}.csv")
             if os.path.exists(csv_path):
                 self.plotErrorbarsFromFile(fn)
         plt.xlabel("Epoch")
@@ -361,7 +380,7 @@ class Report:
         plt.legend()
         plt.grid(True)
         self.save_figure(fig, "Model Comparison")
-        plt.show(block=False)
+        self.show_figure(fig)
 TheReport = Report()
 
 class PositionalEncoding(nn.Module):
@@ -573,9 +592,9 @@ class Data():
         self.train_input = self.train_input[rand_indx][:]
         self.train_output = self.train_output[rand_indx][:]
     def loadMNist(self):
-        df = pd.read_csv(os.path.join(DATA_DIR, 'mnist_train.csv'))
+        df = pd.read_csv(os.path.join(ProjectPaths.DATA_DIR, 'mnist_train.csv'))
         train = df.values
-        df = pd.read_csv(os.path.join(DATA_DIR, 'mnist_test.csv'))
+        df = pd.read_csv(os.path.join(ProjectPaths.DATA_DIR, 'mnist_test.csv'))
         test = df.values
         self.train_input  = torch.tensor(train[:, 1:]/255.0, dtype=torch.float)
         mnistMean = torch.mean(self.train_input)
@@ -621,7 +640,7 @@ class Data():
         self.test_output       = data["test"]["label"]
         self.processLM(data)
     def loadTomatoes(self):
-        cache_file = os.path.join(DATA_DIR, "rottenTomatoes.data")
+        cache_file = os.path.join(ProjectPaths.DATA_DIR, "rottenTomatoes.data")
 
         # Load or cache the pre-trained Word2Vec model
         if os.path.exists(cache_file):
@@ -713,21 +732,24 @@ class VectorSet(nn.Module):
     frozen           = []
     returnOnlyFrozen = False
     freezingTemp     = 0.25
+    passThrough      = False
     # linear = nn.Linear(10, 5)
     # tracker = ColumnUsageTracker(linear, freezeThreshold=0.01)
 
     def getSize(self):
         return self.nVectors
 
-    def create(self, nInput, nVectors, nDim, customVQ=True, signed=False):
-        self.nInput    = nInput
-        self.nVectors  = nVectors
-        self.nDim      = nDim
-        self.nVectors  = nVectors
-        self.customVQ  = customVQ
-        self.signed    = signed
+    def create(self, nInput, nVectors, nDim, customVQ=True, signed=False, passThrough=False):
+        self.nInput      = nInput
+        self.nVectors    = nVectors
+        self.nDim        = nDim
+        self.customVQ    = customVQ
+        self.signed      = signed
+        self.passThrough = passThrough
         if nDim != None:
             self.embeddingSize = TheObjectEncoding.getEmbeddingSize(nDim)
+        if passThrough:
+            return
     def updateWeights(self, embed_sum, cluster_size):
         # Zero out gradients for frozen indices
         weights = torch.ones(self.vq.codebook_size)
@@ -776,6 +798,8 @@ class VectorSet(nn.Module):
                 vec[i, :] = F.normalize(TheObjectEncoding(vec[i, :].unsqueeze(0).unsqueeze(0)), p=2, dim=1)
             self.vectors = vec[:, :]
     def forward(self, input, t=0):
+        if self.passThrough:
+            return self._passthroughForward(input, t)
         # X should be of size batch x nInput x nDim
         # Pad X if necessary
         x     = input
@@ -834,6 +858,13 @@ class VectorSet(nn.Module):
                 act[b, unfrozen] = 0
             self.freeze(activations = self.codebookAct.get())
         return x
+    def _passthroughForward(self, x, t=0):
+        """PassThrough forward: identity transform, skipping quantization."""
+        return x
+    def reverse(self, y, t=0):
+        if self.passThrough:
+            return y
+        return y  # existing VectorSet has no explicit reverse beyond identity
 
     # The following routine needs also to check if the inner product is positive,
     # otherwise the intersection of the hyperplanes outside of the unit circle
@@ -985,35 +1016,6 @@ class VectorSet(nn.Module):
         return torch.max(x, y)
     def intersection(self, x, y):
         return torch.min(x, y)
-# In PassThrough, the perceptual space comes directly from the input space: percepts are not used.
-class PassThrough(VectorSet):
-    def create(self, nInput, nVectors, nDim):
-        super().create(nInput, nVectors, nDim)
-    def forward(self, x, t=0):
-        batch = x.shape[0]
-        y = np.zeros([batch, self.nVectors, self.embeddingSize])
-        embeddingZeroPad = TheObjectEncoding.objectSize
-        for b in range(batch):
-            for n in range(0, self.nInput+1):
-                data = np.concatenate((x[b:b + 1, :], np.zeros([1, embeddingZeroPad])), axis=1)
-                data = TheObjectEncoding.forward(data)
-                y[b, n, 0:self.embeddingSize] = data
-            data = np.zeros([1, self.embeddingSize])
-            for n in range(self.nInput, self.nVectors):
-                y[b, n, 0:self.embeddingSize] = data
-        y =  torch.from_numpy(np.array(y, dtype=np.float32))
-        return y
-    def reverse(self, y, t):
-        x = y
-        return x
-class UnquantizedVSet(VectorSet):
-    """Pass-through VectorSet that skips quantization entirely."""
-    def create(self, nInput, nVectors, nDim):
-        super().create(nInput, nVectors, nDim)
-    def forward(self, x, t=0):
-        return x
-    def reverse(self, y, t=0):
-        return y
 # An LVQ implementation with an inverse.
 class ReversibleDictionary(VectorSet):
     talking = True
@@ -1130,8 +1132,8 @@ class LanguageModel(VectorSet):
     def create(self, untokenized, nInput=None, nVectors=None, nDim=None, pretrained=True):
         super().create(nInput, nVectors, nDim)
         tokenized = self.tokenizeList(untokenized)
-        data_embeddings_dir = os.path.join(PROJECT_DIR, "data", "embeddings")
-        output_embeddings_dir = os.path.join(PROJECT_DIR, "output", "embeddings")
+        data_embeddings_dir = os.path.join(ProjectPaths.PROJECT_DIR, "data", "embeddings")
+        output_embeddings_dir = os.path.join(ProjectPaths.PROJECT_DIR, "output", "embeddings")
         os.makedirs(output_embeddings_dir, exist_ok=True)
         if pretrained:
             self.model_path = os.path.join(output_embeddings_dir, "word2vec_custom_pretrained.pt")
@@ -1263,11 +1265,16 @@ class Space(nn.Module):
             self.vectors().create(self.inputShape[0], self.nVectors, self.nDim, self.customVQ)
             self.vectors().addVectors(nVec=self.nPrototypes)
         else:
-            vs = UnquantizedVSet()
-            vs.create(self.inputShape[0], self.nVectors, self.nDim)
+            vs = VectorSet()
+            vs.create(self.inputShape[0], self.nVectors, self.nDim, passThrough=True)
             self.vectorSet.append(vs)
     def forwardBegin(self, x, t=0.0, reshape=False):
         self.batch = x.shape[0]
+        # Anneal temperature on all ergodic layers in this Space
+        if t > 0:
+            for l in self.layers:
+                if hasattr(l, 'global_temp_anneal'):
+                    l.global_temp_anneal(t)
         if reshape:
             x = self.flatten(x, True)
             # assert list(x.shape) == [self.batch, self.inputShape[0] *self.inputShape[1]]
@@ -1321,50 +1328,71 @@ class Space(nn.Module):
             l.paramUpdate()
 class InputSpace(Space):
     name = "Inputs"
-    def __init__(self, inputShape, outputShape, nVectors, nDim=None, LM=None, tokenizedInput=False, useVQ=True):
+    def __init__(self, inputShape, outputShape, nVectors, nDim=None, model_type="simple",
+                 tokenizedInput=False, useVQ=True, pretrained=False, data=None):
         super(InputSpace, self).__init__(inputShape, outputShape, nVectors, nDim, useVQ=useVQ)
-        if LM is not None:
-            self.nDim = LM.nDim
-            if True:
-                self.vectorSet.append(ReversibleDictionary())
-                self.vectors().create(self.inputShape[0], self.nVectors, self.nDim, customVQ=True)
-                self.vectors().addVectors(nVec=LM.getSize(), LM=LM)
-            else:
-                self.vectorSet.append(LM)
-                #self.vectors().create(self.inputShape[0], self.nVectors, self.nDim)
-                #self.vectors().addVectors(nVec=LM.getSize(), LM=LM)
-        else:
+        self.data = data
+        self.model_type = model_type
+        if model_type == "lm":
+            lm = LanguageModel()
+            lm.create(data.combinedTokens, nInput=0, nVectors=nVectors, pretrained=pretrained)
+            self.nDim = lm.nDim
+            # Update ObjectEncoding dimensions now that we know the LM embedding size
+            TheObjectEncoding.setDimensions(lm.nDim, lm.nDim, lm.nDim, data.getOutputSize())
+            # Update our own outputShape to match actual LM embedding size
+            self.outputShape = [self.outputShape[0], TheObjectEncoding.inputDim]
+            self.vectorSet.append(ReversibleDictionary())
+            self.vectors().create(self.inputShape[0], self.nVectors, self.nDim, customVQ=True)
+            self.vectors().addVectors(nVec=lm.getSize(), LM=lm)
+        elif model_type == "passthrough":
+            vs = VectorSet()
+            vs.create(self.inputShape[0], nVectors, nDim, passThrough=True)
+            self.vectorSet.append(vs)
+        elif model_type == "vq":
+            vs = VectorSet()
+            vs.create(self.inputShape[0], nVectors, nDim, nVectors=self.inputShape[0])
+            self.vectorSet.append(vs)
+        else:  # "simple"
             self.createVectorSet(quantized=self.useVQ)
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
         self.input          = torch.FloatTensor
         self.tokenizedInput = tokenizedInput
         fullSize  = outputShape[0]*outputShape[1]
         self.lift = LiftingLayer(fullSize, fullSize)
+    # Data client interface
+    def getTrainData(self):
+        return self.data.train_input, self.data.train_output
+    def getTestData(self):
+        return self.data.test_input, self.data.test_output
+    def prepInput(self, inputBatch, hasThoughts):
+        if hasThoughts:
+            return torch.stack(inputBatch, dim=0).unsqueeze(1)
+        else:
+            return inputBatch.unsqueeze(2)
+    def shuffle(self):
+        self.data.shuffle()
     # The world presenting itself
     def forward(self, input, t=0, mask=None):
         self.batch = input.shape[0]
         assert list(input.shape) == [self.batch, self.inputShape[0], self.inputShape[1]]
         self.input = self.vectors().forward(input, t)
-        #self.input = self.lift.forward(self.input)
         _, output = self.getEmbeddedIO()
         assert list(self.input.shape) == [self.batch, self.outputShape[0], output]
         return self.input
     def reverse(self, y, t=0):
         y = self.reverseBegin(y, t)
-        #y = self.lift.reverse(y)
-        #x = x.unsqueeze(0).unsqueeze(0)
-        #x = torch.cat([torch.zeros([1, 1, TheObjectEncoding.conceptDim]), x[:, :, 1:]], dim=2)
-        #output[:, :, 0:TheObjectEncoding.conceptDim] = output[:, :, 0:TheObjectEncoding.conceptDim] * activation  # multiply the codebook vector by the activation
         self.input = self.vectors().reverse(y, t)
-        #where, when = TheObjectEncoding.reverse(self.percepts)
-        #self.input = self.reverseEnd(self.input, t)
+        self.reconstructed = self.input.detach()
         return self.input
 class PerceptualSpace(Space):
     name = "Percepts"
     hasAttention = True
 
-    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False):
+    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False, passThrough=False):
         super(PerceptualSpace, self).__init__(inputShape, outputShape, nVectors, nDim, useVQ=useVQ, nPrototypes=nPrototypes, reversePass=reversePass, processSymbols=processSymbols)
+        self.passThrough = passThrough
+        if passThrough:
+            return
         input, output = self.getEmbeddedIO()
         self.attention = AttentionLayer(self.nDim, self.nDim)
         if reversePass:
@@ -1390,8 +1418,11 @@ class PerceptualSpace(Space):
         pass
     # Perception
     def forward(self, x, t=0):
+        if self.passThrough:
+            self.batch = x.shape[0]
+            return x
         x = self.forwardBegin(x, t)
-        x = self.forwardPi(x, t)
+        x = self.forwardPi(x)
         if self.hasAttention:
             x = self.attention.forward(x, t)
         if self.useVQ:
@@ -1407,7 +1438,10 @@ class PerceptualSpace(Space):
         return self.percepts
     # Manifesting
     def reverse(self, y, t=0):
-        assert False, "Perceptual layer is not currently invertible"
+        if self.passThrough:
+            return y
+        # Full perceptual reverse not yet implemented; pass through for now
+        return y
         self.percepts = self.reverseBegin(y, t)
         if self.processSymbols:
             self.percepts = self.dereference(self.percepts)
@@ -1538,10 +1572,11 @@ class SymbolicSpace(Space):
 
     # The current implementation merely symbolizes all concepts.
     # Therefore, no symbol learning is necessary.
-    def __init__(self, inputShape, outputShape, nVectors, nDim, reversePass=False, conceptualSpace=None, processSymbols=False):
+    def __init__(self, inputShape, outputShape, nVectors, nDim, reversePass=False, conceptualSpace=None, processSymbols=False, passThrough=False):
         super(SymbolicSpace, self).__init__( inputShape, outputShape, nVectors, nDim, customVQ=True, reversePass=reversePass, processSymbols=processSymbols)
         assert(inputShape[0] == nVectors) # 1:1 mapping
         self.conceptualSpace = conceptualSpace
+        self.passThrough = passThrough
         #self.mapping     = SoftMap(inputShape[1], nDim, soft=False)
         #self.createVectorSet()
     def distance(self, x, y):
@@ -1570,9 +1605,10 @@ class SymbolicSpace(Space):
     # Naming
     def forward(self, x, t=0):
         self.symbols = self.forwardBegin(x, t)
-        if self.processSymbols: # reduce the embedding vector to the symbolic encoding
-            self.symbols = self.computeActivation(self.symbols)
-        self.symbols = self.discretize(self.symbols)
+        if not self.passThrough:
+            if self.processSymbols: # reduce the embedding vector to the symbolic encoding
+                self.symbols = self.computeActivation(self.symbols)
+            self.symbols = self.discretize(self.symbols)
         self.symbols = self.forwardEnd(self.symbols, t)
         if self.useVQ:
             self.symbols  = self.vectors().forward(self.symbols , t)
@@ -1580,8 +1616,9 @@ class SymbolicSpace(Space):
     # Interpretation
     def reverse(self, y, t=0):
         self.symbols = self.reverseBegin(y,t)
-        if self.processSymbols: # map the symbolic encoding to the embedding vector
-            self.symbols = self.conceptualSpace.dereference(self.symbols)
+        if not self.passThrough:
+            if self.processSymbols: # map the symbolic encoding to the embedding vector
+                self.symbols = self.conceptualSpace.dereference(self.symbols)
         self.symbols = self.reverseEnd(self.symbols, t)
         return self.symbols
 
@@ -1631,8 +1668,9 @@ class SyntacticSpace(Space):
         pass
 class OutputSpace(Space):
     name = "Outputs"
-    def __init__(self, inputShape, outputShape, nVectors, nDim, reversePass=False):
+    def __init__(self, inputShape, outputShape, nVectors, nDim, reversePass=False, data=None):
         super(OutputSpace, self).__init__(inputShape, outputShape, nVectors, nDim)
+        self.data = data
         input, output = self.getEmbeddedIO()
         # the output is reshaped, so we can't use the above formula
         input  = self.inputShape[0]  * input
@@ -1649,6 +1687,13 @@ class OutputSpace(Space):
             self.forwardLinear = LinearLayer(input, output)
         self.params = list(self.parameters())
         self.layers = [self.forwardLinear] if not reversePass else [self.linear1, self.linear2]
+    def getTestOutput(self):
+        return self.data.test_output if self.data else None
+    def prepOutput(self, outputBatch, hasThoughts):
+        if hasThoughts:
+            return torch.stack(outputBatch, dim=0).unsqueeze(1)
+        else:
+            return outputBatch.unsqueeze(2)
     # Acting
     def forward(self, x, t=0):
         y = super().forwardBegin(x, t, reshape=True)
@@ -1657,6 +1702,7 @@ class OutputSpace(Space):
         output = self.forwardEnd(output, t, reshape=True)
         if self.useVQ:
             self.output  = self.vectors().output(self.percepts , t)
+        self.predicted = output.detach()
         return output
     # Being acted upon
     def reverse(self, y, t=0):
@@ -1683,7 +1729,7 @@ class BaseModel(nn.Module):
         """
         import xml.etree.ElementTree as ET
         if config_path is None:
-            config_path = os.path.join(PROJECT_DIR, "model.xml")
+            config_path = os.path.join(ProjectPaths.PROJECT_DIR, "model.xml")
         if not os.path.exists(config_path):
             return {}
         tree = ET.parse(config_path)
@@ -1707,16 +1753,16 @@ class BaseModel(nn.Module):
         return cfg
 
     @staticmethod
-    def from_config(config_path=None, LM=None):
+    def from_config(config_path=None, model_type="simple", data=None, pretrained=False):
         """Factory: create the right model type from XML config."""
         cfg = BaseModel.load_config(config_path)
         arch = cfg.get("architecture", {})
-        model_type = arch.get("type", "basic")
-        if model_type == "simple":
-            model = SimpleModel()
-        else:
-            model = BasicModel()
-        model.create_from_config(config_path, LM)
+        arch_type = arch.get("type", "basic")
+        model = BasicModel()
+        if arch_type == "simple":
+            model.nSubThoughts = 0
+            model.nThoughts    = 0
+        model.create_from_config(config_path, model_type=model_type, data=data, pretrained=pretrained)
         return model, cfg
 
     def create(self, **kwargs):
@@ -1743,9 +1789,10 @@ class BaseModel(nn.Module):
         print(f"\n\n==== {self.name} ====")
         for trial in range(numTrials):
             print(f"\nTrial [{trial + 1}/{numTrials}]")
-            self.create(nInput=self.nInput, nConcepts=self.nConcepts, nOutput=self.nOutput)
+            self.create(nInput=self.nInput, nConcepts=self.nConcepts, nOutput=self.nOutput,
+                       model_type=self.model_type, data=self.data, pretrained=self.pretrained)
             acc[trial, :] = self.run(numEpochs=numEpochs, batchSize=batchSize, lr=lr)
-        np.savetxt(output_path(f"{self.name}.csv"), np.array(acc), delimiter=",")
+        np.savetxt(ProjectPaths.output_path(f"{self.name}.csv"), np.array(acc), delimiter=",")
         return acc
 
     def paramUpdate(self):
@@ -1755,7 +1802,7 @@ class BaseModel(nn.Module):
     def save_weights(self, path=None):
         """Persist model weights and ergodic state to disk."""
         if path is None:
-            path = os.path.join(OUTPUT_DIR, "weights.pt")
+            path = os.path.join(ProjectPaths.OUTPUT_DIR, "weights.pt")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         torch.save(self.state_dict(), path)
         print(f"[{self.name}] Weights saved to {path}")
@@ -1763,7 +1810,7 @@ class BaseModel(nn.Module):
     def load_weights(self, path=None, strict=False):
         """Load model weights from disk."""
         if path is None:
-            path = os.path.join(OUTPUT_DIR, "weights.pt")
+            path = os.path.join(ProjectPaths.OUTPUT_DIR, "weights.pt")
         if not os.path.exists(path):
             print(f"[{self.name}] No weights found at {path}")
             return False
@@ -1774,226 +1821,62 @@ class BaseModel(nn.Module):
 
     def mnistReport(self):
         """Run test epoch, compute per-digit accuracy, and plot."""
-        _, _, y_pred, last_x_pred = self.runEpoch(TheData.test_input, TheData.test_output, lr=0)
+        test_input, test_output = self.inputSpace.getTestData()
+        _, _, y_pred, last_x_pred = self.runEpoch(test_input, test_output, lr=0)
         _, predicted = torch.max(y_pred, 1)
-        _, actual = torch.max(TheData.test_output, 1)
-
-        rCorrect = torch.zeros((10))
-        for i in range(0,10):
-            total    = (actual == i).sum().item()
-            correct  = (actual==i) & (predicted==actual)
-            nCorrect = correct.sum().item()
-            rCorrect[i] = nCorrect / total
-            print(f"Correctly predicted {i}: {rCorrect[i]}")
-
-        TheReport.plotAccuracy(self.name, rCorrect)
-        return rCorrect
-
-class SimpleModel(BaseModel):
-    """Unified parameterized model: InputSpace → ConceptualSpace → OutputSpace.
-
-    Three independent levers:
-      ergodic   – SigmaLayer (with temperature/alpha adaptation) vs LinearLayer+Tanh
-      certainty – CertaintyWeightedCrossEntropy vs nn.CrossEntropyLoss
-      quantized – VectorSet codebook snapping vs pass-through
-    """
-    name       = "SimpleModel"
-    vSet       = None
-    invertible = False
-    hasNorm    = False
-    ergodic    = True
-    certainty  = True
-    quantized  = False
-
-    def create_from_config(self, config_path=None, LM=None):
-        """Create the model using settings from an XML config file."""
-        cfg = self.load_config(config_path)
-        arch = cfg.get("architecture", {})
-        self.ergodic = arch.get("ergodic", self.ergodic)
-        self.certainty = arch.get("certainty", self.certainty)
-        self.quantized = arch.get("quantized", self.quantized)
-        self.create(
-            nInput=arch.get("nInput", 32),
-            nConcepts=arch.get("nConcepts", 256),
-            nOutput=arch.get("nOutput", 32),
-        )
-        return cfg
-
-    def create(self, nInput=32, nConcepts=256, nOutput=32):
-        self.nInput    = nInput
-        self.nConcepts = nConcepts
-        self.nOutput   = nOutput
-
-        inputDim   = 1
-        conceptDim = 1
-        outputDim  = 1
-
-        self.inputSpace = InputSpace([self.nInput, inputDim],
-                                     [self.nInput, inputDim],
-                                     self.nInput, nDim=inputDim,
-                                     useVQ=self.quantized)
-        self.conceptualSpace = ConceptualSpace([self.nInput, inputDim],
-                                               [self.nConcepts, conceptDim],
-                                               self.nConcepts, conceptDim,
-                                               reversePass=self.reversePass,
-                                               invertible=self.invertible,
-                                               hasNorm=self.hasNorm,
-                                               ergodic=self.ergodic,
-                                               useVQ=self.quantized)
-        self.outputSpace = OutputSpace([self.nConcepts, conceptDim],
-                                       [self.nOutput, outputDim],
-                                       self.nOutput, outputDim,
-                                       reversePass=False)
-
-        self.spaces = [self.inputSpace, self.conceptualSpace, self.outputSpace]
-    def forward(self, data):
-        percepts = self.inputSpace(data)
-        concepts = self.conceptualSpace(percepts)
-        symbols  = self.outputSpace(concepts)
-        return symbols, concepts
-    def reverse(self, concepts):
-        percepts = self.conceptualSpace.reverse(concepts)
-        data     = self.inputSpace.reverse(percepts)
-        return data, percepts
-    def runEpoch(self, input, output, lr=0.01, batchSize=10):
-        if lr:
-            optimizer = self.getOptimizer(lr=lr)
+        _, actual = torch.max(self.outputSpace.getTestOutput(), 1)
 
         if self.certainty:
-            criterionOutput = CertaintyWeightedCrossEntropy()
+            norms = torch.linalg.norm(self.outputSpace.forwardLinear.W, dim=0)
+            rCorrect = torch.zeros_like(norms)
         else:
-            criterionOutput = nn.CrossEntropyLoss()
-        criterionInput  = nn.MSELoss()
-
-        allOutput = []
-        allInput  = []
-        outErr    = 0
-        inErr     = 0
-        self.train(lr != 0)
-        for i in range(0, len(input), batchSize):
-            inputBatch  = input[i:i + batchSize]
-            outputBatch = output[i:i + batchSize]
-            batchSize   = len(inputBatch)
-
-            inputTensor  = inputBatch
-            inputTensor  = inputTensor.unsqueeze(2)
-            outputTensor = outputBatch
-            outputTensor = outputTensor.unsqueeze(2)
-
-            if lr:
-                optimizer.zero_grad()
-            outputPred, concepts = self.forward(inputTensor)
-            lossOut = criterionOutput(outputPred.squeeze(), outputTensor.squeeze())
-            if lr:
-                lossOut.backward()
-                if self.ergodic:
-                    self.paramUpdate()
-                optimizer.step()
-            outErr = lossOut.item()
-            outputPred = outputPred.clone().detach().squeeze()
-            if i == 0:
-                allOutput = outputPred
-            else:
-                allOutput = torch.concat((allOutput, outputPred), dim=0)
-
-            # Next run reverse
-            if self.reversePass:
-                if lr:
-                    optimizer.zero_grad()
-                inputPred, percepts = self.reverse(concepts.detach())
-                lossIn = criterionInput(inputPred.squeeze(), inputTensor.squeeze())
-                if lr:
-                    lossIn.backward()
-                    if self.ergodic:
-                        self.paramUpdate()
-                    optimizer.step()
-                inErr   = lossIn.item()
-                inputPred = inputPred.clone().detach().squeeze()
-                allInput = inputPred
-        return outErr, inErr, allOutput, allInput
-
-    def mnistReport(self):
-        """Run test epoch, compute per-digit accuracy with certainty analysis, and plot."""
-        _, _, y_pred, last_x_pred = self.runEpoch(TheData.test_input, TheData.test_output, lr=0)
-        _, predicted = torch.max(y_pred, 1)
-        _, actual = torch.max(TheData.test_output, 1)
-
-        norms = torch.linalg.norm(self.outputSpace.forwardLinear.W, dim=0)
-        rCorrect = torch.zeros_like(norms)
+            rCorrect = torch.zeros((10))
         for i in range(0,10):
             total    = (actual == i).sum().item()
             correct  = (actual==i) & (predicted==actual)
             nCorrect = correct.sum().item()
             rCorrect[i] = nCorrect / total
             print(f"Correctly predicted {i}: {rCorrect[i]}")
-            print(f"Weight norm: {norms[i]}")
+            if self.certainty:
+                print(f"Weight norm: {norms[i]}")
 
-        input_matrix = torch.stack((rCorrect, norms))
-        correlation_matrix = torch.corrcoef(input_matrix)
-        correlation_value = correlation_matrix[0, 1]
-        print(f"Pearson Correlation: {correlation_value}")
-
-        TheReport.plotAccuracyAndCertainty(self.name, rCorrect, self.reversePass, last_x_pred)
+        if self.certainty:
+            input_matrix = torch.stack((rCorrect, norms))
+            correlation_matrix = torch.corrcoef(input_matrix)
+            correlation_value = correlation_matrix[0, 1]
+            print(f"Pearson Correlation: {correlation_value}")
+            TheReport.plotAccuracyAndCertainty(self.name, rCorrect, self.reversePass, last_x_pred)
+        else:
+            TheReport.plotAccuracy(self.name, rCorrect)
         return rCorrect
-
-    def run(self, numEpochs=1, batchSize=10, lr=0.001, stoppingCriterion=0.1):
-        trainLosses       = [[],[]]
-        validationLosses  = [[],[]]
-        minValidationLoss = math.inf
-        testLosses        = [[],[]]
-        self.plot         = True
-        accuracy          = []
-        for epoch in range(numEpochs):
-            print(f"Epoch [{epoch + 1}/{numEpochs}]")
-            if epoch != 0:
-                outErr,inErr,allOut,lastIn = self.runEpoch(TheData.train_input, TheData.train_output, lr=lr, batchSize=batchSize)
-                trainLosses[0].append(outErr)
-                trainLosses[1].append(inErr)
-                print(f"Train Loss: {outErr:.4f},  {inErr:.4f}")
-                # Anneal global temperature: force convergence over training
-                if self.ergodic and numEpochs > 1:
-                    progress = epoch / (numEpochs - 1)
-                    for s in self.spaces:
-                        for l in s.layers:
-                            if hasattr(l, 'global_temp_anneal'):
-                                l.global_temp_anneal(progress)
-            outErr,inErr,allOut,lastIn = self.runEpoch(TheData.test_input, TheData.test_output, lr=0, batchSize=batchSize)
-            testLosses[0].append(outErr)
-            testLosses[1].append(inErr)
-            _, predicted = torch.max(allOut, 1)
-            _, actual = torch.max(TheData.test_output, 1)
-            total   = predicted.size(0)
-            correct = (predicted == actual).sum().item()
-            accuracy += [correct / total]
-            print(f"Test Accuracy: {100 * correct / total:.2f}%")
-            TheData.shuffle()
-            if outErr > minValidationLoss + stoppingCriterion:
-                print(f"Validation increasing")
-                minValidationLoss = outErr
-            if outErr < minValidationLoss:
-                minValidationLoss = outErr
-        if self.plot:
-            print(f"Final Stats:")
-            TheReport.plotLoss(self.name, trainLosses, validationLosses, testLosses)
-            self.rCorrect = self.mnistReport()
-        self.trainLosses = trainLosses
-        self.testLosses  = testLosses
-        return accuracy
-
 class BasicModel(BaseModel):
     nSubThoughts   = 1
     nThoughts      = 0
     processSymbols = False
     name           = "BasicModel"
+    # SimpleModel feature flags (active when nSubThoughts=0, nThoughts=0, no LM)
+    ergodic    = False
+    certainty  = False
+    quantized  = False
+    invertible = False
+    hasNorm    = False
 
-    def create_from_config(self, config_path=None, LM=None):
-        """Create the model using settings from model.xml.
+    def create_from_config(self, config_path=None, model_type="simple", data=None, pretrained=False):
+        """Create the model using settings from an XML config file.
 
-        Loads architecture parameters from config, creates the model,
-        and optionally loads saved weights if autoload is true.
+        Loads architecture parameters and feature flags from config,
+        creates the model, and optionally loads saved weights.
         """
         cfg = self.load_config(config_path)
         arch = cfg.get("architecture", {})
+        # Feature flags
+        self.ergodic    = arch.get("ergodic", self.ergodic)
+        self.certainty  = arch.get("certainty", self.certainty)
+        self.quantized  = arch.get("quantized", self.quantized)
+        self.invertible = arch.get("invertible", self.invertible)
+        self.hasNorm    = arch.get("hasNorm", self.hasNorm)
+        self.nSubThoughts = arch.get("nSubThoughts", self.nSubThoughts)
+        self.nThoughts    = arch.get("nThoughts", self.nThoughts)
         self.create(
             nInput=arch.get("nInput", 32),
             nPercepts=arch.get("nPercepts", 64),
@@ -2002,18 +1885,19 @@ class BasicModel(BaseModel):
             nWords=arch.get("nWords", 16),
             nOutput=arch.get("nOutput", 32),
             reversePass=arch.get("reversePass", True),
-            LM=LM,
+            model_type=model_type, data=data, pretrained=pretrained,
         )
         # Auto-load weights if configured
         wcfg = cfg.get("weights", {})
         if wcfg.get("autoload", True):
             wpath = wcfg.get("path", "output/weights.pt")
             if not os.path.isabs(wpath):
-                wpath = os.path.join(PROJECT_DIR, wpath)
+                wpath = os.path.join(ProjectPaths.PROJECT_DIR, wpath)
             self.load_weights(wpath)
         return cfg
 
-    def create(self, nInput=32,  nPercepts = 64, nConcepts=256, nSymbols=2, nWords=16, nOutput=32, reversePass=True, LM=None):
+    def create(self, nInput=32, nPercepts=64, nConcepts=256, nSymbols=2, nWords=16, nOutput=32,
+               reversePass=True, model_type="simple", data=None, pretrained=False):
         self.reversePass      = reversePass
         self.nInput           = nInput
         self.nOutput          = nOutput
@@ -2021,58 +1905,111 @@ class BasicModel(BaseModel):
         self.nConcepts        = nConcepts
         self.nSymbols         = nSymbols
         self.nWords           = nWords
+        self.data             = data
+        self.model_type       = model_type
+        self.pretrained       = pretrained
 
-        symbolicOutputDim     = TheObjectEncoding.symbolDim if self.processSymbols else TheObjectEncoding.conceptDim
+        hasThoughts = self.nSubThoughts > 0 or self.nThoughts > 0
 
-        self.inputSpace       = InputSpace([1, TheData.inputLength],
-                                           [self.nInput, TheObjectEncoding.inputDim],
-                                           self.nInput, nDim=TheObjectEncoding.inputDim, LM=LM)
-        self.conceptualSpace  = ConceptualSpace([self.nInput, TheObjectEncoding.inputDim],
-                                               [self.nConcepts, TheObjectEncoding.conceptDim],
-                                               self.nConcepts, TheObjectEncoding.conceptDim,
-                                               reversePass=reversePass,
-                                               nPrototypes=2 * self.nConcepts)
-        self.symbolicSpace    = SymbolicSpace([self.nConcepts, TheObjectEncoding.conceptDim],
-                                              [self.nSymbols, symbolicOutputDim],
-                                              self.nSymbols, TheObjectEncoding.symbolDim,
-                                              reversePass = reversePass,
-                                              conceptualSpace = self.conceptualSpace,
-                                              processSymbols = self.processSymbols)
-        self.spaces.extend([self.inputSpace, self.conceptualSpace, self.symbolicSpace])
-        if self.nSubThoughts == 1:
-            self.perceptualSpace2 = PerceptualSpace([self.nConcepts, symbolicOutputDim],
+        if hasThoughts:
+            # Full pathway: input → percepts → concepts → symbols → (thought loops) → output
+            self.inputSpace       = InputSpace([1, TheData.inputLength],
+                                               [self.nInput, TheObjectEncoding.inputDim],
+                                               self.nInput, nDim=TheObjectEncoding.inputDim,
+                                               model_type=model_type, data=data, pretrained=pretrained)
+            # Compute after InputSpace init (LM path updates ObjectEncoding dims)
+            symbolicOutputDim     = TheObjectEncoding.symbolDim if self.processSymbols else TheObjectEncoding.conceptDim
+
+            self.perceptualSpace  = PerceptualSpace([self.nInput, TheObjectEncoding.inputDim],
                                                     [self.nPercepts, TheObjectEncoding.perceptDim],
                                                     self.nPercepts, TheObjectEncoding.perceptDim,
+                                                    reversePass=reversePass,
+                                                    nPrototypes=2 * self.nPercepts)
+            self.conceptualSpace  = ConceptualSpace([self.nPercepts, TheObjectEncoding.perceptDim],
+                                                   [self.nConcepts, TheObjectEncoding.conceptDim],
+                                                   self.nConcepts, TheObjectEncoding.conceptDim,
+                                                   reversePass=reversePass,
+                                                   nPrototypes=2 * self.nConcepts)
+            self.symbolicSpace    = SymbolicSpace([self.nConcepts, TheObjectEncoding.conceptDim],
+                                                  [self.nSymbols, symbolicOutputDim],
+                                                  self.nSymbols, TheObjectEncoding.symbolDim,
+                                                  reversePass = reversePass,
+                                                  conceptualSpace = self.conceptualSpace,
+                                                  processSymbols = self.processSymbols)
+            self.spaces.extend([self.inputSpace, self.perceptualSpace, self.conceptualSpace, self.symbolicSpace])
+            if self.nSubThoughts == 1:
+                self.perceptualSpace2 = PerceptualSpace([self.nConcepts, symbolicOutputDim],
+                                                        [self.nPercepts, TheObjectEncoding.perceptDim],
+                                                        self.nPercepts, TheObjectEncoding.perceptDim,
+                                                        reversePass = reversePass,
+                                                        nPrototypes = 2*self.nPercepts)
+                self.conceptualSpace2 = ConceptualSpace([self.nPercepts, TheObjectEncoding.perceptDim],
+                                                        [self.nConcepts, TheObjectEncoding.conceptDim],
+                                                        self.nConcepts, TheObjectEncoding.conceptDim,
+                                                        reversePass = reversePass,
+                                                        nPrototypes = 2*self.nConcepts)
+                self.symbolicSpace2 = SymbolicSpace([self.nConcepts, TheObjectEncoding.conceptDim],
+                                                    [self.nSymbols, symbolicOutputDim],
+                                                    self.nSymbols, TheObjectEncoding.symbolDim,
                                                     reversePass = reversePass,
-                                                    nPrototypes = 2*self.nPercepts)
-            self.conceptualSpace2 = ConceptualSpace([self.nPercepts, TheObjectEncoding.perceptDim],
-                                                    [self.nConcepts, TheObjectEncoding.conceptDim],
-                                                    self.nConcepts, TheObjectEncoding.conceptDim,
-                                                    reversePass = reversePass,
-                                                    nPrototypes = 2*self.nConcepts)
-            self.symbolicSpace2 = SymbolicSpace([self.nConcepts, TheObjectEncoding.conceptDim],
-                                                [self.nSymbols, symbolicOutputDim],
-                                                self.nSymbols, TheObjectEncoding.symbolDim,
-                                                reversePass = reversePass,
-                                                conceptualSpace = self.conceptualSpace2,
-                                                processSymbols = self.processSymbols)
-            self.spaces.extend([self.perceptualSpace2, self.conceptualSpace2, self.symbolicSpace2])
-        if self.nThoughts == 1:
-            self.syntacticSpace3    = SyntacticSpace([self.nSymbols, symbolicOutputDim],
-                                               [self.nWords, symbolicOutputDim],
-                                                self.nWords, TheObjectEncoding.symbolDim,
-                                                reversePass = reversePass)
-            self.symbolicSpace3 = SymbolicSpace([self.nWords, symbolicOutputDim],
-                                                [self.nWords, symbolicOutputDim],
-                                                self.nWords, TheObjectEncoding.symbolDim,
-                                                reversePass = reversePass)
-            self.spaces.extend([self.syntacticSpace3, self.symbolicSpace3])
-        # The input dimensionality of the output layer must be equal to the sum of the output dimensionalities of the symbolic layers.
-        self.outputSpace     = OutputSpace([ (self.nSubThoughts+self.nThoughts+1) * self.nSymbols, symbolicOutputDim],
-                                           [self.nOutput, TheObjectEncoding.outputDim],
-                                           self.nOutput, TheObjectEncoding.outputDim,
-                                           reversePass = reversePass)
-        self.spaces.extend([self.outputSpace])
+                                                    conceptualSpace = self.conceptualSpace2,
+                                                    processSymbols = self.processSymbols)
+                self.spaces.extend([self.perceptualSpace2, self.conceptualSpace2, self.symbolicSpace2])
+            if self.nThoughts == 1:
+                self.syntacticSpace3    = SyntacticSpace([self.nSymbols, symbolicOutputDim],
+                                                   [self.nWords, symbolicOutputDim],
+                                                    self.nWords, TheObjectEncoding.symbolDim,
+                                                    reversePass = reversePass)
+                self.symbolicSpace3 = SymbolicSpace([self.nWords, symbolicOutputDim],
+                                                    [self.nWords, symbolicOutputDim],
+                                                    self.nWords, TheObjectEncoding.symbolDim,
+                                                    reversePass = reversePass)
+                self.spaces.extend([self.syntacticSpace3, self.symbolicSpace3])
+            # The input dimensionality of the output layer must be equal to the sum of the output dimensionalities of the symbolic layers.
+            self.outputSpace     = OutputSpace([ (self.nSubThoughts+self.nThoughts+1) * self.nSymbols, symbolicOutputDim],
+                                               [self.nOutput, TheObjectEncoding.outputDim],
+                                               self.nOutput, TheObjectEncoding.outputDim,
+                                               reversePass = reversePass, data=data)
+        else:
+            # Simple pathway: input → percepts(passThrough) → concepts → symbols(passThrough) → output
+            inputDim   = 1
+            conceptDim = 1
+            outputDim  = 1
+            self.nSymbols = self.nConcepts  # 1:1 passthrough
+
+            self.inputSpace = InputSpace([self.nInput, inputDim],
+                                         [self.nInput, inputDim],
+                                         self.nInput, nDim=inputDim,
+                                         model_type=model_type, data=data,
+                                         useVQ=self.quantized)
+            self.perceptualSpace = PerceptualSpace([self.nInput, inputDim],
+                                                   [self.nInput, inputDim],
+                                                   self.nInput, inputDim,
+                                                   passThrough=True)
+            self.conceptualSpace = ConceptualSpace([self.nInput, inputDim],
+                                                   [self.nConcepts, conceptDim],
+                                                   self.nConcepts, conceptDim,
+                                                   reversePass=reversePass,
+                                                   invertible=self.invertible,
+                                                   hasNorm=self.hasNorm,
+                                                   ergodic=self.ergodic,
+                                                   useVQ=self.quantized)
+            self.symbolicSpace = SymbolicSpace([self.nConcepts, conceptDim],
+                                               [self.nConcepts, conceptDim],
+                                               self.nConcepts, conceptDim,
+                                               reversePass=reversePass,
+                                               conceptualSpace=self.conceptualSpace,
+                                               passThrough=True)
+            symbolicOutputDim = conceptDim
+            self.outputSpace = OutputSpace([(self.nSubThoughts+self.nThoughts+1) * self.nSymbols, symbolicOutputDim],
+                                           [self.nOutput, outputDim],
+                                           self.nOutput, outputDim,
+                                           reversePass=reversePass, data=data)
+
+        if hasThoughts:
+            self.spaces.extend([self.outputSpace])
+        else:
+            self.spaces.extend([self.inputSpace, self.perceptualSpace, self.conceptualSpace, self.symbolicSpace, self.outputSpace])
 
         # The output dimensionality of the input layer must be equal to the output dimensionality of the perceptual layer, since the conceptual layer operates on both.
         #assert self.inputSpace.outputShape[1] == self.perceptualSpace2.outputShape[1] # inputDim == perceptDim
@@ -2083,14 +2020,16 @@ class BasicModel(BaseModel):
 
     def Start(self, data, t=0.0):
         input = self.inputSpace(data, t)
-        concepts = self.conceptualSpace(input, t)
+        percepts = self.perceptualSpace(input, t)
+        concepts = self.conceptualSpace(percepts, t)
         symbols = self.symbolicSpace(concepts, t)
         if self.plot:
             TheReport.plotActivations(figure=1, concepts=concepts)
         return concepts, input, symbols
     def StartReverse(self, concepts, input, symbols, t=0.0):
         concepts = self.symbolicSpace.reverse(symbols, t)
-        input = self.conceptualSpace.reverse(concepts, t)
+        percepts = self.conceptualSpace.reverse(concepts, t)
+        input = self.perceptualSpace.reverse(percepts, t)
         data  = self.inputSpace.reverse(input, t)
         return data, input
     def SubsymbolicThought(self, data, t=0.0):
@@ -2129,9 +2068,6 @@ class BasicModel(BaseModel):
             #symbols = self.outputSpace.reverse(data, t)
             return symbols
     def forward(self, data, t=0.0):
-        # We may at some point wish to combine concepts over symbolic and subsymbolic pathways
-        # concepts = (alpha) * concepts1 + (1 - alpha) * concepts2
-        symbols = None
         data, input, symbols = self.Start(data, t)
         for n in range(self.nSubThoughts):
             data, symbols1 = self.SubsymbolicThought(data, t)
@@ -2143,170 +2079,151 @@ class BasicModel(BaseModel):
         batch = input.shape[0]
         TheObjectEncoding.when.increment(batch)
         return data, input
-    def reverse(self, data, t=0.0):
-        symbols = self.FinishReverse(data, t)
+    def reverse(self, end_state, t=0.0):
+        symbols = self.FinishReverse(end_state, t)
         nSym = round(self.nSymbols)
         symbolIndex = 0
         for n in range(self.nThoughts):
             symbols1 = symbols[:, symbolIndex*nSym:(symbolIndex+1)*nSym]
             symbolIndex += 1
-            data = self.SymbolicThoughtReverse(data, symbols1, t)
+            end_state = self.SymbolicThoughtReverse(end_state, symbols1, t)
         for n in range(self.nSubThoughts):
             symbols1 = symbols[:, symbolIndex*nSym:(symbolIndex+1)*nSym]
             symbolIndex += 1
-            data = self.SubsymbolicThoughtReverse(data, symbols1, t)
+            end_state = self.SubsymbolicThoughtReverse(end_state, symbols1, t)
         symbols1 = symbols[:, symbolIndex * nSym:(symbolIndex + 1) * nSym]
-        data, input = self.StartReverse(data, None, symbols1, t)
+        data, input = self.StartReverse(end_state, None, symbols1, t)
         return data, input
 
-    def run(self, numEpochs=1, batchSize=10, temperature=0.0001, lr=0.01, stoppingCriterion=0.1):
-        """
-        Runs the Transformer model.
-        """
-
+    def run(self, numEpochs=1, batchSize=10, lr=0.01, stoppingCriterion=0.1):
         trainLosses       = [[],[]]
         validationLosses  = [[],[]]
         minValidationLoss = math.inf
         testLosses        = [[],[]]
         self.plot         = False
+        accuracy          = []
 
         for epoch in range(numEpochs):
-            if epoch % 10 == 0:
-                print(f"Epoch [{epoch + 1}/{numEpochs}]")
+            t = epoch / max(1, numEpochs - 1)
+            print(f"Epoch [{epoch + 1}/{numEpochs}]")
 
-            outErr,inErr,_,_ = self.runTrain(TheData.train_input, TheData.train_output, temperature=temperature, lr=lr, batchSize=batchSize)
-            trainLosses[0].append(outErr)
-            trainLosses[1].append(inErr)
-            print(f"Train Loss: {outErr:.4f},  {inErr:.4f}")
+            if epoch != 0:
+                train_input, train_output = self.inputSpace.getTrainData()
+                outErr, inErr, allOut, lastIn = self.runEpoch(train_input, train_output, lr=lr, batchSize=batchSize, t=t)
+                trainLosses[0].append(outErr)
+                trainLosses[1].append(inErr)
+                print(f"Train Loss: {outErr:.4f},  {inErr:.4f}")
 
-            outErr,inErr,_,_ = self.runTest(TheData.validation_input, TheData.validation_output)
-            validationLosses[0].append(outErr)
-            validationLosses[1].append(inErr)
-            #print(f"Validation Loss: {outErr:.4f},  {inErr:.4f}")
-
-            outErr,inErr,_,_ = self.runTest(TheData.test_input, TheData.test_output)
+            test_input, test_output = self.inputSpace.getTestData()
+            outErr, inErr, allOut, lastIn = self.runEpoch(test_input, test_output, lr=0, batchSize=batchSize, t=t)
             testLosses[0].append(outErr)
             testLosses[1].append(inErr)
-            #print(f"Test Loss: {outErr:.4f},  {inErr:.4f}")
 
+            _, predicted = torch.max(allOut, 1)
+            _, actual = torch.max(self.outputSpace.getTestOutput(), 1)
+            total   = predicted.size(0)
+            correct = (predicted == actual).sum().item()
+            accuracy += [correct / total]
+            print(f"Test Accuracy: {100 * correct / total:.2f}%")
+
+            self.inputSpace.shuffle()
             if outErr > minValidationLoss + stoppingCriterion:
-                temperature = temperature/2
-                print(f"Validation increasing, dropping temperature to {temperature}")
+                print(f"Validation increasing")
                 minValidationLoss = outErr
             if outErr < minValidationLoss:
                 minValidationLoss = outErr
-            if epoch < (numEpochs / 2):
-                temperature = 0 # This will stop the temperature from being used.
-                # It might better be eliminated by the optimizer
 
-        # Plot the loss over time
-        self.plot = True
-        self.runTest(TheData.test_input, TheData.test_output)
+        print(f"Final Stats:")
         TheReport.plotLoss(self.name, trainLosses, validationLosses, testLosses)
-        #TheReport.plotNetwork(self)
-    def runTrain(self, input, output, temperature=0.00001, lr=0.01, batchSize=10):
+        self.rCorrect = self.mnistReport()
+        self.trainLosses = trainLosses
+        self.testLosses  = testLosses
+        return accuracy
+    def _prepTensors(self, inputBatch, outputBatch):
+        """Prepare input/output tensors for the model.
+        Returns (inputTensor, outputTensor) with correct shapes.
         """
-        Trains the Transformer model using labeled training data.
-        """
-        optimizer1 = torch.optim.Adam(self.parameters(), lr=lr)
-        optimizer2 = torch.optim.Adam(self.parameters(), lr=lr)
+        hasThoughts = self.nSubThoughts > 0 or self.nThoughts > 0
+        if hasThoughts:
+            # LM path: list of tensors → [B, 1, D]
+            inputTensor  = torch.stack(inputBatch, dim=0).unsqueeze(1)
+            outputTensor = torch.stack(outputBatch, dim=0).unsqueeze(1)
+        else:
+            # Simple path: already tensors → [B, N, 1]
+            inputTensor  = inputBatch.unsqueeze(2)
+            outputTensor = outputBatch.unsqueeze(2)
+        return inputTensor, outputTensor
 
-        # Define LRscheduler
-        #scheduler = ReduceLROnPlateau(optimizer1, 'min', patience=5, factor=0.1, verbose=True)
-        #scheduler.step(val_loss)
+    def _getLossFn(self):
+        """Return (outputLossFn, inputLossFn) based on model config."""
+        if self.certainty:
+            return CertaintyWeightedCrossEntropy(), nn.MSELoss()
+        elif self.nSubThoughts > 0 or self.nThoughts > 0:
+            return nn.MSELoss(), nn.MSELoss()
+        else:
+            return nn.CrossEntropyLoss(), nn.MSELoss()
 
-        lossFnOutput = nn.MSELoss()
-        lossFnInput = nn.MSELoss()
+    def runEpoch(self, input, output, lr=0.01, batchSize=10, t=0.0):
+        """Unified training/eval epoch for all model configurations."""
+        training = lr != 0
+        if training:
+            optimizer1 = self.getOptimizer(lr=lr)
+            optimizer2 = self.getOptimizer(lr=lr)
+
+        criterionOutput, criterionInput = self._getLossFn()
 
         allOutput = []
         allInput  = []
         outErr    = 0
         inErr     = 0
-        self.train()
-        for i in range(0, len(input), batchSize):
-            inputBatch  = input[i:i + batchSize]
-            outputBatch = output[i:i + batchSize]
-            batchSize   = len(inputBatch)
-
-            # train only one layer at a time
-            #layer = i % 5
-            #self.inputSpace.freeze(layer==0)
-            #self.perceptualSpace.freeze(layer==1)
-            #self.conceptualSpace.freeze(layer==2)
-            #self.symbolicSpace.freeze(layer==3)
-            #self.outputSpace.freeze(layer==4)
-
-            # Combine the padded tensors
-            inputTensor  = torch.stack(inputBatch, dim=0)
-            inputTensor  = inputTensor.unsqueeze(1)
-            outputTensor = torch.stack(outputBatch, dim=0)
-            outputTensor = outputTensor.unsqueeze(1)
-
-            # First run forward
-            optimizer1.zero_grad()
-            eOutput, aInput  = self.forward(inputTensor, temperature)
-            lossOut  = lossFnOutput(eOutput.squeeze(), outputTensor.squeeze())
-            outErr   = lossOut.item()
-            lossOut.backward()
-            #list(map(lambda obj: obj.zeroGradient(), self.spaces))
-            optimizer1.step()
-            out = eOutput.clone().detach()
-            for i in range(0, batchSize):
-                allOutput.append(out[i,:,:].numpy())
-
-            # Next run reverse
-            if self.reversePass:
-                optimizer2.zero_grad()
-                eInput, aOutput  = self.reverse(eOutput.detach(), temperature)
-                #lossIn = lossFnInput(eInput.squeeze().float(), inputTensor.squeeze().float())
-                lossIn  = lossFnInput(aOutput, aInput)
-                inErr   = lossIn.item()
-                lossIn.backward()
-                #list(map(lambda obj: obj.zeroGradient(), self.spaces))
-                optimizer2.step()
-                inp = eInput.clone().detach()
-                for i in range(0, batchSize):
-                    allInput.append(inp[i,:,:].numpy())
-        return outErr, inErr, allOutput, allInput
-    def runTest(self, input, output, batchSize=10):
-        lossFnOutput = nn.MSELoss()
-        lossFnInput = nn.MSELoss()
-
-        allOutput = []
-        allInput  = []
-        outErr    = 0
-        inErr     = 0
-        self.eval()
-        with torch.no_grad():
+        self.train(training)
+        ctx = torch.no_grad() if not training else nullcontext()
+        with ctx:
             for i in range(0, len(input), batchSize):
-                inputBatch   = input[i:i + batchSize]
-                outputBatch  = output[i:i + batchSize]
-                batchSize    = len(inputBatch)
-                # Combine the padded tensors
-                inputTensor  = torch.stack(inputBatch, dim=0)
-                inputTensor  = inputTensor.unsqueeze(1)
-                outputTensor = torch.stack(outputBatch, dim=0)
-                outputTensor = outputTensor.unsqueeze(1)
-                eOutput,pIn  = self.forward(inputTensor)
-                lossOut      = lossFnOutput(eOutput.squeeze(), outputTensor.squeeze())
-                outErr       = lossOut.item()
-                out = eOutput.clone().detach()
-                for i in range(0, batchSize):
-                    allOutput.append(out[i, :, :].numpy())
+                inputBatch  = input[i:i + batchSize]
+                outputBatch = output[i:i + batchSize]
+                batchSize   = len(inputBatch)
 
-                # Next run reverse
+                hasThoughts = self.nSubThoughts > 0 or self.nThoughts > 0
+                inputTensor  = self.inputSpace.prepInput(inputBatch, hasThoughts)
+                outputTensor = self.outputSpace.prepOutput(outputBatch, hasThoughts)
+
+                # Forward pass
+                if training:
+                    optimizer1.zero_grad()
+                outputPred, end_state = self.forward(inputTensor, t)
+                lossOut = criterionOutput(outputPred.squeeze(), outputTensor.squeeze())
+                if training:
+                    lossOut.backward()
+                    if self.ergodic:
+                        self.paramUpdate()
+                    optimizer1.step()
+                outErr = lossOut.item()
+                outputPred = outputPred.clone().detach().squeeze()
+                if i == 0:
+                    allOutput = outputPred
+                else:
+                    allOutput = torch.concat((allOutput, outputPred), dim=0)
+
+                # Reverse pass
                 if self.reversePass:
-                    eInput, pOut = self.reverse(eOutput.detach())
-                    lossIn    = lossFnInput(pOut, pIn)
-                    inErr     = lossIn.item()
-                    inp       = eInput.clone().detach()
-                    for i in range(0, batchSize):
-                        allInput.append(inp[i,:,:].numpy())
+                    if training:
+                        optimizer2.zero_grad()
+                    reconstructed, start_state = self.reverse(end_state.detach(), t)
+                    lossIn = criterionInput(start_state, end_state.detach())
+                    if training:
+                        lossIn.backward()
+                        if self.ergodic:
+                            self.paramUpdate()
+                        optimizer2.step()
+                    inErr = lossIn.item()
+                    allInput = reconstructed.clone().detach().squeeze()
         return outErr, inErr, allOutput, allInput
 
     def classificationReport(self, min=0, max=1):
-        _, _, y_pred, x_pred = self.runTest(TheData.test_input, TheData.test_output)
-        y_actual = TheData.test_output
+        test_input, test_output = self.inputSpace.getTestData()
+        _, _, y_pred, x_pred = self.runTest(test_input, test_output)
+        y_actual = self.outputSpace.getTestOutput()
         y_pred_sat = np.maximum(min, np.minimum(max, np.round(np.array(y_pred)).squeeze()))
         performance = classification_report(
             y_actual, y_pred_sat,
@@ -2314,13 +2231,6 @@ class BasicModel(BaseModel):
         )
         print(performance)
 TheBasicModel = BasicModel()
-
-
-def test():
-    PositionalEncoding.test()
-    TemporalEncoding.test()
-    # test XOR — fully XML-driven
-    BasicModelFactory.run(os.path.join(PROJECT_DIR, "data", "xor.xml"))
 
 
 class BasicModelFactory:
@@ -2360,11 +2270,11 @@ class BasicModelFactory:
         if os.path.isabs(path):
             return path
         # Try relative to project root first (handles "data/simple.xml")
-        candidate = os.path.join(PROJECT_DIR, path)
+        candidate = os.path.join(ProjectPaths.PROJECT_DIR, path)
         if os.path.exists(candidate):
             return candidate
         # Try inside data/ (handles bare "simple.xml")
-        candidate = os.path.join(PROJECT_DIR, "data", path)
+        candidate = os.path.join(ProjectPaths.PROJECT_DIR, "data", path)
         if os.path.exists(candidate):
             return candidate
         return path
@@ -2383,7 +2293,7 @@ class BasicModelFactory:
         if train.get("detectAnomaly", False):
             torch.autograd.set_detect_anomaly(True)
 
-        # --- SimpleModel path ---
+        # --- Simple path (no thoughts, no LM) ---
         ergodic   = arch.get("ergodic", False)
         certainty = arch.get("certainty", False)
         quantized = arch.get("quantized", False)
@@ -2394,15 +2304,16 @@ class BasicModelFactory:
         is_simple = ergodic or certainty or quantized or normed or reverse or invert \
                      or "ergodic" in arch or "certainty" in arch or "quantized" in arch
 
-        if is_simple:
-            TheData.load(dataset)
-            nInput = TheData.getInputSize()
-            nConcepts = arch.get("nConcepts", 20)
-            nOutput = TheData.getOutputSize()
+        # --- Load data ---
+        TheData.load(dataset)
 
-            # Set ObjectEncoding dimensions for the SimpleModel path.
-            # nWhere=0, nWhen=0 so objectSize=0 — unified Space with no
-            # positional/temporal encoding (matches old DerivedSpace behaviour).
+        if is_simple:
+            nInput    = TheData.getInputSize()
+            nConcepts = arch.get("nConcepts", 20)
+            nOutput   = TheData.getOutputSize()
+            model_type = "simple"
+
+            # ObjectEncoding: no positional/temporal encoding for simple path
             dim = 1
             TheObjectEncoding.nWhere = 0
             TheObjectEncoding.nWhen = 0
@@ -2410,7 +2321,7 @@ class BasicModelFactory:
             TheObjectEncoding.setInputDim(dim)
             TheObjectEncoding.setPerceptDim(dim)
             TheObjectEncoding.setConceptDim(dim)
-            TheObjectEncoding.setSymbolDim(0)
+            TheObjectEncoding.setSymbolDim(dim)
             TheObjectEncoding.setOutputDim(dim)
 
             numTrials = train.get("numTrials", 1)
@@ -2418,16 +2329,19 @@ class BasicModelFactory:
             batchSize = train.get("batchSize", 10)
             completed_models = []
 
-            m = SimpleModel()
-            m.ergodic   = ergodic
-            m.certainty = certainty
-            m.quantized = quantized
-            m.hasNorm   = normed
+            m = BasicModel()
+            m.nSubThoughts = 0
+            m.nThoughts    = 0
+            m.ergodic      = ergodic
+            m.certainty    = certainty
+            m.quantized    = quantized
+            m.hasNorm      = normed
             if reverse or invert:
                 m.reversePass = True
             if invert:
                 m.invertible = True
-            m.create(nInput=nInput, nConcepts=nConcepts, nOutput=nOutput)
+            m.create(nInput=nInput, nConcepts=nConcepts, nOutput=nOutput,
+                     model_type=model_type, data=TheData)
             m.name = BasicModelFactory.model_name(ergodic, certainty, quantized, normed, reverse, invert)
             m.runTrials(numTrials, numEpochs, batchSize)
             if hasattr(m, 'rCorrect'):
@@ -2438,9 +2352,7 @@ class BasicModelFactory:
 
             return completed_models
 
-        # --- BasicModel path ---
-        TheData.load(dataset)
-
+        # --- BasicModel path (unified: passthrough/vq/lm) ---
         nInput    = arch.get("nInput", 8)
         nPercepts = arch.get("nPercepts", 8)
         nConcepts = arch.get("nConcepts", 8)
@@ -2448,50 +2360,20 @@ class BasicModelFactory:
         nWords    = arch.get("nWords", 8)
         nOutput   = arch.get("nOutput", 1)
 
-        if model_type == "passthrough":
-            inputDim  = TheData.getInputSize()
-            outputDim = TheData.getOutputSize()
-            TheObjectEncoding.setInputDim(inputDim)
-            TheObjectEncoding.setPerceptDim(inputDim)
-            TheObjectEncoding.setConceptDim(inputDim)
-            TheObjectEncoding.setSymbolDim(0)
-            TheObjectEncoding.setOutputDim(outputDim)
+        # ObjectEncoding setup — InputSpace will set inputDim/perceptDim internally
+        inputDim  = TheData.getInputSize()
+        outputDim = TheData.getOutputSize()
+        TheObjectEncoding.setInputDim(inputDim)
+        TheObjectEncoding.setPerceptDim(inputDim)
+        TheObjectEncoding.setConceptDim(inputDim)
+        TheObjectEncoding.setSymbolDim(0 if model_type != "lm" else inputDim)
+        TheObjectEncoding.setOutputDim(outputDim)
 
-            passThrough = PassThrough()
-            passThrough.create(nInput=nInput, nOutput=nPercepts, nDim=inputDim)
-
-            TheBasicModel.create(nInput=nInput, nPercepts=nPercepts, nConcepts=nConcepts,
-                                 nSymbols=nSymbols, nOutput=nOutput,
-                                 reversePass=False, LM=passThrough)
-
-        elif model_type == "vq":
-            inputDim  = TheData.getInputSize()
-            outputDim = TheData.getOutputSize()
-            TheObjectEncoding.setInputDim(inputDim)
-            TheObjectEncoding.setPerceptDim(inputDim)
-            TheObjectEncoding.setConceptDim(inputDim)
-            TheObjectEncoding.setSymbolDim(0)
-            TheObjectEncoding.setOutputDim(outputDim)
-
-            vectorSet = VectorSet()
-            vectorSet.create(nInput=nInput, nOutput=nPercepts, nDim=inputDim, nVectors=nInput)
-
-            TheBasicModel.create(nInput=nInput, nPercepts=nPercepts, nConcepts=nConcepts,
-                                 nSymbols=nSymbols, nOutput=nOutput,
-                                 reversePass=False, LM=vectorSet)
-
-        else:  # "lm" (default)
-            languageModel = LanguageModel()
-            languageModel.create(TheData.combinedTokens, nInput=0, nVectors=nInput,
-                                 pretrained=train.get("pretrained", False))
-
-            inputDim   = languageModel.nDim
-            outputDim  = TheData.getOutputSize()
-            TheObjectEncoding.setDimensions(inputDim, inputDim, inputDim, outputDim)
-
-            TheBasicModel.create(nInput=nInput, nPercepts=nPercepts, nConcepts=nConcepts,
-                                 nSymbols=nSymbols, nWords=nWords, nOutput=nOutput,
-                                 LM=languageModel)
+        reversePass = (model_type == "lm")
+        TheBasicModel.create(nInput=nInput, nPercepts=nPercepts, nConcepts=nConcepts,
+                             nSymbols=nSymbols, nWords=nWords, nOutput=nOutput,
+                             reversePass=reversePass, model_type=model_type,
+                             data=TheData, pretrained=train.get("pretrained", False))
 
         # Build run() kwargs from training config
         run_kwargs = {}
@@ -2499,8 +2381,6 @@ class BasicModelFactory:
             run_kwargs["numEpochs"] = train["numEpochs"]
         if "stoppingCriterion" in train:
             run_kwargs["stoppingCriterion"] = train["stoppingCriterion"]
-        if "temperature" in train:
-            run_kwargs["temperature"] = train["temperature"]
         if "learningRate" in train:
             run_kwargs["lr"] = train["learningRate"]
 
@@ -2518,11 +2398,16 @@ class BasicModelFactory:
         if weights.get("autosave", False):
             wpath = weights.get("path", "output/weights.pt")
             if not os.path.isabs(wpath):
-                wpath = os.path.join(PROJECT_DIR, wpath)
+                wpath = os.path.join(ProjectPaths.PROJECT_DIR, wpath)
             TheBasicModel.save_weights(wpath)
 
         return []
 
+def test():
+    PositionalEncoding.test()
+    TemporalEncoding.test()
+    # test XOR — fully XML-driven
+    BasicModelFactory.run(os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml"))
 
 # Standalone execution entry point
 if __name__ == "__main__":
@@ -2541,7 +2426,7 @@ if __name__ == "__main__":
             TheReport.plotCombinedLoss([m for _, _, m in results])
     else:
         # Single run mode
-        xml = BasicModelFactory.resolve_xml(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(PROJECT_DIR, "data", "xor.xml")
+        xml = BasicModelFactory.resolve_xml(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml")
         TheReport.add_xml(xml)
         BasicModelFactory.run(xml)
 

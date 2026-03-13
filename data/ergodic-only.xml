@@ -13,7 +13,7 @@
   <training>
     <dataset>mnist</dataset>
     <numTrials>1</numTrials>
-    <numEpochs>20</numEpochs>
+    <numEpochs>10</numEpochs>
     <batchSize>10</batchSize>
   </training>
 </model>

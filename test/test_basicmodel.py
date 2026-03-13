@@ -195,8 +195,32 @@ class TestSymPercept(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# SimpleModel construction
+# Simple path: BasicModel with nSubThoughts=0, nThoughts=0
 # ---------------------------------------------------------------------------
+def _make_simple_model(ergodic=False, certainty=False, quantized=False,
+                       reversePass=False, invertible=False, hasNorm=False):
+    """Helper to create a BasicModel configured for the simple (no-thoughts) path."""
+    from BasicModel import BasicModel, TheObjectEncoding
+    TheObjectEncoding.nWhere = 0
+    TheObjectEncoding.nWhen = 0
+    TheObjectEncoding.objectSize = 0
+    TheObjectEncoding.setInputDim(1)
+    TheObjectEncoding.setPerceptDim(1)
+    TheObjectEncoding.setConceptDim(1)
+    TheObjectEncoding.setSymbolDim(1)
+    TheObjectEncoding.setOutputDim(1)
+    m = BasicModel()
+    m.nSubThoughts = 0
+    m.nThoughts    = 0
+    m.ergodic      = ergodic
+    m.certainty    = certainty
+    m.quantized    = quantized
+    m.reversePass  = reversePass
+    m.invertible   = invertible
+    m.hasNorm      = hasNorm
+    return m
+
+
 class TestSimpleModelCreation(unittest.TestCase):
 
     def setUp(self):
@@ -204,9 +228,6 @@ class TestSimpleModelCreation(unittest.TestCase):
         self._orig_nWhere = TheObjectEncoding.nWhere
         self._orig_nWhen = TheObjectEncoding.nWhen
         self._orig_objectSize = TheObjectEncoding.objectSize
-        TheObjectEncoding.nWhere = 0
-        TheObjectEncoding.nWhen = 0
-        TheObjectEncoding.objectSize = 0
 
     def tearDown(self):
         from BasicModel import TheObjectEncoding
@@ -215,32 +236,23 @@ class TestSimpleModelCreation(unittest.TestCase):
         TheObjectEncoding.objectSize = self._orig_objectSize
 
     def test_simple_model_creation(self):
-        from BasicModel import SimpleModel
-        model = SimpleModel()
+        model = _make_simple_model()
         self.assertIsNotNone(model)
 
     def test_simple_model_traditional(self):
-        """SimpleModel with ergodic=False, certainty=False produces valid output."""
-        from BasicModel import SimpleModel
-        model = SimpleModel()
-        model.ergodic   = False
-        model.certainty = False
-        model.quantized = False
+        """BasicModel (simple path) with ergodic=False produces valid output."""
+        model = _make_simple_model(ergodic=False, certainty=False)
         model.create(nInput=28*28, nConcepts=20, nOutput=10)
         x = torch.randn(2, 28*28, 1)  # batch of 2, flattened MNIST, dim=1
-        out, concepts = model.forward(x)
+        out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)  # batch size preserved
 
     def test_simple_model_ergodic(self):
-        """SimpleModel with ergodic=True uses SigmaLayer path."""
-        from BasicModel import SimpleModel
-        model = SimpleModel()
-        model.ergodic   = True
-        model.certainty = True
-        model.quantized = False
+        """BasicModel (simple path) with ergodic=True uses SigmaLayer path."""
+        model = _make_simple_model(ergodic=True, certainty=True)
         model.create(nInput=28*28, nConcepts=20, nOutput=10)
         x = torch.randn(2, 28*28, 1)
-        out, concepts = model.forward(x)
+        out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)
 
 
@@ -284,7 +296,7 @@ class TestWeightPersistence(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Regression: Space shape contracts and SimpleModel
+# Regression: Space shape contracts
 # ---------------------------------------------------------------------------
 class TestCanonicalSpaceShapes(unittest.TestCase):
     """Lock down tensor shapes for canonical Space subclasses."""
@@ -334,16 +346,13 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
 
 
 class TestSimpleModel(unittest.TestCase):
-    """SimpleModel (renamed SimpleModel) uses unified Space hierarchy."""
+    """BasicModel (simple path) uses unified Space hierarchy with passThrough SymbolicSpace."""
 
     def setUp(self):
         from BasicModel import TheObjectEncoding
         self._orig_nWhere = TheObjectEncoding.nWhere
         self._orig_nWhen = TheObjectEncoding.nWhen
         self._orig_objectSize = TheObjectEncoding.objectSize
-        TheObjectEncoding.nWhere = 0
-        TheObjectEncoding.nWhen = 0
-        TheObjectEncoding.objectSize = 0
 
     def tearDown(self):
         from BasicModel import TheObjectEncoding
@@ -352,42 +361,28 @@ class TestSimpleModel(unittest.TestCase):
         TheObjectEncoding.objectSize = self._orig_objectSize
 
     def test_simple_model_ergodic_shapes(self):
-        from BasicModel import SimpleModel
-        model = SimpleModel()
-        model.ergodic = True
-        model.certainty = False
-        model.quantized = False
+        model = _make_simple_model(ergodic=True)
         model.create(nInput=16, nConcepts=8, nOutput=4)
         x = torch.randn(2, 16, 1)
-        out, concepts = model.forward(x)
+        out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
-        self.assertEqual(concepts.shape[0], 2)
-        self.assertEqual(concepts.shape[1], 8)
+        self.assertEqual(end_state.shape[0], 2)
 
     def test_simple_model_traditional_shapes(self):
-        from BasicModel import SimpleModel
-        model = SimpleModel()
-        model.ergodic = False
-        model.certainty = False
-        model.quantized = False
+        model = _make_simple_model(ergodic=False)
         model.create(nInput=16, nConcepts=8, nOutput=4)
         x = torch.randn(2, 16, 1)
-        out, concepts = model.forward(x)
+        out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
 
     def test_simple_model_reverse_shapes(self):
-        from BasicModel import SimpleModel
-        model = SimpleModel()
-        model.ergodic = True
-        model.certainty = False
-        model.quantized = False
-        model.reversePass = True
+        model = _make_simple_model(ergodic=True, reversePass=True)
         model.create(nInput=16, nConcepts=8, nOutput=4)
         x = torch.randn(2, 16, 1)
-        out, concepts = model.forward(x)
-        data, percepts = model.reverse(concepts)
+        out, end_state = model.forward(x)
+        data, start_state = model.reverse(end_state)
         self.assertEqual(data.shape[0], 2)
         self.assertEqual(data.shape[1], 16)
 
@@ -396,9 +391,9 @@ class TestVectorSetVariants(unittest.TestCase):
     """Lock down quantized vs unquantized VectorSet behavior."""
 
     def test_unquantized_passthrough(self):
-        from BasicModel import UnquantizedVSet
-        vs = UnquantizedVSet()
-        vs.create(4, 4, 1)
+        from BasicModel import VectorSet
+        vs = VectorSet()
+        vs.create(4, 4, 1, passThrough=True)
         x = torch.randn(2, 4, 1)
         y = vs.forward(x)
         self.assertTrue(torch.equal(x, y))
@@ -422,9 +417,6 @@ class TestModelEndToEnd(unittest.TestCase):
         self._orig_nWhere = TheObjectEncoding.nWhere
         self._orig_nWhen = TheObjectEncoding.nWhen
         self._orig_objectSize = TheObjectEncoding.objectSize
-        TheObjectEncoding.nWhere = 0
-        TheObjectEncoding.nWhen = 0
-        TheObjectEncoding.objectSize = 0
 
     def tearDown(self):
         from BasicModel import TheObjectEncoding
@@ -433,58 +425,40 @@ class TestModelEndToEnd(unittest.TestCase):
         TheObjectEncoding.objectSize = self._orig_objectSize
 
     def test_simple_model_ergodic_shapes(self):
-        from BasicModel import SimpleModel
-        model = SimpleModel()
-        model.ergodic = True
-        model.certainty = False
-        model.quantized = False
+        model = _make_simple_model(ergodic=True)
         model.create(nInput=16, nConcepts=8, nOutput=4)
         x = torch.randn(2, 16, 1)
-        out, concepts = model.forward(x)
+        out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
-        self.assertEqual(concepts.shape[0], 2)
-        self.assertEqual(concepts.shape[1], 8)
+        self.assertEqual(end_state.shape[0], 2)
 
     def test_simple_model_traditional_shapes(self):
-        from BasicModel import SimpleModel
-        model = SimpleModel()
-        model.ergodic = False
-        model.certainty = False
-        model.quantized = False
+        model = _make_simple_model(ergodic=False)
         model.create(nInput=16, nConcepts=8, nOutput=4)
         x = torch.randn(2, 16, 1)
-        out, concepts = model.forward(x)
+        out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
-        self.assertEqual(concepts.shape[0], 2)
-        self.assertEqual(concepts.shape[1], 8)
+        self.assertEqual(end_state.shape[0], 2)
 
     def test_simple_model_reverse_shapes(self):
-        from BasicModel import SimpleModel
-        model = SimpleModel()
-        model.ergodic = True
-        model.certainty = False
-        model.quantized = False
-        model.reversePass = True
+        model = _make_simple_model(ergodic=True, reversePass=True)
         model.create(nInput=16, nConcepts=8, nOutput=4)
         x = torch.randn(2, 16, 1)
-        out, concepts = model.forward(x)
-        data, percepts = model.reverse(concepts)
+        out, end_state = model.forward(x)
+        data, start_state = model.reverse(end_state)
         self.assertEqual(data.shape[0], 2)
         self.assertEqual(data.shape[1], 16)
 
     def test_simple_model_loss_runs(self):
         """Verify forward + loss + backward doesn't crash."""
-        from BasicModel import SimpleModel, CertaintyWeightedCrossEntropy
-        model = SimpleModel()
-        model.ergodic = True
-        model.certainty = True
-        model.quantized = False
+        from BasicModel import CertaintyWeightedCrossEntropy
+        model = _make_simple_model(ergodic=True, certainty=True)
         model.create(nInput=16, nConcepts=8, nOutput=4)
         x = torch.randn(2, 16, 1)
         target = torch.randn(2, 4)
-        out, concepts = model.forward(x)
+        out, end_state = model.forward(x)
         loss_fn = CertaintyWeightedCrossEntropy()
         loss = loss_fn(out.squeeze(), target)
         loss.backward()
@@ -562,11 +536,12 @@ class TestCreateVectorSetQuantized(unittest.TestCase):
         s.createVectorSet(quantized=True)
         self.assertIsInstance(s.vectors(), VectorSet)
 
-    def test_unquantized_creates_unquantized_vset(self):
-        from BasicModel import Space, UnquantizedVSet
+    def test_unquantized_creates_passthrough_vset(self):
+        from BasicModel import Space, VectorSet
         s = Space([4, 3], [4, 3], 4, 3)
         s.createVectorSet(quantized=False)
-        self.assertIsInstance(s.vectors(), UnquantizedVSet)
+        self.assertIsInstance(s.vectors(), VectorSet)
+        self.assertTrue(s.vectors().passThrough)
 
     def test_default_is_quantized(self):
         from BasicModel import Space, VectorSet
@@ -730,13 +705,14 @@ class TestBaseModelFactory(unittest.TestCase):
     """BaseModel.from_config factory creates the correct model type."""
 
     def test_factory_creates_simple_model(self):
-        from BasicModel import BaseModel, SimpleModel, TheObjectEncoding
+        from BasicModel import BaseModel, BasicModel, TheObjectEncoding
         orig_nWhere = TheObjectEncoding.nWhere
         orig_nWhen = TheObjectEncoding.nWhen
         orig_objectSize = TheObjectEncoding.objectSize
         TheObjectEncoding.nWhere = 0
         TheObjectEncoding.nWhen = 0
         TheObjectEncoding.objectSize = 0
+        TheObjectEncoding.setSymbolDim(1)
         xml = """<model>
   <architecture>
     <type>simple</type>
@@ -750,7 +726,9 @@ class TestBaseModelFactory(unittest.TestCase):
             path = f.name
         try:
             model, cfg = BaseModel.from_config(path)
-            self.assertIsInstance(model, SimpleModel)
+            self.assertIsInstance(model, BasicModel)
+            self.assertEqual(model.nSubThoughts, 0)
+            self.assertEqual(model.nThoughts, 0)
         finally:
             os.unlink(path)
             TheObjectEncoding.nWhere = orig_nWhere
