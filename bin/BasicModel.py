@@ -1391,23 +1391,31 @@ class ConceptualSpace(Space):
     name = "Concepts"
     hasAttention = False
 
-    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False, invertible=False, hasNorm=False):
+    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False, invertible=False, hasNorm=False, ergodic=False):
         super(ConceptualSpace, self).__init__(inputShape, outputShape, nVectors, nDim, useVQ=useVQ, nPrototypes=nPrototypes, reversePass=reversePass, processSymbols=processSymbols)
+        self.ergodic = ergodic
         input, output = self.getEmbeddedIO()
         self.hasNorm = hasNorm
         self.attention = AttentionLayer(output, output)
         if hasNorm:
-            self.norm = NormLayer(input, input)
+            self.norm = NormLayer(input, input + 2)
+            input += 2
         if invertible:
             self.sigma = ReversibleSigmaLayer(input, self.nDim, permuteInput=False)
             self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
+            self.params = self.sigma.getParameters()
+            self.layers = [self.sigma]
         elif reversePass:
-            self.sigma1 = SigmaLayer(input, self.nDim, permuteInput=False)
-            self.sigma2 = SigmaLayer(self.nDim, input, permuteInput=False)
+            self.sigma1 = SigmaLayer(input, self.nDim, permuteInput=False, deterministic=not ergodic)
+            self.sigma2 = SigmaLayer(self.nDim, input, permuteInput=False, deterministic=not ergodic)
             self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.forward
+            self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
+            self.layers = [self.sigma1, self.sigma2]
         else:
-            self.sigma = SigmaLayer(input, self.nDim, permuteInput=False)
+            self.sigma = SigmaLayer(input, self.nDim, permuteInput=False, deterministic=not ergodic)
             self.forwardSigma = self.sigma.forward
+            self.params = self.sigma.getParameters()
+            self.layers = [self.sigma]
         self.createVectorSet()
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
@@ -1423,7 +1431,7 @@ class ConceptualSpace(Space):
         x = self.forwardBegin(x, t)
         if self.hasNorm:
             x = self.norm.forward(x)
-        y = self.forwardSigma(x, t) # Pass through SigmaLayer
+        y = self.forwardSigma(x) # Pass through SigmaLayer
         if self.hasAttention:
             y = self.attention.forward(y, t)
         # Get the concept vectors from the codebook
@@ -1450,7 +1458,10 @@ class ConceptualSpace(Space):
             self.concepts = self.attention.reverse(self.concepts, t)
         # preserve the codebook's positional encoding
         encoding = self.concepts[:, :, -TheObjectEncoding.objectSize:]
-        self.concepts = self.reverseSigma(self.concepts[:,:,0:-TheObjectEncoding.objectSize], t)
+        if TheObjectEncoding.objectSize > 0:
+            self.concepts = self.reverseSigma(self.concepts[:,:,0:-TheObjectEncoding.objectSize])
+        else:
+            self.concepts = self.reverseSigma(self.concepts)
         if self.hasNorm:
             self.concepts = self.norm.reverse(self.concepts)
         #self.concepts = torch.concatenate((self.concepts, encoding), dim=2)

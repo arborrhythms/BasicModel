@@ -279,27 +279,26 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
         TheObjectEncoding.setDimensions(inputDim=8, perceptDim=8, conceptDim=8, outputDim=4)
         self.B = 2  # batch
 
-    @unittest.skip("Known bug: ConceptualSpace.forward passes t to SigmaLayer which does not accept it")
     def test_conceptual_space_forward_shape(self):
         from BasicModel import ConceptualSpace, TheObjectEncoding
         nIn, nOut, nDim = 4, 4, 8
         cs = ConceptualSpace([nIn, TheObjectEncoding.inputDim],
                              [nOut, TheObjectEncoding.conceptDim],
-                             nOut, TheObjectEncoding.conceptDim)
+                             nOut, TheObjectEncoding.conceptDim,
+                             nPrototypes=nOut)
         inEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.inputDim)
         x = torch.randn(self.B, nIn, inEmb)
         y = cs(x)
         outEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.conceptDim)
         self.assertEqual(list(y.shape), [self.B, nOut, outEmb])
 
-    @unittest.skip("Known bug: ConceptualSpace.reverse passes t to SigmaLayer which does not accept it")
     def test_conceptual_space_reverse_shape(self):
         from BasicModel import ConceptualSpace, TheObjectEncoding
         nIn, nOut, nDim = 4, 4, 8
         cs = ConceptualSpace([nIn, TheObjectEncoding.inputDim],
                              [nOut, TheObjectEncoding.conceptDim],
                              nOut, TheObjectEncoding.conceptDim,
-                             reversePass=True)
+                             reversePass=True, nPrototypes=nOut)
         outEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.conceptDim)
         y = torch.randn(self.B, nOut, outEmb)
         x = cs.reverse(y)
@@ -552,6 +551,92 @@ class TestCreateVectorSetQuantized(unittest.TestCase):
         s = Space([4, 3], [4, 3], 4, 3)
         s.createVectorSet()
         self.assertIsInstance(s.vectors(), VectorSet)
+
+
+class TestConceptualSpaceErgodic(unittest.TestCase):
+    """ConceptualSpace with ergodic flag matches DerivedConceptualSpace behavior."""
+
+    def setUp(self):
+        from BasicModel import TheObjectEncoding
+        self._orig_nWhere = TheObjectEncoding.nWhere
+        self._orig_nWhen = TheObjectEncoding.nWhen
+        self._orig_objectSize = TheObjectEncoding.objectSize
+
+    def tearDown(self):
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = self._orig_nWhere
+        TheObjectEncoding.nWhen = self._orig_nWhen
+        TheObjectEncoding.objectSize = self._orig_objectSize
+
+    def _set_zero_object_encoding(self):
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = 0
+        TheObjectEncoding.nWhen = 0
+        TheObjectEncoding.objectSize = 0
+
+    def test_ergodic_forward_shape(self):
+        self._set_zero_object_encoding()
+        from BasicModel import ConceptualSpace
+        nVec, nDim, cDim = 8, 1, 1
+        cs = ConceptualSpace([nVec, nDim], [nVec, cDim], nVec, cDim,
+                             ergodic=True, useVQ=False)
+        x = torch.randn(2, nVec, nDim)
+        y = cs(x)
+        self.assertEqual(list(y.shape), [2, nVec, cDim])
+
+    def test_non_ergodic_forward_shape(self):
+        self._set_zero_object_encoding()
+        from BasicModel import ConceptualSpace
+        nVec, nDim, cDim = 8, 1, 1
+        cs = ConceptualSpace([nVec, nDim], [nVec, cDim], nVec, cDim,
+                             ergodic=False, useVQ=False)
+        x = torch.randn(2, nVec, nDim)
+        y = cs(x)
+        self.assertEqual(list(y.shape), [2, nVec, cDim])
+
+    def test_ergodic_flag_stored(self):
+        self._set_zero_object_encoding()
+        from BasicModel import ConceptualSpace
+        cs_erg = ConceptualSpace([8, 1], [8, 1], 8, 1,
+                                 ergodic=True, useVQ=False)
+        cs_det = ConceptualSpace([8, 1], [8, 1], 8, 1,
+                                 ergodic=False, useVQ=False)
+        self.assertTrue(cs_erg.ergodic)
+        self.assertFalse(cs_det.ergodic)
+
+    def test_ergodic_reverse_shape(self):
+        self._set_zero_object_encoding()
+        from BasicModel import ConceptualSpace
+        nVec, nDim, cDim = 8, 1, 1
+        cs = ConceptualSpace([nVec, nDim], [nVec, cDim], nVec, cDim,
+                             ergodic=True, reversePass=True, useVQ=False)
+        y = torch.randn(2, nVec, cDim)
+        x = cs.reverse(y)
+        self.assertEqual(list(x.shape), [2, nVec, nDim])
+
+    def test_ergodic_exposes_params(self):
+        self._set_zero_object_encoding()
+        from BasicModel import ConceptualSpace
+        cs = ConceptualSpace([8, 1], [8, 1], 8, 1,
+                             ergodic=True, useVQ=False)
+        params = cs.getParameters()
+        self.assertIsInstance(params, list)
+        self.assertGreater(len(params), 0)
+
+    def test_canonical_forward_still_works(self):
+        """Existing ConceptualSpace (with objectSize > 0) still works after changes."""
+        from BasicModel import ConceptualSpace, TheObjectEncoding
+        TheObjectEncoding.setDimensions(inputDim=8, perceptDim=8, conceptDim=8, outputDim=4)
+        nIn, nOut = 4, 4
+        cs = ConceptualSpace([nIn, TheObjectEncoding.inputDim],
+                             [nOut, TheObjectEncoding.conceptDim],
+                             nOut, TheObjectEncoding.conceptDim,
+                             nPrototypes=nOut)
+        inEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.inputDim)
+        x = torch.randn(2, nIn, inEmb)
+        y = cs(x)
+        outEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.conceptDim)
+        self.assertEqual(list(y.shape), [2, nOut, outEmb])
 
 
 if __name__ == "__main__":
