@@ -195,9 +195,9 @@ class TestSymPercept(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# SimpleModel construction (renamed from DerivedModel, now in BasicModel.py)
+# SimpleModel construction
 # ---------------------------------------------------------------------------
-class TestDerivedModel(unittest.TestCase):
+class TestSimpleModelCreation(unittest.TestCase):
 
     def setUp(self):
         from BasicModel import TheObjectEncoding
@@ -214,14 +214,12 @@ class TestDerivedModel(unittest.TestCase):
         TheObjectEncoding.nWhen = self._orig_nWhen
         TheObjectEncoding.objectSize = self._orig_objectSize
 
-    def test_derived_model_creation(self):
-        from BasicModel import SimpleModel, DerivedModel
+    def test_simple_model_creation(self):
+        from BasicModel import SimpleModel
         model = SimpleModel()
         self.assertIsNotNone(model)
-        # backward-compat alias
-        self.assertIs(DerivedModel, SimpleModel)
 
-    def test_derived_model_traditional(self):
+    def test_simple_model_traditional(self):
         """SimpleModel with ergodic=False, certainty=False produces valid output."""
         from BasicModel import SimpleModel
         model = SimpleModel()
@@ -233,7 +231,7 @@ class TestDerivedModel(unittest.TestCase):
         out, concepts = model.forward(x)
         self.assertEqual(out.shape[0], 2)  # batch size preserved
 
-    def test_derived_model_ergodic(self):
+    def test_simple_model_ergodic(self):
         """SimpleModel with ergodic=True uses SigmaLayer path."""
         from BasicModel import SimpleModel
         model = SimpleModel()
@@ -336,7 +334,7 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
 
 
 class TestSimpleModel(unittest.TestCase):
-    """SimpleModel (renamed DerivedModel) uses unified Space hierarchy."""
+    """SimpleModel (renamed SimpleModel) uses unified Space hierarchy."""
 
     def setUp(self):
         from BasicModel import TheObjectEncoding
@@ -434,7 +432,7 @@ class TestModelEndToEnd(unittest.TestCase):
         TheObjectEncoding.nWhen = self._orig_nWhen
         TheObjectEncoding.objectSize = self._orig_objectSize
 
-    def test_derived_model_ergodic_shapes(self):
+    def test_simple_model_ergodic_shapes(self):
         from BasicModel import SimpleModel
         model = SimpleModel()
         model.ergodic = True
@@ -448,7 +446,7 @@ class TestModelEndToEnd(unittest.TestCase):
         self.assertEqual(concepts.shape[0], 2)
         self.assertEqual(concepts.shape[1], 8)
 
-    def test_derived_model_traditional_shapes(self):
+    def test_simple_model_traditional_shapes(self):
         from BasicModel import SimpleModel
         model = SimpleModel()
         model.ergodic = False
@@ -462,7 +460,7 @@ class TestModelEndToEnd(unittest.TestCase):
         self.assertEqual(concepts.shape[0], 2)
         self.assertEqual(concepts.shape[1], 8)
 
-    def test_derived_model_reverse_shapes(self):
+    def test_simple_model_reverse_shapes(self):
         from BasicModel import SimpleModel
         model = SimpleModel()
         model.ergodic = True
@@ -476,7 +474,7 @@ class TestModelEndToEnd(unittest.TestCase):
         self.assertEqual(data.shape[0], 2)
         self.assertEqual(data.shape[1], 16)
 
-    def test_derived_model_loss_runs(self):
+    def test_simple_model_loss_runs(self):
         """Verify forward + loss + backward doesn't crash."""
         from BasicModel import SimpleModel, CertaintyWeightedCrossEntropy
         model = SimpleModel()

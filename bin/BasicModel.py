@@ -39,6 +39,12 @@ def output_path(filename):
 def output_stem(stem):
     return os.path.join(ensure_output_dir(), stem)
 
+def output_resolve_xml(path):
+    """Resolve an XML path relative to PROJECT_DIR if not absolute."""
+    if not os.path.isabs(path):
+        return os.path.join(PROJECT_DIR, path)
+    return path
+
 
 class Report:
     """Collects timestamped SVG figures and XML configs, then writes an HTML report."""
@@ -102,6 +108,260 @@ class Report:
         file_url = "file://" + quote(os.path.abspath(html_path))
         print(f"Report saved to {file_url}")
         return html_path
+
+    # ----- Plotting methods (moved from BaseModel / SimpleModel / module level) -----
+
+    def plotAccuracy(self, model_name, rCorrect):
+        """Plot per-digit accuracy."""
+        fig = plt.figure(figsize=(10, 5))
+        plt.plot(range(0, 10), rCorrect, label="Error (per Input)", marker='o')
+        plt.xlabel("Digit")
+        plt.ylabel("Accuracy")
+        plt.title(f"Accuracy per Digit: {model_name}")
+        plt.legend()
+        plt.grid(True)
+        self.save_figure(fig, f"{model_name} Accuracy")
+        plt.show(block=False)
+
+    def plotAccuracyAndCertainty(self, model_name, rCorrect, reversePass=False, last_x_pred=None):
+        """Plot per-digit accuracy with certainty, and optionally reconstruction images."""
+        fig = plt.figure(figsize=(10, 5))
+        plt.plot(range(0, 10), rCorrect, label="Error (per Input)", marker='o')
+        plt.xlabel("Digit")
+        plt.ylabel("Accuracy & Certainty")
+        plt.title(f"Accuracy and Certainty: {model_name}")
+        plt.legend()
+        plt.grid(True)
+        self.save_figure(fig, f"{model_name} Accuracy")
+        plt.show(block=False)
+
+        if reversePass and last_x_pred is not None:
+            for i in range(0, 10):
+                fig = plt.figure(figsize=(10, 5))
+                j = TheData.test_output[-i-1]
+                _, num = torch.max(j, axis=0)
+                plt.title(f"Reconstruction {num}: {model_name}")
+                image = last_x_pred[9-i, :]
+                image = np.reshape(image, (28, 28))
+                plt.imshow(image)
+                self.save_figure(fig, f"{model_name} Reconstruction {num}")
+                plt.show(block=False)
+
+    def plotLoss(self, model_name, trainErr, valErr, testErr):
+        """Plots the training, validation, and test losses over time."""
+        fig = plt.figure(figsize=(10, 5))
+
+        # Training starts at epoch 2 (epoch 1 is test-only), so offset by +2
+        plt.plot(range(2, len(trainErr[0]) + 2), trainErr[0], label="Training Error", marker='o')
+        if len(trainErr) > 1 and trainErr[1]:
+            plt.plot(range(2, len(trainErr[1]) + 2), trainErr[1], label="Training Error (Input)", marker='o')
+
+        if testErr:
+            plt.plot(range(1, len(testErr[0]) + 1), testErr[0], label="Test Error", marker='x')
+            if len(testErr) > 1 and testErr[1]:
+                plt.plot(range(1, len(testErr[1]) + 1), testErr[1], label="Test Error (Input)", marker='x')
+
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title(f"Error per Epoch: {model_name}")
+        plt.legend()
+        plt.grid(True)
+
+        self.save_figure(fig, f"{model_name} Error")
+        plt.show(block=False)
+
+    def plotActivations(self, figure=1, percepts=None, concepts=None, symbols=None):
+        fig = plt.figure(figure, figsize=(12, 4))
+        fig.clf()
+
+        if percepts is not None:
+            p = percepts[-1, :, :].squeeze()
+            pAct = torch.norm(p, dim=1).detach().numpy()
+            plt.plot(pAct, marker='o', color='r')
+            plt.xlabel("Activation")
+            plt.ylabel("Percepts")
+            plt.title("Perceptual Activation")
+
+        if concepts is not None:
+            c = concepts[-1, :, :].squeeze()
+            cAct = torch.norm(c, dim=-1).detach().numpy()
+            plt.plot(cAct, marker='o', color='b')
+            plt.xlabel("Epoch")
+            plt.ylabel("Concepts")
+            plt.title("Conceptual Activation")
+
+        if symbols is not None:
+            s = symbols[-1, :, 0].squeeze()
+            sAct = s.detach().numpy()
+            plt.plot(sAct, marker='o', color='g')
+            plt.xlabel("Epoch")
+            plt.ylabel("Symbols")
+            plt.title("Symbolic Activations")
+
+        plt.tight_layout()
+        plt.show(block=False)
+
+    def plotSpace(self, model):
+        """Visualizes learned weight parameters via PCA projections."""
+        perc_weights = model.prototypes.data.cpu().numpy()
+        pca = PCA(n_components=2)
+        perc_2d = pca.fit_transform(perc_weights)
+
+        plt.figure(figsize=(18, 5))
+
+        plt.subplot(1, 3, 1)
+        plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
+        plt.xlabel("PC1")
+        plt.ylabel("PC2")
+        plt.title("Perceptual Space Prototypes")
+        plt.legend()
+
+        perc_mean = perc_2d.mean(axis=0)
+
+        conc_weights = model.conceptual.fc_p.weight.data.cpu().numpy()
+        conc_proj = pca.transform(conc_weights)
+
+        plt.subplot(1, 3, 2)
+        plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
+        x_vals = np.linspace(np.min(perc_2d[:, 0]) - 1, np.max(perc_2d[:, 0]) + 1, 100)
+        for i in range(conc_proj.shape[0]):
+            n = conc_proj[i]
+            if np.abs(n[1]) > 1e-3:
+                y_vals = perc_mean[1] - (n[0] / n[1]) * (x_vals - perc_mean[0])
+                plt.plot(x_vals, y_vals, '--', label=f"Hyperplane {i + 1}" if i == 0 else None, alpha=0.7)
+            else:
+                plt.axvline(x=perc_mean[0], linestyle='--', alpha=0.7, label=f"Hyperplane {i + 1}" if i == 0 else None)
+        plt.xlabel("PC1")
+        plt.ylabel("PC2")
+        plt.title("Conceptual Hyperplanes")
+        plt.legend()
+
+        symb_weights = model.fc_symbolic.weight.data.cpu().numpy()
+        symb_norms = np.linalg.norm(symb_weights, axis=1)
+        x_symb = np.arange(len(symb_norms))
+
+        plt.subplot(1, 3, 3)
+        plt.vlines(x_symb, 0, symb_norms, color='k', alpha=0.7)
+        plt.scatter(x_symb, symb_norms, color='red', s=100, zorder=3)
+        plt.xlabel("Symbolic Feature Index")
+        plt.ylabel("L2 Norm")
+        plt.title("Symbolic Weights (Lollipop Plot)")
+
+        plt.tight_layout()
+        plt.show(block=False)
+
+    def plotNetwork(self, model):
+        """Uses Torchviz to visualize the computation graph."""
+        model.eval()
+        output, input, _, _ = model.runTest(TheData.test_input, TheData.test_output)
+        dot = make_dot(output, params=dict(model.named_parameters()))
+        dot.format = "png"
+        graph_path = dot.render(output_stem(f"graph_{model.name}"))
+        print(f"Saved network graph as {graph_path}")
+
+    def plotErrorbars(self, model_name, acc):
+        x = list(range(1, len(acc[0]) + 1))
+        y = np.array(np.mean(acc, axis=0))
+        y_err = np.std(acc, axis=0)
+        plt.errorbar(x, y, yerr=y_err, fmt='-o', label=model_name, capsize=4)
+
+    def plotErrorbarsFromFile(self, fn):
+        """Load a CSV of trial accuracies and add an errorbar series to the current plot."""
+        acc = np.loadtxt(output_path(f"{fn}.csv"), delimiter=",")
+        y = np.mean(acc, axis=0)
+        y_err = np.std(acc, axis=0)
+        x = list(range(1, len(y) + 1))
+        plt.errorbar(x, y, yerr=y_err, fmt='-o', label=fn, capsize=4)
+
+    def plotComparison(self, models):
+        """Plot per-digit accuracy comparison across model variants.
+
+        Args:
+            models: list of (name, rCorrect_tensor) tuples
+        """
+        digits = list(range(10))
+        n = len(models)
+        width = 0.8 / n
+        fig = plt.figure(figsize=(12, 6))
+        for i, (name, rCorrect) in enumerate(models):
+            offsets = [d + (i - n/2 + 0.5) * width for d in digits]
+            vals = rCorrect.detach().cpu().numpy() if hasattr(rCorrect, 'detach') else rCorrect
+            plt.bar(offsets, vals, width, label=name)
+        plt.xlabel("Digit")
+        plt.ylabel("Accuracy")
+        plt.title("Per-Digit Accuracy Comparison")
+        plt.xticks(digits)
+        plt.ylim(0, 1.05)
+        plt.legend()
+        plt.grid(True, axis='y', alpha=0.3)
+        path = self.save_figure(fig, "Digit Comparison")
+        plt.show(block=False)
+        print(f"Comparison saved to {path}")
+
+    def plotCombinedLoss(self, models):
+        """Overlay training and test loss curves from multiple models on shared axes.
+
+        Args:
+            models: list of model instances with .trainLosses and .testLosses.
+        """
+        fig = plt.figure(figsize=(12, 6))
+        colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple']
+        for i, m in enumerate(models):
+            color = colors[i % len(colors)]
+            if hasattr(m, 'trainLosses') and m.trainLosses[0]:
+                train = m.trainLosses[0]
+                # Training starts at epoch 2 (epoch 1 is test-only)
+                plt.plot(range(2, len(train) + 2), train,
+                         label=f"{m.name} - Training",
+                         marker='o', color=color, linestyle='-')
+            if hasattr(m, 'testLosses') and m.testLosses[0]:
+                test = m.testLosses[0]
+                plt.plot(range(1, len(test) + 1), test,
+                         label=f"{m.name} - Test",
+                         marker='x', color=color, linestyle='--')
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title("Error per Epoch: Model Comparison")
+        plt.legend()
+        plt.grid(True)
+        self.save_figure(fig, "Combined Error Comparison")
+        plt.show(block=False)
+
+    def plotCombinedAccuracy(self, models):
+        """Overlay per-digit accuracy curves from multiple models on shared axes.
+
+        Args:
+            models: list of (name, rCorrect_tensor) tuples.
+        """
+        fig = plt.figure(figsize=(12, 6))
+        digits = list(range(10))
+        for name, rCorrect in models:
+            vals = rCorrect.detach().cpu().numpy() if hasattr(rCorrect, 'detach') else rCorrect
+            plt.plot(digits, vals, label=name, marker='o')
+        plt.xlabel("Digit")
+        plt.ylabel("Accuracy")
+        plt.title("Accuracy per Digit: Model Comparison")
+        plt.xticks(digits)
+        plt.ylim(0, 1.05)
+        plt.legend()
+        plt.grid(True)
+        self.save_figure(fig, "Combined Accuracy Comparison")
+        plt.show(block=False)
+
+    def plotEpochComparison(self):
+        """Plot epoch-level accuracy comparison from saved CSV files."""
+        fig = plt.figure(figsize=(10, 5))
+        for fn in ["SimpleModel", "ErgodicModel", "Ergodic - Normed", "Ergodic - Reversible"]:
+            csv_path = output_path(f"{fn}.csv")
+            if os.path.exists(csv_path):
+                self.plotErrorbarsFromFile(fn)
+        plt.xlabel("Epoch")
+        plt.ylabel("Accuracy")
+        plt.title("Model Comparison")
+        plt.legend()
+        plt.grid(True)
+        self.save_figure(fig, "Model Comparison")
+        plt.show(block=False)
 TheReport = Report()
 
 class PositionalEncoding(nn.Module):
@@ -725,7 +985,6 @@ class VectorSet(nn.Module):
         return torch.max(x, y)
     def intersection(self, x, y):
         return torch.min(x, y)
-
 # In PassThrough, the perceptual space comes directly from the input space: percepts are not used.
 class PassThrough(VectorSet):
     def create(self, nInput, nVectors, nDim):
@@ -755,7 +1014,6 @@ class UnquantizedVSet(VectorSet):
         return x
     def reverse(self, y, t=0):
         return y
-
 # An LVQ implementation with an inverse.
 class ReversibleDictionary(VectorSet):
     talking = True
@@ -1389,6 +1647,8 @@ class OutputSpace(Space):
             #self.forwardLinear, self.reverseLinear = self.linear.forward, self.linear.reverse
         else:
             self.forwardLinear = LinearLayer(input, output)
+        self.params = list(self.parameters())
+        self.layers = [self.forwardLinear] if not reversePass else [self.linear1, self.linear2]
     # Acting
     def forward(self, x, t=0):
         y = super().forwardBegin(x, t, reshape=True)
@@ -1512,8 +1772,9 @@ class BaseModel(nn.Module):
         print(f"[{self.name}] Weights loaded from {path}")
         return True
 
-    def mnistReport(model):
-        _, _, y_pred, last_x_pred = model.runEpoch(TheData.test_input, TheData.test_output, lr=0)
+    def mnistReport(self):
+        """Run test epoch, compute per-digit accuracy, and plot."""
+        _, _, y_pred, last_x_pred = self.runEpoch(TheData.test_input, TheData.test_output, lr=0)
         _, predicted = torch.max(y_pred, 1)
         _, actual = torch.max(TheData.test_output, 1)
 
@@ -1525,134 +1786,9 @@ class BaseModel(nn.Module):
             rCorrect[i] = nCorrect / total
             print(f"Correctly predicted {i}: {rCorrect[i]}")
 
-        fig = plt.figure(figsize=(10, 5))
-        plt.plot(range(0, 10), rCorrect, label="Error (per Input)", marker='o')
-        plt.xlabel("Digit")
-        plt.ylabel("Accuracy")
-        plt.title(f"Accuracy per Digit: {model.name}")
-        plt.legend()
-        plt.grid(True)
-        TheReport.save_figure(fig, f"{model.name} Accuracy")
-        plt.show(block=False)
+        TheReport.plotAccuracy(self.name, rCorrect)
         return rCorrect
 
-    def plotLoss(model, trainErr, valErr, testErr):
-        """Plots the training, validation, and test losses over time."""
-        fig = plt.figure(figsize=(10, 5))
-
-        # Training starts at epoch 2 (epoch 1 is test-only), so offset by +2
-        plt.plot(range(2, len(trainErr[0]) + 2), trainErr[0], label="Training Error", marker='o')
-        if len(trainErr) > 1 and trainErr[1]:
-            plt.plot(range(2, len(trainErr[1]) + 2), trainErr[1], label="Training Error (Input)", marker='o')
-
-        if testErr:
-            plt.plot(range(1, len(testErr[0]) + 1), testErr[0], label="Test Error", marker='x')
-            if len(testErr) > 1 and testErr[1]:
-                plt.plot(range(1, len(testErr[1]) + 1), testErr[1], label="Test Error (Input)", marker='x')
-
-        plt.xlabel("Epoch")
-        plt.ylabel("Loss")
-        plt.title(f"Error per Epoch: {model.name}")
-        plt.legend()
-        plt.grid(True)
-
-        TheReport.save_figure(fig, f"{model.name} Error")
-        plt.show(block=False)
-
-    def plotActivations(model, figure=1, percepts=None, concepts=None, symbols=None):
-        fig = plt.figure(figure, figsize=(12, 4))
-        fig.clf()
-
-        if percepts is not None:
-            p = percepts[-1, :, :].squeeze()
-            pAct = torch.norm(p, dim=1).detach().numpy()
-            plt.plot(pAct, marker='o', color='r')
-            plt.xlabel("Activation")
-            plt.ylabel("Percepts")
-            plt.title("Perceptual Activation")
-
-        if concepts is not None:
-            c = concepts[-1, :, :].squeeze()
-            cAct = torch.norm(c, dim=-1).detach().numpy()
-            plt.plot(cAct, marker='o', color='b')
-            plt.xlabel("Epoch")
-            plt.ylabel("Concepts")
-            plt.title("Conceptual Activation")
-
-        if symbols is not None:
-            s = symbols[-1, :, 0].squeeze()
-            sAct = s.detach().numpy()
-            plt.plot(sAct, marker='o', color='g')
-            plt.xlabel("Epoch")
-            plt.ylabel("Symbols")
-            plt.title("Symbolic Activations")
-
-        plt.tight_layout()
-        plt.show(block=False)
-
-    def plotSpace(model):
-        """Visualizes learned weight parameters via PCA projections."""
-        perc_weights = model.prototypes.data.cpu().numpy()
-        pca = PCA(n_components=2)
-        perc_2d = pca.fit_transform(perc_weights)
-
-        plt.figure(figsize=(18, 5))
-
-        plt.subplot(1, 3, 1)
-        plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
-        plt.xlabel("PC1")
-        plt.ylabel("PC2")
-        plt.title("Perceptual Space Prototypes")
-        plt.legend()
-
-        perc_mean = perc_2d.mean(axis=0)
-
-        conc_weights = model.conceptual.fc_p.weight.data.cpu().numpy()
-        conc_proj = pca.transform(conc_weights)
-
-        plt.subplot(1, 3, 2)
-        plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
-        x_vals = np.linspace(np.min(perc_2d[:, 0]) - 1, np.max(perc_2d[:, 0]) + 1, 100)
-        for i in range(conc_proj.shape[0]):
-            n = conc_proj[i]
-            if np.abs(n[1]) > 1e-3:
-                y_vals = perc_mean[1] - (n[0] / n[1]) * (x_vals - perc_mean[0])
-                plt.plot(x_vals, y_vals, '--', label=f"Hyperplane {i + 1}" if i == 0 else None, alpha=0.7)
-            else:
-                plt.axvline(x=perc_mean[0], linestyle='--', alpha=0.7, label=f"Hyperplane {i + 1}" if i == 0 else None)
-        plt.xlabel("PC1")
-        plt.ylabel("PC2")
-        plt.title("Conceptual Hyperplanes")
-        plt.legend()
-
-        symb_weights = model.fc_symbolic.weight.data.cpu().numpy()
-        symb_norms = np.linalg.norm(symb_weights, axis=1)
-        x_symb = np.arange(len(symb_norms))
-
-        plt.subplot(1, 3, 3)
-        plt.vlines(x_symb, 0, symb_norms, color='k', alpha=0.7)
-        plt.scatter(x_symb, symb_norms, color='red', s=100, zorder=3)
-        plt.xlabel("Symbolic Feature Index")
-        plt.ylabel("L2 Norm")
-        plt.title("Symbolic Weights (Lollipop Plot)")
-
-        plt.tight_layout()
-        plt.show(block=False)
-
-    def plotNetwork(model):
-        """Uses Torchviz to visualize the computation graph."""
-        model.eval()
-        output, input, _, _ = model.runTest(TheData.test_input, TheData.test_output)
-        dot = make_dot(output, params=dict(model.named_parameters()))
-        dot.format = "png"
-        graph_path = dot.render(output_stem(f"graph_{model.name}"))
-        print(f"Saved network graph as {graph_path}")
-
-    def plotErrorbars(model, acc):
-        x = list(range(1, len(acc[0]) + 1))
-        y = np.array(np.mean(acc, axis=0))
-        y_err = np.std(acc, axis=0)
-        plt.errorbar(x, y, yerr=y_err, fmt='-o', label=model.name, capsize=4)
 class SimpleModel(BaseModel):
     """Unified parameterized model: InputSpace → ConceptualSpace → OutputSpace.
 
@@ -1776,12 +1912,13 @@ class SimpleModel(BaseModel):
                 allInput = inputPred
         return outErr, inErr, allOutput, allInput
 
-    def mnistReport(model):
-        _, _, y_pred, last_x_pred = model.runEpoch(TheData.test_input, TheData.test_output, lr=0)
+    def mnistReport(self):
+        """Run test epoch, compute per-digit accuracy with certainty analysis, and plot."""
+        _, _, y_pred, last_x_pred = self.runEpoch(TheData.test_input, TheData.test_output, lr=0)
         _, predicted = torch.max(y_pred, 1)
         _, actual = torch.max(TheData.test_output, 1)
 
-        norms = torch.linalg.norm(model.outputSpace.linear.W, dim=0)
+        norms = torch.linalg.norm(self.outputSpace.forwardLinear.W, dim=0)
         rCorrect = torch.zeros_like(norms)
         for i in range(0,10):
             total    = (actual == i).sum().item()
@@ -1796,27 +1933,7 @@ class SimpleModel(BaseModel):
         correlation_value = correlation_matrix[0, 1]
         print(f"Pearson Correlation: {correlation_value}")
 
-        fig = plt.figure(figsize=(10, 5))
-        plt.plot(range(0, 10), rCorrect, label="Error (per Input)", marker='o')
-        plt.xlabel("Digit")
-        plt.ylabel("Accuracy & Certainty")
-        plt.title(f"Accuracy and Certainty: {model.name}")
-        plt.legend()
-        plt.grid(True)
-        TheReport.save_figure(fig, f"{model.name} Accuracy")
-        plt.show(block=False)
-
-        if model.reversePass:
-            for i in range(0, 10):
-                fig = plt.figure(figsize=(10, 5))
-                j = TheData.test_output[-i-1]
-                _, num = torch.max(j, axis=0)
-                plt.title(f"Reconstruction {num}: {model.name}")
-                image = last_x_pred[9-i, :]
-                image = np.reshape(image, (28, 28))
-                plt.imshow(image)
-                TheReport.save_figure(fig, f"{model.name} Reconstruction {num}")
-                plt.show(block=False)
+        TheReport.plotAccuracyAndCertainty(self.name, rCorrect, self.reversePass, last_x_pred)
         return rCorrect
 
     def run(self, numEpochs=1, batchSize=10, lr=0.001, stoppingCriterion=0.1):
@@ -1857,11 +1974,12 @@ class SimpleModel(BaseModel):
                 minValidationLoss = outErr
         if self.plot:
             print(f"Final Stats:")
-            self.plotLoss(trainLosses, validationLosses, testLosses)
+            TheReport.plotLoss(self.name, trainLosses, validationLosses, testLosses)
             self.rCorrect = self.mnistReport()
         self.trainLosses = trainLosses
         self.testLosses  = testLosses
         return accuracy
+
 class BasicModel(BaseModel):
     nSubThoughts   = 1
     nThoughts      = 0
@@ -1968,7 +2086,7 @@ class BasicModel(BaseModel):
         concepts = self.conceptualSpace(input, t)
         symbols = self.symbolicSpace(concepts, t)
         if self.plot:
-            self.plotActivations(figure=1, concepts=concepts)
+            TheReport.plotActivations(figure=1, concepts=concepts)
         return concepts, input, symbols
     def StartReverse(self, concepts, input, symbols, t=0.0):
         concepts = self.symbolicSpace.reverse(symbols, t)
@@ -1980,7 +2098,7 @@ class BasicModel(BaseModel):
         concepts = self.conceptualSpace2(percepts, t)
         symbols  = self.symbolicSpace2(concepts, t)
         if self.plot:
-            self.plotActivations(figure=1, percepts=percepts, concepts=concepts)
+            TheReport.plotActivations(figure=1, percepts=percepts, concepts=concepts)
         return concepts, symbols
     def SubsymbolicThoughtReverse(self, concepts, symbols, t=0.0):
         concepts = self.symbolicSpace2.reverse(symbols, t)
@@ -1992,7 +2110,7 @@ class BasicModel(BaseModel):
         words   = self.syntacticSpace3(data, t)
         symbols = self.symbolicSpace3(words, t)
         if self.plot:
-            self.plotActivations(figure=1, symbols=symbols)
+            TheReport.plotActivations(figure=1, symbols=symbols)
         return symbols, words
     def SymbolicThoughtReverse(self, symbols, words, t=0.0):
         symbols = self.syntacticSpace3.reverse(words, t)
@@ -2002,7 +2120,7 @@ class BasicModel(BaseModel):
             self.words = symbols
             data = self.outputSpace(symbols, t)
             if self.plot:
-                self.plotActivations(figure=1, symbols=symbols)
+                TheReport.plotActivations(figure=1, symbols=symbols)
             return data
     def FinishReverse(self, data, t=0.0):
             # cache this non-invertible step, since we watn to reverse our behavior based on our understanding,
@@ -2084,8 +2202,8 @@ class BasicModel(BaseModel):
         # Plot the loss over time
         self.plot = True
         self.runTest(TheData.test_input, TheData.test_output)
-        self.plotLoss(trainLosses, validationLosses, testLosses)
-        #self.plotNetwork()
+        TheReport.plotLoss(self.name, trainLosses, validationLosses, testLosses)
+        #TheReport.plotNetwork(self)
     def runTrain(self, input, output, temperature=0.00001, lr=0.01, batchSize=10):
         """
         Trains the Transformer model using labeled training data.
@@ -2198,320 +2316,212 @@ class BasicModel(BaseModel):
 TheBasicModel = BasicModel()
 
 
-def createLMModel(dataset, pretrained=False):
-    nInput    = 2 ** 3  # the size of the context window
-    nPercepts = 2 ** 3  # the number of percepts cannot be greater than the number of inputs
-    nConcepts = 2 ** 3  # the number of concepts may vary freely
-    nSymbols  = 2 ** 3  # must be equal to nConcepts
-    nWords    = 2 ** 3
-    nOutput   = 1       # The output (prediction) size
-
-    TheData.load(dataset)
-    # load the langauge model, which will determine the number of inputs
-    languageModel = LanguageModel()
-    languageModel.create(TheData.combinedTokens, nInput=0, nVectors=nInput, pretrained=pretrained)
-
-    # pre-tokenization for speed
-    #TheData.tokenize(languageModel)
-
-    inputDim     = languageModel.nDim
-    outputDim    = TheData.getOutputSize()
-    perceptDim   = inputDim
-    conceptDim   = inputDim
-    TheObjectEncoding.setDimensions(inputDim, perceptDim, conceptDim, outputDim)
-
-    TheBasicModel.create(nInput=nInput, nPercepts=nPercepts, nConcepts=nConcepts, nSymbols=nSymbols, nWords=nWords, nOutput=nOutput,
-                         LM=languageModel)
-def createVQModel():
-    nInput    = 2 ** 7  #
-    nPercepts = 2 ** 8  #
-    nConcepts = 2 ** 5  #
-    nSymbols  = 2 ** 5  #
-    nOutput   = 1  # The output (prediction) size
-
-    inputDim  = TheData.getInputSize()
-    outputDim = TheData.getOutputSize()
-    TheObjectEncoding.setInputDim(inputDim)
-    TheObjectEncoding.setPerceptDim(inputDim)
-    TheObjectEncoding.setConceptDim(inputDim)
-    TheObjectEncoding.setSymbolDim(0)
-    TheObjectEncoding.setOutputDim(outputDim)
-
-    vectorSet = VectorSet()
-    vectorSet.create(nInput=nInput, nOutput=nPercepts, nDim =inputDim, nVectors=nInput)
-
-    TheBasicModel.create(nInput=nInput, nPercepts=nPercepts, nConcepts=nConcepts, nSymbols=nSymbols, nOutput=nOutput,
-                         reversePass=False, LM=vectorSet)
-def createPassThroughModel(dataset):
-    nInput    = 1       #
-    nPercepts = 2 ** 3  #
-    nConcepts = 2 ** 3  #
-    nSymbols  = 2 ** 3  #
-    nOutput   = 1       # The output (prediction) size
-
-    TheData.load(dataset)
-    # Set the network's dimensionality
-    inputDim = TheData.getInputSize()
-    outputDim = TheData.getOutputSize()
-    TheObjectEncoding.setInputDim(inputDim)
-    TheObjectEncoding.setPerceptDim(inputDim)
-    TheObjectEncoding.setConceptDim(inputDim)
-    TheObjectEncoding.setSymbolDim(0)
-    TheObjectEncoding.setOutputDim(outputDim)
-
-
-    passThrough = PassThrough()
-    passThrough.create(nInput=nInput, nOutput=nPercepts, nDim=TheObjectEncoding.inputDim)
-
-    TheBasicModel.create(nInput=nInput, nPercepts=nPercepts, nConcepts=nConcepts, nSymbols=nSymbols, nOutput=nOutput,
-                         reversePass=False, LM=passThrough)
-
-
 def test():
     PositionalEncoding.test()
     TemporalEncoding.test()
-
-    # test XOR
-    createLMModel('xor', pretrained=False, reversePass=True)
-    TheBasicModel.run(numEpochs=200, stoppingCriterion=1, temperature=0.01, lr=0.01)
-    TheBasicModel.classificationReport()
-
-def plotErrorbarsFromFile(fn):
-    """Load a CSV of trial accuracies and add an errorbar series to the current plot."""
-    acc = np.loadtxt(output_path(f"{fn}.csv"), delimiter=",")
-    y = np.mean(acc, axis=0)
-    y_err = np.std(acc, axis=0)
-    x = list(range(1, len(y) + 1))
-    plt.errorbar(x, y, yerr=y_err, fmt='-o', label=fn, capsize=4)
-
-def plotComparison(models):
-    """Plot per-digit accuracy comparison across model variants.
-
-    Args:
-        models: list of (name, rCorrect_tensor) tuples
-    """
-    digits = list(range(10))
-    n = len(models)
-    width = 0.8 / n
-    fig = plt.figure(figsize=(12, 6))
-    for i, (name, rCorrect) in enumerate(models):
-        offsets = [d + (i - n/2 + 0.5) * width for d in digits]
-        vals = rCorrect.detach().cpu().numpy() if hasattr(rCorrect, 'detach') else rCorrect
-        plt.bar(offsets, vals, width, label=name)
-    plt.xlabel("Digit")
-    plt.ylabel("Accuracy")
-    plt.title("Per-Digit Accuracy Comparison")
-    plt.xticks(digits)
-    plt.ylim(0, 1.05)
-    plt.legend()
-    plt.grid(True, axis='y', alpha=0.3)
-    path = TheReport.save_figure(fig, "Digit Comparison")
-    plt.show(block=False)
-    print(f"Comparison saved to {path}")
-
-def plotCombinedLoss(models):
-    """Overlay training and test loss curves from multiple models on shared axes.
-
-    Args:
-        models: list of SimpleModel instances with .trainLosses and .testLosses.
-    """
-    fig = plt.figure(figsize=(12, 6))
-    colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple']
-    for i, m in enumerate(models):
-        color = colors[i % len(colors)]
-        if hasattr(m, 'trainLosses') and m.trainLosses[0]:
-            train = m.trainLosses[0]
-            # Training starts at epoch 2 (epoch 1 is test-only)
-            plt.plot(range(2, len(train) + 2), train,
-                     label=f"{m.name} - Training",
-                     marker='o', color=color, linestyle='-')
-        if hasattr(m, 'testLosses') and m.testLosses[0]:
-            test = m.testLosses[0]
-            plt.plot(range(1, len(test) + 1), test,
-                     label=f"{m.name} - Test",
-                     marker='x', color=color, linestyle='--')
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.title("Error per Epoch: Model Comparison")
-    plt.legend()
-    plt.grid(True)
-    TheReport.save_figure(fig, "Combined Error Comparison")
-    plt.show(block=False)
-
-def plotCombinedAccuracy(models):
-    """Overlay per-digit accuracy curves from multiple models on shared axes.
-
-    Args:
-        models: list of (name, rCorrect_tensor) tuples.
-    """
-    fig = plt.figure(figsize=(12, 6))
-    digits = list(range(10))
-    for name, rCorrect in models:
-        vals = rCorrect.detach().cpu().numpy() if hasattr(rCorrect, 'detach') else rCorrect
-        plt.plot(digits, vals, label=name, marker='o')
-    plt.xlabel("Digit")
-    plt.ylabel("Accuracy")
-    plt.title("Accuracy per Digit: Model Comparison")
-    plt.xticks(digits)
-    plt.ylim(0, 1.05)
-    plt.legend()
-    plt.grid(True)
-    TheReport.save_figure(fig, "Combined Accuracy Comparison")
-    plt.show(block=False)
-
-def plotEpochComparison():
-    """Plot epoch-level accuracy comparison from saved CSV files."""
-    fig = plt.figure(figsize=(10, 5))
-    for fn in ["SimpleModel", "ErgodicModel", "Ergodic - Normed", "Ergodic - Reversible"]:
-        csv_path = output_path(f"{fn}.csv")
-        if os.path.exists(csv_path):
-            plotErrorbarsFromFile(fn)
-    plt.xlabel("Epoch")
-    plt.ylabel("Accuracy")
-    plt.title("Model Comparison")
-    plt.legend()
-    plt.grid(True)
-    TheReport.save_figure(fig, "Model Comparison")
-    plt.show(block=False)
-
-def _derived_name(ergodic, certainty, quantized, normed=False, reverse=False, invert=False):
-    """Generate a human-readable model name from its flags."""
-    if not ergodic and not certainty and not quantized:
-        return "SimpleModel"
-    parts = []
-    if ergodic:
-        parts.append("Ergodic")
-    if certainty:
-        parts.append("Certainty")
-    if quantized:
-        parts.append("Quantized")
-    if normed:
-        parts.append("Normed")
-    if invert:
-        parts.append("Invertible")
-    elif reverse:
-        parts.append("Reversible")
-    return " + ".join(parts) if parts else "SimpleModel"
+    # test XOR — fully XML-driven
+    BasicModelFactory.run(os.path.join(PROJECT_DIR, "data", "xor.xml"))
 
 
-def BasicModelFactory(config_path):
+class BasicModelFactory:
     """Create, train, and evaluate models from an XML config file.
 
     Dispatches to the right model class based on <architecture> flags:
       - modelType=lm         → BasicModel (language model path)
       - modelType=passthrough → BasicModel (passthrough path)
+      - modelType=vq         → BasicModel (vector-quantized path)
       - Otherwise             → SimpleModel parameterized by:
             ergodic, certainty, quantized, normed, reverse, invert
     """
-    cfg = BaseModel.load_config(config_path)
-    arch = cfg.get("architecture", {})
-    train = cfg.get("training", {})
-    weights = cfg.get("weights", {})
 
-    dataset = train.get("dataset", "xor")
-    model_type = train.get("modelType", "lm")
-
-    if train.get("detectAnomaly", False):
-        torch.autograd.set_detect_anomaly(True)
-
-    # --- SimpleModel path ---
-    # All flags live in <architecture>
-    ergodic   = arch.get("ergodic", False)
-    certainty = arch.get("certainty", False)
-    quantized = arch.get("quantized", False)
-    normed    = arch.get("normed", False)
-    reverse   = arch.get("reverse", False)
-    invert    = arch.get("invert", False)
-
-    is_derived = ergodic or certainty or quantized or normed or reverse or invert \
-                 or "ergodic" in arch or "certainty" in arch or "quantized" in arch
-
-    if is_derived:
-        TheData.load(dataset)
-        nInput = TheData.getInputSize()
-        nConcepts = arch.get("nConcepts", 20)
-        nOutput = TheData.getOutputSize()
-
-        # Set ObjectEncoding dimensions for the SimpleModel path.
-        # nWhere=0, nWhen=0 so objectSize=0 — unified Space with no
-        # positional/temporal encoding (matches old DerivedSpace behaviour).
-        dim = 1
-        TheObjectEncoding.nWhere = 0
-        TheObjectEncoding.nWhen = 0
-        TheObjectEncoding.objectSize = 0
-        TheObjectEncoding.setInputDim(dim)
-        TheObjectEncoding.setPerceptDim(dim)
-        TheObjectEncoding.setConceptDim(dim)
-        TheObjectEncoding.setSymbolDim(0)
-        TheObjectEncoding.setOutputDim(dim)
-
-        numTrials = train.get("numTrials", 1)
-        numEpochs = train.get("numEpochs", 3)
-        batchSize = train.get("batchSize", 10)
-        completed_models = []
-
-        m = SimpleModel()
-        m.ergodic   = ergodic
-        m.certainty = certainty
-        m.quantized = quantized
-        m.hasNorm   = normed
-        if reverse or invert:
-            m.reversePass = True
+    @staticmethod
+    def model_name(ergodic, certainty, quantized, normed=False, reverse=False, invert=False):
+        """Generate a human-readable model name from its flags."""
+        if not ergodic and not certainty and not quantized:
+            return "SimpleModel"
+        parts = []
+        if ergodic:
+            parts.append("Ergodic")
+        if certainty:
+            parts.append("Certainty")
+        if quantized:
+            parts.append("Quantized")
+        if normed:
+            parts.append("Normed")
         if invert:
-            m.invertible = True
-        m.create(nInput=nInput, nConcepts=nConcepts, nOutput=nOutput)
-        m.name = _derived_name(ergodic, certainty, quantized, normed, reverse, invert)
-        m.runTrials(numTrials, numEpochs, batchSize)
-        if hasattr(m, 'rCorrect'):
-            completed_models.append((m.name, m.rCorrect, m))
+            parts.append("Invertible")
+        elif reverse:
+            parts.append("Reversible")
+        return " + ".join(parts) if parts else "SimpleModel"
 
-        if len(completed_models) > 1:
-            plotComparison([(name, rc) for name, rc, _ in completed_models])
+    @staticmethod
+    def resolve_xml(path):
+        """Resolve an XML config path relative to the project directory."""
+        if os.path.isabs(path):
+            return path
+        # Try relative to project root first (handles "data/simple.xml")
+        candidate = os.path.join(PROJECT_DIR, path)
+        if os.path.exists(candidate):
+            return candidate
+        # Try inside data/ (handles bare "simple.xml")
+        candidate = os.path.join(PROJECT_DIR, "data", path)
+        if os.path.exists(candidate):
+            return candidate
+        return path
 
-        return completed_models
+    @staticmethod
+    def run(config_path):
+        """Main entry point — create, train, and evaluate a model from XML config."""
+        cfg = BaseModel.load_config(config_path)
+        arch = cfg.get("architecture", {})
+        train = cfg.get("training", {})
+        weights = cfg.get("weights", {})
 
-    # --- BasicModel path (LM or passthrough) ---
-    if model_type == "passthrough":
-        createPassThroughModel(dataset)
-    else:
-        createLMModel(dataset, pretrained=train.get("pretrained", False))
+        dataset = train.get("dataset", "xor")
+        model_type = train.get("modelType", "lm")
 
-    # Build run() kwargs from training config
-    run_kwargs = {}
-    if "numEpochs" in train:
-        run_kwargs["numEpochs"] = train["numEpochs"]
-    if "stoppingCriterion" in train:
-        run_kwargs["stoppingCriterion"] = train["stoppingCriterion"]
-    if "temperature" in train:
-        run_kwargs["temperature"] = train["temperature"]
-    if "learningRate" in train:
-        run_kwargs["lr"] = train["learningRate"]
+        if train.get("detectAnomaly", False):
+            torch.autograd.set_detect_anomaly(True)
 
-    TheBasicModel.run(**run_kwargs)
+        # --- SimpleModel path ---
+        ergodic   = arch.get("ergodic", False)
+        certainty = arch.get("certainty", False)
+        quantized = arch.get("quantized", False)
+        normed    = arch.get("normed", False)
+        reverse   = arch.get("reverse", False)
+        invert    = arch.get("invert", False)
 
-    # Build classificationReport() kwargs
-    report_kwargs = {}
-    if "classificationMin" in train:
-        report_kwargs["min"] = train["classificationMin"]
-    if "classificationMax" in train:
-        report_kwargs["max"] = train["classificationMax"]
-    TheBasicModel.classificationReport(**report_kwargs)
+        is_simple = ergodic or certainty or quantized or normed or reverse or invert \
+                     or "ergodic" in arch or "certainty" in arch or "quantized" in arch
 
-    # Auto-save weights if configured
-    if weights.get("autosave", False):
-        wpath = weights.get("path", "output/weights.pt")
-        if not os.path.isabs(wpath):
-            wpath = os.path.join(PROJECT_DIR, wpath)
-        TheBasicModel.save_weights(wpath)
+        if is_simple:
+            TheData.load(dataset)
+            nInput = TheData.getInputSize()
+            nConcepts = arch.get("nConcepts", 20)
+            nOutput = TheData.getOutputSize()
 
-    return []
+            # Set ObjectEncoding dimensions for the SimpleModel path.
+            # nWhere=0, nWhen=0 so objectSize=0 — unified Space with no
+            # positional/temporal encoding (matches old DerivedSpace behaviour).
+            dim = 1
+            TheObjectEncoding.nWhere = 0
+            TheObjectEncoding.nWhen = 0
+            TheObjectEncoding.objectSize = 0
+            TheObjectEncoding.setInputDim(dim)
+            TheObjectEncoding.setPerceptDim(dim)
+            TheObjectEncoding.setConceptDim(dim)
+            TheObjectEncoding.setSymbolDim(0)
+            TheObjectEncoding.setOutputDim(dim)
 
+            numTrials = train.get("numTrials", 1)
+            numEpochs = train.get("numEpochs", 3)
+            batchSize = train.get("batchSize", 10)
+            completed_models = []
 
-def _resolve_xml(path):
-    """Resolve an XML path relative to PROJECT_DIR if not absolute."""
-    if not os.path.isabs(path):
-        return os.path.join(PROJECT_DIR, path)
-    return path
+            m = SimpleModel()
+            m.ergodic   = ergodic
+            m.certainty = certainty
+            m.quantized = quantized
+            m.hasNorm   = normed
+            if reverse or invert:
+                m.reversePass = True
+            if invert:
+                m.invertible = True
+            m.create(nInput=nInput, nConcepts=nConcepts, nOutput=nOutput)
+            m.name = BasicModelFactory.model_name(ergodic, certainty, quantized, normed, reverse, invert)
+            m.runTrials(numTrials, numEpochs, batchSize)
+            if hasattr(m, 'rCorrect'):
+                completed_models.append((m.name, m.rCorrect, m))
+
+            if len(completed_models) > 1:
+                TheReport.plotComparison([(name, rc) for name, rc, _ in completed_models])
+
+            return completed_models
+
+        # --- BasicModel path ---
+        TheData.load(dataset)
+
+        nInput    = arch.get("nInput", 8)
+        nPercepts = arch.get("nPercepts", 8)
+        nConcepts = arch.get("nConcepts", 8)
+        nSymbols  = arch.get("nSymbols", 8)
+        nWords    = arch.get("nWords", 8)
+        nOutput   = arch.get("nOutput", 1)
+
+        if model_type == "passthrough":
+            inputDim  = TheData.getInputSize()
+            outputDim = TheData.getOutputSize()
+            TheObjectEncoding.setInputDim(inputDim)
+            TheObjectEncoding.setPerceptDim(inputDim)
+            TheObjectEncoding.setConceptDim(inputDim)
+            TheObjectEncoding.setSymbolDim(0)
+            TheObjectEncoding.setOutputDim(outputDim)
+
+            passThrough = PassThrough()
+            passThrough.create(nInput=nInput, nOutput=nPercepts, nDim=inputDim)
+
+            TheBasicModel.create(nInput=nInput, nPercepts=nPercepts, nConcepts=nConcepts,
+                                 nSymbols=nSymbols, nOutput=nOutput,
+                                 reversePass=False, LM=passThrough)
+
+        elif model_type == "vq":
+            inputDim  = TheData.getInputSize()
+            outputDim = TheData.getOutputSize()
+            TheObjectEncoding.setInputDim(inputDim)
+            TheObjectEncoding.setPerceptDim(inputDim)
+            TheObjectEncoding.setConceptDim(inputDim)
+            TheObjectEncoding.setSymbolDim(0)
+            TheObjectEncoding.setOutputDim(outputDim)
+
+            vectorSet = VectorSet()
+            vectorSet.create(nInput=nInput, nOutput=nPercepts, nDim=inputDim, nVectors=nInput)
+
+            TheBasicModel.create(nInput=nInput, nPercepts=nPercepts, nConcepts=nConcepts,
+                                 nSymbols=nSymbols, nOutput=nOutput,
+                                 reversePass=False, LM=vectorSet)
+
+        else:  # "lm" (default)
+            languageModel = LanguageModel()
+            languageModel.create(TheData.combinedTokens, nInput=0, nVectors=nInput,
+                                 pretrained=train.get("pretrained", False))
+
+            inputDim   = languageModel.nDim
+            outputDim  = TheData.getOutputSize()
+            TheObjectEncoding.setDimensions(inputDim, inputDim, inputDim, outputDim)
+
+            TheBasicModel.create(nInput=nInput, nPercepts=nPercepts, nConcepts=nConcepts,
+                                 nSymbols=nSymbols, nWords=nWords, nOutput=nOutput,
+                                 LM=languageModel)
+
+        # Build run() kwargs from training config
+        run_kwargs = {}
+        if "numEpochs" in train:
+            run_kwargs["numEpochs"] = train["numEpochs"]
+        if "stoppingCriterion" in train:
+            run_kwargs["stoppingCriterion"] = train["stoppingCriterion"]
+        if "temperature" in train:
+            run_kwargs["temperature"] = train["temperature"]
+        if "learningRate" in train:
+            run_kwargs["lr"] = train["learningRate"]
+
+        TheBasicModel.run(**run_kwargs)
+
+        # Build classificationReport() kwargs
+        report_kwargs = {}
+        if "classificationMin" in train:
+            report_kwargs["min"] = train["classificationMin"]
+        if "classificationMax" in train:
+            report_kwargs["max"] = train["classificationMax"]
+        TheBasicModel.classificationReport(**report_kwargs)
+
+        # Auto-save weights if configured
+        if weights.get("autosave", False):
+            wpath = weights.get("path", "output/weights.pt")
+            if not os.path.isabs(wpath):
+                wpath = os.path.join(PROJECT_DIR, wpath)
+            TheBasicModel.save_weights(wpath)
+
+        return []
 
 
 # Standalone execution entry point
@@ -2520,19 +2530,19 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1 and sys.argv[1] == "--compare":
         # Compare mode: run two XML configs and plot per-digit accuracy side by side
-        xml1 = _resolve_xml(sys.argv[2])
-        xml2 = _resolve_xml(sys.argv[3])
+        xml1 = BasicModelFactory.resolve_xml(sys.argv[2])
+        xml2 = BasicModelFactory.resolve_xml(sys.argv[3])
         TheReport.add_xml(xml1)
         TheReport.add_xml(xml2)
-        results = BasicModelFactory(xml1) + BasicModelFactory(xml2)
+        results = BasicModelFactory.run(xml1) + BasicModelFactory.run(xml2)
         if len(results) >= 2:
-            plotComparison([(name, rc) for name, rc, _ in results])
-            plotCombinedAccuracy([(name, rc) for name, rc, _ in results])
-            plotCombinedLoss([m for _, _, m in results])
+            TheReport.plotComparison([(name, rc) for name, rc, _ in results])
+            TheReport.plotCombinedAccuracy([(name, rc) for name, rc, _ in results])
+            TheReport.plotCombinedLoss([m for _, _, m in results])
     else:
         # Single run mode
-        xml = _resolve_xml(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(PROJECT_DIR, "data", "xor.xml")
+        xml = BasicModelFactory.resolve_xml(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(PROJECT_DIR, "data", "xor.xml")
         TheReport.add_xml(xml)
-        BasicModelFactory(xml)
+        BasicModelFactory.run(xml)
 
     TheReport.write_html()
