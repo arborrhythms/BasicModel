@@ -1131,7 +1131,7 @@ class BaseModel(nn.Module):
                 params.extend(s.getParameters())
         else:
             params = list(self.parameters())
-        return optim.Adam(params, lr=lr) if params else None
+        return optim.Adam(params, lr=lr)
 
     def runTrials(self, numTrials=1, numEpochs=1, batchSize=10, lr=0.001):
         acc = np.zeros([numTrials, numEpochs])
