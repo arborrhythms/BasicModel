@@ -490,5 +490,47 @@ class TestUniversalTrainingContract(unittest.TestCase):
         cs.paramUpdate()  # no crash
 
 
+class TestSigmaLayerDeterministic(unittest.TestCase):
+    """SigmaLayer(deterministic=True) behaves like LinearLayer + Tanh."""
+
+    def test_deterministic_matches_linear_tanh(self):
+        from Model import SigmaLayer, LinearLayer
+        torch.manual_seed(42)
+        nIn, nOut = 8, 4
+        sigma = SigmaLayer(nIn, nOut, deterministic=True)
+        sigma.train()
+
+        # Build a matching LinearLayer + Tanh with same weights
+        linear = LinearLayer(nIn, nOut, hasBias=True)
+        with torch.no_grad():
+            linear.W.copy_(sigma.layer.W)
+            linear.bias.copy_(sigma.layer.bias)
+        tanh = torch.nn.Tanh()
+
+        x = torch.randn(2, nIn)
+        y_sigma = sigma(x)
+        y_manual = tanh(linear(x))
+        self.assertTrue(torch.allclose(y_sigma, y_manual, atol=1e-6),
+                        f"Deterministic SigmaLayer should match LinearLayer+Tanh")
+
+    def test_deterministic_same_train_eval(self):
+        from Model import SigmaLayer
+        nIn, nOut = 8, 4
+        sigma = SigmaLayer(nIn, nOut, deterministic=True)
+        x = torch.randn(2, nIn)
+
+        sigma.train()
+        y_train = sigma(x).detach().clone()
+        sigma.eval()
+        y_eval = sigma(x).detach().clone()
+        self.assertTrue(torch.allclose(y_train, y_eval, atol=1e-6),
+                        "Deterministic mode should produce same output in train and eval")
+
+    def test_non_deterministic_default(self):
+        from Model import SigmaLayer
+        sigma = SigmaLayer(nInput=8, nOutput=4)
+        self.assertFalse(sigma.deterministic)
+
+
 if __name__ == "__main__":
     unittest.main()

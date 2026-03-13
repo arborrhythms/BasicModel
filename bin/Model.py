@@ -729,19 +729,23 @@ class SoftMap(Layer):
         assert error < 1e-3, f"Reconstruction error too high: {error}"
 
 class SigmaLayer(ErgodicLayer):
-    def __init__(self, nInput, nOutput, permuteInput=False):
+    def __init__(self, nInput, nOutput, permuteInput=False, deterministic=False):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
         self.layer       = LinearLayer(nInput, nOutput, hasBias=True)
         self.saturate    = True
         self.activation  = torch.zeros(1,nOutput,1)
+        self.deterministic = deterministic
 
     def layer_tradeoff(self):
         return self.local_tradeoff()
 
     def forward(self, x):
-        bias, temp = self.layer_tradeoff()
-        if not self.training:
+        if self.deterministic:
+            bias, temp = 1.0, 0.0
+        elif not self.training:
             bias, temp = 1.0, 0.0      # pure learned weights, no noise
+        else:
+            bias, temp = self.layer_tradeoff()
         x = self.permute(x)
         y = self.layer.forward(x, bias, temp)   # (batch_size, output_dim)
         if self.saturate:
