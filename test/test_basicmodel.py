@@ -532,5 +532,27 @@ class TestSigmaLayerDeterministic(unittest.TestCase):
         self.assertFalse(sigma.deterministic)
 
 
+class TestCreateVectorSetQuantized(unittest.TestCase):
+    """Space.createVectorSet supports both quantized and unquantized paths."""
+
+    def test_quantized_creates_vectorset(self):
+        from BasicModel import Space, VectorSet
+        s = Space([4, 3], [4, 3], 4, 3)
+        s.createVectorSet(quantized=True)
+        self.assertIsInstance(s.vectors(), VectorSet)
+
+    def test_unquantized_creates_unquantized_vset(self):
+        from BasicModel import Space, UnquantizedVSet
+        s = Space([4, 3], [4, 3], 4, 3)
+        s.createVectorSet(quantized=False)
+        self.assertIsInstance(s.vectors(), UnquantizedVSet)
+
+    def test_default_is_quantized(self):
+        from BasicModel import Space, VectorSet
+        s = Space([4, 3], [4, 3], 4, 3)
+        s.createVectorSet()
+        self.assertIsInstance(s.vectors(), VectorSet)
+
+
 if __name__ == "__main__":
     unittest.main()

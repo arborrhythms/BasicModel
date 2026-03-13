@@ -948,7 +948,7 @@ class LanguageModel(VectorSet):
 
 class Space(nn.Module):
     name         = ""
-    vectorSet    = []
+    # vectorSet class-level default removed — use instance nn.ModuleList instead
     activation   = None
     processSymbols = False
 
@@ -960,7 +960,7 @@ class Space(nn.Module):
         self.nDim         = nDim # the latent dimensionality
         self.embeddingSize = TheObjectEncoding.getEmbeddingSize(self.nDim)
         self.batch        = 0
-        self.vectorSet    = []
+        self.vectorSet    = nn.ModuleList()
         self.useVQ        = useVQ
         self.customVQ     = customVQ
         self.nPrototypes  = nPrototypes
@@ -1000,10 +1000,15 @@ class Space(nn.Module):
     def vectors(self):
         # this is done to store by reference, since lists are mutable entities (?)
         return self.vectorSet[0]
-    def createVectorSet(self):
-        self.vectorSet.append(VectorSet())
-        self.vectors().create(self.inputShape[0], self.nVectors, self.nDim, self.customVQ) # can be bigger than nVectors, cannot be smaller
-        self.vectors().addVectors(nVec=self.nPrototypes)
+    def createVectorSet(self, quantized=True):
+        if quantized:
+            self.vectorSet.append(VectorSet())
+            self.vectors().create(self.inputShape[0], self.nVectors, self.nDim, self.customVQ)
+            self.vectors().addVectors(nVec=self.nPrototypes)
+        else:
+            vs = UnquantizedVSet()
+            vs.create(self.inputShape[0], self.nVectors, self.nDim)
+            self.vectorSet.append(vs)
     def forwardBegin(self, x, t=0.0, reshape=False):
         self.batch = x.shape[0]
         if reshape:
