@@ -639,5 +639,70 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         self.assertEqual(list(y.shape), [2, nOut, outEmb])
 
 
+class TestInputSpaceUnquantized(unittest.TestCase):
+    """InputSpace works with unquantized codebook (objectSize=0)."""
+
+    def setUp(self):
+        from BasicModel import TheObjectEncoding
+        self._orig_nWhere = TheObjectEncoding.nWhere
+        self._orig_nWhen = TheObjectEncoding.nWhen
+        self._orig_objectSize = TheObjectEncoding.objectSize
+
+    def tearDown(self):
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = self._orig_nWhere
+        TheObjectEncoding.nWhen = self._orig_nWhen
+        TheObjectEncoding.objectSize = self._orig_objectSize
+
+    def test_unquantized_forward_shape(self):
+        from BasicModel import TheObjectEncoding, InputSpace
+        TheObjectEncoding.nWhere = 0
+        TheObjectEncoding.nWhen = 0
+        TheObjectEncoding.objectSize = 0
+        nIn, nDim = 8, 1
+        inp = InputSpace([nIn, nDim], [nIn, nDim], nIn, nDim=nDim, useVQ=False)
+        x = torch.randn(2, nIn, nDim)
+        y = inp(x)
+        self.assertEqual(list(y.shape), [2, nIn, nDim])
+
+
+class TestOutputSpaceZeroObjectSize(unittest.TestCase):
+    """OutputSpace works with objectSize=0."""
+
+    def setUp(self):
+        from BasicModel import TheObjectEncoding
+        self._orig_nWhere = TheObjectEncoding.nWhere
+        self._orig_nWhen = TheObjectEncoding.nWhen
+        self._orig_objectSize = TheObjectEncoding.objectSize
+
+    def tearDown(self):
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = self._orig_nWhere
+        TheObjectEncoding.nWhen = self._orig_nWhen
+        TheObjectEncoding.objectSize = self._orig_objectSize
+
+    def test_forward_shape_zero_object_size(self):
+        from BasicModel import TheObjectEncoding, OutputSpace
+        TheObjectEncoding.nWhere = 0
+        TheObjectEncoding.nWhen = 0
+        TheObjectEncoding.objectSize = 0
+        nIn, nOut = 4, 3
+        os_ = OutputSpace([nIn, 1], [nOut, 1], nOut, 1)
+        x = torch.randn(2, nIn, 1)
+        y = os_(x)
+        self.assertEqual(list(y.shape), [2, nOut, 1])
+
+    def test_reverse_shape_zero_object_size(self):
+        from BasicModel import TheObjectEncoding, OutputSpace
+        TheObjectEncoding.nWhere = 0
+        TheObjectEncoding.nWhen = 0
+        TheObjectEncoding.objectSize = 0
+        nIn, nOut = 4, 3
+        os_ = OutputSpace([nIn, 1], [nOut, 1], nOut, 1, reversePass=True)
+        y = torch.randn(2, nOut, 1)
+        x = os_.reverse(y)
+        self.assertEqual(list(x.shape), [2, nIn, 1])
+
+
 if __name__ == "__main__":
     unittest.main()

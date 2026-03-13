@@ -752,9 +752,9 @@ class UnquantizedVSet(VectorSet):
     """Pass-through VectorSet that skips quantization entirely."""
     def create(self, nInput, nVectors, nDim):
         super().create(nInput, nVectors, nDim)
-    def forward(self, x):
+    def forward(self, x, t=0):
         return x
-    def reverse(self, y):
+    def reverse(self, y, t=0):
         return y
 
 # An LVQ implementation with an inverse.
@@ -1297,7 +1297,7 @@ class InputSpace(Space):
                 #self.vectors().create(self.inputShape[0], self.nVectors, self.nDim)
                 #self.vectors().addVectors(nVec=LM.getSize(), LM=LM)
         else:
-            self.createVectorSet()
+            self.createVectorSet(quantized=self.useVQ)
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
         self.input          = torch.FloatTensor
         self.tokenizedInput = tokenizedInput
