@@ -1101,9 +1101,37 @@ class BaseModel(nn.Module):
             cfg[section.tag] = sec
         return cfg
 
+    @staticmethod
+    def from_config(config_path=None, LM=None):
+        """Factory: create the right model type from XML config."""
+        cfg = BaseModel.load_config(config_path)
+        arch = cfg.get("architecture", {})
+        model_type = arch.get("type", "basic")
+        if model_type == "simple":
+            model = SimpleModel()
+        else:
+            model = BasicModel()
+        model.create_from_config(config_path, LM)
+        return model, cfg
+
     def create(self, **kwargs):
         """Override in subclasses to build model architecture."""
         pass
+
+    def getOptimizer(self, lr=0.01):
+        """Build an Adam optimizer over all space parameters.
+
+        Uses getParameters() from each Space (the universal training contract),
+        which excludes temperature params managed by alpha_update.
+        Falls back to standard PyTorch parameters() when not in ergodic mode.
+        """
+        if getattr(self, 'ergodic', True):
+            params = []
+            for s in self.spaces:
+                params.extend(s.getParameters())
+        else:
+            params = list(self.parameters())
+        return optim.Adam(params, lr=lr) if params else None
 
     def runTrials(self, numTrials=1, numEpochs=1, batchSize=10, lr=0.001):
         acc = np.zeros([numTrials, numEpochs])
@@ -1649,6 +1677,20 @@ class SimpleModel(BaseModel):
     certainty  = True
     quantized  = False
 
+    def create_from_config(self, config_path=None, LM=None):
+        """Create the model using settings from an XML config file."""
+        cfg = self.load_config(config_path)
+        arch = cfg.get("architecture", {})
+        self.ergodic = arch.get("ergodic", self.ergodic)
+        self.certainty = arch.get("certainty", self.certainty)
+        self.quantized = arch.get("quantized", self.quantized)
+        self.create(
+            nInput=arch.get("nInput", 32),
+            nConcepts=arch.get("nConcepts", 256),
+            nOutput=arch.get("nOutput", 32),
+        )
+        return cfg
+
     def create(self, nInput=32, nConcepts=256, nOutput=32):
         self.nInput    = nInput
         self.nConcepts = nConcepts
@@ -1685,15 +1727,6 @@ class SimpleModel(BaseModel):
         percepts = self.conceptualSpace.reverse(concepts)
         data     = self.inputSpace.reverse(percepts)
         return data, percepts
-    def getOptimizer(self, lr=0.01):
-        if self.ergodic:
-            # Filtered params: excludes temperature (managed by alpha_update, not Adam)
-            params = self.inputSpace.getParameters() + self.conceptualSpace.getParameters() + self.outputSpace.getParameters()
-        else:
-            # Traditional path: all parameters via standard PyTorch
-            params = list(self.parameters())
-        optimizer = optim.Adam(params, lr=lr)
-        return optimizer
     def runEpoch(self, input, output, lr=0.01, batchSize=10):
         if lr:
             optimizer = self.getOptimizer(lr=lr)

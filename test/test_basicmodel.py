@@ -728,5 +728,65 @@ class TestOutputSpaceZeroObjectSize(unittest.TestCase):
         self.assertEqual(list(x.shape), [2, nIn, 1])
 
 
+class TestBaseModelFactory(unittest.TestCase):
+    """BaseModel.from_config factory creates the correct model type."""
+
+    def test_factory_creates_simple_model(self):
+        from BasicModel import BaseModel, SimpleModel, TheObjectEncoding
+        orig_nWhere = TheObjectEncoding.nWhere
+        orig_nWhen = TheObjectEncoding.nWhen
+        orig_objectSize = TheObjectEncoding.objectSize
+        TheObjectEncoding.nWhere = 0
+        TheObjectEncoding.nWhen = 0
+        TheObjectEncoding.objectSize = 0
+        xml = """<model>
+  <architecture>
+    <type>simple</type>
+    <nInput>16</nInput>
+    <nConcepts>8</nConcepts>
+    <nOutput>4</nOutput>
+  </architecture>
+</model>"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml)
+            path = f.name
+        try:
+            model, cfg = BaseModel.from_config(path)
+            self.assertIsInstance(model, SimpleModel)
+        finally:
+            os.unlink(path)
+            TheObjectEncoding.nWhere = orig_nWhere
+            TheObjectEncoding.nWhen = orig_nWhen
+            TheObjectEncoding.objectSize = orig_objectSize
+
+    def test_factory_creates_basic_model(self):
+        from BasicModel import BaseModel, BasicModel as BM, TheObjectEncoding
+        # BasicModel.create() needs non-zero encoding dimensions
+        TheObjectEncoding.setDimensions(inputDim=8, perceptDim=8,
+                                        conceptDim=8, outputDim=4)
+        # nSymbols must equal nConcepts (SymbolicSpace 1:1 mapping constraint),
+        # and nPercepts must be 2*nConcepts (ReversiblePiLayer invertibility).
+        xml = """<model>
+  <architecture>
+    <type>basic</type>
+    <nInput>32</nInput>
+    <nPercepts>4</nPercepts>
+    <nConcepts>2</nConcepts>
+    <nSymbols>2</nSymbols>
+    <nWords>16</nWords>
+    <nOutput>32</nOutput>
+    <reversePass>false</reversePass>
+  </architecture>
+</model>"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml)
+            path = f.name
+        try:
+            model, cfg = BaseModel.from_config(path)
+            self.assertIsInstance(model, BM)
+        finally:
+            os.unlink(path)
+
+
 if __name__ == "__main__":
     unittest.main()
