@@ -1394,25 +1394,38 @@ class ConceptualSpace(Space):
     def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False, invertible=False, hasNorm=False, ergodic=False):
         super(ConceptualSpace, self).__init__(inputShape, outputShape, nVectors, nDim, useVQ=useVQ, nPrototypes=nPrototypes, reversePass=reversePass, processSymbols=processSymbols)
         self.ergodic = ergodic
-        input, output = self.getEmbeddedIO()
+        # When objectSize==0 and vector counts differ between input and output,
+        # the sigma must operate on *flattened* vectors (nVectors*nDim) so it
+        # can change both count and dimension (matching DerivedConceptualSpace).
+        self._ergodic_flat = (TheObjectEncoding.objectSize == 0
+                              and inputShape[0] != outputShape[0])
+        if self._ergodic_flat:
+            input  = self.inputShape[0] * self.inputShape[1]
+            output = self.outputShape[0] * self.outputShape[1]
+        else:
+            input, output = self.getEmbeddedIO()
         self.hasNorm = hasNorm
-        self.attention = AttentionLayer(output, output)
+        if self._ergodic_flat:
+            self.attention = AttentionLayer(output, output)
+        else:
+            self.attention = AttentionLayer(output, output)
         if hasNorm:
             self.norm = NormLayer(input, input + 2)
             input += 2
+        sigmaOut = output if self._ergodic_flat else self.nDim
         if invertible:
-            self.sigma = ReversibleSigmaLayer(input, self.nDim, permuteInput=False)
+            self.sigma = ReversibleSigmaLayer(input, sigmaOut, permuteInput=False)
             self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
             self.params = self.sigma.getParameters()
             self.layers = [self.sigma]
         elif reversePass:
-            self.sigma1 = SigmaLayer(input, self.nDim, permuteInput=False, deterministic=not ergodic)
-            self.sigma2 = SigmaLayer(self.nDim, input, permuteInput=False, deterministic=not ergodic)
+            self.sigma1 = SigmaLayer(input, sigmaOut, permuteInput=False, deterministic=not ergodic)
+            self.sigma2 = SigmaLayer(sigmaOut, input, permuteInput=False, deterministic=not ergodic)
             self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.forward
             self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
             self.layers = [self.sigma1, self.sigma2]
         else:
-            self.sigma = SigmaLayer(input, self.nDim, permuteInput=False, deterministic=not ergodic)
+            self.sigma = SigmaLayer(input, sigmaOut, permuteInput=False, deterministic=not ergodic)
             self.forwardSigma = self.sigma.forward
             self.params = self.sigma.getParameters()
             self.layers = [self.sigma]
@@ -1428,12 +1441,15 @@ class ConceptualSpace(Space):
         return x.T @ x
     # Knowing
     def forward(self, x, t=0):
-        x = self.forwardBegin(x, t)
+        x = self.forwardBegin(x, t, reshape=self._ergodic_flat)
         if self.hasNorm:
             x = self.norm.forward(x)
         y = self.forwardSigma(x) # Pass through SigmaLayer
         if self.hasAttention:
-            y = self.attention.forward(y, t)
+            if self._ergodic_flat:
+                y = self.attention.forward(y)
+            else:
+                y = self.attention.forward(y, t)
         # Get the concept vectors from the codebook
         # replace some of the Dynamic Percepts with Static Percepts if their distance is low
         if self.useVQ:
@@ -1445,27 +1461,34 @@ class ConceptualSpace(Space):
             y = y.unsqueeze(-1)
             y = torch.concatenate((y, encoding), dim=2)
         # Reshape the output tensor
-        self.concepts = self.forwardEnd(y, t)
+        self.concepts = self.forwardEnd(y, t, reshape=self._ergodic_flat)
         #self.stats(x)
         return self.concepts
     # Visualizing
     def reverse(self, y, t=0):
-        self.concepts = self.reverseBegin(y, t)
+        self.concepts = self.reverseBegin(y, t, reshape=self._ergodic_flat)
         # we are receiving symbols, and we turn them into concepts.
         if self.processSymbols:
             self.concepts = self.dereference(self.concepts)
         if self.hasAttention:
-            self.concepts = self.attention.reverse(self.concepts, t)
-        # preserve the codebook's positional encoding
-        encoding = self.concepts[:, :, -TheObjectEncoding.objectSize:]
-        if TheObjectEncoding.objectSize > 0:
-            self.concepts = self.reverseSigma(self.concepts[:,:,0:-TheObjectEncoding.objectSize])
-        else:
+            if self._ergodic_flat:
+                self.concepts = self.attention.reverse(self.concepts)
+            else:
+                self.concepts = self.attention.reverse(self.concepts, t)
+        if self._ergodic_flat:
+            # Flattened path — no object encoding to strip
             self.concepts = self.reverseSigma(self.concepts)
+        else:
+            # preserve the codebook's positional encoding
+            encoding = self.concepts[:, :, -TheObjectEncoding.objectSize:]
+            if TheObjectEncoding.objectSize > 0:
+                self.concepts = self.reverseSigma(self.concepts[:,:,0:-TheObjectEncoding.objectSize])
+            else:
+                self.concepts = self.reverseSigma(self.concepts)
         if self.hasNorm:
             self.concepts = self.norm.reverse(self.concepts)
         #self.concepts = torch.concatenate((self.concepts, encoding), dim=2)
-        self.concepts = self.reverseEnd(self.concepts, t)
+        self.concepts = self.reverseEnd(self.concepts, t, reshape=self._ergodic_flat)
         return self.concepts
     @staticmethod
     def test():
@@ -1606,202 +1629,11 @@ class OutputSpace(Space):
 
 
 # ---------------------------------------------------------------------------
-# Ergodic Space hierarchy — plain-tensor Spaces without ObjectEncoding.
-# Kept separate from the canonical Space hierarchy so both can coexist
-# until a future unification pass.
+# DerivedSpace hierarchy removed — SimpleModel now uses the unified
+# InputSpace / ConceptualSpace / OutputSpace with objectSize=0.
 # ---------------------------------------------------------------------------
 
-class DerivedSpace(nn.Module):
-    """Base space operating on raw tensors (no ObjectEncoding overhead)."""
-    name         = ""
-    vectorSet    = []
-    activation   = None
-    params       = []
-    layers       = []
-
-    def __init__(self, inputShape, nVectors, nDim, nOutput, vSet=None, reversePass=False):
-        super().__init__()
-        self.inputShape  = inputShape
-        self.outputShape = [nVectors, nDim]
-        self.nVectors    = nVectors
-        self.nDim        = nDim
-        self.nOutput     = nOutput
-        self.reversePass = reversePass
-        self.batchSize   = 0
-        self.vectorSet   = nn.ModuleList()
-        self.params      = []
-        self.layers      = []
-    def lookup(self, x):
-        x = x.unsqueeze(0).unsqueeze(0)
-        return self.vectorSet[0](x)
-    def stats(self, x):
-        pass
-    def vectors(self):
-        return self.vectorSet[0]
-    def createVectorSet(self, quantized=False):
-        if quantized:
-            vs = VectorSet()
-            vs.create(self.inputShape[0], self.nVectors, self.nDim, customVQ=False)
-            vs.addVectors(nVec=self.nOutput)
-            self.vectorSet.append(vs)
-        else:
-            vs = UnquantizedVSet()
-            vs.create(self.inputShape[0], self.nVectors, self.nDim)
-            self.vectorSet.append(vs)
-    def forwardBegin(self, x, reshape=False):
-        self.batchSize = x.shape[0]
-        if reshape:
-            x = x.reshape(self.batchSize, self.inputShape[0] * self.inputShape[1])
-        else:
-            assert list(x.shape[1:]) == self.inputShape
-        return x
-    def forwardEnd(self, x, reshape=False):
-        if reshape:
-            x = x.reshape(self.batchSize, self.outputShape[0], self.outputShape[1])
-        else:
-            assert list(x.shape[1:]) == self.outputShape
-        return x
-    def reverseBegin(self, y, reshape=False):
-        self.batchSize = y.shape[0]
-        if reshape:
-            y = y.reshape(self.batchSize, self.outputShape[0] * self.outputShape[1])
-        else:
-            assert list(y.shape[1:]) == self.outputShape
-        return y
-    def reverseEnd(self, y, reshape=False):
-        if reshape:
-            y = y.reshape(self.batchSize, self.inputShape[0], self.inputShape[1])
-        else:
-            assert list(y.shape[1:]) == self.inputShape
-        return y
-    def flatten(self, x, forward=True):
-        if forward:
-            return x.reshape(self.batchSize, self.inputShape[0] * self.inputShape[1])
-        else:
-            return x.reshape(self.batchSize, self.outputShape[0] * self.outputShape[1])
-    def reshape(self, y, forward=True):
-        if forward:
-            return y.reshape(self.batchSize, self.outputShape[0], self.outputShape[1])
-        else:
-            return y.reshape(self.batchSize, self.inputShape[0], self.inputShape[1])
-    def getParameters(self):
-        return self.params
-    def paramUpdate(self):
-        for l in self.layers:
-            l.paramUpdate()
-class DerivedInputSpace(DerivedSpace):
-    name = "ErgodicInputs"
-
-    def __init__(self, inputShape, nVectors, nDim, nOutput, vSet=None, tokenizedInput=False):
-        super().__init__(inputShape, nVectors, nDim, nOutput, vSet=vSet)
-        self.createVectorSet()
-        self.tokenizedInput = tokenizedInput
-    def forward(self, input):
-        self.batchSize = input.shape[0]
-        assert list(input.shape[1:]) == self.inputShape
-        output = self.vectors().forward(input)
-        assert list(output.shape[1:]) == self.outputShape
-        return output
-    def reverse(self, y):
-        y = self.reverseBegin(y)
-        output = self.vectors().reverse(y)
-        return output
-class DerivedConceptualSpace(DerivedSpace):
-    name = "ErgodicConcepts"
-    hasAttention = False
-
-    def __init__(self, inputShape, nVectors, nDim, nOutput, vSet=None, reversePass=False, invertible=False, hasNorm=False, ergodic=True):
-        super().__init__(inputShape, nVectors, nDim, nOutput, vSet=vSet, reversePass=reversePass)
-        self.hasNorm    = hasNorm
-        self.invertible = invertible
-        self.ergodic    = ergodic
-        input  = self.inputShape[0] * self.inputShape[1]
-        output = self.outputShape[0] * self.outputShape[1]
-        if self.hasAttention:
-            self.attention = AttentionLayer(self.outputShape[1], self.outputShape[1])
-        if hasNorm:
-            self.norm = NormLayer(input, input+2)
-            input += 2
-        if not ergodic:
-            # Traditional path: LinearLayer + Tanh (no certainty/temperature mechanism)
-            self._linear = LinearLayer(input, output, hasBias=True)
-            self._tanh = nn.Tanh()
-            self.forwardSigma = lambda x: self._tanh(self._linear(x))
-            self.params = list(self._linear.parameters())
-            self.layers = []  # Nothing needs paramUpdate
-            if reversePass:
-                self._linear_rev = LinearLayer(output, input, hasBias=True)
-                self._tanh_rev = nn.Tanh()
-                self.reverseSigma = lambda x: self._tanh_rev(self._linear_rev(x))
-                self.params += list(self._linear_rev.parameters())
-        elif invertible:
-            self.sigma = ReversibleSigmaLayer(input, output, permuteInput=False)
-            self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
-            self.params  = self.sigma.getParameters()
-            self.layers += [self.sigma]
-        elif reversePass:
-            self.sigma1 = SigmaLayer(input, output, permuteInput=False)
-            self.sigma2 = SigmaLayer(output, input, permuteInput=False)
-            self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.forward
-            self.params  = self.sigma1.getParameters() + self.sigma2.getParameters()
-            self.layers += [self.sigma1, self.sigma2]
-        else:
-            self.sigma = SigmaLayer(input, output, permuteInput=False)
-            self.forwardSigma = self.sigma.forward
-            self.params  = self.sigma.getParameters()
-            self.layers += [self.sigma]
-        self.createVectorSet()
-    def distance(self, x, y):
-        return x.T @ y
-    def certainty(self, x):
-        return x.T @ x
-    def forward(self, x):
-        x = self.forwardBegin(x, reshape=True)
-        if self.hasNorm:
-            x = self.norm.forward(x)
-        y = self.forwardSigma(x)
-        if self.hasAttention:
-            y = self.attention.forward(y)
-        y = self.vectors().forward(y)
-        y = self.forwardEnd(y, reshape=True)
-        return y
-    def reverse(self, y):
-        y = self.reverseBegin(y, reshape=True)
-        if self.hasAttention:
-            y = self.attention.reverse(y)
-        y = self.reverseSigma(y)
-        if self.hasNorm:
-            y = self.norm.reverse(y)
-        y = self.reverseEnd(y, reshape=True)
-        return y
-    @staticmethod
-    def test():
-        pass
-class DerivedOutputSpace(DerivedSpace):
-    name = "ErgodicOutput"
-
-    def __init__(self, inputShape, nVectors, nDim, nOutput, vSet=None, reversePass=False):
-        super().__init__(inputShape, nVectors, nDim, nOutput, vSet=vSet, reversePass=reversePass)
-        input  = self.inputShape[0] * self.inputShape[1]
-        output = self.outputShape[0] * self.outputShape[1]
-        self.linear = LinearLayer(input, output, hasBias=True)
-        if reversePass:
-            self.reverseLinear = LinearLayer(output, input, hasBias=True)
-        self.createVectorSet()
-        self.params = list(self.parameters())
-        self.layers = [self.linear]
-    def forward(self, x):
-        x = self.forwardBegin(x, reshape=True)
-        output = self.linear(x)
-        output = self.forwardEnd(output, reshape=True)
-        return output
-    def reverse(self, y):
-        y = self.reverseBegin(y, reshape=True)
-        y = self.reverseLinear(y)
-        output = self.reverseEnd(y, reshape=True)
-        return output
-
-class DerivedModel(BaseModel):
+class SimpleModel(BaseModel):
     """Unified parameterized model: InputSpace → ConceptualSpace → OutputSpace.
 
     Three independent levers:
@@ -1809,7 +1641,7 @@ class DerivedModel(BaseModel):
       certainty – CertaintyWeightedCrossEntropy vs nn.CrossEntropyLoss
       quantized – VectorSet codebook snapping vs pass-through
     """
-    name       = "DerivedModel"
+    name       = "SimpleModel"
     vSet       = None
     invertible = False
     hasNorm    = False
@@ -1826,20 +1658,22 @@ class DerivedModel(BaseModel):
         conceptDim = 1
         outputDim  = 1
 
-        self.inputSpace = DerivedInputSpace([self.nInput, inputDim],
-                                            self.nInput, inputDim,
-                                            nOutput=self.nInput, vSet=self.vSet)
-        self.conceptualSpace = DerivedConceptualSpace([self.nInput, inputDim],
-                                                      self.nConcepts, conceptDim,
-                                                      nOutput=self.nConcepts,
-                                                      reversePass=self.reversePass,
-                                                      invertible=self.invertible,
-                                                      hasNorm=self.hasNorm,
-                                                      ergodic=self.ergodic)
-        self.outputSpace = DerivedOutputSpace([self.nConcepts, conceptDim],
-                                              self.nOutput, outputDim,
-                                              nOutput=self.nOutput,
-                                              reversePass=False)
+        self.inputSpace = InputSpace([self.nInput, inputDim],
+                                     [self.nInput, inputDim],
+                                     self.nInput, nDim=inputDim,
+                                     useVQ=self.quantized)
+        self.conceptualSpace = ConceptualSpace([self.nInput, inputDim],
+                                               [self.nConcepts, conceptDim],
+                                               self.nConcepts, conceptDim,
+                                               reversePass=self.reversePass,
+                                               invertible=self.invertible,
+                                               hasNorm=self.hasNorm,
+                                               ergodic=self.ergodic,
+                                               useVQ=self.quantized)
+        self.outputSpace = OutputSpace([self.nConcepts, conceptDim],
+                                       [self.nOutput, outputDim],
+                                       self.nOutput, outputDim,
+                                       reversePass=False)
 
         self.spaces = [self.inputSpace, self.conceptualSpace, self.outputSpace]
     def forward(self, data):
@@ -2003,6 +1837,9 @@ class DerivedModel(BaseModel):
         self.trainLosses = trainLosses
         self.testLosses  = testLosses
         return accuracy
+
+DerivedModel = SimpleModel  # backward compatibility
+
 class BasicModel(BaseModel):
     nSubThoughts   = 1
     nThoughts      = 0

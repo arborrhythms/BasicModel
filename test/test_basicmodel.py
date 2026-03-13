@@ -195,18 +195,36 @@ class TestSymPercept(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# DerivedModel construction (now in BasicModel.py)
+# SimpleModel construction (renamed from DerivedModel, now in BasicModel.py)
 # ---------------------------------------------------------------------------
 class TestDerivedModel(unittest.TestCase):
+
+    def setUp(self):
+        from BasicModel import TheObjectEncoding
+        self._orig_nWhere = TheObjectEncoding.nWhere
+        self._orig_nWhen = TheObjectEncoding.nWhen
+        self._orig_objectSize = TheObjectEncoding.objectSize
+        TheObjectEncoding.nWhere = 0
+        TheObjectEncoding.nWhen = 0
+        TheObjectEncoding.objectSize = 0
+
+    def tearDown(self):
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = self._orig_nWhere
+        TheObjectEncoding.nWhen = self._orig_nWhen
+        TheObjectEncoding.objectSize = self._orig_objectSize
+
     def test_derived_model_creation(self):
-        from BasicModel import DerivedModel
-        model = DerivedModel()
+        from BasicModel import SimpleModel, DerivedModel
+        model = SimpleModel()
         self.assertIsNotNone(model)
+        # backward-compat alias
+        self.assertIs(DerivedModel, SimpleModel)
 
     def test_derived_model_traditional(self):
-        """DerivedModel with ergodic=False, certainty=False produces valid output."""
-        from BasicModel import DerivedModel
-        model = DerivedModel()
+        """SimpleModel with ergodic=False, certainty=False produces valid output."""
+        from BasicModel import SimpleModel
+        model = SimpleModel()
         model.ergodic   = False
         model.certainty = False
         model.quantized = False
@@ -216,9 +234,9 @@ class TestDerivedModel(unittest.TestCase):
         self.assertEqual(out.shape[0], 2)  # batch size preserved
 
     def test_derived_model_ergodic(self):
-        """DerivedModel with ergodic=True uses SigmaLayer path."""
-        from BasicModel import DerivedModel
-        model = DerivedModel()
+        """SimpleModel with ergodic=True uses SigmaLayer path."""
+        from BasicModel import SimpleModel
+        model = SimpleModel()
         model.ergodic   = True
         model.certainty = True
         model.quantized = False
@@ -268,7 +286,7 @@ class TestWeightPersistence(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Regression: Space and DerivedSpace shape contracts
+# Regression: Space shape contracts and SimpleModel
 # ---------------------------------------------------------------------------
 class TestCanonicalSpaceShapes(unittest.TestCase):
     """Lock down tensor shapes for canonical Space subclasses."""
@@ -317,72 +335,63 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
         self.assertEqual(list(y.shape), [self.B, nOut, TheObjectEncoding.outputDim])
 
 
-class TestDerivedSpaceShapes(unittest.TestCase):
-    """Lock down tensor shapes for DerivedSpace subclasses."""
+class TestSimpleModel(unittest.TestCase):
+    """SimpleModel (renamed DerivedModel) uses unified Space hierarchy."""
 
     def setUp(self):
-        self.B = 2
+        from BasicModel import TheObjectEncoding
+        self._orig_nWhere = TheObjectEncoding.nWhere
+        self._orig_nWhen = TheObjectEncoding.nWhen
+        self._orig_objectSize = TheObjectEncoding.objectSize
+        TheObjectEncoding.nWhere = 0
+        TheObjectEncoding.nWhen = 0
+        TheObjectEncoding.objectSize = 0
 
-    def test_derived_input_forward_shape(self):
-        from BasicModel import DerivedInputSpace
-        nIn, nDim = 8, 1
-        dis = DerivedInputSpace([nIn, nDim], nIn, nDim, nOutput=nIn)
-        x = torch.randn(self.B, nIn, nDim)
-        y = dis(x)
-        self.assertEqual(list(y.shape), [self.B, nIn, nDim])
+    def tearDown(self):
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = self._orig_nWhere
+        TheObjectEncoding.nWhen = self._orig_nWhen
+        TheObjectEncoding.objectSize = self._orig_objectSize
 
-    def test_derived_conceptual_ergodic_forward_shape(self):
-        from BasicModel import DerivedConceptualSpace
-        nIn, nDim, nConcepts, cDim = 8, 1, 4, 1
-        dcs = DerivedConceptualSpace([nIn, nDim], nConcepts, cDim,
-                                     nOutput=nConcepts, ergodic=True)
-        x = torch.randn(self.B, nIn, nDim)
-        y = dcs(x)
-        self.assertEqual(list(y.shape), [self.B, nConcepts, cDim])
+    def test_simple_model_ergodic_shapes(self):
+        from BasicModel import SimpleModel
+        model = SimpleModel()
+        model.ergodic = True
+        model.certainty = False
+        model.quantized = False
+        model.create(nInput=16, nConcepts=8, nOutput=4)
+        x = torch.randn(2, 16, 1)
+        out, concepts = model.forward(x)
+        self.assertEqual(out.shape[0], 2)
+        self.assertEqual(out.shape[1], 4)
+        self.assertEqual(concepts.shape[0], 2)
+        self.assertEqual(concepts.shape[1], 8)
 
-    def test_derived_conceptual_traditional_forward_shape(self):
-        from BasicModel import DerivedConceptualSpace
-        nIn, nDim, nConcepts, cDim = 8, 1, 4, 1
-        dcs = DerivedConceptualSpace([nIn, nDim], nConcepts, cDim,
-                                     nOutput=nConcepts, ergodic=False)
-        x = torch.randn(self.B, nIn, nDim)
-        y = dcs(x)
-        self.assertEqual(list(y.shape), [self.B, nConcepts, cDim])
+    def test_simple_model_traditional_shapes(self):
+        from BasicModel import SimpleModel
+        model = SimpleModel()
+        model.ergodic = False
+        model.certainty = False
+        model.quantized = False
+        model.create(nInput=16, nConcepts=8, nOutput=4)
+        x = torch.randn(2, 16, 1)
+        out, concepts = model.forward(x)
+        self.assertEqual(out.shape[0], 2)
+        self.assertEqual(out.shape[1], 4)
 
-    def test_derived_conceptual_reverse_shape(self):
-        from BasicModel import DerivedConceptualSpace
-        nIn, nDim, nConcepts, cDim = 8, 1, 4, 1
-        dcs = DerivedConceptualSpace([nIn, nDim], nConcepts, cDim,
-                                     nOutput=nConcepts, ergodic=True,
-                                     reversePass=True)
-        y = torch.randn(self.B, nConcepts, cDim)
-        x = dcs.reverse(y)
-        self.assertEqual(list(x.shape), [self.B, nIn, nDim])
-
-    def test_derived_output_forward_shape(self):
-        from BasicModel import DerivedOutputSpace
-        nIn, nDim, nOut, oDim = 4, 1, 3, 1
-        dos = DerivedOutputSpace([nIn, nDim], nOut, oDim, nOutput=nOut)
-        x = torch.randn(self.B, nIn, nDim)
-        y = dos(x)
-        self.assertEqual(list(y.shape), [self.B, nOut, oDim])
-
-    def test_derived_input_reverse_shape(self):
-        from BasicModel import DerivedInputSpace
-        nIn, nDim = 8, 1
-        dis = DerivedInputSpace([nIn, nDim], nIn, nDim, nOutput=nIn)
-        y = torch.randn(self.B, nIn, nDim)
-        x = dis.reverse(y)
-        self.assertEqual(list(x.shape), [self.B, nIn, nDim])
-
-    def test_derived_output_reverse_shape(self):
-        from BasicModel import DerivedOutputSpace
-        nIn, nDim, nOut, oDim = 4, 1, 3, 1
-        dos = DerivedOutputSpace([nIn, nDim], nOut, oDim, nOutput=nOut,
-                                 reversePass=True)
-        y = torch.randn(self.B, nOut, oDim)
-        x = dos.reverse(y)
-        self.assertEqual(list(x.shape), [self.B, nIn, nDim])
+    def test_simple_model_reverse_shapes(self):
+        from BasicModel import SimpleModel
+        model = SimpleModel()
+        model.ergodic = True
+        model.certainty = False
+        model.quantized = False
+        model.reversePass = True
+        model.create(nInput=16, nConcepts=8, nOutput=4)
+        x = torch.randn(2, 16, 1)
+        out, concepts = model.forward(x)
+        data, percepts = model.reverse(concepts)
+        self.assertEqual(data.shape[0], 2)
+        self.assertEqual(data.shape[1], 16)
 
 
 class TestVectorSetVariants(unittest.TestCase):
@@ -410,9 +419,24 @@ class TestVectorSetVariants(unittest.TestCase):
 class TestModelEndToEnd(unittest.TestCase):
     """Lock down full model forward shapes and loss compatibility."""
 
+    def setUp(self):
+        from BasicModel import TheObjectEncoding
+        self._orig_nWhere = TheObjectEncoding.nWhere
+        self._orig_nWhen = TheObjectEncoding.nWhen
+        self._orig_objectSize = TheObjectEncoding.objectSize
+        TheObjectEncoding.nWhere = 0
+        TheObjectEncoding.nWhen = 0
+        TheObjectEncoding.objectSize = 0
+
+    def tearDown(self):
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = self._orig_nWhere
+        TheObjectEncoding.nWhen = self._orig_nWhen
+        TheObjectEncoding.objectSize = self._orig_objectSize
+
     def test_derived_model_ergodic_shapes(self):
-        from BasicModel import DerivedModel
-        model = DerivedModel()
+        from BasicModel import SimpleModel
+        model = SimpleModel()
         model.ergodic = True
         model.certainty = False
         model.quantized = False
@@ -425,8 +449,8 @@ class TestModelEndToEnd(unittest.TestCase):
         self.assertEqual(concepts.shape[1], 8)
 
     def test_derived_model_traditional_shapes(self):
-        from BasicModel import DerivedModel
-        model = DerivedModel()
+        from BasicModel import SimpleModel
+        model = SimpleModel()
         model.ergodic = False
         model.certainty = False
         model.quantized = False
@@ -439,8 +463,8 @@ class TestModelEndToEnd(unittest.TestCase):
         self.assertEqual(concepts.shape[1], 8)
 
     def test_derived_model_reverse_shapes(self):
-        from BasicModel import DerivedModel
-        model = DerivedModel()
+        from BasicModel import SimpleModel
+        model = SimpleModel()
         model.ergodic = True
         model.certainty = False
         model.quantized = False
@@ -454,8 +478,8 @@ class TestModelEndToEnd(unittest.TestCase):
 
     def test_derived_model_loss_runs(self):
         """Verify forward + loss + backward doesn't crash."""
-        from BasicModel import DerivedModel, CertaintyWeightedCrossEntropy
-        model = DerivedModel()
+        from BasicModel import SimpleModel, CertaintyWeightedCrossEntropy
+        model = SimpleModel()
         model.ergodic = True
         model.certainty = True
         model.quantized = False
