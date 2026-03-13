@@ -6,12 +6,12 @@ Given a weight matrix $( W \in \mathbb{R}^{m \times n})$ and input vector $( x \
 
 For the Sigma layer:
 
-### $$y_j = W x + b$$
-### $$y_j = b_j + \sum_{i=1}^{n} W_{ji} x_i$$
+ $$y_j = W x + b$$
+ $$y_j = b_j + \sum_{i=1}^{n} W_{ji} x_i$$
 
 For the Pi layer:
 
-### $$y_j = b_j  \cdot \prod_{i=1}^{n} \left( 1 + W_{ji} x_i \right)  $$
+ $$y_j = b_j  \cdot \prod_{i=1}^{n} \left( 1 + W_{ji} x_i \right)  $$
 
 This is not invertible, but if we are allowed twice as many outputs as inputs, we may:
 do inversion as:

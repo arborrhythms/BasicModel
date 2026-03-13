@@ -1,3 +1,11 @@
+"""Top-level model assembly, data loading, and experiment reporting.
+
+``BasicModel`` composes the custom layers from ``Model.py`` into a set of
+spaces that move between raw inputs, percepts, concepts, symbols, syntax,
+and outputs.  The same module also carries the project utilities used to
+load datasets, resolve config paths, plot results, and save reports.
+"""
+
 import math, os, warnings
 from contextlib import nullcontext
 import numpy as np

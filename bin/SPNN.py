@@ -1,3 +1,10 @@
+"""Standalone NumPy neural-network experiment for simple logic problems.
+
+This file predates the PyTorch-based ``BasicModel`` stack and keeps a compact
+implementation around for experimentation with activation functions,
+bidirectional updates, and XOR-style toy datasets.
+"""
+
 # Final project for Machine Learning
 import math
 import os, sys
@@ -5,6 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class SPNN:
+    """Small fully-connected network with optional bidirectional learning."""
 
 #region Initialization
     def __init__(self, transfer="sigmoid", bidirectional=False):
@@ -53,6 +61,8 @@ class SPNN:
         self.loadXOR()
         self.reinit()
     def reinit(self):
+        # Weights include an extra column so the network can carry a learned
+        # bias-like term alongside the hidden/output activations.
         self.M1 = np.zeros(self.nInput)
         self.M2 = np.zeros(self.nHidden)
         self.M3 = np.zeros(self.nOutput)
@@ -63,6 +73,7 @@ class SPNN:
         self.testErr  = []
         self.trainErr = []
     def loadOR(self):
+        """Populate the repeated OR truth table used for training and testing."""
         self.name        = "OR"
         input_data       = np.array([[1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]])
         target           = np.array([[1, 0], [1, 1], [1, 1], [1, 1]])
@@ -72,6 +83,7 @@ class SPNN:
         self.testInput   = input_data
         self.testOutput  = target
     def loadXOR(self):
+        """Populate the repeated XOR truth table used for training and testing."""
         self.name        = "XOR"
         input_data       = np.array([[1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]])
         target           = np.array([[1, 0], [1, 1], [1, 1], [1, 0]])
@@ -257,6 +269,7 @@ class SPNN:
 
 #region Train the Network
     def run(self):
+        """Train for ``nEpoch`` epochs while tracking train/test reconstruction error."""
         for epoch in range(0, self.nEpoch + 1):
             trainErr = self.runEpoch(self.trainInput, self.trainOutput)
             testErr  = self.runEpoch(self.testInput, self.testOutput, True)
@@ -265,6 +278,7 @@ class SPNN:
             self.trainErr.append(trainErr)
             self.testErr.append(testErr)
     def runEpoch(self, input_data, output_data, learn=False):
+        """Evaluate one full pass and optionally apply weight updates per sample."""
         nTrials = len(input_data)
         err = 0
         for i in range(0, nTrials):
@@ -275,6 +289,8 @@ class SPNN:
         mse = err/nTrials
         return mse
     def compute(self, input, output):
+        # Unidirectional mode behaves like a conventional MLP; bidirectional
+        # mode also attempts an inverse pass from desired outputs back to inputs.
         if self.bidirectional == False:
             x    = np.zeros_like(self.nInput)
             act  = self.activation( np.dot(input, self.W1) )
@@ -345,7 +361,8 @@ class SPNN:
         else:
             dW1 = -0* self.W1
             dW2 = -0 * self.W2
-            # note: not back prop
+            # Bidirectional mode blends a forward supervised update with a
+            # reverse reconstruction update instead of standard backprop.
             errOut        = (y - output)
             deltaOut      = self.gradient(y, inverse=False)  * errOut
             deltaHidden1  = self.gradient(act[0], inverse=False) * np.dot(self.W2, deltaOut)
@@ -365,6 +382,7 @@ class SPNN:
 
 #region Plots and Statistics
     def show(self):
+        """Plot train/test error traces and print the learned weights."""
         titleText = 'MSE, '
         if self.bidirectional == False:
             titleText += 'UniDir '
@@ -390,6 +408,7 @@ class SPNN:
         print('Weight_1', self.W1)
         print('Weight_2', self.W2)
     def showAct(self):
+        """Compare the chosen activation with its inverse form and gradients."""
         plt.figure(1, dpi=300)  # Increase size and DPI for better quality
         plt.clf()
         x = np.array([i/100 for i in range(-99,100)], float)
@@ -439,4 +458,3 @@ if __name__ == "__main__":
 
     plt.show()
 #endregion
-

@@ -1,9 +1,18 @@
+"""Small plotting helpers for visualising distance surfaces.
+
+These functions are exploratory rather than part of the main training
+pipeline, so the emphasis here is on making the geometric intent clear.
+"""
+
 import numpy as np
 import math
 import matplotlib.pyplot as plt
 
 def distances():
+    """Plot three toy similarity/distance surfaces over a 2D grid."""
     def cos_distance(w, X, Y):
+        # This is effectively a dot-product response over the grid.  The
+        # unused norm line is left in place from the cosine-similarity version.
         norms = np.sqrt(X ** 2 + Y ** 2) + 1e-8  # avoid divide by zero
         dot = w[0] * Y + w[1] * X
         return dot
@@ -13,6 +22,7 @@ def distances():
         return np.sqrt((X - w[1]) ** 2 + (Y - w[0]) ** 2)
 
     def pi_distance(w, X, Y):
+        # The Pi-style distance treats each axis as an independent gated factor.
         return (1 + np.tanh(w[0] * Y)) * (1 + np.tanh(w[1] * X))
 
     x = np.linspace(-4, 4, 100)
@@ -34,6 +44,7 @@ def distances():
 
 
 def plot_surface_3d(X, Y, Z, title):
+    """Render one surface in its own 3D figure for side-by-side comparison."""
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.plot_surface(X, Y, Z, cmap='viridis')

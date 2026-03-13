@@ -1,3 +1,5 @@
+"""Minimal experiments for logical functions built from Sigma/Pi layers."""
+
 import random
 
 import torch
@@ -13,6 +15,7 @@ embeddingDim  = 1
 
 # Define the neural network
 class LogicalFunctionNet(Layer):
+    """Two-layer logical network using a Pi hidden layer and Sigma output layer."""
     def __init__(self, nInput, nHidden, nOutput):
         super(LogicalFunctionNet, self).__init__(nInput, nOutput)
         self.nInput  = nInput
@@ -27,12 +30,15 @@ class LogicalFunctionNet(Layer):
             numQuantizers = 100)
 
     def forward(self, x, t=0):
+        # The optional VQ stage is kept for experiments but is currently disabled
+        # so the logical layers operate directly on the input tensor.
         #x = self.vq(x,t)
         x1 = self.hidden(x, t)  # Pass through PiLayer
         x2 = self.output(x1, t)  # Pass through SigmaLayer
         return x2
 
 def logic(X_train, Y_train):
+    """Train the toy network on a hand-built logical truth table."""
     # Hyperparameters
     input_dim  = X_train.shape[1]  # Number of input
     hidden_dim = 3  # Number of hidden
@@ -50,7 +56,7 @@ def logic(X_train, Y_train):
     t = 0.0001
     for epoch in range(epochs):
         optimizer.zero_grad()              # Clear gradients
-        outputs = model(X_train, t)        # Forward pass
+        outputs = model(X_train, t)        # Forward pass on all truth-table rows
         loss    = criterion(outputs, Y_train) # Compute loss
         loss.backward()                    # Backpropagation
         optimizer.step()                   # Update weights
@@ -81,6 +87,7 @@ def logic(X_train, Y_train):
 
 # Plot decision boundary
 def plot_decision_boundary(model, X, Y):
+    """Visualise the learned scalar output over the 2D boolean input plane."""
     x_min, x_max = -0.5, 1.5
     y_min, y_max = -0.5, 1.5
     xx, yy = np.meshgrid(np.linspace(x_min, x_max, 100),
@@ -88,6 +95,8 @@ def plot_decision_boundary(model, X, Y):
 
     grid_points = np.c_[xx.ravel(), yy.ravel()]
     grid_tensor = torch.tensor(grid_points, dtype=torch.float32)
+    # The model expects shape (batch, symbols, embeddingDim); for the boolean
+    # examples the embedding dimension is 1, so unsqueeze creates that axis.
     grid_tensor = grid_tensor.unsqueeze(2)
     with torch.no_grad():
         Z = model(grid_tensor).reshape(xx.shape)
@@ -110,6 +119,7 @@ if __name__ == '__main__':
         zero = torch.zeros(1,1,embeddingDim)
         one  = torch.ones(1,1,embeddingDim)
     else:
+        # Higher-dimensional experiments use random embeddings for logical 0/1.
         zero = torch.rand(1,1,embeddingDim)
         one  = torch.rand(1,1,embeddingDim)
     X_train = torch.concatenate((

@@ -1,3 +1,5 @@
+"""Analytic NumPy experiment for a reversible 2D linear perceptual map."""
+
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -81,7 +83,8 @@ def compute_loss(model, x, y, alpha=0.8, beta = 0.2):
     x_pred = y @ W_inv
     loss_reverse = np.mean((x_pred - x) ** 2)
 
-    # options here for (uninformed) tie-breaking:
+    # The weighted sum lets training prefer forward accuracy while still
+    # penalizing inverses that drift away from the original inputs.
     loss = alpha*loss_forward + beta*loss_reverse, loss_forward, loss_reverse
     #if random() > 0.5:
     #    loss = loss_forward, loss_forward, loss_reverse
@@ -179,6 +182,8 @@ class NumpySGD:
         grad_theta1, grad_theta2, grad_diag, _, _ = grads
         self.model.theta1 -= self.lr * grad_theta1
         self.model.theta2 -= self.lr * grad_theta2
+        # Keeping the diagonal explicit makes it easy to inspect whether the
+        # model is learning scaling versus rotation.
         self.model.diag -= self.lr * grad_diag
 def get_optimizer(model, lr=0.001):
     """
@@ -216,6 +221,8 @@ def train_bidirectional_model(num_epochs=100, lr=0.001, num_samples=128):
         forward_losses.append(L_forward)
         reverse_losses.append(L_reverse)
 
+        # The whole training loop stays in NumPy so the hand-derived gradients
+        # can be compared against the observed loss curves directly.
         # Compute analytic gradients.
         grads = analytic_gradients(model, x_train, y_train)
         optimizer.step(grads)

@@ -1,3 +1,11 @@
+"""Core layer primitives used by BasicModel.
+
+This module mixes conventional neural-network utilities with a set of
+custom reversible, ergodic, and memory-style layers.  Most higher-level
+model construction happens in ``BasicModel.py``; this file provides the
+building blocks and the update rules they share.
+"""
+
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,22 +21,26 @@ import time
 epsilon = 1e-7  # to avoid log(0)
 
 def has_signal(value):
+    """Return True when a tensor or scalar contains any non-zero signal."""
     if isinstance(value, torch.Tensor):
         return bool(torch.any(value != 0).item())
     return bool(value)
 
 def sample_noise(reference, shape=None):
+    """Sample noise that matches the device and dtype of a reference tensor."""
     if shape is None:
         shape = tuple(reference.shape)
     return torch.randn(shape, device=reference.device, dtype=reference.dtype)
 
 class Message():
+    """Tiny callable wrapper so legacy code can swap out message sinks later."""
     def __call__(self, txt, newline="\n"):
         print(txt, end=newline)
 message = Message()
 
 #region Layers
 class Layer(nn.Module):
+    """Base class for custom layers with optional symbol/object axis swapping."""
     def __init__(self, nInput, nOutput, permuteInput=False):
         super(Layer, self).__init__()
         self.nInput       = nInput
@@ -41,6 +53,8 @@ class Layer(nn.Module):
             param.requires_grad = not learn
     def permute(self, x):
         self.batch = x.shape[0]
+        # Several layers treat the middle dimension as the symbol axis; this
+        # flag lets them reuse the same implementation for either layout.
         if self.permuteInput:
             x = torch.permute(x, (0, 2, 1))
         return x
@@ -64,6 +78,7 @@ class Layer(nn.Module):
         assert y.shape[1] == self.nOutput
         return y
 class ErgodicLayer(Layer):
+    """Layer base class that adapts its explore/exploit balance over training."""
     def __init__(self, nInput, nOutput, permuteInput=False):
         super().__init__(nInput, nOutput, permuteInput)
         # Alpha controls bias-variance tradeoff: bias = alpha, temp = 1 - alpha
@@ -101,6 +116,8 @@ class ErgodicLayer(Layer):
             self.global_temp = temp
             self.setAlpha(1.0 - temp)
     def local_tradeoff(self):
+        # High-certainty outputs lean toward bias; uncertain outputs keep more
+        # temperature so the layer continues to explore alternatives.
         certainty = self.certainty.to(device=self.bias.device, dtype=self.bias.dtype)
         local_bias = self.bias * certainty
         local_temp = self.temperature * torch.ones_like(certainty) + self.bias * (1.0 - certainty)
@@ -177,6 +194,8 @@ class ErgodicLayer(Layer):
             gradient_certainty=self.gradient_certainty(),
         )
         if certainty is not None:
+            # Certainty is tracked per output column so later passes can damp
+            # exploration only where the layer has become reliable.
             self.certainty.copy_(certainty)
     @torch.no_grad()
     def alpha_update(self):
@@ -193,6 +212,8 @@ class ErgodicLayer(Layer):
         # Derive bias and temp from alpha
         alpha = self.alpha.item()
         if random.random() < self.dropoutRate:
+            # Occasional bias dropout forces another exploration step even when
+            # the layer has converged toward exploitation.
             self.bias.fill_(0.0)
         else:
             self.bias.fill_(alpha)
