@@ -966,6 +966,8 @@ class Space(nn.Module):
         self.nPrototypes  = nPrototypes
         self.reversePass = reversePass
         self.processSymbols = processSymbols
+        self.params = []
+        self.layers = []
 
     def getEmbeddedIO(self):
         input  = TheObjectEncoding.getEmbeddingSize(self.inputShape[1])
@@ -1050,6 +1052,231 @@ class Space(nn.Module):
         else:
             y = y.reshape(self.batch, self.inputShape[0], input)
         return y
+    def getParameters(self):
+        return self.params
+    def paramUpdate(self):
+        for l in self.layers:
+            l.paramUpdate()
+class BaseModel(nn.Module):
+    """Shared training, plotting, and persistence infrastructure for all models."""
+    name           = "BaseModel"
+    spaces         = []
+    reversePass    = False
+    plot           = False
+
+    @staticmethod
+    def load_config(config_path=None):
+        """Load model settings from an XML config file.
+
+        Returns a dict with architecture, training, weights, and server
+        settings.  Missing fields use defaults from the create() signature.
+        """
+        import xml.etree.ElementTree as ET
+        if config_path is None:
+            config_path = os.path.join(PROJECT_DIR, "model.xml")
+        if not os.path.exists(config_path):
+            return {}
+        tree = ET.parse(config_path)
+        root = tree.getroot()
+        cfg = {}
+        for section in root:
+            sec = {}
+            for child in section:
+                text = child.text.strip() if child.text else ""
+                if text.lower() in ("true", "false"):
+                    sec[child.tag] = text.lower() == "true"
+                else:
+                    try:
+                        sec[child.tag] = int(text)
+                    except ValueError:
+                        try:
+                            sec[child.tag] = float(text)
+                        except ValueError:
+                            sec[child.tag] = text
+            cfg[section.tag] = sec
+        return cfg
+
+    def create(self, **kwargs):
+        """Override in subclasses to build model architecture."""
+        pass
+
+    def runTrials(self, numTrials=1, numEpochs=1, batchSize=10, lr=0.001):
+        acc = np.zeros([numTrials, numEpochs])
+        print(f"\n\n==== {self.name} ====")
+        for trial in range(numTrials):
+            print(f"\nTrial [{trial + 1}/{numTrials}]")
+            self.create(nInput=self.nInput, nConcepts=self.nConcepts, nOutput=self.nOutput)
+            acc[trial, :] = self.run(numEpochs=numEpochs, batchSize=batchSize, lr=lr)
+        np.savetxt(output_path(f"{self.name}.csv"), np.array(acc), delimiter=",")
+        return acc
+
+    def paramUpdate(self):
+        for s in self.spaces:
+            s.paramUpdate()
+
+    def save_weights(self, path=None):
+        """Persist model weights and ergodic state to disk."""
+        if path is None:
+            path = os.path.join(OUTPUT_DIR, "weights.pt")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        torch.save(self.state_dict(), path)
+        print(f"[{self.name}] Weights saved to {path}")
+
+    def load_weights(self, path=None, strict=False):
+        """Load model weights from disk."""
+        if path is None:
+            path = os.path.join(OUTPUT_DIR, "weights.pt")
+        if not os.path.exists(path):
+            print(f"[{self.name}] No weights found at {path}")
+            return False
+        state = torch.load(path, map_location="cpu", weights_only=True)
+        self.load_state_dict(state, strict=strict)
+        print(f"[{self.name}] Weights loaded from {path}")
+        return True
+
+    def mnistReport(model):
+        _, _, y_pred, last_x_pred = model.runEpoch(TheData.test_input, TheData.test_output, lr=0)
+        _, predicted = torch.max(y_pred, 1)
+        _, actual = torch.max(TheData.test_output, 1)
+
+        rCorrect = torch.zeros((10))
+        for i in range(0,10):
+            total    = (actual == i).sum().item()
+            correct  = (actual==i) & (predicted==actual)
+            nCorrect = correct.sum().item()
+            rCorrect[i] = nCorrect / total
+            print(f"Correctly predicted {i}: {rCorrect[i]}")
+
+        fig = plt.figure(figsize=(10, 5))
+        plt.plot(range(0, 10), rCorrect, label="Error (per Input)", marker='o')
+        plt.xlabel("Digit")
+        plt.ylabel("Accuracy")
+        plt.title(f"Accuracy per Digit: {model.name}")
+        plt.legend()
+        plt.grid(True)
+        TheReport.save_figure(fig, f"{model.name} Accuracy")
+        plt.show(block=False)
+        return rCorrect
+
+    def plotLoss(model, trainErr, valErr, testErr):
+        """Plots the training, validation, and test losses over time."""
+        fig = plt.figure(figsize=(10, 5))
+
+        # Training starts at epoch 2 (epoch 1 is test-only), so offset by +2
+        plt.plot(range(2, len(trainErr[0]) + 2), trainErr[0], label="Training Error", marker='o')
+        if len(trainErr) > 1 and trainErr[1]:
+            plt.plot(range(2, len(trainErr[1]) + 2), trainErr[1], label="Training Error (Input)", marker='o')
+
+        if testErr:
+            plt.plot(range(1, len(testErr[0]) + 1), testErr[0], label="Test Error", marker='x')
+            if len(testErr) > 1 and testErr[1]:
+                plt.plot(range(1, len(testErr[1]) + 1), testErr[1], label="Test Error (Input)", marker='x')
+
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.title(f"Error per Epoch: {model.name}")
+        plt.legend()
+        plt.grid(True)
+
+        TheReport.save_figure(fig, f"{model.name} Error")
+        plt.show(block=False)
+
+    def plotActivations(model, figure=1, percepts=None, concepts=None, symbols=None):
+        fig = plt.figure(figure, figsize=(12, 4))
+        fig.clf()
+
+        if percepts is not None:
+            p = percepts[-1, :, :].squeeze()
+            pAct = torch.norm(p, dim=1).detach().numpy()
+            plt.plot(pAct, marker='o', color='r')
+            plt.xlabel("Activation")
+            plt.ylabel("Percepts")
+            plt.title("Perceptual Activation")
+
+        if concepts is not None:
+            c = concepts[-1, :, :].squeeze()
+            cAct = torch.norm(c, dim=-1).detach().numpy()
+            plt.plot(cAct, marker='o', color='b')
+            plt.xlabel("Epoch")
+            plt.ylabel("Concepts")
+            plt.title("Conceptual Activation")
+
+        if symbols is not None:
+            s = symbols[-1, :, 0].squeeze()
+            sAct = s.detach().numpy()
+            plt.plot(sAct, marker='o', color='g')
+            plt.xlabel("Epoch")
+            plt.ylabel("Symbols")
+            plt.title("Symbolic Activations")
+
+        plt.tight_layout()
+        plt.show(block=False)
+
+    def plotSpace(model):
+        """Visualizes learned weight parameters via PCA projections."""
+        perc_weights = model.prototypes.data.cpu().numpy()
+        pca = PCA(n_components=2)
+        perc_2d = pca.fit_transform(perc_weights)
+
+        plt.figure(figsize=(18, 5))
+
+        plt.subplot(1, 3, 1)
+        plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
+        plt.xlabel("PC1")
+        plt.ylabel("PC2")
+        plt.title("Perceptual Space Prototypes")
+        plt.legend()
+
+        perc_mean = perc_2d.mean(axis=0)
+
+        conc_weights = model.conceptual.fc_p.weight.data.cpu().numpy()
+        conc_proj = pca.transform(conc_weights)
+
+        plt.subplot(1, 3, 2)
+        plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
+        x_vals = np.linspace(np.min(perc_2d[:, 0]) - 1, np.max(perc_2d[:, 0]) + 1, 100)
+        for i in range(conc_proj.shape[0]):
+            n = conc_proj[i]
+            if np.abs(n[1]) > 1e-3:
+                y_vals = perc_mean[1] - (n[0] / n[1]) * (x_vals - perc_mean[0])
+                plt.plot(x_vals, y_vals, '--', label=f"Hyperplane {i + 1}" if i == 0 else None, alpha=0.7)
+            else:
+                plt.axvline(x=perc_mean[0], linestyle='--', alpha=0.7, label=f"Hyperplane {i + 1}" if i == 0 else None)
+        plt.xlabel("PC1")
+        plt.ylabel("PC2")
+        plt.title("Conceptual Hyperplanes")
+        plt.legend()
+
+        symb_weights = model.fc_symbolic.weight.data.cpu().numpy()
+        symb_norms = np.linalg.norm(symb_weights, axis=1)
+        x_symb = np.arange(len(symb_norms))
+
+        plt.subplot(1, 3, 3)
+        plt.vlines(x_symb, 0, symb_norms, color='k', alpha=0.7)
+        plt.scatter(x_symb, symb_norms, color='red', s=100, zorder=3)
+        plt.xlabel("Symbolic Feature Index")
+        plt.ylabel("L2 Norm")
+        plt.title("Symbolic Weights (Lollipop Plot)")
+
+        plt.tight_layout()
+        plt.show(block=False)
+
+    def plotNetwork(model):
+        """Uses Torchviz to visualize the computation graph."""
+        model.eval()
+        output, input, _, _ = model.runTest(TheData.test_input, TheData.test_output)
+        dot = make_dot(output, params=dict(model.named_parameters()))
+        dot.format = "png"
+        graph_path = dot.render(output_stem(f"graph_{model.name}"))
+        print(f"Saved network graph as {graph_path}")
+
+    def plotErrorbars(model, acc):
+        x = list(range(1, len(acc[0]) + 1))
+        y = np.array(np.mean(acc, axis=0))
+        y_err = np.std(acc, axis=0)
+        plt.errorbar(x, y, yerr=y_err, fmt='-o', label=model.name, capsize=4)
+
+
 class InputSpace(Space):
     name = "Inputs"
     def __init__(self, inputShape, outputShape, nVectors, nDim=None, LM=None, tokenizedInput=False, useVQ=True):
@@ -1446,8 +1673,6 @@ class DerivedSpace(nn.Module):
     def paramUpdate(self):
         for l in self.layers:
             l.paramUpdate()
-
-
 class DerivedInputSpace(DerivedSpace):
     name = "ErgodicInputs"
 
@@ -1465,8 +1690,6 @@ class DerivedInputSpace(DerivedSpace):
         y = self.reverseBegin(y)
         output = self.vectors().reverse(y)
         return output
-
-
 class DerivedConceptualSpace(DerivedSpace):
     name = "ErgodicConcepts"
     hasAttention = False
@@ -1538,8 +1761,6 @@ class DerivedConceptualSpace(DerivedSpace):
     @staticmethod
     def test():
         pass
-
-
 class DerivedOutputSpace(DerivedSpace):
     name = "ErgodicOutput"
 
@@ -1563,228 +1784,6 @@ class DerivedOutputSpace(DerivedSpace):
         y = self.reverseLinear(y)
         output = self.reverseEnd(y, reshape=True)
         return output
-
-
-class BaseModel(nn.Module):
-    """Shared training, plotting, and persistence infrastructure for all models."""
-    name           = "BaseModel"
-    spaces         = []
-    reversePass    = False
-    plot           = False
-
-    @staticmethod
-    def load_config(config_path=None):
-        """Load model settings from an XML config file.
-
-        Returns a dict with architecture, training, weights, and server
-        settings.  Missing fields use defaults from the create() signature.
-        """
-        import xml.etree.ElementTree as ET
-        if config_path is None:
-            config_path = os.path.join(PROJECT_DIR, "model.xml")
-        if not os.path.exists(config_path):
-            return {}
-        tree = ET.parse(config_path)
-        root = tree.getroot()
-        cfg = {}
-        for section in root:
-            sec = {}
-            for child in section:
-                text = child.text.strip() if child.text else ""
-                if text.lower() in ("true", "false"):
-                    sec[child.tag] = text.lower() == "true"
-                else:
-                    try:
-                        sec[child.tag] = int(text)
-                    except ValueError:
-                        try:
-                            sec[child.tag] = float(text)
-                        except ValueError:
-                            sec[child.tag] = text
-            cfg[section.tag] = sec
-        return cfg
-
-    def create(self, **kwargs):
-        """Override in subclasses to build model architecture."""
-        pass
-
-    def runTrials(self, numTrials=1, numEpochs=1, batchSize=10, lr=0.001):
-        acc = np.zeros([numTrials, numEpochs])
-        print(f"\n\n==== {self.name} ====")
-        for trial in range(numTrials):
-            print(f"\nTrial [{trial + 1}/{numTrials}]")
-            self.create(nInput=self.nInput, nConcepts=self.nConcepts, nOutput=self.nOutput)
-            acc[trial, :] = self.run(numEpochs=numEpochs, batchSize=batchSize, lr=lr)
-        np.savetxt(output_path(f"{self.name}.csv"), np.array(acc), delimiter=",")
-        return acc
-
-    def paramUpdate(self):
-        for s in self.spaces:
-            s.paramUpdate()
-
-    def save_weights(self, path=None):
-        """Persist model weights and ergodic state to disk."""
-        if path is None:
-            path = os.path.join(OUTPUT_DIR, "weights.pt")
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        torch.save(self.state_dict(), path)
-        print(f"[{self.name}] Weights saved to {path}")
-
-    def load_weights(self, path=None, strict=False):
-        """Load model weights from disk."""
-        if path is None:
-            path = os.path.join(OUTPUT_DIR, "weights.pt")
-        if not os.path.exists(path):
-            print(f"[{self.name}] No weights found at {path}")
-            return False
-        state = torch.load(path, map_location="cpu", weights_only=True)
-        self.load_state_dict(state, strict=strict)
-        print(f"[{self.name}] Weights loaded from {path}")
-        return True
-
-    def mnistReport(model):
-        _, _, y_pred, last_x_pred = model.runEpoch(TheData.test_input, TheData.test_output, lr=0)
-        _, predicted = torch.max(y_pred, 1)
-        _, actual = torch.max(TheData.test_output, 1)
-
-        rCorrect = torch.zeros((10))
-        for i in range(0,10):
-            total    = (actual == i).sum().item()
-            correct  = (actual==i) & (predicted==actual)
-            nCorrect = correct.sum().item()
-            rCorrect[i] = nCorrect / total
-            print(f"Correctly predicted {i}: {rCorrect[i]}")
-
-        fig = plt.figure(figsize=(10, 5))
-        plt.plot(range(0, 10), rCorrect, label="Error (per Input)", marker='o')
-        plt.xlabel("Digit")
-        plt.ylabel("Accuracy")
-        plt.title(f"Accuracy per Digit: {model.name}")
-        plt.legend()
-        plt.grid(True)
-        TheReport.save_figure(fig, f"{model.name} Accuracy")
-        plt.show(block=False)
-        return rCorrect
-
-    def plotLoss(model, trainErr, valErr, testErr):
-        """Plots the training, validation, and test losses over time."""
-        fig = plt.figure(figsize=(10, 5))
-
-        # Training starts at epoch 2 (epoch 1 is test-only), so offset by +2
-        plt.plot(range(2, len(trainErr[0]) + 2), trainErr[0], label="Training Error", marker='o')
-        if len(trainErr) > 1 and trainErr[1]:
-            plt.plot(range(2, len(trainErr[1]) + 2), trainErr[1], label="Training Error (Input)", marker='o')
-
-        if testErr:
-            plt.plot(range(1, len(testErr[0]) + 1), testErr[0], label="Test Error", marker='x')
-            if len(testErr) > 1 and testErr[1]:
-                plt.plot(range(1, len(testErr[1]) + 1), testErr[1], label="Test Error (Input)", marker='x')
-
-        plt.xlabel("Epoch")
-        plt.ylabel("Loss")
-        plt.title(f"Error per Epoch: {model.name}")
-        plt.legend()
-        plt.grid(True)
-
-        TheReport.save_figure(fig, f"{model.name} Error")
-        plt.show(block=False)
-
-    def plotActivations(model, figure=1, percepts=None, concepts=None, symbols=None):
-        fig = plt.figure(figure, figsize=(12, 4))
-        fig.clf()
-
-        if percepts is not None:
-            p = percepts[-1, :, :].squeeze()
-            pAct = torch.norm(p, dim=1).detach().numpy()
-            plt.plot(pAct, marker='o', color='r')
-            plt.xlabel("Activation")
-            plt.ylabel("Percepts")
-            plt.title("Perceptual Activation")
-
-        if concepts is not None:
-            c = concepts[-1, :, :].squeeze()
-            cAct = torch.norm(c, dim=-1).detach().numpy()
-            plt.plot(cAct, marker='o', color='b')
-            plt.xlabel("Epoch")
-            plt.ylabel("Concepts")
-            plt.title("Conceptual Activation")
-
-        if symbols is not None:
-            s = symbols[-1, :, 0].squeeze()
-            sAct = s.detach().numpy()
-            plt.plot(sAct, marker='o', color='g')
-            plt.xlabel("Epoch")
-            plt.ylabel("Symbols")
-            plt.title("Symbolic Activations")
-
-        plt.tight_layout()
-        plt.show(block=False)
-
-    def plotSpace(model):
-        """Visualizes learned weight parameters via PCA projections."""
-        perc_weights = model.prototypes.data.cpu().numpy()
-        pca = PCA(n_components=2)
-        perc_2d = pca.fit_transform(perc_weights)
-
-        plt.figure(figsize=(18, 5))
-
-        plt.subplot(1, 3, 1)
-        plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
-        plt.xlabel("PC1")
-        plt.ylabel("PC2")
-        plt.title("Perceptual Space Prototypes")
-        plt.legend()
-
-        perc_mean = perc_2d.mean(axis=0)
-
-        conc_weights = model.conceptual.fc_p.weight.data.cpu().numpy()
-        conc_proj = pca.transform(conc_weights)
-
-        plt.subplot(1, 3, 2)
-        plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
-        x_vals = np.linspace(np.min(perc_2d[:, 0]) - 1, np.max(perc_2d[:, 0]) + 1, 100)
-        for i in range(conc_proj.shape[0]):
-            n = conc_proj[i]
-            if np.abs(n[1]) > 1e-3:
-                y_vals = perc_mean[1] - (n[0] / n[1]) * (x_vals - perc_mean[0])
-                plt.plot(x_vals, y_vals, '--', label=f"Hyperplane {i + 1}" if i == 0 else None, alpha=0.7)
-            else:
-                plt.axvline(x=perc_mean[0], linestyle='--', alpha=0.7, label=f"Hyperplane {i + 1}" if i == 0 else None)
-        plt.xlabel("PC1")
-        plt.ylabel("PC2")
-        plt.title("Conceptual Hyperplanes")
-        plt.legend()
-
-        symb_weights = model.fc_symbolic.weight.data.cpu().numpy()
-        symb_norms = np.linalg.norm(symb_weights, axis=1)
-        x_symb = np.arange(len(symb_norms))
-
-        plt.subplot(1, 3, 3)
-        plt.vlines(x_symb, 0, symb_norms, color='k', alpha=0.7)
-        plt.scatter(x_symb, symb_norms, color='red', s=100, zorder=3)
-        plt.xlabel("Symbolic Feature Index")
-        plt.ylabel("L2 Norm")
-        plt.title("Symbolic Weights (Lollipop Plot)")
-
-        plt.tight_layout()
-        plt.show(block=False)
-
-    def plotNetwork(model):
-        """Uses Torchviz to visualize the computation graph."""
-        model.eval()
-        output, input, _, _ = model.runTest(TheData.test_input, TheData.test_output)
-        dot = make_dot(output, params=dict(model.named_parameters()))
-        dot.format = "png"
-        graph_path = dot.render(output_stem(f"graph_{model.name}"))
-        print(f"Saved network graph as {graph_path}")
-
-    def plotErrorbars(model, acc):
-        x = list(range(1, len(acc[0]) + 1))
-        y = np.array(np.mean(acc, axis=0))
-        y_err = np.std(acc, axis=0)
-        plt.errorbar(x, y, yerr=y_err, fmt='-o', label=model.name, capsize=4)
-
-
 
 class DerivedModel(BaseModel):
     """Unified parameterized model: InputSpace → ConceptualSpace → OutputSpace.
@@ -1988,8 +1987,6 @@ class DerivedModel(BaseModel):
         self.trainLosses = trainLosses
         self.testLosses  = testLosses
         return accuracy
-
-
 class BasicModel(BaseModel):
     nSubThoughts   = 1
     nThoughts      = 0

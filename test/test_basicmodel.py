@@ -470,5 +470,25 @@ class TestModelEndToEnd(unittest.TestCase):
         # No crash = pass
 
 
+class TestUniversalTrainingContract(unittest.TestCase):
+    """All spaces expose getParameters() and paramUpdate()."""
+
+    def test_space_has_training_contract(self):
+        from BasicModel import Space
+        s = Space([4, 8], [4, 8], 4, 8)
+        self.assertEqual(s.getParameters(), [])
+        s.paramUpdate()  # should be a no-op, not crash
+
+    def test_conceptual_space_has_training_contract(self):
+        from BasicModel import ConceptualSpace, TheObjectEncoding
+        TheObjectEncoding.setDimensions(inputDim=8, perceptDim=8, conceptDim=8, outputDim=4)
+        cs = ConceptualSpace([4, TheObjectEncoding.inputDim],
+                             [4, TheObjectEncoding.conceptDim],
+                             4, TheObjectEncoding.conceptDim)
+        params = cs.getParameters()
+        self.assertIsInstance(params, list)
+        cs.paramUpdate()  # no crash
+
+
 if __name__ == "__main__":
     unittest.main()
