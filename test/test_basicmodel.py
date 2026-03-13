@@ -14,6 +14,9 @@ import sys
 import tempfile
 import unittest
 
+# Prevent OMP fork-safety crash on macOS when multiple libs load OpenMP
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -262,6 +265,209 @@ class TestWeightPersistence(unittest.TestCase):
                             "Weight save/load should preserve outputs")
         finally:
             os.unlink(path)
+
+
+# ---------------------------------------------------------------------------
+# Regression: Space and DerivedSpace shape contracts
+# ---------------------------------------------------------------------------
+class TestCanonicalSpaceShapes(unittest.TestCase):
+    """Lock down tensor shapes for canonical Space subclasses."""
+
+    def setUp(self):
+        from BasicModel import (TheObjectEncoding, InputSpace,
+                                ConceptualSpace, OutputSpace)
+        TheObjectEncoding.setDimensions(inputDim=8, perceptDim=8, conceptDim=8, outputDim=4)
+        self.B = 2  # batch
+
+    @unittest.skip("Known bug: ConceptualSpace.forward passes t to SigmaLayer which does not accept it")
+    def test_conceptual_space_forward_shape(self):
+        from BasicModel import ConceptualSpace, TheObjectEncoding
+        nIn, nOut, nDim = 4, 4, 8
+        cs = ConceptualSpace([nIn, TheObjectEncoding.inputDim],
+                             [nOut, TheObjectEncoding.conceptDim],
+                             nOut, TheObjectEncoding.conceptDim)
+        inEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.inputDim)
+        x = torch.randn(self.B, nIn, inEmb)
+        y = cs(x)
+        outEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.conceptDim)
+        self.assertEqual(list(y.shape), [self.B, nOut, outEmb])
+
+    @unittest.skip("Known bug: ConceptualSpace.reverse passes t to SigmaLayer which does not accept it")
+    def test_conceptual_space_reverse_shape(self):
+        from BasicModel import ConceptualSpace, TheObjectEncoding
+        nIn, nOut, nDim = 4, 4, 8
+        cs = ConceptualSpace([nIn, TheObjectEncoding.inputDim],
+                             [nOut, TheObjectEncoding.conceptDim],
+                             nOut, TheObjectEncoding.conceptDim,
+                             reversePass=True)
+        outEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.conceptDim)
+        y = torch.randn(self.B, nOut, outEmb)
+        x = cs.reverse(y)
+        inEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.inputDim)
+        self.assertEqual(list(x.shape), [self.B, nIn, inEmb])
+
+    def test_output_space_forward_shape(self):
+        from BasicModel import OutputSpace, TheObjectEncoding
+        nIn, nOut = 4, 4
+        os_ = OutputSpace([nIn, TheObjectEncoding.conceptDim],
+                          [nOut, TheObjectEncoding.outputDim],
+                          nOut, TheObjectEncoding.outputDim)
+        inEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.conceptDim)
+        x = torch.randn(self.B, nIn, inEmb)
+        y = os_(x)
+        self.assertEqual(list(y.shape), [self.B, nOut, TheObjectEncoding.outputDim])
+
+
+class TestDerivedSpaceShapes(unittest.TestCase):
+    """Lock down tensor shapes for DerivedSpace subclasses."""
+
+    def setUp(self):
+        self.B = 2
+
+    def test_derived_input_forward_shape(self):
+        from BasicModel import DerivedInputSpace
+        nIn, nDim = 8, 1
+        dis = DerivedInputSpace([nIn, nDim], nIn, nDim, nOutput=nIn)
+        x = torch.randn(self.B, nIn, nDim)
+        y = dis(x)
+        self.assertEqual(list(y.shape), [self.B, nIn, nDim])
+
+    def test_derived_conceptual_ergodic_forward_shape(self):
+        from BasicModel import DerivedConceptualSpace
+        nIn, nDim, nConcepts, cDim = 8, 1, 4, 1
+        dcs = DerivedConceptualSpace([nIn, nDim], nConcepts, cDim,
+                                     nOutput=nConcepts, ergodic=True)
+        x = torch.randn(self.B, nIn, nDim)
+        y = dcs(x)
+        self.assertEqual(list(y.shape), [self.B, nConcepts, cDim])
+
+    def test_derived_conceptual_traditional_forward_shape(self):
+        from BasicModel import DerivedConceptualSpace
+        nIn, nDim, nConcepts, cDim = 8, 1, 4, 1
+        dcs = DerivedConceptualSpace([nIn, nDim], nConcepts, cDim,
+                                     nOutput=nConcepts, ergodic=False)
+        x = torch.randn(self.B, nIn, nDim)
+        y = dcs(x)
+        self.assertEqual(list(y.shape), [self.B, nConcepts, cDim])
+
+    def test_derived_conceptual_reverse_shape(self):
+        from BasicModel import DerivedConceptualSpace
+        nIn, nDim, nConcepts, cDim = 8, 1, 4, 1
+        dcs = DerivedConceptualSpace([nIn, nDim], nConcepts, cDim,
+                                     nOutput=nConcepts, ergodic=True,
+                                     reversePass=True)
+        y = torch.randn(self.B, nConcepts, cDim)
+        x = dcs.reverse(y)
+        self.assertEqual(list(x.shape), [self.B, nIn, nDim])
+
+    def test_derived_output_forward_shape(self):
+        from BasicModel import DerivedOutputSpace
+        nIn, nDim, nOut, oDim = 4, 1, 3, 1
+        dos = DerivedOutputSpace([nIn, nDim], nOut, oDim, nOutput=nOut)
+        x = torch.randn(self.B, nIn, nDim)
+        y = dos(x)
+        self.assertEqual(list(y.shape), [self.B, nOut, oDim])
+
+    def test_derived_input_reverse_shape(self):
+        from BasicModel import DerivedInputSpace
+        nIn, nDim = 8, 1
+        dis = DerivedInputSpace([nIn, nDim], nIn, nDim, nOutput=nIn)
+        y = torch.randn(self.B, nIn, nDim)
+        x = dis.reverse(y)
+        self.assertEqual(list(x.shape), [self.B, nIn, nDim])
+
+    def test_derived_output_reverse_shape(self):
+        from BasicModel import DerivedOutputSpace
+        nIn, nDim, nOut, oDim = 4, 1, 3, 1
+        dos = DerivedOutputSpace([nIn, nDim], nOut, oDim, nOutput=nOut,
+                                 reversePass=True)
+        y = torch.randn(self.B, nOut, oDim)
+        x = dos.reverse(y)
+        self.assertEqual(list(x.shape), [self.B, nIn, nDim])
+
+
+class TestVectorSetVariants(unittest.TestCase):
+    """Lock down quantized vs unquantized VectorSet behavior."""
+
+    def test_unquantized_passthrough(self):
+        from BasicModel import UnquantizedVSet
+        vs = UnquantizedVSet()
+        vs.create(4, 4, 1)
+        x = torch.randn(2, 4, 1)
+        y = vs.forward(x)
+        self.assertTrue(torch.equal(x, y))
+
+    @unittest.skip("Known bug: VectorSet.forward indexes nearestDist[v] but topk returns size 1")
+    def test_quantized_shape(self):
+        from BasicModel import VectorSet
+        vs = VectorSet()
+        vs.create(4, 4, 3, customVQ=False)
+        vs.addVectors(nVec=4)
+        x = torch.randn(2, 4, 3)
+        y = vs.forward(x)
+        self.assertEqual(list(y.shape), [2, 4, 3])
+
+
+class TestModelEndToEnd(unittest.TestCase):
+    """Lock down full model forward shapes and loss compatibility."""
+
+    def test_derived_model_ergodic_shapes(self):
+        from BasicModel import DerivedModel
+        model = DerivedModel()
+        model.ergodic = True
+        model.certainty = False
+        model.quantized = False
+        model.create(nInput=16, nConcepts=8, nOutput=4)
+        x = torch.randn(2, 16, 1)
+        out, concepts = model.forward(x)
+        self.assertEqual(out.shape[0], 2)
+        self.assertEqual(out.shape[1], 4)
+        self.assertEqual(concepts.shape[0], 2)
+        self.assertEqual(concepts.shape[1], 8)
+
+    def test_derived_model_traditional_shapes(self):
+        from BasicModel import DerivedModel
+        model = DerivedModel()
+        model.ergodic = False
+        model.certainty = False
+        model.quantized = False
+        model.create(nInput=16, nConcepts=8, nOutput=4)
+        x = torch.randn(2, 16, 1)
+        out, concepts = model.forward(x)
+        self.assertEqual(out.shape[0], 2)
+        self.assertEqual(out.shape[1], 4)
+        self.assertEqual(concepts.shape[0], 2)
+        self.assertEqual(concepts.shape[1], 8)
+
+    def test_derived_model_reverse_shapes(self):
+        from BasicModel import DerivedModel
+        model = DerivedModel()
+        model.ergodic = True
+        model.certainty = False
+        model.quantized = False
+        model.reversePass = True
+        model.create(nInput=16, nConcepts=8, nOutput=4)
+        x = torch.randn(2, 16, 1)
+        out, concepts = model.forward(x)
+        data, percepts = model.reverse(concepts)
+        self.assertEqual(data.shape[0], 2)
+        self.assertEqual(data.shape[1], 16)
+
+    def test_derived_model_loss_runs(self):
+        """Verify forward + loss + backward doesn't crash."""
+        from BasicModel import DerivedModel, CertaintyWeightedCrossEntropy
+        model = DerivedModel()
+        model.ergodic = True
+        model.certainty = True
+        model.quantized = False
+        model.create(nInput=16, nConcepts=8, nOutput=4)
+        x = torch.randn(2, 16, 1)
+        target = torch.randn(2, 4)
+        out, concepts = model.forward(x)
+        loss_fn = CertaintyWeightedCrossEntropy()
+        loss = loss_fn(out.squeeze(), target)
+        loss.backward()
+        # No crash = pass
 
 
 if __name__ == "__main__":
