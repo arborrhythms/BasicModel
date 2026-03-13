@@ -9,6 +9,9 @@
     <nSymbols>2</nSymbols>
     <nWords>16</nWords>
     <nOutput>32</nOutput>
+    <conceptualOrder>1</conceptualOrder>
+    <perceptPrototypes>128</perceptPrototypes>
+    <conceptPrototypes>512</conceptPrototypes>
     <!-- Enable reverse (reconstruction) pass -->
     <reversePass>true</reversePass>
   </architecture>
@@ -17,11 +20,11 @@
     <!-- Training hyperparameters -->
     <numEpochs>10</numEpochs>
     <batchSize>10</batchSize>
-    <temperature>0.0001</temperature>
     <learningRate>0.01</learningRate>
     <stoppingCriterion>0.1</stoppingCriterion>
     <!-- Dataset: mnist | xor | tomatoes -->
     <dataset>mnist</dataset>
+    <modelType>passthrough</modelType>
   </training>
 
   <weights>

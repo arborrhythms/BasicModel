@@ -1387,8 +1387,8 @@ class InputSpace(Space):
         return self.data.train_input, self.data.train_output
     def getTestData(self):
         return self.data.test_input, self.data.test_output
-    def prepInput(self, inputBatch, hasThoughts):
-        if hasThoughts:
+    def prepInput(self, inputBatch):
+        if isinstance(inputBatch, list):
             return torch.stack(inputBatch, dim=0).unsqueeze(1).to(TheDevice)
         else:
             return inputBatch.unsqueeze(2).to(TheDevice)
@@ -1713,8 +1713,8 @@ class OutputSpace(Space):
         self.layers = [self.forwardLinear] if not reversePass else [self.linear1, self.linear2]
     def getTestOutput(self):
         return self.data.test_output if self.data else None
-    def prepOutput(self, outputBatch, hasThoughts):
-        if hasThoughts:
+    def prepOutput(self, outputBatch):
+        if isinstance(outputBatch, list):
             return torch.stack(outputBatch, dim=0).unsqueeze(1).to(TheDevice)
         else:
             return outputBatch.unsqueeze(2).to(TheDevice)
@@ -1777,16 +1777,10 @@ class BaseModel(nn.Module):
         return cfg
 
     @staticmethod
-    def from_config(config_path=None, model_type="simple", data=None, pretrained=False):
+    def from_config(config_path=None, model_type=None, data=None, pretrained=None):
         """Factory: create the right model type from XML config."""
-        cfg = BaseModel.load_config(config_path)
-        arch = cfg.get("architecture", {})
-        arch_type = arch.get("type", "basic")
         model = BasicModel()
-        if arch_type == "simple":
-            model.nSubThoughts = 0
-            model.nThoughts    = 0
-        model.create_from_config(config_path, model_type=model_type, data=data, pretrained=pretrained)
+        cfg = model.create_from_config(config_path, model_type=model_type, data=data, pretrained=pretrained)
         return model, cfg
 
     def create(self, **kwargs):
@@ -1813,8 +1807,21 @@ class BaseModel(nn.Module):
         print(f"\n\n==== {self.name} ====")
         for trial in range(numTrials):
             print(f"\nTrial [{trial + 1}/{numTrials}]")
-            self.create(nInput=self.nInput, nConcepts=self.nConcepts, nOutput=self.nOutput,
-                       model_type=self.model_type, data=self.data, pretrained=self.pretrained)
+            self.create(nInput=self.nInput, nPercepts=self.nPercepts,
+                       nConcepts=self.nConcepts, nSymbols=self.nSymbols,
+                       nWords=self.nWords, nOutput=self.nOutput,
+                       reversePass=self.reversePass,
+                       perceptPassThrough=self.perceptPassThrough,
+                       symbolPassThrough=self.symbolPassThrough,
+                       perceptPrototypes=self.perceptPrototypes,
+                       conceptPrototypes=self.conceptPrototypes,
+                       ergodic=self.ergodic, certainty=self.certainty,
+                       quantized=self.quantized, invertible=self.invertible,
+                       hasNorm=self.hasNorm,
+                       conceptualOrder=self.conceptualOrder, symbolicOrder=self.symbolicOrder,
+                       processSymbols=self.processSymbols,
+                       model_type=self.model_type, data=self.data,
+                       pretrained=self.pretrained)
             acc[trial, :] = self.run(numEpochs=numEpochs, batchSize=batchSize, lr=lr)
         np.savetxt(ProjectPaths.output_path(f"{self.name}.csv"), np.array(acc), delimiter=",")
         return acc
@@ -1874,41 +1881,65 @@ class BaseModel(nn.Module):
             TheReport.plotAccuracy(self.name, rCorrect)
         return rCorrect
 class BasicModel(BaseModel):
-    nSubThoughts   = 1
-    nThoughts      = 0
-    processSymbols = False
-    name           = "BasicModel"
-    # SimpleModel feature flags (active when nSubThoughts=0, nThoughts=0, no LM)
-    ergodic    = False
-    certainty  = False
-    quantized  = False
-    invertible = False
-    hasNorm    = False
+    name = "BasicModel"
 
-    def create_from_config(self, config_path=None, model_type="simple", data=None, pretrained=False):
+    def create_from_config(self, config_path=None, model_type=None, data=None, pretrained=None):
         """Create the model using settings from an XML config file.
 
-        Loads architecture parameters and feature flags from config,
-        creates the model, and optionally loads saved weights.
+        Loads defaults from defaults.xml, overlays model-specific config,
+        then creates the model and optionally loads saved weights.
         """
+        # Load defaults, then overlay model-specific config
+        defaults_path = os.path.join(ProjectPaths.DATA_DIR, "defaults.xml")
+        defaults = self.load_config(defaults_path)
         cfg = self.load_config(config_path)
-        arch = cfg.get("architecture", {})
-        # Feature flags
-        self.ergodic    = arch.get("ergodic", self.ergodic)
-        self.certainty  = arch.get("certainty", self.certainty)
-        self.quantized  = arch.get("quantized", self.quantized)
-        self.invertible = arch.get("invertible", self.invertible)
-        self.hasNorm    = arch.get("hasNorm", self.hasNorm)
-        self.nSubThoughts = arch.get("nSubThoughts", self.nSubThoughts)
-        self.nThoughts    = arch.get("nThoughts", self.nThoughts)
+        for section in defaults:
+            if section not in cfg:
+                cfg[section] = defaults[section]
+            else:
+                merged = dict(defaults[section])
+                merged.update(cfg[section])
+                cfg[section] = merged
+
+        arch = cfg["architecture"]
+        train = cfg.get("training", {})
+
+        # Caller overrides XML; XML overrides defaults
+        if model_type is None:
+            model_type = train["modelType"]
+        if pretrained is None:
+            pretrained = train["pretrained"]
+
+        # ObjectEncoding setup
+        TheObjectEncoding.nWhere = arch["nWhere"]
+        TheObjectEncoding.nWhen = arch["nWhen"]
+        TheObjectEncoding.objectSize = arch["objectSize"]
+        TheObjectEncoding.setInputDim(arch["inputDim"])
+        TheObjectEncoding.setPerceptDim(arch["perceptDim"])
+        TheObjectEncoding.setConceptDim(arch["conceptDim"])
+        TheObjectEncoding.setSymbolDim(arch["symbolDim"])
+        TheObjectEncoding.setOutputDim(arch["outputDim"])
+
         self.create(
-            nInput=arch.get("nInput", 32),
-            nPercepts=arch.get("nPercepts", 64),
-            nConcepts=arch.get("nConcepts", 256),
-            nSymbols=arch.get("nSymbols", 2),
-            nWords=arch.get("nWords", 16),
-            nOutput=arch.get("nOutput", 32),
-            reversePass=arch.get("reversePass", True),
+            nInput=arch["nInput"],
+            nPercepts=arch["nPercepts"],
+            nConcepts=arch["nConcepts"],
+            nSymbols=arch["nSymbols"],
+            nWords=arch["nWords"],
+            nOutput=arch["nOutput"],
+            reversePass=arch["reversePass"],
+            perceptPassThrough=arch["perceptPassThrough"],
+            symbolPassThrough=arch["symbolPassThrough"],
+            perceptPrototypes=arch["perceptPrototypes"],
+            conceptPrototypes=arch["conceptPrototypes"],
+            ergodic=arch["ergodic"],
+            certainty=arch["certainty"],
+            quantized=arch["quantized"],
+            invertible=arch["invertible"],
+            hasNorm=arch["hasNorm"],
+            conceptualOrder=arch["conceptualOrder"],
+            symbolicOrder=arch["symbolicOrder"],
+            processSymbols=arch["processSymbols"],
             model_type=model_type, data=data, pretrained=pretrained,
         )
         # Auto-load weights if configured
@@ -1920,8 +1951,13 @@ class BasicModel(BaseModel):
             self.load_weights(wpath)
         return cfg
 
-    def create(self, nInput=32, nPercepts=64, nConcepts=256, nSymbols=2, nWords=16, nOutput=32,
-               reversePass=True, model_type="simple", data=None, pretrained=False):
+    def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
+               reversePass=True, perceptPassThrough=False, symbolPassThrough=False,
+               perceptPrototypes=0, conceptPrototypes=0,
+               ergodic=False, certainty=False, quantized=False,
+               invertible=False, hasNorm=False,
+               conceptualOrder=0, symbolicOrder=0, processSymbols=False,
+               model_type="simple", data=None, pretrained=False):
         self.reversePass      = reversePass
         self.nInput           = nInput
         self.nOutput          = nOutput
@@ -1932,108 +1968,83 @@ class BasicModel(BaseModel):
         self.data             = data
         self.model_type       = model_type
         self.pretrained       = pretrained
+        self.ergodic          = ergodic
+        self.certainty        = certainty
+        self.quantized        = quantized
+        self.invertible       = invertible
+        self.hasNorm          = hasNorm
+        self.conceptualOrder  = conceptualOrder
+        self.symbolicOrder    = symbolicOrder
+        self.processSymbols   = processSymbols
 
-        hasThoughts = self.nSubThoughts > 0 or self.nThoughts > 0
+        nOutputSymbols = self.nSymbols
+        self.inputSpace      = InputSpace([self.nInput, TheObjectEncoding.inputDim],
+                                           [self.nInput, TheObjectEncoding.inputDim],
+                                           self.nInput, TheObjectEncoding.inputDim,
+                                           model_type=model_type, data=data,
+                                           pretrained=pretrained,
+                                           useVQ=self.quantized)
+        self.perceptualSpace = PerceptualSpace([self.nInput, TheObjectEncoding.inputDim],
+                                               [self.nPercepts, TheObjectEncoding.perceptDim],
+                                               self.nPercepts, TheObjectEncoding.perceptDim,
+                                               reversePass=reversePass,
+                                               nPrototypes=perceptPrototypes,
+                                               passThrough=perceptPassThrough)
+        self.conceptualSpace = ConceptualSpace([self.nPercepts, TheObjectEncoding.perceptDim],
+                                               [self.nConcepts, TheObjectEncoding.conceptDim],
+                                               self.nConcepts, TheObjectEncoding.conceptDim,
+                                               reversePass=reversePass,
+                                               nPrototypes=conceptPrototypes,
+                                               invertible=self.invertible,
+                                               hasNorm=self.hasNorm,
+                                               ergodic=self.ergodic,
+                                               useVQ=self.quantized)
+        self.symbolicSpace   = SymbolicSpace([self.nConcepts, TheObjectEncoding.conceptDim],
+                                              [self.nSymbols, TheObjectEncoding.symbolDim],
+                                              self.nSymbols, TheObjectEncoding.symbolDim,
+                                              reversePass=reversePass,
+                                              conceptualSpace=self.conceptualSpace,
+                                              processSymbols=self.processSymbols,
+                                              passThrough=symbolPassThrough)
+        self.spaces.extend([self.inputSpace, self.perceptualSpace, self.conceptualSpace, self.symbolicSpace])
 
-        if hasThoughts:
-            # Full pathway: input → percepts → concepts → symbols → (thought loops) → output
-            self.inputSpace       = InputSpace([1, TheData.inputLength],
-                                               [self.nInput, TheObjectEncoding.inputDim],
-                                               self.nInput, nDim=TheObjectEncoding.inputDim,
-                                               model_type=model_type, data=data, pretrained=pretrained)
-            # Compute after InputSpace init (LM path updates ObjectEncoding dims)
-            symbolicOutputDim     = TheObjectEncoding.symbolDim if self.processSymbols else TheObjectEncoding.conceptDim
-
-            self.perceptualSpace  = PerceptualSpace([self.nInput, TheObjectEncoding.inputDim],
+        if self.conceptualOrder == 1:
+            self.perceptualSpace2 = PerceptualSpace([self.nConcepts, TheObjectEncoding.symbolDim],
                                                     [self.nPercepts, TheObjectEncoding.perceptDim],
                                                     self.nPercepts, TheObjectEncoding.perceptDim,
-                                                    reversePass=reversePass,
-                                                    nPrototypes=2 * self.nPercepts)
-            self.conceptualSpace  = ConceptualSpace([self.nPercepts, TheObjectEncoding.perceptDim],
-                                                   [self.nConcepts, TheObjectEncoding.conceptDim],
-                                                   self.nConcepts, TheObjectEncoding.conceptDim,
-                                                   reversePass=reversePass,
-                                                   nPrototypes=2 * self.nConcepts)
-            self.symbolicSpace    = SymbolicSpace([self.nConcepts, TheObjectEncoding.conceptDim],
-                                                  [self.nSymbols, symbolicOutputDim],
-                                                  self.nSymbols, TheObjectEncoding.symbolDim,
-                                                  reversePass = reversePass,
-                                                  conceptualSpace = self.conceptualSpace,
-                                                  processSymbols = self.processSymbols)
-            self.spaces.extend([self.inputSpace, self.perceptualSpace, self.conceptualSpace, self.symbolicSpace])
-            if self.nSubThoughts == 1:
-                self.perceptualSpace2 = PerceptualSpace([self.nConcepts, symbolicOutputDim],
-                                                        [self.nPercepts, TheObjectEncoding.perceptDim],
-                                                        self.nPercepts, TheObjectEncoding.perceptDim,
-                                                        reversePass = reversePass,
-                                                        nPrototypes = 2*self.nPercepts)
-                self.conceptualSpace2 = ConceptualSpace([self.nPercepts, TheObjectEncoding.perceptDim],
-                                                        [self.nConcepts, TheObjectEncoding.conceptDim],
-                                                        self.nConcepts, TheObjectEncoding.conceptDim,
-                                                        reversePass = reversePass,
-                                                        nPrototypes = 2*self.nConcepts)
-                self.symbolicSpace2 = SymbolicSpace([self.nConcepts, TheObjectEncoding.conceptDim],
-                                                    [self.nSymbols, symbolicOutputDim],
-                                                    self.nSymbols, TheObjectEncoding.symbolDim,
                                                     reversePass = reversePass,
-                                                    conceptualSpace = self.conceptualSpace2,
-                                                    processSymbols = self.processSymbols)
-                self.spaces.extend([self.perceptualSpace2, self.conceptualSpace2, self.symbolicSpace2])
-            if self.nThoughts == 1:
-                self.syntacticSpace3    = SyntacticSpace([self.nSymbols, symbolicOutputDim],
-                                                   [self.nWords, symbolicOutputDim],
-                                                    self.nWords, TheObjectEncoding.symbolDim,
-                                                    reversePass = reversePass)
-                self.symbolicSpace3 = SymbolicSpace([self.nWords, symbolicOutputDim],
-                                                    [self.nWords, symbolicOutputDim],
-                                                    self.nWords, TheObjectEncoding.symbolDim,
-                                                    reversePass = reversePass)
-                self.spaces.extend([self.syntacticSpace3, self.symbolicSpace3])
-            # The input dimensionality of the output layer must be equal to the sum of the output dimensionalities of the symbolic layers.
-            self.outputSpace     = OutputSpace([ (self.nSubThoughts+self.nThoughts+1) * self.nSymbols, symbolicOutputDim],
-                                               [self.nOutput, TheObjectEncoding.outputDim],
-                                               self.nOutput, TheObjectEncoding.outputDim,
-                                               reversePass = reversePass, data=data)
-        else:
-            # Simple pathway: input → percepts(passThrough) → concepts → symbols(passThrough) → output
-            inputDim   = 1
-            conceptDim = 1
-            outputDim  = 1
-            self.nSymbols = self.nConcepts  # 1:1 passthrough
+                                                    nPrototypes = 2*self.nPercepts)
+            self.conceptualSpace2 = ConceptualSpace([self.nPercepts, TheObjectEncoding.perceptDim],
+                                                    [self.nConcepts, TheObjectEncoding.conceptDim],
+                                                    self.nConcepts, TheObjectEncoding.conceptDim,
+                                                    reversePass = reversePass,
+                                                    nPrototypes = 2*self.nConcepts)
+            self.symbolicSpace2   = SymbolicSpace([self.nConcepts, TheObjectEncoding.conceptDim],
+                                                [self.nSymbols, TheObjectEncoding.symbolDim],
+                                                self.nSymbols, TheObjectEncoding.symbolDim,
+                                                reversePass = reversePass,
+                                                conceptualSpace = self.conceptualSpace2,
+                                                processSymbols = self.processSymbols)
+            nOutputSymbols += self.conceptualOrder * self.nSymbols
+            self.spaces.extend([self.perceptualSpace2, self.conceptualSpace2, self.symbolicSpace2])
 
-            self.inputSpace = InputSpace([self.nInput, inputDim],
-                                         [self.nInput, inputDim],
-                                         self.nInput, nDim=inputDim,
-                                         model_type=model_type, data=data,
-                                         useVQ=self.quantized)
-            self.perceptualSpace = PerceptualSpace([self.nInput, inputDim],
-                                                   [self.nInput, inputDim],
-                                                   self.nInput, inputDim,
-                                                   passThrough=True)
-            self.conceptualSpace = ConceptualSpace([self.nInput, inputDim],
-                                                   [self.nConcepts, conceptDim],
-                                                   self.nConcepts, conceptDim,
-                                                   reversePass=reversePass,
-                                                   invertible=self.invertible,
-                                                   hasNorm=self.hasNorm,
-                                                   ergodic=self.ergodic,
-                                                   useVQ=self.quantized)
-            self.symbolicSpace = SymbolicSpace([self.nConcepts, conceptDim],
-                                               [self.nConcepts, conceptDim],
-                                               self.nConcepts, conceptDim,
-                                               reversePass=reversePass,
-                                               conceptualSpace=self.conceptualSpace,
-                                               passThrough=True)
-            symbolicOutputDim = conceptDim
-            self.outputSpace = OutputSpace([(self.nSubThoughts+self.nThoughts+1) * self.nSymbols, symbolicOutputDim],
-                                           [self.nOutput, outputDim],
-                                           self.nOutput, outputDim,
+        if self.symbolicOrder == 1:
+            self.syntacticSpace3 = SyntacticSpace([self.nSymbols, TheObjectEncoding.symbolDim],
+                                               [self.nWords, TheObjectEncoding.symbolDim],
+                                                self.nWords, TheObjectEncoding.symbolDim,
+                                                reversePass = reversePass)
+            self.symbolicSpace3  = SymbolicSpace([self.nWords, TheObjectEncoding.symbolDim],
+                                                [self.nWords, TheObjectEncoding.symbolDim],
+                                                self.nWords, TheObjectEncoding.symbolDim,
+                                                reversePass = reversePass)
+            nOutputSymbols += self.symbolicOrder * self.nSymbols
+            self.spaces.extend([self.syntacticSpace3, self.symbolicSpace3])
+            
+        self.outputSpace     = OutputSpace([nOutputSymbols, TheObjectEncoding.symbolDim],
+                                           [self.nOutput, TheObjectEncoding.outputDim],
+                                           self.nOutput, TheObjectEncoding.outputDim,
                                            reversePass=reversePass, data=data)
-
-        if hasThoughts:
-            self.spaces.extend([self.outputSpace])
-        else:
-            self.spaces.extend([self.inputSpace, self.perceptualSpace, self.conceptualSpace, self.symbolicSpace, self.outputSpace])
+        self.spaces.extend([self.outputSpace])
 
         # The output dimensionality of the input layer must be equal to the output dimensionality of the perceptual layer, since the conceptual layer operates on both.
         #assert self.inputSpace.outputShape[1] == self.perceptualSpace2.outputShape[1] # inputDim == perceptDim
@@ -2095,10 +2106,10 @@ class BasicModel(BaseModel):
             return symbols
     def forward(self, data, t=0.0):
         data, input, symbols = self.Start(data, t)
-        for n in range(self.nSubThoughts):
+        for n in range(self.conceptualOrder):
             data, symbols1 = self.SubsymbolicThought(data, t)
             symbols = torch.cat((symbols, symbols1), dim=1)
-        for n in range(self.nThoughts):
+        for n in range(self.symbolicOrder):
             data, symbols2 = self.SymbolicThought(data, t)
             symbols = torch.cat((symbols, symbols2), dim=1)
         data = self.Finish(symbols, t)
@@ -2109,11 +2120,11 @@ class BasicModel(BaseModel):
         symbols = self.FinishReverse(end_state, t)
         nSym = round(self.nSymbols)
         symbolIndex = 0
-        for n in range(self.nThoughts):
+        for n in range(self.symbolicOrder):
             symbols1 = symbols[:, symbolIndex*nSym:(symbolIndex+1)*nSym]
             symbolIndex += 1
             end_state = self.SymbolicThoughtReverse(end_state, symbols1, t)
-        for n in range(self.nSubThoughts):
+        for n in range(self.conceptualOrder):
             symbols1 = symbols[:, symbolIndex*nSym:(symbolIndex+1)*nSym]
             symbolIndex += 1
             end_state = self.SubsymbolicThoughtReverse(end_state, symbols1, t)
@@ -2165,26 +2176,12 @@ class BasicModel(BaseModel):
         self.trainLosses = trainLosses
         self.testLosses  = testLosses
         return accuracy
-    def _prepTensors(self, inputBatch, outputBatch):
-        """Prepare input/output tensors for the model.
-        Returns (inputTensor, outputTensor) with correct shapes.
-        """
-        hasThoughts = self.nSubThoughts > 0 or self.nThoughts > 0
-        if hasThoughts:
-            # LM path: list of tensors → [B, 1, D]
-            inputTensor  = torch.stack(inputBatch, dim=0).unsqueeze(1)
-            outputTensor = torch.stack(outputBatch, dim=0).unsqueeze(1)
-        else:
-            # Simple path: already tensors → [B, N, 1]
-            inputTensor  = inputBatch.unsqueeze(2)
-            outputTensor = outputBatch.unsqueeze(2)
-        return inputTensor, outputTensor
-
+    
     def _getLossFn(self):
         """Return (outputLossFn, inputLossFn) based on model config."""
         if self.certainty:
             return CertaintyWeightedCrossEntropy(), nn.MSELoss()
-        elif self.nSubThoughts > 0 or self.nThoughts > 0:
+        elif self.conceptualOrder > 0 or self.symbolicOrder > 0:
             return nn.MSELoss(), nn.MSELoss()
         else:
             return nn.CrossEntropyLoss(), nn.MSELoss()
@@ -2210,9 +2207,8 @@ class BasicModel(BaseModel):
                 outputBatch = output[i:i + batchSize]
                 batchSize   = len(inputBatch)
 
-                hasThoughts = self.nSubThoughts > 0 or self.nThoughts > 0
-                inputTensor  = self.inputSpace.prepInput(inputBatch, hasThoughts)
-                outputTensor = self.outputSpace.prepOutput(outputBatch, hasThoughts)
+                inputTensor  = self.inputSpace.prepInput(inputBatch)
+                outputTensor = self.outputSpace.prepOutput(outputBatch)
 
                 # Forward pass
                 if training:
@@ -2308,126 +2304,41 @@ class BasicModelFactory:
     @staticmethod
     def run(config_path):
         """Main entry point — create, train, and evaluate a model from XML config."""
+        # Pre-read config for dataset loading (needed before create_from_config)
         cfg = BaseModel.load_config(config_path)
-        arch = cfg.get("architecture", {})
         train = cfg.get("training", {})
-        weights = cfg.get("weights", {})
-
-        dataset = train.get("dataset", "xor")
-        model_type = train.get("modelType", "lm")
 
         if train.get("detectAnomaly", False):
             torch.autograd.set_detect_anomaly(True)
 
-        # --- Simple path (no thoughts, no LM) ---
-        ergodic   = arch.get("ergodic", False)
-        certainty = arch.get("certainty", False)
-        quantized = arch.get("quantized", False)
-        normed    = arch.get("normed", False)
-        reverse   = arch.get("reverse", False)
-        invert    = arch.get("invert", False)
-
-        is_simple = ergodic or certainty or quantized or normed or reverse or invert \
-                     or "ergodic" in arch or "certainty" in arch or "quantized" in arch
-
-        # --- Load data ---
+        dataset = train.get("dataset", "xor")
         TheData.load(dataset)
 
-        if is_simple:
-            nInput    = TheData.getInputSize()
-            nConcepts = arch.get("nConcepts", 20)
-            nOutput   = TheData.getOutputSize()
-            model_type = "simple"
+        m = BasicModel()
+        cfg = m.create_from_config(config_path, data=TheData)
 
-            # ObjectEncoding: no positional/temporal encoding for simple path
-            dim = 1
-            TheObjectEncoding.nWhere = 0
-            TheObjectEncoding.nWhen = 0
-            TheObjectEncoding.objectSize = 0
-            TheObjectEncoding.setInputDim(dim)
-            TheObjectEncoding.setPerceptDim(dim)
-            TheObjectEncoding.setConceptDim(dim)
-            TheObjectEncoding.setSymbolDim(dim)
-            TheObjectEncoding.setOutputDim(dim)
+        # Training params from merged config
+        train = cfg["training"]
+        weights = cfg.get("weights", {})
 
-            numTrials = train.get("numTrials", 1)
-            numEpochs = train.get("numEpochs", 3)
-            batchSize = train.get("batchSize", 10)
-            completed_models = []
+        m.runTrials(train["numTrials"], train["numEpochs"],
+                    train["batchSize"], lr=train["learningRate"])
 
-            m = BasicModel()
-            m.nSubThoughts = 0
-            m.nThoughts    = 0
-            m.ergodic      = ergodic
-            m.certainty    = certainty
-            m.quantized    = quantized
-            m.hasNorm      = normed
-            if reverse or invert:
-                m.reversePass = True
-            if invert:
-                m.invertible = True
-            m.create(nInput=nInput, nConcepts=nConcepts, nOutput=nOutput,
-                     model_type=model_type, data=TheData)
-            m.name = BasicModelFactory.model_name(ergodic, certainty, quantized, normed, reverse, invert)
-            m.runTrials(numTrials, numEpochs, batchSize)
-            if hasattr(m, 'rCorrect'):
-                completed_models.append((m.name, m.rCorrect, m))
-
-            if len(completed_models) > 1:
-                TheReport.plotComparison([(name, rc) for name, rc, _ in completed_models])
-
-            return completed_models
-
-        # --- BasicModel path (unified: passthrough/vq/lm) ---
-        nInput    = arch.get("nInput", 8)
-        nPercepts = arch.get("nPercepts", 8)
-        nConcepts = arch.get("nConcepts", 8)
-        nSymbols  = arch.get("nSymbols", 8)
-        nWords    = arch.get("nWords", 8)
-        nOutput   = arch.get("nOutput", 1)
-
-        # ObjectEncoding setup — InputSpace will set inputDim/perceptDim internally
-        inputDim  = TheData.getInputSize()
-        outputDim = TheData.getOutputSize()
-        TheObjectEncoding.setInputDim(inputDim)
-        TheObjectEncoding.setPerceptDim(inputDim)
-        TheObjectEncoding.setConceptDim(inputDim)
-        TheObjectEncoding.setSymbolDim(0 if model_type != "lm" else inputDim)
-        TheObjectEncoding.setOutputDim(outputDim)
-
-        reversePass = (model_type == "lm")
-        TheBasicModel.create(nInput=nInput, nPercepts=nPercepts, nConcepts=nConcepts,
-                             nSymbols=nSymbols, nWords=nWords, nOutput=nOutput,
-                             reversePass=reversePass, model_type=model_type,
-                             data=TheData, pretrained=train.get("pretrained", False))
-
-        # Build run() kwargs from training config
-        run_kwargs = {}
-        if "numEpochs" in train:
-            run_kwargs["numEpochs"] = train["numEpochs"]
-        if "stoppingCriterion" in train:
-            run_kwargs["stoppingCriterion"] = train["stoppingCriterion"]
-        if "learningRate" in train:
-            run_kwargs["lr"] = train["learningRate"]
-
-        TheBasicModel.run(**run_kwargs)
-
-        # Build classificationReport() kwargs
         report_kwargs = {}
         if "classificationMin" in train:
             report_kwargs["min"] = train["classificationMin"]
         if "classificationMax" in train:
             report_kwargs["max"] = train["classificationMax"]
-        TheBasicModel.classificationReport(**report_kwargs)
+        if report_kwargs:
+            m.classificationReport(**report_kwargs)
 
-        # Auto-save weights if configured
         if weights.get("autosave", False):
             wpath = weights.get("path", "output/weights.pt")
             if not os.path.isabs(wpath):
                 wpath = os.path.join(ProjectPaths.PROJECT_DIR, wpath)
-            TheBasicModel.save_weights(wpath)
+            m.save_weights(wpath)
 
-        return []
+        return m
 
 def test():
     PositionalEncoding.test()

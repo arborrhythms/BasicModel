@@ -1,0 +1,49 @@
+<?xml version="1.0" ?>
+<model>
+  <architecture>
+    <nInput>32</nInput>
+    <nPercepts>32</nPercepts>
+    <nConcepts>256</nConcepts>
+    <nSymbols>256</nSymbols>
+    <nWords>16</nWords>
+    <nOutput>32</nOutput>
+    <reversePass>true</reversePass>
+    <perceptPassThrough>false</perceptPassThrough>
+    <symbolPassThrough>false</symbolPassThrough>
+    <perceptPrototypes>0</perceptPrototypes>
+    <conceptPrototypes>0</conceptPrototypes>
+    <ergodic>false</ergodic>
+    <certainty>false</certainty>
+    <quantized>false</quantized>
+    <invertible>false</invertible>
+    <hasNorm>false</hasNorm>
+    <conceptualOrder>0</conceptualOrder>
+    <symbolicOrder>0</symbolicOrder>
+    <processSymbols>false</processSymbols>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <objectSize>0</objectSize>
+    <inputDim>1</inputDim>
+    <perceptDim>1</perceptDim>
+    <conceptDim>1</conceptDim>
+    <symbolDim>1</symbolDim>
+    <outputDim>1</outputDim>
+  </architecture>
+
+  <training>
+    <dataset>xor</dataset>
+    <modelType>simple</modelType>
+    <numTrials>1</numTrials>
+    <numEpochs>3</numEpochs>
+    <batchSize>10</batchSize>
+    <learningRate>0.01</learningRate>
+    <pretrained>false</pretrained>
+    <detectAnomaly>false</detectAnomaly>
+  </training>
+
+  <weights>
+    <path>output/weights.pt</path>
+    <autoload>true</autoload>
+    <autosave>false</autosave>
+  </weights>
+</model>

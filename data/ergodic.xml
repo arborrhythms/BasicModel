@@ -1,17 +1,25 @@
 <?xml version="1.0" ?>
 <model>
   <architecture>
+    <nInput>784</nInput>
+    <nPercepts>784</nPercepts>
     <nConcepts>20</nConcepts>
+    <nSymbols>20</nSymbols>
+    <nOutput>10</nOutput>
+    <inputDim>1</inputDim>
+    <perceptDim>1</perceptDim>
+    <conceptDim>1</conceptDim>
+    <symbolDim>1</symbolDim>
+    <outputDim>1</outputDim>
+    <perceptPassThrough>true</perceptPassThrough>
+    <symbolPassThrough>true</symbolPassThrough>
     <ergodic>true</ergodic>
     <certainty>true</certainty>
-    <quantized>false</quantized>
-    <normed>false</normed>
-    <reverse>false</reverse>
-    <invert>false</invert>
   </architecture>
 
   <training>
     <dataset>mnist</dataset>
+    <modelType>simple</modelType>
     <numTrials>1</numTrials>
     <numEpochs>10</numEpochs>
     <batchSize>64</batchSize>

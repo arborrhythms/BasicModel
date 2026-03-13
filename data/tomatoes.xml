@@ -7,6 +7,9 @@
     <nSymbols>8</nSymbols>
     <nWords>8</nWords>
     <nOutput>1</nOutput>
+    <conceptualOrder>1</conceptualOrder>
+    <perceptPrototypes>16</perceptPrototypes>
+    <conceptPrototypes>16</conceptPrototypes>
   </architecture>
 
   <training>
@@ -15,7 +18,6 @@
     <pretrained>true</pretrained>
     <numEpochs>100</numEpochs>
     <stoppingCriterion>0.2</stoppingCriterion>
-    <temperature>0.001</temperature>
     <learningRate>0.00001</learningRate>
   </training>
 

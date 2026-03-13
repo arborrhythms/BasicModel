@@ -35,33 +35,16 @@ _model_config = {}
 
 def _load_model():
     """Load BasicModel with config from model.xml."""
-    from BasicModel import BasicModel, TheData, TheObjectEncoding
-
-    model = BasicModel()
-    cfg = model.load_config(os.path.join(_PROJECT, "model.xml"))
-    arch = cfg.get("architecture", {})
+    from BasicModel import BasicModel, TheData
 
     # Data must be loaded before model creation (sets dimensions)
+    config_path = os.path.join(_PROJECT, "model.xml")
+    cfg = BasicModel.load_config(config_path)
     dataset = cfg.get("training", {}).get("dataset", "xor")
     TheData.load(dataset)
 
-    model.create(
-        nInput=arch.get("nInput", 32),
-        nPercepts=arch.get("nPercepts", 64),
-        nConcepts=arch.get("nConcepts", 256),
-        nSymbols=arch.get("nSymbols", 2),
-        nWords=arch.get("nWords", 16),
-        nOutput=arch.get("nOutput", 32),
-        reversePass=arch.get("reversePass", True),
-    )
-
-    # Load weights if available
-    wcfg = cfg.get("weights", {})
-    if wcfg.get("autoload", True):
-        wpath = wcfg.get("path", "output/weights.pt")
-        if not os.path.isabs(wpath):
-            wpath = os.path.join(_PROJECT, wpath)
-        model.load_weights(wpath)
+    model = BasicModel()
+    cfg = model.create_from_config(config_path, data=TheData)
 
     model.eval()
     return model, cfg

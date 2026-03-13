@@ -195,11 +195,10 @@ class TestSymPercept(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Simple path: BasicModel with nSubThoughts=0, nThoughts=0
+# Simple path: BasicModel with conceptualOrder=0, symbolicOrder=0
 # ---------------------------------------------------------------------------
-def _make_simple_model(ergodic=False, certainty=False, quantized=False,
-                       reversePass=False, invertible=False, hasNorm=False):
-    """Helper to create a BasicModel configured for the simple (no-thoughts) path."""
+def _make_simple_model():
+    """Helper to create a BasicModel with ObjectEncoding set up for simple path."""
     from BasicModel import BasicModel, TheObjectEncoding
     TheObjectEncoding.nWhere = 0
     TheObjectEncoding.nWhen = 0
@@ -209,16 +208,7 @@ def _make_simple_model(ergodic=False, certainty=False, quantized=False,
     TheObjectEncoding.setConceptDim(1)
     TheObjectEncoding.setSymbolDim(1)
     TheObjectEncoding.setOutputDim(1)
-    m = BasicModel()
-    m.nSubThoughts = 0
-    m.nThoughts    = 0
-    m.ergodic      = ergodic
-    m.certainty    = certainty
-    m.quantized    = quantized
-    m.reversePass  = reversePass
-    m.invertible   = invertible
-    m.hasNorm      = hasNorm
-    return m
+    return BasicModel()
 
 
 class TestSimpleModelCreation(unittest.TestCase):
@@ -241,16 +231,19 @@ class TestSimpleModelCreation(unittest.TestCase):
 
     def test_simple_model_traditional(self):
         """BasicModel (simple path) with ergodic=False produces valid output."""
-        model = _make_simple_model(ergodic=False, certainty=False)
-        model.create(nInput=28*28, nConcepts=20, nOutput=10)
+        model = _make_simple_model()
+        model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
+                       perceptPassThrough=True, symbolPassThrough=True)
         x = torch.randn(2, 28*28, 1)  # batch of 2, flattened MNIST, dim=1
         out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)  # batch size preserved
 
     def test_simple_model_ergodic(self):
         """BasicModel (simple path) with ergodic=True uses SigmaLayer path."""
-        model = _make_simple_model(ergodic=True, certainty=True)
-        model.create(nInput=28*28, nConcepts=20, nOutput=10)
+        model = _make_simple_model()
+        model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
+                       perceptPassThrough=True, symbolPassThrough=True,
+                       ergodic=True, certainty=True)
         x = torch.randn(2, 28*28, 1)
         out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -361,8 +354,10 @@ class TestSimpleModel(unittest.TestCase):
         TheObjectEncoding.objectSize = self._orig_objectSize
 
     def test_simple_model_ergodic_shapes(self):
-        model = _make_simple_model(ergodic=True)
-        model.create(nInput=16, nConcepts=8, nOutput=4)
+        model = _make_simple_model()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+                       perceptPassThrough=True, symbolPassThrough=True,
+                       ergodic=True)
         x = torch.randn(2, 16, 1)
         out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -370,16 +365,19 @@ class TestSimpleModel(unittest.TestCase):
         self.assertEqual(end_state.shape[0], 2)
 
     def test_simple_model_traditional_shapes(self):
-        model = _make_simple_model(ergodic=False)
-        model.create(nInput=16, nConcepts=8, nOutput=4)
+        model = _make_simple_model()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+                       perceptPassThrough=True, symbolPassThrough=True)
         x = torch.randn(2, 16, 1)
         out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
 
     def test_simple_model_reverse_shapes(self):
-        model = _make_simple_model(ergodic=True, reversePass=True)
-        model.create(nInput=16, nConcepts=8, nOutput=4)
+        model = _make_simple_model()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+                       perceptPassThrough=True, symbolPassThrough=True,
+                       ergodic=True, reversePass=True)
         x = torch.randn(2, 16, 1)
         out, end_state = model.forward(x)
         data, start_state = model.reverse(end_state)
@@ -425,8 +423,10 @@ class TestModelEndToEnd(unittest.TestCase):
         TheObjectEncoding.objectSize = self._orig_objectSize
 
     def test_simple_model_ergodic_shapes(self):
-        model = _make_simple_model(ergodic=True)
-        model.create(nInput=16, nConcepts=8, nOutput=4)
+        model = _make_simple_model()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+                       perceptPassThrough=True, symbolPassThrough=True,
+                       ergodic=True)
         x = torch.randn(2, 16, 1)
         out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -434,8 +434,9 @@ class TestModelEndToEnd(unittest.TestCase):
         self.assertEqual(end_state.shape[0], 2)
 
     def test_simple_model_traditional_shapes(self):
-        model = _make_simple_model(ergodic=False)
-        model.create(nInput=16, nConcepts=8, nOutput=4)
+        model = _make_simple_model()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+                       perceptPassThrough=True, symbolPassThrough=True)
         x = torch.randn(2, 16, 1)
         out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -443,8 +444,10 @@ class TestModelEndToEnd(unittest.TestCase):
         self.assertEqual(end_state.shape[0], 2)
 
     def test_simple_model_reverse_shapes(self):
-        model = _make_simple_model(ergodic=True, reversePass=True)
-        model.create(nInput=16, nConcepts=8, nOutput=4)
+        model = _make_simple_model()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+                       perceptPassThrough=True, symbolPassThrough=True,
+                       ergodic=True, reversePass=True)
         x = torch.randn(2, 16, 1)
         out, end_state = model.forward(x)
         data, start_state = model.reverse(end_state)
@@ -454,8 +457,10 @@ class TestModelEndToEnd(unittest.TestCase):
     def test_simple_model_loss_runs(self):
         """Verify forward + loss + backward doesn't crash."""
         from BasicModel import CertaintyWeightedCrossEntropy
-        model = _make_simple_model(ergodic=True, certainty=True)
-        model.create(nInput=16, nConcepts=8, nOutput=4)
+        model = _make_simple_model()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+                       perceptPassThrough=True, symbolPassThrough=True,
+                       ergodic=True, certainty=True)
         x = torch.randn(2, 16, 1)
         target = torch.randn(2, 4)
         out, end_state = model.forward(x)
@@ -709,16 +714,20 @@ class TestBaseModelFactory(unittest.TestCase):
         orig_nWhere = TheObjectEncoding.nWhere
         orig_nWhen = TheObjectEncoding.nWhen
         orig_objectSize = TheObjectEncoding.objectSize
-        TheObjectEncoding.nWhere = 0
-        TheObjectEncoding.nWhen = 0
-        TheObjectEncoding.objectSize = 0
-        TheObjectEncoding.setSymbolDim(1)
         xml = """<model>
   <architecture>
-    <type>simple</type>
     <nInput>16</nInput>
+    <nPercepts>16</nPercepts>
     <nConcepts>8</nConcepts>
+    <nSymbols>8</nSymbols>
     <nOutput>4</nOutput>
+    <inputDim>1</inputDim>
+    <perceptDim>1</perceptDim>
+    <conceptDim>1</conceptDim>
+    <symbolDim>1</symbolDim>
+    <outputDim>1</outputDim>
+    <perceptPassThrough>true</perceptPassThrough>
+    <symbolPassThrough>true</symbolPassThrough>
   </architecture>
 </model>"""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
@@ -727,8 +736,8 @@ class TestBaseModelFactory(unittest.TestCase):
         try:
             model, cfg = BaseModel.from_config(path)
             self.assertIsInstance(model, BasicModel)
-            self.assertEqual(model.nSubThoughts, 0)
-            self.assertEqual(model.nThoughts, 0)
+            self.assertEqual(model.conceptualOrder, 0)
+            self.assertEqual(model.symbolicOrder, 0)
         finally:
             os.unlink(path)
             TheObjectEncoding.nWhere = orig_nWhere
@@ -751,7 +760,15 @@ class TestBaseModelFactory(unittest.TestCase):
     <nSymbols>2</nSymbols>
     <nWords>16</nWords>
     <nOutput>32</nOutput>
+    <conceptualOrder>1</conceptualOrder>
     <reversePass>false</reversePass>
+    <perceptPrototypes>8</perceptPrototypes>
+    <conceptPrototypes>4</conceptPrototypes>
+    <inputDim>8</inputDim>
+    <perceptDim>8</perceptDim>
+    <conceptDim>8</conceptDim>
+    <symbolDim>8</symbolDim>
+    <outputDim>4</outputDim>
   </architecture>
 </model>"""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:

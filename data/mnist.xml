@@ -6,6 +6,9 @@
     <nConcepts>8</nConcepts>
     <nSymbols>8</nSymbols>
     <nOutput>1</nOutput>
+    <conceptualOrder>1</conceptualOrder>
+    <perceptPrototypes>16</perceptPrototypes>
+    <conceptPrototypes>16</conceptPrototypes>
   </architecture>
 
   <training>
