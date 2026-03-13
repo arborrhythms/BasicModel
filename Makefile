@@ -4,7 +4,9 @@ include /bits/projects/Make.mk
 PDF_CHAPTERS := README.md $(wildcard doc/*.md) todo.md
 XML1 ?= data/simple.xml
 XML2 ?= data/ergodic-only.xml
-PLOT_CACHE_ENV := MPLCONFIGDIR="$(CURDIR)/output/.mplconfig" XDG_CACHE_HOME="$(CURDIR)/output/.cache"
+#TORCH_LIB := $(shell python3 -c "import torch; print(torch.__path__[0])")/lib
+#PLOT_CACHE_ENV := MPLCONFIGDIR="$(CURDIR)/output/.mplconfig" XDG_CACHE_HOME="$(CURDIR)/output/.cache"
+#OMP_ENV := DYLD_LIBRARY_PATH="$(TORCH_LIB)" KMP_DUPLICATE_LIB_OK=TRUE MPLBACKEND=Agg
 
 .PHONY : all xor tomatoes ergodic simple run compare test doc_pdf clean
 
@@ -12,7 +14,7 @@ all : xor
 
 
 run :
-	cd bin && PYTHONPATH=. $(PLOT_CACHE_ENV) ../.venv/bin/python BasicModel.py $(XML1)
+	cd bin && PYTHONPATH=. $(OMP_ENV) $(PLOT_CACHE_ENV) ../.venv/bin/python BasicModel.py $(XML1)
 
 xor : data/xor.xml
 	make run XML1=$<
@@ -27,10 +29,10 @@ simple : data/simple.xml
 	make run XML1=$<
 
 compare :
-	cd bin && PYTHONPATH=. $(PLOT_CACHE_ENV) MPLBACKEND=Agg ../.venv/bin/python BasicModel.py --compare $(XML1) $(XML2)
+	cd bin && PYTHONPATH=. $(OMP_ENV) $(PLOT_CACHE_ENV) ../.venv/bin/python BasicModel.py --compare $(XML1) $(XML2)
 
 test :
-	PYTHONPATH=bin .venv/bin/python -m pytest test/test_basicmodel.py -v
+	$(OMP_ENV) PYTHONPATH=bin .venv/bin/python -m pytest test/test_basicmodel.py -v
 
 clean :
 	rm -f BasicModel.pdf

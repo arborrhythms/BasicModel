@@ -14,6 +14,6 @@
     <dataset>mnist</dataset>
     <numTrials>1</numTrials>
     <numEpochs>10</numEpochs>
-    <batchSize>10</batchSize>
+    <batchSize>64</batchSize>
   </training>
 </model>

@@ -23,6 +23,14 @@ from Model import GammaMem, ColumnUsageTracker, LiftingLayer, SoftMap, Certainty
 import torch.optim as optim
 from functools import partial
 
+# Device selection: prefer MPS (Apple Silicon GPU) when available
+if torch.backends.mps.is_available():
+    TheDevice = torch.device("mps")
+elif torch.cuda.is_available():
+    TheDevice = torch.device("cuda")
+else:
+    TheDevice = torch.device("cpu")
+
 from datetime import datetime
 
 class ProjectPaths:
@@ -587,6 +595,21 @@ class Data():
             self.loadXOR()
         if dataset == "tomatoes":
             self.loadTomatoes()
+        self.toDevice()
+    def toDevice(self):
+        """Move all data tensors to TheDevice (GPU if available)."""
+        if isinstance(self.train_input, torch.Tensor):
+            self.train_input = self.train_input.to(TheDevice)
+        if isinstance(self.train_output, torch.Tensor):
+            self.train_output = self.train_output.to(TheDevice)
+        if isinstance(self.test_input, torch.Tensor):
+            self.test_input = self.test_input.to(TheDevice)
+        if isinstance(self.test_output, torch.Tensor):
+            self.test_output = self.test_output.to(TheDevice)
+        if isinstance(self.validation_input, torch.Tensor):
+            self.validation_input = self.validation_input.to(TheDevice)
+        if isinstance(self.validation_output, torch.Tensor):
+            self.validation_output = self.validation_output.to(TheDevice)
     def shuffle(self):
         rand_indx = torch.randperm(len(self.train_output))
         self.train_input = self.train_input[rand_indx][:]
@@ -752,7 +775,7 @@ class VectorSet(nn.Module):
             return
     def updateWeights(self, embed_sum, cluster_size):
         # Zero out gradients for frozen indices
-        weights = torch.ones(self.vq.codebook_size)
+        weights = torch.ones(self.vq.codebook_size, device=self.vq.codebook.device)
         if len(self.frozen) > 0:
             weights[self.frozen] = 0
             if not self.customVQ:
@@ -804,10 +827,10 @@ class VectorSet(nn.Module):
         # Pad X if necessary
         x     = input
         batch = input.shape[0]
-        act   = torch.zeros([batch, self.codebookSize])
+        act   = torch.zeros([batch, self.codebookSize], device=input.device)
         if self.customVQ:
             if x.shape[-1] == self.nDim:
-                x = torch.cat([x, torch.zeros([x.shape[0], x.shape[1], TheObjectEncoding.objectSize])], dim=2)
+                x = torch.cat([x, torch.zeros([x.shape[0], x.shape[1], TheObjectEncoding.objectSize], device=x.device)], dim=2)
             y   = torch.reshape(x, [-1, self.embeddingSize])
 
             quantized, indices, commit_loss = self.vq(y, ema_update_weight=self.updateWeights)
@@ -832,7 +855,7 @@ class VectorSet(nn.Module):
                         #x[i, j, :] = torch.zeros( [1, 1, self.embeddingSize])
         else:
             dists = self.codebookDistance(x)
-            x = torch.cat([x, torch.zeros([x.shape[0], x.shape[1], TheObjectEncoding.objectSize])], dim=2)
+            x = torch.cat([x, torch.zeros([x.shape[0], x.shape[1], TheObjectEncoding.objectSize], device=x.device)], dim=2)
             # Project the set of input vectors onto the basis vectors (the vector set).
             # Then compute the column norm of the basis, which result in activations (neuron power).
             # The top of those activations become the "Conscious" set of the current space.
@@ -1039,7 +1062,7 @@ class ReversibleDictionary(VectorSet):
         indices   = self.lookup(tokenized)
         words     = self.vq.codebook[indices, :]
         if words.shape[1] < self.nVectors:
-            words = torch.concatenate( (words, torch.zeros([batch, self.nVectors-words.shape[1], self.embeddingSize])), dim=1)
+            words = torch.concatenate( (words, torch.zeros([batch, self.nVectors-words.shape[1], self.embeddingSize], device=words.device)), dim=1)
         return words
     def flatten(self, words):
         s = ""
@@ -1235,7 +1258,7 @@ class Space(nn.Module):
     def lookup(self, x):
         activation = x[0]
         x = x.unsqueeze(0).unsqueeze(0)
-        x = torch.cat([torch.zeros([1,1, TheObjectEncoding.conceptDim]), x[:,:,1:]], dim=2)
+        x = torch.cat([torch.zeros([1,1, TheObjectEncoding.conceptDim], device=x.device), x[:,:,1:]], dim=2)
         output, index, _ = self.vectors().vq(x)
         #output[:,:,0:TheObjectEncoding.conceptDim] = output[:,:,0:TheObjectEncoding.conceptDim] * activation  # multiply the codebook vector by the activation
         return output
@@ -1244,7 +1267,7 @@ class Space(nn.Module):
         # and must compute [ batch x nConcepts x conceptEmbedding ]
         assert list(symbols.shape) == [self.batch, self.nVectors, TheObjectEncoding.getSymbolEmbedding()], "Incorrect input size for dereference"
         input,_ = self.getEmbeddedIO()
-        objects = torch.zeros(self.batch, self.nVectors, self.embeddingSize)
+        objects = torch.zeros(self.batch, self.nVectors, self.embeddingSize, device=symbols.device)
         for b in range(self.batch):
             for s in range(self.nVectors):
                 x = self.lookup(symbols[b,s,:])
@@ -1366,13 +1389,14 @@ class InputSpace(Space):
         return self.data.test_input, self.data.test_output
     def prepInput(self, inputBatch, hasThoughts):
         if hasThoughts:
-            return torch.stack(inputBatch, dim=0).unsqueeze(1)
+            return torch.stack(inputBatch, dim=0).unsqueeze(1).to(TheDevice)
         else:
-            return inputBatch.unsqueeze(2)
+            return inputBatch.unsqueeze(2).to(TheDevice)
     def shuffle(self):
         self.data.shuffle()
     # The world presenting itself
     def forward(self, input, t=0, mask=None):
+        input = input.to(TheDevice)
         self.batch = input.shape[0]
         assert list(input.shape) == [self.batch, self.inputShape[0], self.inputShape[1]]
         self.input = self.vectors().forward(input, t)
@@ -1691,9 +1715,9 @@ class OutputSpace(Space):
         return self.data.test_output if self.data else None
     def prepOutput(self, outputBatch, hasThoughts):
         if hasThoughts:
-            return torch.stack(outputBatch, dim=0).unsqueeze(1)
+            return torch.stack(outputBatch, dim=0).unsqueeze(1).to(TheDevice)
         else:
-            return outputBatch.unsqueeze(2)
+            return outputBatch.unsqueeze(2).to(TheDevice)
     # Acting
     def forward(self, x, t=0):
         y = super().forwardBegin(x, t, reshape=True)
@@ -1814,7 +1838,7 @@ class BaseModel(nn.Module):
         if not os.path.exists(path):
             print(f"[{self.name}] No weights found at {path}")
             return False
-        state = torch.load(path, map_location="cpu", weights_only=True)
+        state = torch.load(path, map_location=TheDevice, weights_only=True)
         self.load_state_dict(state, strict=strict)
         print(f"[{self.name}] Weights loaded from {path}")
         return True
@@ -2017,6 +2041,8 @@ class BasicModel(BaseModel):
         #assert self.symbolicSpace.inputShape[1] == self.perceptualSpace2.inputShape[1] == self.conceptualSpace.outputShape[1]#  conceptDim = conceptDim
         # The output shape of the symbolic space is equal to the input shape of the output space
         #assert self.symbolicSpace.outputShape[1] == self.outputSpace.inputShape[1] # these are in conceptual space, or symbolic space if symbols emit objectSize symbols (processSymbols == True)
+
+        self.to(TheDevice)
 
     def Start(self, data, t=0.0):
         input = self.inputSpace(data, t)
