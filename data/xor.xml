@@ -1,21 +1,10 @@
 <?xml version="1.0" ?>
 <model>
   <architecture>
-    <nInput>2</nInput>
-    <nPercepts>3</nPercepts>
-    <nConcepts>3</nConcepts>
-    <nSymbols>3</nSymbols>
-    <nWords>3</nWords>
-    <nOutput>1</nOutput>
+    <reversePass>true</reversePass>
+    <reshape>true</reshape>
     <conceptualOrder>0</conceptualOrder>
     <symbolicOrder>0</symbolicOrder>
-    <perceptPrototypes>16</perceptPrototypes>
-    <conceptPrototypes>16</conceptPrototypes>
-    <reshape>True</reshape>
-    <reversePass>True</reversePass>
-  </architecture>
-
-  <training>
     <dataset>xor</dataset>
     <modelType>lm</modelType>
     <pretrained>false</pretrained>
@@ -23,10 +12,37 @@
     <stoppingCriterion>0.01</stoppingCriterion>
     <learningRate>0.01</learningRate>
     <detectAnomaly>true</detectAnomaly>
-  </training>
-
-  <weights>
-    <path>output/xor_weights.pt</path>
+    <weightsPath>output/xor_weights.pt</weightsPath>
     <autosave>true</autosave>
-  </weights>
+  </architecture>
+
+  <InputSpace>
+    <nVectors>2</nVectors>
+    <dim>1</dim>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nVectors>4</nVectors>
+    <dim>1</dim>
+    <prototypes>16</prototypes>
+    <invertible>false</invertible>
+    <hasAttention>false</hasAttention>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nVectors>3</nVectors>
+    <dim>1</dim>
+    <prototypes>16</prototypes>
+    <invertible>false</invertible>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nVectors>3</nVectors>
+    <passThrough>true</passThrough>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nVectors>1</nVectors>
+    <dim>1</dim>
+  </OutputSpace>
 </model>

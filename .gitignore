@@ -6,3 +6,4 @@ data/embeddings/
 output/*
 .DS_Store
 */.DS_Store
+.venv/

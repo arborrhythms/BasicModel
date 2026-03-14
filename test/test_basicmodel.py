@@ -1,7 +1,7 @@
 """BasicModel test suite — exercises all core modules.
 
 Covers:
-  - Model.py   layer tests (LinearLayer, Reversible*, PiLayer, SigmaLayer, etc.)
+  - Model.py   layer tests (LinearLayer, Invertible*, PiLayer, SigmaLayer, etc.)
   - SPNN.py    classical neural network
   - SigmaPi.py product-sum network
   - SymPercept.py  bidirectional linear learning
@@ -47,11 +47,11 @@ class TestLinearLayer(unittest.TestCase):
         self.assertEqual(y.shape, (1, 4))
 
 
-class TestReversibleRotationLayer(unittest.TestCase):
+class TestInvertibleRotationLayer(unittest.TestCase):
     def test_forward_reverse_identity(self):
-        from Model import ReversibleRotationLayer
+        from Model import InvertibleRotationLayer
         dim = 4
-        layer = ReversibleRotationLayer(dim)
+        layer = InvertibleRotationLayer(dim)
         x = torch.randn(2, dim)
         y = layer(x)
         x_rec = layer.reverse(y)
@@ -59,10 +59,10 @@ class TestReversibleRotationLayer(unittest.TestCase):
                         f"Rotation reverse error: {(x - x_rec).abs().max():.6f}")
 
 
-class TestReversibleDiagonalLayer(unittest.TestCase):
+class TestInvertibleDiagonalLayer(unittest.TestCase):
     def test_forward_reverse_identity(self):
-        from Model import ReversibleDiagonalLayer
-        layer = ReversibleDiagonalLayer(nInput=4, nOutput=4)
+        from Model import InvertibleDiagonalLayer
+        layer = InvertibleDiagonalLayer(nInput=4, nOutput=4)
         x = torch.randn(2, 4)
         y = layer(x)
         x_rec = layer.reverse(y)
@@ -70,10 +70,10 @@ class TestReversibleDiagonalLayer(unittest.TestCase):
                         f"Diagonal reverse error: {(x - x_rec).abs().max():.6f}")
 
 
-class TestReversibleLinearLayer(unittest.TestCase):
+class TestInvertibleLinearLayer(unittest.TestCase):
     def test_forward_reverse_square(self):
-        from Model import ReversibleLinearLayer
-        layer = ReversibleLinearLayer(nInput=4, nOutput=4)
+        from Model import InvertibleLinearLayer
+        layer = InvertibleLinearLayer(nInput=4, nOutput=4)
         x = torch.randn(2, 4)
         y = layer(x)
         x_rec = layer.reverse(y)
@@ -99,17 +99,17 @@ class TestPiLayer(unittest.TestCase):
         self.assertEqual(y.shape, (2, 3))
 
 
-class TestReversibleSigmaLayer(unittest.TestCase):
+class TestInvertibleSigmaLayer(unittest.TestCase):
     def test_forward_shape(self):
-        from Model import ReversibleSigmaLayer
-        layer = ReversibleSigmaLayer(nInput=4, nOutput=4)
+        from Model import InvertibleSigmaLayer
+        layer = InvertibleSigmaLayer(nInput=4, nOutput=4)
         x = torch.randn(2, 4) * 0.3
         y = layer(x)
         self.assertEqual(y.shape, (2, 4))
 
     def test_reverse_shape(self):
-        from Model import ReversibleSigmaLayer
-        layer = ReversibleSigmaLayer(nInput=4, nOutput=4)
+        from Model import InvertibleSigmaLayer
+        layer = InvertibleSigmaLayer(nInput=4, nOutput=4)
         y = torch.randn(2, 4) * 0.3
         x = layer.reverse(y)
         self.assertEqual(x.shape, (2, 4))
@@ -584,7 +584,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         from BasicModel import ConceptualSpace
         nVec, nDim, cDim = 8, 1, 1
         cs = ConceptualSpace([nVec, nDim], [nVec, cDim], nVec, cDim,
-                             ergodic=True, useVQ=False)
+                             ergodic=True, quantized=False)
         x = torch.randn(2, nVec, nDim)
         y = cs(x)
         self.assertEqual(list(y.shape), [2, nVec, cDim])
@@ -594,7 +594,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         from BasicModel import ConceptualSpace
         nVec, nDim, cDim = 8, 1, 1
         cs = ConceptualSpace([nVec, nDim], [nVec, cDim], nVec, cDim,
-                             ergodic=False, useVQ=False)
+                             ergodic=False, quantized=False)
         x = torch.randn(2, nVec, nDim)
         y = cs(x)
         self.assertEqual(list(y.shape), [2, nVec, cDim])
@@ -603,9 +603,9 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         self._set_zero_object_encoding()
         from BasicModel import ConceptualSpace
         cs_erg = ConceptualSpace([8, 1], [8, 1], 8, 1,
-                                 ergodic=True, useVQ=False)
+                                 ergodic=True, quantized=False)
         cs_det = ConceptualSpace([8, 1], [8, 1], 8, 1,
-                                 ergodic=False, useVQ=False)
+                                 ergodic=False, quantized=False)
         self.assertTrue(cs_erg.ergodic)
         self.assertFalse(cs_det.ergodic)
 
@@ -614,7 +614,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         from BasicModel import ConceptualSpace
         nVec, nDim, cDim = 8, 1, 1
         cs = ConceptualSpace([nVec, nDim], [nVec, cDim], nVec, cDim,
-                             ergodic=True, reversePass=True, useVQ=False)
+                             ergodic=True, reversePass=True, quantized=False)
         y = torch.randn(2, nVec, cDim)
         x = cs.reverse(y)
         self.assertEqual(list(x.shape), [2, nVec, nDim])
@@ -623,7 +623,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         self._set_zero_object_encoding()
         from BasicModel import ConceptualSpace
         cs = ConceptualSpace([8, 1], [8, 1], 8, 1,
-                             ergodic=True, useVQ=False)
+                             ergodic=True, quantized=False)
         params = cs.getParameters()
         self.assertIsInstance(params, list)
         self.assertGreater(len(params), 0)
@@ -665,7 +665,7 @@ class TestInputSpaceUnquantized(unittest.TestCase):
         TheObjectEncoding.nWhen = 0
         TheObjectEncoding.objectSize = 0
         nIn, nDim = 8, 1
-        inp = InputSpace([nIn, nDim], [nIn, nDim], nIn, nDim=nDim, useVQ=False)
+        inp = InputSpace([nIn, nDim], [nIn, nDim], nIn, nDim=nDim, quantized=False)
         x = torch.randn(2, nIn, nDim)
         y = inp(x)
         self.assertEqual(list(y.shape), [2, nIn, nDim])
@@ -753,7 +753,7 @@ class TestBaseModelFactory(unittest.TestCase):
         TheObjectEncoding.setDimensions(inputDim=8, perceptDim=8,
                                         conceptDim=8, outputDim=4)
         # nSymbols must equal nConcepts (SymbolicSpace 1:1 mapping constraint),
-        # and nPercepts must be 2*nConcepts (ReversiblePiLayer invertibility).
+        # and nPercepts must be 2*nConcepts (InvertiblePiLayer invertibility).
         xml = """<model>
   <architecture>
     <type>basic</type>
@@ -1232,7 +1232,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         TheObjectEncoding.setOutputDim(1)
         from BasicModel import InputSpace
         nIn, nDim = 8, 1
-        inp = InputSpace([nIn, nDim], [nIn, nDim], nIn, nDim=nDim, useVQ=False)
+        inp = InputSpace([nIn, nDim], [nIn, nDim], nIn, nDim=nDim, quantized=False)
         x = torch.randn(2, nIn, nDim)
         y = inp.forward(x)
         result = inp.reverse(y)

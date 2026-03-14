@@ -137,20 +137,29 @@ class Report:
 
     @staticmethod
     def _open_in_vscode(html_path):
-        """Open the HTML report in VS Code's Simple Browser."""
+        """Open the report file in VS Code, falling back to the default browser."""
+        import os
         import subprocess
+        import webbrowser
         from urllib.parse import quote
-        abs_path = os.path.abspath(html_path)
-        file_url = "file://" + quote(abs_path)
-        try:
-            # Use VS Code CLI to open the file, which renders HTML in the editor
-            subprocess.Popen(
-                ["code", abs_path],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except FileNotFoundError:
-            import webbrowser
-            webbrowser.open(file_url)
 
+        abs_path = os.path.abspath(html_path)
+        vscode_url = f"vscode://file{quote(abs_path)}"
+        file_url = f"file://{quote(abs_path)}"
+
+        try:
+            result = subprocess.run(
+                ["open", vscode_url],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            if result.returncode == 0:
+                return
+        except OSError:
+            pass
+
+        webbrowser.open(file_url)
     # ----- Plotting methods -----
 
     def plotAccuracy(self, model_name, rCorrect):

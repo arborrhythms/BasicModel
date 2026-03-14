@@ -29,9 +29,9 @@ from sklearn.metrics import classification_report
 from sklearn.decomposition import PCA
 import pandas as pd
 from vector_quantize_pytorch import ResidualVQ, VectorQuantize
-from Model import Layer, PiLayer, SigmaLayer, ReversibleSigmaLayer, ReversiblePiLayer # Import custom layers from Model.py
+from Model import Layer, PiLayer, SigmaLayer, InvertibleSigmaLayer, InvertiblePiLayer # Import custom layers from Model.py
 from lex import Lex
-from Model import VQLayer, NormLayer, LinearLayer, ReversibleLinearLayer, AttentionLayer
+from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer
 from Model import GammaMem, ColumnUsageTracker, LiftingLayer, SoftMap, CertaintyWeightedCrossEntropy, epsilon
 import torch.optim as optim
 from functools import partial
@@ -1035,7 +1035,7 @@ class Space(nn.Module):
         input and output object counts differ (since layers operate on the last dim).
       - ``processSymbols``: when True, reduces full embedding vectors to scalar
         activations (norms) for the symbolic representation.
-      - ``useVQ``: when True, input vectors are quantized against the codebook
+      - ``quantized``: when True, input vectors are quantized against the codebook
         (VectorSet) after the main layer transformation.
 
     ``getEmbeddedIO()`` returns (input_dim, output_dim) for this space's layers.
@@ -1050,7 +1050,7 @@ class Space(nn.Module):
     activation   = None
     processSymbols = False
 
-    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=False, customVQ=True, nPrototypes=0, reversePass=False, processSymbols=False, reshape=False):
+    def __init__(self, inputShape, outputShape, nVectors, nDim, quantized=False, customVQ=True, nPrototypes=0, reversePass=False, processSymbols=False, reshape=False):
         super(Space, self).__init__()
         self.inputShape   = inputShape   # [nObjects, nDim] for input
         self.outputShape  = outputShape  # [nObjects, nDim] for output
@@ -1059,7 +1059,7 @@ class Space(nn.Module):
         self.embeddingSize = TheObjectEncoding.getEmbeddingSize(self.nDim)
         self.batch        = 0
         self.vectorSet    = nn.ModuleList()  # holds this space's VectorSet (accessed via self.vectors())
-        self.useVQ        = useVQ
+        self.quantized        = quantized
         self.customVQ     = customVQ
         self.nPrototypes  = nPrototypes
         self.reversePass = reversePass
@@ -1216,9 +1216,9 @@ class InputSpace(Space):
     """
     name = "Inputs"
     def __init__(self, inputShape, outputShape, nVectors, nDim=None, model_type="simple",
-                 tokenizedInput=False, useVQ=True, pretrained=False, data=None,
+                 tokenizedInput=False, quantized=True, pretrained=False, data=None,
                  tokenizer="traditional"):
-        super(InputSpace, self).__init__(inputShape, outputShape, nVectors, nDim, useVQ=useVQ)
+        super(InputSpace, self).__init__(inputShape, outputShape, nVectors, nDim, quantized=quantized)
         self.data = data
         self.model_type = model_type
         self.tokenizer = tokenizer  # "traditional" (word2vec) or "grammatical" (Lex span tables)
@@ -1245,7 +1245,7 @@ class InputSpace(Space):
             vs.create(self.inputShape[0], nVectors, nDim)
             self.vectorSet.append(vs)
         else:  # "simple"
-            self.createVectorSet(quantized=self.useVQ)
+            self.createVectorSet(quantized=self.quantized)
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
         self.input          = torch.FloatTensor
         self.tokenizedInput = tokenizedInput
@@ -1378,31 +1378,36 @@ class PerceptualSpace(Space):
     perceptual embeddings, optionally followed by self-attention and VQ
     codebook quantization.
 
-    When ``reversePass=True``, a separate reverse PiLayer (or the inverse of a
-    ReversiblePiLayer) maps percepts back to inputs.
+    When ``invertible=True``, uses an InvertiblePiLayer whose inverse is
+    exact.  Requires ``output == 2*input`` (flattened dims).
+    When ``reversePass=True`` without invertibility, a separate PiLayer is
+    trained for the reverse direction.
 
     ``passThrough=True`` makes this a no-op (identity), useful when the input
     is already in the desired perceptual form.
     """
     name = "Percepts"
 
-    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False, passThrough=False, reshape=False, ergodic=False, hasAttention=True):
-        super(PerceptualSpace, self).__init__(inputShape, outputShape, nVectors, nDim, useVQ=useVQ, nPrototypes=nPrototypes, reversePass=reversePass, processSymbols=processSymbols, reshape=reshape)
+    def __init__(self, inputShape, outputShape, nVectors, nDim, quantized=True, reversePass=False, nPrototypes=0, processSymbols=False, passThrough=False, reshape=False, ergodic=False, hasAttention=True, invertible=False):
+        super(PerceptualSpace, self).__init__(inputShape, outputShape, nVectors, nDim, quantized=quantized, nPrototypes=nPrototypes, reversePass=reversePass, processSymbols=processSymbols, reshape=reshape)
         self.passThrough = passThrough
         self.ergodic = ergodic
         self.hasAttention = hasAttention
+        self.invertible = invertible
         if passThrough:
             return
         input, output = self.getEmbeddedIO()
         self.attention = AttentionLayer(output, output)
-        if self.reversePass:
-            if inputShape[0]*2 == nVectors:
-                self.pi  = ReversiblePiLayer(input, output)
-                self.forwardPi, self.reversePi = self.pi.forward, self.pi.reverse
-            else:
-                self.pi1      = PiLayer(input, output, ergodic=ergodic)
-                self.pi2      = PiLayer(output, input, ergodic=ergodic)
-                self.forwardPi, self.reversePi = self.pi1.forward, self.pi2.forward
+        if invertible:
+            assert output == 2 * input, (
+                f"InvertiblePiLayer requires output == 2*input, "
+                f"got input={input}, output={output}")
+            self.pi  = InvertiblePiLayer(input, output)
+            self.forwardPi, self.reversePi = self.pi.forward, self.pi.reverse
+        elif self.reversePass:
+            self.pi1      = PiLayer(input, output, ergodic=ergodic)
+            self.pi2      = PiLayer(output, input, ergodic=ergodic)
+            self.forwardPi, self.reversePi = self.pi1.forward, self.pi2.forward
         else:
             self.pi        = PiLayer(input, output, ergodic=ergodic)
             self.forwardPi = self.pi.forward
@@ -1425,7 +1430,7 @@ class PerceptualSpace(Space):
         x = self.forwardPi(x)
         if self.hasAttention:
             x = self.attention.forward(x)
-        if self.useVQ:
+        if self.quantized:
             x  = self.vectors().forward(x)
         if self.processSymbols:
             # Collapse content dims to scalar activation, keep positional encoding
@@ -1458,14 +1463,14 @@ class ConceptualSpace(Space):
     Supports optional NormLayer preprocessing, self-attention, and VQ codebook
     quantization.
 
-    When ``invertible=True``, uses a ReversibleSigmaLayer whose inverse is
+    When ``invertible=True``, uses a InvertibleSigmaLayer whose inverse is
     exact.  When ``reversePass=True`` without invertibility, a separate
     SigmaLayer is trained for the reverse direction.
     """
     name = "Concepts"
 
-    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False, invertible=False, hasNorm=False, ergodic=False, reshape=False, hasAttention=False):
-        super(ConceptualSpace, self).__init__(inputShape, outputShape, nVectors, nDim, useVQ=useVQ, nPrototypes=nPrototypes, reversePass=reversePass, processSymbols=processSymbols, reshape=reshape)
+    def __init__(self, inputShape, outputShape, nVectors, nDim, quantized=True, reversePass=False, nPrototypes=0, processSymbols=False, invertible=False, hasNorm=False, ergodic=False, reshape=False, hasAttention=False):
+        super(ConceptualSpace, self).__init__(inputShape, outputShape, nVectors, nDim, quantized=quantized, nPrototypes=nPrototypes, reversePass=reversePass, processSymbols=processSymbols, reshape=reshape)
         self.ergodic = ergodic
         self.hasAttention = hasAttention
         input, output = self.getEmbeddedIO()
@@ -1475,7 +1480,7 @@ class ConceptualSpace(Space):
             self.norm = NormLayer(input, input + 2)
             input += 2
         if invertible:
-            self.sigma = ReversibleSigmaLayer(input, output)
+            self.sigma = InvertibleSigmaLayer(input, output)
             self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
             self.params = self.sigma.getParameters()
             self.layers = [self.sigma]
@@ -1509,7 +1514,7 @@ class ConceptualSpace(Space):
         if self.hasAttention:
             y = self.attention.forward(y)
         # Quantize against codebook: snap dynamic vectors to static prototypes
-        if self.useVQ:
+        if self.quantized:
             y = self.vectors().forward(y)
         if self.processSymbols:
             # Collapse content dims to scalar activation, keep positional encoding
@@ -1527,16 +1532,19 @@ class ConceptualSpace(Space):
             self.concepts = self.dereference(self.concepts)
         if self.hasAttention:
             self.concepts = self.attention.reverse(self.concepts)
-        if self.reshape:
-            # Flattened path — no object encoding to strip
-            self.concepts = self.reverseSigma(self.concepts)
-        else:
-            # preserve the codebook's positional encoding
-            encoding = self.concepts[:, :, -TheObjectEncoding.objectSize:]
-            if TheObjectEncoding.objectSize > 0:
-                self.concepts = self.reverseSigma(self.concepts[:,:,0:-TheObjectEncoding.objectSize])
-            else:
-                self.concepts = self.reverseSigma(self.concepts)
+        # reverseSigma was built for the full embedding dim (content + objectEncoding),
+        # so pass the complete tensor — do NOT strip objectEncoding first.        
+        # if self.reshape:
+        #    # Flattened path — no object encoding to strip
+        #    self.concepts = self.reverseSigma(self.concepts)
+        #else:
+        #    # preserve the codebook's positional encoding
+        #    encoding = self.concepts[:, :, -TheObjectEncoding.objectSize:]
+        #    if TheObjectEncoding.objectSize > 0:
+        #        self.concepts = self.reverseSigma(self.concepts[:,:,0:-TheObjectEncoding.objectSize])
+        #    else:
+        #        self.concepts = self.reverseSigma(self.concepts)
+        self.concepts = self.reverseSigma(self.concepts)
         if self.hasNorm:
             self.concepts = self.norm.reverse(self.concepts)
         #self.concepts = torch.concatenate((self.concepts, encoding), dim=2)
@@ -1602,7 +1610,7 @@ class SymbolicSpace(Space):
                 self.symbols = self.computeActivation(self.symbols)
             self.symbols = self.discretize(self.symbols)
         self.symbols = self.forwardEnd(self.symbols)
-        if self.useVQ:
+        if self.quantized:
             self.symbols  = self.vectors().forward(self.symbols)
         return self.symbols
     def reverse(self, y):
@@ -1697,7 +1705,7 @@ class OutputSpace(Space):
             self.linear1 = LinearLayer(input, output)
             self.linear2 = LinearLayer(output, input)
             self.forwardLinear, self.reverseLinear = self.linear1.forward, self.linear2.forward
-            #self.linear = ReversibleLinearLayer(input, output)
+            #self.linear = InvertibleLinearLayer(input, output)
             #self.forwardLinear, self.reverseLinear = self.linear.forward, self.linear.reverse
         else:
             self.forwardLinear = LinearLayer(input, output)
@@ -1719,7 +1727,7 @@ class OutputSpace(Space):
         y = super().forwardBegin(x)
         output = self.forwardLinear(y)
         output = self.forwardEnd(output)
-        if self.useVQ:
+        if self.quantized:
             self.output  = self.vectors().output(self.percepts)
         self.predicted = output.detach()
         return output
@@ -2088,55 +2096,60 @@ class BasicModel(BaseModel):
                 merged.update(cfg[section])
                 cfg[section] = merged
 
+        BasicModelFactory.validate_config(cfg)
+
         arch = cfg["architecture"]
+        # Training/weights settings now live in architecture;
+        # fall back to legacy <training>/<weights> sections for compatibility.
         train = cfg.get("training", {})
 
         # Caller overrides XML; XML overrides defaults
         if model_type is None:
-            model_type = train["modelType"]
+            model_type = arch.get("modelType", train.get("modelType", "simple"))
         if pretrained is None:
-            pretrained = train["pretrained"]
+            pretrained = arch.get("pretrained", train.get("pretrained", False))
 
-        # ObjectEncoding setup
-        TheObjectEncoding.nWhere = arch["nWhere"]
-        TheObjectEncoding.nWhen = arch["nWhen"]
-        TheObjectEncoding.objectSize = arch["objectSize"]
-        TheObjectEncoding.setInputDim(arch["inputDim"])
-        TheObjectEncoding.setPerceptDim(arch["perceptDim"])
-        TheObjectEncoding.setConceptDim(arch["conceptDim"])
-        TheObjectEncoding.setSymbolDim(arch["symbolDim"])
-        TheObjectEncoding.setOutputDim(arch["outputDim"])
+        # ObjectEncoding setup — dims now come from space sections
+        gsp = BasicModelFactory.get_space_param
+        TheObjectEncoding.nWhere = arch.get("nWhere", 0)
+        TheObjectEncoding.nWhen = arch.get("nWhen", 0)
+        TheObjectEncoding.objectSize = arch.get("objectSize", 0)
+        TheObjectEncoding.setInputDim(gsp(cfg, "InputSpace", "dim", 1))
+        TheObjectEncoding.setPerceptDim(gsp(cfg, "PerceptualSpace", "dim", 1))
+        TheObjectEncoding.setConceptDim(gsp(cfg, "ConceptualSpace", "dim", 1))
+        TheObjectEncoding.setSymbolDim(gsp(cfg, "SymbolicSpace", "dim", 1))
+        TheObjectEncoding.setOutputDim(gsp(cfg, "OutputSpace", "dim", 1))
 
         self.create(
-            nInput=arch["nInput"],
-            nPercepts=arch["nPercepts"],
-            nConcepts=arch["nConcepts"],
-            nSymbols=arch["nSymbols"],
-            nWords=arch["nWords"],
-            nOutput=arch["nOutput"],
-            reversePass=arch["reversePass"],
-            perceptPassThrough=arch["perceptPassThrough"],
-            symbolPassThrough=arch["symbolPassThrough"],
-            perceptPrototypes=arch["perceptPrototypes"],
-            conceptPrototypes=arch["conceptPrototypes"],
-            ergodic=arch["ergodic"],
-            certainty=arch["certainty"],
-            quantized=arch["quantized"],
-            invertible=arch["invertible"],
-            hasNorm=arch["hasNorm"],
-            conceptualOrder=arch["conceptualOrder"],
-            symbolicOrder=arch["symbolicOrder"],
-            processSymbols=arch["processSymbols"],
+            nInput=gsp(cfg, "InputSpace", "nVectors"),
+            nPercepts=gsp(cfg, "PerceptualSpace", "nVectors"),
+            nConcepts=gsp(cfg, "ConceptualSpace", "nVectors"),
+            nSymbols=gsp(cfg, "SymbolicSpace", "nVectors"),
+            nWords=arch.get("nWords", 16),
+            nOutput=gsp(cfg, "OutputSpace", "nVectors"),
+            reversePass=arch.get("reversePass", False),
+            perceptPassThrough=gsp(cfg, "PerceptualSpace", "passThrough", False),
+            symbolPassThrough=gsp(cfg, "SymbolicSpace", "passThrough", False),
+            perceptPrototypes=gsp(cfg, "PerceptualSpace", "prototypes", 0),
+            conceptPrototypes=gsp(cfg, "ConceptualSpace", "prototypes", 0),
+            ergodic=arch.get("ergodic", False),
+            certainty=arch.get("certainty", False),
+            quantized=gsp(cfg, "InputSpace", "quantized", False),
+            invertible=gsp(cfg, "PerceptualSpace", "invertible", False),
+            hasNorm=gsp(cfg, "ConceptualSpace", "hasNorm", False),
+            conceptualOrder=arch.get("conceptualOrder", 0),
+            symbolicOrder=arch.get("symbolicOrder", 0),
+            processSymbols=arch.get("processSymbols", False),
             reshape=arch.get("reshape", False),
-            perceptHasAttention=arch.get("perceptHasAttention", True),
-            conceptHasAttention=arch.get("conceptHasAttention", False),
+            perceptHasAttention=gsp(cfg, "PerceptualSpace", "hasAttention", True),
+            conceptHasAttention=gsp(cfg, "ConceptualSpace", "hasAttention", False),
             model_type=model_type, data=data, pretrained=pretrained,
-            tokenizer=arch.get("tokenizer", "traditional"),
+            tokenizer=gsp(cfg, "InputSpace", "tokenizer", "traditional"),
         )
         # Auto-load weights if configured
         wcfg = cfg.get("weights", {})
-        if wcfg.get("autoload", True):
-            wpath = wcfg.get("path", "output/weights.pt")
+        if arch.get("autoload", wcfg.get("autoload", True)):
+            wpath = arch.get("weightsPath", wcfg.get("path", "output/weights.pt"))
             if not os.path.isabs(wpath):
                 wpath = os.path.join(ProjectPaths.PROJECT_DIR, wpath)
             self.load_weights(wpath)
@@ -2163,7 +2176,8 @@ class BasicModel(BaseModel):
             ergodic: use ergodic (temperature-based) parameter updates in layers.
             certainty: use CertaintyWeightedCrossEntropy loss.
             quantized: enable VQ codebook quantization in spaces.
-            invertible: use ReversibleSigmaLayer (exact inverse) in ConceptualSpace.
+            invertible: use InvertiblePiLayer/InvertibleSigmaLayer (exact inverse)
+                in PerceptualSpace and ConceptualSpace.
             reshape: flatten [batch, nObj, dim] before layers (required when
                      input/output object counts differ).
             conceptualOrder: number of extra Percept->Concept->Symbol cycles.
@@ -2206,18 +2220,19 @@ class BasicModel(BaseModel):
                                            self.nInput, TheObjectEncoding.inputDim,
                                            model_type=model_type, data=data,
                                            pretrained=pretrained,
-                                           useVQ=self.quantized,
+                                           quantized=self.quantized,
                                            tokenizer=self.tokenizer)
         self.perceptualSpace = PerceptualSpace([self.nInput, TheObjectEncoding.inputDim],
                                                [self.nPercepts, TheObjectEncoding.perceptDim],
                                                self.nPercepts, TheObjectEncoding.perceptDim,
                                                reversePass=reversePass,
                                                nPrototypes=perceptPrototypes,
-                                               useVQ=self.quantized,
+                                               quantized=self.quantized,
                                                passThrough=perceptPassThrough,
                                                reshape=reshape,
                                                ergodic=self.ergodic,
-                                               hasAttention=self.perceptHasAttention)
+                                               hasAttention=self.perceptHasAttention,
+                                               invertible=self.invertible)
         self.conceptualSpace = ConceptualSpace([self.nPercepts, TheObjectEncoding.perceptDim],
                                                [self.nConcepts, TheObjectEncoding.conceptDim],
                                                self.nConcepts, TheObjectEncoding.conceptDim,
@@ -2226,7 +2241,7 @@ class BasicModel(BaseModel):
                                                invertible=self.invertible,
                                                hasNorm=self.hasNorm,
                                                ergodic=self.ergodic,
-                                               useVQ=self.quantized,
+                                               quantized=self.quantized,
                                                reshape=reshape,
                                                hasAttention=self.conceptHasAttention)
         if symbolPassThrough:
@@ -2402,7 +2417,8 @@ class BasicModel(BaseModel):
         accuracy          = []
 
         for epoch in range(numEpochs):
-            alpha = 1.0 - epoch / max(1, numEpochs - 1)  # 1->0: explore->exploit
+            alpha = 0.0  # TEMP: disabled alpha annealing for convergence testing
+            # alpha = 1.0 - epoch / max(1, numEpochs - 1)  # 1->0: explore->exploit
             self.setAlpha(alpha)
             print(f"Epoch [{epoch + 1}/{numEpochs}]")
 
@@ -2582,6 +2598,63 @@ class BasicModelFactory:
         return " + ".join(parts) if parts else "SimpleModel"
 
     @staticmethod
+    def get_space_param(cfg, space_name, key, default=None):
+        """Look up key in space section, fall back to architecture section.
+
+        Resolution order: cfg[space_name][key] -> cfg["architecture"][key] -> default
+        """
+        space = cfg.get(space_name, {})
+        if key in space:
+            return space[key]
+        return cfg.get("architecture", {}).get(key, default)
+
+    @staticmethod
+    def validate_config(cfg):
+        """Check merged config for known inconsistencies and raise on error.
+
+        Called after defaults have been merged so all keys are present.
+        Uses get_space_param() to read from space-scoped sections.
+        """
+        gsp = BasicModelFactory.get_space_param
+        arch = cfg.get("architecture", {})
+        errors = []
+
+        reshape = arch.get("reshape", False)
+
+        # Attention is incompatible with reshape (attention expects 3D, reshape flattens to 2D)
+        if reshape and gsp(cfg, "PerceptualSpace", "hasAttention", True):
+            errors.append(
+                "PerceptualSpace hasAttention=True is incompatible with reshape=True. "
+                "Set <hasAttention>false</hasAttention> in <PerceptualSpace>.")
+        if reshape and gsp(cfg, "ConceptualSpace", "hasAttention", False):
+            errors.append(
+                "ConceptualSpace hasAttention=True is incompatible with reshape=True. "
+                "Set <hasAttention>false</hasAttention> in <ConceptualSpace>.")
+
+        # Invertible PiLayer requires output == 2*input
+        percept_inv = gsp(cfg, "PerceptualSpace", "invertible", False)
+        percept_pt = gsp(cfg, "PerceptualSpace", "passThrough", False)
+        if percept_inv and not percept_pt:
+            objectSize = arch.get("objectSize", 0)
+            inputDim  = gsp(cfg, "InputSpace", "dim", 1) + objectSize
+            perceptDim = gsp(cfg, "PerceptualSpace", "dim", 1) + objectSize
+            if reshape:
+                inp  = gsp(cfg, "InputSpace", "nVectors", 0) * inputDim
+                outp = gsp(cfg, "PerceptualSpace", "nVectors", 0) * perceptDim
+            else:
+                inp  = inputDim
+                outp = perceptDim
+            if outp != 2 * inp:
+                errors.append(
+                    f"PerceptualSpace invertible=True requires output == 2*input "
+                    f"(got input={inp}, output={outp}). "
+                    f"Adjust <nVectors> or <dim> in <PerceptualSpace>/<InputSpace>.")
+
+        if errors:
+            raise ValueError(
+                "XML config inconsistencies:\n  - " + "\n  - ".join(errors))
+
+    @staticmethod
     def resolve_xml(path):
         """Resolve an XML config path relative to the project directory."""
         if os.path.isabs(path):
@@ -2601,34 +2674,37 @@ class BasicModelFactory:
         """Main entry point — create, train, and evaluate a model from XML config."""
         # Pre-read config for dataset loading (needed before create_from_config)
         cfg = BaseModel.load_config(config_path)
-        train = cfg.get("training", {})
+        arch = cfg.get("architecture", {})
+        train = cfg.get("training", {})  # legacy fallback
 
-        if train.get("detectAnomaly", False):
+        if arch.get("detectAnomaly", train.get("detectAnomaly", False)):
             torch.autograd.set_detect_anomaly(True)
 
-        dataset = train.get("dataset", "xor")
+        dataset = arch.get("dataset", train.get("dataset", "xor"))
         TheData.load(dataset)
 
         m = BasicModel()
         cfg = m.create_from_config(config_path, data=TheData)
 
-        # Training params from merged config
-        train = cfg["training"]
-        weights = cfg.get("weights", {})
+        # Training params from merged config (architecture, with training fallback)
+        arch = cfg["architecture"]
+        train = cfg.get("training", {})
 
-        m.runTrials(train["numTrials"], train["numEpochs"],
-                    train["batchSize"], lr=train["learningRate"])
+        m.runTrials(arch.get("numTrials", train.get("numTrials", 1)),
+                    arch.get("numEpochs", train.get("numEpochs", 3)),
+                    arch.get("batchSize", train.get("batchSize", 10)),
+                    lr=arch.get("learningRate", train.get("learningRate", 0.01)))
 
         report_kwargs = {}
-        if "classificationMin" in train:
-            report_kwargs["min"] = train["classificationMin"]
-        if "classificationMax" in train:
-            report_kwargs["max"] = train["classificationMax"]
+        if "classificationMin" in arch or "classificationMin" in train:
+            report_kwargs["min"] = arch.get("classificationMin", train.get("classificationMin"))
+        if "classificationMax" in arch or "classificationMax" in train:
+            report_kwargs["max"] = arch.get("classificationMax", train.get("classificationMax"))
         if report_kwargs:
             m.classificationReport(**report_kwargs)
 
-        if weights.get("autosave", False):
-            wpath = weights.get("path", "output/weights.pt")
+        if arch.get("autosave", train.get("autosave", False)):
+            wpath = arch.get("weightsPath", cfg.get("weights", {}).get("path", "output/weights.pt"))
             if not os.path.isabs(wpath):
                 wpath = os.path.join(ProjectPaths.PROJECT_DIR, wpath)
             m.save_weights(wpath)

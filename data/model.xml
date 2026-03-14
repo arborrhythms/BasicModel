@@ -2,21 +2,9 @@
 <model>
   <!-- BasicModel configuration -->
   <architecture>
-    <!-- Input/output dimensions -->
-    <nInput>32</nInput>
-    <nPercepts>64</nPercepts>
-    <nConcepts>256</nConcepts>
-    <nSymbols>2</nSymbols>
-    <nWords>16</nWords>
-    <nOutput>32</nOutput>
     <conceptualOrder>1</conceptualOrder>
-    <perceptPrototypes>128</perceptPrototypes>
-    <conceptPrototypes>512</conceptPrototypes>
     <!-- Enable reverse (reconstruction) pass -->
     <reversePass>true</reversePass>
-  </architecture>
-
-  <training>
     <!-- Training hyperparameters -->
     <numEpochs>10</numEpochs>
     <batchSize>10</batchSize>
@@ -25,16 +13,35 @@
     <!-- Dataset: mnist | xor | tomatoes -->
     <dataset>mnist</dataset>
     <modelType>passthrough</modelType>
-  </training>
-
-  <weights>
     <!-- Path to saved weights (relative to basicmodel/ root) -->
-    <path>output/weights.pt</path>
+    <weightsPath>output/weights.pt</weightsPath>
     <!-- Auto-load weights on startup if available -->
     <autoload>true</autoload>
     <!-- Auto-save weights after training -->
     <autosave>true</autosave>
-  </weights>
+  </architecture>
+
+  <InputSpace>
+    <nVectors>32</nVectors>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nVectors>64</nVectors>
+    <prototypes>128</prototypes>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nVectors>256</nVectors>
+    <prototypes>512</prototypes>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nVectors>2</nVectors>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nVectors>32</nVectors>
+  </OutputSpace>
 
   <server>
     <!-- HTTP interface settings (for WikiOracle integration) -->

@@ -1,28 +1,36 @@
 <?xml version="1.0" ?>
 <model>
   <architecture>
-    <nInput>8</nInput>
-    <nPercepts>8</nPercepts>
-    <nConcepts>8</nConcepts>
-    <nSymbols>8</nSymbols>
-    <nWords>8</nWords>
-    <nOutput>1</nOutput>
     <conceptualOrder>1</conceptualOrder>
-    <perceptPrototypes>16</perceptPrototypes>
-    <conceptPrototypes>16</conceptPrototypes>
-  </architecture>
-
-  <training>
     <dataset>tomatoes</dataset>
     <modelType>lm</modelType>
     <pretrained>true</pretrained>
     <numEpochs>100</numEpochs>
     <stoppingCriterion>0.2</stoppingCriterion>
     <learningRate>0.00001</learningRate>
-  </training>
-
-  <weights>
-    <path>output/tomatoes_weights.pt</path>
+    <weightsPath>output/tomatoes_weights.pt</weightsPath>
     <autosave>true</autosave>
-  </weights>
+  </architecture>
+
+  <InputSpace>
+    <nVectors>8</nVectors>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nVectors>8</nVectors>
+    <prototypes>16</prototypes>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nVectors>8</nVectors>
+    <prototypes>16</prototypes>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nVectors>8</nVectors>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nVectors>1</nVectors>
+  </OutputSpace>
 </model>

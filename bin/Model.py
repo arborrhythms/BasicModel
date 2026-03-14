@@ -302,7 +302,7 @@ class LinearLayer(Layer):
 
         print(f"Input: {input}")
         print(f"After forward linear: {output}")
-class ReversibleRotationLayer(Layer):
+class InvertibleRotationLayer(Layer):
     """Learnable orthogonal rotation built from a chain of Givens rotations.
 
     Each of the (dim-1) angles rotates a consecutive pair of axes.
@@ -312,7 +312,7 @@ class ReversibleRotationLayer(Layer):
     pseudoinverse, ``reverse()`` just applies the transpose.
     """
     def __init__(self, dim, naive=False, theta=None):
-        super(ReversibleRotationLayer, self).__init__(dim, dim)
+        super(InvertibleRotationLayer, self).__init__(dim, dim)
         self.dim = dim
         self.naive = naive
         if theta is None:
@@ -413,8 +413,8 @@ class ReversibleRotationLayer(Layer):
     def test():
         dim    = 4
         theta  = torch.rand(dim - 1) * torch.pi / 2
-        nlayer = ReversibleRotationLayer(dim=dim, naive=True, theta=theta)
-        layer  = ReversibleRotationLayer(dim=dim, naive=False, theta=theta)
+        nlayer = InvertibleRotationLayer(dim=dim, naive=True, theta=theta)
+        layer  = InvertibleRotationLayer(dim=dim, naive=False, theta=theta)
         x      = torch.tensor([[1, 2, 3, 4]], dtype=torch.float32)
 
         # Test forward pass
@@ -433,7 +433,7 @@ class ReversibleRotationLayer(Layer):
         print(f"Inverse Rotation: {inverse_x}")
         print(f"Forward-Reverse check (naive): {torch.norm(x - ninverse_x)}")
         print(f"Forward-Reverse check (non-naive): {torch.norm(x - inverse_x)}")
-class ReversibleDiagonalLayer(Layer):
+class InvertibleDiagonalLayer(Layer):
     """Learnable diagonal (singular-value) matrix for use in a reversible SVD decomposition.
 
     Stores ``rank = min(nInput, nOutput)`` positive scalars (lamda) and
@@ -442,7 +442,7 @@ class ReversibleDiagonalLayer(Layer):
     zero-pads any extra input dimensions.
     """
     def __init__(self, nInput, nOutput):
-        super(ReversibleDiagonalLayer, self).__init__(nInput, nOutput)
+        super(InvertibleDiagonalLayer, self).__init__(nInput, nOutput)
         self.nInput = nInput
         self.nOutput = nOutput
         self.rank = min(nInput, nOutput)
@@ -476,7 +476,7 @@ class ReversibleDiagonalLayer(Layer):
     @staticmethod
     def test():
         """
-        Runs several tests on the ReversibleDiagonalLayer:
+        Runs several tests on the InvertibleDiagonalLayer:
           1. Square case: nInput == nOutput.
           2. Wide-output case: nInput < nOutput.
           3. Tall-input case: nInput > nOutput.
@@ -484,11 +484,11 @@ class ReversibleDiagonalLayer(Layer):
         For the tall-input case and batch test (when nInput > nOutput), the tests force the extra input coordinates
         to zero so that the mapping is invertible.
         """
-        print("Testing ReversibleDiagonalLayer...")
+        print("Testing InvertibleDiagonalLayer...")
 
         # Test 1: Square case: nInput == nOutput.
         nInput, nOutput = 4, 4
-        layer = ReversibleDiagonalLayer(nInput, nOutput)
+        layer = InvertibleDiagonalLayer(nInput, nOutput)
         x = torch.rand((10, nInput))
         y = layer.forward(x)
         x_rec = layer.reverse(y)
@@ -500,7 +500,7 @@ class ReversibleDiagonalLayer(Layer):
 
         # Test 2: Wide output: nInput < nOutput.
         nInput, nOutput = 3, 5
-        layer = ReversibleDiagonalLayer(nInput, nOutput)
+        layer = InvertibleDiagonalLayer(nInput, nOutput)
         x = torch.rand((10, nInput))
         y = layer.forward(x)
         x_rec = layer.reverse(y)
@@ -512,7 +512,7 @@ class ReversibleDiagonalLayer(Layer):
 
         # Test 3: Tall input: nInput > nOutput.
         nInput, nOutput = 5, 3
-        layer = ReversibleDiagonalLayer(nInput, nOutput)
+        layer = InvertibleDiagonalLayer(nInput, nOutput)
         x = torch.rand((10, nInput))
         # For the mapping to be invertible, force the extra dimensions (nOutput: nInput) to zero.
         if nInput > nOutput:
@@ -527,7 +527,7 @@ class ReversibleDiagonalLayer(Layer):
 
         # Test 4: Batch behavior.
         nInput, nOutput = 6, 4
-        layer = ReversibleDiagonalLayer(nInput, nOutput)
+        layer = InvertibleDiagonalLayer(nInput, nOutput)
         x = torch.rand((7, nInput))
         if nInput > nOutput:
             x[:, nOutput:] = 0.0
@@ -540,10 +540,10 @@ class ReversibleDiagonalLayer(Layer):
         print("Batch behavior test passed.")
 
         print("All tests passed!")
-class ReversibleLinearLayer(Layer):
+class InvertibleLinearLayer(Layer):
     """Exactly-invertible linear layer factored as W = U * Sigma * V^T (thin SVD).
 
-    U and V are orthogonal (ReversibleRotationLayer), Sigma is diagonal.
+    U and V are orthogonal (InvertibleRotationLayer), Sigma is diagonal.
     Two modes:
       - naive=True:  materializes W and W^{-1} as dense matrices.
       - naive=False: applies U, Sigma, V sequentially (lower memory, exact inverse).
@@ -551,15 +551,15 @@ class ReversibleLinearLayer(Layer):
     When ``stable=True``, singular values are clamped to <=1 each step.
     """
     def __init__(self, nInput, nOutput, naive=False, hasBias=True, stable=False):
-        super(ReversibleLinearLayer, self).__init__(nInput, nOutput)
+        super(InvertibleLinearLayer, self).__init__(nInput, nOutput)
         self.naive = naive
         self.hasBias = hasBias
         self.rank = min(nInput, nOutput)
         self.stable = stable
 
-        self.U = ReversibleRotationLayer(dim=nInput, naive=self.naive)      # nInput x nInput
-        self.V = ReversibleRotationLayer(dim=nOutput, naive=self.naive)     # nOutput x nOutput
-        self.Sigma = ReversibleDiagonalLayer(nInput, nOutput)               # diagonal scaling
+        self.U = InvertibleRotationLayer(dim=nInput, naive=self.naive)      # nInput x nInput
+        self.V = InvertibleRotationLayer(dim=nOutput, naive=self.naive)     # nOutput x nOutput
+        self.Sigma = InvertibleDiagonalLayer(nInput, nOutput)               # diagonal scaling
 
         if self.naive:
             self.register_buffer('noise', torch.randn(nInput, nOutput))
@@ -643,8 +643,8 @@ class ReversibleLinearLayer(Layer):
     def test():
         torch.manual_seed(42)
         nInput, nOutput = 7, 11
-        layer = ReversibleLinearLayer(nInput=nInput, nOutput=nOutput, naive=True)
-        gLayer = ReversibleLinearLayer(nInput=nInput, nOutput=nOutput, naive=False)
+        layer = InvertibleLinearLayer(nInput=nInput, nOutput=nOutput, naive=True)
+        gLayer = InvertibleLinearLayer(nInput=nInput, nOutput=nOutput, naive=False)
 
         # Disable noise completely for testing
         b = 1
@@ -684,7 +684,7 @@ class ReversibleLinearLayer(Layer):
         assert givens_error < 0.001, f"Givens implementation failed with error {givens_error}"
         print("All tests passed!")
 
-class LiftingLayer(ReversibleLinearLayer):
+class LiftingLayer(InvertibleLinearLayer):
     """Bias-free, stable reversible linear layer for mapping between row/column spaces."""
     def __init__(self, nInput, nOutput, init='orthogonal'):
         super(LiftingLayer, self).__init__(nInput, nOutput, naive=False, hasBias=False, stable=True)
@@ -743,7 +743,7 @@ class SoftMap(Layer):
         self.codebookX = nn.Parameter(torch.randn(nInput, self.nInputCodes))   # (nInput, nInputCodes)
         self.codebookY = nn.Parameter(torch.randn(nOutput, self.nOutputCodes)) # (nOutput, nOutputCodes)
         self.penalty = nn.Parameter(torch.zeros(1))
-        self.SVD = ReversibleLinearLayer(nInput, nOutput, naive=True)
+        self.SVD = InvertibleLinearLayer(nInput, nOutput, naive=True)
 
     def quantize(self, v, codebook):
         dist = torch.cdist(v.reshape(-1, v.shape[-1]), codebook.T) ** 2  # (batch*seq, nCodes)
@@ -873,7 +873,7 @@ class SigmaLayer(ErgodicLayer):
         print(f"Original input: {x}")
         print(f"After linear: {y}")
         #print(f"Inverse operation result: {y_inv}")
-class ReversibleSigmaLayer(SigmaLayer):
+class InvertibleSigmaLayer(SigmaLayer):
     """SigmaLayer whose linear transform is exactly invertible (SVD-factored).
 
     Inherits the ergodic flag behavior from SigmaLayer.
@@ -881,7 +881,7 @@ class ReversibleSigmaLayer(SigmaLayer):
     """
     def __init__(self, nInput, nOutput, naive=False, permuteInput=False):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
-        self.layer          = ReversibleLinearLayer(nInput, nOutput, naive=naive, hasBias=True)
+        self.layer          = InvertibleLinearLayer(nInput, nOutput, naive=naive, hasBias=True)
     def layer_tradeoff(self):
         return self.bias, self.var
     def reverse(self, y):
@@ -905,7 +905,7 @@ class ReversibleSigmaLayer(SigmaLayer):
         nInput, nOutput = 5, 7
         permute = False
         #naive = False
-        layer   = ReversibleSigmaLayer(nInput=nInput, nOutput=nOutput, permuteInput=permute, naive=False)
+        layer   = InvertibleSigmaLayer(nInput=nInput, nOutput=nOutput, permuteInput=permute, naive=False)
 
         x = torch.randn((2, 5, nInput))
         layer.setAlpha(0.000000001)
@@ -917,7 +917,7 @@ class ReversibleSigmaLayer(SigmaLayer):
         #print(f"Inverse operation result: {y_inv}")
         assert(torch.norm(x-y_inv) < 0.00001)
 
-        layer = ReversibleSigmaLayer(nInput=nInput, nOutput=nOutput, permuteInput=False, naive=True)
+        layer = InvertibleSigmaLayer(nInput=nInput, nOutput=nOutput, permuteInput=False, naive=True)
         x = torch.randn((4, 8, nInput))
         layer.setAlpha(0.00000001)
         y = layer.forward(x)
@@ -1037,7 +1037,7 @@ class PiLayer(ErgodicLayer):
             optimizer.step()  # Update weights
             if epoch % 100 == 0:
                 print(f'Epoch {epoch}/{epochs}, MSE: {loss.item():.6f}')
-class ReversiblePiLayer(ErgodicLayer):
+class InvertiblePiLayer(ErgodicLayer):
     """Invertible multiplicative layer that outputs paired (1-tanh, 1+tanh) products.
 
     Forward produces interleaved (y, z) pairs where:
@@ -1062,8 +1062,8 @@ class ReversiblePiLayer(ErgodicLayer):
             self.W      = nn.Parameter(torch.randn(nInput, nOutput))
             self.register_buffer('noise', torch.randn(nInput, nOutput))
         else:
-            self.layer  = ReversibleLinearLayer(nInput, nOutput, naive=True)
-            self.register_buffer('noise', torch.randn(nOutput, nInput))
+            self.layer  = InvertibleLinearLayer(nInput, nOutput, naive=True)
+            self.register_buffer('noise', torch.randn(nInput, nOutput))
         self.biasWeight       = nn.Parameter(torch.zeros(1, 1, self.nOutput))
         self.register_buffer('biasNoise', torch.randn(1, 1, self.nOutput))
 
@@ -1071,11 +1071,14 @@ class ReversiblePiLayer(ErgodicLayer):
         if self.naive:
             self.noise = sample_noise(self.W)
         else:
-            self.noise = sample_noise(self.biasWeight, shape=(self.nOutput, self.nInput))
+            self.noise = sample_noise(self.biasWeight, shape=(self.nInput, self.nOutput))
         self.biasNoise = sample_noise(self.biasWeight, shape=(1, 1, self.nOutput))
 
     def forward(self, x):
-        """Produce interleaved (y, z) product pairs from input x."""
+        """Produce interleaved (y, z) product pairs from input x.
+
+        Supports both 2D (batch, nInput) and 3D (batch, seq, nInput) inputs.
+        """
         if not self.ergodic:
             bias, temp = 1.0, 0.0
         elif not self.training:
@@ -1083,45 +1086,57 @@ class ReversiblePiLayer(ErgodicLayer):
         else:
             bias, temp = self.bias, self.var
 
-        """
-        x: (batch_size, in_features)
-        Output: yz: (batch_size, out_features, 2)
-        y_j = b_j * prod_i (1 - tanh(w_{ji} * x_i))
-        z_j = b_j * prod_i (1 + tanh(w_{ji} * x_i))
-        """
         if temp != 0:
             self.resample_noise()
+        self._input_ndim = x.ndim
         x = self.permute(x)
 
         if not self.naive:
-            W = self.layer.compute_W().T # XXX seems not to use bias, variance
+            W = self.layer.compute_W() # shape (nInput, nOutput) — matches self.W layout
             W  = (bias * W + temp * self.noise)
-            WX = x.unsqueeze(-1) * W.unsqueeze(0).unsqueeze(0)
         else:
-            W  = (bias * self.W + temp * self.noise).unsqueeze(0).unsqueeze(0)
-            WX =  x.unsqueeze(-1) * W                 # (batch, out_features, in_features)
-        if self.hasBias:
-            WX = WX + (bias*self.biasWeight.unsqueeze(1) + temp*self.biasNoise.unsqueeze(1))
+            W  = (bias * self.W + temp * self.noise)
 
-        # Compute tanh(w_{ji} * x_i)
-        sWX = torch.tanh(WX)
-        # Apply (1 - tanh(...)) and (1 + tanh(...))
-        one_minus = 1 - sWX
-        one_plus  = 1 + sWX
-        if self.useEpsilon:
-            one_minus += epsilon
-            one_plus  += epsilon
-        # Product over input dimension (i)
-        y = torch.prod(one_minus, dim=2)
-        z = torch.prod(one_plus, dim=2)
-        #s = torch.concatenate((y, z), dim=1)  # (batch, out_features, 2)
-        stacked = torch.stack((y,z), dim=1)
-        interleaved = torch.flatten(stacked, start_dim=1, end_dim=2)
-        y = self.unpermute(interleaved)
-        return y
+        ndim = x.ndim
+        if ndim == 2:
+            # 2D flattened: x is (batch, nInput), W is (nInput, nOutput)
+            WX = x.unsqueeze(-1) * W.unsqueeze(0)       # (batch, nInput, nOutput)
+            if self.hasBias:
+                WX = WX + (bias*self.biasWeight.squeeze(0) + temp*self.biasNoise.squeeze(0))
+            sWX = torch.tanh(WX)
+            one_minus = 1 - sWX
+            one_plus  = 1 + sWX
+            if self.useEpsilon:
+                one_minus += epsilon
+                one_plus  += epsilon
+            y = torch.prod(one_minus, dim=1)  # (batch, nOutput)
+            z = torch.prod(one_plus, dim=1)   # (batch, nOutput)
+            stacked = torch.stack((y, z), dim=1)           # (batch, 2, nOutput)
+            interleaved = torch.flatten(stacked, start_dim=1, end_dim=2)  # (batch, 2*nOutput)
+        else:
+            # 3D: x is (batch, seq, nInput), W is (nInput, nOutput)
+            WX = x.unsqueeze(-1) * W.unsqueeze(0).unsqueeze(0)  # (batch, seq, nInput, nOutput)
+            if self.hasBias:
+                WX = WX + (bias*self.biasWeight.unsqueeze(1) + temp*self.biasNoise.unsqueeze(1))
+            sWX = torch.tanh(WX)
+            one_minus = 1 - sWX
+            one_plus  = 1 + sWX
+            if self.useEpsilon:
+                one_minus += epsilon
+                one_plus  += epsilon
+            y = torch.prod(one_minus, dim=2)  # (batch, seq, nOutput)
+            z = torch.prod(one_plus, dim=2)   # (batch, seq, nOutput)
+            stacked = torch.stack((y, z), dim=1)           # (batch, 2, seq, nOutput)
+            interleaved = torch.flatten(stacked, start_dim=1, end_dim=2)  # (batch, 2*seq, nOutput)
+
+        result = self.unpermute(interleaved)
+        return result
 
     def reverse(self, yz):
-        """Recover x from interleaved (y,z): gamma = 0.5*log(z/y) = Wx, then x = W^+ @ gamma."""
+        """Recover x from interleaved (y,z): gamma = 0.5*log(z/y) = Wx, then x = W^+ @ gamma.
+
+        Supports both 2D (batch, 2*nOutput) and 3D (batch, 2*seq, nOutput) inputs.
+        """
         if not self.ergodic:
             bias, temp = 1.0, 0.0
         elif not self.training:
@@ -1129,18 +1144,32 @@ class ReversiblePiLayer(ErgodicLayer):
         else:
             bias, temp = self.bias, self.var
         yz = self.permute(yz)
-        n2 = round(yz.shape[1]/2)
-        uninterleaved = torch.unflatten(yz, 1, (2,n2))
-        y = uninterleaved[:,0,:,:].squeeze(1)
-        z = uninterleaved[:,1,:,:].squeeze(1)
-        gamma = 0.5 * torch.log(z / y)
-        if self.hasBias:
-            gamma = gamma - torch.sum(bias*self.biasWeight + temp*self.biasNoise, dim=1).unsqueeze(1) # (batch, out_features)
+        ndim = yz.ndim
+
+        if ndim == 2:
+            # 2D flattened: yz is (batch, 2*nOutput)
+            n2 = yz.shape[1] // 2
+            uninterleaved = torch.unflatten(yz, 1, (2, n2))  # (batch, 2, nOutput)
+            y = uninterleaved[:, 0, :]  # (batch, nOutput)
+            z = uninterleaved[:, 1, :]  # (batch, nOutput)
+            gamma = 0.5 * torch.log(z / y)
+            if self.hasBias:
+                gamma = gamma - torch.sum(bias*self.biasWeight.squeeze(0) + temp*self.biasNoise.squeeze(0), dim=0)
+        else:
+            # 3D: yz is (batch, 2*seq, nOutput)
+            n2 = yz.shape[1] // 2
+            uninterleaved = torch.unflatten(yz, 1, (2, n2))  # (batch, 2, seq, nOutput)
+            y = uninterleaved[:, 0, :, :]  # (batch, seq, nOutput)
+            z = uninterleaved[:, 1, :, :]  # (batch, seq, nOutput)
+            gamma = 0.5 * torch.log(z / y)
+            if self.hasBias:
+                gamma = gamma - torch.sum(bias*self.biasWeight + temp*self.biasNoise, dim=1).unsqueeze(1)
+
         if not self.naive:
-            W_pinv = self.layer.compute_Winverse().T
+            W_pinv = self.layer.compute_Winverse() # shape (nOutput, nInput) — matches pinv(W) layout
             x = gamma @ W_pinv
         else:
-            W_pinv = torch.linalg.pinv( (self.W + temp*self.noise) )  # (in_features, out_features)
+            W_pinv = torch.linalg.pinv( (self.W + temp*self.noise) )  # (nOutput, nInput)
             x = gamma @ W_pinv
         x = self.unpermute(x)
         if temp != 0:
@@ -1157,7 +1186,7 @@ class ReversiblePiLayer(ErgodicLayer):
         nOutput   = 2 * nInput
         nFeatures = 5
 
-        layer = ReversiblePiLayer(nInput=nInput, nOutput=nOutput, naive=True, hasBias=True, permuteInput=True)
+        layer = InvertiblePiLayer(nInput=nInput, nOutput=nOutput, naive=True, hasBias=True, permuteInput=True)
         x = torch.randn(nBatch, nInput, nFeatures)
         layer.setAlpha(0.00000001)
         yz = layer.forward(x)
@@ -1168,7 +1197,7 @@ class ReversiblePiLayer(ErgodicLayer):
         error = torch.norm(x - x_recon) / torch.norm(x)
         print(f"Reconstruction relative error: {error.item():.6f}")
         assert error < 0.1, f"Reconstruction error too high: {error}"
-        print("ReversiblePiLayer test passed.")
+        print("InvertiblePiLayer test passed.")
 
 class VQLayer(Layer):
     """Vector-quantization layer backed by a residual VQ codebook.
@@ -1982,16 +2011,16 @@ if __name__ == "__main__":
     torch.autograd.set_detect_anomaly(True)
 
     LinearLayer.test()
-    ReversibleRotationLayer.test()
-    ReversibleDiagonalLayer.test()
-    ReversibleLinearLayer.test()
+    InvertibleRotationLayer.test()
+    InvertibleDiagonalLayer.test()
+    InvertibleLinearLayer.test()
 
-    ReversiblePiLayer.test()
+    InvertiblePiLayer.test()
     SigmaLayer.test()
-    ReversibleSigmaLayer.test()
+    InvertibleSigmaLayer.test()
     PiLayer.test()
     PiLayer.xorTest()
-    ReversiblePiLayer.test()
+    InvertiblePiLayer.test()
 
     AttentionLayer.test()
     NormLayer.test()
