@@ -1537,11 +1537,68 @@ class InputSpace(Space):
         # Apply positional and temporal encoding via ObjectEncoding
         result = TheObjectEncoding.forward(result)
         return result
+    def _reverse_lex(self, y):
+        """Reverse the Lex encoding path: strip ObjectEncoding, snap to
+        nearest codebook entry, recover words and positions."""
+        # 1. Strip positional/temporal encoding via ObjectEncoding.reverse()
+        content, positions, times = TheObjectEncoding.reverse(y.clone())
+        batch = content.shape[0]
+        nVec = content.shape[1]
+        codebook = self.vectors().vq.codebook
+        words_list = self.vectors().words
+        # The codebook vectors are embeddingSize = nWhat + objectSize.
+        # After ObjectEncoding.reverse(), the last objectSize dims are zeroed.
+        # Compare only the nWhat portion for nearest-neighbor lookup.
+        nWhat = self.vectors().embeddingSize - TheObjectEncoding.objectSize
+        cb_what = codebook[:, :nWhat]  # [codebookSize, nWhat]
+        # 2. For each vector, find nearest codebook entry by cosine sim on nWhat
+        recovered_words = [[] for _ in range(batch)]
+        for b in range(batch):
+            for v in range(nVec):
+                vec = content[b, v, :nWhat]  # [nWhat]
+                # Cosine similarity to all codebook entries
+                sims = F.cosine_similarity(vec.unsqueeze(0), cb_what, dim=1)
+                idx = sims.argmax().item()
+                recovered_words[b].append(words_list[idx])
+        self._recovered_words = recovered_words
+        self._recovered_positions = positions
+        self._recovered_times = times
+        return content
+
     def reverse(self, y, t=0):
         y = self.reverseBegin(y, t)
-        self.input = self.vectors().reverse(y, t)
-        self.reconstructed = self.input.detach()
+        if hasattr(self, 'lex'):
+            content = self._reverse_lex(y)
+            self.input = content
+            self.reconstructed = self.input.detach()
+        else:
+            self.input = self.vectors().reverse(y, t)
+            self.reconstructed = self.input.detach()
         return self.input
+
+    def reconstruct_text(self, join=False):
+        """Return recovered words from the last reverse() call.
+
+        Args:
+            join: If True, return list of joined strings. If False, return
+                  list of word lists (one per batch element).
+
+        Returns:
+            List of word lists or joined strings, one per batch element.
+            Empty words (from zero-padded vectors) are stripped.
+        """
+        if not hasattr(self, '_recovered_words'):
+            raise RuntimeError("reconstruct_text() called before reverse()")
+        result = []
+        for b_words in self._recovered_words:
+            # Strip empty strings from zero-padded positions
+            words = [w for w in b_words if w]
+            if join:
+                result.append(" ".join(words))
+            else:
+                result.append(words)
+        return result
+
 class PerceptualSpace(Space):
     name = "Percepts"
     hasAttention = True

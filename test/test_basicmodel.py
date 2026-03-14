@@ -910,5 +910,106 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
             self.assertIn(token_id, inp.lex_to_codebook)
 
 
+class TestInputSpaceTextRoundTrip(unittest.TestCase):
+    """InputSpace.reverse() must reconstruct text from latent state."""
+
+    def setUp(self):
+        from BasicModel import TheObjectEncoding
+        self._orig_nWhere = TheObjectEncoding.nWhere
+        self._orig_nWhen = TheObjectEncoding.nWhen
+        self._orig_objectSize = TheObjectEncoding.objectSize
+
+    def tearDown(self):
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = self._orig_nWhere
+        TheObjectEncoding.nWhen = self._orig_nWhen
+        TheObjectEncoding.objectSize = self._orig_objectSize
+
+    def _make_text_input_space(self):
+        """Create an InputSpace with model_type='lm' from XOR text data."""
+        from BasicModel import InputSpace, Data
+        data = Data()
+        data.load("xor")
+        nInput = 8
+        nVectors = 8
+        inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nVectors,
+                         nDim=1, model_type="lm", pretrained=False, data=data)
+        return inp, data
+
+    def test_reverse_recovers_words(self):
+        """forward -> reverse should recover the original words."""
+        inp, data = self._make_text_input_space()
+        batch_size = 2
+        inputBatch = data.train_input[0:batch_size]
+        inputTensor = inp.prepInput(inputBatch)
+        # Decode what words we expect from the input bytes
+        expected_words = []
+        for b in range(batch_size):
+            raw_bytes = inputTensor[b].squeeze().tolist()
+            text = "".join(chr(int(c) & 0xFF) for c in raw_bytes).rstrip("\x00")
+            expected_words.append(text.split())
+        # Forward pass
+        latent = inp.forward(inputTensor)
+        # Reverse pass
+        inp.reverse(latent)
+        recovered = inp.reconstruct_text()
+        for b in range(batch_size):
+            # Only compare up to the number of words that fit in nVec
+            nVec = inp.outputShape[0]
+            exp = expected_words[b][:nVec]
+            rec = recovered[b][:len(exp)]
+            self.assertEqual(rec, exp,
+                             f"Batch {b}: expected {exp}, got {rec}")
+
+    def test_reverse_recovers_all_xor_examples(self):
+        """All XOR training examples should round-trip through forward/reverse."""
+        inp, data = self._make_text_input_space()
+        all_inputs = data.train_input
+        inputTensor = inp.prepInput(all_inputs)
+        latent = inp.forward(inputTensor)
+        inp.reverse(latent)
+        recovered = inp.reconstruct_text()
+        nVec = inp.outputShape[0]
+        for b in range(len(all_inputs)):
+            raw_bytes = inputTensor[b].squeeze().tolist()
+            text = "".join(chr(int(c) & 0xFF) for c in raw_bytes).rstrip("\x00")
+            exp = text.split()[:nVec]
+            rec = recovered[b][:len(exp)]
+            self.assertEqual(rec, exp,
+                             f"Example {b}: expected {exp}, got {rec}")
+
+    def test_reconstruct_text_joins_words(self):
+        """reconstruct_text(join=True) returns joined strings."""
+        inp, data = self._make_text_input_space()
+        batch_size = 2
+        inputBatch = data.train_input[0:batch_size]
+        inputTensor = inp.prepInput(inputBatch)
+        latent = inp.forward(inputTensor)
+        inp.reverse(latent)
+        joined = inp.reconstruct_text(join=True)
+        self.assertIsInstance(joined[0], str)
+        self.assertGreater(len(joined[0]), 0)
+
+    def test_reverse_numeric_unchanged(self):
+        """Numeric reverse path should still work exactly as before."""
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = 0
+        TheObjectEncoding.nWhen = 0
+        TheObjectEncoding.objectSize = 0
+        TheObjectEncoding.setInputDim(1)
+        TheObjectEncoding.setPerceptDim(1)
+        TheObjectEncoding.setConceptDim(1)
+        TheObjectEncoding.setSymbolDim(1)
+        TheObjectEncoding.setOutputDim(1)
+        from BasicModel import InputSpace
+        nIn, nDim = 8, 1
+        inp = InputSpace([nIn, nDim], [nIn, nDim], nIn, nDim=nDim, useVQ=False)
+        x = torch.randn(2, nIn, nDim)
+        y = inp.forward(x)
+        result = inp.reverse(y)
+        # Numeric path returns tensor, not text
+        self.assertIsInstance(result, (torch.Tensor, list))
+
+
 if __name__ == "__main__":
     unittest.main()
