@@ -2001,6 +2001,7 @@ class BasicModel(BaseModel):
                                                self.nPercepts, TheObjectEncoding.perceptDim,
                                                reversePass=reversePass,
                                                nPrototypes=perceptPrototypes,
+                                               useVQ=self.quantized,
                                                passThrough=perceptPassThrough)
         self.conceptualSpace = ConceptualSpace([self.nPercepts, TheObjectEncoding.perceptDim],
                                                [self.nConcepts, TheObjectEncoding.conceptDim],
