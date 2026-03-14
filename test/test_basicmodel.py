@@ -781,5 +781,58 @@ class TestBaseModelFactory(unittest.TestCase):
             os.unlink(path)
 
 
+class TestDataSourceBuffer(unittest.TestCase):
+    """Data stores raw text as an immutable uint8 source buffer."""
+
+    def test_source_buffer_created_for_text(self):
+        from BasicModel import Data
+        data = Data()
+        data.load("xor")  # XOR uses text examples
+        self.assertTrue(hasattr(data, 'train_source'))
+        self.assertEqual(data.train_source.dtype, torch.uint8)
+
+    def test_source_buffer_is_uint8(self):
+        from BasicModel import Data
+        data = Data()
+        data.load("xor")
+        self.assertEqual(data.train_source.dtype, torch.uint8)
+
+    def test_no_source_buffer_for_numeric(self):
+        """Numeric datasets should not have a source buffer."""
+        from BasicModel import Data
+        data = Data()
+        data.load("simple")
+        self.assertFalse(hasattr(data, 'train_source') and
+                         data.train_source is not None)
+
+
+class TestSymbolDimZeroPassthrough(unittest.TestCase):
+    """symbolDim must be 0 when symbolic space is passthrough."""
+
+    def test_passthrough_symbolic_space_has_zero_symbol_dim(self):
+        """When symbolPassThrough=True, symbolDim should be 0 and
+        embedding size should not be inflated by a symbol dimension."""
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = 0
+        TheObjectEncoding.nWhen = 0
+        TheObjectEncoding.objectSize = 0
+        TheObjectEncoding.setInputDim(1)
+        TheObjectEncoding.setPerceptDim(1)
+        TheObjectEncoding.setConceptDim(1)
+        TheObjectEncoding.setSymbolDim(0)
+        TheObjectEncoding.setOutputDim(1)
+        self.assertEqual(TheObjectEncoding.symbolDim, 0)
+        self.assertEqual(TheObjectEncoding.getSymbolEmbedding(), 0)
+
+    def test_objectencoding_zero_contribution_when_unused(self):
+        """ObjectEncoding must not inflate tensor size when nWhere=0, nWhen=0."""
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = 0
+        TheObjectEncoding.nWhen = 0
+        TheObjectEncoding.objectSize = 0
+        nDim = 10
+        self.assertEqual(TheObjectEncoding.getEmbeddingSize(nDim), nDim)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -9,6 +9,11 @@ load datasets, resolve config paths, plot results, and save reports.
 import math, os, warnings
 from contextlib import nullcontext
 import numpy as np
+warnings.filterwarnings(
+    "ignore",
+    message="Initializing zero-element tensors is a no-op",
+    category=UserWarning,
+)
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -32,7 +37,9 @@ import torch.optim as optim
 from functools import partial
 
 # Device selection: prefer MPS (Apple Silicon GPU) when available
-if torch.backends.mps.is_available():
+# NOTE: MPS disabled — ergodic paramUpdate() in-place ops cause MPS hangs.
+# Re-enable once torch MPS stabilizes for this workload.
+if False and torch.backends.mps.is_available():
     TheDevice = torch.device("mps")
 elif torch.cuda.is_available():
     TheDevice = torch.device("cuda")
@@ -596,6 +603,19 @@ class Data():
     inputLength       = 128
     combinedTokens    = []
 
+    def __init__(self):
+        self.train_input       = []
+        self.train_output      = []
+        self.validation_input  = []
+        self.validation_output = []
+        self.test_input        = []
+        self.test_output       = []
+        self.combinedTokens    = []
+        self.train_source      = None
+        self.test_source       = None
+        self.train_example_offsets = None
+        self.test_example_offsets  = None
+
     def load(self, dataset):
         if dataset == "mnist":
             self.loadMNist()
@@ -605,19 +625,21 @@ class Data():
             self.loadTomatoes()
         self.toDevice()
     def toDevice(self):
-        """Move all data tensors to TheDevice (GPU if available)."""
-        if isinstance(self.train_input, torch.Tensor):
-            self.train_input = self.train_input.to(TheDevice)
-        if isinstance(self.train_output, torch.Tensor):
-            self.train_output = self.train_output.to(TheDevice)
-        if isinstance(self.test_input, torch.Tensor):
-            self.test_input = self.test_input.to(TheDevice)
-        if isinstance(self.test_output, torch.Tensor):
-            self.test_output = self.test_output.to(TheDevice)
-        if isinstance(self.validation_input, torch.Tensor):
-            self.validation_input = self.validation_input.to(TheDevice)
-        if isinstance(self.validation_output, torch.Tensor):
-            self.validation_output = self.validation_output.to(TheDevice)
+        """Move all data tensors to TheDevice and pre-shape for training.
+
+        Adds the trailing dimension (unsqueeze) that prepInput/prepOutput
+        previously applied per-batch, so the hot loop can skip both the
+        unsqueeze and the redundant .to() call.
+        """
+        for attr in ("train_input", "train_output",
+                      "test_input", "test_output",
+                      "validation_input", "validation_output"):
+            v = getattr(self, attr)
+            if isinstance(v, torch.Tensor):
+                v = v.to(TheDevice)
+                if v.ndim == 2:          # [N, D] → [N, D, 1]
+                    v = v.unsqueeze(2)
+                setattr(self, attr, v)
     def shuffle(self):
         rand_indx = torch.randperm(len(self.train_output))
         self.train_input = self.train_input[rand_indx][:]
@@ -694,6 +716,10 @@ class Data():
         self.combinedTokens = train_tokens + validation_tokens + test_tokens
         self.combinedTokens = list(set(self.combinedTokens))
 
+        # Build immutable uint8 source buffers from raw text
+        self._build_source_buffer(train_tokens, "train")
+        self._build_source_buffer(test_tokens, "test")
+
         for i in range(len(self.train_input)):
             self.train_input[i]       = self.stringTensor(train_tokens[i])
             self.validation_input[i]  = self.stringTensor(validation_tokens[i])
@@ -736,6 +762,33 @@ class Data():
         outShape = len(self.train_output)
         outputEmbeddingSize = self.train_output[0].shape[0]
         return outputEmbeddingSize
+    def _build_source_buffer(self, text_examples, split):
+        """Create an immutable uint8 source buffer from raw text examples.
+
+        Concatenates all text with space separators and stores byte offsets
+        so InputSpace can later slice per-example.
+        """
+        raw_text = " ".join(text_examples)
+        source = torch.tensor(
+            list(raw_text.encode('utf-8')), dtype=torch.uint8
+        )
+        # Build example offsets [N, 2] tensor of (start_byte, end_byte)
+        offsets = []
+        pos = 0
+        for example in text_examples:
+            encoded = example.encode('utf-8')
+            end = pos + len(encoded)
+            offsets.append([pos, end])
+            pos = end + 1  # +1 for the space separator
+        offset_tensor = torch.tensor(offsets, dtype=torch.long)
+
+        if split == "train":
+            self.train_source = source
+            self.train_example_offsets = offset_tensor
+        elif split == "test":
+            self.test_source = source
+            self.test_example_offsets = offset_tensor
+
     def stringTensor(self, string):
         ascii_values = [ord(char) for char in string]
         tensor = torch.tensor(ascii_values, dtype=torch.int8)
@@ -1358,6 +1411,36 @@ class Space(nn.Module):
         for l in self.layers:
             l.paramUpdate()
 class InputSpace(Space):
+    """Receives the source buffer from Data() and encodes it as vectors.
+
+    For text: delegates tokenization to Lex, which produces a span table
+    (start, end, type) over the source buffer.  Each span is encoded as a
+    vector with nWhat (token content via VectorSet codebook) and nWhere
+    (positional encoding from the span's start offset).  A whole sentence
+    is sent at once as a batch of [nWhat + nWhere] vectors.
+
+    For numeric data: the tensor path is unchanged — no span table, no Lex,
+    and objectEncoding contributes nothing when nWhat/nWhere are absent.
+
+    reverse() reconstructs the source buffer from the latent state by
+    decoding nWhat back to token IDs and using nWhere for positioning.
+
+    Future: parse.py integration
+    ----------------------------
+    parse.py can produce constituent span tables (NP, VP, PP, etc.) over
+    the same source buffer that Lex tokenizes.  If a convention is found
+    for representing syntactic constituent information in ObjectEncoding
+    (e.g. a new nSyntax dimension, or extending symbolDim to carry the
+    constituent type), then InputSpace could encode both word-level and
+    constituent-level spans.  This would require:
+      1. A shared grammar available to both InputSpace and OutputSpace.
+      2. An objectEncoding dimension convention for constituent types
+         agreed upon by both sides.
+      3. OutputSpace would use a generative grammar (inverse of parse.py's
+         analytical grammar) to expand constituent-tagged symbols into
+         structured token sequences in the destination buffer.
+    Until such a convention is established, parse.py is not used here.
+    """
     name = "Inputs"
     def __init__(self, inputShape, outputShape, nVectors, nDim=None, model_type="simple",
                  tokenizedInput=False, useVQ=True, pretrained=False, data=None):
@@ -1398,13 +1481,11 @@ class InputSpace(Space):
     def prepInput(self, inputBatch):
         if isinstance(inputBatch, list):
             return torch.stack(inputBatch, dim=0).unsqueeze(1).to(TheDevice)
-        else:
-            return inputBatch.unsqueeze(2).to(TheDevice)
+        return inputBatch  # already [B, D, 1] and on device after toDevice()
     def shuffle(self):
         self.data.shuffle()
     # The world presenting itself
     def forward(self, input, t=0, mask=None):
-        input = input.to(TheDevice)
         self.batch = input.shape[0]
         assert list(input.shape) == [self.batch, self.inputShape[0], self.inputShape[1]]
         self.input = self.vectors().forward(input, t)
@@ -1720,12 +1801,14 @@ class OutputSpace(Space):
         self.params = list(self.parameters())
         self.layers = [self.forwardLinear] if not reversePass else [self.linear1, self.linear2]
     def getTestOutput(self):
-        return self.data.test_output if self.data else None
+        if self.data is None:
+            return None
+        out = self.data.test_output
+        return out.squeeze(-1) if out.ndim == 3 else out
     def prepOutput(self, outputBatch):
         if isinstance(outputBatch, list):
             return torch.stack(outputBatch, dim=0).unsqueeze(1).to(TheDevice)
-        else:
-            return outputBatch.unsqueeze(2).to(TheDevice)
+        return outputBatch  # already [B, D, 1] and on device after toDevice()
     # Acting
     def forward(self, x, t=0):
         y = super().forwardBegin(x, t, reshape=True)
@@ -1851,7 +1934,6 @@ class BaseModel(nn.Module):
         if path is None:
             path = os.path.join(ProjectPaths.OUTPUT_DIR, "weights.pt")
         if not os.path.exists(path):
-            print(f"[{self.name}] No weights found at {path}")
             return False
         state = torch.load(path, map_location=TheDevice, weights_only=True)
         self.load_state_dict(state, strict=strict)
@@ -1964,8 +2046,11 @@ class BasicModel(BaseModel):
                perceptPrototypes=0, conceptPrototypes=0,
                ergodic=False, certainty=False, quantized=False,
                invertible=False, hasNorm=False,
+               # NOTE: self.spaces is cleared below to prevent accumulation across
+               # repeated create() calls (class-level list was never reset).
                conceptualOrder=0, symbolicOrder=0, processSymbols=False,
                model_type="simple", data=None, pretrained=False):
+        self.spaces = []  # reset — prevent stale accumulation from prior create() calls
         self.reversePass      = reversePass
         self.nInput           = nInput
         self.nOutput          = nOutput
@@ -1976,6 +2061,10 @@ class BasicModel(BaseModel):
         self.data             = data
         self.model_type       = model_type
         self.pretrained       = pretrained
+        self.perceptPassThrough = perceptPassThrough
+        self.symbolPassThrough  = symbolPassThrough
+        self.perceptPrototypes  = perceptPrototypes
+        self.conceptPrototypes  = conceptPrototypes
         self.ergodic          = ergodic
         self.certainty        = certainty
         self.quantized        = quantized
@@ -2007,9 +2096,15 @@ class BasicModel(BaseModel):
                                                hasNorm=self.hasNorm,
                                                ergodic=self.ergodic,
                                                useVQ=self.quantized)
+        if symbolPassThrough:
+            TheObjectEncoding.setSymbolDim(0)
+
+        # When symbolPassThrough, data flows through unchanged at conceptDim;
+        # use conceptDim for the symbolic-space output so shape assertions hold.
+        symDim = TheObjectEncoding.conceptDim if symbolPassThrough else TheObjectEncoding.symbolDim
         self.symbolicSpace   = SymbolicSpace([self.nConcepts, TheObjectEncoding.conceptDim],
-                                              [self.nSymbols, TheObjectEncoding.symbolDim],
-                                              self.nSymbols, TheObjectEncoding.symbolDim,
+                                              [self.nSymbols, symDim],
+                                              self.nSymbols, symDim,
                                               reversePass=reversePass,
                                               conceptualSpace=self.conceptualSpace,
                                               processSymbols=self.processSymbols,
@@ -2048,7 +2143,7 @@ class BasicModel(BaseModel):
             nOutputSymbols += self.symbolicOrder * self.nSymbols
             self.spaces.extend([self.syntacticSpace3, self.symbolicSpace3])
             
-        self.outputSpace     = OutputSpace([nOutputSymbols, TheObjectEncoding.symbolDim],
+        self.outputSpace     = OutputSpace([nOutputSymbols, symDim],
                                            [self.nOutput, TheObjectEncoding.outputDim],
                                            self.nOutput, TheObjectEncoding.outputDim,
                                            reversePass=reversePass, data=data)
@@ -2208,12 +2303,15 @@ class BasicModel(BaseModel):
         outErr    = 0
         inErr     = 0
         self.train(training)
+        nBatches = (len(input) + batchSize - 1) // batchSize
         ctx = torch.no_grad() if not training else nullcontext()
         with ctx:
-            for i in range(0, len(input), batchSize):
+            for batchIdx, i in enumerate(range(0, len(input), batchSize)):
+                if training and batchIdx % 100 == 0:
+                    print(f"  batch {batchIdx}/{nBatches}", end="\r", flush=True)
                 inputBatch  = input[i:i + batchSize]
                 outputBatch = output[i:i + batchSize]
-                batchSize   = len(inputBatch)
+                actualBatch = len(inputBatch)
 
                 inputTensor  = self.inputSpace.prepInput(inputBatch)
                 outputTensor = self.outputSpace.prepOutput(outputBatch)
@@ -2346,7 +2444,7 @@ class BasicModelFactory:
                 wpath = os.path.join(ProjectPaths.PROJECT_DIR, wpath)
             m.save_weights(wpath)
 
-        return m
+        return [(m.name, m.rCorrect, m)]
 
 def test():
     PositionalEncoding.test()
@@ -2373,6 +2471,6 @@ if __name__ == "__main__":
         # Single run mode
         xml = BasicModelFactory.resolve_xml(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml")
         TheReport.add_xml(xml)
-        BasicModelFactory.run(xml)
+        results = BasicModelFactory.run(xml)
 
     TheReport.write_html()
