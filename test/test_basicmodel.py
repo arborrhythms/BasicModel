@@ -1230,5 +1230,39 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         self.assertIsInstance(result, (torch.Tensor, list))
 
 
+class TestLegacyTokenizationRemoval(unittest.TestCase):
+    """Task 7: Data.tokenize() removed; LanguageModel legacy methods still exist."""
+
+    def test_data_has_no_tokenize_method(self):
+        """Data.tokenize() was dead code and has been removed."""
+        from BasicModel import Data
+        data = Data()
+        self.assertFalse(hasattr(data, 'tokenize'),
+                         "Data.tokenize() should have been removed")
+
+    def test_language_model_tokenize_still_exists(self):
+        """LanguageModel.tokenize() is still needed by the non-lex code path."""
+        from BasicModel import LanguageModel
+        self.assertTrue(hasattr(LanguageModel, 'tokenize'))
+
+    def test_language_model_tokenize_list_still_exists(self):
+        """LanguageModel.tokenizeList() is still needed by create()."""
+        from BasicModel import LanguageModel
+        self.assertTrue(hasattr(LanguageModel, 'tokenizeList'))
+
+    def test_language_model_untokenize_still_exists(self):
+        """LanguageModel.untokenize() is still needed by the non-lex code path."""
+        from BasicModel import LanguageModel
+        self.assertTrue(hasattr(LanguageModel, 'untokenize'))
+
+    def test_data_loads_without_tokenize(self):
+        """Data loading (XOR) works without Data.tokenize()."""
+        from BasicModel import Data
+        data = Data()
+        data.load("xor")
+        self.assertGreater(len(data.train_input), 0)
+        self.assertTrue(hasattr(data, 'train_source'))
+
+
 if __name__ == "__main__":
     unittest.main()

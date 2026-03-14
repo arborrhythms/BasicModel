@@ -706,7 +706,6 @@ class Data():
             torch.save(data, cache_file)
         self.processLM(data)
     def processLM(self, data, permute=True):
-        # tokenize the sentences
         train_tokens      = data["train"]["text"]
         train_labels      = data["train"]["label"]
         validation_tokens = data["validation"]["text"]
@@ -734,10 +733,6 @@ class Data():
             self.train_input  = [self.train_input[i] for i in rand_indx]
             self.train_output = [self.train_output[i] for i in rand_indx]
 
-    def tokenize(self, TheLanguageModel):
-        self.train_input      = TheLanguageModel.tokenize(self.train_input)
-        self.validation_input = TheLanguageModel.tokenize(self.validation_input)
-        self.test_input       = TheLanguageModel.tokenize(self.test_input)
     def data(self):
         data = {
             "train": {
@@ -1146,38 +1141,23 @@ class ReversibleDictionary(VectorSet):
                 if self.talking:
                     message(word, newline = " " if v!=nVec-1 else "\n")
         words = self.LM.untokenize(untokenizedWords)
-
-        #p = []
-        #for b in range(batch):
-        #    s = []
-        #    for v in range(nVec):
-        #        vec = y[b,v,:].unsqueeze(0)
-        #       quant, index, _ = self.vq( vec,  )
-        #        s.append(self.words[index])
-        #    p.append(self.flatten(s))
-        #words = p # self.LM.untokenize(p)
-        #if self.talking:
-        #    message(words)
-        return  words
+        return words
 # This class assumes that the perceptual space is a dictionary full of word embeddings.
 class LanguageModel(VectorSet):
     maxTokens = 0
     talking   = True
 
+    # Legacy: will be removed when Lex fully replaces this code path
     def tokenize(self, data):
         tokenized = []
         for b in range(len(data)):
             sentence = "".join(chr(i) for i in data[b].tolist())
             sentence = sentence.rstrip("\x00")
             t = sentence.split(" ")
-            #tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-            #t = tokenizer.tokenize(sentence)
-            # compute the maximum number of tokens in a sentence
             self.maxTokens = max(self.maxTokens, len(t))
             tokenized.append(t)
-        # if self.maxTokens > self.nInput:
-        #    assert("word was clipped")
-        return tokenized  # tokenize the sentences, and compute the maximum number of tokens
+        return tokenized
+    # Legacy: will be removed when Lex fully replaces this code path
     def tokenizeList(self, data):
         tokenized = []
         for b in range(len(data)):
@@ -1189,9 +1169,9 @@ class LanguageModel(VectorSet):
         vocab.append(" ")
         vocab.append("\x00")
         return vocab
+    # Legacy: will be removed when Lex fully replaces this code path
     def untokenize(self, tokenized):
         data = []
-        speech = ""
         for b in range(len(tokenized)):
             sentence = ""
             for w in range(self.nVectors):
@@ -1199,9 +1179,6 @@ class LanguageModel(VectorSet):
                 if w < self.nVectors - 1:
                     sentence += " "
             data.append(TheData.stringTensor(sentence))
-            speech += sentence
-        #if self.talking:
-        #    message(speech)
         data = torch.stack(data)
         return data.unsqueeze(1)
     def getVectors(self):
