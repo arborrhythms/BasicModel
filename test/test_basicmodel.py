@@ -801,9 +801,8 @@ class TestDataSourceBuffer(unittest.TestCase):
         """Numeric datasets should not have a source buffer."""
         from BasicModel import Data
         data = Data()
-        data.load("simple")
-        self.assertFalse(hasattr(data, 'train_source') and
-                         data.train_source is not None)
+        data.load("mnist")
+        self.assertIsNone(data.train_source)
 
 
 class TestSymbolDimZeroPassthrough(unittest.TestCase):
