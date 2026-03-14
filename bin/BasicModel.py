@@ -477,6 +477,7 @@ class VectorSet(nn.Module):
         self.customVQ    = customVQ
         self.signed      = signed
         self.passThrough = passThrough
+        self.alpha       = 0
         if nDim != None:
             self.embeddingSize = TheObjectEncoding.getEmbeddingSize(nDim)
         if passThrough:
@@ -528,9 +529,9 @@ class VectorSet(nn.Module):
             for i in range(0, nVec):
                 vec[i, :] = F.normalize(TheObjectEncoding(vec[i, :].unsqueeze(0).unsqueeze(0)), p=2, dim=1)
             self.vectors = vec[:, :]
-    def forward(self, input, t=0):
+    def forward(self, input):
         if self.passThrough:
-            return self._passthroughForward(input, t)
+            return self._passthroughForward(input)
         # X should be of size batch x nInput x nDim
         # Pad X if necessary
         x     = input
@@ -564,7 +565,7 @@ class VectorSet(nn.Module):
                         x[i, j, :] = quantized[i, indices_smallest[i, j], :]
                         # Is this filling the entire activation matrix properly (on the LHS)?
                         assert torch.all(indices_smallest < self.codebookSize), "activation dimension is not correct."
-                        act[i, indices_smallest[i, j]] = cosSim + t * random.random()
+                        act[i, indices_smallest[i, j]] = cosSim + self.alpha * random.random()
                     else:
                         #message("codebook miss")
                         x[i, j, :] = quantized[i, indices_smallest[i, j], :]
@@ -597,10 +598,10 @@ class VectorSet(nn.Module):
                 act[b, unfrozen] = 0
             self.freeze(activations = self.codebookAct.get())
         return x
-    def _passthroughForward(self, x, t=0):
+    def _passthroughForward(self, x):
         """PassThrough forward: identity transform, skipping quantization."""
         return x
-    def reverse(self, y, t=0):
+    def reverse(self, y):
         if self.passThrough:
             return y
         return y  # existing VectorSet has no explicit reverse beyond identity
@@ -893,7 +894,7 @@ class Embedding(VectorSet):
     def getSize(self):
         return len(self.wv)
 
-    def forward(self, input, t=0):
+    def forward(self, input):
         """Look up token embeddings via nn.Embedding (differentiable).
 
         Input: (batch, max_len) byte tensor from Data.
@@ -932,7 +933,7 @@ class Embedding(VectorSet):
         self.wv = self.cbow.to_word_vectors()
         return self.wv
 
-    def reverse(self, y, t=0.0):
+    def reverse(self, y):
         """Map embedding vectors back to nearest words, return as byte tensor."""
         wv = self.cbow.to_word_vectors()
         similarWords = [["" for _ in range(self.nVectors)] for _ in range(self.batch)]
@@ -950,7 +951,7 @@ class Space(nn.Module):
     activation   = None
     processSymbols = False
 
-    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=False, customVQ=True, nPrototypes=0, reversePass=False, processSymbols=False):
+    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=False, customVQ=True, nPrototypes=0, reversePass=False, processSymbols=False, reshape=False):
         super(Space, self).__init__()
         self.inputShape   = inputShape
         self.outputShape  = outputShape
@@ -964,12 +965,16 @@ class Space(nn.Module):
         self.nPrototypes  = nPrototypes
         self.reversePass = reversePass
         self.processSymbols = processSymbols
+        self.reshape      = reshape
         self.params = []
         self.layers = []
 
     def getEmbeddedIO(self):
         input  = TheObjectEncoding.getEmbeddingSize(self.inputShape[1])
         output = TheObjectEncoding.getEmbeddingSize(self.outputShape[1])
+        if self.reshape:
+            input  *= self.inputShape[0]
+            output *= self.outputShape[0]
         return input, output
     def lookup(self, x):
         activation = x[0]
@@ -1007,41 +1012,32 @@ class Space(nn.Module):
             vs = VectorSet()
             vs.create(self.inputShape[0], self.nVectors, self.nDim, passThrough=True)
             self.vectorSet.append(vs)
-    def forwardBegin(self, x, t=0.0, reshape=False):
+    def forwardBegin(self, x):
         self.batch = x.shape[0]
-        # Anneal temperature on all ergodic layers in this Space
-        if t > 0:
-            for l in self.layers:
-                if hasattr(l, 'global_temp_anneal'):
-                    l.global_temp_anneal(t)
-        if reshape:
+        if self.reshape:
             x = self.flatten(x, True)
-            # assert list(x.shape) == [self.batch, self.inputShape[0] *self.inputShape[1]]
         else:
             input, _ = self.getEmbeddedIO()
             assert list(x.shape) == [self.batch, self.inputShape[0], input]
         return x
-    def forwardEnd(self, x, t=0.0, reshape=False):
-        if reshape:
-            x = self.reshape(x, True)
+    def forwardEnd(self, x):
+        if self.reshape:
+            x = self.unflatten(x, True)
         else:
-        #    if x.shape[-1] == self.nDim: # zero-pad vectors without a position.
-        #        # x = TheObjectEncoding.forward(x)
-        #        x = torch.cat([x, torch.zeros([x.shape[0], x.shape[1], TheObjectEncoding.objectSize])], dim=2)
             _, output = self.getEmbeddedIO()
-            assert list(x.shape)==[self.batch, self.outputShape[0], output]
+            assert list(x.shape)==[self.batch, self.outputShape[0], output], f"{self.__class__.__name__} forwardEnd: got {list(x.shape)}, expected {[self.batch, self.outputShape[0], output]}"
         return x
-    def reverseBegin(self, y, t=0.0, reshape=False):
+    def reverseBegin(self, y):
         self.batch = y.shape[0]
-        if reshape:
+        if self.reshape:
             y = self.flatten(y, False)
         else:
             _, output = self.getEmbeddedIO()
             assert list(y.shape) == [self.batch, self.outputShape[0], output]
         return y
-    def reverseEnd(self, y, t=0.0, reshape=False):
-        if reshape:
-            y = self.reshape(y, False)
+    def reverseEnd(self, y):
+        if self.reshape:
+            y = self.unflatten(y, False)
         else:
             input, _ = self.getEmbeddedIO()
             assert list(y.shape) == [self.batch, self.inputShape[0], input]
@@ -1049,17 +1045,25 @@ class Space(nn.Module):
     def flatten(self, x, forward=True):
         input, output = self.getEmbeddedIO()
         if forward:
-            x = x.reshape(self.batch, self.inputShape[0] * input)
+            x = x.reshape(self.batch, input)
         else:
-            x = x.reshape(self.batch, self.outputShape[0] * self.outputShape[1])
+            x = x.reshape(self.batch, output)
         return x
-    def reshape(self, y, forward=True):
+    def unflatten(self, y, forward=True):
         input, output = self.getEmbeddedIO()
         if forward:
-            y = y.reshape(self.batch, self.outputShape[0], self.outputShape[1])
+            y = y.reshape(self.batch, self.outputShape[0], output // self.outputShape[0])
         else:
-            y = y.reshape(self.batch, self.inputShape[0], input)
+            y = y.reshape(self.batch, self.inputShape[0], input // self.inputShape[0])
         return y
+    def setAlpha(self, alpha):
+        """alpha 1→0: explore→exploit."""
+        self.alpha = alpha  # VectorSet jitter: high when exploring, zero when exploiting
+        for l in self.layers:
+            if hasattr(l, 'setAlpha'):
+                l.setAlpha(alpha)
+        for vs in self.vectorSet:
+            vs.alpha = self.alpha
     def getParameters(self):
         return self.params
     def paramUpdate(self):
@@ -1145,14 +1149,14 @@ class InputSpace(Space):
     def shuffle(self):
         self.data.shuffle()
     # The world presenting itself
-    def forward(self, input, t=0, mask=None):
+    def forward(self, input, mask=None):
         self.batch = input.shape[0]
         if hasattr(self, 'lex'):
             self.input = self._forward_lex(input)
         else:
             if not isinstance(self.vectors(), Embedding):
                 assert list(input.shape) == [self.batch, self.inputShape[0], self.inputShape[1]]
-            self.input = self.vectors().forward(input, t)
+            self.input = self.vectors().forward(input)
         _, output = self.getEmbeddedIO()
         assert list(self.input.shape) == [self.batch, self.outputShape[0], output]
         return self.input
@@ -1219,14 +1223,14 @@ class InputSpace(Space):
         self._recovered_times = times
         return content
 
-    def reverse(self, y, t=0):
-        y = self.reverseBegin(y, t)
+    def reverse(self, y):
+        y = self.reverseBegin(y)
         if hasattr(self, 'lex'):
             content = self._reverse_lex(y)
             self.input = content
             self.reconstructed = self.input.detach()
         else:
-            self.input = self.vectors().reverse(y, t)
+            self.input = self.vectors().reverse(y)
             self.reconstructed = self.input.detach()
         return self.input
 
@@ -1254,25 +1258,26 @@ class InputSpace(Space):
         return result
 class PerceptualSpace(Space):
     name = "Percepts"
-    hasAttention = True
 
-    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False, passThrough=False):
-        super(PerceptualSpace, self).__init__(inputShape, outputShape, nVectors, nDim, useVQ=useVQ, nPrototypes=nPrototypes, reversePass=reversePass, processSymbols=processSymbols)
+    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False, passThrough=False, reshape=False, ergodic=False, hasAttention=True):
+        super(PerceptualSpace, self).__init__(inputShape, outputShape, nVectors, nDim, useVQ=useVQ, nPrototypes=nPrototypes, reversePass=reversePass, processSymbols=processSymbols, reshape=reshape)
         self.passThrough = passThrough
+        self.ergodic = ergodic
+        self.hasAttention = hasAttention
         if passThrough:
             return
         input, output = self.getEmbeddedIO()
-        self.attention = AttentionLayer(self.nDim, self.nDim)
-        if reversePass:
+        self.attention = AttentionLayer(output, output)
+        if self.reversePass:
             if inputShape[0]*2 == nVectors:
-                self.pi  = ReversiblePiLayer(input, self.nDim, permuteInput=False)  # Hidden layer using PiLayer
+                self.pi  = ReversiblePiLayer(input, output)
                 self.forwardPi, self.reversePi = self.pi.forward, self.pi.reverse
             else:
-                self.pi1      = PiLayer(input, self.nDim, permuteInput=False)  # Hidden layer using PiLayer
-                self.pi2      = PiLayer(self.nDim, input, permuteInput=False)  # Hidden layer using PiLayer
+                self.pi1      = PiLayer(input, output, ergodic=ergodic)
+                self.pi2      = PiLayer(output, input, ergodic=ergodic)
                 self.forwardPi, self.reversePi = self.pi1.forward, self.pi2.forward
         else:
-            self.pi        = PiLayer(input, self.nDim, permuteInput=False)  # Hidden layer using PiLayer
+            self.pi        = PiLayer(input, output, ergodic=ergodic)
             self.forwardPi = self.pi.forward
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
         self.createVectorSet()
@@ -1285,72 +1290,63 @@ class PerceptualSpace(Space):
     def certainty(self, x):
         pass
     # Perception
-    def forward(self, x, t=0):
+    def forward(self, x):
         if self.passThrough:
             self.batch = x.shape[0]
             return x
-        x = self.forwardBegin(x, t)
+        x = self.forwardBegin(x)
         x = self.forwardPi(x)
         if self.hasAttention:
-            x = self.attention.forward(x, t)
+            x = self.attention.forward(x)
         if self.useVQ:
-            x  = self.vectors().forward(x , t)
+            x  = self.vectors().forward(x)
         if self.processSymbols:
             # Turn the percept dimensionality into the symbol dimensionality, but preserve the codebook's positional encoding
             encoding = x[:,:,-TheObjectEncoding.objectSize:]
             x = torch.norm( x[:,:,0:-TheObjectEncoding.objectSize], dim=2 ) / (2*self.nVectors)
             x = x.unsqueeze(-1)
             x = torch.concatenate((x, encoding), dim=2)
-        self.percepts = self.forwardEnd(x,t)
+        self.percepts = self.forwardEnd(x)
         #self.stats(x)
         return self.percepts
     # Manifesting
-    def reverse(self, y, t=0):
+    def reverse(self, y):
         if self.passThrough:
             return y
+        if self.reversePass:
+            y = self.reverseBegin(y)
+            y = self.reversePi(y)
+            y = self.reverseEnd(y)
         return y
     @staticmethod
     def test():
         pass
 class ConceptualSpace(Space):
     name = "Concepts"
-    hasAttention = False
 
-    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False, invertible=False, hasNorm=False, ergodic=False):
-        super(ConceptualSpace, self).__init__(inputShape, outputShape, nVectors, nDim, useVQ=useVQ, nPrototypes=nPrototypes, reversePass=reversePass, processSymbols=processSymbols)
+    def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False, invertible=False, hasNorm=False, ergodic=False, reshape=False, hasAttention=False):
+        super(ConceptualSpace, self).__init__(inputShape, outputShape, nVectors, nDim, useVQ=useVQ, nPrototypes=nPrototypes, reversePass=reversePass, processSymbols=processSymbols, reshape=reshape)
         self.ergodic = ergodic
-        # When objectSize==0 and vector counts differ between input and output,
-        # the sigma must operate on *flattened* vectors (nVectors*nDim) so it
-        # can change both count and dimension (matching DerivedConceptualSpace).
-        self._ergodic_flat = (TheObjectEncoding.objectSize == 0
-                              and inputShape[0] != outputShape[0])
-        if self._ergodic_flat:
-            input  = self.inputShape[0] * self.inputShape[1]
-            output = self.outputShape[0] * self.outputShape[1]
-        else:
-            input, output = self.getEmbeddedIO()
+        self.hasAttention = hasAttention
+        input, output = self.getEmbeddedIO()
         self.hasNorm = hasNorm
-        if self._ergodic_flat:
-            self.attention = AttentionLayer(output, output)
-        else:
-            self.attention = AttentionLayer(output, output)
+        self.attention = AttentionLayer(output, output)
         if hasNorm:
             self.norm = NormLayer(input, input + 2)
             input += 2
-        sigmaOut = output if self._ergodic_flat else self.nDim
         if invertible:
-            self.sigma = ReversibleSigmaLayer(input, sigmaOut, permuteInput=False)
+            self.sigma = ReversibleSigmaLayer(input, output)
             self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
             self.params = self.sigma.getParameters()
             self.layers = [self.sigma]
         elif reversePass:
-            self.sigma1 = SigmaLayer(input, sigmaOut, permuteInput=False, deterministic=not ergodic)
-            self.sigma2 = SigmaLayer(sigmaOut, input, permuteInput=False, deterministic=not ergodic)
+            self.sigma1 = SigmaLayer(input, output, ergodic=ergodic)
+            self.sigma2 = SigmaLayer(output, input, ergodic=ergodic)
             self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.forward
             self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
             self.layers = [self.sigma1, self.sigma2]
         else:
-            self.sigma = SigmaLayer(input, sigmaOut, permuteInput=False, deterministic=not ergodic)
+            self.sigma = SigmaLayer(input, output, ergodic=ergodic)
             self.forwardSigma = self.sigma.forward
             self.params = self.sigma.getParameters()
             self.layers = [self.sigma]
@@ -1365,20 +1361,17 @@ class ConceptualSpace(Space):
     def certainty(self, x):
         return x.T @ x
     # Knowing
-    def forward(self, x, t=0):
-        x = self.forwardBegin(x, t, reshape=self._ergodic_flat)
+    def forward(self, x):
+        x = self.forwardBegin(x)
         if self.hasNorm:
             x = self.norm.forward(x)
         y = self.forwardSigma(x) # Pass through SigmaLayer
         if self.hasAttention:
-            if self._ergodic_flat:
-                y = self.attention.forward(y)
-            else:
-                y = self.attention.forward(y, t)
+            y = self.attention.forward(y)
         # Get the concept vectors from the codebook
         # replace some of the Dynamic Percepts with Static Percepts if their distance is low
         if self.useVQ:
-            y = self.vectors().forward(y, t) # This must be 4x8x24
+            y = self.vectors().forward(y) # This must be 4x8x24
         if self.processSymbols:
             # Turn the concept dimensionality into the symbol dimensionality, but preserve the codebook's positional encoding
             encoding = y[:,:,-TheObjectEncoding.objectSize:]
@@ -1386,21 +1379,18 @@ class ConceptualSpace(Space):
             y = y.unsqueeze(-1)
             y = torch.concatenate((y, encoding), dim=2)
         # Reshape the output tensor
-        self.concepts = self.forwardEnd(y, t, reshape=self._ergodic_flat)
+        self.concepts = self.forwardEnd(y)
         #self.stats(x)
         return self.concepts
     # Visualizing
-    def reverse(self, y, t=0):
-        self.concepts = self.reverseBegin(y, t, reshape=self._ergodic_flat)
+    def reverse(self, y):
+        self.concepts = self.reverseBegin(y)
         # we are receiving symbols, and we turn them into concepts.
         if self.processSymbols:
             self.concepts = self.dereference(self.concepts)
         if self.hasAttention:
-            if self._ergodic_flat:
-                self.concepts = self.attention.reverse(self.concepts)
-            else:
-                self.concepts = self.attention.reverse(self.concepts, t)
-        if self._ergodic_flat:
+            self.concepts = self.attention.reverse(self.concepts)
+        if self.reshape:
             # Flattened path — no object encoding to strip
             self.concepts = self.reverseSigma(self.concepts)
         else:
@@ -1413,7 +1403,7 @@ class ConceptualSpace(Space):
         if self.hasNorm:
             self.concepts = self.norm.reverse(self.concepts)
         #self.concepts = torch.concatenate((self.concepts, encoding), dim=2)
-        self.concepts = self.reverseEnd(self.concepts, t, reshape=self._ergodic_flat)
+        self.concepts = self.reverseEnd(self.concepts)
         return self.concepts
     @staticmethod
     def test():
@@ -1426,8 +1416,8 @@ class SymbolicSpace(Space):
 
     # The current implementation merely symbolizes all concepts.
     # Therefore, no symbol learning is necessary.
-    def __init__(self, inputShape, outputShape, nVectors, nDim, reversePass=False, conceptualSpace=None, processSymbols=False, passThrough=False):
-        super(SymbolicSpace, self).__init__( inputShape, outputShape, nVectors, nDim, customVQ=True, reversePass=reversePass, processSymbols=processSymbols)
+    def __init__(self, inputShape, outputShape, nVectors, nDim, reversePass=False, conceptualSpace=None, processSymbols=False, passThrough=False, reshape=False):
+        super(SymbolicSpace, self).__init__( inputShape, outputShape, nVectors, nDim, customVQ=True, reversePass=reversePass, processSymbols=processSymbols, reshape=reshape)
         assert(inputShape[0] == nVectors) # 1:1 mapping
         self.conceptualSpace = conceptualSpace
         self.passThrough = passThrough
@@ -1457,23 +1447,23 @@ class SymbolicSpace(Space):
         return activations
 
     # Naming
-    def forward(self, x, t=0):
-        self.symbols = self.forwardBegin(x, t)
+    def forward(self, x):
+        self.symbols = self.forwardBegin(x)
         if not self.passThrough:
             if self.processSymbols: # reduce the embedding vector to the symbolic encoding
                 self.symbols = self.computeActivation(self.symbols)
             self.symbols = self.discretize(self.symbols)
-        self.symbols = self.forwardEnd(self.symbols, t)
+        self.symbols = self.forwardEnd(self.symbols)
         if self.useVQ:
-            self.symbols  = self.vectors().forward(self.symbols , t)
+            self.symbols  = self.vectors().forward(self.symbols)
         return self.symbols
     # Interpretation
-    def reverse(self, y, t=0):
-        self.symbols = self.reverseBegin(y,t)
+    def reverse(self, y):
+        self.symbols = self.reverseBegin(y)
         if not self.passThrough:
             if self.processSymbols: # map the symbolic encoding to the embedding vector
                 self.symbols = self.conceptualSpace.dereference(self.symbols)
-        self.symbols = self.reverseEnd(self.symbols, t)
+        self.symbols = self.reverseEnd(self.symbols)
         return self.symbols
 
     @staticmethod
@@ -1506,15 +1496,15 @@ class SyntacticSpace(Space):
             activations = x
         return activations
     # Naming
-    def forward(self, x, t=0):
-        self.symbols = self.forwardBegin(x, t)
+    def forward(self, x):
+        self.symbols = self.forwardBegin(x)
         #self.symbols = self.computeActivation(self.symbols)
-        self.symbols = self.forwardEnd(self.symbols, t)
+        self.symbols = self.forwardEnd(self.symbols)
         return self.symbols
     # Interpretation
-    def reverse(self, y, t=0):
-        self.symbols = self.reverseBegin(y,t)
-        self.symbols = self.reverseEnd(self.symbols, t)
+    def reverse(self, y):
+        self.symbols = self.reverseBegin(y)
+        self.symbols = self.reverseEnd(self.symbols)
         return self.symbols
 
     @staticmethod
@@ -1523,16 +1513,19 @@ class SyntacticSpace(Space):
 class OutputSpace(Space):
     name = "Outputs"
     text_mode = False
+    def getEmbeddedIO(self):
+        # Output maps to raw target dimensions (no embedding overhead)
+        input = TheObjectEncoding.getEmbeddingSize(self.inputShape[1])
+        output = self.outputShape[1]
+        if self.reshape:
+            input  *= self.inputShape[0]
+            output *= self.outputShape[0]
+        return input, output
     def __init__(self, inputShape, outputShape, nVectors, nDim, reversePass=False, data=None):
-        super(OutputSpace, self).__init__(inputShape, outputShape, nVectors, nDim)
+        super(OutputSpace, self).__init__(inputShape, outputShape, nVectors, nDim, reshape=True)
         self.data = data
         self.text_mode = False
         input, output = self.getEmbeddedIO()
-        # the output is reshaped, so we can't use the above formula
-        input  = self.inputShape[0]  * input
-        output = self.outputShape[0] * self.outputShape[1]
-
-        # output is 0 of reshaped and not embedded
         if reversePass:
             self.linear1 = LinearLayer(input, output)
             self.linear2 = LinearLayer(output, input)
@@ -1555,21 +1548,20 @@ class OutputSpace(Space):
             return torch.stack(outputBatch, dim=0).unsqueeze(1).to(TheDevice)
         return outputBatch  # already [B, D, 1] and on device after toDevice()
     # Acting
-    def forward(self, x, t=0):
-        y = super().forwardBegin(x, t, reshape=True)
+    def forward(self, x):
+        y = super().forwardBegin(x)
         # input is batch x nConcepts
         output = self.forwardLinear(y)
-        output = self.forwardEnd(output, t, reshape=True)
+        output = self.forwardEnd(output)
         if self.useVQ:
-            self.output  = self.vectors().output(self.percepts , t)
+            self.output  = self.vectors().output(self.percepts)
         self.predicted = output.detach()
         return output
     # Being acted upon
-    def reverse(self, y, t=0):
-        y = self.reverseBegin(y, t, reshape=True)
-        #assert list(y.shape) == [self.batch, self.outputShape[0], self.outputShape[1]]
+    def reverse(self, y):
+        y = self.reverseBegin(y)
         y = self.reverseLinear(y)
-        output = self.reverseEnd(y, t, reshape=True)
+        output = self.reverseEnd(y)
         return output
     # --- Text reconstruction from symbolic vectors ---
     def set_text_mode(self, input_space):
@@ -1767,6 +1759,9 @@ class BaseModel(nn.Module):
                        hasNorm=self.hasNorm,
                        conceptualOrder=self.conceptualOrder, symbolicOrder=self.symbolicOrder,
                        processSymbols=self.processSymbols,
+                       reshape=self.reshape,
+                       perceptHasAttention=self.perceptHasAttention,
+                       conceptHasAttention=self.conceptHasAttention,
                        model_type=self.model_type, data=self.data,
                        pretrained=self.pretrained)
             acc[trial, :] = self.run(numEpochs=numEpochs, batchSize=batchSize, lr=lr)
@@ -1776,6 +1771,10 @@ class BaseModel(nn.Module):
     def paramUpdate(self):
         for s in self.spaces:
             s.paramUpdate()
+
+    def setAlpha(self, alpha):
+        for s in self.spaces:
+            s.setAlpha(alpha)
 
     def save_weights(self, path=None):
         """Persist model weights and ergodic state to disk."""
@@ -1803,9 +1802,10 @@ class BaseModel(nn.Module):
     def mnistReport(self):
         """Run test epoch, compute per-digit accuracy, and plot."""
         test_input, test_output = self.inputSpace.getTestData()
+        self.setAlpha(0.0)  # fully deterministic for evaluation
         _, _, y_pred, last_x_pred = self.runEpoch(test_input, test_output, lr=0)
-        if y_pred.dim() == 1:
-            predicted = (y_pred > 0.5).long()
+        if y_pred.dim() == 1 or y_pred.shape[-1] == 1:
+            predicted = (y_pred.squeeze() > 0.5).long()
             actual = (self.outputSpace.getTestOutput().squeeze() > 0.5).long()
         else:
             _, predicted = torch.max(y_pred, 1)
@@ -1852,7 +1852,8 @@ class BaseModel(nn.Module):
     def _reconstructionReport(self):
         """Run a test pass with reverse and report input vs reconstructed text."""
         test_input, test_output = self.inputSpace.getTestData()
-        _, _, allOut, _ = self.runEpoch(test_input, test_output, lr=0, batchSize=len(test_input), t=1.0)
+        self.setAlpha(0.0)  # fully deterministic for evaluation
+        _, _, allOut, _ = self.runEpoch(test_input, test_output, lr=0, batchSize=len(test_input))
 
         rows = []
         for i in range(len(test_input)):
@@ -1941,6 +1942,9 @@ class BasicModel(BaseModel):
             conceptualOrder=arch["conceptualOrder"],
             symbolicOrder=arch["symbolicOrder"],
             processSymbols=arch["processSymbols"],
+            reshape=arch.get("reshape", False),
+            perceptHasAttention=arch.get("perceptHasAttention", True),
+            conceptHasAttention=arch.get("conceptHasAttention", False),
             model_type=model_type, data=data, pretrained=pretrained,
             tokenizer=arch.get("tokenizer", "traditional"),
         )
@@ -1961,6 +1965,8 @@ class BasicModel(BaseModel):
                # NOTE: self.spaces is cleared below to prevent accumulation across
                # repeated create() calls (class-level list was never reset).
                conceptualOrder=0, symbolicOrder=0, processSymbols=False,
+               reshape=False,
+               perceptHasAttention=True, conceptHasAttention=False,
                model_type="simple", data=None, pretrained=False,
                tokenizer="traditional"):
         self.spaces = []  # reset — prevent stale accumulation from prior create() calls
@@ -1987,6 +1993,9 @@ class BasicModel(BaseModel):
         self.conceptualOrder  = conceptualOrder
         self.symbolicOrder    = symbolicOrder
         self.processSymbols   = processSymbols
+        self.reshape          = reshape
+        self.perceptHasAttention = perceptHasAttention
+        self.conceptHasAttention = conceptHasAttention
 
         nOutputSymbols = self.nSymbols
         self.inputSpace      = InputSpace([self.nInput, TheObjectEncoding.inputDim],
@@ -2002,7 +2011,10 @@ class BasicModel(BaseModel):
                                                reversePass=reversePass,
                                                nPrototypes=perceptPrototypes,
                                                useVQ=self.quantized,
-                                               passThrough=perceptPassThrough)
+                                               passThrough=perceptPassThrough,
+                                               reshape=reshape,
+                                               ergodic=self.ergodic,
+                                               hasAttention=self.perceptHasAttention)
         self.conceptualSpace = ConceptualSpace([self.nPercepts, TheObjectEncoding.perceptDim],
                                                [self.nConcepts, TheObjectEncoding.conceptDim],
                                                self.nConcepts, TheObjectEncoding.conceptDim,
@@ -2011,7 +2023,9 @@ class BasicModel(BaseModel):
                                                invertible=self.invertible,
                                                hasNorm=self.hasNorm,
                                                ergodic=self.ergodic,
-                                               useVQ=self.quantized)
+                                               useVQ=self.quantized,
+                                               reshape=reshape,
+                                               hasAttention=self.conceptHasAttention)
         if symbolPassThrough:
             TheObjectEncoding.setSymbolDim(0)
 
@@ -2024,7 +2038,8 @@ class BasicModel(BaseModel):
                                               reversePass=reversePass,
                                               conceptualSpace=self.conceptualSpace,
                                               processSymbols=self.processSymbols,
-                                              passThrough=symbolPassThrough)
+                                              passThrough=symbolPassThrough,
+                                              reshape=reshape)
         self.spaces.extend([self.inputSpace, self.perceptualSpace, self.conceptualSpace, self.symbolicSpace])
 
         if self.conceptualOrder == 1:
@@ -2074,80 +2089,80 @@ class BasicModel(BaseModel):
 
         self.to(TheDevice)
 
-    def Start(self, data, t=0.0):
-        input = self.inputSpace(data, t)
-        percepts = self.perceptualSpace(input, t)
-        concepts = self.conceptualSpace(percepts, t)
-        symbols = self.symbolicSpace(concepts, t)
+    def Start(self, data):
+        input = self.inputSpace(data)
+        percepts = self.perceptualSpace(input)
+        concepts = self.conceptualSpace(percepts)
+        symbols = self.symbolicSpace(concepts)
         if self.plot:
             TheReport.plotActivations(figure=1, concepts=concepts)
         return concepts, input, symbols
-    def StartReverse(self, concepts, input, symbols, t=0.0):
-        concepts = self.symbolicSpace.reverse(symbols, t)
-        percepts = self.conceptualSpace.reverse(concepts, t)
-        input = self.perceptualSpace.reverse(percepts, t)
-        data  = self.inputSpace.reverse(input, t)
+    def StartReverse(self, concepts, input, symbols):
+        concepts = self.symbolicSpace.reverse(symbols)
+        percepts = self.conceptualSpace.reverse(concepts)
+        input = self.perceptualSpace.reverse(percepts)
+        data  = self.inputSpace.reverse(input)
         return data, input
-    def SubsymbolicThought(self, data, t=0.0):
-        percepts = self.perceptualSpace2(data, t)
-        concepts = self.conceptualSpace2(percepts, t)
-        symbols  = self.symbolicSpace2(concepts, t)
+    def SubsymbolicThought(self, data):
+        percepts = self.perceptualSpace2(data)
+        concepts = self.conceptualSpace2(percepts)
+        symbols  = self.symbolicSpace2(concepts)
         if self.plot:
             TheReport.plotActivations(figure=1, percepts=percepts, concepts=concepts)
         return concepts, symbols
-    def SubsymbolicThoughtReverse(self, concepts, symbols, t=0.0):
-        concepts = self.symbolicSpace2.reverse(symbols, t)
-        percepts = self.conceptualSpace2.reverse(concepts, t)
+    def SubsymbolicThoughtReverse(self, concepts, symbols):
+        concepts = self.symbolicSpace2.reverse(symbols)
+        percepts = self.conceptualSpace2.reverse(concepts)
         # perceptualSpace2.reverse is a no-op for now (attention shape mismatch)
         return percepts
-    def SymbolicThought(self, data, t=0.0):
-        words   = self.syntacticSpace3(data, t)
-        symbols = self.symbolicSpace3(words, t)
+    def SymbolicThought(self, data):
+        words   = self.syntacticSpace3(data)
+        symbols = self.symbolicSpace3(words)
         if self.plot:
             TheReport.plotActivations(figure=1, symbols=symbols)
         return symbols, words
-    def SymbolicThoughtReverse(self, symbols, words, t=0.0):
-        symbols = self.syntacticSpace3.reverse(words, t)
-        data    = self.symbolicSpace3.reverse(symbols, t)
+    def SymbolicThoughtReverse(self, symbols, words):
+        symbols = self.syntacticSpace3.reverse(words)
+        data    = self.symbolicSpace3.reverse(symbols)
         return data
-    def Finish(self, symbols, t=0.0):
+    def Finish(self, symbols):
             self.words = symbols
-            data = self.outputSpace(symbols, t)
+            data = self.outputSpace(symbols)
             if self.plot:
                 TheReport.plotActivations(figure=1, symbols=symbols)
             return data
-    def FinishReverse(self, data, t=0.0):
+    def FinishReverse(self, data):
             # cache this non-invertible step, since we watn to reverse our behavior based on our understanding,
             # not based on the action that we emitted.
             symbols = self.words.detach()
-            #symbols = self.outputSpace.reverse(data, t)
+            #symbols = self.outputSpace.reverse(data)
             return symbols
-    def forward(self, data, t=0.0):
-        data, input, symbols = self.Start(data, t)
+    def forward(self, data):
+        data, input, symbols = self.Start(data)
         for n in range(self.conceptualOrder):
-            data, symbols1 = self.SubsymbolicThought(data, t)
+            data, symbols1 = self.SubsymbolicThought(data)
             symbols = torch.cat((symbols, symbols1), dim=1)
         for n in range(self.symbolicOrder):
-            data, symbols2 = self.SymbolicThought(data, t)
+            data, symbols2 = self.SymbolicThought(data)
             symbols = torch.cat((symbols, symbols2), dim=1)
-        data = self.Finish(symbols, t)
+        data = self.Finish(symbols)
         batch = input.shape[0]
         TheObjectEncoding.when.increment(batch)
         return data, input
-    def reverse(self, end_state, t=0.0):
-        symbols = self.FinishReverse(end_state, t)
+    def reverse(self, end_state):
+        symbols = self.FinishReverse(end_state)
         nSym = round(self.nSymbols)
         symbolIndex = 0
         for n in range(self.symbolicOrder):
             symbols1 = symbols[:, symbolIndex*nSym:(symbolIndex+1)*nSym]
             symbolIndex += 1
-            end_state = self.SymbolicThoughtReverse(end_state, symbols1, t)
+            end_state = self.SymbolicThoughtReverse(end_state, symbols1)
         for n in range(self.conceptualOrder):
             symbols1 = symbols[:, symbolIndex*nSym:(symbolIndex+1)*nSym]
             symbolIndex += 1
-            end_state = self.SubsymbolicThoughtReverse(end_state, symbols1, t)
+            end_state = self.SubsymbolicThoughtReverse(end_state, symbols1)
         symbols1 = symbols[:, symbolIndex * nSym:(symbolIndex + 1) * nSym]
-        data, input = self.StartReverse(end_state, None, symbols1, t)
+        data, input = self.StartReverse(end_state, None, symbols1)
         return data, input
 
     def run(self, numEpochs=1, batchSize=10, lr=0.01, stoppingCriterion=0.1):
@@ -2159,18 +2174,19 @@ class BasicModel(BaseModel):
         accuracy          = []
 
         for epoch in range(numEpochs):
-            t = epoch / max(1, numEpochs - 1)
+            alpha = 1.0 - epoch / max(1, numEpochs - 1)  # 1→0: explore→exploit
+            self.setAlpha(alpha)
             print(f"Epoch [{epoch + 1}/{numEpochs}]")
 
             if epoch != 0:
                 train_input, train_output = self.inputSpace.getTrainData()
-                outErr, inErr, allOut, lastIn = self.runEpoch(train_input, train_output, lr=lr, batchSize=batchSize, t=t)
+                outErr, inErr, allOut, lastIn = self.runEpoch(train_input, train_output, lr=lr, batchSize=batchSize)
                 trainLosses[0].append(outErr)
                 trainLosses[1].append(inErr)
                 print(f"Train Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
 
             test_input, test_output = self.inputSpace.getTestData()
-            outErr, inErr, allOut, lastIn = self.runEpoch(test_input, test_output, lr=0, batchSize=batchSize, t=t)
+            outErr, inErr, allOut, lastIn = self.runEpoch(test_input, test_output, lr=0, batchSize=batchSize)
             testLosses[0].append(outErr)
             testLosses[1].append(inErr)
 
@@ -2216,7 +2232,7 @@ class BasicModel(BaseModel):
         else:
             return nn.CrossEntropyLoss(), nn.MSELoss()
 
-    def runEpoch(self, input, output, lr=0.01, batchSize=10, t=0.0):
+    def runEpoch(self, input, output, lr=0.01, batchSize=10):
         """Unified training/eval epoch for all model configurations."""
         training = lr != 0
         if training:
@@ -2246,7 +2262,7 @@ class BasicModel(BaseModel):
                 # Forward pass
                 if training:
                     optimizer1.zero_grad()
-                outputPred, end_state = self.forward(inputTensor, t)
+                outputPred, end_state = self.forward(inputTensor)
                 lossOut = criterionOutput(outputPred.squeeze(), outputTensor.squeeze())
                 if training:
                     lossOut.backward()
@@ -2264,7 +2280,7 @@ class BasicModel(BaseModel):
                 if self.reversePass:
                     if training:
                         optimizer2.zero_grad()
-                    reconstructed, start_state = self.reverse(end_state.detach(), t)
+                    reconstructed, start_state = self.reverse(end_state.detach())
                     lossIn = criterionInput(start_state, end_state.detach())
                     if training:
                         lossIn.backward()

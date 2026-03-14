@@ -81,11 +81,11 @@ class ErgodicLayer(Layer):
     """Layer base class that adapts its explore/exploit balance over training."""
     def __init__(self, nInput, nOutput, permuteInput=False):
         super().__init__(nInput, nOutput, permuteInput)
-        # Alpha controls bias-variance tradeoff: bias = alpha, temp = 1 - alpha
-        # Start at full exploration (alpha=0): bias=0, temp=1
-        self.alpha       = nn.Parameter(torch.tensor(0.0), requires_grad=False)
+        # Alpha controls bias-variance tradeoff: bias = 1-alpha, var = alpha
+        # Alpha 1→0: explore→exploit. Start at full exploration (alpha=1): bias=0, var=1
+        self.alpha       = nn.Parameter(torch.tensor(1.0), requires_grad=False)
         self.bias        = nn.Parameter(torch.tensor(0.0), requires_grad=False)
-        self.temperature = nn.Parameter(torch.tensor(1.0), requires_grad=True)
+        self.var         = nn.Parameter(torch.tensor(1.0), requires_grad=True)
         # Modified Adam: second moment only (gradient is zero-mean)
         self.register_buffer('v', torch.tensor(0.0))
         self.register_buffer('t_step', torch.tensor(0))            # step counter for bias correction
@@ -94,7 +94,6 @@ class ErgodicLayer(Layer):
         self.register_buffer('certainty_forward_ema', torch.zeros(nOutput))
         self.register_buffer('certainty_step', torch.tensor(0))
         self.register_buffer('certainty_forward_step', torch.tensor(0))
-        self.global_temp = 1.0                                     # sensitivity knob
         self.beta = 0.999
         self.certainty_beta = 0.99
         self.certainty_forward_beta = 0.9
@@ -104,24 +103,21 @@ class ErgodicLayer(Layer):
         self.dropoutRate = 0.0
 
     def getParameters(self):
-        params = [p for n, p in self.named_parameters() if n != "temperature"]
+        params = [p for n, p in self.named_parameters() if n != "var"]
         return params
     def setAlpha(self, alpha):
+        """alpha 1→0: explore→exploit. bias = 1-alpha, var = alpha."""
         with torch.no_grad():
             self.alpha.fill_(alpha)
-            self.bias.fill_(alpha)
-            self.temperature.fill_(1.0 - alpha)
-    def setTemperature(self, temp=0.0):
-        with torch.no_grad():
-            self.global_temp = temp
-            self.setAlpha(1.0 - temp)
-    def local_tradeoff(self):
-        # High-certainty outputs lean toward bias; uncertain outputs keep more
-        # temperature so the layer continues to explore alternatives.
-        certainty = self.certainty.to(device=self.bias.device, dtype=self.bias.dtype)
-        local_bias = self.bias * certainty
-        local_temp = self.temperature * torch.ones_like(certainty) + self.bias * (1.0 - certainty)
-        return local_bias, local_temp.clamp(0.0, 1.0)
+            self.bias.fill_(1.0 - alpha)
+            self.var.fill_(alpha)
+    # def local_tradeoff(self):
+    #     # High-certainty outputs lean toward bias; uncertain outputs keep more
+    #     # variance so the layer continues to explore alternatives.
+    #     certainty = self.certainty.to(device=self.bias.device, dtype=self.bias.dtype)
+    #     local_bias = self.bias * certainty
+    #     local_var = self.var * torch.ones_like(certainty) + self.bias * (1.0 - certainty)
+    #     return local_bias, local_var.clamp(0.0, 1.0)
     @torch.no_grad()
     def reduce_certainty_signal(self, signal):
         if signal is None:
@@ -152,7 +148,7 @@ class ErgodicLayer(Layer):
         for name, param in self.named_parameters():
             if param.grad is None or not param.requires_grad:
                 continue
-            if name in {"alpha", "bias", "temperature"}:
+            if name in {"alpha", "bias", "var"}:
                 continue
             if "noise" in name.lower():
                 continue
@@ -197,35 +193,33 @@ class ErgodicLayer(Layer):
             # Certainty is tracked per output column so later passes can damp
             # exploration only where the layer has become reliable.
             self.certainty.copy_(certainty)
-    @torch.no_grad()
-    def alpha_update(self):
-        if self.temperature.grad is None:
-            return
-        grad = self.temperature.grad.item()
-        # Modified Adam: EMA of gradient energy (second moment only)
-        self.v = self.beta * self.v + (1 - self.beta) * (grad ** 2)
-        self.t_step += 1
-        # Bias correction (same as Adam)
-        v_hat = self.v / (1 - self.beta ** self.t_step)
-        # Alpha = sensor output: high gradient energy → low alpha (explore)
-        self.alpha.fill_(1.0 / (1.0 + self.global_temp * v_hat.sqrt()))
-        # Derive bias and temp from alpha
-        alpha = self.alpha.item()
-        if random.random() < self.dropoutRate:
-            # Occasional bias dropout forces another exploration step even when
-            # the layer has converged toward exploitation.
-            self.bias.fill_(0.0)
-        else:
-            self.bias.fill_(alpha)
-        self.temperature.fill_(1.0 - alpha)
-        self.temperature.grad.zero_()
+    # alpha_update: locally tuning alpha per-layer from gradient energy
+    # could substitute for global calls to setAlpha().
+    # @torch.no_grad()
+    # def alpha_update(self):
+    #     if self.var.grad is None:
+    #         return
+    #     grad = self.var.grad.item()
+    #     # Modified Adam: EMA of gradient energy (second moment only)
+    #     self.v = self.beta * self.v + (1 - self.beta) * (grad ** 2)
+    #     self.t_step += 1
+    #     # Bias correction (same as Adam)
+    #     v_hat = self.v / (1 - self.beta ** self.t_step)
+    #     # Alpha = sensor output: high gradient energy → low alpha (explore)
+    #     self.alpha.fill_(1.0 / (1.0 + self.global_temp * v_hat.sqrt()))
+    #     # Derive bias and var from alpha
+    #     alpha = self.alpha.item()
+    #     if random.random() < self.dropoutRate:
+    #         # Occasional bias dropout forces another exploration step even when
+    #         # the layer has converged toward exploitation.
+    #         self.bias.fill_(0.0)
+    #     else:
+    #         self.bias.fill_(alpha)
+    #     self.var.fill_(1.0 - alpha)
+    #     self.var.grad.zero_()
     def paramUpdate(self):
         self.certainty_update()
-        self.alpha_update()
-    def global_temp_anneal(self, progress):
-        """Anneal global_temp from 1.0→0.0 over training.
-        progress: float 0..1 (fraction of training complete)."""
-        self.global_temp = max(0.0, 1.0 - progress)
+        # self.alpha_update()
 
 class LinearLayer(Layer):
     def __init__(self, nInput, nOutput, hasBias=True, W=None):
@@ -750,23 +744,20 @@ class SoftMap(Layer):
         assert error < 1e-3, f"Reconstruction error too high: {error}"
 
 class SigmaLayer(ErgodicLayer):
-    def __init__(self, nInput, nOutput, permuteInput=False, deterministic=False):
+    def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
         self.layer       = LinearLayer(nInput, nOutput, hasBias=True)
         self.saturate    = True
         self.activation  = torch.zeros(1,nOutput,1)
-        self.deterministic = deterministic
-
-    def layer_tradeoff(self):
-        return self.local_tradeoff()
+        self.ergodic     = ergodic
 
     def forward(self, x):
-        if self.deterministic:
+        if not self.ergodic:
             bias, temp = 1.0, 0.0
         elif not self.training:
             bias, temp = 1.0, 0.0      # pure learned weights, no noise
         else:
-            bias, temp = self.layer_tradeoff()
+            bias, temp = self.bias, self.var
         x = self.permute(x)
         y = self.layer.forward(x, bias, temp)   # (batch_size, output_dim)
         if self.saturate:
@@ -782,7 +773,7 @@ class SigmaLayer(ErgodicLayer):
         layer = SigmaLayer(nInput=nInput, nOutput=nOutput)
 
         x = torch.randn((2, 5, nInput))
-        layer.setTemperature(0.001)
+        layer.setAlpha(0.001)
 
         criterion = nn.MSELoss()  # Mean Squared Error Loss
         optimizer = optim.Adam(layer.getParameters(), lr=0.01)  # Adam Optimizer
@@ -801,16 +792,20 @@ class ReversibleSigmaLayer(SigmaLayer):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
         self.layer          = ReversibleLinearLayer(nInput, nOutput, naive=naive, hasBias=True)
     def layer_tradeoff(self):
-        if self.layer.naive:
-            return self.local_tradeoff()
-        return self.bias, self.temperature
+        return self.bias, self.var
     def reverse(self, y):
+        if not self.ergodic:
+            bias, temp = 1.0, 0.0
+        elif not self.training:
+            bias, temp = 1.0, 0.0
+        else:
+            bias, temp = self.bias, self.var
         y  = self.permute(y)
         y = y.squeeze(0)
         if self.saturate:
             self.activation = torch.atanh(y) # this can be faster if we keep the tanh activation
             y = self.activation.clone()
-        x  = self.layer.reverse(y, self.bias, self.temperature)  # (batch_size, output_dim)
+        x  = self.layer.reverse(y, bias, temp)  # (batch_size, output_dim)
         x = self.unpermute(x)
         return x
 
@@ -822,7 +817,7 @@ class ReversibleSigmaLayer(SigmaLayer):
         layer   = ReversibleSigmaLayer(nInput=nInput, nOutput=nOutput, permuteInput=permute, naive=False)
 
         x = torch.randn((2, 5, nInput))
-        layer.setTemperature(0.000000001)
+        layer.setAlpha(0.000000001)
         y = layer.forward(x)
         y_inv = layer.reverse(y)
 
@@ -833,14 +828,15 @@ class ReversibleSigmaLayer(SigmaLayer):
 
         layer = ReversibleSigmaLayer(nInput=nInput, nOutput=nOutput, permuteInput=False, naive=True)
         x = torch.randn((4, 8, nInput))
-        layer.setTemperature(0.00000001)
+        layer.setAlpha(0.00000001)
         y = layer.forward(x)
         assert y.shape == (4,8,nOutput), "Incorrect Size"
         y_inv = layer.reverse(y)
         assert(torch.norm(x-y_inv) < 0.00001)
 class PiLayer(ErgodicLayer):
-    def __init__(self, nInput, nOutput, permuteInput=False):
+    def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
+        self.ergodic = ergodic
         self.weights          = nn.Parameter(torch.zeros(nInput, nOutput))
         self.register_buffer('noise', torch.randn(nInput, nOutput))
         self.biasWeight       = nn.Parameter(torch.zeros(1, 1, self.nOutput))  # Per-output-feature bias
@@ -855,7 +851,12 @@ class PiLayer(ErgodicLayer):
         self.biasWeightNoise = sample_noise(self.weights, shape=(1, self.nInput, self.nOutput))
 
     def forward(self, x):
-        bias, temp = self.local_tradeoff()
+        if not self.ergodic:
+            bias, temp = 1.0, 0.0
+        elif not self.training:
+            bias, temp = 1.0, 0.0
+        else:
+            bias, temp = self.bias, self.var
         x = self.permute(x)
         # This method implements PI(1+wx)
         # Tried to implement as exp( SIGMA(log(e) * log(wx)) ) so that we could invert with standard methods,
@@ -904,7 +905,7 @@ class PiLayer(ErgodicLayer):
 
         # x must be positive
         x = torch.randn((nBatch, nInput, 6))
-        layer.setTemperature(0.001)
+        layer.setAlpha(0.001)
         y = layer(x)
         assert(y.shape==(nBatch, nOutput, 6))
 
@@ -925,8 +926,8 @@ class PiLayer(ErgodicLayer):
         criterion = nn.MSELoss()  # Mean Squared Error Loss
         optimizer = optim.Adam(chain(pi.parameters(), sigma.parameters()), lr=0.01)  # Adam Optimizer
         epochs = 1000
-        sigma.setTemperature(0.0001)
-        pi.setTemperature(0.0001)
+        sigma.setAlpha(0.0001)
+        pi.setAlpha(0.0001)
         for epoch in range(epochs):
             optimizer.zero_grad()  # Clear gradients
 
@@ -958,8 +959,9 @@ class ReversiblePiLayer(ErgodicLayer):
 #	4.	Finally:
 #x = W^\dagger \gamma
 
-    def __init__(self, nInput, nOutput, naive=False, permuteInput=False, hasBias = True):
+    def __init__(self, nInput, nOutput, naive=False, permuteInput=False, hasBias = True, ergodic=False):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
+        self.ergodic = ergodic
         self.naive   = naive
         self.hasBias = hasBias
         self.useEpsilon = True
@@ -984,7 +986,12 @@ class ReversiblePiLayer(ErgodicLayer):
         self.biasNoise = sample_noise(self.biasWeight, shape=(1, 1, self.nOutput))
 
     def forward(self, x):
-        bias, temp = self.bias, self.temperature
+        if not self.ergodic:
+            bias, temp = 1.0, 0.0
+        elif not self.training:
+            bias, temp = 1.0, 0.0
+        else:
+            bias, temp = self.bias, self.var
 
         """
         x: (batch_size, in_features)
@@ -1024,7 +1031,12 @@ class ReversiblePiLayer(ErgodicLayer):
         return y
 
     def reverse(self, yz):
-        bias, temp = self.bias, self.temperature
+        if not self.ergodic:
+            bias, temp = 1.0, 0.0
+        elif not self.training:
+            bias, temp = 1.0, 0.0
+        else:
+            bias, temp = self.bias, self.var
         """
         Reverse pass: x ≈ W† * gamma, where gamma_j = 0.5 * log((1 + tanh(w x)) / (1 - tanh(w x))) = Wx
         """
@@ -1059,7 +1071,7 @@ class ReversiblePiLayer(ErgodicLayer):
 
         layer = ReversiblePiLayer(nInput=nInput, nOutput=nOutput, naive=True, hasBias=True, permuteInput=True)
         x = torch.randn(nBatch, nInput, nFeatures)
-        layer.setTemperature(0.00000001)
+        layer.setAlpha(0.00000001)
         yz = layer.forward(x)
         print("Forward output shape:", yz.shape)  # Should be (batch, out_features, 2)
         x_recon = layer.reverse(yz)
@@ -1190,7 +1202,7 @@ class NormLayer(Layer):
         #self.noise  = nn.Parameter(torch.zeros(2)) If is ErgodicLayer
 
     def forward(self, x):
-        #bias, temp = self.bias, self.temperature
+        #bias, temp = self.bias, self.var
         shape = x.shape
         N = shape[self.dim]
         mean = x.mean(dim=self.dim, keepdim=True)

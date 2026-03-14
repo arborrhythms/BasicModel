@@ -233,7 +233,8 @@ class TestSimpleModelCreation(unittest.TestCase):
         """BasicModel (simple path) with ergodic=False produces valid output."""
         model = _make_simple_model()
         model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
-                       perceptPassThrough=True, symbolPassThrough=True)
+                       perceptPassThrough=True, symbolPassThrough=True,
+                       reshape=True)
         x = torch.randn(2, 28*28, 1)  # batch of 2, flattened MNIST, dim=1
         out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)  # batch size preserved
@@ -243,7 +244,7 @@ class TestSimpleModelCreation(unittest.TestCase):
         model = _make_simple_model()
         model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
                        perceptPassThrough=True, symbolPassThrough=True,
-                       ergodic=True, certainty=True)
+                       ergodic=True, certainty=True, reshape=True)
         x = torch.randn(2, 28*28, 1)
         out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -357,7 +358,7 @@ class TestSimpleModel(unittest.TestCase):
         model = _make_simple_model()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
                        perceptPassThrough=True, symbolPassThrough=True,
-                       ergodic=True)
+                       ergodic=True, reshape=True)
         x = torch.randn(2, 16, 1)
         out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -367,7 +368,8 @@ class TestSimpleModel(unittest.TestCase):
     def test_simple_model_traditional_shapes(self):
         model = _make_simple_model()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-                       perceptPassThrough=True, symbolPassThrough=True)
+                       perceptPassThrough=True, symbolPassThrough=True,
+                       reshape=True)
         x = torch.randn(2, 16, 1)
         out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -377,7 +379,7 @@ class TestSimpleModel(unittest.TestCase):
         model = _make_simple_model()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
                        perceptPassThrough=True, symbolPassThrough=True,
-                       ergodic=True, reversePass=True)
+                       ergodic=True, reversePass=True, reshape=True)
         x = torch.randn(2, 16, 1)
         out, end_state = model.forward(x)
         data, start_state = model.reverse(end_state)
@@ -426,7 +428,7 @@ class TestModelEndToEnd(unittest.TestCase):
         model = _make_simple_model()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
                        perceptPassThrough=True, symbolPassThrough=True,
-                       ergodic=True)
+                       ergodic=True, reshape=True)
         x = torch.randn(2, 16, 1)
         out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -436,7 +438,8 @@ class TestModelEndToEnd(unittest.TestCase):
     def test_simple_model_traditional_shapes(self):
         model = _make_simple_model()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-                       perceptPassThrough=True, symbolPassThrough=True)
+                       perceptPassThrough=True, symbolPassThrough=True,
+                       reshape=True)
         x = torch.randn(2, 16, 1)
         out, end_state = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -447,7 +450,7 @@ class TestModelEndToEnd(unittest.TestCase):
         model = _make_simple_model()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
                        perceptPassThrough=True, symbolPassThrough=True,
-                       ergodic=True, reversePass=True)
+                       ergodic=True, reversePass=True, reshape=True)
         x = torch.randn(2, 16, 1)
         out, end_state = model.forward(x)
         data, start_state = model.reverse(end_state)
@@ -460,7 +463,7 @@ class TestModelEndToEnd(unittest.TestCase):
         model = _make_simple_model()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
                        perceptPassThrough=True, symbolPassThrough=True,
-                       ergodic=True, certainty=True)
+                       ergodic=True, certainty=True, reshape=True)
         x = torch.randn(2, 16, 1)
         target = torch.randn(2, 4)
         out, end_state = model.forward(x)
@@ -491,13 +494,13 @@ class TestUniversalTrainingContract(unittest.TestCase):
 
 
 class TestSigmaLayerDeterministic(unittest.TestCase):
-    """SigmaLayer(deterministic=True) behaves like LinearLayer + Tanh."""
+    """SigmaLayer(ergodic=False) behaves like LinearLayer + Tanh."""
 
     def test_deterministic_matches_linear_tanh(self):
         from Model import SigmaLayer, LinearLayer
         torch.manual_seed(42)
         nIn, nOut = 8, 4
-        sigma = SigmaLayer(nIn, nOut, deterministic=True)
+        sigma = SigmaLayer(nIn, nOut, ergodic=False)
         sigma.train()
 
         # Build a matching LinearLayer + Tanh with same weights
@@ -516,7 +519,7 @@ class TestSigmaLayerDeterministic(unittest.TestCase):
     def test_deterministic_same_train_eval(self):
         from Model import SigmaLayer
         nIn, nOut = 8, 4
-        sigma = SigmaLayer(nIn, nOut, deterministic=True)
+        sigma = SigmaLayer(nIn, nOut, ergodic=False)
         x = torch.randn(2, nIn)
 
         sigma.train()
@@ -524,12 +527,12 @@ class TestSigmaLayerDeterministic(unittest.TestCase):
         sigma.eval()
         y_eval = sigma(x).detach().clone()
         self.assertTrue(torch.allclose(y_train, y_eval, atol=1e-6),
-                        "Deterministic mode should produce same output in train and eval")
+                        "Non-ergodic mode should produce same output in train and eval")
 
-    def test_non_deterministic_default(self):
+    def test_non_ergodic_default(self):
         from Model import SigmaLayer
         sigma = SigmaLayer(nInput=8, nOutput=4)
-        self.assertFalse(sigma.deterministic)
+        self.assertFalse(sigma.ergodic)
 
 
 class TestCreateVectorSetQuantized(unittest.TestCase):

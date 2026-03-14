@@ -47,8 +47,8 @@ def logic(X_train, Y_train):
 
     # Initialize the model, loss function, and optimizer
     model     = LogicalFunctionNet(input_dim, hidden_dim, output_dim)
-    model.hidden.setTemperature(0.0001)
-    model.output.setTemperature(0.0001)
+    model.hidden.setAlpha(0.0001)
+    model.output.setAlpha(0.0001)
     criterion = nn.MSELoss()  # Mean Squared Error Loss
     optimizer = optim.Adam(model.parameters(), lr=0.01)  # Adam Optimizer
 

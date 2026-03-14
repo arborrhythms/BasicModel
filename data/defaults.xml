@@ -20,6 +20,9 @@
     <conceptualOrder>0</conceptualOrder>
     <symbolicOrder>0</symbolicOrder>
     <processSymbols>false</processSymbols>
+    <reshape>false</reshape>
+    <perceptHasAttention>true</perceptHasAttention>
+    <conceptHasAttention>false</conceptHasAttention>
     <tokenizer>traditional</tokenizer>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>

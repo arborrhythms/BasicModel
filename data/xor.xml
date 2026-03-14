@@ -1,25 +1,26 @@
 <?xml version="1.0" ?>
 <model>
   <architecture>
-    <nInput>8</nInput>
-    <nPercepts>8</nPercepts>
-    <nConcepts>8</nConcepts>
-    <nSymbols>8</nSymbols>
-    <nWords>8</nWords>
+    <nInput>2</nInput>
+    <nPercepts>3</nPercepts>
+    <nConcepts>3</nConcepts>
+    <nSymbols>3</nSymbols>
+    <nWords>3</nWords>
     <nOutput>1</nOutput>
     <conceptualOrder>0</conceptualOrder>
     <symbolicOrder>0</symbolicOrder>
     <perceptPrototypes>16</perceptPrototypes>
     <conceptPrototypes>16</conceptPrototypes>
+    <reshape>True</reshape>
   </architecture>
 
   <training>
     <dataset>xor</dataset>
     <modelType>lm</modelType>
     <pretrained>false</pretrained>
-    <numEpochs>100</numEpochs>
-    <stoppingCriterion>0.1</stoppingCriterion>
-    <learningRate>0.001</learningRate>
+    <numEpochs>1000</numEpochs>
+    <stoppingCriterion>0.01</stoppingCriterion>
+    <learningRate>0.01</learningRate>
     <detectAnomaly>true</detectAnomaly>
   </training>
 
