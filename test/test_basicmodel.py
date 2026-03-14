@@ -931,6 +931,204 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         self.assertAlmostEqual(p2, expected_p2, places=5)
 
 
+class TestOutputSpaceTextReconstruction(unittest.TestCase):
+    """OutputSpace can reconstruct text from symbolic vectors."""
+
+    def setUp(self):
+        from BasicModel import TheObjectEncoding
+        self._orig_nWhere = TheObjectEncoding.nWhere
+        self._orig_nWhen = TheObjectEncoding.nWhen
+        self._orig_objectSize = TheObjectEncoding.objectSize
+
+    def tearDown(self):
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = self._orig_nWhere
+        TheObjectEncoding.nWhen = self._orig_nWhen
+        TheObjectEncoding.objectSize = self._orig_objectSize
+
+    def test_numeric_output_unchanged(self):
+        """Numeric OutputSpace should still produce [B, nOutput] tensor."""
+        from BasicModel import TheObjectEncoding, OutputSpace
+        TheObjectEncoding.nWhere = 0
+        TheObjectEncoding.nWhen = 0
+        TheObjectEncoding.objectSize = 0
+        nIn, nOut = 4, 3
+        os_ = OutputSpace([nIn, 1], [nOut, 1], nOut, 1)
+        x = torch.randn(2, nIn, 1)
+        y = os_(x)
+        self.assertEqual(list(y.shape), [2, nOut, 1])
+        # text_mode should be False for numeric data
+        self.assertFalse(os_.text_mode)
+
+    def test_text_mode_false_without_lex(self):
+        """OutputSpace without lex info should have text_mode=False."""
+        from BasicModel import TheObjectEncoding, OutputSpace
+        TheObjectEncoding.setDimensions(inputDim=8, perceptDim=8,
+                                        conceptDim=8, outputDim=4)
+        nIn, nOut = 4, 4
+        os_ = OutputSpace([nIn, TheObjectEncoding.conceptDim],
+                          [nOut, TheObjectEncoding.outputDim],
+                          nOut, TheObjectEncoding.outputDim)
+        self.assertFalse(os_.text_mode)
+
+    def test_set_text_mode_enables_reconstruction(self):
+        """set_text_mode() stores codebook, words, and lex references."""
+        from BasicModel import InputSpace, Data, OutputSpace, TheObjectEncoding
+        data = Data()
+        data.load("xor")
+        nInput = 8
+        nVectors = 8
+        inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nVectors,
+                         nDim=1, model_type="lm", pretrained=False, data=data)
+        # Create OutputSpace with the same embedding setup
+        nOut = 4
+        os_ = OutputSpace([nInput, TheObjectEncoding.conceptDim],
+                          [nOut, TheObjectEncoding.outputDim],
+                          nOut, TheObjectEncoding.outputDim)
+        os_.set_text_mode(inp)
+        self.assertTrue(os_.text_mode)
+
+    def test_reconstruct_from_known_vectors(self):
+        """Given codebook vectors with nWhere, reconstruct_text should recover words at positions."""
+        import math
+        from BasicModel import (InputSpace, Data, OutputSpace, TheObjectEncoding,
+                                PositionalEncoding)
+        data = Data()
+        data.load("xor")
+        nInput = 8
+        nVectors = 8
+        inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nVectors,
+                         nDim=1, model_type="lm", pretrained=False, data=data)
+        nOut = 4
+        os_ = OutputSpace([nInput, TheObjectEncoding.conceptDim],
+                          [nOut, TheObjectEncoding.outputDim],
+                          nOut, TheObjectEncoding.outputDim)
+        os_.set_text_mode(inp)
+
+        # Build synthetic vectors from known codebook entries with known nWhere
+        codebook = inp.vectors().vq.codebook
+        words_list = inp.vectors().words
+        embSize = inp.vectors().embeddingSize
+        nWhat = embSize - TheObjectEncoding.objectSize
+        div_term = TheObjectEncoding.where.div_term
+
+        # Pick first two words from the codebook
+        batch = 1
+        nVec = 2
+        vectors = torch.zeros([batch, nVec, embSize])
+        expected_words = []
+        for i in range(nVec):
+            vectors[0, i, :] = codebook[i]
+            expected_words.append(words_list[i])
+            # Set nWhere to encode byte offset i*6
+            offset = i * 6
+            pos = offset * div_term
+            where_idx = np.add([embSize, embSize], PositionalEncoding.index)
+            vectors[0, i, where_idx[0]] = math.sin(pos * div_term)
+            vectors[0, i, where_idx[1]] = math.cos(pos * div_term)
+
+        recovered_words, recovered_positions = os_.reconstruct_text(vectors)
+        self.assertEqual(recovered_words[0], expected_words)
+
+    def test_reconstruct_consecutive_no_nwhere(self):
+        """When nWhere is zero, tokens are written consecutively."""
+        from BasicModel import (InputSpace, Data, OutputSpace, TheObjectEncoding)
+        data = Data()
+        data.load("xor")
+        nInput = 8
+        nVectors = 8
+        inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nVectors,
+                         nDim=1, model_type="lm", pretrained=False, data=data)
+        nOut = 4
+        os_ = OutputSpace([nInput, TheObjectEncoding.conceptDim],
+                          [nOut, TheObjectEncoding.outputDim],
+                          nOut, TheObjectEncoding.outputDim)
+        os_.set_text_mode(inp)
+
+        # Build vectors with nWhere = 0 (all zeros)
+        codebook = inp.vectors().vq.codebook
+        words_list = inp.vectors().words
+        embSize = inp.vectors().embeddingSize
+
+        batch = 1
+        nVec = 2
+        vectors = torch.zeros([batch, nVec, embSize])
+        expected_words = []
+        for i in range(nVec):
+            vectors[0, i, :embSize - TheObjectEncoding.objectSize] = \
+                codebook[i, :embSize - TheObjectEncoding.objectSize]
+            expected_words.append(words_list[i])
+        # nWhere left as zero -> consecutive mode
+
+        recovered_words, recovered_positions = os_.reconstruct_text(vectors)
+        self.assertEqual(recovered_words[0], expected_words)
+
+    def test_reconstruct_to_buffer(self):
+        """reconstruct_text with to_buffer=True produces a string with positioned words."""
+        import math
+        from BasicModel import (InputSpace, Data, OutputSpace, TheObjectEncoding,
+                                PositionalEncoding)
+        data = Data()
+        data.load("xor")
+        nInput = 8
+        nVectors = 8
+        inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nVectors,
+                         nDim=1, model_type="lm", pretrained=False, data=data)
+        nOut = 4
+        os_ = OutputSpace([nInput, TheObjectEncoding.conceptDim],
+                          [nOut, TheObjectEncoding.outputDim],
+                          nOut, TheObjectEncoding.outputDim)
+        os_.set_text_mode(inp)
+
+        # Build synthetic vectors with nWhere at known positions
+        codebook = inp.vectors().vq.codebook
+        words_list = inp.vectors().words
+        embSize = inp.vectors().embeddingSize
+        div_term = TheObjectEncoding.where.div_term
+        where_idx = np.add([embSize, embSize], PositionalEncoding.index)
+
+        batch = 1
+        nVec = 2
+        vectors = torch.zeros([batch, nVec, embSize])
+        # Word 0 at offset 0, word 1 at offset 6
+        for i in range(nVec):
+            vectors[0, i, :] = codebook[i]
+            offset = i * 6
+            pos = offset * div_term
+            vectors[0, i, where_idx[0]] = math.sin(pos * div_term)
+            vectors[0, i, where_idx[1]] = math.cos(pos * div_term)
+
+        recovered_words, positions = os_.reconstruct_text(vectors)
+        text = os_.reconstruct_buffer(vectors)
+        # The buffer should contain words at byte offsets
+        self.assertIsInstance(text[0], str)
+        self.assertIn(words_list[0], text[0])
+        self.assertIn(words_list[1], text[0])
+
+    def test_forward_reverse_shapes_unchanged(self):
+        """forward() and reverse() tensor shapes must not change with text_mode."""
+        from BasicModel import (InputSpace, Data, OutputSpace, TheObjectEncoding)
+        data = Data()
+        data.load("xor")
+        nInput = 8
+        nVectors = 8
+        inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nVectors,
+                         nDim=1, model_type="lm", pretrained=False, data=data)
+        nOut = 4
+        os_ = OutputSpace([nInput, TheObjectEncoding.conceptDim],
+                          [nOut, TheObjectEncoding.outputDim],
+                          nOut, TheObjectEncoding.outputDim,
+                          reversePass=True)
+        os_.set_text_mode(inp)
+        inEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.conceptDim)
+        x = torch.randn(2, nInput, inEmb)
+        y = os_(x)
+        self.assertEqual(list(y.shape), [2, nOut, TheObjectEncoding.outputDim])
+        # Reverse path should also be unchanged
+        rev = os_.reverse(y)
+        self.assertEqual(list(rev.shape), [2, nInput, inEmb])
+
+
 class TestInputSpaceTextRoundTrip(unittest.TestCase):
     """InputSpace.reverse() must reconstruct text from latent state."""
 

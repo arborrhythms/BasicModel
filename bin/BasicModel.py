@@ -1892,9 +1892,11 @@ class SyntacticSpace(Space):
         pass
 class OutputSpace(Space):
     name = "Outputs"
+    text_mode = False
     def __init__(self, inputShape, outputShape, nVectors, nDim, reversePass=False, data=None):
         super(OutputSpace, self).__init__(inputShape, outputShape, nVectors, nDim)
         self.data = data
+        self.text_mode = False
         input, output = self.getEmbeddedIO()
         # the output is reshaped, so we can't use the above formula
         input  = self.inputShape[0]  * input
@@ -1937,6 +1939,110 @@ class OutputSpace(Space):
         y = self.reverseLinear(y)
         output = self.reverseEnd(y, t, reshape=True)
         return output
+    # --- Text reconstruction from symbolic vectors ---
+    def set_text_mode(self, input_space):
+        """Enable text reconstruction by storing references from InputSpace.
+
+        Args:
+            input_space: An InputSpace instance that has lex, codebook, and
+                         words attributes from the 'lm' model_type path.
+        """
+        if not hasattr(input_space, 'lex'):
+            return
+        self.text_mode = True
+        self._codebook = input_space.vectors().vq.codebook
+        self._words_list = input_space.vectors().words
+        self._embedding_size = input_space.vectors().embeddingSize
+        self._lex = input_space.lex
+
+    def reconstruct_text(self, vectors):
+        """Reconstruct words and positions from symbolic vectors.
+
+        Extracts nWhat and nWhere from vectors via ObjectEncoding.reverse(),
+        snaps nWhat to nearest codebook entry by cosine similarity, and
+        recovers byte-offset positions from nWhere.
+
+        Args:
+            vectors: Tensor of shape [batch, nVec, embeddingSize] containing
+                     symbolic vectors with nWhat content and nWhere positioning.
+
+        Returns:
+            (recovered_words, recovered_offsets) where:
+              - recovered_words is a list of lists of strings, one per batch element
+              - recovered_offsets is a list of lists of floats (byte offsets),
+                one per batch element.  None entries mean nWhere was absent (zero).
+        """
+        if not self.text_mode:
+            raise RuntimeError("reconstruct_text() called but text_mode is not enabled. "
+                               "Call set_text_mode(input_space) first.")
+        # 1. Strip positional/temporal encoding via ObjectEncoding.reverse()
+        content, positions, times = TheObjectEncoding.reverse(vectors.clone())
+        batch = content.shape[0]
+        nVec = content.shape[1]
+        codebook = self._codebook
+        words_list = self._words_list
+        nWhat = self._embedding_size - TheObjectEncoding.objectSize
+        cb_what = codebook[:, :nWhat]  # [codebookSize, nWhat]
+        div_term = TheObjectEncoding.where.div_term
+
+        # 2. For each vector, find nearest codebook entry by cosine sim on nWhat
+        recovered_words = [[] for _ in range(batch)]
+        recovered_offsets = [[] for _ in range(batch)]
+        for b in range(batch):
+            for v in range(nVec):
+                vec = content[b, v, :nWhat]
+                # Skip zero vectors (padding)
+                if vec.abs().sum().item() < 1e-8:
+                    continue
+                sims = F.cosine_similarity(vec.unsqueeze(0), cb_what, dim=1)
+                idx = sims.argmax().item()
+                recovered_words[b].append(words_list[idx])
+                # 3. Decode nWhere: positions holds raw [sin, cos] values
+                sin_val = positions[b, v, 0].item()
+                cos_val = positions[b, v, 1].item()
+                if abs(sin_val) < 1e-8 and abs(cos_val) < 1e-8:
+                    recovered_offsets[b].append(None)  # no position -> consecutive
+                else:
+                    angle = math.atan2(sin_val, cos_val)
+                    if angle < 0:
+                        angle += 2 * math.pi
+                    offset = angle / (div_term * div_term)
+                    recovered_offsets[b].append(round(offset))
+        return recovered_words, recovered_offsets
+
+    def reconstruct_buffer(self, vectors, buf_size=256):
+        """Reconstruct a destination buffer string from symbolic vectors.
+
+        Uses nWhere byte offsets (when present) to place words at specific
+        positions; falls back to consecutive placement when nWhere is absent.
+
+        Args:
+            vectors: Tensor of shape [batch, nVec, embeddingSize].
+            buf_size: Size of the destination buffer in bytes.
+
+        Returns:
+            List of strings, one per batch element.
+        """
+        words_list, offsets_list = self.reconstruct_text(vectors)
+        results = []
+        for b in range(len(words_list)):
+            words = words_list[b]
+            offsets = offsets_list[b]
+            has_positions = any(o is not None for o in offsets)
+            if has_positions:
+                # Positioned write: place each word at its byte offset
+                buf = bytearray(b' ' * buf_size)
+                for word, offset in zip(words, offsets):
+                    if offset is None:
+                        continue
+                    encoded = word.encode('utf-8')
+                    end = min(offset + len(encoded), buf_size)
+                    buf[offset:end] = encoded[:end - offset]
+                results.append(buf.decode('utf-8').rstrip())
+            else:
+                # Consecutive: just join with spaces
+                results.append(" ".join(words))
+        return results
 
 
 class BaseModel(nn.Module):
