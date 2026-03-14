@@ -24,14 +24,14 @@ except ImportError:
     make_dot = None
 from matplotlib import pyplot as plt
 from datasets import load_dataset
-from wordvectors import WordVectors
+from embed import WordVectors, CBOWModel
 #from transformers import BertTokenizer
 from sklearn.metrics import classification_report
 from sklearn.decomposition import PCA
 import pandas as pd
 from vector_quantize_pytorch import ResidualVQ, VectorQuantize
 from Model import Layer, PiLayer, SigmaLayer, ReversibleSigmaLayer, ReversiblePiLayer # Import custom layers from Model.py
-from Lex import Lex
+from lex import Lex
 from Model import VQLayer, NormLayer, LinearLayer, ReversibleLinearLayer, AttentionLayer
 from Model import GammaMem, ColumnUsageTracker, LiftingLayer, SoftMap, CertaintyWeightedCrossEntropy, epsilon
 import torch.optim as optim
@@ -48,364 +48,8 @@ else:
     TheDevice = torch.device("cpu")
 
 from datetime import datetime
-
-class ProjectPaths:
-    """Centralized path resolution for the basicmodel project."""
-    BASE_DIR    = os.path.dirname(__file__)
-    PROJECT_DIR = os.path.dirname(BASE_DIR)  # basicmodel/ root
-    DATA_DIR    = os.path.join(PROJECT_DIR, "data")
-    OUTPUT_DIR  = os.path.join(PROJECT_DIR, "output")
-
-    @classmethod
-    def ensure_output_dir(cls):
-        os.makedirs(cls.OUTPUT_DIR, exist_ok=True)
-        return cls.OUTPUT_DIR
-
-    @classmethod
-    def output_path(cls, filename):
-        return os.path.join(cls.ensure_output_dir(), filename)
-
-    @classmethod
-    def output_stem(cls, stem):
-        return os.path.join(cls.ensure_output_dir(), stem)
-
-    @classmethod
-    def resolve_xml(cls, path):
-        """Resolve an XML path relative to PROJECT_DIR if not absolute."""
-        if not os.path.isabs(path):
-            return os.path.join(cls.PROJECT_DIR, path)
-        return path
-
-class Report:
-    """Collects timestamped SVG figures and XML configs, then writes an HTML report."""
-    def __init__(self):
-        self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        self.figures = []       # list of (title, svg_path)
-        self.xml_configs = []   # list of (name, xml_content)
-
-    def show_figure(self, fig=None):
-        """Display figures only on interactive backends; otherwise close them."""
-        backend = str(plt.get_backend()).lower()
-        if "agg" in backend or backend == "template":
-            if fig is not None:
-                plt.close(fig)
-            return
-        plt.show(block=False)
-
-    def save_figure(self, fig, title):
-        """Save a matplotlib figure as a timestamped SVG and register it."""
-        safe = title.replace(" ", "_").replace("/", "-")
-        filename = f"{self.timestamp}_{safe}.svg"
-        path = ProjectPaths.output_path(filename)
-        fig.savefig(path, format='svg', bbox_inches='tight')
-        self.figures.append((title, filename))
-        return path
-
-    def add_xml(self, config_path):
-        """Register an XML config file for inclusion in the report."""
-        name = os.path.basename(config_path)
-        with open(config_path, 'r') as f:
-            self.xml_configs.append((name, f.read()))
-
-    def write_html(self):
-        """Write the collected figures and configs into a single HTML file."""
-        if not self.figures:
-            return None
-        html_path = ProjectPaths.output_path(f"{self.timestamp}_report.html")
-        lines = [
-            '<!DOCTYPE html>',
-            '<html><head>',
-            f'<title>BasicModel Report {self.timestamp}</title>',
-            '<style>',
-            '  body { font-family: system-ui, sans-serif; max-width: 1200px; margin: 2em auto; padding: 0 1em; }',
-            '  h1 { border-bottom: 2px solid #333; padding-bottom: .3em; }',
-            '  h2 { margin-top: 2em; color: #444; }',
-            '  .figure { margin: 1.5em 0; }',
-            '  .figure img { max-width: 100%; border: 1px solid #ddd; }',
-            '  pre { background: #f5f5f5; padding: 1em; overflow-x: auto; border-radius: 4px; }',
-            '  .meta { color: #888; font-size: 0.9em; }',
-            '</style>',
-            '</head><body>',
-            f'<h1>BasicModel Report</h1>',
-            f'<p class="meta">Generated {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>',
-        ]
-        # Figures
-        lines.append('<h2>Figures</h2>')
-        for title, svg_file in self.figures:
-            lines.append(f'<div class="figure"><h3>{title}</h3>')
-            lines.append(f'<img src="{svg_file}" alt="{title}"></div>')
-        # XML configs
-        if self.xml_configs:
-            lines.append('<h2>Configurations</h2>')
-            for name, content in self.xml_configs:
-                escaped = content.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-                lines.append(f'<h3>{name}</h3><pre>{escaped}</pre>')
-        lines.append('</body></html>')
-        with open(html_path, 'w') as f:
-            f.write('\n'.join(lines))
-        from urllib.parse import quote
-        file_url = "file://" + quote(os.path.abspath(html_path))
-        print(f"Report saved to {file_url}")
-        return html_path
-
-    # ----- Plotting methods (moved from BaseModel / SimpleModel / module level) -----
-
-    def plotAccuracy(self, model_name, rCorrect):
-        """Plot per-digit accuracy."""
-        fig = plt.figure(figsize=(10, 5))
-        plt.plot(range(0, 10), rCorrect, label="Error (per Input)", marker='o')
-        plt.xlabel("Digit")
-        plt.ylabel("Accuracy")
-        plt.title(f"Accuracy per Digit: {model_name}")
-        plt.legend()
-        plt.grid(True)
-        self.save_figure(fig, f"{model_name} Accuracy")
-        self.show_figure(fig)
-
-    def plotAccuracyAndCertainty(self, model_name, rCorrect, reversePass=False, last_x_pred=None):
-        """Plot per-digit accuracy with certainty, and optionally reconstruction images."""
-        fig = plt.figure(figsize=(10, 5))
-        plt.plot(range(0, 10), rCorrect, label="Error (per Input)", marker='o')
-        plt.xlabel("Digit")
-        plt.ylabel("Accuracy & Certainty")
-        plt.title(f"Accuracy and Certainty: {model_name}")
-        plt.legend()
-        plt.grid(True)
-        self.save_figure(fig, f"{model_name} Accuracy")
-        self.show_figure(fig)
-
-        if reversePass and last_x_pred is not None:
-            for i in range(0, 10):
-                fig = plt.figure(figsize=(10, 5))
-                j = TheData.test_output[-i-1]
-                _, num = torch.max(j, axis=0)
-                plt.title(f"Reconstruction {num}: {model_name}")
-                image = last_x_pred[9-i, :]
-                image = np.reshape(image, (28, 28))
-                plt.imshow(image)
-                self.save_figure(fig, f"{model_name} Reconstruction {num}")
-                self.show_figure(fig)
-
-    def plotLoss(self, model_name, trainErr, valErr, testErr):
-        """Plots the training, validation, and test losses over time."""
-        fig = plt.figure(figsize=(10, 5))
-
-        # Training starts at epoch 2 (epoch 1 is test-only), so offset by +2
-        plt.plot(range(2, len(trainErr[0]) + 2), trainErr[0], label="Training Error", marker='o')
-        if len(trainErr) > 1 and trainErr[1]:
-            plt.plot(range(2, len(trainErr[1]) + 2), trainErr[1], label="Training Error (Input)", marker='o')
-
-        if testErr:
-            plt.plot(range(1, len(testErr[0]) + 1), testErr[0], label="Test Error", marker='x')
-            if len(testErr) > 1 and testErr[1]:
-                plt.plot(range(1, len(testErr[1]) + 1), testErr[1], label="Test Error (Input)", marker='x')
-
-        plt.xlabel("Epoch")
-        plt.ylabel("Loss")
-        plt.title(f"Error per Epoch: {model_name}")
-        plt.legend()
-        plt.grid(True)
-
-        self.save_figure(fig, f"{model_name} Error")
-        self.show_figure(fig)
-
-    def plotActivations(self, figure=1, percepts=None, concepts=None, symbols=None):
-        if plt.fignum_exists(figure):
-            fig = plt.figure(figure)
-            fig.set_size_inches(12, 4, forward=True)
-            fig.clf()
-        else:
-            fig = plt.figure(figure, figsize=(12, 4))
-
-        if percepts is not None:
-            p = percepts[-1, :, :].squeeze()
-            pAct = torch.norm(p, dim=1).detach().numpy()
-            plt.plot(pAct, marker='o', color='r')
-            plt.xlabel("Activation")
-            plt.ylabel("Percepts")
-            plt.title("Perceptual Activation")
-
-        if concepts is not None:
-            c = concepts[-1, :, :].squeeze()
-            cAct = torch.norm(c, dim=-1).detach().numpy()
-            plt.plot(cAct, marker='o', color='b')
-            plt.xlabel("Epoch")
-            plt.ylabel("Concepts")
-            plt.title("Conceptual Activation")
-
-        if symbols is not None:
-            s = symbols[-1, :, 0].squeeze()
-            sAct = s.detach().numpy()
-            plt.plot(sAct, marker='o', color='g')
-            plt.xlabel("Epoch")
-            plt.ylabel("Symbols")
-            plt.title("Symbolic Activations")
-
-        plt.tight_layout()
-        self.show_figure(fig)
-
-    def plotSpace(self, model):
-        """Visualizes learned weight parameters via PCA projections."""
-        perc_weights = model.prototypes.data.cpu().numpy()
-        pca = PCA(n_components=2)
-        perc_2d = pca.fit_transform(perc_weights)
-
-        fig = plt.figure(figsize=(18, 5))
-
-        plt.subplot(1, 3, 1)
-        plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
-        plt.xlabel("PC1")
-        plt.ylabel("PC2")
-        plt.title("Perceptual Space Prototypes")
-        plt.legend()
-
-        perc_mean = perc_2d.mean(axis=0)
-
-        conc_weights = model.conceptual.fc_p.weight.data.cpu().numpy()
-        conc_proj = pca.transform(conc_weights)
-
-        plt.subplot(1, 3, 2)
-        plt.scatter(perc_2d[:, 0], perc_2d[:, 1], c='blue', label="Perceptual Prototypes")
-        x_vals = np.linspace(np.min(perc_2d[:, 0]) - 1, np.max(perc_2d[:, 0]) + 1, 100)
-        for i in range(conc_proj.shape[0]):
-            n = conc_proj[i]
-            if np.abs(n[1]) > 1e-3:
-                y_vals = perc_mean[1] - (n[0] / n[1]) * (x_vals - perc_mean[0])
-                plt.plot(x_vals, y_vals, '--', label=f"Hyperplane {i + 1}" if i == 0 else None, alpha=0.7)
-            else:
-                plt.axvline(x=perc_mean[0], linestyle='--', alpha=0.7, label=f"Hyperplane {i + 1}" if i == 0 else None)
-        plt.xlabel("PC1")
-        plt.ylabel("PC2")
-        plt.title("Conceptual Hyperplanes")
-        plt.legend()
-
-        symb_weights = model.fc_symbolic.weight.data.cpu().numpy()
-        symb_norms = np.linalg.norm(symb_weights, axis=1)
-        x_symb = np.arange(len(symb_norms))
-
-        plt.subplot(1, 3, 3)
-        plt.vlines(x_symb, 0, symb_norms, color='k', alpha=0.7)
-        plt.scatter(x_symb, symb_norms, color='red', s=100, zorder=3)
-        plt.xlabel("Symbolic Feature Index")
-        plt.ylabel("L2 Norm")
-        plt.title("Symbolic Weights (Lollipop Plot)")
-
-        plt.tight_layout()
-        self.show_figure(fig)
-
-    def plotNetwork(self, model):
-        """Uses Torchviz to visualize the computation graph."""
-        model.eval()
-        output, input, _, _ = model.runTest(TheData.test_input, TheData.test_output)
-        dot = make_dot(output, params=dict(model.named_parameters()))
-        dot.format = "png"
-        graph_path = dot.render(ProjectPaths.output_stem(f"graph_{model.name}"))
-        print(f"Saved network graph as {graph_path}")
-
-    def plotErrorbars(self, model_name, acc):
-        x = list(range(1, len(acc[0]) + 1))
-        y = np.array(np.mean(acc, axis=0))
-        y_err = np.std(acc, axis=0)
-        plt.errorbar(x, y, yerr=y_err, fmt='-o', label=model_name, capsize=4)
-
-    def plotErrorbarsFromFile(self, fn):
-        """Load a CSV of trial accuracies and add an errorbar series to the current plot."""
-        acc = np.loadtxt(ProjectPaths.output_path(f"{fn}.csv"), delimiter=",")
-        y = np.mean(acc, axis=0)
-        y_err = np.std(acc, axis=0)
-        x = list(range(1, len(y) + 1))
-        plt.errorbar(x, y, yerr=y_err, fmt='-o', label=fn, capsize=4)
-
-    def plotComparison(self, models):
-        """Plot per-digit accuracy comparison across model variants.
-
-        Args:
-            models: list of (name, rCorrect_tensor) tuples
-        """
-        digits = list(range(10))
-        n = len(models)
-        width = 0.8 / n
-        fig = plt.figure(figsize=(12, 6))
-        for i, (name, rCorrect) in enumerate(models):
-            offsets = [d + (i - n/2 + 0.5) * width for d in digits]
-            vals = rCorrect.detach().cpu().numpy() if hasattr(rCorrect, 'detach') else rCorrect
-            plt.bar(offsets, vals, width, label=name)
-        plt.xlabel("Digit")
-        plt.ylabel("Accuracy")
-        plt.title("Per-Digit Accuracy Comparison")
-        plt.xticks(digits)
-        plt.ylim(0, 1.05)
-        plt.legend()
-        plt.grid(True, axis='y', alpha=0.3)
-        path = self.save_figure(fig, "Digit Comparison")
-        self.show_figure(fig)
-        print(f"Comparison saved to {path}")
-
-    def plotCombinedLoss(self, models):
-        """Overlay training and test loss curves from multiple models on shared axes.
-
-        Args:
-            models: list of model instances with .trainLosses and .testLosses.
-        """
-        fig = plt.figure(figsize=(12, 6))
-        colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple']
-        for i, m in enumerate(models):
-            color = colors[i % len(colors)]
-            if hasattr(m, 'trainLosses') and m.trainLosses[0]:
-                train = m.trainLosses[0]
-                # Training starts at epoch 2 (epoch 1 is test-only)
-                plt.plot(range(2, len(train) + 2), train,
-                         label=f"{m.name} - Training",
-                         marker='o', color=color, linestyle='-')
-            if hasattr(m, 'testLosses') and m.testLosses[0]:
-                test = m.testLosses[0]
-                plt.plot(range(1, len(test) + 1), test,
-                         label=f"{m.name} - Test",
-                         marker='x', color=color, linestyle='--')
-        plt.xlabel("Epoch")
-        plt.ylabel("Loss")
-        plt.title("Error per Epoch: Model Comparison")
-        plt.legend()
-        plt.grid(True)
-        self.save_figure(fig, "Combined Error Comparison")
-        self.show_figure(fig)
-
-    def plotCombinedAccuracy(self, models):
-        """Overlay per-digit accuracy curves from multiple models on shared axes.
-
-        Args:
-            models: list of (name, rCorrect_tensor) tuples.
-        """
-        fig = plt.figure(figsize=(12, 6))
-        digits = list(range(10))
-        for name, rCorrect in models:
-            vals = rCorrect.detach().cpu().numpy() if hasattr(rCorrect, 'detach') else rCorrect
-            plt.plot(digits, vals, label=name, marker='o')
-        plt.xlabel("Digit")
-        plt.ylabel("Accuracy")
-        plt.title("Accuracy per Digit: Model Comparison")
-        plt.xticks(digits)
-        plt.ylim(0, 1.05)
-        plt.legend()
-        plt.grid(True)
-        self.save_figure(fig, "Combined Accuracy Comparison")
-        self.show_figure(fig)
-
-    def plotEpochComparison(self):
-        """Plot epoch-level accuracy comparison from saved CSV files."""
-        fig = plt.figure(figsize=(10, 5))
-        for fn in ["SimpleModel", "ErgodicModel", "Ergodic - Normed", "Ergodic - Reversible"]:
-            csv_path = ProjectPaths.output_path(f"{fn}.csv")
-            if os.path.exists(csv_path):
-                self.plotErrorbarsFromFile(fn)
-        plt.xlabel("Epoch")
-        plt.ylabel("Accuracy")
-        plt.title("Model Comparison")
-        plt.legend()
-        plt.grid(True)
-        self.save_figure(fig, "Model Comparison")
-        self.show_figure(fig)
-TheReport = Report()
+from util import ProjectPaths
+from visualize import Report, TheReport
 
 class PositionalEncoding(nn.Module):
     nDim   = 2
@@ -520,7 +164,7 @@ class ObjectEncoding(nn.Module):
         TheObjectEncoding.setInputDim(inputDim)
         TheObjectEncoding.setPerceptDim(perceptDim)
         TheObjectEncoding.setConceptDim(conceptDim)
-        TheObjectEncoding.setSymbolDim(1)
+        TheObjectEncoding.setSymbolDim(conceptDim)
         TheObjectEncoding.setOutputDim(outputDim)
     def setInputDim(self, nDim):
         assert self.nObjects != 0, "nObjects was not set"
@@ -562,8 +206,9 @@ class ObjectEncoding(nn.Module):
         size = 0
         size += self.nWhere if where else 0
         size += self.nWhen if when else 0
-        objects = object[0:-size]
-        return objects
+        if size == 0:
+            return object
+        return object[0:-size]
 
     def forward(self, objects, what=False, where=True, when=True, pad=False):
         if self.nObjects == 1: # no positional encoding if there is only one object
@@ -591,7 +236,6 @@ class ObjectEncoding(nn.Module):
     #        x = x[:, :, 0:e]
     #    return x
 TheObjectEncoding = ObjectEncoding()
-
 
 class Data():
     train_input       = []
@@ -643,8 +287,12 @@ class Data():
                 setattr(self, attr, v)
     def shuffle(self):
         rand_indx = torch.randperm(len(self.train_output))
-        self.train_input = self.train_input[rand_indx][:]
-        self.train_output = self.train_output[rand_indx][:]
+        if isinstance(self.train_input, list):
+            self.train_input  = [self.train_input[i] for i in rand_indx]
+            self.train_output = [self.train_output[i] for i in rand_indx]
+        else:
+            self.train_input = self.train_input[rand_indx]
+            self.train_output = self.train_output[rand_indx]
     def loadMNist(self):
         df = pd.read_csv(os.path.join(ProjectPaths.DATA_DIR, 'mnist_train.csv'))
         train = df.values
@@ -733,6 +381,10 @@ class Data():
             self.train_input  = [self.train_input[i] for i in rand_indx]
             self.train_output = [self.train_output[i] for i in rand_indx]
 
+    def tokenize(self, TheLanguageModel):
+        self.train_input      = TheLanguageModel.tokenize(self.train_input)
+        self.validation_input = TheLanguageModel.tokenize(self.validation_input)
+        self.test_input       = TheLanguageModel.tokenize(self.test_input)
     def data(self):
         data = {
             "train": {
@@ -797,7 +449,6 @@ class Message():
     def __call__(self, txt, newline="\n"):
         print(txt, end=newline)
 message = Message()
-
 
 # A set of prototype vectors for each space
 class VectorSet(nn.Module):
@@ -894,12 +545,20 @@ class VectorSet(nn.Module):
 
             err = torch.norm(y-quantized, dim=1)
             err = torch.reshape(err, x.shape[0:2])
+            indices = indices.reshape(x.shape[0:2])
             quantized = torch.reshape(quantized, x.shape)
             # pick the nVector symbols with the smallest reconstruction error
             # Get the top nVectors smallest reconstruction errors
             values_smallest, indices_smallest = torch.topk(err, k=self.nVectors, dim=1, largest=False)
             for i in range(0, indices_smallest.shape[0]):
+                claimed = set()  # track which codebook entries are taken in this batch
                 for j in range(0, indices_smallest.shape[1]):
+                    cb_idx = indices[i, j].item()
+                    if cb_idx in claimed:
+                        # Codebook entry already used — keep original vector
+                        # so distinct inputs stay distinct downstream.
+                        continue
+                    claimed.add(cb_idx)
                     if err[i,j] <= self.snapDistance:
                         cosSim = self.unsignedAngle(x[i, j, :].clone(), quantized[i, indices_smallest[i, j], :].clone())
                         x[i, j, :] = quantized[i, indices_smallest[i, j], :]
@@ -1096,81 +755,119 @@ class VectorSet(nn.Module):
         return torch.max(x, y)
     def intersection(self, x, y):
         return torch.min(x, y)
-# An LVQ implementation with an inverse.
-class ReversibleDictionary(VectorSet):
-    talking = True
-    def addVectors(self, nVec=1, LM=None):
-        super().addVectors(nVec=nVec, decay = 1.0)
-        self.LM = LM
-        dict    = LM.getDictionary()
-        self.replace(list(dict.values()))
-        self.words = list(dict.keys())
-    def lookup(self, x):
-        y = x
-        for b in range(len(x)):
-            for i in range(len(x[b])):
-                y[b][i] =self.words.index(x[b][i])
-        return y
-    def forward(self, input, t):
-        batch = input.shape[0]
-        input = input.squeeze()
-        # percepts are Batch x nVectors x nFeatures
-        tokenized = self.LM.tokenize(input)
-        indices   = self.lookup(tokenized)
-        words     = self.vq.codebook[indices, :]
-        if words.shape[1] < self.nVectors:
-            words = torch.concatenate( (words, torch.zeros([batch, self.nVectors-words.shape[1], self.embeddingSize], device=words.device)), dim=1)
-        return words
-    def flatten(self, words):
-        s = ""
-        for w in words:
-            s += str(w) + " "
-        s = s.rstrip(" ")
-        return s
-    def reverse(self, y, t):
-        batch = y.shape[0]
-        nVec  = y.shape[1]
+# VectorSet backed by a differentiable nn.Embedding with online CBOW training
+class Embedding(VectorSet):
+    """VectorSet backed by a differentiable nn.Embedding with online CBOW training.
 
-        untokenizedWords = [["" for _ in range(nVec)] for _ in range(batch)]
-        for b in range(batch):
-            for v in range(nVec):
-                vec = y[b,v,:].unsqueeze(0)
-                quant, index, _ = self.vq(vec)
-                word = self.words[index]
-                untokenizedWords[b][v] = word #[0][0]
-                if self.talking:
-                    message(word, newline = " " if v!=nVec-1 else "\n")
-        words = self.LM.untokenize(untokenizedWords)
-        return words
-# This class assumes that the perceptual space is a dictionary full of word embeddings.
-class LanguageModel(VectorSet):
-    maxTokens = 0
-    talking   = True
+    Loads pretrained weights from a WordVectors artifact (e.g. sentence.pt)
+    and wraps them in an nn.Embedding so gradients can flow through the
+    forward pass.  ``train_step(words)`` runs one sentence-level CBOW
+    update using the same objective that produced the pretrained weights.
+    """
 
-    # Legacy: will be removed when Lex fully replaces this code path
+    def __init__(self):
+        super().__init__()
+        self._lex = Lex()
+        self.cbow = None       # CBOWModel, created in create()
+        self._emb = None       # nn.Embedding, shared with cbow
+        self.wv = None         # WordVectors snapshot for reverse()
+
     def tokenize(self, data):
+        """Tokenize byte-tensor batch into lists of word strings via Lex."""
         tokenized = []
         for b in range(len(data)):
             sentence = "".join(chr(i) for i in data[b].tolist())
             sentence = sentence.rstrip("\x00")
-            t = sentence.split(" ")
-            self.maxTokens = max(self.maxTokens, len(t))
-            tokenized.append(t)
+            tokens = self._lex.lex_buffer(sentence, 0)
+            tokenized.append(
+                [tok['text'] for tok in tokens if tok['category'] == 'WORD'])
         return tokenized
-    # Legacy: will be removed when Lex fully replaces this code path
+
+    def create(self, nInput=None, nVectors=None, nDim=None, passThrough=True,
+               wv=None, pretrained=True, source=None, learning_rate=0.001):
+        """Initialise from WordVectors or auto-discover embeddings on disk.
+
+        Accepts the same positional signature as VectorSet.create() so it
+        can be used as a drop-in vectorSet member of InputSpace.
+
+        If *wv* is provided, use it directly.  Otherwise auto-discover
+        cached .pt or word2vec text-format files on disk.
+
+        If *source* is provided (a raw text string), build a Lex span table
+        and a token_id → embedding index mapping for grammatical tokenization.
+        Sets ``self.spans``, ``self.source``, and ``self.lex_to_emb``.
+        """
+        if wv is None:
+            wv = self._load_embeddings(pretrained=pretrained)
+        self.wv = wv
+        vocab_size = len(wv)
+        vector_size = wv._vectors.shape[1]
+
+        # Always use the actual embedding vector size — callers may pass a
+        # placeholder nDim that doesn't match the loaded embeddings.
+        super().create(nInput or vocab_size, nVectors or vocab_size,
+                       vector_size, passThrough=passThrough)
+
+        self.cbow = CBOWModel(wv, learning_rate=learning_rate)
+        self._emb = self.cbow.embeddings   # shared nn.Embedding
+
+        # Span-table integration for grammatical tokenizer
+        if source is not None:
+            self._lex.build_vocab(source)
+            self.spans = self._lex.encode(source)
+            self.source = source
+            self.lex_to_emb = {}
+            for word, token_id in self._lex.vocab.items():
+                if word in self.wv:
+                    self.lex_to_emb[token_id] = self.wv.key_to_index[word]
+
+    @staticmethod
+    def _load_embeddings(pretrained=True):
+        """Auto-discover embeddings from data/ and output/ directories."""
+        data_dir = os.path.join(ProjectPaths.PROJECT_DIR, "data", "embeddings")
+        output_dir = os.path.join(ProjectPaths.PROJECT_DIR, "output", "embeddings")
+        os.makedirs(output_dir, exist_ok=True)
+
+        if pretrained:
+            cached = os.path.join(output_dir, "word2vec_custom_pretrained.pt")
+            if os.path.exists(cached):
+                print(f"Loading {cached}...")
+                return WordVectors.load(cached)
+            txt = os.path.join(data_dir, "enwiki_20180420_100d.txt")
+            if os.path.exists(txt):
+                print(f"Loading pretrained embeddings from {txt}...")
+                return WordVectors.load_word2vec_format(txt)
+            # Fall back to sentence.pt from the CBOW pipeline
+            sentence_pt = os.path.join(output_dir, "sentence.pt")
+            if os.path.exists(sentence_pt):
+                print(f"Loading {sentence_pt}...")
+                return WordVectors.load(sentence_pt)
+            raise FileNotFoundError(
+                f"No pretrained embeddings found in {data_dir} or {output_dir}")
+        else:
+            cached = os.path.join(output_dir, "word2vec_custom.pt")
+            if os.path.exists(cached):
+                print(f"Loading {cached}...")
+                return WordVectors.load(cached)
+            raise FileNotFoundError(
+                f"No embeddings found at {cached}. "
+                "Run embed.py first or pass a WordVectors instance.")
+
     def tokenizeList(self, data):
+        """Build vocabulary from a list of strings via Lex."""
         tokenized = []
-        for b in range(len(data)):
-            sentence = data[b]
-            t = sentence.split(" ")
-            for w in t:
-                tokenized.append(w)
+        for sentence in data:
+            tokens = self._lex.lex_buffer(sentence, 0)
+            for tok in tokens:
+                if tok['category'] == 'WORD':
+                    tokenized.append(tok['text'])
         vocab = list(set(tokenized))
         vocab.append(" ")
         vocab.append("\x00")
         return vocab
-    # Legacy: will be removed when Lex fully replaces this code path
+
     def untokenize(self, tokenized):
+        """Convert batch of token lists back to byte tensors."""
         data = []
         for b in range(len(tokenized)):
             sentence = ""
@@ -1181,90 +878,70 @@ class LanguageModel(VectorSet):
             data.append(TheData.stringTensor(sentence))
         data = torch.stack(data)
         return data.unsqueeze(1)
-    def getVectors(self):
-        return self.wv.get_normed_vectors()
-    def getSize(self):
-        return len(self.wv)
+
     def getDictionary(self):
-        dictionary = dict({})
+        """Return {word: encoded_vector} for every word in the vocabulary."""
+        dictionary = {}
         for key in self.wv.index_to_key:
-            word = torch.reshape(torch.tensor(self.wv[key]), [1, 1, self.nDim])
+            word = torch.reshape(self.wv[key].detach().clone(), [1, 1, self.nDim])
             dictionary[key] = TheObjectEncoding.forward(word, pad=True).squeeze()
         return dictionary
-    def create(self, untokenized, nInput=None, nVectors=None, nDim=None, pretrained=True):
-        super().create(nInput, nVectors, nDim)
-        tokenized = self.tokenizeList(untokenized)
-        data_embeddings_dir = os.path.join(ProjectPaths.PROJECT_DIR, "data", "embeddings")
-        output_embeddings_dir = os.path.join(ProjectPaths.PROJECT_DIR, "output", "embeddings")
-        os.makedirs(output_embeddings_dir, exist_ok=True)
-        if pretrained:
-            self.model_path = os.path.join(output_embeddings_dir, "word2vec_custom_pretrained.pt")
-            super().create(nInput, nVectors, 100)
-            if os.path.exists(self.model_path):
-                print(f"Loading {self.model_path}...")
-                self.wv = WordVectors.load(self.model_path)
-            else:
-                print("Loading pretrained embeddings...")
-                pretrained_file = os.path.join(data_embeddings_dir, "enwiki_20180420_100d.txt")
-                self.wv = WordVectors.load_word2vec_format(pretrained_file)
-            vec = self.getVectors()
-            nDim = len(vec[0])
-            nVectors = len(vec)
-            super().create(nInput, nVectors, nDim)
-        else:
-            self.model_path = os.path.join(output_embeddings_dir, "word2vec_custom.pt")
-            nDim = 20
-            super().create(nInput, nVectors, nDim)
-            if os.path.exists(self.model_path):
-                print(f"Loading {self.model_path}...")
-                self.wv = WordVectors.load(self.model_path)
-            else:
-                print("Building vocabulary embeddings...")
-                self.wv = WordVectors.from_vocab(tokenized, vector_size=nDim)
-            vec = self.getVectors()
-            nDim = len(vec[0])
-            nVectors = len(vec)
-            super().create(nInput, nVectors, nDim)
-        self.wv.save(self.model_path)
-        print(f"Saved embeddings to {self.model_path}")
+
+    def getVectors(self):
+        return self.wv.get_normed_vectors()
+
+    def getSize(self):
+        return len(self.wv)
+
     def forward(self, input, t=0):
+        """Look up token embeddings via nn.Embedding (differentiable).
+
+        Input: (batch, max_len) byte tensor from Data.
+        Output: (batch, nVectors, embeddingSize) padded embedding tensor.
+        """
         input = input.squeeze()
         self.batch = len(input)
         tokenized = self.tokenize(input)
 
-        embeddings = []
-        embeddingZeroPad = TheObjectEncoding.objectSize
+        pad_size = TheObjectEncoding.objectSize
+        results = []
         for sentence in tokenized:
-            sentence_embeddings = []
-            nTokens = 0
-            for token in sentence:
-                if token in self.wv:
-                    t = np.concatenate((self.wv[token], np.zeros([embeddingZeroPad])), axis=0)
-                    t = t / np.linalg.norm(t)
-                    sentence_embeddings.append(t)
+            vecs = []
+            for token in sentence[:self.nVectors]:
+                if token in self.cbow.key_to_index:
+                    idx = self.cbow.key_to_index[token]
+                    v = self._emb(torch.tensor(idx))  # (vec_size,)
+                    v = F.pad(v, (0, pad_size))
+                    v = F.normalize(v, p=2, dim=0)
                 else:
-                    t = np.concatenate((np.random.randn(self.nDim), np.zeros([embeddingZeroPad])), axis=0)
-                    t = t / np.linalg.norm(t)
-                    sentence_embeddings.append(t)
-                    warnings.warn('unknown token "{0}"'.format(token))
-                nTokens += 1
-                if nTokens >= self.nVectors:
-                    break
-            while len(sentence_embeddings) < self.nVectors:
-                sentence_embeddings.append(np.zeros(self.embeddingSize))
-            embeddings.append(sentence_embeddings)
+                    v = torch.randn(self.embeddingSize)
+                    v = F.normalize(v, p=2, dim=0)
+                vecs.append(v)
+            # Pad to nVectors
+            while len(vecs) < self.nVectors:
+                vecs.append(torch.zeros(self.embeddingSize))
+            results.append(torch.stack(vecs))
+        return torch.stack(results)
 
-        e = torch.from_numpy(np.array(embeddings, dtype=np.float32))
-        return e
+    def train_step(self, words):
+        """One sentence-level CBOW gradient step.  Returns loss or None."""
+        return self.cbow.train_step(words)
+
+    def snapshot(self):
+        """Update the internal WordVectors from current nn.Embedding weights."""
+        self.wv = self.cbow.to_word_vectors()
+        return self.wv
+
     def reverse(self, y, t=0.0):
+        """Map embedding vectors back to nearest words, return as byte tensor."""
+        wv = self.cbow.to_word_vectors()
         similarWords = [["" for _ in range(self.nVectors)] for _ in range(self.batch)]
         for b in range(self.batch):
             for w in range(self.nVectors):
                 embedding = TheObjectEncoding.slice(y[b, w])
-                word, score = self.wv.most_similar(embedding.detach().numpy(), topn=1)[0]
+                word, score = wv.most_similar(embedding.detach(), topn=1)[0]
                 similarWords[b][w] = word
-        similarWords = self.untokenize(similarWords)
-        return similarWords
+        return self.untokenize(similarWords)
 
 
 class Space(nn.Module):
@@ -1421,44 +1098,33 @@ class InputSpace(Space):
     """
     name = "Inputs"
     def __init__(self, inputShape, outputShape, nVectors, nDim=None, model_type="simple",
-                 tokenizedInput=False, useVQ=True, pretrained=False, data=None):
+                 tokenizedInput=False, useVQ=True, pretrained=False, data=None,
+                 tokenizer="traditional"):
         super(InputSpace, self).__init__(inputShape, outputShape, nVectors, nDim, useVQ=useVQ)
         self.data = data
         self.model_type = model_type
+        self.tokenizer = tokenizer  # "traditional" (word2vec) or "grammatical" (Lex span tables)
         if model_type == "lm":
-            lm = LanguageModel()
-            lm.create(data.combinedTokens, nInput=0, nVectors=nVectors, pretrained=pretrained)
-            self.nDim = lm.nDim
-            # Update ObjectEncoding dimensions now that we know the LM embedding size
-            TheObjectEncoding.setDimensions(lm.nDim, lm.nDim, lm.nDim, data.getOutputSize())
-            # Update our own outputShape to match actual LM embedding size
+            source = data.train_source if tokenizer == "grammatical" else None
+            vs = Embedding()
+            vs.create(self.inputShape[0], nVectors, nDim, pretrained=pretrained,
+                      source=source)
+            self.nDim = vs.nDim
+            TheObjectEncoding.setDimensions(vs.nDim, vs.nDim, vs.nDim, data.getOutputSize())
             self.outputShape = [self.outputShape[0], TheObjectEncoding.inputDim]
-            self.vectorSet.append(ReversibleDictionary())
-            self.vectors().create(self.inputShape[0], self.nVectors, self.nDim, customVQ=True)
-            self.vectors().addVectors(nVec=lm.getSize(), LM=lm)
-            # --- Lex span-table integration ---
-            # Build vocabulary and full span table from the source buffer.
-            # The span table is [num_spans, 3] of (start, end, token_id).
-            if data.train_source is not None:
-                self.lex = Lex()
-                self.lex.build_vocab(data.train_source)
-                self.spans = self.lex.encode(data.train_source)
-                self.source = data.train_source
-                # Build mapping from Lex token_id -> codebook index in
-                # ReversibleDictionary.  The codebook rows are ordered by
-                # self.vectors().words, so codebook_index = words.index(word).
-                codebook_words = self.vectors().words
-                self.lex_to_codebook = {}
-                for word, token_id in self.lex.vocab.items():
-                    if word in codebook_words:
-                        self.lex_to_codebook[token_id] = codebook_words.index(word)
+            self.vectorSet.append(vs)
+            if source is not None:
+                self.lex = vs._lex
+                self.spans = vs.spans
+                self.source = vs.source
+                self.lex_to_codebook = vs.lex_to_emb
         elif model_type == "passthrough":
             vs = VectorSet()
             vs.create(self.inputShape[0], nVectors, nDim, passThrough=True)
             self.vectorSet.append(vs)
         elif model_type == "vq":
             vs = VectorSet()
-            vs.create(self.inputShape[0], nVectors, nDim, nVectors=self.inputShape[0])
+            vs.create(self.inputShape[0], nVectors, nDim)
             self.vectorSet.append(vs)
         else:  # "simple"
             self.createVectorSet(quantized=self.useVQ)
@@ -1484,20 +1150,21 @@ class InputSpace(Space):
         if hasattr(self, 'lex'):
             self.input = self._forward_lex(input)
         else:
-            assert list(input.shape) == [self.batch, self.inputShape[0], self.inputShape[1]]
+            if not isinstance(self.vectors(), Embedding):
+                assert list(input.shape) == [self.batch, self.inputShape[0], self.inputShape[1]]
             self.input = self.vectors().forward(input, t)
         _, output = self.getEmbeddedIO()
         assert list(self.input.shape) == [self.batch, self.outputShape[0], output]
         return self.input
 
     def _forward_lex(self, input):
-        """Span-based encoding: tokenize via Lex, look up codebook vectors,
+        """Span-based encoding: tokenize via Lex, look up embedding vectors,
         encode nWhere from span byte offsets."""
         batch = input.shape[0]
         embSize = self.vectors().embeddingSize
         nVec = self.outputShape[0]
         result = torch.zeros([batch, nVec, embSize], device=input.device)
-        codebook = self.vectors().vq.codebook
+        codebook = self.vectors()._emb.weight.detach()
         where_enc = TheObjectEncoding.where
         div_term = where_enc.div_term
 
@@ -1511,10 +1178,11 @@ class InputSpace(Space):
             for i in range(min(example_spans.shape[0], nVec)):
                 start = example_spans[i, 0].item()
                 token_id = example_spans[i, 2].item()
-                # nWhat: look up codebook vector
+                # nWhat: look up embedding vector and pad to embeddingSize
                 if token_id in self.lex_to_codebook:
                     cb_idx = self.lex_to_codebook[token_id]
-                    result[b, i, :] = codebook[cb_idx]
+                    vec = codebook[cb_idx]
+                    result[b, i, :vec.shape[0]] = vec
                 # nWhere: encode byte offset using same sin/cos as PositionalEncoding
                 pos = start * div_term
                 where_idx = np.add([embSize, embSize], PositionalEncoding.index)
@@ -1530,13 +1198,13 @@ class InputSpace(Space):
         content, positions, times = TheObjectEncoding.reverse(y.clone())
         batch = content.shape[0]
         nVec = content.shape[1]
-        codebook = self.vectors().vq.codebook
-        words_list = self.vectors().words
-        # The codebook vectors are embeddingSize = nWhat + objectSize.
+        codebook = self.vectors()._emb.weight.detach()
+        words_list = self.vectors().wv.index_to_key
+        # The embedding vectors are vector_size-dim (nWhat).
         # After ObjectEncoding.reverse(), the last objectSize dims are zeroed.
         # Compare only the nWhat portion for nearest-neighbor lookup.
-        nWhat = self.vectors().embeddingSize - TheObjectEncoding.objectSize
-        cb_what = codebook[:, :nWhat]  # [codebookSize, nWhat]
+        nWhat = codebook.shape[1]
+        cb_what = codebook  # [vocab_size, nWhat]
         # 2. For each vector, find nearest codebook entry by cosine sim on nWhat
         recovered_words = [[] for _ in range(batch)]
         for b in range(batch):
@@ -1584,7 +1252,6 @@ class InputSpace(Space):
             else:
                 result.append(words)
         return result
-
 class PerceptualSpace(Space):
     name = "Percepts"
     hasAttention = True
@@ -1641,21 +1308,7 @@ class PerceptualSpace(Space):
     def reverse(self, y, t=0):
         if self.passThrough:
             return y
-        # Full perceptual reverse not yet implemented; pass through for now
         return y
-        self.percepts = self.reverseBegin(y, t)
-        if self.processSymbols:
-            self.percepts = self.dereference(self.percepts)
-        # preserve the codebook's positional encoding
-        encoding = self.percepts[:, :, -TheObjectEncoding.objectSize:]
-        if self.useVQ:
-            y = y[:,:,0:-TheObjectEncoding.objectSize]
-        if self.hasAttention:
-            y = self.attention.reverse(y, t)
-        x = self.reversePi(y, t)
-        #self.concepts = torch.concatenate((self.concepts, encoding), dim=2)
-        x = self.reverseEnd(x, t)
-        return x
     @staticmethod
     def test():
         pass
@@ -1894,6 +1547,8 @@ class OutputSpace(Space):
         if self.data is None:
             return None
         out = self.data.test_output
+        if isinstance(out, list):
+            out = torch.stack(out)
         return out.squeeze(-1) if out.ndim == 3 else out
     def prepOutput(self, outputBatch):
         if isinstance(outputBatch, list):
@@ -1927,9 +1582,16 @@ class OutputSpace(Space):
         if not hasattr(input_space, 'lex'):
             return
         self.text_mode = True
-        self._codebook = input_space.vectors().vq.codebook
-        self._words_list = input_space.vectors().words
-        self._embedding_size = input_space.vectors().embeddingSize
+        vs = input_space.vectors()
+        if hasattr(vs, '_emb'):
+            # Embedding-backed path
+            self._codebook = vs._emb.weight.detach()
+            self._words_list = vs.wv.index_to_key
+        else:
+            # Legacy VQ-backed path
+            self._codebook = vs.vq.codebook
+            self._words_list = vs.words
+        self._embedding_size = vs.embeddingSize
         self._lex = input_space.lex
 
     def reconstruct_text(self, vectors):
@@ -2124,13 +1786,17 @@ class BaseModel(nn.Module):
         print(f"[{self.name}] Weights saved to {path}")
 
     def load_weights(self, path=None, strict=False):
-        """Load model weights from disk."""
+        """Load model weights from disk.  Silently skips mismatched shapes."""
         if path is None:
             path = os.path.join(ProjectPaths.OUTPUT_DIR, "weights.pt")
         if not os.path.exists(path):
             return False
         state = torch.load(path, map_location=TheDevice, weights_only=True)
-        self.load_state_dict(state, strict=strict)
+        try:
+            self.load_state_dict(state, strict=strict)
+        except RuntimeError as e:
+            print(f"[{self.name}] Warning: cannot load {path} (architecture changed), training from scratch")
+            return False
         print(f"[{self.name}] Weights loaded from {path}")
         return True
 
@@ -2138,19 +1804,29 @@ class BaseModel(nn.Module):
         """Run test epoch, compute per-digit accuracy, and plot."""
         test_input, test_output = self.inputSpace.getTestData()
         _, _, y_pred, last_x_pred = self.runEpoch(test_input, test_output, lr=0)
-        _, predicted = torch.max(y_pred, 1)
-        _, actual = torch.max(self.outputSpace.getTestOutput(), 1)
+        if y_pred.dim() == 1:
+            predicted = (y_pred > 0.5).long()
+            actual = (self.outputSpace.getTestOutput().squeeze() > 0.5).long()
+        else:
+            _, predicted = torch.max(y_pred, 1)
+            _, actual = torch.max(self.outputSpace.getTestOutput(), 1)
 
+        nClasses = int(actual.max().item()) + 1
         if self.certainty:
-            norms = torch.linalg.norm(self.outputSpace.forwardLinear.W, dim=0)
+            # forwardLinear may be a bound method (reversePass=True) or a
+            # LinearLayer (reversePass=False).  Get the layer either way.
+            fwd_layer = (self.outputSpace.linear1
+                         if hasattr(self.outputSpace, 'linear1')
+                         else self.outputSpace.forwardLinear)
+            norms = torch.linalg.norm(fwd_layer.W, dim=0)
             rCorrect = torch.zeros_like(norms)
         else:
-            rCorrect = torch.zeros((10))
-        for i in range(0,10):
+            rCorrect = torch.zeros((nClasses))
+        for i in range(nClasses):
             total    = (actual == i).sum().item()
             correct  = (actual==i) & (predicted==actual)
             nCorrect = correct.sum().item()
-            rCorrect[i] = nCorrect / total
+            rCorrect[i] = nCorrect / total if total > 0 else 0.0
             print(f"Correctly predicted {i}: {rCorrect[i]}")
             if self.certainty:
                 print(f"Weight norm: {norms[i]}")
@@ -2160,10 +1836,51 @@ class BaseModel(nn.Module):
             correlation_matrix = torch.corrcoef(input_matrix)
             correlation_value = correlation_matrix[0, 1]
             print(f"Pearson Correlation: {correlation_value}")
-            TheReport.plotAccuracyAndCertainty(self.name, rCorrect, self.reversePass, last_x_pred)
+            TheReport.plotAccuracyAndCertainty(self.name, rCorrect, self.reversePass, last_x_pred, TheData.test_output)
         else:
             TheReport.plotAccuracy(self.name, rCorrect)
         return rCorrect
+
+    @staticmethod
+    def _bytes_to_text(tensor):
+        """Decode a byte tensor (or padded int8 tensor) to a string."""
+        if tensor.dim() > 1:
+            tensor = tensor.squeeze()
+        chars = [chr(int(b) & 0xFF) for b in tensor.tolist()]
+        return "".join(chars).rstrip("\x00").strip()
+
+    def _reconstructionReport(self):
+        """Run a test pass with reverse and report input vs reconstructed text."""
+        test_input, test_output = self.inputSpace.getTestData()
+        _, _, allOut, _ = self.runEpoch(test_input, test_output, lr=0, batchSize=len(test_input), t=1.0)
+
+        rows = []
+        for i in range(len(test_input)):
+            original = self._bytes_to_text(test_input[i])
+            if hasattr(self.inputSpace, 'reconstructed'):
+                recon = self._bytes_to_text(self.inputSpace.reconstructed[i])
+            else:
+                recon = "(no reconstruction)"
+            match = original.split() == recon.split()
+            css = "match" if match else "mismatch"
+            label = test_output[i]
+            if isinstance(label, torch.Tensor):
+                label = label.squeeze().tolist()
+            pred = allOut[i].item() if allOut.dim() >= 1 else allOut.item()
+            rows.append([
+                f'{original}',
+                f'<span class="{css}">{recon}</span>',
+                f'{label}',
+                f'{pred:.4f}',
+                f'<span class="{css}">{"Yes" if match else "No"}</span>',
+            ])
+            print(f"  Input: {original:30s} -> Reconstructed: {recon:30s} Predicted: {pred:.4f} {'OK' if match else 'MISMATCH'}")
+
+        TheReport.add_table(
+            "Input vs Reconstructed",
+            ["Input", "Reconstructed", "Label", "Predicted", "Match"],
+            rows)
+
 class BasicModel(BaseModel):
     name = "BasicModel"
 
@@ -2225,6 +1942,7 @@ class BasicModel(BaseModel):
             symbolicOrder=arch["symbolicOrder"],
             processSymbols=arch["processSymbols"],
             model_type=model_type, data=data, pretrained=pretrained,
+            tokenizer=arch.get("tokenizer", "traditional"),
         )
         # Auto-load weights if configured
         wcfg = cfg.get("weights", {})
@@ -2243,8 +1961,10 @@ class BasicModel(BaseModel):
                # NOTE: self.spaces is cleared below to prevent accumulation across
                # repeated create() calls (class-level list was never reset).
                conceptualOrder=0, symbolicOrder=0, processSymbols=False,
-               model_type="simple", data=None, pretrained=False):
+               model_type="simple", data=None, pretrained=False,
+               tokenizer="traditional"):
         self.spaces = []  # reset — prevent stale accumulation from prior create() calls
+        self.tokenizer        = tokenizer  # "traditional" (word2vec) or "grammatical" (Lex span tables)
         self.reversePass      = reversePass
         self.nInput           = nInput
         self.nOutput          = nOutput
@@ -2274,7 +1994,8 @@ class BasicModel(BaseModel):
                                            self.nInput, TheObjectEncoding.inputDim,
                                            model_type=model_type, data=data,
                                            pretrained=pretrained,
-                                           useVQ=self.quantized)
+                                           useVQ=self.quantized,
+                                           tokenizer=self.tokenizer)
         self.perceptualSpace = PerceptualSpace([self.nInput, TheObjectEncoding.inputDim],
                                                [self.nPercepts, TheObjectEncoding.perceptDim],
                                                self.nPercepts, TheObjectEncoding.perceptDim,
@@ -2376,9 +2097,8 @@ class BasicModel(BaseModel):
     def SubsymbolicThoughtReverse(self, concepts, symbols, t=0.0):
         concepts = self.symbolicSpace2.reverse(symbols, t)
         percepts = self.conceptualSpace2.reverse(concepts, t)
-        #data = self.perceptualSpace2.reverse(percepts, t)
-        data = None
-        return data
+        # perceptualSpace2.reverse is a no-op for now (attention shape mismatch)
+        return percepts
     def SymbolicThought(self, data, t=0.0):
         words   = self.syntacticSpace3(data, t)
         symbols = self.symbolicSpace3(words, t)
@@ -2446,15 +2166,19 @@ class BasicModel(BaseModel):
                 outErr, inErr, allOut, lastIn = self.runEpoch(train_input, train_output, lr=lr, batchSize=batchSize, t=t)
                 trainLosses[0].append(outErr)
                 trainLosses[1].append(inErr)
-                print(f"Train Loss: {outErr:.4f},  {inErr:.4f}")
+                print(f"Train Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
 
             test_input, test_output = self.inputSpace.getTestData()
             outErr, inErr, allOut, lastIn = self.runEpoch(test_input, test_output, lr=0, batchSize=batchSize, t=t)
             testLosses[0].append(outErr)
             testLosses[1].append(inErr)
 
-            _, predicted = torch.max(allOut, 1)
-            _, actual = torch.max(self.outputSpace.getTestOutput(), 1)
+            if allOut.dim() == 1:
+                predicted = (allOut > 0.5).long()
+                actual = (self.outputSpace.getTestOutput().squeeze() > 0.5).long()
+            else:
+                _, predicted = torch.max(allOut, 1)
+                _, actual = torch.max(self.outputSpace.getTestOutput(), 1)
             total   = predicted.size(0)
             correct = (predicted == actual).sum().item()
             accuracy += [correct / total]
@@ -2470,6 +2194,11 @@ class BasicModel(BaseModel):
         print(f"Final Stats:")
         TheReport.plotLoss(self.name, trainLosses, validationLosses, testLosses)
         self.rCorrect = self.mnistReport()
+
+        # Reconstruction report: run final test pass and show input vs reconstructed
+        if self.reversePass and self.inputSpace.model_type == "lm":
+            self._reconstructionReport()
+
         self.trainLosses = trainLosses
         self.testLosses  = testLosses
         return accuracy
@@ -2478,6 +2207,9 @@ class BasicModel(BaseModel):
         """Return (outputLossFn, inputLossFn) based on model config."""
         if self.certainty:
             return CertaintyWeightedCrossEntropy(), nn.MSELoss()
+        elif self.nOutput <= 2:
+            # Binary classification or scalar regression — MSE is appropriate
+            return nn.MSELoss(), nn.MSELoss()
         elif self.conceptualOrder > 0 or self.symbolicOrder > 0:
             return nn.MSELoss(), nn.MSELoss()
         else:

@@ -1,5 +1,13 @@
 # Architecture
 
+## Grammar
+
+The 5DG grammar used for English sentence parsing is documented in
+[Grammar.md](../../doc/Grammar.md).  The parser implementation lives in
+`bin/parse.py` and loads its CFG rules from `data/grammar.cfg`.
+
+---
+
 ## Sigma and Pi Layers
 
 Given a weight matrix $( W \in \mathbb{R}^{m \times n})$ and input vector $( x \in \mathbb{R}^n )$, the output vector $( y \in \mathbb{R}^m )$ is computed as:

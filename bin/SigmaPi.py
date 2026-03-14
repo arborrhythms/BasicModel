@@ -8,6 +8,7 @@ import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
 from Model import Layer, SigmaLayer, ReversibleSigmaLayer, PiLayer , ReversiblePiLayer, VQLayer # Import custom layers from Model.py
+from visualize import TheReport
 
 # This numerically hides the XOR in a set of random vectors,
 # which must be identified before the XOR problem can be solved.
@@ -33,8 +34,8 @@ class LogicalFunctionNet(Layer):
         # The optional VQ stage is kept for experiments but is currently disabled
         # so the logical layers operate directly on the input tensor.
         #x = self.vq(x,t)
-        x1 = self.hidden(x, t)  # Pass through PiLayer
-        x2 = self.output(x1, t)  # Pass through SigmaLayer
+        x1 = self.hidden(x)  # Pass through PiLayer
+        x2 = self.output(x1)  # Pass through SigmaLayer
         return x2
 
 def logic(X_train, Y_train):
@@ -46,17 +47,17 @@ def logic(X_train, Y_train):
 
     # Initialize the model, loss function, and optimizer
     model     = LogicalFunctionNet(input_dim, hidden_dim, output_dim)
+    model.hidden.setTemperature(0.0001)
+    model.output.setTemperature(0.0001)
     criterion = nn.MSELoss()  # Mean Squared Error Loss
     optimizer = optim.Adam(model.parameters(), lr=0.01)  # Adam Optimizer
 
     # Training loop
     epochs      = 1000
     mse_history = []
-
-    t = 0.0001
     for epoch in range(epochs):
         optimizer.zero_grad()              # Clear gradients
-        outputs = model(X_train, t)        # Forward pass on all truth-table rows
+        outputs = model(X_train)           # Forward pass on all truth-table rows
         loss    = criterion(outputs, Y_train) # Compute loss
         loss.backward()                    # Backpropagation
         optimizer.step()                   # Update weights
@@ -64,54 +65,30 @@ def logic(X_train, Y_train):
         if epoch % 100 == 0:
             print(f'Epoch {epoch}/{epochs}, MSE: {loss.item():.6f}')
 
-    # Plot the Mean Squared Error (MSE) over time
-    plt.figure(figsize=(8,5))
+    # Plot MSE loss curve
+    fig = plt.figure(figsize=(8, 5))
     plt.plot(mse_history, label='MSE Loss')
     plt.xlabel("Epoch")
     plt.ylabel("Mean Squared Error")
     plt.title("Training Loss Over Time")
     plt.legend()
     plt.grid()
-    plt.show()
+    TheReport.save_figure(fig, "SigmaPi Training Loss")
+    TheReport.show_figure(fig)
 
     # Test the trained model
     with torch.no_grad():
-        test_outputs = model(X_train, 0)
+        test_outputs = model(X_train)
         print("\nPredictions after training:")
         for i, (x, y) in enumerate(zip(X_train, test_outputs)):
             print(f"Input: {x.numpy()}, Predicted Output: {y.item():.4f}")
     # Display the learned decision boundary
     if input_dim == 2:
-        plot_decision_boundary(model, X_train.numpy(), Y_train.numpy())
+        TheReport.plotDecisionBoundary(
+            model, X_train.numpy(), Y_train.numpy(),
+            title="Decision Boundary of PiLayer + SigmaLayer")
 
-
-# Plot decision boundary
-def plot_decision_boundary(model, X, Y):
-    """Visualise the learned scalar output over the 2D boolean input plane."""
-    x_min, x_max = -0.5, 1.5
-    y_min, y_max = -0.5, 1.5
-    xx, yy = np.meshgrid(np.linspace(x_min, x_max, 100),
-                         np.linspace(y_min, y_max, 100))
-
-    grid_points = np.c_[xx.ravel(), yy.ravel()]
-    grid_tensor = torch.tensor(grid_points, dtype=torch.float32)
-    # The model expects shape (batch, symbols, embeddingDim); for the boolean
-    # examples the embedding dimension is 1, so unsqueeze creates that axis.
-    grid_tensor = grid_tensor.unsqueeze(2)
-    with torch.no_grad():
-        Z = model(grid_tensor).reshape(xx.shape)
-    Z = Z.squeeze()
-    plt.figure(figsize=(7, 6))
-    plt.contourf(xx, yy, Z, levels=[0, 0.5, 1], cmap="coolwarm", alpha=0.5)
-    plt.colorbar(label="Model Output")
-
-    # Plot training points
-    plt.scatter(X[:, 0], X[:, 1], c=Y.squeeze(), edgecolors='k', cmap="coolwarm", s=100)
-    plt.xlabel("Input Feature x1")
-    plt.ylabel("Input Feature x2")
-    plt.title("Decision Boundary of PiLayer + SigmaLayer")
-    plt.grid(True)
-    plt.show()
+    TheReport.write_html()
 
 if __name__ == '__main__':
     # Define the logical functions training set

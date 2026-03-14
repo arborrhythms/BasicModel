@@ -33,6 +33,19 @@ ergodic : data/ergodic.xml
 simple : data/simple.xml
 	make run XML1=$<
 
+mnist : data/mnist.xml
+	make run XML1=$<
+
+SigmaPi :
+	cd bin && PYTHONPATH=. ../.venv/bin/python SigmaPi.py
+
+SymPercept :
+	cd bin && PYTHONPATH=. ../.venv/bin/python SymPercept.py
+
+SPNN :
+	cd bin && PYTHONPATH=. ../.venv/bin/python SPNN.py
+
+
 compare :
 	cd bin && PYTHONPATH=. ../.venv/bin/python BasicModel.py --compare $(XML1) $(XML2)
 

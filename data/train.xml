@@ -1,0 +1,59 @@
+<?xml version="1.0" ?>
+<model>
+  <architecture>
+    <nInput>32</nInput>
+    <nPercepts>32</nPercepts>
+    <nConcepts>256</nConcepts>
+    <nSymbols>256</nSymbols>
+    <nWords>16</nWords>
+    <nOutput>32</nOutput>
+    <reversePass>true</reversePass>
+    <perceptPassThrough>false</perceptPassThrough>
+    <symbolPassThrough>false</symbolPassThrough>
+    <perceptPrototypes>0</perceptPrototypes>
+    <conceptPrototypes>0</conceptPrototypes>
+    <ergodic>false</ergodic>
+    <certainty>false</certainty>
+    <quantized>false</quantized>
+    <invertible>false</invertible>
+    <hasNorm>false</hasNorm>
+    <conceptualOrder>0</conceptualOrder>
+    <symbolicOrder>0</symbolicOrder>
+    <processSymbols>false</processSymbols>
+    <tokenizer>grammatical</tokenizer>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <objectSize>0</objectSize>
+    <inputDim>1</inputDim>
+    <perceptDim>1</perceptDim>
+    <conceptDim>1</conceptDim>
+    <symbolDim>0</symbolDim>
+    <outputDim>1</outputDim>
+  </architecture>
+
+  <training>
+    <dataset>text</dataset>
+    <modelType>lm</modelType>
+    <numTrials>1</numTrials>
+    <numEpochs>10</numEpochs>
+    <batchSize>10</batchSize>
+    <learningRate>0.01</learningRate>
+    <pretrained>false</pretrained>
+    <detectAnomaly>false</detectAnomaly>
+  </training>
+
+  <embeddings>
+    <numShards>1</numShards>
+    <maxDocs>10000</maxDocs>
+    <vectorSize>100</vectorSize>
+    <trainingEpochs>10</trainingEpochs>
+    <minCount>5</minCount>
+    <artifactPath>output/embeddings/sentence.pt</artifactPath>
+  </embeddings>
+
+  <weights>
+    <path>output/weights.pt</path>
+    <autoload>true</autoload>
+    <autosave>false</autosave>
+  </weights>
+</model>

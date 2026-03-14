@@ -856,7 +856,7 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         data.load("xor")
         return data
 
-    def _make_input_space(self):
+    def _make_input_space(self, tokenizer="grammatical"):
         """Create an InputSpace with model_type='lm' from XOR text data."""
         from BasicModel import InputSpace, TheObjectEncoding
         data = self._make_text_data()
@@ -866,12 +866,13 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         # setDimensions(), but super().__init__ needs a valid nDim.
         # Pass nDim=1 as a placeholder; the lm path overrides it.
         inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nVectors,
-                         nDim=1, model_type="lm", pretrained=False, data=data)
+                         nDim=1, model_type="lm", pretrained=False, data=data,
+                         tokenizer=tokenizer)
         return inp, data
 
     def test_lex_created_on_init(self):
         """InputSpace with model_type='lm' creates a Lex instance."""
-        from Lex import Lex
+        from lex import Lex
         inp, _ = self._make_input_space()
         self.assertTrue(hasattr(inp, 'lex'))
         self.assertIsInstance(inp.lex, Lex)
@@ -979,7 +980,8 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         nInput = 8
         nVectors = 8
         inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nVectors,
-                         nDim=1, model_type="lm", pretrained=False, data=data)
+                         nDim=1, model_type="lm", pretrained=False, data=data,
+                         tokenizer="grammatical")
         # Create OutputSpace with the same embedding setup
         nOut = 4
         os_ = OutputSpace([nInput, TheObjectEncoding.conceptDim],
@@ -998,7 +1000,8 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         nInput = 8
         nVectors = 8
         inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nVectors,
-                         nDim=1, model_type="lm", pretrained=False, data=data)
+                         nDim=1, model_type="lm", pretrained=False, data=data,
+                         tokenizer="grammatical")
         nOut = 4
         os_ = OutputSpace([nInput, TheObjectEncoding.conceptDim],
                           [nOut, TheObjectEncoding.outputDim],
@@ -1006,8 +1009,8 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         os_.set_text_mode(inp)
 
         # Build synthetic vectors from known codebook entries with known nWhere
-        codebook = inp.vectors().vq.codebook
-        words_list = inp.vectors().words
+        codebook = inp.vectors()._emb.weight.detach()
+        words_list = inp.vectors().wv.index_to_key
         embSize = inp.vectors().embeddingSize
         nWhat = embSize - TheObjectEncoding.objectSize
         div_term = TheObjectEncoding.where.div_term
@@ -1038,7 +1041,8 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         nInput = 8
         nVectors = 8
         inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nVectors,
-                         nDim=1, model_type="lm", pretrained=False, data=data)
+                         nDim=1, model_type="lm", pretrained=False, data=data,
+                         tokenizer="grammatical")
         nOut = 4
         os_ = OutputSpace([nInput, TheObjectEncoding.conceptDim],
                           [nOut, TheObjectEncoding.outputDim],
@@ -1046,8 +1050,8 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         os_.set_text_mode(inp)
 
         # Build vectors with nWhere = 0 (all zeros)
-        codebook = inp.vectors().vq.codebook
-        words_list = inp.vectors().words
+        codebook = inp.vectors()._emb.weight.detach()
+        words_list = inp.vectors().wv.index_to_key
         embSize = inp.vectors().embeddingSize
 
         batch = 1
@@ -1073,7 +1077,8 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         nInput = 8
         nVectors = 8
         inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nVectors,
-                         nDim=1, model_type="lm", pretrained=False, data=data)
+                         nDim=1, model_type="lm", pretrained=False, data=data,
+                         tokenizer="grammatical")
         nOut = 4
         os_ = OutputSpace([nInput, TheObjectEncoding.conceptDim],
                           [nOut, TheObjectEncoding.outputDim],
@@ -1081,8 +1086,8 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         os_.set_text_mode(inp)
 
         # Build synthetic vectors with nWhere at known positions
-        codebook = inp.vectors().vq.codebook
-        words_list = inp.vectors().words
+        codebook = inp.vectors()._emb.weight.detach()
+        words_list = inp.vectors().wv.index_to_key
         embSize = inp.vectors().embeddingSize
         div_term = TheObjectEncoding.where.div_term
         where_idx = np.add([embSize, embSize], PositionalEncoding.index)
@@ -1113,7 +1118,8 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         nInput = 8
         nVectors = 8
         inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nVectors,
-                         nDim=1, model_type="lm", pretrained=False, data=data)
+                         nDim=1, model_type="lm", pretrained=False, data=data,
+                         tokenizer="grammatical")
         nOut = 4
         os_ = OutputSpace([nInput, TheObjectEncoding.conceptDim],
                           [nOut, TheObjectEncoding.outputDim],
@@ -1152,7 +1158,8 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         nInput = 8
         nVectors = 8
         inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nVectors,
-                         nDim=1, model_type="lm", pretrained=False, data=data)
+                         nDim=1, model_type="lm", pretrained=False, data=data,
+                         tokenizer="grammatical")
         return inp, data
 
     def test_reverse_recovers_words(self):
@@ -1230,38 +1237,147 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         self.assertIsInstance(result, (torch.Tensor, list))
 
 
-class TestLegacyTokenizationRemoval(unittest.TestCase):
-    """Task 7: Data.tokenize() removed; LanguageModel legacy methods still exist."""
+class TestTokenizerConfig(unittest.TestCase):
+    """Tokenizer is selectable via config: traditional (word2vec) or grammatical (Lex)."""
 
-    def test_data_has_no_tokenize_method(self):
-        """Data.tokenize() was dead code and has been removed."""
-        from BasicModel import Data
-        data = Data()
-        self.assertFalse(hasattr(data, 'tokenize'),
-                         "Data.tokenize() should have been removed")
-
-    def test_language_model_tokenize_still_exists(self):
-        """LanguageModel.tokenize() is still needed by the non-lex code path."""
-        from BasicModel import LanguageModel
-        self.assertTrue(hasattr(LanguageModel, 'tokenize'))
-
-    def test_language_model_tokenize_list_still_exists(self):
-        """LanguageModel.tokenizeList() is still needed by create()."""
-        from BasicModel import LanguageModel
-        self.assertTrue(hasattr(LanguageModel, 'tokenizeList'))
-
-    def test_language_model_untokenize_still_exists(self):
-        """LanguageModel.untokenize() is still needed by the non-lex code path."""
-        from BasicModel import LanguageModel
-        self.assertTrue(hasattr(LanguageModel, 'untokenize'))
-
-    def test_data_loads_without_tokenize(self):
-        """Data loading (XOR) works without Data.tokenize()."""
-        from BasicModel import Data
+    def test_traditional_tokenizer_no_lex(self):
+        """tokenizer='traditional' should NOT create Lex instance."""
+        from BasicModel import InputSpace, Data
         data = Data()
         data.load("xor")
-        self.assertGreater(len(data.train_input), 0)
-        self.assertTrue(hasattr(data, 'train_source'))
+        nInput = 8
+        inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nInput,
+                         nDim=1, model_type="lm", pretrained=False, data=data,
+                         tokenizer="traditional")
+        self.assertFalse(hasattr(inp, 'lex'))
+
+    def test_grammatical_tokenizer_creates_lex(self):
+        """tokenizer='grammatical' should create Lex instance."""
+        from BasicModel import InputSpace, Data
+        from lex import Lex
+        data = Data()
+        data.load("xor")
+        nInput = 8
+        inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nInput,
+                         nDim=1, model_type="lm", pretrained=False, data=data,
+                         tokenizer="grammatical")
+        self.assertTrue(hasattr(inp, 'lex'))
+        self.assertIsInstance(inp.lex, Lex)
+
+    def test_traditional_keeps_reversible_dictionary(self):
+        """tokenizer='traditional' creates Embedding for word2vec."""
+        from BasicModel import InputSpace, Data, Embedding
+        data = Data()
+        data.load("xor")
+        nInput = 8
+        inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nInput,
+                         nDim=1, model_type="lm", pretrained=False, data=data,
+                         tokenizer="traditional")
+        self.assertIsInstance(inp.vectors(), Embedding)
+
+
+class TestEmbeddingLexDelegation(unittest.TestCase):
+    """Verify Embedding tokenize/tokenizeList delegate to Lex."""
+
+    def test_tokenize_returns_word_list(self):
+        """tokenize() returns list of word lists from byte tensor input."""
+        from BasicModel import Embedding
+        text = "the dog barks"
+        byte_tensor = torch.tensor([ord(c) for c in text], dtype=torch.uint8)
+        padded = torch.zeros(32, dtype=torch.uint8)
+        padded[:len(byte_tensor)] = byte_tensor
+        batch = padded.unsqueeze(0)  # [1, 32]
+
+        emb = Embedding()
+        result = emb.tokenize(batch)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0], ["the", "dog", "barks"])
+
+    def test_tokenize_strips_punctuation(self):
+        """tokenize() separates punctuation from words."""
+        from BasicModel import Embedding
+        text = "the dog barks."
+        byte_tensor = torch.tensor([ord(c) for c in text], dtype=torch.uint8)
+        padded = torch.zeros(32, dtype=torch.uint8)
+        padded[:len(byte_tensor)] = byte_tensor
+        batch = padded.unsqueeze(0)
+
+        emb = Embedding()
+        result = emb.tokenize(batch)
+        # Lex splits "barks." into "barks" (WORD) + "." (SEPARATOR)
+        # Only WORDs are returned
+        self.assertIn("barks", result[0])
+        self.assertNotIn("barks.", result[0])
+        self.assertNotIn(".", result[0])
+
+    def test_tokenize_list_builds_vocab(self):
+        """tokenizeList() produces vocabulary via Lex."""
+        from BasicModel import Embedding
+        emb = Embedding()
+        data = ["the dog barks", "the cat sits"]
+        vocab = emb.tokenizeList(data)
+        self.assertIn("dog", vocab)
+        self.assertIn("cat", vocab)
+        self.assertIn(" ", vocab)
+        self.assertIn("\x00", vocab)
+
+
+class TestInputSpaceParseEmbeddings(unittest.TestCase):
+
+    def test_loads_parse_artifact(self):
+        import tempfile, os
+        from embed import WordVectors
+        import numpy as np
+
+        words = ["the", "dog", "barks", "cat", "sits"]
+        vecs = np.random.randn(len(words), 20).astype(np.float32)
+        wv = WordVectors(vecs, words)
+        with tempfile.NamedTemporaryFile(suffix='.pt', delete=False) as f:
+            artifact_path = f.name
+        wv.save(artifact_path)
+
+        try:
+            loaded = WordVectors.load(artifact_path)
+            self.assertEqual(len(loaded), 5)
+            self.assertEqual(loaded._vectors.shape[1], 20)
+            self.assertIn("dog", loaded)
+        finally:
+            os.unlink(artifact_path)
+
+
+class TestXorForwardPass(unittest.TestCase):
+    """Embedding-backed InputSpace handles xor.xml forward pass without assertion error."""
+
+    def test_xor_forward_produces_output(self):
+        """InputSpace with model_type='lm' can forward xor data through Embedding."""
+        from BasicModel import InputSpace, Data, TheObjectEncoding
+        data = Data()
+        data.load("xor")
+        nInput = 8
+        nVectors = 8
+        inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nVectors,
+                         nDim=1, model_type="lm", pretrained=False, data=data,
+                         tokenizer="traditional")
+        inputTensor = inp.prepInput(data.train_input[:2])
+        result = inp.forward(inputTensor)
+        self.assertEqual(result.shape[0], 2)  # batch size
+        self.assertEqual(result.shape[1], inp.outputShape[0])
+
+
+class TestErgodicMnistReport(unittest.TestCase):
+    """OutputSpace.forwardLinear.W accessible even with reversePass=True."""
+
+    def test_forward_layer_weight_accessible(self):
+        """mnistReport can access the forward linear layer weight matrix."""
+        from BasicModel import OutputSpace, TheObjectEncoding, LinearLayer
+        # Create OutputSpace with reversePass=True (the default from defaults.xml)
+        TheObjectEncoding.setOutputDim(1)
+        os_ = OutputSpace([10, 1], [10, 1], 10, 1, reversePass=True)
+        # The bug was: forwardLinear is a bound method, not a layer
+        # After fix: we can get the layer via linear1
+        fwd_layer = (os_.linear1 if hasattr(os_, 'linear1') else os_.forwardLinear)
+        self.assertTrue(hasattr(fwd_layer, 'W'))
+        self.assertIsInstance(fwd_layer, LinearLayer)
 
 
 if __name__ == "__main__":

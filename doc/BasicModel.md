@@ -303,6 +303,6 @@ $$\Delta W_{y}\Delta W_{x} = \eta(\widehat{y} - y)\delta_{f}(W^{T} \cdot g^{- 1}
 
 $$\Delta W_{y}\Delta W_{x} = \eta(\widehat{x} - x)(\widehat{y} - y)\delta_{f}(W^{T} \cdot g^{- 1}(x))\delta_{g}(W \cdot f^{- 1}(y))f^{- 1}(y)g^{- 1}(x)$$
 
-[^1]: Perceptual space is known as ["]{dir="rtl"}embedding space" in the current literature on transformer neural net architectures.
+[^1]: Perceptual space is known as "embedding space" in the current literature on transformer neural net architectures.
 
-[^2]: For example, {0,1} and {0,1}, if those sets are orthogonal to one another, pose no constraint on the location of the 1 within the 2x2 grid that they partition. However, {0,1,1} and {0,1} partition a 3x2 space and simultaneously impose the constraint that two 1[']{dir="rtl"}s must lie on the same row. This is a fact which is not present in either the row set or the column set.
+[^2]: For example, {0,1} and {0,1}, if those sets are orthogonal to one another, pose no constraint on the location of the 1 within the 2x2 grid that they partition. However, {0,1,1} and {0,1} partition a 3x2 space and simultaneously impose the constraint that two 1's must lie on the same row. This is a fact which is not present in either the row set or the column set.

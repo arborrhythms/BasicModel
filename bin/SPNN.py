@@ -10,6 +10,7 @@ import math
 import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
+from visualize import TheReport
 
 class SPNN:
     """Small fully-connected network with optional bidirectional learning."""
@@ -381,7 +382,7 @@ class SPNN:
 #endregion
 
 #region Plots and Statistics
-    def show(self):
+    def show(self, ax=None):
         """Plot train/test error traces and print the learned weights."""
         titleText = 'MSE, '
         if self.bidirectional == False:
@@ -389,47 +390,32 @@ class SPNN:
         else:
             titleText += 'BiDir '
         titleText += self.transfer
-        xText = 'Epochs'
-        yText = 'MSE'
-        # Experiment 1
-        legendText = []
-        #plt.axis("equal")
-        plt.grid(True)
-        legendText.append('train')
-        legendText.append('test')
-        plt.plot(n.trainErr, label='train')
-        plt.plot(n.testErr, label='test')
-        plt.title(titleText, fontsize=16, fontweight='bold')
-        plt.xlabel(xText, fontsize=14, fontweight='bold')
-        plt.ylabel(yText, fontsize=14, fontweight='bold')
-        plt.legend(legendText)
-        filename = self.name + titleText
-        #exportgraphics(gcf,[filename '.png'],'Resolution',300);
+        if ax is None:
+            ax = plt.gca()
+        ax.grid(True)
+        ax.plot(self.trainErr, label='train')
+        ax.plot(self.testErr, label='test')
+        ax.set_title(titleText, fontsize=16, fontweight='bold')
+        ax.set_xlabel('Epochs', fontsize=14, fontweight='bold')
+        ax.set_ylabel('MSE', fontsize=14, fontweight='bold')
+        ax.legend(['train', 'test'])
         print('Weight_1', self.W1)
         print('Weight_2', self.W2)
     def showAct(self):
         """Compare the chosen activation with its inverse form and gradients."""
-        plt.figure(1, dpi=300)  # Increase size and DPI for better quality
-        plt.clf()
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5), dpi=300)
         x = np.array([i/100 for i in range(-99,100)], float)
 
-        plt.subplot(1,2,1)
-        labels = []
-        labels.append('Activation')
-        plt.plot(x, SPNN.actLinear(x), label='activation')
-        labels.append('Gradient')
-        plt.plot(x, SPNN.gradLinear(x), label='gradient')
-        plt.legend(labels)
+        ax1.plot(x, SPNN.actLinear(x), label='Activation')
+        ax1.plot(x, SPNN.gradLinear(x), label='Gradient')
+        ax1.legend()
 
-        plt.subplot(1,2,2)
-        labels = []
-        labels.append('Inverse Activation')
-        plt.plot(x, SPNN.actLinear(x, inverse=True), label='inverse activation')
-        labels.append('Inverse Gradient')
-        plt.plot(x, SPNN.gradLinear(x, inverse=True), label='inverse gradient')
-        plt.legend(labels)
+        ax2.plot(x, SPNN.actLinear(x, inverse=True), label='Inverse Activation')
+        ax2.plot(x, SPNN.gradLinear(x, inverse=True), label='Inverse Gradient')
+        ax2.legend()
 
-        plt.show()
+        TheReport.save_figure(fig, "SPNN Activation Functions")
+        TheReport.show_figure(fig)
 #endregion
 
 #region Example Usage
@@ -442,19 +428,18 @@ if __name__ == "__main__":
         n.showAct()
 
     if showPictures:
-        plt.figure(2, dpi=300)  # Increase size and DPI for better quality
-        plt.clf()
-        #plt.hold('on')
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5), dpi=300)
 
-        plt.subplot(1,2,1)
         n = SPNN("linear", False)
         n.run()
-        n.show()
+        n.show(ax=ax1)
 
-        plt.subplot(1,2,2)
         n = SPNN("linear", True)
         n.run()
-        n.show()
+        n.show(ax=ax2)
 
-    plt.show()
+        TheReport.save_figure(fig, "SPNN Training Comparison")
+        TheReport.show_figure(fig)
+
+    TheReport.write_html()
 #endregion

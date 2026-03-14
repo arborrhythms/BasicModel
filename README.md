@@ -2,7 +2,7 @@
 
 ## Basic Model of Cognition
 
-![Logo](dpc/Logo.png)
+![Logo](doc/Logo.png)
 
 *The basic model of cognition relies on conceptual hyperplanes and perceptual prototypes to synthesize and analyze the input space. It uses a high-dimensional embedding to characterize mental space and integrates symbolic computation. Its three major operations are intersection (which forms percepts from concepts), union (a bidirectional mapping between concepts and percepts), and equality (where symbols are elements that map across perceptual and conceptual domains).*
 

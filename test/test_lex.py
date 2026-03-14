@@ -1,6 +1,6 @@
 import unittest
 import torch
-from Lex import Lex
+from lex import Lex
 
 
 class TestLexWordLevel(unittest.TestCase):

@@ -2,6 +2,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from visualize import TheReport
 
 # -------------------------------
 # 2D Rotation Matrix and Its Derivative
@@ -245,7 +246,7 @@ def train_bidirectional_model(num_epochs=100, lr=0.001, num_samples=128):
     print(f"Theoretical Best Reverse LS Loss: {loss_reverse_ls:.6f}")
 
     epochs_arr = np.arange(1, num_epochs + 1)
-    plt.figure(figsize=(10, 6))
+    fig = plt.figure(figsize=(10, 6))
     plt.plot(epochs_arr, forward_losses, label="Forward Loss (Network)")
     plt.plot(epochs_arr, reverse_losses, label="Reverse Loss (Network)")
     plt.plot(epochs_arr, product_losses, label="Product Loss (Network)")
@@ -259,8 +260,9 @@ def train_bidirectional_model(num_epochs=100, lr=0.001, num_samples=128):
     plt.ylabel("Loss")
     plt.title("Training Losses (Product Loss) with Theoretical Best Performance")
     plt.legend()
-    plt.show()
-
+    TheReport.save_figure(fig, "SymPercept Training Losses")
+    TheReport.show_figure(fig)
+    TheReport.write_html()
 
     return model, forward_losses, reverse_losses, product_losses
 # -------------------------------
