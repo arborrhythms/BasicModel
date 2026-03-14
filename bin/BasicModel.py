@@ -25,7 +25,6 @@ except ImportError:
 from matplotlib import pyplot as plt
 from datasets import load_dataset
 from embed import WordVectors, CBOWModel
-#from transformers import BertTokenizer
 from sklearn.metrics import classification_report
 from sklearn.decomposition import PCA
 import pandas as pd
@@ -52,9 +51,17 @@ from util import ProjectPaths
 from visualize import Report, TheReport
 
 class PositionalEncoding(nn.Module):
+    """Encode spatial position (nWhere) as sin/cos values in reserved embedding slots.
+
+    Writes a (sin, cos) pair into the last few dimensions of each object vector,
+    indexed by ``self.index`` (negative offsets from the end).  A monotonic
+    counter ``self.p`` assigns each object a unique position within a dataset
+    pass; it must be reset between epochs to avoid overflow.
+
+    Used by ObjectEncoding to stamp each object with a "where" tag.
+    """
     nDim   = 2
-    index  = [-4, -3]
-    #index = [embeddingSize-4, embeddingSize-3]
+    index  = [-4, -3]      # which embedding dimensions to write (negative = from end)
     p      = 0
     maxP   = 0
     period = [65521, 65537]
@@ -66,23 +73,23 @@ class PositionalEncoding(nn.Module):
         self.maxP = maxP
         self.div_term = 2*math.pi / maxP
     def forward(self, x):
+        """Stamp sin/cos positional values into reserved embedding slots."""
         batch = x.shape[0]
         n     = x.shape[1] if len(x.shape) > 1 else 1
         embeddingSize = x.shape[-1]
         index = np.add([embeddingSize, embeddingSize], self.index)
-        # write to the last elements of the array
+        # Write sin/cos position into the last reserved dimensions
         position = torch.arange(self.p, self.p+batch*n, dtype=torch.float32) * self.div_term
         p1 = torch.sin(position * self.div_term).unsqueeze(0).unsqueeze(0)
         p2 = torch.cos(position * self.div_term).unsqueeze(0).unsqueeze(0)
         pos = torch.concatenate((p1, p2), dim=2)
-        # normalize the positional encodings so that they do not overwhelm the data
-        # pos = pos/ torch.norm(pos, dim=-1, keepdim=True)
         y = x.clone()
         y[:, :, index] = pos.reshape(batch, n, self.nDim)
         self.p += batch
         assert self.p < self.maxP, "Overflow in object embedding"
         return y
-    def reverse(self, y): # from a positional encoding, retrieve indices
+    def reverse(self, y):
+        """Extract and zero-out positional encoding; return (cleaned, positions)."""
         embeddingSize = y.shape[-1]
         index = np.add([embeddingSize, embeddingSize], self.index)
         pos = y[:,:, index]
@@ -96,22 +103,31 @@ class PositionalEncoding(nn.Module):
         z = pe.reverse(y)
         print(z)
 class TemporalEncoding(nn.Module):
+    """Encode temporal order (nWhen) as cos values in reserved embedding slots.
+
+    Similar to PositionalEncoding but tracks a global time counter ``self.t``
+    that is incremented explicitly via ``increment(batch)`` at the end of each
+    forward pass through the full model.  The two periods produce slowly-varying
+    signals that distinguish objects seen at different times.
+
+    Used by ObjectEncoding to stamp each object with a "when" tag.
+    """
     nDim= 2
-    index  = [-2, -1]
+    index  = [-2, -1]      # which embedding dimensions to write (negative = from end)
     period = [1193, 2000147]
-    t      = 0 #nn.Parameter(torch.zeros(1))
+    t      = 0
 
     def __init__(self, maxT=0):
         super().__init__()
         self.t    = 0
         self.maxT = maxT
     def forward(self, x):
+        """Stamp cos-based temporal values into reserved embedding slots."""
         batch = x.shape[0]
         n = x.shape[1] if len(x.shape) > 1 else 1
         embeddingSize = x.shape[-1]
         index = np.add([embeddingSize, embeddingSize], self.index)
-        # write to the last elements of the array
-        # add in proportion to the norm of the existing features
+        # Cosine encoding scaled to [0, 1] via 0.5*(1+cos(...))
         t1 = ( 0.5*(1+torch.cos(math.pi + 2*math.pi * torch.tensor(range(self.t, self.t+batch))/self.period[0] )) ).unsqueeze(0).unsqueeze(0)
         t2 = ( 0.5*(1+torch.cos(math.pi + 2*math.pi * torch.tensor(range(self.t, self.t+batch))/self.period[0] )) ).unsqueeze(0).unsqueeze(0)
         time = torch.concatenate((t1, t2), dim=2)
@@ -120,9 +136,11 @@ class TemporalEncoding(nn.Module):
         return y
 
     def increment(self, batch):
+        """Advance the global time counter by `batch` steps (called per forward pass)."""
         self.t += batch
 
-    def reverse(self, y): # from a positional encoding, retrieve indices
+    def reverse(self, y):
+        """Extract and zero-out temporal encoding; return (cleaned, times)."""
         batch = y.shape[0]
         embeddingSize = y.shape[-1]
         index = np.add([embeddingSize, embeddingSize], self.index)
@@ -137,7 +155,21 @@ class TemporalEncoding(nn.Module):
         z = te.reverse(y)
         print(z)
 class ObjectEncoding(nn.Module):
-    #nWhat        = the "what" is encoded as a dimensionality that varies by subspace
+    """Augments each object vector with positional (nWhere) and temporal (nWhen) tags.
+
+    Every vector in the pipeline has the layout:
+        [nWhat content dims | nWhere (2 dims) | nWhen (2 dims)]
+
+    ``nWhat`` varies per subspace (inputDim, perceptDim, conceptDim, etc.) while
+    nWhere and nWhen are fixed overhead.  ``objectSize = nWhere + nWhen`` is the
+    total overhead appended to the content portion.
+
+    ``getEmbeddingSize(nDim)`` returns ``nDim + objectSize`` — the full vector width
+    for a given content dimensionality.
+
+    A single global instance ``TheObjectEncoding`` is used throughout the model.
+    """
+    # nWhat: varies by subspace — set via setInputDim/setPerceptDim/etc.
     nWhere       = PositionalEncoding.nDim
     nWhen        = TemporalEncoding.nDim
 
@@ -149,11 +181,11 @@ class ObjectEncoding(nn.Module):
 
     nInput    = 2 ** 3  # the size of the context window
     nPercepts = 2 ** 4
-    nConcepts = 2 ** 4  #
+    nConcepts = 2 ** 4
     nSymbols  = 2 ** 3  # must be equal to nConcepts (currently)
-    nOutput   = 1  # The output (prediction) size
+    nOutput   = 1       # the output (prediction) size
 
-    objectSize = nWhere + nWhen
+    objectSize = nWhere + nWhen  # total encoding overhead per vector
     nObjects   = 100*(nInput + nPercepts + nConcepts + nSymbols + nOutput)
     what       = lambda x : True
     where      = PositionalEncoding(nObjects)
@@ -238,6 +270,18 @@ class ObjectEncoding(nn.Module):
 TheObjectEncoding = ObjectEncoding()
 
 class Data():
+    """Dataset container: loads, preprocesses, and serves train/validation/test splits.
+
+    Supports MNIST (numeric), XOR (toy text), and Rotten Tomatoes (real text).
+    Text datasets go through ``processLM()`` which tokenizes via ``stringTensor()``
+    (ASCII byte encoding, zero-padded to ``inputLength``) and builds an immutable
+    source buffer for span-table integration.
+
+    After ``load()``, tensors are moved to ``TheDevice`` and pre-shaped to
+    [N, D, 1] so the training loop avoids per-batch unsqueezes.
+
+    A single global instance ``TheData`` is used by ``BasicModelFactory.run()``.
+    """
     train_input       = []
     train_output      = []
     validation_input  = []
@@ -245,7 +289,7 @@ class Data():
     test_input        = []
     test_output       = []
 
-    inputLength       = 128
+    inputLength       = 128    # max byte length for text inputs (zero-padded)
     combinedTokens    = []
 
     def __init__(self):
@@ -450,34 +494,55 @@ class Message():
         print(txt, end=newline)
 message = Message()
 
-# A set of prototype vectors for each space
 class VectorSet(nn.Module):
-    nInput           = 0  # the number of inputs passed to the forward method
-    nVectors         = 0  # the number of outputs expected from the forward method
-    nDim             = 0  # the latent dimensionality
-    embeddingSize    = 0  # this is the dimensionality and the objectEncoding for each vector
-    vectors          = nn.Parameter(torch.randn([nVectors, embeddingSize]))  # this is the actual matrix of vectors
-    snapDistance     = 0.1  # vectors at or below this distance snap to their corresponding prototypes
-    eta              = 0.9
-    codebookAct      = GammaMem(nVectors)
-    frozen           = []
+    """Codebook of prototype vectors with vector-quantization (VQ) support.
+
+    Each Space owns a VectorSet that maps continuous input vectors to their
+    nearest codebook entries.  Two VQ backends are supported:
+
+    * **customVQ=True** (default): uses ``vector_quantize_pytorch.VectorQuantize``
+      with EMA codebook updates and the rotation trick for gradients.
+    * **customVQ=False**: a simpler manual VQ loop with explicit LVQ-style
+      prototype attraction (controlled by ``eta``).
+
+    Key concepts:
+      - ``snapDistance``: distance threshold below which an input snaps to its
+        nearest prototype (codebook entry).
+      - ``frozen``: list of codebook indices that are locked and no longer
+        updated.  Once a codebook entry's activation (tracked by ``codebookAct``)
+        exceeds ``freezingTemp``, it gets frozen.
+      - ``passThrough=True``: disables quantization entirely; forward() is identity.
+      - ``alpha``: jitter factor injected during exploration (high early in
+        training, zero at convergence).  Propagated from BasicModel.setAlpha().
+
+    The mereological methods (part, whole, overlap, etc.) operate on normalized
+    vectors and are used for reasoning about concept parthood relationships.
+    """
+    nInput           = 0   # number of input vectors per batch element
+    nVectors         = 0   # number of output vectors (codebook slots selected)
+    nDim             = 0   # content dimensionality (before ObjectEncoding overhead)
+    embeddingSize    = 0   # nDim + objectSize = full vector width
+    vectors          = nn.Parameter(torch.randn([nVectors, embeddingSize]))
+    snapDistance     = 0.1 # distance threshold for snapping to prototypes
+    eta              = 0.9 # EMA decay for manual VQ updates (customVQ=False)
+    codebookAct      = GammaMem(nVectors)  # tracks per-entry activation history
+    frozen           = []  # indices of locked codebook entries
     returnOnlyFrozen = False
-    freezingTemp     = 0.25
+    freezingTemp     = 0.25  # activation threshold above which entries freeze
     passThrough      = False
-    # linear = nn.Linear(10, 5)
-    # tracker = ColumnUsageTracker(linear, freezeThreshold=0.01)
 
     def getSize(self):
         return self.nVectors
 
     def create(self, nInput, nVectors, nDim, customVQ=True, signed=False, passThrough=False):
+        """Initialize codebook dimensions.  Call ``addVectors()`` after to allocate entries."""
         self.nInput      = nInput
         self.nVectors    = nVectors
         self.nDim        = nDim
         self.customVQ    = customVQ
-        self.signed      = signed
+        self.signed      = signed    # True: vectors may have negative components
         self.passThrough = passThrough
-        self.alpha       = 0
+        self.alpha       = 0         # exploration jitter (set by setAlpha)
         if nDim != None:
             self.embeddingSize = TheObjectEncoding.getEmbeddingSize(nDim)
         if passThrough:
@@ -503,9 +568,10 @@ class VectorSet(nn.Module):
                     self.frozen.append(indexMax)
                     message(f"Frozen activation at {indexMax}")
     def addVectors(self, nVec=1, decay = 0.9):
+        """Allocate ``nVec`` codebook entries using the configured VQ backend."""
         self.codebookSize = nVec
         self.codebookAct  = GammaMem(nVec)
-        self.frozen       = [] #np.zeros(nVec)
+        self.frozen       = []
         if self.customVQ:
             self.vq = VectorQuantize(
                 dim = self.embeddingSize,
@@ -530,10 +596,15 @@ class VectorSet(nn.Module):
                 vec[i, :] = F.normalize(TheObjectEncoding(vec[i, :].unsqueeze(0).unsqueeze(0)), p=2, dim=1)
             self.vectors = vec[:, :]
     def forward(self, input):
+        """Quantize input vectors against the codebook.
+
+        Input shape: [batch, nInput, nDim] (or embeddingSize).
+        Returns: [batch, nInput, embeddingSize] with vectors snapped to
+        their nearest codebook entry when within ``snapDistance``.
+        Also updates ``codebookAct`` activation tracking and freezing state.
+        """
         if self.passThrough:
             return self._passthroughForward(input)
-        # X should be of size batch x nInput x nDim
-        # Pad X if necessary
         x     = input
         batch = input.shape[0]
         act   = torch.zeros([batch, self.codebookSize], device=input.device)
@@ -756,7 +827,6 @@ class VectorSet(nn.Module):
         return torch.max(x, y)
     def intersection(self, x, y):
         return torch.min(x, y)
-# VectorSet backed by a differentiable nn.Embedding with online CBOW training
 class Embedding(VectorSet):
     """VectorSet backed by a differentiable nn.Embedding with online CBOW training.
 
@@ -946,30 +1016,66 @@ class Embedding(VectorSet):
 
 
 class Space(nn.Module):
+    """Base class for all spaces in the processing pipeline.
+
+    The model is organized as a chain of spaces, each transforming object
+    vectors from one representation to the next:
+
+        InputSpace -> PerceptualSpace -> ConceptualSpace -> SymbolicSpace -> OutputSpace
+
+    When ``reversePass=True``, the chain also runs in reverse (OutputSpace
+    back to InputSpace), enabling reconstruction of the input from the latent
+    representation.
+
+    Key parameters:
+      - ``inputShape``/``outputShape``: each is [nObjects, nDim] describing the
+        count and content-dimensionality of vectors entering/leaving this space.
+      - ``reshape``: when True, flattens [batch, nObj, dim] -> [batch, nObj*dim]
+        before passing through layers, then unflattens after.  Required when the
+        input and output object counts differ (since layers operate on the last dim).
+      - ``processSymbols``: when True, reduces full embedding vectors to scalar
+        activations (norms) for the symbolic representation.
+      - ``useVQ``: when True, input vectors are quantized against the codebook
+        (VectorSet) after the main layer transformation.
+
+    ``getEmbeddedIO()`` returns (input_dim, output_dim) for this space's layers.
+    When reshape=False these are the per-object embedding sizes; when reshape=True
+    they are multiplied by the respective object counts.  OutputSpace overrides
+    this to use raw target dimensions (no ObjectEncoding overhead on output).
+
+    ``setAlpha(alpha)`` propagates the exploration parameter (1=explore, 0=exploit)
+    from BasicModel down to all layers and VectorSets in this space.
+    """
     name         = ""
-    # vectorSet class-level default removed — use instance nn.ModuleList instead
     activation   = None
     processSymbols = False
 
     def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=False, customVQ=True, nPrototypes=0, reversePass=False, processSymbols=False, reshape=False):
         super(Space, self).__init__()
-        self.inputShape   = inputShape
-        self.outputShape  = outputShape
+        self.inputShape   = inputShape   # [nObjects, nDim] for input
+        self.outputShape  = outputShape  # [nObjects, nDim] for output
         self.nVectors     = nVectors
-        self.nDim         = nDim # the latent dimensionality
+        self.nDim         = nDim         # content dimensionality (before ObjectEncoding)
         self.embeddingSize = TheObjectEncoding.getEmbeddingSize(self.nDim)
         self.batch        = 0
-        self.vectorSet    = nn.ModuleList()
+        self.vectorSet    = nn.ModuleList()  # holds this space's VectorSet (accessed via self.vectors())
         self.useVQ        = useVQ
         self.customVQ     = customVQ
         self.nPrototypes  = nPrototypes
         self.reversePass = reversePass
         self.processSymbols = processSymbols
         self.reshape      = reshape
-        self.params = []
-        self.layers = []
+        self.params = []   # parameters for the optimizer (excludes temperature params)
+        self.layers = []   # layer instances for paramUpdate() delegation
 
     def getEmbeddedIO(self):
+        """Return (input_dim, output_dim) for this space's layers.
+
+        Without reshape: returns per-object embedding sizes (nDim + objectSize).
+        With reshape: multiplies by object counts, giving the flattened vector
+        width that layers see when the [batch, nObj, dim] tensor is reshaped to
+        [batch, nObj*dim].
+        """
         input  = TheObjectEncoding.getEmbeddingSize(self.inputShape[1])
         output = TheObjectEncoding.getEmbeddingSize(self.outputShape[1])
         if self.reshape:
@@ -1001,7 +1107,7 @@ class Space(nn.Module):
         #message(f"{self.name} Codebook activation: { np.sum(self.vectors().codebookAct.get()) }")
         return
     def vectors(self):
-        # this is done to store by reference, since lists are mutable entities (?)
+        """Accessor for this space's VectorSet (first element of the ModuleList)."""
         return self.vectorSet[0]
     def createVectorSet(self, quantized=True):
         if quantized:
@@ -1013,6 +1119,8 @@ class Space(nn.Module):
             vs.create(self.inputShape[0], self.nVectors, self.nDim, passThrough=True)
             self.vectorSet.append(vs)
     def forwardBegin(self, x):
+        """Validate/reshape input at the start of the forward pass.
+        When reshape=True, flattens [batch, nObj, dim] -> [batch, nObj*dim]."""
         self.batch = x.shape[0]
         if self.reshape:
             x = self.flatten(x, True)
@@ -1021,6 +1129,8 @@ class Space(nn.Module):
             assert list(x.shape) == [self.batch, self.inputShape[0], input]
         return x
     def forwardEnd(self, x):
+        """Validate/unflatten output at the end of the forward pass.
+        When reshape=True, unflattens [batch, nObj*dim] -> [batch, nObj, dim]."""
         if self.reshape:
             x = self.unflatten(x, True)
         else:
@@ -1028,6 +1138,7 @@ class Space(nn.Module):
             assert list(x.shape)==[self.batch, self.outputShape[0], output], f"{self.__class__.__name__} forwardEnd: got {list(x.shape)}, expected {[self.batch, self.outputShape[0], output]}"
         return x
     def reverseBegin(self, y):
+        """Validate/reshape at the start of the reverse pass (output-side)."""
         self.batch = y.shape[0]
         if self.reshape:
             y = self.flatten(y, False)
@@ -1036,6 +1147,7 @@ class Space(nn.Module):
             assert list(y.shape) == [self.batch, self.outputShape[0], output]
         return y
     def reverseEnd(self, y):
+        """Validate/unflatten at the end of the reverse pass (input-side)."""
         if self.reshape:
             y = self.unflatten(y, False)
         else:
@@ -1043,6 +1155,7 @@ class Space(nn.Module):
             assert list(y.shape) == [self.batch, self.inputShape[0], input]
         return y
     def flatten(self, x, forward=True):
+        """Collapse [batch, nObj, dim] -> [batch, nObj*dim] for layer input."""
         input, output = self.getEmbeddedIO()
         if forward:
             x = x.reshape(self.batch, input)
@@ -1050,6 +1163,7 @@ class Space(nn.Module):
             x = x.reshape(self.batch, output)
         return x
     def unflatten(self, y, forward=True):
+        """Restore [batch, nObj*dim] -> [batch, nObj, dim] after layer output."""
         input, output = self.getEmbeddedIO()
         if forward:
             y = y.reshape(self.batch, self.outputShape[0], output // self.outputShape[0])
@@ -1257,6 +1371,19 @@ class InputSpace(Space):
                 result.append(words)
         return result
 class PerceptualSpace(Space):
+    """Transforms raw input vectors into percepts via a PiLayer.
+
+    In the forward data flow: InputSpace -> **PerceptualSpace** -> ConceptualSpace.
+    Uses a PiLayer (permutation-equivariant layer) to map input embeddings to
+    perceptual embeddings, optionally followed by self-attention and VQ
+    codebook quantization.
+
+    When ``reversePass=True``, a separate reverse PiLayer (or the inverse of a
+    ReversiblePiLayer) maps percepts back to inputs.
+
+    ``passThrough=True`` makes this a no-op (identity), useful when the input
+    is already in the desired perceptual form.
+    """
     name = "Percepts"
 
     def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False, passThrough=False, reshape=False, ergodic=False, hasAttention=True):
@@ -1289,8 +1416,8 @@ class PerceptualSpace(Space):
         return torch.prod( [1-x, 1-y] )
     def certainty(self, x):
         pass
-    # Perception
     def forward(self, x):
+        """Perception: map input vectors to percepts via PiLayer + optional attention + VQ."""
         if self.passThrough:
             self.batch = x.shape[0]
             return x
@@ -1301,16 +1428,15 @@ class PerceptualSpace(Space):
         if self.useVQ:
             x  = self.vectors().forward(x)
         if self.processSymbols:
-            # Turn the percept dimensionality into the symbol dimensionality, but preserve the codebook's positional encoding
+            # Collapse content dims to scalar activation, keep positional encoding
             encoding = x[:,:,-TheObjectEncoding.objectSize:]
             x = torch.norm( x[:,:,0:-TheObjectEncoding.objectSize], dim=2 ) / (2*self.nVectors)
             x = x.unsqueeze(-1)
             x = torch.concatenate((x, encoding), dim=2)
         self.percepts = self.forwardEnd(x)
-        #self.stats(x)
         return self.percepts
-    # Manifesting
     def reverse(self, y):
+        """Manifesting: reconstruct input vectors from percepts via reverse PiLayer."""
         if self.passThrough:
             return y
         if self.reversePass:
@@ -1322,6 +1448,20 @@ class PerceptualSpace(Space):
     def test():
         pass
 class ConceptualSpace(Space):
+    """Transforms percepts into concepts via a SigmaLayer (summation layer).
+
+    In the forward data flow: PerceptualSpace -> **ConceptualSpace** -> SymbolicSpace.
+    Uses a SigmaLayer to combine perceptual features into conceptual
+    representations.  The SigmaLayer computes weighted sums (inner products)
+    rather than the permutation-equivariant operations of PiLayer.
+
+    Supports optional NormLayer preprocessing, self-attention, and VQ codebook
+    quantization.
+
+    When ``invertible=True``, uses a ReversibleSigmaLayer whose inverse is
+    exact.  When ``reversePass=True`` without invertibility, a separate
+    SigmaLayer is trained for the reverse direction.
+    """
     name = "Concepts"
 
     def __init__(self, inputShape, outputShape, nVectors, nDim, useVQ=True, reversePass=False, nPrototypes=0, processSymbols=False, invertible=False, hasNorm=False, ergodic=False, reshape=False, hasAttention=False):
@@ -1360,30 +1500,27 @@ class ConceptualSpace(Space):
         return x.T @ y
     def certainty(self, x):
         return x.T @ x
-    # Knowing
     def forward(self, x):
+        """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ."""
         x = self.forwardBegin(x)
         if self.hasNorm:
             x = self.norm.forward(x)
-        y = self.forwardSigma(x) # Pass through SigmaLayer
+        y = self.forwardSigma(x)
         if self.hasAttention:
             y = self.attention.forward(y)
-        # Get the concept vectors from the codebook
-        # replace some of the Dynamic Percepts with Static Percepts if their distance is low
+        # Quantize against codebook: snap dynamic vectors to static prototypes
         if self.useVQ:
-            y = self.vectors().forward(y) # This must be 4x8x24
+            y = self.vectors().forward(y)
         if self.processSymbols:
-            # Turn the concept dimensionality into the symbol dimensionality, but preserve the codebook's positional encoding
+            # Collapse content dims to scalar activation, keep positional encoding
             encoding = y[:,:,-TheObjectEncoding.objectSize:]
             y = torch.sum(y[:,:,0:-TheObjectEncoding.objectSize], dim=2) / (2*self.nVectors)
             y = y.unsqueeze(-1)
             y = torch.concatenate((y, encoding), dim=2)
-        # Reshape the output tensor
         self.concepts = self.forwardEnd(y)
-        #self.stats(x)
         return self.concepts
-    # Visualizing
     def reverse(self, y):
+        """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer."""
         self.concepts = self.reverseBegin(y)
         # we are receiving symbols, and we turn them into concepts.
         if self.processSymbols:
@@ -1409,13 +1546,24 @@ class ConceptualSpace(Space):
     def test():
         pass
 class SymbolicSpace(Space):
+    """Converts continuous concept vectors into discrete symbols.
+
+    In the forward data flow: ConceptualSpace -> **SymbolicSpace** -> OutputSpace.
+    Applies optional discretization (thresholding or top-k serial activation) to
+    produce symbolic representations from concept embeddings.
+
+    When ``processSymbols=True``, computes scalar activations (vector norms) from
+    concept vectors.  In reverse, ``dereference()`` looks up the corresponding
+    concept vector from the ConceptualSpace's codebook.
+
+    ``passThrough=True`` skips all symbolic processing, passing concept vectors
+    through unchanged (useful when the conceptual representation is sufficient).
+    """
     name = "Symbols"
-    threshold        = 0
-    serialActivation = False
+    threshold        = 0       # discretization threshold (0 = disabled)
+    serialActivation = False   # if True, only the top-1 activation is kept per batch
     symbols          = None
 
-    # The current implementation merely symbolizes all concepts.
-    # Therefore, no symbol learning is necessary.
     def __init__(self, inputShape, outputShape, nVectors, nDim, reversePass=False, conceptualSpace=None, processSymbols=False, passThrough=False, reshape=False):
         super(SymbolicSpace, self).__init__( inputShape, outputShape, nVectors, nDim, customVQ=True, reversePass=reversePass, processSymbols=processSymbols, reshape=reshape)
         assert(inputShape[0] == nVectors) # 1:1 mapping
@@ -1446,22 +1594,22 @@ class SymbolicSpace(Space):
         activations = torch.concatenate((activations, x[:,:,self.inputShape[1]:]), dim=2)
         return activations
 
-    # Naming
     def forward(self, x):
+        """Naming: convert concept vectors to discrete symbols."""
         self.symbols = self.forwardBegin(x)
         if not self.passThrough:
-            if self.processSymbols: # reduce the embedding vector to the symbolic encoding
+            if self.processSymbols:
                 self.symbols = self.computeActivation(self.symbols)
             self.symbols = self.discretize(self.symbols)
         self.symbols = self.forwardEnd(self.symbols)
         if self.useVQ:
             self.symbols  = self.vectors().forward(self.symbols)
         return self.symbols
-    # Interpretation
     def reverse(self, y):
+        """Interpretation: map symbols back to concept vectors (via codebook dereference)."""
         self.symbols = self.reverseBegin(y)
         if not self.passThrough:
-            if self.processSymbols: # map the symbolic encoding to the embedding vector
+            if self.processSymbols:
                 self.symbols = self.conceptualSpace.dereference(self.symbols)
         self.symbols = self.reverseEnd(self.symbols)
         return self.symbols
@@ -1470,11 +1618,16 @@ class SymbolicSpace(Space):
     def test():
         pass
 class SyntacticSpace(Space):
+    """Placeholder for syntactic processing between symbols and words.
+
+    Currently a passthrough that reshapes symbols without transformation.
+    Used when ``symbolicOrder >= 1`` to add an extra processing stage
+    between the symbolic and output spaces.  Future work would integrate
+    generative grammar operations here.
+    """
     name  = "Syntactic"
     words = None
 
-    # The current implementation merely symbolizes all concepts.
-    # Therefore, no symbol learning is necessary.
     def __init__(self, inputShape, outputShape, nVectors, nDim, reversePass=False, conceptualSpace=None):
         super(SyntacticSpace, self).__init__( inputShape, outputShape, nVectors, nDim, customVQ=False, reversePass=reversePass, processSymbols=True)
         assert(inputShape[0] == nVectors) # 1:1 mapping
@@ -1511,10 +1664,24 @@ class SyntacticSpace(Space):
     def test():
         pass
 class OutputSpace(Space):
+    """Maps symbolic vectors to task targets (classification logits, regression values).
+
+    In the forward data flow: SymbolicSpace -> **OutputSpace** -> loss.
+    Uses a LinearLayer to project the (flattened) symbolic representation down
+    to the target dimensionality.  Always uses reshape=True since the number of
+    input objects (symbols) typically differs from the number of outputs.
+
+    Overrides ``getEmbeddedIO()`` so the output side uses raw target dimensions
+    (no ObjectEncoding overhead), since targets are not embedded.
+
+    ``text_mode``: when enabled via ``set_text_mode()``, supports reconstructing
+    text from symbolic vectors by snapping to the nearest codebook entry and
+    recovering byte-offset positions.
+    """
     name = "Outputs"
     text_mode = False
     def getEmbeddedIO(self):
-        # Output maps to raw target dimensions (no embedding overhead)
+        """Override: output uses raw target dims (no ObjectEncoding overhead)."""
         input = TheObjectEncoding.getEmbeddingSize(self.inputShape[1])
         output = self.outputShape[1]
         if self.reshape:
@@ -1547,18 +1714,17 @@ class OutputSpace(Space):
         if isinstance(outputBatch, list):
             return torch.stack(outputBatch, dim=0).unsqueeze(1).to(TheDevice)
         return outputBatch  # already [B, D, 1] and on device after toDevice()
-    # Acting
     def forward(self, x):
+        """Acting: project flattened symbols to task output via LinearLayer."""
         y = super().forwardBegin(x)
-        # input is batch x nConcepts
         output = self.forwardLinear(y)
         output = self.forwardEnd(output)
         if self.useVQ:
             self.output  = self.vectors().output(self.percepts)
         self.predicted = output.detach()
         return output
-    # Being acted upon
     def reverse(self, y):
+        """Being acted upon: map output back to symbolic space via reverse LinearLayer."""
         y = self.reverseBegin(y)
         y = self.reverseLinear(y)
         output = self.reverseEnd(y)
@@ -1687,8 +1853,10 @@ class BaseModel(nn.Module):
     def load_config(config_path=None):
         """Load model settings from an XML config file.
 
-        Returns a dict with architecture, training, weights, and server
-        settings.  Missing fields use defaults from the create() signature.
+        Parses top-level sections (e.g. <architecture>, <training>, <weights>)
+        into a nested dict.  Values are auto-cast to bool/int/float/str.
+        Returns a dict of dicts; missing fields are filled by create_from_config()
+        using defaults.xml.
         """
         import xml.etree.ElementTree as ET
         if config_path is None:
@@ -1769,10 +1937,12 @@ class BaseModel(nn.Module):
         return acc
 
     def paramUpdate(self):
+        """Delegate ergodic in-place parameter updates to all spaces."""
         for s in self.spaces:
             s.paramUpdate()
 
     def setAlpha(self, alpha):
+        """Propagate exploration temperature to all spaces, layers, and VectorSets."""
         for s in self.spaces:
             s.setAlpha(alpha)
 
@@ -1881,8 +2051,23 @@ class BaseModel(nn.Module):
             "Input vs Reconstructed",
             ["Input", "Reconstructed", "Label", "Predicted", "Match"],
             rows)
-
 class BasicModel(BaseModel):
+    """Core model: assembles Spaces into a forward and (optionally) reverse pipeline.
+
+    The forward pass flows:
+        InputSpace -> PerceptualSpace -> ConceptualSpace -> SymbolicSpace -> OutputSpace
+
+    The reverse pass mirrors it:
+        OutputSpace -> SymbolicSpace -> ConceptualSpace -> PerceptualSpace -> InputSpace
+
+    Higher-order processing (conceptualOrder, symbolicOrder) inserts additional
+    Percept/Concept/Symbol cycles between the first SymbolicSpace and OutputSpace,
+    concatenating their symbol outputs before the final projection.
+
+    ``create()`` builds the full space hierarchy.  ``create_from_config()`` is the
+    XML-driven factory that reads architecture and training parameters from config,
+    then delegates to ``create()``.
+    """
     name = "BasicModel"
 
     def create_from_config(self, config_path=None, model_type=None, data=None, pretrained=None):
@@ -1962,13 +2147,29 @@ class BasicModel(BaseModel):
                perceptPrototypes=0, conceptPrototypes=0,
                ergodic=False, certainty=False, quantized=False,
                invertible=False, hasNorm=False,
-               # NOTE: self.spaces is cleared below to prevent accumulation across
-               # repeated create() calls (class-level list was never reset).
                conceptualOrder=0, symbolicOrder=0, processSymbols=False,
                reshape=False,
                perceptHasAttention=True, conceptHasAttention=False,
                model_type="simple", data=None, pretrained=False,
                tokenizer="traditional"):
+        """Build the full space hierarchy from architecture parameters.
+
+        Args:
+            nInput/nPercepts/nConcepts/nSymbols/nOutput: object counts per space.
+            nWords: object count for the SyntacticSpace (used when symbolicOrder >= 1).
+            reversePass: enable the reverse (reconstruction) pipeline.
+            perceptPassThrough: make PerceptualSpace an identity.
+            symbolPassThrough: make SymbolicSpace an identity (passes conceptDim through).
+            ergodic: use ergodic (temperature-based) parameter updates in layers.
+            certainty: use CertaintyWeightedCrossEntropy loss.
+            quantized: enable VQ codebook quantization in spaces.
+            invertible: use ReversibleSigmaLayer (exact inverse) in ConceptualSpace.
+            reshape: flatten [batch, nObj, dim] before layers (required when
+                     input/output object counts differ).
+            conceptualOrder: number of extra Percept->Concept->Symbol cycles.
+            symbolicOrder: number of extra Syntax->Symbol cycles.
+            model_type: "simple", "lm", "passthrough", or "vq".
+        """
         self.spaces = []  # reset — prevent stale accumulation from prior create() calls
         self.tokenizer        = tokenizer  # "traditional" (word2vec) or "grammatical" (Lex span tables)
         self.reversePass      = reversePass
@@ -1997,6 +2198,8 @@ class BasicModel(BaseModel):
         self.perceptHasAttention = perceptHasAttention
         self.conceptHasAttention = conceptHasAttention
 
+        # nOutputSymbols tracks total symbol count fed to OutputSpace.
+        # It grows as higher-order cycles (conceptualOrder, symbolicOrder) append symbols.
         nOutputSymbols = self.nSymbols
         self.inputSpace      = InputSpace([self.nInput, TheObjectEncoding.inputDim],
                                            [self.nInput, TheObjectEncoding.inputDim],
@@ -2090,6 +2293,7 @@ class BasicModel(BaseModel):
         self.to(TheDevice)
 
     def Start(self, data):
+        """Forward pass through the core pipeline: Input -> Percept -> Concept -> Symbol."""
         input = self.inputSpace(data)
         percepts = self.perceptualSpace(input)
         concepts = self.conceptualSpace(percepts)
@@ -2098,12 +2302,14 @@ class BasicModel(BaseModel):
             TheReport.plotActivations(figure=1, concepts=concepts)
         return concepts, input, symbols
     def StartReverse(self, concepts, input, symbols):
+        """Reverse pass: Symbol -> Concept -> Percept -> Input (reconstruction)."""
         concepts = self.symbolicSpace.reverse(symbols)
         percepts = self.conceptualSpace.reverse(concepts)
         input = self.perceptualSpace.reverse(percepts)
         data  = self.inputSpace.reverse(input)
         return data, input
     def SubsymbolicThought(self, data):
+        """Extra Percept->Concept->Symbol cycle (conceptualOrder >= 1)."""
         percepts = self.perceptualSpace2(data)
         concepts = self.conceptualSpace2(percepts)
         symbols  = self.symbolicSpace2(concepts)
@@ -2111,37 +2317,45 @@ class BasicModel(BaseModel):
             TheReport.plotActivations(figure=1, percepts=percepts, concepts=concepts)
         return concepts, symbols
     def SubsymbolicThoughtReverse(self, concepts, symbols):
+        """Reverse of SubsymbolicThought."""
         concepts = self.symbolicSpace2.reverse(symbols)
         percepts = self.conceptualSpace2.reverse(concepts)
-        # perceptualSpace2.reverse is a no-op for now (attention shape mismatch)
         return percepts
     def SymbolicThought(self, data):
+        """Extra Syntax->Symbol cycle (symbolicOrder >= 1)."""
         words   = self.syntacticSpace3(data)
         symbols = self.symbolicSpace3(words)
         if self.plot:
             TheReport.plotActivations(figure=1, symbols=symbols)
         return symbols, words
     def SymbolicThoughtReverse(self, symbols, words):
+        """Reverse of SymbolicThought."""
         symbols = self.syntacticSpace3.reverse(words)
         data    = self.symbolicSpace3.reverse(symbols)
         return data
     def Finish(self, symbols):
-            self.words = symbols
-            data = self.outputSpace(symbols)
-            if self.plot:
-                TheReport.plotActivations(figure=1, symbols=symbols)
-            return data
+        """Project concatenated symbols to task output via OutputSpace."""
+        self.words = symbols
+        data = self.outputSpace(symbols)
+        if self.plot:
+            TheReport.plotActivations(figure=1, symbols=symbols)
+        return data
     def FinishReverse(self, data):
-            # cache this non-invertible step, since we watn to reverse our behavior based on our understanding,
-            # not based on the action that we emitted.
-            symbols = self.words.detach()
-            #symbols = self.outputSpace.reverse(data)
-            return symbols
+        """Return cached symbols (OutputSpace projection is non-invertible)."""
+        symbols = self.words.detach()
+        return symbols
     def forward(self, data):
+        """Full forward pass: core pipeline + higher-order cycles + output projection.
+
+        Returns (output_prediction, perceptual_state).
+        Symbols from each processing stage are concatenated before OutputSpace.
+        """
         data, input, symbols = self.Start(data)
+        # Higher-order subsymbolic cycles (conceptualOrder extra passes)
         for n in range(self.conceptualOrder):
             data, symbols1 = self.SubsymbolicThought(data)
             symbols = torch.cat((symbols, symbols1), dim=1)
+        # Higher-order symbolic cycles (symbolicOrder extra passes)
         for n in range(self.symbolicOrder):
             data, symbols2 = self.SymbolicThought(data)
             symbols = torch.cat((symbols, symbols2), dim=1)
@@ -2150,6 +2364,11 @@ class BasicModel(BaseModel):
         TheObjectEncoding.when.increment(batch)
         return data, input
     def reverse(self, end_state):
+        """Full reverse pass: unwind higher-order cycles then core reconstruction.
+
+        Slices the concatenated symbol tensor to route each chunk to its
+        corresponding reverse stage, in reverse order of the forward pass.
+        """
         symbols = self.FinishReverse(end_state)
         nSym = round(self.nSymbols)
         symbolIndex = 0
@@ -2161,12 +2380,21 @@ class BasicModel(BaseModel):
             symbols1 = symbols[:, symbolIndex*nSym:(symbolIndex+1)*nSym]
             symbolIndex += 1
             end_state = self.SubsymbolicThoughtReverse(end_state, symbols1)
+        # Final chunk goes to the core reverse pipeline
         symbols1 = symbols[:, symbolIndex * nSym:(symbolIndex + 1) * nSym]
         data, input = self.StartReverse(end_state, None, symbols1)
         return data, input
 
     def run(self, numEpochs=1, batchSize=10, lr=0.01, stoppingCriterion=0.1):
-        trainLosses       = [[],[]]
+        """Main training loop: train for numEpochs, evaluate on test set each epoch.
+
+        Alpha (exploration temperature) anneals linearly from 1.0 (full exploration)
+        to 0.0 (full exploitation) over the course of training.  This is propagated
+        to all Spaces and their layers/VectorSets via setAlpha().
+
+        Returns a list of per-epoch test accuracies.
+        """
+        trainLosses       = [[],[]]  # [output_losses, reconstruction_losses]
         validationLosses  = [[],[]]
         minValidationLoss = math.inf
         testLosses        = [[],[]]
@@ -2174,7 +2402,7 @@ class BasicModel(BaseModel):
         accuracy          = []
 
         for epoch in range(numEpochs):
-            alpha = 1.0 - epoch / max(1, numEpochs - 1)  # 1→0: explore→exploit
+            alpha = 1.0 - epoch / max(1, numEpochs - 1)  # 1->0: explore->exploit
             self.setAlpha(alpha)
             print(f"Epoch [{epoch + 1}/{numEpochs}]")
 
@@ -2221,7 +2449,11 @@ class BasicModel(BaseModel):
         return accuracy
     
     def _getLossFn(self):
-        """Return (outputLossFn, inputLossFn) based on model config."""
+        """Return (outputLossFn, inputLossFn) based on model config.
+
+        outputLossFn: used for the forward pass (prediction vs target).
+        inputLossFn:  used for the reverse pass (reconstruction loss), always MSE.
+        """
         if self.certainty:
             return CertaintyWeightedCrossEntropy(), nn.MSELoss()
         elif self.nOutput <= 2:
@@ -2233,9 +2465,23 @@ class BasicModel(BaseModel):
             return nn.CrossEntropyLoss(), nn.MSELoss()
 
     def runEpoch(self, input, output, lr=0.01, batchSize=10):
-        """Unified training/eval epoch for all model configurations."""
+        """Run one epoch over the dataset (training if lr>0, eval if lr==0).
+
+        Each batch goes through:
+          1. Forward pass: input -> prediction, compute output loss, backprop.
+          2. Reverse pass (if enabled): prediction -> reconstruction, compute
+             reconstruction loss, backprop with a separate optimizer.
+
+        When ``ergodic=True``, ``paramUpdate()`` is called before each optimizer
+        step to apply temperature-based in-place parameter updates to the
+        ergodic layers.
+
+        Returns (output_loss, reconstruction_loss, all_predictions, last_reconstruction).
+        """
         training = lr != 0
         if training:
+            # Separate optimizers for forward and reverse passes to avoid
+            # gradient interference between the two loss functions.
             optimizer1 = self.getOptimizer(lr=lr)
             optimizer2 = self.getOptimizer(lr=lr)
 
@@ -2259,7 +2505,7 @@ class BasicModel(BaseModel):
                 inputTensor  = self.inputSpace.prepInput(inputBatch)
                 outputTensor = self.outputSpace.prepOutput(outputBatch)
 
-                # Forward pass
+                # --- Forward pass ---
                 if training:
                     optimizer1.zero_grad()
                 outputPred, end_state = self.forward(inputTensor)
@@ -2276,7 +2522,7 @@ class BasicModel(BaseModel):
                 else:
                     allOutput = torch.concat((allOutput, outputPred), dim=0)
 
-                # Reverse pass
+                # --- Reverse pass (reconstruction) ---
                 if self.reversePass:
                     if training:
                         optimizer2.zero_grad()
@@ -2390,12 +2636,14 @@ class BasicModelFactory:
         return [(m.name, m.rCorrect, m)]
 
 def test():
+    """Smoke test: verify encodings and run the XOR config end-to-end."""
     PositionalEncoding.test()
     TemporalEncoding.test()
-    # test XOR — fully XML-driven
     BasicModelFactory.run(os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml"))
 
-# Standalone execution entry point
+# --- CLI entry point ---
+# Usage: python BasicModel.py [config.xml]
+#        python BasicModel.py --compare config1.xml config2.xml
 if __name__ == "__main__":
     import sys
 

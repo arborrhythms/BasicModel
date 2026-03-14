@@ -49,6 +49,7 @@ class Layer(nn.Module):
         self.batch        = 0
 
     def freeze(self, learn=False):
+        """Freeze all params (learn=False) or unfreeze them (learn=True)."""
         for param in self.parameters():
             param.requires_grad = not learn
     def permute(self, x):
@@ -66,47 +67,70 @@ class Layer(nn.Module):
         params = [p for n, p in self.named_parameters()]
         return params
     def paramUpdate(self):
+        """Hook called after each optimizer step for custom parameter updates."""
         pass
 
     def forward(self, x, bias=None, temp=None):
+        """Identity pass-through (subclasses override)."""
         batch = x.shape[0]
         assert x.shape[1] == self.nSymbols
-        #assert x.shape[2] == TheObjectEncoding.objectSize
         return x
     def reverse(self, y, bias=None, temp=None):
+        """Identity pass-through (subclasses override)."""
         batch = y.shape[0]
         assert y.shape[1] == self.nOutput
         return y
 class ErgodicLayer(Layer):
-    """Layer base class that adapts its explore/exploit balance over training."""
+    """Layer base class that adapts its explore/exploit balance over training.
+
+    The explore/exploit tradeoff is governed by a single scalar ``alpha``:
+        - alpha = 1  (initial) => full exploration: bias=0, var=1
+        - alpha = 0  (converged) => full exploitation: bias=1, var=0
+
+    Subclasses mix learned weights (scaled by ``bias``) with random noise
+    (scaled by ``var``) in their forward passes:
+        effective_weight = bias * W + var * noise
+
+    A per-output-column **certainty** tracker observes both forward
+    activations and gradient energy to estimate how reliable each output
+    dimension has become.  This certainty signal is available for
+    downstream scheduling but does not yet feed back into alpha
+    automatically (the commented-out ``alpha_update`` sketches that path).
+    """
     def __init__(self, nInput, nOutput, permuteInput=False):
         super().__init__(nInput, nOutput, permuteInput)
-        # Alpha controls bias-variance tradeoff: bias = 1-alpha, var = alpha
-        # Alpha 1→0: explore→exploit. Start at full exploration (alpha=1): bias=0, var=1
+        # --- Explore/exploit knobs (set externally via setAlpha) ----------
+        # alpha in [0,1]: bias = 1-alpha, var = alpha.
         self.alpha       = nn.Parameter(torch.tensor(1.0), requires_grad=False)
         self.bias        = nn.Parameter(torch.tensor(0.0), requires_grad=False)
+        # var has requires_grad=True so gradient energy can be sensed
         self.var         = nn.Parameter(torch.tensor(1.0), requires_grad=True)
-        # Modified Adam: second moment only (gradient is zero-mean)
-        self.register_buffer('v', torch.tensor(0.0))
-        self.register_buffer('t_step', torch.tensor(0))            # step counter for bias correction
+
+        # --- Buffers for the (disabled) per-layer Adam alpha update -------
+        self.register_buffer('v', torch.tensor(0.0))             # EMA of squared gradient on var
+        self.register_buffer('t_step', torch.tensor(0))          # step counter for bias correction
+
+        # --- Per-output certainty tracking --------------------------------
+        # certainty[j] in [0,1]: how reliable output column j is.
         self.register_buffer('certainty', torch.ones(nOutput))
-        self.register_buffer('certainty_v', torch.zeros(nOutput))
-        self.register_buffer('certainty_forward_ema', torch.zeros(nOutput))
+        self.register_buffer('certainty_v', torch.zeros(nOutput))            # gradient energy EMA
+        self.register_buffer('certainty_forward_ema', torch.zeros(nOutput))  # forward activation EMA
         self.register_buffer('certainty_step', torch.tensor(0))
         self.register_buffer('certainty_forward_step', torch.tensor(0))
-        self.beta = 0.999
-        self.certainty_beta = 0.99
-        self.certainty_forward_beta = 0.9
-        self.certainty_scale = 1.0
-        self.certainty_forward_weight = 0.5
+        self.beta = 0.999                       # EMA decay for (disabled) alpha_update
+        self.certainty_beta = 0.99              # EMA decay for gradient certainty
+        self.certainty_forward_beta = 0.9       # EMA decay for forward certainty
+        self.certainty_scale = 1.0              # scaling inside gradient certainty formula
+        self.certainty_forward_weight = 0.5     # blending weight: forward vs gradient certainty
         self.certainty_gradient_weight = 0.5
         self.dropoutRate = 0.0
 
     def getParameters(self):
+        """Return learnable params, excluding ``var`` (which is only sensed, not optimized)."""
         params = [p for n, p in self.named_parameters() if n != "var"]
         return params
     def setAlpha(self, alpha):
-        """alpha 1→0: explore→exploit. bias = 1-alpha, var = alpha."""
+        """Set the explore/exploit balance.  alpha 1->0 = explore->exploit."""
         with torch.no_grad():
             self.alpha.fill_(alpha)
             self.bias.fill_(1.0 - alpha)
@@ -120,6 +144,7 @@ class ErgodicLayer(Layer):
     #     return local_bias, local_var.clamp(0.0, 1.0)
     @torch.no_grad()
     def reduce_certainty_signal(self, signal):
+        """Collapse a (possibly batched) signal to a per-output-column scalar in [0,1]."""
         if signal is None:
             return None
         signal = signal.detach()
@@ -127,10 +152,12 @@ class ErgodicLayer(Layer):
             return None
         signal = signal.abs()
         if signal.ndim > 1:
+            # Average over all dimensions except the last (output) axis
             signal = signal.mean(dim=tuple(range(signal.ndim - 1)))
         return torch.tanh(signal).clamp(0.0, 1.0)
     @torch.no_grad()
     def observe_forward_certainty(self, signal):
+        """Feed a forward-pass activation into the certainty EMA.  Called at end of forward()."""
         signal = self.reduce_certainty_signal(signal)
         if signal is None:
             return
@@ -138,12 +165,17 @@ class ErgodicLayer(Layer):
         self.certainty_forward_step += 1
     @torch.no_grad()
     def forward_certainty(self):
+        """Return bias-corrected forward certainty EMA, or None if no observations yet."""
         if self.certainty_forward_step.item() == 0:
             return None
         forward = self.certainty_forward_ema / (1 - self.certainty_forward_beta ** self.certainty_forward_step.item())
         return forward.clamp(0.0, 1.0)
     @torch.no_grad()
     def certainty_gradient_energy(self):
+        """Sum squared-gradient energy across learnable params that share the output axis.
+
+        Skips alpha/bias/var and noise params since those are not true learned weights.
+        """
         grad_energy = None
         for name, param in self.named_parameters():
             if param.grad is None or not param.requires_grad:
@@ -161,6 +193,10 @@ class ErgodicLayer(Layer):
         return grad_energy
     @torch.no_grad()
     def gradient_certainty(self):
+        """Compute per-output certainty from gradient energy: low energy => high certainty.
+
+        Uses the Adam-style formula: certainty = 1 / (1 + scale * sqrt(v_hat)).
+        """
         grad_energy = self.certainty_gradient_energy()
         if grad_energy is None:
             return None
@@ -171,6 +207,7 @@ class ErgodicLayer(Layer):
         return certainty.clamp(0.0, 1.0)
     @torch.no_grad()
     def combine_certainty_sources(self, forward_certainty=None, gradient_certainty=None):
+        """Weighted average of forward and gradient certainty signals."""
         combined = None
         total_weight = 0.0
         if forward_certainty is not None:
@@ -222,6 +259,14 @@ class ErgodicLayer(Layer):
         # self.alpha_update()
 
 class LinearLayer(Layer):
+    """Standard linear (affine) layer with ergodic noise injection.
+
+    Forward: y = x @ (bias*W + temp*noise) [+ bias*b + temp*biasNoise]
+
+    When bias=1, temp=0 (exploitation) this is an ordinary linear layer.
+    Non-zero ``temp`` blends in freshly sampled Gaussian noise, enabling
+    exploration.  Defaults to identity initialization.
+    """
     def __init__(self, nInput, nOutput, hasBias=True, W=None):
         super(LinearLayer, self).__init__(nInput, nOutput)
         self.hasBias = hasBias
@@ -233,6 +278,7 @@ class LinearLayer(Layer):
         self.register_buffer('biasNoise', torch.randn(1, nOutput))
 
     def resample_noise(self):
+        """Draw fresh Gaussian noise matching W (and bias) shape/device."""
         self.noise = sample_noise(self.W)
         if self.hasBias:
             self.biasNoise = sample_noise(self.bias)
@@ -251,13 +297,20 @@ class LinearLayer(Layer):
         nInput, nOutput = 3, 4
         W = torch.rand(nInput, nOutput)
         layer = LinearLayer(nInput=nInput, nOutput=nOutput, W = W)
-        # note: x must be strictly positive for this to work
         input = torch.rand((1, nInput))
         output = layer(input)
 
         print(f"Input: {input}")
         print(f"After forward linear: {output}")
 class ReversibleRotationLayer(Layer):
+    """Learnable orthogonal rotation built from a chain of Givens rotations.
+
+    Each of the (dim-1) angles rotates a consecutive pair of axes.
+    The ``naive`` flag controls whether the full rotation matrix is
+    materialized (True) or applied sequentially in-place (False, faster
+    for large dim).  Because orthogonal matrices are their own
+    pseudoinverse, ``reverse()`` just applies the transpose.
+    """
     def __init__(self, dim, naive=False, theta=None):
         super(ReversibleRotationLayer, self).__init__(dim, dim)
         self.dim = dim
@@ -265,7 +318,6 @@ class ReversibleRotationLayer(Layer):
         if theta is None:
             theta = torch.randn(dim - 1) * 2 * torch.pi
         self.theta = nn.Parameter(theta)
-        # For simplicity, we initialize noise deterministically.
         self.register_buffer('noise', torch.zeros(dim - 1, dtype=self.theta.dtype))
 
     def givens_rotation(self, i, j, theta):
@@ -382,16 +434,23 @@ class ReversibleRotationLayer(Layer):
         print(f"Forward-Reverse check (naive): {torch.norm(x - ninverse_x)}")
         print(f"Forward-Reverse check (non-naive): {torch.norm(x - inverse_x)}")
 class ReversibleDiagonalLayer(Layer):
+    """Learnable diagonal (singular-value) matrix for use in a reversible SVD decomposition.
+
+    Stores ``rank = min(nInput, nOutput)`` positive scalars (lamda) and
+    builds a (nOutput x nInput) diagonal matrix S.  Forward: y = x @ S^T.
+    Reverse inverts the diagonal on the shared rank dimensions and
+    zero-pads any extra input dimensions.
+    """
     def __init__(self, nInput, nOutput):
         super(ReversibleDiagonalLayer, self).__init__(nInput, nOutput)
         self.nInput = nInput
         self.nOutput = nOutput
         self.rank = min(nInput, nOutput)
-        # Store the nonzero singular values (for the effective rank).
         self.lamda = nn.Parameter(torch.ones(self.rank))
         self.register_buffer('noise', torch.zeros(self.rank))
 
     def stabilize(self):
+        """Clamp singular values to at most 1.0 to prevent unbounded growth."""
         self.lamda.data = torch.minimum(self.lamda, torch.ones_like(self.lamda))
     def forward(self, x, bias=1.0, temp=0.0):
         # Compute the effective singular values.
@@ -482,6 +541,15 @@ class ReversibleDiagonalLayer(Layer):
 
         print("All tests passed!")
 class ReversibleLinearLayer(Layer):
+    """Exactly-invertible linear layer factored as W = U * Sigma * V^T (thin SVD).
+
+    U and V are orthogonal (ReversibleRotationLayer), Sigma is diagonal.
+    Two modes:
+      - naive=True:  materializes W and W^{-1} as dense matrices.
+      - naive=False: applies U, Sigma, V sequentially (lower memory, exact inverse).
+
+    When ``stable=True``, singular values are clamped to <=1 each step.
+    """
     def __init__(self, nInput, nOutput, naive=False, hasBias=True, stable=False):
         super(ReversibleLinearLayer, self).__init__(nInput, nOutput)
         self.naive = naive
@@ -489,12 +557,9 @@ class ReversibleLinearLayer(Layer):
         self.rank = min(nInput, nOutput)
         self.stable = stable
 
-        # U is a square rotation matrix on the input side (nInput × nInput)
-        self.U = ReversibleRotationLayer(dim=nInput, naive=self.naive)
-        # V is a square rotation matrix on the output side (nOutput × nOutput)
-        self.V = ReversibleRotationLayer(dim=nOutput, naive=self.naive)
-        # Sigma now builds an (nInput × nOutput) diagonal matrix.
-        self.Sigma = ReversibleDiagonalLayer(nInput, nOutput)
+        self.U = ReversibleRotationLayer(dim=nInput, naive=self.naive)      # nInput x nInput
+        self.V = ReversibleRotationLayer(dim=nOutput, naive=self.naive)     # nOutput x nOutput
+        self.Sigma = ReversibleDiagonalLayer(nInput, nOutput)               # diagonal scaling
 
         if self.naive:
             self.register_buffer('noise', torch.randn(nInput, nOutput))
@@ -510,7 +575,7 @@ class ReversibleLinearLayer(Layer):
             self.biasNoise = sample_noise(self.bias)
 
     def compute_W(self):
-        # Compute full weight: W = U · Σ · Vᵀ.
+        """Materialize the full weight matrix W = U * Sigma * V^T."""
         U_matrix = self.U.rotation_matrix()  # shape: (nInput, nInput)
         # Build Σ of shape (nInput, nOutput)
         Sigma_matrix = torch.zeros(self.nInput, self.nOutput, device=self.Sigma.lamda.device,
@@ -522,7 +587,7 @@ class ReversibleLinearLayer(Layer):
         W = U_matrix @ Sigma_matrix @ V_matrix.T
         return W
     def compute_Winverse(self):
-        # Compute pseudoinverse: W_inv = V · Σ⁻¹ · Uᵀ.
+        """Materialize the pseudoinverse W^+ = V * Sigma^{-1} * U^T."""
         U_matrix = self.U.rotation_matrix()  # shape: (nInput, nInput)
         Sigma_inv = torch.zeros(self.nOutput, self.nInput, device=self.Sigma.lamda.device,
                                 dtype=self.Sigma.lamda.dtype)
@@ -619,19 +684,24 @@ class ReversibleLinearLayer(Layer):
         assert givens_error < 0.001, f"Givens implementation failed with error {givens_error}"
         print("All tests passed!")
 
-# A layer to map between row and column operations of other layers
 class LiftingLayer(ReversibleLinearLayer):
+    """Bias-free, stable reversible linear layer for mapping between row/column spaces."""
     def __init__(self, nInput, nOutput, init='orthogonal'):
         super(LiftingLayer, self).__init__(nInput, nOutput, naive=False, hasBias=False, stable=True)
 
 class ColumnUsageTracker:
+    """Monitors gradient norms per weight column and freezes low-activity columns.
+
+    Attaches a backward hook to a standard nn.Linear layer.  After
+    ``window`` steps, columns whose average gradient norm falls below
+    ``freezeThreshold`` are permanently frozen (gradients zeroed out).
+    """
     def __init__(self, linearLayer, freezeThreshold=0.01, window=10):
         self.linear = linearLayer
         self.freezeThreshold = freezeThreshold
         self.window = window
         self.grad_history = []
         self.frozen_columns = torch.zeros(linearLayer.weight.shape[1], dtype=torch.bool)
-        # Register backward hook to capture gradients
         self.linear.weight.register_hook(self._save_grad)
     def _save_grad(self, grad):
         # grad shape: (out_features, in_features)
@@ -656,8 +726,14 @@ class ColumnUsageTracker:
     def freezeMask(self):
         return self.frozen_columns
 
-# Create a differentiable map between spaces using quantized vectors in each domain.
 class SoftMap(Layer):
+    """Differentiable map between two spaces via paired vector-quantized codebooks.
+
+    Each input is quantized against codebookX, mapped through a reversible
+    linear transform (SVD-based), then quantized against codebookY.
+    ``soft=True`` uses softmax-weighted codebook lookup; ``soft=False``
+    uses hard nearest-neighbor.
+    """
     def __init__(self, nInput, nOutput, nInputCodes=None, nOutputCodes=None, soft=False, beta=10.0):
         super().__init__(nInput, nOutput)
         self.nInputCodes  = nInputCodes if nInputCodes is not None else 2*nInput
@@ -697,6 +773,7 @@ class SoftMap(Layer):
         return qx, qy
 
     def codebook_regularization(self):
+        """Penalize cosine similarity between codebook vectors to encourage diversity."""
         normX = F.normalize(self.codebookX, dim=0)
         normY = F.normalize(self.codebookY, dim=0)
         simX = torch.matmul(normX.T, normX)
@@ -744,6 +821,14 @@ class SoftMap(Layer):
         assert error < 1e-3, f"Reconstruction error too high: {error}"
 
 class SigmaLayer(ErgodicLayer):
+    """Additive (summation) layer: y = tanh(W @ x + b).
+
+    When ``ergodic=True``, the layer participates in the explore/exploit
+    schedule: during training, bias and temp are derived from setAlpha().
+    When ``ergodic=False`` (default), the layer always uses deterministic
+    weights (bias=1, temp=0), ignoring setAlpha entirely.
+    At eval time, both modes use deterministic weights.
+    """
     def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
         self.layer       = LinearLayer(nInput, nOutput, hasBias=True)
@@ -752,10 +837,11 @@ class SigmaLayer(ErgodicLayer):
         self.ergodic     = ergodic
 
     def forward(self, x):
+        # ergodic=False or eval mode => deterministic pass (no noise)
         if not self.ergodic:
             bias, temp = 1.0, 0.0
         elif not self.training:
-            bias, temp = 1.0, 0.0      # pure learned weights, no noise
+            bias, temp = 1.0, 0.0
         else:
             bias, temp = self.bias, self.var
         x = self.permute(x)
@@ -788,6 +874,11 @@ class SigmaLayer(ErgodicLayer):
         print(f"After linear: {y}")
         #print(f"Inverse operation result: {y_inv}")
 class ReversibleSigmaLayer(SigmaLayer):
+    """SigmaLayer whose linear transform is exactly invertible (SVD-factored).
+
+    Inherits the ergodic flag behavior from SigmaLayer.
+    reverse() inverts tanh via atanh, then inverts the linear layer.
+    """
     def __init__(self, nInput, nOutput, naive=False, permuteInput=False):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
         self.layer          = ReversibleLinearLayer(nInput, nOutput, naive=naive, hasBias=True)
@@ -834,23 +925,31 @@ class ReversibleSigmaLayer(SigmaLayer):
         y_inv = layer.reverse(y)
         assert(torch.norm(x-y_inv) < 0.00001)
 class PiLayer(ErgodicLayer):
+    """Multiplicative (product) layer: y_j = prod_i (1 + tanh(w_ji * x_i)).
+
+    Whereas SigmaLayer sums weighted inputs, PiLayer takes their product,
+    giving it a fundamentally different inductive bias (conjunction-like).
+    The ``ergodic`` flag works identically to SigmaLayer: when False,
+    the layer always uses deterministic weights regardless of setAlpha().
+    """
     def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
         self.ergodic = ergodic
         self.weights          = nn.Parameter(torch.zeros(nInput, nOutput))
         self.register_buffer('noise', torch.randn(nInput, nOutput))
-        self.biasWeight       = nn.Parameter(torch.zeros(1, 1, self.nOutput))  # Per-output-feature bias
-        self.register_buffer('biasWeightNoise', torch.randn(1, self.nInput, self.nOutput))  # Per-output-feature bias
+        self.biasWeight       = nn.Parameter(torch.zeros(1, 1, self.nOutput))
+        self.register_buffer('biasWeightNoise', torch.randn(1, self.nInput, self.nOutput))
 
         self.saturate      = True
         self.hasBiasWeight = True
-        self.useEpsilon    = True
+        self.useEpsilon    = True   # add epsilon inside product terms to avoid exact zeros
 
     def resample_noise(self):
         self.noise = sample_noise(self.weights)
         self.biasWeightNoise = sample_noise(self.weights, shape=(1, self.nInput, self.nOutput))
 
     def forward(self, x):
+        # ergodic=False or eval mode => deterministic pass (no noise)
         if not self.ergodic:
             bias, temp = 1.0, 0.0
         elif not self.training:
@@ -858,10 +957,9 @@ class PiLayer(ErgodicLayer):
         else:
             bias, temp = self.bias, self.var
         x = self.permute(x)
-        # This method implements PI(1+wx)
-        # Tried to implement as exp( SIGMA(log(e) * log(wx)) ) so that we could invert with standard methods,
-        # but the matrix log(e) is not invertible. If we try simply PI(w+x), we get a weight matrix with negative values,
-        # so we can't take it into the log domain.
+        # Implements y_j = prod_i (1 + tanh(w_ji * x_i + b_j)).
+        # A log-domain formulation was attempted (exp(sum(log(...)))), but
+        # the matrix log is not invertible with negative weights.
         if has_signal(temp):
             self.resample_noise()
         w = bias * self.weights + temp * self.noise
@@ -940,25 +1038,18 @@ class PiLayer(ErgodicLayer):
             if epoch % 100 == 0:
                 print(f'Epoch {epoch}/{epochs}, MSE: {loss.item():.6f}')
 class ReversiblePiLayer(ErgodicLayer):
-# 	•	This computes:
-# y_j = b_j \prod_i \left(1 - \tanh(w_{ji} x_i)\right)
-# z_j = b_j \prod_i \left(1 + \tanh(w_{ji} x_i)\right)
-# 	•	These match up with:
-# \gamma_j = \frac{1}{2} \log\left( \frac{z_j}{y_j} \right) = \sum_i \tanh^{-1}(\tanh(w_{ji} x_i)) = \sum_i w_{ji} x_i = (W x)_j
-# 	•	And thus:
-# x \approx W^\dagger \gamma
-#The full inversion process is:
-#	1.	Define:
-#s_j := \sum_i \tanh^{-1}(w_{ji} x_i) = W x
-#	2.	In forward pass, use:
-#y_j = b_j \cdot \prod_i (1 - \tanh(w_{ji} x_i)), \quad
-#z_j = b_j \cdot \prod_i (1 + \tanh(w_{ji} x_i))
-#	3.	In reverse pass, compute:
-#\gamma_j = \frac{1}{2} \log\left( \frac{z_j}{y_j} \right) = \sum_i \tanh^{-1}(\tanh(w_{ji} x_i)) = \sum_i w_{ji} x_i
-#\Rightarrow \gamma = W x
-#	4.	Finally:
-#x = W^\dagger \gamma
+    """Invertible multiplicative layer that outputs paired (1-tanh, 1+tanh) products.
 
+    Forward produces interleaved (y, z) pairs where:
+        y_j = prod_i (1 - tanh(w_ji * x_i))
+        z_j = prod_i (1 + tanh(w_ji * x_i))
+
+    Reverse recovers x via gamma_j = 0.5 * log(z_j / y_j) = (W @ x)_j,
+    then x = W^+ @ gamma.  Because the output has both y and z channels,
+    nOutput must equal 2*nInput when naive=False.
+
+    The ``ergodic`` flag works identically to SigmaLayer/PiLayer.
+    """
     def __init__(self, nInput, nOutput, naive=False, permuteInput=False, hasBias = True, ergodic=False):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
         self.ergodic = ergodic
@@ -966,17 +1057,15 @@ class ReversiblePiLayer(ErgodicLayer):
         self.hasBias = hasBias
         self.useEpsilon = True
         if not self.naive:
-            assert 2*nInput == nOutput, "There must be twice as many outputs as inputs for invertibility when using the non-naive algorithm."
-        #self.saturate = True # saturation is currently necessary for a smooth inversion
-        # W: shape (out_features, in_features)
+            assert 2*nInput == nOutput, "Non-naive mode requires nOutput == 2*nInput for invertibility."
         if naive:
             self.W      = nn.Parameter(torch.randn(nInput, nOutput))
             self.register_buffer('noise', torch.randn(nInput, nOutput))
         else:
             self.layer  = ReversibleLinearLayer(nInput, nOutput, naive=True)
             self.register_buffer('noise', torch.randn(nOutput, nInput))
-        self.biasWeight       = nn.Parameter(torch.zeros(1, 1, self.nOutput))  # Per-output-feature bias
-        self.register_buffer('biasNoise', torch.randn(1, 1, self.nOutput))  # Per-output-feature bias
+        self.biasWeight       = nn.Parameter(torch.zeros(1, 1, self.nOutput))
+        self.register_buffer('biasNoise', torch.randn(1, 1, self.nOutput))
 
     def resample_noise(self):
         if self.naive:
@@ -986,6 +1075,7 @@ class ReversiblePiLayer(ErgodicLayer):
         self.biasNoise = sample_noise(self.biasWeight, shape=(1, 1, self.nOutput))
 
     def forward(self, x):
+        """Produce interleaved (y, z) product pairs from input x."""
         if not self.ergodic:
             bias, temp = 1.0, 0.0
         elif not self.training:
@@ -1031,15 +1121,13 @@ class ReversiblePiLayer(ErgodicLayer):
         return y
 
     def reverse(self, yz):
+        """Recover x from interleaved (y,z): gamma = 0.5*log(z/y) = Wx, then x = W^+ @ gamma."""
         if not self.ergodic:
             bias, temp = 1.0, 0.0
         elif not self.training:
             bias, temp = 1.0, 0.0
         else:
             bias, temp = self.bias, self.var
-        """
-        Reverse pass: x ≈ W† * gamma, where gamma_j = 0.5 * log((1 + tanh(w x)) / (1 - tanh(w x))) = Wx
-        """
         yz = self.permute(yz)
         n2 = round(yz.shape[1]/2)
         uninterleaved = torch.unflatten(yz, 1, (2,n2))
@@ -1083,6 +1171,13 @@ class ReversiblePiLayer(ErgodicLayer):
         print("ReversiblePiLayer test passed.")
 
 class VQLayer(Layer):
+    """Vector-quantization layer backed by a residual VQ codebook.
+
+    Flattens the input to (N, dim), quantizes each vector against a
+    learned codebook using cosine similarity, and returns the codes from
+    all quantizer stages.  The reverse pass is not implemented because
+    codebook lookup is not uniquely invertible.
+    """
     nOutput = 0
 
     def __init__(self, dim, codebookSize, numQuantizers):
@@ -1091,34 +1186,31 @@ class VQLayer(Layer):
             dim=dim,
             codebook_size=codebookSize,
             num_quantizers=numQuantizers,
-            decay=0.8,  # the exponential moving average decay, lower means the dictionary will change faster
-            commitment_weight=1.0,  # the weight on the commitment loss
+            decay=0.8,
+            commitment_weight=1.0,
             use_cosine_sim=True,
-            rotation_trick=True  # Set False to use the STE gradient estimator or True to use the rotation trick.
+            rotation_trick=True,  # rotation trick gradient estimator (vs STE)
         )
 
-
     def distance(self, x, y):
-        # This is a Euclidean distance
+        """Euclidean distance between two tensors."""
         return torch.sqrt(torch.sum((x - y) ** 2))
 
     def forward(self, x, t=0):
         batch = len(x)
-        # percepts are Batch x nOutput x nFeatures
         x = x.reshape((-1, self.nInput))
         quantized, indices, commit_loss, all_codes = self.vq(x, return_all_codes=True)
-        distances = all_codes.permute(1, 2, 0)
-        # need to produce
-        # Find the closest prototype for each input
-        # closest_prototype_indices = torch.argmin(distances, dim=1)
-        # Get the labels of the closest prototypes
-        # predicted_labels = self.labels[closest_prototype_indices]
         return all_codes
 
     def reverse(self, y, t=0):
-        raise ValueError("Value not computed")
-        return x
+        raise ValueError("VQLayer reverse is not defined; codebook lookup is not invertible.")
 class DecisionBoundaryLayer(Layer):
+    """Learns a hyperplane normal vector via online updates (not backprop).
+
+    forward() returns +1/-1 on each side of the boundary.
+    update() nudges the weight toward or away from an observation depending
+    on which side it falls.
+    """
     def __init__(self, nInput, nOutput, learning_rate=0.01):
         super(DecisionBoundaryLayer, self).__init__(nInput, nOutput)
         self.learning_rate = learning_rate
@@ -1297,6 +1389,12 @@ class NormLayer(Layer):
         #print("✓ 3D input passed.")
         #print("All NormLayer tests passed successfully!")
 class AttentionLayer(Layer):
+    """Scaled dot-product attention with optional symmetric (Hopfield-like) mode.
+
+    In symmetric mode, a single projection A replaces Q and K, yielding
+    scores = A^T @ A (positive semi-definite).  Standard QKV mode is used
+    when ``symmetric=False``.
+    """
     def __init__(self, nInput, nOutput, nHidden=None, symmetric=False):
         super(AttentionLayer, self).__init__(nInput, nOutput)
         if not nHidden:
@@ -1555,6 +1653,11 @@ class Activation:
 
 #region Error Functions
 class CertaintyWeightedMAELoss(nn.Module):
+    """MAE loss weighted by prediction magnitude (certainty).
+
+    High-magnitude (confident) predictions are penalized more when wrong,
+    blended with unweighted MAE via ``alpha``.
+    """
     def __init__(self, alpha=0.5):
         super().__init__()
         self.alpha = alpha
@@ -1564,24 +1667,28 @@ class CertaintyWeightedMAELoss(nn.Module):
         certainty = torch.abs(predictions)
         loss = abs_error * (self.alpha * certainty + (1 - self.alpha))
         return torch.mean(loss)
+
 class CertaintyWeightedMSELoss(nn.Module):
+    """MSE loss weighted by prediction magnitude (certainty).
+
+    Hybrid of certainty-weighted MSE and plain MSE, blended by ``alpha``.
+    """
     def __init__(self, alpha=0.5):
         super().__init__()
         self.alpha = alpha
 
     def forward(self, outputs, targets):
-        """
-        outputs: [batch_size, num_outputs]
-        targets: [batch_size, num_outputs] (for regression or one-hot for classification)
-        """
-        # Certainty: magnitude of the prediction for each sample
-        certainty = outputs.abs().sum(dim=1)  # [batch_size], or you could use .mean(dim=1)
-        mse_loss = ((outputs - targets) ** 2).sum(dim=1)  # [batch_size]
-        cw_mse_loss = mse_loss * certainty                 # [batch_size]
+        certainty = outputs.abs().sum(dim=1)                # per-sample confidence
+        mse_loss = ((outputs - targets) ** 2).sum(dim=1)
+        cw_mse_loss = mse_loss * certainty
         hybrid_loss = self.alpha * cw_mse_loss.mean() + (1 - self.alpha) * mse_loss.mean()
-        #hybrid_loss = self.alpha * cw_mse_loss + (1 - self.alpha) * mse_loss
         return hybrid_loss
+
 class CertaintyWeightedCrossEntropy(nn.Module):
+    """Cross-entropy weighted by predicted probability of the true class.
+
+    Hybrid of certainty-weighted CE and plain CE, blended by ``alpha``.
+    """
     def __init__(self, alpha=0.5, epsilon=1e-8):
         super().__init__()
         self.alpha = alpha
@@ -1608,8 +1715,14 @@ class CertaintyWeightedCrossEntropy(nn.Module):
 #endregion
 
 #region Various kinds of memory
-# Base class for various kinds of (temporally-varying) Memory
 class Mem:
+    """Base class for temporal memory filters (exponential, gamma, mean, etc.).
+
+    Subclasses implement ``delta()`` to update internal state from a new
+    observation.  ``get()`` returns the current filtered output.  The
+    ``removeRC``/``insertRC``/``setRC`` helpers support dynamic resizing
+    of the output matrix (1-indexed for legacy compatibility).
+    """
     def __init__(self, sz=None):
         self.lr = 0.01
         self.nTrials = 0
@@ -1864,7 +1977,7 @@ class CorrMem(Mem):
                 self.output[r, c] = ((self.nTrials - amt) / self.nTrials) * self.output[r, c] + (amt / self.nTrials) * val
 #endregion
 
-# Example usage:
+# Self-test: run each layer's static test method to verify forward/reverse consistency.
 if __name__ == "__main__":
     torch.autograd.set_detect_anomaly(True)
 

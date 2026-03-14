@@ -12,6 +12,7 @@
     <perceptPrototypes>16</perceptPrototypes>
     <conceptPrototypes>16</conceptPrototypes>
     <reshape>True</reshape>
+    <reversePass>True</reversePass>
   </architecture>
 
   <training>

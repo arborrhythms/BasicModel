@@ -1383,5 +1383,122 @@ class TestErgodicMnistReport(unittest.TestCase):
         self.assertIsInstance(fwd_layer, LinearLayer)
 
 
+# ---------------------------------------------------------------------------
+# TestModelTypeVariants — missing model type combinations
+# ---------------------------------------------------------------------------
+class TestModelTypeVariants(unittest.TestCase):
+    """Exercise BasicModel.create() with configuration combinations not yet covered."""
+
+    def setUp(self):
+        from BasicModel import TheObjectEncoding
+        self._orig_nWhere = TheObjectEncoding.nWhere
+        self._orig_nWhen = TheObjectEncoding.nWhen
+        self._orig_objectSize = TheObjectEncoding.objectSize
+
+    def tearDown(self):
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = self._orig_nWhere
+        TheObjectEncoding.nWhen = self._orig_nWhen
+        TheObjectEncoding.objectSize = self._orig_objectSize
+
+    def test_invertible(self):
+        """invertible=True with ergodic, reversePass — forward + reverse."""
+        model = _make_simple_model()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+                     invertible=True, ergodic=True, reversePass=True,
+                     perceptPassThrough=True, symbolPassThrough=True,
+                     reshape=True)
+        x = torch.randn(2, 16, 1)
+        out, end_state = model.forward(x)
+        self.assertEqual(out.shape[0], 2)
+        self.assertEqual(out.shape[1], 4)
+        data, start_state = model.reverse(end_state)
+        self.assertEqual(data.shape[0], 2)
+        self.assertEqual(data.shape[1], 16)
+
+    def test_has_norm(self):
+        """hasNorm=True with ergodic — forward only."""
+        model = _make_simple_model()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+                     hasNorm=True, ergodic=True,
+                     perceptPassThrough=True, symbolPassThrough=True,
+                     reshape=True)
+        x = torch.randn(2, 16, 1)
+        out, end_state = model.forward(x)
+        self.assertEqual(out.shape[0], 2)
+        self.assertEqual(out.shape[1], 4)
+
+    def test_conceptual_order_1(self):
+        """conceptualOrder=1 — forward only (equal object counts).
+
+        Higher-order cycles require a non-passthrough symbolic space so that
+        symbolDim > 0 for the second perceptual/conceptual/symbolic spaces.
+        """
+        model = _make_simple_model()
+        model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
+                     conceptualOrder=1,
+                     perceptPassThrough=True, symbolPassThrough=False,
+                     reshape=True)
+        x = torch.randn(2, 8, 1)
+        out, end_state = model.forward(x)
+        self.assertEqual(out.shape[0], 2)
+        self.assertEqual(out.shape[1], 4)
+
+    def test_symbolic_order_1(self):
+        """symbolicOrder=1 — forward only (equal object counts).
+
+        Higher-order cycles require a non-passthrough symbolic space so that
+        symbolDim > 0 for the syntactic/symbolic spaces.
+        """
+        model = _make_simple_model()
+        model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nWords=8, nOutput=4,
+                     symbolicOrder=1,
+                     perceptPassThrough=True, symbolPassThrough=False,
+                     reshape=True)
+        x = torch.randn(2, 8, 1)
+        out, end_state = model.forward(x)
+        self.assertEqual(out.shape[0], 2)
+        self.assertEqual(out.shape[1], 4)
+
+    def test_non_ergodic_reverse(self):
+        """ergodic=False with reversePass=True — forward + reverse."""
+        model = _make_simple_model()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+                     ergodic=False, reversePass=True,
+                     perceptPassThrough=True, symbolPassThrough=True,
+                     reshape=True)
+        x = torch.randn(2, 16, 1)
+        out, end_state = model.forward(x)
+        self.assertEqual(out.shape[0], 2)
+        self.assertEqual(out.shape[1], 4)
+        data, start_state = model.reverse(end_state)
+        self.assertEqual(data.shape[0], 2)
+        self.assertEqual(data.shape[1], 16)
+
+    def test_percept_no_attention(self):
+        """perceptHasAttention=False, perceptPassThrough=False — forward only."""
+        model = _make_simple_model()
+        model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
+                     perceptHasAttention=False,
+                     perceptPassThrough=False, symbolPassThrough=True,
+                     reshape=True)
+        x = torch.randn(2, 8, 1)
+        out, end_state = model.forward(x)
+        self.assertEqual(out.shape[0], 2)
+        self.assertEqual(out.shape[1], 4)
+
+    def test_concept_with_attention(self):
+        """conceptHasAttention=True — forward only."""
+        model = _make_simple_model()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+                     conceptHasAttention=True,
+                     perceptPassThrough=True, symbolPassThrough=True,
+                     reshape=True)
+        x = torch.randn(2, 16, 1)
+        out, end_state = model.forward(x)
+        self.assertEqual(out.shape[0], 2)
+        self.assertEqual(out.shape[1], 4)
+
+
 if __name__ == "__main__":
     unittest.main()
