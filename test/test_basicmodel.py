@@ -833,5 +833,82 @@ class TestSymbolDimZeroPassthrough(unittest.TestCase):
         self.assertEqual(TheObjectEncoding.getEmbeddingSize(nDim), nDim)
 
 
+class TestInputSpaceLexIntegration(unittest.TestCase):
+    """InputSpace with text data creates a Lex instance, span table, and
+    encodes spans as [nWhat + nWhere] via VectorSet codebook + ObjectEncoding."""
+
+    def setUp(self):
+        from BasicModel import TheObjectEncoding
+        self._orig_nWhere = TheObjectEncoding.nWhere
+        self._orig_nWhen = TheObjectEncoding.nWhen
+        self._orig_objectSize = TheObjectEncoding.objectSize
+
+    def tearDown(self):
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = self._orig_nWhere
+        TheObjectEncoding.nWhen = self._orig_nWhen
+        TheObjectEncoding.objectSize = self._orig_objectSize
+
+    def _make_text_data(self):
+        """Create a minimal Data object with text examples and source buffer."""
+        from BasicModel import Data
+        data = Data()
+        data.load("xor")
+        return data
+
+    def _make_input_space(self):
+        """Create an InputSpace with model_type='lm' from XOR text data."""
+        from BasicModel import InputSpace, TheObjectEncoding
+        data = self._make_text_data()
+        nInput = 8
+        nVectors = 8
+        # The lm path resets ObjectEncoding dimensions internally via
+        # setDimensions(), but super().__init__ needs a valid nDim.
+        # Pass nDim=1 as a placeholder; the lm path overrides it.
+        inp = InputSpace([data.getInputSize(), 1], [nInput, 1], nVectors,
+                         nDim=1, model_type="lm", pretrained=False, data=data)
+        return inp, data
+
+    def test_lex_created_on_init(self):
+        """InputSpace with model_type='lm' creates a Lex instance."""
+        from Lex import Lex
+        inp, _ = self._make_input_space()
+        self.assertTrue(hasattr(inp, 'lex'))
+        self.assertIsInstance(inp.lex, Lex)
+
+    def test_span_table_created(self):
+        """InputSpace stores a span table from Lex.encode()."""
+        inp, _ = self._make_input_space()
+        self.assertTrue(hasattr(inp, 'spans'))
+        self.assertEqual(inp.spans.ndim, 2)
+        self.assertEqual(inp.spans.shape[1], 3)  # (start, end, type)
+
+    def test_span_table_shape(self):
+        """Span table has one row per word token across all training text."""
+        inp, _ = self._make_input_space()
+        # XOR data: "hello world", "hello there", "loving world", "loving there"
+        # Concatenated: "hello world hello there loving world loving there"
+        # That's 8 words
+        self.assertEqual(inp.spans.shape[0], 8)
+
+    def test_forward_produces_correct_shape(self):
+        """forward() with Lex path produces [batch, nInput, embeddingSize]."""
+        inp, data = self._make_input_space()
+        batch_size = 2
+        inputBatch = data.train_input[0:batch_size]
+        inputTensor = inp.prepInput(inputBatch)
+        output = inp.forward(inputTensor)
+        _, embSize = inp.getEmbeddedIO()
+        self.assertEqual(list(output.shape), [batch_size, inp.outputShape[0], embSize])
+
+    def test_lex_to_codebook_mapping_exists(self):
+        """InputSpace builds a Lex token_id -> codebook index mapping."""
+        inp, _ = self._make_input_space()
+        self.assertTrue(hasattr(inp, 'lex_to_codebook'))
+        # Every Lex token should have a mapping
+        for word, token_id in inp.lex.vocab.items():
+            self.assertIn(token_id, inp.lex_to_codebook)
+
+
 if __name__ == "__main__":
     unittest.main()

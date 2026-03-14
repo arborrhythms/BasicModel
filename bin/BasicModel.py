@@ -31,6 +31,7 @@ from sklearn.decomposition import PCA
 import pandas as pd
 from vector_quantize_pytorch import ResidualVQ, VectorQuantize
 from Model import Layer, PiLayer, SigmaLayer, ReversibleSigmaLayer, ReversiblePiLayer # Import custom layers from Model.py
+from Lex import Lex
 from Model import VQLayer, NormLayer, LinearLayer, ReversibleLinearLayer, AttentionLayer
 from Model import GammaMem, ColumnUsageTracker, LiftingLayer, SoftMap, CertaintyWeightedCrossEntropy, epsilon
 import torch.optim as optim
@@ -1458,6 +1459,22 @@ class InputSpace(Space):
             self.vectorSet.append(ReversibleDictionary())
             self.vectors().create(self.inputShape[0], self.nVectors, self.nDim, customVQ=True)
             self.vectors().addVectors(nVec=lm.getSize(), LM=lm)
+            # --- Lex span-table integration ---
+            # Build vocabulary and full span table from the source buffer.
+            # The span table is [num_spans, 3] of (start, end, token_id).
+            if data.train_source is not None:
+                self.lex = Lex()
+                self.lex.build_vocab(data.train_source)
+                self.spans = self.lex.encode(data.train_source)
+                self.source = data.train_source
+                # Build mapping from Lex token_id -> codebook index in
+                # ReversibleDictionary.  The codebook rows are ordered by
+                # self.vectors().words, so codebook_index = words.index(word).
+                codebook_words = self.vectors().words
+                self.lex_to_codebook = {}
+                for word, token_id in self.lex.vocab.items():
+                    if word in codebook_words:
+                        self.lex_to_codebook[token_id] = codebook_words.index(word)
         elif model_type == "passthrough":
             vs = VectorSet()
             vs.create(self.inputShape[0], nVectors, nDim, passThrough=True)
@@ -1487,11 +1504,39 @@ class InputSpace(Space):
     # The world presenting itself
     def forward(self, input, t=0, mask=None):
         self.batch = input.shape[0]
-        assert list(input.shape) == [self.batch, self.inputShape[0], self.inputShape[1]]
-        self.input = self.vectors().forward(input, t)
+        if hasattr(self, 'lex'):
+            self.input = self._forward_lex(input)
+        else:
+            assert list(input.shape) == [self.batch, self.inputShape[0], self.inputShape[1]]
+            self.input = self.vectors().forward(input, t)
         _, output = self.getEmbeddedIO()
         assert list(self.input.shape) == [self.batch, self.outputShape[0], output]
         return self.input
+
+    def _forward_lex(self, input):
+        """Span-based encoding: tokenize via Lex, look up codebook vectors,
+        apply positional encoding via ObjectEncoding."""
+        batch = input.shape[0]
+        embSize = self.vectors().embeddingSize
+        nVec = self.outputShape[0]
+        result = torch.zeros([batch, nVec, embSize], device=input.device)
+        codebook = self.vectors().vq.codebook
+
+        for b in range(batch):
+            # Decode bytes to text (strip zero padding)
+            raw_bytes = input[b].squeeze().tolist()
+            text = "".join(chr(int(c) & 0xFF) for c in raw_bytes).rstrip("\x00")
+            words = text.split()
+            for i, word in enumerate(words):
+                if i >= nVec:
+                    break
+                token_id = self.lex.vocab.get(word)
+                if token_id is not None and token_id in self.lex_to_codebook:
+                    cb_idx = self.lex_to_codebook[token_id]
+                    result[b, i, :] = codebook[cb_idx]
+        # Apply positional and temporal encoding via ObjectEncoding
+        result = TheObjectEncoding.forward(result)
+        return result
     def reverse(self, y, t=0):
         y = self.reverseBegin(y, t)
         self.input = self.vectors().reverse(y, t)
