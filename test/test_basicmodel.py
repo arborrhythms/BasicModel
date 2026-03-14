@@ -909,6 +909,27 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         for word, token_id in inp.lex.vocab.items():
             self.assertIn(token_id, inp.lex_to_codebook)
 
+    def test_nwhere_encodes_byte_offsets(self):
+        """nWhere should encode span byte offsets, not sequential positions."""
+        import math, numpy as np
+        from BasicModel import TheObjectEncoding, PositionalEncoding
+        inp, data = self._make_input_space()
+        batch_size = 1
+        inputBatch = data.train_input[0:batch_size]
+        inputTensor = inp.prepInput(inputBatch)
+        output = inp.forward(inputTensor)
+        # Extract nWhere from the output
+        embSize = output.shape[-1]
+        where_idx = np.add([embSize, embSize], PositionalEncoding.index)
+        p1 = output[0, 0, where_idx[0]].item()  # sin component of first word
+        p2 = output[0, 0, where_idx[1]].item()  # cos component of first word
+        # First word starts at byte offset 0
+        div_term = TheObjectEncoding.where.div_term
+        expected_p1 = math.sin(0 * div_term * div_term)
+        expected_p2 = math.cos(0 * div_term * div_term)
+        self.assertAlmostEqual(p1, expected_p1, places=5)
+        self.assertAlmostEqual(p2, expected_p2, places=5)
+
 
 class TestInputSpaceTextRoundTrip(unittest.TestCase):
     """InputSpace.reverse() must reconstruct text from latent state."""

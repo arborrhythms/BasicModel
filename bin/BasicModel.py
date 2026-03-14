@@ -1515,27 +1515,36 @@ class InputSpace(Space):
 
     def _forward_lex(self, input):
         """Span-based encoding: tokenize via Lex, look up codebook vectors,
-        apply positional encoding via ObjectEncoding."""
+        encode nWhere from span byte offsets."""
         batch = input.shape[0]
         embSize = self.vectors().embeddingSize
         nVec = self.outputShape[0]
         result = torch.zeros([batch, nVec, embSize], device=input.device)
         codebook = self.vectors().vq.codebook
+        where_enc = TheObjectEncoding.where
+        div_term = where_enc.div_term
 
         for b in range(batch):
             # Decode bytes to text (strip zero padding)
             raw_bytes = input[b].squeeze().tolist()
             text = "".join(chr(int(c) & 0xFF) for c in raw_bytes).rstrip("\x00")
-            words = text.split()
-            for i, word in enumerate(words):
-                if i >= nVec:
-                    break
-                token_id = self.lex.vocab.get(word)
-                if token_id is not None and token_id in self.lex_to_codebook:
+            # Use Lex to get spans with byte offsets
+            source_tensor = torch.tensor(list(text.encode('utf-8')), dtype=torch.uint8)
+            example_spans = self.lex.encode(source_tensor)
+            for i in range(min(example_spans.shape[0], nVec)):
+                start = example_spans[i, 0].item()
+                token_id = example_spans[i, 2].item()
+                # nWhat: look up codebook vector
+                if token_id in self.lex_to_codebook:
                     cb_idx = self.lex_to_codebook[token_id]
                     result[b, i, :] = codebook[cb_idx]
-        # Apply positional and temporal encoding via ObjectEncoding
-        result = TheObjectEncoding.forward(result)
+                # nWhere: encode byte offset using same sin/cos as PositionalEncoding
+                pos = start * div_term
+                where_idx = np.add([embSize, embSize], PositionalEncoding.index)
+                result[b, i, where_idx[0]] = math.sin(pos * div_term)
+                result[b, i, where_idx[1]] = math.cos(pos * div_term)
+        # Apply temporal encoding only (positional is already set from byte offsets)
+        result = TheObjectEncoding.when(result)
         return result
     def _reverse_lex(self, y):
         """Reverse the Lex encoding path: strip ObjectEncoding, snap to
