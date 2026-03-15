@@ -726,100 +726,6 @@ class ColumnUsageTracker:
     def freezeMask(self):
         return self.frozen_columns
 
-class SoftMap(Layer):
-    """Differentiable map between two spaces via paired vector-quantized codebooks.
-
-    Each input is quantized against codebookX, mapped through a reversible
-    linear transform (SVD-based), then quantized against codebookY.
-    ``soft=True`` uses softmax-weighted codebook lookup; ``soft=False``
-    uses hard nearest-neighbor.
-    """
-    def __init__(self, nInput, nOutput, nInputCodes=None, nOutputCodes=None, soft=False, beta=10.0):
-        super().__init__(nInput, nOutput)
-        self.nInputCodes  = nInputCodes if nInputCodes is not None else 2*nInput
-        self.nOutputCodes = nOutputCodes if nOutputCodes is not None else 2*nOutput
-        self.soft         = soft
-        self.beta         = beta
-        self.codebookX = nn.Parameter(torch.randn(nInput, self.nInputCodes))   # (nInput, nInputCodes)
-        self.codebookY = nn.Parameter(torch.randn(nOutput, self.nOutputCodes)) # (nOutput, nOutputCodes)
-        self.penalty = nn.Parameter(torch.zeros(1))
-        self.SVD = InvertibleLinearLayer(nInput, nOutput, naive=True)
-
-    def quantize(self, v, codebook):
-        dist = torch.cdist(v.reshape(-1, v.shape[-1]), codebook.T) ** 2  # (batch*seq, nCodes)
-        if self.soft:
-            weights = F.softmax(-self.beta * dist, dim=-1)  # (batch*seq, nCodes)
-            quantized = weights @ codebook.T  # (batch*seq, dim)
-        else:
-            indices = torch.argmin(dist, dim=-1)  # (batch*seq,)
-            quantized = codebook.T[indices]  # (batch*seq, dim)
-        return quantized.view(*v.shape)
-
-    def forward(self, x, t=0.0):
-        qx = self.quantize(x, self.codebookX)
-        y  = self.SVD.forward(qx, t)
-        qy = self.quantize(y, self.codebookY)
-        return qy, qx
-        #rx = self.SVD.reverse(qy, 0)
-        #self.penalty[:] = torch.norm(qx - rx)
-        #return qy + self.penalty, qx
-
-    def reverse(self, y, t=0.0):
-        qy = self.quantize(y, self.codebookY)
-        x  = self.SVD.reverse(qy, t) # Calling reverse before forward will not maintain the weights here ...
-        qx = self.quantize(x, self.codebookX)
-        #ry = self.SVD.forward(qx, 0)
-        #penalty = torch.norm(qy - ry)
-        return qx, qy
-
-    def codebook_regularization(self):
-        """Penalize cosine similarity between codebook vectors to encourage diversity."""
-        normX = F.normalize(self.codebookX, dim=0)
-        normY = F.normalize(self.codebookY, dim=0)
-        simX = torch.matmul(normX.T, normX)
-        simY = torch.matmul(normY.T, normY)
-        lossX = ((simX - torch.eye(simX.shape[0], device=simX.device))**2).sum()
-        lossY = ((simY - torch.eye(simY.shape[0], device=simY.device))**2).sum()
-        return lossX + lossY
-
-    def normalize_codebooks(self):
-        with torch.no_grad():
-            self.codebookX.data = F.normalize(self.codebookX.data, dim=0)
-            self.codebookY.data = F.normalize(self.codebookY.data, dim=0)
-
-    @staticmethod
-    def test():
-        torch.manual_seed(0)
-        nInput  = 4
-        nOutput = 5
-        mapper = SoftMap(nInput=nInput, nOutput=nOutput, beta=10.0)
-        criterion = nn.MSELoss()
-        optimizer = optim.Adam(mapper.parameters(), lr=0.001)
-        epochs = 1000
-        t = 0.0001
-        for epoch in range(epochs):
-            optimizer.zero_grad()
-            xc = mapper.codebookX[:, 1]
-            x = torch.rand([2, 3, nInput])
-            # ---------- Training pass (soft) ----------
-            qy, qx = mapper.forward(x)
-            qx_rec, qy_rec = mapper.reverse(qy)
-            loss = criterion(x, qx_rec) + criterion(qy, qy_rec) + 0.01 * mapper.codebook_regularization()
-            #y = 2*x
-            #loss = criterion(x, qx_rec)
-            loss.backward()
-            optimizer.step()
-            mapper.normalize_codebooks()
-            if epoch % 10 == 0:
-                print(f'Epoch {epoch}/{epochs}, MSE: {loss.item():.6f}')
-        # ---------- Evaluation (invertibility) using hard quantization ----------
-        x[0, 0, :] = xc
-        qy, qx = mapper.forward(x)
-        qx_rec, qy_rec = mapper.reverse(qy)
-        error = (x[0, 0, :] - qx_rec[0, 0, :]).norm(p=2).item()
-        print("Reconstruction error (L2 norm):", error)
-        assert error < 1e-3, f"Reconstruction error too high: {error}"
-
 class SigmaLayer(ErgodicLayer):
     """Additive (summation) layer: y = tanh(W @ x + b).
 
@@ -1038,15 +944,18 @@ class PiLayer(ErgodicLayer):
             if epoch % 100 == 0:
                 print(f'Epoch {epoch}/{epochs}, MSE: {loss.item():.6f}')
 class InvertiblePiLayer(ErgodicLayer):
-    """Invertible multiplicative layer that outputs paired (1-tanh, 1+tanh) products.
+    """Invertible multiplicative layer that outputs paired log-products.
 
-    Forward produces interleaved (y, z) pairs where:
-        y_j = prod_i (1 - tanh(w_ji * x_i))
-        z_j = prod_i (1 + tanh(w_ji * x_i))
+    Forward produces interleaved (log_y, log_z) pairs where:
+        log_y_j = sum_i log(1 - tanh(w_ji * x_i))
+        log_z_j = sum_i log(1 + tanh(w_ji * x_i))
 
-    Reverse recovers x via gamma_j = 0.5 * log(z_j / y_j) = (W @ x)_j,
-    then x = W^+ @ gamma.  Because the output has both y and z channels,
-    nOutput must equal 2*nInput when naive=False.
+    Computing in log-space (sum of logs instead of product) avoids numerical
+    underflow when nInput is large.
+
+    Reverse recovers x via gamma_j = 0.5 * (log_z_j - log_y_j) = (W @ x)_j,
+    then x = W^+ @ gamma.  Because the output has both log_y and log_z
+    channels, nOutput must equal 2*nInput when naive=False.
 
     The ``ergodic`` flag works identically to SigmaLayer/PiLayer.
     """
@@ -1109,9 +1018,12 @@ class InvertiblePiLayer(ErgodicLayer):
             if self.useEpsilon:
                 one_minus += epsilon
                 one_plus  += epsilon
-            y = torch.prod(one_minus, dim=1)  # (batch, nOutput)
-            z = torch.prod(one_plus, dim=1)   # (batch, nOutput)
-            stacked = torch.stack((y, z), dim=1)           # (batch, 2, nOutput)
+            # Log-space summation avoids underflow when nInput is large.
+            # Downstream layers see log-scale values; reverse uses subtraction
+            # instead of log(z/y), preserving exact invertibility.
+            log_y = torch.sum(torch.log(one_minus), dim=1)  # (batch, nOutput)
+            log_z = torch.sum(torch.log(one_plus), dim=1)   # (batch, nOutput)
+            stacked = torch.stack((log_y, log_z), dim=1)           # (batch, 2, nOutput)
             interleaved = torch.flatten(stacked, start_dim=1, end_dim=2)  # (batch, 2*nOutput)
         else:
             # 3D: x is (batch, seq, nInput), W is (nInput, nOutput)
@@ -1124,16 +1036,20 @@ class InvertiblePiLayer(ErgodicLayer):
             if self.useEpsilon:
                 one_minus += epsilon
                 one_plus  += epsilon
-            y = torch.prod(one_minus, dim=2)  # (batch, seq, nOutput)
-            z = torch.prod(one_plus, dim=2)   # (batch, seq, nOutput)
-            stacked = torch.stack((y, z), dim=1)           # (batch, 2, seq, nOutput)
+            # Log-space summation (see 2D comment above).
+            log_y = torch.sum(torch.log(one_minus), dim=2)  # (batch, seq, nOutput)
+            log_z = torch.sum(torch.log(one_plus), dim=2)   # (batch, seq, nOutput)
+            stacked = torch.stack((log_y, log_z), dim=1)           # (batch, 2, seq, nOutput)
             interleaved = torch.flatten(stacked, start_dim=1, end_dim=2)  # (batch, 2*seq, nOutput)
 
         result = self.unpermute(interleaved)
         return result
 
     def reverse(self, yz):
-        """Recover x from interleaved (y,z): gamma = 0.5*log(z/y) = Wx, then x = W^+ @ gamma.
+        """Recover x from interleaved (log_y, log_z): gamma = 0.5*(log_z - log_y) = Wx, then x = W^+ @ gamma.
+
+        Forward outputs log-space values, so reverse uses subtraction instead
+        of log(z/y), avoiding numerical issues with large nInput.
 
         Supports both 2D (batch, 2*nOutput) and 3D (batch, 2*seq, nOutput) inputs.
         """
@@ -1147,21 +1063,21 @@ class InvertiblePiLayer(ErgodicLayer):
         ndim = yz.ndim
 
         if ndim == 2:
-            # 2D flattened: yz is (batch, 2*nOutput)
+            # 2D flattened: yz is (batch, 2*nOutput) containing (log_y, log_z)
             n2 = yz.shape[1] // 2
             uninterleaved = torch.unflatten(yz, 1, (2, n2))  # (batch, 2, nOutput)
-            y = uninterleaved[:, 0, :]  # (batch, nOutput)
-            z = uninterleaved[:, 1, :]  # (batch, nOutput)
-            gamma = 0.5 * torch.log(z / y)
+            log_y = uninterleaved[:, 0, :]  # (batch, nOutput)
+            log_z = uninterleaved[:, 1, :]  # (batch, nOutput)
+            gamma = 0.5 * (log_z - log_y)
             if self.hasBias:
                 gamma = gamma - torch.sum(bias*self.biasWeight.squeeze(0) + temp*self.biasNoise.squeeze(0), dim=0)
         else:
-            # 3D: yz is (batch, 2*seq, nOutput)
+            # 3D: yz is (batch, 2*seq, nOutput) containing (log_y, log_z)
             n2 = yz.shape[1] // 2
             uninterleaved = torch.unflatten(yz, 1, (2, n2))  # (batch, 2, seq, nOutput)
-            y = uninterleaved[:, 0, :, :]  # (batch, seq, nOutput)
-            z = uninterleaved[:, 1, :, :]  # (batch, seq, nOutput)
-            gamma = 0.5 * torch.log(z / y)
+            log_y = uninterleaved[:, 0, :, :]  # (batch, seq, nOutput)
+            log_z = uninterleaved[:, 1, :, :]  # (batch, seq, nOutput)
+            gamma = 0.5 * (log_z - log_y)
             if self.hasBias:
                 gamma = gamma - torch.sum(bias*self.biasWeight + temp*self.biasNoise, dim=1).unsqueeze(1)
 

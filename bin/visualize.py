@@ -68,7 +68,8 @@ class Report:
 
     def write_html(self):
         """Write the collected figures and configs into a single HTML file."""
-        if not self.figures:
+        has_tables = hasattr(self, 'tables') and self.tables
+        if not self.figures and not has_tables and not self.xml_configs:
             return None
         html_path = _output_path(f"{self.timestamp}_report.html")
         lines = [

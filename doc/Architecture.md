@@ -1,5 +1,115 @@
 # Architecture
 
+## Overview
+
+BasicModel is a bidirectional neural architecture organized as a pipeline of five
+**spaces**, each implementing a distinct representational transformation:
+
+```
+Forward:  InputSpace → PerceptualSpace → ConceptualSpace → SymbolicSpace → OutputSpace
+Reverse:  OutputSpace → SymbolicSpace → ConceptualSpace → PerceptualSpace → InputSpace
+```
+
+The forward pass transforms raw input into predictions. The reverse pass
+reconstructs the original input from the symbolic representation. Both directions
+are trained simultaneously with a single optimizer minimizing a combined loss:
+
+```
+totalLoss = outputLoss + reconstructionLoss
+```
+
+### Spaces
+
+| Space | Role | Layer Type | Parameters |
+|-------|------|-----------|------------|
+| **InputSpace** | Lifts raw data into working dimensionality | LiftingLayer | dim, nVectors |
+| **PerceptualSpace** | Multiplicative feature extraction | PiLayer | nVectors, dim, prototypes, invertible |
+| **ConceptualSpace** | Additive abstraction | SigmaLayer | nVectors, dim, prototypes, invertible |
+| **SymbolicSpace** | Information bottleneck | passThrough or learned | nVectors, passThrough |
+| **OutputSpace** | Final prediction | LinearLayer | nVectors, dim |
+
+Each space with learnable layers maintains separate forward and reverse layer instances
+(e.g., `pi1`/`pi2`, `sigma1`/`sigma2`) unless `invertible=true`, in which case a
+single invertible layer serves both directions.
+
+### Reconstruction Symbols
+
+The symbolic bottleneck can lose information needed for reconstruction. For example,
+XOR maps 2 inputs to 1 output, but `XOR(0,0)=0` and `XOR(1,1)=0` are distinct inputs
+producing the same output. A single output symbol cannot reconstruct which input was
+presented.
+
+To solve this, the `nSymbols` produced by SymbolicSpace are split:
+
+- **`nOutputSymbols`** `= OutputSpace.nVectors` — fed to OutputSpace for prediction
+- **`nReconSymbols`** `= nSymbols - nOutputSymbols` — carried in `end_state` for reconstruction
+
+This is essentially a skip connection through the symbolic bottleneck: an extra channel
+that preserves information lost in the output projection. Reconstruction symbols receive
+gradient only from reconstruction loss, never from output loss.
+
+For XOR with `nSymbols=3`, `nOutput=1`: symbol 0 predicts the output; symbols 1-2 carry
+enough information to distinguish all 4 input patterns, enabling perfect reconstruction.
+
+### Single Optimizer with Overlapping Weight Spaces
+
+A critical design choice: the forward and reverse passes share a **single Adam
+optimizer** that minimizes a combined loss:
+
+```
+totalLoss = outputLoss + reconstructionLoss
+```
+
+This works because the forward and reverse weight spaces **partially overlap**.
+They are neither disjoint (which would allow independent optimizers) nor identical
+(which would create destructive interference). Instead, certain layers share
+weights between directions (e.g., shared embeddings, the symbolic bottleneck
+itself) while others are direction-specific (e.g., `pi1`/`pi2`, `sigma1`/`sigma2`,
+`linear1`/`linear2`).
+
+The partial overlap means:
+- **Shared weights** receive gradient from *both* output and reconstruction loss,
+  learning representations useful in both directions simultaneously.
+- **Direction-specific weights** receive gradient from only their respective loss,
+  specializing freely without interference.
+- **No ping-pong**: separate optimizers on overlapping parameters would pull weights
+  in alternating, conflicting directions each step. A single optimizer sees the
+  combined gradient and finds a consistent descent direction.
+
+This resolves the fundamental tension between forward prediction and backward
+reconstruction in bidirectional architectures — a problem first identified in
+A.M. Rogers, T.T. Shannon, and G.G. Lendaris, "A comparison of DHP based
+antecedent parameter tuning strategies for fuzzy control," *Proceedings Joint
+9th IFSA World Congress and 20th NAFIPS International Conference*, Vancouver,
+BC, Canada, 2001, pp. 580-585, doi:
+[10.1109/NAFIPS.2001.944317](https://ieeexplore.ieee.org/document/944317).
+See also `doc/research/` for a local copy.
+
+When `invertible=true`, the overlap is total: a single invertible layer serves both
+directions, and its weights receive the full combined gradient. The single-optimizer
+approach handles this case naturally.
+
+### Training Loop
+
+Training uses the single Adam optimizer with persistent state (momentum/variance
+accumulate across epochs):
+
+1. Forward pass: input → prediction + `end_state`
+2. Compute `outputLoss` from prediction vs. target
+3. Reverse pass: `end_state` → reconstructed input
+4. Compute `reconstructionLoss` from reconstruction vs. `end_state`
+5. Backpropagate `totalLoss = outputLoss + reconstructionLoss`
+6. If ergodic: run `paramUpdate()` (gradient energy sensor updates alpha)
+7. Optimizer step
+
+Alpha annealing (ergodic mode): starts at `alpha=0` (pure exploration) and decays
+to `alpha=0` (pure exploitation) within the first 5% of epochs via
+`alpha = max(0, 1 - epoch / warmup)` where `warmup = numEpochs // 20`.
+
+See [Params.md](Params.md) for all XML configuration parameters.
+
+---
+
 ## Grammar
 
 The 5DG grammar used for English sentence parsing is documented in

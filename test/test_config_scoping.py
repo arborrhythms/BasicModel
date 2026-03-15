@@ -174,4 +174,4 @@ class TestValidateConfig(unittest.TestCase):
         }
         with self.assertRaises(ValueError) as ctx:
             BasicModelFactory.validate_config(cfg)
-        self.assertIn("output == 2*input", str(ctx.exception))
+        self.assertIn("output == 4*input", str(ctx.exception))

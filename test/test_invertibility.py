@@ -17,7 +17,6 @@ from Model import (
     LinearLayer, InvertibleLinearLayer, InvertibleRotationLayer,
     InvertibleDiagonalLayer, SigmaLayer, InvertibleSigmaLayer,
     PiLayer, InvertiblePiLayer, AttentionLayer, NormLayer, LiftingLayer,
-    SoftMap,
 )
 
 
@@ -217,36 +216,7 @@ class TestNormLayerInvertibility(unittest.TestCase):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 4. SoftMap (trained)
-# ═══════════════════════════════════════════════════════════════════════════
-
-class TestSoftMapInvertibility(unittest.TestCase):
-    @unittest.expectedFailure
-    def test_trained_roundtrip(self):
-        torch.manual_seed(42)
-        nIn, nOut = 4, 5
-        mapper = SoftMap(nIn, nOut, beta=10.0)
-        criterion = nn.MSELoss()
-        optimizer = optim.Adam(mapper.parameters(), lr=0.001)
-        for _ in range(200):
-            optimizer.zero_grad()
-            x = torch.rand(2, 3, nIn)
-            qy, qx = mapper.forward(x)
-            qx_rec, qy_rec = mapper.reverse(qy)
-            loss = (criterion(x, qx_rec) + criterion(qy, qy_rec)
-                    + 0.01 * mapper.codebook_regularization())
-            loss.backward()
-            optimizer.step()
-            mapper.normalize_codebooks()
-        x = torch.rand(2, 3, nIn)
-        qy, qx = mapper.forward(x)
-        qx_rec, qy_rec = mapper.reverse(qy)
-        err = torch.norm(x - qx_rec).item()
-        self.assertLess(err, 1.0, f"SoftMap roundtrip err={err:.4f}")
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# 5. Paired layer training (non-invertible encoder/decoder pairs)
+# 4. Paired layer training (non-invertible encoder/decoder pairs)
 # ═══════════════════════════════════════════════════════════════════════════
 
 class TestPairedSigmaTraining(unittest.TestCase):
@@ -274,7 +244,21 @@ class TestPairedSigmaTraining(unittest.TestCase):
 
 
 class TestPairedPiTraining(unittest.TestCase):
-    """Paired PiLayer training — known to be difficult to converge."""
+    """Paired PiLayer roundtrip — demonstrates the Pi layer gradient barrier.
+
+    The PiLayer computes y = b * prod(1 + W*x), a multiplicative layer.
+    When training a separate reverse PiLayer to invert the forward one,
+    gradients flowing back through the product collapse toward zero
+    (each partial derivative is a product of N-1 terms, all near 1,
+    making the gradient signal ~1000x smaller than additive layers).
+
+    This is the same gradient barrier that blocks reconstruction through
+    PerceptualSpace.reverse() in the full model — the reverse Pi layer
+    receives near-zero gradients and cannot learn the inverse mapping.
+
+    Compare with TestPairedSigmaTraining which succeeds: SigmaLayer uses
+    y = tanh(W*x + b), an additive layer whose gradients flow cleanly.
+    """
     @unittest.expectedFailure
     def test_paired_roundtrip(self):
         torch.manual_seed(42)
@@ -439,8 +423,11 @@ class TestConceptualSpacePairedSigma(unittest.TestCase):
 
 
 class TestConceptualSpaceHasNorm(unittest.TestCase):
-    """ConceptualSpace with hasNorm=True."""
-    @unittest.expectedFailure
+    """ConceptualSpace with hasNorm=True.
+
+    Norm factors (mean, std) are cached during forward and reattached
+    during reverse, keeping the sigma layer square for exact invertibility.
+    """
     def test_hasNorm_reshape(self):
         _setup_object_encoding(objSize=0)
         nObj, contentDim = 3, 6

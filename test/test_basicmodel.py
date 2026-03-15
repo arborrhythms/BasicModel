@@ -236,7 +236,7 @@ class TestSimpleModelCreation(unittest.TestCase):
                        perceptPassThrough=True, symbolPassThrough=True,
                        reshape=True)
         x = torch.randn(2, 28*28, 1)  # batch of 2, flattened MNIST, dim=1
-        out, end_state = model.forward(x)
+        _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)  # batch size preserved
 
     def test_simple_model_ergodic(self):
@@ -246,7 +246,7 @@ class TestSimpleModelCreation(unittest.TestCase):
                        perceptPassThrough=True, symbolPassThrough=True,
                        ergodic=True, certainty=True, reshape=True)
         x = torch.randn(2, 28*28, 1)
-        out, end_state = model.forward(x)
+        _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
 
 
@@ -360,7 +360,7 @@ class TestSimpleModel(unittest.TestCase):
                        perceptPassThrough=True, symbolPassThrough=True,
                        ergodic=True, reshape=True)
         x = torch.randn(2, 16, 1)
-        out, end_state = model.forward(x)
+        _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
         self.assertEqual(end_state.shape[0], 2)
@@ -371,7 +371,7 @@ class TestSimpleModel(unittest.TestCase):
                        perceptPassThrough=True, symbolPassThrough=True,
                        reshape=True)
         x = torch.randn(2, 16, 1)
-        out, end_state = model.forward(x)
+        _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
 
@@ -381,8 +381,8 @@ class TestSimpleModel(unittest.TestCase):
                        perceptPassThrough=True, symbolPassThrough=True,
                        ergodic=True, reversePass=True, reshape=True)
         x = torch.randn(2, 16, 1)
-        out, end_state = model.forward(x)
-        data, start_state = model.reverse(end_state)
+        _, end_state, out = model.forward(x)
+        data, start_state = model.reverse(end_state, out)
         self.assertEqual(data.shape[0], 2)
         self.assertEqual(data.shape[1], 16)
 
@@ -398,15 +398,16 @@ class TestVectorSetVariants(unittest.TestCase):
         y = vs.forward(x)
         self.assertTrue(torch.equal(x, y))
 
-    @unittest.skip("Known bug: VectorSet.forward indexes nearestDist[v] but topk returns size 1")
     def test_quantized_shape(self):
-        from BasicModel import VectorSet
+        from BasicModel import VectorSet, TheObjectEncoding
         vs = VectorSet()
         vs.create(4, 4, 3, customVQ=False)
         vs.addVectors(nVec=4)
         x = torch.randn(2, 4, 3)
         y = vs.forward(x)
-        self.assertEqual(list(y.shape), [2, 4, 3])
+        # Output gains ObjectEncoding overhead (nWhere + nWhen)
+        embeddingSize = 3 + TheObjectEncoding.objectSize
+        self.assertEqual(list(y.shape), [2, 4, embeddingSize])
 
 
 class TestModelEndToEnd(unittest.TestCase):
@@ -430,7 +431,7 @@ class TestModelEndToEnd(unittest.TestCase):
                        perceptPassThrough=True, symbolPassThrough=True,
                        ergodic=True, reshape=True)
         x = torch.randn(2, 16, 1)
-        out, end_state = model.forward(x)
+        _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
         self.assertEqual(end_state.shape[0], 2)
@@ -441,7 +442,7 @@ class TestModelEndToEnd(unittest.TestCase):
                        perceptPassThrough=True, symbolPassThrough=True,
                        reshape=True)
         x = torch.randn(2, 16, 1)
-        out, end_state = model.forward(x)
+        _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
         self.assertEqual(end_state.shape[0], 2)
@@ -452,8 +453,8 @@ class TestModelEndToEnd(unittest.TestCase):
                        perceptPassThrough=True, symbolPassThrough=True,
                        ergodic=True, reversePass=True, reshape=True)
         x = torch.randn(2, 16, 1)
-        out, end_state = model.forward(x)
-        data, start_state = model.reverse(end_state)
+        _, end_state, out = model.forward(x)
+        data, start_state = model.reverse(end_state, out)
         self.assertEqual(data.shape[0], 2)
         self.assertEqual(data.shape[1], 16)
 
@@ -466,7 +467,7 @@ class TestModelEndToEnd(unittest.TestCase):
                        ergodic=True, certainty=True, reshape=True)
         x = torch.randn(2, 16, 1)
         target = torch.randn(2, 4)
-        out, end_state = model.forward(x)
+        _, end_state, out = model.forward(x)
         loss_fn = CertaintyWeightedCrossEntropy()
         loss = loss_fn(out.squeeze(), target)
         loss.backward()
@@ -1409,10 +1410,10 @@ class TestModelTypeVariants(unittest.TestCase):
                      perceptPassThrough=True, symbolPassThrough=True,
                      reshape=True)
         x = torch.randn(2, 16, 1)
-        out, end_state = model.forward(x)
+        _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
-        data, start_state = model.reverse(end_state)
+        data, start_state = model.reverse(end_state, out)
         self.assertEqual(data.shape[0], 2)
         self.assertEqual(data.shape[1], 16)
 
@@ -1424,7 +1425,7 @@ class TestModelTypeVariants(unittest.TestCase):
                      perceptPassThrough=True, symbolPassThrough=True,
                      reshape=True)
         x = torch.randn(2, 16, 1)
-        out, end_state = model.forward(x)
+        _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
 
@@ -1440,7 +1441,7 @@ class TestModelTypeVariants(unittest.TestCase):
                      perceptPassThrough=True, symbolPassThrough=False,
                      reshape=True)
         x = torch.randn(2, 8, 1)
-        out, end_state = model.forward(x)
+        _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
 
@@ -1456,7 +1457,7 @@ class TestModelTypeVariants(unittest.TestCase):
                      perceptPassThrough=True, symbolPassThrough=False,
                      reshape=True)
         x = torch.randn(2, 8, 1)
-        out, end_state = model.forward(x)
+        _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
 
@@ -1468,10 +1469,10 @@ class TestModelTypeVariants(unittest.TestCase):
                      perceptPassThrough=True, symbolPassThrough=True,
                      reshape=True)
         x = torch.randn(2, 16, 1)
-        out, end_state = model.forward(x)
+        _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
-        data, start_state = model.reverse(end_state)
+        data, start_state = model.reverse(end_state, out)
         self.assertEqual(data.shape[0], 2)
         self.assertEqual(data.shape[1], 16)
 
@@ -1483,7 +1484,7 @@ class TestModelTypeVariants(unittest.TestCase):
                      perceptPassThrough=False, symbolPassThrough=True,
                      reshape=True)
         x = torch.randn(2, 8, 1)
-        out, end_state = model.forward(x)
+        _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
 
@@ -1495,9 +1496,212 @@ class TestModelTypeVariants(unittest.TestCase):
                      perceptPassThrough=True, symbolPassThrough=True,
                      reshape=True)
         x = torch.randn(2, 16, 1)
-        out, end_state = model.forward(x)
+        _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
+
+
+class TestReconstructionSymbols(unittest.TestCase):
+    """Test that reconstruction symbols split correctly and enable reconstruction."""
+
+    def _create_xor_model(self, nSymbols=3, nOutput=1):
+        """Helper: create XOR model from XOR_exact.xml with given symbol/output counts.
+
+        Also patches ConceptualSpace/nVectors to match nSymbols, because
+        SymbolicSpace requires inputShape[0] == nVectors (1:1 concept→symbol mapping).
+        """
+        import tempfile
+        import xml.etree.ElementTree as ET
+        from BasicModel import BasicModel, TheData
+
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+
+        # Patch autoload off
+        auto = root.find("architecture/autoload")
+        if auto is None:
+            auto = ET.SubElement(root.find("architecture"), "autoload")
+        auto.text = "false"
+
+        # Patch symbol count (and concepts to match — SymbolicSpace requires nConcepts == nSymbols)
+        sym_nvec = root.find("SymbolicSpace/nVectors")
+        if sym_nvec is not None:
+            sym_nvec.text = str(nSymbols)
+        con_nvec = root.find("ConceptualSpace/nVectors")
+        if con_nvec is not None:
+            con_nvec.text = str(nSymbols)
+
+        # Patch output count
+        out_nvec = root.find("OutputSpace/nVectors")
+        if out_nvec is not None:
+            out_nvec.text = str(nOutput)
+
+        tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
+        tree.write(tmp, xml_declaration=True)
+        tmp.close()
+        TheData.load("xor")
+        m = BasicModel()
+        m.create_from_config(tmp.name, data=TheData)
+        os.unlink(tmp.name)
+        return m
+
+    def test_nOutputSymbols_computed(self):
+        """nOutputSymbols and nReconSymbols are computed from nSymbols and nOutput."""
+        m = self._create_xor_model(nSymbols=3, nOutput=1)
+        self.assertEqual(m.nOutputSymbols, 1)
+        self.assertEqual(m.nReconSymbols, 2)
+
+    def test_no_recon_symbols_when_equal(self):
+        """When nSymbols == nOutput, there are no reconstruction symbols."""
+        m = self._create_xor_model(nSymbols=3, nOutput=3)
+        self.assertEqual(m.nOutputSymbols, 3)
+        self.assertEqual(m.nReconSymbols, 0)
+
+    def test_forward_output_shape_unchanged(self):
+        """Forward pass output shape is [batch, nOutput] regardless of recon symbols."""
+        m = self._create_xor_model(nSymbols=3, nOutput=1)
+        m.train(False)
+        test_input, _ = m.inputSpace.getTestData()
+        x = m.inputSpace.prepInput(test_input[:2])
+        with torch.no_grad():
+            forwardInput, symbols, outputPred = m.forward(x)
+        # Output should have batch dim = 2
+        self.assertEqual(outputPred.shape[0], 2)
+
+    def test_recon_symbols_cached(self):
+        """After forward(), model.recon_symbols has correct shape."""
+        m = self._create_xor_model(nSymbols=3, nOutput=1)
+        m.train(False)
+        test_input, _ = m.inputSpace.getTestData()
+        x = m.inputSpace.prepInput(test_input[:2])
+        with torch.no_grad():
+            forwardInput, symbols, outputPred = m.forward(x)
+        # recon_symbols should be [batch, nReconSymbols, dim]
+        self.assertIsNotNone(m.recon_symbols)
+        self.assertEqual(m.recon_symbols.shape[0], 2)   # batch
+        self.assertEqual(m.recon_symbols.shape[1], 2)    # nReconSymbols
+
+    def test_reverse_uses_recon_symbols(self):
+        """Reverse pass produces output with correct shape when recon symbols present."""
+        m = self._create_xor_model(nSymbols=3, nOutput=1)
+        m.train(False)
+        test_input, _ = m.inputSpace.getTestData()
+        x = m.inputSpace.prepInput(test_input[:2])
+        with torch.no_grad():
+            forwardInput, symbols, outputPred = m.forward(x)
+            inputData, inputPred = m.reverse(symbols, outputPred)
+        # Should not raise; inputData should have batch dimension
+        self.assertEqual(inputData.shape[0], 2)
+
+    def test_nsymbols_less_than_noutput_raises(self):
+        """Creating a model with nSymbols < nOutput should raise."""
+        with self.assertRaises(AssertionError):
+            self._create_xor_model(nSymbols=2, nOutput=3)
+
+    def test_xor_training_with_recon_symbols(self):
+        """Training with recon symbols works end-to-end and output loss converges.
+
+        Verifies:
+        - Training loop runs without errors when recon symbols are active
+        - Output loss converges to near-zero (XOR is learnable)
+        - recon_symbols are populated on every forward pass
+        - Recon symbols carry live gradients (grad_fn is not None)
+        """
+        torch.manual_seed(42)
+        m = self._create_xor_model(nSymbols=3, nOutput=1)
+        m.setAlpha(0.0)
+        m.train(True)
+
+        criterionOutput, criterionInput = m._getLossFn()
+        optimizer = m.getOptimizer(lr=0.005)
+
+        train_input, train_output = m.inputSpace.getTrainData()
+        recon_symbols_seen = False
+
+        for epoch in range(200):
+            for i in range(0, len(train_input), 10):
+                ib = train_input[i:i+10]
+                ob = train_output[i:i+10]
+                it = m.inputSpace.prepInput(ib)
+                ot = m.outputSpace.prepOutput(ob)
+
+                optimizer.zero_grad()
+                forwardInput, symbols, outputPred = m.forward(it)
+                lossOut = criterionOutput(outputPred.squeeze(), ot.squeeze())
+
+                # Verify recon symbols are populated and have gradient connectivity
+                if m.recon_symbols is not None:
+                    recon_symbols_seen = True
+                    self.assertIsNotNone(m.recon_symbols.grad_fn,
+                                         "recon_symbols should have grad_fn (live computation graph)")
+
+                inputData, inputPred = m.reverse(symbols, outputPred)
+                lossIn = criterionInput(inputPred, forwardInput.squeeze())
+                total = lossOut + lossIn
+
+                total.backward()
+                optimizer.step()
+
+            m.inputSpace.shuffle()
+
+        # Recon symbols should have been present during training
+        self.assertTrue(recon_symbols_seen, "recon_symbols were never populated during training")
+
+        # Output loss should converge — XOR is learnable regardless of recon symbols
+        self.assertLess(lossOut.item(), 0.01,
+                        f"Output loss ({lossOut.item():.4f}) should converge for XOR")
+
+    def test_xor_perfect_reconstruction(self):
+        """After training, all 4 XOR inputs reconstruct to the correct words.
+
+        Trains the model via run() (which uses the full training loop including
+        reconstruction), then verifies that each input's reconstructed text
+        matches the original input text exactly.
+        """
+        from BasicModel import BasicModel, BasicModelFactory, TheData
+        import xml.etree.ElementTree as ET
+
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+
+        # Ensure autoload is off
+        auto = root.find("architecture/autoload")
+        if auto is None:
+            auto = ET.SubElement(root.find("architecture"), "autoload")
+        auto.text = "false"
+
+        tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
+        tree.write(tmp, xml_declaration=True)
+        tmp.close()
+
+        try:
+            torch.manual_seed(42)
+            TheData.load("xor")
+            m = BasicModel()
+            m.create_from_config(tmp.name, data=TheData)
+
+            # Train for enough epochs to converge
+            m.run(numEpochs=500, batchSize=10, lr=0.01, stoppingCriterion=0.01)
+
+            # Run a final evaluation pass with reverse
+            test_input, test_output = m.inputSpace.getTestData()
+            m.setAlpha(0.0)
+            m.train(False)
+            with torch.no_grad():
+                m.runEpoch(test_input, test_output, lr=0, batchSize=len(test_input))
+
+            # Check each input reconstructs to the correct words
+            for i in range(len(test_input)):
+                original = m._bytes_to_text(test_input[i])
+                recon = m._bytes_to_text(m.inputSpace.reconstructed[i])
+                self.assertEqual(
+                    original.split(), recon.split(),
+                    f"Input {i}: '{original}' reconstructed as '{recon}'"
+                )
+        finally:
+            os.unlink(tmp.name)
 
 
 if __name__ == "__main__":

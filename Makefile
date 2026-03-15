@@ -1,7 +1,7 @@
 include /bits/projects/Make.mk
 
 # Ordered list of doc chapters for PDF generation
-PDF_CHAPTERS := README.md $(wildcard doc/*.md) todo.md
+PDF_CHAPTERS := README.md doc/CognitiveScienceSociety.md doc/Architecture.md doc/BasicModel.md doc/MachineMinds.md doc/Params.md
 XML1 ?= data/simple.xml
 XML2 ?= data/ergodic-only.xml
 
@@ -21,7 +21,7 @@ all : xor
 run :
 	cd bin && PYTHONPATH=. ../.venv/bin/python BasicModel.py $(XML1)
 
-xor : data/xor.xml
+xor : data/XOR_exact.xml
 	make run XML1=$<
 
 tomatoes : data/tomatoes.xml
@@ -50,7 +50,7 @@ compare :
 	cd bin && PYTHONPATH=. ../.venv/bin/python BasicModel.py --compare $(XML1) $(XML2)
 
 test :
-	PYTHONPATH=bin .venv/bin/python -m pytest test/ -v
+	PYTHONPATH=bin .venv/bin/python test/test_report.py
 
 bench :
 	@echo "=== Baseline (no env tweaks) ==="

@@ -32,7 +32,7 @@ from vector_quantize_pytorch import ResidualVQ, VectorQuantize
 from Model import Layer, PiLayer, SigmaLayer, InvertibleSigmaLayer, InvertiblePiLayer # Import custom layers from Model.py
 from lex import Lex
 from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer
-from Model import GammaMem, ColumnUsageTracker, LiftingLayer, SoftMap, CertaintyWeightedCrossEntropy, epsilon
+from Model import GammaMem, ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, epsilon
 import torch.optim as optim
 from functools import partial
 
@@ -654,7 +654,7 @@ class VectorSet(nn.Module):
                     if err <= self.snapDistance:
                         #message("Using prototype vector")
                         x[b,v,:] = self.vectors[nearestIdx,:]
-                        act[b, v] = nearestDist[v]
+                        act[b, nearestIdx[0]] = nearestDist[0]
                     #else:
                     #    x[b,v,:] = x[b,v,:]
                     # Update the codebook
@@ -1251,6 +1251,8 @@ class InputSpace(Space):
         self.tokenizedInput = tokenizedInput
         fullSize  = outputShape[0]*outputShape[1]
         self.lift = LiftingLayer(fullSize, fullSize)
+        self.params = self.lift.getParameters()
+        self.layers = [self.lift]
     # Data client interface
     def getTrainData(self):
         return self.data.train_input, self.data.train_output
@@ -1399,18 +1401,26 @@ class PerceptualSpace(Space):
         input, output = self.getEmbeddedIO()
         self.attention = AttentionLayer(output, output)
         if invertible:
-            assert output == 2 * input, (
-                f"InvertiblePiLayer requires output == 2*input, "
+            # InvertiblePiLayer(n, 2n) produces interleaved (y,z) pairs of
+            # size 2*(2n) = 4n.  So the flat output must be 4× the flat input.
+            assert output == 4 * input, (
+                f"InvertiblePiLayer requires output == 4*input (reshape=True), "
                 f"got input={input}, output={output}")
-            self.pi  = InvertiblePiLayer(input, output)
+            self.pi  = InvertiblePiLayer(input, 2 * input)
             self.forwardPi, self.reversePi = self.pi.forward, self.pi.reverse
+            self.params = self.pi.getParameters()
+            self.layers = [self.pi]
         elif self.reversePass:
             self.pi1      = PiLayer(input, output, ergodic=ergodic)
             self.pi2      = PiLayer(output, input, ergodic=ergodic)
             self.forwardPi, self.reversePi = self.pi1.forward, self.pi2.forward
+            self.params = self.pi1.getParameters() + self.pi2.getParameters()
+            self.layers = [self.pi1, self.pi2]
         else:
             self.pi        = PiLayer(input, output, ergodic=ergodic)
             self.forwardPi = self.pi.forward
+            self.params = self.pi.getParameters()
+            self.layers = [self.pi]
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
         self.createVectorSet()
     def distance(self, x, y):
@@ -1478,7 +1488,11 @@ class ConceptualSpace(Space):
         self.attention = AttentionLayer(output, output)
         if hasNorm:
             self.norm = NormLayer(input, input + 2)
-            input += 2
+            # Don't expand input dim for invertible path — norm factors
+            # are cached during forward and reapplied during reverse,
+            # so the sigma layer stays square (input == output).
+            if not invertible:
+                input += 2
         if invertible:
             self.sigma = InvertibleSigmaLayer(input, output)
             self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
@@ -1510,6 +1524,10 @@ class ConceptualSpace(Space):
         x = self.forwardBegin(x)
         if self.hasNorm:
             x = self.norm.forward(x)
+            if hasattr(self, 'sigma') and isinstance(self.sigma, InvertibleSigmaLayer):
+                # Cache norm factors for reverse, pass only normalized content
+                self._norm_factors = x[..., -2:]
+                x = x[..., :-2]
         y = self.forwardSigma(x)
         if self.hasAttention:
             y = self.attention.forward(y)
@@ -1546,6 +1564,9 @@ class ConceptualSpace(Space):
         #        self.concepts = self.reverseSigma(self.concepts)
         self.concepts = self.reverseSigma(self.concepts)
         if self.hasNorm:
+            if hasattr(self, '_norm_factors'):
+                # Reattach cached norm factors for un-normalization
+                self.concepts = torch.cat([self.concepts, self._norm_factors], dim=-1)
             self.concepts = self.norm.reverse(self.concepts)
         #self.concepts = torch.concatenate((self.concepts, encoding), dim=2)
         self.concepts = self.reverseEnd(self.concepts)
@@ -1577,7 +1598,7 @@ class SymbolicSpace(Space):
         assert(inputShape[0] == nVectors) # 1:1 mapping
         self.conceptualSpace = conceptualSpace
         self.passThrough = passThrough
-        #self.mapping     = SoftMap(inputShape[1], nDim, soft=False)
+        #self.mapping     = TODO(inputShape[1], nDim, soft=False)
         #self.createVectorSet()
     def distance(self, x, y):
         return x == y
@@ -1640,7 +1661,7 @@ class SyntacticSpace(Space):
         super(SyntacticSpace, self).__init__( inputShape, outputShape, nVectors, nDim, customVQ=False, reversePass=reversePass, processSymbols=True)
         assert(inputShape[0] == nVectors) # 1:1 mapping
         self.conceptualSpace = conceptualSpace
-        #self.mapping     = SoftMap(inputShape[1], nDim, soft=False)
+        #self.mapping     = TODO(inputShape[1], nDim, soft=False)
         #self.createVectorSet()
     def distance(self, x, y):
         return x == y
@@ -2192,6 +2213,13 @@ class BasicModel(BaseModel):
         self.nPercepts        = nPercepts
         self.nConcepts        = nConcepts
         self.nSymbols         = nSymbols
+        assert nSymbols >= nOutput, (
+            f"nSymbols ({nSymbols}) must be >= nOutput ({nOutput}). "
+            f"The symbolic bottleneck must have at least as many symbols as outputs."
+        )
+        self.nOutputSymbols   = nOutput
+        self.nReconSymbols    = max(0, nSymbols - nOutput)
+        self.recon_symbols    = None
         self.nWords           = nWords
         self.data             = data
         self.model_type       = model_type
@@ -2213,8 +2241,9 @@ class BasicModel(BaseModel):
         self.conceptHasAttention = conceptHasAttention
 
         # nOutputSymbols tracks total symbol count fed to OutputSpace.
+        # Starts with only the output-destined symbols (not reconstruction symbols).
         # It grows as higher-order cycles (conceptualOrder, symbolicOrder) append symbols.
-        nOutputSymbols = self.nSymbols
+        nOutputSymbols = self.nOutputSymbols
         self.inputSpace      = InputSpace([self.nInput, TheObjectEncoding.inputDim],
                                            [self.nInput, TheObjectEncoding.inputDim],
                                            self.nInput, TheObjectEncoding.inputDim,
@@ -2292,6 +2321,7 @@ class BasicModel(BaseModel):
             nOutputSymbols += self.symbolicOrder * self.nSymbols
             self.spaces.extend([self.syntacticSpace3, self.symbolicSpace3])
             
+        self.nTotalOutputSymbols = nOutputSymbols
         self.outputSpace     = OutputSpace([nOutputSymbols, symDim],
                                            [self.nOutput, TheObjectEncoding.outputDim],
                                            self.nOutput, TheObjectEncoding.outputDim,
@@ -2307,22 +2337,22 @@ class BasicModel(BaseModel):
 
         self.to(TheDevice)
 
-    def Start(self, data):
+    def Start(self, inputData):
         """Forward pass through the core pipeline: Input -> Percept -> Concept -> Symbol."""
-        input = self.inputSpace(data)
+        input = self.inputSpace(inputData)
         percepts = self.perceptualSpace(input)
         concepts = self.conceptualSpace(percepts)
         symbols = self.symbolicSpace(concepts)
         if self.plot:
             TheReport.plotActivations(figure=1, concepts=concepts)
-        return concepts, input, symbols
-    def StartReverse(self, concepts, input, symbols):
+        return input, concepts, symbols
+    def StartReverse(self, symbols):
         """Reverse pass: Symbol -> Concept -> Percept -> Input (reconstruction)."""
         concepts = self.symbolicSpace.reverse(symbols)
         percepts = self.conceptualSpace.reverse(concepts)
         input = self.perceptualSpace.reverse(percepts)
-        data  = self.inputSpace.reverse(input)
-        return data, input
+        inputData  = self.inputSpace.reverse(input)
+        return inputData, input
     def SubsymbolicThought(self, data):
         """Extra Percept->Concept->Symbol cycle (conceptualOrder >= 1)."""
         percepts = self.perceptualSpace2(data)
@@ -2350,62 +2380,78 @@ class BasicModel(BaseModel):
         return data
     def Finish(self, symbols):
         """Project concatenated symbols to task output via OutputSpace."""
-        self.words = symbols
-        data = self.outputSpace(symbols)
+        outputData = self.outputSpace(symbols)
         if self.plot:
             TheReport.plotActivations(figure=1, symbols=symbols)
-        return data
-    def FinishReverse(self, data):
-        """Return cached symbols (OutputSpace projection is non-invertible)."""
-        symbols = self.words.detach()
-        return symbols
-    def forward(self, data):
+        return outputData
+    def FinishReverse(self, outputData):
+        # the following line might not be sufficient for reconstruction, so we use the cache
+        #output_symbols = self.outputSpace.reverse(outputData)
+        output_symbols = self.output_symbols
+        if self.recon_symbols is not None and self.nReconSymbols > 0:
+            # Recon symbols are NOT detached — reconstruction loss gradient
+            # flows back through them to train forward layers to produce
+            # good reconstruction information.
+            return torch.cat([output_symbols, self.recon_symbols], dim=1)
+        return output_symbols
+    def forward(self, inputData):
         """Full forward pass: core pipeline + higher-order cycles + output projection.
 
         Returns (output_prediction, perceptual_state).
         Symbols from each processing stage are concatenated before OutputSpace.
         """
-        data, input, symbols = self.Start(data)
+        input, concepts, symbols = self.Start(inputData)
         # Higher-order subsymbolic cycles (conceptualOrder extra passes)
         for n in range(self.conceptualOrder):
-            data, symbols1 = self.SubsymbolicThought(data)
+            NA, symbols1 = self.SubsymbolicThought(concepts)
             symbols = torch.cat((symbols, symbols1), dim=1)
         # Higher-order symbolic cycles (symbolicOrder extra passes)
         for n in range(self.symbolicOrder):
-            data, symbols2 = self.SymbolicThought(data)
+            NA, symbols2 = self.SymbolicThought(symbols)
             symbols = torch.cat((symbols, symbols2), dim=1)
-        data = self.Finish(symbols)
+        # Split AFTER higher-order cycles: output symbols for prediction,
+        # recon symbols for reconstruction
+        if self.nReconSymbols > 0:
+            self.output_symbols = symbols[:, :self.nTotalOutputSymbols, :]
+            self.recon_symbols = symbols[:, self.nTotalOutputSymbols:, :]
+        else:
+            self.output_symbols = symbols
+            self.recon_symbols = None
+        outputData = self.Finish(self.output_symbols)
         batch = input.shape[0]
         TheObjectEncoding.when.increment(batch)
-        return data, input
-    def reverse(self, end_state):
+        return input, symbols, outputData
+    def reverse(self, symbols, outputData):
         """Full reverse pass: unwind higher-order cycles then core reconstruction.
 
         Slices the concatenated symbol tensor to route each chunk to its
         corresponding reverse stage, in reverse order of the forward pass.
         """
-        symbols = self.FinishReverse(end_state)
+        symbols = self.FinishReverse(outputData)
         nSym = round(self.nSymbols)
         symbolIndex = 0
         for n in range(self.symbolicOrder):
             symbols1 = symbols[:, symbolIndex*nSym:(symbolIndex+1)*nSym]
             symbolIndex += 1
-            end_state = self.SymbolicThoughtReverse(end_state, symbols1)
+            symbols = self.SymbolicThoughtReverse(symbols, symbols1)
         for n in range(self.conceptualOrder):
             symbols1 = symbols[:, symbolIndex*nSym:(symbolIndex+1)*nSym]
             symbolIndex += 1
-            end_state = self.SubsymbolicThoughtReverse(end_state, symbols1)
+            symbols = self.SubsymbolicThoughtReverse(symbols, symbols1)
         # Final chunk goes to the core reverse pipeline
-        symbols1 = symbols[:, symbolIndex * nSym:(symbolIndex + 1) * nSym]
-        data, input = self.StartReverse(end_state, None, symbols1)
-        return data, input
+        symbols = symbols[:, symbolIndex * nSym:(symbolIndex + 1) * nSym]
+        inputData, input = self.StartReverse(symbols)
+        return inputData, input
 
     def run(self, numEpochs=1, batchSize=10, lr=0.01, stoppingCriterion=0.1):
         """Main training loop: train for numEpochs, evaluate on test set each epoch.
 
-        Alpha (exploration temperature) anneals linearly from 1.0 (full exploration)
-        to 0.0 (full exploitation) over the course of training.  This is propagated
-        to all Spaces and their layers/VectorSets via setAlpha().
+        Alpha (exploration temperature) anneals from 1.0 (full exploration)
+        to 0.0 (full exploitation) over the first 5% of training.  This is
+        propagated to all Spaces and their layers/VectorSets via setAlpha().
+
+        A single persistent optimizer is used across all epochs so Adam's
+        momentum and variance estimates accumulate properly.
 
         Returns a list of per-epoch test accuracies.
         """
@@ -2415,16 +2461,19 @@ class BasicModel(BaseModel):
         testLosses        = [[],[]]
         self.plot         = False
         accuracy          = []
+        optimizer         = self.getOptimizer(lr=lr)
 
         for epoch in range(numEpochs):
-            alpha = 0.0  # TEMP: disabled alpha annealing for convergence testing
-            # alpha = 1.0 - epoch / max(1, numEpochs - 1)  # 1->0: explore->exploit
+            # Fast alpha annealing: reach exploitation by 5% of training.
+            # Only affects ergodic layers; non-ergodic layers ignore alpha.
+            warmup = max(1, numEpochs // 20)
+            alpha = max(0.0, 1.0 - epoch / warmup)
             self.setAlpha(alpha)
             print(f"Epoch [{epoch + 1}/{numEpochs}]")
 
             if epoch != 0:
                 train_input, train_output = self.inputSpace.getTrainData()
-                outErr, inErr, allOut, lastIn = self.runEpoch(train_input, train_output, lr=lr, batchSize=batchSize)
+                outErr, inErr, allOut, lastIn = self.runEpoch(train_input, train_output, optimizer=optimizer, batchSize=batchSize)
                 trainLosses[0].append(outErr)
                 trainLosses[1].append(inErr)
                 print(f"Train Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
@@ -2480,26 +2529,22 @@ class BasicModel(BaseModel):
         else:
             return nn.CrossEntropyLoss(), nn.MSELoss()
 
-    def runEpoch(self, input, output, lr=0.01, batchSize=10):
-        """Run one epoch over the dataset (training if lr>0, eval if lr==0).
+    def runEpoch(self, input, output, optimizer=None, lr=0.01, batchSize=10):
+        """Run one epoch over the dataset (training if optimizer given, eval if None).
 
-        Each batch goes through:
-          1. Forward pass: input -> prediction, compute output loss, backprop.
-          2. Reverse pass (if enabled): prediction -> reconstruction, compute
-             reconstruction loss, backprop with a separate optimizer.
+        Each batch computes a combined loss (forward + reverse) in a single
+        backward pass, avoiding gradient interference from separate optimizers.
 
-        When ``ergodic=True``, ``paramUpdate()`` is called before each optimizer
-        step to apply temperature-based in-place parameter updates to the
-        ergodic layers.
+        When ``ergodic=True``, ``paramUpdate()`` is called before the optimizer
+        step to apply temperature-based in-place parameter updates.
+
+        Args:
+            optimizer: pre-built Adam optimizer (persistent across epochs).
+                       Pass None for evaluation mode.
 
         Returns (output_loss, reconstruction_loss, all_predictions, last_reconstruction).
         """
-        training = lr != 0
-        if training:
-            # Separate optimizers for forward and reverse passes to avoid
-            # gradient interference between the two loss functions.
-            optimizer1 = self.getOptimizer(lr=lr)
-            optimizer2 = self.getOptimizer(lr=lr)
+        training = optimizer is not None
 
         criterionOutput, criterionInput = self._getLossFn()
 
@@ -2521,36 +2566,40 @@ class BasicModel(BaseModel):
                 inputTensor  = self.inputSpace.prepInput(inputBatch)
                 outputTensor = self.outputSpace.prepOutput(outputBatch)
 
+                if training:
+                    optimizer.zero_grad()
+
                 # --- Forward pass ---
-                if training:
-                    optimizer1.zero_grad()
-                outputPred, end_state = self.forward(inputTensor)
-                lossOut = criterionOutput(outputPred.squeeze(), outputTensor.squeeze())
-                if training:
-                    lossOut.backward()
-                    if self.ergodic:
-                        self.paramUpdate()
-                    optimizer1.step()
-                outErr = lossOut.item()
-                outputPred = outputPred.clone().detach().squeeze()
-                if i == 0:
-                    allOutput = outputPred
-                else:
-                    allOutput = torch.concat((allOutput, outputPred), dim=0)
+                input, symbols, outputDataPred = self.forward(inputTensor)
+                lossOut = criterionOutput(outputDataPred.squeeze(), outputTensor.squeeze())
 
                 # --- Reverse pass (reconstruction) ---
                 if self.reversePass:
-                    if training:
-                        optimizer2.zero_grad()
-                    reconstructed, start_state = self.reverse(end_state.detach())
-                    lossIn = criterionInput(start_state, end_state.detach())
-                    if training:
-                        lossIn.backward()
-                        if self.ergodic:
-                            self.paramUpdate()
-                        optimizer2.step()
-                    inErr = lossIn.item()
-                    allInput = reconstructed.clone().detach().squeeze()
+                    inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
+                    #lossIn = criterionInput(inputPred.squeeze(), inputTensor.squeeze().float())
+                    lossIn = criterionInput(inputPred, input.squeeze())
+                    totalLoss = lossOut + lossIn
+                else:
+                    lossIn = torch.tensor(0.0)
+                    totalLoss = lossOut
+
+                if training:
+                    totalLoss.backward()
+                    if self.ergodic:
+                        self.paramUpdate()
+                    optimizer.step()
+
+                outErr = lossOut.item()
+                inErr  = lossIn.item() if self.reversePass else 0
+
+                outputDataPred = outputDataPred.clone().detach().squeeze()
+                if i == 0:
+                    allOutput = outputDataPred
+                else:
+                    allOutput = torch.concat((allOutput, outputDataPred), dim=0)
+
+                if self.reversePass:
+                    allInput = inputDataPred.clone().detach().squeeze()
         return outErr, inErr, allOutput, allInput
 
     def classificationReport(self, min=0, max=1):
@@ -2631,7 +2680,8 @@ class BasicModelFactory:
                 "ConceptualSpace hasAttention=True is incompatible with reshape=True. "
                 "Set <hasAttention>false</hasAttention> in <ConceptualSpace>.")
 
-        # Invertible PiLayer requires output == 2*input
+        # InvertiblePiLayer(n, 2n) produces interleaved (y,z) of size 4n.
+        # With reshape=True: output_flat must be 4 * input_flat.
         percept_inv = gsp(cfg, "PerceptualSpace", "invertible", False)
         percept_pt = gsp(cfg, "PerceptualSpace", "passThrough", False)
         if percept_inv and not percept_pt:
@@ -2644,9 +2694,9 @@ class BasicModelFactory:
             else:
                 inp  = inputDim
                 outp = perceptDim
-            if outp != 2 * inp:
+            if outp != 4 * inp:
                 errors.append(
-                    f"PerceptualSpace invertible=True requires output == 2*input "
+                    f"PerceptualSpace invertible=True requires output == 4*input "
                     f"(got input={inp}, output={outp}). "
                     f"Adjust <nVectors> or <dim> in <PerceptualSpace>/<InputSpace>.")
 
