@@ -23,10 +23,10 @@
   </InputSpace>
 
   <PerceptualSpace>
-    <nActive>4</nActive>
+    <nActive>8</nActive>
     <nDim>10</nDim>
     <nVectors>16</nVectors>
-    <invertible>false</invertible>
+    <invertible>true</invertible>
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 

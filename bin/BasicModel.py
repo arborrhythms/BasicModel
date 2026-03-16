@@ -1510,15 +1510,18 @@ class PerceptualSpace(Space):
         input, output = self.getLayerIO()
         _, unflatOutput = self.getEmbeddedIO()
         self.attention = AttentionLayer(unflatOutput, unflatOutput)
+        # Use non-naive InvertiblePiLayer (SVD-based inverse) when dimensions
+        # allow it (2*input == output); fall back to naive (pinv) otherwise.
+        use_naive = (2 * input != output)
         if self.reversible:
             if invertible:
-                self.pi  = InvertiblePiLayer(input, output, naive=True, ergodic=ergodic)
+                self.pi  = InvertiblePiLayer(input, output, naive=use_naive, ergodic=ergodic)
                 self.forwardPi, self.reversePi = self.pi.forward, self.pi.reverse
                 self.params = self.pi.getParameters()
                 self.layers = [self.pi]
             else:
-                self.pi1 = InvertiblePiLayer(input, output, naive=True, ergodic=ergodic)
-                self.pi2 = InvertiblePiLayer(input, output, naive=True, ergodic=ergodic)
+                self.pi1 = InvertiblePiLayer(input, output, naive=use_naive, ergodic=ergodic)
+                self.pi2 = InvertiblePiLayer(input, output, naive=use_naive, ergodic=ergodic)
                 self.forwardPi, self.reversePi = self.pi1.forward, self.pi2.reverse
                 self.params = self.pi1.getParameters() + self.pi2.getParameters()
                 self.layers = [self.pi1, self.pi2]

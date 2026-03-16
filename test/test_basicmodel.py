@@ -1745,13 +1745,13 @@ class TestReconstructionSymbols(unittest.TestCase):
         self.assertLess(lossOut.item(), 0.01,
                         f"Output loss ({lossOut.item():.4f}) should converge for XOR")
 
-    @unittest.expectedFailure  # pinv numerically unstable on trained weights (non-invertible reversible path)
     def test_xor_perfect_reconstruction(self):
         """After training, all 4 XOR inputs reconstruct to the correct words.
 
-        Trains the model via run() (which uses the full training loop including
-        reconstruction), then verifies that each input's reconstructed text
-        matches the original input text exactly.
+        Uses XOR_exact.xml which configures PerceptualSpace with invertible=True
+        and nActive=8 so that the non-naive InvertiblePiLayer path is exercised.
+        The non-naive path uses SVD-based compute_Winverse() for numerically
+        stable inversion (no pinv fallback).
         """
         from BasicModel import BasicModel, BasicModelFactory, TheData
         import xml.etree.ElementTree as ET

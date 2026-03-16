@@ -591,21 +591,39 @@ class InvertibleLinearLayer(Layer):
     def compute_Winverse(self, temp=0.0, noise=None):
         """Materialize the pseudoinverse W^+ = V * Sigma^{-1} * U^T.
 
-        When temp > 0 and noise is provided, computes pinv(W + temp*noise)
-        so the inverse matches the augmented matrix used in forward().
+        When temp > 0 and noise is provided, rotates the noise into the SVD
+        basis and inverts the augmented matrix exactly:
+
+            W + temp*noise = U @ M @ V^T
+            where M = Sigma + temp * (U^T @ noise @ V)
+
+        Then (W + temp*noise)^{-1} = V @ M^{-1} @ U^T.  Because M is a
+        perturbation of the diagonal Sigma, its SVD is well-conditioned.
         """
-        if temp != 0 and noise is not None:
-            # Augmented matrix: invert W + temp*noise directly
-            W = self.compute_W() + temp * noise
-            return torch.linalg.pinv(W)
         U_matrix = self.U.rotation_matrix()  # shape: (nInput, nInput)
-        Sigma_inv = torch.zeros(self.nOutput, self.nInput, device=self.Sigma.lamda.device,
-                                dtype=self.Sigma.lamda.dtype)
-        for i in range(self.rank):
-            Sigma_inv[i, i] = 1.0 / self.Sigma.lamda[i]
         V_matrix = self.V.rotation_matrix()  # shape: (nOutput, nOutput)
-        # W_inv: shape (nOutput, nInput)
-        W_inv = V_matrix @ Sigma_inv @ U_matrix.T
+        if temp != 0 and noise is not None:
+            # Build Sigma matrix (nInput, nOutput)
+            Sigma_matrix = torch.zeros(self.nInput, self.nOutput,
+                                       device=self.Sigma.lamda.device,
+                                       dtype=self.Sigma.lamda.dtype)
+            for i in range(self.rank):
+                Sigma_matrix[i, i] = self.Sigma.lamda[i]
+            # Rotate noise into U,V basis: D = U^T @ noise @ V
+            D = U_matrix.T @ noise @ V_matrix  # (nInput, nOutput)
+            M = Sigma_matrix + temp * D         # (nInput, nOutput)
+            # Invert M via SVD (well-conditioned: diagonal + small perturbation)
+            Um, Sm, Vmh = torch.linalg.svd(M, full_matrices=False)
+            Sm_inv = torch.where(Sm > 1e-7 * Sm.max(), 1.0 / Sm, torch.zeros_like(Sm))
+            M_inv = (Vmh.mH * Sm_inv.unsqueeze(-2)) @ Um.mH  # (nOutput, nInput)
+            W_inv = V_matrix @ M_inv @ U_matrix.T
+        else:
+            Sigma_inv = torch.zeros(self.nOutput, self.nInput,
+                                    device=self.Sigma.lamda.device,
+                                    dtype=self.Sigma.lamda.dtype)
+            for i in range(self.rank):
+                Sigma_inv[i, i] = 1.0 / self.Sigma.lamda[i]
+            W_inv = V_matrix @ Sigma_inv @ U_matrix.T
         return W_inv
     def forward(self, x, bias=1.0, temp=0.0):
         if self.stable:
