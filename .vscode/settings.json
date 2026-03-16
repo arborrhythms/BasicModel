@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": "/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/.venv/bin/python",
+  "python.envFile": "/Users/arogers/Library/Mobile Documents/com~apple~CloudDocs/bits/projects/WikiOracle/basicmodel/.env",
+  "python.terminal.activateEnvironment": true,
+  "python-envs.workspaceSearchPaths": [
+    "./.venv"
+  ]
+}

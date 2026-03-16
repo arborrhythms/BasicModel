@@ -1,11 +1,10 @@
 <?xml version="1.0" ?>
 <model>
   <architecture>
-    <conceptualOrder>1</conceptualOrder>
+    <conceptualOrder>2</conceptualOrder>
     <dataset>mnist</dataset>
     <modelType>passthrough</modelType>
     <numEpochs>10</numEpochs>
-    <stoppingCriterion>1</stoppingCriterion>
     <classificationMin>0</classificationMin>
     <classificationMax>9</classificationMax>
     <weightsPath>output/mnist_weights.pt</weightsPath>
@@ -13,24 +12,27 @@
   </architecture>
 
   <InputSpace>
+    <nActive>1</nActive>
     <nVectors>1</nVectors>
   </InputSpace>
 
   <PerceptualSpace>
-    <nVectors>8</nVectors>
-    <prototypes>16</prototypes>
+    <nActive>8</nActive>
+    <nVectors>16</nVectors>
   </PerceptualSpace>
 
   <ConceptualSpace>
-    <nVectors>8</nVectors>
-    <prototypes>16</prototypes>
+    <nActive>8</nActive>
+    <nVectors>16</nVectors>
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <nActive>8</nActive>
     <nVectors>8</nVectors>
   </SymbolicSpace>
 
   <OutputSpace>
+    <nActive>1</nActive>
     <nVectors>1</nVectors>
   </OutputSpace>
 </model>

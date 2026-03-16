@@ -24,15 +24,15 @@ class TestGetSpaceParam(unittest.TestCase):
     def test_falls_back_to_architecture(self):
         cfg = {
             "architecture": {"invertible": True},
-            "PerceptualSpace": {"nVectors": 4},
+            "PerceptualSpace": {"nActive": 4},
         }
         result = BasicModelFactory.get_space_param(cfg, "PerceptualSpace", "invertible")
         self.assertTrue(result)
 
-    def test_returns_default_when_missing_everywhere(self):
+    def test_raises_when_missing_everywhere(self):
         cfg = {"architecture": {}, "PerceptualSpace": {}}
-        result = BasicModelFactory.get_space_param(cfg, "PerceptualSpace", "hasNorm", default=False)
-        self.assertFalse(result)
+        with self.assertRaises(KeyError):
+            BasicModelFactory.get_space_param(cfg, "PerceptualSpace", "hasNorm")
 
     def test_space_section_missing_entirely(self):
         cfg = {"architecture": {"invertible": True}}
@@ -58,16 +58,16 @@ class TestDefaultsXml(unittest.TestCase):
                       "SymbolicSpace", "OutputSpace"]:
             self.assertIn(name, self.cfg, f"Missing <{name}> section")
 
-    def test_space_has_nVectors(self):
+    def test_space_has_nActive(self):
         for name in ["InputSpace", "PerceptualSpace", "ConceptualSpace",
                       "SymbolicSpace", "OutputSpace"]:
-            self.assertIn("nVectors", self.cfg[name],
-                          f"<{name}> missing nVectors")
+            self.assertIn("nActive", self.cfg[name],
+                          f"<{name}> missing nActive")
 
-    def test_space_has_dim(self):
+    def test_space_has_nDim(self):
         for name in ["InputSpace", "PerceptualSpace", "ConceptualSpace",
                       "SymbolicSpace", "OutputSpace"]:
-            self.assertIn("dim", self.cfg[name], f"<{name}> missing dim")
+            self.assertIn("nDim", self.cfg[name], f"<{name}> missing nDim")
 
     def test_architecture_has_model_wide_only(self):
         arch = self.cfg["architecture"]
@@ -81,11 +81,11 @@ class TestDefaultsXml(unittest.TestCase):
 
     def test_architecture_keeps_model_wide(self):
         arch = self.cfg["architecture"]
-        for key in ["reversePass", "reshape", "conceptualOrder", "symbolicOrder",
-                    "nWhere", "nWhen", "objectSize", "ergodic", "certainty",
+        for key in ["reversible", "reshape", "conceptualOrder", "symbolicOrder",
+                    "ergodic", "certainty",
                     "processSymbols",
                     "dataset", "modelType", "numTrials", "numEpochs",
-                    "batchSize", "learningRate", "pretrained", "detectAnomaly",
+                    "batchSize", "learningRate", "pretrained",
                     "weightsPath", "autoload", "autosave"]:
             self.assertIn(key, arch, f"architecture missing model-wide key '{key}'")
 
@@ -102,31 +102,31 @@ class TestCreateFromConfig(unittest.TestCase):
         f.close()
         return f.name
 
-    def test_reads_space_nVectors(self):
+    def test_reads_space_nActive(self):
         xml = self._write_xml("""<?xml version="1.0" ?>
 <model>
   <architecture>
-    <reversePass>true</reversePass>
+    <reversible>true</reversible>
     <reshape>true</reshape>
     <dataset>xor</dataset>
     <modelType>lm</modelType>
     <pretrained>false</pretrained>
   </architecture>
-  <InputSpace><nVectors>2</nVectors><dim>1</dim></InputSpace>
+  <InputSpace><nActive>2</nActive><nDim>1</nDim></InputSpace>
   <PerceptualSpace>
-    <nVectors>4</nVectors><dim>1</dim>
+    <nActive>4</nActive><nDim>1</nDim>
     <passThrough>true</passThrough>
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
   <ConceptualSpace>
-    <nVectors>3</nVectors><dim>1</dim>
+    <nActive>3</nActive><nDim>1</nDim>
     <invertible>true</invertible>
   </ConceptualSpace>
   <SymbolicSpace>
-    <nVectors>3</nVectors><dim>1</dim>
+    <nActive>3</nActive><nDim>1</nDim>
     <passThrough>true</passThrough>
   </SymbolicSpace>
-  <OutputSpace><nVectors>1</nVectors><dim>1</dim></OutputSpace>
+  <OutputSpace><nActive>1</nActive><nDim>1</nDim></OutputSpace>
 </model>""")
         try:
             from BasicModel import BasicModel, TheData
@@ -148,8 +148,10 @@ class TestValidateConfig(unittest.TestCase):
     def test_attention_reshape_incompatible(self):
         cfg = {
             "architecture": {"reshape": True},
-            "PerceptualSpace": {"hasAttention": True},
-            "ConceptualSpace": {},
+            "PerceptualSpace": {"hasAttention": True, "invertible": False,
+                                "passThrough": False, "nActive": 4, "nDim": 1},
+            "ConceptualSpace": {"hasAttention": False},
+            "SymbolicSpace": {"passThrough": False},
         }
         with self.assertRaises(ValueError) as ctx:
             BasicModelFactory.validate_config(cfg)
@@ -158,20 +160,11 @@ class TestValidateConfig(unittest.TestCase):
     def test_attention_reshape_ok_when_false(self):
         cfg = {
             "architecture": {"reshape": True},
-            "PerceptualSpace": {"hasAttention": False},
+            "PerceptualSpace": {"hasAttention": False, "invertible": False,
+                                "passThrough": False, "nActive": 4, "nDim": 1},
             "ConceptualSpace": {"hasAttention": False},
+            "SymbolicSpace": {"passThrough": False},
         }
         # Should not raise
         BasicModelFactory.validate_config(cfg)
 
-    def test_invertible_shape_check(self):
-        cfg = {
-            "architecture": {"reshape": True, "objectSize": 0},
-            "InputSpace": {"nVectors": 2, "dim": 1},
-            "PerceptualSpace": {"nVectors": 3, "dim": 1, "invertible": True,
-                                "hasAttention": False},
-            "ConceptualSpace": {},
-        }
-        with self.assertRaises(ValueError) as ctx:
-            BasicModelFactory.validate_config(cfg)
-        self.assertIn("output == 4*input", str(ctx.exception))

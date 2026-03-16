@@ -2,7 +2,7 @@
 <model>
   <architecture>
     <reversible>true</reversible>
-    <reshape>true</reshape>
+    <reshape>false</reshape>
     <conceptualOrder>1</conceptualOrder>
     <symbolicOrder>1</symbolicOrder>
     <dataset>xor</dataset>
@@ -10,8 +10,10 @@
     <pretrained>false</pretrained>
     <numEpochs>1000</numEpochs>
     <learningRate>0.01</learningRate>
-    <weightsPath>output/xor_weights.pt</weightsPath>
-    <autosave>true</autosave>
+    <weightsPath>output/xor_3d_weights.pt</weightsPath>
+    <autosave>false</autosave>
+    <autoload>false</autoload>
+    <ergodic>false</ergodic>
   </architecture>
 
   <InputSpace>
@@ -29,15 +31,16 @@
   </PerceptualSpace>
 
   <ConceptualSpace>
-    <nActive>3</nActive>
+    <nActive>4</nActive>
     <nDim>1</nDim>
     <nVectors>16</nVectors>
     <invertible>false</invertible>
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nActive>3</nActive>
-    <nVectors>3</nVectors>
+    <nActive>4</nActive>
+    <nDim>1</nDim>
+    <nVectors>4</nVectors>
     <passThrough>true</passThrough>
   </SymbolicSpace>
 

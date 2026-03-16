@@ -41,8 +41,12 @@ class ResultCollector:
                 outcome = "failed"
                 msg = str(report.longrepr)[:200] if report.longrepr else ""
             elif report.skipped:
-                outcome = "skipped"
-                msg = str(report.longrepr)[:200] if report.longrepr else ""
+                if hasattr(report, 'wasxfail'):
+                    outcome = "xfailed"
+                    msg = report.wasxfail or ""
+                else:
+                    outcome = "skipped"
+                    msg = str(report.longrepr)[:200] if report.longrepr else ""
             else:
                 outcome = report.outcome
                 msg = ""
@@ -77,21 +81,24 @@ def generate_report(test_dir=None):
     passed = sum(1 for _, o, _, _ in collector.results if o == "passed")
     failed = sum(1 for _, o, _, _ in collector.results if o == "failed")
     skipped = sum(1 for _, o, _, _ in collector.results if o == "skipped")
+    xfailed = sum(1 for _, o, _, _ in collector.results if o == "xfailed")
     total = len(collector.results)
 
     # Summary table
-    report.add_table(
-        "Test Summary",
-        ["Metric", "Value"],
-        [
-            ["Total tests", str(total)],
-            ["Passed", f'<span class="match">{passed}</span>'],
-            ["Failed", f'<span class="mismatch">{failed}</span>' if failed else "0"],
-            ["Skipped", str(skipped)],
-            ["Duration", f"{collector.elapsed:.1f}s"],
-            ["Exit code", str(exit_code)],
-        ],
-    )
+    rows = [
+        ["Total tests", str(total)],
+        ["Passed", f'<span class="match">{passed}</span>'],
+        ["Failed", f'<span class="mismatch">{failed}</span>' if failed else "0"],
+    ]
+    if xfailed:
+        rows.append(["Expected failures", f'<span style="color:#cc0">{xfailed}</span>'])
+    if skipped:
+        rows.append(["Skipped", str(skipped)])
+    rows.extend([
+        ["Duration", f"{collector.elapsed:.1f}s"],
+        ["Exit code", str(exit_code)],
+    ])
+    report.add_table("Test Summary", ["Metric", "Value"], rows)
 
     # Group results by test file
     by_file = {}
@@ -109,6 +116,8 @@ def generate_report(test_dir=None):
                 status = '<span class="match">PASS</span>'
             elif outcome == "failed":
                 status = '<span class="mismatch">FAIL</span>'
+            elif outcome == "xfailed":
+                status = '<span style="color:#cc0">XFAIL</span>'
             elif outcome == "skipped":
                 status = "SKIP"
             else:

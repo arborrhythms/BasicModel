@@ -220,11 +220,17 @@ class TestNormLayerInvertibility(unittest.TestCase):
 # ═══════════════════════════════════════════════════════════════════════════
 
 class TestPairedSigmaTraining(unittest.TestCase):
+    """Paired roundtrip with two InvertibleSigmaLayers (separate weights).
+
+    Demonstrates case 3: reversible without weight-sharing.
+    forward() on one layer, reverse() on the other.  The reverse path
+    uses atanh then the SVD-based pseudoinverse of its linear layer.
+    """
     def test_paired_roundtrip(self):
         torch.manual_seed(42)
         nIn, nOut = 6, 8
-        sigma_fwd = SigmaLayer(nIn, nOut, ergodic=False)
-        sigma_rev = SigmaLayer(nOut, nIn, ergodic=False)
+        sigma_fwd = InvertibleSigmaLayer(nIn, nOut)
+        sigma_rev = InvertibleSigmaLayer(nIn, nOut)
         criterion = nn.MSELoss()
         optimizer = optim.Adam(
             list(sigma_fwd.parameters()) + list(sigma_rev.parameters()), lr=0.01)
@@ -232,39 +238,30 @@ class TestPairedSigmaTraining(unittest.TestCase):
         for _ in range(500):
             optimizer.zero_grad()
             y = sigma_fwd(x_data)
-            x_rec = sigma_rev(y)
+            x_rec = sigma_rev.reverse(y)
             loss = criterion(x_data, x_rec)
             loss.backward()
             optimizer.step()
         with torch.no_grad():
             y = sigma_fwd(x_data)
-            x_rec = sigma_rev(y)
+            x_rec = sigma_rev.reverse(y)
         err = _reconstruction_error(x_data, x_rec, rel=True)
         self.assertLess(err, 0.5, f"Paired Sigma rel err={err:.4f}")
 
 
 class TestPairedPiTraining(unittest.TestCase):
-    """Paired PiLayer roundtrip — demonstrates the Pi layer gradient barrier.
+    """Paired roundtrip with two InvertiblePiLayers (separate weights).
 
-    The PiLayer computes y = b * prod(1 + W*x), a multiplicative layer.
-    When training a separate reverse PiLayer to invert the forward one,
-    gradients flowing back through the product collapse toward zero
-    (each partial derivative is a product of N-1 terms, all near 1,
-    making the gradient signal ~1000x smaller than additive layers).
-
-    This is the same gradient barrier that blocks reconstruction through
-    PerceptualSpace.reverse() in the full model — the reverse Pi layer
-    receives near-zero gradients and cannot learn the inverse mapping.
-
-    Compare with TestPairedSigmaTraining which succeeds: SigmaLayer uses
-    y = tanh(W*x + b), an additive layer whose gradients flow cleanly.
+    Demonstrates case 3: reversible without weight-sharing.
+    forward() on one layer, reverse() on the other.  The reverse path
+    recovers x via gamma = 0.5*(log_z - log_y) = Wx, then x = pinv(W) @ gamma.
+    Uses naive=True which computes torch.linalg.pinv at each step.
     """
-    @unittest.expectedFailure
     def test_paired_roundtrip(self):
         torch.manual_seed(42)
         nIn, nOut = 4, 6
-        pi_fwd = PiLayer(nIn, nOut, permuteInput=True, ergodic=False)
-        pi_rev = PiLayer(nOut, nIn, permuteInput=True, ergodic=False)
+        pi_fwd = InvertiblePiLayer(nIn, nOut, naive=True, permuteInput=True, ergodic=False)
+        pi_rev = InvertiblePiLayer(nIn, nOut, naive=True, permuteInput=True, ergodic=False)
         criterion = nn.MSELoss()
         optimizer = optim.Adam(
             list(pi_fwd.parameters()) + list(pi_rev.parameters()), lr=0.01)
@@ -272,13 +269,13 @@ class TestPairedPiTraining(unittest.TestCase):
         for _ in range(500):
             optimizer.zero_grad()
             y = pi_fwd(x_data)
-            x_rec = pi_rev(y)
+            x_rec = pi_rev.reverse(y)
             loss = criterion(x_data, x_rec)
             loss.backward()
             optimizer.step()
         with torch.no_grad():
             y = pi_fwd(x_data)
-            x_rec = pi_rev(y)
+            x_rec = pi_rev.reverse(y)
         err = _reconstruction_error(x_data, x_rec, rel=True)
         self.assertLess(err, 0.5, f"Paired Pi rel err={err:.4f}")
 
@@ -293,7 +290,7 @@ from BasicModel import (
 )
 
 
-def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2):
+def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3):
     """Configure TheObjectEncoding for isolated Space tests."""
     TheObjectEncoding.objectSize = objSize
     TheObjectEncoding.nWhere = objSize // 2 if objSize > 0 else 0
@@ -302,7 +299,17 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2):
     TheObjectEncoding.perceptDim = contentDim
     TheObjectEncoding.conceptDim = contentDim
     TheObjectEncoding.symbolDim = contentDim
+    TheObjectEncoding.wordDim = contentDim
     TheObjectEncoding.outputDim = outputDim
+    # Set codebook sizes for Space constructors
+    TheObjectEncoding.nInput = nObj
+    TheObjectEncoding.nPercepts = nObj
+    TheObjectEncoding.nConcepts = nObj
+    TheObjectEncoding.nSymbols = nObj
+    TheObjectEncoding.nWords = nObj
+    TheObjectEncoding.nOutput = nObj
+    TheObjectEncoding.nObjects = 0  # reset for test isolation
+    TheObjectEncoding.computeNObjects()
 
 
 class TestPerceptualSpacePassthrough(unittest.TestCase):
@@ -313,9 +320,8 @@ class TestPerceptualSpacePassthrough(unittest.TestCase):
         embDim = contentDim + objSize
         torch.manual_seed(42)
         pspace = PerceptualSpace(
-            inputShape=[nObj, contentDim], outputShape=[nObj, contentDim],
-            nVectors=nObj, nDim=contentDim,
-            quantized=False, reversePass=True,
+            nObj, nObj,
+            quantized=False, reversible=True,
             passThrough=True, reshape=False,
         )
         pspace.eval()
@@ -330,18 +336,21 @@ class TestPerceptualSpacePassthrough(unittest.TestCase):
     def test_objsize_4(self):  self._check(4)
 
 
-class TestPerceptualSpaceReshapeTrained(unittest.TestCase):
-    """PerceptualSpace with reshape=True, trained pair for roundtrip."""
+class TestPerceptualSpaceReversePassTrained(unittest.TestCase):
+    """PerceptualSpace with reversible=True, trained pair for roundtrip.
+
+    InvertiblePiLayer doubles dim 1 (objects), so nActive_out = 2 * nActive_in.
+    Uses reshape=False (3D mode) where the doubling maps cleanly to nActive.
+    """
     def _check(self, objSize):
         _setup_object_encoding(objSize=objSize)
         nObj, contentDim = 3, 6
         embDim = contentDim + objSize
         torch.manual_seed(42)
         pspace = PerceptualSpace(
-            inputShape=[nObj, contentDim], outputShape=[nObj, contentDim],
-            nVectors=nObj, nDim=contentDim,
-            quantized=False, reversePass=True, nPrototypes=16,
-            passThrough=False, reshape=True, ergodic=False,
+            nObj, 2 * nObj,
+            quantized=False, reversible=True,
+            passThrough=False, reshape=False, ergodic=False,
             hasAttention=False,
         )
         criterion = nn.MSELoss()
@@ -374,9 +383,8 @@ class TestConceptualSpaceInvertible(unittest.TestCase):
         embDim = contentDim + objSize
         torch.manual_seed(42)
         cspace = ConceptualSpace(
-            inputShape=[nObj, contentDim], outputShape=[nObj, contentDim],
-            nVectors=nObj, nDim=contentDim,
-            quantized=False, reversePass=True, nPrototypes=16,
+            nObj, nObj,
+            quantized=False, reversible=True,
             invertible=True, hasNorm=False, ergodic=False,
             reshape=reshape, hasAttention=False,
         )
@@ -404,9 +412,8 @@ class TestConceptualSpacePairedSigma(unittest.TestCase):
         embDim = contentDim + objSize
         torch.manual_seed(42)
         cspace = ConceptualSpace(
-            inputShape=[nObj, contentDim], outputShape=[nObj, contentDim],
-            nVectors=nObj, nDim=contentDim,
-            quantized=False, reversePass=True, nPrototypes=16,
+            nObj, nObj,
+            quantized=False, reversible=True,
             invertible=False, hasNorm=False, ergodic=False,
             reshape=True, hasAttention=False,
         )
@@ -433,9 +440,8 @@ class TestConceptualSpaceHasNorm(unittest.TestCase):
         nObj, contentDim = 3, 6
         torch.manual_seed(42)
         cspace = ConceptualSpace(
-            inputShape=[nObj, contentDim], outputShape=[nObj, contentDim],
-            nVectors=nObj, nDim=contentDim,
-            quantized=False, reversePass=True, nPrototypes=16,
+            nObj, nObj,
+            quantized=False, reversible=True,
             invertible=True, hasNorm=True, ergodic=False,
             reshape=True, hasAttention=False,
         )
@@ -456,9 +462,8 @@ class TestSymbolicSpacePassthrough(unittest.TestCase):
         embDim = contentDim + objSize
         torch.manual_seed(42)
         sspace = SymbolicSpace(
-            inputShape=[nObj, contentDim], outputShape=[nObj, contentDim],
-            nVectors=nObj, nDim=contentDim,
-            reversePass=True, passThrough=True, reshape=True,
+            nObj, nObj,
+            reversible=True, passThrough=True, reshape=True,
         )
         sspace.eval()
         x = torch.randn(2, nObj, embDim)
@@ -479,9 +484,8 @@ class TestSyntacticSpace(unittest.TestCase):
         embDim = contentDim + objSize
         torch.manual_seed(42)
         synspace = SyntacticSpace(
-            inputShape=[nObj, contentDim], outputShape=[nObj, contentDim],
-            nVectors=nObj, nDim=contentDim,
-            reversePass=True,
+            nObj, nObj,
+            reversible=True,
         )
         synspace.eval()
         x = torch.randn(2, nObj, embDim)
@@ -498,14 +502,13 @@ class TestSyntacticSpace(unittest.TestCase):
 class TestOutputSpaceReversePass(unittest.TestCase):
     """OutputSpace changes shape so roundtrip is lossy — just verify no crash."""
     def _check(self, objSize):
-        _setup_object_encoding(objSize=objSize)
+        _setup_object_encoding(objSize=objSize, outputDim=2)
         nObj, contentDim, outputDim = 3, 6, 2
         embDim = contentDim + objSize
         torch.manual_seed(42)
         ospace = OutputSpace(
-            inputShape=[nObj, contentDim], outputShape=[1, outputDim],
-            nVectors=nObj, nDim=contentDim,
-            reversePass=True,
+            nObj, 1,
+            reversible=True,
         )
         ospace.eval()
         x = torch.randn(2, nObj, embDim)
@@ -517,3 +520,37 @@ class TestOutputSpaceReversePass(unittest.TestCase):
 
     def test_objsize_0(self):  self._check(0)
     def test_objsize_4(self):  self._check(4)
+
+
+class TestErgodicInvertibleLayers(unittest.TestCase):
+    """Ergodic mode on invertible layers: noise injection during training."""
+
+    def test_invertible_pi_ergodic_roundtrip(self):
+        """InvertiblePiLayer with ergodic=True should still roundtrip after training.
+
+        Uses a moderate alpha; high alpha (e.g. 0.5) makes pinv imprecise
+        because the effective weight matrix is heavily perturbed by noise.
+        """
+        torch.manual_seed(42)
+        nIn, nOut = 4, 6
+        layer = InvertiblePiLayer(nIn, nOut, naive=True, ergodic=True)
+        layer.setAlpha(0.1)
+        layer.train()
+        x = torch.randn(8, nIn)
+        y = layer.forward(x)
+        x_rec = layer.reverse(y)
+        err = _reconstruction_error(x, x_rec, rel=True)
+        self.assertLess(err, 0.15, f"Ergodic roundtrip error too large: {err}")
+
+    def test_invertible_sigma_ergodic_roundtrip(self):
+        """InvertibleSigmaLayer with ergodic=True should still roundtrip after training."""
+        torch.manual_seed(42)
+        nIn, nOut = 6, 8
+        layer = InvertibleSigmaLayer(nIn, nOut, ergodic=True)
+        layer.setAlpha(0.5)
+        layer.train()
+        x = torch.randn(8, nIn)
+        y = layer.forward(x)
+        x_rec = layer.reverse(y)
+        err = _reconstruction_error(x, x_rec, rel=True)
+        self.assertLess(err, 0.1, f"Ergodic roundtrip error too large: {err}")

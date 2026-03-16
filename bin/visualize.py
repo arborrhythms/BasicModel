@@ -176,7 +176,7 @@ class Report:
         self.save_figure(fig, f"{model_name} Accuracy")
         self.show_figure(fig)
 
-    def plotAccuracyAndCertainty(self, model_name, rCorrect, reversePass=False,
+    def plotAccuracyAndCertainty(self, model_name, rCorrect, reversible=False,
                                  last_x_pred=None, test_output=None):
         """Plot per-class accuracy with certainty, and optionally reconstruction images."""
         nClasses = len(rCorrect)
@@ -190,7 +190,7 @@ class Report:
         self.save_figure(fig, f"{model_name} Accuracy")
         self.show_figure(fig)
 
-        if reversePass and last_x_pred is not None and test_output is not None:
+        if reversible and last_x_pred is not None and test_output is not None:
             for i in range(0, 10):
                 fig = plt.figure(figsize=(10, 5))
                 j = test_output[-i-1]

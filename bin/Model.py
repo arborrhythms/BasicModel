@@ -17,6 +17,8 @@ from vector_quantize_pytorch import ResidualVQ, VectorQuantize
 from itertools import chain
 import torch.optim as optim
 import time
+from torchlogix.layers import FixedBinarization, GroupSum, LogicConv2d, LogicDense, OrPooling2d
+
 
 epsilon = 1e-7  # to avoid log(0)
 
@@ -586,8 +588,16 @@ class InvertibleLinearLayer(Layer):
         # W: (nInput, nOutput)
         W = U_matrix @ Sigma_matrix @ V_matrix.T
         return W
-    def compute_Winverse(self):
-        """Materialize the pseudoinverse W^+ = V * Sigma^{-1} * U^T."""
+    def compute_Winverse(self, temp=0.0, noise=None):
+        """Materialize the pseudoinverse W^+ = V * Sigma^{-1} * U^T.
+
+        When temp > 0 and noise is provided, computes pinv(W + temp*noise)
+        so the inverse matches the augmented matrix used in forward().
+        """
+        if temp != 0 and noise is not None:
+            # Augmented matrix: invert W + temp*noise directly
+            W = self.compute_W() + temp * noise
+            return torch.linalg.pinv(W)
         U_matrix = self.U.rotation_matrix()  # shape: (nInput, nInput)
         Sigma_inv = torch.zeros(self.nOutput, self.nInput, device=self.Sigma.lamda.device,
                                 dtype=self.Sigma.lamda.dtype)
@@ -785,8 +795,8 @@ class InvertibleSigmaLayer(SigmaLayer):
     Inherits the ergodic flag behavior from SigmaLayer.
     reverse() inverts tanh via atanh, then inverts the linear layer.
     """
-    def __init__(self, nInput, nOutput, naive=False, permuteInput=False):
-        super().__init__(nInput, nOutput, permuteInput=permuteInput)
+    def __init__(self, nInput, nOutput, naive=False, permuteInput=False, ergodic=False):
+        super().__init__(nInput, nOutput, permuteInput=permuteInput, ergodic=ergodic)
         self.layer          = InvertibleLinearLayer(nInput, nOutput, naive=naive, hasBias=True)
     def layer_tradeoff(self):
         return self.bias, self.var
@@ -1059,6 +1069,7 @@ class InvertiblePiLayer(ErgodicLayer):
             bias, temp = 1.0, 0.0
         else:
             bias, temp = self.bias, self.var
+
         yz = self.permute(yz)
         ndim = yz.ndim
 
@@ -1070,7 +1081,10 @@ class InvertiblePiLayer(ErgodicLayer):
             log_z = uninterleaved[:, 1, :]  # (batch, nOutput)
             gamma = 0.5 * (log_z - log_y)
             if self.hasBias:
-                gamma = gamma - torch.sum(bias*self.biasWeight.squeeze(0) + temp*self.biasNoise.squeeze(0), dim=0)
+                # Forward adds bias to each of nInput terms before summing,
+                # so we must subtract nInput copies to recover x @ W.
+                bias_corr = bias*self.biasWeight.squeeze(0) + temp*self.biasNoise.squeeze(0)
+                gamma = gamma - self.nInput * torch.sum(bias_corr, dim=0)
         else:
             # 3D: yz is (batch, 2*seq, nOutput) containing (log_y, log_z)
             n2 = yz.shape[1] // 2
@@ -1079,20 +1093,19 @@ class InvertiblePiLayer(ErgodicLayer):
             log_z = uninterleaved[:, 1, :, :]  # (batch, seq, nOutput)
             gamma = 0.5 * (log_z - log_y)
             if self.hasBias:
-                gamma = gamma - torch.sum(bias*self.biasWeight + temp*self.biasNoise, dim=1).unsqueeze(1)
+                # Same nInput scaling as 2D case.
+                gamma = gamma - self.nInput * torch.sum(bias*self.biasWeight + temp*self.biasNoise, dim=1).unsqueeze(1)
 
         if not self.naive:
-            W_pinv = self.layer.compute_Winverse() # shape (nOutput, nInput) — matches pinv(W) layout
+            W_pinv = self.layer.compute_Winverse(temp=temp, noise=self.noise)
             x = gamma @ W_pinv
         else:
             W_pinv = torch.linalg.pinv( (self.W + temp*self.noise) )  # (nOutput, nInput)
             x = gamma @ W_pinv
         x = self.unpermute(x)
+
         if temp != 0:
-            if self.naive:
-                self.resample_noise()
-            else:
-                self.biasNoise = sample_noise(self.biasWeight, shape=(1, 1, self.nOutput))
+            self.resample_noise()
         return x
 
     @staticmethod
@@ -1263,7 +1276,9 @@ class NormLayer(Layer):
                 sum_x  = torch.sum(x, dim=self.dim, keepdim=True)
                 x_norm = x / (sum_x + epsilon)
                 moments = sum_x
-            assert(False, "False until we add the W prediction in this code branch")
+            raise NotImplementedError(
+                "NormLayer pNorm=1 requires W prediction support in this branch."
+            )
         # append mean and norm
         output = torch.concat((x_norm, moments), dim=-1)
         return output
@@ -1922,8 +1937,78 @@ class CorrMem(Mem):
                 self.output[r, c] = ((self.nTrials - amt) / self.nTrials) * self.output[r, c] + (amt / self.nTrials) * val
 #endregion
 
-# Self-test: run each layer's static test method to verify forward/reverse consistency.
-if __name__ == "__main__":
+#region Logic
+
+class LogicNet(nn.Module):
+    def __init__(self, num_classes=10, groups_per_class=16, lut_rank=2):
+        super().__init__()
+        if num_classes <= 0:
+            raise ValueError("num_classes must be positive.")
+        if groups_per_class <= 0:
+            raise ValueError("groups_per_class must be positive.")
+        if lut_rank <= 0:
+            raise ValueError("lut_rank must be positive.")
+        flattened_dim = 32 * 7 * 7
+        hidden_dim = max(256, (flattened_dim + lut_rank - 1) // lut_rank)
+        min_grouped_logits = (hidden_dim + lut_rank - 1) // lut_rank
+        grouped_logits = max(num_classes * groups_per_class, min_grouped_logits)
+        if grouped_logits % num_classes != 0:
+            grouped_logits += num_classes - (grouped_logits % num_classes)
+
+        self.features = nn.Sequential(
+            FixedBinarization(thresholds=[0.0]),
+            LogicConv2d(
+                in_dim=28,
+                channels=1,
+                num_kernels=16,
+                tree_depth=3,
+                receptive_field_size=5,
+                padding=2
+            ),
+            OrPooling2d(kernel_size=2, stride=2, padding=0),
+
+            LogicConv2d(
+                in_dim=14,
+                channels=16,
+                num_kernels=32,
+                tree_depth=3,
+                receptive_field_size=3,
+                padding=1
+            ),
+            OrPooling2d(kernel_size=2, stride=2, padding=0),
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            LogicDense(in_dim=flattened_dim, out_dim=hidden_dim, lut_rank=lut_rank),
+            LogicDense(in_dim=hidden_dim, out_dim=grouped_logits, lut_rank=lut_rank),
+            GroupSum(k=num_classes, tau=8.0)
+        )
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.classifier(x)
+        return x
+
+    @staticmethod
+    def test(batch_size=32, num_classes=10):
+        model = LogicNet(num_classes=num_classes)
+        model.eval()
+        x = torch.rand(batch_size, 1, 28, 28)
+        with torch.no_grad():
+            output = model(x)
+        expected_shape = (batch_size, num_classes)
+        if output.shape != expected_shape:
+            raise RuntimeError(
+                f"LogicNet produced {tuple(output.shape)}, expected {expected_shape}."
+            )
+        print(f"Output shape: {output.shape}")
+
+#endregion
+
+
+def test():
+    LogicNet.test()
     torch.autograd.set_detect_anomaly(True)
 
     LinearLayer.test()
@@ -1942,3 +2027,13 @@ if __name__ == "__main__":
     NormLayer.test()
     Mem.test()
     DecisionBoundaryLayer.test()
+
+def main():
+    try:
+        test()
+    except ImportError as exc:
+        raise SystemExit(str(exc)) from exc
+
+# Self-test: run the LogicNet smoke test when executed as a script.
+if __name__ == "__main__":
+    main()

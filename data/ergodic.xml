@@ -11,29 +11,34 @@
   </architecture>
 
   <InputSpace>
+    <nActive>784</nActive>
+    <nDim>1</nDim>
     <nVectors>784</nVectors>
-    <dim>1</dim>
   </InputSpace>
 
   <PerceptualSpace>
+    <nActive>784</nActive>
+    <nDim>1</nDim>
     <nVectors>784</nVectors>
-    <dim>1</dim>
     <passThrough>true</passThrough>
   </PerceptualSpace>
 
   <ConceptualSpace>
+    <nActive>20</nActive>
+    <nDim>1</nDim>
     <nVectors>20</nVectors>
-    <dim>1</dim>
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <nActive>20</nActive>
+    <nDim>0</nDim>
     <nVectors>20</nVectors>
-    <dim>1</dim>
     <passThrough>true</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>
+    <nActive>10</nActive>
+    <nDim>1</nDim>
     <nVectors>10</nVectors>
-    <dim>1</dim>
   </OutputSpace>
 </model>

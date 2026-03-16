@@ -130,7 +130,7 @@ def run_combined_loss(model, numEpochs, batchSize, lr, recon_weight=1.0,
             lossOut = criterionOutput(outputPred.squeeze(), ot.squeeze())
 
             # Reverse (reconstruction)
-            if model.reversePass:
+            if model.reversible:
                 reconstructed, start_state = model.reverse(end_state)
                 lossIn = criterionInput(start_state, end_state.detach())
                 total_loss = lossOut + recon_weight * lossIn
@@ -146,7 +146,7 @@ def run_combined_loss(model, numEpochs, batchSize, lr, recon_weight=1.0,
             optimizer.step()
 
             epoch_out = lossOut.item()
-            epoch_recon = lossIn.item() if model.reversePass else 0.0
+            epoch_recon = lossIn.item() if model.reversible else 0.0
 
         trainLosses[0].append(epoch_out)
         trainLosses[1].append(epoch_recon)
@@ -242,7 +242,7 @@ def run_asymmetric_lr(model, numEpochs, batchSize, lr_fwd, lr_rev,
             opt_fwd.step()
 
             # Reverse
-            if model.reversePass:
+            if model.reversible:
                 opt_rev.zero_grad()
                 reconstructed, start_state = model.reverse(end_state.detach())
                 lossIn = criterionInput(start_state, end_state.detach())

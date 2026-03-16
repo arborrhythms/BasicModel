@@ -22,15 +22,30 @@ totalLoss = outputLoss + reconstructionLoss
 
 | Space | Role | Layer Type | Parameters |
 |-------|------|-----------|------------|
-| **InputSpace** | Lifts raw data into working dimensionality | LiftingLayer | dim, nVectors |
-| **PerceptualSpace** | Multiplicative feature extraction | PiLayer | nVectors, dim, prototypes, invertible |
-| **ConceptualSpace** | Additive abstraction | SigmaLayer | nVectors, dim, prototypes, invertible |
-| **SymbolicSpace** | Information bottleneck | passThrough or learned | nVectors, passThrough |
-| **OutputSpace** | Final prediction | LinearLayer | nVectors, dim |
+| **InputSpace** | Lifts raw data into working dimensionality | LiftingLayer | nActive, nDim, nVectors |
+| **PerceptualSpace** | Multiplicative feature extraction | PiLayer | nActive, nDim, nVectors, invertible |
+| **ConceptualSpace** | Additive abstraction | SigmaLayer | nActive, nDim, nVectors, invertible |
+| **SymbolicSpace** | Information bottleneck | passThrough or learned | nActive, nVectors, passThrough |
+| **SyntacticSpace** | Syntactic processing | passthrough (future: grammar) | nActive, nDim (wordDim), nVectors (nWords) |
+| **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
-Each space with learnable layers maintains separate forward and reverse layer instances
-(e.g., `pi1`/`pi2`, `sigma1`/`sigma2`) unless `invertible=true`, in which case a
-single invertible layer serves both directions.
+Dimensions (`nDim`) are not passed to Space constructors; each subclass reads its
+content dimensionality from `TheObjectEncoding` (e.g., `TheObjectEncoding.perceptDim`
+for PerceptualSpace).  Codebook sizes (`nVectors`) are likewise stored on
+`TheObjectEncoding` and may differ from the active count (`nActive`); the factory
+validates `nVectors >= nActive` for every space.
+
+Layer selection depends on two flags — `reversible` and `invertible`:
+
+1. **No reversible**: Use non-invertible layers (`PiLayer`, `SigmaLayer`) for
+   the forward pass only.
+2. **reversible + invertible**: A single invertible layer (`InvertiblePiLayer`,
+   `InvertibleSigmaLayer`) serves both directions, sharing weights.
+3. **reversible + not invertible**: Two invertible layers with separate weights —
+   call `forward()` on one and `reverse()` on the other.  This avoids the
+   expressivity limitation where a non-invertible layer's forward pass cannot
+   represent the inverse of another (e.g., PiLayer's product structure is not
+   closed under inversion).
 
 ### Reconstruction Symbols
 
@@ -41,7 +56,7 @@ presented.
 
 To solve this, the `nSymbols` produced by SymbolicSpace are split:
 
-- **`nOutputSymbols`** `= OutputSpace.nVectors` — fed to OutputSpace for prediction
+- **`nOutputSymbols`** `= OutputSpace.nActive` — fed to OutputSpace for prediction
 - **`nReconSymbols`** `= nSymbols - nOutputSymbols` — carried in `end_state` for reconstruction
 
 This is essentially a skip connection through the symbolic bottleneck: an extra channel
@@ -102,9 +117,12 @@ accumulate across epochs):
 6. If ergodic: run `paramUpdate()` (gradient energy sensor updates alpha)
 7. Optimizer step
 
-Alpha annealing (ergodic mode): starts at `alpha=0` (pure exploration) and decays
-to `alpha=0` (pure exploitation) within the first 5% of epochs via
-`alpha = max(0, 1 - epoch / warmup)` where `warmup = numEpochs // 20`.
+Alpha annealing (ergodic mode): the code-level exploration parameter starts at
+`1.0` (full exploration) and decays to `0.0` (full exploitation) within the first
+5% of epochs via `alpha = max(0, 1 - epoch / warmup)` where
+`warmup = numEpochs // 20`.  Note: the code convention (`alpha=1` means explore)
+is the inverse of the ergodic math convention (`alpha=0` means explore); layers
+translate between them internally.
 
 See [Params.md](Params.md) for all XML configuration parameters.
 

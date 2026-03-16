@@ -1,13 +1,10 @@
 <?xml version="1.0" ?>
 <model>
   <architecture>
-    <reversePass>true</reversePass>
-    <conceptualOrder>0</conceptualOrder>
-    <symbolicOrder>0</symbolicOrder>
+    <reversible>true</reversible>
+    <conceptualOrder>1</conceptualOrder>
+    <symbolicOrder>1</symbolicOrder>
     <processSymbols>false</processSymbols>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
-    <objectSize>0</objectSize>
     <ergodic>false</ergodic>
     <certainty>false</certainty>
     <dataset>text</dataset>
@@ -17,46 +14,49 @@
     <batchSize>10</batchSize>
     <learningRate>0.01</learningRate>
     <pretrained>false</pretrained>
-    <detectAnomaly>false</detectAnomaly>
     <weightsPath>output/weights.pt</weightsPath>
     <autoload>true</autoload>
     <autosave>false</autosave>
   </architecture>
 
   <InputSpace>
-    <nVectors>32</nVectors>
-    <dim>1</dim>
+    <nActive>32</nActive>
+    <nDim>1</nDim>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
     <tokenizer>grammatical</tokenizer>
     <quantized>false</quantized>
   </InputSpace>
 
   <PerceptualSpace>
-    <nVectors>32</nVectors>
-    <dim>1</dim>
+    <nActive>32</nActive>
+    <nDim>1</nDim>
     <passThrough>false</passThrough>
-    <prototypes>0</prototypes>
+    <nVectors>0</nVectors>
     <invertible>false</invertible>
     <quantized>false</quantized>
   </PerceptualSpace>
 
   <ConceptualSpace>
-    <nVectors>256</nVectors>
-    <dim>1</dim>
-    <prototypes>0</prototypes>
+    <nActive>256</nActive>
+    <nDim>1</nDim>
+    <nVectors>0</nVectors>
     <hasNorm>false</hasNorm>
     <invertible>false</invertible>
     <quantized>false</quantized>
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <nActive>256</nActive>
+    <nDim>0</nDim>
     <nVectors>256</nVectors>
-    <dim>1</dim>
     <passThrough>false</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>
+    <nActive>32</nActive>
+    <nDim>1</nDim>
     <nVectors>32</nVectors>
-    <dim>1</dim>
   </OutputSpace>
 
   <embeddings>

@@ -2,14 +2,11 @@
 <model>
   <architecture>
     <reshape>false</reshape>
-    <conceptualOrder>0</conceptualOrder>
-    <symbolicOrder>0</symbolicOrder>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
-    <objectSize>0</objectSize>
+    <conceptualOrder>1</conceptualOrder>
+    <symbolicOrder>1</symbolicOrder>
     <ergodic>false</ergodic>
     <certainty>false</certainty>
-    <reversePass>false</reversePass>
+    <reversible>false</reversible>
     <processSymbols>false</processSymbols>
     <dataset>xor</dataset>
     <modelType>simple</modelType>
@@ -18,23 +15,25 @@
     <batchSize>10</batchSize>
     <learningRate>0.001</learningRate>
     <pretrained>false</pretrained>
-    <detectAnomaly>false</detectAnomaly>
     <weightsPath>output/weights.pt</weightsPath>
     <autoload>true</autoload>
     <autosave>false</autosave>
   </architecture>
 
   <InputSpace>
+    <nActive>32</nActive>
+    <nDim>1</nDim>
     <nVectors>32</nVectors>
-    <dim>1</dim>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
     <quantized>false</quantized>
     <tokenizer>traditional</tokenizer>
   </InputSpace>
 
   <PerceptualSpace>
-    <nVectors>32</nVectors>
-    <dim>1</dim>
-    <prototypes>0</prototypes>
+    <nActive>32</nActive>
+    <nDim>1</nDim>
+    <nVectors>0</nVectors>
     <passThrough>false</passThrough>
     <hasAttention>true</hasAttention>
     <invertible>false</invertible>
@@ -42,9 +41,9 @@
   </PerceptualSpace>
 
   <ConceptualSpace>
-    <nVectors>256</nVectors>
-    <dim>1</dim>
-    <prototypes>0</prototypes>
+    <nActive>256</nActive>
+    <nDim>1</nDim>
+    <nVectors>0</nVectors>
     <hasAttention>false</hasAttention>
     <hasNorm>false</hasNorm>
     <invertible>false</invertible>
@@ -52,13 +51,21 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <nActive>256</nActive>
+    <nDim>1</nDim>
     <nVectors>256</nVectors>
-    <dim>1</dim>
     <passThrough>false</passThrough>
   </SymbolicSpace>
 
+  <SyntacticSpace>
+    <nActive>16</nActive>
+    <nDim>1</nDim>
+    <nVectors>16</nVectors>
+  </SyntacticSpace>
+
   <OutputSpace>
+    <nActive>32</nActive>
+    <nDim>1</nDim>
     <nVectors>32</nVectors>
-    <dim>1</dim>
   </OutputSpace>
 </model>

@@ -96,7 +96,7 @@ def run_combined(model, numEpochs, batchSize, lr, recon_weight=1.0,
             outputPred, end_state = model.forward(it)
             lossOut = criterionOutput(outputPred.squeeze(), ot.squeeze())
 
-            if model.reversePass:
+            if model.reversible:
                 reconstructed, start_state = model.reverse(end_state)
                 lossIn = criterionInput(start_state, end_state.detach())
                 total_loss = lossOut + recon_weight * lossIn
@@ -110,7 +110,7 @@ def run_combined(model, numEpochs, batchSize, lr, recon_weight=1.0,
             optimizer.step()
 
         out_curve.append(lossOut.item())
-        recon_curve.append(lossIn.item() if model.reversePass else 0.0)
+        recon_curve.append(lossIn.item() if model.reversible else 0.0)
         model.inputSpace.shuffle()
 
     # Final accuracy

@@ -2,14 +2,13 @@
 <model>
   <!-- BasicModel configuration -->
   <architecture>
-    <conceptualOrder>1</conceptualOrder>
+    <conceptualOrder>2</conceptualOrder>
     <!-- Enable reverse (reconstruction) pass -->
-    <reversePass>true</reversePass>
+    <reversible>true</reversible>
     <!-- Training hyperparameters -->
     <numEpochs>10</numEpochs>
     <batchSize>10</batchSize>
     <learningRate>0.01</learningRate>
-    <stoppingCriterion>0.1</stoppingCriterion>
     <!-- Dataset: mnist | xor | tomatoes -->
     <dataset>mnist</dataset>
     <modelType>passthrough</modelType>
@@ -22,24 +21,27 @@
   </architecture>
 
   <InputSpace>
+    <nActive>32</nActive>
     <nVectors>32</nVectors>
   </InputSpace>
 
   <PerceptualSpace>
-    <nVectors>64</nVectors>
-    <prototypes>128</prototypes>
+    <nActive>64</nActive>
+    <nVectors>128</nVectors>
   </PerceptualSpace>
 
   <ConceptualSpace>
-    <nVectors>256</nVectors>
-    <prototypes>512</prototypes>
+    <nActive>256</nActive>
+    <nVectors>512</nVectors>
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <nActive>2</nActive>
     <nVectors>2</nVectors>
   </SymbolicSpace>
 
   <OutputSpace>
+    <nActive>32</nActive>
     <nVectors>32</nVectors>
   </OutputSpace>
 

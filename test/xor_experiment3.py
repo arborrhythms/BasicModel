@@ -97,7 +97,7 @@ def run_detailed(model, numEpochs, batchSize, lr, recon_weight=1.0,
             outputPred, end_state = model.forward(it)
             lossOut = criterionOutput(outputPred.squeeze(), ot.squeeze())
 
-            if model.reversePass and use_recon:
+            if model.reversible and use_recon:
                 reconstructed, start_state = model.reverse(end_state)
                 lossIn = criterionInput(start_state, end_state.detach())
                 total_loss = lossOut + current_rw * lossIn

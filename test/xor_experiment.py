@@ -71,7 +71,7 @@ ALPHA_SCHEDULES = {
 # Patched run method
 # ---------------------------------------------------------------------------
 
-def run_with_schedule(model, numEpochs, batchSize, lr, alpha_fn, stoppingCriterion=0.01):
+def run_with_schedule(model, numEpochs, batchSize, lr, alpha_fn):
     """Run training with a custom alpha schedule, return final losses and accuracy."""
     trainLosses = [[], []]
     testLosses  = [[], []]
