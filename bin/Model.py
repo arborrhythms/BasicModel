@@ -6,6 +6,7 @@ model construction happens in ``BasicModel.py``; this file provides the
 building blocks and the update rules they share.
 """
 
+import os
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,10 +18,29 @@ from vector_quantize_pytorch import ResidualVQ, VectorQuantize
 from itertools import chain
 import torch.optim as optim
 import time
-from torchlogix.layers import FixedBinarization, GroupSum, LogicConv2d, LogicDense, OrPooling2d
+# torchlogix disabled — einsum ops incompatible with MPS
+# from torchlogix.layers import FixedBinarization, GroupSum, LogicConv2d, LogicDense, OrPooling2d
 
 
 epsilon = 1e-7  # to avoid log(0)
+
+# Device used by all layers — honours BASICMODEL_DEVICE env var, or set
+# at runtime via init_device() from BasicModel.py.
+_device_override = os.environ.get("BASICMODEL_DEVICE", "").lower()
+if _device_override:
+    _TheDevice = torch.device(_device_override)
+else:
+    _TheDevice = torch.device("cpu")
+
+def init_device(device):
+    """Set the device for all Layer instances (called by BasicModel.py).
+
+    The BASICMODEL_DEVICE env var takes precedence when set — this ensures
+    tests that force CPU aren't overridden by import-order side-effects.
+    """
+    global _TheDevice
+    override = os.environ.get("BASICMODEL_DEVICE", "").lower()
+    _TheDevice = torch.device(override) if override else device
 
 def has_signal(value):
     """Return True when a tensor or scalar contains any non-zero signal."""
@@ -41,7 +61,13 @@ class Message():
 message = Message()
 
 #region Layers
-class Layer(nn.Module):
+class _AutoDevice(type(nn.Module)):
+    """Metaclass that moves nn.Modules to _TheDevice after __init__."""
+    def __call__(cls, *args, **kwargs):
+        instance = super().__call__(*args, **kwargs)
+        return instance.to(_TheDevice)
+
+class Layer(nn.Module, metaclass=_AutoDevice):
     """Base class for custom layers with optional symbol/object axis swapping."""
     def __init__(self, nInput, nOutput, permuteInput=False):
         super(Layer, self).__init__()
@@ -2009,8 +2035,11 @@ class CorrMem(Mem):
 
 #region Logic
 
+# LogicNet disabled — torchlogix einsum ops incompatible with MPS
 class LogicNet(nn.Module):
     def __init__(self, num_classes=10, groups_per_class=16, lut_rank=2):
+        raise NotImplementedError("LogicNet requires torchlogix (disabled for MPS)")
+    def _init_original(self, num_classes=10, groups_per_class=16, lut_rank=2):
         super().__init__()
         if num_classes <= 0:
             raise ValueError("num_classes must be positive.")

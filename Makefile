@@ -50,7 +50,7 @@ compare :
 	cd bin && PYTHONPATH=. ../.venv/bin/python BasicModel.py --compare $(XML1) $(XML2)
 
 test :
-	PYTHONPATH=bin .venv/bin/python test/test_report.py
+	BASICMODEL_DEVICE=cpu PYTHONPATH=bin .venv/bin/python test/test_report.py
 
 bench :
 	@echo "=== Baseline (no env tweaks) ==="

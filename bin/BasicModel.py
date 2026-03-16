@@ -33,18 +33,25 @@ from Model import Layer, PiLayer, SigmaLayer, InvertibleSigmaLayer, InvertiblePi
 from lex import Lex
 from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer
 from Model import GammaMem, ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, epsilon
+from Model import init_device
 import torch.optim as optim
 from functools import partial
 
-# Device selection: prefer MPS (Apple Silicon GPU) when available
-# NOTE: MPS disabled — ergodic paramUpdate() in-place ops cause MPS hangs.
-# Re-enable once torch MPS stabilizes for this workload.
-if False and torch.backends.mps.is_available():
-    TheDevice = torch.device("mps")
+# Device selection: prefer GPU (CUDA > MPS) when available.
+# MPS works for non-VQ configs (e.g. BasicModel.xml with quantized=false).
+# vector_quantize_pytorch einsum fails on MPS — set BASICMODEL_DEVICE=cpu
+# for VQ-enabled configs.
+_device_override = os.environ.get("BASICMODEL_DEVICE", "").lower()
+if _device_override:
+    TheDevice = torch.device(_device_override)
 elif torch.cuda.is_available():
     TheDevice = torch.device("cuda")
+elif torch.backends.mps.is_available():
+    TheDevice = torch.device("mps")
 else:
     TheDevice = torch.device("cpu")
+
+init_device(TheDevice)
 
 from datetime import datetime
 from util import ProjectPaths
@@ -314,7 +321,7 @@ class Data():
     test_input        = []
     test_output       = []
 
-    inputLength       = 128    # max byte length for text inputs (zero-padded)
+    inputLength       = 4096   # max byte length for text inputs (zero-padded)
     combinedTokens    = []
 
     def __init__(self):
@@ -360,13 +367,15 @@ class Data():
             return self.train_output.shape[2]
         return 1
 
-    def load(self, dataset):
+    def load(self, dataset, num_shards=1, max_docs=10000, shard_dir=None):
         if dataset == "mnist":
             self.loadMNist()
         if dataset == "xor":
             self.loadXOR()
         if dataset == "tomatoes":
             self.loadTomatoes()
+        if dataset == "text":
+            self.loadShards(num_shards, max_docs, shard_dir)
         self.toDevice()
     def toDevice(self):
         """Move all data tensors to TheDevice and pre-shape for training.
@@ -384,6 +393,11 @@ class Data():
                 if v.ndim == 2:          # [N, D] → [N, D, 1]
                     v = v.unsqueeze(2)
                 setattr(self, attr, v)
+            elif isinstance(v, list):
+                setattr(self, attr, [
+                    t.to(TheDevice) if isinstance(t, torch.Tensor) else t
+                    for t in v
+                ])
     def shuffle(self):
         rand_indx = torch.randperm(len(self.train_output))
         if isinstance(self.train_input, list):
@@ -451,6 +465,69 @@ class Data():
             print("Downloading data...")
             data = load_dataset("rotten_tomatoes")
             torch.save(data, cache_file)
+        self.processLM(data)
+    def loadShards(self, num_shards, max_docs, shard_dir):
+        """Load training text from FineWeb-EDU parquet shards.
+
+        Uses the same shard infrastructure as embed.py so the model trains
+        on the same corpus that produced the word embeddings.
+        """
+        from embed import get_shard_paths, iter_documents
+
+        if shard_dir is None:
+            shard_dir = os.path.join(ProjectPaths.DATA_DIR, "fineweb")
+        # Resolve relative paths against project root
+        if not os.path.isabs(shard_dir):
+            shard_dir = os.path.join(ProjectPaths.PROJECT_DIR, shard_dir)
+
+        print(f"Loading text: {num_shards} shard(s), max {max_docs} docs "
+              f"from {shard_dir}")
+        shard_paths = get_shard_paths(shard_dir, num_shards=num_shards)
+        if not shard_paths:
+            raise RuntimeError(f"No shards found in {shard_dir}. "
+                               "Run 'make basic_data' first.")
+
+        docs = list(iter_documents(shard_paths, max_docs=max_docs))
+        if not docs:
+            raise RuntimeError("No documents found in shards.")
+
+        # Split 80/10/10 into train/validation/test
+        random.shuffle(docs)
+        n = len(docs)
+        n_val = max(1, n // 10)
+        n_test = max(1, n // 10)
+        n_train = n - n_val - n_test
+
+        train_texts = docs[:n_train]
+        val_texts = docs[n_train:n_train + n_val]
+        test_texts = docs[n_train + n_val:]
+
+        # For LM (masked-word prediction), labels are placeholder [0] —
+        # the actual target comes from the text itself during training.
+        data = {
+            "train": {
+                "text": train_texts,
+                "label": [[0]] * len(train_texts),
+            },
+            "validation": {
+                "text": val_texts,
+                "label": [[0]] * len(val_texts),
+            },
+            "test": {
+                "text": test_texts,
+                "label": [[0]] * len(test_texts),
+            },
+        }
+
+        # Initialize input/output lists to the right size before processLM
+        self.train_input = [None] * len(train_texts)
+        self.train_output = [None] * len(train_texts)
+        self.validation_input = [None] * len(val_texts)
+        self.validation_output = [None] * len(val_texts)
+        self.test_input = [None] * len(test_texts)
+        self.test_output = [None] * len(test_texts)
+
+        print(f"Loaded {n_train} train, {n_val} val, {n_test} test documents")
         self.processLM(data)
     def processLM(self, data, permute=True):
         train_tokens      = data["train"]["text"]
@@ -537,11 +614,11 @@ class Data():
             self.test_example_offsets = offset_tensor
 
     def stringTensor(self, string):
-        ascii_values = [ord(char) for char in string]
+        # Encode to ASCII, replacing non-ASCII chars (smart quotes, accents, etc.)
+        ascii_values = list(string.encode('ascii', errors='replace'))[:self.inputLength]
         tensor = torch.tensor(ascii_values, dtype=torch.int8)
-        #zero   = torch.tensor(0, dtype=torch.int8)
-        tensor = F.pad(tensor, (0, self.inputLength - tensor.size(0)), 'constant', 0) #ord(" "))
-        assert tensor.shape[0]==self.inputLength
+        if tensor.size(0) < self.inputLength:
+            tensor = F.pad(tensor, (0, self.inputLength - tensor.size(0)), 'constant', 0)
         return tensor
 TheData = Data()
 class Message():
@@ -1458,6 +1535,29 @@ class InputSpace(Space):
             else:
                 result.append(words)
         return result
+
+    def predict(self, vector):
+        """Decode an output vector to the nearest word in the embedding codebook.
+
+        Args:
+            vector: Tensor of shape [batch, 1, embeddingSize] or [batch, embeddingSize].
+
+        Returns:
+            List of predicted words (one per batch element).
+        """
+        if vector.dim() == 3:
+            vector = vector.squeeze(1)  # [batch, embeddingSize]
+        codebook = self.vectors()._emb.weight.detach()
+        words_list = self.vectors().wv.index_to_key
+        nWhat = codebook.shape[1]
+        predictions = []
+        for b in range(vector.shape[0]):
+            vec = vector[b, :nWhat]
+            sims = F.cosine_similarity(vec.unsqueeze(0), codebook, dim=1)
+            idx = sims.argmax().item()
+            predictions.append(words_list[idx])
+        return predictions
+
 class PerceptualSpace(Space):
     """Transforms raw input vectors into percepts via a PiLayer.
 
@@ -2295,6 +2395,8 @@ class BasicModel(BaseModel):
         TheObjectEncoding.setWordDim(gsp(cfg, "SyntacticSpace", "nDim"))
         TheObjectEncoding.setOutputDim(gsp(cfg, "OutputSpace", "nDim"))
 
+        self.recon_ratio = arch.get("reconRatio", 0.5)
+
         self.create(
             nInput=gsp(cfg, "InputSpace", "nActive"),
             nPercepts=gsp(cfg, "PerceptualSpace", "nActive"),
@@ -2529,6 +2631,8 @@ class BasicModel(BaseModel):
         Returns (output_prediction, perceptual_state).
         Symbols from each processing stage are concatenated before OutputSpace.
         """
+        if isinstance(inputData, torch.Tensor):
+            inputData = inputData.to(TheDevice)
         input, concepts, symbols = self.Start(inputData)
         # Higher-order subsymbolic cycles (conceptualOrder extra passes)
         for n in range(1,self.conceptualOrder):
@@ -2701,7 +2805,8 @@ class BasicModel(BaseModel):
                     inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
                     #lossIn = criterionInput(inputPred.squeeze(), inputTensor.squeeze().float())
                     lossIn = criterionInput(inputPred, input.squeeze())
-                    totalLoss = lossOut + lossIn
+                    rr = getattr(self, 'recon_ratio', 1.0)
+                    totalLoss = (1 - rr) * lossOut + rr * lossIn
                 else:
                     lossIn = torch.tensor(0.0)
                     totalLoss = lossOut
@@ -2860,7 +2965,11 @@ class BasicModelFactory:
         train = cfg.get("training", {})  # legacy fallback
 
         dataset = arch.get("dataset", train.get("dataset", "xor"))
-        TheData.load(dataset)
+        emb = cfg.get("embeddings", {})
+        TheData.load(dataset,
+                     num_shards=emb.get("numShards", 1),
+                     max_docs=emb.get("maxDocs", 10000),
+                     shard_dir=emb.get("shardDir"))
 
         m = BasicModel()
         cfg = m.create_from_config(config_path, data=TheData)

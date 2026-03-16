@@ -1,0 +1,83 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- BasicModel chatbot: ~80K params, masked-word prediction with reversible reconstruction -->
+  <architecture>
+    <reversible>true</reversible>
+    <reshape>false</reshape>
+    <conceptualOrder>1</conceptualOrder>
+    <symbolicOrder>1</symbolicOrder>
+    <processSymbols>false</processSymbols>
+    <ergodic>false</ergodic>
+    <certainty>false</certainty>
+    <dataset>text</dataset>
+    <modelType>lm</modelType>
+    <pretrained>false</pretrained>
+    <numTrials>1</numTrials>
+    <numEpochs>4</numEpochs>
+    <batchSize>16</batchSize>
+    <learningRate>0.001</learningRate>
+    <reconRatio>0.1</reconRatio>
+    <weightsPath>output/basicmodel_weights.pt</weightsPath>
+    <autoload>true</autoload>
+    <autosave>true</autosave>
+  </architecture>
+
+  <InputSpace>
+    <nActive>32</nActive>
+    <nDim>100</nDim>
+    <nVectors>32</nVectors>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
+    <tokenizer>traditional</tokenizer>
+    <quantized>true</quantized>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nActive>32</nActive>
+    <nDim>100</nDim>
+    <nVectors>0</nVectors>
+    <passThrough>false</passThrough>
+    <hasAttention>true</hasAttention>
+    <invertible>true</invertible>
+    <quantized>false</quantized>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nActive>32</nActive>
+    <nDim>100</nDim>
+    <nVectors>0</nVectors>
+    <hasAttention>true</hasAttention>
+    <hasNorm>false</hasNorm>
+    <invertible>true</invertible>
+    <quantized>false</quantized>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nActive>32</nActive>
+    <nDim>100</nDim>
+    <nVectors>32</nVectors>
+    <passThrough>false</passThrough>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nActive>1</nActive>
+    <nDim>100</nDim>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+
+  <embeddings>
+    <shardDir>data/fineweb</shardDir>
+    <numShards>1</numShards>
+    <maxDocs>10000</maxDocs>
+    <vectorSize>100</vectorSize>
+    <trainingEpochs>10</trainingEpochs>
+    <minCount>5</minCount>
+    <artifactPath>output/embeddings/sentence.pt</artifactPath>
+  </embeddings>
+
+  <server>
+    <host>127.0.0.1</host>
+    <port>8001</port>
+    <timeout>120</timeout>
+  </server>
+</model>
