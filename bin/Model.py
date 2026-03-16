@@ -576,54 +576,69 @@ class InvertibleLinearLayer(Layer):
         if self.hasBias:
             self.biasNoise = sample_noise(self.bias)
 
-    def compute_W(self):
-        """Materialize the full weight matrix W = U * Sigma * V^T."""
-        U_matrix = self.U.rotation_matrix()  # shape: (nInput, nInput)
-        # Build Σ of shape (nInput, nOutput)
-        Sigma_matrix = torch.zeros(self.nInput, self.nOutput, device=self.Sigma.lamda.device,
-                                   dtype=self.Sigma.lamda.dtype)
+    def _rotation_matrices(self, bias=1.0, temp=0.0):
+        """Compute and cache U, V rotation matrices for reuse within a forward+reverse pair."""
+        U_matrix = self.U.rotation_matrix(bias, temp)
+        V_matrix = self.V.rotation_matrix(bias, temp)
+        self._cached_U = U_matrix
+        self._cached_V = V_matrix
+        return U_matrix, V_matrix
+
+    def compute_W(self, bias=1.0, temp=0.0):
+        """Materialize the full weight matrix W = U * Sigma * V^T.
+
+        When bias/temp are provided, each SVD component incorporates its own
+        noise: W_eff = U(bias,temp) @ Sigma(bias,temp) @ V(bias,temp)^T.
+        Caches rotation matrices for reuse by compute_Winverse.
+        """
+        U_matrix, V_matrix = self._rotation_matrices(bias, temp)
+        # Build Σ of shape (nInput, nOutput) with bias/temp applied
+        w = bias * self.Sigma.lamda + temp * self.Sigma.noise
+        Sigma_matrix = torch.zeros(self.nInput, self.nOutput, device=w.device, dtype=w.dtype)
         for i in range(self.rank):
-            Sigma_matrix[i, i] = self.Sigma.lamda[i]
-        V_matrix = self.V.rotation_matrix()  # shape: (nOutput, nOutput)
-        # W: (nInput, nOutput)
+            Sigma_matrix[i, i] = w[i]
         W = U_matrix @ Sigma_matrix @ V_matrix.T
         return W
-    def compute_Winverse(self, temp=0.0, noise=None):
+
+    def compute_Winverse(self, bias=1.0, temp=0.0, noise=None):
         """Materialize the pseudoinverse W^+ = V * Sigma^{-1} * U^T.
 
-        When temp > 0 and noise is provided, rotates the noise into the SVD
-        basis and inverts the augmented matrix exactly:
+        Reuses cached rotation matrices from compute_W when available.
+        When bias/temp are provided (and noise is None), each SVD component
+        incorporates its own internal noise — matching compute_W(bias, temp).
 
-            W + temp*noise = U @ M @ V^T
-            where M = Sigma + temp * (U^T @ noise @ V)
-
-        Then (W + temp*noise)^{-1} = V @ M^{-1} @ U^T.  Because M is a
-        perturbation of the diagonal Sigma, its SVD is well-conditioned.
+        When external noise is provided, rotates it into the SVD basis and
+        inverts the augmented matrix exactly (for the naive/external-noise path).
         """
-        U_matrix = self.U.rotation_matrix()  # shape: (nInput, nInput)
-        V_matrix = self.V.rotation_matrix()  # shape: (nOutput, nOutput)
-        if temp != 0 and noise is not None:
-            # Build Sigma matrix (nInput, nOutput)
+        # Reuse cached rotation matrices if available, otherwise recompute
+        U_matrix = getattr(self, '_cached_U', None)
+        V_matrix = getattr(self, '_cached_V', None)
+        if U_matrix is None or V_matrix is None:
+            U_matrix, V_matrix = self._rotation_matrices(bias, temp)
+        if noise is not None and temp != 0:
+            # External noise path: W_eff = W + temp*noise
             Sigma_matrix = torch.zeros(self.nInput, self.nOutput,
                                        device=self.Sigma.lamda.device,
                                        dtype=self.Sigma.lamda.dtype)
             for i in range(self.rank):
                 Sigma_matrix[i, i] = self.Sigma.lamda[i]
-            # Rotate noise into U,V basis: D = U^T @ noise @ V
-            D = U_matrix.T @ noise @ V_matrix  # (nInput, nOutput)
-            M = Sigma_matrix + temp * D         # (nInput, nOutput)
-            # Invert M via SVD (well-conditioned: diagonal + small perturbation)
+            D = U_matrix.T @ noise @ V_matrix
+            M = Sigma_matrix + temp * D
             Um, Sm, Vmh = torch.linalg.svd(M, full_matrices=False)
             Sm_inv = torch.where(Sm > 1e-7 * Sm.max(), 1.0 / Sm, torch.zeros_like(Sm))
-            M_inv = (Vmh.mH * Sm_inv.unsqueeze(-2)) @ Um.mH  # (nOutput, nInput)
+            M_inv = (Vmh.mH * Sm_inv.unsqueeze(-2)) @ Um.mH
             W_inv = V_matrix @ M_inv @ U_matrix.T
         else:
+            # Internal noise path: each component already includes bias/temp
+            w = bias * self.Sigma.lamda + temp * self.Sigma.noise
             Sigma_inv = torch.zeros(self.nOutput, self.nInput,
-                                    device=self.Sigma.lamda.device,
-                                    dtype=self.Sigma.lamda.dtype)
+                                    device=w.device, dtype=w.dtype)
             for i in range(self.rank):
-                Sigma_inv[i, i] = 1.0 / self.Sigma.lamda[i]
+                Sigma_inv[i, i] = 1.0 / w[i]
             W_inv = V_matrix @ Sigma_inv @ U_matrix.T
+        # Clear cache after use
+        self._cached_U = None
+        self._cached_V = None
         return W_inv
     def forward(self, x, bias=1.0, temp=0.0):
         if self.stable:
@@ -710,6 +725,39 @@ class InvertibleLinearLayer(Layer):
         # Now test with assertions
         assert naive_error < 0.001, f"Naive implementation failed with error {naive_error}"
         assert givens_error < 0.001, f"Givens implementation failed with error {givens_error}"
+
+        # Test compute_W / compute_Winverse roundtrip
+        layer2 = InvertibleLinearLayer(nInput=nInput, nOutput=nOutput, naive=False, hasBias=False)
+        W = layer2.compute_W()
+        W_inv = layer2.compute_Winverse()
+        # W @ W_inv should be identity (nInput x nInput) for wide matrix
+        identity_check = W @ W_inv  # (nInput, nInput)
+        eye = torch.eye(nInput)
+        identity_err = torch.norm(identity_check - eye)
+        assert identity_err < 1e-4, f"compute_W/Winverse identity error: {identity_err}"
+        print(f"compute_W/Winverse identity error: {identity_err:.2e}")
+
+        # Test compute_W(bias, temp) with internal noise
+        W_noisy = layer2.compute_W(bias=0.9, temp=0.1)
+        W_inv_noisy = layer2.compute_Winverse(bias=0.9, temp=0.1)
+        identity_noisy = W_noisy @ W_inv_noisy
+        noisy_err = torch.norm(identity_noisy - eye)
+        assert noisy_err < 1e-4, f"Noisy compute_W/Winverse identity error: {noisy_err}"
+        print(f"Noisy compute_W/Winverse identity error: {noisy_err:.2e}")
+
+        # Test rotation matrix caching: compute_W caches, compute_Winverse reuses
+        layer2._cached_U = None
+        layer2._cached_V = None
+        W = layer2.compute_W(bias=0.8, temp=0.2)
+        assert layer2._cached_U is not None, "compute_W should cache U"
+        assert layer2._cached_V is not None, "compute_W should cache V"
+        W_inv = layer2.compute_Winverse(bias=0.8, temp=0.2)
+        assert layer2._cached_U is None, "compute_Winverse should clear cache"
+        identity_cached = W @ W_inv
+        cached_err = torch.norm(identity_cached - eye)
+        assert cached_err < 1e-4, f"Cached roundtrip error: {cached_err}"
+        print(f"Cached roundtrip error: {cached_err:.2e}")
+
         print("All tests passed!")
 
 class LiftingLayer(InvertibleLinearLayer):
@@ -999,8 +1047,10 @@ class InvertiblePiLayer(ErgodicLayer):
             self.W      = nn.Parameter(torch.randn(nInput, nOutput))
             self.register_buffer('noise', torch.randn(nInput, nOutput))
         else:
-            self.layer  = InvertibleLinearLayer(nInput, nOutput, naive=True)
-            self.register_buffer('noise', torch.randn(nInput, nOutput))
+            # Non-naive: SVD-factored weights with internal noise at each
+            # component (U, Sigma, V).  No external noise matrix needed.
+            # hasBias=False because InvertiblePiLayer handles its own bias.
+            self.layer  = InvertibleLinearLayer(nInput, nOutput, naive=False, hasBias=False)
         self.biasWeight       = nn.Parameter(torch.zeros(1, 1, self.nOutput))
         self.register_buffer('biasNoise', torch.randn(1, 1, self.nOutput))
 
@@ -1008,7 +1058,10 @@ class InvertiblePiLayer(ErgodicLayer):
         if self.naive:
             self.noise = sample_noise(self.W)
         else:
-            self.noise = sample_noise(self.biasWeight, shape=(self.nInput, self.nOutput))
+            # Non-naive: resample noise at each SVD component (U, Sigma, V)
+            self.layer.U.noise = sample_noise(self.layer.U.theta)
+            self.layer.Sigma.noise = sample_noise(self.layer.Sigma.lamda)
+            self.layer.V.noise = sample_noise(self.layer.V.theta)
         self.biasNoise = sample_noise(self.biasWeight, shape=(1, 1, self.nOutput))
 
     def forward(self, x):
@@ -1029,8 +1082,7 @@ class InvertiblePiLayer(ErgodicLayer):
         x = self.permute(x)
 
         if not self.naive:
-            W = self.layer.compute_W() # shape (nInput, nOutput) — matches self.W layout
-            W  = (bias * W + temp * self.noise)
+            W = self.layer.compute_W(bias, temp)  # SVD components handle their own noise
         else:
             W  = (bias * self.W + temp * self.noise)
 
@@ -1115,7 +1167,7 @@ class InvertiblePiLayer(ErgodicLayer):
                 gamma = gamma - self.nInput * torch.sum(bias*self.biasWeight + temp*self.biasNoise, dim=1).unsqueeze(1)
 
         if not self.naive:
-            W_pinv = self.layer.compute_Winverse(temp=temp, noise=self.noise)
+            W_pinv = self.layer.compute_Winverse(bias, temp)  # SVD-based, internal noise
             x = gamma @ W_pinv
         else:
             W_pinv = torch.linalg.pinv( (self.W + temp*self.noise) )  # (nOutput, nInput)

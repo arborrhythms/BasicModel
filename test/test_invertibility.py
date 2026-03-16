@@ -199,6 +199,108 @@ class TestInvertiblePiLayer2D(unittest.TestCase):
     def test_nobias(self):         self._check(False, False)
 
 
+class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
+    """Lock down non-naive InvertiblePiLayer behavior before refactoring.
+
+    Non-naive mode uses InvertibleLinearLayer (SVD-factored weights).
+    These tests verify forward/reverse roundtrip across 2D, 3D, bias,
+    ergodic, and training scenarios.
+    """
+
+    def test_2d_roundtrip(self):
+        """2D (batch, nInput) -> (batch, 2*nOutput) roundtrip, no noise."""
+        torch.manual_seed(42)
+        nIn, nOut = 4, 8
+        layer = InvertiblePiLayer(nIn, nOut, naive=False, hasBias=True)
+        layer.train(False)
+        x = torch.randn(6, nIn)
+        with torch.no_grad():
+            y = layer.forward(x)
+            self.assertEqual(y.shape, (6, 2 * nOut))
+            x_rec = layer.reverse(y)
+            self.assertEqual(x_rec.shape, x.shape)
+        err = _reconstruction_error(x, x_rec, rel=True)
+        self.assertLess(err, 1e-3, f"2D roundtrip rel err={err:.2e}")
+
+    def test_2d_nobias(self):
+        """2D roundtrip without bias term."""
+        torch.manual_seed(42)
+        nIn, nOut = 4, 8
+        layer = InvertiblePiLayer(nIn, nOut, naive=False, hasBias=False)
+        layer.train(False)
+        x = torch.randn(6, nIn)
+        with torch.no_grad():
+            y = layer.forward(x)
+            x_rec = layer.reverse(y)
+        err = _reconstruction_error(x, x_rec, rel=True)
+        self.assertLess(err, 1e-3, f"2D no-bias rel err={err:.2e}")
+
+    def test_3d_roundtrip(self):
+        """3D (batch, seq, nInput) -> (batch, 2*seq, nOutput) roundtrip."""
+        torch.manual_seed(42)
+        nIn, nOut = 4, 8
+        layer = InvertiblePiLayer(nIn, nOut, naive=False, hasBias=True)
+        layer.train(False)
+        x = torch.randn(3, 5, nIn)
+        with torch.no_grad():
+            y = layer.forward(x)
+            self.assertEqual(y.shape, (3, 10, nOut))
+            x_rec = layer.reverse(y)
+            self.assertEqual(x_rec.shape, x.shape)
+        err = _reconstruction_error(x, x_rec, rel=True)
+        self.assertLess(err, 1e-3, f"3D roundtrip rel err={err:.2e}")
+
+    def test_3d_permuted(self):
+        """3D with permuteInput=True."""
+        torch.manual_seed(42)
+        nIn, nOut = 4, 8
+        layer = InvertiblePiLayer(nIn, nOut, naive=False, permuteInput=True, hasBias=True)
+        layer.train(False)
+        x = torch.randn(3, nIn, 5)
+        with torch.no_grad():
+            y = layer.forward(x)
+            x_rec = layer.reverse(y)
+            self.assertEqual(x_rec.shape, x.shape)
+        err = _reconstruction_error(x, x_rec, rel=True)
+        self.assertLess(err, 0.1, f"3D permuted rel err={err:.2e}")
+
+    def test_ergodic_roundtrip(self):
+        """Non-naive with ergodic noise (temp > 0) uses compute_Winverse."""
+        torch.manual_seed(42)
+        nIn, nOut = 4, 8
+        layer = InvertiblePiLayer(nIn, nOut, naive=False, ergodic=True)
+        layer.setAlpha(0.1)
+        layer.train(True)
+        x = torch.randn(8, nIn)
+        with torch.no_grad():
+            y = layer.forward(x)
+            x_rec = layer.reverse(y)
+        err = _reconstruction_error(x, x_rec, rel=True)
+        self.assertLess(err, 0.15, f"Ergodic non-naive rel err={err:.2e}")
+
+    def test_training_preserves_invertibility(self):
+        """After gradient steps, non-naive roundtrip remains accurate."""
+        torch.manual_seed(42)
+        nIn, nOut = 4, 8
+        layer = InvertiblePiLayer(nIn, nOut, naive=False, hasBias=True)
+        optimizer = optim.Adam(layer.parameters(), lr=0.01)
+        x = torch.randn(8, nIn)
+        # Run a few training steps with a dummy loss
+        for _ in range(20):
+            optimizer.zero_grad()
+            y = layer.forward(x)
+            loss = y.sum()
+            loss.backward()
+            optimizer.step()
+        # Roundtrip after training
+        layer.train(False)
+        with torch.no_grad():
+            y = layer.forward(x)
+            x_rec = layer.reverse(y)
+        err = _reconstruction_error(x, x_rec, rel=True)
+        self.assertLess(err, 1e-2, f"Post-training rel err={err:.2e}")
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # 3. NormLayer
 # ═══════════════════════════════════════════════════════════════════════════
