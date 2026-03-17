@@ -831,28 +831,23 @@ class TestBaseModelFactory(unittest.TestCase):
             os.unlink(path)
 
 
-class TestDataSourceBuffer(unittest.TestCase):
-    """Data stores raw text as an immutable uint8 source buffer."""
+class TestDataTextStorage(unittest.TestCase):
+    """Data stores raw text as lists of strings for per-document processing."""
 
-    def test_source_buffer_created_for_text(self):
+    def test_train_texts_created_for_text(self):
         from BasicModel import Data
         data = Data()
         data.load("xor")  # XOR uses text examples
-        self.assertTrue(hasattr(data, 'train_source'))
-        self.assertEqual(data.train_source.dtype, torch.uint8)
+        self.assertTrue(hasattr(data, 'train_texts'))
+        self.assertIsInstance(data.train_texts, list)
+        self.assertIsInstance(data.train_texts[0], str)
 
-    def test_source_buffer_is_uint8(self):
-        from BasicModel import Data
-        data = Data()
-        data.load("xor")
-        self.assertEqual(data.train_source.dtype, torch.uint8)
-
-    def test_no_source_buffer_for_numeric(self):
-        """Numeric datasets should not have a source buffer."""
+    def test_no_train_texts_for_numeric(self):
+        """Numeric datasets should not have train_texts."""
         from BasicModel import Data
         data = Data()
         data.load("mnist")
-        self.assertIsNone(data.train_source)
+        self.assertIsNone(data.train_texts)
 
 
 class TestSymbolDimZeroPassthrough(unittest.TestCase):
@@ -931,20 +926,22 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         self.assertTrue(hasattr(inp, 'lex'))
         self.assertIsInstance(inp.lex, Lex)
 
-    def test_span_table_created(self):
-        """InputSpace stores a span table from Lex.encode()."""
+    def test_per_doc_spans_created(self):
+        """InputSpace stores per-document span tables from Lex.encode()."""
         inp, _ = self._make_input_space()
-        self.assertTrue(hasattr(inp, 'spans'))
-        self.assertEqual(inp.spans.ndim, 2)
-        self.assertEqual(inp.spans.shape[1], 3)  # (start, end, type)
+        self.assertTrue(hasattr(inp, 'doc_spans'))
+        self.assertIsInstance(inp.doc_spans, list)
+        for spans in inp.doc_spans:
+            self.assertEqual(spans.ndim, 2)
+            self.assertEqual(spans.shape[1], 3)  # (start, end, type)
 
-    def test_span_table_shape(self):
-        """Span table has one row per word token across all training text."""
+    def test_per_doc_span_counts(self):
+        """Each document's span table has the right number of tokens."""
         inp, _ = self._make_input_space()
         # XOR data: "hello world", "hello there", "loving world", "loving there"
-        # Concatenated: "hello world hello there loving world loving there"
-        # That's 8 words
-        self.assertEqual(inp.spans.shape[0], 8)
+        # Each doc has 2 words
+        for spans in inp.doc_spans:
+            self.assertEqual(spans.shape[0], 2)
 
     def test_forward_produces_correct_shape(self):
         """forward() with Lex path produces [batch, nInput, embeddingSize]."""

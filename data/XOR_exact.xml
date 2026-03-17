@@ -25,7 +25,7 @@
   <PerceptualSpace>
     <nActive>8</nActive>
     <nDim>10</nDim>
-    <nVectors>16</nVectors>
+    <nVectors>8</nVectors>
     <invertible>true</invertible>
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
@@ -34,7 +34,7 @@
     <nActive>4</nActive>
     <nDim>10</nDim>
     <nVectors>16</nVectors>
-    <invertible>false</invertible>
+    <invertible>true</invertible>
   </ConceptualSpace>
 
   <SymbolicSpace>

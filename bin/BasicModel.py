@@ -338,10 +338,8 @@ class Data():
         self.test_input        = []
         self.test_output       = []
         self.combinedTokens    = []
-        self.train_source      = None
-        self.test_source       = None
-        self.train_example_offsets = None
-        self.test_example_offsets  = None
+        self.train_texts       = None
+        self.test_texts        = None
 
     @property
     def nInput(self):
@@ -529,9 +527,9 @@ class Data():
         self.combinedTokens = train_tokens + validation_tokens + test_tokens
         self.combinedTokens = list(set(self.combinedTokens))
 
-        # Build immutable uint8 source buffers from raw text
-        self._build_source_buffer(train_tokens, "train")
-        self._build_source_buffer(test_tokens, "test")
+        # Store raw text lists for per-document vocab building
+        self.train_texts = train_tokens
+        self.test_texts = test_tokens
 
         self.train_input  = [self.stringTensor(t) for t in train_tokens]
         self.validation_input  = [self.stringTensor(t) for t in validation_tokens]
@@ -608,33 +606,6 @@ class Data():
         outShape = len(self.train_output)
         outputEmbeddingSize = self.train_output[0].shape[0]
         return outputEmbeddingSize
-    def _build_source_buffer(self, text_examples, split):
-        """Create an immutable uint8 source buffer from raw text examples.
-
-        Concatenates all text with space separators and stores byte offsets
-        so InputSpace can later slice per-example.
-        """
-        raw_text = " ".join(text_examples)
-        source = torch.tensor(
-            list(raw_text.encode('utf-8')), dtype=torch.uint8
-        )
-        # Build example offsets [N, 2] tensor of (start_byte, end_byte)
-        offsets = []
-        pos = 0
-        for example in text_examples:
-            encoded = example.encode('utf-8')
-            end = pos + len(encoded)
-            offsets.append([pos, end])
-            pos = end + 1  # +1 for the space separator
-        offset_tensor = torch.tensor(offsets, dtype=torch.long)
-
-        if split == "train":
-            self.train_source = source
-            self.train_example_offsets = offset_tensor
-        elif split == "test":
-            self.test_source = source
-            self.test_example_offsets = offset_tensor
-
     def prepare_lm_targets(self, embedding):
         """Convert word-string labels to embedding vectors for masked LM training.
 
@@ -1066,7 +1037,7 @@ class Embedding(VectorSet):
 
         If *source* is provided (a raw text string), build a Lex span table
         and a token_id → embedding index mapping for grammatical tokenization.
-        Sets ``self.spans``, ``self.source``, and ``self.lex_to_emb``.
+        Sets ``self.doc_spans``, ``self.doc_sources``, and ``self.lex_to_emb``.
         """
         if wv is None:
             wv = self._load_embeddings(pretrained=pretrained, nDim=nDim)
@@ -1104,9 +1075,14 @@ class Embedding(VectorSet):
 
         # Span-table integration for grammatical tokenizer
         if source is not None:
-            self._lex.build_vocab(source)
-            self.spans = self._lex.encode(source)
-            self.source = source
+            # Process each document individually instead of one giant concatenation
+            self.doc_spans = []
+            self.doc_sources = []
+            for doc in source:
+                doc_tensor = torch.tensor(list(doc.encode('utf-8')), dtype=torch.uint8)
+                self._lex.build_vocab(doc_tensor)
+                self.doc_spans.append(self._lex.encode(doc_tensor))
+                self.doc_sources.append(doc_tensor)
             self.lex_to_emb = {}
             for word, token_id in self._lex.vocab.items():
                 if word not in self.wv:
@@ -1546,7 +1522,7 @@ class InputSpace(Space):
         self.model_type = model_type
         self.tokenizer = tokenizer  # "traditional" (word2vec) or "grammatical" (Lex span tables)
         if model_type == "embedding":
-            source = data.train_source if tokenizer == "grammatical" else None
+            source = data.train_texts if tokenizer == "grammatical" else None
             vs = Embedding()
             vs.create(self.inputShape[0], self.outputShape[0], self.nDim, pretrained=pretrained, source=source)
             self.nDim = vs.nDim
@@ -1560,8 +1536,8 @@ class InputSpace(Space):
             self.vectorSet.append(vs)
             if source is not None:
                 self.lex = vs._lex
-                self.spans = vs.spans
-                self.source = vs.source
+                self.doc_spans = vs.doc_spans
+                self.doc_sources = vs.doc_sources
                 self.lex_to_codebook = vs.lex_to_emb
         elif model_type == "passthrough":
             vs = VectorSet()
@@ -1888,9 +1864,25 @@ class PerceptualSpace(Space):
         input, output = self.getLayerIO()
         _, unflatOutput = self.getEmbeddedIO()
         self.attention = AttentionLayer(unflatOutput, unflatOutput)
-        # Use non-naive InvertiblePiLayer (SVD-based inverse) when dimensions
-        # allow it (2*input == output); fall back to naive (pinv) otherwise.
-        use_naive = (2 * input != output)
+        if invertible:
+            use_naive = False  # invertible always uses SVD-based exact inverse
+            if self.reshape:
+                if 2 * input != output:
+                    raise ValueError(
+                        f"invertible=True with reshape requires nOutput == 2*nInput, "
+                        f"but got nInput={input}, nOutput={output}.")
+            else:
+                if input != output:
+                    raise ValueError(
+                        f"invertible=True without reshape requires nInput == nOutput, "
+                        f"but got nInput={input}, nOutput={output}.")
+                if self.outputShape[0] != 2 * self.inputShape[0]:
+                    raise ValueError(
+                        f"invertible=True without reshape requires nPercepts == 2*nInput "
+                        f"(sequence doubling), but got nInput={self.inputShape[0]}, "
+                        f"nPercepts={self.outputShape[0]}.")
+        else:
+            use_naive = (2 * input != output)  # naive when dims don't match 2x
         if self.reversible:
             if invertible:
                 self.pi  = InvertiblePiLayer(input, output, naive=use_naive, ergodic=ergodic)
@@ -3312,10 +3304,22 @@ class BasicModelFactory:
                     f"(got symbolDim={symDim}, conceptDim={conDim}). "
                     f"Set <nDim>{conDim}</nDim> in <SymbolicSpace> or use <nDim>0</nDim>.")
 
-        # Warn about reversible + not invertible: uses pinv which may be numerically unstable
+        # When invertible=True, the InvertiblePiLayer doubles the sequence,
+        # so ConceptualSpace.nVectors must be 2 * PerceptualSpace.nVectors.
         reversible = arch.get("reversible", False)
         percept_inv = gsp(cfg, "PerceptualSpace", "invertible")
         percept_pt = gsp(cfg, "PerceptualSpace", "passThrough")
+        if percept_inv:
+            p_nvec = gsp(cfg, "PerceptualSpace", "nVectors")
+            c_nvec = gsp(cfg, "ConceptualSpace", "nVectors")
+            if c_nvec != 2 * p_nvec:
+                errors.append(
+                    f"PerceptualSpace invertible=True doubles sequence length, "
+                    f"so ConceptualSpace.nVectors must be 2*PerceptualSpace.nVectors "
+                    f"(got PerceptualSpace.nVectors={p_nvec}, ConceptualSpace.nVectors={c_nvec}). "
+                    f"Set <nVectors>{2*p_nvec}</nVectors> in <ConceptualSpace>.")
+
+        # Warn about reversible + not invertible: uses pinv which may be numerically unstable
         if reversible and not percept_inv and not percept_pt:
             warnings.warn(
                 "PerceptualSpace: reversible=True with invertible=False uses two "

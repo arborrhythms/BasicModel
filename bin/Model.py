@@ -1071,7 +1071,12 @@ class InvertiblePiLayer(ErgodicLayer):
         self.hasBias = hasBias
         self.useEpsilon = True
         if not self.naive:
-            assert 2*nInput == nOutput, "Non-naive mode requires nOutput == 2*nInput for invertibility."
+            # 2D: [b,nd] → [b,2nd], W is (nInput, 2*nInput)
+            # 3D: [b,n,d] → [b,2n,d], W is square (nInput == nOutput)
+            assert nInput == nOutput or 2*nInput == nOutput, (
+                f"Non-naive mode requires nInput == nOutput (3D) or nOutput == 2*nInput (2D), "
+                f"got nInput={nInput}, nOutput={nOutput}."
+            )
         if naive:
             self.W      = nn.Parameter(torch.randn(nInput, nOutput))
             self.register_buffer('noise', torch.randn(nInput, nOutput))

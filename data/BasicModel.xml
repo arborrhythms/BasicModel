@@ -43,7 +43,7 @@
   </PerceptualSpace>
 
   <ConceptualSpace>
-    <nActive>64</nActive>
+    <nActive>128</nActive>
     <nDim>100</nDim>
     <nVectors>0</nVectors>
     <hasAttention>true</hasAttention>

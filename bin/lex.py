@@ -24,7 +24,7 @@ class Lex:
             words = text.split()
         else:
             raise ValueError(f"Unsupported granularity: {self.granularity}")
-        next_id = 0
+        next_id = len(self.vocab)
         for word in words:
             if word not in self.vocab:
                 self.vocab[word] = next_id
@@ -35,18 +35,32 @@ class Lex:
                example_offsets: Optional[torch.Tensor] = None) -> torch.Tensor:
         """Return span table [num_spans, 3] over source buffer.
 
+        Offsets are byte positions into the source tensor (not character
+        positions), so multi-byte UTF-8 characters are handled correctly.
+
         If example_offsets is provided as [N, 2] tensor of (start, end) pairs,
         only spans within those byte ranges are returned.
         """
-        text = bytes(source.tolist()).decode('utf-8')
+        raw = bytes(source.tolist())
+        text = raw.decode('utf-8')
         spans = []
-        pos = 0
+        # Build a char-offset → byte-offset map
+        byte_offsets = []  # byte_offsets[i] = byte position of character i
+        bi = 0
+        for ch in text:
+            byte_offsets.append(bi)
+            bi += len(ch.encode('utf-8'))
+        byte_offsets.append(bi)  # sentinel for end of string
+
+        char_pos = 0
         for word in text.split():
-            start = text.index(word, pos)
-            end = start + len(word.encode('utf-8'))
+            start_char = text.index(word, char_pos)
+            end_char = start_char + len(word)
+            start_byte = byte_offsets[start_char]
+            end_byte = byte_offsets[end_char]
             token_id = self.vocab[word]
-            spans.append([start, end, token_id])
-            pos = end
+            spans.append([start_byte, end_byte, token_id])
+            char_pos = end_char
 
         result = torch.tensor(spans, dtype=torch.long)
 
