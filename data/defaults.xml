@@ -20,7 +20,7 @@
     <autosave>false</autosave>
     <reconRatio>0.5</reconRatio>
     <maskedPrediction>NONE</maskedPrediction>
-    <trainEmbeddings>false</trainEmbeddings>
+    <trainEmbeddings>BOTH</trainEmbeddings>
   </architecture>
 
   <InputSpace>

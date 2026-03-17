@@ -1,6 +1,53 @@
 """Shared utilities for the basicmodel project."""
 
 import os
+import torch
+
+
+# ---------------------------------------------------------------------------
+# Device management
+# ---------------------------------------------------------------------------
+
+def resolve_device(name=""):
+    """Resolve a device name string to a torch.device.
+
+    Maps 'gpu' to the best available GPU backend (cuda > mps > cpu).
+    Empty string or None falls back to cpu.
+    """
+    name = (name or "").strip().lower()
+    if name == "gpu":
+        if torch.cuda.is_available():
+            return torch.device("cuda")
+        if torch.backends.mps.is_available():
+            return torch.device("mps")
+        return torch.device("cpu")
+    return torch.device(name) if name else torch.device("cpu")
+
+
+def auto_device():
+    """Select the best device: BASICMODEL_DEVICE env var > cuda > mps > cpu."""
+    override = os.environ.get("BASICMODEL_DEVICE", "").strip().lower()
+    if override:
+        return resolve_device(override)
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    if torch.backends.mps.is_available():
+        return torch.device("mps")
+    return torch.device("cpu")
+
+# The canonical device for this process.
+TheDevice = auto_device()
+
+
+def init_device(device=None):
+    """Override the process-wide device.  None re-runs auto-detection."""
+    global TheDevice
+    TheDevice = auto_device() if device is None else device
+
+
+def buffer(*size, **kwargs):
+    """Allocate a zero tensor on TheDevice.  Accepts the same args as torch.zeros."""
+    return torch.zeros(*size, **kwargs, device=TheDevice)
 
 
 class ProjectPaths:

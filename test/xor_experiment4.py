@@ -68,7 +68,7 @@ def create_model(ergodic=False, nSymbols=3, nConcepts=3):
 def run_combined(model, numEpochs, batchSize, lr, recon_weight=1.0,
                  alpha_fn=None, skip_param_update=False):
     """Combined loss training. alpha_fn(epoch, N) -> alpha value."""
-    model.setAlpha(0.0)
+    model.set_sigma(0.0)
     criterionOutput, criterionInput = model._getLossFn()
     optimizer = model.getOptimizer(lr=lr)
 
@@ -78,7 +78,7 @@ def run_combined(model, numEpochs, batchSize, lr, recon_weight=1.0,
     for epoch in range(numEpochs):
         if alpha_fn is not None:
             alpha = alpha_fn(epoch, numEpochs)
-            model.setAlpha(alpha)
+            model.set_sigma(alpha)
 
         if epoch == 0:
             continue
@@ -115,7 +115,7 @@ def run_combined(model, numEpochs, batchSize, lr, recon_weight=1.0,
 
     # Final accuracy
     model.train(False)
-    model.setAlpha(0.0)
+    model.set_sigma(0.0)
     test_input, test_output = model.inputSpace.getTestData()
     with torch.no_grad():
         allOut = []

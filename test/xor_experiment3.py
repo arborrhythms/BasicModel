@@ -63,7 +63,7 @@ def run_detailed(model, numEpochs, batchSize, lr, recon_weight=1.0,
         persistent_opt: keep optimizer across epochs (preserve Adam momentum)
         phase_split: if >0, train forward-only for this many epochs first
     """
-    model.setAlpha(0.0)
+    model.set_sigma(0.0)
     criterionOutput, criterionInput = model._getLossFn()
 
     if persistent_opt:

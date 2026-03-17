@@ -23,7 +23,7 @@ class TestPiLayerForward(unittest.TestCase):
     def test_3d_input_shape(self):
         nBatch, nInput, nOutput, nSymbols = 5, 3, 4, 6
         layer = PiLayer(nInput, nOutput, permuteInput=True)
-        layer.setAlpha(0.001)
+        layer.set_sigma(0)
         x = torch.randn(nBatch, nInput, nSymbols)
         y = layer(x)
         self.assertEqual(y.shape, (nBatch, nOutput, nSymbols))
@@ -31,14 +31,16 @@ class TestPiLayerForward(unittest.TestCase):
     def test_2d_input_shape(self):
         nBatch, nInput, nOutput = 4, 3, 5
         layer = PiLayer(nInput, nOutput)
-        layer.setAlpha(0.001)
+        layer.set_sigma(0)
         x = torch.randn(nBatch, nInput)
         y = layer(x)
         self.assertEqual(y.shape, (nBatch, nOutput))
 
     def test_gradient_flows(self):
         layer = PiLayer(2, 3, ergodic=True)
-        layer.setAlpha(0.001)
+        with torch.no_grad():
+            layer.var.fill_(0.001)
+            layer.bias.fill_(0.999)
         x = torch.randn(4, 2, requires_grad=True)
         y = layer(x)
         loss = y.sum()
@@ -53,7 +55,7 @@ class TestSigmaLayerForward(unittest.TestCase):
     def test_3d_input_shape(self):
         nBatch, nInput, nOutput, nSymbols = 4, 3, 5, 6
         layer = SigmaLayer(nInput, nOutput)
-        layer.setAlpha(0.001)
+        layer.set_sigma(0)
         x = torch.randn(nBatch, nSymbols, nInput)
         y = layer(x)
         self.assertEqual(y.shape, (nBatch, nSymbols, nOutput))
@@ -61,7 +63,7 @@ class TestSigmaLayerForward(unittest.TestCase):
     def test_output_bounded_by_tanh(self):
         """With saturate=True (default), outputs should be in [-1, 1]."""
         layer = SigmaLayer(4, 3)
-        layer.setAlpha(0.001)
+        layer.set_sigma(0)
         x = torch.randn(10, 4) * 10  # large inputs
         y = layer(x)
         self.assertTrue(torch.all(y >= -1.0))
@@ -69,7 +71,7 @@ class TestSigmaLayerForward(unittest.TestCase):
 
     def test_gradient_flows(self):
         layer = SigmaLayer(3, 2)
-        layer.setAlpha(0.001)
+        layer.set_sigma(0)
         x = torch.randn(4, 3, requires_grad=True)
         y = layer(x)
         loss = y.sum()
@@ -88,8 +90,8 @@ class TestPiSigmaXOR(unittest.TestCase):
 
         pi = PiLayer(2, 3, permuteInput=True)
         sigma = SigmaLayer(3, 1, permuteInput=True)
-        pi.setAlpha(0.0001)
-        sigma.setAlpha(0.0001)
+        pi.set_sigma(0)
+        sigma.set_sigma(0)
 
         criterion = nn.MSELoss()
         from itertools import chain

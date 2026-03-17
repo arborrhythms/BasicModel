@@ -35,9 +35,10 @@ from parse import parse_buffer, set_sentence_cfg
 
 def _get_device():
     """Select best available device, respecting BASICMODEL_DEVICE env var."""
+    from util import resolve_device
     env = os.environ.get("BASICMODEL_DEVICE", "").strip().lower()
     if env:
-        return torch.device(env)
+        return resolve_device(env)
     if torch.cuda.is_available():
         return torch.device("cuda")
     if torch.backends.mps.is_available():
@@ -286,52 +287,7 @@ def iter_documents(shard_paths, max_docs=None):
 
 
 # ---------------------------------------------------------------------------
-# Corpus builder
-# ---------------------------------------------------------------------------
-
-class CorpusBuilder:
-    """Accumulates vocabulary and word-in-sentence examples from streamed text."""
-
-    def __init__(self):
-        self.vocab = set()
-        self.vocab_counts = Counter()
-        self.examples = []  # list of {'target': str, 'context': [str]}
-
-    def process_document(self, text):
-        """Lex + parse a document, accumulate vocabulary + training examples."""
-        pos = 0
-        while pos < len(text):
-            result, next_pos = parse_buffer(text, pos)
-            if next_pos == pos:
-                break  # no progress -- remaining text has no sentence separator
-            pos = next_pos
-
-            for sent in result['sentences']:
-                # sent['tokens'] are the WORD tokens in this sentence
-                words = [t['text'] for t in sent['tokens']]
-
-                for w in words:
-                    self.vocab.add(w)
-                    self.vocab_counts[w] += 1
-
-                # Build word-in-sentence examples
-                for i, w in enumerate(words):
-                    context = [words[j] for j in range(len(words)) if j != i]
-                    self.examples.append({
-                        'target': w,
-                        'context': context,
-                    })
-
-    def get_vocab_list(self, min_count=1):
-        """Return vocabulary sorted by frequency, filtered by min_count."""
-        return [
-            word for word, count in self.vocab_counts.most_common()
-            if count >= min_count
-        ]
-
-
-# ---------------------------------------------------------------------------
-# CBOW embedding trainer
+# CBOW embedding trainer (streaming)
 # ---------------------------------------------------------------------------
 
 class CBOWModel:
@@ -363,6 +319,40 @@ class CBOWModel:
             lr=learning_rate,
         )
         self.loss_fn = nn.CrossEntropyLoss()
+
+        # Per-word gradient variance (sigma) — lazy-initialized in observe_sigma
+        self.sigma = None
+        self.sigma_mean = None
+        self.sigma_step = 0
+        self.sigma_beta = 0.99
+
+    @torch.no_grad()
+    def observe_sigma(self, word_indices):
+        """Track per-word gradient variance via Welford's algorithm.
+
+        Called after backward() and before optimizer.step() so that
+        embedding.weight.grad is available.  Works regardless of which
+        training method (CBOW, SBOW, etc.) produced the gradients.
+        """
+        grad = self.embeddings.weight.grad
+        if grad is None:
+            return
+        device = grad.device
+        vocab_size = self.embeddings.weight.shape[0]
+        if self.sigma is None:
+            self.sigma = torch.zeros(vocab_size, device=device)
+            self.sigma_mean = torch.zeros(vocab_size, device=device)
+        elif self.sigma.shape[0] < vocab_size:
+            old = self.sigma.shape[0]
+            self.sigma = nn.functional.pad(self.sigma, (0, vocab_size - old))
+            self.sigma_mean = nn.functional.pad(self.sigma_mean, (0, vocab_size - old))
+        self.sigma_step += 1
+        beta = self.sigma_beta
+        for wi in word_indices:
+            g = grad[wi].pow(2).mean()
+            delta = g - self.sigma_mean[wi]
+            self.sigma_mean[wi] += (1 - beta) * delta
+            self.sigma[wi] = beta * self.sigma[wi] + (1 - beta) * delta * (g - self.sigma_mean[wi])
 
     # -- single-sentence update ------------------------------------------------
 
@@ -412,6 +402,36 @@ class CBOWModel:
         # Backward
         self.optimizer.zero_grad()
         loss.backward()
+        self.observe_sigma(targets)
+        self.optimizer.step()
+
+        return loss.item()
+
+    # -- SBOW: sentence bag-of-words update ------------------------------------
+
+    def sbow_step(self, words):
+        """Sentence BOW: predict every word from its leave-one-out centroid
+        via full softmax.  Returns mean loss, or None if < 2 usable words.
+        """
+        word_indices = [self.key_to_index[w] for w in words
+                        if w in self.key_to_index]
+        if len(word_indices) < 2:
+            return None
+
+        device = self.embeddings.weight.device
+        idx = torch.tensor(word_indices, dtype=torch.long, device=device)
+        N = len(word_indices)
+
+        vecs = self.embeddings(idx)                       # [N, dim]
+        total = vecs.sum(dim=0)                           # [dim]
+        centroids = (total.unsqueeze(0) - vecs) / (N - 1) # [N, dim]
+
+        logits = self.linear(centroids)                   # [N, vocab]
+        loss = self.loss_fn(logits, idx)
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.observe_sigma(word_indices)
         self.optimizer.step()
 
         return loss.item()
@@ -440,98 +460,131 @@ class _CBOWModule(nn.Module):
         return self.linear(ctx_mean)
 
 
-class EmbeddingTrainer:
+class _SBOWEmbedding(nn.Module):
+    """SBOW embedding: just an embedding table, no linear head."""
 
-    def __init__(self, vector_size=100, min_count=1, learning_rate=0.01,
-                 batch_size=256):
+    def __init__(self, vocab_size, vector_size):
+        super().__init__()
+        self.embeddings = nn.Embedding(vocab_size, vector_size)
+        # Initialise on the unit sphere
+        with torch.no_grad():
+            nn.init.normal_(self.embeddings.weight)
+            self.embeddings.weight.copy_(
+                torch.nn.functional.normalize(self.embeddings.weight, p=2, dim=1)
+            )
+
+
+class StreamingSBOWTrainer:
+    """Two-pass SBOW trainer: build vocab first, then stream-train per sentence.
+
+    Pass 1: Stream documents to count words and build vocabulary.
+    Pass 2: Stream documents again, train SBOW per sentence — each word
+            predicted from its leave-one-out centroid via full softmax.
+    The model is allocated once at its final size.  Uses SGD to avoid
+    the 2x memory overhead of Adam's momentum buffers.
+    """
+
+    def __init__(self, vector_size=100, min_count=5, learning_rate=0.001):
         self.vector_size = vector_size
         self.min_count = min_count
         self.learning_rate = learning_rate
-        self.batch_size = batch_size
 
-    def train(self, corpus_builder, epochs=10):
-        vocab = corpus_builder.get_vocab_list(min_count=self.min_count)
-        if not vocab:
+        self.word_counts = Counter()
+        self.word_to_idx = {}
+        self.idx_to_word = []
+
+        self.device = _get_device()
+        print(f"Training on {self.device}")
+
+        self.model = None
+        self.optimizer = None
+        self.loss_fn = nn.CrossEntropyLoss()
+
+        self.n_examples = 0
+        self._total_loss = 0.0
+        self._loss_count = 0
+
+    @property
+    def vocab_size(self):
+        return len(self.idx_to_word)
+
+    @property
+    def avg_loss(self):
+        return self._total_loss / self._loss_count if self._loss_count else 0.0
+
+    # -- Pass 1: vocabulary building ------------------------------------------
+
+    def scan_document(self, text):
+        """Parse one document and count words (no training)."""
+        pos = 0
+        while pos < len(text):
+            result, next_pos = parse_buffer(text, pos)
+            if next_pos == pos:
+                break
+            pos = next_pos
+            for sent in result['sentences']:
+                for t in sent['tokens']:
+                    self.word_counts[t['text']] += 1
+
+    def build_vocab(self):
+        """Promote words that meet min_count and allocate the model."""
+        for word, count in self.word_counts.items():
+            if count >= self.min_count:
+                self.word_to_idx[word] = len(self.idx_to_word)
+                self.idx_to_word.append(word)
+        self.model = _CBOWModule(self.vocab_size, self.vector_size).to(self.device)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        print(f"  Vocab: {len(self.word_counts)} unique words -> "
+              f"{self.vocab_size} after min_count={self.min_count}")
+
+    # -- Pass 2: streaming SBOW training --------------------------------------
+
+    def process_document(self, text):
+        """Parse one document, train SBOW on each sentence immediately."""
+        pos = 0
+        while pos < len(text):
+            result, next_pos = parse_buffer(text, pos)
+            if next_pos == pos:
+                break
+            pos = next_pos
+
+            for sent in result['sentences']:
+                words = [t['text'] for t in sent['tokens']]
+                self._train_sentence(words)
+
+    def _train_sentence(self, words):
+        """SBOW: predict each word from leave-one-out centroid via full softmax."""
+        word_indices = [self.word_to_idx[w] for w in words
+                        if w in self.word_to_idx]
+        if len(word_indices) < 2:
+            return
+
+        idx = torch.tensor(word_indices, dtype=torch.long, device=self.device)
+        N = len(word_indices)
+
+        vecs = self.model.embeddings(idx)                       # [N, dim]
+        total = vecs.sum(dim=0)                                 # [dim]
+        centroids = (total.unsqueeze(0) - vecs) / (N - 1)       # [N, dim]
+
+        logits = self.model.linear(centroids)                   # [N, vocab]
+        loss = self.loss_fn(logits, idx)
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        self.n_examples += N
+        self._total_loss += loss.item() * N
+        self._loss_count += N
+
+    def finish(self):
+        """Return trained WordVectors."""
+        n = self.vocab_size
+        if n == 0:
             return WordVectors.from_vocab([], vector_size=self.vector_size)
-
-        word_to_idx = {w: i for i, w in enumerate(vocab)}
-        vocab_size = len(vocab)
-
-        # Pre-compute targets and variable-length context index lists
-        targets = []
-        contexts = []
-        for ex in corpus_builder.examples:
-            target = ex['target']
-            context = [w for w in ex['context'] if w in word_to_idx]
-            if target in word_to_idx and len(context) > 0:
-                targets.append(word_to_idx[target])
-                contexts.append([word_to_idx[w] for w in context])
-
-        if not targets:
-            return WordVectors.from_vocab(vocab, vector_size=self.vector_size)
-
-        device = _get_device()
-        print(f"Training on {device}")
-
-        n_examples = len(targets)
-        target_tensor = torch.tensor(targets, dtype=torch.long, device=device)
-
-        # Pad context lists to uniform length for batched lookup
-        max_ctx = max(len(c) for c in contexts)
-        ctx_padded = torch.zeros(n_examples, max_ctx, dtype=torch.long, device=device)
-        ctx_mask = torch.zeros(n_examples, max_ctx, dtype=torch.float32, device=device)
-        for i, c in enumerate(contexts):
-            ctx_padded[i, :len(c)] = torch.tensor(c, dtype=torch.long, device=device)
-            ctx_mask[i, :len(c)] = 1.0
-
-        model = _CBOWModule(vocab_size, self.vector_size).to(device)
-
-        if device.type != "cpu":
-            _patch_inductor_paths()
-            try:
-                model = torch.compile(model)
-            except Exception:
-                try:
-                    model = torch.compile(model, backend='aot_eager')
-                except Exception:
-                    pass
-
-        optimizer = optim.Adam(model.parameters(), lr=self.learning_rate)
-        loss_fn = nn.CrossEntropyLoss()
-
-        n_batches = (n_examples + self.batch_size - 1) // self.batch_size
-        for epoch in range(epochs):
-            total_loss = 0.0
-            perm = torch.randperm(n_examples, device=device)
-            for batch_i, start in enumerate(range(0, n_examples, self.batch_size)):
-                idx = perm[start:start + self.batch_size]
-                batch_ctx = ctx_padded[idx]
-                batch_mask = ctx_mask[idx]
-                batch_target = target_tensor[idx]
-
-                logits = model(batch_ctx, batch_mask)
-                loss = loss_fn(logits, batch_target)
-
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-                total_loss += loss.item() * len(idx)
-
-                # Progress within epoch
-                if n_batches > 10 and (batch_i + 1) % max(1, n_batches // 10) == 0:
-                    pct = 100 * (batch_i + 1) / n_batches
-                    avg = total_loss / (start + len(idx))
-                    print(f"  Epoch {epoch+1}/{epochs} [{pct:3.0f}%] loss: {avg:.4f}",
-                          flush=True)
-
-            print(f"Epoch {epoch+1}/{epochs} complete, loss: {total_loss/n_examples:.4f}",
-                  flush=True)
-
-        # Extract weights back to CPU for WordVectors
         with torch.no_grad():
-            embeddings = model.embeddings if not hasattr(model, '_orig_mod') else model._orig_mod.embeddings
-            vectors = embeddings.weight.detach().cpu().clone()
-        return WordVectors(vectors, vocab)
+            vectors = self.model.embeddings.weight.detach().cpu().clone()
+        return WordVectors(vectors, list(self.idx_to_word))
 
 
 # ---------------------------------------------------------------------------
@@ -541,31 +594,41 @@ class EmbeddingTrainer:
 def build_embeddings(shard_paths, output_path, max_docs=10000,
                      vector_size=100, epochs=10, min_count=5,
                      batch_size=256):
-    print(f"Building corpus from {len(shard_paths)} shard(s), max_docs={max_docs}...")
-    cb = CorpusBuilder()
-    count = 0
-    for doc in iter_documents(shard_paths, max_docs=max_docs):
-        cb.process_document(doc)
-        count += 1
-        if count % 100 == 0:
-            print(f"  Processed {count} docs, vocab={len(cb.vocab)}, "
-                  f"examples={len(cb.examples)}")
-
-    print(f"Corpus complete: {count} docs, {len(cb.vocab)} unique words, "
-          f"{len(cb.examples)} training examples")
-
-    vocab = cb.get_vocab_list(min_count=min_count)
-    print(f"Vocabulary after min_count={min_count} filter: {len(vocab)} words")
-
-    print(f"Training {vector_size}-dim embeddings for {epochs} epochs "
-          f"(batch_size={batch_size})...")
-    trainer = EmbeddingTrainer(
+    trainer = StreamingSBOWTrainer(
         vector_size=vector_size,
         min_count=min_count,
-        learning_rate=0.01,
-        batch_size=batch_size,
+        learning_rate=0.001,
     )
-    wv = trainer.train(cb, epochs=epochs)
+
+    # Pass 1: build vocabulary
+    print(f"Pass 1: scanning vocabulary from {len(shard_paths)} shard(s), "
+          f"max_docs={max_docs}...")
+    count = 0
+    for doc in iter_documents(shard_paths, max_docs=max_docs):
+        trainer.scan_document(doc)
+        count += 1
+        if count % 100 == 0:
+            print(f"  Scanned {count} docs, "
+                  f"unique words={len(trainer.word_counts)}", flush=True)
+    trainer.build_vocab()
+
+    # Pass 2: stream-train SBOW (full softmax, per-sentence)
+    print(f"Pass 2: training {vector_size}-dim SBOW, epochs={epochs}...")
+    for epoch in range(epochs):
+        count = 0
+        trainer._total_loss = 0.0
+        trainer._loss_count = 0
+        for doc in iter_documents(shard_paths, max_docs=max_docs):
+            trainer.process_document(doc)
+            count += 1
+            if count % 100 == 0:
+                print(f"  Epoch {epoch+1}/{epochs}: {count} docs, "
+                      f"examples={trainer.n_examples}, "
+                      f"loss={trainer.avg_loss:.4f}", flush=True)
+        print(f"Epoch {epoch+1}/{epochs} complete, loss={trainer.avg_loss:.4f}",
+              flush=True)
+
+    wv = trainer.finish()
 
     dirname = os.path.dirname(output_path)
     if dirname:

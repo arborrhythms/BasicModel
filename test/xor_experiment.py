@@ -84,7 +84,7 @@ def run_with_schedule(model, numEpochs, batchSize, lr, alpha_fn):
 
     for epoch in range(numEpochs):
         alpha = alpha_fn(epoch, numEpochs)
-        model.setAlpha(alpha)
+        model.set_sigma(alpha)
 
         if epoch != 0:
             outErr, inErr, allOut, lastIn = model.runEpoch(

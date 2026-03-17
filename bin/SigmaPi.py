@@ -76,11 +76,10 @@ def logic(X_train, Y_train):
     output_dim = Y_train.shape[1]
 
     model     = LogicalFunctionNet(input_dim, hidden_dim, output_dim)
-    # setAlpha(0.0001) drives the stochastic layers to near-deterministic
-    # behaviour (alpha 1->0 is explore->exploit), appropriate for this
+    # set_sigma(0) suppresses exploration noise, appropriate for this
     # small standalone experiment where we want reliable convergence.
-    model.hidden.setAlpha(0.0001)
-    model.output.setAlpha(0.0001)
+    model.hidden.set_sigma(0.0001)
+    model.output.set_sigma(0.0001)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.01)
 

@@ -28,6 +28,9 @@ Core model settings.
 | `weightsPath` | string | `"output/weights.pt"` | File path for saving/loading model weights. |
 | `autoload` | bool | `true` | Automatically load weights from `weightsPath` on model creation. Set to `false` for fresh training. |
 | `autosave` | bool | `false` | Automatically save weights after training completes. |
+| `maskedPrediction` | string | `"NONE"` | Masked prediction mode: `NONE`, `MLM`, `ARLM`, `ARUS`, `RARLM`. See [Training.md](Training.md). |
+| `trainEmbeddings` | string | `"NONE"` | Embedding update mode: `NONE` (frozen), `CBOW` (SBOW only, EM separation), `ARLM` (network gradients only), `BOTH` (SBOW + network gradients). See [Training.md](Training.md). |
+| `reconRatio` | float | `0.5` | Weight of reconstruction loss in combined loss: `total = (1-r)*output + r*recon`. |
 | `classificationMin` | float | — | Minimum threshold for classification accuracy reporting. |
 | `classificationMax` | float | — | Maximum threshold for classification accuracy reporting. |
 

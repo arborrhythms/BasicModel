@@ -95,7 +95,7 @@ def run_combined_loss(model, numEpochs, batchSize, lr, recon_weight=1.0,
 
     for epoch in range(numEpochs):
         alpha = alpha_fn(epoch, numEpochs)
-        model.setAlpha(alpha)
+        model.set_sigma(alpha)
 
         if epoch == 0:
             # Eval only on first epoch
@@ -213,7 +213,7 @@ def run_asymmetric_lr(model, numEpochs, batchSize, lr_fwd, lr_rev,
 
     for epoch in range(numEpochs):
         alpha = alpha_fn(epoch, numEpochs)
-        model.setAlpha(alpha)
+        model.set_sigma(alpha)
 
         if epoch == 0:
             continue

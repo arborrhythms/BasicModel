@@ -33,28 +33,18 @@ from Model import Layer, PiLayer, SigmaLayer, InvertibleSigmaLayer, InvertiblePi
 from lex import Lex
 from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer
 from Model import GammaMem, ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, epsilon
-from Model import init_device
 import torch.optim as optim
 from functools import partial
 
-# Device selection: prefer GPU (CUDA > MPS) when available.
-# MPS works for non-VQ configs (e.g. BasicModel.xml with quantized=false).
+# Device selection: BASICMODEL_DEVICE env var > cuda > mps > cpu.
 # vector_quantize_pytorch einsum fails on MPS — set BASICMODEL_DEVICE=cpu
 # for VQ-enabled configs.
-_device_override = os.environ.get("BASICMODEL_DEVICE", "").lower()
-if _device_override:
-    TheDevice = torch.device(_device_override)
-elif torch.cuda.is_available():
-    TheDevice = torch.device("cuda")
-elif torch.backends.mps.is_available():
-    TheDevice = torch.device("mps")
-else:
-    TheDevice = torch.device("cpu")
+import util
+from util import ProjectPaths
 
-init_device(TheDevice)
+TheDevice = util.TheDevice
 
 from datetime import datetime
-from util import ProjectPaths
 from visualize import Report, TheReport
 
 class PositionalEncoding(nn.Module):
@@ -678,7 +668,7 @@ class VectorSet(nn.Module):
         exceeds ``freezingTemp``, it gets frozen.
       - ``passThrough=True``: disables quantization entirely; forward() is identity.
       - ``alpha``: jitter factor injected during exploration (high early in
-        training, zero at convergence).  Propagated from BasicModel.setAlpha().
+        training, zero at convergence).  Driven by per-neuron sigma via set_sigma().
 
     The mereological methods (part, whole, overlap, etc.) operate on normalized
     vectors and are used for reasoning about concept parthood relationships.
@@ -711,7 +701,7 @@ class VectorSet(nn.Module):
         self.customVQ    = customVQ
         self.signed      = signed    # True: vectors may have negative components
         self.passThrough = passThrough
-        self.alpha       = 0         # exploration jitter (set by setAlpha)
+        self.alpha       = 0         # exploration jitter (set by set_sigma)
         if nDim != None:
             self.embeddingSize = TheObjectEncoding.getEmbeddingSize(nDim)
         if passThrough:
@@ -728,7 +718,7 @@ class VectorSet(nn.Module):
         if activations is not None:
             # set the activations that are already frozen
             #unfrozenAct = [a if a not in self.frozen else 0 for a in activations ]
-            unfrozenAct = [activations[a].detach().numpy() if a not in self.frozen else 0 for a in range(self.codebookSize)]
+            unfrozenAct = [activations[a].detach().cpu().numpy() if a not in self.frozen else 0 for a in range(self.codebookSize)]
             #unfrozenAct = activations[unfrozen]
             #if len(unfrozen) > 0:
             indexMax = np.argmax(unfrozenAct)
@@ -760,7 +750,7 @@ class VectorSet(nn.Module):
             #    nDim          = nDim,
             #    codebookSize  = nVectors,
             #    numQuantizers = nVectors)
-            vec = torch.randn([nVec, self.embeddingSize])
+            vec = torch.randn([nVec, self.embeddingSize], device=TheDevice)
             for i in range(0, nVec):
                 vec[i, :] = F.normalize(TheObjectEncoding(vec[i, :].unsqueeze(0).unsqueeze(0)), p=2, dim=1)
             self.vectors = vec[:, :]
@@ -782,7 +772,12 @@ class VectorSet(nn.Module):
                 x = torch.cat([x, torch.zeros([x.shape[0], x.shape[1], TheObjectEncoding.objectSize], device=x.device)], dim=2)
             y   = torch.reshape(x, [-1, self.embeddingSize])
 
-            quantized, indices, commit_loss = self.vq(y, ema_update_weight=self.updateWeights)
+            # VQ einsum fails on MPS — round-trip VQ module and data through CPU
+            _dev = y.device
+            self.vq.cpu()
+            quantized, indices, commit_loss = self.vq(y.cpu(), ema_update_weight=self.updateWeights)
+            self.vq.to(_dev)
+            quantized, indices = quantized.to(_dev), indices.to(_dev)
 
             err = torch.norm(y-quantized, dim=1)
             err = torch.reshape(err, x.shape[0:2])
@@ -929,7 +924,7 @@ class VectorSet(nn.Module):
         new_vectors = F.normalize(new_vectors, p=2, dim =-1)
         for i in range(0, new_vectors.shape[0]):
             new_vectors[i, :] = TheObjectEncoding(new_vectors[i, :])
-        self.vectors = nn.Parameter(torch.cat([self.vectors.data, new_vectors], dim =0))
+        self.vectors = torch.cat([self.vectors, new_vectors], dim=0)
         self.nVectors = self.vectors.shape[0]
     # --- Vector Removal ---
     def remove(self, indices):
@@ -939,7 +934,7 @@ class VectorSet(nn.Module):
         """
         mask = torch.ones(self.vectors.shape[0], dtype=torch.bool, device=self.vectors.device)
         mask[indices] = False
-        self.vectors = nn.Parameter(self.vectors.data[mask])
+        self.vectors = self.vectors[mask]
         self.nVectors = self.vectors.shape[0]
     # --- Fuzzy / Mereology Methods ---
     def norm(self, x):
@@ -967,7 +962,7 @@ class VectorSet(nn.Module):
         return dist
     def codebookDistance(self, x):
         vec = self.vectors[:, 0:self.nDim] if TheObjectEncoding.objectSize == 0 else self.vectors[:, 0:-TheObjectEncoding.objectSize]
-        # dist = self.angle(x.unsqueeze(2), vec.unsqueeze(0).unsqueeze(0))  # (batch, nInput, nFeatures)
+        vec = vec.to(x.device)
         dist = x @ vec.T / self.nDim
         return dist
     def unsignedAngle(self, x, y, dim=-1):
@@ -1011,6 +1006,8 @@ class Embedding(VectorSet):
         self.cbow = None       # CBOWModel, created in create()
         self._emb = None       # nn.Embedding, shared with cbow
         self.wv = None         # WordVectors snapshot for reverse()
+        self.ergodic = False   # when True, inject per-word noise from SBOW sigma
+        self.sigma_kappa = 0.01
 
     def tokenize(self, data):
         """Tokenize byte-tensor batch into lists of word strings via Lex."""
@@ -1255,6 +1252,11 @@ class Embedding(VectorSet):
                     one_hot = torch.zeros(vocab_size, device=weights.device)
                     one_hot[idx] = 1.0
                     v = one_hot @ weights  # (vec_size,) — differentiable
+                    if self.ergodic and self.training and self.cbow.sigma is not None:
+                        s = self.cbow.sigma[idx]
+                        word_var = s / (s + self.sigma_kappa)
+                        word_bias = 1 - word_var
+                        v = word_bias * v + word_var * torch.randn_like(v)
                     v = F.pad(v, (0, pad_size))
                     v = F.normalize(v, p=2, dim=0)
                 else:
@@ -1272,8 +1274,21 @@ class Embedding(VectorSet):
             results.append(torch.stack(vecs))
         return torch.stack(results)
 
-    def train_step(self, words):
-        """One sentence-level CBOW gradient step.  Returns loss or None."""
+    def set_sigma(self, sigma):
+        """Control exploration for embedding lookups."""
+        if sigma == 0:
+            self.sigma_kappa = 1e6
+        else:
+            self.sigma_kappa = 0.01 / sigma
+
+    def train_step(self, words, method='SBOW'):
+        """One sentence-level embedding gradient step.  Returns loss or None.
+
+        method: 'CBOW' — predict each word from leave-one-out context (padded)
+                'SBOW' — predict each word from leave-one-out centroid (vectorised)
+        """
+        if method == 'SBOW':
+            return self.cbow.sbow_step(words)
         return self.cbow.train_step(words)
 
     def snapshot(self):
@@ -1326,7 +1341,7 @@ class Space(nn.Module):
     they are multiplied by the respective object counts.  OutputSpace overrides
     this to use raw target dimensions (no ObjectEncoding overhead on output).
 
-    ``setAlpha(alpha)`` propagates the exploration parameter (1=explore, 0=exploit)
+    ``set_sigma(sigma)`` propagates exploration meta-parameters (1=explore, 0=suppress)
     from BasicModel down to all layers and VectorSets in this space.
     """
     name         = ""
@@ -1465,14 +1480,14 @@ class Space(nn.Module):
         else:
             y = y.reshape(self.batch, self.inputShape[0], input // self.inputShape[0])
         return y
-    def setAlpha(self, alpha):
-        """alpha 1→0: explore→exploit."""
-        self.alpha = alpha  # VectorSet jitter: high when exploring, zero when exploiting
+    def set_sigma(self, sigma):
+        """Propagate exploration meta-parameters to all layers and VectorSets."""
         for l in self.layers:
-            if hasattr(l, 'setAlpha'):
-                l.setAlpha(alpha)
+            if hasattr(l, 'set_sigma'):
+                l.set_sigma(sigma)
         for vs in self.vectorSet:
-            vs.alpha = self.alpha
+            if hasattr(vs, 'set_sigma'):
+                vs.set_sigma(sigma)
     def getParameters(self):
         return self.params
     def paramUpdate(self):
@@ -1512,7 +1527,7 @@ class InputSpace(Space):
     name = "Inputs"
     def __init__(self, nActiveInput, nActiveOutput, model_type="simple",
                  tokenizedInput=False, quantized=True, pretrained=False, data=None,
-                 tokenizer="traditional"):
+                 tokenizer="traditional", ergodic=False):
         # inputShape uses the data's native dimension (e.g. 784 for MNIST);
         # outputShape uses TheObjectEncoding.inputDim (set from XML nDim).
         dataDim     = data.getInputSize() if data is not None else TheObjectEncoding.inputDim
@@ -1523,9 +1538,11 @@ class InputSpace(Space):
         self.data = data
         self.model_type = model_type
         self.tokenizer = tokenizer  # "traditional" (word2vec) or "grammatical" (Lex span tables)
+        self.ergodic = ergodic
         if model_type == "embedding":
             source = data.train_texts if tokenizer == "grammatical" else None
             vs = Embedding()
+            vs.ergodic = ergodic
             vs.create(self.inputShape[0], self.outputShape[0], self.nDim, pretrained=pretrained, source=source)
             self.nDim = vs.nDim
             # LM mode: the embedding determines content dims for all spaces
@@ -1589,7 +1606,7 @@ class InputSpace(Space):
         embSize = self.vectors().embeddingSize
         nVec = self.outputShape[0]
         result = torch.zeros([batch, nVec, embSize], device=input.device)
-        codebook = self.vectors()._emb.weight.detach()
+        codebook = self.vectors()._emb.weight.detach().to(input.device)
         where_enc = TheObjectEncoding.where
         div_term = where_enc.div_term
 
@@ -1625,7 +1642,7 @@ class InputSpace(Space):
         content, positions, times = TheObjectEncoding.reverse(y.clone())
         batch = content.shape[0]
         nVec = content.shape[1]
-        codebook = self.vectors()._emb.weight.detach()
+        codebook = self.vectors()._emb.weight.detach().to(y.device)
         words_list = self.vectors().wv.index_to_key
         # The embedding vectors are vector_size-dim (nWhat).
         # After ObjectEncoding.reverse(), the last objectSize dims are zeroed.
@@ -1797,8 +1814,8 @@ class InputSpace(Space):
             # Expand to N masked copies
             masked_batch, mask_pos = self.expand_masked(embedded, sentence, self.data.masked_prediction)
 
-            # Compute N target embeddings
-            targets = self.outputSpace.expand_masked(sentence, self.vectors(), self.data.masked_prediction)
+            # Target for each masked position is the original embedded word vector
+            targets = self.outputSpace.expand_masked(embedded, sentence, self.data.masked_prediction)
 
             return (masked_batch, targets), batchNum + 1
 
@@ -1813,7 +1830,7 @@ class InputSpace(Space):
         """
         if vector.dim() == 3:
             vector = vector.squeeze(1)  # [batch, embeddingSize]
-        codebook = self.vectors()._emb.weight.detach()
+        codebook = self.vectors()._emb.weight.detach().to(vector.device)
         words_list = self.vectors().wv.index_to_key
         nWhat = codebook.shape[1]
         predictions = []
@@ -2263,49 +2280,37 @@ class OutputSpace(Space):
         y = self.reverseLinear(y)
         output = self.reverseEnd(y)
         return output
-    def expand_masked(self, sentence_text, embedding, maskedPrediction='MLM'):
-        """Produce N target embedding vectors for masked prediction.
+    def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM'):
+        """Extract target embedding vectors from the embedded sentence.
+
+        Each target is the original embedded word vector at the masked position,
+        paralleling InputSpace.expand_masked() which creates masked copies.
 
         Modes:
-            MLM: Target is the normalized embedding of each word.
-            ARLM: Same as MLM (autoregressive targets).
-            ARUS: Returns zero vectors (unsupervised — loss suppressed in runEpoch).
-            RARLM: Same targets as MLM but in reverse order (matching reverse mask positions).
+            MLM/ARLM: Target[i] = embedded word i.
+            ARUS: Zero vectors (loss suppressed in runEpoch).
+            RARLM: Targets in reverse order (matching reverse mask positions).
 
         Args:
-            sentence_text: original sentence string
-            embedding: Embedding instance with cbow.key_to_index and _emb.weight
+            embedded: [1, nVectors, embeddingSize] from InputSpace.forward()
+            sentence_text: original sentence string (for word count)
             maskedPrediction: prediction mode ('MLM', 'ARLM', 'ARUS', or 'RARLM')
 
         Returns:
-            targets: [N, vec_size] tensor of target word embeddings
+            targets: [N, 1, embeddingSize] tensor of target word embeddings
         """
         words = sentence_text.split()
-        weights = embedding._emb.weight  # (vocab_size, vec_size) — stays in graph
-        vocab_size = weights.shape[0]
-        vec_size = weights.shape[1]
-        if not words:
-            return torch.zeros(0, vec_size, device=weights.device)
-        targets = []
-        for word in words:
-            w = word.lower()
-            if w in embedding.cbow.key_to_index:
-                idx = embedding.cbow.key_to_index[w]
-                one_hot = torch.zeros(vocab_size, device=weights.device)
-                one_hot[idx] = 1.0
-                v = one_hot @ weights  # differentiable
-                v = F.normalize(v, p=2, dim=0)
-            else:
-                v = torch.zeros(vec_size, device=weights.device)
-            targets.append(v)
-        # ARUS: unsupervised — return zero targets (loss suppressed in runEpoch)
+        N = min(len(words), embedded.shape[1])
+        embSize = embedded.shape[-1]
+        if N == 0:
+            return torch.zeros(0, 1, embSize, device=embedded.device)
+        # Extract the first N word vectors from the embedded sentence
+        targets = embedded[0, :N, :].clone()  # [N, embSize]
         if maskedPrediction == 'ARUS':
-            return torch.zeros(len(targets), vec_size, device=weights.device)
-        stacked = torch.stack(targets)
-        # RARLM: reverse target order to match reverse mask positions
-        if maskedPrediction == 'RARLM':
-            stacked = stacked.flip(0)
-        return stacked
+            targets = torch.zeros_like(targets)
+        elif maskedPrediction == 'RARLM':
+            targets = targets.flip(0)
+        return targets.unsqueeze(1)  # [N, 1, embSize]
     # --- Text reconstruction from symbolic vectors ---
     def set_text_mode(self, input_space):
         """Enable text reconstruction by storing references from InputSpace.
@@ -2353,7 +2358,7 @@ class OutputSpace(Space):
         content, positions, times = TheObjectEncoding.reverse(vectors.clone())
         batch = content.shape[0]
         nVec = content.shape[1]
-        codebook = self._codebook
+        codebook = self._codebook.to(content.device)
         words_list = self._words_list
         nWhat = self._embedding_size - TheObjectEncoding.objectSize
         cb_what = codebook[:, :nWhat]  # [codebookSize, nWhat]
@@ -2487,8 +2492,9 @@ class BaseModel(nn.Module):
                 params.extend(s.getParameters())
         else:
             params = list(self.parameters())
-        # Exclude frozen embedding params when trainEmbeddings is off
-        if not getattr(self, 'train_embeddings', False):
+        # Exclude embedding params unless network gradients are enabled (ARLM or BOTH)
+        te = getattr(self, 'train_embeddings', 'NONE')
+        if te not in ('ARLM', 'BOTH'):
             exclude = set()
             if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.vectors(), Embedding):
                 for p in self.inputSpace.vectors()._emb.parameters():
@@ -2517,10 +2523,10 @@ class BaseModel(nn.Module):
         for s in self.spaces:
             s.paramUpdate()
 
-    def setAlpha(self, alpha):
-        """Propagate exploration temperature to all spaces, layers, and VectorSets."""
+    def set_sigma(self, sigma):
+        """Propagate exploration meta-parameters to all spaces."""
         for s in self.spaces:
-            s.setAlpha(alpha)
+            s.set_sigma(sigma)
 
     def save_weights(self, path=None):
         """Persist model weights and ergodic state to disk."""
@@ -2547,7 +2553,7 @@ class BaseModel(nn.Module):
 
     def mnistReport(self):
         """Run test epoch, compute per-digit accuracy, and plot."""
-        self.setAlpha(0.0)  # fully deterministic for evaluation
+        self.set_sigma(0)  # suppress exploration for evaluation
         _, _, y_pred, last_x_pred = self.runEpoch(split="test")
         if y_pred.dim() == 1 or y_pred.shape[-1] == 1:
             predicted = (y_pred.squeeze() > 0.5).long()
@@ -2596,7 +2602,7 @@ class BaseModel(nn.Module):
 
     def _reconstructionReport(self):
         """Run a test pass with reverse and report input vs reconstructed text."""
-        self.setAlpha(0.0)  # fully deterministic for evaluation
+        self.set_sigma(0)  # suppress exploration for evaluation
         test_input, test_output = self.inputSpace.getTestData()
         _, _, allOut, _ = self.runEpoch(batchSize=len(test_input), split="test")
 
@@ -2754,9 +2760,14 @@ class BasicModel(BaseModel):
             recon_ratio=arch["reconRatio"],
             masked_prediction=arch["maskedPrediction"],
         )
-        # End-to-end embedding training: include embedding weights in optimizer
-        self.train_embeddings = arch.get("trainEmbeddings", False)
-        if self.train_embeddings and isinstance(self.inputSpace.vectors(), Embedding):
+        # trainEmbeddings: NONE=frozen, CBOW=SBOW only, ARLM=network only, BOTH=SBOW+network
+        te = arch.get("trainEmbeddings", "NONE")
+        if te is True:
+            te = "BOTH"
+        elif te is False:
+            te = "NONE"
+        self.train_embeddings = te.upper()
+        if self.train_embeddings in ("ARLM", "BOTH") and isinstance(self.inputSpace.vectors(), Embedding):
             emb_params = list(self.inputSpace.vectors()._emb.parameters())
             self.inputSpace.params = self.inputSpace.params + emb_params
         # Auto-load weights if configured
@@ -2849,7 +2860,8 @@ class BasicModel(BaseModel):
                                            model_type=model_type, data=data,
                                            pretrained=pretrained,
                                            quantized=self.quantized,
-                                           tokenizer=self.tokenizer)
+                                           tokenizer=self.tokenizer,
+                                           ergodic=self.ergodic)
         # Convert masked-word string labels to embedding vectors now that
         # the Embedding vocabulary is available.
         if data is not None and hasattr(data, '_lm_labels') and data._lm_labels is not None:
@@ -3150,7 +3162,7 @@ class BasicModel(BaseModel):
 
         Alpha (exploration temperature) anneals from 1.0 (full exploration)
         to 0.0 (full exploitation) over the first 5% of training.  This is
-        propagated to all Spaces and their layers/VectorSets via setAlpha().
+        propagated to all Spaces and their layers/VectorSets via set_sigma().
 
         A single persistent optimizer is used across all epochs so Adam's
         momentum and variance estimates accumulate properly.
@@ -3164,12 +3176,10 @@ class BasicModel(BaseModel):
         accuracy          = []
         optimizer         = self.getOptimizer(lr=lr)
 
+        # Enable sigma-driven self-annealing for ergodic layers
+        self.set_sigma(1.0)
+
         for epoch in range(numEpochs):
-            # Fast alpha annealing: reach exploitation by 5% of training.
-            # Only affects ergodic layers; non-ergodic layers ignore alpha.
-            warmup = max(1, numEpochs // 20)
-            alpha = max(0.0, 1.0 - epoch / warmup)
-            self.setAlpha(alpha)
             print(f"Epoch [{epoch + 1}/{numEpochs}]")
 
             if epoch != 0:
@@ -3178,7 +3188,9 @@ class BasicModel(BaseModel):
                 trainLosses[1].append(inErr)
                 print(f"Train Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
 
+            self.set_sigma(0)  # suppress exploration during eval
             outErr, inErr, allOut, lastIn = self.runEpoch(batchSize=batchSize, split="test")
+            self.set_sigma(1.0)  # re-enable for next training epoch
             testLosses[0].append(outErr)
             testLosses[1].append(inErr)
 
@@ -3272,16 +3284,13 @@ class BasicModel(BaseModel):
                 else:
                     input, symbols, outputDataPred = self.forward(inputTensor)
 
-                pred_sq = outputDataPred.squeeze()
-                tgt_sq = outputTensor.squeeze()
-                if pred_sq.shape != tgt_sq.shape:
-                    if tgt_sq.ndim == 0 or (tgt_sq.ndim == 1 and pred_sq.ndim == 2):
-                        tgt_sq = tgt_sq.unsqueeze(0).expand_as(pred_sq) if tgt_sq.ndim == 0 else torch.zeros_like(pred_sq)
-                lossOut = criterionOutput(pred_sq, tgt_sq)
+                outputPred = outputDataPred.squeeze()
+                output     = outputTensor.squeeze()
+                lossOut    = criterionOutput(outputPred, output)
 
                 # ARUS: suppress output loss (unsupervised — no target signal)
                 if hasattr(self, 'masked_prediction') and self.masked_prediction == 'ARUS':
-                    lossOut = torch.tensor(0.0, device=pred_sq.device)
+                    lossOut = torch.tensor(0.0, device=outputPred.device)
 
                 if self.reversible:
                     inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
@@ -3289,7 +3298,7 @@ class BasicModel(BaseModel):
                     rr = self.recon_ratio
                     totalLoss = (1 - rr) * lossOut + rr * lossIn
                 else:
-                    lossIn = torch.tensor(0.0, device=pred_sq.device)
+                    lossIn = torch.tensor(0.0, device=outputPred.device)
                     totalLoss = lossOut
 
                 if training:
@@ -3303,6 +3312,20 @@ class BasicModel(BaseModel):
                         with torch.no_grad():
                             emb = self.inputSpace.vectors()
                             emb._emb.weight[emb.mask_token_idx] = 0.0
+
+                    # M-step: SBOW update on the same sentence
+                    # CBOW: SBOW only (EM separation), BOTH: SBOW + network gradients
+                    te = getattr(self, 'train_embeddings', 'NONE')
+                    if masked_pred and te in ('CBOW', 'BOTH'):
+                        emb = self.inputSpace.vectors()
+                        if isinstance(emb, Embedding):
+                            sentences = self.inputSpace.data._lm_sentences[split]
+                            if batchIdx < len(sentences):
+                                sentence = sentences[batchIdx]
+                                tokens = emb._lex.lex_buffer(sentence, 0)
+                                words = [t['text'] for t in tokens
+                                         if t['category'] == 'WORD']
+                                emb.train_step(words)
 
                 outErr = lossOut.item()
                 inErr = lossIn.item() if self.reversible else 0

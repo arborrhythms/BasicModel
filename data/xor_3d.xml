@@ -46,7 +46,7 @@
 
   <OutputSpace>
     <nActive>1</nActive>
-    <nDim>10</nDim>
+    <nDim>1</nDim>
     <nVectors>1</nVectors>
   </OutputSpace>
 </model>

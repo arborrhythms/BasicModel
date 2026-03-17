@@ -16,6 +16,8 @@ import unittest
 
 # Prevent OMP fork-safety crash on macOS when multiple libs load OpenMP
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+# Force GPU for unit tests (must be set before BasicModel import)
+os.environ["BASICMODEL_DEVICE"] = "gpu"
 
 import numpy as np
 import torch
@@ -36,15 +38,15 @@ class TestLinearLayer(unittest.TestCase):
     def test_forward_shape(self):
         from Model import LinearLayer
         layer = LinearLayer(nInput=4, nOutput=3)
-        x = torch.randn(2, 4)
+        x = torch.randn(2, 4).to(TheDevice)
         y = layer(x)
         self.assertEqual(y.shape, (2, 3))
 
     def test_with_identity_weight(self):
         from Model import LinearLayer
-        W = torch.eye(4)
+        W = torch.eye(4).to(TheDevice)
         layer = LinearLayer(nInput=4, nOutput=4, W=W)
-        x = torch.randn(1, 4)
+        x = torch.randn(1, 4).to(TheDevice)
         y = layer(x)
         self.assertEqual(y.shape, (1, 4))
 
@@ -54,7 +56,7 @@ class TestInvertibleRotationLayer(unittest.TestCase):
         from Model import InvertibleRotationLayer
         dim = 4
         layer = InvertibleRotationLayer(dim)
-        x = torch.randn(2, dim)
+        x = torch.randn(2, dim).to(TheDevice)
         y = layer(x)
         x_rec = layer.reverse(y)
         self.assertTrue(torch.allclose(x, x_rec, atol=1e-4),
@@ -65,7 +67,7 @@ class TestInvertibleDiagonalLayer(unittest.TestCase):
     def test_forward_reverse_identity(self):
         from Model import InvertibleDiagonalLayer
         layer = InvertibleDiagonalLayer(nInput=4, nOutput=4)
-        x = torch.randn(2, 4)
+        x = torch.randn(2, 4).to(TheDevice)
         y = layer(x)
         x_rec = layer.reverse(y)
         self.assertTrue(torch.allclose(x, x_rec, atol=1e-4),
@@ -76,7 +78,7 @@ class TestInvertibleLinearLayer(unittest.TestCase):
     def test_forward_reverse_square(self):
         from Model import InvertibleLinearLayer
         layer = InvertibleLinearLayer(nInput=4, nOutput=4)
-        x = torch.randn(2, 4)
+        x = torch.randn(2, 4).to(TheDevice)
         y = layer(x)
         x_rec = layer.reverse(y)
         self.assertTrue(torch.allclose(x, x_rec, atol=1e-3),
@@ -87,7 +89,7 @@ class TestSigmaLayer(unittest.TestCase):
     def test_forward_shape(self):
         from Model import SigmaLayer
         layer = SigmaLayer(nInput=8, nOutput=4)
-        x = torch.randn(2, 8)
+        x = torch.randn(2, 8).to(TheDevice)
         y = layer(x)
         self.assertEqual(y.shape, (2, 4))
 
@@ -96,7 +98,7 @@ class TestPiLayer(unittest.TestCase):
     def test_forward_shape(self):
         from Model import PiLayer
         layer = PiLayer(nInput=6, nOutput=3)
-        x = torch.randn(2, 6)
+        x = torch.randn(2, 6).to(TheDevice)
         y = layer(x)
         self.assertEqual(y.shape, (2, 3))
 
@@ -105,14 +107,14 @@ class TestInvertibleSigmaLayer(unittest.TestCase):
     def test_forward_shape(self):
         from Model import InvertibleSigmaLayer
         layer = InvertibleSigmaLayer(nInput=4, nOutput=4)
-        x = torch.randn(2, 4) * 0.3
+        x = torch.randn(2, 4).to(TheDevice) * 0.3
         y = layer(x)
         self.assertEqual(y.shape, (2, 4))
 
     def test_reverse_shape(self):
         from Model import InvertibleSigmaLayer
         layer = InvertibleSigmaLayer(nInput=4, nOutput=4)
-        y = torch.randn(2, 4) * 0.3
+        y = torch.randn(2, 4).to(TheDevice) * 0.3
         x = layer.reverse(y)
         self.assertEqual(x.shape, (2, 4))
 
@@ -121,7 +123,7 @@ class TestAttentionLayer(unittest.TestCase):
     def test_forward_shape(self):
         from Model import AttentionLayer
         layer = AttentionLayer(nInput=8, nOutput=4)
-        x = torch.randn(2, 8)
+        x = torch.randn(2, 8).to(TheDevice)
         y = layer(x)
         self.assertEqual(y.shape, (2, 4))
 
@@ -130,7 +132,7 @@ class TestNormLayer(unittest.TestCase):
     def test_forward_runs(self):
         from Model import NormLayer
         layer = NormLayer(4, 4)
-        x = torch.randn(3, 4)
+        x = torch.randn(3, 4).to(TheDevice)
         y = layer(x)
         # NormLayer may append extra features (mean, std)
         self.assertEqual(y.shape[0], 3)
@@ -250,7 +252,7 @@ class TestSimpleModelCreation(unittest.TestCase):
         model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
                        perceptPassThrough=True, symbolPassThrough=True,
                        reshape=True)
-        x = torch.randn(2, 28*28, 1)  # batch of 2, flattened MNIST, dim=1
+        x = torch.randn(2, 28*28, 1).to(TheDevice)  # batch of 2, flattened MNIST, dim=1
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)  # batch size preserved
 
@@ -260,7 +262,7 @@ class TestSimpleModelCreation(unittest.TestCase):
         model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
                        perceptPassThrough=True, symbolPassThrough=True,
                        ergodic=True, certainty=True, reshape=True)
-        x = torch.randn(2, 28*28, 1)
+        x = torch.randn(2, 28*28, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
 
@@ -287,7 +289,7 @@ class TestWeightPersistence(unittest.TestCase):
     def test_save_load_roundtrip(self):
         from Model import LinearLayer
         layer = LinearLayer(nInput=4, nOutput=3)
-        x = torch.randn(1, 4)
+        x = torch.randn(1, 4).to(TheDevice)
         y_before = layer(x).detach().clone()
 
         with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f:
@@ -330,7 +332,7 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
         nIn, nOut, nDim = 4, 4, 8
         cs = ConceptualSpace(nIn, nOut)
         inEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.inputDim)
-        x = torch.randn(self.B, nIn, inEmb)
+        x = torch.randn(self.B, nIn, inEmb).to(TheDevice)
         y = cs(x)
         outEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.conceptDim)
         self.assertEqual(list(y.shape), [self.B, nOut, outEmb])
@@ -340,7 +342,7 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
         nIn, nOut, nDim = 4, 4, 8
         cs = ConceptualSpace(nIn, nOut, reversible=True)
         outEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.conceptDim)
-        y = torch.randn(self.B, nOut, outEmb)
+        y = torch.randn(self.B, nOut, outEmb).to(TheDevice)
         x = cs.reverse(y)
         inEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.inputDim)
         self.assertEqual(list(x.shape), [self.B, nIn, inEmb])
@@ -350,7 +352,7 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
         nIn, nOut = 4, 4
         os_ = OutputSpace(nIn, nOut)
         inEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.symbolDim)
-        x = torch.randn(self.B, nIn, inEmb)
+        x = torch.randn(self.B, nIn, inEmb).to(TheDevice)
         y = os_(x)
         self.assertEqual(list(y.shape), [self.B, nOut, TheObjectEncoding.outputDim])
 
@@ -375,7 +377,7 @@ class TestSimpleModel(unittest.TestCase):
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
                        perceptPassThrough=True, symbolPassThrough=True,
                        ergodic=True, reshape=True)
-        x = torch.randn(2, 16, 1)
+        x = torch.randn(2, 16, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -386,7 +388,7 @@ class TestSimpleModel(unittest.TestCase):
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
                        perceptPassThrough=True, symbolPassThrough=True,
                        reshape=True)
-        x = torch.randn(2, 16, 1)
+        x = torch.randn(2, 16, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -396,7 +398,7 @@ class TestSimpleModel(unittest.TestCase):
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
                        perceptPassThrough=True, symbolPassThrough=True,
                        ergodic=True, reversible=True, reshape=True)
-        x = torch.randn(2, 16, 1)
+        x = torch.randn(2, 16, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         data, start_state = model.reverse(end_state, out)
         self.assertEqual(data.shape[0], 2)
@@ -410,7 +412,7 @@ class TestVectorSetVariants(unittest.TestCase):
         from BasicModel import VectorSet
         vs = VectorSet()
         vs.create(4, 4, 1, passThrough=True)
-        x = torch.randn(2, 4, 1)
+        x = torch.randn(2, 4, 1).to(TheDevice)
         y = vs.forward(x)
         self.assertTrue(torch.equal(x, y))
 
@@ -427,7 +429,8 @@ class TestVectorSetVariants(unittest.TestCase):
         vs = VectorSet()
         vs.create(4, 4, 3, customVQ=False)
         vs.addVectors(nVec=4)
-        x = torch.randn(2, 4, 3)
+        vs = vs.to(TheDevice)
+        x = torch.randn(2, 4, 3).to(TheDevice)
         y = vs.forward(x)
         # Output gains ObjectEncoding overhead (nWhere + nWhen)
         embeddingSize = 3 + TheObjectEncoding.objectSize
@@ -454,7 +457,7 @@ class TestModelEndToEnd(unittest.TestCase):
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
                        perceptPassThrough=True, symbolPassThrough=True,
                        ergodic=True, reshape=True)
-        x = torch.randn(2, 16, 1)
+        x = torch.randn(2, 16, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -465,7 +468,7 @@ class TestModelEndToEnd(unittest.TestCase):
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
                        perceptPassThrough=True, symbolPassThrough=True,
                        reshape=True)
-        x = torch.randn(2, 16, 1)
+        x = torch.randn(2, 16, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -476,7 +479,7 @@ class TestModelEndToEnd(unittest.TestCase):
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
                        perceptPassThrough=True, symbolPassThrough=True,
                        ergodic=True, reversible=True, reshape=True)
-        x = torch.randn(2, 16, 1)
+        x = torch.randn(2, 16, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         data, start_state = model.reverse(end_state, out)
         self.assertEqual(data.shape[0], 2)
@@ -489,8 +492,8 @@ class TestModelEndToEnd(unittest.TestCase):
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
                        perceptPassThrough=True, symbolPassThrough=True,
                        ergodic=True, certainty=True, reshape=True)
-        x = torch.randn(2, 16, 1)
-        target = torch.randn(2, 4)
+        x = torch.randn(2, 16, 1).to(TheDevice)
+        target = torch.randn(2, 4).to(TheDevice)
         _, end_state, out = model.forward(x)
         loss_fn = CertaintyWeightedCrossEntropy()
         loss = loss_fn(out.squeeze(), target)
@@ -536,7 +539,7 @@ class TestSigmaLayerDeterministic(unittest.TestCase):
             linear.bias.copy_(sigma.layer.bias)
         tanh = torch.nn.Tanh()
 
-        x = torch.randn(2, nIn)
+        x = torch.randn(2, nIn).to(TheDevice)
         y_sigma = sigma(x)
         y_manual = tanh(linear(x))
         self.assertTrue(torch.allclose(y_sigma, y_manual, atol=1e-6),
@@ -546,7 +549,7 @@ class TestSigmaLayerDeterministic(unittest.TestCase):
         from Model import SigmaLayer
         nIn, nOut = 8, 4
         sigma = SigmaLayer(nIn, nOut, ergodic=False)
-        x = torch.randn(2, nIn)
+        x = torch.randn(2, nIn).to(TheDevice)
 
         sigma.train()
         y_train = sigma(x).detach().clone()
@@ -625,7 +628,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         nVec, nDim, cDim = 8, 1, 1
         cs = ConceptualSpace(nVec, nVec,
                              ergodic=True, quantized=False)
-        x = torch.randn(2, nVec, nDim)
+        x = torch.randn(2, nVec, nDim).to(TheDevice)
         y = cs(x)
         self.assertEqual(list(y.shape), [2, nVec, cDim])
 
@@ -635,7 +638,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         nVec, nDim, cDim = 8, 1, 1
         cs = ConceptualSpace(nVec, nVec,
                              ergodic=False, quantized=False)
-        x = torch.randn(2, nVec, nDim)
+        x = torch.randn(2, nVec, nDim).to(TheDevice)
         y = cs(x)
         self.assertEqual(list(y.shape), [2, nVec, cDim])
 
@@ -655,7 +658,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         nVec, nDim, cDim = 8, 1, 1
         cs = ConceptualSpace(nVec, nVec,
                              ergodic=True, reversible=True, quantized=False)
-        y = torch.randn(2, nVec, cDim)
+        y = torch.randn(2, nVec, cDim).to(TheDevice)
         x = cs.reverse(y)
         self.assertEqual(list(x.shape), [2, nVec, nDim])
 
@@ -678,7 +681,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         nIn, nOut = 4, 4
         cs = ConceptualSpace(nIn, nOut)
         inEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.inputDim)
-        x = torch.randn(2, nIn, inEmb)
+        x = torch.randn(2, nIn, inEmb).to(TheDevice)
         y = cs(x)
         outEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.conceptDim)
         self.assertEqual(list(y.shape), [2, nOut, outEmb])
@@ -710,7 +713,7 @@ class TestInputSpaceUnquantized(unittest.TestCase):
         TheObjectEncoding.computeNObjects()
         nIn, nDim = 8, 1
         inp = InputSpace(nIn, nIn, quantized=False)
-        x = torch.randn(2, nIn, nDim)
+        x = torch.randn(2, nIn, nDim).to(TheDevice)
         y = inp(x)
         self.assertEqual(list(y.shape), [2, nIn, nDim])
 
@@ -742,7 +745,7 @@ class TestOutputSpaceZeroObjectSize(unittest.TestCase):
         TheObjectEncoding.computeNObjects()
         nIn, nOut = 4, 3
         os_ = OutputSpace(nIn, nOut)
-        x = torch.randn(2, nIn, 1)
+        x = torch.randn(2, nIn, 1).to(TheDevice)
         y = os_(x)
         self.assertEqual(list(y.shape), [2, nOut, 1])
 
@@ -758,7 +761,7 @@ class TestOutputSpaceZeroObjectSize(unittest.TestCase):
         TheObjectEncoding.computeNObjects()
         nIn, nOut = 4, 3
         os_ = OutputSpace(nIn, nOut, reversible=True)
-        y = torch.randn(2, nOut, 1)
+        y = torch.randn(2, nOut, 1).to(TheDevice)
         x = os_.reverse(y)
         self.assertEqual(list(x.shape), [2, nIn, 1])
 
@@ -1015,7 +1018,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         TheObjectEncoding.computeNObjects()
         nIn, nOut = 4, 3
         os_ = OutputSpace(nIn, nOut)
-        x = torch.randn(2, nIn, 1)
+        x = torch.randn(2, nIn, 1).to(TheDevice)
         y = os_(x)
         self.assertEqual(list(y.shape), [2, nOut, 1])
         # text_mode should be False for numeric data
@@ -1081,7 +1084,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         # Pick first two non-[MASK] words from the codebook
         batch = 1
         nVec = 2
-        vectors = torch.zeros([batch, nVec, embSize])
+        vectors = torch.zeros([batch, nVec, embSize]).to(TheDevice)
         expected_words = []
         # Skip [MASK] (zero vector) — cosine matching can't recover it
         usable = [j for j, w in enumerate(words_list) if w != "[MASK]"]
@@ -1122,7 +1125,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
 
         batch = 1
         nVec = 2
-        vectors = torch.zeros([batch, nVec, embSize])
+        vectors = torch.zeros([batch, nVec, embSize]).to(TheDevice)
         expected_words = []
         # Skip [MASK] (zero vector) — cosine matching can't recover it
         usable = [j for j, w in enumerate(words_list) if w != "[MASK]"]
@@ -1164,7 +1167,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
 
         batch = 1
         nVec = 2
-        vectors = torch.zeros([batch, nVec, embSize])
+        vectors = torch.zeros([batch, nVec, embSize]).to(TheDevice)
         # Skip [MASK] (zero vector) — cosine matching can't recover it
         usable = [j for j, w in enumerate(words_list) if w != "[MASK]"]
         # Word 0 at offset 0, word 1 at offset 6
@@ -1202,7 +1205,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         os_ = OutputSpace(nInput, nOut, reversible=True)
         os_.set_text_mode(inp)
         inEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.symbolDim)
-        x = torch.randn(2, nInput, inEmb)
+        x = torch.randn(2, nInput, inEmb).to(TheDevice)
         y = os_(x)
         self.assertEqual(list(y.shape), [2, nOut, TheObjectEncoding.outputDim])
         # Reverse path should also be unchanged
@@ -1316,7 +1319,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         from BasicModel import InputSpace
         nIn, nDim = 8, 1
         inp = InputSpace(nIn, nIn, quantized=False)
-        x = torch.randn(2, nIn, nDim)
+        x = torch.randn(2, nIn, nDim).to(TheDevice)
         y = inp.forward(x)
         result = inp.reverse(y)
         # Numeric path returns tensor, not text
@@ -1524,7 +1527,7 @@ class TestModelTypeVariants(unittest.TestCase):
                      invertible=True, ergodic=True, reversible=True,
                      perceptPassThrough=True, symbolPassThrough=True,
                      reshape=True)
-        x = torch.randn(2, 16, 1)
+        x = torch.randn(2, 16, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -1539,7 +1542,7 @@ class TestModelTypeVariants(unittest.TestCase):
                      hasNorm=True, ergodic=True,
                      perceptPassThrough=True, symbolPassThrough=True,
                      reshape=True)
-        x = torch.randn(2, 16, 1)
+        x = torch.randn(2, 16, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -1557,7 +1560,7 @@ class TestModelTypeVariants(unittest.TestCase):
                      conceptualOrder=2, reversible=False,
                      perceptPassThrough=True, symbolPassThrough=False,
                      reshape=True)
-        x = torch.randn(2, 8, 1)
+        x = torch.randn(2, 8, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -1575,7 +1578,7 @@ class TestModelTypeVariants(unittest.TestCase):
                      symbolicOrder=2,
                      perceptPassThrough=True, symbolPassThrough=False,
                      reshape=True)
-        x = torch.randn(2, 8, 1)
+        x = torch.randn(2, 8, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -1735,7 +1738,7 @@ class TestReconstructionSymbols(unittest.TestCase):
         """
         torch.manual_seed(42)
         m = self._create_xor_model(nSymbols=3, nOutput=1)
-        m.setAlpha(0.0)
+        m.set_sigma(0)
         m.train(True)
 
         criterionOutput, criterionInput = m._getLossFn()
@@ -1813,7 +1816,7 @@ class TestReconstructionSymbols(unittest.TestCase):
 
             # Run a final evaluation pass with reverse
             test_input, test_output = m.inputSpace.getTestData()
-            m.setAlpha(0.0)
+            m.set_sigma(0)
             m.train(False)
             with torch.no_grad():
                 m.runEpoch(batchSize=len(test_input), split="test")
@@ -1839,6 +1842,7 @@ class TestXor3dReversePass(unittest.TestCase):
     """
 
     def test_construct_and_forward_reverse(self):
+        import warnings
         from BasicModel import BasicModel, TheData
         import xml.etree.ElementTree as ET
 
@@ -1846,11 +1850,13 @@ class TestXor3dReversePass(unittest.TestCase):
         torch.manual_seed(42)
         TheData.load("xor")
         m = BasicModel()
-        m.create_from_config(xml_path, data=TheData)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="PerceptualSpace: reversible=True with invertible=False")
+            m.create_from_config(xml_path, data=TheData)
 
         # Forward pass
         test_input, test_output = m.inputSpace.getTestData()
-        m.setAlpha(0.0)
+        m.set_sigma(0)
         m.train(False)
         with torch.no_grad():
             m.runEpoch(batchSize=len(test_input), split="test")
@@ -2007,39 +2013,36 @@ class TestExpandMaskedTargets(unittest.TestCase):
         TheObjectEncoding.objectSize = self._orig_objectSize
         TheObjectEncoding.nObjects = self._orig_nObjects
 
+    def _make_embedded(self, n_words, emb_size=None):
+        """Create a synthetic [1, n_words, embSize] embedded sentence."""
+        if emb_size is None:
+            emb_size = self.emb._emb.weight.shape[1] + 4  # content + nWhere + nWhen
+        return torch.randn(1, n_words, emb_size, device=TheDevice)
+
     def test_expand_masked_shape(self):
-        """N words produce [N, vec_size] target tensor."""
-        for w in ["hello", "world", "test"]:
-            if w not in self.emb.cbow.key_to_index:
-                self.emb._add_word(w)
-        targets = self.out.expand_masked("hello world test", self.emb)
+        """N words produce [N, 1, embSize] target tensor."""
+        embedded = self._make_embedded(3)
+        targets = self.out.expand_masked(embedded, "hello world test")
         self.assertEqual(targets.shape[0], 3)
-        self.assertEqual(targets.shape[1], self.emb._emb.weight.shape[1])
+        self.assertEqual(targets.shape[1], 1)
+        self.assertEqual(targets.shape[2], embedded.shape[-1])
 
     def test_expand_masked_known_word(self):
-        """Known word produces its normalized embedding vector."""
-        import torch.nn.functional as F
-        if "hello" not in self.emb.cbow.key_to_index:
-            self.emb._add_word("hello")
-        targets = self.out.expand_masked("hello", self.emb)
-        idx = self.emb.cbow.key_to_index["hello"]
-        weights = self.emb._emb.weight
-        one_hot = torch.zeros(weights.shape[0], device=weights.device)
-        one_hot[idx] = 1.0
-        expected = F.normalize(one_hot @ weights, p=2, dim=0)
-        torch.testing.assert_close(targets[0], expected)
+        """Target for word i matches embedded[0, i, :]."""
+        embedded = self._make_embedded(1)
+        targets = self.out.expand_masked(embedded, "hello")
+        torch.testing.assert_close(targets[0, 0], embedded[0, 0])
 
     def test_expand_masked_unknown_word(self):
-        """Unknown word produces a zero vector."""
-        targets = self.out.expand_masked("xyzzynotaword123", self.emb)
-        self.assertTrue(torch.all(targets[0] == 0.0))
+        """Even unknown words get their embedded vector as target."""
+        embedded = self._make_embedded(1)
+        targets = self.out.expand_masked(embedded, "xyzzynotaword123")
+        torch.testing.assert_close(targets[0, 0], embedded[0, 0])
 
     def test_arus_returns_zero_targets(self):
         """ARUS mode returns all-zero target vectors."""
-        for w in ["hello", "world"]:
-            if w not in self.emb.cbow.key_to_index:
-                self.emb._add_word(w)
-        targets = self.out.expand_masked("hello world", self.emb, maskedPrediction='ARUS')
+        embedded = self._make_embedded(2)
+        targets = self.out.expand_masked(embedded, "hello world", maskedPrediction='ARUS')
         self.assertTrue(torch.all(targets == 0.0))
         self.assertEqual(targets.shape[0], 2)
 
@@ -2236,11 +2239,10 @@ class TestRARLMTargets(unittest.TestCase):
 
     def test_rarlm_targets_reversed(self):
         """RARLM targets are MLM targets in reverse order."""
-        for w in ["hello", "world"]:
-            if w not in self.emb.cbow.key_to_index:
-                self.emb._add_word(w)
-        mlm_targets = self.out.expand_masked("hello world", self.emb, maskedPrediction='MLM')
-        rarlm_targets = self.out.expand_masked("hello world", self.emb, maskedPrediction='RARLM')
+        emb_size = self.emb._emb.weight.shape[1] + 4
+        embedded = torch.randn(1, 2, emb_size, device=TheDevice)
+        mlm_targets = self.out.expand_masked(embedded, "hello world", maskedPrediction='MLM')
+        rarlm_targets = self.out.expand_masked(embedded, "hello world", maskedPrediction='RARLM')
         # RARLM targets should be MLM targets reversed
         torch.testing.assert_close(rarlm_targets, mlm_targets.flip(0))
 

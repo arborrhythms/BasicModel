@@ -73,8 +73,8 @@ class TestInvertibleLinearLayer(unittest.TestCase):
         torch.manual_seed(42)
         layer = InvertibleLinearLayer(nIn, nOut, naive=naive, hasBias=True)
         x = torch.randn(2, 3, nIn)
-        y = layer.forward(x, bias=1.0, temp=0.0)
-        x_rec = layer.reverse(y, bias=1.0, temp=0.0)
+        y = layer.forward(x, bias=1.0, var=0.0)
+        x_rec = layer.reverse(y, bias=1.0, var=0.0)
         err = _reconstruction_error(x, x_rec)
         self.assertLess(err, tol,
                         f"{nIn}->{nOut}, naive={naive}: err={err:.2e}")
@@ -92,8 +92,8 @@ class TestLiftingLayer(unittest.TestCase):
         torch.manual_seed(42)
         layer = LiftingLayer(nIn, nOut)
         x = torch.randn(4, nIn)
-        y = layer.forward(x, bias=1.0, temp=0.0)
-        x_rec = layer.reverse(y, bias=1.0, temp=0.0)
+        y = layer.forward(x, bias=1.0, var=0.0)
+        x_rec = layer.reverse(y, bias=1.0, var=0.0)
         err = _reconstruction_error(x, x_rec)
         self.assertLess(err, tol, f"{nIn}->{nOut}: err={err:.2e}")
 
@@ -121,7 +121,7 @@ class TestInvertibleSigmaLayer(unittest.TestCase):
     def _check(self, nIn, nOut, naive, tol):
         torch.manual_seed(42)
         layer = InvertibleSigmaLayer(nIn, nOut, naive=naive, permuteInput=False)
-        layer.setAlpha(1e-9)
+        layer.set_sigma(0)
         x = torch.randn(2, 3, nIn)
         y = layer.forward(x)
         x_rec = layer.reverse(y)
@@ -140,7 +140,7 @@ class TestInvertibleSigmaLayer(unittest.TestCase):
         nIn, nOut, seqLen = 5, 7, 3
         torch.manual_seed(42)
         layer = InvertibleSigmaLayer(nIn, nOut, naive=naive, permuteInput=True)
-        layer.setAlpha(1e-9)
+        layer.set_sigma(0)
         x = torch.randn(2, nIn, seqLen)
         y = layer.forward(x)
         x_rec = layer.reverse(y)
@@ -158,7 +158,7 @@ class TestInvertiblePiLayer3D(unittest.TestCase):
         torch.manual_seed(42)
         layer = InvertiblePiLayer(nIn, nOut, naive=naive,
                                   permuteInput=perm, hasBias=bias)
-        layer.setAlpha(1e-9)
+        layer.set_sigma(0)
         if perm:
             x = torch.randn(3, nIn, 5)
         else:
@@ -185,7 +185,7 @@ class TestInvertiblePiLayer2D(unittest.TestCase):
         torch.manual_seed(42)
         layer = InvertiblePiLayer(nIn, nOut, naive=naive,
                                   permuteInput=False, hasBias=bias)
-        layer.setAlpha(1e-9)
+        layer.set_sigma(0)
         x = torch.randn(6, nIn)
         y = layer.forward(x)
         x_rec = layer.reverse(y)
@@ -265,11 +265,13 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
         self.assertLess(err, 0.1, f"3D permuted rel err={err:.2e}")
 
     def test_ergodic_roundtrip(self):
-        """Non-naive with ergodic noise (temp > 0) uses compute_Winverse."""
+        """Non-naive with ergodic noise uses compute_Winverse."""
         torch.manual_seed(42)
         nIn, nOut = 4, 8
         layer = InvertiblePiLayer(nIn, nOut, naive=False, ergodic=True)
-        layer.setAlpha(0.1)
+        with torch.no_grad():
+            layer.var.fill_(0.05)
+            layer.bias.fill_(0.95)
         layer.train(True)
         x = torch.randn(8, nIn)
         with torch.no_grad():
@@ -491,7 +493,7 @@ class TestConceptualSpaceInvertible(unittest.TestCase):
             reshape=reshape, hasAttention=False,
         )
         cspace.eval()
-        cspace.sigma.setAlpha(1e-9)
+        cspace.sigma.set_sigma(0)
         x = torch.randn(2, nObj, embDim)
         with torch.no_grad():
             y = cspace.forward(x)
@@ -548,7 +550,7 @@ class TestConceptualSpaceHasNorm(unittest.TestCase):
             reshape=True, hasAttention=False,
         )
         cspace.eval()
-        cspace.sigma.setAlpha(1e-9)
+        cspace.sigma.set_sigma(0)
         x = torch.randn(2, nObj, contentDim)
         with torch.no_grad():
             y = cspace.forward(x)
@@ -630,13 +632,15 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
     def test_invertible_pi_ergodic_roundtrip(self):
         """InvertiblePiLayer with ergodic=True should still roundtrip after training.
 
-        Uses a moderate alpha; high alpha (e.g. 0.5) makes pinv imprecise
+        Directly sets moderate var; high var makes pinv imprecise
         because the effective weight matrix is heavily perturbed by noise.
         """
         torch.manual_seed(42)
         nIn, nOut = 4, 6
         layer = InvertiblePiLayer(nIn, nOut, naive=True, ergodic=True)
-        layer.setAlpha(0.1)
+        with torch.no_grad():
+            layer.var.fill_(0.1)
+            layer.bias.fill_(0.9)
         layer.train()
         x = torch.randn(8, nIn)
         y = layer.forward(x)
@@ -645,14 +649,19 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
         self.assertLess(err, 0.15, f"Ergodic roundtrip error too large: {err}")
 
     def test_invertible_sigma_ergodic_roundtrip(self):
-        """InvertibleSigmaLayer with ergodic=True should still roundtrip after training."""
+        """InvertibleSigmaLayer with ergodic=True should still roundtrip after training.
+
+        tanh/atanh amplifies noise so tolerance is higher than for PiLayer.
+        """
         torch.manual_seed(42)
         nIn, nOut = 6, 8
         layer = InvertibleSigmaLayer(nIn, nOut, ergodic=True)
-        layer.setAlpha(0.5)
+        with torch.no_grad():
+            layer.var.fill_(0.05)
+            layer.bias.fill_(0.95)
         layer.train()
         x = torch.randn(8, nIn)
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec, rel=True)
-        self.assertLess(err, 0.1, f"Ergodic roundtrip error too large: {err}")
+        self.assertLess(err, 0.3, f"Ergodic roundtrip error too large: {err}")

@@ -27,7 +27,8 @@
     <trainingEpochs>10</trainingEpochs>
     <minCount>5</minCount>
     <artifactPath>output/embeddings/sentence.pt</artifactPath>
-    <trainEmbeddings>true</trainEmbeddings>
+    <trainEmbeddings>CBOW</trainEmbeddings>
+    <maskedPrediction>ARLM</maskedPrediction>
     <maxResponseLength>64</maxResponseLength>
     <serverHost>127.0.0.1</serverHost>
     <serverPort>8001</serverPort>

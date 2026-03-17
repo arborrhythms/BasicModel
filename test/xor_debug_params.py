@@ -74,7 +74,7 @@ for s in m_erg.spaces:
 
 # Check the forward/reverse behavior difference
 print("\n--- Forward pass bias/temp with ergodic=True, alpha=0: ---")
-m_erg.setAlpha(0.0)
+m_erg.set_sigma(0.0)
 # Check what the SigmaLayer/PiLayer forward uses
 for s in m_erg.spaces:
     if hasattr(s, 'ergodic'):

@@ -24,23 +24,15 @@ import time
 
 epsilon = 1e-7  # to avoid log(0)
 
-# Device used by all layers — honours BASICMODEL_DEVICE env var, or set
-# at runtime via init_device() from BasicModel.py.
-_device_override = os.environ.get("BASICMODEL_DEVICE", "").lower()
-if _device_override:
-    _TheDevice = torch.device(_device_override)
-else:
-    _TheDevice = torch.device("cpu")
+# Device used by all layers — delegates to util.
+import util as _util
+
+def _get_device():
+    return _util.TheDevice
 
 def init_device(device):
-    """Set the device for all Layer instances (called by BasicModel.py).
-
-    The BASICMODEL_DEVICE env var takes precedence when set — this ensures
-    tests that force CPU aren't overridden by import-order side-effects.
-    """
-    global _TheDevice
-    override = os.environ.get("BASICMODEL_DEVICE", "").lower()
-    _TheDevice = torch.device(override) if override else device
+    """Update the device for all layers. Kept for backward compat."""
+    _util.init_device(device)
 
 def has_signal(value):
     """Return True when a tensor or scalar contains any non-zero signal."""
@@ -62,10 +54,10 @@ message = Message()
 
 #region Layers
 class _AutoDevice(type(nn.Module)):
-    """Metaclass that moves nn.Modules to _TheDevice after __init__."""
+    """Metaclass that moves nn.Modules to TheDevice after __init__."""
     def __call__(cls, *args, **kwargs):
         instance = super().__call__(*args, **kwargs)
-        return instance.to(_TheDevice)
+        return instance.to(_get_device())
 
 class Layer(nn.Module, metaclass=_AutoDevice):
     """Base class for custom layers with optional symbol/object axis swapping."""
@@ -114,104 +106,66 @@ class Layer(nn.Module, metaclass=_AutoDevice):
 class ErgodicLayer(Layer):
     """Layer base class that adapts its explore/exploit balance over training.
 
-    The explore/exploit tradeoff is governed by a single scalar ``alpha``:
-        - alpha = 1  (initial) => full exploration: bias=0, var=1
-        - alpha = 0  (converged) => full exploitation: bias=1, var=0
+    Each output neuron tracks **sigma** — the running variance of its gradient.
+    Sigma drives per-neuron bias and var:
+
+        var_i  = sigma_i / (sigma_i + kappa)      exploration noise
+        bias_i = 1 - var_i                         weight trust
+
+    Low sigma (consistent gradient, found a minimum) → high bias, low var.
+    High sigma (unstable gradient) → low bias, high var.
 
     Subclasses mix learned weights (scaled by ``bias``) with random noise
     (scaled by ``var``) in their forward passes:
         effective_weight = bias * W + var * noise
 
-    A per-output-column **certainty** tracker observes both forward
-    activations and gradient energy to estimate how reliable each output
-    dimension has become.  This certainty signal is available for
-    downstream scheduling but does not yet feed back into alpha
-    automatically (the commented-out ``alpha_update`` sketches that path).
+    External control via ``set_sigma(sigma)``:
+        sigma=1: responsive exploration (low kappa)
+        sigma=0: suppress exploration (high kappa, var ≈ 0)
     """
     def __init__(self, nInput, nOutput, permuteInput=False):
         super().__init__(nInput, nOutput, permuteInput)
-        # --- Explore/exploit knobs (set externally via setAlpha) ----------
-        # alpha in [0,1]: bias = 1-alpha, var = alpha.
-        self.alpha       = nn.Parameter(torch.tensor(1.0), requires_grad=False)
-        self.bias        = nn.Parameter(torch.tensor(0.0), requires_grad=False)
-        # var has requires_grad=True so gradient energy can be sensed
-        self.var         = nn.Parameter(torch.tensor(1.0), requires_grad=True)
+        # --- Per-neuron explore/exploit (driven by sigma) -----------------
+        self.register_buffer('bias', torch.ones(nOutput))
+        self.register_buffer('var', torch.zeros(nOutput))
 
-        # --- Buffers for the (disabled) per-layer Adam alpha update -------
-        self.register_buffer('v', torch.tensor(0.0))             # EMA of squared gradient on var
-        self.register_buffer('t_step', torch.tensor(0))          # step counter for bias correction
+        # --- Per-neuron sigma: running gradient variance ------------------
+        self.register_buffer('sigma', torch.zeros(nOutput))
+        self.register_buffer('sigma_mean', torch.zeros(nOutput))
+        self.register_buffer('sigma_step', torch.tensor(0))
+        self.sigma_beta = 0.99
+        self.sigma_kappa = 0.01
 
-        # --- Per-output certainty tracking --------------------------------
-        # certainty[j] in [0,1]: how reliable output column j is.
-        self.register_buffer('certainty', torch.ones(nOutput))
-        self.register_buffer('certainty_v', torch.zeros(nOutput))            # gradient energy EMA
-        self.register_buffer('certainty_forward_ema', torch.zeros(nOutput))  # forward activation EMA
-        self.register_buffer('certainty_step', torch.tensor(0))
-        self.register_buffer('certainty_forward_step', torch.tensor(0))
-        self.beta = 0.999                       # EMA decay for (disabled) alpha_update
-        self.certainty_beta = 0.99              # EMA decay for gradient certainty
-        self.certainty_forward_beta = 0.9       # EMA decay for forward certainty
-        self.certainty_scale = 1.0              # scaling inside gradient certainty formula
-        self.certainty_forward_weight = 0.5     # blending weight: forward vs gradient certainty
-        self.certainty_gradient_weight = 0.5
         self.dropoutRate = 0.0
+        # Initialize in exploration-ready mode
+        self.set_sigma(1.0)
 
     def getParameters(self):
-        """Return learnable params, excluding ``var`` (which is only sensed, not optimized)."""
-        params = [p for n, p in self.named_parameters() if n != "var"]
-        return params
-    def setAlpha(self, alpha):
-        """Set the explore/exploit balance.  alpha 1->0 = explore->exploit."""
-        with torch.no_grad():
-            self.alpha.fill_(alpha)
-            self.bias.fill_(1.0 - alpha)
-            self.var.fill_(alpha)
-    # def local_tradeoff(self):
-    #     # High-certainty outputs lean toward bias; uncertain outputs keep more
-    #     # variance so the layer continues to explore alternatives.
-    #     certainty = self.certainty.to(device=self.bias.device, dtype=self.bias.dtype)
-    #     local_bias = self.bias * certainty
-    #     local_var = self.var * torch.ones_like(certainty) + self.bias * (1.0 - certainty)
-    #     return local_bias, local_var.clamp(0.0, 1.0)
-    @torch.no_grad()
-    def reduce_certainty_signal(self, signal):
-        """Collapse a (possibly batched) signal to a per-output-column scalar in [0,1]."""
-        if signal is None:
-            return None
-        signal = signal.detach()
-        if signal.ndim == 0 or signal.shape[-1] != self.nOutput:
-            return None
-        signal = signal.abs()
-        if signal.ndim > 1:
-            # Average over all dimensions except the last (output) axis
-            signal = signal.mean(dim=tuple(range(signal.ndim - 1)))
-        return torch.tanh(signal).clamp(0.0, 1.0)
-    @torch.no_grad()
-    def observe_forward_certainty(self, signal):
-        """Feed a forward-pass activation into the certainty EMA.  Called at end of forward()."""
-        signal = self.reduce_certainty_signal(signal)
-        if signal is None:
-            return
-        self.certainty_forward_ema.mul_(self.certainty_forward_beta).add_((1 - self.certainty_forward_beta) * signal)
-        self.certainty_forward_step += 1
-    @torch.no_grad()
-    def forward_certainty(self):
-        """Return bias-corrected forward certainty EMA, or None if no observations yet."""
-        if self.certainty_forward_step.item() == 0:
-            return None
-        forward = self.certainty_forward_ema / (1 - self.certainty_forward_beta ** self.certainty_forward_step.item())
-        return forward.clamp(0.0, 1.0)
-    @torch.no_grad()
-    def certainty_gradient_energy(self):
-        """Sum squared-gradient energy across learnable params that share the output axis.
+        """Return learnable params (var/bias are buffers, not parameters)."""
+        return list(self.parameters())
 
-        Skips alpha/bias/var and noise params since those are not true learned weights.
+    def set_sigma(self, sigma):
+        """Control exploration meta-parameters.
+
+        sigma=1: encourage exploration (low kappa, responsive to gradient variance)
+        sigma=0: suppress exploration (high kappa, var ≈ 0)
+        """
+        if sigma == 0:
+            self.sigma_kappa = 1e6
+        else:
+            self.sigma_kappa = 0.01 / sigma
+            self.sigma_beta = 0.99
+
+    @torch.no_grad()
+    def observe_sigma(self):
+        """Track per-neuron gradient variance via Welford's algorithm.
+
+        Aggregates gradient energy per output neuron from all weight parameters,
+        then updates the running mean and variance of that gradient signal.
         """
         grad_energy = None
         for name, param in self.named_parameters():
             if param.grad is None or not param.requires_grad:
-                continue
-            if name in {"alpha", "bias", "var"}:
                 continue
             if "noise" in name.lower():
                 continue
@@ -221,73 +175,28 @@ class ErgodicLayer(Layer):
             if energy.ndim > 1:
                 energy = energy.mean(dim=tuple(range(energy.ndim - 1)))
             grad_energy = energy if grad_energy is None else grad_energy + energy
-        return grad_energy
-    @torch.no_grad()
-    def gradient_certainty(self):
-        """Compute per-output certainty from gradient energy: low energy => high certainty.
-
-        Uses the Adam-style formula: certainty = 1 / (1 + scale * sqrt(v_hat)).
-        """
-        grad_energy = self.certainty_gradient_energy()
         if grad_energy is None:
-            return None
-        self.certainty_v.mul_(self.certainty_beta).add_((1 - self.certainty_beta) * grad_energy)
-        self.certainty_step += 1
-        v_hat = self.certainty_v / (1 - self.certainty_beta ** self.certainty_step.item())
-        certainty = 1.0 / (1.0 + self.certainty_scale * torch.sqrt(v_hat + epsilon))
-        return certainty.clamp(0.0, 1.0)
+            return
+        self.sigma_step += 1
+        beta = self.sigma_beta
+        delta = grad_energy - self.sigma_mean
+        self.sigma_mean.add_((1 - beta) * delta)
+        self.sigma.mul_(beta).add_((1 - beta) * delta * (grad_energy - self.sigma_mean))
+
     @torch.no_grad()
-    def combine_certainty_sources(self, forward_certainty=None, gradient_certainty=None):
-        """Weighted average of forward and gradient certainty signals."""
-        combined = None
-        total_weight = 0.0
-        if forward_certainty is not None:
-            combined = self.certainty_forward_weight * forward_certainty
-            total_weight += self.certainty_forward_weight
-        if gradient_certainty is not None:
-            term = self.certainty_gradient_weight * gradient_certainty
-            combined = term if combined is None else combined + term
-            total_weight += self.certainty_gradient_weight
-        if combined is None or total_weight == 0:
-            return None
-        return (combined / total_weight).clamp(0.0, 1.0)
-    @torch.no_grad()
-    def certainty_update(self):
-        certainty = self.combine_certainty_sources(
-            forward_certainty=self.forward_certainty(),
-            gradient_certainty=self.gradient_certainty(),
-        )
-        if certainty is not None:
-            # Certainty is tracked per output column so later passes can damp
-            # exploration only where the layer has become reliable.
-            self.certainty.copy_(certainty)
-    # alpha_update: locally tuning alpha per-layer from gradient energy
-    # could substitute for global calls to setAlpha().
-    # @torch.no_grad()
-    # def alpha_update(self):
-    #     if self.var.grad is None:
-    #         return
-    #     grad = self.var.grad.item()
-    #     # Modified Adam: EMA of gradient energy (second moment only)
-    #     self.v = self.beta * self.v + (1 - self.beta) * (grad ** 2)
-    #     self.t_step += 1
-    #     # Bias correction (same as Adam)
-    #     v_hat = self.v / (1 - self.beta ** self.t_step)
-    #     # Alpha = sensor output: high gradient energy → low alpha (explore)
-    #     self.alpha.fill_(1.0 / (1.0 + self.global_temp * v_hat.sqrt()))
-    #     # Derive bias and var from alpha
-    #     alpha = self.alpha.item()
-    #     if random.random() < self.dropoutRate:
-    #         # Occasional bias dropout forces another exploration step even when
-    #         # the layer has converged toward exploitation.
-    #         self.bias.fill_(0.0)
-    #     else:
-    #         self.bias.fill_(alpha)
-    #     self.var.fill_(1.0 - alpha)
-    #     self.var.grad.zero_()
+    def sigma_to_ergodic(self):
+        """Update per-neuron bias and var from sigma (gradient variance)."""
+        if self.sigma_step.item() == 0:
+            return
+        # Bias-corrected sigma estimate
+        s = self.sigma / (1 - self.sigma_beta ** self.sigma_step.item())
+        s = s.clamp(min=0)
+        self.var.copy_((s / (s + self.sigma_kappa)).clamp(0, 1))
+        self.bias.copy_(1.0 - self.var)
+
     def paramUpdate(self):
-        self.certainty_update()
-        # self.alpha_update()
+        self.observe_sigma()
+        self.sigma_to_ergodic()
 
 class LinearLayer(Layer):
     """Standard linear (affine) layer with ergodic noise injection.
@@ -669,33 +578,51 @@ class InvertibleLinearLayer(Layer):
         self._cached_U = None
         self._cached_V = None
         return W_inv
-    def forward(self, x, bias=1.0, temp=0.0):
+    def forward(self, x, bias=1.0, var=0.0):
         if self.stable:
             self.Sigma.stabilize()
-        if self.naive:
+        if isinstance(bias, torch.Tensor) or isinstance(var, torch.Tensor):
+            # Per-neuron bias/var: materialize W, apply externally
+            W = self.compute_W()
+            if has_signal(var):
+                self.resample_naive_noise()
+                W_eff = bias * W + var * self.noise
+            else:
+                W_eff = bias * W
+            y = x @ W_eff
+        elif self.naive:
             self.resample_naive_noise()
-            W = bias * self.compute_W() + temp * self.noise
-            # Naive forward: y = x @ W
+            W = bias * self.compute_W() + var * self.noise
             y = x @ W
         else:
             # Non-naive branch: apply U, then Σ, then Vᵀ.
             xShape = list(x.shape)
             xShape[-1] = self.nOutput
             x = x.reshape(-1, self.nInput)
-            x1 = self.U.forward(x, bias, temp)  # shape: (batch, nInput)
-            x2 = self.Sigma.forward(x1, bias, temp)  # shape: (batch, nOutput)
-            y = self.V.forward(x2, bias, temp)
+            x1 = self.U.forward(x, bias, var)  # shape: (batch, nInput)
+            x2 = self.Sigma.forward(x1, bias, var)  # shape: (batch, nOutput)
+            y = self.V.forward(x2, bias, var)
             y = y.reshape(xShape)
         if self.hasBias:
             self.resample_bias_noise()
-            y += bias * self.bias + temp * self.biasNoise
+            y += bias * self.bias + var * self.biasNoise
         return y
-    def reverse(self, y, bias=1.0, temp=0.0):
+
+    def reverse(self, y, bias=1.0, var=0.0):
         if self.hasBias:
-            y -= bias * self.bias + temp * self.biasNoise
-        if self.naive:
-            W_inv = bias * self.compute_Winverse() + temp * self.noise.T
-            # Naive reverse: x = y @ W_inv
+            y -= bias * self.bias + var * self.biasNoise
+        if isinstance(bias, torch.Tensor) or isinstance(var, torch.Tensor):
+            # Per-neuron bias/var: materialize W_inv, apply externally
+            W_inv = self.compute_Winverse()
+            b = bias.unsqueeze(-1) if isinstance(bias, torch.Tensor) else bias
+            v = var.unsqueeze(-1) if isinstance(var, torch.Tensor) else var
+            if has_signal(var):
+                W_inv_eff = b * W_inv + v * self.noise.T
+            else:
+                W_inv_eff = b * W_inv
+            x = y @ W_inv_eff
+        elif self.naive:
+            W_inv = bias * self.compute_Winverse() + var * self.noise.T
             x = y @ W_inv
             self.resample_naive_noise()
         else:
@@ -703,9 +630,9 @@ class InvertibleLinearLayer(Layer):
             yShape[-1] = self.nInput
             y = y.reshape(-1, self.nOutput)
             # Non-naive reverse: undo Vᵀ, then Σ, then U.
-            x2 = self.V.reverse(y, bias, temp)
-            x1 = self.Sigma.reverse(x2, bias, temp)  # shape: (batch, nInput)
-            x = self.U.reverse(x1, bias, temp)  # shape: (batch, nInput)
+            x2 = self.V.reverse(y, bias, var)
+            x1 = self.Sigma.reverse(x2, bias, var)  # shape: (batch, nInput)
+            x = self.U.reverse(x1, bias, var)  # shape: (batch, nInput)
             x = x.reshape(yShape)
         if self.hasBias:
             self.resample_bias_noise()
@@ -835,9 +762,9 @@ class SigmaLayer(ErgodicLayer):
     """Additive (summation) layer: y = tanh(W @ x + b).
 
     When ``ergodic=True``, the layer participates in the explore/exploit
-    schedule: during training, bias and temp are derived from setAlpha().
+    schedule: during training, bias and var are driven by per-neuron sigma.
     When ``ergodic=False`` (default), the layer always uses deterministic
-    weights (bias=1, temp=0), ignoring setAlpha entirely.
+    weights (bias=1, var=0).
     At eval time, both modes use deterministic weights.
     """
     def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False):
@@ -848,19 +775,14 @@ class SigmaLayer(ErgodicLayer):
         self.ergodic     = ergodic
 
     def forward(self, x):
-        # ergodic=False or eval mode => deterministic pass (no noise)
-        if not self.ergodic:
-            bias, temp = 1.0, 0.0
-        elif not self.training:
-            bias, temp = 1.0, 0.0
-        else:
-            bias, temp = self.bias, self.var
         x = self.permute(x)
-        y = self.layer.forward(x, bias, temp)   # (batch_size, output_dim)
+        if self.ergodic and self.training:
+            y = self.layer.forward(x, self.bias, self.var)
+        else:
+            y = self.layer.forward(x)
         if self.saturate:
             self.activation = torch.tanh(y)
             y = self.activation.clone()
-        self.observe_forward_certainty(y)
         y = self.unpermute(y)
         return y
 
@@ -870,7 +792,7 @@ class SigmaLayer(ErgodicLayer):
         layer = SigmaLayer(nInput=nInput, nOutput=nOutput)
 
         x = torch.randn((2, 5, nInput))
-        layer.setAlpha(0.001)
+        layer.set_sigma(0.999)
 
         criterion = nn.MSELoss()  # Mean Squared Error Loss
         optimizer = optim.Adam(layer.getParameters(), lr=0.01)  # Adam Optimizer
@@ -896,18 +818,15 @@ class InvertibleSigmaLayer(SigmaLayer):
     def layer_tradeoff(self):
         return self.bias, self.var
     def reverse(self, y):
-        if not self.ergodic:
-            bias, temp = 1.0, 0.0
-        elif not self.training:
-            bias, temp = 1.0, 0.0
-        else:
-            bias, temp = self.bias, self.var
         y  = self.permute(y)
         y = y.squeeze(0)
         if self.saturate:
             self.activation = torch.atanh(y) # this can be faster if we keep the tanh activation
             y = self.activation.clone()
-        x  = self.layer.reverse(y, bias, temp)  # (batch_size, output_dim)
+        if self.ergodic and self.training:
+            x = self.layer.reverse(y, self.bias, self.var)
+        else:
+            x = self.layer.reverse(y)
         x = self.unpermute(x)
         return x
 
@@ -919,7 +838,7 @@ class InvertibleSigmaLayer(SigmaLayer):
         layer   = InvertibleSigmaLayer(nInput=nInput, nOutput=nOutput, permuteInput=permute, naive=False)
 
         x = torch.randn((2, 5, nInput))
-        layer.setAlpha(0.000000001)
+        layer.set_sigma(0.0)
         y = layer.forward(x)
         y_inv = layer.reverse(y)
 
@@ -930,7 +849,7 @@ class InvertibleSigmaLayer(SigmaLayer):
 
         layer = InvertibleSigmaLayer(nInput=nInput, nOutput=nOutput, permuteInput=False, naive=True)
         x = torch.randn((4, 8, nInput))
-        layer.setAlpha(0.00000001)
+        layer.set_sigma(0.0)
         y = layer.forward(x)
         assert y.shape == (4,8,nOutput), "Incorrect Size"
         y_inv = layer.reverse(y)
@@ -941,7 +860,7 @@ class PiLayer(ErgodicLayer):
     Whereas SigmaLayer sums weighted inputs, PiLayer takes their product,
     giving it a fundamentally different inductive bias (conjunction-like).
     The ``ergodic`` flag works identically to SigmaLayer: when False,
-    the layer always uses deterministic weights regardless of setAlpha().
+    the layer always uses deterministic weights regardless of set_sigma().
     """
     def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
@@ -960,50 +879,47 @@ class PiLayer(ErgodicLayer):
         self.biasWeightNoise = sample_noise(self.weights, shape=(1, self.nInput, self.nOutput))
 
     def forward(self, x):
-        # ergodic=False or eval mode => deterministic pass (no noise)
-        if not self.ergodic:
-            bias, temp = 1.0, 0.0
-        elif not self.training:
-            bias, temp = 1.0, 0.0
-        else:
-            bias, temp = self.bias, self.var
         x = self.permute(x)
+        if self.ergodic and self.training:
+            bias, var = self.bias, self.var
+            self.resample_noise()
+            w = bias * self.weights + var * self.noise
+        else:
+            w = self.weights
+
+        ndim = len(x.shape)
+        assert self.nInput == x.shape[-1], "Incorrect shape in piLayer"
         # Implements y_j = prod_i (1 + tanh(w_ji * x_i + b_j)).
         # Log-domain: exp(sum(log(term))) avoids numerical overflow when
         # nInput is large.  Safe because saturate=True guarantees term > 0.
-        if has_signal(temp):
-            self.resample_noise()
-        w = bias * self.weights + temp * self.noise
-        ndim = len(x.shape)
-        assert self.nInput == x.shape[-1], "Incorrect shape in piLayer"
-        # x: shape (N, J, K), w: shape (K, L)
-        # Expand x to (N, J, K, 1) and w to (1, 1, K, L) so they can broadcast together:
         if ndim == 2:
             WX = x.unsqueeze(-1) * w.unsqueeze(0)
             if self.hasBiasWeight:
-                WX += (bias * self.biasWeight + temp * self.biasWeightNoise)
+                if self.ergodic and self.training:
+                    WX += (bias * self.biasWeight + var * self.biasWeightNoise)
+                else:
+                    WX += self.biasWeight
             if self.saturate:
-                term = 1 + torch.tanh(WX)  # shape (N, J, K)
+                term = 1 + torch.tanh(WX)
             else:
                 term = 1 + WX
             output = torch.exp(torch.sum(torch.log(term.clamp(min=1e-8)), dim=1))  # (N, L)
         else:
-            # x: shape (N, J, K), w: shape (K, L)
-            # Expand x to (N, J, K, 1) and w to (1, 1, K, L) so they can broadcast together:
             x2 = x.unsqueeze(-1)
             w2 = w.unsqueeze(0)
             WX = x2 * w2
             if self.hasBiasWeight:
-                WX += (bias*self.biasWeight.unsqueeze(1) + temp*self.biasWeightNoise.unsqueeze(1))
+                if self.ergodic and self.training:
+                    WX += (bias*self.biasWeight.unsqueeze(1) + var*self.biasWeightNoise.unsqueeze(1))
+                else:
+                    WX += self.biasWeight.unsqueeze(1)
             if self.saturate:
-                term = 1 + torch.tanh(WX)  # shape (N, J, K)
+                term = 1 + torch.tanh(WX)
                 if self.useEpsilon:
                     term += epsilon
             else:
-                term  = 1 + WX
-            # Compute the product along the J dimension:
+                term = 1 + WX
             output = torch.exp(torch.sum(torch.log(term.clamp(min=1e-8)), dim=2))  # (N, K, L)
-        self.observe_forward_certainty(output)
         output = self.unpermute(output)
         return output
 
@@ -1014,7 +930,7 @@ class PiLayer(ErgodicLayer):
 
         # x must be positive
         x = torch.randn((nBatch, nInput, 6))
-        layer.setAlpha(0.001)
+        layer.set_sigma(0.999)
         y = layer(x)
         assert(y.shape==(nBatch, nOutput, 6))
 
@@ -1035,8 +951,8 @@ class PiLayer(ErgodicLayer):
         criterion = nn.MSELoss()  # Mean Squared Error Loss
         optimizer = optim.Adam(chain(pi.parameters(), sigma.parameters()), lr=0.01)  # Adam Optimizer
         epochs = 1000
-        sigma.setAlpha(0.0001)
-        pi.setAlpha(0.0001)
+        sigma.set_sigma(0.9999)
+        pi.set_sigma(0.9999)
         for epoch in range(epochs):
             optimizer.zero_grad()  # Clear gradients
 
@@ -1081,10 +997,11 @@ class InvertiblePiLayer(ErgodicLayer):
             self.W      = nn.Parameter(torch.randn(nInput, nOutput))
             self.register_buffer('noise', torch.randn(nInput, nOutput))
         else:
-            # Non-naive: SVD-factored weights with internal noise at each
-            # component (U, Sigma, V).  No external noise matrix needed.
+            # Non-naive: SVD-factored weights.  Ergodic noise applied to
+            # the materialized W via ergodic_noise buffer.
             # hasBias=False because InvertiblePiLayer handles its own bias.
             self.layer  = InvertibleLinearLayer(nInput, nOutput, naive=False, hasBias=False)
+            self.register_buffer('ergodic_noise', torch.randn(nInput, nOutput))
         self.biasWeight       = nn.Parameter(torch.zeros(1, 1, self.nOutput))
         self.register_buffer('biasNoise', torch.randn(1, 1, self.nOutput))
 
@@ -1092,10 +1009,7 @@ class InvertiblePiLayer(ErgodicLayer):
         if self.naive:
             self.noise = sample_noise(self.W)
         else:
-            # Non-naive: resample noise at each SVD component (U, Sigma, V)
-            self.layer.U.noise = sample_noise(self.layer.U.theta)
-            self.layer.Sigma.noise = sample_noise(self.layer.Sigma.lamda)
-            self.layer.V.noise = sample_noise(self.layer.V.theta)
+            self.ergodic_noise = sample_noise(self.ergodic_noise)
         self.biasNoise = sample_noise(self.biasWeight, shape=(1, 1, self.nOutput))
 
     def forward(self, x):
@@ -1103,29 +1017,31 @@ class InvertiblePiLayer(ErgodicLayer):
 
         Supports both 2D (batch, nInput) and 3D (batch, seq, nInput) inputs.
         """
-        if not self.ergodic:
-            bias, temp = 1.0, 0.0
-        elif not self.training:
-            bias, temp = 1.0, 0.0
-        else:
-            bias, temp = self.bias, self.var
-
-        if temp != 0:
-            self.resample_noise()
         self._input_ndim = x.ndim
         x = self.permute(x)
 
-        if not self.naive:
-            W = self.layer.compute_W(bias, temp)  # SVD components handle their own noise
+        if self.ergodic and self.training:
+            bias, var = self.bias, self.var
+            self.resample_noise()
+            if not self.naive:
+                W = bias * self.layer.compute_W() + var * self.ergodic_noise
+            else:
+                W = bias * self.W + var * self.noise
         else:
-            W  = (bias * self.W + temp * self.noise)
+            if not self.naive:
+                W = self.layer.compute_W()
+            else:
+                W = self.W
 
         ndim = x.ndim
         if ndim == 2:
             # 2D flattened: x is (batch, nInput), W is (nInput, nOutput)
             WX = x.unsqueeze(-1) * W.unsqueeze(0)       # (batch, nInput, nOutput)
             if self.hasBias:
-                WX = WX + (bias*self.biasWeight.squeeze(0) + temp*self.biasNoise.squeeze(0))
+                if self.ergodic and self.training:
+                    WX = WX + (bias*self.biasWeight.squeeze(0) + var*self.biasNoise.squeeze(0))
+                else:
+                    WX = WX + self.biasWeight.squeeze(0)
             sWX = torch.tanh(WX)
             one_minus = 1 - sWX
             one_plus  = 1 + sWX
@@ -1143,7 +1059,10 @@ class InvertiblePiLayer(ErgodicLayer):
             # 3D: x is (batch, seq, nInput), W is (nInput, nOutput)
             WX = x.unsqueeze(-1) * W.unsqueeze(0).unsqueeze(0)  # (batch, seq, nInput, nOutput)
             if self.hasBias:
-                WX = WX + (bias*self.biasWeight.unsqueeze(1) + temp*self.biasNoise.unsqueeze(1))
+                if self.ergodic and self.training:
+                    WX = WX + (bias*self.biasWeight.unsqueeze(1) + var*self.biasNoise.unsqueeze(1))
+                else:
+                    WX = WX + self.biasWeight.unsqueeze(1)
             sWX = torch.tanh(WX)
             one_minus = 1 - sWX
             one_plus  = 1 + sWX
@@ -1167,50 +1086,54 @@ class InvertiblePiLayer(ErgodicLayer):
 
         Supports both 2D (batch, 2*nOutput) and 3D (batch, 2*seq, nOutput) inputs.
         """
-        if not self.ergodic:
-            bias, temp = 1.0, 0.0
-        elif not self.training:
-            bias, temp = 1.0, 0.0
-        else:
-            bias, temp = self.bias, self.var
-
         yz = self.permute(yz)
         ndim = yz.ndim
 
         if ndim == 2:
-            # 2D flattened: yz is (batch, 2*nOutput) containing (log_y, log_z)
             n2 = yz.shape[1] // 2
             uninterleaved = torch.unflatten(yz, 1, (2, n2))  # (batch, 2, nOutput)
             log_y = uninterleaved[:, 0, :]  # (batch, nOutput)
             log_z = uninterleaved[:, 1, :]  # (batch, nOutput)
             gamma = 0.5 * (log_z - log_y)
             if self.hasBias:
-                # Forward adds bias to each of nInput terms before summing,
-                # so we must subtract nInput copies to recover x @ W.
-                bias_corr = bias*self.biasWeight.squeeze(0) + temp*self.biasNoise.squeeze(0)
+                if self.ergodic and self.training:
+                    bias_corr = self.bias*self.biasWeight.squeeze(0) + self.var*self.biasNoise.squeeze(0)
+                else:
+                    bias_corr = self.biasWeight.squeeze(0)
                 gamma = gamma - self.nInput * torch.sum(bias_corr, dim=0)
         else:
-            # 3D: yz is (batch, 2*seq, nOutput) containing (log_y, log_z)
             n2 = yz.shape[1] // 2
             uninterleaved = torch.unflatten(yz, 1, (2, n2))  # (batch, 2, seq, nOutput)
             log_y = uninterleaved[:, 0, :, :]  # (batch, seq, nOutput)
             log_z = uninterleaved[:, 1, :, :]  # (batch, seq, nOutput)
             gamma = 0.5 * (log_z - log_y)
             if self.hasBias:
-                # Same nInput scaling as 2D case.
-                gamma = gamma - self.nInput * torch.sum(bias*self.biasWeight + temp*self.biasNoise, dim=1).unsqueeze(1)
+                if self.ergodic and self.training:
+                    gamma = gamma - self.nInput * torch.sum(self.bias*self.biasWeight + self.var*self.biasNoise, dim=1).unsqueeze(1)
+                else:
+                    gamma = gamma - self.nInput * torch.sum(self.biasWeight, dim=1).unsqueeze(1)
 
-        if not self.naive:
-            W_pinv = self.layer.compute_Winverse(bias, temp)  # SVD-based, internal noise
-            x = gamma @ W_pinv
-        else:
-            W_eff = self.W + temp*self.noise
-            W_pinv = torch.linalg.pinv(W_eff)  # (nOutput, nInput)
-            x = gamma @ W_pinv
-        x = self.unpermute(x)
-
-        if temp != 0:
+        if self.ergodic and self.training:
+            bias, var = self.bias, self.var
+            if not self.naive:
+                W_pinv = self.layer.compute_Winverse()
+                b = bias.unsqueeze(-1) if isinstance(bias, torch.Tensor) else bias
+                v = var.unsqueeze(-1) if isinstance(var, torch.Tensor) else var
+                W_pinv = b * W_pinv + v * self.ergodic_noise.T
+                x = gamma @ W_pinv
+            else:
+                W_eff = bias * self.W + var * self.noise
+                W_pinv = torch.linalg.pinv(W_eff)
+                x = gamma @ W_pinv
             self.resample_noise()
+        else:
+            if not self.naive:
+                W_pinv = self.layer.compute_Winverse()
+                x = gamma @ W_pinv
+            else:
+                W_pinv = torch.linalg.pinv(self.W)
+                x = gamma @ W_pinv
+        x = self.unpermute(x)
         return x
 
     @staticmethod
@@ -1222,7 +1145,7 @@ class InvertiblePiLayer(ErgodicLayer):
 
         layer = InvertiblePiLayer(nInput=nInput, nOutput=nOutput, naive=True, hasBias=True, permuteInput=True)
         x = torch.randn(nBatch, nInput, nFeatures)
-        layer.setAlpha(0.00000001)
+        layer.set_sigma(0.0)
         yz = layer.forward(x)
         print("Forward output shape:", yz.shape)  # Should be (batch, out_features, 2)
         x_recon = layer.reverse(yz)
@@ -1813,7 +1736,7 @@ class Mem:
                 sz = (0, 0)
             else:
                 sz = self.output.shape
-        self.output = torch.zeros(sz)
+        self.output = torch.zeros(sz, device=_get_device())
         self.nTrials = 0
     def removeRC(self, r=None, c=None):
         """
@@ -1913,7 +1836,7 @@ class StateMem(Mem):
             else:
                 sz = self.output.shape
         super().reset(sz)
-        self.state = torch.zeros(sz)
+        self.state = torch.zeros(sz, device=_get_device())
 
     def delta(self, *args):
         # Just call the base class delta.

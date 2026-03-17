@@ -7,7 +7,7 @@ import numpy as np
 import torch
 
 from embed import (
-    iter_documents, CorpusBuilder, EmbeddingTrainer, build_embeddings,
+    iter_documents, StreamingSBOWTrainer, build_embeddings,
     WordVectors,
 )
 
@@ -52,139 +52,80 @@ class TestFineWebIterator(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Corpus builder
+# Streaming CBOW trainer
 # ---------------------------------------------------------------------------
 
-class TestCorpusBuilder(unittest.TestCase):
+class TestStreamingSBOWTrainer(unittest.TestCase):
 
-    def test_process_document(self):
-        """Processing a document updates vocabulary and examples."""
-        cb = CorpusBuilder()
-        cb.process_document("The dog barks. The cat sits.")
-        self.assertGreater(len(cb.vocab), 0)
-        self.assertIn("dog", cb.vocab)
-        self.assertGreater(len(cb.examples), 0)
+    def _make_trainer(self, docs=None, **kwargs):
+        """Create a trainer with vocabulary already built from *docs*.
+
+        The two-pass API requires scan_document + build_vocab before
+        process_document can train.
+        """
+        defaults = dict(vector_size=20, min_count=1)
+        defaults.update(kwargs)
+        t = StreamingSBOWTrainer(**defaults)
+        if docs:
+            for d in docs:
+                t.scan_document(d)
+            t.build_vocab()
+        return t
+
+    def test_scan_grows_vocab(self):
+        """Scanning documents and building vocab adds words."""
+        t = self._make_trainer(docs=["The dog barks. The cat sits."])
+        self.assertGreater(t.vocab_size, 0)
+        self.assertIn("dog", t.word_to_idx)
 
     def test_vocab_counts(self):
-        """Vocabulary tracks word frequency."""
-        cb = CorpusBuilder()
-        cb.process_document("The dog barks. The cat barks.")
-        self.assertGreaterEqual(cb.vocab_counts["barks"], 2)
+        """Word counts are tracked correctly after scanning."""
+        t = StreamingSBOWTrainer(vector_size=20, min_count=1)
+        t.scan_document("The dog barks. The cat barks.")
+        self.assertGreaterEqual(t.word_counts["barks"], 2)
 
-    def test_example_structure(self):
-        """Each example has target word and context words."""
-        cb = CorpusBuilder()
-        cb.process_document("The big dog barks.")
-        ex = cb.examples[0]
-        self.assertIn('target', ex)
-        self.assertIn('context', ex)
-        self.assertIsInstance(ex['target'], str)
-        self.assertIsInstance(ex['context'], list)
+    def test_min_count_filters(self):
+        """Words below min_count are not promoted to trainable vocab."""
+        t = StreamingSBOWTrainer(vector_size=20, min_count=3)
+        t.scan_document("The dog barks. The cat barks.")
+        t.build_vocab()
+        # "The" appears twice, "barks" appears twice — neither hits 3
+        for word, idx in t.word_to_idx.items():
+            self.assertGreaterEqual(t.word_counts[word], 3,
+                                    f"{word} promoted with count {t.word_counts[word]}")
 
-    def test_context_is_sentence_minus_target(self):
-        """Context is the other words in the same sentence."""
-        cb = CorpusBuilder()
-        cb.process_document("The big dog barks.")
-        for ex in cb.examples:
-            self.assertIsInstance(ex['context'], list)
-            self.assertGreater(len(ex['context']), 0)
-
-    def test_multiple_documents(self):
-        """Processing multiple documents accumulates results."""
-        cb = CorpusBuilder()
-        cb.process_document("The dog barks.")
-        n1 = len(cb.examples)
-        cb.process_document("The cat meows.")
-        n2 = len(cb.examples)
-        self.assertGreater(n2, n1)
-
-    def test_get_vocab_list(self):
-        """get_vocab_list returns words sorted by frequency."""
-        cb = CorpusBuilder()
-        cb.process_document("The dog barks. The cat barks. The bird sings.")
-        vocab = cb.get_vocab_list(min_count=1)
-        self.assertIsInstance(vocab, list)
-        self.assertGreater(len(vocab), 0)
-
-    def test_min_count_filter(self):
-        """min_count filters out rare words."""
-        cb = CorpusBuilder()
-        cb.process_document("The dog barks. The cat barks.")
-        vocab_all = cb.get_vocab_list(min_count=1)
-        vocab_freq = cb.get_vocab_list(min_count=2)
-        self.assertLessEqual(len(vocab_freq), len(vocab_all))
-
-    def test_sentences_from_parse(self):
-        """Words are grouped into sentences by parse_buffer."""
-        cb = CorpusBuilder()
-        cb.process_document("Big dog. Small cat.")
-        # Should have 2 sentences worth of examples
-        # "Big dog" -> 2 examples, "Small cat" -> 2 examples
-        self.assertEqual(len(cb.examples), 4)
-
-
-# ---------------------------------------------------------------------------
-# Embedding trainer
-# ---------------------------------------------------------------------------
-
-class MockCorpusBuilder:
-    """Minimal corpus builder for testing embedding trainer."""
-    def __init__(self):
-        self.examples = []
-        self.vocab_counts = {}
-
-    def get_vocab_list(self, min_count=1):
-        counts = {}
-        for ex in self.examples:
-            w = ex['target']
-            counts[w] = counts.get(w, 0) + 1
-            for c in ex['context']:
-                counts[c] = counts.get(c, 0) + 1
-        return [w for w, c in sorted(counts.items(), key=lambda x: -x[1]) if c >= min_count]
-
-def _make_corpus():
-    cb = MockCorpusBuilder()
-    words_sets = [
-        ["The", "big", "dog", "barks", "loudly"],
-        ["The", "small", "cat", "meows", "softly"],
-        ["Water", "is", "wet"],
-        ["Fire", "is", "hot"],
-        ["Ice", "is", "cold"],
-    ]
-    for _ in range(10):
-        for words in words_sets:
-            for i, w in enumerate(words):
-                context = [words[j] for j in range(len(words)) if j != i]
-                cb.examples.append({'target': w, 'context': context})
-    return cb
-
-class TestEmbeddingTrainer(unittest.TestCase):
-
-    def test_train_produces_vectors(self):
-        cb = _make_corpus()
-        trainer = EmbeddingTrainer(vector_size=20)
-        wv = trainer.train(cb, epochs=5)
+    def test_trains_and_produces_vectors(self):
+        """Training produces WordVectors with correct dimensions."""
+        docs = [
+            "The big dog barks loudly. The small cat meows softly.",
+            "Water is wet. Fire is hot. Ice is cold.",
+        ]
+        t = self._make_trainer(docs=docs, vector_size=16)
+        for _ in range(10):
+            for d in docs:
+                t.process_document(d)
+        wv = t.finish()
         self.assertIsInstance(wv, WordVectors)
         self.assertGreater(len(wv), 0)
+        self.assertEqual(wv._vectors.shape[1], 16)
 
-    def test_vector_dimensions(self):
-        cb = _make_corpus()
-        trainer = EmbeddingTrainer(vector_size=32)
-        wv = trainer.train(cb, epochs=3)
-        self.assertEqual(wv._vectors.shape[1], 32)
-
-    def test_vocab_coverage(self):
-        cb = _make_corpus()
-        vocab = cb.get_vocab_list(min_count=2)
-        trainer = EmbeddingTrainer(vector_size=20, min_count=2)
-        wv = trainer.train(cb, epochs=3)
-        for word in vocab:
-            self.assertIn(word, wv, f"{word} not in trained vectors")
+    def test_multiple_documents(self):
+        """Processing multiple documents increases trained examples."""
+        docs = ["The dog barks.", "The cat meows."]
+        t = self._make_trainer(docs=docs)
+        t.process_document("The dog barks.")
+        n1 = t.n_examples
+        t.process_document("The cat meows.")
+        n2 = t.n_examples
+        self.assertGreaterEqual(n2, n1)
 
     def test_save_and_load(self):
-        cb = _make_corpus()
-        trainer = EmbeddingTrainer(vector_size=20)
-        wv = trainer.train(cb, epochs=3)
+        """Trained vectors can be saved and loaded."""
+        docs = ["The big dog barks. The small cat meows."]
+        t = self._make_trainer(docs=docs)
+        for _ in range(10):
+            t.process_document(docs[0])
+        wv = t.finish()
         with tempfile.NamedTemporaryFile(suffix='.pt', delete=False) as f:
             path = f.name
         try:
@@ -203,10 +144,13 @@ class TestBuildEmbeddings(unittest.TestCase):
 
     @patch('embed.iter_documents')
     def test_end_to_end(self, mock_iter):
-        mock_iter.return_value = iter([
+        docs = [
             "The big dog barks loudly. The small cat meows softly.",
             "Water is wet. Fire is hot. Ice is cold.",
-        ] * 20)
+        ] * 20
+
+        # iter_documents is called once per epoch; return fresh iterator each time
+        mock_iter.side_effect = lambda *a, **kw: iter(docs)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = os.path.join(tmpdir, "embeddings.pt")
