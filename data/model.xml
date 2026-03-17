@@ -3,21 +3,25 @@
   <!-- BasicModel configuration -->
   <architecture>
     <conceptualOrder>2</conceptualOrder>
-    <!-- Enable reverse (reconstruction) pass -->
-    <reversible>true</reversible>
-    <!-- Training hyperparameters -->
-    <numEpochs>10</numEpochs>
-    <batchSize>10</batchSize>
-    <learningRate>0.01</learningRate>
-    <!-- Dataset: mnist | xor | tomatoes -->
-    <dataset>mnist</dataset>
+    <reconstruct>symbols</reconstruct>
     <modelType>passthrough</modelType>
-    <!-- Path to saved weights (relative to basicmodel/ root) -->
-    <weightsPath>output/weights.pt</weightsPath>
-    <!-- Auto-load weights on startup if available -->
-    <autoload>true</autoload>
-    <!-- Auto-save weights after training -->
-    <autosave>true</autosave>
+
+    <data>
+      <!-- Dataset: mnist | xor | tomatoes -->
+      <dataset>mnist</dataset>
+    </data>
+
+    <training>
+      <numEpochs>10</numEpochs>
+      <batchSize>10</batchSize>
+      <learningRate>0.01</learningRate>
+      <!-- Path to saved weights (relative to basicmodel/ root) -->
+      <weightsPath>output/weights.ckpt</weightsPath>
+      <!-- Auto-load weights on startup if available -->
+      <autoload>true</autoload>
+      <!-- Auto-save weights after training -->
+      <autosave>true</autosave>
+    </training>
   </architecture>
 
   <InputSpace>

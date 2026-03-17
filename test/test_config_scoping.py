@@ -81,13 +81,15 @@ class TestDefaultsXml(unittest.TestCase):
 
     def test_architecture_keeps_model_wide(self):
         arch = self.cfg["architecture"]
-        for key in ["reversible", "reshape", "conceptualOrder", "symbolicOrder",
-                    "ergodic", "certainty",
-                    "processSymbols",
-                    "dataset", "modelType", "numTrials", "numEpochs",
-                    "batchSize", "learningRate", "pretrained",
-                    "weightsPath", "autoload", "autosave"]:
+        for key in ["reconstruct", "reshape", "conceptualOrder", "symbolicOrder",
+                    "ergodic", "certainty", "processSymbols"]:
             self.assertIn(key, arch, f"architecture missing model-wide key '{key}'")
+        trn = arch.get("training", {})
+        for key in ["numTrials", "numEpochs", "batchSize", "learningRate",
+                    "weightsPath", "autoload", "autosave"]:
+            self.assertIn(key, trn, f"architecture.training missing key '{key}'")
+        dat = arch.get("data", {})
+        self.assertIn("dataset", dat, "architecture.data missing 'dataset'")
 
 
 import tempfile
@@ -106,11 +108,10 @@ class TestCreateFromConfig(unittest.TestCase):
         xml = self._write_xml("""<?xml version="1.0" ?>
 <model>
   <architecture>
-    <reversible>true</reversible>
+    <reconstruct>symbols</reconstruct>
     <reshape>true</reshape>
-    <dataset>xor</dataset>
-    <modelType>embedding</modelType>
-    <pretrained>false</pretrained>
+    <data><dataset>xor</dataset></data>
+    <training><modelType>embedding</modelType></training>
   </architecture>
   <InputSpace><nActive>2</nActive><nDim>1</nDim></InputSpace>
   <PerceptualSpace>

@@ -6,21 +6,29 @@
     <symbolicOrder>1</symbolicOrder>
     <ergodic>false</ergodic>
     <certainty>false</certainty>
-    <reversible>false</reversible>
     <processSymbols>false</processSymbols>
-    <dataset>xor</dataset>
     <modelType>simple</modelType>
-    <numTrials>1</numTrials>
-    <numEpochs>3</numEpochs>
-    <batchSize>10</batchSize>
-    <learningRate>0.001</learningRate>
-    <pretrained>false</pretrained>
-    <weightsPath>output/weights.pt</weightsPath>
-    <autoload>true</autoload>
-    <autosave>false</autosave>
-    <reconRatio>0.5</reconRatio>
-    <maskedPrediction>NONE</maskedPrediction>
-    <trainEmbeddings>BOTH</trainEmbeddings>
+    <maskedPrediction>none</maskedPrediction>
+    <reconstruct>none</reconstruct>
+    <maxResponseLength>4096</maxResponseLength>
+
+    <data>
+      <dataset>xor</dataset>
+      <minFrequency>0.0</minFrequency>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>3</numEpochs>
+      <batchSize>10</batchSize>
+      <learningRate>0.001</learningRate>
+      <reconRatio>0.5</reconRatio>
+      <train>both</train>
+      <weightsPath>output/weights.ckpt</weightsPath>
+      <autoload>true</autoload>
+      <autosave>false</autosave>
+      <negSamples>1024</negSamples>
+    </training>
   </architecture>
 
   <InputSpace>

@@ -6,33 +6,56 @@ Model configuration is specified in XML files (e.g. `data/XOR_exact.xml`). Defau
 
 ## `<architecture>`
 
-Core model settings.
+Core model settings. Training and data parameters are in nested sub-elements `<training>` and `<data>` (see below).
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `modelType` | string | `"simple"` | Model type. `"lm"` for language model (adjusts dimensions for sequence processing), `"simple"` for basic feedforward. |
-| `dataset` | string | `"xor"` | Dataset to load. Determines input/output data via `TheData.load()`. |
-| `pretrained` | bool | `false` | Whether to use a pretrained model (e.g. BERT embeddings). |
-| `reversible` | bool | `false` | Enable the reverse (reconstruction) pass. When true, the model trains both forward prediction and backward reconstruction. |
+| `modelType` | string | `"simple"` | Model type: `"simple"` (feedforward), `"lm"` (language model with sequence processing), `"embedding"` (CBOW/SBOW embedding trainer). |
 | `ergodic` | bool | `false` | Enable ergodic exploration mode. Layers use `W_eff = bias * W + temp * noise` where bias/temp are derived from alpha. See Architecture.md for the gradient energy sensor. |
 | `certainty` | bool | `false` | Enable per-neuron certainty tracking in ergodic layers. Allows individual neurons to transition from exploration to exploitation at different rates. |
 | `reshape` | bool | `false` | Reshape input data for sequence processing. Required for `modelType=lm`. |
-| `numEpochs` | int | `3` | Number of training epochs. |
-| `numTrials` | int | `1` | Number of independent training runs. |
-| `batchSize` | int | `10` | Mini-batch size for training. |
-| `learningRate` | float | `0.01` | Learning rate for the Adam optimizer. |
 | `conceptualOrder` | int | `1` | Order of conceptual processing. Controls how many higher-order conceptual transforms are applied. |
 | `symbolicOrder` | int | `1` | Order of symbolic processing. Controls how many higher-order symbolic transforms are applied. |
 | `processSymbols` | bool | `false` | Enable additional symbolic processing steps. |
-| `nWords` | int | `16` | Vocabulary size for tokenized inputs. |
-| `weightsPath` | string | `"output/weights.pt"` | File path for saving/loading model weights. |
-| `autoload` | bool | `true` | Automatically load weights from `weightsPath` on model creation. Set to `false` for fresh training. |
-| `autosave` | bool | `false` | Automatically save weights after training completes. |
 | `maskedPrediction` | string | `"NONE"` | Masked prediction mode: `NONE`, `MLM`, `ARLM`, `ARUS`, `RARLM`. See [Training.md](Training.md). |
-| `trainEmbeddings` | string | `"NONE"` | Embedding update mode: `NONE` (frozen), `CBOW` (SBOW only, EM separation), `ARLM` (network gradients only), `BOTH` (SBOW + network gradients). See [Training.md](Training.md). |
-| `reconRatio` | float | `0.5` | Weight of reconstruction loss in combined loss: `total = (1-r)*output + r*recon`. |
+| `reconstruct` | string | `"NONE"` | Controls the reverse (reconstruction) pass. `"NONE"` disables reconstruction entirely. `"symbols"` reconstructs from cached output symbols (most common). `"output"` runs `outputSpace.reverse()` only. `"both"` combines reversed output with reconstruction symbols. Any non-`NONE` value enables the full bidirectional training pipeline. |
+| `maxResponseLength` | int | `64` | Maximum number of characters/tokens to generate during inference. Measured in characters for uniformity with `InputSpace.nActive`. Both this value and `InputSpace.nActive` cap generation: truncation occurs when the expanded token sequence (OOV words spelled out as characters) exceeds `nActive`. |
+
+---
+
+### `<architecture><data>`
+
+Data loading and filtering settings.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `dataset` | string | `"xor"` | Dataset to load. Determines input/output data via `TheData.load()`. Common values: `"xor"`, `"mnist"`, `"text"`. |
+| `minFrequency` | float | `0.0` | Minimum word frequency ratio for vocabulary admission. Words below this threshold are held in a pending buffer until they accumulate enough occurrences. `0.0` admits all words immediately. |
+| `shardDir` | string | — | Directory containing text shards for streaming datasets (e.g. `"data/fineweb"`). |
+| `numShards` | int | `1` | Number of shards to load from `shardDir`. |
+| `maxDocs` | int | `10000` | Maximum number of documents to load per shard. |
 | `classificationMin` | float | — | Minimum threshold for classification accuracy reporting. |
 | `classificationMax` | float | — | Maximum threshold for classification accuracy reporting. |
+
+---
+
+### `<architecture><training>`
+
+Training loop and I/O settings.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `numTrials` | int | `1` | Number of independent training runs. |
+| `numEpochs` | int | `3` | Number of training epochs per trial. |
+| `batchSize` | int | `10` | Mini-batch size for training. |
+| `learningRate` | float | `0.001` | Learning rate for the Adam optimizer. |
+| `reconRatio` | float | `0.5` | Weight of reconstruction loss in combined loss: `total = (1-r)*output + r*recon`. |
+| `train` | string | `"NONE"` | Embedding update mode: `NONE` (frozen), `CBOW` (SBOW only, EM separation), `ARLM` (network gradients only), `BOTH` (SBOW + network gradients). See [Training.md](Training.md). |
+| `weightsPath` | string | `"output/BasicModel.ckpt"` | File path for saving/loading model weights checkpoint. Filename conventionally matches the XML config (e.g. `BasicModel.xml` → `output/BasicModel.ckpt`). |
+| `embeddingPath` | string | — | File path for the word vector store (`.kv` extension, gensim-compatible `KeyedVectors`). When absent, embedding training is skipped. |
+| `autoload` | bool | `true` | Automatically load weights from `weightsPath` on model creation. Set to `false` for fresh training. |
+| `autosave` | bool | `false` | Automatically save weights after training completes. |
+| `negSamples` | int | `64` | Number of negative samples per positive example for CBOW/SBOW training. Controls memory usage: `O(batch × negSamples × dim)` vs `O(batch × vocab)` for full softmax. |
 
 ---
 
@@ -42,7 +65,7 @@ The entry point that lifts raw data into the model's internal representation.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `nActive` | int | *required* | Number of active input vectors (sequence length or input dimensionality). For XOR: 2 (two binary inputs). |
+| `nActive` | int | *required* | Sequence length: maximum number of tokens per input. For XOR: 2 (two binary inputs). For text models, OOV words are spelled out as individual characters, so a single word may consume multiple slots — a short sentence with many OOV words can exceed this limit and trigger a truncation warning suggesting a lower `<minFrequency>`. |
 | `nDim` | int | `1` | Dimensionality of each input vector. Set on TheObjectEncoding via XML; not passed to the Space constructor. |
 | `nVectors` | int | = `nActive` | Codebook size (total vectors in the space). Defaults to `nActive` for InputSpace. |
 | `nWhere` | int | `0` | Number of spatial/positional dimensions appended to each vector. When > 0, enables PositionalEncoding on all objects throughout the model. |
@@ -133,18 +156,7 @@ Maps symbols to final predictions via linear layers.
 
 ---
 
-## `<weights>` (Legacy)
-
-Legacy section for weight management. Parameters have been migrated to `<architecture>` but this section is still read as fallback.
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `autoload` | bool | `true` | Fallback for `architecture/autoload`. |
-| `path` | string | `"output/weights.pt"` | Fallback for `architecture/weightsPath`. |
-
----
-
-## `<server>`
+## `<architecture><server>`
 
 HTTP server settings (used by `serve.py`).
 
@@ -152,6 +164,7 @@ HTTP server settings (used by `serve.py`).
 |-----------|------|---------|-------------|
 | `host` | string | `"127.0.0.1"` | Server bind address. |
 | `port` | int | `8001` | Server port. |
+| `timeout` | int | `120` | Request timeout in seconds. |
 
 ---
 
@@ -162,13 +175,19 @@ HTTP server settings (used by `serve.py`).
   <architecture>
     <reversible>true</reversible>
     <reshape>true</reshape>
-    <dataset>xor</dataset>
     <modelType>lm</modelType>
-    <numEpochs>1000</numEpochs>
-    <learningRate>0.01</learningRate>
     <ergodic>false</ergodic>
-    <autoload>false</autoload>
-    <autosave>false</autosave>
+
+    <data>
+      <dataset>xor</dataset>
+    </data>
+
+    <training>
+      <numEpochs>1000</numEpochs>
+      <learningRate>0.01</learningRate>
+      <autoload>false</autoload>
+      <autosave>false</autosave>
+    </training>
   </architecture>
 
   <InputSpace>
@@ -209,3 +228,54 @@ In this configuration:
 - 3 symbols are produced: 1 for output prediction, 2 for reconstruction
 - The reverse pass reconstructs the original 2 inputs from all 3 symbols
 - Ergodic mode is off; training uses standard Adam with combined forward+reverse loss
+
+---
+
+## Example: Embedding / Chatbot Configuration
+
+```xml
+<model>
+  <architecture>
+    <reversible>true</reversible>
+    <modelType>embedding</modelType>
+    <maskedPrediction>ARLM</maskedPrediction>
+
+    <data>
+      <dataset>text</dataset>
+      <shardDir>data/fineweb</shardDir>
+      <numShards>1</numShards>
+      <maxDocs>10000</maxDocs>
+      <minFrequency>0.00001</minFrequency>
+    </data>
+
+    <training>
+      <numEpochs>1</numEpochs>
+      <batchSize>1</batchSize>
+      <learningRate>0.001</learningRate>
+      <train>CBOW</train>
+      <weightsPath>output/BasicModel.ckpt</weightsPath>
+      <embeddingPath>output/BasicModel.kv</embeddingPath>
+      <autoload>true</autoload>
+      <autosave>true</autosave>
+      <negSamples>64</negSamples>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nActive>32</nActive>
+    <nDim>100</nDim>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
+    <tokenizer>traditional</tokenizer>
+    <quantized>true</quantized>
+  </InputSpace>
+
+  <!-- ... space definitions ... -->
+</model>
+```
+
+Key points:
+- `modelType=embedding` activates the CBOW/SBOW embedding trainer alongside the neural model
+- `train=CBOW` runs SBOW (Sparse Bag of Words) in parallel using negative sampling (`negSamples`) instead of full softmax — avoids O(vocab) memory allocation
+- `weightsPath` stores the neural model checkpoint; `embeddingPath` stores the word vectors in gensim-compatible `.kv` format
+- `minFrequency` gates vocabulary admission: words are buffered until their frequency ratio exceeds this threshold

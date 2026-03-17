@@ -113,23 +113,18 @@ def _load_model(config_path=None):
 
     cfg = BasicModel.load_config(config_path)
     arch = cfg.get("architecture", {})
-    dataset = arch.get("dataset", "xor")
+    dat = arch.get("data", {})
+    dataset = dat.get("dataset")
+    if dataset is None:
+        raise ValueError("Model file must specify <data><dataset> in <architecture>")
     TheData.load(dataset)
 
     model = BasicModel()
     cfg = model.create_from_config(config_path, data=TheData)
 
     model.eval()
-    from BasicModel import TheDevice, _patch_inductor_paths
-    if TheDevice.type != "cpu":
-        _patch_inductor_paths()
-        try:
-            model = torch.compile(model)
-        except Exception:
-            try:
-                model = torch.compile(model, backend='aot_eager')
-            except Exception:
-                pass
+    from util import compile
+    model = compile(model)
     return model, cfg
 
 
@@ -215,10 +210,10 @@ def main():
     parser = argparse.ArgumentParser(description="BasicModel HTTP server")
     parser.add_argument("-p", "--port", type=int, default=None)
     parser.add_argument("--host", default=None)
-    parser.add_argument("--config", default=None, help="Path to XML config file")
+    parser.add_argument("--model", default=None, help="Path to the model file")
     args = parser.parse_args()
 
-    config_path = args.config or os.getenv("BASIC_XML")
+    config_path = args.model or os.getenv("BASIC_XML")
 
     logger.info("Loading model...")
     _model, _model_config = _load_model(config_path)
@@ -226,8 +221,9 @@ def main():
                 sum(p.numel() for p in _model.parameters()))
 
     arch = _model_config.get("architecture", {})
-    host = args.host or arch.get("serverHost", "127.0.0.1")
-    port = args.port or arch.get("serverPort", 8001)
+    srv = arch.get("server", {})
+    host = args.host or srv.get("host", "127.0.0.1")
+    port = args.port or srv.get("port", 8001)
 
     logger.info("Serving on %s:%s", host, port)
     app.run(host=host, port=port, debug=False)

@@ -2,13 +2,19 @@
 <model>
   <architecture>
     <conceptualOrder>2</conceptualOrder>
-    <dataset>mnist</dataset>
     <modelType>passthrough</modelType>
-    <numEpochs>10</numEpochs>
-    <classificationMin>0</classificationMin>
-    <classificationMax>9</classificationMax>
-    <weightsPath>output/mnist_weights.pt</weightsPath>
-    <autosave>true</autosave>
+
+    <data>
+      <dataset>mnist</dataset>
+      <classificationMin>0</classificationMin>
+      <classificationMax>9</classificationMax>
+    </data>
+
+    <training>
+      <numEpochs>10</numEpochs>
+      <weightsPath>output/mnist_weights.ckpt</weightsPath>
+      <autosave>true</autosave>
+    </training>
   </architecture>
 
   <InputSpace>

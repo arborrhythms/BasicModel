@@ -1,19 +1,24 @@
 <?xml version="1.0" ?>
 <model>
   <architecture>
-    <reversible>true</reversible>
+    <reconstruct>symbols</reconstruct>
     <reshape>true</reshape>
     <conceptualOrder>1</conceptualOrder>
     <symbolicOrder>1</symbolicOrder>
-    <dataset>xor</dataset>
     <modelType>embedding</modelType>
-    <pretrained>false</pretrained>
-    <numEpochs>1000</numEpochs>
-    <learningRate>0.01</learningRate>
-    <weightsPath>output/xor_exact_weights.pt</weightsPath>
-    <autosave>false</autosave>
-    <autoload>false</autoload>
     <ergodic>false</ergodic>
+
+    <data>
+      <dataset>xor</dataset>
+    </data>
+
+    <training>
+      <numEpochs>1000</numEpochs>
+      <learningRate>0.01</learningRate>
+      <weightsPath>output/xor_exact_weights.ckpt</weightsPath>
+      <autosave>false</autosave>
+      <autoload>false</autoload>
+    </training>
   </architecture>
 
   <InputSpace>

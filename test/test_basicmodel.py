@@ -331,27 +331,27 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
         from BasicModel import ConceptualSpace, TheObjectEncoding
         nIn, nOut, nDim = 4, 4, 8
         cs = ConceptualSpace(nIn, nOut)
-        inEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.inputDim)
+        inEmb = TheObjectEncoding.getObjectEncodingSize(TheObjectEncoding.inputDim)
         x = torch.randn(self.B, nIn, inEmb).to(TheDevice)
         y = cs(x)
-        outEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.conceptDim)
+        outEmb = TheObjectEncoding.getObjectEncodingSize(TheObjectEncoding.conceptDim)
         self.assertEqual(list(y.shape), [self.B, nOut, outEmb])
 
     def test_conceptual_space_reverse_shape(self):
         from BasicModel import ConceptualSpace, TheObjectEncoding
         nIn, nOut, nDim = 4, 4, 8
         cs = ConceptualSpace(nIn, nOut, reversible=True)
-        outEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.conceptDim)
+        outEmb = TheObjectEncoding.getObjectEncodingSize(TheObjectEncoding.conceptDim)
         y = torch.randn(self.B, nOut, outEmb).to(TheDevice)
         x = cs.reverse(y)
-        inEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.inputDim)
+        inEmb = TheObjectEncoding.getObjectEncodingSize(TheObjectEncoding.inputDim)
         self.assertEqual(list(x.shape), [self.B, nIn, inEmb])
 
     def test_output_space_forward_shape(self):
         from BasicModel import OutputSpace, TheObjectEncoding
         nIn, nOut = 4, 4
         os_ = OutputSpace(nIn, nOut)
-        inEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.symbolDim)
+        inEmb = TheObjectEncoding.getObjectEncodingSize(TheObjectEncoding.symbolDim)
         x = torch.randn(self.B, nIn, inEmb).to(TheDevice)
         y = os_(x)
         self.assertEqual(list(y.shape), [self.B, nOut, TheObjectEncoding.outputDim])
@@ -680,10 +680,10 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         TheObjectEncoding.computeNObjects()
         nIn, nOut = 4, 4
         cs = ConceptualSpace(nIn, nOut)
-        inEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.inputDim)
+        inEmb = TheObjectEncoding.getObjectEncodingSize(TheObjectEncoding.inputDim)
         x = torch.randn(2, nIn, inEmb).to(TheDevice)
         y = cs(x)
-        outEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.conceptDim)
+        outEmb = TheObjectEncoding.getObjectEncodingSize(TheObjectEncoding.conceptDim)
         self.assertEqual(list(y.shape), [2, nOut, outEmb])
 
 
@@ -816,7 +816,7 @@ class TestBaseModelFactory(unittest.TestCase):
     <type>basic</type>
     <nWords>16</nWords>
     <conceptualOrder>2</conceptualOrder>
-    <reversible>false</reversible>
+    <reconstruct>none</reconstruct>
   </architecture>
   <InputSpace><nActive>32</nActive><nDim>8</nDim></InputSpace>
   <PerceptualSpace><nActive>4</nActive><nDim>8</nDim><nVectors>8</nVectors></PerceptualSpace>
@@ -869,7 +869,7 @@ class TestSymbolDimZeroPassthrough(unittest.TestCase):
         TheObjectEncoding.setSymbolDim(0)
         TheObjectEncoding.setOutputDim(1)
         self.assertEqual(TheObjectEncoding.symbolDim, 0)
-        self.assertEqual(TheObjectEncoding.getSymbolEmbedding(), 0)
+        self.assertEqual(TheObjectEncoding.getSymbolEncodingSize(), 0)
 
     def test_objectencoding_zero_contribution_when_unused(self):
         """ObjectEncoding must not inflate tensor size when nWhere=0, nWhen=0."""
@@ -878,7 +878,7 @@ class TestSymbolDimZeroPassthrough(unittest.TestCase):
         TheObjectEncoding.nWhen = 0
         TheObjectEncoding.objectSize = 0
         nDim = 10
-        self.assertEqual(TheObjectEncoding.getEmbeddingSize(nDim), nDim)
+        self.assertEqual(TheObjectEncoding.getObjectEncodingSize(nDim), nDim)
 
 
 class TestInputSpaceLexIntegration(unittest.TestCase):
@@ -918,7 +918,7 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", pretrained=False, data=data,
+                         model_type="embedding", embedding_path=None, data=data,
                          tokenizer=tokenizer)
         return inp, data
 
@@ -1047,7 +1047,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", pretrained=False, data=data,
+                         model_type="embedding", embedding_path=None, data=data,
                          tokenizer="grammatical")
         # Create OutputSpace with the same embedding setup
         nOut = 4
@@ -1068,7 +1068,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", pretrained=False, data=data,
+                         model_type="embedding", embedding_path=None, data=data,
                          tokenizer="grammatical")
         nOut = 4
         os_ = OutputSpace(nInput, nOut)
@@ -1112,7 +1112,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", pretrained=False, data=data,
+                         model_type="embedding", embedding_path=None, data=data,
                          tokenizer="grammatical")
         nOut = 4
         os_ = OutputSpace(nInput, nOut)
@@ -1151,7 +1151,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", pretrained=False, data=data,
+                         model_type="embedding", embedding_path=None, data=data,
                          tokenizer="grammatical")
         nOut = 4
         os_ = OutputSpace(nInput, nOut)
@@ -1199,12 +1199,12 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", pretrained=False, data=data,
+                         model_type="embedding", embedding_path=None, data=data,
                          tokenizer="grammatical")
         nOut = 4
         os_ = OutputSpace(nInput, nOut, reversible=True)
         os_.set_text_mode(inp)
-        inEmb = TheObjectEncoding.getEmbeddingSize(TheObjectEncoding.symbolDim)
+        inEmb = TheObjectEncoding.getObjectEncodingSize(TheObjectEncoding.symbolDim)
         x = torch.randn(2, nInput, inEmb).to(TheDevice)
         y = os_(x)
         self.assertEqual(list(y.shape), [2, nOut, TheObjectEncoding.outputDim])
@@ -1243,7 +1243,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", pretrained=False, data=data,
+                         model_type="embedding", embedding_path=None, data=data,
                          tokenizer="grammatical")
         return inp, data
 
@@ -1340,7 +1340,7 @@ class TestTokenizerConfig(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", pretrained=False, data=data,
+                         model_type="embedding", embedding_path=None, data=data,
                          tokenizer="traditional")
         self.assertFalse(hasattr(inp, 'lex'))
 
@@ -1356,7 +1356,7 @@ class TestTokenizerConfig(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", pretrained=False, data=data,
+                         model_type="embedding", embedding_path=None, data=data,
                          tokenizer="grammatical")
         self.assertTrue(hasattr(inp, 'lex'))
         self.assertIsInstance(inp.lex, Lex)
@@ -1372,7 +1372,7 @@ class TestTokenizerConfig(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", pretrained=False, data=data,
+                         model_type="embedding", embedding_path=None, data=data,
                          tokenizer="traditional")
         self.assertIsInstance(inp.vectors(), Embedding)
 
@@ -1429,7 +1429,7 @@ class TestMaskCodebookEntry(unittest.TestCase):
         from BasicModel import Embedding, TheObjectEncoding
         TheObjectEncoding.objectSize = 0
         emb = Embedding()
-        emb.create(nInput=10, nVectors=2, nDim=10, pretrained=False)
+        emb.create(nInput=10, nVectors=2, nDim=10, embedding_path=None)
         self.assertIn("[MASK]", emb.cbow.key_to_index)
         idx = emb.cbow.key_to_index["[MASK]"]
         vec = emb._emb.weight[idx]
@@ -1454,10 +1454,68 @@ class TestInputSpaceParseEmbeddings(unittest.TestCase):
         try:
             loaded = WordVectors.load(artifact_path)
             self.assertEqual(len(loaded), 5)
-            self.assertEqual(loaded._vectors.shape[1], 20)
+            self.assertEqual(loaded.vector_size, 20)
             self.assertIn("dog", loaded)
         finally:
             os.unlink(artifact_path)
+
+
+class TestLoadEmbeddingsEnwiki(unittest.TestCase):
+    """Embedding._load_embeddings handles word2vec text format (.txt)."""
+
+    ENWIKI_PATH = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "data", "embeddings", "enwiki_20180420_100d.txt")
+
+    @unittest.skip("slow — large file load")
+    def test_load_enwiki_txt(self):
+        """_load_embeddings loads word2vec text format via embeddingPath."""
+        from BasicModel import Embedding
+        wv = Embedding._load_embeddings(embedding_path=self.ENWIKI_PATH)
+        self.assertIsNotNone(wv)
+        self.assertEqual(wv.vector_size, 100)
+        self.assertGreater(len(wv), 1000)
+        self.assertIn("the", wv)
+
+    @unittest.skipUnless(
+        os.path.exists(os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "data", "embeddings", "enwiki_20180420_100d.txt")),
+        "enwiki embeddings not present")
+    def test_load_enwiki_dim_filter(self):
+        """_load_embeddings returns None when nDim doesn't match."""
+        from BasicModel import Embedding
+        wv = Embedding._load_embeddings(embedding_path=self.ENWIKI_PATH, nDim=50)
+        self.assertIsNone(wv)
+
+    def test_load_pt_format(self):
+        """_load_embeddings loads .pt torch format."""
+        import tempfile
+        from embed import WordVectors
+        words = ["hello", "world"]
+        vecs = torch.randn(2, 20)
+        wv = WordVectors(vecs, words)
+        with tempfile.NamedTemporaryFile(suffix='.pt', delete=False) as f:
+            path = f.name
+        wv.save(path)
+        try:
+            from BasicModel import Embedding
+            loaded = Embedding._load_embeddings(embedding_path=path, nDim=20)
+            self.assertIsNotNone(loaded)
+            self.assertEqual(len(loaded), 2)
+            self.assertIn("hello", loaded)
+        finally:
+            os.unlink(path)
+
+    def test_load_none_path(self):
+        """_load_embeddings returns None when no path given."""
+        from BasicModel import Embedding
+        self.assertIsNone(Embedding._load_embeddings(embedding_path=None))
+
+    def test_load_missing_file(self):
+        """_load_embeddings returns None for nonexistent path."""
+        from BasicModel import Embedding
+        self.assertIsNone(Embedding._load_embeddings(embedding_path="/tmp/no_such_file.pt"))
 
 
 class TestXorForwardPass(unittest.TestCase):
@@ -1474,7 +1532,7 @@ class TestXorForwardPass(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", pretrained=False, data=data,
+                         model_type="embedding", embedding_path=None, data=data,
                          tokenizer="traditional")
         inputTensor = inp.prepInput(data.train_input[:2])
         result = inp.forward(inputTensor)
@@ -1890,7 +1948,7 @@ class TestExpandMasked(unittest.TestCase):
         TheObjectEncoding.nObjects = 0
         TheObjectEncoding.computeNObjects()
         self.inp = InputSpace(nInput, nInput,
-                              model_type="embedding", pretrained=False,
+                              model_type="embedding", embedding_path=None,
                               data=data, tokenizer="grammatical")
         # Run a forward pass to get a real embedded tensor
         inputBatch = data.train_input[0:1]
@@ -1995,7 +2053,7 @@ class TestExpandMaskedTargets(unittest.TestCase):
         TheObjectEncoding.nObjects = 0
         TheObjectEncoding.computeNObjects()
         self.inp = InputSpace(nInput, nInput,
-                              model_type="embedding", pretrained=False,
+                              model_type="embedding", embedding_path=None,
                               data=data, tokenizer="grammatical")
         self.emb = self.inp.vectors()
 
@@ -2149,7 +2207,7 @@ class TestRARLM(unittest.TestCase):
         TheObjectEncoding.nObjects = 0
         TheObjectEncoding.computeNObjects()
         self.inp = InputSpace(nInput, nInput,
-                              model_type="embedding", pretrained=False,
+                              model_type="embedding", embedding_path=None,
                               data=data, tokenizer="grammatical")
         inputBatch = data.train_input[0:1]
         inputTensor = self.inp.prepInput(inputBatch)
@@ -2220,7 +2278,7 @@ class TestRARLMTargets(unittest.TestCase):
         TheObjectEncoding.nObjects = 0
         TheObjectEncoding.computeNObjects()
         self.inp = InputSpace(nInput, nInput,
-                              model_type="embedding", pretrained=False,
+                              model_type="embedding", embedding_path=None,
                               data=data, tokenizer="grammatical")
         self.emb = self.inp.vectors()
 
@@ -2315,6 +2373,125 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
         opt_params = [p.data_ptr() for group in optimizer.param_groups for p in group['params']]
         self.assertNotIn(emb_weight.data_ptr(), opt_params,
                          "Embedding weight should NOT be in optimizer when trainEmbeddings=false")
+
+
+# ---------------------------------------------------------------------------
+# Weight persistence — save/load round-trip with shape mismatches
+# ---------------------------------------------------------------------------
+class TestWeightShapeMismatch(unittest.TestCase):
+    """Verify save_weights / load_weights handles vocab-size changes."""
+
+    def _make_model(self, vocab_size, dim=8):
+        """Create a minimal nn.Module with an embedding of given vocab_size."""
+        from BasicModel import BasicModel
+        m = BasicModel()
+        m.name = "TestModel"
+        # Directly set up a simple module structure to test shape-mismatch logic
+        m.emb = nn.Embedding(vocab_size, dim)
+        m.fc = nn.Linear(dim, 2)
+        return m
+
+    def test_save_load_same_shape(self):
+        """Weights round-trip when architecture is identical."""
+        m1 = self._make_model(100)
+        with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f:
+            path = f.name
+        try:
+            m1.save_weights(path)
+            m2 = self._make_model(100)
+            self.assertTrue(m2.load_weights(path))
+            # Verify weights match
+            for k in m1.state_dict():
+                torch.testing.assert_close(m1.state_dict()[k], m2.state_dict()[k])
+        finally:
+            os.unlink(path)
+
+    def test_save_load_vocab_mismatch_fails(self):
+        """load_weights fails when shapes don't match and no vocab is saved."""
+        m1 = self._make_model(50)
+        with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f:
+            path = f.name
+        try:
+            m1.save_weights(path)
+            m2 = self._make_model(80)  # different vocab size
+            self.assertFalse(m2.load_weights(path),
+                             "load_weights should fail on shape mismatch without vocab")
+        finally:
+            os.unlink(path)
+
+
+# ---------------------------------------------------------------------------
+# Training actually updates weights (regression: numEpochs=1 did nothing)
+# ---------------------------------------------------------------------------
+class TestVocabSaveRestore(unittest.TestCase):
+    """Verify vocab is saved with weights and restored on load."""
+
+    def test_save_load_with_vocab(self):
+        """Embedding vocab round-trips through save/load with no shape mismatch."""
+        from BasicModel import BasicModel, TheData, Embedding
+
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        TheData.load("xor")
+
+        m1 = BasicModel()
+        m1.create_from_config(xml_path, data=TheData)
+
+        # Add extra words to grow the vocab
+        emb1 = m1._get_embedding()
+        if emb1 is None:
+            self.skipTest("XOR_exact doesn't use Embedding")
+        for w in ["extra1", "extra2", "extra3"]:
+            emb1._add_word(w)
+        vocab_before = list(emb1.cbow.index_to_key)
+
+        with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f:
+            path = f.name
+        try:
+            m1.save_weights(path)
+
+            # Create a fresh model (will have smaller vocab)
+            m2 = BasicModel()
+            m2.create_from_config(xml_path, data=TheData)
+            emb2 = m2._get_embedding()
+            self.assertNotEqual(len(emb2.cbow.index_to_key), len(vocab_before))
+
+            # Load should restore vocab and weights cleanly
+            self.assertTrue(m2.load_weights(path))
+            emb2 = m2._get_embedding()
+            self.assertEqual(list(emb2.cbow.index_to_key), vocab_before)
+            # Embedding shapes must match exactly
+            torch.testing.assert_close(
+                m2.state_dict()["inputSpace.vectorSet.0._emb.weight"],
+                m1.state_dict()["inputSpace.vectorSet.0._emb.weight"])
+        finally:
+            os.unlink(path)
+
+
+class TestTrainingUpdatesWeights(unittest.TestCase):
+    """Verify that run() with numEpochs=1 actually trains and changes weights."""
+
+    def test_xor_weights_change_after_one_epoch(self):
+        """XOR model weights must differ after 1 epoch of training."""
+        from BasicModel import BasicModel, TheData
+
+        # XOR_exact.xml has autoload=false, autosave=false
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        TheData.load("xor")
+
+        m = BasicModel()
+        m.create_from_config(xml_path, data=TheData)
+
+        weights_before = {k: v.clone() for k, v in m.state_dict().items()}
+
+        m.run(numEpochs=1, batchSize=10, lr=0.01)
+
+        weights_after = m.state_dict()
+        changed = sum(
+            1 for k in weights_before
+            if not torch.equal(weights_before[k], weights_after[k])
+        )
+        self.assertGreater(changed, 0,
+                           "At least some weights must change after 1 epoch of training")
 
 
 if __name__ == "__main__":

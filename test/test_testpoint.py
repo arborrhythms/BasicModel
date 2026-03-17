@@ -48,7 +48,7 @@ class TestEmbeddingProbes(unittest.TestCase):
     def setUpClass(cls):
         cls.wv, cls.path = _load_embeddings()
         cls.vocab_size = len(cls.wv)
-        cls.dim = cls.wv._vectors.shape[1]
+        cls.dim = cls.wv.vector_size
 
     def test_vocab_minimum(self):
         """Vocabulary has at least 500 words."""
@@ -102,7 +102,7 @@ class TestEmbeddingProbes(unittest.TestCase):
     def test_vector_norms_nonzero(self):
         """No zero vectors in the vocabulary."""
         import torch
-        norms = torch.norm(self.wv._vectors, dim=1)
+        norms = torch.norm(torch.as_tensor(self.wv.vectors), dim=1)
         zeros = int((norms == 0).sum().item())
         print(f"  Zero-norm vectors: {zeros}/{self.vocab_size}")
         self.assertEqual(zeros, 0, "Found zero-norm vectors in embeddings")

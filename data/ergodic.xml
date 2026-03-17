@@ -3,11 +3,17 @@
   <architecture>
     <ergodic>true</ergodic>
     <certainty>true</certainty>
-    <dataset>mnist</dataset>
     <modelType>simple</modelType>
-    <numTrials>1</numTrials>
-    <numEpochs>10</numEpochs>
-    <batchSize>64</batchSize>
+
+    <data>
+      <dataset>mnist</dataset>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>10</numEpochs>
+      <batchSize>64</batchSize>
+    </training>
   </architecture>
 
   <InputSpace>

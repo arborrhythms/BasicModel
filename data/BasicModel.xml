@@ -1,38 +1,44 @@
 <?xml version="1.0" ?>
 <model>
-  <!-- BasicModel chatbot: ~80K params, masked-word prediction with reversible reconstruction -->
+  <!-- BasicModel chatbot: ~80K params, masked-word prediction with reconstruction -->
   <architecture>
-    <reversible>true</reversible>
+    <reconstruct>symbols</reconstruct>
     <reshape>false</reshape>
     <conceptualOrder>1</conceptualOrder>
     <symbolicOrder>1</symbolicOrder>
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
     <certainty>false</certainty>
-    <dataset>text</dataset>
     <modelType>embedding</modelType>
-    <pretrained>false</pretrained>
-    <numTrials>1</numTrials>
-    <numEpochs>4</numEpochs>
-    <batchSize>4</batchSize>
-    <learningRate>0.001</learningRate>
-    <reconRatio>0.1</reconRatio>
-    <weightsPath>output/basicmodel.pt</weightsPath>
-    <autoload>true</autoload>
-    <autosave>true</autosave>
-    <shardDir>data/fineweb</shardDir>
-    <numShards>1</numShards>
-    <maxDocs>10000</maxDocs>
-    <vectorSize>100</vectorSize>
-    <trainingEpochs>10</trainingEpochs>
-    <minCount>5</minCount>
-    <artifactPath>output/embeddings/sentence.pt</artifactPath>
-    <trainEmbeddings>CBOW</trainEmbeddings>
     <maskedPrediction>ARLM</maskedPrediction>
-    <maxResponseLength>64</maxResponseLength>
-    <serverHost>127.0.0.1</serverHost>
-    <serverPort>8001</serverPort>
-    <serverTimeout>120</serverTimeout>
+    <maxResponseLength>4096</maxResponseLength>
+
+    <data>
+      <dataset>text</dataset>
+      <shardDir>data/fineweb</shardDir>
+      <numShards>1</numShards>
+      <maxDocs>10000</maxDocs>
+      <minFrequency>0.00001</minFrequency>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>1</numEpochs>
+      <batchSize>1</batchSize>
+      <learningRate>0.001</learningRate>
+      <reconRatio>0.1</reconRatio>
+      <train>CBOW</train>
+      <weightsPath>output/BasicModel.ckpt</weightsPath>
+      <embeddingPath>output/BasicModel.kv</embeddingPath>
+      <autoload>true</autoload>
+      <autosave>true</autosave>
+    </training>
+
+    <server>
+      <host>127.0.0.1</host>
+      <port>8001</port>
+      <timeout>120</timeout>
+    </server>
   </architecture>
 
   <InputSpace>

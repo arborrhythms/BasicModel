@@ -107,7 +107,7 @@ class TestStreamingSBOWTrainer(unittest.TestCase):
         wv = t.finish()
         self.assertIsInstance(wv, WordVectors)
         self.assertGreater(len(wv), 0)
-        self.assertEqual(wv._vectors.shape[1], 16)
+        self.assertEqual(wv.vector_size, 16)
 
     def test_multiple_documents(self):
         """Processing multiple documents increases trained examples."""
@@ -165,7 +165,7 @@ class TestBuildEmbeddings(unittest.TestCase):
             self.assertTrue(os.path.exists(output_path))
             wv = WordVectors.load(output_path)
             self.assertGreater(len(wv), 0)
-            self.assertEqual(wv._vectors.shape[1], 20)
+            self.assertEqual(wv.vector_size, 20)
 
 
 if __name__ == '__main__':

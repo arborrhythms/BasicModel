@@ -2,11 +2,17 @@
 <model>
   <architecture>
     <ergodic>true</ergodic>
-    <dataset>mnist</dataset>
     <modelType>simple</modelType>
-    <numTrials>1</numTrials>
-    <numEpochs>10</numEpochs>
-    <batchSize>10</batchSize>
+
+    <data>
+      <dataset>mnist</dataset>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>10</numEpochs>
+      <batchSize>10</batchSize>
+    </training>
   </architecture>
 
   <InputSpace>

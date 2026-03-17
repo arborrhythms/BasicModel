@@ -11,8 +11,8 @@
 BasicModel is a parameterized neural architecture with three independent levers:
 
 - **Ergodic** — adaptive bias-variance control via a gradient energy sensor (not gradient descent)
-- **Certainty** — certainty-weighted cross-entropy loss
-- **Quantized** — vector quantization of the conceptual space
+- **Certainty** — per-neuron certainty tracking; neurons graduate from exploration to exploitation independently
+- **Reversible** — bidirectional training: forward prediction + backward reconstruction in a single optimizer pass
 
 Model configurations are specified in XML and can be compared side-by-side. See [doc/Architecture.md](doc/Architecture.md) for the full mathematical treatment.
 
@@ -20,11 +20,13 @@ Model configurations are specified in XML and can be compared side-by-side. See 
 
 | File | Description |
 |------|-------------|
-| [bin/BasicModel.py](bin/BasicModel.py) | Main entry point: DerivedModel, training loop, comparison plots, HTML report |
-| [bin/Model.py](bin/Model.py) | Layer library: SigmaLayer, ErgodicLayer, LinearLayer, spaces, and utilities |
+| [bin/BasicModel.py](bin/BasicModel.py) | Main entry point: model factory, training loop, comparison plots, HTML report |
+| [bin/Model.py](bin/Model.py) | Layer library: SigmaLayer, PiLayer, ErgodicLayer, LinearLayer, spaces |
+| [bin/embed.py](bin/embed.py) | Word vector training: CBOW/SBOW with negative sampling, `WordVectors` (gensim-compatible `.kv`) |
 | [bin/SigmaPi.py](bin/SigmaPi.py) | Standalone demo of the SigmaPi network solving XOR |
-| [data/](data/) | XML model configurations and static embeddings |
+| [data/](data/) | XML model configurations |
 | [doc/Architecture.md](doc/Architecture.md) | Algorithm details: Sigma/Pi layers, ergodic exploration, gradient energy sensor |
+| [doc/Params.md](doc/Params.md) | Full XML parameter reference |
 | [test/](test/) | Unit tests |
 
 ## Quick Start
@@ -50,27 +52,41 @@ make doc_pdf
 
 ## XML Configuration
 
-Models are configured via XML files in `data/`:
+Models are configured via XML files in `data/`. Training and data parameters live in nested sub-elements:
 
 ```xml
 <model>
   <architecture>
-    <nConcepts>20</nConcepts>
-    <ergodic>true</ergodic>
-    <certainty>true</certainty>
-    <quantized>false</quantized>
-    <normed>false</normed>
-    <reverse>false</reverse>
-    <invert>false</invert>
+    <modelType>simple</modelType>   <!-- simple | lm | embedding -->
+    <ergodic>false</ergodic>
+    <certainty>false</certainty>
+    <reconstruct>NONE</reconstruct>  <!-- NONE | symbols | output | both -->
+    <maskedPrediction>NONE</maskedPrediction>
+
+    <data>
+      <dataset>xor</dataset>        <!-- xor | mnist | text | ... -->
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>20</numEpochs>
+      <batchSize>10</batchSize>
+      <learningRate>0.001</learningRate>
+      <weightsPath>output/BasicModel.ckpt</weightsPath>
+      <autoload>true</autoload>
+      <autosave>false</autosave>
+    </training>
   </architecture>
-  <training>
-    <dataset>mnist</dataset>
-    <numTrials>1</numTrials>
-    <numEpochs>20</numEpochs>
-    <batchSize>10</batchSize>
-  </training>
+
+  <InputSpace> ... </InputSpace>
+  <PerceptualSpace> ... </PerceptualSpace>
+  <ConceptualSpace> ... </ConceptualSpace>
+  <SymbolicSpace> ... </SymbolicSpace>
+  <OutputSpace> ... </OutputSpace>
 </model>
 ```
+
+See [doc/Params.md](doc/Params.md) for the full parameter reference.
 
 ## Output
 

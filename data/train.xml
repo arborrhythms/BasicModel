@@ -1,22 +1,27 @@
 <?xml version="1.0" ?>
 <model>
   <architecture>
-    <reversible>true</reversible>
+    <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
     <symbolicOrder>1</symbolicOrder>
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
     <certainty>false</certainty>
-    <dataset>text</dataset>
     <modelType>embedding</modelType>
-    <numTrials>1</numTrials>
-    <numEpochs>10</numEpochs>
-    <batchSize>10</batchSize>
-    <learningRate>0.01</learningRate>
-    <pretrained>false</pretrained>
-    <weightsPath>output/weights.pt</weightsPath>
-    <autoload>true</autoload>
-    <autosave>false</autosave>
+
+    <data>
+      <dataset>text</dataset>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>10</numEpochs>
+      <batchSize>10</batchSize>
+      <learningRate>0.01</learningRate>
+      <weightsPath>output/weights.ckpt</weightsPath>
+      <autoload>true</autoload>
+      <autosave>false</autosave>
+    </training>
   </architecture>
 
   <InputSpace>
@@ -65,6 +70,6 @@
     <vectorSize>100</vectorSize>
     <trainingEpochs>10</trainingEpochs>
     <minCount>5</minCount>
-    <artifactPath>output/embeddings/sentence.pt</artifactPath>
+    <artifactPath>output/BasicModel.kv</artifactPath>
   </embeddings>
 </model>

@@ -35,13 +35,13 @@ for PerceptualSpace).  Codebook sizes (`nVectors`) are likewise stored on
 `TheObjectEncoding` and may differ from the active count (`nActive`); the factory
 validates `nVectors >= nActive` for every space.
 
-Layer selection depends on two flags — `reversible` and `invertible`:
+Layer selection depends on `<reconstruct>` and `invertible`:
 
-1. **No reversible**: Use non-invertible layers (`PiLayer`, `SigmaLayer`) for
-   the forward pass only.
-2. **reversible + invertible**: A single invertible layer (`InvertiblePiLayer`,
+1. **`reconstruct=NONE`**: Use non-invertible layers (`PiLayer`, `SigmaLayer`) for
+   the forward pass only. No reverse pipeline is created.
+2. **`reconstruct=<any>` + `invertible`**: A single invertible layer (`InvertiblePiLayer`,
    `InvertibleSigmaLayer`) serves both directions, sharing weights.
-3. **reversible + not invertible**: Two invertible layers with separate weights —
+3. **`reconstruct=<any>` + not `invertible`**: Two layers with separate weights —
    call `forward()` on one and `reverse()` on the other.  This avoids the
    expressivity limitation where a non-invertible layer's forward pass cannot
    represent the inverse of another (e.g., PiLayer's product structure is not
