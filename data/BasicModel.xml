@@ -14,12 +14,24 @@
     <pretrained>false</pretrained>
     <numTrials>1</numTrials>
     <numEpochs>4</numEpochs>
-    <batchSize>16</batchSize>
+    <batchSize>4</batchSize>
     <learningRate>0.001</learningRate>
     <reconRatio>0.1</reconRatio>
-    <weightsPath>output/basicmodel_weights.pt</weightsPath>
+    <weightsPath>output/basicmodel.pt</weightsPath>
     <autoload>true</autoload>
     <autosave>true</autosave>
+    <shardDir>data/fineweb</shardDir>
+    <numShards>1</numShards>
+    <maxDocs>10000</maxDocs>
+    <vectorSize>100</vectorSize>
+    <trainingEpochs>10</trainingEpochs>
+    <minCount>5</minCount>
+    <artifactPath>output/embeddings/sentence.pt</artifactPath>
+    <trainEmbeddings>true</trainEmbeddings>
+    <maxResponseLength>64</maxResponseLength>
+    <serverHost>127.0.0.1</serverHost>
+    <serverPort>8001</serverPort>
+    <serverTimeout>120</serverTimeout>
   </architecture>
 
   <InputSpace>
@@ -33,7 +45,7 @@
   </InputSpace>
 
   <PerceptualSpace>
-    <nActive>64</nActive>
+    <nActive>32</nActive>
     <nDim>100</nDim>
     <nVectors>0</nVectors>
     <passThrough>false</passThrough>
@@ -43,7 +55,7 @@
   </PerceptualSpace>
 
   <ConceptualSpace>
-    <nActive>128</nActive>
+    <nActive>64</nActive>
     <nDim>100</nDim>
     <nVectors>0</nVectors>
     <hasAttention>true</hasAttention>
@@ -65,19 +77,4 @@
     <nVectors>1</nVectors>
   </OutputSpace>
 
-  <embeddings>
-    <shardDir>data/fineweb</shardDir>
-    <numShards>1</numShards>
-    <maxDocs>10000</maxDocs>
-    <vectorSize>100</vectorSize>
-    <trainingEpochs>10</trainingEpochs>
-    <minCount>5</minCount>
-    <artifactPath>output/embeddings/sentence.pt</artifactPath>
-  </embeddings>
-
-  <server>
-    <host>127.0.0.1</host>
-    <port>8001</port>
-    <timeout>120</timeout>
-  </server>
 </model>

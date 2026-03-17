@@ -33,6 +33,33 @@ from typing import List, Tuple, Optional
 from parse import parse_buffer, set_sentence_cfg
 
 
+def _get_device():
+    """Select best available device, respecting BASICMODEL_DEVICE env var."""
+    env = os.environ.get("BASICMODEL_DEVICE", "").strip().lower()
+    if env:
+        return torch.device(env)
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    if torch.backends.mps.is_available():
+        return torch.device("mps")
+    return torch.device("cpu")
+
+
+def _patch_inductor_paths():
+    """Replace iCloud paths (with spaces) with /bits symlink in inductor commands."""
+    try:
+        from torch._inductor import cpp_builder
+        _orig = cpp_builder._run_compile_cmd
+        _bits = "/bits"
+        if os.path.islink(_bits):
+            _target = os.readlink(_bits)
+            def _patched(cmd_line, cwd):
+                return _orig(cmd_line.replace(_target, _bits), cwd)
+            cpp_builder._run_compile_cmd = _patched
+    except Exception:
+        pass
+
+
 # ---------------------------------------------------------------------------
 # Word vector store
 # ---------------------------------------------------------------------------
@@ -363,15 +390,17 @@ class CBOWModel:
         if not targets:
             return None
 
+        device = self.embeddings.weight.device
+
         # Pad contexts to uniform length
         max_ctx = max(len(c) for c in contexts)
         n = len(targets)
-        ctx_padded = torch.zeros(n, max_ctx, dtype=torch.long)
-        ctx_mask = torch.zeros(n, max_ctx)
+        ctx_padded = torch.zeros(n, max_ctx, dtype=torch.long, device=device)
+        ctx_mask = torch.zeros(n, max_ctx, device=device)
         for i, c in enumerate(contexts):
-            ctx_padded[i, :len(c)] = torch.tensor(c, dtype=torch.long)
+            ctx_padded[i, :len(c)] = torch.tensor(c, dtype=torch.long, device=device)
             ctx_mask[i, :len(c)] = 1.0
-        target_tensor = torch.tensor(targets, dtype=torch.long)
+        target_tensor = torch.tensor(targets, dtype=torch.long, device=device)
 
         # Forward
         ctx_embeds = self.embeddings(ctx_padded)
@@ -394,6 +423,21 @@ class CBOWModel:
         with torch.no_grad():
             vectors = self.embeddings.weight.detach().clone()
         return WordVectors(vectors, self.index_to_key)
+
+
+class _CBOWModule(nn.Module):
+    """CBOW forward pass as an nn.Module for torch.compile."""
+
+    def __init__(self, vocab_size, vector_size):
+        super().__init__()
+        self.embeddings = nn.Embedding(vocab_size, vector_size)
+        self.linear = nn.Linear(vector_size, vocab_size)
+
+    def forward(self, ctx_padded, ctx_mask):
+        ctx_embeds = self.embeddings(ctx_padded)
+        masked = ctx_embeds * ctx_mask.unsqueeze(-1)
+        ctx_mean = masked.sum(dim=1) / ctx_mask.sum(dim=1, keepdim=True)
+        return self.linear(ctx_mean)
 
 
 class EmbeddingTrainer:
@@ -426,41 +470,46 @@ class EmbeddingTrainer:
         if not targets:
             return WordVectors.from_vocab(vocab, vector_size=self.vector_size)
 
+        device = _get_device()
+        print(f"Training on {device}")
+
         n_examples = len(targets)
-        target_tensor = torch.tensor(targets, dtype=torch.long)
+        target_tensor = torch.tensor(targets, dtype=torch.long, device=device)
 
         # Pad context lists to uniform length for batched lookup
         max_ctx = max(len(c) for c in contexts)
-        ctx_padded = torch.zeros(n_examples, max_ctx, dtype=torch.long)
-        ctx_mask = torch.zeros(n_examples, max_ctx, dtype=torch.float32)
+        ctx_padded = torch.zeros(n_examples, max_ctx, dtype=torch.long, device=device)
+        ctx_mask = torch.zeros(n_examples, max_ctx, dtype=torch.float32, device=device)
         for i, c in enumerate(contexts):
-            ctx_padded[i, :len(c)] = torch.tensor(c, dtype=torch.long)
+            ctx_padded[i, :len(c)] = torch.tensor(c, dtype=torch.long, device=device)
             ctx_mask[i, :len(c)] = 1.0
 
-        embeddings = nn.Embedding(vocab_size, self.vector_size)
-        linear = nn.Linear(self.vector_size, vocab_size)
-        optimizer = optim.Adam(
-            list(embeddings.parameters()) + list(linear.parameters()),
-            lr=self.learning_rate,
-        )
+        model = _CBOWModule(vocab_size, self.vector_size).to(device)
+
+        if device.type != "cpu":
+            _patch_inductor_paths()
+            try:
+                model = torch.compile(model)
+            except Exception:
+                try:
+                    model = torch.compile(model, backend='aot_eager')
+                except Exception:
+                    pass
+
+        optimizer = optim.Adam(model.parameters(), lr=self.learning_rate)
         loss_fn = nn.CrossEntropyLoss()
 
         n_batches = (n_examples + self.batch_size - 1) // self.batch_size
         for epoch in range(epochs):
             total_loss = 0.0
-            perm = torch.randperm(n_examples)
+            perm = torch.randperm(n_examples, device=device)
             for batch_i, start in enumerate(range(0, n_examples, self.batch_size)):
                 idx = perm[start:start + self.batch_size]
-                batch_ctx = ctx_padded[idx]       # (B, max_ctx)
-                batch_mask = ctx_mask[idx]         # (B, max_ctx)
-                batch_target = target_tensor[idx]  # (B,)
+                batch_ctx = ctx_padded[idx]
+                batch_mask = ctx_mask[idx]
+                batch_target = target_tensor[idx]
 
-                ctx_embeds = embeddings(batch_ctx)  # (B, max_ctx, vec_size)
-                # Masked mean: sum embeddings for real context, divide by count
-                masked = ctx_embeds * batch_mask.unsqueeze(-1)
-                ctx_mean = masked.sum(dim=1) / batch_mask.sum(dim=1, keepdim=True)
-
-                logits = linear(ctx_mean)  # (B, vocab_size)
+                logits = model(batch_ctx, batch_mask)
                 loss = loss_fn(logits, batch_target)
 
                 optimizer.zero_grad()
@@ -478,8 +527,10 @@ class EmbeddingTrainer:
             print(f"Epoch {epoch+1}/{epochs} complete, loss: {total_loss/n_examples:.4f}",
                   flush=True)
 
+        # Extract weights back to CPU for WordVectors
         with torch.no_grad():
-            vectors = embeddings.weight.detach().clone()
+            embeddings = model.embeddings if not hasattr(model, '_orig_mod') else model._orig_mod.embeddings
+            vectors = embeddings.weight.detach().cpu().clone()
         return WordVectors(vectors, vocab)
 
 

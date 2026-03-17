@@ -86,7 +86,7 @@ class PositionalEncoding(nn.Module):
         embeddingSize = x.shape[-1]
         index = np.add([embeddingSize, embeddingSize], self.index)
         # Write sin/cos position into the last reserved dimensions
-        position = torch.arange(self.p, self.p+batch*n, dtype=torch.float32) * self.div_term
+        position = torch.arange(self.p, self.p+batch*n, dtype=torch.float32, device=x.device) * self.div_term
         p1 = torch.sin(position * self.div_term).unsqueeze(0).unsqueeze(0)
         p2 = torch.cos(position * self.div_term).unsqueeze(0).unsqueeze(0)
         pos = torch.concatenate((p1, p2), dim=2)
@@ -138,8 +138,8 @@ class TemporalEncoding(nn.Module):
         embeddingSize = x.shape[-1]
         index = np.add([embeddingSize, embeddingSize], self.index)
         # Cosine encoding scaled to [0, 1] via 0.5*(1+cos(...))
-        t1 = ( 0.5*(1+torch.cos(math.pi + 2*math.pi * torch.tensor(range(self.t, self.t+batch))/self.period[0] )) ).unsqueeze(0).unsqueeze(0)
-        t2 = ( 0.5*(1+torch.cos(math.pi + 2*math.pi * torch.tensor(range(self.t, self.t+batch))/self.period[0] )) ).unsqueeze(0).unsqueeze(0)
+        t1 = ( 0.5*(1+torch.cos(math.pi + 2*math.pi * torch.tensor(range(self.t, self.t+batch), device=x.device)/self.period[0] )) ).unsqueeze(0).unsqueeze(0)
+        t2 = ( 0.5*(1+torch.cos(math.pi + 2*math.pi * torch.tensor(range(self.t, self.t+batch), device=x.device)/self.period[0] )) ).unsqueeze(0).unsqueeze(0)
         time = torch.concatenate((t1, t2), dim=2)
         y = x.clone()
         y[:, :, index] = time.reshape(batch, 1, self.nDim)
@@ -956,7 +956,7 @@ class VectorSet(nn.Module):
             if self.signed:
                 x = F.normalize(x, p=2, dim=-1)
             else:
-                x = torch.maximum(torch.minimum(x, torch.tensor(1.0)), torch.tensor(0.0))
+                x = torch.maximum(torch.minimum(x, torch.tensor(1.0, device=x.device)), torch.tensor(0.0, device=x.device))
                 x = F.normalize(x, p=2, dim=-1)
             return x
     def negate(self, x):
@@ -1094,14 +1094,16 @@ class Embedding(VectorSet):
 
         Extends the WordVectors, CBOWModel vocabulary, and nn.Embedding so
         that subsequent forward passes can look up this word.  Returns the
-        new embedding vector (on CPU).
+        new embedding vector on the same device as existing weights.
         """
         dim = self.wv._vectors.shape[1]
-        new_vec = torch.randn(1, dim)
+        device = self._emb.weight.device
+        new_vec = torch.randn(1, dim, device=device)
         new_vec = F.normalize(new_vec, p=2, dim=1)
 
-        # Extend WordVectors
-        self.wv._vectors = torch.cat([self.wv._vectors, new_vec], dim=0)
+        # Extend WordVectors (stays on CPU for neighbor queries)
+        new_vec_cpu = new_vec.cpu()
+        self.wv._vectors = torch.cat([self.wv._vectors, new_vec_cpu], dim=0)
         self.wv._normed = None  # invalidate cache
         idx = len(self.wv.index_to_key)
         self.wv.index_to_key.append(word)
@@ -1111,7 +1113,7 @@ class Embedding(VectorSet):
         self.cbow.index_to_key.append(word)
         self.cbow.key_to_index[word] = idx
         old_emb = self.cbow.embeddings
-        new_emb = nn.Embedding(idx + 1, dim)
+        new_emb = nn.Embedding(idx + 1, dim, device=device)
         with torch.no_grad():
             if old_emb.weight.shape[0] > 0:
                 new_emb.weight[:idx] = old_emb.weight
@@ -1121,7 +1123,7 @@ class Embedding(VectorSet):
 
         # Extend linear head (output vocab size must match embedding vocab)
         old_linear = self.cbow.linear
-        new_linear = nn.Linear(dim, idx + 1)
+        new_linear = nn.Linear(dim, idx + 1, device=device)
         with torch.no_grad():
             if old_linear.weight.shape[0] > 0:
                 new_linear.weight[:idx] = old_linear.weight
@@ -1346,7 +1348,7 @@ class Space(nn.Module):
         self.processSymbols = processSymbols
         self.reshape      = reshape
         self.params = []   # parameters for the optimizer (excludes temperature params)
-        self.layers = []   # layer instances for paramUpdate() delegation
+        self.layers = nn.ModuleList()   # layer instances for paramUpdate() delegation
 
     def getEmbeddedIO(self):
         """Return (input_dim, output_dim) for reshape/validation.
@@ -1555,7 +1557,7 @@ class InputSpace(Space):
         fullSize  = outputShape[0]*outputShape[1]
         self.lift = LiftingLayer(fullSize, fullSize)
         self.params = self.lift.getParameters()
-        self.layers = [self.lift]
+        self.layers = nn.ModuleList([self.lift])
     # Data client interface
     def getTrainData(self):
         return self.data.train_input, self.data.train_output
@@ -1651,11 +1653,12 @@ class InputSpace(Space):
             MLM: Zero content at position i, preserve position encoding.
             ARLM: Zero content at position i, truncate all future positions (j > i).
             ARUS: Same as ARLM (output-side behavior differs in OutputSpace).
+            RARLM: Zero content at position (N-1-i), truncate all previous positions (j < pos).
 
         Args:
             embedded: [1, nVectors, embeddingSize] output of forward()
             sentence_text: original sentence string (used for word count)
-            maskedPrediction: prediction mode ('MLM', 'ARLM', or 'ARUS')
+            maskedPrediction: prediction mode ('MLM', 'ARLM', 'ARUS', or 'RARLM')
 
         Returns:
             (masked_batch, mask_positions):
@@ -1684,17 +1687,26 @@ class InputSpace(Space):
                 if 0 <= wi < embSize:
                     content_mask[wi] = False
 
-        # Zero content at masked position in each copy
+        # Determine mask position for each copy
         for i in range(N):
-            masked[i, i, content_mask] = 0.0
+            pos = (N - 1 - i) if maskedPrediction == 'RARLM' else i
+            masked[i, pos, content_mask] = 0.0
 
-        # ARLM/ARUS: also truncate all future positions (completely zero, including position encoding)
+        # ARLM/ARUS: truncate all future positions (j > i)
         if maskedPrediction in ('ARLM', 'ARUS'):
             for i in range(N):
-                # Zero all positions after the masked position (j > i)
                 if i + 1 < masked.shape[1]:
                     masked[i, i + 1:, :] = 0.0
 
+        # RARLM: truncate all previous positions (j < pos)
+        if maskedPrediction == 'RARLM':
+            for i in range(N):
+                pos = N - 1 - i
+                if pos > 0:
+                    masked[i, :pos, :] = 0.0
+
+        if maskedPrediction == 'RARLM':
+            return masked, list(range(N - 1, -1, -1))
         return masked, list(range(N))
 
     def reverse(self, y):
@@ -1876,11 +1888,6 @@ class PerceptualSpace(Space):
                     raise ValueError(
                         f"invertible=True without reshape requires nInput == nOutput, "
                         f"but got nInput={input}, nOutput={output}.")
-                if self.outputShape[0] != 2 * self.inputShape[0]:
-                    raise ValueError(
-                        f"invertible=True without reshape requires nPercepts == 2*nInput "
-                        f"(sequence doubling), but got nInput={self.inputShape[0]}, "
-                        f"nPercepts={self.outputShape[0]}.")
         else:
             use_naive = (2 * input != output)  # naive when dims don't match 2x
         if self.reversible:
@@ -1888,18 +1895,21 @@ class PerceptualSpace(Space):
                 self.pi  = InvertiblePiLayer(input, output, naive=use_naive, ergodic=ergodic)
                 self.forwardPi, self.reversePi = self.pi.forward, self.pi.reverse
                 self.params = self.pi.getParameters()
-                self.layers = [self.pi]
+                self.layers = nn.ModuleList([self.pi])
+                # InvertiblePiLayer doubles sequence in 3D or flat dim in 2D
+                if not self.reshape:
+                    self.outputShape = [2 * self.outputShape[0], self.outputShape[1]]
             else:
                 self.pi1 = InvertiblePiLayer(input, output, naive=use_naive, ergodic=ergodic)
                 self.pi2 = InvertiblePiLayer(input, output, naive=use_naive, ergodic=ergodic)
                 self.forwardPi, self.reversePi = self.pi1.forward, self.pi2.reverse
                 self.params = self.pi1.getParameters() + self.pi2.getParameters()
-                self.layers = [self.pi1, self.pi2]
+                self.layers = nn.ModuleList([self.pi1, self.pi2])
         else:
             self.pi        = PiLayer(input, output, ergodic=ergodic)
             self.forwardPi = self.pi.forward
             self.params = self.pi.getParameters()
-            self.layers = [self.pi]
+            self.layers = nn.ModuleList([self.pi])
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
         self.createVectorSet(quantized=self.quantized)
     def distance(self, x, y):
@@ -1980,7 +1990,7 @@ class ConceptualSpace(Space):
                 self.sigma = InvertibleSigmaLayer(input, output, ergodic=ergodic)
                 self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
                 self.params = self.sigma.getParameters()
-                self.layers = [self.sigma]
+                self.layers = nn.ModuleList([self.sigma])
             else:
                 self.sigma1 = InvertibleSigmaLayer(input, output, ergodic=ergodic)
                 self.sigma2 = InvertibleSigmaLayer(input, output, ergodic=ergodic)
@@ -1988,12 +1998,12 @@ class ConceptualSpace(Space):
                 # self.sigma2 = SigmaLayer(output, input, ergodic=ergodic)
                 self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
                 self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
-                self.layers = [self.sigma1, self.sigma2]
+                self.layers = nn.ModuleList([self.sigma1, self.sigma2])
         else:
             self.sigma = SigmaLayer(input, output, ergodic=ergodic)
             self.forwardSigma = self.sigma.forward
             self.params = self.sigma.getParameters()
-            self.layers = [self.sigma]
+            self.layers = nn.ModuleList([self.sigma])
         self.createVectorSet(quantized=self.quantized)
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
@@ -2226,7 +2236,7 @@ class OutputSpace(Space):
         else:
             self.forwardLinear = LinearLayer(input, output)
         self.params = list(self.parameters())
-        self.layers = [self.forwardLinear] if not reversible else [self.linear1, self.linear2]
+        self.layers = nn.ModuleList([self.forwardLinear] if not reversible else [self.linear1, self.linear2])
     def getTestOutput(self):
         if self.data is None:
             return None
@@ -2260,11 +2270,12 @@ class OutputSpace(Space):
             MLM: Target is the normalized embedding of each word.
             ARLM: Same as MLM (autoregressive targets).
             ARUS: Returns zero vectors (unsupervised — loss suppressed in runEpoch).
+            RARLM: Same targets as MLM but in reverse order (matching reverse mask positions).
 
         Args:
             sentence_text: original sentence string
             embedding: Embedding instance with cbow.key_to_index and _emb.weight
-            maskedPrediction: prediction mode ('MLM', 'ARLM', or 'ARUS')
+            maskedPrediction: prediction mode ('MLM', 'ARLM', 'ARUS', or 'RARLM')
 
         Returns:
             targets: [N, vec_size] tensor of target word embeddings
@@ -2290,7 +2301,11 @@ class OutputSpace(Space):
         # ARUS: unsupervised — return zero targets (loss suppressed in runEpoch)
         if maskedPrediction == 'ARUS':
             return torch.zeros(len(targets), vec_size, device=weights.device)
-        return torch.stack(targets)
+        stacked = torch.stack(targets)
+        # RARLM: reverse target order to match reverse mask positions
+        if maskedPrediction == 'RARLM':
+            stacked = stacked.flip(0)
+        return stacked
     # --- Text reconstruction from symbolic vectors ---
     def set_text_mode(self, input_space):
         """Enable text reconstruction by storing references from InputSpace.
@@ -2462,6 +2477,9 @@ class BaseModel(nn.Module):
         Uses getParameters() from each Space (the universal training contract),
         which excludes temperature params managed by alpha_update.
         Falls back to standard PyTorch parameters() when not in ergodic mode.
+
+        When trainEmbeddings is False, embedding parameters are excluded
+        from the optimizer regardless of path.
         """
         if getattr(self, 'ergodic', True):
             params = []
@@ -2469,6 +2487,14 @@ class BaseModel(nn.Module):
                 params.extend(s.getParameters())
         else:
             params = list(self.parameters())
+        # Exclude frozen embedding params when trainEmbeddings is off
+        if not getattr(self, 'train_embeddings', False):
+            exclude = set()
+            if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.vectors(), Embedding):
+                for p in self.inputSpace.vectors()._emb.parameters():
+                    exclude.add(p.data_ptr())
+            if exclude:
+                params = [p for p in params if p.data_ptr() not in exclude]
         return optim.Adam(params, lr=lr)
 
     def runTrials(self, numTrials=1, numEpochs=1, batchSize=10, lr=0.001):
@@ -2728,6 +2754,11 @@ class BasicModel(BaseModel):
             recon_ratio=arch["reconRatio"],
             masked_prediction=arch["maskedPrediction"],
         )
+        # End-to-end embedding training: include embedding weights in optimizer
+        self.train_embeddings = arch.get("trainEmbeddings", False)
+        if self.train_embeddings and isinstance(self.inputSpace.vectors(), Embedding):
+            emb_params = list(self.inputSpace.vectors()._emb.parameters())
+            self.inputSpace.params = self.inputSpace.params + emb_params
         # Auto-load weights if configured
         wcfg = cfg.get("weights", {})
         if arch.get("autoload", wcfg.get("autoload", True)):
@@ -2735,6 +2766,8 @@ class BasicModel(BaseModel):
             if not os.path.isabs(wpath):
                 wpath = os.path.join(ProjectPaths.PROJECT_DIR, wpath)
             self.load_weights(wpath)
+        # Inference config
+        self.max_response_length = arch.get("maxResponseLength", 64)
         return cfg
 
     def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
@@ -2808,7 +2841,6 @@ class BasicModel(BaseModel):
         self.masked_prediction = masked_prediction
         if data is not None and hasattr(data, 'masked_prediction') and data.masked_prediction != 'NONE':
             data.masked_prediction = masked_prediction
-
         # nOutputSymbols tracks total symbol count fed to OutputSpace.
         # Starts with only the output-destined symbols (not reconstruction symbols).
         # It grows as higher-order cycles (conceptualOrder, symbolicOrder) append symbols.
@@ -2826,7 +2858,7 @@ class BasicModel(BaseModel):
                 data.prepare_lm_targets(embedding)
                 # Move new targets to device
                 data.toDevice()
-        self.perceptualSpace = PerceptualSpace(self.nInput, self.nPercepts,
+        self.perceptualSpace = PerceptualSpace(self.inputSpace.outputShape[0], self.nPercepts,
                                                reversible=reversible,
                                                quantized=self.perceptQuantized,
                                                passThrough=perceptPassThrough,
@@ -2834,7 +2866,7 @@ class BasicModel(BaseModel):
                                                ergodic=self.ergodic,
                                                hasAttention=self.perceptHasAttention,
                                                invertible=self.invertible)
-        self.conceptualSpace = ConceptualSpace(self.nPercepts, self.nConcepts,
+        self.conceptualSpace = ConceptualSpace(self.perceptualSpace.outputShape[0], self.nConcepts,
                                                reversible=reversible,
                                                invertible=self.invertible,
                                                hasNorm=self.hasNorm,
@@ -2846,7 +2878,7 @@ class BasicModel(BaseModel):
             # passThrough means data flows at conceptDim — set symbolDim accordingly
             TheObjectEncoding.setSymbolDim(TheObjectEncoding.conceptDim)
 
-        self.symbolicSpace   = SymbolicSpace(self.nConcepts, self.nSymbols,
+        self.symbolicSpace   = SymbolicSpace(self.conceptualSpace.outputShape[0], self.nSymbols,
                                               reversible=reversible,
                                               conceptualSpace=self.conceptualSpace,
                                               processSymbols=self.processSymbols,
@@ -2855,12 +2887,12 @@ class BasicModel(BaseModel):
         self.spaces.extend([self.inputSpace, self.perceptualSpace, self.conceptualSpace, self.symbolicSpace])
 
         if self.conceptualOrder == 2:
-            self.perceptualSpace2 = PerceptualSpace(self.nConcepts, self.nPercepts,
+            self.perceptualSpace2 = PerceptualSpace(self.conceptualSpace.outputShape[0],self.nPercepts,
                                                     reversible = reversible,
                                                     inputDim = TheObjectEncoding.symbolDim)
-            self.conceptualSpace2 = ConceptualSpace(self.nPercepts, self.nConcepts,
+            self.conceptualSpace2 = ConceptualSpace(self.perceptualSpace2.outputShape[0], self.nConcepts,
                                                     reversible = reversible)
-            self.symbolicSpace2   = SymbolicSpace(self.nConcepts, self.nSymbols,
+            self.symbolicSpace2   = SymbolicSpace(self.conceptualSpace2.outputShape[0], self.nSymbols,
                                                 reversible = reversible,
                                                 conceptualSpace = self.conceptualSpace2,
                                                 processSymbols = self.processSymbols)
@@ -2868,10 +2900,12 @@ class BasicModel(BaseModel):
             self.spaces.extend([self.perceptualSpace2, self.conceptualSpace2, self.symbolicSpace2])
 
         if self.symbolicOrder == 2:
-            self.syntacticSpace3 = SyntacticSpace(self.nSymbols, self.nWords,
+            # SyntacticSpace3 receives the full symbol tensor (nSymbols objects)
+            self.syntacticSpace3 = SyntacticSpace(self.nSymbols, self.nSymbols,
                                                 reversible = reversible)
-            self.symbolicSpace3  = SymbolicSpace(self.nWords, self.nWords,
-                                                reversible = reversible)
+            self.symbolicSpace3  = SymbolicSpace(self.syntacticSpace3.outputShape[0], self.nSymbols,
+                                                reversible = reversible,
+                                                reshape = reshape)
             nOutputSymbols += (self.symbolicOrder - 1) * self.nSymbols
             self.spaces.extend([self.syntacticSpace3, self.symbolicSpace3])
             
@@ -2983,6 +3017,82 @@ class BasicModel(BaseModel):
         batch = input_embedded.shape[0]
         TheObjectEncoding.when.increment(batch)
         return input_embedded, symbols, outputData
+
+    def infer(self, text, max_length=None):
+        """Autoregressive inference: extend input text word by word.
+
+        Embeds the input, then iteratively:
+          1. Zero the content at position len(words) (prediction slot)
+          2. Forward pass to get output embedding
+          3. Decode output to nearest word in codebook
+          4. Append predicted word's embedding at that position
+          5. Repeat until max_length or [MASK]/padding reached
+
+        Args:
+            text: input string (user query)
+            max_length: max words to generate (default from config)
+
+        Returns:
+            list of predicted words
+        """
+        if max_length is None:
+            max_length = getattr(self, 'max_response_length', 64)
+
+        self.eval()
+        input_space = self.inputSpace
+        vs = input_space.vectors()
+        codebook = vs._emb.weight.detach()
+        word_list = vs.wv.index_to_key
+        word_to_idx = {w: i for i, w in enumerate(word_list)}
+        nVec = input_space.outputShape[0]
+        embSize = vs.embeddingSize
+
+        # Embed the input text
+        words = text.split()
+        embedded = torch.zeros(1, nVec, embSize, device=TheDevice)
+        for i, word in enumerate(words[:nVec]):
+            w = word.lower()
+            if w in word_to_idx:
+                idx = word_to_idx[w]
+                embedded[0, i, :codebook.shape[1]] = codebook[idx]
+        # Apply position encoding
+        embedded = TheObjectEncoding.where(embedded)
+        embedded = TheObjectEncoding.when(embedded)
+
+        # Content mask: which dims to zero for prediction slot
+        content_mask = torch.ones(embSize, dtype=torch.bool, device=TheDevice)
+        if TheObjectEncoding.nWhere > 0:
+            where_idx = np.add([embSize, embSize], PositionalEncoding.index)
+            for wi in where_idx:
+                if 0 <= wi < embSize:
+                    content_mask[wi] = False
+        if TheObjectEncoding.nWhen > 0:
+            content_mask[-2:] = False
+
+        predicted_words = []
+        pos = len(words)
+
+        with torch.no_grad():
+            for step in range(min(max_length, nVec - pos)):
+                # Zero content at prediction position, preserve position encoding
+                embedded[0, pos, content_mask] = 0.0
+
+                # Forward pass
+                _, _, output = self.forward_from_input(embedded)
+
+                # Decode output to nearest word
+                decoded = input_space.predict(output)
+                word = decoded[0]
+                predicted_words.append(word)
+
+                # Append predicted word's embedding at this position
+                if word.lower() in word_to_idx:
+                    idx = word_to_idx[word.lower()]
+                    embedded[0, pos, :codebook.shape[1]] = codebook[idx]
+
+                pos += 1
+
+        return predicted_words
 
     def forward(self, inputData):
         """Full forward pass: core pipeline + higher-order cycles + output projection.
@@ -3179,7 +3289,7 @@ class BasicModel(BaseModel):
                     rr = self.recon_ratio
                     totalLoss = (1 - rr) * lossOut + rr * lossIn
                 else:
-                    lossIn = torch.tensor(0.0)
+                    lossIn = torch.tensor(0.0, device=pred_sq.device)
                     totalLoss = lossOut
 
                 if training:
@@ -3357,14 +3467,23 @@ class BasicModelFactory:
         train = cfg.get("training", {})  # legacy fallback
 
         dataset = arch.get("dataset", train.get("dataset", "xor"))
-        emb = cfg.get("embeddings", {})
         TheData.load(dataset,
-                     num_shards=emb.get("numShards", 1),
-                     max_docs=emb.get("maxDocs", 10000),
-                     shard_dir=emb.get("shardDir"))
+                     num_shards=arch.get("numShards", 1),
+                     max_docs=arch.get("maxDocs", 10000),
+                     shard_dir=arch.get("shardDir"))
 
         m = BasicModel()
         cfg = m.create_from_config(config_path, data=TheData)
+
+        if TheDevice.type != "cpu":
+            _patch_inductor_paths()
+            try:
+                m = torch.compile(m)
+            except Exception:
+                try:
+                    m = torch.compile(m, backend='aot_eager')
+                except Exception:
+                    pass
 
         # Training params from merged config (architecture, with training fallback)
         arch = cfg["architecture"]
@@ -3396,6 +3515,28 @@ def test():
     PositionalEncoding.test()
     TemporalEncoding.test()
     BasicModelFactory.run(os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml"))
+
+def _patch_inductor_paths():
+    """Monkey-patch torch inductor to handle paths containing spaces.
+
+    The inductor's CppBuilder assembles -L/-I flags as unquoted strings,
+    then shlex.split() breaks paths with spaces (e.g. iCloud paths).
+    This patch replaces the space-containing iCloud path with its /bits
+    symlink equivalent in the compile command before shlex.split runs.
+    """
+    try:
+        from torch._inductor import cpp_builder
+        _orig = cpp_builder._run_compile_cmd
+        # Find the iCloud prefix that /bits points to
+        _bits = "/bits"
+        if os.path.islink(_bits):
+            _target = os.readlink(_bits)  # e.g. /Users/.../Mobile Documents/.../bits
+            def _patched_run_compile_cmd(cmd_line, cwd):
+                cmd_line = cmd_line.replace(_target, _bits)
+                return _orig(cmd_line, cwd)
+            cpp_builder._run_compile_cmd = _patched_run_compile_cmd
+    except Exception:
+        pass
 
 # --- CLI entry point ---
 # Usage: python BasicModel.py [config.xml]

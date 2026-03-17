@@ -26,17 +26,14 @@ import time
 
 from flask import Flask, jsonify, request
 
-# Ensure bin/ is on the path for local imports
+# Ensure basicmodel bin/ is on the path for local imports
 _BIN = os.path.dirname(os.path.abspath(__file__))
 _PROJECT = os.path.dirname(_BIN)
-_WO_BIN = os.path.join(os.path.dirname(_PROJECT), "bin")  # WikiOracle bin/
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
-if _WO_BIN not in sys.path:
-    sys.path.insert(0, _WO_BIN)
 
 import torch
-from security import guard_input, detect_identifiability, detect_asymmetric_claim
+from secure import guard_input
 
 logger = logging.getLogger("basicmodel")
 logging.basicConfig(level=logging.INFO, format="[BasicModel] %(message)s")
@@ -123,6 +120,16 @@ def _load_model(config_path=None):
     cfg = model.create_from_config(config_path, data=TheData)
 
     model.eval()
+    from BasicModel import TheDevice, _patch_inductor_paths
+    if TheDevice.type != "cpu":
+        _patch_inductor_paths()
+        try:
+            model = torch.compile(model)
+        except Exception:
+            try:
+                model = torch.compile(model, backend='aot_eager')
+            except Exception:
+                pass
     return model, cfg
 
 
@@ -174,42 +181,9 @@ def chat_completions():
         return jsonify({"error": "Input rejected"}), 400
 
     try:
-        # Tokenize: convert text to input tensor via the model's Embedding
-        input_space = _model.inputSpace
-        vs = input_space.vectors()
-
-        # Encode text as word embeddings
-        words = user_msg.split()
-        nVec = input_space.outputShape[0]  # max tokens (nActive)
-        emb_dim = vs.embeddingSize
-        input_tensor = torch.zeros(1, nVec, emb_dim, device=next(_model.parameters()).device)
-
-        codebook = vs._emb.weight.detach()
-        word_list = vs.wv.index_to_key
-        word_to_idx = {w: i for i, w in enumerate(word_list)}
-
-        for i, word in enumerate(words[:nVec]):
-            w_lower = word.lower()
-            if w_lower in word_to_idx:
-                idx = word_to_idx[w_lower]
-                input_tensor[0, i, :codebook.shape[1]] = codebook[idx]
-
-        # Forward pass
-        with torch.no_grad():
-            input_emb, symbols, output_pred = _model.forward(input_tensor)
-
-        # Decode: map output vector to nearest word in InputSpace codebook
-        predicted_words = input_space.predict(output_pred)
+        # Autoregressive inference: extend input text word by word
+        predicted_words = _model.infer(user_msg)
         response_text = " ".join(predicted_words)
-
-        # Output safety filtering
-        if detect_identifiability(response_text):
-            logger.warning("Output blocked: identifiability detected")
-            response_text = ""
-        asym = detect_asymmetric_claim(response_text)
-        if asym:
-            logger.warning("Output blocked: %s", asym)
-            response_text = ""
 
         return jsonify({
             "choices": [{
@@ -251,8 +225,9 @@ def main():
     logger.info("Model loaded: %d parameters",
                 sum(p.numel() for p in _model.parameters()))
 
-    host = args.host or _model_config.get("server", {}).get("host", "127.0.0.1")
-    port = args.port or _model_config.get("server", {}).get("port", 8001)
+    arch = _model_config.get("architecture", {})
+    host = args.host or arch.get("serverHost", "127.0.0.1")
+    port = args.port or arch.get("serverPort", 8001)
 
     logger.info("Serving on %s:%s", host, port)
     app.run(host=host, port=port, debug=False)

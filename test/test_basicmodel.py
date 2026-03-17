@@ -2125,5 +2125,195 @@ class TestMaskedPredictionIntegration(unittest.TestCase):
         self.assertIsNotNone(batch)
 
 
+class TestRARLM(unittest.TestCase):
+    """RARLM mode masks from end and truncates previous positions."""
+
+    def setUp(self):
+        from BasicModel import (TheObjectEncoding, PositionalEncoding,
+                                TemporalEncoding, InputSpace, Data)
+        self._orig_nWhere = TheObjectEncoding.nWhere
+        self._orig_nWhen = TheObjectEncoding.nWhen
+        self._orig_objectSize = TheObjectEncoding.objectSize
+        TheObjectEncoding.nWhere = PositionalEncoding.nDim
+        TheObjectEncoding.nWhen = TemporalEncoding.nDim
+        TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
+
+        data = Data()
+        data.load("xor")
+        nInput = 8
+        TheObjectEncoding.inputDim = 1
+        TheObjectEncoding.nInput = nInput
+        TheObjectEncoding.nObjects = 0
+        TheObjectEncoding.computeNObjects()
+        self.inp = InputSpace(nInput, nInput,
+                              model_type="embedding", pretrained=False,
+                              data=data, tokenizer="grammatical")
+        inputBatch = data.train_input[0:1]
+        inputTensor = self.inp.prepInput(inputBatch)
+        self.embedded = self.inp.forward(inputTensor)
+        self.embSize = self.embedded.shape[-1]
+
+    def tearDown(self):
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = self._orig_nWhere
+        TheObjectEncoding.nWhen = self._orig_nWhen
+        TheObjectEncoding.objectSize = self._orig_objectSize
+
+    def test_rarlm_masks_from_end(self):
+        """RARLM masks position (N-1-i) and zeros previous positions."""
+        sentence = "hello world test"
+        masked, positions = self.inp.expand_masked(self.embedded, sentence, maskedPrediction='RARLM')
+        N = len(sentence.split())
+        self.assertEqual(masked.shape[0], N)
+        # Copy 0: position 2 masked, positions 0-1 zeroed
+        self.assertTrue(torch.all(masked[0, :2, :] == 0.0),
+                        "Copy 0: positions before masked pos should be zeroed")
+        # Copy 1: position 1 masked, position 0 zeroed
+        self.assertTrue(torch.all(masked[1, :1, :] == 0.0),
+                        "Copy 1: positions before masked pos should be zeroed")
+        # Copy 2: position 0 masked, nothing zeroed before it (pos=0)
+
+    def test_rarlm_mask_positions_reversed(self):
+        """RARLM returns mask_positions in reverse order [N-1, ..., 0]."""
+        sentence = "hello world test"
+        _, positions = self.inp.expand_masked(self.embedded, sentence, maskedPrediction='RARLM')
+        self.assertEqual(positions, [2, 1, 0])
+
+    def test_rarlm_content_zeroed_at_masked_pos(self):
+        """Content dims at the masked position are zeroed in each copy."""
+        from BasicModel import PositionalEncoding, TemporalEncoding
+        sentence = "hello world test"
+        masked, positions = self.inp.expand_masked(self.embedded, sentence, maskedPrediction='RARLM')
+        embSize = self.embSize
+        where_idx = np.add([embSize, embSize], PositionalEncoding.index)
+        when_idx = np.add([embSize, embSize], TemporalEncoding.index)
+        pos_dims = set(where_idx.tolist() + when_idx.tolist())
+        content_dims = [d for d in range(embSize) if d not in pos_dims]
+        for i, pos in enumerate(positions):
+            content_vals = masked[i, pos, content_dims]
+            self.assertTrue(torch.all(content_vals == 0.0),
+                            f"Copy {i}: content at masked pos {pos} should be zero")
+
+
+class TestRARLMTargets(unittest.TestCase):
+    """RARLM targets are in reverse word order."""
+
+    def setUp(self):
+        from BasicModel import (TheObjectEncoding, PositionalEncoding,
+                                TemporalEncoding, InputSpace, OutputSpace, Data)
+        self._orig_nWhere = TheObjectEncoding.nWhere
+        self._orig_nWhen = TheObjectEncoding.nWhen
+        self._orig_objectSize = TheObjectEncoding.objectSize
+        self._orig_nObjects = TheObjectEncoding.nObjects
+        TheObjectEncoding.nWhere = PositionalEncoding.nDim
+        TheObjectEncoding.nWhen = TemporalEncoding.nDim
+        TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
+
+        data = Data()
+        data.load("xor")
+        nInput = 8
+        TheObjectEncoding.inputDim = 1
+        TheObjectEncoding.nInput = nInput
+        TheObjectEncoding.nObjects = 0
+        TheObjectEncoding.computeNObjects()
+        self.inp = InputSpace(nInput, nInput,
+                              model_type="embedding", pretrained=False,
+                              data=data, tokenizer="grammatical")
+        self.emb = self.inp.vectors()
+
+        TheObjectEncoding.symbolDim = 1
+        TheObjectEncoding.outputDim = 1
+        TheObjectEncoding.nOutput = 4
+        self.out = OutputSpace(nActiveInput=8, nActiveOutput=4,
+                               reversible=False, data=data)
+
+    def tearDown(self):
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = self._orig_nWhere
+        TheObjectEncoding.nWhen = self._orig_nWhen
+        TheObjectEncoding.objectSize = self._orig_objectSize
+        TheObjectEncoding.nObjects = self._orig_nObjects
+
+    def test_rarlm_targets_reversed(self):
+        """RARLM targets are MLM targets in reverse order."""
+        for w in ["hello", "world"]:
+            if w not in self.emb.cbow.key_to_index:
+                self.emb._add_word(w)
+        mlm_targets = self.out.expand_masked("hello world", self.emb, maskedPrediction='MLM')
+        rarlm_targets = self.out.expand_masked("hello world", self.emb, maskedPrediction='RARLM')
+        # RARLM targets should be MLM targets reversed
+        torch.testing.assert_close(rarlm_targets, mlm_targets.flip(0))
+
+
+class TestTrainEmbeddingsFlag(unittest.TestCase):
+    """trainEmbeddings config flag controls whether embedding weights are in optimizer."""
+
+    def _create_model(self, train_embeddings):
+        """Create an XOR embedding model with specified trainEmbeddings flag."""
+        import xml.etree.ElementTree as ET
+        from BasicModel import BasicModel, TheData
+
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+
+        auto = root.find("architecture/autoload")
+        if auto is None:
+            auto = ET.SubElement(root.find("architecture"), "autoload")
+        auto.text = "false"
+
+        te = root.find("architecture/trainEmbeddings")
+        if te is None:
+            te = ET.SubElement(root.find("architecture"), "trainEmbeddings")
+        te.text = str(train_embeddings).lower()
+
+        tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
+        tree.write(tmp, xml_declaration=True)
+        tmp.close()
+        TheData.load("xor")
+        m = BasicModel()
+        m.create_from_config(tmp.name, data=TheData)
+        os.unlink(tmp.name)
+        return m
+
+    def setUp(self):
+        from BasicModel import TheObjectEncoding
+        self._saved = {
+            'nObjects': TheObjectEncoding.nObjects,
+            'nWhere': TheObjectEncoding.nWhere,
+            'nWhen': TheObjectEncoding.nWhen,
+            'objectSize': TheObjectEncoding.objectSize,
+        }
+
+    def tearDown(self):
+        from BasicModel import TheObjectEncoding
+        for k, v in self._saved.items():
+            setattr(TheObjectEncoding, k, v)
+
+    def test_train_embeddings_includes_emb_params(self):
+        """When trainEmbeddings=true, _emb.weight is in optimizer params."""
+        from BasicModel import Embedding
+        m = self._create_model(True)
+        if not isinstance(m.inputSpace.vectors(), Embedding):
+            self.skipTest("Model doesn't use Embedding")
+        emb_weight = m.inputSpace.vectors()._emb.weight
+        optimizer = m.getOptimizer(lr=0.001)
+        opt_params = [p.data_ptr() for group in optimizer.param_groups for p in group['params']]
+        self.assertIn(emb_weight.data_ptr(), opt_params,
+                      "Embedding weight should be in optimizer when trainEmbeddings=true")
+
+    def test_frozen_embeddings_default(self):
+        """When trainEmbeddings=false, _emb.weight is NOT in optimizer params."""
+        from BasicModel import Embedding
+        m = self._create_model(False)
+        if not isinstance(m.inputSpace.vectors(), Embedding):
+            self.skipTest("Model doesn't use Embedding")
+        emb_weight = m.inputSpace.vectors()._emb.weight
+        optimizer = m.getOptimizer(lr=0.001)
+        opt_params = [p.data_ptr() for group in optimizer.param_groups for p in group['params']]
+        self.assertNotIn(emb_weight.data_ptr(), opt_params,
+                         "Embedding weight should NOT be in optimizer when trainEmbeddings=false")
+
+
 if __name__ == "__main__":
     unittest.main()

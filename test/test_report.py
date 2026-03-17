@@ -25,7 +25,7 @@ class ResultCollector:
     """Pytest plugin that collects test outcomes."""
 
     def __init__(self):
-        self.results = []  # list of (nodeid, outcome, duration, message)
+        self.results = []  # list of (nodeid, outcome, duration, message, stdout)
         self.start_time = None
 
     def pytest_sessionstart(self, session):
@@ -50,7 +50,12 @@ class ResultCollector:
             else:
                 outcome = report.outcome
                 msg = ""
-            self.results.append((report.nodeid, outcome, duration, msg))
+            # Capture stdout from test (printed probe/query output)
+            stdout = ""
+            for section_name, content in report.sections:
+                if "stdout" in section_name.lower():
+                    stdout += content
+            self.results.append((report.nodeid, outcome, duration, msg, stdout))
 
     def pytest_runtest_makereport(self, item, call):
         # Capture xfail
@@ -78,10 +83,10 @@ def generate_report(test_dir=None):
     report = Report()
 
     # Summary counts
-    passed = sum(1 for _, o, _, _ in collector.results if o == "passed")
-    failed = sum(1 for _, o, _, _ in collector.results if o == "failed")
-    skipped = sum(1 for _, o, _, _ in collector.results if o == "skipped")
-    xfailed = sum(1 for _, o, _, _ in collector.results if o == "xfailed")
+    passed = sum(1 for r in collector.results if r[1] == "passed")
+    failed = sum(1 for r in collector.results if r[1] == "failed")
+    skipped = sum(1 for r in collector.results if r[1] == "skipped")
+    xfailed = sum(1 for r in collector.results if r[1] == "xfailed")
     total = len(collector.results)
 
     # Summary table
@@ -102,16 +107,17 @@ def generate_report(test_dir=None):
 
     # Group results by test file
     by_file = {}
-    for nodeid, outcome, duration, msg in collector.results:
+    for nodeid, outcome, duration, msg, stdout in collector.results:
         parts = nodeid.split("::", 1)
         filename = parts[0]
         testname = parts[1] if len(parts) > 1 else nodeid
-        by_file.setdefault(filename, []).append((testname, outcome, duration, msg))
+        by_file.setdefault(filename, []).append((testname, outcome, duration, msg, stdout))
 
     # Per-file tables
+    testpoint_output = []
     for filename, tests in sorted(by_file.items()):
         rows = []
-        for testname, outcome, duration, msg in tests:
+        for testname, outcome, duration, msg, stdout in tests:
             if outcome == "passed":
                 status = '<span class="match">PASS</span>'
             elif outcome == "failed":
@@ -128,7 +134,19 @@ def generate_report(test_dir=None):
             else:
                 row.append("")
             rows.append(row)
+            # Collect testpoint stdout for the diagnostic section
+            if "test_testpoint" in filename and stdout.strip():
+                testpoint_output.append((testname, stdout.strip()))
         report.add_table(filename, ["Test", "Status", "Duration", "Details"], rows)
+
+    # Testpoint diagnostic section — embedding probes and server queries
+    if testpoint_output:
+        tp_rows = []
+        for testname, output in testpoint_output:
+            short_name = testname.split("::")[-1] if "::" in testname else testname
+            tp_rows.append([short_name, f"<pre>{output}</pre>"])
+        report.add_table("Testpoint: Embedding Probes &amp; Server Queries",
+                         ["Probe", "Output"], tp_rows)
 
     path = report.write_html()
     return exit_code, path
