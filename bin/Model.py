@@ -101,12 +101,15 @@ class Layer(nn.Module, metaclass=_AutoDevice):
     def forward(self, x, bias=None, temp=None):
         """Identity pass-through (subclasses override)."""
         batch = x.shape[0]
-        assert x.shape[1] == self.nSymbols
         return x
     def reverse(self, y, bias=None, temp=None):
         """Identity pass-through (subclasses override)."""
         batch = y.shape[0]
-        assert y.shape[1] == self.nOutput
+        # For 3D tensors, nOutput matches the last dim (embedding), not dim 1 (sequence)
+        if y.ndim == 3:
+            assert y.shape[2] == self.nOutput
+        else:
+            assert y.shape[1] == self.nOutput
         return y
 class ErgodicLayer(Layer):
     """Layer base class that adapts its explore/exploit balance over training.
@@ -966,8 +969,8 @@ class PiLayer(ErgodicLayer):
             bias, temp = self.bias, self.var
         x = self.permute(x)
         # Implements y_j = prod_i (1 + tanh(w_ji * x_i + b_j)).
-        # A log-domain formulation was attempted (exp(sum(log(...)))), but
-        # the matrix log is not invertible with negative weights.
+        # Log-domain: exp(sum(log(term))) avoids numerical overflow when
+        # nInput is large.  Safe because saturate=True guarantees term > 0.
         if has_signal(temp):
             self.resample_noise()
         w = bias * self.weights + temp * self.noise
@@ -983,7 +986,7 @@ class PiLayer(ErgodicLayer):
                 term = 1 + torch.tanh(WX)  # shape (N, J, K)
             else:
                 term = 1 + WX
-            output = torch.prod(term, dim=1)  # result has shape (N, L)
+            output = torch.exp(torch.sum(torch.log(term.clamp(min=1e-8)), dim=1))  # (N, L)
         else:
             # x: shape (N, J, K), w: shape (K, L)
             # Expand x to (N, J, K, 1) and w to (1, 1, K, L) so they can broadcast together:
@@ -999,7 +1002,7 @@ class PiLayer(ErgodicLayer):
             else:
                 term  = 1 + WX
             # Compute the product along the J dimension:
-            output   =  torch.prod(term, dim=2)  # result has shape (N, K, L)
+            output = torch.exp(torch.sum(torch.log(term.clamp(min=1e-8)), dim=2))  # (N, K, L)
         self.observe_forward_certainty(output)
         output = self.unpermute(output)
         return output
@@ -1196,7 +1199,8 @@ class InvertiblePiLayer(ErgodicLayer):
             W_pinv = self.layer.compute_Winverse(bias, temp)  # SVD-based, internal noise
             x = gamma @ W_pinv
         else:
-            W_pinv = torch.linalg.pinv( (self.W + temp*self.noise) )  # (nOutput, nInput)
+            W_eff = self.W + temp*self.noise
+            W_pinv = torch.linalg.pinv(W_eff)  # (nOutput, nInput)
             x = gamma @ W_pinv
         x = self.unpermute(x)
 

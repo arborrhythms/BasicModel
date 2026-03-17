@@ -10,7 +10,7 @@
     <ergodic>false</ergodic>
     <certainty>false</certainty>
     <dataset>text</dataset>
-    <modelType>lm</modelType>
+    <modelType>embedding</modelType>
     <pretrained>false</pretrained>
     <numTrials>1</numTrials>
     <numEpochs>4</numEpochs>
@@ -33,7 +33,7 @@
   </InputSpace>
 
   <PerceptualSpace>
-    <nActive>32</nActive>
+    <nActive>64</nActive>
     <nDim>100</nDim>
     <nVectors>0</nVectors>
     <passThrough>false</passThrough>
@@ -43,7 +43,7 @@
   </PerceptualSpace>
 
   <ConceptualSpace>
-    <nActive>32</nActive>
+    <nActive>64</nActive>
     <nDim>100</nDim>
     <nVectors>0</nVectors>
     <hasAttention>true</hasAttention>
@@ -53,9 +53,9 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nActive>32</nActive>
+    <nActive>64</nActive>
     <nDim>100</nDim>
-    <nVectors>32</nVectors>
+    <nVectors>64</nVectors>
     <passThrough>false</passThrough>
   </SymbolicSpace>
 

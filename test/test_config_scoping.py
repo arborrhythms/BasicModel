@@ -109,7 +109,7 @@ class TestCreateFromConfig(unittest.TestCase):
     <reversible>true</reversible>
     <reshape>true</reshape>
     <dataset>xor</dataset>
-    <modelType>lm</modelType>
+    <modelType>embedding</modelType>
     <pretrained>false</pretrained>
   </architecture>
   <InputSpace><nActive>2</nActive><nDim>1</nDim></InputSpace>

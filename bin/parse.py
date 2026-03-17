@@ -42,7 +42,29 @@ for _res in ("tokenizers/punkt_tab", "taggers/averaged_perceptron_tagger_eng",
 # Constants
 # ---------------------------------------------------------------------------
 
-PUNCTUATION = set(".,;:?!\"'()-—–")
+def _punctuation_from_grammar():
+    """Derive the PUNCTUATION set from the PUNCTUATION rule in grammar.cfg,
+    plus SENTENCE_SEPARATORS from lex.py."""
+    import re
+    from lex import SENTENCE_SEPARATORS
+    chars = set(SENTENCE_SEPARATORS)
+    grammar_path = Path(__file__).resolve().parent.parent / "data" / "grammar.cfg"
+    for line in grammar_path.read_text().splitlines():
+        stripped = line.split('#')[0].strip()
+        if not stripped or '->' not in stripped:
+            continue
+        lhs, rhs = stripped.split('->', 1)
+        lhs = lhs.strip()
+        if lhs != 'PUNCTUATION':
+            continue
+        # Extract quoted characters: handles both "x" and 'x' styles
+        for match in re.finditer(r"""(?:"([^"]+)"|'([^']+)')""", rhs):
+            char = match.group(1) if match.group(1) is not None else match.group(2)
+            chars.add(char)
+    return chars
+
+
+PUNCTUATION = _punctuation_from_grammar()
 
 # ---------------------------------------------------------------------------
 # Grammar loading — derive all word lists from grammar.cfg
@@ -834,13 +856,15 @@ def _group_sentences(lex_tokens):
 
     for tok in lex_tokens:
         cat = tok['category']
-        if cat in word_cats:
-            current_words.append(tok)
-        elif cat in sep_cats:
+        if cat in sep_cats:
             if current_words:
                 sentences.append((list(current_words), tok))
                 current_words = []
             # else: bare separator, skip
+        elif cat in word_cats or cat in ('PUNCT', 'NUMBER'):
+            # Accumulate WORD, PUNCT, and NUMBER tokens as sentence content
+            current_words.append(tok)
+        # else: unknown category, skip
 
     # Return (complete_sentences, trailing_fragment)
     return sentences, current_words

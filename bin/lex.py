@@ -1,7 +1,7 @@
 import torch
 from typing import List, Optional
 
-SENTENCE_SEPARATORS = set('.!?;')
+SENTENCE_SEPARATORS = set('.!?')
 
 
 class Lex:
@@ -71,14 +71,19 @@ class Lex:
         return words
 
     def lex_buffer(self, buf, start=0):
-        """Tokenize buf[start:] into word and separator spans.
+        """Tokenize buf[start:] into spans using character-class scanning.
 
         Returns:
             list of {'start': int, 'end': int, 'text': str, 'category': str}
 
-        Each token is categorized as 'WORD' or 'SEPARATOR'.
+        Each token is categorized as one of:
+            'WORD'      — alphabetic runs (including mid-word apostrophes/hyphens)
+            'NUMBER'    — digit runs
+            'SEPARATOR' — sentence-ending punctuation (. ! ?)
+            'PUNCT'     — all other non-whitespace single characters
+
         Sentence grouping is NOT done here — that is parse's job.
-        Also updates self.vocab with new words encountered.
+        Only WORD tokens update self.vocab.
         """
         text = buf[start:]
         if not text.strip():
@@ -86,65 +91,62 @@ class Lex:
 
         tokens = []
         i = 0
-        while i < len(text):
+        n = len(text)
+
+        def _add_token(tok_start, tok_end, category):
+            tok_text = text[tok_start:tok_end]
+            tokens.append({
+                'start': start + tok_start,
+                'end': start + tok_end,
+                'text': tok_text,
+                'category': category,
+            })
+            if category == 'WORD' and tok_text not in self.vocab:
+                next_id = len(self.vocab)
+                self.vocab[tok_text] = next_id
+                self.id_to_word[next_id] = tok_text
+
+        while i < n:
+            ch = text[i]
+
             # Skip whitespace
-            if text[i] in ' \n\r\t':
+            if ch in ' \n\r\t':
                 i += 1
                 continue
 
-            # Find token end
-            j = i
-            while j < len(text) and text[j] not in ' \n\r\t':
-                j += 1
+            # Alphabetic run (WORD) — includes mid-word apostrophes and hyphens
+            if ch.isalpha():
+                j = i + 1
+                while j < n:
+                    c = text[j]
+                    if c.isalpha():
+                        j += 1
+                    elif c in ("'", "-", "\u2019") and j + 1 < n and text[j + 1].isalpha():
+                        # Mid-word apostrophe/hyphen: include it and the next alpha
+                        j += 2
+                    else:
+                        break
+                _add_token(i, j, 'WORD')
+                i = j
+                continue
 
-            raw_token = text[i:j]
+            # Digit run (NUMBER)
+            if ch.isdigit():
+                j = i + 1
+                while j < n and text[j].isdigit():
+                    j += 1
+                _add_token(i, j, 'NUMBER')
+                i = j
+                continue
 
-            # Check if token ends with separator punctuation
-            # e.g. "barks." → WORD "barks" + SEPARATOR "."
-            if len(raw_token) > 1 and raw_token[-1] in SENTENCE_SEPARATORS:
-                word_part = raw_token[:-1]
-                sep_part = raw_token[-1]
+            # Sentence-ending punctuation (SEPARATOR)
+            if ch in SENTENCE_SEPARATORS:
+                _add_token(i, i + 1, 'SEPARATOR')
+                i += 1
+                continue
 
-                abs_start = start + i
-                abs_end = start + i + len(word_part)
-                tokens.append({
-                    'start': abs_start,
-                    'end': abs_end,
-                    'text': word_part,
-                    'category': 'WORD',
-                })
-                if word_part not in self.vocab:
-                    next_id = len(self.vocab)
-                    self.vocab[word_part] = next_id
-                    self.id_to_word[next_id] = word_part
-
-                sep_start = abs_end
-                sep_end = sep_start + 1
-                tokens.append({
-                    'start': sep_start,
-                    'end': sep_end,
-                    'text': sep_part,
-                    'category': 'SEPARATOR',
-                })
-            elif raw_token in SENTENCE_SEPARATORS:
-                tokens.append({
-                    'start': start + i,
-                    'end': start + j,
-                    'text': raw_token,
-                    'category': 'SEPARATOR',
-                })
-            else:
-                tokens.append({
-                    'start': start + i,
-                    'end': start + j,
-                    'text': raw_token,
-                    'category': 'WORD',
-                })
-                if raw_token not in self.vocab:
-                    next_id = len(self.vocab)
-                    self.vocab[raw_token] = next_id
-                    self.id_to_word[next_id] = raw_token
-
-            i = j
+            # Everything else: single-character PUNCT
+            _add_token(i, i + 1, 'PUNCT')
+            i += 1
 
         return tokens

@@ -18,6 +18,8 @@
     <weightsPath>output/weights.pt</weightsPath>
     <autoload>true</autoload>
     <autosave>false</autosave>
+    <reconRatio>0.5</reconRatio>
+    <maskedPrediction>NONE</maskedPrediction>
   </architecture>
 
   <InputSpace>

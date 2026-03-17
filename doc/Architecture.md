@@ -126,6 +126,53 @@ translate between them internally.
 
 See [Params.md](Params.md) for all XML configuration parameters.
 
+### Masked Prediction Modes
+
+The `<maskedPrediction>` config parameter controls how the model learns word
+embeddings during training. When set to a mode other than `NONE`, the training
+loop uses a stream interface (`getBatch`) that dynamically expands each sentence
+into N masked examples (one per word position), avoiding pre-expansion memory
+costs.
+
+| Mode | Input masking | Future truncation | Output target | Loss |
+|------|--------------|-------------------|---------------|------|
+| `NONE` | No masking | No | Provided by dataset | Normal |
+| `MLM` | Zero content at position i, preserve position encoding | No | Embedding of word i | Normal MSE |
+| `ARLM` | Zero content at position i, preserve position encoding | Yes — all positions j > i completely zeroed | Embedding of word i | Normal MSE |
+| `ARUS` | Same as ARLM | Yes | Zero vector (no supervised signal) | Suppressed to 0 |
+
+**MLM** (Masked Language Model): Each word position is masked independently. The
+model sees the full surrounding context (both past and future) and must predict
+the masked word's embedding. This is analogous to BERT-style training.
+
+**ARLM** (AutoRegressive Language Model): Like MLM, but future context is removed.
+The model can only see positions before the mask, making it autoregressive. The
+target is still the masked word's embedding.
+
+**ARUS** (AutoRegressive Unsupervised): Same input masking as ARLM, but the output
+target is a zero vector and the output loss is suppressed. Only reconstruction
+loss (if `reversible=true`) provides learning signal. This enables unsupervised
+representation learning without explicit word prediction.
+
+#### MSE over Embeddings vs. Cross-Entropy over Vocabulary
+
+Standard BERT uses cross-entropy over vocabulary indices: the model produces a
+probability distribution over the full vocabulary and is penalized for assigning
+low probability to the correct word. This treats each word as a discrete,
+unrelated class.
+
+WikiOracle instead uses MSE over embedding vectors: the model produces a
+continuous vector and is penalized by its distance from the target word's
+embedding. This is an architectural advantage because it **rewards meaningful
+similarity**. A prediction near "cat" when the target is "kitten" incurs less
+loss than a prediction near "democracy" — the embedding space captures semantic
+relationships that cross-entropy over indices discards entirely. The model learns
+a continuous landscape of meaning rather than a flat classification surface.
+
+This also means the model's output dimensionality is the embedding dimension
+(typically 50-300) rather than the vocabulary size (typically 30,000-100,000),
+substantially reducing the parameter count of the output projection.
+
 ---
 
 ## Grammar

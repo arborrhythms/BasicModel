@@ -43,7 +43,7 @@ class TestLexBuffer(unittest.TestCase):
     def test_multiple_separators(self):
         """Different separator types are recognized."""
         lex = Lex()
-        for sep in ['.', '!', '?', ';']:
+        for sep in ['.', '!', '?']:
             buf = f"The dog barks{sep}"
             tokens = lex.lex_buffer(buf, 0)
             seps = [t for t in tokens if t['category'] == 'SEPARATOR']
@@ -74,6 +74,43 @@ class TestLexBuffer(unittest.TestCase):
         lex.build_vocab(source)
         spans = lex.encode(source)
         self.assertEqual(spans.shape[1], 3)
+
+    def test_bracket_splits_from_word(self):
+        """[MASK] from source text splits into 3 tokens."""
+        lex = Lex()
+        tokens = lex.lex_buffer("[MASK]", 0)
+        texts = [t['text'] for t in tokens]
+        self.assertEqual(texts, ['[', 'MASK', ']'])
+        self.assertEqual(tokens[0]['category'], 'PUNCT')
+        self.assertEqual(tokens[1]['category'], 'WORD')
+        self.assertEqual(tokens[2]['category'], 'PUNCT')
+
+    def test_brackets_in_sentence(self):
+        lex = Lex()
+        tokens = lex.lex_buffer("the [quick] fox", 0)
+        words = [t['text'] for t in tokens if t['category'] == 'WORD']
+        self.assertEqual(words, ['the', 'quick', 'fox'])
+
+    def test_numbers_separate(self):
+        lex = Lex()
+        tokens = lex.lex_buffer("room 101", 0)
+        self.assertEqual(tokens[0]['text'], 'room')
+        self.assertEqual(tokens[0]['category'], 'WORD')
+        self.assertEqual(tokens[1]['text'], '101')
+        self.assertEqual(tokens[1]['category'], 'NUMBER')
+
+    def test_semicolon_is_punct_not_separator(self):
+        lex = Lex()
+        tokens = lex.lex_buffer("hello; world", 0)
+        semi = [t for t in tokens if t['text'] == ';']
+        self.assertEqual(semi[0]['category'], 'PUNCT')
+
+    def test_bracket_offsets_correct(self):
+        lex = Lex()
+        buf = "[MASK]"
+        tokens = lex.lex_buffer(buf, 0)
+        for tok in tokens:
+            self.assertEqual(buf[tok['start']:tok['end']], tok['text'])
 
 if __name__ == '__main__':
     unittest.main()

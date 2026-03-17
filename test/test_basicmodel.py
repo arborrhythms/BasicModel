@@ -888,10 +888,14 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
     encodes spans as [nWhat + nWhere] via VectorSet codebook + ObjectEncoding."""
 
     def setUp(self):
-        from BasicModel import TheObjectEncoding
+        from BasicModel import TheObjectEncoding, PositionalEncoding, TemporalEncoding
         self._orig_nWhere = TheObjectEncoding.nWhere
         self._orig_nWhen = TheObjectEncoding.nWhen
         self._orig_objectSize = TheObjectEncoding.objectSize
+        # Enforce non-zero nWhere/nWhen — earlier tests may have zeroed them
+        TheObjectEncoding.nWhere = PositionalEncoding.nDim   # 2
+        TheObjectEncoding.nWhen = TemporalEncoding.nDim      # 2
+        TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
 
     def tearDown(self):
         from BasicModel import TheObjectEncoding
@@ -907,7 +911,7 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         return data
 
     def _make_input_space(self, tokenizer="grammatical"):
-        """Create an InputSpace with model_type='lm' from XOR text data."""
+        """Create an InputSpace with model_type='embedding' from XOR text data."""
         from BasicModel import InputSpace, TheObjectEncoding
         data = self._make_text_data()
         nInput = 8
@@ -916,12 +920,12 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="lm", pretrained=False, data=data,
+                         model_type="embedding", pretrained=False, data=data,
                          tokenizer=tokenizer)
         return inp, data
 
     def test_lex_created_on_init(self):
-        """InputSpace with model_type='lm' creates a Lex instance."""
+        """InputSpace with model_type='embedding' creates a Lex instance."""
         from lex import Lex
         inp, _ = self._make_input_space()
         self.assertTrue(hasattr(inp, 'lex'))
@@ -986,10 +990,14 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
     """OutputSpace can reconstruct text from symbolic vectors."""
 
     def setUp(self):
-        from BasicModel import TheObjectEncoding
+        from BasicModel import TheObjectEncoding, PositionalEncoding, TemporalEncoding
         self._orig_nWhere = TheObjectEncoding.nWhere
         self._orig_nWhen = TheObjectEncoding.nWhen
         self._orig_objectSize = TheObjectEncoding.objectSize
+        # Enforce non-zero nWhere/nWhen — earlier tests may have zeroed them
+        TheObjectEncoding.nWhere = PositionalEncoding.nDim   # 2
+        TheObjectEncoding.nWhen = TemporalEncoding.nDim      # 2
+        TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
 
     def tearDown(self):
         from BasicModel import TheObjectEncoding
@@ -1039,7 +1047,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="lm", pretrained=False, data=data,
+                         model_type="embedding", pretrained=False, data=data,
                          tokenizer="grammatical")
         # Create OutputSpace with the same embedding setup
         nOut = 4
@@ -1055,12 +1063,12 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         data = Data()
         data.load("xor")
         nInput = 8
-        TheObjectEncoding.inputDim = 1
+        TheObjectEncoding.inputDim = 10  # need enough dims for reliable cosine matching
         TheObjectEncoding.nInput = nInput
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="lm", pretrained=False, data=data,
+                         model_type="embedding", pretrained=False, data=data,
                          tokenizer="grammatical")
         nOut = 4
         os_ = OutputSpace(nInput, nOut)
@@ -1073,20 +1081,22 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         nWhat = embSize - TheObjectEncoding.objectSize
         div_term = TheObjectEncoding.where.div_term
 
-        # Pick first two words from the codebook
+        # Pick first two non-[MASK] words from the codebook
         batch = 1
         nVec = 2
         vectors = torch.zeros([batch, nVec, embSize])
         expected_words = []
-        for i in range(nVec):
-            vectors[0, i, :] = codebook[i]
-            expected_words.append(words_list[i])
-            # Set nWhere to encode byte offset i*6
-            offset = i * 6
+        # Skip [MASK] (zero vector) — cosine matching can't recover it
+        usable = [j for j, w in enumerate(words_list) if w != "[MASK]"]
+        for slot, j in enumerate(usable[:nVec]):
+            vectors[0, slot, :nWhat] = codebook[j][:nWhat]
+            expected_words.append(words_list[j])
+            # Set nWhere to encode byte offset slot*6
+            offset = slot * 6
             pos = offset * div_term
             where_idx = np.add([embSize, embSize], PositionalEncoding.index)
-            vectors[0, i, where_idx[0]] = math.sin(pos * div_term)
-            vectors[0, i, where_idx[1]] = math.cos(pos * div_term)
+            vectors[0, slot, where_idx[0]] = math.sin(pos * div_term)
+            vectors[0, slot, where_idx[1]] = math.cos(pos * div_term)
 
         recovered_words, recovered_positions = os_.reconstruct_text(vectors)
         self.assertEqual(recovered_words[0], expected_words)
@@ -1097,12 +1107,12 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         data = Data()
         data.load("xor")
         nInput = 8
-        TheObjectEncoding.inputDim = 1
+        TheObjectEncoding.inputDim = 10  # need enough dims for reliable cosine matching
         TheObjectEncoding.nInput = nInput
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="lm", pretrained=False, data=data,
+                         model_type="embedding", pretrained=False, data=data,
                          tokenizer="grammatical")
         nOut = 4
         os_ = OutputSpace(nInput, nOut)
@@ -1117,10 +1127,12 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         nVec = 2
         vectors = torch.zeros([batch, nVec, embSize])
         expected_words = []
-        for i in range(nVec):
-            vectors[0, i, :embSize - TheObjectEncoding.objectSize] = \
-                codebook[i, :embSize - TheObjectEncoding.objectSize]
-            expected_words.append(words_list[i])
+        # Skip [MASK] (zero vector) — cosine matching can't recover it
+        usable = [j for j, w in enumerate(words_list) if w != "[MASK]"]
+        for slot, j in enumerate(usable[:nVec]):
+            vectors[0, slot, :embSize - TheObjectEncoding.objectSize] = \
+                codebook[j, :embSize - TheObjectEncoding.objectSize]
+            expected_words.append(words_list[j])
         # nWhere left as zero -> consecutive mode
 
         recovered_words, recovered_positions = os_.reconstruct_text(vectors)
@@ -1134,12 +1146,12 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         data = Data()
         data.load("xor")
         nInput = 8
-        TheObjectEncoding.inputDim = 1
+        TheObjectEncoding.inputDim = 10  # need enough dims for reliable cosine matching
         TheObjectEncoding.nInput = nInput
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="lm", pretrained=False, data=data,
+                         model_type="embedding", pretrained=False, data=data,
                          tokenizer="grammatical")
         nOut = 4
         os_ = OutputSpace(nInput, nOut)
@@ -1149,26 +1161,29 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         codebook = inp.vectors()._emb.weight.detach()
         words_list = inp.vectors().wv.index_to_key
         embSize = inp.vectors().embeddingSize
+        nWhat = embSize - TheObjectEncoding.objectSize
         div_term = TheObjectEncoding.where.div_term
         where_idx = np.add([embSize, embSize], PositionalEncoding.index)
 
         batch = 1
         nVec = 2
         vectors = torch.zeros([batch, nVec, embSize])
+        # Skip [MASK] (zero vector) — cosine matching can't recover it
+        usable = [j for j, w in enumerate(words_list) if w != "[MASK]"]
         # Word 0 at offset 0, word 1 at offset 6
-        for i in range(nVec):
-            vectors[0, i, :] = codebook[i]
-            offset = i * 6
+        for slot, j in enumerate(usable[:nVec]):
+            vectors[0, slot, :nWhat] = codebook[j][:nWhat]
+            offset = slot * 6
             pos = offset * div_term
-            vectors[0, i, where_idx[0]] = math.sin(pos * div_term)
-            vectors[0, i, where_idx[1]] = math.cos(pos * div_term)
+            vectors[0, slot, where_idx[0]] = math.sin(pos * div_term)
+            vectors[0, slot, where_idx[1]] = math.cos(pos * div_term)
 
         recovered_words, positions = os_.reconstruct_text(vectors)
         text = os_.reconstruct_buffer(vectors)
         # The buffer should contain words at byte offsets
         self.assertIsInstance(text[0], str)
-        self.assertIn(words_list[0], text[0])
-        self.assertIn(words_list[1], text[0])
+        self.assertIn(words_list[usable[0]], text[0])
+        self.assertIn(words_list[usable[1]], text[0])
 
     def test_forward_reverse_shapes_unchanged(self):
         """forward() and reverse() tensor shapes must not change with text_mode."""
@@ -1184,7 +1199,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="lm", pretrained=False, data=data,
+                         model_type="embedding", pretrained=False, data=data,
                          tokenizer="grammatical")
         nOut = 4
         os_ = OutputSpace(nInput, nOut, reversible=True)
@@ -1202,10 +1217,14 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
     """InputSpace.reverse() must reconstruct text from latent state."""
 
     def setUp(self):
-        from BasicModel import TheObjectEncoding
+        from BasicModel import TheObjectEncoding, PositionalEncoding, TemporalEncoding
         self._orig_nWhere = TheObjectEncoding.nWhere
         self._orig_nWhen = TheObjectEncoding.nWhen
         self._orig_objectSize = TheObjectEncoding.objectSize
+        # Enforce non-zero nWhere/nWhen — earlier tests may have zeroed them
+        TheObjectEncoding.nWhere = PositionalEncoding.nDim   # 2
+        TheObjectEncoding.nWhen = TemporalEncoding.nDim      # 2
+        TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
 
     def tearDown(self):
         from BasicModel import TheObjectEncoding
@@ -1214,17 +1233,17 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         TheObjectEncoding.objectSize = self._orig_objectSize
 
     def _make_text_input_space(self):
-        """Create an InputSpace with model_type='lm' from XOR text data."""
+        """Create an InputSpace with model_type='embedding' from XOR text data."""
         from BasicModel import InputSpace, Data, TheObjectEncoding
         data = Data()
         data.load("xor")
         nInput = 8
-        TheObjectEncoding.inputDim = 1
+        TheObjectEncoding.inputDim = 10  # need enough dims for reliable cosine matching
         TheObjectEncoding.nInput = nInput
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="lm", pretrained=False, data=data,
+                         model_type="embedding", pretrained=False, data=data,
                          tokenizer="grammatical")
         return inp, data
 
@@ -1321,7 +1340,7 @@ class TestTokenizerConfig(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="lm", pretrained=False, data=data,
+                         model_type="embedding", pretrained=False, data=data,
                          tokenizer="traditional")
         self.assertFalse(hasattr(inp, 'lex'))
 
@@ -1337,7 +1356,7 @@ class TestTokenizerConfig(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="lm", pretrained=False, data=data,
+                         model_type="embedding", pretrained=False, data=data,
                          tokenizer="grammatical")
         self.assertTrue(hasattr(inp, 'lex'))
         self.assertIsInstance(inp.lex, Lex)
@@ -1353,7 +1372,7 @@ class TestTokenizerConfig(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="lm", pretrained=False, data=data,
+                         model_type="embedding", pretrained=False, data=data,
                          tokenizer="traditional")
         self.assertIsInstance(inp.vectors(), Embedding)
 
@@ -1404,6 +1423,20 @@ class TestEmbeddingLexDelegation(unittest.TestCase):
         self.assertIn("\x00", vocab)
 
 
+class TestMaskCodebookEntry(unittest.TestCase):
+    def test_mask_codebook_entry_is_zero(self):
+        """[MASK] exists in vocabulary as a zero vector after Embedding.create()."""
+        from BasicModel import Embedding, TheObjectEncoding
+        TheObjectEncoding.objectSize = 0
+        emb = Embedding()
+        emb.create(nInput=10, nVectors=2, nDim=10, pretrained=False)
+        self.assertIn("[MASK]", emb.cbow.key_to_index)
+        idx = emb.cbow.key_to_index["[MASK]"]
+        vec = emb._emb.weight[idx]
+        self.assertTrue(torch.all(vec == 0.0))
+        self.assertEqual(emb.mask_token_idx, idx)
+
+
 class TestInputSpaceParseEmbeddings(unittest.TestCase):
 
     def test_loads_parse_artifact(self):
@@ -1431,7 +1464,7 @@ class TestXorForwardPass(unittest.TestCase):
     """Embedding-backed InputSpace handles xor.xml forward pass without assertion error."""
 
     def test_xor_forward_produces_output(self):
-        """InputSpace with model_type='lm' can forward xor data through Embedding."""
+        """InputSpace with model_type='embedding' can forward xor data through Embedding."""
         from BasicModel import InputSpace, Data, TheObjectEncoding
         data = Data()
         data.load("xor")
@@ -1441,7 +1474,7 @@ class TestXorForwardPass(unittest.TestCase):
         TheObjectEncoding.nObjects = 0  # reset for test isolation
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
-                         model_type="lm", pretrained=False, data=data,
+                         model_type="embedding", pretrained=False, data=data,
                          tokenizer="traditional")
         inputTensor = inp.prepInput(data.train_input[:2])
         result = inp.forward(inputTensor)
@@ -1786,7 +1819,7 @@ class TestReconstructionSymbols(unittest.TestCase):
             m.setAlpha(0.0)
             m.train(False)
             with torch.no_grad():
-                m.runEpoch(test_input, test_output, lr=0, batchSize=len(test_input))
+                m.runEpoch(batchSize=len(test_input), split="test")
 
             # Check each input reconstructs to the correct words
             for i in range(len(test_input)):
@@ -1823,10 +1856,276 @@ class TestXor3dReversePass(unittest.TestCase):
         m.setAlpha(0.0)
         m.train(False)
         with torch.no_grad():
-            m.runEpoch(test_input, test_output, lr=0, batchSize=len(test_input))
+            m.runEpoch(batchSize=len(test_input), split="test")
 
         # Verify no crash and shapes are consistent
         self.assertIsNotNone(m.inputSpace.reconstructed)
+
+
+class TestExpandMasked(unittest.TestCase):
+    """InputSpace.expand_masked() produces N masked copies of a sentence embedding."""
+
+    def setUp(self):
+        from BasicModel import (TheObjectEncoding, PositionalEncoding,
+                                TemporalEncoding, InputSpace)
+        # Save/restore global state
+        self._orig_nWhere = TheObjectEncoding.nWhere
+        self._orig_nWhen = TheObjectEncoding.nWhen
+        self._orig_objectSize = TheObjectEncoding.objectSize
+        # Enforce nWhere=2, nWhen=2
+        TheObjectEncoding.nWhere = PositionalEncoding.nDim   # 2
+        TheObjectEncoding.nWhen = TemporalEncoding.nDim      # 2
+        TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
+
+        # Build a minimal InputSpace with embedding from XOR data
+        from BasicModel import Data
+        data = Data()
+        data.load("xor")
+        nInput = 8
+        TheObjectEncoding.inputDim = 1
+        TheObjectEncoding.nInput = nInput
+        TheObjectEncoding.nObjects = 0
+        TheObjectEncoding.computeNObjects()
+        self.inp = InputSpace(nInput, nInput,
+                              model_type="embedding", pretrained=False,
+                              data=data, tokenizer="grammatical")
+        # Run a forward pass to get a real embedded tensor
+        inputBatch = data.train_input[0:1]
+        inputTensor = self.inp.prepInput(inputBatch)
+        self.embedded = self.inp.forward(inputTensor)  # [1, nVec, embSize]
+        self.sentence = "hello world"  # matches XOR training data
+        self.embSize = self.embedded.shape[-1]
+        self.nVec = self.embedded.shape[1]
+
+    def tearDown(self):
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = self._orig_nWhere
+        TheObjectEncoding.nWhen = self._orig_nWhen
+        TheObjectEncoding.objectSize = self._orig_objectSize
+
+    def test_expand_masked_shape(self):
+        """3-word sentence produces [3, nVec, embSize] masked batch."""
+        sentence = "hello loving world"
+        words = sentence.split()
+        masked, positions = self.inp.expand_masked(self.embedded, sentence)
+        self.assertEqual(masked.shape[0], len(words))
+        self.assertEqual(masked.shape[1], self.nVec)
+        self.assertEqual(masked.shape[2], self.embSize)
+        self.assertEqual(positions, [0, 1, 2])
+
+    def test_masked_position_is_zero_content(self):
+        """Masked position has zero content dims, non-zero position dims."""
+        from BasicModel import PositionalEncoding, TemporalEncoding
+        masked, _ = self.inp.expand_masked(self.embedded, self.sentence)
+        embSize = self.embSize
+        where_idx = np.add([embSize, embSize], PositionalEncoding.index)
+        when_idx = np.add([embSize, embSize], TemporalEncoding.index)
+        pos_dims = set(where_idx.tolist() + when_idx.tolist())
+        content_dims = [d for d in range(embSize) if d not in pos_dims]
+        # In copy i, position i should have zero content
+        for i in range(masked.shape[0]):
+            content_vals = masked[i, i, content_dims]
+            self.assertTrue(torch.all(content_vals == 0.0),
+                            f"Copy {i}: content at masked pos should be zero, "
+                            f"got max={content_vals.abs().max().item():.6f}")
+
+    def test_non_masked_positions_unchanged(self):
+        """Non-masked positions identical to original."""
+        masked, _ = self.inp.expand_masked(self.embedded, self.sentence)
+        # In copy 1, position 0 should match original position 0
+        self.assertTrue(torch.allclose(masked[1, 0], self.embedded[0, 0]),
+                        "Non-masked position should match original")
+        # In copy 0, position 1 should match original position 1
+        self.assertTrue(torch.allclose(masked[0, 1], self.embedded[0, 1]),
+                        "Non-masked position should match original")
+
+    def test_position_encoding_preserved(self):
+        """Position encoding (nWhere) at masked position matches original."""
+        from BasicModel import PositionalEncoding, TemporalEncoding
+        masked, _ = self.inp.expand_masked(self.embedded, self.sentence)
+        embSize = self.embSize
+        where_idx = np.add([embSize, embSize], PositionalEncoding.index)
+        when_idx = np.add([embSize, embSize], TemporalEncoding.index)
+        pos_dims = list(where_idx) + list(when_idx)
+        # At masked position, positional dims should match original
+        for i in range(masked.shape[0]):
+            for d in pos_dims:
+                self.assertAlmostEqual(
+                    masked[i, i, d].item(),
+                    self.embedded[0, i, d].item(),
+                    places=5,
+                    msg=f"Copy {i}, dim {d}: position encoding not preserved"
+                )
+
+    def test_arlm_truncates_future(self):
+        """ARLM mode zeros all positions after the masked position."""
+        sentence = "hello world"
+        masked, positions = self.inp.expand_masked(self.embedded, sentence, maskedPrediction='ARLM')
+        # In copy 0, positions 1+ should be completely zero
+        self.assertTrue(torch.all(masked[0, 1:, :] == 0.0))
+        # In copy 1, positions 2+ should be completely zero (if they exist)
+        if masked.shape[1] > 2:
+            self.assertTrue(torch.all(masked[1, 2:, :] == 0.0))
+
+
+class TestExpandMaskedTargets(unittest.TestCase):
+    def setUp(self):
+        """Create an OutputSpace + Embedding to test expand_masked."""
+        from BasicModel import (TheObjectEncoding, PositionalEncoding,
+                                TemporalEncoding, InputSpace, OutputSpace, Data)
+        # Save/restore global state
+        self._orig_nWhere = TheObjectEncoding.nWhere
+        self._orig_nWhen = TheObjectEncoding.nWhen
+        self._orig_objectSize = TheObjectEncoding.objectSize
+        self._orig_nObjects = TheObjectEncoding.nObjects
+        # Enforce nWhere=2, nWhen=2
+        TheObjectEncoding.nWhere = PositionalEncoding.nDim
+        TheObjectEncoding.nWhen = TemporalEncoding.nDim
+        TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
+
+        # Build a minimal InputSpace with embedding from XOR data
+        data = Data()
+        data.load("xor")
+        nInput = 8
+        TheObjectEncoding.inputDim = 1
+        TheObjectEncoding.nInput = nInput
+        TheObjectEncoding.nObjects = 0
+        TheObjectEncoding.computeNObjects()
+        self.inp = InputSpace(nInput, nInput,
+                              model_type="embedding", pretrained=False,
+                              data=data, tokenizer="grammatical")
+        self.emb = self.inp.vectors()
+
+        # Build a minimal OutputSpace
+        TheObjectEncoding.symbolDim = 1
+        TheObjectEncoding.outputDim = 1
+        TheObjectEncoding.nOutput = 4
+        self.out = OutputSpace(nActiveInput=8, nActiveOutput=4,
+                               reversible=False, data=data)
+
+    def tearDown(self):
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nWhere = self._orig_nWhere
+        TheObjectEncoding.nWhen = self._orig_nWhen
+        TheObjectEncoding.objectSize = self._orig_objectSize
+        TheObjectEncoding.nObjects = self._orig_nObjects
+
+    def test_expand_masked_shape(self):
+        """N words produce [N, vec_size] target tensor."""
+        for w in ["hello", "world", "test"]:
+            if w not in self.emb.cbow.key_to_index:
+                self.emb._add_word(w)
+        targets = self.out.expand_masked("hello world test", self.emb)
+        self.assertEqual(targets.shape[0], 3)
+        self.assertEqual(targets.shape[1], self.emb._emb.weight.shape[1])
+
+    def test_expand_masked_known_word(self):
+        """Known word produces its normalized embedding vector."""
+        import torch.nn.functional as F
+        if "hello" not in self.emb.cbow.key_to_index:
+            self.emb._add_word("hello")
+        targets = self.out.expand_masked("hello", self.emb)
+        idx = self.emb.cbow.key_to_index["hello"]
+        weights = self.emb._emb.weight
+        one_hot = torch.zeros(weights.shape[0], device=weights.device)
+        one_hot[idx] = 1.0
+        expected = F.normalize(one_hot @ weights, p=2, dim=0)
+        torch.testing.assert_close(targets[0], expected)
+
+    def test_expand_masked_unknown_word(self):
+        """Unknown word produces a zero vector."""
+        targets = self.out.expand_masked("xyzzynotaword123", self.emb)
+        self.assertTrue(torch.all(targets[0] == 0.0))
+
+    def test_arus_returns_zero_targets(self):
+        """ARUS mode returns all-zero target vectors."""
+        for w in ["hello", "world"]:
+            if w not in self.emb.cbow.key_to_index:
+                self.emb._add_word(w)
+        targets = self.out.expand_masked("hello world", self.emb, maskedPrediction='ARUS')
+        self.assertTrue(torch.all(targets == 0.0))
+        self.assertEqual(targets.shape[0], 2)
+
+
+class TestMaskedPredictionIntegration(unittest.TestCase):
+    """Integration tests for maskedPrediction stream interface."""
+
+    def _create_xor_embedding_model(self):
+        """Create an XOR embedding model via create_from_config (autoload off)."""
+        import xml.etree.ElementTree as ET
+        from BasicModel import BasicModel, TheData
+
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+
+        # Ensure autoload is off
+        auto = root.find("architecture/autoload")
+        if auto is None:
+            auto = ET.SubElement(root.find("architecture"), "autoload")
+        auto.text = "false"
+
+        tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
+        tree.write(tmp, xml_declaration=True)
+        tmp.close()
+        TheData.load("xor")
+        m = BasicModel()
+        m.create_from_config(tmp.name, data=TheData)
+        os.unlink(tmp.name)
+        return m
+
+    def setUp(self):
+        from BasicModel import TheObjectEncoding
+        self._saved_nObjects = TheObjectEncoding.nObjects
+        self._saved_nWhere = TheObjectEncoding.nWhere
+        self._saved_nWhen = TheObjectEncoding.nWhen
+        self._saved_objectSize = TheObjectEncoding.objectSize
+        self.model = self._create_xor_embedding_model()
+
+    def tearDown(self):
+        from BasicModel import TheObjectEncoding
+        TheObjectEncoding.nObjects = self._saved_nObjects
+        TheObjectEncoding.nWhere = self._saved_nWhere
+        TheObjectEncoding.nWhen = self._saved_nWhen
+        TheObjectEncoding.objectSize = self._saved_objectSize
+
+    def test_forward_from_input_shape(self):
+        """forward_from_input produces same output shape as forward."""
+        self.model.train(False)
+        inputBatch = self.model.inputSpace.data.train_input[0:2]
+        inputTensor = self.model.inputSpace.prepInput(inputBatch)
+        with torch.no_grad():
+            # Standard forward
+            input1, sym1, out1 = self.model.forward(inputTensor)
+            # forward_from_input with same embedded input
+            embedded = self.model.inputSpace.forward(inputTensor)
+            input2, sym2, out2 = self.model.forward_from_input(embedded)
+        self.assertEqual(out1.shape, out2.shape)
+        self.assertEqual(sym1.shape, sym2.shape)
+
+    def test_getbatch_standard_mode(self):
+        """getBatch in standard mode returns correct batches and exhausts."""
+        inp = self.model.inputSpace
+        batch, nextNum = inp.getBatch(0, batchSize=2, split="train")
+        self.assertIsNotNone(batch)
+        inputTensor, outputTensor = batch
+        self.assertEqual(inputTensor.shape[0], 2)  # batch of 2
+        self.assertEqual(nextNum, 1)
+        # Eventually exhausts
+        batchNum = 0
+        count = 0
+        while True:
+            batch, batchNum = inp.getBatch(batchNum, batchSize=2, split="train")
+            if batch is None:
+                break
+            count += 1
+        self.assertGreater(count, 0)
+
+    def test_getbatch_test_split(self):
+        """getBatch works with test split."""
+        inp = self.model.inputSpace
+        batch, nextNum = inp.getBatch(0, batchSize=2, split="test")
+        self.assertIsNotNone(batch)
 
 
 if __name__ == "__main__":

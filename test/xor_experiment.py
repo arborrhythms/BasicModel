@@ -80,15 +80,15 @@ def run_with_schedule(model, numEpochs, batchSize, lr, alpha_fn):
     best_recon  = float('inf')
     ping_pong_count = 0
     prev_out    = None
+    optimizer   = model.getOptimizer(lr)
 
     for epoch in range(numEpochs):
         alpha = alpha_fn(epoch, numEpochs)
         model.setAlpha(alpha)
 
         if epoch != 0:
-            train_input, train_output = model.inputSpace.getTrainData()
             outErr, inErr, allOut, lastIn = model.runEpoch(
-                train_input, train_output, lr=lr, batchSize=batchSize)
+                optimizer=optimizer, batchSize=batchSize, split="train")
             trainLosses[0].append(outErr)
             trainLosses[1].append(inErr)
 
@@ -103,9 +103,8 @@ def run_with_schedule(model, numEpochs, batchSize, lr, alpha_fn):
             prev_out = outErr
 
         # Test evaluation
-        test_input, test_output = model.inputSpace.getTestData()
         outErr_t, inErr_t, allOut, lastIn = model.runEpoch(
-            test_input, test_output, lr=0, batchSize=batchSize)
+            batchSize=batchSize, split="test")
         testLosses[0].append(outErr_t)
         testLosses[1].append(inErr_t)
 

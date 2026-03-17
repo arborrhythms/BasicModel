@@ -8,7 +8,7 @@
     <ergodic>false</ergodic>
     <certainty>false</certainty>
     <dataset>text</dataset>
-    <modelType>lm</modelType>
+    <modelType>embedding</modelType>
     <numTrials>1</numTrials>
     <numEpochs>10</numEpochs>
     <batchSize>10</batchSize>

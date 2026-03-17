@@ -3,7 +3,7 @@
   <architecture>
     <conceptualOrder>2</conceptualOrder>
     <dataset>tomatoes</dataset>
-    <modelType>lm</modelType>
+    <modelType>embedding</modelType>
     <pretrained>true</pretrained>
     <numEpochs>100</numEpochs>
     <learningRate>0.00001</learningRate>

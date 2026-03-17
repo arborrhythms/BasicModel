@@ -6,7 +6,7 @@
     <conceptualOrder>1</conceptualOrder>
     <symbolicOrder>1</symbolicOrder>
     <dataset>xor</dataset>
-    <modelType>lm</modelType>
+    <modelType>embedding</modelType>
     <pretrained>false</pretrained>
     <numEpochs>1000</numEpochs>
     <learningRate>0.01</learningRate>
@@ -18,13 +18,13 @@
 
   <InputSpace>
     <nActive>2</nActive>
-    <nDim>1</nDim>
+    <nDim>10</nDim>
     <nVectors>2</nVectors>
   </InputSpace>
 
   <PerceptualSpace>
     <nActive>4</nActive>
-    <nDim>1</nDim>
+    <nDim>10</nDim>
     <nVectors>16</nVectors>
     <invertible>false</invertible>
     <hasAttention>false</hasAttention>
@@ -32,21 +32,21 @@
 
   <ConceptualSpace>
     <nActive>4</nActive>
-    <nDim>1</nDim>
+    <nDim>10</nDim>
     <nVectors>16</nVectors>
     <invertible>false</invertible>
   </ConceptualSpace>
 
   <SymbolicSpace>
     <nActive>4</nActive>
-    <nDim>1</nDim>
+    <nDim>10</nDim>
     <nVectors>4</nVectors>
     <passThrough>true</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>
     <nActive>1</nActive>
-    <nDim>1</nDim>
+    <nDim>10</nDim>
     <nVectors>1</nVectors>
   </OutputSpace>
 </model>

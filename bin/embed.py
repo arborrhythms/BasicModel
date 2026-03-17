@@ -137,6 +137,58 @@ class WordVectors:
             _, top_idx = sims.sort(descending=True)
         return [(self.index_to_key[i], float(sims[i])) for i in top_idx]
 
+    def similarity(self, word1: str, word2: str) -> float:
+        """Return cosine similarity between two words."""
+        v1 = self[word1].float()
+        v2 = self[word2].float()
+        return float(torch.nn.functional.cosine_similarity(
+            v1.unsqueeze(0), v2.unsqueeze(0)))
+
+    # -- Exploration / CLI helpers --
+
+    def neighbors(self, word: str, topn: int = 10) -> List[Tuple[str, float]]:
+        """Return nearest neighbors of *word*, excluding itself."""
+        if word not in self:
+            return []
+        results = self.most_similar(self[word], topn=topn + 1)
+        return [(w, s) for w, s in results if w != word][:topn]
+
+    def random_word(self) -> str:
+        """Return a random word from the vocabulary."""
+        import random
+        return random.choice(self.index_to_key)
+
+    def explore(self, words: List[str], topn: int = 10) -> None:
+        """Interactive exploration: print neighbors and/or similarity.
+
+        - No words: random word + neighbors
+        - One word: neighbors of that word
+        - Two words: similarity + neighbors for each
+        - Three+ words: neighbors for each
+        """
+        if len(words) == 0:
+            word = self.random_word()
+            print(f"Random word: '{word}'\n")
+            words = [word]
+
+        if len(words) == 2 and words[0] in self and words[1] in self:
+            sim = self.similarity(words[0], words[1])
+            print(f"similarity('{words[0]}', '{words[1]}') = {sim:.4f}\n")
+
+        for word in words:
+            if word not in self:
+                print(f"'{word}' not in vocabulary ({len(self)} words)")
+                lower = word.lower()
+                if lower in self:
+                    print(f"  (did you mean '{lower}'?)")
+                print()
+                continue
+            results = self.neighbors(word, topn=topn)
+            print(f"Nearest neighbors of '{word}':")
+            for w, sim in results:
+                print(f"  {w:20s}  {sim:.4f}")
+            print()
+
 
 # ---------------------------------------------------------------------------
 # FineWeb-EDU streaming
@@ -472,38 +524,78 @@ def build_embeddings(shard_paths, output_path, max_docs=10000,
     return wv
 
 
+def _find_embeddings(path=None):
+    """Locate and load a .pt embedding file from standard paths."""
+    candidates = [path] if path else [
+        "output/embeddings/sentence.pt",
+        "data/sentence.pt",
+        "sentence.pt",
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            return WordVectors.load(p)
+    print(f"No embedding file found. Searched: {candidates}", file=sys.stderr)
+    print("Run 'make basic_train' to train embeddings first.", file=sys.stderr)
+    sys.exit(1)
+
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Build parse-derived embeddings from FineWeb-EDU")
-    parser.add_argument('--config', default='data/sentence.cfg',
-                        help='Sentence grammar config used by parse_buffer')
-    parser.add_argument('--output', default='output/embeddings/sentence.pt')
-    parser.add_argument('--data-dir', default=None)
-    parser.add_argument('--num-shards', type=int, default=1)
-    parser.add_argument('--max-docs', type=int, default=10000)
-    parser.add_argument('--vector-size', type=int, default=100)
-    parser.add_argument('--epochs', type=int, default=10)
-    parser.add_argument('--min-count', type=int, default=5)
-    parser.add_argument('--batch-size', type=int, default=256)
+    parser = argparse.ArgumentParser(description="Word embeddings: train or explore")
+    sub = parser.add_subparsers(dest="command")
+
+    # --- train subcommand ---
+    train_p = sub.add_parser("train", help="Train CBOW embeddings from FineWeb-EDU")
+    train_p.add_argument('--config', default='data/sentence.cfg',
+                         help='Sentence grammar config used by parse_buffer')
+    train_p.add_argument('--output', default='output/embeddings/sentence.pt')
+    train_p.add_argument('--data-dir', default=None)
+    train_p.add_argument('--num-shards', type=int, default=1)
+    train_p.add_argument('--max-docs', type=int, default=10000)
+    train_p.add_argument('--vector-size', type=int, default=100)
+    train_p.add_argument('--epochs', type=int, default=10)
+    train_p.add_argument('--min-count', type=int, default=5)
+    train_p.add_argument('--batch-size', type=int, default=256)
+
+    # --- explore subcommand ---
+    explore_p = sub.add_parser("explore", help="Explore trained embeddings")
+    explore_p.add_argument("words", nargs="*", help="Word(s) to look up")
+    explore_p.add_argument("--path", "-p", default=None, help="Path to .pt file")
+    explore_p.add_argument("--topn", "-n", type=int, default=10)
+    explore_p.add_argument("--vocab", action="store_true", help="Print vocabulary stats")
+
     args = parser.parse_args()
 
-    data_dir = args.data_dir
-    if data_dir is None:
-        data_dir = str(Path(__file__).resolve().parent.parent / "data" / "fineweb")
+    if args.command == "explore":
+        import random
+        wv = _find_embeddings(args.path)
+        if args.vocab:
+            print(f"Vocabulary: {len(wv)} words, {wv._vectors.shape[1]}-dim vectors")
+            print(f"Sample: {', '.join(random.sample(wv.index_to_key, min(20, len(wv))))}")
+        else:
+            wv.explore(args.words, topn=args.topn)
 
-    print(f"Config: {args.config}")
-    set_sentence_cfg(args.config)
+    elif args.command == "train":
+        data_dir = args.data_dir
+        if data_dir is None:
+            data_dir = str(Path(__file__).resolve().parent.parent / "data" / "fineweb")
 
-    shard_paths = get_shard_paths(data_dir, num_shards=args.num_shards)
-    if not shard_paths:
-        print("No shards available.")
-        sys.exit(1)
+        print(f"Config: {args.config}")
+        set_sentence_cfg(args.config)
 
-    build_embeddings(
-        shard_paths=shard_paths,
-        output_path=args.output,
-        max_docs=args.max_docs,
-        vector_size=args.vector_size,
-        epochs=args.epochs,
-        min_count=args.min_count,
-        batch_size=args.batch_size,
-    )
+        shard_paths = get_shard_paths(data_dir, num_shards=args.num_shards)
+        if not shard_paths:
+            print("No shards available.")
+            sys.exit(1)
+
+        build_embeddings(
+            shard_paths=shard_paths,
+            output_path=args.output,
+            max_docs=args.max_docs,
+            vector_size=args.vector_size,
+            epochs=args.epochs,
+            min_count=args.min_count,
+            batch_size=args.batch_size,
+        )
+
+    else:
+        parser.print_help()

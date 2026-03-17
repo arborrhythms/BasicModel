@@ -99,6 +99,9 @@ class PositionalEncoding(nn.Module):
         """Extract and zero-out positional encoding; return (cleaned, positions)."""
         embeddingSize = y.shape[-1]
         index = np.add([embeddingSize, embeddingSize], self.index)
+        # Guard: if embedding is too small for positional slots, return zeros
+        if index[0] < 0 or index[0] >= embeddingSize:
+            return y, torch.zeros(y.shape[0], y.shape[1], len(self.index), device=y.device)
         pos = y[:,:, index]
         y[:, :, index] = 0
         return y, pos
@@ -151,6 +154,9 @@ class TemporalEncoding(nn.Module):
         batch = y.shape[0]
         embeddingSize = y.shape[-1]
         index = np.add([embeddingSize, embeddingSize], self.index)
+        # Guard: if embedding is too small for temporal slots, return zeros
+        if index[0] < 0 or index[0] >= embeddingSize:
+            return y, torch.zeros(y.shape[0], y.shape[1], len(self.index), device=y.device)
         t =  y[:, :, index]
         y[:, :, index] = 0
         return y, t
@@ -406,6 +412,8 @@ class Data():
         else:
             self.train_input = self.train_input[rand_indx]
             self.train_output = self.train_output[rand_indx]
+        if getattr(self, 'masked_prediction', 'NONE') != 'NONE':
+            self._lm_sentences["train"] = [self._lm_sentences["train"][i] for i in rand_indx]
     def loadMNist(self):
         df = pd.read_csv(os.path.join(ProjectPaths.DATA_DIR, 'mnist_train.csv'))
         train = df.values
@@ -502,30 +510,11 @@ class Data():
         val_texts = docs[n_train:n_train + n_val]
         test_texts = docs[n_train + n_val:]
 
-        # For LM (masked-word prediction), labels are placeholder [0] —
-        # the actual target comes from the text itself during training.
         data = {
-            "train": {
-                "text": train_texts,
-                "label": [[0]] * len(train_texts),
-            },
-            "validation": {
-                "text": val_texts,
-                "label": [[0]] * len(val_texts),
-            },
-            "test": {
-                "text": test_texts,
-                "label": [[0]] * len(test_texts),
-            },
+            "train":      {"text": train_texts, "label": []},
+            "validation": {"text": val_texts,   "label": []},
+            "test":       {"text": test_texts,  "label": []},
         }
-
-        # Initialize input/output lists to the right size before processLM
-        self.train_input = [None] * len(train_texts)
-        self.train_output = [None] * len(train_texts)
-        self.validation_input = [None] * len(val_texts)
-        self.validation_output = [None] * len(val_texts)
-        self.test_input = [None] * len(test_texts)
-        self.test_output = [None] * len(test_texts)
 
         print(f"Loaded {n_train} train, {n_val} val, {n_test} test documents")
         self.processLM(data)
@@ -544,18 +533,51 @@ class Data():
         self._build_source_buffer(train_tokens, "train")
         self._build_source_buffer(test_tokens, "test")
 
-        for i in range(len(self.train_input)):
-            self.train_input[i]       = self.stringTensor(train_tokens[i])
-            self.validation_input[i]  = self.stringTensor(validation_tokens[i])
-            self.test_input[i]        = self.stringTensor(test_tokens[i])
-            self.train_output[i]      = torch.tensor(train_labels[i], dtype=torch.float)
-            self.validation_output[i] = torch.tensor(validation_labels[i], dtype=torch.float)
-            self.test_output[i]       = torch.tensor(test_labels[i], dtype=torch.float)
+        self.train_input  = [self.stringTensor(t) for t in train_tokens]
+        self.validation_input  = [self.stringTensor(t) for t in validation_tokens]
+        self.test_input  = [self.stringTensor(t) for t in test_tokens]
+
+        # For masked LM, labels are target word strings — store for later
+        # conversion to embedding vectors by prepare_lm_targets().
+        # For non-LM tasks, labels are numeric lists.
+        if not train_labels:
+            # Masked prediction mode: targets computed at runtime
+            self._lm_sentences = {
+                "train": list(train_tokens),
+                "validation": list(validation_tokens),
+                "test": list(test_tokens),
+            }
+            self.masked_prediction = 'MLM'
+            # Sentinel outputs for OutputSpace sizing — shape must match embedding dim
+            # (actual targets computed at runtime by expand_masked)
+            self.train_output = [torch.zeros(1) for _ in train_tokens]
+            self.validation_output = [torch.zeros(1) for _ in validation_tokens]
+            self.test_output = [torch.zeros(1) for _ in test_tokens]
+            self._lm_labels = None
+        elif isinstance(train_labels[0], str):
+            self._lm_labels = {
+                "train": list(train_labels),
+                "validation": list(validation_labels),
+                "test": list(test_labels),
+            }
+            # Placeholder until embeddings are available
+            self.train_output = [torch.zeros(1) for _ in train_labels]
+            self.validation_output = [torch.zeros(1) for _ in validation_labels]
+            self.test_output = [torch.zeros(1) for _ in test_labels]
+        else:
+            self._lm_labels = None
+            self.train_output = [torch.tensor(l, dtype=torch.float) for l in train_labels]
+            self.validation_output = [torch.tensor(l, dtype=torch.float) for l in validation_labels]
+            self.test_output = [torch.tensor(l, dtype=torch.float) for l in test_labels]
 
         if permute:
             rand_indx = torch.randperm(len(self.train_output))
             self.train_input  = [self.train_input[i] for i in rand_indx]
             self.train_output = [self.train_output[i] for i in rand_indx]
+            if self._lm_labels is not None:
+                self._lm_labels["train"] = [self._lm_labels["train"][i] for i in rand_indx]
+            if getattr(self, 'masked_prediction', 'NONE') != 'NONE':
+                self._lm_sentences["train"] = [self._lm_sentences["train"][i] for i in rand_indx]
 
     def tokenize(self, TheLanguageModel):
         self.train_input      = TheLanguageModel.tokenize(self.train_input)
@@ -612,6 +634,46 @@ class Data():
         elif split == "test":
             self.test_source = source
             self.test_example_offsets = offset_tensor
+
+    def prepare_lm_targets(self, embedding):
+        """Convert word-string labels to embedding vectors for masked LM training.
+
+        Called after InputSpace creates the Embedding, so word vectors are available.
+        Each target word is looked up in the CBOW vocabulary; unknown words get
+        a zero vector (the model should learn to predict known words).
+
+        Args:
+            embedding: An Embedding instance with cbow.key_to_index and _emb weights.
+        """
+        if self._lm_labels is None:
+            return
+        weights = embedding._emb.weight  # (vocab_size, vec_size)
+        vec_size = weights.shape[1]
+        vocab_size = weights.shape[0]
+
+        def words_to_embeddings(word_list):
+            targets = []
+            for word in word_list:
+                w = word.lower()
+                if w in embedding.cbow.key_to_index:
+                    idx = embedding.cbow.key_to_index[w]
+                    one_hot = torch.zeros(vocab_size, device=weights.device)
+                    one_hot[idx] = 1.0
+                    v = one_hot @ weights  # differentiable
+                    v = F.normalize(v, p=2, dim=0)
+                else:
+                    v = torch.zeros(vec_size, device=weights.device)
+                targets.append(v)
+            return targets
+
+        self.train_output = words_to_embeddings(self._lm_labels["train"])
+        self.validation_output = words_to_embeddings(self._lm_labels["validation"])
+        self.test_output = words_to_embeddings(self._lm_labels["test"])
+        print(f"LM targets: {len(self.train_output)} train, "
+              f"{len(self.validation_output)} val, "
+              f"{len(self.test_output)} test "
+              f"(embedding dim={vec_size})")
+        self._lm_labels = None  # free memory
 
     def stringTensor(self, string):
         # Encode to ASCII, replacing non-ASCII chars (smart quotes, accents, etc.)
@@ -998,25 +1060,47 @@ class Embedding(VectorSet):
         can be used as a drop-in vectorSet member of InputSpace.
 
         If *wv* is provided, use it directly.  Otherwise auto-discover
-        cached .pt or word2vec text-format files on disk.
+        cached .pt or word2vec text-format files on disk.  When no file
+        matches *nDim*, starts with an empty vocabulary — new words are
+        added dynamically during forward passes via ``_add_word()``.
 
         If *source* is provided (a raw text string), build a Lex span table
         and a token_id → embedding index mapping for grammatical tokenization.
         Sets ``self.spans``, ``self.source``, and ``self.lex_to_emb``.
         """
         if wv is None:
-            wv = self._load_embeddings(pretrained=pretrained)
+            wv = self._load_embeddings(pretrained=pretrained, nDim=nDim)
+        if wv is None:
+            # No matching embeddings on disk — start with a single placeholder.
+            # Real words are added dynamically during forward passes via _add_word().
+            dim = nDim or 20
+            print(f"Starting with dynamic {dim}-dim embedding (words added at runtime)")
+            placeholder = torch.randn(1, dim)
+            placeholder = F.normalize(placeholder, p=2, dim=1)
+            wv = WordVectors(placeholder, ["<pad>"])
         self.wv = wv
         vocab_size = len(wv)
         vector_size = wv._vectors.shape[1]
 
-        # Always use the actual embedding vector size — callers may pass a
-        # placeholder nDim that doesn't match the loaded embeddings.
-        super().create(nInput or vocab_size, nVectors or vocab_size,
+        # Verify dimensionality match: loaded vectors must agree with config nDim.
+        # A mismatch (e.g. 100-dim sentence.pt loaded for nDim=10 config) causes
+        # silent NaN during training as downstream layers expect different shapes.
+        if nDim is not None and vector_size != nDim:
+            raise ValueError(
+                f"Embedding dimension mismatch: loaded vectors are {vector_size}-dim "
+                f"but config requires nDim={nDim}. Check embeddings file or XML config.")
+
+        super().create(nInput or max(1, vocab_size), nVectors or max(1, vocab_size),
                        vector_size, passThrough=passThrough)
 
         self.cbow = CBOWModel(wv, learning_rate=learning_rate)
         self._emb = self.cbow.embeddings   # shared nn.Embedding
+
+        # Add [MASK] as zero-vector codebook entry (internal-only token)
+        self._add_word("[MASK]")
+        with torch.no_grad():
+            self.mask_token_idx = self.cbow.key_to_index["[MASK]"]
+            self._emb.weight[self.mask_token_idx] = 0.0
 
         # Span-table integration for grammatical tokenizer
         if source is not None:
@@ -1025,40 +1109,107 @@ class Embedding(VectorSet):
             self.source = source
             self.lex_to_emb = {}
             for word, token_id in self._lex.vocab.items():
-                if word in self.wv:
-                    self.lex_to_emb[token_id] = self.wv.key_to_index[word]
+                if word not in self.wv:
+                    self._add_word(word)
+                self.lex_to_emb[token_id] = self.wv.key_to_index[word]
+
+    def _add_word(self, word):
+        """Dynamically add a new word with a random normalized embedding.
+
+        Extends the WordVectors, CBOWModel vocabulary, and nn.Embedding so
+        that subsequent forward passes can look up this word.  Returns the
+        new embedding vector (on CPU).
+        """
+        dim = self.wv._vectors.shape[1]
+        new_vec = torch.randn(1, dim)
+        new_vec = F.normalize(new_vec, p=2, dim=1)
+
+        # Extend WordVectors
+        self.wv._vectors = torch.cat([self.wv._vectors, new_vec], dim=0)
+        self.wv._normed = None  # invalidate cache
+        idx = len(self.wv.index_to_key)
+        self.wv.index_to_key.append(word)
+        self.wv.key_to_index[word] = idx
+
+        # Extend CBOWModel
+        self.cbow.index_to_key.append(word)
+        self.cbow.key_to_index[word] = idx
+        old_emb = self.cbow.embeddings
+        new_emb = nn.Embedding(idx + 1, dim)
+        with torch.no_grad():
+            if old_emb.weight.shape[0] > 0:
+                new_emb.weight[:idx] = old_emb.weight
+            new_emb.weight[idx] = new_vec.squeeze()
+        self.cbow.embeddings = new_emb
+        self._emb = new_emb
+
+        # Extend linear head (output vocab size must match embedding vocab)
+        old_linear = self.cbow.linear
+        new_linear = nn.Linear(dim, idx + 1)
+        with torch.no_grad():
+            if old_linear.weight.shape[0] > 0:
+                new_linear.weight[:idx] = old_linear.weight
+                new_linear.bias[:idx] = old_linear.bias
+        self.cbow.linear = new_linear
+
+        # Rebuild optimizer with new parameters
+        self.cbow.optimizer = torch.optim.Adam(
+            list(self.cbow.embeddings.parameters()) + list(self.cbow.linear.parameters()),
+            lr=self.cbow.optimizer.param_groups[0]['lr'],
+        )
+
+        return new_vec.squeeze(0)  # (1, dim) -> (dim,); preserves 1-dim case
 
     @staticmethod
-    def _load_embeddings(pretrained=True):
-        """Auto-discover embeddings from data/ and output/ directories."""
+    def _load_embeddings(pretrained=True, nDim=None):
+        """Auto-discover embeddings from data/ and output/ directories.
+
+        When *nDim* is given, only loads files whose vector dimension matches.
+        Returns None if no suitable file is found (caller should fall back to
+        dynamic vocabulary).
+        """
         data_dir = os.path.join(ProjectPaths.PROJECT_DIR, "data", "embeddings")
         output_dir = os.path.join(ProjectPaths.PROJECT_DIR, "output", "embeddings")
         os.makedirs(output_dir, exist_ok=True)
 
+        def _try_load(path):
+            """Load if file exists and dim matches nDim (or nDim is None)."""
+            if not os.path.exists(path):
+                return None
+            wv = WordVectors.load(path)
+            if nDim is not None and wv._vectors.shape[1] != nDim:
+                return None
+            print(f"Loading {path}...")
+            return wv
+
         if pretrained:
-            cached = os.path.join(output_dir, "word2vec_custom_pretrained.pt")
-            if os.path.exists(cached):
-                print(f"Loading {cached}...")
-                return WordVectors.load(cached)
-            txt = os.path.join(data_dir, "enwiki_20180420_100d.txt")
-            if os.path.exists(txt):
-                print(f"Loading pretrained embeddings from {txt}...")
-                return WordVectors.load_word2vec_format(txt)
-            # Fall back to sentence.pt from the CBOW pipeline
-            sentence_pt = os.path.join(output_dir, "sentence.pt")
-            if os.path.exists(sentence_pt):
-                print(f"Loading {sentence_pt}...")
-                return WordVectors.load(sentence_pt)
+            for path in [
+                os.path.join(output_dir, "word2vec_custom_pretrained.pt"),
+                os.path.join(data_dir, "enwiki_20180420_100d.txt"),
+                os.path.join(output_dir, "sentence.pt"),
+            ]:
+                if path.endswith(".txt") and os.path.exists(path):
+                    wv = WordVectors.load_word2vec_format(path)
+                    if nDim is None or wv._vectors.shape[1] == nDim:
+                        print(f"Loading pretrained embeddings from {path}...")
+                        return wv
+                else:
+                    result = _try_load(path)
+                    if result is not None:
+                        return result
             raise FileNotFoundError(
                 f"No pretrained embeddings found in {data_dir} or {output_dir}")
         else:
-            cached = os.path.join(output_dir, "word2vec_custom.pt")
-            if os.path.exists(cached):
-                print(f"Loading {cached}...")
-                return WordVectors.load(cached)
-            raise FileNotFoundError(
-                f"No embeddings found at {cached}. "
-                "Run embed.py first or pass a WordVectors instance.")
+            # Prefer sentence.pt (output of embed.py training pipeline)
+            for path in [
+                os.path.join(output_dir, "sentence.pt"),
+                os.path.join(output_dir, "word2vec_custom.pt"),
+            ]:
+                result = _try_load(path)
+                if result is not None:
+                    return result
+            # No matching file — return None so caller uses dynamic vocab
+            return None
 
     def tokenizeList(self, data):
         """Build vocabulary from a list of strings via Lex."""
@@ -1101,7 +1252,10 @@ class Embedding(VectorSet):
         return len(self.wv)
 
     def forward(self, input):
-        """Look up token embeddings via nn.Embedding (differentiable).
+        """Look up token embeddings via one-hot matmul (differentiable).
+
+        Uses one-hot × weight instead of nn.Embedding so gradients flow
+        through to the embedding weights on all backends (including MPS).
 
         Input: (batch, max_len) byte tensor from Data.
         Output: (batch, nVectors, embeddingSize) padded embedding tensor.
@@ -1110,6 +1264,9 @@ class Embedding(VectorSet):
         self.batch = len(input)
         tokenized = self.tokenize(input)
 
+        weights = self._emb.weight  # (vocab_size, vec_size) — stays in graph
+        vocab_size = weights.shape[0]
+
         pad_size = TheObjectEncoding.objectSize
         results = []
         for sentence in tokenized:
@@ -1117,16 +1274,23 @@ class Embedding(VectorSet):
             for token in sentence[:self.nVectors]:
                 if token in self.cbow.key_to_index:
                     idx = self.cbow.key_to_index[token]
-                    v = self._emb(torch.tensor(idx))  # (vec_size,)
+                    one_hot = torch.zeros(vocab_size, device=weights.device)
+                    one_hot[idx] = 1.0
+                    v = one_hot @ weights  # (vec_size,) — differentiable
                     v = F.pad(v, (0, pad_size))
                     v = F.normalize(v, p=2, dim=0)
                 else:
-                    v = torch.randn(self.embeddingSize)
+                    # Dynamically add unseen word to vocabulary
+                    v = self._add_word(token)
+                    v = F.pad(v, (0, pad_size))
                     v = F.normalize(v, p=2, dim=0)
+                    # Refresh reference after vocab growth
+                    weights = self._emb.weight
+                    vocab_size = weights.shape[0]
                 vecs.append(v)
             # Pad to nVectors
             while len(vecs) < self.nVectors:
-                vecs.append(torch.zeros(self.embeddingSize))
+                vecs.append(torch.zeros(self.embeddingSize, device=weights.device))
             results.append(torch.stack(vecs))
         return torch.stack(results)
 
@@ -1381,7 +1545,7 @@ class InputSpace(Space):
         self.data = data
         self.model_type = model_type
         self.tokenizer = tokenizer  # "traditional" (word2vec) or "grammatical" (Lex span tables)
-        if model_type == "lm":
+        if model_type == "embedding":
             source = data.train_source if tokenizer == "grammatical" else None
             vs = Embedding()
             vs.create(self.inputShape[0], self.outputShape[0], self.nDim, pretrained=pretrained, source=source)
@@ -1467,10 +1631,12 @@ class InputSpace(Space):
                     vec = codebook[cb_idx]
                     result[b, i, :vec.shape[0]] = vec
                 # nWhere: encode byte offset using same sin/cos as PositionalEncoding
-                pos = start * div_term
-                where_idx = np.add([embSize, embSize], PositionalEncoding.index)
-                result[b, i, where_idx[0]] = math.sin(pos * div_term)
-                result[b, i, where_idx[1]] = math.cos(pos * div_term)
+                if TheObjectEncoding.nWhere > 0 and embSize > 1:
+                    pos = start * div_term
+                    where_idx = np.add([embSize, embSize], PositionalEncoding.index)
+                    if where_idx[0] >= 0 and where_idx[0] < embSize:
+                        result[b, i, where_idx[0]] = math.sin(pos * div_term)
+                        result[b, i, where_idx[1]] = math.cos(pos * div_term)
         # Apply temporal encoding only (positional is already set from byte offsets)
         result = TheObjectEncoding.when(result)
         return result
@@ -1501,6 +1667,59 @@ class InputSpace(Space):
         self._recovered_positions = positions
         self._recovered_times = times
         return content
+
+    def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM'):
+        """Expand one sentence's embedding into N masked copies.
+
+        Modes:
+            MLM: Zero content at position i, preserve position encoding.
+            ARLM: Zero content at position i, truncate all future positions (j > i).
+            ARUS: Same as ARLM (output-side behavior differs in OutputSpace).
+
+        Args:
+            embedded: [1, nVectors, embeddingSize] output of forward()
+            sentence_text: original sentence string (used for word count)
+            maskedPrediction: prediction mode ('MLM', 'ARLM', or 'ARUS')
+
+        Returns:
+            (masked_batch, mask_positions):
+                masked_batch: [N, nVectors, embeddingSize]
+                mask_positions: list[int] of length N
+        """
+        words = sentence_text.split()
+        N = min(len(words), self.outputShape[0])  # cap at nVectors
+
+        # Repeat the embedded sentence N times
+        masked = embedded.expand(N, -1, -1).clone()  # [N, nVec, embSize]
+
+        # Determine which dims are content (to zero) vs position (to preserve)
+        embSize = embedded.shape[-1]
+        content_mask = torch.ones(embSize, dtype=torch.bool, device=embedded.device)
+        # Preserve nWhere dims (indices [-4, -3] from end of embedding)
+        if TheObjectEncoding.nWhere > 0:
+            where_idx = np.add([embSize, embSize], PositionalEncoding.index)
+            for wi in where_idx:
+                if 0 <= wi < embSize:
+                    content_mask[wi] = False
+        # Preserve nWhen dims (indices [-2, -1] from end of embedding)
+        if TheObjectEncoding.nWhen > 0:
+            when_idx = np.add([embSize, embSize], TemporalEncoding.index)
+            for wi in when_idx:
+                if 0 <= wi < embSize:
+                    content_mask[wi] = False
+
+        # Zero content at masked position in each copy
+        for i in range(N):
+            masked[i, i, content_mask] = 0.0
+
+        # ARLM/ARUS: also truncate all future positions (completely zero, including position encoding)
+        if maskedPrediction in ('ARLM', 'ARUS'):
+            for i in range(N):
+                # Zero all positions after the masked position (j > i)
+                if i + 1 < masked.shape[1]:
+                    masked[i, i + 1:, :] = 0.0
+
+        return masked, list(range(N))
 
     def reverse(self, y):
         y = self.reverseBegin(y)
@@ -1535,6 +1754,65 @@ class InputSpace(Space):
             else:
                 result.append(words)
         return result
+
+    def getBatch(self, batchNum, batchSize=10, split="train"):
+        """Return next batch of (input, output) data and the next batchNum.
+
+        For standard mode: slices train_input/train_output by batchSize.
+        For masked prediction: takes sentence batchNum, embeds it,
+            expands into N masked copies (one per word), computes N targets.
+            Batch size is dynamic (= words in sentence).
+
+        Args:
+            batchNum: current batch index
+            batchSize: number of examples per batch (standard mode only)
+            split: "train", "test", or "validation"
+
+        Returns:
+            ((inputBatch, outputBatch), nextBatchNum)
+            Returns (None, batchNum) when data is exhausted.
+        """
+        # Select data for the requested split
+        if split == "train":
+            inputData = self.data.train_input
+            outputData = self.data.train_output
+        elif split == "test":
+            inputData = self.data.test_input
+            outputData = self.data.test_output
+        elif split == "validation":
+            inputData = self.data.validation_input
+            outputData = self.data.validation_output
+        else:
+            raise ValueError(f"Unknown split: {split}")
+
+        if not hasattr(self.data, 'masked_prediction') or self.data.masked_prediction == 'NONE':
+            # Standard mode: fixed-size batch slicing
+            i = batchNum * batchSize
+            if i >= len(inputData):
+                return None, batchNum
+            inputBatch = inputData[i:i + batchSize]
+            outputBatch = outputData[i:i + batchSize]
+            inputTensor = self.prepInput(inputBatch)
+            outputTensor = self.outputSpace.prepOutput(outputBatch)
+            return (inputTensor, outputTensor), batchNum + 1
+        else:
+            # Masked prediction: one sentence -> N masked examples
+            sentences = self.data._lm_sentences[split]
+            if batchNum >= len(sentences):
+                return None, batchNum
+            sentence = sentences[batchNum]
+            inputTensor = self.prepInput(inputData[batchNum:batchNum + 1])
+
+            # Embed full sentence
+            embedded = self.forward(inputTensor)  # [1, nVec, embSize]
+
+            # Expand to N masked copies
+            masked_batch, mask_pos = self.expand_masked(embedded, sentence, self.data.masked_prediction)
+
+            # Compute N target embeddings
+            targets = self.outputSpace.expand_masked(sentence, self.vectors(), self.data.masked_prediction)
+
+            return (masked_batch, targets), batchNum + 1
 
     def predict(self, vector):
         """Decode an output vector to the nearest word in the embedding codebook.
@@ -1631,7 +1909,7 @@ class PerceptualSpace(Space):
             self.params = self.pi.getParameters()
             self.layers = [self.pi]
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
-        self.createVectorSet()
+        self.createVectorSet(quantized=self.quantized)
     def distance(self, x, y):
         # This is a product distance that looks roughly like a star.
         # It has an orthogonalizing effect on its inputs.
@@ -1724,7 +2002,7 @@ class ConceptualSpace(Space):
             self.forwardSigma = self.sigma.forward
             self.params = self.sigma.getParameters()
             self.layers = [self.sigma]
-        self.createVectorSet()
+        self.createVectorSet(quantized=self.quantized)
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
         # However, if the X are not normalized, the magnitudes may be taken as a degree of certainty or knowing.
@@ -1983,13 +2261,51 @@ class OutputSpace(Space):
         y = self.reverseLinear(y)
         output = self.reverseEnd(y)
         return output
+    def expand_masked(self, sentence_text, embedding, maskedPrediction='MLM'):
+        """Produce N target embedding vectors for masked prediction.
+
+        Modes:
+            MLM: Target is the normalized embedding of each word.
+            ARLM: Same as MLM (autoregressive targets).
+            ARUS: Returns zero vectors (unsupervised — loss suppressed in runEpoch).
+
+        Args:
+            sentence_text: original sentence string
+            embedding: Embedding instance with cbow.key_to_index and _emb.weight
+            maskedPrediction: prediction mode ('MLM', 'ARLM', or 'ARUS')
+
+        Returns:
+            targets: [N, vec_size] tensor of target word embeddings
+        """
+        words = sentence_text.split()
+        weights = embedding._emb.weight  # (vocab_size, vec_size) — stays in graph
+        vocab_size = weights.shape[0]
+        vec_size = weights.shape[1]
+        if not words:
+            return torch.zeros(0, vec_size, device=weights.device)
+        targets = []
+        for word in words:
+            w = word.lower()
+            if w in embedding.cbow.key_to_index:
+                idx = embedding.cbow.key_to_index[w]
+                one_hot = torch.zeros(vocab_size, device=weights.device)
+                one_hot[idx] = 1.0
+                v = one_hot @ weights  # differentiable
+                v = F.normalize(v, p=2, dim=0)
+            else:
+                v = torch.zeros(vec_size, device=weights.device)
+            targets.append(v)
+        # ARUS: unsupervised — return zero targets (loss suppressed in runEpoch)
+        if maskedPrediction == 'ARUS':
+            return torch.zeros(len(targets), vec_size, device=weights.device)
+        return torch.stack(targets)
     # --- Text reconstruction from symbolic vectors ---
     def set_text_mode(self, input_space):
         """Enable text reconstruction by storing references from InputSpace.
 
         Args:
             input_space: An InputSpace instance that has lex, codebook, and
-                         words attributes from the 'lm' model_type path.
+                         words attributes from the 'embedding' model_type path.
         """
         if not hasattr(input_space, 'lex'):
             return
@@ -2164,28 +2480,16 @@ class BaseModel(nn.Module):
         return optim.Adam(params, lr=lr)
 
     def runTrials(self, numTrials=1, numEpochs=1, batchSize=10, lr=0.001):
+        """Run multiple independent trials, recreating the model each time.
+
+        Each trial calls create_from_config() to rebuild the full model
+        from scratch so results are statistically independent.
+        """
         acc = np.zeros([numTrials, numEpochs])
         print(f"\n\n==== {self.name} ====")
         for trial in range(numTrials):
             print(f"\nTrial [{trial + 1}/{numTrials}]")
-            self.create(nInput=self.nInput, nPercepts=self.nPercepts,
-                       nConcepts=self.nConcepts, nSymbols=self.nSymbols,
-                       nWords=self.nWords, nOutput=self.nOutput,
-                       reversible=self.reversible,
-                       perceptPassThrough=self.perceptPassThrough,
-                       symbolPassThrough=self.symbolPassThrough,
-                       perceptPrototypes=self.perceptPrototypes,
-                       conceptPrototypes=self.conceptPrototypes,
-                       ergodic=self.ergodic, certainty=self.certainty,
-                       quantized=self.quantized, invertible=self.invertible,
-                       hasNorm=self.hasNorm,
-                       conceptualOrder=self.conceptualOrder, symbolicOrder=self.symbolicOrder,
-                       processSymbols=self.processSymbols,
-                       reshape=self.reshape,
-                       perceptHasAttention=self.perceptHasAttention,
-                       conceptHasAttention=self.conceptHasAttention,
-                       model_type=self.model_type, data=self.data,
-                       pretrained=self.pretrained)
+            self.create_from_config(self._config_path, data=self._config_data)
             acc[trial, :] = self.run(numEpochs=numEpochs, batchSize=batchSize, lr=lr)
         np.savetxt(ProjectPaths.output_path(f"{self.name}.csv"), np.array(acc), delimiter=",")
         return acc
@@ -2225,9 +2529,8 @@ class BaseModel(nn.Module):
 
     def mnistReport(self):
         """Run test epoch, compute per-digit accuracy, and plot."""
-        test_input, test_output = self.inputSpace.getTestData()
         self.setAlpha(0.0)  # fully deterministic for evaluation
-        _, _, y_pred, last_x_pred = self.runEpoch(test_input, test_output, lr=0)
+        _, _, y_pred, last_x_pred = self.runEpoch(split="test")
         if y_pred.dim() == 1 or y_pred.shape[-1] == 1:
             predicted = (y_pred.squeeze() > 0.5).long()
             actual = (self.outputSpace.getTestOutput().squeeze() > 0.5).long()
@@ -2275,9 +2578,9 @@ class BaseModel(nn.Module):
 
     def _reconstructionReport(self):
         """Run a test pass with reverse and report input vs reconstructed text."""
-        test_input, test_output = self.inputSpace.getTestData()
         self.setAlpha(0.0)  # fully deterministic for evaluation
-        _, _, allOut, _ = self.runEpoch(test_input, test_output, lr=0, batchSize=len(test_input))
+        test_input, test_output = self.inputSpace.getTestData()
+        _, _, allOut, _ = self.runEpoch(batchSize=len(test_input), split="test")
 
         rows = []
         for i in range(len(test_input)):
@@ -2291,15 +2594,19 @@ class BaseModel(nn.Module):
             label = test_output[i]
             if isinstance(label, torch.Tensor):
                 label = label.squeeze().tolist()
-            pred = allOut[i].item() if allOut.dim() >= 1 else allOut.item()
+            pred_val = allOut[i]
+            if pred_val.numel() == 1:
+                pred_str = f'{pred_val.item():.4f}'
+            else:
+                pred_str = f'[{pred_val.shape}]'
             rows.append([
                 f'{original}',
                 f'<span class="{css}">{recon}</span>',
                 f'{label}',
-                f'{pred:.4f}',
+                pred_str,
                 f'<span class="{css}">{"Yes" if match else "No"}</span>',
             ])
-            print(f"  Input: {original:30s} -> Reconstructed: {recon:30s} Predicted: {pred:.4f} {'OK' if match else 'MISMATCH'}")
+            print(f"  Input: {original:30s} -> Reconstructed: {recon:30s} Predicted: {pred_str} {'OK' if match else 'MISMATCH'}")
 
         TheReport.add_table(
             "Input vs Reconstructed",
@@ -2330,6 +2637,10 @@ class BasicModel(BaseModel):
         Loads defaults from defaults.xml, overlays model-specific config,
         then creates the model and optionally loads saved weights.
         """
+        # Store for runTrials() re-creation
+        self._config_path = config_path
+        self._config_data = data
+
         # Load defaults, then overlay model-specific config
         defaults_path = os.path.join(ProjectPaths.DATA_DIR, "defaults.xml")
         defaults = self.load_config(defaults_path)
@@ -2395,8 +2706,6 @@ class BasicModel(BaseModel):
         TheObjectEncoding.setWordDim(gsp(cfg, "SyntacticSpace", "nDim"))
         TheObjectEncoding.setOutputDim(gsp(cfg, "OutputSpace", "nDim"))
 
-        self.recon_ratio = arch.get("reconRatio", 0.5)
-
         self.create(
             nInput=gsp(cfg, "InputSpace", "nActive"),
             nPercepts=gsp(cfg, "PerceptualSpace", "nActive"),
@@ -2412,6 +2721,8 @@ class BasicModel(BaseModel):
             ergodic=arch["ergodic"],
             certainty=arch["certainty"],
             quantized=gsp(cfg, "InputSpace", "quantized"),
+            perceptQuantized=gsp(cfg, "PerceptualSpace", "quantized"),
+            conceptQuantized=gsp(cfg, "ConceptualSpace", "quantized"),
             invertible=gsp(cfg, "PerceptualSpace", "invertible"),
             hasNorm=gsp(cfg, "ConceptualSpace", "hasNorm"),
             conceptualOrder=arch["conceptualOrder"],
@@ -2422,6 +2733,8 @@ class BasicModel(BaseModel):
             conceptHasAttention=gsp(cfg, "ConceptualSpace", "hasAttention"),
             model_type=model_type, data=data, pretrained=pretrained,
             tokenizer=gsp(cfg, "InputSpace", "tokenizer"),
+            recon_ratio=arch["reconRatio"],
+            masked_prediction=arch["maskedPrediction"],
         )
         # Auto-load weights if configured
         wcfg = cfg.get("weights", {})
@@ -2436,12 +2749,14 @@ class BasicModel(BaseModel):
                reversible=True, perceptPassThrough=False, symbolPassThrough=False,
                perceptPrototypes=0, conceptPrototypes=0,
                ergodic=False, certainty=False, quantized=False,
+               perceptQuantized=None, conceptQuantized=None,
                invertible=False, hasNorm=False,
                conceptualOrder=1, symbolicOrder=1, processSymbols=False,
                reshape=False,
                perceptHasAttention=True, conceptHasAttention=False,
                model_type="simple", data=None, pretrained=False,
-               tokenizer="traditional"):
+               tokenizer="traditional", recon_ratio=0.5,
+               masked_prediction='NONE'):
         """Build the full space hierarchy from architecture parameters.
 
         Args:
@@ -2459,7 +2774,7 @@ class BasicModel(BaseModel):
                      input/output object counts differ).
             conceptualOrder: number of extra Percept->Concept->Symbol cycles.
             symbolicOrder: number of extra Syntax->Symbol cycles.
-            model_type: "simple", "lm", "passthrough", or "vq".
+            model_type: "simple", "embedding", "passthrough", or "vq".
         """
         self.spaces = []  # reset — prevent stale accumulation from prior create() calls
         self.tokenizer        = tokenizer  # "traditional" (word2vec) or "grammatical" (Lex span tables)
@@ -2487,6 +2802,8 @@ class BasicModel(BaseModel):
         self.ergodic          = ergodic
         self.certainty        = certainty
         self.quantized        = quantized
+        self.perceptQuantized = perceptQuantized if perceptQuantized is not None else quantized
+        self.conceptQuantized = conceptQuantized if conceptQuantized is not None else quantized
         self.invertible       = invertible
         self.hasNorm          = hasNorm
         self.conceptualOrder  = conceptualOrder
@@ -2495,6 +2812,10 @@ class BasicModel(BaseModel):
         self.reshape          = reshape
         self.perceptHasAttention = perceptHasAttention
         self.conceptHasAttention = conceptHasAttention
+        self.recon_ratio      = recon_ratio
+        self.masked_prediction = masked_prediction
+        if data is not None and hasattr(data, 'masked_prediction') and data.masked_prediction != 'NONE':
+            data.masked_prediction = masked_prediction
 
         # nOutputSymbols tracks total symbol count fed to OutputSpace.
         # Starts with only the output-destined symbols (not reconstruction symbols).
@@ -2505,9 +2826,17 @@ class BasicModel(BaseModel):
                                            pretrained=pretrained,
                                            quantized=self.quantized,
                                            tokenizer=self.tokenizer)
+        # Convert masked-word string labels to embedding vectors now that
+        # the Embedding vocabulary is available.
+        if data is not None and hasattr(data, '_lm_labels') and data._lm_labels is not None:
+            embedding = self.inputSpace.vectorSet[0] if self.inputSpace.vectorSet else None
+            if embedding is not None and hasattr(embedding, 'cbow'):
+                data.prepare_lm_targets(embedding)
+                # Move new targets to device
+                data.toDevice()
         self.perceptualSpace = PerceptualSpace(self.nInput, self.nPercepts,
                                                reversible=reversible,
-                                               quantized=self.quantized,
+                                               quantized=self.perceptQuantized,
                                                passThrough=perceptPassThrough,
                                                reshape=reshape,
                                                ergodic=self.ergodic,
@@ -2518,7 +2847,7 @@ class BasicModel(BaseModel):
                                                invertible=self.invertible,
                                                hasNorm=self.hasNorm,
                                                ergodic=self.ergodic,
-                                               quantized=self.quantized,
+                                               quantized=self.conceptQuantized,
                                                reshape=reshape,
                                                hasAttention=self.conceptHasAttention)
         if symbolPassThrough:
@@ -2558,6 +2887,7 @@ class BasicModel(BaseModel):
         self.outputSpace     = OutputSpace(nOutputSymbols, self.nOutput,
                                            reversible=reversible, data=data)
         self.spaces.extend([self.outputSpace])
+        self.inputSpace.outputSpace = self.outputSpace
 
         # The output dimensionality of the input layer must be equal to the output dimensionality of the perceptual layer, since the conceptual layer operates on both.
         #assert self.inputSpace.outputShape[1] == self.perceptualSpace2.outputShape[1] # inputDim == perceptDim
@@ -2625,6 +2955,43 @@ class BasicModel(BaseModel):
             # good reconstruction information.
             return torch.cat([output_symbols, self.recon_symbols], dim=1)
         return output_symbols
+    def forward_from_input(self, input_embedded):
+        """Forward pass starting after InputSpace (for masked prediction).
+
+        Takes already-embedded input and runs it through Percept -> Concept ->
+        Symbol -> Output pipeline, bypassing InputSpace.forward().
+
+        Args:
+            input_embedded: [batch, nVectors, embeddingSize] tensor from
+                           InputSpace.expand_masked()
+
+        Returns:
+            (input_embedded, symbols, outputData) -- same signature as forward()
+        """
+        if isinstance(input_embedded, torch.Tensor):
+            input_embedded = input_embedded.to(TheDevice)
+        percepts = self.perceptualSpace(input_embedded)
+        concepts = self.conceptualSpace(percepts)
+        symbols = self.symbolicSpace(concepts)
+        # Higher-order cycles
+        for n in range(1, self.conceptualOrder):
+            NA, symbols1 = self.SubsymbolicThought(concepts)
+            symbols = torch.cat((symbols, symbols1), dim=1)
+        for n in range(1, self.symbolicOrder):
+            NA, symbols2 = self.SymbolicThought(symbols)
+            symbols = torch.cat((symbols, symbols2), dim=1)
+        # Split for output vs reconstruction
+        if self.nReconSymbols > 0:
+            self.output_symbols = symbols[:, :self.nTotalOutputSymbols, :]
+            self.recon_symbols = symbols[:, self.nTotalOutputSymbols:, :]
+        else:
+            self.output_symbols = symbols
+            self.recon_symbols = None
+        outputData = self.Finish(self.output_symbols)
+        batch = input_embedded.shape[0]
+        TheObjectEncoding.when.increment(batch)
+        return input_embedded, symbols, outputData
+
     def forward(self, inputData):
         """Full forward pass: core pipeline + higher-order cycles + output projection.
 
@@ -2704,14 +3071,12 @@ class BasicModel(BaseModel):
             print(f"Epoch [{epoch + 1}/{numEpochs}]")
 
             if epoch != 0:
-                train_input, train_output = self.inputSpace.getTrainData()
-                outErr, inErr, allOut, lastIn = self.runEpoch(train_input, train_output, optimizer=optimizer, batchSize=batchSize)
+                outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=optimizer, batchSize=batchSize, split="train")
                 trainLosses[0].append(outErr)
                 trainLosses[1].append(inErr)
                 print(f"Train Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
 
-            test_input, test_output = self.inputSpace.getTestData()
-            outErr, inErr, allOut, lastIn = self.runEpoch(test_input, test_output, lr=0, batchSize=batchSize)
+            outErr, inErr, allOut, lastIn = self.runEpoch(batchSize=batchSize, split="test")
             testLosses[0].append(outErr)
             testLosses[1].append(inErr)
 
@@ -2733,7 +3098,7 @@ class BasicModel(BaseModel):
         self.rCorrect = self.mnistReport()
 
         # Reconstruction report: run final test pass and show input vs reconstructed
-        if self.reversible and self.inputSpace.model_type == "lm":
+        if self.reversible and self.inputSpace.model_type == "embedding":
             self._reconstructionReport()
 
         self.trainLosses = trainLosses
@@ -2756,8 +3121,10 @@ class BasicModel(BaseModel):
         else:
             return nn.CrossEntropyLoss(), nn.MSELoss()
 
-    def runEpoch(self, input, output, optimizer=None, lr=0.01, batchSize=10):
+    def runEpoch(self, optimizer=None, batchSize=10, split="train"):
         """Run one epoch over the dataset (training if optimizer given, eval if None).
+
+        Uses getBatch() stream interface for flexible batch iteration.
 
         Each batch computes a combined loss (forward + reverse) in a single
         backward pass, avoiding gradient interference from separate optimizers.
@@ -2768,44 +3135,56 @@ class BasicModel(BaseModel):
         Args:
             optimizer: pre-built Adam optimizer (persistent across epochs).
                        Pass None for evaluation mode.
+            batchSize: number of examples per batch (standard mode only)
+            split: "train", "test", or "validation"
 
         Returns (output_loss, reconstruction_loss, all_predictions, last_reconstruction).
         """
         training = optimizer is not None
-
         criterionOutput, criterionInput = self._getLossFn()
-
         allOutput = []
-        allInput  = []
-        outErr    = 0
-        inErr     = 0
+        allInput = []
+        outErr = 0
+        inErr = 0
         self.train(training)
-        nBatches = (len(input) + batchSize - 1) // batchSize
         ctx = torch.no_grad() if not training else nullcontext()
-        with ctx:
-            for batchIdx, i in enumerate(range(0, len(input), batchSize)):
-                if training and batchIdx % 100 == 0:
-                    print(f"  batch {batchIdx}/{nBatches}", end="\r", flush=True)
-                inputBatch  = input[i:i + batchSize]
-                outputBatch = output[i:i + batchSize]
-                actualBatch = len(inputBatch)
+        masked_pred = hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE'
 
-                inputTensor  = self.inputSpace.prepInput(inputBatch)
-                outputTensor = self.outputSpace.prepOutput(outputBatch)
+        with ctx:
+            batchNum = 0
+            batchIdx = 0
+            while True:
+                batch, batchNum = self.inputSpace.getBatch(batchNum, batchSize, split)
+                if batch is None:
+                    break
+                if training and batchIdx % 100 == 0:
+                    print(f"  batch {batchIdx}", end="\r", flush=True)
+                inputTensor, outputTensor = batch
 
                 if training:
                     optimizer.zero_grad()
 
-                # --- Forward pass ---
-                input, symbols, outputDataPred = self.forward(inputTensor)
-                lossOut = criterionOutput(outputDataPred.squeeze(), outputTensor.squeeze())
+                # Forward pass
+                if masked_pred:
+                    input, symbols, outputDataPred = self.forward_from_input(inputTensor)
+                else:
+                    input, symbols, outputDataPred = self.forward(inputTensor)
 
-                # --- Reverse pass ---
+                pred_sq = outputDataPred.squeeze()
+                tgt_sq = outputTensor.squeeze()
+                if pred_sq.shape != tgt_sq.shape:
+                    if tgt_sq.ndim == 0 or (tgt_sq.ndim == 1 and pred_sq.ndim == 2):
+                        tgt_sq = tgt_sq.unsqueeze(0).expand_as(pred_sq) if tgt_sq.ndim == 0 else torch.zeros_like(pred_sq)
+                lossOut = criterionOutput(pred_sq, tgt_sq)
+
+                # ARUS: suppress output loss (unsupervised — no target signal)
+                if hasattr(self, 'masked_prediction') and self.masked_prediction == 'ARUS':
+                    lossOut = torch.tensor(0.0, device=pred_sq.device)
+
                 if self.reversible:
                     inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
-                    #lossIn = criterionInput(inputPred.squeeze(), inputTensor.squeeze().float())
                     lossIn = criterionInput(inputPred, input.squeeze())
-                    rr = getattr(self, 'recon_ratio', 1.0)
+                    rr = self.recon_ratio
                     totalLoss = (1 - rr) * lossOut + rr * lossIn
                 else:
                     lossIn = torch.tensor(0.0)
@@ -2817,17 +3196,26 @@ class BasicModel(BaseModel):
                         self.paramUpdate()
                     optimizer.step()
 
+                    # Re-zero the [MASK] embedding after each optimizer step
+                    if masked_pred and hasattr(self.inputSpace.vectors(), 'mask_token_idx'):
+                        with torch.no_grad():
+                            emb = self.inputSpace.vectors()
+                            emb._emb.weight[emb.mask_token_idx] = 0.0
+
                 outErr = lossOut.item()
-                inErr  = lossIn.item() if self.reversible else 0
+                inErr = lossIn.item() if self.reversible else 0
 
                 outputDataPred = outputDataPred.clone().detach().squeeze()
-                if i == 0:
+                if batchIdx == 0:
                     allOutput = outputDataPred
                 else:
                     allOutput = torch.concat((allOutput, outputDataPred), dim=0)
 
                 if self.reversible:
                     allInput = inputDataPred.clone().detach().squeeze()
+
+                batchIdx += 1
+
         return outErr, inErr, allOutput, allInput
 
     def classificationReport(self, min=0, max=1):
@@ -2848,7 +3236,7 @@ class BasicModelFactory:
     """Create, train, and evaluate models from an XML config file.
 
     Dispatches to the right model class based on <architecture> flags:
-      - modelType=lm         → BasicModel (language model path)
+      - modelType=embedding   → BasicModel (embedding/language model path)
       - modelType=passthrough → BasicModel (passthrough path)
       - modelType=vq         → BasicModel (vector-quantized path)
       - Otherwise             → SimpleModel parameterized by:
