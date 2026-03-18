@@ -12,7 +12,7 @@
 
     <training>
       <numEpochs>10</numEpochs>
-      <weightsPath>output/mnist_weights.ckpt</weightsPath>
+      <weightsPath>mnist_weights.ckpt</weightsPath>
       <autosave>true</autosave>
     </training>
   </architecture>

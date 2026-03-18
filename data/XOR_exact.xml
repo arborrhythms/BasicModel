@@ -15,7 +15,7 @@
     <training>
       <numEpochs>400</numEpochs>
       <learningRate>0.01</learningRate>
-      <weightsPath>output/xor_exact_weights.ckpt</weightsPath>
+      <weightsPath>xor_exact_weights.ckpt</weightsPath>
       <autosave>false</autosave>
       <autoload>false</autoload>
       <reconRatio>0.3</reconRatio>

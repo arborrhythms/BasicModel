@@ -11,7 +11,7 @@
       <numEpochs>100</numEpochs>
       <learningRate>0.00001</learningRate>
       <embeddingPath>data/embeddings/enwiki_20180420_100d.txt</embeddingPath>
-      <weightsPath>output/tomatoes_weights.ckpt</weightsPath>
+      <weightsPath>tomatoes_weights.ckpt</weightsPath>
       <autosave>true</autosave>
     </training>
   </architecture>

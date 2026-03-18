@@ -21,6 +21,9 @@ all : xor
 run :
 	cd bin && PYTHONPATH=. ../.venv/bin/python BasicModel.py $(XML1)
 
+train : data/train.xml
+	make run XML1=$<
+
 xor : data/XOR_exact.xml
 	make run XML1=$<
 

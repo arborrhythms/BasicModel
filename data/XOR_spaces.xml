@@ -23,7 +23,7 @@
     <training>
       <numEpochs>1000</numEpochs>
       <learningRate>0.01</learningRate>
-      <weightsPath>output/XOR_spaces.ckpt</weightsPath>
+      <weightsPath>XOR_spaces.ckpt</weightsPath>
       <autosave>false</autosave>
       <autoload>false</autoload>
     </training>

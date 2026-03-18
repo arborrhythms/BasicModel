@@ -18,7 +18,7 @@
       <numEpochs>10</numEpochs>
       <batchSize>10</batchSize>
       <learningRate>0.01</learningRate>
-      <weightsPath>output/weights.ckpt</weightsPath>
+      <weightsPath>weights.ckpt</weightsPath>
       <autoload>true</autoload>
       <autosave>false</autosave>
     </training>
@@ -70,6 +70,6 @@
     <vectorSize>100</vectorSize>
     <trainingEpochs>10</trainingEpochs>
     <minCount>5</minCount>
-    <artifactPath>output/BasicModel.kv</artifactPath>
+    <artifactPath>BasicModel.kv</artifactPath>
   </embeddings>
 </model>

@@ -16,7 +16,7 @@
       <batchSize>10</batchSize>
       <learningRate>0.01</learningRate>
       <!-- Path to saved weights (relative to basicmodel/ root) -->
-      <weightsPath>output/weights.ckpt</weightsPath>
+      <weightsPath>weights.ckpt</weightsPath>
       <!-- Auto-load weights on startup if available -->
       <autoload>true</autoload>
       <!-- Auto-save weights after training -->

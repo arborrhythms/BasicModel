@@ -24,7 +24,7 @@
       <learningRate>0.001</learningRate>
       <reconRatio>0.5</reconRatio>
       <train>both</train>
-      <weightsPath>output/weights.ckpt</weightsPath>
+      <weightsPath>weights.ckpt</weightsPath>
       <autoload>true</autoload>
       <autosave>false</autosave>
       <negSamples>1024</negSamples>

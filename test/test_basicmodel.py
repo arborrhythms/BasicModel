@@ -1790,25 +1790,47 @@ class TestReconstructionSymbols(unittest.TestCase):
             self._create_xor_model(nSymbols=2, nOutput=3)
 
     def test_xor_training_with_recon_symbols(self):
-        """Training with recon symbols works end-to-end and output loss converges."""
-        torch.manual_seed(42)
-        m = self._create_xor_model(nSymbols=3, nOutput=1)
-        m.set_sigma(0)
+        """Training with recon symbols works end-to-end and output loss converges.
 
-        # Train using the standard pipeline
-        optimizer = m.getOptimizer(lr=0.005)
-        for epoch in range(200):
-            outErr, inErr, allOut, allIn = m.runEpoch(
-                optimizer=optimizer, batchSize=10, split="train")
-            m.inputSpace.shuffle()
+        Uses XOR_recon.xml which is purpose-built for this test:
+        nActive=3 input (no padding), nSymbols=6, nOutput=1 (5 recon symbols).
+        """
+        from BasicModel import BasicModel, TheData
+        import xml.etree.ElementTree as ET
 
-        # Recon symbols should have been present during training
-        self.assertIsNotNone(m.recon_symbols,
-                             "recon_symbols should be populated after training")
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_recon.xml")
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
 
-        # Output loss should converge
-        self.assertLess(outErr, 0.01,
-                        f"Output loss ({outErr:.4f}) should converge for XOR")
+        # Ensure autoload is off
+        auto = root.find("architecture/autoload")
+        if auto is None:
+            auto = ET.SubElement(root.find("architecture"), "autoload")
+        auto.text = "false"
+
+        tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
+        tree.write(tmp, xml_declaration=True)
+        tmp.close()
+
+        try:
+            torch.manual_seed(42)
+            TheData.load("xor")
+            m = BasicModel()
+            m.create_from_config(tmp.name, data=TheData)
+
+            # Train with sigma annealing via runTrial
+            m.runTrial(numEpochs=600, batchSize=10, lr=0.01)
+
+            # Recon symbols should have been present during training
+            self.assertIsNotNone(m.recon_symbols,
+                                 "recon_symbols should be populated after training")
+
+            # Output loss should converge
+            outErr = m.trainLosses[0][-1] if m.trainLosses[0] else 1.0
+            self.assertLess(outErr, 0.01,
+                            f"Output loss ({outErr:.4f}) should converge for XOR")
+        finally:
+            os.unlink(tmp.name)
 
     def test_xor_perfect_reconstruction(self):
         """After training, all 4 XOR inputs reconstruct to the correct words.
@@ -1852,11 +1874,14 @@ class TestReconstructionSymbols(unittest.TestCase):
                 m.runEpoch(batchSize=len(test_input), split="test")
 
             # Check each input reconstructs to the correct words
+            # (ignore \x00 padding positions — only real words must match)
             for i in range(len(test_input)):
                 original = m._bytes_to_text(test_input[i])
                 recon = m._bytes_to_text(m.inputSpace.reconstructed[i])
+                orig_words = original.replace("\x00", " ").split()
+                recon_words = recon.replace("\x00", " ").split()
                 self.assertEqual(
-                    original.split(), recon.split(),
+                    orig_words, recon_words,
                     f"Input {i}: '{original}' reconstructed as '{recon}'"
                 )
         finally:

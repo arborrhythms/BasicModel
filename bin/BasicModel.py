@@ -1321,9 +1321,6 @@ class Embedding(VectorSet):
         if embedding_path is None:
             return None
 
-        if not os.path.isabs(embedding_path):
-            embedding_path = os.path.join(ProjectPaths.PROJECT_DIR, embedding_path)
-
         if not os.path.exists(embedding_path):
             return None
 
@@ -3237,6 +3234,17 @@ class BasicModel(BaseModel):
     """
     name = "BasicModel"
 
+    def _resolve_artifact_path(self, relpath):
+        """Resolve a relative artifact path against the XML config file's directory.
+
+        If relpath is absolute, return as-is.  Otherwise join with the
+        directory containing the XML config file.
+        """
+        if os.path.isabs(relpath):
+            return relpath
+        config_dir = os.path.dirname(self._config_path)
+        return os.path.join(config_dir, relpath)
+
     def create_from_config(self, config_path=None, model_type=None, data=None):
         """Create the model using settings from an XML config file.
 
@@ -3287,6 +3295,8 @@ class BasicModel(BaseModel):
             model_type = arch.get("modelType", "simple")
         # embedding_path: set in config via <embeddingPath>; absence means dynamic vocab
         embedding_path = _t("embeddingPath", None)
+        if embedding_path is not None:
+            embedding_path = self._resolve_artifact_path(embedding_path)
 
         # ObjectEncoding setup — positional/temporal encoding config from InputSpace
         gsp = BasicModelFactory.get_space_param
@@ -3381,9 +3391,8 @@ class BasicModel(BaseModel):
         # Auto-load weights if configured
         wcfg = cfg.get("weights", {})
         if _t("autoload", wcfg.get("autoload", True)):
-            wpath = _t("weightsPath", wcfg.get("path", "output/weights.ckpt"))
-            if not os.path.isabs(wpath):
-                wpath = os.path.join(ProjectPaths.PROJECT_DIR, wpath)
+            wpath = _t("weightsPath", wcfg.get("path", "weights.ckpt"))
+            wpath = self._resolve_artifact_path(wpath)
             self.load_weights(wpath)
         # Inference config
         self.max_response_length = arch.get("maxResponseLength", 64)
@@ -4261,9 +4270,8 @@ class BasicModelFactory:
             m.classificationReport(**report_kwargs)
 
         if _t("autosave", False):
-            wpath = _t("weightsPath", cfg.get("weights", {}).get("path", "output/weights.ckpt"))
-            if not os.path.isabs(wpath):
-                wpath = os.path.join(ProjectPaths.PROJECT_DIR, wpath)
+            wpath = _t("weightsPath", cfg.get("weights", {}).get("path", "weights.ckpt"))
+            wpath = m._resolve_artifact_path(wpath)
             m.save_weights(wpath)
 
         return [(m.name, m.rCorrect, m)]
