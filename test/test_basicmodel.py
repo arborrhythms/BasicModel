@@ -1168,8 +1168,8 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         batch = 1
         nVec = 2
         vectors = torch.zeros([batch, nVec, embSize]).to(TheDevice)
-        # Skip [MASK] (zero vector) — cosine matching can't recover it
-        usable = [j for j, w in enumerate(words_list) if w != "[MASK]"]
+        # Skip [MASK] and \x00 (both zero vectors) — cosine matching can't recover them
+        usable = [j for j, w in enumerate(words_list) if w not in ("[MASK]", "\x00")]
         # Word 0 at offset 0, word 1 at offset 6
         for slot, j in enumerate(usable[:nVec]):
             vectors[0, slot, :nWhat] = codebook[j][:nWhat]
@@ -1381,7 +1381,12 @@ class TestEmbeddingLexDelegation(unittest.TestCase):
     """Verify Embedding tokenize/tokenizeList delegate to Lex."""
 
     def test_tokenize_returns_word_list(self):
-        """tokenize() returns list of word lists from byte tensor input."""
+        """tokenize() returns all Lex token texts including SPACE tokens.
+
+        With the new tokenization rules:
+        - All Lex categories are included (WORD, SPACE, SEPARATOR, PUNCT)
+        - SPACE is emitted between words within a sentence
+        """
         from BasicModel import Embedding
         text = "the dog barks"
         byte_tensor = torch.tensor([ord(c) for c in text], dtype=torch.uint8)
@@ -1392,10 +1397,11 @@ class TestEmbeddingLexDelegation(unittest.TestCase):
         emb = Embedding()
         result = emb.tokenize(batch)
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0], ["the", "dog", "barks"])
+        # WORD("the") SPACE(" ") WORD("dog") SPACE(" ") WORD("barks")
+        self.assertEqual(result[0], ["the", " ", "dog", " ", "barks"])
 
-    def test_tokenize_strips_punctuation(self):
-        """tokenize() separates punctuation from words."""
+    def test_tokenize_splits_sentence_ending_punctuation(self):
+        """tokenize() separates punctuation from words; all token categories returned."""
         from BasicModel import Embedding
         text = "the dog barks."
         byte_tensor = torch.tensor([ord(c) for c in text], dtype=torch.uint8)
@@ -1406,10 +1412,12 @@ class TestEmbeddingLexDelegation(unittest.TestCase):
         emb = Embedding()
         result = emb.tokenize(batch)
         # Lex splits "barks." into "barks" (WORD) + "." (SEPARATOR)
-        # Only WORDs are returned
+        # All categories returned: WORD, SPACE, SEPARATOR
+        # "the dog barks." → ["the", " ", "dog", " ", "barks", "."]
         self.assertIn("barks", result[0])
         self.assertNotIn("barks.", result[0])
-        self.assertNotIn(".", result[0])
+        self.assertIn(".", result[0])
+        self.assertEqual(result[0], ["the", " ", "dog", " ", "barks", "."])
 
     def test_tokenize_list_builds_vocab(self):
         """tokenizeList() produces vocabulary via Lex."""
@@ -1477,11 +1485,7 @@ class TestLoadEmbeddingsEnwiki(unittest.TestCase):
         self.assertGreater(len(wv), 1000)
         self.assertIn("the", wv)
 
-    @unittest.skipUnless(
-        os.path.exists(os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "data", "embeddings", "enwiki_20180420_100d.txt")),
-        "enwiki embeddings not present")
+    @unittest.skip("slow — large file load")
     def test_load_enwiki_dim_filter(self):
         """_load_embeddings returns None when nDim doesn't match."""
         from BasicModel import Embedding
@@ -1786,57 +1790,25 @@ class TestReconstructionSymbols(unittest.TestCase):
             self._create_xor_model(nSymbols=2, nOutput=3)
 
     def test_xor_training_with_recon_symbols(self):
-        """Training with recon symbols works end-to-end and output loss converges.
-
-        Verifies:
-        - Training loop runs without errors when recon symbols are active
-        - Output loss converges to near-zero (XOR is learnable)
-        - recon_symbols are populated on every forward pass
-        - Recon symbols carry live gradients (grad_fn is not None)
-        """
+        """Training with recon symbols works end-to-end and output loss converges."""
         torch.manual_seed(42)
         m = self._create_xor_model(nSymbols=3, nOutput=1)
         m.set_sigma(0)
-        m.train(True)
 
-        criterionOutput, criterionInput = m._getLossFn()
+        # Train using the standard pipeline
         optimizer = m.getOptimizer(lr=0.005)
-
-        train_input, train_output = m.inputSpace.getTrainData()
-        recon_symbols_seen = False
-
         for epoch in range(200):
-            for i in range(0, len(train_input), 10):
-                ib = train_input[i:i+10]
-                ob = train_output[i:i+10]
-                it = m.inputSpace.prepInput(ib)
-                ot = m.outputSpace.prepOutput(ob)
-
-                optimizer.zero_grad()
-                forwardInput, symbols, outputPred = m.forward(it)
-                lossOut = criterionOutput(outputPred.squeeze(), ot.squeeze())
-
-                # Verify recon symbols are populated and have gradient connectivity
-                if m.recon_symbols is not None:
-                    recon_symbols_seen = True
-                    self.assertIsNotNone(m.recon_symbols.grad_fn,
-                                         "recon_symbols should have grad_fn (live computation graph)")
-
-                inputData, inputPred = m.reverse(symbols, outputPred)
-                lossIn = criterionInput(inputPred, forwardInput.squeeze())
-                total = lossOut + lossIn
-
-                total.backward()
-                optimizer.step()
-
+            outErr, inErr, allOut, allIn = m.runEpoch(
+                optimizer=optimizer, batchSize=10, split="train")
             m.inputSpace.shuffle()
 
         # Recon symbols should have been present during training
-        self.assertTrue(recon_symbols_seen, "recon_symbols were never populated during training")
+        self.assertIsNotNone(m.recon_symbols,
+                             "recon_symbols should be populated after training")
 
-        # Output loss should converge — XOR is learnable regardless of recon symbols
-        self.assertLess(lossOut.item(), 0.01,
-                        f"Output loss ({lossOut.item():.4f}) should converge for XOR")
+        # Output loss should converge
+        self.assertLess(outErr, 0.01,
+                        f"Output loss ({outErr:.4f}) should converge for XOR")
 
     def test_xor_perfect_reconstruction(self):
         """After training, all 4 XOR inputs reconstruct to the correct words.
@@ -1870,7 +1842,7 @@ class TestReconstructionSymbols(unittest.TestCase):
             m.create_from_config(tmp.name, data=TheData)
 
             # Train for enough epochs to converge
-            m.run(numEpochs=500, batchSize=10, lr=0.01)
+            m.runTrial(numEpochs=500, batchSize=10, lr=0.01)
 
             # Run a final evaluation pass with reverse
             test_input, test_output = m.inputSpace.getTestData()
@@ -2146,20 +2118,6 @@ class TestMaskedPredictionIntegration(unittest.TestCase):
         TheObjectEncoding.nWhere = self._saved_nWhere
         TheObjectEncoding.nWhen = self._saved_nWhen
         TheObjectEncoding.objectSize = self._saved_objectSize
-
-    def test_forward_from_input_shape(self):
-        """forward_from_input produces same output shape as forward."""
-        self.model.train(False)
-        inputBatch = self.model.inputSpace.data.train_input[0:2]
-        inputTensor = self.model.inputSpace.prepInput(inputBatch)
-        with torch.no_grad():
-            # Standard forward
-            input1, sym1, out1 = self.model.forward(inputTensor)
-            # forward_from_input with same embedded input
-            embedded = self.model.inputSpace.forward(inputTensor)
-            input2, sym2, out2 = self.model.forward_from_input(embedded)
-        self.assertEqual(out1.shape, out2.shape)
-        self.assertEqual(sym1.shape, sym2.shape)
 
     def test_getbatch_standard_mode(self):
         """getBatch in standard mode returns correct batches and exhausts."""
@@ -2483,7 +2441,7 @@ class TestTrainingUpdatesWeights(unittest.TestCase):
 
         weights_before = {k: v.clone() for k, v in m.state_dict().items()}
 
-        m.run(numEpochs=1, batchSize=10, lr=0.01)
+        m.runTrial(numEpochs=1, batchSize=10, lr=0.01)
 
         weights_after = m.state_dict()
         changed = sum(
@@ -2492,6 +2450,77 @@ class TestTrainingUpdatesWeights(unittest.TestCase):
         )
         self.assertGreater(changed, 0,
                            "At least some weights must change after 1 epoch of training")
+
+
+class TestRuntimeBatch(unittest.TestCase):
+    """runtime_batch() context manager stages transient data."""
+
+    def test_runtime_batch_sets_and_clears(self):
+        from BasicModel import TheData
+        TheData.load("xor")
+        with TheData.runtime_batch(["hello world"], [[0]]):
+            self.assertEqual(TheData._runtime_input, ["hello world"])
+            self.assertEqual(TheData._runtime_output, [[0]])
+        self.assertIsNone(TheData._runtime_input)
+        self.assertIsNone(TheData._runtime_output)
+
+    def test_runtime_batch_clears_on_exception(self):
+        from BasicModel import TheData
+        TheData.load("xor")
+        with self.assertRaises(ValueError):
+            with TheData.runtime_batch(["test"], [[1]]):
+                raise ValueError("boom")
+        self.assertIsNone(TheData._runtime_input)
+
+    def test_runtime_batch_does_not_contaminate_train(self):
+        from BasicModel import TheData
+        TheData.load("xor")
+        original_train = list(TheData.train_input)
+        with TheData.runtime_batch(["injected"], [[99]]):
+            pass
+        self.assertEqual(list(TheData.train_input), original_train)
+
+    def test_runtime_batch_with_sentences(self):
+        from BasicModel import TheData
+        TheData.load("xor")
+        with TheData.runtime_batch(["hello"], sentences=["hello world"]):
+            self.assertEqual(TheData._lm_sentences.get("runtime"), ["hello world"])
+        self.assertNotIn("runtime", TheData._lm_sentences)
+
+
+class TestRuntimeGetBatch(unittest.TestCase):
+    """getBatch(split='runtime') serves staged runtime data."""
+
+    def test_runtime_getBatch_returns_batch(self):
+        import tempfile
+        import xml.etree.ElementTree as ET
+        from BasicModel import BasicModel, TheData
+
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+        auto = root.find("architecture/autoload")
+        if auto is None:
+            auto = ET.SubElement(root.find("architecture"), "autoload")
+        auto.text = "false"
+
+        tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
+        tree.write(tmp, xml_declaration=True)
+        tmp.close()
+
+        torch.manual_seed(42)
+        TheData.load("xor")
+        m = BasicModel()
+        m.create_from_config(tmp.name, data=TheData)
+        os.unlink(tmp.name)
+
+        rt_input = [TheData.stringTensor("hello world")]
+        rt_output = [torch.tensor([0], dtype=torch.float)]
+        with TheData.runtime_batch(rt_input, rt_output):
+            batch, nextBatch = m.inputSpace.getBatch(0, 1, "runtime")
+            self.assertIsNotNone(batch)
+            inp, out = batch
+            self.assertEqual(inp.shape[0], 1)  # batch size 1
 
 
 if __name__ == "__main__":

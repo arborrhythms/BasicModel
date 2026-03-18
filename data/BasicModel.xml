@@ -23,8 +23,8 @@
 
     <training>
       <numTrials>1</numTrials>
-      <numEpochs>1</numEpochs>
-      <batchSize>1</batchSize>
+      <numEpochs>2</numEpochs>
+      <batchSize>8</batchSize>
       <learningRate>0.001</learningRate>
       <reconRatio>0.1</reconRatio>
       <train>CBOW</train>
@@ -42,9 +42,9 @@
   </architecture>
 
   <InputSpace>
-    <nActive>32</nActive>
+    <nActive>128</nActive>
     <nDim>100</nDim>
-    <nVectors>32</nVectors>
+    <nVectors>128</nVectors>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <tokenizer>traditional</tokenizer>
@@ -61,8 +61,11 @@
     <quantized>false</quantized>
   </PerceptualSpace>
 
+  <!-- ConceptualSpace: nActive = 2 * InputSpace.nActive = 256
+       InvertiblePiLayer in 3D (reshape=false) doubles the sequence axis,
+       so the SigmaLayer receives 256 objects and outputs 256 objects. -->
   <ConceptualSpace>
-    <nActive>64</nActive>
+    <nActive>256</nActive>
     <nDim>100</nDim>
     <nVectors>0</nVectors>
     <hasAttention>true</hasAttention>
@@ -71,10 +74,11 @@
     <quantized>false</quantized>
   </ConceptualSpace>
 
+  <!-- SymbolicSpace: nActive = ConceptualSpace.nActive = 256 (1:1 mapping required) -->
   <SymbolicSpace>
-    <nActive>64</nActive>
+    <nActive>256</nActive>
     <nDim>100</nDim>
-    <nVectors>64</nVectors>
+    <nVectors>256</nVectors>
     <passThrough>false</passThrough>
   </SymbolicSpace>
 

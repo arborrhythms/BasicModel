@@ -1,0 +1,76 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- XOR_spaces: whole-sentence XOR with inline data, modelled after XOR_exact.xml.
+       Exercises the tokenizer and space character prediction.
+       Four sentences: "A xor B" where xor output is 1 iff A != B.
+       Architecture is perfectly invertible (invertible=true everywhere). -->
+  <architecture>
+    <reconstruct>symbols</reconstruct>
+    <reshape>true</reshape>
+    <conceptualOrder>1</conceptualOrder>
+    <symbolicOrder>1</symbolicOrder>
+    <modelType>embedding</modelType>
+    <ergodic>false</ergodic>
+
+    <data>
+      <dataset>inline</dataset>
+      <input use="train">zero xor zero|zero xor one|one xor zero|one xor one</input>
+      <input use="test">zero xor zero|zero xor one|one xor zero|one xor one</input>
+      <output use="train">0|1|1|0</output>
+      <output use="test">0|1|1|0</output>
+    </data>
+
+    <training>
+      <numEpochs>1000</numEpochs>
+      <learningRate>0.01</learningRate>
+      <weightsPath>output/XOR_spaces.ckpt</weightsPath>
+      <autosave>false</autosave>
+      <autoload>false</autoload>
+    </training>
+  </architecture>
+
+  <!-- InputSpace: 5 real tokens per sentence ("zero xor zero" → ["zero"," ","xor"," ","zero"])
+       + 1 EOS/padding slot = nActive=6.  The tokenizer now emits WORD and SPACE tokens
+       so the model learns to predict both word content and inter-word spacing.
+       PerceptualSpace.nActive = 4 * InputSpace.nActive (same 4x ratio as XOR_exact.xml). -->
+  <InputSpace>
+    <nActive>6</nActive>
+    <nDim>10</nDim>
+    <nVectors>6</nVectors>
+  </InputSpace>
+
+  <!-- PerceptualSpace: nActive = 4 * InputSpace.nActive = 24
+       Satisfies invertible=true+reshape=true constraint: 2*input == output
+       input = 6*10 = 60, output = 24*10/2 = 120, 2*60 == 120 ✓ -->
+  <PerceptualSpace>
+    <nActive>24</nActive>
+    <nDim>10</nDim>
+    <nVectors>24</nVectors>
+    <invertible>true</invertible>
+    <hasAttention>false</hasAttention>
+  </PerceptualSpace>
+
+  <!-- ConceptualSpace: nActive = PerceptualSpace.nActive / 2 = 12
+       nVectors = 2 * PerceptualSpace.nVectors = 48 (required by validate_config) -->
+  <ConceptualSpace>
+    <nActive>12</nActive>
+    <nDim>10</nDim>
+    <nVectors>48</nVectors>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <!-- SymbolicSpace: nActive = ConceptualSpace.nActive = 12; nSymbols >= nOutput(1) ✓ -->
+  <SymbolicSpace>
+    <nActive>12</nActive>
+    <nDim>10</nDim>
+    <nVectors>12</nVectors>
+    <passThrough>true</passThrough>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nActive>1</nActive>
+    <nDim>1</nDim>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+
+</model>

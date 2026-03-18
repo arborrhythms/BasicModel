@@ -64,7 +64,7 @@ def bench_training():
     buf = io.StringIO()
     t0 = time.monotonic()
     with redirect_stdout(buf), redirect_stderr(buf):
-        m.runTrials(1, num_epochs, batch_size, lr=lr)
+        m.run(1, num_epochs, batch_size, lr=lr)
     elapsed = time.monotonic() - t0
 
     # Extract final accuracy from captured output

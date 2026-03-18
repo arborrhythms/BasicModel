@@ -12,6 +12,8 @@ from datetime import datetime
 
 import numpy as np
 import torch
+import util
+util.init_runtime_env()
 from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
 
@@ -579,7 +581,33 @@ def plot_surface_3d(X, Y, Z, title):
 
 if __name__ == "__main__":
     import sys
-    if len(sys.argv) > 1 and sys.argv[1] == "distances":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog="visualize.py",
+        description=(
+            "Visualize BasicModel metrics and distance functions.\n\n"
+            "Modes:\n"
+            "  metrics    Plot training accuracy and loss curves (default).\n"
+            "  distances  Plot 3D surface plots of cosine, Euclidean, and\n"
+            "             pi-distance functions.\n\n"
+            "Examples:\n"
+            "  python visualize.py\n"
+            "  python visualize.py metrics\n"
+            "  python visualize.py distances\n"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "mode",
+        nargs="?",
+        default="metrics",
+        choices=["metrics", "distances"],
+        help="Visualization mode: 'metrics' (default) or 'distances'.",
+    )
+    args = parser.parse_args()
+
+    if args.mode == "distances":
         distances()
     else:
         metrics()

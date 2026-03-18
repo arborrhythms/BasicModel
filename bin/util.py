@@ -1,12 +1,30 @@
 """Shared utilities for the basicmodel project."""
 
 import os
+import tempfile
 import torch
 
 
 # ---------------------------------------------------------------------------
 # Device management
 # ---------------------------------------------------------------------------
+
+def init_runtime_env():
+    """Configure writable runtime/cache paths before optional GUI imports.
+
+    This keeps CLI runs from stalling while matplotlib/fontconfig try to build
+    caches under unwritable home directories (common in sandboxed or iCloud
+    workspaces). Environment overrides still win because ``setdefault`` is used.
+    """
+    runtime_root = os.path.join(tempfile.gettempdir(), "basicmodel-runtime")
+    mpl_dir = os.path.join(runtime_root, "mplconfig")
+    cache_dir = os.path.join(runtime_root, "cache")
+    os.makedirs(mpl_dir, exist_ok=True)
+    os.makedirs(cache_dir, exist_ok=True)
+    os.environ.setdefault("MPLBACKEND", "Agg")
+    os.environ.setdefault("MPLCONFIGDIR", mpl_dir)
+    os.environ.setdefault("XDG_CACHE_HOME", cache_dir)
+    return runtime_root
 
 def resolve_device(name=""):
     """Resolve a device name string to a torch.device.

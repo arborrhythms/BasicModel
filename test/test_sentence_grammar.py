@@ -15,16 +15,16 @@ class TestSentenceGrammar(unittest.TestCase):
         self.assertIsNotNone(self.cfg)
 
     def test_single_sentence(self):
-        """A sentence ending with period parses."""
+        """A sentence ending with period parses (words separated by SPACE tokens)."""
         parser = EarleyChartParser(self.cfg)
-        tokens = ["WORD", "WORD", "WORD", "SEPARATOR"]
+        tokens = ["WORD", "SPACE", "WORD", "SPACE", "WORD", "SEPARATOR"]
         trees = list(parser.parse(tokens))
         self.assertGreater(len(trees), 0)
 
     def test_two_sentences(self):
         """Two sentences separated by period parse as S -> S SENT."""
         parser = EarleyChartParser(self.cfg)
-        tokens = ["WORD", "WORD", "SEPARATOR", "WORD", "WORD", "SEPARATOR"]
+        tokens = ["WORD", "SPACE", "WORD", "SEPARATOR", "WORD", "SPACE", "WORD", "SEPARATOR"]
         trees = list(parser.parse(tokens))
         self.assertGreater(len(trees), 0)
 

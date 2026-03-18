@@ -91,13 +91,59 @@ class TestLexBuffer(unittest.TestCase):
         words = [t['text'] for t in tokens if t['category'] == 'WORD']
         self.assertEqual(words, ['the', 'quick', 'fox'])
 
-    def test_numbers_separate(self):
+    def test_digit_run_is_number(self):
+        """Digit runs are categorized as NUMBER."""
         lex = Lex()
         tokens = lex.lex_buffer("room 101", 0)
-        self.assertEqual(tokens[0]['text'], 'room')
+        # Expected: WORD("room"), SPACE(" "), NUMBER("101")
+        self.assertEqual(len(tokens), 3)
+        self.assertEqual(tokens[2]['text'], '101')
+        self.assertEqual(tokens[2]['category'], 'NUMBER')
+
+    def test_space_after_separator_not_emitted(self):
+        """Whitespace immediately following a SEPARATOR is not emitted as SPACE.
+
+        SPACE tokens represent intra-sentence spacing between words.
+        Inter-sentence whitespace (after . ! ?) is discarded.
+        """
+        lex = Lex()
+        tokens = lex.lex_buffer("foo.   bar", 0)
+        categories = [t['category'] for t in tokens]
+        # Expected: WORD, SEPARATOR, WORD — no SPACE between sentences
+        self.assertNotIn('SPACE', categories,
+                         f"No SPACE expected after SEPARATOR; got {categories}")
+        self.assertEqual(categories, ['WORD', 'SEPARATOR', 'WORD'])
+
+    def test_four_tokens_for_mixed_sentence(self):
+        """'jhsdfh827348.        hhikh' tokenizes to exactly 4 tokens.
+
+        Breakdown:
+          'jhsdfh'   -> WORD (letter run)
+          '827348'   -> NUMBER (digit run)
+          '.'        -> SEPARATOR
+          '        ' -> skipped (whitespace after SEPARATOR)
+          'hhikh'    -> WORD
+        """
+        lex = Lex()
+        tokens = lex.lex_buffer("jhsdfh827348.        hhikh", 0)
+        self.assertEqual(len(tokens), 4,
+                         f"Expected 4 tokens, got {len(tokens)}: "
+                         f"{[(t['text'], t['category']) for t in tokens]}")
+        self.assertEqual(tokens[0]['text'], 'jhsdfh')
         self.assertEqual(tokens[0]['category'], 'WORD')
-        self.assertEqual(tokens[1]['text'], '101')
+        self.assertEqual(tokens[1]['text'], '827348')
         self.assertEqual(tokens[1]['category'], 'NUMBER')
+        self.assertEqual(tokens[2]['text'], '.')
+        self.assertEqual(tokens[2]['category'], 'SEPARATOR')
+        self.assertEqual(tokens[3]['text'], 'hhikh')
+        self.assertEqual(tokens[3]['category'], 'WORD')
+
+    def test_space_within_sentence_still_emitted(self):
+        """SPACE tokens are emitted between words within a sentence (before any SEPARATOR)."""
+        lex = Lex()
+        tokens = lex.lex_buffer("hello world", 0)
+        categories = [t['category'] for t in tokens]
+        self.assertEqual(categories, ['WORD', 'SPACE', 'WORD'])
 
     def test_semicolon_is_punct_not_separator(self):
         lex = Lex()

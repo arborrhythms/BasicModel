@@ -296,11 +296,10 @@ batch, _ = model.inputSpace.getBatch(0, batchSize=2)
 inp_tensor, out_tensor = batch
 inp_device = str(inp_tensor.device)
 
-# Forward pass — skip on MPS (known segfault in MPS backend)
-out_device = "skipped"
-if TheDevice.type != "mps":
-    with torch.no_grad():
-        _, _, out = model.forward(inp_tensor)
+with torch.no_grad():
+    # getBatch() returns raw input for all modes; masking (if any) is applied
+    # inside InputSpace.forward(), so we always call model.forward().
+    _, _, out = model.forward(inp_tensor)
     out_device = str(out.device)
 
 result = {{
@@ -368,10 +367,9 @@ class TestGPUDevicePlacement(unittest.TestCase):
         self.assertTrue(info["input_device"].startswith(device_type),
                         f"Input on {info['input_device']}, expected {device}")
 
-        # Forward pass output (skipped on MPS due to backend segfault)
-        if info["output_device"] != "skipped":
-            self.assertTrue(info["output_device"].startswith(device_type),
-                            f"Output on {info['output_device']}, expected {device}")
+        # Forward pass output must be on the GPU device
+        self.assertTrue(info["output_device"].startswith(device_type),
+                        f"Output on {info['output_device']}, expected {device}")
 
 
 if __name__ == "__main__":

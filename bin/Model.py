@@ -490,16 +490,35 @@ class InvertibleLinearLayer(Layer):
 
     When ``stable=True``, singular values are clamped to <=1 each step.
     """
-    def __init__(self, nInput, nOutput, naive=False, hasBias=True, stable=False):
+    def __init__(self, nInput, nOutput, naive=False, hasBias=True, stable=True, ldu=False):
         super(InvertibleLinearLayer, self).__init__(nInput, nOutput)
         self.naive = naive
         self.hasBias = hasBias
         self.rank = min(nInput, nOutput)
         self.stable = stable
+        self.ldu = ldu and not naive  # LDU only applies in non-naive mode
 
-        self.U = InvertibleRotationLayer(dim=nInput, naive=self.naive)      # nInput x nInput
-        self.V = InvertibleRotationLayer(dim=nOutput, naive=self.naive)     # nOutput x nOutput
-        self.Sigma = InvertibleDiagonalLayer(nInput, nOutput)               # diagonal scaling
+        if self.ldu:
+            # LDU factorization: W = L @ D @ U
+            # L: unit lower triangular (1s on diagonal, learnable below)
+            # D: diagonal (parameterized as exp(d) to stay positive)
+            # U: unit upper triangular (1s on diagonal, learnable above)
+            # For rectangular: pad to max(nInput, nOutput), slice after.
+            n = max(nInput, nOutput)
+            self._ldu_n = n
+            # Store strictly lower/upper entries as flat parameter vectors
+            n_tri = n * (n - 1) // 2
+            self._L_entries = nn.Parameter(torch.randn(n_tri) * 0.01)
+            self._U_entries = nn.Parameter(torch.randn(n_tri) * 0.01)
+            # D as log-space to guarantee positivity; init near 1
+            self._log_D = nn.Parameter(torch.zeros(n))
+            self.register_buffer('_ldu_noise_L', torch.zeros(n_tri))
+            self.register_buffer('_ldu_noise_U', torch.zeros(n_tri))
+            self.register_buffer('_ldu_noise_D', torch.zeros(n))
+        else:
+            self.U = InvertibleRotationLayer(dim=nInput, naive=self.naive)      # nInput x nInput
+            self.V = InvertibleRotationLayer(dim=nOutput, naive=self.naive)     # nOutput x nOutput
+            self.Sigma = InvertibleDiagonalLayer(nInput, nOutput)               # diagonal scaling
 
         if self.naive:
             self.register_buffer('noise', torch.randn(nInput, nOutput))
@@ -508,11 +527,107 @@ class InvertibleLinearLayer(Layer):
             self.register_buffer('biasNoise', torch.randn(1, nOutput))
 
     def resample_naive_noise(self):
-        self.noise = sample_noise(self.Sigma.lamda, shape=(self.nInput, self.nOutput))
+        if not self.ldu:
+            self.noise = sample_noise(self.Sigma.lamda, shape=(self.nInput, self.nOutput))
 
     def resample_bias_noise(self):
         if self.hasBias:
             self.biasNoise = sample_noise(self.bias)
+
+    # ── LDU helpers ──────────────────────────────────────────────────
+    def _build_L(self, bias=1.0, var=0.0):
+        """Unit lower triangular matrix from flat parameter vector."""
+        n = self._ldu_n
+        L = torch.eye(n, device=self._L_entries.device, dtype=self._L_entries.dtype)
+        entries = bias * self._L_entries + var * self._ldu_noise_L
+        idx = 0
+        for i in range(1, n):
+            for j in range(i):
+                L[i, j] = entries[idx]
+                idx += 1
+        return L
+
+    def _build_U(self, bias=1.0, var=0.0):
+        """Unit upper triangular matrix from flat parameter vector."""
+        n = self._ldu_n
+        U = torch.eye(n, device=self._U_entries.device, dtype=self._U_entries.dtype)
+        entries = bias * self._U_entries + var * self._ldu_noise_U
+        idx = 0
+        for i in range(n):
+            for j in range(i + 1, n):
+                U[i, j] = entries[idx]
+                idx += 1
+        return U
+
+    def _build_D(self, bias=1.0, var=0.0):
+        """Positive diagonal from log-space parameters."""
+        log_d = bias * self._log_D + var * self._ldu_noise_D
+        return torch.exp(log_d)
+
+    def _ldu_forward(self, x, bias=1.0, var=0.0):
+        """Forward: y = x @ W where W = L @ diag(D) @ U.
+
+        Row-vector convention: y = x @ L @ diag(D) @ U.
+        Sequential: z1 = x @ L,  z2 = z1 * d,  y = z2 @ U.
+        """
+        L = self._build_L(bias, var)
+        d = self._build_D(bias, var)
+        U = self._build_U(bias, var)
+        # Cache for reverse
+        self._cached_L = L
+        self._cached_d = d
+        self._cached_U = U
+        xShape = list(x.shape)
+        xShape[-1] = self.nOutput
+        x = x.reshape(-1, self.nInput)
+        n = self._ldu_n
+        # Pad x to n dims if nInput < n
+        if self.nInput < n:
+            x = F.pad(x, (0, n - self.nInput))
+        # y = x @ L @ diag(D) @ U
+        z = x @ L             # [batch, n] @ [n, n] → [batch, n]
+        z = z * d             # element-wise diagonal scaling
+        y = z @ U             # [batch, n] @ [n, n] → [batch, n]
+        # Slice to nOutput
+        y = y[:, :self.nOutput]
+        return y.reshape(xShape)
+
+    def _ldu_reverse(self, y, bias=1.0, var=0.0):
+        """Reverse: recover x from y = x @ L @ diag(D) @ U.
+
+        Undo in reverse order:
+          z2 = y @ U^{-1}      (U is unit upper triangular)
+          z1 = z2 / d
+          x  = z1 @ L^{-1}     (L is unit lower triangular)
+        Triangular solves: x @ A = b  ⟺  A^T @ x^T = b^T.
+        """
+        L = getattr(self, '_cached_L', None)
+        d = getattr(self, '_cached_d', None)
+        U = getattr(self, '_cached_U', None)
+        if L is None or d is None or U is None:
+            L = self._build_L(bias, var)
+            d = self._build_D(bias, var)
+            U = self._build_U(bias, var)
+        yShape = list(y.shape)
+        yShape[-1] = self.nInput
+        y = y.reshape(-1, self.nOutput)
+        n = self._ldu_n
+        # Pad y to n dims if nOutput < n
+        if self.nOutput < n:
+            y = F.pad(y, (0, n - self.nOutput))
+        # Step 1: z2 = y @ U^{-1}  ⟺  U^T @ z2^T = y^T
+        z2 = torch.linalg.solve_triangular(U.T, y.T, upper=False, unitriangular=True).T
+        # Step 2: z1 = z2 / d
+        z1 = z2 / d
+        # Step 3: x = z1 @ L^{-1}  ⟺  L^T @ x^T = z1^T
+        x = torch.linalg.solve_triangular(L.T, z1.T, upper=True, unitriangular=True).T
+        # Slice to nInput
+        x = x[:, :self.nInput]
+        # Clear cache
+        self._cached_L = None
+        self._cached_d = None
+        self._cached_U = None
+        return x.reshape(yShape)
 
     def _rotation_matrices(self, bias=1.0, temp=0.0):
         """Compute and cache U, V rotation matrices for reuse within a forward+reverse pair."""
@@ -523,12 +638,17 @@ class InvertibleLinearLayer(Layer):
         return U_matrix, V_matrix
 
     def compute_W(self, bias=1.0, temp=0.0):
-        """Materialize the full weight matrix W = U * Sigma * V^T.
+        """Materialize the full weight matrix W.
 
-        When bias/temp are provided, each SVD component incorporates its own
-        noise: W_eff = U(bias,temp) @ Sigma(bias,temp) @ V(bias,temp)^T.
-        Caches rotation matrices for reuse by compute_Winverse.
+        SVD mode: W = U * Sigma * V^T.
+        LDU mode: W = L @ diag(D) @ U, sliced to [nInput, nOutput].
         """
+        if self.ldu:
+            L = self._build_L(bias, temp)
+            d = self._build_D(bias, temp)
+            U = self._build_U(bias, temp)
+            W = L @ torch.diag(d) @ U
+            return W[:self.nInput, :self.nOutput]
         U_matrix, V_matrix = self._rotation_matrices(bias, temp)
         # Build Σ of shape (nInput, nOutput) with bias/temp applied
         w = bias * self.Sigma.lamda + temp * self.Sigma.noise
@@ -539,15 +659,20 @@ class InvertibleLinearLayer(Layer):
         return W
 
     def compute_Winverse(self, bias=1.0, temp=0.0, noise=None):
-        """Materialize the pseudoinverse W^+ = V * Sigma^{-1} * U^T.
+        """Materialize the inverse (or pseudoinverse) of W.
 
-        Reuses cached rotation matrices from compute_W when available.
-        When bias/temp are provided (and noise is None), each SVD component
-        incorporates its own internal noise — matching compute_W(bias, temp).
-
-        When external noise is provided, rotates it into the SVD basis and
-        inverts the augmented matrix exactly (for the naive/external-noise path).
+        SVD mode: W^+ = V * Sigma^{-1} * U^T.
+        LDU mode: W^{-1} = U^{-1} @ D^{-1} @ L^{-1}, sliced to [nOutput, nInput].
         """
+        if self.ldu:
+            L = self._build_L(bias, temp)
+            d = self._build_D(bias, temp)
+            U = self._build_U(bias, temp)
+            # inv(L @ D @ U) = inv(U) @ inv(D) @ inv(L)
+            U_inv = torch.linalg.solve_triangular(U, torch.eye(self._ldu_n, device=U.device), upper=True, unitriangular=True)
+            L_inv = torch.linalg.solve_triangular(L, torch.eye(self._ldu_n, device=L.device), upper=False, unitriangular=True)
+            W_inv = U_inv @ torch.diag(1.0 / d) @ L_inv
+            return W_inv[:self.nOutput, :self.nInput]
         # Reuse cached rotation matrices if available, otherwise recompute
         U_matrix = getattr(self, '_cached_U', None)
         V_matrix = getattr(self, '_cached_V', None)
@@ -579,9 +704,11 @@ class InvertibleLinearLayer(Layer):
         self._cached_V = None
         return W_inv
     def forward(self, x, bias=1.0, var=0.0):
-        if self.stable:
+        if not self.ldu and self.stable:
             self.Sigma.stabilize()
-        if isinstance(bias, torch.Tensor) or isinstance(var, torch.Tensor):
+        if self.ldu:
+            y = self._ldu_forward(x, bias, var)
+        elif isinstance(bias, torch.Tensor) or isinstance(var, torch.Tensor):
             # Per-neuron bias/var: materialize W, apply externally
             W = self.compute_W()
             if has_signal(var):
@@ -611,6 +738,8 @@ class InvertibleLinearLayer(Layer):
     def reverse(self, y, bias=1.0, var=0.0):
         if self.hasBias:
             y -= bias * self.bias + var * self.biasNoise
+        if self.ldu:
+            return self._ldu_reverse(y, bias, var)
         if isinstance(bias, torch.Tensor) or isinstance(var, torch.Tensor):
             # Per-neuron bias/var: materialize W_inv, apply externally
             W_inv = self.compute_Winverse()
@@ -713,6 +842,22 @@ class InvertibleLinearLayer(Layer):
         cached_err = torch.norm(identity_cached - eye)
         assert cached_err < 1e-4, f"Cached roundtrip error: {cached_err}"
         print(f"Cached roundtrip error: {cached_err:.2e}")
+
+        # Test LDU mode
+        ldu_layer = InvertibleLinearLayer(nInput=nInput, nOutput=nOutput, naive=False, ldu=True, hasBias=False)
+        y_ldu = ldu_layer.forward(x)
+        x_ldu_rec = ldu_layer.reverse(y_ldu)
+        ldu_err = torch.norm(x - x_ldu_rec)
+        assert ldu_err < 0.001, f"LDU roundtrip error: {ldu_err}"
+        print(f"LDU roundtrip error: {ldu_err:.2e}")
+
+        # LDU with bias
+        ldu_bias = InvertibleLinearLayer(nInput=nInput, nOutput=nOutput, naive=False, ldu=True, hasBias=True)
+        y_ldu_b = ldu_bias.forward(x)
+        x_ldu_b_rec = ldu_bias.reverse(y_ldu_b)
+        ldu_b_err = torch.norm(x - x_ldu_b_rec)
+        assert ldu_b_err < 0.001, f"LDU+bias roundtrip error: {ldu_b_err}"
+        print(f"LDU+bias roundtrip error: {ldu_b_err:.2e}")
 
         print("All tests passed!")
 

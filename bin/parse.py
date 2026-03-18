@@ -986,11 +986,26 @@ def parse_deep(buf, start=0):
 
 def main():
     """CLI entry point: parse each argument as a sentence and print XML."""
-    if len(sys.argv) < 2:
-        print("Usage: python parse.py \"sentence\"", file=sys.stderr)
-        sys.exit(1)
+    import argparse
+    parser = argparse.ArgumentParser(
+        prog="parse.py",
+        description=(
+            "Tokenize and parse a sentence into an XML span tree.\n\n"
+            "Examples:\n"
+            "  python parse.py \"The quick brown fox\"\n"
+            "  python parse.py The quick brown fox\n"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "words",
+        nargs="+",
+        metavar="WORD",
+        help="Words of the sentence to parse (joined with spaces).",
+    )
+    args = parser.parse_args()
 
-    sentence = " ".join(sys.argv[1:])
+    sentence = " ".join(args.words)
     result = parse(sentence)
     print(result)
 

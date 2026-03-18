@@ -7,7 +7,8 @@ load datasets, resolve config paths, plot results, and save reports.
 """
 
 import math, os, warnings
-from contextlib import nullcontext
+from collections import namedtuple
+from contextlib import contextmanager, nullcontext
 import numpy as np
 warnings.filterwarnings(
     "ignore",
@@ -18,6 +19,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import random
+import util
+util.init_runtime_env()
 try:
     from torchviz import make_dot
 except ImportError:
@@ -39,7 +42,6 @@ from functools import partial
 # Device selection: BASICMODEL_DEVICE env var > cuda > mps > cpu.
 # vector_quantize_pytorch einsum fails on MPS — set BASICMODEL_DEVICE=cpu
 # for VQ-enabled configs.
-import util
 from util import ProjectPaths, compile
 
 TheDevice = util.TheDevice
@@ -85,6 +87,24 @@ class PositionalEncoding(nn.Module):
         self.p += batch
         assert self.p < self.maxP, "Overflow in object embedding"
         return y
+    def stamp(self, buf, batch_idx, pos_idx, byte_offset):
+        """Stamp sin/cos positional encoding at a specific buffer position.
+
+        Uses the same encoding as forward(): sin/cos of (offset * div_term^2).
+
+        Args:
+            buf: [batch, nVec, embSize] tensor to write into
+            batch_idx: which batch element
+            pos_idx: which vector position within the element
+            byte_offset: the byte offset to encode
+        """
+        embSize = buf.shape[-1]
+        idx = np.add([embSize, embSize], self.index)
+        if idx[0] >= 0 and idx[0] < embSize:
+            p = byte_offset * self.div_term
+            buf[batch_idx, pos_idx, idx[0]] = math.sin(p * self.div_term)
+            buf[batch_idx, pos_idx, idx[1]] = math.cos(p * self.div_term)
+
     def reverse(self, y):
         """Extract and zero-out positional encoding; return (cleaned, positions)."""
         embeddingSize = y.shape[-1]
@@ -317,6 +337,9 @@ class Data():
     test_input        = []
     test_output       = []
 
+    _runtime_input    = None
+    _runtime_output   = None
+
     inputLength       = 4096   # max byte length for text inputs (zero-padded)
     combinedTokens    = []
 
@@ -361,7 +384,7 @@ class Data():
             return self.train_output.shape[2]
         return 1
 
-    def load(self, dataset, num_shards=1, max_docs=10000, shard_dir=None):
+    def load(self, dataset, num_shards=1, max_docs=10000, shard_dir=None, dat=None):
         if dataset == "mnist":
             self.loadMNist()
         if dataset == "xor":
@@ -370,6 +393,8 @@ class Data():
             self.loadTomatoes()
         if dataset == "text":
             self.loadShards(num_shards, max_docs, shard_dir)
+        if dataset == "inline":
+            self.loadInline(dat or {})
         self.toDevice()
     def toDevice(self):
         """Move all data tensors to TheDevice and pre-shape for training.
@@ -392,6 +417,66 @@ class Data():
                     t.to(TheDevice) if isinstance(t, torch.Tensor) else t
                     for t in v
                 ])
+
+    @contextmanager
+    def runtime_batch(self, inputs, outputs=None, sentences=None, mode=None):
+        """Stage transient inference data as a 'runtime' split.
+
+        Args:
+            inputs: list of input tensors/strings for the runtime split.
+            outputs: optional list of output targets.
+            sentences: optional list of sentence strings for masked prediction.
+            mode: optional inference mode ('ARIR', 'ARLM', or None).
+        """
+        self._runtime_input = inputs
+        self._runtime_output = outputs
+        self._runtime_mode = mode
+        if sentences is not None:
+            if not hasattr(self, '_lm_sentences'):
+                self._lm_sentences = {}
+            self._lm_sentences["runtime"] = sentences
+        try:
+            yield
+        finally:
+            self._runtime_input = None
+            self._runtime_output = None
+            self._runtime_mode = None
+            if hasattr(self, '_lm_sentences'):
+                self._lm_sentences.pop("runtime", None)
+
+    def pushInput(self, token):
+        """Append a token to the runtime input buffer for the next runBatch() call.
+
+        For text-based ARLM inference the runtime input is a list containing
+        a single tensor (byte-encoded string).  Decodes the existing bytes,
+        appends the token, and re-encodes.
+        """
+        assert self._runtime_input is not None, "pushInput requires an active runtime_batch"
+        if not isinstance(self._runtime_input, list) or len(self._runtime_input) == 0:
+            raise TypeError(f"pushInput: unsupported runtime_input type {type(self._runtime_input)}")
+        elem = self._runtime_input[0]
+        if isinstance(elem, str):
+            self._runtime_input[0] = elem + token
+        elif isinstance(elem, torch.Tensor):
+            # Decode existing byte tensor to text, append token, re-encode
+            chars = [chr(int(b) & 0xFF) for b in elem.tolist()]
+            existing = "".join(chars).rstrip("\x00")
+            self._runtime_input[0] = self.stringTensor(existing + token)
+        else:
+            raise TypeError(f"pushInput: unsupported element type {type(elem)}")
+
+    def pushOutput(self, token):
+        """Append a target to the runtime output buffer (training only).
+
+        For text-based data, appends the token to the first output sentence.
+        Not used during inference but provided for completeness.
+        """
+        assert self._runtime_output is not None, "pushOutput requires an active runtime_batch"
+        if isinstance(self._runtime_output, list) and len(self._runtime_output) > 0:
+            self._runtime_output[0] = self._runtime_output[0] + " " + token
+        else:
+            raise TypeError(f"pushOutput: unsupported runtime_output type {type(self._runtime_output)}")
+
     def shuffle(self):
         rand_indx = torch.randperm(len(self.train_output))
         if isinstance(self.train_input, list):
@@ -449,6 +534,57 @@ class Data():
         self.validation_output = data["validation"]["label"]
         self.test_input       = data["test"]["text"]
         self.test_output       = data["test"]["label"]
+        self.processLM(data)
+    def loadInline(self, dat):
+        """Load dataset from inline XML ``<input use="...">`` / ``<output use="...">`` elements.
+
+        ``dat`` is the parsed ``<data>`` dict.  ``<input>`` and ``<output>``
+        children with a ``use`` attribute carry pipe-separated sentence strings
+        and numeric labels respectively::
+
+            <input use="train">zero xor zero|zero xor one|one xor zero|one xor one</input>
+            <output use="train">0|1|1|0</output>
+
+        Missing ``use="validation"`` falls back to the test split.
+        """
+        def _items(key):
+            v = dat.get(key, [])
+            return v if isinstance(v, list) else [v]
+
+        def _get_split(items, use_val):
+            for item in items:
+                if isinstance(item, dict) and item.get("use") == use_val:
+                    return str(item.get("_", ""))
+            return ""
+
+        def _parse_pipe(text):
+            return [s.strip() for s in text.split("|") if s.strip()]
+
+        def _parse_labels(raw):
+            result = []
+            for v in raw:
+                try:
+                    result.append([float(v)])
+                except ValueError:
+                    result.append([0.0])
+            return result
+
+        inputs  = _items("input")
+        outputs = _items("output")
+
+        train_texts  = _parse_pipe(_get_split(inputs,  "train"))
+        test_texts   = _parse_pipe(_get_split(inputs,  "test"))
+        val_texts    = _parse_pipe(_get_split(inputs,  "validation")) or test_texts
+
+        train_labels = _parse_labels(_parse_pipe(_get_split(outputs, "train")))
+        test_labels  = _parse_labels(_parse_pipe(_get_split(outputs, "test")))
+        val_labels   = _parse_labels(_parse_pipe(_get_split(outputs, "validation"))) or test_labels
+
+        data = {
+            "train":      {"text": train_texts, "label": train_labels},
+            "validation": {"text": val_texts,   "label": val_labels},
+            "test":       {"text": test_texts,  "label": test_labels},
+        }
         self.processLM(data)
     def loadTomatoes(self):
         cache_file = os.path.join(ProjectPaths.DATA_DIR, "rottenTomatoes.data")
@@ -1010,14 +1146,20 @@ class Embedding(VectorSet):
         self.sigma_kappa = 0.01
 
     def tokenize(self, data):
-        """Tokenize byte-tensor batch into lists of word strings via Lex."""
+        """Tokenize byte-tensor batch into token lists via Lex.
+
+        All token categories from ``lex_buffer()`` are included — WORD, SPACE,
+        SEPARATOR, PUNCT.  With the current Lex rules:
+        - Digit runs are categorised as WORD (not NUMBER)
+        - SPACE is emitted only between words within a sentence; whitespace
+          after a SEPARATOR (inter-sentence) is silently discarded
+        """
         tokenized = []
         for b in range(len(data)):
-            sentence = "".join(chr(i) for i in data[b].tolist())
+            sentence = "".join(chr(int(i) & 0xFF) for i in data[b].tolist())
             sentence = sentence.rstrip("\x00")
             tokens = self._lex.lex_buffer(sentence, 0)
-            tokenized.append(
-                [tok['text'] for tok in tokens if tok['category'] == 'WORD'])
+            tokenized.append([tok['text'] for tok in tokens])
         return tokenized
 
     def create(self, nInput=None, nVectors=None, nDim=None, passThrough=True,
@@ -1072,6 +1214,13 @@ class Embedding(VectorSet):
         with torch.no_grad():
             self.mask_token_idx = self.cbow.key_to_index["[MASK]"]
             self._emb.weight[self.mask_token_idx] = 0.0
+
+        # Add \x00 as the EOS/padding sentinel.
+        # Gets a regular random embedding — distinct from [MASK]'s all-zeros.
+        # Used to fill padding positions in _forward_lex so the model has a
+        # concrete reconstruction target for positions beyond the real tokens.
+        self._add_word("\x00")
+        self.null_token_idx = self.cbow.key_to_index["\x00"]
 
         # Bootstrap codebook with printable ASCII (32–126) so any OOV word
         # can be spelled out character-by-character without zero vectors.
@@ -1195,11 +1344,13 @@ class Embedding(VectorSet):
         for sentence in data:
             tokens = self._lex.lex_buffer(sentence, 0)
             for tok in tokens:
-                if tok['category'] == 'WORD':
-                    tokenized.append(tok['text'])
+                #if tok['category'] == 'WORD':
+                tokenized.append(tok['text'])
         vocab = list(set(tokenized))
-        vocab.append(" ")
-        vocab.append("\x00")
+        # Include padding sentinel — it has a codebook entry and participates
+        # in reconstruction targets for positions beyond the real tokens.
+        if "\x00" not in vocab:
+            vocab.append("\x00")
         return vocab
 
     def untokenize(self, tokenized):
@@ -1260,6 +1411,7 @@ class Embedding(VectorSet):
             expanded = []
             for token in sentence:
                 if token in self.cbow.key_to_index:
+                    self._observe(token)  # increment count even for known words
                     expanded.append(token)
                 else:
                     result = self._observe(token)
@@ -1301,9 +1453,18 @@ class Embedding(VectorSet):
                 v = F.pad(v, (0, pad_size))
                 v = F.normalize(v, p=2, dim=0)
                 vecs.append(v)
-            # Pad to nActive (sequence length)
+            # Pad to nActive with \x00 embedding (concrete reconstruction target),
+            # not zeros (which is the [MASK] sentinel with no surface form).
+            if hasattr(self, 'null_token_idx'):
+                null_one_hot = torch.zeros(vocab_size, device=weights.device)
+                null_one_hot[self.null_token_idx] = 1.0
+                null_vec = null_one_hot @ weights
+                null_vec = F.pad(null_vec, (0, pad_size))
+                null_vec = F.normalize(null_vec, p=2, dim=0)
+            else:
+                null_vec = torch.zeros(self.embeddingSize, device=weights.device)
             while len(vecs) < self.nInput:
-                vecs.append(torch.zeros(self.embeddingSize, device=weights.device))
+                vecs.append(null_vec)
             results.append(torch.stack(vecs))
         return torch.stack(results)
 
@@ -1606,6 +1767,21 @@ class InputSpace(Space):
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
         self.input          = torch.FloatTensor
         self.tokenizedInput = tokenizedInput
+        # When positional encoding is present, apply a fixed random permutation
+        # to the flattened output (nActive × embDim) so that dimensions from
+        # different tokens are adjacent.  This lets the consecutive Givens chain
+        # in downstream InvertiblePiLayer mix all token positions effectively.
+        if False: # TheObjectEncoding.nWhere > 0:
+            embDim = inputDim if inputDim is not None else TheObjectEncoding.inputDim
+            flat_size = outputShape[0] * embDim
+            perm = torch.randperm(flat_size)
+            self.register_buffer('_output_perm', perm)
+            self.register_buffer('_output_perm_inv', torch.argsort(perm))
+            self._output_perm_nActive = outputShape[0]
+            self._output_perm_embDim = embDim
+        else:
+            self._output_perm = None
+            self._output_perm_inv = None
         fullSize  = outputShape[0]*outputShape[1]
         self.lift = LiftingLayer(fullSize, fullSize)
         self.params = self.lift.getParameters()
@@ -1623,6 +1799,15 @@ class InputSpace(Space):
         self.data.shuffle()
     # The world presenting itself
     def forward(self, input, mask=None):
+        # ARIR cache bypass: if _cached_embedding is set, use it directly
+        # instead of re-lexing / re-embedding.
+        cached = getattr(self, '_cached_embedding', None)
+        if cached is not None:
+            self._cached_embedding = None  # consume once
+            self.batch = cached.shape[0]
+            self.input = cached
+            return self.input
+
         self.batch = input.shape[0]
         if hasattr(self, 'lex'):
             self.input = self._forward_lex(input)
@@ -1632,6 +1817,14 @@ class InputSpace(Space):
             self.input = self.vectors().forward(input)
         _, output = self.getEmbeddedIO()
         assert list(self.input.shape) == [self.batch, self.outputShape[0], output]
+
+        # Permute flat dimensions so downstream Givens chains mix all tokens
+        if self._output_perm is not None:
+            B = self.input.shape[0]
+            flat = self.input.reshape(B, -1)
+            flat = flat[:, self._output_perm]
+            self.input = flat.reshape(B, self._output_perm_nActive, self._output_perm_embDim)
+
         return self.input
 
     def _forward_lex(self, input):
@@ -1642,8 +1835,10 @@ class InputSpace(Space):
         nVec = self.outputShape[0]
         result = torch.zeros([batch, nVec, embSize], device=input.device)
         codebook = self.vectors()._emb.weight.detach().to(input.device)
-        where_enc = TheObjectEncoding.where
-        div_term = where_enc.div_term
+
+        # Metadata for ARIR: span counts and final byte offsets per batch element
+        self._lex_span_counts = []
+        self._lex_final_byte_offsets = []
 
         for b in range(batch):
             # Decode bytes to text (strip zero padding)
@@ -1652,7 +1847,15 @@ class InputSpace(Space):
             # Use Lex to get spans with byte offsets
             source_tensor = torch.tensor(list(text.encode('utf-8')), dtype=torch.uint8)
             example_spans = self.lex.encode(source_tensor)
-            for i in range(min(example_spans.shape[0], nVec)):
+            n_spans = min(example_spans.shape[0], nVec)
+            self._lex_span_counts.append(n_spans)
+            # Track the end byte offset of the last span
+            if n_spans > 0:
+                last_end = example_spans[n_spans - 1, 1].item()
+                self._lex_final_byte_offsets.append(last_end)
+            else:
+                self._lex_final_byte_offsets.append(0)
+            for i in range(n_spans):
                 start = example_spans[i, 0].item()
                 token_id = example_spans[i, 2].item()
                 # nWhat: look up embedding vector and pad to embeddingSize
@@ -1660,13 +1863,19 @@ class InputSpace(Space):
                     cb_idx = self.lex_to_codebook[token_id]
                     vec = codebook[cb_idx]
                     result[b, i, :vec.shape[0]] = vec
-                # nWhere: encode byte offset using same sin/cos as PositionalEncoding
-                if TheObjectEncoding.nWhere > 0 and embSize > 1:
-                    pos = start * div_term
-                    where_idx = np.add([embSize, embSize], PositionalEncoding.index)
-                    if where_idx[0] >= 0 and where_idx[0] < embSize:
-                        result[b, i, where_idx[0]] = math.sin(pos * div_term)
-                        result[b, i, where_idx[1]] = math.cos(pos * div_term)
+                # nWhere: encode byte offset via PositionalEncoding
+                if TheObjectEncoding.nWhere > 0:
+                    TheObjectEncoding.where.stamp(result, b, i, start)
+            # Fill remaining positions with NULL (\x00) embedding so the model
+            # has a concrete reconstruction target for padding positions.
+            null_idx = getattr(self.vectors(), 'null_token_idx', None)
+            if null_idx is not None:
+                null_vec = codebook[null_idx]
+                byte_offset = self._lex_final_byte_offsets[-1]
+                for i in range(n_spans, nVec):
+                    result[b, i, :null_vec.shape[0]] = null_vec
+                    if TheObjectEncoding.nWhere > 0:
+                        TheObjectEncoding.where.stamp(result, b, i, byte_offset + (i - n_spans))
         # Apply temporal encoding only (positional is already set from byte offsets)
         result = TheObjectEncoding.when(result)
         return result
@@ -1762,6 +1971,12 @@ class InputSpace(Space):
         return masked, list(range(N))
 
     def reverse(self, y):
+        # Undo the flat permutation before reversing
+        if self._output_perm_inv is not None:
+            B = y.shape[0]
+            flat = y.reshape(B, -1)
+            flat = flat[:, self._output_perm_inv]
+            y = flat.reshape(B, self._output_perm_nActive, self._output_perm_embDim)
         y = self.reverseBegin(y)
         if hasattr(self, 'lex'):
             content = self._reverse_lex(y)
@@ -1822,37 +2037,60 @@ class InputSpace(Space):
         elif split == "validation":
             inputData = self.data.validation_input
             outputData = self.data.validation_output
+        elif split == "runtime":
+            inputData = self.data._runtime_input
+            outputData = self.data._runtime_output
         else:
             raise ValueError(f"Unknown split: {split}")
 
-        if not hasattr(self.data, 'masked_prediction') or self.data.masked_prediction == 'NONE':
+        # ── ARIR state machine ──────────────────────────────────────
+        if split == "runtime" and getattr(self.data, '_runtime_mode', None) == 'ARIR':
+            return self._getBatch_arir(inputData, batchNum)
+
+        # Use standard (non-masked) path when: no masked prediction configured,
+        # or runtime split with no sentences staged (inference via runBatch).
+        use_masked = (hasattr(self.data, 'masked_prediction')
+                      and self.data.masked_prediction != 'NONE'
+                      and split in getattr(self.data, '_lm_sentences', {}))
+        if not use_masked:
             # Standard mode: fixed-size batch slicing
             i = batchNum * batchSize
             if i >= len(inputData):
                 return None, batchNum
             inputBatch = inputData[i:i + batchSize]
-            outputBatch = outputData[i:i + batchSize]
             inputTensor = self.prepInput(inputBatch)
-            outputTensor = self.outputSpace.prepOutput(outputBatch)
+            if outputData is not None:
+                outputBatch = outputData[i:i + batchSize]
+                outputTensor = self.outputSpace.prepOutput(outputBatch)
+            else:
+                outputTensor = None
             return (inputTensor, outputTensor), batchNum + 1
         else:
-            # Masked prediction: one sentence -> N masked examples
+            # Masked prediction: one sentence -> N masked examples.
+            # Embed once, use that embedding for both targets and masked input.
             sentences = self.data._lm_sentences[split]
             if batchNum >= len(sentences):
                 return None, batchNum
             sentence = sentences[batchNum]
             inputTensor = self.prepInput(inputData[batchNum:batchNum + 1])
 
-            # Embed full sentence
+            # Embed once — retain gradient graph for the masked input path.
+            # Targets are detached (they're labels, not part of the forward graph).
             embedded = self.forward(inputTensor)  # [1, nVec, embSize]
 
-            # Expand to N masked copies
-            masked_batch, mask_pos = self.expand_masked(embedded, sentence, self.data.masked_prediction)
+            # Compute targets from detached embedding (labels, no gradient needed)
+            targets = self.outputSpace.expand_masked(
+                embedded.detach(), sentence, self.data.masked_prediction)
 
-            # Target for each masked position is the original embedded word vector
-            targets = self.outputSpace.expand_masked(embedded, sentence, self.data.masked_prediction)
+            # Build masked copies from the live embedding (retains gradient graph)
+            masked_batch, _ = self.expand_masked(
+                embedded, sentence, self.data.masked_prediction)
 
-            return (masked_batch, targets), batchNum + 1
+            # Hand masked embedding to forward() via cache — no re-embedding,
+            # but gradient flows back through masked_batch → embedded → embedding weights
+            self._cached_embedding = masked_batch
+
+            return (inputTensor, targets), batchNum + 1
 
     def predict(self, vector):
         """Decode an output vector to the nearest word in the embedding codebook.
@@ -1875,6 +2113,174 @@ class InputSpace(Space):
             idx = sims.argmax().item()
             predictions.append(words_list[idx])
         return predictions
+
+    # ------------------------------------------------------------------
+    # ARIR helpers
+    # ------------------------------------------------------------------
+
+    def embed_token(self, word):
+        """Look up a single word in the codebook, return its content vector.
+
+        Returns:
+            Tensor of shape [nWhat] (content dims only, no positional/temporal).
+        """
+        emb = self.vectors()
+        if word in emb.cbow.key_to_index:
+            idx = emb.cbow.key_to_index[word]
+        else:
+            # OOV: fall back to first character
+            ch = word[0] if word else ' '
+            idx = emb.cbow.key_to_index.get(ch, 0)
+        return emb._emb.weight[idx].detach().clone()
+
+    def get_space_embedding(self):
+        """Return the codebook embedding for the space character ' '.
+
+        Returns:
+            Tensor of shape [nWhat].
+        """
+        return self.embed_token(' ')
+
+    def get_mask_embedding(self):
+        """Return the [MASK] zero vector from the codebook.
+
+        Returns:
+            Tensor of shape [nWhat].
+        """
+        emb = self.vectors()
+        return emb._emb.weight[emb.mask_token_idx].detach().clone()
+
+    # ── ARIR state machine ──────────────────────────────────────────
+
+    def _getBatch_arir(self, inputData, batchNum):
+        """ARIR state machine for getBatch(): embed seed, then iteratively
+        place [MASK] and read back reconstructed latent vectors.
+
+        First call (cursor is None):
+            Embed seed text, fill future with spaces, place [MASK] at seed_len.
+
+        Subsequent calls (cursor is not None):
+            Read reconstruction from previous reverse pass, decode word,
+            write reconstructed latent at previous cursor, advance, place [MASK].
+
+        Returns None when cursor reaches nVec, EOF detected, or max_chars exceeded.
+        """
+        nVec = self.outputShape[0]
+        embSize = self.vectors().embeddingSize
+        nWhat = self.vectors()._emb.weight.shape[1]
+
+        if self._arir_cursor is None:
+            # ── First call: embed seed, prepare buffer ──────────────
+            inputTensor = self.prepInput(inputData)
+            embedded = self.forward(inputTensor)  # [1, nVec, embSize]
+            self._arir_embedded = embedded.clone().detach()
+
+            # Read span count from the lex pass
+            counts = getattr(self, '_lex_span_counts', None)
+            seed_len = counts[0] if counts and len(counts) > 0 else 1
+
+            # Read byte offset from the lex pass
+            offsets = getattr(self, '_lex_final_byte_offsets', None)
+            self._arir_byte_offset = offsets[0] if offsets and len(offsets) > 0 else 0
+
+            # Fill future positions (seed_len .. nVec-1) with space embeddings
+            space_emb = self.get_space_embedding()
+            for k in range(seed_len, nVec):
+                self._arir_embedded[0, k, :nWhat] = space_emb[:nWhat]
+                est_offset = self._arir_byte_offset + (k - seed_len)
+                self._arir_stamp_where(self._arir_embedded, k, est_offset)
+
+            # Set cursor and place [MASK] at seed_len
+            self._arir_cursor = seed_len
+            self._arir_embedded[0, self._arir_cursor, :nWhat] = 0.0
+            self._arir_stamp_where(
+                self._arir_embedded, self._arir_cursor, self._arir_byte_offset
+            )
+
+            # Inject via the cached-embedding bypass in forward()
+            self._cached_embedding = self._arir_embedded.clone()
+
+            # Return a dummy input tensor (forward() will use _cached_embedding)
+            dummy_input = inputTensor
+            return (dummy_input, None), batchNum + 1
+
+        else:
+            # ── Subsequent calls: read reconstruction, advance cursor ──
+            prev_cursor = self._arir_cursor
+
+            # Read decoded word from previous reverse pass
+            word = None
+            if hasattr(self, '_recovered_words') and self._recovered_words:
+                word = self._recovered_words[0][prev_cursor]
+
+            # EOF check
+            if word is None or word == '' or word == '\x00':
+                self._arir_reset()
+                return None, batchNum
+
+            # Record the token
+            self._arir_tokens.append(word)
+            self._arir_total_chars += len(word)
+
+            # Max chars check
+            if self._arir_total_chars >= self._arir_max_chars:
+                self._arir_reset()
+                return None, batchNum
+
+            # Write reconstructed latent vector at current cursor
+            # (no codebook lookup -- stay in latent space)
+            recon = self.reconstructed  # [1, nVec, embSize] from reverse()
+            self._arir_embedded[0, prev_cursor, :nWhat] = recon[0, prev_cursor, :nWhat]
+            self._arir_stamp_where(
+                self._arir_embedded, prev_cursor, self._arir_byte_offset
+            )
+
+            # Advance byte offset for positional encoding
+            self._arir_byte_offset += len(word.encode('utf-8'))
+
+            # Write reconstructed vectors beyond cursor as steering signal
+            for k in range(prev_cursor + 1, nVec):
+                self._arir_embedded[0, k, :nWhat] = recon[0, k, :nWhat]
+                # Keep existing positional encoding at those positions
+
+            # Advance cursor
+            self._arir_cursor = prev_cursor + 1
+
+            # Buffer full check
+            if self._arir_cursor >= nVec:
+                self._arir_reset()
+                return None, batchNum
+
+            # Place [MASK] at new cursor
+            self._arir_embedded[0, self._arir_cursor, :nWhat] = 0.0
+            self._arir_stamp_where(
+                self._arir_embedded, self._arir_cursor, self._arir_byte_offset
+            )
+
+            # Inject via cached-embedding bypass
+            self._cached_embedding = self._arir_embedded.clone()
+
+            # Return dummy input (forward() will use _cached_embedding)
+            dummy_input = torch.zeros(1, device=TheDevice)
+            return (dummy_input, None), batchNum + 1
+
+    def _arir_reset(self):
+        """Reset all ARIR state attributes."""
+        self._arir_cursor = None
+        self._arir_embedded = None
+        self._arir_byte_offset = 0
+        self._arir_tokens = []
+        self._arir_max_chars = 256
+        self._arir_total_chars = 0
+
+    def get_predicted_tokens(self):
+        """Return the list of tokens predicted during ARIR inference."""
+        return getattr(self, '_arir_tokens', [])
+
+    def _arir_stamp_where(self, buf, pos_idx, byte_off):
+        """Stamp positional encoding at a buffer position via TheObjectEncoding.where."""
+        if TheObjectEncoding.nWhere > 0:
+            TheObjectEncoding.where.stamp(buf, 0, pos_idx, byte_off)
 
 class PerceptualSpace(Space):
     """Transforms raw input vectors into percepts via a PiLayer.
@@ -1950,7 +2356,7 @@ class PerceptualSpace(Space):
                 self.layers = nn.ModuleList([self.pi])
                 # InvertiblePiLayer doubles sequence in 3D or flat dim in 2D
                 if not self.reshape:
-                    self.outputShape = [2 * self.outputShape[0], self.outputShape[1]]
+                    self.outputShape = [2 * self.inputShape[0], self.outputShape[1]]
             else:
                 self.pi1 = InvertiblePiLayer(input, output, naive=use_naive, ergodic=ergodic)
                 self.pi2 = InvertiblePiLayer(input, output, naive=use_naive, ergodic=ergodic)
@@ -1965,10 +2371,6 @@ class PerceptualSpace(Space):
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
         self.createVectorSet(quantized=self.quantized)
     def distance(self, x, y):
-        # This is a product distance that looks roughly like a star.
-        # It has an orthogonalizing effect on its inputs.
-        # it is not immediately clear what certainty looks like in this domain,
-        # but the suggestion is to use a tunable transfer function whose slope represents certainty.
         return torch.prod( [1-x, 1-y] )
     def certainty(self, x):
         pass
@@ -2406,8 +2808,11 @@ class OutputSpace(Space):
         for b in range(batch):
             for v in range(nVec):
                 vec = content[b, v, :nWhat]
-                # Skip zero vectors (padding)
+                # Zero vectors are padding / EOS sentinels — emit \x00 so that
+                # reconstruct_buffer (consecutive mode) can stop there cleanly.
                 if vec.abs().sum().item() < 1e-8:
+                    recovered_words[b].append("\x00")
+                    recovered_offsets[b].append(None)
                     continue
                 sims = F.cosine_similarity(vec.unsqueeze(0), cb_what, dim=1)
                 idx = sims.argmax().item()
@@ -2456,9 +2861,32 @@ class OutputSpace(Space):
                     buf[offset:end] = encoded[:end - offset]
                 results.append(buf.rstrip(b'\x00').decode('utf-8', errors='replace'))
             else:
-                # Consecutive: concatenate tokens directly — space is a predicted token
-                results.append("".join(words))
+                # Consecutive: concatenate tokens directly — space is a predicted token.
+                # Stop at the first \x00 (EOS/padding sentinel); trailing padding
+                # slots that decode to \x00 are not included in the output.
+                clean = []
+                for w in words:
+                    if w == "\x00":
+                        break
+                    clean.append(w)
+                results.append("".join(clean))
         return results
+
+    def clearBatchResults(self):
+        """Clear accumulated batch results. Called at start of each runEpoch."""
+        self._batch_results = []
+
+    def putBatch(self, result):
+        """Collect output from a completed batch (symmetric with getBatch).
+
+        Results are cleared at the start of each runEpoch() via clearBatchResults().
+
+        Args:
+            result: BatchResult namedtuple from runBatch().
+        """
+        if not hasattr(self, '_batch_results'):
+            self._batch_results = []
+        self._batch_results.append(result)
 
 
 class BaseModel(nn.Module):
@@ -2483,24 +2911,47 @@ class BaseModel(nn.Module):
         import xml.etree.ElementTree as ET
 
         def _parse_element(elem):
-            """Recursively parse an XML element into a dict or scalar."""
+            """Recursively parse an XML element into a dict or scalar.
+
+            Leaf nodes with XML attributes return a dict with ``"_"`` holding
+            the auto-cast text value and one key per attribute — e.g.
+            ``<input use="train">hello|world</input>`` becomes
+            ``{"_": "hello|world", "use": "train"}``.
+
+            When multiple sibling elements share the same tag name (e.g. two
+            ``<input>`` elements), they are aggregated into a list so no entry
+            is silently overwritten.
+            """
             children = list(elem)
             if not children:
                 # Leaf node — auto-cast value
                 text = elem.text.strip() if elem.text else ""
                 if text.lower() in ("true", "false"):
-                    return text.lower() == "true"
-                try:
-                    return int(text)
-                except ValueError:
+                    val = text.lower() == "true"
+                else:
                     try:
-                        return float(text)
+                        val = int(text)
                     except ValueError:
-                        return text
-            # Has children — recurse into a dict
+                        try:
+                            val = float(text)
+                        except ValueError:
+                            val = text
+                # Wrap in dict when XML attributes are present
+                if elem.attrib:
+                    return {"_": val, **elem.attrib}
+                return val
+            # Has children — recurse into a dict; aggregate repeated tags into lists
             d = {}
             for child in children:
-                d[child.tag] = _parse_element(child)
+                parsed = _parse_element(child)
+                if child.tag in d:
+                    existing = d[child.tag]
+                    if isinstance(existing, list):
+                        existing.append(parsed)
+                    else:
+                        d[child.tag] = [existing, parsed]
+                else:
+                    d[child.tag] = parsed
             return d
 
         if config_path is None:
@@ -2552,18 +3003,23 @@ class BaseModel(nn.Module):
                 params = [p for p in params if p.data_ptr() not in exclude]
         return optim.Adam(params, lr=lr)
 
-    def runTrials(self, numTrials=1, numEpochs=1, batchSize=10, lr=0.001):
+    def run(self, numTrials=1, numEpochs=1, batchSize=10, lr=0.001):
         """Run multiple independent trials, recreating the model each time.
 
-        Each trial calls create_from_config() to rebuild the full model
-        from scratch so results are statistically independent.
+        Each trial calls create_from_config() to rebuild from scratch so
+        results are statistically independent.  If the model was already
+        configured by the caller (e.g. manually built models without
+        _config_path), trial 0 skips recreation and uses the model as-is.
         """
         acc = np.zeros([numTrials, numEpochs])
+        has_config = hasattr(self, '_config_path') and self._config_path is not None
+        already_configured = len(list(self.parameters())) > 0
         print(f"\n\n==== {self.name} ====")
         for trial in range(numTrials):
             print(f"\nTrial [{trial + 1}/{numTrials}]")
-            self.create_from_config(self._config_path, data=self._config_data)
-            acc[trial, :] = self.run(numEpochs=numEpochs, batchSize=batchSize, lr=lr)
+            if has_config and (trial > 0 or not already_configured):
+                self.create_from_config(self._config_path, data=self._config_data)
+            acc[trial, :] = self.runTrial(numEpochs=numEpochs, batchSize=batchSize, lr=lr)
         np.savetxt(ProjectPaths.output_path(f"{self.name}.csv"), np.array(acc), delimiter=",")
         return acc
 
@@ -2719,7 +3175,7 @@ class BaseModel(nn.Module):
         if tensor.dim() > 1:
             tensor = tensor.squeeze()
         chars = [chr(int(b) & 0xFF) for b in tensor.tolist()]
-        return "".join(chars).rstrip("\x00").strip()
+        return "".join(chars).rstrip("\x00")
 
     def _reconstructionReport(self):
         """Run a test pass with reverse and report input vs reconstructed text."""
@@ -2736,7 +3192,10 @@ class BaseModel(nn.Module):
                 recon = self._bytes_to_text(self.inputSpace.reconstructed[i])
             else:
                 recon = "(no reconstruction)"
-            match = original.split() == recon.split()
+            # Strip \x00 padding from both sides before comparing words
+            orig_words = original.replace("\x00", " ").split()
+            recon_words = recon.replace("\x00", " ").split()
+            match = orig_words == recon_words
             css = "match" if match else "mismatch"
             label = test_output[i]
             if isinstance(label, torch.Tensor):
@@ -3156,125 +3615,130 @@ class BasicModel(BaseModel):
         if self.recon_symbols is not None and self.nReconSymbols > 0:
             return torch.cat([output_symbols, self.recon_symbols], dim=1)
         return output_symbols
-    def forward_from_input(self, input_embedded):
-        """Forward pass starting after InputSpace (for masked prediction).
 
-        Takes already-embedded input and runs it through Percept -> Concept ->
-        Symbol -> Output pipeline, bypassing InputSpace.forward().
+    def infer(self, text, max_length=None, mode=None):
+        """Autoregressive inference via the standard batch pipeline.
 
-        Args:
-            input_embedded: [batch, nVectors, embeddingSize] tensor from
-                           InputSpace.expand_masked()
+        Two modes:
 
-        Returns:
-            (input_embedded, symbols, outputData) -- same signature as forward()
-        """
-        if isinstance(input_embedded, torch.Tensor):
-            input_embedded = input_embedded.to(TheDevice)
-        percepts = self.perceptualSpace(input_embedded)
-        concepts = self.conceptualSpace(percepts)
-        symbols = self.symbolicSpace(concepts)
-        # Higher-order cycles
-        for n in range(1, self.conceptualOrder):
-            NA, symbols1 = self.SubsymbolicThought(concepts)
-            symbols = torch.cat((symbols, symbols1), dim=1)
-        for n in range(1, self.symbolicOrder):
-            NA, symbols2 = self.SymbolicThought(symbols)
-            symbols = torch.cat((symbols, symbols2), dim=1)
-        # Split for output vs reconstruction
-        if self.nReconSymbols > 0:
-            self.output_symbols = symbols[:, :self.nTotalOutputSymbols, :]
-            self.recon_symbols = symbols[:, self.nTotalOutputSymbols:, :]
-        else:
-            self.output_symbols = symbols
-            self.recon_symbols = None
-        outputData = self.Finish(self.output_symbols)
-        batch = input_embedded.shape[0]
-        TheObjectEncoding.when.increment(batch)
-        return input_embedded, symbols, outputData
+        ``ARLM`` (append-and-rerun): stages seed text, runs forward,
+        decodes the output token, appends it to the input via
+        ``pushInput()``, and repeats.  Each iteration re-lexes and
+        re-embeds the full (growing) input.
 
-    def infer(self, text, max_length=None):
-        """Autoregressive inference: extend input text token by token.
+        ``ARIR`` (autoregressive input reconstruction, default): TODO —
+        reconstructs a degraded input in-place, reusing the lexing and
+        codebook lookup from the initial forward pass.  See design plan
+        in ``docs/plans/``.
 
-        Tokens may be whole words (if in vocab) or individual characters (if
-        the word is OOV and spelled out via the ASCII bootstrap).  The limit
-        ``max_length`` and ``InputSpace.nActive`` together determine how many
-        tokens can be generated before truncation.
-
-        Embeds the input, then iteratively:
-          1. Zero the content at position len(tokens) (prediction slot)
-          2. Forward pass to get output embedding
-          3. Decode output to nearest token in codebook
-          4. Append predicted token's embedding at that position
-          5. Repeat until max_length characters or nActive slots exhausted
+        Stops when: EOF is predicted, ``max_length`` characters have
+        been produced, or the InputSpace output buffer is full.
 
         Args:
-            text: input string (user query)
-            max_length: max characters/tokens to generate (default from
-                ``<maxResponseLength>`` in config — measured in characters
-                for uniformity with InputSpace.nActive)
+            text: input string (seed text)
+            max_length: max characters to generate
+            mode: 'ARLM' for traditional append-and-rerun,
+                  'ARIR' for input reconstruction (default).
+                  Also accepts traditional=True/False for backwards compat
+                  via keyword: ``infer(text, traditional=True)`` is
+                  equivalent to ``infer(text, mode='ARLM')``.
 
         Returns:
             list of predicted tokens (words or characters)
         """
+        if mode is None:
+            mode = getattr(self, 'masked_prediction', 'ARIR')
+        mode = mode.upper()
+
+        if mode == 'ARLM':
+            return self._infer_traditional(text, max_length)
+        elif mode == 'ARIR':
+            return self._infer_arir(text, max_length)
+        else:
+            raise ValueError(f"infer: unknown mode '{mode}'. Use 'ARLM' or 'ARIR'.")
+
+    def _infer_traditional(self, text, max_length=None):
+        """Traditional append-and-rerun autoregressive inference.
+
+        Each step: forward pass → decode output → pushInput(token) → repeat.
+        Re-lexes and re-embeds the full input every iteration.
+        """
         if max_length is None:
-            max_length = getattr(self, 'max_response_length', 64)
+            max_length = getattr(self, 'max_response_length', 256)
 
         self.eval()
-        input_space = self.inputSpace
-        vs = input_space.vectors()
-        codebook = vs._emb.weight.detach()
-        word_list = vs.wv.index_to_key
-        word_to_idx = {w: i for i, w in enumerate(word_list)}
-        nVec = input_space.outputShape[0]
-        embSize = vs.embeddingSize
+        self.set_sigma(0)
+        nOutput = self.inputSpace.outputShape[0]
+        tokens = []
+        total_chars = 0
 
-        # Embed the input text
-        words = text.split()
-        embedded = torch.zeros(1, nVec, embSize, device=TheDevice)
-        for i, word in enumerate(words[:nVec]):
-            w = word.lower()
-            if w in word_to_idx:
-                idx = word_to_idx[w]
-                embedded[0, i, :codebook.shape[1]] = codebook[idx]
-        # Apply position encoding
-        embedded = TheObjectEncoding.where(embedded)
-        embedded = TheObjectEncoding.when(embedded)
+        # Stage sentence text so getBatch() enters the masked prediction path
+        # when the model uses masked prediction (ARLM/MLM). This ensures
+        # inference sees the same masking pattern as training.
+        masked_pred = hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE'
+        sentences = [text] if masked_pred else None
+        with torch.no_grad(), TheData.runtime_batch(
+            [TheData.stringTensor(text)], sentences=sentences
+        ):
+            while True:
+                result, _ = self.runBatch(
+                    train=False, batchNum=0, batchSize=1, split="runtime",
+                )
+                if result is None:
+                    break
 
-        # Content mask: which dims to zero for prediction slot
-        content_mask = torch.ones(embSize, dtype=torch.bool, device=TheDevice)
-        if TheObjectEncoding.nWhere > 0:
-            where_idx = np.add([embSize, embSize], PositionalEncoding.index)
-            for wi in where_idx:
-                if 0 <= wi < embSize:
-                    content_mask[wi] = False
-        if TheObjectEncoding.nWhen > 0:
-            content_mask[-2:] = False
-
-        predicted_words = []
-        pos = len(words)
-
-        with torch.no_grad():
-            for step in range(min(max_length, nVec - pos)):
-                # Zero content at prediction position, preserve position encoding
-                embedded[0, pos, content_mask] = 0.0
-
-                # Forward pass
-                _, _, output = self.forward_from_input(embedded)
-
-                # Decode output to nearest word
-                decoded = input_space.predict(output)
+                # Decode the output prediction to a token
+                decoded = self.inputSpace.predict(result.outputPred)
                 word = decoded[0]
-                predicted_words.append(word)
 
-                # Append predicted word's embedding at this position
-                if word.lower() in word_to_idx:
-                    idx = word_to_idx[word.lower()]
-                    embedded[0, pos, :codebook.shape[1]] = codebook[idx]
+                # EOF check (consistent with ARIR path)
+                if word is None or word == '' or word == '\x00':
+                    break
 
-                pos += 1
+                tokens.append(word)
+                total_chars += len(word)
 
-        return predicted_words
+                # Stop if max characters produced
+                if total_chars >= max_length:
+                    break
+
+                # Stop if output buffer is full
+                if len(tokens) >= nOutput:
+                    break
+
+                TheData.pushInput(word)
+
+        return tokens
+
+    def _infer_arir(self, text, max_length=None):
+        """ARIR: autoregressive input reconstruction inference.
+
+        Pushes data onto TheData and calls runEpoch().  All ARIR logic
+        (embedding, [MASK] placement, reconstruction copy, cursor advance)
+        lives in InputSpace._getBatch_arir() as a state machine.
+
+        Falls back to ARLM if the model is not reversible.
+        """
+        if not self.reversible:
+            import warnings
+            warnings.warn(
+                "ARIR requires reversible=True; falling back to ARLM.",
+                RuntimeWarning, stacklevel=2,
+            )
+            return self._infer_traditional(text, max_length)
+
+        max_length = max_length or getattr(self, 'max_response_length', 256)
+        self.eval()
+        self.set_sigma(0)
+
+        with torch.no_grad(), TheData.runtime_batch(
+            [TheData.stringTensor(text)], [[0]], mode='ARIR'
+        ):
+            self.inputSpace._arir_reset()
+            self.inputSpace._arir_max_chars = max_length
+            self.runEpoch(batchSize=1, split="runtime")
+
+        return self.inputSpace.get_predicted_tokens()
 
     def forward(self, inputData):
         """Full forward pass: core pipeline + higher-order cycles + output projection.
@@ -3327,7 +3791,7 @@ class BasicModel(BaseModel):
         inputData, input = self.StartReverse(symbols)
         return inputData, input
 
-    def run(self, numEpochs=1, batchSize=10, lr=0.01):
+    def runTrial(self, numEpochs=1, batchSize=10, lr=0.01):
         """Main training loop: train for numEpochs, evaluate on test set each epoch.
 
         Alpha (exploration temperature) anneals from 1.0 (full exploration)
@@ -3420,16 +3884,113 @@ class BasicModel(BaseModel):
         else:
             return nn.CrossEntropyLoss(), nn.MSELoss()
 
+    BatchResult = namedtuple('BatchResult', [
+        'outputPred', 'symbols', 'lossOut', 'lossIn', 'inputPred', 'forwardInput',
+    ])
+
+    def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
+                 optimizer=None, criterionOutput=None, criterionInput=None):
+        """Run a single batch: forward pass, loss, and (if training) backward + step.
+
+        Args:
+            train: whether to compute gradients and update parameters.
+            batchNum: opaque cursor returned by getBatch for the next batch.
+            batchSize: number of examples per batch.
+            split: "train", "test", or "validation".
+            optimizer: pre-built optimizer (required when train=True).
+            criterionOutput: loss function for the output prediction.
+            criterionInput: loss function for the input reconstruction.
+
+        Returns:
+            (BatchResult, nextBatchNum) on success, or (None, batchNum) when
+            the dataset is exhausted.
+        """
+        batch, batchNum = self.inputSpace.getBatch(batchNum, batchSize, split)
+        if batch is None:
+            return None, batchNum
+
+        inputTensor, outputTensor = batch
+        masked_pred = hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE'
+        inference_only = not train and criterionOutput is None
+        arir_mode = (split == "runtime"
+                     and getattr(self.inputSpace.data, '_runtime_mode', None) == 'ARIR')
+
+        if train:
+            optimizer.zero_grad()
+
+        # Forward pass (masking, if any, is applied inside InputSpace.forward())
+        forwardInput, symbols, outputDataPred = self.forward(inputTensor)
+
+        if arir_mode:
+            # ARIR inference: no output loss, but always run reverse pass
+            # so that reconstructed vectors and _recovered_words are available
+            # for the next getBatch() call.
+            inputPred = None
+            if self.reversible:
+                _, inputPred = self.reverse(symbols, outputDataPred)
+            return self.BatchResult(
+                outputPred=outputDataPred, symbols=symbols,
+                lossOut=None, lossIn=None,
+                inputPred=inputPred, forwardInput=forwardInput,
+            ), batchNum
+
+        if inference_only:
+            # Inference path: forward only, no loss, no reverse.
+            return self.BatchResult(
+                outputPred=outputDataPred, symbols=symbols,
+                lossOut=None, lossIn=None,
+                inputPred=None, forwardInput=forwardInput,
+            ), batchNum
+
+        outputPred = outputDataPred.squeeze()
+        output     = outputTensor.squeeze()
+        lossOut    = criterionOutput(outputPred, output)
+
+        # ARUS: suppress output loss (unsupervised — no target signal)
+        if hasattr(self, 'masked_prediction') and self.masked_prediction == 'ARUS':
+            lossOut = torch.tensor(0.0, device=outputPred.device)
+
+        if self.reversible:
+            inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
+            lossIn = criterionInput(inputPred, forwardInput.squeeze())
+            rr = self.recon_ratio
+            totalLoss = (1 - rr) * lossOut + rr * lossIn
+        else:
+            inputDataPred = None
+            lossIn = torch.tensor(0.0, device=outputPred.device)
+            totalLoss = lossOut
+
+        if train:
+            totalLoss.backward()
+            if self.ergodic:
+                self.paramUpdate()
+            optimizer.step()
+
+            # Re-zero the [MASK] embedding after each optimizer step
+            if masked_pred and hasattr(self.inputSpace.vectors(), 'mask_token_idx'):
+                with torch.no_grad():
+                    emb = self.inputSpace.vectors()
+                    emb._emb.weight[emb.mask_token_idx] = 0.0
+
+        result = self.BatchResult(
+            outputPred=outputDataPred,
+            symbols=symbols,
+            lossOut=lossOut,
+            lossIn=lossIn,
+            inputPred=inputDataPred,
+            forwardInput=forwardInput,
+        )
+        return result, batchNum
+
     def runEpoch(self, optimizer=None, batchSize=10, split="train"):
         """Run one epoch over the dataset (training if optimizer given, eval if None).
 
         Uses getBatch() stream interface for flexible batch iteration.
+        Delegates per-batch work to ``runBatch()``.
 
-        Each batch computes a combined loss (forward + reverse) in a single
-        backward pass, avoiding gradient interference from separate optimizers.
-
-        When ``ergodic=True``, ``paramUpdate()`` is called before the optimizer
-        step to apply temperature-based in-place parameter updates.
+        In inference mode (split="runtime", no optimizer): skips loss
+        construction, output accumulation, progress printing, and CBOW
+        updates.  Returns immediately after the getBatch/runBatch loop.
 
         Args:
             optimizer: pre-built Adam optimizer (persistent across epochs).
@@ -3438,68 +3999,56 @@ class BasicModel(BaseModel):
             split: "train", "test", or "validation"
 
         Returns (output_loss, reconstruction_loss, all_predictions, last_reconstruction).
+        For inference mode, returns (0, 0, [], []).
         """
         training = optimizer is not None
+        inference = split == "runtime" and not training
+        self.train(training)
+        self.outputSpace.clearBatchResults()
+        ctx = torch.no_grad() if not training else nullcontext()
+
+        # Inference fast path: skip loss construction and accumulation
+        if inference:
+            with ctx:
+                batchNum = 0
+                while True:
+                    result, batchNum = self.runBatch(
+                        train=False, batchNum=batchNum, batchSize=batchSize,
+                        split=split,
+                    )
+                    if result is None:
+                        break
+                    self.outputSpace.putBatch(result)
+            return 0, 0, [], []
+
+        # Training / evaluation path
         criterionOutput, criterionInput = self._getLossFn()
         allOutput = []
         allInput = []
         outErr = 0
         inErr = 0
-        self.train(training)
-        ctx = torch.no_grad() if not training else nullcontext()
         masked_pred = hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE'
 
         with ctx:
             batchNum = 0
             batchIdx = 0
             while True:
-                batch, batchNum = self.inputSpace.getBatch(batchNum, batchSize, split)
-                if batch is None:
+                result, batchNum = self.runBatch(
+                    train=training, batchNum=batchNum, batchSize=batchSize,
+                    split=split, optimizer=optimizer,
+                    criterionOutput=criterionOutput,
+                    criterionInput=criterionInput,
+                )
+                if result is None:
                     break
+
+                self.outputSpace.putBatch(result)
+
                 if training and batchIdx % 100 == 0:
                     print(f"  batch {batchIdx}", end="\r", flush=True)
-                inputTensor, outputTensor = batch
 
+                # CBOW training (post-batch, needs batchIdx for sentence lookup)
                 if training:
-                    optimizer.zero_grad()
-
-                # Forward pass
-                if masked_pred:
-                    input, symbols, outputDataPred = self.forward_from_input(inputTensor)
-                else:
-                    input, symbols, outputDataPred = self.forward(inputTensor)
-
-                outputPred = outputDataPred.squeeze()
-                output     = outputTensor.squeeze()
-                lossOut    = criterionOutput(outputPred, output)
-
-                # ARUS: suppress output loss (unsupervised — no target signal)
-                if hasattr(self, 'masked_prediction') and self.masked_prediction == 'ARUS':
-                    lossOut = torch.tensor(0.0, device=outputPred.device)
-
-                if self.reversible:
-                    inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
-                    lossIn = criterionInput(inputPred, input.squeeze())
-                    rr = self.recon_ratio
-                    totalLoss = (1 - rr) * lossOut + rr * lossIn
-                else:
-                    lossIn = torch.tensor(0.0, device=outputPred.device)
-                    totalLoss = lossOut
-
-                if training:
-                    totalLoss.backward()
-                    if self.ergodic:
-                        self.paramUpdate()
-                    optimizer.step()
-
-                    # Re-zero the [MASK] embedding after each optimizer step
-                    if masked_pred and hasattr(self.inputSpace.vectors(), 'mask_token_idx'):
-                        with torch.no_grad():
-                            emb = self.inputSpace.vectors()
-                            emb._emb.weight[emb.mask_token_idx] = 0.0
-
-                    # M-step: SBOW update on the same sentence
-                    # CBOW: SBOW only (EM separation), BOTH: SBOW + network gradients
                     te = getattr(self, 'train_embeddings', 'NONE')
                     if masked_pred and te in ('CBOW', 'BOTH'):
                         emb = self.inputSpace.vectors()
@@ -3512,17 +4061,17 @@ class BasicModel(BaseModel):
                                          if t['category'] == 'WORD']
                                 emb.train_step(words)
 
-                outErr = lossOut.item()
-                inErr = lossIn.item() if self.reversible else 0
+                outErr = result.lossOut.item()
+                inErr = result.lossIn.item() if self.reversible else 0
 
-                outputDataPred = outputDataPred.clone().detach().squeeze()
+                outputDataPred = result.outputPred.clone().detach().squeeze()
                 if batchIdx == 0:
                     allOutput = outputDataPred
                 else:
                     allOutput = torch.concat((allOutput, outputDataPred), dim=0)
 
-                if self.reversible:
-                    allInput = inputDataPred.clone().detach().squeeze()
+                if self.reversible and result.inputPred is not None:
+                    allInput = result.inputPred.clone().detach().squeeze()
 
                 batchIdx += 1
 
@@ -3679,7 +4228,8 @@ class BasicModelFactory:
         TheData.load(dataset,
                      num_shards=dat.get("numShards", 1),
                      max_docs=dat.get("maxDocs", 10000),
-                     shard_dir=dat.get("shardDir"))
+                     shard_dir=dat.get("shardDir"),
+                     dat=dat)
 
         m = BasicModel()
         # Store config refs so runTrials can call create_from_config per trial
@@ -3695,7 +4245,7 @@ class BasicModelFactory:
         def _d(key, default=None):
             return dat.get(key, default)
 
-        m.runTrials(_t("numTrials", 1),
+        m.run(_t("numTrials", 1),
                     _t("numEpochs", 3),
                     _t("batchSize", 10),
                     lr=_t("learningRate", 0.01))
@@ -3730,11 +4280,44 @@ def test():
 #        python BasicModel.py --compare config1.xml config2.xml
 if __name__ == "__main__":
     import sys
+    import argparse
 
-    if len(sys.argv) > 1 and sys.argv[1] == "--compare":
+    parser = argparse.ArgumentParser(
+        prog="BasicModel.py",
+        description=(
+            "Train and evaluate a BasicModel from an XML config file.\n\n"
+            "Examples:\n"
+            "  python BasicModel.py data/xor.xml\n"
+            "  python BasicModel.py data/XOR_spaces.xml\n"
+            "  python BasicModel.py --compare data/xor.xml data/XOR_exact.xml\n"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "config",
+        nargs="?",
+        default=None,
+        metavar="CONFIG",
+        help=(
+            "Path to the XML config file (relative to data/ or absolute). "
+            "Defaults to data/xor.xml when omitted."
+        ),
+    )
+    parser.add_argument(
+        "--compare",
+        nargs=2,
+        metavar=("CONFIG1", "CONFIG2"),
+        help=(
+            "Run two configs side by side and plot per-digit accuracy, "
+            "combined accuracy, and combined loss comparisons."
+        ),
+    )
+    args = parser.parse_args()
+
+    if args.compare:
         # Compare mode: run two XML configs and plot per-digit accuracy side by side
-        xml1 = BasicModelFactory.resolve_xml(sys.argv[2])
-        xml2 = BasicModelFactory.resolve_xml(sys.argv[3])
+        xml1 = BasicModelFactory.resolve_xml(args.compare[0])
+        xml2 = BasicModelFactory.resolve_xml(args.compare[1])
         TheReport.add_xml(xml1)
         TheReport.add_xml(xml2)
         results = BasicModelFactory.run(xml1) + BasicModelFactory.run(xml2)
@@ -3744,7 +4327,7 @@ if __name__ == "__main__":
             TheReport.plotCombinedLoss([m for _, _, m in results])
     else:
         # Single run mode
-        xml = BasicModelFactory.resolve_xml(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml")
+        xml = BasicModelFactory.resolve_xml(args.config) if args.config else os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml")
         TheReport.add_xml(xml)
         results = BasicModelFactory.run(xml)
 

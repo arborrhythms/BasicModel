@@ -120,12 +120,19 @@ class Lex:
                 self.vocab[tok_text] = next_id
                 self.id_to_word[next_id] = tok_text
 
+        after_separator = True   # start of buffer = treat like after separator (skip leading whitespace)
+
         while i < n:
             ch = text[i]
 
-            # Skip whitespace
+            # Whitespace run — SPACE token only within a sentence (not after SEPARATOR)
             if ch in ' \n\r\t':
-                i += 1
+                j = i + 1
+                while j < n and text[j] in ' \n\r\t':
+                    j += 1
+                if not after_separator:
+                    _add_token(i, j, 'SPACE')
+                i = j
                 continue
 
             # Alphabetic run (WORD) — includes mid-word apostrophes and hyphens
@@ -141,6 +148,7 @@ class Lex:
                     else:
                         break
                 _add_token(i, j, 'WORD')
+                after_separator = False
                 i = j
                 continue
 
@@ -150,17 +158,20 @@ class Lex:
                 while j < n and text[j].isdigit():
                     j += 1
                 _add_token(i, j, 'NUMBER')
+                after_separator = False
                 i = j
                 continue
 
             # Sentence-ending punctuation (SEPARATOR)
             if ch in SENTENCE_SEPARATORS:
                 _add_token(i, i + 1, 'SEPARATOR')
+                after_separator = True
                 i += 1
                 continue
 
             # Everything else: single-character PUNCT
             _add_token(i, i + 1, 'PUNCT')
+            after_separator = False
             i += 1
 
         return tokens

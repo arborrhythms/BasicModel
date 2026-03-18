@@ -51,6 +51,12 @@ class TestInvertibleRotationLayer(unittest.TestCase):
     def test_dim8(self):         self._check(8, False)
     def test_dim16(self):        self._check(16, False)
 
+    def test_parameter_count(self):
+        """Givens chain uses dim-1 angles (one per consecutive pair)."""
+        dim = 8
+        layer = InvertibleRotationLayer(dim=dim, naive=False)
+        self.assertEqual(layer.theta.numel(), dim - 1)
+
 
 class TestInvertibleDiagonalLayer(unittest.TestCase):
     def _check(self, nIn, nOut):
@@ -86,6 +92,7 @@ class TestInvertibleLinearLayer(unittest.TestCase):
     def test_square(self):          self._check(5, 5, False, 1e-3)
     def test_expand(self):          self._check(5, 8, False, 1e-3)
     def test_contract(self):        self._check(8, 5, False, 10.0)
+
 
 
 class TestLiftingLayer(unittest.TestCase):

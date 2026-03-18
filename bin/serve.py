@@ -177,7 +177,7 @@ def chat_completions():
 
     try:
         # Autoregressive inference: extend input text word by word
-        predicted_words = _model.infer(user_msg)
+        predicted_words = _model.infer(user_msg, mode='ARLM')
         response_text = " ".join(predicted_words)
 
         return jsonify({
@@ -207,13 +207,30 @@ def health():
 def main():
     global _model, _model_config
 
-    parser = argparse.ArgumentParser(description="BasicModel HTTP server")
-    parser.add_argument("-p", "--port", type=int, default=None)
-    parser.add_argument("--host", default=None)
-    parser.add_argument("--model", default=None, help="Path to the model file")
+    parser = argparse.ArgumentParser(
+        prog="serve.py",
+        description=(
+            "Start the BasicModel HTTP inference server.\n\n"
+            "Exposes a chat-completions endpoint compatible with the OpenAI\n"
+            "API schema.  The model config is loaded from --config (XML), an\n"
+            "environment variable, or the server block inside the XML.\n\n"
+            "Examples:\n"
+            "  python serve.py --config data/BasicModel.xml\n"
+            "  python serve.py --config data/BasicModel.xml --port 8080\n"
+            "  BASIC_XML=data/BasicModel.xml python serve.py\n"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("-p", "--port", type=int, default=None,
+                        help="TCP port to listen on (overrides XML <server><port>).")
+    parser.add_argument("--host", default=None,
+                        help="Bind address (overrides XML <server><host>; default 127.0.0.1).")
+    parser.add_argument("--config", "--model", dest="config",
+                        default=None,
+                        help="Path to the XML config file (also accepted as --model).")
     args = parser.parse_args()
 
-    config_path = args.model or os.getenv("BASIC_XML")
+    config_path = args.config or os.getenv("BASIC_XML")
 
     logger.info("Loading model...")
     _model, _model_config = _load_model(config_path)
