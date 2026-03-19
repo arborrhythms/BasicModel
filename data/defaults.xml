@@ -38,7 +38,7 @@
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <quantized>false</quantized>
-    <tokenizer>traditional</tokenizer>
+    <lexer>word</lexer>
   </InputSpace>
 
   <PerceptualSpace>

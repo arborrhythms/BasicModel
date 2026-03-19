@@ -243,7 +243,7 @@ class TestSpacePrediction(unittest.TestCase):
 
         inp = InputSpace(nInput, nInput,
                          model_type="embedding", embedding_path=None,
-                         data=data, tokenizer="grammatical")
+                         data=data, lexer="word")
         emb = inp.vectors()
         self.assertIsInstance(emb, Embedding)
 
@@ -298,7 +298,7 @@ class TestSpacePrediction(unittest.TestCase):
 
         inp = InputSpace(nInput, nInput,
                          model_type="embedding", embedding_path=None,
-                         data=data, tokenizer="grammatical")
+                         data=data, lexer="word")
         emb = inp.vectors()
         self.assertIn(" ", emb.cbow.key_to_index)
 
@@ -353,7 +353,7 @@ class TestNullEOS(unittest.TestCase):
 
         cls.inp = InputSpace(nInput, nInput,
                              model_type="embedding", embedding_path=None,
-                             data=data, tokenizer="grammatical")
+                             data=data, lexer="word")
         cls.emb = cls.inp.vectors()
         cls.os_ = OutputSpace(nInput, 4)
         cls.os_.set_text_mode(cls.inp)

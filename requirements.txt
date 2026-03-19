@@ -8,3 +8,4 @@ pandas
 vector_quantize_pytorch
 torchvision
 nltk
+pytest

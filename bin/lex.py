@@ -58,6 +58,10 @@ class Lex:
             end_char = start_char + len(word)
             start_byte = byte_offsets[start_char]
             end_byte = byte_offsets[end_char]
+            if word not in self.vocab:
+                new_id = len(self.vocab)
+                self.vocab[word] = new_id
+                self.id_to_word[new_id] = word
             token_id = self.vocab[word]
             spans.append([start_byte, end_byte, token_id])
             char_pos = end_char

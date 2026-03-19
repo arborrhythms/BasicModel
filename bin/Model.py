@@ -18,8 +18,7 @@ from vector_quantize_pytorch import ResidualVQ, VectorQuantize
 from itertools import chain
 import torch.optim as optim
 import time
-# torchlogix disabled — einsum ops incompatible with MPS
-# from torchlogix.layers import FixedBinarization, GroupSum, LogicConv2d, LogicDense, OrPooling2d
+from typing import Optional, Tuple
 
 
 epsilon = 1e-7  # to avoid log(0)
@@ -2112,81 +2111,353 @@ class CorrMem(Mem):
 
 #region Logic
 
+
 # LogicNet disabled — torchlogix einsum ops incompatible with MPS
-class LogicNet(nn.Module):
-    def __init__(self, num_classes=10, groups_per_class=16, lut_rank=2):
-        raise NotImplementedError("LogicNet requires torchlogix (disabled for MPS)")
-    def _init_original(self, num_classes=10, groups_per_class=16, lut_rank=2):
-        super().__init__()
-        if num_classes <= 0:
-            raise ValueError("num_classes must be positive.")
-        if groups_per_class <= 0:
-            raise ValueError("groups_per_class must be positive.")
-        if lut_rank <= 0:
-            raise ValueError("lut_rank must be positive.")
-        flattened_dim = 32 * 7 * 7
-        hidden_dim = max(256, (flattened_dim + lut_rank - 1) // lut_rank)
-        min_grouped_logits = (hidden_dim + lut_rank - 1) // lut_rank
-        grouped_logits = max(num_classes * groups_per_class, min_grouped_logits)
-        if grouped_logits % num_classes != 0:
-            grouped_logits += num_classes - (grouped_logits % num_classes)
+class LogicLayer(Layer):
 
-        self.features = nn.Sequential(
-            FixedBinarization(thresholds=[0.0]),
-            LogicConv2d(
-                in_dim=28,
-                channels=1,
-                num_kernels=16,
-                tree_depth=3,
-                receptive_field_size=5,
-                padding=2
-            ),
-            OrPooling2d(kernel_size=2, stride=2, padding=0),
 
-            LogicConv2d(
-                in_dim=14,
-                channels=16,
-                num_kernels=32,
-                tree_depth=3,
-                receptive_field_size=3,
-                padding=1
-            ),
-            OrPooling2d(kernel_size=2, stride=2, padding=0),
-        )
 
-        self.classifier = nn.Sequential(
-            nn.Flatten(),
-            LogicDense(in_dim=flattened_dim, out_dim=hidden_dim, lut_rank=lut_rank),
-            LogicDense(in_dim=hidden_dim, out_dim=grouped_logits, lut_rank=lut_rank),
-            GroupSum(k=num_classes, tau=8.0)
-        )
+    def _pairwise_sq_dists(X: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
+        """
+        X: (B, N, D)
+        Y: (B, M, D)
+        Returns:
+            D2: (B, N, M) with squared Euclidean distances
+        """
+        x2 = (X * X).sum(dim=-1, keepdim=True)                 # (B, N, 1)
+        y2 = (Y * Y).sum(dim=-1).unsqueeze(1)                  # (B, 1, M)
+        xy = torch.bmm(X, Y.transpose(1, 2))                   # (B, N, M)
+        d2 = x2 + y2 - 2.0 * xy
+        return d2.clamp_min(0.0)
 
-    def forward(self, x):
-        x = self.features(x)
-        x = self.classifier(x)
-        return x
 
+    def _expand_sigma(
+        sigma: Optional[torch.Tensor | float],
+        B: int,
+        N: int,
+        device: torch.device,
+        dtype: torch.dtype,
+    ) -> torch.Tensor:
+        """
+        Returns sigma as shape (B, N).
+        Accepts:
+        - None -> ones
+        - scalar
+        - tensor of shape (B, N)
+        - tensor of shape (N,) (broadcasted across batch)
+        """
+        if sigma is None:
+            return torch.ones(B, N, device=device, dtype=dtype)
+
+        if isinstance(sigma, (float, int)):
+            return torch.full((B, N), float(sigma), device=device, dtype=dtype)
+
+        if sigma.ndim == 1:
+            if sigma.shape[0] != N:
+                raise ValueError(f"1D sigma must have shape ({N},), got {tuple(sigma.shape)}")
+            return sigma.to(device=device, dtype=dtype).unsqueeze(0).expand(B, N)
+
+        if sigma.ndim == 2:
+            if sigma.shape != (B, N):
+                raise ValueError(f"2D sigma must have shape ({B}, {N}), got {tuple(sigma.shape)}")
+            return sigma.to(device=device, dtype=dtype)
+
+        raise ValueError("sigma must be None, scalar, shape (N,), or shape (B,N)")
+
+
+    def kernel_overlap(
+        X: torch.Tensor,
+        Y: torch.Tensor,
+        sigma_x: Optional[torch.Tensor | float] = None,
+        sigma_y: Optional[torch.Tensor | float] = None,
+        eps: float = 1e-8,
+    ) -> torch.Tensor:
+        """
+        Pairwise fuzzy overlap kernel between two vector sets.
+
+        X: (B, N, D)
+        Y: (B, M, D)
+
+        Returns:
+            K: (B, N, M)
+
+        Kernel:
+            K_ij = exp( -||x_i - y_j||^2 / (2 * (sigma_x_i^2 + sigma_y_j^2)) )
+        """
+        if X.ndim != 3 or Y.ndim != 3:
+            raise ValueError("X and Y must both have shape (B, N, D) and (B, M, D)")
+        if X.shape[0] != Y.shape[0] or X.shape[2] != Y.shape[2]:
+            raise ValueError("Batch size and feature dimension must match")
+
+        B, N, D = X.shape
+        M = Y.shape[1]
+
+        sx = _expand_sigma(sigma_x, B, N, X.device, X.dtype)   # (B, N)
+        sy = _expand_sigma(sigma_y, B, M, Y.device, Y.dtype)   # (B, M)
+
+        d2 = _pairwise_sq_dists(X, Y)                          # (B, N, M)
+        denom = 2.0 * (sx.unsqueeze(2).square() + sy.unsqueeze(1).square()) + eps
+        return torch.exp(-d2 / denom)
+
+
+    def union(X: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
+        """
+        Mereological union as set concatenation.
+
+        X: (B, N, D)
+        Y: (B, M, D)
+
+        Returns:
+            U: (B, N+M, D)
+        """
+        if X.ndim != 3 or Y.ndim != 3:
+            raise ValueError("X and Y must both have shape (B, N, D) and (B, M, D)")
+        if X.shape[0] != Y.shape[0] or X.shape[2] != Y.shape[2]:
+            raise ValueError("Batch size and feature dimension must match")
+        return torch.cat([X, Y], dim=1)
+
+
+    def intersection(
+        X: torch.Tensor,
+        Y: torch.Tensor,
+        sigma_x: Optional[torch.Tensor | float] = None,
+        sigma_y: Optional[torch.Tensor | float] = None,
+        topk: Optional[int] = None,
+        weight_threshold: Optional[float] = None,
+        eps: float = 1e-8,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Fuzzy intersection of two RBF-like vector sets.
+
+        Returns a new vector set whose elements are precision-weighted pairwise
+        merges of X and Y, with weights given by Gaussian overlap.
+
+        X: (B, N, D)
+        Y: (B, M, D)
+
+        Returns:
+            Z: (B, K, D)   merged intersection vectors
+            W: (B, K)      corresponding intersection weights in [0,1]
+
+        Notes:
+        - Exact pairwise intersection would produce N*M vectors.
+        - topk keeps only the strongest K pairwise intersections per batch.
+        - weight_threshold filters weak overlaps.
+        """
+        if X.ndim != 3 or Y.ndim != 3:
+            raise ValueError("X and Y must both have shape (B, N, D) and (B, M, D)")
+        if X.shape[0] != Y.shape[0] or X.shape[2] != Y.shape[2]:
+            raise ValueError("Batch size and feature dimension must match")
+
+        B, N, D = X.shape
+        M = Y.shape[1]
+
+        sx = _expand_sigma(sigma_x, B, N, X.device, X.dtype)   # (B, N)
+        sy = _expand_sigma(sigma_y, B, M, Y.device, Y.dtype)   # (B, M)
+
+        # Pairwise overlap weights
+        Kxy = kernel_overlap(X, Y, sx, sy, eps=eps)            # (B, N, M)
+
+        # Precision-weighted midpoint
+        px = 1.0 / (sx.square().unsqueeze(2) + eps)            # (B, N, 1)
+        py = 1.0 / (sy.square().unsqueeze(1) + eps)            # (B, 1, M)
+        denom = px + py                                        # (B, N, M)
+
+        Xp = X.unsqueeze(2)                                    # (B, N, 1, D)
+        Yp = Y.unsqueeze(1)                                    # (B, 1, M, D)
+
+        Z = (px.unsqueeze(-1) * Xp + py.unsqueeze(-1) * Yp) / denom.unsqueeze(-1)  # (B,N,M,D)
+        W = Kxy                                                # (B,N,M)
+
+        # Optional threshold
+        if weight_threshold is not None:
+            mask = W >= weight_threshold
+            W = W * mask
+
+        # Flatten pairwise results
+        Z = Z.reshape(B, N * M, D)
+        W = W.reshape(B, N * M)
+
+        # Optional top-k pruning
+        if topk is not None:
+            k = min(topk, N * M)
+            vals, idx = torch.topk(W, k=k, dim=1)
+            gather_idx = idx.unsqueeze(-1).expand(-1, -1, D)
+            Z = torch.gather(Z, dim=1, index=gather_idx)
+            W = vals
+
+        return Z, W
+
+
+    def part(
+        X: torch.Tensor,
+        Y: torch.Tensor,
+        sigma_x: Optional[torch.Tensor | float] = None,
+        sigma_y: Optional[torch.Tensor | float] = None,
+        weights_x: Optional[torch.Tensor] = None,
+        weights_y: Optional[torch.Tensor] = None,
+        signed: bool = False,
+        eps: float = 1e-8,
+    ) -> torch.Tensor:
+        """
+        Fuzzy parthood scores:
+            p(X -> Y), p(Y -> X)
+
+        Uses max-coverage:
+            p(X -> Y) = average_i max_j K(x_i, y_j)
+
+        Inputs:
+            X: (B, N, D)
+            Y: (B, M, D)
+            weights_x: optional (B, N)
+            weights_y: optional (B, M)  # only used for symmetry / validation;
+                                        # max-coverage itself weights the outer set
+
+        Returns:
+            P: (B, 2)
+            [:,0] = parthood(X -> Y)
+            [:,1] = parthood(Y -> X)
+
+        If signed=True, maps [0,1] -> [-1,1] by 2p - 1.
+        """
+        if X.ndim != 3 or Y.ndim != 3:
+            raise ValueError("X and Y must both have shape (B, N, D) and (B, M, D)")
+        if X.shape[0] != Y.shape[0] or X.shape[2] != Y.shape[2]:
+            raise ValueError("Batch size and feature dimension must match")
+
+        B, N, D = X.shape
+        M = Y.shape[1]
+
+        Kxy = kernel_overlap(X, Y, sigma_x=sigma_x, sigma_y=sigma_y, eps=eps)  # (B,N,M)
+        Kyx = Kxy.transpose(1, 2)                                               # (B,M,N)
+
+        cover_xy = Kxy.max(dim=2).values                                        # (B,N)
+        cover_yx = Kyx.max(dim=2).values                                        # (B,M)
+
+        if weights_x is None:
+            p_xy = cover_xy.mean(dim=1)
+        else:
+            if weights_x.shape != (B, N):
+                raise ValueError(f"weights_x must have shape ({B}, {N})")
+            wx = weights_x.to(device=X.device, dtype=X.dtype)
+            p_xy = (wx * cover_xy).sum(dim=1) / (wx.sum(dim=1) + eps)
+
+        if weights_y is None:
+            p_yx = cover_yx.mean(dim=1)
+        else:
+            if weights_y.shape != (B, M):
+                raise ValueError(f"weights_y must have shape ({B}, {M})")
+            wy = weights_y.to(device=Y.device, dtype=Y.dtype)
+            p_yx = (wy * cover_yx).sum(dim=1) / (wy.sum(dim=1) + eps)
+
+        out = torch.stack([p_xy, p_yx], dim=1)                                  # (B,2)
+
+        if signed:
+            out = 2.0 * out - 1.0
+
+        return out
+
+
+    def neg(X: torch.Tensor) -> torch.Tensor:
+        """
+        Affirming negation on the hypersphere:
+            neg(x) = -x
+
+        X: (B, N, D)
+        Returns:
+            (B, N, D)
+        """
+        return -X
+
+
+    def non(X: torch.Tensor, alpha: float = 0.0) -> torch.Tensor:
+        """
+        Non-affirming negation:
+            non(x) = alpha * x, with alpha in [0, 1]
+
+        alpha = 0.0 gives full withdrawal toward zero.
+        alpha in (0,1) gives partial weakening.
+
+        X: (B, N, D)
+        Returns:
+            (B, N, D)
+        """
+        if not (0.0 <= alpha <= 1.0):
+            raise ValueError("alpha must be in [0, 1]")
+        return alpha * X
+
+    def symbolize(X: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
+        """
+        Symbolize a set of vectors by mean norm.
+
+        X: (B, N, D)
+        Returns:
+            s: (B,) in [-1, 1], assuming ||x_i|| in [0, 1]
+        """
+        norms = torch.linalg.norm(X, dim=-1)          # (B, N)
+        s = 2.0 * norms.mean(dim=1) - 1.0
+        return s.clamp(-1.0, 1.0)
+
+
+    def scalar_neg(a: torch.Tensor) -> torch.Tensor:
+        """
+        Affirming negation on [-1,1].
+        """
+        return -a
+
+
+    def scalar_non(a: torch.Tensor, alpha: float = 0.0) -> torch.Tensor:
+        """
+        Non-affirming negation: contraction toward zero.
+        alpha in [0,1]. alpha=0 gives full neutralization.
+        """
+        return (alpha * a).clamp(-1.0, 1.0)
+
+
+    def scalar_union(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """
+        Symbolic union on [-1,1].
+        """
+        return torch.maximum(a, b)
+
+
+    def scalar_intersection(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """
+        Symbolic intersection on [-1,1].
+        """
+        return torch.minimum(a, b)
+
+
+    def scalar_part(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """
+        Signed symbolic parthood/order score on [-1,1].
+
+        Positive means a is contained by / does not exceed b.
+        Zero means equal.
+        Negative means a exceeds b.
+        """
+        return (b - a).clamp(-1.0, 1.0)
+    
     @staticmethod
-    def test(batch_size=32, num_classes=10):
-        model = LogicNet(num_classes=num_classes)
-        model.eval()
-        x = torch.rand(batch_size, 1, 28, 28)
-        with torch.no_grad():
-            output = model(x)
-        expected_shape = (batch_size, num_classes)
-        if output.shape != expected_shape:
-            raise RuntimeError(
-                f"LogicNet produced {tuple(output.shape)}, expected {expected_shape}."
-            )
-        print(f"Output shape: {output.shape}")
+    def test():
+        B, N, M, D = 4, 16, 20, 32
+        X = torch.randn(B, N, D, device="gpu")
+        Y = torch.randn(B, M, D, device="gpu")
+
+        LL = LogicLayer()
+        U = LL.union(X, Y)                    # (B, N+M, D)
+        Z, W = LL.intersection(X, Y, topk=32) # Z: (B, 32, D), W: (B, 32)
+        P = LL.part(X, Y)                     # (B, 2)
+        X_neg = LL.neg(X)                     # (B, N, D)
+        X_non = LL.non(X, alpha=0.2)          # (B, N, D)
 
 #endregion
 
 
 def test():
-    LogicNet.test()
     torch.autograd.set_detect_anomaly(True)
 
+    LogicLayer.test()
     LinearLayer.test()
     InvertibleRotationLayer.test()
     InvertibleDiagonalLayer.test()

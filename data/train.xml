@@ -29,7 +29,7 @@
     <nDim>1</nDim>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
-    <tokenizer>grammatical</tokenizer>
+    <lexer>word</lexer>
     <quantized>false</quantized>
   </InputSpace>
 
