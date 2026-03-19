@@ -27,6 +27,8 @@ Model configurations are specified in XML and can be compared side-by-side. See 
 | [data/](data/) | XML model configurations |
 | [doc/Architecture.md](doc/Architecture.md) | Algorithm details: Sigma/Pi layers, ergodic exploration, gradient energy sensor |
 | [doc/Params.md](doc/Params.md) | Full XML parameter reference |
+| [doc/Training.md](doc/Training.md) | Embedding pretraining, CBOW/SBOW, masked prediction, `<train>` and `<OptimizeEmbedding>` |
+| [doc/Installation.md](doc/Installation.md) | Setup, Makefile targets, train.py options, remote training |
 | [test/](test/) | Unit tests |
 
 ## Quick Start

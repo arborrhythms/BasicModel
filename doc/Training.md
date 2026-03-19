@@ -7,14 +7,15 @@ Embedding pretraining builds word vectors from a large corpus. Network training 
 those vectors as the input representation and learns to predict and reconstruct
 sentences.
 
-The two phases can overlap: the `trainEmbeddings` config controls whether and how
-embeddings continue to evolve during network training.
+The two phases can overlap: the `<train>` and `<OptimizeEmbedding>` configs
+control whether and how embeddings continue to evolve during network training.
 
 ---
 
 ## Phase 1: Embedding Pretraining (`make train` / `embed.py train`)
 
-Produces a static `sentence.pt` artifact containing word vectors.
+Produces a static embedding artifact (e.g. `BasicModel.kv`) containing word vectors.
+The output path is read from `<embeddingPath>` in the XML config.
 
 ### Pipeline
 
@@ -68,6 +69,22 @@ centroids = (total - vecs) / (N - 1)          # [N, dim]  leave-one-out
 logits = linear(centroids)                    # [N, vocab] full softmax
 loss = cross_entropy(logits, idx)
 ```
+
+### CBOW (Continuous Bag of Words)
+
+CBOW predicts a single target word from its context. Given a sentence of $N$ words,
+for target word $w_i$ with context $C_i = \{w_j : j \neq i\}$:
+
+Context mean (with padding for variable-length contexts):
+
+$$\bar{c}_i = \frac{1}{|C_i|} \sum_{j \in C_i} v_j$$
+
+The loss is the same negative-sampling objective as SBOW but applied per-word
+to the padded context mean rather than the leave-one-out centroid:
+
+$$\mathcal{L}_{\text{CBOW}} = -\log \sigma({\bar{c}_i}^\top v_{w_i}) - \sum_{k=1}^{K} \log \sigma(-{\bar{c}_i}^\top v_{w_k^-})$$
+
+where $K$ is the number of negative samples and $w_k^-$ are randomly sampled words.
 
 ### Two-Pass Architecture
 
@@ -124,36 +141,96 @@ The `maskedPrediction` config controls the prediction objective:
 | `ARUS` | Same as ARLM | Yes | Zero vector | Unsupervised (loss suppressed) |
 | `RARLM` | Zero word i | Reverse (j < pos zeroed) | Embedding of word i | Right-to-left autoregressive |
 
-### trainEmbeddings: EM-style Embedding Updates
+### `<train>`: Embedding Update Mode
 
-The `trainEmbeddings` config controls whether and how embeddings evolve during
-network training. This implements an EM-like alternation:
+The `train` config controls whether and how embeddings evolve during network
+training.  When embedding updates are enabled (CBOW, SBOW, or BOTH), this
+implements an EM-like alternation:
 
 - **E-step (network):** Forward pass + masked prediction + backward + optimizer step.
   The network learns to predict/reconstruct with the current embedding space.
 
-- **M-step (SBOW):** After each network step, run one SBOW update on the same
-  sentence. The embedding vectors move to better capture sentence-level co-occurrence.
+- **M-step (CBOW/SBOW):** After each network step, run one embedding update on the
+  same sentence. The embedding vectors move to better capture co-occurrence.
 
-| Value | Network gradients → embeddings | SBOW step | Description |
-|-------|-------------------------------|-----------|-------------|
-| `NONE` | No | No | Embeddings frozen at pretrained values |
-| `CBOW` | No | Yes | EM separation: only SBOW updates embeddings |
-| `ARLM` | Yes | No | Only network backprop updates embeddings |
-| `BOTH` | Yes | Yes | Both SBOW and network gradients update embeddings |
+| Value | Embedding method | Model layers | Description |
+|-------|-----------------|-------------|-------------|
+| `NONE` | Frozen | Frozen | Embeddings frozen at pretrained values |
+| `CBOW` | CBOW (padded context) | Frozen | True CBOW: predict word from leave-one-out context with padding |
+| `SBOW` | SBOW (centroid) | Frozen | Faster variant: predict word from leave-one-out centroid |
+| `ARLM` | Frozen | Backprop | Only network layers train; codebook is fixed |
+| `BOTH` | SBOW post-batch | Backprop | Two optimizers: SBOW updates embeddings, Adam updates model layers |
+| `JOINT` | Single backward | Backprop | Single optimizer: combined model + SBOW loss |
 
-**`CBOW` is the recommended mode** for EM-style training. It maintains clean separation
-between the two objectives: the network adapts to the embedding space (E-step), and
-SBOW reshapes the space based on distributional co-occurrence (M-step). Neither
-objective's gradients interfere with the other.
+### `<OptimizeEmbedding>`: Gradient Flow Through Codebook
 
-**`BOTH` risks gradient interference.** The network's reconstruction loss pulls embeddings
-toward being maximally distinguishable (spreading apart), while SBOW pulls co-occurring
-words together. These forces can conflict, potentially destabilizing training.
+Independent of `<train>`, this flag controls whether the codebook's `nn.Embedding`
+weight tensor is **detached** during forward/reverse passes and whether it appears
+in the main optimizer's parameter list.
 
-**`ARLM` lets the network reshape embeddings freely** without the distributional
-constraint of SBOW. Useful when the prediction objective alone provides sufficient
-signal for good embeddings.
+| `OptimizeEmbedding` | `detach()` in forward/reverse | In main optimizer | Default when |
+|---------------------|------------------------------|-------------------|--------------|
+| `true` | No — gradients flow through codebook | Yes | `ARLM`, `BOTH`, `JOINT` |
+| `false` | Yes — codebook is a frozen lookup | No | `NONE`, `CBOW`, `SBOW` |
+
+These two axes are fully independent. Common combinations:
+
+| `<train>` | `<OptimizeEmbedding>` | What happens |
+|-----------|-----------------------|-------------|
+| `ARLM` | `false` | **Recommended for constrained hardware.** Model layers train; codebook is a frozen lookup table. No OOV insertion penalty, no gradient through embeddings. |
+| `ARLM` | `true` (default) | Model trains; backprop also fine-tunes codebook vectors. |
+| `SBOW` | `false` (default) | Only SBOW updates the codebook via its own internal optimizer. Model layers frozen. |
+| `CBOW` | `false` (default) | Only CBOW updates the codebook. Model layers frozen. |
+| `BOTH` | `true` (default) | Two-optimizer training — SBOW + model backprop both update codebook. Requires more memory. |
+| `BOTH` | `false` | SBOW updates codebook via its own optimizer; model trains but codebook detached from backprop graph. |
+| `JOINT` | `true` (default) | **Single optimizer, single loss.** Model loss + SBOW loss combined before one backward pass. |
+| `JOINT` | `false` | Model loss detached from codebook; SBOW loss still flows through (unusual configuration). |
+
+**`ARLM` + `OptimizeEmbedding=false` is the recommended mode for constrained
+hardware** (e.g. Apple MPS with <16GB). The codebook from Phase 1 is frozen,
+all memory and compute go to the model layers, and OOV words cannot trigger
+embedding resizes.
+
+**`CBOW`/`SBOW` with `OptimizeEmbedding=false`** maintains clean EM separation:
+the network adapts to the embedding space, and CBOW/SBOW reshapes the space
+using its own optimizer. Neither objective's gradients interfere with the other.
+
+**`BOTH` risks gradient interference.** The network's reconstruction loss pulls
+embeddings toward being maximally distinguishable (spreading apart), while
+CBOW/SBOW pulls co-occurring words together. These forces can conflict because
+they use separate optimizers with separate momentum buffers.
+
+### `JOINT`: Single Combined Loss
+
+JOINT mode avoids the EM alternation of `BOTH` by computing a single combined
+loss before one backward pass:
+
+$$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathcal{L}_{\text{SBOW}}$$
+
+where $\mathcal{L}_{\text{model}}$ is the standard output loss (plus reconstruction
+loss if `reversible=true`), and $\lambda$ is the `sbowRatio` hyperparameter (default 0.1).
+
+The SBOW loss for the current sentence is computed using the same negative-sampling
+objective as Phase 1:
+
+$$\mathcal{L}_{\text{SBOW}} = -\frac{1}{N} \sum_{i=1}^{N} \left[ \log \sigma(c_i^\top v_{w_i}) + \sum_{k=1}^{K} \log \sigma(-c_i^\top v_{w_k^-}) \right]$$
+
+where $c_i$ is the leave-one-out centroid, $v_{w_i}$ is the target word's embedding,
+and $w_k^-$ are negative samples drawn uniformly from the vocabulary.
+
+**Advantages over `BOTH`:**
+- **One optimizer, one momentum buffer.** Adam sees the full gradient landscape
+  from both objectives simultaneously, avoiding the oscillation risk of two
+  independent optimizers pulling embeddings in different directions.
+- **Gradient coherence.** The model's MSE loss and the SBOW co-occurrence loss
+  are balanced by $\lambda$ before any parameter update, so the step direction
+  reflects the intended trade-off.
+- **Simpler implementation.** No post-batch embedding step; everything flows
+  through `totalLoss.backward()`.
+
+**Trade-off:** Both objectives share the same learning rate and Adam state.
+If the two loss surfaces have very different curvature, `sbowRatio` may need
+tuning. The `BOTH` mode's separate optimizers can use different learning rates.
 
 ### Why MSE over Embeddings (not Cross-Entropy over Vocabulary)
 
@@ -174,27 +251,50 @@ Each batch (one sentence in masked prediction mode):
 3. Compute output loss (MSE against target word embeddings)
 4. If reversible: reverse pass reconstructs input, compute reconstruction loss
 5. Combined loss = `(1 - recon_ratio) × output_loss + recon_ratio × recon_loss`
-6. Backprop + optimizer step (excludes embedding params unless `ARLM` or `BOTH`)
-7. If `trainEmbeddings` is `CBOW` or `BOTH`: run SBOW step on same sentence
-8. Re-zero the [MASK] embedding
+6. If `train` is `JOINT`: add `sbowRatio × sbow_loss` to the combined loss
+7. Backprop + optimizer step (excludes embedding params unless `OptimizeEmbedding=true`)
+8. If `train` is `CBOW`, `SBOW`, or `BOTH`: run embedding step on same sentence
+9. Re-zero the [MASK] embedding
 
 ---
 
 ## SBOW vs CBOW
 
-| Property | CBOW | SBOW |
-|----------|------|------|
-| Targets per sentence | 1 (pick one word) | N (every word) |
-| Context | Other N-1 words | Leave-one-out centroid of N-1 |
-| Positive updates | 1 per step | N per step |
-| Repulsive force | vocab-1 implicit via softmax | N × (vocab-1) via softmax |
-| Signal density | Low (1 gradient per sentence) | High (N gradients per sentence) |
+| Property | CBOW | SBOW | Masked Prediction (Phase 2) |
+|----------|------|------|----------------------------|
+| Targets per sentence | 1 (pick one word) | N (every word) | N (one per masked position) |
+| Context | Other N-1 words | Leave-one-out centroid of N-1 | All unmasked words (+ future truncation for ARLM/RARLM) |
+| Positive updates | 1 per step | N per step | N per step |
+| Repulsive force | vocab-1 implicit via softmax | N × (vocab-1) via softmax | Implicit via MSE in embedding space |
+| Signal density | Low (1 gradient per sentence) | High (N gradients per sentence) | High (N gradients per sentence) |
+| Loss function | Cross-entropy over vocabulary | Cross-entropy over vocabulary | MSE over embedding vectors |
+| Updates embeddings directly | Yes (own optimizer) | Yes (own optimizer) | Only if `OptimizeEmbedding=true` |
+| Used in (`<train>`) | `CBOW` | `SBOW`, `BOTH`, `JOINT` | `ARLM`, `BOTH`, `JOINT` |
 
 SBOW provides richer signal per sentence because every word acts as both context
 (for other words) and target (predicted from others). The full softmax over the
 vocabulary at each position ensures vectors distribute across the hypersphere:
 words too close to centroids they don't belong to are pushed away with force
 proportional to their proximity.
+
+---
+
+## Three-File Architecture
+
+Model behaviour is partitioned across three independently managed artifacts:
+
+| Artifact | Example | Contents | Updated by |
+|----------|---------|----------|-----------|
+| XML config | `data/BasicModel.xml` | Architecture, hyperparameters, file paths | Hand-edited |
+| Embedding | `data/BasicModel.kv` | Word vectors ($V \times d$ codebook matrix) | Phase 1: `embed.py` |
+| Weights | `data/BasicModel.ckpt` | Model layer parameters (attention, Pi/Sigma weights) | Phase 2: `BasicModel.py` |
+
+The checkpoint explicitly excludes embedding parameters (`_emb.weight`).
+This separation enables independent iteration:
+
+- Retrain embeddings without touching model weights (`--force-embeddings`)
+- Retrain model with frozen codebook (`<train>ARLM</train>` + `<OptimizeEmbedding>false</OptimizeEmbedding>`)
+- Swap codebooks between models sharing the same architecture
 
 ---
 
@@ -223,3 +323,30 @@ At equilibrium, no word can move closer to any centroid without increasing the l
 This is the key advantage over approaches like direct push/pull with random negatives,
 where most sampled negatives are already far away on a high-dimensional hypersphere
 and contribute little useful gradient.
+
+---
+
+## Profiling
+
+The `--profile` flag wraps Phase 2 in `cProfile`:
+
+```bash
+make train_micro_remote  # add --profile via train.py
+# Or directly:
+python bin/train.py --model data/BasicModel.xml --profile --max-docs 500
+```
+
+Output: a `.prof` file in `output/profiles/` plus a top-30 summary printed to stdout.
+View interactively with `snakeviz`:
+
+```bash
+pip install snakeviz
+snakeviz output/profiles/train_20260319_111441.prof
+```
+
+For live profiling of a running process, `py-spy` can attach by PID (requires root on macOS):
+
+```bash
+pip install py-spy
+sudo py-spy record -o profile.svg --pid <PID> --duration 30
+```

@@ -27,7 +27,7 @@ except ImportError:
     make_dot = None
 from matplotlib import pyplot as plt
 from datasets import load_dataset
-from embed import WordVectors, CBOWModel
+from embed import WordVectors, PretrainModel
 from sklearn.metrics import classification_report
 from sklearn.decomposition import PCA
 import pandas as pd
@@ -740,7 +740,7 @@ class Data():
         a zero vector (the model should learn to predict known words).
 
         Args:
-            embedding: An Embedding instance with cbow.key_to_index and _emb weights.
+            embedding: An Embedding instance with pretrain.key_to_index and _emb weights.
         """
         if self._lm_labels is None:
             return
@@ -752,8 +752,8 @@ class Data():
             targets = []
             for word in word_list:
                 w = word.lower()
-                if w in embedding.cbow.key_to_index:
-                    idx = embedding.cbow.key_to_index[w]
+                if w in embedding.pretrain.key_to_index:
+                    idx = embedding.pretrain.key_to_index[w]
                     one_hot = torch.zeros(vocab_size, device=weights.device)
                     one_hot[idx] = 1.0
                     v = one_hot @ weights  # differentiable
@@ -1143,12 +1143,12 @@ class VectorSet(nn.Module):
     def intersection(self, x, y):
         return torch.min(x, y)
 class Embedding(VectorSet):
-    """VectorSet backed by a differentiable nn.Embedding with online CBOW training.
+    """VectorSet backed by a differentiable nn.Embedding with online CBOW/SBOW training.
 
     Loads pretrained weights from a WordVectors artifact (e.g. sentence.pt)
     and wraps them in an nn.Embedding so gradients can flow through the
-    forward pass.  ``train_step(words)`` runs one sentence-level CBOW
-    update using the same objective that produced the pretrained weights.
+    forward pass.  ``train_step(words, method)`` runs one sentence-level
+    embedding update: CBOW (padded context) or SBOW (leave-one-out centroid).
 
     This is a direct ``VectorSet`` override: ``forward()`` performs the text
     encoding step, and ``reverse()`` performs the decode step.
@@ -1164,10 +1164,11 @@ class Embedding(VectorSet):
     def __init__(self):
         super().__init__()
         self._lex = Lex()
-        self.cbow = None       # CBOWModel, created in create()
-        self._emb = None       # nn.Embedding, shared with cbow
+        self.pretrain = None       # PretrainModel, created in create()
+        self._emb = None       # nn.Embedding, shared with pretrain
         self.wv = None         # WordVectors snapshot for reverse()
         self.doc_spans = []    # compatibility alias for per-doc token streams
+        self.optimize_embedding = True  # set by BasicModelFactory from <OptimizeEmbedding>
         self.doc_sources = []
 
     @staticmethod
@@ -1182,10 +1183,10 @@ class Embedding(VectorSet):
         return [(tok['text'], tok['start']) for tok in self._lex.lex_buffer(text, 0)]
 
     def _token_to_index(self, text):
-        if text in self.cbow.key_to_index:
-            return self.cbow.key_to_index[text]
+        if text in self.pretrain.key_to_index:
+            return self.pretrain.key_to_index[text]
         ch = text[0] if text else ' '
-        return self.cbow.key_to_index.get(ch, 0)
+        return self.pretrain.key_to_index.get(ch, 0)
 
     def tokenize(self, data):
         """Tokenize a byte-tensor batch into Lex token text."""
@@ -1239,15 +1240,15 @@ class Embedding(VectorSet):
         super().create(nInput or max(1, vocab_size), nVectors or max(1, vocab_size),
                        vector_size, passThrough=passThrough)
 
-        self.cbow = CBOWModel(wv, learning_rate=learning_rate, neg_samples=neg_samples)
-        self._emb = self.cbow.embeddings   # shared nn.Embedding
+        self.pretrain = PretrainModel(wv, learning_rate=learning_rate, neg_samples=neg_samples)
+        self._emb = self.pretrain.embeddings   # shared nn.Embedding
         self.min_frequency = float(min_frequency)
         self._pending_counts: dict = {}
 
         # Add [MASK] as zero-vector codebook entry (internal-only token)
         self.insert("[MASK]")
         with torch.no_grad():
-            self.mask_token_idx = self.cbow.key_to_index["[MASK]"]
+            self.mask_token_idx = self.pretrain.key_to_index["[MASK]"]
             self._emb.weight[self.mask_token_idx] = 0.0
 
         # Add \x00 as the EOS/padding sentinel.
@@ -1255,13 +1256,13 @@ class Embedding(VectorSet):
         # Used to fill padding positions in _forward_lex so the model has a
         # concrete reconstruction target for positions beyond the real tokens.
         self.insert("\x00")
-        self.null_token_idx = self.cbow.key_to_index["\x00"]
+        self.null_token_idx = self.pretrain.key_to_index["\x00"]
 
         # Bootstrap codebook with printable ASCII (32–126) so any OOV word
         # can be spelled out character-by-character without zero vectors.
         for cp in range(32, 127):
             ch = chr(cp)
-            if ch not in self.cbow.key_to_index:
+            if ch not in self.pretrain.key_to_index:
                 self.insert(ch)
 
         # Pre-tokenize source documents for later inspection and optional reuse.
@@ -1282,21 +1283,21 @@ class Embedding(VectorSet):
                         self.insert(token_text)
 
     def _rebuild_optimizer(self):
-        self.cbow.optimizer = torch.optim.Adam(
-            self.cbow.embeddings.parameters(),
-            lr=self.cbow.optimizer.param_groups[0]['lr'],
+        self.pretrain.optimizer = torch.optim.Adam(
+            self.pretrain.embeddings.parameters(),
+            lr=self.pretrain.optimizer.param_groups[0]['lr'],
         )
 
     def _refresh_special_tokens(self):
-        if "[MASK]" in self.cbow.key_to_index:
-            self.mask_token_idx = self.cbow.key_to_index["[MASK]"]
-        if "\x00" in self.cbow.key_to_index:
-            self.null_token_idx = self.cbow.key_to_index["\x00"]
+        if "[MASK]" in self.pretrain.key_to_index:
+            self.mask_token_idx = self.pretrain.key_to_index["[MASK]"]
+        if "\x00" in self.pretrain.key_to_index:
+            self.null_token_idx = self.pretrain.key_to_index["\x00"]
 
     def insert(self, word, vector=None, initial_count=0):
         """Add a word to the vocabulary and codebook.
 
-        Extends the WordVectors, CBOWModel vocabulary, and nn.Embedding so
+        Extends the WordVectors, PretrainModel vocabulary, and nn.Embedding so
         that subsequent forward passes can look up this word.
 
         Args:
@@ -1328,16 +1329,16 @@ class Embedding(VectorSet):
         self.wv.index_to_key.append(word)
         self.wv.key_to_index[word] = idx
 
-        # Extend CBOWModel
-        self.cbow.index_to_key.append(word)
-        self.cbow.key_to_index[word] = idx
-        old_emb = self.cbow.embeddings
+        # Extend PretrainModel
+        self.pretrain.index_to_key.append(word)
+        self.pretrain.key_to_index[word] = idx
+        old_emb = self.pretrain.embeddings
         new_emb = nn.Embedding(idx + 1, dim, device=device)
         with torch.no_grad():
             if old_emb.weight.shape[0] > 0:
                 new_emb.weight[:idx] = old_emb.weight
             new_emb.weight[idx] = new_vec.squeeze()
-        self.cbow.embeddings = new_emb
+        self.pretrain.embeddings = new_emb
         self._emb = new_emb
 
         self._rebuild_optimizer()
@@ -1350,15 +1351,15 @@ class Embedding(VectorSet):
         Args:
             words_or_indices: list of word strings or integer indices to remove.
 
-        Updates nn.Embedding, WordVectors, CBOWModel mappings, special token
+        Updates nn.Embedding, WordVectors, PretrainModel mappings, special token
         indices, and the optimizer in one shot.
         """
         if not words_or_indices:
             return
         # Resolve to indices
         if isinstance(words_or_indices[0], str):
-            indices = [self.cbow.key_to_index[w] for w in words_or_indices
-                       if w in self.cbow.key_to_index]
+            indices = [self.pretrain.key_to_index[w] for w in words_or_indices
+                       if w in self.pretrain.key_to_index]
         else:
             indices = list(words_or_indices)
         if not indices:
@@ -1374,15 +1375,15 @@ class Embedding(VectorSet):
         new_emb = nn.Embedding(new_weight.shape[0], new_weight.shape[1], device=device)
         with torch.no_grad():
             new_emb.weight.copy_(new_weight)
-        self.cbow.embeddings = new_emb
+        self.pretrain.embeddings = new_emb
         self._emb = new_emb
 
         # Shrink WordVectors (shared logic with WordVectors.remove)
         self.wv.remove(indices)
 
-        # Sync CBOWModel mappings from WordVectors
-        self.cbow.index_to_key = list(self.wv.index_to_key)
-        self.cbow.key_to_index = dict(self.wv.key_to_index)
+        # Sync PretrainModel mappings from WordVectors
+        self.pretrain.index_to_key = list(self.wv.index_to_key)
+        self.pretrain.key_to_index = dict(self.wv.key_to_index)
 
         self._refresh_special_tokens()
         self._rebuild_optimizer()
@@ -1442,10 +1443,10 @@ class Embedding(VectorSet):
 
     def _ergodic_var(self, token_idx, device, dtype):
         """Map CBOW's per-word sigma to a noise scale in [0, 1]."""
-        if (not self.ergodic) or (not self.training) or self.cbow is None:
+        if (not self.ergodic) or (not self.training) or self.pretrain is None:
             return None
-        sigma = getattr(self.cbow, 'sigma', None)
-        sigma_step = getattr(self.cbow, 'sigma_step', 0)
+        sigma = getattr(self.pretrain, 'sigma', None)
+        sigma_step = getattr(self.pretrain, 'sigma_step', 0)
         if (
             sigma is None or sigma_step <= 0 or token_idx is None
             or token_idx >= sigma.shape[0]
@@ -1455,7 +1456,7 @@ class Embedding(VectorSet):
                 getattr(self, 'mask_token_idx', None),
                 getattr(self, 'null_token_idx', None)}:
             return None
-        beta = float(getattr(self.cbow, 'sigma_beta', 0.99))
+        beta = float(getattr(self.pretrain, 'sigma_beta', 0.99))
         denom = 1.0 - (beta ** sigma_step)
         if denom <= 0:
             return None
@@ -1496,7 +1497,10 @@ class Embedding(VectorSet):
         if input.dim() == 1:
             input = input.unsqueeze(0)  # [len] -> [1, len]
         batch = input.shape[0]
-        codebook = self._emb.weight #.detach().to(input.device)
+        if getattr(self, 'optimize_embedding', True):
+            codebook = self._emb.weight
+        else:
+            codebook = self._emb.weight.detach()
         batch_tokens = []
         span_counts = []
         final_offsets = []
@@ -1533,20 +1537,33 @@ class Embedding(VectorSet):
             'final_offsets': final_offsets,
         }
 
-    def train_step(self, words, method='SBOW'):
+    def train_step(self, words, method='CBOW'):
         """One sentence-level embedding gradient step.  Returns loss or None.
 
-        method: 'CBOW' — predict each word from leave-one-out context (padded)
-                'SBOW' — predict each word from leave-one-out centroid (vectorised)
+        method: 'CBOW' — predict each word from padded leave-one-out context
+                'SBOW' — predict each word from leave-one-out centroid (faster)
         """
         if method == 'SBOW':
-            return self.cbow.sbow_step(words)
-        return self.cbow.train_step(words)
+            return self.pretrain.sbow_step(words)
+        return self.pretrain.train_step(words)
+
+    def sbow_loss(self, words):
+        """Return SBOW loss tensor for joint optimization (no backward/step).
+
+        The caller adds this to the model loss before a single backward pass.
+        Returns a scalar loss tensor, or None if insufficient words.
+        """
+        return self.pretrain.sbow_loss(words)
 
     def snapshot(self):
         """Update the internal WordVectors from current nn.Embedding weights."""
-        self.wv = self.cbow.to_word_vectors()
+        self.wv = self.pretrain.to_word_vectors()
         return self.wv
+
+    def save_embeddings(self, path):
+        """Snapshot current nn.Embedding weights and save to a .pt file."""
+        self.snapshot()
+        self.wv.save(path)
 
     def reverse_raw(self, y):
         """Return the raw reverse-path vector with all subspaces intact.
@@ -1636,7 +1653,10 @@ class Embedding(VectorSet):
         content, positions, times = TheObjectEncoding.reverse(y.clone())
         batch = content.shape[0]
         nVec = content.shape[1]
-        codebook = self._emb.weight #.detach().to(y.device) XXX
+        if getattr(self, 'optimize_embedding', True):
+            codebook = self._emb.weight
+        else:
+            codebook = self._emb.weight.detach()
         words_list = self.wv.index_to_key
         nWhat = codebook.shape[1]
 
@@ -1734,11 +1754,11 @@ class Embedding(VectorSet):
         Returns:
             Tensor of shape [nWhat] (content dims only).
         """
-        if word in self.cbow.key_to_index:
-            idx = self.cbow.key_to_index[word]
+        if word in self.pretrain.key_to_index:
+            idx = self.pretrain.key_to_index[word]
         else:
             ch = word[0] if word else ' '
-            idx = self.cbow.key_to_index.get(ch, 0)
+            idx = self.pretrain.key_to_index.get(ch, 0)
         return self._emb.weight[idx].detach().clone()
 
     def get_space_embedding(self):
@@ -2209,11 +2229,18 @@ class InputSpace(Space):
     # Training policy — InputSpace decides WHEN, Embedding does HOW
     # ------------------------------------------------------------------
 
-    def train_embeddings(self, words):
+    def train_embeddings(self, words, method='CBOW'):
         """Run one CBOW/SBOW gradient step if words are available."""
         emb = self.vectors()
         if isinstance(emb, Embedding) and words:
-            return emb.train_step(words)
+            return emb.train_step(words, method=method)
+        return None
+
+    def sbow_loss(self, words):
+        """Return SBOW loss tensor for joint optimization (no backward/step)."""
+        emb = self.vectors()
+        if isinstance(emb, Embedding) and words:
+            return emb.sbow_loss(words)
         return None
 
     def _snapshot_embeddings(self):
@@ -3191,9 +3218,8 @@ class BaseModel(nn.Module):
                 params.extend(s.getParameters())
         else:
             params = list(self.parameters())
-        # Exclude embedding params unless network gradients are enabled (ARLM or BOTH)
-        te = getattr(self, 'train_embeddings', 'NONE')
-        if te not in ('ARLM', 'BOTH'):
+        # Exclude embedding params unless OptimizeEmbedding is enabled
+        if not getattr(self, 'optimize_embedding', False):
             exclude = set()
             if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.vectors(), Embedding):
                 for p in self.inputSpace.vectors().embedding_parameters():
@@ -3239,26 +3265,67 @@ class BaseModel(nn.Module):
         return None
 
     def save_weights(self, path=None):
-        """Persist model weights, vocab, and ergodic state to disk."""
+        """Persist model weights (excluding embeddings) to disk.
+
+        Embedding weights live in a separate artifact (the .kv/.pt file
+        specified by <embeddingPath> in the XML config).  The three files
+        — XML config, embedding artifact, weights checkpoint — partition
+        the model's behaviour and are managed independently.
+        """
         if path is None:
             path = os.path.join(ProjectPaths.OUTPUT_DIR, "weights.ckpt")
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        save_dict = {"state_dict": self.state_dict()}
-        emb = self._get_embedding()
-        if emb is not None:
-            save_dict["vocab"] = list(emb.vocab_keys)
-            save_dict["counts"] = emb.wv.counts
-            save_dict["total_count"] = int(emb.wv.total_count)
-            save_dict["pending_counts"] = dict(emb._pending_counts)
-        torch.save(save_dict, path)
+        # Filter out embedding parameters — they belong to the .kv artifact
+        state = {k: v for k, v in self.state_dict().items()
+                 if "_emb.weight" not in k}
+        torch.save({"state_dict": state}, path)
         print(f"[{self.name}] Weights saved to {path}")
 
-    def load_weights(self, path=None, strict=False):
-        """Load model weights from disk.
+    def save_embeddings(self, path=None):
+        """Snapshot current nn.Embedding weights and save the .pt artifact."""
+        if path is None:
+            path = getattr(self, 'embedding_path', None)
+        if path is None:
+            return
+        emb = self._get_embedding()
+        if emb is None:
+            return
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        emb.save_embeddings(path)
+        print(f"[{self.name}] Embeddings saved to {path}")
 
-        If the saved file includes a vocab list, restores the Embedding
-        vocabulary first so tensor shapes match exactly.  Falls back to
-        legacy format (bare state_dict) for older weight files.
+    def load_embeddings(self, path=None):
+        """Load embedding weights and vocab from a .pt artifact."""
+        if path is None:
+            path = getattr(self, 'embedding_path', None)
+        if path is None:
+            return False
+        if not os.path.exists(path):
+            return False
+        emb = self._get_embedding()
+        if emb is None:
+            return False
+        wv = WordVectors.load(path)
+        self._restore_vocab(emb, list(wv.index_to_key),
+                            counts=wv.counts.tolist(),
+                            total_count=int(wv.total_count))
+        # Load the actual weight values
+        weight = torch.tensor(wv.vectors, dtype=torch.float32,
+                              device=emb._emb.weight.device)
+        emb._emb.weight.data.copy_(weight)
+        emb.pretrain.embeddings = emb._emb
+        print(f"[{self.name}] Embeddings loaded from {path}")
+        return True
+
+    def load_weights(self, path=None, strict=False):
+        """Load model weights from disk (excluding embeddings).
+
+        Embedding weights are loaded separately from the .kv artifact
+        specified by <embeddingPath>.  This method only restores layer
+        weights, attention parameters, etc.
+
+        Supports both new format {"state_dict": ...} and legacy format
+        (bare state_dict).
         """
         if path is None:
             path = os.path.join(ProjectPaths.OUTPUT_DIR, "weights.ckpt")
@@ -3267,27 +3334,10 @@ class BaseModel(nn.Module):
             return False
         saved = torch.load(path, map_location=TheDevice, weights_only=False)
 
-        # Support both new format {"state_dict": ..., "vocab": ...}
-        # and legacy format (bare state_dict)
         if isinstance(saved, dict) and "state_dict" in saved:
             state = saved["state_dict"]
-            saved_vocab = saved.get("vocab")
-            saved_counts = saved.get("counts")
-            saved_total = saved.get("total_count", 0)
-            saved_pending = saved.get("pending_counts", {})
         else:
             state = saved
-            saved_vocab = None
-            saved_counts = None
-            saved_total = 0
-            saved_pending = {}
-
-        # Restore vocab on the Embedding so shapes match
-        emb = self._get_embedding()
-        if emb is not None and saved_vocab is not None:
-            self._restore_vocab(emb, saved_vocab,
-                                counts=saved_counts, total_count=saved_total,
-                                pending_counts=saved_pending)
 
         try:
             self.load_state_dict(state, strict=strict)
@@ -3306,8 +3356,8 @@ class BaseModel(nn.Module):
         vocab_size = len(saved_vocab)
 
         # Rebuild word mappings
-        emb.cbow.index_to_key = list(saved_vocab)
-        emb.cbow.key_to_index = {w: i for i, w in enumerate(saved_vocab)}
+        emb.pretrain.index_to_key = list(saved_vocab)
+        emb.pretrain.key_to_index = {w: i for i, w in enumerate(saved_vocab)}
         emb.wv.index_to_key = list(saved_vocab)
         emb.wv.key_to_index = {w: i for i, w in enumerate(saved_vocab)}
         emb.wv._vectors = np.zeros((vocab_size, dim), dtype=np.float32)
@@ -3318,12 +3368,12 @@ class BaseModel(nn.Module):
         emb.wv._normed = None
 
         # Resize nn.Embedding to match
-        emb.cbow.embeddings = nn.Embedding(vocab_size, dim, device=device)
-        emb._emb = emb.cbow.embeddings
+        emb.pretrain.embeddings = nn.Embedding(vocab_size, dim, device=device)
+        emb._emb = emb.pretrain.embeddings
 
         # Update mask token index
-        if "[MASK]" in emb.cbow.key_to_index:
-            emb.mask_token_idx = emb.cbow.key_to_index["[MASK]"]
+        if "[MASK]" in emb.pretrain.key_to_index:
+            emb.mask_token_idx = emb.pretrain.key_to_index["[MASK]"]
 
     def mnistReport(self):
         """Run test epoch, compute per-digit accuracy, and plot."""
@@ -3624,7 +3674,13 @@ class BasicModel(BaseModel):
             neg_samples=_t("negSamples", 64),
             reconstruct=arch.get("reconstruct", "none"),
         )
-        # train (legacy: trainEmbeddings): NONE=frozen, CBOW=SBOW only, ARLM=network only, BOTH=SBOW+network
+        # train (legacy: trainEmbeddings):
+        #   NONE  = frozen embeddings, frozen model
+        #   CBOW  = embedding CBOW updates only (predict from padded context)
+        #   SBOW  = embedding SBOW updates only (predict from leave-one-out centroid, faster)
+        #   ARLM  = network layers only, embeddings frozen
+        #   BOTH  = SBOW embedding updates + network layers (two optimizers)
+        #   JOINT = single loss: model_loss + sbowRatio * sbow_loss, one optimizer
         # Check flat arch for either name first (explicit override), then nested defaults
         if "train" in arch and not isinstance(arch["train"], dict):
             te = arch["train"]
@@ -3637,9 +3693,22 @@ class BasicModel(BaseModel):
         elif te is False:
             te = "NONE"
         self.train_embeddings = te.upper()
-        if self.train_embeddings in ("ARLM", "BOTH") and isinstance(self.inputSpace.vectors(), Embedding):
+        # OptimizeEmbedding: whether embedding weights participate in the
+        # main optimizer graph (backprop through codebook lookups).
+        # Default: True for ARLM/BOTH/JOINT (gradients must flow), False otherwise.
+        oe = _t("OptimizeEmbedding", None)
+        if oe is None:
+            self.optimize_embedding = self.train_embeddings in ("ARLM", "BOTH", "JOINT")
+        else:
+            self.optimize_embedding = str(oe).lower() in ("true", "1", "yes")
+        if self.optimize_embedding and isinstance(self.inputSpace.vectors(), Embedding):
             emb_params = self.inputSpace.vectors().embedding_parameters()
             self.inputSpace.params = self.inputSpace.params + emb_params
+        # sbowRatio: weight of SBOW loss in JOINT mode
+        self.sbow_ratio = float(_t("sbowRatio", 0.1))
+        # Propagate flag to Embedding so forward()/reverse() can detach
+        if isinstance(self.inputSpace.vectors(), Embedding):
+            self.inputSpace.vectors().optimize_embedding = self.optimize_embedding
         # Auto-load weights if configured
         wcfg = cfg.get("weights", {})
         if _t("autoload", wcfg.get("autoload", True)):
@@ -3741,7 +3810,7 @@ class BasicModel(BaseModel):
         # the Embedding vocabulary is available.
         if data is not None and hasattr(data, '_lm_labels') and data._lm_labels is not None:
             embedding = self.inputSpace.vectorSet[0] if self.inputSpace.vectorSet else None
-            if embedding is not None and hasattr(embedding, 'cbow'):
+            if embedding is not None and hasattr(embedding, 'pretrain'):
                 data.prepare_lm_targets(embedding)
                 # Move new targets to device
                 data.toDevice()
@@ -4168,6 +4237,7 @@ class BasicModel(BaseModel):
             (BatchResult, nextBatchNum) on success, or (None, batchNum) when
             the dataset is exhausted.
         """
+        sentenceIdx = batchNum  # sentence index before getBatch increments
         batch, batchNum = self.inputSpace.getBatch(batchNum, batchSize, split)
         if batch is None:
             return None, batchNum
@@ -4225,6 +4295,21 @@ class BasicModel(BaseModel):
             totalLoss = lossOut
 
         if train:
+            # JOINT mode: add SBOW loss to totalLoss before backward
+            te = getattr(self, 'train_embeddings', 'NONE')
+            if te == 'JOINT' and masked_pred:
+                emb = self.inputSpace.vectors()
+                if isinstance(emb, Embedding):
+                    sentences = self.inputSpace.data._lm_sentences[split]
+                    if sentenceIdx < len(sentences):
+                        sentence = sentences[sentenceIdx]
+                        tokens = emb.lex_buffer(sentence, 0)
+                        words = [t['text'] for t in tokens
+                                 if t['category'] == 'WORD']
+                        sbow = self.inputSpace.sbow_loss(words)
+                        if sbow is not None:
+                            totalLoss = totalLoss + self.sbow_ratio * sbow
+
             totalLoss.backward()
             if self.ergodic:
                 self.paramUpdate()
@@ -4311,10 +4396,10 @@ class BasicModel(BaseModel):
                 if training and batchIdx % 100 == 0:
                     print(f"  batch {batchIdx}", end="\r", flush=True)
 
-                # CBOW training (post-batch, needs batchIdx for sentence lookup)
+                # Embedding training (post-batch, needs batchIdx for sentence lookup)
                 if training:
                     te = getattr(self, 'train_embeddings', 'NONE')
-                    if masked_pred and te in ('CBOW', 'BOTH'):
+                    if masked_pred and te in ('CBOW', 'SBOW', 'BOTH'):
                         emb = self.inputSpace.vectors()
                         if isinstance(emb, Embedding):
                             sentences = self.inputSpace.data._lm_sentences[split]
@@ -4323,7 +4408,9 @@ class BasicModel(BaseModel):
                                 tokens = emb.lex_buffer(sentence, 0)
                                 words = [t['text'] for t in tokens
                                          if t['category'] == 'WORD']
-                                self.inputSpace.train_embeddings(words)
+                                # CBOW uses padded context; SBOW and BOTH use the faster centroid method
+                                method = 'CBOW' if te == 'CBOW' else 'SBOW'
+                                self.inputSpace.train_embeddings(words, method=method)
 
                 outErr = result.lossOut.item()
                 inErr = result.lossIn.item() if self.reversible else 0
@@ -4489,9 +4576,12 @@ class BasicModelFactory:
         trn = arch.get("training", {})
 
         dataset = dat.get("dataset")
+        # Environment overrides for num_shards/max_docs (set by train.py)
+        num_shards = int(os.environ.get("BASIC_NUM_SHARDS", dat.get("numShards", 1)))
+        max_docs = int(os.environ.get("BASIC_MAX_DOCS", dat.get("maxDocs", 10000)))
         TheData.load(dataset,
-                     num_shards=dat.get("numShards", 1),
-                     max_docs=dat.get("maxDocs", 10000),
+                     num_shards=num_shards,
+                     max_docs=max_docs,
                      shard_dir=dat.get("shardDir"),
                      dat=dat)
 
@@ -4528,6 +4618,7 @@ class BasicModelFactory:
             wpath = _t("weightsPath", cfg.get("weights", {}).get("path", "weights.ckpt"))
             wpath = m._resolve_artifact_path(wpath)
             m.save_weights(wpath)
+            m.save_embeddings()
 
         return [(m.name, m.rCorrect, m)]
 

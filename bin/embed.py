@@ -307,11 +307,17 @@ def download_shard(index, data_dir):
                 return None
     return None
 
-def get_shard_paths(data_dir, num_shards=1):
+def get_shard_paths(data_dir, num_shards=1, random_select=False):
     """Ensure shards are downloaded and return their file paths."""
     os.makedirs(data_dir, exist_ok=True)
+    if random_select and num_shards <= MAX_SHARD:
+        import random as _rng
+        indices = sorted(_rng.sample(range(MAX_SHARD + 1), num_shards))
+        print(f"  Random shard indices: {indices}")
+    else:
+        indices = list(range(min(num_shards, MAX_SHARD + 1)))
     paths = []
-    for i in range(min(num_shards, MAX_SHARD + 1)):
+    for i in indices:
         path = download_shard(i, data_dir)
         if path:
             paths.append(path)
@@ -333,11 +339,11 @@ def iter_documents(shard_paths, max_docs=None):
 
 
 # ---------------------------------------------------------------------------
-# CBOW embedding trainer (streaming)
+# Embedding pretrainer (streaming)
 # ---------------------------------------------------------------------------
 
-class CBOWModel:
-    """Stateful CBOW model: embedding + linear head + optimizer.
+class PretrainModel:
+    """Stateful embedding pretrainer: embedding + linear head + optimizer.
 
     Supports both bulk training (``train``) and incremental single-sentence
     updates (``train_step``).  The same ``nn.Embedding`` and optimizer are
@@ -501,6 +507,29 @@ class CBOWModel:
 
         return loss.item()
 
+    def sbow_loss(self, words):
+        """Return SBOW loss as a differentiable tensor (no backward, no step).
+
+        For joint optimization: the caller accumulates this loss with the
+        model loss and calls backward() once on the combined scalar.
+
+        Returns a scalar loss tensor, or None if < 2 usable words.
+        """
+        word_indices = [self.key_to_index[w] for w in words
+                        if w in self.key_to_index]
+        if len(word_indices) < 2:
+            return None
+
+        device = self.embeddings.weight.device
+        idx = torch.tensor(word_indices, dtype=torch.long, device=device)
+        N = len(word_indices)
+
+        vecs = self.embeddings(idx)                       # [N, dim]
+        total = vecs.sum(dim=0)                           # [dim]
+        centroids = (total.unsqueeze(0) - vecs) / (N - 1) # [N, dim]
+
+        return self._neg_sampling_loss(centroids, idx)
+
     # -- export ----------------------------------------------------------------
 
     def to_word_vectors(self):
@@ -508,6 +537,7 @@ class CBOWModel:
         with torch.no_grad():
             vectors = self.embeddings.weight.detach().cpu().numpy()
         return WordVectors(vectors, self.index_to_key)
+
 
 
 class _CBOWModule(nn.Module):
@@ -563,7 +593,7 @@ class StreamingSBOWTrainer:
 
         self.model = None
         self.optimizer = None
-        self.loss_fn = nn.CrossEntropyLoss()
+        self.neg_samples = 64
 
         self.n_examples = 0
         self._total_loss = 0.0
@@ -597,8 +627,9 @@ class StreamingSBOWTrainer:
             if count >= self.min_count:
                 self.word_to_idx[word] = len(self.idx_to_word)
                 self.idx_to_word.append(word)
-        self.model = _CBOWModule(self.vocab_size, self.vector_size).to(self.device)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.model = _SBOWEmbedding(self.vocab_size, self.vector_size).to(self.device)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=self.learning_rate)
+        self.neg_samples = 64
         print(f"  Vocab: {len(self.word_counts)} unique words -> "
               f"{self.vocab_size} after min_count={self.min_count}")
 
@@ -618,7 +649,7 @@ class StreamingSBOWTrainer:
                 self._train_sentence(words)
 
     def _train_sentence(self, words):
-        """SBOW: predict each word from leave-one-out centroid via full softmax."""
+        """SBOW via negative sampling: predict each word from leave-one-out centroid."""
         word_indices = [self.word_to_idx[w] for w in words
                         if w in self.word_to_idx]
         if len(word_indices) < 2:
@@ -631,8 +662,18 @@ class StreamingSBOWTrainer:
         total = vecs.sum(dim=0)                                 # [dim]
         centroids = (total.unsqueeze(0) - vecs) / (N - 1)       # [N, dim]
 
-        logits = self.model.linear(centroids)                   # [N, vocab]
-        loss = self.loss_fn(logits, idx)
+        # Negative sampling instead of full softmax
+        K = min(self.neg_samples, self.vocab_size - 1)
+        pos_vecs = self.model.embeddings(idx)                    # [N, dim]
+        pos_scores = (centroids * pos_vecs).sum(dim=1)           # [N]
+
+        neg_idx = torch.randint(0, self.vocab_size, (N, K),
+                                device=self.device)              # [N, K]
+        neg_vecs = self.model.embeddings(neg_idx)                # [N, K, dim]
+        neg_scores = torch.bmm(neg_vecs,
+                               centroids.unsqueeze(2)).squeeze(2) # [N, K]
+
+        loss = -F.logsigmoid(pos_scores).mean() - F.logsigmoid(-neg_scores).mean()
 
         self.optimizer.zero_grad()
         loss.backward()
@@ -764,6 +805,8 @@ if __name__ == '__main__':
     train_p.add_argument('--epochs', type=int, default=10)
     train_p.add_argument('--min-count', type=int, default=5)
     train_p.add_argument('--batch-size', type=int, default=256)
+    train_p.add_argument('--random-shards', action='store_true',
+                         help='Randomly select which shards to download')
 
     # --- prune subcommand ---
     prune_p = sub.add_parser("prune", help="Remove low-frequency words from a .kv codebook")
@@ -803,7 +846,8 @@ if __name__ == '__main__':
         print(f"Config: {args.config}")
         set_sentence_cfg(args.config)
 
-        shard_paths = get_shard_paths(data_dir, num_shards=args.num_shards)
+        shard_paths = get_shard_paths(data_dir, num_shards=args.num_shards,
+                                      random_select=args.random_shards)
         if not shard_paths:
             print("No shards available.")
             sys.exit(1)

@@ -1423,8 +1423,8 @@ class TestMaskCodebookEntry(unittest.TestCase):
         TheObjectEncoding.objectSize = 0
         emb = Embedding()
         emb.create(nInput=10, nVectors=2, nDim=10, embedding_path=None)
-        self.assertIn("[MASK]", emb.cbow.key_to_index)
-        idx = emb.cbow.key_to_index["[MASK]"]
+        self.assertIn("[MASK]", emb.pretrain.key_to_index)
+        idx = emb.pretrain.key_to_index["[MASK]"]
         vec = emb._emb.weight[idx]
         self.assertTrue(torch.all(vec == 0.0))
         self.assertEqual(emb.mask_token_idx, idx)
@@ -1457,10 +1457,10 @@ class TestEmbeddingErgodicForward(unittest.TestCase):
 
     def _seed_sigma(self, emb, word):
         device = emb._emb.weight.device
-        emb.cbow.sigma = torch.zeros(emb._emb.weight.shape[0], device=device)
-        emb.cbow.sigma[emb.cbow.key_to_index[word]] = 1.0
-        emb.cbow.sigma_step = 1
-        emb.cbow.sigma_beta = 0.0
+        emb.pretrain.sigma = torch.zeros(emb._emb.weight.shape[0], device=device)
+        emb.pretrain.sigma[emb.pretrain.key_to_index[word]] = 1.0
+        emb.pretrain.sigma_step = 1
+        emb.pretrain.sigma_beta = 0.0
 
     def test_forward_adds_ergodic_noise_from_sigma(self):
         emb = self._make_embedding()
@@ -2469,7 +2469,7 @@ class TestVocabSaveRestore(unittest.TestCase):
     """Verify vocab is saved with weights and restored on load."""
 
     def test_save_load_with_vocab(self):
-        """Embedding vocab round-trips through save/load with no shape mismatch."""
+        """Embedding vocab round-trips through the embedding file."""
         from BasicModel import BasicModel, TheData, Embedding
 
         xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
@@ -2484,29 +2484,29 @@ class TestVocabSaveRestore(unittest.TestCase):
             self.skipTest("XOR_exact doesn't use Embedding")
         for w in ["extra1", "extra2", "extra3"]:
             emb1.insert(w)
-        vocab_before = list(emb1.cbow.index_to_key)
+        vocab_before = list(emb1.pretrain.index_to_key)
 
         with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f:
-            path = f.name
+            emb_path = f.name
         try:
-            m1.save_weights(path)
+            m1.save_embeddings(emb_path)
 
             # Create a fresh model (will have smaller vocab)
             m2 = BasicModel()
             m2.create_from_config(xml_path, data=TheData)
             emb2 = m2._get_embedding()
-            self.assertNotEqual(len(emb2.cbow.index_to_key), len(vocab_before))
+            self.assertNotEqual(len(emb2.pretrain.index_to_key), len(vocab_before))
 
-            # Load should restore vocab and weights cleanly
-            self.assertTrue(m2.load_weights(path))
+            # Load should restore vocab and embedding weights cleanly
+            self.assertTrue(m2.load_embeddings(emb_path))
             emb2 = m2._get_embedding()
-            self.assertEqual(list(emb2.cbow.index_to_key), vocab_before)
+            self.assertEqual(list(emb2.pretrain.index_to_key), vocab_before)
             # Embedding shapes must match exactly
             torch.testing.assert_close(
                 m2.state_dict()["inputSpace.vectorSet.0._emb.weight"],
                 m1.state_dict()["inputSpace.vectorSet.0._emb.weight"])
         finally:
-            os.unlink(path)
+            os.unlink(emb_path)
 
 
 class TestTrainingUpdatesWeights(unittest.TestCase):

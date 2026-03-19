@@ -172,7 +172,7 @@ class TestXORSpacesModel(unittest.TestCase):
         emb = self.model.inputSpace.vectors()
         self.assertIsInstance(emb, Embedding,
                               "InputSpace should use Embedding for text model")
-        self.assertIn(" ", emb.cbow.key_to_index,
+        self.assertIn(" ", emb.pretrain.key_to_index,
                       "Space character must be in vocabulary (ASCII bootstrap)")
 
     def test_xor_words_in_vocab(self):
@@ -184,7 +184,7 @@ class TestXORSpacesModel(unittest.TestCase):
             if ch == " ":
                 continue  # already tested above
             # Individual characters must always be there (ASCII bootstrap)
-            self.assertIn(ch, emb.cbow.key_to_index,
+            self.assertIn(ch, emb.pretrain.key_to_index,
                           f"ASCII char {ch!r} missing from vocabulary")
 
     def test_forward_pass_runs(self):
@@ -300,12 +300,12 @@ class TestSpacePrediction(unittest.TestCase):
                          model_type="embedding", embedding_path=None,
                          data=data, lexer="word")
         emb = inp.vectors()
-        self.assertIn(" ", emb.cbow.key_to_index)
+        self.assertIn(" ", emb.pretrain.key_to_index)
 
         os_ = OutputSpace(nInput, 4)
         os_.set_text_mode(inp)
 
-        space_idx = emb.cbow.key_to_index[" "]
+        space_idx = emb.pretrain.key_to_index[" "]
         codebook = emb._emb.weight.detach()
         embSize = emb.embeddingSize
         nWhat = embSize - TheObjectEncoding.objectSize  # content dims only
@@ -366,7 +366,7 @@ class TestNullEOS(unittest.TestCase):
         vector to '\\x00' rather than an arbitrary ASCII character.
         """
         self.assertIn(
-            "\x00", self.emb.cbow.key_to_index,
+            "\x00", self.emb.pretrain.key_to_index,
             "Null byte (EOS sentinel) must be in Embedding vocabulary",
         )
 
@@ -379,8 +379,8 @@ class TestNullEOS(unittest.TestCase):
         before the nearest-neighbour cosine lookup.  Only [MASK] is zero.
         """
         import torch
-        self.assertIn("\x00", self.emb.cbow.key_to_index)
-        idx = self.emb.cbow.key_to_index["\x00"]
+        self.assertIn("\x00", self.emb.pretrain.key_to_index)
+        idx = self.emb.pretrain.key_to_index["\x00"]
         vec = self.emb._emb.weight[idx].detach()
         self.assertGreater(
             vec.norm().item(), 1e-6,
@@ -397,14 +397,14 @@ class TestNullEOS(unittest.TestCase):
         from BasicModel import TheObjectEncoding
 
         emb = self.emb
-        self.assertIn("\x00", emb.cbow.key_to_index)
+        self.assertIn("\x00", emb.pretrain.key_to_index)
 
         codebook = emb._emb.weight.detach()
         words_list = emb.wv.index_to_key
         embSize = emb.embeddingSize
         nWhat = embSize - TheObjectEncoding.objectSize
 
-        null_idx = emb.cbow.key_to_index["\x00"]
+        null_idx = emb.pretrain.key_to_index["\x00"]
 
         # Pick a real word that is not [MASK] or \x00
         word_idx = next(
@@ -438,14 +438,14 @@ class TestNullEOS(unittest.TestCase):
         from BasicModel import TheObjectEncoding
 
         emb = self.emb
-        self.assertIn("\x00", emb.cbow.key_to_index)
+        self.assertIn("\x00", emb.pretrain.key_to_index)
 
         codebook = emb._emb.weight.detach()
         words_list = emb.wv.index_to_key
         embSize = emb.embeddingSize
         nWhat = embSize - TheObjectEncoding.objectSize
 
-        null_idx = emb.cbow.key_to_index["\x00"]
+        null_idx = emb.pretrain.key_to_index["\x00"]
 
         usable = [j for j, w in enumerate(words_list)
                   if w not in ("[MASK]", "\x00")]

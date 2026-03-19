@@ -27,7 +27,8 @@
       <batchSize>8</batchSize>
       <learningRate>0.001</learningRate>
       <reconRatio>0.1</reconRatio>
-      <train>CBOW</train>
+      <train>ARLM</train>
+      <OptimizeEmbedding>false</OptimizeEmbedding>
       <weightsPath>BasicModel.ckpt</weightsPath>
       <embeddingPath>BasicModel.kv</embeddingPath>
       <autoload>true</autoload>

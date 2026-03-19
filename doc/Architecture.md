@@ -118,8 +118,8 @@ accumulate across epochs):
 4. Compute `reconstructionLoss` from reconstruction vs. `end_state`
 5. Backpropagate `totalLoss = outputLoss + reconstructionLoss`
 6. If ergodic: run `paramUpdate()` (gradient energy sensor updates alpha)
-7. Optimizer step (embedding params excluded unless `trainEmbeddings` is `ARLM` or `BOTH`)
-8. If `trainEmbeddings` is `CBOW` or `BOTH`: run SBOW step on same sentence
+7. Optimizer step (embedding params excluded unless `OptimizeEmbedding=true`)
+8. If `<train>` is `CBOW`, `SBOW`, or `BOTH`: run embedding update step on same sentence
 
 Alpha annealing (ergodic mode): the code-level exploration parameter starts at
 `1.0` (full exploration) and decays to `0.0` (full exploitation) within the first
@@ -130,7 +130,25 @@ translate between them internally.
 
 See [Params.md](Params.md) for all XML configuration parameters.
 See [Training.md](Training.md) for embedding pretraining, SBOW, masked prediction
-modes, and the EM-style `trainEmbeddings` protocol.
+modes, and the `<train>` and `<OptimizeEmbedding>` controls.
+
+### Three-File Architecture
+
+Model behaviour is partitioned across three independent artifacts:
+
+| File | Contents | Managed by |
+|------|----------|-----------|
+| **XML config** (e.g. `BasicModel.xml`) | Architecture, hyperparameters, paths | Hand-edited |
+| **Embedding artifact** (e.g. `BasicModel.kv`) | Word vectors (codebook) | Phase 1: `embed.py` |
+| **Weights checkpoint** (e.g. `BasicModel.ckpt`) | Model layer parameters (excludes embeddings) | Phase 2: `BasicModel.py` |
+
+The `save_weights()` method explicitly filters out embedding parameters
+(`_emb.weight`) from the checkpoint. Embedding vectors live in the `.kv`
+artifact and are loaded separately. This separation allows:
+
+- Retraining embeddings without touching model weights
+- Retraining model layers with frozen embeddings
+- Swapping codebooks between models that share the same architecture
 
 ---
 
