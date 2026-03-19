@@ -131,6 +131,22 @@ class WordVectors:
                 vecs.append([float(x) for x in parts[1:]])
         return cls(np.array(vecs, dtype=np.float32), words)
 
+    def remove(self, indices):
+        """Remove entries by index, returning the pruned count.
+
+        Shrinks vectors, counts, and vocabulary mappings in-place.
+        """
+        if not indices:
+            return 0
+        removed_set = set(indices)
+        new_keys = [w for i, w in enumerate(self.index_to_key) if i not in removed_set]
+        self._vectors = np.delete(self._vectors, indices, axis=0)
+        self.counts = np.delete(self.counts, indices)
+        self.index_to_key = new_keys
+        self.key_to_index = {w: i for i, w in enumerate(new_keys)}
+        self._normed = None
+        return len(removed_set)
+
     # -- Persistence --
 
     def save(self, path: str) -> None:
@@ -705,22 +721,14 @@ def prune_embeddings(path, min_frequency, output=None):
         print(f"No frequency data in {path} (total_count=0) — nothing to prune.")
         return
 
-    keep_words, keep_vecs, keep_counts = [], [], []
-    for i, word in enumerate(wv.index_to_key):
-        if wv.counts[i] / total >= min_frequency:
-            keep_words.append(word)
-            keep_vecs.append(wv._vectors[i])
-            keep_counts.append(wv.counts[i])
+    prune_indices = [i for i, word in enumerate(wv.index_to_key)
+                     if wv.counts[i] / total < min_frequency]
+    old_size = len(wv)
+    n_pruned = wv.remove(prune_indices)
+    print(f"Vocabulary: {old_size} → {len(wv)}  ({n_pruned} pruned below {min_frequency})")
 
-    n_pruned = len(wv) - len(keep_words)
-    print(f"Vocabulary: {len(wv)} → {len(keep_words)}  ({n_pruned} pruned below {min_frequency})")
-
-    new_vecs = np.stack(keep_vecs) if keep_vecs else np.zeros((0, wv.vector_size), dtype=np.float32)
-    new_wv = WordVectors(new_vecs, keep_words,
-                         counts=np.array(keep_counts, dtype=np.int64),
-                         total_count=total)
     out_path = output or path
-    new_wv.save(out_path)
+    wv.save(out_path)
     print(f"Saved to {out_path}")
 
 

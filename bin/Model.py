@@ -206,7 +206,7 @@ class LinearLayer(Layer):
     Non-zero ``temp`` blends in freshly sampled Gaussian noise, enabling
     exploration.  Defaults to identity initialization.
     """
-    def __init__(self, nInput, nOutput, hasBias=True, W=None):
+    def __init__(self, nInput, nOutput, hasBias=True, W=None, naive=False):
         super(LinearLayer, self).__init__(nInput, nOutput)
         self.hasBias = hasBias
         if W == None:
@@ -911,9 +911,9 @@ class SigmaLayer(ErgodicLayer):
     weights (bias=1, var=0).
     At eval time, both modes use deterministic weights.
     """
-    def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False):
+    def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False, naive=True):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
-        self.layer       = LinearLayer(nInput, nOutput, hasBias=True)
+        self.layer       = LinearLayer(nInput, nOutput, hasBias=True, naive=False) if naive else InvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive)
         self.saturate    = True
         self.activation  = torch.zeros(1,nOutput,1)
         self.ergodic     = ergodic
@@ -965,6 +965,9 @@ class InvertibleSigmaLayer(SigmaLayer):
         y  = self.permute(y)
         y = y.squeeze(0)
         if self.saturate:
+            # Numerical drift from upstream reversible layers can push values
+            # slightly outside (-1, 1); clamp before atanh to avoid NaNs.
+            y = y.clamp(min=-1 + epsilon, max=1 - epsilon)
             self.activation = torch.atanh(y) # this can be faster if we keep the tanh activation
             y = self.activation.clone()
         if self.ergodic and self.training:
@@ -1006,10 +1009,14 @@ class PiLayer(ErgodicLayer):
     The ``ergodic`` flag works identically to SigmaLayer: when False,
     the layer always uses deterministic weights regardless of set_sigma().
     """
-    def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False):
+    def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False, naive=True):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
         self.ergodic = ergodic
-        self.weights          = nn.Parameter(torch.zeros(nInput, nOutput))
+        self.naive   = naive
+        if naive:
+            self.weights = nn.Parameter(torch.zeros(nInput, nOutput))
+        else:
+            self._il = InvertibleLinearLayer(nInput, nOutput, hasBias=False, naive=naive)
         self.register_buffer('noise', torch.randn(nInput, nOutput))
         self.biasWeight       = nn.Parameter(torch.zeros(1, 1, self.nOutput))
         self.register_buffer('biasWeightNoise', torch.randn(1, self.nInput, self.nOutput))
@@ -1019,17 +1026,18 @@ class PiLayer(ErgodicLayer):
         self.useEpsilon    = True   # add epsilon inside product terms to avoid exact zeros
 
     def resample_noise(self):
-        self.noise = sample_noise(self.weights)
-        self.biasWeightNoise = sample_noise(self.weights, shape=(1, self.nInput, self.nOutput))
+        w = self.weights if self.naive else self._il.compute_W()
+        self.noise = sample_noise(w)
+        self.biasWeightNoise = sample_noise(w, shape=(1, self.nInput, self.nOutput))
 
     def forward(self, x):
         x = self.permute(x)
         if self.ergodic and self.training:
             bias, var = self.bias, self.var
             self.resample_noise()
-            w = bias * self.weights + var * self.noise
+            w = bias * (self.weights if self.naive else self._il.compute_W()) + var * self.noise
         else:
-            w = self.weights
+            w = self.weights if self.naive else self._il.compute_W()
 
         ndim = len(x.shape)
         assert self.nInput == x.shape[-1], "Incorrect shape in piLayer"
@@ -1124,15 +1132,13 @@ class InvertiblePiLayer(ErgodicLayer):
 
     The ``ergodic`` flag works identically to SigmaLayer/PiLayer.
     """
-    def __init__(self, nInput, nOutput, naive=False, permuteInput=False, hasBias = True, ergodic=False):
+    def __init__(self, nInput, nOutput, naive=False, permuteInput=False, hasBias=True, ergodic=False):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
         self.ergodic = ergodic
         self.naive   = naive
         self.hasBias = hasBias
         self.useEpsilon = True
         if not self.naive:
-            # 2D: [b,nd] → [b,2nd], W is (nInput, 2*nInput)
-            # 3D: [b,n,d] → [b,2n,d], W is square (nInput == nOutput)
             assert nInput == nOutput or 2*nInput == nOutput, (
                 f"Non-naive mode requires nInput == nOutput (3D) or nOutput == 2*nInput (2D), "
                 f"got nInput={nInput}, nOutput={nOutput}."
@@ -1144,7 +1150,7 @@ class InvertiblePiLayer(ErgodicLayer):
             # Non-naive: SVD-factored weights.  Ergodic noise applied to
             # the materialized W via ergodic_noise buffer.
             # hasBias=False because InvertiblePiLayer handles its own bias.
-            self.layer  = InvertibleLinearLayer(nInput, nOutput, naive=False, hasBias=False)
+            self.layer  = InvertibleLinearLayer(nInput, nOutput, naive=naive, hasBias=False)
             self.register_buffer('ergodic_noise', torch.randn(nInput, nOutput))
         self.biasWeight       = nn.Parameter(torch.zeros(1, 1, self.nOutput))
         self.register_buffer('biasNoise', torch.randn(1, 1, self.nOutput))

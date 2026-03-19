@@ -7,15 +7,16 @@
     <symbolicOrder>1</symbolicOrder>
     <modelType>embedding</modelType>
     <ergodic>false</ergodic>
+    <naive>true</naive>
 
     <data>
       <dataset>xor</dataset>
     </data>
 
     <training>
-      <numEpochs>400</numEpochs>
+      <numEpochs>1000</numEpochs>
       <learningRate>0.01</learningRate>
-      <weightsPath>xor_recon_weights.ckpt</weightsPath>
+      <weightsPath></weightsPath>
       <autosave>false</autosave>
       <autoload>false</autoload>
     </training>
@@ -26,6 +27,8 @@
     <nActive>3</nActive>
     <nDim>10</nDim>
     <nVectors>3</nVectors>
+    <nWhere>2</nWhere>
+    <nWhen>1</nWhen>
   </InputSpace>
 
   <!-- PerceptualSpace: nActive = 4 * InputSpace.nActive = 12

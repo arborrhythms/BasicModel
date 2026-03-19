@@ -73,12 +73,12 @@
     <quantized>false</quantized>
   </ConceptualSpace>
 
-  <!-- SymbolicSpace: nActive = ConceptualSpace.nActive = 256 (1:1 mapping required) -->
+  <!-- SymbolicSpace: nActive = ConceptualSpace.nActive / 2 (reshape required) -->
   <SymbolicSpace>
     <nActive>256</nActive>
     <nDim>100</nDim>
     <nVectors>256</nVectors>
-    <passThrough>false</passThrough>
+    <passThrough>true</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>

@@ -330,8 +330,8 @@ class TestNullEOS(unittest.TestCase):
     - The Embedding vocabulary contains \x00 mapped to the zero vector.
     - Padding slots in the input produce zero vectors; the model learns to
       predict zero for those slots.
-    - reconstruct_buffer (consecutive mode) stops joining tokens at the
-      first \x00, producing clean output without trailing padding garbage.
+    - reconstruct_buffer returns a null-terminated buffer, so decoding stops
+      at the first \x00 without trailing padding garbage.
     """
 
     @classmethod
@@ -391,7 +391,7 @@ class TestNullEOS(unittest.TestCase):
         """reconstruct_buffer (consecutive) stops at the first \\x00 token.
 
         Sequence layout:  [word_A, \\x00, word_B]
-        Expected output:   word_A          (stopped before \\x00, B not included)
+        Expected output:   word_A + \\x00  (stopped before B, buffer terminated)
         """
         import torch
         from BasicModel import TheObjectEncoding
@@ -422,10 +422,10 @@ class TestNullEOS(unittest.TestCase):
         result = self.os_.reconstruct_buffer(vectors)
         text = result[0]
 
-        # Should see word_text once (stopped at \x00); word should NOT appear twice
+        # Should see word_text once, followed by a single NULL terminator.
         self.assertEqual(
-            text, word_text,
-            f"Expected only {word_text!r} (stopped at \\x00), got {text!r}",
+            text, word_text + "\x00",
+            f"Expected null-terminated buffer {(word_text + chr(0))!r}, got {text!r}",
         )
 
     def test_trailing_null_produces_clean_reconstruction(self):
@@ -462,10 +462,10 @@ class TestNullEOS(unittest.TestCase):
         result = self.os_.reconstruct_buffer(vectors)
         text = result[0]
 
-        expected = word_text + word_text  # only the two real words
+        expected = word_text + word_text + "\x00"
         self.assertEqual(
             text, expected,
-            f"Trailing \\x00 slots should be stripped; expected {expected!r}, got {text!r}",
+            f"Trailing \\x00 slots should collapse to one terminator; expected {expected!r}, got {text!r}",
         )
 
 

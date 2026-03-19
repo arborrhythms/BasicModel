@@ -7,15 +7,16 @@
     <symbolicOrder>1</symbolicOrder>
     <modelType>embedding</modelType>
     <ergodic>false</ergodic>
+    <naive>true</naive>
 
     <data>
       <dataset>xor</dataset>
     </data>
 
     <training>
-      <numEpochs>400</numEpochs>
+      <numEpochs>1000</numEpochs>
       <learningRate>0.01</learningRate>
-      <weightsPath>xor_exact_weights.ckpt</weightsPath>
+      <weightsPath></weightsPath>
       <autosave>false</autosave>
       <autoload>false</autoload>
       <reconRatio>0.3</reconRatio>
@@ -29,6 +30,7 @@
     <nDim>10</nDim>
     <nVectors>6</nVectors>
     <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
   </InputSpace>
 
   <!-- PerceptualSpace: invertible+reshape requires 2*input == output.

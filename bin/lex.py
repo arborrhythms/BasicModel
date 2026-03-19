@@ -1,3 +1,4 @@
+import re
 import torch
 from typing import List, Optional
 
@@ -19,7 +20,7 @@ class Lex:
 
     def build_vocab(self, source: torch.Tensor) -> None:
         """Scan source buffer, extract words, assign token IDs."""
-        text = bytes(source.tolist()).decode('utf-8')
+        text = bytes(source.numpy()).decode('utf-8')
         if self.granularity == "word":
             words = text.split()
         else:
@@ -41,32 +42,30 @@ class Lex:
         If example_offsets is provided as [N, 2] tensor of (start, end) pairs,
         only spans within those byte ranges are returned.
         """
-        raw = bytes(source.tolist())
+        raw = bytes(source.numpy())
         text = raw.decode('utf-8')
-        spans = []
-        # Build a char-offset → byte-offset map
-        byte_offsets = []  # byte_offsets[i] = byte position of character i
+
+        # Build char->byte offset map once, O(n)
+        byte_offsets = []
         bi = 0
         for ch in text:
             byte_offsets.append(bi)
             bi += len(ch.encode('utf-8'))
         byte_offsets.append(bi)  # sentinel for end of string
 
-        char_pos = 0
-        for word in text.split():
-            start_char = text.index(word, char_pos)
-            end_char = start_char + len(word)
+        spans = []
+        for m in re.finditer(r'\S+', text):  # O(n) single pass, no re-search
+            word = m.group()
+            start_char, end_char = m.start(), m.end()
             start_byte = byte_offsets[start_char]
             end_byte = byte_offsets[end_char]
             if word not in self.vocab:
                 new_id = len(self.vocab)
                 self.vocab[word] = new_id
                 self.id_to_word[new_id] = word
-            token_id = self.vocab[word]
-            spans.append([start_byte, end_byte, token_id])
-            char_pos = end_char
+            spans.append([start_byte, end_byte, self.vocab[word]])
 
-        result = torch.tensor(spans, dtype=torch.long)
+        result = torch.tensor(spans, dtype=torch.long) if spans else torch.zeros((0, 3), dtype=torch.long)
 
         if example_offsets is not None:
             mask = torch.zeros(len(spans), dtype=torch.bool)

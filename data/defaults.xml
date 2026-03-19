@@ -6,6 +6,7 @@
     <symbolicOrder>1</symbolicOrder>
     <ergodic>false</ergodic>
     <certainty>false</certainty>
+    <naive>false</naive>
     <processSymbols>false</processSymbols>
     <modelType>simple</modelType>
     <maskedPrediction>none</maskedPrediction>

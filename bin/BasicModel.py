@@ -69,7 +69,7 @@ class PositionalEncoding(nn.Module):
         print("Creating positional encoding ...")
         super(PositionalEncoding, self).__init__()
         self.p    = 0
-        self.maxP = maxP
+        self.maxP = maxP # If we complete a period within a single buffer we will get redundancy. so we have two sinusoids in quadrature
         self.div_term = 2*math.pi / maxP
     def forward(self, x):
         """Stamp sin/cos positional values into reserved embedding slots."""
@@ -290,8 +290,6 @@ class ObjectEncoding(nn.Module):
 
     def forward(self, objects, what=False, where=True, when=True, pad=False):
         assert self.nObjects != 0, "nObjects was not set"
-        if self.nObjects == 1: # no positional encoding if there is only one object
-            return objects
         if pad:
             objects = self.pad(objects)
         if what:
@@ -824,6 +822,11 @@ class VectorSet(nn.Module):
     freezingTemp     = 0.25  # activation threshold above which entries freeze
     passThrough      = False
 
+    def __init__(self):
+        super().__init__()
+        self.ergodic = False
+        self.sigma_kappa = 0.01
+
     def getSize(self):
         return self.nVectors
 
@@ -974,6 +977,12 @@ class VectorSet(nn.Module):
     def _passthroughForward(self, x):
         """PassThrough forward: identity transform, skipping quantization."""
         return x
+    def set_sigma(self, sigma):
+        """Control exploration meta-parameters for VectorSet subclasses."""
+        if sigma == 0:
+            self.sigma_kappa = 1e6
+        else:
+            self.sigma_kappa = 0.01 / sigma
     def reverse_raw(self, y):
         """Return raw reverse vector with all subspaces intact (identity for VectorSet)."""
         return y
@@ -1140,6 +1149,16 @@ class Embedding(VectorSet):
     and wraps them in an nn.Embedding so gradients can flow through the
     forward pass.  ``train_step(words)`` runs one sentence-level CBOW
     update using the same objective that produced the pretrained weights.
+
+    This is a direct ``VectorSet`` override: ``forward()`` performs the text
+    encoding step, and ``reverse()`` performs the decode step.
+
+    Tokens are handled as ``(text, start)`` pairs from the lexer.
+
+    Public API is intentionally small:
+    ``create()``, ``forward()``, ``reverse()``, ``train_step()``,
+    ``snapshot()``, ``set_sigma()``, ``lex_buffer()``, ``predict()``,
+    ``embed_token()``, reconstruction helpers, and read-only properties.
     """
 
     def __init__(self):
@@ -1148,29 +1167,35 @@ class Embedding(VectorSet):
         self.cbow = None       # CBOWModel, created in create()
         self._emb = None       # nn.Embedding, shared with cbow
         self.wv = None         # WordVectors snapshot for reverse()
-        self.ergodic = False   # when True, inject per-word noise from SBOW sigma
-        self.sigma_kappa = 0.01
+        self.doc_spans = []    # compatibility alias for per-doc token streams
+        self.doc_sources = []
+
+    @staticmethod
+    def _text_from_bytes(buf):
+        return "".join(chr(int(c) & 0xFF) for c in buf).rstrip("\x00")
+
+    @staticmethod
+    def _token_width(text):
+        return len(text.encode('utf-8'))
+
+    def _token_stream(self, text):
+        return [(tok['text'], tok['start']) for tok in self._lex.lex_buffer(text, 0)]
+
+    def _token_to_index(self, text):
+        if text in self.cbow.key_to_index:
+            return self.cbow.key_to_index[text]
+        ch = text[0] if text else ' '
+        return self.cbow.key_to_index.get(ch, 0)
 
     def tokenize(self, data):
-        """Tokenize byte-tensor batch into token lists via Lex.
-
-        All token categories from ``lex_buffer()`` are included — WORD, SPACE,
-        SEPARATOR, PUNCT.  With the current Lex rules:
-        - Digit runs are categorised as WORD (not NUMBER)
-        - SPACE is emitted only between words within a sentence; whitespace
-          after a SEPARATOR (inter-sentence) is silently discarded
-
-        Side effect: stores ``self._byte_offsets`` as a list of lists of
-        byte offsets (one per token per batch element), for nWhere encoding.
-        """
+        """Tokenize a byte-tensor batch into Lex token text."""
         tokenized = []
-        self._byte_offsets = []
         for b in range(len(data)):
-            sentence = "".join(chr(int(i) & 0xFF) for i in data[b].tolist())
-            sentence = sentence.rstrip("\x00")
-            tokens = self._lex.lex_buffer(sentence, 0)
-            tokenized.append([tok['text'] for tok in tokens])
-            self._byte_offsets.append([tok['start'] for tok in tokens])
+            buf = data[b]
+            if isinstance(buf, torch.Tensor):
+                buf = buf.squeeze().tolist()
+            tokens = self._token_stream(self._text_from_bytes(buf))
+            tokenized.append([text for text, _ in tokens])
         return tokenized
 
     def create(self, nInput=None, nVectors=None, nDim=None, passThrough=True,
@@ -1184,17 +1209,16 @@ class Embedding(VectorSet):
         If *wv* is provided, use it directly.  Otherwise load from
         *embedding_path* if given (.pt or .txt).  When no file is found or
         path is None, starts with an empty vocabulary — new words are
-        added dynamically during forward passes via ``_add_word()``.
+        added dynamically during forward passes via ``insert()``.
 
-        If *source* is provided (a raw text string), build a Lex span table
-        and a token_id → embedding index mapping for grammatical tokenization.
-        Sets ``self.doc_spans``, ``self.doc_sources``, and ``self.lex_to_emb``.
+        If *source* is provided, build per-document lexer token streams and
+        ensure every token text has an embedding row.
         """
         if wv is None:
             wv = self._load_embeddings(embedding_path=embedding_path, nDim=nDim)
         if wv is None:
             # No matching embeddings on disk — start with a single placeholder.
-            # Real words are added dynamically during forward passes via _add_word().
+            # Real words are added dynamically during forward passes via insert().
             dim = nDim or 20
             print(f"Starting with dynamic {dim}-dim embedding (words added at runtime)")
             placeholder = torch.randn(1, dim)
@@ -1221,7 +1245,7 @@ class Embedding(VectorSet):
         self._pending_counts: dict = {}
 
         # Add [MASK] as zero-vector codebook entry (internal-only token)
-        self._add_word("[MASK]")
+        self.insert("[MASK]")
         with torch.no_grad():
             self.mask_token_idx = self.cbow.key_to_index["[MASK]"]
             self._emb.weight[self.mask_token_idx] = 0.0
@@ -1230,7 +1254,7 @@ class Embedding(VectorSet):
         # Gets a regular random embedding — distinct from [MASK]'s all-zeros.
         # Used to fill padding positions in _forward_lex so the model has a
         # concrete reconstruction target for positions beyond the real tokens.
-        self._add_word("\x00")
+        self.insert("\x00")
         self.null_token_idx = self.cbow.key_to_index["\x00"]
 
         # Bootstrap codebook with printable ASCII (32–126) so any OOV word
@@ -1238,54 +1262,60 @@ class Embedding(VectorSet):
         for cp in range(32, 127):
             ch = chr(cp)
             if ch not in self.cbow.key_to_index:
-                self._add_word(ch)
+                self.insert(ch)
 
-        # Span-table integration for grammatical tokenizer
+        # Pre-tokenize source documents for later inspection and optional reuse.
         if source is not None:
-            # Process each document individually instead of one giant concatenation
             self.doc_spans = []
             self.doc_sources = []
-            for doc in source:
-                doc_tensor = torch.tensor(list(doc.encode('utf-8')), dtype=torch.uint8)
-                self._lex.build_vocab(doc_tensor)
-                self.doc_spans.append(self._lex.encode(doc_tensor))
+            n_docs = len(source)
+            for i, doc in enumerate(source):
+                if i % 500 == 0:
+                    print(f"  Building span table: {i}/{n_docs} docs")
+                doc_bytes = doc.encode('utf-8')
+                doc_tensor = torch.frombuffer(doc_bytes, dtype=torch.uint8).clone()
                 self.doc_sources.append(doc_tensor)
-            self.lex_to_emb = {}
-            for word, token_id in self._lex.vocab.items():
-                if word not in self.wv:
-                    self._add_word(word)
-                self.lex_to_emb[token_id] = self.wv.key_to_index[word]
+                doc_tokens = self._token_stream(doc)
+                self.doc_spans.append(doc_tokens)
+                for token_text, _ in doc_tokens:
+                    if token_text not in self.wv:
+                        self.insert(token_text)
 
-    def _observe(self, word):
-        """Observe a word token; promote to vocab once it meets min_frequency.
+    def _rebuild_optimizer(self):
+        self.cbow.optimizer = torch.optim.Adam(
+            self.cbow.embeddings.parameters(),
+            lr=self.cbow.optimizer.param_groups[0]['lr'],
+        )
 
-        Returns the embedding vector if the word is (or just became) in vocab,
-        or None if it is still below the frequency threshold (OOV).
-        """
-        self.wv.total_count += 1
-        if word in self.cbow.key_to_index:
-            idx = self.cbow.key_to_index[word]
-            self.wv.counts[idx] += 1
-            return self._emb.weight[idx].detach()
-        count = self._pending_counts.get(word, 0) + 1
-        self._pending_counts[word] = count
-        if self.min_frequency <= 0 or (
-                self.wv.total_count > 0 and
-                count / self.wv.total_count >= self.min_frequency):
-            return self._add_word(word, initial_count=count)
-        return None
+    def _refresh_special_tokens(self):
+        if "[MASK]" in self.cbow.key_to_index:
+            self.mask_token_idx = self.cbow.key_to_index["[MASK]"]
+        if "\x00" in self.cbow.key_to_index:
+            self.null_token_idx = self.cbow.key_to_index["\x00"]
 
-    def _add_word(self, word, initial_count=0):
-        """Unconditionally add a word with a random normalized embedding.
+    def insert(self, word, vector=None, initial_count=0):
+        """Add a word to the vocabulary and codebook.
 
         Extends the WordVectors, CBOWModel vocabulary, and nn.Embedding so
-        that subsequent forward passes can look up this word.  Returns the
-        new embedding vector on the same device as existing weights.
-        Call ``_observe()`` instead for frequency-gated runtime additions.
+        that subsequent forward passes can look up this word.
+
+        Args:
+            word: string to add.
+            vector: optional (dim,) or (1, dim) tensor. If None, a random
+                    normalized vector is generated.
+            initial_count: frequency count for the new word.
+
+        Returns:
+            The embedding vector for the new word.
         """
         dim = self.wv.vector_size
         device = self._emb.weight.device
-        new_vec = torch.randn(1, dim, device=device)
+        if vector is not None:
+            new_vec = vector.to(device)
+            if new_vec.dim() == 1:
+                new_vec = new_vec.unsqueeze(0)
+        else:
+            new_vec = torch.randn(1, dim, device=device)
         new_vec = F.normalize(new_vec, p=2, dim=1)
 
         # Extend WordVectors (stays on CPU for neighbor queries)
@@ -1310,13 +1340,52 @@ class Embedding(VectorSet):
         self.cbow.embeddings = new_emb
         self._emb = new_emb
 
-        # Rebuild optimizer with new embedding parameters
-        self.cbow.optimizer = torch.optim.Adam(
-            self.cbow.embeddings.parameters(),
-            lr=self.cbow.optimizer.param_groups[0]['lr'],
-        )
+        self._rebuild_optimizer()
 
         return new_vec.squeeze(0)  # (1, dim) -> (dim,); preserves 1-dim case
+
+    def remove(self, words_or_indices):
+        """Remove words by name or index from vocabulary and codebook.
+
+        Args:
+            words_or_indices: list of word strings or integer indices to remove.
+
+        Updates nn.Embedding, WordVectors, CBOWModel mappings, special token
+        indices, and the optimizer in one shot.
+        """
+        if not words_or_indices:
+            return
+        # Resolve to indices
+        if isinstance(words_or_indices[0], str):
+            indices = [self.cbow.key_to_index[w] for w in words_or_indices
+                       if w in self.cbow.key_to_index]
+        else:
+            indices = list(words_or_indices)
+        if not indices:
+            return
+
+        device = self._emb.weight.device
+        mask = torch.ones(
+            self._emb.weight.shape[0], dtype=torch.bool, device=device)
+        mask[indices] = False
+
+        # Shrink nn.Embedding
+        new_weight = self._emb.weight.data[mask]
+        new_emb = nn.Embedding(new_weight.shape[0], new_weight.shape[1], device=device)
+        with torch.no_grad():
+            new_emb.weight.copy_(new_weight)
+        self.cbow.embeddings = new_emb
+        self._emb = new_emb
+
+        # Shrink WordVectors (shared logic with WordVectors.remove)
+        self.wv.remove(indices)
+
+        # Sync CBOWModel mappings from WordVectors
+        self.cbow.index_to_key = list(self.wv.index_to_key)
+        self.cbow.key_to_index = dict(self.wv.key_to_index)
+
+        self._refresh_special_tokens()
+        self._rebuild_optimizer()
 
     @staticmethod
     def _load_embeddings(embedding_path=None, nDim=None):
@@ -1346,48 +1415,6 @@ class Embedding(VectorSet):
         print(f"Loading embeddings from {embedding_path}...")
         return wv
 
-    def tokenizeList(self, data):
-        """Build vocabulary from a list of strings via Lex."""
-        tokenized = []
-        for sentence in data:
-            tokens = self._lex.lex_buffer(sentence, 0)
-            for tok in tokens:
-                #if tok['category'] == 'WORD':
-                tokenized.append(tok['text'])
-        vocab = list(set(tokenized))
-        # Include padding sentinel — it has a codebook entry and participates
-        # in reconstruction targets for positions beyond the real tokens.
-        if "\x00" not in vocab:
-            vocab.append("\x00")
-        return vocab
-
-    def untokenize(self, tokenized):
-        """Convert batch of token lists back to byte tensors."""
-        data = []
-        for b in range(len(tokenized)):
-            sentence = ""
-            for w in range(self.nInput):
-                sentence += tokenized[b][w]
-                if w < self.nInput - 1:
-                    sentence += " "
-            data.append(TheData.stringTensor(sentence))
-        data = torch.stack(data)
-        return data.unsqueeze(1)
-
-    def getDictionary(self):
-        """Return {word: encoded_vector} for every word in the vocabulary."""
-        dictionary = {}
-        for key in self.wv.index_to_key:
-            word = torch.reshape(self.wv[key].detach().clone(), [1, 1, self.nDim])
-            dictionary[key] = TheObjectEncoding.forward(word, pad=True).squeeze()
-        return dictionary
-
-    def getVectors(self):
-        return self.wv.get_normed_vectors()
-
-    def getSize(self):
-        return len(self.wv)
-
     # --- Public properties (encapsulate internals) --------------------
     @property
     def codebook_weight(self):
@@ -1409,119 +1436,102 @@ class Embedding(VectorSet):
         return list(self._emb.parameters())
 
     # --- Lex delegation ---------------------------------------------------
-    def encode(self, source_tensor):
-        """Delegate to Lex.encode() — returns span table [num_spans, 3]."""
-        return self._lex.encode(source_tensor)
-
     def lex_buffer(self, buf, start=0):
         """Delegate to Lex.lex_buffer() — returns list of token dicts."""
         return self._lex.lex_buffer(buf, start)
 
-    def id_to_word(self, token_id):
-        """Look up word string from Lex token ID. Returns '' for unknown IDs."""
-        return self._lex.id_to_word.get(token_id, "")
+    def _ergodic_var(self, token_idx, device, dtype):
+        """Map CBOW's per-word sigma to a noise scale in [0, 1]."""
+        if (not self.ergodic) or (not self.training) or self.cbow is None:
+            return None
+        sigma = getattr(self.cbow, 'sigma', None)
+        sigma_step = getattr(self.cbow, 'sigma_step', 0)
+        if (
+            sigma is None or sigma_step <= 0 or token_idx is None
+            or token_idx >= sigma.shape[0]
+        ):
+            return None
+        if token_idx in {
+                getattr(self, 'mask_token_idx', None),
+                getattr(self, 'null_token_idx', None)}:
+            return None
+        beta = float(getattr(self.cbow, 'sigma_beta', 0.99))
+        denom = 1.0 - (beta ** sigma_step)
+        if denom <= 0:
+            return None
+        s = sigma[token_idx].detach().to(device=device, dtype=dtype) / denom
+        s = s.clamp(min=0)
+        return (s / (s + self.sigma_kappa)).clamp(0, 1)
 
-    def forward(self, input):
+    def _encode_vector(self, vec, token_idx=None):
+        """Pad and normalize one embedding vector, with optional ergodic noise."""
+        if vec.dim() != 1:
+            vec = vec.squeeze()
+        vec = vec.clone()
+        var = self._ergodic_var(token_idx, vec.device, vec.dtype)
+        if var is not None and torch.any(var > 0):
+            vec = vec + var * torch.randn_like(vec)
+        vec = F.pad(vec, (0, TheObjectEncoding.objectSize))
+        return F.normalize(vec, p=2, dim=0)
+
+    def _nearest_idx(self, vec, codebook=None):
+        if codebook is None:
+            codebook = self._emb.weight.detach() # XXX
+        vec = vec.to(codebook.device)
+        sims = F.cosine_similarity(vec.unsqueeze(0), codebook, dim=1)
+        return sims.argmax().item()
+
+    def forward(self, input, return_meta=False):
         """Tokenize via Lex, look up embedding vectors from codebook.
 
         Input: (batch, max_len) byte tensor from Data.
         Output: (batch, nInput, embeddingSize) padded embedding tensor.
 
-        Side effect: stores self._last_tokens (list of word lists per batch)
-        and self._last_span_counts for encode_input metadata.
+        When
+        ``ergodic`` is enabled during training, the returned content vectors
+        receive additive noise scaled by per-word CBOW sigma.
         """
         if input.dim() == 3:
             input = input.squeeze(1)  # [batch, 1, len] -> [batch, len]
         if input.dim() == 1:
             input = input.unsqueeze(0)  # [len] -> [1, len]
         batch = input.shape[0]
-        codebook = self._emb.weight.detach().to(input.device)
-        pad_size = TheObjectEncoding.objectSize
-
-        self._last_tokens = []
-        self._last_span_counts = []
+        codebook = self._emb.weight #.detach().to(input.device)
+        batch_tokens = []
+        span_counts = []
+        final_offsets = []
 
         result = torch.zeros([batch, self.nInput, self.embeddingSize], device=input.device)
         for b in range(batch):
-            raw_bytes = input[b].squeeze().tolist()
-            text = "".join(chr(int(c) & 0xFF) for c in raw_bytes).rstrip("\x00")
-            source_tensor = torch.tensor(list(text.encode('utf-8')), dtype=torch.uint8)
-            spans = self.encode(source_tensor)
-            n_spans = min(spans.shape[0], self.nInput)
-            self._last_span_counts.append(n_spans)
-            b_tokens = []
-            for i in range(n_spans):
-                token_id = spans[i, 2].item()
-                b_tokens.append(self.id_to_word(token_id))
-                cb_idx = None
-                if token_id in self.lex_to_emb:
-                    cb_idx = self.lex_to_emb[token_id]
-                else:
-                    word = b_tokens[-1]
-                    if word and word[0] in self.cbow.key_to_index:
-                        cb_idx = self.cbow.key_to_index[word[0]]
-                if cb_idx is not None:
-                    vec = codebook[cb_idx]
-                    vec = F.pad(vec, (0, pad_size))
-                    vec = F.normalize(vec, p=2, dim=0)
-                    result[b, i, :] = vec
-            self._last_tokens.append(b_tokens)
+            text = self._text_from_bytes(input[b].squeeze().tolist())
+            stream = self._token_stream(text)
+            n_tokens = min(len(stream), self.nInput)
+            tokens = stream[:n_tokens]
+            batch_tokens.append(tokens)
+            span_counts.append(n_tokens)
+            if tokens:
+                last_text, last_start = tokens[-1]
+                final_offsets.append(
+                    last_start + self._token_width(last_text))
+            else:
+                final_offsets.append(0)
+            for i, (token_text, _) in enumerate(tokens):
+                cb_idx = self._token_to_index(token_text)
+                result[b, i, :] = self._encode_vector(
+                    codebook[cb_idx], token_idx=cb_idx)
             # Fill remaining positions with NULL (\x00) embedding
             null_idx = getattr(self, 'null_token_idx', None)
             if null_idx is not None:
-                null_vec = codebook[null_idx]
-                null_vec = F.pad(null_vec, (0, pad_size))
-                null_vec = F.normalize(null_vec, p=2, dim=0)
-                for i in range(n_spans, self.nInput):
+                null_vec = self._encode_vector(codebook[null_idx], token_idx=null_idx)
+                for i in range(n_tokens, self.nInput):
                     result[b, i, :] = null_vec
-        return result
-
-    def encode_input(self, input_tensor, return_meta=False):
-        """Tokenize + embed in one call.
-
-        Args:
-            input_tensor: [batch, max_len] byte tensor
-            return_meta: if True, also return token metadata
-
-        Returns:
-            embedded: [batch, nInput, embeddingSize] tensor
-            meta (only if return_meta): dict with 'tokens' and 'span_counts'
-        """
-        embedded = self.forward(input_tensor)
         if not return_meta:
-            return embedded
-        meta = {
-            'tokens': self._last_tokens,
-            'span_counts': self._last_span_counts,
+            return result
+        return result, {
+            'tokens': batch_tokens,
+            'span_counts': span_counts,
+            'final_offsets': final_offsets,
         }
-        return embedded, meta
-
-    def decode_output(self, vectors):
-        """Snap vectors to codebook and return words/positions.
-
-        Composes reverse() + reconstruct_text() into a single call.
-
-        Args:
-            vectors: [batch, nVec, embSize] tensor
-
-        Returns:
-            dict with 'words' (list of list of str),
-                       'positions' (recovered positions tensor),
-                       'times' (recovered times tensor)
-        """
-        self.reverse(vectors)
-        return {
-            'words': self.reconstruct_text(join=False),
-            'positions': self._recovered_positions,
-            'times': self._recovered_times,
-        }
-
-    def set_sigma(self, sigma):
-        """Control exploration for embedding lookups."""
-        if sigma == 0:
-            self.sigma_kappa = 1e6
-        else:
-            self.sigma_kappa = 0.01 / sigma
 
     def train_step(self, words, method='SBOW'):
         """One sentence-level embedding gradient step.  Returns loss or None.
@@ -1548,51 +1558,119 @@ class Embedding(VectorSet):
         """
         return y
 
-    def reverse(self, y):
+    def _decode_offset(self, positions, batch_idx, vector_idx):
+        if TheObjectEncoding.nWhere <= 0:
+            return None
+        sin_val = positions[batch_idx, vector_idx, 0].item()
+        cos_val = positions[batch_idx, vector_idx, 1].item()
+        if abs(sin_val) < 1e-8 and abs(cos_val) < 1e-8:
+            return None
+        div_term = TheObjectEncoding.where.div_term
+        angle = math.atan2(sin_val, cos_val)
+        if angle < 0:
+            angle += 2 * math.pi
+        return round(angle / (div_term * div_term))
+
+    def _render_tokens(self, batch_tokens, buf_size=None):
+        has_positions = any(offset is not None for _, offset in batch_tokens)
+        if not has_positions:
+            text = []
+            for word, _ in batch_tokens:
+                if word == "\x00":
+                    text.append(word)
+                    break
+                if word not in ("", "[MASK]"):
+                    text.append(word)
+            return "".join(text)
+
+        terminator = None
+        max_end = 0
+        for word, offset in batch_tokens:
+            if offset is None or offset < 0:
+                continue
+            if word == "\x00":
+                terminator = offset if terminator is None else min(
+                    terminator, offset)
+                continue
+            if word in ("", "[MASK]"):
+                continue
+            max_end = max(max_end, offset + self._token_width(word))
+
+        limit = (terminator + 1) if terminator is not None else max_end
+        if buf_size is not None:
+            limit = buf_size if limit <= 0 else min(limit, buf_size)
+        if limit <= 0:
+            return ""
+
+        buf = [' '] * limit
+        if terminator is not None and 0 <= terminator < limit:
+            buf[terminator] = "\x00"
+        for word, offset in batch_tokens:
+            if word in ("", "[MASK]", "\x00") or offset is None:
+                continue
+            if offset < 0 or offset >= limit:
+                continue
+            for ci, ch in enumerate(word):
+                pos = offset + ci
+                if pos >= limit:
+                    break
+                buf[pos] = ch
+        return "".join(buf)
+
+    @staticmethod
+    def _decoded_tokens(decoded):
+        if decoded is None:
+            raise RuntimeError("decode metadata is required")
+        if isinstance(decoded, dict):
+            return decoded.get('tokens', [])
+        return decoded
+
+    def reverse(self, y, return_meta=False):
         """Partition into nWhat/nWhere/nWhen subspaces and snap to codebook.
 
-        Strips ObjectEncoding, snaps nWhat to nearest codebook word,
-        decodes nWhere to byte offsets, stores results for reconstruct_text()
-        and reconstruct_to_buffer().
+        Strips ObjectEncoding, snaps nWhat to nearest codebook word, decodes
+        nWhere to byte offsets, and stores positioned tokens for rendering.
 
         Returns: content tensor [batch, nVec, embSize] with encoding zeroed.
         """
         content, positions, times = TheObjectEncoding.reverse(y.clone())
         batch = content.shape[0]
         nVec = content.shape[1]
-        codebook = self._emb.weight.detach().to(y.device)
+        codebook = self._emb.weight #.detach().to(y.device) XXX
         words_list = self.wv.index_to_key
         nWhat = codebook.shape[1]
-        div_term = TheObjectEncoding.where.div_term
 
         recovered_words = [[] for _ in range(batch)]
         recovered_offsets = [[] for _ in range(batch)]
+        recovered_tokens = [[] for _ in range(batch)]
         for b in range(batch):
             for v in range(nVec):
+                offset = self._decode_offset(positions, b, v)
                 vec = content[b, v, :nWhat]
-                sims = F.cosine_similarity(vec.unsqueeze(0), codebook, dim=1)
-                idx = sims.argmax().item()
-                recovered_words[b].append(words_list[idx])
-                # Decode nWhere: sin/cos → byte offset
-                sin_val = positions[b, v, 0].item()
-                cos_val = positions[b, v, 1].item()
-                if abs(sin_val) < 1e-8 and abs(cos_val) < 1e-8:
-                    recovered_offsets[b].append(None)
+                if vec.abs().sum().item() < 1e-8:
+                    word = "\x00"
                 else:
-                    angle = math.atan2(sin_val, cos_val)
-                    if angle < 0:
-                        angle += 2 * math.pi
-                    recovered_offsets[b].append(round(angle / (div_term * div_term)))
-        self._recovered_words = recovered_words
-        self._recovered_positions = positions
-        self._recovered_offsets = recovered_offsets
-        self._recovered_times = times
+                    idx = self._nearest_idx(vec, codebook=codebook)
+                    word = words_list[idx]
+                recovered_words[b].append(word)
+                recovered_offsets[b].append(offset)
+                recovered_tokens[b].append((word, offset))
+        meta = {
+            'tokens': recovered_tokens,
+            'words': recovered_words,
+            'positions': positions,
+            'times': times,
+            'offsets': recovered_offsets,
+        }
+        if return_meta:
+            return content, meta
         return content
 
-    def reconstruct_text(self, join=False):
-        """Return recovered words from the last reverse() call.
+    def reconstruct_text(self, decoded, join=False):
+        """Render recovered words from explicit reverse() metadata.
 
         Args:
+            decoded: reverse() metadata dict or token stream
             join: If True, return list of joined strings. If False, return
                   list of word lists (one per batch element).
 
@@ -1600,81 +1678,55 @@ class Embedding(VectorSet):
             List of word lists or joined strings, one per batch element.
             Empty words (from zero-padded vectors) are stripped.
         """
-        if not hasattr(self, '_recovered_words'):
-            raise RuntimeError("reconstruct_text() called before reverse()")
+        batch_tokens_list = self._decoded_tokens(decoded)
+        if join:
+            return [text.rstrip("\x00")
+                    for text in self.reconstruct_to_buffer(decoded)]
         result = []
-        for b_words in self._recovered_words:
-            words = [w for w in b_words if w]
-            if join:
-                result.append(" ".join(words))
-            else:
-                result.append(words)
+        for batch_tokens in batch_tokens_list:
+            words = [
+                word for word, _ in batch_tokens
+                if word not in ("", "\x00", "[MASK]")
+            ]
+            result.append(words)
         return result
 
-    def get_recovered_word(self, batch_idx, position):
-        """Return a single recovered word from the last reverse() pass."""
-        rw = getattr(self, '_recovered_words', None)
-        if rw and batch_idx < len(rw) and position < len(rw[batch_idx]):
-            return rw[batch_idx][position]
+    def get_recovered_word(self, decoded, batch_idx, position):
+        """Return a single recovered word from explicit reverse() metadata."""
+        rt = self._decoded_tokens(decoded)
+        if batch_idx < len(rt) and position < len(rt[batch_idx]):
+            return rt[batch_idx][position][0]
         return None
 
-    def reconstruct_to_buffer(self, buf_size=None):
+    def reconstruct_to_buffer(self, decoded, buf_size=None):
         """Place recovered words at nWhere byte offsets in a character buffer.
 
-        Must be called after reverse(). Uses _recovered_words and
-        _recovered_offsets from the last partition.
-
         Args:
+            decoded: reverse() metadata dict or token stream
             buf_size: buffer length in characters. Default: input byte-tensor
                       length (self.nInput * 4 as rough upper bound, or 256).
 
         Returns:
             List of strings, one per batch element.
         """
-        if not hasattr(self, '_recovered_words'):
-            raise RuntimeError("reconstruct_to_buffer() called before reverse()")
-        if buf_size is None:
-            buf_size = max(self.nInput * 4, 256)
+        batch_tokens_list = self._decoded_tokens(decoded)
         results = []
-        for b in range(len(self._recovered_words)):
-            buf = list(' ' * buf_size)
-            words = self._recovered_words[b]
-            offsets = self._recovered_offsets[b]
-            for i, (word, offset) in enumerate(zip(words, offsets)):
-                if word == '\x00' or word == '' or word == '[MASK]':
-                    continue
-                if offset is not None and 0 <= offset < buf_size:
-                    end = min(offset + len(word), buf_size)
-                    for ci, ch in enumerate(word):
-                        pos = offset + ci
-                        if pos < buf_size:
-                            buf[pos] = ch
-                else:
-                    # No position — skip (consecutive fallback not used in buffer mode)
-                    pass
-            results.append(''.join(buf).rstrip())
+        for batch_tokens in batch_tokens_list:
+            results.append(self._render_tokens(batch_tokens, buf_size=buf_size))
         return results
 
     def predict(self, vector):
-        """Decode output vector(s) to nearest codebook word(s).
+        """Decode output vector(s) via ``reverse()``.
 
         Args:
             vector: [batch, 1, embeddingSize] or [batch, embeddingSize]
         Returns:
             List of predicted words (one per batch element).
         """
-        if vector.dim() == 3:
-            vector = vector.squeeze(1)
-        codebook = self._emb.weight.detach().to(vector.device)
-        words_list = self.wv.index_to_key
-        nWhat = codebook.shape[1]
-        predictions = []
-        for b in range(vector.shape[0]):
-            vec = vector[b, :nWhat]
-            sims = F.cosine_similarity(vec.unsqueeze(0), codebook, dim=1)
-            idx = sims.argmax().item()
-            predictions.append(words_list[idx])
-        return predictions
+        if vector.dim() == 2:
+            vector = vector.unsqueeze(1)
+        _, meta = self.reverse(vector, return_meta=True)
+        return [words[0] if words else "" for words in meta['words']]
 
     def embed_token(self, word):
         """Look up a single word in the codebook, return its content vector.
@@ -1947,6 +1999,10 @@ class InputSpace(Space):
             self.vectorSet.append(vs)
             self.doc_spans = vs.doc_spans
             self.doc_sources = vs.doc_sources
+            if data is not None and TheObjectEncoding.where is not None:
+                maxP = max(TheObjectEncoding.where.maxP, data.inputLength)
+                TheObjectEncoding.where.maxP = maxP
+                TheObjectEncoding.where.div_term = 2 * math.pi / maxP
         elif model_type == "passthrough":
             vs = VectorSet()
             vs.create(self.inputShape[0], self.outputShape[0], self.nDim, passThrough=True)
@@ -1999,16 +2055,36 @@ class InputSpace(Space):
             self._cached_embedding = None  # consume once
             self.batch = cached.shape[0]
             self.input = cached
+            self._forward_input = None
             return self.input
 
         self.batch = input.shape[0]
-        if not isinstance(self.vectors(), Embedding):
+        emb = self.vectors()
+        if not isinstance(emb, Embedding):
             assert list(input.shape) == [self.batch, self.inputShape[0], self.inputShape[1]]
-        self.input = self.vectors().forward(input)
-
-        # Object encoding: nWhere + nWhen stamped into reserved embedding slots
-        if TheObjectEncoding.objectSize > 0:
-            self.input = TheObjectEncoding.forward(self.input)
+            self.input = emb.forward(input)
+            self._forward_input = None
+            if TheObjectEncoding.objectSize > 0:
+                self.input = TheObjectEncoding.forward(self.input)
+        else:
+            self.input, meta = emb.forward(input, return_meta=True)
+            self._forward_input = meta
+            if TheObjectEncoding.objectSize > 0:
+                if TheObjectEncoding.nWhere > 0:
+                    for b, batch_tokens in enumerate(meta['tokens']):
+                        for i, (_, start) in enumerate(batch_tokens):
+                            TheObjectEncoding.where.stamp(
+                                self.input, b, i, start)
+                        final_offset = meta['final_offsets'][b]
+                        for i in range(len(batch_tokens), self.outputShape[0]):
+                            TheObjectEncoding.where.stamp(
+                                self.input, b, i, final_offset)
+                if TheObjectEncoding.nWhen > 0:
+                    self.input = TheObjectEncoding.forward(
+                        self.input,
+                        where=False,
+                        when=True,
+                    )
 
         _, output = self.getEmbeddedIO()
         assert list(self.input.shape) == [self.batch, self.outputShape[0], output]
@@ -2097,16 +2173,37 @@ class InputSpace(Space):
         raw = self.vectors().reverse_raw(y)
         self.reconstructed = raw.detach()
         # Partition into nWhat/nWhere/nWhen for display
-        self.input = self.vectors().reverse(y)
+        if isinstance(self.vectors(), Embedding):
+            self.input, self._recovered_input = self.vectors().reverse(
+                y, return_meta=True)
+        else:
+            self.input = self.vectors().reverse(y)
+            self._recovered_input = None
         return self.input
 
     def reconstruct_text(self, join=False):
-        """Delegates to Embedding.reconstruct_text()."""
-        return self.vectors().reconstruct_text(join=join)
+        """Render the last recovered text state stored on InputSpace."""
+        if getattr(self, '_recovered_input', None) is None:
+            raise RuntimeError("reconstruct_text() called before reverse()")
+        return self.vectors().reconstruct_text(self._recovered_input, join=join)
 
     def reconstruct_to_buffer(self, buf_size=None):
-        """Delegates to Embedding.reconstruct_to_buffer()."""
-        return self.vectors().reconstruct_to_buffer(buf_size=buf_size)
+        """Render the last recovered text buffer stored on InputSpace."""
+        if getattr(self, '_recovered_input', None) is None:
+            raise RuntimeError("reconstruct_to_buffer() called before reverse()")
+        return self.vectors().reconstruct_to_buffer(
+            self._recovered_input, buf_size=buf_size)
+
+    def get_forward_meta(self):
+        """Return the last forward-pass lexical metadata for text input."""
+        return getattr(self, '_forward_input', None)
+
+    def get_recovered_word(self, batch_idx, position):
+        """Return one recovered token from the last InputSpace.reverse()."""
+        if getattr(self, '_recovered_input', None) is None:
+            return None
+        return self.vectors().get_recovered_word(
+            self._recovered_input, batch_idx, position)
 
     # ------------------------------------------------------------------
     # Training policy — InputSpace decides WHEN, Embedding does HOW
@@ -2260,12 +2357,13 @@ class InputSpace(Space):
             self._arir_embedded = embedded.clone().detach()
 
             # Read span count from the lex pass
-            counts = getattr(self, '_lex_span_counts', None)
-            seed_len = counts[0] if counts and len(counts) > 0 else 1
+            meta = getattr(self, '_forward_input', None) or {}
+            counts = meta.get('span_counts', [])
+            seed_len = counts[0] if counts else 1
 
             # Read byte offset from the lex pass
-            offsets = getattr(self, '_lex_final_byte_offsets', None)
-            self._arir_byte_offset = offsets[0] if offsets and len(offsets) > 0 else 0
+            offsets = meta.get('final_offsets', [])
+            self._arir_byte_offset = offsets[0] if offsets else 0
 
             # Fill future positions (seed_len .. nVec-1) with space embeddings
             space_emb = self.get_space_embedding()
@@ -2293,7 +2391,7 @@ class InputSpace(Space):
             prev_cursor = self._arir_cursor
 
             # Read decoded word from previous reverse pass
-            word = self.vectors().get_recovered_word(0, prev_cursor)
+            word = self.get_recovered_word(0, prev_cursor)
 
             # EOF check
             if word is None or word == '' or word == '\x00':
@@ -2363,7 +2461,6 @@ class InputSpace(Space):
         """Stamp positional encoding at a buffer position via TheObjectEncoding.where."""
         if TheObjectEncoding.nWhere > 0:
             TheObjectEncoding.where.stamp(buf, 0, pos_idx, byte_off)
-
 class PerceptualSpace(Space):
     """Transforms raw input vectors into percepts via a PiLayer.
 
@@ -2402,7 +2499,7 @@ class PerceptualSpace(Space):
             output = output // 2
         return input, output
 
-    def __init__(self, nActiveInput, nActiveOutput, quantized=True, reversible=False, processSymbols=False, passThrough=False, reshape=False, ergodic=False, hasAttention=True, invertible=False, inputDim=None):
+    def __init__(self, nActiveInput, nActiveOutput, quantized=True, reversible=False, processSymbols=False, passThrough=False, reshape=False, ergodic=False, hasAttention=True, invertible=False, inputDim=None, naive=False):
         inputShape  = [nActiveInput, inputDim if inputDim is not None else TheObjectEncoding.inputDim]
         outputShape = [nActiveOutput, TheObjectEncoding.perceptDim]
         nVectors    = TheObjectEncoding.nPercepts
@@ -2416,8 +2513,7 @@ class PerceptualSpace(Space):
         input, output = self.getLayerIO()
         _, unflatOutput = self.getEmbeddedIO()
         self.attention = AttentionLayer(unflatOutput, unflatOutput)
-        if invertible:
-            use_naive = False  # invertible always uses SVD-based exact inverse
+        if invertible and not naive:
             if self.reshape:
                 if 2 * input != output:
                     raise ValueError(
@@ -2428,11 +2524,9 @@ class PerceptualSpace(Space):
                     raise ValueError(
                         f"invertible=True without reshape requires nInput == nOutput, "
                         f"but got nInput={input}, nOutput={output}.")
-        else:
-            use_naive = (2 * input != output)  # naive when dims don't match 2x
         if self.reversible:
             if invertible:
-                self.pi  = InvertiblePiLayer(input, output, naive=use_naive, ergodic=ergodic)
+                self.pi  = InvertiblePiLayer(input, output, naive=naive, ergodic=ergodic)
                 self.forwardPi, self.reversePi = self.pi.forward, self.pi.reverse
                 self.params = self.pi.getParameters()
                 self.layers = nn.ModuleList([self.pi])
@@ -2440,13 +2534,13 @@ class PerceptualSpace(Space):
                 if not self.reshape:
                     self.outputShape = [2 * self.inputShape[0], self.outputShape[1]]
             else:
-                self.pi1 = InvertiblePiLayer(input, output, naive=use_naive, ergodic=ergodic)
-                self.pi2 = InvertiblePiLayer(input, output, naive=use_naive, ergodic=ergodic)
+                self.pi1 = InvertiblePiLayer(input, output, naive=naive, ergodic=ergodic)
+                self.pi2 = InvertiblePiLayer(input, output, naive=naive, ergodic=ergodic)
                 self.forwardPi, self.reversePi = self.pi1.forward, self.pi2.reverse
                 self.params = self.pi1.getParameters() + self.pi2.getParameters()
                 self.layers = nn.ModuleList([self.pi1, self.pi2])
         else:
-            self.pi        = PiLayer(input, output, ergodic=ergodic)
+            self.pi        = PiLayer(input, output, naive=naive, ergodic=ergodic)
             self.forwardPi = self.pi.forward
             self.params = self.pi.getParameters()
             self.layers = nn.ModuleList([self.pi])
@@ -2504,7 +2598,7 @@ class ConceptualSpace(Space):
     """
     name = "Concepts"
 
-    def __init__(self, nActiveInput, nActiveOutput, quantized=True, reversible=False, processSymbols=False, invertible=False, hasNorm=False, ergodic=False, reshape=False, hasAttention=False):
+    def __init__(self, nActiveInput, nActiveOutput, quantized=True, reversible=False, processSymbols=False, invertible=False, hasNorm=False, ergodic=False, reshape=False, hasAttention=False, naive=False):
         inputShape  = [nActiveInput, TheObjectEncoding.perceptDim]
         outputShape = [nActiveOutput, TheObjectEncoding.conceptDim]
         nVectors    = TheObjectEncoding.nConcepts
@@ -2523,20 +2617,20 @@ class ConceptualSpace(Space):
                 input += 2
         if reversible:
             if invertible:
-                self.sigma = InvertibleSigmaLayer(input, output, ergodic=ergodic)
+                self.sigma = InvertibleSigmaLayer(input, output, naive=naive, ergodic=ergodic)
                 self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
                 self.params = self.sigma.getParameters()
                 self.layers = nn.ModuleList([self.sigma])
             else:
-                self.sigma1 = InvertibleSigmaLayer(input, output, ergodic=ergodic)
-                self.sigma2 = InvertibleSigmaLayer(input, output, ergodic=ergodic)
+                self.sigma1 = InvertibleSigmaLayer(input, output, naive=naive, ergodic=ergodic)
+                self.sigma2 = InvertibleSigmaLayer(input, output, naive=naive, ergodic=ergodic)
                 # self.sigma1 = SigmaLayer(input, output, ergodic=ergodic)
                 # self.sigma2 = SigmaLayer(output, input, ergodic=ergodic)
                 self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
                 self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
                 self.layers = nn.ModuleList([self.sigma1, self.sigma2])
         else:
-            self.sigma = SigmaLayer(input, output, ergodic=ergodic)
+            self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic)
             self.forwardSigma = self.sigma.forward
             self.params = self.sigma.getParameters()
             self.layers = nn.ModuleList([self.sigma])
@@ -2629,7 +2723,6 @@ class SymbolicSpace(Space):
         outputShape = [nActiveOutput, TheObjectEncoding.symbolDim]
         nVectors    = TheObjectEncoding.nSymbols
         super(SymbolicSpace, self).__init__( inputShape, outputShape, nVectors, customVQ=True, reversible=reversible, processSymbols=processSymbols, reshape=reshape)
-        assert(inputShape[0] == outputShape[0]) # 1:1 mapping
         self.conceptualSpace = conceptualSpace
         self.passThrough = passThrough
         #self.mapping     = TODO(inputShape[1], nDim, soft=False)
@@ -2843,15 +2936,30 @@ class OutputSpace(Space):
             return
         self.text_mode = True
         vs = input_space.vectors()
+        if isinstance(vs, Embedding):
+            self._text_decoder = vs
+            return
         if hasattr(vs, 'codebook_weight'):
-            # Embedding-backed path
             self._codebook = vs.codebook_weight.detach()
             self._words_list = vs.vocab_keys
-        else:
-            # Legacy VQ-backed path
-            self._codebook = vs.vq.codebook
-            self._words_list = vs.words
+            self._embedding_size = vs.embeddingSize
+            return
+        self._codebook = vs.vq.codebook
+        self._words_list = vs.words
         self._embedding_size = vs.embeddingSize
+
+    def reconstruct_tokens(self, vectors):
+        """Return positioned tokens decoded from symbolic vectors."""
+        if not self.text_mode:
+            raise RuntimeError("reconstruct_tokens() requires text_mode.")
+        if hasattr(self, '_text_decoder'):
+            _, meta = self._text_decoder.reverse(vectors, return_meta=True)
+            return meta['tokens']
+        words_list, offsets_list = self.reconstruct_text(vectors)
+        return [
+            list(zip(words, offsets))
+            for words, offsets in zip(words_list, offsets_list)
+        ]
 
     def reconstruct_text(self, vectors):
         """Reconstruct words and positions from symbolic vectors.
@@ -2873,6 +2981,12 @@ class OutputSpace(Space):
         if not self.text_mode:
             raise RuntimeError("reconstruct_text() called but text_mode is not enabled. "
                                "Call set_text_mode(input_space) first.")
+        if hasattr(self, '_text_decoder'):
+            recovered_tokens = self.reconstruct_tokens(vectors)
+            return (
+                [[word for word, _ in batch] for batch in recovered_tokens],
+                [[offset for _, offset in batch] for batch in recovered_tokens],
+            )
         # 1. Strip positional/temporal encoding via ObjectEncoding.reverse()
         content, positions, times = TheObjectEncoding.reverse(vectors.clone())
         batch = content.shape[0]
@@ -2924,6 +3038,10 @@ class OutputSpace(Space):
         Returns:
             List of strings, one per batch element.
         """
+        if hasattr(self, '_text_decoder'):
+            _, meta = self._text_decoder.reverse(vectors, return_meta=True)
+            return self._text_decoder.reconstruct_to_buffer(
+                meta, buf_size=buf_size)
         words_list, offsets_list = self.reconstruct_text(vectors)
         results = []
         for b in range(len(words_list)):
@@ -3269,7 +3387,7 @@ class BaseModel(nn.Module):
         rows = []
         # Use reconstruct_text() for lex-based models (embedding vectors, not bytes)
         use_lex_recon = (self.inputSpace.model_type == "embedding" and
-                         self.inputSpace.vectors().get_recovered_word(0, 0) is not None)
+                         self.inputSpace.get_recovered_word(0, 0) is not None)
         if use_lex_recon:
             recon_text_list = self.inputSpace.reconstruct_text(join=True)
         for i in range(len(test_input)):
@@ -3308,7 +3426,8 @@ class BaseModel(nn.Module):
             rows)
 
         # Buffer reconstruction via nWhere byte offsets (non-differentiable display)
-        if use_lex_recon and hasattr(self.inputSpace.vectors(), '_recovered_offsets'):
+        recovered_meta = getattr(self.inputSpace, '_recovered_input', None)
+        if use_lex_recon and recovered_meta is not None:
             buf_size = max(len(test_input[0].tolist()) if isinstance(test_input[0], torch.Tensor) else 64, 64)
             buffer_strings = self.inputSpace.reconstruct_to_buffer(buf_size=buf_size)
             buf_rows = []
@@ -3485,6 +3604,7 @@ class BasicModel(BaseModel):
             conceptPrototypes=gsp(cfg, "ConceptualSpace", "nVectors"),
             ergodic=arch["ergodic"],
             certainty=arch["certainty"],
+            naive=arch.get("naive", False),
             quantized=gsp(cfg, "InputSpace", "quantized"),
             perceptQuantized=gsp(cfg, "PerceptualSpace", "quantized"),
             conceptQuantized=gsp(cfg, "ConceptualSpace", "quantized"),
@@ -3537,7 +3657,7 @@ class BasicModel(BaseModel):
                perceptQuantized=None, conceptQuantized=None,
                invertible=False, hasNorm=False,
                conceptualOrder=1, symbolicOrder=1, processSymbols=False,
-               reshape=False,
+               reshape=False, naive=False,
                perceptHasAttention=True, conceptHasAttention=False,
                model_type="simple", data=None, embedding_path=None,
                lexer="word", recon_ratio=0.5,
@@ -3632,7 +3752,8 @@ class BasicModel(BaseModel):
                                                reshape=reshape,
                                                ergodic=self.ergodic,
                                                hasAttention=self.perceptHasAttention,
-                                               invertible=self.invertible)
+                                               invertible=self.invertible,
+                                               naive=naive)
         self.conceptualSpace = ConceptualSpace(self.perceptualSpace.outputShape[0], self.nConcepts,
                                                reversible=reversible,
                                                invertible=self.invertible,
@@ -3640,7 +3761,8 @@ class BasicModel(BaseModel):
                                                ergodic=self.ergodic,
                                                quantized=self.conceptQuantized,
                                                reshape=reshape,
-                                               hasAttention=self.conceptHasAttention)
+                                               hasAttention=self.conceptHasAttention,
+                                               naive=naive)
         if symbolPassThrough:
             # passThrough means data flows at conceptDim — set symbolDim accordingly
             TheObjectEncoding.setSymbolDim(TheObjectEncoding.conceptDim)
@@ -4091,7 +4213,8 @@ class BasicModel(BaseModel):
         if hasattr(self, 'masked_prediction') and self.masked_prediction == 'ARUS':
             lossOut = torch.tensor(0.0, device=outputPred.device)
 
-        if self.reversible:
+        use_recon = self.reversible and self.recon_ratio > 0
+        if use_recon:
             inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
             lossIn = criterionInput(inputPred, forwardInput.squeeze())
             rr = self.recon_ratio
