@@ -353,6 +353,8 @@ class Data():
         self.combinedTokens    = []
         self.train_texts       = None
         self.test_texts        = None
+        self.reconstructed_input  = None  # filled after reverse pass (buffer strings)
+        self.reconstructed_output = None  # filled after output reverse
 
     @property
     def nInput(self):
@@ -972,6 +974,10 @@ class VectorSet(nn.Module):
     def _passthroughForward(self, x):
         """PassThrough forward: identity transform, skipping quantization."""
         return x
+    def reverse_raw(self, y):
+        """Return raw reverse vector with all subspaces intact (identity for VectorSet)."""
+        return y
+
     def reverse(self, y):
         if self.passThrough:
             return y
@@ -1532,11 +1538,22 @@ class Embedding(VectorSet):
         self.wv = self.cbow.to_word_vectors()
         return self.wv
 
-    def reverse(self, y):
-        """Snap each vector to nearest codebook entry by cosine similarity.
+    def reverse_raw(self, y):
+        """Return the raw reverse-path vector with all subspaces intact.
 
-        Strips ObjectEncoding first, then compares nWhat content against
-        the codebook. Stores recovered words/positions for reconstruct_text().
+        Does NOT strip ObjectEncoding — the full vector (nWhat + nWhere + nWhen)
+        is preserved for MSE loss computation.
+
+        Returns: raw tensor [batch, nVec, embSize] with positions intact.
+        """
+        return y
+
+    def reverse(self, y):
+        """Partition into nWhat/nWhere/nWhen subspaces and snap to codebook.
+
+        Strips ObjectEncoding, snaps nWhat to nearest codebook word,
+        decodes nWhere to byte offsets, stores results for reconstruct_text()
+        and reconstruct_to_buffer().
 
         Returns: content tensor [batch, nVec, embSize] with encoding zeroed.
         """
@@ -1546,15 +1563,29 @@ class Embedding(VectorSet):
         codebook = self._emb.weight.detach().to(y.device)
         words_list = self.wv.index_to_key
         nWhat = codebook.shape[1]
+        div_term = TheObjectEncoding.where.div_term
+
         recovered_words = [[] for _ in range(batch)]
+        recovered_offsets = [[] for _ in range(batch)]
         for b in range(batch):
             for v in range(nVec):
                 vec = content[b, v, :nWhat]
                 sims = F.cosine_similarity(vec.unsqueeze(0), codebook, dim=1)
                 idx = sims.argmax().item()
                 recovered_words[b].append(words_list[idx])
+                # Decode nWhere: sin/cos → byte offset
+                sin_val = positions[b, v, 0].item()
+                cos_val = positions[b, v, 1].item()
+                if abs(sin_val) < 1e-8 and abs(cos_val) < 1e-8:
+                    recovered_offsets[b].append(None)
+                else:
+                    angle = math.atan2(sin_val, cos_val)
+                    if angle < 0:
+                        angle += 2 * math.pi
+                    recovered_offsets[b].append(round(angle / (div_term * div_term)))
         self._recovered_words = recovered_words
         self._recovered_positions = positions
+        self._recovered_offsets = recovered_offsets
         self._recovered_times = times
         return content
 
@@ -1586,6 +1617,43 @@ class Embedding(VectorSet):
         if rw and batch_idx < len(rw) and position < len(rw[batch_idx]):
             return rw[batch_idx][position]
         return None
+
+    def reconstruct_to_buffer(self, buf_size=None):
+        """Place recovered words at nWhere byte offsets in a character buffer.
+
+        Must be called after reverse(). Uses _recovered_words and
+        _recovered_offsets from the last partition.
+
+        Args:
+            buf_size: buffer length in characters. Default: input byte-tensor
+                      length (self.nInput * 4 as rough upper bound, or 256).
+
+        Returns:
+            List of strings, one per batch element.
+        """
+        if not hasattr(self, '_recovered_words'):
+            raise RuntimeError("reconstruct_to_buffer() called before reverse()")
+        if buf_size is None:
+            buf_size = max(self.nInput * 4, 256)
+        results = []
+        for b in range(len(self._recovered_words)):
+            buf = list(' ' * buf_size)
+            words = self._recovered_words[b]
+            offsets = self._recovered_offsets[b]
+            for i, (word, offset) in enumerate(zip(words, offsets)):
+                if word == '\x00' or word == '' or word == '[MASK]':
+                    continue
+                if offset is not None and 0 <= offset < buf_size:
+                    end = min(offset + len(word), buf_size)
+                    for ci, ch in enumerate(word):
+                        pos = offset + ci
+                        if pos < buf_size:
+                            buf[pos] = ch
+                else:
+                    # No position — skip (consecutive fallback not used in buffer mode)
+                    pass
+            results.append(''.join(buf).rstrip())
+        return results
 
     def predict(self, vector):
         """Decode output vector(s) to nearest codebook word(s).
@@ -2025,13 +2093,20 @@ class InputSpace(Space):
             flat = flat[:, self._output_perm_inv]
             y = flat.reshape(B, self._output_perm_nActive, self._output_perm_embDim)
         y = self.reverseBegin(y)
+        # Store full vector (all subspaces) for MSE loss BEFORE partitioning
+        raw = self.vectors().reverse_raw(y)
+        self.reconstructed = raw.detach()
+        # Partition into nWhat/nWhere/nWhen for display
         self.input = self.vectors().reverse(y)
-        self.reconstructed = self.input.detach()
         return self.input
 
     def reconstruct_text(self, join=False):
         """Delegates to Embedding.reconstruct_text()."""
         return self.vectors().reconstruct_text(join=join)
+
+    def reconstruct_to_buffer(self, buf_size=None):
+        """Delegates to Embedding.reconstruct_to_buffer()."""
+        return self.vectors().reconstruct_to_buffer(buf_size=buf_size)
 
     # ------------------------------------------------------------------
     # Training policy — InputSpace decides WHEN, Embedding does HOW
@@ -3231,6 +3306,47 @@ class BaseModel(nn.Module):
             "Input vs Reconstructed",
             ["Input", "Reconstructed", "Label", "Predicted", "Match"],
             rows)
+
+        # Buffer reconstruction via nWhere byte offsets (non-differentiable display)
+        if use_lex_recon and hasattr(self.inputSpace.vectors(), '_recovered_offsets'):
+            buf_size = max(len(test_input[0].tolist()) if isinstance(test_input[0], torch.Tensor) else 64, 64)
+            buffer_strings = self.inputSpace.reconstruct_to_buffer(buf_size=buf_size)
+            buf_rows = []
+            total_chars = 0
+            matching_chars = 0
+            for i in range(len(test_input)):
+                original = self._bytes_to_text(test_input[i])
+                buf_recon = buffer_strings[i] if i < len(buffer_strings) else ""
+                # Character-level accuracy
+                orig_stripped = original.rstrip('\x00')
+                n = max(len(orig_stripped), len(buf_recon))
+                chars_match = sum(
+                    a == b for a, b in zip(orig_stripped.ljust(n), buf_recon.ljust(n)))
+                total_chars += n
+                matching_chars += chars_match
+                acc = chars_match / max(n, 1) * 100
+                css = "match" if acc > 90 else "mismatch"
+                buf_rows.append([
+                    f'{orig_stripped}',
+                    f'{buf_recon}',
+                    f'<span class="{css}">{acc:.0f}%</span>',
+                ])
+                print(f"  Buffer: {orig_stripped:30s} -> {buf_recon:30s} ({acc:.0f}% char accuracy)")
+            overall_acc = matching_chars / max(total_chars, 1) * 100
+            buf_rows.append(["<strong>Overall</strong>", "", f"<strong>{overall_acc:.1f}%</strong>"])
+            TheReport.add_table(
+                "Buffer Reconstruction (nWhere placement)",
+                ["Original", "Buffer", "Char Accuracy"],
+                buf_rows)
+
+            # Push reconstructed data to TheData
+            self.inputSpace.data.reconstructed_input = buffer_strings
+
+        # Push reconstructed output predictions to TheData
+        if allOut is not None:
+            self.inputSpace.data.reconstructed_output = [
+                allOut[i].detach().cpu() for i in range(allOut.shape[0])]
+
 class BasicModel(BaseModel):
     """Core model: assembles Spaces into a forward and (optionally) reverse pipeline.
 
