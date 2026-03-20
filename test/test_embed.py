@@ -18,7 +18,7 @@ from embed import (
 
 class TestFineWebIterator(unittest.TestCase):
 
-    @patch('embed.pq')
+    @patch('data.pq')
     def test_yields_strings(self, mock_pq):
         """iter_documents yields string documents."""
         mock_file = MagicMock()
@@ -35,7 +35,7 @@ class TestFineWebIterator(unittest.TestCase):
         self.assertEqual(len(docs), 2)
         self.assertIsInstance(docs[0], str)
 
-    @patch('embed.pq')
+    @patch('data.pq')
     def test_max_docs_limit(self, mock_pq):
         """iter_documents stops after max_docs."""
         mock_file = MagicMock()

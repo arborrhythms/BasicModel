@@ -1,4 +1,6 @@
-**Basic Model**![pasted-movie.png](bm-image1.png)
+# Basic Model
+
+![Basic Model diagram](bm-image1.png)
 
 ***The Basic Model of Cognition is a neural network that consists of four spaces: real space, perceptual space, conceptual space, and symbolic space.***
 
@@ -18,7 +20,7 @@
 
 ***Background***
 
-Much of this work is based on the Basic Model of Cognition described briefly [*[https://cognitivesciencesociety.org/framework-cognitive-science/]{.underline}*](https://cognitivesciencesociety.org/framework-cognitive-science/). More details are provided in the book [*[The Whole Part]{.underline}*](https://thewholepart.com).![pasted-image.tiff](bm-image1.tif){width="1.6487751531058619in" height="1.0387292213473316in"}
+Much of this work is based on the Basic Model of Cognition described briefly at [cognitivesciencesociety.org/framework-cognitive-science](https://cognitivesciencesociety.org/framework-cognitive-science/). More details are provided in the book [The Whole Part](https://thewholepart.com).
 
 ***Inputs and Outputs***
 
@@ -130,45 +132,49 @@ Those probabilities, once learned, can be stored as unidirectional connection we
 
 Symmetric Perception, in the general case, finds a function f(x) which minimizes the MSE with respect to the following:
 
-$$\left( \begin{array}{r}
+$$
+\begin{pmatrix}
 in \\
 out
-\end{array} \right) \cdot \begin{pmatrix}
+\end{pmatrix} \cdot \begin{pmatrix}
 f(x) & 0 \\
-0 & f^{- 1}(x)
-\end{pmatrix} = \left( \begin{array}{r}
+0 & f^{-1}(x)
+\end{pmatrix} = \begin{pmatrix}
 out \\
 in
-\end{array} \right)$$
+\end{pmatrix}
+$$
 
 In the linear case, $f(x)$ becomes a single invertible matrix A. In general, the mapping from input to output may not be linear, and the inverse may not exist, in which case the previous set of input/output equations is written as:
 
-$$\left( \begin{array}{r}
+$$
+\begin{pmatrix}
 in \\
 out
-\end{array} \right) \cdot \begin{pmatrix}
+\end{pmatrix} \cdot \begin{pmatrix}
 f(x) & 0 \\
 0 & g(x)
-\end{pmatrix} = \left( \begin{array}{r}
+\end{pmatrix} = \begin{pmatrix}
 out \\
 in
-\end{array} \right)$$
+\end{pmatrix}
+$$
 
-This problem bears some resemblance to the standard regression problem $Ax = b$, except that x is known and we wish to find the set of points $A$ (or weights) that map one linear space to another. So the familiar Linear Least-Squares solution to the equation$x = \left( A^{T}A \right)^{- 1}A^{T}b$ becomes an attempt to find a matrix A such that:
+This problem bears some resemblance to the standard regression problem $Ax = b$, except that x is known and we wish to find the set of points $A$ (or weights) that map one linear space to another. So the familiar Linear Least-Squares solution to the equation $x = \left( A^\top A \right)^{-1} A^\top b$ becomes an attempt to find a matrix $A$ such that:
 
-$Ax = b$ and $A^{- 1}b = x$
+$Ax = b$ and $A^{-1} b = x$
 
 This solution is seen as the "best" solution by neural networks that wish to determine a weight matrix A that maps from x onto b. That much is shared between the two problems, although there are nonlinearities in the general neural network case which enable a much better fit. This solution is optimal in the sense that it minimizes the Sum of Squared Errors, where the errors are defined as the residuals when b is projected into the column space of A.
 
-However, the principle of retrocausality suggests an additional objective; namely, we wish to create a matrix such that it is optimal both for the the transformation of the input to the output and the output to the input. \[It is not clear to me the properties of such a transformation, in either a linear or nonlinear context, so that is what I'm exploring\].
+However, the principle of retrocausality suggests an additional objective; namely, we wish to create a matrix such that it is optimal both for the the transformation of the input to the output and the output to the input.
 
-In general, we want a matrix $A$ such that minimizes reconstruction loss over both $Ax = b$ and $A^{- 1}b = x$. Since we are simultaneously minimizing the error vectors of each, and since the column space of a matrix is identical to the column space of its inverse, we will end up with a matrix $A$ that contains the vectors $x$ and $b$ within both its column space and row space (which is necessary because we are seeking a bijective function).
+In general, we want a matrix $A$ such that minimizes reconstruction loss over both $Ax = b$ and $A^{-1} b = x$. Since we are simultaneously minimizing the error vectors of each, and since the column space of a matrix is identical to the column space of its inverse, we will end up with a matrix $A$ that contains the vectors $x$ and $b$ within both its column space and row space (which is necessary because we are seeking a bijective function).
 
-As a first approximation, we might write $A$ as a product of two matrices, each of which performs a perfect surjection: $A \cdot A^{- 1} = I$
+As a first approximation, we might write $A$ as a product of two matrices, each of which performs a perfect surjection: $A \cdot A^{-1} = I$
 
-$$(\frac{b}{2}*x^{- 1}) \cdot (\frac{x}{2}*b^{- 1}) = I$$
+$$(\frac{b}{2} * x^{-1}) \cdot (\frac{x}{2} * b^{-1}) = I$$
 
-However, this will still be only an approximate solution, since it is unlikely that a somewhat arbitrary combination of both matrices will result in the correct orthogonal matrix. To find the best matrix $A$ involves either an iterative solution as would be performed by NN learning, ping-pong style, or (theoretically?) via multiple round trips consisting of Gram-Schmitt orthogonalization with respect to the matrices $A$ and $A^{- 1}$.
+However, this will still be only an approximate solution, since it is unlikely that a somewhat arbitrary combination of both matrices will result in the correct orthogonal matrix. To find the best matrix $A$ involves either an iterative solution as would be performed by NN learning, ping-pong style, or (theoretically?) via multiple round trips consisting of Gram-Schmidt orthogonalization with respect to the matrices $A$ and $A^{-1}$.
 
 ***Symmetric Perception: the Single Layer Nonlinear Case***
 
@@ -176,57 +182,57 @@ If $f(x)$ and $g(x)$ share a common weight matrix $W$, we may write the equation
 
 Forward computation and gradient:
 
-$$\widehat{y} = f(g^{- 1}(x)W)$$
+$$\widehat{y} = f(g^{-1}(x) W)$$
 
 $$e_{y} = \frac{1}{2}(\widehat{y} - y)^{2}$$
 
 $$\frac{\partial e_{y}}{\partial\widehat{y}} = \widehat{y} - y$$
 
-$$\frac{\partial\widehat{y}}{\partial W} = \delta_{f}(W^{T} \cdot g^{- 1}(x))$$
+$$\frac{\partial\widehat{y}}{\partial W} = \delta_{f}(W^\top \cdot g^{-1}(x))$$
 
 $$\frac{\partial W}{\partial x} = \delta_{g}(x)$$
 
-$$\Delta W_{y} = \eta\frac{\partial e_{y}}{\partial\widehat{y}}\frac{\partial\widehat{y}}{\partial W}g^{- 1}(x)$$
+$$\Delta W_{y} = \eta\frac{\partial e_{y}}{\partial\widehat{y}}\frac{\partial\widehat{y}}{\partial W} g^{-1}(x)$$
 
-$$\Delta W_{y} = \eta(\widehat{y} - y)\delta_{f}(W^{T} \cdot g^{- 1}(x))g^{- 1}(x)$$
+$$\Delta W_{y} = \eta(\widehat{y} - y)\delta_{f}(W^\top \cdot g^{-1}(x)) g^{-1}(x)$$
 
 Reverse computation and gradient:
 
-$$\widehat{x} = g(W^{T}f^{- 1}(y))$$
+$$\widehat{x} = g(W^\top f^{-1}(y))$$
 
 $$e_{x} = \frac{1}{2}(\widehat{x} - x)^{2}$$
 
 $$\frac{\partial e_{x}}{\partial\widehat{x}} = \widehat{x} - x$$
 
-$$\frac{\partial\widehat{x}}{\partial W} = \delta_{g}(W \cdot f^{- 1}(y))$$
+$$\frac{\partial\widehat{x}}{\partial W} = \delta_{g}(W \cdot f^{-1}(y))$$
 
 $$\frac{\partial W}{\partial y} = \delta_{f}(y)$$
 
-$$\Delta W_{x} = \eta\frac{\partial e_{x}}{\partial\widehat{x}}\frac{\partial\widehat{x}}{\partial W}f^{- 1}(y)$$
+$$\Delta W_{x} = \eta\frac{\partial e_{x}}{\partial\widehat{x}}\frac{\partial\widehat{x}}{\partial W} f^{-1}(y)$$
 
-$$\Delta W_{x} = \eta(\widehat{x} - x)\delta_{g}(W \cdot f^{- 1}(y))f^{- 1}(y)$$
+$$\Delta W_{x} = \eta(\widehat{x} - x)\delta_{g}(W \cdot f^{-1}(y)) f^{-1}(y)$$
 
 Since the single matrix $W$ is shared, we might combine the partial derivatives of the input and output errors via sum and set the gradient to zero to explore the solution space, which seems to minimize the cross-covariance between the input and output spaces:
 
-$$\frac{\partial e_{y}}{\partial W} + \frac{\partial e_{x}}{\partial W} = \eta(\widehat{y} - y)\delta_{f}(W^{T} \cdot g^{- 1}(x))g^{- 1}(x) + \eta(\widehat{x} - x)\delta_{g}(W \cdot f^{- 1}(y))f^{- 1}(y)$$
+$$\frac{\partial e_{y}}{\partial W} + \frac{\partial e_{x}}{\partial W} = \eta(\widehat{y} - y)\delta_{f}(W^\top \cdot g^{-1}(x)) g^{-1}(x) + \eta(\widehat{x} - x)\delta_{g}(W \cdot f^{-1}(y)) f^{-1}(y)$$
 
 If we assume that the gradients never go to zero, then we have the sum of the partial derivatives with respect to the error going to zero when both $x = i$ and $y = o$. However, it may be the case that $xy - iy = ox - yx$, which means that the simultaneous gradient descent is ping-ponging between the two cost functions. So a better cost function would be a multiplication of the two error partials, which is an intersection of the space that satisfies both equations. In that case, we can multiply the terms to get a better understanding of the error surface that we are minimizing with respect to the input and the output:
 
-$$\frac{\partial e_{y}}{\partial W}\frac{\partial e_{x}}{\partial W} = \eta(\widehat{y} - y)\delta_{f}(W^{T} \cdot g^{- 1}(x))g^{- 1}(x)(\widehat{x} - x)\delta_{g}(W \cdot f^{- 1}(y))f^{- 1}(y)$$
+$$\frac{\partial e_{y}}{\partial W}\frac{\partial e_{x}}{\partial W} = \eta(\widehat{y} - y)\delta_{f}(W^\top \cdot g^{-1}(x)) g^{-1}(x)(\widehat{x} - x)\delta_{g}(W \cdot f^{-1}(y)) f^{-1}(y)$$
 
 ***Distance Metrics***
 
-$$d(x_{1},x_{2}) = \frac{\parallel x_{1} \parallel^{n} \cdot \parallel x_{2} \parallel^{n}}{\parallel x_{1} - x_{2} \parallel^{2n}}$$
+$$d(x_{1},x_{2}) = \frac{\lVert x_{1} \rVert^{n} \cdot \lVert x_{2} \rVert^{n}}{\lVert x_{1} - x_{2} \rVert^{2n}}$$
 
 Which can be written in the Z-plane as:
 
-$$d(x_{1},x_{2}) = \parallel x_{1} - x_{2} \parallel \cdot \frac{(x - z_{1})}{(x - z_{2})}$$
+$$d(x_{1},x_{2}) = \lVert x_{1} - x_{2} \rVert \cdot \frac{(x - z_{1})}{(x - z_{2})}$$
 
 Where $z_{1}$ is a zero and $z_{2}$ is a pole.
 
 ***Exploration/Exploitation as a function of temperature:***
 
-$$y = x \cdot \frac{(W + rt)}{\parallel W \parallel}$$
+$$y = x \cdot \frac{(W + rt)}{\lVert W \rVert}$$
 
 Where:
 
@@ -259,49 +265,49 @@ $$f(x) = \sin(x)$$
 
 $$g(x) = \cos(x)$$
 
-$$f^{- 1}(x) = \arcsin(x)$$
+$$f^{-1}(x) = \arcsin(x)$$
 
-$$g^{- 1}(x) = \arccos(x)$$
+$$g^{-1}(x) = \arccos(x)$$
 
 $$\partial_{f}(x) = \cos(x)$$
 
 $$\partial_{g}(x) = \sin(x)$$
 
-$$\partial_{f^{- 1}}(x) = \frac{1}{\cos(\arcsin(x))}$$
+$$\partial_{f^{-1}}(x) = \frac{1}{\cos(\arcsin(x))}$$
 
-$$\partial_{g^{- 1}}(x) = \frac{1}{\sin(\arccos(x))}$$
+$$\partial_{g^{-1}}(x) = \frac{1}{\sin(\arccos(x))}$$
 
 If we write the forward equations and gradients of $f()$ and $g()$ using these functions, we end up with the following formulation:
 
-$$\widehat{y} = \sin(\cos^{- 1}(x)W)$$
+$$\widehat{y} = \sin(\cos^{-1}(x) W)$$
 
-$$\widehat{x} = \cos(W^{T}\sin^{- 1}(y))$$
+$$\widehat{x} = \cos(W^\top \sin^{-1}(y))$$
 
-$$\Delta W_{y} = \eta(\widehat{y} - y)\cos(W^{T} \cdot \cos^{- 1}(x))\cos^{- 1}(x)$$
+$$\Delta W_{y} = \eta(\widehat{y} - y)\cos(W^\top \cdot \cos^{-1}(x)) \cos^{-1}(x)$$
 
-$$\Delta W_{x} = \eta(\widehat{x} - x)\sin(W \cdot \sin^{- 1}(y))\sin^{- 1}(y)$$
+$$\Delta W_{x} = \eta(\widehat{x} - x)\sin(W \cdot \sin^{-1}(y)) \sin^{-1}(y)$$
 
 The important thing to notice is that the reconstruction of the reverse perception and the calculation of the gradient of forward perception involve common terms, and may be simplified:
 
-$$\widehat{y} = f(g^{- 1}(x)W)$$
+$$\widehat{y} = f(g^{-1}(x) W)$$
 
-$$\widehat{x} = g(W^{T}f^{- 1}(y))$$
+$$\widehat{x} = g(W^\top f^{-1}(y))$$
 
-$$\Delta W_{y} = \eta(\widehat{y} - y)\delta_{f}(W^{T} \cdot g^{- 1}(x))g^{- 1}(x)$$
+$$\Delta W_{y} = \eta(\widehat{y} - y)\delta_{f}(W^\top \cdot g^{-1}(x)) g^{-1}(x)$$
 
-$$\Delta W_{x} = \eta(\widehat{x} - x)\delta_{g}(W \cdot f^{- 1}(y))f^{- 1}(y)$$
+$$\Delta W_{x} = \eta(\widehat{x} - x)\delta_{g}(W \cdot f^{-1}(y)) f^{-1}(y)$$
 
-$$\Delta W_{y} = \eta(f(g^{- 1}(x)W) - y)\delta_{f}(W^{T} \cdot g^{- 1}(x))g^{- 1}(x)$$
+$$\Delta W_{y} = \eta(f(g^{-1}(x) W) - y)\delta_{f}(W^\top \cdot g^{-1}(x)) g^{-1}(x)$$
 
-$$\Delta W_{x} = \eta(g(W^{T}f^{- 1}(y)) - x)\delta_{g}(W \cdot f^{- 1}(y))f^{- 1}(y)$$
+$$\Delta W_{x} = \eta(g(W^\top f^{-1}(y)) - x)\delta_{g}(W \cdot f^{-1}(y)) f^{-1}(y)$$
 
-$$\Delta W_{y}\Delta W_{x} = \eta(f(g^{- 1}(x)W) - y)\delta_{f}(W^{T} \cdot g^{- 1}(x))g^{- 1}(x) \cdot (g(W^{T}f^{- 1}(y)) - x)\delta_{g}(W \cdot f^{- 1}(y))f^{- 1}(y)$$
+$$\Delta W_{y}\Delta W_{x} = \eta(f(g^{-1}(x) W) - y)\delta_{f}(W^\top \cdot g^{-1}(x)) g^{-1}(x) \cdot (g(W^\top f^{-1}(y)) - x)\delta_{g}(W \cdot f^{-1}(y)) f^{-1}(y)$$
 
 If we take the product of both:
 
-$$\Delta W_{y}\Delta W_{x} = \eta(\widehat{y} - y)\delta_{f}(W^{T} \cdot g^{- 1}(x))g^{- 1}(x) \cdot (\widehat{x} - x)\delta_{g}(W \cdot f^{- 1}(y))f^{- 1}(y)$$
+$$\Delta W_{y}\Delta W_{x} = \eta(\widehat{y} - y)\delta_{f}(W^\top \cdot g^{-1}(x)) g^{-1}(x) \cdot (\widehat{x} - x)\delta_{g}(W \cdot f^{-1}(y)) f^{-1}(y)$$
 
-$$\Delta W_{y}\Delta W_{x} = \eta(\widehat{x} - x)(\widehat{y} - y)\delta_{f}(W^{T} \cdot g^{- 1}(x))\delta_{g}(W \cdot f^{- 1}(y))f^{- 1}(y)g^{- 1}(x)$$
+$$\Delta W_{y}\Delta W_{x} = \eta(\widehat{x} - x)(\widehat{y} - y)\delta_{f}(W^\top \cdot g^{-1}(x))\delta_{g}(W \cdot f^{-1}(y)) f^{-1}(y) g^{-1}(x)$$
 
 [^1]: Perceptual space is known as "embedding space" in the current literature on transformer neural net architectures.
 

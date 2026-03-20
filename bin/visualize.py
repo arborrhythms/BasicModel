@@ -38,14 +38,22 @@ def _output_stem(stem):
 # ---------------------------------------------------------------------------
 
 class Report:
-    """Collects timestamped SVG figures and XML configs, then writes an HTML report."""
+    """Collects timestamped SVG figures and XML configs, then writes an HTML report.
+
+    Set ``enabled = False`` to suppress all figure generation and report output.
+    """
     def __init__(self):
+        self.enabled = True
         self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         self.figures = []       # list of (title, svg_path)
         self.xml_configs = []   # list of (name, xml_content)
 
     def show_figure(self, fig=None):
         """Display figures only on interactive backends; otherwise close them."""
+        if not self.enabled:
+            if fig is not None:
+                plt.close(fig)
+            return
         backend = str(plt.get_backend()).lower()
         if "agg" in backend or backend == "template":
             if fig is not None:
@@ -55,6 +63,9 @@ class Report:
 
     def save_figure(self, fig, title):
         """Save a matplotlib figure as a timestamped SVG and register it."""
+        if not self.enabled:
+            plt.close(fig)
+            return None
         safe = title.replace(" ", "_").replace("/", "-")
         filename = f"{self.timestamp}_{safe}.svg"
         path = _output_path(filename)
@@ -64,12 +75,16 @@ class Report:
 
     def add_xml(self, config_path):
         """Register an XML config file for inclusion in the report."""
+        if not self.enabled:
+            return
         name = os.path.basename(config_path)
         with open(config_path, 'r') as f:
             self.xml_configs.append((name, f.read()))
 
     def write_html(self):
         """Write the collected figures and configs into a single HTML file."""
+        if not self.enabled:
+            return None
         has_tables = hasattr(self, 'tables') and self.tables
         if not self.figures and not has_tables and not self.xml_configs:
             return None
@@ -134,6 +149,8 @@ class Report:
             headers: list of column header strings.
             rows: list of lists (one per row).
         """
+        if not self.enabled:
+            return
         if not hasattr(self, 'tables'):
             self.tables = []
         self.tables.append((title, headers, rows))

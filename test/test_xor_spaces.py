@@ -374,7 +374,7 @@ class TestNullEOS(unittest.TestCase):
         """The \\x00 codebook entry has a regular nonzero embedding.
 
         \\x00 participates in the vocabulary like any other token — it is NOT
-        the zero vector.  Zero-vector slots are detected in reconstruct_text by
+        the zero vector.  Zero-vector slots are detected in reconstruct_data by
         the abs-sum threshold check (< 1e-8) and mapped directly to '\\x00'
         before the nearest-neighbour cosine lookup.
         """

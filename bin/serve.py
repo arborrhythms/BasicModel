@@ -106,7 +106,8 @@ def add_security_headers(response):
 
 def _load_model(config_path=None):
     """Load BasicModel with config from BasicModel.xml."""
-    from BasicModel import BasicModel, TheData
+    from BasicModel import BasicModel
+    from data import TheData
 
     if config_path is None:
         config_path = os.path.join(_PROJECT, "data", "BasicModel.xml")

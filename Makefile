@@ -5,7 +5,7 @@ PD_TEMPLATE := /bits/projects/custom_template.tex
 PDFOPTS := --pdf-engine=xelatex \
           -V geometry:margin=1in \
           --template=$(PD_TEMPLATE) \
-          -V header-includes="\usepackage{unicode-math} \hyphenpenalty=10000 \exhyphenpenalty=10000 \makeatletter \renewcommand\section{\@startsection{section}{1}{\z@}{-3.5ex}{2.3ex}{\normalfont\Large\bfseries\centering}} \makeatother"
+          -V header-includes="\usepackage{amsmath} \usepackage{amssymb} \usepackage{unicode-math} \hyphenpenalty=10000 \exhyphenpenalty=10000 \makeatletter \renewcommand\section{\@startsection{section}{1}{\z@}{-3.5ex}{2.3ex}{\normalfont\Large\bfseries\centering}} \makeatother"
 
 # Ordered list of doc chapters for PDF generation
 PDF_CHAPTERS := README.md doc/CognitiveScienceSociety.md doc/Architecture.md doc/BasicModel.md doc/MachineMinds.md doc/Params.md

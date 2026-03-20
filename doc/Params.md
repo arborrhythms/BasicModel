@@ -89,7 +89,7 @@ The entry point that lifts raw data into the model's internal representation.
 | `nWhere` | int | `0` | Number of spatial/positional dimensions appended to each vector. When > 0, enables PositionalEncoding on all objects throughout the model. |
 | `nWhen` | int | `0` | Number of temporal dimensions appended to each vector. When > 0, enables TemporalEncoding on all objects throughout the model. |
 | `quantized` | bool | `false` | Whether input values are quantized/discrete. |
-| `tokenizer` | string | `"traditional"` | Tokenization method for text inputs. |
+| `lexer` | string | `"word"` | Tokenization mode for text inputs. Common values in the current configs are `"word"` and `"sentence"`. |
 
 **Note:** InputSpace's `inputShape` uses the data's native dimension (e.g. 784 for MNIST, `inputLength` for text), while `outputShape` uses `nDim` from TheObjectEncoding. The LiftingLayer bridges the two.
 
@@ -191,7 +191,7 @@ HTTP server settings (used by `serve.py`).
 ```xml
 <model>
   <architecture>
-    <reversible>true</reversible>
+    <reconstruct>symbols</reconstruct>
     <reshape>true</reshape>
     <modelType>lm</modelType>
     <ergodic>false</ergodic>
@@ -254,7 +254,7 @@ In this configuration:
 ```xml
 <model>
   <architecture>
-    <reversible>true</reversible>
+    <reconstruct>symbols</reconstruct>
     <modelType>embedding</modelType>
     <maskedPrediction>ARLM</maskedPrediction>
 

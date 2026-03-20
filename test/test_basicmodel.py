@@ -1058,7 +1058,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         self.assertTrue(os_.text_mode)
 
     def test_reconstruct_from_known_vectors(self):
-        """Given codebook vectors with nWhere, reconstruct_text should recover words at positions."""
+        """Given codebook vectors with nWhere, reconstruct_data should recover words at positions."""
         import math
         from BasicModel import (InputSpace, Data, OutputSpace, TheObjectEncoding,
                                 PositionalEncoding)
@@ -1100,7 +1100,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
             vectors[0, slot, where_idx[0]] = math.sin(pos * div_term)
             vectors[0, slot, where_idx[1]] = math.cos(pos * div_term)
 
-        recovered_words, recovered_positions = os_.reconstruct_text(vectors)
+        recovered_words, recovered_positions = os_.reconstruct_data(vectors)
         self.assertEqual(recovered_words[0], expected_words)
 
     def test_reconstruct_consecutive_no_nwhere(self):
@@ -1137,11 +1137,11 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
             expected_words.append(words_list[j])
         # nWhere left as zero -> consecutive mode
 
-        recovered_words, recovered_positions = os_.reconstruct_text(vectors)
+        recovered_words, recovered_positions = os_.reconstruct_data(vectors)
         self.assertEqual(recovered_words[0], expected_words)
 
     def test_reconstruct_to_buffer(self):
-        """reconstruct_text with to_buffer=True produces a string with positioned words."""
+        """reconstruct_data with to_buffer=True produces a string with positioned words."""
         import math
         from BasicModel import (InputSpace, Data, OutputSpace, TheObjectEncoding,
                                 PositionalEncoding)
@@ -1180,7 +1180,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
             vectors[0, slot, where_idx[0]] = math.sin(pos * div_term)
             vectors[0, slot, where_idx[1]] = math.cos(pos * div_term)
 
-        recovered_words, positions = os_.reconstruct_text(vectors)
+        recovered_words, positions = os_.reconstruct_data(vectors)
         text = os_.reconstruct_buffer(vectors)
         # The buffer should contain words at byte offsets
         self.assertIsInstance(text[0], str)
@@ -1266,7 +1266,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         latent = inp.forward(inputTensor)
         # Reverse pass
         inp.reverse(latent)
-        recovered = inp.reconstruct_text()
+        recovered = inp.reconstruct_data()
         for b in range(batch_size):
             nVec = inp.outputShape[0]
             exp = expected_tokens[b][:nVec]
@@ -1287,7 +1287,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         inputTensor = inp.prepInput(all_inputs)
         latent = inp.forward(inputTensor)
         inp.reverse(latent)
-        recovered = inp.reconstruct_text()
+        recovered = inp.reconstruct_data()
         expected = inp.vectors().tokenize(inputTensor)
         nVec = inp.outputShape[0]
         for b in range(len(all_inputs)):
@@ -1301,19 +1301,19 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
                     self.assertEqual(r, e,
                                      f"Example {b} token {i}: expected {e!r}, got {r!r}")
 
-    def test_reconstruct_text_joins_words(self):
-        """reconstruct_text(join=True) renders the whitespace buffer."""
+    def test_reconstruct_data_joins_words(self):
+        """reconstruct_data(text=True) renders the whitespace buffer."""
         inp, data = self._make_text_input_space()
         batch_size = 2
         inputBatch = data.train_input[0:batch_size]
         inputTensor = inp.prepInput(inputBatch)
         latent = inp.forward(inputTensor)
         inp.reverse(latent)
-        joined = inp.reconstruct_text(join=True)
+        joined = inp.reconstruct_data(text=True)
         self.assertIsInstance(joined[0], str)
-        # Reconstructed text should match original input (ignoring trailing space padding)
+        # Reconstructed text should match original input (ignoring trailing null/space padding)
         for b in range(batch_size):
-            reconstructed = joined[b].rstrip()
+            reconstructed = joined[b].rstrip('\x00 ')
             original = inputBatch[b]
             self.assertEqual(reconstructed, original,
                              f"Batch {b}: reconstructed {reconstructed!r} != original {original!r}")
@@ -1949,7 +1949,7 @@ class TestReconstructionSymbols(unittest.TestCase):
             # Check reconstruction quality: at least 75% of inputs must
             # perfectly reconstruct (some words may snap to wrong codebook
             # entry when the reverse path is approximate).
-            recon_texts = m.inputSpace.reconstruct_text(join=True)
+            recon_texts = m.inputSpace.reconstruct_data(text=True)
             perfect = 0
             for i in range(len(test_input)):
                 original = m._bytes_to_text(test_input[i])

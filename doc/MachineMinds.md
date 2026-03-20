@@ -2,25 +2,7 @@ Alec Rogers
 
 September 24, 2025
 
-[]{#_Toc .anchor}Table of Contents
-
-Table of Contents [2](#_Toc)
-
-Abstract [3](#_Toc1)
-
-Background [5](#_Toc2)
-
-Methods [8](#_Toc3)
-
-Results [10](#_Toc4)
-
-Discussion [11](#_Toc5)
-
-Conclusion [12](#_Toc6)
-
-References [12](#_Toc7)
-
-[]{#_Toc1 .anchor}Abstract
+## Abstract
 
 *Problem*
 
@@ -38,7 +20,7 @@ References [12](#_Toc7)
 
 *Network invertibility is important with respect to developing a meaningful semantic embedding: the symbols of an LLM should correspond to something and we should be able to know to what they correspond, as opposed to being merely abstract tokens inside of Searl's Chinese translation engine.*
 
-[]{#_Toc2 .anchor}Background
+## Background
 
 The scope of this paper is Large Language Models, or reinforcement learning where the inputs and outputs are known and the weights of the network are unknown (i.e. the transformer architecture).
 
@@ -58,7 +40,7 @@ $$\mu = 1 - temp$$
 
 $$\sigma = temp$$
 
-In this experiment, the temperature of the ergodic weight process begins at 1 and decreases to 0 using the ADAM algorithm \[make sure there are the same number of parameters here\].
+In this experiment, the temperature of the ergodic weight process begins at 1 and decreases to 0 using the ADAM algorithm.
 
 There are three significant advantages to using ergodic weights. The first advantage is that a learning rate is not necessary, since the biases have different contributions as a result of the randomness and converge as the temperature decreases. Thus, the adaptive learning rate schedule is reinterpreted as a process of simulated annealing. The second advantage is that the weights can be initialized to zero, since they find different locations in weight space over time. It is hypothesized that this process of annealing will help the model to bounce out of local minima and saddle points within its weight space more often than taking a step in the direction opposite to the gradient, which is often prone to deterministic and oscillatory behavior. The third advantage is described in the literature on simulated annealing, according to which there is a theoretical guarantee of convergence to the global optimum if run for an infinite number of iterations.
 
@@ -66,7 +48,7 @@ Note that the standard *dropout* algorithm may be interpreted as a per-neuron va
 
 Network Invertibility
 
-The egocentric point of view tends to see perception as a passive process, while physics suggests that it is bidirectional. That bidirectionally within a neural network can be approximated via the invertibility of its weight multiplications and activation functions. Even when the network is not invertible, bidirectionality provides an important role in backpropogation and network topologies such as autoencoders that perform a decoding step that is analogous to the reverse of the encoding step. In modern practice, the topological similarity of encoders and decoders does not typically extend to shared weights. Here, we briefly examine the possibility of simultaneously training the network in both the forward and reverse direction: the forward encoding step in which the outputs are predicted from the input, and the reverse decoding step in which the inputs are predicted from the (possibly predicted) outputs. For a related experiment in sharing the weight matrix between controller (policy) and critic (value) networks, see *Rogers et al 2001*.
+The egocentric point of view tends to see perception as a passive process, while physics suggests that it is bidirectional. That bidirectionality within a neural network can be approximated via the invertibility of its weight multiplications and activation functions. Even when the network is not invertible, bidirectionality provides an important role in backpropagation and network topologies such as autoencoders that perform a decoding step that is analogous to the reverse of the encoding step. In modern practice, the topological similarity of encoders and decoders does not typically extend to shared weights. Here, we briefly examine the possibility of simultaneously training the network in both the forward and reverse direction: the forward encoding step in which the outputs are predicted from the input, and the reverse decoding step in which the inputs are predicted from the (possibly predicted) outputs. For a related experiment in sharing the weight matrix between controller (policy) and critic (value) networks, see *Rogers et al 2001*.
 
 In this experiment, the output is a one-hot encoded vector corresponding to the predicted MNIST digit, a classification task that is clearly not a bijective (invertible) function. To address this situation, the inputs are predicted from the outputs of the *penultimate* network layer; thus, the network is composed of a bijective front and a surjective back. We characterize these components respectively as the *recognizer* (or representer) and the *generalizer*.
 
@@ -86,7 +68,7 @@ Amplitude certainty
 
 $$error = (\widehat{y} - y)^{2}$$
 
-[]{#_Toc3 .anchor}Methods
+## Methods
 
 The software used to run these experiments is a combination of Python and PyTorch (the Python code is provided in the appendices).
 
@@ -116,13 +98,13 @@ $$\bigtriangleup_{W} = (ce - \alpha\widehat{y}e^{2})x$$
 
 This equation demonstrates that the network is simultaneously trying to minimize error and "incorrect certainty".
 
-[]{#_Toc4 .anchor}Results
+## Results
 
 The most important result of this experiment is the model comparison with error bars, that demonstrates that the simple model performs slightly better than all proposed paradigms, and that all of the proposed paradigms perform a![ModelComparison.png](mm-image1.png){width="6.05387467191601in" height="3.337696850393701in"}lmost identically:
 
 Finally, although there is no invertible network to compare it to, we show the reconstruction of the input by running the network in reverse, which uses a separate weight matrix and MSE loss for input reconstruction:![3_Reconstruction.png](mm-image2.png){width="1.8625087489063867in" height="1.9371817585301838in"}![2_Reconstruction.png](mm-image3.png){width="1.890411198600175in" height="1.9662029746281715in"}![1_Reconstruction.png](mm-image4.png){width="1.890411198600175in" height="1.9662029746281715in"}
 
-[]{#_Toc5 .anchor}Discussion
+## Discussion
 
 The benefits of the novel paradigms described in this paper are as follows:
 
@@ -138,11 +120,11 @@ The Pearson correlation between the certainty and the accuracy for each digit is
 
 Finally, **the use of the autograd algorithm within PyTorch led to weights being tuned directly**, which interferes with the simultaneous tuning of the temperature parameter in a way that is not explicitly captured in this paper. So while the addition of weight variance does make random weight initialization unnecessary, the intricacies of the interaction between the weight tuning and the temperature tuning is hidden behind the autograd mechanism.
 
-[]{#_Toc6 .anchor}Conclusion
+## Conclusion
 
 Overall, I am optimistic about the strength of the philosophical grounding behind several of the paradigms introduced in this paper. However, due to several implementation issues, I do not feel that the hypotheses were well-tested. Further, even if they had been, the effectiveness of these neural network paradigms in both multilayer neural networks and with more challenging tasks is not clear.
 
-[]{#_Toc7 .anchor}References
+## References
 
 Rogers, Shannon, Lendaris; 2001: *A comparison of DHP based antecedent parameter tuning strategies for fuzzy control*, Proceedings of the Joint 9th IFSA World Congress and 20th NAFIPS International Conference, IEEE
 

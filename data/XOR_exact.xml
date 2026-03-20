@@ -14,15 +14,16 @@
     </data>
 
     <training>
-      <numEpochs>1000</numEpochs>
+      <numEpochs>600</numEpochs>
       <learningRate>0.01</learningRate>
       <weightsPath></weightsPath>
       <autosave>false</autosave>
       <autoload>false</autoload>
-      <reconRatio>0.3</reconRatio>
 
+      <reconRatio>0.5</reconRatio>
       <maskedPrediction>NONE</maskedPrediction>
-      <trainEmbedding>BACKPROP</trainEmbedding>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <trainEmbeddingRatio>0.05</trainEmbeddingRatio>
 
     </training>
   </architecture>

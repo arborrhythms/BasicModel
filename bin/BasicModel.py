@@ -26,11 +26,10 @@ try:
 except ImportError:
     make_dot = None
 from matplotlib import pyplot as plt
-from datasets import load_dataset
 from embed import WordVectors, PretrainModel
+from data import Data, TheData
 from sklearn.metrics import classification_report
 from sklearn.decomposition import PCA
-import pandas as pd
 from vector_quantize_pytorch import ResidualVQ, VectorQuantize
 from Model import Layer, PiLayer, SigmaLayer, InvertibleSigmaLayer, InvertiblePiLayer # Import custom layers from Model.py
 from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer
@@ -314,453 +313,6 @@ class ObjectEncoding(nn.Module):
     #    return x
 TheObjectEncoding = ObjectEncoding()
 
-class Data():
-    """Dataset container: loads, preprocesses, and serves train/validation/test splits.
-
-    Supports MNIST (numeric), XOR (toy text), and Rotten Tomatoes (real text).
-    Text datasets go through ``processLM()`` which tokenizes via ``stringTensor()``
-    (ASCII byte encoding, zero-padded to ``inputLength``) and builds an immutable
-    source buffer for span-table integration.
-
-    After ``load()``, tensors are moved to ``TheDevice`` and pre-shaped to
-    [N, D, 1] so the training loop avoids per-batch unsqueezes.
-
-    A single global instance ``TheData`` is used by ``BasicModelFactory.run()``.
-    """
-    train_input       = []
-    train_output      = []
-    validation_input  = []
-    validation_output = []
-    test_input        = []
-    test_output       = []
-
-    inputLength       = 4096   # max byte length for text inputs (zero-padded)
-    combinedTokens    = []
-
-    def __init__(self):
-        self.train_input       = []
-        self.train_output      = []
-        self.validation_input  = []
-        self.validation_output = []
-        self.test_input        = []
-        self.test_output       = []
-        self.combinedTokens    = []
-        self.reconstructed_input  = None  # filled after reverse pass (buffer strings)
-        self.reconstructed_output = None  # filled after output reverse
-
-    @property
-    def nInput(self):
-        """Number of input features, derived from train_input shape."""
-        if isinstance(self.train_input, torch.Tensor):
-            return self.train_input.shape[1]
-        return len(self.train_input)  # list of strings for LM
-
-    @property
-    def inputDim(self):
-        """Dimensionality per input feature, derived from train_input shape."""
-        if isinstance(self.train_input, torch.Tensor) and self.train_input.ndim >= 3:
-            return self.train_input.shape[2]
-        return 1
-
-    @property
-    def nOutput(self):
-        """Number of output features, derived from train_output shape."""
-        if isinstance(self.train_output, torch.Tensor):
-            return self.train_output.shape[1]
-        if isinstance(self.train_output, list) and len(self.train_output) > 0:
-            return len(self.train_output[0])
-        return 0
-
-    @property
-    def outputDim(self):
-        """Dimensionality per output feature, derived from train_output shape."""
-        if isinstance(self.train_output, torch.Tensor) and self.train_output.ndim >= 3:
-            return self.train_output.shape[2]
-        return 1
-
-    def load(self, dataset, num_shards=1, max_docs=10000, shard_dir=None, dat=None):
-        if dataset == "mnist":
-            self.loadMNist()
-        if dataset == "xor":
-            self.loadXOR()
-        if dataset == "tomatoes":
-            self.loadTomatoes()
-        if dataset == "text":
-            self.loadShards(num_shards, max_docs, shard_dir)
-        if dataset == "inline":
-            self.loadInline(dat or {})
-        self.toDevice()
-    def toDevice(self):
-        """Move all data tensors to TheDevice and pre-shape for training.
-
-        Adds the trailing dimension (unsqueeze) that prepInput/prepOutput
-        previously applied per-batch, so the hot loop can skip both the
-        unsqueeze and the redundant .to() call.
-        """
-        for attr in ("train_input", "train_output",
-                      "test_input", "test_output",
-                      "validation_input", "validation_output"):
-            v = getattr(self, attr)
-            if isinstance(v, torch.Tensor):
-                v = v.to(TheDevice)
-                if v.ndim == 2:          # [N, D] → [N, D, 1]
-                    v = v.unsqueeze(2)
-                setattr(self, attr, v)
-            elif isinstance(v, list):
-                setattr(self, attr, [
-                    t.to(TheDevice) if isinstance(t, torch.Tensor) else t
-                    for t in v
-                ])
-
-    @contextmanager
-    def runtime_batch(self, inputs, outputs=None, mode=None):
-        """Stage transient inference data into train_input/train_output.
-
-        Saves and restores the previous contents so training data is
-        not corrupted (though in practice, inference and training never
-        overlap).
-
-        Args:
-            inputs: list of strings for the runtime batch.
-            outputs: optional list of output targets.
-            mode: optional inference mode ('ARIR', 'ARLM', or None).
-        """
-        saved_input = self.train_input
-        saved_output = self.train_output
-        self.train_input = inputs
-        self.train_output = outputs or []
-        self._runtime_mode = mode
-        try:
-            yield
-        finally:
-            self.train_input = saved_input
-            self.train_output = saved_output
-            self._runtime_mode = None
-
-    def pushInput(self, token):
-        """Append a token to train_input[0] during inference.
-
-        For text-based ARLM inference, train_input is a list containing
-        a single string.  Appends the predicted token for autoregressive
-        generation.
-        """
-        if not isinstance(self.train_input, list) or len(self.train_input) == 0:
-            raise TypeError(f"pushInput: unsupported train_input type {type(self.train_input)}")
-        elem = self.train_input[0]
-        if isinstance(elem, str):
-            self.train_input[0] = elem + token
-        elif isinstance(elem, torch.Tensor):
-            chars = [chr(int(b) & 0xFF) for b in elem.tolist()]
-            existing = "".join(chars).rstrip("\x00")
-            self.train_input[0] = self.stringTensor(existing + token)
-        else:
-            raise TypeError(f"pushInput: unsupported element type {type(elem)}")
-
-    def pushOutput(self, token):
-        """Append a target to train_output[0] during inference.
-
-        For text-based data, appends the token to the first output sentence.
-        Not used during inference but provided for completeness.
-        """
-        if isinstance(self.train_output, list) and len(self.train_output) > 0:
-            self.train_output[0] = self.train_output[0] + " " + token
-        else:
-            raise TypeError(f"pushOutput: unsupported train_output type {type(self.train_output)}")
-
-    def shuffle(self):
-        rand_indx = torch.randperm(len(self.train_output))
-        if isinstance(self.train_input, list):
-            self.train_input  = [self.train_input[i] for i in rand_indx]
-            self.train_output = [self.train_output[i] for i in rand_indx]
-        else:
-            self.train_input = self.train_input[rand_indx]
-            self.train_output = self.train_output[rand_indx]
-    def loadMNist(self):
-        df = pd.read_csv(os.path.join(ProjectPaths.DATA_DIR, 'mnist_train.csv'))
-        train = df.values
-        df = pd.read_csv(os.path.join(ProjectPaths.DATA_DIR, 'mnist_test.csv'))
-        test = df.values
-        self.train_input  = torch.tensor(train[:, 1:]/255.0, dtype=torch.float)
-        mnistMean = torch.mean(self.train_input)
-        self.train_input = self.train_input - mnistMean
-        mnistSTD = torch.std(self.train_input)
-        self.train_input = self.train_input / mnistSTD
-        self.train_output = torch.zeros((train.shape[0],10), dtype=torch.float)
-        for i, ndx in enumerate(train[:, 0]):
-            self.train_output[i][ndx:ndx+1] = 1.0
-        self.test_input  = torch.tensor(test[:, 1:]/255.0, dtype=torch.float)
-        self.test_input  = (self.test_input - mnistMean) / mnistSTD
-        self.test_output = torch.zeros((test.shape[0],10), dtype=torch.float)
-        for i, ndx in enumerate(test[:, 0]):
-            self.test_output[i][ndx:ndx+1] = 1.0
-        self.validation_input  = torch.tensor(test[:, 1:]/255.0, dtype=torch.float)
-        self.validation_output = torch.zeros((test.shape[0],10), dtype=torch.float)
-        for i, ndx in enumerate(test[:, 0]):
-            self.validation_output[i][ndx:ndx+1] = 1.0
-        self.inputLength = 28 * 28
-    def loadXOR(self):
-        data = {
-            "train": {
-                "text": ["hello world", "hello there", "loving world", "loving there" ], # nPercepts = 3
-                "label": [[0], [1], [1], [0]]
-                #"label": [[0, 1], [1, 0], [1, 0], [0, 1]]
-            },
-            "validation": {
-                "text": ["hello world", "hello there", "loving world", "loving there" ], # nPercepts = 3
-                "label": [[0], [1], [1], [0]]
-                #"label": [[0, 1], [1, 0], [1, 0], [0, 1]]
-            },
-            "test": {
-                "text": ["hello world", "hello there", "loving world", "loving there" ], # nPercepts = 3
-                "label": [[0], [1], [1], [0]]
-                #"label": [[0, 1], [1, 0], [1, 0], [0, 1]]
-            }
-        }
-        self.train_input      = data["train"]["text"]
-        self.train_output      = data["train"]["label"]
-        self.validation_input = data["validation"]["text"]
-        self.validation_output = data["validation"]["label"]
-        self.test_input       = data["test"]["text"]
-        self.test_output       = data["test"]["label"]
-        self.processLM(data)
-    def loadInline(self, dat):
-        """Load dataset from inline XML ``<input use="...">`` / ``<output use="...">`` elements.
-
-        ``dat`` is the parsed ``<data>`` dict.  ``<input>`` and ``<output>``
-        children with a ``use`` attribute carry pipe-separated sentence strings
-        and numeric labels respectively::
-
-            <input use="train">zero xor zero|zero xor one|one xor zero|one xor one</input>
-            <output use="train">0|1|1|0</output>
-
-        Missing ``use="validation"`` falls back to the test split.
-        """
-        def _items(key):
-            v = dat.get(key, [])
-            return v if isinstance(v, list) else [v]
-
-        def _get_split(items, use_val):
-            for item in items:
-                if isinstance(item, dict) and item.get("use") == use_val:
-                    return str(item.get("_", ""))
-            return ""
-
-        def _parse_pipe(text):
-            return [s.strip() for s in text.split("|") if s.strip()]
-
-        def _parse_labels(raw):
-            result = []
-            for v in raw:
-                try:
-                    result.append([float(v)])
-                except ValueError:
-                    result.append([0.0])
-            return result
-
-        inputs  = _items("input")
-        outputs = _items("output")
-
-        train_texts  = _parse_pipe(_get_split(inputs,  "train"))
-        test_texts   = _parse_pipe(_get_split(inputs,  "test"))
-        val_texts    = _parse_pipe(_get_split(inputs,  "validation")) or test_texts
-
-        train_labels = _parse_labels(_parse_pipe(_get_split(outputs, "train")))
-        test_labels  = _parse_labels(_parse_pipe(_get_split(outputs, "test")))
-        val_labels   = _parse_labels(_parse_pipe(_get_split(outputs, "validation"))) or test_labels
-
-        data = {
-            "train":      {"text": train_texts, "label": train_labels},
-            "validation": {"text": val_texts,   "label": val_labels},
-            "test":       {"text": test_texts,  "label": test_labels},
-        }
-        self.processLM(data)
-    def loadTomatoes(self):
-        cache_file = os.path.join(ProjectPaths.DATA_DIR, "rottenTomatoes.data")
-
-        # Load or cache the pre-trained Word2Vec model
-        if os.path.exists(cache_file):
-            print("Loading cached data...")
-            data = torch.load(cache_file, weights_only=False)
-        else:
-            print("Downloading data...")
-            data = load_dataset("rotten_tomatoes")
-            torch.save(data, cache_file)
-        self.processLM(data)
-    def loadShards(self, num_shards, max_docs, shard_dir):
-        """Load training text from FineWeb-EDU parquet shards.
-
-        Uses the same shard infrastructure as embed.py so the model trains
-        on the same corpus that produced the word embeddings.
-        """
-        from embed import get_shard_paths, iter_documents
-
-        if shard_dir is None:
-            shard_dir = os.path.join(ProjectPaths.DATA_DIR, "fineweb")
-        # Resolve relative paths against project root
-        if not os.path.isabs(shard_dir):
-            shard_dir = os.path.join(ProjectPaths.PROJECT_DIR, shard_dir)
-
-        print(f"Loading text: {num_shards} shard(s), max {max_docs} docs "
-              f"from {shard_dir}")
-        shard_paths = get_shard_paths(shard_dir, num_shards=num_shards)
-        if not shard_paths:
-            raise RuntimeError(f"No shards found in {shard_dir}. "
-                               "Run 'make basic_data' first.")
-
-        docs = list(iter_documents(shard_paths, max_docs=max_docs))
-        if not docs:
-            raise RuntimeError("No documents found in shards.")
-
-        # Split 80/10/10 into train/validation/test
-        random.shuffle(docs)
-        n = len(docs)
-        n_val = max(1, n // 10)
-        n_test = max(1, n // 10)
-        n_train = n - n_val - n_test
-
-        train_texts = docs[:n_train]
-        val_texts = docs[n_train:n_train + n_val]
-        test_texts = docs[n_train + n_val:]
-
-        data = {
-            "train":      {"text": train_texts, "label": []},
-            "validation": {"text": val_texts,   "label": []},
-            "test":       {"text": test_texts,  "label": []},
-        }
-
-        print(f"Loaded {n_train} train, {n_val} val, {n_test} test documents")
-        self.processLM(data)
-    def processLM(self, data, permute=True):
-        train_tokens      = data["train"]["text"]
-        train_labels      = data["train"]["label"]
-        validation_tokens = data["validation"]["text"]
-        validation_labels = data["validation"]["label"]
-        test_tokens       = data["test"]["text"]
-        test_labels       = data["test"]["label"]
-
-        self.combinedTokens = train_tokens + validation_tokens + test_tokens
-        self.combinedTokens = list(set(self.combinedTokens))
-
-        # Store raw strings — tensorized lazily in prepInput()
-        self.train_input  = list(train_tokens)
-        self.validation_input  = list(validation_tokens)
-        self.test_input  = list(test_tokens)
-
-        # For masked LM, labels are target word strings — store for later
-        # conversion to embedding vectors by prepare_lm_targets().
-        # For non-LM tasks, labels are numeric lists.
-        if not train_labels:
-            # Masked prediction mode: targets computed at runtime
-            # Raw sentences are already in train_input/validation_input/test_input
-            self.masked_prediction = 'MLM'
-            # Sentinel outputs for OutputSpace sizing — shape must match embedding dim
-            # (actual targets computed at runtime by expand_masked)
-            self.train_output = [torch.zeros(1) for _ in train_tokens]
-            self.validation_output = [torch.zeros(1) for _ in validation_tokens]
-            self.test_output = [torch.zeros(1) for _ in test_tokens]
-            self._lm_labels = None
-        elif isinstance(train_labels[0], str):
-            self._lm_labels = {
-                "train": list(train_labels),
-                "validation": list(validation_labels),
-                "test": list(test_labels),
-            }
-            # Placeholder until embeddings are available
-            self.train_output = [torch.zeros(1) for _ in train_labels]
-            self.validation_output = [torch.zeros(1) for _ in validation_labels]
-            self.test_output = [torch.zeros(1) for _ in test_labels]
-        else:
-            self._lm_labels = None
-            self.train_output = [torch.tensor(l, dtype=torch.float) for l in train_labels]
-            self.validation_output = [torch.tensor(l, dtype=torch.float) for l in validation_labels]
-            self.test_output = [torch.tensor(l, dtype=torch.float) for l in test_labels]
-
-        if permute:
-            rand_indx = torch.randperm(len(self.train_output))
-            self.train_input  = [self.train_input[i] for i in rand_indx]
-            self.train_output = [self.train_output[i] for i in rand_indx]
-            if self._lm_labels is not None:
-                self._lm_labels["train"] = [self._lm_labels["train"][i] for i in rand_indx]
-
-    def tokenize(self, TheLanguageModel):
-        self.train_input      = TheLanguageModel.tokenize(self.train_input)
-        self.validation_input = TheLanguageModel.tokenize(self.validation_input)
-        self.test_input       = TheLanguageModel.tokenize(self.test_input)
-    def data(self):
-        data = {
-            "train": {
-                "text": self.train_input,
-                "label": self.train_output
-            },
-            "validation": {
-                "text":self.validation_input,
-                "label": self.validation_output
-            },
-            "test": {
-                "text": self.test_input,
-                "label": self.test_output
-            }
-        }
-    def getEmbeddingSize(self):
-        return self.getInputSize(), self.getOutputSize()
-    def getInputSize(self):
-        if self.train_input and isinstance(self.train_input[0], str):
-            return self.inputLength
-        inputEmbeddingSize  = self.train_input[0].shape[0]
-        return inputEmbeddingSize
-    def getOutputSize(self):
-        outShape = len(self.train_output)
-        outputEmbeddingSize = self.train_output[0].shape[0]
-        return outputEmbeddingSize
-    def prepare_lm_targets(self, embedding):
-        """Convert word-string labels to embedding vectors for masked LM training.
-
-        Called after InputSpace creates the Embedding, so word vectors are available.
-        Each target word is looked up in the CBOW vocabulary; unknown words get
-        a zero vector (the model should learn to predict known words).
-
-        Args:
-            embedding: An Embedding instance with pretrain.key_to_index and _emb weights.
-        """
-        if self._lm_labels is None:
-            return
-        weights = embedding.wv._vectors  # (vocab_size, vec_size)
-        vec_size = weights.shape[1]
-        vocab_size = weights.shape[0]
-
-        def words_to_embeddings(word_list):
-            targets = []
-            for word in word_list:
-                w = word.lower()
-                if w in embedding.pretrain.key_to_index:
-                    idx = embedding.pretrain.key_to_index[w]
-                    one_hot = torch.zeros(vocab_size, device=weights.device)
-                    one_hot[idx] = 1.0
-                    v = one_hot @ weights  # differentiable
-                    v = F.normalize(v, p=2, dim=0)
-                else:
-                    v = torch.zeros(vec_size, device=weights.device)
-                targets.append(v)
-            return targets
-
-        self.train_output = words_to_embeddings(self._lm_labels["train"])
-        self.validation_output = words_to_embeddings(self._lm_labels["validation"])
-        self.test_output = words_to_embeddings(self._lm_labels["test"])
-        print(f"LM targets: {len(self.train_output)} train, "
-              f"{len(self.validation_output)} val, "
-              f"{len(self.test_output)} test "
-              f"(embedding dim={vec_size})")
-        self._lm_labels = None  # free memory
-
-    def stringTensor(self, string):
-        # Encode to ASCII, replacing non-ASCII chars (smart quotes, accents, etc.)
-        ascii_values = list(string.encode('ascii', errors='replace'))[:self.inputLength]
-        tensor = torch.tensor(ascii_values, dtype=torch.int8)
-        if tensor.size(0) < self.inputLength:
-            # Pad with space (32), matching the output buffer initialization
-            tensor = F.pad(tensor, (0, self.inputLength - tensor.size(0)), 'constant', 32)
-        return tensor
-TheData = Data()
 class Message():
     def __call__(self, txt, newline="\n"):
         print(txt, end=newline)
@@ -968,10 +520,44 @@ class VectorSet(nn.Module):
         """Return raw reverse vector with all subspaces intact (identity for VectorSet)."""
         return y
 
+    def _get_codebook(self):
+        """Return the live codebook parameter for reverse-path snapping."""
+        return self.vq.codebook
+
     def reverse(self, y):
+        """Reverse: strip ObjectEncoding, snap content to codebook, reassemble.
+
+        Returns full-length vectors with snapped codebook content and
+        original positions/times restored, so gradients flow through
+        the live codebook parameter.
+        """
         if self.passThrough:
             return y
-        return y  # existing VectorSet has no explicit reverse beyond identity
+        content, positions, times = TheObjectEncoding.reverse(y.clone())
+        batch = content.shape[0]
+        nVec = content.shape[1]
+        codebook = self._get_codebook()  # live parameter
+        nWhat = self.nDim
+
+        # Snap each vector to nearest codebook entry
+        for b in range(batch):
+            for v in range(nVec):
+                vec = content[b, v, :nWhat]
+                if vec.abs().sum().item() < 1e-8:
+                    continue  # zero-padding sentinel
+                sims = F.cosine_similarity(vec.unsqueeze(0), codebook[:, :nWhat], dim=1)
+                idx = sims.argmax().item()
+                content[b, v, :nWhat] = codebook[idx, :nWhat]
+
+        # Reassemble: write extracted positions and times back into encoding slots
+        embSize = content.shape[-1]
+        where_idx = np.add([embSize, embSize], TheObjectEncoding.where.index)
+        when_idx = np.add([embSize, embSize], TheObjectEncoding.when.index)
+        if where_idx[0] >= 0 and where_idx[0] < embSize:
+            content[:, :, where_idx] = positions
+        if when_idx[0] >= 0 and when_idx[0] < embSize:
+            content[:, :, when_idx] = times
+        return content
 
     # The following routine needs also to check if the inner product is positive,
     # otherwise the intersection of the hyperplanes outside of the unit circle
@@ -1147,7 +733,8 @@ class Embedding(VectorSet):
         self.pretrain = None       # PretrainModel, created in create()
         self.wv = None             # WordVectors (nn.Module with nn.Parameter)
         self.doc_spans = []
-        self.optimize_embedding = True  # set by BasicModelFactory from <trainEmbedding>
+        self.optimize_embedding = False  # set by BasicModelFactory from <trainEmbedding>
+        object.__setattr__(self, '_model', None)  # back-ref to BasicModel, avoids nn.Module submodule registration
         self.doc_sources = []
 
     @staticmethod
@@ -1225,9 +812,9 @@ class Embedding(VectorSet):
         # target for positions beyond the real tokens.
         self.insert("\x00")
 
-        # Bootstrap codebook with printable ASCII (32–126) so any OOV word
-        # can be spelled out character-by-character without zero vectors.
-        for cp in range(32, 127):
+        # Bootstrap codebook with printable ASCII (1–127) so any OOV word
+        # can be spelled out character-by-character.
+        for cp in range(1, 127):
             ch = chr(cp)
             if ch not in self.pretrain.key_to_index:
                 self.insert(ch)
@@ -1431,17 +1018,38 @@ class Embedding(VectorSet):
         if input.dim() == 1:
             input = input.unsqueeze(0)  # [len] -> [1, len]
         batch = input.shape[0]
-        if getattr(self, 'optimize_embedding', True):
-            codebook = self.wv._vectors
-        else:
-            codebook = self.wv._vectors.detach()
+        codebook = self.wv._vectors
         batch_tokens = []
         span_counts = []
         final_offsets = []
 
-        result = torch.zeros([batch, self.nInput, self.embeddingSize], device=input.device)
+        # Phase 1: Tokenize all batch items and collect OOV words
+        all_streams = []
+        oov_words = []
+        oov_seen = set()
         for b in range(batch):
             stream = self._token_stream(input[b])
+            all_streams.append(stream)
+            for token_text, _ in stream:
+                if (token_text not in self.pretrain.key_to_index
+                        and token_text not in oov_seen):
+                    oov_words.append(token_text)
+                    oov_seen.add(token_text)
+
+        # Phase 2: Batch-insert OOV words into codebook
+        if oov_words:
+            for word in oov_words:
+                self.insert(word)
+            codebook = self.wv._vectors  # refresh after insert
+            if self.optimize_embedding:
+                model = getattr(self, '_model', None)
+                if model is not None:
+                    model.rebuild_optimizer()
+
+        # Phase 3: Build result tensor (all tokens now in codebook)
+        result = torch.zeros([batch, self.nInput, self.embeddingSize], device=input.device)
+        for b in range(batch):
+            stream = all_streams[b]
             n_tokens = min(len(stream), self.nInput)
             tokens = stream[:n_tokens]
             batch_tokens.append(tokens)
@@ -1456,12 +1064,12 @@ class Embedding(VectorSet):
                 cb_idx = self._token_to_index(token_text)
                 result[b, i, :] = self._encode_vector(
                     codebook[cb_idx], token_idx=cb_idx)
-            # Fill remaining positions with space embedding (matches output buffer init)
-            space_idx = self.wv.key_to_index.get(" ")
-            if space_idx is not None:
-                space_vec = self._encode_vector(codebook[space_idx], token_idx=space_idx)
+            # Fill remaining positions with NULL embedding (input buffer is null-terminated)
+            null_idx = self.wv.key_to_index.get("\x00")
+            if null_idx is not None:
+                null_vec = self._encode_vector(codebook[null_idx], token_idx=null_idx)
                 for i in range(n_tokens, self.nInput):
-                    result[b, i, :] = space_vec
+                    result[b, i, :] = null_vec
         if not return_meta:
             return result
         return result, {
@@ -1568,21 +1176,30 @@ class Embedding(VectorSet):
             return decoded.get('tokens', [])
         return decoded
 
+    def _get_codebook(self):
+        """Return the live codebook parameter (Embedding uses WordVectors)."""
+        return self.wv._vectors
+
     def reverse(self, y, return_meta=False):
-        """Partition into nWhat/nWhere/nWhen subspaces and snap to codebook.
+        """Snap to codebook via super(), then build word/offset metadata.
 
-        Strips ObjectEncoding, snaps nWhat to nearest codebook word, decodes
-        nWhere to byte offsets, and stores positioned tokens for rendering.
-
-        Returns: content tensor [batch, nVec, embSize] with encoding zeroed.
+        Returns: reassembled tensor [batch, nVec, embSize] with snapped
+        codebook content and original positions/times restored.
+        When return_meta=True, also returns metadata for text rendering.
         """
-        content, positions, times = TheObjectEncoding.reverse(y.clone())
+        # Base class does ObjectEncoding.reverse + snap + reassemble
+        content = super().reverse(y)
+
+        # Extract positions from the reassembled tensor for metadata
+        embSize = content.shape[-1]
+        where_idx = np.add([embSize, embSize], TheObjectEncoding.where.index)
+        when_idx = np.add([embSize, embSize], TheObjectEncoding.when.index)
+        positions = content[:, :, where_idx] if where_idx[0] >= 0 and where_idx[0] < embSize else None
+        times = content[:, :, when_idx] if when_idx[0] >= 0 and when_idx[0] < embSize else None
+
         batch = content.shape[0]
         nVec = content.shape[1]
-        if getattr(self, 'optimize_embedding', True):
-            codebook = self.wv._vectors
-        else:
-            codebook = self.wv._vectors.detach()
+        codebook = self.wv._vectors
         words_list = self.wv.index_to_key
         nWhat = codebook.shape[1]
 
@@ -1591,8 +1208,9 @@ class Embedding(VectorSet):
         recovered_tokens = [[] for _ in range(batch)]
         for b in range(batch):
             for v in range(nVec):
-                offset = self._decode_offset(positions, b, v)
+                offset = self._decode_offset(positions, b, v) if positions is not None else None
                 vec = content[b, v, :nWhat]
+                # Content is already snapped; _nearest_idx confirms the word label
                 idx = self._nearest_idx(vec, codebook=codebook)
                 word = words_list[idx]
                 recovered_words[b].append(word)
@@ -1609,12 +1227,12 @@ class Embedding(VectorSet):
             return content, meta
         return content
 
-    def reconstruct_text(self, decoded, join=False):
+    def reconstruct_data(self, decoded, text=False):
         """Render recovered words from explicit reverse() metadata.
 
         Args:
             decoded: reverse() metadata dict or token stream
-            join: If True, return list of joined strings. If False, return
+            text: If True, return list of joined strings. If False, return
                   list of word lists (one per batch element).
 
         Returns:
@@ -1622,7 +1240,7 @@ class Embedding(VectorSet):
             Empty words (from zero-padded vectors) are stripped.
         """
         batch_tokens_list = self._decoded_tokens(decoded)
-        if join:
+        if text:
             return list(self.reconstruct_to_buffer(decoded))
         result = []
         for batch_tokens in batch_tokens_list:
@@ -2127,11 +1745,11 @@ class InputSpace(Space):
             self._recovered_input = None
         return self.input
 
-    def reconstruct_text(self, join=False):
+    def reconstruct_data(self, text=False):
         """Render the last recovered text state stored on InputSpace."""
         if getattr(self, '_recovered_input', None) is None:
-            raise RuntimeError("reconstruct_text() called before reverse()")
-        return self.vectors().reconstruct_text(self._recovered_input, join=join)
+            raise RuntimeError("reconstruct_data() called before reverse()")
+        return self.vectors().reconstruct_data(self._recovered_input, text=text)
 
     def reconstruct_to_buffer(self, buf_size=None):
         """Render the last recovered text buffer stored on InputSpace."""
@@ -2239,6 +1857,8 @@ class InputSpace(Space):
                 outputTensor = self.outputSpace.prepOutput(outputBatch)
             else:
                 outputTensor = None
+            self._unmasked_embedding = None
+            self._mask_positions = None
             return (inputTensor, outputTensor), batchNum + 1
         else:
             # Masked prediction: one sentence -> N masked examples.
@@ -2257,14 +1877,37 @@ class InputSpace(Space):
                 embedded.detach(), sentence, self.data.masked_prediction)
 
             # Build masked copies from the live embedding (retains gradient graph)
-            masked_batch, _ = self.expand_masked(
+            masked_batch, mask_positions = self.expand_masked(
                 embedded, sentence, self.data.masked_prediction)
+
+            # Cache unmasked embedding for reconstruction loss target
+            self._unmasked_embedding = embedded.detach()  # [1, nVec, embSize]
+            self._mask_positions = mask_positions           # list[int], len=N
 
             # Hand masked embedding to forward() via cache — no re-embedding,
             # but gradient flows back through masked_batch → embedded → embedding weights
             self._cached_embedding = masked_batch
 
             return (inputTensor, targets), batchNum + 1
+
+    def get_reconstruction_target(self):
+        """Return (target, mask) for reconstruction loss.
+
+        target: [batch, nVec, embSize] — unmasked post-encoding embedding
+        mask:   [batch, nVec] bool — True at masked positions to compute loss on.
+                None when maskedPrediction=NONE (use whole buffer).
+        """
+        unmasked = getattr(self, '_unmasked_embedding', None)
+        positions = getattr(self, '_mask_positions', None)
+        if unmasked is None or positions is None:
+            return None, None
+        N = len(positions)
+        nVec = unmasked.shape[1]
+        target = unmasked.expand(N, -1, -1)
+        mask = torch.zeros(N, nVec, dtype=torch.bool, device=unmasked.device)
+        for i, pos in enumerate(positions):
+            mask[i, pos] = True
+        return target, mask
 
     def predict(self, vector):
         """Delegates to Embedding.predict()."""
@@ -2320,10 +1963,10 @@ class InputSpace(Space):
             offsets = meta.get('final_offsets', [])
             self._arir_byte_offset = offsets[0] if offsets else 0
 
-            # Fill future positions (seed_len .. nVec-1) with space embeddings
-            space_emb = self.get_space_embedding()
+            # Fill future positions (seed_len .. nVec-1) with NULL embeddings
+            null_emb = self.vectors().embed_token("\x00")
             for k in range(seed_len, nVec):
-                self._arir_embedded[0, k, :nWhat] = space_emb[:nWhat]
+                self._arir_embedded[0, k, :nWhat] = null_emb[:nWhat]
                 est_offset = self._arir_byte_offset + (k - seed_len)
                 self._arir_stamp_where(self._arir_embedded, k, est_offset)
 
@@ -2802,7 +2445,7 @@ class OutputSpace(Space):
             input  *= self.inputShape[0]
             output *= self.outputShape[0]
         return input, output
-    def __init__(self, nActiveInput, nActiveOutput, reversible=False, data=None, masked_prediction=False):
+    def __init__(self, nActiveInput, nActiveOutput, reversible=False, data=None, masked_prediction=False, vectors=None):
         symDim = TheObjectEncoding.symbolDim
         inputShape  = [nActiveInput, symDim]
         outputShape = [nActiveOutput, TheObjectEncoding.outputDim]
@@ -2810,7 +2453,11 @@ class OutputSpace(Space):
         self.masked_prediction = masked_prediction
         super(OutputSpace, self).__init__(inputShape, outputShape, nVectors, reshape=True)
         self.data = data
-        self.text_mode = False
+        if vectors is not None:
+            self.text_mode = isinstance(vectors, Embedding)
+            self.vectorSet.append(vectors)
+        else:
+            self.text_mode = False
         input, output = self.getEmbeddedIO()
         if reversible:
             self.linear1 = LinearLayer(input, output)
@@ -2881,47 +2528,32 @@ class OutputSpace(Space):
         return targets.unsqueeze(1)  # [N, 1, embSize]
     # --- Text reconstruction from symbolic vectors ---
     def set_text_mode(self, input_space):
-        """Enable text reconstruction by storing references from InputSpace.
+        """Share InputSpace's VectorSet so OutputSpace can reconstruct text.
 
-        Args:
-            input_space: An InputSpace instance that has lex, codebook, and
-                         words attributes from the 'embedding' model_type path.
+        Convenience method for tests. Production code passes vectors= to __init__.
         """
-        if input_space.model_type != "embedding":
-            return
-        self.text_mode = True
         vs = input_space.vectors()
-        if isinstance(vs, Embedding):
-            self._text_decoder = vs
-            return
-        if hasattr(vs, 'codebook_weight'):
-            self._codebook = vs.codebook_weight.detach()
-            self._words_list = vs.vocab_keys
-            self._embedding_size = vs.embeddingSize
-            return
-        self._codebook = vs.vq.codebook
-        self._words_list = vs.words
-        self._embedding_size = vs.embeddingSize
+        self.text_mode = True
+        if len(self.vectorSet) == 0:
+            self.vectorSet.append(vs)
+        else:
+            self.vectorSet[0] = vs
 
     def reconstruct_tokens(self, vectors):
-        """Return positioned tokens decoded from symbolic vectors."""
+        """Return positioned tokens decoded from symbolic vectors.
+
+        Delegates to the VectorSet/Embedding reverse() path.
+        """
         if not self.text_mode:
             raise RuntimeError("reconstruct_tokens() requires text_mode.")
-        if hasattr(self, '_text_decoder'):
-            _, meta = self._text_decoder.reverse(vectors, return_meta=True)
-            return meta['tokens']
-        words_list, offsets_list = self.reconstruct_text(vectors)
-        return [
-            list(zip(words, offsets))
-            for words, offsets in zip(words_list, offsets_list)
-        ]
+        _, meta = self.vectors().reverse(vectors, return_meta=True)
+        return meta['tokens']
 
-    def reconstruct_text(self, vectors):
+    def reconstruct_data(self, vectors):
         """Reconstruct words and positions from symbolic vectors.
 
-        Extracts nWhat and nWhere from vectors via ObjectEncoding.reverse(),
-        snaps nWhat to nearest codebook entry by cosine similarity, and
-        recovers byte-offset positions from nWhere.
+        Delegates to the VectorSet/Embedding reverse() which handles
+        ObjectEncoding stripping, codebook snapping, and reassembly.
 
         Args:
             vectors: Tensor of shape [batch, nVec, embeddingSize] containing
@@ -2934,51 +2566,13 @@ class OutputSpace(Space):
                 one per batch element.  None entries mean nWhere was absent (zero).
         """
         if not self.text_mode:
-            raise RuntimeError("reconstruct_text() called but text_mode is not enabled. "
+            raise RuntimeError("reconstruct_data() called but text_mode is not enabled. "
                                "Call set_text_mode(input_space) first.")
-        if hasattr(self, '_text_decoder'):
-            recovered_tokens = self.reconstruct_tokens(vectors)
-            return (
-                [[word for word, _ in batch] for batch in recovered_tokens],
-                [[offset for _, offset in batch] for batch in recovered_tokens],
-            )
-        # 1. Strip positional/temporal encoding via ObjectEncoding.reverse()
-        content, positions, times = TheObjectEncoding.reverse(vectors.clone())
-        batch = content.shape[0]
-        nVec = content.shape[1]
-        codebook = self._codebook.to(content.device)
-        words_list = self._words_list
-        nWhat = self._embedding_size - TheObjectEncoding.objectSize
-        cb_what = codebook[:, :nWhat]  # [codebookSize, nWhat]
-        div_term = TheObjectEncoding.where.div_term
-
-        # 2. For each vector, find nearest codebook entry by cosine sim on nWhat
-        recovered_words = [[] for _ in range(batch)]
-        recovered_offsets = [[] for _ in range(batch)]
-        for b in range(batch):
-            for v in range(nVec):
-                vec = content[b, v, :nWhat]
-                # Zero vectors are padding / EOS sentinels — emit \x00 so that
-                # reconstruct_buffer (consecutive mode) can stop there cleanly.
-                if vec.abs().sum().item() < 1e-8:
-                    recovered_words[b].append("\x00")
-                    recovered_offsets[b].append(None)
-                    continue
-                sims = F.cosine_similarity(vec.unsqueeze(0), cb_what, dim=1)
-                idx = sims.argmax().item()
-                recovered_words[b].append(words_list[idx])
-                # 3. Decode nWhere: positions holds raw [sin, cos] values
-                sin_val = positions[b, v, 0].item()
-                cos_val = positions[b, v, 1].item()
-                if abs(sin_val) < 1e-8 and abs(cos_val) < 1e-8:
-                    recovered_offsets[b].append(None)  # no position -> consecutive
-                else:
-                    angle = math.atan2(sin_val, cos_val)
-                    if angle < 0:
-                        angle += 2 * math.pi
-                    offset = angle / (div_term * div_term)
-                    recovered_offsets[b].append(round(offset))
-        return recovered_words, recovered_offsets
+        recovered_tokens = self.reconstruct_tokens(vectors)
+        return (
+            [[word for word, _ in batch] for batch in recovered_tokens],
+            [[offset for _, offset in batch] for batch in recovered_tokens],
+        )
 
     def reconstruct_buffer(self, vectors, buf_size=256):
         """Reconstruct a destination buffer string from symbolic vectors.
@@ -2993,38 +2587,9 @@ class OutputSpace(Space):
         Returns:
             List of strings, one per batch element.
         """
-        if hasattr(self, '_text_decoder'):
-            _, meta = self._text_decoder.reverse(vectors, return_meta=True)
-            return self._text_decoder.reconstruct_to_buffer(
-                meta, buf_size=buf_size)
-        words_list, offsets_list = self.reconstruct_text(vectors)
-        results = []
-        for b in range(len(words_list)):
-            words = words_list[b]
-            offsets = offsets_list[b]
-            has_positions = any(o is not None for o in offsets)
-            if has_positions:
-                # Positioned write: place each word at its byte offset.
-                # Null-initialized so spaces are only present when predicted.
-                buf = bytearray(buf_size)
-                for word, offset in zip(words, offsets):
-                    if offset is None:
-                        continue
-                    encoded = word.encode('utf-8')
-                    end = min(offset + len(encoded), buf_size)
-                    buf[offset:end] = encoded[:end - offset]
-                results.append(buf.rstrip(b'\x00').decode('utf-8', errors='replace'))
-            else:
-                # Consecutive: concatenate tokens directly — space is a predicted token.
-                # Stop at the first \x00 (EOS/padding sentinel); trailing padding
-                # slots that decode to \x00 are not included in the output.
-                clean = []
-                for w in words:
-                    if w == "\x00":
-                        break
-                    clean.append(w)
-                results.append("".join(clean))
-        return results
+        _, meta = self.vectors().reverse(vectors, return_meta=True)
+        return self.vectors().reconstruct_to_buffer(
+            meta, buf_size=buf_size)
 
     def clearBatchResults(self):
         """Clear accumulated batch results. Called at start of each runEpoch."""
@@ -3049,6 +2614,7 @@ class BaseModel(nn.Module):
     spaces         = []
     reversible    = False
     plot           = False
+    _optimizer     = None
 
     @staticmethod
     def load_config(config_path=None):
@@ -3155,6 +2721,13 @@ class BaseModel(nn.Module):
             if exclude:
                 params = [p for p in params if p.data_ptr() not in exclude]
         return optim.Adam(params, lr=lr)
+
+    def rebuild_optimizer(self):
+        """Rebuild the main optimizer after codebook expansion."""
+        if self._optimizer is None:
+            return
+        lr = self._optimizer.param_groups[0]['lr']
+        self._optimizer = self.getOptimizer(lr=lr)
 
     def run(self, numTrials=1, numEpochs=1, batchSize=10, lr=0.001):
         """Run multiple independent trials, recreating the model each time.
@@ -3375,11 +2948,11 @@ class BaseModel(nn.Module):
         _, _, allOut, _ = self.runEpoch(batchSize=len(test_input), split="test")
 
         rows = []
-        # Use reconstruct_text() for lex-based models (embedding vectors, not bytes)
+        # Use reconstruct_data() for lex-based models (embedding vectors, not bytes)
         use_lex_recon = (self.inputSpace.model_type == "embedding" and
                          self.inputSpace.get_recovered_word(0, 0) is not None)
         if use_lex_recon:
-            recon_text_list = self.inputSpace.reconstruct_text(join=True)
+            recon_text_list = self.inputSpace.reconstruct_data(text=True)
         for i in range(len(test_input)):
             original = self._bytes_to_text(test_input[i])
             if use_lex_recon:
@@ -3644,6 +3217,7 @@ class BasicModel(BaseModel):
         # Propagate flag to Embedding so forward()/reverse() can detach
         if isinstance(self.inputSpace.vectors(), Embedding):
             self.inputSpace.vectors().optimize_embedding = self.optimize_embedding
+            object.__setattr__(self.inputSpace.vectors(), '_model', self)
         # Auto-load weights if configured
         if _t("autoload"):
             wpath = _t("weightsPath")
@@ -3804,7 +3378,8 @@ class BasicModel(BaseModel):
         self.nTotalOutputSymbols = nOutputSymbols
         self.outputSpace     = OutputSpace(nOutputSymbols, self.nOutput,
                                            reversible=reversible, data=data,
-                                           masked_prediction=(masked_prediction != 'NONE'))
+                                           masked_prediction=(masked_prediction != 'NONE'),
+                                           vectors=self.inputSpace.vectors())
         self.spaces.extend([self.outputSpace])
         self.inputSpace.outputSpace = self.outputSpace
 
@@ -4065,7 +3640,7 @@ class BasicModel(BaseModel):
         testLosses        = [[],[]]
         self.plot         = False
         accuracy          = []
-        optimizer         = self.getOptimizer(lr=lr)
+        self._optimizer   = self.getOptimizer(lr=lr)
 
         # Enable sigma-driven self-annealing for ergodic layers
         self.set_sigma(1.0)
@@ -4081,7 +3656,7 @@ class BasicModel(BaseModel):
         for epoch in range(numEpochs):
             print(f"Epoch [{epoch + 1}/{numEpochs}]")
 
-            outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=optimizer, batchSize=batchSize, split="train")
+            outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split="train")
             trainLosses[0].append(outErr)
             trainLosses[1].append(inErr)
             print(f"Train Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
@@ -4212,21 +3787,20 @@ class BasicModel(BaseModel):
         if use_recon:
             inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
             pred_sq = inputPred
-            target_sq = forwardInput.squeeze()
             masked_pred = hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE'
-            meta = self.inputSpace.get_forward_meta()
-            span_counts = meta.get('span_counts') if meta else None
-            if masked_pred and span_counts and pred_sq.dim() >= 2:
-                # Masked prediction: only compute reconstruction loss on content positions
-                batch_sz = pred_sq.shape[0] if pred_sq.dim() >= 2 else 1
-                nVec = pred_sq.shape[-2] if pred_sq.dim() >= 2 else pred_sq.shape[0]
-                mask = torch.zeros(batch_sz, nVec, dtype=torch.bool, device=pred_sq.device)
-                for b in range(min(batch_sz, len(span_counts))):
-                    mask[b, :span_counts[b]] = True
+
+            # Use pre-masked, post-encoding target when available
+            recon_target, recon_mask = self.inputSpace.get_reconstruction_target()
+            if recon_target is not None:
+                target_sq = recon_target.squeeze()
+            else:
+                target_sq = forwardInput.squeeze()
+
+            if masked_pred and recon_mask is not None and pred_sq.dim() >= 2:
+                # Masked prediction: compute loss only at masked positions
+                mask = recon_mask
                 if pred_sq.dim() == 3:
                     mask = mask.unsqueeze(-1).expand_as(pred_sq)
-                elif pred_sq.dim() == 2:
-                    mask = mask[:pred_sq.shape[0]]
                 lossIn = criterionInput(pred_sq[mask], target_sq[mask])
             else:
                 # maskedPrediction=NONE: train reconstruction on the whole buffer
@@ -4602,7 +4176,15 @@ if __name__ == "__main__":
             "combined accuracy, and combined loss comparisons."
         ),
     )
+    parser.add_argument(
+        "--report",
+        action="store_true",
+        default=False,
+        help="Generate figures and HTML report at the end of the run.",
+    )
     args = parser.parse_args()
+
+    TheReport.enabled = args.report
 
     if args.compare:
         # Compare mode: run two XML configs and plot per-digit accuracy side by side

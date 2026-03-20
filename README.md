@@ -35,7 +35,7 @@ Model configurations are specified in XML and can be compared side-by-side. See 
 
 ```bash
 # Set up virtual environment
-make venv
+make install
 
 # Run a single model
 make simple          # data/simple.xml

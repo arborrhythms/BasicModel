@@ -21,7 +21,7 @@
     </data>
 
     <training>
-      <numEpochs>1000</numEpochs>
+      <numEpochs>600</numEpochs>
       <learningRate>0.01</learningRate>
       <weightsPath>XOR_spaces.ckpt</weightsPath>
       <autosave>false</autosave>

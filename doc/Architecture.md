@@ -15,7 +15,7 @@ reconstructs the original input from the symbolic representation. Both direction
 are trained simultaneously with a single optimizer minimizing a combined loss:
 
 ```
-totalLoss = outputLoss + reconstructionLoss
+totalLoss = (1 - reconRatio) * outputLoss + reconRatio * reconstructionLoss
 ```
 
 ### Spaces
@@ -75,7 +75,7 @@ A critical design choice: the forward and reverse passes share a **single Adam
 optimizer** that minimizes a combined loss:
 
 ```
-totalLoss = outputLoss + reconstructionLoss
+totalLoss = (1 - reconRatio) * outputLoss + reconRatio * reconstructionLoss
 ```
 
 This works because the forward and reverse weight spaces **partially overlap**.
@@ -116,7 +116,7 @@ accumulate across epochs):
 2. Compute `outputLoss` from prediction vs. target
 3. Reverse pass: `end_state` → reconstructed input
 4. Compute `reconstructionLoss` from reconstruction vs. `end_state`
-5. Backpropagate `totalLoss = outputLoss + reconstructionLoss`
+5. Backpropagate `totalLoss = (1 - reconRatio) * outputLoss + reconRatio * reconstructionLoss`
 6. If ergodic: run `paramUpdate()` (gradient energy sensor updates alpha)
 7. Optimizer step (embedding params excluded when `trainEmbedding` is `NONE` or `ARLM`)
 8. If `trainEmbedding` is `CBOW`, `SBOW`, or `BOTH`: run embedding update step on same sentence
@@ -204,9 +204,7 @@ $$y_j = b_j \cdot \prod_{i=1}^{n}\log( e^{1+W_{ji} x_i})$$
 $$y_j = b_j \cdot \prod_{i=1}^{n} (1+W_{ji} x_i)$$
 
 *Now, is there a way to write $e^{1+W_{ji} x_i}$ as a matrix product, $W_{ji} x_i$ ?*
-# $$ e^{1+W_{ji} x_i} = e \cdot e^{W_{ji} x_i}$$
 If we write W and x in the log domain first, we have:
-# $$e \cdot e^{\log(W_{ji}) \log(x_i)} = e \cdot (W_{ji} + x_i) $$
 
 ---
 

@@ -17,14 +17,11 @@ Usage:
 
 import os
 import sys
-import time
 import argparse
 from collections import Counter
 from pathlib import Path
 
 import numpy as np
-import pyarrow.parquet as pq
-import requests
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -269,78 +266,8 @@ class WordVectors(nn.Module):
             print()
 
 
-# ---------------------------------------------------------------------------
-# FineWeb-EDU streaming
-# ---------------------------------------------------------------------------
-
-BASE_URL = "https://huggingface.co/datasets/karpathy/fineweb-edu-100b-shuffle/resolve/main"
-MAX_SHARD = 1822
-
-def _shard_filename(index):
-    return f"shard_{index:05d}.parquet"
-
-def download_shard(index, data_dir):
-    """Download a single shard if not already present. Returns filepath or None."""
-    filename = _shard_filename(index)
-    filepath = os.path.join(data_dir, filename)
-    if os.path.exists(filepath):
-        return filepath
-    url = f"{BASE_URL}/{filename}"
-    max_attempts = 5
-    for attempt in range(1, max_attempts + 1):
-        try:
-            response = requests.get(url, stream=True, timeout=30)
-            response.raise_for_status()
-            temp_path = filepath + ".tmp"
-            with open(temp_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=1024 * 1024):
-                    if chunk:
-                        f.write(chunk)
-            os.rename(temp_path, filepath)
-            return filepath
-        except (requests.RequestException, IOError) as e:
-            for path in [filepath + ".tmp", filepath]:
-                if os.path.exists(path):
-                    try:
-                        os.remove(path)
-                    except OSError:
-                        pass
-            if attempt < max_attempts:
-                time.sleep(2 ** attempt)
-            else:
-                print(f"Failed to download {filename} after {max_attempts} attempts: {e}")
-                return None
-    return None
-
-def get_shard_paths(data_dir, num_shards=1, random_select=False):
-    """Ensure shards are downloaded and return their file paths."""
-    os.makedirs(data_dir, exist_ok=True)
-    if random_select and num_shards <= MAX_SHARD:
-        import random as _rng
-        indices = sorted(_rng.sample(range(MAX_SHARD + 1), num_shards))
-        print(f"  Random shard indices: {indices}")
-    else:
-        indices = list(range(min(num_shards, MAX_SHARD + 1)))
-    paths = []
-    for i in indices:
-        path = download_shard(i, data_dir)
-        if path:
-            paths.append(path)
-    return paths
-
-def iter_documents(shard_paths, max_docs=None):
-    """Yield text documents from parquet shard files."""
-    count = 0
-    for filepath in shard_paths:
-        pf = pq.ParquetFile(filepath)
-        for rg_idx in range(pf.num_row_groups):
-            rg = pf.read_row_group(rg_idx)
-            texts = rg.column('text').to_pylist()
-            for text in texts:
-                yield text
-                count += 1
-                if max_docs is not None and count >= max_docs:
-                    return
+# FineWeb-EDU streaming — canonical implementation lives in data.py
+from data import download_shard, get_shard_paths, iter_documents  # noqa: F401
 
 
 # ---------------------------------------------------------------------------
