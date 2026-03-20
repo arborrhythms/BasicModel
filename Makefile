@@ -28,7 +28,7 @@ MAKE_PDF = pandoc $(PDFOPTS) \
 		--toc --toc-depth=3 \
 		--resource-path=.:doc
 
-.PHONY : all install xor tomatoes ergodic simple run compare test bench doc_pdf clean \
+.PHONY : all install xor tomatoes ergodic simple run compare test test_all bench doc_pdf clean \
          train train_micro train_remote train_micro_remote
 
 all : xor
@@ -57,7 +57,7 @@ train_remote :
 train_micro_remote :
 	$(MAKE) train_micro TRAIN_HOST=arbormini.local
 
-xor : data/XOR_exact.xml
+xor : data/XOR_pos.xml
 	make run XML1=$<
 
 tomatoes : data/tomatoes.xml
@@ -86,6 +86,9 @@ compare :
 	cd bin && PYTHONPATH=. ../.venv/bin/python BasicModel.py --compare $(XML1) $(XML2)
 
 test :
+	BASICMODEL_DEVICE=cpu PYTHONPATH=bin .venv/bin/python test/test_report.py
+
+test_all :
 	BASICMODEL_DEVICE=cpu PYTHONPATH=bin .venv/bin/python test/test_report.py
 
 bench :

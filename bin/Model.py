@@ -45,11 +45,7 @@ def sample_noise(reference, shape=None):
         shape = tuple(reference.shape)
     return torch.randn(shape, device=reference.device, dtype=reference.dtype)
 
-class Message():
-    """Tiny callable wrapper so legacy code can swap out message sinks later."""
-    def __call__(self, txt, newline="\n"):
-        print(txt, end=newline)
-message = Message()
+from util import TheMessage
 
 #region Layers
 class _AutoDevice(type(nn.Module)):
@@ -1790,7 +1786,16 @@ class Activation:
 #endregion
 
 #region Error Functions
-class CertaintyWeightedMAELoss(nn.Module):
+class Loss(nn.Module):
+    """Base class for loss computation.
+
+    Subclasses override compute() to define how prediction and target
+    tensors are compared. The default compute() is MSE.
+    """
+    def compute(self, pred, target):
+        """Compute loss between pred and target. Override in subclasses."""
+        return nn.functional.mse_loss(pred, target)
+class CertaintyWeightedMAELoss(Loss):
     """MAE loss weighted by prediction magnitude (certainty).
 
     High-magnitude (confident) predictions are penalized more when wrong,
@@ -1806,7 +1811,7 @@ class CertaintyWeightedMAELoss(nn.Module):
         loss = abs_error * (self.alpha * certainty + (1 - self.alpha))
         return torch.mean(loss)
 
-class CertaintyWeightedMSELoss(nn.Module):
+class CertaintyWeightedMSELoss(Loss):
     """MSE loss weighted by prediction magnitude (certainty).
 
     Hybrid of certainty-weighted MSE and plain MSE, blended by ``alpha``.
@@ -1822,7 +1827,7 @@ class CertaintyWeightedMSELoss(nn.Module):
         hybrid_loss = self.alpha * cw_mse_loss.mean() + (1 - self.alpha) * mse_loss.mean()
         return hybrid_loss
 
-class CertaintyWeightedCrossEntropy(nn.Module):
+class CertaintyWeightedCrossEntropy(Loss):
     """Cross-entropy weighted by predicted probability of the true class.
 
     Hybrid of certainty-weighted CE and plain CE, blended by ``alpha``.

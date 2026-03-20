@@ -38,13 +38,16 @@
       <numEpochs>3</numEpochs>
       <batchSize>10</batchSize>
       <learningRate>0.001</learningRate>
-      <reconRatio>0.5</reconRatio>
+      <reverseScale>0.5</reverseScale>
+      <whatScale>0.7</whatScale>
+      <whereScale>0.2</whereScale>
+      <whenScale>0.1</whenScale>
       <negSamples>64</negSamples>
 
       <!-- Embedding training mode: NONE | CBOW | SBOW | BACKPROP | BOTH | JOINT -->
       <trainEmbedding>NONE</trainEmbedding>
       <!-- Embedding loss weight in JOINT mode -->
-      <trainEmbeddingRatio>0.25</trainEmbeddingRatio>
+      <embeddingScale>0.25</embeddingScale>
 
       <!-- Artifact paths (relative to XML file location) -->
       <embeddingPath></embeddingPath>
@@ -64,8 +67,8 @@
     <nActive>32</nActive>
     <nDim>1</nDim>
     <nVectors>32</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
+    <nWhere>false</nWhere>
+    <nWhen>false</nWhen>
     <quantized>false</quantized>
     <lexer>word</lexer>
   </InputSpace>

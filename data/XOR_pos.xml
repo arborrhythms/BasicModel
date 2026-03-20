@@ -28,18 +28,18 @@
     </training>
   </architecture>
 
-  <!-- InputSpace: 3 tokens per sentence ("hello world" → ["hello"," ","world"])
-       nActive=6 to allow headroom for punctuation / longer sentences. -->
+  <!-- InputSpace: nWhere=true, nWhen=true enables positional + temporal encoding.
+       objectSize = 2 + 2 = 4, embSize = nDim + objectSize = 10 + 4 = 14. -->
   <InputSpace>
     <nActive>6</nActive>
     <nDim>10</nDim>
     <nVectors>6</nVectors>
-    <nWhere>false</nWhere>
-    <nWhen>false</nWhen>
+    <nWhere>true</nWhere>
+    <nWhen>true</nWhen>
   </InputSpace>
 
   <!-- PerceptualSpace: invertible+reshape requires 2*input == output.
-       input = 6*10 = 60, getLayerIO output = nActive*10/2 = 120 → nActive = 24. -->
+       input = 6*13 = 78, getLayerIO output = nActive*13/2 = 156 → nActive = 24. -->
   <PerceptualSpace>
     <nActive>24</nActive>
     <nDim>10</nDim>

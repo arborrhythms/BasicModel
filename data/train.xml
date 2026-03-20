@@ -27,8 +27,8 @@
   <InputSpace>
     <nActive>32</nActive>
     <nDim>1</nDim>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
+    <nWhere>false</nWhere>
+    <nWhen>false</nWhen>
     <lexer>word</lexer>
     <quantized>false</quantized>
   </InputSpace>

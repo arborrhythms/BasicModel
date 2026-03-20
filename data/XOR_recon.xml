@@ -27,8 +27,8 @@
     <nActive>3</nActive>
     <nDim>10</nDim>
     <nVectors>3</nVectors>
-    <nWhere>2</nWhere>
-    <nWhen>1</nWhen>
+    <nWhere>true</nWhere>
+    <nWhen>true</nWhen>
   </InputSpace>
 
   <!-- PerceptualSpace: nActive = 4 * InputSpace.nActive = 12

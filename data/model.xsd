@@ -159,10 +159,13 @@
       <xs:element name="numEpochs" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="batchSize" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="learningRate" type="positiveFloat" minOccurs="0"/>
-      <xs:element name="reconRatio" type="unitInterval" minOccurs="0"/>
+      <xs:element name="reverseScale" type="unitInterval" minOccurs="0"/>
+      <xs:element name="whatScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="whereScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="whenScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="negSamples" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="trainEmbedding" type="trainEnum" minOccurs="0"/>
-      <xs:element name="trainEmbeddingRatio" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="embeddingScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="embeddingPath" type="xs:string" minOccurs="0"/>
       <xs:element name="weightsPath" type="xs:string" minOccurs="0"/>
       <xs:element name="autoload" type="xs:boolean" minOccurs="0"/>
@@ -199,8 +202,8 @@
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="lexer" type="lexerEnum" minOccurs="0"/>
     </xs:all>

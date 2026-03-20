@@ -19,35 +19,109 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import random
-import util
-util.init_runtime_env()
 try:
     from torchviz import make_dot
 except ImportError:
     make_dot = None
 from matplotlib import pyplot as plt
-from embed import WordVectors, PretrainModel
-from data import Data, TheData
 from sklearn.metrics import classification_report
 from sklearn.decomposition import PCA
 from vector_quantize_pytorch import ResidualVQ, VectorQuantize
-from Model import Layer, PiLayer, SigmaLayer, InvertibleSigmaLayer, InvertiblePiLayer # Import custom layers from Model.py
-from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer
-from Model import GammaMem, ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, epsilon
 import torch.optim as optim
 from functools import partial
-
-# Device selection: BASICMODEL_DEVICE env var > cuda > mps > cpu.
-# vector_quantize_pytorch einsum fails on MPS — set BASICMODEL_DEVICE=cpu
-# for VQ-enabled configs.
-from util import ProjectPaths, compile
-
-TheDevice = util.TheDevice
-
 from datetime import datetime
-from visualize import Report, TheReport
 
-class PositionalEncoding(nn.Module):
+import util
+util.init_runtime_env()
+TheDevice = util.TheDevice
+TheMessage = util.TheMessage
+
+from visualize import Report, TheReport
+from util import ProjectPaths, compile, TheXMLConfig, init_config
+from embed import WordVectors, PretrainModel
+from data import Data, TheData
+from Model import Layer, PiLayer, SigmaLayer, InvertibleSigmaLayer, InvertiblePiLayer # Import custom layers from Model.py
+from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer
+from Model import GammaMem, ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, epsilon
+
+
+
+class Encoding(nn.Module):
+    """Base class for sin/cos quadrature encodings.
+
+    Encodes scalar values as (sin, cos) pairs at frequency ``div_term = 2π/maxVal``.
+    Exactly invertible via ``atan2(sin, cos) / div_term``.
+
+    Subclasses implement ``forward()`` to define how values are assigned
+    (per-object for spatial, per-batch for temporal).
+    """
+    nDim = 2
+
+    def __init__(self, index, maxVal):
+        super().__init__()
+        self.index = index
+        self.maxVal = maxVal
+        self.div_term = 2 * math.pi / maxVal
+
+    def encode(self, offsets):
+        """Encode values to sin/cos pairs.
+
+        Args:
+            offsets: tensor [...] or scalar (int/float).
+
+        Returns:
+            Tensor [..., 2] with (sin, cos).
+        """
+        if not isinstance(offsets, torch.Tensor):
+            offsets = torch.tensor(float(offsets))
+        angle = offsets * self.div_term
+        return torch.stack((torch.sin(angle), torch.cos(angle)), dim=-1)
+
+    def decode(self, sin_val, cos_val):
+        """Decode sin/cos values back to offsets.
+
+        Args:
+            sin_val, cos_val: tensors [...] or scalars.
+
+        Returns:
+            Decoded offsets (tensor or float).
+        """
+        if isinstance(sin_val, torch.Tensor):
+            angle = torch.atan2(sin_val, cos_val) % (2 * math.pi)
+            return angle / self.div_term
+        angle = math.atan2(float(sin_val), float(cos_val)) % (2 * math.pi)
+        return angle / self.div_term
+
+    def resolve(self, embSize):
+        """Resolve negative index offsets to absolute indices for a given embedding size."""
+        return np.add([embSize, embSize], self.index)
+
+    def stamp(self, buf, batch_idx, pos_idx, offset):
+        """Write encoded (sin, cos) pair at a specific buffer position.
+
+        Uses scalar math for device-agnostic element-wise assignment.
+        """
+        idx = self.resolve(buf.shape[-1])
+        if idx[0] >= 0 and idx[0] < buf.shape[-1]:
+            angle = float(offset) * self.div_term
+            buf[batch_idx, pos_idx, idx[0]] = math.sin(angle)
+            buf[batch_idx, pos_idx, idx[1]] = math.cos(angle)
+
+    def reverse(self, y):
+        """Extract encoding, decode to values, zero the slots.
+
+        Returns (cleaned_tensor, decoded_values) where decoded_values is
+        a float tensor of shape [batch, nVec].
+        """
+        embeddingSize = y.shape[-1]
+        index = np.add([embeddingSize, embeddingSize], self.index)
+        if index[0] < 0 or index[0] >= embeddingSize:
+            return y, torch.zeros(y.shape[0], y.shape[1], device=y.device)
+        sin_val = y[:, :, index[0]].clone()
+        cos_val = y[:, :, index[1]].clone()
+        y[:, :, index] = 0
+        return y, self.decode(sin_val, cos_val)
+class WhereEncoding(Encoding):
     """Encode spatial position (nWhere) as sin/cos values in reserved embedding slots.
 
     Writes a (sin, cos) pair into the last few dimensions of each object vector,
@@ -57,124 +131,165 @@ class PositionalEncoding(nn.Module):
 
     Used by ObjectEncoding to stamp each object with a "where" tag.
     """
-    nDim   = 2
-    index  = [-4, -3]      # which embedding dimensions to write (negative = from end)
-    p      = 0
-    maxP   = 0
-    period = [65521, 65537]
+    index = [-4, -3]
+    p = 0
 
     def __init__(self, maxP=0):
         print("Creating positional encoding ...")
-        super(PositionalEncoding, self).__init__()
-        self.p    = 0
-        self.maxP = maxP # If we complete a period within a single buffer we will get redundancy. so we have two sinusoids in quadrature
-        self.div_term = 2*math.pi / maxP
+        super().__init__([-4, -3], maxP)
+        self.p = 0
+
     def forward(self, x):
         """Stamp sin/cos positional values into reserved embedding slots."""
         batch = x.shape[0]
         n     = x.shape[1] if len(x.shape) > 1 else 1
         embeddingSize = x.shape[-1]
         index = np.add([embeddingSize, embeddingSize], self.index)
-        # Write sin/cos position into the last reserved dimensions
-        position = torch.arange(self.p, self.p+batch*n, dtype=torch.float32, device=x.device) * self.div_term
-        p1 = torch.sin(position * self.div_term).unsqueeze(0).unsqueeze(0)
-        p2 = torch.cos(position * self.div_term).unsqueeze(0).unsqueeze(0)
-        pos = torch.concatenate((p1, p2), dim=2)
+        position = torch.arange(self.p, self.p+batch*n, dtype=torch.float32, device=x.device)
+        pos = self.encode(position)  # [batch*n, 2]
         y = x.clone()
         y[:, :, index] = pos.reshape(batch, n, self.nDim)
         self.p += batch
-        assert self.p < self.maxP, "Overflow in object embedding"
+        assert self.p < self.maxVal, "Overflow in object embedding"
         return y
-    def stamp(self, buf, batch_idx, pos_idx, byte_offset):
-        """Stamp sin/cos positional encoding at a specific buffer position.
 
-        Uses the same encoding as forward(): sin/cos of (offset * div_term^2).
-
-        Args:
-            buf: [batch, nVec, embSize] tensor to write into
-            batch_idx: which batch element
-            pos_idx: which vector position within the element
-            byte_offset: the byte offset to encode
-        """
-        embSize = buf.shape[-1]
-        idx = np.add([embSize, embSize], self.index)
-        if idx[0] >= 0 and idx[0] < embSize:
-            p = byte_offset * self.div_term
-            buf[batch_idx, pos_idx, idx[0]] = math.sin(p * self.div_term)
-            buf[batch_idx, pos_idx, idx[1]] = math.cos(p * self.div_term)
-
-    def reverse(self, y):
-        """Extract and zero-out positional encoding; return (cleaned, positions)."""
-        embeddingSize = y.shape[-1]
-        index = np.add([embeddingSize, embeddingSize], self.index)
-        # Guard: if embedding is too small for positional slots, return zeros
-        if index[0] < 0 or index[0] >= embeddingSize:
-            return y, torch.zeros(y.shape[0], y.shape[1], len(self.index), device=y.device)
-        pos = y[:,:, index]
-        y[:, :, index] = 0
-        return y, pos
     @staticmethod
     def test():
-        x=  torch.zeros([2,4,100])
-        pe= PositionalEncoding(100)
+        pe = WhereEncoding(100)
+        pe.p = 0
+        x = torch.zeros([2, 4, 100])
         y = pe.forward(x)
-        z = pe.reverse(y)
-        print(z)
-class TemporalEncoding(nn.Module):
-    """Encode temporal order (nWhen) as cos values in reserved embedding slots.
+        cleaned, offsets = pe.reverse(y)
+        print(f"Positions decoded: {offsets}")
+class WhenEncoding(Encoding):
+    """Encode temporal order (nWhen) as sin/cos values in reserved embedding slots.
 
-    Similar to PositionalEncoding but tracks a global time counter ``self.t``
-    that is incremented explicitly via ``increment(batch)`` at the end of each
-    forward pass through the full model.  The two periods produce slowly-varying
-    signals that distinguish objects seen at different times.
+    Uses the same quadrature encoding as PositionalEncoding: a (sin, cos) pair
+    at a single frequency ``div_term = 2π/maxVal``.  This is exactly invertible
+    via ``atan2(sin, cos) / div_term``.
+
+    A global time counter ``self.t`` is incremented explicitly via
+    ``increment(batch)`` at the end of each forward pass through the full model.
 
     Used by ObjectEncoding to stamp each object with a "when" tag.
     """
-    nDim= 2
-    index  = [-2, -1]      # which embedding dimensions to write (negative = from end)
-    period = [1193, 2000147]
-    t      = 0
+    index = [-2, -1]
+    t = 0
 
-    def __init__(self, maxT=0):
-        super().__init__()
-        self.t    = 0
-        self.maxT = maxT
+    def __init__(self, maxT=10000):
+        super().__init__([-2, -1], maxT)
+        self.t = 0
+
     def forward(self, x):
-        """Stamp cos-based temporal values into reserved embedding slots."""
+        """Stamp sin/cos temporal values into reserved embedding slots."""
         batch = x.shape[0]
         n = x.shape[1] if len(x.shape) > 1 else 1
         embeddingSize = x.shape[-1]
         index = np.add([embeddingSize, embeddingSize], self.index)
-        # Cosine encoding scaled to [0, 1] via 0.5*(1+cos(...))
-        t1 = ( 0.5*(1+torch.cos(math.pi + 2*math.pi * torch.tensor(range(self.t, self.t+batch), device=x.device)/self.period[0] )) ).unsqueeze(0).unsqueeze(0)
-        t2 = ( 0.5*(1+torch.cos(math.pi + 2*math.pi * torch.tensor(range(self.t, self.t+batch), device=x.device)/self.period[0] )) ).unsqueeze(0).unsqueeze(0)
-        time = torch.concatenate((t1, t2), dim=2)
+        time_vals = torch.arange(self.t, self.t + batch, dtype=torch.float32, device=x.device)
+        time = self.encode(time_vals)  # [batch, 2]
         y = x.clone()
-        y[:, :, index] = time.reshape(batch, 1, self.nDim)
+        y[:, :, index] = time.unsqueeze(1).expand(-1, n, -1)
         return y
 
     def increment(self, batch):
         """Advance the global time counter by `batch` steps (called per forward pass)."""
         self.t += batch
 
-    def reverse(self, y):
-        """Extract and zero-out temporal encoding; return (cleaned, times)."""
-        batch = y.shape[0]
-        embeddingSize = y.shape[-1]
-        index = np.add([embeddingSize, embeddingSize], self.index)
-        # Guard: if embedding is too small for temporal slots, return zeros
-        if index[0] < 0 or index[0] >= embeddingSize:
-            return y, torch.zeros(y.shape[0], y.shape[1], len(self.index), device=y.device)
-        t =  y[:, :, index]
-        y[:, :, index] = 0
-        return y, t
     @staticmethod
     def test():
-        x=  torch.zeros([2,4,10])
-        te= TemporalEncoding(4)
+        te = WhenEncoding(10000)
+        te.t = 0
+        x = torch.zeros([2, 4, 10])
         y = te.forward(x)
-        z = te.reverse(y)
-        print(z)
+        cleaned, times = te.reverse(y)
+        print(f"Times decoded: {times}")
+class WhatEncoding(nn.Module):
+    """Handle the content-layout transform for a space's What factor.
+
+    Unlike WhereEncoding and WhenEncoding, this encoding is not a fixed
+    quadrature code.  It owns only the layout transform used by reshaped
+    spaces: validating [batch, nObj, emb] tensors, flattening them to
+    [batch, nObj*emb] before a layer pass, and restoring them afterwards.
+
+    The encoding is parameter-free and identity by default.  When a caller
+    provides a space-specific ``get_io`` callback (for example OutputSpace's
+    raw target width override), that callback is used to resolve the current
+    embedded input/output widths.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, objects, **kwargs):
+        """Identity content pass-through.
+
+        This keeps ObjectEncoding.forward(..., what=True) well-defined while
+        reshape-aware spaces use the explicit begin/end helpers below.
+        """
+        return objects
+
+    def _resolve_io(self, inputShape, outputShape, reshape=False, get_io=None):
+        if get_io is not None:
+            return get_io()
+        input_size = TheObjectEncoding.getObjectEncodingSize(inputShape[1])
+        output_size = TheObjectEncoding.getObjectEncodingSize(outputShape[1])
+        if reshape:
+            input_size *= inputShape[0]
+            output_size *= outputShape[0]
+        return input_size, output_size
+
+    def forwardBegin(self, x, batch, inputShape, outputShape, reshape=False, get_io=None):
+        """Validate or flatten input at the start of a forward pass."""
+        if reshape:
+            return self.flatten(x, batch, inputShape, outputShape, reshape=reshape,
+                                forward=True, get_io=get_io)
+        input_size, _ = self._resolve_io(inputShape, outputShape, reshape=reshape, get_io=get_io)
+        assert list(x.shape) == [batch, inputShape[0], input_size]
+        return x
+
+    def forwardEnd(self, x, batch, inputShape, outputShape, reshape=False, get_io=None):
+        """Validate or unflatten output at the end of a forward pass."""
+        if reshape:
+            return self.unflatten(x, batch, inputShape, outputShape, reshape=reshape,
+                                  forward=True, get_io=get_io)
+        _, output_size = self._resolve_io(inputShape, outputShape, reshape=reshape, get_io=get_io)
+        assert list(x.shape) == [batch, outputShape[0], output_size], \
+            f"forwardEnd: got {list(x.shape)}, expected {[batch, outputShape[0], output_size]}"
+        return x
+
+    def reverseBegin(self, y, batch, inputShape, outputShape, reshape=False, get_io=None):
+        """Validate or flatten output-side state at the start of reverse()."""
+        if reshape:
+            return self.flatten(y, batch, inputShape, outputShape, reshape=reshape,
+                                forward=False, get_io=get_io)
+        _, output_size = self._resolve_io(inputShape, outputShape, reshape=reshape, get_io=get_io)
+        assert list(y.shape) == [batch, outputShape[0], output_size]
+        return y
+
+    def reverseEnd(self, y, batch, inputShape, outputShape, reshape=False, get_io=None):
+        """Validate or unflatten input-side state at the end of reverse()."""
+        if reshape:
+            return self.unflatten(y, batch, inputShape, outputShape, reshape=reshape,
+                                  forward=False, get_io=get_io)
+        input_size, _ = self._resolve_io(inputShape, outputShape, reshape=reshape, get_io=get_io)
+        assert list(y.shape) == [batch, inputShape[0], input_size]
+        return y
+
+    def flatten(self, x, batch, inputShape, outputShape, reshape=False, forward=True, get_io=None):
+        """Collapse [batch, nObj, dim] -> [batch, nObj*dim] for a reshaped space."""
+        input_size, output_size = self._resolve_io(
+            inputShape, outputShape, reshape=reshape, get_io=get_io)
+        size = input_size if forward else output_size
+        return x.reshape(batch, size)
+
+    def unflatten(self, y, batch, inputShape, outputShape, reshape=False, forward=True, get_io=None):
+        """Restore [batch, nObj*dim] -> [batch, nObj, dim] for a reshaped space."""
+        input_size, output_size = self._resolve_io(
+            inputShape, outputShape, reshape=reshape, get_io=get_io)
+        if forward:
+            return y.reshape(batch, outputShape[0], output_size // outputShape[0])
+        return y.reshape(batch, inputShape[0], input_size // inputShape[0])
 class ObjectEncoding(nn.Module):
     """Augments each object vector with positional (nWhere) and temporal (nWhen) tags.
 
@@ -197,8 +312,8 @@ class ObjectEncoding(nn.Module):
     A single global instance ``TheObjectEncoding`` is used throughout the model.
     """
     # nWhat: varies by subspace — set via setInputDim/setPerceptDim/etc.
-    nWhere       = PositionalEncoding.nDim
-    nWhen        = TemporalEncoding.nDim
+    nWhere       = WhereEncoding.nDim
+    nWhen        = WhenEncoding.nDim
 
     inputDim     = 0
     perceptDim   = 0
@@ -216,18 +331,17 @@ class ObjectEncoding(nn.Module):
 
     objectSize = nWhere + nWhen  # total encoding overhead per vector
     nObjects   = 0               # 0 = uninitialized sentinel
-    what       = lambda x : True
 
     def __init__(self):
         super().__init__()
         # where/when must be instance attrs (not class attrs) so that
         # nn.Module.__setattr__ can register them as submodules later
         # without being shadowed by a class-level None.
+        self.what = WhatEncoding()
         self.where = None
         self.when  = None
 
     def setDimensions(self, inputDim, perceptDim, conceptDim, symbolDim, outputDim):
-        assert inputDim == perceptDim, "The input and percept dimensions do not match" # they are both input to concepts
         TheObjectEncoding.setInputDim(inputDim)
         TheObjectEncoding.setPerceptDim(perceptDim)
         TheObjectEncoding.setConceptDim(conceptDim)
@@ -254,8 +368,8 @@ class ObjectEncoding(nn.Module):
         """
         assert self.nObjects == 0, "computeNObjects must only be called once"
         self.nObjects = (self.nInput + self.nPercepts + self.nConcepts + self.nSymbols + self.nWords + self.nOutput)
-        self.where = PositionalEncoding(self.nObjects)
-        self.when = TemporalEncoding(10000)
+        self.where = WhereEncoding(self.nObjects)
+        self.when = WhenEncoding(10000)
 
     def getObjectEncodingSize(self, nDim):
         return nDim + self.objectSize
@@ -313,10 +427,96 @@ class ObjectEncoding(nn.Module):
     #    return x
 TheObjectEncoding = ObjectEncoding()
 
-class Message():
-    def __call__(self, txt, newline="\n"):
-        print(txt, end=newline)
-message = Message()
+class ModelLoss(Loss):
+    """Weighted reconstruction loss with separate scales for what/where/when.
+
+    Holds output and reconstruction criteria, combines component losses
+    via forward().  total() delegates to forward() through nn.Module.__call__.
+
+    Attributes:
+        reverse_scale:    weight of reconstruction vs output loss.
+        what_scale:       weight for content dimensions in reconstruction.
+        where_scale:      weight for positional encoding dimensions.
+        when_scale:       weight for temporal encoding dimensions.
+        embedding_scale:  weight of embedding (SBOW) loss in JOINT mode.
+        output_criterion: loss function for forward-pass prediction.
+    """
+    def __init__(self, reverse_scale=0.5,
+                 what_scale=0.7, where_scale=0.2, when_scale=0.1,
+                 embedding_scale=0.1,
+                 certainty=False, nOutput=2,
+                 conceptualOrder=0, symbolicOrder=0):
+        super().__init__()
+        self.reverse_scale   = float(reverse_scale or 0.5)
+        self.what_scale      = float(what_scale or 0.7)
+        self.where_scale     = float(where_scale or 0.2)
+        self.when_scale      = float(when_scale or 0.1)
+        self.embedding_scale = float(embedding_scale or 0.1)
+
+        # Select output criterion based on model config
+        if certainty:
+            self.output_criterion = CertaintyWeightedCrossEntropy()
+        elif nOutput <= 2:
+            self.output_criterion = nn.MSELoss()
+        elif conceptualOrder > 0 or symbolicOrder > 0:
+            self.output_criterion = nn.MSELoss()
+        else:
+            self.output_criterion = nn.CrossEntropyLoss()
+
+    def output(self, pred, target):
+        """Compute output loss (prediction vs target)."""
+        return self.output_criterion(pred, target)
+
+    def compute(self, pred, target):
+        """Compute scaled MSE across what/where/when dimension groups.
+
+        Args:
+            pred:   predicted tensor, last dim is embedding.
+            target: target tensor, same shape as pred.
+
+        Returns:
+            Scalar loss tensor.
+        """
+        embSize = pred.shape[-1]
+        nWhere = TheObjectEncoding.nWhere
+        nWhen  = TheObjectEncoding.nWhen
+        nWhat  = embSize - nWhere - nWhen
+
+        loss = torch.tensor(0.0, device=pred.device)
+        if nWhat > 0:
+            loss = loss + self.what_scale * nn.functional.mse_loss(
+                pred[..., :nWhat], target[..., :nWhat])
+        if nWhere > 0:
+            loss = loss + self.where_scale * nn.functional.mse_loss(
+                pred[..., nWhat:nWhat+nWhere], target[..., nWhat:nWhat+nWhere])
+        if nWhen > 0:
+            loss = loss + self.when_scale * nn.functional.mse_loss(
+                pred[..., nWhat+nWhere:], target[..., nWhat+nWhere:])
+        return loss
+
+    def forward(self, lossOut, lossIn=None, sbow=None):
+        """Combine output, reconstruction, and embedding losses.
+
+        Args:
+            lossOut: output prediction loss.
+            lossIn:  reconstruction loss (None if not reversible).
+            sbow:    embedding co-occurrence loss (None if not JOINT).
+
+        Returns:
+            Combined total loss.
+        """
+        total = lossOut
+        if lossIn is not None:
+            rr = self.reverse_scale
+            total = (1 - rr) * lossOut + rr * lossIn
+        if sbow is not None:
+            total = total + self.embedding_scale * sbow
+        return total
+
+    def total(self, lossOut, lossIn=None, sbow=None):
+        """Combine component losses. Delegates to forward() via nn.Module.__call__."""
+        return self(lossOut, lossIn, sbow)
+
 
 class VectorSet(nn.Module):
     """Codebook of prototype vectors with vector-quantization (VQ) support.
@@ -399,7 +599,7 @@ class VectorSet(nn.Module):
             if unfrozenAct[indexMax] > self.freezingTemp:
                 if not indexMax in self.frozen:
                     self.frozen.append(indexMax)
-                    message(f"Frozen activation at {indexMax}")
+                    TheMessage(f"Frozen activation at {indexMax}")
     def addVectors(self, nVec=1, decay = 0.9):
         """Allocate ``nVec`` codebook entries using the configured VQ backend."""
         self.codebookSize = nVec
@@ -476,7 +676,7 @@ class VectorSet(nn.Module):
                         assert torch.all(indices_smallest < self.codebookSize), "activation dimension is not correct."
                         act[i, indices_smallest[i, j]] = cosSim + self.alpha * random.random()
                     else:
-                        #message("codebook miss")
+                        #TheMessage("codebook miss")
                         x[i, j, :] = quantized[i, indices_smallest[i, j], :]
                         #x[i, j, :] = torch.zeros( [1, 1, self.embeddingSize])
         else:
@@ -490,7 +690,7 @@ class VectorSet(nn.Module):
                     nearestDist, nearestIdx = torch.topk(dists[b,v,:], 1, dim =-1, largest=True)
                     err = nearestDist[0]
                     if err <= self.snapDistance:
-                        #message("Using prototype vector")
+                        #TheMessage("Using prototype vector")
                         x[b,v,:] = self.vectors[nearestIdx,:]
                         act[b, nearestIdx[0]] = nearestDist[0]
                     #else:
@@ -549,14 +749,14 @@ class VectorSet(nn.Module):
                 idx = sims.argmax().item()
                 content[b, v, :nWhat] = codebook[idx, :nWhat]
 
-        # Reassemble: write extracted positions and times back into encoding slots
+        # Reassemble: re-encode decoded positions/times back to sin/cos
         embSize = content.shape[-1]
         where_idx = np.add([embSize, embSize], TheObjectEncoding.where.index)
         when_idx = np.add([embSize, embSize], TheObjectEncoding.when.index)
         if where_idx[0] >= 0 and where_idx[0] < embSize:
-            content[:, :, where_idx] = positions
+            content[:, :, where_idx] = TheObjectEncoding.where.encode(positions)
         if when_idx[0] >= 0 and when_idx[0] < embSize:
-            content[:, :, when_idx] = times
+            content[:, :, when_idx] = TheObjectEncoding.when.encode(times)
         return content
 
     # The following routine needs also to check if the inner product is positive,
@@ -1117,11 +1317,7 @@ class Embedding(VectorSet):
         cos_val = positions[batch_idx, vector_idx, 1].item()
         if abs(sin_val) < 1e-8 and abs(cos_val) < 1e-8:
             return None
-        div_term = TheObjectEncoding.where.div_term
-        angle = math.atan2(sin_val, cos_val)
-        if angle < 0:
-            angle += 2 * math.pi
-        return round(angle / (div_term * div_term))
+        return round(TheObjectEncoding.where.decode(sin_val, cos_val))
 
     def _render_tokens(self, batch_tokens, buf_size=None):
         has_positions = any(offset is not None for _, offset in batch_tokens)
@@ -1352,7 +1548,7 @@ class Space(nn.Module):
     activation   = None
     processSymbols = False
 
-    def __init__(self, inputShape, outputShape, nVectors, quantized=False, customVQ=True, reversible=False, processSymbols=False, reshape=False):
+    def __init__(self, inputShape, outputShape, nVectors, quantized=False, customVQ=True, reversible=False, processSymbols=False, reshape=False, config_section=None):
         super(Space, self).__init__()
         self.inputShape   = inputShape   # [nObjects, nDim] for input
         self.outputShape  = outputShape  # [nObjects, nDim] for output
@@ -1368,6 +1564,17 @@ class Space(nn.Module):
         self.reshape      = reshape
         self.params = []   # parameters for the optimizer (excludes temperature params)
         self.layers = nn.ModuleList()   # layer instances for paramUpdate() delegation
+        if config_section:
+            self._register_requirements(config_section)
+
+    def _register_requirements(self, section_name):
+        """Register base-class config requirements."""
+        nV = self.nVectors
+        nA = self.outputShape[0]
+        TheXMLConfig.require(
+            lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv >= _na,
+            f"{section_name}: nVectors ({nV}) must be >= nActive ({nA})"
+        )
 
     def getEmbeddedIO(self):
         """Return (input_dim, output_dim) for reshape/validation.
@@ -1416,7 +1623,7 @@ class Space(nn.Module):
 
     def stats(self, x):
         #codebookUse = self.vectors().codebookUse
-        #message(f"{self.name} Codebook activation: { np.sum(self.vectors().codebookAct.get()) }")
+        #TheMessage(f"{self.name} Codebook activation: { np.sum(self.vectors().codebookAct.get()) }")
         return
     def vectors(self):
         """Accessor for this space's VectorSet (first element of the ModuleList)."""
@@ -1436,54 +1643,37 @@ class Space(nn.Module):
         """Validate/reshape input at the start of the forward pass.
         When reshape=True, flattens [batch, nObj, dim] -> [batch, nObj*dim]."""
         self.batch = x.shape[0]
-        if self.reshape:
-            x = self.flatten(x, True)
-        else:
-            input, _ = self.getEmbeddedIO()
-            assert list(x.shape) == [self.batch, self.inputShape[0], input]
-        return x
+        return TheObjectEncoding.what.forwardBegin(
+            x, self.batch, self.inputShape, self.outputShape,
+            reshape=self.reshape, get_io=self.getEmbeddedIO)
     def forwardEnd(self, x):
         """Validate/unflatten output at the end of the forward pass.
         When reshape=True, unflattens [batch, nObj*dim] -> [batch, nObj, dim]."""
-        if self.reshape:
-            x = self.unflatten(x, True)
-        else:
-            _, output = self.getEmbeddedIO()
-            assert list(x.shape)==[self.batch, self.outputShape[0], output], f"{self.__class__.__name__} forwardEnd: got {list(x.shape)}, expected {[self.batch, self.outputShape[0], output]}"
+        x = TheObjectEncoding.what.forwardEnd(
+            x, self.batch, self.inputShape, self.outputShape,
+            reshape=self.reshape, get_io=self.getEmbeddedIO)
         return x
     def reverseBegin(self, y):
         """Validate/reshape at the start of the reverse pass (output-side)."""
         self.batch = y.shape[0]
-        if self.reshape:
-            y = self.flatten(y, False)
-        else:
-            _, output = self.getEmbeddedIO()
-            assert list(y.shape) == [self.batch, self.outputShape[0], output]
-        return y
+        return TheObjectEncoding.what.reverseBegin(
+            y, self.batch, self.inputShape, self.outputShape,
+            reshape=self.reshape, get_io=self.getEmbeddedIO)
     def reverseEnd(self, y):
         """Validate/unflatten at the end of the reverse pass (input-side)."""
-        if self.reshape:
-            y = self.unflatten(y, False)
-        else:
-            input, _ = self.getEmbeddedIO()
-            assert list(y.shape) == [self.batch, self.inputShape[0], input]
-        return y
+        return TheObjectEncoding.what.reverseEnd(
+            y, self.batch, self.inputShape, self.outputShape,
+            reshape=self.reshape, get_io=self.getEmbeddedIO)
     def flatten(self, x, forward=True):
         """Collapse [batch, nObj, dim] -> [batch, nObj*dim] for layer input."""
-        input, output = self.getEmbeddedIO()
-        if forward:
-            x = x.reshape(self.batch, input)
-        else:
-            x = x.reshape(self.batch, output)
-        return x
+        return TheObjectEncoding.what.flatten(
+            x, self.batch, self.inputShape, self.outputShape,
+            reshape=self.reshape, forward=forward, get_io=self.getEmbeddedIO)
     def unflatten(self, y, forward=True):
         """Restore [batch, nObj*dim] -> [batch, nObj, dim] after layer output."""
-        input, output = self.getEmbeddedIO()
-        if forward:
-            y = y.reshape(self.batch, self.outputShape[0], output // self.outputShape[0])
-        else:
-            y = y.reshape(self.batch, self.inputShape[0], input // self.inputShape[0])
-        return y
+        return TheObjectEncoding.what.unflatten(
+            y, self.batch, self.inputShape, self.outputShape,
+            reshape=self.reshape, forward=forward, get_io=self.getEmbeddedIO)
     def set_sigma(self, sigma):
         """Propagate exploration meta-parameters to all layers and VectorSets."""
         for l in self.layers:
@@ -1539,7 +1729,7 @@ class InputSpace(Space):
         inputShape  = [nActiveInput, dataDim]
         outputShape = [nActiveOutput, TheObjectEncoding.inputDim]
         nVectors    = TheObjectEncoding.nInput
-        super(InputSpace, self).__init__(inputShape, outputShape, nVectors, quantized=quantized)
+        super(InputSpace, self).__init__(inputShape, outputShape, nVectors, quantized=quantized, config_section="InputSpace")
         self.data = data
         self.model_type = model_type
         self.lexer = lexer  # "word", "sentence", or "grammar" — selects .cfg file
@@ -1551,19 +1741,13 @@ class InputSpace(Space):
             vs.ergodic = ergodic
             vs.create(self.inputShape[0], self.outputShape[0], self.nDim, embedding_path=embedding_path, source=source, min_frequency=min_frequency, neg_samples=neg_samples)
             self.nDim = vs.nDim
-            # LM mode: the embedding determines content dims for all spaces
-            # that process content vectors (input, percept, concept).
-            # Symbol/output dims are set from XML (symbolDim=1, outputDim from data).
-            TheObjectEncoding.setInputDim(vs.nDim)
-            TheObjectEncoding.setPerceptDim(vs.nDim)
-            TheObjectEncoding.setConceptDim(vs.nDim)
             self.outputShape = [self.outputShape[0], TheObjectEncoding.inputDim]
             self.vectorSet.append(vs)
             self.doc_spans = vs.doc_spans
             self.doc_sources = vs.doc_sources
             if data is not None and TheObjectEncoding.where is not None:
-                maxP = max(TheObjectEncoding.where.maxP, data.inputLength)
-                TheObjectEncoding.where.maxP = maxP
+                maxP = max(TheObjectEncoding.where.maxVal, data.inputLength)
+                TheObjectEncoding.where.maxVal = maxP
                 TheObjectEncoding.where.div_term = 2 * math.pi / maxP
         elif model_type == "passthrough":
             vs = VectorSet()
@@ -1641,8 +1825,9 @@ class InputSpace(Space):
                                 self.input, b, i, start)
                         final_offset = meta['final_offsets'][b]
                         for i in range(len(batch_tokens), self.outputShape[0]):
+                            pad_offset = final_offset + (i - len(batch_tokens))
                             TheObjectEncoding.where.stamp(
-                                self.input, b, i, final_offset)
+                                self.input, b, i, pad_offset)
                 if TheObjectEncoding.nWhen > 0:
                     self.input = TheObjectEncoding.forward(
                         self.input,
@@ -1692,13 +1877,13 @@ class InputSpace(Space):
         content_mask = torch.ones(embSize, dtype=torch.bool, device=embedded.device)
         # Preserve nWhere dims (indices [-4, -3] from end of embedding)
         if TheObjectEncoding.nWhere > 0:
-            where_idx = np.add([embSize, embSize], PositionalEncoding.index)
+            where_idx = np.add([embSize, embSize], TheObjectEncoding.where.index)
             for wi in where_idx:
                 if 0 <= wi < embSize:
                     content_mask[wi] = False
         # Preserve nWhen dims (indices [-2, -1] from end of embedding)
         if TheObjectEncoding.nWhen > 0:
-            when_idx = np.add([embSize, embSize], TemporalEncoding.index)
+            when_idx = np.add([embSize, embSize], TheObjectEncoding.when.index)
             for wi in when_idx:
                 if 0 <= wi < embSize:
                     content_mask[wi] = False
@@ -2101,7 +2286,7 @@ class PerceptualSpace(Space):
         inputShape  = [nActiveInput, inputDim if inputDim is not None else TheObjectEncoding.inputDim]
         outputShape = [nActiveOutput, TheObjectEncoding.perceptDim]
         nVectors    = TheObjectEncoding.nPercepts
-        super(PerceptualSpace, self).__init__(inputShape, outputShape, nVectors, quantized=quantized, reversible=reversible, processSymbols=processSymbols, reshape=reshape)
+        super(PerceptualSpace, self).__init__(inputShape, outputShape, nVectors, quantized=quantized, reversible=reversible, processSymbols=processSymbols, reshape=reshape, config_section="PerceptualSpace")
         self.passThrough = passThrough
         self.ergodic = ergodic
         self.hasAttention = hasAttention
@@ -2200,7 +2385,7 @@ class ConceptualSpace(Space):
         inputShape  = [nActiveInput, TheObjectEncoding.perceptDim]
         outputShape = [nActiveOutput, TheObjectEncoding.conceptDim]
         nVectors    = TheObjectEncoding.nConcepts
-        super(ConceptualSpace, self).__init__(inputShape, outputShape, nVectors, quantized=quantized, reversible=reversible, processSymbols=processSymbols, reshape=reshape)
+        super(ConceptualSpace, self).__init__(inputShape, outputShape, nVectors, quantized=quantized, reversible=reversible, processSymbols=processSymbols, reshape=reshape, config_section="ConceptualSpace")
         self.ergodic = ergodic
         self.hasAttention = hasAttention
         input, output = self.getEmbeddedIO()
@@ -2320,7 +2505,7 @@ class SymbolicSpace(Space):
         inputShape  = [nActiveInput, TheObjectEncoding.conceptDim]
         outputShape = [nActiveOutput, TheObjectEncoding.symbolDim]
         nVectors    = TheObjectEncoding.nSymbols
-        super(SymbolicSpace, self).__init__( inputShape, outputShape, nVectors, customVQ=True, reversible=reversible, processSymbols=processSymbols, reshape=reshape)
+        super(SymbolicSpace, self).__init__( inputShape, outputShape, nVectors, customVQ=True, reversible=reversible, processSymbols=processSymbols, reshape=reshape, config_section="SymbolicSpace")
         self.conceptualSpace = conceptualSpace
         self.passThrough = passThrough
         #self.mapping     = TODO(inputShape[1], nDim, soft=False)
@@ -2386,7 +2571,7 @@ class SyntacticSpace(Space):
         inputShape  = [nActiveInput, TheObjectEncoding.symbolDim]
         outputShape = [nActiveOutput, TheObjectEncoding.wordDim]
         nVectors    = TheObjectEncoding.nWords
-        super(SyntacticSpace, self).__init__( inputShape, outputShape, nVectors, customVQ=False, reversible=reversible, processSymbols=True)
+        super(SyntacticSpace, self).__init__( inputShape, outputShape, nVectors, customVQ=False, reversible=reversible, processSymbols=True, config_section="SyntacticSpace")
         assert(inputShape[0] == outputShape[0]) # 1:1 mapping
         self.conceptualSpace = conceptualSpace
         #self.mapping     = TODO(inputShape[1], nDim, soft=False)
@@ -2451,7 +2636,7 @@ class OutputSpace(Space):
         outputShape = [nActiveOutput, TheObjectEncoding.outputDim]
         nVectors    = TheObjectEncoding.nOutput
         self.masked_prediction = masked_prediction
-        super(OutputSpace, self).__init__(inputShape, outputShape, nVectors, reshape=True)
+        super(OutputSpace, self).__init__(inputShape, outputShape, nVectors, reshape=True, config_section="OutputSpace")
         self.data = data
         if vectors is not None:
             self.text_mode = isinstance(vectors, Embedding)
@@ -2620,70 +2805,13 @@ class BaseModel(nn.Module):
     def load_config(config_path=None):
         """Load model settings from an XML config file.
 
-        Parses sections recursively — e.g. ``<architecture><training><numEpochs>``
-        becomes ``cfg["architecture"]["training"]["numEpochs"]``.  Leaf elements
-        (no children) are auto-cast to bool/int/float/str.  Elements with
-        children become nested dicts.
-
-        Returns a dict of dicts; missing fields are filled by create_from_config()
-        using model.xml.
+        Delegates to XMLConfig._parse_xml().  Returns a dict of dicts;
+        missing fields are filled by create_from_config() using model.xml.
         """
-        import xml.etree.ElementTree as ET
-
-        def _parse_element(elem):
-            """Recursively parse an XML element into a dict or scalar.
-
-            Leaf nodes with XML attributes return a dict with ``"_"`` holding
-            the auto-cast text value and one key per attribute — e.g.
-            ``<input use="train">hello|world</input>`` becomes
-            ``{"_": "hello|world", "use": "train"}``.
-
-            When multiple sibling elements share the same tag name (e.g. two
-            ``<input>`` elements), they are aggregated into a list so no entry
-            is silently overwritten.
-            """
-            children = list(elem)
-            if not children:
-                # Leaf node — auto-cast value
-                text = elem.text.strip() if elem.text else ""
-                if text.lower() in ("true", "false"):
-                    val = text.lower() == "true"
-                else:
-                    try:
-                        val = int(text)
-                    except ValueError:
-                        try:
-                            val = float(text)
-                        except ValueError:
-                            val = text
-                # Wrap in dict when XML attributes are present
-                if elem.attrib:
-                    return {"_": val, **elem.attrib}
-                return val
-            # Has children — recurse into a dict; aggregate repeated tags into lists
-            d = {}
-            for child in children:
-                parsed = _parse_element(child)
-                if child.tag in d:
-                    existing = d[child.tag]
-                    if isinstance(existing, list):
-                        existing.append(parsed)
-                    else:
-                        d[child.tag] = [existing, parsed]
-                else:
-                    d[child.tag] = parsed
-            return d
-
         if config_path is None:
             config_path = os.path.join(ProjectPaths.PROJECT_DIR, "model.xml")
-        if not os.path.exists(config_path):
-            return {}
-        tree = ET.parse(config_path)
-        root = tree.getroot()
-        cfg = {}
-        for section in root:
-            cfg[section.tag] = _parse_element(section)
-        return cfg
+        from util import XMLConfig
+        return XMLConfig._parse_xml(config_path)
 
     @staticmethod
     def from_config(config_path=None, model_type=None, data=None):
@@ -3028,7 +3156,6 @@ class BaseModel(nn.Module):
         if allOut is not None:
             self.inputSpace.data.reconstructed_output = [
                 allOut[i].detach().cpu() for i in range(allOut.shape[0])]
-
 class BasicModel(BaseModel):
     """Core model: assembles Spaces into a forward and (optionally) reverse pipeline.
 
@@ -3069,119 +3196,86 @@ class BasicModel(BaseModel):
         self._config_path = config_path
         self._config_data = data
 
-        # Load defaults from model.xml, then overlay model-specific config
+        # Load defaults from model.xml, overlay model-specific config
         defaults_path = os.path.join(ProjectPaths.DATA_DIR, "model.xml")
-        defaults = self.load_config(defaults_path)
-        cfg = self.load_config(config_path)
-
-        def _deep_merge(base, overlay):
-            """Recursively merge overlay into base (overlay wins on conflicts)."""
-            merged = dict(base)
-            for k, v in overlay.items():
-                if k in merged and isinstance(merged[k], dict) and isinstance(v, dict):
-                    merged[k] = _deep_merge(merged[k], v)
-                else:
-                    merged[k] = v
-            return merged
-
-        for section in defaults:
-            if section not in cfg:
-                cfg[section] = defaults[section]
-            else:
-                cfg[section] = _deep_merge(defaults[section], cfg[section])
+        init_config(path=config_path, defaults_path=defaults_path)
+        cfg = TheXMLConfig.data
 
         BasicModelFactory.validate_config(cfg)
 
         arch = cfg["architecture"]
-        trn = arch.get("training", {})
-        dat = arch.get("data", {})
-
-        def _t(key, default=None):
-            """Look up a training param from arch.training."""
-            return trn.get(key, default)
-
-        def _d(key, default=None):
-            """Look up a data param from arch.data."""
-            return dat.get(key, default)
+        _t = TheXMLConfig.training
+        _d = TheXMLConfig.data_param
 
         # Caller overrides XML; XML overrides defaults
         if model_type is None:
             model_type = arch["modelType"]
         # embedding_path: set in config via <embeddingPath>; absence means dynamic vocab
-        embedding_path = _t("embeddingPath") or None
+        embedding_path = _t("embeddingPath", None) or None
         if embedding_path is not None:
             embedding_path = self._resolve_artifact_path(embedding_path)
 
         # ObjectEncoding setup — positional/temporal encoding config from InputSpace
-        gsp = BasicModelFactory.get_space_param
-        TheObjectEncoding.nWhere = gsp(cfg, "InputSpace", "nWhere")
-        TheObjectEncoding.nWhen = gsp(cfg, "InputSpace", "nWhen")
+        # nWhere/nWhen are boolean flags: true → 2 dims (sin/cos pair), false → 0
+        _s = TheXMLConfig.space
+        nWhere_val = _s("InputSpace", "nWhere")
+        nWhen_val = _s("InputSpace", "nWhen")
+        TheObjectEncoding.nWhere = WhereEncoding.nDim if nWhere_val else 0
+        TheObjectEncoding.nWhen = WhenEncoding.nDim if nWhen_val else 0
         TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
 
         # Codebook sizes (from model.xml defaults, overridden by model-specific XML)
-        TheObjectEncoding.nInput    = gsp(cfg, "InputSpace", "nVectors")
-        TheObjectEncoding.nPercepts = gsp(cfg, "PerceptualSpace", "nVectors")
-        TheObjectEncoding.nConcepts = gsp(cfg, "ConceptualSpace", "nVectors")
-        TheObjectEncoding.nSymbols  = gsp(cfg, "SymbolicSpace", "nVectors")
-        TheObjectEncoding.nWords    = gsp(cfg, "SyntacticSpace", "nVectors")
-        TheObjectEncoding.nOutput   = gsp(cfg, "OutputSpace", "nVectors")
-
-        # Validate: codebook size must be >= active count for every space
-        for space_name, n_attr in [
-            ("InputSpace",      "nInput"),
-            ("PerceptualSpace", "nPercepts"),
-            ("ConceptualSpace", "nConcepts"),
-            ("SymbolicSpace",   "nSymbols"),
-            ("SyntacticSpace",  "nWords"),
-            ("OutputSpace",     "nOutput"),
-        ]:
-            nVectors = getattr(TheObjectEncoding, n_attr)
-            nActive = gsp(cfg, space_name, "nActive")
-            if nVectors > 0:
-                assert nVectors >= nActive, \
-                    f"{space_name}: nVectors ({nVectors}) must be >= nActive ({nActive})"
+        TheObjectEncoding.nInput    = _s("InputSpace", "nVectors")
+        TheObjectEncoding.nPercepts = _s("PerceptualSpace", "nVectors")
+        TheObjectEncoding.nConcepts = _s("ConceptualSpace", "nVectors")
+        TheObjectEncoding.nSymbols  = _s("SymbolicSpace", "nVectors")
+        TheObjectEncoding.nWords    = _s("SyntacticSpace", "nVectors")
+        TheObjectEncoding.nOutput   = _s("OutputSpace", "nVectors")
 
         TheObjectEncoding.nObjects = 0  # reset for re-creation
         TheObjectEncoding.computeNObjects()
 
         # Content dimensions from XML — set on TheObjectEncoding, not on Space constructors
-        TheObjectEncoding.setInputDim(gsp(cfg, "InputSpace", "nDim"))
-        TheObjectEncoding.setPerceptDim(gsp(cfg, "PerceptualSpace", "nDim"))
-        TheObjectEncoding.setConceptDim(gsp(cfg, "ConceptualSpace", "nDim"))
-        TheObjectEncoding.setSymbolDim(gsp(cfg, "SymbolicSpace", "nDim"))
-        TheObjectEncoding.setWordDim(gsp(cfg, "SyntacticSpace", "nDim"))
-        outDim = gsp(cfg, "OutputSpace", "nDim")
+        TheObjectEncoding.setInputDim(_s("InputSpace", "nDim"))
+        TheObjectEncoding.setPerceptDim(_s("PerceptualSpace", "nDim"))
+        TheObjectEncoding.setConceptDim(_s("ConceptualSpace", "nDim"))
+        TheObjectEncoding.setSymbolDim(_s("SymbolicSpace", "nDim"))
+        TheObjectEncoding.setWordDim(_s("SyntacticSpace", "nDim"))
+        outDim = _s("OutputSpace", "nDim")
         TheObjectEncoding.setOutputDim(outDim)
 
         self.create(
-            nInput=gsp(cfg, "InputSpace", "nActive"),
-            nPercepts=gsp(cfg, "PerceptualSpace", "nActive"),
-            nConcepts=gsp(cfg, "ConceptualSpace", "nActive"),
-            nSymbols=gsp(cfg, "SymbolicSpace", "nActive"),
-            nWords=gsp(cfg, "SyntacticSpace", "nActive"),
-            nOutput=gsp(cfg, "OutputSpace", "nActive"),
+            nInput=_s("InputSpace", "nActive"),
+            nPercepts=_s("PerceptualSpace", "nActive"),
+            nConcepts=_s("ConceptualSpace", "nActive"),
+            nSymbols=_s("SymbolicSpace", "nActive"),
+            nWords=_s("SyntacticSpace", "nActive"),
+            nOutput=_s("OutputSpace", "nActive"),
             reversible=arch["reconstruct"].upper() != "NONE",
-            perceptPassThrough=gsp(cfg, "PerceptualSpace", "passThrough"),
-            symbolPassThrough=gsp(cfg, "SymbolicSpace", "passThrough"),
-            perceptPrototypes=gsp(cfg, "PerceptualSpace", "nVectors"),
-            conceptPrototypes=gsp(cfg, "ConceptualSpace", "nVectors"),
+            perceptPassThrough=_s("PerceptualSpace", "passThrough"),
+            symbolPassThrough=_s("SymbolicSpace", "passThrough"),
+            perceptPrototypes=_s("PerceptualSpace", "nVectors"),
+            conceptPrototypes=_s("ConceptualSpace", "nVectors"),
             ergodic=arch["ergodic"],
             certainty=arch["certainty"],
             naive=arch["naive"],
-            quantized=gsp(cfg, "InputSpace", "quantized"),
-            perceptQuantized=gsp(cfg, "PerceptualSpace", "quantized"),
-            conceptQuantized=gsp(cfg, "ConceptualSpace", "quantized"),
-            invertible=gsp(cfg, "PerceptualSpace", "invertible"),
-            hasNorm=gsp(cfg, "ConceptualSpace", "hasNorm"),
+            quantized=_s("InputSpace", "quantized"),
+            perceptQuantized=_s("PerceptualSpace", "quantized"),
+            conceptQuantized=_s("ConceptualSpace", "quantized"),
+            invertible=_s("PerceptualSpace", "invertible"),
+            hasNorm=_s("ConceptualSpace", "hasNorm"),
             conceptualOrder=arch["conceptualOrder"],
             symbolicOrder=arch["symbolicOrder"],
             processSymbols=arch["processSymbols"],
             reshape=arch["reshape"],
-            perceptHasAttention=gsp(cfg, "PerceptualSpace", "hasAttention"),
-            conceptHasAttention=gsp(cfg, "ConceptualSpace", "hasAttention"),
+            perceptHasAttention=_s("PerceptualSpace", "hasAttention"),
+            conceptHasAttention=_s("ConceptualSpace", "hasAttention"),
             model_type=model_type, data=data, embedding_path=embedding_path,
-            lexer=gsp(cfg, "InputSpace", "lexer"),
-            recon_ratio=_t("reconRatio"),
+            lexer=_s("InputSpace", "lexer"),
+            reverse_scale=_t("reverseScale"),
+            what_scale=_t("whatScale"),
+            where_scale=_t("whereScale"),
+            when_scale=_t("whenScale"),
             masked_prediction=arch["maskedPrediction"].upper(),
             min_frequency=_d("minFrequency"),
             neg_samples=_t("negSamples"),
@@ -3193,7 +3287,7 @@ class BasicModel(BaseModel):
         #   SBOW  = embedding SBOW updates only (predict from leave-one-out centroid, faster)
         #   ARLM  = network layers only, embeddings frozen
         #   BOTH  = SBOW embedding updates + network layers (two optimizers)
-        #   JOINT = single loss: model_loss + trainEmbeddingRatio * sbow_loss, one optimizer
+        #   JOINT = single loss: model_loss + embeddingScale * sbow_loss, one optimizer
         if "trainEmbedding" in arch and not isinstance(arch["trainEmbedding"], dict):
             te = arch["trainEmbedding"]
         elif "trainEmbeddings" in arch and not isinstance(arch["trainEmbeddings"], dict):
@@ -3212,8 +3306,8 @@ class BasicModel(BaseModel):
         if self.optimize_embedding and isinstance(self.inputSpace.vectors(), Embedding):
             emb_params = self.inputSpace.vectors().embedding_parameters()
             self.inputSpace.params = self.inputSpace.params + emb_params
-        # trainEmbeddingRatio: weight of embedding loss in JOINT mode
-        self.train_embedding_ratio = float(_t("trainEmbeddingRatio") or 0.1)
+        # embeddingScale: weight of embedding loss in JOINT mode
+        self.loss.embedding_scale = float(_t("embeddingScale") or 0.1)
         # Propagate flag to Embedding so forward()/reverse() can detach
         if isinstance(self.inputSpace.vectors(), Embedding):
             self.inputSpace.vectors().optimize_embedding = self.optimize_embedding
@@ -3237,7 +3331,8 @@ class BasicModel(BaseModel):
                reshape=False, naive=False,
                perceptHasAttention=True, conceptHasAttention=False,
                model_type="simple", data=None, embedding_path=None,
-               lexer="word", recon_ratio=0.5,
+               lexer="word", reverse_scale=0.5,
+               what_scale=0.7, where_scale=0.2, when_scale=0.1,
                masked_prediction='NONE', min_frequency=0.0,
                neg_samples=64, reconstruct='NONE'):
         """Build the full space hierarchy from architecture parameters.
@@ -3260,6 +3355,7 @@ class BasicModel(BaseModel):
             model_type: "simple", "embedding", "passthrough", or "vq".
         """
         self.spaces = []  # reset — prevent stale accumulation from prior create() calls
+        TheXMLConfig._requirements.clear()  # clear stale requirements from prior create()/tests
         self.lexer            = lexer  # "word", "sentence", or "grammar" — selects .cfg file
         self.reversible      = reversible
         self.reconstruct     = reconstruct.lower()
@@ -3268,9 +3364,10 @@ class BasicModel(BaseModel):
         self.nPercepts        = nPercepts
         self.nConcepts        = nConcepts
         self.nSymbols         = nSymbols
-        assert nSymbols >= nOutput, (
-            f"nSymbols ({nSymbols}) must be >= nOutput ({nOutput}). "
-            f"The symbolic bottleneck must have at least as many symbols as outputs."
+        TheXMLConfig.require(
+            lambda cfg, _ns=nSymbols, _no=nOutput: _ns >= _no,
+            f"nSymbols ({nSymbols}) must be >= nOutput ({nOutput}): "
+            f"the symbolic bottleneck must have at least as many symbols as outputs"
         )
         self.nOutputSymbols   = nOutput
         self.nReconSymbols    = max(0, nSymbols - nOutput)
@@ -3298,7 +3395,14 @@ class BasicModel(BaseModel):
         self.reshape          = reshape
         self.perceptHasAttention = perceptHasAttention
         self.conceptHasAttention = conceptHasAttention
-        self.recon_ratio      = recon_ratio
+        self.loss = ModelLoss(reverse_scale=reverse_scale,
+                         what_scale=what_scale,
+                         where_scale=where_scale,
+                         when_scale=when_scale,
+                         certainty=certainty,
+                         nOutput=nOutput,
+                         conceptualOrder=conceptualOrder,
+                         symbolicOrder=symbolicOrder)
         self.masked_prediction = masked_prediction
         if data is not None and hasattr(data, 'masked_prediction') and data.masked_prediction != 'NONE':
             data.masked_prediction = masked_prediction
@@ -3391,6 +3495,7 @@ class BasicModel(BaseModel):
         #assert self.symbolicSpace.outputShape[1] == self.outputSpace.inputShape[1] # these are in conceptual space, or symbolic space if symbols emit objectSize symbols (processSymbols == True)
 
         self.to(TheDevice)
+        TheXMLConfig.validate()
 
     def Start(self, inputData):
         """Forward pass through the core pipeline: Input -> Percept -> Concept -> Symbol."""
@@ -3700,28 +3805,12 @@ class BasicModel(BaseModel):
         self.testLosses  = testLosses
         return accuracy
     
-    def _getLossFn(self):
-        """Return (outputLossFn, inputLossFn) based on model config.
-
-        outputLossFn: used for the forward pass (prediction vs target).
-        inputLossFn:  used for the reverse pass (reconstruction loss), always MSE.
-        """
-        if self.certainty:
-            return CertaintyWeightedCrossEntropy(), nn.MSELoss()
-        elif self.nOutput <= 2:
-            # Binary classification or scalar regression — MSE is appropriate
-            return nn.MSELoss(), nn.MSELoss()
-        elif self.conceptualOrder > 0 or self.symbolicOrder > 0:
-            return nn.MSELoss(), nn.MSELoss()
-        else:
-            return nn.CrossEntropyLoss(), nn.MSELoss()
-
     BatchResult = namedtuple('BatchResult', [
         'outputPred', 'symbols', 'lossOut', 'lossIn', 'inputPred', 'forwardInput',
     ])
 
     def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
-                 optimizer=None, criterionOutput=None, criterionInput=None):
+                 optimizer=None):
         """Run a single batch: forward pass, loss, and (if training) backward + step.
 
         Args:
@@ -3730,8 +3819,6 @@ class BasicModel(BaseModel):
             batchSize: number of examples per batch.
             split: "train", "test", or "validation".
             optimizer: pre-built optimizer (required when train=True).
-            criterionOutput: loss function for the output prediction.
-            criterionInput: loss function for the input reconstruction.
 
         Returns:
             (BatchResult, nextBatchNum) on success, or (None, batchNum) when
@@ -3744,7 +3831,7 @@ class BasicModel(BaseModel):
 
         inputTensor, outputTensor = batch
         masked_pred = hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE'
-        inference_only = not train and criterionOutput is None
+        inference_only = not train and split == "runtime"
         arir_mode = (split == "runtime"
                      and getattr(self.inputSpace.data, '_runtime_mode', None) == 'ARIR')
 
@@ -3777,16 +3864,16 @@ class BasicModel(BaseModel):
 
         outputPred = outputDataPred.squeeze()
         output     = outputTensor.squeeze()
-        lossOut    = criterionOutput(outputPred, output)
+        lossOut    = self.loss.output(outputPred, output)
 
         # ARUS: suppress output loss (unsupervised — no target signal)
         if hasattr(self, 'masked_prediction') and self.masked_prediction == 'ARUS':
             lossOut = torch.tensor(0.0, device=outputPred.device)
 
-        use_recon = self.reversible and self.recon_ratio > 0
+        use_recon = self.reversible and self.loss.reverse_scale > 0
         if use_recon:
             inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
-            pred_sq = inputPred
+            pred_sq = inputDataPred
             masked_pred = hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE'
 
             # Use pre-masked, post-encoding target when available
@@ -3801,19 +3888,16 @@ class BasicModel(BaseModel):
                 mask = recon_mask
                 if pred_sq.dim() == 3:
                     mask = mask.unsqueeze(-1).expand_as(pred_sq)
-                lossIn = criterionInput(pred_sq[mask], target_sq[mask])
+                lossIn = self.loss.compute(pred_sq[mask], target_sq[mask])
             else:
-                # maskedPrediction=NONE: train reconstruction on the whole buffer
-                lossIn = criterionInput(pred_sq, target_sq)
-            rr = self.recon_ratio
-            totalLoss = (1 - rr) * lossOut + rr * lossIn
+                lossIn = self.loss.compute(pred_sq, target_sq)
         else:
             inputDataPred = None
-            lossIn = torch.tensor(0.0, device=outputPred.device)
-            totalLoss = lossOut
+            lossIn = None
 
+        # JOINT mode: compute SBOW embedding loss
+        sbow = None
         if train:
-            # JOINT mode: add SBOW loss to totalLoss before backward
             te = getattr(self, 'train_embedding', 'NONE')
             if te == 'JOINT':
                 emb = self.inputSpace.vectors()
@@ -3824,9 +3908,10 @@ class BasicModel(BaseModel):
                         from parse import quick_parser
                         words = [t for t, _ in quick_parser(sentence)]
                         sbow = self.inputSpace.sbow_loss(words)
-                        if sbow is not None:
-                            totalLoss = totalLoss + self.train_embedding_ratio * sbow
 
+        totalLoss = self.loss.total(lossOut, lossIn, sbow)
+
+        if train:
             totalLoss.backward()
             if self.ergodic:
                 self.paramUpdate()
@@ -3882,7 +3967,6 @@ class BasicModel(BaseModel):
             return 0, 0, [], []
 
         # Training / evaluation path
-        criterionOutput, criterionInput = self._getLossFn()
         allOutput = []
         allInput = []
         outErr = 0
@@ -3896,8 +3980,6 @@ class BasicModel(BaseModel):
                 result, batchNum = self.runBatch(
                     train=training, batchNum=batchNum, batchSize=batchSize,
                     split=split, optimizer=optimizer,
-                    criterionOutput=criterionOutput,
-                    criterionInput=criterionInput,
                 )
                 if result is None:
                     break
@@ -3923,7 +4005,7 @@ class BasicModel(BaseModel):
                                 self.inputSpace.train_embeddings(words, method=method)
 
                 outErr = result.lossOut.item()
-                inErr = result.lossIn.item() if self.reversible else 0
+                inErr = result.lossIn.item() if result.lossIn is not None else 0
 
                 outputDataPred = result.outputPred.clone().detach().squeeze()
                 if batchIdx == 0:
@@ -4080,7 +4162,9 @@ class BasicModelFactory:
     def run(config_path):
         """Main entry point — create, train, and evaluate a model from XML config."""
         # Pre-read config for dataset loading (needed before create_from_config)
-        cfg = BaseModel.load_config(config_path)
+        defaults_path = os.path.join(ProjectPaths.DATA_DIR, "model.xml")
+        init_config(path=config_path, defaults_path=defaults_path)
+        cfg = TheXMLConfig.data
         arch = cfg.get("architecture", {})
         dat = arch.get("data", {})
         trn = arch.get("training", {})
@@ -4099,7 +4183,7 @@ class BasicModelFactory:
         # Store config refs so runTrials can call create_from_config per trial
         m._config_path = config_path
         m._config_data = TheData
-        message(f"Device: {TheDevice}")
+        TheMessage(f"Device: {TheDevice}")
 
         m = compile(m)
 
@@ -4134,8 +4218,8 @@ class BasicModelFactory:
 
 def test():
     """Smoke test: verify encodings and run the XOR config end-to-end."""
-    PositionalEncoding.test()
-    TemporalEncoding.test()
+    WhereEncoding.test()
+    WhenEncoding.test()
     BasicModelFactory.run(os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml"))
 
 

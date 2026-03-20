@@ -4,5 +4,6 @@
   "python.terminal.activateEnvironment": true,
   "python-envs.workspaceSearchPaths": [
     "./.venv"
-  ]
+  ],
+  "foldOnOpen.targets": ["AllBlockComments"],
 }

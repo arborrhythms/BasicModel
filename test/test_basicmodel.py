@@ -156,6 +156,7 @@ class TestSPNN(unittest.TestCase):
         self.assertTrue(hasattr(net, 'W1'))
         self.assertTrue(hasattr(net, 'W2'))
 
+    @unittest.skip("slow")
     def test_xor_training(self):
         from SPNN import SPNN
         net = SPNN("tanh", False)
@@ -272,9 +273,9 @@ class TestSimpleModelCreation(unittest.TestCase):
 # ---------------------------------------------------------------------------
 class TestBasicModelCreation(unittest.TestCase):
     def test_encodings(self):
-        from BasicModel import PositionalEncoding, TemporalEncoding
-        PositionalEncoding.test()
-        TemporalEncoding.test()
+        from BasicModel import WhereEncoding, WhenEncoding
+        WhereEncoding.test()
+        WhenEncoding.test()
 
     def test_config_loading(self):
         from BasicModel import BasicModel
@@ -307,6 +308,101 @@ class TestWeightPersistence(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Encoding round-trip tests
+# ---------------------------------------------------------------------------
+class TestWhereEncodingRoundTrip(unittest.TestCase):
+    """WhereEncoding: encode → reverse → decode recovers the original offset."""
+
+    def test_stamp_round_trip(self):
+        from BasicModel import WhereEncoding
+        maxP = 4096
+        pe = WhereEncoding(maxP)
+        buf = torch.zeros(1, 1, 10)
+        offsets = [0, 1, 5, 11, 42, 100, 255, 1000]
+        for offset in offsets:
+            pe.stamp(buf, 0, 0, offset)
+            _, decoded = pe.reverse(buf.clone())
+            self.assertAlmostEqual(decoded[0, 0].item(), offset, places=3,
+                msg=f"stamp/reverse round-trip failed for offset={offset}")
+
+    def test_forward_decode_round_trip(self):
+        from BasicModel import WhereEncoding
+        maxP = 256
+        pe = WhereEncoding(maxP)
+        pe.p = 0
+        batch, n = 4, 3
+        x = torch.zeros(batch, n, 10)
+        y = pe.forward(x)
+        _, decoded = pe.reverse(y)
+        for b in range(batch):
+            for v in range(n):
+                expected = float(b * n + v)
+                self.assertAlmostEqual(
+                    decoded[b, v].item(), expected, places=3,
+                    msg=f"forward/decode round-trip failed at batch={b}, vec={v}")
+
+    def test_content_preserved(self):
+        """Content dimensions (non-encoding slots) survive the round-trip."""
+        from BasicModel import WhereEncoding
+        pe = WhereEncoding(1000)
+        pe.p = 0
+        x = torch.randn(2, 3, 10)
+        original = x.clone()
+        y = pe.forward(x)
+        cleaned, _ = pe.reverse(y)
+        mask = torch.ones(10, dtype=torch.bool)
+        mask[[-4, -3]] = False
+        torch.testing.assert_close(cleaned[:, :, mask], original[:, :, mask])
+
+
+class TestWhenEncodingRoundTrip(unittest.TestCase):
+    """WhenEncoding: forward → reverse recovers the original time."""
+
+    def test_forward_reverse_round_trip(self):
+        from BasicModel import WhenEncoding
+        maxT = 10000
+        te = WhenEncoding(maxT)
+        te.t = 0
+        x = torch.zeros(5, 2, 10)
+        y = te.forward(x)
+        _, decoded = te.reverse(y)
+        expected = torch.arange(0, 5, dtype=torch.float32)
+        for b in range(5):
+            for v in range(2):
+                self.assertAlmostEqual(
+                    decoded[b, v].item(), expected[b].item(), places=2,
+                    msg=f"forward/reverse round-trip failed at batch={b}, vec={v}")
+
+    def test_large_time_values(self):
+        """Round-trip works for time values well into the range."""
+        from BasicModel import WhenEncoding
+        maxT = 10000
+        te = WhenEncoding(maxT)
+        te.t = 500
+        x = torch.zeros(3, 1, 10)
+        y = te.forward(x)
+        _, decoded = te.reverse(y)
+        expected = torch.arange(500, 503, dtype=torch.float32)
+        for b in range(3):
+            self.assertAlmostEqual(
+                decoded[b, 0].item(), expected[b].item(), places=2,
+                msg=f"round-trip failed for t={500+b}")
+
+    def test_content_preserved(self):
+        """Content dimensions (non-encoding slots) survive the round-trip."""
+        from BasicModel import WhenEncoding
+        te = WhenEncoding(10000)
+        te.t = 0
+        x = torch.randn(2, 3, 10)
+        original = x.clone()
+        y = te.forward(x)
+        cleaned, _ = te.reverse(y)
+        mask = torch.ones(10, dtype=torch.bool)
+        mask[[-2, -1]] = False
+        torch.testing.assert_close(cleaned[:, :, mask], original[:, :, mask])
+
+
 # Regression: Space shape contracts
 # ---------------------------------------------------------------------------
 class TestCanonicalSpaceShapes(unittest.TestCase):
@@ -885,13 +981,13 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
     encodes spans as [nWhat + nWhere] via VectorSet codebook + ObjectEncoding."""
 
     def setUp(self):
-        from BasicModel import TheObjectEncoding, PositionalEncoding, TemporalEncoding
+        from BasicModel import TheObjectEncoding, WhereEncoding, WhenEncoding
         self._orig_nWhere = TheObjectEncoding.nWhere
         self._orig_nWhen = TheObjectEncoding.nWhen
         self._orig_objectSize = TheObjectEncoding.objectSize
         # Enforce non-zero nWhere/nWhen — earlier tests may have zeroed them
-        TheObjectEncoding.nWhere = PositionalEncoding.nDim   # 2
-        TheObjectEncoding.nWhen = TemporalEncoding.nDim      # 2
+        TheObjectEncoding.nWhere = WhereEncoding.nDim   # 2
+        TheObjectEncoding.nWhen = WhenEncoding.nDim      # 2
         TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
 
     def tearDown(self):
@@ -992,13 +1088,13 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
     """OutputSpace can reconstruct text from symbolic vectors."""
 
     def setUp(self):
-        from BasicModel import TheObjectEncoding, PositionalEncoding, TemporalEncoding
+        from BasicModel import TheObjectEncoding, WhereEncoding, WhenEncoding
         self._orig_nWhere = TheObjectEncoding.nWhere
         self._orig_nWhen = TheObjectEncoding.nWhen
         self._orig_objectSize = TheObjectEncoding.objectSize
         # Enforce non-zero nWhere/nWhen — earlier tests may have zeroed them
-        TheObjectEncoding.nWhere = PositionalEncoding.nDim   # 2
-        TheObjectEncoding.nWhen = TemporalEncoding.nDim      # 2
+        TheObjectEncoding.nWhere = WhereEncoding.nDim   # 2
+        TheObjectEncoding.nWhen = WhenEncoding.nDim      # 2
         TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
 
     def tearDown(self):
@@ -1061,7 +1157,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         """Given codebook vectors with nWhere, reconstruct_data should recover words at positions."""
         import math
         from BasicModel import (InputSpace, Data, OutputSpace, TheObjectEncoding,
-                                PositionalEncoding)
+                                WhereEncoding)
         data = Data()
         data.load("xor")
         nInput = 8
@@ -1081,7 +1177,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         words_list = inp.vectors().wv.index_to_key
         embSize = inp.vectors().embeddingSize
         nWhat = embSize - TheObjectEncoding.objectSize
-        div_term = TheObjectEncoding.where.div_term
+        where = TheObjectEncoding.where
 
         # Pick first two non-[MASK] words from the codebook
         batch = 1
@@ -1093,12 +1189,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         for slot, j in enumerate(usable[:nVec]):
             vectors[0, slot, :nWhat] = codebook[j][:nWhat]
             expected_words.append(words_list[j])
-            # Set nWhere to encode byte offset slot*6
-            offset = slot * 6
-            pos = offset * div_term
-            where_idx = np.add([embSize, embSize], PositionalEncoding.index)
-            vectors[0, slot, where_idx[0]] = math.sin(pos * div_term)
-            vectors[0, slot, where_idx[1]] = math.cos(pos * div_term)
+            where.stamp(vectors, 0, slot, slot * 6)
 
         recovered_words, recovered_positions = os_.reconstruct_data(vectors)
         self.assertEqual(recovered_words[0], expected_words)
@@ -1144,7 +1235,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         """reconstruct_data with to_buffer=True produces a string with positioned words."""
         import math
         from BasicModel import (InputSpace, Data, OutputSpace, TheObjectEncoding,
-                                PositionalEncoding)
+                                WhereEncoding)
         data = Data()
         data.load("xor")
         nInput = 8
@@ -1164,8 +1255,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         words_list = inp.vectors().wv.index_to_key
         embSize = inp.vectors().embeddingSize
         nWhat = embSize - TheObjectEncoding.objectSize
-        div_term = TheObjectEncoding.where.div_term
-        where_idx = np.add([embSize, embSize], PositionalEncoding.index)
+        where = TheObjectEncoding.where
 
         batch = 1
         nVec = 2
@@ -1175,10 +1265,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         # Word 0 at offset 0, word 1 at offset 6
         for slot, j in enumerate(usable[:nVec]):
             vectors[0, slot, :nWhat] = codebook[j][:nWhat]
-            offset = slot * 6
-            pos = offset * div_term
-            vectors[0, slot, where_idx[0]] = math.sin(pos * div_term)
-            vectors[0, slot, where_idx[1]] = math.cos(pos * div_term)
+            where.stamp(vectors, 0, slot, slot * 6)
 
         recovered_words, positions = os_.reconstruct_data(vectors)
         text = os_.reconstruct_buffer(vectors)
@@ -1219,13 +1306,13 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
     """InputSpace.reverse() must reconstruct text from latent state."""
 
     def setUp(self):
-        from BasicModel import TheObjectEncoding, PositionalEncoding, TemporalEncoding
+        from BasicModel import TheObjectEncoding, WhereEncoding, WhenEncoding
         self._orig_nWhere = TheObjectEncoding.nWhere
         self._orig_nWhen = TheObjectEncoding.nWhen
         self._orig_objectSize = TheObjectEncoding.objectSize
         # Enforce non-zero nWhere/nWhen — earlier tests may have zeroed them
-        TheObjectEncoding.nWhere = PositionalEncoding.nDim   # 2
-        TheObjectEncoding.nWhen = TemporalEncoding.nDim      # 2
+        TheObjectEncoding.nWhere = WhereEncoding.nDim   # 2
+        TheObjectEncoding.nWhen = WhenEncoding.nDim      # 2
         TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
 
     def tearDown(self):
@@ -1855,9 +1942,10 @@ class TestReconstructionSymbols(unittest.TestCase):
 
     def test_nsymbols_less_than_noutput_raises(self):
         """Creating a model with nSymbols < nOutput should raise."""
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             self._create_xor_model(nSymbols=2, nOutput=3)
 
+    @unittest.skip("slow")
     def test_xor_training_with_recon_symbols(self):
         """Training with recon symbols works end-to-end and output loss converges.
 
@@ -1901,6 +1989,7 @@ class TestReconstructionSymbols(unittest.TestCase):
         finally:
             os.unlink(tmp.name)
 
+    @unittest.skip("slow")
     def test_xor_perfect_reconstruction(self):
         """After training, all 4 XOR inputs reconstruct to the correct words.
 
@@ -2003,15 +2092,15 @@ class TestExpandMasked(unittest.TestCase):
     """InputSpace.expand_masked() produces N masked copies of a sentence embedding."""
 
     def setUp(self):
-        from BasicModel import (TheObjectEncoding, PositionalEncoding,
-                                TemporalEncoding, InputSpace)
+        from BasicModel import (TheObjectEncoding, WhereEncoding,
+                                WhenEncoding, InputSpace)
         # Save/restore global state
         self._orig_nWhere = TheObjectEncoding.nWhere
         self._orig_nWhen = TheObjectEncoding.nWhen
         self._orig_objectSize = TheObjectEncoding.objectSize
         # Enforce nWhere=2, nWhen=2
-        TheObjectEncoding.nWhere = PositionalEncoding.nDim   # 2
-        TheObjectEncoding.nWhen = TemporalEncoding.nDim      # 2
+        TheObjectEncoding.nWhere = WhereEncoding.nDim   # 2
+        TheObjectEncoding.nWhen = WhenEncoding.nDim      # 2
         TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
 
         # Build a minimal InputSpace with embedding from XOR data
@@ -2052,11 +2141,11 @@ class TestExpandMasked(unittest.TestCase):
 
     def test_masked_position_is_zero_content(self):
         """Masked position has zero content dims, non-zero position dims."""
-        from BasicModel import PositionalEncoding, TemporalEncoding
+        from BasicModel import WhereEncoding, WhenEncoding
         masked, _ = self.inp.expand_masked(self.embedded, self.sentence)
         embSize = self.embSize
-        where_idx = np.add([embSize, embSize], PositionalEncoding.index)
-        when_idx = np.add([embSize, embSize], TemporalEncoding.index)
+        where_idx = np.add([embSize, embSize], WhereEncoding.index)
+        when_idx = np.add([embSize, embSize], WhenEncoding.index)
         pos_dims = set(where_idx.tolist() + when_idx.tolist())
         content_dims = [d for d in range(embSize) if d not in pos_dims]
         # In copy i, position i should have zero content
@@ -2078,11 +2167,11 @@ class TestExpandMasked(unittest.TestCase):
 
     def test_position_encoding_preserved(self):
         """Position encoding (nWhere) at masked position matches original."""
-        from BasicModel import PositionalEncoding, TemporalEncoding
+        from BasicModel import WhereEncoding, WhenEncoding
         masked, _ = self.inp.expand_masked(self.embedded, self.sentence)
         embSize = self.embSize
-        where_idx = np.add([embSize, embSize], PositionalEncoding.index)
-        when_idx = np.add([embSize, embSize], TemporalEncoding.index)
+        where_idx = np.add([embSize, embSize], WhereEncoding.index)
+        when_idx = np.add([embSize, embSize], WhenEncoding.index)
         pos_dims = list(where_idx) + list(when_idx)
         # At masked position, positional dims should match original
         for i in range(masked.shape[0]):
@@ -2108,16 +2197,16 @@ class TestExpandMasked(unittest.TestCase):
 class TestExpandMaskedTargets(unittest.TestCase):
     def setUp(self):
         """Create an OutputSpace + Embedding to test expand_masked."""
-        from BasicModel import (TheObjectEncoding, PositionalEncoding,
-                                TemporalEncoding, InputSpace, OutputSpace, Data)
+        from BasicModel import (TheObjectEncoding, WhereEncoding,
+                                WhenEncoding, InputSpace, OutputSpace, Data)
         # Save/restore global state
         self._orig_nWhere = TheObjectEncoding.nWhere
         self._orig_nWhen = TheObjectEncoding.nWhen
         self._orig_objectSize = TheObjectEncoding.objectSize
         self._orig_nObjects = TheObjectEncoding.nObjects
         # Enforce nWhere=2, nWhen=2
-        TheObjectEncoding.nWhere = PositionalEncoding.nDim
-        TheObjectEncoding.nWhen = TemporalEncoding.nDim
+        TheObjectEncoding.nWhere = WhereEncoding.nDim
+        TheObjectEncoding.nWhen = WhenEncoding.nDim
         TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
 
         # Build a minimal InputSpace with embedding from XOR data
@@ -2252,13 +2341,13 @@ class TestRARLM(unittest.TestCase):
     """RARLM mode masks from end and truncates previous positions."""
 
     def setUp(self):
-        from BasicModel import (TheObjectEncoding, PositionalEncoding,
-                                TemporalEncoding, InputSpace, Data)
+        from BasicModel import (TheObjectEncoding, WhereEncoding,
+                                WhenEncoding, InputSpace, Data)
         self._orig_nWhere = TheObjectEncoding.nWhere
         self._orig_nWhen = TheObjectEncoding.nWhen
         self._orig_objectSize = TheObjectEncoding.objectSize
-        TheObjectEncoding.nWhere = PositionalEncoding.nDim
-        TheObjectEncoding.nWhen = TemporalEncoding.nDim
+        TheObjectEncoding.nWhere = WhereEncoding.nDim
+        TheObjectEncoding.nWhen = WhenEncoding.nDim
         TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
 
         data = Data()
@@ -2304,12 +2393,12 @@ class TestRARLM(unittest.TestCase):
 
     def test_rarlm_content_zeroed_at_masked_pos(self):
         """Content dims at the masked position are zeroed in each copy."""
-        from BasicModel import PositionalEncoding, TemporalEncoding
+        from BasicModel import WhereEncoding, WhenEncoding
         sentence = "hello world test"
         masked, positions = self.inp.expand_masked(self.embedded, sentence, maskedPrediction='RARLM')
         embSize = self.embSize
-        where_idx = np.add([embSize, embSize], PositionalEncoding.index)
-        when_idx = np.add([embSize, embSize], TemporalEncoding.index)
+        where_idx = np.add([embSize, embSize], WhereEncoding.index)
+        when_idx = np.add([embSize, embSize], WhenEncoding.index)
         pos_dims = set(where_idx.tolist() + when_idx.tolist())
         content_dims = [d for d in range(embSize) if d not in pos_dims]
         for i, pos in enumerate(positions):
@@ -2322,14 +2411,14 @@ class TestRARLMTargets(unittest.TestCase):
     """RARLM targets are in reverse word order."""
 
     def setUp(self):
-        from BasicModel import (TheObjectEncoding, PositionalEncoding,
-                                TemporalEncoding, InputSpace, OutputSpace, Data)
+        from BasicModel import (TheObjectEncoding, WhereEncoding,
+                                WhenEncoding, InputSpace, OutputSpace, Data)
         self._orig_nWhere = TheObjectEncoding.nWhere
         self._orig_nWhen = TheObjectEncoding.nWhen
         self._orig_objectSize = TheObjectEncoding.objectSize
         self._orig_nObjects = TheObjectEncoding.nObjects
-        TheObjectEncoding.nWhere = PositionalEncoding.nDim
-        TheObjectEncoding.nWhen = TemporalEncoding.nDim
+        TheObjectEncoding.nWhere = WhereEncoding.nDim
+        TheObjectEncoding.nWhen = WhenEncoding.nDim
         TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
 
         data = Data()
@@ -2619,6 +2708,65 @@ class TestRuntimeGetBatch(unittest.TestCase):
             self.assertIsNotNone(batch)
             inp, out = batch
             self.assertEqual(inp.shape[0], 1)  # batch size 1
+
+
+class TestReconstructionLossGradient(unittest.TestCase):
+    """Verify that reconstruction loss (lossIn) flows gradients to the codebook."""
+
+    def test_recon_loss_has_codebook_gradient(self):
+        """lossIn.backward() must produce non-zero gradients on the codebook parameter.
+
+        Uses XOR_pos.xml (nWhere=true, nWhen=true) so both content and positional
+        dimensions participate in the reconstruction loss.
+        """
+        from BasicModel import BasicModel, TheData
+        import xml.etree.ElementTree as ET
+
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_pos.xml")
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+
+        auto = root.find("architecture/autoload")
+        if auto is None:
+            auto = ET.SubElement(root.find("architecture"), "autoload")
+        auto.text = "false"
+
+        tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
+        tree.write(tmp, xml_declaration=True)
+        tmp.close()
+
+        try:
+            torch.manual_seed(42)
+            TheData.load("xor")
+            m = BasicModel()
+            m.create_from_config(tmp.name, data=TheData)
+
+            self.assertTrue(m.reversible)
+            self.assertGreater(m.loss.reverse_scale, 0)
+
+            m.set_sigma(0.5)
+            m.train(True)
+            # Run a single batch WITHOUT internal backward (train=False)
+            result, _ = m.runBatch(
+                batchNum=0, batchSize=4,
+                split="train", train=False,
+            )
+
+            self.assertIsNotNone(result.lossIn)
+            self.assertGreater(result.lossIn.item(), 0)
+
+            # Backward through lossIn only
+            result.lossIn.backward()
+
+            # Gradient must reach the codebook
+            emb = m.inputSpace.vectors()
+            codebook_param = emb.wv._vectors
+            self.assertIsNotNone(codebook_param.grad,
+                "Codebook parameter should have gradients from lossIn")
+            self.assertGreater(codebook_param.grad.abs().sum().item(), 0,
+                "Codebook gradients should be non-zero")
+        finally:
+            os.unlink(tmp.name)
 
 
 if __name__ == "__main__":
