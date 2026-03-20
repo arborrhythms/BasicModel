@@ -1,6 +1,6 @@
 # XML Configuration Parameters
 
-Model configuration is specified in XML files (e.g. `data/XOR_exact.xml`). Default values are loaded from `data/defaults.xml` and overridden by model-specific configs.
+Model configuration is specified in XML files (e.g. `data/XOR_exact.xml`). Default values are loaded from `data/model.xml` and overridden by model-specific configs. The schema is defined in `data/model.xsd`.
 
 ---
 
@@ -50,52 +50,30 @@ Training loop and I/O settings.
 | `batchSize` | int | `10` | Mini-batch size for training. |
 | `learningRate` | float | `0.001` | Learning rate for the Adam optimizer. |
 | `reconRatio` | float | `0.5` | Weight of reconstruction loss in combined loss: `total = (1-r)*output + r*recon`. |
-| `train` | string | `"NONE"` | Embedding update mode. See table below and [Training.md](Training.md). |
-| `OptimizeEmbedding` | bool | *(see below)* | Whether embedding weights participate in the main optimizer graph (backprop through codebook lookups). When `false`, codebook vectors are detached during forward/reverse — no gradients flow through them. Default: `true` for `ARLM`/`BOTH`/`JOINT`, `false` otherwise. |
-| `sbowRatio` | float | `0.1` | Weight $\lambda$ of SBOW loss in JOINT mode: $\mathcal{L} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathcal{L}_{\text{SBOW}}$. Ignored by other modes. |
+| `trainEmbedding` | string | `"NONE"` | Embedding update mode. Controls both the embedding training method and whether gradients flow through the codebook. See table below and [Training.md](Training.md). |
+| `trainEmbeddingRatio` | float | `0.1` | Weight $\lambda$ of embedding loss in JOINT mode: $\mathcal{L} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathcal{L}_{\text{emb}}$. Ignored by other modes. |
 | `weightsPath` | string | `"output/BasicModel.ckpt"` | File path for saving/loading model weights checkpoint. Filename conventionally matches the XML config (e.g. `BasicModel.xml` → `output/BasicModel.ckpt`). |
 | `embeddingPath` | string | — | File path for the word vector store (`.kv` extension, gensim-compatible `KeyedVectors`). When absent, embedding training is skipped. |
 | `autoload` | bool | `true` | Automatically load weights from `weightsPath` on model creation. Set to `false` for fresh training. |
 | `autosave` | bool | `false` | Automatically save weights after training completes. |
 | `negSamples` | int | `64` | Number of negative samples per positive example for CBOW/SBOW training. Controls memory usage: `O(batch × negSamples × dim)` vs `O(batch × vocab)` for full softmax. |
 
-#### `<train>` — Embedding Update Modes
+#### `<trainEmbedding>` — Embedding Update Modes
 
-| Value | Embedding method | Model layers | Description |
-|-------|-----------------|-------------|-------------|
-| `NONE` | Frozen | Frozen | Inference only; no parameters updated |
-| `CBOW` | CBOW (padded context) | Frozen | True CBOW: predict each word from leave-one-out context with padding |
-| `SBOW` | SBOW (centroid) | Frozen | Faster variant: predict each word from leave-one-out centroid |
-| `ARLM` | Frozen | Backprop | Train model layers only; codebook is fixed |
-| `BOTH` | SBOW post-batch | Backprop | Two optimizers: SBOW updates embeddings, Adam updates model layers |
-| `JOINT` | Single backward | Backprop | Single optimizer: $\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathcal{L}_{\text{SBOW}}$ |
+| Value | Embedding method | Model layers | Gradients through codebook | Description |
+|-------|-----------------|-------------|---------------------------|-------------|
+| `NONE` | Frozen | Frozen | No | Inference only; no parameters updated |
+| `CBOW` | CBOW (padded context) | Frozen | No | True CBOW: predict each word from leave-one-out context with padding |
+| `SBOW` | SBOW (centroid) | Frozen | No | Faster variant: predict each word from leave-one-out centroid |
+| `ARLM` | Frozen | Backprop | No | Train model layers only; codebook is fixed |
+| `BOTH` | SBOW post-batch | Backprop | Yes | Two optimizers: SBOW updates embeddings, Adam updates model layers |
+| `JOINT` | Single backward | Backprop | Yes | Single optimizer: $\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathcal{L}_{\text{SBOW}}$ |
 
-#### `<sbowRatio>` — SBOW Loss Weight (JOINT mode)
+#### `<trainEmbeddingRatio>` — Embedding Loss Weight (JOINT mode)
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `sbowRatio` | float | `0.1` | Weight $\lambda$ of the SBOW co-occurrence loss in JOINT mode. Higher values bias training toward embedding quality; lower values prioritize model prediction. |
-
-#### `<OptimizeEmbedding>` — Gradient Flow Through Codebook
-
-Controls whether the codebook `nn.Embedding` weight is **detached** during forward/reverse passes and whether it is included in the main optimizer's parameter list.
-
-| `OptimizeEmbedding` | `detach()` in forward/reverse | In main optimizer | Use case |
-|---------------------|------------------------------|-------------------|----------|
-| `true` | No — gradients flow through codebook | Yes | ARLM/BOTH/JOINT: model backprop fine-tunes embeddings |
-| `false` | Yes — codebook is a frozen lookup table | No | SBOW/CBOW: embedding updates are isolated to their own optimizer |
-
-**`<train>` and `<OptimizeEmbedding>` are independent axes.** Common combinations:
-
-| `<train>` | `<OptimizeEmbedding>` | Effect |
-|-----------|-----------------------|--------|
-| `ARLM` | `false` | Model trains, codebook completely frozen (no gradient flow) |
-| `ARLM` | `true` (default) | Model trains, backprop also fine-tunes codebook |
-| `SBOW` | `false` (default) | Only SBOW updates codebook via its own optimizer |
-| `BOTH` | `true` (default) | SBOW + model backprop both update codebook (two optimizers) |
-| `BOTH` | `false` | SBOW updates codebook via its own optimizer; model trains but codebook detached from backprop |
-| `JOINT` | `true` (default) | Single combined loss; one optimizer updates everything |
-| `JOINT` | `false` | Model loss doesn't flow through codebook, but SBOW loss still does (unusual) |
+| `trainEmbeddingRatio` | float | `0.1` | Weight $\lambda$ of the embedding co-occurrence loss in JOINT mode. Higher values bias training toward embedding quality; lower values prioritize model prediction. |
 
 ---
 
@@ -292,8 +270,7 @@ In this configuration:
       <numEpochs>1</numEpochs>
       <batchSize>1</batchSize>
       <learningRate>0.001</learningRate>
-      <train>ARLM</train>
-      <OptimizeEmbedding>false</OptimizeEmbedding>
+      <trainEmbedding>ARLM</trainEmbedding>
       <weightsPath>BasicModel.ckpt</weightsPath>
       <embeddingPath>BasicModel.kv</embeddingPath>
       <autoload>true</autoload>
@@ -317,7 +294,7 @@ In this configuration:
 
 Key points:
 - `modelType=embedding` activates the embedding-based input pipeline alongside the neural model
-- `train=ARLM` trains only the network layers; `OptimizeEmbedding=false` detaches the codebook so no gradients flow through it
+- `trainEmbedding=ARLM` trains only the network layers; the codebook is detached so no gradients flow through it
 - The three files partition model behaviour: **XML config** (architecture), **`.kv` embedding** (codebook), **`.ckpt` weights** (model layers)
 - `weightsPath` stores the neural model checkpoint; `embeddingPath` stores the word vectors
 - `minFrequency` gates vocabulary admission: words are buffered until their frequency ratio exceeds this threshold

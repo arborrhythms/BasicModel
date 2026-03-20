@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <!-- Root element -->
+  <xs:element name="model">
+    <xs:complexType>
+      <xs:all>
+        <xs:element name="architecture" type="architectureType"/>
+        <xs:element name="InputSpace" type="inputSpaceType" minOccurs="0"/>
+        <xs:element name="PerceptualSpace" type="perceptualSpaceType" minOccurs="0"/>
+        <xs:element name="ConceptualSpace" type="conceptualSpaceType" minOccurs="0"/>
+        <xs:element name="SymbolicSpace" type="symbolicSpaceType" minOccurs="0"/>
+        <xs:element name="SyntacticSpace" type="syntacticSpaceType" minOccurs="0"/>
+        <xs:element name="OutputSpace" type="outputSpaceType" minOccurs="0"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Architecture (top-level config)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="architectureType">
+    <xs:all>
+      <xs:element name="modelType" type="modelTypeEnum" minOccurs="0"/>
+      <xs:element name="reshape" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="conceptualOrder" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="symbolicOrder" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="processSymbols" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="ergodic" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="naive" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="maskedPrediction" type="maskedPredictionEnum" minOccurs="0"/>
+      <xs:element name="reconstruct" type="reconstructEnum" minOccurs="0"/>
+      <xs:element name="maxResponseLength" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="data" type="dataType" minOccurs="0"/>
+      <xs:element name="training" type="trainingType" minOccurs="0"/>
+      <xs:element name="server" type="serverType" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Enumerations
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:simpleType name="modelTypeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="simple"/>
+      <xs:enumeration value="embedding"/>
+      <xs:enumeration value="passthrough"/>
+      <xs:enumeration value="vq"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="maskedPredictionEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="NONE"/>
+      <xs:enumeration value="none"/>
+      <xs:enumeration value="MLM"/>
+      <xs:enumeration value="ARLM"/>
+      <xs:enumeration value="ARUS"/>
+      <xs:enumeration value="RARLM"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="reconstructEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="none"/>
+      <xs:enumeration value="symbols"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="trainEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="NONE"/>
+      <xs:enumeration value="CBOW"/>
+      <xs:enumeration value="SBOW"/>
+      <xs:enumeration value="ARLM"/>
+      <xs:enumeration value="BOTH"/>
+      <xs:enumeration value="JOINT"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="datasetEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="xor"/>
+      <xs:enumeration value="mnist"/>
+      <xs:enumeration value="tomatoes"/>
+      <xs:enumeration value="text"/>
+      <xs:enumeration value="inline"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="lexerEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="word"/>
+      <xs:enumeration value="sentence"/>
+      <xs:enumeration value="grammar"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="unitInterval">
+    <xs:restriction base="xs:float">
+      <xs:minInclusive value="0.0"/>
+      <xs:maxInclusive value="1.0"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="nonNegativeFloat">
+    <xs:restriction base="xs:float">
+      <xs:minInclusive value="0.0"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="positiveFloat">
+    <xs:restriction base="xs:float">
+      <xs:minExclusive value="0.0"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Data section
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="dataType">
+    <xs:all>
+      <xs:element name="dataset" type="datasetEnum" minOccurs="0"/>
+      <xs:element name="numShards" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="maxDocs" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="shardDir" type="xs:string" minOccurs="0"/>
+      <xs:element name="minFrequency" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="classificationMin" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="classificationMax" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <!-- Inline data elements (pipe-separated) -->
+      <xs:element name="input" minOccurs="0" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="use" type="xs:string"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="output" minOccurs="0" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="use" type="xs:string"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Training section
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="trainingType">
+    <xs:all>
+      <xs:element name="numTrials" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="numEpochs" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="batchSize" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="learningRate" type="positiveFloat" minOccurs="0"/>
+      <xs:element name="reconRatio" type="unitInterval" minOccurs="0"/>
+      <xs:element name="negSamples" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="trainEmbedding" type="trainEnum" minOccurs="0"/>
+      <xs:element name="trainEmbeddingRatio" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="embeddingPath" type="xs:string" minOccurs="0"/>
+      <xs:element name="weightsPath" type="xs:string" minOccurs="0"/>
+      <xs:element name="autoload" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="autosave" type="xs:boolean" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Server section
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="serverType">
+    <xs:all>
+      <xs:element name="host" type="xs:string" minOccurs="0"/>
+      <xs:element name="port" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="timeout" type="xs:positiveInteger" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Space types
+       ═══════════════════════════════════════════════════════════════════ -->
+
+  <!-- Common elements shared by all spaces -->
+  <xs:group name="spaceCommon">
+    <xs:all>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+    </xs:all>
+  </xs:group>
+
+  <xs:complexType name="inputSpaceType">
+    <xs:all>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="lexer" type="lexerEnum" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="perceptualSpaceType">
+    <xs:all>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="conceptualSpaceType">
+    <xs:all>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="hasNorm" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="symbolicSpaceType">
+    <xs:all>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="syntacticSpaceType">
+    <xs:all>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="outputSpaceType">
+    <xs:all>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+</xs:schema>

@@ -1,4 +1,11 @@
-include /bits/projects/Make.mk
+SHELL := /bin/bash
+
+# --- PDF generation options (inlined from Make.mk) ----------------------------
+PD_TEMPLATE := /bits/projects/custom_template.tex
+PDFOPTS := --pdf-engine=xelatex \
+          -V geometry:margin=1in \
+          --template=$(PD_TEMPLATE) \
+          -V header-includes="\usepackage{unicode-math} \hyphenpenalty=10000 \exhyphenpenalty=10000 \makeatletter \renewcommand\section{\@startsection{section}{1}{\z@}{-3.5ex}{2.3ex}{\normalfont\Large\bfseries\centering}} \makeatother"
 
 # Ordered list of doc chapters for PDF generation
 PDF_CHAPTERS := README.md doc/CognitiveScienceSociety.md doc/Architecture.md doc/BasicModel.md doc/MachineMinds.md doc/Params.md
@@ -21,21 +28,26 @@ MAKE_PDF = pandoc $(PDFOPTS) \
 		--toc --toc-depth=3 \
 		--resource-path=.:doc
 
-.PHONY : all xor tomatoes ergodic simple run compare test bench doc_pdf clean \
+.PHONY : all install xor tomatoes ergodic simple run compare test bench doc_pdf clean \
          train train_micro train_remote train_micro_remote
 
 all : xor
+
+install :
+	python3 -m venv .venv
+	.venv/bin/pip install --upgrade pip setuptools wheel
+	.venv/bin/pip install -r requirements.txt
 
 
 run :
 	cd bin && PYTHONPATH=. ../.venv/bin/python BasicModel.py $(XML1)
 
 train :
-	$(PYTHON) bin/train.py --model $(MODEL) --log \
+	$(PYTHON) bin/train.py --model $(MODEL) --data text --log \
 		$(if $(TRAIN_HOST),--host $(TRAIN_HOST) --user $(TRAIN_USER) --key-file $(TRAIN_KEY) --remote-dir $(TRAIN_DIR))
 
 train_micro :
-	$(PYTHON) bin/train.py --model $(MODEL) --log \
+	$(PYTHON) bin/train.py --model $(MODEL) --data text --log \
 		--max-docs 500 --num-shards 1 --random-shards \
 		$(if $(TRAIN_HOST),--host $(TRAIN_HOST) --user $(TRAIN_USER) --key-file $(TRAIN_KEY) --remote-dir $(TRAIN_DIR))
 

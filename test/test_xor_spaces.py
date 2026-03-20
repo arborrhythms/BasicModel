@@ -250,7 +250,7 @@ class TestSpacePrediction(unittest.TestCase):
         os_ = OutputSpace(nInput, 4)
         os_.set_text_mode(inp)
 
-        codebook = emb._emb.weight.detach()
+        codebook = emb.wv._vectors.detach()
         words_list = emb.wv.index_to_key
         embSize = emb.embeddingSize
         nWhat = embSize - TheObjectEncoding.objectSize  # content dims only
@@ -306,7 +306,7 @@ class TestSpacePrediction(unittest.TestCase):
         os_.set_text_mode(inp)
 
         space_idx = emb.pretrain.key_to_index[" "]
-        codebook = emb._emb.weight.detach()
+        codebook = emb.wv._vectors.detach()
         embSize = emb.embeddingSize
         nWhat = embSize - TheObjectEncoding.objectSize  # content dims only
 
@@ -376,15 +376,15 @@ class TestNullEOS(unittest.TestCase):
         \\x00 participates in the vocabulary like any other token — it is NOT
         the zero vector.  Zero-vector slots are detected in reconstruct_text by
         the abs-sum threshold check (< 1e-8) and mapped directly to '\\x00'
-        before the nearest-neighbour cosine lookup.  Only [MASK] is zero.
+        before the nearest-neighbour cosine lookup.
         """
         import torch
         self.assertIn("\x00", self.emb.pretrain.key_to_index)
         idx = self.emb.pretrain.key_to_index["\x00"]
-        vec = self.emb._emb.weight[idx].detach()
+        vec = self.emb.wv._vectors[idx].detach()
         self.assertGreater(
             vec.norm().item(), 1e-6,
-            "\\x00 embedding must be a regular nonzero vector (only [MASK] is zero)",
+            "\\x00 embedding must be a regular nonzero vector",
         )
 
     def test_reconstruct_buffer_stops_at_null_token(self):
@@ -399,7 +399,7 @@ class TestNullEOS(unittest.TestCase):
         emb = self.emb
         self.assertIn("\x00", emb.pretrain.key_to_index)
 
-        codebook = emb._emb.weight.detach()
+        codebook = emb.wv._vectors.detach()
         words_list = emb.wv.index_to_key
         embSize = emb.embeddingSize
         nWhat = embSize - TheObjectEncoding.objectSize
@@ -440,7 +440,7 @@ class TestNullEOS(unittest.TestCase):
         emb = self.emb
         self.assertIn("\x00", emb.pretrain.key_to_index)
 
-        codebook = emb._emb.weight.detach()
+        codebook = emb.wv._vectors.detach()
         words_list = emb.wv.index_to_key
         embSize = emb.embeddingSize
         nWhat = embSize - TheObjectEncoding.objectSize
@@ -448,16 +448,18 @@ class TestNullEOS(unittest.TestCase):
         null_idx = emb.pretrain.key_to_index["\x00"]
 
         usable = [j for j, w in enumerate(words_list)
-                  if w not in ("[MASK]", "\x00")]
+                  if w != "\x00"]
         word_idx = usable[0]
         word_text = words_list[word_idx]
 
-        # Two real words followed by two null (padding) slots
+        # Two real words followed by two \x00 (terminator) slots
         batch, nVec = 1, 4
         vectors = torch.zeros([batch, nVec, embSize])
         vectors[0, 0, :nWhat] = codebook[word_idx][:nWhat]
         vectors[0, 1, :nWhat] = codebook[word_idx][:nWhat]
-        # slots 2 and 3 remain zero → decode to \x00
+        # slots 2 and 3 use the actual \x00 codebook embedding (not zeros)
+        vectors[0, 2, :nWhat] = codebook[null_idx][:nWhat]
+        vectors[0, 3, :nWhat] = codebook[null_idx][:nWhat]
 
         result = self.os_.reconstruct_buffer(vectors)
         text = result[0]

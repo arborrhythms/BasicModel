@@ -23,24 +23,63 @@ Usage:
 import sys
 from pathlib import Path
 
-import nltk
-from nltk import pos_tag
-from nltk.tokenize import word_tokenize
-from nltk.grammar import CFG
-from nltk.parse.earleychart import EarleyChartParser
-from nltk.tree import Tree
-
-# Ensure required NLTK data is available (silent no-ops if already present)
-for _res in ("tokenizers/punkt_tab", "taggers/averaged_perceptron_tagger_eng",
-             "corpora/wordnet"):
-    try:
-        nltk.data.find(_res)
-    except LookupError:
-        nltk.download(_res.split("/")[-1], quiet=True)
-
 # ---------------------------------------------------------------------------
-# Constants
+# Lazy NLTK + grammar initialization (deferred so importing parse.py is free)
 # ---------------------------------------------------------------------------
+
+_nltk_ready = False
+Tree = None  # nltk.tree.Tree, set by _ensure_nltk()
+
+def _ensure_nltk():
+    """Import NLTK and download required data on first use."""
+    global _nltk_ready, Tree
+    if _nltk_ready:
+        return
+    import nltk
+    from nltk.tree import Tree as _Tree
+    Tree = _Tree
+    for _res in ("tokenizers/punkt_tab", "taggers/averaged_perceptron_tagger_eng",
+                 "corpora/wordnet"):
+        try:
+            nltk.data.find(_res)
+        except LookupError:
+            nltk.download(_res.split("/")[-1], quiet=True)
+    _nltk_ready = True
+
+
+_BASE_CFG = None
+_FUNC_WORDS = None
+_GRAMMAR_LEXICAL = None
+_COORD_WORDS = None
+PUNCTUATION = None
+
+def _ensure_grammar():
+    """Load grammar.cfg and build derived lookups on first use."""
+    global _BASE_CFG, _FUNC_WORDS, _GRAMMAR_LEXICAL, _COORD_WORDS, PUNCTUATION
+    if _BASE_CFG is not None:
+        return
+    from nltk.grammar import CFG
+
+    # PUNCTUATION
+    PUNCTUATION = _punctuation_from_grammar()
+
+    # Base grammar
+    grammar_dir = Path(__file__).resolve().parent.parent / "data"
+    base_grammar = (grammar_dir / "grammar.cfg").read_text()
+    _BASE_CFG = CFG.fromstring(base_grammar)
+
+    # Function-word lookup from grammar's lexical rules
+    _FUNC_WORDS = {}
+    _GRAMMAR_LEXICAL = set()
+    for prod in _BASE_CFG.productions():
+        if prod.is_lexical():
+            w = prod.rhs()[0]
+            nt = str(prod.lhs())
+            _FUNC_WORDS[w] = nt
+            _GRAMMAR_LEXICAL.add((nt, w))
+
+    _COORD_WORDS = {w for (nt, w) in _GRAMMAR_LEXICAL if nt in ("AND", "OR")}
+
 
 def _punctuation_from_grammar():
     """Derive the PUNCTUATION set from the PUNCTUATION rule in grammar.cfg,
@@ -57,36 +96,10 @@ def _punctuation_from_grammar():
         lhs = lhs.strip()
         if lhs != 'PUNCTUATION':
             continue
-        # Extract quoted characters: handles both "x" and 'x' styles
         for match in re.finditer(r"""(?:"([^"]+)"|'([^']+)')""", rhs):
             char = match.group(1) if match.group(1) is not None else match.group(2)
             chars.add(char)
     return chars
-
-
-PUNCTUATION = _punctuation_from_grammar()
-
-# ---------------------------------------------------------------------------
-# Grammar loading — derive all word lists from grammar.cfg
-# ---------------------------------------------------------------------------
-
-_GRAMMAR_DIR = Path(__file__).resolve().parent.parent / "data"
-_BASE_GRAMMAR = (_GRAMMAR_DIR / "grammar.cfg").read_text()
-_BASE_CFG = CFG.fromstring(_BASE_GRAMMAR)
-
-# Build function-word lookup from grammar's lexical rules.
-# Maps lowercase word → terminal name, e.g. {"is": "IS", "over": "P", ...}.
-_FUNC_WORDS = {}
-_GRAMMAR_LEXICAL = set()  # (terminal_name, word) pairs already in grammar
-for _prod in _BASE_CFG.productions():
-    if _prod.is_lexical():
-        _w = _prod.rhs()[0]
-        _nt = str(_prod.lhs())
-        _FUNC_WORDS[_w] = _nt
-        _GRAMMAR_LEXICAL.add((_nt, _w))
-
-# Coordination words — used by _select_tree to prefer clause-level parses.
-_COORD_WORDS = {w for (nt, w) in _GRAMMAR_LEXICAL if nt in ("AND", "OR")}
 
 # ---------------------------------------------------------------------------
 # POS mapping: Penn Treebank tag → grammar terminal
@@ -98,6 +111,7 @@ def ptb_to_grammar(word, tag):
     Function words are identified by the grammar's lexical rules (grammar.cfg).
     Content words are classified by their POS tag.
     """
+    _ensure_grammar()
     low = word.lower()
 
     # Function words — lookup in grammar-derived table
@@ -160,6 +174,8 @@ def wordnet_categories(word):
     Function words get their grammar terminal; content words use WordNet
     synsets to determine all plausible open-class terminals.
     """
+    _ensure_nltk()
+    _ensure_grammar()
     from nltk.corpus import wordnet as wn
 
     low = word.lower()
@@ -217,7 +233,8 @@ def build_grammar(tagged_tokens):
     Content words (N, V, ADJ, ADV) and case-variants of function words get
     dynamic terminal rules added here.
     """
-    from nltk.grammar import Nonterminal, Production
+    _ensure_grammar()
+    from nltk.grammar import Nonterminal, Production, CFG
 
     productions = list(_BASE_CFG.productions())
 
@@ -660,6 +677,7 @@ def _try_parse(grammar_tokens, max_trees=50):
     The parser receives actual words.  Function words match lexical rules
     in grammar.cfg; content words match dynamic rules added by build_grammar.
     """
+    from nltk.parse.earleychart import EarleyChartParser
     grammar = build_grammar(grammar_tokens)
     parser = EarleyChartParser(grammar)
     chart_tokens = [word for word, _ in grammar_tokens]
@@ -677,6 +695,7 @@ def _select_tree(trees, grammar_tokens):
 
     Prefers clause-coordination parses when coordination tokens are present.
     """
+    _ensure_grammar()
     tree = trees[0]
     has_coord = any(w.lower() in _COORD_WORDS for w, _ in grammar_tokens)
     if has_coord and not has_clause_coord(tree):
@@ -687,6 +706,30 @@ def _select_tree(trees, grammar_tokens):
     return tree
 
 
+def parser(sentence):
+    """Full Lex tokenization with span tracking. Returns [(text, byte_start), ...]."""
+    from lex import Lex
+    return [(tok['text'], tok['start']) for tok in Lex().lex_buffer(sentence, 0)]
+
+
+_QUICK_TOK = __import__('re').compile(r'[a-zA-Z]+|[0-9]+|[^a-zA-Z0-9\s]+|\s+')
+
+def quick_parser(sentence):
+    """Fast flat parse — regex split into words, punctuation, and spaces.
+
+    Returns a list of (token_text, byte_start) tuples.  Every character
+    in the input is covered by exactly one token (words, punctuation runs,
+    or whitespace runs), so byte offsets are contiguous.
+    """
+    spans = []
+    byte_pos = 0
+    for m in _QUICK_TOK.finditer(sentence):
+        tok = m.group()
+        spans.append((tok, byte_pos))
+        byte_pos += len(tok.encode('utf-8'))
+    return spans
+
+
 def parse(sentence):
     """Tokenize, POS-tag, parse, and emit XML for a sentence.
 
@@ -695,6 +738,11 @@ def parse(sentence):
       Pass 2 — on failure, fall back to WordNet synset lookup for broader
                category alternatives, and retry.
     """
+    _ensure_nltk()
+    _ensure_grammar()
+    from nltk import pos_tag
+    from nltk.tokenize import word_tokenize
+
     # Tokenize
     tokens = word_tokenize(sentence)
     if not tokens:

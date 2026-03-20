@@ -1,58 +1,111 @@
 <?xml version="1.0" ?>
+<!--
+  model.xml — canonical defaults for BasicModel.
+
+  Every parameter that create_from_config() reads must appear here.
+  Model-specific XML files (XOR_exact.xml, BasicModel.xml, …) override
+  individual values; anything they omit inherits from this file.
+
+  Validated by model.xsd.
+-->
 <model>
-  <!-- BasicModel configuration -->
   <architecture>
-    <conceptualOrder>2</conceptualOrder>
-    <reconstruct>symbols</reconstruct>
-    <modelType>passthrough</modelType>
+    <modelType>simple</modelType>
+    <reshape>false</reshape>
+    <conceptualOrder>1</conceptualOrder>
+    <symbolicOrder>1</symbolicOrder>
+    <processSymbols>false</processSymbols>
+    <ergodic>false</ergodic>
+    <certainty>false</certainty>
+    <naive>false</naive>
+    <maskedPrediction>NONE</maskedPrediction>
+    <reconstruct>none</reconstruct>
+    <maxResponseLength>4096</maxResponseLength>
 
     <data>
-      <!-- Dataset: mnist | xor | tomatoes -->
-      <dataset>mnist</dataset>
+      <!-- dataset: xor | mnist | tomatoes | text | inline | (omit for inference-only) -->
+      <dataset>xor</dataset>
+      <numShards>1</numShards>
+      <maxDocs>10000</maxDocs>
+      <shardDir></shardDir>
+      <minFrequency>0.0</minFrequency>
+      <classificationMin></classificationMin>
+      <classificationMax></classificationMax>
     </data>
 
     <training>
-      <numEpochs>10</numEpochs>
+      <numTrials>1</numTrials>
+      <numEpochs>3</numEpochs>
       <batchSize>10</batchSize>
-      <learningRate>0.01</learningRate>
-      <!-- Path to saved weights (relative to basicmodel/ root) -->
+      <learningRate>0.001</learningRate>
+      <reconRatio>0.5</reconRatio>
+      <negSamples>64</negSamples>
+
+      <!-- Embedding training mode: NONE | CBOW | SBOW | BACKPROP | BOTH | JOINT -->
+      <trainEmbedding>NONE</trainEmbedding>
+      <!-- Embedding loss weight in JOINT mode -->
+      <trainEmbeddingRatio>0.25</trainEmbeddingRatio>
+
+      <!-- Artifact paths (relative to XML file location) -->
+      <embeddingPath></embeddingPath>
       <weightsPath>weights.ckpt</weightsPath>
-      <!-- Auto-load weights on startup if available -->
       <autoload>true</autoload>
-      <!-- Auto-save weights after training -->
-      <autosave>true</autosave>
+      <autosave>false</autosave>
     </training>
+
+    <server>
+      <host>127.0.0.1</host>
+      <port>8001</port>
+      <timeout>120</timeout>
+    </server>
   </architecture>
 
   <InputSpace>
     <nActive>32</nActive>
+    <nDim>1</nDim>
     <nVectors>32</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <quantized>false</quantized>
+    <lexer>word</lexer>
   </InputSpace>
 
   <PerceptualSpace>
-    <nActive>64</nActive>
-    <nVectors>128</nVectors>
+    <nActive>32</nActive>
+    <nDim>1</nDim>
+    <nVectors>0</nVectors>
+    <passThrough>false</passThrough>
+    <hasAttention>true</hasAttention>
+    <invertible>false</invertible>
+    <quantized>false</quantized>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nActive>256</nActive>
-    <nVectors>512</nVectors>
+    <nDim>1</nDim>
+    <nVectors>0</nVectors>
+    <hasAttention>false</hasAttention>
+    <hasNorm>false</hasNorm>
+    <invertible>false</invertible>
+    <quantized>false</quantized>
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nActive>2</nActive>
-    <nVectors>2</nVectors>
+    <nActive>256</nActive>
+    <nDim>1</nDim>
+    <nVectors>256</nVectors>
+    <passThrough>false</passThrough>
   </SymbolicSpace>
+
+  <SyntacticSpace>
+    <nActive>16</nActive>
+    <nDim>1</nDim>
+    <nVectors>16</nVectors>
+  </SyntacticSpace>
 
   <OutputSpace>
     <nActive>32</nActive>
+    <nDim>1</nDim>
     <nVectors>32</nVectors>
   </OutputSpace>
-
-  <server>
-    <!-- HTTP interface settings (for WikiOracle integration) -->
-    <host>127.0.0.1</host>
-    <port>8001</port>
-    <timeout>120</timeout>
-  </server>
 </model>

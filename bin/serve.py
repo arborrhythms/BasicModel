@@ -114,10 +114,12 @@ def _load_model(config_path=None):
     cfg = BasicModel.load_config(config_path)
     arch = cfg.get("architecture", {})
     dat = arch.get("data", {})
-    dataset = dat.get("dataset")
-    if dataset is None:
-        raise ValueError("Model file must specify <data><dataset> in <architecture>")
-    TheData.load(dataset)
+    dataset = dat.get("dataset")  # None when serving without training data
+    if dataset is not None:
+        TheData.load(dataset,
+                     num_shards=int(dat.get("numShards")),
+                     max_docs=int(dat.get("maxDocs")),
+                     shard_dir=dat.get("shardDir"))
 
     model = BasicModel()
     cfg = model.create_from_config(config_path, data=TheData)
@@ -239,8 +241,8 @@ def main():
 
     arch = _model_config.get("architecture", {})
     srv = arch.get("server", {})
-    host = args.host or srv.get("host", "127.0.0.1")
-    port = args.port or srv.get("port", 8001)
+    host = args.host or srv.get("host")
+    port = args.port or srv.get("port")
 
     logger.info("Serving on %s:%s", host, port)
     app.run(host=host, port=port, debug=False)

@@ -835,22 +835,21 @@ class TestBaseModelFactory(unittest.TestCase):
 
 
 class TestDataTextStorage(unittest.TestCase):
-    """Data stores raw text as lists of strings for per-document processing."""
+    """Text datasets store raw strings in train_input (tensorized lazily)."""
 
-    def test_train_texts_created_for_text(self):
+    def test_train_input_strings_for_text(self):
         from BasicModel import Data
         data = Data()
         data.load("xor")  # XOR uses text examples
-        self.assertTrue(hasattr(data, 'train_texts'))
-        self.assertIsInstance(data.train_texts, list)
-        self.assertIsInstance(data.train_texts[0], str)
+        self.assertIsInstance(data.train_input, list)
+        self.assertIsInstance(data.train_input[0], str)
 
-    def test_no_train_texts_for_numeric(self):
-        """Numeric datasets should not have train_texts."""
+    def test_train_input_tensors_for_numeric(self):
+        """Numeric datasets store tensors in train_input."""
         from BasicModel import Data
         data = Data()
         data.load("mnist")
-        self.assertIsNone(data.train_texts)
+        self.assertIsInstance(data.train_input, torch.Tensor)
 
 
 class TestSymbolDimZeroPassthrough(unittest.TestCase):
@@ -922,12 +921,13 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
                          lexer=lexer)
         return inp, data
 
-    def test_lex_created_on_init(self):
-        """InputSpace with model_type='embedding' creates a Lex on its Embedding."""
-        from lex import Lex
+    def test_token_stream_available(self):
+        """InputSpace with model_type='embedding' can tokenize via _token_stream."""
         inp, _ = self._make_input_space()
-        from lex import Lex
-        self.assertIsInstance(inp.vectors()._lex, Lex)
+        emb = inp.vectors()
+        tokens = emb._token_stream("hello world")
+        self.assertIsInstance(tokens, list)
+        self.assertEqual(tokens[0][0], "hello")
 
     def test_per_doc_spans_created(self):
         """InputSpace stores per-document `(text, start)` token streams."""
@@ -959,10 +959,15 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         """Embedding stores token text alongside byte starts."""
         inp, _ = self._make_input_space()
         emb = inp.vectors()
-        self.assertEqual(
-            emb.doc_spans[0],
-            [("hello", 0), (" ", 5), ("world", 6)],
-        )
+        # Find the "hello world" doc (order may vary after shuffling)
+        hw = None
+        for spans in emb.doc_spans:
+            words = "".join(t for t, _ in spans)
+            if words == "hello world":
+                hw = spans
+                break
+        self.assertIsNotNone(hw, "Expected 'hello world' doc in doc_spans")
+        self.assertEqual(hw, [("hello", 0), (" ", 5), ("world", 6)])
 
     def test_object_encoding_applied(self):
         """ObjectEncoding (nWhere + nWhen) is applied to forward() output."""
@@ -1072,7 +1077,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         os_.set_text_mode(inp)
 
         # Build synthetic vectors from known codebook entries with known nWhere
-        codebook = inp.vectors()._emb.weight.detach()
+        codebook = inp.vectors().wv._vectors.detach()
         words_list = inp.vectors().wv.index_to_key
         embSize = inp.vectors().embeddingSize
         nWhat = embSize - TheObjectEncoding.objectSize
@@ -1116,7 +1121,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         os_.set_text_mode(inp)
 
         # Build vectors with nWhere = 0 (all zeros)
-        codebook = inp.vectors()._emb.weight.detach()
+        codebook = inp.vectors().wv._vectors.detach()
         words_list = inp.vectors().wv.index_to_key
         embSize = inp.vectors().embeddingSize
 
@@ -1155,7 +1160,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         os_.set_text_mode(inp)
 
         # Build synthetic vectors with nWhere at known positions
-        codebook = inp.vectors()._emb.weight.detach()
+        codebook = inp.vectors().wv._vectors.detach()
         words_list = inp.vectors().wv.index_to_key
         embSize = inp.vectors().embeddingSize
         nWhat = embSize - TheObjectEncoding.objectSize
@@ -1245,7 +1250,13 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         return inp, data
 
     def test_reverse_recovers_words(self):
-        """forward -> reverse should recover the original lexical tokens."""
+        """forward -> reverse should recover the original lexical tokens.
+
+        Content tokens (non-whitespace) must match exactly.  Trailing
+        padding is space-filled, so the last token from tokenize() is a
+        long whitespace run; the reverse path may recover a shorter
+        space token — both are correct padding representations.
+        """
         inp, data = self._make_text_input_space()
         batch_size = 2
         inputBatch = data.train_input[0:batch_size]
@@ -1260,8 +1271,14 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
             nVec = inp.outputShape[0]
             exp = expected_tokens[b][:nVec]
             rec = recovered[b][:len(exp)]
-            self.assertEqual(rec, exp,
-                             f"Batch {b}: expected {exp}, got {rec}")
+            # Content tokens must match; padding tokens just need to be whitespace
+            for i, (r, e) in enumerate(zip(rec, exp)):
+                if e.strip() == "":
+                    self.assertEqual(r.strip(), "",
+                                     f"Batch {b} token {i}: expected whitespace, got {r!r}")
+                else:
+                    self.assertEqual(r, e,
+                                     f"Batch {b} token {i}: expected {e!r}, got {r!r}")
 
     def test_reverse_recovers_all_xor_examples(self):
         """All XOR examples should round-trip as lexical token streams."""
@@ -1276,8 +1293,13 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         for b in range(len(all_inputs)):
             exp = expected[b][:nVec]
             rec = recovered[b][:len(exp)]
-            self.assertEqual(rec, exp,
-                             f"Example {b}: expected {exp}, got {rec}")
+            for i, (r, e) in enumerate(zip(rec, exp)):
+                if e.strip() == "":
+                    self.assertEqual(r.strip(), "",
+                                     f"Example {b} token {i}: expected whitespace, got {r!r}")
+                else:
+                    self.assertEqual(r, e,
+                                     f"Example {b} token {i}: expected {e!r}, got {r!r}")
 
     def test_reconstruct_text_joins_words(self):
         """reconstruct_text(join=True) renders the whitespace buffer."""
@@ -1289,12 +1311,12 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         inp.reverse(latent)
         joined = inp.reconstruct_text(join=True)
         self.assertIsInstance(joined[0], str)
-        expected = []
+        # Reconstructed text should match original input (ignoring trailing space padding)
         for b in range(batch_size):
-            raw_bytes = inputTensor[b].squeeze().tolist()
-            expected.append(
-                "".join(chr(int(c) & 0xFF) for c in raw_bytes).rstrip("\x00"))
-        self.assertEqual(joined[:batch_size], expected)
+            reconstructed = joined[b].rstrip()
+            original = inputBatch[b]
+            self.assertEqual(reconstructed, original,
+                             f"Batch {b}: reconstructed {reconstructed!r} != original {original!r}")
 
     def test_reverse_numeric_unchanged(self):
         """Numeric reverse path should still work exactly as before."""
@@ -1324,10 +1346,9 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
 class TestLexerConfig(unittest.TestCase):
     """Lexer cfg (word/sentence/grammar) always creates Lex span tables."""
 
-    def test_embedding_always_creates_lex(self):
-        """Embedding model_type always creates Lex instance."""
+    def test_embedding_can_tokenize(self):
+        """Embedding model_type can tokenize text via _token_stream."""
         from BasicModel import InputSpace, Data, TheObjectEncoding
-        from lex import Lex
         data = Data()
         data.load("xor")
         nInput = 8
@@ -1337,7 +1358,8 @@ class TestLexerConfig(unittest.TestCase):
         TheObjectEncoding.computeNObjects()
         inp = InputSpace(nInput, nInput,
                          model_type="embedding", embedding_path=None, data=data)
-        self.assertIsInstance(inp.vectors()._lex, Lex)
+        tokens = inp.vectors()._token_stream("test input")
+        self.assertEqual(tokens[0][0], "test")
 
     def test_embedding_creates_reversible_dictionary(self):
         """Embedding model_type creates Embedding with Lex-backed codebook."""
@@ -1379,12 +1401,11 @@ class TestEmbeddingLexDelegation(unittest.TestCase):
         self.assertEqual(result[0], ["the", " ", "dog", " ", "barks"])
 
     def test_tokenize_splits_sentence_ending_punctuation(self):
-        """tokenize() separates punctuation from words; all token categories returned."""
+        """tokenize() separates punctuation from words; all tokens returned."""
         from BasicModel import Embedding
         emb = Embedding()
         result = emb.tokenize(self._make_batch("the dog barks."))
-        # Lex splits "barks." into "barks" (WORD) + "." (SEPARATOR)
-        # All categories returned: WORD, SPACE, SEPARATOR
+        # quick_parser regex: words, punct, spaces are separate tokens
         # "the dog barks." → ["the", " ", "dog", " ", "barks", "."]
         self.assertIn("barks", result[0])
         self.assertNotIn("barks.", result[0])
@@ -1418,16 +1439,15 @@ class TestEmbeddingLexDelegation(unittest.TestCase):
 
 class TestMaskCodebookEntry(unittest.TestCase):
     def test_mask_codebook_entry_is_zero(self):
-        """[MASK] exists in vocabulary as a zero vector after Embedding.create()."""
+        """get_mask_embedding() returns a zero vector; [MASK] is not in vocab."""
         from BasicModel import Embedding, TheObjectEncoding
         TheObjectEncoding.objectSize = 0
         emb = Embedding()
         emb.create(nInput=10, nVectors=2, nDim=10, embedding_path=None)
-        self.assertIn("[MASK]", emb.pretrain.key_to_index)
-        idx = emb.pretrain.key_to_index["[MASK]"]
-        vec = emb._emb.weight[idx]
-        self.assertTrue(torch.all(vec == 0.0))
-        self.assertEqual(emb.mask_token_idx, idx)
+        self.assertNotIn("[MASK]", emb.pretrain.key_to_index)
+        mask_vec = emb.get_mask_embedding()
+        self.assertTrue(torch.all(mask_vec == 0.0))
+        self.assertEqual(mask_vec.shape[0], emb.wv._vectors.shape[1])
 
 
 class TestEmbeddingErgodicForward(unittest.TestCase):
@@ -1456,8 +1476,8 @@ class TestEmbeddingErgodicForward(unittest.TestCase):
         return emb
 
     def _seed_sigma(self, emb, word):
-        device = emb._emb.weight.device
-        emb.pretrain.sigma = torch.zeros(emb._emb.weight.shape[0], device=device)
+        device = emb.wv._vectors.device
+        emb.pretrain.sigma = torch.zeros(emb.wv._vectors.shape[0], device=device)
         emb.pretrain.sigma[emb.pretrain.key_to_index[word]] = 1.0
         emb.pretrain.sigma_step = 1
         emb.pretrain.sigma_beta = 0.0
@@ -1599,7 +1619,7 @@ class TestErgodicMnistReport(unittest.TestCase):
     def test_forward_layer_weight_accessible(self):
         """mnistReport can access the forward linear layer weight matrix."""
         from BasicModel import OutputSpace, TheObjectEncoding, LinearLayer
-        # Create OutputSpace with reversible=True (the default from defaults.xml)
+        # Create OutputSpace with reversible=True (the default from model.xml)
         TheObjectEncoding.setOutputDim(1)
         TheObjectEncoding.symbolDim = 1
         TheObjectEncoding.nOutput = 10
@@ -2130,7 +2150,7 @@ class TestExpandMaskedTargets(unittest.TestCase):
     def _make_embedded(self, n_words, emb_size=None):
         """Create a synthetic [1, n_words, embSize] embedded sentence."""
         if emb_size is None:
-            emb_size = self.emb._emb.weight.shape[1] + 4  # content + nWhere + nWhen
+            emb_size = self.emb.wv._vectors.shape[1] + 4  # content + nWhere + nWhen
         return torch.randn(1, n_words, emb_size, device=TheDevice)
 
     def test_expand_masked_shape(self):
@@ -2339,7 +2359,7 @@ class TestRARLMTargets(unittest.TestCase):
 
     def test_rarlm_targets_reversed(self):
         """RARLM targets are MLM targets in reverse order."""
-        emb_size = self.emb._emb.weight.shape[1] + 4
+        emb_size = self.emb.wv._vectors.shape[1] + 4
         embedded = torch.randn(1, 2, emb_size, device=TheDevice)
         mlm_targets = self.out.expand_masked(embedded, "hello world", maskedPrediction='MLM')
         rarlm_targets = self.out.expand_masked(embedded, "hello world", maskedPrediction='RARLM')
@@ -2398,7 +2418,7 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
         m = self._create_model(True)
         if not isinstance(m.inputSpace.vectors(), Embedding):
             self.skipTest("Model doesn't use Embedding")
-        emb_weight = m.inputSpace.vectors()._emb.weight
+        emb_weight = m.inputSpace.vectors().wv._vectors
         optimizer = m.getOptimizer(lr=0.001)
         opt_params = [p.data_ptr() for group in optimizer.param_groups for p in group['params']]
         self.assertIn(emb_weight.data_ptr(), opt_params,
@@ -2410,7 +2430,7 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
         m = self._create_model(False)
         if not isinstance(m.inputSpace.vectors(), Embedding):
             self.skipTest("Model doesn't use Embedding")
-        emb_weight = m.inputSpace.vectors()._emb.weight
+        emb_weight = m.inputSpace.vectors().wv._vectors
         optimizer = m.getOptimizer(lr=0.001)
         opt_params = [p.data_ptr() for group in optimizer.param_groups for p in group['params']]
         self.assertNotIn(emb_weight.data_ptr(), opt_params,
@@ -2503,8 +2523,8 @@ class TestVocabSaveRestore(unittest.TestCase):
             self.assertEqual(list(emb2.pretrain.index_to_key), vocab_before)
             # Embedding shapes must match exactly
             torch.testing.assert_close(
-                m2.state_dict()["inputSpace.vectorSet.0._emb.weight"],
-                m1.state_dict()["inputSpace.vectorSet.0._emb.weight"])
+                m2.state_dict()["inputSpace.vectorSet.0.wv._vectors"],
+                m1.state_dict()["inputSpace.vectorSet.0.wv._vectors"])
         finally:
             os.unlink(emb_path)
 
@@ -2539,37 +2559,31 @@ class TestTrainingUpdatesWeights(unittest.TestCase):
 class TestRuntimeBatch(unittest.TestCase):
     """runtime_batch() context manager stages transient data."""
 
-    def test_runtime_batch_sets_and_clears(self):
-        from BasicModel import TheData
-        TheData.load("xor")
-        with TheData.runtime_batch(["hello world"], [[0]]):
-            self.assertEqual(TheData._runtime_input, ["hello world"])
-            self.assertEqual(TheData._runtime_output, [[0]])
-        self.assertIsNone(TheData._runtime_input)
-        self.assertIsNone(TheData._runtime_output)
-
-    def test_runtime_batch_clears_on_exception(self):
-        from BasicModel import TheData
-        TheData.load("xor")
-        with self.assertRaises(ValueError):
-            with TheData.runtime_batch(["test"], [[1]]):
-                raise ValueError("boom")
-        self.assertIsNone(TheData._runtime_input)
-
-    def test_runtime_batch_does_not_contaminate_train(self):
+    def test_runtime_batch_sets_and_restores(self):
         from BasicModel import TheData
         TheData.load("xor")
         original_train = list(TheData.train_input)
-        with TheData.runtime_batch(["injected"], [[99]]):
-            pass
+        original_output = list(TheData.train_output)
+        with TheData.runtime_batch(["hello world"], [[0]]):
+            self.assertEqual(TheData.train_input, ["hello world"])
+            self.assertEqual(TheData.train_output, [[0]])
         self.assertEqual(list(TheData.train_input), original_train)
+        self.assertEqual(list(TheData.train_output), original_output)
 
-    def test_runtime_batch_with_sentences(self):
+    def test_runtime_batch_restores_on_exception(self):
         from BasicModel import TheData
         TheData.load("xor")
-        with TheData.runtime_batch(["hello"], sentences=["hello world"]):
-            self.assertEqual(TheData._lm_sentences.get("runtime"), ["hello world"])
-        self.assertNotIn("runtime", TheData._lm_sentences)
+        original_train = list(TheData.train_input)
+        with self.assertRaises(ValueError):
+            with TheData.runtime_batch(["test"], [[1]]):
+                raise ValueError("boom")
+        self.assertEqual(list(TheData.train_input), original_train)
+
+    def test_runtime_batch_stores_strings(self):
+        from BasicModel import TheData
+        TheData.load("xor")
+        with TheData.runtime_batch(["hello world"]):
+            self.assertEqual(TheData.train_input, ["hello world"])
 
 
 class TestRuntimeGetBatch(unittest.TestCase):
@@ -2598,7 +2612,7 @@ class TestRuntimeGetBatch(unittest.TestCase):
         m.create_from_config(tmp.name, data=TheData)
         os.unlink(tmp.name)
 
-        rt_input = [TheData.stringTensor("hello world")]
+        rt_input = ["hello world"]
         rt_output = [torch.tensor([0], dtype=torch.float)]
         with TheData.runtime_batch(rt_input, rt_output):
             batch, nextBatch = m.inputSpace.getBatch(0, 1, "runtime")

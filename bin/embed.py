@@ -66,21 +66,26 @@ def _patch_inductor_paths():
 # Word vector store
 # ---------------------------------------------------------------------------
 
-class WordVectors:
-    """Stores word embeddings as a numpy array with word <-> index mappings.
+class WordVectors(nn.Module):
+    """Stores word embeddings as a trainable nn.Parameter with word <-> index mappings.
 
     API-compatible with gensim's KeyedVectors: ``wv.vectors``, ``wv.vector_size``,
     ``wv[word]``, ``wv.key_to_index``, ``wv.index_to_key``, ``wv.most_similar()``.
+
+    Being an nn.Module, the parameter moves to device via ``.to(device)``
+    and participates in ``state_dict()`` / ``parameters()``.
     """
 
     def __init__(self, vectors, index_to_key: List[str],
                  counts=None, total_count: int = 0):
         """Create from a (vocab_size, vector_size) array/tensor and word list."""
+        super().__init__()
         assert len(index_to_key) == vectors.shape[0]
-        if isinstance(vectors, torch.Tensor):
-            self._vectors: np.ndarray = vectors.detach().cpu().float().numpy()
+        if not isinstance(vectors, torch.Tensor):
+            vectors = torch.as_tensor(vectors, dtype=torch.float32)
         else:
-            self._vectors = np.asarray(vectors, dtype=np.float32)
+            vectors = vectors.detach().float()
+        self._vectors = nn.Parameter(vectors, requires_grad=True)
         self.index_to_key = list(index_to_key)
         self.key_to_index = {w: i for i, w in enumerate(self.index_to_key)}
         n = len(self.index_to_key)
@@ -92,13 +97,13 @@ class WordVectors:
         self._normed: Optional[torch.Tensor] = None
 
     @property
-    def vectors(self) -> np.ndarray:
-        """Raw embedding matrix (vocab_size, vector_size) — gensim compat."""
+    def vectors(self) -> nn.Parameter:
+        """Trainable embedding matrix (vocab_size, vector_size)."""
         return self._vectors
 
     @property
     def vector_size(self) -> int:
-        """Dimensionality of each vector — gensim compat."""
+        """Dimensionality of each vector."""
         return self._vectors.shape[1]
 
     # -- Factory methods --
@@ -108,8 +113,8 @@ class WordVectors:
         """Build random unit-normalised embeddings for a vocabulary list."""
         unique = list(dict.fromkeys(words))  # preserve order, deduplicate
         vecs = torch.randn(len(unique), vector_size)
-        vecs = torch.nn.functional.normalize(vecs, p=2, dim=1)
-        return cls(vecs.numpy(), unique)
+        vecs = F.normalize(vecs, p=2, dim=1)
+        return cls(vecs, unique)
 
     @classmethod
     def load_word2vec_format(cls, path: str) -> "WordVectors":
@@ -129,7 +134,7 @@ class WordVectors:
                     continue  # skip malformed lines
                 words.append(parts[0])
                 vecs.append([float(x) for x in parts[1:]])
-        return cls(np.array(vecs, dtype=np.float32), words)
+        return cls(torch.tensor(vecs, dtype=torch.float32), words)
 
     def remove(self, indices):
         """Remove entries by index, returning the pruned count.
@@ -139,9 +144,12 @@ class WordVectors:
         if not indices:
             return 0
         removed_set = set(indices)
+        mask = torch.ones(self._vectors.shape[0], dtype=torch.bool)
+        for i in removed_set:
+            mask[i] = False
+        self._vectors = nn.Parameter(self._vectors.data[mask], requires_grad=True)
+        self.counts = np.delete(self.counts, list(indices))
         new_keys = [w for i, w in enumerate(self.index_to_key) if i not in removed_set]
-        self._vectors = np.delete(self._vectors, indices, axis=0)
-        self.counts = np.delete(self.counts, indices)
         self.index_to_key = new_keys
         self.key_to_index = {w: i for i, w in enumerate(new_keys)}
         self._normed = None
@@ -152,7 +160,7 @@ class WordVectors:
     def save(self, path: str) -> None:
         """Save vectors, vocabulary, and word frequencies to a .pt file."""
         torch.save({
-            "vectors": self._vectors,
+            "vectors": self._vectors.detach().cpu(),
             "index_to_key": self.index_to_key,
             "counts": self.counts,
             "total_count": int(self.total_count),
@@ -163,9 +171,10 @@ class WordVectors:
         """Load from a .pt file saved by ``save()``."""
         data = torch.load(path, map_location="cpu", weights_only=False)
         vectors = data["vectors"]
-        # Migrate old files that stored torch tensors
-        if isinstance(vectors, torch.Tensor):
-            vectors = vectors.float().numpy()
+        if isinstance(vectors, np.ndarray):
+            vectors = torch.as_tensor(vectors, dtype=torch.float32)
+        else:
+            vectors = vectors.float()
         counts = data.get("counts")
         total_count = data.get("total_count", 0)
         return cls(vectors, data["index_to_key"],
@@ -179,16 +188,14 @@ class WordVectors:
     def __contains__(self, word: str) -> bool:
         return word in self.key_to_index
 
-    def __getitem__(self, word: str) -> np.ndarray:
-        """Return the raw (unnormalised) vector for *word* — gensim compat."""
+    def __getitem__(self, word: str) -> torch.Tensor:
+        """Return the raw (unnormalised) vector for *word*."""
         return self._vectors[self.key_to_index[word]]
 
     def get_normed_vectors(self) -> torch.Tensor:
-        """Return all vectors L2-normalised on TheDevice (cached)."""
+        """Return all vectors L2-normalised (cached, same device as _vectors)."""
         if self._normed is None:
-            from util import TheDevice
-            t = torch.as_tensor(self._vectors).to(TheDevice)
-            self._normed = torch.nn.functional.normalize(t, p=2, dim=1)
+            self._normed = F.normalize(self._vectors.detach(), p=2, dim=1)
         return self._normed
 
     # -- Similarity --
@@ -212,11 +219,9 @@ class WordVectors:
 
     def similarity(self, word1: str, word2: str) -> float:
         """Return cosine similarity between two words."""
-        from util import TheDevice
-        v1 = torch.as_tensor(self[word1], dtype=torch.float32).to(TheDevice)
-        v2 = torch.as_tensor(self[word2], dtype=torch.float32).to(TheDevice)
-        return float(torch.nn.functional.cosine_similarity(
-            v1.unsqueeze(0), v2.unsqueeze(0)))
+        v1 = self[word1].detach()
+        v2 = self[word2].detach()
+        return float(F.cosine_similarity(v1.unsqueeze(0), v2.unsqueeze(0)))
 
     # -- Exploration / CLI helpers --
 
@@ -343,11 +348,11 @@ def iter_documents(shard_paths, max_docs=None):
 # ---------------------------------------------------------------------------
 
 class PretrainModel:
-    """Stateful embedding pretrainer: embedding + linear head + optimizer.
+    """Stateful embedding pretrainer: optimizer + negative sampling.
 
     Supports both bulk training (``train``) and incremental single-sentence
-    updates (``train_step``).  The same ``nn.Embedding`` and optimizer are
-    reused across calls so that gradient state is preserved.
+    updates (``train_step``).  Operates directly on the WordVectors'
+    nn.Parameter — no separate nn.Embedding.
     """
 
     def __init__(self, wv: WordVectors, learning_rate=0.01, neg_samples=64):
@@ -357,18 +362,13 @@ class PretrainModel:
         keeping MPS/GPU memory proportional to ``neg_samples`` rather
         than ``vocab_size``.
         """
-        self.index_to_key = list(wv.index_to_key)
-        self.key_to_index = dict(wv.key_to_index)
-        vocab_size = len(self.index_to_key)
-        vector_size = wv.vector_size
+        self.wv = wv
+        self.index_to_key = wv.index_to_key
+        self.key_to_index = wv.key_to_index
         self.neg_samples = neg_samples
 
-        self.embeddings = nn.Embedding(vocab_size, vector_size)
-        with torch.no_grad():
-            self.embeddings.weight.copy_(torch.as_tensor(wv._vectors, dtype=torch.float32))
-
         self.optimizer = optim.Adam(
-            self.embeddings.parameters(),
+            [wv._vectors],
             lr=learning_rate,
         )
 
@@ -383,14 +383,14 @@ class PretrainModel:
         """Track per-word gradient variance via Welford's algorithm.
 
         Called after backward() and before optimizer.step() so that
-        embedding.weight.grad is available.  Works regardless of which
+        _vectors.grad is available.  Works regardless of which
         training method (CBOW, SBOW, etc.) produced the gradients.
         """
-        grad = self.embeddings.weight.grad
+        grad = self.wv._vectors.grad
         if grad is None:
             return
         device = grad.device
-        vocab_size = self.embeddings.weight.shape[0]
+        vocab_size = self.wv._vectors.shape[0]
         if self.sigma is None:
             self.sigma = torch.zeros(vocab_size, device=device)
             self.sigma_mean = torch.zeros(vocab_size, device=device)
@@ -418,15 +418,15 @@ class PretrainModel:
             Scalar loss.
         """
         device = queries.device
-        vocab_size = self.embeddings.weight.shape[0]
+        vocab_size = self.wv._vectors.shape[0]
         K = min(self.neg_samples, vocab_size - 1)
 
-        pos_vecs = self.embeddings(target_idx)                        # [N, dim]
+        pos_vecs = self.wv._vectors[target_idx]                      # [N, dim]
         pos_scores = (queries * pos_vecs).sum(dim=1)                  # [N]
 
         neg_idx = torch.randint(0, vocab_size, (queries.shape[0], K),
                                 device=device)                        # [N, K]
-        neg_vecs = self.embeddings(neg_idx)                           # [N, K, dim]
+        neg_vecs = self.wv._vectors[neg_idx]                         # [N, K, dim]
         neg_scores = torch.bmm(neg_vecs,
                                queries.unsqueeze(2)).squeeze(2)       # [N, K]
 
@@ -455,7 +455,7 @@ class PretrainModel:
         if not targets:
             return None
 
-        device = self.embeddings.weight.device
+        device = self.wv._vectors.device
 
         max_ctx = max(len(c) for c in contexts)
         n = len(targets)
@@ -466,7 +466,7 @@ class PretrainModel:
             ctx_mask[i, :len(c)] = 1.0
         target_tensor = torch.tensor(targets, dtype=torch.long, device=device)
 
-        ctx_embeds = self.embeddings(ctx_padded)
+        ctx_embeds = self.wv._vectors[ctx_padded]
         masked = ctx_embeds * ctx_mask.unsqueeze(-1)
         ctx_mean = masked.sum(dim=1) / ctx_mask.sum(dim=1, keepdim=True)
 
@@ -490,11 +490,11 @@ class PretrainModel:
         if len(word_indices) < 2:
             return None
 
-        device = self.embeddings.weight.device
+        device = self.wv._vectors.device
         idx = torch.tensor(word_indices, dtype=torch.long, device=device)
         N = len(word_indices)
 
-        vecs = self.embeddings(idx)                       # [N, dim]
+        vecs = self.wv._vectors[idx]                     # [N, dim]
         total = vecs.sum(dim=0)                           # [dim]
         centroids = (total.unsqueeze(0) - vecs) / (N - 1) # [N, dim]
 
@@ -520,23 +520,17 @@ class PretrainModel:
         if len(word_indices) < 2:
             return None
 
-        device = self.embeddings.weight.device
+        device = self.wv._vectors.device
         idx = torch.tensor(word_indices, dtype=torch.long, device=device)
         N = len(word_indices)
 
-        vecs = self.embeddings(idx)                       # [N, dim]
+        vecs = self.wv._vectors[idx]                     # [N, dim]
         total = vecs.sum(dim=0)                           # [dim]
         centroids = (total.unsqueeze(0) - vecs) / (N - 1) # [N, dim]
 
         return self._neg_sampling_loss(centroids, idx)
 
     # -- export ----------------------------------------------------------------
-
-    def to_word_vectors(self):
-        """Snapshot current embedding weights as a new WordVectors."""
-        with torch.no_grad():
-            vectors = self.embeddings.weight.detach().cpu().numpy()
-        return WordVectors(vectors, self.index_to_key)
 
 
 

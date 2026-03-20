@@ -14,7 +14,6 @@
     <maxResponseLength>4096</maxResponseLength>
 
     <data>
-      <dataset>text</dataset>
       <shardDir>data/fineweb</shardDir>
       <numShards>1</numShards>
       <maxDocs>10000</maxDocs>
@@ -27,8 +26,7 @@
       <batchSize>8</batchSize>
       <learningRate>0.001</learningRate>
       <reconRatio>0.1</reconRatio>
-      <train>ARLM</train>
-      <OptimizeEmbedding>false</OptimizeEmbedding>
+      <trainEmbedding>ARLM</trainEmbedding>
       <weightsPath>BasicModel.ckpt</weightsPath>
       <embeddingPath>BasicModel.kv</embeddingPath>
       <autoload>true</autoload>

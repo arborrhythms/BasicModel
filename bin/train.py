@@ -22,6 +22,9 @@ def parse_args():
     p = argparse.ArgumentParser(description="Train BasicModel end-to-end")
     p.add_argument("--model", "-m", default="data/BasicModel.xml",
                    help="XML config file (default: data/BasicModel.xml)")
+    p.add_argument("--data", default=None,
+                   help="Dataset name (e.g. text, mnist, xor). "
+                        "Overrides <dataset> in XML config.")
     p.add_argument("--max-docs", type=int, default=None,
                    help="Override maxDocs from XML config")
     p.add_argument("--num-shards", type=int, default=None,
@@ -138,6 +141,8 @@ def train_local(args):
     # --- Phase 2: Model training ---
     # Pass overrides via env so BasicModel.py respects them over XML config
     model_env = dict(env)
+    if args.data is not None:
+        model_env["BASIC_DATASET"] = args.data
     if args.max_docs is not None:
         model_env["BASIC_MAX_DOCS"] = str(args.max_docs)
     if args.num_shards is not None:
@@ -190,6 +195,8 @@ def train_remote(args):
 
     # Build remote command
     remote_args = ["bin/train.py", "--model", args.model]
+    if args.data is not None:
+        remote_args += ["--data", args.data]
     if args.max_docs is not None:
         remote_args += ["--max-docs", str(args.max_docs)]
     if args.num_shards is not None:

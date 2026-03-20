@@ -44,13 +44,13 @@ from BasicModel import BaseModel
 
 
 class TestDefaultsXml(unittest.TestCase):
-    """defaults.xml has space-scoped sections."""
+    """model.xml has space-scoped sections."""
 
     @classmethod
     def setUpClass(cls):
         defaults_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "data", "defaults.xml")
+            "data", "model.xml")
         cls.cfg = BaseModel.load_config(defaults_path)
 
     def test_has_space_sections(self):

@@ -118,8 +118,8 @@ accumulate across epochs):
 4. Compute `reconstructionLoss` from reconstruction vs. `end_state`
 5. Backpropagate `totalLoss = outputLoss + reconstructionLoss`
 6. If ergodic: run `paramUpdate()` (gradient energy sensor updates alpha)
-7. Optimizer step (embedding params excluded unless `OptimizeEmbedding=true`)
-8. If `<train>` is `CBOW`, `SBOW`, or `BOTH`: run embedding update step on same sentence
+7. Optimizer step (embedding params excluded when `trainEmbedding` is `NONE` or `ARLM`)
+8. If `trainEmbedding` is `CBOW`, `SBOW`, or `BOTH`: run embedding update step on same sentence
 
 Alpha annealing (ergodic mode): the code-level exploration parameter starts at
 `1.0` (full exploration) and decays to `0.0` (full exploitation) within the first
@@ -130,7 +130,7 @@ translate between them internally.
 
 See [Params.md](Params.md) for all XML configuration parameters.
 See [Training.md](Training.md) for embedding pretraining, SBOW, masked prediction
-modes, and the `<train>` and `<OptimizeEmbedding>` controls.
+modes, and the `<trainEmbedding>` control.
 
 ### Three-File Architecture
 

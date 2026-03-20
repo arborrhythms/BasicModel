@@ -20,6 +20,10 @@
       <autosave>false</autosave>
       <autoload>false</autoload>
       <reconRatio>0.3</reconRatio>
+
+      <maskedPrediction>NONE</maskedPrediction>
+      <trainEmbedding>BACKPROP</trainEmbedding>
+
     </training>
   </architecture>
 
