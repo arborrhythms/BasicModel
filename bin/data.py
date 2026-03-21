@@ -523,10 +523,10 @@ class Data():
                 w = word.lower()
                 if w in embedding.pretrain.key_to_index:
                     idx = embedding.pretrain.key_to_index[w]
-                    one_hot = torch.zeros(vocab_size, device=weights.device)
-                    one_hot[idx] = 1.0
-                    v = one_hot @ weights  # differentiable
-                    v = F.normalize(v, p=2, dim=0)
+                    # These tensors are labels, not a differentiable target path.
+                    # Snapshot the current embedding row so later optimizer steps do
+                    # not silently move the targets.
+                    v = F.normalize(weights[idx].detach().clone(), p=2, dim=0)
                 else:
                     v = torch.zeros(vec_size, device=weights.device)
                 targets.append(v)

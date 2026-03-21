@@ -21,6 +21,7 @@
        ═══════════════════════════════════════════════════════════════════ -->
   <xs:complexType name="architectureType">
     <xs:all>
+      <xs:element name="type" type="architectureModelEnum" minOccurs="0"/>
       <xs:element name="modelType" type="modelTypeEnum" minOccurs="0"/>
       <xs:element name="reshape" type="xs:boolean" minOccurs="0"/>
       <xs:element name="conceptualOrder" type="xs:positiveInteger" minOccurs="0"/>
@@ -45,6 +46,15 @@
   <!-- ═══════════════════════════════════════════════════════════════════
        Enumerations
        ═══════════════════════════════════════════════════════════════════ -->
+  <xs:simpleType name="architectureModelEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="basic"/>
+      <xs:enumeration value="Basic"/>
+      <xs:enumeration value="mental"/>
+      <xs:enumeration value="Mental"/>
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:simpleType name="modelTypeEnum">
     <xs:restriction base="xs:string">
       <xs:enumeration value="simple"/>

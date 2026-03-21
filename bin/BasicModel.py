@@ -26,7 +26,6 @@ try:
 except ImportError:
     make_dot = None
 from matplotlib import pyplot as plt
-from sklearn.metrics import classification_report
 from sklearn.decomposition import PCA
 from vector_quantize_pytorch import ResidualVQ, VectorQuantize
 import torch.optim as optim
@@ -330,7 +329,6 @@ class WhatEncoding(Encoding):
         else:
             per_obj = self.inputShape[1]
             return y.reshape(batch, self.inputShape[0], per_obj)
-
 class ObjectEncoding(Encoding):
     """Handle the content-layout transform for a space's What factor.
 
@@ -692,7 +690,6 @@ class Tensor(Basis):
         self.W = y
         self._materialized = y
         return y
-
 class Codebook(Basis):
     """Prototype basis with vector quantization and reverse snapping support."""
 
@@ -887,7 +884,6 @@ class Codebook(Basis):
         A, B = A.clamp(0, 1), B.clamp(0, 1)
         ratio = torch.minimum(A / (B + epsilon), torch.ones_like(A))
         return torch.prod(ratio).item()
-
 class Embedding(Basis):
     """Text-backed Basis using a differentiable nn.Embedding with online CBOW/SBOW training.
 
@@ -912,7 +908,7 @@ class Embedding(Basis):
         self.pretrain = None       # PretrainModel, created in create()
         self.wv = None             # WordVectors (nn.Module with nn.Parameter)
         self.doc_spans = []
-        self.optimize_embedding = False  # set by BasicModelFactory from <trainEmbedding>
+        self.optimize_embedding = False  # set by ModelFactory from <trainEmbedding>
         object.__setattr__(self, '_model', None)  # back-ref to BasicModel, avoids nn.Module submodule registration
         self.doc_sources = []
 
@@ -1198,7 +1194,7 @@ class Embedding(Basis):
 
     def _nearest_idx(self, vec, codebook=None):
         if codebook is None:
-            codebook = self.W.detach() # XXX
+            codebook = self.W.detach()
         vec = vec.to(TheDevice)
         sims = F.cosine_similarity(vec.unsqueeze(0), codebook, dim=1)
         return sims.argmax().item()
@@ -1520,7 +1516,7 @@ class Embedding(Basis):
         else:
             ch = word[0] if word else ' '
             idx = self.pretrain.key_to_index.get(ch, 0)
-        return self.W[idx].detach().clone()
+        return self.W[idx].detach()
 
     def get_space_embedding(self):
         """Return the codebook embedding for the space character ' '."""
@@ -2166,7 +2162,7 @@ class InputSpace(Space):
         N = min(len(words), self.outputShape[0])  # cap at nVectors
 
         # Repeat the embedded sentence N times
-        masked = embedded.expand(N, -1, -1).clone()  # [N, nVec, embSize]
+        masked = embedded.expand(N, -1, -1).detach().clone()  # [N, nVec, embSize]
 
         # Determine which dims are content (to zero) vs position (to preserve)
         embSize = embedded.shape[-1]
@@ -2453,7 +2449,7 @@ class InputSpace(Space):
             # ── First call: embed seed, prepare buffer ──────────────
             inputTensor = self.prepInput(inputData)
             embedded = self.forward(inputTensor)  # [1, nVec, embSize]
-            self._arir_embedded = embedded.clone().detach()
+            self._arir_embedded = embedded.detach().clone()
 
             # Read span count from the lex pass
             meta = getattr(self, '_forward_input', None) or {}
@@ -3213,9 +3209,112 @@ class BaseModel(nn.Module):
     @staticmethod
     def from_config(config_path=None, model_type=None, data=None):
         """Factory: create the right model type from XML config."""
-        model = BasicModel()
-        cfg = model.create_from_config(config_path, model_type=model_type, data=data)
+        if config_path is None:
+            config_path = os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml")
+        resolved_path = ModelFactory.resolve_xml(config_path)
+        raw_cfg = BaseModel.load_config(resolved_path)
+        arch = raw_cfg.get("architecture", {})
+        model_kind = str(arch.get("type", "basic") or "basic").strip().lower()
+        model_cls = MentalModel if model_kind == "mental" else BasicModel
+        model = model_cls()
+        cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
         return model, cfg
+
+    def _resolve_artifact_path(self, relpath):
+        """Resolve a relative artifact path against the XML config directory."""
+        if relpath is None or relpath == "":
+            return relpath
+        if os.path.isabs(relpath):
+            return relpath
+        config_path = getattr(self, "_config_path", None)
+        config_dir = os.path.dirname(config_path) if config_path else ProjectPaths.PROJECT_DIR
+        return os.path.join(config_dir, relpath)
+
+    def create_from_config(self, config_path=None, model_type=None, data=None):
+        """Create the model using settings from an XML config file."""
+        self._config_path = config_path
+        self._config_data = data
+
+        defaults_path = os.path.join(ProjectPaths.DATA_DIR, "model.xml")
+        init_config(path=config_path, defaults_path=defaults_path)
+        cfg = TheXMLConfig.data
+
+        arch = cfg["architecture"]
+        model_family = str(arch.get("type", "basic") or "basic").strip().lower()
+        ModelFactory.validate_config(cfg, model_family=model_family)
+
+        _t = TheXMLConfig.training
+        _s = TheXMLConfig.space
+
+        if model_type is None:
+            model_type = arch["modelType"]
+
+        embedding_path = TheXMLConfig.get("architecture.embeddingPath", None) or None
+        if embedding_path is not None:
+            embedding_path = self._resolve_artifact_path(embedding_path)
+            TheXMLConfig._data["architecture"]["embeddingPath"] = embedding_path
+
+        _nWhere = TheXMLConfig.get("architecture.nWhere")
+        _nWhen = TheXMLConfig.get("architecture.nWhen")
+        _objectSize = _nWhere + _nWhen
+        TheXMLConfig._data.setdefault("architecture", {})["objectSize"] = _objectSize
+
+        _nObjects = (
+            _s("InputSpace", "nVectors")
+            + _s("PerceptualSpace", "nVectors")
+            + _s("ConceptualSpace", "nVectors")
+            + _s("SymbolicSpace", "nVectors")
+            + _s("SyntacticSpace", "nVectors")
+            + _s("OutputSpace", "nVectors")
+        )
+        TheXMLConfig._data.setdefault("architecture", {})["nObjects"] = _nObjects
+
+        self.create(
+            nInput=_s("InputSpace", "nActive"),
+            nPercepts=_s("PerceptualSpace", "nActive"),
+            nConcepts=_s("ConceptualSpace", "nActive"),
+            nSymbols=_s("SymbolicSpace", "nActive"),
+            nWords=_s("SyntacticSpace", "nActive"),
+            nOutput=_s("OutputSpace", "nActive"),
+            conceptualOrder=arch["conceptualOrder"],
+            symbolicOrder=arch["symbolicOrder"],
+            model_type=model_type,
+            data=data,
+            embedding_path=embedding_path,
+            reverse_scale=_t("reverseScale"),
+            what_scale=_t("whatScale"),
+            where_scale=_t("whereScale"),
+            when_scale=_t("whenScale"),
+            masked_prediction=arch["maskedPrediction"].upper(),
+            reconstruct=arch["reconstruct"],
+        )
+
+        if "trainEmbedding" in arch and not isinstance(arch["trainEmbedding"], dict):
+            te = arch["trainEmbedding"]
+        elif "trainEmbeddings" in arch and not isinstance(arch["trainEmbeddings"], dict):
+            te = arch["trainEmbeddings"]
+        else:
+            te = _t("trainEmbedding")
+        if te is True:
+            te = "BOTH"
+        elif te is False or te is None:
+            te = "NONE"
+        self.train_embedding = te.upper()
+        self.optimize_embedding = self.train_embedding not in ("NONE", "CBOW", "SBOW")
+        if self.optimize_embedding and isinstance(self.inputSpace.subspace.vectors(), Embedding):
+            emb_params = self.inputSpace.subspace.vectors().embedding_parameters()
+            self.inputSpace.params = self.inputSpace.params + emb_params
+        self.loss.embedding_scale = float(_t("embeddingScale") or 0.1)
+        if isinstance(self.inputSpace.subspace.vectors(), Embedding):
+            self.inputSpace.subspace.vectors().optimize_embedding = self.optimize_embedding
+            object.__setattr__(self.inputSpace.subspace.vectors(), "_model", self)
+
+        if _t("autoload"):
+            wpath = TheXMLConfig.get("architecture.weightsPath")
+            wpath = self._resolve_artifact_path(wpath)
+            self.load_weights(wpath)
+        self.max_response_length = arch["maxResponseLength"]
+        return cfg
 
     def create(self, **kwargs):
         """Override in subclasses to build model architecture."""
@@ -3571,116 +3670,9 @@ class BasicModel(BaseModel):
     """
     name = "BasicModel"
 
-    def _resolve_artifact_path(self, relpath):
-        """Resolve a relative artifact path against the XML config file's directory.
-
-        If relpath is absolute, return as-is.  Otherwise join with the
-        directory containing the XML config file.
-        """
-        if os.path.isabs(relpath):
-            return relpath
-        config_dir = os.path.dirname(self._config_path)
-        return os.path.join(config_dir, relpath)
-
     def create_from_config(self, config_path=None, model_type=None, data=None):
-        """Create the model using settings from an XML config file.
-
-        Loads defaults from model.xml, overlays model-specific config,
-        then creates the model and optionally loads saved weights.
-        """
-        # Store for runTrials() re-creation
-        self._config_path = config_path
-        self._config_data = data
-
-        # Load defaults from model.xml, overlay model-specific config
-        defaults_path = os.path.join(ProjectPaths.DATA_DIR, "model.xml")
-        init_config(path=config_path, defaults_path=defaults_path)
-        cfg = TheXMLConfig.data
-
-        BasicModelFactory.validate_config(cfg)
-
-        arch = cfg["architecture"]
-        _t = TheXMLConfig.training
-        _d = TheXMLConfig.data_param
-
-        # Caller overrides XML; XML overrides defaults
-        if model_type is None:
-            model_type = arch["modelType"]
-        # Resolve embedding_path and store back in config for InputSpace
-        embedding_path = TheXMLConfig.get("architecture.embeddingPath", None) or None
-        if embedding_path is not None:
-            embedding_path = self._resolve_artifact_path(embedding_path)
-            TheXMLConfig._data["architecture"]["embeddingPath"] = embedding_path
-
-        # Positional/temporal encoding: architecture-level numeric values
-        _s = TheXMLConfig.space
-        _nWhere = TheXMLConfig.get("architecture.nWhere")
-        _nWhen  = TheXMLConfig.get("architecture.nWhen")
-        _objectSize = _nWhere + _nWhen
-        TheXMLConfig._data.setdefault("architecture", {})["objectSize"] = _objectSize
-
-        # Codebook sizes (from model.xml defaults, overridden by model-specific XML)
-        _nObjects = (_s("InputSpace", "nVectors") + _s("PerceptualSpace", "nVectors") +
-                     _s("ConceptualSpace", "nVectors") + _s("SymbolicSpace", "nVectors") +
-                     _s("SyntacticSpace", "nVectors") + _s("OutputSpace", "nVectors"))
-        TheXMLConfig._data.setdefault("architecture", {})["nObjects"] = _nObjects
-
-        self.create(
-            nInput=_s("InputSpace", "nActive"),
-            nPercepts=_s("PerceptualSpace", "nActive"),
-            nConcepts=_s("ConceptualSpace", "nActive"),
-            nSymbols=_s("SymbolicSpace", "nActive"),
-            nWords=_s("SyntacticSpace", "nActive"),
-            nOutput=_s("OutputSpace", "nActive"),
-            conceptualOrder=arch["conceptualOrder"],
-            symbolicOrder=arch["symbolicOrder"],
-            model_type=model_type, data=data, embedding_path=embedding_path,
-            reverse_scale=_t("reverseScale"),
-            what_scale=_t("whatScale"),
-            where_scale=_t("whereScale"),
-            when_scale=_t("whenScale"),
-            masked_prediction=arch["maskedPrediction"].upper(),
-            reconstruct=arch["reconstruct"],
-        )
-        # trainEmbedding:
-        #   NONE  = frozen embeddings, frozen model
-        #   CBOW  = embedding CBOW updates only (predict from padded context)
-        #   SBOW  = embedding SBOW updates only (predict from leave-one-out centroid, faster)
-        #   ARLM  = network layers only, embeddings frozen
-        #   BOTH  = SBOW embedding updates + network layers (two optimizers)
-        #   JOINT = single loss: model_loss + embeddingScale * sbow_loss, one optimizer
-        if "trainEmbedding" in arch and not isinstance(arch["trainEmbedding"], dict):
-            te = arch["trainEmbedding"]
-        elif "trainEmbeddings" in arch and not isinstance(arch["trainEmbeddings"], dict):
-            te = arch["trainEmbeddings"]
-        else:
-            te = _t("trainEmbedding")
-        if te is True:
-            te = "BOTH"
-        elif te is False or te is None:
-            te = "NONE"
-        self.train_embedding = te.upper()
-        # Embeddings participate in the optimizer unless frozen
-        # Valid trainEmbedding values: NONE, CBOW, SBOW, BACKPROP, BOTH, JOINT
-        # (ARLM/ARUS/RARLM are maskedPrediction modes, not trainEmbedding modes)
-        self.optimize_embedding = self.train_embedding not in ("NONE", "CBOW", "SBOW")
-        if self.optimize_embedding and isinstance(self.inputSpace.subspace.vectors(), Embedding):
-            emb_params = self.inputSpace.subspace.vectors().embedding_parameters()
-            self.inputSpace.params = self.inputSpace.params + emb_params
-        # embeddingScale: weight of embedding loss in JOINT mode
-        self.loss.embedding_scale = float(_t("embeddingScale") or 0.1)
-        # Propagate flag to Embedding so forward()/reverse() can detach
-        if isinstance(self.inputSpace.subspace.vectors(), Embedding):
-            self.inputSpace.subspace.vectors().optimize_embedding = self.optimize_embedding
-            object.__setattr__(self.inputSpace.subspace.vectors(), '_model', self)
-        # Auto-load weights if configured
-        if _t("autoload"):
-            wpath = TheXMLConfig.get("architecture.weightsPath")
-            wpath = self._resolve_artifact_path(wpath)
-            self.load_weights(wpath)
-        # Inference config
-        self.max_response_length = arch["maxResponseLength"]
-        return cfg
+        """Delegate XML-driven construction to BaseModel."""
+        return super().create_from_config(config_path, model_type=model_type, data=data)
 
     def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
                conceptualOrder=1, symbolicOrder=1,
@@ -3923,85 +3915,96 @@ class BasicModel(BaseModel):
         mode = mode.upper()
 
         if mode == 'ARLM':
-            return self._infer_traditional(text, max_length)
+            if max_length is None:
+                max_length = getattr(self, 'max_response_length', 256)
+
+            self.eval()
+            self.set_sigma(0)
+            nOutput = self.inputSpace.outputShape[0]
+            tokens = []
+            total_chars = 0
+
+            with torch.no_grad(), TheData.runtime_batch([text]):
+                while True:
+                    result, _ = self.runBatch(
+                        train=False, batchNum=0, batchSize=1, split="runtime",
+                    )
+                    if result is None:
+                        break
+
+                    decoded = self.inputSpace.predict(result.outputPred)
+                    word = decoded[0]
+
+                    if word is None or word == '' or word == '\x00':
+                        break
+
+                    tokens.append(word)
+                    total_chars += len(word)
+
+                    if total_chars >= max_length:
+                        break
+
+                    if len(tokens) >= nOutput:
+                        break
+
+                    TheData.pushInput(word)
+
+            return tokens
         elif mode == 'ARIR':
-            return self._infer_arir(text, max_length)
+            if not self.reversible:
+                import warnings
+                warnings.warn(
+                    "ARIR requires reversible=True; falling back to ARLM.",
+                    RuntimeWarning, stacklevel=2,
+                )
+                if max_length is None:
+                    max_length = getattr(self, 'max_response_length', 256)
+
+                self.eval()
+                self.set_sigma(0)
+                nOutput = self.inputSpace.outputShape[0]
+                tokens = []
+                total_chars = 0
+
+                with torch.no_grad(), TheData.runtime_batch([text]):
+                    while True:
+                        result, _ = self.runBatch(
+                            train=False, batchNum=0, batchSize=1, split="runtime",
+                        )
+                        if result is None:
+                            break
+
+                        decoded = self.inputSpace.predict(result.outputPred)
+                        word = decoded[0]
+
+                        if word is None or word == '' or word == '\x00':
+                            break
+
+                        tokens.append(word)
+                        total_chars += len(word)
+
+                        if total_chars >= max_length:
+                            break
+
+                        if len(tokens) >= nOutput:
+                            break
+
+                        TheData.pushInput(word)
+
+                return tokens
+
+            max_length = max_length or getattr(self, 'max_response_length', 256)
+            self.eval()
+            self.set_sigma(0)
+
+            with torch.no_grad(), TheData.runtime_batch([text], [[0]], mode='ARIR'):
+                self.inputSpace._arir_reset()
+                self.inputSpace._arir_max_chars = max_length
+                self.runEpoch(batchSize=1, split="runtime")
+
+            return self.inputSpace.get_predicted_tokens()
         else:
             raise ValueError(f"infer: unknown mode '{mode}'. Use 'ARLM' or 'ARIR'.")
-
-    def _infer_traditional(self, text, max_length=None):
-        """Traditional append-and-rerun autoregressive inference.
-
-        Each step: forward pass → decode output → pushInput(token) → repeat.
-        Re-lexes and re-embeds the full input every iteration.
-        """
-        if max_length is None:
-            max_length = getattr(self, 'max_response_length', 256)
-
-        self.eval()
-        self.set_sigma(0)
-        nOutput = self.inputSpace.outputShape[0]
-        tokens = []
-        total_chars = 0
-
-        with torch.no_grad(), TheData.runtime_batch([text]):
-            while True:
-                result, _ = self.runBatch(
-                    train=False, batchNum=0, batchSize=1, split="runtime",
-                )
-                if result is None:
-                    break
-
-                # Decode the output prediction to a token
-                decoded = self.inputSpace.predict(result.outputPred)
-                word = decoded[0]
-
-                # EOF check (consistent with ARIR path)
-                if word is None or word == '' or word == '\x00':
-                    break
-
-                tokens.append(word)
-                total_chars += len(word)
-
-                # Stop if max characters produced
-                if total_chars >= max_length:
-                    break
-
-                # Stop if output buffer is full
-                if len(tokens) >= nOutput:
-                    break
-
-                TheData.pushInput(word)
-
-        return tokens
-
-    def _infer_arir(self, text, max_length=None):
-        """ARIR: autoregressive input reconstruction inference.
-
-        Pushes data onto TheData and calls runEpoch().  All ARIR logic
-        (embedding, [MASK] placement, reconstruction copy, cursor advance)
-        lives in InputSpace._getBatch_arir() as a state machine.
-
-        Falls back to ARLM if the model is not reversible.
-        """
-        if not self.reversible:
-            import warnings
-            warnings.warn(
-                "ARIR requires reversible=True; falling back to ARLM.",
-                RuntimeWarning, stacklevel=2,
-            )
-            return self._infer_traditional(text, max_length)
-
-        max_length = max_length or getattr(self, 'max_response_length', 256)
-        self.eval()
-        self.set_sigma(0)
-
-        with torch.no_grad(), TheData.runtime_batch([text], [[0]], mode='ARIR'):
-            self.inputSpace._arir_reset()
-            self.inputSpace._arir_max_chars = max_length
-            self.runEpoch(batchSize=1, split="runtime")
-
-        return self.inputSpace.get_predicted_tokens()
 
     def forward(self, inputData):
         """Full forward pass: core pipeline + higher-order cycles + output projection.
@@ -4135,6 +4138,25 @@ class BasicModel(BaseModel):
         'outputPred', 'symbols', 'lossOut', 'lossIn', 'inputPred', 'forwardInput',
     ])
 
+    def trainEmbeddings(self, trainMod, index, split):
+        sbow = None
+        te = getattr(self, 'train_embedding', 'NONE')
+        if te in trainMod:
+            emb = self.inputSpace.subspace.vectors()
+            if isinstance(emb, Embedding):
+                sentences = self._get_sentences(split)
+                if sentences and index < len(sentences):
+                    sentence = sentences[index]
+                    from parse import quick_parser
+                    words = [t for t, _ in quick_parser(sentence)]
+                    if te in ('JOINT'):
+                        sbow = self.inputSpace.sbow_loss(words)
+                    elif te in ('CBOW', 'SBOW', 'BOTH'):
+                        # CBOW uses padded context; SBOW and BOTH use the faster centroid method
+                        method = 'CBOW' if te == 'CBOW' else 'SBOW'
+                        self.inputSpace.train_embeddings(words, method=method)
+        return sbow
+
     def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
                  optimizer=None):
         """Run a single batch: forward pass, loss, and (if training) backward + step.
@@ -4231,16 +4253,7 @@ class BasicModel(BaseModel):
         # JOINT mode: compute SBOW embedding loss
         sbow = None
         if train:
-            te = getattr(self, 'train_embedding', 'NONE')
-            if te == 'JOINT':
-                emb = self.inputSpace.subspace.vectors()
-                if isinstance(emb, Embedding):
-                    sentences = self._get_sentences(split)
-                    if sentences and sentenceIdx < len(sentences):
-                        sentence = sentences[sentenceIdx]
-                        from parse import quick_parser
-                        words = [t for t, _ in quick_parser(sentence)]
-                        sbow = self.inputSpace.sbow_loss(words)
+            sbow = self.trainEmbeddings(('JOINT'), sentenceIdx, split)
 
         totalLoss = self.loss.total(lossOut, lossIn, sbow)
 
@@ -4301,7 +4314,9 @@ class BasicModel(BaseModel):
 
         # Training / evaluation path
         allOutput = []
+        outputChunks = []
         allInput = []
+        inputChunks = []
         outErr = 0
         inErr = 0
         masked_pred = hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE'
@@ -4323,75 +4338,73 @@ class BasicModel(BaseModel):
                     print(f"  batch {batchIdx}", end="\r", flush=True)
 
                 # Embedding training (post-batch, needs batchIdx for sentence lookup)
-                if training:
-                    te = getattr(self, 'train_embedding', 'NONE')
-                    if masked_pred and te in ('CBOW', 'SBOW', 'BOTH'):
-                        emb = self.inputSpace.subspace.vectors()
-                        if isinstance(emb, Embedding):
-                            sentences = self._get_sentences(split)
-                            if sentences and batchIdx < len(sentences):
-                                sentence = sentences[batchIdx]
-                                from parse import quick_parser
-                                words = [t for t, _ in quick_parser(sentence)]
-                                # CBOW uses padded context; SBOW and BOTH use the faster centroid method
-                                method = 'CBOW' if te == 'CBOW' else 'SBOW'
-                                self.inputSpace.train_embeddings(words, method=method)
+                if training and masked_pred:
+                    self.trainEmbeddings(('CBOW', 'SBOW', 'BOTH'), batchIdx, split)
 
                 outErr = result.lossOut.item()
                 inErr = result.lossIn.item() if result.lossIn is not None else 0
 
                 outputDataPred = result.outputPred.clone().detach().squeeze()
-                if batchIdx == 0:
-                    allOutput = outputDataPred
-                else:
-                    allOutput = torch.concat((allOutput, outputDataPred), dim=0)
+                outputChunks.append(outputDataPred)
 
                 if self.reversible and result.inputPred is not None:
-                    allInput = result.inputPred.clone().detach().squeeze()
+                    inputDataPred = result.inputPred.clone().detach().squeeze()
+                    inputChunks.append(inputDataPred)
 
-                batchIdx += 1
+        batchIdx += 1
+
+        if inputChunks:
+            if outputChunks[0].dim() == 0:
+                allInput = torch.stack(inputChunks, dim=0)
+            else:
+                allInput = torch.cat(inputChunks, dim=0)
+        if outputChunks:
+            if outputChunks[0].dim() == 0:
+                allOutput = torch.stack(outputChunks, dim=0)
+            else:
+                allOutput = torch.cat(outputChunks, dim=0)
 
         return outErr, inErr, allOutput, allInput
+TheBasicModel = BasicModel()
 
-    def classificationReport(self, min=0, max=1):
-        test_input, test_output = self.inputSpace.getTestData()
-        _, _, y_pred, x_pred = self.runTest(test_input, test_output)
-        y_actual = self.outputSpace.getTestOutput()
-        y_pred_sat = np.maximum(min, np.minimum(max, np.round(np.array(y_pred)).squeeze()))
-        performance = classification_report(
-            y_actual, y_pred_sat,
-            target_names=["Negative Review", "Positive Review"]
-        )
-        print(performance)
 class MentalModel(BaseModel):
     name = "MentalModel"
 
-    def create(self, nInput, nPercepts, nConcepts, nSymbols, nOutput,
-               reversible=True, quantized=False,
-               perceptQuantized=None, conceptQuantized=None,
+    BatchResult = BasicModel.BatchResult
+    runBatch = BasicModel.runBatch
+    runEpoch = BasicModel.runEpoch
+    runTrial = BasicModel.runTrial
+    infer = BasicModel.infer
+
+    def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
+               conceptualOrder=1, symbolicOrder=1,
                model_type="simple", data=None, embedding_path=None,
-               lexer="word", reverse_scale=0.5,
+               reverse_scale=0.5,
                what_scale=0.7, where_scale=0.2, when_scale=0.1,
-               reshape=False, naive=False,
-               perceptHasAttention=True, conceptHasAttention=False,
-               masked_prediction='NONE', min_frequency=0.0,
-               neg_samples=64):
+               masked_prediction='NONE', reconstruct='NONE', **kwargs):
 
         self.spaces = []
-        self.reversible = reversible
+        self.reversible = str(TheXMLConfig.get("architecture.reconstruct")).upper() != "NONE"
         self.nInput = nInput
         self.nPercepts = nPercepts
         self.nConcepts = nConcepts
         self.nSymbols = nSymbols
         self.nOutput = nOutput
+        self.nWords = nWords
         self.data = data
         self.model_type = model_type
         self.embedding_path = embedding_path
-        self.lexer = lexer
-        self.reshape = reshape
-        self.quantized = quantized
-        self.perceptQuantized = perceptQuantized if perceptQuantized is not None else quantized
-        self.conceptQuantized = conceptQuantized if conceptQuantized is not None else quantized
+        self.lexer = TheXMLConfig.space("InputSpace", "lexer")
+        self.reshape = TheXMLConfig.get("architecture.reshape")
+        self.ergodic = TheXMLConfig.get("architecture.ergodic")
+        self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
+        self.certainty = TheXMLConfig.get("architecture.certainty")
+        self.quantized = TheXMLConfig.space("InputSpace", "quantized")
+        self.perceptQuantized = TheXMLConfig.space("PerceptualSpace", "quantized")
+        self.conceptQuantized = TheXMLConfig.space("ConceptualSpace", "quantized")
+        self.conceptualOrder = conceptualOrder
+        self.symbolicOrder = symbolicOrder
+        self.reconstruct = reconstruct.lower()
         self.masked_prediction = masked_prediction
 
         self.loss = ModelLoss(
@@ -4400,8 +4413,10 @@ class MentalModel(BaseModel):
             where_scale=where_scale,
             when_scale=when_scale,
             nOutput=nOutput,
-            conceptualOrder=1,
-            symbolicOrder=1,
+            conceptualOrder=conceptualOrder,
+            symbolicOrder=symbolicOrder,
+            nWhere=TheXMLConfig.get("architecture.nWhere"),
+            nWhen=TheXMLConfig.get("architecture.nWhen"),
         )
 
         self.inputSpace = InputSpace(
@@ -4441,7 +4456,9 @@ class MentalModel(BaseModel):
             self.outputSpace,
         ])
 
+        self.inputSpace.outputSpace = self.outputSpace
         self.to(TheDevice)
+        TheXMLConfig.validate()
 
     def Start(self, inputData):
         self.inputs = self.inputSpace.forward_subspace(inputData)
@@ -4464,7 +4481,7 @@ class MentalModel(BaseModel):
             inputData = inputData.to(TheDevice)
         input_state, percepts, concepts, symbols = self.Start(inputData)
         outputData = self.Finish(symbols)
-        return input_state, percepts, concepts, symbols, outputData
+        return input_state, symbols, outputData
 
     def reverse(self, symbols, outputData):
         symbols = self.outputSpace.reverse_subspace(outputData).materialize()
@@ -4481,9 +4498,9 @@ class MentalModel(BaseModel):
         input_data = self.inputSpace.reverse_subspace(input_latent).materialize()
 
         return input_data, input_latent
-TheBasicModel = BasicModel()
+TheMentalModel = MentalModel()
 
-class BasicModelFactory:
+class ModelFactory:
     """Create, train, and evaluate models from an XML config file.
 
     Dispatches to the right model class based on <architecture> flags:
@@ -4530,15 +4547,17 @@ class BasicModelFactory:
         raise KeyError(f"Required parameter '{key}' not found in <{space_name}> or <architecture>")
 
     @staticmethod
-    def validate_config(cfg):
+    def validate_config(cfg, model_family=None):
         """Check merged config for known inconsistencies and raise on error.
 
         Called after defaults have been merged so all keys are present.
         Uses get_space_param() to read from space-scoped sections.
         """
-        gsp = BasicModelFactory.get_space_param
+        gsp = ModelFactory.get_space_param
         arch = cfg.get("architecture", {})
         errors = []
+        if model_family is None:
+            model_family = str(arch.get("type", "basic") or "basic").strip().lower()
 
         reshape = arch.get("reshape", False)
 
@@ -4568,7 +4587,7 @@ class BasicModelFactory:
         reversible = arch.get("reconstruct", "NONE").upper() != "NONE"
         percept_inv = gsp(cfg, "PerceptualSpace", "invertible")
         percept_pt = gsp(cfg, "PerceptualSpace", "passThrough")
-        if percept_inv:
+        if model_family != "mental" and percept_inv:
             p_nvec = gsp(cfg, "PerceptualSpace", "nVectors")
             c_nvec = gsp(cfg, "ConceptualSpace", "nVectors")
             if c_nvec != 2 * p_nvec:
@@ -4628,10 +4647,7 @@ class BasicModelFactory:
                      shard_dir=dat.get("shardDir"),
                      dat=dat)
 
-        m = BasicModel()
-        # Store config refs so runTrials can call create_from_config per trial
-        m._config_path = config_path
-        m._config_data = TheData
+        m, _ = BaseModel.from_config(config_path, data=TheData)
         TheMessage(f"Device: {TheDevice}")
 
         m = compile(m)
@@ -4650,12 +4666,12 @@ class BasicModelFactory:
         report_kwargs = {}
         cmin = _d("classificationMin")
         cmax = _d("classificationMax")
-        if cmin is not None:
+        if cmin not in (None, ""):
             report_kwargs["min"] = cmin
-        if cmax is not None:
+        if cmax not in (None, ""):
             report_kwargs["max"] = cmax
         if report_kwargs:
-            m.classificationReport(**report_kwargs)
+            return TheReport.classificationReport( **report_kwargs )
 
         if _t("autosave", False):
             wpath = TheXMLConfig.get("architecture.weightsPath", "weights.ckpt")
@@ -4665,11 +4681,13 @@ class BasicModelFactory:
 
         return [(m.name, m.rCorrect, m)]
 
+BasicModelFactory = ModelFactory
+
 def test():
     """Smoke test: verify encodings and run the XOR config end-to-end."""
     WhereEncoding.test()
     WhenEncoding.test()
-    BasicModelFactory.run(os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml"))
+    ModelFactory.run(os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml"))
 
 
 # --- CLI entry point ---
@@ -4721,19 +4739,19 @@ if __name__ == "__main__":
 
     if args.compare:
         # Compare mode: run two XML configs and plot per-digit accuracy side by side
-        xml1 = BasicModelFactory.resolve_xml(args.compare[0])
-        xml2 = BasicModelFactory.resolve_xml(args.compare[1])
+        xml1 = ModelFactory.resolve_xml(args.compare[0])
+        xml2 = ModelFactory.resolve_xml(args.compare[1])
         TheReport.add_xml(xml1)
         TheReport.add_xml(xml2)
-        results = BasicModelFactory.run(xml1) + BasicModelFactory.run(xml2)
+        results = ModelFactory.run(xml1) + ModelFactory.run(xml2)
         if len(results) >= 2:
             TheReport.plotComparison([(name, rc) for name, rc, _ in results])
             TheReport.plotCombinedAccuracy([(name, rc) for name, rc, _ in results])
             TheReport.plotCombinedLoss([m for _, _, m in results])
     else:
         # Single run mode
-        xml = BasicModelFactory.resolve_xml(args.config) if args.config else os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml")
+        xml = ModelFactory.resolve_xml(args.config) if args.config else os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml")
         TheReport.add_xml(xml)
-        results = BasicModelFactory.run(xml)
+        results = ModelFactory.run(xml)
 
     TheReport.write_html()

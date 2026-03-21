@@ -26,6 +26,29 @@ def init_runtime_env():
     os.environ.setdefault("XDG_CACHE_HOME", cache_dir)
     return runtime_root
 
+class DeviceHandle(str):
+    """str subclass representing a torch device that adds an optimized() query.
+
+    Inherits from str so it can be passed directly wherever PyTorch expects a
+    device string (device=TheDevice, tensor.to(TheDevice), etc.).
+    """
+
+    @property
+    def type(self):
+        """Device type string, e.g. 'cpu', 'cuda', 'mps'."""
+        return self.split(":")[0]
+
+    @property
+    def index(self):
+        """Device index, or None for devices without an index."""
+        parts = self.split(":")
+        return int(parts[1]) if len(parts) > 1 else None
+
+    def optimized(self):
+        """Return True when running on a real accelerator (cuda or mps), False on cpu."""
+        return self.type != "cpu"
+
+
 def resolve_device(name=""):
     """Resolve a device name string to a torch.device.
 
@@ -46,12 +69,13 @@ def auto_device():
     """Select the best device: BASICMODEL_DEVICE env var > cuda > mps > cpu."""
     override = os.environ.get("BASICMODEL_DEVICE", "").strip().lower()
     if override:
-        return resolve_device(override)
+        d = resolve_device(override)
+        return DeviceHandle(str(d))
     if torch.cuda.is_available():
-        return torch.device("cuda")
+        return DeviceHandle("cuda")
     if torch.backends.mps.is_available():
-        return torch.device("mps")
-    return torch.device("cpu")
+        return DeviceHandle("mps")
+    return DeviceHandle("cpu")
 
 # The canonical device for this process.
 TheDevice = auto_device()

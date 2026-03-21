@@ -15,6 +15,7 @@ import torch
 import util
 util.init_runtime_env()
 from matplotlib import pyplot as plt
+from sklearn.metrics import classification_report
 from sklearn.decomposition import PCA
 
 try:
@@ -22,7 +23,7 @@ try:
 except ImportError:
     make_dot = None
 
-from util import ProjectPaths
+from util import ProjectPaths, TheDevice
 
 OUTPUT_DIR = ProjectPaths.OUTPUT_DIR
 
@@ -43,7 +44,7 @@ class Report:
     Set ``enabled = False`` to suppress all figure generation and report output.
     """
     def __init__(self):
-        self.enabled = True
+        self.enabled = not TheDevice.optimized()
         self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         self.figures = []       # list of (title, svg_path)
         self.xml_configs = []   # list of (name, xml_content)
@@ -155,6 +156,43 @@ class Report:
             self.tables = []
         self.tables.append((title, headers, rows))
 
+    def classificationReport(self, model, min_value=0, max_value=1, **kwargs):
+        """Run a model test pass and print a sklearn classification report."""
+        if not self.enabled:
+            return
+        if "min" in kwargs:
+            min_value = kwargs.pop("min")
+        if "max" in kwargs:
+            max_value = kwargs.pop("max")
+        if kwargs:
+            raise TypeError(f"Unexpected keyword arguments: {', '.join(kwargs.keys())}")
+
+        test_input, _ = model.inputSpace.getTestData()
+        if test_input is None:
+            raise RuntimeError("classificationReport() requires test input data.")
+
+        batch_size = len(test_input) if hasattr(test_input, "__len__") else 10
+        _, _, y_pred, _ = model.runEpoch(
+            optimizer=None,
+            batchSize=max(1, batch_size),
+            split="test",
+        )
+        y_actual = model.outputSpace.getTestOutput()
+        y_actual = np.array(y_actual.cpu() if hasattr(y_actual, "cpu") else y_actual).squeeze()
+        y_pred_sat = np.maximum(
+            min_value,
+            np.minimum(
+                max_value,
+                np.round(np.array(y_pred.cpu() if hasattr(y_pred, "cpu") else y_pred)).squeeze(),
+            ),
+        )
+        performance = classification_report(
+            y_actual, y_pred_sat,
+            target_names=["Negative Review", "Positive Review"],
+        )
+        print(performance)
+        return performance
+
     @staticmethod
     def _open_in_vscode(html_path):
         """Open the report file in VS Code, falling back to the default browser."""
@@ -184,6 +222,8 @@ class Report:
 
     def plotAccuracy(self, model_name, rCorrect):
         """Plot per-class accuracy."""
+        if not self.enabled:
+            return
         nClasses = len(rCorrect)
         fig = plt.figure(figsize=(10, 5))
         plt.plot(range(nClasses), rCorrect, label="Error (per Input)", marker='o')
@@ -198,6 +238,8 @@ class Report:
     def plotAccuracyAndCertainty(self, model_name, rCorrect, reversible=False,
                                  last_x_pred=None, test_output=None):
         """Plot per-class accuracy with certainty, and optionally reconstruction images."""
+        if not self.enabled:
+            return
         nClasses = len(rCorrect)
         fig = plt.figure(figsize=(10, 5))
         plt.plot(range(nClasses), rCorrect, label="Error (per Input)", marker='o')
@@ -223,6 +265,8 @@ class Report:
 
     def plotLoss(self, model_name, trainErr, valErr, testErr):
         """Plots the training, validation, and test losses over time."""
+        if not self.enabled:
+            return
         fig = plt.figure(figsize=(10, 5))
 
         # Training starts at epoch 2 (epoch 1 is test-only), so offset by +2
@@ -245,6 +289,8 @@ class Report:
         self.show_figure(fig)
 
     def plotActivations(self, figure=1, percepts=None, concepts=None, symbols=None):
+        if not self.enabled:
+            return
         if plt.fignum_exists(figure):
             fig = plt.figure(figure)
             fig.set_size_inches(12, 4, forward=True)
@@ -281,6 +327,8 @@ class Report:
 
     def plotSpace(self, model):
         """Visualizes learned weight parameters via PCA projections."""
+        if not self.enabled:
+            return
         perc_weights = model.prototypes.data.cpu().numpy()
         pca = PCA(n_components=2)
         perc_2d = pca.fit_transform(perc_weights)
@@ -330,6 +378,8 @@ class Report:
 
     def plotNetwork(self, model):
         """Uses Torchviz to visualize the computation graph."""
+        if not self.enabled:
+            return
         from BasicModel import TheData
         model.eval()
         output, input, _, _ = model.runTest(TheData.test_input, TheData.test_output)
@@ -339,6 +389,8 @@ class Report:
         print(f"Saved network graph as {graph_path}")
 
     def plotErrorbars(self, model_name, acc):
+        if not self.enabled:
+            return
         x = list(range(1, len(acc[0]) + 1))
         y = np.array(np.mean(acc, axis=0))
         y_err = np.std(acc, axis=0)
@@ -346,6 +398,8 @@ class Report:
 
     def plotErrorbarsFromFile(self, fn):
         """Load a CSV of trial accuracies and add an errorbar series to the current plot."""
+        if not self.enabled:
+            return
         acc = np.loadtxt(_output_path(f"{fn}.csv"), delimiter=",")
         y = np.mean(acc, axis=0)
         y_err = np.std(acc, axis=0)
@@ -358,6 +412,8 @@ class Report:
         Args:
             models: list of (name, rCorrect_tensor) tuples
         """
+        if not self.enabled:
+            return
         digits = list(range(10))
         n = len(models)
         width = 0.8 / n
@@ -383,6 +439,8 @@ class Report:
         Args:
             models: list of model instances with .trainLosses and .testLosses.
         """
+        if not self.enabled:
+            return
         fig = plt.figure(figsize=(12, 6))
         colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple']
         for i, m in enumerate(models):
@@ -412,6 +470,8 @@ class Report:
         Args:
             models: list of (name, rCorrect_tensor) tuples.
         """
+        if not self.enabled:
+            return
         fig = plt.figure(figsize=(12, 6))
         digits = list(range(10))
         for name, rCorrect in models:
@@ -436,6 +496,8 @@ class Report:
             Y: numpy array of training targets, shape (N,) or (N, 1) or (N, 1, 1).
             title: plot title.
         """
+        if not self.enabled:
+            return
         x_min, x_max = -0.5, 1.5
         y_min, y_max = -0.5, 1.5
         xx, yy = np.meshgrid(np.linspace(x_min, x_max, 100),
@@ -465,6 +527,8 @@ class Report:
 
     def plotEpochComparison(self):
         """Plot epoch-level accuracy comparison from saved CSV files."""
+        if not self.enabled:
+            return
         fig = plt.figure(figsize=(10, 5))
         for fn in ["SimpleModel", "ErgodicModel", "Ergodic - Normed", "Ergodic - Reversible"]:
             csv_path = _output_path(f"{fn}.csv")

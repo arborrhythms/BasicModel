@@ -10,6 +10,7 @@
 -->
 <model>
   <architecture>
+    <type>basic</type>
     <modelType>simple</modelType>
     <reshape>false</reshape>
     <conceptualOrder>1</conceptualOrder>

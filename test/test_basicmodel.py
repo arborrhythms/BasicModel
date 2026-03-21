@@ -1112,6 +1112,25 @@ class TestBaseModelFactory(unittest.TestCase):
         finally:
             os.unlink(path)
 
+    def test_factory_creates_mental_model(self):
+        from BasicModel import BaseModel, MentalModel
+        xml = """<model>
+  <architecture>
+    <type>mental</type>
+    <reconstruct>none</reconstruct>
+    <training><autoload>false</autoload></training>
+  </architecture>
+</model>"""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml)
+            path = f.name
+        try:
+            model, cfg = BaseModel.from_config(path)
+            self.assertIsInstance(model, MentalModel)
+            self.assertIs(model.inputSpace.outputSpace, model.outputSpace)
+        finally:
+            os.unlink(path)
+
 
 class TestDataTextStorage(unittest.TestCase):
     """Text datasets store raw strings in train_input (tensorized lazily)."""
@@ -1129,6 +1148,7 @@ class TestDataTextStorage(unittest.TestCase):
         data = Data()
         data.load("mnist")
         self.assertIsInstance(data.train_input, torch.Tensor)
+
 
 
 class TestSymbolDimZeroPassthrough(unittest.TestCase):
@@ -2491,6 +2511,44 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
         opt_params = [p.data_ptr() for group in optimizer.param_groups for p in group['params']]
         self.assertNotIn(emb_weight.data_ptr(), opt_params,
                          "Embedding weight should NOT be in optimizer when trainEmbeddings=false")
+
+    def test_joint_mode_passes_sbow_to_total_loss(self):
+        """runBatch must forward JOINT sbow loss into ModelLoss.total()."""
+        from BasicModel import Embedding
+        m = self._create_model("joint")
+        if not isinstance(m.inputSpace.vectors(), Embedding):
+            self.skipTest("Model doesn't use Embedding")
+
+        optimizer = m.getOptimizer(lr=0.001)
+        sentinel = torch.tensor(1.2345, device=TheDevice)
+        seen = {}
+
+        original_total = m.loss.total
+        original_train_embeddings = m.trainEmbeddings
+
+        def capture_total(lossOut, lossIn=None, sbow=None):
+            seen["sbow"] = sbow
+            return original_total(lossOut, lossIn, sbow)
+
+        def fake_train_embeddings(trainMod, index, split):
+            if getattr(m, "train_embedding", "NONE") == "JOINT":
+                return sentinel
+            return original_train_embeddings(trainMod, index, split)
+
+        m.loss.total = capture_total
+        m.trainEmbeddings = fake_train_embeddings
+        m.loss.reverse_scale = 0.0
+
+        result, _ = m.runBatch(
+            train=True,
+            batchNum=0,
+            batchSize=1,
+            split="train",
+            optimizer=optimizer,
+        )
+
+        self.assertIsNotNone(result)
+        self.assertIs(seen.get("sbow"), sentinel)
 
 
 # ---------------------------------------------------------------------------
