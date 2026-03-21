@@ -1,6 +1,8 @@
 """Analytic NumPy experiment for a reversible 2D linear perceptual map."""
 
 import numpy as np
+import util
+util.init_runtime_env()
 import matplotlib.pyplot as plt
 from visualize import TheReport
 

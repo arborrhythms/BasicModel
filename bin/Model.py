@@ -9,6 +9,8 @@ building blocks and the update rules they share.
 import os
 import warnings
 import numpy as np
+import util as _util
+_util.init_runtime_env()
 import matplotlib.pyplot as plt
 import torch
 import random
@@ -24,7 +26,7 @@ from typing import Optional, Tuple
 epsilon = 1e-7  # to avoid log(0)
 
 # Device used by all layers — delegates to util.
-import util as _util
+from util import TheXMLConfig
 
 def _get_device():
     return _util.TheDevice
@@ -1795,6 +1797,68 @@ class Loss(nn.Module):
     def compute(self, pred, target):
         """Compute loss between pred and target. Override in subclasses."""
         return nn.functional.mse_loss(pred, target)
+
+
+class ModelLoss(Loss):
+    """Weighted reconstruction loss with separate scales for what/where/when."""
+
+    def __init__(self, reverse_scale=0.5,
+                 what_scale=0.7, where_scale=0.2, when_scale=0.1,
+                 embedding_scale=0.1,
+                 certainty=False, nOutput=2,
+                 conceptualOrder=0, symbolicOrder=0,
+                 nWhere=None, nWhen=None):
+        super().__init__()
+        self.reverse_scale = float(reverse_scale or 0.5)
+        self.what_scale = float(what_scale or 0.7)
+        self.where_scale = float(where_scale or 0.2)
+        self.when_scale = float(when_scale or 0.1)
+        self.embedding_scale = float(embedding_scale or 0.1)
+        self.nWhere = nWhere if nWhere is not None else TheXMLConfig.get("architecture.nWhere")
+        self.nWhen = nWhen if nWhen is not None else TheXMLConfig.get("architecture.nWhen")
+
+        if certainty:
+            self.output_criterion = CertaintyWeightedCrossEntropy()
+        elif nOutput <= 2:
+            self.output_criterion = nn.MSELoss()
+        elif conceptualOrder > 0 or symbolicOrder > 0:
+            self.output_criterion = nn.MSELoss()
+        else:
+            self.output_criterion = nn.CrossEntropyLoss()
+
+    def output(self, pred, target):
+        return self.output_criterion(pred, target)
+
+    def compute(self, pred, target):
+        embSize = pred.shape[-1]
+        nWhere = self.nWhere
+        nWhen = self.nWhen
+        nWhat = embSize - nWhere - nWhen
+
+        loss = pred.new_tensor(0.0)
+        if nWhat > 0:
+            loss = loss + self.what_scale * F.mse_loss(
+                pred[..., :nWhat], target[..., :nWhat])
+        if nWhere > 0:
+            loss = loss + self.where_scale * F.mse_loss(
+                pred[..., nWhat:nWhat + nWhere], target[..., nWhat:nWhat + nWhere])
+        if nWhen > 0:
+            loss = loss + self.when_scale * F.mse_loss(
+                pred[..., nWhat + nWhere:], target[..., nWhat + nWhere:])
+        return loss
+
+    def forward(self, lossOut, lossIn=None, sbow=None):
+        total = lossOut
+        if lossIn is not None:
+            rr = self.reverse_scale
+            total = (1 - rr) * lossOut + rr * lossIn
+        if sbow is not None:
+            total = total + self.embedding_scale * sbow
+        return total
+
+    def total(self, lossOut, lossIn=None, sbow=None):
+        return self(lossOut, lossIn, sbow)
+
 class CertaintyWeightedMAELoss(Loss):
     """MAE loss weighted by prediction magnitude (certainty).
 

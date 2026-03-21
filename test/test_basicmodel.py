@@ -521,12 +521,13 @@ class TestSubSpaceMaterialize(unittest.TestCase):
     """SubSpace.materialize() returns the expected dense tensor."""
 
     def test_materialize_tensor(self):
-        from BasicModel import SubSpace, WhereEncoding, WhenEncoding
+        from BasicModel import SubSpace, Tensor, WhereEncoding, WhenEncoding
         t = torch.randn(2, 4, 12)
         ss = SubSpace.from_tensor(t, whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
                                   inputShape=[4, 8], outputShape=[4, 8])
         result = ss.materialize()
         self.assertIs(result, t)
+        self.assertIsInstance(ss.what, Tensor)
 
     def test_materialize_none_when_unset(self):
         from BasicModel import SubSpace, WhereEncoding, WhenEncoding
@@ -565,16 +566,17 @@ class TestSubSpaceConstruction(unittest.TestCase):
     """SubSpace.from_tensor and from_components helpers."""
 
     def test_from_tensor(self):
-        from BasicModel import SubSpace, WhereEncoding, WhenEncoding
+        from BasicModel import SubSpace, Tensor, WhereEncoding, WhenEncoding
         t = torch.randn(2, 3, 10)
         ss = SubSpace.from_tensor(t, whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
                                   inputShape=[3, 6], outputShape=[3, 6])
-        self.assertIs(ss.what, t)
+        self.assertIsInstance(ss.what, Tensor)
+        self.assertIs(ss.what.W, t)
         self.assertEqual(ss.objectSize, 4)
         self.assertEqual(ss.inputShape, [3, 6])
 
     def test_from_components(self):
-        from BasicModel import SubSpace, ActiveEncoding, WhereEncoding, WhenEncoding
+        from BasicModel import SubSpace, ActiveEncoding, Tensor, WhereEncoding, WhenEncoding
         what = torch.randn(2, 4, 8)
         act = torch.ones(2, 4)
         ae = ActiveEncoding()
@@ -582,8 +584,10 @@ class TestSubSpaceConstruction(unittest.TestCase):
             what=what, activation=act, activeEncoding=ae,
             whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
             inputShape=[4, 4], outputShape=[4, 4])
-        self.assertIs(ss.what, what)
-        self.assertIs(ss.activation, act)
+        self.assertIsInstance(ss.what, Tensor)
+        self.assertIsInstance(ss.activation, Tensor)
+        self.assertIs(ss.what.W, what)
+        self.assertIs(ss.activation.W, act)
         self.assertIs(ss.activeEncoding, ae)
 
     def test_from_components_defaults_none(self):
@@ -718,33 +722,50 @@ class TestSimpleModel(unittest.TestCase):
         self.assertEqual(data.shape[1], 16)
 
 
-class TestVectorSetVariants(unittest.TestCase):
-    """Lock down quantized vs unquantized VectorSet behavior."""
+class TestCodebookVariants(unittest.TestCase):
+    """Lock down quantized vs unquantized Codebook behavior."""
 
     def test_unquantized_passthrough(self):
-        from BasicModel import VectorSet
-        vs = VectorSet()
+        from BasicModel import Codebook
+        vs = Codebook()
         vs.create(4, 4, 1, passThrough=True)
         x = torch.randn(2, 4, 1).to(TheDevice)
         y = vs.forward(x)
         self.assertTrue(torch.equal(x, y))
 
     def test_quantized_shape(self):
-        from BasicModel import VectorSet, WhereEncoding, WhenEncoding, TheXMLConfig
+        from BasicModel import Codebook, TheXMLConfig
         _populate_test_config(nInput=4, nPercepts=4, nConcepts=4, nSymbols=4,
                               nWords=0, nOutput=4)
-        vs = VectorSet()
+        vs = Codebook()
         vs.create(4, 4, 3, customVQ=False,
-                  objectSize=TheXMLConfig.objectSize,
-                  where_encoding=WhereEncoding(TheXMLConfig.nObjects),
-                  when_encoding=WhenEncoding(10000))
-        vs.addVectors(nVec=4)
+                  objectSize=TheXMLConfig.objectSize)
         vs = vs.to(TheDevice)
         x = torch.randn(2, 4, 3).to(TheDevice)
         y = vs.forward(x)
         # Output gains ObjectEncoding overhead (nWhere + nWhen)
         embeddingSize = 3 + TheXMLConfig.objectSize
         self.assertEqual(list(y.shape), [2, 4, embeddingSize])
+
+
+class TestBasisContract(unittest.TestCase):
+    def test_tensor_identity_materialization(self):
+        from BasicModel import Tensor
+        payload = torch.randn(2, 3, 4, device=TheDevice)
+        basis = Tensor()
+        basis.create(3, 3, 4, passThrough=True)
+        out = basis.forward(payload)
+        self.assertIs(out, payload)
+        self.assertIs(basis.materialize(), payload)
+        rev = basis.reverse(payload)
+        self.assertIs(rev, payload)
+
+    def test_invalid_geometry_requires_2d_prototype_matrix(self):
+        from BasicModel import Tensor
+        basis = Tensor(W=torch.randn(2, 3, 4, device=TheDevice))
+        basis.create(3, 3, 4, passThrough=True)
+        with self.assertRaises(RuntimeError):
+            basis.codebookDistance(torch.randn(2, 4, device=TheDevice))
 
 
 class TestModelEndToEnd(unittest.TestCase):
@@ -879,8 +900,8 @@ class TestSigmaLayerDeterministic(unittest.TestCase):
         self.assertFalse(sigma.ergodic)
 
 
-class TestCreateVectorSetQuantized(unittest.TestCase):
-    """Space.createVectorSet supports both quantized and unquantized paths."""
+class TestSpaceBasisConstruction(unittest.TestCase):
+    """Space builds its basis during construction."""
 
     def setUp(self):
         from BasicModel import Space
@@ -888,24 +909,19 @@ class TestCreateVectorSetQuantized(unittest.TestCase):
         Space.config_section = "InputSpace"
         self.addCleanup(setattr, Space, 'config_section', None)
 
-    def test_quantized_creates_vectorset(self):
-        from BasicModel import Space, VectorSet
+    def test_quantized_creates_codebook(self):
+        from BasicModel import Codebook, Space
+        _populate_test_config(inputDim=3, nInput=4, quantized=True)
         s = Space([4, 3], [4, 3], 4)
-        s.createVectorSet(quantized=True)
-        self.assertIsInstance(s.vectors(), VectorSet)
+        self.assertIsInstance(s.vectors(), Codebook)
+        self.assertFalse(s.vectors().passThrough)
 
-    def test_unquantized_creates_passthrough_vset(self):
-        from BasicModel import Space, VectorSet
+    def test_unquantized_creates_passthrough_codebook(self):
+        from BasicModel import Codebook, Space
+        _populate_test_config(inputDim=3, nInput=4, quantized=False)
         s = Space([4, 3], [4, 3], 4)
-        s.createVectorSet(quantized=False)
-        self.assertIsInstance(s.vectors(), VectorSet)
+        self.assertIsInstance(s.vectors(), Codebook)
         self.assertTrue(s.vectors().passThrough)
-
-    def test_default_is_quantized(self):
-        from BasicModel import Space, VectorSet
-        s = Space([4, 3], [4, 3], 4)
-        s.createVectorSet()
-        self.assertIsInstance(s.vectors(), VectorSet)
 
 
 class TestConceptualSpaceErgodic(unittest.TestCase):
@@ -1113,7 +1129,7 @@ class TestSymbolDimZeroPassthrough(unittest.TestCase):
 
 class TestInputSpaceLexIntegration(unittest.TestCase):
     """InputSpace with text data creates a Lex instance, span table, and
-    encodes spans as [nWhat + nWhere] via VectorSet codebook + ObjectEncoding."""
+    encodes spans as [nWhat + nWhere] via a Codebook basis plus ObjectEncoding."""
 
     def _make_text_data(self):
         """Load XOR text data into TheData singleton."""
@@ -1225,8 +1241,8 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         os_ = OutputSpace(nIn, nOut)
         self.assertFalse(os_.text_mode)
 
-    def test_set_text_mode_enables_reconstruction(self):
-        """set_text_mode() stores codebook, words, and lex references."""
+    def test_vectors_constructor_enables_reconstruction(self):
+        """Passing vectors= shares the embedding basis with OutputSpace."""
         from BasicModel import InputSpace, TheData, OutputSpace, WhereEncoding, WhenEncoding
         TheData.load("xor")
         nInput = 8
@@ -1235,10 +1251,8 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
                               reshape=True)
         inp = InputSpace(nInput, nInput,
                          model_type="embedding")
-        # Create OutputSpace with the same embedding setup
         nOut = 8
-        os_ = OutputSpace(nInput, nOut)
-        os_.set_text_mode(inp)
+        os_ = OutputSpace(nInput, nOut, vectors=inp.vectors())
         self.assertTrue(os_.text_mode)
 
     def test_reconstruct_from_known_vectors(self):
@@ -1254,11 +1268,10 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         inp = InputSpace(nInput, nInput,
                          model_type="embedding")
         nOut = 4
-        os_ = OutputSpace(nInput, nOut)
-        os_.set_text_mode(inp)
+        os_ = OutputSpace(nInput, nOut, vectors=inp.vectors())
 
         # Build synthetic vectors from known codebook entries with known nWhere
-        codebook = inp.vectors().wv._vectors.detach()
+        codebook = inp.vectors().W.detach()
         words_list = inp.vectors().wv.index_to_key
         embSize = inp.vectors().embeddingSize
         nWhat = embSize - TheXMLConfig.objectSize
@@ -1291,11 +1304,10 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         inp = InputSpace(nInput, nInput,
                          model_type="embedding")
         nOut = 4
-        os_ = OutputSpace(nInput, nOut)
-        os_.set_text_mode(inp)
+        os_ = OutputSpace(nInput, nOut, vectors=inp.vectors())
 
         # Build vectors with nWhere = 0 (all zeros)
-        codebook = inp.vectors().wv._vectors.detach()
+        codebook = inp.vectors().W.detach()
         words_list = inp.vectors().wv.index_to_key
         embSize = inp.vectors().embeddingSize
 
@@ -1327,11 +1339,10 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         inp = InputSpace(nInput, nInput,
                          model_type="embedding")
         nOut = 4
-        os_ = OutputSpace(nInput, nOut)
-        os_.set_text_mode(inp)
+        os_ = OutputSpace(nInput, nOut, vectors=inp.vectors())
 
         # Build synthetic vectors with nWhere at known positions
-        codebook = inp.vectors().wv._vectors.detach()
+        codebook = inp.vectors().W.detach()
         words_list = inp.vectors().wv.index_to_key
         embSize = inp.vectors().embeddingSize
         nWhat = embSize - inp.objectSize
@@ -1367,8 +1378,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         inp = InputSpace(nInput, nInput,
                          model_type="embedding")
         nOut = 4
-        os_ = OutputSpace(nInput, nOut)
-        os_.set_text_mode(inp)
+        os_ = OutputSpace(nInput, nOut, vectors=inp.vectors())
         inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("SymbolicSpace", "nDim"))
         x = torch.randn(2, nInput, inEmb).to(TheDevice)
         y = os_(x)
@@ -1574,9 +1584,9 @@ class TestMaskCodebookEntry(unittest.TestCase):
 
 
 class TestEmbeddingErgodicForward(unittest.TestCase):
-    def test_vectorset_owns_exploration_state(self):
-        from BasicModel import Embedding, VectorSet
-        vs = VectorSet()
+    def test_codebook_owns_exploration_state(self):
+        from BasicModel import Codebook, Embedding
+        vs = Codebook()
         emb = Embedding()
         self.assertFalse(vs.ergodic)
         self.assertAlmostEqual(vs.sigma_kappa, 0.01)
