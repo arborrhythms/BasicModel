@@ -1450,7 +1450,7 @@ class Embedding(VectorSet):
         """Return a zero vector the same size as a codebook entry."""
         return torch.zeros(self.wv._vectors.shape[1], device=TheDevice)
 
-class SubSpace:
+class SubSpace(nn.Module):
     """Per-space runtime state container.
 
     Holds the factored representation (what, where, when, activation) along
@@ -1464,18 +1464,11 @@ class SubSpace:
     references rather than learnable parameters.
     """
 
-    __slots__ = (
-        'activation', 'what', 'where', 'when',
-        'activeEncoding', 'whatEncoding', 'whereEncoding', 'whenEncoding',
-        'reshape', 'objectSize',
-        'inputShape', 'outputShape',
-        'batch',
-    )
-
     def __init__(self, inputShape, outputShape,
                  reshape=False,
                  activeEncoding=None, whatEncoding=None,
                  whereEncoding=None, whenEncoding=None):
+        super().__init__()
         self.activation = None
         self.what = None
         self.where = None
@@ -1489,6 +1482,12 @@ class SubSpace:
         self.inputShape = inputShape    # [nActive, nDim]
         self.outputShape = outputShape  # [nActive, nDim]
         self.batch = 0
+
+    def vectors(self):
+        return self.what
+    
+    def createVectorSet(self, vs):
+        self.what = vs
 
     # ------------------------------------------------------------------
     # Derived sizes
@@ -1702,7 +1701,6 @@ class Space(nn.Module):
                                      whereEncoding=WhereEncoding(TheXMLConfig.get("architecture.nObjects"), _nWhere),
                                      whenEncoding=WhenEncoding(10000, _nWhen))
         self.embeddingSize = self.subspace.getEncodingSize(self.nDim)
-        self.vectorSet    = nn.ModuleList()  # holds this space's VectorSet (accessed via self.vectors())
         self.customVQ     = customVQ
         self.params = []   # parameters for the optimizer (excludes temperature params)
         self.layers = nn.ModuleList()   # layer instances for paramUpdate() delegation
@@ -1718,6 +1716,22 @@ class Space(nn.Module):
             f"{section_name}: nVectors ({nV}) must be >= nActive ({nA})"
         )
 
+    def createSubspaceVectorSet(self, passThrough=False):
+        vs = VectorSet()
+        vs.create(self.inputShape[0], self.outputShape[0], self.nDim, passThrough=passThrough,
+                    objectSize=self.objectSize,
+                    where_encoding=self.subspace.whereEncoding,
+                    when_encoding=self.subspace.whenEncoding)
+        self.subspace.createVectorSet(vs)
+
+    def vectors(self):
+        """Convenience accessor — delegates to subspace."""
+        return self.subspace.vectors()
+
+    def createVectorSet(self, quantized=True):
+        """Convenience method — delegates to createSubspaceVectorSet."""
+        self.createSubspaceVectorSet(passThrough=not quantized)
+
     def getEmbeddedIO(self):
         """Return (input_dim, output_dim) for reshape/validation and layer construction.
 
@@ -1729,7 +1743,7 @@ class Space(nn.Module):
         activation = x[0]
         x = x.unsqueeze(0).unsqueeze(0)
         x = torch.cat([torch.zeros([1,1, TheXMLConfig.space("ConceptualSpace", "nDim")], device=TheDevice), x[:,:,1:]], dim=2)
-        output, index, _ = self.vectors().vq(x)
+        output, index, _ = self.subspace.vectors().vq(x)
         #output[:,:,0:conceptDim] = output[:,:,0:conceptDim] * activation  # multiply the codebook vector by the activation
         return output
     def dereference(self, symbols):
@@ -1748,27 +1762,16 @@ class Space(nn.Module):
         return objects
 
     def stats(self, x):
-        #codebookUse = self.vectors().codebookUse
-        #TheMessage(f"{self.name} Codebook activation: { np.sum(self.vectors().codebookAct.get()) }")
+        #codebookUse = self.subspace.vectors().codebookUse
+        #TheMessage(f"{self.name} Codebook activation: { np.sum(self.subspace.vectors().codebookAct.get()) }")
         return
-    def vectors(self):
-        """Accessor for this space's VectorSet (first element of the ModuleList)."""
-        return self.vectorSet[0]
-    def createVectorSet(self, quantized=True):
-        vs = VectorSet()
-        vs.create(self.inputShape[0], self.outputShape[0], self.nDim, passThrough=not quantized,
-                    objectSize=self.objectSize,
-                    where_encoding=self.subspace.whereEncoding,
-                    when_encoding=self.subspace.whenEncoding)
-        self.vectorSet.append(vs)
     def set_sigma(self, sigma):
         """Propagate exploration meta-parameters to all layers and VectorSets."""
         for l in self.layers:
             if hasattr(l, 'set_sigma'):
                 l.set_sigma(sigma)
-        for vs in self.vectorSet:
-            if hasattr(vs, 'set_sigma'):
-                vs.set_sigma(sigma)
+        if self.subspace.what is not None and hasattr(self.subspace.what, 'set_sigma'):
+            self.subspace.what.set_sigma(sigma)
     def getParameters(self):
         return self.params
     def paramUpdate(self):
@@ -1845,7 +1848,7 @@ class InputSpace(Space):
             self.outputShape = [self.outputShape[0], _inputDim]
             self.subspace.outputShape = self.outputShape
             self.subspace.whatEncoding.outputShape = self.outputShape
-            self.vectorSet.append(vs)
+            self.subspace.createVectorSet(vs)
             self.doc_spans = vs.doc_spans
             self.doc_sources = vs.doc_sources
             if data.train_input and self.subspace.whereEncoding.nDim > 0:
@@ -1853,19 +1856,14 @@ class InputSpace(Space):
                 self.subspace.whereEncoding.maxVal = maxP
                 self.subspace.whereEncoding.div_term = 2 * math.pi / maxP
         elif model_type == "passthrough":
-            vs = VectorSet()
-            vs.create(self.inputShape[0], self.outputShape[0], self.nDim, passThrough=True,
-                      objectSize=self.objectSize, where_encoding=self.subspace.whereEncoding,
-                      when_encoding=self.subspace.whenEncoding)
-            self.vectorSet.append(vs)
+            self.createSubspaceVectorSet(passThrough=True)
         elif model_type == "vq":
-            vs = VectorSet()
-            vs.create(self.inputShape[0], self.outputShape[0], self.nDim,
-                      objectSize=self.objectSize, where_encoding=self.subspace.whereEncoding,
-                      when_encoding=self.subspace.whenEncoding)
-            self.vectorSet.append(vs)
-        else:  # "simple"
-            self.createVectorSet(quantized=self.quantized)
+            self.createSubspaceVectorSet(passThrough=False)
+        elif model_type == "simple":
+            self.createSubspaceVectorSet(passThrough=True)
+        else:
+            raise RuntimeError("Unexpected model_type")
+
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
         self.input          = torch.FloatTensor
         self.tokenizedInput = False
@@ -1903,7 +1901,7 @@ class InputSpace(Space):
         self.subspace.whereEncoding.p = 0
 
         batch = input.shape[0]
-        emb = self.vectors()
+        emb = self.subspace.vectors()
         if not isinstance(emb, Embedding):
             assert list(input.shape) == [batch, self.inputShape[0], self.inputShape[1]]
             self.input = emb.forward(input)
@@ -2015,14 +2013,14 @@ class InputSpace(Space):
             y = flat.reshape(B, self._output_perm_nActive, self._output_perm_embDim)
         y = self.subspace.reverseBegin(y)
         # Store full vector (all subspaces) for MSE loss BEFORE partitioning
-        raw = self.vectors().reverse_raw(y)
+        raw = self.subspace.vectors().reverse_raw(y)
         self.reconstructed = raw.detach()
         # Partition into nWhat/nWhere/nWhen for display
-        if isinstance(self.vectors(), Embedding):
-            self.input, self._recovered_input = self.vectors().reverse(
+        if isinstance(self.subspace.vectors(), Embedding):
+            self.input, self._recovered_input = self.subspace.vectors().reverse(
                 y, return_meta=True)
         else:
-            self.input = self.vectors().reverse(y)
+            self.input = self.subspace.vectors().reverse(y)
             self._recovered_input = None
         return self.input
 
@@ -2030,13 +2028,13 @@ class InputSpace(Space):
         """Render the last recovered text state stored on InputSpace."""
         if getattr(self, '_recovered_input', None) is None:
             raise RuntimeError("reconstruct_data() called before reverse()")
-        return self.vectors().reconstruct_data(self._recovered_input, text=text)
+        return self.subspace.vectors().reconstruct_data(self._recovered_input, text=text)
 
     def reconstruct_to_buffer(self, buf_size=None):
         """Render the last recovered text buffer stored on InputSpace."""
         if getattr(self, '_recovered_input', None) is None:
             raise RuntimeError("reconstruct_to_buffer() called before reverse()")
-        return self.vectors().reconstruct_to_buffer(
+        return self.subspace.vectors().reconstruct_to_buffer(
             self._recovered_input, buf_size=buf_size)
 
     def get_forward_meta(self):
@@ -2047,7 +2045,7 @@ class InputSpace(Space):
         """Return one recovered token from the last InputSpace.reverse()."""
         if getattr(self, '_recovered_input', None) is None:
             return None
-        return self.vectors().get_recovered_word(
+        return self.subspace.vectors().get_recovered_word(
             self._recovered_input, batch_idx, position)
 
     # ------------------------------------------------------------------
@@ -2056,28 +2054,28 @@ class InputSpace(Space):
 
     def train_embeddings(self, words, method='CBOW'):
         """Run one CBOW/SBOW gradient step if words are available."""
-        emb = self.vectors()
+        emb = self.subspace.vectors()
         if isinstance(emb, Embedding) and words:
             return emb.train_step(words, method=method)
         return None
 
     def sbow_loss(self, words):
         """Return SBOW loss tensor for joint optimization (no backward/step)."""
-        emb = self.vectors()
+        emb = self.subspace.vectors()
         if isinstance(emb, Embedding) and words:
             return emb.sbow_loss(words)
         return None
 
     def _snapshot_embeddings(self):
         """Return the current WordVectors (no-op, vectors are always live)."""
-        emb = self.vectors()
+        emb = self.subspace.vectors()
         if isinstance(emb, Embedding):
             return emb.wv
         return None
 
     def set_embedding_sigma(self, sigma):
         """Control exploration noise on the embedding."""
-        emb = self.vectors()
+        emb = self.subspace.vectors()
         if hasattr(emb, 'set_sigma'):
             emb.set_sigma(sigma)
 
@@ -2192,7 +2190,7 @@ class InputSpace(Space):
 
     def predict(self, vector):
         """Delegates to Embedding.predict()."""
-        return self.vectors().predict(vector)
+        return self.subspace.vectors().predict(vector)
 
     # ------------------------------------------------------------------
     # ARIR helpers
@@ -2200,15 +2198,15 @@ class InputSpace(Space):
 
     def embed_token(self, word):
         """Delegates to Embedding.embed_token()."""
-        return self.vectors().embed_token(word)
+        return self.subspace.vectors().embed_token(word)
 
     def get_space_embedding(self):
         """Delegates to Embedding.get_space_embedding()."""
-        return self.vectors().get_space_embedding()
+        return self.subspace.vectors().get_space_embedding()
 
     def get_mask_embedding(self):
         """Delegates to Embedding.get_mask_embedding()."""
-        return self.vectors().get_mask_embedding()
+        return self.subspace.vectors().get_mask_embedding()
 
     # ── ARIR state machine ──────────────────────────────────────────
 
@@ -2226,8 +2224,8 @@ class InputSpace(Space):
         Returns None when cursor reaches nVec, EOF detected, or max_chars exceeded.
         """
         nVec = self.outputShape[0]
-        embSize = self.vectors().embeddingSize
-        nWhat = self.vectors().embedding_dim
+        embSize = self.subspace.vectors().embeddingSize
+        nWhat = self.subspace.vectors().embedding_dim
 
         if self._arir_cursor is None:
             # ── First call: embed seed, prepare buffer ──────────────
@@ -2245,7 +2243,7 @@ class InputSpace(Space):
             self._arir_byte_offset = offsets[0] if offsets else 0
 
             # Fill future positions (seed_len .. nVec-1) with NULL embeddings
-            null_emb = self.vectors().embed_token("\x00")
+            null_emb = self.subspace.vectors().embed_token("\x00")
             for k in range(seed_len, nVec):
                 self._arir_embedded[0, k, :nWhat] = null_emb[:nWhat]
                 est_offset = self._arir_byte_offset + (k - seed_len)
@@ -2427,7 +2425,7 @@ class PerceptualSpace(Space):
             self.params = self.pi.getParameters()
             self.layers = nn.ModuleList([self.pi])
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
-        self.createVectorSet(quantized=self.quantized)
+        self.createSubspaceVectorSet(passThrough=False)
     def distance(self, x, y):
         return torch.prod( [1-x, 1-y] )
     def certainty(self, x):
@@ -2441,7 +2439,7 @@ class PerceptualSpace(Space):
         if self.hasAttention:
             x = self.attention.forward(x)
         if self.quantized:
-            x  = self.vectors().forward(x)
+            x  = self.subspace.vectors().forward(x)
         if self.processSymbols:
             # Collapse content dims to scalar activation, keep positional encoding
             encoding = x[:,:,-self.objectSize:]
@@ -2525,7 +2523,7 @@ class ConceptualSpace(Space):
             self.forwardSigma = self.sigma.forward
             self.params = self.sigma.getParameters()
             self.layers = nn.ModuleList([self.sigma])
-        self.createVectorSet(quantized=self.quantized)
+        self.createSubspaceVectorSet(passThrough=not self.quantized)
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
         # However, if the X are not normalized, the magnitudes may be taken as a degree of certainty or knowing.
@@ -2549,7 +2547,7 @@ class ConceptualSpace(Space):
             y = self.attention.forward(y)
         # Quantize against codebook: snap dynamic vectors to static prototypes
         if self.quantized:
-            y = self.vectors().forward(y)
+            y = self.subspace.vectors().forward(y)
         if self.processSymbols:
             # Collapse content dims to scalar activation, keep positional encoding
             encoding = y[:,:,-self.objectSize:]
@@ -2658,7 +2656,7 @@ class SymbolicSpace(Space):
             self.symbols = self.discretize(self.symbols)
         self.symbols = self.subspace.forwardEnd(self.symbols)
         if self.quantized:
-            self.symbols  = self.vectors().forward(self.symbols)
+            self.symbols  = self.subspace.vectors().forward(self.symbols)
         return self.symbols
     def reverse(self, y):
         """Interpretation: map symbols back to concept vectors (via codebook dereference)."""
@@ -2764,7 +2762,7 @@ class OutputSpace(Space):
         self.data = TheData
         if vectors is not None:
             self.text_mode = isinstance(vectors, Embedding)
-            self.vectorSet.append(vectors)
+            self.subspace.createVectorSet(vectors)
         else:
             self.text_mode = False
         input, output = self.getEmbeddedIO()
@@ -2795,7 +2793,7 @@ class OutputSpace(Space):
         output = self.forwardLinear(y)
         output = self.subspace.forwardEnd(output)
         if self.quantized:
-            self.output  = self.vectors().output(self.percepts)
+            self.output  = self.subspace.vectors().output(self.percepts)
         self.predicted = output.detach()
         return output
     def reverse(self, y):
@@ -2841,12 +2839,9 @@ class OutputSpace(Space):
 
         Convenience method for tests. Production code passes vectors= to __init__.
         """
-        vs = input_space.vectors()
+        vs = input_space.subspace.vectors()
         self.text_mode = True
-        if len(self.vectorSet) == 0:
-            self.vectorSet.append(vs)
-        else:
-            self.vectorSet[0] = vs
+        self.subspace.createVectorSet(vs)
 
     def reconstruct_tokens(self, vectors):
         """Return positioned tokens decoded from symbolic vectors.
@@ -2855,7 +2850,7 @@ class OutputSpace(Space):
         """
         if not self.text_mode:
             raise RuntimeError("reconstruct_tokens() requires text_mode.")
-        _, meta = self.vectors().reverse(vectors, return_meta=True)
+        _, meta = self.subspace.vectors().reverse(vectors, return_meta=True)
         return meta['tokens']
 
     def reconstruct_data(self, vectors):
@@ -2896,8 +2891,8 @@ class OutputSpace(Space):
         Returns:
             List of strings, one per batch element.
         """
-        _, meta = self.vectors().reverse(vectors, return_meta=True)
-        return self.vectors().reconstruct_to_buffer(
+        _, meta = self.subspace.vectors().reverse(vectors, return_meta=True)
+        return self.subspace.vectors().reconstruct_to_buffer(
             meta, buf_size=buf_size)
 
     def clearBatchResults(self):
@@ -2966,8 +2961,8 @@ class BaseModel(nn.Module):
         # Exclude embedding params when trainEmbedding is NONE or ARLM
         if not getattr(self, 'optimize_embedding', False):
             exclude = set()
-            if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.vectors(), Embedding):
-                for p in self.inputSpace.vectors().embedding_parameters():
+            if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.subspace.vectors(), Embedding):
+                for p in self.inputSpace.subspace.vectors().embedding_parameters():
                     exclude.add(p.data_ptr())
             if exclude:
                 params = [p for p in params if p.data_ptr() not in exclude]
@@ -3012,8 +3007,8 @@ class BaseModel(nn.Module):
 
     def _get_embedding(self):
         """Return the Embedding instance if this model uses one, else None."""
-        if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.vectors(), Embedding):
-            return self.inputSpace.vectors()
+        if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.subspace.vectors(), Embedding):
+            return self.inputSpace.subspace.vectors()
         return None
 
     def save_weights(self, path=None):
@@ -3390,15 +3385,15 @@ class BasicModel(BaseModel):
         # Valid trainEmbedding values: NONE, CBOW, SBOW, BACKPROP, BOTH, JOINT
         # (ARLM/ARUS/RARLM are maskedPrediction modes, not trainEmbedding modes)
         self.optimize_embedding = self.train_embedding not in ("NONE", "CBOW", "SBOW")
-        if self.optimize_embedding and isinstance(self.inputSpace.vectors(), Embedding):
-            emb_params = self.inputSpace.vectors().embedding_parameters()
+        if self.optimize_embedding and isinstance(self.inputSpace.subspace.vectors(), Embedding):
+            emb_params = self.inputSpace.subspace.vectors().embedding_parameters()
             self.inputSpace.params = self.inputSpace.params + emb_params
         # embeddingScale: weight of embedding loss in JOINT mode
         self.loss.embedding_scale = float(_t("embeddingScale") or 0.1)
         # Propagate flag to Embedding so forward()/reverse() can detach
-        if isinstance(self.inputSpace.vectors(), Embedding):
-            self.inputSpace.vectors().optimize_embedding = self.optimize_embedding
-            object.__setattr__(self.inputSpace.vectors(), '_model', self)
+        if isinstance(self.inputSpace.subspace.vectors(), Embedding):
+            self.inputSpace.subspace.vectors().optimize_embedding = self.optimize_embedding
+            object.__setattr__(self.inputSpace.subspace.vectors(), '_model', self)
         # Auto-load weights if configured
         if _t("autoload"):
             wpath = TheXMLConfig.get("architecture.weightsPath")
@@ -3491,7 +3486,7 @@ class BasicModel(BaseModel):
         # Convert masked-word string labels to embedding vectors now that
         # the Embedding vocabulary is available.
         if data is not None and hasattr(data, '_lm_labels') and data._lm_labels is not None:
-            embedding = self.inputSpace.vectorSet[0] if self.inputSpace.vectorSet else None
+            embedding = self.inputSpace.subspace.vectors() if self.inputSpace.subspace.what is not None else None
             if embedding is not None and hasattr(embedding, 'pretrain'):
                 data.prepare_lm_targets(embedding)
                 # Move new targets to device
@@ -3522,7 +3517,7 @@ class BasicModel(BaseModel):
         self.outputSpace     = OutputSpace(nOutputSymbols,
                                            nActiveOutput=nOutput,
                                            masked_prediction=(masked_prediction != 'NONE'),
-                                           vectors=self.inputSpace.vectors())
+                                           vectors=self.inputSpace.subspace.vectors())
         self.spaces.extend([self.outputSpace])
         self.inputSpace.outputSpace = self.outputSpace
 
@@ -3946,7 +3941,7 @@ class BasicModel(BaseModel):
         if train:
             te = getattr(self, 'train_embedding', 'NONE')
             if te == 'JOINT':
-                emb = self.inputSpace.vectors()
+                emb = self.inputSpace.subspace.vectors()
                 if isinstance(emb, Embedding):
                     sentences = self._get_sentences(split)
                     if sentences and sentenceIdx < len(sentences):
@@ -4039,7 +4034,7 @@ class BasicModel(BaseModel):
                 if training:
                     te = getattr(self, 'train_embedding', 'NONE')
                     if masked_pred and te in ('CBOW', 'SBOW', 'BOTH'):
-                        emb = self.inputSpace.vectors()
+                        emb = self.inputSpace.subspace.vectors()
                         if isinstance(emb, Embedding):
                             sentences = self._get_sentences(split)
                             if sentences and batchIdx < len(sentences):
@@ -4143,7 +4138,7 @@ class MentalModel(BaseModel):
         self.outputSpace = OutputSpace(
             nSymbols,
             masked_prediction=(masked_prediction != 'NONE'),
-            vectors=self.inputSpace.vectors(),
+            vectors=self.inputSpace.subspace.vectors(),
         )
 
         self.spaces.extend([

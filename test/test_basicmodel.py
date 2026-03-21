@@ -2227,7 +2227,7 @@ class TestExpandMaskedTargets(unittest.TestCase):
         nInput = 8
         self.inp = InputSpace(nInput, nInput,
                               model_type="embedding")
-        self.emb = self.inp.vectors()
+        self.emb = self.inp.subspace.vectors()
 
         # Build a minimal OutputSpace
         self.out = OutputSpace(nActiveInput=8, nActiveOutput=4)
@@ -2389,7 +2389,7 @@ class TestRARLMTargets(unittest.TestCase):
         nInput = 8
         self.inp = InputSpace(nInput, nInput,
                               model_type="embedding")
-        self.emb = self.inp.vectors()
+        self.emb = self.inp.subspace.vectors()
 
         self.out = OutputSpace(nActiveInput=8, nActiveOutput=4)
 
@@ -2545,8 +2545,8 @@ class TestVocabSaveRestore(unittest.TestCase):
             self.assertEqual(list(emb2.pretrain.index_to_key), vocab_before)
             # Embedding shapes must match exactly
             torch.testing.assert_close(
-                m2.state_dict()["inputSpace.vectorSet.0.wv._vectors"],
-                m1.state_dict()["inputSpace.vectorSet.0.wv._vectors"])
+                m2.state_dict()["inputSpace.subspace.what.wv._vectors"],
+                m1.state_dict()["inputSpace.subspace.what.wv._vectors"])
         finally:
             os.unlink(emb_path)
 
