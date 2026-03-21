@@ -219,7 +219,7 @@ class Data():
         saved_input = self.train_input
         saved_output = self.train_output
         self.train_input = inputs
-        self.train_output = outputs or []
+        self.train_output = outputs
         self._runtime_mode = mode
         try:
             yield

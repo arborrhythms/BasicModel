@@ -29,7 +29,6 @@ from BasicModel import (
     BaseModel,
     Data,
     TheDevice,
-    TheObjectEncoding,
 )
 from util import ProjectPaths
 

@@ -8,6 +8,7 @@
     <ergodic>false</ergodic>
     <certainty>false</certainty>
     <modelType>embedding</modelType>
+    <weightsPath>weights.ckpt</weightsPath>
 
     <data>
       <dataset>text</dataset>
@@ -18,7 +19,6 @@
       <numEpochs>10</numEpochs>
       <batchSize>10</batchSize>
       <learningRate>0.01</learningRate>
-      <weightsPath>weights.ckpt</weightsPath>
       <autoload>true</autoload>
       <autosave>false</autosave>
     </training>

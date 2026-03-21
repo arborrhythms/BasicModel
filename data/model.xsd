@@ -35,6 +35,10 @@
       <xs:element name="data" type="dataType" minOccurs="0"/>
       <xs:element name="training" type="trainingType" minOccurs="0"/>
       <xs:element name="server" type="serverType" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="embeddingPath" type="xs:string" minOccurs="0"/>
+      <xs:element name="weightsPath" type="xs:string" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -65,6 +69,8 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="none"/>
       <xs:enumeration value="symbols"/>
+      <xs:enumeration value="output"/>
+      <xs:enumeration value="both"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -166,8 +172,6 @@
       <xs:element name="negSamples" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="trainEmbedding" type="trainEnum" minOccurs="0"/>
       <xs:element name="embeddingScale" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="embeddingPath" type="xs:string" minOccurs="0"/>
-      <xs:element name="weightsPath" type="xs:string" minOccurs="0"/>
       <xs:element name="autoload" type="xs:boolean" minOccurs="0"/>
       <xs:element name="autosave" type="xs:boolean" minOccurs="0"/>
     </xs:all>
@@ -202,8 +206,6 @@
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="nWhere" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="nWhen" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="lexer" type="lexerEnum" minOccurs="0"/>
     </xs:all>

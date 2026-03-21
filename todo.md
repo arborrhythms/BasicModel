@@ -1,5 +1,6 @@
 ## Per-Space Encoding, `ActiveEncoding`, and `SubSpace` Refactor
 
+
 ### Summary
 Refactor the model away from the global `ObjectEncoding` / `TheObjectEncoding` design and toward per-space encoding ownership plus a single runtime `SubSpace` object.
 
@@ -26,7 +27,7 @@ Implement this design in [basicmodel/bin/BasicModel.py](/Users/arogers/Library/M
   - In v1, the canonical payload is dense scalar activation per active slot, not a new sparse-index structure.
 - Keep `activation` as the payload name and `ActiveEncoding` as the codec name.
 - Keep encode/decode logic on the `*Encoding` objects only. `SubSpace` is a state container and materialization adapter, not a codec.
-- Make dimensions and sizes derived from attached tensors and encoding objects, not from a global singleton.
+- Make dimensions and sizes derived from TheModelConfig.
 - `SubSpace.materialize()` should return the dense tensor expected by the current code.
   - For `reshape=True`, the whole representation is treated as `what`.
   - For `reshape=False`, materialize the current dense stand-in tensor without inventing new implicit activation math.
@@ -51,7 +52,6 @@ Delete `ObjectEncoding` and `TheObjectEncoding` from the runtime design.
   - It owns reshape, flatten, unflatten, and shape validation.
   - It must not depend on global `inputDim`, `perceptDim`, `conceptDim`, `objectSize`, `nWhere`, or `nWhen`.
 - `ActiveEncoding`, `WhereEncoding`, and `WhenEncoding` must also be owned per space when that space uses them.
-- `create_from_config()` must stop writing dimensions into a global encoding singleton and instead pass those values into each space constructor.
 - `VectorSet`, `Embedding`, and related helpers must stop depending on global object-encoding state and instead receive the sizes and encoding references they need from the owning space.
 
 ### Part 3: Pass `SubSpace` objects between spaces

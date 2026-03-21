@@ -91,11 +91,9 @@ def read_xml_config(xml_path):
     arch = root.find("architecture")
     result = {}
     if arch is not None:
-        trn = arch.find("training")
-        if trn is not None:
-            ep = trn.findtext("embeddingPath")
-            if ep:
-                result["embeddingPath"] = ep
+        ep = arch.findtext("embeddingPath")
+        if ep:
+            result["embeddingPath"] = ep
     return result
 
 

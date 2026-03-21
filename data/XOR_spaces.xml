@@ -11,6 +11,7 @@
     <symbolicOrder>1</symbolicOrder>
     <modelType>embedding</modelType>
     <ergodic>false</ergodic>
+    <weightsPath>XOR_spaces.ckpt</weightsPath>
 
     <data>
       <dataset>inline</dataset>
@@ -23,7 +24,6 @@
     <training>
       <numEpochs>600</numEpochs>
       <learningRate>0.01</learningRate>
-      <weightsPath>XOR_spaces.ckpt</weightsPath>
       <autosave>false</autosave>
       <autoload>false</autoload>
     </training>

@@ -2126,8 +2126,6 @@ class CorrMem(Mem):
 # LogicNet disabled — torchlogix einsum ops incompatible with MPS
 class LogicLayer(Layer):
 
-
-
     def _pairwise_sq_dists(X: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
         """
         X: (B, N, D)
@@ -2140,7 +2138,6 @@ class LogicLayer(Layer):
         xy = torch.bmm(X, Y.transpose(1, 2))                   # (B, N, M)
         d2 = x2 + y2 - 2.0 * xy
         return d2.clamp_min(0.0)
-
 
     def _expand_sigma(
         sigma: Optional[torch.Tensor | float],
@@ -2174,7 +2171,6 @@ class LogicLayer(Layer):
             return sigma.to(device=device, dtype=dtype)
 
         raise ValueError("sigma must be None, scalar, shape (N,), or shape (B,N)")
-
 
     def kernel_overlap(
         X: torch.Tensor,
@@ -2210,7 +2206,6 @@ class LogicLayer(Layer):
         denom = 2.0 * (sx.unsqueeze(2).square() + sy.unsqueeze(1).square()) + eps
         return torch.exp(-d2 / denom)
 
-
     def union(X: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
         """
         Mereological union as set concatenation.
@@ -2226,7 +2221,6 @@ class LogicLayer(Layer):
         if X.shape[0] != Y.shape[0] or X.shape[2] != Y.shape[2]:
             raise ValueError("Batch size and feature dimension must match")
         return torch.cat([X, Y], dim=1)
-
 
     def intersection(
         X: torch.Tensor,
@@ -2299,7 +2293,6 @@ class LogicLayer(Layer):
 
         return Z, W
 
-
     def part(
         X: torch.Tensor,
         Y: torch.Tensor,
@@ -2368,7 +2361,6 @@ class LogicLayer(Layer):
 
         return out
 
-
     def neg(X: torch.Tensor) -> torch.Tensor:
         """
         Affirming negation on the hypersphere:
@@ -2379,7 +2371,6 @@ class LogicLayer(Layer):
             (B, N, D)
         """
         return -X
-
 
     def non(X: torch.Tensor, alpha: float = 0.0) -> torch.Tensor:
         """

@@ -22,6 +22,10 @@ if _BIN not in sys.path:
 
 _CONFIG = os.path.join(_PROJECT, "data", "XOR_spaces.xml")
 
+_TEST = os.path.dirname(os.path.abspath(__file__))
+if _TEST not in sys.path:
+    sys.path.insert(0, _TEST)
+from test_basicmodel import _populate_test_config
 
 # ---------------------------------------------------------------------------
 # Config parsing
@@ -151,17 +155,17 @@ class TestXORSpacesModel(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import torch
-        from BasicModel import BasicModel, Data, TheObjectEncoding
-        # Load config, extract inline dat, and populate TheData-like object
+        from BasicModel import BasicModel, TheData
+        # Load config, extract inline data into TheData singleton
         cfg = BasicModel.load_config(_CONFIG)
         arch = cfg.get("architecture", {})
         dat = arch.get("data", {})
 
-        cls.data = Data()
-        cls.data.load("inline", dat=dat)
+        TheData.load("inline", dat=dat)
+        cls.data = TheData
 
         cls.model = BasicModel()
-        cls.model.create_from_config(_CONFIG, data=cls.data)
+        cls.model.create_from_config(_CONFIG, data=TheData)
 
     def test_model_has_input_space(self):
         self.assertTrue(hasattr(self.model, "inputSpace"))
@@ -224,26 +228,18 @@ class TestSpacePrediction(unittest.TestCase):
         being inserted between them — spaces must come from predicted tokens.
         """
         import torch
-        from BasicModel import (InputSpace, Data, OutputSpace,
-                                TheObjectEncoding, Embedding)
-
-        data = Data()
-        data.load("xor")
+        from BasicModel import (InputSpace, TheData, OutputSpace,
+                                TheXMLConfig, Embedding)
 
         nInput = 8
-        TheObjectEncoding.inputDim = 10
-        TheObjectEncoding.nInput = nInput
-        # Ensure objectSize=4 so content dims (0..9) and positional dims (10..13)
-        # are properly separated; PositionalEncoding always uses last 2 dims.
-        TheObjectEncoding.nWhere = 2
-        TheObjectEncoding.nWhen = 2
-        TheObjectEncoding.objectSize = 4
-        TheObjectEncoding.nObjects = 0
-        TheObjectEncoding.computeNObjects()
+        _populate_test_config(inputDim=10, nInput=nInput,
+                              nPercepts=nInput, nConcepts=nInput,
+                              nSymbols=nInput, nWords=nInput, nOutput=nInput,
+                              nWhere=2, nWhen=2, reshape=True)
+        TheData.load("xor")
 
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", embedding_path=None,
-                         data=data, lexer="word")
+                         model_type="embedding")
         emb = inp.vectors()
         self.assertIsInstance(emb, Embedding)
 
@@ -253,7 +249,7 @@ class TestSpacePrediction(unittest.TestCase):
         codebook = emb.wv._vectors.detach()
         words_list = emb.wv.index_to_key
         embSize = emb.embeddingSize
-        nWhat = embSize - TheObjectEncoding.objectSize  # content dims only
+        nWhat = embSize - TheXMLConfig.objectSize  # content dims only
 
         # Find two non-[MASK] tokens that are NOT the space or \x00 sentinel
         usable = [j for j, w in enumerate(words_list)
@@ -279,26 +275,18 @@ class TestSpacePrediction(unittest.TestCase):
     def test_space_token_predicted_by_reverse(self):
         """When a space vector is placed in output, it decodes to ' '."""
         import torch
-        from BasicModel import (InputSpace, Data, OutputSpace,
-                                TheObjectEncoding, Embedding)
-
-        data = Data()
-        data.load("xor")
+        from BasicModel import (InputSpace, TheData, OutputSpace,
+                                TheXMLConfig, Embedding)
 
         nInput = 8
-        TheObjectEncoding.inputDim = 10
-        TheObjectEncoding.nInput = nInput
-        # Ensure objectSize=4 so content dims (0..9) and positional dims (10..13)
-        # are properly separated.
-        TheObjectEncoding.nWhere = 2
-        TheObjectEncoding.nWhen = 2
-        TheObjectEncoding.objectSize = 4
-        TheObjectEncoding.nObjects = 0
-        TheObjectEncoding.computeNObjects()
+        _populate_test_config(inputDim=10, nInput=nInput,
+                              nPercepts=nInput, nConcepts=nInput,
+                              nSymbols=nInput, nWords=nInput, nOutput=nInput,
+                              nWhere=2, nWhen=2, reshape=True)
+        TheData.load("xor")
 
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", embedding_path=None,
-                         data=data, lexer="word")
+                         model_type="embedding")
         emb = inp.vectors()
         self.assertIn(" ", emb.pretrain.key_to_index)
 
@@ -308,7 +296,7 @@ class TestSpacePrediction(unittest.TestCase):
         space_idx = emb.pretrain.key_to_index[" "]
         codebook = emb.wv._vectors.detach()
         embSize = emb.embeddingSize
-        nWhat = embSize - TheObjectEncoding.objectSize  # content dims only
+        nWhat = embSize - TheXMLConfig.objectSize  # content dims only
 
         vectors = torch.zeros([1, 1, embSize])
         # Assign only the content dims; positional slots remain 0 → consecutive mode
@@ -337,23 +325,17 @@ class TestNullEOS(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import torch
-        from BasicModel import InputSpace, Data, OutputSpace, TheObjectEncoding, Embedding
-
-        data = Data()
-        data.load("xor")
+        from BasicModel import InputSpace, TheData, OutputSpace, TheXMLConfig, Embedding
 
         nInput = 8
-        TheObjectEncoding.inputDim = 10
-        TheObjectEncoding.nInput = nInput
-        TheObjectEncoding.nWhere = 2
-        TheObjectEncoding.nWhen = 2
-        TheObjectEncoding.objectSize = 4
-        TheObjectEncoding.nObjects = 0
-        TheObjectEncoding.computeNObjects()
+        _populate_test_config(inputDim=10, nInput=nInput,
+                              nPercepts=nInput, nConcepts=nInput,
+                              nSymbols=nInput, nWords=nInput, nOutput=nInput,
+                              nWhere=2, nWhen=2, reshape=True)
+        TheData.load("xor")
 
         cls.inp = InputSpace(nInput, nInput,
-                             model_type="embedding", embedding_path=None,
-                             data=data, lexer="word")
+                             model_type="embedding")
         cls.emb = cls.inp.vectors()
         cls.os_ = OutputSpace(nInput, 4)
         cls.os_.set_text_mode(cls.inp)
@@ -394,7 +376,7 @@ class TestNullEOS(unittest.TestCase):
         Expected output:   word_A + \\x00  (stopped before B, buffer terminated)
         """
         import torch
-        from BasicModel import TheObjectEncoding
+        from BasicModel import TheXMLConfig
 
         emb = self.emb
         self.assertIn("\x00", emb.pretrain.key_to_index)
@@ -402,7 +384,7 @@ class TestNullEOS(unittest.TestCase):
         codebook = emb.wv._vectors.detach()
         words_list = emb.wv.index_to_key
         embSize = emb.embeddingSize
-        nWhat = embSize - TheObjectEncoding.objectSize
+        nWhat = embSize - TheXMLConfig.objectSize
 
         null_idx = emb.pretrain.key_to_index["\x00"]
 
@@ -435,7 +417,7 @@ class TestNullEOS(unittest.TestCase):
         first N slots and the rest are padding (zero vectors → \\x00).
         """
         import torch
-        from BasicModel import TheObjectEncoding
+        from BasicModel import TheXMLConfig
 
         emb = self.emb
         self.assertIn("\x00", emb.pretrain.key_to_index)
@@ -443,7 +425,7 @@ class TestNullEOS(unittest.TestCase):
         codebook = emb.wv._vectors.detach()
         words_list = emb.wv.index_to_key
         embSize = emb.embeddingSize
-        nWhat = embSize - TheObjectEncoding.objectSize
+        nWhat = embSize - TheXMLConfig.objectSize
 
         null_idx = emb.pretrain.key_to_index["\x00"]
 

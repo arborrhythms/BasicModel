@@ -8,6 +8,7 @@
     <modelType>embedding</modelType>
     <ergodic>false</ergodic>
     <naive>true</naive>
+    <weightsPath></weightsPath>
 
     <data>
       <dataset>xor</dataset>
@@ -16,7 +17,6 @@
     <training>
       <numEpochs>600</numEpochs>
       <learningRate>0.01</learningRate>
-      <weightsPath></weightsPath>
       <autosave>false</autosave>
       <autoload>false</autoload>
     </training>

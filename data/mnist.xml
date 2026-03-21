@@ -3,6 +3,7 @@
   <architecture>
     <conceptualOrder>2</conceptualOrder>
     <modelType>passthrough</modelType>
+    <weightsPath>mnist_weights.ckpt</weightsPath>
 
     <data>
       <dataset>mnist</dataset>
@@ -12,7 +13,6 @@
 
     <training>
       <numEpochs>10</numEpochs>
-      <weightsPath>mnist_weights.ckpt</weightsPath>
       <autosave>true</autosave>
     </training>
   </architecture>

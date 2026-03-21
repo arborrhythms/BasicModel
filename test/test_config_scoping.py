@@ -86,8 +86,11 @@ class TestDefaultsXml(unittest.TestCase):
             self.assertIn(key, arch, f"architecture missing model-wide key '{key}'")
         trn = arch.get("training", {})
         for key in ["numTrials", "numEpochs", "batchSize", "learningRate",
-                    "weightsPath", "autoload", "autosave"]:
+                    "autoload", "autosave"]:
             self.assertIn(key, trn, f"architecture.training missing key '{key}'")
+        # weightsPath and embeddingPath are at architecture level, not training
+        for key in ["weightsPath", "embeddingPath"]:
+            self.assertIn(key, arch, f"architecture missing key '{key}'")
         dat = arch.get("data", {})
         self.assertIn("dataset", dat, "architecture.data missing 'dataset'")
 
@@ -110,8 +113,9 @@ class TestCreateFromConfig(unittest.TestCase):
   <architecture>
     <reconstruct>symbols</reconstruct>
     <reshape>true</reshape>
+    <modelType>embedding</modelType>
     <data><dataset>xor</dataset></data>
-    <training><modelType>embedding</modelType></training>
+    <training><autoload>false</autoload></training>
   </architecture>
   <InputSpace><nActive>2</nActive><nDim>1</nDim></InputSpace>
   <PerceptualSpace>

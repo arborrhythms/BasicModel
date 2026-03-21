@@ -7,6 +7,7 @@
     <symbolicOrder>1</symbolicOrder>
     <modelType>embedding</modelType>
     <ergodic>false</ergodic>
+    <weightsPath>xor_3d_weights.ckpt</weightsPath>
 
     <data>
       <dataset>xor</dataset>
@@ -15,7 +16,6 @@
     <training>
       <numEpochs>1000</numEpochs>
       <learningRate>0.01</learningRate>
-      <weightsPath>xor_3d_weights.ckpt</weightsPath>
       <autosave>false</autosave>
       <autoload>false</autoload>
     </training>

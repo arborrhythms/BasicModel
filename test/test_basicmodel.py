@@ -31,6 +31,100 @@ if _BIN not in sys.path:
 from BasicModel import TheDevice
 
 
+def _populate_test_config(*,
+                          inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0,
+                          wordDim=1, outputDim=1,
+                          nInput=16, nPercepts=16, nConcepts=8, nSymbols=8,
+                          nWords=16, nOutput=4,
+                          nWhere=0, nWhen=0,
+                          reconstruct="NONE", reshape=False, ergodic=False,
+                          naive=False, processSymbols=False,
+                          perceptPassThrough=False, symbolPassThrough=False,
+                          perceptHasAttention=True, conceptHasAttention=False,
+                          invertible=False, hasNorm=False, quantized=False,
+                          perceptQuantized=None, conceptQuantized=None,
+                          certainty=False,
+                          lexer="word"):
+    """Populate TheXMLConfig._data — test equivalent of XML loading.
+
+    Space constructors read nDim/nVectors from TheXMLConfig.  In production,
+    the XML file provides these.  In tests, this helper provides them directly.
+    """
+    from BasicModel import TheXMLConfig, TheData
+    # Reset global state to prevent cross-test pollution
+    TheXMLConfig._requirements.clear()
+    TheData.train_input = []
+    TheData.test_input = []
+    TheData.train_output = []
+    TheData.test_output = []
+    _pq = perceptQuantized if perceptQuantized is not None else quantized
+    _cq = conceptQuantized if conceptQuantized is not None else quantized
+    _objectSize = nWhere + nWhen
+    _nObjects = nInput + nPercepts + nConcepts + nSymbols + nWords + nOutput
+    _symbol_dim = conceptDim if symbolPassThrough else symbolDim
+    TheXMLConfig._data.update({
+        "architecture": {
+            "reconstruct": reconstruct,
+            "reshape": reshape,
+            "ergodic": ergodic,
+            "naive": naive,
+            "processSymbols": processSymbols,
+            "certainty": certainty,
+            "objectSize": _objectSize,
+            "nObjects": _nObjects,
+            "nWhere": nWhere,
+            "nWhen": nWhen,
+            "embeddingPath": None,
+            "data": {},
+            "training": {},
+        },
+        "InputSpace": {
+            "nActive": nInput,
+            "nDim": inputDim,
+            "nVectors": nInput,
+            "quantized": quantized,
+            "lexer": lexer,
+        },
+        "PerceptualSpace": {
+            "nActive": nPercepts,
+            "nDim": perceptDim,
+            "nVectors": nPercepts,
+            "quantized": _pq,
+            "passThrough": perceptPassThrough,
+            "hasAttention": perceptHasAttention,
+            "invertible": invertible,
+        },
+        "ConceptualSpace": {
+            "nActive": nConcepts,
+            "nDim": conceptDim,
+            "nVectors": nConcepts,
+            "quantized": _cq,
+            "hasAttention": conceptHasAttention,
+            "hasNorm": hasNorm,
+            "invertible": invertible,
+        },
+        "SymbolicSpace": {
+            "nActive": nSymbols,
+            "nDim": _symbol_dim,
+            "nVectors": nSymbols,
+            "passThrough": symbolPassThrough,
+            "quantized": False,
+        },
+        "SyntacticSpace": {
+            "nActive": nWords,
+            "nDim": wordDim,
+            "nVectors": nWords,
+            "quantized": False,
+        },
+        "OutputSpace": {
+            "nActive": nOutput,
+            "nDim": outputDim,
+            "nVectors": nOutput,
+            "quantized": False,
+        },
+    })
+
+
 # ---------------------------------------------------------------------------
 # Model.py — Layer tests
 # ---------------------------------------------------------------------------
@@ -203,45 +297,17 @@ class TestSymPercept(unittest.TestCase):
 # Simple path: BasicModel with conceptualOrder=1, symbolicOrder=1
 # ---------------------------------------------------------------------------
 def _make_simple_model(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nWords=16, nOutput=4):
-    """Helper to create a BasicModel with ObjectEncoding set up for simple path.
-
-    Sets both dims and codebook sizes (n* values) on TheObjectEncoding.
-    Caller can override counts if needed.
-    """
-    from BasicModel import BasicModel, TheObjectEncoding
-    TheObjectEncoding.nWhere = 0
-    TheObjectEncoding.nWhen = 0
-    TheObjectEncoding.objectSize = 0
-    TheObjectEncoding.setInputDim(1)
-    TheObjectEncoding.setPerceptDim(1)
-    TheObjectEncoding.setConceptDim(1)
-    TheObjectEncoding.setSymbolDim(0)
-    TheObjectEncoding.setWordDim(1)
-    TheObjectEncoding.setOutputDim(1)
-    TheObjectEncoding.nInput = nInput
-    TheObjectEncoding.nPercepts = nPercepts
-    TheObjectEncoding.nConcepts = nConcepts
-    TheObjectEncoding.nSymbols = nSymbols
-    TheObjectEncoding.nWords = nWords
-    TheObjectEncoding.nOutput = nOutput
-    TheObjectEncoding.nObjects = 0  # reset for test isolation
-    TheObjectEncoding.computeNObjects()
+    """Helper to create a BasicModel with config set up for simple path."""
+    from BasicModel import BasicModel
+    _populate_test_config(
+        inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+        nInput=nInput, nPercepts=nPercepts, nConcepts=nConcepts,
+        nSymbols=nSymbols, nWords=nWords, nOutput=nOutput,
+        symbolPassThrough=True)
     return BasicModel()
 
 
 class TestSimpleModelCreation(unittest.TestCase):
-
-    def setUp(self):
-        from BasicModel import TheObjectEncoding
-        self._orig_nWhere = TheObjectEncoding.nWhere
-        self._orig_nWhen = TheObjectEncoding.nWhen
-        self._orig_objectSize = TheObjectEncoding.objectSize
-
-    def tearDown(self):
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = self._orig_nWhere
-        TheObjectEncoding.nWhen = self._orig_nWhen
-        TheObjectEncoding.objectSize = self._orig_objectSize
 
     def test_simple_model_creation(self):
         model = _make_simple_model()
@@ -249,20 +315,27 @@ class TestSimpleModelCreation(unittest.TestCase):
 
     def test_simple_model_traditional(self):
         """BasicModel (simple path) with ergodic=False produces valid output."""
-        model = _make_simple_model(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
-        model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
-                       perceptPassThrough=True, symbolPassThrough=True,
-                       reshape=True)
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
+            perceptPassThrough=True, symbolPassThrough=True, reshape=True)
+        from BasicModel import BasicModel
+        model = BasicModel()
+        model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
         x = torch.randn(2, 28*28, 1).to(TheDevice)  # batch of 2, flattened MNIST, dim=1
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)  # batch size preserved
 
     def test_simple_model_ergodic(self):
         """BasicModel (simple path) with ergodic=True uses SigmaLayer path."""
-        model = _make_simple_model(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
-        model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
-                       perceptPassThrough=True, symbolPassThrough=True,
-                       ergodic=True, certainty=True, reshape=True)
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, certainty=True, reshape=True)
+        from BasicModel import BasicModel
+        model = BasicModel()
+        model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
         x = torch.randn(2, 28*28, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -318,7 +391,7 @@ class TestWhereEncodingRoundTrip(unittest.TestCase):
         from BasicModel import WhereEncoding
         maxP = 4096
         pe = WhereEncoding(maxP)
-        buf = torch.zeros(1, 1, 10)
+        buf = torch.zeros(1, 1, 10, device=TheDevice)
         offsets = [0, 1, 5, 11, 42, 100, 255, 1000]
         for offset in offsets:
             pe.stamp(buf, 0, 0, offset)
@@ -332,7 +405,7 @@ class TestWhereEncodingRoundTrip(unittest.TestCase):
         pe = WhereEncoding(maxP)
         pe.p = 0
         batch, n = 4, 3
-        x = torch.zeros(batch, n, 10)
+        x = torch.zeros(batch, n, 10, device=TheDevice)
         y = pe.forward(x)
         _, decoded = pe.reverse(y)
         for b in range(batch):
@@ -347,7 +420,7 @@ class TestWhereEncodingRoundTrip(unittest.TestCase):
         from BasicModel import WhereEncoding
         pe = WhereEncoding(1000)
         pe.p = 0
-        x = torch.randn(2, 3, 10)
+        x = torch.randn(2, 3, 10, device=TheDevice)
         original = x.clone()
         y = pe.forward(x)
         cleaned, _ = pe.reverse(y)
@@ -364,7 +437,7 @@ class TestWhenEncodingRoundTrip(unittest.TestCase):
         maxT = 10000
         te = WhenEncoding(maxT)
         te.t = 0
-        x = torch.zeros(5, 2, 10)
+        x = torch.zeros(5, 2, 10, device=TheDevice)
         y = te.forward(x)
         _, decoded = te.reverse(y)
         expected = torch.arange(0, 5, dtype=torch.float32)
@@ -380,7 +453,7 @@ class TestWhenEncodingRoundTrip(unittest.TestCase):
         maxT = 10000
         te = WhenEncoding(maxT)
         te.t = 500
-        x = torch.zeros(3, 1, 10)
+        x = torch.zeros(3, 1, 10, device=TheDevice)
         y = te.forward(x)
         _, decoded = te.reverse(y)
         expected = torch.arange(500, 503, dtype=torch.float32)
@@ -394,7 +467,7 @@ class TestWhenEncodingRoundTrip(unittest.TestCase):
         from BasicModel import WhenEncoding
         te = WhenEncoding(10000)
         te.t = 0
-        x = torch.randn(2, 3, 10)
+        x = torch.randn(2, 3, 10, device=TheDevice)
         original = x.clone()
         y = te.forward(x)
         cleaned, _ = te.reverse(y)
@@ -403,76 +476,212 @@ class TestWhenEncodingRoundTrip(unittest.TestCase):
         torch.testing.assert_close(cleaned[:, :, mask], original[:, :, mask])
 
 
+# SubSpace — derived sizes, materialization, construction helpers
+# ---------------------------------------------------------------------------
+class TestSubSpaceDerivedSizes(unittest.TestCase):
+    """SubSpace.getEncodingSize and getEmbeddedIO match ObjectEncoding math."""
+
+    def test_getEncodingSize_adds_objectSize(self):
+        from BasicModel import SubSpace, WhereEncoding, WhenEncoding
+        ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
+                      inputShape=[3, 8], outputShape=[3, 8])
+        self.assertEqual(ss.getEncodingSize(8), 12)
+        self.assertEqual(ss.getEncodingSize(0), 4)
+
+    def test_getEmbeddedIO_no_reshape(self):
+        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, WhatEncoding
+        ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
+                      whatEncoding=WhatEncoding([3, 8], [5, 16], reshape=False, objectSize=4),
+                      reshape=False,
+                      inputShape=[3, 8], outputShape=[5, 16])
+        inp, out = ss.getEmbeddedIO()
+        self.assertEqual(inp, 8 + 4)   # nDim + objectSize
+        self.assertEqual(out, 16 + 4)
+
+    def test_getEmbeddedIO_reshape(self):
+        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, WhatEncoding
+        ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
+                      whatEncoding=WhatEncoding([3, 8], [5, 16], reshape=True, objectSize=4),
+                      reshape=True,
+                      inputShape=[3, 8], outputShape=[5, 16])
+        inp, out = ss.getEmbeddedIO()
+        self.assertEqual(inp, (8 + 4) * 3)
+        self.assertEqual(out, (16 + 4) * 5)
+
+    def test_zero_objectSize(self):
+        from BasicModel import SubSpace, WhatEncoding
+        ss = SubSpace(whatEncoding=WhatEncoding([2, 10], [2, 10]),
+                      inputShape=[2, 10], outputShape=[2, 10])
+        inp, out = ss.getEmbeddedIO()
+        self.assertEqual(inp, 10)
+        self.assertEqual(out, 10)
+
+
+class TestSubSpaceMaterialize(unittest.TestCase):
+    """SubSpace.materialize() returns the expected dense tensor."""
+
+    def test_materialize_tensor(self):
+        from BasicModel import SubSpace, WhereEncoding, WhenEncoding
+        t = torch.randn(2, 4, 12)
+        ss = SubSpace.from_tensor(t, whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
+                                  inputShape=[4, 8], outputShape=[4, 8])
+        result = ss.materialize()
+        self.assertIs(result, t)
+
+    def test_materialize_none_when_unset(self):
+        from BasicModel import SubSpace, WhereEncoding, WhenEncoding
+        ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
+                      inputShape=[4, 8], outputShape=[4, 8])
+        self.assertIsNone(ss.materialize())
+
+    def test_shape_property(self):
+        from BasicModel import SubSpace
+        t = torch.randn(2, 4, 12)
+        ss = SubSpace.from_tensor(t, inputShape=[4, 8], outputShape=[4, 8])
+        self.assertEqual(ss.shape, torch.Size([2, 4, 12]))
+
+    def test_shape_property_none(self):
+        from BasicModel import SubSpace
+        ss = SubSpace(inputShape=[4, 8], outputShape=[4, 8])
+        self.assertIsNone(ss.shape)
+
+
+class TestSubSpaceProperties(unittest.TestCase):
+    """SubSpace batch tracking."""
+
+    def test_batch_from_tensor(self):
+        from BasicModel import SubSpace
+        t = torch.randn(5, 4, 8, device=TheDevice)
+        ss = SubSpace.from_tensor(t, inputShape=[4, 4], outputShape=[4, 4])
+        self.assertEqual(ss.batch, 5)
+
+    def test_batch_zero_when_empty(self):
+        from BasicModel import SubSpace
+        ss = SubSpace(inputShape=[4, 8], outputShape=[4, 8])
+        self.assertEqual(ss.batch, 0)
+
+
+class TestSubSpaceConstruction(unittest.TestCase):
+    """SubSpace.from_tensor and from_components helpers."""
+
+    def test_from_tensor(self):
+        from BasicModel import SubSpace, WhereEncoding, WhenEncoding
+        t = torch.randn(2, 3, 10)
+        ss = SubSpace.from_tensor(t, whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
+                                  inputShape=[3, 6], outputShape=[3, 6])
+        self.assertIs(ss.what, t)
+        self.assertEqual(ss.objectSize, 4)
+        self.assertEqual(ss.inputShape, [3, 6])
+
+    def test_from_components(self):
+        from BasicModel import SubSpace, ActiveEncoding, WhereEncoding, WhenEncoding
+        what = torch.randn(2, 4, 8)
+        act = torch.ones(2, 4)
+        ae = ActiveEncoding()
+        ss = SubSpace.from_components(
+            what=what, activation=act, activeEncoding=ae,
+            whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
+            inputShape=[4, 4], outputShape=[4, 4])
+        self.assertIs(ss.what, what)
+        self.assertIs(ss.activation, act)
+        self.assertIs(ss.activeEncoding, ae)
+
+    def test_from_components_defaults_none(self):
+        from BasicModel import SubSpace
+        ss = SubSpace.from_components(inputShape=[4, 8], outputShape=[4, 8])
+        self.assertIsNone(ss.what)
+        self.assertIsNone(ss.activation)
+        self.assertIsNone(ss.where)
+        self.assertIsNone(ss.when)
+
+
+class TestSubSpaceActiveEncoding(unittest.TestCase):
+    """ActiveEncoding round-trip through SubSpace."""
+
+    def test_activation_stored_and_retrievable(self):
+        from BasicModel import SubSpace, ActiveEncoding
+        ae = ActiveEncoding()
+        act = torch.tensor([0.5, 0.8, 0.1])
+        encoded = ae.encode(act)
+        ss = SubSpace(activeEncoding=ae, inputShape=[3, 8], outputShape=[3, 8])
+        ss.activation = act
+        decoded = ae.decode(encoded)
+        torch.testing.assert_close(decoded, act)
+
+    def test_two_spaces_independent_encoding(self):
+        """Two SubSpaces can have different objectSize without shared coupling."""
+        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, WhatEncoding
+        ss1 = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
+                        whatEncoding=WhatEncoding([3, 8], [3, 8], objectSize=4),
+                        inputShape=[3, 8], outputShape=[3, 8])
+        ss2 = SubSpace(whatEncoding=WhatEncoding([3, 16], [3, 16]),
+                        inputShape=[3, 16], outputShape=[3, 16])
+        self.assertEqual(ss1.getEncodingSize(8), 12)
+        self.assertEqual(ss2.getEncodingSize(16), 16)
+        inp1, out1 = ss1.getEmbeddedIO()
+        inp2, out2 = ss2.getEmbeddedIO()
+        self.assertEqual(inp1, 12)
+        self.assertEqual(inp2, 16)
+
+
 # Regression: Space shape contracts
 # ---------------------------------------------------------------------------
 class TestCanonicalSpaceShapes(unittest.TestCase):
     """Lock down tensor shapes for canonical Space subclasses."""
 
     def setUp(self):
-        from BasicModel import (TheObjectEncoding, InputSpace,
-                                ConceptualSpace, OutputSpace)
-        TheObjectEncoding.setDimensions(inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0, outputDim=4)
-        TheObjectEncoding.setWordDim(1)
-        TheObjectEncoding.nInput = 4
-        TheObjectEncoding.nPercepts = 4
-        TheObjectEncoding.nConcepts = 4
-        TheObjectEncoding.nSymbols = 4
-        TheObjectEncoding.nWords = 4
-        TheObjectEncoding.nOutput = 4
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        _populate_test_config(
+            inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0, wordDim=1, outputDim=4,
+            nInput=4, nPercepts=4, nConcepts=4, nSymbols=4, nWords=4, nOutput=4,
+            reshape=True)
         self.B = 2  # batch
 
     def test_conceptual_space_forward_shape(self):
-        from BasicModel import ConceptualSpace, TheObjectEncoding
+        from BasicModel import ConceptualSpace, TheXMLConfig
         nIn, nOut, nDim = 4, 4, 8
         cs = ConceptualSpace(nIn, nOut)
-        inEmb = TheObjectEncoding.getObjectEncodingSize(TheObjectEncoding.inputDim)
+        inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("InputSpace", "nDim"))
         x = torch.randn(self.B, nIn, inEmb).to(TheDevice)
         y = cs(x)
-        outEmb = TheObjectEncoding.getObjectEncodingSize(TheObjectEncoding.conceptDim)
+        outEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("ConceptualSpace", "nDim"))
         self.assertEqual(list(y.shape), [self.B, nOut, outEmb])
 
     def test_conceptual_space_reverse_shape(self):
-        from BasicModel import ConceptualSpace, TheObjectEncoding
+        from BasicModel import ConceptualSpace, TheXMLConfig
+        _populate_test_config(
+            inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0, wordDim=1, outputDim=4,
+            nInput=4, nPercepts=4, nConcepts=4, nSymbols=4, nWords=4, nOutput=4,
+            reshape=True, reconstruct="FULL")
         nIn, nOut, nDim = 4, 4, 8
-        cs = ConceptualSpace(nIn, nOut, reversible=True)
-        outEmb = TheObjectEncoding.getObjectEncodingSize(TheObjectEncoding.conceptDim)
+        cs = ConceptualSpace(nIn, nOut)
+        outEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("ConceptualSpace", "nDim"))
         y = torch.randn(self.B, nOut, outEmb).to(TheDevice)
         x = cs.reverse(y)
-        inEmb = TheObjectEncoding.getObjectEncodingSize(TheObjectEncoding.inputDim)
+        inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("InputSpace", "nDim"))
         self.assertEqual(list(x.shape), [self.B, nIn, inEmb])
 
     def test_output_space_forward_shape(self):
-        from BasicModel import OutputSpace, TheObjectEncoding
+        from BasicModel import OutputSpace, TheXMLConfig
         nIn, nOut = 4, 4
         os_ = OutputSpace(nIn, nOut)
-        inEmb = TheObjectEncoding.getObjectEncodingSize(TheObjectEncoding.symbolDim)
+        inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("SymbolicSpace", "nDim"))
         x = torch.randn(self.B, nIn, inEmb).to(TheDevice)
         y = os_(x)
-        self.assertEqual(list(y.shape), [self.B, nOut, TheObjectEncoding.outputDim])
+        self.assertEqual(list(y.shape), [self.B, nOut, TheXMLConfig.space("OutputSpace", "nDim")])
 
 
 class TestSimpleModel(unittest.TestCase):
     """BasicModel (simple path) uses unified Space hierarchy with passThrough SymbolicSpace."""
 
-    def setUp(self):
-        from BasicModel import TheObjectEncoding
-        self._orig_nWhere = TheObjectEncoding.nWhere
-        self._orig_nWhen = TheObjectEncoding.nWhen
-        self._orig_objectSize = TheObjectEncoding.objectSize
-
-    def tearDown(self):
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = self._orig_nWhere
-        TheObjectEncoding.nWhen = self._orig_nWhen
-        TheObjectEncoding.objectSize = self._orig_objectSize
-
     def test_simple_model_ergodic_shapes(self):
-        model = _make_simple_model()
-        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-                       perceptPassThrough=True, symbolPassThrough=True,
-                       ergodic=True, reshape=True)
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, reshape=True)
+        from BasicModel import BasicModel
+        model = BasicModel()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -480,20 +689,28 @@ class TestSimpleModel(unittest.TestCase):
         self.assertEqual(end_state.shape[0], 2)
 
     def test_simple_model_traditional_shapes(self):
-        model = _make_simple_model()
-        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-                       perceptPassThrough=True, symbolPassThrough=True,
-                       reshape=True)
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            reshape=True)
+        from BasicModel import BasicModel
+        model = BasicModel()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
 
     def test_simple_model_reverse_shapes(self):
-        model = _make_simple_model()
-        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-                       perceptPassThrough=True, symbolPassThrough=True,
-                       ergodic=True, reversible=True, reshape=True)
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, reshape=True, reconstruct="FULL")
+        from BasicModel import BasicModel
+        model = BasicModel()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         data, start_state = model.reverse(end_state, out)
@@ -513,46 +730,35 @@ class TestVectorSetVariants(unittest.TestCase):
         self.assertTrue(torch.equal(x, y))
 
     def test_quantized_shape(self):
-        from BasicModel import VectorSet, TheObjectEncoding
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.nInput = 4
-        TheObjectEncoding.nPercepts = 4
-        TheObjectEncoding.nConcepts = 4
-        TheObjectEncoding.nSymbols = 4
-        TheObjectEncoding.nWords = 0
-        TheObjectEncoding.nOutput = 4
-        TheObjectEncoding.computeNObjects()
+        from BasicModel import VectorSet, WhereEncoding, WhenEncoding, TheXMLConfig
+        _populate_test_config(nInput=4, nPercepts=4, nConcepts=4, nSymbols=4,
+                              nWords=0, nOutput=4)
         vs = VectorSet()
-        vs.create(4, 4, 3, customVQ=False)
+        vs.create(4, 4, 3, customVQ=False,
+                  objectSize=TheXMLConfig.objectSize,
+                  where_encoding=WhereEncoding(TheXMLConfig.nObjects),
+                  when_encoding=WhenEncoding(10000))
         vs.addVectors(nVec=4)
         vs = vs.to(TheDevice)
         x = torch.randn(2, 4, 3).to(TheDevice)
         y = vs.forward(x)
         # Output gains ObjectEncoding overhead (nWhere + nWhen)
-        embeddingSize = 3 + TheObjectEncoding.objectSize
+        embeddingSize = 3 + TheXMLConfig.objectSize
         self.assertEqual(list(y.shape), [2, 4, embeddingSize])
 
 
 class TestModelEndToEnd(unittest.TestCase):
     """Lock down full model forward shapes and loss compatibility."""
 
-    def setUp(self):
-        from BasicModel import TheObjectEncoding
-        self._orig_nWhere = TheObjectEncoding.nWhere
-        self._orig_nWhen = TheObjectEncoding.nWhen
-        self._orig_objectSize = TheObjectEncoding.objectSize
-
-    def tearDown(self):
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = self._orig_nWhere
-        TheObjectEncoding.nWhen = self._orig_nWhen
-        TheObjectEncoding.objectSize = self._orig_objectSize
-
     def test_simple_model_ergodic_shapes(self):
-        model = _make_simple_model()
-        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-                       perceptPassThrough=True, symbolPassThrough=True,
-                       ergodic=True, reshape=True)
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, reshape=True)
+        from BasicModel import BasicModel
+        model = BasicModel()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -560,10 +766,14 @@ class TestModelEndToEnd(unittest.TestCase):
         self.assertEqual(end_state.shape[0], 2)
 
     def test_simple_model_traditional_shapes(self):
-        model = _make_simple_model()
-        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-                       perceptPassThrough=True, symbolPassThrough=True,
-                       reshape=True)
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            reshape=True)
+        from BasicModel import BasicModel
+        model = BasicModel()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -571,10 +781,14 @@ class TestModelEndToEnd(unittest.TestCase):
         self.assertEqual(end_state.shape[0], 2)
 
     def test_simple_model_reverse_shapes(self):
-        model = _make_simple_model()
-        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-                       perceptPassThrough=True, symbolPassThrough=True,
-                       ergodic=True, reversible=True, reshape=True)
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, reshape=True, reconstruct="FULL")
+        from BasicModel import BasicModel
+        model = BasicModel()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         data, start_state = model.reverse(end_state, out)
@@ -584,10 +798,14 @@ class TestModelEndToEnd(unittest.TestCase):
     def test_simple_model_loss_runs(self):
         """Verify forward + loss + backward doesn't crash."""
         from BasicModel import CertaintyWeightedCrossEntropy
-        model = _make_simple_model()
-        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-                       perceptPassThrough=True, symbolPassThrough=True,
-                       ergodic=True, certainty=True, reshape=True)
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True,
+            ergodic=True, certainty=True, reshape=True)
+        from BasicModel import BasicModel
+        model = BasicModel()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).to(TheDevice)
         target = torch.randn(2, 4).to(TheDevice)
         _, end_state, out = model.forward(x)
@@ -602,16 +820,17 @@ class TestUniversalTrainingContract(unittest.TestCase):
 
     def test_space_has_training_contract(self):
         from BasicModel import Space
+        _populate_test_config(inputDim=8, nInput=4)
+        Space.config_section = "InputSpace"
         s = Space([4, 8], [4, 8], 4)
+        Space.config_section = None
         self.assertEqual(s.getParameters(), [])
         s.paramUpdate()  # should be a no-op, not crash
 
     def test_conceptual_space_has_training_contract(self):
-        from BasicModel import ConceptualSpace, TheObjectEncoding
-        TheObjectEncoding.setDimensions(inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0, outputDim=4)
-        TheObjectEncoding.nConcepts = 4
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        from BasicModel import ConceptualSpace
+        _populate_test_config(inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0, outputDim=4,
+                              nConcepts=4)
         cs = ConceptualSpace(4, 4)
         params = cs.getParameters()
         self.assertIsInstance(params, list)
@@ -663,6 +882,12 @@ class TestSigmaLayerDeterministic(unittest.TestCase):
 class TestCreateVectorSetQuantized(unittest.TestCase):
     """Space.createVectorSet supports both quantized and unquantized paths."""
 
+    def setUp(self):
+        from BasicModel import Space
+        _populate_test_config(inputDim=3, nInput=4)
+        Space.config_section = "InputSpace"
+        self.addCleanup(setattr, Space, 'config_section', None)
+
     def test_quantized_creates_vectorset(self):
         from BasicModel import Space, VectorSet
         s = Space([4, 3], [4, 3], 4)
@@ -686,129 +911,78 @@ class TestCreateVectorSetQuantized(unittest.TestCase):
 class TestConceptualSpaceErgodic(unittest.TestCase):
     """ConceptualSpace with ergodic flag matches DerivedConceptualSpace behavior."""
 
-    def setUp(self):
-        from BasicModel import TheObjectEncoding
-        self._orig_nWhere = TheObjectEncoding.nWhere
-        self._orig_nWhen = TheObjectEncoding.nWhen
-        self._orig_objectSize = TheObjectEncoding.objectSize
-
-    def tearDown(self):
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = self._orig_nWhere
-        TheObjectEncoding.nWhen = self._orig_nWhen
-        TheObjectEncoding.objectSize = self._orig_objectSize
-
-    def _set_zero_object_encoding(self):
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = 0
-        TheObjectEncoding.nWhen = 0
-        TheObjectEncoding.objectSize = 0
-        TheObjectEncoding.inputDim = 1
-        TheObjectEncoding.perceptDim = 1
-        TheObjectEncoding.conceptDim = 1
-        TheObjectEncoding.symbolDim = 0
-        TheObjectEncoding.wordDim = 1
-        TheObjectEncoding.outputDim = 1
-        TheObjectEncoding.nInput = 8
-        TheObjectEncoding.nPercepts = 8
-        TheObjectEncoding.nConcepts = 8
-        TheObjectEncoding.nSymbols = 8
-        TheObjectEncoding.nWords = 8
-        TheObjectEncoding.nOutput = 8
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+    def _set_zero_object_encoding(self, ergodic=False, reconstruct="NONE"):
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nWords=8, nOutput=8,
+            nWhere=0, nWhen=0, ergodic=ergodic, reconstruct=reconstruct)
 
     def test_ergodic_forward_shape(self):
-        self._set_zero_object_encoding()
+        self._set_zero_object_encoding(ergodic=True)
         from BasicModel import ConceptualSpace
         nVec, nDim, cDim = 8, 1, 1
-        cs = ConceptualSpace(nVec, nVec,
-                             ergodic=True, quantized=False)
+        cs = ConceptualSpace(nVec, nVec)
         x = torch.randn(2, nVec, nDim).to(TheDevice)
         y = cs(x)
         self.assertEqual(list(y.shape), [2, nVec, cDim])
 
     def test_non_ergodic_forward_shape(self):
-        self._set_zero_object_encoding()
+        self._set_zero_object_encoding(ergodic=False)
         from BasicModel import ConceptualSpace
         nVec, nDim, cDim = 8, 1, 1
-        cs = ConceptualSpace(nVec, nVec,
-                             ergodic=False, quantized=False)
+        cs = ConceptualSpace(nVec, nVec)
         x = torch.randn(2, nVec, nDim).to(TheDevice)
         y = cs(x)
         self.assertEqual(list(y.shape), [2, nVec, cDim])
 
     def test_ergodic_flag_stored(self):
-        self._set_zero_object_encoding()
+        self._set_zero_object_encoding(ergodic=True)
         from BasicModel import ConceptualSpace
-        cs_erg = ConceptualSpace(8, 8,
-                                 ergodic=True, quantized=False)
-        cs_det = ConceptualSpace(8, 8,
-                                 ergodic=False, quantized=False)
+        cs_erg = ConceptualSpace(8, 8)
         self.assertTrue(cs_erg.ergodic)
+        self._set_zero_object_encoding(ergodic=False)
+        cs_det = ConceptualSpace(8, 8)
         self.assertFalse(cs_det.ergodic)
 
     def test_ergodic_reverse_shape(self):
-        self._set_zero_object_encoding()
+        self._set_zero_object_encoding(ergodic=True, reconstruct="FULL")
         from BasicModel import ConceptualSpace
         nVec, nDim, cDim = 8, 1, 1
-        cs = ConceptualSpace(nVec, nVec,
-                             ergodic=True, reversible=True, quantized=False)
+        cs = ConceptualSpace(nVec, nVec)
         y = torch.randn(2, nVec, cDim).to(TheDevice)
         x = cs.reverse(y)
         self.assertEqual(list(x.shape), [2, nVec, nDim])
 
     def test_ergodic_exposes_params(self):
-        self._set_zero_object_encoding()
+        self._set_zero_object_encoding(ergodic=True)
         from BasicModel import ConceptualSpace
-        cs = ConceptualSpace(8, 8,
-                             ergodic=True, quantized=False)
+        cs = ConceptualSpace(8, 8)
         params = cs.getParameters()
         self.assertIsInstance(params, list)
         self.assertGreater(len(params), 0)
 
     def test_canonical_forward_still_works(self):
         """Existing ConceptualSpace (with objectSize > 0) still works after changes."""
-        from BasicModel import ConceptualSpace, TheObjectEncoding
-        TheObjectEncoding.setDimensions(inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0, outputDim=4)
-        TheObjectEncoding.nConcepts = 4
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        from BasicModel import ConceptualSpace, TheXMLConfig
+        _populate_test_config(inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0, outputDim=4,
+                              nConcepts=4)
         nIn, nOut = 4, 4
         cs = ConceptualSpace(nIn, nOut)
-        inEmb = TheObjectEncoding.getObjectEncodingSize(TheObjectEncoding.inputDim)
+        inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("InputSpace", "nDim"))
         x = torch.randn(2, nIn, inEmb).to(TheDevice)
         y = cs(x)
-        outEmb = TheObjectEncoding.getObjectEncodingSize(TheObjectEncoding.conceptDim)
+        outEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("ConceptualSpace", "nDim"))
         self.assertEqual(list(y.shape), [2, nOut, outEmb])
 
 
 class TestInputSpaceUnquantized(unittest.TestCase):
     """InputSpace works with unquantized codebook (objectSize=0)."""
 
-    def setUp(self):
-        from BasicModel import TheObjectEncoding
-        self._orig_nWhere = TheObjectEncoding.nWhere
-        self._orig_nWhen = TheObjectEncoding.nWhen
-        self._orig_objectSize = TheObjectEncoding.objectSize
-
-    def tearDown(self):
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = self._orig_nWhere
-        TheObjectEncoding.nWhen = self._orig_nWhen
-        TheObjectEncoding.objectSize = self._orig_objectSize
-
     def test_unquantized_forward_shape(self):
-        from BasicModel import TheObjectEncoding, InputSpace
-        TheObjectEncoding.nWhere = 0
-        TheObjectEncoding.nWhen = 0
-        TheObjectEncoding.objectSize = 0
-        TheObjectEncoding.inputDim = 1
-        TheObjectEncoding.nInput = 8
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        from BasicModel import InputSpace
+        _populate_test_config(inputDim=1, nInput=8, nWhere=0, nWhen=0, quantized=False)
         nIn, nDim = 8, 1
-        inp = InputSpace(nIn, nIn, quantized=False)
+        inp = InputSpace(nIn, nIn)
         x = torch.randn(2, nIn, nDim).to(TheDevice)
         y = inp(x)
         self.assertEqual(list(y.shape), [2, nIn, nDim])
@@ -817,28 +991,10 @@ class TestInputSpaceUnquantized(unittest.TestCase):
 class TestOutputSpaceZeroObjectSize(unittest.TestCase):
     """OutputSpace works with objectSize=0."""
 
-    def setUp(self):
-        from BasicModel import TheObjectEncoding
-        self._orig_nWhere = TheObjectEncoding.nWhere
-        self._orig_nWhen = TheObjectEncoding.nWhen
-        self._orig_objectSize = TheObjectEncoding.objectSize
-
-    def tearDown(self):
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = self._orig_nWhere
-        TheObjectEncoding.nWhen = self._orig_nWhen
-        TheObjectEncoding.objectSize = self._orig_objectSize
-
     def test_forward_shape_zero_object_size(self):
-        from BasicModel import TheObjectEncoding, OutputSpace
-        TheObjectEncoding.nWhere = 0
-        TheObjectEncoding.nWhen = 0
-        TheObjectEncoding.objectSize = 0
-        TheObjectEncoding.symbolDim = 1
-        TheObjectEncoding.outputDim = 1
-        TheObjectEncoding.nOutput = 3
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        from BasicModel import OutputSpace
+        _populate_test_config(symbolDim=1, outputDim=1, nOutput=3, nWhere=0, nWhen=0,
+                              reshape=True)
         nIn, nOut = 4, 3
         os_ = OutputSpace(nIn, nOut)
         x = torch.randn(2, nIn, 1).to(TheDevice)
@@ -846,17 +1002,11 @@ class TestOutputSpaceZeroObjectSize(unittest.TestCase):
         self.assertEqual(list(y.shape), [2, nOut, 1])
 
     def test_reverse_shape_zero_object_size(self):
-        from BasicModel import TheObjectEncoding, OutputSpace
-        TheObjectEncoding.nWhere = 0
-        TheObjectEncoding.nWhen = 0
-        TheObjectEncoding.objectSize = 0
-        TheObjectEncoding.symbolDim = 1
-        TheObjectEncoding.outputDim = 1
-        TheObjectEncoding.nOutput = 3
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        from BasicModel import OutputSpace
+        _populate_test_config(symbolDim=1, outputDim=1, nOutput=3, nWhere=0, nWhen=0,
+                              reshape=True, reconstruct="FULL")
         nIn, nOut = 4, 3
-        os_ = OutputSpace(nIn, nOut, reversible=True)
+        os_ = OutputSpace(nIn, nOut)
         y = torch.randn(2, nOut, 1).to(TheDevice)
         x = os_.reverse(y)
         self.assertEqual(list(x.shape), [2, nIn, 1])
@@ -866,10 +1016,7 @@ class TestBaseModelFactory(unittest.TestCase):
     """BaseModel.from_config factory creates the correct model type."""
 
     def test_factory_creates_simple_model(self):
-        from BasicModel import BaseModel, BasicModel, TheObjectEncoding
-        orig_nWhere = TheObjectEncoding.nWhere
-        orig_nWhen = TheObjectEncoding.nWhen
-        orig_objectSize = TheObjectEncoding.objectSize
+        from BasicModel import BaseModel, BasicModel
         xml = """<model>
   <architecture>
     <nInput>16</nInput>
@@ -884,6 +1031,7 @@ class TestBaseModelFactory(unittest.TestCase):
     <outputDim>1</outputDim>
     <perceptPassThrough>true</perceptPassThrough>
     <symbolPassThrough>true</symbolPassThrough>
+    <training><autoload>false</autoload></training>
   </architecture>
 </model>"""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
@@ -896,15 +1044,9 @@ class TestBaseModelFactory(unittest.TestCase):
             self.assertEqual(model.symbolicOrder, 1)
         finally:
             os.unlink(path)
-            TheObjectEncoding.nWhere = orig_nWhere
-            TheObjectEncoding.nWhen = orig_nWhen
-            TheObjectEncoding.objectSize = orig_objectSize
 
     def test_factory_creates_basic_model(self):
-        from BasicModel import BaseModel, BasicModel as BM, TheObjectEncoding
-        # BasicModel.create() needs non-zero encoding dimensions
-        TheObjectEncoding.setDimensions(inputDim=8, perceptDim=8,
-                                        conceptDim=8, symbolDim=0, outputDim=4)
+        from BasicModel import BaseModel, BasicModel as BM
         # nSymbols must equal nConcepts (SymbolicSpace 1:1 mapping constraint),
         # and nPercepts must be 2*nConcepts (InvertiblePiLayer invertibility).
         xml = """<model>
@@ -913,6 +1055,7 @@ class TestBaseModelFactory(unittest.TestCase):
     <nWords>16</nWords>
     <conceptualOrder>2</conceptualOrder>
     <reconstruct>none</reconstruct>
+    <training><autoload>false</autoload></training>
   </architecture>
   <InputSpace><nActive>32</nActive><nDim>8</nDim></InputSpace>
   <PerceptualSpace><nActive>4</nActive><nDim>8</nDim><nVectors>8</nVectors></PerceptualSpace>
@@ -954,68 +1097,41 @@ class TestSymbolDimZeroPassthrough(unittest.TestCase):
     def test_passthrough_symbolic_space_has_zero_symbol_dim(self):
         """When symbolPassThrough=True, symbolDim should be 0 and
         embedding size should not be inflated by a symbol dimension."""
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = 0
-        TheObjectEncoding.nWhen = 0
-        TheObjectEncoding.objectSize = 0
-        TheObjectEncoding.setInputDim(1)
-        TheObjectEncoding.setPerceptDim(1)
-        TheObjectEncoding.setConceptDim(1)
-        TheObjectEncoding.setSymbolDim(0)
-        TheObjectEncoding.setOutputDim(1)
-        self.assertEqual(TheObjectEncoding.symbolDim, 0)
-        self.assertEqual(TheObjectEncoding.getSymbolEncodingSize(), 0)
+        from BasicModel import TheXMLConfig
+        _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0,
+                              outputDim=1, nWhere=0, nWhen=0)
+        self.assertEqual(TheXMLConfig.space("SymbolicSpace", "nDim"), 0)
+        self.assertEqual(TheXMLConfig.encodingSize(0), 0)
 
     def test_objectencoding_zero_contribution_when_unused(self):
         """ObjectEncoding must not inflate tensor size when nWhere=0, nWhen=0."""
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = 0
-        TheObjectEncoding.nWhen = 0
-        TheObjectEncoding.objectSize = 0
+        from BasicModel import TheXMLConfig
+        _populate_test_config(nWhere=0, nWhen=0)
         nDim = 10
-        self.assertEqual(TheObjectEncoding.getObjectEncodingSize(nDim), nDim)
+        self.assertEqual(TheXMLConfig.encodingSize(nDim), nDim)
 
 
 class TestInputSpaceLexIntegration(unittest.TestCase):
     """InputSpace with text data creates a Lex instance, span table, and
     encodes spans as [nWhat + nWhere] via VectorSet codebook + ObjectEncoding."""
 
-    def setUp(self):
-        from BasicModel import TheObjectEncoding, WhereEncoding, WhenEncoding
-        self._orig_nWhere = TheObjectEncoding.nWhere
-        self._orig_nWhen = TheObjectEncoding.nWhen
-        self._orig_objectSize = TheObjectEncoding.objectSize
-        # Enforce non-zero nWhere/nWhen — earlier tests may have zeroed them
-        TheObjectEncoding.nWhere = WhereEncoding.nDim   # 2
-        TheObjectEncoding.nWhen = WhenEncoding.nDim      # 2
-        TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
-
-    def tearDown(self):
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = self._orig_nWhere
-        TheObjectEncoding.nWhen = self._orig_nWhen
-        TheObjectEncoding.objectSize = self._orig_objectSize
-
     def _make_text_data(self):
-        """Create a minimal Data object with text examples and source buffer."""
-        from BasicModel import Data
-        data = Data()
-        data.load("xor")
-        return data
+        """Load XOR text data into TheData singleton."""
+        from BasicModel import TheData
+        TheData.load("xor")
+        return TheData
 
     def _make_input_space(self, lexer="word"):
         """Create an InputSpace with model_type='embedding' from XOR text data."""
-        from BasicModel import InputSpace, TheObjectEncoding
-        data = self._make_text_data()
+        from BasicModel import InputSpace, TheData, WhereEncoding, WhenEncoding
         nInput = 8
-        TheObjectEncoding.inputDim = 1
-        TheObjectEncoding.nInput = nInput
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        _populate_test_config(inputDim=1, nInput=nInput,
+                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              lexer=lexer)
+        self._make_text_data()
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", embedding_path=None, data=data,
-                         lexer=lexer)
-        return inp, data
+                         model_type="embedding")
+        return inp, TheData
 
     def test_token_stream_available(self):
         """InputSpace with model_type='embedding' can tokenize via _token_stream."""
@@ -1067,17 +1183,17 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
 
     def test_object_encoding_applied(self):
         """ObjectEncoding (nWhere + nWhen) is applied to forward() output."""
-        from BasicModel import TheObjectEncoding
+        from BasicModel import TheXMLConfig
         inp, data = self._make_input_space()
         batch_size = 1
         inputBatch = data.train_input[0:batch_size]
         inputTensor = inp.prepInput(inputBatch)
-        TheObjectEncoding.where.p = 0
+        inp.subspace.whereEncoding.p = 0
         output = inp.forward(inputTensor)
         # With nWhere > 0, the reserved encoding dims should be non-zero
         # (ObjectEncoding.forward stamps sin/cos into the last objectSize dims)
         embSize = output.shape[-1]
-        objSize = TheObjectEncoding.objectSize
+        objSize = TheXMLConfig.objectSize
         if objSize > 0:
             encoding_dims = output[0, 0, -objSize:]
             self.assertFalse(torch.all(encoding_dims == 0).item(),
@@ -1087,33 +1203,11 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
 class TestOutputSpaceTextReconstruction(unittest.TestCase):
     """OutputSpace can reconstruct text from symbolic vectors."""
 
-    def setUp(self):
-        from BasicModel import TheObjectEncoding, WhereEncoding, WhenEncoding
-        self._orig_nWhere = TheObjectEncoding.nWhere
-        self._orig_nWhen = TheObjectEncoding.nWhen
-        self._orig_objectSize = TheObjectEncoding.objectSize
-        # Enforce non-zero nWhere/nWhen — earlier tests may have zeroed them
-        TheObjectEncoding.nWhere = WhereEncoding.nDim   # 2
-        TheObjectEncoding.nWhen = WhenEncoding.nDim      # 2
-        TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
-
-    def tearDown(self):
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = self._orig_nWhere
-        TheObjectEncoding.nWhen = self._orig_nWhen
-        TheObjectEncoding.objectSize = self._orig_objectSize
-
     def test_numeric_output_unchanged(self):
         """Numeric OutputSpace should still produce [B, nOutput] tensor."""
-        from BasicModel import TheObjectEncoding, OutputSpace
-        TheObjectEncoding.nWhere = 0
-        TheObjectEncoding.nWhen = 0
-        TheObjectEncoding.objectSize = 0
-        TheObjectEncoding.symbolDim = 1
-        TheObjectEncoding.outputDim = 1
-        TheObjectEncoding.nOutput = 3
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        from BasicModel import OutputSpace
+        _populate_test_config(symbolDim=1, outputDim=1, nOutput=3, nWhere=0, nWhen=0,
+                              reshape=True)
         nIn, nOut = 4, 3
         os_ = OutputSpace(nIn, nOut)
         x = torch.randn(2, nIn, 1).to(TheDevice)
@@ -1124,29 +1218,23 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
 
     def test_text_mode_false_without_lex(self):
         """OutputSpace without lex info should have text_mode=False."""
-        from BasicModel import TheObjectEncoding, OutputSpace
-        TheObjectEncoding.setDimensions(inputDim=8, perceptDim=8,
-                                        conceptDim=8, symbolDim=0, outputDim=4)
-        TheObjectEncoding.nOutput = 4
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        from BasicModel import OutputSpace
+        _populate_test_config(inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0, outputDim=4,
+                              nOutput=4, reshape=True)
         nIn, nOut = 4, 4
         os_ = OutputSpace(nIn, nOut)
         self.assertFalse(os_.text_mode)
 
     def test_set_text_mode_enables_reconstruction(self):
         """set_text_mode() stores codebook, words, and lex references."""
-        from BasicModel import InputSpace, Data, OutputSpace, TheObjectEncoding
-        data = Data()
-        data.load("xor")
+        from BasicModel import InputSpace, TheData, OutputSpace, WhereEncoding, WhenEncoding
+        TheData.load("xor")
         nInput = 8
-        TheObjectEncoding.inputDim = 1
-        TheObjectEncoding.nInput = nInput
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        _populate_test_config(inputDim=1, nInput=nInput,
+                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              reshape=True)
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", embedding_path=None, data=data,
-                         lexer="word")
+                         model_type="embedding")
         # Create OutputSpace with the same embedding setup
         nOut = 8
         os_ = OutputSpace(nInput, nOut)
@@ -1156,18 +1244,15 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
     def test_reconstruct_from_known_vectors(self):
         """Given codebook vectors with nWhere, reconstruct_data should recover words at positions."""
         import math
-        from BasicModel import (InputSpace, Data, OutputSpace, TheObjectEncoding,
-                                WhereEncoding)
-        data = Data()
-        data.load("xor")
+        from BasicModel import (InputSpace, TheData, OutputSpace, TheXMLConfig,
+                                WhereEncoding, WhenEncoding)
+        TheData.load("xor")
         nInput = 8
-        TheObjectEncoding.inputDim = 10  # need enough dims for reliable cosine matching
-        TheObjectEncoding.nInput = nInput
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        _populate_test_config(inputDim=10, nInput=nInput,
+                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              reshape=True)
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", embedding_path=None, data=data,
-                         lexer="word")
+                         model_type="embedding")
         nOut = 4
         os_ = OutputSpace(nInput, nOut)
         os_.set_text_mode(inp)
@@ -1176,8 +1261,8 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         codebook = inp.vectors().wv._vectors.detach()
         words_list = inp.vectors().wv.index_to_key
         embSize = inp.vectors().embeddingSize
-        nWhat = embSize - TheObjectEncoding.objectSize
-        where = TheObjectEncoding.where
+        nWhat = embSize - TheXMLConfig.objectSize
+        where = inp.subspace.whereEncoding
 
         # Pick first two non-[MASK] words from the codebook
         batch = 1
@@ -1196,17 +1281,15 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
 
     def test_reconstruct_consecutive_no_nwhere(self):
         """When nWhere is zero, tokens are written consecutively."""
-        from BasicModel import (InputSpace, Data, OutputSpace, TheObjectEncoding)
-        data = Data()
-        data.load("xor")
+        from BasicModel import (InputSpace, TheData, OutputSpace, TheXMLConfig,
+                                WhereEncoding, WhenEncoding)
+        TheData.load("xor")
         nInput = 8
-        TheObjectEncoding.inputDim = 10  # need enough dims for reliable cosine matching
-        TheObjectEncoding.nInput = nInput
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        _populate_test_config(inputDim=10, nInput=nInput,
+                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              reshape=True)
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", embedding_path=None, data=data,
-                         lexer="word")
+                         model_type="embedding")
         nOut = 4
         os_ = OutputSpace(nInput, nOut)
         os_.set_text_mode(inp)
@@ -1223,8 +1306,8 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         # Skip [MASK] (zero vector) — cosine matching can't recover it
         usable = [j for j, w in enumerate(words_list) if w != "[MASK]"]
         for slot, j in enumerate(usable[:nVec]):
-            vectors[0, slot, :embSize - TheObjectEncoding.objectSize] = \
-                codebook[j, :embSize - TheObjectEncoding.objectSize]
+            vectors[0, slot, :embSize - TheXMLConfig.objectSize] = \
+                codebook[j, :embSize - TheXMLConfig.objectSize]
             expected_words.append(words_list[j])
         # nWhere left as zero -> consecutive mode
 
@@ -1234,18 +1317,15 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
     def test_reconstruct_to_buffer(self):
         """reconstruct_data with to_buffer=True produces a string with positioned words."""
         import math
-        from BasicModel import (InputSpace, Data, OutputSpace, TheObjectEncoding,
-                                WhereEncoding)
-        data = Data()
-        data.load("xor")
+        from BasicModel import (InputSpace, TheData, OutputSpace, TheXMLConfig,
+                                WhereEncoding, WhenEncoding)
+        TheData.load("xor")
         nInput = 8
-        TheObjectEncoding.inputDim = 10  # need enough dims for reliable cosine matching
-        TheObjectEncoding.nInput = nInput
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        _populate_test_config(inputDim=10, nInput=nInput,
+                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              reshape=True)
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", embedding_path=None, data=data,
-                         lexer="word")
+                         model_type="embedding")
         nOut = 4
         os_ = OutputSpace(nInput, nOut)
         os_.set_text_mode(inp)
@@ -1254,8 +1334,8 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         codebook = inp.vectors().wv._vectors.detach()
         words_list = inp.vectors().wv.index_to_key
         embSize = inp.vectors().embeddingSize
-        nWhat = embSize - TheObjectEncoding.objectSize
-        where = TheObjectEncoding.where
+        nWhat = embSize - inp.objectSize
+        where = inp.subspace.whereEncoding
 
         batch = 1
         nVec = 2
@@ -1276,27 +1356,23 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
 
     def test_forward_reverse_shapes_unchanged(self):
         """forward() and reverse() tensor shapes must not change with text_mode."""
-        from BasicModel import (InputSpace, Data, OutputSpace, TheObjectEncoding)
-        data = Data()
-        data.load("xor")
+        from BasicModel import (InputSpace, TheData, OutputSpace, TheXMLConfig,
+                                WhereEncoding, WhenEncoding)
+        TheData.load("xor")
         nInput = 8
-        TheObjectEncoding.inputDim = 1
-        TheObjectEncoding.symbolDim = 1
-        TheObjectEncoding.outputDim = 1
-        TheObjectEncoding.nInput = nInput
-        TheObjectEncoding.nOutput = 4
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        _populate_test_config(inputDim=1, symbolDim=1, outputDim=1,
+                              nInput=nInput, nOutput=4,
+                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              reshape=True, reconstruct="FULL")
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", embedding_path=None, data=data,
-                         lexer="word")
+                         model_type="embedding")
         nOut = 4
-        os_ = OutputSpace(nInput, nOut, reversible=True)
+        os_ = OutputSpace(nInput, nOut)
         os_.set_text_mode(inp)
-        inEmb = TheObjectEncoding.getObjectEncodingSize(TheObjectEncoding.symbolDim)
+        inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("SymbolicSpace", "nDim"))
         x = torch.randn(2, nInput, inEmb).to(TheDevice)
         y = os_(x)
-        self.assertEqual(list(y.shape), [2, nOut, TheObjectEncoding.outputDim])
+        self.assertEqual(list(y.shape), [2, nOut, TheXMLConfig.space("OutputSpace", "nDim")])
         # Reverse path should also be unchanged
         rev = os_.reverse(y)
         self.assertEqual(list(rev.shape), [2, nInput, inEmb])
@@ -1305,36 +1381,17 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
 class TestInputSpaceTextRoundTrip(unittest.TestCase):
     """InputSpace.reverse() must reconstruct text from latent state."""
 
-    def setUp(self):
-        from BasicModel import TheObjectEncoding, WhereEncoding, WhenEncoding
-        self._orig_nWhere = TheObjectEncoding.nWhere
-        self._orig_nWhen = TheObjectEncoding.nWhen
-        self._orig_objectSize = TheObjectEncoding.objectSize
-        # Enforce non-zero nWhere/nWhen — earlier tests may have zeroed them
-        TheObjectEncoding.nWhere = WhereEncoding.nDim   # 2
-        TheObjectEncoding.nWhen = WhenEncoding.nDim      # 2
-        TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
-
-    def tearDown(self):
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = self._orig_nWhere
-        TheObjectEncoding.nWhen = self._orig_nWhen
-        TheObjectEncoding.objectSize = self._orig_objectSize
-
     def _make_text_input_space(self):
         """Create an InputSpace with model_type='embedding' from XOR text data."""
-        from BasicModel import InputSpace, Data, TheObjectEncoding
-        data = Data()
-        data.load("xor")
+        from BasicModel import InputSpace, TheData, WhereEncoding, WhenEncoding
         nInput = 8
-        TheObjectEncoding.inputDim = 10  # need enough dims for reliable cosine matching
-        TheObjectEncoding.nInput = nInput
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        _populate_test_config(inputDim=10, nInput=nInput,
+                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              reshape=True)
+        TheData.load("xor")
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", embedding_path=None, data=data,
-                         lexer="word")
-        return inp, data
+                         model_type="embedding")
+        return inp, TheData
 
     def test_reverse_recovers_words(self):
         """forward -> reverse should recover the original lexical tokens.
@@ -1407,22 +1464,11 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
 
     def test_reverse_numeric_unchanged(self):
         """Numeric reverse path should still work exactly as before."""
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = 0
-        TheObjectEncoding.nWhen = 0
-        TheObjectEncoding.objectSize = 0
-        TheObjectEncoding.setInputDim(1)
-        TheObjectEncoding.setPerceptDim(1)
-        TheObjectEncoding.setConceptDim(1)
-        TheObjectEncoding.setSymbolDim(0)
-        TheObjectEncoding.setOutputDim(1)
-        TheObjectEncoding.inputDim = 1
-        TheObjectEncoding.nInput = 8
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, outputDim=1,
+                              nInput=8, nWhere=0, nWhen=0, quantized=False)
         from BasicModel import InputSpace
         nIn, nDim = 8, 1
-        inp = InputSpace(nIn, nIn, quantized=False)
+        inp = InputSpace(nIn, nIn)
         x = torch.randn(2, nIn, nDim).to(TheDevice)
         y = inp.forward(x)
         result = inp.reverse(y)
@@ -1435,31 +1481,23 @@ class TestLexerConfig(unittest.TestCase):
 
     def test_embedding_can_tokenize(self):
         """Embedding model_type can tokenize text via _token_stream."""
-        from BasicModel import InputSpace, Data, TheObjectEncoding
-        data = Data()
-        data.load("xor")
+        from BasicModel import InputSpace, TheData
+        TheData.load("xor")
         nInput = 8
-        TheObjectEncoding.inputDim = 1
-        TheObjectEncoding.nInput = nInput
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        _populate_test_config(inputDim=1, nInput=nInput)
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", embedding_path=None, data=data)
+                         model_type="embedding")
         tokens = inp.vectors()._token_stream("test input")
         self.assertEqual(tokens[0][0], "test")
 
     def test_embedding_creates_reversible_dictionary(self):
         """Embedding model_type creates Embedding with Lex-backed codebook."""
-        from BasicModel import InputSpace, Data, Embedding, TheObjectEncoding
-        data = Data()
-        data.load("xor")
+        from BasicModel import InputSpace, TheData, Embedding
+        TheData.load("xor")
         nInput = 8
-        TheObjectEncoding.inputDim = 1
-        TheObjectEncoding.nInput = nInput
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        _populate_test_config(inputDim=1, nInput=nInput)
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", embedding_path=None, data=data)
+                         model_type="embedding")
         self.assertIsInstance(inp.vectors(), Embedding)
 
 
@@ -1501,10 +1539,8 @@ class TestEmbeddingLexDelegation(unittest.TestCase):
 
     def test_forward_returns_token_metadata(self):
         """forward(return_meta=True) replaces old encoding wrappers."""
-        from BasicModel import Embedding, TheObjectEncoding
-        old_object_size = TheObjectEncoding.objectSize
-        self.addCleanup(setattr, TheObjectEncoding, "objectSize", old_object_size)
-        TheObjectEncoding.objectSize = 0
+        from BasicModel import Embedding
+        _populate_test_config(nWhere=0, nWhen=0)
         emb = Embedding()
         emb.create(
             nInput=8,
@@ -1527,8 +1563,8 @@ class TestEmbeddingLexDelegation(unittest.TestCase):
 class TestMaskCodebookEntry(unittest.TestCase):
     def test_mask_codebook_entry_is_zero(self):
         """get_mask_embedding() returns a zero vector; [MASK] is not in vocab."""
-        from BasicModel import Embedding, TheObjectEncoding
-        TheObjectEncoding.objectSize = 0
+        from BasicModel import Embedding
+        _populate_test_config(nWhere=0, nWhen=0)
         emb = Embedding()
         emb.create(nInput=10, nVectors=2, nDim=10, embedding_path=None)
         self.assertNotIn("[MASK]", emb.pretrain.key_to_index)
@@ -1554,10 +1590,8 @@ class TestEmbeddingErgodicForward(unittest.TestCase):
         return padded.unsqueeze(0)
 
     def _make_embedding(self, text="the dog"):
-        from BasicModel import Embedding, TheObjectEncoding
-        old_object_size = TheObjectEncoding.objectSize
-        self.addCleanup(setattr, TheObjectEncoding, "objectSize", old_object_size)
-        TheObjectEncoding.objectSize = 0
+        from BasicModel import Embedding
+        _populate_test_config(nWhere=0, nWhen=0)
         emb = Embedding()
         emb.create(nInput=8, nVectors=8, nDim=10, embedding_path=None, source=[text])
         return emb
@@ -1684,17 +1718,13 @@ class TestXorForwardPass(unittest.TestCase):
 
     def test_xor_forward_produces_output(self):
         """InputSpace with model_type='embedding' can forward xor data through Embedding."""
-        from BasicModel import InputSpace, Data, TheObjectEncoding
-        data = Data()
-        data.load("xor")
+        from BasicModel import InputSpace, TheData
         nInput = 8
-        TheObjectEncoding.inputDim = 1
-        TheObjectEncoding.nInput = nInput
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
+        _populate_test_config(inputDim=1, nInput=nInput)
+        TheData.load("xor")
         inp = InputSpace(nInput, nInput,
-                         model_type="embedding", embedding_path=None, data=data)
-        inputTensor = inp.prepInput(data.train_input[:2])
+                         model_type="embedding")
+        inputTensor = inp.prepInput(TheData.train_input[:2])
         result = inp.forward(inputTensor)
         self.assertEqual(result.shape[0], 2)  # batch size
         self.assertEqual(result.shape[1], inp.outputShape[0])
@@ -1705,14 +1735,10 @@ class TestErgodicMnistReport(unittest.TestCase):
 
     def test_forward_layer_weight_accessible(self):
         """mnistReport can access the forward linear layer weight matrix."""
-        from BasicModel import OutputSpace, TheObjectEncoding, LinearLayer
-        # Create OutputSpace with reversible=True (the default from model.xml)
-        TheObjectEncoding.setOutputDim(1)
-        TheObjectEncoding.symbolDim = 1
-        TheObjectEncoding.nOutput = 10
-        TheObjectEncoding.nObjects = 0  # reset for test isolation
-        TheObjectEncoding.computeNObjects()
-        os_ = OutputSpace(10, 10, reversible=True)
+        from BasicModel import OutputSpace, LinearLayer
+        _populate_test_config(outputDim=1, symbolDim=1, nOutput=10,
+                              reshape=True, reconstruct="FULL")
+        os_ = OutputSpace(10, 10)
         # The bug was: forwardLinear is a bound method, not a layer
         # After fix: we can get the layer via linear1
         fwd_layer = (os_.linear1 if hasattr(os_, 'linear1') else os_.forwardLinear)
@@ -1726,25 +1752,17 @@ class TestErgodicMnistReport(unittest.TestCase):
 class TestModelTypeVariants(unittest.TestCase):
     """Exercise BasicModel.create() with configuration combinations not yet covered."""
 
-    def setUp(self):
-        from BasicModel import TheObjectEncoding
-        self._orig_nWhere = TheObjectEncoding.nWhere
-        self._orig_nWhen = TheObjectEncoding.nWhen
-        self._orig_objectSize = TheObjectEncoding.objectSize
-
-    def tearDown(self):
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = self._orig_nWhere
-        TheObjectEncoding.nWhen = self._orig_nWhen
-        TheObjectEncoding.objectSize = self._orig_objectSize
-
     def test_invertible(self):
         """invertible=True with ergodic, reversible — forward + reverse."""
-        model = _make_simple_model()
-        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-                     invertible=True, ergodic=True, reversible=True,
-                     perceptPassThrough=True, symbolPassThrough=True,
-                     reshape=True)
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+            invertible=True, ergodic=True, reconstruct="FULL",
+            perceptPassThrough=True, symbolPassThrough=True,
+            reshape=True)
+        from BasicModel import BasicModel
+        model = BasicModel()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -1755,11 +1773,15 @@ class TestModelTypeVariants(unittest.TestCase):
 
     def test_has_norm(self):
         """hasNorm=True with ergodic — forward only."""
-        model = _make_simple_model()
-        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-                     hasNorm=True, ergodic=True,
-                     perceptPassThrough=True, symbolPassThrough=True,
-                     reshape=True)
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+            hasNorm=True, ergodic=True,
+            perceptPassThrough=True, symbolPassThrough=True,
+            reshape=True)
+        from BasicModel import BasicModel
+        model = BasicModel()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -1771,13 +1793,15 @@ class TestModelTypeVariants(unittest.TestCase):
         Higher-order cycles require a non-passthrough symbolic space so that
         symbolDim > 0 for the second perceptual/conceptual/symbolic spaces.
         """
-        from BasicModel import TheObjectEncoding
-        model = _make_simple_model(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4)
-        TheObjectEncoding.setSymbolDim(1)
+        _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=1,
+                              wordDim=1, outputDim=1,
+                              nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
+                              perceptPassThrough=True, symbolPassThrough=False,
+                              reshape=True)
+        from BasicModel import BasicModel
+        model = BasicModel()
         model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
-                     conceptualOrder=2, reversible=False,
-                     perceptPassThrough=True, symbolPassThrough=False,
-                     reshape=True)
+                     conceptualOrder=2)
         x = torch.randn(2, 8, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -1789,13 +1813,15 @@ class TestModelTypeVariants(unittest.TestCase):
         Higher-order cycles require a non-passthrough symbolic space so that
         symbolDim > 0 for the syntactic/symbolic spaces.
         """
-        from BasicModel import TheObjectEncoding
-        model = _make_simple_model(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4)
-        TheObjectEncoding.setSymbolDim(1)
+        _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=1,
+                              wordDim=1, outputDim=1,
+                              nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
+                              perceptPassThrough=True, symbolPassThrough=False,
+                              reshape=True)
+        from BasicModel import BasicModel
+        model = BasicModel()
         model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nWords=8, nOutput=4,
-                     symbolicOrder=2,
-                     perceptPassThrough=True, symbolPassThrough=False,
-                     reshape=True)
+                     symbolicOrder=2)
         x = torch.randn(2, 8, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -1803,11 +1829,15 @@ class TestModelTypeVariants(unittest.TestCase):
 
     def test_non_ergodic_reverse(self):
         """ergodic=False with reversible=True — forward + reverse."""
-        model = _make_simple_model()
-        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-                     ergodic=False, reversible=True,
-                     perceptPassThrough=True, symbolPassThrough=True,
-                     reshape=True)
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+            ergodic=False, reconstruct="FULL",
+            perceptPassThrough=True, symbolPassThrough=True,
+            reshape=True)
+        from BasicModel import BasicModel
+        model = BasicModel()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -1818,11 +1848,15 @@ class TestModelTypeVariants(unittest.TestCase):
 
     def test_percept_no_attention(self):
         """perceptHasAttention=False, perceptPassThrough=False — forward only."""
-        model = _make_simple_model(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4)
-        model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
-                     perceptHasAttention=False,
-                     perceptPassThrough=False, symbolPassThrough=True,
-                     reshape=True, naive=True)
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
+            perceptHasAttention=False,
+            perceptPassThrough=False, symbolPassThrough=True,
+            reshape=True, naive=True)
+        from BasicModel import BasicModel
+        model = BasicModel()
+        model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 8, 1)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -1830,11 +1864,15 @@ class TestModelTypeVariants(unittest.TestCase):
 
     def test_concept_with_attention(self):
         """conceptHasAttention=True — forward only."""
-        model = _make_simple_model()
-        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-                     conceptHasAttention=True,
-                     perceptPassThrough=True, symbolPassThrough=True,
-                     reshape=True)
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+            conceptHasAttention=True,
+            perceptPassThrough=True, symbolPassThrough=True,
+            reshape=True)
+        from BasicModel import BasicModel
+        model = BasicModel()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -2092,42 +2130,22 @@ class TestExpandMasked(unittest.TestCase):
     """InputSpace.expand_masked() produces N masked copies of a sentence embedding."""
 
     def setUp(self):
-        from BasicModel import (TheObjectEncoding, WhereEncoding,
-                                WhenEncoding, InputSpace)
-        # Save/restore global state
-        self._orig_nWhere = TheObjectEncoding.nWhere
-        self._orig_nWhen = TheObjectEncoding.nWhen
-        self._orig_objectSize = TheObjectEncoding.objectSize
-        # Enforce nWhere=2, nWhen=2
-        TheObjectEncoding.nWhere = WhereEncoding.nDim   # 2
-        TheObjectEncoding.nWhen = WhenEncoding.nDim      # 2
-        TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
+        from BasicModel import (WhereEncoding, WhenEncoding, InputSpace, TheData)
+        _populate_test_config(inputDim=1, nInput=8,
+                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim)
 
         # Build a minimal InputSpace with embedding from XOR data
-        from BasicModel import Data
-        data = Data()
-        data.load("xor")
+        TheData.load("xor")
         nInput = 8
-        TheObjectEncoding.inputDim = 1
-        TheObjectEncoding.nInput = nInput
-        TheObjectEncoding.nObjects = 0
-        TheObjectEncoding.computeNObjects()
         self.inp = InputSpace(nInput, nInput,
-                              model_type="embedding", embedding_path=None,
-                              data=data, lexer="word")
+                              model_type="embedding")
         # Run a forward pass to get a real embedded tensor
-        inputBatch = data.train_input[0:1]
+        inputBatch = TheData.train_input[0:1]
         inputTensor = self.inp.prepInput(inputBatch)
         self.embedded = self.inp.forward(inputTensor)  # [1, nVec, embSize]
         self.sentence = "hello world"  # matches XOR training data
         self.embSize = self.embedded.shape[-1]
         self.nVec = self.embedded.shape[1]
-
-    def tearDown(self):
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = self._orig_nWhere
-        TheObjectEncoding.nWhen = self._orig_nWhen
-        TheObjectEncoding.objectSize = self._orig_objectSize
 
     def test_expand_masked_shape(self):
         """3-word sentence produces [3, nVec, embSize] masked batch."""
@@ -2197,44 +2215,22 @@ class TestExpandMasked(unittest.TestCase):
 class TestExpandMaskedTargets(unittest.TestCase):
     def setUp(self):
         """Create an OutputSpace + Embedding to test expand_masked."""
-        from BasicModel import (TheObjectEncoding, WhereEncoding,
-                                WhenEncoding, InputSpace, OutputSpace, Data)
-        # Save/restore global state
-        self._orig_nWhere = TheObjectEncoding.nWhere
-        self._orig_nWhen = TheObjectEncoding.nWhen
-        self._orig_objectSize = TheObjectEncoding.objectSize
-        self._orig_nObjects = TheObjectEncoding.nObjects
-        # Enforce nWhere=2, nWhen=2
-        TheObjectEncoding.nWhere = WhereEncoding.nDim
-        TheObjectEncoding.nWhen = WhenEncoding.nDim
-        TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
+        from BasicModel import (WhereEncoding, WhenEncoding,
+                                InputSpace, OutputSpace, TheData)
+        _populate_test_config(inputDim=1, symbolDim=1, outputDim=1,
+                              nInput=8, nOutput=4,
+                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              reshape=True)
 
         # Build a minimal InputSpace with embedding from XOR data
-        data = Data()
-        data.load("xor")
+        TheData.load("xor")
         nInput = 8
-        TheObjectEncoding.inputDim = 1
-        TheObjectEncoding.nInput = nInput
-        TheObjectEncoding.nObjects = 0
-        TheObjectEncoding.computeNObjects()
         self.inp = InputSpace(nInput, nInput,
-                              model_type="embedding", embedding_path=None,
-                              data=data, lexer="word")
+                              model_type="embedding")
         self.emb = self.inp.vectors()
 
         # Build a minimal OutputSpace
-        TheObjectEncoding.symbolDim = 1
-        TheObjectEncoding.outputDim = 1
-        TheObjectEncoding.nOutput = 4
-        self.out = OutputSpace(nActiveInput=8, nActiveOutput=4,
-                               reversible=False, data=data)
-
-    def tearDown(self):
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = self._orig_nWhere
-        TheObjectEncoding.nWhen = self._orig_nWhen
-        TheObjectEncoding.objectSize = self._orig_objectSize
-        TheObjectEncoding.nObjects = self._orig_nObjects
+        self.out = OutputSpace(nActiveInput=8, nActiveOutput=4)
 
     def _make_embedded(self, n_words, emb_size=None):
         """Create a synthetic [1, n_words, embSize] embedded sentence."""
@@ -2298,19 +2294,7 @@ class TestMaskedPredictionIntegration(unittest.TestCase):
         return m
 
     def setUp(self):
-        from BasicModel import TheObjectEncoding
-        self._saved_nObjects = TheObjectEncoding.nObjects
-        self._saved_nWhere = TheObjectEncoding.nWhere
-        self._saved_nWhen = TheObjectEncoding.nWhen
-        self._saved_objectSize = TheObjectEncoding.objectSize
         self.model = self._create_xor_embedding_model()
-
-    def tearDown(self):
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nObjects = self._saved_nObjects
-        TheObjectEncoding.nWhere = self._saved_nWhere
-        TheObjectEncoding.nWhen = self._saved_nWhen
-        TheObjectEncoding.objectSize = self._saved_objectSize
 
     def test_getbatch_standard_mode(self):
         """getBatch in standard mode returns correct batches and exhausts."""
@@ -2341,35 +2325,18 @@ class TestRARLM(unittest.TestCase):
     """RARLM mode masks from end and truncates previous positions."""
 
     def setUp(self):
-        from BasicModel import (TheObjectEncoding, WhereEncoding,
-                                WhenEncoding, InputSpace, Data)
-        self._orig_nWhere = TheObjectEncoding.nWhere
-        self._orig_nWhen = TheObjectEncoding.nWhen
-        self._orig_objectSize = TheObjectEncoding.objectSize
-        TheObjectEncoding.nWhere = WhereEncoding.nDim
-        TheObjectEncoding.nWhen = WhenEncoding.nDim
-        TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
+        from BasicModel import (WhereEncoding, WhenEncoding, InputSpace, TheData)
+        _populate_test_config(inputDim=1, nInput=8,
+                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim)
 
-        data = Data()
-        data.load("xor")
+        TheData.load("xor")
         nInput = 8
-        TheObjectEncoding.inputDim = 1
-        TheObjectEncoding.nInput = nInput
-        TheObjectEncoding.nObjects = 0
-        TheObjectEncoding.computeNObjects()
         self.inp = InputSpace(nInput, nInput,
-                              model_type="embedding", embedding_path=None,
-                              data=data, lexer="word")
-        inputBatch = data.train_input[0:1]
+                              model_type="embedding")
+        inputBatch = TheData.train_input[0:1]
         inputTensor = self.inp.prepInput(inputBatch)
         self.embedded = self.inp.forward(inputTensor)
         self.embSize = self.embedded.shape[-1]
-
-    def tearDown(self):
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = self._orig_nWhere
-        TheObjectEncoding.nWhen = self._orig_nWhen
-        TheObjectEncoding.objectSize = self._orig_objectSize
 
     def test_rarlm_masks_from_end(self):
         """RARLM masks position (N-1-i) and zeros previous positions."""
@@ -2411,40 +2378,20 @@ class TestRARLMTargets(unittest.TestCase):
     """RARLM targets are in reverse word order."""
 
     def setUp(self):
-        from BasicModel import (TheObjectEncoding, WhereEncoding,
-                                WhenEncoding, InputSpace, OutputSpace, Data)
-        self._orig_nWhere = TheObjectEncoding.nWhere
-        self._orig_nWhen = TheObjectEncoding.nWhen
-        self._orig_objectSize = TheObjectEncoding.objectSize
-        self._orig_nObjects = TheObjectEncoding.nObjects
-        TheObjectEncoding.nWhere = WhereEncoding.nDim
-        TheObjectEncoding.nWhen = WhenEncoding.nDim
-        TheObjectEncoding.objectSize = TheObjectEncoding.nWhere + TheObjectEncoding.nWhen
+        from BasicModel import (WhereEncoding, WhenEncoding,
+                                InputSpace, OutputSpace, TheData)
+        _populate_test_config(inputDim=1, symbolDim=1, outputDim=1,
+                              nInput=8, nOutput=4,
+                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              reshape=True)
 
-        data = Data()
-        data.load("xor")
+        TheData.load("xor")
         nInput = 8
-        TheObjectEncoding.inputDim = 1
-        TheObjectEncoding.nInput = nInput
-        TheObjectEncoding.nObjects = 0
-        TheObjectEncoding.computeNObjects()
         self.inp = InputSpace(nInput, nInput,
-                              model_type="embedding", embedding_path=None,
-                              data=data, lexer="word")
+                              model_type="embedding")
         self.emb = self.inp.vectors()
 
-        TheObjectEncoding.symbolDim = 1
-        TheObjectEncoding.outputDim = 1
-        TheObjectEncoding.nOutput = 4
-        self.out = OutputSpace(nActiveInput=8, nActiveOutput=4,
-                               reversible=False, data=data)
-
-    def tearDown(self):
-        from BasicModel import TheObjectEncoding
-        TheObjectEncoding.nWhere = self._orig_nWhere
-        TheObjectEncoding.nWhen = self._orig_nWhen
-        TheObjectEncoding.objectSize = self._orig_objectSize
-        TheObjectEncoding.nObjects = self._orig_nObjects
+        self.out = OutputSpace(nActiveInput=8, nActiveOutput=4)
 
     def test_rarlm_targets_reversed(self):
         """RARLM targets are MLM targets in reverse order."""
@@ -2486,20 +2433,6 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
         m.create_from_config(tmp.name, data=TheData)
         os.unlink(tmp.name)
         return m
-
-    def setUp(self):
-        from BasicModel import TheObjectEncoding
-        self._saved = {
-            'nObjects': TheObjectEncoding.nObjects,
-            'nWhere': TheObjectEncoding.nWhere,
-            'nWhen': TheObjectEncoding.nWhen,
-            'objectSize': TheObjectEncoding.objectSize,
-        }
-
-    def tearDown(self):
-        from BasicModel import TheObjectEncoding
-        for k, v in self._saved.items():
-            setattr(TheObjectEncoding, k, v)
 
     def test_train_embeddings_includes_emb_params(self):
         """When trainEmbeddings=true, _emb.weight is in optimizer params."""

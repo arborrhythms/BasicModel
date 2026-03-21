@@ -270,6 +270,24 @@ class XMLConfig:
         finally:
             self._requirements.clear()
 
+    # --- Derived properties ---
+
+    @property
+    def objectSize(self):
+        """nWhere + nWhen encoding overhead per vector."""
+        return self.space("InputSpace", "nWhere") + self.space("InputSpace", "nWhen")
+
+    @property
+    def nObjects(self):
+        """Total codebook vectors across all spaces."""
+        return sum(self.space(s, "nVectors") for s in (
+            "InputSpace", "PerceptualSpace", "ConceptualSpace",
+            "SymbolicSpace", "SyntacticSpace", "OutputSpace"))
+
+    def encodingSize(self, nDim):
+        """Full vector width: nDim + objectSize."""
+        return nDim + self.objectSize
+
     # --- BasicModel convenience ---
 
     def training(self, key, default=_MISSING):

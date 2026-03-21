@@ -12,6 +12,8 @@
     <modelType>embedding</modelType>
     <maskedPrediction>ARLM</maskedPrediction>
     <maxResponseLength>4096</maxResponseLength>
+    <weightsPath>BasicModel.ckpt</weightsPath>
+    <embeddingPath>BasicModel.kv</embeddingPath>
 
     <data>
       <shardDir>data/fineweb</shardDir>
@@ -27,8 +29,6 @@
       <learningRate>0.001</learningRate>
       <reverseScale>0.1</reverseScale>
       <trainEmbedding>ARLM</trainEmbedding>
-      <weightsPath>BasicModel.ckpt</weightsPath>
-      <embeddingPath>BasicModel.kv</embeddingPath>
       <autoload>true</autoload>
       <autosave>true</autosave>
     </training>

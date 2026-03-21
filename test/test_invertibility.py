@@ -397,44 +397,48 @@ class TestPairedPiTraining(unittest.TestCase):
 # ═══════════════════════════════════════════════════════════════════════════
 
 from BasicModel import (
-    TheObjectEncoding, PerceptualSpace, ConceptualSpace,
+    TheXMLConfig, PerceptualSpace, ConceptualSpace,
     SymbolicSpace, OutputSpace, SyntacticSpace,
 )
 
 
-def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3):
-    """Configure TheObjectEncoding for isolated Space tests."""
-    TheObjectEncoding.objectSize = objSize
-    TheObjectEncoding.nWhere = objSize // 2 if objSize > 0 else 0
-    TheObjectEncoding.nWhen = objSize - (objSize // 2) if objSize > 0 else 0
-    TheObjectEncoding.inputDim = contentDim
-    TheObjectEncoding.perceptDim = contentDim
-    TheObjectEncoding.conceptDim = contentDim
-    TheObjectEncoding.symbolDim = contentDim
-    TheObjectEncoding.wordDim = contentDim
-    TheObjectEncoding.outputDim = outputDim
-    # Set codebook sizes for Space constructors
-    TheObjectEncoding.nInput = nObj
-    TheObjectEncoding.nPercepts = nObj
-    TheObjectEncoding.nConcepts = nObj
-    TheObjectEncoding.nSymbols = nObj
-    TheObjectEncoding.nWords = nObj
-    TheObjectEncoding.nOutput = nObj
-    TheObjectEncoding.nObjects = 0  # reset for test isolation
-    TheObjectEncoding.computeNObjects()
+def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
+                           reconstruct="FULL", reshape=True, ergodic=False,
+                           passThrough=False, hasAttention=True,
+                           invertible=False, hasNorm=False,
+                           symbolPassThrough=False):
+    """Configure TheXMLConfig for isolated Space tests."""
+    nWhere = objSize // 2 if objSize > 0 else 0
+    nWhen = objSize - nWhere if objSize > 0 else 0
+    nObjects = nObj * 6  # 6 spaces, each with nObj vectors
+    # Populate config (test equivalent of XML loading)
+    TheXMLConfig._data.update({
+        "architecture": {
+            "reconstruct": reconstruct,
+            "reshape": reshape, "ergodic": ergodic,
+            "naive": False, "processSymbols": False, "certainty": False,
+            "objectSize": objSize, "nObjects": nObjects,
+            "nWhere": nWhere, "nWhen": nWhen,
+            "embeddingPath": None, "data": {}, "training": {},
+        },
+        "InputSpace":      {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "quantized": False, "lexer": "word"},
+        "PerceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "quantized": False, "passThrough": passThrough, "hasAttention": hasAttention, "invertible": invertible},
+        "ConceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "quantized": False, "hasAttention": False, "hasNorm": hasNorm, "invertible": invertible},
+        "SymbolicSpace":   {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "passThrough": symbolPassThrough, "quantized": False},
+        "SyntacticSpace":  {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "quantized": False},
+        "OutputSpace":     {"nDim": outputDim,  "nVectors": nObj, "nActive": nObj, "quantized": False},
+    })
 
 
 class TestPerceptualSpacePassthrough(unittest.TestCase):
     """PerceptualSpace with passThrough=True is exact identity."""
     def _check(self, objSize):
-        _setup_object_encoding(objSize=objSize)
+        _setup_object_encoding(objSize=objSize, passThrough=True)
         nObj, contentDim = 3, 6
         embDim = contentDim + objSize
         torch.manual_seed(42)
         pspace = PerceptualSpace(
             nObj, nObj,
-            quantized=False, reversible=True,
-            passThrough=True, reshape=False,
         )
         pspace.eval()
         x = torch.randn(2, nObj, embDim).to(TheDevice)
@@ -455,15 +459,13 @@ class TestPerceptualSpaceReversePassTrained(unittest.TestCase):
     Uses reshape=False (3D mode) where the doubling maps cleanly to nActive.
     """
     def _check(self, objSize):
-        _setup_object_encoding(objSize=objSize)
+        _setup_object_encoding(objSize=objSize, passThrough=False, hasAttention=False,
+                               ergodic=False)
         nObj, contentDim = 3, 6
         embDim = contentDim + objSize
         torch.manual_seed(42)
         pspace = PerceptualSpace(
             nObj, 2 * nObj,
-            quantized=False, reversible=True,
-            passThrough=False, reshape=False, ergodic=False,
-            hasAttention=False,
         )
         criterion = nn.MSELoss()
         optimizer = optim.Adam(pspace.parameters(), lr=0.005)
@@ -490,15 +492,13 @@ class TestPerceptualSpaceReversePassTrained(unittest.TestCase):
 class TestConceptualSpaceInvertible(unittest.TestCase):
     """ConceptualSpace with invertible=True should roundtrip well."""
     def _check(self, objSize, reshape):
-        _setup_object_encoding(objSize=objSize)
+        _setup_object_encoding(objSize=objSize, invertible=True, hasNorm=False,
+                               ergodic=False, reshape=reshape, hasAttention=False)
         nObj, contentDim = 3, 6
         embDim = contentDim + objSize
         torch.manual_seed(42)
         cspace = ConceptualSpace(
             nObj, nObj,
-            quantized=False, reversible=True,
-            invertible=True, hasNorm=False, ergodic=False,
-            reshape=reshape, hasAttention=False,
         )
         cspace.eval()
         cspace.sigma.set_sigma(0)
@@ -519,15 +519,13 @@ class TestConceptualSpaceInvertible(unittest.TestCase):
 class TestConceptualSpacePairedSigma(unittest.TestCase):
     """ConceptualSpace with paired (non-invertible) sigma layers."""
     def _check(self, objSize):
-        _setup_object_encoding(objSize=objSize)
+        _setup_object_encoding(objSize=objSize, invertible=False, hasNorm=False,
+                               ergodic=False, reshape=True, hasAttention=False)
         nObj, contentDim = 3, 6
         embDim = contentDim + objSize
         torch.manual_seed(42)
         cspace = ConceptualSpace(
             nObj, nObj,
-            quantized=False, reversible=True,
-            invertible=False, hasNorm=False, ergodic=False,
-            reshape=True, hasAttention=False,
         )
         cspace.eval()
         x = torch.randn(2, nObj, embDim).to(TheDevice)
@@ -548,14 +546,13 @@ class TestConceptualSpaceHasNorm(unittest.TestCase):
     during reverse, keeping the sigma layer square for exact invertibility.
     """
     def test_hasNorm_reshape(self):
-        _setup_object_encoding(objSize=0)
+        _setup_object_encoding(objSize=0, reconstruct="FULL", reshape=True,
+                               invertible=True, hasNorm=True, ergodic=False,
+                               hasAttention=False)
         nObj, contentDim = 3, 6
         torch.manual_seed(42)
         cspace = ConceptualSpace(
             nObj, nObj,
-            quantized=False, reversible=True,
-            invertible=True, hasNorm=True, ergodic=False,
-            reshape=True, hasAttention=False,
         )
         cspace.eval()
         cspace.sigma.set_sigma(0)
@@ -569,13 +566,13 @@ class TestConceptualSpaceHasNorm(unittest.TestCase):
 
 class TestSymbolicSpacePassthrough(unittest.TestCase):
     def _check(self, objSize):
-        _setup_object_encoding(objSize=objSize)
+        _setup_object_encoding(objSize=objSize, reconstruct="FULL", reshape=True,
+                               symbolPassThrough=True)
         nObj, contentDim = 3, 6
         embDim = contentDim + objSize
         torch.manual_seed(42)
         sspace = SymbolicSpace(
             nObj, nObj,
-            reversible=True, passThrough=True, reshape=True,
         )
         sspace.eval()
         x = torch.randn(2, nObj, embDim).to(TheDevice)
@@ -591,13 +588,12 @@ class TestSymbolicSpacePassthrough(unittest.TestCase):
 
 class TestSyntacticSpace(unittest.TestCase):
     def _check(self, objSize):
-        _setup_object_encoding(objSize=objSize)
+        _setup_object_encoding(objSize=objSize, reconstruct="FULL")
         nObj, contentDim = 3, 6
         embDim = contentDim + objSize
         torch.manual_seed(42)
         synspace = SyntacticSpace(
             nObj, nObj,
-            reversible=True,
         )
         synspace.eval()
         x = torch.randn(2, nObj, embDim).to(TheDevice)
@@ -614,13 +610,13 @@ class TestSyntacticSpace(unittest.TestCase):
 class TestOutputSpaceReversePass(unittest.TestCase):
     """OutputSpace changes shape so roundtrip is lossy — just verify no crash."""
     def _check(self, objSize):
-        _setup_object_encoding(objSize=objSize, outputDim=2)
+        _setup_object_encoding(objSize=objSize, outputDim=2, reconstruct="FULL",
+                               reshape=True)
         nObj, contentDim, outputDim = 3, 6, 2
         embDim = contentDim + objSize
         torch.manual_seed(42)
         ospace = OutputSpace(
             nObj, 1,
-            reversible=True,
         )
         ospace.eval()
         x = torch.randn(2, nObj, embDim).to(TheDevice)
