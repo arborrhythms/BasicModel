@@ -280,6 +280,70 @@ class WhatEncoding(Encoding):
 
     nDim = 0  # WhatEncoding does not occupy fixed index slots
 
+    def __init__(self, inputShape=None, outputShape=None):
+        super().__init__([], 0)
+        self.inputShape = inputShape
+        self.outputShape = outputShape
+
+    def forward(self, objects, **kwargs):
+        """Identity content pass-through."""
+        return objects
+
+    def forwardBegin(self, x, batch):
+        """Validate or flatten input at the start of a forward pass."""
+        input_size = self.inputShape[1]
+        assert list(x.shape) == [batch, self.inputShape[0], input_size]
+        return x
+
+    def forwardEnd(self, x, batch):
+        """Validate or unflatten output at the end of a forward pass."""
+        output_size = self.outputShape[1]
+        assert list(x.shape) == [batch, self.outputShape[0], output_size], \
+            f"forwardEnd: got {list(x.shape)}, expected {[batch, self.outputShape[0], output_size]}"
+        return x
+
+    def reverseBegin(self, y, batch):
+        """Validate or flatten output-side state at the start of reverse()."""
+        output_size = self.outputShape[1]
+        assert list(y.shape) == [batch, self.outputShape[0], output_size]
+        return y
+
+    def reverseEnd(self, y, batch):
+        """Validate or unflatten input-side state at the end of reverse()."""
+        input_size = self.inputShape[1]
+        assert list(y.shape) == [batch, self.inputShape[0], input_size]
+        return y
+
+    def flatten(self, x, batch, forward=True):
+        """Collapse [batch, nObj, dim] -> [batch, nObj*dim] for a reshaped space."""
+        if forward:
+            size = self.inputShape[1] * self.inputShape[0]
+        else:
+            size = (self.outputShape[1]) * self.outputShape[0]
+        return x.reshape(batch, size)
+
+    def unflatten(self, y, batch, forward=True):
+        """Restore [batch, nObj*dim] -> [batch, nObj, dim] for a reshaped space."""
+        if forward:
+            per_obj = self.outputShape[1] 
+            return y.reshape(batch, self.outputShape[0], per_obj)
+        else:
+            per_obj = self.inputShape[1]
+            return y.reshape(batch, self.inputShape[0], per_obj)
+
+class ObjectEncoding(Encoding):
+    """Handle the content-layout transform for a space's What factor.
+
+    Unlike WhereEncoding and WhenEncoding, this encoding is not a fixed
+    quadrature code.  It owns only the layout transform used by reshaped
+    spaces: validating [batch, nObj, emb] tensors, flattening them to
+    [batch, nObj*emb] before a layer pass, and restoring them afterwards.
+
+    The encoding is parameter-free and identity by default.
+    """
+
+    nDim = 0  # WhatEncoding does not occupy fixed index slots
+
     def __init__(self, inputShape=None, outputShape=None, reshape=False, objectSize=0):
         super().__init__([], 0)
         self.inputShape = inputShape
@@ -1482,19 +1546,23 @@ class SubSpace(nn.Module):
 
     def __init__(self, inputShape, outputShape,
                  reshape=False,
-                 activeEncoding=None, whatEncoding=None,
+                 objectEncoding=None, activeEncoding=None, whatEncoding=None,
                  whereEncoding=None, whenEncoding=None,
-                 what=None, where=None, when=None, activation=None):
+                 object=None, what=None, where=None, when=None, activation=None):
         super().__init__()
         self.activeEncoding = activeEncoding
         self.whereEncoding = whereEncoding if whereEncoding is not None else WhereEncoding(0, 0)
         self.whenEncoding = whenEncoding if whenEncoding is not None else WhenEncoding(0, 0)
-        self.whatEncoding = whatEncoding
         self.reshape = reshape
         self.objectSize = self.whereEncoding.nDim + self.whenEncoding.nDim
+        self.whatEncoding = whatEncoding if whatEncoding is not None else WhatEncoding(inputShape, outputShape)
+        self.objectEncoding = objectEncoding if objectEncoding is not None else ObjectEncoding(
+            inputShape, outputShape, reshape=reshape, objectSize=self.objectSize)
         self.inputShape = inputShape    # [nActive, nDim]
         self.outputShape = outputShape  # [nActive, nDim]
         self.batch = 0
+        self._materialized = None
+        self.object = self._coerce_basis(object, role="object")
         self.what = self._coerce_basis(what, role="what")
         self.where = self._coerce_basis(where, role="where")
         self.when = self._coerce_basis(when, role="when")
@@ -1509,9 +1577,17 @@ class SubSpace(nn.Module):
         if not isinstance(value, torch.Tensor):
             raise TypeError(f"SubSpace {role} must be a Basis, Tensor, or None")
         basis = Tensor()
-        if role == "what":
+        if role == "object":
             basis.create(
                 self.inputShape[0],
+                self.outputShape[0],
+                self.outputShape[1],
+                passThrough=True,
+                objectSize=self.objectSize,
+            )
+        elif role == "what":
+            basis.create(
+                self.outputShape[0],
                 self.outputShape[0],
                 self.outputShape[1],
                 passThrough=True,
@@ -1530,7 +1606,14 @@ class SubSpace(nn.Module):
         return basis
 
     def vectors(self):
-        return self.what
+        return self.object
+
+    def set_materialized(self, payload):
+        """Cache the current dense stand-in tensor for this runtime state."""
+        self._materialized = payload
+        if isinstance(payload, torch.Tensor) and payload.ndim > 0:
+            self.batch = payload.shape[0]
+        return payload
 
     # ------------------------------------------------------------------
     # Derived sizes
@@ -1545,7 +1628,7 @@ class SubSpace(nn.Module):
 
         Accounts for reshape, objectSize, and raw_output.
         """
-        we = self.whatEncoding
+        we = self.objectEncoding
         input_size = we.inputShape[1] + we.objectSize
         output_size = we.outputShape[1] + (0 if we.raw_output else we.objectSize)
         if we.reshape:
@@ -1559,45 +1642,39 @@ class SubSpace(nn.Module):
 
     @property
     def shape(self):
-        """Shape of the what tensor (or None if unset)."""
-        if self.what is None:
-            return None
-        if isinstance(self.what, Basis):
-            payload = self.what.materialize()
-            return None if payload is None else payload.shape
-        if isinstance(self.what, torch.Tensor):
-            return self.what.shape
-        return None
+        """Shape of the current dense object tensor (or None if unset)."""
+        payload = self.materialize()
+        return None if payload is None else payload.shape
 
     # ------------------------------------------------------------------
-    # Reshape / validate helpers (delegates to whatEncoding)
+    # Reshape / validate helpers (delegates to objectEncoding)
     # ------------------------------------------------------------------
 
     def forwardBegin(self, x):
         """Validate/reshape input at the start of the forward pass."""
         self.batch = x.shape[0]
-        return self.whatEncoding.forwardBegin(x, self.batch)
+        return self.objectEncoding.forwardBegin(x, self.batch)
 
     def forwardEnd(self, x):
         """Validate/unflatten output at the end of the forward pass."""
-        return self.whatEncoding.forwardEnd(x, self.batch)
+        return self.objectEncoding.forwardEnd(x, self.batch)
 
     def reverseBegin(self, y):
         """Validate/reshape at the start of the reverse pass (output-side)."""
         self.batch = y.shape[0]
-        return self.whatEncoding.reverseBegin(y, self.batch)
+        return self.objectEncoding.reverseBegin(y, self.batch)
 
     def reverseEnd(self, y):
         """Validate/unflatten at the end of the reverse pass (input-side)."""
-        return self.whatEncoding.reverseEnd(y, self.batch)
+        return self.objectEncoding.reverseEnd(y, self.batch)
 
     def flatten(self, x, forward=True):
         """Collapse [batch, nObj, dim] -> [batch, nObj*dim]."""
-        return self.whatEncoding.flatten(x, self.batch, forward=forward)
+        return self.objectEncoding.flatten(x, self.batch, forward=forward)
 
     def unflatten(self, y, forward=True):
         """Restore [batch, nObj*dim] -> [batch, nObj, dim]."""
-        return self.whatEncoding.unflatten(y, self.batch, forward=forward)
+        return self.objectEncoding.unflatten(y, self.batch, forward=forward)
 
     # ------------------------------------------------------------------
     # Construction helpers
@@ -1609,13 +1686,13 @@ class SubSpace(nn.Module):
         """Wrap an existing dense tensor into a SubSpace."""
         return cls(reshape=reshape,
                    inputShape=inputShape, outputShape=outputShape,
-                   what=tensor, **kw)
+                   object=tensor, **kw)
 
     @classmethod
-    def from_components(cls, *, what=None, activation=None,
+    def from_components(cls, *, object=None, what=None, activation=None,
                         where=None, when=None, **kw):
         """Build a SubSpace with explicit factor values."""
-        return cls(what=what, activation=activation, where=where, when=when, **kw)
+        return cls(object=object, activation=activation, where=where, when=when, **kw)
 
     # ------------------------------------------------------------------
     # Materialization
@@ -1624,17 +1701,23 @@ class SubSpace(nn.Module):
     def materialize(self):
         """Return the dense tensor expected by current model code.
 
-        - If ``what`` is a ``Basis``, return its dense runtime payload.
-        - If ``what`` is a plain tensor, compatibility mode returns it directly.
-        - v1: activation is NOT multiplied into what — kept explicit.
-        - Returns None when ``what`` is unset.
+        Prefers an explicit cached runtime tensor when one has been set by a
+        space forward()/reverse() path. Otherwise returns the unfactored
+        ``object`` payload.
+
+        - If ``object`` is a ``Basis``, return its dense runtime payload.
+        - If ``object`` is a plain tensor, compatibility mode returns it directly.
+        - v1: activation is NOT multiplied into object — kept explicit.
+        - Returns None when ``object`` is unset.
         """
-        if self.what is None:
+        if self._materialized is not None:
+            return self._materialized
+        if self.object is None:
             return None
-        if isinstance(self.what, Basis):
-            return self.what.materialize()
-        if isinstance(self.what, torch.Tensor):
-            return self.what
+        if isinstance(self.object, Basis):
+            return self.object.materialize()
+        if isinstance(self.object, torch.Tensor):
+            return self.object
         return None
 
     # ------------------------------------------------------------------
@@ -1724,31 +1807,35 @@ class Space(nn.Module):
         self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
         self.quantized    = TheXMLConfig.space(section, "quantized")
         # self.objectSize needs to be removed . right now it is used by WhatEncoding to take account of the other encodings
+        _nWhat  = TheXMLConfig.space(section, "nDim")
         _nWhere = TheXMLConfig.get("architecture.nWhere")
         _nWhen  = TheXMLConfig.get("architecture.nWhen")
         self.objectSize = _nWhere + _nWhen
         self.customVQ = customVQ
-        whatEncoding = WhatEncoding(inputShape, outputShape, reshape=self.reshape, objectSize=self.objectSize)
+        objectEncoding = ObjectEncoding(inputShape, outputShape, reshape=self.reshape, objectSize=self.objectSize)
+        whatEncoding = WhatEncoding(inputShape, outputShape)
         whereEncoding = WhereEncoding(TheXMLConfig.get("architecture.nObjects"), _nWhere)
         whenEncoding = WhenEncoding(10000, _nWhen)
         self.subspace = SubSpace(
             reshape=self.reshape,
             inputShape=inputShape,
             outputShape=outputShape,
+            objectEncoding=objectEncoding,
             whatEncoding=whatEncoding,
             whereEncoding=whereEncoding,
             whenEncoding=whenEncoding,
-            what=self._build_what_basis(whatEncoding, whereEncoding, whenEncoding),
-            where=self._build_where_basis(whatEncoding, whereEncoding, whenEncoding),
-            when=self._build_when_basis(whatEncoding, whereEncoding, whenEncoding),
-            activation=self._build_activation_basis(whatEncoding, whereEncoding, whenEncoding),
+            object=self._build_object_basis(),
+            what=self._build_what_basis(),
+            where=self._build_where_basis(),
+            when=self._build_when_basis(),
+            activation=self._build_activation_basis(),
         )
         self.embeddingSize = self.subspace.getEncodingSize(self.nDim)
         self.params = []   # parameters for the optimizer (excludes temperature params)
         self.layers = nn.ModuleList()   # layer instances for paramUpdate() delegation
         self._register_requirements()
 
-    def _build_what_basis(self, whatEncoding, whereEncoding, whenEncoding):
+    def _build_object_basis(self):
         basis = Codebook()
         basis.create(
             self.inputShape[0],
@@ -1761,13 +1848,16 @@ class Space(nn.Module):
         basis.ergodic = getattr(self, "ergodic", False)
         return basis
 
-    def _build_where_basis(self, whatEncoding, whereEncoding, whenEncoding):
+    def _build_what_basis(self):
         return None
 
-    def _build_when_basis(self, whatEncoding, whereEncoding, whenEncoding):
+    def _build_where_basis(self):
         return None
 
-    def _build_activation_basis(self, whatEncoding, whereEncoding, whenEncoding):
+    def _build_when_basis(self):
+        return None
+
+    def _build_activation_basis(self):
         return None
 
     def _register_requirements(self):
@@ -1784,11 +1874,29 @@ class Space(nn.Module):
         """Convenience accessor — delegates to subspace."""
         return self.subspace.vectors()
 
+    def _coerce_runtime_input(self, value):
+        """Accept either a dense tensor or a SubSpace at internal boundaries."""
+        if isinstance(value, SubSpace):
+            return value.materialize()
+        return value
+
+    def forward_subspace(self, x):
+        """Run forward() and return this space's runtime SubSpace."""
+        output = self.forward(self._coerce_runtime_input(x))
+        self.subspace.set_materialized(output)
+        return self.subspace
+
+    def reverse_subspace(self, y):
+        """Run reverse() and return this space's runtime SubSpace."""
+        output = self.reverse(self._coerce_runtime_input(y))
+        self.subspace.set_materialized(output)
+        return self.subspace
+
     def getEmbeddedIO(self):
         """Return (input_dim, output_dim) for reshape/validation and layer construction.
 
         Delegates to ``self.subspace.getEmbeddedIO()`` which uses local
-        objectSize from this subspace's WhatEncoding.
+        objectSize from this subspace's ObjectEncoding.
         """
         return self.subspace.getEmbeddedIO()
     def lookup(self, x):
@@ -1866,7 +1974,7 @@ class InputSpace(Space):
     name = "Inputs"
     config_section = "InputSpace"
 
-    def _build_what_basis(self, whatEncoding, whereEncoding, whenEncoding):
+    def _build_object_basis(self):
         if self.model_type == "embedding":
             basis = Embedding()
             basis.ergodic = self.ergodic
@@ -1937,10 +2045,11 @@ class InputSpace(Space):
         # Reshape is applied by downstream spaces (Perceptual, Conceptual, etc.).
         self.reshape = False
         self.subspace.reshape = False
-        self.subspace.whatEncoding.reshape = False
-        if isinstance(self.subspace.vectors(), Embedding):
-            self.doc_spans = self.subspace.vectors().doc_spans
-            self.doc_sources = self.subspace.vectors().doc_sources
+        self.subspace.objectEncoding.reshape = False
+        lexical_basis = self.subspace.object
+        if isinstance(lexical_basis, Embedding):
+            self.doc_spans = lexical_basis.doc_spans
+            self.doc_sources = lexical_basis.doc_sources
             if data.train_input and self.subspace.whereEncoding.nDim > 0:
                 maxP = max(self.subspace.whereEncoding.maxVal, data.inputLength)
                 self.subspace.whereEncoding.maxVal = maxP
@@ -1980,24 +2089,26 @@ class InputSpace(Space):
             self._cached_embedding = None  # consume once
             self.input = cached
             self._forward_input = None
+            self.subspace.set_materialized(self.input)
             return self.input
 
         # Reset positional counter for each forward pass
         self.subspace.whereEncoding.p = 0
 
         batch = input.shape[0]
-        emb = self.subspace.vectors()
-        if not isinstance(emb, Embedding):
+        object_basis = self.subspace.vectors()
+        lexical_basis = self.subspace.object
+        if not isinstance(lexical_basis, Embedding):
             assert list(input.shape) == [batch, self.inputShape[0], self.inputShape[1]]
-            self.input = emb.forward(input)
+            self.input = object_basis.forward(input)
             self._forward_input = None
             if self.objectSize > 0:
                 self.input = self.subspace.encode(self.input)
-            emb._materialized = self.input
-            if isinstance(emb, Tensor):
-                emb.W = self.input
+            object_basis._materialized = self.input
+            if isinstance(object_basis, Tensor):
+                object_basis.W = self.input
         else:
-            self.input, meta = emb.forward(input, return_meta=True)
+            self.input, meta = lexical_basis.forward(input, return_meta=True)
             self._forward_input = meta
             if self.objectSize > 0:
                 if self.subspace.whereEncoding.nDim > 0:
@@ -2011,12 +2122,13 @@ class InputSpace(Space):
                             self.subspace.whereEncoding.stamp(
                                 self.input, b, i, pad_offset)
                 if self.subspace.whenEncoding.nDim > 0:
-                    self.input = self.subspace.encode(
-                        self.input,
-                        where=False,
-                        when=True,
-                    )
-            emb._materialized = self.input
+                        self.input = self.subspace.encode(
+                            self.input,
+                            where=False,
+                            when=True,
+                        )
+            lexical_basis._materialized = self.input
+        object_basis._materialized = self.input
 
         _, output = self.getEmbeddedIO()
         assert list(self.input.shape) == [batch, self.outputShape[0], output]
@@ -2028,6 +2140,7 @@ class InputSpace(Space):
             flat = flat[:, self._output_perm]
             self.input = flat.reshape(B, self._output_perm_nActive, self._output_perm_embDim)
 
+        self.subspace.set_materialized(self.input)
         return self.input
 
     def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM'):
@@ -2102,32 +2215,35 @@ class InputSpace(Space):
             y = flat.reshape(B, self._output_perm_nActive, self._output_perm_embDim)
         y = self.subspace.reverseBegin(y)
         # Store full vector (all subspaces) for MSE loss BEFORE partitioning
-        vectors = self.subspace.vectors()
-        raw = vectors.reverse_raw(y)
+        object_basis = self.subspace.vectors()
+        content_basis = self.subspace.what if isinstance(self.subspace.what, Embedding) else object_basis
+        raw = object_basis.reverse_raw(y)
         self.reconstructed = raw.detach()
-        nWhat = vectors.content_dim
-        what_encoding = self.subspace.whatEncoding
-        if what_encoding is not None:
-            content, aux = what_encoding.split_aux(y, nWhat)
+        nWhat = content_basis.content_dim
+        object_encoding = self.subspace.objectEncoding
+        if object_encoding is not None:
+            content, aux = object_encoding.split_aux(y, nWhat)
         else:
             if y.shape[-1] <= nWhat:
                 content, aux = y.clone(), None
             else:
                 content, aux = y[:, :, :nWhat].clone(), y[:, :, nWhat:].clone()
         # Partition into nWhat/nWhere/nWhen for display
-        content = vectors.reverse(content)
-        if what_encoding is not None:
-            self.input = what_encoding.restore_aux(content, aux)
+        content = content_basis.reverse(content)
+        if object_encoding is not None:
+            self.input = object_encoding.restore_aux(content, aux)
         elif aux is not None:
             self.input = torch.cat([content, aux], dim=-1)
         else:
             self.input = content
-        vectors._materialized = self.input
-        if isinstance(vectors, Embedding):
-            self._recovered_input = vectors.decode_reverse_meta(
+        content_basis._materialized = self.input
+        object_basis._materialized = self.input
+        if isinstance(content_basis, Embedding):
+            self._recovered_input = content_basis.decode_reverse_meta(
                 self.input, subspace=self.subspace)
         else:
             self._recovered_input = None
+        self.subspace.set_materialized(self.input)
         return self.input
 
     def reconstruct_data(self, text=False):
@@ -2518,7 +2634,7 @@ class PerceptualSpace(Space):
                 if not self.reshape:
                     self.outputShape = [2 * self.inputShape[0], self.outputShape[1]]
                     self.subspace.outputShape = self.outputShape
-                    self.subspace.whatEncoding.outputShape = self.outputShape
+                    self.subspace.objectEncoding.outputShape = self.outputShape
             else:
                 self.pi1 = InvertiblePiLayer(input, output, naive=naive, ergodic=ergodic)
                 self.pi2 = InvertiblePiLayer(input, output, naive=naive, ergodic=ergodic)
@@ -2538,6 +2654,7 @@ class PerceptualSpace(Space):
     def forward(self, x):
         """Perception: map input vectors to percepts via PiLayer + optional attention + VQ."""
         if self.passThrough:
+            self.subspace.set_materialized(x)
             return x
         x = self.subspace.forwardBegin(x)
         x = self.forwardPi(x)
@@ -2552,15 +2669,18 @@ class PerceptualSpace(Space):
             x = x.unsqueeze(-1)
             x = torch.concatenate((x, encoding), dim=2)
         self.percepts = self.subspace.forwardEnd(x)
+        self.subspace.set_materialized(self.percepts)
         return self.percepts
     def reverse(self, y):
         """Manifesting: reconstruct input vectors from percepts via reverse PiLayer."""
         if self.passThrough:
+            self.subspace.set_materialized(y)
             return y
         if self.reversible:
             y = self.subspace.reverseBegin(y)
             y = self.reversePi(y)
             y = self.subspace.reverseEnd(y)
+        self.subspace.set_materialized(y)
         return y
     @staticmethod
     def test():
@@ -2659,6 +2779,7 @@ class ConceptualSpace(Space):
             y = y.unsqueeze(-1)
             y = torch.concatenate((y, encoding), dim=2)
         self.concepts = self.subspace.forwardEnd(y)
+        self.subspace.set_materialized(self.concepts)
         return self.concepts
     def reverse(self, y):
         """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer."""
@@ -2688,6 +2809,7 @@ class ConceptualSpace(Space):
             self.concepts = self.norm.reverse(self.concepts)
         #self.concepts = torch.concatenate((self.concepts, encoding), dim=2)
         self.concepts = self.subspace.reverseEnd(self.concepts)
+        self.subspace.set_materialized(self.concepts)
         return self.concepts
     @staticmethod
     def test():
@@ -2761,6 +2883,7 @@ class SymbolicSpace(Space):
         self.symbols = self.subspace.forwardEnd(self.symbols)
         if self.quantized:
             self.symbols  = self.subspace.vectors().forward(self.symbols)
+        self.subspace.set_materialized(self.symbols)
         return self.symbols
     def reverse(self, y):
         """Interpretation: map symbols back to concept vectors (via codebook dereference)."""
@@ -2769,6 +2892,7 @@ class SymbolicSpace(Space):
             if self.processSymbols:
                 self.symbols = self.conceptualSpace.dereference(self.symbols)
         self.symbols = self.subspace.reverseEnd(self.symbols)
+        self.subspace.set_materialized(self.symbols)
         return self.symbols
 
     @staticmethod
@@ -2818,11 +2942,13 @@ class SyntacticSpace(Space):
         self.symbols = self.subspace.forwardBegin(x)
         #self.symbols = self.computeActivation(self.symbols)
         self.symbols = self.subspace.forwardEnd(self.symbols)
+        self.subspace.set_materialized(self.symbols)
         return self.symbols
     # Interpretation
     def reverse(self, y):
         self.symbols = self.subspace.reverseBegin(y)
         self.symbols = self.subspace.reverseEnd(self.symbols)
+        self.subspace.set_materialized(self.symbols)
         return self.symbols
 
     @staticmethod
@@ -2847,7 +2973,7 @@ class OutputSpace(Space):
     config_section = "OutputSpace"
     text_mode = False
 
-    def _build_what_basis(self, whatEncoding, whereEncoding, whenEncoding):
+    def _build_object_basis(self):
         initial_vectors = getattr(self, "_initial_vectors", None)
         if initial_vectors is not None:
             if isinstance(initial_vectors, Basis):
@@ -2888,10 +3014,10 @@ class OutputSpace(Space):
         # so the layer must operate on flattened [batch, nObj*dim] tensors.
         self.reshape = True
         self.subspace.reshape = True
-        self.subspace.whatEncoding.reshape = True
+        self.subspace.objectEncoding.reshape = True
         # Output targets are not embedded — raw_output skips objectSize on the output side
         if not masked_prediction:
-            self.subspace.whatEncoding.raw_output = True
+            self.subspace.objectEncoding.raw_output = True
         self.data = TheData
         self.text_mode = isinstance(self.subspace.vectors(), Embedding)
         input, output = self.getEmbeddedIO()
@@ -2925,12 +3051,14 @@ class OutputSpace(Space):
             output = self.subspace.vectors().forward(output)
         self.output = output
         self.predicted = output.detach()
+        self.subspace.set_materialized(self.output)
         return output
     def reverse(self, y):
         """Being acted upon: map output back to symbolic space via reverse LinearLayer."""
         y = self.subspace.reverseBegin(y)
         y = self.reverseLinear(y)
         output = self.subspace.reverseEnd(y)
+        self.subspace.set_materialized(output)
         return output
     def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM'):
         """Extract target embedding vectors from the embedded sentence.
@@ -2970,23 +3098,23 @@ class OutputSpace(Space):
         Convenience method for tests. Production code passes vectors= to __init__.
         """
         vs = input_space.subspace.vectors()
-        self.subspace.what = vs
+        self.subspace.object = vs
         self.text_mode = isinstance(vs, Embedding)
 
     def _reverse_text_vectors(self, vectors):
-        emb = self.subspace.vectors()
+        emb = self.subspace.object
         nWhat = emb.content_dim
-        what_encoding = self.subspace.whatEncoding
-        if what_encoding is not None:
-            content, aux = what_encoding.split_aux(vectors, nWhat)
+        object_encoding = self.subspace.objectEncoding
+        if object_encoding is not None:
+            content, aux = object_encoding.split_aux(vectors, nWhat)
         else:
             if vectors.shape[-1] <= nWhat:
                 content, aux = vectors.clone(), None
             else:
                 content, aux = vectors[:, :, :nWhat].clone(), vectors[:, :, nWhat:].clone()
         content = emb.reverse(content)
-        if what_encoding is not None:
-            restored = what_encoding.restore_aux(content, aux)
+        if object_encoding is not None:
+            restored = object_encoding.restore_aux(content, aux)
         elif aux is not None:
             restored = torch.cat([content, aux], dim=-1)
         else:
@@ -3637,7 +3765,7 @@ class BasicModel(BaseModel):
         # Convert masked-word string labels to embedding vectors now that
         # the Embedding vocabulary is available.
         if data is not None and hasattr(data, '_lm_labels') and data._lm_labels is not None:
-            embedding = self.inputSpace.subspace.vectors() if self.inputSpace.subspace.what is not None else None
+            embedding = self.inputSpace.subspace.vectors() if self.inputSpace.subspace.object is not None else None
             if embedding is not None and hasattr(embedding, 'pretrain'):
                 data.prepare_lm_targets(embedding)
                 # Move new targets to device
@@ -3684,48 +3812,61 @@ class BasicModel(BaseModel):
 
     def Start(self, inputData):
         """Forward pass through the core pipeline: Input -> Percept -> Concept -> Symbol."""
-        input = self.inputSpace(inputData)
-        percepts = self.perceptualSpace(input)
-        concepts = self.conceptualSpace(percepts)
-        symbols = self.symbolicSpace(concepts)
+        self.inputs = self.inputSpace.forward_subspace(inputData)
+        self.percepts = self.perceptualSpace.forward_subspace(self.inputs)
+        self.concepts = self.conceptualSpace.forward_subspace(self.percepts)
+        self.symbols = self.symbolicSpace.forward_subspace(self.concepts)
+        input = self.inputs.materialize()
+        concepts = self.concepts.materialize()
+        symbols = self.symbols.materialize()
         if self.plot:
             TheReport.plotActivations(figure=1, concepts=concepts)
         return input, concepts, symbols
     def StartReverse(self, symbols):
         """Reverse pass: Symbol -> Concept -> Percept -> Input (reconstruction)."""
-        concepts = self.symbolicSpace.reverse(symbols)
-        percepts = self.conceptualSpace.reverse(concepts)
-        input = self.perceptualSpace.reverse(percepts)
-        inputData  = self.inputSpace.reverse(input)
+        concepts_state = self.symbolicSpace.reverse_subspace(symbols)
+        percepts_state = self.conceptualSpace.reverse_subspace(concepts_state)
+        input_state = self.perceptualSpace.reverse_subspace(percepts_state)
+        self.inputs = self.inputSpace.reverse_subspace(input_state)
+        input = input_state.materialize()
+        inputData  = self.inputs.materialize()
         return inputData, input
     def SubsymbolicThought(self, data):
         """Extra Percept->Concept->Symbol cycle (conceptualOrder >= 1)."""
-        percepts = self.perceptualSpace2(data)
-        concepts = self.conceptualSpace2(percepts)
-        symbols  = self.symbolicSpace2(concepts)
+        percepts_state = self.perceptualSpace2.forward_subspace(data)
+        concepts_state = self.conceptualSpace2.forward_subspace(percepts_state)
+        symbols_state  = self.symbolicSpace2.forward_subspace(concepts_state)
+        percepts = percepts_state.materialize()
+        concepts = concepts_state.materialize()
+        symbols = symbols_state.materialize()
         if self.plot:
             TheReport.plotActivations(figure=1, percepts=percepts, concepts=concepts)
         return concepts, symbols
     def SubsymbolicThoughtReverse(self, concepts, symbols):
         """Reverse of SubsymbolicThought."""
-        concepts = self.symbolicSpace2.reverse(symbols)
-        percepts = self.conceptualSpace2.reverse(concepts)
+        concepts_state = self.symbolicSpace2.reverse_subspace(symbols)
+        percepts_state = self.conceptualSpace2.reverse_subspace(concepts_state)
+        percepts = percepts_state.materialize()
         return percepts
     def SymbolicThought(self, data):
         """Extra Syntax->Symbol cycle (symbolicOrder >= 1)."""
-        words   = self.syntacticSpace3(data)
-        symbols = self.symbolicSpace3(words)
+        words_state = self.syntacticSpace3.forward_subspace(data)
+        symbols_state = self.symbolicSpace3.forward_subspace(words_state)
+        words = words_state.materialize()
+        symbols = symbols_state.materialize()
         if self.plot:
             TheReport.plotActivations(figure=1, symbols=symbols)
         return symbols, words
     def SymbolicThoughtReverse(self, symbols, words):
         """Reverse of SymbolicThought."""
-        symbols = self.syntacticSpace3.reverse(words)
-        data    = self.symbolicSpace3.reverse(symbols)
+        symbols_state = self.syntacticSpace3.reverse_subspace(words)
+        data_state = self.symbolicSpace3.reverse_subspace(symbols_state)
+        data = data_state.materialize()
         return data
     def Finish(self, symbols):
         """Project concatenated symbols to task output via OutputSpace."""
-        outputData = self.outputSpace(symbols)
+        self.outputs = self.outputSpace.forward_subspace(symbols)
+        outputData = self.outputs.materialize()
         if self.plot:
             TheReport.plotActivations(figure=1, symbols=symbols)
         return outputData
@@ -3738,9 +3879,9 @@ class BasicModel(BaseModel):
         """
         mode = getattr(self, 'reconstruct', 'symbols')
         if mode == 'output':
-            return self.outputSpace.reverse(outputData)
+            return self.outputSpace.reverse_subspace(outputData).materialize()
         elif mode == 'both':
-            output_symbols = self.outputSpace.reverse(outputData)
+            output_symbols = self.outputSpace.reverse_subspace(outputData).materialize()
         else:  # 'symbols'
             output_symbols = self.output_symbols
         if self.recon_symbols is not None and self.nReconSymbols > 0:
@@ -4303,15 +4444,20 @@ class MentalModel(BaseModel):
         self.to(TheDevice)
 
     def Start(self, inputData):
-        input_state = self.inputSpace(inputData)
-        percepts = self.perceptualSpace(input_state)
-        concepts = self.conceptualSpace(input_state)
+        self.inputs = self.inputSpace.forward_subspace(inputData)
+        self.percepts = self.perceptualSpace.forward_subspace(self.inputs)
+        self.concepts = self.conceptualSpace.forward_subspace(self.inputs)
+        input_state = self.inputs.materialize()
+        percepts = self.percepts.materialize()
+        concepts = self.concepts.materialize()
         merged = torch.cat([percepts, concepts], dim=1)
-        symbols = self.symbolicSpace(merged)
+        self.symbols = self.symbolicSpace.forward_subspace(merged)
+        symbols = self.symbols.materialize()
         return input_state, percepts, concepts, symbols
 
     def Finish(self, symbols):
-        return self.outputSpace(symbols)
+        self.outputs = self.outputSpace.forward_subspace(symbols)
+        return self.outputs.materialize()
 
     def forward(self, inputData):
         if isinstance(inputData, torch.Tensor):
@@ -4321,18 +4467,18 @@ class MentalModel(BaseModel):
         return input_state, percepts, concepts, symbols, outputData
 
     def reverse(self, symbols, outputData):
-        symbols = self.outputSpace.reverse(outputData)
-        merged = self.symbolicSpace.reverse(symbols)
+        symbols = self.outputSpace.reverse_subspace(outputData).materialize()
+        merged = self.symbolicSpace.reverse_subspace(symbols).materialize()
 
         percepts = merged[:, :self.nPercepts, :]
         concepts = merged[:, self.nPercepts:self.nPercepts + self.nConcepts, :]
 
-        input_from_percepts = self.perceptualSpace.reverse(percepts)
-        input_from_concepts = self.conceptualSpace.reverse(concepts)
+        input_from_percepts = self.perceptualSpace.reverse_subspace(percepts).materialize()
+        input_from_concepts = self.conceptualSpace.reverse_subspace(concepts).materialize()
 
         # Hypothetical merge rule for the two reconstructed input streams.
         input_latent = 0.5 * (input_from_percepts + input_from_concepts)
-        input_data = self.inputSpace.reverse(input_latent)
+        input_data = self.inputSpace.reverse_subspace(input_latent).materialize()
 
         return input_data, input_latent
 TheBasicModel = BasicModel()

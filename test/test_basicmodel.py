@@ -489,9 +489,9 @@ class TestSubSpaceDerivedSizes(unittest.TestCase):
         self.assertEqual(ss.getEncodingSize(0), 4)
 
     def test_getEmbeddedIO_no_reshape(self):
-        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, WhatEncoding
+        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, ObjectEncoding
         ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
-                      whatEncoding=WhatEncoding([3, 8], [5, 16], reshape=False, objectSize=4),
+                      objectEncoding=ObjectEncoding([3, 8], [5, 16], reshape=False, objectSize=4),
                       reshape=False,
                       inputShape=[3, 8], outputShape=[5, 16])
         inp, out = ss.getEmbeddedIO()
@@ -499,9 +499,9 @@ class TestSubSpaceDerivedSizes(unittest.TestCase):
         self.assertEqual(out, 16 + 4)
 
     def test_getEmbeddedIO_reshape(self):
-        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, WhatEncoding
+        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, ObjectEncoding
         ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
-                      whatEncoding=WhatEncoding([3, 8], [5, 16], reshape=True, objectSize=4),
+                      objectEncoding=ObjectEncoding([3, 8], [5, 16], reshape=True, objectSize=4),
                       reshape=True,
                       inputShape=[3, 8], outputShape=[5, 16])
         inp, out = ss.getEmbeddedIO()
@@ -509,8 +509,8 @@ class TestSubSpaceDerivedSizes(unittest.TestCase):
         self.assertEqual(out, (16 + 4) * 5)
 
     def test_zero_objectSize(self):
-        from BasicModel import SubSpace, WhatEncoding
-        ss = SubSpace(whatEncoding=WhatEncoding([2, 10], [2, 10]),
+        from BasicModel import SubSpace, ObjectEncoding
+        ss = SubSpace(objectEncoding=ObjectEncoding([2, 10], [2, 10]),
                       inputShape=[2, 10], outputShape=[2, 10])
         inp, out = ss.getEmbeddedIO()
         self.assertEqual(inp, 10)
@@ -527,7 +527,7 @@ class TestSubSpaceMaterialize(unittest.TestCase):
                                   inputShape=[4, 8], outputShape=[4, 8])
         result = ss.materialize()
         self.assertIs(result, t)
-        self.assertIsInstance(ss.what, Tensor)
+        self.assertIsInstance(ss.object, Tensor)
 
     def test_materialize_none_when_unset(self):
         from BasicModel import SubSpace, WhereEncoding, WhenEncoding
@@ -570,30 +570,30 @@ class TestSubSpaceConstruction(unittest.TestCase):
         t = torch.randn(2, 3, 10)
         ss = SubSpace.from_tensor(t, whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
                                   inputShape=[3, 6], outputShape=[3, 6])
-        self.assertIsInstance(ss.what, Tensor)
-        self.assertIs(ss.what.W, t)
+        self.assertIsInstance(ss.object, Tensor)
+        self.assertIs(ss.object.W, t)
         self.assertEqual(ss.objectSize, 4)
         self.assertEqual(ss.inputShape, [3, 6])
 
     def test_from_components(self):
         from BasicModel import SubSpace, ActiveEncoding, Tensor, WhereEncoding, WhenEncoding
-        what = torch.randn(2, 4, 8)
+        object = torch.randn(2, 4, 8)
         act = torch.ones(2, 4)
         ae = ActiveEncoding()
         ss = SubSpace.from_components(
-            what=what, activation=act, activeEncoding=ae,
+            object=object, activation=act, activeEncoding=ae,
             whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
             inputShape=[4, 4], outputShape=[4, 4])
-        self.assertIsInstance(ss.what, Tensor)
+        self.assertIsInstance(ss.object, Tensor)
         self.assertIsInstance(ss.activation, Tensor)
-        self.assertIs(ss.what.W, what)
+        self.assertIs(ss.object.W, object)
         self.assertIs(ss.activation.W, act)
         self.assertIs(ss.activeEncoding, ae)
 
     def test_from_components_defaults_none(self):
         from BasicModel import SubSpace
         ss = SubSpace.from_components(inputShape=[4, 8], outputShape=[4, 8])
-        self.assertIsNone(ss.what)
+        self.assertIsNone(ss.object)
         self.assertIsNone(ss.activation)
         self.assertIsNone(ss.where)
         self.assertIsNone(ss.when)
@@ -614,11 +614,11 @@ class TestSubSpaceActiveEncoding(unittest.TestCase):
 
     def test_two_spaces_independent_encoding(self):
         """Two SubSpaces can have different objectSize without shared coupling."""
-        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, WhatEncoding
+        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, ObjectEncoding
         ss1 = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
-                        whatEncoding=WhatEncoding([3, 8], [3, 8], objectSize=4),
+                        objectEncoding=ObjectEncoding([3, 8], [3, 8], objectSize=4),
                         inputShape=[3, 8], outputShape=[3, 8])
-        ss2 = SubSpace(whatEncoding=WhatEncoding([3, 16], [3, 16]),
+        ss2 = SubSpace(objectEncoding=ObjectEncoding([3, 16], [3, 16]),
                         inputShape=[3, 16], outputShape=[3, 16])
         self.assertEqual(ss1.getEncodingSize(8), 12)
         self.assertEqual(ss2.getEncodingSize(16), 16)
@@ -922,6 +922,30 @@ class TestSpaceBasisConstruction(unittest.TestCase):
         s = Space([4, 3], [4, 3], 4)
         self.assertIsInstance(s.vectors(), Codebook)
         self.assertTrue(s.vectors().passThrough)
+
+    def test_forward_subspace_round_trip_keeps_runtime_state(self):
+        from BasicModel import InputSpace, PerceptualSpace, SubSpace
+        _populate_test_config(
+            inputDim=3, perceptDim=3,
+            nInput=4, nPercepts=4,
+            quantized=False, perceptPassThrough=True,
+            nWhere=0, nWhen=0, reshape=False,
+        )
+        inp = InputSpace(4, 4, model_type="simple")
+        per = PerceptualSpace(4, 4)
+        x = torch.randn(2, 4, 3).to(TheDevice)
+
+        input_state = inp.forward_subspace(x)
+        self.assertIsInstance(input_state, SubSpace)
+        self.assertTrue(torch.equal(input_state.materialize(), x))
+
+        percept_state = per.forward_subspace(input_state)
+        self.assertIsInstance(percept_state, SubSpace)
+        self.assertTrue(torch.equal(percept_state.materialize(), x))
+
+        reversed_state = per.reverse_subspace(percept_state)
+        self.assertIsInstance(reversed_state, SubSpace)
+        self.assertTrue(torch.equal(reversed_state.materialize(), x))
 
 
 class TestConceptualSpaceErgodic(unittest.TestCase):
@@ -2555,8 +2579,8 @@ class TestVocabSaveRestore(unittest.TestCase):
             self.assertEqual(list(emb2.pretrain.index_to_key), vocab_before)
             # Embedding shapes must match exactly
             torch.testing.assert_close(
-                m2.state_dict()["inputSpace.subspace.what.wv._vectors"],
-                m1.state_dict()["inputSpace.subspace.what.wv._vectors"])
+                m2.state_dict()["inputSpace.subspace.object.wv._vectors"],
+                m1.state_dict()["inputSpace.subspace.object.wv._vectors"])
         finally:
             os.unlink(emb_path)
 
