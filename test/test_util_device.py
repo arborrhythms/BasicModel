@@ -130,7 +130,8 @@ class TestCudaSanityChecks(unittest.TestCase):
     def test_compile_tries_successive_backends(self, compile_mock, patch_mock):
         model = object()
 
-        def _compile_side_effect(model_arg, backend=None):
+        def _compile_side_effect(model_arg, backend=None, mode=None):
+            self.assertEqual(mode, "max-autotune")
             if backend == "inductor":
                 raise RuntimeError("inductor failed")
             if backend == "eager":

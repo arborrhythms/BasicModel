@@ -287,7 +287,7 @@ def compile(model, verbose=True):
     backends = _COMPILE_BACKENDS if TheCompileBackend == "auto" else (TheCompileBackend,)
     for backend in backends:
         try:
-            compiled = torch.compile(model, backend=backend)
+            compiled = torch.compile(model, mode="max-autotune", backend=backend)
             _msg(f"Model compiled ({backend})")
             return compiled
         except Exception as e:

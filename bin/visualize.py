@@ -220,6 +220,48 @@ class Report:
         webbrowser.open(file_url)
     # ----- Plotting methods -----
 
+    def mnistReport(self, model):
+        """Run test epoch, compute per-digit accuracy, and plot."""
+        if hasattr(model, 'masked_prediction') and model.masked_prediction != 'NONE':
+            return torch.zeros(1)  # no classification report for masked prediction
+        model.set_sigma(0)  # suppress exploration for evaluation
+        _, _, y_pred, last_x_pred = model.runEpoch(split="test")
+        if y_pred.dim() == 1 or y_pred.shape[-1] == 1:
+            predicted = (y_pred.squeeze() > 0.5).long()
+            actual = (model.outputSpace.getTestOutput().squeeze() > 0.5).long()
+        else:
+            _, predicted = torch.max(y_pred, 1)
+            _, actual = torch.max(model.outputSpace.getTestOutput(), 1)
+
+        nClasses = int(actual.max().item()) + 1
+        if model.certainty:
+            fwd_layer = (model.outputSpace.linear1
+                         if hasattr(model.outputSpace, 'linear1')
+                         else model.outputSpace.forwardLinear)
+            norms = torch.linalg.norm(fwd_layer.W, dim=0)
+            rCorrect = torch.zeros_like(norms)
+        else:
+            rCorrect = torch.zeros((nClasses))
+        for i in range(nClasses):
+            total    = (actual == i).sum().item()
+            correct  = (actual==i) & (predicted==actual)
+            nCorrect = correct.sum().item()
+            rCorrect[i] = nCorrect / total if total > 0 else 0.0
+            print(f"Correctly predicted {i}: {rCorrect[i]}")
+            if model.certainty:
+                print(f"Weight norm: {norms[i]}")
+
+        if model.certainty:
+            input_matrix = torch.stack((rCorrect, norms))
+            correlation_matrix = torch.corrcoef(input_matrix)
+            correlation_value = correlation_matrix[0, 1]
+            print(f"Pearson Correlation: {correlation_value}")
+            from data import TheData
+            self.plotAccuracyAndCertainty(model.name, rCorrect, model.reversible, last_x_pred, TheData.test_output)
+        else:
+            self.plotAccuracy(model.name, rCorrect)
+        return rCorrect
+
     def plotAccuracy(self, model_name, rCorrect):
         """Plot per-class accuracy."""
         if not self.enabled:

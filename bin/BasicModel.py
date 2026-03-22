@@ -29,6 +29,7 @@ from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
 from vector_quantize_pytorch import ResidualVQ, VectorQuantize
 import torch.optim as optim
+from torch.profiler import profile as torch_profile, ProfilerActivity, schedule as profiler_schedule
 from functools import partial
 from datetime import datetime
 TheDevice = util.TheDevice
@@ -807,7 +808,7 @@ class Codebook(Basis):
             for b in range(x.shape[0]):
                 for v in range(x.shape[1]):
                     nearestDist, nearestIdx = torch.topk(dists[b, v, :], 1, dim=-1, largest=True)
-                    err = nearestDist[0]
+                    err = nearestDist[0].item()
                     idx = nearestIdx[0].item()
                     if err <= self.snapDistance:
                         x[b, v, :] = self.W[idx, :]
@@ -3353,7 +3354,7 @@ class BaseModel(nn.Module):
         lr = self._optimizer.param_groups[0]['lr']
         self._optimizer = self.getOptimizer(lr=lr)
 
-    def run(self, numTrials=1, numEpochs=1, batchSize=10, lr=0.001):
+    def run(self, numTrials=1, numEpochs=1, batchSize=10, lr=0.001, profile=None):
         """Run multiple independent trials, recreating the model each time.
 
         Each trial calls create_from_config() to rebuild from scratch so
@@ -3369,7 +3370,8 @@ class BaseModel(nn.Module):
             print(f"\nTrial [{trial + 1}/{numTrials}]")
             if has_config and (trial > 0 or not already_configured):
                 self.create_from_config(self._config_path, data=self._config_data)
-            acc[trial, :] = self.runTrial(numEpochs=numEpochs, batchSize=batchSize, lr=lr)
+            acc[trial, :] = self.runTrial(numEpochs=numEpochs, batchSize=batchSize, lr=lr, profile=profile)
+
         np.savetxt(ProjectPaths.output_path(f"{self.name}.csv"), np.array(acc), delimiter=",")
         return acc
 
@@ -3489,49 +3491,6 @@ class BaseModel(nn.Module):
         emb.wv.total_count = np.int64(total_count)
         emb._pending_counts = dict(pending_counts) if pending_counts else {}
         emb.wv._normed = None
-
-    def mnistReport(self):
-        """Run test epoch, compute per-digit accuracy, and plot."""
-        if hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE':
-            return torch.zeros(1)  # no classification report for masked prediction
-        self.set_sigma(0)  # suppress exploration for evaluation
-        _, _, y_pred, last_x_pred = self.runEpoch(split="test")
-        if y_pred.dim() == 1 or y_pred.shape[-1] == 1:
-            predicted = (y_pred.squeeze() > 0.5).long()
-            actual = (self.outputSpace.getTestOutput().squeeze() > 0.5).long()
-        else:
-            _, predicted = torch.max(y_pred, 1)
-            _, actual = torch.max(self.outputSpace.getTestOutput(), 1)
-
-        nClasses = int(actual.max().item()) + 1
-        if self.certainty:
-            # forwardLinear may be a bound method (reversible=True) or a
-            # LinearLayer (reversible=False).  Get the layer either way.
-            fwd_layer = (self.outputSpace.linear1
-                         if hasattr(self.outputSpace, 'linear1')
-                         else self.outputSpace.forwardLinear)
-            norms = torch.linalg.norm(fwd_layer.W, dim=0)
-            rCorrect = torch.zeros_like(norms)
-        else:
-            rCorrect = torch.zeros((nClasses))
-        for i in range(nClasses):
-            total    = (actual == i).sum().item()
-            correct  = (actual==i) & (predicted==actual)
-            nCorrect = correct.sum().item()
-            rCorrect[i] = nCorrect / total if total > 0 else 0.0
-            print(f"Correctly predicted {i}: {rCorrect[i]}")
-            if self.certainty:
-                print(f"Weight norm: {norms[i]}")
-
-        if self.certainty:
-            input_matrix = torch.stack((rCorrect, norms))
-            correlation_matrix = torch.corrcoef(input_matrix)
-            correlation_value = correlation_matrix[0, 1]
-            print(f"Pearson Correlation: {correlation_value}")
-            TheReport.plotAccuracyAndCertainty(self.name, rCorrect, self.reversible, last_x_pred, TheData.test_output)
-        else:
-            TheReport.plotAccuracy(self.name, rCorrect)
-        return rCorrect
 
     def _get_sentences(self, split):
         """Return raw sentence strings for a data split.
@@ -4017,7 +3976,7 @@ class BasicModel(BaseModel):
         inputData, input = self.StartReverse(symbols)
         return inputData, input
 
-    def runTrial(self, numEpochs=1, batchSize=10, lr=0.01):
+    def runTrial(self, numEpochs=1, batchSize=10, lr=0.01, profile=None):
         """Main training loop: train for numEpochs, evaluate on test set each epoch.
 
         Alpha (exploration temperature) anneals from 1.0 (full exploration)
@@ -4082,9 +4041,12 @@ class BasicModel(BaseModel):
 
             self.inputSpace.shuffle()
 
+            if profile:
+                profile.step()
+
         print(f"Final Stats:")
         TheReport.plotLoss(self.name, trainLosses, validationLosses, testLosses)
-        self.rCorrect = self.mnistReport()
+        self.rCorrect = TheReport.mnistReport(self)
 
         # Reconstruction report: run final test pass and show input vs reconstructed
         if self.reversible and self.inputSpace.model_type == "embedding":
@@ -4304,7 +4266,7 @@ class BasicModel(BaseModel):
                     self.trainEmbeddings(('CBOW', 'SBOW', 'BOTH'), batchNum, split)
 
                 outErr = result.lossOut.item()
-                inErr = result.lossIn.item() if result.lossIn is not None else 0
+                inErr = result.lossIn.item()
 
                 outputDataPred = result.outputPred.clone().detach().squeeze()
                 outputChunks.append(outputDataPred)
@@ -4625,20 +4587,33 @@ class ModelFactory:
         def _d(key, default=None):
             return dat.get(key, default)
 
+        do_profile = os.environ.get("BASIC_PROFILE", "").lower() in ("1", "true") or _t("profile", False)
+        if do_profile:
+            with torch_profile(
+                activities=[ProfilerActivity.CPU],
+                schedule=profiler_schedule(wait=1, warmup=1, active=3, repeat=1),
+                record_shapes=True,
+                profile_memory=True,
+                with_stack=True,
+            ) as prof:
+                m.run(_t("numTrials", 1),
+                            _t("numEpochs", 3),
+                            _t("batchSize", 10),
+                            lr=_t("learningRate", 0.01), profile=prof)
+
+            # Print summary table
+            print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=30))
+
+            # Export Chrome trace
+            trace_path = ProjectPaths.output_path("profile_trace.json")
+            prof.export_chrome_trace(trace_path)
+            print(f"Chrome trace saved to {trace_path}")
+            return [(m.name, m.rCorrect, m)]
+
         m.run(_t("numTrials", 1),
                     _t("numEpochs", 3),
                     _t("batchSize", 10),
                     lr=_t("learningRate", 0.01))
-
-        report_kwargs = {}
-        cmin = _d("classificationMin")
-        cmax = _d("classificationMax")
-        if cmin not in (None, ""):
-            report_kwargs["min"] = cmin
-        if cmax not in (None, ""):
-            report_kwargs["max"] = cmax
-        if report_kwargs:
-            return TheReport.classificationReport( **report_kwargs )
 
         if _t("autosave", False):
             wpath = TheXMLConfig.get("architecture.weightsPath", "weights.ckpt")
@@ -4709,10 +4684,19 @@ if __name__ == "__main__":
             "Overrides BASICMODEL_COMPILE env var."
         ),
     )
+    parser.add_argument(
+        "--profile",
+        action="store_true",
+        default=False,
+        help="Profile the model's training step using torch.profiler (overrides XML <training><profile>).",
+    )
     args = parser.parse_args()
 
     if args.compile is not None:
         init_compile_backend(args.compile)
+
+    if args.profile:
+        os.environ["BASIC_PROFILE"] = "true"
 
     TheReport.enabled = args.report
 
