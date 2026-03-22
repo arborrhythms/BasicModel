@@ -3996,12 +3996,12 @@ class BasicModel(BaseModel):
         self._optimizer   = self.getOptimizer(lr=lr)
 
         # Enable sigma-driven self-annealing for ergodic layers
-        self.set_sigma(1.0)
+        self.set_sigma(0.5)
 
         # Baseline evaluation before any training
         self.set_sigma(0)
         outErr, inErr, allOut, lastIn = self.runEpoch(batchSize=batchSize, split="test")
-        self.set_sigma(1.0)
+        self.set_sigma(0.5)
         testLosses[0].append(outErr)
         testLosses[1].append(inErr)
         print(f"Baseline Test Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
@@ -4016,7 +4016,7 @@ class BasicModel(BaseModel):
 
             self.set_sigma(0)  # suppress exploration during eval
             outErr, inErr, allOut, lastIn = self.runEpoch(batchSize=batchSize, split="test")
-            self.set_sigma(1.0)  # re-enable for next training epoch
+            self.set_sigma(0.5)  # re-enable for next training epoch
             testLosses[0].append(outErr)
             testLosses[1].append(inErr)
 

@@ -250,7 +250,6 @@ class TestSPNN(unittest.TestCase):
         self.assertTrue(hasattr(net, 'W1'))
         self.assertTrue(hasattr(net, 'W2'))
 
-    @unittest.skip("slow")
     def test_xor_training(self):
         from SPNN import SPNN
         net = SPNN("tanh", False)
@@ -1667,7 +1666,7 @@ class TestEmbeddingErgodicForward(unittest.TestCase):
         baseline = emb.forward(batch)
 
         emb.ergodic = True
-        emb.set_sigma(1.0)
+        emb.set_sigma(0.5)
         torch.manual_seed(0)
         noisy = emb.forward(batch)
 
@@ -2037,7 +2036,6 @@ class TestReconstructionSymbols(unittest.TestCase):
         with self.assertRaises(ValueError):
             self._create_xor_model(nSymbols=2, nOutput=3)
 
-    @unittest.skip("slow")
     def test_xor_training_with_recon_symbols(self):
         """Training with recon symbols works end-to-end and output loss converges.
 
@@ -2081,7 +2079,6 @@ class TestReconstructionSymbols(unittest.TestCase):
         finally:
             os.unlink(tmp.name)
 
-    @unittest.skip("slow")
     def test_xor_perfect_reconstruction(self):
         """After training, all 4 XOR inputs reconstruct to the correct words.
 

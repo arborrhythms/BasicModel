@@ -59,11 +59,11 @@ class TestInvertibleRotationLayer(unittest.TestCase):
         layer_g = InvertibleRotationLayer(dim=dim, naive=False, useGivens=True)
         n_g = sum(p.numel() for p in layer_g.parameters() if p.requires_grad)
         self.assertEqual(n_g, expected_givens, f"Givens: {n_g} != {expected_givens}")
-        # Householder WY: shrinking support, raw = sum(dim-i for i=0..dim-2) = 35
-        layer_h = InvertibleRotationLayer(dim=dim, naive=False, useGivens=False)
-        n_h = sum(p.numel() for p in layer_h.parameters() if p.requires_grad)
-        expected_raw = sum(dim - i for i in range(dim - 1))  # 35
-        self.assertEqual(n_h, expected_raw, f"Householder WY: {n_h} != {expected_raw}")
+        # Householder (default): shrinking support, raw = sum(dim-i for i=0..dim-2) = 35
+        layer_hh = InvertibleRotationLayer(dim=dim, naive=False, useGivens=False)
+        n_hh = sum(p.numel() for p in layer_hh.parameters() if p.requires_grad)
+        expected_hh = sum(dim - i for i in range(dim - 1))  # 35
+        self.assertEqual(n_hh, expected_hh, f"Householder: {n_hh} != {expected_hh}")
 
 
 class TestInvertibleDiagonalLayer(unittest.TestCase):
