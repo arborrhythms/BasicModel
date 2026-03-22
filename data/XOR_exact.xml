@@ -7,7 +7,7 @@
     <symbolicOrder>1</symbolicOrder>
     <modelType>embedding</modelType>
     <ergodic>false</ergodic>
-    <naive>true</naive>
+    <naive>false</naive>
     <weightsPath></weightsPath>
 
     <data>
