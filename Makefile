@@ -34,6 +34,8 @@ MAKE_PDF = pandoc $(PDFOPTS) \
 all : xor
 
 install :
+	deactivate 2>/dev/null || true
+	rm -rf .venv
 	python3 -m venv .venv
 	.venv/bin/pip install --upgrade pip setuptools wheel
 	.venv/bin/pip install -r requirements.txt
@@ -57,7 +59,7 @@ train_remote :
 train_micro_remote :
 	$(MAKE) train_micro TRAIN_HOST=arbormini.local
 
-xor : data/XOR_pos.xml
+xor : data/XOR_exact.xml
 	make run XML1=$<
 
 tomatoes : data/tomatoes.xml

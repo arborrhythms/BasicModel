@@ -35,7 +35,7 @@ TheDevice = util.TheDevice
 TheMessage = util.TheMessage
 
 from visualize import Report, TheReport
-from util import ProjectPaths, compile, TheXMLConfig, init_config
+from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
 from Model import Layer, PiLayer, SigmaLayer, InvertibleSigmaLayer, InvertiblePiLayer # Import custom layers from Model.py
@@ -1060,7 +1060,7 @@ class Embedding(Basis):
 
         # Extend WordVectors parameter
         with torch.no_grad():
-            new_data = torch.cat([self.wv._vectors.data, new_vec], dim=0)
+            new_data = torch.cat([self.wv._vectors.data, new_vec.to(self.wv._vectors.device)], dim=0)
             self.wv._vectors = nn.Parameter(new_data, requires_grad=True)
         self.wv.counts = np.append(self.wv.counts, np.int64(initial_count))
         self._pending_counts.pop(word, None)
@@ -3913,11 +3913,26 @@ class BasicModel(BaseModel):
         if mode is None:
             mode = getattr(self, 'masked_prediction', 'ARIR')
         mode = mode.upper()
+        if max_length is None:
+            max_length = getattr(self, 'max_response_length', 256)
 
-        if mode == 'ARLM':
-            if max_length is None:
-                max_length = getattr(self, 'max_response_length', 256)
+        if mode not in {'ARLM', 'ARIR'}:
+            raise ValueError(f"infer: unknown mode '{mode}'. Use 'ARLM' or 'ARIR'.")
 
+        tokens = None
+        if mode == 'ARIR':
+            if not self.reversible:
+                raise ValueError("infer(mode='ARIR') requires reversible=True.")
+            self.eval()
+            self.set_sigma(0)
+
+            with torch.no_grad(), TheData.runtime_batch([text], [[0]], mode='ARIR'):
+                self.inputSpace._arir_reset()
+                self.inputSpace._arir_max_chars = max_length
+                self.runEpoch(batchSize=1, split="runtime")
+
+            tokens = self.inputSpace.get_predicted_tokens()
+        else: # 'ARLM'
             self.eval()
             self.set_sigma(0)
             nOutput = self.inputSpace.outputShape[0]
@@ -3925,9 +3940,10 @@ class BasicModel(BaseModel):
             total_chars = 0
 
             with torch.no_grad(), TheData.runtime_batch([text]):
+                batchNum=0
                 while True:
-                    result, _ = self.runBatch(
-                        train=False, batchNum=0, batchSize=1, split="runtime",
+                    result, batchNum = self.runBatch(
+                        train=False, batchNum=batchNum, batchSize=1, split="runtime",
                     )
                     if result is None:
                         break
@@ -3948,63 +3964,7 @@ class BasicModel(BaseModel):
                         break
 
                     TheData.pushInput(word)
-
-            return tokens
-        elif mode == 'ARIR':
-            if not self.reversible:
-                import warnings
-                warnings.warn(
-                    "ARIR requires reversible=True; falling back to ARLM.",
-                    RuntimeWarning, stacklevel=2,
-                )
-                if max_length is None:
-                    max_length = getattr(self, 'max_response_length', 256)
-
-                self.eval()
-                self.set_sigma(0)
-                nOutput = self.inputSpace.outputShape[0]
-                tokens = []
-                total_chars = 0
-
-                with torch.no_grad(), TheData.runtime_batch([text]):
-                    while True:
-                        result, _ = self.runBatch(
-                            train=False, batchNum=0, batchSize=1, split="runtime",
-                        )
-                        if result is None:
-                            break
-
-                        decoded = self.inputSpace.predict(result.outputPred)
-                        word = decoded[0]
-
-                        if word is None or word == '' or word == '\x00':
-                            break
-
-                        tokens.append(word)
-                        total_chars += len(word)
-
-                        if total_chars >= max_length:
-                            break
-
-                        if len(tokens) >= nOutput:
-                            break
-
-                        TheData.pushInput(word)
-
-                return tokens
-
-            max_length = max_length or getattr(self, 'max_response_length', 256)
-            self.eval()
-            self.set_sigma(0)
-
-            with torch.no_grad(), TheData.runtime_batch([text], [[0]], mode='ARIR'):
-                self.inputSpace._arir_reset()
-                self.inputSpace._arir_max_chars = max_length
-                self.runEpoch(batchSize=1, split="runtime")
-
-            return self.inputSpace.get_predicted_tokens()
-        else:
-            raise ValueError(f"infer: unknown mode '{mode}'. Use 'ARLM' or 'ARIR'.")
+        return tokens
 
     def forward(self, inputData):
         """Full forward pass: core pipeline + higher-order cycles + output projection.
@@ -4257,6 +4217,11 @@ class BasicModel(BaseModel):
 
         totalLoss = self.loss.total(lossOut, lossIn, sbow)
 
+        print(
+            f"batch = {batchNum}, loss = {totalLoss} ",
+            flush=True
+        )
+
         if train:
             totalLoss.backward()
             if self.ergodic:
@@ -4298,6 +4263,7 @@ class BasicModel(BaseModel):
         self.outputSpace.clearBatchResults()
         ctx = torch.no_grad() if not training else nullcontext()
 
+
         # Inference fast path: skip loss construction and accumulation
         if inference:
             with ctx:
@@ -4323,7 +4289,6 @@ class BasicModel(BaseModel):
 
         with ctx:
             batchNum = 0
-            batchIdx = 0
             while True:
                 result, batchNum = self.runBatch(
                     train=training, batchNum=batchNum, batchSize=batchSize,
@@ -4334,12 +4299,9 @@ class BasicModel(BaseModel):
 
                 self.outputSpace.putBatch(result)
 
-                if training and batchIdx % 100 == 0:
-                    print(f"  batch {batchIdx}", end="\r", flush=True)
-
-                # Embedding training (post-batch, needs batchIdx for sentence lookup)
+                # Embedding training (post-batch, needs batchNum for sentence lookup)
                 if training and masked_pred:
-                    self.trainEmbeddings(('CBOW', 'SBOW', 'BOTH'), batchIdx, split)
+                    self.trainEmbeddings(('CBOW', 'SBOW', 'BOTH'), batchNum, split)
 
                 outErr = result.lossOut.item()
                 inErr = result.lossIn.item() if result.lossIn is not None else 0
@@ -4350,8 +4312,6 @@ class BasicModel(BaseModel):
                 if self.reversible and result.inputPred is not None:
                     inputDataPred = result.inputPred.clone().detach().squeeze()
                     inputChunks.append(inputDataPred)
-
-        batchIdx += 1
 
         if inputChunks:
             if outputChunks[0].dim() == 0:
@@ -4585,6 +4545,13 @@ class ModelFactory:
         # When invertible=True, the InvertiblePiLayer doubles the sequence,
         # so ConceptualSpace.nVectors must be 2 * PerceptualSpace.nVectors.
         reversible = arch.get("reconstruct", "NONE").upper() != "NONE"
+        masked_prediction = str(arch.get("maskedPrediction", "NONE") or "NONE").upper()
+        if masked_prediction == "ARIR" and not reversible:
+            errors.append(
+                "maskedPrediction=ARIR requires reconstruct != NONE. "
+                "ARIR is autoregressive input reconstruction, so the model must "
+                "have a reverse path."
+            )
         percept_inv = gsp(cfg, "PerceptualSpace", "invertible")
         percept_pt = gsp(cfg, "PerceptualSpace", "passThrough")
         if model_family != "mental" and percept_inv:
@@ -4733,7 +4700,19 @@ if __name__ == "__main__":
         default=False,
         help="Generate figures and HTML report at the end of the run.",
     )
+    parser.add_argument(
+        "--compile",
+        default=None,
+        metavar="BACKEND",
+        help=(
+            "Compilation backend: none, inductor, eager, aot_eager. "
+            "Overrides BASICMODEL_COMPILE env var."
+        ),
+    )
     args = parser.parse_args()
+
+    if args.compile is not None:
+        init_compile_backend(args.compile)
 
     TheReport.enabled = args.report
 

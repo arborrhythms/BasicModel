@@ -40,7 +40,7 @@ class TestGetSpaceParam(unittest.TestCase):
         self.assertTrue(result)
 
 
-from BasicModel import BaseModel
+from BasicModel import BaseModel, BasicModel
 
 
 class TestDefaultsXml(unittest.TestCase):
@@ -173,3 +173,27 @@ class TestValidateConfig(unittest.TestCase):
         # Should not raise
         BasicModelFactory.validate_config(cfg)
 
+    def test_arir_requires_reconstruction(self):
+        cfg = {
+            "architecture": {
+                "reshape": False,
+                "maskedPrediction": "ARIR",
+                "reconstruct": "NONE",
+            },
+            "PerceptualSpace": {"hasAttention": False, "invertible": False,
+                                "passThrough": False, "nActive": 4, "nDim": 1},
+            "ConceptualSpace": {"hasAttention": False},
+            "SymbolicSpace": {"passThrough": False},
+        }
+        with self.assertRaises(ValueError) as ctx:
+            BasicModelFactory.validate_config(cfg)
+        self.assertIn("maskedPrediction=ARIR", str(ctx.exception))
+
+
+class TestInferValidation(unittest.TestCase):
+    def test_arir_infer_requires_reversible(self):
+        model = BasicModel()
+        model.reversible = False
+        with self.assertRaises(ValueError) as ctx:
+            model.infer("hello", max_length=1, mode="ARIR")
+        self.assertIn("reversible=True", str(ctx.exception))

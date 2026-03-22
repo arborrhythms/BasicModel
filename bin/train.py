@@ -203,10 +203,15 @@ def train_remote(args):
         remote_args += ["--random-shards"]
     if args.profile:
         remote_args += ["--profile"]
+    # SSH and run — forward selected env vars that affect training behaviour
+    remote_env_vars = "PYTHONUNBUFFERED=1 PYTHONPATH=bin"
+    for var in ("BASICMODEL_DEVICE", "BASICMODEL_COMPILE"):
+        val = os.environ.get(var)
+        if val:
+            remote_env_vars = f"{var}={val} {remote_env_vars}"
 
-    # SSH and run
     print(f"\n=== Running training on {args.host} ===")
-    remote_cmd = f"cd {args.remote_dir} && PYTHONUNBUFFERED=1 PYTHONPATH=bin .venv/bin/python {' '.join(remote_args)}"
+    remote_cmd = f"cd {args.remote_dir} && {remote_env_vars} .venv/bin/python {' '.join(remote_args)}"
     ssh_cmd = [
         "ssh", "-i", key, "-t",
         f"{args.user}@{args.host}",

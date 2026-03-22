@@ -5,6 +5,7 @@ custom reversible, ergodic, and memory-style layers.  Most higher-level
 model construction happens in ``BasicModel.py``; this file provides the
 building blocks and the update rules they share.
 """
+from __future__ import annotations  # allow X | Y union syntax on Python 3.9
 
 import os
 import warnings

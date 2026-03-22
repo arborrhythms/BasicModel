@@ -29,34 +29,7 @@ import torch.optim as optim
 from typing import List, Tuple, Optional
 
 from parse import parse_buffer, set_sentence_cfg
-
-
-def _get_device():
-    """Select best available device, respecting BASICMODEL_DEVICE env var."""
-    from util import resolve_device
-    env = os.environ.get("BASICMODEL_DEVICE", "").strip().lower()
-    if env:
-        return resolve_device(env)
-    if torch.cuda.is_available():
-        return torch.device("cuda")
-    if torch.backends.mps.is_available():
-        return torch.device("mps")
-    return torch.device("cpu")
-
-
-def _patch_inductor_paths():
-    """Replace iCloud paths (with spaces) with /bits symlink in inductor commands."""
-    try:
-        from torch._inductor import cpp_builder
-        _orig = cpp_builder._run_compile_cmd
-        _bits = "/bits"
-        if os.path.islink(_bits):
-            _target = os.readlink(_bits)
-            def _patched(cmd_line, cwd):
-                return _orig(cmd_line.replace(_target, _bits), cwd)
-            cpp_builder._run_compile_cmd = _patched
-    except Exception:
-        pass
+import util
 
 
 # ---------------------------------------------------------------------------
@@ -509,7 +482,7 @@ class StreamingSBOWTrainer:
         self.word_to_idx = {}
         self.idx_to_word = []
 
-        self.device = _get_device()
+        self.device = util.auto_device()
         print(f"Training on {self.device}")
 
         self.model = None
@@ -549,6 +522,7 @@ class StreamingSBOWTrainer:
                 self.word_to_idx[word] = len(self.idx_to_word)
                 self.idx_to_word.append(word)
         self.model = _SBOWEmbedding(self.vocab_size, self.vector_size).to(self.device)
+        self.model = util.compile(self.model)
         self.optimizer = optim.SGD(self.model.parameters(), lr=self.learning_rate)
         self.neg_samples = 64
         print(f"  Vocab: {len(self.word_counts)} unique words -> "
@@ -728,6 +702,10 @@ if __name__ == '__main__':
     train_p.add_argument('--batch-size', type=int, default=256)
     train_p.add_argument('--random-shards', action='store_true',
                          help='Randomly select which shards to download')
+    train_p.add_argument('--compile', default=None,
+                         metavar='BACKEND',
+                         help='Compilation backend: none, inductor, eager, aot_eager. '
+                              'Overrides BASICMODEL_COMPILE env var.')
 
     # --- prune subcommand ---
     prune_p = sub.add_parser("prune", help="Remove low-frequency words from a .kv codebook")
@@ -760,6 +738,9 @@ if __name__ == '__main__':
             wv.explore(args.words, topn=args.topn)
 
     elif args.command == "train":
+        if args.compile is not None:
+            util.init_compile_backend(args.compile)
+
         data_dir = args.data_dir
         if data_dir is None:
             data_dir = str(Path(__file__).resolve().parent.parent / "data" / "fineweb")

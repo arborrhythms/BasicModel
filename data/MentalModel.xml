@@ -1,0 +1,89 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- MentalModel chatbot: parallel perceptual/conceptual branches over the same input -->
+  <architecture>
+    <type>mental</type>
+    <reconstruct>symbols</reconstruct>
+    <reshape>false</reshape>
+    <conceptualOrder>1</conceptualOrder>
+    <symbolicOrder>1</symbolicOrder>
+    <processSymbols>false</processSymbols>
+    <ergodic>false</ergodic>
+    <certainty>false</certainty>
+    <modelType>embedding</modelType>
+    <maskedPrediction>ARLM</maskedPrediction>
+    <maxResponseLength>4096</maxResponseLength>
+    <weightsPath>MentalModel.ckpt</weightsPath>
+    <embeddingPath>MentalModel.kv</embeddingPath>
+
+    <data>
+      <shardDir>data/fineweb</shardDir>
+      <numShards>1</numShards>
+      <maxDocs>10000</maxDocs>
+      <minFrequency>0.00001</minFrequency>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>2</numEpochs>
+      <batchSize>8</batchSize>
+      <learningRate>0.001</learningRate>
+      <reverseScale>0.1</reverseScale>
+      <trainEmbedding>ARLM</trainEmbedding>
+      <autoload>false</autoload>
+      <autosave>true</autosave>
+    </training>
+
+    <server>
+      <host>127.0.0.1</host>
+      <port>8002</port>
+      <timeout>120</timeout>
+    </server>
+  </architecture>
+
+  <InputSpace>
+    <nActive>128</nActive>
+    <nDim>100</nDim>
+    <nVectors>128</nVectors>
+    <nWhere>true</nWhere>
+    <nWhen>true</nWhen>
+    <lexer>sentence</lexer>
+    <quantized>true</quantized>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nActive>32</nActive>
+    <nDim>100</nDim>
+    <nVectors>128</nVectors>
+    <passThrough>false</passThrough>
+    <hasAttention>true</hasAttention>
+    <invertible>true</invertible>
+    <quantized>false</quantized>
+  </PerceptualSpace>
+
+  <!-- Concept branch runs directly from InputSpace in MentalModel, so this keeps
+       the same width as BasicModel.xml without assuming invertible doubling. -->
+  <ConceptualSpace>
+    <nActive>256</nActive>
+    <nDim>100</nDim>
+    <nVectors>256</nVectors>
+    <hasAttention>true</hasAttention>
+    <hasNorm>false</hasNorm>
+    <invertible>true</invertible>
+    <quantized>false</quantized>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nActive>256</nActive>
+    <nDim>100</nDim>
+    <nVectors>256</nVectors>
+    <passThrough>false</passThrough>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nActive>1</nActive>
+    <nDim>100</nDim>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+
+</model>

@@ -1,7 +1,15 @@
 """Shared utilities for the basicmodel project."""
 
 import os
+import platform
+import re
+import shutil
+import subprocess
+import sys
+import sysconfig
 import tempfile
+import warnings
+from functools import lru_cache
 import torch
 
 
@@ -52,30 +60,94 @@ class DeviceHandle(str):
 def resolve_device(name=""):
     """Resolve a device name string to a torch.device.
 
-    Maps 'gpu' to the best available GPU backend (cuda > mps > cpu).
-    Empty string or None falls back to cpu.
+    Special cases:
+      - 'gpu'      -> best available accelerator (cuda > mps > cpu)
+      - 'cuda[:N]' -> require CUDA to be available
+      - 'mps'      -> require MPS to be available
+      - 'cpu'      -> CPU
+
+    Empty string or None falls back to CPU. Any other non-empty string is
+    delegated to ``torch.device()`` so standard PyTorch device syntaxes such
+    as ``xpu`` remain usable.
     """
     name = (name or "").strip().lower()
+    if not name:
+        return torch.device("cpu")
+    if name == "cpu":
+        return torch.device("cpu")
     if name == "gpu":
         if torch.cuda.is_available():
             return torch.device("cuda")
+        else:
+            _warn_if_cuda_unavailable_but_nvidia_visible()
         if torch.backends.mps.is_available():
             return torch.device("mps")
         return torch.device("cpu")
-    return torch.device(name) if name else torch.device("cpu")
+    if name.startswith("cuda"):
+        if not torch.cuda.is_available():
+            _warn_if_cuda_unavailable_but_nvidia_visible()
+            raise ValueError(f"Requested device '{name}' but CUDA is not available.")
+        return torch.device(name)
+    if name.startswith("mps"):
+        if not torch.backends.mps.is_available():
+            raise ValueError("Requested device 'mps' but MPS is not available.")
+        return torch.device(name)
+    try:
+        return torch.device(name)
+    except (TypeError, RuntimeError, ValueError) as e:
+        raise ValueError(f"Unknown device override '{name}'.") from e
+
+@lru_cache(maxsize=1)
+def _visible_nvidia_gpu_present():
+    """Best-effort check for a process-visible NVIDIA GPU on non-macOS hosts."""
+    if platform.system() == "Darwin":
+        return False
+
+    hidden = os.environ.get("CUDA_VISIBLE_DEVICES", "").strip().lower()
+    if hidden in {"-1", "none"}:
+        return False
+
+    for path in ("/dev/nvidiactl", "/dev/nvidia0", "/proc/driver/nvidia/version"):
+        if os.path.exists(path):
+            return True
+
+    nvidia_smi = shutil.which("nvidia-smi")
+    if not nvidia_smi:
+        return False
+
+    try:
+        result = subprocess.run(
+            [nvidia_smi, "-L"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+    except Exception:
+        return False
+    return result.returncode == 0 and bool(result.stdout.strip())
+
+
+@lru_cache(maxsize=1)
+def _warn_if_cuda_unavailable_but_nvidia_visible():
+    """Warn once when an NVIDIA GPU appears visible but PyTorch CUDA is unavailable."""
+    if platform.system() == "Darwin" or torch.cuda.is_available():
+        return
+    if _visible_nvidia_gpu_present():
+        warnings.warn(
+            "NVIDIA GPU detected, but torch.cuda.is_available() is False. "
+            "Falling back to CPU. Check that this environment has CUDA-enabled "
+            "PyTorch and compatible NVIDIA drivers.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
 
 
 def auto_device():
-    """Select the best device: BASICMODEL_DEVICE env var > cuda > mps > cpu."""
+    """Select the runtime device using the same policy as resolve_device()."""
     override = os.environ.get("BASICMODEL_DEVICE", "").strip().lower()
-    if override:
-        d = resolve_device(override)
-        return DeviceHandle(str(d))
-    if torch.cuda.is_available():
-        return DeviceHandle("cuda")
-    if torch.backends.mps.is_available():
-        return DeviceHandle("mps")
-    return DeviceHandle("cpu")
+    target = override if override else "gpu"
+    return DeviceHandle(str(resolve_device(target)))
 
 # The canonical device for this process.
 TheDevice = auto_device()
@@ -93,27 +165,101 @@ def buffer(*size, **kwargs):
 
 
 # ---------------------------------------------------------------------------
+# Compilation backend management
+# ---------------------------------------------------------------------------
+
+_COMPILE_BACKENDS = ("inductor", "eager", "aot_eager")
+_COMPILE_OFF      = frozenset({"none", "off", "false", "0", "no"})
+
+def auto_compile_backend():
+    """Select the compilation backend from BASICMODEL_COMPILE env var.
+
+    Recognised values (case-insensitive):
+      none / off / false / 0 / no  → skip compilation entirely (return "none")
+      inductor                     → force torch.compile(backend='inductor')
+      eager                        → force torch.compile(backend='eager')
+      aot_eager                    → force torch.compile(backend='aot_eager')
+      (empty / unset)              → auto: try inductor → eager → aot_eager
+    """
+    override = os.environ.get("BASICMODEL_COMPILE", "").strip().lower()
+    if not override:
+        return "auto"
+    if override in _COMPILE_OFF:
+        return "none"
+    if override in _COMPILE_BACKENDS:
+        return override
+    raise ValueError(
+        f"Unknown BASICMODEL_COMPILE value '{override}'. "
+        f"Valid values: none, {', '.join(_COMPILE_BACKENDS)}"
+    )
+
+# The canonical compilation backend for this process.
+TheCompileBackend = auto_compile_backend()
+
+
+def init_compile_backend(backend=None):
+    """Override the process-wide compilation backend.  None re-runs auto-detection."""
+    global TheCompileBackend
+    TheCompileBackend = auto_compile_backend() if backend is None else backend
+
+
+# ---------------------------------------------------------------------------
 # Model compilation
 # ---------------------------------------------------------------------------
 
-def _patch_inductor_paths():
-    """Monkey-patch torch inductor to handle paths containing spaces.
+@lru_cache(maxsize=1)
+def _inductor_space_prefixes():
+    """Collect path prefixes that need quoting in inductor shell commands."""
+    candidates = {
+        os.getcwd(),
+        sys.prefix,
+        sys.exec_prefix,
+        sys.base_prefix,
+        os.path.dirname(torch.__file__),
+    }
+    candidates.update(sys.path)
+    candidates.update(sysconfig.get_paths().values())
 
-    The inductor's CppBuilder assembles -L/-I flags as unquoted strings,
-    then shlex.split() breaks paths with spaces (e.g. iCloud paths).
-    This patch replaces the space-containing iCloud path with its /bits
-    symlink equivalent in the compile command before shlex.split runs.
-    """
+    prefixes = []
+    for path in candidates:
+        if not path:
+            continue
+        path = os.path.normpath(os.path.abspath(path))
+        if " " not in path:
+            continue
+        prefixes.append(path)
+    return tuple(sorted(set(prefixes), key=len, reverse=True))
+
+
+def _rewrite_inductor_cmd_line(cmd_line, prefixes=None):
+    """Quote known path prefixes so shlex.split keeps them intact."""
+    if prefixes is None:
+        prefixes = _inductor_space_prefixes()
+    for prefix in prefixes:
+        cmd_line = re.sub(
+            rf'(?<!["\']){re.escape(prefix)}(?!["\'])',
+            f'"{prefix}"',
+            cmd_line,
+        )
+    return cmd_line
+
+
+def _patch_inductor_paths():
+    """Monkey-patch torch inductor to quote path prefixes containing spaces."""
     try:
         from torch._inductor import cpp_builder
+        if getattr(cpp_builder, "_basicmodel_path_patch", False):
+            return
         _orig = cpp_builder._run_compile_cmd
-        _bits = "/bits"
-        if os.path.islink(_bits):
-            _target = os.readlink(_bits)
-            def _patched_run_compile_cmd(cmd_line, cwd):
-                cmd_line = cmd_line.replace(_target, _bits)
-                return _orig(cmd_line, cwd)
-            cpp_builder._run_compile_cmd = _patched_run_compile_cmd
+        prefixes = _inductor_space_prefixes()
+        if not prefixes:
+            return
+
+        def _patched_run_compile_cmd(cmd_line, cwd):
+            return _orig(_rewrite_inductor_cmd_line(cmd_line, prefixes), cwd)
+
+        cpp_builder._run_compile_cmd = _patched_run_compile_cmd
+        cpp_builder._basicmodel_path_patch = True
     except Exception:
         pass
 
@@ -121,35 +267,33 @@ def _patch_inductor_paths():
 def compile(model, verbose=True):
     """Try to torch.compile the model; return the (possibly compiled) model.
 
-    On GPU devices, patches inductor paths first.
-    Tries default compile, then explicit inductor backend as fallback.
+    Respects TheCompileBackend (set by BASICMODEL_COMPILE env var):
+      "none" → skip compilation entirely.
+      "auto" → try inductor → eager → aot_eager, return first success.
+      <name> → try only that backend; fall back to uncompiled on failure.
+
+    Patches inductor compile commands first when paths contain spaces.
     """
     def _msg(text):
         if verbose:
             print(text)
 
-    if TheDevice.type == "gpu" or TheDevice.type == "cuda":
-        _patch_inductor_paths()
+    if TheCompileBackend == "none":
+        _msg("Model compilation skipped (BASICMODEL_COMPILE=none)")
+        return model
 
-    try:
-        model = torch.compile(model)
-        # Extract the actual backend name from the compiled model
-        backend_name = "unknown"
-        try:
-            backend_name = (model.dynamo_ctx.callback
-                           ._torchdynamo_orig_backend._inner_convert
-                           ._torchdynamo_orig_backend._compiler_name)
-        except Exception:
-            pass
-        _msg(f"Model compiled ({backend_name})")
-    except Exception as e:
-        _msg(f"Model compile failed: {e}")
-        try:
-            model = torch.compile(model, backend='eager')
-            _msg("Model compiled (eager)")
-        except Exception:
-            _msg("Model compilation failed, running eager")
+    _patch_inductor_paths()
 
+    backends = _COMPILE_BACKENDS if TheCompileBackend == "auto" else (TheCompileBackend,)
+    for backend in backends:
+        try:
+            compiled = torch.compile(model, backend=backend)
+            _msg(f"Model compiled ({backend})")
+            return compiled
+        except Exception as e:
+            _msg(f"Model compile failed ({backend}): {e}")
+
+    _msg("Model compilation failed, running eager")
     return model
 
 

@@ -94,6 +94,19 @@ class TestStreamingSBOWTrainer(unittest.TestCase):
             self.assertGreaterEqual(t.word_counts[word], 3,
                                     f"{word} promoted with count {t.word_counts[word]}")
 
+    @patch('embed.util.compile')
+    def test_build_vocab_compiles_model(self, mock_compile):
+        """Vocabulary build routes the SBOW model through util.compile()."""
+        mock_compile.side_effect = lambda model: model
+        t = StreamingSBOWTrainer(vector_size=20, min_count=1)
+        t.scan_document("The dog barks.")
+
+        t.build_vocab()
+
+        mock_compile.assert_called_once()
+        compiled_model = mock_compile.call_args.args[0]
+        self.assertIs(t.model, compiled_model)
+
     def test_trains_and_produces_vectors(self):
         """Training produces WordVectors with correct dimensions."""
         docs = [
