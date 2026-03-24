@@ -106,11 +106,13 @@ Transforms lifted input into perceptual features via Pi layers (multiplicative i
 | `nActive` | int | *required* | Number of active perceptual feature vectors (sparse subset selected in forward pass). Should be >= InputSpace nActive. For XOR: 4. |
 | `nDim` | int | `1` | Dimensionality of each perceptual vector. Set on TheObjectEncoding; not passed to the Space constructor. |
 | `nVectors` | int | `0` | Codebook size (total vectors in the space). When > 0, enables vector quantization with topk selection of `nActive` from `nVectors`. |
-| `invertible` | bool | `false` | Use a single invertible Pi layer instead of separate forward/reverse layers. When `true`, one layer handles both directions. When `false`, separate `pi1` (forward) and `pi2` (reverse) layers are created. |
+| `invertible` | bool | `false` | Use a single invertible Pi layer instead of separate forward/reverse layers. When `true`, one `PiLayer(invertible=True)` handles both directions via `InvertibleLinearLayer` internally. When `false`, separate `pi1` (forward) and `pi2` (reverse) layers are created. |
 | `hasAttention` | bool | `true` | Enable attention mechanism in this space. |
 | `passThrough` | bool | `false` | Skip perceptual processing entirely; pass input through unchanged. |
 
 **Layers:** Pi layers — multiplicative: `y_j = b_j * prod_i(1 + W_ji * x_i)`. See Architecture.md.
+
+**Note:** `InvertiblePiLayer` has been merged into `PiLayer(invertible=True)`; the standalone class is removed.
 
 ---
 
@@ -123,11 +125,13 @@ Transforms perceptual features into abstract concepts via Sigma layers (additive
 | `nActive` | int | *required* | Number of active concept vectors (sparse subset). For XOR: 3. |
 | `nDim` | int | `1` | Dimensionality of each concept vector. Set on TheObjectEncoding; not passed to the Space constructor. |
 | `nVectors` | int | `0` | Codebook size (total vectors in the space). |
-| `invertible` | bool | `false` | Use single invertible Sigma layer vs. separate forward/reverse layers (`sigma1`/`sigma2`). |
+| `invertible` | bool | `false` | Use single invertible Sigma layer vs. separate forward/reverse layers (`sigma1`/`sigma2`). When `true`, routes to `SigmaLayer(invertible=True)` which uses `InvertibleLinearLayer` internally for exact inversion via atanh + W⁻¹. |
 | `hasAttention` | bool | `false` | Enable attention in conceptual processing. |
 | `hasNorm` | bool | `false` | Enable layer normalization in this space. |
 
-**Layers:** Sigma layers — additive: `y_j = b_j + sum_i(W_ji * x_i)`. See Architecture.md.
+**Layers:** Sigma layers — additive: `y_j = tanh(W x + b)`. See Architecture.md.
+
+**Note:** `InvertibleSigmaLayer` has been merged into `SigmaLayer(invertible=True)`; the standalone class is removed.
 
 ---
 
@@ -171,6 +175,32 @@ Maps symbols to final predictions via linear layers.
 | `nVectors` | int | = `nActive` | Codebook size (total vectors in the space). Defaults to `nActive` for OutputSpace. |
 
 **Layers:** Linear layers with `(bias, temp)` support for ergodic mode.
+
+---
+
+## `InvertibleLinearLayer`
+
+The LDU-factorised invertible linear primitive used internally by
+`SigmaLayer(invertible=True)` and `PiLayer(invertible=True)`. These parameters are not
+set via XML directly; they are configured programmatically when constructing the layer.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `naive` | bool | `False` | `False`: apply L, D, U sequentially via triangular solves — no W materialisation, backprop through each factor separately. `True`: materialise `W_eff` as a dense matrix and use `pinv(W_eff)` for the reverse pass. The `naive=True` path is slower and uses more memory; it exists for debugging and validation. |
+| `stable` | bool | `False` | Clamps each diagonal entry `d_i` to magnitude `[eps, 1]` with sign preserved in `_d_effective()` before the ergodic blend. Keeps `W_eff` bounded away from singularity. This is the only stability constraint on d; no additional clamp is applied to `d_eff`. |
+| `ergodic` | bool | `False` | Enables factor-level noise injection. When `True`, registers noise buffers `noise_raw_L`, `noise_raw_U`, `noise_d` and zero-initialises the learned parameters. Noise is resampled at the start of each `forward()` and at the end of each `reverse()`. |
+
+**Class renames and removals.**
+
+| Old name | New name / status |
+|----------|------------------|
+| `LULayer` | Renamed to `InvertibleLinearLayer` |
+| `InvertibleLinearLayer` (SVD-based) | Removed; replaced by LDU factorisation |
+| `InvertibleSigmaLayer` | Merged into `SigmaLayer(invertible=True)` |
+| `InvertiblePiLayer` | Merged into `PiLayer(invertible=True)` |
+
+See [Architecture.md](Architecture.md) for the full mathematical treatment of the LDU
+factorisation and factor-level noise injection.
 
 ---
 

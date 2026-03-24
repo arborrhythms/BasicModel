@@ -15,7 +15,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 from util import TheDevice
-from Model import PiLayer, SigmaLayer, InvertibleSigmaLayer, InvertiblePiLayer
+from Model import PiLayer, SigmaLayer
 
 
 class TestPiLayerForward(unittest.TestCase):

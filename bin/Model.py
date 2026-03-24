@@ -205,8 +205,9 @@ class LinearLayer(Layer):
     Non-zero ``temp`` blends in freshly sampled Gaussian noise, enabling
     exploration.  Defaults to identity initialization.
     """
-    def __init__(self, nInput, nOutput, hasBias=True, W=None, naive=False):
+    def __init__(self, nInput, nOutput, hasBias=True, W=None, naive=False, stable=False):
         super(LinearLayer, self).__init__(nInput, nOutput)
+        self.stable  = stable
         self.hasBias = hasBias
         if W == None:
             W = nn.Parameter(torch.eye(self.nInput, self.nOutput))
@@ -222,8 +223,7 @@ class LinearLayer(Layer):
             self.biasNoise = sample_noise(self.bias)
 
     def forward(self, x, bias=1.0, temp=0.0):
-        if has_signal(temp):
-            self.resample_noise()
+        self.resample_noise()
         W = bias * self.W + temp * self.noise
         output = x @ W
         if self.hasBias:
@@ -240,423 +240,54 @@ class LinearLayer(Layer):
 
         print(f"Input: {input}")
         print(f"After forward linear: {output}")
-class InvertibleRotationLayer(ErgodicLayer):
-    """Learnable orthogonal rotation via Givens rotations or stacked Householder reflections.
 
-    Both paths use n(n-1)/2 continuous parameters — the exact dimensionality of SO(n).
-
-    Givens (useGivens=True, default):
-        All n(n-1)/2 plane pairs (i,j) with i<j. Batched via round-robin
-        scheduling: n-1 rounds of n/2 disjoint pairs, each round applied as
-        one vectorized matrix multiply. Total: n-1 matmuls instead of n(n-1)/2
-        Python iterations. No .item() calls on the hot path.
-
-    Householder (useGivens=False):
-        QR-style shrinking support: reflector i acts on coords [i..dim-1],
-        giving n(n-1)/2 effective DOF via F.normalize.
-
-    When ``ergodic=True``, parameters are perturbed with noise.
-    When ``ergodic=False``, deterministic weights only.
-    """
-
-    @staticmethod
-    def _round_robin(n):
-        """Build round-robin tournament schedule for n items.
-        Returns list of rounds; each round is a list of (i, j) pairs with i < j.
-        Even n: n-1 rounds of n/2 pairs. Odd n: n rounds of (n-1)/2 pairs."""
-        if n < 2:
-            return []
-        is_odd = n % 2 == 1
-        m = n + 1 if is_odd else n
-        players = list(range(m))
-        fixed = players[-1]
-        rotating = players[:-1]
-        rounds = []
-        for _ in range(m - 1):
-            round_pairs = []
-            a, b = fixed, rotating[0]
-            if a < n and b < n:  # skip bye
-                round_pairs.append((min(a, b), max(a, b)))
-            half = len(rotating) // 2
-            for i in range(1, half + 1):
-                a, b = rotating[i], rotating[-(i)]
-                if a < n and b < n:
-                    round_pairs.append((min(a, b), max(a, b)))
-            rounds.append(round_pairs)
-            rotating = [rotating[-1]] + rotating[:-1]
-        return rounds
-
-    def __init__(self, dim, naive=False, ergodic=False, useGivens=True):
-        super().__init__(dim, dim)
-        self.dim      = dim
-        self.naive    = naive
-        self.ergodic  = ergodic
-        self.useGivens = useGivens
-        self.LDU       = False  # SVD is the default non-Givens path
-
-        if self.useGivens:
-            # All n(n-1)/2 plane pairs (i,j) with i<j
-            pairs = [(i, j) for i in range(dim) for j in range(i+1, dim)]
-            nAngles = len(pairs)  # dim*(dim-1)//2
-            pair_to_idx = {p: idx for idx, p in enumerate(pairs)}
-
-            # Round-robin schedule: group into ~dim-1 rounds of disjoint pairs
-            schedule = self._round_robin(dim)
-            # Precompute per-round index arrays as LongTensors (registered as buffers
-            # so they move with .to(device))
-            self._n_rounds = len(schedule)
-            for r, round_pairs in enumerate(schedule):
-                theta_idx = [pair_to_idx[p] for p in round_pairs]
-                ii = [p[0] for p in round_pairs]
-                jj = [p[1] for p in round_pairs]
-                self.register_buffer(f'_rd_t_{r}', torch.tensor(theta_idx, dtype=torch.long))
-                self.register_buffer(f'_rd_i_{r}', torch.tensor(ii, dtype=torch.long))
-                self.register_buffer(f'_rd_j_{r}', torch.tensor(jj, dtype=torch.long))
-
-            if ergodic:
-                self.theta = nn.Parameter(torch.zeros(nAngles))
-                self.register_buffer('noise', torch.randn(nAngles))
-            else:
-                self.theta = nn.Parameter(torch.randn(nAngles) * 2 * torch.pi)
-                self.register_buffer('noise', torch.zeros(nAngles, dtype=torch.float32))
-        elif self.LDU:
-            # Store a general dim×dim matrix; extract orthogonal factor via SVD
-            # Q = U @ Vᵀ from W = U @ S @ Vᵀ. Smooth gradients through W.
-            self.W = nn.Parameter(torch.randn(self.dim, self.dim))
-        else:
-            # Padded sequential Householder: dim-1 shrinking-support reflectors,
-            # each zero-padded to full dim for fast rank-1 apply.
-            # Reflector i: y_i = [0]*i ++ v_i, where v_i has size (dim-i).
-            # H(y_i) = I - τ_i·y_i·y_iᵀ,  τ_i = 2/(v_i·v_i).
-            # Total: n(n-1)/2 effective DOF. Apply: O(B·N) per reflector.
-            # det = (-1)^(dim-1); parity correction not needed for training.
-            self.k = dim - 1
-            if ergodic:
-                self.vs = nn.ParameterList([
-                    nn.Parameter(torch.zeros(dim - i)) for i in range(self.k)
-                ])
-                for i in range(self.k):
-                    self.register_buffer(f'v_noise_{i}', torch.randn(dim - i))
-            else:
-                self.vs = nn.ParameterList([
-                    nn.Parameter(torch.randn(dim - i)) for i in range(self.k)
-                ])
-
-    def resample_noise(self):
-        if self.ergodic:
-            if self.useGivens:
-                self.noise = torch.randn_like(self.noise)
-            elif self.LDU:
-                pass  # SVD path: no separate noise buffers
-            else:
-                for i in range(self.k):
-                    setattr(self, f'v_noise_{i}', torch.randn(self.dim - i, device=self.vs[0].device))
-
-    def paramUpdate(self):
-        if self.ergodic:
-            super().paramUpdate()
-
-    # --- Givens batched ops ---
-    def _get_all_angles(self):
-        """Return all angles as one tensor, with ergodic mixing if applicable."""
-        if self.ergodic:
-            bias, var = self.bias.mean(), self.var.mean()
-            return bias * self.theta + var * self.noise
-        return self.theta
-
-    def _build_round_matrix(self, c, s, theta_idx, ii, jj):
-        """Build one round's Givens product matrix. Pairs are disjoint so entries
-        don't overlap — we can set them all at once in an identity matrix."""
-        G = torch.eye(self.dim, device=c.device, dtype=c.dtype)
-        c_r = c[theta_idx]
-        s_r = s[theta_idx]
-        G[ii, ii] = c_r
-        G[jj, jj] = c_r
-        G[ii, jj] = -s_r
-        G[jj, ii] = s_r
-        return G
-
-    def _givens_rounds(self, reverse=False):
-        """Iterate (theta_idx, ii, jj) LongTensor triples, optionally reversed."""
-        rng = range(self._n_rounds - 1, -1, -1) if reverse else range(self._n_rounds)
-        for r in rng:
-            yield (getattr(self, f'_rd_t_{r}'),
-                   getattr(self, f'_rd_i_{r}'),
-                   getattr(self, f'_rd_j_{r}'))
-
-    # --- Householder padded sequential helpers ---
-    def _get_padded_v(self, i):
-        """Get zero-padded full-dim Householder vector: [0]*i ++ v_i."""
-        if self.ergodic:
-            bias, var = self.bias.mean(), self.var.mean()
-            v_noise = getattr(self, f'v_noise_{i}')
-            v = bias * self.vs[i] + var * v_noise
-        else:
-            v = self.vs[i]
-        if i > 0:
-            pad = torch.zeros(i, device=v.device, dtype=v.dtype)
-            return torch.cat([pad, v])
-        return v
-
-    def _build_reflectors(self):
-        """Build all padded reflector vectors and taus once. Returns (ys, taus)."""
-        ys = []
-        taus = []
-        for i in range(self.k):
-            y = self._get_padded_v(i)
-            tau = 2.0 / (y @ y + 1e-30)
-            ys.append(y)
-            taus.append(tau)
-        return ys, taus
-
-    @staticmethod
-    def _apply_reflector(x, y, tau):
-        """Apply H(y) to rows of x: x - τ·(x·y)·y  [O(B·N)]."""
-        return x - tau * (x @ y).unsqueeze(-1) * y
-
-    # --- Common interface ---
-    def _svd_orthogonal(self):
-        """Extract orthogonal factor Q = U @ Vᵀ from W = U @ S @ Vᵀ."""
-        U, S, Vh = torch.linalg.svd(self.W)
-        return U @ Vh
-
-    def rotation_matrix(self):
-        """Materialize R. Givens: batched round matmuls. SVD: polar factor. Householder: sequential on I."""
-        if self.useGivens:
-            angles = self._get_all_angles()
-            c = torch.cos(angles)
-            s = torch.sin(angles)
-            R = torch.eye(self.dim, device=c.device, dtype=c.dtype)
-            for theta_idx, ii, jj in self._givens_rounds():
-                G = self._build_round_matrix(c, s, theta_idx, ii, jj)
-                R = G @ R
-            return R
-        elif self.LDU:
-            return self._svd_orthogonal()
-        else:
-            ys, taus = self._build_reflectors()
-            R = torch.eye(self.dim, device=ys[0].device, dtype=ys[0].dtype)
-            for y, tau in zip(ys, taus):
-                R = self._apply_reflector(R, y, tau)
-            return R
-
-    def forward(self, x):
-        if self.useGivens:
-            if self.naive:
-                return x @ self.rotation_matrix()
-            angles = self._get_all_angles()
-            c = torch.cos(angles)
-            s = torch.sin(angles)
-            x = x.clone()
-            last_dim = x.ndim - 1
-            for theta_idx, ii, jj in self._givens_rounds():
-                # theta_idx, ii, jj are already LongTensor buffers on the right device
-                xi = x.index_select(last_dim, ii)
-                xj = x.index_select(last_dim, jj)
-                shape = [1] * x.ndim
-                shape[-1] = xi.shape[-1]
-                c_r = c.index_select(0, theta_idx).reshape(shape)
-                s_r = s.index_select(0, theta_idx).reshape(shape)
-                new_i = c_r * xi - s_r * xj
-                new_j = s_r * xi + c_r * xj
-                x.index_copy_(last_dim, ii, new_i)
-                x.index_copy_(last_dim, jj, new_j)
-            return x
-        elif self.LDU:
-            return x @ self.W #_svd_orthogonal()
-        else:
-            if self.naive: return x @ self.rotation_matrix()
-            ys, taus = self._build_reflectors()
-            for y, tau in zip(ys, taus):
-                x = self._apply_reflector(x, y, tau)
-            return x
-
-    def reverse(self, x):
-        if self.useGivens:
-            if self.naive:
-                return x @ self.rotation_matrix().T
-            angles = self._get_all_angles()
-            c = torch.cos(angles)
-            s = torch.sin(angles)
-            x = x.clone()
-            last_dim = x.ndim - 1
-            for theta_idx, ii, jj in self._givens_rounds(reverse=True):
-                # theta_idx, ii, jj are already LongTensor buffers on the right device
-                xi = x.index_select(last_dim, ii)
-                xj = x.index_select(last_dim, jj)
-                shape = [1] * x.ndim
-                shape[-1] = xi.shape[-1]
-                c_r = c.index_select(0, theta_idx).reshape(shape)
-                s_r = s.index_select(0, theta_idx).reshape(shape)
-                new_i = c_r * xi + s_r * xj
-                new_j = -s_r * xi + c_r * xj
-                x.index_copy_(last_dim, ii, new_i)
-                x.index_copy_(last_dim, jj, new_j)
-            return x
-        elif self.LDU:
-            return x @ self.W.T # _svd_orthogonal().T
-        else:
-            if self.naive: return x @ self.rotation_matrix().T
-            ys, taus = self._build_reflectors()
-            for y, tau in reversed(list(zip(ys, taus))):
-                x = self._apply_reflector(x, y, tau)
-            return x
-
-    def forwardTranspose(self, x): return self.reverse(x)
-    def reverseTranspose(self, x): return self.forward(x)
-class InvertibleDiagonalLayer(ErgodicLayer):
-    """Learnable diagonal (singular-value) scaling for use in a reversible SVD decomposition.
-
-    Stores ``rank = min(nInput, nOutput)`` positive scalars (lamda).
-    Forward: element-wise multiply by lamda, zero-pad if needed.
-    Reverse: element-wise divide, zero-pad if needed.
-
-    When ``ergodic=True``, lamda is perturbed with noise scaled by
-    per-neuron bias/var from ErgodicLayer.
-    """
-    def __init__(self, nInput, nOutput, ergodic=False):
-        super().__init__(nInput, nOutput)
-        self.nInput  = nInput
-        self.nOutput = nOutput
-        self.rank    = min(nInput, nOutput)
-        self.ergodic = ergodic
-        if ergodic:
-            self.register_buffer('noise', torch.randn(self.rank))
-        self.lamda = nn.Parameter(torch.ones(self.rank))
-
-    def resample_noise(self):
-        if self.ergodic:
-            self.noise = torch.randn_like(self.noise)
-    def _effective_w(self):
-        if self.ergodic:
-            bias, var = self.bias[:self.rank].mean(), self.var[:self.rank].mean()
-            return bias * self.lamda + var * self.noise
-        return self.lamda
-
-    def paramUpdate(self):
-        if self.ergodic:
-            super().paramUpdate()
-
-    def stabilize(self):
-        """Clamp singular values to at most 1.0 to prevent unbounded growth."""
-        self.lamda.data = torch.minimum(self.lamda, torch.ones_like(self.lamda))
-
-    def forward(self, x):
-        w = self._effective_w()
-        if self.nInput <= self.nOutput:
-            scaled = x * w
-            pad = torch.zeros(*x.shape[:-1], self.nOutput - self.nInput,
-                              device=x.device, dtype=x.dtype)
-            return torch.cat([scaled, pad], dim=-1)
-        else:
-            return x[..., :self.nOutput] * w
-
-    def reverse(self, x):
-        w = self._effective_w()
-        if self.nInput <= self.nOutput:
-            return x[..., :self.nInput] / w
-        else:
-            x_known = x / w
-            pad = torch.zeros(*x_known.shape[:-1], self.nInput - self.nOutput,
-                              device=x.device, dtype=x.dtype)
-            return torch.cat([x_known, pad], dim=-1)
-
-    @staticmethod
-    def test():
-        print("Testing InvertibleDiagonalLayer...")
-
-        # Test 1: Square case: nInput == nOutput.
-        nInput, nOutput = 4, 4
-        layer = InvertibleDiagonalLayer(nInput, nOutput)
-        x = torch.rand((10, nInput))
-        y = layer.forward(x)
-        x_rec = layer.reverse(y)
-        assert torch.allclose(x, x_rec, atol=1e-5), (
-            f"Square test failed for nInput={nInput}, nOutput={nOutput}\n"
-            f"x: {x}\nx_rec: {x_rec}"
-        )
-        print("Square test passed.")
-
-        # Test 2: Wide output: nInput < nOutput.
-        nInput, nOutput = 3, 5
-        layer = InvertibleDiagonalLayer(nInput, nOutput)
-        x = torch.rand((10, nInput))
-        y = layer.forward(x)
-        x_rec = layer.reverse(y)
-        assert torch.allclose(x, x_rec, atol=1e-5), (
-            f"Wide output test failed for nInput={nInput}, nOutput={nOutput}\n"
-            f"x: {x}\nx_rec: {x_rec}"
-        )
-        print("Wide output test passed.")
-
-        # Test 3: Tall input: nInput > nOutput.
-        nInput, nOutput = 5, 3
-        layer = InvertibleDiagonalLayer(nInput, nOutput)
-        x = torch.rand((10, nInput))
-        if nInput > nOutput:
-            x[:, nOutput:] = 0.0
-        y = layer.forward(x)
-        x_rec = layer.reverse(y)
-        assert torch.allclose(x, x_rec, atol=1e-5), (
-            f"Tall input test failed for nInput={nInput}, nOutput={nOutput}\n"
-            f"x: {x}\nx_rec: {x_rec}"
-        )
-        print("Tall input test passed.")
-
-        # Test 4: Batch behavior.
-        nInput, nOutput = 6, 4
-        layer = InvertibleDiagonalLayer(nInput, nOutput)
-        x = torch.rand((7, nInput))
-        if nInput > nOutput:
-            x[:, nOutput:] = 0.0
-        y = layer.forward(x)
-        x_rec = layer.reverse(y)
-        assert torch.allclose(x, x_rec, atol=1e-5), (
-            f"Batch behavior test failed for nInput={nInput}, nOutput={nOutput}\n"
-            f"x: {x}\nx_rec: {x_rec}"
-        )
-        print("Batch behavior test passed.")
-
-        print("All tests passed!")
-
-class LULayer(ErgodicLayer):
+class InvertibleLinearLayer(ErgodicLayer):
     """Exactly-invertible linear layer factored as W = L @ D_embed @ U.
 
     L is unit-lower-triangular [nInput, nInput], D is diagonal [rank],
     U is unit-upper-triangular [nOutput, nOutput].  D_embed zero-pads D
     into [nInput, nOutput] for rectangular cases.
 
-    Inverse is exact via triangular solves: W⁻¹ = U⁻¹ @ D_embed⁻¹ @ L⁻¹.
-    Total parameters: nInput² + rank + nOutput² (overparameterized but simple).
+    Non-ergodic inverse is exact via triangular solves: W⁻¹ = U⁻¹ D⁻¹ L⁻¹.
 
-    Drop-in replacement for InvertibleLinearLayer.
+    Ergodic mode injects noise into each factor before extracting the
+    triangular structure, preserving the LDU form so the exact inverse is
+    always available — no approximation or SVD required:
+        L_eff = I + strict_lower(raw_L + t * noise_raw_L)
+        U_eff = I + strict_upper(raw_U + t * noise_raw_U)
+        d_eff = b * d_effective + t * noise_d
+        W_eff = L_eff @ D_eff_embed @ U_eff
+
+    stable=True clamps d to [eps, 1] magnitude (sign preserved) via
+    _d_effective(), keeping W well-conditioned and invertible.
+
+    naive=False (default): sequential triangular solves, no W materialisation.
+    naive=True: materialise W_eff as dense matrix; reverse uses pinv(W_eff).
     """
     def __init__(self, nInput, nOutput, naive=False, ergodic=False,
-                 hasBias=True, stable=False, **kwargs):
+                 hasBias=True, stable=False):
         super().__init__(nInput, nOutput)
-        # naive accepted for API compatibility but ignored (LDU is always exact)
+        self.naive   = naive
         self.ergodic = ergodic
         self.hasBias = hasBias
         self.stable  = stable
         self.rank    = min(nInput, nOutput)
 
-        # LDU parameters
+        # LDU learned parameters
+        self.raw_L = nn.Parameter(torch.zeros(nInput, nInput))
+        self.d     = nn.Parameter(torch.ones(self.rank))
+        self.raw_U = nn.Parameter(torch.zeros(nOutput, nOutput))
+        if hasBias:
+            self.biasWeight = nn.Parameter(torch.zeros(1, nOutput))
         if ergodic:
-            self.raw_L = nn.Parameter(torch.zeros(nInput, nInput))
-            self.d     = nn.Parameter(torch.ones(self.rank))
-            self.raw_U = nn.Parameter(torch.zeros(nOutput, nOutput))
-            self.register_buffer('noise_out', torch.randn(nOutput))       # post-mix noise [nOutput]
-            self.register_buffer('noise', torch.randn(nInput, nOutput))  # for compute_W path
+            # Factor-level noise: perturb each LDU factor independently
+            self.register_buffer('noise_raw_L', torch.randn(nInput, nInput))
+            self.register_buffer('noise_raw_U', torch.randn(nOutput, nOutput))
+            self.register_buffer('noise_d',     torch.ones(self.rank))
             if hasBias:
                 self.register_buffer('biasNoise', torch.randn(1, nOutput))
-                self.biasWeight = nn.Parameter(torch.zeros(1, nOutput))
-        else:
-            self.raw_L = nn.Parameter(torch.zeros(nInput, nInput))
-            self.d     = nn.Parameter(torch.ones(self.rank))
-            self.raw_U = nn.Parameter(torch.zeros(nOutput, nOutput))
-            if hasBias:
-                self.biasWeight = nn.Parameter(torch.zeros(1, nOutput))
 
+    # --- Factor helpers ---
     def _L(self):
         """Unit-lower-triangular: strict lower of raw_L + I."""
         return torch.tril(self.raw_L, diagonal=-1) + torch.eye(
@@ -667,23 +298,44 @@ class LULayer(ErgodicLayer):
         return torch.triu(self.raw_U, diagonal=1) + torch.eye(
             self.nOutput, device=self.raw_U.device, dtype=self.raw_U.dtype)
 
+    def _d_effective(self):
+        """Return d clamped to [eps, 1] magnitude with sign preserved when
+        stable=True, else raw self.d.  Stability constraint lives here only."""
+        if self.stable:
+            _eps = 1e-3
+            return self.d.sign() * self.d.abs().clamp(_eps, 1.0)
+        return self.d
+
     def _D_embed(self):
-        """Diagonal embedded into [nInput, nOutput] with zero padding."""
-        D = torch.zeros(self.nInput, self.nOutput,
-                        device=self.d.device, dtype=self.d.dtype)
+        """Embed _d_effective() into [nInput, nOutput] rectangular diagonal."""
+        d = self._d_effective()
+        D = torch.zeros(self.nInput, self.nOutput, device=d.device, dtype=d.dtype)
         for i in range(self.rank):
-            D[i, i] = self.d[i]
+            D[i, i] = d[i]
         return D
 
-    def stabilize(self):
-        """Clamp diagonal values to [-1, 1]."""
-        with torch.no_grad():
-            self.d.data.clamp_(-1.0, 1.0)
-
     # --- ErgodicLayer overrides ---
+    @torch.no_grad()
     def observe_sigma(self):
-        if self.ergodic:
-            super().observe_sigma()
+        if not self.ergodic:
+            return
+        grad_energy = None
+        for name, param in self.named_parameters():
+            if param.grad is None or not param.requires_grad:
+                continue
+            energy = param.grad.detach().pow(2)
+            if param.shape[-1] == self.nOutput:
+                e = energy.mean(dim=tuple(range(energy.ndim - 1))) if energy.ndim > 1 else energy
+            else:
+                e = energy.mean().expand(self.nOutput)
+            grad_energy = e if grad_energy is None else grad_energy + e
+        if grad_energy is None:
+            return
+        self.sigma_step += 1
+        beta = self.sigma_beta
+        delta = grad_energy - self.sigma_mean
+        self.sigma_mean.add_((1 - beta) * delta)
+        self.sigma.mul_(beta).add_((1 - beta) * delta * (grad_energy - self.sigma_mean))
 
     def sigma_to_ergodic(self):
         if self.ergodic:
@@ -695,64 +347,70 @@ class LULayer(ErgodicLayer):
 
     # --- Noise resampling ---
     def resample_noise(self):
-        if self.ergodic:
-            self.noise = torch.randn_like(self.noise)
-            self.noise_out = torch.randn_like(self.noise_out)
-            if self.hasBias:
-                self.biasNoise = torch.randn_like(self.biasNoise)
+        if not self.ergodic:
+            return
+        self.noise_raw_L = torch.randn_like(self.noise_raw_L)
+        self.noise_raw_U = torch.randn_like(self.noise_raw_U)
+        # Signed diagonal: |d_i| uniform in [eps, 1], random sign
+        _eps = 1e-3
+        d_abs  = torch.rand_like(self.noise_d) * (1.0 - _eps) + _eps
+        d_sign = torch.randint(0, 2, self.noise_d.shape,
+                               device=self.noise_d.device).float() * 2.0 - 1.0
+        self.noise_d = d_abs * d_sign
+        if self.hasBias:
+            self.biasNoise = torch.randn_like(self.biasNoise)
 
-    # --- W materialization ---
+    # --- Effective ergodic factors ---
+    def _L_eff(self):
+        """L_eff = I + strict_lower(raw_L + var * noise_raw_L).
+        self.var is [nOutput]; use mean as scalar for the [nInput,nInput] L factor."""
+        t = self.var.mean()
+        raw = self.raw_L + t * self.noise_raw_L
+        return (torch.tril(raw, diagonal=-1)
+                + torch.eye(self.nInput, device=raw.device, dtype=raw.dtype))
+
+    def _U_eff(self):
+        """U_eff = I + strict_upper(raw_U + var * noise_raw_U).
+        self.var is [nOutput]; broadcast as [1, nOutput] over each column of U."""
+        t = self.var.unsqueeze(0)
+        raw = self.raw_U + t * self.noise_raw_U
+        return (torch.triu(raw, diagonal=1)
+                + torch.eye(self.nOutput, device=raw.device, dtype=raw.dtype))
+
+    def _d_eff(self):
+        """d_eff = bias[:rank] * d_effective + var[:rank] * noise_d.
+        self.bias/self.var are [nOutput]; slice to [rank] for element-wise multiply."""
+        b = self.bias[:self.rank]
+        t = self.var[:self.rank]
+        return b * self._d_effective() + t * self.noise_d
+
+    # --- W materialisation ---
     def compute_W(self):
         """W = L @ D_embed @ U.  Shape [nInput, nOutput]."""
         return self._L() @ self._D_embed() @ self._U()
 
     def compute_Winverse(self):
-        """W⁻¹ = U⁻¹ @ D_embed⁻¹ @ L⁻¹.  Shape [nOutput, nInput]."""
+        """W⁻¹ = U⁻¹ @ D_embed⁻¹ @ L⁻¹.  Shape [nOutput, nInput].
+        Uses _d_effective() so stable=True is automatically respected."""
         L = self._L()
         U = self._U()
-        I_in = torch.eye(self.nInput, device=L.device, dtype=L.dtype)
+        I_in  = torch.eye(self.nInput,  device=L.device, dtype=L.dtype)
         I_out = torch.eye(self.nOutput, device=U.device, dtype=U.dtype)
-        L_inv = torch.linalg.solve_triangular(L, I_in, upper=False, unitriangular=True)
-        U_inv = torch.linalg.solve_triangular(U, I_out, upper=True, unitriangular=True)
-        # D_embed inverse: [nOutput, nInput]
-        D_inv = torch.zeros(self.nOutput, self.nInput,
-                            device=self.d.device, dtype=self.d.dtype)
+        L_inv = torch.linalg.solve_triangular(L, I_in,  upper=False, unitriangular=True)
+        U_inv = torch.linalg.solve_triangular(U, I_out, upper=True,  unitriangular=True)
+        d = self._d_effective()
+        D_inv = torch.zeros(self.nOutput, self.nInput, device=d.device, dtype=d.dtype)
         for i in range(self.rank):
-            D_inv[i, i] = 1.0 / self.d[i]
+            D_inv[i, i] = 1.0 / d[i]
         return U_inv @ D_inv @ L_inv
 
-    # --- Forward / Reverse ---
-    def forward(self, x):
-        if self.stable:
-            self.stabilize()
-
-        if self.ergodic:
-            self.resample_noise()
-            y = self._apply_forward(x)                     # clean LDU
-            y = self.bias * y + self.var * self.noise   # per-neuron ergodic mix
-            if self.hasBias:
-                y = y + self.bias * self.biasWeight + self.var * self.biasNoise
-        else:
-            y = self._apply_forward(x)
-            if self.hasBias:
-                y = y + self.biasWeight
-        return y
-
-    def _apply_forward(self, x):
-        """Apply x @ L @ D_embed @ U sequentially — no W materialization.
-        Ergodic mixing is handled post-computation in forward().
-        Supports arbitrary batch dimensions."""
-        L = self._L()
-        U = self._U()
-        d = self.d
-
-        # Flatten batch dims: (..., nInput) -> (B, nInput)
+    # --- Parameterised sequential apply / solve ---
+    def _apply_ldu(self, x, L, d, U):
+        """Apply x @ L @ D_embed(d) @ U sequentially.  d is a [rank] vector.
+        Supports arbitrary leading batch dimensions."""
         orig_shape = x.shape
         x = x.reshape(-1, orig_shape[-1])
-
-        # x @ L
         x = x @ L
-        # x @ D_embed: multiply by diagonal, then pad/truncate for rectangular
         if self.nInput <= self.nOutput:
             scaled = x * d
             if self.nOutput > self.nInput:
@@ -766,64 +424,147 @@ class LULayer(ErgodicLayer):
             pad = torch.zeros(x.shape[0], self.nOutput - self.rank,
                               device=x.device, dtype=x.dtype)
             x = torch.cat([x, pad], dim=-1)
-        # x @ U
         x = x @ U
-
-        # Restore batch dims
-        out_shape = list(orig_shape)
-        out_shape[-1] = self.nOutput
+        out_shape = list(orig_shape); out_shape[-1] = self.nOutput
         return x.reshape(out_shape)
 
-    def _solve_reverse(self, x):
-        """Solve x @ W = y for x, i.e. x = y @ U⁻¹ @ D⁻¹ @ L⁻¹.
-        Uses triangular solves on clean (non-ergodic) LDU — no matrix materialization.
-        Supports arbitrary batch dimensions (2D, 3D, etc)."""
-        U = self._U()
-        L = self._L()
-        d = self.d
-
-        # Flatten batch dims: (..., nOutput) -> (B, nOutput)
-        orig_shape = x.shape
-        x = x.reshape(-1, orig_shape[-1])
-
-        # x @ U = z  →  Uᵀ @ xᵀ = zᵀ  →  xᵀ = solve(Uᵀ, zᵀ)
-        x = torch.linalg.solve_triangular(U.T, x.T, upper=False, unitriangular=True).T
-        # D⁻¹: divide by diagonal (embedded for rectangular)
+    def _solve_ldu(self, y, L, d, U):
+        """Solve y @ (L D U) = x exactly via triangular solves.  d is [rank].
+        Supports arbitrary leading batch dimensions."""
+        orig_shape = y.shape
+        y = y.reshape(-1, orig_shape[-1])
+        y = torch.linalg.solve_triangular(U.T, y.T, upper=False, unitriangular=True).T
         if self.nInput <= self.nOutput:
-            x = x[..., :self.rank] / d
+            y = y[..., :self.rank] / d
             if self.nInput > self.rank:
-                pad = torch.zeros(x.shape[0], self.nInput - self.rank,
-                                  device=x.device, dtype=x.dtype)
-                x = torch.cat([x, pad], dim=-1)
+                pad = torch.zeros(y.shape[0], self.nInput - self.rank,
+                                  device=y.device, dtype=y.dtype)
+                y = torch.cat([y, pad], dim=-1)
         else:
-            x = x / d
-            pad = torch.zeros(x.shape[0], self.nInput - self.rank,
-                              device=x.device, dtype=x.dtype)
-            x = torch.cat([x, pad], dim=-1)
-        # x @ L = z  →  Lᵀ @ xᵀ = zᵀ  →  xᵀ = solve(Lᵀ, zᵀ)
-        x = torch.linalg.solve_triangular(L.T, x.T, upper=True, unitriangular=True).T
+            y = y / d
+            pad = torch.zeros(y.shape[0], self.nInput - self.rank,
+                              device=y.device, dtype=y.dtype)
+            y = torch.cat([y, pad], dim=-1)
+        y = torch.linalg.solve_triangular(L.T, y.T, upper=True, unitriangular=True).T
+        out_shape = list(orig_shape); out_shape[-1] = self.nInput
+        return y.reshape(out_shape)
 
-        # Restore batch dims
-        out_shape = list(orig_shape)
-        out_shape[-1] = self.nInput
-        return x.reshape(out_shape)
+    def _apply_forward(self, x):
+        """Non-ergodic sequential forward using clean L, d_effective, U."""
+        return self._apply_ldu(x, self._L(), self._d_effective(), self._U())
+
+    def _solve_reverse(self, y):
+        """Non-ergodic sequential reverse using clean L, d_effective, U."""
+        return self._solve_ldu(y, self._L(), self._d_effective(), self._U())
+
+    def _compute_forward(self, x):
+        """Non-ergodic forward: naive=True materialises W; naive=False uses solves."""
+        if self.naive:
+            W = self.compute_W()
+            orig_shape = x.shape
+            out_shape = list(orig_shape); out_shape[-1] = self.nOutput
+            return (x.reshape(-1, self.nInput) @ W).reshape(out_shape)
+        return self._apply_forward(x)
+
+    def _compute_reverse(self, y):
+        """Non-ergodic reverse: naive=True materialises W_inv; naive=False uses solves."""
+        if self.naive:
+            W_inv = self.compute_Winverse()
+            orig_shape = y.shape
+            out_shape = list(orig_shape); out_shape[-1] = self.nInput
+            return (y.reshape(-1, self.nOutput) @ W_inv).reshape(out_shape)
+        return self._solve_reverse(y)
+
+    # --- Forward / Reverse ---
+    def forward(self, x):
+        """Apply the LDU transform with optional ergodic noise injection.
+
+        Ergodic (self.ergodic=True):
+          Resamples noise at the start, then builds effective factors:
+            L_eff = I + strict_lower(raw_L + t * noise_raw_L)
+            U_eff = I + strict_upper(raw_U + t * noise_raw_U)
+            d_eff = b * d_effective + t * noise_d
+          naive=True: materialise W_eff = L_eff D_eff U_eff, dense matmul.
+          naive=False: sequential triangular solves via _apply_ldu.
+          Stored noise buffers remain unchanged after this call so that
+          reverse() can reconstruct the identical factors exactly.
+
+        Non-ergodic (self.ergodic=False):
+          naive=True: materialise W = L D U, dense matmul.
+          naive=False: sequential triangular solves.
+        """
+        if self.ergodic:
+            self.resample_noise()
+            L_eff = self._L_eff()
+            U_eff = self._U_eff()
+            d_eff = self._d_eff()
+            if self.naive:
+                D_eff = torch.zeros(self.nInput, self.nOutput,
+                                    device=d_eff.device, dtype=d_eff.dtype)
+                for i in range(self.rank):
+                    D_eff[i, i] = d_eff[i]
+                W_eff = L_eff @ D_eff @ U_eff
+                orig_shape = x.shape
+                out_shape = list(orig_shape); out_shape[-1] = self.nOutput
+                y = (x.reshape(-1, self.nInput) @ W_eff).reshape(out_shape)
+            else:
+                y = self._apply_ldu(x, L_eff, d_eff, U_eff)
+            if self.hasBias:
+                y = y + self.bias * self.biasWeight + self.var * self.biasNoise
+        else:
+            if self.naive:
+                W = self.compute_W()
+                orig_shape = x.shape
+                out_shape = list(orig_shape); out_shape[-1] = self.nOutput
+                y = (x.reshape(-1, self.nInput) @ W).reshape(out_shape)
+            else:
+                y = self._apply_forward(x)
+            if self.hasBias:
+                y = y + self.biasWeight
+        return y
 
     def reverse(self, y):
+        """Invert the LDU transform.
+
+        Ergodic (self.ergodic=True):
+          Reconstructs L_eff, d_eff, U_eff from the noise buffers set during
+          the preceding forward() call — no new resampling is done until after
+          the result is computed.
+          naive=False: triangular solves (exact, no materialisation).
+          naive=True: materialise W_eff, apply pinv.
+          Resamples noise at end so the layer is ready for the next forward().
+
+        Non-ergodic (self.ergodic=False):
+          naive=True: materialise W_inv = U_inv D_inv L_inv, dense matmul.
+          naive=False: sequential triangular solves.
+        """
         if self.ergodic:
-            # Undo in reverse order of forward:
-            # 1. Undo ergodic bias
             if self.hasBias:
                 y = y - (self.bias * self.biasWeight + self.var * self.biasNoise)
-            # 2. Undo post-mix: y = bias * clean + var * noise_out
-            #    Clamp bias to avoid explosion when bias ≈ 0 (pure exploration)
-            y = (y - self.var * self.noise_out) / torch.clamp(self.bias, min=0.05)
-            # 3. Solve clean LDU
-            result = self._solve_reverse(y)
-            self.resample_noise()  # fresh noise for next standalone reverse
+            L_eff = self._L_eff()
+            U_eff = self._U_eff()
+            d_eff = self._d_eff()
+            if self.naive:
+                D_eff = torch.zeros(self.nInput, self.nOutput,
+                                    device=d_eff.device, dtype=d_eff.dtype)
+                for i in range(self.rank):
+                    D_eff[i, i] = d_eff[i]
+                W_eff = L_eff @ D_eff @ U_eff
+                orig_shape = y.shape
+                out_shape = list(orig_shape); out_shape[-1] = self.nInput
+                result = (y.reshape(-1, self.nOutput) @ torch.linalg.pinv(W_eff)).reshape(out_shape)
+            else:
+                result = self._solve_ldu(y, L_eff, d_eff, U_eff)
+            self.resample_noise()
             return result
         else:
             if self.hasBias:
                 y = y - self.biasWeight
+            if self.naive:
+                W_inv = self.compute_Winverse()
+                orig_shape = y.shape
+                out_shape = list(orig_shape); out_shape[-1] = self.nInput
+                return (y.reshape(-1, self.nOutput) @ W_inv).reshape(out_shape)
             return self._solve_reverse(y)
 
     @staticmethod
@@ -832,250 +573,48 @@ class LULayer(ErgodicLayer):
         device = _get_device()
         nInput, nOutput = 7, 11
 
-        # Test roundtrip
-        layer = LULayer(nInput=nInput, nOutput=nOutput, hasBias=False)
+        # Non-ergodic roundtrip (expand)
+        layer = InvertibleLinearLayer(nInput=nInput, nOutput=nOutput, hasBias=False)
         layer.set_sigma(0)
         x = torch.randn(5, nInput, device=device)
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = torch.norm(x - x_rec) / torch.norm(x)
-        assert err < 1e-4, f"LULayer roundtrip error: {err:.2e}"
-        print(f"LULayer roundtrip: err={err:.2e} OK")
+        assert err < 1e-4, f"roundtrip error: {err:.2e}"
+        print(f"InvertibleLinearLayer roundtrip: err={err:.2e} OK")
 
-        # Test with bias
-        layer2 = LULayer(nInput=nInput, nOutput=nOutput, hasBias=True)
+        # With bias
+        layer2 = InvertibleLinearLayer(nInput=nInput, nOutput=nOutput, hasBias=True)
         layer2.set_sigma(0)
         y2 = layer2.forward(x)
         x_rec2 = layer2.reverse(y2)
         err2 = torch.norm(x - x_rec2) / torch.norm(x)
-        assert err2 < 1e-4, f"LULayer bias roundtrip error: {err2:.2e}"
-        print(f"LULayer bias roundtrip: err={err2:.2e} OK")
+        assert err2 < 1e-4, f"bias roundtrip error: {err2:.2e}"
+        print(f"InvertibleLinearLayer bias roundtrip: err={err2:.2e} OK")
 
-        # Test square
-        layer3 = LULayer(nInput=5, nOutput=5, hasBias=False)
+        # Square W @ W_inv = I
+        layer3 = InvertibleLinearLayer(nInput=5, nOutput=5, hasBias=False)
         layer3.set_sigma(0)
-        x3 = torch.randn(3, 5, device=device)
-        y3 = layer3.forward(x3)
-        x_rec3 = layer3.reverse(y3)
-        err3 = torch.norm(x3 - x_rec3) / torch.norm(x3)
-        assert err3 < 1e-5, f"LULayer square roundtrip error: {err3:.2e}"
-        print(f"LULayer square roundtrip: err={err3:.2e} OK")
+        W = layer3.compute_W(); W_inv = layer3.compute_Winverse()
+        id_err = torch.norm(W @ W_inv - torch.eye(5))
+        assert id_err < 1e-4, f"W@W_inv identity err: {id_err:.2e}"
+        print(f"InvertibleLinearLayer W@W_inv identity: err={id_err:.2e} OK")
 
-        print("All LULayer tests passed!")
-
-class InvertibleLinearLayer(ErgodicLayer):
-    """Exactly-invertible linear layer factored as W = U @ Σ @ Vᵀ (thin SVD).
-
-    U and V are orthogonal (Householder+diagonal+Householder), Σ is diagonal.
-    Two modes:
-      - naive=True:  materializes W and W⁻¹ as dense matrices.
-      - naive=False: applies U, Σ, V sequentially — O(B·N), exact inverse.
-
-    Ergodic mixing (ergodic=True): sub-layers perturb their own parameters
-    via bias/var from ErgodicLayer.  At the W level, forward uses
-    bias·W + var·noise when ergodic and training.
-    When stable=True, singular values are clamped to ≤1 each step.
-    """
-    def __init__(self, nInput, nOutput, naive=False, ergodic=False,
-                 hasBias=True, stable=False, useGivens=False):
-        super().__init__(nInput, nOutput)
-        self.naive   = naive
-        self.ergodic = ergodic
-        self.hasBias = hasBias
-        self.stable  = stable
-        self.useGivens = useGivens
-        self.rank    = min(nInput, nOutput)
-
-        self.U     = InvertibleRotationLayer(dim=nInput, naive=naive, ergodic=ergodic, useGivens=useGivens)
-        self.V     = InvertibleRotationLayer(dim=nOutput, naive=naive, ergodic=ergodic, useGivens=useGivens)
-        self.Sigma = InvertibleDiagonalLayer(nInput, nOutput, ergodic=ergodic)
-
-        if ergodic:
-            self.register_buffer('noise', torch.randn(nInput, nOutput))
-            if hasBias:
-                self.register_buffer('biasNoise', torch.randn(1, nOutput))
-                self.biasWeight = nn.Parameter(torch.zeros(1, nOutput))
-        else:
-            if hasBias:
-                self.biasWeight = nn.Parameter(torch.randn(1, nOutput))
-
-    def set_sigma(self, sigma):
-        """Forward set_sigma to self and child ErgodicLayer sub-layers."""
-        super().set_sigma(sigma)
-        if hasattr(self, 'U'):
-            self.U.set_sigma(sigma)
-            self.V.set_sigma(sigma)
-            self.Sigma.set_sigma(sigma)
-
-    def observe_sigma(self):
-        if self.naive and self.ergodic:
-            super().observe_sigma()
-        # else: no-op (non-naive children track their own; non-ergodic skips)
-
-    def sigma_to_ergodic(self):
-        if self.naive and self.ergodic:
-            super().sigma_to_ergodic()
-
-    def paramUpdate(self):
-        # Always anneal children's d_scale
-        self.U.paramUpdate()
-        self.V.paramUpdate()
-        self.Sigma.paramUpdate()
-        # Only track sigma/ergodic at this level for naive+ergodic
-        if self.naive and self.ergodic:
-            super().paramUpdate()
-
-    def resample_naive_noise(self):
-        if self.ergodic:
-            self.noise = torch.randn_like(self.noise)
-    def resample_bias_noise(self):
-        if self.ergodic and self.hasBias:
-            self.biasNoise = torch.randn_like(self.biasNoise)
-    def _rotation_matrices(self):
-        """Compute and cache U, V rotation matrices for reuse within a forward+reverse pair."""
-        self._cached_U = self.U.rotation_matrix()
-        self._cached_V = self.V.rotation_matrix()
-        return self._cached_U, self._cached_V
-
-    def compute_W(self):
-        """W = U @ Σ @ Vᵀ. O(N²)."""
-        U_mat, V_mat = self._rotation_matrices()
-        w = self.Sigma.lamda
-        Sigma_mat = torch.zeros(self.nInput, self.nOutput, device=w.device, dtype=w.dtype)
-        for i in range(self.rank):
-            Sigma_mat[i, i] = w[i]
-        return U_mat @ Sigma_mat @ V_mat.T
-
-    def compute_Winverse(self):
-        """W⁺ = V @ Σ⁻¹ @ Uᵀ."""
-        U_mat = getattr(self, '_cached_U', None)
-        V_mat = getattr(self, '_cached_V', None)
-        if U_mat is None or V_mat is None:
-            U_mat, V_mat = self._rotation_matrices()
-        w = self.Sigma.lamda
-        Sigma_inv = torch.zeros(self.nOutput, self.nInput, device=w.device, dtype=w.dtype)
-        for i in range(self.rank):
-            Sigma_inv[i, i] = 1.0 / w[i]
-        W_inv = V_mat @ Sigma_inv @ U_mat.T
-        self._cached_U = None
-        self._cached_V = None
-        return W_inv
-
-    def forward(self, x):
-        if not self.naive and self.stable:
-            self.Sigma.stabilize()
-
-        # Resample noise at start of forward; reverse reuses same noise.
-        # Noise is also resampled at end of reverse so standalone reverse calls work.
-        if self.ergodic:
-            if not self.naive:
-                self.U.resample_noise()
-                self.V.resample_noise()
-                self.Sigma.resample_noise()
-            else:
-                self.resample_naive_noise()
-
-        if self.naive:
-            if self.ergodic:
-                W = self.bias * self.compute_W() + self.var * self.noise
-                y = x @ W
-                if self.hasBias:
-                    self.resample_bias_noise()
-                    y += self.bias * self.biasWeight + self.var * self.biasNoise
-            else:
-                W = self.compute_W()
-                y = x @ W
-                if self.hasBias:
-                    y += self.biasWeight
-        else:
-            # Fast O(N) path: sub-layers handle ergodic internally
-            x = self.U.forward(x)
-            x = self.Sigma.forward(x)
-            y = self.V.forward(x)
-            if self.hasBias:
-                y += self.biasWeight
-        return y
-
-    def reverse(self, y):
-        if self.naive:
-            yShape = list(y.shape); yShape[-1] = self.nInput
-            if self.ergodic:
-                bias = self.bias.mean()
-                var  = self.var.mean()
-                if self.hasBias:
-                    y -= bias * self.biasWeight + var * self.biasNoise
-                W_inv = bias * self.compute_Winverse() + var * self.noise.T
-                x = y @ W_inv
-            else:
-                if self.hasBias:
-                    y -= self.biasWeight
-                W_inv = self.compute_Winverse()
-                x = y @ W_inv
-            result = x
-        else:
-            # O(N) Householder reverse: sub-layers handle ergodic internally
-            if self.hasBias:
-                y -= self.biasWeight
-            #yShape = list(y.shape); yShape[-1] = self.nInput
-            y = self.V.reverse(y)
-            y = self.Sigma.reverse(y)
-            x = self.U.reverse(y)
-            result = x
-
-        # Resample after reverse so next standalone reverse call gets fresh noise
-        if self.ergodic:
-            if not self.naive:
-                self.U.resample_noise()
-                self.V.resample_noise()
-                self.Sigma.resample_noise()
-            else:
-                self.resample_naive_noise()
-        return result
-
-    @staticmethod
-    def test():
-        torch.manual_seed(42)
-        nInput, nOutput = 7, 11
-
-        # Test naive=True roundtrip
-        layer = InvertibleLinearLayer(nInput=nInput, nOutput=nOutput, naive=True, hasBias=False)
-        x = torch.rand((2, 5, nInput))
-        y = layer.forward(x)
-        x_rec = layer.reverse(y)
-        err = torch.norm(x - x_rec)
-        assert err < 1e-4, f"naive roundtrip error: {err}"
-        print(f"naive roundtrip error: {err:.2e}")
-
-        # Test naive=False (Householder) roundtrip
-        glayer = InvertibleLinearLayer(nInput=nInput, nOutput=nOutput, naive=False, hasBias=False)
-        y2 = glayer.forward(x)
-        x_rec2 = glayer.reverse(y2)
-        err2 = torch.norm(x - x_rec2)
-        assert err2 < 1e-4, f"Householder roundtrip error: {err2}"
-        print(f"Householder roundtrip error: {err2:.2e}")
-
-        # Test compute_W / compute_Winverse identity
-        layer2 = InvertibleLinearLayer(nInput=nInput, nOutput=nOutput, naive=False, hasBias=False)
-        W = layer2.compute_W()
-        W_inv = layer2.compute_Winverse()
-        eye = torch.eye(nInput)
-        identity_err = torch.norm(W @ W_inv - eye)
-        assert identity_err < 1e-4, f"compute_W/Winverse identity error: {identity_err}"
-        print(f"compute_W/Winverse identity error: {identity_err:.2e}")
-
-        # Test ergodic mode eval roundtrip (var=0 → fast path)
-        elayer = InvertibleLinearLayer(nInput=nInput, nOutput=nOutput, naive=False,
-                                       ergodic=True, hasBias=False)
-        elayer.eval()
-        y3 = elayer.forward(x)
+        # Ergodic roundtrip (factor-level noise → exact inverse)
+        elayer = InvertibleLinearLayer(nInput=5, nOutput=5, ergodic=True, stable=True)
+        with torch.no_grad():
+            elayer.var.fill_(0.2)
+            elayer.bias.fill_(0.8)
+        x3 = torch.randn(4, 5, device=device)
+        y3 = elayer.forward(x3)
         x_rec3 = elayer.reverse(y3)
-        err3 = torch.norm(x - x_rec3)
-        assert err3 < 1e-4, f"ergodic eval roundtrip error: {err3}"
-        print(f"ergodic eval roundtrip error: {err3:.2e}")
+        err3 = torch.norm(x3 - x_rec3) / torch.norm(x3)
+        assert err3 < 1e-4, f"ergodic roundtrip error: {err3:.2e}"
+        print(f"InvertibleLinearLayer ergodic roundtrip: err={err3:.2e} OK")
 
-        print("All tests passed!")
+        print("All InvertibleLinearLayer tests passed!")
 
-class LiftingLayer(LULayer):
+class LiftingLayer(InvertibleLinearLayer):
     """Bias-free, stable reversible linear layer for mapping between row/column spaces."""
     def __init__(self, nInput, nOutput, init='orthogonal'):
         super().__init__(nInput, nOutput, naive=False, hasBias=False, stable=True)
@@ -1120,18 +659,33 @@ class ColumnUsageTracker:
 class SigmaLayer(ErgodicLayer):
     """Additive (summation) layer: y = tanh(W @ x + b).
 
+    When ``invertible=True``, the linear transform is exactly invertible
+    (via InvertibleLinearLayer) and ``reverse()`` is available.
+    When ``invertible=False`` (default), the layer is forward-only.
+
     When ``ergodic=True``, the layer participates in the explore/exploit
     schedule: during training, bias and var are driven by per-neuron sigma.
     When ``ergodic=False`` (default), the layer always uses deterministic
     weights (bias=1, var=0).
     At eval time, both modes use deterministic weights.
     """
-    def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False, naive=True):
+    def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False, naive=True, invertible=False):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
-        self.layer       = LinearLayer(nInput, nOutput, hasBias=True, naive=False) if naive else LULayer(nInput, nOutput, hasBias=True, naive=naive)
-        self.saturate    = True
-        self.activation  = torch.zeros(1,nOutput,1)
-        self.ergodic     = ergodic
+        self.invertible = invertible
+        self.ergodic    = ergodic
+        self.saturate   = True
+        self.activation = torch.zeros(1, nOutput, 1)
+        # invertible=True or non-naive: use InvertibleLinearLayer.
+        #   naive=True  → dense W materialized from LDU factors; reverse uses W_inv (pinv-style).
+        #   naive=False → sequential triangular solves; no W materialization.
+        # invertible=False + naive=True: fast LinearLayer (no reverse).
+        if invertible or not naive:
+            self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic)
+        else:
+            self.layer = LinearLayer(nInput, nOutput, hasBias=True)
+
+    def layer_tradeoff(self):
+        return self.bias, self.var
 
     def forward(self, x):
         x = self.permute(x)
@@ -1142,6 +696,20 @@ class SigmaLayer(ErgodicLayer):
         y = self.unpermute(y)
         return y
 
+    def reverse(self, y):
+        """Invert tanh then apply W⁻¹. Requires invertible=True."""
+        y = self.permute(y)
+        y = y.squeeze(0)
+        if self.saturate:
+            # Numerical drift from upstream reversible layers can push values
+            # slightly outside (-1, 1); clamp before atanh to avoid NaNs.
+            y = y.clamp(min=-1 + epsilon, max=1 - epsilon)
+            self.activation = torch.atanh(y)
+            y = self.activation.clone()
+        x = self.layer.reverse(y)
+        x = self.unpermute(x)
+        return x
+
     @staticmethod
     def test():
         nInput, nOutput = 3, 4
@@ -1150,382 +718,252 @@ class SigmaLayer(ErgodicLayer):
         x = torch.randn((2, 5, nInput))
         layer.set_sigma(0.999)
 
-        criterion = nn.MSELoss()  # Mean Squared Error Loss
-        optimizer = optim.Adam(layer.getParameters(), lr=0.01)  # Adam Optimizer
-        optimizer.zero_grad()  # Clear gradients
+        criterion = nn.MSELoss()
+        optimizer = optim.Adam(layer.getParameters(), lr=0.01)
+        optimizer.zero_grad()
         y = layer(x)
-        #y_inv = layer.reverse(y)
-
-        loss = criterion(y, y)  # Compute loss
-        loss.backward()  # Backpropagation
-
+        loss = criterion(y, y)
+        loss.backward()
         print(f"Original input: {x}")
         print(f"After linear: {y}")
-        #print(f"Inverse operation result: {y_inv}")
-class InvertibleSigmaLayer(SigmaLayer):
-    """SigmaLayer whose linear transform is exactly invertible (SVD-factored).
 
-    Inherits the ergodic flag behavior from SigmaLayer.
-    reverse() inverts tanh via atanh, then inverts the linear layer.
-    """
-    def __init__(self, nInput, nOutput, naive=False, permuteInput=False, ergodic=False):
-        super().__init__(nInput, nOutput, permuteInput=permuteInput, ergodic=ergodic)
-        self.layer          = LULayer(nInput, nOutput, naive=naive, hasBias=True)
-    def layer_tradeoff(self):
-        return self.bias, self.var
-    def reverse(self, y):
-        y  = self.permute(y)
-        y = y.squeeze(0)
-        if self.saturate:
-            # Numerical drift from upstream reversible layers can push values
-            # slightly outside (-1, 1); clamp before atanh to avoid NaNs.
-            y = y.clamp(min=-1 + epsilon, max=1 - epsilon)
-            self.activation = torch.atanh(y) # this can be faster if we keep the tanh activation
-            y = self.activation.clone()
-            x = self.layer.reverse(y)
-        x = self.unpermute(x)
-        return x
-
-    @staticmethod
-    def test():
         nInput, nOutput = 5, 7
-        permute = False
-        #naive = False
-        layer   = InvertibleSigmaLayer(nInput=nInput, nOutput=nOutput, permuteInput=permute, naive=False)
-
+        layer = SigmaLayer(nInput=nInput, nOutput=nOutput, naive=False, invertible=True)
         x = torch.randn((2, 5, nInput))
         layer.set_sigma(0.0)
         y = layer.forward(x)
         y_inv = layer.reverse(y)
-
-        #print(f"Original input: {x}")
-        #print(f"After reversible linear: {y}")
-        #print(f"Inverse operation result: {y_inv}")
-        assert(torch.norm(x-y_inv) < 0.00001)
-
-        layer = InvertibleSigmaLayer(nInput=nInput, nOutput=nOutput, permuteInput=False, naive=True)
+        assert torch.norm(x - y_inv) < 0.00001
+        layer = SigmaLayer(nInput=nInput, nOutput=nOutput, naive=True, invertible=True)
         x = torch.randn((4, 8, nInput))
         layer.set_sigma(0.0)
         y = layer.forward(x)
-        assert y.shape == (4,8,nOutput), "Incorrect Size"
+        assert y.shape == (4, 8, nOutput), "Incorrect Size"
         y_inv = layer.reverse(y)
-        assert(torch.norm(x-y_inv) < 0.00001)
+        assert torch.norm(x - y_inv) < 0.00001
+        print("SigmaLayer tests passed.")
+
 class PiLayer(ErgodicLayer):
-    """Multiplicative (product) layer: y_j = prod_i (1 + tanh(w_ji * x_i)).
+    """Multiplicative (product) layer.
 
-    Whereas SigmaLayer sums weighted inputs, PiLayer takes their product,
-    giving it a fundamentally different inductive bias (conjunction-like).
-    The ``ergodic`` flag works identically to SigmaLayer: when False,
-    the layer always uses deterministic weights regardless of set_sigma().
+    When ``invertible=False`` (default):
+        y_j = prod_i (1 + tanh(w_ji * x_i + b_j))
+
+    When ``invertible=True``: outputs interleaved (log_y, log_z) pairs where
+        log_y_j = sum_i log(1 - tanh(w_ji * x_i))
+        log_z_j = sum_i log(1 + tanh(w_ji * x_i))
+    Reverse recovers x via gamma = 0.5*(log_z - log_y) = Wx → x = W⁺ @ gamma.
+    Non-naive invertible mode requires nInput == nOutput (3D) or nOutput == 2*nInput (2D).
+
+    The ``ergodic`` flag works identically to SigmaLayer.
     """
-    def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False, naive=True):
+    def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False, naive=True,
+                 invertible=False, hasBias=True):
         super().__init__(nInput, nOutput, permuteInput=permuteInput)
-        self.ergodic = ergodic
-        self.naive   = naive
-        if ergodic:
-            self.register_buffer('noise', torch.randn(nInput, nOutput))
-            self.register_buffer('biasWeightNoise', torch.randn(1, nInput, nOutput))
-            if naive:
-                self.weights = nn.Parameter(torch.zeros(nInput, nOutput))
-            else:
-                self._il = LULayer(nInput, nOutput, hasBias=False, naive=naive, ergodic=True)
-            self.biasWeight = nn.Parameter(torch.zeros(1, 1, self.nOutput))
-        else:
-            if naive:
-                self.weights = nn.Parameter(torch.randn(nInput, nOutput))
-            else:
-                self._il = LULayer(nInput, nOutput, hasBias=False, naive=naive)
-            self.biasWeight = nn.Parameter(torch.randn(1, 1, self.nOutput))
+        self.ergodic    = ergodic
+        self.naive      = naive
+        self.invertible = invertible
+        self.hasBias    = hasBias
+        self.saturate   = True
+        self.useEpsilon = True
 
-        self.saturate      = True
-        self.hasBiasWeight = True
-        self.useEpsilon    = True   # add epsilon inside product terms to avoid exact zeros
+        if not naive and invertible:
+            assert nInput == nOutput or 2*nInput == nOutput, (
+                f"Non-naive invertible mode requires nInput == nOutput (3D) or "
+                f"nOutput == 2*nInput (2D), got nInput={nInput}, nOutput={nOutput}."
+            )
+
+        # Weight matrix — always register noise buffers for ergodic support
+        if naive:
+            self.W = nn.Parameter(torch.zeros(nInput, nOutput) if ergodic else torch.randn(nInput, nOutput))
+            self.register_buffer('noise', torch.randn(nInput, nOutput))
+        else:
+            self._il = InvertibleLinearLayer(nInput, nOutput, hasBias=False, naive=naive, ergodic=ergodic)
+            self.register_buffer('ergodic_noise', torch.randn(nInput, nOutput))
+
+        # Bias weight and corresponding noise (shape differs by path)
+        self.biasWeight = nn.Parameter(torch.zeros(1, 1, self.nOutput))
+        if invertible:
+            # Uniform-over-inputs bias noise: [1, 1, nOutput]
+            self.register_buffer('biasNoise', torch.randn(1, 1, self.nOutput))
+        else:
+            # Per-input bias noise: [1, nInput, nOutput]
+            self.register_buffer('biasWeightNoise', torch.randn(1, nInput, nOutput))
 
     def resample_noise(self):
-        w = self.weights if self.naive else self._il.compute_W()
-        self.noise = sample_noise(w)
-        self.biasWeightNoise = sample_noise(w, shape=(1, self.nInput, self.nOutput))
+        """Resample all noise buffers at the start of every ergodic forward pass."""
+        if self.naive:
+            self.noise = sample_noise(self.W)
+        else:
+            self.ergodic_noise = sample_noise(self.ergodic_noise)
+        if self.invertible:
+            self.biasNoise = sample_noise(self.biasWeight, shape=(1, 1, self.nOutput))
+        else:
+            ref = self.W if self.naive else self.ergodic_noise
+            self.biasWeightNoise = sample_noise(ref, shape=(1, self.nInput, self.nOutput))
+
+    def _get_W(self):
+        """Compute effective weight matrix with ergodic mixing when active."""
+        if self.ergodic:
+            if self.naive:
+                return self.bias * self.W + self.var * self.noise
+            return self.bias * self._il.compute_W() + self.var * self.ergodic_noise
+        return self.W if self.naive else self._il.compute_W()
 
     def forward(self, x):
+        self._input_ndim = x.ndim
         x = self.permute(x)
         if self.ergodic:
-            bias, var = self.bias, self.var
             self.resample_noise()
-            w = bias * (self.weights if self.naive else self._il.compute_W()) + var * self.noise
+        W   = self._get_W()
+        ndim = x.ndim
+        assert self.nInput == x.shape[-1], "Incorrect shape in PiLayer"
+        if self.invertible:
+            result = self._forward_invertible(x, W, ndim)
         else:
-            w = self.weights if self.naive else self._il.compute_W()
+            result = self._forward_non_invertible(x, W, ndim)
+        return self.unpermute(result)
 
-        ndim = len(x.shape)
-        assert self.nInput == x.shape[-1], "Incorrect shape in piLayer"
-        # Implements y_j = prod_i (1 + tanh(w_ji * x_i + b_j)).
-        # Log-domain: exp(sum(log(term))) avoids numerical overflow when
-        # nInput is large.  Safe because saturate=True guarantees term > 0.
+    def _forward_non_invertible(self, x, W, ndim):
+        """y_j = prod_i (1 + tanh(w_ji * x_i + b_j)), computed in log-space."""
+        bias, var = (self.bias, self.var) if self.ergodic else (None, None)
         if ndim == 2:
-            WX = x.unsqueeze(-1) * w.unsqueeze(0)
-            if self.hasBiasWeight:
-                if self.ergodic:
-                    WX += (bias * self.biasWeight + var * self.biasWeightNoise)
-                else:
-                    WX += self.biasWeight
-            if self.saturate:
-                term = 1 + torch.tanh(WX)
-            else:
-                term = 1 + WX
-            output = torch.exp(torch.sum(torch.log(term.clamp(min=1e-8)), dim=1))  # (N, L)
+            WX = x.unsqueeze(-1) * W.unsqueeze(0)          # (B, nIn, nOut)
+            if self.hasBias:
+                WX += bias * self.biasWeight + var * self.biasWeightNoise if self.ergodic else self.biasWeight
+            term = (1 + torch.tanh(WX)) if self.saturate else (1 + WX)
+            return torch.exp(torch.sum(torch.log(term.clamp(min=1e-8)), dim=1))
         else:
-            x2 = x.unsqueeze(-1)
-            w2 = w.unsqueeze(0)
-            WX = x2 * w2
-            if self.hasBiasWeight:
+            WX = x.unsqueeze(-1) * W.unsqueeze(0)          # (B, S, nIn, nOut) via broadcast
+            if self.hasBias:
                 if self.ergodic:
-                    WX += (bias*self.biasWeight.unsqueeze(1) + var*self.biasWeightNoise.unsqueeze(1))
+                    WX += bias * self.biasWeight.unsqueeze(1) + var * self.biasWeightNoise.unsqueeze(1)
                 else:
                     WX += self.biasWeight.unsqueeze(1)
             if self.saturate:
                 term = 1 + torch.tanh(WX)
                 if self.useEpsilon:
-                    term += epsilon
+                    term = term + epsilon
             else:
                 term = 1 + WX
-            output = torch.exp(torch.sum(torch.log(term.clamp(min=1e-8)), dim=2))  # (N, K, L)
-        output = self.unpermute(output)
-        return output
+            return torch.exp(torch.sum(torch.log(term.clamp(min=1e-8)), dim=2))
 
-    @staticmethod
-    def test():
-        nBatch, nInput, nOutput = 5, 3, 4
-        layer = PiLayer(nInput=nInput, nOutput=nOutput, permuteInput=True)
-
-        # x must be positive
-        x = torch.randn((nBatch, nInput, 6))
-        layer.set_sigma(0.999)
-        y = layer(x)
-        assert(y.shape==(nBatch, nOutput, 6))
-
-        print(f"Original input: {x}")
-        print(f"After linear: {y}")
-    @staticmethod
-    def xorTest():
-        X = torch.tensor([
-            [0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32)
-        Y = torch.tensor([
-            [0], [1], [1], [0]], dtype=torch.float32)
-        X = X.unsqueeze(2)
-        Y = Y.unsqueeze(2)
-        nInput, nHidden, nOutput = (2,3,1)
-        pi    = PiLayer(nInput, nHidden, permuteInput=True)      # Hidden layer using PiLayer
-        sigma = SigmaLayer(nHidden, nOutput, permuteInput=True)  # Output layer using SigmaLayer
-
-        criterion = nn.MSELoss()  # Mean Squared Error Loss
-        optimizer = optim.Adam(chain(pi.parameters(), sigma.parameters()), lr=0.01)  # Adam Optimizer
-        epochs = 1000
-        sigma.set_sigma(0.9999)
-        pi.set_sigma(0.9999)
-        for epoch in range(epochs):
-            optimizer.zero_grad()  # Clear gradients
-
-            x1 = pi(X)  # Pass through PiLayer
-            y = sigma(x1)  # Pass through SigmaLayer
-
-            loss = criterion(y, Y)  # Compute loss
-            loss.backward()  # Backpropagation
-            optimizer.step()  # Update weights
-            if epoch % 100 == 0:
-                print(f'Epoch {epoch}/{epochs}, MSE: {loss.item():.6f}')
-class InvertiblePiLayer(ErgodicLayer):
-    """Invertible multiplicative layer that outputs paired log-products.
-
-    Forward produces interleaved (log_y, log_z) pairs where:
-        log_y_j = sum_i log(1 - tanh(w_ji * x_i))
-        log_z_j = sum_i log(1 + tanh(w_ji * x_i))
-
-    Computing in log-space (sum of logs instead of product) avoids numerical
-    underflow when nInput is large.
-
-    Reverse recovers x via gamma_j = 0.5 * (log_z_j - log_y_j) = (W @ x)_j,
-    then x = W^+ @ gamma.  Because the output has both log_y and log_z
-    channels, nOutput must equal 2*nInput when naive=False.
-
-    The ``ergodic`` flag works identically to SigmaLayer/PiLayer.
-    """
-    def __init__(self, nInput, nOutput, naive=False, permuteInput=False, hasBias=True, ergodic=False):
-        super().__init__(nInput, nOutput, permuteInput=permuteInput)
-        self.ergodic = ergodic
-        self.naive   = naive
-        self.hasBias = hasBias
-        self.useEpsilon = True
-        if not self.naive:
-            assert nInput == nOutput or 2*nInput == nOutput, (
-                f"Non-naive mode requires nInput == nOutput (3D) or nOutput == 2*nInput (2D), "
-                f"got nInput={nInput}, nOutput={nOutput}."
-            )
-        if ergodic:
-            self.register_buffer('biasNoise', torch.randn(1, 1, self.nOutput))
-            if naive:
-                self.register_buffer('noise', torch.randn(nInput, nOutput))
-                self.W = nn.Parameter(torch.zeros(nInput, nOutput))
-            else:
-                self.register_buffer('ergodic_noise', torch.randn(nInput, nOutput))
-                self.layer = LULayer(nInput, nOutput, naive=naive, hasBias=False, ergodic=True)
-        else:
-            self.register_buffer('biasNoise', torch.randn(1, 1, self.nOutput))
-            if naive:
-                self.W = nn.Parameter(torch.randn(nInput, nOutput))
-            else:
-                self.register_buffer('ergodic_noise', torch.randn(nInput, nOutput))
-                self.layer = LULayer(nInput, nOutput, naive=naive, hasBias=False)
-        self.biasWeight = nn.Parameter(torch.zeros(1, 1, self.nOutput))
-
-    def resample_noise(self):
-        if self.naive:
-            self.noise = sample_noise(self.W)
-        else:
-            self.ergodic_noise = sample_noise(self.ergodic_noise)
-        self.biasNoise = sample_noise(self.biasWeight, shape=(1, 1, self.nOutput))
-
-    def forward(self, x):
-        """Produce interleaved (y, z) product pairs from input x.
-
-        Supports both 2D (batch, nInput) and 3D (batch, seq, nInput) inputs.
-        """
-        self._input_ndim = x.ndim
-        x = self.permute(x)
-
-        if self.ergodic:
-            bias, var = self.bias, self.var
-            self.resample_noise()
-            if not self.naive:
-                W = bias * self.layer.compute_W() + var * self.ergodic_noise
-            else:
-                W = bias * self.W + var * self.noise
-        else:
-            if not self.naive:
-                W = self.layer.compute_W()
-            else:
-                W = self.W
-
-        ndim = x.ndim
+    def _forward_invertible(self, x, W, ndim):
+        """Produce interleaved (log_y, log_z) pairs for exact reverse."""
+        bias, var = (self.bias, self.var) if self.ergodic else (None, None)
         if ndim == 2:
-            # 2D flattened: x is (batch, nInput), W is (nInput, nOutput)
-            WX = x.unsqueeze(-1) * W.unsqueeze(0)       # (batch, nInput, nOutput)
+            WX = x.unsqueeze(-1) * W.unsqueeze(0)          # (B, nIn, nOut)
             if self.hasBias:
                 if self.ergodic:
-                    WX = WX + (bias*self.biasWeight.squeeze(0) + var*self.biasNoise.squeeze(0))
+                    WX = WX + (bias * self.biasWeight.squeeze(0) + var * self.biasNoise.squeeze(0))
                 else:
                     WX = WX + self.biasWeight.squeeze(0)
             sWX = torch.tanh(WX)
-            one_minus = 1 - sWX
-            one_plus  = 1 + sWX
+            one_m, one_p = 1 - sWX, 1 + sWX
             if self.useEpsilon:
-                one_minus += epsilon
-                one_plus  += epsilon
-            # Log-space summation avoids underflow when nInput is large.
-            # Downstream layers see log-scale values; reverse uses subtraction
-            # instead of log(z/y), preserving exact invertibility.
-            log_y = torch.sum(torch.log(one_minus), dim=1)  # (batch, nOutput)
-            log_z = torch.sum(torch.log(one_plus), dim=1)   # (batch, nOutput)
-            stacked = torch.stack((log_y, log_z), dim=1)           # (batch, 2, nOutput)
-            interleaved = torch.flatten(stacked, start_dim=1, end_dim=2)  # (batch, 2*nOutput)
+                one_m = one_m + epsilon; one_p = one_p + epsilon
+            log_y = torch.sum(torch.log(one_m), dim=1)
+            log_z = torch.sum(torch.log(one_p), dim=1)
+            return torch.flatten(torch.stack((log_y, log_z), dim=1), start_dim=1, end_dim=2)
         else:
-            # 3D: x is (batch, seq, nInput), W is (nInput, nOutput)
-            WX = x.unsqueeze(-1) * W.unsqueeze(0).unsqueeze(0)  # (batch, seq, nInput, nOutput)
+            WX = x.unsqueeze(-1) * W.unsqueeze(0).unsqueeze(0)  # (B, S, nIn, nOut)
             if self.hasBias:
                 if self.ergodic:
-                    WX = WX + (bias*self.biasWeight.unsqueeze(1) + var*self.biasNoise.unsqueeze(1))
+                    WX = WX + (bias * self.biasWeight.unsqueeze(1) + var * self.biasNoise.unsqueeze(1))
                 else:
                     WX = WX + self.biasWeight.unsqueeze(1)
             sWX = torch.tanh(WX)
-            one_minus = 1 - sWX
-            one_plus  = 1 + sWX
+            one_m, one_p = 1 - sWX, 1 + sWX
             if self.useEpsilon:
-                one_minus += epsilon
-                one_plus  += epsilon
-            # Log-space summation (see 2D comment above).
-            log_y = torch.sum(torch.log(one_minus), dim=2)  # (batch, seq, nOutput)
-            log_z = torch.sum(torch.log(one_plus), dim=2)   # (batch, seq, nOutput)
-            stacked = torch.stack((log_y, log_z), dim=1)           # (batch, 2, seq, nOutput)
-            interleaved = torch.flatten(stacked, start_dim=1, end_dim=2)  # (batch, 2*seq, nOutput)
-
-        result = self.unpermute(interleaved)
-        return result
+                one_m = one_m + epsilon; one_p = one_p + epsilon
+            log_y = torch.sum(torch.log(one_m), dim=2)
+            log_z = torch.sum(torch.log(one_p), dim=2)
+            return torch.flatten(torch.stack((log_y, log_z), dim=1), start_dim=1, end_dim=2)
 
     def reverse(self, yz):
-        """Recover x from interleaved (log_y, log_z): gamma = 0.5*(log_z - log_y) = Wx, then x = W^+ @ gamma.
+        """Recover x from interleaved (log_y, log_z). Requires invertible=True.
 
-        Forward outputs log-space values, so reverse uses subtraction instead
-        of log(z/y), avoiding numerical issues with large nInput.
-
-        Supports both 2D (batch, 2*nOutput) and 3D (batch, 2*seq, nOutput) inputs.
+        gamma = 0.5*(log_z - log_y) = Wx  →  x = W⁺ @ gamma.
+        Supports 2D (batch, 2*nOutput) and 3D (batch, 2*seq, nOutput) inputs.
         """
         yz = self.permute(yz)
         ndim = yz.ndim
+        n2 = yz.shape[1] // 2
+        uninterleaved = torch.unflatten(yz, 1, (2, n2))
 
         if ndim == 2:
-            n2 = yz.shape[1] // 2
-            uninterleaved = torch.unflatten(yz, 1, (2, n2))  # (batch, 2, nOutput)
-            log_y = uninterleaved[:, 0, :]  # (batch, nOutput)
-            log_z = uninterleaved[:, 1, :]  # (batch, nOutput)
+            log_y, log_z = uninterleaved[:, 0, :], uninterleaved[:, 1, :]
             gamma = 0.5 * (log_z - log_y)
             if self.hasBias:
-                if self.ergodic:
-                    bias_corr = self.bias*self.biasWeight.squeeze(0) + self.var*self.biasNoise.squeeze(0)
-                else:
-                    bias_corr = self.biasWeight.squeeze(0)
+                bias_corr = (self.bias * self.biasWeight.squeeze(0) + self.var * self.biasNoise.squeeze(0)
+                             if self.ergodic else self.biasWeight.squeeze(0))
                 gamma = gamma - self.nInput * torch.sum(bias_corr, dim=0)
         else:
-            n2 = yz.shape[1] // 2
-            uninterleaved = torch.unflatten(yz, 1, (2, n2))  # (batch, 2, seq, nOutput)
-            log_y = uninterleaved[:, 0, :, :]  # (batch, seq, nOutput)
-            log_z = uninterleaved[:, 1, :, :]  # (batch, seq, nOutput)
+            log_y, log_z = uninterleaved[:, 0, :, :], uninterleaved[:, 1, :, :]
             gamma = 0.5 * (log_z - log_y)
             if self.hasBias:
                 if self.ergodic:
-                    gamma = gamma - self.nInput * torch.sum(self.bias*self.biasWeight + self.var*self.biasNoise, dim=1).unsqueeze(1)
+                    gamma = gamma - self.nInput * torch.sum(
+                        self.bias * self.biasWeight + self.var * self.biasNoise, dim=1).unsqueeze(1)
                 else:
                     gamma = gamma - self.nInput * torch.sum(self.biasWeight, dim=1).unsqueeze(1)
 
         if self.ergodic:
             bias, var = self.bias, self.var
             if not self.naive:
-                W_pinv = self.layer.compute_Winverse()
+                W_pinv = self._il.compute_Winverse()
                 b = bias.unsqueeze(-1) if isinstance(bias, torch.Tensor) else bias
-                v = var.unsqueeze(-1) if isinstance(var, torch.Tensor) else var
+                v = var.unsqueeze(-1)  if isinstance(var,  torch.Tensor) else var
                 W_pinv = b * W_pinv + v * self.ergodic_noise.T
-                x = gamma @ W_pinv
             else:
-                W_eff = bias * self.W + var * self.noise
-                W_pinv = torch.linalg.pinv(W_eff)
-                x = gamma @ W_pinv
+                W_pinv = torch.linalg.pinv(bias * self.W + var * self.noise)
             self.resample_noise()
         else:
-            if not self.naive:
-                W_pinv = self.layer.compute_Winverse()
-                x = gamma @ W_pinv
-            else:
-                W_pinv = torch.linalg.pinv(self.W)
-                x = gamma @ W_pinv
-        x = self.unpermute(x)
-        return x
+            W_pinv = (self._il.compute_Winverse() if not self.naive
+                      else torch.linalg.pinv(self.W))
+        x = gamma @ W_pinv
+        return self.unpermute(x)
 
     @staticmethod
     def test():
-        nBatch    = 16
-        nInput    = 3
-        nOutput   = 2 * nInput
-        nFeatures = 5
+        nBatch, nInput, nOutput = 5, 3, 4
+        layer = PiLayer(nInput=nInput, nOutput=nOutput, permuteInput=True)
+        x = torch.randn((nBatch, nInput, 6))
+        layer.set_sigma(0.999)
+        y = layer(x)
+        assert y.shape == (nBatch, nOutput, 6)
+        print(f"Original input: {x}")
+        print(f"After PiLayer: {y}")
 
-        layer = InvertiblePiLayer(nInput=nInput, nOutput=nOutput, naive=True, hasBias=True, permuteInput=True)
-        x = torch.randn(nBatch, nInput, nFeatures)
+        nInput, nOutput = 3, 6
+        layer = PiLayer(nInput=nInput, nOutput=nOutput, naive=True, hasBias=True,
+                        permuteInput=True, invertible=True)
+        x = torch.randn(16, nInput, 5)
         layer.set_sigma(0.0)
         yz = layer.forward(x)
-        print("Forward output shape:", yz.shape)  # Should be (batch, out_features, 2)
         x_recon = layer.reverse(yz)
-        print("Reconstructed x shape:", x_recon.shape)  # Should be (batch, in_features)
-
         error = torch.norm(x - x_recon) / torch.norm(x)
-        print(f"Reconstruction relative error: {error.item():.6f}")
-        assert error < 0.1, f"Reconstruction error too high: {error}"
-        print("InvertiblePiLayer test passed.")
+        assert error < 0.1, f"Invertible PiLayer reconstruction error too high: {error}"
+        print("PiLayer tests passed.")
+
+    @staticmethod
+    def xorTest():
+        X = torch.tensor(
+            [[0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32).unsqueeze(2)
+        Y = torch.tensor([[0], [1], [1], [0]], dtype=torch.float32).unsqueeze(2)
+        nInput, nHidden, nOutput = 2, 3, 1
+        pi    = PiLayer(nInput, nHidden, permuteInput=True)
+        sigma = SigmaLayer(nHidden, nOutput, permuteInput=True)
+        criterion = nn.MSELoss()
+        optimizer = optim.Adam(chain(pi.parameters(), sigma.parameters()), lr=0.01)
+        sigma.set_sigma(0.9999); pi.set_sigma(0.9999)
+        for epoch in range(1000):
+            optimizer.zero_grad()
+            loss = criterion(sigma(pi(X)), Y)
+            loss.backward()
+            optimizer.step()
+            if epoch % 100 == 0:
+                print(f'Epoch {epoch}/1000, MSE: {loss.item():.6f}')
 
 class VQLayer(Layer):
     """Vector-quantization layer backed by a residual VQ codebook.
@@ -1831,6 +1269,130 @@ class AttentionLayer(Layer):
         #print("Input minus output:")
         #print(x-x_rec)
         #assert torch.norm(x-x_rec) < 1, "Norm too high"
+class TransformerAttentionLayer(Layer):
+    """Standard multi-head attention over the object axis.
+
+    Unlike ``AttentionLayer`` above, this implementation attends across
+    objects/tokens rather than across feature channels.  For input
+    ``x`` with shape ``[batch, nObj, dim]``:
+
+    - ``Q = W_Q x`` produces queries: "what is each object looking for?"
+    - ``K = W_K x`` produces keys: "what information does each object offer?"
+    - ``V = W_V x`` produces values: "what content should flow if matched?"
+
+    Each head compares every query object to every key object, producing an
+    ``[nObj, nObj]`` attention map per head. The weighted values are then
+    concatenated and projected back to ``nOutput``.
+
+    The layer also accepts 2D input ``[batch, dim]`` and treats it as a
+    single-object sequence for convenience.
+    """
+
+    def __init__(self, nInput, nOutput, nHeads=1, nHidden=None):
+        super(TransformerAttentionLayer, self).__init__(nInput, nOutput)
+        if nHeads < 1:
+            raise ValueError(f"nHeads must be >= 1, got {nHeads}")
+        self.nHeads = nHeads
+        self.nHidden = nOutput if nHidden is None else nHidden
+        if self.nHidden % self.nHeads != 0:
+            raise ValueError(
+                f"nHidden ({self.nHidden}) must be divisible by nHeads ({self.nHeads})")
+        self.headDim = self.nHidden // self.nHeads
+        self.scale = self.headDim ** -0.5
+        self.mask = None
+
+        self.Q = LinearLayer(self.nInput, self.nHidden)
+        self.K = LinearLayer(self.nInput, self.nHidden)
+        self.V = LinearLayer(self.nInput, self.nHidden)
+        self.Out = LinearLayer(self.nHidden, self.nOutput)
+        self.reversible = False
+
+    def set_mask(self, mask: Optional[torch.Tensor]):
+        """Set an optional attention mask.
+
+        Supported mask shapes:
+        - ``[batch, nObj]`` bool: True keeps a token, False masks it out.
+        - ``[batch, nObj, nObj]`` bool: explicit per-query/per-key mask.
+        - ``[batch, 1, nObj, nObj]`` or ``[batch, nHeads, nObj, nObj]`` bool:
+          fully expanded mask.
+        """
+        self.mask = mask
+
+    def _reshape_heads(self, x):
+        batch, n_obj, _ = x.shape
+        x = x.view(batch, n_obj, self.nHeads, self.headDim)
+        return x.transpose(1, 2)
+
+    def _normalize_mask(self, mask, batch, n_obj):
+        if mask is None:
+            return None
+        if mask.dtype != torch.bool:
+            mask = mask.to(dtype=torch.bool)
+        if mask.dim() == 2:
+            if list(mask.shape) != [batch, n_obj]:
+                raise ValueError(
+                    f"2D mask must have shape {[batch, n_obj]}, got {list(mask.shape)}")
+            mask = mask[:, None, None, :].expand(-1, self.nHeads, n_obj, -1)
+        elif mask.dim() == 3:
+            if list(mask.shape) != [batch, n_obj, n_obj]:
+                raise ValueError(
+                    f"3D mask must have shape {[batch, n_obj, n_obj]}, got {list(mask.shape)}")
+            mask = mask[:, None, :, :].expand(-1, self.nHeads, -1, -1)
+        elif mask.dim() == 4:
+            if mask.shape[0] != batch or mask.shape[-2:] != (n_obj, n_obj):
+                raise ValueError(
+                    f"4D mask must end with {[n_obj, n_obj]} and batch {batch}, "
+                    f"got {list(mask.shape)}")
+            if mask.shape[1] == 1:
+                mask = mask.expand(-1, self.nHeads, -1, -1)
+            elif mask.shape[1] != self.nHeads:
+                raise ValueError(
+                    f"4D mask head dimension must be 1 or nHeads ({self.nHeads}), "
+                    f"got {mask.shape[1]}")
+        else:
+            raise ValueError(f"Unsupported mask rank {mask.dim()}; expected 2, 3, or 4")
+        return mask
+
+    def forward(self, x, bias=1, temp=0):
+        squeeze_sequence = False
+        if x.ndim == 2:
+            x = x.unsqueeze(1)
+            squeeze_sequence = True
+        if x.ndim != 3:
+            raise ValueError(f"TransformerAttentionLayer expects 2D or 3D input, got {list(x.shape)}")
+
+        batch, n_obj, _ = x.shape
+
+        # Q: per-object queries, K: per-object lookup keys, V: per-object payload.
+        query = self._reshape_heads(self.Q(x, bias, temp))
+        key = self._reshape_heads(self.K(x, bias, temp))
+        value = self._reshape_heads(self.V(x, bias, temp))
+
+        scores = torch.matmul(query, key.transpose(-2, -1)) * self.scale
+
+        mask = self._normalize_mask(self.mask, batch, n_obj)
+        if mask is not None:
+            scores = scores.masked_fill(~mask, float("-inf"))
+
+        attn = F.softmax(scores, dim=-1)
+        output = torch.matmul(attn, value)
+        output = output.transpose(1, 2).contiguous().view(batch, n_obj, self.nHidden)
+        output = self.Out(output, bias, temp)
+
+        if squeeze_sequence:
+            return output.squeeze(1)
+        return output
+
+    def reverse(self, y, bias=None, temp=None):
+        """Attention is not analytically invertible; keep reverse as identity."""
+        return super().reverse(y, bias=bias, temp=temp)
+
+    @staticmethod
+    def test():
+        layer = TransformerAttentionLayer(nInput=8, nOutput=8, nHeads=2)
+        x = torch.randn(4, 5, 8)
+        y = layer(x)
+        assert list(y.shape) == [4, 5, 8]
 #endregion
 
 #region Activation Functions
@@ -2752,16 +2314,13 @@ def test():
 
     LogicLayer.test()
     LinearLayer.test()
-    InvertibleRotationLayer.test()
-    InvertibleDiagonalLayer.test()
+
+
     InvertibleLinearLayer.test()
 
-    InvertiblePiLayer.test()
     SigmaLayer.test()
-    InvertibleSigmaLayer.test()
     PiLayer.test()
     PiLayer.xorTest()
-    InvertiblePiLayer.test()
 
     AttentionLayer.test()
     NormLayer.test()

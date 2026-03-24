@@ -39,7 +39,7 @@ from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
-from Model import Layer, PiLayer, SigmaLayer, InvertibleSigmaLayer, InvertiblePiLayer # Import custom layers from Model.py
+from Model import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
 from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer
 from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 
@@ -2633,13 +2633,13 @@ class PerceptualSpace(Space):
         self.attention = AttentionLayer(unflatOutput, unflatOutput)
         if self.reversible:
             if invertible:
-                self.pi  = InvertiblePiLayer(input, output, naive=naive, ergodic=ergodic)
+                self.pi  = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
                 self.forwardPi, self.reversePi = self.pi.forward, self.pi.reverse
                 self.params = self.pi.getParameters()
                 self.layers = nn.ModuleList([self.pi])
             else:
-                self.pi1 = InvertiblePiLayer(input, output, naive=naive, ergodic=ergodic)
-                self.pi2 = InvertiblePiLayer(input, output, naive=naive, ergodic=ergodic)
+                self.pi1 = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
+                self.pi2 = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
                 self.forwardPi, self.reversePi = self.pi1.forward, self.pi2.reverse
                 self.params = self.pi1.getParameters() + self.pi2.getParameters()
                 self.layers = nn.ModuleList([self.pi1, self.pi2])
@@ -2771,15 +2771,13 @@ class ConceptualSpace(Space):
                 input += 2
         if self.reversible:
             if invertible:
-                self.sigma = InvertibleSigmaLayer(input, output, naive=naive, ergodic=ergodic)
+                self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
                 self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
                 self.params = self.sigma.getParameters()
                 self.layers = nn.ModuleList([self.sigma])
             else:
-                self.sigma1 = InvertibleSigmaLayer(input, output, naive=naive, ergodic=ergodic)
-                self.sigma2 = InvertibleSigmaLayer(input, output, naive=naive, ergodic=ergodic)
-                # self.sigma1 = SigmaLayer(input, output, ergodic=ergodic)
-                # self.sigma2 = SigmaLayer(output, input, ergodic=ergodic)
+                self.sigma1 = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
+                self.sigma2 = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
                 self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
                 self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
                 self.layers = nn.ModuleList([self.sigma1, self.sigma2])
@@ -2802,7 +2800,7 @@ class ConceptualSpace(Space):
         x = self.subspace.forwardBegin(x)
         if self.hasNorm:
             x = self.norm.forward(x)
-            if hasattr(self, 'sigma') and isinstance(self.sigma, InvertibleSigmaLayer):
+            if hasattr(self, 'sigma') and isinstance(self.sigma, SigmaLayer) and self.sigma.invertible:
                 # Cache norm factors for reverse, pass only normalized content
                 self._norm_factors = x[..., -2:]
                 x = x[..., :-2]

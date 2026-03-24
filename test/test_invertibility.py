@@ -15,9 +15,8 @@ os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 
 from util import TheDevice
 from Model import (
-    LinearLayer, InvertibleLinearLayer, InvertibleRotationLayer,
-    InvertibleDiagonalLayer, SigmaLayer, InvertibleSigmaLayer,
-    PiLayer, InvertiblePiLayer, AttentionLayer, NormLayer, LiftingLayer,
+    LinearLayer, InvertibleLinearLayer, SigmaLayer,
+    PiLayer, AttentionLayer, NormLayer, LiftingLayer,
 )
 
 
@@ -33,73 +32,92 @@ def _reconstruction_error(x, x_rec, rel=False):
 # 1. Low-level layer invertibility
 # ═══════════════════════════════════════════════════════════════════════════
 
-class TestInvertibleRotationLayer(unittest.TestCase):
-    def _check(self, dim, naive):
-        torch.manual_seed(42)
-        layer = InvertibleRotationLayer(dim=dim, naive=naive)
-        x = torch.randn(3, dim).to(TheDevice)
-        y = layer.forward(x)
-        x_rec = layer.reverse(y)
-        err = _reconstruction_error(x, x_rec)
-        self.assertLess(err, 1e-5,
-                        f"dim={dim}, naive={naive}: err={err:.2e}")
-
-    def test_dim4_naive(self):   self._check(4, True)
-    def test_dim8_naive(self):   self._check(8, True)
-    def test_dim16_naive(self):  self._check(16, True)
-    def test_dim4(self):         self._check(4, False)
-    def test_dim8(self):         self._check(8, False)
-    def test_dim16(self):        self._check(16, False)
-
-    def test_parameter_count(self):
-        """Givens: n(n-1)/2 angles. Householder: shrinking support, n(n-1)/2 effective DOF."""
-        dim = 8
-        expected_givens = dim * (dim - 1) // 2  # = 28
-        # Givens: 28 angles
-        layer_g = InvertibleRotationLayer(dim=dim, naive=False, useGivens=True)
-        n_g = sum(p.numel() for p in layer_g.parameters() if p.requires_grad)
-        self.assertEqual(n_g, expected_givens, f"Givens: {n_g} != {expected_givens}")
-        # Householder (default): shrinking support, raw = sum(dim-i for i=0..dim-2) = 35
-        layer_hh = InvertibleRotationLayer(dim=dim, naive=False, useGivens=False)
-        n_hh = sum(p.numel() for p in layer_hh.parameters() if p.requires_grad)
-        expected_hh = sum(dim - i for i in range(dim - 1))  # 35
-        self.assertEqual(n_hh, expected_hh, f"Householder: {n_hh} != {expected_hh}")
-
-
-class TestInvertibleDiagonalLayer(unittest.TestCase):
-    def _check(self, nIn, nOut):
-        torch.manual_seed(42)
-        layer = InvertibleDiagonalLayer(nIn, nOut)
-        x = torch.randn(5, nIn).to(TheDevice)
-        if nIn > nOut:
-            x[:, nOut:] = 0.0
-        y = layer.forward(x)
-        x_rec = layer.reverse(y)
-        err = _reconstruction_error(x, x_rec)
-        self.assertLess(err, 1e-5, f"{nIn}->{nOut}: err={err:.2e}")
-
-    def test_square(self):       self._check(4, 4)
-    def test_expand(self):       self._check(3, 6)
-    def test_contract(self):     self._check(6, 3)
-
-
 class TestInvertibleLinearLayer(unittest.TestCase):
-    def _check(self, nIn, nOut, naive, tol):
-        torch.manual_seed(42)
-        layer = InvertibleLinearLayer(nIn, nOut, naive=naive, hasBias=True)
-        x = torch.randn(2, 3, nIn).to(TheDevice)
-        y = layer.forward(x)
-        x_rec = layer.reverse(y)
-        err = _reconstruction_error(x, x_rec)
-        self.assertLess(err, tol,
-                        f"{nIn}->{nOut}, naive={naive}: err={err:.2e}")
+    """Roundtrip tests for InvertibleLinearLayer (LDU factorisation).
 
-    def test_square_naive(self):    self._check(5, 5, True, 1e-3)
-    def test_expand_naive(self):    self._check(5, 8, True, 1e-3)
-    def test_contract_naive(self):  self._check(8, 5, True, 10.0)
+    Covers non-ergodic and ergodic paths, naive and non-naive dispatch,
+    square / expand / contract shapes, batched inputs, and bias.
+    """
+
+    def _check(self, nIn, nOut, naive, tol, hasBias=True, batch=(2, 3)):
+        torch.manual_seed(42)
+        layer = InvertibleLinearLayer(nIn, nOut, naive=naive, hasBias=hasBias)
+        layer.set_sigma(0)
+        if nIn <= nOut:
+            # Square / expand: left-invertible → reverse(forward(x)) ≈ x
+            x = torch.randn(*batch, nIn).to(TheDevice)
+            y = layer.forward(x)
+            x_rec = layer.reverse(y)
+            err = _reconstruction_error(x, x_rec)
+            self.assertLess(err, tol,
+                            f"{nIn}->{nOut} naive={naive} hasBias={hasBias}: err={err:.2e}")
+        else:
+            # Contract (nIn > nOut): right-invertible → forward(reverse(y)) ≈ y
+            y = torch.randn(*batch, nOut).to(TheDevice)
+            x_rev = layer.reverse(y)
+            y_rec = layer.forward(x_rev)
+            err = _reconstruction_error(y, y_rec)
+            self.assertLess(err, tol,
+                            f"{nIn}->{nOut} naive={naive} hasBias={hasBias}: err={err:.2e}")
+
+    # non-ergodic, naive=True (dense W + pinv)
+    def test_square_naive(self):    self._check(5, 5, True,  1e-3)
+    def test_expand_naive(self):    self._check(5, 8, True,  1e-3)
+    def test_contract_naive(self):  self._check(8, 5, True,  1e-3)
+    def test_no_bias_naive(self):   self._check(5, 5, True,  1e-3, hasBias=False)
+
+    # non-ergodic, naive=False (triangular solves)
     def test_square(self):          self._check(5, 5, False, 1e-3)
     def test_expand(self):          self._check(5, 8, False, 1e-3)
-    def test_contract(self):        self._check(8, 5, False, 10.0)
+    def test_contract(self):        self._check(8, 5, False, 1e-3)
+    def test_no_bias(self):         self._check(5, 5, False, 1e-3, hasBias=False)
+
+    # 2-D batch (single batch dim)
+    def test_2d_batch(self):        self._check(6, 6, False, 1e-3, batch=(4,))
+
+    def test_W_Winverse_identity(self):
+        """compute_W() @ compute_Winverse() should be identity."""
+        torch.manual_seed(7)
+        layer = InvertibleLinearLayer(5, 5, hasBias=False)
+        layer.set_sigma(0)
+        W     = layer.compute_W()
+        W_inv = layer.compute_Winverse()
+        I5    = torch.eye(5, device=W.device, dtype=W.dtype)
+        err   = (W @ W_inv - I5).norm().item()
+        self.assertLess(err, 1e-4, f"W@W_inv identity err={err:.2e}")
+
+    def _check_ergodic(self, nIn, nOut, naive, stable, tol):
+        torch.manual_seed(42)
+        layer = InvertibleLinearLayer(nIn, nOut, naive=naive, ergodic=True, stable=stable)
+        with torch.no_grad():
+            layer.var.fill_(0.2)
+            layer.bias.fill_(0.8)
+        if nIn <= nOut:
+            # Square / expand: left-invertible → reverse(forward(x)) ≈ x
+            x = torch.randn(3, nIn).to(TheDevice)
+            y = layer.forward(x)
+            x_rec = layer.reverse(y)
+            err = _reconstruction_error(x, x_rec, rel=True)
+        else:
+            # Contract (nIn > nOut): forward→reverse use the same ergodic factors
+            # (forward resamples, reverse uses the stored buffers).  The map is
+            # surjective so reverse(forward(x)) only recovers the row-space
+            # component of x; the expected relative error is ≈ sqrt((nIn-nOut)/nIn).
+            # Use a generous tolerance to verify the ergodic path runs correctly.
+            x = torch.randn(3, nIn).to(TheDevice)
+            y = layer.forward(x)
+            x_rec = layer.reverse(y)
+            err = _reconstruction_error(x, x_rec, rel=True)
+        self.assertLess(err, tol,
+                        f"ergodic {nIn}->{nOut} naive={naive} stable={stable}: err={err:.2e}")
+
+    # ergodic roundtrip: factor-level noise injection → exact inverse
+    def test_ergodic_square_naive(self):        self._check_ergodic(5, 5, True,  False, 1e-3)
+    def test_ergodic_square(self):              self._check_ergodic(5, 5, False, False, 1e-3)
+    def test_ergodic_expand(self):              self._check_ergodic(5, 8, False, False, 1e-3)
+    def test_ergodic_contract(self):            self._check_ergodic(8, 5, False, False, 0.9)
+    def test_ergodic_stable_square(self):       self._check_ergodic(5, 5, False, True,  1e-3)
+    def test_ergodic_stable_expand(self):       self._check_ergodic(5, 8, False, True,  1e-3)
 
 
 
@@ -136,7 +154,7 @@ class TestLinearLayerIdentity(unittest.TestCase):
 class TestInvertibleSigmaLayer(unittest.TestCase):
     def _check(self, nIn, nOut, naive, tol):
         torch.manual_seed(42)
-        layer = InvertibleSigmaLayer(nIn, nOut, naive=naive, permuteInput=False)
+        layer = SigmaLayer(nIn, nOut, naive=naive, permuteInput=False, invertible=True)
         layer.set_sigma(0)
         x = torch.randn(2, 3, nIn).to(TheDevice)
         y = layer.forward(x)
@@ -155,7 +173,7 @@ class TestInvertibleSigmaLayer(unittest.TestCase):
     def _check_permute(self, naive):
         nIn, nOut, seqLen = 5, 7, 3
         torch.manual_seed(42)
-        layer = InvertibleSigmaLayer(nIn, nOut, naive=naive, permuteInput=True)
+        layer = SigmaLayer(nIn, nOut, naive=naive, permuteInput=True, invertible=True)
         layer.set_sigma(0)
         x = torch.randn(2, nIn, seqLen).to(TheDevice)
         y = layer.forward(x)
@@ -173,8 +191,8 @@ class TestInvertiblePiLayer3D(unittest.TestCase):
     def _check(self, naive, perm, bias):
         nIn, nOut = 4, 8
         torch.manual_seed(42)
-        layer = InvertiblePiLayer(nIn, nOut, naive=naive,
-                                  permuteInput=perm, hasBias=bias)
+        layer = PiLayer(nIn, nOut, naive=naive,
+                        permuteInput=perm, hasBias=bias, invertible=True)
         layer.set_sigma(0)
         if perm:
             x = torch.randn(3, nIn, 5).to(TheDevice)
@@ -200,8 +218,8 @@ class TestInvertiblePiLayer2D(unittest.TestCase):
     def _check(self, naive, bias):
         nIn, nOut = 4, 8
         torch.manual_seed(42)
-        layer = InvertiblePiLayer(nIn, nOut, naive=naive,
-                                  permuteInput=False, hasBias=bias)
+        layer = PiLayer(nIn, nOut, naive=naive,
+                        permuteInput=False, hasBias=bias, invertible=True)
         layer.set_sigma(0)
         x = torch.randn(6, nIn).to(TheDevice)
         y = layer.forward(x)
@@ -219,7 +237,7 @@ class TestInvertiblePiLayer2D(unittest.TestCase):
 class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
     """Lock down non-naive InvertiblePiLayer behavior before refactoring.
 
-    Non-naive mode uses InvertibleLinearLayer (SVD-factored weights).
+    Non-naive mode uses OldInvertibleLinearLayer (SVD-factored weights).
     These tests verify forward/reverse roundtrip across 2D, 3D, bias,
     ergodic, and training scenarios.
     """
@@ -228,7 +246,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
         """2D (batch, nInput) -> (batch, 2*nOutput) roundtrip, no noise."""
         torch.manual_seed(42)
         nIn, nOut = 4, 8
-        layer = InvertiblePiLayer(nIn, nOut, naive=False, hasBias=True)
+        layer = PiLayer(nIn, nOut, naive=False, hasBias=True, invertible=True)
         layer.train(False)
         x = torch.randn(6, nIn).to(TheDevice)
         with torch.no_grad():
@@ -243,7 +261,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
         """2D roundtrip without bias term."""
         torch.manual_seed(42)
         nIn, nOut = 4, 8
-        layer = InvertiblePiLayer(nIn, nOut, naive=False, hasBias=False)
+        layer = PiLayer(nIn, nOut, naive=False, hasBias=False, invertible=True)
         layer.train(False)
         x = torch.randn(6, nIn).to(TheDevice)
         with torch.no_grad():
@@ -256,7 +274,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
         """3D (batch, seq, nInput) -> (batch, 2*seq, nOutput) roundtrip."""
         torch.manual_seed(42)
         nIn, nOut = 4, 8
-        layer = InvertiblePiLayer(nIn, nOut, naive=False, hasBias=True)
+        layer = PiLayer(nIn, nOut, naive=False, hasBias=True, invertible=True)
         layer.train(False)
         x = torch.randn(3, 5, nIn).to(TheDevice)
         with torch.no_grad():
@@ -271,7 +289,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
         """3D with permuteInput=True."""
         torch.manual_seed(42)
         nIn, nOut = 4, 8
-        layer = InvertiblePiLayer(nIn, nOut, naive=False, permuteInput=True, hasBias=True)
+        layer = PiLayer(nIn, nOut, naive=False, permuteInput=True, hasBias=True, invertible=True)
         layer.train(False)
         x = torch.randn(3, nIn, 5).to(TheDevice)
         with torch.no_grad():
@@ -285,7 +303,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
         """Non-naive with ergodic noise uses compute_Winverse."""
         torch.manual_seed(42)
         nIn, nOut = 4, 8
-        layer = InvertiblePiLayer(nIn, nOut, naive=False, ergodic=True)
+        layer = PiLayer(nIn, nOut, naive=False, ergodic=True, invertible=True)
         with torch.no_grad():
             layer.var.fill_(0.05)
             layer.bias.fill_(0.95)
@@ -301,7 +319,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
         """After gradient steps, non-naive roundtrip remains accurate."""
         torch.manual_seed(42)
         nIn, nOut = 4, 8
-        layer = InvertiblePiLayer(nIn, nOut, naive=False, hasBias=True)
+        layer = PiLayer(nIn, nOut, naive=False, hasBias=True, invertible=True)
         optimizer = optim.Adam(layer.parameters(), lr=0.01)
         x = torch.randn(8, nIn).to(TheDevice)
         # Run a few training steps with a dummy loss
@@ -350,8 +368,8 @@ class TestPairedSigmaTraining(unittest.TestCase):
     def test_paired_roundtrip(self):
         torch.manual_seed(42)
         nIn, nOut = 6, 8
-        sigma_fwd = InvertibleSigmaLayer(nIn, nOut)
-        sigma_rev = InvertibleSigmaLayer(nIn, nOut)
+        sigma_fwd = SigmaLayer(nIn, nOut, invertible=True)
+        sigma_rev = SigmaLayer(nIn, nOut, invertible=True)
         criterion = nn.MSELoss()
         optimizer = optim.Adam(
             list(sigma_fwd.parameters()) + list(sigma_rev.parameters()), lr=0.01)
@@ -381,8 +399,8 @@ class TestPairedPiTraining(unittest.TestCase):
     def test_paired_roundtrip(self):
         torch.manual_seed(42)
         nIn, nOut = 4, 6
-        pi_fwd = InvertiblePiLayer(nIn, nOut, naive=True, permuteInput=True, ergodic=False)
-        pi_rev = InvertiblePiLayer(nIn, nOut, naive=True, permuteInput=True, ergodic=False)
+        pi_fwd = PiLayer(nIn, nOut, naive=True, permuteInput=True, ergodic=False, invertible=True)
+        pi_rev = PiLayer(nIn, nOut, naive=True, permuteInput=True, ergodic=False, invertible=True)
         criterion = nn.MSELoss()
         optimizer = optim.Adam(
             list(pi_fwd.parameters()) + list(pi_rev.parameters()), lr=0.01)
@@ -650,7 +668,7 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
         """
         torch.manual_seed(42)
         nIn, nOut = 4, 6
-        layer = InvertiblePiLayer(nIn, nOut, naive=True, ergodic=True)
+        layer = PiLayer(nIn, nOut, naive=True, ergodic=True, invertible=True)
         with torch.no_grad():
             layer.var.fill_(0.1)
             layer.bias.fill_(0.9)
@@ -668,7 +686,7 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
         """
         torch.manual_seed(42)
         nIn, nOut = 6, 8
-        layer = InvertibleSigmaLayer(nIn, nOut, ergodic=True)
+        layer = SigmaLayer(nIn, nOut, ergodic=True, invertible=True)
         with torch.no_grad():
             layer.var.fill_(0.05)
             layer.bias.fill_(0.95)

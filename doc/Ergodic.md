@@ -387,3 +387,76 @@ $$
 $$
 
 8. Zero temperature gradient: $g_t \leftarrow 0$
+
+---
+
+## Factor-Level Noise Injection
+
+### Previous Approach: Matrix-Level Blending
+
+The original ergodic formulation applied noise at the level of the full weight matrix:
+
+$$
+W_{\text{eff}} = b \cdot W + t \cdot N, \qquad N \sim \mathcal{N}(0, I)
+$$
+
+This worked well for non-invertible layers, but breaks down when exact invertibility is
+required. The approximate inverse
+
+$$
+W_{\text{eff}}^{-1} \approx b \cdot W^{-1} + t \cdot N^{-1}
+$$
+
+has reconstruction error proportional to the cross-terms:
+
+$$
+W_{\text{eff}} \cdot W_{\text{eff}}^{-1} \approx (b^2 + t^2) I + b t (W N^{-1} + N W^{-1}) \neq I
+$$
+
+The error is small when `t` is small, but grows with temperature — exactly the regime
+where exploration is most active.
+
+### New Approach: Factor-Level Injection
+
+For `InvertibleLinearLayer`, noise is injected directly into the raw parameters of each
+LDU factor before the triangular structure is extracted:
+
+```
+L_eff = I + strict_lower(raw_L + t · noise_raw_L)
+U_eff = I + strict_upper(raw_U + t · noise_raw_U)
+d_eff = b · d_effective + t · noise_d
+W_eff = L_eff @ D_eff_embed @ U_eff
+```
+
+Because `W_eff` is in LDU form regardless of the noise level, its exact inverse is
+always available via the same triangular solves:
+
+```
+W_eff^{-1} = U_eff^{-1} @ D_eff^{-1} @ L_eff^{-1}
+```
+
+No approximation is introduced at any temperature.
+
+### stable=True and the d Backbone
+
+The `stable=True` flag controls whether `_d_effective()` clamps the deterministic
+diagonal backbone before the ergodic blend. This is the only place the stability
+constraint lives:
+
+```
+d_clamped_i = sign(d_i) * clamp(|d_i|, eps, 1)
+d_eff = b · d_clamped + t · noise_d
+```
+
+The noise factor `noise_d` is sampled with `|noise_d_i| ∈ [eps, 1]` and random sign,
+so it is itself always invertible. Combined, `d_eff` stays bounded away from zero at
+all temperatures without any additional clamp on the blended result.
+
+### SigmaLayer and PiLayer Integration
+
+`SigmaLayer(invertible=True)` and `PiLayer(invertible=True)` use
+`InvertibleLinearLayer(ergodic=True)` internally for the linear component of their
+transformations. The `bias` and `var` values computed by the parent `ErgodicLayer` are
+forwarded as `bias=` and `temp=` arguments to `InvertibleLinearLayer.forward()` and
+`InvertibleLinearLayer.reverse()`, so the same gradient-energy sensor that controls the
+outer layer also governs the factor-level noise injection in the inner linear primitive.

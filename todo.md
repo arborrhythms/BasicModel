@@ -1,9 +1,5 @@
 # TODO
 
-## test Model.py
-* ensure that Ergodic works on LULayer
-* rename LULayer -> InvertibleLinearLayer
-
 ## use subspace activation
 * migrate all forward/reverse methods to pass subspaces (and remove the forward_subspace() method)
 
@@ -16,6 +12,7 @@
 * compute the (scalar) subspace activation
 * if not flatten
   * assert nShape >= nOutput
+  * optionally apply Attention
   * do Space-specific processing
   * where nShape != nOutput, select the nOutput most active for propogation (creating [nBatch, nOutput, ?]) creating a new subspace
   * if quantized=true, select the nearest vectors from the Codebook
@@ -29,12 +26,16 @@
 * when reverse() is called, indices are used to look up the concepts that were passed in
 * its subspace consists only of an (ordered) vector of activations
 * It passes [nBatch, nOutput, 1] to all consumers (OutputSpace and SyntacticSpace)
+* Integrate the Activation and Syntactic Layer classes
 
-## percept and concept vectors
-* vectors that learn positions and vectors that learn boundaries
-* make sure concepts and percepts both quantize nicely
+## AttentionLayer
+* re-write the attention layer
 
 ================================== April 1 ==================================
+
+## Percept and concept vectors
+* vectors that learn positions and vectors that learn boundaries
+* make sure concepts and percepts both quantize nicely
 
 ## Implement equals in symbolicSpace
 * "equals"
@@ -56,6 +57,25 @@
 * characterize non-meditation (resonance)
 
 ================================== April 17 ==================================
+
+# Ask Solid community for a simple file-getting interface
+* if the user provides the server with an API key, we can query an LLM
+* if the user provides the server with a SOLID key, we can retrieve a file
+* if the user provides the server with a DSA key, we can decrypt a file
+* is there a POD service that does simple free hosting?
+
+# Ask EFF for a security review
+* propose "Owning our Data"
+* this entails taht marketers and AI are not allowed to lock us down karmically
+with specifically-characterized information (concrete details)
+* maybe it can learn from that data by removing or randomizing that information
+
+# Implement forgetting
+* if someone has contributed information to an LLM and asked for the LLM 
+to learn from that data, even when the data is revoked, it will be remembered 
+in some vague way by the weights. So implement non-destructive forgetting: 
+not making the network crazy for knowing, but by training it on the reward
+of not knowing (i.e. train it with non-affirming negation).
 
 ================================== April 24 ==================================
 

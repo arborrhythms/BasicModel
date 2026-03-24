@@ -208,6 +208,111 @@ If we write W and x in the log domain first, we have:
 
 ---
 
+## Invertible Linear Layer (LDU)
+
+### InvertibleLinearLayer — LDU Factorisation
+
+The core invertible linear primitive factors the weight matrix W as:
+
+```
+W = L @ D_embed @ U
+```
+
+where:
+
+- **L** ∈ ℝ^{nIn×nIn}: unit lower-triangular matrix (diagonal fixed at 1). Stored as
+  `raw_L`; the strict lower triangle is extracted and the diagonal is forced to 1 at
+  each forward call.
+- **D**: diagonal vector of length `rank = min(nIn, nOut)`, embedded into a rectangular
+  `[nIn, nOut]` matrix `D_embed` by zero-padding.
+- **U** ∈ ℝ^{nOut×nOut}: unit upper-triangular matrix (diagonal fixed at 1). Stored as
+  `raw_U`; the strict upper triangle is extracted symmetrically.
+
+**Exact inverse via triangular solves.**
+
+```
+W^{-1} = U^{-1} @ D^{-1} @ L^{-1}
+```
+
+Each factor is inverted by a triangular solve (`torch.linalg.solve_triangular`). No SVD
+is required, and the inverse is exact as long as all diagonal entries of D are nonzero.
+
+**Parameter count.** nIn² + rank + nOut² total parameters. Initialized at L = I, d = 1,
+U = I so that the initial map is the identity.
+
+### Ergodic Noise Injection (Factor-Level)
+
+Rather than the matrix-level blend `W_eff = b·W + t·N` (which destroys the LDU
+structure and makes the inverse approximate), noise is injected directly into the raw
+parameters of each factor before the triangular structure is extracted:
+
+```
+L_eff = I + strict_lower(raw_L + t · noise_raw_L)
+U_eff = I + strict_upper(raw_U + t · noise_raw_U)
+d_eff = b · d_effective + t · noise_d
+W_eff = L_eff @ D_eff_embed @ U_eff
+```
+
+Because `W_eff` is still in LDU form, its exact inverse is always available by the same
+triangular solves — no approximation, regardless of the noise level.
+
+### stable=True
+
+When `stable=True`, `_d_effective()` clamps each diagonal entry `d_i` to magnitude
+`[eps, 1]` with sign preserved before the ergodic blend:
+
+```
+d_clamped_i = sign(d_i) * clamp(|d_i|, eps, 1)
+d_eff = b · d_clamped + t · noise_d
+```
+
+This keeps `d_eff` bounded away from zero, preventing `W_eff` from becoming singular.
+`stable=True` is the only place the stability constraint is enforced; no additional
+clamp on `d_eff` is needed.
+
+### noise_d
+
+Noise for the diagonal factor is sampled with `|d_i| ∈ [eps, 1]` and random sign, so
+the noise factor is itself always invertible. This ensures that even at full temperature
+(`b=0, t=1`) the effective matrix is still well-conditioned.
+
+### naive Flag
+
+| `naive` | Forward path | Reverse path |
+|---------|-------------|-------------|
+| `False` (default) | Apply L, D, U sequentially to x; backprop through each factor separately | Triangular solves: U⁻¹, D⁻¹, L⁻¹ applied in sequence |
+| `True` | Materialise `W_eff` as a dense matrix; apply `W_eff @ x` | `pinv(W_eff) @ y` |
+
+The `naive=False` path never materialises W_eff as a full matrix, saving memory and
+allowing each factor's gradients to flow independently.
+
+### Noise Lifecycle in Ergodic Mode
+
+Noise buffers (`noise_raw_L`, `noise_raw_U`, `noise_d`) are:
+
+1. **Resampled at the start of every ergodic `forward()`** — new noise is drawn before
+   constructing `W_eff`.
+2. **Resampled again at the end of every ergodic `reverse()`** — fresh noise is drawn
+   after the reverse computation completes.
+
+The window between the two calls is exactly when `reverse()` needs to reconstruct the
+same `L_eff`, `U_eff`, `d_eff` that `forward()` used. Because the buffers are not
+resampled during that window, `reverse()` reads the stored buffers directly — no
+explicit caching of `W_eff` is required.
+
+### Class Renames
+
+The LDU layer supersedes the previous SVD-based implementation:
+
+| Old name | New name | Status |
+|----------|----------|--------|
+| `LULayer` | `InvertibleLinearLayer` | Renamed |
+| `InvertibleLinearLayer` (SVD) | — | Removed |
+| `InvertibleSigmaLayer` | `SigmaLayer(invertible=True)` | Merged |
+| `InvertiblePiLayer` | `PiLayer(invertible=True)` | Merged |
+
+---
+
 ## Ergodic Exploration
 
 The ergodic bias-variance control system is documented in [Ergodic.md](Ergodic.md).

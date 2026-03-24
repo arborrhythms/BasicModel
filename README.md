@@ -6,6 +6,21 @@
 
 *The basic model of cognition relies on conceptual hyperplanes and perceptual prototypes to synthesize and analyze the input space. It uses a high-dimensional embedding to characterize mental space and integrates symbolic computation. Its three major operations are intersection (which forms percepts from concepts), union (a bidirectional mapping between concepts and percepts), and equality (where symbols are elements that map across perceptual and conceptual domains).*
 
+## Documentation
+
+| Document | Description |
+|---|---|
+| [Architecture](doc/Architecture.md) | Pipeline design, layer types, invertible LDU factorisation |
+| [Spaces](doc/Spaces.md) | All six spaces: Input → Perceptual → Conceptual → Symbolic → Syntactic → Output |
+| [Ergodic](doc/Ergodic.md) | Gradient energy sensor, adaptive exploration, factor-level noise injection |
+| [Training](doc/Training.md) | Two-phase training, SBOW embeddings, masked prediction modes |
+| [Params](doc/Params.md) | Complete XML configuration reference |
+| [BasicModel](doc/BasicModel.md) | Cognitive science foundations |
+| [Logic](doc/Logic.md) | Subsymbolic and symbolic logic operations |
+| [MachineMinds](doc/MachineMinds.md) | Weight ergodicity, invertibility, certainty weighting |
+| [CognitiveScienceSociety](doc/CognitiveScienceSociety.md) | Theoretical CSS framework |
+| [Installation](doc/Installation.md) | Setup, Makefile targets, environment variables |
+
 ## Overview
 
 BasicModel is a parameterized neural architecture with three independent levers:

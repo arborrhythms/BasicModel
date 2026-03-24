@@ -14,7 +14,7 @@ import numpy as np
 import util
 util.init_runtime_env()
 import matplotlib.pyplot as plt
-from Model import Layer, SigmaLayer, InvertibleSigmaLayer, PiLayer, InvertiblePiLayer, VQLayer
+from Model import Layer, SigmaLayer, PiLayer, VQLayer
 from visualize import TheReport
 
 # When embeddingDim == 1, logical 0/1 are scalar tensors.

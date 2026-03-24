@@ -40,8 +40,8 @@ from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_
 from embed import WordVectors, PretrainModel
 from data import TheData, Data
 
-from Model import Layer, PiLayer, SigmaLayer, InvertibleSigmaLayer, InvertiblePiLayer # Import custom layers from Model.py
-from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer
+from Model import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
+from Model import VQLayer, NormLayer, LinearLayer, AttentionLayer
 from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 
 from Space import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, ObjectEncoding
@@ -517,11 +517,14 @@ class BaseModel(nn.Module):
             for i in range(len(test_input)):
                 original = self._bytes_to_text(test_input[i])
                 buf_recon = buffer_strings[i] if i < len(buffer_strings) else ""
-                # Character-level accuracy
+                # Character-level accuracy: strip nulls only for display;
+                # pad with '\x00' (not space) to match the actual input encoding
+                # so the model is scored on correctly predicting null padding.
                 orig_stripped = original.rstrip('\x00')
                 n = max(len(orig_stripped), len(buf_recon))
                 chars_match = sum(
-                    a == b for a, b in zip(orig_stripped.ljust(n), buf_recon.ljust(n)))
+                    a == b for a, b in zip(orig_stripped.ljust(n, '\x00'),
+                                           buf_recon.ljust(n, '\x00')))
                 total_chars += n
                 matching_chars += chars_match
                 acc = chars_match / max(n, 1) * 100
