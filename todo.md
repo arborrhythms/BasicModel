@@ -4,14 +4,11 @@
 * ensure that Ergodic works on LULayer
 * rename LULayer -> InvertibleLinearLayer
 
-## percept and concept vectors
-* vectors that learn positions and vectors that learn boundaries
-* make sure concepts and percepts both quantize nicely
-
 ## use subspace activation
 * migrate all forward/reverse methods to pass subspaces (and remove the forward_subspace() method)
 
-* all spaces call Materialize() at the top to extract their input vector (uses activation to select specified fields: activation/what/where/when)
+* For all spaces:
+* call Materialize() # extract the input vector in a suitable form (select specified fields: activation/what/where/when)
 * assert [nBatch, nInput, nInputDims]
 * if flatten
   * flatten
@@ -28,7 +25,14 @@
 
 ## symbol processing
 * symbols map bijectively to concepts
-* they preserve only the activation of those concepts
+* when calling materialize, extracts only [activation, index] (the numeric indices of the concepts)
+* when reverse() is called, indices are used to look up the concepts that were passed in
+* its subspace consists only of an (ordered) vector of activations
+* It passes [nBatch, nOutput, 1] to all consumers (OutputSpace and SyntacticSpace)
+
+## percept and concept vectors
+* vectors that learn positions and vectors that learn boundaries
+* make sure concepts and percepts both quantize nicely
 
 ================================== April 1 ==================================
 
