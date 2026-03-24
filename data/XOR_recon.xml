@@ -2,7 +2,6 @@
 <model>
   <architecture>
     <reconstruct>symbols</reconstruct>
-    <reshape>true</reshape>
     <conceptualOrder>1</conceptualOrder>
     <symbolicOrder>1</symbolicOrder>
     <modelType>embedding</modelType>
@@ -22,44 +21,49 @@
     </training>
   </architecture>
 
-  <!-- InputSpace: 3 tokens per sentence ("hello world" -> ["hello"," ","world"]) -->
   <InputSpace>
-    <nActive>3</nActive>
+    <nOutput>3</nOutput>
     <nDim>10</nDim>
     <nVectors>3</nVectors>
+    <flatten>true</flatten>
     <nWhere>true</nWhere>
     <nWhen>true</nWhen>
   </InputSpace>
 
-  <!-- PerceptualSpace: nActive = 4 * InputSpace.nActive = 12
-       Satisfies invertible=true+reshape=true constraint: 2*input == output -->
+  <!-- PerceptualSpace: invertible+reshape.
+       Constraint: 4 * nInput * inputDim == nOutput * outputDim
+       4 * 3 * 10 = 120 = 12 * 10  -->
   <PerceptualSpace>
-    <nActive>12</nActive>
+    <nOutput>12</nOutput>
     <nDim>10</nDim>
     <nVectors>12</nVectors>
+    <flatten>true</flatten>
     <invertible>true</invertible>
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace: nVectors = 2 * PerceptualSpace.nVectors = 24 (required) -->
+
+  <!-- ConceptualSpace: nOutput=6, nVectors=6 (non-quantized: nVectors==nOutput). -->
   <ConceptualSpace>
-    <nActive>6</nActive>
+    <nOutput>6</nOutput>
     <nDim>10</nDim>
-    <nVectors>24</nVectors>
+    <nVectors>6</nVectors>
+    <flatten>true</flatten>
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <!-- SymbolicSpace: nActive > OutputSpace.nActive for recon symbols to exist -->
+  <!-- SymbolicSpace: nOutput > OutputSpace.nOutput so recon symbols exist (nRecon=5). -->
   <SymbolicSpace>
-    <nActive>6</nActive>
+    <nOutput>6</nOutput>
     <nDim>10</nDim>
     <nVectors>6</nVectors>
+    <flatten>true</flatten>
     <passThrough>true</passThrough>
   </SymbolicSpace>
 
-  <!-- OutputSpace: nActive=1 so nReconSymbols = SymbolicSpace.nActive - 1 = 5 -->
+  <!-- OutputSpace: nOutput=1 so nReconSymbols = SymbolicSpace.nOutput - 1 = 5 -->
   <OutputSpace>
-    <nActive>1</nActive>
+    <nOutput>1</nOutput>
     <nDim>1</nDim>
     <nVectors>1</nVectors>
   </OutputSpace>

@@ -16,33 +16,33 @@
   </architecture>
 
   <InputSpace>
-    <nActive>784</nActive>
+    <nOutput>784</nOutput>
     <nDim>1</nDim>
     <nVectors>784</nVectors>
   </InputSpace>
 
   <PerceptualSpace>
-    <nActive>784</nActive>
+    <nOutput>784</nOutput>
     <nDim>1</nDim>
     <nVectors>784</nVectors>
     <passThrough>true</passThrough>
   </PerceptualSpace>
 
   <ConceptualSpace>
-    <nActive>20</nActive>
+    <nOutput>20</nOutput>
     <nDim>1</nDim>
     <nVectors>20</nVectors>
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nActive>20</nActive>
+    <nOutput>20</nOutput>
     <nDim>0</nDim>
     <nVectors>20</nVectors>
     <passThrough>true</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>
-    <nActive>10</nActive>
+    <nOutput>10</nOutput>
     <nDim>1</nDim>
     <nVectors>10</nVectors>
   </OutputSpace>

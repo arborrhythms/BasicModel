@@ -25,7 +25,7 @@
   </architecture>
 
   <InputSpace>
-    <nActive>32</nActive>
+    <nOutput>32</nOutput>
     <nDim>1</nDim>
     <nWhere>false</nWhere>
     <nWhen>false</nWhen>
@@ -34,7 +34,7 @@
   </InputSpace>
 
   <PerceptualSpace>
-    <nActive>32</nActive>
+    <nOutput>32</nOutput>
     <nDim>1</nDim>
     <passThrough>false</passThrough>
     <nVectors>0</nVectors>
@@ -43,7 +43,7 @@
   </PerceptualSpace>
 
   <ConceptualSpace>
-    <nActive>256</nActive>
+    <nOutput>256</nOutput>
     <nDim>1</nDim>
     <nVectors>0</nVectors>
     <hasNorm>false</hasNorm>
@@ -52,14 +52,14 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nActive>256</nActive>
+    <nOutput>256</nOutput>
     <nDim>0</nDim>
     <nVectors>256</nVectors>
     <passThrough>false</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>
-    <nActive>32</nActive>
+    <nOutput>32</nOutput>
     <nDim>1</nDim>
     <nVectors>32</nVectors>
   </OutputSpace>

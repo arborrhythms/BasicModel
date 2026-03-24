@@ -58,11 +58,11 @@ class TestDefaultsXml(unittest.TestCase):
                       "SymbolicSpace", "OutputSpace"]:
             self.assertIn(name, self.cfg, f"Missing <{name}> section")
 
-    def test_space_has_nActive(self):
+    def test_space_has_nOutput(self):
         for name in ["InputSpace", "PerceptualSpace", "ConceptualSpace",
                       "SymbolicSpace", "OutputSpace"]:
-            self.assertIn("nActive", self.cfg[name],
-                          f"<{name}> missing nActive")
+            self.assertIn("nOutput", self.cfg[name],
+                          f"<{name}> missing nOutput")
 
     def test_space_has_nDim(self):
         for name in ["InputSpace", "PerceptualSpace", "ConceptualSpace",
@@ -81,7 +81,7 @@ class TestDefaultsXml(unittest.TestCase):
 
     def test_architecture_keeps_model_wide(self):
         arch = self.cfg["architecture"]
-        for key in ["reconstruct", "reshape", "conceptualOrder", "symbolicOrder",
+        for key in ["reconstruct", "conceptualOrder", "symbolicOrder",
                     "ergodic", "certainty", "processSymbols"]:
             self.assertIn(key, arch, f"architecture missing model-wide key '{key}'")
         trn = arch.get("training", {})
@@ -107,31 +107,30 @@ class TestCreateFromConfig(unittest.TestCase):
         f.close()
         return f.name
 
-    def test_reads_space_nActive(self):
+    def test_reads_space_nOutput(self):
         xml = self._write_xml("""<?xml version="1.0" ?>
 <model>
   <architecture>
     <reconstruct>symbols</reconstruct>
-    <reshape>true</reshape>
     <modelType>embedding</modelType>
     <data><dataset>xor</dataset></data>
     <training><autoload>false</autoload></training>
   </architecture>
-  <InputSpace><nActive>2</nActive><nDim>1</nDim></InputSpace>
+  <InputSpace><nOutput>2</nOutput><nDim>1</nDim></InputSpace>
   <PerceptualSpace>
-    <nActive>4</nActive><nDim>1</nDim>
+    <nOutput>4</nOutput><nDim>1</nDim>
     <passThrough>true</passThrough>
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
   <ConceptualSpace>
-    <nActive>3</nActive><nDim>1</nDim>
+    <nOutput>3</nOutput><nDim>1</nDim>
     <invertible>true</invertible>
   </ConceptualSpace>
   <SymbolicSpace>
-    <nActive>3</nActive><nDim>1</nDim>
+    <nOutput>3</nOutput><nDim>1</nDim><nVectors>3</nVectors>
     <passThrough>true</passThrough>
   </SymbolicSpace>
-  <OutputSpace><nActive>1</nActive><nDim>1</nDim></OutputSpace>
+  <OutputSpace><nOutput>1</nOutput><nDim>1</nDim></OutputSpace>
 </model>""")
         try:
             from BasicModel import BasicModel, TheData
@@ -152,10 +151,10 @@ class TestValidateConfig(unittest.TestCase):
 
     def test_attention_reshape_incompatible(self):
         cfg = {
-            "architecture": {"reshape": True},
+            "architecture": {},
             "PerceptualSpace": {"hasAttention": True, "invertible": False,
-                                "passThrough": False, "nActive": 4, "nDim": 1},
-            "ConceptualSpace": {"hasAttention": False},
+                                "passThrough": False, "nActive": 4, "nDim": 1, "flatten": True},
+            "ConceptualSpace": {"hasAttention": False, "flatten": False},
             "SymbolicSpace": {"passThrough": False},
         }
         with self.assertRaises(ValueError) as ctx:
@@ -164,10 +163,10 @@ class TestValidateConfig(unittest.TestCase):
 
     def test_attention_reshape_ok_when_false(self):
         cfg = {
-            "architecture": {"reshape": True},
+            "architecture": {},
             "PerceptualSpace": {"hasAttention": False, "invertible": False,
-                                "passThrough": False, "nActive": 4, "nDim": 1},
-            "ConceptualSpace": {"hasAttention": False},
+                                "passThrough": False, "nActive": 4, "nDim": 1, "flatten": True},
+            "ConceptualSpace": {"hasAttention": False, "flatten": False},
             "SymbolicSpace": {"passThrough": False},
         }
         # Should not raise
@@ -176,13 +175,12 @@ class TestValidateConfig(unittest.TestCase):
     def test_arir_requires_reconstruction(self):
         cfg = {
             "architecture": {
-                "reshape": False,
-                "maskedPrediction": "ARIR",
                 "reconstruct": "NONE",
+                "training": {"maskedPrediction": "ARIR"},
             },
             "PerceptualSpace": {"hasAttention": False, "invertible": False,
-                                "passThrough": False, "nActive": 4, "nDim": 1},
-            "ConceptualSpace": {"hasAttention": False},
+                                "passThrough": False, "nActive": 4, "nDim": 1, "flatten": False},
+            "ConceptualSpace": {"hasAttention": False, "flatten": False},
             "SymbolicSpace": {"passThrough": False},
         }
         with self.assertRaises(ValueError) as ctx:

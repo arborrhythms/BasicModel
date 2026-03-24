@@ -4,7 +4,6 @@
   <architecture>
     <type>mental</type>
     <reconstruct>symbols</reconstruct>
-    <reshape>false</reshape>
     <conceptualOrder>1</conceptualOrder>
     <symbolicOrder>1</symbolicOrder>
     <processSymbols>false</processSymbols>
@@ -42,7 +41,7 @@
   </architecture>
 
   <InputSpace>
-    <nActive>128</nActive>
+    <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
     <nWhere>true</nWhere>
@@ -52,7 +51,7 @@
   </InputSpace>
 
   <PerceptualSpace>
-    <nActive>32</nActive>
+    <nOutput>32</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
     <passThrough>false</passThrough>
@@ -64,7 +63,7 @@
   <!-- Concept branch runs directly from InputSpace in MentalModel, so this keeps
        the same width as BasicModel.xml without assuming invertible doubling. -->
   <ConceptualSpace>
-    <nActive>256</nActive>
+    <nOutput>256</nOutput>
     <nDim>100</nDim>
     <nVectors>256</nVectors>
     <hasAttention>true</hasAttention>
@@ -74,14 +73,14 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nActive>256</nActive>
+    <nOutput>256</nOutput>
     <nDim>100</nDim>
     <nVectors>256</nVectors>
     <passThrough>false</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>
-    <nActive>1</nActive>
+    <nOutput>1</nOutput>
     <nDim>100</nDim>
     <nVectors>1</nVectors>
   </OutputSpace>

@@ -2,7 +2,6 @@
 <model>
   <architecture>
     <reconstruct>symbols</reconstruct>
-    <reshape>true</reshape>
     <conceptualOrder>1</conceptualOrder>
     <symbolicOrder>1</symbolicOrder>
     <modelType>embedding</modelType>
@@ -20,34 +19,38 @@
   </architecture>
 
   <InputSpace>
-    <nActive>2</nActive>
+    <nOutput>2</nOutput>
     <nDim>1</nDim>
     <nVectors>2</nVectors>
   </InputSpace>
 
+  <!-- PerceptualSpace: VQ codebook (nVectors=16 > nOutput=4) — quantized=true. -->
   <PerceptualSpace>
-    <nActive>4</nActive>
+    <nOutput>4</nOutput>
     <nDim>1</nDim>
     <nVectors>16</nVectors>
+    <quantized>true</quantized>
     <invertible>false</invertible>
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
+  <!-- ConceptualSpace: VQ codebook (nVectors=16 > nOutput=3) — quantized=true. -->
   <ConceptualSpace>
-    <nActive>3</nActive>
+    <nOutput>3</nOutput>
     <nDim>1</nDim>
     <nVectors>16</nVectors>
+    <quantized>true</quantized>
     <invertible>false</invertible>
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nActive>3</nActive>
+    <nOutput>3</nOutput>
     <nVectors>3</nVectors>
     <passThrough>true</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>
-    <nActive>1</nActive>
+    <nOutput>1</nOutput>
     <nDim>1</nDim>
     <nVectors>1</nVectors>
   </OutputSpace>

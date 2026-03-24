@@ -3,14 +3,12 @@
   <!-- BasicModel chatbot: ~80K params, masked-word prediction with reconstruction -->
   <architecture>
     <reconstruct>symbols</reconstruct>
-    <reshape>false</reshape>
     <conceptualOrder>1</conceptualOrder>
     <symbolicOrder>1</symbolicOrder>
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
     <certainty>false</certainty>
     <modelType>embedding</modelType>
-    <maskedPrediction>ARLM</maskedPrediction>
     <maxResponseLength>4096</maxResponseLength>
     <weightsPath>BasicModel.ckpt</weightsPath>
     <embeddingPath>BasicModel.kv</embeddingPath>
@@ -28,6 +26,7 @@
       <batchSize>8</batchSize>
       <learningRate>0.001</learningRate>
       <reverseScale>0.1</reverseScale>
+      <maskedPrediction>ARLM</maskedPrediction>
       <trainEmbedding>ARLM</trainEmbedding>
       <autoload>true</autoload>
       <autosave>true</autosave>
@@ -41,7 +40,7 @@
   </architecture>
 
   <InputSpace>
-    <nActive>128</nActive>
+    <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
     <nWhere>true</nWhere>
@@ -51,7 +50,7 @@
   </InputSpace>
 
   <PerceptualSpace>
-    <nActive>32</nActive>
+    <nOutput>256</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
     <passThrough>false</passThrough>
@@ -60,28 +59,29 @@
     <quantized>false</quantized>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace: nVectors = 2 * PerceptualSpace.nVectors = 256
-       (invertible doubles sequence length). nActive = 2 * InputSpace.nActive. -->
+  <!-- ConceptualSpace: nVectors = 2 * PerceptualSpace.nVectors = 128
+       (invertible doubles sequence length). nActive = 2 * InputSpace.nActive = 256. -->
   <ConceptualSpace>
-    <nActive>256</nActive>
+    <nOutput>128</nOutput>
     <nDim>100</nDim>
-    <nVectors>256</nVectors>
-    <hasAttention>true</hasAttention>
+    <nVectors>128</nVectors>
+    <hasAttention>false</hasAttention>
     <hasNorm>false</hasNorm>
+    <flatten>true</flatten>
     <invertible>true</invertible>
-    <quantized>false</quantized>
+    <quantized>true</quantized>
   </ConceptualSpace>
 
-  <!-- SymbolicSpace: nActive = ConceptualSpace.nActive / 2 (reshape required) -->
+  <!-- SymbolicSpace: passThrough — nActive = nVectors = ConceptualSpace.nActive = 256 -->
   <SymbolicSpace>
-    <nActive>256</nActive>
+    <nOutput>128</nOutput>
     <nDim>100</nDim>
-    <nVectors>256</nVectors>
+    <nVectors>128</nVectors>
     <passThrough>true</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>
-    <nActive>1</nActive>
+    <nOutput>1</nOutput>
     <nDim>100</nDim>
     <nVectors>1</nVectors>
   </OutputSpace>

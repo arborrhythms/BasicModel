@@ -2,69 +2,67 @@
 <model>
   <architecture>
     <reconstruct>symbols</reconstruct>
-    <reshape>true</reshape>
     <conceptualOrder>1</conceptualOrder>
     <symbolicOrder>1</symbolicOrder>
     <modelType>embedding</modelType>
     <ergodic>false</ergodic>
-    <naive>true</naive>
     <weightsPath></weightsPath>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
 
     <data>
       <dataset>xor</dataset>
     </data>
 
     <training>
-      <numEpochs>1000</numEpochs>
+      <numEpochs>600</numEpochs>
       <learningRate>0.01</learningRate>
       <autosave>false</autosave>
       <autoload>false</autoload>
-
-      <reverseScale>0.5</reverseScale>
-      <maskedPrediction>NONE</maskedPrediction>
       <trainEmbedding>JOINT</trainEmbedding>
       <embeddingScale>0.05</embeddingScale>
-
     </training>
   </architecture>
 
-  <!-- InputSpace: nWhere=true, nWhen=true enables positional + temporal encoding.
-       objectSize = 2 + 2 = 4, embSize = nDim + objectSize = 10 + 4 = 14. -->
+  <!-- InputSpace: nOutput=6; objectSize=4, embSize=nDim+objectSize=10+4=14. -->
   <InputSpace>
-    <nActive>6</nActive>
+    <nOutput>6</nOutput>
     <nDim>10</nDim>
     <nVectors>6</nVectors>
-    <nWhere>true</nWhere>
-    <nWhen>true</nWhen>
+    <flatten>true</flatten>
   </InputSpace>
 
-  <!-- PerceptualSpace: invertible+reshape requires 2*input == output.
-       input = 6*13 = 78, getLayerIO output = nActive*13/2 = 156 → nActive = 24. -->
+  <!-- PerceptualSpace: invertible+reshape.
+       Constraint: 4 * nInput * inputDim == nOutput * outputDim
+       4 * 6 * 13 = 312 = 24 * 13  -->
   <PerceptualSpace>
-    <nActive>24</nActive>
+    <nOutput>24</nOutput>
     <nDim>10</nDim>
     <nVectors>24</nVectors>
+    <flatten>true</flatten>
     <invertible>true</invertible>
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace: nVectors = 2 × PerceptualSpace.nVectors = 48. -->
+  <!-- ConceptualSpace: nOutput=6, nVectors=6 (non-quantized: nVectors==nOutput). -->
   <ConceptualSpace>
-    <nActive>6</nActive>
+    <nOutput>6</nOutput>
     <nDim>10</nDim>
-    <nVectors>48</nVectors>
+    <nVectors>6</nVectors>
+    <flatten>true</flatten>
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <!-- SymbolicSpace: nActive = ConceptualSpace.nActive = 6 -->
+  <!-- SymbolicSpace: nOutput = ConceptualSpace.nOutput = 6 -->
   <SymbolicSpace>
-    <nActive>6</nActive>
+    <nOutput>6</nOutput>
     <nDim>10</nDim>
     <nVectors>6</nVectors>
+    <flatten>true</flatten>
   </SymbolicSpace>
 
   <OutputSpace>
-    <nActive>1</nActive>
+    <nOutput>1</nOutput>
     <nDim>1</nDim>
     <nVectors>1</nVectors>
   </OutputSpace>

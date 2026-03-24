@@ -40,7 +40,7 @@ def _load_embeddings(path=_ARTIFACT):
     return WordVectors.load(path), path
 
 
-@unittest.skipUnless(os.path.exists(_ARTIFACT), "sentence.pt not built")
+@unittest.skipIf(not os.path.exists(_ARTIFACT), "sentence.pt not built")
 class TestEmbeddingProbes(unittest.TestCase):
     """Probe embedding quality with nearest-neighbor and analogy checks."""
 
@@ -180,7 +180,7 @@ def _chat(text):
     return body["choices"][0]["message"]["content"]
 
 
-@unittest.skipUnless(os.path.exists(_ARTIFACT), "sentence.pt not built")
+@unittest.skipIf(not os.path.exists(_ARTIFACT), "sentence.pt not built")
 class TestServerQueries(unittest.TestCase):
     """Query the BasicModel server and print responses."""
 
@@ -321,8 +321,8 @@ def _has_gpu():
     return torch.cuda.is_available() or torch.backends.mps.is_available()
 
 
-@unittest.skipUnless(os.path.exists(_ARTIFACT), "sentence.pt not built")
-@unittest.skipUnless(_has_gpu(), "no GPU available (need CUDA or MPS)")
+@unittest.skipIf(not os.path.exists(_ARTIFACT), "sentence.pt not built")
+@unittest.skipIf(not _has_gpu(), "no GPU available (need CUDA or MPS)")
 class TestGPUDevicePlacement(unittest.TestCase):
     """Verify the model runs entirely on GPU when BASICMODEL_DEVICE is unset."""
 
@@ -370,6 +370,51 @@ class TestGPUDevicePlacement(unittest.TestCase):
         # Forward pass output must be on the GPU device
         self.assertTrue(info["output_device"].startswith(device_type),
                         f"Output on {info['output_device']}, expected {device}")
+
+
+_DATA_DIR = os.path.join(_PROJECT, "data")
+_SCHEMA_FILE = os.path.join(_DATA_DIR, "model.xsd")
+
+
+class TestModelXmlSchema(unittest.TestCase):
+    """Validate all model XML config files against model.xsd."""
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            import lxml.etree as ET
+            cls.ET = ET
+            schema_doc = ET.parse(_SCHEMA_FILE)
+            cls.schema = ET.XMLSchema(schema_doc)
+        except ImportError:
+            cls.schema = None
+
+    def _validate(self, xml_path):
+        if self.schema is None:
+            self.skipTest("lxml not installed")
+        ET = self.ET
+        doc = ET.parse(xml_path)
+        if not self.schema.validate(doc):
+            msgs = "\n".join(str(e.message) for e in self.schema.error_log)
+            self.fail(f"{os.path.basename(xml_path)} failed schema validation:\n{msgs}")
+
+    def test_model_xml(self):
+        self._validate(os.path.join(_DATA_DIR, "model.xml"))
+
+    def test_basicmodel_xml(self):
+        self._validate(os.path.join(_DATA_DIR, "BasicModel.xml"))
+
+    def test_xor_exact_xml(self):
+        self._validate(os.path.join(_DATA_DIR, "XOR_exact.xml"))
+
+    def test_xor_spaces_xml(self):
+        self._validate(os.path.join(_DATA_DIR, "XOR_spaces.xml"))
+
+    def test_xor_recon_xml(self):
+        self._validate(os.path.join(_DATA_DIR, "XOR_recon.xml"))
+
+    def test_xor_pos_xml(self):
+        self._validate(os.path.join(_DATA_DIR, "XOR_pos.xml"))
 
 
 if __name__ == "__main__":

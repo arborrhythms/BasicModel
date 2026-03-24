@@ -18,27 +18,30 @@
   </architecture>
 
   <InputSpace>
-    <nActive>1</nActive>
+    <nOutput>1</nOutput>
     <nVectors>1</nVectors>
   </InputSpace>
 
+  <!-- VQ codebook spaces: nVectors=16 > nOutput=8 — quantized=true. -->
   <PerceptualSpace>
-    <nActive>8</nActive>
+    <nOutput>8</nOutput>
     <nVectors>16</nVectors>
+    <quantized>true</quantized>
   </PerceptualSpace>
 
   <ConceptualSpace>
-    <nActive>8</nActive>
+    <nOutput>8</nOutput>
     <nVectors>16</nVectors>
+    <quantized>true</quantized>
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nActive>8</nActive>
+    <nOutput>8</nOutput>
     <nVectors>8</nVectors>
   </SymbolicSpace>
 
   <OutputSpace>
-    <nActive>1</nActive>
+    <nOutput>1</nOutput>
     <nVectors>1</nVectors>
   </OutputSpace>
 </model>

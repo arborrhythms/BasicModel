@@ -14,9 +14,17 @@ import numpy as np
 import torch
 import util
 util.init_runtime_env()
-from matplotlib import pyplot as plt
 from sklearn.metrics import classification_report
 from sklearn.decomposition import PCA
+
+class _LazyPlt:
+    """Defers ``import matplotlib.pyplot`` until the first plotting call."""
+    def __getattr__(self, name):
+        import matplotlib.pyplot as _m
+        globals()['plt'] = _m  # replace proxy with the real module
+        return getattr(_m, name)
+
+plt = _LazyPlt()
 
 try:
     from torchviz import make_dot

@@ -1,12 +1,9 @@
 <?xml version="1.0" ?>
 <model>
   <!-- XOR_spaces: whole-sentence XOR with inline data, modelled after XOR_exact.xml.
-       Exercises the tokenizer and space character prediction.
-       Four sentences: "A xor B" where xor output is 1 iff A != B.
        Architecture is perfectly invertible (invertible=true everywhere). -->
   <architecture>
     <reconstruct>symbols</reconstruct>
-    <reshape>true</reshape>
     <conceptualOrder>1</conceptualOrder>
     <symbolicOrder>1</symbolicOrder>
     <modelType>embedding</modelType>
@@ -29,48 +26,47 @@
     </training>
   </architecture>
 
-  <!-- InputSpace: 5 real tokens per sentence ("zero xor zero" → ["zero"," ","xor"," ","zero"])
-       + 1 EOS/padding slot = nActive=6.  The tokenizer now emits WORD and SPACE tokens
-       so the model learns to predict both word content and inter-word spacing.
-       PerceptualSpace.nActive = 4 * InputSpace.nActive (same 4x ratio as XOR_exact.xml). -->
+  <!-- InputSpace: nOutput=6 (5 real tokens + 1 EOS/padding slot). -->
   <InputSpace>
-    <nActive>6</nActive>
+    <nOutput>6</nOutput>
     <nDim>10</nDim>
     <nVectors>6</nVectors>
+    <flatten>true</flatten>
   </InputSpace>
 
-  <!-- PerceptualSpace: nActive = 4 * InputSpace.nActive = 24
-       Satisfies invertible=true+reshape=true constraint: 2*input == output
-       input = 6*10 = 60, output = 24*10/2 = 120, 2*60 == 120 ✓ -->
+  <!-- PerceptualSpace: invertible+reshape.
+       Constraint: 4 * nInput * inputDim == nOutput * outputDim
+       4 * 6 * 10 = 240 = 24 * 10  -->
   <PerceptualSpace>
-    <nActive>24</nActive>
+    <nOutput>24</nOutput>
     <nDim>10</nDim>
     <nVectors>24</nVectors>
+    <flatten>true</flatten>
     <invertible>true</invertible>
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace: nActive = PerceptualSpace.nActive / 2 = 12
-       nVectors = 2 * PerceptualSpace.nVectors = 48 (required by validate_config) -->
+  <!-- ConceptualSpace: nOutput=12, nVectors=12 (non-quantized: nVectors==nOutput). -->
   <ConceptualSpace>
-    <nActive>12</nActive>
+    <nOutput>12</nOutput>
     <nDim>10</nDim>
-    <nVectors>48</nVectors>
+    <nVectors>12</nVectors>
+    <flatten>true</flatten>
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <!-- SymbolicSpace: nActive = ConceptualSpace.nActive = 12; nSymbols >= nOutput(1) ✓ -->
+  <!-- SymbolicSpace: nOutput = ConceptualSpace.nOutput = 12 -->
   <SymbolicSpace>
-    <nActive>12</nActive>
+    <nOutput>12</nOutput>
     <nDim>10</nDim>
     <nVectors>12</nVectors>
+    <flatten>true</flatten>
     <passThrough>true</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>
-    <nActive>1</nActive>
+    <nOutput>1</nOutput>
     <nDim>1</nDim>
     <nVectors>1</nVectors>
   </OutputSpace>
-
 </model>

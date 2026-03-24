@@ -11,6 +11,7 @@ Exercises:
 import os
 import sys
 import unittest
+import importlib.util
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -26,6 +27,8 @@ _TEST = os.path.dirname(os.path.abspath(__file__))
 if _TEST not in sys.path:
     sys.path.insert(0, _TEST)
 from test_basicmodel import _populate_test_config
+
+_HAS_NLTK = importlib.util.find_spec("nltk") is not None
 
 # ---------------------------------------------------------------------------
 # Config parsing
@@ -235,15 +238,19 @@ class TestSpacePrediction(unittest.TestCase):
         _populate_test_config(inputDim=10, nInput=nInput,
                               nPercepts=nInput, nConcepts=nInput,
                               nSymbols=nInput, nWords=nInput, nOutput=nInput,
-                              nWhere=2, nWhen=2, reshape=True)
+                              nWhere=2, nWhen=2, flatten=True)
         TheData.load("xor")
 
-        inp = InputSpace(nInput, nInput,
+        _idim = TheXMLConfig.space("InputSpace", "nDim")
+        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
                          model_type="embedding")
         emb = inp.vectors()
         self.assertIsInstance(emb, Embedding)
 
-        os_ = OutputSpace(nInput, 4)
+        _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
+        _odim = TheXMLConfig.space("OutputSpace", "nDim")
+        os_ = OutputSpace([nInput, _sdim], [4, _odim], [4, _odim])
         os_.set_text_mode(inp)
 
         codebook = emb.wv._vectors.detach()
@@ -282,15 +289,19 @@ class TestSpacePrediction(unittest.TestCase):
         _populate_test_config(inputDim=10, nInput=nInput,
                               nPercepts=nInput, nConcepts=nInput,
                               nSymbols=nInput, nWords=nInput, nOutput=nInput,
-                              nWhere=2, nWhen=2, reshape=True)
+                              nWhere=2, nWhen=2, flatten=True)
         TheData.load("xor")
 
-        inp = InputSpace(nInput, nInput,
+        _idim = TheXMLConfig.space("InputSpace", "nDim")
+        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
                          model_type="embedding")
         emb = inp.vectors()
         self.assertIn(" ", emb.pretrain.key_to_index)
 
-        os_ = OutputSpace(nInput, 4)
+        _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
+        _odim = TheXMLConfig.space("OutputSpace", "nDim")
+        os_ = OutputSpace([nInput, _sdim], [4, _odim], [4, _odim])
         os_.set_text_mode(inp)
 
         space_idx = emb.pretrain.key_to_index[" "]
@@ -331,13 +342,17 @@ class TestNullEOS(unittest.TestCase):
         _populate_test_config(inputDim=10, nInput=nInput,
                               nPercepts=nInput, nConcepts=nInput,
                               nSymbols=nInput, nWords=nInput, nOutput=nInput,
-                              nWhere=2, nWhen=2, reshape=True)
+                              nWhere=2, nWhen=2, flatten=True)
         TheData.load("xor")
 
-        cls.inp = InputSpace(nInput, nInput,
+        _idim = TheXMLConfig.space("InputSpace", "nDim")
+        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        cls.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
                              model_type="embedding")
         cls.emb = cls.inp.vectors()
-        cls.os_ = OutputSpace(nInput, 4)
+        _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
+        _odim = TheXMLConfig.space("OutputSpace", "nDim")
+        cls.os_ = OutputSpace([nInput, _sdim], [4, _odim], [4, _odim])
         cls.os_.set_text_mode(cls.inp)
 
     def test_null_char_in_embedding_vocab(self):
@@ -563,6 +578,7 @@ class TestXORTokenization(unittest.TestCase):
             self.assertIn(words[2], ("zero", "one"),
                           f"{sentence!r}: right operand {words[2]!r} not in {{zero, one}}")
 
+    @unittest.skipIf(not _HAS_NLTK, "nltk not available")
     def test_sentence_cfg_parses_with_separator(self):
         """Token categories match sentence.cfg grammar when a SEPARATOR is appended.
 
@@ -570,11 +586,8 @@ class TestXORTokenization(unittest.TestCase):
         The XOR sentences have pattern WORD SPACE WORD SPACE WORD; appending a
         SEPARATOR makes them parseable as a complete sentence.
         """
-        try:
-            from nltk.grammar import CFG
-            from nltk.parse.earleychart import EarleyChartParser
-        except ImportError:
-            self.skipTest("nltk not available")
+        from nltk.grammar import CFG
+        from nltk.parse.earleychart import EarleyChartParser
 
         import os
         cfg_path = os.path.join(

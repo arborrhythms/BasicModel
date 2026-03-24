@@ -2,7 +2,6 @@
 <model>
   <architecture>
     <reconstruct>symbols</reconstruct>
-    <reshape>false</reshape>
     <conceptualOrder>1</conceptualOrder>
     <symbolicOrder>1</symbolicOrder>
     <modelType>embedding</modelType>
@@ -22,35 +21,37 @@
   </architecture>
 
   <InputSpace>
-    <nActive>2</nActive>
+    <nOutput>2</nOutput>
     <nDim>10</nDim>
     <nVectors>2</nVectors>
   </InputSpace>
 
   <PerceptualSpace>
-    <nActive>4</nActive>
+    <nOutput>4</nOutput>
     <nDim>10</nDim>
     <nVectors>16</nVectors>
+    <quantized>true</quantized>
     <invertible>false</invertible>
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
   <ConceptualSpace>
-    <nActive>4</nActive>
+    <nOutput>4</nOutput>
     <nDim>10</nDim>
     <nVectors>16</nVectors>
+    <quantized>true</quantized>
     <invertible>false</invertible>
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nActive>4</nActive>
+    <nOutput>4</nOutput>
     <nDim>10</nDim>
     <nVectors>4</nVectors>
     <passThrough>true</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>
-    <nActive>1</nActive>
+    <nOutput>1</nOutput>
     <nDim>1</nDim>
     <nVectors>1</nVectors>
   </OutputSpace>

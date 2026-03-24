@@ -497,6 +497,14 @@ class XMLConfig:
             f"or 'architecture'"
         )
 
+    def nOutput(self, space_name):
+        """Return raw nOutput for a space (0 = sentinel meaning 'same as nInput')."""
+        return self.space(space_name, "nOutput")
+
+    def nInput(self, space_name):
+        """Return raw nInput for a space (0 = sentinel meaning 'derive from previous space')."""
+        return self.space(space_name, "nInput")
+
     # --- Serialization ---
 
     def to_xml(self):

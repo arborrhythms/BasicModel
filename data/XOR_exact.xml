@@ -2,7 +2,6 @@
 <model>
   <architecture>
     <reconstruct>symbols</reconstruct>
-    <reshape>true</reshape>
     <conceptualOrder>1</conceptualOrder>
     <symbolicOrder>1</symbolicOrder>
     <modelType>embedding</modelType>
@@ -28,43 +27,48 @@
     </training>
   </architecture>
 
-  <!-- InputSpace: 3 tokens per sentence ("hello world" → ["hello"," ","world"])
-       nActive=6 to allow headroom for punctuation / longer sentences. -->
+  <!-- InputSpace: nOutput=6 tokens per sentence (e.g. "hello world" has 3 tokens;
+       nOutput=6 allows headroom for punctuation / longer sentences). -->
   <InputSpace>
-    <nActive>6</nActive>
+    <nOutput>6</nOutput>
     <nDim>10</nDim>
     <nVectors>6</nVectors>
+    <flatten>true</flatten>
     <nWhere>false</nWhere>
     <nWhen>false</nWhen>
   </InputSpace>
 
-  <!-- PerceptualSpace: invertible+reshape requires 2*input == output.
-       input = 6*10 = 60, getLayerIO output = nActive*10/2 = 120 → nActive = 24. -->
+  <!-- PerceptualSpace: invertible+reshape.
+       Constraint: 4 * nInput * inputDim == nOutput * outputDim
+       4 * 6 * 10 = 240 = 24 * 10  -->
   <PerceptualSpace>
-    <nActive>24</nActive>
+    <nOutput>24</nOutput>
     <nDim>10</nDim>
     <nVectors>24</nVectors>
+    <flatten>true</flatten>
     <invertible>true</invertible>
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace: nVectors = 2 × PerceptualSpace.nVectors = 48. -->
+  <!-- ConceptualSpace: nOutput=6, nVectors=6 (non-quantized: nVectors==nOutput). -->
   <ConceptualSpace>
-    <nActive>6</nActive>
+    <nOutput>6</nOutput>
     <nDim>10</nDim>
-    <nVectors>48</nVectors>
+    <nVectors>6</nVectors>
+    <flatten>true</flatten>
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <!-- SymbolicSpace: nActive = ConceptualSpace.nActive = 6 -->
+  <!-- SymbolicSpace: nOutput = ConceptualSpace.nOutput = 6 -->
   <SymbolicSpace>
-    <nActive>6</nActive>
+    <nOutput>6</nOutput>
     <nDim>10</nDim>
     <nVectors>6</nVectors>
+    <flatten>true</flatten>
   </SymbolicSpace>
 
   <OutputSpace>
-    <nActive>1</nActive>
+    <nOutput>1</nOutput>
     <nDim>1</nDim>
     <nVectors>1</nVectors>
   </OutputSpace>

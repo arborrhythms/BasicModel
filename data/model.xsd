@@ -23,14 +23,12 @@
     <xs:all>
       <xs:element name="type" type="architectureModelEnum" minOccurs="0"/>
       <xs:element name="modelType" type="modelTypeEnum" minOccurs="0"/>
-      <xs:element name="reshape" type="xs:boolean" minOccurs="0"/>
       <xs:element name="conceptualOrder" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="symbolicOrder" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="processSymbols" type="xs:boolean" minOccurs="0"/>
       <xs:element name="ergodic" type="xs:boolean" minOccurs="0"/>
       <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
       <xs:element name="naive" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="maskedPrediction" type="maskedPredictionEnum" minOccurs="0"/>
       <xs:element name="reconstruct" type="reconstructEnum" minOccurs="0"/>
       <xs:element name="maxResponseLength" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="data" type="dataType" minOccurs="0"/>
@@ -136,16 +134,16 @@
        Data section
        ═══════════════════════════════════════════════════════════════════ -->
   <xs:complexType name="dataType">
-    <xs:all>
-      <xs:element name="dataset" type="datasetEnum" minOccurs="0"/>
-      <xs:element name="numShards" type="xs:positiveInteger" minOccurs="0"/>
-      <xs:element name="maxDocs" type="xs:positiveInteger" minOccurs="0"/>
-      <xs:element name="shardDir" type="xs:string" minOccurs="0"/>
-      <xs:element name="minFrequency" type="nonNegativeFloat" minOccurs="0"/>
-      <xs:element name="classificationMin" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="classificationMax" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <!-- Inline data elements (pipe-separated) -->
-      <xs:element name="input" minOccurs="0" maxOccurs="unbounded">
+    <!-- xs:choice allows multiple <input>/<output> elements (inline data mode) -->
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="dataset" type="datasetEnum"/>
+      <xs:element name="numShards" type="xs:positiveInteger"/>
+      <xs:element name="maxDocs" type="xs:positiveInteger"/>
+      <xs:element name="shardDir" type="xs:string"/>
+      <xs:element name="minFrequency" type="nonNegativeFloat"/>
+      <xs:element name="classificationMin" type="xs:string"/>
+      <xs:element name="classificationMax" type="xs:string"/>
+      <xs:element name="input">
         <xs:complexType>
           <xs:simpleContent>
             <xs:extension base="xs:string">
@@ -154,7 +152,7 @@
           </xs:simpleContent>
         </xs:complexType>
       </xs:element>
-      <xs:element name="output" minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="output">
         <xs:complexType>
           <xs:simpleContent>
             <xs:extension base="xs:string">
@@ -163,7 +161,7 @@
           </xs:simpleContent>
         </xs:complexType>
       </xs:element>
-    </xs:all>
+    </xs:choice>
   </xs:complexType>
 
   <!-- ═══════════════════════════════════════════════════════════════════
@@ -180,10 +178,12 @@
       <xs:element name="whereScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="whenScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="negSamples" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="maskedPrediction" type="maskedPredictionEnum" minOccurs="0"/>
       <xs:element name="trainEmbedding" type="trainEnum" minOccurs="0"/>
       <xs:element name="embeddingScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="autoload" type="xs:boolean" minOccurs="0"/>
       <xs:element name="autosave" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="profile" type="xs:boolean" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -202,20 +202,16 @@
        Space types
        ═══════════════════════════════════════════════════════════════════ -->
 
-  <!-- Common elements shared by all spaces -->
-  <xs:group name="spaceCommon">
-    <xs:all>
-      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
-    </xs:all>
-  </xs:group>
-
   <xs:complexType name="inputSpaceType">
     <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="lexer" type="lexerEnum" minOccurs="0"/>
     </xs:all>
@@ -223,9 +219,12 @@
 
   <xs:complexType name="perceptualSpaceType">
     <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
@@ -235,9 +234,12 @@
 
   <xs:complexType name="conceptualSpaceType">
     <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
       <xs:element name="hasNorm" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
@@ -247,26 +249,39 @@
 
   <xs:complexType name="symbolicSpaceType">
     <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
   <xs:complexType name="syntacticSpaceType">
     <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
   <xs:complexType name="outputSpaceType">
     <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 

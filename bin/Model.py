@@ -12,7 +12,6 @@ import warnings
 import numpy as np
 import util as _util
 _util.init_runtime_env()
-import matplotlib.pyplot as plt
 import torch
 import math
 import random
@@ -1595,6 +1594,7 @@ class DecisionBoundaryLayer(Layer):
 
     @staticmethod
     def test():
+        import matplotlib.pyplot as plt
         n_points = 100
         data = torch.randn(n_points, 2)
         data[:, 0] *= 1.5
@@ -1982,6 +1982,7 @@ class Activation:
 
     @staticmethod
     def test():
+        import matplotlib.pyplot as plt
         def neg(x):
             # y = 1-x;
             return -x
@@ -2226,6 +2227,7 @@ class Mem:
         """
         Test one impulse by incrementing and plotting the output.
         """
+        import matplotlib.pyplot as plt
         plt.figure(1)
         plt.clf()
         x = np.arange(1, 1001)
@@ -2243,6 +2245,7 @@ class Mem:
         """
         Test impulse response by incrementing and plotting the output.
         """
+        import matplotlib.pyplot as plt
         plt.figure(1)
         x = np.arange(1, 1001)
         y = np.zeros(1000)
