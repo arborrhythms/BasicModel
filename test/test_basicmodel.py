@@ -160,8 +160,7 @@ class TestLinearLayer(unittest.TestCase):
 
     def test_with_identity_weight(self):
         from Model import LinearLayer
-        W = torch.eye(4).to(TheDevice)
-        layer = LinearLayer(nInput=4, nOutput=4, W=W)
+        layer = LinearLayer(nInput=4, nOutput=4, ergodic=True)  # ergodic init = eye
         x = torch.randn(1, 4).to(TheDevice)
         y = layer(x)
         self.assertEqual(y.shape, (1, 4))

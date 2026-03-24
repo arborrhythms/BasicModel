@@ -140,9 +140,9 @@ class TestLinearLayerIdentity(unittest.TestCase):
     """LinearLayer with W=I and no bias should be exact identity."""
     def test_identity(self):
         torch.manual_seed(42)
-        layer = LinearLayer(5, 5, hasBias=False, W=torch.eye(5))
+        layer = LinearLayer(5, 5, hasBias=False, ergodic=True)
         x = torch.randn(3, 5).to(TheDevice)
-        y = layer.forward(x, bias=1.0, temp=0.0)
+        y = layer.forward(x)
         err = _reconstruction_error(x, y)
         self.assertLess(err, 1e-6)
 
