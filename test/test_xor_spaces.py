@@ -26,7 +26,7 @@ _CONFIG = os.path.join(_PROJECT, "data", "XOR_spaces.xml")
 _TEST = os.path.dirname(os.path.abspath(__file__))
 if _TEST not in sys.path:
     sys.path.insert(0, _TEST)
-from test_basicmodel import _populate_test_config
+from test_basicmodel import _populate_test_config, _obj_size
 
 _HAS_NLTK = importlib.util.find_spec("nltk") is not None
 
@@ -243,14 +243,16 @@ class TestSpacePrediction(unittest.TestCase):
 
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _obj = _obj_size("InputSpace")
+        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         emb = inp.vectors()
         self.assertIsInstance(emb, Embedding)
 
         _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = TheXMLConfig.space("OutputSpace", "nDim")
-        os_ = OutputSpace([nInput, _sdim], [4, _odim], [4, _odim])
+        _obj_sym = _obj_size("SymbolicSpace")
+        os_ = OutputSpace([nInput, _sdim + _obj_sym], [4, _odim], [4, _odim])
         os_.set_text_mode(inp)
 
         codebook = emb.wv._vectors.detach()
@@ -294,14 +296,16 @@ class TestSpacePrediction(unittest.TestCase):
 
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _obj = _obj_size("InputSpace")
+        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         emb = inp.vectors()
         self.assertIn(" ", emb.pretrain.key_to_index)
 
         _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = TheXMLConfig.space("OutputSpace", "nDim")
-        os_ = OutputSpace([nInput, _sdim], [4, _odim], [4, _odim])
+        _obj_sym = _obj_size("SymbolicSpace")
+        os_ = OutputSpace([nInput, _sdim + _obj_sym], [4, _odim], [4, _odim])
         os_.set_text_mode(inp)
 
         space_idx = emb.pretrain.key_to_index[" "]

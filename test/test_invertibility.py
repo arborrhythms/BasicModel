@@ -420,6 +420,20 @@ from BasicModel import (
     TheXMLConfig, PerceptualSpace, ConceptualSpace,
     SymbolicSpace, OutputSpace, SyntacticSpace,
 )
+from Space import SubSpace
+
+
+def _wrap_tensor(space, x):
+    """Wrap a raw tensor in the space's SubSpace so forward()/reverse() can materialize it."""
+    space.subspace.set_materialized(x)
+    return space.subspace
+
+
+def _unwrap(vspace):
+    """Extract the dense tensor from a SubSpace returned by forward()/reverse()."""
+    if isinstance(vspace, SubSpace):
+        return vspace.materialize()
+    return vspace
 
 
 def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
@@ -446,7 +460,7 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
         "ConceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "quantized": False, "hasAttention": False, "hasNorm": hasNorm, "invertible": invertible},
         "SymbolicSpace":   {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "passThrough": symbolPassThrough, "quantized": False},
         "SyntacticSpace":  {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "quantized": False},
-        "OutputSpace":     {"nDim": outputDim,  "nVectors": nObj, "nActive": nObj, "flatten": True,   "quantized": False, "invertible": False},
+        "OutputSpace":     {"nDim": outputDim,  "nVectors": nObj, "nActive": nObj, "nWhere": 0, "nWhen": 0, "flatten": True, "quantized": False, "invertible": False},
     })
 
 
@@ -458,13 +472,13 @@ class TestPerceptualSpacePassthrough(unittest.TestCase):
         embDim = contentDim + objSize
         torch.manual_seed(42)
         pspace = PerceptualSpace(
-            [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
+            [nObj, embDim], [nObj, contentDim], [nObj, embDim],
         )
         pspace.eval()
         x = torch.randn(2, nObj, embDim).to(TheDevice)
         with torch.no_grad():
-            y = pspace.forward(x)
-            x_rec = pspace.reverse(y)
+            y = pspace.forward(_wrap_tensor(pspace, x))
+            x_rec = _unwrap(pspace.reverse(y))
         err = _reconstruction_error(x, x_rec)
         self.assertLess(err, 1e-6, f"objSize={objSize}: err={err:.2e}")
 
@@ -485,7 +499,7 @@ class TestPerceptualSpaceReversePassTrained(unittest.TestCase):
         embDim = contentDim + objSize
         torch.manual_seed(42)
         pspace = PerceptualSpace(
-            [nObj, contentDim], [nObj, contentDim], [2*nObj, contentDim],
+            [nObj, embDim], [nObj, contentDim], [2*nObj, embDim],
         )
         criterion = nn.MSELoss()
         optimizer = optim.Adam(pspace.parameters(), lr=0.005)
@@ -493,15 +507,15 @@ class TestPerceptualSpaceReversePassTrained(unittest.TestCase):
         pspace.train()
         for _ in range(2000):
             optimizer.zero_grad()
-            y = pspace.forward(x_data)
-            x_rec = pspace.reverse(y)
+            y = pspace.forward(_wrap_tensor(pspace, x_data))
+            x_rec = _unwrap(pspace.reverse(y))
             loss = criterion(x_data, x_rec)
             loss.backward()
             optimizer.step()
         pspace.eval()
         with torch.no_grad():
-            y = pspace.forward(x_data)
-            x_rec = pspace.reverse(y)
+            y = pspace.forward(_wrap_tensor(pspace, x_data))
+            x_rec = _unwrap(pspace.reverse(y))
         err = _reconstruction_error(x_data, x_rec, rel=True)
         self.assertLess(err, 1.0, f"objSize={objSize}: rel err={err:.4f}")
 
@@ -518,14 +532,14 @@ class TestConceptualSpaceInvertible(unittest.TestCase):
         embDim = contentDim + objSize
         torch.manual_seed(42)
         cspace = ConceptualSpace(
-            [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
+            [nObj, embDim], [nObj, contentDim], [nObj, embDim],
         )
         cspace.eval()
         cspace.sigma.set_sigma(0)
         x = torch.randn(2, nObj, embDim).to(TheDevice)
         with torch.no_grad():
-            y = cspace.forward(x)
-            x_rec = cspace.reverse(y)
+            y = cspace.forward(_wrap_tensor(cspace, x))
+            x_rec = _unwrap(cspace.reverse(y))
         err = _reconstruction_error(x, x_rec)
         self.assertLess(err, 1e-2,
                         f"objSize={objSize}, flatten={flatten}: err={err:.2e}")
@@ -545,13 +559,13 @@ class TestConceptualSpacePairedSigma(unittest.TestCase):
         embDim = contentDim + objSize
         torch.manual_seed(42)
         cspace = ConceptualSpace(
-            [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
+            [nObj, embDim], [nObj, contentDim], [nObj, embDim],
         )
         cspace.eval()
         x = torch.randn(2, nObj, embDim).to(TheDevice)
         with torch.no_grad():
-            y = cspace.forward(x)
-            x_rec = cspace.reverse(y)
+            y = cspace.forward(_wrap_tensor(cspace, x))
+            x_rec = _unwrap(cspace.reverse(y))
         err = _reconstruction_error(x, x_rec, rel=True)
         self.assertLess(err, 2.5, f"objSize={objSize}: rel err={err:.4f}")
 
@@ -578,8 +592,8 @@ class TestConceptualSpaceHasNorm(unittest.TestCase):
         cspace.sigma.set_sigma(0)
         x = torch.randn(2, nObj, contentDim).to(TheDevice)
         with torch.no_grad():
-            y = cspace.forward(x)
-            x_rec = cspace.reverse(y)
+            y = cspace.forward(_wrap_tensor(cspace, x))
+            x_rec = _unwrap(cspace.reverse(y))
         err = _reconstruction_error(x, x_rec)
         self.assertLess(err, 1e-2, f"err={err:.2e}")
 
@@ -592,13 +606,13 @@ class TestSymbolicSpacePassthrough(unittest.TestCase):
         embDim = contentDim + objSize
         torch.manual_seed(42)
         sspace = SymbolicSpace(
-            [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
+            [nObj, embDim], [nObj, contentDim], [nObj, embDim],
         )
         sspace.eval()
         x = torch.randn(2, nObj, embDim).to(TheDevice)
         with torch.no_grad():
-            y = sspace.forward(x)
-            x_rec = sspace.reverse(y)
+            y = sspace.forward(_wrap_tensor(sspace, x))
+            x_rec = _unwrap(sspace.reverse(y))
         err = _reconstruction_error(x, x_rec)
         self.assertLess(err, 1e-6, f"objSize={objSize}: err={err:.2e}")
 
@@ -613,13 +627,13 @@ class TestSyntacticSpace(unittest.TestCase):
         embDim = contentDim + objSize
         torch.manual_seed(42)
         synspace = SyntacticSpace(
-            [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
+            [nObj, embDim], [nObj, contentDim], [nObj, embDim],
         )
         synspace.eval()
         x = torch.randn(2, nObj, embDim).to(TheDevice)
         with torch.no_grad():
-            y = synspace.forward(x)
-            x_rec = synspace.reverse(y)
+            y = synspace.forward(_wrap_tensor(synspace, x))
+            x_rec = _unwrap(synspace.reverse(y))
         err = _reconstruction_error(x, x_rec)
         self.assertLess(err, 1e-6, f"objSize={objSize}: err={err:.2e}")
 
@@ -635,16 +649,17 @@ class TestOutputSpaceReversePass(unittest.TestCase):
         nObj, contentDim, outputDim = 3, 6, 2
         embDim = contentDim + objSize
         torch.manual_seed(42)
+        # OutputSpace: input has upstream objectSize, output has 0 (nWhere=0/nWhen=0)
         ospace = OutputSpace(
-            [nObj, contentDim], [nObj, contentDim], [1, outputDim],
+            [nObj, embDim], [nObj, contentDim], [1, outputDim],
         )
         ospace.eval()
         x = torch.randn(2, nObj, embDim).to(TheDevice)
         with torch.no_grad():
-            y = ospace.forward(x)
-            x_rec = ospace.reverse(y)
+            y = ospace.forward(_wrap_tensor(ospace, x))
+            x_rec = _unwrap(ospace.reverse(y))
         # Just verify shapes and no crash; roundtrip is lossy by design
-        self.assertEqual(y.dim(), 3)
+        self.assertEqual(_unwrap(y).dim(), 3)
 
     def test_objsize_0(self):  self._check(0)
     def test_objsize_4(self):  self._check(4)

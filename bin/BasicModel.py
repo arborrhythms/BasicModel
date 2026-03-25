@@ -665,6 +665,25 @@ class BasicModel(BaseModel):
         syntax_dim  = _resolve_dim("SyntacticSpace",   symbol_dim)
         output_dim  = _resolve_dim("OutputSpace",      symbol_dim)
 
+        # Per-space objectSize: nWhere + nWhen (falls back to architecture, then 0)
+        def _obj_size(section):
+            try:
+                nw = TheXMLConfig.space(section, "nWhere")
+            except KeyError:
+                nw = 0
+            try:
+                nn = TheXMLConfig.space(section, "nWhen")
+            except KeyError:
+                nn = 0
+            return nw + nn
+
+        obj_input   = _obj_size("InputSpace")
+        obj_percept = _obj_size("PerceptualSpace")
+        obj_concept = _obj_size("ConceptualSpace")
+        obj_symbol  = _obj_size("SymbolicSpace")
+        obj_syntax  = _obj_size("SyntacticSpace")
+        obj_output  = _obj_size("OutputSpace")
+
         # Resolve nVectors sentinels (0 → same as output count for that space)
         def _nvec(section, n_out):
             raw = TheXMLConfig.space(section, "nVectors")
@@ -677,14 +696,16 @@ class BasicModel(BaseModel):
         nvec_syntax  = _nvec("SyntacticSpace", nSymbols)
         nvec_output  = _nvec("OutputSpace",    nOutput)
 
-        # Build I/O shape tuples: [count, dim]
-        inputShape   = [nInput,    input_dim]
-        perceptShape = [nPercepts, percept_dim]
-        conceptShape = [nConcepts, concept_dim]
-        symbolShape  = [nSymbols,  symbol_dim]
-        outputShape  = [nOutput,   output_dim]
+        # Build I/O shape tuples: [count, dim + objectSize]
+        # Each space's shape includes its own objectSize.
+        inputShape   = [nInput,    input_dim   + obj_input]
+        perceptShape = [nPercepts, percept_dim + obj_percept]
+        conceptShape = [nConcepts, concept_dim + obj_concept]
+        symbolShape  = [nSymbols,  symbol_dim  + obj_symbol]
+        outputShape  = [nOutput,   output_dim  + obj_output]
 
         # Build codebook (space-internal) shape tuples: [nVectors, nDim]
+        # spaceShape uses raw content dim — codebook vectors don't include objectSize.
         spaceShape_input   = [nvec_input,   input_dim]
         spaceShape_percept = [nvec_percept, percept_dim]
         spaceShape_concept = [nvec_concept, concept_dim]
@@ -696,7 +717,9 @@ class BasicModel(BaseModel):
         # Starts with only the output-destined symbols (not reconstruction symbols).
         # It grows as higher-order cycles (conceptualOrder, symbolicOrder) append symbols.
         nOutputSymbols = self.nOutputSymbols
-        self.inputSpace      = InputSpace(inputShape, spaceShape_input, inputShape,
+        # InputSpace receives raw data (no encoding) as input but produces encoded vectors.
+        rawInputShape = [nInput, input_dim]
+        self.inputSpace      = InputSpace(rawInputShape, spaceShape_input, inputShape,
                                           model_type=model_type)
         # Convert masked-word string labels to embedding vectors now that
         # the Embedding vocabulary is available.
@@ -728,7 +751,7 @@ class BasicModel(BaseModel):
             self.spaces.extend([self.syntacticSpace3, self.symbolicSpace3])
 
         self.nTotalOutputSymbols = nOutputSymbols
-        self.outputSpace     = OutputSpace([nOutputSymbols, symbol_dim], spaceShape_output, outputShape,
+        self.outputSpace     = OutputSpace([nOutputSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
                                            masked_prediction=(masked_prediction != 'NONE'),
                                            vectors=self.inputSpace.subspace.vectors())
         self.spaces.extend([self.outputSpace])
@@ -746,10 +769,10 @@ class BasicModel(BaseModel):
 
     def Start(self, inputData):
         """Forward pass through the core pipeline: Input -> Percept -> Concept -> Symbol."""
-        self.inputs = self.inputSpace.forward_subspace(inputData)
-        self.percepts = self.perceptualSpace.forward_subspace(self.inputs)
-        self.concepts = self.conceptualSpace.forward_subspace(self.percepts)
-        self.symbols = self.symbolicSpace.forward_subspace(self.concepts)
+        self.inputs = self.inputSpace.forward(inputData)
+        self.percepts = self.perceptualSpace.forward(self.inputs)
+        self.concepts = self.conceptualSpace.forward(self.percepts)
+        self.symbols = self.symbolicSpace.forward(self.concepts)
         input = self.inputs.materialize()
         concepts = self.concepts.materialize()
         symbols = self.symbols.materialize()
@@ -758,18 +781,21 @@ class BasicModel(BaseModel):
         return input, concepts, symbols
     def StartReverse(self, symbols):
         """Reverse pass: Symbol -> Concept -> Percept -> Input (reconstruction)."""
-        concepts_state = self.symbolicSpace.reverse_subspace(symbols)
-        percepts_state = self.conceptualSpace.reverse_subspace(concepts_state)
-        input_state = self.perceptualSpace.reverse_subspace(percepts_state)
-        self.inputs = self.inputSpace.reverse_subspace(input_state)
+        concepts_state = self.symbolicSpace.reverse(symbols)
+        percepts_state = self.conceptualSpace.reverse(concepts_state)
+        input_state = self.perceptualSpace.reverse(percepts_state)
+        self.inputs = self.inputSpace.reverse(input_state)
         input = input_state.materialize()
         inputData  = self.inputs.materialize()
         return inputData, input
     def SubsymbolicThought(self, data):
         """Extra Percept->Concept->Symbol cycle (conceptualOrder >= 1)."""
-        percepts_state = self.perceptualSpace2.forward_subspace(data)
-        concepts_state = self.conceptualSpace2.forward_subspace(percepts_state)
-        symbols_state  = self.symbolicSpace2.forward_subspace(concepts_state)
+        if isinstance(data, torch.Tensor):
+            self.perceptualSpace2.subspace.set_materialized(data)
+            data = self.perceptualSpace2.subspace
+        percepts_state = self.perceptualSpace2.forward(data)
+        concepts_state = self.conceptualSpace2.forward(percepts_state)
+        symbols_state  = self.symbolicSpace2.forward(concepts_state)
         percepts = percepts_state.materialize()
         concepts = concepts_state.materialize()
         symbols = symbols_state.materialize()
@@ -778,14 +804,17 @@ class BasicModel(BaseModel):
         return concepts, symbols
     def SubsymbolicThoughtReverse(self, concepts, symbols):
         """Reverse of SubsymbolicThought."""
-        concepts_state = self.symbolicSpace2.reverse_subspace(symbols)
-        percepts_state = self.conceptualSpace2.reverse_subspace(concepts_state)
+        concepts_state = self.symbolicSpace2.reverse(symbols)
+        percepts_state = self.conceptualSpace2.reverse(concepts_state)
         percepts = percepts_state.materialize()
         return percepts
     def SymbolicThought(self, data):
         """Extra Syntax->Symbol cycle (symbolicOrder >= 1)."""
-        words_state = self.syntacticSpace3.forward_subspace(data)
-        symbols_state = self.symbolicSpace3.forward_subspace(words_state)
+        if isinstance(data, torch.Tensor):
+            self.syntacticSpace3.subspace.set_materialized(data)
+            data = self.syntacticSpace3.subspace
+        words_state = self.syntacticSpace3.forward(data)
+        symbols_state = self.symbolicSpace3.forward(words_state)
         words = words_state.materialize()
         symbols = symbols_state.materialize()
         if self.plot:
@@ -793,13 +822,16 @@ class BasicModel(BaseModel):
         return symbols, words
     def SymbolicThoughtReverse(self, symbols, words):
         """Reverse of SymbolicThought."""
-        symbols_state = self.syntacticSpace3.reverse_subspace(words)
-        data_state = self.symbolicSpace3.reverse_subspace(symbols_state)
+        symbols_state = self.syntacticSpace3.reverse(words)
+        data_state = self.symbolicSpace3.reverse(symbols_state)
         data = data_state.materialize()
         return data
     def Finish(self, symbols):
         """Project concatenated symbols to task output via OutputSpace."""
-        self.outputs = self.outputSpace.forward_subspace(symbols)
+        if isinstance(symbols, torch.Tensor):
+            self.outputSpace.subspace.set_materialized(symbols)
+            symbols = self.outputSpace.subspace
+        self.outputs = self.outputSpace.forward(symbols)
         outputData = self.outputs.materialize()
         if self.plot:
             TheReport.plotActivations(figure=1, symbols=symbols)
@@ -813,9 +845,9 @@ class BasicModel(BaseModel):
         """
         mode = getattr(self, 'reconstruct', 'symbols')
         if mode == 'output':
-            return self.outputSpace.reverse_subspace(outputData).materialize()
+            return self.outputSpace.reverse(outputData).materialize()
         elif mode == 'both':
-            output_symbols = self.outputSpace.reverse_subspace(outputData).materialize()
+            output_symbols = self.outputSpace.reverse(outputData).materialize()
         else:  # 'symbols'
             output_symbols = self.output_symbols
         if self.recon_symbols is not None and self.nReconSymbols > 0:
@@ -1333,6 +1365,24 @@ class MentalModel(BaseModel):
         symbol_dim  = _resolve_dim("SymbolicSpace",    concept_dim)
         output_dim  = _resolve_dim("OutputSpace",      symbol_dim)
 
+        # Per-space objectSize: nWhere + nWhen (falls back to architecture, then 0)
+        def _obj_size(section):
+            try:
+                nw = TheXMLConfig.space(section, "nWhere")
+            except KeyError:
+                nw = 0
+            try:
+                nn = TheXMLConfig.space(section, "nWhen")
+            except KeyError:
+                nn = 0
+            return nw + nn
+
+        obj_input   = _obj_size("InputSpace")
+        obj_percept = _obj_size("PerceptualSpace")
+        obj_concept = _obj_size("ConceptualSpace")
+        obj_symbol  = _obj_size("SymbolicSpace")
+        obj_output  = _obj_size("OutputSpace")
+
         # Resolve nVectors sentinels (0 → same as output count for that space)
         def _nvec(section, n_out):
             raw = TheXMLConfig.space(section, "nVectors")
@@ -1344,23 +1394,27 @@ class MentalModel(BaseModel):
         nvec_symbol  = _nvec("SymbolicSpace",  nSymbols)
         nvec_output  = _nvec("OutputSpace",    nOutput)
 
-        # Build I/O shape tuples: [count, dim]
-        inputShape   = [nInput,            input_dim]
-        perceptShape = [nPercepts,          percept_dim]
-        conceptShape = [nConcepts,          concept_dim]
-        symbolShape  = [nSymbols,           symbol_dim]
-        outputShape  = [nOutput,            output_dim]
+        # Build I/O shape tuples: [count, dim + objectSize]
+        # Shapes include the full vector width (content + spatial encoding).
+        # Each space's shape includes its own objectSize.
+        inputShape   = [nInput,            input_dim   + obj_input]
+        perceptShape = [nPercepts,          percept_dim + obj_percept]
+        conceptShape = [nConcepts,          concept_dim + obj_concept]
+        symbolShape  = [nSymbols,           symbol_dim  + obj_symbol]
+        outputShape  = [nOutput,            output_dim  + obj_output]
         # MentalModel joins percepts + concepts before symbolicSpace
-        joinShape    = [nPercepts + nConcepts, concept_dim]
+        joinShape    = [nPercepts + nConcepts, concept_dim + obj_concept]
 
         # Build codebook (space-internal) shape tuples: [nVectors, nDim]
+        # spaceShape uses raw content dim — codebook vectors don't include objectSize.
         spaceShape_input   = [nvec_input,   input_dim]
         spaceShape_percept = [nvec_percept, percept_dim]
         spaceShape_concept = [nvec_concept, concept_dim]
         spaceShape_symbol  = [nvec_symbol,  symbol_dim]
         spaceShape_output  = [nvec_output,  output_dim]
 
-        self.inputSpace = InputSpace(inputShape, spaceShape_input, inputShape,
+        rawInputShape = [nInput, input_dim]
+        self.inputSpace = InputSpace(rawInputShape, spaceShape_input, inputShape,
                                      model_type=model_type)
 
         # Branch 1: Input -> Percepts
@@ -1373,7 +1427,7 @@ class MentalModel(BaseModel):
         self.symbolicSpace = SymbolicSpace(joinShape, spaceShape_symbol, symbolShape,
                                            conceptualSpace=self.conceptualSpace)
 
-        self.outputSpace = OutputSpace([nSymbols, symbol_dim], spaceShape_output, outputShape,
+        self.outputSpace = OutputSpace([nSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
                                        masked_prediction=(masked_prediction != 'NONE'),
                                        vectors=self.inputSpace.subspace.vectors())
 
@@ -1390,19 +1444,19 @@ class MentalModel(BaseModel):
         TheXMLConfig.validate()
 
     def Start(self, inputData):
-        self.inputs = self.inputSpace.forward_subspace(inputData)
-        self.percepts = self.perceptualSpace.forward_subspace(self.inputs)
-        self.concepts = self.conceptualSpace.forward_subspace(self.inputs)
+        self.inputs = self.inputSpace.forward(inputData)
+        self.percepts = self.perceptualSpace.forward(self.inputs)
+        self.concepts = self.conceptualSpace.forward(self.inputs)
         input_state = self.inputs.materialize()
         percepts = self.percepts.materialize()
         concepts = self.concepts.materialize()
         merged = torch.cat([percepts, concepts], dim=1)
-        self.symbols = self.symbolicSpace.forward_subspace(merged)
+        self.symbols = self.symbolicSpace.forward(merged)
         symbols = self.symbols.materialize()
         return input_state, percepts, concepts, symbols
 
     def Finish(self, symbols):
-        self.outputs = self.outputSpace.forward_subspace(symbols)
+        self.outputs = self.outputSpace.forward(symbols)
         return self.outputs.materialize()
 
     def forward(self, inputData):
@@ -1413,18 +1467,18 @@ class MentalModel(BaseModel):
         return input_state, symbols, outputData
 
     def reverse(self, symbols, outputData):
-        symbols = self.outputSpace.reverse_subspace(outputData).materialize()
-        merged = self.symbolicSpace.reverse_subspace(symbols).materialize()
+        symbols = self.outputSpace.reverse(outputData).materialize()
+        merged = self.symbolicSpace.reverse(symbols).materialize()
 
         percepts = merged[:, :self.nPercepts, :]
         concepts = merged[:, self.nPercepts:self.nPercepts + self.nConcepts, :]
 
-        input_from_percepts = self.perceptualSpace.reverse_subspace(percepts).materialize()
-        input_from_concepts = self.conceptualSpace.reverse_subspace(concepts).materialize()
+        input_from_percepts = self.perceptualSpace.reverse(percepts).materialize()
+        input_from_concepts = self.conceptualSpace.reverse(concepts).materialize()
 
         # Hypothetical merge rule for the two reconstructed input streams.
         input_latent = 0.5 * (input_from_percepts + input_from_concepts)
-        input_data = self.inputSpace.reverse_subspace(input_latent).materialize()
+        input_data = self.inputSpace.reverse(input_latent).materialize()
 
         return input_data, input_latent
 TheMentalModel = MentalModel()

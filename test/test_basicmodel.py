@@ -29,8 +29,36 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 from BasicModel import TheDevice
+from Space import SubSpace
 
 _RUN_SLOW = os.getenv("RUN_SLOW") == "1"
+
+
+def _wrap_tensor(space, x):
+    """Wrap a raw tensor in the space's SubSpace so forward()/reverse() can materialize it."""
+    space.subspace.set_materialized(x)
+    return space.subspace
+
+
+def _unwrap(vspace):
+    """Extract the dense tensor from a SubSpace returned by forward()/reverse()."""
+    if isinstance(vspace, SubSpace):
+        return vspace.materialize()
+    return vspace
+
+
+def _obj_size(section):
+    """Compute per-space objectSize from config (nWhere + nWhen)."""
+    from BasicModel import TheXMLConfig
+    try:
+        nw = TheXMLConfig.space(section, "nWhere")
+    except KeyError:
+        nw = 0
+    try:
+        nn = TheXMLConfig.space(section, "nWhen")
+    except KeyError:
+        nn = 0
+    return nw + nn
 
 
 def _xml_uses_embedding(filename):
@@ -55,6 +83,7 @@ def _populate_test_config(*,
                           nWhere=0, nWhen=0,
                           reconstruct="NONE", flatten=False, ergodic=False,
                           naive=False, processSymbols=False,
+                          useSubspaceActivation=False,
                           perceptPassThrough=False, symbolPassThrough=False,
                           perceptHasAttention=True, conceptHasAttention=False,
                           invertible=False, hasNorm=False, quantized=False,
@@ -84,6 +113,7 @@ def _populate_test_config(*,
             "ergodic": ergodic,
             "naive": naive,
             "processSymbols": processSymbols,
+            "useSubspaceActivation": useSubspaceActivation,
             "certainty": certainty,
             "objectSize": _objectSize,
             "nObjects": _nObjects,
@@ -140,6 +170,8 @@ def _populate_test_config(*,
             "nActive": nOutput,
             "nDim": outputDim,
             "nVectors": nOutput,
+            "nWhere": 0,
+            "nWhen": 0,
             "flatten": True,  # OutputSpace always flattens
             "quantized": False,
             "invertible": False,
@@ -504,7 +536,7 @@ class TestWhenEncodingRoundTrip(unittest.TestCase):
 # SubSpace — derived sizes, materialization, construction helpers
 # ---------------------------------------------------------------------------
 class TestSubSpaceDerivedSizes(unittest.TestCase):
-    """SubSpace.getEncodingSize and getEmbeddedIO match ObjectEncoding math."""
+    """SubSpace.getEncodingSize, getEncodedInputSize, getEncodedOutputSize match ObjectEncoding math."""
 
     def test_getEncodingSize_adds_objectSize(self):
         from BasicModel import SubSpace, WhereEncoding, WhenEncoding
@@ -513,33 +545,32 @@ class TestSubSpaceDerivedSizes(unittest.TestCase):
         self.assertEqual(ss.getEncodingSize(8), 12)
         self.assertEqual(ss.getEncodingSize(0), 4)
 
-    def test_getEmbeddedIO_no_reshape(self):
+    def test_getEncodedIO_no_reshape(self):
         from BasicModel import SubSpace, WhereEncoding, WhenEncoding, ObjectEncoding
+        # Shapes already include objectSize (4 = nWhere=2 + nWhen=2)
         ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
-                      objectEncoding=ObjectEncoding([3, 8], [5, 16], flatten=False, objectSize=4),
+                      objectEncoding=ObjectEncoding([3, 12], [5, 20], flatten=False),
                       flatten=False,
-                      inputShape=[3, 8], outputShape=[5, 16])
-        inp, out = ss.getEmbeddedIO()
-        self.assertEqual(inp, 8 + 4)   # nDim + objectSize
-        self.assertEqual(out, 16 + 4)
+                      inputShape=[3, 12], outputShape=[5, 20])
+        self.assertEqual(ss.getEncodedInputSize(), 12)
+        self.assertEqual(ss.getEncodedOutputSize(), 20)
 
-    def test_getEmbeddedIO_reshape(self):
+    def test_getEncodedIO_reshape(self):
         from BasicModel import SubSpace, WhereEncoding, WhenEncoding, ObjectEncoding
+        # Shapes already include objectSize (4 = nWhere=2 + nWhen=2)
         ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
-                      objectEncoding=ObjectEncoding([3, 8], [5, 16], flatten=True, objectSize=4),
+                      objectEncoding=ObjectEncoding([3, 12], [5, 20], flatten=True),
                       flatten=True,
-                      inputShape=[3, 8], outputShape=[5, 16])
-        inp, out = ss.getEmbeddedIO()
-        self.assertEqual(inp, (8 + 4) * 3)
-        self.assertEqual(out, (16 + 4) * 5)
+                      inputShape=[3, 12], outputShape=[5, 20])
+        self.assertEqual(ss.getEncodedInputSize(), 12 * 3)
+        self.assertEqual(ss.getEncodedOutputSize(), 20 * 5)
 
     def test_zero_objectSize(self):
         from BasicModel import SubSpace, ObjectEncoding
         ss = SubSpace(objectEncoding=ObjectEncoding([2, 10], [2, 10]),
                       inputShape=[2, 10], outputShape=[2, 10])
-        inp, out = ss.getEmbeddedIO()
-        self.assertEqual(inp, 10)
-        self.assertEqual(out, 10)
+        self.assertEqual(ss.getEncodedInputSize(), 10)
+        self.assertEqual(ss.getEncodedOutputSize(), 10)
 
 
 class TestSubSpaceMaterialize(unittest.TestCase):
@@ -640,17 +671,16 @@ class TestSubSpaceActiveEncoding(unittest.TestCase):
     def test_two_spaces_independent_encoding(self):
         """Two SubSpaces can have different objectSize without shared coupling."""
         from BasicModel import SubSpace, WhereEncoding, WhenEncoding, ObjectEncoding
+        # ss1: objectSize=4 (nWhere=2, nWhen=2), shapes include it
         ss1 = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
-                        objectEncoding=ObjectEncoding([3, 8], [3, 8], objectSize=4),
-                        inputShape=[3, 8], outputShape=[3, 8])
+                        objectEncoding=ObjectEncoding([3, 12], [3, 12]),
+                        inputShape=[3, 12], outputShape=[3, 12])
         ss2 = SubSpace(objectEncoding=ObjectEncoding([3, 16], [3, 16]),
                         inputShape=[3, 16], outputShape=[3, 16])
         self.assertEqual(ss1.getEncodingSize(8), 12)
         self.assertEqual(ss2.getEncodingSize(16), 16)
-        inp1, out1 = ss1.getEmbeddedIO()
-        inp2, out2 = ss2.getEmbeddedIO()
-        self.assertEqual(inp1, 12)
-        self.assertEqual(inp2, 16)
+        self.assertEqual(ss1.getEncodedInputSize(), 12)
+        self.assertEqual(ss2.getEncodedInputSize(), 16)
 
 
 # Regression: Space shape contracts
@@ -671,7 +701,7 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
         cs = ConceptualSpace([nIn, nDim], [nOut, nDim], [nOut, nDim])
         inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("InputSpace", "nDim"))
         x = torch.randn(self.B, nIn, inEmb).to(TheDevice)
-        y = cs(x)
+        y = _unwrap(cs(_wrap_tensor(cs, x)))
         outEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("ConceptualSpace", "nDim"))
         self.assertEqual(list(y.shape), [self.B, nOut, outEmb])
 
@@ -685,7 +715,7 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
         cs = ConceptualSpace([nIn, nDim], [nOut, nDim], [nOut, nDim])
         outEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("ConceptualSpace", "nDim"))
         y = torch.randn(self.B, nOut, outEmb).to(TheDevice)
-        x = cs.reverse(y)
+        x = _unwrap(cs.reverse(_wrap_tensor(cs, y)))
         inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("InputSpace", "nDim"))
         self.assertEqual(list(x.shape), [self.B, nIn, inEmb])
 
@@ -695,7 +725,7 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
         os_ = OutputSpace([nIn, 8], [nOut, 4], [nOut, 4])
         inEmb = os_.inputShape[1]
         x = torch.randn(self.B, nIn, inEmb).to(TheDevice)
-        y = os_(x)
+        y = _unwrap(os_(_wrap_tensor(os_, x)))
         self.assertEqual(list(y.shape), [self.B, nOut, TheXMLConfig.space("OutputSpace", "nDim")])
 
 
@@ -960,15 +990,16 @@ class TestSpaceBasisConstruction(unittest.TestCase):
         per = PerceptualSpace([4, 3], [4, 3], [4, 3])
         x = torch.randn(2, 4, 3).to(TheDevice)
 
-        input_state = inp.forward_subspace(x)
+        inp.forward(x)
+        input_state = inp.subspace
         self.assertIsInstance(input_state, SubSpace)
         self.assertTrue(torch.equal(input_state.materialize(), x))
 
-        percept_state = per.forward_subspace(input_state)
+        percept_state = per.forward(input_state)
         self.assertIsInstance(percept_state, SubSpace)
         self.assertTrue(torch.equal(percept_state.materialize(), x))
 
-        reversed_state = per.reverse_subspace(percept_state)
+        reversed_state = per.reverse(percept_state)
         self.assertIsInstance(reversed_state, SubSpace)
         self.assertTrue(torch.equal(reversed_state.materialize(), x))
 
@@ -988,7 +1019,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         nVec, nDim, cDim = 8, 1, 1
         cs = ConceptualSpace([nVec, nDim], [nVec, cDim], [nVec, cDim])
         x = torch.randn(2, nVec, nDim).to(TheDevice)
-        y = cs(x)
+        y = _unwrap(cs(_wrap_tensor(cs, x)))
         self.assertEqual(list(y.shape), [2, nVec, cDim])
 
     def test_non_ergodic_forward_shape(self):
@@ -997,7 +1028,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         nVec, nDim, cDim = 8, 1, 1
         cs = ConceptualSpace([nVec, nDim], [nVec, cDim], [nVec, cDim])
         x = torch.randn(2, nVec, nDim).to(TheDevice)
-        y = cs(x)
+        y = _unwrap(cs(_wrap_tensor(cs, x)))
         self.assertEqual(list(y.shape), [2, nVec, cDim])
 
     def test_ergodic_flag_stored(self):
@@ -1015,7 +1046,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         nVec, nDim, cDim = 8, 1, 1
         cs = ConceptualSpace([nVec, nDim], [nVec, cDim], [nVec, cDim])
         y = torch.randn(2, nVec, cDim).to(TheDevice)
-        x = cs.reverse(y)
+        x = _unwrap(cs.reverse(_wrap_tensor(cs, y)))
         self.assertEqual(list(x.shape), [2, nVec, nDim])
 
     def test_ergodic_exposes_params(self):
@@ -1035,7 +1066,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         cs = ConceptualSpace([nIn, 8], [nOut, 8], [nOut, 8])
         inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("InputSpace", "nDim"))
         x = torch.randn(2, nIn, inEmb).to(TheDevice)
-        y = cs(x)
+        y = _unwrap(cs(_wrap_tensor(cs, x)))
         outEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("ConceptualSpace", "nDim"))
         self.assertEqual(list(y.shape), [2, nOut, outEmb])
 
@@ -1049,7 +1080,7 @@ class TestInputSpaceUnquantized(unittest.TestCase):
         nIn, nDim = 8, 1
         inp = InputSpace([nIn, nDim], [nIn, nDim], [nIn, nDim])
         x = torch.randn(2, nIn, nDim).to(TheDevice)
-        y = inp(x)
+        y = _unwrap(inp(x))
         self.assertEqual(list(y.shape), [2, nIn, nDim])
 
 
@@ -1063,7 +1094,7 @@ class TestOutputSpaceZeroObjectSize(unittest.TestCase):
         nIn, nOut = 4, 3
         os_ = OutputSpace([nIn, 1], [nOut, 1], [nOut, 1])
         x = torch.randn(2, nIn, 1).to(TheDevice)
-        y = os_(x)
+        y = _unwrap(os_(_wrap_tensor(os_, x)))
         self.assertEqual(list(y.shape), [2, nOut, 1])
 
     def test_reverse_shape_zero_object_size(self):
@@ -1073,7 +1104,7 @@ class TestOutputSpaceZeroObjectSize(unittest.TestCase):
         nIn, nOut = 4, 3
         os_ = OutputSpace([nIn, 1], [nOut, 1], [nOut, 1])
         y = torch.randn(2, nOut, 1).to(TheDevice)
-        x = os_.reverse(y)
+        x = _unwrap(os_.reverse(_wrap_tensor(os_, y)))
         self.assertEqual(list(x.shape), [2, nIn, 1])
 
 
@@ -1216,7 +1247,8 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         self._make_text_data()
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _obj = _obj_size("InputSpace")
+        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         return inp, TheData
 
@@ -1250,8 +1282,8 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         batch_size = 2
         inputBatch = data.train_input[0:batch_size]
         inputTensor = inp.prepInput(inputBatch)
-        output = inp.forward(inputTensor)
-        _, embSize = inp.getEmbeddedIO()
+        output = _unwrap(inp.forward(inputTensor))
+        embSize = inp.subspace.getEncodedOutputSize()
         self.assertEqual(list(output.shape), [batch_size, inp.outputShape[0], embSize])
 
     def test_doc_spans_store_token_offsets(self):
@@ -1276,7 +1308,7 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         inputBatch = data.train_input[0:batch_size]
         inputTensor = inp.prepInput(inputBatch)
         inp.subspace.whereEncoding.p = 0
-        output = inp.forward(inputTensor)
+        output = _unwrap(inp.forward(inputTensor))
         # With nWhere > 0, the reserved encoding dims should be non-zero
         # (ObjectEncoding.forward stamps sin/cos into the last objectSize dims)
         embSize = output.shape[-1]
@@ -1298,7 +1330,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         nIn, nOut = 4, 3
         os_ = OutputSpace([nIn, 1], [nOut, 1], [nOut, 1])
         x = torch.randn(2, nIn, 1).to(TheDevice)
-        y = os_(x)
+        y = _unwrap(os_(_wrap_tensor(os_, x)))
         self.assertEqual(list(y.shape), [2, nOut, 1])
         # text_mode should be False for numeric data
         self.assertFalse(os_.text_mode)
@@ -1322,12 +1354,14 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
                               flatten=True)
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _obj = _obj_size("InputSpace")
+        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         nOut = 8
         _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = TheXMLConfig.space("OutputSpace", "nDim")
-        os_ = OutputSpace([nInput, _sdim], [nOut, _odim], [nOut, _odim], vectors=inp.vectors())
+        _obj_sym = _obj_size("SymbolicSpace")
+        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vectors())
         self.assertTrue(os_.text_mode)
 
     def test_reconstruct_from_known_vectors(self):
@@ -1342,12 +1376,14 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
                               flatten=True)
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _obj = _obj_size("InputSpace")
+        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         nOut = 4
         _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = TheXMLConfig.space("OutputSpace", "nDim")
-        os_ = OutputSpace([nInput, _sdim], [nOut, _odim], [nOut, _odim], vectors=inp.vectors())
+        _obj_sym = _obj_size("SymbolicSpace")
+        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vectors())
 
         # Build synthetic vectors from known codebook entries with known nWhere
         codebook = inp.vectors().W.detach()
@@ -1382,12 +1418,14 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
                               flatten=True)
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _obj = _obj_size("InputSpace")
+        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         nOut = 4
         _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = TheXMLConfig.space("OutputSpace", "nDim")
-        os_ = OutputSpace([nInput, _sdim], [nOut, _odim], [nOut, _odim], vectors=inp.vectors())
+        _obj_sym = _obj_size("SymbolicSpace")
+        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vectors())
 
         # Build vectors with nWhere = 0 (all zeros)
         codebook = inp.vectors().W.detach()
@@ -1421,12 +1459,14 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
                               flatten=True)
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _obj = _obj_size("InputSpace")
+        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         nOut = 4
         _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = TheXMLConfig.space("OutputSpace", "nDim")
-        os_ = OutputSpace([nInput, _sdim], [nOut, _odim], [nOut, _odim], vectors=inp.vectors())
+        _obj_sym = _obj_size("SymbolicSpace")
+        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vectors())
 
         # Build synthetic vectors with nWhere at known positions
         codebook = inp.vectors().W.detach()
@@ -1464,18 +1504,20 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
                               flatten=True, reconstruct="FULL")
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _obj = _obj_size("InputSpace")
+        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         nOut = 4
         _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = TheXMLConfig.space("OutputSpace", "nDim")
-        os_ = OutputSpace([nInput, _sdim], [nOut, _odim], [nOut, _odim], vectors=inp.vectors())
+        _obj_sym = _obj_size("SymbolicSpace")
+        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vectors())
         inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("SymbolicSpace", "nDim"))
         x = torch.randn(2, nInput, inEmb).to(TheDevice)
-        y = os_(x)
-        self.assertEqual(list(y.shape), [2, nOut, TheXMLConfig.space("OutputSpace", "nDim")])
+        y = os_(_wrap_tensor(os_, x))
+        self.assertEqual(list(_unwrap(y).shape), [2, nOut, TheXMLConfig.space("OutputSpace", "nDim")])
         # Reverse path should also be unchanged
-        rev = os_.reverse(y)
+        rev = _unwrap(os_.reverse(y))
         self.assertEqual(list(rev.shape), [2, nInput, inEmb])
 
 
@@ -1492,7 +1534,8 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         TheData.load("xor")
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _obj = _obj_size("InputSpace")
+        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         return inp, TheData
 
@@ -1574,7 +1617,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         inp = InputSpace([nIn, nDim], [nIn, nDim], [nIn, nDim])
         x = torch.randn(2, nIn, nDim).to(TheDevice)
         y = inp.forward(x)
-        result = inp.reverse(y)
+        result = _unwrap(inp.reverse(y))
         # Numeric path returns tensor, not text
         self.assertIsInstance(result, (torch.Tensor, list))
 
@@ -1590,7 +1633,8 @@ class TestLexerConfig(unittest.TestCase):
         _populate_test_config(inputDim=1, nInput=nInput)
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _obj = _obj_size("InputSpace")
+        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         tokens = inp.vectors()._token_stream("test input")
         self.assertEqual(tokens[0][0], "test")
@@ -1603,7 +1647,8 @@ class TestLexerConfig(unittest.TestCase):
         _populate_test_config(inputDim=1, nInput=nInput)
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _obj = _obj_size("InputSpace")
+        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         self.assertIsInstance(inp.vectors(), Embedding)
 
@@ -1841,10 +1886,11 @@ class TestXorForwardPass(unittest.TestCase):
         TheData.load("xor")
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _obj = _obj_size("InputSpace")
+        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         inputTensor = inp.prepInput(TheData.train_input[:2])
-        result = inp.forward(inputTensor)
+        result = _unwrap(inp.forward(inputTensor))
         self.assertEqual(result.shape[0], 2)  # batch size
         self.assertEqual(result.shape[1], inp.outputShape[0])
 
@@ -2260,12 +2306,13 @@ class TestExpandMasked(unittest.TestCase):
         nInput = 8
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        self.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _obj = _obj_size("InputSpace")
+        self.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                               model_type="embedding")
         # Run a forward pass to get a real embedded tensor
         inputBatch = TheData.train_input[0:1]
         inputTensor = self.inp.prepInput(inputBatch)
-        self.embedded = self.inp.forward(inputTensor)  # [1, nVec, embSize]
+        self.embedded = _unwrap(self.inp.forward(inputTensor))  # [1, nVec, embSize]
         self.sentence = "hello world"  # matches XOR training data
         self.embSize = self.embedded.shape[-1]
         self.nVec = self.embedded.shape[1]
@@ -2350,12 +2397,14 @@ class TestExpandMaskedTargets(unittest.TestCase):
         nInput = 8
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        self.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _obj = _obj_size("InputSpace")
+        self.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                               model_type="embedding")
         self.emb = self.inp.subspace.vectors()
 
-        # Build a minimal OutputSpace
-        self.out = OutputSpace([8, 1], [4, 1], [4, 1])
+        # Build a minimal OutputSpace — input carries symbol objectSize
+        _obj_sym = _obj_size("SymbolicSpace")
+        self.out = OutputSpace([8, 1 + _obj_sym], [4, 1], [4, 1])
 
     def _make_embedded(self, n_words, emb_size=None):
         """Create a synthetic [1, n_words, embSize] embedded sentence."""
@@ -2458,11 +2507,12 @@ class TestRARLM(unittest.TestCase):
         nInput = 8
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        self.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _obj = _obj_size("InputSpace")
+        self.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                               model_type="embedding")
         inputBatch = TheData.train_input[0:1]
         inputTensor = self.inp.prepInput(inputBatch)
-        self.embedded = self.inp.forward(inputTensor)
+        self.embedded = _unwrap(self.inp.forward(inputTensor))
         self.embSize = self.embedded.shape[-1]
 
     def test_rarlm_masks_from_end(self):
@@ -2516,11 +2566,13 @@ class TestRARLMTargets(unittest.TestCase):
         nInput = 8
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        self.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _obj = _obj_size("InputSpace")
+        self.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                               model_type="embedding")
         self.emb = self.inp.subspace.vectors()
 
-        self.out = OutputSpace([8, 1], [4, 1], [4, 1])
+        _obj_sym = _obj_size("SymbolicSpace")
+        self.out = OutputSpace([8, 1 + _obj_sym], [4, 1], [4, 1])
 
     def test_rarlm_targets_reversed(self):
         """RARLM targets are MLM targets in reverse order."""
@@ -2917,6 +2969,147 @@ class TestXorExactErgodic(unittest.TestCase):
                     f"Loss should converge under ergodic=true, got {loss_val:.4f}")
         finally:
             os.unlink(tmp.name)
+
+
+# ---------------------------------------------------------------------------
+# Subspace Activation tests
+# ---------------------------------------------------------------------------
+class TestSubspaceActivation(unittest.TestCase):
+    """Tests for the SubSpace.Materialize(k) and activation machinery."""
+
+    def test_set_get_activation(self):
+        """set_activation / get_activation round-trip."""
+        from Space import SubSpace
+        ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        activation = torch.randn(2, 4).to(TheDevice)
+        ss.set_activation(activation)
+        got = ss.get_activation()
+        self.assertTrue(torch.equal(activation, got))
+
+    def test_set_activation_squeeze(self):
+        """set_activation accepts [batch, n, 1] and squeezes."""
+        from Space import SubSpace
+        ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        activation = torch.randn(2, 4, 1).to(TheDevice)
+        ss.set_activation(activation)
+        got = ss.get_activation()
+        self.assertEqual(got.shape, (2, 4))
+
+    def test_materialize_topk(self):
+        """Materialize(k) returns top-k vectors by activation."""
+        from Space import SubSpace
+        ss = SubSpace(inputShape=[8, 3], outputShape=[8, 3])
+        # Create a known tensor: 8 vectors of dim 3
+        x = torch.arange(24, dtype=torch.float32).reshape(1, 8, 3).to(TheDevice)
+        ss.set_materialized(x)
+        # Set activation: highest at indices 7, 5, 3, 1
+        activation = torch.tensor([[0.1, 0.8, 0.2, 0.7, 0.3, 0.9, 0.4, 1.0]]).to(TheDevice)
+        ss.set_activation(activation)
+        selected = ss.Materialize(k=4)
+        self.assertEqual(selected.shape, (1, 4, 3))
+        # The top-4 by activation are indices 7(1.0), 5(0.9), 1(0.8), 3(0.7)
+        expected_indices = [7, 5, 1, 3]
+        for i, idx in enumerate(expected_indices):
+            self.assertTrue(torch.allclose(selected[0, i], x[0, idx]),
+                            f"Position {i}: expected vector at index {idx}")
+
+    def test_materialize_k_none(self):
+        """Materialize(k=None) returns all vectors."""
+        from Space import SubSpace
+        ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        x = torch.randn(2, 4, 3).to(TheDevice)
+        ss.set_materialized(x)
+        activation = torch.randn(2, 4).to(TheDevice)
+        ss.set_activation(activation)
+        result = ss.Materialize(k=None)
+        self.assertTrue(torch.equal(result, x))
+
+    def test_materialize_k_geq_nspace(self):
+        """Materialize(k >= nSpace) returns all vectors."""
+        from Space import SubSpace
+        ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        x = torch.randn(2, 4, 3).to(TheDevice)
+        ss.set_materialized(x)
+        activation = torch.randn(2, 4).to(TheDevice)
+        ss.set_activation(activation)
+        result = ss.Materialize(k=4)
+        self.assertTrue(torch.equal(result, x))
+        result2 = ss.Materialize(k=10)
+        self.assertTrue(torch.equal(result2, x))
+
+
+class TestSubspaceActivationPipeline(unittest.TestCase):
+    """Full pipeline test with useSubspaceActivation=true."""
+
+    def test_simple_model_subspace_activation(self):
+        """BasicModel with useSubspaceActivation=True produces valid output shapes."""
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
+            perceptPassThrough=True, symbolPassThrough=True, flatten=True,
+            useSubspaceActivation=True)
+        from BasicModel import BasicModel
+        model = BasicModel()
+        model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
+        x = torch.randn(2, 28*28, 1).to(TheDevice)
+        _, end_state, out = model.forward(x)
+        self.assertEqual(out.shape[0], 2)  # batch size preserved
+
+    def test_subspace_agrees_with_legacy(self):
+        """Subspace activation path produces same output shape as legacy."""
+        # Legacy run
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
+            perceptPassThrough=True, symbolPassThrough=True, flatten=True,
+            useSubspaceActivation=False)
+        from BasicModel import BasicModel
+        model_legacy = BasicModel()
+        model_legacy.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
+        x = torch.randn(2, 28*28, 1).to(TheDevice)
+        _, _, out_legacy = model_legacy.forward(x)
+
+        # Subspace run — copy weights from legacy
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
+            perceptPassThrough=True, symbolPassThrough=True, flatten=True,
+            useSubspaceActivation=True)
+        model_sub = BasicModel()
+        model_sub.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
+        model_sub.load_state_dict(model_legacy.state_dict())
+        _, _, out_sub = model_sub.forward(x)
+
+        self.assertEqual(out_legacy.shape, out_sub.shape,
+                         f"Shape mismatch: legacy {out_legacy.shape} vs subspace {out_sub.shape}")
+
+    def test_subspace_activation_stored(self):
+        """After forward with useSubspaceActivation, spaces have activations."""
+        _populate_test_config(
+            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
+            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
+            perceptPassThrough=True, symbolPassThrough=True, flatten=True,
+            useSubspaceActivation=True)
+        from BasicModel import BasicModel
+        model = BasicModel()
+        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
+        x = torch.randn(2, 16, 1).to(TheDevice)
+        model.forward(x)
+
+        # Check that activations are stored on spaces that compute them.
+        # InputSpace (entry point) and passthrough spaces don't set activation —
+        # they forward the upstream SubSpace unchanged.
+        from BasicModel import InputSpace
+        for space in model.spaces:
+            if isinstance(space, InputSpace):
+                continue
+            if getattr(space, 'passThrough', False):
+                continue
+            activation = space.subspace.get_activation()
+            self.assertIsNotNone(activation,
+                                 f"{space.name} should have activation after forward")
+            self.assertEqual(activation.shape[0], 2,
+                             f"{space.name} activation batch dim wrong")
 
 
 if __name__ == "__main__":

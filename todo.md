@@ -1,24 +1,11 @@
 # TODO
 
 ## use subspace activation
-* migrate all forward/reverse methods to pass subspaces (and remove the forward_subspace() method)
-
-* For all spaces:
-* call Materialize() # extract the input vector in a suitable form (select specified fields: activation/what/where/when)
-* assert [nBatch, nInput, nInputDims]
-* if flatten
-  * flatten
-* do Space-specific processing
-* compute the (scalar) subspace activation
-* if not flatten
-  * assert nShape >= nOutput
-  * optionally apply Attention
-  * do Space-specific processing
-  * where nShape != nOutput, select the nOutput most active for propogation (creating [nBatch, nOutput, ?]) creating a new subspace
-  * if quantized=true, select the nearest vectors from the Codebook
-* if flatten
-  * unflatten
-* assert [nBatch, nOutput, nOutputDims]
+* introduce an objectActivation which is used when the subspace data is stored in object
+* create methods 
+  * setActivation(whatA, whereA, whenA) to store a cross-product activation
+  * setObjectActivation(objectA) # compute the (scalar) subspace activation and assign to the subspace
+  * materialize() converts these to an objectA and then returns object[objectA] #select at most nOutput entries zero the other activations
 
 ## symbol processing
 * symbols map bijectively to concepts

@@ -34,8 +34,8 @@
     <nDim>10</nDim>
     <nVectors>6</nVectors>
     <flatten>true</flatten>
-    <nWhere>false</nWhere>
-    <nWhen>false</nWhen>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
   </InputSpace>
 
   <!-- PerceptualSpace: invertible+reshape.
