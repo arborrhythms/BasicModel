@@ -36,8 +36,8 @@ class LogicalFunctionNet(Layer):
         self.nInput  = nInput
         self.nHidden = nHidden
         self.nOutput = nOutput
-        self.hidden  = PiLayer(nInput, nHidden, permuteInput=True)
-        self.output  = SigmaLayer(nHidden, nOutput, permuteInput=True)
+        self.hidden  = PiLayer(nInput, nHidden)
+        self.output  = SigmaLayer(nHidden, nOutput)
 
         # VQ layer is instantiated but currently unused (see forward()).
         self.vq = VQLayer(

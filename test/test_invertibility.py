@@ -154,7 +154,7 @@ class TestLinearLayerIdentity(unittest.TestCase):
 class TestInvertibleSigmaLayer(unittest.TestCase):
     def _check(self, nIn, nOut, naive, tol):
         torch.manual_seed(42)
-        layer = SigmaLayer(nIn, nOut, naive=naive, permuteInput=False, invertible=True)
+        layer = SigmaLayer(nIn, nOut, naive=naive, invertible=True)
         layer.set_sigma(0)
         x = torch.randn(2, 3, nIn).to(TheDevice)
         y = layer.forward(x)
@@ -170,48 +170,41 @@ class TestInvertibleSigmaLayer(unittest.TestCase):
     def test_square(self):           self._check(4, 4, False, 1e-3)
     def test_contract(self):         self._check(8, 5, False, 10.0)
 
-    def _check_permute(self, naive):
+    def _check_3d(self, naive):
         nIn, nOut, seqLen = 5, 7, 3
         torch.manual_seed(42)
-        layer = SigmaLayer(nIn, nOut, naive=naive, permuteInput=True, invertible=True)
+        layer = SigmaLayer(nIn, nOut, naive=naive, invertible=True)
         layer.set_sigma(0)
-        x = torch.randn(2, nIn, seqLen).to(TheDevice)
+        x = torch.randn(2, seqLen, nIn).to(TheDevice)
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec)
         tol = 1e-2 if naive else 1e-3  # pinv less precise than SVD-factored inverse
         self.assertLess(err, tol,
-                        f"perm=True, naive={naive}: err={err:.2e}")
+                        f"3d, naive={naive}: err={err:.2e}")
 
-    def test_permute_naive(self):  self._check_permute(True)
-    def test_permute(self):        self._check_permute(False)
+    def test_3d_naive(self):  self._check_3d(True)
+    def test_3d(self):        self._check_3d(False)
 
 
 class TestInvertiblePiLayer3D(unittest.TestCase):
-    def _check(self, naive, perm, bias):
+    def _check(self, naive, bias):
         nIn, nOut = 4, 8
         torch.manual_seed(42)
         layer = PiLayer(nIn, nOut, naive=naive,
-                        permuteInput=perm, hasBias=bias, invertible=True)
+                        hasBias=bias, invertible=True)
         layer.set_sigma(0)
-        if perm:
-            x = torch.randn(3, nIn, 5).to(TheDevice)
-        else:
-            x = torch.randn(3, 5, nIn).to(TheDevice)
+        x = torch.randn(3, 5, nIn).to(TheDevice)
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec, rel=True)
         self.assertLess(err, 0.1,
-                        f"naive={naive}, perm={perm}, bias={bias}: rel err={err:.2e}")
+                        f"naive={naive}, bias={bias}: rel err={err:.2e}")
 
-    def test_naive_perm_bias(self):       self._check(True, True, True)
-    def test_naive_perm_nobias(self):     self._check(True, True, False)
-    def test_naive_noperm_bias(self):     self._check(True, False, True)
-    def test_naive_noperm_nobias(self):   self._check(True, False, False)
-    def test_perm_bias(self):             self._check(False, True, True)
-    def test_perm_nobias(self):           self._check(False, True, False)
-    def test_noperm_bias(self):           self._check(False, False, True)
-    def test_noperm_nobias(self):         self._check(False, False, False)
+    def test_naive_bias(self):     self._check(True, True)
+    def test_naive_nobias(self):   self._check(True, False)
+    def test_bias(self):           self._check(False, True)
+    def test_nobias(self):         self._check(False, False)
 
 
 class TestInvertiblePiLayer2D(unittest.TestCase):
@@ -219,7 +212,7 @@ class TestInvertiblePiLayer2D(unittest.TestCase):
         nIn, nOut = 4, 8
         torch.manual_seed(42)
         layer = PiLayer(nIn, nOut, naive=naive,
-                        permuteInput=False, hasBias=bias, invertible=True)
+                        hasBias=bias, invertible=True)
         layer.set_sigma(0)
         x = torch.randn(6, nIn).to(TheDevice)
         y = layer.forward(x)
@@ -279,28 +272,28 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
         x = torch.randn(3, 5, nIn).to(TheDevice)
         with torch.no_grad():
             y = layer.forward(x)
-            self.assertEqual(y.shape, (3, 10, nOut))
+            self.assertEqual(y.shape, (3, 2 * 5, nOut))
             x_rec = layer.reverse(y)
             self.assertEqual(x_rec.shape, x.shape)
         err = _reconstruction_error(x, x_rec, rel=True)
         self.assertLess(err, 1e-3, f"3D roundtrip rel err={err:.2e}")
 
-    def test_3d_permuted(self):
-        """3D with permuteInput=True."""
+    def test_3d(self):
+        """3D (batch, seq, nInput) roundtrip."""
         torch.manual_seed(42)
         nIn, nOut = 4, 8
-        layer = PiLayer(nIn, nOut, naive=False, permuteInput=True, hasBias=True, invertible=True)
+        layer = PiLayer(nIn, nOut, naive=False, hasBias=True, invertible=True)
         layer.train(False)
-        x = torch.randn(3, nIn, 5).to(TheDevice)
+        x = torch.randn(3, 5, nIn).to(TheDevice)
         with torch.no_grad():
             y = layer.forward(x)
             x_rec = layer.reverse(y)
             self.assertEqual(x_rec.shape, x.shape)
         err = _reconstruction_error(x, x_rec, rel=True)
-        self.assertLess(err, 0.1, f"3D permuted rel err={err:.2e}")
+        self.assertLess(err, 0.1, f"3D rel err={err:.2e}")
 
     def test_ergodic_roundtrip(self):
-        """Non-naive with ergodic noise uses compute_Winverse."""
+        """Non-naive with ergodic noise: reverse uses self.layer.reverse."""
         torch.manual_seed(42)
         nIn, nOut = 4, 8
         layer = PiLayer(nIn, nOut, naive=False, ergodic=True, invertible=True)
@@ -399,12 +392,12 @@ class TestPairedPiTraining(unittest.TestCase):
     def test_paired_roundtrip(self):
         torch.manual_seed(42)
         nIn, nOut = 4, 6
-        pi_fwd = PiLayer(nIn, nOut, naive=True, permuteInput=True, ergodic=False, invertible=True)
-        pi_rev = PiLayer(nIn, nOut, naive=True, permuteInput=True, ergodic=False, invertible=True)
+        pi_fwd = PiLayer(nIn, nOut, naive=True, ergodic=False, invertible=True)
+        pi_rev = PiLayer(nIn, nOut, naive=True, ergodic=False, invertible=True)
         criterion = nn.MSELoss()
         optimizer = optim.Adam(
             list(pi_fwd.parameters()) + list(pi_rev.parameters()), lr=0.01)
-        x_data = torch.randn(8, nIn, 5).to(TheDevice)
+        x_data = torch.randn(8, 5, nIn).to(TheDevice)
         for _ in range(500):
             optimizer.zero_grad()
             y = pi_fwd(x_data)

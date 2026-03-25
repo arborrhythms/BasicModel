@@ -64,11 +64,10 @@ class Layer(nn.Module, metaclass=_AutoDevice):
     so that the ergodic interface (set_sigma, observe_sigma, etc.) and
     paramUpdate are automatically forwarded to them.
     """
-    def __init__(self, nInput, nOutput, permuteInput=False):
+    def __init__(self, nInput, nOutput):
         super(Layer, self).__init__()
         self.nInput       = nInput
         self.nOutput      = nOutput
-        self.permuteInput = permuteInput
         self.batch        = 0
         self.layers       = []  # child layers; populate in subclass __init__
 
@@ -76,15 +75,6 @@ class Layer(nn.Module, metaclass=_AutoDevice):
         """Freeze all params (learn=False) or unfreeze them (learn=True)."""
         for param in self.parameters():
             param.requires_grad = not learn
-    def permute(self, x):
-        self.batch = x.shape[0]
-        if self.permuteInput:
-            x = torch.permute(x, (0, 2, 1))
-        return x
-    def unpermute(self, y):
-        if self.permuteInput:
-            y = torch.permute(y, (0,2,1))
-        return y
     def getParameters(self):
         params = [p for n, p in self.named_parameters()]
         return params
@@ -139,8 +129,8 @@ class ErgodicLayer(Layer):
     ``ergodic=False`` (default): sigma tracking is still wired but
     sigma_to_ergodic / paramUpdate are no-ops, keeping bias=1, var=0.
     """
-    def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False):
-        super().__init__(nInput, nOutput, permuteInput)
+    def __init__(self, nInput, nOutput, ergodic=False):
+        super().__init__(nInput, nOutput)
         self.ergodic = ergodic
 
         # --- Scalar explore/exploit (broadcasts over any weight shape) -----
@@ -236,7 +226,7 @@ class LinearLayer(ErgodicLayer):
             self.W = nn.Parameter(torch.eye(self.nInput, self.nOutput))
         else:
             self.W = nn.Parameter(torch.randn(self.nInput, self.nOutput))
-        self.b = nn.Parameter(torch.zeros(1, nOutput))
+        self.biasWeight = nn.Parameter(torch.zeros(1, nOutput))
         if ergodic:
             self.register_buffer('noise', torch.randn(self.nInput, self.nOutput))
             self.register_buffer('bNoise', torch.randn(1, nOutput))
@@ -247,7 +237,13 @@ class LinearLayer(ErgodicLayer):
         """Draw fresh Gaussian noise matching W shape/device. No-op if not ergodic."""
         if self.ergodic:
             self.noise  = sample_noise(self.W)
-            self.bNoise = sample_noise(self.b)
+            self.bNoise = sample_noise(self.biasWeight)
+
+    def compute_W_current(self):
+        """Effective W for outer-product use (respects ergodic noise if active)."""
+        if self.ergodic:
+            return self.bias * self.W + self.var * self.noise
+        return self.W
 
     def forward(self, x):
         if self.ergodic:
@@ -255,11 +251,11 @@ class LinearLayer(ErgodicLayer):
             b, v = self.bias, self.var
             output = x @ (b * self.W + v * self.noise)
             if self.hasBias:
-                output += b * self.b + v * self.bNoise
+                output += b * self.biasWeight + v * self.bNoise
         else:
             output = x @ self.W
             if self.hasBias:
-                output += self.b
+                output += self.biasWeight
         return output
 
     @staticmethod
@@ -414,12 +410,12 @@ class InvertibleLinearLayer(ErgodicLayer):
         if not self.ergodic:
             return self.compute_Winverse()
         L = self._L_eff()
+        d = self._d_eff()
         U = self._U_eff()
         I_in  = torch.eye(self.nInput,  device=L.device, dtype=L.dtype)
         I_out = torch.eye(self.nOutput, device=U.device, dtype=U.dtype)
         L_inv = torch.linalg.solve_triangular(L, I_in,  upper=False, unitriangular=True)
         U_inv = torch.linalg.solve_triangular(U, I_out, upper=True,  unitriangular=True)
-        d = self._d_eff()
         D_inv = torch.zeros(self.nOutput, self.nInput, device=d.device, dtype=d.dtype)
         for i in range(self.rank):
             D_inv[i, i] = 1.0 / d[i]
@@ -478,24 +474,6 @@ class InvertibleLinearLayer(ErgodicLayer):
         """Non-ergodic sequential reverse using clean L, d_effective, U."""
         return self._solve_ldu(y, self._L(), self._d_effective(), self._U())
 
-    def _compute_forward(self, x):
-        """Non-ergodic forward: naive=True materialises W; naive=False uses solves."""
-        if self.naive:
-            W = self.compute_W()
-            orig_shape = x.shape
-            out_shape = list(orig_shape); out_shape[-1] = self.nOutput
-            return (x.reshape(-1, self.nInput) @ W).reshape(out_shape)
-        return self._apply_forward(x)
-
-    def _compute_reverse(self, y):
-        """Non-ergodic reverse: naive=True materialises W_inv; naive=False uses solves."""
-        if self.naive:
-            W_inv = self.compute_Winverse()
-            orig_shape = y.shape
-            out_shape = list(orig_shape); out_shape[-1] = self.nInput
-            return (y.reshape(-1, self.nOutput) @ W_inv).reshape(out_shape)
-        return self._solve_reverse(y)
-
     # --- Forward / Reverse ---
     def forward(self, x):
         """Apply the LDU transform with optional ergodic noise injection.
@@ -516,31 +494,20 @@ class InvertibleLinearLayer(ErgodicLayer):
         """
         if self.ergodic:
             self.resample_noise()
-            L_eff = self._L_eff()
-            U_eff = self._U_eff()
-            d_eff = self._d_eff()
-            if self.naive:
-                D_eff = torch.zeros(self.nInput, self.nOutput,
-                                    device=d_eff.device, dtype=d_eff.dtype)
-                for i in range(self.rank):
-                    D_eff[i, i] = d_eff[i]
-                W_eff = L_eff @ D_eff @ U_eff
-                orig_shape = x.shape
-                out_shape = list(orig_shape); out_shape[-1] = self.nOutput
-                y = (x.reshape(-1, self.nInput) @ W_eff).reshape(out_shape)
-            else:
-                y = self._apply_ldu(x, L_eff, d_eff, U_eff)
-            if self.hasBias:
-                y = y + self.bias * self.biasWeight + self.var * self.biasNoise
+        if self.naive:
+            W = self.compute_W_current()
+            orig_shape = x.shape
+            out_shape = list(orig_shape); out_shape[-1] = self.nOutput
+            y = (x.reshape(-1, self.nInput) @ W).reshape(out_shape)
         else:
-            if self.naive:
-                W = self.compute_W()
-                orig_shape = x.shape
-                out_shape = list(orig_shape); out_shape[-1] = self.nOutput
-                y = (x.reshape(-1, self.nInput) @ W).reshape(out_shape)
+            if self.ergodic:
+                y = self._apply_ldu(x, self._L_eff(), self._d_eff(), self._U_eff())
             else:
                 y = self._apply_forward(x)
-            if self.hasBias:
+        if self.hasBias:
+            if self.ergodic:
+                y = y + self.bias * self.biasWeight + self.var * self.biasNoise
+            else:
                 y = y + self.biasWeight
         return y
 
@@ -559,34 +526,24 @@ class InvertibleLinearLayer(ErgodicLayer):
           naive=True: materialise W_inv = U_inv D_inv L_inv, dense matmul.
           naive=False: sequential triangular solves.
         """
-        if self.ergodic:
-            if self.hasBias:
+        if self.hasBias:
+            if self.ergodic:
                 y = y - (self.bias * self.biasWeight + self.var * self.biasNoise)
-            L_eff = self._L_eff()
-            U_eff = self._U_eff()
-            d_eff = self._d_eff()
-            if self.naive:
-                D_eff = torch.zeros(self.nInput, self.nOutput,
-                                    device=d_eff.device, dtype=d_eff.dtype)
-                for i in range(self.rank):
-                    D_eff[i, i] = d_eff[i]
-                W_eff = L_eff @ D_eff @ U_eff
-                orig_shape = y.shape
-                out_shape = list(orig_shape); out_shape[-1] = self.nInput
-                result = (y.reshape(-1, self.nOutput) @ torch.linalg.pinv(W_eff)).reshape(out_shape)
             else:
-                result = self._solve_ldu(y, L_eff, d_eff, U_eff)
-            self.resample_noise()
-            return result
-        else:
-            if self.hasBias:
                 y = y - self.biasWeight
-            if self.naive:
-                W_inv = self.compute_Winverse()
-                orig_shape = y.shape
-                out_shape = list(orig_shape); out_shape[-1] = self.nInput
-                return (y.reshape(-1, self.nOutput) @ W_inv).reshape(out_shape)
-            return self._solve_reverse(y)
+        if self.naive:
+            W_inv = self.compute_Winverse_current()
+            orig_shape = y.shape
+            out_shape = list(orig_shape); out_shape[-1] = self.nInput
+            result = (y.reshape(-1, self.nOutput) @ W_inv).reshape(out_shape)
+        else:
+            if self.ergodic:
+                result = self._solve_ldu(y, self._L_eff(), self._d_eff(), self._U_eff())
+            else:
+                result = self._solve_reverse(y)
+        if self.ergodic:
+            self.resample_noise()
+        return result
 
     @staticmethod
     def test():
@@ -687,8 +644,8 @@ class SigmaLayer(Layer):
     All ergodic machinery lives in the inner layer; SigmaLayer dispatches
     the ergodic interface (set_sigma, observe_sigma, etc.) there.
     """
-    def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False, naive=True, invertible=False):
-        super().__init__(nInput, nOutput, permuteInput=permuteInput)
+    def __init__(self, nInput, nOutput, ergodic=False, naive=True, invertible=False):
+        super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.ergodic    = ergodic
         self.saturate   = True
@@ -705,24 +662,20 @@ class SigmaLayer(Layer):
     def var(self):  return self.layer.var
 
     def forward(self, x):
-        x = self.permute(x)
         y = self.layer.forward(x)
         if self.saturate:
             self.activation = torch.tanh(y)
             y = self.activation.clone()
-        y = self.unpermute(y)
         return y
 
     def reverse(self, y):
         """Invert tanh then apply W⁻¹. Requires invertible=True."""
-        y = self.permute(y)
         y = y.squeeze(0)
         if self.saturate:
             y = y.clamp(min=-1 + epsilon, max=1 - epsilon)
             self.activation = torch.atanh(y)
             y = self.activation.clone()
         x = self.layer.reverse(y)
-        x = self.unpermute(x)
         return x
 
     @staticmethod
@@ -759,45 +712,38 @@ class SigmaLayer(Layer):
         print("SigmaLayer tests passed.")
 
 class PiLayer(Layer):
-    """Linear layer with optional exact invertibility and ergodic noise.
+    """Multiplicative layer: y_j = prod_i (1 + tanh(w_ji * x_i)).
 
-    Multiplicative (product) layer.
+    Forward materializes W via the inner layer, computes the outer product
+    x.unsqueeze(-1) * W.unsqueeze(0) to keep per-input factors separate,
+    applies tanh element-wise, then products via exp(sum(log(...))).
+    No bias is applied inside the outer product.
 
     When ``invertible=False`` (default):
-        y_j = prod_i (1 + tanh(w_ji * x_i + b_j))
+        y_j = exp(sum_i log(1 + tanh(w_ji * x_i)))
 
-    When ``invertible=True``: outputs interleaved (log_y, log_z) pairs where
-        log_y_j = sum_i log(1 - tanh(w_ji * x_i))
-        log_z_j = sum_i log(1 + tanh(w_ji * x_i))
-    Reverse recovers x via gamma = 0.5*(log_z - log_y) = Wx → x = W⁺ @ gamma.
+    When ``invertible=True``: outputs interleaved (y, z) pairs where
+        y_j = exp(sum_i log(1 + tanh(w_ji * x_i)))
+        z_j = exp(sum_i log(1 - tanh(w_ji * x_i)))
+    Reverse: gamma_j = 0.5*(log y_j - log z_j) = sum_i x_i*w_ji = (x@W)_j,
+    then x = gamma @ W_inv using the materialized inverse.
 
-    The inner layer (LinearLayer or InvertibleLinearLayer) owns the weight
-    matrix and all ergodic machinery.  PiLayer reads W from the inner layer
-    and performs the product computation on top of it.
+    All ergodic machinery lives in the inner layer; PiLayer dispatches
+    the ergodic interface there via self.layers.
     """
-    def __init__(self, nInput, nOutput, permuteInput=False, ergodic=False, naive=True,
-                 invertible=False, hasBias=True):
-        super().__init__(nInput, nOutput, permuteInput=permuteInput)
-        self.ergodic    = ergodic
-        self.naive      = naive
+    def __init__(self, nInput, nOutput, ergodic=False, naive=True,
+                 invertible=False, hasBias=True, stable=False):
+        super().__init__(nInput, nOutput)
         self.invertible = invertible
-        self.hasBias    = hasBias
         self.saturate   = True
-        self.useEpsilon = True
-
+        self.stable     = stable
+        self.hasBias    = hasBias
         if invertible:
-            self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=False,
-                                               naive=naive, ergodic=ergodic)
+            self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
+                                               naive=naive, ergodic=ergodic, stable=stable)
         else:
-            self.layer = LinearLayer(nInput, nOutput, hasBias=False,
-                                     naive=naive, ergodic=ergodic)
-
-        # Bias term for the WX computation (separate from the inner layer's affine bias)
-        self.biasWeight = nn.Parameter(torch.zeros(1, 1, self.nOutput))
-        if invertible:
-            self.register_buffer('biasNoise', torch.randn(1, 1, self.nOutput))
-        else:
-            self.register_buffer('biasWeightNoise', torch.randn(1, nInput, nOutput))
+            self.layer = LinearLayer(nInput, nOutput, hasBias=hasBias,
+                                     naive=naive, ergodic=ergodic, stable=stable)
         self.layers.append(self.layer)
 
     @property
@@ -806,146 +752,116 @@ class PiLayer(Layer):
     def var(self):  return self.layer.var
 
     def resample_noise(self):
-        """Resample W noise (via inner layer) and bias noise buffers."""
         self.layer.resample_noise()
-        if self.invertible:
-            self.biasNoise = sample_noise(self.biasWeight, shape=(1, 1, self.nOutput))
-        else:
-            self.biasWeightNoise = sample_noise(self.biasWeight,
-                                                shape=(1, self.nInput, self.nOutput))
 
-    def _get_W(self):
-        """Return the effective weight matrix from the inner layer."""
-        if self.invertible:
-            return self.layer.compute_W_current()
-        # LinearLayer: read W directly (ergodic mixing already applied by resample+bias/var)
-        if self.ergodic:
-            return self.layer.bias * self.layer.W + self.layer.var * self.layer.noise
-        return self.layer.W
+    def _effective_bias(self):
+        """Bias to add to WX, or None if hasBias=False."""
+        if not self.hasBias:
+            return None
+        if self.layer.ergodic:
+            return self.layer.bias * self.layer.biasWeight + self.layer.var * self.layer.biasNoise
+        return self.layer.biasWeight
 
     def forward(self, x):
-        self._input_ndim = x.ndim
-        x = self.permute(x)
-        if self.ergodic:
+        if self.layer.ergodic:
             self.resample_noise()
-        W    = self._get_W()
+        W    = self.layer.compute_W_current()                         # [nIn, nOut]
+        x    = x.to(W.device)
         ndim = x.ndim
-        assert self.nInput == x.shape[-1], "Incorrect shape in PiLayer"
+        if ndim == 2:
+            WX  = x.unsqueeze(-1) * W.unsqueeze(0)      # [B, nIn, nOut]
+            dim = 1
+        else:
+            WX  = x.unsqueeze(-1) * W.unsqueeze(0).unsqueeze(0)  # [B, S, nIn, nOut]
+            dim = 2
+        b = self._effective_bias()
+        if b is not None:
+            WX = WX + b                                  # [nOut] broadcasts over nIn
+        if self.saturate:
+            t     = torch.tanh(WX)
+            one_p = 1 + t
+            if self.invertible:
+                one_m = 1 - t
+        else:
+            one_p = 1 + WX
+            if self.invertible:
+                one_m = 1 - WX
+        if self.stable:
+            one_p = one_p.clamp(min=epsilon)
+            if self.invertible:
+                one_m = one_m.clamp(min=epsilon)
+        y = torch.sum(torch.log(one_p), dim=dim)
         if self.invertible:
-            result = self._forward_invertible(x, W, ndim)
-        else:
-            result = self._forward_non_invertible(x, W, ndim)
-        return self.unpermute(result)
-
-    def _forward_non_invertible(self, x, W, ndim):
-        """y_j = prod_i (1 + tanh(w_ji * x_i + b_j)), computed in log-space."""
-        bias, var = (self.layer.bias, self.layer.var) if self.ergodic else (None, None)
-        if ndim == 2:
-            WX = x.unsqueeze(-1) * W.unsqueeze(0)          # (B, nIn, nOut)
-            if self.hasBias:
-                WX += bias * self.biasWeight + var * self.biasWeightNoise if self.ergodic else self.biasWeight
-            term = (1 + torch.tanh(WX)) if self.saturate else (1 + WX)
-            return torch.exp(torch.sum(torch.log(term.clamp(min=1e-8)), dim=1))
-        else:
-            WX = x.unsqueeze(-1) * W.unsqueeze(0)          # (B, S, nIn, nOut)
-            if self.hasBias:
-                if self.ergodic:
-                    WX += bias * self.biasWeight.unsqueeze(1) + var * self.biasWeightNoise.unsqueeze(1)
-                else:
-                    WX += self.biasWeight.unsqueeze(1)
-            if self.saturate:
-                term = 1 + torch.tanh(WX)
-                if self.useEpsilon:
-                    term = term + epsilon
+            z = torch.sum(torch.log(one_m), dim=dim)
+            if ndim == 2:
+                # [B, nOut] -> [B, nOut, 2] -> [B, 2*nOut]  (y0,z0,y1,z1,...)
+                result = torch.stack((y, z), dim=-1).flatten(-2)
             else:
-                term = 1 + WX
-            return torch.exp(torch.sum(torch.log(term.clamp(min=1e-8)), dim=2))
-
-    def _forward_invertible(self, x, W, ndim):
-        """Produce interleaved (log_y, log_z) pairs for exact reverse."""
-        bias, var = (self.layer.bias, self.layer.var) if self.ergodic else (None, None)
-        if ndim == 2:
-            WX = x.unsqueeze(-1) * W.unsqueeze(0)          # (B, nIn, nOut)
-            if self.hasBias:
-                if self.ergodic:
-                    WX = WX + (bias * self.biasWeight.squeeze(0) + var * self.biasNoise.squeeze(0))
-                else:
-                    WX = WX + self.biasWeight.squeeze(0)
-            sWX = torch.tanh(WX)
-            one_m, one_p = 1 - sWX, 1 + sWX
-            if self.useEpsilon:
-                one_m = one_m + epsilon; one_p = one_p + epsilon
-            log_y = torch.sum(torch.log(one_m), dim=1)
-            log_z = torch.sum(torch.log(one_p), dim=1)
-            return torch.flatten(torch.stack((log_y, log_z), dim=1), start_dim=1, end_dim=2)
+                # [B, S, nOut] -> [B, S, 2, nOut] -> [B, 2*S, nOut]  (y[s],z[s] adjacent)
+                result = torch.stack((y, z), dim=2).flatten(1, 2)
         else:
-            WX = x.unsqueeze(-1) * W.unsqueeze(0).unsqueeze(0)  # (B, S, nIn, nOut)
-            if self.hasBias:
-                if self.ergodic:
-                    WX = WX + (bias * self.biasWeight.unsqueeze(1) + var * self.biasNoise.unsqueeze(1))
-                else:
-                    WX = WX + self.biasWeight.unsqueeze(1)
-            sWX = torch.tanh(WX)
-            one_m, one_p = 1 - sWX, 1 + sWX
-            if self.useEpsilon:
-                one_m = one_m + epsilon; one_p = one_p + epsilon
-            log_y = torch.sum(torch.log(one_m), dim=2)
-            log_z = torch.sum(torch.log(one_p), dim=2)
-            return torch.flatten(torch.stack((log_y, log_z), dim=1), start_dim=1, end_dim=2)
+            result = y
+        return result
 
     def reverse(self, yz):
-        """Recover x from interleaved (log_y, log_z). Requires invertible=True."""
-        yz = self.permute(yz)
-        ndim = yz.ndim
-        n2 = yz.shape[1] // 2
-        uninterleaved = torch.unflatten(yz, 1, (2, n2))
+        """Recover x from interleaved (y, z) pairs. Requires invertible=True.
 
-        if ndim == 2:
-            log_y, log_z = uninterleaved[:, 0, :], uninterleaved[:, 1, :]
-            gamma = 0.5 * (log_z - log_y)
-            if self.hasBias:
-                bias_corr = (self.layer.bias * self.biasWeight.squeeze(0)
-                             + self.layer.var * self.biasNoise.squeeze(0)
-                             if self.ergodic else self.biasWeight.squeeze(0))
-                gamma = gamma - self.nInput * torch.sum(bias_corr, dim=0)
+        gamma_j = 0.5*(log y_j - log z_j) = sum_i x_i*w_ji = (x@W)_j.
+        x = gamma @ W_inv using the materialized inverse of current W.
+        """
+        if yz.ndim == 2:
+            # [B, 2*nOut] -> [B, nOut, 2] -> y, z each [B, nOut]
+            y, z = yz.unflatten(-1, (-1, 2)).unbind(-1)
         else:
-            log_y, log_z = uninterleaved[:, 0, :, :], uninterleaved[:, 1, :, :]
-            gamma = 0.5 * (log_z - log_y)
-            if self.hasBias:
-                if self.ergodic:
-                    gamma = gamma - self.nInput * torch.sum(
-                        self.layer.bias * self.biasWeight
-                        + self.layer.var * self.biasNoise, dim=1).unsqueeze(1)
-                else:
-                    gamma = gamma - self.nInput * torch.sum(self.biasWeight, dim=1).unsqueeze(1)
-
-        # Use exact LDU inverse (ergodic or clean) from the inner layer
-        W_pinv = self.layer.compute_Winverse_current()
-        if self.ergodic:
+            # [B, 2*S, nOut] -> [B, S, 2, nOut] -> y, z each [B, S, nOut]
+            y, z = yz.unflatten(1, (yz.shape[1] // 2, 2)).unbind(2)
+        W_inv = self.layer.compute_Winverse_current()   # [nOut, nIn]
+        gamma = 0.5 * (y - z)                           # [..., nOut]
+        b = self._effective_bias()
+        if b is not None:
+            gamma = gamma - self.nInput * b
+        gamma = gamma.to(W_inv.device)
+        x     = gamma @ W_inv
+        if self.layer.ergodic:
             self.resample_noise()
-        x = gamma @ W_pinv
-        return self.unpermute(x)
+        return x
 
     @staticmethod
     def test():
         nBatch, nInput, nOutput = 5, 3, 4
-        layer = PiLayer(nInput=nInput, nOutput=nOutput, permuteInput=True)
-        x = torch.randn((nBatch, nInput, 6))
+        layer = PiLayer(nInput=nInput, nOutput=nOutput)
+        device = next(layer.parameters()).device
+        x = torch.randn((nBatch, 6, nInput), device=device)
         layer.set_sigma(0.999)
         y = layer(x)
-        assert y.shape == (nBatch, nOutput, 6)
+        assert y.shape == (nBatch, 6, nOutput)
         print(f"Original input: {x}")
         print(f"After PiLayer: {y}")
 
-        nInput, nOutput = 3, 6
-        layer = PiLayer(nInput=nInput, nOutput=nOutput, naive=True, hasBias=True,
-                        permuteInput=True, invertible=True)
-        x = torch.randn(16, nInput, 5)
-        layer.set_sigma(0.0)
-        yz = layer.forward(x)
-        x_recon = layer.reverse(yz)
-        error = torch.norm(x - x_recon) / torch.norm(x)
-        assert error < 0.1, f"Invertible PiLayer reconstruction error too high: {error}"
+        def check_roundtrip(desc, **kwargs):
+            kw = dict(nInput=3, nOutput=6, invertible=True)
+            kw.update(kwargs)
+            layer = PiLayer(**kw)
+            device = next(layer.parameters()).device
+            nI = kw['nInput']
+            inputs = [('3D [B,S,nIn]', torch.randn(16, 5, nI, device=device)),
+                      ('2D [B,nIn]',   torch.randn(16, nI,    device=device))]
+            for tag, x in inputs:
+                layer.set_sigma(0.0)
+                y = layer.forward(x)
+                x_recon = layer.reverse(y)
+                error = torch.norm(x - x_recon) / torch.norm(x)
+                assert error < 1e-4, f"{desc} {tag}: reconstruction error {error:.2e}"
+            print(f"  {desc}: OK")
+
+        print("Invertible PiLayer roundtrip variations:")
+        check_roundtrip("naive=T hasBias=T", naive=True,  hasBias=True)
+        check_roundtrip("naive=T hasBias=F", naive=True,  hasBias=False)
+        check_roundtrip("naive=F hasBias=T", naive=False, hasBias=True)
+        check_roundtrip("naive=F hasBias=F", naive=False, hasBias=False)
+        check_roundtrip("square nIn=nOut=6", naive=True,  hasBias=False, nInput=6, nOutput=6)
+        check_roundtrip("ergodic naive=T hasBias=F", naive=True, hasBias=False, ergodic=True)
+        check_roundtrip("ergodic naive=T hasBias=T", naive=True, hasBias=True,  ergodic=True)
         print("PiLayer tests passed.")
 
     @staticmethod
@@ -954,8 +870,8 @@ class PiLayer(Layer):
             [[0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32).unsqueeze(2)
         Y = torch.tensor([[0], [1], [1], [0]], dtype=torch.float32).unsqueeze(2)
         nInput, nHidden, nOutput = 2, 3, 1
-        pi    = PiLayer(nInput, nHidden, permuteInput=True)
-        sigma = SigmaLayer(nHidden, nOutput, permuteInput=True)
+        pi    = PiLayer(nInput, nHidden)
+        sigma = SigmaLayer(nHidden, nOutput)
         criterion = nn.MSELoss()
         optimizer = optim.Adam(chain(pi.parameters(), sigma.parameters()), lr=0.01)
         sigma.set_sigma(0.9999); pi.set_sigma(0.9999)

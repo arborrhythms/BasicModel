@@ -23,11 +23,11 @@ class TestPiLayerForward(unittest.TestCase):
 
     def test_3d_input_shape(self):
         nBatch, nInput, nOutput, nSymbols = 5, 3, 4, 6
-        layer = PiLayer(nInput, nOutput, permuteInput=True)
+        layer = PiLayer(nInput, nOutput)
         layer.set_sigma(0)
-        x = torch.randn(nBatch, nInput, nSymbols).to(TheDevice)
+        x = torch.randn(nBatch, nSymbols, nInput).to(TheDevice)
         y = layer(x)
-        self.assertEqual(y.shape, (nBatch, nOutput, nSymbols))
+        self.assertEqual(y.shape, (nBatch, nSymbols, nOutput))
 
     def test_2d_input_shape(self):
         nBatch, nInput, nOutput = 4, 3, 5
@@ -86,11 +86,11 @@ class TestPiSigmaXOR(unittest.TestCase):
     def test_xor_convergence(self):
         X = torch.tensor([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32).to(TheDevice)
         Y = torch.tensor([[0], [1], [1], [0]], dtype=torch.float32).to(TheDevice)
-        X = X.unsqueeze(2)
-        Y = Y.unsqueeze(2)
+        X = X.unsqueeze(1)
+        Y = Y.unsqueeze(1)
 
-        pi = PiLayer(2, 3, permuteInput=True)
-        sigma = SigmaLayer(3, 1, permuteInput=True)
+        pi = PiLayer(2, 3)
+        sigma = SigmaLayer(3, 1)
         pi.set_sigma(0)
         sigma.set_sigma(0)
 
@@ -116,14 +116,14 @@ class TestLogicalFunctionNet(unittest.TestCase):
     def test_forward_shape(self):
         from SigmaPi import LogicalFunctionNet
         model = LogicalFunctionNet(2, 3, 1)
-        x = torch.randn(4, 2, 1).to(TheDevice)
+        x = torch.randn(4, 1, 2).to(TheDevice)
         y = model(x)
         self.assertEqual(y.shape, (4, 1, 1))
 
     def test_backward_no_error(self):
         from SigmaPi import LogicalFunctionNet
         model = LogicalFunctionNet(2, 3, 1)
-        x = torch.randn(4, 2, 1).to(TheDevice)
+        x = torch.randn(4, 1, 2).to(TheDevice)
         y = model(x)
         loss = y.sum()
         loss.backward()

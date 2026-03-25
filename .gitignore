@@ -8,3 +8,4 @@ output/*
 */.DS_Store
 .venv/
 data/fineweb/*
+bin/etc/__pycache__/*
