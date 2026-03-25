@@ -732,7 +732,7 @@ class PiLayer(Layer):
     the ergodic interface there via self.layers.
     """
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
-                 invertible=False, hasBias=True, stable=False):
+                 invertible=False, hasBias=True, stable=True):
         super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.saturate   = True
@@ -757,7 +757,7 @@ class PiLayer(Layer):
     def _effective_bias(self):
         """Bias to add to WX, or None if hasBias=False."""
         if not self.hasBias:
-            return None
+            return 0
         if self.layer.ergodic:
             return self.layer.bias * self.layer.biasWeight + self.layer.var * self.layer.biasNoise
         return self.layer.biasWeight
@@ -774,9 +774,6 @@ class PiLayer(Layer):
         else:
             WX  = x.unsqueeze(-1) * W.unsqueeze(0).unsqueeze(0)  # [B, S, nIn, nOut]
             dim = 2
-        b = self._effective_bias()
-        if b is not None:
-            WX = WX + b                                  # [nOut] broadcasts over nIn
         if self.saturate:
             t     = torch.tanh(WX)
             one_p = 1 + t
@@ -791,8 +788,11 @@ class PiLayer(Layer):
             if self.invertible:
                 one_m = one_m.clamp(min=epsilon)
         y = torch.sum(torch.log(one_p), dim=dim)
+        b = self._effective_bias()
+        y = y + b   # invertible: shift gamma = 0.5*(y-z) by +b, no nIn scaling
         if self.invertible:
             z = torch.sum(torch.log(one_m), dim=dim)
+            z = z - b
             if ndim == 2:
                 # [B, nOut] -> [B, nOut, 2] -> [B, 2*nOut]  (y0,z0,y1,z1,...)
                 result = torch.stack((y, z), dim=-1).flatten(-2)
@@ -818,8 +818,7 @@ class PiLayer(Layer):
         W_inv = self.layer.compute_Winverse_current()   # [nOut, nIn]
         gamma = 0.5 * (y - z)                           # [..., nOut]
         b = self._effective_bias()
-        if b is not None:
-            gamma = gamma - self.nInput * b
+        gamma = gamma - b                            # undo y+=b, z-=b
         gamma = gamma.to(W_inv.device)
         x     = gamma @ W_inv
         if self.layer.ergodic:
@@ -860,8 +859,9 @@ class PiLayer(Layer):
         check_roundtrip("naive=F hasBias=T", naive=False, hasBias=True)
         check_roundtrip("naive=F hasBias=F", naive=False, hasBias=False)
         check_roundtrip("square nIn=nOut=6", naive=True,  hasBias=False, nInput=6, nOutput=6)
-        check_roundtrip("ergodic naive=T hasBias=F", naive=True, hasBias=False, ergodic=True)
-        check_roundtrip("ergodic naive=T hasBias=T", naive=True, hasBias=True,  ergodic=True)
+        check_roundtrip("ergodic naive=T hasBias=F", naive=True,  hasBias=False, ergodic=True)
+        check_roundtrip("ergodic naive=T hasBias=T", naive=True,  hasBias=True,  ergodic=True)
+        check_roundtrip("ergodic naive=F hasBias=T", naive=False, hasBias=True,  ergodic=True)
         print("PiLayer tests passed.")
 
     @staticmethod
