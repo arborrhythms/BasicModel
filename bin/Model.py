@@ -211,7 +211,7 @@ class ErgodicLayer(Layer):
 class LinearLayer(ErgodicLayer):
     """Standard linear (affine) layer.
 
-    Forward (ergodic):     y = x @ (bias*W + var*noise) [+ bias*b + var*bNoise]
+    Forward (ergodic):     y = x @ (bias*W + var*noise) [+ bias*biasWeight + var*biasNoise]
     Forward (non-ergodic): y = x @ W [+ b]
 
     ``bias`` and ``var`` come from the ErgodicLayer explore/exploit schedule.
@@ -229,7 +229,7 @@ class LinearLayer(ErgodicLayer):
         self.biasWeight = nn.Parameter(torch.zeros(1, nOutput))
         if ergodic:
             self.register_buffer('noise', torch.randn(self.nInput, self.nOutput))
-            self.register_buffer('bNoise', torch.randn(1, nOutput))
+            self.register_buffer('biasNoise', torch.randn(1, nOutput))
         else:
             self.set_sigma(0)
 
@@ -237,7 +237,7 @@ class LinearLayer(ErgodicLayer):
         """Draw fresh Gaussian noise matching W shape/device. No-op if not ergodic."""
         if self.ergodic:
             self.noise  = sample_noise(self.W)
-            self.bNoise = sample_noise(self.biasWeight)
+            self.biasNoise = sample_noise(self.biasWeight)
 
     def compute_W_current(self):
         """Effective W for outer-product use (respects ergodic noise if active)."""
@@ -251,7 +251,7 @@ class LinearLayer(ErgodicLayer):
             b, v = self.bias, self.var
             output = x @ (b * self.W + v * self.noise)
             if self.hasBias:
-                output += b * self.biasWeight + v * self.bNoise
+                output += b * self.biasWeight + v * self.biasNoise
         else:
             output = x @ self.W
             if self.hasBias:
@@ -800,7 +800,7 @@ class PiLayer(Layer):
                 # [B, S, nOut] -> [B, S, 2, nOut] -> [B, 2*S, nOut]  (y[s],z[s] adjacent)
                 result = torch.stack((y, z), dim=2).flatten(1, 2)
         else:
-            result = y
+            result = torch.exp(y)
         return result
 
     def reverse(self, yz):
