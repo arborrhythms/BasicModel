@@ -2703,9 +2703,9 @@ class PerceptualSpace(Space):
             self.subspace.set_materialized(x)
             return x
         x = self.subspace.forwardBegin(x)
-        x = self.forwardPi(x)
         if self.hasAttention:
             x = self.attention.forward(x)
+        x = self.forwardPi(x)
         if self.quantized:
             x  = self.subspace.vectors().forward(x)
         if self.processSymbols:
@@ -2798,12 +2798,12 @@ class ConceptualSpace(Space):
     def forward(self, x):
         """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ."""
         x = self.subspace.forwardBegin(x)
-        if self.hasNorm:
-            x = self.norm.forward(x)
-            if hasattr(self, 'sigma') and isinstance(self.sigma, SigmaLayer) and self.sigma.invertible:
-                # Cache norm factors for reverse, pass only normalized content
-                self._norm_factors = x[..., -2:]
-                x = x[..., :-2]
+        #if self.hasNorm:
+        #    x = self.norm.forward(x)
+        #    if hasattr(self, 'sigma') and isinstance(self.sigma, SigmaLayer) and self.sigma.invertible:
+        #        # Cache norm factors for reverse, pass only normalized content
+        #        self._norm_factors = x[..., -2:]
+        #        x = x[..., :-2]
         y = self.forwardSigma(x)
         if self.hasAttention:
             y = self.attention.forward(y)
@@ -2840,11 +2840,11 @@ class ConceptualSpace(Space):
         #    else:
         #        self.concepts = self.reverseSigma(self.concepts)
         self.concepts = self.reverseSigma(self.concepts)
-        if self.hasNorm:
-            if hasattr(self, '_norm_factors'):
-                # Reattach cached norm factors for un-normalization
-                self.concepts = torch.cat([self.concepts, self._norm_factors], dim=-1)
-            self.concepts = self.norm.reverse(self.concepts)
+        #if self.hasNorm:
+        #    if hasattr(self, '_norm_factors'):
+        #        # Reattach cached norm factors for un-normalization
+        #        self.concepts = torch.cat([self.concepts, self._norm_factors], dim=-1)
+        #    self.concepts = self.norm.reverse(self.concepts)
         #self.concepts = torch.concatenate((self.concepts, encoding), dim=2)
         self.concepts = self.subspace.reverseEnd(self.concepts)
         self.subspace.set_materialized(self.concepts)

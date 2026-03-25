@@ -226,10 +226,12 @@ class LinearLayer(ErgodicLayer):
             self.W = nn.Parameter(torch.eye(self.nInput, self.nOutput))
         else:
             self.W = nn.Parameter(torch.randn(self.nInput, self.nOutput))
-        self.biasWeight = nn.Parameter(torch.zeros(1, nOutput))
+        if self.hasBias:
+            self.biasWeight = nn.Parameter(torch.zeros(1, nOutput))
         if ergodic:
             self.register_buffer('noise', torch.randn(self.nInput, self.nOutput))
-            self.register_buffer('biasNoise', torch.randn(1, nOutput))
+            if self.hasBias:
+                self.register_buffer('biasNoise', torch.randn(1, nOutput))
         else:
             self.set_sigma(0)
 
@@ -237,7 +239,8 @@ class LinearLayer(ErgodicLayer):
         """Draw fresh Gaussian noise matching W shape/device. No-op if not ergodic."""
         if self.ergodic:
             self.noise  = sample_noise(self.W)
-            self.biasNoise = sample_noise(self.biasWeight)
+            if self.hasBias:
+                self.biasNoise = sample_noise(self.biasWeight)
 
     def compute_W_current(self):
         """Effective W for outer-product use (respects ergodic noise if active)."""
@@ -248,15 +251,17 @@ class LinearLayer(ErgodicLayer):
     def forward(self, x):
         if self.ergodic:
             self.resample_noise()
-            b, v = self.bias, self.var
-            output = x @ (b * self.W + v * self.noise)
-            if self.hasBias:
-                output += b * self.biasWeight + v * self.biasNoise
+            output = x @ (self.bias * self.W + self.var * self.noise)
         else:
             output = x @ self.W
-            if self.hasBias:
-                output += self.biasWeight
         return output
+    def forwardBias(self, x):
+        if self.hasBias:
+            if self.ergodic:
+                x = x + self.bias * self.biasWeight + self.var * self.biasNoise
+            else:
+                x = x + self.biasWeight
+        return x
 
     @staticmethod
     def test():
@@ -329,8 +334,7 @@ class InvertibleLinearLayer(ErgodicLayer):
         """Return d clamped to [eps, 1] magnitude with sign preserved when
         stable=True, else raw self.d.  Stability constraint lives here only."""
         if self.stable:
-            _eps = 1e-3
-            return self.d.sign() * self.d.abs().clamp(_eps, 1.0)
+            return self.d.sign() * self.d.abs().clamp(epsilon, 1.0)
         return self.d
 
     def _D_embed(self):
@@ -370,8 +374,12 @@ class InvertibleLinearLayer(ErgodicLayer):
                 + torch.eye(self.nOutput, device=raw.device, dtype=raw.dtype))
 
     def _d_eff(self):
-        """d_eff = bias * d_effective + var * noise_d."""
-        return self.bias * self._d_effective() + self.var * self.noise_d
+        """d_eff = bias * d_effective + var * noise_d.
+        When stable=True, clamp magnitude to [eps, 1] so W_inv never blows up."""
+        d = self.bias * self._d_effective() + self.var * self.noise_d
+        if self.stable:
+            d = d.sign() * d.abs().clamp(epsilon, 1.0)
+        return d
 
     # --- W materialisation ---
     def compute_W(self):
@@ -420,6 +428,29 @@ class InvertibleLinearLayer(ErgodicLayer):
         for i in range(self.rank):
             D_inv[i, i] = 1.0 / d[i]
         return U_inv @ D_inv @ L_inv
+
+    def observe_sigma(self):
+        """Override: observe gradient energy of effective W = L@D@U.
+
+        The base class sums energy across raw_L, d, raw_U — three tensors for
+        an n×n matrix — while LinearLayer uses one W tensor.  This double-count
+        drives var too high, making L/U ill-conditioned.  Instead, approximate
+        the effective W gradient from dL/d(raw_L) and normalise per element.
+        """
+        if self.raw_L.grad is None or self.raw_U.grad is None:
+            return
+        # Approximate ||dL/dW||² ≈ mean of raw_L and raw_U factor gradients,
+        # normalised by matrix size so the scale matches a plain LinearLayer.
+        e_L = self.raw_L.grad.detach().pow(2).mean()
+        e_U = self.raw_U.grad.detach().pow(2).mean()
+        e_d = self.d.grad.detach().pow(2).mean() if self.d.grad is not None else torch.zeros(1)
+        grad_energy = (e_L + e_U + e_d) / 3.0   # average, not sum
+
+        self.sigma_step += 1
+        beta = self.sigma_beta
+        delta = grad_energy - self.sigma_mean
+        self.sigma_mean.add_((1 - beta) * delta)
+        self.sigma.mul_(beta).add_((1 - beta) * delta * (grad_energy - self.sigma_mean))
 
     # --- Parameterised sequential apply / solve ---
     def _apply_ldu(self, x, L, d, U):
@@ -504,13 +535,64 @@ class InvertibleLinearLayer(ErgodicLayer):
                 y = self._apply_ldu(x, self._L_eff(), self._d_eff(), self._U_eff())
             else:
                 y = self._apply_forward(x)
+        y = self.forwardBias(y)
+        return y
+    def forwardBias(self, x):
         if self.hasBias:
             if self.ergodic:
-                y = y + self.bias * self.biasWeight + self.var * self.biasNoise
+                x = x + self.bias * self.biasWeight + self.var * self.biasNoise
             else:
-                y = y + self.biasWeight
+                x = x + self.biasWeight
+        return x
+    def forwardBiasInterleaved(self, x):
+        if self.hasBias:
+            if x.ndim == 2:
+                # [B, 2*nOut]: pairs along last dim
+                bWeight = torch.stack([self.biasWeight, -self.biasWeight], dim=-1).flatten(-2)
+                if self.ergodic:
+                    bNoise = torch.stack([self.biasNoise, self.biasNoise], dim=-1).flatten(-2)
+                    x = x + self.bias * bWeight + self.var * bNoise
+                else:
+                    x = x + bWeight
+            else:
+                # [B, 2*S, nOut]: pairs along dim=1, alternate +b/-b every row
+                signs = x.new_ones(1, x.shape[1], 1)
+                signs[0, 1::2, 0] = -1
+                bWeight = signs * self.biasWeight
+                if self.ergodic:
+                    bNoise = signs * self.biasNoise
+                    x = x + self.bias * bWeight + self.var * bNoise
+                else:
+                    x = x + bWeight
+        return x
+
+    def reverseBias(self, y):
+        if self.hasBias:
+            if self.ergodic:
+                y = y - (self.bias * self.biasWeight + self.var * self.biasNoise)
+            else:
+                y = y - self.biasWeight
         return y
 
+    def reverseBiasInterleaved(self, y):
+        if self.hasBias:
+            if y.ndim == 2:
+                bWeight = torch.stack([self.biasWeight, -self.biasWeight], dim=-1).flatten(-2)
+                if self.ergodic:
+                    bNoise = torch.stack([self.biasNoise, self.biasNoise], dim=-1).flatten(-2)
+                    y = y - (self.bias * bWeight + self.var * bNoise)
+                else:
+                    y = y - bWeight
+            else:
+                signs = y.new_ones(1, y.shape[1], 1)
+                signs[0, 1::2, 0] = -1
+                bWeight = signs * self.biasWeight
+                if self.ergodic:
+                    bNoise = signs * self.biasNoise
+                    y = y - (self.bias * bWeight + self.var * bNoise)
+                else:
+                    y = y - bWeight
+        return y
     def reverse(self, y):
         """Invert the LDU transform.
 
@@ -526,11 +608,7 @@ class InvertibleLinearLayer(ErgodicLayer):
           naive=True: materialise W_inv = U_inv D_inv L_inv, dense matmul.
           naive=False: sequential triangular solves.
         """
-        if self.hasBias:
-            if self.ergodic:
-                y = y - (self.bias * self.biasWeight + self.var * self.biasNoise)
-            else:
-                y = y - self.biasWeight
+        y = self.reverseBias(y)
         if self.naive:
             W_inv = self.compute_Winverse_current()
             orig_shape = y.shape
@@ -788,11 +866,8 @@ class PiLayer(Layer):
             if self.invertible:
                 one_m = one_m.clamp(min=epsilon)
         y = torch.sum(torch.log(one_p), dim=dim)
-        b = self._effective_bias()
-        y = y + b   # invertible: shift gamma = 0.5*(y-z) by +b, no nIn scaling
         if self.invertible:
             z = torch.sum(torch.log(one_m), dim=dim)
-            z = z - b
             if ndim == 2:
                 # [B, nOut] -> [B, nOut, 2] -> [B, 2*nOut]  (y0,z0,y1,z1,...)
                 result = torch.stack((y, z), dim=-1).flatten(-2)
@@ -801,6 +876,10 @@ class PiLayer(Layer):
                 result = torch.stack((y, z), dim=2).flatten(1, 2)
         else:
             result = torch.exp(y)
+        if self.invertible:
+            result = self.layer.forwardBiasInterleaved(result)
+        else:
+            result = self.layer.forwardBias(result)
         return result
 
     def reverse(self, yz):
@@ -809,6 +888,10 @@ class PiLayer(Layer):
         gamma_j = 0.5*(log y_j - log z_j) = sum_i x_i*w_ji = (x@W)_j.
         x = gamma @ W_inv using the materialized inverse of current W.
         """
+        if self.invertible:
+            yz = self.layer.reverseBiasInterleaved(yz)
+        else:
+            yz = self.layer.reverseBias(yz)
         if yz.ndim == 2:
             # [B, 2*nOut] -> [B, nOut, 2] -> y, z each [B, nOut]
             y, z = yz.unflatten(-1, (-1, 2)).unbind(-1)
@@ -817,8 +900,6 @@ class PiLayer(Layer):
             y, z = yz.unflatten(1, (yz.shape[1] // 2, 2)).unbind(2)
         W_inv = self.layer.compute_Winverse_current()   # [nOut, nIn]
         gamma = 0.5 * (y - z)                           # [..., nOut]
-        b = self._effective_bias()
-        gamma = gamma - b                            # undo y+=b, z-=b
         gamma = gamma.to(W_inv.device)
         x     = gamma @ W_inv
         if self.layer.ergodic:

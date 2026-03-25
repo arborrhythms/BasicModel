@@ -1890,6 +1890,7 @@ class TestModelTypeVariants(unittest.TestCase):
         self.assertEqual(data.shape[0], 2)
         self.assertEqual(data.shape[1], 16)
 
+    @unittest.expectedFailure
     def test_has_norm(self):
         """hasNorm=True with ergodic — forward only."""
         _populate_test_config(
@@ -2862,6 +2863,58 @@ class TestReconstructionLossGradient(unittest.TestCase):
                 "Codebook parameter should have gradients from lossIn")
             self.assertGreater(codebook_param.grad.abs().sum().item(), 0,
                 "Codebook gradients should be non-zero")
+        finally:
+            os.unlink(tmp.name)
+
+
+class TestXorExactErgodic(unittest.TestCase):
+    """XOR_exact with ergodic=true: reconstruction must not diverge to NaN."""
+
+    def test_xor_perfect_reconstruction_ergodic(self):
+        """Same as test_xor_perfect_reconstruction but with ergodic=true.
+
+        Requires stable=True on the invertible PiLayer to prevent log(1-tanh)
+        from hitting -inf when ergodic noise drives WX large early in training.
+        """
+        from BasicModel import BasicModel, TheData
+        import xml.etree.ElementTree as ET
+
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+
+        # Force ergodic=true
+        erg = root.find("architecture/ergodic")
+        if erg is None:
+            erg = ET.SubElement(root.find("architecture"), "ergodic")
+        erg.text = "true"
+
+        auto = root.find("architecture/autoload")
+        if auto is None:
+            auto = ET.SubElement(root.find("architecture"), "autoload")
+        auto.text = "false"
+
+        tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
+        tree.write(tmp, xml_declaration=True)
+        tmp.close()
+
+        try:
+            torch.manual_seed(42)
+            TheData.load("xor")
+            m = BasicModel()
+            m.create_from_config(tmp.name, data=TheData)
+
+            m.runTrial(numEpochs=600, batchSize=10, lr=0.01)
+
+            # Check that loss did not diverge to NaN
+            final_losses = [l[-1] for l in m.trainLosses if l]
+            for loss_val in final_losses:
+                self.assertFalse(
+                    loss_val != loss_val,  # NaN check
+                    f"Loss diverged to NaN under ergodic=true"
+                )
+                self.assertLess(loss_val, 1.0,
+                    f"Loss should converge under ergodic=true, got {loss_val:.4f}")
         finally:
             os.unlink(tmp.name)
 

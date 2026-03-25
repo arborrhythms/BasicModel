@@ -5,7 +5,7 @@
     <conceptualOrder>1</conceptualOrder>
     <symbolicOrder>1</symbolicOrder>
     <modelType>embedding</modelType>
-    <ergodic>false</ergodic>
+    <ergodic>true</ergodic>
     <naive>false</naive>
     <weightsPath></weightsPath>
 
