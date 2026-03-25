@@ -349,32 +349,40 @@ class InvertibleLinearLayer(ErgodicLayer):
     def resample_noise(self):
         if not self.ergodic:
             return
-        self.noise_raw_L = torch.randn_like(self.noise_raw_L)
-        self.noise_raw_U = torch.randn_like(self.noise_raw_U)
-        # Signed diagonal: |d_i| uniform in [eps, 1], random sign
-        _eps = 1e-3
-        d_abs  = torch.rand_like(self.noise_d) * (1.0 - _eps) + _eps
-        d_sign = torch.randint(0, 2, self.noise_d.shape,
-                               device=self.noise_d.device).float() * 2.0 - 1.0
-        self.noise_d = d_abs * d_sign
+        # Mask to the entries that survive tril/triu, then unit-normalise so
+        # that var is the exact Frobenius norm of the perturbation regardless
+        # of matrix size.
+        n_L = torch.tril(torch.randn_like(self.noise_raw_L), diagonal=-1)
+        self.noise_raw_L = n_L / (n_L.norm() + 1e-8)
+
+        n_U = torch.triu(torch.randn_like(self.noise_raw_U), diagonal=1)
+        self.noise_raw_U = n_U / (n_U.norm() + 1e-8)
+
+        n_d = torch.randn_like(self.noise_d)
+        self.noise_d = n_d / (n_d.norm() + 1e-8)
+
         if self.hasBias:
-            self.biasNoise = torch.randn_like(self.biasNoise)
+            n_b = torch.randn_like(self.biasNoise)
+            self.biasNoise = n_b / (n_b.norm() + 1e-8)
 
     # --- Effective ergodic factors ---
     def _L_eff(self):
-        """L_eff = I + strict_lower(raw_L + var * noise_raw_L)."""
+        """L_eff = I + strict_lower(raw_L + var * noise_raw_L).
+        noise_raw_L is pre-masked to strict lower triangular and unit-normalised."""
         raw = self.raw_L + self.var * self.noise_raw_L
         return (torch.tril(raw, diagonal=-1)
                 + torch.eye(self.nInput, device=raw.device, dtype=raw.dtype))
 
     def _U_eff(self):
-        """U_eff = I + strict_upper(raw_U + var * noise_raw_U)."""
+        """U_eff = I + strict_upper(raw_U + var * noise_raw_U).
+        noise_raw_U is pre-masked to strict upper triangular and unit-normalised."""
         raw = self.raw_U + self.var * self.noise_raw_U
         return (torch.triu(raw, diagonal=1)
                 + torch.eye(self.nOutput, device=raw.device, dtype=raw.dtype))
 
     def _d_eff(self):
         """d_eff = bias * d_effective + var * noise_d.
+        noise_d is unit-normalised so var is the exact L2 norm of the perturbation.
         When stable=True, clamp magnitude to [eps, 1] so W_inv never blows up."""
         d = self.bias * self._d_effective() + self.var * self.noise_d
         if self.stable:
@@ -429,29 +437,6 @@ class InvertibleLinearLayer(ErgodicLayer):
             D_inv[i, i] = 1.0 / d[i]
         return U_inv @ D_inv @ L_inv
 
-    def observe_sigma(self):
-        """Override: observe gradient energy of effective W = L@D@U.
-
-        The base class sums energy across raw_L, d, raw_U — three tensors for
-        an n×n matrix — while LinearLayer uses one W tensor.  This double-count
-        drives var too high, making L/U ill-conditioned.  Instead, approximate
-        the effective W gradient from dL/d(raw_L) and normalise per element.
-        """
-        if self.raw_L.grad is None or self.raw_U.grad is None:
-            return
-        # Approximate ||dL/dW||² ≈ mean of raw_L and raw_U factor gradients,
-        # normalised by matrix size so the scale matches a plain LinearLayer.
-        e_L = self.raw_L.grad.detach().pow(2).mean()
-        e_U = self.raw_U.grad.detach().pow(2).mean()
-        e_d = self.d.grad.detach().pow(2).mean() if self.d.grad is not None else torch.zeros(1)
-        grad_energy = (e_L + e_U + e_d) / 3.0   # average, not sum
-
-        self.sigma_step += 1
-        beta = self.sigma_beta
-        delta = grad_energy - self.sigma_mean
-        self.sigma_mean.add_((1 - beta) * delta)
-        self.sigma.mul_(beta).add_((1 - beta) * delta * (grad_energy - self.sigma_mean))
-
     # --- Parameterised sequential apply / solve ---
     def _apply_ldu(self, x, L, d, U):
         """Apply x @ L @ D_embed(d) @ U sequentially.  d is a [rank] vector.
@@ -468,10 +453,8 @@ class InvertibleLinearLayer(ErgodicLayer):
             else:
                 x = scaled
         else:
+            # rank == nOutput here (min(nInput,nOutput)), so no zero-pad needed
             x = x[..., :self.rank] * d
-            pad = torch.zeros(x.shape[0], self.nOutput - self.rank,
-                              device=x.device, dtype=x.dtype)
-            x = torch.cat([x, pad], dim=-1)
         x = x @ U
         out_shape = list(orig_shape); out_shape[-1] = self.nOutput
         return x.reshape(out_shape)
@@ -483,11 +466,8 @@ class InvertibleLinearLayer(ErgodicLayer):
         y = y.reshape(-1, orig_shape[-1])
         y = torch.linalg.solve_triangular(U.T, y.T, upper=False, unitriangular=True).T
         if self.nInput <= self.nOutput:
+            # rank == nInput here (min(nInput,nOutput)), so no zero-pad needed
             y = y[..., :self.rank] / d
-            if self.nInput > self.rank:
-                pad = torch.zeros(y.shape[0], self.nInput - self.rank,
-                                  device=y.device, dtype=y.dtype)
-                y = torch.cat([y, pad], dim=-1)
         else:
             y = y / d
             pad = torch.zeros(y.shape[0], self.nInput - self.rank,
@@ -748,7 +728,6 @@ class SigmaLayer(Layer):
 
     def reverse(self, y):
         """Invert tanh then apply W⁻¹. Requires invertible=True."""
-        y = y.squeeze(0)
         if self.saturate:
             y = y.clamp(min=-1 + epsilon, max=1 - epsilon)
             self.activation = torch.atanh(y)
