@@ -258,38 +258,67 @@ class TestInvertibleSigmaLayer(unittest.TestCase):
 
 
 class TestAttentionLayer(unittest.TestCase):
-    def test_forward_shape(self):
+    def test_asymmetric_forward_shape(self):
         from Model import AttentionLayer
-        layer = AttentionLayer(nInput=8, nOutput=4)
-        x = torch.randn(2, 8).to(TheDevice)
-        y = layer(x)
-        self.assertEqual(y.shape, (2, 4))
-
-    def test_transformer_forward_shape(self):
-        from Model import TransformerAttentionLayer
-        layer = TransformerAttentionLayer(nInput=8, nOutput=4, nHeads=2)
+        layer = AttentionLayer(nInput=8, nOutput=4, type="asymmetric")
         x = torch.randn(2, 5, 8).to(TheDevice)
         y = layer(x)
         self.assertEqual(y.shape, (2, 5, 4))
 
-    def test_transformer_forward_shape_2d(self):
+    def test_symmetric_forward_shape(self):
+        from Model import AttentionLayer
+        layer = AttentionLayer(nInput=8, nOutput=4, type="symmetric")
+        x = torch.randn(2, 5, 8).to(TheDevice)
+        y = layer(x)
+        self.assertEqual(y.shape, (2, 5, 4))
+
+    def test_transformer_forward_shape(self):
+        from Model import AttentionLayer
+        layer = AttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
+        x = torch.randn(2, 5, 8).to(TheDevice)
+        y = layer(x)
+        self.assertEqual(y.shape, (2, 5, 4))
+
+    def test_transformer_single_object(self):
         """Single-object 3D input [B, 1, D] -> [B, 1, nOut]."""
-        from Model import TransformerAttentionLayer
-        layer = TransformerAttentionLayer(nInput=8, nOutput=4, nHeads=2)
+        from Model import AttentionLayer
+        layer = AttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
         x = torch.randn(2, 1, 8).to(TheDevice)
         y = layer(x)
         self.assertEqual(y.shape, (2, 1, 4))
 
+    def test_inline(self):
+        from Model import AttentionLayer
+        AttentionLayer.test()
+
 
 class TestNormLayer(unittest.TestCase):
-    def test_forward_runs(self):
+    def test_forward_2d(self):
         from Model import NormLayer
-        layer = NormLayer(4, 4)
+        layer = NormLayer(4, 6)
         x = torch.randn(3, 4).to(TheDevice)
         y = layer(x)
-        # NormLayer may append extra features (mean, std)
-        self.assertEqual(y.shape[0], 3)
-        self.assertGreaterEqual(y.shape[1], 4)
+        self.assertEqual(y.shape, (3, 6))
+
+    def test_forward_3d(self):
+        from Model import NormLayer
+        layer = NormLayer(4, 6)
+        x = torch.randn(3, 5, 4).to(TheDevice)
+        y = layer(x)
+        self.assertEqual(y.shape, (3, 5, 6))
+
+    def test_reverse_3d(self):
+        from Model import NormLayer
+        layer = NormLayer(4, 6)
+        layer.lr = 0
+        x = torch.randn(3, 5, 4).to(TheDevice)
+        y = layer(x)
+        x_rec = layer.reverse(y)
+        self.assertTrue(torch.allclose(x, x_rec, atol=1e-5))
+
+    def test_inline(self):
+        from Model import NormLayer
+        NormLayer.test()
 
 
 class TestMemory(unittest.TestCase):
@@ -584,7 +613,7 @@ class TestSubSpaceMaterialize(unittest.TestCase):
                                   inputShape=[4, 8], outputShape=[4, 8])
         result = ss.materialize()
         self.assertIs(result, t)
-        self.assertIsInstance(ss.object, Tensor)
+        self.assertIsInstance(ss.event, Tensor)
 
     def test_materialize_none_when_unset(self):
         from BasicModel import SubSpace, WhereEncoding, WhenEncoding
@@ -627,8 +656,8 @@ class TestSubSpaceConstruction(unittest.TestCase):
         t = torch.randn(2, 3, 10)
         ss = SubSpace.from_tensor(t, whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
                                   inputShape=[3, 6], outputShape=[3, 6])
-        self.assertIsInstance(ss.object, Tensor)
-        self.assertIs(ss.object.W, t)
+        self.assertIsInstance(ss.event, Tensor)
+        self.assertIs(ss.event.W, t)
         self.assertEqual(ss.objectSize, 4)
         self.assertEqual(ss.inputShape, [3, 6])
 
@@ -641,9 +670,9 @@ class TestSubSpaceConstruction(unittest.TestCase):
             object=object, activation=act, activeEncoding=ae,
             whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
             inputShape=[4, 4], outputShape=[4, 4])
-        self.assertIsInstance(ss.object, Tensor)
+        self.assertIsInstance(ss.event, Tensor)
         self.assertIsInstance(ss.activation, Tensor)
-        self.assertIs(ss.object.W, object)
+        self.assertIs(ss.event.W, object)
         self.assertIs(ss.activation.W, act)
         self.assertIs(ss.activeEncoding, ae)
 
@@ -651,7 +680,7 @@ class TestSubSpaceConstruction(unittest.TestCase):
         """All modalities are initialized (as empty Tensor bases) even with no args."""
         from BasicModel import SubSpace, Tensor
         ss = SubSpace.from_components(inputShape=[4, 8], outputShape=[4, 8])
-        self.assertIsInstance(ss.object, Tensor)
+        self.assertIsInstance(ss.event, Tensor)
         self.assertIsInstance(ss.activation, Tensor)
         self.assertIsInstance(ss.where, Tensor)
         self.assertIsInstance(ss.when, Tensor)
@@ -2766,8 +2795,8 @@ class TestVocabSaveRestore(unittest.TestCase):
             self.assertEqual(list(emb2.pretrain.index_to_key), vocab_before)
             # Embedding shapes must match exactly
             torch.testing.assert_close(
-                m2.state_dict()["inputSpace.subspace.object.wv._vectors"],
-                m1.state_dict()["inputSpace.subspace.object.wv._vectors"])
+                m2.state_dict()["inputSpace.subspace.event.wv._vectors"],
+                m1.state_dict()["inputSpace.subspace.event.wv._vectors"])
         finally:
             os.unlink(emb_path)
 

@@ -1,9 +1,6 @@
 # TODO
 
-## Theory
-* make a policy for vector norms
-
-## symbol processing
+## symbolic processing
 * symbols map bijectively to concepts
 * when calling materialize, extracts only [activation, index] (the numeric indices of the concepts)
 * when reverse() is called, indices are used to look up the concepts that were passed in
@@ -11,13 +8,10 @@
 * It passes [nBatch, nOutput, 1] to all consumers (OutputSpace and SyntacticSpace)
 * Integrate the Activation and Syntactic Layer classes
 
-## Clean-up
-* re-write the attention layer
-* Revisit all forward/reverse methods
-
 ================================== April 1 ==================================
 
 ## Percept and concept vectors
+* make a policy for vector norms
 * vectors that learn positions and vectors that learn boundaries
 * make sure concepts and percepts both quantize nicely
 

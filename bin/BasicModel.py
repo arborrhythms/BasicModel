@@ -44,7 +44,7 @@ from Model import Layer, PiLayer, SigmaLayer # Import custom layers from Model.p
 from Model import VQLayer, NormLayer, LinearLayer, AttentionLayer
 from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 
-from Space import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, ObjectEncoding
+from Space import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Space import Basis, Tensor, Codebook, Embedding
 from Space import SubSpace, Space, InputSpace, PerceptualSpace, ConceptualSpace, SymbolicSpace, SyntacticSpace, OutputSpace
 
@@ -724,7 +724,7 @@ class BasicModel(BaseModel):
         # Convert masked-word string labels to embedding vectors now that
         # the Embedding vocabulary is available.
         if data is not None and hasattr(data, '_lm_labels') and data._lm_labels is not None:
-            embedding = self.inputSpace.subspace.get_vectors() if self.inputSpace.subspace.object is not None else None
+            embedding = self.inputSpace.subspace.get_vectors() if self.inputSpace.subspace.event is not None else None
             if embedding is not None and hasattr(embedding, 'pretrain'):
                 data.prepare_lm_targets(embedding)
                 # Move new targets to device

@@ -326,8 +326,8 @@ class WhatEncoding(Encoding):
         else:
             per_obj = self.inputShape[1]
             return y.reshape(batch, self.inputShape[0], per_obj)
-class ObjectEncoding(Encoding):
-    """Handle the content-layout transform for a space's What factor.
+class EventEncoding(Encoding):
+    """Handle the content-layout transform for a space's Event factor.
 
     Unlike WhereEncoding and WhenEncoding, this encoding is not a fixed
     quadrature code.  It owns only the layout transform used by reshaped
@@ -1559,7 +1559,7 @@ class SubSpace(nn.Module):
         self.outputShape = outputShape  # [nActive, nDim]
 
         self.activeEncoding = activeEncoding if activeEncoding is not None else ActiveEncoding()
-        self.objectEncoding = objectEncoding if objectEncoding is not None else ObjectEncoding(
+        self.objectEncoding = objectEncoding if objectEncoding is not None else EventEncoding(
             inputShape, outputShape, flatten=flatten)
         self.whatEncoding   = whatEncoding if whatEncoding is not None else WhatEncoding(inputShape, outputShape)
         self.whereEncoding  = whereEncoding if whereEncoding is not None else WhereEncoding(0, 0)
@@ -1569,7 +1569,7 @@ class SubSpace(nn.Module):
         self.objectSize = self.whereEncoding.nDim + self.whenEncoding.nDim
 
         self.activation = self._coerce_basis(activation, role="activation")
-        self.object = self._coerce_basis(object, role="object")
+        self.event = self._coerce_basis(object, role="event")
         self.what   = self._coerce_basis(what, role="what")
         self.where  = self._coerce_basis(where, role="where")
         self.when   = self._coerce_basis(when, role="when")
@@ -1592,7 +1592,7 @@ class SubSpace(nn.Module):
                 passThrough=True,
                 objectSize=self.activeEncoding.nDim,
             )
-        elif role == "object":
+        elif role == "event":
             basis.create(
                 self.inputShape[0],
                 self.outputShape[0],
@@ -1620,7 +1620,7 @@ class SubSpace(nn.Module):
         return basis
 
     def get_vectors(self):
-        return self.object
+        return self.event
 
     def set_vectors(self, vectors):
         """Store the current dense vectors (forward output) for materialize().
@@ -1628,9 +1628,9 @@ class SubSpace(nn.Module):
         This is separate from the object's codebook (getW/setW) — for Embedding,
         getW() returns the codebook while set_vectors stores the forward result.
         """
-        if self.object is None:
-            self.object = Tensor()
-        self.object.setW(vectors)
+        if self.event is None:
+            self.event = Tensor()
+        self.event.setW(vectors)
         self.set_activation_vectors(vectors)
 
     # ------------------------------------------------------------------
@@ -1751,7 +1751,7 @@ class SubSpace(nn.Module):
             Tensor [batch, k, dim] of the k highest-activation vectors.
             Stores selection indices in self._topk_indices for downstream use.
         """
-        x = self.object.getW()
+        x = self.event.getW()
         if x is None:
             return None
         activation = self.get_activation()
@@ -1864,7 +1864,7 @@ class Space(nn.Module):
         self.objectSize = _nWhere + _nWhen
         self.customVQ  = customVQ
         # inputShape/outputShape already include objectSize in dim (set by factory).
-        objectEncoding = ObjectEncoding(inputShape, outputShape, flatten=self.flatten)
+        objectEncoding = EventEncoding(inputShape, outputShape, flatten=self.flatten)
         whatEncoding   = WhatEncoding(inputShape, outputShape)
         whereEncoding  = WhereEncoding(TheXMLConfig.get("architecture.nObjects"), _nWhere)
         whenEncoding   = WhenEncoding(10000, _nWhen)
@@ -2110,7 +2110,7 @@ class InputSpace(Space):
         self.flatten = False
         self.subspace.flatten = False
         self.subspace.objectEncoding.flatten = False
-        lexical_basis = self.subspace.object
+        lexical_basis = self.subspace.event
         if isinstance(lexical_basis, Embedding):
             self.doc_spans = lexical_basis.doc_spans
             self.doc_sources = lexical_basis.doc_sources
@@ -2160,7 +2160,7 @@ class InputSpace(Space):
 
         batch = input.shape[0]
         object_basis = self.subspace.get_vectors()
-        lexical_basis = self.subspace.object
+        lexical_basis = self.subspace.event
         if not isinstance(lexical_basis, Embedding):
             assert list(input.shape) == [batch, self.inputShape[0], self.inputShape[1]]
             self.input = object_basis.forward(input)
@@ -2659,7 +2659,7 @@ class PerceptualSpace(Space):
         # so the 2x interleaving produces the correct unflatten width.
         if self.flatten and self.reversible:
             output = output // 2
-        self.attention = AttentionLayer(unflatOutput, unflatOutput)
+        self.attention = AttentionLayer(unflatOutput, unflatOutput, type="transformer")
         if self.reversible:
             if invertible:
                 self.pi  = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
@@ -2783,7 +2783,7 @@ class ConceptualSpace(Space):
         input = self.subspace.getEncodedInputSize()
         output = self.subspace.getEncodedOutputSize()
         self.hasNorm = hasNorm
-        self.attention = AttentionLayer(output, output)
+        self.attention = AttentionLayer(output, output, type="transformer")
         if hasNorm:
             self.norm = NormLayer(input, input + 2)
             # Don't expand input dim for invertible path — norm factors

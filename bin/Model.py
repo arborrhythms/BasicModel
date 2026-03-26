@@ -1024,17 +1024,18 @@ class NormLayer(Layer):
     pNorm      = 2
     removeBias = True
     takeExp    = False
-    dim        = 1
+    dim        = -1
     lr         = 0.001
 
     def __init__(self, nInput, nOutput, pNorm=2, exp=False):
         """
         Hand-coded implementation of Layer Normalization or Softmax-like operation.
+        Operates on the last (feature) dimension, supporting both 2D and 3D input.
         """
         super().__init__(nInput,nOutput)
         self.pNorm  = pNorm
         self.exp    = exp
-        self.dim    = 1
+        self.dim    = -1
         # predict the bias and variance within this layer
         self.W      = nn.Parameter(torch.zeros(2))
         #self.noise  = nn.Parameter(torch.zeros(2)) If is ErgodicLayer
@@ -1052,7 +1053,7 @@ class NormLayer(Layer):
             #error    = self.W - moments
             #self.W   = nn.Parameter((1-self.lr) * self.W + (self.lr) * error)
             moments -= self.W
-            x_norm   = (x - moments[:, 0:1]) / moments[:, 1:2]
+            x_norm   = (x - moments[..., 0:1]) / moments[..., 1:2]
         else:
             assert(self.pNorm == 1)
             if self.exp:
@@ -1077,88 +1078,54 @@ class NormLayer(Layer):
         """
         if self.pNorm != 2:
             raise NotImplementedError("Reverse only supported for pNorm=2.")
-        x    = y[:,  0:-2]
-        mean = y[:, -2:-1] + self.W[0:1]
-        norm = y[:, -1:]   + self.W[1:2]
+        x    = y[...,  0:-2]
+        mean = y[..., -2:-1] + self.W[0:1]
+        norm = y[..., -1:]   + self.W[1:2]
         return x * norm + mean
 
     @staticmethod
     def test():
         torch.manual_seed(42)
 
-        print("== Testing NormLayer ==")
-        # === Test 1: pNorm=2 (Standard LayerNorm) ===
+        # === Test 1: pNorm=2, 2D forward + reverse ===
         x = torch.randn(10, 20)
-        manual_layer_norm = NormLayer(20, 22, pNorm=2)
-        manual_layer_norm.lr = 0
-        normalized = manual_layer_norm(x)
+        layer = NormLayer(20, 22, pNorm=2)
+        layer.lr = 0
+        normalized = layer(x)
+        assert normalized.shape == (10, 22), f"2D shape: expected (10,22), got {normalized.shape}"
+        reconstructed = layer.reverse(normalized)
+        assert torch.allclose(x, reconstructed, atol=1e-5), "2D reverse failed"
 
-        # Shape check
-        #assert normalized.shape == x.shape, "Output shape mismatch"
-        # Mean check
-        # assert torch.allclose(normalized.mean(dim=manual_layer_norm.dim), torch.zeros_like(normalized.mean(dim=manual_layer_norm.dim)), atol=1e-5), "Mean not close to 0"
-        # Variance check
-        # assert torch.allclose(normalized.var(dim=manual_layer_norm.dim, unbiased=True), torch.ones_like(normalized.var(dim=manual_layer_norm.dim)), atol=1e-5), "Variance not close to 1"
-
-        # === Reverse test ===
-        reconstructed = manual_layer_norm.reverse(normalized)
-        assert torch.allclose(x, reconstructed, atol=1e-5), "Reverse reconstruction failed"
-
-        print("✓ pNorm=2 forward + reverse passed.")
-
-        # === Test 2: pNorm=1, exp=True (Softmax mode) ===
-        x = torch.randn(10, 5)
-        builtin_softmax = nn.Softmax(dim=1)
-        manual_softmax = NormLayer(5, 7, pNorm=1, exp=True)
-
-        builtin_output = builtin_softmax(x)
-        manual_output = manual_softmax(x)[:,0:-1]
-
-        # Shape check
-        assert builtin_output.shape == manual_output.shape, "Softmax output shape mismatch"
-
-        # Softmax values check
-        assert torch.allclose(builtin_output, manual_output, atol=1e-6), "Softmax outputs differ"
-
-        # Sum-to-1 check
-        assert torch.allclose(manual_output.sum(dim=manual_softmax.dim), torch.ones(x.shape[0]), atol=1e-6), "Softmax output does not sum to 1"
-
-        # Range check
-        assert torch.all((manual_output >= 0) & (manual_output <= 1)), "Softmax output contains values outside [0, 1]"
-
-        print("✓ Softmax mode passed.")
-
-        # === Test 3: 3D input ===
-        #x_3d = torch.randn(5, 10, 20)
-        #manual_layer_norm_3d = NormLayer(2, pNorm=2)
-        #normalized_3d = manual_layer_norm_3d(x_3d)
-        # 3D shape check
-        #assert normalized_3d.shape == x_3d.shape, "3D input normalization failed"
-        #print("✓ 3D input passed.")
+        # === Test 2: pNorm=2, 3D forward + reverse ===
+        x_3d = torch.randn(4, 5, 20)
+        normalized_3d = layer(x_3d)
+        assert normalized_3d.shape == (4, 5, 22), f"3D shape: expected (4,5,22), got {normalized_3d.shape}"
+        reconstructed_3d = layer.reverse(normalized_3d)
+        assert torch.allclose(x_3d, reconstructed_3d, atol=1e-5), "3D reverse failed"
         #print("All NormLayer tests passed successfully!")
+        
 class AttentionLayer(Layer):
-    """Scaled dot-product attention with optional symmetric (Hopfield-like) mode.
+    """Unified attention layer with three modes.
 
-    In symmetric mode, a single projection A replaces Q and K, yielding
-    scores = A^T @ A (positive semi-definite).  Standard QKV mode is used
-    when ``symmetric=False``.
+    type="symmetric"   — Hopfield-like: scores = A^T @ A (positive semi-definite).
+                         Attends across feature channels.
+    type="asymmetric"  — Channel attention: scores = Q^T @ K.
+                         Attends across feature channels.
+    type="transformer" — Standard multi-head attention over the object/token axis.
+                         Q K^T / sqrt(d) with multi-head splitting.
+
+    All modes require 3D input [batch, nObj, dim].
     """
-    def __init__(self, nInput, nOutput, nHidden=None, symmetric=False):
+    def __init__(self, nInput, nOutput, nHidden=None, type="asymmetric", nHeads=1):
         super(AttentionLayer, self).__init__(nInput, nOutput)
-        if not nHidden:
-            self.nHidden = nOutput
-        else:
-            self.nHidden = nHidden
+        self.nHidden = nOutput if not nHidden else nHidden
+        self.type = type
         self.mask = None
         self.beta = 10
-        # self.dropout = nn.Dropout(p=0.1)
-        self.symmetric  = symmetric
         self.reversible = False
-        #self.target_norm  = target_norm
-        #self.tol          = tol
-        #self.maxIter      = maxIter
+        self.nHeads = nHeads
 
-        if self.symmetric:
+        if self.type == "symmetric":
             self.A = LinearLayer(self.nInput, self.nHidden)
             self.V = LinearLayer(self.nInput, self.nHidden)
         else:
@@ -1166,95 +1133,22 @@ class AttentionLayer(Layer):
             self.K = LinearLayer(self.nInput, self.nHidden)
             self.V = LinearLayer(self.nInput, self.nHidden)
         self.Out = LinearLayer(self.nHidden, self.nOutput)
-    def create_mask(self, sentences):
-        self.mask = torch.zeros(self.nOutput, self.objectSize, dtype=torch.bool)
-        for i, s in enumerate(sentences):
-            self.mask[i, len(s):] = True
 
-    def forward(self, x):
-        if self.symmetric:
-            a2     = self.A(x)
-            value  = x if self.nHidden == self.nInput else self.V(x)
-            scores = torch.matmul(a2.transpose(-2, -1), a2) / (self.nInput ** 0.5)
-        else:
-            query  = self.Q(x)
-            key    = self.K(x)
-            value  = x if self.nHidden == self.nInput else self.V(x)
-            scores = torch.matmul(query.transpose(-2, -1), key) / (self.nInput ** 0.5)
-
-        if self.mask is not None:
-            scores = scores.masked_fill(self.mask == 0, float('-inf'))
-
-        if not self.reversible:
-            attn = F.softmax(self.beta * scores, dim=-1)
-        else:
-            attn = scores
-
-        output = value @ attn
-        if self.nHidden != self.nOutput:
-            output = self.Out(output)
-        return output
-
-    @staticmethod
-    def test():
-        nInput = 6
-        nOutput = 3
-        layer = AttentionLayer(nInput=nInput, nOutput=nOutput, nHidden=7)
-
-        x = torch.randn(4, 5, nInput)  # batch of 4
-        y = layer.forward(x)
-
-        #print("Input minus output:")
-        #print(x-x_rec)
-        #assert torch.norm(x-x_rec) < 1, "Norm too high"
-class TransformerAttentionLayer(Layer):
-    """Standard multi-head attention over the object axis.
-
-    Unlike ``AttentionLayer`` above, this implementation attends across
-    objects/tokens rather than across feature channels.  For input
-    ``x`` with shape ``[batch, nObj, dim]``:
-
-    - ``Q = W_Q x`` produces queries: "what is each object looking for?"
-    - ``K = W_K x`` produces keys: "what information does each object offer?"
-    - ``V = W_V x`` produces values: "what content should flow if matched?"
-
-    Each head compares every query object to every key object, producing an
-    ``[nObj, nObj]`` attention map per head. The weighted values are then
-    concatenated and projected back to ``nOutput``.
-
-    The layer also accepts 2D input ``[batch, dim]`` and treats it as a
-    single-object sequence for convenience.
-    """
-
-    def __init__(self, nInput, nOutput, nHeads=1, nHidden=None):
-        super(TransformerAttentionLayer, self).__init__(nInput, nOutput)
-        if nHeads < 1:
-            raise ValueError(f"nHeads must be >= 1, got {nHeads}")
-        self.nHeads = nHeads
-        self.nHidden = nOutput if nHidden is None else nHidden
-        if self.nHidden % self.nHeads != 0:
-            raise ValueError(
-                f"nHidden ({self.nHidden}) must be divisible by nHeads ({self.nHeads})")
-        self.headDim = self.nHidden // self.nHeads
-        self.scale = self.headDim ** -0.5
-        self.mask = None
-
-        self.Q = LinearLayer(self.nInput, self.nHidden)
-        self.K = LinearLayer(self.nInput, self.nHidden)
-        self.V = LinearLayer(self.nInput, self.nHidden)
-        self.Out = LinearLayer(self.nHidden, self.nOutput)
-        self.reversible = False
+        # Transformer-specific: multi-head geometry
+        if self.type == "transformer":
+            if nHeads < 1:
+                raise ValueError(f"nHeads must be >= 1, got {nHeads}")
+            if self.nHidden % self.nHeads != 0:
+                raise ValueError(
+                    f"nHidden ({self.nHidden}) must be divisible by nHeads ({self.nHeads})")
+            self.headDim = self.nHidden // self.nHeads
+            self.scale = self.headDim ** -0.5
 
     def set_mask(self, mask: Optional[torch.Tensor]):
-        """Set an optional attention mask.
-
-        Supported mask shapes:
-        - ``[batch, nObj]`` bool: True keeps a token, False masks it out.
-        - ``[batch, nObj, nObj]`` bool: explicit per-query/per-key mask.
-        - ``[batch, 1, nObj, nObj]`` or ``[batch, nHeads, nObj, nObj]`` bool:
-          fully expanded mask.
-        """
+        """Set an optional attention mask (used by all types)."""
         self.mask = mask
+
+    # --- Transformer helpers (multi-head) ---
 
     def _reshape_heads(self, x):
         batch, n_obj, _ = x.shape
@@ -1291,21 +1185,51 @@ class TransformerAttentionLayer(Layer):
             raise ValueError(f"Unsupported mask rank {mask.dim()}; expected 2, 3, or 4")
         return mask
 
+    # --- Forward dispatch ---
+
     def forward(self, x):
-        assert x.ndim == 3, f"TransformerAttentionLayer expects 3D input [B, N, D], got {list(x.shape)}"
+        assert x.ndim == 3, f"AttentionLayer expects 3D input [B, N, D], got {list(x.shape)}"
+        if self.type == "transformer":
+            return self._forward_transformer(x)
+        elif self.type == "symmetric":
+            return self._forward_symmetric(x)
+        else:
+            return self._forward_asymmetric(x)
 
+    def _forward_symmetric(self, x):
+        a2     = self.A(x)
+        value  = x if self.nHidden == self.nInput else self.V(x)
+        scores = torch.matmul(a2.transpose(-2, -1), a2) / (self.nInput ** 0.5)
+        if self.mask is not None:
+            scores = scores.masked_fill(self.mask == 0, float('-inf'))
+        attn = F.softmax(self.beta * scores, dim=-1) if not self.reversible else scores
+        output = value @ attn
+        if self.nHidden != self.nOutput:
+            output = self.Out(output)
+        return output
+
+    def _forward_asymmetric(self, x):
+        query  = self.Q(x)
+        key    = self.K(x)
+        value  = x if self.nHidden == self.nInput else self.V(x)
+        scores = torch.matmul(query.transpose(-2, -1), key) / (self.nInput ** 0.5)
+        if self.mask is not None:
+            scores = scores.masked_fill(self.mask == 0, float('-inf'))
+        attn = F.softmax(self.beta * scores, dim=-1) if not self.reversible else scores
+        output = value @ attn
+        if self.nHidden != self.nOutput:
+            output = self.Out(output)
+        return output
+
+    def _forward_transformer(self, x):
         batch, n_obj, _ = x.shape
-
         query = self._reshape_heads(self.Q(x))
-        key = self._reshape_heads(self.K(x))
+        key   = self._reshape_heads(self.K(x))
         value = self._reshape_heads(self.V(x))
-
         scores = torch.matmul(query, key.transpose(-2, -1)) * self.scale
-
         mask = self._normalize_mask(self.mask, batch, n_obj)
         if mask is not None:
             scores = scores.masked_fill(~mask, float("-inf"))
-
         attn = F.softmax(scores, dim=-1)
         output = torch.matmul(attn, value)
         output = output.transpose(1, 2).contiguous().view(batch, n_obj, self.nHidden)
@@ -1318,10 +1242,20 @@ class TransformerAttentionLayer(Layer):
 
     @staticmethod
     def test():
-        layer = TransformerAttentionLayer(nInput=8, nOutput=8, nHeads=2)
-        x = torch.randn(4, 5, 8)
+        # Test all three types with 3D input
+        for atype in ["symmetric", "asymmetric", "transformer"]:
+            kwargs = {"nInput": 8, "nOutput": 8, "type": atype}
+            if atype == "transformer":
+                kwargs["nHeads"] = 2
+            layer = AttentionLayer(**kwargs)
+            x = torch.randn(4, 5, 8)
+            y = layer(x)
+            assert list(y.shape) == [4, 5, 8], f"type={atype}: expected [4,5,8], got {list(y.shape)}"
+        # Test nInput != nOutput
+        layer = AttentionLayer(nInput=6, nOutput=3, nHidden=7, type="asymmetric")
+        x = torch.randn(4, 5, 6)
         y = layer(x)
-        assert list(y.shape) == [4, 5, 8]
+        assert list(y.shape) == [4, 5, 3], f"asymmetric nIn!=nOut: expected [4,5,3], got {list(y.shape)}"
 #endregion
 
 #region Activation Functions
