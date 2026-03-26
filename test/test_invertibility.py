@@ -425,7 +425,7 @@ from Space import SubSpace
 
 def _wrap_tensor(space, x):
     """Wrap a raw tensor in the space's SubSpace so forward()/reverse() can materialize it."""
-    space.subspace.set_materialized(x)
+    space.subspace.set_vectors(x)
     return space.subspace
 
 

@@ -176,7 +176,7 @@ class TestXORSpacesModel(unittest.TestCase):
     def test_space_char_in_vocab(self):
         """ASCII bootstrap ensures space chr(32) is always in vocabulary."""
         from BasicModel import Embedding
-        emb = self.model.inputSpace.vectors()
+        emb = self.model.inputSpace.get_vectors()
         self.assertIsInstance(emb, Embedding,
                               "InputSpace should use Embedding for text model")
         self.assertIn(" ", emb.pretrain.key_to_index,
@@ -184,7 +184,7 @@ class TestXORSpacesModel(unittest.TestCase):
 
     def test_xor_words_in_vocab(self):
         """XOR sentence words are added to vocabulary during data loading."""
-        emb = self.model.inputSpace.vectors()
+        emb = self.model.inputSpace.get_vectors()
         # Words appear in training data; they should be added via forward passes
         # or they may still be pending — we only assert ASCII chars are present
         for ch in "zero one xor":
@@ -246,7 +246,7 @@ class TestSpacePrediction(unittest.TestCase):
         _obj = _obj_size("InputSpace")
         inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
-        emb = inp.vectors()
+        emb = inp.get_vectors()
         self.assertIsInstance(emb, Embedding)
 
         _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
@@ -299,7 +299,7 @@ class TestSpacePrediction(unittest.TestCase):
         _obj = _obj_size("InputSpace")
         inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
-        emb = inp.vectors()
+        emb = inp.get_vectors()
         self.assertIn(" ", emb.pretrain.key_to_index)
 
         _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
@@ -353,7 +353,7 @@ class TestNullEOS(unittest.TestCase):
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
         cls.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
                              model_type="embedding")
-        cls.emb = cls.inp.vectors()
+        cls.emb = cls.inp.get_vectors()
         _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = TheXMLConfig.space("OutputSpace", "nDim")
         cls.os_ = OutputSpace([nInput, _sdim], [4, _odim], [4, _odim])

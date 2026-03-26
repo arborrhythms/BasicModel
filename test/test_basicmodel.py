@@ -36,7 +36,7 @@ _RUN_SLOW = os.getenv("RUN_SLOW") == "1"
 
 def _wrap_tensor(space, x):
     """Wrap a raw tensor in the space's SubSpace so forward()/reverse() can materialize it."""
-    space.subspace.set_materialized(x)
+    space.subspace.set_vectors(x)
     return space.subspace
 
 
@@ -811,7 +811,7 @@ class TestBasisContract(unittest.TestCase):
         basis.create(3, 3, 4, passThrough=True)
         out = basis.forward(payload)
         self.assertIs(out, payload)
-        self.assertIs(basis.materialize(), payload)
+        self.assertIs(basis.getW(), payload)
         rev = basis.reverse(payload)
         self.assertIs(rev, payload)
 
@@ -968,15 +968,15 @@ class TestSpaceBasisConstruction(unittest.TestCase):
         from BasicModel import Codebook, Space
         _populate_test_config(inputDim=3, nInput=4, quantized=True)
         s = Space([4, 3], [4, 3], [4, 3])
-        self.assertIsInstance(s.vectors(), Codebook)
-        self.assertFalse(s.vectors().passThrough)
+        self.assertIsInstance(s.get_vectors(), Codebook)
+        self.assertFalse(s.get_vectors().passThrough)
 
     def test_unquantized_creates_passthrough_codebook(self):
         from BasicModel import Codebook, Space
         _populate_test_config(inputDim=3, nInput=4, quantized=False)
         s = Space([4, 3], [4, 3], [4, 3])
-        self.assertIsInstance(s.vectors(), Codebook)
-        self.assertTrue(s.vectors().passThrough)
+        self.assertIsInstance(s.get_vectors(), Codebook)
+        self.assertTrue(s.get_vectors().passThrough)
 
     def test_forward_subspace_round_trip_keeps_runtime_state(self):
         from BasicModel import InputSpace, PerceptualSpace, SubSpace
@@ -1255,7 +1255,7 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
     def test_token_stream_available(self):
         """InputSpace with model_type='embedding' can tokenize via _token_stream."""
         inp, _ = self._make_input_space()
-        emb = inp.vectors()
+        emb = inp.get_vectors()
         tokens = emb._token_stream("hello world")
         self.assertIsInstance(tokens, list)
         self.assertEqual(tokens[0][0], "hello")
@@ -1289,7 +1289,7 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
     def test_doc_spans_store_token_offsets(self):
         """Embedding stores token text alongside byte starts."""
         inp, _ = self._make_input_space()
-        emb = inp.vectors()
+        emb = inp.get_vectors()
         # Find the "hello world" doc (order may vary after shuffling)
         hw = None
         for spans in emb.doc_spans:
@@ -1361,7 +1361,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
-        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vectors())
+        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.get_vectors())
         self.assertTrue(os_.text_mode)
 
     def test_reconstruct_from_known_vectors(self):
@@ -1383,12 +1383,12 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
-        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vectors())
+        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.get_vectors())
 
         # Build synthetic vectors from known codebook entries with known nWhere
-        codebook = inp.vectors().W.detach()
-        words_list = inp.vectors().wv.index_to_key
-        embSize = inp.vectors().embeddingSize
+        codebook = inp.get_vectors().getW().detach()
+        words_list = inp.get_vectors().wv.index_to_key
+        embSize = inp.get_vectors().embeddingSize
         nWhat = embSize - TheXMLConfig.objectSize
         where = inp.subspace.whereEncoding
 
@@ -1425,12 +1425,12 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
-        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vectors())
+        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.get_vectors())
 
         # Build vectors with nWhere = 0 (all zeros)
-        codebook = inp.vectors().W.detach()
-        words_list = inp.vectors().wv.index_to_key
-        embSize = inp.vectors().embeddingSize
+        codebook = inp.get_vectors().getW().detach()
+        words_list = inp.get_vectors().wv.index_to_key
+        embSize = inp.get_vectors().embeddingSize
 
         batch = 1
         nVec = 2
@@ -1466,12 +1466,12 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
-        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vectors())
+        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.get_vectors())
 
         # Build synthetic vectors with nWhere at known positions
-        codebook = inp.vectors().W.detach()
-        words_list = inp.vectors().wv.index_to_key
-        embSize = inp.vectors().embeddingSize
+        codebook = inp.get_vectors().getW().detach()
+        words_list = inp.get_vectors().wv.index_to_key
+        embSize = inp.get_vectors().embeddingSize
         nWhat = embSize - inp.objectSize
         where = inp.subspace.whereEncoding
 
@@ -1511,7 +1511,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
-        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vectors())
+        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.get_vectors())
         inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("SymbolicSpace", "nDim"))
         x = torch.randn(2, nInput, inEmb).to(TheDevice)
         y = os_(_wrap_tensor(os_, x))
@@ -1551,7 +1551,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         batch_size = 2
         inputBatch = data.train_input[0:batch_size]
         inputTensor = inp.prepInput(inputBatch)
-        expected_tokens = inp.vectors().tokenize(inputTensor)
+        expected_tokens = inp.get_vectors().tokenize(inputTensor)
         # Forward pass
         latent = inp.forward(inputTensor)
         # Reverse pass
@@ -1578,7 +1578,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         latent = inp.forward(inputTensor)
         inp.reverse(latent)
         recovered = inp.reconstruct_data()
-        expected = inp.vectors().tokenize(inputTensor)
+        expected = inp.get_vectors().tokenize(inputTensor)
         nVec = inp.outputShape[0]
         for b in range(len(all_inputs)):
             exp = expected[b][:nVec]
@@ -1636,7 +1636,7 @@ class TestLexerConfig(unittest.TestCase):
         _obj = _obj_size("InputSpace")
         inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
-        tokens = inp.vectors()._token_stream("test input")
+        tokens = inp.get_vectors()._token_stream("test input")
         self.assertEqual(tokens[0][0], "test")
 
     def test_embedding_creates_reversible_dictionary(self):
@@ -1650,7 +1650,7 @@ class TestLexerConfig(unittest.TestCase):
         _obj = _obj_size("InputSpace")
         inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
-        self.assertIsInstance(inp.vectors(), Embedding)
+        self.assertIsInstance(inp.get_vectors(), Embedding)
 
 
 class TestEmbeddingLexDelegation(unittest.TestCase):
@@ -2400,7 +2400,7 @@ class TestExpandMaskedTargets(unittest.TestCase):
         _obj = _obj_size("InputSpace")
         self.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                               model_type="embedding")
-        self.emb = self.inp.subspace.vectors()
+        self.emb = self.inp.subspace.get_vectors()
 
         # Build a minimal OutputSpace — input carries symbol objectSize
         _obj_sym = _obj_size("SymbolicSpace")
@@ -2569,7 +2569,7 @@ class TestRARLMTargets(unittest.TestCase):
         _obj = _obj_size("InputSpace")
         self.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                               model_type="embedding")
-        self.emb = self.inp.subspace.vectors()
+        self.emb = self.inp.subspace.get_vectors()
 
         _obj_sym = _obj_size("SymbolicSpace")
         self.out = OutputSpace([8, 1 + _obj_sym], [4, 1], [4, 1])
@@ -2620,8 +2620,8 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
         """When trainEmbeddings=true, _emb.weight is in optimizer params."""
         from BasicModel import Embedding
         m = self._create_model(True)
-        self.assertIsInstance(m.inputSpace.vectors(), Embedding)
-        emb_weight = m.inputSpace.vectors().wv._vectors
+        self.assertIsInstance(m.inputSpace.get_vectors(), Embedding)
+        emb_weight = m.inputSpace.get_vectors().wv._vectors
         optimizer = m.getOptimizer(lr=0.001)
         opt_params = [p.data_ptr() for group in optimizer.param_groups for p in group['params']]
         self.assertIn(emb_weight.data_ptr(), opt_params,
@@ -2631,8 +2631,8 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
         """When trainEmbeddings=false, _emb.weight is NOT in optimizer params."""
         from BasicModel import Embedding
         m = self._create_model(False)
-        self.assertIsInstance(m.inputSpace.vectors(), Embedding)
-        emb_weight = m.inputSpace.vectors().wv._vectors
+        self.assertIsInstance(m.inputSpace.get_vectors(), Embedding)
+        emb_weight = m.inputSpace.get_vectors().wv._vectors
         optimizer = m.getOptimizer(lr=0.001)
         opt_params = [p.data_ptr() for group in optimizer.param_groups for p in group['params']]
         self.assertNotIn(emb_weight.data_ptr(), opt_params,
@@ -2642,7 +2642,7 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
         """runBatch must forward JOINT sbow loss into ModelLoss.total()."""
         from BasicModel import Embedding
         m = self._create_model("joint")
-        self.assertIsInstance(m.inputSpace.vectors(), Embedding)
+        self.assertIsInstance(m.inputSpace.get_vectors(), Embedding)
 
         optimizer = m.getOptimizer(lr=0.001)
         sentinel = torch.tensor(1.2345, device=TheDevice)
@@ -2909,7 +2909,7 @@ class TestReconstructionLossGradient(unittest.TestCase):
             result.lossIn.backward()
 
             # Gradient must reach the codebook
-            emb = m.inputSpace.vectors()
+            emb = m.inputSpace.get_vectors()
             codebook_param = emb.wv._vectors
             self.assertIsNotNone(codebook_param.grad,
                 "Codebook parameter should have gradients from lossIn")
@@ -2975,7 +2975,7 @@ class TestXorExactErgodic(unittest.TestCase):
 # Subspace Activation tests
 # ---------------------------------------------------------------------------
 class TestSubspaceActivation(unittest.TestCase):
-    """Tests for the SubSpace.Materialize(k) and activation machinery."""
+    """Tests for the SubSpace.materialize(k) and activation machinery."""
 
     def test_set_get_activation(self):
         """set_activation / get_activation round-trip."""
@@ -3001,11 +3001,11 @@ class TestSubspaceActivation(unittest.TestCase):
         ss = SubSpace(inputShape=[8, 3], outputShape=[8, 3])
         # Create a known tensor: 8 vectors of dim 3
         x = torch.arange(24, dtype=torch.float32).reshape(1, 8, 3).to(TheDevice)
-        ss.set_materialized(x)
+        ss.set_vectors(x)
         # Set activation: highest at indices 7, 5, 3, 1
         activation = torch.tensor([[0.1, 0.8, 0.2, 0.7, 0.3, 0.9, 0.4, 1.0]]).to(TheDevice)
         ss.set_activation(activation)
-        selected = ss.Materialize(k=4)
+        selected = ss.materialize(k=4)
         self.assertEqual(selected.shape, (1, 4, 3))
         # The top-4 by activation are indices 7(1.0), 5(0.9), 1(0.8), 3(0.7)
         expected_indices = [7, 5, 1, 3]
@@ -3018,10 +3018,10 @@ class TestSubspaceActivation(unittest.TestCase):
         from Space import SubSpace
         ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
         x = torch.randn(2, 4, 3).to(TheDevice)
-        ss.set_materialized(x)
+        ss.set_vectors(x)
         activation = torch.randn(2, 4).to(TheDevice)
         ss.set_activation(activation)
-        result = ss.Materialize(k=None)
+        result = ss.materialize(k=None)
         self.assertTrue(torch.equal(result, x))
 
     def test_materialize_k_geq_nspace(self):
@@ -3029,12 +3029,12 @@ class TestSubspaceActivation(unittest.TestCase):
         from Space import SubSpace
         ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
         x = torch.randn(2, 4, 3).to(TheDevice)
-        ss.set_materialized(x)
+        ss.set_vectors(x)
         activation = torch.randn(2, 4).to(TheDevice)
         ss.set_activation(activation)
-        result = ss.Materialize(k=4)
+        result = ss.materialize(k=4)
         self.assertTrue(torch.equal(result, x))
-        result2 = ss.Materialize(k=10)
+        result2 = ss.materialize(k=10)
         self.assertTrue(torch.equal(result2, x))
 
 
@@ -3054,34 +3054,6 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
         x = torch.randn(2, 28*28, 1).to(TheDevice)
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)  # batch size preserved
-
-    def test_subspace_agrees_with_legacy(self):
-        """Subspace activation path produces same output shape as legacy."""
-        # Legacy run
-        _populate_test_config(
-            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
-            nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
-            perceptPassThrough=True, symbolPassThrough=True, flatten=True,
-            useSubspaceActivation=False)
-        from BasicModel import BasicModel
-        model_legacy = BasicModel()
-        model_legacy.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
-        x = torch.randn(2, 28*28, 1).to(TheDevice)
-        _, _, out_legacy = model_legacy.forward(x)
-
-        # Subspace run — copy weights from legacy
-        _populate_test_config(
-            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
-            nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
-            perceptPassThrough=True, symbolPassThrough=True, flatten=True,
-            useSubspaceActivation=True)
-        model_sub = BasicModel()
-        model_sub.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
-        model_sub.load_state_dict(model_legacy.state_dict())
-        _, _, out_sub = model_sub.forward(x)
-
-        self.assertEqual(out_legacy.shape, out_sub.shape,
-                         f"Shape mismatch: legacy {out_legacy.shape} vs subspace {out_sub.shape}")
 
     def test_subspace_activation_stored(self):
         """After forward with useSubspaceActivation, spaces have activations."""

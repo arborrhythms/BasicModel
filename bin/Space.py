@@ -396,7 +396,8 @@ class Basis(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.W = None
+        # W is NOT stored here — subclasses own the storage.
+        # Tensor/Codebook use register_buffer; Embedding uses wv._vectors.
         self.activation = None
         self.activeSigma = None
         self.nInput = 0
@@ -408,6 +409,14 @@ class Basis(nn.Module):
         self.signed = False
         self.ergodic = False
         self.sigma_kappa = 0.01
+
+    def getW(self):
+        """Return the current weight tensor. Subclasses must override."""
+        raise NotImplementedError(f"{self.__class__.__name__} must implement getW()")
+
+    def setW(self, value):
+        """Set the weight tensor. Subclasses must override."""
+        raise NotImplementedError(f"{self.__class__.__name__} must implement setW()")
 
     def create(self, nInput, nVectors, nDim, customVQ=True, signed=False,
                passThrough=False, objectSize=0):
@@ -422,11 +431,13 @@ class Basis(nn.Module):
 
     @property
     def size(self):
-        return 0 if self.W is None else self.W.shape[0]
+        w = self.getW()
+        return 0 if w is None else w.shape[0]
 
     @property
     def width(self):
-        return 0 if self.W is None else self.W.shape[-1]
+        w = self.getW()
+        return 0 if w is None else w.shape[-1]
 
     @property
     def content_dim(self):
@@ -443,11 +454,11 @@ class Basis(nn.Module):
         self.activeSigma = None
 
     def forward(self, x):
-        self.W = x
+        self.setW(x)
         return x
 
     def reverse(self, y, **kwargs):
-        self.W = y
+        self.setW(y)
         return y
 
     def reverse_raw(self, y):
@@ -468,27 +479,30 @@ class Basis(nn.Module):
         return value
 
     def replace(self, new_W):
-        self.W = self._coerce_rows(new_W)
-        return self.W
+        self.setW(self._coerce_rows(new_W))
+        return self.getW()
 
     def insert(self, new_W):
         new_W = self._coerce_rows(new_W)
-        self.W = new_W if self.W is None else torch.cat([self.W, new_W], dim=0)
-        return self.W
+        w = self.getW()
+        self.setW(new_W if w is None else torch.cat([w, new_W], dim=0))
+        return self.getW()
 
     def remove(self, indices):
-        if self.W is None:
+        w = self.getW()
+        if w is None:
             return None
-        mask = torch.ones(self.W.shape[0], dtype=torch.bool, device=self.W.device)
+        mask = torch.ones(w.shape[0], dtype=torch.bool, device=w.device)
         mask[indices] = False
-        self.W = self.W[mask]
-        return self.W
+        self.setW(w[mask])
+        return self.getW()
 
     def parameters_for_optimizer(self):
-        return [self.W] if isinstance(self.W, nn.Parameter) else []
+        w = self.getW()
+        return [w] if isinstance(w, nn.Parameter) else []
 
     def _prototype_weight(self, weight=None, context="prototype lookup"):
-        weight = self.W if weight is None else weight
+        weight = self.getW() if weight is None else weight
         if weight is None or weight.ndim != 2:
             shape = None if weight is None else list(weight.shape)
             raise RuntimeError(
@@ -524,7 +538,7 @@ class Basis(nn.Module):
         return torch.norm(x, dim=-1)
 
     def normalize(self, x=None):
-        target = self.W if x is None else x
+        target = self.getW() if x is None else x
         if target is None:
             raise RuntimeError(f"{self.__class__.__name__}.normalize() has no tensor to normalize.")
         if self.signed:
@@ -533,11 +547,8 @@ class Basis(nn.Module):
             normalized = torch.clamp(target, 0, 1)
             normalized = F.normalize(normalized, p=2, dim=-1)
         if x is None:
-            if isinstance(self.W, nn.Parameter):
-                self.W.data = normalized
-            else:
-                self.W = normalized
-            return self.W
+            self.setW(normalized)
+            return self.getW()
         return normalized
 
     def negate(self, x):
@@ -577,11 +588,12 @@ class Basis(nn.Module):
         return torch.min(x, y)
 
     def active_dense(self):
-        if self.activation is None or self.W is None:
+        w = self.getW()
+        if self.activation is None or w is None:
             return None
         if self.activation.ndim == 1:
-            return self.activation.unsqueeze(-1) * self.W
-        return self.activation.unsqueeze(-1) * self.W.unsqueeze(0)
+            return self.activation.unsqueeze(-1) * w
+        return self.activation.unsqueeze(-1) * w.unsqueeze(0)
 
     @staticmethod
     def _pairwise_sq_dists(X, Y):
@@ -627,28 +639,43 @@ class Tensor(Basis):
 
     def __init__(self, nVectors=0, nDim=0, W=None):
         super().__init__()
+        self.register_buffer('W', None)
         self.nVectors = nVectors
         self.nDim = nDim
-        self.W = W
+        if W is not None:
+            self.W = W
+
+    def getW(self):
+        return self.W
+
+    def setW(self, value):
+        self.W = value
 
     def forward(self, x):
-        self.W = x
+        self.setW(x)
         return x
 
     def reverse(self, y, **kwargs):
-        self.W = y
+        self.setW(y)
         return y
 class Codebook(Basis):
     """Prototype basis with vector quantization and reverse snapping support."""
 
     def __init__(self):
         super().__init__()
+        self.register_buffer('W', None)
         self.customVQ = True
         self.snapDistance = 0.1
         self.eta = 0.9
         self.alpha = 0.0
         self.codebookSize = 0
         self.vq = None
+
+    def getW(self):
+        return self.W
+
+    def setW(self, value):
+        self.W = value
 
     def getSize(self):
         return self.nVectors
@@ -666,7 +693,7 @@ class Codebook(Basis):
         )
         self.customVQ = customVQ
         self.alpha = 0.0
-        if (not self.passThrough) and self.nVectors > 0 and self.W is None:
+        if (not self.passThrough) and self.nVectors > 0 and self.getW() is None:
             self.addVectors(self.nVectors)
         return self
 
@@ -685,13 +712,13 @@ class Codebook(Basis):
                 commitment_weight=1.0,
                 rotation_trick=True,
             )
-            self.W = self.vq.codebook
+            self.setW(self.vq.codebook)
         else:
             W = torch.randn([nVec, self.embeddingSize], device=TheDevice)
             for i in range(nVec):
                 W[i, :] = self.normalize(W[i, :]).squeeze(0)
-            self.W = W
-        return self.W
+            self.setW(W)
+        return self.getW()
 
     def quantize(self, x):
         if self.passThrough:
@@ -702,7 +729,7 @@ class Codebook(Basis):
                 x,
                 ema_update_weight=self.updateWeights,
             )
-            self.W = self.vq.codebook
+            self.setW(self.vq.codebook)
             return quantized, indices, commit_loss
         weight = self._prototype_weight(context="quantize")
         flat = x.reshape(-1, x.shape[-1])
@@ -716,10 +743,11 @@ class Codebook(Basis):
 
     def forward(self, input):
         if self.passThrough:
-            self.W = input
+            self.setW(input)
             return input
 
-        if self.W is None or self.codebookSize == 0:
+        w = self.getW()
+        if w is None or self.codebookSize == 0:
             self.addVectors(max(self.nVectors, input.shape[1]))
         x = self._ensure_embedding_width(input)
         batch = x.shape[0]
@@ -754,6 +782,7 @@ class Codebook(Basis):
                         act[i, cb_idx] = cosSim + self.alpha * random.random()
             x = x3d.reshape(x.shape)
         else:
+            w = self.getW()
             dists = self.codebookDistance(input)
             for b in range(x.shape[0]):
                 for v in range(x.shape[1]):
@@ -761,64 +790,64 @@ class Codebook(Basis):
                     err = nearestDist[0].item()
                     idx = nearestIdx[0].item()
                     if err <= self.snapDistance:
-                        x[b, v, :] = self.W[idx, :]
+                        x[b, v, :] = w[idx, :]
                         act[b, idx] = nearestDist[0]
                     if self.training:
-                        self.W[idx, :] = self.eta * self.W[idx, :] + (1 - self.eta) * x[b, v, :]
+                        w[idx, :] = self.eta * w[idx, :] + (1 - self.eta) * x[b, v, :]
         self.activation = act
         self.activeSigma = None
-        self.W = x
+        self.setW(x)
         return x
 
     def reverse(self, y, **kwargs):
         if self.passThrough:
-            self.W = y
+            self.setW(y)
             return y
         if y.shape[-1] < self.nDim:
             raise RuntimeError(
                 f"Codebook.reverse() expected at least {self.nDim} content dims, "
                 f"got shape {list(y.shape)}.")
         content = y.clone() if y.shape[-1] == self.nDim else y[:, :, :self.nDim].clone()
-        content = self._snap_content(content, weight=self.W, nWhat=self.nDim)
-        self.W = content
+        content = self._snap_content(content, weight=self.getW(), nWhat=self.nDim)
+        self.setW(content)
         return content
 
     def replace(self, new_vectors):
         new_vectors = self._coerce_rows(new_vectors)
         if self.customVQ and self.vq is not None:
             self.vq.codebook = new_vectors
-        self.W = new_vectors
-        self.codebookSize = 0 if self.W is None else self.W.shape[0]
-        return self.W
+        self.setW(new_vectors)
+        w = self.getW()
+        self.codebookSize = 0 if w is None else w.shape[0]
+        return w
 
     def insert(self, new_vectors):
         new_vectors = self._coerce_rows(new_vectors)
         new_vectors = self.normalize(new_vectors)
         if new_vectors.ndim == 1:
             new_vectors = new_vectors.unsqueeze(0)
-        current = self.W
+        current = self.getW()
         if current is None:
             self.replace(new_vectors)
         else:
             self.replace(torch.cat([current, new_vectors], dim=0))
-        return self.W
+        return self.getW()
 
     def remove(self, indices):
-        if self.W is None:
+        w = self.getW()
+        if w is None:
             return None
-        mask = torch.ones(self.W.shape[0], dtype=torch.bool, device=self.W.device)
+        mask = torch.ones(w.shape[0], dtype=torch.bool, device=w.device)
         mask[indices] = False
-        self.replace(self.W[mask])
-        return self.W
+        self.replace(w[mask])
+        return self.getW()
 
     def learn(self, x, target_idx, lr=0.01):
         x = F.normalize(x, p=2, dim=-1)
-        selected_vectors = self.W[target_idx]
+        w = self.getW()
+        selected_vectors = w[target_idx]
         delta = lr * (x - selected_vectors)
-        if isinstance(self.W, nn.Parameter):
-            self.W.data[target_idx] += delta
-        else:
-            self.W[target_idx] += delta
+        w[target_idx] += delta
         self.normalize()
 
     @staticmethod
@@ -862,6 +891,19 @@ class Embedding(Basis):
         self.optimize_embedding = False  # set by ModelFactory from <trainEmbedding>
         object.__setattr__(self, '_model', None)  # back-ref to BasicModel, avoids nn.Module submodule registration
         self.doc_sources = []
+
+    def getW(self):
+        """Return live embedding vectors (always current, even after insert/remove).
+
+        Returns the nn.Parameter directly (not .data) so gradients flow through.
+        """
+        if self.wv is not None and self.wv._vectors is not None:
+            return self.wv._vectors
+        return None
+
+    def setW(self, value):
+        """Embedding W is managed by wv._vectors — setW is a no-op."""
+        pass
 
     @staticmethod
     def _to_text(buf):
@@ -928,7 +970,7 @@ class Embedding(Basis):
         super().create(nInput or max(1, vocab_size), nVectors or max(1, vocab_size),
                        vector_size, passThrough=passThrough,
                        objectSize=objectSize)
-        self.W = self.wv._vectors
+        # W is managed by wv._vectors; getW() returns live data
 
         self.pretrain = PretrainModel(wv, learning_rate=learning_rate, neg_samples=neg_samples)
         self.wv = wv  # register as submodule for .to(device) and state_dict
@@ -970,17 +1012,17 @@ class Embedding(Basis):
             [self.wv._vectors],
             lr=self.pretrain.optimizer.param_groups[0]['lr'],
         )
-        self.W = self.wv._vectors
+        # W is managed by wv._vectors; getW() returns live data
 
     def replace(self, new_W):
         new_W = self._coerce_rows(new_W).to(TheDevice)
         with torch.no_grad():
             self.wv._vectors = nn.Parameter(new_W, requires_grad=True)
-        self.W = self.wv._vectors
+        # W is managed by wv._vectors; getW() returns live data
         self.wv._normed = None
         if self.pretrain is not None:
             self._rebuild_optimizer()
-        return self.W
+        return self.getW()
 
     def insert(self, word, vector=None, initial_count=0):
         """Add a word to the vocabulary and codebook.
@@ -1022,7 +1064,7 @@ class Embedding(Basis):
         self.pretrain.key_to_index = self.wv.key_to_index
 
         self._rebuild_optimizer()
-        self.W = self.wv._vectors
+        # W is managed by wv._vectors; getW() returns live data
 
         return new_vec.squeeze(0)  # (1, dim) -> (dim,); preserves 1-dim case
 
@@ -1054,7 +1096,7 @@ class Embedding(Basis):
         self.pretrain.key_to_index = self.wv.key_to_index
 
         self._rebuild_optimizer()
-        self.W = self.wv._vectors
+        # W is managed by wv._vectors; getW() returns live data
 
     @staticmethod
     def _load_embeddings(embedding_path=None, nDim=None):
@@ -1112,7 +1154,7 @@ class Embedding(Basis):
     @property
     def codebook_weight(self):
         """nn.Embedding weight tensor (read-only reference)."""
-        return self.W
+        return self.getW()
 
     @property
     def vocab_keys(self):
@@ -1122,11 +1164,11 @@ class Embedding(Basis):
     @property
     def embedding_dim(self):
         """Content dimensionality (nWhat)."""
-        return self.W.shape[1]
+        return self.getW().shape[1]
 
     def embedding_parameters(self):
         """Return embedding parameters for optimizer inclusion."""
-        return [self.W]
+        return [self.wv._vectors]
 
     def parameters_for_optimizer(self):
         return self.embedding_parameters()
@@ -1166,7 +1208,7 @@ class Embedding(Basis):
 
     def _nearest_idx(self, vec, codebook=None):
         if codebook is None:
-            codebook = self.W.detach()
+            codebook = self.getW().detach()
         vec = vec.to(TheDevice)
         sims = F.cosine_similarity(vec.unsqueeze(0), codebook, dim=1)
         return sims.argmax().item()
@@ -1186,7 +1228,7 @@ class Embedding(Basis):
         if input.dim() == 1:
             input = input.unsqueeze(0)  # [len] -> [1, len]
         batch = input.shape[0]
-        codebook = self.W
+        codebook = self.getW()
         batch_tokens = []
         span_counts = []
         final_offsets = []
@@ -1208,7 +1250,7 @@ class Embedding(Basis):
         if oov_words:
             for word in oov_words:
                 self.insert(word)
-            codebook = self.W  # refresh after insert
+            codebook = self.getW()  # refresh after insert
             if self.optimize_embedding:
                 model = getattr(self, '_model', None)
                 if model is not None:
@@ -1238,7 +1280,6 @@ class Embedding(Basis):
                 null_vec = self._encode_vector(codebook[null_idx], token_idx=null_idx)
                 for i in range(n_tokens, self.nInput):
                     result[b, i, :] = null_vec
-        self.W = result
         if not return_meta:
             return result
         return result, {
@@ -1344,7 +1385,7 @@ class Embedding(Basis):
 
     def _get_codebook(self):
         """Return the live codebook parameter (Embedding uses WordVectors)."""
-        return self.W
+        return self.getW()
 
     def reverse(self, y, return_meta=False, subspace=None):
         """Snap content vectors to the nearest embedding rows.
@@ -1362,8 +1403,7 @@ class Embedding(Basis):
                     f"Embedding.reverse() expected at least {self.embedding_dim} "
                     f"content dims, got shape {list(y.shape)}.")
             content = y.clone() if y.shape[-1] == self.embedding_dim else y[:, :, :self.embedding_dim].clone()
-            content = self._snap_content(content, weight=self.W, nWhat=self.embedding_dim)
-        self.W = content
+            content = self._snap_content(content, weight=self.getW(), nWhat=self.embedding_dim)
         if return_meta:
             return content, self.decode_reverse_meta(content, subspace=subspace)
         return content
@@ -1386,7 +1426,7 @@ class Embedding(Basis):
 
         batch = vectors.shape[0]
         nVec = vectors.shape[1]
-        codebook = self.W
+        codebook = self.getW()
         words_list = self.wv.index_to_key
         nWhat = codebook.shape[1]
 
@@ -1487,7 +1527,7 @@ class Embedding(Basis):
         else:
             ch = word[0] if word else ' '
             idx = self.pretrain.key_to_index.get(ch, 0)
-        return self.W[idx].detach()
+        return self.getW()[idx].detach()
 
     def get_space_embedding(self):
         """Return the codebook embedding for the space character ' '."""
@@ -1495,7 +1535,7 @@ class Embedding(Basis):
 
     def get_mask_embedding(self):
         """Return a zero vector the same size as a codebook entry."""
-        return torch.zeros(self.W.shape[1], device=TheDevice)
+        return torch.zeros(self.getW().shape[1], device=TheDevice)
 
 class SubSpace(nn.Module):
     """Per-space runtime state container.
@@ -1528,6 +1568,7 @@ class SubSpace(nn.Module):
         self.inputShape = inputShape    # [nActive, nDim]
         self.outputShape = outputShape  # [nActive, nDim]
         self.batch = 0
+        self._vectors = None  # dense forward result, set by set_vectors()
         self.object = self._coerce_basis(object, role="object")
         self.what   = self._coerce_basis(what, role="what")
         self.where  = self._coerce_basis(where, role="where")
@@ -1567,28 +1608,29 @@ class SubSpace(nn.Module):
             last_dim = value.shape[-1] if value.ndim > 1 else 1
             n_vectors = value.shape[-1] if value.ndim == 1 else value.shape[-2]
             basis.create(n_vectors, n_vectors, last_dim, passThrough=True)
-        basis.W = value
+        basis.setW(value)
         return basis
 
-    def vectors(self):
+    def get_vectors(self):
         return self.object
 
-    def setVectors(self, vectors):
-        self.object = Tensor()
-        self.object.W = vectors
-        self.setActivationFromVectors(vectors)
-        #self.object.create(
-        #    self.inputShape[0],
-        #    self.outputShape[0],
-        #    self.outputShape[1],
-        #    passThrough=True,
-        #    objectSize=self.objectSize)
+    def set_vectors(self, vectors):
+        """Store the current dense vectors (forward output) for materialize().
 
-    def setActivationFromVectors(self, y):
-        # Compute and store subspace activation
-        assert y.ndim == 3 , "Must be dim==3"
-        activation = torch.norm(y, dim=-1, keepdim=True)
-        self.setActivation(activation)
+        This is separate from the object's codebook (getW/setW) — for Embedding,
+        getW() returns the codebook while set_vectors stores the forward result.
+        """
+        if self.object is None:
+            self.object = Tensor()
+        self._vectors = vectors
+        self.object.setW(vectors)
+        self.set_activation_vectors(vectors)
+
+    def set_activation_vectors(self, y):
+        """Compute and store subspace activation from dense vectors [B, N, D]."""
+        assert y.ndim == 3, "Must be dim==3"
+        activation = torch.norm(y, dim=-1)  # [B, N]
+        self.set_activation(activation)
 
     # ------------------------------------------------------------------
     # Derived sizes
@@ -1664,11 +1706,15 @@ class SubSpace(nn.Module):
         """Store scalar subspace activation for each object vector.
 
         Args:
-            activation_tensor: [batch, nVectors, 1]
+            activation_tensor: [batch, nVectors] or [batch, nVectors, 1]
                 scalar activation values per vector.
         """
-        assert activation_tensor.ndim == 3 and activation_tensor.shape[-1] == 1, \
-            f"activation must be [batch, nVectors, 1], got {activation_tensor.shape}"
+        if activation_tensor.ndim == 3:
+            assert activation_tensor.shape[-1] == 1, \
+                f"activation last dim must be 1, got {activation_tensor.shape}"
+            activation_tensor = activation_tensor.squeeze(-1)
+        assert activation_tensor.ndim == 2, \
+            f"activation must be [batch, nVectors], got {activation_tensor.shape}"
         self._activation = activation_tensor
 
     def get_activation(self):
@@ -1688,11 +1734,15 @@ class SubSpace(nn.Module):
             Tensor [batch, k, dim] of the k highest-activation vectors.
             Stores selection indices in self._topk_indices for downstream use.
         """
-        x = None
-        if self.object is None:
+        # _vectors holds the dense forward result (set by set_vectors).
+        # Falls back to object.getW() (the codebook) if no forward has run.
+        x = getattr(self, '_vectors', None)
+        if x is None:
+            if self.object is None:
+                return None
+            x = self.object.getW()
+        if x is None:
             return None
-        if isinstance(self.object, Basis):
-            x = self.object.materialize()
 
         activation = self.get_activation()
         if k is None or activation is None:
@@ -1748,7 +1798,6 @@ class SubSpace(nn.Module):
         if size == 0:
             return object
         return object[0:-size]
-    
 class Space(nn.Module):
     """Base class for all spaces in the processing pipeline.
 
@@ -1869,51 +1918,57 @@ class Space(nn.Module):
                 f"{section_name}: non-quantized space requires nVectors ({nV}) == nActive ({nA})"
             )
 
-    def vectors(self):
+    def get_vectors(self):
         """Convenience accessor — delegates to subspace."""
-        return self.subspace.vectors()
+        return self.subspace.get_vectors()
 
     def forwardBegin(self, vspace):
-        """
-        Materialize input and optionally flatten for space-specific processing.
-        Accepts either a SubSpace or a raw tensor.
-        """
+        """Materialize input and optionally flatten for space-specific processing."""
         x = vspace.materialize()
         self.subspace.batch = x.shape[0]
         if self.subspace.flatten:
-            x = x.reshape(x.shape[0], -1)
+            x = x.reshape(x.shape[0], 1, -1)  # [B, N, D] -> [B, 1, N*D]
         return x
 
     def forwardEnd(self, x):
         """Optionally unflatten output, store in subspace, return SubSpace."""
         if self.subspace.flatten:
             x = self.subspace.objectEncoding._unflatten(x, self.subspace.batch, forward=True)
-        self.subspace.setVectors(x)
+        self.subspace.set_vectors(x)
         return self.subspace
 
     def reverseBegin(self, vspace):
-        """Materialize input and optionally flatten for space-specific reverse processing.
-
-        Accepts either a SubSpace or a raw tensor.
-        """
+        """Materialize input and optionally flatten for space-specific reverse processing."""
         y = vspace.materialize()
         self.subspace.batch = y.shape[0]
         if self.subspace.flatten:
-            y = y.reshape(y.shape[0], -1)
+            y = y.reshape(y.shape[0], 1, -1)  # [B, N, D] -> [B, 1, N*D]
         return y
 
     def reverseEnd(self, y):
         """Optionally unflatten output, store in subspace, return SubSpace."""
         if self.subspace.flatten:
             y = self.subspace.objectEncoding._unflatten(y, self.subspace.batch, forward=False)
-        self.subspace.setVectors(y)
+        self.subspace.set_vectors(y)
         return self.subspace
+
+    def _2d(self, x):
+        """Squeeze [B, 1, D] -> [B, D] for 2D layer interfaces when flattened."""
+        if self.subspace.flatten:
+            return x.squeeze(1)
+        return x
+
+    def _3d(self, x):
+        """Unsqueeze [B, D] -> [B, 1, D] after 2D layer interfaces when flattened."""
+        if self.subspace.flatten:
+            return x.unsqueeze(1)
+        return x
 
     def lookup(self, x):
         activation = x[0]
         x = x.unsqueeze(0).unsqueeze(0)
         x = torch.cat([torch.zeros([1,1, TheXMLConfig.space("ConceptualSpace", "nDim")], device=TheDevice), x[:,:,1:]], dim=2)
-        output, index, _ = self.subspace.vectors().quantize(x)
+        output, index, _ = self.subspace.get_vectors().quantize(x)
         #output[:,:,0:conceptDim] = output[:,:,0:conceptDim] * activation  # multiply the codebook vector by the activation
         return output
     def dereference(self, symbols):
@@ -1931,8 +1986,8 @@ class Space(nn.Module):
         return objects
 
     def stats(self, x):
-        #codebookUse = self.subspace.vectors().codebookUse
-        #TheMessage(f"{self.name} Codebook activation: { np.sum(self.subspace.vectors().codebookAct.get()) }")
+        #codebookUse = self.subspace.get_vectors().codebookUse
+        #TheMessage(f"{self.name} Codebook activation: { np.sum(self.subspace.get_vectors().codebookAct.get()) }")
         return
     def set_sigma(self, sigma):
         """Propagate exploration meta-parameters to all layers and Basis slots."""
@@ -1947,7 +2002,6 @@ class Space(nn.Module):
     def paramUpdate(self):
         for l in self.layers:
             l.paramUpdate()
-
 class InputSpace(Space):
     """Receives the source buffer from Data() and encodes it as vectors.
 
@@ -2088,14 +2142,14 @@ class InputSpace(Space):
             self._cached_embedding = None  # consume once
             self.input = cached
             self._forward_input = None
-            self.subspace.setVectors(self.input)
+            self.subspace.set_vectors(self.input)
             return self.subspace
 
         # Reset positional counter for each forward pass
         self.subspace.whereEncoding.p = 0
 
         batch = input.shape[0]
-        object_basis = self.subspace.vectors()
+        object_basis = self.subspace.get_vectors()
         lexical_basis = self.subspace.object
         if not isinstance(lexical_basis, Embedding):
             assert list(input.shape) == [batch, self.inputShape[0], self.inputShape[1]]
@@ -2103,7 +2157,7 @@ class InputSpace(Space):
             self._forward_input = None
             if self.objectSize > 0:
                 self.input = self.subspace.encode(self.input)
-            object_basis.W = self.input
+            object_basis.setW(self.input)
         else:
             self.input, meta = lexical_basis.forward(input, return_meta=True)
             self._forward_input = meta
@@ -2124,13 +2178,13 @@ class InputSpace(Space):
                             where=False,
                             when=True,
                         )
-            lexical_basis.W = self.input
-        object_basis.W = self.input
+            lexical_basis.setW(self.input)
+        object_basis.setW(self.input)
 
         output = self.subspace.getEncodedOutputSize()
         assert list(self.input.shape) == [batch, self.outputShape[0], output]
 
-        self.subspace.setVectors(self.input)
+        self.subspace.set_vectors(self.input)
         return self.subspace
     
     def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM'):
@@ -2199,7 +2253,7 @@ class InputSpace(Space):
     def reverse(self, vspace):
         y = self.reverseBegin(vspace)
         # Store full vector (all subspaces) for MSE loss BEFORE partitioning
-        object_basis = self.subspace.vectors()
+        object_basis = self.subspace.get_vectors()
         content_basis = self.subspace.what if isinstance(self.subspace.what, Embedding) else object_basis
         raw = object_basis.reverse_raw(y)
         self.reconstructed = raw.detach()
@@ -2220,8 +2274,8 @@ class InputSpace(Space):
             self.input = torch.cat([content, aux], dim=-1)
         else:
             self.input = content
-        content_basis.W = self.input
-        object_basis.W = self.input
+        content_basis.setW(self.input)
+        object_basis.setW(self.input)
         if isinstance(content_basis, Embedding):
             self._recovered_input = content_basis.decode_reverse_meta(
                 self.input, subspace=self.subspace)
@@ -2234,13 +2288,13 @@ class InputSpace(Space):
         """Render the last recovered text state stored on InputSpace."""
         if getattr(self, '_recovered_input', None) is None:
             raise RuntimeError("reconstruct_data() called before reverse()")
-        return self.subspace.vectors().reconstruct_data(self._recovered_input, text=text)
+        return self.subspace.get_vectors().reconstruct_data(self._recovered_input, text=text)
 
     def reconstruct_to_buffer(self, buf_size=None):
         """Render the last recovered text buffer stored on InputSpace."""
         if getattr(self, '_recovered_input', None) is None:
             raise RuntimeError("reconstruct_to_buffer() called before reverse()")
-        return self.subspace.vectors().reconstruct_to_buffer(
+        return self.subspace.get_vectors().reconstruct_to_buffer(
             self._recovered_input, buf_size=buf_size)
 
     def get_forward_meta(self):
@@ -2251,7 +2305,7 @@ class InputSpace(Space):
         """Return one recovered token from the last InputSpace.reverse()."""
         if getattr(self, '_recovered_input', None) is None:
             return None
-        return self.subspace.vectors().get_recovered_word(
+        return self.subspace.get_vectors().get_recovered_word(
             self._recovered_input, batch_idx, position)
 
     # ------------------------------------------------------------------
@@ -2260,28 +2314,28 @@ class InputSpace(Space):
 
     def train_embeddings(self, words, method='CBOW'):
         """Run one CBOW/SBOW gradient step if words are available."""
-        emb = self.subspace.vectors()
+        emb = self.subspace.get_vectors()
         if isinstance(emb, Embedding) and words:
             return emb.train_step(words, method=method)
         return None
 
     def sbow_loss(self, words):
         """Return SBOW loss tensor for joint optimization (no backward/step)."""
-        emb = self.subspace.vectors()
+        emb = self.subspace.get_vectors()
         if isinstance(emb, Embedding) and words:
             return emb.sbow_loss(words)
         return None
 
     def _snapshot_embeddings(self):
         """Return the current WordVectors (no-op, vectors are always live)."""
-        emb = self.subspace.vectors()
+        emb = self.subspace.get_vectors()
         if isinstance(emb, Embedding):
             return emb.wv
         return None
 
     def set_embedding_sigma(self, sigma):
         """Control exploration noise on the embedding."""
-        emb = self.subspace.vectors()
+        emb = self.subspace.get_vectors()
         if hasattr(emb, 'set_sigma'):
             emb.set_sigma(sigma)
 
@@ -2396,7 +2450,7 @@ class InputSpace(Space):
 
     def predict(self, vector):
         """Delegates to Embedding.predict()."""
-        return self.subspace.vectors().predict(vector)
+        return self.subspace.get_vectors().predict(vector)
 
     # ------------------------------------------------------------------
     # ARIR helpers
@@ -2404,15 +2458,15 @@ class InputSpace(Space):
 
     def embed_token(self, word):
         """Delegates to Embedding.embed_token()."""
-        return self.subspace.vectors().embed_token(word)
+        return self.subspace.get_vectors().embed_token(word)
 
     def get_space_embedding(self):
         """Delegates to Embedding.get_space_embedding()."""
-        return self.subspace.vectors().get_space_embedding()
+        return self.subspace.get_vectors().get_space_embedding()
 
     def get_mask_embedding(self):
         """Delegates to Embedding.get_mask_embedding()."""
-        return self.subspace.vectors().get_mask_embedding()
+        return self.subspace.get_vectors().get_mask_embedding()
 
     # ── ARIR state machine ──────────────────────────────────────────
 
@@ -2430,8 +2484,8 @@ class InputSpace(Space):
         Returns None when cursor reaches nVec, EOF detected, or max_chars exceeded.
         """
         nVec = self.outputShape[0]
-        embSize = self.subspace.vectors().embeddingSize
-        nWhat = self.subspace.vectors().embedding_dim
+        embSize = self.subspace.get_vectors().embeddingSize
+        nWhat = self.subspace.get_vectors().embedding_dim
 
         if self._arir_cursor is None:
             # ── First call: embed seed, prepare buffer ──────────────
@@ -2449,7 +2503,7 @@ class InputSpace(Space):
             self._arir_byte_offset = offsets[0] if offsets else 0
 
             # Fill future positions (seed_len .. nVec-1) with NULL embeddings
-            null_emb = self.subspace.vectors().embed_token("\x00")
+            null_emb = self.subspace.get_vectors().embed_token("\x00")
             for k in range(seed_len, nVec):
                 self._arir_embedded[0, k, :nWhat] = null_emb[:nWhat]
                 est_offset = self._arir_byte_offset + (k - seed_len)
@@ -2664,33 +2718,12 @@ class PerceptualSpace(Space):
             return vspace
         x = self.forwardBegin(vspace)
         if self.hasAttention:
-            x = self.attention.forward(x)
-        x = self.forwardPi(x)
+            x = self._3d(self.attention.forward(self._2d(x)))
+        x = self._3d(self.forwardPi(self._2d(x)))
         if self.quantized:
-            x = self.subspace.vectors().forward(x)
+            x = self._3d(self.subspace.get_vectors().forward(self._2d(x)))
         vspace = self.forwardEnd(x)
         return vspace
-
-    def _forward_subspace_v2(self, input_subspace):
-        if self.flatten:
-            x = self.subspace.objectEncoding._flatten(x, batch, forward=True)
-            x, activation = self._space_forward(x)
-            self.subspace.set_activation(activation)
-            x = self.subspace.objectEncoding._unflatten(x, batch, forward=True)
-        else:
-            if getattr(self, 'hasAttention', False):
-                x = self.attention.forward(x)
-            x, activation = self._space_forward(x)
-            self.subspace.set_activation(activation)
-            if self.quantized:
-                x = self.subspace.vectors().forward(x)
-    def _reverse_subspace_v2(self, input_subspace):
-        if self.flatten:
-            x = self.subspace.objectEncoding._flatten(x, batch, forward=False)
-            x = self._space_reverse(x)
-            x = self.subspace.objectEncoding._unflatten(x, batch, forward=False)
-        else:
-            x = self._space_reverse(x)
 
     def reverse(self, vspace):
         """Manifesting: reconstruct input vectors from percepts via reverse PiLayer."""
@@ -2698,7 +2731,7 @@ class PerceptualSpace(Space):
             return vspace
         y = self.reverseBegin(vspace)
         if self.reversible:
-            y = self.reversePi(y)
+            y = self._3d(self.reversePi(self._2d(y)))
         vspace = self.reverseEnd(y)
         return vspace
 
@@ -2773,19 +2806,11 @@ class ConceptualSpace(Space):
     def forward(self, vspace):
         """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ."""
         x = self.forwardBegin(vspace)
-        y = self.forwardSigma(x)
+        y = self._3d(self.forwardSigma(self._2d(x)))
         if self.hasAttention:
-            y = self.attention.forward(y)
+            y = self._3d(self.attention.forward(self._2d(y)))
         if self.quantized:
-            y = self.subspace.vectors().forward(y)
-        # Compute and store subspace activation (sum-based for concepts)
-        if y.ndim == 3:
-            nDim = self.outputShape[1]
-            activation = torch.sum(y[:, :, :nDim], dim=-1) / (2 * self.outputShape[0])
-        else:
-            activation = torch.norm(y, dim=-1, keepdim=True)
-        self.subspace.set_activation(activation)
-        self.concepts = y
+            y = self._3d(self.subspace.get_vectors().forward(self._2d(y)))
         vspace = self.forwardEnd(y)
         return vspace
 
@@ -2794,7 +2819,7 @@ class ConceptualSpace(Space):
         y = self.reverseBegin(vspace)
         if self.processSymbols:
             y = self.dereference(y)
-        y = self.reverseSigma(y)
+        y = self._3d(self.reverseSigma(self._2d(y)))
         self.concepts = y
         vspace = self.reverseEnd(y)
         return vspace
@@ -2852,18 +2877,9 @@ class SymbolicSpace(Space):
         if not self.passThrough:
             x = self.discretize(x)
         if self.quantized:
-            x = self.subspace.vectors().forward(x)
-        # Compute and store subspace activation
-        if x.ndim == 3:
-            nDim = self.outputShape[1]
-            activation = torch.norm(x[:, :, :nDim], dim=-1)
-        else:
-            activation = torch.norm(x, dim=-1, keepdim=True)
-        self.subspace.set_activation(activation)
-        self.symbols = x
+            x = self._3d(self.subspace.get_vectors().forward(self._2d(x)))
         vspace = self.forwardEnd(x)
         return vspace
-
 
     def reverse(self, vspace):
         """Interpretation: map symbols back to concept vectors (via codebook dereference)."""
@@ -2902,14 +2918,7 @@ class SyntacticSpace(Space):
         return x.T @ x
     def forward(self, vspace):
         x = self.forwardBegin(vspace)
-        # Identity — no transform, just compute activation
-        if x.ndim == 3:
-            nDim = self.outputShape[1]
-            activation = torch.norm(x[:, :, :nDim], dim=-1)
-        else:
-            activation = torch.norm(x, dim=-1, keepdim=True)
-        self.subspace.set_activation(activation)
-        self.symbols = x
+        # Identity — no transform
         vspace = self.forwardEnd(x)
         return vspace
 
@@ -2956,7 +2965,7 @@ class OutputSpace(Space):
                 passThrough=True,
                 objectSize=self.objectSize,
             )
-            basis.W = initial_vectors
+            basis.setW(initial_vectors)
             return basis
         basis = Tensor()
         basis.create(
@@ -2975,7 +2984,7 @@ class OutputSpace(Space):
         object.__setattr__(self, "_initial_vectors", vectors)
         super().__init__(inputShape, spaceShape, outputShape)
         self.data = TheData
-        self.text_mode = isinstance(self.subspace.vectors(), Embedding)
+        self.text_mode = isinstance(self.subspace.get_vectors(), Embedding)
         input = self.subspace.getEncodedInputSize()
         output = self.subspace.getEncodedOutputSize()
         if self.reversible:
@@ -3006,23 +3015,16 @@ class OutputSpace(Space):
     def forward(self, vspace):
         """Acting: project flattened symbols to task output via LinearLayer."""
         x = self.forwardBegin(vspace)
-        output = self.forwardLinear(x)
+        output = self._3d(self.forwardLinear(self._2d(x)))
         if self.quantized:
-            output = self.subspace.vectors().forward(output)
-        # Compute and store subspace activation
-        if output.ndim == 3:
-            activation = torch.norm(output, dim=-1)
-        else:
-            activation = torch.norm(output, dim=-1, keepdim=True)
-        self.subspace.set_activation(activation)
-        self.output = output
+            output = self._3d(self.subspace.get_vectors().forward(self._2d(output)))
         vspace = self.forwardEnd(output)
         return vspace
 
     def reverse(self, vspace):
         """Being acted upon: map output back to symbolic space via reverse LinearLayer."""
         y = self.reverseBegin(vspace)
-        y = self.reverseLinear(y)
+        y = self._3d(self.reverseLinear(self._2d(y)))
         vspace = self.reverseEnd(y)
         return vspace
 
@@ -3063,7 +3065,7 @@ class OutputSpace(Space):
 
         Convenience method for tests. Production code passes vectors= to __init__.
         """
-        vs = input_space.subspace.vectors()
+        vs = input_space.subspace.get_vectors()
         self.subspace.object = vs
         self.text_mode = isinstance(vs, Embedding)
 
@@ -3136,7 +3138,7 @@ class OutputSpace(Space):
             List of strings, one per batch element.
         """
         _, meta = self._reverse_text_vectors(vectors)
-        return self.subspace.vectors().reconstruct_to_buffer(
+        return self.subspace.get_vectors().reconstruct_to_buffer(
             meta, buf_size=buf_size)
 
     def clearBatchResults(self):

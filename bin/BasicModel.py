@@ -179,13 +179,13 @@ class BaseModel(nn.Module):
             te = "NONE"
         self.train_embedding = te.upper()
         self.optimize_embedding = self.train_embedding not in ("NONE", "CBOW", "SBOW")
-        if self.optimize_embedding and isinstance(self.inputSpace.subspace.vectors(), Embedding):
-            emb_params = self.inputSpace.subspace.vectors().embedding_parameters()
+        if self.optimize_embedding and isinstance(self.inputSpace.subspace.get_vectors(), Embedding):
+            emb_params = self.inputSpace.subspace.get_vectors().embedding_parameters()
             self.inputSpace.params = self.inputSpace.params + emb_params
         self.loss.embedding_scale = float(_t("embeddingScale") or 0.1)
-        if isinstance(self.inputSpace.subspace.vectors(), Embedding):
-            self.inputSpace.subspace.vectors().optimize_embedding = self.optimize_embedding
-            object.__setattr__(self.inputSpace.subspace.vectors(), "_model", self)
+        if isinstance(self.inputSpace.subspace.get_vectors(), Embedding):
+            self.inputSpace.subspace.get_vectors().optimize_embedding = self.optimize_embedding
+            object.__setattr__(self.inputSpace.subspace.get_vectors(), "_model", self)
 
         if _t("autoload"):
             wpath = TheXMLConfig.get("architecture.weightsPath")
@@ -217,8 +217,8 @@ class BaseModel(nn.Module):
         # Exclude embedding params when trainEmbedding is NONE or ARLM
         if not getattr(self, 'optimize_embedding', False):
             exclude = set()
-            if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.subspace.vectors(), Embedding):
-                for p in self.inputSpace.subspace.vectors().embedding_parameters():
+            if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.subspace.get_vectors(), Embedding):
+                for p in self.inputSpace.subspace.get_vectors().embedding_parameters():
                     exclude.add(p.data_ptr())
             if exclude:
                 params = [p for p in params if p.data_ptr() not in exclude]
@@ -264,8 +264,8 @@ class BaseModel(nn.Module):
 
     def _get_embedding(self):
         """Return the Embedding instance if this model uses one, else None."""
-        if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.subspace.vectors(), Embedding):
-            return self.inputSpace.subspace.vectors()
+        if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.subspace.get_vectors(), Embedding):
+            return self.inputSpace.subspace.get_vectors()
         return None
 
     def save_weights(self, path=None):
@@ -724,7 +724,7 @@ class BasicModel(BaseModel):
         # Convert masked-word string labels to embedding vectors now that
         # the Embedding vocabulary is available.
         if data is not None and hasattr(data, '_lm_labels') and data._lm_labels is not None:
-            embedding = self.inputSpace.subspace.vectors() if self.inputSpace.subspace.object is not None else None
+            embedding = self.inputSpace.subspace.get_vectors() if self.inputSpace.subspace.object is not None else None
             if embedding is not None and hasattr(embedding, 'pretrain'):
                 data.prepare_lm_targets(embedding)
                 # Move new targets to device
@@ -753,7 +753,7 @@ class BasicModel(BaseModel):
         self.nTotalOutputSymbols = nOutputSymbols
         self.outputSpace     = OutputSpace([nOutputSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
                                            masked_prediction=(masked_prediction != 'NONE'),
-                                           vectors=self.inputSpace.subspace.vectors())
+                                           vectors=self.inputSpace.subspace.get_vectors())
         self.spaces.extend([self.outputSpace])
         self.inputSpace.outputSpace = self.outputSpace
 
@@ -781,6 +781,9 @@ class BasicModel(BaseModel):
         return input, concepts, symbols
     def StartReverse(self, symbols):
         """Reverse pass: Symbol -> Concept -> Percept -> Input (reconstruction)."""
+        if isinstance(symbols, torch.Tensor):
+            self.symbolicSpace.subspace.set_vectors(symbols)
+            symbols = self.symbolicSpace.subspace
         concepts_state = self.symbolicSpace.reverse(symbols)
         percepts_state = self.conceptualSpace.reverse(concepts_state)
         input_state = self.perceptualSpace.reverse(percepts_state)
@@ -791,7 +794,7 @@ class BasicModel(BaseModel):
     def SubsymbolicThought(self, data):
         """Extra Percept->Concept->Symbol cycle (conceptualOrder >= 1)."""
         if isinstance(data, torch.Tensor):
-            self.perceptualSpace2.subspace.set_materialized(data)
+            self.perceptualSpace2.subspace.set_vectors(data)
             data = self.perceptualSpace2.subspace
         percepts_state = self.perceptualSpace2.forward(data)
         concepts_state = self.conceptualSpace2.forward(percepts_state)
@@ -804,6 +807,9 @@ class BasicModel(BaseModel):
         return concepts, symbols
     def SubsymbolicThoughtReverse(self, concepts, symbols):
         """Reverse of SubsymbolicThought."""
+        if isinstance(symbols, torch.Tensor):
+            self.symbolicSpace2.subspace.set_vectors(symbols)
+            symbols = self.symbolicSpace2.subspace
         concepts_state = self.symbolicSpace2.reverse(symbols)
         percepts_state = self.conceptualSpace2.reverse(concepts_state)
         percepts = percepts_state.materialize()
@@ -811,7 +817,7 @@ class BasicModel(BaseModel):
     def SymbolicThought(self, data):
         """Extra Syntax->Symbol cycle (symbolicOrder >= 1)."""
         if isinstance(data, torch.Tensor):
-            self.syntacticSpace3.subspace.set_materialized(data)
+            self.syntacticSpace3.subspace.set_vectors(data)
             data = self.syntacticSpace3.subspace
         words_state = self.syntacticSpace3.forward(data)
         symbols_state = self.symbolicSpace3.forward(words_state)
@@ -822,6 +828,9 @@ class BasicModel(BaseModel):
         return symbols, words
     def SymbolicThoughtReverse(self, symbols, words):
         """Reverse of SymbolicThought."""
+        if isinstance(words, torch.Tensor):
+            self.syntacticSpace3.subspace.set_vectors(words)
+            words = self.syntacticSpace3.subspace
         symbols_state = self.syntacticSpace3.reverse(words)
         data_state = self.symbolicSpace3.reverse(symbols_state)
         data = data_state.materialize()
@@ -829,7 +838,7 @@ class BasicModel(BaseModel):
     def Finish(self, symbols):
         """Project concatenated symbols to task output via OutputSpace."""
         if isinstance(symbols, torch.Tensor):
-            self.outputSpace.subspace.set_materialized(symbols)
+            self.outputSpace.subspace.set_vectors(symbols)
             symbols = self.outputSpace.subspace
         self.outputs = self.outputSpace.forward(symbols)
         outputData = self.outputs.materialize()
@@ -843,6 +852,9 @@ class BasicModel(BaseModel):
         reconstruct="output": use outputSpace.reverse(outputData) only.
         reconstruct="both": reversed output + cached recon_symbols.
         """
+        if isinstance(outputData, torch.Tensor):
+            self.outputSpace.subspace.set_vectors(outputData)
+            outputData = self.outputSpace.subspace
         mode = getattr(self, 'reconstruct', 'symbols')
         if mode == 'output':
             return self.outputSpace.reverse(outputData).materialize()
@@ -1079,7 +1091,7 @@ class BasicModel(BaseModel):
         sbow = None
         te = getattr(self, 'train_embedding', 'NONE')
         if te in trainMod:
-            emb = self.inputSpace.subspace.vectors()
+            emb = self.inputSpace.subspace.get_vectors()
             if isinstance(emb, Embedding):
                 sentences = self._get_sentences(split)
                 if sentences and index < len(sentences):
@@ -1429,7 +1441,7 @@ class MentalModel(BaseModel):
 
         self.outputSpace = OutputSpace([nSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
                                        masked_prediction=(masked_prediction != 'NONE'),
-                                       vectors=self.inputSpace.subspace.vectors())
+                                       vectors=self.inputSpace.subspace.get_vectors())
 
         self.spaces.extend([
             self.inputSpace,
@@ -1466,19 +1478,24 @@ class MentalModel(BaseModel):
         outputData = self.Finish(symbols)
         return input_state, symbols, outputData
 
+    def _wrap_reverse(self, space, tensor):
+        """Wrap a raw tensor in the space's subspace for reverse()."""
+        space.subspace.set_vectors(tensor)
+        return space.subspace
+
     def reverse(self, symbols, outputData):
-        symbols = self.outputSpace.reverse(outputData).materialize()
-        merged = self.symbolicSpace.reverse(symbols).materialize()
+        symbols = self.outputSpace.reverse(self._wrap_reverse(self.outputSpace, outputData)).materialize()
+        merged = self.symbolicSpace.reverse(self._wrap_reverse(self.symbolicSpace, symbols)).materialize()
 
         percepts = merged[:, :self.nPercepts, :]
         concepts = merged[:, self.nPercepts:self.nPercepts + self.nConcepts, :]
 
-        input_from_percepts = self.perceptualSpace.reverse(percepts).materialize()
-        input_from_concepts = self.conceptualSpace.reverse(concepts).materialize()
+        input_from_percepts = self.perceptualSpace.reverse(self._wrap_reverse(self.perceptualSpace, percepts)).materialize()
+        input_from_concepts = self.conceptualSpace.reverse(self._wrap_reverse(self.conceptualSpace, concepts)).materialize()
 
         # Hypothetical merge rule for the two reconstructed input streams.
         input_latent = 0.5 * (input_from_percepts + input_from_concepts)
-        input_data = self.inputSpace.reverse(input_latent).materialize()
+        input_data = self.inputSpace.reverse(self._wrap_reverse(self.inputSpace, input_latent)).materialize()
 
         return input_data, input_latent
 TheMentalModel = MentalModel()
