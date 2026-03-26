@@ -1,11 +1,7 @@
 # TODO
 
-## use subspace activation
-* introduce an objectActivation which is used when the subspace data is stored in object
-* create methods 
-  * setActivation(whatA, whereA, whenA) to store a cross-product activation
-  * setObjectActivation(objectA) # compute the (scalar) subspace activation and assign to the subspace
-  * materialize() converts these to an objectA and then returns object[objectA] # select at most nOutput entries zero the other activations
+## Theory
+* make a policy for vector norms
 
 ## symbol processing
 * symbols map bijectively to concepts
@@ -15,8 +11,9 @@
 * It passes [nBatch, nOutput, 1] to all consumers (OutputSpace and SyntacticSpace)
 * Integrate the Activation and Syntactic Layer classes
 
-## AttentionLayer
+## Clean-up
 * re-write the attention layer
+* Revisit all forward/reverse methods
 
 ================================== April 1 ==================================
 

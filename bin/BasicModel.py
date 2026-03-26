@@ -1315,6 +1315,7 @@ class BasicModel(BaseModel):
 
         return outErr, inErr, allOutput, allInput
 TheBasicModel = BasicModel()
+
 class MentalModel(BaseModel):
     name = "MentalModel"
 
@@ -1371,7 +1372,7 @@ class MentalModel(BaseModel):
             raw = TheXMLConfig.space(section, "nDim")
             return prev_dim if raw == 0 else raw
 
-        input_dim   = _resolve_dim("InputSpace",    1)
+        input_dim   = _resolve_dim("InputSpace",       1)
         percept_dim = _resolve_dim("PerceptualSpace",  input_dim)
         concept_dim = _resolve_dim("ConceptualSpace",  percept_dim)
         symbol_dim  = _resolve_dim("SymbolicSpace",    concept_dim)

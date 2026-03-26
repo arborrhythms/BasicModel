@@ -647,13 +647,14 @@ class TestSubSpaceConstruction(unittest.TestCase):
         self.assertIs(ss.activation.W, act)
         self.assertIs(ss.activeEncoding, ae)
 
-    def test_from_components_defaults_none(self):
-        from BasicModel import SubSpace
+    def test_from_components_defaults_initialized(self):
+        """All modalities are initialized (as empty Tensor bases) even with no args."""
+        from BasicModel import SubSpace, Tensor
         ss = SubSpace.from_components(inputShape=[4, 8], outputShape=[4, 8])
-        self.assertIsNone(ss.object)
-        self.assertIsNone(ss.activation)
-        self.assertIsNone(ss.where)
-        self.assertIsNone(ss.when)
+        self.assertIsInstance(ss.object, Tensor)
+        self.assertIsInstance(ss.activation, Tensor)
+        self.assertIsInstance(ss.where, Tensor)
+        self.assertIsInstance(ss.when, Tensor)
 
 
 class TestSubSpaceActiveEncoding(unittest.TestCase):
@@ -662,12 +663,14 @@ class TestSubSpaceActiveEncoding(unittest.TestCase):
     def test_activation_stored_and_retrievable(self):
         from BasicModel import SubSpace, ActiveEncoding
         ae = ActiveEncoding()
-        act = torch.tensor([0.5, 0.8, 0.1])
-        encoded = ae.encode(act)
+        act = torch.tensor([[0.5, 0.8, 0.1]])  # [1, 3] — batch=1, nVectors=3
+        encoded = ae.encode(act.squeeze(0))
         ss = SubSpace(activeEncoding=ae, inputShape=[3, 8], outputShape=[3, 8])
-        ss.activation = act
+        ss.set_activation(act)
+        retrieved = ss.get_activation()
+        torch.testing.assert_close(retrieved, act)
         decoded = ae.decode(encoded)
-        torch.testing.assert_close(decoded, act)
+        torch.testing.assert_close(decoded, act.squeeze(0))
 
     def test_two_spaces_independent_encoding(self):
         """Two SubSpaces can have different objectSize without shared coupling."""

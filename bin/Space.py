@@ -640,6 +640,8 @@ class Tensor(Basis):
         self.nDim = nDim
         if W is not None:
             self.W = W
+        else:
+            self.W = torch.zeros(nVectors, nDim)
 
     def getW(self):
         return self.W
@@ -1556,37 +1558,45 @@ class SubSpace(nn.Module):
         self.inputShape = inputShape    # [nActive, nDim]
         self.outputShape = outputShape  # [nActive, nDim]
 
-        self.activeEncoding = activeEncoding
-        self.whereEncoding = whereEncoding if whereEncoding is not None else WhereEncoding(0, 0)
-        self.whenEncoding = whenEncoding if whenEncoding is not None else WhenEncoding(0, 0)
-        self.whatEncoding = whatEncoding if whatEncoding is not None else WhatEncoding(inputShape, outputShape)
+        self.activeEncoding = activeEncoding if activeEncoding is not None else ActiveEncoding()
         self.objectEncoding = objectEncoding if objectEncoding is not None else ObjectEncoding(
             inputShape, outputShape, flatten=flatten)
+        self.whatEncoding   = whatEncoding if whatEncoding is not None else WhatEncoding(inputShape, outputShape)
+        self.whereEncoding  = whereEncoding if whereEncoding is not None else WhereEncoding(0, 0)
+        self.whenEncoding   = whenEncoding if whenEncoding is not None else WhenEncoding(0, 0)
 
         self.flatten = flatten
         self.objectSize = self.whereEncoding.nDim + self.whenEncoding.nDim
 
+        self.activation = self._coerce_basis(activation, role="activation")
         self.object = self._coerce_basis(object, role="object")
         self.what   = self._coerce_basis(what, role="what")
         self.where  = self._coerce_basis(where, role="where")
         self.when   = self._coerce_basis(when, role="when")
-        self.activation = self._coerce_basis(activation, role="activation")
         self.batch = 0
         payload = self.materialize()
         if isinstance(payload, torch.Tensor) and payload.ndim > 0:
             self.batch = payload.shape[0]
 
-    def _coerce_basis(self, value, role="what"):
-        if value is None or isinstance(value, Basis):
+    def _coerce_basis(self, value, role):
+        if isinstance(value, Basis):
             return value
-        if not isinstance(value, torch.Tensor):
+        if value is not None and not isinstance(value, torch.Tensor):
             raise TypeError(f"SubSpace {role} must be a Basis, Tensor, or None")
         basis = Tensor()
-        if role == "object":
+        if role == "activation":
             basis.create(
                 self.inputShape[0],
                 self.outputShape[0],
-                self.outputShape[1],
+                self.activeEncoding.nDim,
+                passThrough=True,
+                objectSize=self.activeEncoding.nDim,
+            )
+        elif role == "object":
+            basis.create(
+                self.inputShape[0],
+                self.outputShape[0],
+                self.outputShape[1], # encompasses all other dimensions
                 passThrough=True,
                 objectSize=self.objectSize,
             )
@@ -1594,9 +1604,9 @@ class SubSpace(nn.Module):
             basis.create(
                 self.outputShape[0],
                 self.outputShape[0],
-                self.outputShape[1],
+                self.whatEncoding.nDim,
                 passThrough=True,
-                objectSize=self.objectSize,
+                objectSize=self.whatEncoding.nDim,
             )
         elif role == "where":
             basis.create(self.outputShape[0], self.outputShape[0], self.whereEncoding.nDim, passThrough=True)
@@ -1620,7 +1630,6 @@ class SubSpace(nn.Module):
         """
         if self.object is None:
             self.object = Tensor()
-        self._vectors = vectors
         self.object.setW(vectors)
         self.set_activation_vectors(vectors)
 
@@ -1700,6 +1709,9 @@ class SubSpace(nn.Module):
         activation = torch.norm(y, dim=-1)  # [B, N]
         self.set_activation(activation)
 
+    #def set_activations(self, whatA, whereA, whenA): 
+    #    # to store a cross-product activation
+    #    return
     def set_activation(self, activation_tensor):
         """Store scalar subspace activation for each object vector.
 
@@ -1713,11 +1725,18 @@ class SubSpace(nn.Module):
             activation_tensor = activation_tensor.squeeze(-1)
         assert activation_tensor.ndim == 2, \
             f"activation must be [batch, nVectors], got {activation_tensor.shape}"
-        self._activation = activation_tensor
+        
+        self.activation.setW(activation_tensor)
 
     def get_activation(self):
         """Return stored activation [batch, nVectors] or None."""
-        return getattr(self, '_activation', None)
+        if self.activation is None:
+            return None
+        return self.activation.getW()
+    
+    #def get_activations(self): 
+    #    # to store a cross-product activation
+    #    return (whatA, whereA, whenA)
 
     def materialize(self, k=None):
         """Return dense tensor of the top-k most active object vectors.
@@ -1732,31 +1751,22 @@ class SubSpace(nn.Module):
             Tensor [batch, k, dim] of the k highest-activation vectors.
             Stores selection indices in self._topk_indices for downstream use.
         """
-        # _vectors holds the dense forward result (set by set_vectors).
-        # Falls back to object.getW() (the codebook) if no forward has run.
-        x = getattr(self, '_vectors', None)
-        if x is None:
-            if self.object is None:
-                return None
-            x = self.object.getW()
+        x = self.object.getW()
         if x is None:
             return None
-
         activation = self.get_activation()
-        if k is None or activation is None:
+
+        # No activation or no selection needed — return all vectors
+        if activation is None or k is None or k >= x.shape[-2]:
             return x
 
-        nSpace = x.shape[1]
-        if k >= nSpace:
-            return x
-
-        # Select top-k by activation
-        _, indices = torch.topk(activation, k, dim=1)  # [batch, k]
+        # Select top-k by activation [batch, nVectors] → indices [batch, k]
+        _, indices = torch.topk(activation, k, dim=-1)
         self._topk_indices = indices
 
         # Gather the corresponding vectors: [batch, k, dim]
         indices_expanded = indices.unsqueeze(-1).expand(-1, -1, x.shape[-1])
-        selected = torch.gather(x, 1, indices_expanded)
+        selected = torch.gather(x, -2, indices_expanded)
         return selected
 
     # ------------------------------------------------------------------
@@ -2141,8 +2151,9 @@ class InputSpace(Space):
             self._cached_embedding = None  # consume once
             self.input = cached
             self._forward_input = None
-            self.subspace.set_vectors(self.input)
-            return self.subspace
+            self.forwarding_subspace = SubSpace(inputShape=self.outputShape, outputShape=self.outputShape)
+            self.forwarding_subspace.set_vectors(self.input)
+            return self.forwarding_subspace
 
         # Reset positional counter for each forward pass
         self.subspace.whereEncoding.p = 0
@@ -2183,8 +2194,11 @@ class InputSpace(Space):
         output = self.subspace.getEncodedOutputSize()
         assert list(self.input.shape) == [batch, self.outputShape[0], output]
 
-        self.subspace.set_vectors(self.input)
-        return self.subspace
+        # Return a forwarding subspace with the forward result, keeping
+        # self.subspace for the codebook (Embedding).
+        self.forwarding_subspace = SubSpace(inputShape=self.outputShape, outputShape=self.outputShape)
+        self.forwarding_subspace.set_vectors(self.input)
+        return self.forwarding_subspace
     
     def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM'):
         """Expand one sentence's embedding into N masked copies.
@@ -2280,8 +2294,9 @@ class InputSpace(Space):
                 self.input, subspace=self.subspace)
         else:
             self._recovered_input = None
-        vspace = self.reverseEnd(self.input)
-        return vspace
+        # Return forwarding subspace (not self.subspace which is the codebook)
+        self.forwarding_subspace.set_vectors(self.input)
+        return self.forwarding_subspace
 
     def reconstruct_data(self, text=False):
         """Render the last recovered text state stored on InputSpace."""
@@ -2952,20 +2967,11 @@ class OutputSpace(Space):
         pass
 
     def _build_object_basis(self):
+        # OutputSpace always uses its own Tensor basis for forward results.
+        # The Embedding reference (if any) is stored separately for text_mode reverse.
         initial_vectors = getattr(self, "_initial_vectors", None)
-        if initial_vectors is not None:
-            if isinstance(initial_vectors, Basis):
-                return initial_vectors
-            basis = Tensor()
-            basis.create(
-                self.inputShape[0],
-                self.outputShape[0],
-                self.nDim,
-                passThrough=True,
-                objectSize=self.objectSize,
-            )
-            basis.setW(initial_vectors)
-            return basis
+        if isinstance(initial_vectors, Basis):
+            self._vocabulary = initial_vectors  # keep for text_mode reverse
         basis = Tensor()
         basis.create(
             self.inputShape[0],
@@ -2983,7 +2989,8 @@ class OutputSpace(Space):
         object.__setattr__(self, "_initial_vectors", vectors)
         super().__init__(inputShape, spaceShape, outputShape)
         self.data = TheData
-        self.text_mode = isinstance(self.subspace.get_vectors(), Embedding)
+        self._vocabulary = getattr(self, '_vocabulary', None)
+        self.text_mode = isinstance(self._vocabulary, Embedding)
         input = self.subspace.getEncodedInputSize()
         output = self.subspace.getEncodedOutputSize()
         if self.reversible:
@@ -3060,16 +3067,16 @@ class OutputSpace(Space):
         return targets.unsqueeze(1)  # [N, 1, embSize]
     # --- Text reconstruction from symbolic vectors ---
     def set_text_mode(self, input_space):
-        """Share InputSpace's Basis so OutputSpace can reconstruct text.
+        """Share InputSpace's Embedding so OutputSpace can reconstruct text.
 
         Convenience method for tests. Production code passes vectors= to __init__.
         """
         vs = input_space.subspace.get_vectors()
-        self.subspace.object = vs
+        self._vocabulary = vs
         self.text_mode = isinstance(vs, Embedding)
 
     def _reverse_text_vectors(self, vectors):
-        emb = self.subspace.object
+        emb = self._vocabulary
         nWhat = emb.content_dim
         object_encoding = self.subspace.objectEncoding
         if object_encoding is not None:
@@ -3137,7 +3144,7 @@ class OutputSpace(Space):
             List of strings, one per batch element.
         """
         _, meta = self._reverse_text_vectors(vectors)
-        return self.subspace.get_vectors().reconstruct_to_buffer(
+        return self._vocabulary.reconstruct_to_buffer(
             meta, buf_size=buf_size)
 
     def clearBatchResults(self):
