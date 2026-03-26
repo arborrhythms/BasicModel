@@ -31,10 +31,8 @@ from functools import partial
 from datetime import datetime
 
 import util
+from util import TheDevice, TheMessage
 util.init_runtime_env()
-TheDevice = util.TheDevice
-TheMessage = util.TheMessage
-
 from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import WordVectors, PretrainModel
@@ -42,8 +40,6 @@ from data import Data, TheData
 from Model import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
 from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer
 from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
-
-
 
 class Encoding(nn.Module):
     """Abstract base class for per-slot encodings in the embedding vector.
@@ -757,7 +753,7 @@ class Codebook(Basis):
             quantized, indices, _ = self.quantize(flat)
             batch = x.shape[0]
             n_tokens = flat.shape[0] // batch
-            err = torch.norm(flat - quantized, dim=1).reshape(batch, n_tokens)
+            err = torch.norm(flat - quantized, dim=-1).reshape(batch, n_tokens)
             indices = indices.reshape(batch, n_tokens)
             # Use 3D views for token-level indexing (x may be 2D when reshape=True)
             x3d = x.reshape(batch, n_tokens, self.embeddingSize)
@@ -1557,23 +1553,25 @@ class SubSpace(nn.Module):
                  whereEncoding=None, whenEncoding=None,
                  object=None, what=None, where=None, when=None, activation=None):
         super().__init__()
+        self.inputShape = inputShape    # [nActive, nDim]
+        self.outputShape = outputShape  # [nActive, nDim]
+
         self.activeEncoding = activeEncoding
         self.whereEncoding = whereEncoding if whereEncoding is not None else WhereEncoding(0, 0)
         self.whenEncoding = whenEncoding if whenEncoding is not None else WhenEncoding(0, 0)
-        self.flatten = flatten
-        self.objectSize = self.whereEncoding.nDim + self.whenEncoding.nDim
         self.whatEncoding = whatEncoding if whatEncoding is not None else WhatEncoding(inputShape, outputShape)
         self.objectEncoding = objectEncoding if objectEncoding is not None else ObjectEncoding(
             inputShape, outputShape, flatten=flatten)
-        self.inputShape = inputShape    # [nActive, nDim]
-        self.outputShape = outputShape  # [nActive, nDim]
-        self.batch = 0
-        self._vectors = None  # dense forward result, set by set_vectors()
+
+        self.flatten = flatten
+        self.objectSize = self.whereEncoding.nDim + self.whenEncoding.nDim
+
         self.object = self._coerce_basis(object, role="object")
         self.what   = self._coerce_basis(what, role="what")
         self.where  = self._coerce_basis(where, role="where")
         self.when   = self._coerce_basis(when, role="when")
         self.activation = self._coerce_basis(activation, role="activation")
+        self.batch = 0
         payload = self.materialize()
         if isinstance(payload, torch.Tensor) and payload.ndim > 0:
             self.batch = payload.shape[0]
@@ -1625,12 +1623,6 @@ class SubSpace(nn.Module):
         self._vectors = vectors
         self.object.setW(vectors)
         self.set_activation_vectors(vectors)
-
-    def set_activation_vectors(self, y):
-        """Compute and store subspace activation from dense vectors [B, N, D]."""
-        assert y.ndim == 3, "Must be dim==3"
-        activation = torch.norm(y, dim=-1)  # [B, N]
-        self.set_activation(activation)
 
     # ------------------------------------------------------------------
     # Derived sizes
@@ -1701,6 +1693,12 @@ class SubSpace(nn.Module):
     # ------------------------------------------------------------------
     # Activation management
     # ------------------------------------------------------------------
+
+    def set_activation_vectors(self, y):
+        """Compute and store subspace activation from dense vectors [B, N, D]."""
+        assert y.ndim == 3, "Must be dim==3"
+        activation = torch.norm(y, dim=-1)  # [B, N]
+        self.set_activation(activation)
 
     def set_activation(self, activation_tensor):
         """Store scalar subspace activation for each object vector.
@@ -1798,6 +1796,7 @@ class SubSpace(nn.Module):
         if size == 0:
             return object
         return object[0:-size]
+    
 class Space(nn.Module):
     """Base class for all spaces in the processing pipeline.
 
@@ -1933,16 +1932,26 @@ class Space(nn.Module):
     def forwardEnd(self, x):
         """Optionally unflatten output, store in subspace, return SubSpace."""
         if self.subspace.flatten:
+            self._pre_unflatten_shape = x.shape  # save for reverseBegin
             x = self.subspace.objectEncoding._unflatten(x, self.subspace.batch, forward=True)
         self.subspace.set_vectors(x)
         return self.subspace
 
     def reverseBegin(self, vspace):
-        """Materialize input and optionally flatten for space-specific reverse processing."""
+        """Materialize output-side tensor for space-specific reverse processing.
+
+        For flatten mode, restores the shape that existed before forwardEnd's
+        unflatten, so the reverse layer sees the same tensor layout as during
+        forward (e.g. invertible PiLayer's interleaved objects are preserved).
+        """
         y = vspace.materialize()
         self.subspace.batch = y.shape[0]
         if self.subspace.flatten:
-            y = y.reshape(y.shape[0], 1, -1)  # [B, N, D] -> [B, 1, N*D]
+            pre = getattr(self, '_pre_unflatten_shape', None)
+            if pre is not None:
+                y = y.reshape(pre)
+            else:
+                y = y.reshape(y.shape[0], 1, -1)
         return y
 
     def reverseEnd(self, y):
@@ -1952,17 +1961,7 @@ class Space(nn.Module):
         self.subspace.set_vectors(y)
         return self.subspace
 
-    def _2d(self, x):
-        """Squeeze [B, 1, D] -> [B, D] for 2D layer interfaces when flattened."""
-        if self.subspace.flatten:
-            return x.squeeze(1)
-        return x
-
-    def _3d(self, x):
-        """Unsqueeze [B, D] -> [B, 1, D] after 2D layer interfaces when flattened."""
-        if self.subspace.flatten:
-            return x.unsqueeze(1)
-        return x
+    # _2d/_3d removed — all layers now operate on [..., D] natively.
 
     def lookup(self, x):
         activation = x[0]
@@ -2718,10 +2717,10 @@ class PerceptualSpace(Space):
             return vspace
         x = self.forwardBegin(vspace)
         if self.hasAttention:
-            x = self._3d(self.attention.forward(self._2d(x)))
-        x = self._3d(self.forwardPi(self._2d(x)))
+            x = self.attention.forward(x)
+        x = self.forwardPi(x)
         if self.quantized:
-            x = self._3d(self.subspace.get_vectors().forward(self._2d(x)))
+            x = self.subspace.get_vectors().forward(x)
         vspace = self.forwardEnd(x)
         return vspace
 
@@ -2731,7 +2730,7 @@ class PerceptualSpace(Space):
             return vspace
         y = self.reverseBegin(vspace)
         if self.reversible:
-            y = self._3d(self.reversePi(self._2d(y)))
+            y = self.reversePi(y)
         vspace = self.reverseEnd(y)
         return vspace
 
@@ -2806,11 +2805,11 @@ class ConceptualSpace(Space):
     def forward(self, vspace):
         """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ."""
         x = self.forwardBegin(vspace)
-        y = self._3d(self.forwardSigma(self._2d(x)))
+        y = self.forwardSigma(x)
         if self.hasAttention:
-            y = self._3d(self.attention.forward(self._2d(y)))
+            y = self.attention.forward(y)
         if self.quantized:
-            y = self._3d(self.subspace.get_vectors().forward(self._2d(y)))
+            y = self.subspace.get_vectors().forward(y)
         vspace = self.forwardEnd(y)
         return vspace
 
@@ -2819,7 +2818,7 @@ class ConceptualSpace(Space):
         y = self.reverseBegin(vspace)
         if self.processSymbols:
             y = self.dereference(y)
-        y = self._3d(self.reverseSigma(self._2d(y)))
+        y = self.reverseSigma(y)
         self.concepts = y
         vspace = self.reverseEnd(y)
         return vspace
@@ -2877,7 +2876,7 @@ class SymbolicSpace(Space):
         if not self.passThrough:
             x = self.discretize(x)
         if self.quantized:
-            x = self._3d(self.subspace.get_vectors().forward(self._2d(x)))
+            x = self.subspace.get_vectors().forward(x)
         vspace = self.forwardEnd(x)
         return vspace
 
@@ -3015,16 +3014,16 @@ class OutputSpace(Space):
     def forward(self, vspace):
         """Acting: project flattened symbols to task output via LinearLayer."""
         x = self.forwardBegin(vspace)
-        output = self._3d(self.forwardLinear(self._2d(x)))
+        output = self.forwardLinear(x)
         if self.quantized:
-            output = self._3d(self.subspace.get_vectors().forward(self._2d(output)))
+            output = self.subspace.get_vectors().forward(output)
         vspace = self.forwardEnd(output)
         return vspace
 
     def reverse(self, vspace):
         """Being acted upon: map output back to symbolic space via reverse LinearLayer."""
         y = self.reverseBegin(vspace)
-        y = self._3d(self.reverseLinear(self._2d(y)))
+        y = self.reverseLinear(y)
         vspace = self.reverseEnd(y)
         return vspace
 

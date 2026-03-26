@@ -5,7 +5,7 @@
 * create methods 
   * setActivation(whatA, whereA, whenA) to store a cross-product activation
   * setObjectActivation(objectA) # compute the (scalar) subspace activation and assign to the subspace
-  * materialize() converts these to an objectA and then returns object[objectA] #select at most nOutput entries zero the other activations
+  * materialize() converts these to an objectA and then returns object[objectA] # select at most nOutput entries zero the other activations
 
 ## symbol processing
 * symbols map bijectively to concepts

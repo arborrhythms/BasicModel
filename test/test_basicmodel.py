@@ -273,11 +273,12 @@ class TestAttentionLayer(unittest.TestCase):
         self.assertEqual(y.shape, (2, 5, 4))
 
     def test_transformer_forward_shape_2d(self):
+        """Single-object 3D input [B, 1, D] -> [B, 1, nOut]."""
         from Model import TransformerAttentionLayer
         layer = TransformerAttentionLayer(nInput=8, nOutput=4, nHeads=2)
-        x = torch.randn(2, 8).to(TheDevice)
+        x = torch.randn(2, 1, 8).to(TheDevice)
         y = layer(x)
-        self.assertEqual(y.shape, (2, 4))
+        self.assertEqual(y.shape, (2, 1, 4))
 
 
 class TestNormLayer(unittest.TestCase):

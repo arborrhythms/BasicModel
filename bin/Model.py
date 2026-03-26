@@ -526,24 +526,15 @@ class InvertibleLinearLayer(ErgodicLayer):
         return x
     def forwardBiasInterleaved(self, x):
         if self.hasBias:
-            if x.ndim == 2:
-                # [B, 2*nOut]: pairs along last dim
-                bWeight = torch.stack([self.biasWeight, -self.biasWeight], dim=-1).flatten(-2)
-                if self.ergodic:
-                    bNoise = torch.stack([self.biasNoise, self.biasNoise], dim=-1).flatten(-2)
-                    x = x + self.bias * bWeight + self.var * bNoise
-                else:
-                    x = x + bWeight
+            # [..., 2*S, nOut]: pairs along dim=-2, alternate +b/-b every row
+            signs = x.new_ones(x.shape[-2], 1)
+            signs[1::2, 0] = -1
+            bWeight = signs * self.biasWeight
+            if self.ergodic:
+                bNoise = signs * self.biasNoise
+                x = x + self.bias * bWeight + self.var * bNoise
             else:
-                # [B, 2*S, nOut]: pairs along dim=1, alternate +b/-b every row
-                signs = x.new_ones(1, x.shape[1], 1)
-                signs[0, 1::2, 0] = -1
-                bWeight = signs * self.biasWeight
-                if self.ergodic:
-                    bNoise = signs * self.biasNoise
-                    x = x + self.bias * bWeight + self.var * bNoise
-                else:
-                    x = x + bWeight
+                x = x + bWeight
         return x
 
     def reverseBias(self, y):
@@ -556,22 +547,15 @@ class InvertibleLinearLayer(ErgodicLayer):
 
     def reverseBiasInterleaved(self, y):
         if self.hasBias:
-            if y.ndim == 2:
-                bWeight = torch.stack([self.biasWeight, -self.biasWeight], dim=-1).flatten(-2)
-                if self.ergodic:
-                    bNoise = torch.stack([self.biasNoise, self.biasNoise], dim=-1).flatten(-2)
-                    y = y - (self.bias * bWeight + self.var * bNoise)
-                else:
-                    y = y - bWeight
+            # [..., 2*S, nOut]: pairs along dim=-2, alternate +b/-b every row
+            signs = y.new_ones(y.shape[-2], 1)
+            signs[1::2, 0] = -1
+            bWeight = signs * self.biasWeight
+            if self.ergodic:
+                bNoise = signs * self.biasNoise
+                y = y - (self.bias * bWeight + self.var * bNoise)
             else:
-                signs = y.new_ones(1, y.shape[1], 1)
-                signs[0, 1::2, 0] = -1
-                bWeight = signs * self.biasWeight
-                if self.ergodic:
-                    bNoise = signs * self.biasNoise
-                    y = y - (self.bias * bWeight + self.var * bNoise)
-                else:
-                    y = y - bWeight
+                y = y - bWeight
         return y
     def reverse(self, y):
         """Invert the LDU transform.
@@ -824,13 +808,8 @@ class PiLayer(Layer):
             self.resample_noise()
         W    = self.layer.compute_W_current()                         # [nIn, nOut]
         x    = x.to(W.device)
-        ndim = x.ndim
-        if ndim == 2:
-            WX  = x.unsqueeze(-1) * W.unsqueeze(0)      # [B, nIn, nOut]
-            dim = 1
-        else:
-            WX  = x.unsqueeze(-1) * W.unsqueeze(0).unsqueeze(0)  # [B, S, nIn, nOut]
-            dim = 2
+        # Outer product: [..., nIn, 1] * [nIn, nOut] -> [..., nIn, nOut]
+        WX   = x.unsqueeze(-1) * W                                   # broadcasts over leading dims
         if self.saturate:
             t     = torch.tanh(WX)
             one_p = 1 + t
@@ -844,15 +823,12 @@ class PiLayer(Layer):
             one_p = one_p.clamp(min=epsilon)
             if self.invertible:
                 one_m = one_m.clamp(min=epsilon)
-        y = torch.sum(torch.log(one_p), dim=dim)
+        y = torch.sum(torch.log(one_p), dim=-2)                      # sum over nIn -> [..., nOut]
         if self.invertible:
-            z = torch.sum(torch.log(one_m), dim=dim)
-            if ndim == 2:
-                # [B, nOut] -> [B, nOut, 2] -> [B, 2*nOut]  (y0,z0,y1,z1,...)
-                result = torch.stack((y, z), dim=-1).flatten(-2)
-            else:
-                # [B, S, nOut] -> [B, S, 2, nOut] -> [B, 2*S, nOut]  (y[s],z[s] adjacent)
-                result = torch.stack((y, z), dim=2).flatten(1, 2)
+            z = torch.sum(torch.log(one_m), dim=-2)                   # [..., nOut]
+            # Interleave (y, z) along the object axis:
+            # [..., S, nOut] -> [..., S, 2, nOut] -> [..., 2*S, nOut]
+            result = torch.stack((y, z), dim=-2).flatten(-3, -2)
         else:
             result = torch.exp(y)
         if self.invertible:
@@ -871,12 +847,8 @@ class PiLayer(Layer):
             yz = self.layer.reverseBiasInterleaved(yz)
         else:
             yz = self.layer.reverseBias(yz)
-        if yz.ndim == 2:
-            # [B, 2*nOut] -> [B, nOut, 2] -> y, z each [B, nOut]
-            y, z = yz.unflatten(-1, (-1, 2)).unbind(-1)
-        else:
-            # [B, 2*S, nOut] -> [B, S, 2, nOut] -> y, z each [B, S, nOut]
-            y, z = yz.unflatten(1, (yz.shape[1] // 2, 2)).unbind(2)
+        # De-interleave: [..., 2*S, nOut] -> [..., S, 2, nOut] -> y, z each [..., S, nOut]
+        y, z = yz.unflatten(-2, (-1, 2)).unbind(-2)
         W_inv = self.layer.compute_Winverse_current()   # [nOut, nIn]
         gamma = 0.5 * (y - z)                           # [..., nOut]
         gamma = gamma.to(W_inv.device)
@@ -1320,12 +1292,7 @@ class TransformerAttentionLayer(Layer):
         return mask
 
     def forward(self, x):
-        squeeze_sequence = False
-        if x.ndim == 2:
-            x = x.unsqueeze(1)
-            squeeze_sequence = True
-        if x.ndim != 3:
-            raise ValueError(f"TransformerAttentionLayer expects 2D or 3D input, got {list(x.shape)}")
+        assert x.ndim == 3, f"TransformerAttentionLayer expects 3D input [B, N, D], got {list(x.shape)}"
 
         batch, n_obj, _ = x.shape
 
@@ -1343,9 +1310,6 @@ class TransformerAttentionLayer(Layer):
         output = torch.matmul(attn, value)
         output = output.transpose(1, 2).contiguous().view(batch, n_obj, self.nHidden)
         output = self.Out(output)
-
-        if squeeze_sequence:
-            return output.squeeze(1)
         return output
 
     def reverse(self, y, bias=None, temp=None):
