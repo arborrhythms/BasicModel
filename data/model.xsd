@@ -8,6 +8,7 @@
         <xs:element name="architecture" type="architectureType"/>
         <xs:element name="InputSpace" type="inputSpaceType" minOccurs="0"/>
         <xs:element name="PerceptualSpace" type="perceptualSpaceType" minOccurs="0"/>
+        <xs:element name="ModalSpace" type="modalSpaceType" minOccurs="0"/>
         <xs:element name="ConceptualSpace" type="conceptualSpaceType" minOccurs="0"/>
         <xs:element name="SymbolicSpace" type="symbolicSpaceType" minOccurs="0"/>
         <xs:element name="SyntacticSpace" type="syntacticSpaceType" minOccurs="0"/>
@@ -229,6 +230,24 @@
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="modalSpaceType">
+    <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="whatPassThrough" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="wherePassThrough" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="whenPassThrough" type="xs:boolean" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 

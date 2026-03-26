@@ -57,6 +57,8 @@ class DeviceHandle(str):
         return self.type != "cpu"
 
 
+
+
 def resolve_device(name=""):
     """Resolve a device name string to a torch.device.
 
@@ -149,19 +151,63 @@ def auto_device():
     target = override if override else "gpu"
     return DeviceHandle(str(resolve_device(target)))
 
+class _DeviceHolder:
+    """Mutable container for the process-wide device.
+
+    ``from util import TheDevice`` imports this holder once.  Call
+    ``TheDevice.get()`` to obtain the current ``DeviceHandle``, or pass
+    ``TheDevice`` directly where PyTorch expects a device (``__str__``
+    delegates to the live value).
+
+    ``init_device()`` updates the held value; all importers see the change
+    immediately through ``.get()`` and ``str(TheDevice)``.
+    """
+    __slots__ = ('_device',)
+
+    def __init__(self, device):
+        self._device = device
+
+    def get(self):
+        """Return the current DeviceHandle."""
+        return self._device
+
+    def set(self, device):
+        """Update the held device."""
+        self._device = device
+
+    # Convenience: str(TheDevice) returns the device string so existing
+    # code like ``f"Device: {TheDevice}"`` still works.
+    def __str__(self):
+        return str(self._device)
+
+    def __repr__(self):
+        return f"TheDevice({self._device!r})"
+
+    # Delegate DeviceHandle properties for direct access
+    @property
+    def type(self):
+        return self._device.type
+
+    @property
+    def index(self):
+        return self._device.index
+
+    def optimized(self):
+        return self._device.optimized()
+
+
 # The canonical device for this process.
-TheDevice = auto_device()
+TheDevice = _DeviceHolder(auto_device())
 
 
 def init_device(device=None):
     """Override the process-wide device.  None re-runs auto-detection."""
-    global TheDevice
-    TheDevice = auto_device() if device is None else device
+    TheDevice.set(auto_device() if device is None else DeviceHandle(str(device)))
 
 
 def buffer(*size, **kwargs):
     """Allocate a zero tensor on TheDevice.  Accepts the same args as torch.zeros."""
-    return torch.zeros(*size, **kwargs, device=TheDevice)
+    return torch.zeros(*size, **kwargs, device=TheDevice.get())
 
 
 # ---------------------------------------------------------------------------

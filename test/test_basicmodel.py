@@ -176,6 +176,18 @@ def _populate_test_config(*,
             "quantized": False,
             "invertible": False,
         },
+        "ModalSpace": {
+            "nDim": perceptDim,
+            "nVectors": nPercepts,
+            "flatten": flatten,
+            "passThrough": False,
+            "hasAttention": perceptHasAttention,
+            "invertible": invertible,
+            "quantized": _pq,
+            "whatPassThrough": False,
+            "wherePassThrough": True,
+            "whenPassThrough": True,
+        },
     })
 
 
@@ -186,14 +198,14 @@ class TestLinearLayer(unittest.TestCase):
     def test_forward_shape(self):
         from Model import LinearLayer
         layer = LinearLayer(nInput=4, nOutput=3)
-        x = torch.randn(2, 4).to(TheDevice)
+        x = torch.randn(2, 4).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 3))
 
     def test_with_identity_weight(self):
         from Model import LinearLayer
         layer = LinearLayer(nInput=4, nOutput=4, ergodic=True)  # ergodic init = eye
-        x = torch.randn(1, 4).to(TheDevice)
+        x = torch.randn(1, 4).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (1, 4))
 
@@ -203,7 +215,7 @@ class TestInvertibleLinearLayer(unittest.TestCase):
         from Model import InvertibleLinearLayer
         layer = InvertibleLinearLayer(nInput=4, nOutput=4)
         layer.set_sigma(0)
-        x = torch.randn(2, 4).to(TheDevice)
+        x = torch.randn(2, 4).to(TheDevice.get())
         y = layer(x)
         x_rec = layer.reverse(y)
         self.assertTrue(torch.allclose(x, x_rec, atol=1e-4),
@@ -215,7 +227,7 @@ class TestInvertibleLinearLayer(unittest.TestCase):
         with torch.no_grad():
             layer.var.fill_(0.2)
             layer.bias.fill_(0.8)
-        x = torch.randn(2, 4).to(TheDevice)
+        x = torch.randn(2, 4).to(TheDevice.get())
         y = layer(x)
         x_rec = layer.reverse(y)
         err = (x - x_rec).norm() / x.norm()
@@ -227,7 +239,7 @@ class TestSigmaLayer(unittest.TestCase):
     def test_forward_shape(self):
         from Model import SigmaLayer
         layer = SigmaLayer(nInput=8, nOutput=4)
-        x = torch.randn(2, 8).to(TheDevice)
+        x = torch.randn(2, 8).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 4))
 
@@ -236,7 +248,7 @@ class TestPiLayer(unittest.TestCase):
     def test_forward_shape(self):
         from Model import PiLayer
         layer = PiLayer(nInput=6, nOutput=3)
-        x = torch.randn(2, 6).to(TheDevice)
+        x = torch.randn(2, 6).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 3))
 
@@ -245,14 +257,14 @@ class TestInvertibleSigmaLayer(unittest.TestCase):
     def test_forward_shape(self):
         from Model import SigmaLayer
         layer = SigmaLayer(nInput=4, nOutput=4, invertible=True)
-        x = torch.randn(2, 4).to(TheDevice) * 0.3
+        x = torch.randn(2, 4).to(TheDevice.get()) * 0.3
         y = layer(x)
         self.assertEqual(y.shape, (2, 4))
 
     def test_reverse_shape(self):
         from Model import SigmaLayer
         layer = SigmaLayer(nInput=4, nOutput=4, invertible=True)
-        y = torch.randn(2, 4).to(TheDevice) * 0.3
+        y = torch.randn(2, 4).to(TheDevice.get()) * 0.3
         x = layer.reverse(y)
         self.assertEqual(x.shape, (2, 4))
 
@@ -261,21 +273,21 @@ class TestAttentionLayer(unittest.TestCase):
     def test_asymmetric_forward_shape(self):
         from Model import AttentionLayer
         layer = AttentionLayer(nInput=8, nOutput=4, type="asymmetric")
-        x = torch.randn(2, 5, 8).to(TheDevice)
+        x = torch.randn(2, 5, 8).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 5, 4))
 
     def test_symmetric_forward_shape(self):
         from Model import AttentionLayer
         layer = AttentionLayer(nInput=8, nOutput=4, type="symmetric")
-        x = torch.randn(2, 5, 8).to(TheDevice)
+        x = torch.randn(2, 5, 8).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 5, 4))
 
     def test_transformer_forward_shape(self):
         from Model import AttentionLayer
         layer = AttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
-        x = torch.randn(2, 5, 8).to(TheDevice)
+        x = torch.randn(2, 5, 8).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 5, 4))
 
@@ -283,7 +295,7 @@ class TestAttentionLayer(unittest.TestCase):
         """Single-object 3D input [B, 1, D] -> [B, 1, nOut]."""
         from Model import AttentionLayer
         layer = AttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
-        x = torch.randn(2, 1, 8).to(TheDevice)
+        x = torch.randn(2, 1, 8).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 1, 4))
 
@@ -296,14 +308,14 @@ class TestNormLayer(unittest.TestCase):
     def test_forward_2d(self):
         from Model import NormLayer
         layer = NormLayer(4, 6)
-        x = torch.randn(3, 4).to(TheDevice)
+        x = torch.randn(3, 4).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (3, 6))
 
     def test_forward_3d(self):
         from Model import NormLayer
         layer = NormLayer(4, 6)
-        x = torch.randn(3, 5, 4).to(TheDevice)
+        x = torch.randn(3, 5, 4).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (3, 5, 6))
 
@@ -311,7 +323,7 @@ class TestNormLayer(unittest.TestCase):
         from Model import NormLayer
         layer = NormLayer(4, 6)
         layer.lr = 0
-        x = torch.randn(3, 5, 4).to(TheDevice)
+        x = torch.randn(3, 5, 4).to(TheDevice.get())
         y = layer(x)
         x_rec = layer.reverse(y)
         self.assertTrue(torch.allclose(x, x_rec, atol=1e-5))
@@ -409,7 +421,7 @@ class TestSimpleModelCreation(unittest.TestCase):
         from BasicModel import BasicModel
         model = BasicModel()
         model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
-        x = torch.randn(2, 28*28, 1).to(TheDevice)  # batch of 2, flattened MNIST, dim=1
+        x = torch.randn(2, 28*28, 1).to(TheDevice.get())  # batch of 2, flattened MNIST, dim=1
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)  # batch size preserved
 
@@ -423,7 +435,7 @@ class TestSimpleModelCreation(unittest.TestCase):
         from BasicModel import BasicModel
         model = BasicModel()
         model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
-        x = torch.randn(2, 28*28, 1).to(TheDevice)
+        x = torch.randn(2, 28*28, 1).to(TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
 
@@ -450,7 +462,7 @@ class TestWeightPersistence(unittest.TestCase):
     def test_save_load_roundtrip(self):
         from Model import LinearLayer
         layer = LinearLayer(nInput=4, nOutput=3)
-        x = torch.randn(1, 4).to(TheDevice)
+        x = torch.randn(1, 4).to(TheDevice.get())
         y_before = layer(x).detach().clone()
 
         with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f:
@@ -478,7 +490,7 @@ class TestWhereEncodingRoundTrip(unittest.TestCase):
         from BasicModel import WhereEncoding
         maxP = 4096
         pe = WhereEncoding(maxP)
-        buf = torch.zeros(1, 1, 10, device=TheDevice)
+        buf = torch.zeros(1, 1, 10, device=TheDevice.get())
         offsets = [0, 1, 5, 11, 42, 100, 255, 1000]
         for offset in offsets:
             pe.stamp(buf, 0, 0, offset)
@@ -492,7 +504,7 @@ class TestWhereEncodingRoundTrip(unittest.TestCase):
         pe = WhereEncoding(maxP)
         pe.p = 0
         batch, n = 4, 3
-        x = torch.zeros(batch, n, 10, device=TheDevice)
+        x = torch.zeros(batch, n, 10, device=TheDevice.get())
         y = pe.forward(x)
         _, decoded = pe.reverse(y)
         for b in range(batch):
@@ -507,7 +519,7 @@ class TestWhereEncodingRoundTrip(unittest.TestCase):
         from BasicModel import WhereEncoding
         pe = WhereEncoding(1000)
         pe.p = 0
-        x = torch.randn(2, 3, 10, device=TheDevice)
+        x = torch.randn(2, 3, 10, device=TheDevice.get())
         original = x.clone()
         y = pe.forward(x)
         cleaned, _ = pe.reverse(y)
@@ -524,7 +536,7 @@ class TestWhenEncodingRoundTrip(unittest.TestCase):
         maxT = 10000
         te = WhenEncoding(maxT)
         te.t = 0
-        x = torch.zeros(5, 2, 10, device=TheDevice)
+        x = torch.zeros(5, 2, 10, device=TheDevice.get())
         y = te.forward(x)
         _, decoded = te.reverse(y)
         expected = torch.arange(0, 5, dtype=torch.float32)
@@ -540,7 +552,7 @@ class TestWhenEncodingRoundTrip(unittest.TestCase):
         maxT = 10000
         te = WhenEncoding(maxT)
         te.t = 500
-        x = torch.zeros(3, 1, 10, device=TheDevice)
+        x = torch.zeros(3, 1, 10, device=TheDevice.get())
         y = te.forward(x)
         _, decoded = te.reverse(y)
         expected = torch.arange(500, 503, dtype=torch.float32)
@@ -554,7 +566,7 @@ class TestWhenEncodingRoundTrip(unittest.TestCase):
         from BasicModel import WhenEncoding
         te = WhenEncoding(10000)
         te.t = 0
-        x = torch.randn(2, 3, 10, device=TheDevice)
+        x = torch.randn(2, 3, 10, device=TheDevice.get())
         original = x.clone()
         y = te.forward(x)
         cleaned, _ = te.reverse(y)
@@ -566,38 +578,39 @@ class TestWhenEncodingRoundTrip(unittest.TestCase):
 # SubSpace — derived sizes, materialization, construction helpers
 # ---------------------------------------------------------------------------
 class TestSubSpaceDerivedSizes(unittest.TestCase):
-    """SubSpace.getEncodingSize, getEncodedInputSize, getEncodedOutputSize match ObjectEncoding math."""
+    """SubSpace.getEncodingSize, getEncodedInputSize, getEncodedOutputSize match EventEncoding math."""
 
-    def test_getEncodingSize_adds_objectSize(self):
+    def test_getEncodingSize_returns_muxedSize(self):
         from BasicModel import SubSpace, WhereEncoding, WhenEncoding
         ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
                       inputShape=[3, 8], outputShape=[3, 8])
-        self.assertEqual(ss.getEncodingSize(8), 12)
-        self.assertEqual(ss.getEncodingSize(0), 4)
+        # muxedSize = nWhat(4) + nWhere(2) + nWhen(2) = 8 (inputShape[1])
+        self.assertEqual(ss.getEncodingSize(8), 8)
+        self.assertEqual(ss.muxedSize, 8)
 
     def test_getEncodedIO_no_reshape(self):
-        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, ObjectEncoding
-        # Shapes already include objectSize (4 = nWhere=2 + nWhen=2)
+        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, EventEncoding
+        # Shapes already include muxed width (nWhere=2 + nWhen=2)
         ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
-                      objectEncoding=ObjectEncoding([3, 12], [5, 20], flatten=False),
+                      objectEncoding=EventEncoding([3, 12], [5, 20], flatten=False),
                       flatten=False,
                       inputShape=[3, 12], outputShape=[5, 20])
         self.assertEqual(ss.getEncodedInputSize(), 12)
         self.assertEqual(ss.getEncodedOutputSize(), 20)
 
     def test_getEncodedIO_reshape(self):
-        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, ObjectEncoding
-        # Shapes already include objectSize (4 = nWhere=2 + nWhen=2)
+        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, EventEncoding
+        # Shapes already include muxed width (nWhere=2 + nWhen=2)
         ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
-                      objectEncoding=ObjectEncoding([3, 12], [5, 20], flatten=True),
+                      objectEncoding=EventEncoding([3, 12], [5, 20], flatten=True),
                       flatten=True,
                       inputShape=[3, 12], outputShape=[5, 20])
         self.assertEqual(ss.getEncodedInputSize(), 12 * 3)
         self.assertEqual(ss.getEncodedOutputSize(), 20 * 5)
 
-    def test_zero_objectSize(self):
-        from BasicModel import SubSpace, ObjectEncoding
-        ss = SubSpace(objectEncoding=ObjectEncoding([2, 10], [2, 10]),
+    def test_zero_nWhere_nWhen(self):
+        from BasicModel import SubSpace, EventEncoding
+        ss = SubSpace(objectEncoding=EventEncoding([2, 10], [2, 10]),
                       inputShape=[2, 10], outputShape=[2, 10])
         self.assertEqual(ss.getEncodedInputSize(), 10)
         self.assertEqual(ss.getEncodedOutputSize(), 10)
@@ -638,7 +651,7 @@ class TestSubSpaceProperties(unittest.TestCase):
 
     def test_batch_from_tensor(self):
         from BasicModel import SubSpace
-        t = torch.randn(5, 4, 8, device=TheDevice)
+        t = torch.randn(5, 4, 8, device=TheDevice.get())
         ss = SubSpace.from_tensor(t, inputShape=[4, 4], outputShape=[4, 4])
         self.assertEqual(ss.batch, 5)
 
@@ -658,7 +671,9 @@ class TestSubSpaceConstruction(unittest.TestCase):
                                   inputShape=[3, 6], outputShape=[3, 6])
         self.assertIsInstance(ss.event, Tensor)
         self.assertIs(ss.event.W, t)
-        self.assertEqual(ss.objectSize, 4)
+        self.assertEqual(ss.nWhere, 2)
+        self.assertEqual(ss.nWhen, 2)
+        self.assertEqual(ss.muxedSize, 6)
         self.assertEqual(ss.inputShape, [3, 6])
 
     def test_from_components(self):
@@ -702,16 +717,16 @@ class TestSubSpaceActiveEncoding(unittest.TestCase):
         torch.testing.assert_close(decoded, act.squeeze(0))
 
     def test_two_spaces_independent_encoding(self):
-        """Two SubSpaces can have different objectSize without shared coupling."""
-        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, ObjectEncoding
-        # ss1: objectSize=4 (nWhere=2, nWhen=2), shapes include it
+        """Two SubSpaces can have different muxedSize without shared coupling."""
+        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, EventEncoding
+        # ss1: nWhere=2, nWhen=2, muxedSize=12
         ss1 = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
-                        objectEncoding=ObjectEncoding([3, 12], [3, 12]),
+                        objectEncoding=EventEncoding([3, 12], [3, 12]),
                         inputShape=[3, 12], outputShape=[3, 12])
-        ss2 = SubSpace(objectEncoding=ObjectEncoding([3, 16], [3, 16]),
+        ss2 = SubSpace(objectEncoding=EventEncoding([3, 16], [3, 16]),
                         inputShape=[3, 16], outputShape=[3, 16])
-        self.assertEqual(ss1.getEncodingSize(8), 12)
-        self.assertEqual(ss2.getEncodingSize(16), 16)
+        self.assertEqual(ss1.muxedSize, 12)
+        self.assertEqual(ss2.muxedSize, 16)
         self.assertEqual(ss1.getEncodedInputSize(), 12)
         self.assertEqual(ss2.getEncodedInputSize(), 16)
 
@@ -733,7 +748,7 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
         nIn, nOut, nDim = 4, 4, 8
         cs = ConceptualSpace([nIn, nDim], [nOut, nDim], [nOut, nDim])
         inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("InputSpace", "nDim"))
-        x = torch.randn(self.B, nIn, inEmb).to(TheDevice)
+        x = torch.randn(self.B, nIn, inEmb).to(TheDevice.get())
         y = _unwrap(cs(_wrap_tensor(cs, x)))
         outEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("ConceptualSpace", "nDim"))
         self.assertEqual(list(y.shape), [self.B, nOut, outEmb])
@@ -747,7 +762,7 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
         nIn, nOut, nDim = 4, 4, 8
         cs = ConceptualSpace([nIn, nDim], [nOut, nDim], [nOut, nDim])
         outEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("ConceptualSpace", "nDim"))
-        y = torch.randn(self.B, nOut, outEmb).to(TheDevice)
+        y = torch.randn(self.B, nOut, outEmb).to(TheDevice.get())
         x = _unwrap(cs.reverse(_wrap_tensor(cs, y)))
         inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("InputSpace", "nDim"))
         self.assertEqual(list(x.shape), [self.B, nIn, inEmb])
@@ -757,7 +772,7 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
         nIn, nOut = 4, 4
         os_ = OutputSpace([nIn, 8], [nOut, 4], [nOut, 4])
         inEmb = os_.inputShape[1]
-        x = torch.randn(self.B, nIn, inEmb).to(TheDevice)
+        x = torch.randn(self.B, nIn, inEmb).to(TheDevice.get())
         y = _unwrap(os_(_wrap_tensor(os_, x)))
         self.assertEqual(list(y.shape), [self.B, nOut, TheXMLConfig.space("OutputSpace", "nDim")])
 
@@ -774,7 +789,7 @@ class TestSimpleModel(unittest.TestCase):
         from BasicModel import BasicModel
         model = BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice)
+        x = torch.randn(2, 16, 1).to(TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -789,7 +804,7 @@ class TestSimpleModel(unittest.TestCase):
         from BasicModel import BasicModel
         model = BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice)
+        x = torch.randn(2, 16, 1).to(TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -803,7 +818,7 @@ class TestSimpleModel(unittest.TestCase):
         from BasicModel import BasicModel
         model = BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice)
+        x = torch.randn(2, 16, 1).to(TheDevice.get())
         _, end_state, out = model.forward(x)
         data, start_state = model.reverse(end_state, out)
         self.assertEqual(data.shape[0], 2)
@@ -817,7 +832,7 @@ class TestCodebookVariants(unittest.TestCase):
         from BasicModel import Codebook
         vs = Codebook()
         vs.create(4, 4, 1, passThrough=True)
-        x = torch.randn(2, 4, 1).to(TheDevice)
+        x = torch.randn(2, 4, 1).to(TheDevice.get())
         y = vs.forward(x)
         self.assertTrue(torch.equal(x, y))
 
@@ -826,20 +841,18 @@ class TestCodebookVariants(unittest.TestCase):
         _populate_test_config(nInput=4, nPercepts=4, nConcepts=4, nSymbols=4,
                               nWords=0, nOutput=4)
         vs = Codebook()
-        vs.create(4, 4, 3, customVQ=False,
-                  objectSize=TheXMLConfig.objectSize)
-        vs = vs.to(TheDevice)
-        x = torch.randn(2, 4, 3).to(TheDevice)
+        vs.create(4, 4, 3, customVQ=False)
+        vs = vs.to(TheDevice.get())
+        x = torch.randn(2, 4, 3).to(TheDevice.get())
         y = vs.forward(x)
-        # Output gains ObjectEncoding overhead (nWhere + nWhen)
-        embeddingSize = 3 + TheXMLConfig.objectSize
-        self.assertEqual(list(y.shape), [2, 4, embeddingSize])
+        # Basis.nDim is actual width — no objectSize padding
+        self.assertEqual(list(y.shape), [2, 4, 3])
 
 
 class TestBasisContract(unittest.TestCase):
     def test_tensor_identity_materialization(self):
         from BasicModel import Tensor
-        payload = torch.randn(2, 3, 4, device=TheDevice)
+        payload = torch.randn(2, 3, 4, device=TheDevice.get())
         basis = Tensor()
         basis.create(3, 3, 4, passThrough=True)
         out = basis.forward(payload)
@@ -850,10 +863,10 @@ class TestBasisContract(unittest.TestCase):
 
     def test_invalid_geometry_requires_2d_prototype_matrix(self):
         from BasicModel import Tensor
-        basis = Tensor(W=torch.randn(2, 3, 4, device=TheDevice))
+        basis = Tensor(W=torch.randn(2, 3, 4, device=TheDevice.get()))
         basis.create(3, 3, 4, passThrough=True)
         with self.assertRaises(RuntimeError):
-            basis.codebookDistance(torch.randn(2, 4, device=TheDevice))
+            basis.codebookDistance(torch.randn(2, 4, device=TheDevice.get()))
 
 
 class TestModelEndToEnd(unittest.TestCase):
@@ -868,7 +881,7 @@ class TestModelEndToEnd(unittest.TestCase):
         from BasicModel import BasicModel
         model = BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice)
+        x = torch.randn(2, 16, 1).to(TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -883,7 +896,7 @@ class TestModelEndToEnd(unittest.TestCase):
         from BasicModel import BasicModel
         model = BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice)
+        x = torch.randn(2, 16, 1).to(TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -898,7 +911,7 @@ class TestModelEndToEnd(unittest.TestCase):
         from BasicModel import BasicModel
         model = BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice)
+        x = torch.randn(2, 16, 1).to(TheDevice.get())
         _, end_state, out = model.forward(x)
         data, start_state = model.reverse(end_state, out)
         self.assertEqual(data.shape[0], 2)
@@ -915,8 +928,8 @@ class TestModelEndToEnd(unittest.TestCase):
         from BasicModel import BasicModel
         model = BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice)
-        target = torch.randn(2, 4).to(TheDevice)
+        x = torch.randn(2, 16, 1).to(TheDevice.get())
+        target = torch.randn(2, 4).to(TheDevice.get())
         _, end_state, out = model.forward(x)
         loss_fn = CertaintyWeightedCrossEntropy()
         loss = loss_fn(out.squeeze(), target)
@@ -963,7 +976,7 @@ class TestSigmaLayerDeterministic(unittest.TestCase):
             linear.bias.copy_(sigma.layer.bias)
         tanh = torch.nn.Tanh()
 
-        x = torch.randn(2, nIn).to(TheDevice)
+        x = torch.randn(2, nIn).to(TheDevice.get())
         y_sigma = sigma(x)
         y_manual = tanh(linear(x))
         self.assertTrue(torch.allclose(y_sigma, y_manual, atol=1e-6),
@@ -973,7 +986,7 @@ class TestSigmaLayerDeterministic(unittest.TestCase):
         from Model import SigmaLayer
         nIn, nOut = 8, 4
         sigma = SigmaLayer(nIn, nOut, ergodic=False)
-        x = torch.randn(2, nIn).to(TheDevice)
+        x = torch.randn(2, nIn).to(TheDevice.get())
 
         sigma.train()
         y_train = sigma(x).detach().clone()
@@ -1021,7 +1034,7 @@ class TestSpaceBasisConstruction(unittest.TestCase):
         )
         inp = InputSpace([4, 3], [4, 3], [4, 3], model_type="simple")
         per = PerceptualSpace([4, 3], [4, 3], [4, 3])
-        x = torch.randn(2, 4, 3).to(TheDevice)
+        x = torch.randn(2, 4, 3).to(TheDevice.get())
 
         inp.forward(x)
         input_state = inp.subspace
@@ -1051,7 +1064,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         from BasicModel import ConceptualSpace
         nVec, nDim, cDim = 8, 1, 1
         cs = ConceptualSpace([nVec, nDim], [nVec, cDim], [nVec, cDim])
-        x = torch.randn(2, nVec, nDim).to(TheDevice)
+        x = torch.randn(2, nVec, nDim).to(TheDevice.get())
         y = _unwrap(cs(_wrap_tensor(cs, x)))
         self.assertEqual(list(y.shape), [2, nVec, cDim])
 
@@ -1060,7 +1073,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         from BasicModel import ConceptualSpace
         nVec, nDim, cDim = 8, 1, 1
         cs = ConceptualSpace([nVec, nDim], [nVec, cDim], [nVec, cDim])
-        x = torch.randn(2, nVec, nDim).to(TheDevice)
+        x = torch.randn(2, nVec, nDim).to(TheDevice.get())
         y = _unwrap(cs(_wrap_tensor(cs, x)))
         self.assertEqual(list(y.shape), [2, nVec, cDim])
 
@@ -1078,7 +1091,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         from BasicModel import ConceptualSpace
         nVec, nDim, cDim = 8, 1, 1
         cs = ConceptualSpace([nVec, nDim], [nVec, cDim], [nVec, cDim])
-        y = torch.randn(2, nVec, cDim).to(TheDevice)
+        y = torch.randn(2, nVec, cDim).to(TheDevice.get())
         x = _unwrap(cs.reverse(_wrap_tensor(cs, y)))
         self.assertEqual(list(x.shape), [2, nVec, nDim])
 
@@ -1098,7 +1111,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         nIn, nOut = 4, 4
         cs = ConceptualSpace([nIn, 8], [nOut, 8], [nOut, 8])
         inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("InputSpace", "nDim"))
-        x = torch.randn(2, nIn, inEmb).to(TheDevice)
+        x = torch.randn(2, nIn, inEmb).to(TheDevice.get())
         y = _unwrap(cs(_wrap_tensor(cs, x)))
         outEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("ConceptualSpace", "nDim"))
         self.assertEqual(list(y.shape), [2, nOut, outEmb])
@@ -1112,7 +1125,7 @@ class TestInputSpaceUnquantized(unittest.TestCase):
         _populate_test_config(inputDim=1, nInput=8, nWhere=0, nWhen=0, quantized=False)
         nIn, nDim = 8, 1
         inp = InputSpace([nIn, nDim], [nIn, nDim], [nIn, nDim])
-        x = torch.randn(2, nIn, nDim).to(TheDevice)
+        x = torch.randn(2, nIn, nDim).to(TheDevice.get())
         y = _unwrap(inp(x))
         self.assertEqual(list(y.shape), [2, nIn, nDim])
 
@@ -1126,7 +1139,7 @@ class TestOutputSpaceZeroObjectSize(unittest.TestCase):
                               flatten=True)
         nIn, nOut = 4, 3
         os_ = OutputSpace([nIn, 1], [nOut, 1], [nOut, 1])
-        x = torch.randn(2, nIn, 1).to(TheDevice)
+        x = torch.randn(2, nIn, 1).to(TheDevice.get())
         y = _unwrap(os_(_wrap_tensor(os_, x)))
         self.assertEqual(list(y.shape), [2, nOut, 1])
 
@@ -1136,7 +1149,7 @@ class TestOutputSpaceZeroObjectSize(unittest.TestCase):
                               flatten=True, reconstruct="FULL")
         nIn, nOut = 4, 3
         os_ = OutputSpace([nIn, 1], [nOut, 1], [nOut, 1])
-        y = torch.randn(2, nOut, 1).to(TheDevice)
+        y = torch.randn(2, nOut, 1).to(TheDevice.get())
         x = _unwrap(os_.reverse(_wrap_tensor(os_, y)))
         self.assertEqual(list(x.shape), [2, nIn, 1])
 
@@ -1345,7 +1358,7 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         # With nWhere > 0, the reserved encoding dims should be non-zero
         # (ObjectEncoding.forward stamps sin/cos into the last objectSize dims)
         embSize = output.shape[-1]
-        objSize = TheXMLConfig.objectSize
+        objSize = _obj_size("InputSpace")
         if objSize > 0:
             encoding_dims = output[0, 0, -objSize:]
             self.assertFalse(torch.all(encoding_dims == 0).item(),
@@ -1362,7 +1375,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
                               flatten=True)
         nIn, nOut = 4, 3
         os_ = OutputSpace([nIn, 1], [nOut, 1], [nOut, 1])
-        x = torch.randn(2, nIn, 1).to(TheDevice)
+        x = torch.randn(2, nIn, 1).to(TheDevice.get())
         y = _unwrap(os_(_wrap_tensor(os_, x)))
         self.assertEqual(list(y.shape), [2, nOut, 1])
         # text_mode should be False for numeric data
@@ -1421,14 +1434,14 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         # Build synthetic vectors from known codebook entries with known nWhere
         codebook = inp.get_vectors().getW().detach()
         words_list = inp.get_vectors().wv.index_to_key
-        embSize = inp.get_vectors().embeddingSize
-        nWhat = embSize - TheXMLConfig.objectSize
+        embSize = inp.muxedSize
+        nWhat = embSize - _obj_size("InputSpace")
         where = inp.subspace.whereEncoding
 
         # Pick first two non-[MASK] words from the codebook
         batch = 1
         nVec = 2
-        vectors = torch.zeros([batch, nVec, embSize]).to(TheDevice)
+        vectors = torch.zeros([batch, nVec, embSize]).to(TheDevice.get())
         expected_words = []
         # Skip [MASK] (zero vector) — cosine matching can't recover it
         usable = [j for j, w in enumerate(words_list) if w != "[MASK]"]
@@ -1463,17 +1476,17 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         # Build vectors with nWhere = 0 (all zeros)
         codebook = inp.get_vectors().getW().detach()
         words_list = inp.get_vectors().wv.index_to_key
-        embSize = inp.get_vectors().embeddingSize
+        embSize = inp.muxedSize
 
         batch = 1
         nVec = 2
-        vectors = torch.zeros([batch, nVec, embSize]).to(TheDevice)
+        vectors = torch.zeros([batch, nVec, embSize]).to(TheDevice.get())
         expected_words = []
         # Skip [MASK] (zero vector) — cosine matching can't recover it
         usable = [j for j, w in enumerate(words_list) if w != "[MASK]"]
         for slot, j in enumerate(usable[:nVec]):
-            vectors[0, slot, :embSize - TheXMLConfig.objectSize] = \
-                codebook[j, :embSize - TheXMLConfig.objectSize]
+            vectors[0, slot, :embSize - _obj_size("InputSpace")] = \
+                codebook[j, :embSize - _obj_size("InputSpace")]
             expected_words.append(words_list[j])
         # nWhere left as zero -> consecutive mode
 
@@ -1504,13 +1517,13 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         # Build synthetic vectors with nWhere at known positions
         codebook = inp.get_vectors().getW().detach()
         words_list = inp.get_vectors().wv.index_to_key
-        embSize = inp.get_vectors().embeddingSize
-        nWhat = embSize - inp.objectSize
+        embSize = inp.muxedSize
+        nWhat = inp.nWhat
         where = inp.subspace.whereEncoding
 
         batch = 1
         nVec = 2
-        vectors = torch.zeros([batch, nVec, embSize]).to(TheDevice)
+        vectors = torch.zeros([batch, nVec, embSize]).to(TheDevice.get())
         # Skip [MASK] and \x00 (both zero vectors) — cosine matching can't recover them
         usable = [j for j, w in enumerate(words_list) if w not in ("[MASK]", "\x00")]
         # Word 0 at offset 0, word 1 at offset 6
@@ -1546,7 +1559,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         _obj_sym = _obj_size("SymbolicSpace")
         os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.get_vectors())
         inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("SymbolicSpace", "nDim"))
-        x = torch.randn(2, nInput, inEmb).to(TheDevice)
+        x = torch.randn(2, nInput, inEmb).to(TheDevice.get())
         y = os_(_wrap_tensor(os_, x))
         self.assertEqual(list(_unwrap(y).shape), [2, nOut, TheXMLConfig.space("OutputSpace", "nDim")])
         # Reverse path should also be unchanged
@@ -1648,7 +1661,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         from BasicModel import InputSpace
         nIn, nDim = 8, 1
         inp = InputSpace([nIn, nDim], [nIn, nDim], [nIn, nDim])
-        x = torch.randn(2, nIn, nDim).to(TheDevice)
+        x = torch.randn(2, nIn, nDim).to(TheDevice.get())
         y = inp.forward(x)
         result = _unwrap(inp.reverse(y))
         # Numeric path returns tensor, not text
@@ -1736,7 +1749,7 @@ class TestEmbeddingLexDelegation(unittest.TestCase):
         )
         embedded, meta = emb.forward(
             self._make_batch("the dog barks"), return_meta=True)
-        self.assertEqual(list(embedded.shape), [1, 8, emb.embeddingSize])
+        self.assertEqual(list(embedded.shape), [1, 8, emb.nDim])
         self.assertEqual(
             meta["tokens"][0],
             [("the", 0), (" ", 3), ("dog", 4), (" ", 7), ("barks", 8)],
@@ -1961,7 +1974,7 @@ class TestModelTypeVariants(unittest.TestCase):
         from BasicModel import BasicModel
         model = BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice)
+        x = torch.randn(2, 16, 1).to(TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -1981,7 +1994,7 @@ class TestModelTypeVariants(unittest.TestCase):
         from BasicModel import BasicModel
         model = BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice)
+        x = torch.randn(2, 16, 1).to(TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -2001,7 +2014,7 @@ class TestModelTypeVariants(unittest.TestCase):
         model = BasicModel()
         model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
                      conceptualOrder=2)
-        x = torch.randn(2, 8, 1).to(TheDevice)
+        x = torch.randn(2, 8, 1).to(TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -2021,7 +2034,7 @@ class TestModelTypeVariants(unittest.TestCase):
         model = BasicModel()
         model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nWords=8, nOutput=4,
                      symbolicOrder=2)
-        x = torch.randn(2, 8, 1).to(TheDevice)
+        x = torch.randn(2, 8, 1).to(TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -2443,7 +2456,7 @@ class TestExpandMaskedTargets(unittest.TestCase):
         """Create a synthetic [1, n_words, embSize] embedded sentence."""
         if emb_size is None:
             emb_size = self.emb.wv._vectors.shape[1] + 4  # content + nWhere + nWhen
-        return torch.randn(1, n_words, emb_size, device=TheDevice)
+        return torch.randn(1, n_words, emb_size, device=TheDevice.get())
 
     def test_expand_masked_shape(self):
         """N words produce [N, 1, embSize] target tensor."""
@@ -2610,7 +2623,7 @@ class TestRARLMTargets(unittest.TestCase):
     def test_rarlm_targets_reversed(self):
         """RARLM targets are MLM targets in reverse order."""
         emb_size = self.emb.wv._vectors.shape[1] + 4
-        embedded = torch.randn(1, 2, emb_size, device=TheDevice)
+        embedded = torch.randn(1, 2, emb_size, device=TheDevice.get())
         mlm_targets = self.out.expand_masked(embedded, "hello world", maskedPrediction='MLM')
         rarlm_targets = self.out.expand_masked(embedded, "hello world", maskedPrediction='RARLM')
         # RARLM targets should be MLM targets reversed
@@ -2678,7 +2691,7 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
         self.assertIsInstance(m.inputSpace.get_vectors(), Embedding)
 
         optimizer = m.getOptimizer(lr=0.001)
-        sentinel = torch.tensor(1.2345, device=TheDevice)
+        sentinel = torch.tensor(1.2345, device=TheDevice.get())
         seen = {}
 
         original_total = m.loss.total
@@ -3014,7 +3027,7 @@ class TestSubspaceActivation(unittest.TestCase):
         """set_activation / get_activation round-trip."""
         from Space import SubSpace
         ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
-        activation = torch.randn(2, 4).to(TheDevice)
+        activation = torch.randn(2, 4).to(TheDevice.get())
         ss.set_activation(activation)
         got = ss.get_activation()
         self.assertTrue(torch.equal(activation, got))
@@ -3023,7 +3036,7 @@ class TestSubspaceActivation(unittest.TestCase):
         """set_activation accepts [batch, n, 1] and squeezes."""
         from Space import SubSpace
         ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
-        activation = torch.randn(2, 4, 1).to(TheDevice)
+        activation = torch.randn(2, 4, 1).to(TheDevice.get())
         ss.set_activation(activation)
         got = ss.get_activation()
         self.assertEqual(got.shape, (2, 4))
@@ -3033,10 +3046,10 @@ class TestSubspaceActivation(unittest.TestCase):
         from Space import SubSpace
         ss = SubSpace(inputShape=[8, 3], outputShape=[8, 3])
         # Create a known tensor: 8 vectors of dim 3
-        x = torch.arange(24, dtype=torch.float32).reshape(1, 8, 3).to(TheDevice)
+        x = torch.arange(24, dtype=torch.float32).reshape(1, 8, 3).to(TheDevice.get())
         ss.set_vectors(x)
         # Set activation: highest at indices 7, 5, 3, 1
-        activation = torch.tensor([[0.1, 0.8, 0.2, 0.7, 0.3, 0.9, 0.4, 1.0]]).to(TheDevice)
+        activation = torch.tensor([[0.1, 0.8, 0.2, 0.7, 0.3, 0.9, 0.4, 1.0]]).to(TheDevice.get())
         ss.set_activation(activation)
         selected = ss.materialize(k=4)
         self.assertEqual(selected.shape, (1, 4, 3))
@@ -3050,9 +3063,9 @@ class TestSubspaceActivation(unittest.TestCase):
         """Materialize(k=None) returns all vectors."""
         from Space import SubSpace
         ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
-        x = torch.randn(2, 4, 3).to(TheDevice)
+        x = torch.randn(2, 4, 3).to(TheDevice.get())
         ss.set_vectors(x)
-        activation = torch.randn(2, 4).to(TheDevice)
+        activation = torch.randn(2, 4).to(TheDevice.get())
         ss.set_activation(activation)
         result = ss.materialize(k=None)
         self.assertTrue(torch.equal(result, x))
@@ -3061,9 +3074,9 @@ class TestSubspaceActivation(unittest.TestCase):
         """Materialize(k >= nSpace) returns all vectors."""
         from Space import SubSpace
         ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
-        x = torch.randn(2, 4, 3).to(TheDevice)
+        x = torch.randn(2, 4, 3).to(TheDevice.get())
         ss.set_vectors(x)
-        activation = torch.randn(2, 4).to(TheDevice)
+        activation = torch.randn(2, 4).to(TheDevice.get())
         ss.set_activation(activation)
         result = ss.materialize(k=4)
         self.assertTrue(torch.equal(result, x))
@@ -3084,7 +3097,7 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
         from BasicModel import BasicModel
         model = BasicModel()
         model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
-        x = torch.randn(2, 28*28, 1).to(TheDevice)
+        x = torch.randn(2, 28*28, 1).to(TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)  # batch size preserved
 
@@ -3098,7 +3111,7 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
         from BasicModel import BasicModel
         model = BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice)
+        x = torch.randn(2, 16, 1).to(TheDevice.get())
         model.forward(x)
 
         # Check that activations are stored on spaces that compute them.
@@ -3115,6 +3128,135 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
                                  f"{space.name} should have activation after forward")
             self.assertEqual(activation.shape[0], 2,
                              f"{space.name} activation batch dim wrong")
+
+
+# ---------------------------------------------------------------------------
+# DemuxedInputSpace / ModalSpace tests
+# ---------------------------------------------------------------------------
+
+class TestDemuxedInputSpace(unittest.TestCase):
+    """DemuxedInputSpace separates what/where/when and auto-muxes on materialize."""
+
+    def test_demuxed_slots_populated(self):
+        """DemuxedInputSpace.forward() populates what, where, when independently."""
+        from BasicModel import DemuxedInputSpace, TheData, TheXMLConfig
+        TheData.load("xor")
+        nInput = 4
+        _populate_test_config(inputDim=8, nInput=nInput, nWhere=2, nWhen=2)
+        _idim = TheXMLConfig.space("InputSpace", "nDim")
+        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _obj = _obj_size("InputSpace")
+        inp = DemuxedInputSpace([nInput, _idim], [_invec, _idim],
+                                [nInput, _idim + _obj], model_type="simple")
+        x = torch.randn(2, nInput, _idim).to(TheDevice.get())
+        result = inp.forward(x)
+        self.assertTrue(result.is_demuxed)
+        self.assertEqual(list(result.what.getW().shape), [2, nInput, _idim])
+        self.assertEqual(list(result.where.getW().shape), [2, nInput, 2])
+        self.assertEqual(list(result.when.getW().shape), [2, nInput, 2])
+
+    def test_materialize_produces_muxed(self):
+        """DemuxedInputSpace.materialize() produces concat([what, where, when])."""
+        from BasicModel import DemuxedInputSpace, TheData, TheXMLConfig
+        TheData.load("xor")
+        nInput = 4
+        _populate_test_config(inputDim=8, nInput=nInput, nWhere=2, nWhen=2)
+        _idim = TheXMLConfig.space("InputSpace", "nDim")
+        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _obj = _obj_size("InputSpace")
+        inp = DemuxedInputSpace([nInput, _idim], [_invec, _idim],
+                                [nInput, _idim + _obj], model_type="simple")
+        x = torch.randn(2, nInput, _idim).to(TheDevice.get())
+        result = inp.forward(x)
+        muxed = result.materialize()
+        self.assertEqual(list(muxed.shape), [2, nInput, _idim + _obj])
+
+    def test_equivalence_with_input_space(self):
+        """DemuxedInputSpace.materialize() == InputSpace.materialize() for same input."""
+        from BasicModel import InputSpace, DemuxedInputSpace, TheData, TheXMLConfig
+        TheData.load("xor")
+        nInput = 4
+        _populate_test_config(inputDim=8, nInput=nInput, nWhere=2, nWhen=2)
+        _idim = TheXMLConfig.space("InputSpace", "nDim")
+        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _obj = _obj_size("InputSpace")
+
+        legacy = InputSpace([nInput, _idim], [_invec, _idim],
+                            [nInput, _idim + _obj], model_type="simple")
+        demuxed = DemuxedInputSpace([nInput, _idim], [_invec, _idim],
+                                    [nInput, _idim + _obj], model_type="simple")
+
+        x = torch.randn(2, nInput, _idim).to(TheDevice.get())
+        legacy_out = _unwrap(legacy.forward(x))
+        demuxed_out = _unwrap(demuxed.forward(x))
+        self.assertTrue(torch.allclose(legacy_out, demuxed_out, atol=1e-5),
+                        f"max diff: {(legacy_out - demuxed_out).abs().max():.6f}")
+
+
+class TestModalSpace(unittest.TestCase):
+    """ModalSpace routes what/where/when through independent PerceptualSpaces."""
+
+    def test_forward_shape(self):
+        """ModalSpace.forward() produces correct muxed output shape."""
+        from BasicModel import ModalSpace, SubSpace, TheXMLConfig
+        nInput = 4
+        nWhere = 2
+        nWhen = 2
+        nDim = 8
+        _populate_test_config(inputDim=nDim, perceptDim=nDim,
+                              nInput=nInput, nPercepts=nInput,
+                              nWhere=nWhere, nWhen=nWhen,
+                              perceptPassThrough=True)
+        muxed_w = nDim + nWhere + nWhen
+        space = ModalSpace([nInput, muxed_w], [nInput, nDim], [nInput, muxed_w])
+        # Build a demuxed input
+        what_t = torch.randn(2, nInput, nDim).to(TheDevice.get())
+        where_t = torch.randn(2, nInput, nWhere).to(TheDevice.get())
+        when_t = torch.randn(2, nInput, nWhen).to(TheDevice.get())
+        ss = SubSpace(inputShape=[nInput, muxed_w], outputShape=[nInput, muxed_w])
+        ss.set_demuxed(what_t, where_t, when_t)
+        result = space.forward(ss)
+        materialized = result.materialize()
+        self.assertEqual(list(materialized.shape), [2, nInput, muxed_w])
+
+    def test_degenerate_no_position(self):
+        """With nWhere=nWhen=0, ModalSpace degenerates to a single PerceptualSpace."""
+        from BasicModel import ModalSpace, SubSpace, TheXMLConfig
+        nInput = 4
+        nDim = 8
+        _populate_test_config(inputDim=nDim, perceptDim=nDim,
+                              nInput=nInput, nPercepts=nInput,
+                              nWhere=0, nWhen=0,
+                              perceptPassThrough=True)
+        space = ModalSpace([nInput, nDim], [nInput, nDim], [nInput, nDim])
+        self.assertIsNone(space.whereSpace)
+        self.assertIsNone(space.whenSpace)
+        # Forward with muxed input (no demux needed)
+        x = torch.randn(2, nInput, nDim).to(TheDevice.get())
+        ss = SubSpace(inputShape=[nInput, nDim], outputShape=[nInput, nDim])
+        ss.set_vectors(x)
+        result = space.forward(ss)
+        self.assertEqual(list(result.materialize().shape), [2, nInput, nDim])
+
+
+class TestDemuxedBasicModel(unittest.TestCase):
+    """DemuxedBasicModel creates the model and runs forward pass."""
+
+    def test_create_from_config(self):
+        """DemuxedBasicModel can be created from config with nWhere/nWhen > 0."""
+        from BasicModel import DemuxedBasicModel, DemuxedInputSpace, ModalSpace, TheData
+        TheData.load("xor")
+        _populate_test_config(
+            inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0,
+            outputDim=4,
+            nInput=4, nPercepts=4, nConcepts=4, nSymbols=4, nWords=4, nOutput=4,
+            nWhere=2, nWhen=2,
+            flatten=True, perceptPassThrough=True)
+        model = DemuxedBasicModel()
+        model.create(nInput=4, nPercepts=4, nConcepts=4, nSymbols=4, nOutput=4,
+                     model_type="simple")
+        self.assertIsInstance(model.inputSpace, DemuxedInputSpace)
+        self.assertIsInstance(model.perceptualSpace, ModalSpace)
 
 
 if __name__ == "__main__":

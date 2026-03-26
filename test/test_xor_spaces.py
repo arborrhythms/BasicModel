@@ -257,8 +257,8 @@ class TestSpacePrediction(unittest.TestCase):
 
         codebook = emb.wv._vectors.detach()
         words_list = emb.wv.index_to_key
-        embSize = emb.embeddingSize
-        nWhat = embSize - TheXMLConfig.objectSize  # content dims only
+        embSize = inp.muxedSize
+        nWhat = inp.nWhat  # content dims only
 
         # Find two non-[MASK] tokens that are NOT the space or \x00 sentinel
         usable = [j for j, w in enumerate(words_list)
@@ -310,8 +310,8 @@ class TestSpacePrediction(unittest.TestCase):
 
         space_idx = emb.pretrain.key_to_index[" "]
         codebook = emb.wv._vectors.detach()
-        embSize = emb.embeddingSize
-        nWhat = embSize - TheXMLConfig.objectSize  # content dims only
+        embSize = inp.muxedSize
+        nWhat = inp.nWhat  # content dims only
 
         vectors = torch.zeros([1, 1, embSize])
         # Assign only the content dims; positional slots remain 0 → consecutive mode
@@ -402,8 +402,8 @@ class TestNullEOS(unittest.TestCase):
 
         codebook = emb.wv._vectors.detach()
         words_list = emb.wv.index_to_key
-        embSize = emb.embeddingSize
-        nWhat = embSize - TheXMLConfig.objectSize
+        embSize = self.inp.muxedSize
+        nWhat = self.inp.nWhat
 
         null_idx = emb.pretrain.key_to_index["\x00"]
 
@@ -443,8 +443,8 @@ class TestNullEOS(unittest.TestCase):
 
         codebook = emb.wv._vectors.detach()
         words_list = emb.wv.index_to_key
-        embSize = emb.embeddingSize
-        nWhat = embSize - TheXMLConfig.objectSize
+        embSize = self.inp.muxedSize
+        nWhat = self.inp.nWhat
 
         null_idx = emb.pretrain.key_to_index["\x00"]
 

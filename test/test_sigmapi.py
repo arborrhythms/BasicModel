@@ -25,7 +25,7 @@ class TestPiLayerForward(unittest.TestCase):
         nBatch, nInput, nOutput, nSymbols = 5, 3, 4, 6
         layer = PiLayer(nInput, nOutput)
         layer.set_sigma(0)
-        x = torch.randn(nBatch, nSymbols, nInput).to(TheDevice)
+        x = torch.randn(nBatch, nSymbols, nInput).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (nBatch, nSymbols, nOutput))
 
@@ -33,7 +33,7 @@ class TestPiLayerForward(unittest.TestCase):
         nBatch, nInput, nOutput = 4, 3, 5
         layer = PiLayer(nInput, nOutput)
         layer.set_sigma(0)
-        x = torch.randn(nBatch, nInput).to(TheDevice)
+        x = torch.randn(nBatch, nInput).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (nBatch, nOutput))
 
@@ -42,7 +42,7 @@ class TestPiLayerForward(unittest.TestCase):
         with torch.no_grad():
             layer.var.fill_(0.001)
             layer.bias.fill_(0.999)
-        x = torch.randn(4, 2).to(TheDevice).requires_grad_(True)
+        x = torch.randn(4, 2).to(TheDevice.get()).requires_grad_(True)
         y = layer(x)
         loss = y.sum()
         loss.backward()
@@ -57,7 +57,7 @@ class TestSigmaLayerForward(unittest.TestCase):
         nBatch, nInput, nOutput, nSymbols = 4, 3, 5, 6
         layer = SigmaLayer(nInput, nOutput)
         layer.set_sigma(0)
-        x = torch.randn(nBatch, nSymbols, nInput).to(TheDevice)
+        x = torch.randn(nBatch, nSymbols, nInput).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (nBatch, nSymbols, nOutput))
 
@@ -65,7 +65,7 @@ class TestSigmaLayerForward(unittest.TestCase):
         """With saturate=True (default), outputs should be in [-1, 1]."""
         layer = SigmaLayer(4, 3)
         layer.set_sigma(0)
-        x = torch.randn(10, 4).to(TheDevice) * 10  # large inputs
+        x = torch.randn(10, 4).to(TheDevice.get()) * 10  # large inputs
         y = layer(x)
         self.assertTrue(torch.all(y >= -1.0))
         self.assertTrue(torch.all(y <= 1.0))
@@ -73,7 +73,7 @@ class TestSigmaLayerForward(unittest.TestCase):
     def test_gradient_flows(self):
         layer = SigmaLayer(3, 2)
         layer.set_sigma(0)
-        x = torch.randn(4, 3).to(TheDevice).requires_grad_(True)
+        x = torch.randn(4, 3).to(TheDevice.get()).requires_grad_(True)
         y = layer(x)
         loss = y.sum()
         loss.backward()
@@ -84,8 +84,8 @@ class TestPiSigmaXOR(unittest.TestCase):
     """A PiLayer+SigmaLayer stack can learn XOR with low temperature."""
 
     def test_xor_convergence(self):
-        X = torch.tensor([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32).to(TheDevice)
-        Y = torch.tensor([[0], [1], [1], [0]], dtype=torch.float32).to(TheDevice)
+        X = torch.tensor([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32).to(TheDevice.get())
+        Y = torch.tensor([[0], [1], [1], [0]], dtype=torch.float32).to(TheDevice.get())
         X = X.unsqueeze(1)
         Y = Y.unsqueeze(1)
 
@@ -116,14 +116,14 @@ class TestLogicalFunctionNet(unittest.TestCase):
     def test_forward_shape(self):
         from SigmaPi import LogicalFunctionNet
         model = LogicalFunctionNet(2, 3, 1)
-        x = torch.randn(4, 1, 2).to(TheDevice)
+        x = torch.randn(4, 1, 2).to(TheDevice.get())
         y = model(x)
         self.assertEqual(y.shape, (4, 1, 1))
 
     def test_backward_no_error(self):
         from SigmaPi import LogicalFunctionNet
         model = LogicalFunctionNet(2, 3, 1)
-        x = torch.randn(4, 1, 2).to(TheDevice)
+        x = torch.randn(4, 1, 2).to(TheDevice.get())
         y = model(x)
         loss = y.sum()
         loss.backward()

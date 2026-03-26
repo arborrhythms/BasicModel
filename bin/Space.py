@@ -78,11 +78,11 @@ class Encoding(nn.Module):
         a float tensor of shape [batch, nVec].
         """
         if self.nDim == 0:
-            return y, torch.zeros(y.shape[0], y.shape[1], device=TheDevice)
+            return y, torch.zeros(y.shape[0], y.shape[1], device=TheDevice.get())
         embeddingSize = y.shape[-1]
         index = self.resolve(embeddingSize)
         if index[0] < 0 or index[0] >= embeddingSize:
-            return y, torch.zeros(y.shape[0], y.shape[1], device=TheDevice)
+            return y, torch.zeros(y.shape[0], y.shape[1], device=TheDevice.get())
         encoded = y[:, :, index].clone()  # [batch, nVec, nDim]
         y[:, :, index] = 0
         return y, self.decode(encoded)
@@ -111,7 +111,7 @@ class QuadratureEncoding(Encoding):
             Tensor [..., 2] with (sin, cos).
         """
         if not isinstance(offsets, torch.Tensor):
-            offsets = torch.tensor(float(offsets), device=TheDevice)
+            offsets = torch.tensor(float(offsets), device=TheDevice.get())
         angle = offsets * self.div_term
         return torch.stack((torch.sin(angle), torch.cos(angle)), dim=-1)
 
@@ -198,7 +198,7 @@ class WhereEncoding(QuadratureEncoding):
         n     = x.shape[1] if len(x.shape) > 1 else 1
         embeddingSize = x.shape[-1]
         index = np.add([embeddingSize, embeddingSize], self.index)
-        position = torch.arange(self.p, self.p+batch*n, dtype=torch.float32, device=TheDevice)
+        position = torch.arange(self.p, self.p+batch*n, dtype=torch.float32, device=TheDevice.get())
         pos = self.encode(position)  # [batch*n, 2]
         y = x.clone()
         y[:, :, index] = pos.reshape(batch, n, self.nDim)
@@ -210,7 +210,7 @@ class WhereEncoding(QuadratureEncoding):
     def test():
         pe = WhereEncoding(100)
         pe.p = 0
-        x = torch.zeros([2, 4, 100], device=TheDevice)
+        x = torch.zeros([2, 4, 100], device=TheDevice.get())
         y = pe.forward(x)
         cleaned, offsets = pe.reverse(y)
         print(f"Positions decoded: {offsets}")
@@ -245,7 +245,7 @@ class WhenEncoding(QuadratureEncoding):
         n = x.shape[1] if len(x.shape) > 1 else 1
         embeddingSize = x.shape[-1]
         index = np.add([embeddingSize, embeddingSize], self.index)
-        time_vals = torch.arange(self.t, self.t + batch, dtype=torch.float32, device=TheDevice)
+        time_vals = torch.arange(self.t, self.t + batch, dtype=torch.float32, device=TheDevice.get())
         time = self.encode(time_vals)  # [batch, 2]
         y = x.clone()
         y[:, :, index] = time.unsqueeze(1).expand(-1, n, -1)
@@ -259,7 +259,7 @@ class WhenEncoding(QuadratureEncoding):
     def test():
         te = WhenEncoding(10000)
         te.t = 0
-        x = torch.zeros([2, 4, 10], device=TheDevice)
+        x = torch.zeros([2, 4, 10], device=TheDevice.get())
         y = te.forward(x)
         cleaned, times = te.reverse(y)
         print(f"Times decoded: {times}")
@@ -399,8 +399,6 @@ class Basis(nn.Module):
         self.nInput = 0
         self.nVectors = 0
         self.nDim = 0
-        self.objectSize = 0
-        self.embeddingSize = 0
         self.passThrough = False
         self.signed = False
         self.ergodic = False
@@ -415,14 +413,12 @@ class Basis(nn.Module):
         raise NotImplementedError(f"{self.__class__.__name__} must implement setW()")
 
     def create(self, nInput, nVectors, nDim, customVQ=True, signed=False,
-               passThrough=False, objectSize=0):
+               passThrough=False):
         self.nInput = nInput
         self.nVectors = nVectors
         self.nDim = nDim or 0
         self.signed = signed
         self.passThrough = passThrough
-        self.objectSize = objectSize
-        self.embeddingSize = self.nDim + self.objectSize
         return self
 
     @property
@@ -506,13 +502,6 @@ class Basis(nn.Module):
                 f"but got shape {shape}.")
         return weight
 
-    def _ensure_embedding_width(self, x):
-        if x.shape[-1] == self.nDim and self.objectSize > 0:
-            padding = torch.zeros(*x.shape[:-1], self.objectSize,
-                                  device=x.device, dtype=x.dtype)
-            return torch.cat([x, padding], dim=-1)
-        return x
-
     def _snap_content(self, content, weight=None, nWhat=None):
         weight = self._prototype_weight(weight, context="reverse")
         nWhat = self.nDim if nWhat is None else nWhat
@@ -555,7 +544,7 @@ class Basis(nn.Module):
 
     def codebookDistance(self, x):
         weight = self._prototype_weight(context="codebookDistance")
-        vec = weight[:, :self.nDim].to(TheDevice)
+        vec = weight[:, :self.nDim].to(TheDevice.get())
         return x @ vec.T / max(self.nDim, 1)
 
     def unsignedAngle(self, x, y, dim=-1):
@@ -679,7 +668,7 @@ class Codebook(Basis):
         return self.nVectors
 
     def create(self, nInput, nVectors, nDim, customVQ=True, signed=False,
-               passThrough=False, objectSize=0):
+               passThrough=False):
         super().create(
             nInput,
             nVectors,
@@ -687,7 +676,6 @@ class Codebook(Basis):
             customVQ=customVQ,
             signed=signed,
             passThrough=passThrough,
-            objectSize=objectSize,
         )
         self.customVQ = customVQ
         self.alpha = 0.0
@@ -696,14 +684,14 @@ class Codebook(Basis):
         return self
 
     def updateWeights(self, embed_sum, cluster_size):
-        return torch.ones(self.vq.codebook_size, device=TheDevice)
+        return torch.ones(self.vq.codebook_size, device=TheDevice.get())
 
     def addVectors(self, nVec=1, decay=0.9):
         """Allocate ``nVec`` prototype entries using the configured backend."""
         self.codebookSize = nVec
         if self.customVQ:
             self.vq = VectorQuantize(
-                dim=self.embeddingSize,
+                dim=self.nDim,
                 codebook_size=nVec,
                 threshold_ema_dead_code=1,
                 decay=decay,
@@ -712,7 +700,7 @@ class Codebook(Basis):
             )
             self.setW(self.vq.codebook)
         else:
-            W = torch.randn([nVec, self.embeddingSize], device=TheDevice)
+            W = torch.randn([nVec, self.nDim], device=TheDevice.get())
             for i in range(nVec):
                 W[i, :] = self.normalize(W[i, :]).squeeze(0)
             self.setW(W)
@@ -721,7 +709,6 @@ class Codebook(Basis):
     def quantize(self, x):
         if self.passThrough:
             return x, None, torch.tensor(0.0, device=x.device, dtype=x.dtype)
-        x = self._ensure_embedding_width(x)
         if self.customVQ:
             quantized, indices, commit_loss = self.vq(
                 x,
@@ -747,20 +734,20 @@ class Codebook(Basis):
         w = self.getW()
         if w is None or self.codebookSize == 0:
             self.addVectors(max(self.nVectors, input.shape[1]))
-        x = self._ensure_embedding_width(input)
+        x = input
         batch = x.shape[0]
-        act = torch.zeros([batch, self.codebookSize], device=TheDevice)
+        act = torch.zeros([batch, self.codebookSize], device=TheDevice.get())
         if self.customVQ:
-            flat = torch.reshape(x, [-1, self.embeddingSize])
+            flat = torch.reshape(x, [-1, self.nDim])
             quantized, indices, _ = self.quantize(flat)
             batch = x.shape[0]
             n_tokens = flat.shape[0] // batch
             err = torch.norm(flat - quantized, dim=-1).reshape(batch, n_tokens)
             indices = indices.reshape(batch, n_tokens)
             # Use 3D views for token-level indexing (x may be 2D when reshape=True)
-            x3d = x.reshape(batch, n_tokens, self.embeddingSize)
-            input3d = input.reshape(batch, n_tokens, self.embeddingSize)
-            quantized3d = quantized.reshape(batch, n_tokens, self.embeddingSize)
+            x3d = x.reshape(batch, n_tokens, self.nDim)
+            input3d = input.reshape(batch, n_tokens, self.nDim)
+            quantized3d = quantized.reshape(batch, n_tokens, self.nDim)
             k = min(self.nVectors, err.shape[1])
             _, indices_smallest = torch.topk(err, k=k, dim=1, largest=False)
             for i in range(indices_smallest.shape[0]):
@@ -928,8 +915,7 @@ class Embedding(Basis):
 
     def create(self, nInput=None, nVectors=None, nDim=None, passThrough=True,
                wv=None, embedding_path=None, source=None, learning_rate=0.001,
-               min_frequency=0.0, neg_samples=64,
-               objectSize=0):
+               min_frequency=0.0, neg_samples=64):
         """Initialise from WordVectors or load from embedding_path.
 
         Accepts the same positional signature as ``Basis.create()`` so it can
@@ -950,7 +936,7 @@ class Embedding(Basis):
             # Real words are added dynamically during forward passes via insert().
             dim = nDim or 20
             print(f"Starting with dynamic {dim}-dim embedding (words added at runtime)")
-            placeholder = torch.randn(1, dim, device=TheDevice)
+            placeholder = torch.randn(1, dim, device=TheDevice.get())
             placeholder = F.normalize(placeholder, p=2, dim=1)
             wv = WordVectors(placeholder, ["<pad>"])
         self.wv = wv
@@ -966,8 +952,7 @@ class Embedding(Basis):
                 f"but config requires nDim={nDim}. Check embeddings file or XML config.")
 
         super().create(nInput or max(1, vocab_size), nVectors or max(1, vocab_size),
-                       vector_size, passThrough=passThrough,
-                       objectSize=objectSize)
+                       vector_size, passThrough=passThrough)
         # W is managed by wv._vectors; getW() returns live data
 
         self.pretrain = PretrainModel(wv, learning_rate=learning_rate, neg_samples=neg_samples)
@@ -1013,7 +998,7 @@ class Embedding(Basis):
         # W is managed by wv._vectors; getW() returns live data
 
     def replace(self, new_W):
-        new_W = self._coerce_rows(new_W).to(TheDevice)
+        new_W = self._coerce_rows(new_W).to(TheDevice.get())
         with torch.no_grad():
             self.wv._vectors = nn.Parameter(new_W, requires_grad=True)
         # W is managed by wv._vectors; getW() returns live data
@@ -1039,11 +1024,11 @@ class Embedding(Basis):
         """
         dim = self.wv.vector_size
         if vector is not None:
-            new_vec = vector.to(TheDevice)
+            new_vec = vector.to(TheDevice.get())
             if new_vec.dim() == 1:
                 new_vec = new_vec.unsqueeze(0)
         else:
-            new_vec = torch.randn(1, dim, device=TheDevice)
+            new_vec = torch.randn(1, dim, device=TheDevice.get())
         new_vec = F.normalize(new_vec, p=2, dim=1)
 
         # Extend WordVectors parameter
@@ -1198,16 +1183,15 @@ class Embedding(Basis):
         if vec.dim() != 1:
             vec = vec.squeeze()
         vec = vec.clone()
-        var = self._ergodic_var(token_idx, TheDevice, vec.dtype)
+        var = self._ergodic_var(token_idx, TheDevice.get(), vec.dtype)
         if var is not None and torch.any(var > 0):
             vec = vec + var * torch.randn_like(vec)
-        vec = F.pad(vec, (0, self.objectSize))
         return F.normalize(vec, p=2, dim=0)
 
     def _nearest_idx(self, vec, codebook=None):
         if codebook is None:
             codebook = self.getW().detach()
-        vec = vec.to(TheDevice)
+        vec = vec.to(TheDevice.get())
         sims = F.cosine_similarity(vec.unsqueeze(0), codebook, dim=1)
         return sims.argmax().item()
 
@@ -1215,7 +1199,7 @@ class Embedding(Basis):
         """Tokenize via Lex, look up embedding vectors from codebook.
 
         Input: (batch, max_len) byte tensor from Data.
-        Output: (batch, nInput, embeddingSize) padded embedding tensor.
+        Output: (batch, nInput, nDim) embedding tensor (pure content, no positional padding).
 
         When
         ``ergodic`` is enabled during training, the returned content vectors
@@ -1255,7 +1239,7 @@ class Embedding(Basis):
                     model.rebuild_optimizer()
 
         # Phase 3: Build result tensor (all tokens now in codebook)
-        result = torch.zeros([batch, self.nInput, self.embeddingSize], device=TheDevice)
+        result = torch.zeros([batch, self.nInput, self.nDim], device=TheDevice.get())
         for b in range(batch):
             stream = all_streams[b]
             n_tokens = min(len(stream), self.nInput)
@@ -1533,7 +1517,7 @@ class Embedding(Basis):
 
     def get_mask_embedding(self):
         """Return a zero vector the same size as a codebook entry."""
-        return torch.zeros(self.getW().shape[1], device=TheDevice)
+        return torch.zeros(self.getW().shape[1], device=TheDevice.get())
 
 class SubSpace(nn.Module):
     """Per-space runtime state container.
@@ -1566,17 +1550,43 @@ class SubSpace(nn.Module):
         self.whenEncoding   = whenEncoding if whenEncoding is not None else WhenEncoding(0, 0)
 
         self.flatten = flatten
-        self.objectSize = self.whereEncoding.nDim + self.whenEncoding.nDim
+        self.nWhere = self.whereEncoding.nDim
+        self.nWhen = self.whenEncoding.nDim
+        # nWhat: content width from outputShape (full dim minus where/when)
+        self.nWhat = outputShape[1] - self.nWhere - self.nWhen
+        self.muxedSize = self.nWhat + self.nWhere + self.nWhen
 
         self.activation = self._coerce_basis(activation, role="activation")
         self.event = self._coerce_basis(object, role="event")
         self.what   = self._coerce_basis(what, role="what")
         self.where  = self._coerce_basis(where, role="where")
         self.when   = self._coerce_basis(when, role="when")
+        self._demuxed = False
         self.batch = 0
         payload = self.materialize()
         if isinstance(payload, torch.Tensor) and payload.ndim > 0:
             self.batch = payload.shape[0]
+
+    @property
+    def is_demuxed(self):
+        """True when what/where/when are stored independently (not muxed into event)."""
+        return self._demuxed
+
+    def set_demuxed(self, what_tensor, where_tensor=None, when_tensor=None):
+        """Store modality tensors independently. Clears event; materialize() will auto-mux.
+
+        Args:
+            what_tensor: [batch, nObj, nWhat] content vectors
+            where_tensor: [batch, nObj, nWhere] positional encoding (or None)
+            when_tensor: [batch, nObj, nWhen] temporal encoding (or None)
+        """
+        self.what.setW(what_tensor)
+        if where_tensor is not None:
+            self.where.setW(where_tensor)
+        if when_tensor is not None:
+            self.when.setW(when_tensor)
+        self.event.setW(None)  # clear muxed cache
+        self._demuxed = True
 
     def _coerce_basis(self, value, role):
         if isinstance(value, Basis):
@@ -1590,28 +1600,25 @@ class SubSpace(nn.Module):
                 self.outputShape[0],
                 self.activeEncoding.nDim,
                 passThrough=True,
-                objectSize=self.activeEncoding.nDim,
             )
         elif role == "event":
             basis.create(
                 self.inputShape[0],
                 self.outputShape[0],
-                self.outputShape[1], # encompasses all other dimensions
+                self.muxedSize,
                 passThrough=True,
-                objectSize=self.objectSize,
             )
         elif role == "what":
             basis.create(
                 self.outputShape[0],
                 self.outputShape[0],
-                self.whatEncoding.nDim,
+                self.nWhat,
                 passThrough=True,
-                objectSize=self.whatEncoding.nDim,
             )
         elif role == "where":
-            basis.create(self.outputShape[0], self.outputShape[0], self.whereEncoding.nDim, passThrough=True)
+            basis.create(self.outputShape[0], self.outputShape[0], self.nWhere, passThrough=True)
         elif role == "when":
-            basis.create(self.outputShape[0], self.outputShape[0], self.whenEncoding.nDim, passThrough=True)
+            basis.create(self.outputShape[0], self.outputShape[0], self.nWhen, passThrough=True)
         else:
             last_dim = value.shape[-1] if value.ndim > 1 else 1
             n_vectors = value.shape[-1] if value.ndim == 1 else value.shape[-2]
@@ -1638,11 +1645,11 @@ class SubSpace(nn.Module):
     # ------------------------------------------------------------------
 
     def getEncodingSize(self, nDim):
-        """Full vector width: nDim + objectSize."""
-        return nDim + self.objectSize
+        """Full muxed vector width: nWhat + nWhere + nWhen."""
+        return self.muxedSize
 
     def getEncodedInputSize(self):
-        """Return flattened input size (inputShape already includes objectSize)."""
+        """Return flattened input size (inputShape already includes muxed width)."""
         we = self.objectEncoding
         size = we.inputShape[1]
         if we.flatten:
@@ -1650,7 +1657,7 @@ class SubSpace(nn.Module):
         return size
 
     def getEncodedOutputSize(self):
-        """Return flattened output size (outputShape already includes objectSize)."""
+        """Return flattened output size (outputShape already includes muxed width)."""
         we = self.objectEncoding
         size = we.outputShape[1]
         if we.flatten:
@@ -1752,6 +1759,19 @@ class SubSpace(nn.Module):
             Stores selection indices in self._topk_indices for downstream use.
         """
         x = self.event.getW()
+        # Auto-mux: if demuxed, build event from what/where/when components
+        if x is None and self._demuxed:
+            what_w = self.what.getW()
+            if what_w is not None:
+                parts = [what_w]
+                where_w = self.where.getW()
+                if where_w is not None and where_w.shape[-1] > 0:
+                    parts.append(where_w)
+                when_w = self.when.getW()
+                if when_w is not None and when_w.shape[-1] > 0:
+                    parts.append(when_w)
+                x = torch.cat(parts, dim=-1)
+                self.event.setW(x)
         if x is None:
             return None
         activation = self.get_activation()
@@ -1861,9 +1881,12 @@ class Space(nn.Module):
             _nWhen = TheXMLConfig.space(section, "nWhen")
         except KeyError:
             _nWhen = 0
-        self.objectSize = _nWhere + _nWhen
+        self.nWhere = _nWhere
+        self.nWhen = _nWhen
+        self.nWhat = self.nDim
+        self.muxedSize = self.nWhat + self.nWhere + self.nWhen
         self.customVQ  = customVQ
-        # inputShape/outputShape already include objectSize in dim (set by factory).
+        # inputShape/outputShape already include muxed width in dim (set by factory).
         objectEncoding = EventEncoding(inputShape, outputShape, flatten=self.flatten)
         whatEncoding   = WhatEncoding(inputShape, outputShape)
         whereEncoding  = WhereEncoding(TheXMLConfig.get("architecture.nObjects"), _nWhere)
@@ -1882,7 +1905,7 @@ class Space(nn.Module):
             when=self._build_when_basis(),
             activation=self._build_activation_basis(),
         )
-        self.embeddingSize = self.subspace.getEncodingSize(self.nDim)
+        self.muxedSize = self.subspace.getEncodingSize(self.nDim)
         self.params = []   # parameters for the optimizer (excludes temperature params)
         self.layers = nn.ModuleList()   # layer instances for paramUpdate() delegation
         self._register_requirements()
@@ -1892,10 +1915,9 @@ class Space(nn.Module):
         basis.create(
             self.inputShape[0],
             self.nVectors,
-            self.nDim,
+            self.muxedSize,  # Codebook processes full event vectors
             customVQ=self.customVQ,
             passThrough=not self.quantized,
-            objectSize=self.objectSize,
         )
         basis.ergodic = getattr(self, "ergodic", False)
         return basis
@@ -1976,7 +1998,7 @@ class Space(nn.Module):
     def lookup(self, x):
         activation = x[0]
         x = x.unsqueeze(0).unsqueeze(0)
-        x = torch.cat([torch.zeros([1,1, TheXMLConfig.space("ConceptualSpace", "nDim")], device=TheDevice), x[:,:,1:]], dim=2)
+        x = torch.cat([torch.zeros([1,1, TheXMLConfig.space("ConceptualSpace", "nDim")], device=TheDevice.get()), x[:,:,1:]], dim=2)
         output, index, _ = self.subspace.get_vectors().quantize(x)
         #output[:,:,0:conceptDim] = output[:,:,0:conceptDim] * activation  # multiply the codebook vector by the activation
         return output
@@ -1985,13 +2007,13 @@ class Space(nn.Module):
         # and must compute [ batch x nConcepts x conceptEmbedding ]
         batch = symbols.shape[0]
         nActive = self.outputShape[0]
-        assert list(symbols.shape) == [batch, nActive, TheXMLConfig.space("SymbolicSpace", "nDim") + self.objectSize], "Incorrect input size for dereference"
-        objects = torch.zeros(batch, nActive, self.embeddingSize, device=TheDevice)
+        assert list(symbols.shape) == [batch, nActive, TheXMLConfig.space("SymbolicSpace", "nDim") + self.muxedSize - self.nWhat], "Incorrect input size for dereference"
+        objects = torch.zeros(batch, nActive, self.muxedSize, device=TheDevice.get())
         for b in range(batch):
             for s in range(nActive):
                 x = self.lookup(symbols[b,s,:])
                 objects[b,s,:] = x
-        assert list(objects.shape) == [batch, nActive, self.embeddingSize], "Incorrect output size for dereference"
+        assert list(objects.shape) == [batch, nActive, self.muxedSize], "Incorrect output size for dereference"
         return objects
 
     def stats(self, x):
@@ -2058,7 +2080,6 @@ class InputSpace(Space):
                 source=self.embedding_source,
                 min_frequency=self.min_frequency,
                 neg_samples=self.neg_samples,
-                objectSize=self.objectSize,
             )
             return basis
 
@@ -2070,7 +2091,6 @@ class InputSpace(Space):
                 self.nDim,
                 customVQ=self.customVQ,
                 passThrough=False,
-                objectSize=self.objectSize,
             )
             return basis
 
@@ -2081,7 +2101,6 @@ class InputSpace(Space):
                 self.outputShape[0],
                 self.nDim,
                 passThrough=True,
-                objectSize=self.objectSize,
             )
             return basis
 
@@ -2138,7 +2157,7 @@ class InputSpace(Space):
         if isinstance(inputBatch, list):
             tensors = [self.data.stringTensor(s) if isinstance(s, str) else s
                        for s in inputBatch]
-            return torch.stack(tensors, dim=0).unsqueeze(1).to(TheDevice)
+            return torch.stack(tensors, dim=0).unsqueeze(1).to(TheDevice.get())
         return inputBatch  # already [B, D, 1] and on device after toDevice()
     def shuffle(self):
         self.data.shuffle()
@@ -2159,40 +2178,58 @@ class InputSpace(Space):
         self.subspace.whereEncoding.p = 0
 
         batch = input.shape[0]
+        nObj = self.outputShape[0]
         object_basis = self.subspace.get_vectors()
         lexical_basis = self.subspace.event
         if not isinstance(lexical_basis, Embedding):
             assert list(input.shape) == [batch, self.inputShape[0], self.inputShape[1]]
-            self.input = object_basis.forward(input)
+            what = object_basis.forward(input)
             self._forward_input = None
-            if self.objectSize > 0:
-                self.input = self.subspace.encode(self.input)
-            object_basis.setW(self.input)
         else:
-            self.input, meta = lexical_basis.forward(input, return_meta=True)
+            what, meta = lexical_basis.forward(input, return_meta=True)
             self._forward_input = meta
-            if self.objectSize > 0:
-                if self.subspace.whereEncoding.nDim > 0:
-                    for b, batch_tokens in enumerate(meta['tokens']):
-                        for i, (_, start) in enumerate(batch_tokens):
-                            self.subspace.whereEncoding.stamp(
-                                self.input, b, i, start)
-                        final_offset = meta['final_offsets'][b]
-                        for i in range(len(batch_tokens), self.outputShape[0]):
-                            pad_offset = final_offset + (i - len(batch_tokens))
-                            self.subspace.whereEncoding.stamp(
-                                self.input, b, i, pad_offset)
-                if self.subspace.whenEncoding.nDim > 0:
-                        self.input = self.subspace.encode(
-                            self.input,
-                            where=False,
-                            when=True,
-                        )
-            lexical_basis.setW(self.input)
+
+        # Build where tensor [batch, nObj, nWhere]
+        if self.nWhere > 0:
+            where = torch.zeros(batch, nObj, self.nWhere, device=TheDevice.get())
+            if isinstance(lexical_basis, Embedding) and self._forward_input is not None:
+                for b, batch_tokens in enumerate(meta['tokens']):
+                    for i, (_, start) in enumerate(batch_tokens):
+                        encoded = self.subspace.whereEncoding.encode(start)
+                        where[b, i, :] = encoded
+                    final_offset = meta['final_offsets'][b]
+                    for i in range(len(batch_tokens), nObj):
+                        pad_offset = final_offset + (i - len(batch_tokens))
+                        encoded = self.subspace.whereEncoding.encode(pad_offset)
+                        where[b, i, :] = encoded
+            else:
+                # Non-text: use WhereEncoding.forward() on a zeros buffer
+                where = self.subspace.whereEncoding.forward(
+                    torch.zeros(batch, nObj, self.nWhere, device=TheDevice.get()))
+        else:
+            where = None
+
+        # Build when tensor [batch, nObj, nWhen]
+        if self.nWhen > 0:
+            when = self.subspace.whenEncoding.forward(
+                torch.zeros(batch, nObj, self.nWhen, device=TheDevice.get()))
+        else:
+            when = None
+
+        # Mux: event = concat([what, where, when], dim=-1)
+        parts = [what]
+        if where is not None:
+            parts.append(where)
+        if when is not None:
+            parts.append(when)
+        self.input = torch.cat(parts, dim=-1) if len(parts) > 1 else what
+
         object_basis.setW(self.input)
+        if isinstance(lexical_basis, Embedding):
+            lexical_basis.setW(self.input)
 
         output = self.subspace.getEncodedOutputSize()
-        assert list(self.input.shape) == [batch, self.outputShape[0], output]
+        assert list(self.input.shape) == [batch, nObj, output]
 
         # Return a forwarding subspace with the forward result, keeping
         # self.subspace for the codebook (Embedding).
@@ -2227,7 +2264,7 @@ class InputSpace(Space):
 
         # Determine which dims are content (to zero) vs position (to preserve)
         embSize = embedded.shape[-1]
-        content_mask = torch.ones(embSize, dtype=torch.bool, device=TheDevice)
+        content_mask = torch.ones(embSize, dtype=torch.bool, device=TheDevice.get())
         # Preserve nWhere dims (indices [-4, -3] from end of embedding)
         if self.subspace.whereEncoding.nDim > 0:
             where_idx = np.add([embSize, embSize], self.subspace.whereEncoding.index)
@@ -2457,7 +2494,7 @@ class InputSpace(Space):
         N = len(positions)
         nVec = unmasked.shape[1]
         target = unmasked.expand(N, -1, -1)
-        mask = torch.zeros(N, nVec, dtype=torch.bool, device=TheDevice)
+        mask = torch.zeros(N, nVec, dtype=torch.bool, device=TheDevice.get())
         for i, pos in enumerate(positions):
             mask[i, pos] = True
         return target, mask
@@ -2498,7 +2535,7 @@ class InputSpace(Space):
         Returns None when cursor reaches nVec, EOF detected, or max_chars exceeded.
         """
         nVec = self.outputShape[0]
-        embSize = self.subspace.get_vectors().embeddingSize
+        embSize = self.muxedSize
         nWhat = self.subspace.get_vectors().embedding_dim
 
         if self._arir_cursor is None:
@@ -2592,7 +2629,7 @@ class InputSpace(Space):
             self._cached_embedding = self._arir_embedded.clone()
 
             # Return dummy input (forward() will use _cached_embedding)
-            dummy_input = torch.zeros(1, device=TheDevice)
+            dummy_input = torch.zeros(1, device=TheDevice.get())
             return (dummy_input, None), batchNum + 1
 
     def _arir_reset(self):
@@ -2612,6 +2649,92 @@ class InputSpace(Space):
         """Stamp positional encoding at a buffer position via subspace.whereEncoding."""
         if self.subspace.whereEncoding.nDim > 0:
             self.subspace.whereEncoding.stamp(buf, 0, pos_idx, byte_off)
+class DemuxedInputSpace(InputSpace):
+    """InputSpace variant that separates what/where/when into independent SubSpace slots.
+
+    The lexical/codebook basis maps directly to the what space — positional
+    and temporal metadata never contaminate the codebook branch.  When
+    materialize() is called on the returned SubSpace, the result is
+    event = concat([what, where, when], dim=-1), exactly matching the
+    current InputSpace contract.
+
+    "event" = a specifically characterized entity (Buddhist philosophical term)
+    — an object with spatiotemporal embedding (nWhere/nWhen > 0).
+    """
+    name = "Inputs"
+    config_section = "InputSpace"
+
+    def forward(self, input, mask=None):
+        # ARIR cache bypass
+        cached = getattr(self, '_cached_embedding', None)
+        if cached is not None:
+            self._cached_embedding = None
+            self.input = cached
+            self._forward_input = None
+            self.forwarding_subspace = SubSpace(inputShape=self.outputShape, outputShape=self.outputShape)
+            self.forwarding_subspace.set_vectors(self.input)
+            return self.forwarding_subspace
+
+        self.subspace.whereEncoding.p = 0
+
+        batch = input.shape[0]
+        nObj = self.outputShape[0]
+        object_basis = self.subspace.get_vectors()
+        lexical_basis = self.subspace.event
+
+        # Phase 1: Get pure content vectors (what)
+        if not isinstance(lexical_basis, Embedding):
+            assert list(input.shape) == [batch, self.inputShape[0], self.inputShape[1]]
+            what = object_basis.forward(input)
+            self._forward_input = None
+            meta = None
+        else:
+            what, meta = lexical_basis.forward(input, return_meta=True)
+            self._forward_input = meta
+
+        # Phase 2: Build standalone where tensor [batch, nObj, nWhere]
+        if self.nWhere > 0:
+            where = torch.zeros(batch, nObj, self.nWhere, device=TheDevice.get())
+            if isinstance(lexical_basis, Embedding) and meta is not None:
+                for b, batch_tokens in enumerate(meta['tokens']):
+                    for i, (_, start) in enumerate(batch_tokens):
+                        encoded = self.subspace.whereEncoding.encode(start)
+                        where[b, i, :] = encoded
+                    final_offset = meta['final_offsets'][b]
+                    for i in range(len(batch_tokens), nObj):
+                        pad_offset = final_offset + (i - len(batch_tokens))
+                        encoded = self.subspace.whereEncoding.encode(pad_offset)
+                        where[b, i, :] = encoded
+            else:
+                where = self.subspace.whereEncoding.forward(
+                    torch.zeros(batch, nObj, self.nWhere, device=TheDevice.get()))
+        else:
+            where = None
+
+        # Phase 3: Build standalone when tensor [batch, nObj, nWhen]
+        if self.nWhen > 0:
+            when = self.subspace.whenEncoding.forward(
+                torch.zeros(batch, nObj, self.nWhen, device=TheDevice.get()))
+        else:
+            when = None
+
+        # Phase 4: Create demuxed forwarding subspace
+        self.forwarding_subspace = SubSpace(
+            inputShape=self.outputShape, outputShape=self.outputShape,
+            whereEncoding=self.subspace.whereEncoding,
+            whenEncoding=self.subspace.whenEncoding,
+        )
+        self.forwarding_subspace.set_demuxed(what, where, when)
+
+        # Store muxed tensor for compatibility with code that reads self.input
+        self.input = self.forwarding_subspace.materialize()
+
+        object_basis.setW(self.input)
+        if isinstance(lexical_basis, Embedding):
+            lexical_basis.setW(self.input)
+
+        return self.forwarding_subspace
+
 class PerceptualSpace(Space):
     """Transforms raw input vectors into percepts via a PiLayer.
 
@@ -2752,6 +2875,182 @@ class PerceptualSpace(Space):
     @staticmethod
     def test():
         pass
+class ModalSpace(Space):
+    """Composite space routing what/where/when through independent PerceptualSpaces.
+
+    Default: what branch is processed (PiLayer), where/when branches are passthrough.
+    When nWhere=nWhen=0, degenerates to a single PerceptualSpace on the full embedding.
+
+    Per-branch passthrough flags are read from <ModalSpace> config:
+        whatPassThrough  (default False)
+        wherePassThrough (default True)
+        whenPassThrough  (default True)
+    """
+    name = "Percepts"
+    config_section = "ModalSpace"
+
+    def __init__(self, inputShape, spaceShape, outputShape):
+        section = self.config_section
+        super().__init__(inputShape, spaceShape, outputShape)
+
+        # Per-branch passthrough defaults
+        try:
+            whatPT = TheXMLConfig.space(section, "whatPassThrough")
+        except KeyError:
+            whatPT = False
+        try:
+            wherePT = TheXMLConfig.space(section, "wherePassThrough")
+        except KeyError:
+            wherePT = True
+        try:
+            whenPT = TheXMLConfig.space(section, "whenPassThrough")
+        except KeyError:
+            whenPT = True
+
+        # Derive branch shapes (symmetric — subtract off the modality you don't need)
+        whatDim = self.muxedSize - self.nWhere - self.nWhen
+        whatInputShape = [inputShape[0], whatDim]
+        whatOutputShape = [outputShape[0], whatDim]
+        whatSpaceShape = [spaceShape[0], spaceShape[1]]
+
+        # Build what branch — override passThrough in config temporarily
+        saved_pt = TheXMLConfig._data.get("PerceptualSpace", {}).get("passThrough")
+        TheXMLConfig._data.setdefault("PerceptualSpace", {})["passThrough"] = whatPT
+        self.whatSpace = PerceptualSpace(whatInputShape, whatSpaceShape, whatOutputShape)
+        TheXMLConfig._data["PerceptualSpace"]["passThrough"] = saved_pt
+
+        # Build where branch (if nWhere > 0)
+        if self.nWhere > 0:
+            whereShape = [inputShape[0], self.nWhere]
+            whereSpaceShape = [spaceShape[0], self.nWhere]
+            saved_pt = TheXMLConfig._data.get("PerceptualSpace", {}).get("passThrough")
+            TheXMLConfig._data["PerceptualSpace"]["passThrough"] = wherePT
+            self.whereSpace = PerceptualSpace(whereShape, whereSpaceShape, whereShape)
+            TheXMLConfig._data["PerceptualSpace"]["passThrough"] = saved_pt
+        else:
+            self.whereSpace = None
+
+        # Build when branch (if nWhen > 0)
+        if self.nWhen > 0:
+            whenShape = [inputShape[0], self.nWhen]
+            whenSpaceShape = [spaceShape[0], self.nWhen]
+            saved_pt = TheXMLConfig._data.get("PerceptualSpace", {}).get("passThrough")
+            TheXMLConfig._data["PerceptualSpace"]["passThrough"] = whenPT
+            self.whenSpace = PerceptualSpace(whenShape, whenSpaceShape, whenShape)
+            TheXMLConfig._data["PerceptualSpace"]["passThrough"] = saved_pt
+        else:
+            self.whenSpace = None
+
+        # Collect parameters and layers from all branches
+        self.params = list(self.whatSpace.getParameters())
+        self.layers = nn.ModuleList([self.whatSpace])
+        if self.whereSpace is not None:
+            self.params.extend(self.whereSpace.getParameters())
+            self.layers.append(self.whereSpace)
+        if self.whenSpace is not None:
+            self.params.extend(self.whenSpace.getParameters())
+            self.layers.append(self.whenSpace)
+
+    def _register_requirements(self):
+        """ModalSpace manages its own branch requirements."""
+        pass
+
+    def forward(self, vspace):
+        """Route each modality through its branch PerceptualSpace."""
+        if vspace.is_demuxed:
+            what_in = vspace.what.getW()
+            where_in = vspace.where.getW() if vspace.where is not None else None
+            when_in = vspace.when.getW() if vspace.when is not None else None
+        else:
+            # Fallback: split muxed event into branches
+            event = vspace.materialize()
+            what_in = event[..., :self.nWhat]
+            where_in = event[..., self.nWhat:self.nWhat + self.nWhere] if self.nWhere > 0 else None
+            when_in = event[..., self.nWhat + self.nWhere:] if self.nWhen > 0 else None
+
+        # Route what through whatSpace
+        what_sub = SubSpace(inputShape=[what_in.shape[1], what_in.shape[2]],
+                           outputShape=[what_in.shape[1], what_in.shape[2]])
+        what_sub.set_vectors(what_in)
+        what_out = self.whatSpace.forward(what_sub).materialize()
+
+        # Route where through whereSpace (passthrough if no whereSpace)
+        where_out = where_in
+        if self.whereSpace is not None and where_in is not None:
+            where_sub = SubSpace(inputShape=[where_in.shape[1], where_in.shape[2]],
+                                outputShape=[where_in.shape[1], where_in.shape[2]])
+            where_sub.set_vectors(where_in)
+            where_out = self.whereSpace.forward(where_sub).materialize()
+
+        # Route when through whenSpace (passthrough if no whenSpace)
+        when_out = when_in
+        if self.whenSpace is not None and when_in is not None:
+            when_sub = SubSpace(inputShape=[when_in.shape[1], when_in.shape[2]],
+                               outputShape=[when_in.shape[1], when_in.shape[2]])
+            when_sub.set_vectors(when_in)
+            when_out = self.whenSpace.forward(when_sub).materialize()
+
+        # Build output demuxed SubSpace
+        out = SubSpace(inputShape=self.outputShape, outputShape=self.outputShape,
+                      whereEncoding=self.subspace.whereEncoding,
+                      whenEncoding=self.subspace.whenEncoding)
+        out.set_demuxed(what_out, where_out, when_out)
+        return out
+
+    def reverse(self, vspace):
+        """Split event into modalities, reverse each branch, rebuild."""
+        event = vspace.materialize()
+        what_in = event[..., :self.nWhat]
+        where_in = event[..., self.nWhat:self.nWhat + self.nWhere] if self.nWhere > 0 else None
+        when_in = event[..., self.nWhat + self.nWhere:] if self.nWhen > 0 else None
+
+        # Reverse what
+        what_sub = SubSpace(inputShape=[what_in.shape[1], what_in.shape[2]],
+                           outputShape=[what_in.shape[1], what_in.shape[2]])
+        what_sub.set_vectors(what_in)
+        what_rev = self.whatSpace.reverse(what_sub).materialize()
+
+        # Reverse where
+        where_rev = where_in
+        if self.whereSpace is not None and where_in is not None:
+            where_sub = SubSpace(inputShape=[where_in.shape[1], where_in.shape[2]],
+                                outputShape=[where_in.shape[1], where_in.shape[2]])
+            where_sub.set_vectors(where_in)
+            where_rev = self.whereSpace.reverse(where_sub).materialize()
+
+        # Reverse when
+        when_rev = when_in
+        if self.whenSpace is not None and when_in is not None:
+            when_sub = SubSpace(inputShape=[when_in.shape[1], when_in.shape[2]],
+                               outputShape=[when_in.shape[1], when_in.shape[2]])
+            when_sub.set_vectors(when_in)
+            when_rev = self.whenSpace.reverse(when_sub).materialize()
+
+        # Rebuild demuxed SubSpace
+        out = SubSpace(inputShape=self.inputShape, outputShape=self.inputShape,
+                      whereEncoding=self.subspace.whereEncoding,
+                      whenEncoding=self.subspace.whenEncoding)
+        out.set_demuxed(what_rev, where_rev, when_rev)
+        return out
+
+    def set_sigma(self, sigma):
+        """Propagate exploration meta-parameters to all branch spaces."""
+        self.whatSpace.set_sigma(sigma)
+        if self.whereSpace is not None:
+            self.whereSpace.set_sigma(sigma)
+        if self.whenSpace is not None:
+            self.whenSpace.set_sigma(sigma)
+
+    def getParameters(self):
+        return self.params
+
+    def paramUpdate(self):
+        self.whatSpace.paramUpdate()
+        if self.whereSpace is not None:
+            self.whereSpace.paramUpdate()
+        if self.whenSpace is not None:
+            self.whenSpace.paramUpdate()
+
 class ConceptualSpace(Space):
     """Transforms percepts into concepts via a SigmaLayer (summation layer).
 
@@ -2976,9 +3275,8 @@ class OutputSpace(Space):
         basis.create(
             self.inputShape[0],
             self.outputShape[0],
-            self.nDim,
+            self.muxedSize,  # full event width
             passThrough=True,
-            objectSize=self.objectSize,
         )
         return basis
 
@@ -3016,7 +3314,7 @@ class OutputSpace(Space):
         return out.squeeze(-1) if out.ndim == 3 else out
     def prepOutput(self, outputBatch):
         if isinstance(outputBatch, list):
-            return torch.stack(outputBatch, dim=0).unsqueeze(1).to(TheDevice)
+            return torch.stack(outputBatch, dim=0).unsqueeze(1).to(TheDevice.get())
         return outputBatch  # already [B, D, 1] and on device after toDevice()
     def forward(self, vspace):
         """Acting: project flattened symbols to task output via LinearLayer."""
@@ -3057,7 +3355,7 @@ class OutputSpace(Space):
         N = min(len(words), embedded.shape[1])
         embSize = embedded.shape[-1]
         if N == 0:
-            return torch.zeros(0, 1, embSize, device=TheDevice)
+            return torch.zeros(0, 1, embSize, device=TheDevice.get())
         # Extract the first N full word vectors (nWhat + nWhere + nWhen)
         targets = embedded[0, :N, :].clone()  # [N, embSize]
         if maskedPrediction == 'ARUS':

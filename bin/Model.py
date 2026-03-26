@@ -26,15 +26,8 @@ from typing import Optional, Tuple
 
 epsilon = 1e-7  # to avoid log(0)
 
-# Device used by all layers — delegates to util.
-from util import TheXMLConfig
-
-def _get_device():
-    return _util.TheDevice
-
-def init_device(device):
-    """Update the device for all layers. Kept for backward compat."""
-    _util.init_device(device)
+# Device used by all layers.
+from util import TheXMLConfig, TheDevice
 
 def has_signal(value):
     """Return True when a tensor or scalar contains any non-zero signal."""
@@ -55,7 +48,7 @@ class _AutoDevice(type(nn.Module)):
     """Metaclass that moves nn.Modules to TheDevice after __init__."""
     def __call__(cls, *args, **kwargs):
         instance = super().__call__(*args, **kwargs)
-        return instance.to(_get_device())
+        return instance.to(TheDevice.get())
 
 class Layer(nn.Module, metaclass=_AutoDevice):
     """Base class for custom layers with optional symbol/object axis swapping.
@@ -590,7 +583,7 @@ class InvertibleLinearLayer(ErgodicLayer):
     @staticmethod
     def test():
         torch.manual_seed(42)
-        device = _get_device()
+        device = TheDevice.get()
         nInput, nOutput = 7, 11
 
         # Non-ergodic roundtrip (expand)
@@ -1088,7 +1081,7 @@ class NormLayer(Layer):
         torch.manual_seed(42)
 
         # === Test 1: pNorm=2, 2D forward + reverse ===
-        x = torch.randn(10, 20)
+        x = torch.randn(10, 20, device=TheDevice.get())
         layer = NormLayer(20, 22, pNorm=2)
         layer.lr = 0
         normalized = layer(x)
@@ -1097,7 +1090,7 @@ class NormLayer(Layer):
         assert torch.allclose(x, reconstructed, atol=1e-5), "2D reverse failed"
 
         # === Test 2: pNorm=2, 3D forward + reverse ===
-        x_3d = torch.randn(4, 5, 20)
+        x_3d = torch.randn(4, 5, 20, device=TheDevice.get())
         normalized_3d = layer(x_3d)
         assert normalized_3d.shape == (4, 5, 22), f"3D shape: expected (4,5,22), got {normalized_3d.shape}"
         reconstructed_3d = layer.reverse(normalized_3d)
@@ -1248,12 +1241,12 @@ class AttentionLayer(Layer):
             if atype == "transformer":
                 kwargs["nHeads"] = 2
             layer = AttentionLayer(**kwargs)
-            x = torch.randn(4, 5, 8)
+            x = torch.randn(4, 5, 8, device=TheDevice.get())
             y = layer(x)
             assert list(y.shape) == [4, 5, 8], f"type={atype}: expected [4,5,8], got {list(y.shape)}"
         # Test nInput != nOutput
         layer = AttentionLayer(nInput=6, nOutput=3, nHidden=7, type="asymmetric")
-        x = torch.randn(4, 5, 6)
+        x = torch.randn(4, 5, 6, device=TheDevice.get())
         y = layer(x)
         assert list(y.shape) == [4, 5, 3], f"asymmetric nIn!=nOut: expected [4,5,3], got {list(y.shape)}"
 #endregion
@@ -1605,7 +1598,7 @@ class Mem:
                 sz = (0, 0)
             else:
                 sz = self.output.shape
-        self.output = torch.zeros(sz, device=_get_device())
+        self.output = torch.zeros(sz, device=TheDevice.get())
         self.nTrials = 0
     def removeRC(self, r=None, c=None):
         """
@@ -1707,7 +1700,7 @@ class StateMem(Mem):
             else:
                 sz = self.output.shape
         super().reset(sz)
-        self.state = torch.zeros(sz, device=_get_device())
+        self.state = torch.zeros(sz, device=TheDevice.get())
 
     def delta(self, *args):
         # Just call the base class delta.

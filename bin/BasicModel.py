@@ -46,7 +46,7 @@ from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntrop
 
 from Space import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Space import Basis, Tensor, Codebook, Embedding
-from Space import SubSpace, Space, InputSpace, PerceptualSpace, ConceptualSpace, SymbolicSpace, SyntacticSpace, OutputSpace
+from Space import SubSpace, Space, InputSpace, DemuxedInputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, SyntacticSpace, OutputSpace
 
 class BaseModel(nn.Module):
     """Shared training, plotting, and persistence infrastructure for all models."""
@@ -77,7 +77,7 @@ class BaseModel(nn.Module):
         raw_cfg = BaseModel.load_config(resolved_path)
         arch = raw_cfg.get("architecture", {})
         model_kind = str(arch.get("type", "basic") or "basic").strip().lower()
-        model_cls = MentalModel if model_kind == "mental" else BasicModel
+        model_cls = {"mental": MentalModel, "demuxed": DemuxedBasicModel}.get(model_kind, BasicModel)
         model = model_cls()
         cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
         return model, cfg
@@ -179,13 +179,13 @@ class BaseModel(nn.Module):
             te = "NONE"
         self.train_embedding = te.upper()
         self.optimize_embedding = self.train_embedding not in ("NONE", "CBOW", "SBOW")
-        if self.optimize_embedding and isinstance(self.inputSpace.subspace.get_vectors(), Embedding):
-            emb_params = self.inputSpace.subspace.get_vectors().embedding_parameters()
+        if self.optimize_embedding and isinstance(self.inputSpace.get_vectors(), Embedding):
+            emb_params = self.inputSpace.get_vectors().embedding_parameters()
             self.inputSpace.params = self.inputSpace.params + emb_params
         self.loss.embedding_scale = float(_t("embeddingScale") or 0.1)
-        if isinstance(self.inputSpace.subspace.get_vectors(), Embedding):
-            self.inputSpace.subspace.get_vectors().optimize_embedding = self.optimize_embedding
-            object.__setattr__(self.inputSpace.subspace.get_vectors(), "_model", self)
+        if isinstance(self.inputSpace.get_vectors(), Embedding):
+            self.inputSpace.get_vectors().optimize_embedding = self.optimize_embedding
+            object.__setattr__(self.inputSpace.get_vectors(), "_model", self)
 
         if _t("autoload"):
             wpath = TheXMLConfig.get("architecture.weightsPath")
@@ -217,8 +217,8 @@ class BaseModel(nn.Module):
         # Exclude embedding params when trainEmbedding is NONE or ARLM
         if not getattr(self, 'optimize_embedding', False):
             exclude = set()
-            if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.subspace.get_vectors(), Embedding):
-                for p in self.inputSpace.subspace.get_vectors().embedding_parameters():
+            if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.get_vectors(), Embedding):
+                for p in self.inputSpace.get_vectors().embedding_parameters():
                     exclude.add(p.data_ptr())
             if exclude:
                 params = [p for p in params if p.data_ptr() not in exclude]
@@ -264,8 +264,8 @@ class BaseModel(nn.Module):
 
     def _get_embedding(self):
         """Return the Embedding instance if this model uses one, else None."""
-        if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.subspace.get_vectors(), Embedding):
-            return self.inputSpace.subspace.get_vectors()
+        if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.get_vectors(), Embedding):
+            return self.inputSpace.get_vectors()
         return None
 
     def save_weights(self, path=None):
@@ -364,7 +364,7 @@ class BaseModel(nn.Module):
         if not os.path.exists(path):
             print(f"[{self.name}] No checkpoint at {path}, starting fresh")
             return False
-        saved = torch.load(path, map_location=TheDevice, weights_only=False)
+        saved = torch.load(path, map_location=TheDevice.get(), weights_only=False)
 
         if isinstance(saved, dict) and "state_dict" in saved:
             state = saved["state_dict"]
@@ -421,7 +421,7 @@ class BaseModel(nn.Module):
         emb.pretrain.index_to_key = emb.wv.index_to_key
         emb.pretrain.key_to_index = emb.wv.key_to_index
         emb.wv._vectors = nn.Parameter(
-            torch.zeros(vocab_size, dim, device=TheDevice), requires_grad=True)
+            torch.zeros(vocab_size, dim, device=TheDevice.get()), requires_grad=True)
         emb.wv.counts = (np.asarray(counts, dtype=np.int64) if counts is not None
                          else np.zeros(vocab_size, dtype=np.int64))
         emb.wv.total_count = np.int64(total_count)
@@ -719,17 +719,17 @@ class BasicModel(BaseModel):
         nOutputSymbols = self.nOutputSymbols
         # InputSpace receives raw data (no encoding) as input but produces encoded vectors.
         rawInputShape = [nInput, input_dim]
-        self.inputSpace      = InputSpace(rawInputShape, spaceShape_input, inputShape,
-                                          model_type=model_type)
+        self.inputSpace      = self._make_input_space(rawInputShape, spaceShape_input, inputShape,
+                                                      model_type=model_type)
         # Convert masked-word string labels to embedding vectors now that
         # the Embedding vocabulary is available.
         if data is not None and hasattr(data, '_lm_labels') and data._lm_labels is not None:
-            embedding = self.inputSpace.subspace.get_vectors() if self.inputSpace.subspace.event is not None else None
+            embedding = self.inputSpace.get_vectors() if self.inputSpace.subspace.event is not None else None
             if embedding is not None and hasattr(embedding, 'pretrain'):
                 data.prepare_lm_targets(embedding)
                 # Move new targets to device
                 data.toDevice()
-        self.perceptualSpace = PerceptualSpace(inputShape, spaceShape_percept, perceptShape)
+        self.perceptualSpace = self._make_perceptual_space(inputShape, spaceShape_percept, perceptShape)
         self.conceptualSpace = ConceptualSpace(perceptShape, spaceShape_concept, conceptShape)
         self.symbolicSpace   = SymbolicSpace(conceptShape, spaceShape_symbol, symbolShape,
                                              conceptualSpace=self.conceptualSpace)
@@ -753,7 +753,7 @@ class BasicModel(BaseModel):
         self.nTotalOutputSymbols = nOutputSymbols
         self.outputSpace     = OutputSpace([nOutputSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
                                            masked_prediction=(masked_prediction != 'NONE'),
-                                           vectors=self.inputSpace.subspace.get_vectors())
+                                           vectors=self.inputSpace.get_vectors())
         self.spaces.extend([self.outputSpace])
         self.inputSpace.outputSpace = self.outputSpace
 
@@ -764,8 +764,15 @@ class BasicModel(BaseModel):
         # The output shape of the symbolic space is equal to the input shape of the output space
         #assert self.symbolicSpace.outputShape[1] == self.outputSpace.inputShape[1] # these are in conceptual space, or symbolic space if symbols emit objectSize symbols (processSymbols == True)
 
-        self.to(TheDevice)
+        self.to(TheDevice.get())
         TheXMLConfig.validate()
+
+    # --- Factory methods (override in subclasses to swap Space types) ---
+    def _make_input_space(self, rawInputShape, spaceShape, inputShape, model_type):
+        return InputSpace(rawInputShape, spaceShape, inputShape, model_type=model_type)
+
+    def _make_perceptual_space(self, inputShape, spaceShape, outputShape):
+        return PerceptualSpace(inputShape, spaceShape, outputShape)
 
     def Start(self, inputData):
         """Forward pass through the core pipeline: Input -> Percept -> Concept -> Symbol."""
@@ -959,7 +966,7 @@ class BasicModel(BaseModel):
         Symbols from each processing stage are concatenated before OutputSpace.
         """
         if isinstance(inputData, torch.Tensor):
-            inputData = inputData.to(TheDevice)
+            inputData = inputData.to(TheDevice.get())
         input, concepts, symbols = self.Start(inputData)
         # Higher-order subsymbolic cycles (conceptualOrder extra passes)
         for n in range(1,self.conceptualOrder):
@@ -1091,7 +1098,7 @@ class BasicModel(BaseModel):
         sbow = None
         te = getattr(self, 'train_embedding', 'NONE')
         if te in trainMod:
-            emb = self.inputSpace.subspace.get_vectors()
+            emb = self.inputSpace.get_vectors()
             if isinstance(emb, Embedding):
                 sentences = self._get_sentences(split)
                 if sentences and index < len(sentences):
@@ -1172,7 +1179,7 @@ class BasicModel(BaseModel):
 
         # ARUS: suppress output loss (unsupervised — no target signal)
         if hasattr(self, 'masked_prediction') and self.masked_prediction == 'ARUS':
-            lossOut = torch.tensor(0.0, device=TheDevice)
+            lossOut = torch.tensor(0.0, device=TheDevice.get())
 
         use_recon = self.reversible and self.loss.reverse_scale > 0
         if use_recon:
@@ -1442,7 +1449,7 @@ class MentalModel(BaseModel):
 
         self.outputSpace = OutputSpace([nSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
                                        masked_prediction=(masked_prediction != 'NONE'),
-                                       vectors=self.inputSpace.subspace.get_vectors())
+                                       vectors=self.inputSpace.get_vectors())
 
         self.spaces.extend([
             self.inputSpace,
@@ -1453,7 +1460,7 @@ class MentalModel(BaseModel):
         ])
 
         self.inputSpace.outputSpace = self.outputSpace
-        self.to(TheDevice)
+        self.to(TheDevice.get())
         TheXMLConfig.validate()
 
     def Start(self, inputData):
@@ -1474,7 +1481,7 @@ class MentalModel(BaseModel):
 
     def forward(self, inputData):
         if isinstance(inputData, torch.Tensor):
-            inputData = inputData.to(TheDevice)
+            inputData = inputData.to(TheDevice.get())
         input_state, percepts, concepts, symbols = self.Start(inputData)
         outputData = self.Finish(symbols)
         return input_state, symbols, outputData
@@ -1500,6 +1507,24 @@ class MentalModel(BaseModel):
 
         return input_data, input_latent
 TheMentalModel = MentalModel()
+
+class DemuxedBasicModel(BasicModel):
+    """BasicModel variant using DemuxedInputSpace + ModalSpace.
+
+    Separates what/where/when modalities so each gets independent
+    perceptual processing. The muxed event tensor is reconstructed
+    transparently by SubSpace.materialize() for downstream compatibility.
+    """
+    name = "DemuxedBasicModel"
+
+    def _make_input_space(self, rawInputShape, spaceShape, inputShape, model_type):
+        return DemuxedInputSpace(rawInputShape, spaceShape, inputShape, model_type=model_type)
+
+    def _make_perceptual_space(self, inputShape, spaceShape, outputShape):
+        return ModalSpace(inputShape, spaceShape, outputShape)
+
+TheDemuxedBasicModel = DemuxedBasicModel()
+
 class ModelFactory:
     """Create, train, and evaluate models from an XML config file.
 

@@ -91,6 +91,21 @@
     <quantized>false</quantized>
   </PerceptualSpace>
 
+  <ModalSpace>
+    <nInput>0</nInput>
+    <nOutput>0</nOutput>
+    <nDim>1</nDim>
+    <nVectors>0</nVectors>
+    <flatten>false</flatten>
+    <passThrough>false</passThrough>
+    <hasAttention>true</hasAttention>
+    <invertible>false</invertible>
+    <quantized>false</quantized>
+    <whatPassThrough>false</whatPassThrough>
+    <wherePassThrough>true</wherePassThrough>
+    <whenPassThrough>true</whenPassThrough>
+  </ModalSpace>
+
   <ConceptualSpace>
     <nInput>0</nInput>
     <nOutput>0</nOutput>

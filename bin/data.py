@@ -193,13 +193,13 @@ class Data():
                       "validation_input", "validation_output"):
             v = getattr(self, attr)
             if isinstance(v, torch.Tensor):
-                v = v.to(TheDevice)
+                v = v.to(TheDevice.get())
                 if v.ndim == 2:          # [N, D] → [N, D, 1]
                     v = v.unsqueeze(2)
                 setattr(self, attr, v)
             elif isinstance(v, list):
                 setattr(self, attr, [
-                    t.to(TheDevice) if isinstance(t, torch.Tensor) else t
+                    t.to(TheDevice.get()) if isinstance(t, torch.Tensor) else t
                     for t in v
                 ])
 

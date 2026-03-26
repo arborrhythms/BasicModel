@@ -45,7 +45,7 @@ class TestInvertibleLinearLayer(unittest.TestCase):
         layer.set_sigma(0)
         if nIn <= nOut:
             # Square / expand: left-invertible → reverse(forward(x)) ≈ x
-            x = torch.randn(*batch, nIn).to(TheDevice)
+            x = torch.randn(*batch, nIn).to(TheDevice.get())
             y = layer.forward(x)
             x_rec = layer.reverse(y)
             err = _reconstruction_error(x, x_rec)
@@ -53,7 +53,7 @@ class TestInvertibleLinearLayer(unittest.TestCase):
                             f"{nIn}->{nOut} naive={naive} hasBias={hasBias}: err={err:.2e}")
         else:
             # Contract (nIn > nOut): right-invertible → forward(reverse(y)) ≈ y
-            y = torch.randn(*batch, nOut).to(TheDevice)
+            y = torch.randn(*batch, nOut).to(TheDevice.get())
             x_rev = layer.reverse(y)
             y_rec = layer.forward(x_rev)
             err = _reconstruction_error(y, y_rec)
@@ -94,7 +94,7 @@ class TestInvertibleLinearLayer(unittest.TestCase):
             layer.bias.fill_(0.8)
         if nIn <= nOut:
             # Square / expand: left-invertible → reverse(forward(x)) ≈ x
-            x = torch.randn(3, nIn).to(TheDevice)
+            x = torch.randn(3, nIn).to(TheDevice.get())
             y = layer.forward(x)
             x_rec = layer.reverse(y)
             err = _reconstruction_error(x, x_rec, rel=True)
@@ -104,7 +104,7 @@ class TestInvertibleLinearLayer(unittest.TestCase):
             # surjective so reverse(forward(x)) only recovers the row-space
             # component of x; the expected relative error is ≈ sqrt((nIn-nOut)/nIn).
             # Use a generous tolerance to verify the ergodic path runs correctly.
-            x = torch.randn(3, nIn).to(TheDevice)
+            x = torch.randn(3, nIn).to(TheDevice.get())
             y = layer.forward(x)
             x_rec = layer.reverse(y)
             err = _reconstruction_error(x, x_rec, rel=True)
@@ -125,7 +125,7 @@ class TestLiftingLayer(unittest.TestCase):
     def _check(self, nIn, nOut, tol):
         torch.manual_seed(42)
         layer = LiftingLayer(nIn, nOut)
-        x = torch.randn(4, nIn).to(TheDevice)
+        x = torch.randn(4, nIn).to(TheDevice.get())
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec)
@@ -141,7 +141,7 @@ class TestLinearLayerIdentity(unittest.TestCase):
     def test_identity(self):
         torch.manual_seed(42)
         layer = LinearLayer(5, 5, hasBias=False, ergodic=True)
-        x = torch.randn(3, 5).to(TheDevice)
+        x = torch.randn(3, 5).to(TheDevice.get())
         y = layer.forward(x)
         err = _reconstruction_error(x, y)
         self.assertLess(err, 1e-6)
@@ -156,7 +156,7 @@ class TestInvertibleSigmaLayer(unittest.TestCase):
         torch.manual_seed(42)
         layer = SigmaLayer(nIn, nOut, naive=naive, invertible=True)
         layer.set_sigma(0)
-        x = torch.randn(2, 3, nIn).to(TheDevice)
+        x = torch.randn(2, 3, nIn).to(TheDevice.get())
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec)
@@ -175,7 +175,7 @@ class TestInvertibleSigmaLayer(unittest.TestCase):
         torch.manual_seed(42)
         layer = SigmaLayer(nIn, nOut, naive=naive, invertible=True)
         layer.set_sigma(0)
-        x = torch.randn(2, seqLen, nIn).to(TheDevice)
+        x = torch.randn(2, seqLen, nIn).to(TheDevice.get())
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec)
@@ -194,7 +194,7 @@ class TestInvertiblePiLayer3D(unittest.TestCase):
         layer = PiLayer(nIn, nOut, naive=naive,
                         hasBias=bias, invertible=True)
         layer.set_sigma(0)
-        x = torch.randn(3, 5, nIn).to(TheDevice)
+        x = torch.randn(3, 5, nIn).to(TheDevice.get())
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec, rel=True)
@@ -215,7 +215,7 @@ class TestInvertiblePiLayer2D(unittest.TestCase):
         layer = PiLayer(nIn, nOut, naive=naive,
                         hasBias=bias, invertible=True)
         layer.set_sigma(0)
-        x = torch.randn(6, 1, nIn).to(TheDevice)
+        x = torch.randn(6, 1, nIn).to(TheDevice.get())
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec, rel=True)
@@ -242,7 +242,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
         nIn, nOut = 4, 8
         layer = PiLayer(nIn, nOut, naive=False, hasBias=True, invertible=True)
         layer.train(False)
-        x = torch.randn(6, 1, nIn).to(TheDevice)
+        x = torch.randn(6, 1, nIn).to(TheDevice.get())
         with torch.no_grad():
             y = layer.forward(x)
             self.assertEqual(y.shape, (6, 2, nOut))
@@ -257,7 +257,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
         nIn, nOut = 4, 8
         layer = PiLayer(nIn, nOut, naive=False, hasBias=False, invertible=True)
         layer.train(False)
-        x = torch.randn(6, 1, nIn).to(TheDevice)
+        x = torch.randn(6, 1, nIn).to(TheDevice.get())
         with torch.no_grad():
             y = layer.forward(x)
             x_rec = layer.reverse(y)
@@ -270,7 +270,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
         nIn, nOut = 4, 8
         layer = PiLayer(nIn, nOut, naive=False, hasBias=True, invertible=True)
         layer.train(False)
-        x = torch.randn(3, 5, nIn).to(TheDevice)
+        x = torch.randn(3, 5, nIn).to(TheDevice.get())
         with torch.no_grad():
             y = layer.forward(x)
             self.assertEqual(y.shape, (3, 2 * 5, nOut))
@@ -285,7 +285,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
         nIn, nOut = 4, 8
         layer = PiLayer(nIn, nOut, naive=False, hasBias=True, invertible=True)
         layer.train(False)
-        x = torch.randn(3, 5, nIn).to(TheDevice)
+        x = torch.randn(3, 5, nIn).to(TheDevice.get())
         with torch.no_grad():
             y = layer.forward(x)
             x_rec = layer.reverse(y)
@@ -302,7 +302,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
             layer.var.fill_(0.05)
             layer.bias.fill_(0.95)
         layer.train(True)
-        x = torch.randn(8, 1, nIn).to(TheDevice)
+        x = torch.randn(8, 1, nIn).to(TheDevice.get())
         with torch.no_grad():
             y = layer.forward(x)
             x_rec = layer.reverse(y)
@@ -315,7 +315,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
         nIn, nOut = 4, 8
         layer = PiLayer(nIn, nOut, naive=False, hasBias=True, invertible=True)
         optimizer = optim.Adam(layer.parameters(), lr=0.01)
-        x = torch.randn(8, 1, nIn).to(TheDevice)
+        x = torch.randn(8, 1, nIn).to(TheDevice.get())
         # Run a few training steps with a dummy loss
         for _ in range(20):
             optimizer.zero_grad()
@@ -341,7 +341,7 @@ class TestNormLayerInvertibility(unittest.TestCase):
         torch.manual_seed(42)
         layer = NormLayer(10, 12, pNorm=2)
         layer.lr = 0
-        x = torch.randn(5, 10).to(TheDevice)
+        x = torch.randn(5, 10).to(TheDevice.get())
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec)
@@ -367,7 +367,7 @@ class TestPairedSigmaTraining(unittest.TestCase):
         criterion = nn.MSELoss()
         optimizer = optim.Adam(
             list(sigma_fwd.parameters()) + list(sigma_rev.parameters()), lr=0.01)
-        x_data = torch.randn(8, 3, nIn).to(TheDevice)
+        x_data = torch.randn(8, 3, nIn).to(TheDevice.get())
         for _ in range(500):
             optimizer.zero_grad()
             y = sigma_fwd(x_data)
@@ -398,7 +398,7 @@ class TestPairedPiTraining(unittest.TestCase):
         criterion = nn.MSELoss()
         optimizer = optim.Adam(
             list(pi_fwd.parameters()) + list(pi_rev.parameters()), lr=0.01)
-        x_data = torch.randn(8, 5, nIn).to(TheDevice)
+        x_data = torch.randn(8, 5, nIn).to(TheDevice.get())
         for _ in range(500):
             optimizer.zero_grad()
             y = pi_fwd(x_data)
@@ -476,7 +476,7 @@ class TestPerceptualSpacePassthrough(unittest.TestCase):
             [nObj, embDim], [nObj, contentDim], [nObj, embDim],
         )
         pspace.eval()
-        x = torch.randn(2, nObj, embDim).to(TheDevice)
+        x = torch.randn(2, nObj, embDim).to(TheDevice.get())
         with torch.no_grad():
             y = pspace.forward(_wrap_tensor(pspace, x))
             x_rec = _unwrap(pspace.reverse(y))
@@ -504,7 +504,7 @@ class TestPerceptualSpaceReversePassTrained(unittest.TestCase):
         )
         criterion = nn.MSELoss()
         optimizer = optim.Adam(pspace.parameters(), lr=0.005)
-        x_data = torch.randn(4, nObj, embDim).to(TheDevice)
+        x_data = torch.randn(4, nObj, embDim).to(TheDevice.get())
         pspace.train()
         for _ in range(2000):
             optimizer.zero_grad()
@@ -537,7 +537,7 @@ class TestConceptualSpaceInvertible(unittest.TestCase):
         )
         cspace.eval()
         cspace.sigma.set_sigma(0)
-        x = torch.randn(2, nObj, embDim).to(TheDevice)
+        x = torch.randn(2, nObj, embDim).to(TheDevice.get())
         with torch.no_grad():
             y = cspace.forward(_wrap_tensor(cspace, x))
             x_rec = _unwrap(cspace.reverse(y))
@@ -563,7 +563,7 @@ class TestConceptualSpacePairedSigma(unittest.TestCase):
             [nObj, embDim], [nObj, contentDim], [nObj, embDim],
         )
         cspace.eval()
-        x = torch.randn(2, nObj, embDim).to(TheDevice)
+        x = torch.randn(2, nObj, embDim).to(TheDevice.get())
         with torch.no_grad():
             y = cspace.forward(_wrap_tensor(cspace, x))
             x_rec = _unwrap(cspace.reverse(y))
@@ -591,7 +591,7 @@ class TestConceptualSpaceHasNorm(unittest.TestCase):
         )
         cspace.eval()
         cspace.sigma.set_sigma(0)
-        x = torch.randn(2, nObj, contentDim).to(TheDevice)
+        x = torch.randn(2, nObj, contentDim).to(TheDevice.get())
         with torch.no_grad():
             y = cspace.forward(_wrap_tensor(cspace, x))
             x_rec = _unwrap(cspace.reverse(y))
@@ -610,7 +610,7 @@ class TestSymbolicSpacePassthrough(unittest.TestCase):
             [nObj, embDim], [nObj, contentDim], [nObj, embDim],
         )
         sspace.eval()
-        x = torch.randn(2, nObj, embDim).to(TheDevice)
+        x = torch.randn(2, nObj, embDim).to(TheDevice.get())
         with torch.no_grad():
             y = sspace.forward(_wrap_tensor(sspace, x))
             x_rec = _unwrap(sspace.reverse(y))
@@ -631,7 +631,7 @@ class TestSyntacticSpace(unittest.TestCase):
             [nObj, embDim], [nObj, contentDim], [nObj, embDim],
         )
         synspace.eval()
-        x = torch.randn(2, nObj, embDim).to(TheDevice)
+        x = torch.randn(2, nObj, embDim).to(TheDevice.get())
         with torch.no_grad():
             y = synspace.forward(_wrap_tensor(synspace, x))
             x_rec = _unwrap(synspace.reverse(y))
@@ -655,7 +655,7 @@ class TestOutputSpaceReversePass(unittest.TestCase):
             [nObj, embDim], [nObj, contentDim], [1, outputDim],
         )
         ospace.eval()
-        x = torch.randn(2, nObj, embDim).to(TheDevice)
+        x = torch.randn(2, nObj, embDim).to(TheDevice.get())
         with torch.no_grad():
             y = ospace.forward(_wrap_tensor(ospace, x))
             x_rec = _unwrap(ospace.reverse(y))
@@ -682,7 +682,7 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
             layer.var.fill_(0.1)
             layer.bias.fill_(0.9)
         layer.train()
-        x = torch.randn(8, 1, nIn).to(TheDevice)
+        x = torch.randn(8, 1, nIn).to(TheDevice.get())
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec, rel=True)
@@ -700,7 +700,7 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
             layer.var.fill_(0.05)
             layer.bias.fill_(0.95)
         layer.train()
-        x = torch.randn(8, nIn).to(TheDevice)
+        x = torch.randn(8, nIn).to(TheDevice.get())
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec, rel=True)

@@ -84,11 +84,11 @@ def main():
 
     dim = 512
     batch = 64
-    x = torch.randn(batch, dim, device=TheDevice)
-    target = torch.randn(batch, dim, device=TheDevice)
+    x = torch.randn(batch, dim, device=TheDevice.get())
+    target = torch.randn(batch, dim, device=TheDevice.get())
 
     # --- Eager baseline ---
-    model_eager = MatMulModel(dim=dim).to(TheDevice)
+    model_eager = MatMulModel(dim=dim).to(TheDevice.get())
     torch.manual_seed(42)
     # Save initial weights so all variants start from same state
     init_state = copy.deepcopy(model_eager.state_dict())
@@ -99,14 +99,14 @@ def main():
     eager_ms = bench(model_eager, x, target, label="eager (no compile)")
 
     # --- util.compile() default ---
-    model_default = MatMulModel(dim=dim).to(TheDevice)
+    model_default = MatMulModel(dim=dim).to(TheDevice.get())
     model_default.load_state_dict(init_state)
     torch._dynamo.reset()
     model_default = util_compile(model_default, verbose=True)
     default_ms = bench(model_default, x, target, label="util.compile (default)")
 
     # --- torch.compile(backend='eager') ---
-    model_dynamo_eager = MatMulModel(dim=dim).to(TheDevice)
+    model_dynamo_eager = MatMulModel(dim=dim).to(TheDevice.get())
     model_dynamo_eager.load_state_dict(init_state)
     torch._dynamo.reset()
     try:
