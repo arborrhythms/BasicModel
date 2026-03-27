@@ -15,17 +15,20 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 from util import TheDevice
-from Model import PiLayer, SigmaLayer
+from Model import PiLayer, NewPiLayer, SigmaLayer, epsilon
 
 
 class TestPiLayerForward(unittest.TestCase):
-    """PiLayer produces the correct output shape for 2D and 3D inputs."""
+    """PiLayer produces the correct output shape for 2D and 3D inputs.
+
+    PiLayer expects inputs in (0, 1].
+    """
 
     def test_3d_input_shape(self):
         nBatch, nInput, nOutput, nSymbols = 5, 3, 4, 6
         layer = PiLayer(nInput, nOutput)
         layer.set_sigma(0)
-        x = torch.randn(nBatch, nSymbols, nInput).to(TheDevice.get())
+        x = torch.rand(nBatch, nSymbols, nInput).clamp(min=epsilon).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (nBatch, nSymbols, nOutput))
 
@@ -33,7 +36,7 @@ class TestPiLayerForward(unittest.TestCase):
         nBatch, nInput, nOutput = 4, 3, 5
         layer = PiLayer(nInput, nOutput)
         layer.set_sigma(0)
-        x = torch.randn(nBatch, nInput).to(TheDevice.get())
+        x = torch.rand(nBatch, nInput).clamp(min=epsilon).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (nBatch, nOutput))
 
@@ -42,7 +45,7 @@ class TestPiLayerForward(unittest.TestCase):
         with torch.no_grad():
             layer.var.fill_(0.001)
             layer.bias.fill_(0.999)
-        x = torch.randn(4, 2).to(TheDevice.get()).requires_grad_(True)
+        x = torch.rand(4, 2).clamp(min=epsilon).to(TheDevice.get()).requires_grad_(True)
         y = layer(x)
         loss = y.sum()
         loss.backward()
@@ -81,7 +84,7 @@ class TestSigmaLayerForward(unittest.TestCase):
 
 
 class TestPiSigmaXOR(unittest.TestCase):
-    """A PiLayer+SigmaLayer stack can learn XOR with low temperature."""
+    """An PiLayer+SigmaLayer stack can learn XOR with low temperature."""
 
     def test_xor_convergence(self):
         X = torch.tensor([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32).to(TheDevice.get())

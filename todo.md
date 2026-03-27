@@ -1,12 +1,6 @@
 # TODO
 
 ## symbolic processing
-* symbols map bijectively to concepts
-* when calling materialize, extracts only [activation, index] (the numeric indices of the concepts)
-* when reverse() is called, indices are used to look up the concepts that were passed in
-* its subspace consists only of an (ordered) vector of activations
-* It passes [nBatch, nOutput, 1] to all consumers (OutputSpace and SyntacticSpace)
-* Integrate the Activation and Syntactic Layer classes
 
 ================================== April 1 ==================================
 

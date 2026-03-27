@@ -37,7 +37,7 @@ from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
-from Model import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
+from Model import Layer, PiLayer, NewPiLayer, SigmaLayer # Import custom layers from Model.py
 from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer
 from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 
@@ -2777,12 +2777,11 @@ class PerceptualSpace(Space):
             return
         input = self.subspace.getEncodedInputSize()
         output = self.subspace.getEncodedOutputSize()
-        unflatOutput = output
-        # InvertiblePiLayer doubles its output; halve the layer's nOutput
-        # so the 2x interleaving produces the correct unflatten width.
+        self.attention = AttentionLayer(output, output, type="transformer")
+        # PiLayer's invertible mode interleaves (y, z) pairs, doubling output.
+        # Halve nOutput so the 2x interleaving produces the correct total width.
         if self.flatten and self.reversible:
             output = output // 2
-        self.attention = AttentionLayer(unflatOutput, unflatOutput, type="transformer")
         if self.reversible:
             if invertible:
                 self.pi  = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
@@ -2817,22 +2816,20 @@ class PerceptualSpace(Space):
 
         invertible = TheXMLConfig.space(self.config_section, "invertible")
         if invertible:
-            if self.reversible:
-                if self.flatten:
-                    # 4*nInput*inputDim == nOutput*outputDim
-                    TheXMLConfig.require(
-                        lambda cfg, _ni=nI, _nid=nI_dim, _na=nA, _nad=nA_dim:
-                            4 * _ni * _nid == _na * _nad,
-                        f"PerceptualSpace: invertible+flatten requires 4*nInput*inputDim == nOutput*outputDim "
-                        f"(got 4*{nI}*{nI_dim}={4*nI*nI_dim}, {nA}*{nA_dim}={nA*nA_dim})"
-                    )
-                else:
-                    # nOutput == 2 * nInput
-                    TheXMLConfig.require(
-                        lambda cfg, _ni=nI, _na=nA: _na == 2 * _ni,
-                        f"PerceptualSpace: invertible without flatten requires nOutput ({nA}) == 2*nInput ({nI})"
-                    )
-            # When invertible=True: skip nVectors checks (InvertiblePiLayer manages sizing)
+            if self.flatten:
+                # Flattened: 2*nInput*inputDim == nOutput*outputDim
+                TheXMLConfig.require(
+                    lambda cfg, _ni=nI, _nid=nI_dim, _na=nA, _nad=nA_dim:
+                        2 * _ni * _nid == _na * _nad,
+                    f"PerceptualSpace: invertible+flatten requires 2*nInput*inputDim == nOutput*outputDim "
+                    f"(got 2*{nI}*{nI_dim}={2*nI*nI_dim}, {nA}*{nA_dim}={nA*nA_dim})"
+                )
+            else:
+                # Unflattened: nOutput == 2 * nInput
+                TheXMLConfig.require(
+                    lambda cfg, _ni=nI, _na=nA: _na == 2 * _ni,
+                    f"PerceptualSpace: invertible requires nOutput ({nA}) == 2*nInput ({nI})"
+                )
         else:
             # Standard checks
             TheXMLConfig.require(

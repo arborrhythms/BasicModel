@@ -38,13 +38,12 @@
     <nWhen>0</nWhen>
   </InputSpace>
 
-  <!-- PerceptualSpace: invertible+reshape.
-       Constraint: 4 * nInput * inputDim == nOutput * outputDim
-       4 * 6 * 10 = 240 = 24 * 10  -->
+  <!-- PerceptualSpace: invertible+flatten.
+       Constraint: 2 * nInput * inputDim == nOutput * outputDim  -->
   <PerceptualSpace>
-    <nOutput>24</nOutput>
+    <nOutput>12</nOutput>
     <nDim>10</nDim>
-    <nVectors>24</nVectors>
+    <nVectors>6</nVectors>
     <flatten>true</flatten>
     <invertible>true</invertible>
     <hasAttention>false</hasAttention>
