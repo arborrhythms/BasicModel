@@ -51,7 +51,7 @@ The gradient of the loss with respect to embedding v_i has two terms:
 
 - **Attractive** (from position i where w_i is the target): pulls v_i
   toward directions that increase its probability.
-- **Repulsive** (from positions j ≠ i where v_i is part of the centroid):
+- **Repulsive** (from positions $j \neq i$ where $v_i$ is part of the centroid):
   pushes v_i away from centroids whose targets are other words.
 
 The softmax partition function ensures that all V words compete: any word k
@@ -306,7 +306,7 @@ where the logits are:
 $$z_i = W_o \, c_i + b_o$$
 
 The partition function (denominator) sums over every word in the vocabulary. The
-gradient with respect to the logit for any non-target word k ≠ w_i is:
+gradient with respect to the logit for any non-target word $k \neq w_i$ is:
 
 $$\frac{\partial \mathcal{L}_i}{\partial z_{i,k}} = P(k \mid c_i)$$
 

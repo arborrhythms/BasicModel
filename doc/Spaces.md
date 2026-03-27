@@ -168,70 +168,88 @@ separate layers with independent weights.
 
 ## SymbolicSpace
 
-**Role.** Converts continuous concept vectors into discrete symbols. This is the
-information bottleneck of the pipeline: rich perceptual–conceptual representations
-are compressed into a small set of symbols that can be matched, compared, and
-reasoned over.
+**Role.** Converts continuous concept activations into a discrete set of active
+symbols. This is the information bottleneck of the pipeline: rich
+perceptual–conceptual representations are compressed into a sparse activation
+pattern over a codebook of symbol prototypes. Symbols are **zero-dimensional**
+entities — pure activation scalars, not vectors.
 
-**Forward operation (processSymbols=True).** Computes scalar activations from concept
-vectors as vector norms. Each concept vector is measured, and the resulting scalar is
-the "activation level" of that symbol. The `threshold` flag controls hard
-discretization: activations below threshold are zeroed out. The `serialActivation`
-flag controls whether symbols fire one at a time (serial) or in parallel.
+See [Language.md](Language.md) for the full language system design.
 
-**Reverse operation (processSymbols=True).** Dereferences concept vectors from the
-`ConceptualSpace` codebook: each symbol index is looked up in the codebook and the
-corresponding concept vector is retrieved, reconstructing a continuous representation
-for further reverse processing.
+**Forward operation (quantized=True).**
 
-**passThrough=True.** Concept vectors pass through unchanged with no norm computation
-or discretization. Typically used for simple feedforward models where symbolic
-compression is not needed.
+1. Extract concept activation `[B, nConcepts]` from the input subspace.
+2. Map through `InvertibleLinearLayer(nConcepts, nSymbols)` to `[B, nSymbols]`.
+3. Reshape to `[B, nSymbols, 1]` (each symbol is 1-dim) and pass through the
+   codebook, which quantizes and produces a one-hot activation over codebook
+   entries weighted by similarity.
+
+The output is a one-hot encoding over the codebook. The codebook provides dense
+vectors for downstream spaces that require `[B, N, D]` tensors.
+
+**Forward operation (quantized=False).** The invertible layer maps the activation;
+vectors pass through from the input subspace unchanged.
+
+**Reverse operation.** The invertible layer's exact inverse maps
+`[B, nSymbols]` back to `[B, nConcepts]`, recovering the concept activation.
+
+**passThrough=True.** Concept vectors and activation pass through unchanged.
 
 **Key parameters.**
 
 | Parameter | Description |
 |-----------|-------------|
 | `nActive` | Total number of symbols (output + reconstruction symbols) |
-| `nVectors` | Codebook size (defaults to nActive) |
+| `nVectors` | Codebook size (= nSymbols when quantized) |
 | `passThrough` | Skip symbolic processing entirely |
-| `threshold` | Enable hard activation threshold for discretization |
-| `serialActivation` | Fire symbols one at a time rather than in parallel |
-| `processSymbols` | Enable norm-based symbol activation |
+| `quantized` | Enable codebook quantization (required for one-hot output) |
 
-**Layer.** None when `passThrough=True`. When `processSymbols=True`, the bottleneck
-effect comes from the dimensionality constraint rather than a learned weight matrix.
+**Layer.** `InvertibleLinearLayer(nConcepts, nSymbols)` — maps between
+activation spaces of different lengths. Exact inverse via LDU factorisation.
 
-**Invertibility.** Not invertible in the weight-matrix sense. Reverse dereferences the
-codebook by symbol index.
+**Invertibility.** Exactly invertible via the invertible layer's reverse.
 
 ---
 
 ## SyntacticSpace
 
-**Role.** Placeholder for future generative grammar operations. Currently performs a
-reshape of the symbol tensor without any learned transformation. Sits between
-SymbolicSpace and OutputSpace in the pipeline.
+**Role.** Generates a binary derivation tree (deep structure) from the set of
+active symbols produced by SymbolicSpace. The derivation is a Chomsky Normal Form
+(CNF) grammar stored as word tuples `(batch, vector, rule)` on the output subspace.
 
-**Active when.** Used when `symbolicOrder >= 1`.
+See [Language.md](Language.md) for the grammar, word encoding, and open questions
+about differentiable tree structure.
 
-**Forward operation.** Reshapes the symbol tensor from `[B, nSymbols, symbolDim]` to
-the word-vector layout `[B, nWords, wordDim]`. No nonlinearity or weight matrix is
-applied.
+**Forward operation.**
 
-**Reverse operation.** Inverse reshape.
+1. Identify active symbol positions from the activation vector (nonzero entries).
+2. For N active symbols per batch, generate a CNF derivation: N-1 binary rules
+   (randomly selected) + 1 terminal (S → W).
+3. Store the derivation as word tuples on the output subspace. Vectors and
+   activation pass through unchanged.
+
+**Reverse operation.**
+
+1. Walk the word list: every `(batch, vector, rule)` entry marks that position
+   as active.
+2. Reconstruct the activation vector deterministically from the derivation.
+3. Store the recovered activation (without recomputing from vector norms).
+
+The round-trip `forward → (delete activation) → reverse` recovers the original
+active positions exactly.
 
 **Key parameters.**
 
 | Parameter | Description |
 |-----------|-------------|
-| `nActive` | Number of active word vectors (`nWords` on TheObjectEncoding) |
-| `nDim` | Word vector dimensionality (`wordDim` on TheObjectEncoding) |
+| `nActive` | Number of active word vectors |
+| `nDim` | Word vector dimensionality |
 | `nVectors` | Codebook size (defaults to nActive) |
 
-**Layer.** Passthrough reshape; no trainable parameters.
+**Layer.** No trainable parameters (rule selection is currently random).
 
-**Invertibility.** Trivially invertible (reshape is lossless).
+**Invertibility.** Reverse deterministically recovers activation from the
+derivation tree.
 
 ---
 

@@ -33,16 +33,16 @@ Objects:
   Antipodal opposition on hypersphere
 
 - **Non (non-affirming negation)**:
-  ```
-  non(x) = αx,  α ∈ [0,1)
-  ```
+  $$
+  \operatorname{non}(x) = \alpha x, \quad \alpha \in [0,1)
+  $$
   Contraction toward zero (withdrawal of assertion)
 
 - **Parthood**:
   Fuzzy max-coverage:
-  ```
-  P(A → B) ∈ [-1,1]
-  ```
+  $$
+  P(A \to B) \in [-1,1]
+  $$
 
 ---
 
@@ -50,11 +50,11 @@ Objects:
 
 Map vectors → scalar truth strength
 
-For X ∈ (B, N, D):
+For $X \in (B, N, D)$:
 
-```
-s(X) = 2 * mean(||x_i||) - 1
-```
+$$
+s(X) = 2 \cdot \mathrm{mean}(\lVert x_i \rVert) - 1
+$$
 
 Range: [-1, 1]
 
@@ -67,32 +67,32 @@ Interpretation:
 
 ## 3. Symbolic Layer (Scalars in [-1,1])
 
-Let a, b ∈ [-1,1]
+Let $a, b \in [-1,1]$.
 
 ### Negation (affirming)
-```
-neg(a) = -a
-```
+$$
+\operatorname{neg}(a) = -a
+$$
 
 ### Non (non-affirming)
-```
-non(a) = αa
-```
+$$
+\operatorname{non}(a) = \alpha a
+$$
 
 ### Union
-```
-a ∪ b = max(a, b)
-```
+$$
+a \cup b = \max(a, b)
+$$
 
 ### Intersection
-```
-a ∩ b = min(a, b)
-```
+$$
+a \cap b = \min(a, b)
+$$
 
 ### Parthood (order relation)
-```
-part(a, b) = clamp(b - a, -1, 1)
-```
+$$
+\operatorname{part}(a, b) = \operatorname{clamp}(b - a, -1, 1)
+$$
 
 ---
 

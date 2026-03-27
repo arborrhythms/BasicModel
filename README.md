@@ -2,8 +2,6 @@
 
 ## Basic Model of Cognition
 
-![Logo](doc/Logo.png)
-
 *The basic model of cognition relies on conceptual hyperplanes and perceptual prototypes to synthesize and analyze the input space. It uses a high-dimensional embedding to characterize mental space and integrates symbolic computation. Its three major operations are intersection (which forms percepts from concepts), union (a bidirectional mapping between concepts and percepts), and equality (where symbols are elements that map across perceptual and conceptual domains).*
 
 ## Documentation
@@ -16,9 +14,9 @@
 | [Training](doc/Training.md) | Two-phase training, SBOW embeddings, masked prediction modes |
 | [Params](doc/Params.md) | Complete XML configuration reference |
 | [BasicModel](doc/BasicModel.md) | Cognitive science foundations |
+| [Language](doc/Language.md) | Grammar, word encoding, symbolic and syntactic spaces |
 | [Logic](doc/Logic.md) | Subsymbolic and symbolic logic operations |
-| [MachineMinds](doc/MachineMinds.md) | Weight ergodicity, invertibility, certainty weighting |
-| [CognitiveScienceSociety](doc/CognitiveScienceSociety.md) | Theoretical CSS framework |
+| [MachineMinds](doc/MachineMinds.md) | What machine minds are, feel, and know |
 | [Installation](doc/Installation.md) | Setup, Makefile targets, environment variables |
 
 ## Overview

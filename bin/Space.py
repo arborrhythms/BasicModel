@@ -37,8 +37,8 @@ from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
-from Model import Layer, PiLayer, NewPiLayer, SigmaLayer # Import custom layers from Model.py
-from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer
+from Model import Grammar, Layer, PiLayer, NewPiLayer, SigmaLayer # Import custom layers from Model.py
+from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, SyntacticLayer
 from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 
 class Encoding(nn.Module):
@@ -263,6 +263,34 @@ class WhenEncoding(QuadratureEncoding):
         y = te.forward(x)
         cleaned, times = te.reverse(y)
         print(f"Times decoded: {times}")
+
+TheGrammar = Grammar()
+
+class WordEncoding(Encoding):
+    """Word encoding: each word is a (batch, vector, rule) 3-tuple.
+
+    Words are stored as a Python list of tuples, not muxed into the
+    event tensor.  Each tuple indexes into [B, N] activation space
+    and specifies a grammar rule from TheGrammar.
+    """
+    nDim = 3  # (batch, vector, rule)
+
+    def __init__(self, nBatch=0, nActive=0):
+        super().__init__([], maxVal=0)  # no index slots — not muxed
+        self.nBatch = nBatch
+        self.nActive = nActive
+
+    def encode(self, batch, vector, rule):
+        """Validate and return a (batch, vector, rule) tuple."""
+        assert 0 <= batch, f"batch {batch} must be >= 0"
+        assert 0 <= vector, f"vector {vector} must be >= 0"
+        assert 0 <= rule < len(TheGrammar), f"rule {rule} out of range [0, {len(TheGrammar)})"
+        return (batch, vector, rule)
+
+    def decode(self, word):
+        """Unpack a word tuple into (batch, vector, rule)."""
+        return word[0], word[1], word[2]
+
 class WhatEncoding(Encoding):
     """Handle the content-layout transform for a space's What factor.
 
@@ -727,8 +755,16 @@ class Codebook(Basis):
         return quantized, indices, loss
 
     def forward(self, input):
+        _vspace = None
+        if isinstance(input, SubSpace):
+            _vspace = input
+            input = _vspace.materialize()
+
         if self.passThrough:
             self.setW(input)
+            if _vspace is not None:
+                _vspace.set_vectors(input)
+                return _vspace
             return input
 
         w = self.getW()
@@ -782,6 +818,10 @@ class Codebook(Basis):
         self.activation = act
         self.activeSigma = None
         self.setW(x)
+        if _vspace is not None:
+            _vspace.set_vectors(x)
+            _vspace.set_activation(act)
+            return _vspace
         return x
 
     def reverse(self, y, **kwargs):
@@ -1536,8 +1576,9 @@ class SubSpace(nn.Module):
     def __init__(self, inputShape, outputShape,
                  flatten=False,
                  objectEncoding=None, activeEncoding=None, whatEncoding=None,
-                 whereEncoding=None, whenEncoding=None,
-                 object=None, what=None, where=None, when=None, activation=None):
+                 whereEncoding=None, whenEncoding=None, wordEncoding=None,
+                 object=None, what=None, where=None, when=None, activation=None,
+                 word=None):
         super().__init__()
         self.inputShape = inputShape    # [nActive, nDim]
         self.outputShape = outputShape  # [nActive, nDim]
@@ -1548,6 +1589,7 @@ class SubSpace(nn.Module):
         self.whatEncoding   = whatEncoding if whatEncoding is not None else WhatEncoding(inputShape, outputShape)
         self.whereEncoding  = whereEncoding if whereEncoding is not None else WhereEncoding(0, 0)
         self.whenEncoding   = whenEncoding if whenEncoding is not None else WhenEncoding(0, 0)
+        self.wordEncoding   = wordEncoding if wordEncoding is not None else WordEncoding()
 
         self.flatten = flatten
         self.nWhere = self.whereEncoding.nDim
@@ -1561,6 +1603,7 @@ class SubSpace(nn.Module):
         self.what   = self._coerce_basis(what, role="what")
         self.where  = self._coerce_basis(where, role="where")
         self.when   = self._coerce_basis(when, role="when")
+        self.word   = word if word is not None else []  # list of (batch, vector, rule) tuples
         self._demuxed = False
         self.batch = 0
         payload = self.materialize()
@@ -1627,18 +1670,29 @@ class SubSpace(nn.Module):
         return basis
 
     def get_vectors(self):
+        """Return the event Basis object.
+
+        To get the dense tensor, use materialize() instead.
+        """
         return self.event
 
-    def set_vectors(self, vectors):
+    def set_vectors(self, vectors, compute_activation=True):
         """Store the current dense vectors (forward output) for materialize().
 
         This is separate from the object's codebook (getW/setW) — for Embedding,
         getW() returns the codebook while set_vectors stores the forward result.
+
+        Args:
+            vectors: dense tensor [B, N, D] to store.
+            compute_activation: if True (default), recompute activation as
+                the norm of each vector. Set to False when the activation
+                has been computed separately (e.g. from a derivation tree).
         """
         if self.event is None:
             self.event = Tensor()
         self.event.setW(vectors)
-        self.set_activation_vectors(vectors)
+        if compute_activation:
+            self.set_activation_vectors(vectors)
 
     # ------------------------------------------------------------------
     # Derived sizes
@@ -1741,11 +1795,27 @@ class SubSpace(nn.Module):
             return None
         return self.activation.getW()
     
-    #def get_activations(self): 
+    #def get_activations(self):
     #    # to store a cross-product activation
     #    return (whatA, whereA, whenA)
 
-    def materialize(self, k=None):
+    # ------------------------------------------------------------------
+    # Word management
+    # ------------------------------------------------------------------
+
+    def set_words(self, words):
+        """Store word list. Each entry is a (batch, vector, rule) tuple."""
+        self.word = list(words)
+
+    def get_words(self):
+        """Return the word list."""
+        return self.word
+
+    def add_word(self, batch, vector, rule):
+        """Append a validated word tuple."""
+        self.word.append(self.wordEncoding.encode(batch, vector, rule))
+
+    def materialize(self, k=None, mode="active"):
         """Return dense tensor of the top-k most active object vectors.
 
         When activations have been set via set_activation(), selects the k
@@ -1753,11 +1823,37 @@ class SubSpace(nn.Module):
 
         Args:
             k: number of vectors to return. If None, returns all vectors.
+            mode: "active" (default) returns object vectors;
+                  "activation" returns the activation tensor [batch, nVectors].
+                  If no activation is stored, computes it from event vectors.
 
         Returns:
-            Tensor [batch, k, dim] of the k highest-activation vectors.
+            Tensor [batch, k, dim] of the k highest-activation vectors (mode="active"),
+            or Tensor [batch, nVectors] of activation values (mode="activation").
             Stores selection indices in self._topk_indices for downstream use.
         """
+        if mode == "activation":
+            activation = self.get_activation()
+            if activation is not None:
+                return activation
+            # Compute from event vectors if not yet stored
+            x = self.event.getW()
+            if x is None and self._demuxed:
+                what_w = self.what.getW()
+                if what_w is not None:
+                    parts = [what_w]
+                    where_w = self.where.getW()
+                    if where_w is not None and where_w.shape[-1] > 0:
+                        parts.append(where_w)
+                    when_w = self.when.getW()
+                    if when_w is not None and when_w.shape[-1] > 0:
+                        parts.append(when_w)
+                    x = torch.cat(parts, dim=-1)
+                    self.event.setW(x)
+            assert x is not None, "Cannot compute activation: no event vectors stored"
+            self.set_activation_vectors(x)
+            return self.get_activation()
+
         x = self.event.getW()
         # Auto-mux: if demuxed, build event from what/where/when components
         if x is None and self._demuxed:
@@ -1788,6 +1884,43 @@ class SubSpace(nn.Module):
         indices_expanded = indices.unsqueeze(-1).expand(-1, -1, x.shape[-1])
         selected = torch.gather(x, -2, indices_expanded)
         return selected
+
+    # ------------------------------------------------------------------
+    # Normalization
+    # ------------------------------------------------------------------
+
+    def normalize(self, kind, x=None):
+        """Normalize a tensor or this subspace's activation in-place.
+
+        When called with an explicit tensor x, returns the normalized tensor.
+        When called without x, materializes the activation vector (if needed),
+        normalizes it, and stores it back via set_activation().
+
+        Args:
+            kind: "percepts" → [0,1] reals (sigmoid),
+                  "concepts" → [-1,1] reals (tanh),
+                  "symbols"  → {0,1} integers (sigmoid + straight-through round).
+            x: tensor to normalize. If None, operates on this subspace's
+               activation vector in-place.
+        """
+        if x is None:
+            x = self.materialize(mode="activation")
+            self.set_activation(self._apply_normalization(kind, x))
+            return
+        return self._apply_normalization(kind, x)
+
+    def _apply_normalization(self, kind, x):
+        """Apply normalization function to tensor x."""
+        if kind == "percepts":
+            return torch.sigmoid(x)
+        elif kind == "concepts":
+            return torch.tanh(x)
+        elif kind == "symbols":
+            soft = torch.sigmoid(x)
+            hard = torch.round(soft)
+            return hard - soft.detach() + soft  # straight-through estimator
+        else:
+            raise ValueError(f"Unknown normalization kind: {kind!r}")
 
     # ------------------------------------------------------------------
     # Encoding helpers
@@ -1953,29 +2086,62 @@ class Space(nn.Module):
         """Convenience accessor — delegates to subspace."""
         return self.subspace.get_vectors()
 
-    def forwardBegin(self, vspace):
-        """Materialize input and optionally flatten for space-specific processing."""
+    def forwardBegin(self, vspace, returnVectors=False):
+        """Prepare input for space-specific processing.
+
+        Args:
+            vspace: input SubSpace.
+            returnVectors: if True, materialize to a dense tensor and
+                optionally flatten. If False, pass the SubSpace through
+                without materializing (for spaces that operate on
+                activation vectors rather than event tensors).
+        """
+        if not returnVectors:
+            self.subspace.batch = vspace.batch
+            return vspace
         x = vspace.materialize()
         self.subspace.batch = x.shape[0]
         if self.subspace.flatten:
             x = x.reshape(x.shape[0], 1, -1)  # [B, N, D] -> [B, 1, N*D]
         return x
 
-    def forwardEnd(self, x):
-        """Optionally unflatten output, store in subspace, return SubSpace."""
+    def forwardEnd(self, x, returnVectors=False):
+        """Finalize output after space-specific processing.
+
+        Args:
+            x: dense tensor (returnVectors=True) or SubSpace (returnVectors=False).
+            returnVectors: if True, unflatten and store tensor into subspace.
+                If False, SubSpace passes through with unflatten if needed.
+                All SubSpace vectors maintain [B, N, D] invariant.
+        """
+        if not returnVectors:
+            # Ensure [B, N, D] invariant even for SubSpace pass-through
+            if self.subspace.flatten:
+                vectors = x.materialize()
+                if vectors is not None and vectors.ndim == 3 and vectors.shape[1] == 1:
+                    self._pre_unflatten_shape = vectors.shape
+                    vectors = self.subspace.objectEncoding._unflatten(
+                        vectors, self.subspace.batch, forward=True)
+                    x.set_vectors(vectors)
+            return x
         if self.subspace.flatten:
             self._pre_unflatten_shape = x.shape  # save for reverseBegin
             x = self.subspace.objectEncoding._unflatten(x, self.subspace.batch, forward=True)
         self.subspace.set_vectors(x)
         return self.subspace
 
-    def reverseBegin(self, vspace):
-        """Materialize output-side tensor for space-specific reverse processing.
+    def reverseBegin(self, vspace, returnVectors=False):
+        """Prepare input for space-specific reverse processing.
 
-        For flatten mode, restores the shape that existed before forwardEnd's
-        unflatten, so the reverse layer sees the same tensor layout as during
-        forward (e.g. invertible PiLayer's interleaved objects are preserved).
+        Args:
+            vspace: input SubSpace.
+            returnVectors: if True, materialize to a dense tensor and
+                handle flatten. If False, pass the SubSpace through
+                without materializing.
         """
+        if not returnVectors:
+            self.subspace.batch = vspace.batch
+            return vspace
         y = vspace.materialize()
         self.subspace.batch = y.shape[0]
         if self.subspace.flatten:
@@ -1986,8 +2152,16 @@ class Space(nn.Module):
                 y = y.reshape(y.shape[0], 1, -1)
         return y
 
-    def reverseEnd(self, y):
-        """Optionally unflatten output, store in subspace, return SubSpace."""
+    def reverseEnd(self, y, returnVectors=False):
+        """Finalize output after space-specific reverse processing.
+
+        Args:
+            y: dense tensor (returnVectors=True) or SubSpace (returnVectors=False).
+            returnVectors: if True, unflatten and store tensor into subspace.
+                If False, pass SubSpace through unchanged.
+        """
+        if not returnVectors:
+            return y
         if self.subspace.flatten:
             y = self.subspace.objectEncoding._unflatten(y, self.subspace.batch, forward=False)
         self.subspace.set_vectors(y)
@@ -2301,7 +2475,7 @@ class InputSpace(Space):
         return masked, list(range(N))
 
     def reverse(self, vspace):
-        y = self.reverseBegin(vspace)
+        y = self.reverseBegin(vspace, returnVectors=True)
         # Store full vector (all subspaces) for MSE loss BEFORE partitioning
         object_basis = self.subspace.get_vectors()
         content_basis = self.subspace.what if isinstance(self.subspace.what, Embedding) else object_basis
@@ -2850,23 +3024,23 @@ class PerceptualSpace(Space):
         """Perception: map input vectors to percepts via PiLayer + optional attention + VQ."""
         if self.passThrough:
             return vspace
-        x = self.forwardBegin(vspace)
+        x = self.forwardBegin(vspace, returnVectors=True)
         if self.hasAttention:
             x = self.attention.forward(x)
         x = self.forwardPi(x)
         if self.quantized:
             x = self.subspace.get_vectors().forward(x)
-        vspace = self.forwardEnd(x)
+        vspace = self.forwardEnd(x, returnVectors=True)
         return vspace
 
     def reverse(self, vspace):
         """Manifesting: reconstruct input vectors from percepts via reverse PiLayer."""
         if self.passThrough:
             return vspace
-        y = self.reverseBegin(vspace)
+        y = self.reverseBegin(vspace, returnVectors=True)
         if self.reversible:
             y = self.reversePi(y)
-        vspace = self.reverseEnd(y)
+        vspace = self.reverseEnd(y, returnVectors=True)
         return vspace
 
     @staticmethod
@@ -3115,28 +3289,29 @@ class ConceptualSpace(Space):
         return x.T @ x
     def forward(self, vspace):
         """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ."""
-        x = self.forwardBegin(vspace)
+        x = self.forwardBegin(vspace, returnVectors=True)
         y = self.forwardSigma(x)
         if self.hasAttention:
             y = self.attention.forward(y)
         if self.quantized:
             y = self.subspace.get_vectors().forward(y)
-        vspace = self.forwardEnd(y)
+        vspace = self.forwardEnd(y, returnVectors=True)
         return vspace
 
     def reverse(self, vspace):
         """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer."""
-        y = self.reverseBegin(vspace)
+        y = self.reverseBegin(vspace, returnVectors=True)
         if self.processSymbols:
             y = self.dereference(y)
         y = self.reverseSigma(y)
         self.concepts = y
-        vspace = self.reverseEnd(y)
+        vspace = self.reverseEnd(y, returnVectors=True)
         return vspace
 
     @staticmethod
     def test():
         pass
+    
 class SymbolicSpace(Space):
     """Converts continuous concept vectors into discrete symbols.
 
@@ -3164,84 +3339,149 @@ class SymbolicSpace(Space):
         super().__init__(inputShape, spaceShape, outputShape, customVQ=True)
         self.conceptualSpace = conceptualSpace
         self.passThrough = passThrough
-        #self.mapping     = TODO(inputShape[1], nDim, soft=False)
-    def distance(self, x, y):
-        return x == y
-    def certainty(self, x):
-        return x.T @ x
-    def discretize(self, symbols):
-        batch = symbols.shape[0]
-        if self.serialActivation:
-            for b in range(0,batch):
-                top, indices = torch.topk(symbols[b,:], k=1)
-                symbols[b,:] = 0
-                symbols[b,indices] = top[indices]
-        elif self.threshold:
-            symbols[symbols > self.threshold] =  1
-            symbols[symbols < self.threshold] = -1
-        return symbols
+        self.codebook = self.subspace.event  # Basis (Codebook) for VQ
+        nConcepts = inputShape[0]   # activation length from previous space
+        nSymbols = spaceShape[0]    # number of symbols = codebook size
+        self.layer = InvertibleLinearLayer(nConcepts, nSymbols)
+        self.layers = nn.ModuleList([self.layer])
+
+    def discretize(self, vspace):
+        """Discretize a subspace's activation vector to {0, 1}.
+
+        Delegates to vspace.normalize("symbols") which materializes
+        the activation (if needed), applies the straight-through
+        estimator, and stores the result back in-place.
+        """
+        vspace.normalize("symbols")
 
     def forward(self, vspace):
-        """Naming: convert concept vectors to discrete symbols."""
-        x = self.forwardBegin(vspace)
-        if not self.passThrough:
-            x = self.discretize(x)
+        """Naming: map concept activations to symbolic activations.
+
+        1. Extract concept activation [B, nConcepts] from input subspace.
+        2. Map through invertible layer to [B, nSymbols].
+        3. Codebook quantizes and produces one-hot activation + dense vectors.
+           Output is a one-hot encoding over the codebook.
+        """
+        if self.passThrough:
+            return vspace
+        vspace = self.forwardBegin(vspace)
+        # Map concept activation → symbol activation
+        act = vspace.materialize(mode="activation")  # [B, nConcepts]
+        act = self.layer.forward(act)                 # [B, nSymbols]
         if self.quantized:
-            x = self.subspace.get_vectors().forward(x)
-        vspace = self.forwardEnd(x)
-        return vspace
+            # Codebook: quantize, topk, populate subspace with vectors + activation
+            act_3d = act.unsqueeze(-1)                # [B, nSymbols, 1] — each symbol is 1-dim
+            self.subspace.set_vectors(act_3d)
+            self.codebook.forward(self.subspace)
+            return self.forwardEnd(self.subspace)
+        else:
+            vspace.set_activation(act)
+            return vspace
 
     def reverse(self, vspace):
-        """Interpretation: map symbols back to concept vectors (via codebook dereference)."""
-        y = self.reverseBegin(vspace)
-        if not self.passThrough:
-            if self.processSymbols:
-                y = self.conceptualSpace.dereference(y)
-        self.symbols = y
-        vspace = self.reverseEnd(y)
-        return vspace
+        """Interpretation: map symbolic activations back to concept space.
+
+        When quantized: inverse layer maps [B, nSymbols] activation back
+        to [B, nConcepts], reconstructing the concept activation.
+        When not quantized: inverse layer maps activation, returns input
+        vspace with updated activation.
+        """
+        if self.passThrough:
+            return vspace
+        vspace = self.reverseBegin(vspace)
+        act = vspace.materialize(mode="activation")
+        act = self.layer.reverse(act)
+        if self.quantized:
+            self.subspace.set_activation(act)
+            return self.reverseEnd(self.subspace)
+        else:
+            vspace.set_activation(act)
+            return vspace
 
     @staticmethod
     def test():
         pass
-class SyntacticSpace(Space):
-    """Placeholder for syntactic processing between symbols and words.
 
-    Currently a passthrough that reshapes symbols without transformation.
-    Used when ``symbolicOrder >= 1`` to add an extra processing stage
-    between the symbolic and output spaces.  Future work would integrate
-    generative grammar operations here.
+class SyntacticSpace(Space):
+    """Generate binary deep structure from active symbols via a learned layer.
+
+    Given N active symbols (from SymbolicSpace's activation or top-k),
+    the forward pass uses a SyntacticLayer to predict grammar rules at
+    each derivation depth.  The derivation is stored as word tuples
+    (batch, vector, rule) on the output subspace.
+
+    The reverse pass delegates to SyntacticLayer.reverse(), which
+    deterministically walks the word tuples and reconstructs the
+    activation vector.
     """
     name  = "Syntactic"
     config_section = "SyntacticSpace"
-    words = None
 
     def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None):
         super().__init__(inputShape, spaceShape, outputShape, customVQ=False)
-        self.processSymbols = True  # class invariant
-        assert(inputShape[0] == outputShape[0]) # 1:1 mapping
+        self.processSymbols = True
         self.conceptualSpace = conceptualSpace
-        #self.mapping     = TODO(inputShape[1], nDim, soft=False)
-    def distance(self, x, y):
-        return x == y
-    def certainty(self, x):
-        return x.T @ x
+
+        # Learnable recursive derivation layer
+        nSymbols = inputShape[0]
+        self.layer = SyntacticLayer(
+            nInput=nSymbols,
+            nOutput=nSymbols,
+            max_depth=max(nSymbols - 1, 1),
+            hidden_dim=min(256, max(64, nSymbols * 4)),
+            grammar=TheGrammar,
+        )
+        self.layers = nn.ModuleList([self.layer])
+
     def forward(self, vspace):
-        x = self.forwardBegin(vspace)
-        # Identity — no transform
-        vspace = self.forwardEnd(x)
+        """Predict derivation rules and build word tuples."""
+        vspace = self.forwardBegin(vspace)
+
+        # Get activation vector for the layer
+        act = vspace.get_activation()
+        if act is None:
+            # All symbols active — build a full activation
+            B = vspace.batch or 1
+            N = vspace.outputShape[0]
+            act = torch.ones(B, N, device=TheDevice.get())
+
+        # Predict rules and build derivation
+        out = self.layer.forward(act)
+        words = out["words"]
+        self.subspace.set_words(words)
+
+        # Pass vectors and activation through unchanged
+        x = vspace.materialize()
+        if x is not None:
+            self.subspace.set_vectors(x)
+        self.subspace.set_activation(act)
+        vspace = self.forwardEnd(self.subspace)
         return vspace
 
     def reverse(self, vspace):
-        """Syntax reverse: passthrough."""
-        y = self.reverseBegin(vspace)
-        self.symbols = y
-        vspace = self.reverseEnd(y)
+        """Decode derivation tree to recover active symbol positions."""
+        vspace = self.reverseBegin(vspace)
+        words = vspace.get_words()
+        nVectors = self.inputShape[0]
+        batch_size = max((b for b, v, r in words), default=0) + 1 if words else 1
+
+        # Deterministic tree-walk via the layer
+        activation = self.layer.reverse(words, nVectors, batch_size)
+        activation = activation.to(TheDevice.get())
+
+        # Pass vectors through without recomputing activation
+        x = vspace.materialize()
+        if x is not None:
+            self.subspace.set_vectors(x, compute_activation=False)
+        self.subspace.set_activation(activation)
+        self.subspace.set_words([])
+        vspace = self.reverseEnd(self.subspace)
         return vspace
 
     @staticmethod
     def test():
         pass
+
 class OutputSpace(Space):
     """Maps symbolic vectors to task targets (classification logits, regression values).
 
@@ -3315,18 +3555,18 @@ class OutputSpace(Space):
         return outputBatch  # already [B, D, 1] and on device after toDevice()
     def forward(self, vspace):
         """Acting: project flattened symbols to task output via LinearLayer."""
-        x = self.forwardBegin(vspace)
+        x = self.forwardBegin(vspace, returnVectors=True)
         output = self.forwardLinear(x)
         if self.quantized:
             output = self.subspace.get_vectors().forward(output)
-        vspace = self.forwardEnd(output)
+        vspace = self.forwardEnd(output, returnVectors=True)
         return vspace
 
     def reverse(self, vspace):
         """Being acted upon: map output back to symbolic space via reverse LinearLayer."""
-        y = self.reverseBegin(vspace)
+        y = self.reverseBegin(vspace, returnVectors=True)
         y = self.reverseLinear(y)
-        vspace = self.reverseEnd(y)
+        vspace = self.reverseEnd(y, returnVectors=True)
         return vspace
 
     def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM'):

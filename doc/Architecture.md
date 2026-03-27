@@ -2,12 +2,12 @@
 
 ## Overview
 
-BasicModel is a bidirectional neural architecture organized as a pipeline of five
+BasicModel is a bidirectional neural architecture organized as a pipeline of six
 **spaces**, each implementing a distinct representational transformation:
 
 ```
-Forward:  InputSpace → PerceptualSpace → ConceptualSpace → SymbolicSpace → OutputSpace
-Reverse:  OutputSpace → SymbolicSpace → ConceptualSpace → PerceptualSpace → InputSpace
+Forward:  InputSpace → PerceptualSpace → ConceptualSpace → SymbolicSpace → SyntacticSpace → OutputSpace
+Reverse:  OutputSpace → SyntacticSpace → SymbolicSpace → ConceptualSpace → PerceptualSpace → InputSpace
 ```
 
 The forward pass transforms raw input into predictions. The reverse pass
@@ -25,8 +25,8 @@ totalLoss = (1 - reconRatio) * outputLoss + reconRatio * reconstructionLoss
 | **InputSpace** | Lifts raw data into working dimensionality | LiftingLayer | nActive, nDim, nVectors |
 | **PerceptualSpace** | Multiplicative feature extraction | PiLayer | nActive, nDim, nVectors, invertible |
 | **ConceptualSpace** | Additive abstraction | SigmaLayer | nActive, nDim, nVectors, invertible |
-| **SymbolicSpace** | Information bottleneck | passThrough or learned | nActive, nVectors, passThrough |
-| **SyntacticSpace** | Syntactic processing | passthrough (future: grammar) | nActive, nDim (wordDim), nVectors (nWords) |
+| **SymbolicSpace** | Discrete activation bottleneck | InvertibleLinearLayer + Codebook | nActive, nVectors, passThrough, quantized |
+| **SyntacticSpace** | Binary derivation tree (CNF grammar) | Grammar + WordEncoding | nActive, nDim, nVectors |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
 Dimensions (`nDim`) are not passed to Space constructors; each subclass reads its
@@ -152,11 +152,16 @@ artifact and are loaded separately. This separation allows:
 
 ---
 
-## Grammar
+## Language System
 
-The 5DG grammar used for English sentence parsing is documented in
-[Grammar.md](../../doc/Grammar.md).  The parser implementation lives in
-`bin/parse.py` and loads its CFG rules from `data/grammar.cfg`.
+The symbolic and syntactic spaces implement a binary deep-structure grammar in
+Chomsky Normal Form. SymbolicSpace maps continuous concept activations to a
+discrete one-hot encoding via an invertible layer and codebook. SyntacticSpace
+generates a derivation tree from the active symbols, stored as word tuples
+`(batch, vector, rule)`.
+
+See [Language.md](Language.md) for the full grammar, word encoding, and open
+implementation questions about differentiable tree structure and rule operations.
 
 ---
 
@@ -220,12 +225,12 @@ W = L @ D_embed @ U
 
 where:
 
-- **L** ∈ ℝ^{nIn×nIn}: unit lower-triangular matrix (diagonal fixed at 1). Stored as
+- $L \in \mathbb{R}^{nIn \times nIn}$: unit lower-triangular matrix (diagonal fixed at 1). Stored as
   `raw_L`; the strict lower triangle is extracted and the diagonal is forced to 1 at
   each forward call.
 - **D**: diagonal vector of length `rank = min(nIn, nOut)`, embedded into a rectangular
   `[nIn, nOut]` matrix `D_embed` by zero-padding.
-- **U** ∈ ℝ^{nOut×nOut}: unit upper-triangular matrix (diagonal fixed at 1). Stored as
+- $U \in \mathbb{R}^{nOut \times nOut}$: unit upper-triangular matrix (diagonal fixed at 1). Stored as
   `raw_U`; the strict upper triangle is extracted symmetrically.
 
 **Exact inverse via triangular solves.**
@@ -272,7 +277,7 @@ clamp on `d_eff` is needed.
 
 ### noise_d
 
-Noise for the diagonal factor is sampled with `|d_i| ∈ [eps, 1]` and random sign, so
+Noise for the diagonal factor is sampled with $|d_i| \in [\text{eps}, 1]$ and random sign, so
 the noise factor is itself always invertible. This ensures that even at full temperature
 (`b=0, t=1`) the effective matrix is still well-conditioned.
 
@@ -280,7 +285,7 @@ the noise factor is itself always invertible. This ensures that even at full tem
 
 | `naive` | Forward path | Reverse path |
 |---------|-------------|-------------|
-| `False` (default) | Apply L, D, U sequentially to x; backprop through each factor separately | Triangular solves: U⁻¹, D⁻¹, L⁻¹ applied in sequence |
+| `False` (default) | Apply L, D, U sequentially to x; backprop through each factor separately | Triangular solves: $U^{-1}$, $D^{-1}$, $L^{-1}$ applied in sequence |
 | `True` | Materialise `W_eff` as a dense matrix; apply `W_eff @ x` | `pinv(W_eff) @ y` |
 
 The `naive=False` path never materialises W_eff as a full matrix, saving memory and

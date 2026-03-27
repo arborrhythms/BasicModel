@@ -157,7 +157,7 @@ def _populate_test_config(*,
             "nVectors": nSymbols,
             "flatten": flatten,
             "passThrough": symbolPassThrough,
-            "quantized": False,
+            "quantized": not symbolPassThrough,
         },
         "SyntacticSpace": {
             "nActive": nWords,
@@ -3084,6 +3084,231 @@ class TestSubspaceActivation(unittest.TestCase):
         self.assertTrue(torch.equal(result2, x))
 
 
+    def test_materialize_activation_mode_with_stored(self):
+        """materialize(mode='activation') returns stored activation."""
+        from Space import SubSpace
+        ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        x = torch.randn(2, 4, 3).to(TheDevice.get())
+        ss.set_vectors(x)
+        # activation was set by set_vectors -> set_activation_vectors
+        result = ss.materialize(mode="activation")
+        expected = torch.norm(x, dim=-1)
+        self.assertTrue(torch.allclose(result, expected))
+
+    def test_materialize_activation_mode_computes_from_event(self):
+        """materialize(mode='activation') computes activation when not stored."""
+        from Space import SubSpace
+        ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        x = torch.randn(2, 4, 3).to(TheDevice.get())
+        # Store event directly without setting activation
+        ss.event.setW(x)
+        ss.activation.setW(None)
+        result = ss.materialize(mode="activation")
+        expected = torch.norm(x, dim=-1)
+        self.assertTrue(torch.allclose(result, expected))
+
+    def test_materialize_activation_mode_no_data_asserts(self):
+        """materialize(mode='activation') asserts when no event vectors exist."""
+        from Space import SubSpace
+        ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        ss.event.setW(None)
+        ss.activation.setW(None)
+        with self.assertRaises(AssertionError):
+            ss.materialize(mode="activation")
+
+    def test_materialize_default_mode_unchanged(self):
+        """materialize() with default mode='active' behaves as before."""
+        from Space import SubSpace
+        ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        x = torch.randn(2, 4, 3).to(TheDevice.get())
+        ss.set_vectors(x)
+        result = ss.materialize()
+        self.assertTrue(torch.equal(result, x))
+
+
+class TestGrammar(unittest.TestCase):
+    """Tests for Grammar and TheGrammar singleton."""
+
+    def test_length(self):
+        from Space import TheGrammar
+        self.assertEqual(len(TheGrammar), 10)
+
+    def test_indexing(self):
+        from Space import TheGrammar
+        self.assertEqual(TheGrammar[0], "S")
+        self.assertEqual(TheGrammar[1], "S → W")
+        self.assertEqual(TheGrammar[9], "S → S EQUALS S")
+
+    def test_arity_leaf(self):
+        from Space import TheGrammar
+        self.assertEqual(TheGrammar.arity(0), 0)  # S — no children
+
+    def test_arity_unary(self):
+        from Space import TheGrammar
+        self.assertEqual(TheGrammar.arity(4), 1)  # NOT S
+        self.assertEqual(TheGrammar.arity(5), 1)  # NON S
+
+    def test_arity_binary(self):
+        from Space import TheGrammar
+        for r in [2, 3, 6, 7, 8, 9]:
+            self.assertEqual(TheGrammar.arity(r), 2, f"rule {r} should be binary")
+
+    def test_arity_word(self):
+        from Space import TheGrammar
+        self.assertEqual(TheGrammar.arity(1), 0)  # S → W — W is not S
+
+
+class TestWordEncoding(unittest.TestCase):
+    """Tests for WordEncoding."""
+
+    def test_encode_decode_roundtrip(self):
+        from Space import WordEncoding
+        we = WordEncoding(nBatch=4, nActive=64)
+        word = we.encode(2, 42, 1)
+        b, v, r = we.decode(word)
+        self.assertEqual((b, v, r), (2, 42, 1))
+
+    def test_encode_validates_rule(self):
+        from Space import WordEncoding
+        we = WordEncoding(nBatch=4, nActive=64)
+        with self.assertRaises(AssertionError):
+            we.encode(0, 0, 99)  # rule out of range
+
+    def test_encode_validates_negative_batch(self):
+        from Space import WordEncoding
+        we = WordEncoding(nBatch=4, nActive=64)
+        with self.assertRaises(AssertionError):
+            we.encode(-1, 0, 0)
+
+    def test_encode_validates_negative_vector(self):
+        from Space import WordEncoding
+        we = WordEncoding(nBatch=4, nActive=64)
+        with self.assertRaises(AssertionError):
+            we.encode(0, -1, 0)
+
+
+class TestSubspaceWords(unittest.TestCase):
+    """Tests for SubSpace word support."""
+
+    def _make_ss(self):
+        from Space import SubSpace
+        return SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+
+    def test_words_default_empty(self):
+        ss = self._make_ss()
+        self.assertEqual(ss.get_words(), [])
+
+    def test_add_word_start_state(self):
+        ss = self._make_ss()
+        ss.add_word(0, 0, 0)
+        self.assertEqual(ss.get_words(), [(0, 0, 0)])
+
+    def test_add_multiple_words(self):
+        ss = self._make_ss()
+        ss.add_word(0, 0, 0)
+        ss.add_word(0, 42, 1)
+        self.assertEqual(ss.get_words(), [(0, 0, 0), (0, 42, 1)])
+
+    def test_set_words(self):
+        ss = self._make_ss()
+        words = [(0, 0, 0), (0, 1, 2), (0, 2, 3)]
+        ss.set_words(words)
+        self.assertEqual(ss.get_words(), words)
+
+    def test_add_word_validates(self):
+        ss = self._make_ss()
+        with self.assertRaises(AssertionError):
+            ss.add_word(0, 0, 99)  # bad rule
+
+
+class TestSyntacticSpaceRoundTrip(unittest.TestCase):
+    """SyntacticSpace.reverse deterministically recovers activation from derivation."""
+
+    def test_forward_reverse_recovers_activation(self):
+        """Pass top-k activation → forward → delete activation → reverse → compare."""
+        _populate_test_config(
+            inputDim=3, perceptDim=3, conceptDim=3, symbolDim=1, wordDim=3,
+            nInput=4, nPercepts=4, nConcepts=20, nSymbols=20, nWords=20, nOutput=10,
+            perceptPassThrough=True, symbolPassThrough=True)
+        from Space import SyntacticSpace, SubSpace
+        nVectors = 20
+        nDim = 3
+        syn = SyntacticSpace([nVectors, nDim], [nVectors, nDim], [nVectors, nDim])
+        # Create input subspace with top-k=7 activation
+        ss = SubSpace(inputShape=[nVectors, nDim], outputShape=[nVectors, nDim])
+        x = torch.randn(2, nVectors, nDim).to(TheDevice.get())
+        ss.set_vectors(x)
+        # Build a sparse activation: 7 active positions per batch
+        act = torch.zeros(2, nVectors, device=TheDevice.get())
+        # Pick 7 random positions per batch
+        for b in range(2):
+            indices = torch.randperm(nVectors)[:7]
+            act[b, indices] = 1.0
+        ss.set_activation(act)
+        original_act = act.clone()
+        # Forward: generates derivation
+        out = syn.forward(ss)
+        # Verify words were produced
+        words = out.get_words()
+        self.assertGreater(len(words), 0)
+        # Delete the activation from the output subspace
+        out.activation.setW(None)
+        self.assertIsNone(out.get_activation())
+        # Reverse: should recover activation from derivation
+        recovered = syn.reverse(out)
+        recovered_act = recovered.get_activation()
+        self.assertIsNotNone(recovered_act)
+        # The nonzero positions should match
+        self.assertTrue(torch.equal(
+            (original_act > 0).float().cpu(),
+            (recovered_act > 0).float().cpu()),
+            "Recovered activation positions don't match original")
+
+
+class TestSubspaceNormalize(unittest.TestCase):
+    """Tests for SubSpace.normalize()."""
+
+    def _make_ss(self):
+        from Space import SubSpace
+        return SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+
+    def test_percepts_range(self):
+        """normalize('percepts', x) produces values in [0, 1] via sigmoid."""
+        ss = self._make_ss()
+        x = torch.randn(2, 4, 3)
+        y = ss.normalize("percepts", x)
+        self.assertTrue(torch.all(y >= 0) and torch.all(y <= 1))
+        self.assertTrue(torch.allclose(y, torch.sigmoid(x)))
+
+    def test_concepts_range(self):
+        """normalize('concepts', x) produces values in [-1, 1] via tanh."""
+        ss = self._make_ss()
+        x = torch.randn(2, 4, 3)
+        y = ss.normalize("concepts", x)
+        self.assertTrue(torch.all(y >= -1) and torch.all(y <= 1))
+        self.assertTrue(torch.allclose(y, torch.tanh(x)))
+
+    def test_symbols_discrete(self):
+        """normalize('symbols', x) produces {0, 1} integers with STE gradients."""
+        ss = self._make_ss()
+        x = torch.randn(2, 4, 3, requires_grad=True)
+        y = ss.normalize("symbols", x)
+        # Output should be exactly 0 or 1
+        self.assertTrue(torch.all((y == 0) | (y == 1)))
+        # Gradients should flow (straight-through estimator)
+        loss = y.sum()
+        loss.backward()
+        self.assertIsNotNone(x.grad)
+        self.assertTrue(torch.all(x.grad != 0))
+
+    def test_invalid_kind_raises(self):
+        """normalize() with unknown kind raises ValueError."""
+        ss = self._make_ss()
+        x = torch.randn(2, 4, 3)
+        with self.assertRaises(ValueError):
+            ss.normalize("bogus", x)
+
+
 class TestSubspaceActivationPipeline(unittest.TestCase):
     """Full pipeline test with useSubspaceActivation=true."""
 
@@ -3257,6 +3482,74 @@ class TestDemuxedBasicModel(unittest.TestCase):
                      model_type="simple")
         self.assertIsInstance(model.inputSpace, DemuxedInputSpace)
         self.assertIsInstance(model.perceptualSpace, ModalSpace)
+
+
+class TestSyntacticLayer(unittest.TestCase):
+    """Tests for SyntacticLayer — learnable derivation stack."""
+
+    def _make_layer(self, nInput=16, max_depth=7, hidden_dim=32):
+        from Model import SyntacticLayer
+        return SyntacticLayer(nInput=nInput, nOutput=nInput,
+                              max_depth=max_depth, hidden_dim=hidden_dim)
+
+    def _dev(self):
+        return TheDevice.get()
+
+    def test_forward_shapes(self):
+        layer = self._make_layer()
+        x = torch.randn(4, 16).to(self._dev())
+        out = layer.forward(x)
+        self.assertEqual(out["rule_logits"].shape, (4, 7, 10))
+        self.assertEqual(out["rule_probs"].shape, (4, 7, 10))
+        self.assertEqual(out["predicted_rules"].shape, (4, 7))
+
+    def test_gradient_flows_through_gumbel(self):
+        layer = self._make_layer(nInput=8, hidden_dim=16)
+        layer.train()
+        x = torch.randn(2, 8, requires_grad=True, device=self._dev())
+        out = layer.forward(x)
+        # Use rule_logits (not probs) — probs.sum()=1 has vanishing gradient
+        loss = out["rule_logits"].pow(2).sum()
+        loss.backward()
+        self.assertIsNotNone(x.grad)
+        self.assertTrue((x.grad.abs() > 0).any())
+
+    def test_eval_uses_softmax(self):
+        layer = self._make_layer(nInput=8, hidden_dim=16)
+        layer.eval()
+        x = torch.randn(2, 8).to(self._dev())
+        out = layer.forward(x)
+        # softmax probs should sum to 1 along rule dim
+        sums = out["rule_probs"].sum(dim=-1)
+        self.assertTrue(torch.allclose(sums, torch.ones_like(sums), atol=1e-5))
+
+    def test_generate_derivation(self):
+        layer = self._make_layer(nInput=8, max_depth=7, hidden_dim=16)
+        # Fabricate predicted rules: all binary (rule 2 = S → S AND S)
+        predicted = torch.full((1, 7), 2, dtype=torch.long)
+        active_pos = [[0, 1, 2, 3, 4]]
+        words = layer._generate_derivation(predicted, active_pos)
+        # 5 active positions → 4 binary + 1 terminal = 5 words
+        self.assertEqual(len(words), 5)
+        # All internal nodes should be binary rule 2, last is terminal rule 1
+        for b, v, r in words[:-1]:
+            self.assertEqual(b, 0)
+            self.assertEqual(r, 2)
+        self.assertEqual(words[-1][2], 1)  # terminal
+
+    def test_shared_weights(self):
+        """Verify the recursive architecture uses shared weights."""
+        layer = self._make_layer(nInput=8, max_depth=12, hidden_dim=16)
+        # Only one derivation_layer and one rule_head (not 12)
+        self.assertIsInstance(layer.derivation_layer, type(layer.input_proj))
+        self.assertIsInstance(layer.rule_head, type(layer.input_proj))
+        # Depth embedding has max_depth entries
+        self.assertEqual(layer.depth_embed.num_embeddings, 12)
+
+    def test_set_tau(self):
+        layer = self._make_layer()
+        layer.set_tau(0.5)
+        self.assertEqual(layer.tau, 0.5)
 
 
 if __name__ == "__main__":

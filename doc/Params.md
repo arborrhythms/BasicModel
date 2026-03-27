@@ -125,7 +125,7 @@ Transforms perceptual features into abstract concepts via Sigma layers (additive
 | `nActive` | int | *required* | Number of active concept vectors (sparse subset). For XOR: 3. |
 | `nDim` | int | `1` | Dimensionality of each concept vector. Set on TheObjectEncoding; not passed to the Space constructor. |
 | `nVectors` | int | `0` | Codebook size (total vectors in the space). |
-| `invertible` | bool | `false` | Use single invertible Sigma layer vs. separate forward/reverse layers (`sigma1`/`sigma2`). When `true`, routes to `SigmaLayer(invertible=True)` which uses `InvertibleLinearLayer` internally for exact inversion via atanh + W⁻¹. |
+| `invertible` | bool | `false` | Use single invertible Sigma layer vs. separate forward/reverse layers (`sigma1`/`sigma2`). When `true`, routes to `SigmaLayer(invertible=True)` which uses `InvertibleLinearLayer` internally for exact inversion via atanh + $W^{-1}$. |
 | `hasAttention` | bool | `false` | Enable attention in conceptual processing. |
 | `hasNorm` | bool | `false` | Enable layer normalization in this space. |
 
@@ -138,29 +138,35 @@ Transforms perceptual features into abstract concepts via Sigma layers (additive
 ## `<SymbolicSpace>`
 
 Discrete symbolic representation — the information bottleneck between perception and output.
+Maps concept activations to a one-hot encoding over a codebook of symbol prototypes.
+See [Language.md](Language.md) for the full design.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `nActive` | int | *required* | Number of active symbols. This is the full count; when reconstruction symbols are enabled, `nOutputSymbols = OutputSpace.nActive` are fed to output, and the rest carry reconstruction information. For XOR: 3 (1 output + 2 reconstruction). |
-| `nDim` | int | `1` | Dimensionality of each symbol (typically 0 — symbols are zero-dimensional). Set on TheObjectEncoding; not passed to the Space constructor. |
-| `nVectors` | int | = `nActive` | Codebook size (total vectors in the space). |
-| `passThrough` | bool | `false` | Pass concepts through as symbols unchanged (no learned transformation). Typically `true` for simple models. |
+| `nActive` | int | *required* | Number of active symbols. When reconstruction symbols are enabled, `nOutputSymbols = OutputSpace.nActive` are fed to output, and the rest carry reconstruction information. |
+| `nDim` | int | `1` | Dimensionality of each symbol (typically 1 — symbols are scalar activations). |
+| `nVectors` | int | = `nActive` | Codebook size. When `quantized=true`, equals the number of symbol prototypes. |
+| `passThrough` | bool | `false` | Pass concepts through as symbols unchanged. Typically `true` for simple models. |
+| `quantized` | bool | `false` | Enable codebook quantization. When `true`, the forward path produces a one-hot activation over codebook entries. Required for the full symbolic pipeline. |
 
-**Layers:** None when `passThrough=true`. The bottleneck effect comes from the dimensionality constraint, not learned weights.
+**Layers:** `InvertibleLinearLayer(nConcepts, nSymbols)` maps between concept and symbol activation spaces. Codebook provides dense vectors when quantized.
 
 ---
 
 ## `<SyntacticSpace>`
 
-Syntactic processing stage between symbols and output. Used when `symbolicOrder >= 1` to add an extra transformation layer. Future work will integrate generative grammar operations here.
+Generates binary derivation trees (deep structure) from active symbols using a
+Chomsky Normal Form grammar. See [Language.md](Language.md) for the grammar and
+open implementation questions.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `nActive` | int | `16` | Number of active word vectors (sparse subset selected in forward pass). |
-| `nDim` | int | `1` | Dimensionality of each word vector (symbolic layer, so typically low-dimensional). Set on TheObjectEncoding as `wordDim`. |
-| `nVectors` | int | = `nActive` | Codebook size (total vectors in the space). Stored on TheObjectEncoding as `nWords`. |
+| `nActive` | int | `16` | Number of active word vectors. |
+| `nDim` | int | `1` | Dimensionality of each word vector. |
+| `nVectors` | int | = `nActive` | Codebook size (total vectors in the space). |
 
-**Layers:** Currently a passthrough that reshapes symbols without transformation.
+**Layers:** No trainable parameters currently. Rule selection is random; derivation
+is stored as word tuples `(batch, vector, rule)` on the output subspace.
 
 ---
 

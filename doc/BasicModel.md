@@ -1,7 +1,5 @@
 # Basic Model
 
-![Basic Model diagram](bm-image1.png)
-
 ***The Basic Model of Cognition is a neural network that consists of four spaces: real space, perceptual space, conceptual space, and symbolic space.***
 
 **Model Entities:**

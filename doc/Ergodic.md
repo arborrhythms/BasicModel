@@ -448,7 +448,7 @@ d_clamped_i = sign(d_i) * clamp(|d_i|, eps, 1)
 d_eff = b · d_clamped + t · noise_d
 ```
 
-The noise factor `noise_d` is sampled with `|noise_d_i| ∈ [eps, 1]` and random sign,
+The noise factor `noise_d` is sampled with magnitude in $[\text{eps}, 1]$ and random sign,
 so it is itself always invertible. Combined, `d_eff` stays bounded away from zero at
 all temperatures without any additional clamp on the blended result.
 

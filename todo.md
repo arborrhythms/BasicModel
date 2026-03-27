@@ -1,7 +1,5 @@
 # TODO
 
-## symbolic processing
-
 ================================== April 1 ==================================
 
 ## Percept and concept vectors

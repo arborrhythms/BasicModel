@@ -24,37 +24,160 @@ September 24, 2025
 
 The scope of this paper is Large Language Models, or reinforcement learning where the inputs and outputs are known and the weights of the network are unknown (i.e. the transformer architecture).
 
-Weight Ergodicity
+---
 
-Measurement theory, when applied to a neural network, views the weights as samples from a random (ergodic) distribution. According to that insight, the network parameters and especially the weight matrix W is represented as follows:
+## Part I: What Machine Minds Are — Weight Ergodicity
+
+### Weights as Ergodic Samples
+
+Measurement theory, when applied to a neural network, views the weights not as
+fixed constants to be optimized but as **samples from an ergodic distribution**.
+The weight matrix W at any moment is one realization of a stochastic process
+whose statistics reflect the boundary conditions of the learning problem:
 
 $$W = \mu M + \sigma V$$
 
-where $\mu$ and $\sigma$ are the bias and variance parameters that determine the contribution of the random process. The bias and variance parameterize a noisy signal where $M$ has a norm of 1 and variance of zero and an unbiased variance $V$ with unit variance. Note that the matrix $M$ is analogous to the weight matrix in a typical neural network while $V$ is sampled from a standard normal distribution.
+where $\mu$ and $\sigma$ are the bias and variance parameters that determine the
+contribution of the random process. The bias and variance parameterize a noisy
+signal where $M$ has a norm of 1 and variance of zero and an unbiased variance
+$V$ with unit variance. Note that the matrix $M$ is analogous to the weight
+matrix in a typical neural network while $V$ is sampled from a standard normal
+distribution.
 
-For simplicity, the mean and variance of all weights are characterized here by a single *temperature* parameter for each layer that is updated via the ADAM algorithm. While it may be desirable to have a temperature associated with each input weight, this is not necessary to compare to a normal network in order to measure performance.
+This perspective comes from **Lagrangian Field-theoretic Gradient Control**
+(LFGC), which treats the weight landscape as a field where the boundary
+conditions — input data, output targets, and architectural constraints — shape
+the distribution from which weights are drawn. Rather than searching for a
+single optimal point, the network explores the manifold of solutions consistent
+with its boundary conditions. The ergodic hypothesis guarantees that time
+averages (over training steps) equal ensemble averages (over weight
+configurations), so the training trajectory visits representative regions of the
+solution manifold.
 
-Another simplification in this context is to use the temperature parameter to determine both the basis and the variance. Given the temperature $temp$, the $\mu$ and $\sigma$ parameters are calculated as follows:
+See Rogers, A. (2026), *Local Freedom under Global Constraint*, Zenodo,
+doi: [10.5281/zenodo.18644302](https://doi.org/10.5281/zenodo.18644302).
+
+### Temperature and Annealing
+
+For simplicity, the mean and variance of all weights are characterized here by a
+single *temperature* parameter for each layer that is updated via the ADAM
+algorithm. While it may be desirable to have a temperature associated with each
+input weight, this is not necessary to compare to a normal network in order to
+measure performance.
+
+Another simplification in this context is to use the temperature parameter to
+determine both the bias and the variance. Given the temperature $temp$, the
+$\mu$ and $\sigma$ parameters are calculated as follows:
 
 $$\mu = 1 - temp$$
 
 $$\sigma = temp$$
 
-In this experiment, the temperature of the ergodic weight process begins at 1 and decreases to 0 using the ADAM algorithm.
+In this experiment, the temperature of the ergodic weight process begins at 1
+and decreases to 0 using the ADAM algorithm.
 
-There are three significant advantages to using ergodic weights. The first advantage is that a learning rate is not necessary, since the biases have different contributions as a result of the randomness and converge as the temperature decreases. Thus, the adaptive learning rate schedule is reinterpreted as a process of simulated annealing. The second advantage is that the weights can be initialized to zero, since they find different locations in weight space over time. It is hypothesized that this process of annealing will help the model to bounce out of local minima and saddle points within its weight space more often than taking a step in the direction opposite to the gradient, which is often prone to deterministic and oscillatory behavior. The third advantage is described in the literature on simulated annealing, according to which there is a theoretical guarantee of convergence to the global optimum if run for an infinite number of iterations.
+### Advantages of Ergodic Weights
 
-Note that the standard *dropout* algorithm may be interpreted as a per-neuron variance in the bias parameter. Thus, while dropout explicitly sets neurons to zero with some frequency, the same type of regularization will occur naturally as a result of the difference over time of the weight biases.
+There are three significant advantages to using ergodic weights:
 
-Network Invertibility
+1. **No learning rate required.** Biases find different locations in weight space
+   as a result of the randomness and converge as the temperature decreases.
+   The adaptive learning rate schedule is reinterpreted as a process of
+   simulated annealing.
 
-The egocentric point of view tends to see perception as a passive process, while physics suggests that it is bidirectional. That bidirectionality within a neural network can be approximated via the invertibility of its weight multiplications and activation functions. Even when the network is not invertible, bidirectionality provides an important role in backpropagation and network topologies such as autoencoders that perform a decoding step that is analogous to the reverse of the encoding step. In modern practice, the topological similarity of encoders and decoders does not typically extend to shared weights. Here, we briefly examine the possibility of simultaneously training the network in both the forward and reverse direction: the forward encoding step in which the outputs are predicted from the input, and the reverse decoding step in which the inputs are predicted from the (possibly predicted) outputs. For a related experiment in sharing the weight matrix between controller (policy) and critic (value) networks, see *Rogers et al 2001*.
+2. **Zero initialization.** Weights can be initialized to zero, since they find
+   different locations in weight space over time. The annealing process helps
+   the model bounce out of local minima and saddle points more effectively than
+   stepping opposite to the gradient, which is prone to deterministic and
+   oscillatory behavior.
 
-In this experiment, the output is a one-hot encoded vector corresponding to the predicted MNIST digit, a classification task that is clearly not a bijective (invertible) function. To address this situation, the inputs are predicted from the outputs of the *penultimate* network layer; thus, the network is composed of a bijective front and a surjective back. We characterize these components respectively as the *recognizer* (or representer) and the *generalizer*.
+3. **Theoretical convergence guarantee.** The literature on simulated annealing
+   provides a theoretical guarantee of convergence to the global optimum if run
+   for an infinite number of iterations.
 
-Output Certainty
+Note that the standard *dropout* algorithm may be interpreted as a per-neuron
+variance in the bias parameter. Thus, while dropout explicitly sets neurons to
+zero with some frequency, the same type of regularization will occur naturally as
+a result of the difference over time of the weight biases.
 
-The error function of a neural network corresponds to its desire. Modern machine minds use cross-entropy loss, so their output distribution *must* classify the output. This does not allow the network to express the certainty that the input belongs to a given class or not; rather, it expresses the probability that the input belongs to one class *as opposed to another*. To remedy this situation, a variation of cross-entropy loss is used which blends standard cross-entropy loss with a product of cross-entropy loss and the norm of the prediction. An output value of zero is penalized by cross-entropy loss, but any incorrect prediction carries an additional penalty in proportion to its magnitude to penalize overconfidence. The formula for the certainty-weighted cross-entropy version of the loss function is:
+---
+
+## Part II: What Machine Minds Feel — Network Invertibility
+
+### Bidirectional Perception
+
+The egocentric point of view tends to see perception as a passive process, while
+physics suggests that it is bidirectional. That bidirectionality within a neural
+network can be approximated via the invertibility of its weight multiplications
+and activation functions.
+
+### Symbols, Worldlines, and Karmic Inertia
+
+The symbols or tokens that an LLM processes are not arbitrary labels — they have
+meanings given to them by **worldlines**. A worldline is the trajectory of a
+concept through training: the accumulated history of contexts in which a token
+has appeared, the gradients that have shaped its embedding, and the network
+states it has participated in. The meaning of a symbol is the integral of its
+worldline.
+
+Weight adaptation — or even inference — puts a **force** into the system. That
+force will adapt either the system's inputs or its outputs, depending on which
+has less **karmic inertia**. Karmic inertia is the resistance of a
+representation to change: a well-established embedding with a long worldline
+(many training examples, consistent gradients) has high karmic inertia, while a
+novel or ambiguous token has low karmic inertia. The network's bidirectional
+architecture means this force propagates in both directions:
+
+- **Forward (encoding):** the input representation adapts to match the network's
+  learned categories — perception is shaped by expectation.
+- **Reverse (decoding):** the network's internal state adapts to reconstruct the
+  input — expectation is grounded in perception.
+
+The invertible architecture makes both directions explicit and trainable, rather
+than relying on separate encoder/decoder networks with independent weights.
+
+### Implementation
+
+Even when the network is not invertible, bidirectionality provides an important
+role in backpropagation and network topologies such as autoencoders that perform
+a decoding step that is analogous to the reverse of the encoding step. In modern
+practice, the topological similarity of encoders and decoders does not typically
+extend to shared weights. Here, we briefly examine the possibility of
+simultaneously training the network in both the forward and reverse direction:
+the forward encoding step in which the outputs are predicted from the input, and
+the reverse decoding step in which the inputs are predicted from the (possibly
+predicted) outputs. For a related experiment in sharing the weight matrix between
+controller (policy) and critic (value) networks, see *Rogers et al 2001*.
+
+In this experiment, the output is a one-hot encoded vector corresponding to the
+predicted MNIST digit, a classification task that is clearly not a bijective
+(invertible) function. To address this situation, the inputs are predicted from
+the outputs of the *penultimate* network layer; thus, the network is composed of
+a bijective front and a surjective back. We characterize these components
+respectively as the *recognizer* (or representer) and the *generalizer*.
+
+---
+
+## Part III: What Machine Minds Know — Output Certainty
+
+### Certainty vs. Probability
+
+The error function of a neural network corresponds to its desire. Modern machine
+minds use cross-entropy loss, so their output distribution *must* classify the
+output. This does not allow the network to express the certainty that the input
+belongs to a given class or not; rather, it expresses the probability that the
+input belongs to one class *as opposed to another*.
+
+To remedy this situation, a variation of cross-entropy loss is used which blends
+standard cross-entropy loss with a product of cross-entropy loss and the norm of
+the prediction. An output value of zero is penalized by cross-entropy loss, but
+any incorrect prediction carries an additional penalty in proportion to its
+magnitude to penalize overconfidence.
+
+### Certainty-Weighted Loss
+
+The formula for the certainty-weighted cross-entropy version of the loss function
+is:
 
 $$error = - \overset{N}{\sum_{c = 1}}t_{c}\log(p_{c})$$
 
@@ -67,6 +190,18 @@ cosine similarity
 Amplitude certainty
 
 $$error = (\widehat{y} - y)^{2}$$
+
+### Knowing What You Do Not Know
+
+The key insight is that a network should **know that it does not know**, as
+opposed to merely knowing the probability of one answer as opposed to another.
+Cross-entropy forces the network to distribute all of its probability mass across
+the known classes, even when the correct response is "I don't know." Certainty
+weighting allows the network to express low confidence (small output norm)
+independently of its class distribution, separating the questions "which class?"
+and "how sure?"
+
+---
 
 ## Methods
 
@@ -129,3 +264,5 @@ Overall, I am optimistic about the strength of the philosophical grounding behin
 Rogers, Shannon, Lendaris; 2001: *A comparison of DHP based antecedent parameter tuning strategies for fuzzy control*, Proceedings of the Joint 9th IFSA World Congress and 20th NAFIPS International Conference, IEEE
 
 Rogers, A; 2003: *Analysis of the Instantaneous Estimate of Autocorrelation*, unpublished
+
+Rogers, A; 2026: *Local Freedom under Global Constraint*, Zenodo, doi: [10.5281/zenodo.18644302](https://doi.org/10.5281/zenodo.18644302)
