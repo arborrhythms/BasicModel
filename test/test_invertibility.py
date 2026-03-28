@@ -442,12 +442,16 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
                            passThrough=False, hasAttention=True,
                            invertible=False, hasNorm=False,
                            symbolPassThrough=False):
-    """Configure TheXMLConfig for isolated Space tests."""
+    """Configure TheXMLConfig for isolated Space tests.
+
+    Overlays test-specific values on top of model.xml defaults so that
+    keys like 'normalize', 'syntax', etc. are always present.
+    """
     nWhere = objSize // 2 if objSize > 0 else 0
     nWhen = objSize - nWhere if objSize > 0 else 0
     nObjects = nObj * 6  # 6 spaces, each with nObj vectors
-    # Populate config (test equivalent of XML loading)
-    TheXMLConfig._data.update({
+    # Deep-merge test overrides onto existing defaults
+    overrides = {
         "architecture": {
             "reconstruct": reconstruct,
             "ergodic": ergodic,
@@ -462,7 +466,12 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
         "SymbolicSpace":   {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "passThrough": symbolPassThrough, "quantized": False},
         "SyntacticSpace":  {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "quantized": False},
         "OutputSpace":     {"nDim": outputDim,  "nVectors": nObj, "nActive": nObj, "nWhere": 0, "nWhen": 0, "flatten": True, "quantized": False, "invertible": False},
-    })
+    }
+    for section, vals in overrides.items():
+        if section in TheXMLConfig._data and isinstance(TheXMLConfig._data[section], dict):
+            TheXMLConfig._data[section].update(vals)
+        else:
+            TheXMLConfig._data[section] = vals
 
 
 class TestPerceptualSpacePassthrough(unittest.TestCase):

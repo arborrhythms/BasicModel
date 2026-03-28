@@ -38,8 +38,10 @@ from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
 from Model import Grammar, Layer, PiLayer, NewPiLayer, SigmaLayer # Import custom layers from Model.py
-from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, OldSyntacticLayer, SyntacticLayer
+from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, VerbLayer, OldSyntacticLayer, SyntacticLayer
 from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
+
+ENCODING_TARGETS = ("activation", "what", "where", "when", "event", "all")
 
 class Encoding(nn.Module):
     """Abstract base class for per-slot encodings in the embedding vector.
@@ -1886,41 +1888,227 @@ class SubSpace(nn.Module):
         return selected
 
     # ------------------------------------------------------------------
+    # Encoding target selection
+    # ------------------------------------------------------------------
+
+    def select(self, target="event"):
+        """Return the tensor for the named encoding target.
+
+        Args:
+            target: one of ENCODING_TARGETS — "activation", "what", "where",
+                    "when", "event", or "all".
+
+        Returns:
+            Tensor for the requested encoding, or a dict of {target: tensor}
+            when target="all" (skipping empty encodings).
+        """
+        assert target in ENCODING_TARGETS, f"Unknown target {target!r}, expected one of {ENCODING_TARGETS}"
+
+        if target == "activation":
+            return self.materialize(mode="activation")
+
+        if target == "all":
+            result = {}
+            for t in ("activation", "what", "where", "when", "event"):
+                v = self.select(t)
+                if v is not None and v.numel() > 0:
+                    result[t] = v
+            return result
+
+        if target == "event":
+            return self.materialize()
+
+        # Demuxed mode: read from independent factor tensors
+        if self._demuxed:
+            if target == "what":
+                return self.what.getW()
+            elif target == "where":
+                return self.where.getW()
+            elif target == "when":
+                return self.when.getW()
+
+        # Muxed mode: slice from event tensor
+        event = self.materialize()
+        if event is None:
+            return None
+        if target == "what":
+            return event[:, :, :self.nWhat]
+        elif target == "where":
+            if self.nWhere == 0:
+                return None
+            return event[:, :, self.nWhat:self.nWhat + self.nWhere]
+        elif target == "when":
+            if self.nWhen == 0:
+                return None
+            return event[:, :, self.nWhat + self.nWhere:]
+        return None
+
+    def put(self, target, tensor):
+        """Write a tensor back to the named encoding target.
+
+        Args:
+            target: one of "activation", "what", "where", "when", "event".
+            tensor: the tensor to store.
+        """
+        assert target in ENCODING_TARGETS and target != "all", \
+            f"Cannot put to target {target!r}"
+
+        if target == "activation":
+            self.set_activation(tensor)
+            return
+
+        if target == "event":
+            self.set_vectors(tensor)
+            return
+
+        # Demuxed mode: write to independent factor tensors
+        if self._demuxed:
+            if target == "what":
+                self.what.setW(tensor)
+            elif target == "where":
+                self.where.setW(tensor)
+            elif target == "when":
+                self.when.setW(tensor)
+            return
+
+        # Muxed mode: write into the event tensor slice
+        event = self.materialize()
+        if event is None:
+            return
+        if target == "what":
+            event[:, :, :self.nWhat] = tensor
+        elif target == "where" and self.nWhere > 0:
+            event[:, :, self.nWhat:self.nWhat + self.nWhere] = tensor
+        elif target == "when" and self.nWhen > 0:
+            event[:, :, self.nWhat + self.nWhere:] = tensor
+        self.set_vectors(event, compute_activation=False)
+
+    # ------------------------------------------------------------------
     # Normalization
     # ------------------------------------------------------------------
 
-    def normalize(self, kind, x=None):
-        """Normalize a tensor or this subspace's activation in-place.
+    def normalize(self, kind, target="activation", x=None):
+        """Normalize a tensor or an encoding of this subspace in-place.
 
-        When called with an explicit tensor x, returns the normalized tensor.
-        When called without x, materializes the activation vector (if needed),
-        normalizes it, and stores it back via set_activation().
+        Uses the encoding target enum to select which part of the subspace
+        to normalize, and the kind to select the transfer function.
+
+        Backwards compatible: normalize(kind, tensor) still works — if
+        target is a tensor, it is treated as the x argument.
+
+        Geometry-aware:
+          - "percepts" on vectors → sigmoid + clamp [0,1] (hypercube)
+          - "percepts" on activation → sigmoid [0,1]
+          - "concepts" on vectors → L2 unit-norm (hypersphere)
+          - "concepts" on activation → tanh [-1,1]
+          - "symbols" → STE round {0,1} (activation only)
+          - "input" on vectors → L2 unit-norm (scale raw data)
 
         Args:
-            kind: "percepts" → [0,1] reals (sigmoid),
-                  "concepts" → [-1,1] reals (tanh),
-                  "symbols"  → {0,1} integers (sigmoid + straight-through round).
-            x: tensor to normalize. If None, operates on this subspace's
-               activation vector in-place.
+            kind: "percepts", "concepts", "symbols", or "input".
+            target: encoding target — "activation", "what", "where",
+                    "when", "event", or "all". Default "activation"
+                    for backwards compatibility.
+            x: explicit tensor to normalize. If provided, returns the
+               normalized tensor without modifying the subspace.
         """
-        if x is None:
-            x = self.materialize(mode="activation")
-            self.set_activation(self._apply_normalization(kind, x))
+        # Backwards compat: normalize(kind, tensor) — tensor passed as target
+        if isinstance(target, torch.Tensor):
+            x = target
+            target = "activation"
+        if x is not None:
+            return self._apply_normalization(kind, x, target=target)
+        x = self.select(target)
+        if x is None or x.numel() == 0:
             return
-        return self._apply_normalization(kind, x)
+        normalized = self._apply_normalization(kind, x, target=target)
+        self.put(target, normalized)
 
-    def _apply_normalization(self, kind, x):
-        """Apply normalization function to tensor x."""
+    def _apply_normalization(self, kind, x, target="activation"):
+        """Apply normalization function to tensor x.
+
+        The combination of kind and target determines the geometry:
+          - Perceptual vectors live on a hypercube [0,1]^d (sigmoid + clamp).
+          - Conceptual vectors live on a hypersphere S^(d-1) (L2 unit-norm).
+          - Activations use scalar transfer functions (sigmoid/tanh/STE).
+        """
+        is_vector = target in ("what", "where", "when", "event")
         if kind == "percepts":
+            if is_vector:
+                return torch.sigmoid(x).clamp(0, 1)  # hypercube
             return torch.sigmoid(x)
         elif kind == "concepts":
+            if is_vector:
+                return F.normalize(x, p=2, dim=-1)  # hypersphere
             return torch.tanh(x)
         elif kind == "symbols":
             soft = torch.sigmoid(x)
             hard = torch.round(soft)
             return hard - soft.detach() + soft  # straight-through estimator
+        elif kind == "input":
+            if is_vector:
+                return F.normalize(x, p=2, dim=-1)
+            return x
         else:
             raise ValueError(f"Unknown normalization kind: {kind!r}")
+
+    # ------------------------------------------------------------------
+    # Luminosity
+    # ------------------------------------------------------------------
+
+    def luminosity(self, x=None, target="what", reduce="batch"):
+        """Measure contrast (signal energy) as MSE against zero.
+
+        For activations in [-1, 1], luminosity ranges [0, 1].
+        A zero vector has luminosity 0 (nothing); a fully saturated
+        vector has luminosity ~1 (everything).
+
+        Args:
+            x: tensor to measure. If None, uses self.select(target).
+            target: encoding target to measure.
+            reduce: "batch" → mean over objects → [B] (default),
+                    "vector" → per-object → [B, N].
+
+        Returns:
+            Tensor of luminosity values.
+        """
+        if x is None:
+            x = self.select(target)
+        if x is None or x.numel() == 0:
+            return torch.tensor(0.0, device=TheDevice.get())
+        mse = (x ** 2).mean(dim=-1)
+        if reduce == "batch" and mse.ndim > 1:
+            return mse.mean(dim=-1)  # [B]
+        return mse  # [B, N] or scalar
+
+    def luminosity_match(self, x1, x2, target="what", reduce="batch"):
+        """Measure truth: the magnitude of agreement between two signals.
+
+        Agreement at each dimension is the smaller magnitude when signs
+        match (both confirm at least that much).  When signs disagree,
+        agreement is zero — the representations contradict.
+
+        The MSE of the agreement vector gives the luminosity of truth
+        between the two signals.
+
+        Args:
+            x1, x2: tensors to compare (same shape).
+            target: encoding target (for documentation; tensors are
+                    passed explicitly).
+            reduce: "batch" → [B], "vector" → [B, N].
+
+        Returns:
+            Tensor of truth-luminosity values.
+        """
+        agreement = torch.where(
+            x1 * x2 >= 0,
+            torch.min(x1.abs(), x2.abs()),
+            torch.zeros_like(x1),
+        )
+        mse = (agreement ** 2).mean(dim=-1)
+        if reduce == "batch" and mse.ndim > 1:
+            return mse.mean(dim=-1)
+        return mse
 
     # ------------------------------------------------------------------
     # Encoding helpers
@@ -2006,14 +2194,9 @@ class Space(nn.Module):
         self.reversible   = str(TheXMLConfig.get("architecture.reconstruct")).upper() != "NONE"
         self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
         self.quantized    = TheXMLConfig.space(section, "quantized")
-        try:
-            _nWhere = TheXMLConfig.space(section, "nWhere")
-        except KeyError:
-            _nWhere = 0
-        try:
-            _nWhen = TheXMLConfig.space(section, "nWhen")
-        except KeyError:
-            _nWhen = 0
+        _nWhere = TheXMLConfig.space(section, "nWhere")
+        _nWhen = TheXMLConfig.space(section, "nWhen")
+        self._normalize = TheXMLConfig.space(section, "normalize")
         self.nWhere = _nWhere
         self.nWhen = _nWhen
         self.nWhat = self.nDim
@@ -2903,6 +3086,11 @@ class DemuxedInputSpace(InputSpace):
         # Store muxed tensor for compatibility with code that reads self.input
         self.input = self.forwarding_subspace.materialize()
 
+        # Normalize what-content vectors (where/when are already unit-circle encoded)
+        if self._normalize:
+            self.forwarding_subspace.normalize("input", target="what")
+            self.input = self.forwarding_subspace.materialize()
+
         object_basis.setW(self.input)
         if isinstance(lexical_basis, Embedding):
             lexical_basis.setW(self.input)
@@ -2974,9 +3162,11 @@ class PerceptualSpace(Space):
             self.params = self.pi.getParameters()
             self.layers = nn.ModuleList([self.pi])
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
-        # Per-space syntactic layer for perceptual grammar rules (11: terminal)
+        # Per-space syntactic layer for perceptual grammar rules (13: terminal)
+        self.syntactic_layer = None
+        syntax = TheXMLConfig.get("architecture.syntax", False)
         nPerceptSlots = outputShape[0]
-        if not passThrough:
+        if syntax and not passThrough:
             self.syntactic_layer = SyntacticLayer(
                 nInput=nPerceptSlots, nOutput=nPerceptSlots,
                 rules=TheGrammar.perceptual(),
@@ -2986,8 +3176,6 @@ class PerceptualSpace(Space):
                 grammar=TheGrammar,
             )
             self.layers.append(self.syntactic_layer)
-        else:
-            self.syntactic_layer = None
 
     def _register_requirements(self):
         """Register PerceptualSpace-specific config requirements."""
@@ -3030,6 +3218,32 @@ class PerceptualSpace(Space):
                     f"PerceptualSpace: non-quantized requires nVectors ({nV}) == nOutput ({nA})"
                 )
 
+    def everything(self, target="what"):
+        """The universal whole — vertex (1,1,...,1) of the perceptual hypercube.
+
+        Valid only in perceptual space where vectors are sigmoid-normalized
+        to [0,1]^d and mereological operations (min/max) apply.
+
+        Args:
+            target: encoding target — "what", "event", or "activation".
+        """
+        dim = {"what": self.nDim, "event": self.muxedSize,
+               "activation": self.outputShape[0]}[target]
+        return torch.ones(dim, device=TheDevice.get())
+
+    def nothing(self, target="what"):
+        """The empty set — origin (0,0,...,0) of the perceptual hypercube.
+
+        Valid only in perceptual space where vectors are sigmoid-normalized
+        to [0,1]^d and mereological operations (min/max) apply.
+
+        Args:
+            target: encoding target — "what", "event", or "activation".
+        """
+        dim = {"what": self.nDim, "event": self.muxedSize,
+               "activation": self.outputShape[0]}[target]
+        return torch.zeros(dim, device=TheDevice.get())
+
     def distance(self, x, y):
         return torch.prod( [1-x, 1-y] )
     def certainty(self, x):
@@ -3045,6 +3259,9 @@ class PerceptualSpace(Space):
         if self.quantized:
             x = self.subspace.get_vectors().forward(x)
         vspace = self.forwardEnd(x, returnVectors=True)
+        if self._normalize and not self.reversible:
+            vspace.normalize("percepts", target="what")       # hypercube [0,1]^d
+            vspace.normalize("percepts", target="activation")  # sigmoid [0,1]
         return vspace
 
     def reverse(self, vspace):
@@ -3318,17 +3535,26 @@ class ConceptualSpace(Space):
             self.forwardSigma = self.sigma.forward
             self.params = self.sigma.getParameters()
             self.layers = nn.ModuleList([self.sigma])
-        # Per-space syntactic layer for conceptual grammar rules (7-9, transition 10)
-        nConceptSlots = outputShape[0]
-        self.syntactic_layer = SyntacticLayer(
-            nInput=nConceptSlots, nOutput=nConceptSlots,
-            rules=TheGrammar.conceptual(),
-            transition_rule=10,
-            max_depth=max(nConceptSlots - 1, 1),
-            hidden_dim=min(256, max(64, nConceptSlots * 4)),
-            grammar=TheGrammar,
-        )
-        self.layers.append(self.syntactic_layer)
+        # Per-space syntactic layer for conceptual grammar rules (7-11, transition 12)
+        self.syntactic_layer = None
+        self.verb_layer = None
+        syntax = TheXMLConfig.get("architecture.syntax", False)
+        if syntax:
+            nConceptSlots = outputShape[0]
+            self.syntactic_layer = SyntacticLayer(
+                nInput=nConceptSlots, nOutput=nConceptSlots,
+                rules=TheGrammar.conceptual(),
+                transition_rule=12,
+                max_depth=max(nConceptSlots - 1, 1),
+                hidden_dim=min(256, max(64, nConceptSlots * 4)),
+                grammar=TheGrammar,
+            )
+            self.layers.append(self.syntactic_layer)
+            # VERB layer: codebook of verb weight matrices for S→C VERB C / S→C VERB
+            nConceptDim = self.nDim  # per-vector content dimension
+            nVerbs = 16
+            self.verb_layer = VerbLayer(nVerbs, nConceptDim)
+            self.layers.append(self.verb_layer)
 
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
@@ -3348,6 +3574,9 @@ class ConceptualSpace(Space):
         if self.quantized:
             y = self.subspace.get_vectors().forward(y)
         vspace = self.forwardEnd(y, returnVectors=True)
+        if self._normalize and not self.reversible:
+            vspace.normalize("concepts", target="what")       # hypersphere S^(d-1)
+            vspace.normalize("concepts", target="activation")  # tanh [-1,1]
         return vspace
 
     def reverse(self, vspace):
@@ -3363,18 +3592,33 @@ class ConceptualSpace(Space):
     def projectConcepts(self, rule_id, left, right=None):
         """Execute a conceptual grammar rule on [B, N, D] embedded vectors.
 
-        Conceptual rules are mereological: they compose or decompose regions
-        in the continuous concept embedding space.
+        Conceptual rules are mereological (PART, UNION, INTERSECTION) or
+        verb-based (VERB). VERB rules use a codebook of learned weight
+        matrices selected by soft embedding similarity.
 
         Args:
-            rule_id: global Grammar rule ID (7-9).
+            rule_id: global Grammar rule ID (7-11).
             left:    [B, N, D] left child vectors.
-            right:   [B, N, D] right child vectors (None for terminal).
+            right:   [B, N, D] right child vectors (None for unary/intransitive).
 
         Returns:
             [B, N, D] parent vectors.
         """
         rule_name = TheGrammar[rule_id]
+
+        if "VERB" in rule_name and self.verb_layer is not None:
+            B, N, D = left.shape
+            # Use activation-weighted centroid as proxy VERB embedding for
+            # codebook lookup. Future: thread explicit VERB token identity
+            # through the derivation for precise lookup.
+            vp_query = left.mean(dim=1)  # [B, D]
+            if right is not None:
+                # Transitive: C1 VERB C2
+                C1_out, C2_out = self.verb_layer.forward_transitive(left, right, vp_query)
+                return C1_out  # composeSyntax accumulator receives updated C1
+            else:
+                # Intransitive: C1 VERB
+                return self.verb_layer.forward_reflexive(left, vp_query)
 
         if "PART" in rule_name:
             # Parthood: the part is the region where left fits within right.
@@ -3407,6 +3651,8 @@ class ConceptualSpace(Space):
             dict with keys from syntactic_layer.forward() plus:
                 composed: [B, N, D] vectors after soft-weighted tree composition.
         """
+        if self.syntactic_layer is None:
+            return {"composed": vectors, "words": []}
         out = self.syntactic_layer.forward(activation)
         rule_probs = out["rule_probs"]
         all_rules = self.syntactic_layer.all_rules
@@ -3493,22 +3739,26 @@ class SymbolicSpace(Space):
         nConcepts = inputShape[0]   # activation length from previous space
         nSymbols = spaceShape[0]    # number of symbols = codebook size
         self.layer = InvertibleLinearLayer(nConcepts, nSymbols)
-        # Per-space syntactic layer for symbolic grammar rules (1-5, transition 6)
-        self.syntactic_layer = SyntacticLayer(
-            nInput=nSymbols, nOutput=nSymbols,
-            rules=TheGrammar.symbolic(),
-            transition_rule=6,
-            max_depth=max(nSymbols - 1, 1),
-            hidden_dim=min(256, max(64, nSymbols * 4)),
-            grammar=TheGrammar,
-        )
-        # EQUALS projection: cross-symbol associative memory (Hopfield-like)
-        # Learns which symbols are associated with which other symbols
-        self.equals_layer = AssociationLayer(nSymbols, nSymbols, type="symmetric")
-        # NON dampening factor
+        self.syntactic_layer = None
+        self.equals_layer = None
         self.non_alpha = nn.Parameter(torch.tensor(0.5))
-        self.layers = nn.ModuleList([self.layer, self.syntactic_layer,
-                                      self.equals_layer])
+        syntax = TheXMLConfig.get("architecture.syntax", False)
+        if syntax:
+            # Per-space syntactic layer for symbolic grammar rules (1-5, transition 6)
+            self.syntactic_layer = SyntacticLayer(
+                nInput=nSymbols, nOutput=nSymbols,
+                rules=TheGrammar.symbolic(),
+                transition_rule=6,
+                max_depth=max(nSymbols - 1, 1),
+                hidden_dim=min(256, max(64, nSymbols * 4)),
+                grammar=TheGrammar,
+            )
+            # EQUALS projection: cross-symbol associative memory (Hopfield-like)
+            self.equals_layer = AssociationLayer(nSymbols, nSymbols, type="symmetric")
+            self.layers = nn.ModuleList([self.layer, self.syntactic_layer,
+                                          self.equals_layer])
+        else:
+            self.layers = nn.ModuleList([self.layer])
 
     def projectSymbols(self, rule_id, left, right=None):
         """Execute a symbolic grammar rule on [B, N] activation vectors.
@@ -3526,7 +3776,7 @@ class SymbolicSpace(Space):
         """
         rule_name = TheGrammar[rule_id]
 
-        if "EQUALS" in rule_name:
+        if "EQUALS" in rule_name and self.equals_layer is not None:
             # Cross-symbol association via Hopfield-like associative memory.
             # The AssociationLayer learns which symbols are associated with
             # which: when symbol A equals symbol B, they retrieve each other.
@@ -3565,6 +3815,8 @@ class SymbolicSpace(Space):
             dict with keys from syntactic_layer.forward() plus:
                 composed: [B, N] activation after soft-weighted tree composition.
         """
+        if self.syntactic_layer is None:
+            return {"composed": activation, "words": []}
         out = self.syntactic_layer.forward(activation)
         rule_probs = out["rule_probs"]      # [B, max_depth, num_rules_local]
         all_rules = self.syntactic_layer.all_rules
@@ -3623,7 +3875,7 @@ class SymbolicSpace(Space):
         the activation (if needed), applies the straight-through
         estimator, and stores the result back in-place.
         """
-        vspace.normalize("symbols")
+        vspace.normalize("symbols", target="activation")
 
     def forward(self, vspace):
         """Naming: map concept activations to symbolic activations.

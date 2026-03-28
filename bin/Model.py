@@ -259,9 +259,8 @@ class LinearLayer(ErgodicLayer):
     @staticmethod
     def test():
         nInput, nOutput = 3, 4
-        W = torch.rand(nInput, nOutput)
-        layer = LinearLayer(nInput=nInput, nOutput=nOutput, W = W)
-        input = torch.rand((1, nInput))
+        layer = LinearLayer(nInput=nInput, nOutput=nOutput)
+        input = torch.rand((1, nInput), device=TheDevice.get())
         output = layer(input)
 
         print(f"Input: {input}")
@@ -609,7 +608,7 @@ class InvertibleLinearLayer(ErgodicLayer):
         layer3 = InvertibleLinearLayer(nInput=5, nOutput=5, hasBias=False)
         layer3.set_sigma(0)
         W = layer3.compute_W(); W_inv = layer3.compute_Winverse()
-        id_err = torch.norm(W @ W_inv - torch.eye(5))
+        id_err = torch.norm(W @ W_inv - torch.eye(5, device=W.device))
         assert id_err < 1e-4, f"W@W_inv identity err: {id_err:.2e}"
         print(f"InvertibleLinearLayer W@W_inv identity: err={id_err:.2e} OK")
 
@@ -717,7 +716,7 @@ class SigmaLayer(Layer):
         nInput, nOutput = 3, 4
         layer = SigmaLayer(nInput=nInput, nOutput=nOutput)
 
-        x = torch.randn((2, 5, nInput))
+        x = torch.randn((2, 5, nInput), device=TheDevice.get())
         layer.set_sigma(0.999)
 
         criterion = nn.MSELoss()
@@ -731,13 +730,13 @@ class SigmaLayer(Layer):
 
         nInput, nOutput = 5, 7
         layer = SigmaLayer(nInput=nInput, nOutput=nOutput, naive=False, invertible=True)
-        x = torch.randn((2, 5, nInput))
+        x = torch.randn((2, 5, nInput), device=TheDevice.get())
         layer.set_sigma(0.0)
         y = layer.forward(x)
         y_inv = layer.reverse(y)
         assert torch.norm(x - y_inv) < 0.00001
         layer = SigmaLayer(nInput=nInput, nOutput=nOutput, naive=True, invertible=True)
-        x = torch.randn((4, 8, nInput))
+        x = torch.randn((4, 8, nInput), device=TheDevice.get())
         layer.set_sigma(0.0)
         y = layer.forward(x)
         assert y.shape == (4, 8, nOutput), "Incorrect Size"
@@ -1001,8 +1000,8 @@ class PiLayer(Layer):
             layer = NewPiLayer(**kw)
             device = next(layer.parameters()).device
             nI = kw['nInput']
-            inputs = [('3D [B,S,nIn]', torch.randn(16, 5, nI, device=device)),
-                      ('2D [B,nIn]',   torch.randn(16, nI,    device=device))]
+            inputs = [('3D [B,S,nIn]', torch.rand(16, 5, nI, device=device).clamp(min=epsilon)),
+                      ('2D [B,nIn]',   torch.rand(16, nI,    device=device).clamp(min=epsilon))]
             for tag, x in inputs:
                 layer.set_sigma(0.0)
                 y = layer.forward(x)
@@ -1025,8 +1024,8 @@ class PiLayer(Layer):
     @staticmethod
     def xorTest():
         X = torch.tensor(
-            [[0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32).unsqueeze(2)
-        Y = torch.tensor([[0], [1], [1], [0]], dtype=torch.float32).unsqueeze(2)
+            [[0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32, device=TheDevice.get())
+        Y = torch.tensor([[0], [1], [1], [0]], dtype=torch.float32, device=TheDevice.get())
         nInput, nHidden, nOutput = 2, 3, 1
         pi    = NewPiLayer(nInput, nHidden)
         sigma = SigmaLayer(nHidden, nOutput)
@@ -1110,7 +1109,7 @@ class DecisionBoundaryLayer(Layer):
     def test():
         import matplotlib.pyplot as plt
         n_points = 100
-        data = torch.randn(n_points, 2)
+        data = torch.randn(n_points, 2, device=TheDevice.get())
         data[:, 0] *= 1.5
 
         layer = DecisionBoundaryLayer(nInput=2, nOutput=1, learning_rate=0.01)
@@ -1122,7 +1121,7 @@ class DecisionBoundaryLayer(Layer):
         w = layer.weight.detach().cpu().numpy()
         w_neg = -w
 
-        data_np = data.numpy()
+        data_np = data.cpu().numpy()
         plt.figure(figsize=(8, 6))
         plt.scatter(data_np[:, 0], data_np[:, 1], label="Data", alpha=0.6)
 
@@ -1478,6 +1477,128 @@ class AssociationLayer(Layer):
         x = torch.randn(2, 6, device=TheDevice.get())
         y = layer(x)
         assert y.shape == (2, 4), f"nIn!=nOut: expected (2,4), got {y.shape}"
+
+class VerbLayer(Layer):
+    """Codebook of verb weight matrices for conceptual composition.
+
+    Each VERB in the codebook is a learned [D, D] weight matrix that
+    transforms concept vectors bidirectionally (invertible linear map).
+    VERB selection is soft: cosine similarity between a query embedding
+    and learned codebook keys produces blending weights.
+
+    Transitive (S → C VERB C):
+        VP_eff @ C1 → attention added to C2 (forward)
+        VP_eff^T @ C2 → attention added to C1 (backward)
+
+    Intransitive (S → C VERB):
+        VP_eff @ C1 → self-attention added to C1
+
+    # Future: VP → VERB C prepositional phrases would modify the
+    # VERB's attention matrix before application. The prepositional
+    # object C would gate or bias the VP weight matrix, changing
+    # the verb's semantics contextually. Deferred.
+    """
+    def __init__(self, nVerbs, nDim, ergodic=False):
+        super().__init__(nDim, nDim)
+        self.nVerbs = nVerbs
+        self.nDim = nDim
+        # Codebook keys for soft VERB selection [nVerbs, nDim]
+        self.keys = nn.Parameter(torch.randn(nVerbs, nDim))
+        # VERB weight matrices — stack of [nDim, nDim] (initialized near-identity)
+        self.vp_weights = nn.ParameterList([
+            nn.Parameter(torch.eye(nDim) + 0.01 * torch.randn(nDim, nDim))
+            for _ in range(nVerbs)
+        ])
+
+    def _select_vp(self, query):
+        """Soft-select a blended VERB matrix via cosine similarity.
+
+        Args:
+            query: [B, D] embedding vector for VERB selection.
+        Returns:
+            [B, D, D] blended VERB weight matrix.
+        """
+        sim = F.cosine_similarity(
+            query.unsqueeze(1),           # [B, 1, D]
+            self.keys.unsqueeze(0),       # [1, V, D]
+            dim=-1
+        )                                 # [B, V]
+        weights = F.softmax(sim * 10.0, dim=-1)  # sharp selection
+        vp_stack = torch.stack(list(self.vp_weights))  # [V, D, D]
+        vp_eff = torch.einsum('bv, vij -> bij', weights, vp_stack)  # [B, D, D]
+        return vp_eff
+
+    def forward_transitive(self, C1, C2, vp_query):
+        """Transitive VERB: C1 VERB C2.
+
+        VP_eff @ C1 → attention added to C2 (forward)
+        VP_eff^T @ C2 → attention added to C1 (backward)
+
+        Args:
+            C1: [B, N, D] subject concepts.
+            C2: [B, N, D] object concepts.
+            vp_query: [B, D] VERB embedding for codebook lookup.
+        Returns:
+            (C1', C2') updated concept tensors.
+        """
+        vp_eff = self._select_vp(vp_query)              # [B, D, D]
+        fwd = torch.bmm(C1, vp_eff)                     # [B, N, D]
+        bwd = torch.bmm(C2, vp_eff.transpose(1, 2))     # [B, N, D]
+        return C1 + bwd, C2 + fwd
+
+    def forward_reflexive(self, C1, vp_query):
+        """Intransitive VERB: C1 VERB (self-application).
+
+        Applies VERB as self-attention on C1, producing the post-VERB state.
+        Replaces C1 in-place for this iteration.
+
+        # NOTE: In a stateful model, this produces a state-of-affairs at T2
+        # which is distinct from the T1 input. The temporal distinction is
+        # significant for learning over sequences of events but is not
+        # represented in the current single-timestamp encoding.
+
+        Args:
+            C1: [B, N, D] concept vectors.
+            vp_query: [B, D] VERB embedding for codebook lookup.
+        Returns:
+            C1': [B, N, D] self-attended concept vectors.
+        """
+        vp_eff = self._select_vp(vp_query)              # [B, D, D]
+        attended = torch.bmm(C1, vp_eff)                 # [B, N, D]
+        return C1 + attended
+
+    @staticmethod
+    def test():
+        device = TheDevice.get()
+        B, N, D, V = 4, 8, 16, 6
+        layer = VerbLayer(nVerbs=V, nDim=D)
+
+        C1 = torch.randn(B, N, D, device=device)
+        C2 = torch.randn(B, N, D, device=device)
+        query = torch.randn(B, D, device=device)
+
+        # Soft selection shape
+        vp = layer._select_vp(query)
+        assert vp.shape == (B, D, D), f"select shape: {vp.shape}"
+
+        # Transitive
+        C1_out, C2_out = layer.forward_transitive(C1, C2, query)
+        assert C1_out.shape == (B, N, D), f"transitive C1: {C1_out.shape}"
+        assert C2_out.shape == (B, N, D), f"transitive C2: {C2_out.shape}"
+
+        # Reflexive
+        C1_refl = layer.forward_reflexive(C1, query)
+        assert C1_refl.shape == (B, N, D), f"reflexive: {C1_refl.shape}"
+
+        # Gradient flow
+        C1_grad = C1.clone().requires_grad_(True)
+        q_grad = query.clone().requires_grad_(True)
+        out = layer.forward_reflexive(C1_grad, q_grad)
+        out.sum().backward()
+        assert C1_grad.grad is not None, "no gradient on C1"
+        assert q_grad.grad is not None, "no gradient on query"
+
+        print("VerbLayer tests passed.")
 
 #endregion
 
@@ -2071,11 +2192,13 @@ class Grammar:
         "S → NOT S",               # 4 — unary
         "S → NON S",               # 5 — unary
         "S → C",                   # 6
-        "C → C PART C",            # 7
-        "C → C UNION C",           # 8
-        "C → C INTERSECTION C",    # 9
-        "C → P",                   # 10
-        "P → W",                   # 11 — word terminal
+        "S → C VERB C",            # 7  — transitive verb
+        "S → C VERB",              # 8  — intransitive verb
+        "C → C PART C",            # 9
+        "C → C UNION C",           # 10
+        "C → C INTERSECTION C",    # 11
+        "C → P",                   # 12
+        "P → W",                   # 13 — word terminal
     ]
 
     def __len__(self):
@@ -2087,15 +2210,15 @@ class Grammar:
     def arity(self, rule_id):
         """Number of nonterminal children for a rule (0, 1, or 2).
 
-        Counts occurrences of the LHS nonterminal (S, C, or P) on the RHS.
+        Counts occurrences of any nonterminal (S, C, P) on the RHS.
         """
         prod = self.rules[rule_id]
         if "→" not in prod:
             return 0  # bare start symbol
         lhs, rhs = prod.split("→", 1)
-        nt = lhs.strip()
+        nonterminals = {"S", "C", "P"}
         rhs_tokens = rhs.split()
-        return sum(1 for t in rhs_tokens if t == nt)
+        return sum(1 for t in rhs_tokens if t in nonterminals)
 
     def binary_rules(self):
         """Return list of rule IDs with arity 2."""
@@ -2106,12 +2229,12 @@ class Grammar:
         return [1,2,3,4,5]
 
     def conceptual(self):
-        """Rules associated with conceptual operations: W, AND, OR, NOT, PART."""
-        return [7,8,9]
+        """Rules associated with conceptual operations: VERB, PART, UNION, INTERSECTION."""
+        return [7, 8, 9, 10, 11]
 
     def perceptual(self):
-        """Rules associated with perceptual operations: NON, UNION, INTERSECTION, EQUALS."""
-        return [11]
+        """Rules associated with perceptual operations: word terminal."""
+        return [13]
 
 class OldSyntacticLayer(Layer):
     """Recursive derivation stack that learns grammar rule distributions.
@@ -2277,7 +2400,7 @@ class OldSyntacticLayer(Layer):
         Returns:
             activation: [batch_size, nVectors] tensor with 1.0 at active positions.
         """
-        activation = torch.zeros(batch_size, nVectors)
+        activation = torch.zeros(batch_size, nVectors, device=TheDevice.get())
         for b, v, r in words:
             activation[b, v] = 1.0
         return activation
@@ -2454,7 +2577,7 @@ class SyntacticLayer(Layer):
 
     def reverse(self, words, nVectors, batch_size):
         """Decode derivation to recover the activation vector."""
-        activation = torch.zeros(batch_size, nVectors)
+        activation = torch.zeros(batch_size, nVectors, device=TheDevice.get())
         for b, v, r in words:
             activation[b, v] = 1.0
         return activation
@@ -2468,6 +2591,7 @@ class SyntacticLayer(Layer):
 
 class LogicLayer(Layer):
 
+    @staticmethod
     def _pairwise_sq_dists(X: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
         """
         X: (B, N, D)
@@ -2481,6 +2605,7 @@ class LogicLayer(Layer):
         d2 = x2 + y2 - 2.0 * xy
         return d2.clamp_min(0.0)
 
+    @staticmethod
     def _expand_sigma(
         sigma: Optional[torch.Tensor | float],
         B: int,
@@ -2514,6 +2639,7 @@ class LogicLayer(Layer):
 
         raise ValueError("sigma must be None, scalar, shape (N,), or shape (B,N)")
 
+    @staticmethod
     def kernel_overlap(
         X: torch.Tensor,
         Y: torch.Tensor,
@@ -2541,13 +2667,14 @@ class LogicLayer(Layer):
         B, N, D = X.shape
         M = Y.shape[1]
 
-        sx = _expand_sigma(sigma_x, B, N, X.device, X.dtype)   # (B, N)
-        sy = _expand_sigma(sigma_y, B, M, Y.device, Y.dtype)   # (B, M)
+        sx = LogicLayer._expand_sigma(sigma_x, B, N, X.device, X.dtype)   # (B, N)
+        sy = LogicLayer._expand_sigma(sigma_y, B, M, Y.device, Y.dtype)   # (B, M)
 
-        d2 = _pairwise_sq_dists(X, Y)                          # (B, N, M)
+        d2 = LogicLayer._pairwise_sq_dists(X, Y)                          # (B, N, M)
         denom = 2.0 * (sx.unsqueeze(2).square() + sy.unsqueeze(1).square()) + eps
         return torch.exp(-d2 / denom)
 
+    @staticmethod
     def union(X: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
         """
         Mereological union as set concatenation.
@@ -2564,6 +2691,7 @@ class LogicLayer(Layer):
             raise ValueError("Batch size and feature dimension must match")
         return torch.cat([X, Y], dim=1)
 
+    @staticmethod
     def intersection(
         X: torch.Tensor,
         Y: torch.Tensor,
@@ -2599,11 +2727,11 @@ class LogicLayer(Layer):
         B, N, D = X.shape
         M = Y.shape[1]
 
-        sx = _expand_sigma(sigma_x, B, N, X.device, X.dtype)   # (B, N)
-        sy = _expand_sigma(sigma_y, B, M, Y.device, Y.dtype)   # (B, M)
+        sx = LogicLayer._expand_sigma(sigma_x, B, N, X.device, X.dtype)   # (B, N)
+        sy = LogicLayer._expand_sigma(sigma_y, B, M, Y.device, Y.dtype)   # (B, M)
 
         # Pairwise overlap weights
-        Kxy = kernel_overlap(X, Y, sx, sy, eps=eps)            # (B, N, M)
+        Kxy = LogicLayer.kernel_overlap(X, Y, sx, sy, eps=eps)            # (B, N, M)
 
         # Precision-weighted midpoint
         px = 1.0 / (sx.square().unsqueeze(2) + eps)            # (B, N, 1)
@@ -2635,6 +2763,7 @@ class LogicLayer(Layer):
 
         return Z, W
 
+    @staticmethod
     def part(
         X: torch.Tensor,
         Y: torch.Tensor,
@@ -2674,7 +2803,7 @@ class LogicLayer(Layer):
         B, N, D = X.shape
         M = Y.shape[1]
 
-        Kxy = kernel_overlap(X, Y, sigma_x=sigma_x, sigma_y=sigma_y, eps=eps)  # (B,N,M)
+        Kxy = LogicLayer.kernel_overlap(X, Y, sigma_x=sigma_x, sigma_y=sigma_y, eps=eps)  # (B,N,M)
         Kyx = Kxy.transpose(1, 2)                                               # (B,M,N)
 
         cover_xy = Kxy.max(dim=2).values                                        # (B,N)
@@ -2703,6 +2832,7 @@ class LogicLayer(Layer):
 
         return out
 
+    @staticmethod
     def neg(X: torch.Tensor) -> torch.Tensor:
         """
         Affirming negation on the hypersphere:
@@ -2714,6 +2844,7 @@ class LogicLayer(Layer):
         """
         return -X
 
+    @staticmethod
     def non(X: torch.Tensor, alpha: float = 0.0) -> torch.Tensor:
         """
         Non-affirming negation:
@@ -2730,6 +2861,7 @@ class LogicLayer(Layer):
             raise ValueError("alpha must be in [0, 1]")
         return alpha * X
 
+    @staticmethod
     def symbolize(X: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
         """
         Symbolize a set of vectors by mean norm.
@@ -2743,6 +2875,7 @@ class LogicLayer(Layer):
         return s.clamp(-1.0, 1.0)
 
 
+    @staticmethod
     def scalar_neg(a: torch.Tensor) -> torch.Tensor:
         """
         Affirming negation on [-1,1].
@@ -2750,6 +2883,7 @@ class LogicLayer(Layer):
         return -a
 
 
+    @staticmethod
     def scalar_non(a: torch.Tensor, alpha: float = 0.0) -> torch.Tensor:
         """
         Non-affirming negation: contraction toward zero.
@@ -2758,6 +2892,7 @@ class LogicLayer(Layer):
         return (alpha * a).clamp(-1.0, 1.0)
 
 
+    @staticmethod
     def scalar_union(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
         """
         Symbolic union on [-1,1].
@@ -2765,6 +2900,7 @@ class LogicLayer(Layer):
         return torch.maximum(a, b)
 
 
+    @staticmethod
     def scalar_intersection(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
         """
         Symbolic intersection on [-1,1].
@@ -2772,6 +2908,7 @@ class LogicLayer(Layer):
         return torch.minimum(a, b)
 
 
+    @staticmethod
     def scalar_part(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
         """
         Signed symbolic parthood/order score on [-1,1].
@@ -2785,10 +2922,10 @@ class LogicLayer(Layer):
     @staticmethod
     def test():
         B, N, M, D = 4, 16, 20, 32
-        X = torch.randn(B, N, D, device="gpu")
-        Y = torch.randn(B, M, D, device="gpu")
+        X = torch.randn(B, N, D, device=TheDevice.get())
+        Y = torch.randn(B, M, D, device=TheDevice.get())
 
-        LL = LogicLayer()
+        LL = LogicLayer(N, M)
         U = LL.union(X, Y)                    # (B, N+M, D)
         Z, W = LL.intersection(X, Y, topk=32) # Z: (B, 32, D), W: (B, 32)
         P = LL.part(X, Y)                     # (B, 2)

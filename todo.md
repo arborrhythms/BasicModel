@@ -1,19 +1,14 @@
 # TODO
 
-================================== April 1 ==================================
+* Implement parthood, union, intersection on the membedded vectors
 
-## Percept and concept vectors
-* make a policy for vector norms
-* vectors that learn positions and vectors that learn boundaries
-* make sure concepts and percepts both quantize nicely
+* Verify() : map TruthSets to ConceptualSpace (top-down reasoning). 
+A given sentence can be measured against a corpus of truth by measuring the osel after apoha of the TruthSet
 
-## Implement input-energy reduction in MentalModel
-* implement "Truth is accurately characterizing what exists"
-
-## Ethics
-* implemment symmetry (the golden rule)
-* implemment isomorphism
-* map TruthSets to SyntacticSpace (top-down reasoning)
+* Universalize() : implement universality (the golden rule) by measuring osel after round-robin projection of the given action
+Next we need to determine some measure of harm or destructiveness osel(x)
+Finally if K(X,Y) + K(Y,X) leads to less osel(X’)+osel(Y’) than osel over the original X and Y, then the kronecker in question is not universalize, and thus not ethical.
+Osel(x) is the weak spot in this architecture, the rest is math. One way to describe it is through subjective measure; another might be to describe its “perceptive volume”. If we follow Augustine is saying that all percepts are good, then any increase in volume is better. That does capture growth and destruction as being relatively good and  bad for the things in question.
 
 ================================== April 10 ==================================
 

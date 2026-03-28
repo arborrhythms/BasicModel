@@ -107,7 +107,9 @@ def _populate_test_config(*,
     _objectSize = nWhere + nWhen
     _nObjects = nInput + nPercepts + nConcepts + nSymbols + nWords + nOutput
     _symbol_dim = conceptDim if symbolPassThrough else symbolDim
-    TheXMLConfig._data.update({
+    # Deep-merge test overrides onto model.xml defaults so that keys like
+    # 'normalize', 'syntax', etc. are always present.
+    _overrides = {
         "architecture": {
             "reconstruct": reconstruct,
             "ergodic": ergodic,
@@ -188,7 +190,12 @@ def _populate_test_config(*,
             "wherePassThrough": True,
             "whenPassThrough": True,
         },
-    })
+    }
+    for section, vals in _overrides.items():
+        if section in TheXMLConfig._data and isinstance(TheXMLConfig._data[section], dict):
+            TheXMLConfig._data[section].update(vals)
+        else:
+            TheXMLConfig._data[section] = vals
 
 
 # ---------------------------------------------------------------------------
@@ -3131,14 +3138,16 @@ class TestGrammar(unittest.TestCase):
 
     def test_length(self):
         from Space import TheGrammar
-        self.assertEqual(len(TheGrammar), 12)
+        self.assertEqual(len(TheGrammar), 14)
 
     def test_indexing(self):
         from Space import TheGrammar
         self.assertEqual(TheGrammar[0], "S")
         self.assertEqual(TheGrammar[1], "S → S EQUALS S")
         self.assertEqual(TheGrammar[6], "S → C")
-        self.assertEqual(TheGrammar[11], "P → W")
+        self.assertEqual(TheGrammar[7], "S → C VERB C")
+        self.assertEqual(TheGrammar[8], "S → C VERB")
+        self.assertEqual(TheGrammar[13], "P → W")
 
     def test_arity_start(self):
         from Space import TheGrammar
@@ -3148,26 +3157,27 @@ class TestGrammar(unittest.TestCase):
         from Space import TheGrammar
         self.assertEqual(TheGrammar.arity(4), 1)  # NOT S
         self.assertEqual(TheGrammar.arity(5), 1)  # NON S
+        self.assertEqual(TheGrammar.arity(8), 1)  # S → C VERB (one C)
 
     def test_arity_binary(self):
         from Space import TheGrammar
-        for r in [1, 2, 3, 7, 8, 9]:
+        for r in [1, 2, 3, 7, 9, 10]:
             self.assertEqual(TheGrammar.arity(r), 2, f"rule {r} should be binary")
 
     def test_arity_transition(self):
         from Space import TheGrammar
-        self.assertEqual(TheGrammar.arity(6), 0)   # S → C �� transition (C is not S)
-        self.assertEqual(TheGrammar.arity(10), 0)  # C → P — transition (P is not C)
+        self.assertEqual(TheGrammar.arity(6), 1)   # S → C �� transition (C is not S)
+        self.assertEqual(TheGrammar.arity(12), 1)  # C → P — transition (P is not C)
 
     def test_arity_terminal(self):
         from Space import TheGrammar
-        self.assertEqual(TheGrammar.arity(11), 0)  # P → W — terminal
+        self.assertEqual(TheGrammar.arity(13), 0)  # P → W — terminal
 
     def test_space_partitions(self):
         from Space import TheGrammar
         self.assertEqual(TheGrammar.symbolic(), [1, 2, 3, 4, 5])
-        self.assertEqual(TheGrammar.conceptual(), [7, 8, 9])
-        self.assertEqual(TheGrammar.perceptual(), [11])
+        self.assertEqual(TheGrammar.conceptual(), [7, 8, 9, 10, 11])
+        self.assertEqual(TheGrammar.perceptual(), [13])
 
 
 class TestWordEncoding(unittest.TestCase):
@@ -3511,8 +3521,8 @@ class TestOldSyntacticLayer(unittest.TestCase):
         layer = self._make_layer()
         x = torch.randn(4, 16).to(self._dev())
         out = layer.forward(x)
-        self.assertEqual(out["rule_logits"].shape, (4, 7, 12))
-        self.assertEqual(out["rule_probs"].shape, (4, 7, 12))
+        self.assertEqual(out["rule_logits"].shape, (4, 7, 14))
+        self.assertEqual(out["rule_probs"].shape, (4, 7, 14))
         self.assertEqual(out["predicted_rules"].shape, (4, 7))
 
     def test_gradient_flows_through_gumbel(self):
@@ -3569,8 +3579,8 @@ class TestSyntacticLayer(unittest.TestCase):
         g = Grammar()
         return SyntacticLayer(
             nInput=nInput, nOutput=nInput,
-            rules=g.conceptual(),     # [7, 8, 9]
-            transition_rule=10,
+            rules=g.conceptual(),     # [7, 8, 9, 10, 11]
+            transition_rule=12,
             max_depth=max_depth,
             hidden_dim=hidden_dim,
             grammar=g,
@@ -3604,15 +3614,15 @@ class TestSyntacticLayer(unittest.TestCase):
         layer = self._make_conceptual_layer()
         x = torch.randn(2, 8).to(self._dev())
         out = layer.forward(x)
-        # conceptual rules [7,8,9] + transition 10 = 4 local rules
-        self.assertEqual(out["rule_logits"].shape, (2, 7, 4))
+        # conceptual rules [7,8,9,10,11] + transition 12 = 6 local rules
+        self.assertEqual(out["rule_logits"].shape, (2, 7, 6))
         self.assertNotIn("composed_activation", out)
 
     def test_perceptual_forward_shapes(self):
         layer = self._make_perceptual_layer()
         x = torch.randn(2, 8).to(self._dev())
         out = layer.forward(x)
-        # perceptual rules [11] = 1 local rule
+        # perceptual rules [13] = 1 local rule
         self.assertEqual(out["rule_logits"].shape, (2, 7, 1))
 
     # ── Space projection operation tests ─────────────────────────

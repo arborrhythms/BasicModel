@@ -234,6 +234,8 @@ class Report:
             return torch.zeros(1)  # no classification report for masked prediction
         model.set_sigma(0)  # suppress exploration for evaluation
         _, _, y_pred, last_x_pred = model.runEpoch(split="test")
+        if not isinstance(y_pred, torch.Tensor) or y_pred.numel() == 0:
+            return torch.zeros(1)
         if y_pred.dim() == 1 or y_pred.shape[-1] == 1:
             predicted = (y_pred.squeeze() > 0.5).long()
             actual = (model.outputSpace.getTestOutput().squeeze() > 0.5).long()

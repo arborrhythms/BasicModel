@@ -647,7 +647,10 @@ class XMLConfig:
 
 
 # The canonical config for this process.
-TheXMLConfig = XMLConfig()
+# Always load model.xml defaults so that Space constructors can read
+# config keys even when create_from_config() hasn't been called yet.
+_defaults_xml = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "model.xml")
+TheXMLConfig = XMLConfig(defaults_path=_defaults_xml if os.path.exists(_defaults_xml) else None)
 
 
 def init_config(path=None, defaults_path=None):

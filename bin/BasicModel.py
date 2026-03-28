@@ -465,6 +465,9 @@ class BaseModel(nn.Module):
         test_input, test_output = self.inputSpace.getTestData()
         _, _, allOut, _ = self.runEpoch(batchSize=len(test_input), split="test")
 
+        if not isinstance(allOut, torch.Tensor) or allOut.numel() == 0:
+            return  # no predictions to report
+
         rows = []
         # Use reconstruct_data() for lex-based models (embedding vectors, not bytes)
         use_lex_recon = (self.inputSpace.model_type == "embedding" and
@@ -598,6 +601,7 @@ class BasicModel(BaseModel):
         self.ergodic          = TheXMLConfig.get("architecture.ergodic")
         self.processSymbols   = TheXMLConfig.get("architecture.processSymbols")
         self.certainty        = TheXMLConfig.get("architecture.certainty")
+        self.syntax           = TheXMLConfig.get("architecture.syntax", False)
         self.lexer            = TheXMLConfig.space("InputSpace", "lexer")
         self.quantized        = TheXMLConfig.space("InputSpace", "quantized")
         self.perceptQuantized = TheXMLConfig.space("PerceptualSpace", "quantized")
@@ -1040,7 +1044,8 @@ class BasicModel(BaseModel):
             inputData = inputData.to(TheDevice.get())
         input, concepts, symbols = self.Start(inputData)
         # Run per-space syntactic derivation (grammar rules on activations)
-        self.SyntacticDerivation()
+        if self.syntax:
+            self.SyntacticDerivation()
         # Higher-order subsymbolic cycles (conceptualOrder extra passes)
         for n in range(1,self.conceptualOrder):
             NA, symbols1 = self.SubsymbolicThought(concepts)
@@ -1131,6 +1136,10 @@ class BasicModel(BaseModel):
                 # Masked prediction: report loss only (no classification accuracy)
                 accuracy += [0.0]
                 print(f"Test Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
+            elif not isinstance(allOut, torch.Tensor) or allOut.numel() == 0:
+                # No output predictions (empty dataset or no batches)
+                accuracy += [0.0]
+                print(f"Test Loss: output={outErr:.4f}, reconstruction={inErr:.4f} (no predictions)")
             elif allOut.dim() == 1:
                 predicted = (allOut > 0.5).long()
                 actual = (self.outputSpace.getTestOutput().squeeze() > 0.5).long()
