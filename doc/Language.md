@@ -2,66 +2,69 @@
 
 ## Overview
 
-The language system spans two spaces in the pipeline — **SymbolicSpace** and
-**SyntacticSpace** — together with a grammar (`TheGrammar`) and a word encoding
-(`WordEncoding`) that represent binary deep structure as derivation trees.
+The language system is distributed across three cognitive spaces, each with its
+own grammar rules and projection operations.  A **SyntacticLayer** at each space
+predicts rule distributions via Gumbel-softmax, then the space's **projection
+method** executes all candidate rules in soft superposition, weighted by those
+probabilities.
 
 ```
-ConceptualSpace  →  SymbolicSpace  →  SyntacticSpace  →  OutputSpace
-  [B, nConcepts]    [B, nSymbols]    [B, nSymbols] +      [B, nOutput]
-  activation         activation       word list
-                     + codebook       (derivation tree)
+PerceptualSpace  →  ConceptualSpace  →  SymbolicSpace  →  OutputSpace
+  rule 11 (P→W)     rules 7-9 (C)        rules 1-5 (S)
+  terminal           mereological         logical
+  [B, N, D] vectors  [B, N, D] vectors    [B, N] activations
 ```
 
-The key insight: **symbols are discrete, one-dimensional entities**. They carry
-no content vectors ("what") of their own. Instead, the activation pattern over
-a set of symbols *is* the representation, and the codebook provides a bridge
-back to dense vectors when downstream spaces require them.
+The grammar is hierarchical: symbolic rules (S-level) compose first, then
+transition via $S \to C$ to conceptual rules, then via $C \to P$ to the
+perceptual terminal.
 
 ---
 
 ## Grammar
 
-`TheGrammar` is a singleton instance of the `Grammar` class. It defines a
-context-free grammar in **Chomsky Normal Form** (CNF) — every rule is either
-binary (two non-terminal children) or terminal.
+`TheGrammar` is a singleton `Grammar` instance with 12 rules partitioned
+across three cognitive levels:
 
-| Rule | Production | Arity | Group |
-|------|-----------|-------|-------|
-| 0 | S | 0 (leaf) | — |
-| 1 | S → W | 0 (terminal) | conceptual |
-| 2 | S → S AND S | 2 | conceptual |
-| 3 | S → S OR S | 2 | conceptual |
-| 4 | S → NOT S | 1 (unary) | conceptual |
-| 5 | S → NON S | 1 (unary) | perceptual |
-| 6 | S → S PART S | 2 | conceptual |
-| 7 | S → S UNION S | 2 | perceptual |
-| 8 | S → S INTERSECTION S | 2 | perceptual |
-| 9 | S → S EQUALS S | 2 | perceptual |
+### Symbolic Rules (SymbolicSpace)
 
-Rules are partitioned into two groups:
+| Rule | Production | Arity | Operation |
+|------|-----------|-------|-----------|
+| 0 | S | 0 | start symbol |
+| 1 | $S \to S\ \text{EQUALS}\ S$ | 2 | `AssociationLayer` (Hopfield cross-symbol memory) |
+| 2 | $S \to S\ \text{AND}\ S$ | 2 | $\min(l, r)$ (Godel t-norm) |
+| 3 | $S \to S\ \text{OR}\ S$ | 2 | $\max(l, r)$ (Godel t-conorm) |
+| 4 | $S \to \text{NOT}\ S$ | 1 | $1 - x$ (complement) |
+| 5 | $S \to \text{NON}\ S$ | 1 | $\sigma(\alpha) \cdot x$ (learnable dampening) |
+| 6 | $S \to C$ | 0 | transition to conceptual level |
 
-- **`Grammar.conceptual()`** → `[1, 2, 3, 4, 6]` — operations that manipulate
-  abstract concepts (word reference, conjunction, disjunction, negation, parthood).
-- **`Grammar.perceptual()`** → `[5, 7, 8, 9]` — operations on perceptual fields
-  (non-affirming negation, set union, set intersection, equality).
+### Conceptual Rules (ConceptualSpace)
 
-This partition mirrors the two-layer logic system described in [Logic.md](Logic.md):
-conceptual rules operate on the symbolic/scalar layer, perceptual rules operate
-on the subsymbolic/vector layer.
+| Rule | Production | Arity | Operation |
+|------|-----------|-------|-----------|
+| 7 | $C \to C\ \text{PART}\ C$ | 2 | $\min(l, r)$ on vectors |
+| 8 | $C \to C\ \text{UNION}\ C$ | 2 | $\max(l, r)$ on vectors |
+| 9 | $C \to C\ \text{INTERSECTION}\ C$ | 2 | $\min(l, r)$ on vectors |
+| 10 | $C \to P$ | 0 | transition to perceptual level |
 
-### CNF and Unary Rules
+### Perceptual Rules (PerceptualSpace)
 
-Rules 4 (NOT S) and 5 (NON S) are unary — they have one non-terminal child,
-which breaks strict Chomsky Normal Form. Two design options remain open:
+| Rule | Production | Arity | Operation |
+|------|-----------|-------|-----------|
+| 11 | $P \to W$ | 0 | terminal: word embedding recovery |
 
-1. **Rewrite as binary** with an implicit identity/epsilon child:
-   $S \to \mathrm{NOT}\ S\ \varepsilon$. This preserves strict CNF at the cost of introducing
-   null nodes.
-2. **Allow unary rules** as a first-class concept — unary operators transform
-   a single child's representation without branching. The tree remains binary
-   in the sense that all branching nodes have exactly two children; unary nodes
-   are pass-through transformations.
+### Space-Level Accessors
+
+- `Grammar.symbolic()` $\to$ `[1, 2, 3, 4, 5]`
+- `Grammar.conceptual()` $\to$ `[7, 8, 9]`
+- `Grammar.perceptual()` $\to$ `[11]`
+
+### Transition Rules
+
+Rules 6 ($S \to C$) and 10 ($C \to P$) are **transitions** between grammar
+levels.  They have arity 0 at their own level (the RHS nonterminal is a
+different symbol than the LHS).  In the XML parse tree output, transitions
+are transparent --- they do not emit tags.
 
 ---
 
@@ -69,74 +72,27 @@ which breaks strict Chomsky Normal Form. Two design options remain open:
 
 Each word is a 3-tuple `(batch, vector, rule)`:
 
-- **batch** — index into the batch dimension `[0, B)`
-- **vector** — index into the activation vector `[0, N)`
-- **rule** — grammar rule ID from `TheGrammar` `[0, 10)`
+- **batch** --- index into the batch dimension $[0, B)$
+- **vector** --- index into the activation vector $[0, N)$
+- **rule** --- grammar rule ID from `TheGrammar` $[0, 12)$
 
-Words are stored as a Python list of tuples on the SubSpace (not muxed into the
-event tensor). The list constitutes a **derivation tree** in pre-order: the
-first entry is the root, and binary rules expand left-first.
-
-The `WordEncoding` class validates tuple entries on construction. The `SubSpace`
-provides accessors: `add_word(batch, vector, rule)`, `set_words(list)`,
-`get_words()`.
+Words are stored as a Python list of tuples on the SubSpace.  The list is a
+**derivation tree** in pre-order: the first entry is the root, and binary rules
+expand left-first.
 
 ---
 
-## SymbolicSpace
-
-### Role
-
-Converts continuous concept activations into a discrete set of active symbols.
-This is the information bottleneck of the pipeline.
-
-### Forward Path
-
-1. **Activation mapping.** Extract concept activation `[B, nConcepts]` from the
-   input subspace. Map through an `InvertibleLinearLayer(nConcepts, nSymbols)` to
-   produce `[B, nSymbols]` — a continuous activation in symbol space.
-
-2. **Codebook quantization** (when `quantized=True`). The activation vector is
-   reshaped to `[B, nSymbols, 1]` (each symbol is a 1-dimensional scalar) and
-   passed through the codebook. The codebook quantizes, computes top-k by
-   similarity, and produces:
-   - A one-hot-ish activation over codebook entries (similarity-weighted)
-   - Dense vectors for downstream materialization
-
-   When `quantized=False`, the activation is stored directly on the subspace
-   and the input vectors pass through unchanged.
-
-3. **Output.** A SubSpace with symbol activation and (when quantized) codebook
-   vectors. The output is a **one-hot encoding** over the codebook.
-
-### Reverse Path
-
-1. Extract symbol activation `[B, nSymbols]` from the input subspace.
-2. Apply the **exact inverse** of the invertible layer to recover `[B, nConcepts]`.
-3. Store the recovered concept activation on the output subspace, allowing
-   ConceptualSpace to reconstruct its dense vectors.
-
-### Key Properties
-
-- Symbols are **zero-dimensional** — they are pure activation scalars, not vectors.
-- The invertible layer allows **different-length** activation spaces ($nConcepts \neq nSymbols$).
-- When quantized, the codebook size equals nSymbols — each symbol *is* a codebook entry.
-- The `discretize()` method (sigmoid + straight-through round to {0,1}) is available
-  but currently unused; the codebook's VQ serves as the discretizer.
-
----
-
-## SyntacticLayer
+## SyntacticLayer (Rule Prediction)
 
 ### Architecture: Recursive Hybrid with Depth Embedding
 
-`SyntacticLayer` is a weight-tied (recursive) derivation stack. A **single**
-shared derivation layer and rule head are applied repeatedly at each depth,
-with a learned depth embedding added to the hidden state so the shared weights
-can specialize by tree level.
+Each space has its own `SyntacticLayer` instance that predicts rule distributions
+over **only that space's rules**.  The architecture is weight-tied (recursive):
+a single shared derivation layer and rule head are applied at each depth with a
+learned depth embedding.
 
 $$
-\text{activation}\ [B, n_{\text{Symbols}}]
+\text{activation}\ [B, N]
 \xrightarrow{\text{input\_proj}}
 h \in \mathbb{R}^{B \times d_{\text{hidden}}}
 $$
@@ -149,99 +105,131 @@ h \leftarrow \text{GELU}(\text{derivation\_layer}(h)), \quad
 \text{logits}_d \leftarrow \text{rule\_head}(h)
 $$
 
-**Parameters:**
-
-| Component | Shape | Count (hidden_dim=256, num_rules=10) |
-|-----------|-------|-----|
-| `input_proj` | nSymbols × hidden_dim | varies |
-| `derivation_layer` | hidden_dim × hidden_dim | 65K |
-| `rule_head` | hidden_dim × num_rules | 2.5K |
-| `depth_embed` | max_depth × hidden_dim | 256 per depth level |
-| **Total (excluding input_proj)** | | **~70K + 256 × max_depth** |
-
-The learned weights (`derivation_layer`, `rule_head`) are constant regardless
-of `max_depth`. Only the depth embedding table grows with depth (256 bytes per
-level). This makes deep unrolling essentially free in parameter count.
-
-### Why Recursive?
-
-The same grammar rules apply at every level of syntactic embedding — "the cat
-that the dog chased" uses NP expansion recursively. Weight sharing captures
-this: the layer learns a *single* rule-prediction function conditioned on
-derivation context (the hidden state `h`) and position (the depth embedding).
-
-The depth embedding allows depth-specific behavior without depth-specific
-weights. Depth 0 can learn "always predict S → NP VP" while deeper levels
-learn context-dependent rule selection — all through the same weight matrix
-receiving different input.
+The `rule_head` output dimension equals the number of rules in that space
+(e.g.\ 6 for symbolic, 4 for conceptual, 1 for perceptual).
 
 ### Differentiable Rule Selection
 
-Rule selection uses **Gumbel-softmax** with temperature `tau`:
-
-- **Training:** `F.gumbel_softmax(logits, tau=tau, hard=False)` produces soft
-  one-hot vectors. Gradients flow through the reparametrization trick.
-- **Eval:** `F.softmax(logits, dim=-1)` gives a deterministic distribution;
-  `argmax` selects discrete rule IDs.
-- **Temperature annealing:** `set_tau(tau)` controls the sharpness. Start at
-  `tau=1.0` (soft), anneal toward `tau=0.1` (near-discrete) over training.
+- **Training:** `gumbel_softmax(logits, tau)` --- soft one-hot, gradients flow
+  through all candidate rules proportional to their probability.
+- **Eval:** `softmax` + `argmax` --- discrete rule selection.
+- **Annealing:** Temperature $\tau$ starts at 1.0 (diffuse) and decreases toward
+  0.1 (near-discrete) over training.
 
 ---
 
-## SyntacticSpace
+## Per-Space Projection Operations
 
-### Role
+### SymbolicSpace: `projectSymbols(rule_id, left, right)`
 
-Generates a binary derivation tree (deep structure) from the set of active
-symbols produced by SymbolicSpace, using the learned `SyntacticLayer`.
+Operates on **$[B, N]$ scalar activations** (cross-symbol attention/association).
+
+| Rule | Implementation |
+|------|---------------|
+| EQUALS | `AssociationLayer(type="symmetric")` --- Hopfield-like bidirectional associative memory.  Learns which symbols retrieve which other symbols.  Output modulated by right's activation. |
+| AND | $\min(l, r)$ --- Godel t-norm (fuzzy conjunction) |
+| OR | $\max(l, r)$ --- Godel t-conorm (fuzzy disjunction) |
+| NOT | $1 - x$ --- standard complement |
+| NON | $\sigma(\alpha) \cdot x$ --- learnable dampening ($\alpha$ is a parameter) |
+
+### ConceptualSpace: `projectConcepts(rule_id, left, right)`
+
+Operates on **$[B, N, D]$ embedded vectors** (mereological composition in
+continuous concept space).
+
+| Rule | Implementation |
+|------|---------------|
+| PART | $\min(l, r)$ --- parthood: the overlap region |
+| UNION | $\max(l, r)$ --- mereological union: combined extent |
+| INTERSECTION | $\min(l, r)$ --- mereological intersection: shared region |
+
+### PerceptualSpace: `projectPercepts(rule_id, vspace)`
+
+Operates on **SubSpace** (recovering word embeddings via the reverse PiLayer).
+
+| Rule | Implementation |
+|------|---------------|
+| W | Reverse PiLayer projection: maps percepts back toward input space |
+
+---
+
+## Soft Superposition: `composeSyntax()`
+
+Each space provides a `composeSyntax()` method that combines rule prediction
+with projection execution.  At each derivation depth:
+
+1. Compute **all** rule operations on the current left and right children.
+2. Weight each result by the Gumbel-softmax probability for that rule.
+3. Sum to produce the parent representation.
+
+$$
+\text{parent} = \sum_{r \in \text{rules}} p_r^{(d)} \cdot \text{project}(r,\ \text{left},\ \text{right})
+$$
+
+During training, all rules contribute proportional to their soft probability.
+During eval, the argmax rule dominates.  Over training, reconstruction loss
+sharpens the probabilities: rules that consistently support successful
+reconstruction accumulate weight, while weaker alternatives diminish.
+
+**Deep structure emerges as a learned artifact of reconstruction.**
+
+---
+
+## Parse Tree Output
+
+The model emits an XML parse tree via `parse.derivation_to_xml()`.  Word tuples
+from all three spaces are collected (with global Grammar rule IDs) and
+reconstructed into a tree by recursive descent over the pre-order word list.
+
+Transition rules ($S \to C$, $C \to P$) are transparent --- they do not emit XML
+tags.  Terminal rules ($P \to W$) emit `<token>` leaves.  All other rules emit
+their named tag (`<conjunction>`, `<equals>`, `<not>`, `<union>`, etc.).
+
+Example for "dogs AND NOT cats":
+
+```xml
+<conjunction>
+  <token word="dogs"/>
+  <not>
+    <token word="cats"/>
+  </not>
+</conjunction>
+```
+
+---
+
+## AssociationLayer (EQUALS Implementation)
+
+The `AssociationLayer` is a cross-symbol associative memory used by the EQUALS
+rule.  Two modes are available:
+
+- **`type="symmetric"`** --- Hopfield-like: learns projection $A$, computes
+  association scores $A^T A$, softmax-retrieves the associated pattern.
+  Associations are symmetric ($A \equiv B \Leftrightarrow B \equiv A$).
+- **`type="hopfield"`** --- Modern Hopfield: separate query/key projections,
+  softmax-gated retrieval.
+
+Input and output are both $[B, N]$ activation vectors.  The layer is learnable
+and its parameters are trained end-to-end via the reconstruction loss.
+
+---
+
+## SymbolicSpace
 
 ### Forward Path
 
-1. **Extract activation.** Read the activation vector from the input subspace.
-   If no activation exists (all symbols active), create a full-ones vector.
-2. **Predict rules.** Pass activation to `SyntacticLayer.forward()`, which
-   unrolls the recursive derivation stack and returns rule distributions at
-   each depth plus assembled word tuples.
-3. **Store derivation.** Word tuples are set on the output subspace. Vectors
-   and activation pass through unchanged.
+1. Extract concept activation $[B, n_{\text{Concepts}}]$.
+2. Map through `InvertibleLinearLayer` to $[B, n_{\text{Symbols}}]$.
+3. Codebook quantization (when enabled) produces one-hot activation + vectors.
 
 ### Reverse Path
 
-1. **Decode derivation.** `SyntacticLayer.reverse()` walks the word list:
-   every `(batch, vector, rule)` entry marks that position as active. This
-   deterministically recovers the activation vector from the derivation alone.
-2. **Store result.** Set the recovered activation on the output subspace
-   (without recomputing from vector norms). Clear the word list.
+1. Extract symbol activation $[B, n_{\text{Symbols}}]$.
+2. Exact inverse of the invertible layer recovers $[B, n_{\text{Concepts}}]$.
 
 ### Key Properties
 
-- The derivation is a pre-order list of word tuples.
-- Reverse is **deterministic**: given the same word list, the same activation
-  vector is always recovered.
-- The round-trip `forward → (delete activation) → reverse` preserves the
-  original active positions exactly.
-- Default `max_depth = nSymbols - 1` (the maximum tree size for N leaves).
-  Since the layer is recursive (shared weights), the only per-depth cost is
-  one depth embedding vector — the parameter count is independent of depth.
-
----
-
-## Open Question: Differentiating the Rules Themselves
-
-The grammar rules are currently labels — AND, OR, PART, etc. do not define
-distinct operations on their children's representations. The SyntacticLayer
-learns *which* rule to predict at each depth, but not *what* each rule does.
-
-For the rules to be **meaningful**, each must define a distinct computation
-that transforms child representations into a parent representation:
-
-- **Rule-specific layers.** Each rule maps to a learned transformation — e.g.,
-  AND might use a SigmaLayer (additive), UNION a max operation, etc. The
-  `Grammar.perceptual()` and `Grammar.conceptual()` groupings suggest a natural
-  partition: perceptual rules use PiLayer-style multiplicative operations,
-  conceptual rules use SigmaLayer-style additive operations.
-- **Shared layer with rule embeddings.** A single composition function
-  conditioned on a learned rule embedding vector. Fewer parameters but less
-  expressive per-rule behavior.
-
-This remains the primary open design question for the language system.
+- Symbols are **zero-dimensional** --- pure activation scalars, not vectors.
+- The invertible layer allows $n_{\text{Concepts}} \neq n_{\text{Symbols}}$.
+- `composeSyntax()` runs the symbolic SyntacticLayer and executes the soft
+  superposition of EQUALS/AND/OR/NOT/NON projections.

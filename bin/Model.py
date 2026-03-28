@@ -1382,6 +1382,103 @@ class AttentionLayer(Layer):
         x = torch.randn(4, 5, 6, device=TheDevice.get())
         y = layer(x)
         assert list(y.shape) == [4, 5, 3], f"asymmetric nIn!=nOut: expected [4,5,3], got {list(y.shape)}"
+class AssociationLayer(Layer):
+    """Cross-symbol associative memory for bidirectional pattern completion.
+
+    Given a [B, N] activation vector over N symbol slots, computes an
+    association matrix that measures how each symbol relates to every other.
+    This implements the EQUALS rule: when symbol A is symbol B, they have a
+    high cross-association score.
+
+    type="symmetric"  — Hopfield-like: scores = A(x)^T @ A(x), positive
+                        semi-definite.  Associations are symmetric (A≡B ↔ B≡A).
+    type="hopfield"   — Modern Hopfield / softmax retrieval: projects x into
+                        queries and keys, softmax attention across symbols,
+                        returns the retrieved pattern.
+
+    Input:  [B, N] symbol activations.
+    Output: [B, N] associated activations (cross-symbol pattern completion).
+    """
+
+    def __init__(self, nInput, nOutput=None, nHidden=None,
+                 type="symmetric", beta=10.0):
+        nOutput = nOutput or nInput
+        super().__init__(nInput, nOutput)
+        self.nHidden = nHidden or nInput
+        self.type = type
+        self.beta = beta
+
+        if self.type == "symmetric":
+            # Hopfield energy: E = -x^T W x, stored patterns in W = A^T A
+            self.A = LinearLayer(self.nInput, self.nHidden)
+        elif self.type == "hopfield":
+            # Modern Hopfield: separate query/key projections
+            self.Q = LinearLayer(self.nInput, self.nHidden)
+            self.K = LinearLayer(self.nInput, self.nHidden)
+        else:
+            raise ValueError(f"AssociationLayer type must be 'symmetric' or 'hopfield', got '{type}'")
+
+        if self.nHidden != self.nOutput:
+            self.Out = LinearLayer(self.nHidden, self.nOutput)
+        else:
+            self.Out = None
+
+        self.layers = [self.A] if self.type == "symmetric" else [self.Q, self.K]
+        if self.Out is not None:
+            self.layers.append(self.Out)
+
+    def forward(self, x):
+        """Compute cross-symbol associations.
+
+        Args:
+            x: [B, N] symbol activation vector.
+
+        Returns:
+            [B, N] associated activation — pattern-completed via stored associations.
+        """
+        # Reshape to [B, N, 1] for matmul compatibility
+        x3 = x.unsqueeze(-1)  # [B, N, 1]
+
+        if self.type == "symmetric":
+            # Project: [B, N, 1] → [B, N, H] via broadcasting
+            # A operates on the last dim, so reshape to [B, N, nInput]
+            # For 1-dim symbols, we tile to nInput width
+            a = self.A.forward(x)               # [B, nHidden]
+            # Association scores: outer product in hidden space
+            scores = torch.bmm(
+                a.unsqueeze(-1),                # [B, nHidden, 1]
+                a.unsqueeze(-2)                 # [B, 1, nHidden]
+            )                                   # [B, nHidden, nHidden]
+            # Apply to original activation via projection
+            attn = F.softmax(self.beta * scores, dim=-1)  # [B, H, H]
+            # Map back: use A to project x to hidden, attend, project back
+            h = a.unsqueeze(-1)                 # [B, H, 1]
+            out = torch.bmm(attn, h).squeeze(-1)  # [B, H]
+
+        elif self.type == "hopfield":
+            q = self.Q.forward(x)               # [B, nHidden]
+            k = self.K.forward(x)               # [B, nHidden]
+            # Similarity in hidden space → association strength
+            scores = q * k                      # [B, nHidden] element-wise
+            out = F.softmax(self.beta * scores, dim=-1) * k  # [B, nHidden]
+
+        if self.Out is not None:
+            out = self.Out.forward(out)          # [B, nOutput]
+        return out
+
+    @staticmethod
+    def test():
+        for atype in ["symmetric", "hopfield"]:
+            layer = AssociationLayer(nInput=8, type=atype)
+            x = torch.randn(4, 8, device=TheDevice.get())
+            y = layer(x)
+            assert y.shape == (4, 8), f"type={atype}: expected (4,8), got {y.shape}"
+        # nInput != nOutput
+        layer = AssociationLayer(nInput=6, nOutput=4, nHidden=8, type="symmetric")
+        x = torch.randn(2, 6, device=TheDevice.get())
+        y = layer(x)
+        assert y.shape == (2, 4), f"nIn!=nOut: expected (2,4), got {y.shape}"
+
 #endregion
 
 #region Activation Functions
@@ -1967,16 +2064,18 @@ class CorrMem(Mem):
 class Grammar:
     """Binary deep-structure grammar. Rules map integer IDs to productions."""
     rules = [
-        "S",                       # 0 — leaf / start
-        "S → W",                   # 1 — word terminal
+        "S",                       # 0 — start
+        "S → S EQUALS S",          # 1
         "S → S AND S",             # 2
         "S → S OR S",              # 3
         "S → NOT S",               # 4 — unary
         "S → NON S",               # 5 — unary
-        "S → S PART S",            # 6
-        "S → S UNION S",           # 7
-        "S → S INTERSECTION S",    # 8
-        "S → S EQUALS S",          # 9
+        "S → C",                   # 6
+        "C → C PART C",            # 7
+        "C → C UNION C",           # 8
+        "C → C INTERSECTION C",    # 9
+        "C → P",                   # 10
+        "P → W",                   # 11 — word terminal
     ]
 
     def __len__(self):
@@ -1986,24 +2085,35 @@ class Grammar:
         return self.rules[idx]
 
     def arity(self, rule_id):
-        """Number of S children for a rule (0, 1, or 2)."""
+        """Number of nonterminal children for a rule (0, 1, or 2).
+
+        Counts occurrences of the LHS nonterminal (S, C, or P) on the RHS.
+        """
         prod = self.rules[rule_id]
-        tokens = prod.split()
-        return sum(1 for t in tokens if t == "S") - 1  # subtract the LHS S
+        if "→" not in prod:
+            return 0  # bare start symbol
+        lhs, rhs = prod.split("→", 1)
+        nt = lhs.strip()
+        rhs_tokens = rhs.split()
+        return sum(1 for t in rhs_tokens if t == nt)
 
     def binary_rules(self):
         """Return list of rule IDs with arity 2."""
         return [i for i in range(len(self.rules)) if self.arity(i) == 2]
 
-    def perceptual(self):
-        """Rules associated with perceptual operations: NON, UNION, INTERSECTION, EQUALS."""
-        return [5, 7, 8, 9]
+    def symbolic(self):
+        """Rules associated with symbolic operations: EQUALS."""
+        return [1,2,3,4,5]
 
     def conceptual(self):
         """Rules associated with conceptual operations: W, AND, OR, NOT, PART."""
-        return [1, 2, 3, 4, 6]
+        return [7,8,9]
 
-class SyntacticLayer(Layer):
+    def perceptual(self):
+        """Rules associated with perceptual operations: NON, UNION, INTERSECTION, EQUALS."""
+        return [11]
+
+class OldSyntacticLayer(Layer):
     """Recursive derivation stack that learns grammar rule distributions.
 
     A single shared derivation layer and rule head are applied repeatedly
@@ -2177,6 +2287,184 @@ class SyntacticLayer(Layer):
     def set_tau(self, tau):
         """Anneal the Gumbel-softmax temperature."""
         self.tau = tau
+
+class SyntacticLayer(Layer):
+    """Per-space rule prediction layer for the recursive grammar.
+
+    Each instance handles a subset of the Grammar's rules (one cognitive
+    space's rules).  Uses the same weight-tied recursive architecture as
+    OldSyntacticLayer with depth embeddings.
+
+    **This layer only predicts rules and generates word tuples.**  It does
+    not execute operations on representations — that is done by the owning
+    space's ``projectXxx()`` method, which knows the native representation
+    type (activations, vectors, etc.).
+
+    Args:
+        nInput:    activation width (number of symbol/concept/percept slots).
+        nOutput:   same as nInput.
+        rules:     list of global Grammar rule IDs this layer handles
+                   (e.g. [1,2,3,4,5] for the symbolic space).
+        transition_rule: optional global rule ID for the transition rule
+                   (e.g. 6 for S→C).  Included in prediction but signals
+                   hand-off to the next space.
+        max_depth: maximum derivation depth.
+        hidden_dim: width of the shared derivation hidden state.
+        grammar:   Grammar instance.
+        tau:       Gumbel-softmax temperature.
+    """
+
+    def __init__(self, nInput, nOutput, rules, transition_rule=None,
+                 max_depth=12, hidden_dim=256, grammar=None, tau=1.0):
+        super().__init__(nInput, nOutput)
+        self.grammar         = grammar or Grammar()
+        self.rules           = list(rules)
+        self.transition_rule = transition_rule
+        # Build the full set of rule IDs this layer predicts over
+        self.all_rules = list(rules)
+        if transition_rule is not None and transition_rule not in self.all_rules:
+            self.all_rules.append(transition_rule)
+        self.num_rules  = len(self.all_rules)
+        # Map from local index → global rule ID
+        self.rule_index = {rid: i for i, rid in enumerate(self.all_rules)}
+        self.max_depth  = max_depth
+        self.hidden_dim = hidden_dim
+        self.tau        = tau
+
+        # Rule prediction network (weight-tied across depths)
+        self.input_proj       = LinearLayer(nInput, hidden_dim)
+        self.derivation_layer = LinearLayer(hidden_dim, hidden_dim)
+        self.rule_head        = LinearLayer(hidden_dim, self.num_rules)
+        self.depth_embed      = nn.Embedding(max_depth, hidden_dim)
+        self.activation_fn    = nn.GELU()
+
+        # Register child layers for ergodic dispatch
+        self.layers = [self.input_proj, self.derivation_layer, self.rule_head]
+
+    # ── forward: predict rules ────────────────────────────────────
+
+    def forward(self, x):
+        """Predict rule distributions and build word tuples.
+
+        Args:
+            x: [B, N] activation vector from the space's subspace.
+
+        Returns dict:
+            rule_logits:     [B, max_depth, num_rules]  (local indices)
+            rule_probs:      [B, max_depth, num_rules]
+            predicted_rules: [B, max_depth]             (global rule IDs)
+            words:           list of (batch, vector, rule) tuples
+        """
+        B, N = x.shape
+
+        h = self.input_proj.forward(x)
+        h = self.activation_fn(h)
+
+        depth_ids = torch.arange(self.max_depth, device=x.device)
+        depth_vecs = self.depth_embed(depth_ids)
+
+        all_logits = []
+        all_probs  = []
+
+        for d in range(self.max_depth):
+            h = h + depth_vecs[d]
+            h = self.derivation_layer.forward(h)
+            h = self.activation_fn(h)
+            logits = self.rule_head.forward(h)
+
+            if self.training:
+                probs = F.gumbel_softmax(logits, tau=self.tau, hard=False)
+            else:
+                probs = F.softmax(logits, dim=-1)
+
+            all_logits.append(logits)
+            all_probs.append(probs)
+
+        rule_logits = torch.stack(all_logits, dim=1)
+        rule_probs  = torch.stack(all_probs, dim=1)
+
+        # Map local argmax to global rule IDs
+        local_predicted = rule_logits.argmax(dim=-1)
+        global_predicted = torch.tensor(
+            [[self.all_rules[local_predicted[b, d].item()]
+              for d in range(self.max_depth)]
+             for b in range(B)],
+            device=x.device, dtype=torch.long
+        )
+
+        active_positions = self._active_positions(x)
+        words = self._generate_derivation(global_predicted, active_positions)
+
+        return {
+            "rule_logits":     rule_logits,
+            "rule_probs":      rule_probs,
+            "predicted_rules": global_predicted,
+            "words":           words,
+        }
+
+    # ── helpers ────────────────────────────────────────────────────
+
+    def _active_positions(self, x):
+        """Extract per-batch lists of active (nonzero) positions."""
+        B = x.shape[0]
+        positions = []
+        for b in range(B):
+            active = torch.nonzero(x[b], as_tuple=False).squeeze(-1)
+            positions.append(active.tolist())
+        return positions
+
+    def _generate_derivation(self, predicted_rules, active_positions):
+        """Build word tuples from predicted rules and active positions."""
+        B = predicted_rules.shape[0]
+        all_words = []
+        for b in range(B):
+            rules     = predicted_rules[b].tolist()
+            positions = active_positions[b]
+            n = len(positions)
+            if n == 0:
+                continue
+            if n == 1:
+                terminal = self._find_terminal_rule()
+                all_words.append((b, positions[0], terminal))
+                continue
+            pos_idx = 0
+            for rule_id in rules:
+                if pos_idx >= n - 1:
+                    break
+                arity = self.grammar.arity(rule_id)
+                if arity != 2:
+                    binary = [r for r in self.rules if self.grammar.arity(r) == 2]
+                    rule_id = binary[0] if binary else rule_id
+                all_words.append((b, positions[pos_idx], rule_id))
+                pos_idx += 1
+            terminal = self._find_terminal_rule()
+            all_words.append((b, positions[-1], terminal))
+        return all_words
+
+    def _find_terminal_rule(self):
+        """Find the terminal (arity 0) rule in this layer's rule set."""
+        for r in self.all_rules:
+            if self.grammar.arity(r) == 0:
+                return r
+        if self.transition_rule is not None:
+            return self.transition_rule
+        return self.all_rules[0]
+
+    # ── reverse: deterministic tree-walk ──────────────────────────
+
+    def reverse(self, words, nVectors, batch_size):
+        """Decode derivation to recover the activation vector."""
+        activation = torch.zeros(batch_size, nVectors)
+        for b, v, r in words:
+            activation[b, v] = 1.0
+        return activation
+
+    # ── utilities ─────────────────────────────────────────────────
+
+    def set_tau(self, tau):
+        """Anneal the Gumbel-softmax temperature."""
+        self.tau = tau
+
 
 class LogicLayer(Layer):
 

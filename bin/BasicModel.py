@@ -821,6 +821,77 @@ class BasicModel(BaseModel):
         percepts_state = self.conceptualSpace2.reverse(concepts_state)
         percepts = percepts_state.materialize()
         return percepts
+    def SyntacticDerivation(self):
+        """Run per-space syntactic derivation: predict rules, then execute projections.
+
+        Two phases at each cognitive space:
+          1. **Predict:** syntactic_layer.forward(activation) → rule distributions + word tuples
+          2. **Project:** space.projectXxx(rule, ...) → composed representation
+
+        Representation types by space:
+          - Symbolic: [B, N] scalar activations (association/attention)
+          - Conceptual: [B, N, D] embedded vectors (mereological composition)
+          - Perceptual: SubSpace (word embedding recovery)
+
+        Transition rules (S→C at rule 6, C→P at rule 10) signal hand-off.
+
+        Word tuples from all three layers are collected into self.all_words
+        (using global Grammar rule IDs) for XML parse tree composition.
+
+        Returns: list of (batch, vector, rule) word tuples across all spaces.
+        """
+        all_words = []
+
+        # ── Symbolic derivation (rules 1-5, transition 6) ────────
+        # Predicts rules AND executes soft-weighted projections on [B, N] activations
+        sym_act = self.symbols.get_activation()
+        if sym_act is not None and hasattr(self.symbolicSpace, 'composeSyntax'):
+            sym_out = self.symbolicSpace.composeSyntax(sym_act)
+            all_words.extend(sym_out["words"])
+            self._symbolic_syntax_out = sym_out
+
+        # ── Conceptual derivation (rules 7-9, transition 10) ─────
+        # Predicts rules AND executes soft-weighted projections on [B, N, D] vectors
+        con_act = self.concepts.get_activation()
+        con_vec = self.concepts.materialize()
+        if con_act is not None and hasattr(self.conceptualSpace, 'composeSyntax'):
+            con_out = self.conceptualSpace.composeSyntax(con_act, con_vec)
+            all_words.extend(con_out["words"])
+            self._conceptual_syntax_out = con_out
+
+        # ── Perceptual derivation (rule 11: terminal) ────────────
+        # Terminal rule — only predicts, no composition needed
+        per_act = self.percepts.get_activation()
+        if per_act is not None and hasattr(self.perceptualSpace, 'syntactic_layer') \
+                and self.perceptualSpace.syntactic_layer is not None:
+            per_out = self.perceptualSpace.syntactic_layer.forward(per_act)
+            all_words.extend(per_out["words"])
+            self._perceptual_syntax_out = per_out
+
+        self.all_words = all_words
+        return all_words
+
+    def get_parse_tree(self, batch_index=0):
+        """Return the XML parse tree for a batch element after forward pass.
+
+        Must be called after forward() (which runs SyntacticDerivation).
+        Uses the vocabulary from InputSpace to map vector indices to words.
+
+        Args:
+            batch_index: which batch element to emit (default 0).
+
+        Returns:
+            XML string, or empty string if no derivation was produced.
+        """
+        from parse import derivation_to_xml
+        from Model import Grammar
+        words = [(b, v, r) for b, v, r in getattr(self, 'all_words', [])
+                 if b == batch_index]
+        if not words:
+            return ""
+        vocab = self.inputSpace.get_vocabulary() if hasattr(self.inputSpace, 'get_vocabulary') else None
+        return derivation_to_xml(words, Grammar(), vocab)
+
     def SymbolicThought(self, data):
         """Extra Syntax->Symbol cycle (symbolicOrder >= 1)."""
         if isinstance(data, torch.Tensor):
@@ -968,6 +1039,8 @@ class BasicModel(BaseModel):
         if isinstance(inputData, torch.Tensor):
             inputData = inputData.to(TheDevice.get())
         input, concepts, symbols = self.Start(inputData)
+        # Run per-space syntactic derivation (grammar rules on activations)
+        self.SyntacticDerivation()
         # Higher-order subsymbolic cycles (conceptualOrder extra passes)
         for n in range(1,self.conceptualOrder):
             NA, symbols1 = self.SubsymbolicThought(concepts)

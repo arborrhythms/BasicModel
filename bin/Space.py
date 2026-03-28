@@ -38,7 +38,7 @@ from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
 from Model import Grammar, Layer, PiLayer, NewPiLayer, SigmaLayer # Import custom layers from Model.py
-from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, SyntacticLayer
+from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, OldSyntacticLayer, SyntacticLayer
 from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 
 class Encoding(nn.Module):
@@ -2974,6 +2974,20 @@ class PerceptualSpace(Space):
             self.params = self.pi.getParameters()
             self.layers = nn.ModuleList([self.pi])
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
+        # Per-space syntactic layer for perceptual grammar rules (11: terminal)
+        nPerceptSlots = outputShape[0]
+        if not passThrough:
+            self.syntactic_layer = SyntacticLayer(
+                nInput=nPerceptSlots, nOutput=nPerceptSlots,
+                rules=TheGrammar.perceptual(),
+                transition_rule=None,
+                max_depth=max(nPerceptSlots - 1, 1),
+                hidden_dim=min(256, max(64, nPerceptSlots * 4)),
+                grammar=TheGrammar,
+            )
+            self.layers.append(self.syntactic_layer)
+        else:
+            self.syntactic_layer = None
 
     def _register_requirements(self):
         """Register PerceptualSpace-specific config requirements."""
@@ -3041,6 +3055,32 @@ class PerceptualSpace(Space):
         if self.reversible:
             y = self.reversePi(y)
         vspace = self.reverseEnd(y, returnVectors=True)
+        return vspace
+
+    def projectPercepts(self, rule_id, vspace):
+        """Execute the perceptual terminal rule (P→W).
+
+        Recovers the word embedding by running the perceptual reverse path
+        on the active subspace, mapping from percept space back to input
+        space where words live.
+
+        Args:
+            rule_id: global Grammar rule ID (11).
+            vspace:  SubSpace with perceptual vectors and activation.
+
+        Returns:
+            SubSpace with reconstructed input-level vectors.
+        """
+        rule_name = TheGrammar[rule_id]
+
+        if rule_name.strip().endswith("W"):
+            # Terminal: use the reverse PiLayer to map percepts back
+            # toward the input embedding (word recovery)
+            y = vspace.materialize()
+            if y is not None and self.reversible:
+                y = self.reversePi(y)
+                self.subspace.set_vectors(y)
+                return self.subspace
         return vspace
 
     @staticmethod
@@ -3278,6 +3318,18 @@ class ConceptualSpace(Space):
             self.forwardSigma = self.sigma.forward
             self.params = self.sigma.getParameters()
             self.layers = nn.ModuleList([self.sigma])
+        # Per-space syntactic layer for conceptual grammar rules (7-9, transition 10)
+        nConceptSlots = outputShape[0]
+        self.syntactic_layer = SyntacticLayer(
+            nInput=nConceptSlots, nOutput=nConceptSlots,
+            rules=TheGrammar.conceptual(),
+            transition_rule=10,
+            max_depth=max(nConceptSlots - 1, 1),
+            hidden_dim=min(256, max(64, nConceptSlots * 4)),
+            grammar=TheGrammar,
+        )
+        self.layers.append(self.syntactic_layer)
+
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
         # However, if the X are not normalized, the magnitudes may be taken as a degree of certainty or knowing.
@@ -3308,10 +3360,108 @@ class ConceptualSpace(Space):
         vspace = self.reverseEnd(y, returnVectors=True)
         return vspace
 
+    def projectConcepts(self, rule_id, left, right=None):
+        """Execute a conceptual grammar rule on [B, N, D] embedded vectors.
+
+        Conceptual rules are mereological: they compose or decompose regions
+        in the continuous concept embedding space.
+
+        Args:
+            rule_id: global Grammar rule ID (7-9).
+            left:    [B, N, D] left child vectors.
+            right:   [B, N, D] right child vectors (None for terminal).
+
+        Returns:
+            [B, N, D] parent vectors.
+        """
+        rule_name = TheGrammar[rule_id]
+
+        if "PART" in rule_name:
+            # Parthood: the part is the region where left fits within right.
+            # min(left, right) keeps only the overlap — what left contributes
+            # to right's structure.
+            return torch.min(left, right)
+
+        if "UNION" in rule_name:
+            # Mereological union: the combined extent of both concepts.
+            return torch.max(left, right)
+
+        if "INTERSECTION" in rule_name:
+            # Mereological intersection: the shared region of both concepts.
+            return torch.min(left, right)
+
+        # Transition rule (C→P) — pass through
+        return left
+
+    def composeSyntax(self, activation, vectors):
+        """Predict rules and execute them as soft-weighted projections on vectors.
+
+        Conceptual rules are mereological — they operate on [B, N, D] vectors,
+        not scalar activations.
+
+        Args:
+            activation: [B, N] concept activation (for rule prediction).
+            vectors:    [B, N, D] concept embedding vectors.
+
+        Returns:
+            dict with keys from syntactic_layer.forward() plus:
+                composed: [B, N, D] vectors after soft-weighted tree composition.
+        """
+        out = self.syntactic_layer.forward(activation)
+        rule_probs = out["rule_probs"]
+        all_rules = self.syntactic_layer.all_rules
+        grammar = self.syntactic_layer.grammar
+
+        B, N = activation.shape
+        D = vectors.shape[-1] if vectors is not None and vectors.ndim == 3 else 1
+        active_positions = self.syntactic_layer._active_positions(activation)
+        max_leaves = max((len(p) for p in active_positions), default=0)
+
+        if max_leaves == 0 or vectors is None:
+            out["composed"] = vectors
+            return out
+
+        # Differentiable leaf extraction for vectors
+        masks = torch.zeros(B, max_leaves, N, device=vectors.device)
+        for b in range(B):
+            for i, pos in enumerate(active_positions[b]):
+                masks[b, i, pos] = 1.0
+        # masks [B, max_leaves, N] * vectors [B, N, D] → [B, max_leaves, N, D]
+        leaf_vecs = masks.unsqueeze(-1) * vectors.unsqueeze(1)
+
+        composed = leaf_vecs[:, 0, :, :]  # [B, N, D]
+        max_depth = self.syntactic_layer.max_depth
+
+        for d in range(min(max_depth, max(max_leaves - 1, 1))):
+            if d + 1 >= max_leaves:
+                break
+
+            left = composed
+            right = leaf_vecs[:, d + 1, :, :]  # [B, N, D]
+
+            results = []
+            for local_idx, rule_id in enumerate(all_rules):
+                arity = grammar.arity(rule_id)
+                if arity == 2:
+                    result = self.projectConcepts(rule_id, left, right)
+                elif arity == 1:
+                    result = self.projectConcepts(rule_id, left)
+                else:
+                    result = self.projectConcepts(rule_id, left)
+                results.append(result)
+
+            results = torch.stack(results, dim=1)           # [B, num_rules, N, D]
+            probs_d = rule_probs[:, d, :]                    # [B, num_rules]
+            probs_d = probs_d.unsqueeze(-1).unsqueeze(-1)    # [B, num_rules, 1, 1]
+            composed = (probs_d * results).sum(dim=1)        # [B, N, D]
+
+        out["composed"] = composed
+        return out
+
     @staticmethod
     def test():
         pass
-    
+
 class SymbolicSpace(Space):
     """Converts continuous concept vectors into discrete symbols.
 
@@ -3343,7 +3493,128 @@ class SymbolicSpace(Space):
         nConcepts = inputShape[0]   # activation length from previous space
         nSymbols = spaceShape[0]    # number of symbols = codebook size
         self.layer = InvertibleLinearLayer(nConcepts, nSymbols)
-        self.layers = nn.ModuleList([self.layer])
+        # Per-space syntactic layer for symbolic grammar rules (1-5, transition 6)
+        self.syntactic_layer = SyntacticLayer(
+            nInput=nSymbols, nOutput=nSymbols,
+            rules=TheGrammar.symbolic(),
+            transition_rule=6,
+            max_depth=max(nSymbols - 1, 1),
+            hidden_dim=min(256, max(64, nSymbols * 4)),
+            grammar=TheGrammar,
+        )
+        # EQUALS projection: cross-symbol associative memory (Hopfield-like)
+        # Learns which symbols are associated with which other symbols
+        self.equals_layer = AssociationLayer(nSymbols, nSymbols, type="symmetric")
+        # NON dampening factor
+        self.non_alpha = nn.Parameter(torch.tensor(0.5))
+        self.layers = nn.ModuleList([self.layer, self.syntactic_layer,
+                                      self.equals_layer])
+
+    def projectSymbols(self, rule_id, left, right=None):
+        """Execute a symbolic grammar rule on [B, N] activation vectors.
+
+        Symbolic rules operate on scalar activations (attention/association
+        between symbols).
+
+        Args:
+            rule_id: global Grammar rule ID (1-5).
+            left:    [B, N] left child activation.
+            right:   [B, N] right child activation (None for unary).
+
+        Returns:
+            [B, N] parent activation.
+        """
+        rule_name = TheGrammar[rule_id]
+
+        if "EQUALS" in rule_name:
+            # Cross-symbol association via Hopfield-like associative memory.
+            # The AssociationLayer learns which symbols are associated with
+            # which: when symbol A equals symbol B, they retrieve each other.
+            # Modulate the association output by right's activation pattern.
+            association = self.equals_layer.forward(left)
+            return association * right
+
+        if "AND" in rule_name:
+            return torch.min(left, right)
+
+        if "OR" in rule_name:
+            return torch.max(left, right)
+
+        if "NOT" in rule_name:
+            return 1.0 - left
+
+        if "NON" in rule_name:
+            alpha = torch.sigmoid(self.non_alpha.to(left.device))
+            return alpha * left
+
+        # Transition rule (S→C) or start — pass through
+        return left
+
+    def composeSyntax(self, activation):
+        """Predict rules and execute them as soft-weighted projections.
+
+        Runs the syntactic layer to get rule probabilities, then computes
+        a soft superposition of all rule operations at each derivation
+        depth.  During training, all rules contribute proportional to
+        their Gumbel-softmax weight; during eval, the argmax dominates.
+
+        Args:
+            activation: [B, N] symbol activation vector.
+
+        Returns:
+            dict with keys from syntactic_layer.forward() plus:
+                composed: [B, N] activation after soft-weighted tree composition.
+        """
+        out = self.syntactic_layer.forward(activation)
+        rule_probs = out["rule_probs"]      # [B, max_depth, num_rules_local]
+        all_rules = self.syntactic_layer.all_rules
+        grammar = self.syntactic_layer.grammar
+
+        # Build leaf activations (one-hot masks * activation, preserving gradients)
+        B, N = activation.shape
+        active_positions = self.syntactic_layer._active_positions(activation)
+        max_leaves = max((len(p) for p in active_positions), default=0)
+
+        if max_leaves == 0:
+            out["composed"] = activation
+            return out
+
+        # Differentiable leaf extraction
+        masks = torch.zeros(B, max_leaves, N, device=activation.device)
+        for b in range(B):
+            for i, pos in enumerate(active_positions[b]):
+                masks[b, i, pos] = 1.0
+        leaf_acts = masks * activation.unsqueeze(1)  # [B, max_leaves, N]
+
+        # Left-branching tree composition with soft superposition
+        composed = leaf_acts[:, 0, :]  # [B, N] — start with first leaf
+        max_depth = self.syntactic_layer.max_depth
+
+        for d in range(min(max_depth, max(max_leaves - 1, 1))):
+            if d + 1 >= max_leaves:
+                break
+
+            left = composed
+            right = leaf_acts[:, d + 1, :]   # [B, N]
+
+            # Compute ALL rule operations, weight by soft probs
+            results = []
+            for local_idx, rule_id in enumerate(all_rules):
+                arity = grammar.arity(rule_id)
+                if arity == 2:
+                    result = self.projectSymbols(rule_id, left, right)
+                elif arity == 1:
+                    result = self.projectSymbols(rule_id, left)
+                else:
+                    result = self.projectSymbols(rule_id, left)
+                results.append(result)
+
+            results = torch.stack(results, dim=1)           # [B, num_rules, N]
+            probs_d = rule_probs[:, d, :]                    # [B, num_rules]
+            composed = (probs_d.unsqueeze(-1) * results).sum(dim=1)  # [B, N]
+
+        out["composed"] = composed
+        return out
 
     def discretize(self, vspace):
         """Discretize a subspace's activation vector to {0, 1}.
@@ -3424,7 +3695,7 @@ class SyntacticSpace(Space):
 
         # Learnable recursive derivation layer
         nSymbols = inputShape[0]
-        self.layer = SyntacticLayer(
+        self.layer = OldSyntacticLayer(
             nInput=nSymbols,
             nOutput=nSymbols,
             max_depth=max(nSymbols - 1, 1),

@@ -631,6 +631,129 @@ def tree_to_xml(tree, indent=0):
 
 
 # ---------------------------------------------------------------------------
+# Model derivation → XML
+# ---------------------------------------------------------------------------
+
+# Tag names for each grammar rule (keyed by operator substring in the rule)
+_RULE_TAGS = {
+    "EQUALS":       "equals",
+    "AND":          "conjunction",
+    "OR":           "disjunction",
+    "NOT":          "not",
+    "NON":          "non",
+    "PART":         "part",
+    "UNION":        "union",
+    "INTERSECTION": "intersection",
+}
+
+def _tag_from_rule(rule_str):
+    """Extract the XML tag name from a grammar rule string.
+
+    "S → S AND S"        → "conjunction"
+    "C → C UNION C"      → "union"
+    "S → NOT S"          → "not"
+    "S → C"              → None  (transition, transparent)
+    "P → W"              → None  (terminal, handled separately)
+    """
+    for keyword, tag in _RULE_TAGS.items():
+        if keyword in rule_str:
+            return tag
+    return None
+
+
+def derivation_to_xml(words, grammar, vocab=None, indent=0):
+    """Convert model-predicted word tuples into an XML parse tree.
+
+    Reconstructs the tree from a pre-order traversal of (batch, vector, rule)
+    tuples, using the Grammar's arity to determine how many children each
+    node consumes.
+
+    Args:
+        words:   list of (batch, vector, rule) tuples from SyntacticDerivation,
+                 filtered to a single batch element.
+        grammar: Grammar instance (for rule strings and arities).
+        vocab:   optional dict mapping vector index → surface word string.
+                 If None, vector indices are emitted as ``?N``.
+        indent:  starting indentation level.
+
+    Returns:
+        XML string representing the parse tree.
+
+    Example output::
+
+        <conjunction>
+          <token word="dogs"/>
+          <token word="cats"/>
+        </conjunction>
+    """
+    idx = [0]  # mutable counter consumed by recursive descent
+
+    def _build(depth):
+        if idx[0] >= len(words):
+            return ""
+        b, v, r = words[idx[0]]
+        idx[0] += 1
+        rule_str = grammar[r]
+        arity = grammar.arity(r)
+        pad = "  " * depth
+
+        # Terminal: P → W — emit leaf node
+        if rule_str.strip().endswith("W"):
+            surface = vocab.get(v, f"?{v}") if vocab else f"?{v}"
+            return f'{pad}<token word="{surface}"/>'
+
+        tag = _tag_from_rule(rule_str)
+
+        # Transition rules (S→C, C→P): transparent — recurse without emitting a tag
+        if tag is None:
+            return _build(depth)
+
+        # Unary: <not> child </not>
+        if arity == 1:
+            lines = [f'{pad}<{tag}>']
+            lines.append(_build(depth + 1))
+            lines.append(f'{pad}</{tag}>')
+            return "\n".join(lines)
+
+        # Binary: <conjunction> left right </conjunction>
+        if arity == 2:
+            lines = [f'{pad}<{tag}>']
+            lines.append(_build(depth + 1))
+            lines.append(_build(depth + 1))
+            lines.append(f'{pad}</{tag}>')
+            return "\n".join(lines)
+
+        # Fallback (arity 0 non-terminal, non-transition) — recurse
+        return _build(depth)
+
+    return _build(indent)
+
+
+def derivation_to_xml_batch(all_words, grammar, vocab=None):
+    """Convert word tuples for an entire batch into per-element XML trees.
+
+    Args:
+        all_words: list of (batch, vector, rule) tuples (may span multiple
+                   batch elements).
+        grammar:   Grammar instance.
+        vocab:     optional dict mapping vector index → surface word.
+
+    Returns:
+        dict mapping batch index → XML string.
+    """
+    # Group by batch element
+    from collections import defaultdict
+    by_batch = defaultdict(list)
+    for b, v, r in all_words:
+        by_batch[b].append((b, v, r))
+
+    results = {}
+    for b in sorted(by_batch):
+        results[b] = derivation_to_xml(by_batch[b], grammar, vocab)
+    return results
+
+
+# ---------------------------------------------------------------------------
 # Main parse pipeline
 # ---------------------------------------------------------------------------
 

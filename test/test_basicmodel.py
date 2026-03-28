@@ -3131,17 +3131,18 @@ class TestGrammar(unittest.TestCase):
 
     def test_length(self):
         from Space import TheGrammar
-        self.assertEqual(len(TheGrammar), 10)
+        self.assertEqual(len(TheGrammar), 12)
 
     def test_indexing(self):
         from Space import TheGrammar
         self.assertEqual(TheGrammar[0], "S")
-        self.assertEqual(TheGrammar[1], "S → W")
-        self.assertEqual(TheGrammar[9], "S → S EQUALS S")
+        self.assertEqual(TheGrammar[1], "S → S EQUALS S")
+        self.assertEqual(TheGrammar[6], "S → C")
+        self.assertEqual(TheGrammar[11], "P → W")
 
-    def test_arity_leaf(self):
+    def test_arity_start(self):
         from Space import TheGrammar
-        self.assertEqual(TheGrammar.arity(0), 0)  # S — no children
+        self.assertEqual(TheGrammar.arity(0), 0)  # S — bare start, no production
 
     def test_arity_unary(self):
         from Space import TheGrammar
@@ -3150,12 +3151,23 @@ class TestGrammar(unittest.TestCase):
 
     def test_arity_binary(self):
         from Space import TheGrammar
-        for r in [2, 3, 6, 7, 8, 9]:
+        for r in [1, 2, 3, 7, 8, 9]:
             self.assertEqual(TheGrammar.arity(r), 2, f"rule {r} should be binary")
 
-    def test_arity_word(self):
+    def test_arity_transition(self):
         from Space import TheGrammar
-        self.assertEqual(TheGrammar.arity(1), 0)  # S → W — W is not S
+        self.assertEqual(TheGrammar.arity(6), 0)   # S → C �� transition (C is not S)
+        self.assertEqual(TheGrammar.arity(10), 0)  # C → P — transition (P is not C)
+
+    def test_arity_terminal(self):
+        from Space import TheGrammar
+        self.assertEqual(TheGrammar.arity(11), 0)  # P → W — terminal
+
+    def test_space_partitions(self):
+        from Space import TheGrammar
+        self.assertEqual(TheGrammar.symbolic(), [1, 2, 3, 4, 5])
+        self.assertEqual(TheGrammar.conceptual(), [7, 8, 9])
+        self.assertEqual(TheGrammar.perceptual(), [11])
 
 
 class TestWordEncoding(unittest.TestCase):
@@ -3484,13 +3496,13 @@ class TestDemuxedBasicModel(unittest.TestCase):
         self.assertIsInstance(model.perceptualSpace, ModalSpace)
 
 
-class TestSyntacticLayer(unittest.TestCase):
-    """Tests for SyntacticLayer — learnable derivation stack."""
+class TestOldSyntacticLayer(unittest.TestCase):
+    """Tests for OldSyntacticLayer — the original learnable derivation stack."""
 
     def _make_layer(self, nInput=16, max_depth=7, hidden_dim=32):
-        from Model import SyntacticLayer
-        return SyntacticLayer(nInput=nInput, nOutput=nInput,
-                              max_depth=max_depth, hidden_dim=hidden_dim)
+        from Model import OldSyntacticLayer
+        return OldSyntacticLayer(nInput=nInput, nOutput=nInput,
+                                 max_depth=max_depth, hidden_dim=hidden_dim)
 
     def _dev(self):
         return TheDevice.get()
@@ -3499,8 +3511,8 @@ class TestSyntacticLayer(unittest.TestCase):
         layer = self._make_layer()
         x = torch.randn(4, 16).to(self._dev())
         out = layer.forward(x)
-        self.assertEqual(out["rule_logits"].shape, (4, 7, 10))
-        self.assertEqual(out["rule_probs"].shape, (4, 7, 10))
+        self.assertEqual(out["rule_logits"].shape, (4, 7, 12))
+        self.assertEqual(out["rule_probs"].shape, (4, 7, 12))
         self.assertEqual(out["predicted_rules"].shape, (4, 7))
 
     def test_gradient_flows_through_gumbel(self):
@@ -3508,7 +3520,6 @@ class TestSyntacticLayer(unittest.TestCase):
         layer.train()
         x = torch.randn(2, 8, requires_grad=True, device=self._dev())
         out = layer.forward(x)
-        # Use rule_logits (not probs) — probs.sum()=1 has vanishing gradient
         loss = out["rule_logits"].pow(2).sum()
         loss.backward()
         self.assertIsNotNone(x.grad)
@@ -3519,35 +3530,170 @@ class TestSyntacticLayer(unittest.TestCase):
         layer.eval()
         x = torch.randn(2, 8).to(self._dev())
         out = layer.forward(x)
-        # softmax probs should sum to 1 along rule dim
         sums = out["rule_probs"].sum(dim=-1)
         self.assertTrue(torch.allclose(sums, torch.ones_like(sums), atol=1e-5))
-
-    def test_generate_derivation(self):
-        layer = self._make_layer(nInput=8, max_depth=7, hidden_dim=16)
-        # Fabricate predicted rules: all binary (rule 2 = S → S AND S)
-        predicted = torch.full((1, 7), 2, dtype=torch.long)
-        active_pos = [[0, 1, 2, 3, 4]]
-        words = layer._generate_derivation(predicted, active_pos)
-        # 5 active positions → 4 binary + 1 terminal = 5 words
-        self.assertEqual(len(words), 5)
-        # All internal nodes should be binary rule 2, last is terminal rule 1
-        for b, v, r in words[:-1]:
-            self.assertEqual(b, 0)
-            self.assertEqual(r, 2)
-        self.assertEqual(words[-1][2], 1)  # terminal
 
     def test_shared_weights(self):
         """Verify the recursive architecture uses shared weights."""
         layer = self._make_layer(nInput=8, max_depth=12, hidden_dim=16)
-        # Only one derivation_layer and one rule_head (not 12)
         self.assertIsInstance(layer.derivation_layer, type(layer.input_proj))
         self.assertIsInstance(layer.rule_head, type(layer.input_proj))
-        # Depth embedding has max_depth entries
         self.assertEqual(layer.depth_embed.num_embeddings, 12)
 
     def test_set_tau(self):
         layer = self._make_layer()
+        layer.set_tau(0.5)
+        self.assertEqual(layer.tau, 0.5)
+
+
+class TestSyntacticLayer(unittest.TestCase):
+    """Tests for SyntacticLayer — per-space grammar with executable rules."""
+
+    def _dev(self):
+        return TheDevice.get()
+
+    def _make_symbolic_layer(self, nInput=8, max_depth=7, hidden_dim=16):
+        from Model import SyntacticLayer, Grammar
+        g = Grammar()
+        return SyntacticLayer(
+            nInput=nInput, nOutput=nInput,
+            rules=g.symbolic(),       # [1, 2, 3, 4, 5]
+            transition_rule=6,
+            max_depth=max_depth,
+            hidden_dim=hidden_dim,
+            grammar=g,
+        )
+
+    def _make_conceptual_layer(self, nInput=8, max_depth=7, hidden_dim=16):
+        from Model import SyntacticLayer, Grammar
+        g = Grammar()
+        return SyntacticLayer(
+            nInput=nInput, nOutput=nInput,
+            rules=g.conceptual(),     # [7, 8, 9]
+            transition_rule=10,
+            max_depth=max_depth,
+            hidden_dim=hidden_dim,
+            grammar=g,
+        )
+
+    def _make_perceptual_layer(self, nInput=8, max_depth=7, hidden_dim=16):
+        from Model import SyntacticLayer, Grammar
+        g = Grammar()
+        return SyntacticLayer(
+            nInput=nInput, nOutput=nInput,
+            rules=g.perceptual(),     # [11]
+            transition_rule=None,
+            max_depth=max_depth,
+            hidden_dim=hidden_dim,
+            grammar=g,
+        )
+
+    # ── Shape tests ───────────────────────────────────────────────
+
+    def test_symbolic_forward_shapes(self):
+        layer = self._make_symbolic_layer()
+        x = torch.randn(4, 8).to(self._dev())
+        out = layer.forward(x)
+        # symbolic rules [1,2,3,4,5] + transition 6 = 6 local rules
+        self.assertEqual(out["rule_logits"].shape, (4, 7, 6))
+        self.assertEqual(out["rule_probs"].shape, (4, 7, 6))
+        self.assertEqual(out["predicted_rules"].shape, (4, 7))
+        self.assertNotIn("composed_activation", out)
+
+    def test_conceptual_forward_shapes(self):
+        layer = self._make_conceptual_layer()
+        x = torch.randn(2, 8).to(self._dev())
+        out = layer.forward(x)
+        # conceptual rules [7,8,9] + transition 10 = 4 local rules
+        self.assertEqual(out["rule_logits"].shape, (2, 7, 4))
+        self.assertNotIn("composed_activation", out)
+
+    def test_perceptual_forward_shapes(self):
+        layer = self._make_perceptual_layer()
+        x = torch.randn(2, 8).to(self._dev())
+        out = layer.forward(x)
+        # perceptual rules [11] = 1 local rule
+        self.assertEqual(out["rule_logits"].shape, (2, 7, 1))
+
+    # ── Space projection operation tests ─────────────────────────
+
+    def test_symbolic_and_is_min(self):
+        """AND (Gödel t-norm): min(left, right)."""
+        left  = torch.tensor([[0.8, 0.5, 1.0]])
+        right = torch.tensor([[0.6, 1.0, 0.0]])
+        result = torch.min(left, right)
+        expected = torch.tensor([[0.6, 0.5, 0.0]])
+        self.assertTrue(torch.allclose(result, expected))
+
+    def test_symbolic_or_is_max(self):
+        """OR (Gödel t-conorm): max(left, right)."""
+        left  = torch.tensor([[0.2, 0.9]])
+        right = torch.tensor([[0.7, 0.3]])
+        result = torch.max(left, right)
+        expected = torch.tensor([[0.7, 0.9]])
+        self.assertTrue(torch.allclose(result, expected))
+
+    def test_symbolic_not_is_complement(self):
+        """NOT: 1.0 - left."""
+        left = torch.tensor([[0.3, 0.8]])
+        result = 1.0 - left
+        expected = torch.tensor([[0.7, 0.2]])
+        self.assertTrue(torch.allclose(result, expected))
+
+    def test_conceptual_union_on_vectors(self):
+        """UNION: max(left, right) on [B, N, D] vectors."""
+        left  = torch.tensor([[[0.2, 0.5], [0.9, 0.1]]])
+        right = torch.tensor([[[0.7, 0.3], [0.3, 0.8]]])
+        result = torch.max(left, right)
+        expected = torch.tensor([[[0.7, 0.5], [0.9, 0.8]]])
+        self.assertTrue(torch.allclose(result, expected))
+
+    def test_conceptual_intersection_on_vectors(self):
+        """INTERSECTION: min(left, right) on [B, N, D] vectors."""
+        left  = torch.tensor([[[0.5, 0.9], [0.7, 0.2]]])
+        right = torch.tensor([[[0.3, 0.8], [0.9, 0.1]]])
+        result = torch.min(left, right)
+        expected = torch.tensor([[[0.3, 0.8], [0.7, 0.1]]])
+        self.assertTrue(torch.allclose(result, expected))
+
+    # ── Gradient flow (rule prediction) ────────────────────────────
+
+    def test_gradient_flows_through_rule_prediction(self):
+        layer = self._make_symbolic_layer()
+        layer.train()
+        x = torch.randn(2, 8, requires_grad=True, device=self._dev())
+        out = layer.forward(x)
+        loss = out["rule_logits"].pow(2).sum()
+        loss.backward()
+        self.assertIsNotNone(x.grad)
+        self.assertTrue((x.grad.abs() > 0).any())
+
+    # ── Eval mode ────────��─────────────────────────────���──────────
+
+    def test_eval_uses_softmax(self):
+        layer = self._make_symbolic_layer()
+        layer.eval()
+        x = torch.randn(2, 8).to(self._dev())
+        out = layer.forward(x)
+        sums = out["rule_probs"].sum(dim=-1)
+        self.assertTrue(torch.allclose(sums, torch.ones_like(sums), atol=1e-5))
+
+    # ── Reverse ─────────────��─────────────────────────────────────
+
+    def test_reverse_recovers_positions(self):
+        layer = self._make_symbolic_layer()
+        words = [(0, 2, 2), (0, 5, 2), (0, 7, 6)]  # 3 word tuples
+        activation = layer.reverse(words, nVectors=8, batch_size=1)
+        self.assertEqual(activation.shape, (1, 8))
+        self.assertEqual(activation[0, 2].item(), 1.0)
+        self.assertEqual(activation[0, 5].item(), 1.0)
+        self.assertEqual(activation[0, 7].item(), 1.0)
+        self.assertEqual(activation[0, 0].item(), 0.0)
+
+    # ── Utilities ─────────────────────────��───────────────────────
+
+    def test_set_tau(self):
+        layer = self._make_symbolic_layer()
         layer.set_tau(0.5)
         self.assertEqual(layer.tau, 0.5)
 

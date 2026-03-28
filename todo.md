@@ -7,18 +7,15 @@
 * vectors that learn positions and vectors that learn boundaries
 * make sure concepts and percepts both quantize nicely
 
-## Implement equals in symbolicSpace
-* "equals"
-
 ## Implement input-energy reduction in MentalModel
 * implement "Truth is accurately characterizing what exists"
-* "union, intersection, part, not, nor"
 
-## Map input sentences to operations
-* map mental operators to SyntacticSpace
+## Ethics
 * implemment symmetry (the golden rule)
 * implemment isomorphism
 * map TruthSets to SyntacticSpace (top-down reasoning)
+
+================================== April 10 ==================================
 
 ## Make sure that the mind is balanced
 * characterize one-pointedness (ShamathaSpeech, no Equals, FA)
