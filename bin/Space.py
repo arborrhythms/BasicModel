@@ -1798,10 +1798,27 @@ class SubSpace(nn.Module):
         if self.activation is None:
             return None
         return self.activation.getW()
-    
-    #def get_activations(self):
-    #    # to store a cross-product activation
-    #    return (whatA, whereA, whenA)
+
+    def set_symbols(self, symbols_tensor):
+        """Store symbolic presence [0,1] by mapping to conceptual activation [-1,1].
+
+        Symbols are percepts: each dimension is the presence (1) or absence (0)
+        of a symbol.  Internally stored as activation via x = 2*y - 1.
+
+        Args:
+            symbols_tensor: [batch, nSymbols] values in [0, 1].
+        """
+        self.set_activation(symbols_tensor * 2 - 1)
+
+    def get_symbols(self):
+        """Return symbolic presence [0,1] mapped from activation [-1,1].
+
+        Returns [batch, nSymbols] in [0,1] via y = (x+1)/2, or None.
+        """
+        act = self.get_activation()
+        if act is None:
+            return None
+        return (act + 1) / 2
 
     # ------------------------------------------------------------------
     # Word management
@@ -1971,6 +1988,8 @@ class SubSpace(nn.Module):
                 self.where.setW(tensor)
             elif target == "when":
                 self.when.setW(tensor)
+            # Invalidate cached event so materialize() re-concatenates
+            self.event.setW(None)
             return
 
         # Muxed mode: write into the event tensor slice
@@ -1989,14 +2008,13 @@ class SubSpace(nn.Module):
     # Normalization
     # ------------------------------------------------------------------
 
-    def normalize(self, kind, target="activation", x=None):
-        """Normalize a tensor or an encoding of this subspace in-place.
+    def normalize(self, kind, target="activation", normalize=True):
+        """Normalize or warn about an encoding of this subspace.
 
-        Uses the encoding target enum to select which part of the subspace
-        to normalize, and the kind to select the transfer function.
-
-        Backwards compatible: normalize(kind, tensor) still works — if
-        target is a tensor, it is treated as the x argument.
+        When normalize=True, transforms the tensor in-place to the
+        correct range for the space kind.  When normalize=False,
+        checks whether the tensor is already in range and emits a
+        warning if not (but does not modify it).
 
         Geometry-aware:
           - "percepts" on vectors → sigmoid + clamp [0,1] (hypercube)
@@ -2004,24 +2022,30 @@ class SubSpace(nn.Module):
           - "concepts" on vectors → L2 unit-norm (hypersphere)
           - "concepts" on activation → tanh [-1,1]
           - "symbols" → STE round {0,1} (activation only)
-          - "input" on vectors → L2 unit-norm (scale raw data)
+          - "input" on vectors → min-max scale to [0,1]
 
         Args:
             kind: "percepts", "concepts", "symbols", or "input".
             target: encoding target — "activation", "what", "where",
-                    "when", "event", or "all". Default "activation"
-                    for backwards compatibility.
-            x: explicit tensor to normalize. If provided, returns the
-               normalized tensor without modifying the subspace.
+                    "when", "event", or "all".
+            normalize: if True, apply the normalization in-place.
+                If False, warn if out of range but don't modify.
         """
-        # Backwards compat: normalize(kind, tensor) — tensor passed as target
-        if isinstance(target, torch.Tensor):
-            x = target
-            target = "activation"
-        if x is not None:
-            return self._apply_normalization(kind, x, target=target)
         x = self.select(target)
         if x is None or x.numel() == 0:
+            return
+        if not normalize:
+            normalized = self._apply_normalization(kind, x.detach(), target=target)
+            if not torch.allclose(x.detach(), normalized, atol=1e-4):
+                diff = (x.detach() - normalized).abs().max().item()
+                from data import TheData
+                import warnings
+                warnings.warn(
+                    f"Normalization check: kind={kind!r}, target={target!r} "
+                    f"deviates by {diff:.6f}. "
+                    f"Data range: input=[{TheData.input_min}, {TheData.input_max}], "
+                    f"output=[{TheData.output_min}, {TheData.output_max}]"
+                )
             return
         normalized = self._apply_normalization(kind, x, target=target)
         self.put(target, normalized)
@@ -2049,10 +2073,31 @@ class SubSpace(nn.Module):
             return hard - soft.detach() + soft  # straight-through estimator
         elif kind == "input":
             if is_vector:
-                return F.normalize(x, p=2, dim=-1)
+                from data import TheData
+                return TheData.normalize(x, which="input")  # [0,1] via global min-max
             return x
         else:
             raise ValueError(f"Unknown normalization kind: {kind!r}")
+
+    def denormalize(self, kind, target="activation"):
+        """Reverse the normalization applied by normalize().
+
+        Only meaningful for kinds with invertible transforms:
+          - "input" on vectors → scale from [0,1] back to [input_min, input_max]
+          - "output" on vectors → scale from [output_min, output_max] to [-1,1]
+
+        Other kinds (percepts, concepts, symbols) use non-invertible transforms
+        (sigmoid, L2-norm, STE) and are not denormalized.
+        """
+        x = self.select(target)
+        if x is None or x.numel() == 0:
+            return
+        is_vector = target in ("what", "where", "when", "event")
+        from data import TheData
+        if kind == "input" and is_vector:
+            self.put(target, TheData.denormalize(x, which="input"))
+        elif kind == "output" and is_vector:
+            self.put(target, TheData.normalize(x, which="output"))
 
     # ------------------------------------------------------------------
     # Luminosity
@@ -2589,10 +2634,6 @@ class InputSpace(Space):
             )
             self.forwarding_subspace.set_demuxed(what, where, when)
             self.input = self.forwarding_subspace.materialize()
-
-            if self._normalize:
-                self.forwarding_subspace.normalize("input", target="what")
-                self.input = self.forwarding_subspace.materialize()
         else:
             # Muxed path: event = concat([what, where, when], dim=-1)
             parts = [what]
@@ -2607,8 +2648,20 @@ class InputSpace(Space):
 
             # Return a forwarding subspace with the forward result, keeping
             # self.subspace for the codebook (Embedding).
-            self.forwarding_subspace = SubSpace(inputShape=self.outputShape, outputShape=self.outputShape)
+            self.forwarding_subspace = SubSpace(
+                inputShape=self.outputShape, outputShape=self.outputShape,
+                whereEncoding=self.subspace.whereEncoding,
+                whenEncoding=self.subspace.whenEncoding,
+            )
             self.forwarding_subspace.set_vectors(self.input)
+
+        # Scale what-content to [0,1] via data min-max (or warn if out of range).
+        # Skip for embedding models — embeddings produce learned representations
+        # that don't need range normalization from raw byte values.
+        if not isinstance(lexical_basis, Embedding):
+            self.forwarding_subspace.normalize("input", target="what",
+                                               normalize=self._normalize)
+            self.input = self.forwarding_subspace.materialize()
 
         object_basis.setW(self.input)
         if isinstance(lexical_basis, Embedding):
@@ -2712,6 +2765,14 @@ class InputSpace(Space):
             self._recovered_input = None
         # Return forwarding subspace (not self.subspace which is the codebook)
         self.forwarding_subspace.set_vectors(self.input)
+
+        # Denormalize: scale what-content from [0,1] back to original data range
+        if not isinstance(content_basis, Embedding) and self._normalize:
+            self.forwarding_subspace.denormalize("input", target="what")
+            self.input = self.forwarding_subspace.materialize()
+            content_basis.setW(self.input)
+            object_basis.setW(self.input)
+
         return self.forwarding_subspace
 
     def reconstruct_data(self, text=False):
@@ -3190,9 +3251,8 @@ class PerceptualSpace(Space):
         if self.quantized:
             x = self.subspace.get_vectors().forward(x)
         vspace = self.forwardEnd(x, returnVectors=True)
-        if self._normalize and not self.reversible:
-            vspace.normalize("percepts", target="what")       # hypercube [0,1]^d
-            vspace.normalize("percepts", target="activation")  # sigmoid [0,1]
+        vspace.normalize("percepts", target="what", normalize=self._normalize)       # hypercube [0,1]^d
+        vspace.normalize("percepts", target="activation", normalize=self._normalize)  # sigmoid [0,1]
         return vspace
 
     def reverse(self, vspace):
@@ -3505,9 +3565,8 @@ class ConceptualSpace(Space):
         if self.quantized:
             y = self.subspace.get_vectors().forward(y)
         vspace = self.forwardEnd(y, returnVectors=True)
-        if self._normalize and not self.reversible:
-            vspace.normalize("concepts", target="what")       # hypersphere S^(d-1)
-            vspace.normalize("concepts", target="activation")  # tanh [-1,1]
+        vspace.normalize("concepts", target="what", normalize=self._normalize)       # hypersphere S^(d-1)
+        vspace.normalize("concepts", target="activation", normalize=self._normalize)  # tanh [-1,1]
         return vspace
 
     def reverse(self, vspace):
@@ -3806,20 +3865,21 @@ class SymbolicSpace(Space):
         the activation (if needed), applies the straight-through
         estimator, and stores the result back in-place.
         """
-        vspace.normalize("symbols", target="activation")
+        vspace.normalize("symbols", target="activation", normalize=self._normalize)
 
     def forward(self, vspace):
-        """Naming: map concept activations to symbolic activations.
+        """Naming: map concept activations to symbolic presence.
 
         1. Extract concept activation [B, nConcepts] from input subspace.
         2. Map through invertible layer to [B, nSymbols].
-        3. Codebook quantizes and produces one-hot activation + dense vectors.
+        3. Store as symbolic presence [0,1] via set_symbols().
+        4. Codebook quantizes and produces one-hot activation + dense vectors.
            Output is a one-hot encoding over the codebook.
         """
         if self.passThrough:
             return vspace
         vspace = self.forwardBegin(vspace)
-        # Map concept activation → symbol activation
+        # Map concept activation → symbol presence
         act = vspace.materialize(mode="activation")  # [B, nConcepts]
         act = self.layer.forward(act)                 # [B, nSymbols]
         if self.quantized:
@@ -3829,16 +3889,16 @@ class SymbolicSpace(Space):
             self.codebook.forward(self.subspace)
             return self.forwardEnd(self.subspace)
         else:
-            vspace.set_activation(act)
+            vspace.set_symbols(act)
             return vspace
 
     def reverse(self, vspace):
-        """Interpretation: map symbolic activations back to concept space.
+        """Interpretation: map symbolic presence back to concept space.
 
         When quantized: inverse layer maps [B, nSymbols] activation back
         to [B, nConcepts], reconstructing the concept activation.
-        When not quantized: inverse layer maps activation, returns input
-        vspace with updated activation.
+        When not quantized: inverse layer maps symbols via get_symbols(),
+        returns input vspace with updated activation.
         """
         if self.passThrough:
             return vspace
@@ -3846,10 +3906,10 @@ class SymbolicSpace(Space):
         act = vspace.materialize(mode="activation")
         act = self.layer.reverse(act)
         if self.quantized:
-            self.subspace.set_activation(act)
+            self.subspace.set_symbols(act)
             return self.reverseEnd(self.subspace)
         else:
-            vspace.set_activation(act)
+            vspace.set_symbols(act)
             return vspace
 
     @staticmethod
@@ -3891,24 +3951,24 @@ class SyntacticSpace(Space):
         """Predict derivation rules and build word tuples."""
         vspace = self.forwardBegin(vspace)
 
-        # Get activation vector for the layer
-        act = vspace.get_activation()
-        if act is None:
-            # All symbols active — build a full activation
+        # Get symbolic presence [0,1] for the layer
+        symbols = vspace.get_symbols()
+        if symbols is None:
+            # All symbols present — build a full presence vector
             B = vspace.batch or 1
             N = vspace.outputShape[0]
-            act = torch.ones(B, N, device=TheDevice.get())
+            symbols = torch.ones(B, N, device=TheDevice.get())
 
         # Predict rules and build derivation
-        out = self.layer.forward(act)
+        out = self.layer.forward(symbols)
         words = out["words"]
         self.subspace.set_words(words)
 
-        # Pass vectors and activation through unchanged
+        # Pass vectors and symbols through unchanged
         x = vspace.materialize()
         if x is not None:
             self.subspace.set_vectors(x)
-        self.subspace.set_activation(act)
+        self.subspace.set_symbols(symbols)
         vspace = self.forwardEnd(self.subspace)
         return vspace
 
@@ -3920,14 +3980,14 @@ class SyntacticSpace(Space):
         batch_size = max((b for b, v, r in words), default=0) + 1 if words else 1
 
         # Deterministic tree-walk via the layer
-        activation = self.layer.reverse(words, nVectors, batch_size)
-        activation = activation.to(TheDevice.get())
+        symbols = self.layer.reverse(words, nVectors, batch_size)
+        symbols = symbols.to(TheDevice.get())
 
         # Pass vectors through without recomputing activation
         x = vspace.materialize()
         if x is not None:
             self.subspace.set_vectors(x, compute_activation=False)
-        self.subspace.set_activation(activation)
+        self.subspace.set_symbols(symbols)
         self.subspace.set_words([])
         vspace = self.reverseEnd(self.subspace)
         return vspace
@@ -4011,6 +4071,10 @@ class OutputSpace(Space):
         """Acting: project flattened symbols to task output via LinearLayer."""
         x = self.forwardBegin(vspace, returnVectors=True)
         output = self.forwardLinear(x)
+        # Rescale from symbolic activation [-1,1] to original data range
+        if self._normalize:
+            from data import TheData
+            output = TheData.denormalize(output, which="output")
         if self.quantized:
             output = self.subspace.get_vectors().forward(output)
         vspace = self.forwardEnd(output, returnVectors=True)
@@ -4019,6 +4083,11 @@ class OutputSpace(Space):
     def reverse(self, vspace):
         """Being acted upon: map output back to symbolic space via reverse LinearLayer."""
         y = self.reverseBegin(vspace, returnVectors=True)
+        # Denormalize: scale from original data range to [-1,1] (inverse of forward)
+        if self._normalize:
+            self.subspace.set_vectors(y)
+            self.subspace.denormalize("output", target="what")
+            y = self.subspace.materialize()
         y = self.reverseLinear(y)
         vspace = self.reverseEnd(y, returnVectors=True)
         return vspace

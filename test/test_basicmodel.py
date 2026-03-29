@@ -97,6 +97,10 @@ def _populate_test_config(*,
     the XML file provides these.  In tests, this helper provides them directly.
     """
     from BasicModel import TheXMLConfig, TheData
+    from util import init_config, ProjectPaths
+    import os
+    # Always load model.xml defaults first so all keys are present
+    init_config(defaults_path=os.path.join(ProjectPaths.DATA_DIR, "model.xml"))
     # Reset global state to prevent cross-test pollution
     TheXMLConfig._requirements.clear()
     TheData.train_input = []
@@ -133,6 +137,7 @@ def _populate_test_config(*,
             "flatten": False,  # InputSpace never flattens
             "quantized": quantized,
             "demuxed": demuxed,
+            "normalize": True,  # matches model.xml default
             "lexer": lexer,
         },
         "PerceptualSpace": {
@@ -144,6 +149,7 @@ def _populate_test_config(*,
             "passThrough": perceptPassThrough,
             "hasAttention": perceptHasAttention,
             "invertible": invertible,
+            "normalize": False,  # matches model.xml default
         },
         "ConceptualSpace": {
             "nActive": nConcepts,
@@ -154,6 +160,7 @@ def _populate_test_config(*,
             "hasAttention": conceptHasAttention,
             "hasNorm": hasNorm,
             "invertible": invertible,
+            "normalize": False,  # matches model.xml default
         },
         "SymbolicSpace": {
             "nActive": nSymbols,
@@ -162,6 +169,7 @@ def _populate_test_config(*,
             "flatten": flatten,
             "passThrough": symbolPassThrough,
             "quantized": not symbolPassThrough,
+            "normalize": False,  # matches model.xml default
         },
         "SyntacticSpace": {
             "nActive": nWords,
@@ -169,6 +177,7 @@ def _populate_test_config(*,
             "nVectors": nWords,
             "flatten": flatten,
             "quantized": False,
+            "normalize": False,  # matches model.xml default
         },
         "OutputSpace": {
             "nActive": nOutput,
@@ -179,6 +188,7 @@ def _populate_test_config(*,
             "flatten": True,  # OutputSpace always flattens
             "quantized": False,
             "invertible": False,
+            "normalize": True,  # matches model.xml default
         },
         "ModalSpace": {
             "nDim": perceptDim,
@@ -191,6 +201,7 @@ def _populate_test_config(*,
             "whatPassThrough": False,
             "wherePassThrough": True,
             "whenPassThrough": True,
+            "normalize": False,  # matches model.xml default
         },
     }
     for section, vals in _overrides.items():
@@ -3262,14 +3273,14 @@ class TestSyntacticSpaceRoundTrip(unittest.TestCase):
         ss = SubSpace(inputShape=[nVectors, nDim], outputShape=[nVectors, nDim])
         x = torch.randn(2, nVectors, nDim).to(TheDevice.get())
         ss.set_vectors(x)
-        # Build a sparse activation: 7 active positions per batch
-        act = torch.zeros(2, nVectors, device=TheDevice.get())
+        # Build sparse symbolic presence: 7 present positions per batch
+        symbols = torch.zeros(2, nVectors, device=TheDevice.get())
         # Pick 7 random positions per batch
         for b in range(2):
             indices = torch.randperm(nVectors)[:7]
-            act[b, indices] = 1.0
-        ss.set_activation(act)
-        original_act = act.clone()
+            symbols[b, indices] = 1.0
+        ss.set_symbols(symbols)
+        original_symbols = symbols.clone()
         # Forward: generates derivation
         out = syn.forward(ss)
         # Verify words were produced
@@ -3278,15 +3289,15 @@ class TestSyntacticSpaceRoundTrip(unittest.TestCase):
         # Delete the activation from the output subspace
         out.activation.setW(None)
         self.assertIsNone(out.get_activation())
-        # Reverse: should recover activation from derivation
+        # Reverse: should recover symbols from derivation
         recovered = syn.reverse(out)
-        recovered_act = recovered.get_activation()
-        self.assertIsNotNone(recovered_act)
-        # The nonzero positions should match
+        recovered_symbols = recovered.get_symbols()
+        self.assertIsNotNone(recovered_symbols)
+        # The present/absent positions should match
         self.assertTrue(torch.equal(
-            (original_act > 0).float().cpu(),
-            (recovered_act > 0).float().cpu()),
-            "Recovered activation positions don't match original")
+            (original_symbols > 0.5).float().cpu(),
+            (recovered_symbols > 0.5).float().cpu()),
+            "Recovered symbol positions don't match original")
 
 
 class TestSubspaceNormalize(unittest.TestCase):
@@ -3297,26 +3308,32 @@ class TestSubspaceNormalize(unittest.TestCase):
         return SubSpace(inputShape=[4, 3], outputShape=[4, 3])
 
     def test_percepts_range(self):
-        """normalize('percepts', x) produces values in [0, 1] via sigmoid."""
+        """normalize('percepts') produces values in [0, 1] via sigmoid."""
         ss = self._make_ss()
         x = torch.randn(2, 4, 3)
-        y = ss.normalize("percepts", x)
+        ss.set_vectors(x.clone())
+        ss.normalize("percepts", target="what")
+        y = ss.select("what")
         self.assertTrue(torch.all(y >= 0) and torch.all(y <= 1))
         self.assertTrue(torch.allclose(y, torch.sigmoid(x)))
 
     def test_concepts_range(self):
-        """normalize('concepts', x) produces values in [-1, 1] via tanh."""
+        """normalize('concepts') produces values in [-1, 1] via tanh."""
         ss = self._make_ss()
         x = torch.randn(2, 4, 3)
-        y = ss.normalize("concepts", x)
+        ss.set_activation(x[:, :, 0].clone())
+        ss.normalize("concepts", target="activation")
+        y = ss.get_activation()
         self.assertTrue(torch.all(y >= -1) and torch.all(y <= 1))
-        self.assertTrue(torch.allclose(y, torch.tanh(x)))
+        self.assertTrue(torch.allclose(y, torch.tanh(x[:, :, 0])))
 
     def test_symbols_discrete(self):
-        """normalize('symbols', x) produces {0, 1} integers with STE gradients."""
+        """normalize('symbols') produces {0, 1} integers with STE gradients."""
         ss = self._make_ss()
-        x = torch.randn(2, 4, 3, requires_grad=True)
-        y = ss.normalize("symbols", x)
+        x = torch.randn(2, 4, requires_grad=True)
+        ss.set_activation(x)
+        ss.normalize("symbols", target="activation")
+        y = ss.get_activation()
         # Output should be exactly 0 or 1
         self.assertTrue(torch.all((y == 0) | (y == 1)))
         # Gradients should flow (straight-through estimator)
@@ -3328,9 +3345,104 @@ class TestSubspaceNormalize(unittest.TestCase):
     def test_invalid_kind_raises(self):
         """normalize() with unknown kind raises ValueError."""
         ss = self._make_ss()
-        x = torch.randn(2, 4, 3)
+        ss.set_vectors(torch.randn(2, 4, 3))
         with self.assertRaises(ValueError):
-            ss.normalize("bogus", x)
+            ss.normalize("bogus", target="what")
+
+
+class TestDataScaling(unittest.TestCase):
+    """Tests for Data min/max tracking and scaling helpers."""
+
+    def test_xor_data_ranges(self):
+        """After loading XOR, Data has correct input/output min/max."""
+        from BasicModel import TheData
+        TheData.load("xor")
+        # XOR uses text input (byte range) and binary labels
+        self.assertEqual(TheData.input_min, 0.0)
+        self.assertEqual(TheData.input_max, 255.0)
+        self.assertEqual(TheData.output_min, 0.0)
+        self.assertEqual(TheData.output_max, 1.0)
+
+    def test_normalize_denormalize_roundtrip(self):
+        """Data.normalize and Data.denormalize are inverses."""
+        from BasicModel import TheData
+        TheData.input_min = -5.0
+        TheData.input_max = 5.0
+        TheData.output_min = -5.0
+        TheData.output_max = 5.0
+        x = torch.tensor([[-5.0, 0.0, 5.0]])
+        scaled = TheData.normalize(x, which="input")
+        self.assertTrue(torch.allclose(scaled, torch.tensor([[0.0, 0.5, 1.0]])))
+        # denormalize(output): [-1,1] -> [min,max]
+        act = torch.tensor([[-1.0, 0.0, 1.0]])
+        rescaled = TheData.denormalize(act, which="output")
+        self.assertTrue(torch.allclose(rescaled, torch.tensor([[-5.0, 0.0, 5.0]])))
+
+    def test_degenerate_range_noop(self):
+        """When min==max, scaling is a no-op (returns input unchanged)."""
+        from BasicModel import TheData
+        TheData.input_min = 3.0
+        TheData.input_max = 3.0
+        x = torch.tensor([[1.0, 2.0, 3.0]])
+        self.assertTrue(torch.equal(TheData.normalize(x, which="input"), x))
+
+
+class TestNormalizeFlag(unittest.TestCase):
+    """Tests for the normalize flag on SubSpace.normalize()."""
+
+    def test_normalize_false_does_not_modify(self):
+        """normalize=False checks range but does not modify the tensor."""
+        from Space import SubSpace
+        _populate_test_config(inputDim=4, nInput=4)
+        ss = SubSpace(inputShape=[4, 4], outputShape=[4, 4])
+        # Set vectors that are NOT in [0,1] range
+        x = torch.randn(2, 4, 4) * 5
+        ss.set_vectors(x.clone())
+        original = ss.materialize().clone()
+        import warnings
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            ss.normalize("percepts", target="what", normalize=False)
+        after = ss.materialize()
+        self.assertTrue(torch.equal(original, after),
+                        "normalize=False should not modify the tensor")
+        self.assertTrue(len(w) > 0, "Should have emitted a warning")
+
+    def test_normalize_true_does_modify(self):
+        """normalize=True (default) modifies the tensor."""
+        from Space import SubSpace
+        _populate_test_config(inputDim=4, nInput=4)
+        ss = SubSpace(inputShape=[4, 4], outputShape=[4, 4])
+        x = torch.randn(2, 4, 4) * 5
+        ss.set_vectors(x.clone())
+        original = ss.materialize().clone()
+        ss.normalize("percepts", target="what", normalize=True)
+        after = ss.materialize()
+        self.assertFalse(torch.equal(original, after),
+                         "normalize=True should modify the tensor")
+        self.assertTrue(torch.all(after >= 0) and torch.all(after <= 1))
+
+
+class TestInputSpaceScaling(unittest.TestCase):
+    """Tests for InputSpace min-max scaling of non-embedding data."""
+
+    def test_simple_input_scaled_to_unit(self):
+        """InputSpace(normalize=True) scales passthrough what-content to [0,1]."""
+        from BasicModel import InputSpace, TheData, TheXMLConfig
+        TheData.load("xor")
+        TheData.input_min = -3.0
+        TheData.input_max = 3.0
+        nInput = 4
+        _populate_test_config(inputDim=4, nInput=nInput, nWhere=0, nWhen=0)
+        _idim = TheXMLConfig.space("InputSpace", "nDim")
+        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        inp = InputSpace([nInput, _idim], [_invec, _idim],
+                         [nInput, _idim], model_type="simple")
+        x = torch.FloatTensor([[[-3, -1, 1, 3]] * nInput]).to(TheDevice.get())
+        result = inp.forward(x)
+        what = result.select("what")
+        self.assertTrue(torch.all(what >= -0.01) and torch.all(what <= 1.01),
+                        f"what should be in [0,1], got [{what.min():.4f}, {what.max():.4f}]")
 
 
 class TestSubspaceActivationPipeline(unittest.TestCase):
@@ -3389,9 +3501,6 @@ class TestInputSpaceDemuxed(unittest.TestCase):
     def test_demuxed_slots_populated(self):
         """InputSpace(demuxed=True).forward() populates what, where, when independently."""
         from BasicModel import InputSpace, TheData, TheXMLConfig
-        from util import init_config, ProjectPaths
-        import os
-        init_config(defaults_path=os.path.join(ProjectPaths.DATA_DIR, "model.xml"))
         TheData.load("xor")
         nInput = 4
         _populate_test_config(inputDim=8, nInput=nInput, nWhere=2, nWhen=2, demuxed=True)

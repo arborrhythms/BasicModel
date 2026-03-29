@@ -78,7 +78,7 @@
     <flatten>false</flatten>
     <quantized>false</quantized>
     <lexer>word</lexer>
-    <normalize>false</normalize>
+    <normalize>true</normalize>
   </InputSpace>
 
   <PerceptualSpace>
@@ -152,6 +152,6 @@
     <flatten>true</flatten>
     <invertible>false</invertible>
     <quantized>false</quantized>
-    <normalize>false</normalize>
+    <normalize>true</normalize>
   </OutputSpace>
 </model>

@@ -138,6 +138,11 @@ class Data():
         self.combinedTokens    = []
         self.reconstructed_input  = None  # filled after reverse pass (buffer strings)
         self.reconstructed_output = None  # filled after output reverse
+        # Global min/max for data scaling (computed by _compute_ranges)
+        self.input_min  = None
+        self.input_max  = None
+        self.output_min = None
+        self.output_max = None
 
     @property
     def nInput(self):
@@ -180,6 +185,7 @@ class Data():
             self.loadShards(num_shards, max_docs, shard_dir)
         if dataset == "inline":
             self.loadInline(dat or {})
+        self._compute_ranges()
         self.toDevice()
     def toDevice(self):
         """Move all data tensors to TheDevice and pre-shape for training.
@@ -202,6 +208,63 @@ class Data():
                     t.to(TheDevice.get()) if isinstance(t, torch.Tensor) else t
                     for t in v
                 ])
+
+    def _compute_ranges(self):
+        """Compute global scalar min/max for input and output data.
+
+        Called at the end of each load*() method, before toDevice().
+        These values are used by InputSpace (scale to [0,1]) and
+        OutputSpace (rescale from [-1,1] to original range).
+        """
+        if isinstance(self.train_input, torch.Tensor):
+            self.input_min = self.train_input.min().item()
+            self.input_max = self.train_input.max().item()
+        else:
+            # Text data: byte range
+            self.input_min = 0.0
+            self.input_max = 255.0
+        if isinstance(self.train_output, torch.Tensor):
+            self.output_min = self.train_output.min().item()
+            self.output_max = self.train_output.max().item()
+        elif isinstance(self.train_output, list) and len(self.train_output) > 0:
+            if isinstance(self.train_output[0], torch.Tensor):
+                stacked = torch.stack(self.train_output)
+                self.output_min = stacked.min().item()
+                self.output_max = stacked.max().item()
+
+    def normalize(self, x, which="input"):
+        """Normalize x into the canonical range for the given role.
+
+        Args:
+            x: tensor to normalize.
+            which: "input" scales [input_min, input_max] → [0, 1].
+                   "output" scales [output_min, output_max] → [-1, 1].
+        """
+        if which == "input":
+            if self.input_min is None or self.input_max is None or self.input_max == self.input_min:
+                return x
+            return (x - self.input_min) / (self.input_max - self.input_min)
+        else:
+            if self.output_min is None or self.output_max is None or self.output_max == self.output_min:
+                return x
+            return (x - self.output_min) / (self.output_max - self.output_min) * 2 - 1
+
+    def denormalize(self, x, which="input"):
+        """Reverse normalize(): map from canonical range back to data range.
+
+        Args:
+            x: tensor to denormalize.
+            which: "input" scales [0, 1] → [input_min, input_max].
+                   "output" scales [-1, 1] → [output_min, output_max].
+        """
+        if which == "input":
+            if self.input_min is None or self.input_max is None or self.input_max == self.input_min:
+                return x
+            return x * (self.input_max - self.input_min) + self.input_min
+        else:
+            if self.output_min is None or self.output_max is None or self.output_max == self.output_min:
+                return x
+            return (x + 1) / 2 * (self.output_max - self.output_min) + self.output_min
 
     @contextmanager
     def runtime_batch(self, inputs, outputs=None, mode=None):

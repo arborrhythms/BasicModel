@@ -39,6 +39,45 @@ per-neuron exploration level is kept consistent across the entire pipeline.
 
 ---
 
+## Normalization and Ranges
+
+Every space enforces a canonical range on its vectors and activations. The
+`normalize` config flag controls the behavior: when `true`, the space
+actively normalizes its output; when `false`, it emits a warning if the
+output is out of range but does not modify it.
+
+| Space | Vectors | Activation | Normalization |
+|-------|---------|------------|---------------|
+| InputSpace | `[0, 1]` via data min-max | N/A | `normalize=true` by default |
+| PerceptualSpace | `[0, 1]^d` (sigmoid + clamp) | `[0, 1]` (sigmoid) | `normalize=false` by default |
+| ConceptualSpace | S^(d-1) (L2 unit-norm) | `[-1, 1]` (tanh) | `normalize=false` by default |
+| SymbolicSpace | N/A (discrete) | `{0, 1}` presence/absence | `normalize=false` by default |
+| OutputSpace | data range | N/A | `normalize=true` by default |
+
+**Data scaling.** `Data` computes global scalar `input_min`/`input_max` and
+`output_min`/`output_max` from the training data at load time. InputSpace uses
+`Data.normalize(x, "input")` to scale non-embedding inputs to `[0, 1]`, and
+`Data.denormalize(x, "input")` in reverse to restore the original range.
+OutputSpace uses `Data.denormalize(x, "output")` to map from `[-1, 1]`
+(symbolic activation range) to the original output range, and
+`Data.normalize(x, "output")` in reverse.
+
+**Symbols as percepts.** Symbols represent the presence or absence of a named
+entity and live in `[0, 1]`. Since conceptual activations range `[-1, 1]`,
+the mapping is `symbol = (activation + 1) / 2`. The `SubSpace.get_symbols()`
+and `set_symbols()` methods perform this conversion, and SymbolicSpace /
+SyntacticSpace use them exclusively instead of `get_activation` /
+`set_activation`.
+
+**Demuxed mode.** When `InputSpace.demuxed=true`, what/where/when components
+are stored independently in the SubSpace rather than concatenated into a single
+event tensor. This keeps the codebook pure (positional data never contaminates
+content vectors). ModalSpace routes each component through independent
+PerceptualSpaces. Downstream spaces see an identical muxed tensor via
+`materialize()`.
+
+---
+
 ## InputSpace
 
 **Role.** Receives the raw source buffer from `Data()` and lifts it into the model's
@@ -61,7 +100,8 @@ table.
 
 **Numeric mode.** Tensor data is passed through unchanged; the LiftingLayer projects
 the native input dimension (e.g. 784 for MNIST) to the model's working dimensionality
-`nDim`.
+`nDim`. Non-embedding inputs are then scaled to `[0, 1]` using the global data min/max
+(`normalize=true`), and the reverse path restores the original range.
 
 **Key parameters.**
 
@@ -73,6 +113,8 @@ the native input dimension (e.g. 784 for MNIST) to the model's working dimension
 | `nWhen` | Temporal dimensions appended to each token vector |
 | `lexer` | Tokenization mode: `"word"` or `"sentence"` |
 | `quantized` | Whether input values are discrete |
+| `normalize` | Scale what-content to `[0, 1]` (default: `true`) |
+| `demuxed` | Store what/where/when independently (default: `false`) |
 
 **Layer.** `LiftingLayer` — bridges native input dimension to `nDim`.
 
@@ -117,8 +159,13 @@ reverse layer uses a pseudoinverse to approximately invert the forward mapping.
 | `invertible` | True: shared invertible layer; False: separate pi1/pi2 |
 | `passThrough` | Skip perceptual processing entirely |
 | `hasAttention` | Enable attention reweighting |
+| `normalize` | Normalize vectors to `[0,1]` hypercube (default: `false`) |
 
 **Layer.** `PiLayer` (one or two instances depending on `invertible`).
+
+**Range.** Vectors live on the `[0, 1]^d` hypercube (sigmoid + clamp); activation is
+`[0, 1]` (sigmoid). When `normalize=true`, these transforms are applied; when `false`,
+a warning is emitted if the output deviates.
 
 **Invertibility.** `invertible=True`: shared layer, exact inverse. `invertible=False`:
 separate layers, approximate pseudoinverse in reverse.
@@ -161,6 +208,10 @@ instances — `sigma1` for forward, `sigma2` for reverse.
 
 **Layer.** `SigmaLayer` (one or two instances depending on `invertible`).
 
+**Range.** Vectors live on the unit hypersphere S^(d-1) (L2-normalized); activation is
+`[-1, 1]` (tanh). When `normalize=true`, these transforms are applied; when `false`,
+a warning is emitted if the output deviates.
+
 **Invertibility.** `invertible=True`: exact inverse via atanh + `W^{-1}`. `invertible=False`:
 separate layers with independent weights.
 
@@ -170,9 +221,15 @@ separate layers with independent weights.
 
 **Role.** Converts continuous concept activations into a discrete set of active
 symbols. This is the information bottleneck of the pipeline: rich
-perceptual–conceptual representations are compressed into a sparse activation
-pattern over a codebook of symbol prototypes. Symbols are **zero-dimensional**
-entities — pure activation scalars, not vectors.
+perceptual–conceptual representations are compressed into a sparse presence
+pattern over a codebook of symbol prototypes.
+
+**Symbols are percepts.** Each symbol represents the presence (`1`) or absence
+(`0`) of a named entity. Since conceptual activations range `[-1, 1]`, the
+mapping between the two domains is `symbol = (activation + 1) / 2`.
+`SubSpace.get_symbols()` and `set_symbols()` perform this conversion;
+SymbolicSpace uses them exclusively instead of raw `get_activation` /
+`set_activation`.
 
 See [Language.md](Language.md) for the full language system design.
 
@@ -180,18 +237,21 @@ See [Language.md](Language.md) for the full language system design.
 
 1. Extract concept activation `[B, nConcepts]` from the input subspace.
 2. Map through `InvertibleLinearLayer(nConcepts, nSymbols)` to `[B, nSymbols]`.
-3. Reshape to `[B, nSymbols, 1]` (each symbol is 1-dim) and pass through the
+3. Store as symbolic presence `[0, 1]` via `set_symbols()`.
+4. Reshape to `[B, nSymbols, 1]` (each symbol is 1-dim) and pass through the
    codebook, which quantizes and produces a one-hot activation over codebook
    entries weighted by similarity.
 
 The output is a one-hot encoding over the codebook. The codebook provides dense
 vectors for downstream spaces that require `[B, N, D]` tensors.
 
-**Forward operation (quantized=False).** The invertible layer maps the activation;
-vectors pass through from the input subspace unchanged.
+**Forward operation (quantized=False).** The invertible layer maps the activation
+to symbolic presence via `set_symbols()`; vectors pass through from the input
+subspace unchanged.
 
-**Reverse operation.** The invertible layer's exact inverse maps
-`[B, nSymbols]` back to `[B, nConcepts]`, recovering the concept activation.
+**Reverse operation.** Reads symbolic presence via `get_symbols()`, then the
+invertible layer's exact inverse maps `[B, nSymbols]` back to `[B, nConcepts]`,
+recovering the concept activation.
 
 **passThrough=True.** Concept vectors and activation pass through unchanged.
 
@@ -203,6 +263,10 @@ vectors pass through from the input subspace unchanged.
 | `nVectors` | Codebook size (= nSymbols when quantized) |
 | `passThrough` | Skip symbolic processing entirely |
 | `quantized` | Enable codebook quantization (required for one-hot output) |
+| `normalize` | Discretize symbols to `{0, 1}` via STE (default: `false`) |
+
+**Range.** Symbolic presence lives in `[0, 1]`; internally stored as activation
+in `[-1, 1]` via the `(x+1)/2` mapping.
 
 **Layer.** `InvertibleLinearLayer(nConcepts, nSymbols)` — maps between
 activation spaces of different lengths. Exact inverse via LDU factorisation.
@@ -222,21 +286,21 @@ about differentiable tree structure.
 
 **Forward operation.**
 
-1. Identify active symbol positions from the activation vector (nonzero entries).
-2. For N active symbols per batch, generate a CNF derivation: N-1 binary rules
+1. Read symbolic presence via `get_symbols()` (nonzero entries are present symbols).
+2. For N present symbols per batch, generate a CNF derivation: N-1 binary rules
    (randomly selected) + 1 terminal (S → W).
 3. Store the derivation as word tuples on the output subspace. Vectors and
-   activation pass through unchanged.
+   symbolic presence pass through unchanged via `set_symbols()`.
 
 **Reverse operation.**
 
 1. Walk the word list: every `(batch, vector, rule)` entry marks that position
-   as active.
-2. Reconstruct the activation vector deterministically from the derivation.
-3. Store the recovered activation (without recomputing from vector norms).
+   as present.
+2. Reconstruct the symbolic presence vector deterministically from the derivation
+   via `set_symbols()`.
 
-The round-trip `forward → (delete activation) → reverse` recovers the original
-active positions exactly.
+The round-trip `forward → (delete symbols) → reverse` recovers the original
+present positions exactly.
 
 **Key parameters.**
 
@@ -291,5 +355,10 @@ codebook entry, that entry is fed back as input, and generation continues until
 
 **Layer.** `LinearLayer` with `(bias, temp)` support for ergodic mode. Always
 `reshape=True`.
+
+**Range.** When `normalize=true`, the forward pass rescales output from `[-1, 1]`
+(symbolic activation range) to the original data range via `Data.denormalize()`.
+The reverse pass applies `Data.normalize(x, "output")` to map back to `[-1, 1]`
+before the reverse linear projection.
 
 **Invertibility.** Reverse uses pseudoinverse; not exactly invertible in general.
