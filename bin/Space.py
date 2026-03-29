@@ -32,12 +32,11 @@ from datetime import datetime
 
 import util
 from util import TheDevice, TheMessage
-util.init_runtime_env()
 from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
-from Model import Grammar, Layer, PiLayer, NewPiLayer, SigmaLayer # Import custom layers from Model.py
+from Model import Grammar, Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
 from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, VerbLayer, OldSyntacticLayer, SyntacticLayer
 from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 
@@ -1439,6 +1438,9 @@ class Embedding(Basis):
         times = None
         where_encoding = None if subspace is None else subspace.whereEncoding
         when_encoding = None if subspace is None else subspace.whenEncoding
+        # Ensure 3D: [B, N, D]
+        if vectors.ndim == 2:
+            vectors = vectors.unsqueeze(0)
         if where_encoding is not None and where_encoding.nDim > 0:
             where_idx = where_encoding.resolve(embSize)
             if where_idx[0] >= 0 and where_idx[0] < embSize:
@@ -2474,6 +2476,10 @@ class InputSpace(Space):
         data = TheData
         self.data = data
         self.model_type = model_type
+        try:
+            self.demuxed = TheXMLConfig.space(section, "demuxed")
+        except KeyError:
+            self.demuxed = False
         self.lexer = lexer  # "word", "sentence", or "grammar" — selects .cfg file
         self.ergodic = ergodic
         self.min_frequency = float(min_frequency)
@@ -2573,25 +2579,41 @@ class InputSpace(Space):
         else:
             when = None
 
-        # Mux: event = concat([what, where, when], dim=-1)
-        parts = [what]
-        if where is not None:
-            parts.append(where)
-        if when is not None:
-            parts.append(when)
-        self.input = torch.cat(parts, dim=-1) if len(parts) > 1 else what
+        if self.demuxed:
+            # Demuxed path: store what/where/when independently in SubSpace.
+            # Codebook maps only to what-content; position never contaminates it.
+            self.forwarding_subspace = SubSpace(
+                inputShape=self.outputShape, outputShape=self.outputShape,
+                whereEncoding=self.subspace.whereEncoding,
+                whenEncoding=self.subspace.whenEncoding,
+            )
+            self.forwarding_subspace.set_demuxed(what, where, when)
+            self.input = self.forwarding_subspace.materialize()
+
+            if self._normalize:
+                self.forwarding_subspace.normalize("input", target="what")
+                self.input = self.forwarding_subspace.materialize()
+        else:
+            # Muxed path: event = concat([what, where, when], dim=-1)
+            parts = [what]
+            if where is not None:
+                parts.append(where)
+            if when is not None:
+                parts.append(when)
+            self.input = torch.cat(parts, dim=-1) if len(parts) > 1 else what
+
+            output = self.subspace.getEncodedOutputSize()
+            assert list(self.input.shape) == [batch, nObj, output]
+
+            # Return a forwarding subspace with the forward result, keeping
+            # self.subspace for the codebook (Embedding).
+            self.forwarding_subspace = SubSpace(inputShape=self.outputShape, outputShape=self.outputShape)
+            self.forwarding_subspace.set_vectors(self.input)
 
         object_basis.setW(self.input)
         if isinstance(lexical_basis, Embedding):
             lexical_basis.setW(self.input)
 
-        output = self.subspace.getEncodedOutputSize()
-        assert list(self.input.shape) == [batch, nObj, output]
-
-        # Return a forwarding subspace with the forward result, keeping
-        # self.subspace for the codebook (Embedding).
-        self.forwarding_subspace = SubSpace(inputShape=self.outputShape, outputShape=self.outputShape)
-        self.forwarding_subspace.set_vectors(self.input)
         return self.forwarding_subspace
     
     def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM'):
@@ -3006,97 +3028,6 @@ class InputSpace(Space):
         """Stamp positional encoding at a buffer position via subspace.whereEncoding."""
         if self.subspace.whereEncoding.nDim > 0:
             self.subspace.whereEncoding.stamp(buf, 0, pos_idx, byte_off)
-class DemuxedInputSpace(InputSpace):
-    """InputSpace variant that separates what/where/when into independent SubSpace slots.
-
-    The lexical/codebook basis maps directly to the what space — positional
-    and temporal metadata never contaminate the codebook branch.  When
-    materialize() is called on the returned SubSpace, the result is
-    event = concat([what, where, when], dim=-1), exactly matching the
-    current InputSpace contract.
-
-    "event" = a specifically characterized entity (Buddhist philosophical term)
-    — an object with spatiotemporal embedding (nWhere/nWhen > 0).
-    """
-    name = "Inputs"
-    config_section = "InputSpace"
-
-    def forward(self, input, mask=None):
-        # ARIR cache bypass
-        cached = getattr(self, '_cached_embedding', None)
-        if cached is not None:
-            self._cached_embedding = None
-            self.input = cached
-            self._forward_input = None
-            self.forwarding_subspace = SubSpace(inputShape=self.outputShape, outputShape=self.outputShape)
-            self.forwarding_subspace.set_vectors(self.input)
-            return self.forwarding_subspace
-
-        self.subspace.whereEncoding.p = 0
-
-        batch = input.shape[0]
-        nObj = self.outputShape[0]
-        object_basis = self.subspace.get_vectors()
-        lexical_basis = self.subspace.event
-
-        # Phase 1: Get pure content vectors (what)
-        if not isinstance(lexical_basis, Embedding):
-            assert list(input.shape) == [batch, self.inputShape[0], self.inputShape[1]]
-            what = object_basis.forward(input)
-            self._forward_input = None
-            meta = None
-        else:
-            what, meta = lexical_basis.forward(input, return_meta=True)
-            self._forward_input = meta
-
-        # Phase 2: Build standalone where tensor [batch, nObj, nWhere]
-        if self.nWhere > 0:
-            where = torch.zeros(batch, nObj, self.nWhere, device=TheDevice.get())
-            if isinstance(lexical_basis, Embedding) and meta is not None:
-                for b, batch_tokens in enumerate(meta['tokens']):
-                    for i, (_, start) in enumerate(batch_tokens):
-                        encoded = self.subspace.whereEncoding.encode(start)
-                        where[b, i, :] = encoded
-                    final_offset = meta['final_offsets'][b]
-                    for i in range(len(batch_tokens), nObj):
-                        pad_offset = final_offset + (i - len(batch_tokens))
-                        encoded = self.subspace.whereEncoding.encode(pad_offset)
-                        where[b, i, :] = encoded
-            else:
-                where = self.subspace.whereEncoding.forward(
-                    torch.zeros(batch, nObj, self.nWhere, device=TheDevice.get()))
-        else:
-            where = None
-
-        # Phase 3: Build standalone when tensor [batch, nObj, nWhen]
-        if self.nWhen > 0:
-            when = self.subspace.whenEncoding.forward(
-                torch.zeros(batch, nObj, self.nWhen, device=TheDevice.get()))
-        else:
-            when = None
-
-        # Phase 4: Create demuxed forwarding subspace
-        self.forwarding_subspace = SubSpace(
-            inputShape=self.outputShape, outputShape=self.outputShape,
-            whereEncoding=self.subspace.whereEncoding,
-            whenEncoding=self.subspace.whenEncoding,
-        )
-        self.forwarding_subspace.set_demuxed(what, where, when)
-
-        # Store muxed tensor for compatibility with code that reads self.input
-        self.input = self.forwarding_subspace.materialize()
-
-        # Normalize what-content vectors (where/when are already unit-circle encoded)
-        if self._normalize:
-            self.forwarding_subspace.normalize("input", target="what")
-            self.input = self.forwarding_subspace.materialize()
-
-        object_basis.setW(self.input)
-        if isinstance(lexical_basis, Embedding):
-            lexical_basis.setW(self.input)
-
-        return self.forwarding_subspace
-
 class PerceptualSpace(Space):
     """Transforms raw input vectors into percepts via a PiLayer.
 

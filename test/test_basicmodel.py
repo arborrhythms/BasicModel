@@ -89,6 +89,7 @@ def _populate_test_config(*,
                           invertible=False, hasNorm=False, quantized=False,
                           perceptQuantized=None, conceptQuantized=None,
                           certainty=False,
+                          demuxed=False,
                           lexer="word"):
     """Populate TheXMLConfig._data — test equivalent of XML loading.
 
@@ -131,6 +132,7 @@ def _populate_test_config(*,
             "nVectors": nInput,
             "flatten": False,  # InputSpace never flattens
             "quantized": quantized,
+            "demuxed": demuxed,
             "lexer": lexer,
         },
         "PerceptualSpace": {
@@ -3378,23 +3380,26 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# DemuxedInputSpace / ModalSpace tests
+# InputSpace(demuxed=True) / ModalSpace tests
 # ---------------------------------------------------------------------------
 
-class TestDemuxedInputSpace(unittest.TestCase):
-    """DemuxedInputSpace separates what/where/when and auto-muxes on materialize."""
+class TestInputSpaceDemuxed(unittest.TestCase):
+    """InputSpace with demuxed=True separates what/where/when and auto-muxes on materialize."""
 
     def test_demuxed_slots_populated(self):
-        """DemuxedInputSpace.forward() populates what, where, when independently."""
-        from BasicModel import DemuxedInputSpace, TheData, TheXMLConfig
+        """InputSpace(demuxed=True).forward() populates what, where, when independently."""
+        from BasicModel import InputSpace, TheData, TheXMLConfig
+        from util import init_config, ProjectPaths
+        import os
+        init_config(defaults_path=os.path.join(ProjectPaths.DATA_DIR, "model.xml"))
         TheData.load("xor")
         nInput = 4
-        _populate_test_config(inputDim=8, nInput=nInput, nWhere=2, nWhen=2)
+        _populate_test_config(inputDim=8, nInput=nInput, nWhere=2, nWhen=2, demuxed=True)
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        inp = DemuxedInputSpace([nInput, _idim], [_invec, _idim],
-                                [nInput, _idim + _obj], model_type="simple")
+        inp = InputSpace([nInput, _idim], [_invec, _idim],
+                         [nInput, _idim + _obj], model_type="simple")
         x = torch.randn(2, nInput, _idim).to(TheDevice.get())
         result = inp.forward(x)
         self.assertTrue(result.is_demuxed)
@@ -3403,35 +3408,39 @@ class TestDemuxedInputSpace(unittest.TestCase):
         self.assertEqual(list(result.when.getW().shape), [2, nInput, 2])
 
     def test_materialize_produces_muxed(self):
-        """DemuxedInputSpace.materialize() produces concat([what, where, when])."""
-        from BasicModel import DemuxedInputSpace, TheData, TheXMLConfig
+        """InputSpace(demuxed=True).materialize() produces concat([what, where, when])."""
+        from BasicModel import InputSpace, TheData, TheXMLConfig
         TheData.load("xor")
         nInput = 4
-        _populate_test_config(inputDim=8, nInput=nInput, nWhere=2, nWhen=2)
+        _populate_test_config(inputDim=8, nInput=nInput, nWhere=2, nWhen=2, demuxed=True)
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        inp = DemuxedInputSpace([nInput, _idim], [_invec, _idim],
-                                [nInput, _idim + _obj], model_type="simple")
+        inp = InputSpace([nInput, _idim], [_invec, _idim],
+                         [nInput, _idim + _obj], model_type="simple")
         x = torch.randn(2, nInput, _idim).to(TheDevice.get())
         result = inp.forward(x)
         muxed = result.materialize()
         self.assertEqual(list(muxed.shape), [2, nInput, _idim + _obj])
 
-    def test_equivalence_with_input_space(self):
-        """DemuxedInputSpace.materialize() == InputSpace.materialize() for same input."""
-        from BasicModel import InputSpace, DemuxedInputSpace, TheData, TheXMLConfig
+    def test_equivalence_with_muxed_input_space(self):
+        """InputSpace(demuxed=True).materialize() == InputSpace(demuxed=False).materialize()."""
+        from BasicModel import InputSpace, TheData, TheXMLConfig
         TheData.load("xor")
         nInput = 4
-        _populate_test_config(inputDim=8, nInput=nInput, nWhere=2, nWhen=2)
+
+        # Build muxed (legacy) InputSpace
+        _populate_test_config(inputDim=8, nInput=nInput, nWhere=2, nWhen=2, demuxed=False)
         _idim = TheXMLConfig.space("InputSpace", "nDim")
         _invec = TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-
         legacy = InputSpace([nInput, _idim], [_invec, _idim],
                             [nInput, _idim + _obj], model_type="simple")
-        demuxed = DemuxedInputSpace([nInput, _idim], [_invec, _idim],
-                                    [nInput, _idim + _obj], model_type="simple")
+
+        # Build demuxed InputSpace
+        _populate_test_config(inputDim=8, nInput=nInput, nWhere=2, nWhen=2, demuxed=True)
+        demuxed = InputSpace([nInput, _idim], [_invec, _idim],
+                             [nInput, _idim + _obj], model_type="simple")
 
         x = torch.randn(2, nInput, _idim).to(TheDevice.get())
         legacy_out = _unwrap(legacy.forward(x))
@@ -3486,23 +3495,25 @@ class TestModalSpace(unittest.TestCase):
         self.assertEqual(list(result.materialize().shape), [2, nInput, nDim])
 
 
-class TestDemuxedBasicModel(unittest.TestCase):
-    """DemuxedBasicModel creates the model and runs forward pass."""
+class TestBasicModelDemuxed(unittest.TestCase):
+    """BasicModel with demuxed=True creates InputSpace(demuxed) + ModalSpace."""
 
     def test_create_from_config(self):
-        """DemuxedBasicModel can be created from config with nWhere/nWhen > 0."""
-        from BasicModel import DemuxedBasicModel, DemuxedInputSpace, ModalSpace, TheData
+        """BasicModel with demuxed=True creates InputSpace(demuxed) + ModalSpace."""
+        from BasicModel import BasicModel, InputSpace, ModalSpace, TheData
         TheData.load("xor")
         _populate_test_config(
             inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0,
             outputDim=4,
             nInput=4, nPercepts=4, nConcepts=4, nSymbols=4, nWords=4, nOutput=4,
             nWhere=2, nWhen=2,
+            demuxed=True,
             flatten=True, perceptPassThrough=True)
-        model = DemuxedBasicModel()
+        model = BasicModel()
         model.create(nInput=4, nPercepts=4, nConcepts=4, nSymbols=4, nOutput=4,
                      model_type="simple")
-        self.assertIsInstance(model.inputSpace, DemuxedInputSpace)
+        self.assertIsInstance(model.inputSpace, InputSpace)
+        self.assertTrue(model.inputSpace.demuxed)
         self.assertIsInstance(model.perceptualSpace, ModalSpace)
 
 

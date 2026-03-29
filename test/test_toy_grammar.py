@@ -157,6 +157,7 @@ def train_and_evaluate(num_epochs=300, batch_size=64, lr=0.005, verbose=True):
     layer = SyntacticLayer(
         nInput=NUM_POS,
         nOutput=NUM_POS,
+        rules=list(range(NUM_TOY_RULES)),
         max_depth=MAX_DEPTH,
         hidden_dim=64,
         grammar=toy_grammar,

@@ -10,8 +10,6 @@ from __future__ import annotations  # allow X | Y union syntax on Python 3.9
 import os
 import warnings
 import numpy as np
-import util as _util
-_util.init_runtime_env()
 import torch
 import math
 import random
@@ -29,28 +27,10 @@ epsilon = 1e-7  # to avoid log(0)
 # Device used by all layers.
 from util import TheXMLConfig, TheDevice
 
-def has_signal(value):
-    """Return True when a tensor or scalar contains any non-zero signal."""
-    if isinstance(value, torch.Tensor):
-        return bool(torch.any(value != 0).item())
-    return bool(value)
-
-def sample_noise(reference, shape=None):
-    """Sample noise that matches the device and dtype of a reference tensor."""
-    if shape is None:
-        shape = tuple(reference.shape)
-    return torch.randn(shape, device=reference.device, dtype=reference.dtype)
-
 from util import TheMessage
 
 #region Layers
-class _AutoDevice(type(nn.Module)):
-    """Metaclass that moves nn.Modules to TheDevice after __init__."""
-    def __call__(cls, *args, **kwargs):
-        instance = super().__call__(*args, **kwargs)
-        return instance.to(TheDevice.get())
-
-class Layer(nn.Module, metaclass=_AutoDevice):
+class Layer(nn.Module):
     """Base class for custom layers with optional symbol/object axis swapping.
 
     Composite layers should register their child layers in ``self.layers``
@@ -231,9 +211,13 @@ class LinearLayer(ErgodicLayer):
     def resample_noise(self):
         """Draw fresh Gaussian noise matching W shape/device. No-op if not ergodic."""
         if self.ergodic:
-            self.noise  = sample_noise(self.W)
+            self.noise = torch.randn(self.W.shape, device=TheDevice.get(), dtype=self.W.dtype)
             if self.hasBias:
-                self.biasNoise = sample_noise(self.biasWeight)
+                self.biasNoise = torch.randn(
+                    self.biasWeight.shape,
+                    device=TheDevice.get(),
+                    dtype=self.biasWeight.dtype,
+                )
 
     def compute_W_current(self):
         """Effective W for outer-product use (respects ergodic noise if active)."""
@@ -744,139 +728,6 @@ class SigmaLayer(Layer):
         assert torch.norm(x - y_inv) < 0.00001
         print("SigmaLayer tests passed.")
 
-class NewPiLayer(Layer):
-    r"""Log-space multiplicative layer.
-
-    Forward:
-        y = exp(clamp(W @ log(clamp(x, ε, 1)) + b, log(ε), 0))
-
-    Inputs are expected in (0, 1].  In log-space the layer is a simple
-    affine map, and clamps keep the result in (0, 1].  Unlike OldPiLayer
-    this does **not** require nOutput = 2 * nInput for invertibility —
-    the invertible variant uses the same InvertibleLinearLayer but
-    operates directly in log-space without interleaving.
-
-    When ``stable=True`` (default) the clamp operations are applied.
-    When ``stable=False`` the clamps are omitted (caller guarantees
-    inputs are in range and the affine result stays in [log(ε), 0]).
-
-    When ``invertible=True``:
-        Reverse: x = exp(W_inv @ (log(clamp(y, ε, 1)) − b))
-    """
-    def __init__(self, nInput, nOutput, ergodic=False, naive=True,
-                 invertible=False, hasBias=True, stable=True):
-        super().__init__(nInput, nOutput)
-        self.invertible = invertible
-        self.stable     = stable
-        self.hasBias    = hasBias
-        if invertible:
-            self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
-                                               naive=naive, ergodic=ergodic,
-                                               stable=stable)
-        else:
-            self.layer = LinearLayer(nInput, nOutput, hasBias=hasBias,
-                                     naive=naive, ergodic=ergodic, stable=stable)
-        self.layers.append(self.layer)
-        # Log-space affine needs near-identity init so that the sum
-        # W @ log(x) stays bounded.  Replace the default randn W with
-        # eye + small noise.
-        if not ergodic and hasattr(self.layer, 'W'):
-            with torch.no_grad():
-                self.layer.W.copy_(
-                    torch.eye(nInput, nOutput) +
-                    0.01 * torch.randn(nInput, nOutput)
-                )
-
-    @property
-    def bias(self): return self.layer.bias
-    @property
-    def var(self):  return self.layer.var
-
-    def resample_noise(self):
-        self.layer.resample_noise()
-
-    def _effective_bias(self):
-        """Bias to add to W @ log(x), or 0 if hasBias=False."""
-        if not self.hasBias:
-            return 0
-        if self.layer.ergodic:
-            return self.layer.bias * self.layer.biasWeight + self.layer.var * self.layer.biasNoise
-        return self.layer.biasWeight
-
-    def forward(self, x):
-        if self.layer.ergodic:
-            self.resample_noise()
-        W = self.layer.compute_W_current()               # [nIn, nOut]
-        x = x.to(W.device)
-        # --- log-space affine: y = exp(clamp(W @ log(clamp(x)) + b)) ---
-        if self.stable:
-            x = x.clamp(min=0) + epsilon #x.clamp(min=epsilon, max=1.0)
-        log_x = torch.log(x)                             # [..., nIn]
-        wx = log_x @ W                                   # [..., nOut]
-        b  = self._effective_bias()
-        wx = wx + b
-        if self.stable:
-            wx = wx.clamp(min=math.log(epsilon), max=0.0)
-        return torch.exp(wx)
-
-    def reverse(self, y):
-        """Recover x from y.  Requires invertible=True.
-
-        x = exp(W_inv @ (log(clamp(y, ε, 1)) − b))
-        """
-        W_inv = self.layer.compute_Winverse_current()     # [nOut, nIn]
-        y = y.to(W_inv.device)
-        if self.stable:
-            y = y.clamp(min=epsilon)
-        log_y = torch.log(y)
-        b = self._effective_bias()
-        gamma = log_y - b                                 # [..., nOut]
-        log_x = gamma @ W_inv                             # [..., nIn]
-        if self.layer.ergodic:
-            self.resample_noise()
-        return torch.exp(log_x)
-
-    @staticmethod
-    def test():
-        nBatch, nInput, nOutput = 5, 3, 4
-        layer = PiLayer(nInput=nInput, nOutput=nOutput)
-        device = next(layer.parameters()).device
-        # Inputs in (0, 1]
-        x = torch.rand((nBatch, 6, nInput), device=device).clamp(min=epsilon)
-        layer.set_sigma(0.999)
-        y = layer(x)
-        assert y.shape == (nBatch, 6, nOutput), f"shape mismatch: {y.shape}"
-        print(f"PiLayer forward: input {x.shape} -> output {y.shape}")
-
-        def check_roundtrip(desc, **kwargs):
-            kw = dict(nInput=3, nOutput=4, invertible=True)
-            kw.update(kwargs)
-            layer = PiLayer(**kw)
-            device = next(layer.parameters()).device
-            nI = kw['nInput']
-            inputs = [('3D [B,S,nIn]', torch.rand(16, 5, nI, device=device).clamp(min=epsilon)),
-                      ('2D [B,nIn]',   torch.rand(16, nI,    device=device).clamp(min=epsilon))]
-            for tag, x in inputs:
-                layer.set_sigma(0.0)
-                y = layer.forward(x)
-                x_recon = layer.reverse(y)
-                error = torch.norm(x - x_recon) / torch.norm(x)
-                assert error < 1e-4, f"{desc} {tag}: reconstruction error {error:.2e}"
-            print(f"  {desc}: OK")
-
-        print("Invertible PiLayer (log-space) roundtrip variations:")
-        check_roundtrip("naive=T hasBias=T", naive=True,  hasBias=True)
-        check_roundtrip("naive=T hasBias=F", naive=True,  hasBias=False)
-        check_roundtrip("naive=F hasBias=T", naive=False, hasBias=True)
-        check_roundtrip("naive=F hasBias=F", naive=False, hasBias=False)
-        check_roundtrip("square nIn=nOut=4", naive=True,  hasBias=False, nInput=4, nOutput=4)
-        check_roundtrip("nOut<nIn 5->3",     naive=True,  hasBias=False, nInput=5, nOutput=3)
-        check_roundtrip("ergodic naive=T hasBias=F", naive=True,  hasBias=False, ergodic=True)
-        check_roundtrip("ergodic naive=T hasBias=T", naive=True,  hasBias=True,  ergodic=True)
-        check_roundtrip("ergodic naive=F hasBias=T", naive=False, hasBias=True,  ergodic=True)
-        print("PiLayer tests passed.")
-
-
 class PiLayer(Layer):
     """Multiplicative layer: y_j = prod_i (1 + tanh(w_ji * x_i)).
 
@@ -1089,7 +940,11 @@ class DecisionBoundaryLayer(Layer):
 
     def forward(self, x, t=0):
         if t != 0:
-            self.noise = sample_noise(self.weight)
+            self.noise = torch.randn(
+                self.weight.shape,
+                device=TheDevice.get(),
+                dtype=self.weight.dtype,
+            )
 
         W = self.weight + t*self.noise
         dot_product = torch.matmul(x, W)
@@ -1791,8 +1646,6 @@ class Loss(nn.Module):
     def compute(self, pred, target):
         """Compute loss between pred and target. Override in subclasses."""
         return nn.functional.mse_loss(pred, target)
-
-
 class ModelLoss(Loss):
     """Weighted reconstruction loss with separate scales for what/where/when."""
 
@@ -1852,7 +1705,6 @@ class ModelLoss(Loss):
 
     def total(self, lossOut, lossIn=None, sbow=None):
         return self(lossOut, lossIn, sbow)
-
 class CertaintyWeightedMAELoss(Loss):
     """MAE loss weighted by prediction magnitude (certainty).
 
@@ -1868,7 +1720,6 @@ class CertaintyWeightedMAELoss(Loss):
         certainty = torch.abs(predictions)
         loss = abs_error * (self.alpha * certainty + (1 - self.alpha))
         return torch.mean(loss)
-
 class CertaintyWeightedMSELoss(Loss):
     """MSE loss weighted by prediction magnitude (certainty).
 
@@ -1884,7 +1735,6 @@ class CertaintyWeightedMSELoss(Loss):
         cw_mse_loss = mse_loss * certainty
         hybrid_loss = self.alpha * cw_mse_loss.mean() + (1 - self.alpha) * mse_loss.mean()
         return hybrid_loss
-
 class CertaintyWeightedCrossEntropy(Loss):
     """Cross-entropy weighted by predicted probability of the true class.
 
@@ -2236,181 +2086,6 @@ class Grammar:
         """Rules associated with perceptual operations: word terminal."""
         return [13]
 
-class OldSyntacticLayer(Layer):
-    """Recursive derivation stack that learns grammar rule distributions.
-
-    A single shared derivation layer and rule head are applied repeatedly
-    at each depth, with a learned depth embedding added to the hidden
-    state so the shared weights can specialize by tree level.  This is
-    a recursive (weight-tied) architecture — the same transformation
-    applies at every level of the derivation, mirroring the recursive
-    nature of natural-language syntax.
-
-    **Forward:** receives activation [B, nSymbols], unrolls the shared
-    layer for ``max_depth`` steps, predicts a rule distribution at each
-    step via Gumbel-softmax, and assembles word tuples.
-
-    **Reverse:** deterministic tree-walk — reads word tuples and
-    reconstructs the activation vector by marking referenced positions
-    as active.  No learned weights; gradients do not flow through reverse.
-    """
-
-    def __init__(self, nInput, nOutput, max_depth=12, hidden_dim=256,
-                 grammar=None, tau=1.0):
-        # nInput  = nSymbols (activation width from SymbolicSpace)
-        # nOutput = nInput   (pass-through; output is side-effect on words)
-        super().__init__(nInput, nOutput)
-        self.grammar    = grammar or Grammar()
-        self.num_rules  = len(self.grammar)
-        self.max_depth  = max_depth
-        self.hidden_dim = hidden_dim
-        self.tau        = tau
-
-        # Input projection: activation → hidden state
-        self.input_proj = LinearLayer(nInput, hidden_dim)
-
-        # Shared recursive layer (applied at every depth)
-        self.derivation_layer = LinearLayer(hidden_dim, hidden_dim)
-        self.rule_head        = LinearLayer(hidden_dim, self.num_rules)
-
-        # Depth embedding: tells the shared weights where in the tree they are
-        self.depth_embed = nn.Embedding(max_depth, hidden_dim)
-
-        self.activation_fn = nn.GELU()
-
-        # Register child layers for ergodic dispatch
-        self.layers = [self.input_proj, self.derivation_layer, self.rule_head]
-
-    # ── forward: predict rules ──────────────────────────────────────
-
-    def forward(self, x):
-        """
-        x: [B, nSymbols] activation vector.
-
-        Returns dict:
-            rule_logits:     [B, max_depth, num_rules]
-            rule_probs:      [B, max_depth, num_rules]
-            predicted_rules: [B, max_depth]
-            words:           list of (batch, vector, rule) tuples
-        """
-        B = x.shape[0]
-        h = self.input_proj.forward(x)       # [B, hidden_dim]
-        h = self.activation_fn(h)
-
-        depth_ids = torch.arange(self.max_depth, device=x.device)
-        depth_vecs = self.depth_embed(depth_ids)  # [max_depth, hidden_dim]
-
-        all_logits = []
-        all_probs  = []
-
-        for d in range(self.max_depth):
-            h = h + depth_vecs[d]                            # add depth embedding
-            h = self.derivation_layer.forward(h)             # shared weights
-            h = self.activation_fn(h)
-            logits = self.rule_head.forward(h)               # shared weights
-
-            if self.training:
-                probs = F.gumbel_softmax(logits, tau=self.tau, hard=False)
-            else:
-                probs = F.softmax(logits, dim=-1)
-
-            all_logits.append(logits)
-            all_probs.append(probs)
-
-        rule_logits     = torch.stack(all_logits, dim=1)     # [B, max_depth, num_rules]
-        rule_probs      = torch.stack(all_probs, dim=1)
-        predicted_rules = rule_logits.argmax(dim=-1)         # [B, max_depth]
-
-        # Build word tuples from predicted rules + active positions
-        active_positions = self._active_positions(x)
-        words = self._generate_derivation(predicted_rules, active_positions)
-
-        return {
-            "rule_logits":     rule_logits,
-            "rule_probs":      rule_probs,
-            "predicted_rules": predicted_rules,
-            "words":           words,
-        }
-
-    def _active_positions(self, x):
-        """Extract per-batch lists of active (nonzero) positions from activation.
-
-        x: [B, nSymbols] activation vector.
-        Returns: list of lists — active_positions[b] = [pos0, pos1, ...].
-        """
-        B = x.shape[0]
-        positions = []
-        for b in range(B):
-            active = torch.nonzero(x[b], as_tuple=False).squeeze(-1)
-            positions.append(active.tolist())
-        return positions
-
-    def _generate_derivation(self, predicted_rules, active_positions):
-        """Build a binary derivation tree from predicted rules and active positions.
-
-        For N active symbols per batch element, produces N-1 binary rules
-        (internal nodes) + 1 terminal rule (rightmost leaf), consuming
-        positions left-to-right in pre-order.
-
-        predicted_rules:  [B, max_depth] integer tensor
-        active_positions: list of lists — active_positions[b] = [pos0, ...]
-
-        Returns: flat list of (batch, vector, rule) word tuples.
-        """
-        B = predicted_rules.shape[0]
-        all_words = []
-        for b in range(B):
-            rules     = predicted_rules[b].tolist()
-            positions = active_positions[b]
-            n = len(positions)
-            if n == 0:
-                continue
-            if n == 1:
-                # Single symbol — terminal (rule 1: S → W)
-                all_words.append((b, positions[0], 1))
-                continue
-            # Use predicted binary rules for internal nodes, terminal for last leaf
-            pos_idx = 0
-            for rule_id in rules:
-                if pos_idx >= n - 1:
-                    break
-                # Force binary: if predicted rule isn't binary, use first binary rule
-                if self.grammar.arity(rule_id) != 2:
-                    rule_id = self.grammar.binary_rules()[0]
-                all_words.append((b, positions[pos_idx], rule_id))
-                pos_idx += 1
-            # Last leaf is always terminal
-            all_words.append((b, positions[-1], 1))
-        return all_words
-
-    # ── reverse: deterministic tree-walk ────────────────────────────
-
-    def reverse(self, words, nVectors, batch_size):
-        """Decode the derivation tree to recover the activation vector.
-
-        Walks word tuples in pre-order — each (batch, vector, rule) entry
-        marks that position as active.  This deterministically reconstructs
-        which symbol positions are "on" from the derivation alone.
-
-        Args:
-            words:      list of (batch, vector, rule) tuples.
-            nVectors:   width of the activation vector (number of symbol slots).
-            batch_size: batch dimension.
-
-        Returns:
-            activation: [batch_size, nVectors] tensor with 1.0 at active positions.
-        """
-        activation = torch.zeros(batch_size, nVectors, device=TheDevice.get())
-        for b, v, r in words:
-            activation[b, v] = 1.0
-        return activation
-
-    # ── utilities ───────────────────────────────────────────────────
-
-    def set_tau(self, tau):
-        """Anneal the Gumbel-softmax temperature."""
-        self.tau = tau
-
 class SyntacticLayer(Layer):
     """Per-space rule prediction layer for the recursive grammar.
 
@@ -2587,7 +2262,6 @@ class SyntacticLayer(Layer):
     def set_tau(self, tau):
         """Anneal the Gumbel-softmax temperature."""
         self.tau = tau
-
 
 class LogicLayer(Layer):
 
@@ -2931,6 +2605,185 @@ class LogicLayer(Layer):
         P = LL.part(X, Y)                     # (B, 2)
         X_neg = LL.neg(X)                     # (B, N, D)
         X_non = LL.non(X, alpha=0.2)          # (B, N, D)
+
+
+
+
+class OldSyntacticLayer(Layer):
+    """Recursive derivation stack that learns grammar rule distributions.
+
+    A single shared derivation layer and rule head are applied repeatedly
+    at each depth, with a learned depth embedding added to the hidden
+    state so the shared weights can specialize by tree level.  This is
+    a recursive (weight-tied) architecture — the same transformation
+    applies at every level of the derivation, mirroring the recursive
+    nature of natural-language syntax.
+
+    **Forward:** receives activation [B, nSymbols], unrolls the shared
+    layer for ``max_depth`` steps, predicts a rule distribution at each
+    step via Gumbel-softmax, and assembles word tuples.
+
+    **Reverse:** deterministic tree-walk — reads word tuples and
+    reconstructs the activation vector by marking referenced positions
+    as active.  No learned weights; gradients do not flow through reverse.
+    """
+
+    def __init__(self, nInput, nOutput, max_depth=12, hidden_dim=256,
+                 grammar=None, tau=1.0):
+        # nInput  = nSymbols (activation width from SymbolicSpace)
+        # nOutput = nInput   (pass-through; output is side-effect on words)
+        super().__init__(nInput, nOutput)
+        self.grammar    = grammar or Grammar()
+        self.num_rules  = len(self.grammar)
+        self.max_depth  = max_depth
+        self.hidden_dim = hidden_dim
+        self.tau        = tau
+
+        # Input projection: activation → hidden state
+        self.input_proj = LinearLayer(nInput, hidden_dim)
+
+        # Shared recursive layer (applied at every depth)
+        self.derivation_layer = LinearLayer(hidden_dim, hidden_dim)
+        self.rule_head        = LinearLayer(hidden_dim, self.num_rules)
+
+        # Depth embedding: tells the shared weights where in the tree they are
+        self.depth_embed = nn.Embedding(max_depth, hidden_dim)
+
+        self.activation_fn = nn.GELU()
+
+        # Register child layers for ergodic dispatch
+        self.layers = [self.input_proj, self.derivation_layer, self.rule_head]
+
+    # ── forward: predict rules ──────────────────────────────────────
+
+    def forward(self, x):
+        """
+        x: [B, nSymbols] activation vector.
+
+        Returns dict:
+            rule_logits:     [B, max_depth, num_rules]
+            rule_probs:      [B, max_depth, num_rules]
+            predicted_rules: [B, max_depth]
+            words:           list of (batch, vector, rule) tuples
+        """
+        B = x.shape[0]
+        h = self.input_proj.forward(x)       # [B, hidden_dim]
+        h = self.activation_fn(h)
+
+        depth_ids = torch.arange(self.max_depth, device=x.device)
+        depth_vecs = self.depth_embed(depth_ids)  # [max_depth, hidden_dim]
+
+        all_logits = []
+        all_probs  = []
+
+        for d in range(self.max_depth):
+            h = h + depth_vecs[d]                            # add depth embedding
+            h = self.derivation_layer.forward(h)             # shared weights
+            h = self.activation_fn(h)
+            logits = self.rule_head.forward(h)               # shared weights
+
+            if self.training:
+                probs = F.gumbel_softmax(logits, tau=self.tau, hard=False)
+            else:
+                probs = F.softmax(logits, dim=-1)
+
+            all_logits.append(logits)
+            all_probs.append(probs)
+
+        rule_logits     = torch.stack(all_logits, dim=1)     # [B, max_depth, num_rules]
+        rule_probs      = torch.stack(all_probs, dim=1)
+        predicted_rules = rule_logits.argmax(dim=-1)         # [B, max_depth]
+
+        # Build word tuples from predicted rules + active positions
+        active_positions = self._active_positions(x)
+        words = self._generate_derivation(predicted_rules, active_positions)
+
+        return {
+            "rule_logits":     rule_logits,
+            "rule_probs":      rule_probs,
+            "predicted_rules": predicted_rules,
+            "words":           words,
+        }
+
+    def _active_positions(self, x):
+        """Extract per-batch lists of active (nonzero) positions from activation.
+
+        x: [B, nSymbols] activation vector.
+        Returns: list of lists — active_positions[b] = [pos0, pos1, ...].
+        """
+        B = x.shape[0]
+        positions = []
+        for b in range(B):
+            active = torch.nonzero(x[b], as_tuple=False).squeeze(-1)
+            positions.append(active.tolist())
+        return positions
+
+    def _generate_derivation(self, predicted_rules, active_positions):
+        """Build a binary derivation tree from predicted rules and active positions.
+
+        For N active symbols per batch element, produces N-1 binary rules
+        (internal nodes) + 1 terminal rule (rightmost leaf), consuming
+        positions left-to-right in pre-order.
+
+        predicted_rules:  [B, max_depth] integer tensor
+        active_positions: list of lists — active_positions[b] = [pos0, ...]
+
+        Returns: flat list of (batch, vector, rule) word tuples.
+        """
+        B = predicted_rules.shape[0]
+        all_words = []
+        for b in range(B):
+            rules     = predicted_rules[b].tolist()
+            positions = active_positions[b]
+            n = len(positions)
+            if n == 0:
+                continue
+            if n == 1:
+                # Single symbol — terminal (rule 1: S → W)
+                all_words.append((b, positions[0], 1))
+                continue
+            # Use predicted binary rules for internal nodes, terminal for last leaf
+            pos_idx = 0
+            for rule_id in rules:
+                if pos_idx >= n - 1:
+                    break
+                # Force binary: if predicted rule isn't binary, use first binary rule
+                if self.grammar.arity(rule_id) != 2:
+                    rule_id = self.grammar.binary_rules()[0]
+                all_words.append((b, positions[pos_idx], rule_id))
+                pos_idx += 1
+            # Last leaf is always terminal
+            all_words.append((b, positions[-1], 1))
+        return all_words
+
+    # ── reverse: deterministic tree-walk ────────────────────────────
+
+    def reverse(self, words, nVectors, batch_size):
+        """Decode the derivation tree to recover the activation vector.
+
+        Walks word tuples in pre-order — each (batch, vector, rule) entry
+        marks that position as active.  This deterministically reconstructs
+        which symbol positions are "on" from the derivation alone.d
+
+        Args:
+            words:      list of (batch, vector, rule) tuples.
+            nVectors:   width of the activation vector (number of symbol slots).
+            batch_size: batch dimension.
+
+        Returns:
+            activation: [batch_size, nVectors] tensor with 1.0 at active positions.
+        """
+        activation = torch.zeros(batch_size, nVectors, device=TheDevice.get())
+        for b, v, r in words:
+            activation[b, v] = 1.0
+        return activation
+
+    # ── utilities ───────────────────────────────────────────────────
+
+    def set_tau(self, tau):
+        """Anneal the Gumbel-softmax temperature."""
+        self.tau = tau
+
 
 #endregion
 

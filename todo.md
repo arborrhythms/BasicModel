@@ -1,16 +1,35 @@
 # TODO
 
-* Implement parthood, union, intersection on the membedded vectors
+* ProjectConcepts() : 
+Mereology
+Implement parthood, union, intersection on the embedded vectors
+parthood needs to exist on both concepts (as activation containment) and percepts (as a simpler "<" operator)
 
-* Verify() : map TruthSets to ConceptualSpace (top-down reasoning). 
-A given sentence can be measured against a corpus of truth by measuring the osel after apoha of the TruthSet
+* LogicLayer() : 
+the logical operations on symbols for a basis for propositional knowledge over all symbols.
+add a LogicLayer that learns symbolic logic on symbols.
+ensure that EQUALS and other symbolic logical operators in sentences equates the learned symbols.
+
+* Verify() : map TruthSets to ConceptualSpace (top-down reasoning) 
+a given sentence can be measured against a corpus of truth by measuring the osel after apoha of the TruthSet.
+negation of the non-concept from the truthset leaves a space of truth and a background of falsity.
+it will be sparse: not all turths will be covered.
 
 * Universalize() : implement universality (the golden rule) by measuring osel after round-robin projection of the given action
-Next we need to determine some measure of harm or destructiveness osel(x)
+Next we need to determine some measure of harm or destructiveness osel(x).
 Finally if K(X,Y) + K(Y,X) leads to less osel(X’)+osel(Y’) than osel over the original X and Y, then the kronecker in question is not universalize, and thus not ethical.
-Osel(x) is the weak spot in this architecture, the rest is math. One way to describe it is through subjective measure; another might be to describe its “perceptive volume”. If we follow Augustine is saying that all percepts are good, then any increase in volume is better. That does capture growth and destruction as being relatively good and  bad for the things in question.
+Osel(x) is the weak spot in this architecture, the rest is math. One way to describe it is through subjective measure; another might be to describe its “perceptive volume”. 
+If we follow Augustine is saying that all percepts are good, then any increase in volume is better. 
+That does capture growth and destruction as being relatively good and  bad for the things in question.
 
-================================== April 10 ==================================
+* Implement forgetting
+If someone has contributed information to an LLM and asked for the LLM 
+to learn from that data, even when the data is revoked, it will be remembered 
+in some vague way by the weights. So implement non-destructive forgetting: 
+not making the network crazy for knowing, but by training it on the reward
+of not knowing (i.e. train it with non-affirming negation).
+
+================================== April 17 ==================================
 
 ## Make sure that the mind is balanced
 * characterize one-pointedness (ShamathaSpeech, no Equals, FA)
@@ -18,7 +37,7 @@ Osel(x) is the weak spot in this architecture, the rest is math. One way to desc
 * characterize one taste (balance dissonance and consonance)
 * characterize non-meditation (resonance)
 
-================================== April 17 ==================================
+================================== April 24 ==================================
 
 # Ask Solid community for a simple file-getting interface
 * if the user provides the server with an API key, we can query an LLM
@@ -31,15 +50,6 @@ Osel(x) is the weak spot in this architecture, the rest is math. One way to desc
 * this entails taht marketers and AI are not allowed to lock us down karmically
 with specifically-characterized information (concrete details)
 * maybe it can learn from that data by removing or randomizing that information
-
-# Implement forgetting
-* if someone has contributed information to an LLM and asked for the LLM 
-to learn from that data, even when the data is revoked, it will be remembered 
-in some vague way by the weights. So implement non-destructive forgetting: 
-not making the network crazy for knowing, but by training it on the reward
-of not knowing (i.e. train it with non-affirming negation).
-
-================================== April 24 ==================================
 
 ## Do lots of training
 * optimize

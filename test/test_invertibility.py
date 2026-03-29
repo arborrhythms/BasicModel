@@ -16,7 +16,7 @@ os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 from util import TheDevice
 from Model import (
     LinearLayer, InvertibleLinearLayer, SigmaLayer,
-    PiLayer, NewPiLayer, AttentionLayer, NormLayer, LiftingLayer,
+    PiLayer, AttentionLayer, NormLayer, LiftingLayer,
 )
 
 

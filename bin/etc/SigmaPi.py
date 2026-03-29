@@ -12,7 +12,6 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 import util
-util.init_runtime_env()
 import matplotlib.pyplot as plt
 from Model import Layer, SigmaLayer, PiLayer, VQLayer
 from visualize import TheReport

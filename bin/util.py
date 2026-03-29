@@ -34,6 +34,10 @@ def init_runtime_env():
     os.environ.setdefault("XDG_CACHE_HOME", cache_dir)
     return runtime_root
 
+
+# Initialize runtime/cache paths on import so callers do not need to do it manually.
+RUNTIME_ROOT = init_runtime_env()
+
 class DeviceHandle(str):
     """str subclass representing a torch device that adds an optimized() query.
 
@@ -198,11 +202,13 @@ class _DeviceHolder:
 
 # The canonical device for this process.
 TheDevice = _DeviceHolder(auto_device())
+torch.set_default_device(str(TheDevice.get()))
 
 
 def init_device(device=None):
     """Override the process-wide device.  None re-runs auto-detection."""
     TheDevice.set(auto_device() if device is None else DeviceHandle(str(device)))
+    torch.set_default_device(str(TheDevice.get()))
 
 
 def buffer(*size, **kwargs):
@@ -656,6 +662,7 @@ TheXMLConfig = XMLConfig(defaults_path=_defaults_xml if os.path.exists(_defaults
 def init_config(path=None, defaults_path=None):
     """Load (or reload) TheXMLConfig from file(s)."""
     global TheXMLConfig
+    TheXMLConfig._requirements.clear()  # clear stale requirements from prior create()/tests
     if defaults_path:
         TheXMLConfig.load(defaults_path)
     if path:

@@ -2,7 +2,6 @@
 
 import numpy as np
 import util
-util.init_runtime_env()
 import matplotlib.pyplot as plt
 from visualize import TheReport
 

@@ -13,7 +13,6 @@ from datetime import datetime
 import numpy as np
 import torch
 import util
-util.init_runtime_env()
 from sklearn.metrics import classification_report
 from sklearn.decomposition import PCA
 

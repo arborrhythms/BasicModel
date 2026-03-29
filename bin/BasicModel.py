@@ -31,7 +31,6 @@ from functools import partial
 from datetime import datetime
 
 import util
-util.init_runtime_env()
 TheDevice = util.TheDevice
 TheMessage = util.TheMessage
 
@@ -46,7 +45,7 @@ from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntrop
 
 from Space import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Space import Basis, Tensor, Codebook, Embedding
-from Space import SubSpace, Space, InputSpace, DemuxedInputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, SyntacticSpace, OutputSpace
+from Space import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, SyntacticSpace, OutputSpace
 
 class BaseModel(nn.Module):
     """Shared training, plotting, and persistence infrastructure for all models."""
@@ -77,7 +76,7 @@ class BaseModel(nn.Module):
         raw_cfg = BaseModel.load_config(resolved_path)
         arch = raw_cfg.get("architecture", {})
         model_kind = str(arch.get("type", "basic") or "basic").strip().lower()
-        model_cls = {"mental": MentalModel, "demuxed": DemuxedBasicModel}.get(model_kind, BasicModel)
+        model_cls = {"mental": MentalModel}.get(model_kind, BasicModel)
         model = model_cls()
         cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
         return model, cfg
@@ -776,6 +775,12 @@ class BasicModel(BaseModel):
         return InputSpace(rawInputShape, spaceShape, inputShape, model_type=model_type)
 
     def _make_perceptual_space(self, inputShape, spaceShape, outputShape):
+        try:
+            demuxed = TheXMLConfig.space("InputSpace", "demuxed")
+        except KeyError:
+            demuxed = False
+        if demuxed:
+            return ModalSpace(inputShape, spaceShape, outputShape)
         return PerceptualSpace(inputShape, spaceShape, outputShape)
 
     def Start(self, inputData):
@@ -1409,10 +1414,10 @@ class MentalModel(BaseModel):
     name = "MentalModel"
 
     BatchResult = BasicModel.BatchResult
-    runBatch = BasicModel.runBatch
-    runEpoch = BasicModel.runEpoch
-    runTrial = BasicModel.runTrial
-    infer = BasicModel.infer
+    runBatch    = BasicModel.runBatch
+    runEpoch    = BasicModel.runEpoch
+    runTrial    = BasicModel.runTrial
+    infer       = BasicModel.infer
 
     def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
                conceptualOrder=1, symbolicOrder=1,
@@ -1443,6 +1448,11 @@ class MentalModel(BaseModel):
         self.symbolicOrder = symbolicOrder
         self.reconstruct = reconstruct.lower()
         self.masked_prediction = masked_prediction
+        self.syntax = TheXMLConfig.get("architecture.syntax", False)
+        self.nOutputSymbols = nOutput
+        self.nReconSymbols = max(0, nSymbols - nOutput)
+        self.nTotalOutputSymbols = nOutput
+        self.recon_symbols = None
 
         self.loss = ModelLoss(
             reverse_scale=reverse_scale,
@@ -1505,7 +1515,12 @@ class MentalModel(BaseModel):
         symbolShape  = [nSymbols,           symbol_dim  + obj_symbol]
         outputShape  = [nOutput,            output_dim  + obj_output]
         # MentalModel joins percepts + concepts before symbolicSpace
-        joinShape    = [nPercepts + nConcepts, concept_dim + obj_concept]
+        # When PerceptualSpace is passThrough, only concepts feed SymbolicSpace
+        _perceptPassThrough = TheXMLConfig.space("PerceptualSpace", "passThrough")
+        if _perceptPassThrough:
+            joinShape = [nConcepts, concept_dim + obj_concept]
+        else:
+            joinShape = [nPercepts + nConcepts, concept_dim + obj_concept]
 
         # Build codebook (space-internal) shape tuples: [nVectors, nDim]
         # spaceShape uses raw content dim — codebook vectors don't include objectSize.
@@ -1529,7 +1544,14 @@ class MentalModel(BaseModel):
         self.symbolicSpace = SymbolicSpace(joinShape, spaceShape_symbol, symbolShape,
                                            conceptualSpace=self.conceptualSpace)
 
-        self.outputSpace = OutputSpace([nSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
+        # SyntacticSpace operates on recon_symbols (all symbols when nOutput=0)
+        self.syntacticSpace = None
+        if self.syntax:
+            syntax_dim = _resolve_dim("SyntacticSpace", symbol_dim)
+            spaceShape_syntax = [nvec_symbol, syntax_dim]
+            self.syntacticSpace = SyntacticSpace(symbolShape, spaceShape_syntax, symbolShape)
+
+        self.outputSpace = OutputSpace([self.nOutputSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
                                        masked_prediction=(masked_prediction != 'NONE'),
                                        vectors=self.inputSpace.get_vectors())
 
@@ -1538,8 +1560,10 @@ class MentalModel(BaseModel):
             self.perceptualSpace,
             self.conceptualSpace,
             self.symbolicSpace,
-            self.outputSpace,
         ])
+        if self.syntacticSpace is not None:
+            self.spaces.append(self.syntacticSpace)
+        self.spaces.append(self.outputSpace)
 
         self.inputSpace.outputSpace = self.outputSpace
         self.to(TheDevice.get())
@@ -1547,25 +1571,43 @@ class MentalModel(BaseModel):
 
     def Start(self, inputData):
         self.inputs = self.inputSpace.forward(inputData)
-        self.percepts = self.perceptualSpace.forward(self.inputs)
         self.concepts = self.conceptualSpace.forward(self.inputs)
         input_state = self.inputs.materialize()
-        percepts = self.percepts.materialize()
         concepts = self.concepts.materialize()
-        merged = torch.cat([percepts, concepts], dim=1)
-        self.symbols = self.symbolicSpace.forward(merged)
+        if self.perceptualSpace and not self.perceptualSpace.passThrough:
+            self.percepts = self.perceptualSpace.forward(self.inputs)
+            percepts = self.percepts.materialize()
+            merged = torch.cat([percepts, concepts], dim=1)
+        else:
+            self.percepts = None
+            merged = concepts
+        self.symbols = self.symbolicSpace.forward(self._wrap_reverse(self.symbolicSpace, merged))
         symbols = self.symbols.materialize()
-        return input_state, percepts, concepts, symbols
+        return input_state, concepts, symbols
 
     def Finish(self, symbols):
+        if isinstance(symbols, torch.Tensor):
+            symbols = self._wrap_reverse(self.outputSpace, symbols)
         self.outputs = self.outputSpace.forward(symbols)
         return self.outputs.materialize()
 
     def forward(self, inputData):
         if isinstance(inputData, torch.Tensor):
             inputData = inputData.to(TheDevice.get())
-        input_state, percepts, concepts, symbols = self.Start(inputData)
-        outputData = self.Finish(symbols)
+        input_state, concepts, symbols = self.Start(inputData)
+        # Split symbols: output_symbols → OutputSpace, recon_symbols → SyntacticSpace
+        if self.nReconSymbols > 0:
+            self.output_symbols = symbols[:, :self.nTotalOutputSymbols, :]
+            self.recon_symbols = symbols  # all symbols when nOutput=0
+        else:
+            self.output_symbols = symbols
+            self.recon_symbols = None
+        # Route recon_symbols through SyntacticSpace (grammar derivation)
+        self.syntax_state = None
+        if self.recon_symbols is not None and self.syntacticSpace is not None:
+            self.syntax_state = self.syntacticSpace.forward(
+                self._wrap_reverse(self.syntacticSpace, self.recon_symbols))
+        outputData = self.Finish(self.output_symbols)
         return input_state, symbols, outputData
 
     def _wrap_reverse(self, space, tensor):
@@ -1574,38 +1616,35 @@ class MentalModel(BaseModel):
         return space.subspace
 
     def reverse(self, symbols, outputData):
-        symbols = self.outputSpace.reverse(self._wrap_reverse(self.outputSpace, outputData)).materialize()
-        merged = self.symbolicSpace.reverse(self._wrap_reverse(self.symbolicSpace, symbols)).materialize()
+        # Pass SubSpaces through the chain (like BasicModel.StartReverse)
+        if isinstance(outputData, torch.Tensor):
+            self.outputSpace.subspace.set_vectors(outputData)
+            outputData = self.outputSpace.subspace
+        symbols_state = self.outputSpace.reverse(outputData)
 
-        percepts = merged[:, :self.nPercepts, :]
-        concepts = merged[:, self.nPercepts:self.nPercepts + self.nConcepts, :]
+        # SyntacticSpace reverse: recover activation from word tuples
+        if hasattr(self, 'syntax_state') and self.syntax_state is not None:
+            symbols_state = self.syntacticSpace.reverse(self.syntax_state)
 
-        input_from_percepts = self.perceptualSpace.reverse(self._wrap_reverse(self.perceptualSpace, percepts)).materialize()
-        input_from_concepts = self.conceptualSpace.reverse(self._wrap_reverse(self.conceptualSpace, concepts)).materialize()
+        concepts_state = self.symbolicSpace.reverse(symbols_state)
 
-        # Hypothetical merge rule for the two reconstructed input streams.
-        input_latent = 0.5 * (input_from_percepts + input_from_concepts)
-        input_data = self.inputSpace.reverse(self._wrap_reverse(self.inputSpace, input_latent)).materialize()
+        if self.percepts is not None:
+            merged = concepts_state.materialize()
+            percepts = merged[:, :self.nPercepts, :]
+            concepts = merged[:, self.nPercepts:self.nPercepts + self.nConcepts, :]
+            input_from_percepts = self.perceptualSpace.reverse(self._wrap_reverse(self.perceptualSpace, percepts)).materialize()
+            input_from_concepts = self.conceptualSpace.reverse(self._wrap_reverse(self.conceptualSpace, concepts)).materialize()
+            input_latent = 0.5 * (input_from_percepts + input_from_concepts)
+            input_state = self._wrap_reverse(self.inputSpace, input_latent)
+        else:
+            input_state = self.conceptualSpace.reverse(concepts_state)
+
+        self.inputs = self.inputSpace.reverse(input_state)
+        input_latent = input_state.materialize()
+        input_data = self.inputs.materialize()
 
         return input_data, input_latent
 TheMentalModel = MentalModel()
-
-class DemuxedBasicModel(BasicModel):
-    """BasicModel variant using DemuxedInputSpace + ModalSpace.
-
-    Separates what/where/when modalities so each gets independent
-    perceptual processing. The muxed event tensor is reconstructed
-    transparently by SubSpace.materialize() for downstream compatibility.
-    """
-    name = "DemuxedBasicModel"
-
-    def _make_input_space(self, rawInputShape, spaceShape, inputShape, model_type):
-        return DemuxedInputSpace(rawInputShape, spaceShape, inputShape, model_type=model_type)
-
-    def _make_perceptual_space(self, inputShape, spaceShape, outputShape):
-        return ModalSpace(inputShape, spaceShape, outputShape)
-
-TheDemuxedBasicModel = DemuxedBasicModel()
 
 class ModelFactory:
     """Create, train, and evaluate models from an XML config file.

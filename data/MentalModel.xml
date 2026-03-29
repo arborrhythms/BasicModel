@@ -11,6 +11,7 @@
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
     <certainty>false</certainty>
+    <syntax>true</syntax>
     <modelType>embedding</modelType>
     <maskedPrediction>ARLM</maskedPrediction>
     <maxResponseLength>4096</maxResponseLength>
@@ -53,21 +54,21 @@
   </InputSpace>
 
   <PerceptualSpace>
-    <nOutput>32</nOutput>
+    <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
-    <passThrough>false</passThrough>
-    <hasAttention>true</hasAttention>
-    <invertible>true</invertible>
+    <passThrough>true</passThrough>
+    <hasAttention>false</hasAttention>
+    <invertible>false</invertible>
     <quantized>false</quantized>
   </PerceptualSpace>
 
   <!-- Concept branch runs directly from InputSpace in MentalModel, so this keeps
        the same width as BasicModel.xml without assuming invertible doubling. -->
   <ConceptualSpace>
-    <nOutput>256</nOutput>
+    <nOutput>128</nOutput>
     <nDim>100</nDim>
-    <nVectors>256</nVectors>
+    <nVectors>128</nVectors>
     <hasAttention>true</hasAttention>
     <hasNorm>false</hasNorm>
     <invertible>true</invertible>
@@ -75,9 +76,9 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nOutput>256</nOutput>
+    <nOutput>128</nOutput>
     <nDim>100</nDim>
-    <nVectors>256</nVectors>
+    <nVectors>128</nVectors>
     <passThrough>false</passThrough>
   </SymbolicSpace>
 
