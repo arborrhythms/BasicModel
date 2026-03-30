@@ -14,6 +14,7 @@ import os
 import sys
 import tempfile
 import unittest
+import warnings
 
 # Prevent OMP fork-safety crash on macOS when multiple libs load OpenMP
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
@@ -74,6 +75,25 @@ def _xml_uses_embedding(filename):
 
 
 _XOR_EXACT_USES_EMBEDDING = _xml_uses_embedding("XOR_exact.xml")
+
+
+def _emit_warning_summary(caught):
+    """Emit a single summary warning per warning type from a list of caught warnings."""
+    from collections import Counter
+    counts = Counter()
+    for w in caught:
+        # Collapse to warning type prefix
+        msg = str(w.message)
+        if msg.startswith("Range violation"):
+            key = "Range violation"
+        elif msg.startswith("PiLayer.reverse"):
+            key = "PiLayer.reverse out-of-range"
+        else:
+            key = msg[:60]
+        counts[key] += 1
+    for key, n in counts.items():
+        if n > 0:
+            warnings.warn(f"{key} ({n} occurrences during training)")
 
 
 def _populate_test_config(*,
@@ -357,7 +377,9 @@ class TestNormLayer(unittest.TestCase):
 class TestMemory(unittest.TestCase):
     def test_mem_update(self):
         from Model import Mem
-        Mem.test()  # Runs the built-in test
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="FigureCanvasAgg")
+            Mem.test()  # Runs the built-in test
 
 
 # ---------------------------------------------------------------------------
@@ -2107,7 +2129,10 @@ class TestModelTypeVariants(unittest.TestCase):
         model = BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1)
-        _, end_state, out = model.forward(x)
+        # Untrained model with nonlinear=False — expect concept range warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="Range violation")
+            _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
 
@@ -2293,19 +2318,25 @@ class TestReconstructionSymbols(unittest.TestCase):
             m = BasicModel()
             m.create_from_config(tmp.name, data=TheData)
 
-            # Train using XML-configured epoch count
-            cfg = m.cfg if hasattr(m, 'cfg') else {}
-            training = cfg.get('architecture', {}).get('training', {})
-            epochs = int(training.get('numEpochs', 1000))
-            lr = float(training.get('learningRate', 0.01))
-            m.runTrial(numEpochs=epochs, batchSize=10, lr=lr)
+            # Ergodic training — accumulate range warnings, emit summary at end
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
 
-            # Run a final evaluation pass with reverse
-            test_input, test_output = m.inputSpace.getTestData()
-            m.set_sigma(0)
-            m.train(False)
-            with torch.no_grad():
-                m.runEpoch(batchSize=len(test_input), split="test")
+                # Train using XML-configured epoch count
+                cfg = m.cfg if hasattr(m, 'cfg') else {}
+                training = cfg.get('architecture', {}).get('training', {})
+                epochs = int(training.get('numEpochs', 1000))
+                lr = float(training.get('learningRate', 0.01))
+                m.runTrial(numEpochs=epochs, batchSize=10, lr=lr)
+
+                # Run a final evaluation pass with reverse
+                test_input, test_output = m.inputSpace.getTestData()
+                m.set_sigma(0)
+                m.train(False)
+                with torch.no_grad():
+                    m.runEpoch(batchSize=len(test_input), split="test")
+
+            _emit_warning_summary(caught)
 
             # Check reconstruction quality: at least 75% of inputs must
             # perfectly reconstruct (some words may snap to wrong codebook
@@ -3023,7 +3054,12 @@ class TestXorExactErgodic(unittest.TestCase):
             m = BasicModel()
             m.create_from_config(tmp.name, data=TheData)
 
-            m.runTrial(numEpochs=600, batchSize=10, lr=0.01)
+            # Ergodic training — accumulate range warnings, emit summary at end
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                m.runTrial(numEpochs=600, batchSize=10, lr=0.01)
+
+            _emit_warning_summary(caught)
 
             # Check that loss did not diverge to NaN
             final_losses = [l[-1] for l in m.trainLosses if l]

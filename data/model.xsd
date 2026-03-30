@@ -266,6 +266,7 @@
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
       <xs:element name="hasNorm" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="normalize" type="xs:boolean" minOccurs="0"/>
     </xs:all>

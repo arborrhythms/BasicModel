@@ -119,6 +119,7 @@
     <hasAttention>false</hasAttention>
     <hasNorm>false</hasNorm>
     <invertible>false</invertible>
+    <nonlinear>true</nonlinear>
     <quantized>false</quantized>
     <normalize>false</normalize>
   </ConceptualSpace>

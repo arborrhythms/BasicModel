@@ -1,10 +1,15 @@
 import unittest
 import os
 import tempfile
+import warnings
 from unittest.mock import patch, MagicMock
 
 import numpy as np
 import torch
+
+# torch.jit.script_method deprecation — PyTorch internal, fires during embed import
+warnings.filterwarnings("ignore", message=".*script_method.*",
+                        category=DeprecationWarning)
 
 from embed import (
     iter_documents, StreamingSBOWTrainer, build_embeddings,

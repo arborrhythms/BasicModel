@@ -1023,7 +1023,7 @@ class Embedding(Basis):
                 if i % 500 == 0:
                     print(f"  Building span table: {i}/{n_docs} docs")
                 doc_bytes = doc.encode('utf-8')
-                doc_tensor = torch.frombuffer(doc_bytes, dtype=torch.uint8).clone()
+                doc_tensor = torch.frombuffer(bytearray(doc_bytes), dtype=torch.uint8).clone()
                 self.doc_sources.append(doc_tensor)
                 doc_tokens = self._token_stream(doc)
                 self.doc_spans.append(doc_tokens)
@@ -2017,13 +2017,17 @@ class SubSpace(nn.Module):
     # Normalization
     # ------------------------------------------------------------------
 
-    def normalize(self, kind, target="activation", normalize=True):
-        """Normalize or warn about an encoding of this subspace.
+    def normalize(self, kind, target="activation", normalize=True, strict=False):
+        """Normalize or check range of an encoding of this subspace.
 
         When normalize=True, transforms the tensor in-place to the
         correct range for the space kind.  When normalize=False,
-        checks whether the tensor is already in range and emits a
-        warning if not (but does not modify it).
+        checks whether the tensor is already in range.
+
+        When strict=True (nonlinear path), raises ValueError on
+        out-of-range input — the sigmoid/logit pair guarantees the
+        range contract so a violation is a real bug.  When strict=False,
+        emits a warning — allows exploring the unconstrained path.
 
         Geometry-aware:
           - "percepts" on vectors → sigmoid + clamp [0,1] (hypercube)
@@ -2038,7 +2042,9 @@ class SubSpace(nn.Module):
             target: encoding target — "activation", "what", "where",
                     "when", "event", or "all".
             normalize: if True, apply the normalization in-place.
-                If False, warn if out of range but don't modify.
+                If False, check range only.
+            strict: if True, raise ValueError on violation.
+                If False, emit a warning.
         """
         x = self.select(target)
         if x is None or x.numel() == 0:
@@ -2052,15 +2058,17 @@ class SubSpace(nn.Module):
                 lo, hi = -1, 1  # activation always [-1, 1]
             if lo is not None:
                 xd = x.detach()
-                below = (xd.min().item() - lo)
-                above = (xd.max().item() - hi)
-                if below < -1e-4 or above > 1e-4:
-                    import warnings
-                    warnings.warn(
-                        f"Normalization check: kind={kind!r}, target={target!r} "
-                        f"range [{xd.min().item():.6f}, {xd.max().item():.6f}] "
-                        f"outside [{lo}, {hi}]."
-                    )
+                xmin = xd.min().item()
+                xmax = xd.max().item()
+                below = xmin - lo
+                above = xmax - hi
+                if below < -1e-2 or above > 1e-2:
+                    msg = (f"Range violation: kind={kind!r}, target={target!r} "
+                           f"range [{xmin:.6f}, {xmax:.6f}] outside [{lo}, {hi}].")
+                    if strict:
+                        raise ValueError(msg)
+                    else:
+                        warnings.warn(msg)
             return
         normalized = self._apply_normalization(kind, x, target=target)
         self.put(target, normalized)
@@ -3263,6 +3271,7 @@ class PerceptualSpace(Space):
         if self.reversible:
             y = self.reversePi(y)
         vspace = self.reverseEnd(y, returnVectors=True)
+        vspace.normalize("input", target="what", normalize=False, strict=not self.ergodic)
         return vspace
 
     def projectPercepts(self, rule_id, vspace):
@@ -3494,8 +3503,10 @@ class ConceptualSpace(Space):
         hasAttention = TheXMLConfig.space(section, "hasAttention")
         invertible = TheXMLConfig.space(section, "invertible")
         hasNorm = TheXMLConfig.space(section, "hasNorm")
+        nonlinear = TheXMLConfig.space(section, "nonlinear")
         naive = TheXMLConfig.get("architecture.naive")
         super().__init__(inputShape, spaceShape, outputShape)
+        self.nonlinear = nonlinear
         self.ergodic = ergodic
         self.hasAttention = hasAttention
         input = self.subspace.getEncodedInputSize()
@@ -3511,18 +3522,18 @@ class ConceptualSpace(Space):
                 input += 2
         if self.reversible:
             if invertible:
-                self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
+                self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True, nonlinear=nonlinear)
                 self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
                 self.params = self.sigma.getParameters()
                 self.layers = nn.ModuleList([self.sigma])
             else:
-                self.sigma1 = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
-                self.sigma2 = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
+                self.sigma1 = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True, nonlinear=nonlinear)
+                self.sigma2 = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True, nonlinear=nonlinear)
                 self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
                 self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
                 self.layers = nn.ModuleList([self.sigma1, self.sigma2])
         else:
-            self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic)
+            self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic, nonlinear=nonlinear)
             self.forwardSigma = self.sigma.forward
             self.params = self.sigma.getParameters()
             self.layers = nn.ModuleList([self.sigma])
@@ -3557,8 +3568,16 @@ class ConceptualSpace(Space):
     def certainty(self, x):
         return x.T @ x
     def forward(self, vspace):
-        """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ."""
+        """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ.
+
+        When ergodic=True, applies logit() before SigmaLayer so that the
+        reverse sigmoid (needed to bound noisy W_inv output to (0,1))
+        has an exact mathematical inverse.  Without ergodic noise, W_inv
+        is exact and the range is guaranteed by invertibility alone.
+        """
         x = self.forwardBegin(vspace, returnVectors=True)
+        if self.nonlinear:
+            x = torch.logit(x, eps=1e-6)
         y = self.forwardSigma(x)
         if self.hasAttention:
             y = self.attention.forward(y)
@@ -3570,13 +3589,22 @@ class ConceptualSpace(Space):
         return vspace
 
     def reverse(self, vspace):
-        """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer."""
+        """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer.
+
+        When ergodic=True, applies sigmoid() after reverse SigmaLayer to
+        guarantee output in (0,1) for PiLayer.  Ergodic noise perturbs W,
+        so W_inv is no longer exact and can produce values outside (0,1].
+        """
         y = self.reverseBegin(vspace, returnVectors=True)
         if self.processSymbols:
             y = self.dereference(y)
         y = self.reverseSigma(y)
+        if self.nonlinear:
+            y = torch.sigmoid(y)
         self.concepts = y
         vspace = self.reverseEnd(y, returnVectors=True)
+        vspace.normalize("percepts", target="what", normalize=False,
+                         strict=self.nonlinear)
         return vspace
 
     def projectConcepts(self, rule_id, left, right=None):
@@ -3907,10 +3935,12 @@ class SymbolicSpace(Space):
         act = self.layer.reverse(act)
         if self.quantized:
             self.subspace.set_symbols(act)
-            return self.reverseEnd(self.subspace)
+            result = self.reverseEnd(self.subspace)
         else:
             vspace.set_symbols(act)
-            return vspace
+            result = vspace
+        result.normalize("concepts", target="what", normalize=False, strict=True)
+        return result
 
     @staticmethod
     def test():

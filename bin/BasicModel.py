@@ -209,8 +209,12 @@ class BaseModel(nn.Module):
         """
         if getattr(self, 'ergodic', True):
             params = []
+            seen = set()
             for s in self.spaces:
-                params.extend(s.getParameters())
+                for p in s.getParameters():
+                    if p.data_ptr() not in seen:
+                        seen.add(p.data_ptr())
+                        params.append(p)
         else:
             params = list(self.parameters())
         # Exclude embedding params when trainEmbedding is NONE or ARLM

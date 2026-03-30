@@ -2,7 +2,8 @@
 
 Migrated from bin/scratch.py into the pytest harness.
 """
-import os, sys, unittest
+import os, sys, unittest, warnings
+from unittest.mock import patch
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -305,9 +306,10 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
             layer.bias.fill_(0.95)
         layer.train(True)
         x = (torch.rand(8, 1, nIn).to(TheDevice.get()) * 2 - 1)
+        # Isolated PiLayer — ergodic noise can push output slightly past 1; clamp
         with torch.no_grad():
             y = layer.forward(x)
-            x_rec = layer.reverse(y)
+            x_rec = layer.reverse(y.clamp(min=1e-7, max=1.0))
         err = _reconstruction_error(x, x_rec, rel=True)
         self.assertLess(err, 0.3, f"Ergodic non-naive rel err={err:.2e}")
 
@@ -400,16 +402,19 @@ class TestPairedPiTraining(unittest.TestCase):
             list(pi_fwd.parameters()) + list(pi_rev.parameters()), lr=0.01)
         # Input in [-1, 1]
         x_data = (torch.rand(8, 5, nIn).to(TheDevice.get()) * 2 - 1)
-        for _ in range(500):
-            optimizer.zero_grad()
-            y = pi_fwd(x_data)
-            x_rec = pi_rev.reverse(y)
-            loss = criterion(x_data, x_rec)
-            loss.backward()
-            optimizer.step()
-        with torch.no_grad():
-            y = pi_fwd(x_data)
-            x_rec = pi_rev.reverse(y)
+        # Isolated PiLayer pair — no upstream sigmoid guard; suppress range warning
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="PiLayer.reverse")
+            for _ in range(500):
+                optimizer.zero_grad()
+                y = pi_fwd(x_data)
+                x_rec = pi_rev.reverse(y.clamp(min=1e-7, max=1.0))
+                loss = criterion(x_data, x_rec)
+                loss.backward()
+                optimizer.step()
+            with torch.no_grad():
+                y = pi_fwd(x_data)
+                x_rec = pi_rev.reverse(y.clamp(min=1e-7, max=1.0))
         err = _reconstruction_error(x_data, x_rec, rel=True)
         self.assertLess(err, 0.5, f"Paired Pi rel err={err:.4f}")
 
@@ -435,6 +440,13 @@ def _unwrap(vspace):
     """Extract the dense tensor from a SubSpace returned by forward()/reverse()."""
     if isinstance(vspace, SubSpace):
         return vspace.materialize()
+    return vspace
+
+
+def _clamp_subspace(vspace, lo=1e-7, hi=1.0):
+    """Clamp what-vectors in a SubSpace (unit-test substitute for pipeline sigmoid)."""
+    t = vspace.materialize()
+    vspace.set_vectors(t.clamp(min=lo, max=hi))
     return vspace
 
 
@@ -501,6 +513,8 @@ class TestPerceptualSpaceReversePassTrained(unittest.TestCase):
     """PerceptualSpace with reversible=True, trained pair for roundtrip.
 
     PiLayer (log-space) does not interleave, so output shape matches input.
+    Isolated test — no upstream sigmoid guard from ConceptualSpace, so we
+    suppress PiLayer range warnings and patch out the strict range check.
     """
     def _check(self, objSize):
         _setup_object_encoding(objSize=objSize, passThrough=False, hasAttention=False,
@@ -515,18 +529,21 @@ class TestPerceptualSpaceReversePassTrained(unittest.TestCase):
         optimizer = optim.Adam(pspace.parameters(), lr=0.005)
         # Input in [-1, 1] (PiLayer's expected domain)
         x_data = (torch.rand(4, nObj, embDim).to(TheDevice.get()) * 2 - 1)
-        pspace.train()
-        for _ in range(2000):
-            optimizer.zero_grad()
-            y = pspace.forward(_wrap_tensor(pspace, x_data))
-            x_rec = _unwrap(pspace.reverse(y))
-            loss = criterion(x_data, x_rec)
-            loss.backward()
-            optimizer.step()
-        pspace.eval()
-        with torch.no_grad():
-            y = pspace.forward(_wrap_tensor(pspace, x_data))
-            x_rec = _unwrap(pspace.reverse(y))
+        with warnings.catch_warnings(), \
+             patch.object(SubSpace, 'normalize', lambda *a, **kw: None):
+            warnings.filterwarnings("ignore", message="PiLayer.reverse")
+            pspace.train()
+            for _ in range(2000):
+                optimizer.zero_grad()
+                y = pspace.forward(_wrap_tensor(pspace, x_data))
+                x_rec = _unwrap(pspace.reverse(_clamp_subspace(y)))
+                loss = criterion(x_data, x_rec)
+                loss.backward()
+                optimizer.step()
+            pspace.eval()
+            with torch.no_grad():
+                y = pspace.forward(_wrap_tensor(pspace, x_data))
+                x_rec = _unwrap(pspace.reverse(_clamp_subspace(y)))
         err = _reconstruction_error(x_data, x_rec, rel=True)
         self.assertLess(err, 1.0, f"objSize={objSize}: rel err={err:.4f}")
 
@@ -547,7 +564,8 @@ class TestConceptualSpaceInvertible(unittest.TestCase):
         )
         cspace.eval()
         cspace.sigma.set_sigma(0)
-        x = torch.randn(2, nObj, embDim).to(TheDevice.get())
+        # Input in (0,1) — logit in ConceptualSpace.forward() expects this range
+        x = (torch.rand(2, nObj, embDim) * 0.8 + 0.1).to(TheDevice.get())
         with torch.no_grad():
             y = cspace.forward(_wrap_tensor(cspace, x))
             x_rec = _unwrap(cspace.reverse(y))
@@ -573,7 +591,8 @@ class TestConceptualSpacePairedSigma(unittest.TestCase):
             [nObj, embDim], [nObj, contentDim], [nObj, embDim],
         )
         cspace.eval()
-        x = torch.randn(2, nObj, embDim).to(TheDevice.get())
+        # Input in (0,1) — logit in ConceptualSpace.forward() expects this range
+        x = (torch.rand(2, nObj, embDim) * 0.8 + 0.1).to(TheDevice.get())
         with torch.no_grad():
             y = cspace.forward(_wrap_tensor(cspace, x))
             x_rec = _unwrap(cspace.reverse(y))
@@ -601,7 +620,8 @@ class TestConceptualSpaceHasNorm(unittest.TestCase):
         )
         cspace.eval()
         cspace.sigma.set_sigma(0)
-        x = torch.randn(2, nObj, contentDim).to(TheDevice.get())
+        # Input in (0,1) — logit in ConceptualSpace.forward() expects this range
+        x = (torch.rand(2, nObj, contentDim) * 0.8 + 0.1).to(TheDevice.get())
         with torch.no_grad():
             y = cspace.forward(_wrap_tensor(cspace, x))
             x_rec = _unwrap(cspace.reverse(y))
@@ -694,7 +714,7 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
         # Input in [-1, 1]
         x = (torch.rand(8, 1, nIn).to(TheDevice.get()) * 2 - 1)
         y = layer.forward(x)
-        x_rec = layer.reverse(y)
+        x_rec = layer.reverse(y.clamp(min=1e-7, max=1.0))
         err = _reconstruction_error(x, x_rec, rel=True)
         self.assertLess(err, 0.15, f"Ergodic roundtrip error too large: {err}")
 
@@ -715,3 +735,194 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec, rel=True)
         self.assertLess(err, 0.3, f"Ergodic roundtrip error too large: {err}")
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 7. Out-of-range and range-contract tests
+# ═══════════════════════════════════════════════════════════════════════════
+
+class TestPiLayerOutputRange(unittest.TestCase):
+    """PiLayer.forward() must produce output in (0, 1]."""
+
+    def test_output_in_01(self):
+        torch.manual_seed(42)
+        layer = PiLayer(6, 6, invertible=True)
+        layer.set_sigma(0)
+        x = torch.rand(4, 3, 6) * 2 - 1  # [-1, 1]
+        y = layer.forward(x)
+        self.assertTrue(torch.all(y > 0),
+                        f"PiLayer output has non-positive values: min={y.min().item():.6f}")
+        self.assertTrue(torch.all(y <= 1 + 1e-4),
+                        f"PiLayer output exceeds 1: max={y.max().item():.6f}")
+
+    def test_extreme_input_minus1(self):
+        """Input at -1 (boundary) should still produce valid output."""
+        torch.manual_seed(42)
+        layer = PiLayer(4, 4, invertible=True)
+        layer.set_sigma(0)
+        x = -torch.ones(2, 3, 4)
+        y = layer.forward(x)
+        self.assertTrue(torch.all(torch.isfinite(y)),
+                        f"PiLayer NaN/Inf at x=-1: {y}")
+        self.assertTrue(torch.all(y > 0), f"min={y.min().item():.6f}")
+
+    def test_extreme_input_plus1(self):
+        """Input at +1 (boundary) should still produce valid output."""
+        torch.manual_seed(42)
+        layer = PiLayer(4, 4, invertible=True)
+        layer.set_sigma(0)
+        x = torch.ones(2, 3, 4)
+        y = layer.forward(x)
+        self.assertTrue(torch.all(torch.isfinite(y)),
+                        f"PiLayer NaN/Inf at x=+1: {y}")
+        self.assertTrue(torch.all(y > 0), f"min={y.min().item():.6f}")
+
+
+class TestSigmaLayerNonlinearRange(unittest.TestCase):
+    """SigmaLayer with tanh: forward output in (-1,1), reverse via atanh.
+
+    The logit/sigmoid domain transforms now live in ConceptualSpace, so
+    these tests verify only the tanh/atanh behaviour of SigmaLayer itself.
+    """
+
+    def test_forward_range(self):
+        """tanh guarantees output in (-1, 1)."""
+        torch.manual_seed(42)
+        layer = SigmaLayer(6, 6, invertible=True)
+        layer.set_sigma(0)
+        x = torch.randn(4, 3, 6)
+        y = layer.forward(x)
+        self.assertTrue(torch.all(y > -1),
+                        f"SigmaLayer fwd below -1: min={y.min().item():.6f}")
+        self.assertTrue(torch.all(y < 1),
+                        f"SigmaLayer fwd above 1: max={y.max().item():.6f}")
+
+    def test_reverse_range(self):
+        """atanh→W_inv produces unconstrained output (no sigmoid here)."""
+        torch.manual_seed(42)
+        layer = SigmaLayer(6, 6, invertible=True)
+        layer.set_sigma(0)
+        y = torch.rand(4, 3, 6) * 1.8 - 0.9  # (-0.9, 0.9) ⊂ (-1, 1)
+        x = layer.reverse(y)
+        self.assertTrue(torch.all(torch.isfinite(x)),
+                        f"SigmaLayer reverse produced NaN/Inf: {x}")
+
+    def test_roundtrip(self):
+        torch.manual_seed(42)
+        layer = SigmaLayer(6, 6, invertible=True)
+        layer.set_sigma(0)
+        x = torch.randn(4, 3, 6) * 0.5
+        y = layer.forward(x)
+        x_rec = layer.reverse(y)
+        err = _reconstruction_error(x, x_rec, rel=True)
+        self.assertLess(err, 1e-4,
+                        f"SigmaLayer roundtrip error: {err:.2e}")
+
+    def test_reverse_extreme_input(self):
+        """Values near ±1 should not produce NaN in reverse."""
+        torch.manual_seed(42)
+        layer = SigmaLayer(4, 4, invertible=True)
+        layer.set_sigma(0)
+        y = torch.tensor([[-0.999, 0.999, -0.99, 0.99]]).unsqueeze(1)
+        x = layer.reverse(y)
+        self.assertTrue(torch.all(torch.isfinite(x)),
+                        f"NaN/Inf from near-boundary input: {x}")
+
+
+class TestPiLayerReverseRejectsOutOfRange(unittest.TestCase):
+    """PiLayer.reverse() should warn on out-of-range input."""
+
+    def test_negative_input_warns(self):
+        torch.manual_seed(42)
+        layer = PiLayer(4, 4, invertible=True)
+        layer.set_sigma(0)
+        y = torch.tensor([[[-0.5, 0.3, 0.7, 0.2]]])  # -0.5 is out of range
+        with self.assertWarns(UserWarning, msg="PiLayer.reverse should warn on negative input"):
+            layer.reverse(y)
+
+    def test_above_one_warns(self):
+        torch.manual_seed(42)
+        layer = PiLayer(4, 4, invertible=True)
+        layer.set_sigma(0)
+        y = torch.tensor([[[0.5, 1.5, 0.7, 0.2]]])  # 1.5 is out of range
+        with self.assertWarns(UserWarning, msg="PiLayer.reverse should warn on >1 input"):
+            layer.reverse(y)
+
+
+class TestPerceptualSpaceReverseRangeCheck(unittest.TestCase):
+    """PerceptualSpace.reverse() checks output is in [-1, 1] (input range)."""
+
+    def test_roundtrip_output_in_range(self):
+        """Forward→reverse roundtrip should produce output in [-1, 1]."""
+        _setup_object_encoding(objSize=0, invertible=True, hasAttention=False,
+                               flatten=True)
+        nObj, contentDim = 3, 6
+        torch.manual_seed(42)
+        pspace = PerceptualSpace(
+            [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
+        )
+        pspace.eval()
+        x = torch.rand(2, nObj, contentDim) * 2 - 1  # [-1, 1]
+        with torch.no_grad():
+            y = pspace.forward(_wrap_tensor(pspace, x))
+            # Should NOT raise — PiLayer reverse maps back to [-1, 1]
+            pspace.reverse(y)
+
+
+class TestConceptualSpaceReverseRangeCheck(unittest.TestCase):
+    """ConceptualSpace.reverse() checks output is in [0, 1] (percepts range)."""
+
+    def test_nonlinear_output_in_range(self):
+        """With nonlinear=True, sigmoid guarantees reverse output in (0, 1)."""
+        _setup_object_encoding(objSize=0, invertible=True, hasNorm=False,
+                               flatten=True, hasAttention=False)
+        nObj, contentDim = 3, 6
+        torch.manual_seed(42)
+        cspace = ConceptualSpace(
+            [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
+        )
+        cspace.eval()
+        # Input in (0,1) — logit expects this range
+        x = torch.rand(2, nObj, contentDim) * 0.8 + 0.1
+        with torch.no_grad():
+            y = cspace.forward(_wrap_tensor(cspace, x))
+            # Should NOT raise — sigmoid bounds output to (0, 1)
+            cspace.reverse(y)
+
+    def test_nonlinear_extreme_input_bounded(self):
+        """Even with extreme concept values, sigmoid keeps output in (0, 1)."""
+        _setup_object_encoding(objSize=0, invertible=True, hasNorm=False,
+                               flatten=True, hasAttention=False)
+        nObj, contentDim = 3, 6
+        torch.manual_seed(42)
+        cspace = ConceptualSpace(
+            [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
+        )
+        cspace.eval()
+        # Near-boundary tanh output: values close to ±1
+        extreme = torch.ones(2, nObj, contentDim) * 0.999
+        extreme[0] *= -1
+        with torch.no_grad():
+            # Should NOT raise — sigmoid bounds the reverse output
+            cspace.reverse(_wrap_tensor(cspace, extreme))
+
+    def test_no_nonlinear_warns_on_out_of_range(self):
+        """With nonlinear=False, out-of-range output emits warning not error."""
+        _setup_object_encoding(objSize=0, invertible=True, hasNorm=False,
+                               flatten=True, hasAttention=False)
+        # Override nonlinear to False for this test
+        TheXMLConfig._data["ConceptualSpace"]["nonlinear"] = False
+        nObj, contentDim = 3, 6
+        torch.manual_seed(42)
+        cspace = ConceptualSpace(
+            [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
+        )
+        cspace.eval()
+        # Extreme input — without sigmoid, reverse output will exceed [0, 1]
+        extreme = torch.ones(2, nObj, contentDim) * 0.999
+        extreme[0] *= -1
+        with self.assertWarns(UserWarning):
+            with torch.no_grad():
+                cspace.reverse(_wrap_tensor(cspace, extreme))
+        # Restore default
+        TheXMLConfig._data["ConceptualSpace"]["nonlinear"] = True

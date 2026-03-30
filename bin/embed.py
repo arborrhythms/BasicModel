@@ -128,9 +128,14 @@ class WordVectors(nn.Module):
     # -- Persistence --
 
     def save(self, path: str) -> None:
-        """Save vectors, vocabulary, and word frequencies to a .pt file."""
+        """Save vectors, vocabulary, and word frequencies to a .pt file.
+
+        Vectors are L2-normalized before saving so that downstream
+        consumers (InputSpace) receive elements in [-1, 1].
+        """
+        vectors = F.normalize(self._vectors.detach(), p=2, dim=1).cpu()
         torch.save({
-            "vectors": self._vectors.detach().cpu(),
+            "vectors": vectors,
             "index_to_key": self.index_to_key,
             "counts": self.counts,
             "total_count": int(self.total_count),
@@ -145,6 +150,16 @@ class WordVectors(nn.Module):
             vectors = torch.as_tensor(vectors, dtype=torch.float32)
         else:
             vectors = vectors.float()
+        # Replace NaN vectors with random normalized vectors
+        nan_mask = torch.isnan(vectors).any(dim=1)
+        n_nan = nan_mask.sum().item()
+        if n_nan > 0:
+            dim = vectors.shape[1]
+            replacement = F.normalize(
+                torch.randn(n_nan, dim, device=vectors.device), p=2, dim=1)
+            vectors[nan_mask] = replacement
+            import warnings
+            warnings.warn(f"Replaced {n_nan} NaN embedding vectors in {path}")
         counts = data.get("counts")
         total_count = data.get("total_count", 0)
         return cls(vectors, data["index_to_key"],
@@ -185,7 +200,7 @@ class WordVectors(nn.Module):
             _, top_idx = sims.topk(topn)
         else:
             _, top_idx = sims.sort(descending=True)
-        return [(self.index_to_key[i], float(sims[i])) for i in top_idx]
+        return [(self.index_to_key[i], float(sims[i].detach())) for i in top_idx]
 
     def similarity(self, word1: str, word2: str) -> float:
         """Return cosine similarity between two words."""
@@ -579,12 +594,13 @@ class StreamingSBOWTrainer:
         self._loss_count += N
 
     def finish(self):
-        """Return trained WordVectors."""
+        """Return trained WordVectors (L2-normalized)."""
         n = self.vocab_size
         if n == 0:
             return WordVectors.from_vocab([], vector_size=self.vector_size)
         with torch.no_grad():
-            vectors = self.model.embeddings.weight.detach().cpu().numpy()
+            vectors = F.normalize(self.model.embeddings.weight, p=2, dim=1)
+            vectors = vectors.detach().cpu().numpy()
         return WordVectors(vectors, list(self.idx_to_word))
 
 

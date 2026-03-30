@@ -728,10 +728,15 @@ class SigmaLayer(Layer):
     is available via the exact LDU inverse.  When ``invertible=False``
     (default), uses a plain LinearLayer.
 
+    The logit/sigmoid domain transforms that map between (0,1) and (-1,1)
+    are applied by ConceptualSpace, not here — they encode the pipeline
+    contract (perceptual→conceptual boundary), not a property of this layer.
+
     All ergodic machinery lives in the inner layer; SigmaLayer dispatches
     the ergodic interface (set_sigma, observe_sigma, etc.) there.
     """
-    def __init__(self, nInput, nOutput, ergodic=False, naive=True, invertible=False):
+    def __init__(self, nInput, nOutput, ergodic=False, naive=True,
+                 invertible=False, nonlinear=False):
         super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.ergodic    = ergodic
@@ -1033,7 +1038,7 @@ class PiLayer(Layer):
         b  = self._effective_bias()
         wx = wx + b
         y = torch.exp(wx)
-        return self.layer.forwardBias(y)
+        return y
 
     def reverse(self, y):
         """Recover x from y.  Requires invertible=True.
@@ -1043,7 +1048,6 @@ class PiLayer(Layer):
 
         Expects y in (0, 1] (the forward output range).  Warns if out of range.
         """
-        y = self.layer.reverseBias(y)
         W_inv = self.layer.compute_Winverse_current()       # [nOut, nIn], exact LDU inverse
         y = y.to(W_inv.device)
         with torch.no_grad():

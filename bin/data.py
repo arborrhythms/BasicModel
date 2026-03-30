@@ -284,6 +284,15 @@ class Data():
         self.train_input = inputs
         self.train_output = outputs
         self._runtime_mode = mode
+        # Validate tensor inputs are within the expected range
+        if isinstance(inputs, torch.Tensor) and self.input_min is not None:
+            xmin = inputs.min().item()
+            xmax = inputs.max().item()
+            if xmin < self.input_min - 1e-2 or xmax > self.input_max + 1e-2:
+                import warnings
+                warnings.warn(
+                    f"Inference input range [{xmin:.4f}, {xmax:.4f}] "
+                    f"outside training range [{self.input_min}, {self.input_max}]")
         try:
             yield
         finally:
