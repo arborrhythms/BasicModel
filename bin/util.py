@@ -354,8 +354,12 @@ def compile(model, verbose=True):
 # ---------------------------------------------------------------------------
 
 class Message():
-    """Tiny callable wrapper so legacy code can swap out message sinks later."""
-    def __call__(self, txt, newline="\n"):
+    """Tiny callable wrapper so legacy code can swap out message sinks later.
+
+    Always emits ``\\r\\n`` so output renders correctly both locally and when
+    streamed over SSH with a pseudo-terminal (``ssh -t``).
+    """
+    def __call__(self, txt, newline="\r\n"):
         print(txt, end=newline)
 
 TheMessage = Message()

@@ -52,7 +52,7 @@
   </InputSpace>
 
   <PerceptualSpace>
-    <nOutput>256</nOutput>
+    <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
     <passThrough>false</passThrough>
@@ -84,7 +84,7 @@
 
   <OutputSpace>
     <nOutput>1</nOutput>
-    <nDim>100</nDim>
+    <nDim>104</nDim>
     <nVectors>1</nVectors>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>

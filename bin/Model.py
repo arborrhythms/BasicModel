@@ -610,6 +610,75 @@ class InvertibleLinearLayer(ErgodicLayer):
 
         print("All InvertibleLinearLayer tests passed!")
 
+class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
+    """InvertibleLinearLayer whose W = L @ D @ U is entry-wise non-negative.
+
+    Applies softplus to off-diagonal entries of L and U, and to the
+    diagonal d, so that all factors are non-negative.  Since the product
+    of non-negative matrices is non-negative, W >= 0 by construction.
+
+    The exact LDU inverse (triangular solves) is still available — the
+    inverse of a non-negative W is not itself non-negative, but that's
+    fine since only the forward W needs the constraint.
+
+    Parameters are initialised so that softplus(raw) starts near the
+    identity: raw_L, raw_U off-diagonals at -5 (softplus(-5) ~ 0.007),
+    d at softplus_inverse(1) ~ 0.541.
+    """
+
+    def __init__(self, nInput, nOutput, naive=False, ergodic=False,
+                 hasBias=True, stable=False):
+        super().__init__(nInput, nOutput, naive=naive, ergodic=ergodic,
+                         hasBias=hasBias, stable=stable)
+        # Re-initialise so softplus(raw) gives near-identity W.
+        with torch.no_grad():
+            # softplus(-5) ~ 0.007 ≈ 0 for off-diagonals
+            self.raw_L.fill_(-5.0)
+            self.raw_U.fill_(-5.0)
+            # softplus(0.5414) ~ 1.0 for diagonal
+            self.d.fill_(math.log(math.e - 1))  # softplus_inverse(1.0)
+
+    # --- Non-negative factor helpers ---
+    def _L(self):
+        """Unit-lower-triangular with non-negative off-diagonals."""
+        off = torch.tril(nn.functional.softplus(self.raw_L), diagonal=-1)
+        return off + torch.eye(self.nInput, device=self.raw_L.device, dtype=self.raw_L.dtype)
+
+    def _U(self):
+        """Unit-upper-triangular with non-negative off-diagonals."""
+        off = torch.triu(nn.functional.softplus(self.raw_U), diagonal=1)
+        return off + torch.eye(self.nOutput, device=self.raw_U.device, dtype=self.raw_U.dtype)
+
+    def _d_effective(self):
+        """Strictly positive diagonal via softplus."""
+        d = nn.functional.softplus(self.d)
+        if self.stable:
+            d = d.clamp(epsilon, 1.0)
+        return d
+
+    # --- Ergodic overrides ---
+    def _L_eff(self):
+        """Ergodic L with non-negative off-diagonals."""
+        raw = self.raw_L + self.var * self.noise_raw_L
+        off = torch.tril(nn.functional.softplus(raw), diagonal=-1)
+        return off + torch.eye(self.nInput, device=raw.device, dtype=raw.dtype)
+
+    def _U_eff(self):
+        """Ergodic U with non-negative off-diagonals."""
+        raw = self.raw_U + self.var * self.noise_raw_U
+        off = torch.triu(nn.functional.softplus(raw), diagonal=1)
+        return off + torch.eye(self.nOutput, device=raw.device, dtype=raw.dtype)
+
+    def _d_eff(self):
+        """Ergodic d, strictly positive via softplus."""
+        d_base = nn.functional.softplus(self.d)
+        d = self.bias * d_base + self.var * self.noise_d
+        d = nn.functional.softplus(d)  # ensure positive after noise
+        if self.stable:
+            d = d.clamp(epsilon, 1.0)
+        return d
+
+
 class LiftingLayer(InvertibleLinearLayer):
     """Bias-free, stable reversible linear layer for mapping between row/column spaces."""
     def __init__(self, nInput, nOutput, init='orthogonal'):
@@ -728,7 +797,7 @@ class SigmaLayer(Layer):
         assert torch.norm(x - y_inv) < 0.00001
         print("SigmaLayer tests passed.")
 
-class PiLayer(Layer):
+class PiLayerOld(Layer):
     """Multiplicative layer: y_j = prod_i (1 + tanh(w_ji * x_i)).
 
     Forward materializes W via the inner layer, computes the outer product
@@ -745,7 +814,7 @@ class PiLayer(Layer):
     Reverse: gamma_j = 0.5*(log y_j - log z_j) = sum_i x_i*w_ji = (x@W)_j,
     then x = gamma @ W_inv using the materialized inverse.
 
-    All ergodic machinery lives in the inner layer; PiLayer dispatches
+    All ergodic machinery lives in the inner layer; PiLayerOld dispatches
     the ergodic interface there via self.layers.
     """
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
@@ -836,19 +905,19 @@ class PiLayer(Layer):
     @staticmethod
     def test():
         nBatch, nInput, nOutput = 5, 3, 4
-        layer = NewPiLayer(nInput=nInput, nOutput=nOutput)
+        layer = PiLayerOld(nInput=nInput, nOutput=nOutput)
         device = next(layer.parameters()).device
         x = torch.randn((nBatch, 6, nInput), device=device)
         layer.set_sigma(0.999)
         y = layer(x)
         assert y.shape == (nBatch, 6, nOutput)
         print(f"Original input: {x}")
-        print(f"After NewPiLayer: {y}")
+        print(f"After PiLayerOld: {y}")
 
         def check_roundtrip(desc, **kwargs):
             kw = dict(nInput=3, nOutput=6, invertible=True)
             kw.update(kwargs)
-            layer = NewPiLayer(**kw)
+            layer = PiLayerOld(**kw)
             device = next(layer.parameters()).device
             nI = kw['nInput']
             inputs = [('3D [B,S,nIn]', torch.rand(16, 5, nI, device=device).clamp(min=epsilon)),
@@ -861,7 +930,7 @@ class PiLayer(Layer):
                 assert error < 1e-4, f"{desc} {tag}: reconstruction error {error:.2e}"
             print(f"  {desc}: OK")
 
-        print("Invertible NewPiLayer roundtrip variations:")
+        print("Invertible PiLayerOld roundtrip variations:")
         check_roundtrip("naive=T hasBias=T", naive=True,  hasBias=True)
         check_roundtrip("naive=T hasBias=F", naive=True,  hasBias=False)
         check_roundtrip("naive=F hasBias=T", naive=False, hasBias=True)
@@ -870,7 +939,7 @@ class PiLayer(Layer):
         check_roundtrip("ergodic naive=T hasBias=F", naive=True,  hasBias=False, ergodic=True)
         check_roundtrip("ergodic naive=T hasBias=T", naive=True,  hasBias=True,  ergodic=True)
         check_roundtrip("ergodic naive=F hasBias=T", naive=False, hasBias=True,  ergodic=True)
-        print("NewPiLayer tests passed.")
+        print("PiLayerOld tests passed.")
 
     @staticmethod
     def xorTest():
@@ -878,7 +947,7 @@ class PiLayer(Layer):
             [[0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32, device=TheDevice.get())
         Y = torch.tensor([[0], [1], [1], [0]], dtype=torch.float32, device=TheDevice.get())
         nInput, nHidden, nOutput = 2, 3, 1
-        pi    = NewPiLayer(nInput, nHidden)
+        pi    = PiLayerOld(nInput, nHidden)
         sigma = SigmaLayer(nHidden, nOutput)
         criterion = nn.MSELoss()
         optimizer = optim.Adam(chain(pi.parameters(), sigma.parameters()), lr=0.01)
@@ -890,6 +959,185 @@ class PiLayer(Layer):
             optimizer.step()
             if epoch % 100 == 0:
                 print(f'Epoch {epoch}/1000, MSE: {loss.item():.6f}')
+
+class PiLayer(Layer):
+    r"""Log-space multiplicative layer with affine input mapping.
+
+    Inputs are expected in [-1, 1].  An affine shift maps them to
+    [ε, 1] for log-space:
+        x' = (x + 1) / 2 * (1 - ε) + ε
+
+    Forward:
+        y = exp(W @ log(x') + b)
+
+    In log-space the layer is a simple affine map.  Output is in (0, ∞)
+    but stays well-behaved when W is near identity.
+
+    When ``invertible=True``:
+        Reverse: x' = exp(W_inv @ (log(y) − b))
+                 x  = ((x' - ε) / (1 - ε)) * 2 - 1
+
+    No clamping is used — the affine mapping guarantees log-safe inputs.
+    """
+    # ε for the affine mapping [-1,1] → [ε, 1].
+    # 1e-6 gives log(ε) ≈ -13.8, well within float32 range.
+    _eps = 1e-6
+
+    def __init__(self, nInput, nOutput, ergodic=False, naive=True,
+                 invertible=False, hasBias=True, stable=True):
+        super().__init__(nInput, nOutput)
+        self.invertible = invertible
+        self.stable     = stable
+        self.hasBias    = hasBias
+        if invertible:
+            self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
+                                               naive=naive, ergodic=ergodic,
+                                               stable=stable)
+        else:
+            self.layer = LinearLayer(nInput, nOutput, hasBias=hasBias,
+                                     naive=naive, ergodic=ergodic, stable=stable)
+        self.layers.append(self.layer)
+
+    @property
+    def bias(self): return self.layer.bias
+    @property
+    def var(self):  return self.layer.var
+
+    def resample_noise(self):
+        self.layer.resample_noise()
+
+    def _effective_bias(self):
+        """Bias to add to W @ log(x'), or 0 if hasBias=False."""
+        if not self.hasBias:
+            return 0
+        if self.layer.ergodic:
+            return self.layer.bias * self.layer.biasWeight + self.layer.var * self.layer.biasNoise
+        return self.layer.biasWeight
+
+    def _to_log_domain(self, x):
+        """Map [-1, 1] → [ε, 1]."""
+        return (x + 1) / 2 * (1 - self._eps) + self._eps
+
+    def _from_log_domain(self, xp):
+        """Map [ε, 1] → [-1, 1]."""
+        return ((xp - self._eps) / (1 - self._eps)) * 2 - 1
+
+    def forward(self, x):
+        if self.layer.ergodic:
+            self.resample_noise()
+        W = self.layer.compute_W_current()                 # [nIn, nOut], non-negative by construction
+        x = x.to(W.device)
+        xp = self._to_log_domain(x)                      # [ε, 1]
+        log_x = torch.log(xp)                            # [-13.8, 0]
+        wx = log_x @ W                                   # [..., nOut], ≤ 0
+        b  = self._effective_bias()
+        wx = wx + b
+        y = torch.exp(wx)
+        return self.layer.forwardBias(y)
+
+    def reverse(self, y):
+        """Recover x from y.  Requires invertible=True.
+
+        x' = exp(W_inv @ (log(y) − b))
+        x  = ((x' - ε) / (1 - ε)) * 2 - 1
+
+        Expects y in (0, 1] (the forward output range).  Warns if out of range.
+        """
+        y = self.layer.reverseBias(y)
+        W_inv = self.layer.compute_Winverse_current()       # [nOut, nIn], exact LDU inverse
+        y = y.to(W_inv.device)
+        with torch.no_grad():
+            if torch.any(y <= 0) or torch.any(y > 1 + 1e-4):
+                import warnings
+                warnings.warn(
+                    f"PiLayer.reverse: input out of expected range (0, 1], "
+                    f"got [{y.min().item():.4f}, {y.max().item():.4f}]"
+                )
+        log_y = torch.log(y.clamp(min=self._eps))
+        b = self._effective_bias()
+        gamma = log_y - b                                 # [..., nOut]
+        log_x = gamma @ W_inv                             # [..., nIn]
+        xp = torch.exp(log_x)
+        x = self._from_log_domain(xp)
+        if self.layer.ergodic:
+            self.resample_noise()
+        return x
+
+    @staticmethod
+    def test():
+        nBatch, nInput, nOutput = 5, 3, 4
+        layer = PiLayer(nInput=nInput, nOutput=nOutput)
+        device = next(layer.parameters()).device
+        # Inputs in [-1, 1]
+        x = torch.rand((nBatch, 6, nInput), device=device) * 2 - 1
+        layer.set_sigma(0.999)
+        y = layer(x)
+        assert y.shape == (nBatch, 6, nOutput), f"shape mismatch: {y.shape}"
+        assert torch.isfinite(y).all(), "PiLayer forward produced non-finite values"
+        assert torch.all(y > 0), "PiLayer output must stay positive"
+        print(f"PiLayer forward: input {x.shape} -> output {y.shape}")
+
+        def check_roundtrip(desc, **kwargs):
+            kw = dict(nInput=3, nOutput=6, invertible=True)
+            kw.update(kwargs)
+            layer = PiLayer(**kw)
+            device = next(layer.parameters()).device
+            nI = kw['nInput']
+            # Inputs in [-1, 1]
+            inputs = [('3D [B,S,nIn]', torch.rand(16, 5, nI, device=device) * 2 - 1),
+                      ('2D [B,nIn]',   torch.rand(16, nI,    device=device) * 2 - 1)]
+            for tag, x in inputs:
+                layer.set_sigma(0.0)
+                y = layer.forward(x)
+                x_recon = layer.reverse(y)
+                error = torch.norm(x - x_recon) / torch.norm(x)
+                assert error < 1e-4, f"{desc} {tag}: reconstruction error {error:.2e}"
+            print(f"  {desc}: OK")
+
+        def check_stability(desc, **kwargs):
+            kw = dict(nInput=3, nOutput=6, invertible=True, stable=True)
+            kw.update(kwargs)
+            layer = PiLayer(**kw)
+            device = next(layer.parameters()).device
+            nI = kw['nInput']
+            dtype = next(layer.parameters()).dtype
+            layer.set_sigma(0.0)
+
+            # Test boundary values in [-1, 1]
+            x_edge = torch.tensor(
+                [[-1.0] * nI,
+                 [0.0] * nI,
+                 [1.0] * nI,
+                 [-0.5, 0.0, 0.5][:nI] if nI <= 3 else [-0.5, 0.0, 0.5] + [0.25] * (nI - 3)],
+                device=device,
+                dtype=dtype,
+            )
+
+            y = layer.forward(x_edge)
+            assert torch.isfinite(y).all(), f"{desc}: forward produced non-finite values"
+            assert torch.all(y > 0), f"{desc}: forward produced non-positive values"
+
+            x_recon = layer.reverse(y)
+            assert torch.isfinite(x_recon).all(), f"{desc}: reverse produced non-finite values"
+            print(f"  {desc}: OK")
+
+        print("Invertible PiLayer roundtrip variations:")
+        check_roundtrip("naive=T hasBias=T", naive=True,  hasBias=True)
+        check_roundtrip("naive=T hasBias=F", naive=True,  hasBias=False)
+        check_roundtrip("naive=F hasBias=T", naive=False, hasBias=True)
+        check_roundtrip("naive=F hasBias=F", naive=False, hasBias=False)
+        check_roundtrip("square nIn=nOut=6", naive=True,  hasBias=False, nInput=6, nOutput=6)
+        check_roundtrip("ergodic naive=T hasBias=F", naive=True,  hasBias=False, ergodic=True)
+        check_roundtrip("ergodic naive=T hasBias=T", naive=True,  hasBias=True,  ergodic=True)
+        check_roundtrip("ergodic naive=F hasBias=T", naive=False, hasBias=True,  ergodic=True)
+
+        print("Stable PiLayer boundary variations:")
+        check_stability("stable naive=T hasBias=T", naive=True, hasBias=True)
+        check_stability("stable naive=T hasBias=F", naive=True, hasBias=False)
+        check_stability("stable naive=F hasBias=T", naive=False, hasBias=True)
+        check_stability("stable naive=F hasBias=F", naive=False, hasBias=False)
+        check_stability("stable square nIn=nOut=6", naive=True, hasBias=False, nInput=6, nOutput=6)
+        print("PiLayer tests passed.")
 
 class VQLayer(Layer):
     """Vector-quantization layer backed by a residual VQ codebook.
@@ -1696,7 +1944,7 @@ class ModelLoss(Loss):
 
     def forward(self, lossOut, lossIn=None, sbow=None):
         total = lossOut
-        if lossIn is not None:
+        if lossIn is not None and not torch.isnan(lossIn):
             rr = self.reverse_scale
             total = (1 - rr) * lossOut + rr * lossIn
         if sbow is not None:
@@ -2798,8 +3046,9 @@ def test():
     InvertibleLinearLayer.test()
 
     SigmaLayer.test()
+    PiLayerOld.test()
+    PiLayerOld.xorTest()
     PiLayer.test()
-    PiLayer.xorTest()
 
     AttentionLayer.test()
     NormLayer.test()

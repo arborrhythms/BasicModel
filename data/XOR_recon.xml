@@ -33,13 +33,11 @@
     <nWhen>2</nWhen>
   </InputSpace>
 
-  <!-- PerceptualSpace: invertible+flatten.
-       Constraint: 2 * nInput * inputDim == nOutput * outputDim
-       2 * 3 * 14 = 84 = 6 * 14  -->
+  <!-- PerceptualSpace: invertible+flatten. -->
   <PerceptualSpace>
-    <nOutput>6</nOutput>
+    <nOutput>3</nOutput>
     <nDim>10</nDim>
-    <nVectors>6</nVectors>
+    <nVectors>3</nVectors>
     <flatten>true</flatten>
     <invertible>true</invertible>
     <hasAttention>false</hasAttention>

@@ -36,7 +36,7 @@ from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
-from Model import Grammar, Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
+from Model import Grammar, Layer, PiLayer, PiLayerOld, SigmaLayer # Import custom layers from Model.py
 from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, VerbLayer, OldSyntacticLayer, SyntacticLayer
 from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 
@@ -919,12 +919,12 @@ class Embedding(Basis):
         self.doc_sources = []
 
     def getW(self):
-        """Return live embedding vectors (always current, even after insert/remove).
+        """Return live embedding vectors, L2-normalized so elements are in [-1, 1].
 
         Returns the nn.Parameter directly (not .data) so gradients flow through.
         """
         if self.wv is not None and self.wv._vectors is not None:
-            return self.wv._vectors
+            return F.normalize(self.wv._vectors, p=2, dim=-1)
         return None
 
     def setW(self, value):
@@ -1351,6 +1351,8 @@ class Embedding(Basis):
         cos_val = positions[batch_idx, vector_idx, 1].item()
         if abs(sin_val) < 1e-8 and abs(cos_val) < 1e-8:
             return None
+        if math.isnan(sin_val) or math.isnan(cos_val):
+            return None
         return round(where_encoding.decode(torch.tensor([sin_val, cos_val])).item())
 
     def _render_tokens(self, batch_tokens, buf_size=None):
@@ -1769,9 +1771,16 @@ class SubSpace(nn.Module):
     # ------------------------------------------------------------------
 
     def set_activation_vectors(self, y):
-        """Compute and store subspace activation from dense vectors [B, N, D]."""
+        """Compute and store subspace activation from dense vectors [B, N, D].
+
+        Activation is the L2 norm divided by sqrt(D), then scaled to [-1, 1]
+        via ``2 * x - 1``.  A zero vector maps to -1; a unit-hypercube corner
+        (all 1s) maps to +1.
+        """
         assert y.ndim == 3, "Must be dim==3"
-        activation = torch.norm(y, dim=-1)  # [B, N]
+        d = y.shape[-1]
+        activation = torch.norm(y, dim=-1) / math.sqrt(d)  # [B, N] in [0, 1]
+        activation = 2 * activation - 1                     # scale to [-1, 1]
         self.set_activation(activation)
 
     #def set_activations(self, whatA, whereA, whenA): 
@@ -2035,17 +2044,23 @@ class SubSpace(nn.Module):
         if x is None or x.numel() == 0:
             return
         if not normalize:
-            normalized = self._apply_normalization(kind, x.detach(), target=target)
-            if not torch.allclose(x.detach(), normalized, atol=1e-4):
-                diff = (x.detach() - normalized).abs().max().item()
-                from data import TheData
-                import warnings
-                warnings.warn(
-                    f"Normalization check: kind={kind!r}, target={target!r} "
-                    f"deviates by {diff:.6f}. "
-                    f"Data range: input=[{TheData.input_min}, {TheData.input_max}], "
-                    f"output=[{TheData.output_min}, {TheData.output_max}]"
-                )
+            is_vector = target in ("what", "where", "when", "event")
+            if is_vector:
+                lo, hi = {"percepts": (0, 1), "concepts": (-1, 1),
+                          "symbols": (0, 1), "input": (-1, 1)}.get(kind, (None, None))
+            else:
+                lo, hi = -1, 1  # activation always [-1, 1]
+            if lo is not None:
+                xd = x.detach()
+                below = (xd.min().item() - lo)
+                above = (xd.max().item() - hi)
+                if below < -1e-4 or above > 1e-4:
+                    import warnings
+                    warnings.warn(
+                        f"Normalization check: kind={kind!r}, target={target!r} "
+                        f"range [{xd.min().item():.6f}, {xd.max().item():.6f}] "
+                        f"outside [{lo}, {hi}]."
+                    )
             return
         normalized = self._apply_normalization(kind, x, target=target)
         self.put(target, normalized)
@@ -2086,15 +2101,30 @@ class SubSpace(nn.Module):
           - "input" on vectors → scale from [0,1] back to [input_min, input_max]
           - "output" on vectors → scale from [output_min, output_max] to [-1,1]
 
-        Other kinds (percepts, concepts, symbols) use non-invertible transforms
-        (sigmoid, L2-norm, STE) and are not denormalized.
+        Invertible transforms:
+          - "percepts" → logit (inverse sigmoid): [0,1] → ℝ
+          - "concepts" → atanh (inverse tanh): [-1,1] → ℝ
+          - "input" on vectors → scale from [0,1] back to [input_min, input_max]
+          - "output" on vectors → scale from [output_min, output_max] to [-1,1]
+          - "symbols" (STE round) is not invertible and is skipped.
         """
         x = self.select(target)
         if x is None or x.numel() == 0:
             return
         is_vector = target in ("what", "where", "when", "event")
         from data import TheData
-        if kind == "input" and is_vector:
+        if kind == "percepts":
+            # logit: inverse of sigmoid
+            x = x.clamp(min=epsilon, max=1 - epsilon)
+            self.put(target, torch.log(x / (1 - x)))
+        elif kind == "concepts":
+            if is_vector:
+                pass  # L2-norm is not uniquely invertible; skip
+            else:
+                # atanh: inverse of tanh
+                x = x.clamp(min=-1 + epsilon, max=1 - epsilon)
+                self.put(target, torch.atanh(x))
+        elif kind == "input" and is_vector:
             self.put(target, TheData.denormalize(x, which="input"))
         elif kind == "output" and is_vector:
             self.put(target, TheData.normalize(x, which="output"))
@@ -2335,7 +2365,7 @@ class Space(nn.Module):
             x = x.reshape(x.shape[0], 1, -1)  # [B, N, D] -> [B, 1, N*D]
         return x
 
-    def forwardEnd(self, x, returnVectors=False):
+    def forwardEnd(self, x, returnVectors=False, compute_activation=True):
         """Finalize output after space-specific processing.
 
         Args:
@@ -2343,6 +2373,9 @@ class Space(nn.Module):
             returnVectors: if True, unflatten and store tensor into subspace.
                 If False, SubSpace passes through with unflatten if needed.
                 All SubSpace vectors maintain [B, N, D] invariant.
+            compute_activation: if True (default), derive activation from vectors.
+                Set to False for spaces (e.g. PerceptualSpace) where activation
+                is not meaningful.
         """
         if not returnVectors:
             # Ensure [B, N, D] invariant even for SubSpace pass-through
@@ -2352,12 +2385,12 @@ class Space(nn.Module):
                     self._pre_unflatten_shape = vectors.shape
                     vectors = self.subspace.objectEncoding._unflatten(
                         vectors, self.subspace.batch, forward=True)
-                    x.set_vectors(vectors)
+                    x.set_vectors(vectors, compute_activation=compute_activation)
             return x
         if self.subspace.flatten:
             self._pre_unflatten_shape = x.shape  # save for reverseBegin
             x = self.subspace.objectEncoding._unflatten(x, self.subspace.batch, forward=True)
-        self.subspace.set_vectors(x)
+        self.subspace.set_vectors(x, compute_activation=compute_activation)
         return self.subspace
 
     def reverseBegin(self, vspace, returnVectors=False):
@@ -2655,13 +2688,10 @@ class InputSpace(Space):
             )
             self.forwarding_subspace.set_vectors(self.input)
 
-        # Scale what-content to [0,1] via data min-max (or warn if out of range).
-        # Skip for embedding models — embeddings produce learned representations
-        # that don't need range normalization from raw byte values.
-        if not isinstance(lexical_basis, Embedding):
-            self.forwarding_subspace.normalize("input", target="what",
-                                               normalize=self._normalize)
-            self.input = self.forwarding_subspace.materialize()
+        # Scale what-content to [0,1] via data min-max (or assert if out of range).
+        self.forwarding_subspace.normalize("input", target="what",
+                                           normalize=self._normalize)
+        self.input = self.forwarding_subspace.materialize()
 
         object_basis.setW(self.input)
         if isinstance(lexical_basis, Embedding):
@@ -2758,20 +2788,15 @@ class InputSpace(Space):
             self.input = content
         content_basis.setW(self.input)
         object_basis.setW(self.input)
+        # Return forwarding subspace (not self.subspace which is the codebook)
+        self.forwarding_subspace.set_vectors(self.input)
+
+        # Word recovery — content is already denormalized, codebook is L2-normalized [-1,1]
         if isinstance(content_basis, Embedding):
             self._recovered_input = content_basis.decode_reverse_meta(
                 self.input, subspace=self.subspace)
         else:
             self._recovered_input = None
-        # Return forwarding subspace (not self.subspace which is the codebook)
-        self.forwarding_subspace.set_vectors(self.input)
-
-        # Denormalize: scale what-content from [0,1] back to original data range
-        if not isinstance(content_basis, Embedding) and self._normalize:
-            self.forwarding_subspace.denormalize("input", target="what")
-            self.input = self.forwarding_subspace.materialize()
-            content_basis.setW(self.input)
-            object_basis.setW(self.input)
 
         return self.forwarding_subspace
 
@@ -3093,17 +3118,13 @@ class PerceptualSpace(Space):
     """Transforms raw input vectors into percepts via a PiLayer.
 
     In the forward data flow: InputSpace -> **PerceptualSpace** -> ConceptualSpace.
-    Uses a PiLayer (permutation-equivariant layer) to map input embeddings to
+    Uses a PiLayer (log-space multiplicative layer) to map input embeddings to
     perceptual embeddings, optionally followed by self-attention and VQ
     codebook quantization.
 
-    When ``reversible=True``, uses InvertiblePiLayer whose forward
-    interleaves (log_y, log_z) pairs, doubling the output.  In 3D mode
-    the doubling is along the sequence axis; in 2D (reshape) mode,
-    the layer's nOutput is halved so the 2x produces the correct
-    unflatten width.  With ``invertible=True``, a single layer serves
-    both directions (shared weights).  Without invertibility, two
-    InvertiblePiLayers with separate weights are used: forward() on
+    When ``reversible=True`` and ``invertible=True``, a single layer
+    serves both directions (shared weights).  Without invertibility, two
+    PiLayers with separate weights are used: forward() on
     one, reverse() on the other.  **Note:** the non-invertible reverse
     path currently involves a matrix pseudoinverse (``pinv``) which may
     be numerically unstable; this is not a recommended code path.
@@ -3132,10 +3153,6 @@ class PerceptualSpace(Space):
         input = self.subspace.getEncodedInputSize()
         output = self.subspace.getEncodedOutputSize()
         self.attention = AttentionLayer(output, output, type="transformer")
-        # PiLayer's invertible mode interleaves (y, z) pairs, doubling output.
-        # Halve nOutput so the 2x interleaving produces the correct total width.
-        if self.flatten and self.reversible:
-            output = output // 2
         if self.reversible:
             if invertible:
                 self.pi  = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
@@ -3183,22 +3200,7 @@ class PerceptualSpace(Space):
         nA_dim = self.outputShape[1]
 
         invertible = TheXMLConfig.space(self.config_section, "invertible")
-        if invertible:
-            if self.flatten:
-                # Flattened: 2*nInput*inputDim == nOutput*outputDim
-                TheXMLConfig.require(
-                    lambda cfg, _ni=nI, _nid=nI_dim, _na=nA, _nad=nA_dim:
-                        2 * _ni * _nid == _na * _nad,
-                    f"PerceptualSpace: invertible+flatten requires 2*nInput*inputDim == nOutput*outputDim "
-                    f"(got 2*{nI}*{nI_dim}={2*nI*nI_dim}, {nA}*{nA_dim}={nA*nA_dim})"
-                )
-            else:
-                # Unflattened: nOutput == 2 * nInput
-                TheXMLConfig.require(
-                    lambda cfg, _ni=nI, _na=nA: _na == 2 * _ni,
-                    f"PerceptualSpace: invertible requires nOutput ({nA}) == 2*nInput ({nI})"
-                )
-        else:
+        if not invertible:
             # Standard checks
             TheXMLConfig.require(
                 lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv >= _na,
@@ -3251,8 +3253,6 @@ class PerceptualSpace(Space):
         if self.quantized:
             x = self.subspace.get_vectors().forward(x)
         vspace = self.forwardEnd(x, returnVectors=True)
-        vspace.normalize("percepts", target="what", normalize=self._normalize)       # hypercube [0,1]^d
-        vspace.normalize("percepts", target="activation", normalize=self._normalize)  # sigmoid [0,1]
         return vspace
 
     def reverse(self, vspace):

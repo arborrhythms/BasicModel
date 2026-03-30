@@ -9,6 +9,7 @@ Covers:
   - BasicModel.py  full model creation, forward/reverse pass, weight persistence
 """
 
+import math
 import os
 import sys
 import tempfile
@@ -3112,7 +3113,8 @@ class TestSubspaceActivation(unittest.TestCase):
         ss.set_vectors(x)
         # activation was set by set_vectors -> set_activation_vectors
         result = ss.materialize(mode="activation")
-        expected = torch.norm(x, dim=-1)
+        d = x.shape[-1]
+        expected = 2 * torch.norm(x, dim=-1) / math.sqrt(d) - 1
         self.assertTrue(torch.allclose(result, expected))
 
     def test_materialize_activation_mode_computes_from_event(self):
@@ -3124,7 +3126,8 @@ class TestSubspaceActivation(unittest.TestCase):
         ss.event.setW(x)
         ss.activation.setW(None)
         result = ss.materialize(mode="activation")
-        expected = torch.norm(x, dim=-1)
+        d = x.shape[-1]
+        expected = 2 * torch.norm(x, dim=-1) / math.sqrt(d) - 1
         self.assertTrue(torch.allclose(result, expected))
 
     def test_materialize_activation_mode_no_data_asserts(self):
@@ -3357,9 +3360,9 @@ class TestDataScaling(unittest.TestCase):
         """After loading XOR, Data has correct input/output min/max."""
         from BasicModel import TheData
         TheData.load("xor")
-        # XOR uses text input (byte range) and binary labels
-        self.assertEqual(TheData.input_min, 0.0)
-        self.assertEqual(TheData.input_max, 255.0)
+        # XOR uses text input (embedded, L2-normalized) and binary labels
+        self.assertEqual(TheData.input_min, -1.0)
+        self.assertEqual(TheData.input_max, 1.0)
         self.assertEqual(TheData.output_min, 0.0)
         self.assertEqual(TheData.output_max, 1.0)
 
@@ -3372,7 +3375,9 @@ class TestDataScaling(unittest.TestCase):
         TheData.output_max = 5.0
         x = torch.tensor([[-5.0, 0.0, 5.0]])
         scaled = TheData.normalize(x, which="input")
-        self.assertTrue(torch.allclose(scaled, torch.tensor([[0.0, 0.5, 1.0]])))
+        self.assertTrue(torch.allclose(scaled, torch.tensor([[-1.0, 0.0, 1.0]])))
+        roundtrip = TheData.denormalize(scaled, which="input")
+        self.assertTrue(torch.allclose(roundtrip, x))
         # denormalize(output): [-1,1] -> [min,max]
         act = torch.tensor([[-1.0, 0.0, 1.0]])
         rescaled = TheData.denormalize(act, which="output")
@@ -3427,7 +3432,7 @@ class TestInputSpaceScaling(unittest.TestCase):
     """Tests for InputSpace min-max scaling of non-embedding data."""
 
     def test_simple_input_scaled_to_unit(self):
-        """InputSpace(normalize=True) scales passthrough what-content to [0,1]."""
+        """InputSpace(normalize=True) scales passthrough what-content to [-1,1]."""
         from BasicModel import InputSpace, TheData, TheXMLConfig
         TheData.load("xor")
         TheData.input_min = -3.0
@@ -3441,8 +3446,8 @@ class TestInputSpaceScaling(unittest.TestCase):
         x = torch.FloatTensor([[[-3, -1, 1, 3]] * nInput]).to(TheDevice.get())
         result = inp.forward(x)
         what = result.select("what")
-        self.assertTrue(torch.all(what >= -0.01) and torch.all(what <= 1.01),
-                        f"what should be in [0,1], got [{what.min():.4f}, {what.max():.4f}]")
+        self.assertTrue(torch.all(what >= -1.01) and torch.all(what <= 1.01),
+                        f"what should be in [-1,1], got [{what.min():.4f}, {what.max():.4f}]")
 
 
 class TestSubspaceActivationPipeline(unittest.TestCase):

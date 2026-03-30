@@ -241,9 +241,9 @@ class BaseModel(nn.Module):
         acc = np.zeros([numTrials, numEpochs])
         has_config = hasattr(self, '_config_path') and self._config_path is not None
         already_configured = len(list(self.parameters())) > 0
-        print(f"\n\n==== {self.name} ====")
+        TheMessage(f"\n\n==== {self.name} ====")
         for trial in range(numTrials):
-            print(f"\nTrial [{trial + 1}/{numTrials}]")
+            TheMessage(f"\nTrial [{trial + 1}/{numTrials}]")
             if has_config and (trial > 0 or not already_configured):
                 self.create_from_config(self._config_path, data=self._config_data)
             acc[trial, :] = self.runTrial(numEpochs=numEpochs, batchSize=batchSize, lr=lr, profile=profile)
@@ -282,7 +282,7 @@ class BaseModel(nn.Module):
         state = {k: v for k, v in self.state_dict().items()
                  if "wv._vectors" not in k}
         torch.save({"state_dict": state}, path)
-        print(f"[{self.name}] Weights saved to {path}")
+        TheMessage(f"[{self.name}] Weights saved to {path}")
 
     def save_embeddings(self, path=None):
         """Snapshot current nn.Embedding weights and save the .pt artifact."""
@@ -295,7 +295,7 @@ class BaseModel(nn.Module):
             return
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
         emb.save_embeddings(path)
-        print(f"[{self.name}] Embeddings saved to {path}")
+        TheMessage(f"[{self.name}] Embeddings saved to {path}")
 
     @staticmethod
     def print_weights_info(path):
@@ -305,17 +305,17 @@ class BaseModel(nn.Module):
         mismatches between a saved checkpoint and a changed XML config.
         """
         if not os.path.exists(path):
-            print(f"Weights file not found: {path}")
+            TheMessage(f"Weights file not found: {path}")
             return
         saved = torch.load(path, map_location="cpu", weights_only=False)
         state = saved["state_dict"] if isinstance(saved, dict) and "state_dict" in saved else saved
         total = sum(v.numel() for v in state.values() if isinstance(v, torch.Tensor))
-        print(f"Weights file    : {path}")
-        print(f"  Total params  : {total:,}")
-        print(f"  Layers ({len(state)}):")
+        TheMessage(f"Weights file    : {path}")
+        TheMessage(f"  Total params  : {total:,}")
+        TheMessage(f"  Layers ({len(state)}):")
         for key, tensor in state.items():
             if isinstance(tensor, torch.Tensor):
-                print(f"    {key:<50s}  {list(tensor.shape)}")
+                TheMessage(f"    {key:<50s}  {list(tensor.shape)}")
 
     def load_embeddings(self, path=None):
         """Load embedding weights and vocab from a .pt artifact."""
@@ -332,7 +332,7 @@ class BaseModel(nn.Module):
         # Check that the saved embedding dimensionality matches the model.
         expected_dim = emb.wv.vector_size
         if wv.vector_size != expected_dim:
-            print(
+            TheMessage(
                 f"[{self.name}] Embedding dimension mismatch — cannot load {path}\n"
                 f"  File has {wv.vector_size}-dim vectors, model expects {expected_dim}-dim.\n"
                 f"  To fix: correct <nDim> in the model XML to match the saved embeddings,\n"
@@ -345,7 +345,7 @@ class BaseModel(nn.Module):
         # Copy loaded weights into the live parameter
         with torch.no_grad():
             emb.wv._vectors.data.copy_(wv._vectors.to(emb.wv._vectors.device))
-        print(f"[{self.name}] Embeddings loaded from {path}")
+        TheMessage(f"[{self.name}] Embeddings loaded from {path}")
         return True
 
     def load_weights(self, path=None, strict=False):
@@ -361,7 +361,7 @@ class BaseModel(nn.Module):
         if path is None:
             path = os.path.join(ProjectPaths.OUTPUT_DIR, "weights.ckpt")
         if not os.path.exists(path):
-            print(f"[{self.name}] No checkpoint at {path}, starting fresh")
+            TheMessage(f"[{self.name}] No checkpoint at {path}, starting fresh")
             return False
         saved = torch.load(path, map_location=TheDevice.get(), weights_only=False)
 
@@ -396,16 +396,16 @@ class BaseModel(nn.Module):
             lines.append("  The model config likely changed since this checkpoint was saved.")
             lines.append(f"  To fix: correct the model XML to match the saved weights,")
             lines.append(f"          or delete/move {path} to start fresh.")
-            print("\n".join(lines))
+            TheMessage("\n".join(lines))
             return False
 
         try:
             self.load_state_dict(state, strict=strict)
         except RuntimeError as e:
-            print(f"[{self.name}] Warning: cannot load {path}: {e}")
+            TheMessage(f"[{self.name}] Warning: cannot load {path}: {e}")
             return False
 
-        print(f"[{self.name}] Weights loaded from {path}")
+        TheMessage(f"[{self.name}] Weights loaded from {path}")
         return True
 
     def _restore_vocab(self, emb, saved_vocab,
@@ -501,7 +501,7 @@ class BaseModel(nn.Module):
                 pred_str,
                 f'<span class="{css}">{"Yes" if match else "No"}</span>',
             ])
-            print(f"  Input: {original:30s} -> Reconstructed: {recon:30s} Predicted: {pred_str} {'OK' if match else 'MISMATCH'}")
+            TheMessage(f"  Input: {original:30s} -> Reconstructed: {recon:30s} Predicted: {pred_str} {'OK' if match else 'MISMATCH'}")
 
         TheReport.add_table(
             "Input vs Reconstructed",
@@ -536,7 +536,7 @@ class BaseModel(nn.Module):
                     f'{buf_recon}',
                     f'<span class="{css}">{acc:.0f}%</span>',
                 ])
-                print(f"  Buffer: {orig_stripped:30s} -> {buf_recon:30s} ({acc:.0f}% char accuracy)")
+                TheMessage(f"  Buffer: {orig_stripped:30s} -> {buf_recon:30s} ({acc:.0f}% char accuracy)")
             overall_acc = matching_chars / max(total_chars, 1) * 100
             buf_rows.append(["<strong>Overall</strong>", "", f"<strong>{overall_acc:.1f}%</strong>"])
             TheReport.add_table(
@@ -1121,15 +1121,15 @@ class BasicModel(BaseModel):
         self.set_sigma(0.5)
         testLosses[0].append(outErr)
         testLosses[1].append(inErr)
-        print(f"Baseline Test Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
+        TheMessage(f"Baseline Test Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
 
         for epoch in range(numEpochs):
-            print(f"Epoch [{epoch + 1}/{numEpochs}]")
+            TheMessage(f"Epoch [{epoch + 1}/{numEpochs}]")
 
             outErr, inErr, allOut, lastIn = self.runEpoch(optimizer=self._optimizer, batchSize=batchSize, split="train")
             trainLosses[0].append(outErr)
             trainLosses[1].append(inErr)
-            print(f"Train Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
+            TheMessage(f"Train Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
 
             self.set_sigma(0)  # suppress exploration during eval
             outErr, inErr, allOut, lastIn = self.runEpoch(batchSize=batchSize, split="test")
@@ -1140,32 +1140,32 @@ class BasicModel(BaseModel):
             if hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE':
                 # Masked prediction: report loss only (no classification accuracy)
                 accuracy += [0.0]
-                print(f"Test Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
+                TheMessage(f"Test Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
             elif not isinstance(allOut, torch.Tensor) or allOut.numel() == 0:
                 # No output predictions (empty dataset or no batches)
                 accuracy += [0.0]
-                print(f"Test Loss: output={outErr:.4f}, reconstruction={inErr:.4f} (no predictions)")
+                TheMessage(f"Test Loss: output={outErr:.4f}, reconstruction={inErr:.4f} (no predictions)")
             elif allOut.dim() == 1:
                 predicted = (allOut > 0.5).long()
                 actual = (self.outputSpace.getTestOutput().squeeze() > 0.5).long()
                 total   = predicted.size(0)
                 correct = (predicted == actual).sum().item()
                 accuracy += [correct / total]
-                print(f"Test Accuracy: {100 * correct / total:.2f}%")
+                TheMessage(f"Test Accuracy: {100 * correct / total:.2f}%")
             else:
                 _, predicted = torch.max(allOut, 1)
                 _, actual = torch.max(self.outputSpace.getTestOutput(), 1)
                 total   = predicted.size(0)
                 correct = (predicted == actual).sum().item()
                 accuracy += [correct / total]
-                print(f"Test Accuracy: {100 * correct / total:.2f}%")
+                TheMessage(f"Test Accuracy: {100 * correct / total:.2f}%")
 
             self.inputSpace.shuffle()
 
             if profile:
                 profile.step()
 
-        print(f"Final Stats:")
+        TheMessage(f"Final Stats:")
         TheReport.plotLoss(self.name, trainLosses, validationLosses, testLosses)
         self.rCorrect = TheReport.mnistReport(self)
 
@@ -1300,10 +1300,7 @@ class BasicModel(BaseModel):
 
         totalLoss = self.loss.total(lossOut, lossIn, sbow)
 
-        print(
-            f"batch = {batchNum}, loss = {totalLoss} ",
-            flush=True
-        )
+        TheMessage(f"batch = {batchNum}, loss = {totalLoss} ")
 
         if train:
             totalLoss.backward()
@@ -1829,12 +1826,12 @@ class ModelFactory:
                             lr=_t("learningRate", 0.01), profile=prof)
 
             # Print summary table
-            print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=30))
+            TheMessage(prof.key_averages().table(sort_by="cpu_time_total", row_limit=30))
 
             # Export Chrome trace
             trace_path = ProjectPaths.output_path("profile_trace.json")
             prof.export_chrome_trace(trace_path)
-            print(f"Chrome trace saved to {trace_path}")
+            TheMessage(f"Chrome trace saved to {trace_path}")
             return [(m.name, m.rCorrect, m)]
 
         m.run(_t("numTrials", 1),

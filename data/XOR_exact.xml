@@ -36,12 +36,12 @@
     <flatten>true</flatten>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
+    <normalize>true</normalize>
   </InputSpace>
 
-  <!-- PerceptualSpace: invertible+flatten.
-       Constraint: 2 * nInput * inputDim == nOutput * outputDim  -->
+  <!-- PerceptualSpace: invertible+flatten. -->
   <PerceptualSpace>
-    <nOutput>12</nOutput>
+    <nOutput>6</nOutput>
     <nDim>10</nDim>
     <nVectors>6</nVectors>
     <flatten>true</flatten>

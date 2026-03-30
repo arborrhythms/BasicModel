@@ -17,6 +17,9 @@ import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from util import TheMessage
+
 
 def parse_args():
     p = argparse.ArgumentParser(description="Train BasicModel end-to-end")
@@ -64,7 +67,7 @@ _log_file = None   # set by main() when --log is active
 
 def run(cmd, **kwargs):
     """Run a command, printing it first. Tees output to log file if active."""
-    print(f"+ {' '.join(cmd)}", flush=True)
+    TheMessage(f"+ {' '.join(cmd)}")
 
     if _log_file:
         # Subprocess stdout goes to a pipe, not our Python-level _Tee,
@@ -131,10 +134,10 @@ def train_local(args):
             embed_cmd += ["--max-docs", str(args.max_docs)]
         if args.random_shards:
             embed_cmd += ["--random-shards"]
-        print(f"\n=== Phase 1: Training embeddings → {emb_path} ===")
+        TheMessage(f"\n=== Phase 1: Training embeddings → {emb_path} ===")
         run(embed_cmd, cwd=proj, env=env)
     else:
-        print(f"\n=== Phase 1: Embeddings exist at {emb_path}, skipping ===")
+        TheMessage(f"\n=== Phase 1: Embeddings exist at {emb_path}, skipping ===")
 
     # --- Phase 2: Model training ---
     # Pass overrides via env so BasicModel.py respects them over XML config
@@ -156,18 +159,18 @@ def train_local(args):
             python, "-m", "cProfile", "-o", prof_path,
             os.path.join(proj, "bin", "BasicModel.py"), args.model,
         ]
-        print(f"\n=== Phase 2: Training model (profiling → {prof_path}) ===")
+        TheMessage(f"\n=== Phase 2: Training model (profiling → {prof_path}) ===")
         run(model_cmd, cwd=os.path.join(proj, "bin"), env=model_env)
 
         # Print summary
-        print(f"\n=== Profile summary (top 30 by cumulative time) ===")
+        TheMessage(f"\n=== Profile summary (top 30 by cumulative time) ===")
         stats = pstats.Stats(prof_path, stream=sys.stdout)
         stats.strip_dirs().sort_stats("cumulative").print_stats(30)
-        print(f"\nFull profile saved to {prof_path}")
-        print("View interactively:  snakeviz " + prof_path)
+        TheMessage(f"\nFull profile saved to {prof_path}")
+        TheMessage("View interactively:  snakeviz " + prof_path)
     else:
         model_cmd = [python, os.path.join(proj, "bin", "BasicModel.py"), args.model]
-        print("\n=== Phase 2: Training model ===")
+        TheMessage("\n=== Phase 2: Training model ===")
         run(model_cmd, cwd=os.path.join(proj, "bin"), env=model_env)
 
 
@@ -179,7 +182,7 @@ def train_remote(args):
     dest = f"{args.user}@{args.host}:{args.remote_dir}/"
 
     # Rsync
-    print(f"\n=== Syncing to {args.host} ===")
+    TheMessage(f"\n=== Syncing to {args.host} ===")
     rsync_cmd = [
         "rsync", "-av", "--progress",
         "-e", ssh_opts,
@@ -210,10 +213,10 @@ def train_remote(args):
         if val:
             remote_env_vars = f"{var}={val} {remote_env_vars}"
 
-    print(f"\n=== Running training on {args.host} ===")
+    TheMessage(f"\n=== Running training on {args.host} ===")
     remote_cmd = f"cd {args.remote_dir} && {remote_env_vars} .venv/bin/python {' '.join(remote_args)}"
     ssh_cmd = [
-        "ssh", "-i", key, "-t",
+        "ssh", "-i", key,
         f"{args.user}@{args.host}",
         remote_cmd,
     ]
@@ -257,7 +260,7 @@ def main():
         _log_file = open(log_path, "w")
         sys.stdout = _Tee(sys.__stdout__, _log_file)
         sys.stderr = _Tee(sys.__stderr__, _log_file)
-        print(f"Logging to {log_path}")
+        TheMessage(f"Logging to {log_path}")
 
     try:
         if args.host:

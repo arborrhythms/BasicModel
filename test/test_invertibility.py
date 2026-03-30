@@ -189,12 +189,13 @@ class TestInvertibleSigmaLayer(unittest.TestCase):
 
 class TestInvertiblePiLayer3D(unittest.TestCase):
     def _check(self, naive, bias):
-        nIn, nOut = 4, 8
+        nIn, nOut = 4, 6
         torch.manual_seed(42)
         layer = PiLayer(nIn, nOut, naive=naive,
                         hasBias=bias, invertible=True)
         layer.set_sigma(0)
-        x = torch.randn(3, 5, nIn).to(TheDevice.get())
+        # Input in [-1, 1] (PiLayer's expected domain)
+        x = (torch.rand(3, 5, nIn).to(TheDevice.get()) * 2 - 1)
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec, rel=True)
@@ -210,12 +211,13 @@ class TestInvertiblePiLayer3D(unittest.TestCase):
 class TestInvertiblePiLayer2D(unittest.TestCase):
     """Invertible PiLayer with single-object 3D input [B, 1, D]."""
     def _check(self, naive, bias):
-        nIn, nOut = 4, 8
+        nIn, nOut = 4, 6
         torch.manual_seed(42)
         layer = PiLayer(nIn, nOut, naive=naive,
                         hasBias=bias, invertible=True)
         layer.set_sigma(0)
-        x = torch.randn(6, 1, nIn).to(TheDevice.get())
+        # Input in [-1, 1] (PiLayer's expected domain)
+        x = (torch.rand(6, 1, nIn).to(TheDevice.get()) * 2 - 1)
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec, rel=True)
@@ -231,21 +233,21 @@ class TestInvertiblePiLayer2D(unittest.TestCase):
 class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
     """Lock down non-naive InvertiblePiLayer behavior before refactoring.
 
-    Non-naive mode uses OldInvertibleLinearLayer (SVD-factored weights).
     These tests verify forward/reverse roundtrip across 2D, 3D, bias,
-    ergodic, and training scenarios.
+    ergodic, and training scenarios.  PiLayer (log-space) does not
+    interleave — output shape matches input shape.
     """
 
     def test_2d_roundtrip(self):
-        """Single-object 3D [B, 1, nIn] -> [B, 2, nOut] roundtrip, no noise."""
+        """Single-object 3D [B, 1, nIn] -> [B, 1, nOut] roundtrip, no noise."""
         torch.manual_seed(42)
-        nIn, nOut = 4, 8
+        nIn, nOut = 4, 6
         layer = PiLayer(nIn, nOut, naive=False, hasBias=True, invertible=True)
         layer.train(False)
-        x = torch.randn(6, 1, nIn).to(TheDevice.get())
+        x = (torch.rand(6, 1, nIn).to(TheDevice.get()) * 2 - 1)
         with torch.no_grad():
             y = layer.forward(x)
-            self.assertEqual(y.shape, (6, 2, nOut))
+            self.assertEqual(y.shape, (6, 1, nOut))
             x_rec = layer.reverse(y)
             self.assertEqual(x_rec.shape, x.shape)
         err = _reconstruction_error(x, x_rec, rel=True)
@@ -254,10 +256,10 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
     def test_2d_nobias(self):
         """Single-object 3D roundtrip without bias term."""
         torch.manual_seed(42)
-        nIn, nOut = 4, 8
+        nIn, nOut = 4, 6
         layer = PiLayer(nIn, nOut, naive=False, hasBias=False, invertible=True)
         layer.train(False)
-        x = torch.randn(6, 1, nIn).to(TheDevice.get())
+        x = (torch.rand(6, 1, nIn).to(TheDevice.get()) * 2 - 1)
         with torch.no_grad():
             y = layer.forward(x)
             x_rec = layer.reverse(y)
@@ -265,15 +267,15 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
         self.assertLess(err, 1e-3, f"no-bias rel err={err:.2e}")
 
     def test_3d_roundtrip(self):
-        """3D (batch, seq, nInput) -> (batch, 2*seq, nOutput) roundtrip."""
+        """3D (batch, seq, nInput) -> (batch, seq, nOutput) roundtrip."""
         torch.manual_seed(42)
-        nIn, nOut = 4, 8
+        nIn, nOut = 4, 6
         layer = PiLayer(nIn, nOut, naive=False, hasBias=True, invertible=True)
         layer.train(False)
-        x = torch.randn(3, 5, nIn).to(TheDevice.get())
+        x = (torch.rand(3, 5, nIn).to(TheDevice.get()) * 2 - 1)
         with torch.no_grad():
             y = layer.forward(x)
-            self.assertEqual(y.shape, (3, 2 * 5, nOut))
+            self.assertEqual(y.shape, (3, 5, nOut))
             x_rec = layer.reverse(y)
             self.assertEqual(x_rec.shape, x.shape)
         err = _reconstruction_error(x, x_rec, rel=True)
@@ -282,10 +284,10 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
     def test_3d(self):
         """3D (batch, seq, nInput) roundtrip."""
         torch.manual_seed(42)
-        nIn, nOut = 4, 8
+        nIn, nOut = 4, 6
         layer = PiLayer(nIn, nOut, naive=False, hasBias=True, invertible=True)
         layer.train(False)
-        x = torch.randn(3, 5, nIn).to(TheDevice.get())
+        x = (torch.rand(3, 5, nIn).to(TheDevice.get()) * 2 - 1)
         with torch.no_grad():
             y = layer.forward(x)
             x_rec = layer.reverse(y)
@@ -294,15 +296,15 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
         self.assertLess(err, 0.1, f"3D rel err={err:.2e}")
 
     def test_ergodic_roundtrip(self):
-        """Non-naive with ergodic noise: reverse uses self.layer.reverse."""
+        """Non-naive with ergodic noise."""
         torch.manual_seed(42)
-        nIn, nOut = 4, 8
+        nIn, nOut = 4, 6
         layer = PiLayer(nIn, nOut, naive=False, ergodic=True, invertible=True)
         with torch.no_grad():
             layer.var.fill_(0.05)
             layer.bias.fill_(0.95)
         layer.train(True)
-        x = torch.randn(8, 1, nIn).to(TheDevice.get())
+        x = (torch.rand(8, 1, nIn).to(TheDevice.get()) * 2 - 1)
         with torch.no_grad():
             y = layer.forward(x)
             x_rec = layer.reverse(y)
@@ -312,10 +314,10 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
     def test_training_preserves_invertibility(self):
         """After gradient steps, non-naive roundtrip remains accurate."""
         torch.manual_seed(42)
-        nIn, nOut = 4, 8
+        nIn, nOut = 4, 6
         layer = PiLayer(nIn, nOut, naive=False, hasBias=True, invertible=True)
         optimizer = optim.Adam(layer.parameters(), lr=0.01)
-        x = torch.randn(8, 1, nIn).to(TheDevice.get())
+        x = (torch.rand(8, 1, nIn).to(TheDevice.get()) * 2 - 1)
         # Run a few training steps with a dummy loss
         for _ in range(20):
             optimizer.zero_grad()
@@ -383,12 +385,10 @@ class TestPairedSigmaTraining(unittest.TestCase):
 
 
 class TestPairedPiTraining(unittest.TestCase):
-    """Paired roundtrip with two InvertiblePiLayers (separate weights).
+    """Paired roundtrip with two PiLayers (separate weights).
 
     Demonstrates case 3: reversible without weight-sharing.
-    forward() on one layer, reverse() on the other.  The reverse path
-    recovers x via gamma = 0.5*(log_z - log_y) = Wx, then x = pinv(W) @ gamma.
-    Uses naive=True which computes torch.linalg.pinv at each step.
+    forward() on one layer, reverse() on the other.
     """
     def test_paired_roundtrip(self):
         torch.manual_seed(42)
@@ -398,7 +398,8 @@ class TestPairedPiTraining(unittest.TestCase):
         criterion = nn.MSELoss()
         optimizer = optim.Adam(
             list(pi_fwd.parameters()) + list(pi_rev.parameters()), lr=0.01)
-        x_data = torch.randn(8, 5, nIn).to(TheDevice.get())
+        # Input in [-1, 1]
+        x_data = (torch.rand(8, 5, nIn).to(TheDevice.get()) * 2 - 1)
         for _ in range(500):
             optimizer.zero_grad()
             y = pi_fwd(x_data)
@@ -499,8 +500,7 @@ class TestPerceptualSpacePassthrough(unittest.TestCase):
 class TestPerceptualSpaceReversePassTrained(unittest.TestCase):
     """PerceptualSpace with reversible=True, trained pair for roundtrip.
 
-    InvertiblePiLayer doubles dim 1 (objects), so nActive_out = 2 * nActive_in.
-    Uses flatten=False (3D mode) where the doubling maps cleanly to nActive.
+    PiLayer (log-space) does not interleave, so output shape matches input.
     """
     def _check(self, objSize):
         _setup_object_encoding(objSize=objSize, passThrough=False, hasAttention=False,
@@ -509,11 +509,12 @@ class TestPerceptualSpaceReversePassTrained(unittest.TestCase):
         embDim = contentDim + objSize
         torch.manual_seed(42)
         pspace = PerceptualSpace(
-            [nObj, embDim], [nObj, contentDim], [2*nObj, embDim],
+            [nObj, embDim], [nObj, contentDim], [nObj, embDim],
         )
         criterion = nn.MSELoss()
         optimizer = optim.Adam(pspace.parameters(), lr=0.005)
-        x_data = torch.randn(4, nObj, embDim).to(TheDevice.get())
+        # Input in [-1, 1] (PiLayer's expected domain)
+        x_data = (torch.rand(4, nObj, embDim).to(TheDevice.get()) * 2 - 1)
         pspace.train()
         for _ in range(2000):
             optimizer.zero_grad()
@@ -679,10 +680,9 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
     """Ergodic mode on invertible layers: noise injection during training."""
 
     def test_invertible_pi_ergodic_roundtrip(self):
-        """InvertiblePiLayer with ergodic=True should still roundtrip after training.
+        """PiLayer with ergodic=True should still roundtrip after training.
 
-        Directly sets moderate var; high var makes pinv imprecise
-        because the effective weight matrix is heavily perturbed by noise.
+        Directly sets moderate var; high var perturbs the weight matrix.
         """
         torch.manual_seed(42)
         nIn, nOut = 4, 6
@@ -691,7 +691,8 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
             layer.var.fill_(0.1)
             layer.bias.fill_(0.9)
         layer.train()
-        x = torch.randn(8, 1, nIn).to(TheDevice.get())
+        # Input in [-1, 1]
+        x = (torch.rand(8, 1, nIn).to(TheDevice.get()) * 2 - 1)
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec, rel=True)

@@ -220,9 +220,9 @@ class Data():
             self.input_min = self.train_input.min().item()
             self.input_max = self.train_input.max().item()
         else:
-            # Text data: byte range
-            self.input_min = 0.0
-            self.input_max = 255.0
+            # Text data: embedded, L2-normalized → elements in [-1, 1]
+            self.input_min = -1.0
+            self.input_max = 1.0
         if isinstance(self.train_output, torch.Tensor):
             self.output_min = self.train_output.min().item()
             self.output_max = self.train_output.max().item()
@@ -237,13 +237,13 @@ class Data():
 
         Args:
             x: tensor to normalize.
-            which: "input" scales [input_min, input_max] → [0, 1].
+            which: "input" scales [input_min, input_max] → [-1, 1].
                    "output" scales [output_min, output_max] → [-1, 1].
         """
         if which == "input":
             if self.input_min is None or self.input_max is None or self.input_max == self.input_min:
                 return x
-            return (x - self.input_min) / (self.input_max - self.input_min)
+            return (x - self.input_min) / (self.input_max - self.input_min) * 2 - 1
         else:
             if self.output_min is None or self.output_max is None or self.output_max == self.output_min:
                 return x
@@ -254,13 +254,13 @@ class Data():
 
         Args:
             x: tensor to denormalize.
-            which: "input" scales [0, 1] → [input_min, input_max].
+            which: "input" scales [-1, 1] → [input_min, input_max].
                    "output" scales [-1, 1] → [output_min, output_max].
         """
         if which == "input":
             if self.input_min is None or self.input_max is None or self.input_max == self.input_min:
                 return x
-            return x * (self.input_max - self.input_min) + self.input_min
+            return (x + 1) / 2 * (self.input_max - self.input_min) + self.input_min
         else:
             if self.output_min is None or self.output_max is None or self.output_max == self.output_min:
                 return x

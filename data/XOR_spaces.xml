@@ -34,32 +34,30 @@
     <flatten>true</flatten>
   </InputSpace>
 
-  <!-- PerceptualSpace: invertible+flatten.
-       Constraint: 2 * nInput * inputDim == nOutput * outputDim
-       2 * 6 * 10 = 120 = 12 * 10  -->
+  <!-- PerceptualSpace: invertible+flatten. -->
   <PerceptualSpace>
-    <nOutput>12</nOutput>
+    <nOutput>6</nOutput>
     <nDim>10</nDim>
-    <nVectors>12</nVectors>
+    <nVectors>6</nVectors>
     <flatten>true</flatten>
     <invertible>true</invertible>
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace: nOutput=12, nVectors=12 (non-quantized: nVectors==nOutput). -->
+  <!-- ConceptualSpace: nOutput=6, nVectors=6 (non-quantized: nVectors==nOutput). -->
   <ConceptualSpace>
-    <nOutput>12</nOutput>
+    <nOutput>6</nOutput>
     <nDim>10</nDim>
-    <nVectors>12</nVectors>
+    <nVectors>6</nVectors>
     <flatten>true</flatten>
     <invertible>true</invertible>
   </ConceptualSpace>
 
-  <!-- SymbolicSpace: nOutput = ConceptualSpace.nOutput = 12 -->
+  <!-- SymbolicSpace: nOutput = ConceptualSpace.nOutput = 6 -->
   <SymbolicSpace>
-    <nOutput>12</nOutput>
+    <nOutput>6</nOutput>
     <nDim>10</nDim>
-    <nVectors>12</nVectors>
+    <nVectors>6</nVectors>
     <flatten>true</flatten>
     <passThrough>true</passThrough>
   </SymbolicSpace>

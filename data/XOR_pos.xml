@@ -32,13 +32,11 @@
     <flatten>true</flatten>
   </InputSpace>
 
-  <!-- PerceptualSpace: invertible+flatten.
-       Constraint: 2 * nInput * inputDim == nOutput * outputDim
-       2 * 6 * 14 = 168 = 12 * 14  -->
+  <!-- PerceptualSpace: invertible+flatten. -->
   <PerceptualSpace>
-    <nOutput>12</nOutput>
+    <nOutput>6</nOutput>
     <nDim>10</nDim>
-    <nVectors>12</nVectors>
+    <nVectors>6</nVectors>
     <flatten>true</flatten>
     <invertible>true</invertible>
     <hasAttention>false</hasAttention>
