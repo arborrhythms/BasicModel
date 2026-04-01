@@ -1,7 +1,5 @@
 # TODO
 
-* Look into chunking of the PerceptualSpace and a byte encoder
-* See if syntax is working
 
 ================================== April 9 ==================================
 

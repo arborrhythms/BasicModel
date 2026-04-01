@@ -706,8 +706,9 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
         bw = self._bias_effective()
         if self.ergodic:
             raw = self.bias * bw + self.var * self.biasNoise
-            return -F.softplus(raw)  # ensure ≤ 0 even with noise
-        return -bw  # always ≤ 0
+        else:
+            raw = bw
+        return -F.softplus(raw)  # always ≤ 0
 
     def forwardBias(self, x):
         if self.hasBias:
@@ -2315,7 +2316,15 @@ class CorrMem(Mem):
 #region Logic
 
 class Grammar:
-    """Binary deep-structure grammar. Rules map integer IDs to productions."""
+    """Binary deep-structure grammar. Rules map integer IDs to productions.
+
+    The full rule catalog is a class attribute. Instances may be configured
+    from an XML ``<grammar>`` section to restrict which rules are active.
+    Lazy initialization via ``_ensure_configured()`` defers the XML lookup
+    until the first call to ``symbolic()``/``conceptual()``/``perceptual()``,
+    solving the module-load-time ordering problem (TheGrammar is created
+    before config overlay).
+    """
     rules = [
         "S",                       # 0 — start
         "S → S EQUALS S",          # 1
@@ -2331,7 +2340,16 @@ class Grammar:
         "C → C INTERSECTION C",    # 11
         "C → P",                   # 12
         "P → W",                   # 13 — word terminal
+        "S → S REWRITE S",         # 14 — swap positions (symbolic)
+        "C → C REWRITE C",         # 15 — swap positions (conceptual)
     ]
+
+    # Rule IDs that represent transitions between spaces (S→C, C→P).
+    _TRANSITION_IDS = {6, 12}
+
+    def __init__(self, lazy_init=True):
+        self._active = None  # None = not yet configured; dict once configured
+        self._lazy_init = lazy_init  # If False, skip XML config lookup
 
     def __len__(self):
         return len(self.rules)
@@ -2356,17 +2374,91 @@ class Grammar:
         """Return list of rule IDs with arity 2."""
         return [i for i in range(len(self.rules)) if self.arity(i) == 2]
 
+    # ── Configuration from XML ────────────────────────────────────────
+
+    def configure(self, grammar_dict):
+        """Configure from parsed XML: {"S": [...], "C": [...], "P": [...]}.
+
+        Each value is a string (single rule) or list of strings. Each string
+        is the RHS of a production (e.g. "S equals S", "C verb C", "P", "W").
+        Tokens are uppercased and matched against the canonical rule catalog.
+
+        Raises ValueError if a rule string doesn't match any known rule.
+        """
+        self._active = {"S": [], "C": [], "P": []}
+        for lhs in ("S", "C", "P"):
+            raw = grammar_dict.get(lhs, [])
+            if isinstance(raw, str):
+                raw = [raw]
+            for rhs_text in raw:
+                tokens = rhs_text.strip().split()
+                canonical_rhs = " ".join(t.upper() for t in tokens)
+                canonical = f"{lhs} → {canonical_rhs}"
+                matched = False
+                for i, rule in enumerate(self.rules):
+                    if rule == canonical:
+                        self._active[lhs].append(i)
+                        matched = True
+                        break
+                if not matched:
+                    raise ValueError(f"Unknown grammar rule: {canonical!r}")
+
+    def _ensure_configured(self):
+        """Lazy init: read <grammar> from TheXMLConfig on first access."""
+        if self._active is not None or not self._lazy_init:
+            return
+        from util import TheXMLConfig
+        try:
+            cfg = TheXMLConfig.get("grammar")
+            if isinstance(cfg, dict):
+                self.configure(cfg)
+        except (KeyError, AttributeError):
+            pass  # no grammar section — use hardcoded defaults
+
+    # ── Rule queries ──────────────────────────────────────────────────
+
     def symbolic(self):
-        """Rules associated with symbolic operations: EQUALS."""
-        return [1,2,3,4,5]
+        """Rule IDs for symbolic (S→) operations."""
+        self._ensure_configured()
+        if self._active is not None:
+            return list(self._active["S"])
+        return [1, 2, 3, 4, 5, 14]
 
     def conceptual(self):
-        """Rules associated with conceptual operations: VERB, PART, UNION, INTERSECTION."""
-        return [7, 8, 9, 10, 11]
+        """Rule IDs for conceptual (C→) operations."""
+        self._ensure_configured()
+        if self._active is not None:
+            return list(self._active["C"])
+        return [7, 8, 9, 10, 11, 15]
 
     def perceptual(self):
-        """Rules associated with perceptual operations: word terminal."""
+        """Rule IDs for perceptual (P→) operations."""
+        self._ensure_configured()
+        if self._active is not None:
+            return list(self._active["P"])
         return [13]
+
+    # ── Transition helpers ────────────────────────────────────────────
+
+    def symbolic_transition(self):
+        """Return the S→C transition rule ID if configured, else default 6."""
+        self._ensure_configured()
+        if self._active is not None:
+            for r in self._active["S"]:
+                if r in self._TRANSITION_IDS:
+                    return r
+            return None
+        return 6
+
+    def conceptual_transition(self):
+        """Return the C→P transition rule ID if configured, else default 12."""
+        self._ensure_configured()
+        if self._active is not None:
+            for r in self._active["C"]:
+                if r in self._TRANSITION_IDS:
+                    return r
+            return None
+        return 12
 
 class SyntacticLayer(Layer):
     """Per-space rule prediction layer for the recursive grammar.

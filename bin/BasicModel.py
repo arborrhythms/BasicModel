@@ -861,31 +861,90 @@ class BasicModel(BaseModel):
         Returns: list of (batch, vector, rule) word tuples across all spaces.
         """
         all_words = []
+        use_sr = TheXMLConfig.get("architecture.shiftReduce", True)
 
         # ── Symbolic derivation (rules 1-5, transition 6) ────────
-        # Predicts rules AND executes soft-weighted projections on [B, N] activations
         sym_act = self.symbols.get_activation()
         if sym_act is not None and self.syntacticSpace is not None:
-            sym_out = self.syntacticSpace.composeSyntax(sym_act)
-            all_words.extend(sym_out["words"])
+            if use_sr:
+                # S/R loop: process one symbol at a time via writeSymbols
+                self.syntacticSpace.resetStack()
+                active_positions = self.syntacticSpace.syntactic_layer._active_positions(sym_act)
+                pos_set = set()
+                for bp in active_positions:
+                    pos_set.update(bp)
+                positions = sorted(pos_set)
+
+                for pos in positions:
+                    mask = torch.zeros_like(sym_act)
+                    mask[:, pos] = sym_act[:, pos]
+                    self.syntacticSpace.writeSymbols(mask)
+
+                composed = self.syntacticSpace._sr_stack[-1] if self.syntacticSpace._sr_stack else sym_act
+                words = list(self.syntacticSpace._sr_words)
+                sym_out = {"composed": composed, "words": words}
+            else:
+                # Legacy: batch composition
+                sym_out = self.syntacticSpace.composeSyntax(sym_act)
+                words = sym_out.get("words", [])
+            all_words.extend(words)
             self._symbolic_syntax_out = sym_out
 
         # ── Conceptual derivation (rules 7-9, transition 10) ─────
-        # Predicts rules AND executes soft-weighted projections on [B, N, D] vectors
         con_act = self.concepts.get_activation()
         con_vec = self.concepts.materialize()
-        if con_act is not None and hasattr(self.conceptualSpace, 'composeSyntax'):
-            con_out = self.conceptualSpace.composeSyntax(con_act, con_vec)
-            all_words.extend(con_out["words"])
+        if con_act is not None and hasattr(self.conceptualSpace, 'writeConcepts'):
+            if use_sr:
+                # S/R loop: process one concept at a time via writeConcepts
+                self.conceptualSpace.resetStack()
+                active_positions = self.conceptualSpace.syntactic_layer._active_positions(con_act)
+                pos_set = set()
+                for bp in active_positions:
+                    pos_set.update(bp)
+                positions = sorted(pos_set)
+
+                for pos in positions:
+                    mask_act = torch.zeros_like(con_act)
+                    mask_act[:, pos] = con_act[:, pos]
+                    mask_vec = torch.zeros_like(con_vec) if con_vec is not None else None
+                    if con_vec is not None:
+                        mask_vec[:, pos] = con_vec[:, pos]
+                    self.conceptualSpace.writeConcepts(mask_act, mask_vec)
+
+                composed = self.conceptualSpace._sr_stack[-1] if self.conceptualSpace._sr_stack else con_vec
+                words = list(self.conceptualSpace._sr_words)
+                con_out = {"composed": composed, "words": words}
+            else:
+                # Legacy: batch composition
+                con_out = self.conceptualSpace.composeSyntax(con_act, con_vec)
+                words = con_out.get("words", [])
+            all_words.extend(words)
             self._conceptual_syntax_out = con_out
 
         # ── Perceptual derivation (rule 11: terminal) ────────────
-        # Terminal rule — only predicts, no composition needed
+        # S/R loop: process one percept at a time via writePercepts
         per_act = self.percepts.get_activation()
-        if per_act is not None and hasattr(self.perceptualSpace, 'syntactic_layer') \
+        if per_act is not None and hasattr(self.perceptualSpace, 'writePercepts') \
                 and self.perceptualSpace.syntactic_layer is not None:
-            per_out = self.perceptualSpace.syntactic_layer.forward(per_act)
-            all_words.extend(per_out["words"])
+            self.perceptualSpace.resetStack()
+            active_positions = self.perceptualSpace.syntactic_layer._active_positions(per_act)
+            pos_set = set()
+            for bp in active_positions:
+                pos_set.update(bp)
+            positions = sorted(pos_set)
+            per_vec = self.percepts.materialize()
+
+            for pos in positions:
+                mask_act = torch.zeros_like(per_act)
+                mask_act[:, pos] = per_act[:, pos]
+                mask_vec = torch.zeros_like(per_vec) if per_vec is not None else None
+                if per_vec is not None:
+                    mask_vec[:, pos] = per_vec[:, pos]
+                self.perceptualSpace.writePercepts(mask_act, mask_vec)
+
+            words = list(self.perceptualSpace._sr_words)
+            per_out = {"words": words}
+            all_words.extend(words)
             self._perceptual_syntax_out = per_out
 
         self.all_words = all_words
@@ -1713,9 +1772,15 @@ class MentalModel(BaseModel):
         symbols = torch.zeros(B, self._symbol_shape[0], self._symbol_shape[1],
                               device=percepts.device)
 
-        # 3. Reset syntactic step counter
+        # 3. Reset syntactic step counter and clear S/R stacks
         if self.syntacticSpace is not None:
             self.syntacticSpace.reset()
+            self.syntacticSpace.resetStack()
+            self.syntacticSpace.subspace.word = []
+        if hasattr(self, 'conceptualSpace') and hasattr(self.conceptualSpace, 'resetStack'):
+            self.conceptualSpace.resetStack()
+        if hasattr(self, 'perceptualSpace') and hasattr(self.perceptualSpace, 'resetStack'):
+            self.perceptualSpace.resetStack()
         self.syntax_states = []
 
         # 4. Iterative loop: [Percept,Symbol]->Concept, Symbol->Syntax, Concept->Symbol
@@ -1758,9 +1823,9 @@ class MentalModel(BaseModel):
 
         # 2. Unwind iterations in reverse
         for t in reversed(range(self.conceptualOrder)):
-            # SyntacticSpace reverse (decrements step internally)
+            # SyntacticSpace reverse: accumulates words on subspace.word list
             if self.syntacticSpace is not None and t < len(self.syntax_states):
-                self.syntacticSpace.reverse(self.syntax_states[t])
+                syntax_result = self.syntacticSpace.reverse(self.syntax_states[t])
 
             # ConceptualSpace reverse: concepts -> [percepts, symbols] estimate
             concept_input_state = self.conceptualSpace.reverse(concepts_state)

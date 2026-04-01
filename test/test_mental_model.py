@@ -98,6 +98,18 @@ class TestMentalModelForwardReverse(unittest.TestCase):
                 self.assertGreaterEqual(r, 0)
 
 
+    def test_mental_model_spaces_have_resetStack(self):
+        """MentalModel spaces all have resetStack method."""
+        _reload_config()
+        model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
+        if model.syntacticSpace is not None:
+            self.assertTrue(hasattr(model.syntacticSpace, 'resetStack'))
+        if hasattr(model, 'conceptualSpace'):
+            self.assertTrue(hasattr(model.conceptualSpace, 'resetStack'))
+        if hasattr(model, 'perceptualSpace'):
+            self.assertTrue(hasattr(model.perceptualSpace, 'resetStack'))
+
+
 @unittest.expectedFailure
 class TestMentalModelLearnsGrammar(unittest.TestCase):
     """MentalModel should learn grammar rules through reconstruction loss.

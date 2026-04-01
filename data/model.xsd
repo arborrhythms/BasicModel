@@ -13,6 +13,7 @@
         <xs:element name="SymbolicSpace" type="symbolicSpaceType" minOccurs="0"/>
         <xs:element name="SyntacticSpace" type="syntacticSpaceType" minOccurs="0"/>
         <xs:element name="OutputSpace" type="outputSpaceType" minOccurs="0"/>
+        <xs:element name="grammar" type="grammarType" minOccurs="0"/>
       </xs:all>
     </xs:complexType>
   </xs:element>
@@ -31,6 +32,7 @@
       <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
       <xs:element name="naive" type="xs:boolean" minOccurs="0"/>
       <xs:element name="syntax" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="shiftReduce" type="xs:boolean" minOccurs="0"/>
       <xs:element name="reconstruct" type="reconstructEnum" minOccurs="0"/>
       <xs:element name="maxResponseLength" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="data" type="dataType" minOccurs="0"/>
@@ -320,6 +322,17 @@
       <xs:element name="normalize" type="xs:boolean" minOccurs="0"/>
 
     </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Grammar section — restricts which deep-structure rules are active
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="grammarType">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="S" type="xs:string"/>
+      <xs:element name="C" type="xs:string"/>
+      <xs:element name="P" type="xs:string"/>
+    </xs:choice>
   </xs:complexType>
 
 </xs:schema>

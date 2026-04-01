@@ -101,4 +101,14 @@
     <nWhen>0</nWhen>
   </OutputSpace>
 
+  <grammar>
+    <S>S equals S</S>
+    <S>not S</S>
+    <S>C verb C</S>
+    <S>C</S>
+    <C>C part C</C>
+    <C>P</C>
+    <P>W</P>
+  </grammar>
+
 </model>
