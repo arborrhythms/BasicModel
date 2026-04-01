@@ -740,7 +740,14 @@ class BasicModel(BaseModel):
         self.conceptualSpace = ConceptualSpace(perceptShape, spaceShape_concept, conceptShape)
         self.symbolicSpace   = SymbolicSpace(conceptShape, spaceShape_symbol, symbolShape,
                                              conceptualSpace=self.conceptualSpace)
+        # SyntacticSpace for symbolic grammar (composeSyntax + rule execution).
+        # Used by SyntacticDerivation() for symbolic derivation (rules 1-5).
+        self.syntacticSpace = None
+        if self.syntax:
+            self.syntacticSpace = SyntacticSpace(symbolShape, spaceShape_syntax, symbolShape)
         self.spaces.extend([self.inputSpace, self.perceptualSpace, self.conceptualSpace, self.symbolicSpace])
+        if self.syntacticSpace is not None:
+            self.spaces.append(self.syntacticSpace)
 
         if self.conceptualOrder == 2:
             self.perceptualSpace2 = PerceptualSpace(conceptShape, spaceShape_percept, perceptShape)
@@ -789,10 +796,10 @@ class BasicModel(BaseModel):
 
     def Start(self, inputData):
         """Forward pass through the core pipeline: Input -> Percept -> Concept -> Symbol."""
-        self.inputs = self.inputSpace.forward(inputData)
+        self.inputs   = self.inputSpace.forward(inputData)
         self.percepts = self.perceptualSpace.forward(self.inputs)
         self.concepts = self.conceptualSpace.forward(self.percepts)
-        self.symbols = self.symbolicSpace.forward(self.concepts)
+        self.symbols  = self.symbolicSpace.forward(self.concepts)
         input = self.inputs.materialize()
         concepts = self.concepts.materialize()
         symbols = self.symbols.materialize()
@@ -858,8 +865,8 @@ class BasicModel(BaseModel):
         # ── Symbolic derivation (rules 1-5, transition 6) ────────
         # Predicts rules AND executes soft-weighted projections on [B, N] activations
         sym_act = self.symbols.get_activation()
-        if sym_act is not None and hasattr(self.symbolicSpace, 'composeSyntax'):
-            sym_out = self.symbolicSpace.composeSyntax(sym_act)
+        if sym_act is not None and self.syntacticSpace is not None:
+            sym_out = self.syntacticSpace.composeSyntax(sym_act)
             all_words.extend(sym_out["words"])
             self._symbolic_syntax_out = sym_out
 
@@ -1454,6 +1461,7 @@ class MentalModel(BaseModel):
         self.nReconSymbols = max(0, nSymbols - nOutput)
         self.nTotalOutputSymbols = nOutput
         self.recon_symbols = None
+        self._iterative = True  # MentalModel is always iterative
 
         self.loss = ModelLoss(
             reverse_scale=reverse_scale,
@@ -1508,23 +1516,13 @@ class MentalModel(BaseModel):
         nvec_output  = _nvec("OutputSpace",    nOutput)
 
         # Build I/O shape tuples: [count, dim + objectSize]
-        # Shapes include the full vector width (content + spatial encoding).
-        # Each space's shape includes its own objectSize.
-        inputShape   = [nInput,            input_dim   + obj_input]
-        perceptShape = [nPercepts,          percept_dim + obj_percept]
-        conceptShape = [nConcepts,          concept_dim + obj_concept]
-        symbolShape  = [nSymbols,           symbol_dim  + obj_symbol]
-        outputShape  = [nOutput,            output_dim  + obj_output]
-        # MentalModel joins percepts + concepts before symbolicSpace
-        # When PerceptualSpace is passThrough, only concepts feed SymbolicSpace
-        _perceptPassThrough = TheXMLConfig.space("PerceptualSpace", "passThrough")
-        if _perceptPassThrough:
-            joinShape = [nConcepts, concept_dim + obj_concept]
-        else:
-            joinShape = [nPercepts + nConcepts, concept_dim + obj_concept]
+        inputShape   = [nInput,    input_dim   + obj_input]
+        perceptShape = [nPercepts, percept_dim + obj_percept]
+        conceptShape = [nConcepts, concept_dim + obj_concept]
+        symbolShape  = [nSymbols,  symbol_dim  + obj_symbol]
+        outputShape  = [nOutput,   output_dim  + obj_output]
 
         # Build codebook (space-internal) shape tuples: [nVectors, nDim]
-        # spaceShape uses raw content dim — codebook vectors don't include objectSize.
         spaceShape_input   = [nvec_input,   input_dim]
         spaceShape_percept = [nvec_percept, percept_dim]
         spaceShape_concept = [nvec_concept, concept_dim]
@@ -1535,26 +1533,65 @@ class MentalModel(BaseModel):
         self.inputSpace = InputSpace(rawInputShape, spaceShape_input, inputShape,
                                      model_type=model_type)
 
-        # Branch 1: Input -> Percepts
-        self.perceptualSpace = PerceptualSpace(inputShape, spaceShape_percept, perceptShape)
+        if self._iterative:
+            # ── Iterative MentalModel wiring ─────────────────────────
+            # Input -> Percept
+            self.perceptualSpace = PerceptualSpace(inputShape, spaceShape_percept, perceptShape)
 
-        # Branch 2: Input -> Concepts
-        self.conceptualSpace = ConceptualSpace(inputShape, spaceShape_concept, conceptShape)
+            # [Percept, Symbol] -> Concept  (cat along vector dim)
+            # SigmaLayer preserves vector count, so output has nPercepts+nSymbols
+            # vectors.  SymbolicSpace's InvertibleLinearLayer maps the activation
+            # from nPercepts+nSymbols → nSymbols.
+            conceptInputShape = [nPercepts + nSymbols, percept_dim + obj_percept]
+            conceptOutputShape = [nPercepts + nSymbols, concept_dim + obj_concept]
+            self.conceptualSpace = ConceptualSpace(conceptInputShape, spaceShape_concept,
+                                                   conceptOutputShape)
 
-        # Join: [Percepts, Concepts] -> Symbols
-        self.symbolicSpace = SymbolicSpace(joinShape, spaceShape_symbol, symbolShape,
-                                           conceptualSpace=self.conceptualSpace)
+            # Concept -> Symbol  (activation: nPercepts+nSymbols → nSymbols)
+            self.symbolicSpace = SymbolicSpace(conceptOutputShape, spaceShape_symbol, symbolShape,
+                                               conceptualSpace=self.conceptualSpace)
 
-        # SyntacticSpace operates on recon_symbols (all symbols when nOutput=0)
-        self.syntacticSpace = None
-        if self.syntax:
-            syntax_dim = _resolve_dim("SyntacticSpace", symbol_dim)
-            spaceShape_syntax = [nvec_symbol, syntax_dim]
-            self.syntacticSpace = SyntacticSpace(symbolShape, spaceShape_syntax, symbolShape)
+            # Symbol -> Syntax  (composeSyntax with rule execution)
+            self.syntacticSpace = None
+            if self.syntax:
+                syntax_dim = _resolve_dim("SyntacticSpace", symbol_dim)
+                spaceShape_syntax = [nvec_symbol, syntax_dim]
+                self.syntacticSpace = SyntacticSpace(symbolShape, spaceShape_syntax, symbolShape)
 
-        self.outputSpace = OutputSpace([self.nOutputSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
-                                       masked_prediction=(masked_prediction != 'NONE'),
-                                       vectors=self.inputSpace.get_vectors())
+            # Concept -> Output  (fed by ConceptualSpace, not SymbolicSpace)
+            self.outputSpace = OutputSpace(conceptOutputShape, spaceShape_output, outputShape,
+                                           masked_prediction=(masked_prediction != 'NONE'),
+                                           vectors=self.inputSpace.get_vectors())
+
+            # Zero-init shape: [nSymbols, percept_dim+obj] for cat with percepts
+            self._symbol_shape = [nSymbols, percept_dim + obj_percept]
+        else:
+            # ── Legacy parallel-branch wiring ────────────────────────
+            # Branch 1: Input -> Percepts
+            self.perceptualSpace = PerceptualSpace(inputShape, spaceShape_percept, perceptShape)
+
+            # Branch 2: Input -> Concepts
+            self.conceptualSpace = ConceptualSpace(inputShape, spaceShape_concept, conceptShape)
+
+            # Join: [Percepts, Concepts] -> Symbols
+            _perceptPassThrough = TheXMLConfig.space("PerceptualSpace", "passThrough")
+            if _perceptPassThrough:
+                joinShape = [nConcepts, concept_dim + obj_concept]
+            else:
+                joinShape = [nPercepts + nConcepts, concept_dim + obj_concept]
+            self.symbolicSpace = SymbolicSpace(joinShape, spaceShape_symbol, symbolShape,
+                                               conceptualSpace=self.conceptualSpace)
+
+            # SyntacticSpace operates on recon_symbols
+            self.syntacticSpace = None
+            if self.syntax:
+                syntax_dim = _resolve_dim("SyntacticSpace", symbol_dim)
+                spaceShape_syntax = [nvec_symbol, syntax_dim]
+                self.syntacticSpace = SyntacticSpace(symbolShape, spaceShape_syntax, symbolShape)
+
+            self.outputSpace = OutputSpace([self.nOutputSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
+                                           masked_prediction=(masked_prediction != 'NONE'),
+                                           vectors=self.inputSpace.get_vectors())
 
         self.spaces.extend([
             self.inputSpace,
@@ -1570,7 +1607,10 @@ class MentalModel(BaseModel):
         self.to(TheDevice.get())
         TheXMLConfig.validate()
 
-    def Start(self, inputData):
+    # ── Legacy helpers (non-iterative path) ──────────────────────────
+
+    def _Start_legacy(self, inputData):
+        """Forward pass: parallel branches Input->{Percept,Concept}->Symbol."""
         self.inputs = self.inputSpace.forward(inputData)
         self.concepts = self.conceptualSpace.forward(self.inputs)
         input_state = self.inputs.materialize()
@@ -1586,24 +1626,17 @@ class MentalModel(BaseModel):
         symbols = self.symbols.materialize()
         return input_state, concepts, symbols
 
-    def Finish(self, symbols):
-        if isinstance(symbols, torch.Tensor):
-            symbols = self._wrap_reverse(self.outputSpace, symbols)
-        self.outputs = self.outputSpace.forward(symbols)
-        return self.outputs.materialize()
-
-    def forward(self, inputData):
+    def _forward_legacy(self, inputData):
+        """Legacy forward: parallel branches, optional SyntacticSpace on recon_symbols."""
         if isinstance(inputData, torch.Tensor):
             inputData = inputData.to(TheDevice.get())
-        input_state, concepts, symbols = self.Start(inputData)
-        # Split symbols: output_symbols → OutputSpace, recon_symbols → SyntacticSpace
+        input_state, concepts, symbols = self._Start_legacy(inputData)
         if self.nReconSymbols > 0:
             self.output_symbols = symbols[:, :self.nTotalOutputSymbols, :]
-            self.recon_symbols = symbols  # all symbols when nOutput=0
+            self.recon_symbols = symbols
         else:
             self.output_symbols = symbols
             self.recon_symbols = None
-        # Route recon_symbols through SyntacticSpace (grammar derivation)
         self.syntax_state = None
         if self.recon_symbols is not None and self.syntacticSpace is not None:
             self.syntax_state = self.syntacticSpace.forward(
@@ -1611,19 +1644,13 @@ class MentalModel(BaseModel):
         outputData = self.Finish(self.output_symbols)
         return input_state, symbols, outputData
 
-    def _wrap_reverse(self, space, tensor):
-        """Wrap a raw tensor in the space's subspace for reverse()."""
-        space.subspace.set_vectors(tensor)
-        return space.subspace
-
-    def reverse(self, symbols, outputData):
-        # Pass SubSpaces through the chain (like BasicModel.StartReverse)
+    def _reverse_legacy(self, symbols, outputData):
+        """Legacy reverse: Symbol->Concept->Percept->Input."""
         if isinstance(outputData, torch.Tensor):
             self.outputSpace.subspace.set_vectors(outputData)
             outputData = self.outputSpace.subspace
         symbols_state = self.outputSpace.reverse(outputData)
 
-        # SyntacticSpace reverse: recover activation from word tuples
         if hasattr(self, 'syntax_state') and self.syntax_state is not None:
             symbols_state = self.syntacticSpace.reverse(self.syntax_state)
 
@@ -1643,8 +1670,122 @@ class MentalModel(BaseModel):
         self.inputs = self.inputSpace.reverse(input_state)
         input_latent = input_state.materialize()
         input_data = self.inputs.materialize()
-
         return input_data, input_latent
+
+    # ── Common helpers ───────────────────────────────────────────────
+
+    def Finish(self, data):
+        """Project through OutputSpace.  Accepts concepts (iterative) or symbols (legacy)."""
+        if isinstance(data, torch.Tensor):
+            data = self._wrap_reverse(self.outputSpace, data)
+        self.outputs = self.outputSpace.forward(data)
+        return self.outputs.materialize()
+
+    def _wrap_reverse(self, space, tensor):
+        """Wrap a raw tensor in the space's subspace for reverse()."""
+        space.subspace.set_vectors(tensor)
+        return space.subspace
+
+    @property
+    def syntax_state(self):
+        """Last syntax state from the most recent forward pass, or None."""
+        if hasattr(self, 'syntax_states') and self.syntax_states:
+            return self.syntax_states[-1]
+        return None
+
+    # ── Iterative forward / reverse ──────────────────────────────────
+
+    def forward(self, inputData):
+        if not self._iterative:
+            return self._forward_legacy(inputData)
+
+        if isinstance(inputData, torch.Tensor):
+            inputData = inputData.to(TheDevice.get())
+
+        # 1. Input -> Percept
+        self.inputs = self.inputSpace.forward(inputData)
+        input_state = self.inputs.materialize()
+        self.percepts = self.perceptualSpace.forward(self.inputs)
+        percepts = self.percepts.materialize()  # [B, nPercepts, dim]
+
+        # 2. Initialize symbols as zeros
+        B = percepts.shape[0]
+        symbols = torch.zeros(B, self._symbol_shape[0], self._symbol_shape[1],
+                              device=percepts.device)
+
+        # 3. Reset syntactic step counter
+        if self.syntacticSpace is not None:
+            self.syntacticSpace.reset()
+        self.syntax_states = []
+
+        # 4. Iterative loop: [Percept,Symbol]->Concept, Symbol->Syntax, Concept->Symbol
+        for t in range(self.conceptualOrder):
+            # [Percept, Symbol_prev] -> Concept  (cat along vector dim)
+            concept_input = torch.cat([percepts, symbols], dim=1)
+            self.concepts = self.conceptualSpace.forward(
+                self._wrap_reverse(self.conceptualSpace, concept_input))
+            concepts = self.concepts.materialize()
+
+            # [Symbol_prev] -> Syntax  (NO-OP when symbols are all-zero)
+            if self.syntacticSpace is not None:
+                syntax_state = self.syntacticSpace.forward(
+                    self._wrap_reverse(self.syntacticSpace, symbols))
+                self.syntax_states.append(syntax_state)
+
+            # Concept -> Symbol  (activation: nP+nS → nS, then sigmoid to [0,1])
+            self.symbols = self.symbolicSpace.forward(
+                self._wrap_reverse(self.symbolicSpace, concepts))
+            # Extract symbol activation [B, nSymbols] and expand to vector form
+            # for concatenation with percepts in the next iteration.
+            symbol_act = self.symbols.get_symbols()          # [B, nSymbols]
+            symbol_act = torch.sigmoid(symbol_act)           # clamp to [0,1]
+            symbols = symbol_act.unsqueeze(-1).expand(       # [B, nSymbols, dim]
+                -1, -1, percepts.shape[-1])
+
+        # 5. Final Concept -> Output
+        outputData = self.Finish(concepts)
+        return input_state, symbols, outputData
+
+    def reverse(self, symbols, outputData):
+        if not self._iterative:
+            return self._reverse_legacy(symbols, outputData)
+
+        # 1. OutputSpace reverse: output -> concepts estimate
+        if isinstance(outputData, torch.Tensor):
+            self.outputSpace.subspace.set_vectors(outputData)
+            outputData = self.outputSpace.subspace
+        concepts_state = self.outputSpace.reverse(outputData)
+
+        # 2. Unwind iterations in reverse
+        for t in reversed(range(self.conceptualOrder)):
+            # SyntacticSpace reverse (decrements step internally)
+            if self.syntacticSpace is not None and t < len(self.syntax_states):
+                self.syntacticSpace.reverse(self.syntax_states[t])
+
+            # ConceptualSpace reverse: concepts -> [percepts, symbols] estimate
+            concept_input_state = self.conceptualSpace.reverse(concepts_state)
+
+            if t > 0:
+                # Split into percept/symbol portions for next reverse iteration.
+                # SymbolicSpace reverse: symbol portion -> concept activation estimate
+                ci = concept_input_state.materialize()
+                symbol_portion = ci[:, self.nPercepts:, :]
+                symbols_state = self.symbolicSpace.reverse(
+                    self._wrap_reverse(self.symbolicSpace, symbol_portion))
+                concepts_state = symbols_state
+
+        # 3. Split reconstructed concept input into percept portion
+        concept_input = concept_input_state.materialize()
+        percepts_portion = concept_input[:, :self.nPercepts, :]
+
+        # 4. PerceptualSpace reverse -> InputSpace reverse
+        input_state = self.perceptualSpace.reverse(
+            self._wrap_reverse(self.perceptualSpace, percepts_portion))
+        self.inputs = self.inputSpace.reverse(input_state)
+        input_latent = input_state.materialize()
+        input_data = self.inputs.materialize()
+        return input_data, input_latent
+
 TheMentalModel = MentalModel()
 
 class ModelFactory:

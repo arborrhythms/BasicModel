@@ -46,13 +46,14 @@ Every space enforces a canonical range on its vectors and activations. The
 actively normalizes its output; when `false`, it emits a warning if the
 output is out of range but does not modify it.
 
-| Space | Vectors | Activation | Normalization |
-|-------|---------|------------|---------------|
-| InputSpace | `[0, 1]` via data min-max | N/A | `normalize=true` by default |
-| PerceptualSpace | `[0, 1]^d` (sigmoid + clamp) | `[0, 1]` (sigmoid) | `normalize=false` by default |
-| ConceptualSpace | S^(d-1) (L2 unit-norm) | `[-1, 1]` (tanh) | `normalize=false` by default |
-| SymbolicSpace | N/A (discrete) | `{0, 1}` presence/absence | `normalize=false` by default |
-| OutputSpace | data range | N/A | `normalize=true` by default |
+| Space | Data Contract | Geometry | Normalization |
+|-------|--------------|----------|---------------|
+| InputSpace | Data scaled -1..1 for scalars or vector norms | Signed unit interval | `normalize=true` by default |
+| PerceptualSpace | Modal/demuxed (what/where/when encoding). Unsigned unit-magnitude scalars or vectors. Weight-normalized when `normedWeights=true` | Positive hemisphere `[0,1]^d`, `‖v‖ ≤ 1` | `normalize=false` by default |
+| ConceptualSpace | Combined/muxed (event encoding). Signed unit-magnitude scalars or vectors. Weight-normalized when `normedWeights=true`, guaranteeing bounded output. Event norm stored on `subspace.activation` | Unit hypersphere S^(d-1) | `normalize=false` by default |
+| SymbolicSpace | Symbols are percepts. Concept-to-symbol mapping through weight-normalized layer (`normedWeights=true`). One symbol encoded at a time (most highly active). Each symbol receives where/when from PerceptualSpace | `[0,1]` presence | `normalize=false` by default |
+| SyntacticSpace | Words are concepts encoding grammatical rules. Stored as word tuples with production rules | Word tuples `(batch, vector, rule)` | `normalize=false` by default |
+| OutputSpace | Rescaled from activation range to original data range | Data range | `normalize=true` by default |
 
 **Data scaling.** `Data` computes global scalar `input_min`/`input_max` and
 `output_min`/`output_max` from the training data at load time. InputSpace uses
@@ -159,13 +160,16 @@ reverse layer uses a pseudoinverse to approximately invert the forward mapping.
 | `invertible` | True: shared invertible layer; False: separate pi1/pi2 |
 | `passThrough` | Skip perceptual processing entirely |
 | `hasAttention` | Enable attention reweighting |
-| `normalize` | Normalize vectors to `[0,1]` hypercube (default: `false`) |
+| `normalize` | Normalize vectors to positive hemisphere (default: `false`) |
+| `normedWeights` | Column-normalize weight matrices to unit L2 norm (default: `false`) |
 
 **Layer.** `PiLayer` (one or two instances depending on `invertible`).
 
-**Range.** Vectors live on the `[0, 1]^d` hypercube (sigmoid + clamp); activation is
-`[0, 1]` (sigmoid). When `normalize=true`, these transforms are applied; when `false`,
-a warning is emitted if the output deviates.
+**Range.** Vectors live on the positive hemisphere `[0, 1]^d` with `‖v‖ ≤ 1`
+(sigmoid + clamp); activation is `[0, 1]` (sigmoid). When `normedWeights=true`,
+weight columns are normalized to unit L2 norm before each forward pass, guaranteeing
+that output magnitude never exceeds input magnitude. When `normalize=true`, these
+transforms are applied; when `false`, a warning is emitted if the output deviates.
 
 **Invertibility.** `invertible=True`: shared layer, exact inverse. `invertible=False`:
 separate layers, approximate pseudoinverse in reverse.
@@ -205,12 +209,15 @@ instances — `sigma1` for forward, `sigma2` for reverse.
 | `invertible` | True: shared invertible layer; False: separate sigma1/sigma2 |
 | `hasAttention` | Enable attention |
 | `hasNorm` | Enable layer normalization |
+| `normedWeights` | Column-normalize weight matrices to unit L2 norm (default: `false`) |
 
 **Layer.** `SigmaLayer` (one or two instances depending on `invertible`).
 
 **Range.** Vectors live on the unit hypersphere S^(d-1) (L2-normalized); activation is
-`[-1, 1]` (tanh). When `normalize=true`, these transforms are applied; when `false`,
-a warning is emitted if the output deviates.
+`[-1, 1]` (tanh). When `normedWeights=true`, weight columns are normalized to unit L2
+norm, guaranteeing that the linear transform preserves or reduces magnitude — the tanh
+saturation then maps to the unit hypersphere. When `normalize=true`, these transforms
+are applied; when `false`, a warning is emitted if the output deviates.
 
 **Invertibility.** `invertible=True`: exact inverse via atanh + `W^{-1}`. `invertible=False`:
 separate layers with independent weights.
@@ -264,9 +271,14 @@ recovering the concept activation.
 | `passThrough` | Skip symbolic processing entirely |
 | `quantized` | Enable codebook quantization (required for one-hot output) |
 | `normalize` | Discretize symbols to `{0, 1}` via STE (default: `false`) |
+| `normedWeights` | Column-normalize weight matrices to unit L2 norm (default: `false`) |
 
-**Range.** Symbolic presence lives in `[0, 1]`; internally stored as activation
-in `[-1, 1]` via the `(x+1)/2` mapping.
+**Range.** Symbols are percepts: each symbol represents the presence (`1`) or absence
+(`0`) of a named entity and lives in `[0, 1]`. One symbol is encoded at a time (the
+most highly active; negative products never activate). Each symbol receives where/when
+encoding from PerceptualSpace, making symbols uniform with percepts. Internally stored
+as activation in `[-1, 1]` via the `(x+1)/2` mapping. When `normedWeights=true`, the
+concept-to-symbol weight matrix is column-normalized, guaranteeing bounded output.
 
 **Layer.** `InvertibleLinearLayer(nConcepts, nSymbols)` — maps between
 activation spaces of different lengths. Exact inverse via LDU factorisation.
@@ -278,8 +290,9 @@ activation spaces of different lengths. Exact inverse via LDU factorisation.
 ## SyntacticSpace
 
 **Role.** Generates a binary derivation tree (deep structure) from the set of
-active symbols produced by SymbolicSpace. The derivation is a Chomsky Normal Form
-(CNF) grammar stored as word tuples `(batch, vector, rule)` on the output subspace.
+active symbols produced by SymbolicSpace. Words are concepts encoding grammatical
+rules. The derivation is a Chomsky Normal Form (CNF) grammar stored as word tuples
+`(batch, vector, rule)` on the output subspace.
 
 See [Language.md](Language.md) for the grammar, word encoding, and open questions
 about differentiable tree structure.

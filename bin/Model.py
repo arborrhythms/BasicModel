@@ -191,10 +191,12 @@ class LinearLayer(ErgodicLayer):
     When ergodic=False (default), noise buffers are not allocated and forward
     uses the learned weights directly.
     """
-    def __init__(self, nInput, nOutput, hasBias=True, naive=False, stable=False, ergodic=False):
+    def __init__(self, nInput, nOutput, hasBias=True, naive=False, stable=False, ergodic=False,
+                 normedWeights=False):
         super(LinearLayer, self).__init__(nInput, nOutput, ergodic=ergodic)
         self.stable  = stable
         self.hasBias = hasBias
+        self.normedWeights = normedWeights
         if ergodic:
             self.W = nn.Parameter(torch.eye(self.nInput, self.nOutput))
         else:
@@ -228,9 +230,12 @@ class LinearLayer(ErgodicLayer):
     def forward(self, x):
         if self.ergodic:
             self.resample_noise()
-            output = x @ (self.bias * self.W + self.var * self.noise)
+            W = self.bias * self.W + self.var * self.noise
         else:
-            output = x @ self.W
+            W = self.W
+        if self.normedWeights:
+            W = F.normalize(W, p=2, dim=0)  # unit-norm columns
+        output = x @ W
         return output
     def forwardBias(self, x):
         if self.hasBias:
@@ -274,11 +279,12 @@ class InvertibleLinearLayer(ErgodicLayer):
     naive=True: materialise W_eff as dense matrix; reverse uses pinv(W_eff).
     """
     def __init__(self, nInput, nOutput, naive=False, ergodic=False,
-                 hasBias=True, stable=False):
+                 hasBias=True, stable=False, normedWeights=False):
         super().__init__(nInput, nOutput, ergodic=ergodic)
         self.naive   = naive
         self.hasBias = hasBias
-        self.stable  = stable
+        self.stable  = stable or normedWeights  # normedWeights requires stable
+        self.normedWeights = normedWeights
         self.rank    = min(nInput, nOutput)
 
         # LDU learned parameters
@@ -453,9 +459,24 @@ class InvertibleLinearLayer(ErgodicLayer):
         out_shape = list(orig_shape); out_shape[-1] = self.nInput
         return y.reshape(out_shape)
 
+    def _d_normed(self):
+        """Scale d so columns of L @ D @ U have approximately unit norm.
+
+        ‖W[:, j]‖ ≈ ‖L[:, j]‖ * |d_j| * ‖U[:, j]‖  (tight when L, U ≈ I)
+        Normalizing d by column norms of L and U bounds the product.
+        """
+        d = self._d_effective()
+        L = self._L()
+        U = self._U()
+        l_col_norms = L.norm(p=2, dim=0)[:self.rank]    # [rank]
+        u_col_norms = U.norm(p=2, dim=0)[:self.rank]    # [rank]
+        scale = l_col_norms * u_col_norms                # [rank]
+        return d / (scale + epsilon)
+
     def _apply_forward(self, x):
-        """Non-ergodic sequential forward using clean L, d_effective, U."""
-        return self._apply_ldu(x, self._L(), self._d_effective(), self._U())
+        """Non-ergodic sequential forward using clean L, d, U."""
+        d = self._d_normed() if self.normedWeights else self._d_effective()
+        return self._apply_ldu(x, self._L(), d, self._U())
 
     def _solve_reverse(self, y):
         """Non-ergodic sequential reverse using clean L, d_effective, U."""
@@ -483,6 +504,8 @@ class InvertibleLinearLayer(ErgodicLayer):
             self.resample_noise()
         if self.naive:
             W = self.compute_W_current()
+            if self.normedWeights:
+                W = F.normalize(W, p=2, dim=0)  # unit-norm columns
             orig_shape = x.shape
             out_shape = list(orig_shape); out_shape[-1] = self.nOutput
             y = (x.reshape(-1, self.nInput) @ W).reshape(out_shape)
@@ -627,9 +650,9 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
     """
 
     def __init__(self, nInput, nOutput, naive=False, ergodic=False,
-                 hasBias=True, stable=False):
+                 hasBias=True, stable=False, normedWeights=False):
         super().__init__(nInput, nOutput, naive=naive, ergodic=ergodic,
-                         hasBias=hasBias, stable=stable)
+                         hasBias=hasBias, stable=stable, normedWeights=normedWeights)
         # Re-initialise so softplus(raw) gives near-identity W.
         with torch.no_grad():
             # softplus(-5) ~ 0.007 ≈ 0 for off-diagonals
@@ -736,16 +759,18 @@ class SigmaLayer(Layer):
     the ergodic interface (set_sigma, observe_sigma, etc.) there.
     """
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
-                 invertible=False, nonlinear=False):
+                 invertible=False, nonlinear=False, normedWeights=False):
         super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.ergodic    = ergodic
         self.saturate   = True
         self.activation = torch.zeros(1, nOutput, 1)
         if invertible:
-            self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic)
+            self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic,
+                                               normedWeights=normedWeights)
         else:
-            self.layer = LinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic)
+            self.layer = LinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic,
+                                      normedWeights=normedWeights)
         self.layers.append(self.layer)
 
     @property
@@ -989,7 +1014,7 @@ class PiLayer(Layer):
     _eps = 1e-6
 
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
-                 invertible=False, hasBias=True, stable=True):
+                 invertible=False, hasBias=True, stable=True, normedWeights=False):
         super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.stable     = stable
@@ -997,10 +1022,11 @@ class PiLayer(Layer):
         if invertible:
             self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
                                                naive=naive, ergodic=ergodic,
-                                               stable=stable)
+                                               stable=stable, normedWeights=normedWeights)
         else:
             self.layer = LinearLayer(nInput, nOutput, hasBias=hasBias,
-                                     naive=naive, ergodic=ergodic, stable=stable)
+                                     naive=naive, ergodic=ergodic, stable=stable,
+                                     normedWeights=normedWeights)
         self.layers.append(self.layer)
 
     @property
@@ -1031,6 +1057,8 @@ class PiLayer(Layer):
         if self.layer.ergodic:
             self.resample_noise()
         W = self.layer.compute_W_current()                 # [nIn, nOut], non-negative by construction
+        if self.layer.normedWeights:
+            W = F.normalize(W, p=2, dim=0)                 # unit-norm columns
         x = x.to(W.device)
         xp = self._to_log_domain(x)                      # [ε, 1]
         log_x = torch.log(xp)                            # [-13.8, 0]

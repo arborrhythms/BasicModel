@@ -1,6 +1,9 @@
 <?xml version="1.0" ?>
 <model>
-  <!-- MentalModel chatbot: parallel perceptual/conceptual branches over the same input -->
+  <!-- MentalModel: iterative [Percept,Symbol]→Concept→Symbol loop.
+       ConceptualSpace receives [percepts, symbols] (symbols=0 at T=1).
+       SyntacticSpace runs composeSyntax over symbol activations each iteration.
+       OutputSpace is fed by the final ConceptualSpace output. -->
   <architecture>
     <type>mental</type>
     <reconstruct>symbols</reconstruct>
@@ -63,16 +66,17 @@
     <quantized>false</quantized>
   </PerceptualSpace>
 
-  <!-- Concept branch runs directly from InputSpace in MentalModel, so this keeps
-       the same width as BasicModel.xml without assuming invertible doubling. -->
+  <!-- ConceptualSpace receives [Percept, Symbol] in iterative MentalModel,
+       so input count = nPercepts + nSymbols. Keeps same dim as BasicModel. -->
   <ConceptualSpace>
-    <nOutput>128</nOutput>
+    <nOutput>256</nOutput>
     <nDim>100</nDim>
-    <nVectors>128</nVectors>
+    <nVectors>256</nVectors>
     <hasAttention>true</hasAttention>
     <hasNorm>false</hasNorm>
     <invertible>true</invertible>
     <quantized>false</quantized>
+    <normedWeights>false</normedWeights>
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -80,7 +84,14 @@
     <nDim>100</nDim>
     <nVectors>128</nVectors>
     <passThrough>false</passThrough>
+    <normedWeights>false</normedWeights>
   </SymbolicSpace>
+
+  <SyntacticSpace>
+    <nOutput>128</nOutput>
+    <nDim>100</nDim>
+    <nVectors>128</nVectors>
+  </SyntacticSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>

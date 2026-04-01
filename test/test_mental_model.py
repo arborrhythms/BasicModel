@@ -16,7 +16,7 @@ import matplotlib
 matplotlib.use('Agg')
 
 from BasicModel import MentalModel, TheData, TheDevice
-from util import init_config, ProjectPaths
+from util import init_config, ProjectPaths, TheXMLConfig
 
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
@@ -70,6 +70,9 @@ class TestMentalModelForwardReverse(unittest.TestCase):
     def test_syntactic_space_produces_derivation(self):
         _reload_config()
         model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
+        # Need conceptualOrder >= 2 so that syntax runs on non-zero symbols.
+        # At T=0 symbols are zeros (NO-OP), at T=1 symbols are non-zero.
+        model.conceptualOrder = 2
         sentences = ['the cat sat on the mat']
         outputs = [torch.tensor([0.0])]
 

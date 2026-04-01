@@ -37,7 +37,7 @@ from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
 from Model import Grammar, Layer, PiLayer, PiLayerOld, SigmaLayer # Import custom layers from Model.py
-from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, VerbLayer, OldSyntacticLayer, SyntacticLayer
+from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, VerbLayer, SyntacticLayer
 from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 
 ENCODING_TARGETS = ("activation", "what", "where", "when", "event", "all")
@@ -1698,7 +1698,7 @@ class SubSpace(nn.Module):
             self.event = Tensor()
         self.event.setW(vectors)
         if compute_activation:
-            self.set_activation_vectors(vectors)
+            self.set_activation_from_event()
 
     # ------------------------------------------------------------------
     # Derived sizes
@@ -1770,14 +1770,15 @@ class SubSpace(nn.Module):
     # Activation management
     # ------------------------------------------------------------------
 
-    def set_activation_vectors(self, y):
+    def set_activation_from_event(self):
         """Compute and store subspace activation from dense vectors [B, N, D].
 
         Activation is the L2 norm divided by sqrt(D), then scaled to [-1, 1]
         via ``2 * x - 1``.  A zero vector maps to -1; a unit-hypercube corner
         (all 1s) maps to +1.
         """
-        assert y.ndim == 3, "Must be dim==3"
+        y = self.event.getW()
+        assert y is not None and y.ndim == 3, "Must be dim==3"
         d = y.shape[-1]
         activation = torch.norm(y, dim=-1) / math.sqrt(d)  # [B, N] in [0, 1]
         activation = 2 * activation - 1                     # scale to [-1, 1]
@@ -1799,7 +1800,6 @@ class SubSpace(nn.Module):
             activation_tensor = activation_tensor.squeeze(-1)
         assert activation_tensor.ndim == 2, \
             f"activation must be [batch, nVectors], got {activation_tensor.shape}"
-        
         self.activation.setW(activation_tensor)
 
     def get_activation(self):
@@ -1866,22 +1866,7 @@ class SubSpace(nn.Module):
             activation = self.get_activation()
             if activation is not None:
                 return activation
-            # Compute from event vectors if not yet stored
-            x = self.event.getW()
-            if x is None and self._demuxed:
-                what_w = self.what.getW()
-                if what_w is not None:
-                    parts = [what_w]
-                    where_w = self.where.getW()
-                    if where_w is not None and where_w.shape[-1] > 0:
-                        parts.append(where_w)
-                    when_w = self.when.getW()
-                    if when_w is not None and when_w.shape[-1] > 0:
-                        parts.append(when_w)
-                    x = torch.cat(parts, dim=-1)
-                    self.event.setW(x)
-            assert x is not None, "Cannot compute activation: no event vectors stored"
-            self.set_activation_vectors(x)
+            self.set_activation_from_event()
             return self.get_activation()
 
         x = self.event.getW()
@@ -2051,24 +2036,60 @@ class SubSpace(nn.Module):
             return
         if not normalize:
             is_vector = target in ("what", "where", "when", "event")
-            if is_vector:
-                lo, hi = {"percepts": (0, 1), "concepts": (-1, 1),
-                          "symbols": (0, 1), "input": (-1, 1)}.get(kind, (None, None))
-            else:
-                lo, hi = -1, 1  # activation always [-1, 1]
-            if lo is not None:
-                xd = x.detach()
-                xmin = xd.min().item()
-                xmax = xd.max().item()
-                below = xmin - lo
-                above = xmax - hi
-                if below < -1e-2 or above > 1e-2:
+            xd = x.detach()
+            if not is_vector:
+                # Activation: scalar range [-1, 1]
+                lo, hi = -1, 1
+                xmin, xmax = xd.min().item(), xd.max().item()
+                if xmin - lo < -1e-2 or xmax - hi > 1e-2:
                     msg = (f"Range violation: kind={kind!r}, target={target!r} "
                            f"range [{xmin:.6f}, {xmax:.6f}] outside [{lo}, {hi}].")
                     if strict:
                         raise ValueError(msg)
                     else:
                         warnings.warn(msg)
+            elif kind == "concepts":
+                # Unit hypersphere: check ‖v‖₂ ≈ 1
+                norms = torch.norm(xd, p=2, dim=-1)
+                max_dev = (norms - 1.0).abs().max().item()
+                if max_dev > 1e-1:
+                    msg = (f"Norm violation: kind={kind!r}, target={target!r} "
+                           f"max |‖v‖ - 1| = {max_dev:.6f}")
+                    if strict:
+                        raise ValueError(msg)
+                    else:
+                        warnings.warn(msg)
+            elif kind == "percepts":
+                # Positive hemisphere: elements in [0, 1], ‖v‖ ≤ 1
+                xmin, xmax = xd.min().item(), xd.max().item()
+                if xmin < -1e-2 or xmax > 1 + 1e-2:
+                    msg = (f"Range violation: kind={kind!r}, target={target!r} "
+                           f"range [{xmin:.6f}, {xmax:.6f}] outside [0, 1].")
+                    if strict:
+                        raise ValueError(msg)
+                    else:
+                        warnings.warn(msg)
+                norms = torch.norm(xd, p=2, dim=-1)
+                max_norm = norms.max().item()
+                if max_norm > 1 + 1e-1:
+                    msg = (f"Norm violation: kind={kind!r}, target={target!r} "
+                           f"max ‖v‖ = {max_norm:.6f} exceeds 1.0")
+                    if strict:
+                        raise ValueError(msg)
+                    else:
+                        warnings.warn(msg)
+            else:
+                # symbols [0,1], input [-1,1]
+                lo, hi = {"symbols": (0, 1), "input": (-1, 1)}.get(kind, (None, None))
+                if lo is not None:
+                    xmin, xmax = xd.min().item(), xd.max().item()
+                    if xmin - lo < -1e-2 or xmax - hi > 1e-2:
+                        msg = (f"Range violation: kind={kind!r}, target={target!r} "
+                               f"range [{xmin:.6f}, {xmax:.6f}] outside [{lo}, {hi}].")
+                        if strict:
+                            raise ValueError(msg)
+                        else:
+                            warnings.warn(msg)
             return
         normalized = self._apply_normalization(kind, x, target=target)
         self.put(target, normalized)
@@ -2127,7 +2148,7 @@ class SubSpace(nn.Module):
             self.put(target, torch.log(x / (1 - x)))
         elif kind == "concepts":
             if is_vector:
-                pass  # L2-norm is not uniquely invertible; skip
+                raise RuntimeError("Cannot denormalize")
             else:
                 # atanh: inverse of tanh
                 x = x.clamp(min=-1 + epsilon, max=1 - epsilon)
@@ -2282,6 +2303,7 @@ class Space(nn.Module):
         _nWhere = TheXMLConfig.space(section, "nWhere")
         _nWhen = TheXMLConfig.space(section, "nWhen")
         self._normalize = TheXMLConfig.space(section, "normalize")
+        self._normedWeights = TheXMLConfig.space(section, "normedWeights")
         self.nWhere = _nWhere
         self.nWhen = _nWhen
         self.nWhat = self.nDim
@@ -2806,6 +2828,8 @@ class InputSpace(Space):
         else:
             self._recovered_input = None
 
+        self.forwarding_subspace.normalize("input", target="what",
+                                            normalize=self._normalize)
         return self.forwarding_subspace
 
     def reconstruct_data(self, text=False):
@@ -3163,18 +3187,22 @@ class PerceptualSpace(Space):
         self.attention = AttentionLayer(output, output, type="transformer")
         if self.reversible:
             if invertible:
-                self.pi  = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
+                self.pi  = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True,
+                                   normedWeights=self._normedWeights)
                 self.forwardPi, self.reversePi = self.pi.forward, self.pi.reverse
                 self.params = self.pi.getParameters()
                 self.layers = nn.ModuleList([self.pi])
             else:
-                self.pi1 = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
-                self.pi2 = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
+                self.pi1 = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True,
+                                   normedWeights=self._normedWeights)
+                self.pi2 = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True,
+                                   normedWeights=self._normedWeights)
                 self.forwardPi, self.reversePi = self.pi1.forward, self.pi2.reverse
                 self.params = self.pi1.getParameters() + self.pi2.getParameters()
                 self.layers = nn.ModuleList([self.pi1, self.pi2])
         else:
-            self.pi        = PiLayer(input, output, naive=naive, ergodic=ergodic)
+            self.pi        = PiLayer(input, output, naive=naive, ergodic=ergodic,
+                                     normedWeights=self._normedWeights)
             self.forwardPi = self.pi.forward
             self.params = self.pi.getParameters()
             self.layers = nn.ModuleList([self.pi])
@@ -3261,6 +3289,7 @@ class PerceptualSpace(Space):
         if self.quantized:
             x = self.subspace.get_vectors().forward(x)
         vspace = self.forwardEnd(x, returnVectors=True)
+        vspace.normalize("percepts", target="what", normalize=self._normalize)
         return vspace
 
     def reverse(self, vspace):
@@ -3271,7 +3300,7 @@ class PerceptualSpace(Space):
         if self.reversible:
             y = self.reversePi(y)
         vspace = self.reverseEnd(y, returnVectors=True)
-        vspace.normalize("input", target="what", normalize=False, strict=not self.ergodic)
+        vspace.normalize("input", target="what", normalize=self._normalize)
         return vspace
 
     def projectPercepts(self, rule_id, vspace):
@@ -3478,7 +3507,6 @@ class ModalSpace(Space):
             self.whereSpace.paramUpdate()
         if self.whenSpace is not None:
             self.whenSpace.paramUpdate()
-
 class ConceptualSpace(Space):
     """Transforms percepts into concepts via a SigmaLayer (summation layer).
 
@@ -3522,18 +3550,22 @@ class ConceptualSpace(Space):
                 input += 2
         if self.reversible:
             if invertible:
-                self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True, nonlinear=nonlinear)
+                self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True,
+                                        nonlinear=nonlinear, normedWeights=self._normedWeights)
                 self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
                 self.params = self.sigma.getParameters()
                 self.layers = nn.ModuleList([self.sigma])
             else:
-                self.sigma1 = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True, nonlinear=nonlinear)
-                self.sigma2 = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True, nonlinear=nonlinear)
+                self.sigma1 = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True,
+                                         nonlinear=nonlinear, normedWeights=self._normedWeights)
+                self.sigma2 = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True,
+                                         nonlinear=nonlinear, normedWeights=self._normedWeights)
                 self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
                 self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
                 self.layers = nn.ModuleList([self.sigma1, self.sigma2])
         else:
-            self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic, nonlinear=nonlinear)
+            self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic, nonlinear=nonlinear,
+                                    normedWeights=self._normedWeights)
             self.forwardSigma = self.sigma.forward
             self.params = self.sigma.getParameters()
             self.layers = nn.ModuleList([self.sigma])
@@ -3603,8 +3635,7 @@ class ConceptualSpace(Space):
             y = torch.sigmoid(y)
         self.concepts = y
         vspace = self.reverseEnd(y, returnVectors=True)
-        vspace.normalize("percepts", target="what", normalize=False,
-                         strict=self.nonlinear)
+        vspace.normalize("percepts", target="what", normalize=self._normalize)
         return vspace
 
     def projectConcepts(self, rule_id, left, right=None):
@@ -3725,7 +3756,6 @@ class ConceptualSpace(Space):
     @staticmethod
     def test():
         pass
-
 class SymbolicSpace(Space):
     """Converts continuous concept vectors into discrete symbols.
 
@@ -3756,27 +3786,130 @@ class SymbolicSpace(Space):
         self.codebook = self.subspace.event  # Basis (Codebook) for VQ
         nConcepts = inputShape[0]   # activation length from previous space
         nSymbols = spaceShape[0]    # number of symbols = codebook size
-        self.layer = InvertibleLinearLayer(nConcepts, nSymbols)
-        self.syntactic_layer = None
-        self.equals_layer = None
-        self.non_alpha = nn.Parameter(torch.tensor(0.5))
-        syntax = TheXMLConfig.get("architecture.syntax", False)
-        if syntax:
-            # Per-space syntactic layer for symbolic grammar rules (1-5, transition 6)
-            self.syntactic_layer = SyntacticLayer(
-                nInput=nSymbols, nOutput=nSymbols,
-                rules=TheGrammar.symbolic(),
-                transition_rule=6,
-                max_depth=max(nSymbols - 1, 1),
-                hidden_dim=min(256, max(64, nSymbols * 4)),
-                grammar=TheGrammar,
-            )
-            # EQUALS projection: cross-symbol associative memory (Hopfield-like)
-            self.equals_layer = AssociationLayer(nSymbols, nSymbols, type="symmetric")
-            self.layers = nn.ModuleList([self.layer, self.syntactic_layer,
-                                          self.equals_layer])
+        self.layer = InvertibleLinearLayer(nConcepts, nSymbols, normedWeights=self._normedWeights)
+        self.layers = nn.ModuleList([self.layer])
+
+    def discretize(self, vspace):
+        """Discretize a subspace's activation vector to {0, 1}.
+
+        Delegates to vspace.normalize("symbols") which materializes
+        the activation (if needed), applies the straight-through
+        estimator, and stores the result back in-place.
+        """
+        vspace.normalize("symbols", target="activation", normalize=self._normalize)
+
+    def forward(self, vspace):
+        """Naming: map concept activations to symbolic presence.
+
+        1. Extract concept activation [B, nConcepts] from input subspace.
+        2. Map through invertible layer to [B, nSymbols].
+        3. Store as symbolic presence [0,1] via set_symbols().
+        4. Codebook quantizes and produces one-hot activation + dense vectors.
+           Output is a one-hot encoding over the codebook.
+        """
+        if self.passThrough:
+            return vspace
+        vspace = self.forwardBegin(vspace)
+        # Map concept activation → symbol presence
+        act = vspace.materialize(mode="activation")  # [B, nConcepts]
+        act = self.layer.forward(act)                 # [B, nSymbols]
+        if self.quantized:
+            # Codebook: quantize, topk, populate subspace with vectors + activation
+            act_3d = act.unsqueeze(-1)                # [B, nSymbols, 1] — each symbol is 1-dim
+            self.subspace.set_vectors(act_3d)
+            self.codebook.forward(self.subspace)
+            vspace = self.forwardEnd(self.subspace)
         else:
-            self.layers = nn.ModuleList([self.layer])
+            vspace.set_symbols(act)
+        vspace.normalize("symbols", target="activation", normalize=self._normalize)
+        return vspace
+
+    def reverse(self, vspace):
+        """Interpretation: map symbolic presence back to concept space.
+
+        When quantized: inverse layer maps [B, nSymbols] activation back
+        to [B, nConcepts], reconstructing the concept activation.
+        When not quantized: inverse layer maps symbols via get_symbols(),
+        returns input vspace with updated activation.
+        """
+        if self.passThrough:
+            return vspace
+        vspace = self.reverseBegin(vspace)
+        act = vspace.materialize(mode="activation")
+        act = self.layer.reverse(act)
+        if self.quantized:
+            self.subspace.set_symbols(act)
+            result = self.reverseEnd(self.subspace)
+        else:
+            vspace.set_symbols(act)
+            result = vspace
+        result.normalize("concepts", target="what", normalize=self._normalize)
+        return result
+
+    @staticmethod
+    def test():
+        pass
+
+class SyntacticSpace(Space):
+    """Identify logical structures over the symbolic activation space and
+    account for them by merging into known representations, reducing
+    entropy of the activation vector by encoding it into known unitizations.
+
+    Current implementation: LR(1) left-to-right over symbols.
+
+    Next implementation step: identify logical structures over the symbolic
+    activation space and "account" for them by merging them into known
+    representations, thus reducing the entropy of the activation vector
+    by encoding it into known unitizations.
+
+    SyntacticSpace maintains an internal step counter.  Each call to
+    ``forward()`` increments it; each call to ``reverse()`` decrements it.
+    Call ``reset()`` to clear the counter.  Both BasicModel and MentalModel
+    use this same interface; BasicModel calls ``forward()`` in a loop to
+    process all depths at once, while MentalModel calls ``forward()`` once
+    per conceptualOrder iteration.
+
+    Word types are strictly binary, involving at least one symbol:
+
+    - symbol-symbol (EQUALS): defines symbols relative to one another
+    - symbol-percept (C->P): symbols name percepts
+
+    The full existing grammar rule set [1-5] is used (EQUALS, AND, OR,
+    NOT, NON).  Eventually the grammar should be expressed in CNF (binary
+    normal form), but for now it operates over the full grammar-as-written.
+
+    Uses SyntacticLayer (rules [1-5]) with full rule prediction and
+    soft-weighted composition (composeSyntax).  Owns the equals_layer
+    and non_alpha for EQUALS and NON rule execution.
+    """
+    name  = "Syntactic"
+    config_section = "SyntacticSpace"
+
+    def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None):
+        super().__init__(inputShape, spaceShape, outputShape, customVQ=False)
+        self.processSymbols = True
+        self.conceptualSpace = conceptualSpace
+        self._step = 0
+
+        nSymbols = inputShape[0]
+
+        # SyntacticLayer + composition layers for symbolic grammar
+        # rules [1-5] with soft-weighted Gumbel-softmax rule execution.
+        # composeSyntax predicts rules and executes them as projections;
+        # projectSymbols dispatches EQUALS/AND/OR/NOT/NON operations.
+        self.syntactic_layer = SyntacticLayer(
+            nInput=nSymbols, nOutput=nSymbols,
+            rules=TheGrammar.symbolic(),
+            transition_rule=6,
+            max_depth=max(nSymbols - 1, 1),
+            hidden_dim=min(256, max(64, nSymbols * 4)),
+            grammar=TheGrammar,
+        )
+        self.equals_layer = AssociationLayer(nSymbols, nSymbols, type="symmetric")
+        self.non_alpha = nn.Parameter(torch.tensor(0.5))
+        self.layers = nn.ModuleList([self.syntactic_layer, self.equals_layer])
+
+    # ── Rule execution (mental mode) ─────────────────────────────────
 
     def projectSymbols(self, rule_id, left, right=None):
         """Execute a symbolic grammar rule on [B, N] activation vectors.
@@ -3795,10 +3928,6 @@ class SymbolicSpace(Space):
         rule_name = TheGrammar[rule_id]
 
         if "EQUALS" in rule_name and self.equals_layer is not None:
-            # Cross-symbol association via Hopfield-like associative memory.
-            # The AssociationLayer learns which symbols are associated with
-            # which: when symbol A equals symbol B, they retrieve each other.
-            # Modulate the association output by right's activation pattern.
             association = self.equals_layer.forward(left)
             return association * right
 
@@ -3886,120 +4015,44 @@ class SymbolicSpace(Space):
         out["composed"] = composed
         return out
 
-    def discretize(self, vspace):
-        """Discretize a subspace's activation vector to {0, 1}.
-
-        Delegates to vspace.normalize("symbols") which materializes
-        the activation (if needed), applies the straight-through
-        estimator, and stores the result back in-place.
-        """
-        vspace.normalize("symbols", target="activation", normalize=self._normalize)
+    # ── Forward / Reverse ────────────────────────────────────────────
 
     def forward(self, vspace):
-        """Naming: map concept activations to symbolic presence.
-
-        1. Extract concept activation [B, nConcepts] from input subspace.
-        2. Map through invertible layer to [B, nSymbols].
-        3. Store as symbolic presence [0,1] via set_symbols().
-        4. Codebook quantizes and produces one-hot activation + dense vectors.
-           Output is a one-hot encoding over the codebook.
-        """
-        if self.passThrough:
-            return vspace
-        vspace = self.forwardBegin(vspace)
-        # Map concept activation → symbol presence
-        act = vspace.materialize(mode="activation")  # [B, nConcepts]
-        act = self.layer.forward(act)                 # [B, nSymbols]
-        if self.quantized:
-            # Codebook: quantize, topk, populate subspace with vectors + activation
-            act_3d = act.unsqueeze(-1)                # [B, nSymbols, 1] — each symbol is 1-dim
-            self.subspace.set_vectors(act_3d)
-            self.codebook.forward(self.subspace)
-            return self.forwardEnd(self.subspace)
-        else:
-            vspace.set_symbols(act)
-            return vspace
-
-    def reverse(self, vspace):
-        """Interpretation: map symbolic presence back to concept space.
-
-        When quantized: inverse layer maps [B, nSymbols] activation back
-        to [B, nConcepts], reconstructing the concept activation.
-        When not quantized: inverse layer maps symbols via get_symbols(),
-        returns input vspace with updated activation.
-        """
-        if self.passThrough:
-            return vspace
-        vspace = self.reverseBegin(vspace)
-        act = vspace.materialize(mode="activation")
-        act = self.layer.reverse(act)
-        if self.quantized:
-            self.subspace.set_symbols(act)
-            result = self.reverseEnd(self.subspace)
-        else:
-            vspace.set_symbols(act)
-            result = vspace
-        result.normalize("concepts", target="what", normalize=False, strict=True)
-        return result
-
-    @staticmethod
-    def test():
-        pass
-
-class SyntacticSpace(Space):
-    """Generate binary deep structure from active symbols via a learned layer.
-
-    Given N active symbols (from SymbolicSpace's activation or top-k),
-    the forward pass uses a SyntacticLayer to predict grammar rules at
-    each derivation depth.  The derivation is stored as word tuples
-    (batch, vector, rule) on the output subspace.
-
-    The reverse pass delegates to SyntacticLayer.reverse(), which
-    deterministically walks the word tuples and reconstructs the
-    activation vector.
-    """
-    name  = "Syntactic"
-    config_section = "SyntacticSpace"
-
-    def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None):
-        super().__init__(inputShape, spaceShape, outputShape, customVQ=False)
-        self.processSymbols = True
-        self.conceptualSpace = conceptualSpace
-
-        # Learnable recursive derivation layer
-        nSymbols = inputShape[0]
-        self.layer = OldSyntacticLayer(
-            nInput=nSymbols,
-            nOutput=nSymbols,
-            max_depth=max(nSymbols - 1, 1),
-            hidden_dim=min(256, max(64, nSymbols * 4)),
-            grammar=TheGrammar,
-        )
-        self.layers = nn.ModuleList([self.layer])
-
-    def forward(self, vspace):
-        """Predict derivation rules and build word tuples."""
+        """Predict derivation rules, build word tuples, and execute
+        soft-weighted rule composition over symbol activations."""
         vspace = self.forwardBegin(vspace)
 
         # Get symbolic presence [0,1] for the layer
         symbols = vspace.get_symbols()
         if symbols is None:
-            # All symbols present — build a full presence vector
             B = vspace.batch or 1
             N = vspace.outputShape[0]
             symbols = torch.ones(B, N, device=TheDevice.get())
 
-        # Predict rules and build derivation
-        out = self.layer.forward(symbols)
-        words = out["words"]
-        self.subspace.set_words(words)
+        # NO-OP when symbols are all zero (e.g., first iteration of MentalModel)
+        if symbols.abs().sum() == 0:
+            self.subspace.set_words([])
+            self.subspace.set_symbols(symbols)
+            x = vspace.materialize()
+            if x is not None:
+                self.subspace.set_vectors(x)
+            vspace = self.forwardEnd(self.subspace)
+            vspace.normalize("symbols", target="activation", normalize=self._normalize)
+            self._step += 1
+            return vspace
 
-        # Pass vectors and symbols through unchanged
+        out = self.composeSyntax(symbols)
+        words = out.get("words", [])
+        composed = out.get("composed", symbols)
+        self.subspace.set_words(words)
+        self.subspace.set_symbols(composed)
         x = vspace.materialize()
         if x is not None:
             self.subspace.set_vectors(x)
-        self.subspace.set_symbols(symbols)
+
         vspace = self.forwardEnd(self.subspace)
+        vspace.normalize("symbols", target="activation", normalize=self._normalize)
+        self._step += 1
         return vspace
 
     def reverse(self, vspace):
@@ -4009,18 +4062,22 @@ class SyntacticSpace(Space):
         nVectors = self.inputShape[0]
         batch_size = max((b for b, v, r in words), default=0) + 1 if words else 1
 
-        # Deterministic tree-walk via the layer
-        symbols = self.layer.reverse(words, nVectors, batch_size)
+        symbols = self.syntactic_layer.reverse(words, nVectors, batch_size)
         symbols = symbols.to(TheDevice.get())
 
-        # Pass vectors through without recomputing activation
         x = vspace.materialize()
         if x is not None:
             self.subspace.set_vectors(x, compute_activation=False)
         self.subspace.set_symbols(symbols)
         self.subspace.set_words([])
         vspace = self.reverseEnd(self.subspace)
+        vspace.normalize("symbols", target="activation", normalize=self._normalize)
+        self._step = max(0, self._step - 1)
         return vspace
+
+    def reset(self):
+        """Reset step counter for a new forward pass."""
+        self._step = 0
 
     @staticmethod
     def test():

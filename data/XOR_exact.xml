@@ -5,8 +5,8 @@
     <conceptualOrder>1</conceptualOrder>
     <symbolicOrder>1</symbolicOrder>
     <modelType>embedding</modelType>
-    <ergodic>true</ergodic>
-    <naive>false</naive>
+    <ergodic>false</ergodic>
+    <naive>true</naive>
     <weightsPath></weightsPath>
 
     <data>
@@ -56,6 +56,7 @@
     <nVectors>6</nVectors>
     <flatten>true</flatten>
     <invertible>true</invertible>
+    <normedWeights>false</normedWeights>
   </ConceptualSpace>
 
   <!-- SymbolicSpace: nOutput = ConceptualSpace.nOutput = 6 -->
