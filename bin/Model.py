@@ -242,14 +242,12 @@ class LinearLayer(ErgodicLayer):
         return x
 
     def _effective_bias(self):
-        """Bias for log-space use. Constrained to ≤ 0 via -softplus."""
+        """Bias for log-space use (unconstrained)."""
         if not self.hasBias:
             return 0
         if self.ergodic:
-            raw = self.bias * self.biasWeight + self.var * self.biasNoise
-        else:
-            raw = self.biasWeight
-        return -F.softplus(raw)  # always ≤ 0
+            return self.bias * self.biasWeight + self.var * self.biasNoise
+        return self.biasWeight
 
     @staticmethod
     def test():
@@ -690,40 +688,23 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
         return d
 
 
-    # --- Non-negative bias ---
-    def _bias_effective(self):
-        """Non-negative bias weight via softplus, matching weight non-negativity."""
-        return F.softplus(self.biasWeight)
-
     def _effective_bias(self):
-        """Bias for log-space use. Constrained to ≤ 0 so exp(wx+b) ∈ (0,1].
-
-        biasWeight is non-negative (softplus), so negation gives ≤ 0 directly.
-        Ergodic noise is wrapped in softplus to guarantee ≤ 0 after negation.
-        """
+        """Bias for log-space use. Constrained to ≤ 0 so exp(wx+b) ∈ (0,1]."""
         if not self.hasBias:
             return 0
-        bw = self._bias_effective()
         if self.ergodic:
-            raw = self.bias * bw + self.var * self.biasNoise
-        else:
-            raw = bw
-        return -F.softplus(raw)  # always ≤ 0
+            raw = self.bias * self.biasWeight + self.var * self.biasNoise
+            return F.softplus(raw)                        # ≤ 0 even with noise
+        return F.softplus(self.biasWeight)                # ≥ 0
 
     def forwardBias(self, x):
         if self.hasBias:
-            if self.ergodic:
-                x = x + self.bias * self._bias_effective() + self.var * self.biasNoise
-            else:
-                x = x + self._bias_effective()
+            x = x + self._effective_bias()                # _effective_bias ≤ 0, so adds ≥ 0
         return x
 
     def reverseBias(self, x):
         if self.hasBias:
-            if self.ergodic:
-                x = x - (self.bias * self._bias_effective() + self.var * self.biasNoise)
-            else:
-                x = x - self._bias_effective()
+            x = x - self._effective_bias()                # _effective_bias ≤ 0, so subtracts ≥ 0
         return x
 
 
@@ -1073,9 +1054,12 @@ class PiLayer(Layer):
         log_x = torch.log(xp)                            # [-13.8, 0]
         wx = log_x @ W                                   # [..., nOut], ≤ 0
         b  = self.layer._effective_bias()
-        wx = wx + b                                       # bias in log-space (multiplicative)
+        wx = wx - b                                       # bias in log-space (multiplicative)
         y = torch.exp(wx)                                 # (0, 1] when b ≤ 0
-        return self._from_log_domain(y)                   # [ε, 1] → [-1, 1]
+        result = self._from_log_domain(y)                 # [ε, 1] → [-1, 1]
+        if not self.invertible:
+            result = torch.tanh(result)                   # gate for unconstrained W
+        return result
 
     def reverse(self, y):
         """Recover x from y.  Requires invertible=True.
@@ -1091,7 +1075,7 @@ class PiLayer(Layer):
         yp = self._to_log_domain(y)                        # [-1, 1] → [ε, 1]
         log_y = torch.log(yp)
         b = self.layer._effective_bias()
-        log_x = (log_y - b) @ W_inv                       # [..., nIn]
+        log_x = (log_y + b) @ W_inv                       # [..., nIn]
         xp = torch.exp(log_x)
         x = self._from_log_domain(xp)
         if self.layer.ergodic:
