@@ -79,7 +79,7 @@
     <quantized>false</quantized>
     <lexer>word</lexer>
     <normalize>true</normalize>
-    <normedWeights>false</normedWeights>
+
   </InputSpace>
 
   <PerceptualSpace>
@@ -93,7 +93,7 @@
     <invertible>false</invertible>
     <quantized>false</quantized>
     <normalize>false</normalize>
-    <normedWeights>false</normedWeights>
+
   </PerceptualSpace>
 
   <ModalSpace>
@@ -110,7 +110,7 @@
     <wherePassThrough>true</wherePassThrough>
     <whenPassThrough>true</whenPassThrough>
     <normalize>false</normalize>
-    <normedWeights>false</normedWeights>
+
   </ModalSpace>
 
   <ConceptualSpace>
@@ -125,7 +125,7 @@
     <nonlinear>true</nonlinear>
     <quantized>false</quantized>
     <normalize>false</normalize>
-    <normedWeights>false</normedWeights>
+
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -137,7 +137,7 @@
     <passThrough>false</passThrough>
     <quantized>false</quantized>
     <normalize>false</normalize>
-    <normedWeights>false</normedWeights>
+
   </SymbolicSpace>
 
   <SyntacticSpace>
@@ -148,7 +148,7 @@
     <flatten>false</flatten>
     <quantized>false</quantized>
     <normalize>false</normalize>
-    <normedWeights>false</normedWeights>
+
   </SyntacticSpace>
 
   <OutputSpace>
@@ -160,6 +160,6 @@
     <invertible>false</invertible>
     <quantized>false</quantized>
     <normalize>true</normalize>
-    <normedWeights>false</normedWeights>
+
   </OutputSpace>
 </model>

@@ -191,12 +191,10 @@ class LinearLayer(ErgodicLayer):
     When ergodic=False (default), noise buffers are not allocated and forward
     uses the learned weights directly.
     """
-    def __init__(self, nInput, nOutput, hasBias=True, naive=False, stable=False, ergodic=False,
-                 normedWeights=False):
+    def __init__(self, nInput, nOutput, hasBias=True, naive=False, stable=False, ergodic=False):
         super(LinearLayer, self).__init__(nInput, nOutput, ergodic=ergodic)
         self.stable  = stable
         self.hasBias = hasBias
-        self.normedWeights = normedWeights
         if ergodic:
             self.W = nn.Parameter(torch.eye(self.nInput, self.nOutput))
         else:
@@ -233,8 +231,6 @@ class LinearLayer(ErgodicLayer):
             W = self.bias * self.W + self.var * self.noise
         else:
             W = self.W
-        if self.normedWeights:
-            W = F.normalize(W, p=2, dim=0)  # unit-norm columns
         output = x @ W
         return output
     def forwardBias(self, x):
@@ -244,6 +240,16 @@ class LinearLayer(ErgodicLayer):
             else:
                 x = x + self.biasWeight
         return x
+
+    def _effective_bias(self):
+        """Bias for log-space use. Constrained to ≤ 0 via -softplus."""
+        if not self.hasBias:
+            return 0
+        if self.ergodic:
+            raw = self.bias * self.biasWeight + self.var * self.biasNoise
+        else:
+            raw = self.biasWeight
+        return -F.softplus(raw)  # always ≤ 0
 
     @staticmethod
     def test():
@@ -279,12 +285,11 @@ class InvertibleLinearLayer(ErgodicLayer):
     naive=True: materialise W_eff as dense matrix; reverse uses pinv(W_eff).
     """
     def __init__(self, nInput, nOutput, naive=False, ergodic=False,
-                 hasBias=True, stable=False, normedWeights=False):
+                 hasBias=True, stable=False):
         super().__init__(nInput, nOutput, ergodic=ergodic)
         self.naive   = naive
         self.hasBias = hasBias
-        self.stable  = stable or normedWeights  # normedWeights requires stable
-        self.normedWeights = normedWeights
+        self.stable  = stable
         self.rank    = min(nInput, nOutput)
 
         # LDU learned parameters
@@ -459,24 +464,9 @@ class InvertibleLinearLayer(ErgodicLayer):
         out_shape = list(orig_shape); out_shape[-1] = self.nInput
         return y.reshape(out_shape)
 
-    def _d_normed(self):
-        """Scale d so columns of L @ D @ U have approximately unit norm.
-
-        ‖W[:, j]‖ ≈ ‖L[:, j]‖ * |d_j| * ‖U[:, j]‖  (tight when L, U ≈ I)
-        Normalizing d by column norms of L and U bounds the product.
-        """
-        d = self._d_effective()
-        L = self._L()
-        U = self._U()
-        l_col_norms = L.norm(p=2, dim=0)[:self.rank]    # [rank]
-        u_col_norms = U.norm(p=2, dim=0)[:self.rank]    # [rank]
-        scale = l_col_norms * u_col_norms                # [rank]
-        return d / (scale + epsilon)
-
     def _apply_forward(self, x):
         """Non-ergodic sequential forward using clean L, d, U."""
-        d = self._d_normed() if self.normedWeights else self._d_effective()
-        return self._apply_ldu(x, self._L(), d, self._U())
+        return self._apply_ldu(x, self._L(), self._d_effective(), self._U())
 
     def _solve_reverse(self, y):
         """Non-ergodic sequential reverse using clean L, d_effective, U."""
@@ -504,8 +494,6 @@ class InvertibleLinearLayer(ErgodicLayer):
             self.resample_noise()
         if self.naive:
             W = self.compute_W_current()
-            if self.normedWeights:
-                W = F.normalize(W, p=2, dim=0)  # unit-norm columns
             orig_shape = x.shape
             out_shape = list(orig_shape); out_shape[-1] = self.nOutput
             y = (x.reshape(-1, self.nInput) @ W).reshape(out_shape)
@@ -650,9 +638,9 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
     """
 
     def __init__(self, nInput, nOutput, naive=False, ergodic=False,
-                 hasBias=True, stable=False, normedWeights=False):
+                 hasBias=True, stable=False):
         super().__init__(nInput, nOutput, naive=naive, ergodic=ergodic,
-                         hasBias=hasBias, stable=stable, normedWeights=normedWeights)
+                         hasBias=hasBias, stable=stable)
         # Re-initialise so softplus(raw) gives near-identity W.
         with torch.no_grad():
             # softplus(-5) ~ 0.007 ≈ 0 for off-diagonals
@@ -700,6 +688,42 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
         if self.stable:
             d = d.clamp(epsilon, 1.0)
         return d
+
+
+    # --- Non-negative bias ---
+    def _bias_effective(self):
+        """Non-negative bias weight via softplus, matching weight non-negativity."""
+        return F.softplus(self.biasWeight)
+
+    def _effective_bias(self):
+        """Bias for log-space use. Constrained to ≤ 0 so exp(wx+b) ∈ (0,1].
+
+        biasWeight is non-negative (softplus), so negation gives ≤ 0 directly.
+        Ergodic noise is wrapped in softplus to guarantee ≤ 0 after negation.
+        """
+        if not self.hasBias:
+            return 0
+        bw = self._bias_effective()
+        if self.ergodic:
+            raw = self.bias * bw + self.var * self.biasNoise
+            return -F.softplus(raw)  # ensure ≤ 0 even with noise
+        return -bw  # always ≤ 0
+
+    def forwardBias(self, x):
+        if self.hasBias:
+            if self.ergodic:
+                x = x + self.bias * self._bias_effective() + self.var * self.biasNoise
+            else:
+                x = x + self._bias_effective()
+        return x
+
+    def reverseBias(self, x):
+        if self.hasBias:
+            if self.ergodic:
+                x = x - (self.bias * self._bias_effective() + self.var * self.biasNoise)
+            else:
+                x = x - self._bias_effective()
+        return x
 
 
 class LiftingLayer(InvertibleLinearLayer):
@@ -759,18 +783,16 @@ class SigmaLayer(Layer):
     the ergodic interface (set_sigma, observe_sigma, etc.) there.
     """
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
-                 invertible=False, nonlinear=False, normedWeights=False):
+                 invertible=False, nonlinear=False):
         super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.ergodic    = ergodic
         self.saturate   = True
         self.activation = torch.zeros(1, nOutput, 1)
         if invertible:
-            self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic,
-                                               normedWeights=normedWeights)
+            self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic)
         else:
-            self.layer = LinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic,
-                                      normedWeights=normedWeights)
+            self.layer = LinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic)
         self.layers.append(self.layer)
 
     @property
@@ -991,21 +1013,18 @@ class PiLayerOld(Layer):
                 print(f'Epoch {epoch}/1000, MSE: {loss.item():.6f}')
 
 class PiLayer(Layer):
-    r"""Log-space multiplicative layer with affine input mapping.
+    r"""Log-space multiplicative layer: [-1,1] → [-1,1].
 
-    Inputs are expected in [-1, 1].  An affine shift maps them to
-    [ε, 1] for log-space:
-        x' = (x + 1) / 2 * (1 - ε) + ε
+    Inputs and outputs are in [-1, 1].  An affine shift maps to
+    [ε, 1] for log-space, and the inverse maps back:
+        to_log:   x' = (x + 1) / 2 * (1 - ε) + ε    [-1,1] → [ε, 1]
+        from_log: x  = ((x' - ε) / (1 - ε)) * 2 - 1  [ε, 1] → [-1,1]
 
     Forward:
-        y = exp(W @ log(x') + b)
+        y = from_log(exp(W @ log(to_log(x)) + b))   # b is multiplicative in data space
 
-    In log-space the layer is a simple affine map.  Output is in (0, ∞)
-    but stays well-behaved when W is near identity.
-
-    When ``invertible=True``:
-        Reverse: x' = exp(W_inv @ (log(y) − b))
-                 x  = ((x' - ε) / (1 - ε)) * 2 - 1
+    Reverse (invertible=True):
+        x = from_log(exp(W_inv @ (log(to_log(y)) − b)))
 
     No clamping is used — the affine mapping guarantees log-safe inputs.
     """
@@ -1014,7 +1033,7 @@ class PiLayer(Layer):
     _eps = 1e-6
 
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
-                 invertible=False, hasBias=True, stable=True, normedWeights=False):
+                 invertible=False, hasBias=True, stable=True):
         super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.stable     = stable
@@ -1022,11 +1041,10 @@ class PiLayer(Layer):
         if invertible:
             self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
                                                naive=naive, ergodic=ergodic,
-                                               stable=stable, normedWeights=normedWeights)
+                                               stable=stable)
         else:
             self.layer = LinearLayer(nInput, nOutput, hasBias=hasBias,
-                                     naive=naive, ergodic=ergodic, stable=stable,
-                                     normedWeights=normedWeights)
+                                     naive=naive, ergodic=ergodic, stable=stable)
         self.layers.append(self.layer)
 
     @property
@@ -1036,14 +1054,6 @@ class PiLayer(Layer):
 
     def resample_noise(self):
         self.layer.resample_noise()
-
-    def _effective_bias(self):
-        """Bias to add to W @ log(x'), or 0 if hasBias=False."""
-        if not self.hasBias:
-            return 0
-        if self.layer.ergodic:
-            return self.layer.bias * self.layer.biasWeight + self.layer.var * self.layer.biasNoise
-        return self.layer.biasWeight
 
     def _to_log_domain(self, x):
         """Map [-1, 1] → [ε, 1]."""
@@ -1057,38 +1067,30 @@ class PiLayer(Layer):
         if self.layer.ergodic:
             self.resample_noise()
         W = self.layer.compute_W_current()                 # [nIn, nOut], non-negative by construction
-        if self.layer.normedWeights:
-            W = F.normalize(W, p=2, dim=0)                 # unit-norm columns
         x = x.to(W.device)
         xp = self._to_log_domain(x)                      # [ε, 1]
         log_x = torch.log(xp)                            # [-13.8, 0]
         wx = log_x @ W                                   # [..., nOut], ≤ 0
-        b  = self._effective_bias()
-        wx = wx + b
-        y = torch.exp(wx)
-        return y
+        b  = self.layer._effective_bias()
+        wx = wx + b                                       # bias in log-space (multiplicative)
+        y = torch.exp(wx)                                 # (0, 1] when b ≤ 0
+        return self._from_log_domain(y)                   # [ε, 1] → [-1, 1]
 
     def reverse(self, y):
         """Recover x from y.  Requires invertible=True.
 
-        x' = exp(W_inv @ (log(y) − b))
-        x  = ((x' - ε) / (1 - ε)) * 2 - 1
+        y' = to_log(y)                                    # [-1,1] → [ε, 1]
+        x' = exp(W_inv @ (log(y') − b))                  # undo log-space bias
+        x  = from_log(x')                                 # [ε, 1] → [-1, 1]
 
-        Expects y in (0, 1] (the forward output range).  Warns if out of range.
+        Expects y in [-1, 1] (the forward output range).
         """
         W_inv = self.layer.compute_Winverse_current()       # [nOut, nIn], exact LDU inverse
         y = y.to(W_inv.device)
-        with torch.no_grad():
-            if torch.any(y <= 0) or torch.any(y > 1 + 1e-4):
-                import warnings
-                warnings.warn(
-                    f"PiLayer.reverse: input out of expected range (0, 1], "
-                    f"got [{y.min().item():.4f}, {y.max().item():.4f}]"
-                )
-        log_y = torch.log(y.clamp(min=self._eps))
-        b = self._effective_bias()
-        gamma = log_y - b                                 # [..., nOut]
-        log_x = gamma @ W_inv                             # [..., nIn]
+        yp = self._to_log_domain(y)                        # [-1, 1] → [ε, 1]
+        log_y = torch.log(yp)
+        b = self.layer._effective_bias()
+        log_x = (log_y - b) @ W_inv                       # [..., nIn]
         xp = torch.exp(log_x)
         x = self._from_log_domain(xp)
         if self.layer.ergodic:

@@ -1817,7 +1817,7 @@ class SubSpace(nn.Module):
         Args:
             symbols_tensor: [batch, nSymbols] values in [0, 1].
         """
-        self.set_activation(symbols_tensor * 2 - 1)
+        self.set_activation(symbols_tensor)
 
     def get_symbols(self):
         """Return symbolic presence [0,1] mapped from activation [-1,1].
@@ -1827,7 +1827,7 @@ class SubSpace(nn.Module):
         act = self.get_activation()
         if act is None:
             return None
-        return (act + 1) / 2
+        return act
 
     # ------------------------------------------------------------------
     # Word management
@@ -2049,31 +2049,21 @@ class SubSpace(nn.Module):
                     else:
                         warnings.warn(msg)
             elif kind == "concepts":
-                # Unit hypersphere: check ‖v‖₂ ≈ 1
-                norms = torch.norm(xd, p=2, dim=-1)
-                max_dev = (norms - 1.0).abs().max().item()
-                if max_dev > 1e-1:
-                    msg = (f"Norm violation: kind={kind!r}, target={target!r} "
-                           f"max |‖v‖ - 1| = {max_dev:.6f}")
+                # Concepts: elements in [-1, 1] (tanh)
+                xmin, xmax = xd.min().item(), xd.max().item()
+                if xmin < -1 - 1e-2 or xmax > 1 + 1e-2:
+                    msg = (f"Range violation: kind={kind!r}, target={target!r} "
+                           f"range [{xmin:.6f}, {xmax:.6f}] outside [-1, 1].")
                     if strict:
                         raise ValueError(msg)
                     else:
                         warnings.warn(msg)
             elif kind == "percepts":
-                # Positive hemisphere: elements in [0, 1], ‖v‖ ≤ 1
+                # Percepts: elements in [-1, 1] (tanh)
                 xmin, xmax = xd.min().item(), xd.max().item()
-                if xmin < -1e-2 or xmax > 1 + 1e-2:
+                if xmin < -1 - 1e-2 or xmax > 1 + 1e-2:
                     msg = (f"Range violation: kind={kind!r}, target={target!r} "
-                           f"range [{xmin:.6f}, {xmax:.6f}] outside [0, 1].")
-                    if strict:
-                        raise ValueError(msg)
-                    else:
-                        warnings.warn(msg)
-                norms = torch.norm(xd, p=2, dim=-1)
-                max_norm = norms.max().item()
-                if max_norm > 1 + 1e-1:
-                    msg = (f"Norm violation: kind={kind!r}, target={target!r} "
-                           f"max ‖v‖ = {max_norm:.6f} exceeds 1.0")
+                           f"range [{xmin:.6f}, {xmax:.6f}] outside [-1, 1].")
                     if strict:
                         raise ValueError(msg)
                     else:
@@ -2098,18 +2088,14 @@ class SubSpace(nn.Module):
         """Apply normalization function to tensor x.
 
         The combination of kind and target determines the geometry:
-          - Perceptual vectors live on a hypercube [0,1]^d (sigmoid + clamp).
-          - Conceptual vectors live on a hypersphere S^(d-1) (L2 unit-norm).
-          - Activations use scalar transfer functions (sigmoid/tanh/STE).
+          - Perceptual vectors and activations use tanh [-1,1].
+          - Conceptual vectors and activations use tanh [-1,1].
+          - Activations use scalar transfer functions (tanh/STE).
         """
         is_vector = target in ("what", "where", "when", "event")
         if kind == "percepts":
-            if is_vector:
-                return torch.sigmoid(x).clamp(0, 1)  # hypercube
-            return torch.sigmoid(x)
+            return torch.tanh(x)
         elif kind == "concepts":
-            if is_vector:
-                return F.normalize(x, p=2, dim=-1)  # hypersphere
             return torch.tanh(x)
         elif kind == "symbols":
             soft = torch.sigmoid(x)
@@ -2303,7 +2289,6 @@ class Space(nn.Module):
         _nWhere = TheXMLConfig.space(section, "nWhere")
         _nWhen = TheXMLConfig.space(section, "nWhen")
         self._normalize = TheXMLConfig.space(section, "normalize")
-        self._normedWeights = TheXMLConfig.space(section, "normedWeights")
         self.nWhere = _nWhere
         self.nWhen = _nWhen
         self.nWhat = self.nDim
@@ -3187,22 +3172,18 @@ class PerceptualSpace(Space):
         self.attention = AttentionLayer(output, output, type="transformer")
         if self.reversible:
             if invertible:
-                self.pi  = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True,
-                                   normedWeights=self._normedWeights)
+                self.pi  = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
                 self.forwardPi, self.reversePi = self.pi.forward, self.pi.reverse
                 self.params = self.pi.getParameters()
                 self.layers = nn.ModuleList([self.pi])
             else:
-                self.pi1 = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True,
-                                   normedWeights=self._normedWeights)
-                self.pi2 = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True,
-                                   normedWeights=self._normedWeights)
+                self.pi1 = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
+                self.pi2 = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
                 self.forwardPi, self.reversePi = self.pi1.forward, self.pi2.reverse
                 self.params = self.pi1.getParameters() + self.pi2.getParameters()
                 self.layers = nn.ModuleList([self.pi1, self.pi2])
         else:
-            self.pi        = PiLayer(input, output, naive=naive, ergodic=ergodic,
-                                     normedWeights=self._normedWeights)
+            self.pi        = PiLayer(input, output, naive=naive, ergodic=ergodic)
             self.forwardPi = self.pi.forward
             self.params = self.pi.getParameters()
             self.layers = nn.ModuleList([self.pi])
@@ -3551,21 +3532,20 @@ class ConceptualSpace(Space):
         if self.reversible:
             if invertible:
                 self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True,
-                                        nonlinear=nonlinear, normedWeights=self._normedWeights)
+                                        nonlinear=nonlinear)
                 self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
                 self.params = self.sigma.getParameters()
                 self.layers = nn.ModuleList([self.sigma])
             else:
                 self.sigma1 = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True,
-                                         nonlinear=nonlinear, normedWeights=self._normedWeights)
+                                         nonlinear=nonlinear)
                 self.sigma2 = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True,
-                                         nonlinear=nonlinear, normedWeights=self._normedWeights)
+                                         nonlinear=nonlinear)
                 self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
                 self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
                 self.layers = nn.ModuleList([self.sigma1, self.sigma2])
         else:
-            self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic, nonlinear=nonlinear,
-                                    normedWeights=self._normedWeights)
+            self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic, nonlinear=nonlinear)
             self.forwardSigma = self.sigma.forward
             self.params = self.sigma.getParameters()
             self.layers = nn.ModuleList([self.sigma])
@@ -3602,14 +3582,13 @@ class ConceptualSpace(Space):
     def forward(self, vspace):
         """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ.
 
-        When ergodic=True, applies logit() before SigmaLayer so that the
-        reverse sigmoid (needed to bound noisy W_inv output to (0,1))
-        has an exact mathematical inverse.  Without ergodic noise, W_inv
-        is exact and the range is guaranteed by invertibility alone.
+        When nonlinear=True, applies atanh() before SigmaLayer so that the
+        reverse tanh (needed to bound output to (-1,1)) has an exact
+        mathematical inverse.
         """
         x = self.forwardBegin(vspace, returnVectors=True)
         if self.nonlinear:
-            x = torch.logit(x, eps=1e-6)
+            x = torch.atanh(x * (1 - 1e-6))
         y = self.forwardSigma(x)
         if self.hasAttention:
             y = self.attention.forward(y)
@@ -3623,16 +3602,15 @@ class ConceptualSpace(Space):
     def reverse(self, vspace):
         """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer.
 
-        When ergodic=True, applies sigmoid() after reverse SigmaLayer to
-        guarantee output in (0,1) for PiLayer.  Ergodic noise perturbs W,
-        so W_inv is no longer exact and can produce values outside (0,1].
+        When nonlinear=True, applies tanh() after reverse SigmaLayer to
+        guarantee output in (-1,1) for PiLayer.
         """
         y = self.reverseBegin(vspace, returnVectors=True)
         if self.processSymbols:
             y = self.dereference(y)
         y = self.reverseSigma(y)
         if self.nonlinear:
-            y = torch.sigmoid(y)
+            y = torch.tanh(y)
         self.concepts = y
         vspace = self.reverseEnd(y, returnVectors=True)
         vspace.normalize("percepts", target="what", normalize=self._normalize)
@@ -3786,7 +3764,7 @@ class SymbolicSpace(Space):
         self.codebook = self.subspace.event  # Basis (Codebook) for VQ
         nConcepts = inputShape[0]   # activation length from previous space
         nSymbols = spaceShape[0]    # number of symbols = codebook size
-        self.layer = InvertibleLinearLayer(nConcepts, nSymbols, normedWeights=self._normedWeights)
+        self.layer = InvertibleLinearLayer(nConcepts, nSymbols)
         self.layers = nn.ModuleList([self.layer])
 
     def discretize(self, vspace):
@@ -3938,7 +3916,7 @@ class SyntacticSpace(Space):
             return torch.max(left, right)
 
         if "NOT" in rule_name:
-            return 1.0 - left
+            return -left
 
         if "NON" in rule_name:
             alpha = torch.sigmoid(self.non_alpha.to(left.device))

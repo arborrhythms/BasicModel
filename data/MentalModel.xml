@@ -76,7 +76,7 @@
     <hasNorm>false</hasNorm>
     <invertible>true</invertible>
     <quantized>false</quantized>
-    <normedWeights>false</normedWeights>
+
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -84,7 +84,7 @@
     <nDim>100</nDim>
     <nVectors>128</nVectors>
     <passThrough>false</passThrough>
-    <normedWeights>false</normedWeights>
+
   </SymbolicSpace>
 
   <SyntacticSpace>

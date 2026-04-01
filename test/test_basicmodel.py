@@ -3347,14 +3347,14 @@ class TestSubspaceNormalize(unittest.TestCase):
         return SubSpace(inputShape=[4, 3], outputShape=[4, 3])
 
     def test_percepts_range(self):
-        """normalize('percepts') produces values in [0, 1] via sigmoid."""
+        """normalize('percepts') produces values in [-1, 1] via tanh."""
         ss = self._make_ss()
         x = torch.randn(2, 4, 3)
         ss.set_vectors(x.clone())
         ss.normalize("percepts", target="what")
         y = ss.select("what")
-        self.assertTrue(torch.all(y >= 0) and torch.all(y <= 1))
-        self.assertTrue(torch.allclose(y, torch.sigmoid(x)))
+        self.assertTrue(torch.all(y >= -1) and torch.all(y <= 1))
+        self.assertTrue(torch.allclose(y, torch.tanh(x)))
 
     def test_concepts_range(self):
         """normalize('concepts') produces values in [-1, 1] via tanh."""
@@ -3461,7 +3461,7 @@ class TestNormalizeFlag(unittest.TestCase):
         after = ss.materialize()
         self.assertFalse(torch.equal(original, after),
                          "normalize=True should modify the tensor")
-        self.assertTrue(torch.all(after >= 0) and torch.all(after <= 1))
+        self.assertTrue(torch.all(after >= -1) and torch.all(after <= 1))
 
 
 class TestInputSpaceScaling(unittest.TestCase):

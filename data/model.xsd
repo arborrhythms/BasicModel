@@ -216,7 +216,7 @@
       <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="normalize" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="normedWeights" type="xs:boolean" minOccurs="0"/>
+
       <xs:element name="lexer" type="lexerEnum" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
@@ -234,7 +234,7 @@
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="normalize" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="normedWeights" type="xs:boolean" minOccurs="0"/>
+
     </xs:all>
   </xs:complexType>
 
@@ -251,7 +251,7 @@
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="normalize" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="normedWeights" type="xs:boolean" minOccurs="0"/>
+
       <xs:element name="whatPassThrough" type="xs:boolean" minOccurs="0"/>
       <xs:element name="wherePassThrough" type="xs:boolean" minOccurs="0"/>
       <xs:element name="whenPassThrough" type="xs:boolean" minOccurs="0"/>
@@ -272,7 +272,7 @@
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="normalize" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="normedWeights" type="xs:boolean" minOccurs="0"/>
+
     </xs:all>
   </xs:complexType>
 
@@ -287,7 +287,7 @@
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="normalize" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="normedWeights" type="xs:boolean" minOccurs="0"/>
+
     </xs:all>
   </xs:complexType>
 
@@ -301,7 +301,7 @@
       <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="normalize" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="normedWeights" type="xs:boolean" minOccurs="0"/>
+
     </xs:all>
   </xs:complexType>
 
@@ -318,7 +318,7 @@
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="normalize" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="normedWeights" type="xs:boolean" minOccurs="0"/>
+
     </xs:all>
   </xs:complexType>
 

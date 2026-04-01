@@ -306,10 +306,9 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
             layer.bias.fill_(0.95)
         layer.train(True)
         x = (torch.rand(8, 1, nIn).to(TheDevice.get()) * 2 - 1)
-        # Isolated PiLayer — ergodic noise can push output slightly past 1; clamp
         with torch.no_grad():
             y = layer.forward(x)
-            x_rec = layer.reverse(y.clamp(min=1e-7, max=1.0))
+            x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec, rel=True)
         self.assertLess(err, 0.3, f"Ergodic non-naive rel err={err:.2e}")
 
@@ -402,19 +401,16 @@ class TestPairedPiTraining(unittest.TestCase):
             list(pi_fwd.parameters()) + list(pi_rev.parameters()), lr=0.01)
         # Input in [-1, 1]
         x_data = (torch.rand(8, 5, nIn).to(TheDevice.get()) * 2 - 1)
-        # Isolated PiLayer pair — no upstream sigmoid guard; suppress range warning
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message="PiLayer.reverse")
-            for _ in range(500):
-                optimizer.zero_grad()
-                y = pi_fwd(x_data)
-                x_rec = pi_rev.reverse(y.clamp(min=1e-7, max=1.0))
-                loss = criterion(x_data, x_rec)
-                loss.backward()
-                optimizer.step()
-            with torch.no_grad():
-                y = pi_fwd(x_data)
-                x_rec = pi_rev.reverse(y.clamp(min=1e-7, max=1.0))
+        for _ in range(500):
+            optimizer.zero_grad()
+            y = pi_fwd(x_data)
+            x_rec = pi_rev.reverse(y)
+            loss = criterion(x_data, x_rec)
+            loss.backward()
+            optimizer.step()
+        with torch.no_grad():
+            y = pi_fwd(x_data)
+            x_rec = pi_rev.reverse(y)
         err = _reconstruction_error(x_data, x_rec, rel=True)
         self.assertLess(err, 0.5, f"Paired Pi rel err={err:.4f}")
 
@@ -714,7 +710,7 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
         # Input in [-1, 1]
         x = (torch.rand(8, 1, nIn).to(TheDevice.get()) * 2 - 1)
         y = layer.forward(x)
-        x_rec = layer.reverse(y.clamp(min=1e-7, max=1.0))
+        x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec, rel=True)
         self.assertLess(err, 0.15, f"Ergodic roundtrip error too large: {err}")
 
@@ -742,16 +738,16 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
 # ═══════════════════════════════════════════════════════════════════════════
 
 class TestPiLayerOutputRange(unittest.TestCase):
-    """PiLayer.forward() must produce output in (0, 1]."""
+    """PiLayer.forward() must produce output in [-1, 1]."""
 
-    def test_output_in_01(self):
+    def test_output_in_neg1_pos1(self):
         torch.manual_seed(42)
         layer = PiLayer(6, 6, invertible=True)
         layer.set_sigma(0)
         x = torch.rand(4, 3, 6) * 2 - 1  # [-1, 1]
         y = layer.forward(x)
-        self.assertTrue(torch.all(y > 0),
-                        f"PiLayer output has non-positive values: min={y.min().item():.6f}")
+        self.assertTrue(torch.all(y >= -1 - 1e-4),
+                        f"PiLayer output below -1: min={y.min().item():.6f}")
         self.assertTrue(torch.all(y <= 1 + 1e-4),
                         f"PiLayer output exceeds 1: max={y.max().item():.6f}")
 
@@ -764,7 +760,8 @@ class TestPiLayerOutputRange(unittest.TestCase):
         y = layer.forward(x)
         self.assertTrue(torch.all(torch.isfinite(y)),
                         f"PiLayer NaN/Inf at x=-1: {y}")
-        self.assertTrue(torch.all(y > 0), f"min={y.min().item():.6f}")
+        self.assertTrue(torch.all(y >= -1 - 1e-4) and torch.all(y <= 1 + 1e-4),
+                        f"PiLayer output outside [-1,1]: range=[{y.min().item():.6f}, {y.max().item():.6f}]")
 
     def test_extreme_input_plus1(self):
         """Input at +1 (boundary) should still produce valid output."""
@@ -775,7 +772,8 @@ class TestPiLayerOutputRange(unittest.TestCase):
         y = layer.forward(x)
         self.assertTrue(torch.all(torch.isfinite(y)),
                         f"PiLayer NaN/Inf at x=+1: {y}")
-        self.assertTrue(torch.all(y > 0), f"min={y.min().item():.6f}")
+        self.assertTrue(torch.all(y >= -1 - 1e-4) and torch.all(y <= 1 + 1e-4),
+                        f"PiLayer output outside [-1,1]: range=[{y.min().item():.6f}, {y.max().item():.6f}]")
 
 
 class TestSigmaLayerNonlinearRange(unittest.TestCase):
@@ -829,24 +827,26 @@ class TestSigmaLayerNonlinearRange(unittest.TestCase):
                         f"NaN/Inf from near-boundary input: {x}")
 
 
-class TestPiLayerReverseRejectsOutOfRange(unittest.TestCase):
-    """PiLayer.reverse() should warn on out-of-range input."""
+class TestPiLayerReverseAcceptsFullRange(unittest.TestCase):
+    """PiLayer.reverse() accepts [-1, 1] input via _to_log_domain."""
 
-    def test_negative_input_warns(self):
+    def test_negative_input_accepted(self):
         torch.manual_seed(42)
         layer = PiLayer(4, 4, invertible=True)
         layer.set_sigma(0)
-        y = torch.tensor([[[-0.5, 0.3, 0.7, 0.2]]])  # -0.5 is out of range
-        with self.assertWarns(UserWarning, msg="PiLayer.reverse should warn on negative input"):
-            layer.reverse(y)
+        y = torch.tensor([[[-0.5, 0.3, 0.7, 0.2]]])  # -0.5 is valid in [-1, 1]
+        x = layer.reverse(y)
+        self.assertTrue(torch.all(torch.isfinite(x)),
+                        f"PiLayer.reverse produced NaN/Inf: {x}")
 
-    def test_above_one_warns(self):
+    def test_near_boundary_accepted(self):
         torch.manual_seed(42)
         layer = PiLayer(4, 4, invertible=True)
         layer.set_sigma(0)
-        y = torch.tensor([[[0.5, 1.5, 0.7, 0.2]]])  # 1.5 is out of range
-        with self.assertWarns(UserWarning, msg="PiLayer.reverse should warn on >1 input"):
-            layer.reverse(y)
+        y = torch.tensor([[[-0.99, 0.99, -0.5, 0.5]]])
+        x = layer.reverse(y)
+        self.assertTrue(torch.all(torch.isfinite(x)),
+                        f"PiLayer.reverse produced NaN/Inf near boundary: {x}")
 
 
 class TestPerceptualSpaceReverseRangeCheck(unittest.TestCase):

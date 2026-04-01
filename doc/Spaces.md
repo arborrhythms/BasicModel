@@ -48,16 +48,16 @@ output is out of range but does not modify it.
 
 | Space | Data Contract | Geometry | Normalization |
 |-------|--------------|----------|---------------|
-| InputSpace | Data scaled -1..1 for scalars or vector norms | Signed unit interval | `normalize=true` by default |
-| PerceptualSpace | Modal/demuxed (what/where/when encoding). Unsigned unit-magnitude scalars or vectors. Weight-normalized when `normedWeights=true` | Positive hemisphere `[0,1]^d`, `‖v‖ ≤ 1` | `normalize=false` by default |
-| ConceptualSpace | Combined/muxed (event encoding). Signed unit-magnitude scalars or vectors. Weight-normalized when `normedWeights=true`, guaranteeing bounded output. Event norm stored on `subspace.activation` | Unit hypersphere S^(d-1) | `normalize=false` by default |
-| SymbolicSpace | Symbols are percepts. Concept-to-symbol mapping through weight-normalized layer (`normedWeights=true`). One symbol encoded at a time (most highly active). Each symbol receives where/when from PerceptualSpace | `[0,1]` presence | `normalize=false` by default |
+| InputSpace | Data scaled -1..1 for scalars or vector norms | Signed unit interval `[-1,1]` | `normalize=true` by default |
+| PerceptualSpace | Modal/demuxed (what/where/when encoding). Signed unit-magnitude scalars or vectors centered at the origin. No negation operator, but signed for symmetry | Signed hypercube `[-1,1]^d` | `normalize=false` by default |
+| ConceptualSpace | Combined/muxed (event encoding). Signed unit-magnitude scalars or vectors (tanh-bounded). Event norm stored on `subspace.activation` | `[-1,1]` per element (tanh) | `normalize=false` by default |
+| SymbolicSpace | Symbols are percepts. Concept-to-symbol mapping. One symbol encoded at a time (most highly active). Each symbol receives where/when from PerceptualSpace | `[0,1]` presence | `normalize=false` by default |
 | SyntacticSpace | Words are concepts encoding grammatical rules. Stored as word tuples with production rules | Word tuples `(batch, vector, rule)` | `normalize=false` by default |
 | OutputSpace | Rescaled from activation range to original data range | Data range | `normalize=true` by default |
 
 **Data scaling.** `Data` computes global scalar `input_min`/`input_max` and
 `output_min`/`output_max` from the training data at load time. InputSpace uses
-`Data.normalize(x, "input")` to scale non-embedding inputs to `[0, 1]`, and
+`Data.normalize(x, "input")` to scale non-embedding inputs to `[-1, 1]`, and
 `Data.denormalize(x, "input")` in reverse to restore the original range.
 OutputSpace uses `Data.denormalize(x, "output")` to map from `[-1, 1]`
 (symbolic activation range) to the original output range, and
@@ -101,7 +101,7 @@ table.
 
 **Numeric mode.** Tensor data is passed through unchanged; the LiftingLayer projects
 the native input dimension (e.g. 784 for MNIST) to the model's working dimensionality
-`nDim`. Non-embedding inputs are then scaled to `[0, 1]` using the global data min/max
+`nDim`. Non-embedding inputs are then scaled to `[-1, 1]` using the global data min/max
 (`normalize=true`), and the reverse path restores the original range.
 
 **Key parameters.**
@@ -114,7 +114,7 @@ the native input dimension (e.g. 784 for MNIST) to the model's working dimension
 | `nWhen` | Temporal dimensions appended to each token vector |
 | `lexer` | Tokenization mode: `"word"` or `"sentence"` |
 | `quantized` | Whether input values are discrete |
-| `normalize` | Scale what-content to `[0, 1]` (default: `true`) |
+| `normalize` | Scale what-content to `[-1, 1]` (default: `true`) |
 | `demuxed` | Store what/where/when independently (default: `false`) |
 
 **Layer.** `LiftingLayer` — bridges native input dimension to `nDim`.
@@ -160,16 +160,15 @@ reverse layer uses a pseudoinverse to approximately invert the forward mapping.
 | `invertible` | True: shared invertible layer; False: separate pi1/pi2 |
 | `passThrough` | Skip perceptual processing entirely |
 | `hasAttention` | Enable attention reweighting |
-| `normalize` | Normalize vectors to positive hemisphere (default: `false`) |
-| `normedWeights` | Column-normalize weight matrices to unit L2 norm (default: `false`) |
+| `normalize` | Normalize vectors to `[-1, 1]` via tanh (default: `false`) |
 
 **Layer.** `PiLayer` (one or two instances depending on `invertible`).
 
-**Range.** Vectors live on the positive hemisphere `[0, 1]^d` with `‖v‖ ≤ 1`
-(sigmoid + clamp); activation is `[0, 1]` (sigmoid). When `normedWeights=true`,
-weight columns are normalized to unit L2 norm before each forward pass, guaranteeing
-that output magnitude never exceeds input magnitude. When `normalize=true`, these
-transforms are applied; when `false`, a warning is emitted if the output deviates.
+**Range.** Vectors live in the signed hypercube `[-1, 1]^d` (tanh-bounded). The space
+is centered at the origin for geometric symmetry, though it has no negation operator —
+percepts represent feature magnitudes with sign indicating direction. Activation is
+`[-1, 1]`. When `normalize=true`, tanh is applied to enforce the range; when `false`,
+a warning is emitted if the output deviates.
 
 **Invertibility.** `invertible=True`: shared layer, exact inverse. `invertible=False`:
 separate layers, approximate pseudoinverse in reverse.
@@ -209,15 +208,14 @@ instances — `sigma1` for forward, `sigma2` for reverse.
 | `invertible` | True: shared invertible layer; False: separate sigma1/sigma2 |
 | `hasAttention` | Enable attention |
 | `hasNorm` | Enable layer normalization |
-| `normedWeights` | Column-normalize weight matrices to unit L2 norm (default: `false`) |
 
 **Layer.** `SigmaLayer` (one or two instances depending on `invertible`).
 
-**Range.** Vectors live on the unit hypersphere S^(d-1) (L2-normalized); activation is
-`[-1, 1]` (tanh). When `normedWeights=true`, weight columns are normalized to unit L2
-norm, guaranteeing that the linear transform preserves or reduces magnitude — the tanh
-saturation then maps to the unit hypersphere. When `normalize=true`, these transforms
-are applied; when `false`, a warning is emitted if the output deviates.
+**Range.** Vectors are tanh-bounded: each element is in `[-1, 1]` (applied by SigmaLayer).
+Activation is `[-1, 1]`. The boundary between PerceptualSpace and ConceptualSpace uses
+`atanh` (forward) / `tanh` (reverse) as exact inverses. When `normalize=true`, tanh is
+applied to enforce the element-wise range; when `false`, a warning is emitted if the
+output deviates.
 
 **Invertibility.** `invertible=True`: exact inverse via atanh + `W^{-1}`. `invertible=False`:
 separate layers with independent weights.
@@ -271,14 +269,12 @@ recovering the concept activation.
 | `passThrough` | Skip symbolic processing entirely |
 | `quantized` | Enable codebook quantization (required for one-hot output) |
 | `normalize` | Discretize symbols to `{0, 1}` via STE (default: `false`) |
-| `normedWeights` | Column-normalize weight matrices to unit L2 norm (default: `false`) |
 
 **Range.** Symbols are percepts: each symbol represents the presence (`1`) or absence
 (`0`) of a named entity and lives in `[0, 1]`. One symbol is encoded at a time (the
 most highly active; negative products never activate). Each symbol receives where/when
 encoding from PerceptualSpace, making symbols uniform with percepts. Internally stored
-as activation in `[-1, 1]` via the `(x+1)/2` mapping. When `normedWeights=true`, the
-concept-to-symbol weight matrix is column-normalized, guaranteeing bounded output.
+as activation in `[-1, 1]` via the `(x+1)/2` mapping.
 
 **Layer.** `InvertibleLinearLayer(nConcepts, nSymbols)` — maps between
 activation spaces of different lengths. Exact inverse via LDU factorisation.
