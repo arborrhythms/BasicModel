@@ -20,6 +20,7 @@ from itertools import chain
 import torch.optim as optim
 import time
 from typing import Optional, Tuple
+from collections import namedtuple
 
 
 epsilon = 1e-7  # to avoid log(0)
@@ -2299,150 +2300,333 @@ class CorrMem(Mem):
 
 #region Logic
 
-class Grammar:
-    """Binary deep-structure grammar. Rules map integer IDs to productions.
+# ── Method base class and subclasses ──────────────────────────────
 
-    The full rule catalog is a class attribute. Instances may be configured
-    from an XML ``<grammar>`` section to restrict which rules are active.
-    Lazy initialization via ``_ensure_configured()`` defers the XML lookup
-    until the first call to ``symbolic()``/``conceptual()``/``perceptual()``,
-    solving the module-load-time ordering problem (TheGrammar is created
-    before config overlay).
+class Method(Layer):
+    """Base for grammar operations. Unary or binary.
+
+    Each Method implements a reversible function on concept vectors.
+    Binary methods take (left, right) → parent.
+    Unary methods take (left) → parent.
     """
-    rules = [
-        "S",                       # 0 — start
-        "S → S EQUALS S",          # 1
-        "S → S AND S",             # 2
-        "S → S OR S",              # 3
-        "S → NOT S",               # 4 — unary
-        "S → NON S",               # 5 — unary
-        "S → C",                   # 6
-        "S → C VERB C",            # 7  — transitive verb
-        "S → C VERB",              # 8  — intransitive verb
-        "C → C PART C",            # 9
-        "C → C UNION C",           # 10
-        "C → C INTERSECTION C",    # 11
-        "C → P",                   # 12
-        "P → W",                   # 13 — word terminal
-        "S → S REWRITE S",         # 14 — swap positions (symbolic)
-        "C → C REWRITE C",         # 15 — swap positions (conceptual)
+    def __init__(self, nDim, binary=False):
+        super().__init__(nDim, nDim)
+        self.binary = binary
+
+    def forward(self, left, right=None):
+        raise NotImplementedError
+
+    def reverse(self, parent, left_hint=None, right_hint=None):
+        raise NotImplementedError
+
+
+class unionMethod(Method):
+    """Mereological union: max(left, right)."""
+    def __init__(self, nDim):
+        super().__init__(nDim, binary=True)
+
+    def forward(self, left, right=None):
+        return torch.max(left, right)
+
+    def reverse(self, parent, left_hint=None, right_hint=None):
+        return parent, parent
+
+
+class intersectionMethod(Method):
+    """Mereological intersection: min(left, right)."""
+    def __init__(self, nDim):
+        super().__init__(nDim, binary=True)
+
+    def forward(self, left, right=None):
+        return torch.min(left, right)
+
+    def reverse(self, parent, left_hint=None, right_hint=None):
+        return parent, parent
+
+
+class equalsMethod(Method):
+    """Association-based equality: assoc(left) * right.
+
+    Handles both [B, N] activations and [B, N, D] vectors.
+    For 3D input, uses cosine similarity per slot as the association gate.
+    """
+    def __init__(self, nDim):
+        super().__init__(nDim, binary=True)
+        self.assoc = AssociationLayer(nDim)
+        self.layers = nn.ModuleList([self.assoc])
+
+    def forward(self, left, right=None):
+        if left.ndim == 3:
+            # [B, N, D] → cosine similarity per slot → gate right
+            sim = F.cosine_similarity(left, right, dim=-1)  # [B, N]
+            return sim.unsqueeze(-1) * right                 # [B, N, D]
+        association = self.assoc.forward(left)
+        return association * right
+
+    def reverse(self, parent, left_hint=None, right_hint=None):
+        return parent, parent
+
+
+class partMethod(Method):
+    """Parthood: min(left, right) — overlap region."""
+    def __init__(self, nDim):
+        super().__init__(nDim, binary=True)
+
+    def forward(self, left, right=None):
+        return torch.min(left, right)
+
+    def reverse(self, parent, left_hint=None, right_hint=None):
+        return parent, parent
+
+
+class liftMethod(Method):
+    """Lift: binary lift_layer(left)*right or unary lift_layer(left)."""
+    def __init__(self, nDim):
+        super().__init__(nDim, binary=True)
+        self.lift_layer = LinearLayer(nDim, nDim)
+        self.layers = nn.ModuleList([self.lift_layer])
+
+    def forward(self, left, right=None):
+        lifted = self.lift_layer.forward(left)
+        if right is not None:
+            return lifted * right
+        return lifted
+
+    def reverse(self, parent, left_hint=None, right_hint=None):
+        return parent, parent
+
+
+class lowerMethod(Method):
+    """Lower: rank-reducing bottleneck (unary)."""
+    def __init__(self, nDim, bottleneck=None):
+        super().__init__(nDim, binary=False)
+        bottleneck = bottleneck or max(1, nDim // 4)
+        self.down = LinearLayer(nDim, bottleneck)
+        self.up = LinearLayer(bottleneck, nDim)
+        self.layers = nn.ModuleList([self.down, self.up])
+
+    def forward(self, left, right=None):
+        return self.up.forward(self.down.forward(left))
+
+    def reverse(self, parent, left_hint=None, right_hint=None):
+        return parent
+
+
+class notMethod(Method):
+    """Negation: -left (unary)."""
+    def __init__(self, nDim):
+        super().__init__(nDim, binary=False)
+
+    def forward(self, left, right=None):
+        return -left
+
+    def reverse(self, parent, left_hint=None, right_hint=None):
+        return -parent
+
+
+class nonMethod(Method):
+    """Attenuated signal: sigmoid(alpha) * left (unary)."""
+    def __init__(self, nDim):
+        super().__init__(nDim, binary=False)
+        self.alpha = nn.Parameter(torch.tensor(0.5))
+
+    def forward(self, left, right=None):
+        return torch.sigmoid(self.alpha) * left
+
+    def reverse(self, parent, left_hint=None, right_hint=None):
+        return parent / (torch.sigmoid(self.alpha) + epsilon)
+
+
+class swapMethod(Method):
+    """Swap whereEncodings of a node's two children (binary).
+
+    Only permutes positional encodings — codebook indices unchanged.
+    """
+    def __init__(self, nDim):
+        super().__init__(nDim, binary=True)
+        self.p_swap = nn.Parameter(torch.tensor(0.5))
+
+    def forward(self, left_where, right_where):
+        p = torch.sigmoid(self.p_swap)
+        new_left = p * right_where + (1 - p) * left_where
+        new_right = p * left_where + (1 - p) * right_where
+        return new_left, new_right
+
+    def reverse(self, left_where, right_where):
+        p = torch.sigmoid(self.p_swap)
+        orig_left = p * right_where + (1 - p) * left_where
+        orig_right = p * left_where + (1 - p) * right_where
+        return orig_left, orig_right
+
+
+class trueMethod(Method):
+    """Truth evaluation: MSE of activation → scalar (unary)."""
+    def __init__(self, nDim):
+        super().__init__(nDim, binary=False)
+
+    def forward(self, left, right=None):
+        return left.pow(2).mean(dim=-1)
+
+    def reverse(self, parent, left_hint=None, right_hint=None):
+        return left_hint if left_hint is not None else parent
+
+
+# ── Grammar ──────────────────────────────────────────────────────
+
+RuleDef = namedtuple('RuleDef', ['tier', 'canonical', 'arity', 'method_name'])
+
+class Grammar:
+    """Hierarchical 3-tier grammar (S, C, P) with 14 rules.
+
+    Rules are parsed from functional notation in XML. Each rule maps to
+    a Method subclass. During encoding, SyntacticLayer chooses which rule
+    fires at each shift/reduce step. The <interpretation> lever biases
+    union (surface) vs non-union (meaningful) rule choice.
+    """
+
+    # Default rule catalog — used when no XML grammar is configured.
+    _DEFAULT_RULES = [
+        RuleDef('START', 'START → true(S) EOF',   1, 'true'),
+        RuleDef('S',     'S → swap(S, S)',         2, 'swap'),
+        RuleDef('S',     'S → equals(S, S)',       2, 'equals'),
+        RuleDef('S',     'S → part(S, S)',         2, 'part'),
+        RuleDef('S',     'S → C',                  1, None),      # transition
+        RuleDef('C',     'C → union(C, C)',        2, 'union'),
+        RuleDef('C',     'C → intersection(C, C)', 2, 'intersection'),
+        RuleDef('C',     'C → lower(C)',           1, 'lower'),
+        RuleDef('C',     'C → lift(C, C)',         2, 'lift'),
+        RuleDef('C',     'C → lift(C)',            1, 'lift'),
+        RuleDef('C',     'C → not(C)',             1, 'not'),
+        RuleDef('C',     'C → non(C)',             1, 'non'),
+        RuleDef('C',     'C → P',                  1, None),      # transition
+        RuleDef('P',     'P → I P',                1, None),      # recursive
+        RuleDef('P',     'P → ε',                  0, None),      # terminal
     ]
 
-    # Rule IDs that represent transitions between spaces (S→C, C→P).
-    _TRANSITION_IDS = {6, 12}
+    # Transition rule IDs (S→C = 4, C→P = 12)
+    _TRANSITION_IDS = {4, 12}
 
     def __init__(self, lazy_init=True):
-        self._active = None  # None = not yet configured; dict once configured
-        self._lazy_init = lazy_init  # If False, skip XML config lookup
+        self.rules = list(self._DEFAULT_RULES)
+        self._configured = False
+        self._lazy_init = lazy_init
+        self.interpretation = 0.5
 
     def __len__(self):
         return len(self.rules)
 
     def __getitem__(self, idx):
-        return self.rules[idx]
+        return self.rules[idx].canonical
 
     def arity(self, rule_id):
-        """Number of nonterminal children for a rule (0, 1, or 2).
+        return self.rules[rule_id].arity
 
-        Counts occurrences of any nonterminal (S, C, P) on the RHS.
-        """
-        prod = self.rules[rule_id]
-        if "→" not in prod:
-            return 0  # bare start symbol
-        lhs, rhs = prod.split("→", 1)
-        nonterminals = {"S", "C", "P"}
-        rhs_tokens = rhs.split()
-        return sum(1 for t in rhs_tokens if t in nonterminals)
+    def method_name(self, rule_id):
+        return self.rules[rule_id].method_name
+
+    def tier(self, rule_id):
+        return self.rules[rule_id].tier
 
     def binary_rules(self):
-        """Return list of rule IDs with arity 2."""
-        return [i for i in range(len(self.rules)) if self.arity(i) == 2]
+        return [i for i in range(len(self.rules)) if self.rules[i].arity == 2]
 
     # ── Configuration from XML ────────────────────────────────────────
 
     def configure(self, grammar_dict):
-        """Configure from parsed XML: {"S": [...], "C": [...], "P": [...]}.
+        """Configure from parsed XML grammar inside <architecture>.
 
-        Each value is a string (single rule) or list of strings. Each string
-        is the RHS of a production (e.g. "S equals S", "C verb C", "P", "W").
-        Tokens are uppercased and matched against the canonical rule catalog.
-
-        Raises ValueError if a rule string doesn't match any known rule.
+        Parses functional notation: "equals(C, C)", "union(C, C)", "swap(S, S)",
+        "I P", "ε", "true(S) EOF", "P", "C".
         """
-        self._active = {"S": [], "C": [], "P": []}
-        for lhs in ("S", "C", "P"):
+        self.rules = []
+        self._configured = True
+
+        # Parse interpretation lever
+        if isinstance(grammar_dict, dict):
+            interp = grammar_dict.get('interpretation', 0.5)
+            self.interpretation = float(interp)
+
+        for lhs in ('START', 'S', 'C', 'P'):
             raw = grammar_dict.get(lhs, [])
             if isinstance(raw, str):
                 raw = [raw]
             for rhs_text in raw:
-                tokens = rhs_text.strip().split()
-                canonical_rhs = " ".join(t.upper() for t in tokens)
-                canonical = f"{lhs} → {canonical_rhs}"
-                matched = False
-                for i, rule in enumerate(self.rules):
-                    if rule == canonical:
-                        self._active[lhs].append(i)
-                        matched = True
-                        break
-                if not matched:
-                    raise ValueError(f"Unknown grammar rule: {canonical!r}")
+                rhs = rhs_text.strip()
+                rule_def = self._parse_rule(lhs, rhs)
+                self.rules.append(rule_def)
+
+    def _parse_rule(self, lhs, rhs):
+        """Parse a single rule RHS into a RuleDef."""
+        # Functional notation: "method(args)"
+        if '(' in rhs:
+            func_name = rhs[:rhs.index('(')]
+            args_str = rhs[rhs.index('(') + 1:rhs.rindex(')')]
+            args = [a.strip() for a in args_str.split(',') if a.strip()]
+            suffix = rhs[rhs.rindex(')') + 1:].strip()  # e.g. "EOF"
+            arity = len(args)
+            canonical = f"{lhs} → {rhs}"
+            return RuleDef(lhs, canonical, arity, func_name)
+
+        # Terminal: "ε"
+        if rhs == 'ε':
+            return RuleDef(lhs, f"{lhs} → ε", 0, None)
+
+        # Recursive: "I P"
+        if rhs == 'I P':
+            return RuleDef(lhs, f"{lhs} → I P", 1, None)
+
+        # Transition: single nonterminal like "C" or "P"
+        if rhs in ('S', 'C', 'P'):
+            return RuleDef(lhs, f"{lhs} → {rhs}", 1, None)
+
+        raise ValueError(f"Cannot parse grammar rule: {lhs} → {rhs}")
 
     def _ensure_configured(self):
         """Lazy init: read <grammar> from TheXMLConfig on first access."""
-        if self._active is not None or not self._lazy_init:
+        if self._configured or not self._lazy_init:
             return
         from util import TheXMLConfig
         try:
-            cfg = TheXMLConfig.get("grammar")
+            cfg = TheXMLConfig.get("architecture.grammar")
             if isinstance(cfg, dict):
                 self.configure(cfg)
         except (KeyError, AttributeError):
-            pass  # no grammar section — use hardcoded defaults
+            pass  # no grammar section — use defaults
 
     # ── Rule queries ──────────────────────────────────────────────────
 
     def symbolic(self):
-        """Rule IDs for symbolic (S→) operations."""
+        """Rule IDs for S-tier operations."""
         self._ensure_configured()
-        if self._active is not None:
-            return list(self._active["S"])
-        return [1, 2, 3, 4, 5, 14]
+        return [i for i, r in enumerate(self.rules) if r.tier == 'S' and r.method_name is not None]
 
     def conceptual(self):
-        """Rule IDs for conceptual (C→) operations."""
+        """Rule IDs for C-tier operations (non-transition)."""
         self._ensure_configured()
-        if self._active is not None:
-            return list(self._active["C"])
-        return [7, 8, 9, 10, 11, 15]
+        return [i for i, r in enumerate(self.rules) if r.tier == 'C' and r.method_name is not None]
 
     def perceptual(self):
-        """Rule IDs for perceptual (P→) operations."""
+        """Rule IDs for P-tier operations."""
         self._ensure_configured()
-        if self._active is not None:
-            return list(self._active["P"])
-        return [13]
+        return [i for i, r in enumerate(self.rules) if r.tier == 'P']
 
     # ── Transition helpers ────────────────────────────────────────────
 
     def symbolic_transition(self):
-        """Return the S→C transition rule ID if configured, else default 6."""
+        """Return the S→C transition rule ID."""
         self._ensure_configured()
-        if self._active is not None:
-            for r in self._active["S"]:
-                if r in self._TRANSITION_IDS:
-                    return r
-            return None
-        return 6
+        for i, r in enumerate(self.rules):
+            if r.tier == 'S' and r.method_name is None and r.arity == 1:
+                return i
+        return None
 
     def conceptual_transition(self):
-        """Return the C→P transition rule ID if configured, else default 12."""
+        """Return the C→P transition rule ID."""
         self._ensure_configured()
-        if self._active is not None:
-            for r in self._active["C"]:
-                if r in self._TRANSITION_IDS:
-                    return r
-            return None
-        return 12
+        for i, r in enumerate(self.rules):
+            if r.tier == 'C' and r.method_name is None and r.arity == 1:
+                return i
+        return None
 
 class SyntacticLayer(Layer):
     """Per-space rule prediction layer for the recursive grammar.

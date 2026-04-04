@@ -1610,12 +1610,9 @@ class MentalModel(BaseModel):
             self.symbolicSpace = SymbolicSpace(conceptOutputShape, spaceShape_symbol, symbolShape,
                                                conceptualSpace=self.conceptualSpace)
 
-            # Symbol -> Syntax  (composeSyntax with rule execution)
+            # No SyntacticSpace in iterative MentalModel — syntax is handled
+            # by ConceptualSpace's Methods and SyntacticLayer directly.
             self.syntacticSpace = None
-            if self.syntax:
-                syntax_dim = _resolve_dim("SyntacticSpace", symbol_dim)
-                spaceShape_syntax = [nvec_symbol, syntax_dim]
-                self.syntacticSpace = SyntacticSpace(symbolShape, spaceShape_syntax, symbolShape)
 
             # Concept -> Output  (fed by ConceptualSpace, not SymbolicSpace)
             self.outputSpace = OutputSpace(conceptOutputShape, spaceShape_output, outputShape,

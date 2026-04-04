@@ -3189,79 +3189,82 @@ class TestGrammar(unittest.TestCase):
     """Tests for Grammar and TheGrammar singleton."""
 
     def test_length(self):
-        from Space import TheGrammar
-        self.assertEqual(len(TheGrammar), 16)
+        from Model import Grammar
+        g = Grammar(lazy_init=False)
+        self.assertEqual(len(g), 15)
 
     def test_indexing(self):
-        from Space import TheGrammar
-        self.assertEqual(TheGrammar[0], "S")
-        self.assertEqual(TheGrammar[1], "S → S EQUALS S")
-        self.assertEqual(TheGrammar[6], "S → C")
-        self.assertEqual(TheGrammar[7], "S → C VERB C")
-        self.assertEqual(TheGrammar[8], "S → C VERB")
-        self.assertEqual(TheGrammar[13], "P → W")
+        from Model import Grammar
+        g = Grammar(lazy_init=False)
+        self.assertEqual(g[0], "START → true(S) EOF")
+        self.assertEqual(g[1], "S → swap(S, S)")
+        self.assertEqual(g[2], "S → equals(S, S)")
+        self.assertEqual(g[3], "S → part(S, S)")
+        self.assertEqual(g[4], "S → C")
+        self.assertEqual(g[5], "C → union(C, C)")
+        self.assertEqual(g[12], "C → P")
+        self.assertEqual(g[14], "P → ε")
 
     def test_arity_start(self):
-        from Space import TheGrammar
-        self.assertEqual(TheGrammar.arity(0), 0)  # S — bare start, no production
+        from Model import Grammar
+        g = Grammar(lazy_init=False)
+        self.assertEqual(g.arity(0), 1)  # START → true(S) EOF
 
     def test_arity_unary(self):
-        from Space import TheGrammar
-        self.assertEqual(TheGrammar.arity(4), 1)  # NOT S
-        self.assertEqual(TheGrammar.arity(5), 1)  # NON S
-        self.assertEqual(TheGrammar.arity(8), 1)  # S → C VERB (one C)
+        from Model import Grammar
+        g = Grammar(lazy_init=False)
+        self.assertEqual(g.arity(7), 1)   # lower(C)
+        self.assertEqual(g.arity(9), 1)   # lift(C)
+        self.assertEqual(g.arity(10), 1)  # not(C)
+        self.assertEqual(g.arity(11), 1)  # non(C)
 
     def test_arity_binary(self):
-        from Space import TheGrammar
-        for r in [1, 2, 3, 7, 9, 10, 14, 15]:
-            self.assertEqual(TheGrammar.arity(r), 2, f"rule {r} should be binary")
+        from Model import Grammar
+        g = Grammar(lazy_init=False)
+        for r in [1, 2, 3, 5, 6, 8]:
+            self.assertEqual(g.arity(r), 2, f"rule {r} should be binary")
 
     def test_arity_transition(self):
-        from Space import TheGrammar
-        self.assertEqual(TheGrammar.arity(6), 1)   # S → C �� transition (C is not S)
-        self.assertEqual(TheGrammar.arity(12), 1)  # C → P — transition (P is not C)
+        from Model import Grammar
+        g = Grammar(lazy_init=False)
+        self.assertEqual(g.arity(4), 1)   # S -> C -- transition
+        self.assertEqual(g.arity(12), 1)  # C -> P -- transition
 
     def test_arity_terminal(self):
-        from Space import TheGrammar
-        self.assertEqual(TheGrammar.arity(13), 0)  # P → W — terminal
-
-    def test_space_partitions_configured(self):
-        """TheGrammar singleton is configured from model.xml (minimal grammar)."""
-        from Space import TheGrammar
-        # model.xml: <S>C</S> <C>P</C> <P>W</P>  → transitions only
-        self.assertEqual(TheGrammar.symbolic(), [6])
-        self.assertEqual(TheGrammar.conceptual(), [12])
-        self.assertEqual(TheGrammar.perceptual(), [13])
+        from Model import Grammar
+        g = Grammar(lazy_init=False)
+        self.assertEqual(g.arity(14), 0)  # P -> epsilon -- terminal
 
     def test_space_partitions_unconfigured(self):
         """Unconfigured Grammar returns full hardcoded defaults."""
         from Model import Grammar
         g = Grammar(lazy_init=False)
-        self.assertEqual(g.symbolic(), [1, 2, 3, 4, 5, 14])
-        self.assertEqual(g.conceptual(), [7, 8, 9, 10, 11, 15])
-        self.assertEqual(g.perceptual(), [13])
+        self.assertEqual(g.symbolic(), [1, 2, 3])                     # swap, equals, part
+        self.assertEqual(g.conceptual(), [5, 6, 7, 8, 9, 10, 11])   # union..non
+        self.assertEqual(g.perceptual(), [13, 14])                   # I P, epsilon
 
     def test_configure_from_dict(self):
-        """Grammar.configure() restricts active rules from dict."""
+        """Grammar.configure() parses functional notation from dict."""
         from Model import Grammar
         g = Grammar(lazy_init=False)
         g.configure({
-            "S": ["S equals S", "not S", "C"],
-            "C": ["C part C", "P"],
-            "P": ["W"],
+            "START": "true(S) EOF",
+            "S": ["swap(S, S)", "equals(S, S)", "C"],
+            "C": ["union(C, C)", "P"],
+            "P": ["I P", "\u03b5"],
         })
-        self.assertEqual(g.symbolic(), [1, 4, 6])
-        self.assertEqual(g.conceptual(), [9, 12])
-        self.assertEqual(g.perceptual(), [13])
+        self.assertEqual(g.symbolic(), [1, 2])    # swap, equals
+        self.assertEqual(g.conceptual(), [4])      # union
+        self.assertEqual(g.perceptual(), [6, 7])   # I P, epsilon
 
     def test_configure_single_rule_string(self):
         """Single rule as string (not list) works."""
         from Model import Grammar
         g = Grammar(lazy_init=False)
-        g.configure({"S": "C", "C": "P", "P": "W"})
-        self.assertEqual(g.symbolic(), [6])
-        self.assertEqual(g.conceptual(), [12])
-        self.assertEqual(g.perceptual(), [13])
+        g.configure({"S": "C", "C": "P", "P": "\u03b5"})
+        self.assertEqual(g.symbolic(), [])     # no S-tier methods
+        self.assertEqual(g.conceptual(), [])   # no C-tier methods
+        self.assertEqual(g.perceptual(), [2])  # epsilon
 
     def test_configure_unknown_rule_raises(self):
         """Unknown rule text raises ValueError."""
@@ -3271,28 +3274,24 @@ class TestGrammar(unittest.TestCase):
             g.configure({"S": ["UNKNOWN RULE"]})
 
     def test_symbolic_transition(self):
-        """symbolic_transition() returns S→C rule if configured."""
+        """symbolic_transition() returns S->C rule."""
         from Model import Grammar
         g = Grammar(lazy_init=False)
-        self.assertEqual(g.symbolic_transition(), 6)  # unconfigured default
-        g.configure({"S": ["S equals S", "C"], "C": "P", "P": "W"})
-        self.assertEqual(g.symbolic_transition(), 6)  # S→C (rule 6) is in active set
+        self.assertEqual(g.symbolic_transition(), 4)  # unconfigured default: rule 4
 
     def test_conceptual_transition(self):
-        """conceptual_transition() returns C→P rule if configured."""
+        """conceptual_transition() returns C->P rule."""
         from Model import Grammar
         g = Grammar(lazy_init=False)
-        self.assertEqual(g.conceptual_transition(), 12)  # unconfigured default
-        g.configure({"S": "C", "C": ["C part C", "P"], "P": "W"})
-        self.assertEqual(g.conceptual_transition(), 12)  # C→P (rule 12)
+        self.assertEqual(g.conceptual_transition(), 12)  # unconfigured default: rule 12
 
     def test_transition_none_when_not_configured(self):
         """Transition returns None if not in active set."""
         from Model import Grammar
         g = Grammar(lazy_init=False)
-        g.configure({"S": "S equals S", "C": "C part C", "P": "W"})
-        self.assertIsNone(g.symbolic_transition())   # no S→C
-        self.assertIsNone(g.conceptual_transition())  # no C→P
+        g.configure({"S": "swap(S, S)", "C": "union(C, C)", "P": "\u03b5"})
+        self.assertIsNone(g.symbolic_transition())   # no S->C
+        self.assertIsNone(g.conceptual_transition())  # no C->P
 
 
 class TestWordEncoding(unittest.TestCase):
@@ -3745,8 +3744,8 @@ class TestOldSyntacticLayer(unittest.TestCase):
         layer = self._make_layer()
         x = torch.randn(4, 16).to(self._dev())
         out = layer.forward(x)
-        self.assertEqual(out["rule_logits"].shape, (4, 7, 16))
-        self.assertEqual(out["rule_probs"].shape, (4, 7, 16))
+        self.assertEqual(out["rule_logits"].shape, (4, 7, 15))
+        self.assertEqual(out["rule_probs"].shape, (4, 7, 15))
         self.assertEqual(out["predicted_rules"].shape, (4, 7))
 
     def test_gradient_flows_through_gumbel(self):
@@ -3791,8 +3790,8 @@ class TestSyntacticLayer(unittest.TestCase):
         g = Grammar(lazy_init=False)
         return SyntacticLayer(
             nInput=nInput, nOutput=nInput,
-            rules=g.symbolic(),       # [1, 2, 3, 4, 5, 14]
-            transition_rule=6,
+            rules=g.symbolic(),       # [1] (swap)
+            transition_rule=g.symbolic_transition(),  # 2 (S->C)
             max_depth=max_depth,
             hidden_dim=hidden_dim,
             grammar=g,
@@ -3803,8 +3802,8 @@ class TestSyntacticLayer(unittest.TestCase):
         g = Grammar(lazy_init=False)
         return SyntacticLayer(
             nInput=nInput, nOutput=nInput,
-            rules=g.conceptual(),     # [7, 8, 9, 10, 11, 15]
-            transition_rule=12,
+            rules=g.conceptual(),     # [3,4,5,6,7,8,9,10,11]
+            transition_rule=g.conceptual_transition(),  # 12 (C->P)
             max_depth=max_depth,
             hidden_dim=hidden_dim,
             grammar=g,
@@ -3815,7 +3814,7 @@ class TestSyntacticLayer(unittest.TestCase):
         g = Grammar(lazy_init=False)
         return SyntacticLayer(
             nInput=nInput, nOutput=nInput,
-            rules=g.perceptual(),     # [13]
+            rules=g.perceptual(),     # [13, 14]
             transition_rule=None,
             max_depth=max_depth,
             hidden_dim=hidden_dim,
@@ -3828,9 +3827,9 @@ class TestSyntacticLayer(unittest.TestCase):
         layer = self._make_symbolic_layer()
         x = torch.randn(4, 8).to(self._dev())
         out = layer.forward(x)
-        # symbolic rules [1,2,3,4,5,14] + transition 6 = 7 local rules
-        self.assertEqual(out["rule_logits"].shape, (4, 7, 7))
-        self.assertEqual(out["rule_probs"].shape, (4, 7, 7))
+        # symbolic rules [1,2,3] + transition 4 = 4 local rules
+        self.assertEqual(out["rule_logits"].shape, (4, 7, 4))
+        self.assertEqual(out["rule_probs"].shape, (4, 7, 4))
         self.assertEqual(out["predicted_rules"].shape, (4, 7))
         self.assertNotIn("composed_activation", out)
 
@@ -3838,16 +3837,16 @@ class TestSyntacticLayer(unittest.TestCase):
         layer = self._make_conceptual_layer()
         x = torch.randn(2, 8).to(self._dev())
         out = layer.forward(x)
-        # conceptual rules [7,8,9,10,11,15] + transition 12 = 7 local rules
-        self.assertEqual(out["rule_logits"].shape, (2, 7, 7))
+        # conceptual rules [5..11] (7) + transition 12 = 8 local rules
+        self.assertEqual(out["rule_logits"].shape, (2, 7, 8))
         self.assertNotIn("composed_activation", out)
 
     def test_perceptual_forward_shapes(self):
         layer = self._make_perceptual_layer()
         x = torch.randn(2, 8).to(self._dev())
         out = layer.forward(x)
-        # perceptual rules [13] = 1 local rule
-        self.assertEqual(out["rule_logits"].shape, (2, 7, 1))
+        # perceptual rules [13, 14] = 2 local rules
+        self.assertEqual(out["rule_logits"].shape, (2, 7, 2))
 
     # ── Space projection operation tests ─────────────────────────
 

@@ -3611,7 +3611,7 @@ class ConceptualSpace(Space):
             self.forwardSigma = self.sigma.forward
             self.params = self.sigma.getParameters()
             self.layers = nn.ModuleList([self.sigma])
-        # Per-space syntactic layer for conceptual grammar rules (7-11, transition 12)
+        # Per-space syntactic layer for conceptual grammar rules
         self.syntactic_layer = None
         self.verb_layer = None
         syntax = TheXMLConfig.get("architecture.syntax", False)
@@ -3626,11 +3626,27 @@ class ConceptualSpace(Space):
                 grammar=TheGrammar,
             )
             self.layers.append(self.syntactic_layer)
-            # VERB layer: codebook of verb weight matrices for S→C VERB C / S→C VERB
-            nConceptDim = self.nDim  # per-vector content dimension
+            # VERB layer: codebook of verb weight matrices
+            nConceptDim = self.nDim
             nVerbs = 16
             self.verb_layer = VerbLayer(nVerbs, nConceptDim)
             self.layers.append(self.verb_layer)
+
+        # C-tier Method instances for shift/reduce operations
+        from Model import (unionMethod, intersectionMethod,
+                           liftMethod, lowerMethod, notMethod, nonMethod)
+        nConceptDim = self.nDim
+        self.methods = nn.ModuleDict({
+            'union': unionMethod(nConceptDim),
+            'intersection': intersectionMethod(nConceptDim),
+            'lower': lowerMethod(nConceptDim),
+            'lift': liftMethod(nConceptDim),
+            'not': notMethod(nConceptDim),
+            'non': nonMethod(nConceptDim),
+        })
+        # Concept codebook for shift (if percept/concept dims differ)
+        # Uses existing subspace codebook
+        self._interpretation = TheGrammar.interpretation
 
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
@@ -3681,55 +3697,39 @@ class ConceptualSpace(Space):
     def projectConcepts(self, rule_id, left, right=None):
         """Execute a conceptual grammar rule on [B, N, D] embedded vectors.
 
-        Conceptual rules are mereological (PART, UNION, INTERSECTION) or
-        verb-based (VERB). VERB rules use a codebook of learned weight
-        matrices selected by soft embedding similarity.
+        Dispatches through Method instances. Falls back to verb_layer for
+        VERB rules (legacy compatibility) and pass-through for transitions.
 
         Args:
-            rule_id: global Grammar rule ID (7-11).
+            rule_id: global Grammar rule ID.
             left:    [B, N, D] left child vectors.
-            right:   [B, N, D] right child vectors (None for unary/intransitive).
+            right:   [B, N, D] right child vectors (None for unary).
 
         Returns:
             [B, N, D] parent vectors.
         """
-        rule_name = TheGrammar[rule_id]
+        method_name = TheGrammar.method_name(rule_id)
 
-        if "VERB" in rule_name and self.verb_layer is not None:
+        # Dispatch through Method instances
+        if method_name and method_name in self.methods:
+            method = self.methods[method_name]
+            if method.binary:
+                if right is not None:
+                    return method.forward(left, right)
+                return left  # binary op with missing operand — pass through
+            return method.forward(left)
+
+        # Legacy: VERB rules via VerbLayer
+        if method_name == 'verb' and self.verb_layer is not None:
             B, N, D = left.shape
-            # Use activation-weighted centroid as proxy VERB embedding for
-            # codebook lookup. Future: thread explicit VERB token identity
-            # through the derivation for precise lookup.
-            vp_query = left.mean(dim=1)  # [B, D]
+            vp_query = left.mean(dim=1)
             if right is not None:
-                # Transitive: C1 VERB C2
                 C1_out, C2_out = self.verb_layer.forward_transitive(left, right, vp_query)
-                return C1_out  # composeSyntax accumulator receives updated C1
+                return C1_out
             else:
-                # Intransitive: C1 VERB
                 return self.verb_layer.forward_reflexive(left, vp_query)
 
-        if "PART" in rule_name:
-            # Parthood: the part is the region where left fits within right.
-            # min(left, right) keeps only the overlap — what left contributes
-            # to right's structure.
-            return torch.min(left, right)
-
-        if "UNION" in rule_name:
-            # Mereological union: the combined extent of both concepts.
-            return torch.max(left, right)
-
-        if "INTERSECTION" in rule_name:
-            # Mereological intersection: the shared region of both concepts.
-            return torch.min(left, right)
-
-        if "REWRITE" in rule_name:
-            # REWRITE operates only on where encodings (swap positions).
-            # The "what" vectors pass through unchanged; composeSyntax
-            # handles the where swap using soft rule probabilities.
-            return left
-
-        # Transition rule (C→P) — pass through
+        # Transition rule (C→P) or unknown — pass through
         return left
 
     def composeSyntax(self, activation, vectors):
@@ -3915,7 +3915,7 @@ class ConceptualSpace(Space):
             self._sr_act_stack.append(composed_act)
 
         # ── TRANSITION ─────────────────────────────────────────────
-        transition = best_rule_id in Grammar._TRANSITION_IDS
+        transition = TheGrammar.method_name(best_rule_id) is None and TheGrammar.arity(best_rule_id) == 1
 
         # ── WORDS ──────────────────────────────────────────────────
         words = []
@@ -3957,25 +3957,138 @@ class ConceptualSpace(Space):
     @staticmethod
     def test():
         pass
+class StackSpace(SubSpace):
+    """Preallocated SubSpace with stack semantics (push/pop/peek).
+
+    Used by SymbolicSpace to hold the symbol stack during shift/reduce.
+    Each entry has what (codebook vector), where (position), and when
+    (derivation order). The stack is a contiguous region of a preallocated
+    SubSpace buffer with a position pointer.
+    """
+
+    def __init__(self, maxSize, nDim, nWhere=0, nWhen=0):
+        inputShape = [maxSize, nDim + nWhere + nWhen]
+        outputShape = [maxSize, nDim + nWhere + nWhen]
+        whereEncoding = WhereEncoding(maxSize, nWhere)
+        whenEncoding = WhenEncoding(10000, nWhen)
+        super().__init__(
+            inputShape=inputShape,
+            outputShape=outputShape,
+            whereEncoding=whereEncoding,
+            whenEncoding=whenEncoding,
+        )
+        self.maxSize = maxSize
+        self.nStackDim = nDim
+        self.pos = 0
+        self._consumed = set()
+        # Preallocate tensors for stack entries
+        self._what_buf = None   # [B, maxSize, nDim]
+        self._where_buf = None  # [B, maxSize, nWhere]
+        self._when_buf = None   # [B, maxSize, nWhen]
+        self._batch_size = 0
+
+    def reset(self, batch_size=1):
+        """Clear the stack for a new derivation."""
+        device = TheDevice.get()
+        self.pos = 0
+        self._consumed = set()
+        self._batch_size = batch_size
+        self._what_buf = torch.zeros(batch_size, self.maxSize, self.nStackDim, device=device)
+        if self.nWhere > 0:
+            self._where_buf = torch.zeros(batch_size, self.maxSize, self.nWhere, device=device)
+        if self.nWhen > 0:
+            self._when_buf = torch.zeros(batch_size, self.maxSize, self.nWhen, device=device)
+
+    def push(self, what, where=None, when=None):
+        """Push an entry onto the stack.
+
+        Args:
+            what: [B, nDim] concept vector or codebook vector
+            where: [B, nWhere] positional encoding (optional)
+            when: [B, nWhen] temporal encoding (optional)
+
+        Returns:
+            int: stack index of the pushed entry
+        """
+        idx = self.pos
+        self._what_buf[:, idx, :] = what
+        if where is not None and self._where_buf is not None:
+            self._where_buf[:, idx, :] = where
+        if when is not None and self._when_buf is not None:
+            self._when_buf[:, idx, :] = when
+        self.pos += 1
+        return idx
+
+    def pop(self):
+        """Pop the top entry from the stack.
+
+        Returns:
+            tuple: (what, where, when) tensors for the popped entry
+        """
+        self.pos -= 1
+        idx = self.pos
+        what = self._what_buf[:, idx, :]
+        where = self._where_buf[:, idx, :] if self._where_buf is not None else None
+        when = self._when_buf[:, idx, :] if self._when_buf is not None else None
+        return what, where, when
+
+    def peek(self, n=1):
+        """Return the top n entries without popping.
+
+        Returns:
+            tuple: (what, where, when) tensors [B, n, dim]
+        """
+        start = max(0, self.pos - n)
+        what = self._what_buf[:, start:self.pos, :]
+        where = self._where_buf[:, start:self.pos, :] if self._where_buf is not None else None
+        when = self._when_buf[:, start:self.pos, :] if self._when_buf is not None else None
+        return what, where, when
+
+    def mark_consumed(self, idx):
+        """Flag an entry as consumed by a reduce (still accessible)."""
+        self._consumed.add(idx)
+
+    def get_stack(self):
+        """Return all entries up to current position.
+
+        Returns:
+            tuple: (what, where, when) tensors [B, pos, dim]
+        """
+        what = self._what_buf[:, :self.pos, :]
+        where = self._where_buf[:, :self.pos, :] if self._where_buf is not None else None
+        when = self._when_buf[:, :self.pos, :] if self._when_buf is not None else None
+        return what, where, when
+
+    def get_active(self):
+        """Return unconsumed entries only.
+
+        Returns:
+            tuple: (what, where, when, indices) — indices lists active positions
+        """
+        active = [i for i in range(self.pos) if i not in self._consumed]
+        if not active:
+            return (torch.zeros(self._batch_size, 0, self.nStackDim, device=TheDevice.get()),
+                    None, None, [])
+        indices = torch.tensor(active, device=TheDevice.get())
+        what = self._what_buf[:, indices, :]
+        where = self._where_buf[:, indices, :] if self._where_buf is not None else None
+        when = self._when_buf[:, indices, :] if self._when_buf is not None else None
+        return what, where, when, active
+
+
 class SymbolicSpace(Space):
-    """Converts continuous concept vectors into discrete symbols.
+    """Codebook-backed symbol stack with swap operations.
 
     In the forward data flow: ConceptualSpace -> **SymbolicSpace** -> OutputSpace.
-    Applies optional discretization (thresholding or top-k serial activation) to
-    produce symbolic representations from concept embeddings.
+    The symbol stack (StackSpace) holds entries produced by ConceptualSpace's
+    shift/reduce loop. Each entry has what (codebook index), where (position),
+    and when (derivation order).
 
-    When ``processSymbols=True``, computes scalar activations (vector norms) from
-    concept vectors.  In reverse, ``dereference()`` looks up the corresponding
-    concept vector from the ConceptualSpace's codebook.
-
-    ``passThrough=True`` skips all symbolic processing, passing concept vectors
-    through unchanged (useful when the conceptual representation is sufficient).
+    S-tier operations (swap) operate on whereEncodings of node children.
+    The START-level true() evaluates the full stack activation → scalar.
     """
     name = "Symbols"
     config_section = "SymbolicSpace"
-    threshold        = 0       # discretization threshold (0 = disabled)
-    serialActivation = False   # if True, only the top-1 activation is kept per batch
-    symbols          = None
 
     def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None):
 
@@ -3985,57 +4098,58 @@ class SymbolicSpace(Space):
         self.conceptualSpace = conceptualSpace
         self.passThrough = passThrough
         self.codebook = self.subspace.event  # Basis (Codebook) for VQ
-        nConcepts = inputShape[0]   # activation length from previous space
-        nSymbols = spaceShape[0]    # number of symbols = codebook size
+        nConcepts = inputShape[0]
+        nSymbols = spaceShape[0]
         self.layer = InvertibleLinearLayer(nConcepts, nSymbols)
-        self.layers = nn.ModuleList([self.layer])
+
+        # S-tier operations
+        from Model import swapMethod, trueMethod, equalsMethod, partMethod
+        self.swap_method = swapMethod(self.nDim)
+        self.true_method = trueMethod(self.nDim)
+        self.equals_method = equalsMethod(self.nDim)
+        self.part_method = partMethod(self.nDim)
+
+        # Symbol stack — preallocated StackSpace
+        self.symbols = StackSpace(
+            maxSize=nSymbols,
+            nDim=self.nDim,
+            nWhere=self.nWhere,
+            nWhen=self.nWhen,
+        )
+
+        self.layers = nn.ModuleList([self.layer, self.swap_method, self.true_method,
+                                     self.equals_method, self.part_method])
 
         # Assign fixed where encodings to symbol positions.
-        # Symbols share a positional encoding space with percepts:
-        # percepts occupy [0..nPercepts-1], symbols occupy [nPercepts..nPercepts+nSymbols-1].
-        nPercepts = inputShape[0]  # nConcepts == nPercepts in the pipeline
+        nPercepts = inputShape[0]
         if self.nWhere > 0:
             positions = torch.arange(nPercepts, nPercepts + nSymbols, dtype=torch.float32)
-            self._symbol_where = self.subspace.whereEncoding.encode(positions)  # [nSymbols, nWhere]
+            self._symbol_where = self.subspace.whereEncoding.encode(positions)
         else:
             self._symbol_where = None
 
-    def discretize(self, vspace):
-        """Discretize a subspace's activation vector to {0, 1}.
-
-        Delegates to vspace.normalize("symbols") which materializes
-        the activation (if needed), applies the straight-through
-        estimator, and stores the result back in-place.
-        """
-        vspace.normalize("symbols", target="activation", normalize=self._normalize)
-
     def forward(self, vspace):
-        """Naming: map concept activations to symbolic presence.
+        """Map concept activations to symbolic stack, apply swap.
 
         1. Extract concept activation [B, nConcepts] from input subspace.
         2. Map through invertible layer to [B, nSymbols].
-        3. Store as symbolic presence [0,1] via set_symbols().
-        4. Codebook quantizes and produces one-hot activation + dense vectors.
-           Output is a one-hot encoding over the codebook.
+        3. Apply swap on whereEncodings of binary node children.
+        4. Store as symbolic presence.
         """
         if self.passThrough:
             return vspace
         vspace = self.forwardBegin(vspace)
-        # Map concept activation → symbol presence
-        act = vspace.materialize(mode="activation")  # [B, nConcepts]
-        act = self.layer.forward(act)                 # [B, nSymbols]
-        # Assign fixed where encodings to symbol positions before forwardEnd.
-        # Symbols are spatiotemporally concrete: each gets a unique position
-        # from the shared [percepts + symbols] encoding space.
+        act = vspace.materialize(mode="activation")
+        act = self.layer.forward(act)
+
         if self._symbol_where is not None:
             B = act.shape[0]
-            where = self._symbol_where.unsqueeze(0).expand(B, -1, -1)  # [B, nSymbols, nWhere]
+            where = self._symbol_where.unsqueeze(0).expand(B, -1, -1)
             where = where.to(act.device)
             self.subspace.where.setW(where)
 
         if self.quantized:
-            # Codebook: quantize, topk, populate subspace with vectors + activation
-            act_3d = act.unsqueeze(-1)                # [B, nSymbols, 1] — each symbol is 1-dim
+            act_3d = act.unsqueeze(-1)
             self.subspace.set_vectors(act_3d)
             self.codebook.forward(self.subspace)
             vspace = self.forwardEnd(self.subspace)
@@ -4046,13 +4160,7 @@ class SymbolicSpace(Space):
         return vspace
 
     def reverse(self, vspace):
-        """Interpretation: map symbolic presence back to concept space.
-
-        When quantized: inverse layer maps [B, nSymbols] activation back
-        to [B, nConcepts], reconstructing the concept activation.
-        When not quantized: inverse layer maps symbols via get_symbols(),
-        returns input vspace with updated activation.
-        """
+        """Map symbolic presence back to concept space, undo swap."""
         if self.passThrough:
             return vspace
         vspace = self.reverseBegin(vspace)
@@ -4066,6 +4174,11 @@ class SymbolicSpace(Space):
             result = vspace
         result.normalize("concepts", target="what", normalize=self._normalize)
         return result
+
+    def evaluate_truth(self, vspace):
+        """START-level: evaluate truth of the full stack → scalar."""
+        act = vspace.materialize(mode="activation")
+        return self.true_method.forward(act)
 
     @staticmethod
     def test():
@@ -4298,7 +4411,7 @@ class SyntacticSpace(Space):
             self._sr_stack.append(composed)
 
         # ── TRANSITION ─────────────────────────────────────────────
-        transition = best_rule_id in Grammar._TRANSITION_IDS
+        transition = TheGrammar.method_name(best_rule_id) is None and TheGrammar.arity(best_rule_id) == 1
 
         # ── WORDS ──────────────────────────────────────────────────
         words = []

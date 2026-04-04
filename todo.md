@@ -1,12 +1,11 @@
 # TODO
 
-
-================================== April 9 ==================================
-
 * ProjectConcepts() : 
 Mereology
 Implement parthood, union, intersection on the embedded vectors
 parthood needs to exist on both concepts (as activation containment) and percepts (as a simpler "<" operator)
+
+================================== April 9 ==================================
 
 * SyntacticLayer() : 
 the logical operations on symbols form a basis for propositional knowledge over all symbols.
@@ -23,8 +22,7 @@ it will be sparse: not all turths will be covered.
 Next we need to determine some measure of harm or destructiveness osel(x).
 Finally if K(X,Y) + K(Y,X) leads to less osel(X’)+osel(Y’) than osel over the original X and Y, then the kronecker in question is not universalize, and thus not ethical.
 Osel(x) is the weak spot in this architecture, the rest is math. One way to describe it is through subjective measure; another might be to describe its “perceptive volume”. 
-If we follow Augustine is saying that all percepts are good, then any increase in volume is better. 
-That does capture growth and destruction as being relatively good and  bad for the things in question.
+If we follow Augustine is saying that all percepts are good, then any increase in volume is better. That does capture growth and destruction as being relatively good and  bad for the things in question.
 
 * Implement forgetting
 If someone has contributed information to an LLM and asked for the LLM 

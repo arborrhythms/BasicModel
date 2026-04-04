@@ -67,35 +67,21 @@ class TestMentalModelForwardReverse(unittest.TestCase):
                 self.assertEqual(inputData.ndim, 3)
                 self.assertEqual(inputData.shape[0], 2)
 
-    def test_syntactic_space_produces_derivation(self):
+    def test_conceptual_space_has_syntactic_layer(self):
+        """MentalModel's ConceptualSpace has a SyntacticLayer for grammar rules."""
         _reload_config()
         model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
-        # Need conceptualOrder >= 2 so that syntax runs on non-zero symbols.
-        # At T=0 symbols are zeros (NO-OP), at T=1 symbols are non-zero.
-        model.conceptualOrder = 2
-        sentences = ['the cat sat on the mat']
-        outputs = [torch.tensor([0.0])]
-
-        # Untrained model — suppress expected concept range warnings
-        with TheData.runtime_batch(sentences, outputs), \
-             warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message="Range violation")
-            train_input, _ = model.inputSpace.getTrainData()
-            x = model.inputSpace.prepInput(train_input[:1])
-
-            model.train()
-            model.set_sigma(0.5)
-            with torch.no_grad():
-                input_state, concepts, symbols = model.forward(x)
-
-            self.assertIsNotNone(model.syntax_state)
-            words = model.syntax_state.get_words()
-            self.assertGreater(len(words), 0, "SyntacticSpace should produce word tuples")
-            # Each word tuple is (batch, vector, rule)
-            for b, v, r in words[:5]:
-                self.assertGreaterEqual(b, 0)
-                self.assertGreaterEqual(v, 0)
-                self.assertGreaterEqual(r, 0)
+        # No SyntacticSpace in iterative MentalModel — syntax handled by ConceptualSpace
+        self.assertIsNone(model.syntacticSpace)
+        self.assertIsNotNone(model.conceptualSpace.syntactic_layer)
+        # ConceptualSpace has C-tier Methods (equals/part moved to S-tier)
+        self.assertNotIn('equals', model.conceptualSpace.methods)
+        self.assertNotIn('part', model.conceptualSpace.methods)
+        self.assertIn('union', model.conceptualSpace.methods)
+        self.assertIn('not', model.conceptualSpace.methods)
+        # SymbolicSpace has S-tier Methods
+        self.assertIsNotNone(model.symbolicSpace.equals_method)
+        self.assertIsNotNone(model.symbolicSpace.part_method)
 
 
     def test_mental_model_spaces_have_resetStack(self):

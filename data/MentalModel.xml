@@ -44,6 +44,28 @@
       <port>8002</port>
       <timeout>120</timeout>
     </server>
+    <grammar>
+      <START>true(S) EOF</START>
+
+      <S>swap(S, S)</S>
+      <S>equals(S, S)</S>
+      <S>part(S, S)</S>
+      <S>C</S>
+
+      <C>union(C, C)</C>
+      <C>intersection(C, C)</C>
+      <C>lower(C)</C>
+      <C>lift(C, C)</C>
+      <C>lift(C)</C>
+      <C>not(C)</C>
+      <C>non(C)</C>
+      <C>P</C>
+
+      <P>I P</P>
+      <P>ε</P>
+
+      <interpretation>0.5</interpretation>
+    </grammar>
   </architecture>
 
   <InputSpace>
@@ -87,12 +109,6 @@
 
   </SymbolicSpace>
 
-  <SyntacticSpace>
-    <nOutput>128</nOutput>
-    <nDim>100</nDim>
-    <nVectors>128</nVectors>
-  </SyntacticSpace>
-
   <OutputSpace>
     <nOutput>1</nOutput>
     <nDim>100</nDim>
@@ -101,14 +117,5 @@
     <nWhen>0</nWhen>
   </OutputSpace>
 
-  <grammar>
-    <S>S equals S</S>
-    <S>not S</S>
-    <S>C verb C</S>
-    <S>C</S>
-    <C>C part C</C>
-    <C>P</C>
-    <P>W</P>
-  </grammar>
 
 </model>
