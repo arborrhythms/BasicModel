@@ -178,6 +178,14 @@ def chat_completions():
         logger.warning("Input blocked: %s", injection)
         return jsonify({"error": "Input rejected"}), 400
 
+    # Process truth entries if provided (WikiOracle TruthSet)
+    truth_entries = body.get("truth", [])
+    if truth_entries and isinstance(truth_entries, list):
+        try:
+            _model.store_truths(truth_entries)
+        except Exception as exc:
+            logger.warning("Failed to store truths: %s", exc)
+
     try:
         # Autoregressive inference: extend input text word by word
         predicted_words = _model.infer(user_msg, mode='ARLM')

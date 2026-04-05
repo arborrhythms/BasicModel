@@ -1,17 +1,13 @@
 # TODO
 
-* ProjectConcepts() : 
-Mereology
-Implement parthood, union, intersection on the embedded vectors
-parthood needs to exist on both concepts (as activation containment) and percepts (as a simpler "<" operator)
+xfail because projectConcepts/projectSymbols methods need actual implementations for gradients to flow
 
 ================================== April 9 ==================================
 
-* SyntacticLayer() : 
-the logical operations on symbols form a basis for propositional knowledge over all symbols.
+* TruthLayer (was LogicLayer) :
+The logical operations on symbols form a basis for propositional knowledge over all symbols.
 symbol-symbol words can be dynamically added (represented) as new symbols in SymbolicSpace
 ensure that EQUALS and other symbolic logical operators in sentences equate the meaning of those symbols.
-add LIFTING/LOWERING to handle VP / ARTICLE
 
 * Verify() : map TruthSets to ConceptualSpace (top-down reasoning) 
 a given sentence can be measured against a corpus of truth by measuring the osel after apoha of the TruthSet.

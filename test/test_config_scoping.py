@@ -32,7 +32,7 @@ class TestGetSpaceParam(unittest.TestCase):
     def test_raises_when_missing_everywhere(self):
         cfg = {"architecture": {}, "PerceptualSpace": {}}
         with self.assertRaises(KeyError):
-            BasicModelFactory.get_space_param(cfg, "PerceptualSpace", "hasNorm")
+            BasicModelFactory.get_space_param(cfg, "PerceptualSpace", "nonExistentKey")
 
     def test_space_section_missing_entirely(self):
         cfg = {"architecture": {"invertible": True}}

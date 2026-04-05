@@ -832,169 +832,6 @@ class SigmaLayer(Layer):
         assert torch.norm(x - y_inv) < 0.00001
         print("SigmaLayer tests passed.")
 
-class PiLayerOld(Layer):
-    """Multiplicative layer: y_j = prod_i (1 + tanh(w_ji * x_i)).
-
-    Forward materializes W via the inner layer, computes the outer product
-    x.unsqueeze(-1) * W.unsqueeze(0) to keep per-input factors separate,
-    applies tanh element-wise, then products via exp(sum(log(...))).
-    No bias is applied inside the outer product.
-
-    When ``invertible=False`` (default):
-        y_j = exp(sum_i log(1 + tanh(w_ji * x_i)))
-
-    When ``invertible=True``: outputs interleaved (y, z) pairs where
-        y_j = exp(sum_i log(1 + tanh(w_ji * x_i)))
-        z_j = exp(sum_i log(1 - tanh(w_ji * x_i)))
-    Reverse: gamma_j = 0.5*(log y_j - log z_j) = sum_i x_i*w_ji = (x@W)_j,
-    then x = gamma @ W_inv using the materialized inverse.
-
-    All ergodic machinery lives in the inner layer; PiLayerOld dispatches
-    the ergodic interface there via self.layers.
-    """
-    def __init__(self, nInput, nOutput, ergodic=False, naive=True,
-                 invertible=False, hasBias=True, stable=True):
-        super().__init__(nInput, nOutput)
-        self.invertible = invertible
-        self.saturate   = True
-        self.stable     = stable
-        self.hasBias    = hasBias
-        if invertible:
-            self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
-                                               naive=naive, ergodic=ergodic, stable=stable)
-        else:
-            self.layer = LinearLayer(nInput, nOutput, hasBias=hasBias,
-                                     naive=naive, ergodic=ergodic, stable=stable)
-        self.layers.append(self.layer)
-
-    @property
-    def bias(self): return self.layer.bias
-    @property
-    def var(self):  return self.layer.var
-
-    def resample_noise(self):
-        self.layer.resample_noise()
-
-    def _effective_bias(self):
-        """Bias to add to WX, or None if hasBias=False."""
-        if not self.hasBias:
-            return 0
-        if self.layer.ergodic:
-            return self.layer.bias * self.layer.biasWeight + self.layer.var * self.layer.biasNoise
-        return self.layer.biasWeight
-
-    def forward(self, x):
-        if self.layer.ergodic:
-            self.resample_noise()
-        W    = self.layer.compute_W_current()                         # [nIn, nOut]
-        x    = x.to(W.device)
-        # Outer product: [..., nIn, 1] * [nIn, nOut] -> [..., nIn, nOut]
-        WX   = x.unsqueeze(-1) * W                                   # broadcasts over leading dims
-        if self.saturate:
-            t     = torch.tanh(WX)
-            one_p = 1 + t
-            if self.invertible:
-                one_m = 1 - t
-        else:
-            one_p = 1 + WX
-            if self.invertible:
-                one_m = 1 - WX
-        if self.stable:
-            one_p = one_p.clamp(min=epsilon)
-            if self.invertible:
-                one_m = one_m.clamp(min=epsilon)
-        y = torch.sum(torch.log(one_p), dim=-2)                      # sum over nIn -> [..., nOut]
-        if self.invertible:
-            z = torch.sum(torch.log(one_m), dim=-2)                   # [..., nOut]
-            # Interleave (y, z) along the object axis:
-            # [..., S, nOut] -> [..., S, 2, nOut] -> [..., 2*S, nOut]
-            result = torch.stack((y, z), dim=-2).flatten(-3, -2)
-        else:
-            result = torch.exp(y)
-        if self.invertible:
-            result = self.layer.forwardBiasInterleaved(result)
-        else:
-            result = self.layer.forwardBias(result)
-        return result
-
-    def reverse(self, yz):
-        """Recover x from interleaved (y, z) pairs. Requires invertible=True.
-
-        gamma_j = 0.5*(log y_j - log z_j) = sum_i x_i*w_ji = (x@W)_j.
-        x = gamma @ W_inv using the materialized inverse of current W.
-        """
-        if self.invertible:
-            yz = self.layer.reverseBiasInterleaved(yz)
-        else:
-            yz = self.layer.reverseBias(yz)
-        # De-interleave: [..., 2*S, nOut] -> [..., S, 2, nOut] -> y, z each [..., S, nOut]
-        y, z = yz.unflatten(-2, (-1, 2)).unbind(-2)
-        W_inv = self.layer.compute_Winverse_current()   # [nOut, nIn]
-        gamma = 0.5 * (y - z)                           # [..., nOut]
-        gamma = gamma.to(W_inv.device)
-        x     = gamma @ W_inv
-        if self.layer.ergodic:
-            self.resample_noise()
-        return x
-
-    @staticmethod
-    def test():
-        nBatch, nInput, nOutput = 5, 3, 4
-        layer = PiLayerOld(nInput=nInput, nOutput=nOutput)
-        device = next(layer.parameters()).device
-        x = torch.randn((nBatch, 6, nInput), device=device)
-        layer.set_sigma(0.999)
-        y = layer(x)
-        assert y.shape == (nBatch, 6, nOutput)
-        print(f"Original input: {x}")
-        print(f"After PiLayerOld: {y}")
-
-        def check_roundtrip(desc, **kwargs):
-            kw = dict(nInput=3, nOutput=6, invertible=True)
-            kw.update(kwargs)
-            layer = PiLayerOld(**kw)
-            device = next(layer.parameters()).device
-            nI = kw['nInput']
-            inputs = [('3D [B,S,nIn]', torch.rand(16, 5, nI, device=device).clamp(min=epsilon)),
-                      ('2D [B,nIn]',   torch.rand(16, nI,    device=device).clamp(min=epsilon))]
-            for tag, x in inputs:
-                layer.set_sigma(0.0)
-                y = layer.forward(x)
-                x_recon = layer.reverse(y)
-                error = torch.norm(x - x_recon) / torch.norm(x)
-                assert error < 1e-4, f"{desc} {tag}: reconstruction error {error:.2e}"
-            print(f"  {desc}: OK")
-
-        print("Invertible PiLayerOld roundtrip variations:")
-        check_roundtrip("naive=T hasBias=T", naive=True,  hasBias=True)
-        check_roundtrip("naive=T hasBias=F", naive=True,  hasBias=False)
-        check_roundtrip("naive=F hasBias=T", naive=False, hasBias=True)
-        check_roundtrip("naive=F hasBias=F", naive=False, hasBias=False)
-        check_roundtrip("square nIn=nOut=6", naive=True,  hasBias=False, nInput=6, nOutput=6)
-        check_roundtrip("ergodic naive=T hasBias=F", naive=True,  hasBias=False, ergodic=True)
-        check_roundtrip("ergodic naive=T hasBias=T", naive=True,  hasBias=True,  ergodic=True)
-        check_roundtrip("ergodic naive=F hasBias=T", naive=False, hasBias=True,  ergodic=True)
-        print("PiLayerOld tests passed.")
-
-    @staticmethod
-    def xorTest():
-        X = torch.tensor(
-            [[0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32, device=TheDevice.get())
-        Y = torch.tensor([[0], [1], [1], [0]], dtype=torch.float32, device=TheDevice.get())
-        nInput, nHidden, nOutput = 2, 3, 1
-        pi    = PiLayerOld(nInput, nHidden)
-        sigma = SigmaLayer(nHidden, nOutput)
-        criterion = nn.MSELoss()
-        optimizer = optim.Adam(chain(pi.parameters(), sigma.parameters()), lr=0.01)
-        sigma.set_sigma(0.9999); pi.set_sigma(0.9999)
-        for epoch in range(1000):
-            optimizer.zero_grad()
-            loss = criterion(sigma(pi(X)), Y)
-            loss.backward()
-            optimizer.step()
-            if epoch % 100 == 0:
-                print(f'Epoch {epoch}/1000, MSE: {loss.item():.6f}')
-
 class PiLayer(Layer):
     r"""Log-space multiplicative layer: [-1,1] → [-1,1].
 
@@ -1268,90 +1105,6 @@ class DecisionBoundaryLayer(Layer):
         plt.ylim(np.min(data_np[:, 1]) - 2, np.max(data_np[:, 1]) + 2)
         warnings.filterwarnings('ignore', message='.*line style')
         plt.show(block=False)
-class NormLayer(Layer):
-    pNorm      = 2
-    removeBias = True
-    takeExp    = False
-    dim        = -1
-    lr         = 0.001
-
-    def __init__(self, nInput, nOutput, pNorm=2, exp=False):
-        """
-        Hand-coded implementation of Layer Normalization or Softmax-like operation.
-        Operates on the last (feature) dimension, supporting both 2D and 3D input.
-        """
-        super().__init__(nInput,nOutput)
-        self.pNorm  = pNorm
-        self.exp    = exp
-        self.dim    = -1
-        # predict the bias and variance within this layer
-        self.W      = nn.Parameter(torch.zeros(2))
-        #self.noise  = nn.Parameter(torch.zeros(2)) If is ErgodicLayer
-
-    def forward(self, x):
-        #bias, temp = self.bias, self.var
-        shape = x.shape
-        N = shape[self.dim]
-        mean = x.mean(dim=self.dim, keepdim=True)
-        if self.pNorm == 2:
-            assert(self.exp == False)
-            norm     = torch.sum((x - mean) ** 2, dim=self.dim, keepdim=True) / (N - 1)
-            norm     = torch.sqrt(norm + epsilon)
-            moments  = torch.concat([mean, norm], axis=self.dim)
-            #error    = self.W - moments
-            #self.W   = nn.Parameter((1-self.lr) * self.W + (self.lr) * error)
-            moments -= self.W
-            x_norm   = (x - moments[..., 0:1]) / moments[..., 1:2]
-        else:
-            assert(self.pNorm == 1)
-            if self.exp:
-                exp_x   = torch.exp(x)
-                sum_exp = exp_x.sum(dim=self.dim, keepdim=True)
-                x_norm  = exp_x / (sum_exp + epsilon)
-                moments = sum_exp
-            else:
-                sum_x  = torch.sum(x, dim=self.dim, keepdim=True)
-                x_norm = x / (sum_x + epsilon)
-                moments = sum_x
-            raise NotImplementedError(
-                "NormLayer pNorm=1 requires W prediction support in this branch."
-            )
-        # append mean and norm
-        output = torch.concat((x_norm, moments), dim=-1)
-        return output
-
-    def reverse(self, y):
-        """
-        Reverse operation (only defined for pNorm=2 without softmax).
-        """
-        if self.pNorm != 2:
-            raise NotImplementedError("Reverse only supported for pNorm=2.")
-        x    = y[...,  0:-2]
-        mean = y[..., -2:-1] + self.W[0:1]
-        norm = y[..., -1:]   + self.W[1:2]
-        return x * norm + mean
-
-    @staticmethod
-    def test():
-        torch.manual_seed(42)
-
-        # === Test 1: pNorm=2, 2D forward + reverse ===
-        x = torch.randn(10, 20, device=TheDevice.get())
-        layer = NormLayer(20, 22, pNorm=2)
-        layer.lr = 0
-        normalized = layer(x)
-        assert normalized.shape == (10, 22), f"2D shape: expected (10,22), got {normalized.shape}"
-        reconstructed = layer.reverse(normalized)
-        assert torch.allclose(x, reconstructed, atol=1e-5), "2D reverse failed"
-
-        # === Test 2: pNorm=2, 3D forward + reverse ===
-        x_3d = torch.randn(4, 5, 20, device=TheDevice.get())
-        normalized_3d = layer(x_3d)
-        assert normalized_3d.shape == (4, 5, 22), f"3D shape: expected (4,5,22), got {normalized_3d.shape}"
-        reconstructed_3d = layer.reverse(normalized_3d)
-        assert torch.allclose(x_3d, reconstructed_3d, atol=1e-5), "3D reverse failed"
-        #print("All NormLayer tests passed successfully!")
-        
 class AttentionLayer(Layer):
     """Unified attention layer with three modes.
 
@@ -2320,7 +2073,7 @@ class Method(Layer):
         raise NotImplementedError
 
 
-class unionMethod(Method):
+class Union(Method):
     """Mereological union: max(left, right)."""
     def __init__(self, nDim):
         super().__init__(nDim, binary=True)
@@ -2332,7 +2085,7 @@ class unionMethod(Method):
         return parent, parent
 
 
-class intersectionMethod(Method):
+class Intersection(Method):
     """Mereological intersection: min(left, right)."""
     def __init__(self, nDim):
         super().__init__(nDim, binary=True)
@@ -2344,31 +2097,36 @@ class intersectionMethod(Method):
         return parent, parent
 
 
-class equalsMethod(Method):
-    """Association-based equality: assoc(left) * right.
+class Equals(Method):
+    """Equality as mutual parthood: equals(a,b) = part(a,b) ∧ part(b,a).
 
-    Handles both [B, N] activations and [B, N, D] vectors.
-    For 3D input, uses cosine similarity per slot as the association gate.
+    Since part is min and min is commutative, the forward pass is
+    equivalent to min(a, b).  The semantic distinction from Part
+    is that equals asserts *both* directions of containment:
+    C(A) <= C(B) AND C(B) <= C(A), therefore C(A) = C(B).
+    Part asserts only one direction.
     """
     def __init__(self, nDim):
         super().__init__(nDim, binary=True)
-        self.assoc = AssociationLayer(nDim)
-        self.layers = nn.ModuleList([self.assoc])
 
     def forward(self, left, right=None):
-        if left.ndim == 3:
-            # [B, N, D] → cosine similarity per slot → gate right
-            sim = F.cosine_similarity(left, right, dim=-1)  # [B, N]
-            return sim.unsqueeze(-1) * right                 # [B, N, D]
-        association = self.assoc.forward(left)
-        return association * right
+        # part(a,b) = min(a,b), part(b,a) = min(b,a)
+        # equals = part(a,b) ∧ part(b,a) = min(min(a,b), min(b,a)) = min(a,b)
+        return torch.min(left, right)
 
     def reverse(self, parent, left_hint=None, right_hint=None):
         return parent, parent
 
 
-class partMethod(Method):
-    """Parthood: min(left, right) — overlap region."""
+class Part(Method):
+    """Parthood: min(left, right).
+
+    Symbol A is a part of symbol B to the extent that A's projection
+    into conceptual space is contained in B's: C(A) <= C(B) for all
+    elements.  When this holds, min(A, B) = A — the part passes
+    through unchanged.  Where A exceeds B, min clips to B, enforcing
+    containment.
+    """
     def __init__(self, nDim):
         super().__init__(nDim, binary=True)
 
@@ -2379,7 +2137,7 @@ class partMethod(Method):
         return parent, parent
 
 
-class liftMethod(Method):
+class Lift(Method):
     """Lift: binary lift_layer(left)*right or unary lift_layer(left)."""
     def __init__(self, nDim):
         super().__init__(nDim, binary=True)
@@ -2396,7 +2154,7 @@ class liftMethod(Method):
         return parent, parent
 
 
-class lowerMethod(Method):
+class Lower(Method):
     """Lower: rank-reducing bottleneck (unary)."""
     def __init__(self, nDim, bottleneck=None):
         super().__init__(nDim, binary=False)
@@ -2412,7 +2170,7 @@ class lowerMethod(Method):
         return parent
 
 
-class notMethod(Method):
+class Not(Method):
     """Negation: -left (unary)."""
     def __init__(self, nDim):
         super().__init__(nDim, binary=False)
@@ -2424,7 +2182,7 @@ class notMethod(Method):
         return -parent
 
 
-class nonMethod(Method):
+class Non(Method):
     """Attenuated signal: sigmoid(alpha) * left (unary)."""
     def __init__(self, nDim):
         super().__init__(nDim, binary=False)
@@ -2437,46 +2195,106 @@ class nonMethod(Method):
         return parent / (torch.sigmoid(self.alpha) + epsilon)
 
 
-class swapMethod(Method):
-    """Swap whereEncodings of a node's two children (binary).
+class Swap(Method):
+    """Learnable soft permutation of arguments (binary).
 
-    Only permutes positional encodings — codebook indices unchanged.
+    Given two arguments (left, right) and a learned marker, produces a
+    soft permutation of all three via a 3x3 doubly-stochastic matrix
+    (Sinkhorn normalisation of learnable logits).  The first two rows
+    of the permutation matrix select the output ordering; the marker
+    row is discarded.
+
+    For the grammar rule ``swap(S, S)``, this rearranges the two S
+    constituents with a learned probability, allowing the model to
+    discover canonical argument order.
     """
-    def __init__(self, nDim):
+    def __init__(self, nDim, sinkhorn_iters=5):
         super().__init__(nDim, binary=True)
-        self.p_swap = nn.Parameter(torch.tensor(0.5))
+        # Learnable marker vector — context for the permutation
+        self.marker = nn.Parameter(torch.randn(nDim) * 0.01)
+        # 3x3 logits for soft permutation (rows=output slots, cols=input slots)
+        self.logits = nn.Parameter(torch.zeros(3, 3))
+        self.sinkhorn_iters = sinkhorn_iters
 
-    def forward(self, left_where, right_where):
-        p = torch.sigmoid(self.p_swap)
-        new_left = p * right_where + (1 - p) * left_where
-        new_right = p * left_where + (1 - p) * right_where
-        return new_left, new_right
+    def _soft_perm(self):
+        """Sinkhorn-normalise logits → doubly-stochastic 3x3 matrix."""
+        M = self.logits
+        for _ in range(self.sinkhorn_iters):
+            M = M - M.logsumexp(dim=-1, keepdim=True)  # row normalise
+            M = M - M.logsumexp(dim=-2, keepdim=True)  # col normalise
+        return M.exp()
 
-    def reverse(self, left_where, right_where):
-        p = torch.sigmoid(self.p_swap)
-        orig_left = p * right_where + (1 - p) * left_where
-        orig_right = p * left_where + (1 - p) * right_where
-        return orig_left, orig_right
+    def forward(self, left, right=None):
+        P = self._soft_perm()                          # [3, 3]
+        marker = self.marker.to(left.device)
+        # Expand marker to match left/right shape
+        if left.ndim == 3:
+            # [B, N, D]
+            m = marker.unsqueeze(0).unsqueeze(0).expand_as(left)
+        elif left.ndim == 2:
+            # [B, N]
+            m = marker[:left.shape[-1]].unsqueeze(0).expand_as(left)
+        else:
+            m = marker
+        if right is None:
+            right = left
+        # Stack inputs: [3, ...] then apply permutation
+        stack = torch.stack([left, right, m], dim=0)    # [3, B, ...]
+        # P[i, j] = weight of input j in output slot i
+        # einsum over input index j: out[i, B, ...] = sum_j P[i,j] * stack[j, B, ...]
+        out = torch.einsum('ij,j...->i...', P, stack)   # [3, B, ...]
+        return out[0]                                    # first output slot
+
+    def reverse(self, parent, left_hint=None, right_hint=None):
+        return parent, parent
 
 
-class trueMethod(Method):
-    """Truth evaluation: MSE of activation → scalar (unary)."""
+class IsTrue(Method):
+    """Truth evaluation: signed maximum absolute value (unary).
+
+    For each vector in the input, finds the element with the largest
+    absolute value and returns that signed value, broadcast back to
+    the original shape.  This collapses a distributed representation
+    to its strongest signal — the "truth" of the expression.
+    """
     def __init__(self, nDim):
         super().__init__(nDim, binary=False)
 
     def forward(self, left, right=None):
-        return left.pow(2).mean(dim=-1)
+        # Find index of max |value| along last dimension
+        abs_vals = left.abs()
+        idx = abs_vals.argmax(dim=-1, keepdim=True)      # [..., 1]
+        signed_max = left.gather(-1, idx)                 # [..., 1]
+        return signed_max.expand_as(left)
 
     def reverse(self, parent, left_hint=None, right_hint=None):
         return left_hint if left_hint is not None else parent
+
+
+class Chunk(Method):
+    """Input accumulation: max(left, right) — chunks elements together."""
+    def __init__(self, nDim):
+        super().__init__(nDim, binary=True)
+
+    def forward(self, left, right=None):
+        if right is None:
+            return left
+        return torch.max(left, right)
+
+    def reverse(self, parent, left_hint=None, right_hint=None):
+        return parent, parent
 
 
 # ── Grammar ──────────────────────────────────────────────────────
 
 RuleDef = namedtuple('RuleDef', ['tier', 'canonical', 'arity', 'method_name'])
 
-class Grammar:
-    """Hierarchical 3-tier grammar (S, C, P) with 14 rules.
+class Grammar(nn.Module):
+    """Hierarchical 3-tier grammar (S, C, P) with rule methods and composition.
+
+    Owns all rule execution (Method instances), rule prediction
+    (SyntacticLayer instances), and shift/reduce composition logic.
+    Spaces delegate syntax to TheGrammar rather than owning methods.
 
     Rules are parsed from functional notation in XML. Each rule maps to
     a Method subclass. During encoding, SyntacticLayer chooses which rule
@@ -2499,7 +2317,7 @@ class Grammar:
         RuleDef('C',     'C → not(C)',             1, 'not'),
         RuleDef('C',     'C → non(C)',             1, 'non'),
         RuleDef('C',     'C → P',                  1, None),      # transition
-        RuleDef('P',     'P → I P',                1, None),      # recursive
+        RuleDef('P',     'P → chunk(I, P)',         2, 'chunk'),
         RuleDef('P',     'P → ε',                  0, None),      # terminal
     ]
 
@@ -2507,10 +2325,32 @@ class Grammar:
     _TRANSITION_IDS = {4, 12}
 
     def __init__(self, lazy_init=True):
+        super().__init__()
         self.rules = list(self._DEFAULT_RULES)
         self._configured = False
         self._lazy_init = lazy_init
         self.interpretation = 0.5
+        # Placeholders — populated by init_layers()
+        self.s_methods = None
+        self.c_methods = None
+        self.p_methods = None
+        self.s_syntactic_layer = None
+        self.c_syntactic_layer = None
+        self.p_syntactic_layer = None
+        self.verb_layer = None
+        self._layers_initialized = False
+        # S/R stacks (not persistent state — reset per derivation)
+        self._s_stack = []
+        self._s_where_stack = []
+        self._s_words = []
+        self._c_stack = []
+        self._c_act_stack = []
+        self._c_words = []
+        self._p_words = []
+        # Word encoders — registered by spaces after init_layers
+        self._word_encoders = {}
+
+    # ── Rule catalog ──────────────────────────────────────────────────
 
     def __len__(self):
         return len(self.rules)
@@ -2582,16 +2422,26 @@ class Grammar:
         raise ValueError(f"Cannot parse grammar rule: {lhs} → {rhs}")
 
     def _ensure_configured(self):
-        """Lazy init: read <grammar> from TheXMLConfig on first access."""
+        """Lazy init: read <grammar> from TheXMLConfig on first access.
+
+        Checks <mentalModel><grammar> first, then <basicModel><grammar>,
+        then legacy <architecture><grammar> for backward compatibility.
+        """
         if self._configured or not self._lazy_init:
             return
         from util import TheXMLConfig
-        try:
-            cfg = TheXMLConfig.get("architecture.grammar")
-            if isinstance(cfg, dict):
-                self.configure(cfg)
-        except (KeyError, AttributeError):
-            pass  # no grammar section — use defaults
+        cfg = None
+        for path in ("mentalModel.grammar",
+                      "architecture.grammar"):
+            try:
+                candidate = TheXMLConfig.get(path)
+                if isinstance(candidate, dict):
+                    cfg = candidate
+                    break
+            except (KeyError, AttributeError):
+                continue
+        if cfg is not None:
+            self.configure(cfg)
 
     # ── Rule queries ──────────────────────────────────────────────────
 
@@ -2628,12 +2478,552 @@ class Grammar:
                 return i
         return None
 
+    # ── Layer initialization ──────────────────────────────────────────
+
+    def init_layers(self, concept_dim, symbol_dim,
+                    n_concept_slots, n_symbol_slots, n_percept_slots):
+        """Create per-tier methods and SyntacticLayers. Called once during
+        model construction.
+
+        Args:
+            concept_dim:    ConceptualSpace embedding width (nDim).
+            symbol_dim:     SymbolicSpace activation width (nSymbols).
+            n_concept_slots: number of concept slots.
+            n_symbol_slots:  number of symbol slots.
+            n_percept_slots: number of percept slots.
+        """
+        if self._layers_initialized:
+            return
+        self._ensure_configured()
+
+        # S-tier methods (dim = symbol_dim)
+        self.s_methods = nn.ModuleDict({
+            'swap':   Swap(symbol_dim),
+            'equals': Equals(symbol_dim),
+            'part':   Part(symbol_dim),
+            'true':   IsTrue(symbol_dim),
+        })
+
+        # C-tier methods (dim = concept_dim)
+        self.c_methods = nn.ModuleDict({
+            'union':        Union(concept_dim),
+            'intersection': Intersection(concept_dim),
+            'lower':        Lower(concept_dim),
+            'lift':         Lift(concept_dim),
+            'not':          Not(concept_dim),
+            'non':          Non(concept_dim),
+        })
+
+        # P-tier methods (chunking = input accumulation)
+        self.p_methods = nn.ModuleDict({
+            'chunk': Chunk(n_percept_slots),
+        })
+
+        # SyntacticLayers
+        self.s_syntactic_layer = SyntacticLayer(
+            nInput=n_symbol_slots, nOutput=n_symbol_slots,
+            rules=self.symbolic(),
+            transition_rule=self.symbolic_transition(),
+            max_depth=max(n_symbol_slots - 1, 1),
+            hidden_dim=min(256, max(64, n_symbol_slots * 4)),
+            grammar=self,
+        )
+        self.c_syntactic_layer = SyntacticLayer(
+            nInput=n_concept_slots, nOutput=n_concept_slots,
+            rules=self.conceptual(),
+            transition_rule=self.conceptual_transition(),
+            max_depth=max(n_concept_slots - 1, 1),
+            hidden_dim=min(256, max(64, n_concept_slots * 4)),
+            grammar=self,
+        )
+        self.p_syntactic_layer = SyntacticLayer(
+            nInput=n_percept_slots, nOutput=n_percept_slots,
+            rules=self.perceptual(),
+            transition_rule=None,
+            max_depth=max(n_percept_slots - 1, 1),
+            hidden_dim=min(256, max(64, n_percept_slots * 4)),
+            grammar=self,
+        )
+
+        # Legacy verb layer
+        self.verb_layer = VerbLayer(16, concept_dim)
+        self._layers_initialized = True
+
+    def register_word_encoder(self, tier, word_encoding):
+        """Register a space's word encoder for word tuple generation."""
+        self._word_encoders[tier] = word_encoding
+
+    # ── Tier dispatch helpers ─────────────────────────────────────────
+
+    def _tier_methods(self, tier):
+        if tier == 'S':
+            return self.s_methods
+        elif tier == 'C':
+            return self.c_methods
+        elif tier == 'P':
+            return self.p_methods
+        return None
+
+    def _tier_syntactic_layer(self, tier):
+        if tier == 'S':
+            return self.s_syntactic_layer
+        elif tier == 'C':
+            return self.c_syntactic_layer
+        elif tier == 'P':
+            return self.p_syntactic_layer
+        return None
+
+    # ── Rule execution ────────────────────────────────────────────────
+
+    def project(self, tier, rule_id, left, right=None):
+        """Execute a grammar rule on left (and right) operands.
+
+        Dispatches to per-tier methods by method_name.
+        Falls back to verb_layer for 'verb' method on C-tier (legacy).
+        Transition rules pass through.
+        """
+        method_name = self.rules[rule_id].method_name
+        methods = self._tier_methods(tier)
+        if method_name and methods and method_name in methods:
+            method = methods[method_name]
+            if method.binary:
+                if right is not None:
+                    return method.forward(left, right)
+                return left
+            return method.forward(left)
+
+        # Legacy: VERB on C-tier
+        if tier == 'C' and method_name == 'verb' and self.verb_layer is not None:
+            B, N, D = left.shape
+            vp_query = left.mean(dim=1)
+            if right is not None:
+                C1_out, _ = self.verb_layer.forward_transitive(left, right, vp_query)
+                return C1_out
+            return self.verb_layer.forward_reflexive(left, vp_query)
+
+        # Transition or unknown — pass through
+        return left
+
+    # ── S/R stacks ────────────────────────────────────────────────────
+
+    def resetStack(self, tier):
+        """Clear per-tier stacks for a new derivation."""
+        if tier == 'S':
+            self._s_stack = []
+            self._s_where_stack = []
+            self._s_words = []
+        elif tier == 'C':
+            self._c_stack = []
+            self._c_act_stack = []
+            self._c_words = []
+        elif tier == 'P':
+            self._p_words = []
+
+    def _rewrite_rule_index(self):
+        """Local index of the REWRITE/swap rule in S-tier rule set."""
+        if self.s_syntactic_layer is None:
+            return None
+        for i, rid in enumerate(self.s_syntactic_layer.all_rules):
+            if "swap" in self[rid].lower():
+                return i
+        return None
+
+    def _encode_words(self, tier, activation, best_rule_id):
+        """Generate word tuples from active positions."""
+        words = []
+        encoder = self._word_encoders.get(tier)
+        if encoder is None:
+            return words
+        B = activation.shape[0]
+        for b in range(B):
+            active = (activation[b].abs() > 1e-6).nonzero(as_tuple=True)[0]
+            for v in active:
+                words.append(encoder.encode(b, v.item(), best_rule_id))
+        return words
+
+    def forward(self, tier, activation, vectors_or_where=None):
+        """Unified shift/reduce for any tier.
+
+        Args:
+            tier: 'S', 'C', or 'P'
+            activation: [B, N] activation vector
+            vectors_or_where: [B, N, D] vectors (C-tier) or
+                              [B, N, nWhere] where (S-tier), or None
+        Returns:
+            dict with transition, composed, words
+        """
+        sl = self._tier_syntactic_layer(tier)
+        if sl is None:
+            return {"transition": False, "composed": activation, "words": []}
+
+        if tier == 'S':
+            return self._write_symbolic(activation, vectors_or_where, sl)
+        elif tier == 'C':
+            return self._write_conceptual(activation, vectors_or_where, sl)
+        elif tier == 'P':
+            return self._write_perceptual(activation, vectors_or_where, sl)
+        return {"transition": False, "composed": activation, "words": []}
+
+    def _write_symbolic(self, symbol_act, where, sl):
+        """S-tier shift/reduce with optional where-swap."""
+        # SHIFT
+        self._s_stack.append(symbol_act)
+        if where is not None:
+            self._s_where_stack.append(where)
+
+        all_rules = sl.all_rules
+        # PREDICT
+        head = self._s_stack[-1]
+        out = sl.forward(head)
+        rule_probs = out["rule_probs"][:, 0, :]
+        best_local = rule_probs.argmax(dim=-1)[0].item()
+        best_rule_id = all_rules[best_local]
+
+        # REDUCE (soft gate)
+        B_act = symbol_act.shape[0]
+        p_binary = torch.zeros(B_act, 1, device=rule_probs.device)
+        for local_idx, rule_id in enumerate(all_rules):
+            if self.arity(rule_id) == 2:
+                p_binary = p_binary + rule_probs[:, local_idx:local_idx + 1]
+
+        arity = self.arity(best_rule_id)
+        has_where = where is not None and len(self._s_where_stack) > 0
+        rewrite_idx = self._rewrite_rule_index() if has_where else None
+
+        if arity == 2 and len(self._s_stack) >= 2:
+            shift_result = self._s_stack[-1]
+            right = self._s_stack.pop()
+            left = self._s_stack.pop()
+
+            results = []
+            for local_idx, rule_id in enumerate(all_rules):
+                a = self.arity(rule_id)
+                if a == 2:
+                    result = self.project('S', rule_id, left, right)
+                elif a == 1:
+                    result = self.project('S', rule_id, left)
+                else:
+                    result = self.project('S', rule_id, left)
+                results.append(result)
+
+            results = torch.stack(results, dim=1)
+            reduce_result = (rule_probs.unsqueeze(-1) * results).sum(dim=1)
+            composed = p_binary * reduce_result + (1.0 - p_binary) * shift_result
+            self._s_stack.append(composed)
+
+            # REWRITE where-swap
+            if has_where and rewrite_idx is not None and len(self._s_where_stack) >= 2:
+                shift_where = self._s_where_stack[-1]
+                right_where = self._s_where_stack.pop()
+                left_where = self._s_where_stack.pop()
+                rewrite_prob = rule_probs[:, rewrite_idx]
+                non_rewrite_prob = 1.0 - rewrite_prob
+                reduce_where = (non_rewrite_prob[:, None, None] * left_where
+                                + rewrite_prob[:, None, None] * right_where)
+                composed_where = (p_binary[:, :, None] * reduce_where
+                                  + (1.0 - p_binary[:, :, None]) * shift_where)
+                self._s_where_stack.append(composed_where)
+
+        elif arity == 1 and len(self._s_stack) >= 1:
+            shift_result = self._s_stack[-1]
+            operand = self._s_stack.pop()
+
+            results = []
+            for local_idx, rule_id in enumerate(all_rules):
+                a = self.arity(rule_id)
+                if a == 1:
+                    result = self.project('S', rule_id, operand)
+                else:
+                    result = self.project('S', rule_id, operand)
+                results.append(result)
+
+            results = torch.stack(results, dim=1)
+            reduce_result = (rule_probs.unsqueeze(-1) * results).sum(dim=1)
+            p_unary = 1.0 - p_binary
+            composed = p_unary * reduce_result + p_binary * shift_result
+            self._s_stack.append(composed)
+
+        # TRANSITION
+        transition = self.rules[best_rule_id].method_name is None and self.arity(best_rule_id) == 1
+
+        # WORDS
+        words = self._encode_words('S', symbol_act, best_rule_id)
+        self._s_words.extend(words)
+
+        return {
+            "transition": transition,
+            "composed": self._s_stack[-1],
+            "words": words,
+        }
+
+    def _write_conceptual(self, activation, vectors, sl):
+        """C-tier shift/reduce on [B, N, D] vectors."""
+        # SHIFT
+        self._c_stack.append(vectors)
+        self._c_act_stack.append(activation)
+
+        all_rules = sl.all_rules
+        # PREDICT
+        head_act = self._c_act_stack[-1]
+        out = sl.forward(head_act)
+        rule_probs = out["rule_probs"][:, 0, :]
+        best_local = rule_probs.argmax(dim=-1)[0].item()
+        best_rule_id = all_rules[best_local]
+
+        # REDUCE (soft gate)
+        B_act = activation.shape[0]
+        p_binary = torch.zeros(B_act, 1, device=rule_probs.device)
+        for local_idx, rule_id in enumerate(all_rules):
+            if self.arity(rule_id) == 2:
+                p_binary = p_binary + rule_probs[:, local_idx:local_idx + 1]
+
+        arity = self.arity(best_rule_id)
+
+        if arity == 2 and len(self._c_stack) >= 2:
+            shift_result = self._c_stack[-1]
+            shift_act = self._c_act_stack[-1]
+            right = self._c_stack.pop()
+            left = self._c_stack.pop()
+            right_act = self._c_act_stack.pop()
+            left_act = self._c_act_stack.pop()
+
+            results = []
+            for local_idx, rule_id in enumerate(all_rules):
+                a = self.arity(rule_id)
+                if a == 2:
+                    result = self.project('C', rule_id, left, right)
+                elif a == 1:
+                    result = self.project('C', rule_id, left)
+                else:
+                    result = self.project('C', rule_id, left)
+                results.append(result)
+
+            results = torch.stack(results, dim=1)
+            probs = rule_probs.unsqueeze(-1).unsqueeze(-1)
+            reduce_result = (probs * results).sum(dim=1)
+            p_b = p_binary.unsqueeze(-1)
+            composed = p_b * reduce_result + (1.0 - p_b) * shift_result
+            self._c_stack.append(composed)
+
+            reduce_act = reduce_result.norm(dim=-1)
+            composed_act = p_binary * reduce_act + (1.0 - p_binary) * shift_act
+            self._c_act_stack.append(composed_act)
+
+        elif arity == 1 and len(self._c_stack) >= 1:
+            shift_result = self._c_stack[-1]
+            shift_act = self._c_act_stack[-1]
+            operand = self._c_stack.pop()
+            operand_act = self._c_act_stack.pop()
+
+            results = []
+            for local_idx, rule_id in enumerate(all_rules):
+                a = self.arity(rule_id)
+                if a == 1:
+                    result = self.project('C', rule_id, operand)
+                else:
+                    result = self.project('C', rule_id, operand)
+                results.append(result)
+
+            results = torch.stack(results, dim=1)
+            probs = rule_probs.unsqueeze(-1).unsqueeze(-1)
+            reduce_result = (probs * results).sum(dim=1)
+            p_unary = 1.0 - p_binary
+            p_u = p_unary.unsqueeze(-1)
+            composed = p_u * reduce_result + (1.0 - p_u) * shift_result
+            self._c_stack.append(composed)
+
+            reduce_act = reduce_result.norm(dim=-1)
+            composed_act = p_unary * reduce_act + p_binary * shift_act
+            self._c_act_stack.append(composed_act)
+
+        # TRANSITION
+        transition = self.rules[best_rule_id].method_name is None and self.arity(best_rule_id) == 1
+
+        # WORDS
+        words = self._encode_words('C', activation, best_rule_id)
+        self._c_words.extend(words)
+
+        return {
+            "transition": transition,
+            "composed": self._c_stack[-1],
+            "words": words,
+        }
+
+    def _write_perceptual(self, activation, vectors, sl):
+        """P-tier shift/reduce — terminal rule, accumulation via chunk."""
+        # PREDICT
+        out = sl.forward(activation)
+        words = out.get("words", [])
+        self._p_words.extend(words)
+
+        # Apply chunk (accumulation) — same as union/max
+        composed = vectors
+        if vectors is not None:
+            composed = self.project('P', 13, vectors)  # rule 13 = chunk
+
+        return {
+            "transition": False,
+            "composed": composed,
+            "words": words,
+        }
+
+    def reverse(self, tier, words, batch_size=1):
+        """Reverse S/R: reconstruct activation from word tuples."""
+        sl = self._tier_syntactic_layer(tier)
+        if sl is None:
+            return None
+        nVectors = sl.nInput
+        return sl.reverse(words, nVectors, batch_size)
+
+    # ── Batch composition (non-S/R) ──────────────────────────────────
+
+    def composeSyntax(self, tier, activation, vectors_or_where=None):
+        """Predict rules and execute soft-weighted composition (batch mode).
+
+        Args:
+            tier: 'S' or 'C'
+            activation: [B, N] activation for rule prediction
+            vectors_or_where: [B, N, D] vectors (C-tier) or
+                              [B, N, nWhere] where (S-tier), or None
+        Returns:
+            dict with composed, words, rule_probs, etc.
+        """
+        sl = self._tier_syntactic_layer(tier)
+        if sl is None:
+            out = {"composed": activation if vectors_or_where is None else vectors_or_where, "words": []}
+            if tier == 'S' and vectors_or_where is not None:
+                out["composed_where"] = vectors_or_where
+            return out
+
+        out = sl.forward(activation)
+        rule_probs = out["rule_probs"]
+        all_rules = sl.all_rules
+
+        B, N = activation.shape
+        active_positions = sl._active_positions(activation)
+        max_leaves = max((len(p) for p in active_positions), default=0)
+
+        if tier == 'C':
+            return self._compose_conceptual(out, activation, vectors_or_where,
+                                            rule_probs, all_rules, active_positions, max_leaves)
+        elif tier == 'S':
+            return self._compose_symbolic(out, activation, vectors_or_where,
+                                          rule_probs, all_rules, active_positions, max_leaves)
+        return out
+
+    def _compose_conceptual(self, out, activation, vectors,
+                            rule_probs, all_rules, active_positions, max_leaves):
+        """Batch composition for C-tier on [B, N, D] vectors."""
+        B, N = activation.shape
+        if max_leaves == 0 or vectors is None:
+            out["composed"] = vectors
+            return out
+
+        D = vectors.shape[-1] if vectors.ndim == 3 else 1
+
+        masks = torch.zeros(B, max_leaves, N, device=vectors.device)
+        for b in range(B):
+            for i, pos in enumerate(active_positions[b]):
+                masks[b, i, pos] = 1.0
+        leaf_vecs = masks.unsqueeze(-1) * vectors.unsqueeze(1)
+
+        composed = leaf_vecs[:, 0, :, :]
+        sl = self.c_syntactic_layer
+        max_depth = sl.max_depth
+
+        for d in range(min(max_depth, max(max_leaves - 1, 1))):
+            if d + 1 >= max_leaves:
+                break
+            left = composed
+            right = leaf_vecs[:, d + 1, :, :]
+
+            results = []
+            for local_idx, rule_id in enumerate(all_rules):
+                a = self.arity(rule_id)
+                if a == 2:
+                    result = self.project('C', rule_id, left, right)
+                elif a == 1:
+                    result = self.project('C', rule_id, left)
+                else:
+                    result = self.project('C', rule_id, left)
+                results.append(result)
+
+            results = torch.stack(results, dim=1)
+            probs_d = rule_probs[:, d, :]
+            probs_d = probs_d.unsqueeze(-1).unsqueeze(-1)
+            composed = (probs_d * results).sum(dim=1)
+
+        out["composed"] = composed
+        return out
+
+    def _compose_symbolic(self, out, activation, where,
+                          rule_probs, all_rules, active_positions, max_leaves):
+        """Batch composition for S-tier on [B, N] activations."""
+        B, N = activation.shape
+        if max_leaves == 0:
+            out["composed"] = activation
+            if where is not None:
+                out["composed_where"] = where
+            return out
+
+        masks = torch.zeros(B, max_leaves, N, device=activation.device)
+        for b in range(B):
+            for i, pos in enumerate(active_positions[b]):
+                masks[b, i, pos] = 1.0
+        leaf_acts = masks * activation.unsqueeze(1)
+
+        has_where = where is not None
+        if has_where:
+            leaf_wheres = masks.unsqueeze(-1) * where.unsqueeze(1)
+
+        composed = leaf_acts[:, 0, :]
+        if has_where:
+            composed_where = leaf_wheres[:, 0, :, :]
+        sl = self.s_syntactic_layer
+        max_depth = sl.max_depth
+
+        rewrite_idx = self._rewrite_rule_index() if has_where else None
+
+        for d in range(min(max_depth, max(max_leaves - 1, 1))):
+            if d + 1 >= max_leaves:
+                break
+            left = composed
+            right = leaf_acts[:, d + 1, :]
+
+            results = []
+            for local_idx, rule_id in enumerate(all_rules):
+                a = self.arity(rule_id)
+                if a == 2:
+                    result = self.project('S', rule_id, left, right)
+                elif a == 1:
+                    result = self.project('S', rule_id, left)
+                else:
+                    result = self.project('S', rule_id, left)
+                results.append(result)
+
+            results = torch.stack(results, dim=1)
+            probs_d = rule_probs[:, d, :]
+            composed = (probs_d.unsqueeze(-1) * results).sum(dim=1)
+
+            if has_where and rewrite_idx is not None:
+                left_where = composed_where
+                right_where = leaf_wheres[:, d + 1, :, :]
+                rewrite_prob = probs_d[:, rewrite_idx]
+                non_rewrite_prob = 1.0 - rewrite_prob
+                composed_where = (non_rewrite_prob[:, None, None] * left_where
+                                  + rewrite_prob[:, None, None] * right_where)
+
+        out["composed"] = composed
+        if has_where:
+            out["composed_where"] = composed_where
+        return out
+
 class SyntacticLayer(Layer):
     """Per-space rule prediction layer for the recursive grammar.
 
     Each instance handles a subset of the Grammar's rules (one cognitive
-    space's rules).  Uses the same weight-tied recursive architecture as
-    OldSyntacticLayer with depth embeddings.
+    space's rules).  Uses a weight-tied recursive architecture with depth
+    embeddings.
 
     **This layer only predicts rules and generates word tuples.**  It does
     not execute operations on representations — that is done by the owning
@@ -2657,7 +3047,11 @@ class SyntacticLayer(Layer):
     def __init__(self, nInput, nOutput, rules, transition_rule=None,
                  max_depth=12, hidden_dim=256, grammar=None, tau=1.0):
         super().__init__(nInput, nOutput)
-        self.grammar         = grammar or Grammar()
+        # Store grammar as non-Module attribute to avoid circular nn.Module
+        # reference (Grammar owns SyntacticLayers, SyntacticLayers reference
+        # Grammar). Using object.__setattr__ bypasses nn.Module.__setattr__
+        # which would register it as a submodule.
+        object.__setattr__(self, 'grammar', grammar or Grammar())
         self.rules           = list(rules)
         self.transition_rule = transition_rule
         # Build the full set of rule IDs this layer predicts over
@@ -2805,527 +3199,214 @@ class SyntacticLayer(Layer):
         """Anneal the Gumbel-softmax temperature."""
         self.tau = tau
 
-class LogicLayer(Layer):
-
-    @staticmethod
-    def _pairwise_sq_dists(X: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
-        """
-        X: (B, N, D)
-        Y: (B, M, D)
-        Returns:
-            D2: (B, N, M) with squared Euclidean distances
-        """
-        x2 = (X * X).sum(dim=-1, keepdim=True)                 # (B, N, 1)
-        y2 = (Y * Y).sum(dim=-1).unsqueeze(1)                  # (B, 1, M)
-        xy = torch.bmm(X, Y.transpose(1, 2))                   # (B, N, M)
-        d2 = x2 + y2 - 2.0 * xy
-        return d2.clamp_min(0.0)
-
-    @staticmethod
-    def _expand_sigma(
-        sigma: Optional[torch.Tensor | float],
-        B: int,
-        N: int,
-        device: torch.device,
-        dtype: torch.dtype,
-    ) -> torch.Tensor:
-        """
-        Returns sigma as shape (B, N).
-        Accepts:
-        - None -> ones
-        - scalar
-        - tensor of shape (B, N)
-        - tensor of shape (N,) (broadcasted across batch)
-        """
-        if sigma is None:
-            return torch.ones(B, N, device=device, dtype=dtype)
-
-        if isinstance(sigma, (float, int)):
-            return torch.full((B, N), float(sigma), device=device, dtype=dtype)
-
-        if sigma.ndim == 1:
-            if sigma.shape[0] != N:
-                raise ValueError(f"1D sigma must have shape ({N},), got {tuple(sigma.shape)}")
-            return sigma.to(device=device, dtype=dtype).unsqueeze(0).expand(B, N)
-
-        if sigma.ndim == 2:
-            if sigma.shape != (B, N):
-                raise ValueError(f"2D sigma must have shape ({B}, {N}), got {tuple(sigma.shape)}")
-            return sigma.to(device=device, dtype=dtype)
-
-        raise ValueError("sigma must be None, scalar, shape (N,), or shape (B,N)")
-
-    @staticmethod
-    def kernel_overlap(
-        X: torch.Tensor,
-        Y: torch.Tensor,
-        sigma_x: Optional[torch.Tensor | float] = None,
-        sigma_y: Optional[torch.Tensor | float] = None,
-        eps: float = 1e-8,
-    ) -> torch.Tensor:
-        """
-        Pairwise fuzzy overlap kernel between two vector sets.
-
-        X: (B, N, D)
-        Y: (B, M, D)
-
-        Returns:
-            K: (B, N, M)
-
-        Kernel:
-            K_ij = exp( -||x_i - y_j||^2 / (2 * (sigma_x_i^2 + sigma_y_j^2)) )
-        """
-        if X.ndim != 3 or Y.ndim != 3:
-            raise ValueError("X and Y must both have shape (B, N, D) and (B, M, D)")
-        if X.shape[0] != Y.shape[0] or X.shape[2] != Y.shape[2]:
-            raise ValueError("Batch size and feature dimension must match")
-
-        B, N, D = X.shape
-        M = Y.shape[1]
-
-        sx = LogicLayer._expand_sigma(sigma_x, B, N, X.device, X.dtype)   # (B, N)
-        sy = LogicLayer._expand_sigma(sigma_y, B, M, Y.device, Y.dtype)   # (B, M)
-
-        d2 = LogicLayer._pairwise_sq_dists(X, Y)                          # (B, N, M)
-        denom = 2.0 * (sx.unsqueeze(2).square() + sy.unsqueeze(1).square()) + eps
-        return torch.exp(-d2 / denom)
-
-    @staticmethod
-    def union(X: torch.Tensor, Y: torch.Tensor) -> torch.Tensor:
-        """
-        Mereological union as set concatenation.
-
-        X: (B, N, D)
-        Y: (B, M, D)
-
-        Returns:
-            U: (B, N+M, D)
-        """
-        if X.ndim != 3 or Y.ndim != 3:
-            raise ValueError("X and Y must both have shape (B, N, D) and (B, M, D)")
-        if X.shape[0] != Y.shape[0] or X.shape[2] != Y.shape[2]:
-            raise ValueError("Batch size and feature dimension must match")
-        return torch.cat([X, Y], dim=1)
-
-    @staticmethod
-    def intersection(
-        X: torch.Tensor,
-        Y: torch.Tensor,
-        sigma_x: Optional[torch.Tensor | float] = None,
-        sigma_y: Optional[torch.Tensor | float] = None,
-        topk: Optional[int] = None,
-        weight_threshold: Optional[float] = None,
-        eps: float = 1e-8,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Fuzzy intersection of two RBF-like vector sets.
-
-        Returns a new vector set whose elements are precision-weighted pairwise
-        merges of X and Y, with weights given by Gaussian overlap.
-
-        X: (B, N, D)
-        Y: (B, M, D)
-
-        Returns:
-            Z: (B, K, D)   merged intersection vectors
-            W: (B, K)      corresponding intersection weights in [0,1]
-
-        Notes:
-        - Exact pairwise intersection would produce N*M vectors.
-        - topk keeps only the strongest K pairwise intersections per batch.
-        - weight_threshold filters weak overlaps.
-        """
-        if X.ndim != 3 or Y.ndim != 3:
-            raise ValueError("X and Y must both have shape (B, N, D) and (B, M, D)")
-        if X.shape[0] != Y.shape[0] or X.shape[2] != Y.shape[2]:
-            raise ValueError("Batch size and feature dimension must match")
-
-        B, N, D = X.shape
-        M = Y.shape[1]
-
-        sx = LogicLayer._expand_sigma(sigma_x, B, N, X.device, X.dtype)   # (B, N)
-        sy = LogicLayer._expand_sigma(sigma_y, B, M, Y.device, Y.dtype)   # (B, M)
-
-        # Pairwise overlap weights
-        Kxy = LogicLayer.kernel_overlap(X, Y, sx, sy, eps=eps)            # (B, N, M)
-
-        # Precision-weighted midpoint
-        px = 1.0 / (sx.square().unsqueeze(2) + eps)            # (B, N, 1)
-        py = 1.0 / (sy.square().unsqueeze(1) + eps)            # (B, 1, M)
-        denom = px + py                                        # (B, N, M)
-
-        Xp = X.unsqueeze(2)                                    # (B, N, 1, D)
-        Yp = Y.unsqueeze(1)                                    # (B, 1, M, D)
-
-        Z = (px.unsqueeze(-1) * Xp + py.unsqueeze(-1) * Yp) / denom.unsqueeze(-1)  # (B,N,M,D)
-        W = Kxy                                                # (B,N,M)
-
-        # Optional threshold
-        if weight_threshold is not None:
-            mask = W >= weight_threshold
-            W = W * mask
-
-        # Flatten pairwise results
-        Z = Z.reshape(B, N * M, D)
-        W = W.reshape(B, N * M)
-
-        # Optional top-k pruning
-        if topk is not None:
-            k = min(topk, N * M)
-            vals, idx = torch.topk(W, k=k, dim=1)
-            gather_idx = idx.unsqueeze(-1).expand(-1, -1, D)
-            Z = torch.gather(Z, dim=1, index=gather_idx)
-            W = vals
-
-        return Z, W
-
-    @staticmethod
-    def part(
-        X: torch.Tensor,
-        Y: torch.Tensor,
-        sigma_x: Optional[torch.Tensor | float] = None,
-        sigma_y: Optional[torch.Tensor | float] = None,
-        weights_x: Optional[torch.Tensor] = None,
-        weights_y: Optional[torch.Tensor] = None,
-        signed: bool = False,
-        eps: float = 1e-8,
-    ) -> torch.Tensor:
-        """
-        Fuzzy parthood scores:
-            p(X -> Y), p(Y -> X)
-
-        Uses max-coverage:
-            p(X -> Y) = average_i max_j K(x_i, y_j)
-
-        Inputs:
-            X: (B, N, D)
-            Y: (B, M, D)
-            weights_x: optional (B, N)
-            weights_y: optional (B, M)  # only used for symmetry / validation;
-                                        # max-coverage itself weights the outer set
-
-        Returns:
-            P: (B, 2)
-            [:,0] = parthood(X -> Y)
-            [:,1] = parthood(Y -> X)
-
-        If signed=True, maps [0,1] -> [-1,1] by 2p - 1.
-        """
-        if X.ndim != 3 or Y.ndim != 3:
-            raise ValueError("X and Y must both have shape (B, N, D) and (B, M, D)")
-        if X.shape[0] != Y.shape[0] or X.shape[2] != Y.shape[2]:
-            raise ValueError("Batch size and feature dimension must match")
-
-        B, N, D = X.shape
-        M = Y.shape[1]
-
-        Kxy = LogicLayer.kernel_overlap(X, Y, sigma_x=sigma_x, sigma_y=sigma_y, eps=eps)  # (B,N,M)
-        Kyx = Kxy.transpose(1, 2)                                               # (B,M,N)
-
-        cover_xy = Kxy.max(dim=2).values                                        # (B,N)
-        cover_yx = Kyx.max(dim=2).values                                        # (B,M)
-
-        if weights_x is None:
-            p_xy = cover_xy.mean(dim=1)
-        else:
-            if weights_x.shape != (B, N):
-                raise ValueError(f"weights_x must have shape ({B}, {N})")
-            wx = weights_x.to(device=X.device, dtype=X.dtype)
-            p_xy = (wx * cover_xy).sum(dim=1) / (wx.sum(dim=1) + eps)
-
-        if weights_y is None:
-            p_yx = cover_yx.mean(dim=1)
-        else:
-            if weights_y.shape != (B, M):
-                raise ValueError(f"weights_y must have shape ({B}, {M})")
-            wy = weights_y.to(device=Y.device, dtype=Y.dtype)
-            p_yx = (wy * cover_yx).sum(dim=1) / (wy.sum(dim=1) + eps)
-
-        out = torch.stack([p_xy, p_yx], dim=1)                                  # (B,2)
-
-        if signed:
-            out = 2.0 * out - 1.0
-
-        return out
-
-    @staticmethod
-    def neg(X: torch.Tensor) -> torch.Tensor:
-        """
-        Affirming negation on the hypersphere:
-            neg(x) = -x
-
-        X: (B, N, D)
-        Returns:
-            (B, N, D)
-        """
-        return -X
-
-    @staticmethod
-    def non(X: torch.Tensor, alpha: float = 0.0) -> torch.Tensor:
-        """
-        Non-affirming negation:
-            non(x) = alpha * x, with alpha in [0, 1]
-
-        alpha = 0.0 gives full withdrawal toward zero.
-        alpha in (0,1) gives partial weakening.
-
-        X: (B, N, D)
-        Returns:
-            (B, N, D)
-        """
-        if not (0.0 <= alpha <= 1.0):
-            raise ValueError("alpha must be in [0, 1]")
-        return alpha * X
-
-    @staticmethod
-    def symbolize(X: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
-        """
-        Symbolize a set of vectors by mean norm.
-
-        X: (B, N, D)
-        Returns:
-            s: (B,) in [-1, 1], assuming ||x_i|| in [0, 1]
-        """
-        norms = torch.linalg.norm(X, dim=-1)          # (B, N)
-        s = 2.0 * norms.mean(dim=1) - 1.0
-        return s.clamp(-1.0, 1.0)
-
-
-    @staticmethod
-    def scalar_neg(a: torch.Tensor) -> torch.Tensor:
-        """
-        Affirming negation on [-1,1].
-        """
-        return -a
-
-
-    @staticmethod
-    def scalar_non(a: torch.Tensor, alpha: float = 0.0) -> torch.Tensor:
-        """
-        Non-affirming negation: contraction toward zero.
-        alpha in [0,1]. alpha=0 gives full neutralization.
-        """
-        return (alpha * a).clamp(-1.0, 1.0)
-
-
-    @staticmethod
-    def scalar_union(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-        """
-        Symbolic union on [-1,1].
-        """
-        return torch.maximum(a, b)
-
-
-    @staticmethod
-    def scalar_intersection(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-        """
-        Symbolic intersection on [-1,1].
-        """
-        return torch.minimum(a, b)
-
-
-    @staticmethod
-    def scalar_part(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-        """
-        Signed symbolic parthood/order score on [-1,1].
-
-        Positive means a is contained by / does not exceed b.
-        Zero means equal.
-        Negative means a exceeds b.
-        """
-        return (b - a).clamp(-1.0, 1.0)
-    
-    @staticmethod
-    def test():
-        B, N, M, D = 4, 16, 20, 32
-        X = torch.randn(B, N, D, device=TheDevice.get())
-        Y = torch.randn(B, M, D, device=TheDevice.get())
-
-        LL = LogicLayer(N, M)
-        U = LL.union(X, Y)                    # (B, N+M, D)
-        Z, W = LL.intersection(X, Y, topk=32) # Z: (B, 32, D), W: (B, 32)
-        P = LL.part(X, Y)                     # (B, 2)
-        X_neg = LL.neg(X)                     # (B, N, D)
-        X_non = LL.non(X, alpha=0.2)          # (B, N, D)
-
-
-
-
-class OldSyntacticLayer(Layer):
-    """Recursive derivation stack that learns grammar rule distributions.
-
-    A single shared derivation layer and rule head are applied repeatedly
-    at each depth, with a learned depth embedding added to the hidden
-    state so the shared weights can specialize by tree level.  This is
-    a recursive (weight-tied) architecture — the same transformation
-    applies at every level of the derivation, mirroring the recursive
-    nature of natural-language syntax.
-
-    **Forward:** receives activation [B, nSymbols], unrolls the shared
-    layer for ``max_depth`` steps, predicts a rule distribution at each
-    step via Gumbel-softmax, and assembles word tuples.
-
-    **Reverse:** deterministic tree-walk — reads word tuples and
-    reconstructs the activation vector by marking referenced positions
-    as active.  No learned weights; gradients do not flow through reverse.
+class TruthLayer(Layer):
+    """Truth store on SymbolicSpace: encoded truth statements scaled by DoT.
+
+    Each truth statement is processed through the model pipeline to produce
+    a symbolic activation ``[nSymbols]``.  The activation is then scaled by
+    the DegreeOfTruth before storage:
+
+        stored = activation * degree
+
+    This means the stored vector carries the DoT intrinsically:
+      - degree = +1 → full activation stored (attractor)
+      - degree = -1 → negated activation stored (disperser)
+      - degree =  0 → zero vector (inert, prunable)
+
+    The ``field()`` method projects stored truths into ConceptualSpace
+    via cosine similarity.  Because the degree is baked into the stored
+    vectors, positive-DoT truths attract and negative-DoT truths repel
+    without needing a separate degree buffer.
+
+    Propositional structure is defined by the S-tier grammar:
+      - ``part(S, S)`` — parthood / containment
+      - ``equals(S, S)`` — identity / equivalence
     """
 
-    def __init__(self, nInput, nOutput, max_depth=12, hidden_dim=256,
-                 grammar=None, tau=1.0):
-        # nInput  = nSymbols (activation width from SymbolicSpace)
-        # nOutput = nInput   (pass-through; output is side-effect on words)
-        super().__init__(nInput, nOutput)
-        self.grammar    = grammar or Grammar()
-        self.num_rules  = len(self.grammar)
-        self.max_depth  = max_depth
-        self.hidden_dim = hidden_dim
-        self.tau        = tau
+    def __init__(self, nDim: int, max_truths: int = 1024):
+        super().__init__(nDim, nDim)
+        self.nDim = nDim
+        self.max_truths = max_truths
 
-        # Input projection: activation → hidden state
-        self.input_proj = LinearLayer(nInput, hidden_dim)
+        # Storage buffer: activation * degree (DoT baked in)
+        self.register_buffer(
+            'truths',
+            torch.zeros(max_truths, nDim),
+        )
+        self.register_buffer(
+            'count',
+            torch.tensor(0, dtype=torch.long),
+        )
 
-        # Shared recursive layer (applied at every depth)
-        self.derivation_layer = LinearLayer(hidden_dim, hidden_dim)
-        self.rule_head        = LinearLayer(hidden_dim, self.num_rules)
+    # ── Record / Query ────────────────────────────────────────────────
 
-        # Depth embedding: tells the shared weights where in the tree they are
-        self.depth_embed = nn.Embedding(max_depth, hidden_dim)
+    @torch.no_grad()
+    def record(self, activation: torch.Tensor, degree: float) -> int:
+        """Store a truth: activation scaled by its DegreeOfTruth.
 
-        self.activation_fn = nn.GELU()
-
-        # Register child layers for ergodic dispatch
-        self.layers = [self.input_proj, self.derivation_layer, self.rule_head]
-
-    # ── forward: predict rules ──────────────────────────────────────
-
-    def forward(self, x):
-        """
-        x: [B, nSymbols] activation vector.
-
-        Returns dict:
-            rule_logits:     [B, max_depth, num_rules]
-            rule_probs:      [B, max_depth, num_rules]
-            predicted_rules: [B, max_depth]
-            words:           list of (batch, vector, rule) tuples
-        """
-        B = x.shape[0]
-        h = self.input_proj.forward(x)       # [B, hidden_dim]
-        h = self.activation_fn(h)
-
-        depth_ids = torch.arange(self.max_depth, device=x.device)
-        depth_vecs = self.depth_embed(depth_ids)  # [max_depth, hidden_dim]
-
-        all_logits = []
-        all_probs  = []
-
-        for d in range(self.max_depth):
-            h = h + depth_vecs[d]                            # add depth embedding
-            h = self.derivation_layer.forward(h)             # shared weights
-            h = self.activation_fn(h)
-            logits = self.rule_head.forward(h)               # shared weights
-
-            if self.training:
-                probs = F.gumbel_softmax(logits, tau=self.tau, hard=False)
-            else:
-                probs = F.softmax(logits, dim=-1)
-
-            all_logits.append(logits)
-            all_probs.append(probs)
-
-        rule_logits     = torch.stack(all_logits, dim=1)     # [B, max_depth, num_rules]
-        rule_probs      = torch.stack(all_probs, dim=1)
-        predicted_rules = rule_logits.argmax(dim=-1)         # [B, max_depth]
-
-        # Build word tuples from predicted rules + active positions
-        active_positions = self._active_positions(x)
-        words = self._generate_derivation(predicted_rules, active_positions)
-
-        return {
-            "rule_logits":     rule_logits,
-            "rule_probs":      rule_probs,
-            "predicted_rules": predicted_rules,
-            "words":           words,
-        }
-
-    def _active_positions(self, x):
-        """Extract per-batch lists of active (nonzero) positions from activation.
-
-        x: [B, nSymbols] activation vector.
-        Returns: list of lists — active_positions[b] = [pos0, pos1, ...].
-        """
-        B = x.shape[0]
-        positions = []
-        for b in range(B):
-            active = torch.nonzero(x[b], as_tuple=False).squeeze(-1)
-            positions.append(active.tolist())
-        return positions
-
-    def _generate_derivation(self, predicted_rules, active_positions):
-        """Build a binary derivation tree from predicted rules and active positions.
-
-        For N active symbols per batch element, produces N-1 binary rules
-        (internal nodes) + 1 terminal rule (rightmost leaf), consuming
-        positions left-to-right in pre-order.
-
-        predicted_rules:  [B, max_depth] integer tensor
-        active_positions: list of lists — active_positions[b] = [pos0, ...]
-
-        Returns: flat list of (batch, vector, rule) word tuples.
-        """
-        B = predicted_rules.shape[0]
-        all_words = []
-        for b in range(B):
-            rules     = predicted_rules[b].tolist()
-            positions = active_positions[b]
-            n = len(positions)
-            if n == 0:
-                continue
-            if n == 1:
-                # Single symbol — terminal (rule 1: S → W)
-                all_words.append((b, positions[0], 1))
-                continue
-            # Use predicted binary rules for internal nodes, terminal for last leaf
-            pos_idx = 0
-            for rule_id in rules:
-                if pos_idx >= n - 1:
-                    break
-                # Force binary: if predicted rule isn't binary, use first binary rule
-                if self.grammar.arity(rule_id) != 2:
-                    rule_id = self.grammar.binary_rules()[0]
-                all_words.append((b, positions[pos_idx], rule_id))
-                pos_idx += 1
-            # Last leaf is always terminal
-            all_words.append((b, positions[-1], 1))
-        return all_words
-
-    # ── reverse: deterministic tree-walk ────────────────────────────
-
-    def reverse(self, words, nVectors, batch_size):
-        """Decode the derivation tree to recover the activation vector.
-
-        Walks word tuples in pre-order — each (batch, vector, rule) entry
-        marks that position as active.  This deterministically reconstructs
-        which symbol positions are "on" from the derivation alone.d
+        The stored vector is ``activation * degree``, so the DoT is
+        encoded in both the magnitude and (for negative degrees) the
+        direction of the stored representation.
 
         Args:
-            words:      list of (batch, vector, rule) tuples.
-            nVectors:   width of the activation vector (number of symbol slots).
-            batch_size: batch dimension.
+            activation: (nDim,) symbolic activation from the model pipeline.
+            degree: scalar in [-1, 1].  +1 = certainly true, -1 = certainly
+                    false, 0 = unknown/inert.
 
         Returns:
-            activation: [batch_size, nVectors] tensor with 1.0 at active positions.
+            Index of the stored entry.
         """
-        activation = torch.zeros(batch_size, nVectors, device=TheDevice.get())
-        for b, v, r in words:
-            activation[b, v] = 1.0
-        return activation
+        if self.count >= self.max_truths:
+            raise RuntimeError(
+                f"Truth store full ({self.max_truths} entries). "
+                "Increase max_truths or prune stale entries."
+            )
+        degree = max(-1.0, min(1.0, degree))
+        idx = self.count.item()
+        self.truths[idx] = activation.detach() * degree
+        self.count += 1
+        return idx
 
-    # ── utilities ───────────────────────────────────────────────────
+    def query(self, activation: torch.Tensor, threshold: float = 0.9
+              ) -> Optional[Tuple[int, float]]:
+        """Find the closest stored truth to ``activation``.
 
-    def set_tau(self, tau):
-        """Anneal the Gumbel-softmax temperature."""
-        self.tau = tau
+        Compares against the *direction* of stored truths (normalised).
+        The sign of the cosine similarity tells you consonance (+) vs
+        dissonance (−) with the stored truth.
 
+        Args:
+            activation: (nDim,) or (B, nDim) query vector.
+            threshold: minimum absolute cosine similarity to count as a match.
+
+        Returns:
+            (index, similarity) of the best match, or None if no match
+            exceeds the threshold.  similarity > 0 means consonant with
+            a positive truth or dissonant with a negative truth.
+        """
+        n = self.count.item()
+        if n == 0:
+            return None
+
+        stored = self.truths[:n]                                 # (n, D)
+        q = activation.detach()
+        if q.ndim == 1:
+            q = q.unsqueeze(0)                                   # (1, D)
+
+        q_norm = torch.nn.functional.normalize(q, dim=-1)
+        s_norm = torch.nn.functional.normalize(stored, dim=-1)
+        sims = (q_norm @ s_norm.T).squeeze(0)                   # (n,)
+
+        best_abs, best_idx = sims.abs().max(dim=0)
+        if best_abs.item() < threshold:
+            return None
+        idx = best_idx.item()
+        return (idx, sims[idx].item())
+
+    # ── Truth Field ───────────────────────────────────────────────────
+
+    def field(self, concepts: torch.Tensor, eps: float = 1e-8
+              ) -> torch.Tensor:
+        """Project stored truths into a scalar truth field over concepts.
+
+        Because the DoT is baked into the stored vectors, the field
+        naturally produces attractors for positive truths and dispersers
+        for negative truths:
+
+            field(c) = (1/n) Σ_i  sim(c, truth_i)
+
+        where ``truth_i = activation_i * degree_i``.
+
+        Args:
+            concepts: (B, N, D) concept vectors in ConceptualSpace.
+
+        Returns:
+            field: (B, N) scalar field in [-1, 1].
+        """
+        n = self.count.item()
+        if n == 0:
+            return torch.zeros(
+                concepts.shape[0], concepts.shape[1],
+                device=concepts.device, dtype=concepts.dtype,
+            )
+
+        stored = self.truths[:n]                                 # (n, D)
+
+        c_norm = torch.nn.functional.normalize(
+            concepts, dim=-1, eps=eps)                            # (B, N, D)
+        # Don't normalize stored — the magnitude carries the DoT
+        # Use dot product: stronger DoT → stronger field influence
+        dots = torch.einsum('bnd,md->bnm', c_norm, stored)      # (B, N, n)
+        truth_field = dots.sum(dim=-1) / (n + eps)               # (B, N)
+
+        return truth_field.clamp(-1.0, 1.0)
+
+    # ── Maintenance ───────────────────────────────────────────────────
+
+    @torch.no_grad()
+    def prune(self, min_norm: float = 1e-6):
+        """Remove near-zero entries (truths with DoT ≈ 0).
+
+        Compacts the store in-place.
+        """
+        n = self.count.item()
+        if n == 0:
+            return
+        norms = self.truths[:n].norm(dim=-1)
+        keep = norms > min_norm
+        kept = self.truths[:n][keep]
+        new_n = kept.shape[0]
+        self.truths[:new_n] = kept
+        self.truths[new_n:] = 0
+        self.count.fill_(new_n)
+
+    def __len__(self):
+        return self.count.item()
+
+    def __repr__(self):
+        return (f"TruthLayer(nDim={self.nDim}, "
+                f"truths={self.count.item()}/{self.max_truths})")
+
+    # ── Test ──────────────────────────────────────────────────────────
+
+    @staticmethod
+    def test():
+        D = 32
+        tl = TruthLayer(D, max_truths=64)
+        assert len(tl) == 0
+
+        # Record truths — DoT is baked into the stored activation
+        t1 = torch.randn(D)
+        t2 = torch.randn(D)
+        idx1 = tl.record(t1, degree=0.9)
+        idx2 = tl.record(t2, degree=-0.7)
+        assert len(tl) == 2
+
+        # Stored vector = activation * degree
+        assert torch.allclose(tl.truths[0], t1 * 0.9, atol=1e-6)
+        assert torch.allclose(tl.truths[1], t2 * -0.7, atol=1e-6)
+
+        # Query — exact match (high similarity)
+        result = tl.query(t1, threshold=0.8)
+        assert result is not None
+        assert result[0] == 0
+        assert result[1] > 0  # consonant with positive truth
+
+        # Query — no match for random vector
+        result = tl.query(torch.randn(D), threshold=0.99)
+        assert result is None
+
+        # Field projection
+        concepts = torch.randn(2, 8, D)
+        f = tl.field(concepts)
+        assert f.shape == (2, 8)
+        assert f.min() >= -1.0 and f.max() <= 1.0
+
+        # Prune near-zero (DoT ≈ 0 produces near-zero stored vector)
+        tl.record(torch.randn(D), degree=0.0)
+        assert len(tl) == 3
+        tl.prune(min_norm=1e-6)
+        assert len(tl) == 2
 
 #endregion
 
@@ -3333,19 +3414,16 @@ class OldSyntacticLayer(Layer):
 def test():
     torch.autograd.set_detect_anomaly(True)
 
-    LogicLayer.test()
+    TruthLayer.test()
     LinearLayer.test()
 
 
     InvertibleLinearLayer.test()
 
     SigmaLayer.test()
-    PiLayerOld.test()
-    PiLayerOld.xorTest()
     PiLayer.test()
 
     AttentionLayer.test()
-    NormLayer.test()
     Mem.test()
     DecisionBoundaryLayer.test()
 

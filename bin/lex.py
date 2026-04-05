@@ -20,7 +20,7 @@ class Lex:
 
     def build_vocab(self, source: torch.Tensor) -> None:
         """Scan source buffer, extract words, assign token IDs."""
-        text = bytes(source.numpy()).decode('utf-8')
+        text = bytes(source.cpu().numpy()).decode('utf-8')
         if self.granularity == "word":
             words = text.split()
         else:
@@ -42,7 +42,7 @@ class Lex:
         If example_offsets is provided as [N, 2] tensor of (start, end) pairs,
         only spans within those byte ranges are returned.
         """
-        raw = bytes(source.numpy())
+        raw = bytes(source.cpu().numpy())
         text = raw.decode('utf-8')
 
         # Build char->byte offset map once, O(n)

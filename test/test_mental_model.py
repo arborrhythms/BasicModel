@@ -67,33 +67,33 @@ class TestMentalModelForwardReverse(unittest.TestCase):
                 self.assertEqual(inputData.ndim, 3)
                 self.assertEqual(inputData.shape[0], 2)
 
-    def test_conceptual_space_has_syntactic_layer(self):
-        """MentalModel's ConceptualSpace has a SyntacticLayer for grammar rules."""
+    def test_grammar_has_syntactic_layers(self):
+        """TheGrammar has per-tier SyntacticLayers and methods after init_layers."""
         _reload_config()
         model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
-        # No SyntacticSpace in iterative MentalModel — syntax handled by ConceptualSpace
-        self.assertIsNone(model.syntacticSpace)
-        self.assertIsNotNone(model.conceptualSpace.syntactic_layer)
-        # ConceptualSpace has C-tier Methods (equals/part moved to S-tier)
-        self.assertNotIn('equals', model.conceptualSpace.methods)
-        self.assertNotIn('part', model.conceptualSpace.methods)
-        self.assertIn('union', model.conceptualSpace.methods)
-        self.assertIn('not', model.conceptualSpace.methods)
-        # SymbolicSpace has S-tier Methods
-        self.assertIsNotNone(model.symbolicSpace.equals_method)
-        self.assertIsNotNone(model.symbolicSpace.part_method)
+        from Space import TheGrammar
+        # Grammar should be initialized with per-tier layers
+        self.assertTrue(TheGrammar._layers_initialized)
+        self.assertIsNotNone(TheGrammar.c_syntactic_layer)
+        self.assertIsNotNone(TheGrammar.s_syntactic_layer)
+        # C-tier methods (equals/part are on S-tier)
+        self.assertNotIn('equals', TheGrammar.c_methods)
+        self.assertNotIn('part', TheGrammar.c_methods)
+        self.assertIn('union', TheGrammar.c_methods)
+        self.assertIn('not', TheGrammar.c_methods)
+        # S-tier methods
+        self.assertIn('equals', TheGrammar.s_methods)
+        self.assertIn('part', TheGrammar.s_methods)
 
-
-    def test_mental_model_spaces_have_resetStack(self):
-        """MentalModel spaces all have resetStack method."""
+    def test_grammar_has_resetStack(self):
+        """TheGrammar.resetStack works for all tiers."""
         _reload_config()
         model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
-        if model.syntacticSpace is not None:
-            self.assertTrue(hasattr(model.syntacticSpace, 'resetStack'))
-        if hasattr(model, 'conceptualSpace'):
-            self.assertTrue(hasattr(model.conceptualSpace, 'resetStack'))
-        if hasattr(model, 'perceptualSpace'):
-            self.assertTrue(hasattr(model.perceptualSpace, 'resetStack'))
+        from Space import TheGrammar
+        # Should not raise
+        TheGrammar.resetStack('S')
+        TheGrammar.resetStack('C')
+        TheGrammar.resetStack('P')
 
 
 @unittest.expectedFailure
@@ -105,9 +105,9 @@ class TestMentalModelLearnsGrammar(unittest.TestCase):
     that maps to a known rule sequence. After training, the SyntacticLayer
     should predict rules that match the correct derivation.
 
-    Currently xfail: the projectConcepts/projectSymbols methods need
-    actual implementations for the gradient to flow through composed
-    representations and train the SyntacticLayer's rule predictions.
+    Currently xfail: the Grammar.project() methods need actual training
+    for the gradient to flow through composed representations and train
+    the SyntacticLayer's rule predictions.
     """
 
     # Known sentences with expected derivation structure.

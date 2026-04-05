@@ -46,7 +46,6 @@
     <nOutput>256</nOutput>
     <nDim>1</nDim>
     <nVectors>0</nVectors>
-    <hasNorm>false</hasNorm>
     <invertible>false</invertible>
     <quantized>false</quantized>
   </ConceptualSpace>

@@ -17,7 +17,7 @@ os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 from util import TheDevice
 from Model import (
     LinearLayer, InvertibleLinearLayer, SigmaLayer,
-    PiLayer, AttentionLayer, NormLayer, LiftingLayer,
+    PiLayer, AttentionLayer, LiftingLayer,
 )
 
 
@@ -336,23 +336,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 3. NormLayer
-# ═══════════════════════════════════════════════════════════════════════════
-
-class TestNormLayerInvertibility(unittest.TestCase):
-    def test_roundtrip(self):
-        torch.manual_seed(42)
-        layer = NormLayer(10, 12, pNorm=2)
-        layer.lr = 0
-        x = torch.randn(5, 10).to(TheDevice.get())
-        y = layer.forward(x)
-        x_rec = layer.reverse(y)
-        err = _reconstruction_error(x, x_rec)
-        self.assertLess(err, 1e-5)
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# 4. Paired layer training (non-invertible encoder/decoder pairs)
+# 3. Paired layer training (non-invertible encoder/decoder pairs)
 # ═══════════════════════════════════════════════════════════════════════════
 
 class TestPairedSigmaTraining(unittest.TestCase):
@@ -449,7 +433,7 @@ def _clamp_subspace(vspace, lo=1e-7, hi=1.0):
 def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
                            reconstruct="FULL", flatten=True, ergodic=False,
                            passThrough=False, hasAttention=True,
-                           invertible=False, hasNorm=False,
+                           invertible=False,
                            symbolPassThrough=False):
     """Configure TheXMLConfig for isolated Space tests.
 
@@ -471,9 +455,9 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
         },
         "InputSpace":      {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": False, "quantized": False, "lexer": "word"},
         "PerceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "quantized": False, "passThrough": passThrough, "hasAttention": hasAttention, "invertible": invertible},
-        "ConceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "quantized": False, "hasAttention": False, "hasNorm": hasNorm, "invertible": invertible},
+        "ConceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "quantized": False, "hasAttention": False, "invertible": invertible},
         "SymbolicSpace":   {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "passThrough": symbolPassThrough, "quantized": False},
-        "SyntacticSpace":  {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "quantized": False},
+        "SyntacticSpace":  {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "quantized": False, "normalize": False},
         "OutputSpace":     {"nDim": outputDim,  "nVectors": nObj, "nActive": nObj, "nWhere": 0, "nWhen": 0, "flatten": True, "quantized": False, "invertible": False},
     }
     for section, vals in overrides.items():
@@ -550,8 +534,7 @@ class TestPerceptualSpaceReversePassTrained(unittest.TestCase):
 class TestConceptualSpaceInvertible(unittest.TestCase):
     """ConceptualSpace with invertible=True should roundtrip well."""
     def _check(self, objSize, flatten):
-        _setup_object_encoding(objSize=objSize, invertible=True, hasNorm=False,
-                               ergodic=False, flatten=flatten, hasAttention=False)
+        _setup_object_encoding(objSize=objSize, invertible=True,                               ergodic=False, flatten=flatten, hasAttention=False)
         nObj, contentDim = 3, 6
         embDim = contentDim + objSize
         torch.manual_seed(42)
@@ -578,8 +561,7 @@ class TestConceptualSpaceInvertible(unittest.TestCase):
 class TestConceptualSpacePairedSigma(unittest.TestCase):
     """ConceptualSpace with paired (non-invertible) sigma layers."""
     def _check(self, objSize):
-        _setup_object_encoding(objSize=objSize, invertible=False, hasNorm=False,
-                               ergodic=False, flatten=True, hasAttention=False)
+        _setup_object_encoding(objSize=objSize, invertible=False,                               ergodic=False, flatten=True, hasAttention=False)
         nObj, contentDim = 3, 6
         embDim = contentDim + objSize
         torch.manual_seed(42)
@@ -597,32 +579,6 @@ class TestConceptualSpacePairedSigma(unittest.TestCase):
 
     def test_objsize_0(self):  self._check(0)
     def test_objsize_4(self):  self._check(4)
-
-
-class TestConceptualSpaceHasNorm(unittest.TestCase):
-    """ConceptualSpace with hasNorm=True.
-
-    Norm factors (mean, std) are cached during forward and reattached
-    during reverse, keeping the sigma layer square for exact invertibility.
-    """
-    def test_hasNorm_reshape(self):
-        _setup_object_encoding(objSize=0, reconstruct="FULL", flatten=True,
-                               invertible=True, hasNorm=True, ergodic=False,
-                               hasAttention=False)
-        nObj, contentDim = 3, 6
-        torch.manual_seed(42)
-        cspace = ConceptualSpace(
-            [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
-        )
-        cspace.eval()
-        cspace.sigma.set_sigma(0)
-        # Input in (0,1) — logit in ConceptualSpace.forward() expects this range
-        x = (torch.rand(2, nObj, contentDim) * 0.8 + 0.1).to(TheDevice.get())
-        with torch.no_grad():
-            y = cspace.forward(_wrap_tensor(cspace, x))
-            x_rec = _unwrap(cspace.reverse(y))
-        err = _reconstruction_error(x, x_rec)
-        self.assertLess(err, 1e-2, f"err={err:.2e}")
 
 
 class TestSymbolicSpacePassthrough(unittest.TestCase):
@@ -874,8 +830,7 @@ class TestConceptualSpaceReverseRangeCheck(unittest.TestCase):
 
     def test_nonlinear_output_in_range(self):
         """With nonlinear=True, sigmoid guarantees reverse output in (0, 1)."""
-        _setup_object_encoding(objSize=0, invertible=True, hasNorm=False,
-                               flatten=True, hasAttention=False)
+        _setup_object_encoding(objSize=0, invertible=True,                               flatten=True, hasAttention=False)
         nObj, contentDim = 3, 6
         torch.manual_seed(42)
         cspace = ConceptualSpace(
@@ -891,8 +846,7 @@ class TestConceptualSpaceReverseRangeCheck(unittest.TestCase):
 
     def test_nonlinear_extreme_input_bounded(self):
         """Even with extreme concept values, sigmoid keeps output in (0, 1)."""
-        _setup_object_encoding(objSize=0, invertible=True, hasNorm=False,
-                               flatten=True, hasAttention=False)
+        _setup_object_encoding(objSize=0, invertible=True,                               flatten=True, hasAttention=False)
         nObj, contentDim = 3, 6
         torch.manual_seed(42)
         cspace = ConceptualSpace(
@@ -908,8 +862,7 @@ class TestConceptualSpaceReverseRangeCheck(unittest.TestCase):
 
     def test_no_nonlinear_warns_on_out_of_range(self):
         """With nonlinear=False, out-of-range output emits warning not error."""
-        _setup_object_encoding(objSize=0, invertible=True, hasNorm=False,
-                               flatten=True, hasAttention=False)
+        _setup_object_encoding(objSize=0, invertible=True,                               flatten=True, hasAttention=False)
         # Override nonlinear to False for this test
         TheXMLConfig._data["ConceptualSpace"]["nonlinear"] = False
         nObj, contentDim = 3, 6

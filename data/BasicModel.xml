@@ -68,7 +68,6 @@
     <nDim>100</nDim>
     <nVectors>128</nVectors>
     <hasAttention>false</hasAttention>
-    <hasNorm>false</hasNorm>
     <flatten>true</flatten>
     <invertible>true</invertible>
     <quantized>true</quantized>

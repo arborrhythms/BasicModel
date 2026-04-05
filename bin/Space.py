@@ -36,8 +36,8 @@ from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
-from Model import Grammar, Layer, PiLayer, PiLayerOld, SigmaLayer # Import custom layers from Model.py
-from Model import VQLayer, NormLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, VerbLayer, SyntacticLayer
+from Model import Grammar, Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
+from Model import VQLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, VerbLayer, SyntacticLayer
 from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 
 ENCODING_TARGETS = ("activation", "what", "where", "when", "event", "all")
@@ -3187,21 +3187,9 @@ class PerceptualSpace(Space):
             self.forwardPi = self.pi.forward
             self.params = self.pi.getParameters()
             self.layers = nn.ModuleList([self.pi])
-        # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
-        # Per-space syntactic layer for perceptual grammar rules (13: terminal)
-        self.syntactic_layer = None
-        syntax = TheXMLConfig.get("architecture.syntax", False)
-        nPerceptSlots = outputShape[0]
-        if syntax and not passThrough:
-            self.syntactic_layer = SyntacticLayer(
-                nInput=nPerceptSlots, nOutput=nPerceptSlots,
-                rules=TheGrammar.perceptual(),
-                transition_rule=None,
-                max_depth=max(nPerceptSlots - 1, 1),
-                hidden_dim=min(256, max(64, nPerceptSlots * 4)),
-                grammar=TheGrammar,
-            )
-            self.layers.append(self.syntactic_layer)
+        # Grammar methods and SyntacticLayers are now on TheGrammar.
+        # Spaces delegate to TheGrammar.project('P', ...) and
+        # TheGrammar.forward('P', ...).
 
     def _register_requirements(self):
         """Register PerceptualSpace-specific config requirements."""
@@ -3284,93 +3272,10 @@ class PerceptualSpace(Space):
         vspace.normalize("input", target="what", normalize=self._normalize)
         return vspace
 
-    def projectPercepts(self, rule_id, vspace):
-        """Execute the perceptual terminal rule (P→W).
-
-        Recovers the word embedding by running the perceptual reverse path
-        on the active subspace, mapping from percept space back to input
-        space where words live.
-
-        Args:
-            rule_id: global Grammar rule ID (11).
-            vspace:  SubSpace with perceptual vectors and activation.
-
-        Returns:
-            SubSpace with reconstructed input-level vectors.
-        """
-        rule_name = TheGrammar[rule_id]
-
-        if rule_name.strip().endswith("W"):
-            # Terminal: use the reverse PiLayer to map percepts back
-            # toward the input embedding (word recovery)
-            y = vspace.materialize()
-            if y is not None and self.reversible:
-                y = self.reversePi(y)
-                self.subspace.set_vectors(y)
-                return self.subspace
-        return vspace
-
-    def resetStack(self):
-        """Clear accumulated words for a new sentence."""
-        self._sr_words = []
-
-    def writePercepts(self, activation, vectors):
-        """Shift one percept and reduce on terminal rule (P->W).
-
-        For the terminal rule, the percept maps to a word -- the reverse
-        PiLayer recovers the word embedding.
-
-        Args:
-            activation: [B, N] percept activation.
-            vectors:    [B, N, D] percept vectors (or SubSpace).
-
-        Returns:
-            dict with:
-                transition: bool -- always False (P is terminal).
-                composed:   result after terminal rule applied.
-                words:      list of word tuples.
-        """
-        words = []
-
-        # Use syntactic_layer to predict terminal rule and generate word tuples
-        if self.syntactic_layer is not None:
-            out = self.syntactic_layer.forward(activation)
-            words = out.get("words", [])
-
-        self._sr_words.extend(words)
-
-        # Apply terminal rule P->W (rule 13) for word recovery
-        vspace = vectors
-        if not isinstance(vspace, SubSpace):
-            self.subspace.set_vectors(vspace)
-            vspace = self.subspace
-        composed = self.projectPercepts(13, vspace)
-
-        return {
-            "transition": False,
-            "composed": composed,
-            "words": words,
-        }
-
-    def readPercepts(self, words, batch_size=1):
-        """Reconstruct percept activation from word tuples (reverse S/R).
-
-        Terminal rule reversal: marks percept positions referenced by P->W
-        word tuples as active.
-
-        Args:
-            words:      list of (batch, vector, rule) tuples.
-            batch_size: number of batch elements.
-
-        Returns:
-            [batch_size, nPercepts] reconstructed activation.
-        """
-        nVectors = self.outputShape[0]
-        activation = torch.zeros(batch_size, nVectors, device=TheDevice.get())
-        for b, v, r in words:
-            if v < nVectors:
-                activation[b, v] = 1.0
-        return activation
+    # projectPercepts, writePercepts, readPercepts, resetStack —
+    # all moved to TheGrammar (Grammar.project('P', ...),
+    # Grammar.forward('P', ...), Grammar.reverse('P', ...),
+    # Grammar.resetStack('P')).
 
     @staticmethod
     def test():
@@ -3558,8 +3463,7 @@ class ConceptualSpace(Space):
     representations.  The SigmaLayer computes weighted sums (inner products)
     rather than the permutation-equivariant operations of PiLayer.
 
-    Supports optional NormLayer preprocessing, self-attention, and VQ codebook
-    quantization.
+    Supports optional self-attention and VQ codebook quantization.
 
     When ``invertible=True``, uses a InvertibleSigmaLayer whose inverse is
     exact.  When ``reversible=True`` without invertibility, a separate
@@ -3573,7 +3477,6 @@ class ConceptualSpace(Space):
         ergodic = TheXMLConfig.get("architecture.ergodic")
         hasAttention = TheXMLConfig.space(section, "hasAttention")
         invertible = TheXMLConfig.space(section, "invertible")
-        hasNorm = TheXMLConfig.space(section, "hasNorm")
         nonlinear = TheXMLConfig.space(section, "nonlinear")
         naive = TheXMLConfig.get("architecture.naive")
         super().__init__(inputShape, spaceShape, outputShape)
@@ -3582,15 +3485,7 @@ class ConceptualSpace(Space):
         self.hasAttention = hasAttention
         input = self.subspace.getEncodedInputSize()
         output = self.subspace.getEncodedOutputSize()
-        self.hasNorm = hasNorm
         self.attention = AttentionLayer(output, output, type="transformer")
-        if hasNorm:
-            self.norm = NormLayer(input, input + 2)
-            # Don't expand input dim for invertible path — norm factors
-            # are cached during forward and reapplied during reverse,
-            # so the sigma layer stays square (input == output).
-            if not invertible:
-                input += 2
         if self.reversible:
             if invertible:
                 self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True,
@@ -3611,41 +3506,9 @@ class ConceptualSpace(Space):
             self.forwardSigma = self.sigma.forward
             self.params = self.sigma.getParameters()
             self.layers = nn.ModuleList([self.sigma])
-        # Per-space syntactic layer for conceptual grammar rules
-        self.syntactic_layer = None
-        self.verb_layer = None
-        syntax = TheXMLConfig.get("architecture.syntax", False)
-        if syntax:
-            nConceptSlots = outputShape[0]
-            self.syntactic_layer = SyntacticLayer(
-                nInput=nConceptSlots, nOutput=nConceptSlots,
-                rules=TheGrammar.conceptual(),
-                transition_rule=TheGrammar.conceptual_transition(),
-                max_depth=max(nConceptSlots - 1, 1),
-                hidden_dim=min(256, max(64, nConceptSlots * 4)),
-                grammar=TheGrammar,
-            )
-            self.layers.append(self.syntactic_layer)
-            # VERB layer: codebook of verb weight matrices
-            nConceptDim = self.nDim
-            nVerbs = 16
-            self.verb_layer = VerbLayer(nVerbs, nConceptDim)
-            self.layers.append(self.verb_layer)
-
-        # C-tier Method instances for shift/reduce operations
-        from Model import (unionMethod, intersectionMethod,
-                           liftMethod, lowerMethod, notMethod, nonMethod)
-        nConceptDim = self.nDim
-        self.methods = nn.ModuleDict({
-            'union': unionMethod(nConceptDim),
-            'intersection': intersectionMethod(nConceptDim),
-            'lower': lowerMethod(nConceptDim),
-            'lift': liftMethod(nConceptDim),
-            'not': notMethod(nConceptDim),
-            'non': nonMethod(nConceptDim),
-        })
-        # Concept codebook for shift (if percept/concept dims differ)
-        # Uses existing subspace codebook
+        # Grammar methods and SyntacticLayers are now on TheGrammar.
+        # Spaces delegate to TheGrammar.project('C', ...) and
+        # TheGrammar.composeSyntax('C', ...).
         self._interpretation = TheGrammar.interpretation
 
     def distance(self, x, y):
@@ -3694,265 +3557,10 @@ class ConceptualSpace(Space):
         vspace.normalize("percepts", target="what", normalize=self._normalize)
         return vspace
 
-    def projectConcepts(self, rule_id, left, right=None):
-        """Execute a conceptual grammar rule on [B, N, D] embedded vectors.
-
-        Dispatches through Method instances. Falls back to verb_layer for
-        VERB rules (legacy compatibility) and pass-through for transitions.
-
-        Args:
-            rule_id: global Grammar rule ID.
-            left:    [B, N, D] left child vectors.
-            right:   [B, N, D] right child vectors (None for unary).
-
-        Returns:
-            [B, N, D] parent vectors.
-        """
-        method_name = TheGrammar.method_name(rule_id)
-
-        # Dispatch through Method instances
-        if method_name and method_name in self.methods:
-            method = self.methods[method_name]
-            if method.binary:
-                if right is not None:
-                    return method.forward(left, right)
-                return left  # binary op with missing operand — pass through
-            return method.forward(left)
-
-        # Legacy: VERB rules via VerbLayer
-        if method_name == 'verb' and self.verb_layer is not None:
-            B, N, D = left.shape
-            vp_query = left.mean(dim=1)
-            if right is not None:
-                C1_out, C2_out = self.verb_layer.forward_transitive(left, right, vp_query)
-                return C1_out
-            else:
-                return self.verb_layer.forward_reflexive(left, vp_query)
-
-        # Transition rule (C→P) or unknown — pass through
-        return left
-
-    def composeSyntax(self, activation, vectors):
-        """Predict rules and execute them as soft-weighted projections on vectors.
-
-        Conceptual rules are mereological — they operate on [B, N, D] vectors,
-        not scalar activations.
-
-        Args:
-            activation: [B, N] concept activation (for rule prediction).
-            vectors:    [B, N, D] concept embedding vectors.
-
-        Returns:
-            dict with keys from syntactic_layer.forward() plus:
-                composed: [B, N, D] vectors after soft-weighted tree composition.
-        """
-        if self.syntactic_layer is None:
-            return {"composed": vectors, "words": []}
-        out = self.syntactic_layer.forward(activation)
-        rule_probs = out["rule_probs"]
-        all_rules = self.syntactic_layer.all_rules
-        grammar = self.syntactic_layer.grammar
-
-        B, N = activation.shape
-        D = vectors.shape[-1] if vectors is not None and vectors.ndim == 3 else 1
-        active_positions = self.syntactic_layer._active_positions(activation)
-        max_leaves = max((len(p) for p in active_positions), default=0)
-
-        if max_leaves == 0 or vectors is None:
-            out["composed"] = vectors
-            return out
-
-        # Differentiable leaf extraction for vectors
-        masks = torch.zeros(B, max_leaves, N, device=vectors.device)
-        for b in range(B):
-            for i, pos in enumerate(active_positions[b]):
-                masks[b, i, pos] = 1.0
-        # masks [B, max_leaves, N] * vectors [B, N, D] → [B, max_leaves, N, D]
-        leaf_vecs = masks.unsqueeze(-1) * vectors.unsqueeze(1)
-
-        composed = leaf_vecs[:, 0, :, :]  # [B, N, D]
-        max_depth = self.syntactic_layer.max_depth
-
-        for d in range(min(max_depth, max(max_leaves - 1, 1))):
-            if d + 1 >= max_leaves:
-                break
-
-            left = composed
-            right = leaf_vecs[:, d + 1, :, :]  # [B, N, D]
-
-            results = []
-            for local_idx, rule_id in enumerate(all_rules):
-                arity = grammar.arity(rule_id)
-                if arity == 2:
-                    result = self.projectConcepts(rule_id, left, right)
-                elif arity == 1:
-                    result = self.projectConcepts(rule_id, left)
-                else:
-                    result = self.projectConcepts(rule_id, left)
-                results.append(result)
-
-            results = torch.stack(results, dim=1)           # [B, num_rules, N, D]
-            probs_d = rule_probs[:, d, :]                    # [B, num_rules]
-            probs_d = probs_d.unsqueeze(-1).unsqueeze(-1)    # [B, num_rules, 1, 1]
-            composed = (probs_d * results).sum(dim=1)        # [B, N, D]
-
-        out["composed"] = composed
-        return out
-
-    # ── Shift/Reduce interface ────────────────────────────────────
-
-    def resetStack(self):
-        """Clear the S/R stack for a new sentence."""
-        self._sr_stack = []
-        self._sr_act_stack = []
-        self._sr_words = []
-
-    def writeConcepts(self, activation, vectors):
-        """Shift one concept and reduce if a grammar rule matches.
-
-        Args:
-            activation: [B, N] concept activation (for rule prediction).
-            vectors:    [B, N, D] concept embedding vectors.
-
-        Returns:
-            dict with:
-                transition: bool — True if transition rule (C→P) fired.
-                composed:   [B, N, D] current stack head vectors.
-                words:      list of word tuples generated.
-        """
-        # ── SHIFT ──────────────────────────────────────────────────
-        self._sr_stack.append(vectors)
-        self._sr_act_stack.append(activation)
-
-        all_rules = self.syntactic_layer.all_rules
-        grammar = self.syntactic_layer.grammar
-
-        # ── PREDICT ────────────────────────────────────────────────
-        head_act = self._sr_act_stack[-1]
-        out = self.syntactic_layer.forward(head_act)
-        rule_probs = out["rule_probs"][:, 0, :]  # [B, num_rules_local]
-
-        # Argmax rule (for deciding arity / transition)
-        best_local = rule_probs.argmax(dim=-1)[0].item()
-        best_rule_id = all_rules[best_local]
-
-        # ── REDUCE (soft gate) ─────────────────────────────────────
-        # Soft reduce/shift: p_binary gates the reduce decision so that
-        # reconstruction error flows through to rule probabilities.
-        B_act = activation.shape[0]
-        p_binary = torch.zeros(B_act, 1, device=rule_probs.device)
-        for local_idx, rule_id in enumerate(all_rules):
-            if grammar.arity(rule_id) == 2:
-                p_binary = p_binary + rule_probs[:, local_idx:local_idx + 1]
-
-        arity = grammar.arity(best_rule_id)
-
-        if arity == 2 and len(self._sr_stack) >= 2:
-            # Save shift-only result (the just-pushed vectors, no composition)
-            shift_result = self._sr_stack[-1]
-            shift_act = self._sr_act_stack[-1]
-
-            right = self._sr_stack.pop()
-            left = self._sr_stack.pop()
-            right_act = self._sr_act_stack.pop()
-            left_act = self._sr_act_stack.pop()
-
-            # Compute ALL rule operations, soft-weight by rule_probs
-            results = []
-            for local_idx, rule_id in enumerate(all_rules):
-                a = grammar.arity(rule_id)
-                if a == 2:
-                    result = self.projectConcepts(rule_id, left, right)
-                elif a == 1:
-                    result = self.projectConcepts(rule_id, left)
-                else:
-                    result = self.projectConcepts(rule_id, left)
-                results.append(result)
-
-            results = torch.stack(results, dim=1)                     # [B, num_rules, N, D]
-            probs = rule_probs.unsqueeze(-1).unsqueeze(-1)            # [B, num_rules, 1, 1]
-            reduce_result = (probs * results).sum(dim=1)              # [B, N, D]
-
-            # Soft interpolation: p_binary * reduce + (1 - p_binary) * shift
-            p_b = p_binary.unsqueeze(-1)                              # [B, 1, 1]
-            composed = p_b * reduce_result + (1.0 - p_b) * shift_result
-            self._sr_stack.append(composed)
-
-            # Derive activation from composed vectors (also soft-gated)
-            reduce_act = reduce_result.norm(dim=-1)                   # [B, N]
-            composed_act = p_binary * reduce_act + (1.0 - p_binary) * shift_act
-            self._sr_act_stack.append(composed_act)
-
-        elif arity == 1 and len(self._sr_stack) >= 1:
-            # Save shift-only result (the just-pushed vectors, no transformation)
-            shift_result = self._sr_stack[-1]
-            shift_act = self._sr_act_stack[-1]
-
-            operand = self._sr_stack.pop()
-            operand_act = self._sr_act_stack.pop()
-
-            results = []
-            for local_idx, rule_id in enumerate(all_rules):
-                a = grammar.arity(rule_id)
-                if a == 1:
-                    result = self.projectConcepts(rule_id, operand)
-                else:
-                    result = self.projectConcepts(rule_id, operand)
-                results.append(result)
-
-            results = torch.stack(results, dim=1)                     # [B, num_rules, N, D]
-            probs = rule_probs.unsqueeze(-1).unsqueeze(-1)            # [B, num_rules, 1, 1]
-            reduce_result = (probs * results).sum(dim=1)              # [B, N, D]
-
-            # Soft interpolation: p_unary * reduce + p_binary * shift
-            p_unary = 1.0 - p_binary
-            p_u = p_unary.unsqueeze(-1)                               # [B, 1, 1]
-            composed = p_u * reduce_result + (1.0 - p_u) * shift_result
-            self._sr_stack.append(composed)
-
-            reduce_act = reduce_result.norm(dim=-1)                   # [B, N]
-            composed_act = p_unary * reduce_act + p_binary * shift_act
-            self._sr_act_stack.append(composed_act)
-
-        # ── TRANSITION ─────────────────────────────────────────────
-        transition = TheGrammar.method_name(best_rule_id) is None and TheGrammar.arity(best_rule_id) == 1
-
-        # ── WORDS ──────────────────────────────────────────────────
-        words = []
-        B = activation.shape[0]
-        for b in range(B):
-            active = (activation[b].abs() > 1e-6).nonzero(as_tuple=True)[0]
-            for v in active:
-                word = self.subspace.wordEncoding.encode(b, v.item(), best_rule_id)
-                words.append(word)
-        self._sr_words.extend(words)
-
-        return {
-            "transition": transition,
-            "composed": self._sr_stack[-1],
-            "words": words,
-        }
-
-    def readConcepts(self, words, batch_size=1):
-        """Reconstruct concept activation from word tuples (reverse S/R).
-
-        Marks referenced positions as active. The concept vectors
-        themselves are reconstructed by the ConceptualSpace.reverse()
-        path (SigmaLayer inverse + attention inverse).
-
-        Args:
-            words:      list of (batch, vector, rule) tuples.
-            batch_size: number of batch elements.
-
-        Returns:
-            [batch_size, nConcepts] reconstructed activation.
-        """
-        nVectors = self.outputShape[0]
-        activation = torch.zeros(batch_size, nVectors, device=TheDevice.get())
-        for b, v, r in words:
-            if v < nVectors:
-                activation[b, v] = 1.0
-        return activation
+    # projectConcepts, composeSyntax, writeConcepts, readConcepts,
+    # resetStack — all moved to TheGrammar (Grammar.project('C', ...),
+    # Grammar.composeSyntax('C', ...), Grammar.forward('C', ...),
+    # Grammar.reverse('C', ...), Grammar.resetStack('C')).
 
     @staticmethod
     def test():
@@ -4102,12 +3710,24 @@ class SymbolicSpace(Space):
         nSymbols = spaceShape[0]
         self.layer = InvertibleLinearLayer(nConcepts, nSymbols)
 
+        # Truth accumulation: when accumulateTruth is set, SymbolicSpace
+        # stores encoded truth statements with DegreeOfTruth values.
+        try:
+            accumulate = TheXMLConfig.space(section, "accumulateTruth")
+        except KeyError:
+            accumulate = False
+        if accumulate:
+            from Model import TruthLayer
+            self.truth = TruthLayer(nSymbols)
+        else:
+            self.truth = None
+
         # S-tier operations
-        from Model import swapMethod, trueMethod, equalsMethod, partMethod
-        self.swap_method = swapMethod(self.nDim)
-        self.true_method = trueMethod(self.nDim)
-        self.equals_method = equalsMethod(self.nDim)
-        self.part_method = partMethod(self.nDim)
+        from Model import Swap, IsTrue, Equals, Part
+        self.swap_method = Swap(self.nDim)
+        self.true_method = IsTrue(self.nDim)
+        self.equals_method = Equals(self.nDim)
+        self.part_method = Part(self.nDim)
 
         # Symbol stack — preallocated StackSpace
         self.symbols = StackSpace(
@@ -4141,6 +3761,10 @@ class SymbolicSpace(Space):
         vspace = self.forwardBegin(vspace)
         act = vspace.materialize(mode="activation")
         act = self.layer.forward(act)
+
+        if self.truth is not None:
+            for i in range(act.shape[0]):
+                self.truth.record(act[i], degree=1.0)
 
         if self._symbol_where is not None:
             B = act.shape[0]
@@ -4227,331 +3851,26 @@ class SyntacticSpace(Space):
 
         nSymbols = inputShape[0]
 
-        # SyntacticLayer + composition layers for symbolic grammar
-        # rules [1-5] with soft-weighted Gumbel-softmax rule execution.
-        # composeSyntax predicts rules and executes them as projections;
-        # projectSymbols dispatches EQUALS/AND/OR/NOT/NON operations.
-        self.syntactic_layer = SyntacticLayer(
-            nInput=nSymbols, nOutput=nSymbols,
-            rules=TheGrammar.symbolic(),
-            transition_rule=TheGrammar.symbolic_transition(),
-            max_depth=max(nSymbols - 1, 1),
-            hidden_dim=min(256, max(64, nSymbols * 4)),
-            grammar=TheGrammar,
-        )
-        self.equals_layer = AssociationLayer(nSymbols, nSymbols, type="symmetric")
-        self.non_alpha = nn.Parameter(torch.tensor(0.5))
-        self.layers = nn.ModuleList([self.syntactic_layer, self.equals_layer])
+        # Grammar methods and SyntacticLayers are now on TheGrammar.
+        # Spaces delegate to TheGrammar.project('S', ...) and
+        # TheGrammar.forward('S', ...).
+        self.layers = nn.ModuleList([])
 
     # ── Rule execution (mental mode) ─────────────────────────────────
 
-    def projectSymbols(self, rule_id, left, right=None):
-        """Execute a symbolic grammar rule on [B, N] activation vectors.
-
-        Symbolic rules operate on scalar activations (attention/association
-        between symbols).
-
-        Args:
-            rule_id: global Grammar rule ID (1-5).
-            left:    [B, N] left child activation.
-            right:   [B, N] right child activation (None for unary).
-
-        Returns:
-            [B, N] parent activation.
-        """
-        rule_name = TheGrammar[rule_id]
-
-        if "EQUALS" in rule_name and self.equals_layer is not None:
-            association = self.equals_layer.forward(left)
-            return association * right
-
-        if "AND" in rule_name:
-            return torch.min(left, right)
-
-        if "OR" in rule_name:
-            return torch.max(left, right)
-
-        if "NOT" in rule_name:
-            return -left
-
-        if "NON" in rule_name:
-            alpha = torch.sigmoid(self.non_alpha.to(left.device))
-            return alpha * left
-
-        if "REWRITE" in rule_name:
-            # REWRITE operates only on where encodings (swap positions).
-            # The "what" activation passes through unchanged; composeSyntax
-            # handles the where swap using soft rule probabilities.
-            return left
-
-        # Transition rule (S→C) or start — pass through
-        return left
-
-    def _rewrite_rule_index(self):
-        """Local index of the REWRITE rule in this layer's rule set."""
-        for i, rid in enumerate(self.syntactic_layer.all_rules):
-            if "REWRITE" in TheGrammar[rid]:
-                return i
-        return None
-
-    # ── Shift/Reduce interface ────────────────────────────────────
-
-    def resetStack(self):
-        """Clear the S/R stack for a new sentence."""
-        self._sr_stack = []
-        self._sr_where_stack = []
-        self._sr_words = []
-
-    def writeSymbols(self, symbol_act, where=None):
-        """Shift one symbol activation and reduce if a grammar rule matches.
-
-        Args:
-            symbol_act: [B, N] activation for one symbol.
-            where:      [B, N, nWhere] optional positional encoding.
-
-        Returns:
-            dict with:
-                transition: bool — True if a transition rule (S→C) fired.
-                composed:   [B, N] current stack head activation.
-                words:      list of word tuples generated.
-        """
-        # ── SHIFT ──────────────────────────────────────────────────
-        self._sr_stack.append(symbol_act)
-        if where is not None:
-            self._sr_where_stack.append(where)
-
-        all_rules = self.syntactic_layer.all_rules
-        grammar = self.syntactic_layer.grammar
-
-        # ── PREDICT ────────────────────────────────────────────────
-        head = self._sr_stack[-1]
-        out = self.syntactic_layer.forward(head)
-        rule_probs = out["rule_probs"][:, 0, :]  # [B, num_rules_local]
-
-        # Argmax rule (for deciding arity / transition)
-        best_local = rule_probs.argmax(dim=-1)[0].item()
-        best_rule_id = all_rules[best_local]
-
-        # ── REDUCE (soft gate) ─────────────────────────────────────
-        # The reduce/shift decision is a soft weighted superposition so
-        # that reconstruction error flows through to the rule probs.
-        # p_binary = sum of rule_probs for arity-2 rules (differentiable).
-        # Stack management follows argmax (one parse gets most weight),
-        # but the VALUE is a soft blend of reduce and shift outcomes.
-        B_act = symbol_act.shape[0]
-        p_binary = torch.zeros(B_act, 1, device=rule_probs.device)
-        for local_idx, rule_id in enumerate(all_rules):
-            if grammar.arity(rule_id) == 2:
-                p_binary = p_binary + rule_probs[:, local_idx:local_idx + 1]
-
-        arity = grammar.arity(best_rule_id)
-        has_where = where is not None and len(self._sr_where_stack) > 0
-        rewrite_idx = self._rewrite_rule_index() if has_where else None
-
-        if arity == 2 and len(self._sr_stack) >= 2:
-            # Save shift-only result (the just-pushed symbol, no composition)
-            shift_result = self._sr_stack[-1]
-
-            right = self._sr_stack.pop()
-            left = self._sr_stack.pop()
-
-            # Compute ALL rule operations, soft-weight by rule_probs
-            results = []
-            for local_idx, rule_id in enumerate(all_rules):
-                a = grammar.arity(rule_id)
-                if a == 2:
-                    result = self.projectSymbols(rule_id, left, right)
-                elif a == 1:
-                    result = self.projectSymbols(rule_id, left)
-                else:
-                    result = self.projectSymbols(rule_id, left)
-                results.append(result)
-
-            results = torch.stack(results, dim=1)           # [B, num_rules, N]
-            reduce_result = (rule_probs.unsqueeze(-1) * results).sum(dim=1)  # [B, N]
-
-            # Soft interpolation: p_binary * reduce + (1 - p_binary) * shift
-            composed = p_binary * reduce_result + (1.0 - p_binary) * shift_result
-            self._sr_stack.append(composed)
-
-            # REWRITE where-swap (also soft-gated by p_binary)
-            if has_where and rewrite_idx is not None and len(self._sr_where_stack) >= 2:
-                shift_where = self._sr_where_stack[-1]
-                right_where = self._sr_where_stack.pop()
-                left_where = self._sr_where_stack.pop()
-                rewrite_prob = rule_probs[:, rewrite_idx]     # [B]
-                non_rewrite_prob = 1.0 - rewrite_prob
-                reduce_where = (non_rewrite_prob[:, None, None] * left_where
-                                + rewrite_prob[:, None, None] * right_where)
-                composed_where = (p_binary[:, :, None] * reduce_where
-                                  + (1.0 - p_binary[:, :, None]) * shift_where)
-                self._sr_where_stack.append(composed_where)
-
-        elif arity == 1 and len(self._sr_stack) >= 1:
-            # Save shift-only result (the just-pushed symbol, no transformation)
-            shift_result = self._sr_stack[-1]
-
-            operand = self._sr_stack.pop()
-
-            results = []
-            for local_idx, rule_id in enumerate(all_rules):
-                a = grammar.arity(rule_id)
-                if a == 1:
-                    result = self.projectSymbols(rule_id, operand)
-                else:
-                    result = self.projectSymbols(rule_id, operand)
-                results.append(result)
-
-            results = torch.stack(results, dim=1)
-            reduce_result = (rule_probs.unsqueeze(-1) * results).sum(dim=1)
-
-            # Soft interpolation: p_unary * reduce + p_binary * shift
-            p_unary = 1.0 - p_binary
-            composed = p_unary * reduce_result + p_binary * shift_result
-            self._sr_stack.append(composed)
-
-        # ── TRANSITION ─────────────────────────────────────────────
-        transition = TheGrammar.method_name(best_rule_id) is None and TheGrammar.arity(best_rule_id) == 1
-
-        # ── WORDS ──────────────────────────────────────────────────
-        words = []
-        B = symbol_act.shape[0]
-        for b in range(B):
-            active = (symbol_act[b].abs() > 1e-6).nonzero(as_tuple=True)[0]
-            for v in active:
-                word = self.subspace.wordEncoding.encode(b, v.item(), best_rule_id)
-                words.append(word)
-        self._sr_words.extend(words)
-
-        return {
-            "transition": transition,
-            "composed": self._sr_stack[-1],
-            "words": words,
-        }
-
-    def readSymbols(self, words, batch_size=1):
-        """Reconstruct symbol activation from word tuples (reverse S/R).
-
-        Pops word tuples and marks referenced positions as active,
-        delegating to SyntacticLayer.reverse().
-
-        Args:
-            words:      list of (batch, vector, rule) tuples.
-            batch_size: number of batch elements.
-
-        Returns:
-            [batch_size, nSymbols] reconstructed activation.
-        """
-        nVectors = self.inputShape[0]
-        return self.syntactic_layer.reverse(words, nVectors, batch_size)
-
-    def composeSyntax(self, activation, where=None):
-        """Predict rules and execute them as soft-weighted projections.
-
-        Runs the syntactic layer to get rule probabilities, then computes
-        a soft superposition of all rule operations at each derivation
-        depth.  During training, all rules contribute proportional to
-        their Gumbel-softmax weight; during eval, the argmax dominates.
-
-        When ``where`` is provided (symbols are spatiotemporally concrete),
-        the REWRITE rule swaps where encodings between left and right
-        operands while leaving "what" activations unchanged.
-
-        Args:
-            activation: [B, N] symbol activation vector.
-            where:      [B, N, nWhere] optional positional encoding per symbol.
-
-        Returns:
-            dict with keys from syntactic_layer.forward() plus:
-                composed:       [B, N] activation after soft-weighted tree composition.
-                composed_where: [B, N, nWhere] where after composition (if where provided).
-        """
-        if self.syntactic_layer is None:
-            out = {"composed": activation, "words": []}
-            if where is not None:
-                out["composed_where"] = where
-            return out
-        out = self.syntactic_layer.forward(activation)
-        rule_probs = out["rule_probs"]      # [B, max_depth, num_rules_local]
-        all_rules = self.syntactic_layer.all_rules
-        grammar = self.syntactic_layer.grammar
-
-        # Build leaf activations (one-hot masks * activation, preserving gradients)
-        B, N = activation.shape
-        active_positions = self.syntactic_layer._active_positions(activation)
-        max_leaves = max((len(p) for p in active_positions), default=0)
-
-        if max_leaves == 0:
-            out["composed"] = activation
-            if where is not None:
-                out["composed_where"] = where
-            return out
-
-        # Differentiable leaf extraction
-        masks = torch.zeros(B, max_leaves, N, device=activation.device)
-        for b in range(B):
-            for i, pos in enumerate(active_positions[b]):
-                masks[b, i, pos] = 1.0
-        leaf_acts = masks * activation.unsqueeze(1)  # [B, max_leaves, N]
-
-        # Extract leaf where encodings if available
-        has_where = where is not None
-        if has_where:
-            # masks [B, max_leaves, N] * where [B, N, nWhere] → [B, max_leaves, N, nWhere]
-            leaf_wheres = masks.unsqueeze(-1) * where.unsqueeze(1)
-
-        # Left-branching tree composition with soft superposition
-        composed = leaf_acts[:, 0, :]  # [B, N] — start with first leaf
-        if has_where:
-            composed_where = leaf_wheres[:, 0, :, :]  # [B, N, nWhere]
-        max_depth = self.syntactic_layer.max_depth
-
-        # Local index of REWRITE rule for where-swap
-        rewrite_idx = self._rewrite_rule_index() if has_where else None
-
-        for d in range(min(max_depth, max(max_leaves - 1, 1))):
-            if d + 1 >= max_leaves:
-                break
-
-            left = composed
-            right = leaf_acts[:, d + 1, :]   # [B, N]
-
-            # Compute ALL rule operations on "what", weight by soft probs
-            results = []
-            for local_idx, rule_id in enumerate(all_rules):
-                arity = grammar.arity(rule_id)
-                if arity == 2:
-                    result = self.projectSymbols(rule_id, left, right)
-                elif arity == 1:
-                    result = self.projectSymbols(rule_id, left)
-                else:
-                    result = self.projectSymbols(rule_id, left)
-                results.append(result)
-
-            results = torch.stack(results, dim=1)           # [B, num_rules, N]
-            probs_d = rule_probs[:, d, :]                    # [B, num_rules]
-            composed = (probs_d.unsqueeze(-1) * results).sum(dim=1)  # [B, N]
-
-            # REWRITE: soft-swap where encodings
-            if has_where and rewrite_idx is not None:
-                left_where = composed_where
-                right_where = leaf_wheres[:, d + 1, :, :]    # [B, N, nWhere]
-                rewrite_prob = probs_d[:, rewrite_idx]        # [B]
-                non_rewrite_prob = 1.0 - rewrite_prob
-                # Soft interpolation: keep left_where or swap to right_where
-                composed_where = (non_rewrite_prob[:, None, None] * left_where
-                                + rewrite_prob[:, None, None] * right_where)
-
-        out["composed"] = composed
-        if has_where:
-            out["composed_where"] = composed_where
-        return out
+    # projectSymbols, composeSyntax, writeSymbols, readSymbols,
+    # resetStack — all moved to TheGrammar (Grammar.project('S', ...),
+    # Grammar.composeSyntax('S', ...), Grammar.forward('S', ...),
+    # Grammar.reverse('S', ...), Grammar.resetStack('S')).
 
     # ── Forward / Reverse ────────────────────────────────────────────
 
     def forward(self, vspace):
         """Predict derivation rules, build word tuples, and execute
-        soft-weighted rule composition over symbol activations."""
+        soft-weighted rule composition over symbol activations.
+
+        Delegates S/R processing to TheGrammar.forward('S', ...).
+        """
         vspace = self.forwardBegin(vspace)
 
         # Get symbolic presence [0,1] for the layer
@@ -4578,39 +3897,27 @@ class SyntacticSpace(Space):
         if where is not None:
             where = where.clone()  # avoid aliasing with event tensor
 
-        # Choose S/R or legacy composeSyntax
-        use_sr = TheXMLConfig.get("architecture.shiftReduce", True)
-        if use_sr:
-            # S/R loop: process one symbol at a time
-            self.resetStack()
-            B, N = symbols.shape
-            active_positions = self.syntactic_layer._active_positions(symbols)
-            # Union of active positions across all batches (sorted)
-            pos_set = set()
-            for bp in active_positions:
-                pos_set.update(bp)
-            positions = sorted(pos_set)
+        # S/R loop via TheGrammar
+        sl = TheGrammar._tier_syntactic_layer('S')
+        TheGrammar.resetStack('S')
+        B, N = symbols.shape
+        active_positions = sl._active_positions(symbols)
+        pos_set = set()
+        for bp in active_positions:
+            pos_set.update(bp)
+        positions = sorted(pos_set)
 
-            for pos in positions:
-                # Create a mask for just this symbol position
-                mask = torch.zeros_like(symbols)
-                mask[:, pos] = symbols[:, pos]
+        for pos in positions:
+            mask = torch.zeros_like(symbols)
+            mask[:, pos] = symbols[:, pos]
+            pos_where = where.clone() if where is not None else None
+            TheGrammar.forward('S', mask, vectors_or_where=pos_where)
 
-                pos_where = where.clone() if where is not None else None
+        composed = TheGrammar._s_stack[-1] if TheGrammar._s_stack else symbols
+        words = list(TheGrammar._s_words)
 
-                self.writeSymbols(mask, where=pos_where)
-
-            composed = self._sr_stack[-1] if self._sr_stack else symbols
-            words = list(self._sr_words)
-
-            # Gather composed_where from S/R where stack
-            composed_where = self._sr_where_stack[-1] if self._sr_where_stack else None
-        else:
-            # Legacy: batch composition
-            out = self.composeSyntax(symbols, where=where)
-            words = out.get("words", [])
-            composed = out.get("composed", symbols)
-            composed_where = out.get("composed_where")
+        # Gather composed_where from S/R where stack
+        composed_where = TheGrammar._s_where_stack[-1] if TheGrammar._s_where_stack else None
 
         self.subspace.set_words(words)
         self.subspace.set_symbols(composed)
@@ -4634,7 +3941,7 @@ class SyntacticSpace(Space):
         nVectors = self.inputShape[0]
         batch_size = max((b for b, v, r in words), default=0) + 1 if words else 1
 
-        symbols = self.syntactic_layer.reverse(words, nVectors, batch_size)
+        symbols = TheGrammar.reverse('S', words, batch_size)
         symbols = symbols.to(TheDevice.get())
 
         x = vspace.materialize()

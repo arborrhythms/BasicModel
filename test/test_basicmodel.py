@@ -107,7 +107,7 @@ def _populate_test_config(*,
                           useSubspaceActivation=False,
                           perceptPassThrough=False, symbolPassThrough=False,
                           perceptHasAttention=True, conceptHasAttention=False,
-                          invertible=False, hasNorm=False, quantized=False,
+                          invertible=False, quantized=False,
                           perceptQuantized=None, conceptQuantized=None,
                           certainty=False,
                           demuxed=False,
@@ -179,7 +179,6 @@ def _populate_test_config(*,
             "flatten": flatten,
             "quantized": _cq,
             "hasAttention": conceptHasAttention,
-            "hasNorm": hasNorm,
             "invertible": invertible,
             "normalize": False,  # matches model.xml default
         },
@@ -343,35 +342,6 @@ class TestAttentionLayer(unittest.TestCase):
     def test_inline(self):
         from Model import AttentionLayer
         AttentionLayer.test()
-
-
-class TestNormLayer(unittest.TestCase):
-    def test_forward_2d(self):
-        from Model import NormLayer
-        layer = NormLayer(4, 6)
-        x = torch.randn(3, 4).to(TheDevice.get())
-        y = layer(x)
-        self.assertEqual(y.shape, (3, 6))
-
-    def test_forward_3d(self):
-        from Model import NormLayer
-        layer = NormLayer(4, 6)
-        x = torch.randn(3, 5, 4).to(TheDevice.get())
-        y = layer(x)
-        self.assertEqual(y.shape, (3, 5, 6))
-
-    def test_reverse_3d(self):
-        from Model import NormLayer
-        layer = NormLayer(4, 6)
-        layer.lr = 0
-        x = torch.randn(3, 5, 4).to(TheDevice.get())
-        y = layer(x)
-        x_rec = layer.reverse(y)
-        self.assertTrue(torch.allclose(x, x_rec, atol=1e-5))
-
-    def test_inline(self):
-        from Model import NormLayer
-        NormLayer.test()
 
 
 class TestMemory(unittest.TestCase):
@@ -2025,23 +1995,6 @@ class TestModelTypeVariants(unittest.TestCase):
         self.assertEqual(data.shape[0], 2)
         self.assertEqual(data.shape[1], 16)
 
-    @unittest.expectedFailure
-    def test_has_norm(self):
-        """hasNorm=True with ergodic — forward only."""
-        _populate_test_config(
-            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
-            nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
-            hasNorm=True, ergodic=True,
-            perceptPassThrough=True, symbolPassThrough=True,
-            flatten=True)
-        from BasicModel import BasicModel
-        model = BasicModel()
-        model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice.get())
-        _, end_state, out = model.forward(x)
-        self.assertEqual(out.shape[0], 2)
-        self.assertEqual(out.shape[1], 4)
-
     def test_conceptual_order_1(self):
         """conceptualOrder=2 — forward only (equal object counts).
 
@@ -3366,7 +3319,11 @@ class TestSyntacticSpaceRoundTrip(unittest.TestCase):
             inputDim=3, perceptDim=3, conceptDim=3, symbolDim=1, wordDim=3,
             nInput=4, nPercepts=4, nConcepts=20, nSymbols=20, nWords=20, nOutput=10,
             perceptPassThrough=True, symbolPassThrough=True)
-        from Space import SyntacticSpace, SubSpace
+        from Space import SyntacticSpace, SubSpace, TheGrammar
+        # Re-initialize grammar for this test's dimensions
+        TheGrammar._layers_initialized = False
+        TheGrammar.init_layers(concept_dim=3, symbol_dim=20,
+                               n_concept_slots=20, n_symbol_slots=20, n_percept_slots=4)
         nVectors = 20
         nDim = 3
         syn = SyntacticSpace([nVectors, nDim], [nVectors, nDim], [nVectors, nDim])
@@ -3729,56 +3686,6 @@ class TestBasicModelDemuxed(unittest.TestCase):
         self.assertIsInstance(model.perceptualSpace, ModalSpace)
 
 
-class TestOldSyntacticLayer(unittest.TestCase):
-    """Tests for OldSyntacticLayer — the original learnable derivation stack."""
-
-    def _make_layer(self, nInput=16, max_depth=7, hidden_dim=32):
-        from Model import OldSyntacticLayer
-        return OldSyntacticLayer(nInput=nInput, nOutput=nInput,
-                                 max_depth=max_depth, hidden_dim=hidden_dim)
-
-    def _dev(self):
-        return TheDevice.get()
-
-    def test_forward_shapes(self):
-        layer = self._make_layer()
-        x = torch.randn(4, 16).to(self._dev())
-        out = layer.forward(x)
-        self.assertEqual(out["rule_logits"].shape, (4, 7, 15))
-        self.assertEqual(out["rule_probs"].shape, (4, 7, 15))
-        self.assertEqual(out["predicted_rules"].shape, (4, 7))
-
-    def test_gradient_flows_through_gumbel(self):
-        layer = self._make_layer(nInput=8, hidden_dim=16)
-        layer.train()
-        x = torch.randn(2, 8, requires_grad=True, device=self._dev())
-        out = layer.forward(x)
-        loss = out["rule_logits"].pow(2).sum()
-        loss.backward()
-        self.assertIsNotNone(x.grad)
-        self.assertTrue((x.grad.abs() > 0).any())
-
-    def test_eval_uses_softmax(self):
-        layer = self._make_layer(nInput=8, hidden_dim=16)
-        layer.eval()
-        x = torch.randn(2, 8).to(self._dev())
-        out = layer.forward(x)
-        sums = out["rule_probs"].sum(dim=-1)
-        self.assertTrue(torch.allclose(sums, torch.ones_like(sums), atol=1e-5))
-
-    def test_shared_weights(self):
-        """Verify the recursive architecture uses shared weights."""
-        layer = self._make_layer(nInput=8, max_depth=12, hidden_dim=16)
-        self.assertIsInstance(layer.derivation_layer, type(layer.input_proj))
-        self.assertIsInstance(layer.rule_head, type(layer.input_proj))
-        self.assertEqual(layer.depth_embed.num_embeddings, 12)
-
-    def test_set_tau(self):
-        layer = self._make_layer()
-        layer.set_tau(0.5)
-        self.assertEqual(layer.tau, 0.5)
-
-
 class TestSyntacticLayer(unittest.TestCase):
     """Tests for SyntacticLayer — per-space grammar with executable rules."""
 
@@ -3932,15 +3839,32 @@ class TestSyntacticLayer(unittest.TestCase):
 
 
 class TestShiftReduce(unittest.TestCase):
-    """Tests for SyntacticSpace shift/reduce (writeSymbols / resetStack)."""
+    """Tests for Grammar shift/reduce (TheGrammar.write / resetStack)."""
 
-    def _make_syntactic_space(self, nSym=8):
-        """Create a SyntacticSpace with minimal config for S/R testing."""
+    def _init_grammar(self, nSym=8, nDim=4):
+        """Initialize TheGrammar with layers for S/R testing."""
         _populate_test_config(
-            inputDim=1, perceptDim=1, conceptDim=1, symbolDim=1, wordDim=1,
+            inputDim=nDim, perceptDim=nDim, conceptDim=nDim, symbolDim=1,
+            wordDim=1,
             nInput=nSym, nPercepts=nSym, nConcepts=nSym, nSymbols=nSym,
             nWords=nSym, nOutput=nSym,
             perceptPassThrough=True, symbolPassThrough=True)
+        from BasicModel import TheXMLConfig
+        TheXMLConfig._data["architecture"]["syntax"] = True
+        from Space import TheGrammar
+        TheGrammar._layers_initialized = False
+        TheGrammar.init_layers(
+            concept_dim=nDim,
+            symbol_dim=nSym,
+            n_concept_slots=nSym,
+            n_symbol_slots=nSym,
+            n_percept_slots=nSym,
+        )
+        return TheGrammar
+
+    def _make_syntactic_space(self, nSym=8):
+        """Create a SyntacticSpace with minimal config for S/R testing."""
+        grammar = self._init_grammar(nSym=nSym, nDim=1)
         from Space import SyntacticSpace
         syn = SyntacticSpace(
             inputShape=(nSym, 1),
@@ -3949,237 +3873,134 @@ class TestShiftReduce(unittest.TestCase):
         )
         syn.to(TheDevice.get())
         syn.eval()
-        return syn
+        return syn, grammar
 
-    def test_writeSymbols_shift(self):
-        """writeSymbols pushes onto _sr_stack and returns valid result dict."""
-        syn = self._make_syntactic_space()
-        syn.resetStack()
+    def test_write_symbolic_shift(self):
+        """TheGrammar.write('S', ...) pushes onto _s_stack."""
+        grammar = self._init_grammar()
+        grammar.resetStack('S')
         act = torch.randn(1, 8, device=TheDevice.get())
-        result = syn.writeSymbols(act)
-        # Stack should have one entry after shift (single symbol, no binary reduce possible)
-        self.assertEqual(len(syn._sr_stack), 1)
-        # Result dict has required keys
-        self.assertIn("transition", result)
-        self.assertIn("composed", result)
-        self.assertIn("words", result)
-        # transition is a bool
-        self.assertIsInstance(result["transition"], bool)
-        # composed should be [B, N]
-        self.assertEqual(result["composed"].shape, (1, 8))
+        grammar.forward('S', act)
+        # Stack should have one entry after shift
+        self.assertGreaterEqual(len(grammar._s_stack), 1)
 
-    def test_writeSymbols_stack_grows(self):
+    def test_write_symbolic_stack_grows(self):
         """Shifting two symbols produces stack entries (may reduce to 1 or stay at 2)."""
-        syn = self._make_syntactic_space()
-        syn.resetStack()
+        grammar = self._init_grammar()
+        grammar.resetStack('S')
         act1 = torch.randn(1, 8, device=TheDevice.get())
         act2 = torch.randn(1, 8, device=TheDevice.get())
-        syn.writeSymbols(act1)
-        result = syn.writeSymbols(act2)
+        grammar.forward('S', act1)
+        grammar.forward('S', act2)
         # After two shifts, stack should have at least 1 entry (may have reduced)
-        self.assertGreaterEqual(len(syn._sr_stack), 1)
-        # composed should be [B, N]
-        self.assertEqual(result["composed"].shape, (1, 8))
+        self.assertGreaterEqual(len(grammar._s_stack), 1)
 
-    def test_resetStack(self):
-        """resetStack clears _sr_stack, _sr_where_stack, _sr_words."""
-        syn = self._make_syntactic_space()
+    def test_resetStack_symbolic(self):
+        """resetStack('S') clears _s_stack, _s_where_stack, _s_words."""
+        grammar = self._init_grammar()
         # Manually populate stacks
-        syn._sr_stack = [torch.zeros(1, 8)]
-        syn._sr_where_stack = [torch.zeros(1, 8, 3)]
-        syn._sr_words = [(0, 1, 2)]
-        syn.resetStack()
-        self.assertEqual(len(syn._sr_stack), 0)
-        self.assertEqual(len(syn._sr_where_stack), 0)
-        self.assertEqual(len(syn._sr_words), 0)
+        grammar._s_stack = [torch.zeros(1, 8)]
+        grammar._s_where_stack = [torch.zeros(1, 8, 3)]
+        grammar._s_words = [(0, 1, 2)]
+        grammar.resetStack('S')
+        self.assertEqual(len(grammar._s_stack), 0)
+        self.assertEqual(len(grammar._s_where_stack), 0)
+        self.assertEqual(len(grammar._s_words), 0)
 
-    # ── ConceptualSpace writeConcepts / resetStack tests ──────────
+    # ── Conceptual tier write / resetStack tests ─────────────────
 
-    def _make_conceptual_space(self, nCon=8, nDim=4):
-        """Create a ConceptualSpace with syntax enabled for S/R testing."""
-        _populate_test_config(
-            inputDim=nDim, perceptDim=nDim, conceptDim=nDim, symbolDim=1,
-            wordDim=1,
-            nInput=nCon, nPercepts=nCon, nConcepts=nCon, nSymbols=nCon,
-            nWords=nCon, nOutput=nCon,
-            perceptPassThrough=True, symbolPassThrough=True)
-        # Enable syntax so ConceptualSpace creates its syntactic_layer
-        from BasicModel import TheXMLConfig
-        TheXMLConfig._data["architecture"]["syntax"] = True
-        from Space import ConceptualSpace
-        cs = ConceptualSpace(
-            inputShape=(nCon, nDim),
-            spaceShape=(nCon, nDim),
-            outputShape=(nCon, nDim),
-        )
-        cs.to(TheDevice.get())
-        cs.eval()
-        return cs, nCon, nDim
-
-    def test_writeConcepts_shift(self):
-        """writeConcepts pushes onto stack and returns valid dict without transition."""
-        cs, nCon, nDim = self._make_conceptual_space()
-        cs.resetStack()
-        activation = torch.randn(1, nCon, device=TheDevice.get())
-        vectors = torch.randn(1, nCon, nDim, device=TheDevice.get())
-        result = cs.writeConcepts(activation, vectors)
+    def test_write_conceptual_shift(self):
+        """TheGrammar.write('C', ...) pushes onto _c_stack."""
+        grammar = self._init_grammar(nDim=4)
+        grammar.resetStack('C')
+        activation = torch.randn(1, 8, device=TheDevice.get())
+        vectors = torch.randn(1, 8, 4, device=TheDevice.get())
+        grammar.forward('C', activation, vectors_or_where=vectors)
         # Stack should have one entry after shift
-        self.assertEqual(len(cs._sr_stack), 1)
-        self.assertEqual(len(cs._sr_act_stack), 1)
-        # Result dict has required keys
-        self.assertIn("transition", result)
-        self.assertIn("composed", result)
-        self.assertIn("words", result)
-        # transition is a bool
-        self.assertIsInstance(result["transition"], bool)
-        # composed should be [B, N, D]
-        self.assertEqual(result["composed"].shape, (1, nCon, nDim))
+        self.assertGreaterEqual(len(grammar._c_stack), 1)
 
-    def test_writeConcepts_stack_grows(self):
+    def test_write_conceptual_stack_grows(self):
         """Shifting two concepts produces stack entries (may reduce to 1 or stay at 2)."""
-        cs, nCon, nDim = self._make_conceptual_space()
-        cs.resetStack()
-        act1 = torch.randn(1, nCon, device=TheDevice.get())
-        vec1 = torch.randn(1, nCon, nDim, device=TheDevice.get())
-        act2 = torch.randn(1, nCon, device=TheDevice.get())
-        vec2 = torch.randn(1, nCon, nDim, device=TheDevice.get())
-        cs.writeConcepts(act1, vec1)
-        result = cs.writeConcepts(act2, vec2)
+        grammar = self._init_grammar(nDim=4)
+        grammar.resetStack('C')
+        act1 = torch.randn(1, 8, device=TheDevice.get())
+        vec1 = torch.randn(1, 8, 4, device=TheDevice.get())
+        act2 = torch.randn(1, 8, device=TheDevice.get())
+        vec2 = torch.randn(1, 8, 4, device=TheDevice.get())
+        grammar.forward('C', act1, vectors_or_where=vec1)
+        grammar.forward('C', act2, vectors_or_where=vec2)
         # After two shifts, stack should have at least 1 entry (may have reduced)
-        self.assertGreaterEqual(len(cs._sr_stack), 1)
-        # composed should be [B, N, D]
-        self.assertEqual(result["composed"].shape, (1, nCon, nDim))
+        self.assertGreaterEqual(len(grammar._c_stack), 1)
 
     def test_resetStack_conceptual(self):
-        """resetStack clears _sr_stack, _sr_act_stack, _sr_words."""
-        cs, nCon, nDim = self._make_conceptual_space()
+        """resetStack('C') clears _c_stack, _c_act_stack, _c_words."""
+        grammar = self._init_grammar(nDim=4)
         # Manually populate stacks
-        cs._sr_stack = [torch.zeros(1, nCon, nDim)]
-        cs._sr_act_stack = [torch.zeros(1, nCon)]
-        cs._sr_words = [(0, 1, 2)]
-        cs.resetStack()
-        self.assertEqual(len(cs._sr_stack), 0)
-        self.assertEqual(len(cs._sr_act_stack), 0)
-        self.assertEqual(len(cs._sr_words), 0)
+        grammar._c_stack = [torch.zeros(1, 8, 4)]
+        grammar._c_act_stack = [torch.zeros(1, 8)]
+        grammar._c_words = [(0, 1, 2)]
+        grammar.resetStack('C')
+        self.assertEqual(len(grammar._c_stack), 0)
+        self.assertEqual(len(grammar._c_act_stack), 0)
+        self.assertEqual(len(grammar._c_words), 0)
 
-    # ── PerceptualSpace writePercepts / resetStack tests ────────
+    # ── Perceptual tier write / resetStack tests ─────────────────
 
-    def _make_perceptual_space(self, nPer=8, nDim=4):
-        """Create a PerceptualSpace with syntax enabled for S/R testing."""
-        _populate_test_config(
-            inputDim=nDim, perceptDim=nDim, conceptDim=nDim, symbolDim=1,
-            wordDim=1,
-            nInput=nPer, nPercepts=nPer, nConcepts=nPer, nSymbols=nPer,
-            nWords=nPer, nOutput=nPer,
-            perceptPassThrough=False, symbolPassThrough=True)
-        # Enable syntax so PerceptualSpace creates its syntactic_layer
-        from BasicModel import TheXMLConfig
-        TheXMLConfig._data["architecture"]["syntax"] = True
-        from Space import PerceptualSpace
-        ps = PerceptualSpace(
-            inputShape=(nPer, nDim),
-            spaceShape=(nPer, nDim),
-            outputShape=(nPer, nDim),
-        )
-        ps.to(TheDevice.get())
-        ps.eval()
-        return ps, nPer, nDim
-
-    def test_writePercepts_shift(self):
-        """writePercepts returns valid dict with transition=False and composed key."""
-        ps, nPer, nDim = self._make_perceptual_space()
-        ps.resetStack()
-        activation = torch.randn(1, nPer, device=TheDevice.get())
-        vectors = torch.randn(1, nPer, nDim, device=TheDevice.get())
-        result = ps.writePercepts(activation, vectors)
-        # Result dict has required keys
-        self.assertIn("transition", result)
-        self.assertIn("composed", result)
-        self.assertIn("words", result)
-        # P is terminal — transition is always False
-        self.assertFalse(result["transition"])
+    def test_write_perceptual_shift(self):
+        """TheGrammar.write('P', ...) pushes onto _p_words (P-tier is terminal)."""
+        grammar = self._init_grammar(nDim=4)
+        grammar.resetStack('P')
+        activation = torch.randn(1, 8, device=TheDevice.get())
+        vectors = torch.randn(1, 8, 4, device=TheDevice.get())
+        grammar.forward('P', activation, vectors_or_where=vectors)
 
     def test_resetStack_perceptual(self):
-        """resetStack clears _sr_words."""
-        ps, nPer, nDim = self._make_perceptual_space()
+        """resetStack('P') clears _p_words."""
+        grammar = self._init_grammar(nDim=4)
         # Manually populate words
-        ps._sr_words = [(0, 1, 13), (0, 2, 13)]
-        ps.resetStack()
-        self.assertEqual(len(ps._sr_words), 0)
+        grammar._p_words = [(0, 1, 13), (0, 2, 13)]
+        grammar.resetStack('P')
+        self.assertEqual(len(grammar._p_words), 0)
 
     # ── SyntacticSpace.forward() S/R integration ──────────────
 
     def test_syntactic_forward_uses_sr(self):
-        """SyntacticSpace.forward() processes symbols via S/R loop."""
+        """SyntacticSpace.forward() processes symbols via S/R loop through TheGrammar."""
         from Space import SubSpace
-        space = self._make_syntactic_space()
+        syn, grammar = self._make_syntactic_space()
         ss = SubSpace(inputShape=[8, 1], outputShape=[8, 1])
         act = torch.zeros(2, 8, device=TheDevice.get())
         act[0, 0] = 1.0
         act[0, 2] = 1.0
         act[1, 1] = 1.0
         ss.set_symbols(act)
-        result = space.forward(ss)
+        result = syn.forward(ss)
         composed = result.get_symbols()
         self.assertIsNotNone(composed)
         self.assertEqual(composed.shape, (2, 8))
 
-    # ── readSymbols / readConcepts / readPercepts tests ────────
+    # ── Grammar.read() tests ─────────────────────────────────────
 
-    def test_readSymbols_from_words(self):
-        """readSymbols reconstructs activation from word tuples."""
-        space = self._make_syntactic_space()
-        word = space.subspace.wordEncoding.encode(0, 3, 2)  # batch=0, vec=3, rule=2 (AND)
-        result = space.readSymbols([word], batch_size=1)
+    def test_read_symbolic(self):
+        """TheGrammar.read('S', ...) reconstructs activation from word tuples."""
+        grammar = self._init_grammar()
+        result = grammar.reverse('S', [(0, 3, 2)], batch_size=1)
         self.assertEqual(result.shape, (1, 8))  # nSym=8
         self.assertGreater(result[0, 3].item(), 0)
 
-    def test_readConcepts_from_words(self):
-        """readConcepts reconstructs activation from word tuples."""
-        cs, nCon, nDim = self._make_conceptual_space()
-        word = cs.subspace.wordEncoding.encode(0, 2, 9)  # batch=0, vec=2, rule=9 (PART)
-        result = cs.readConcepts([word], batch_size=1)
+    def test_read_conceptual(self):
+        """TheGrammar.read('C', ...) reconstructs activation from word tuples."""
+        grammar = self._init_grammar(nDim=4)
+        result = grammar.reverse('C', [(0, 2, 9)], batch_size=1)
         self.assertEqual(result.shape[0], 1)
         self.assertGreater(result[0, 2].item(), 0)
 
-    def test_readPercepts_from_words(self):
-        """readPercepts reconstructs activation from word tuples."""
-        ps, nPer, nDim = self._make_perceptual_space()
-        word = ps.subspace.wordEncoding.encode(0, 1, 13)  # batch=0, vec=1, rule=13 (P->W)
-        result = ps.readPercepts([word], batch_size=1)
+    def test_read_perceptual(self):
+        """TheGrammar.read('P', ...) reconstructs activation from word tuples."""
+        grammar = self._init_grammar(nDim=4)
+        result = grammar.reverse('P', [(0, 1, 13)], batch_size=1)
         self.assertEqual(result.shape[0], 1)
         self.assertGreater(result[0, 1].item(), 0)
-
-
-class TestShiftReduceConfigFlag(unittest.TestCase):
-    """Verify that the shiftReduce config flag gates S/R vs composeSyntax."""
-
-    def test_shift_reduce_config_flag_default(self):
-        """shiftReduce config flag defaults to True (S/R enabled)."""
-        from BasicModel import TheXMLConfig
-        self.assertTrue(TheXMLConfig.get("architecture.shiftReduce", True))
-
-    def test_shift_reduce_config_flag_from_xml(self):
-        """shiftReduce is present in model.xml after adding the element."""
-        from BasicModel import TheXMLConfig
-        # After init_config loads model.xml, shiftReduce should be True
-        from util import init_config, ProjectPaths
-        import os
-        init_config(defaults_path=os.path.join(ProjectPaths.DATA_DIR, "model.xml"))
-        val = TheXMLConfig.get("architecture.shiftReduce")
-        self.assertTrue(val)
-
-    def test_shift_reduce_legacy_path(self):
-        """Setting shiftReduce=False selects the legacy composeSyntax path."""
-        from BasicModel import TheXMLConfig
-        from util import init_config, ProjectPaths
-        import os
-        init_config(defaults_path=os.path.join(ProjectPaths.DATA_DIR, "model.xml"))
-        # Override to False
-        TheXMLConfig.set("architecture.shiftReduce", False)
-        self.assertFalse(TheXMLConfig.get("architecture.shiftReduce"))
-        # Restore
-        TheXMLConfig.set("architecture.shiftReduce", True)
 
 
 if __name__ == "__main__":

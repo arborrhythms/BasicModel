@@ -466,6 +466,11 @@ class XMLConfig:
         """Raw dict access for backward compatibility."""
         return self._data
 
+    @property
+    def model_kind(self):
+        """Infer the configured model family from the current config data."""
+        return self.infer_model_kind(self._data)
+
     # --- Requirements ---
 
     def require(self, check, description):
@@ -503,9 +508,14 @@ class XMLConfig:
     @property
     def nObjects(self):
         """Total codebook vectors across all spaces."""
-        return sum(self.space(s, "nVectors") for s in (
-            "InputSpace", "PerceptualSpace", "ConceptualSpace",
-            "SymbolicSpace", "SyntacticSpace", "OutputSpace"))
+        total = 0
+        for s in ("InputSpace", "PerceptualSpace", "ConceptualSpace",
+                  "SymbolicSpace", "OutputSpace"):
+            try:
+                total += self.space(s, "nVectors")
+            except KeyError:
+                pass
+        return total
 
     def encodingSize(self, nDim):
         """Full vector width: nDim + objectSize."""
@@ -643,6 +653,19 @@ class XMLConfig:
         for section in root:
             cfg[section.tag] = _parse_element(section)
         return cfg
+
+    @staticmethod
+    def infer_model_kind(cfg):
+        """Infer model kind from a parsed config dict.
+
+        Checks for top-level <mentalModel> section. Falls back to the
+        legacy <type> tag in <architecture> for backward compatibility.
+        """
+        has_mental = "mentalModel" in cfg and isinstance(cfg["mentalModel"], dict)
+        if has_mental:
+            return "mental"
+        arch = cfg.get("architecture", {})
+        return str(arch.get("type", "basic") or "basic").strip().lower()
 
     @staticmethod
     def _deep_merge(base, overlay):

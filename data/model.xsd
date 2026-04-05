@@ -6,24 +6,22 @@
     <xs:complexType>
       <xs:all>
         <xs:element name="architecture" type="architectureType"/>
+        <xs:element name="mentalModel" type="mentalModelType" minOccurs="0"/>
         <xs:element name="InputSpace" type="inputSpaceType" minOccurs="0"/>
         <xs:element name="PerceptualSpace" type="perceptualSpaceType" minOccurs="0"/>
         <xs:element name="ModalSpace" type="modalSpaceType" minOccurs="0"/>
         <xs:element name="ConceptualSpace" type="conceptualSpaceType" minOccurs="0"/>
         <xs:element name="SymbolicSpace" type="symbolicSpaceType" minOccurs="0"/>
-        <xs:element name="SyntacticSpace" type="syntacticSpaceType" minOccurs="0"/>
         <xs:element name="OutputSpace" type="outputSpaceType" minOccurs="0"/>
-        <xs:element name="grammar" type="grammarType" minOccurs="0"/>
       </xs:all>
     </xs:complexType>
   </xs:element>
 
   <!-- ═══════════════════════════════════════════════════════════════════
-       Architecture (top-level config)
+       Architecture (top-level config shared by all model types)
        ═══════════════════════════════════════════════════════════════════ -->
   <xs:complexType name="architectureType">
     <xs:all>
-      <xs:element name="type" type="architectureModelEnum" minOccurs="0"/>
       <xs:element name="modelType" type="modelTypeEnum" minOccurs="0"/>
       <xs:element name="conceptualOrder" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="symbolicOrder" type="xs:positiveInteger" minOccurs="0"/>
@@ -31,9 +29,8 @@
       <xs:element name="ergodic" type="xs:boolean" minOccurs="0"/>
       <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
       <xs:element name="naive" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="syntax" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="shiftReduce" type="xs:boolean" minOccurs="0"/>
       <xs:element name="reconstruct" type="reconstructEnum" minOccurs="0"/>
+      <xs:element name="maskedPrediction" type="maskedPredictionEnum" minOccurs="0"/>
       <xs:element name="maxResponseLength" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="data" type="dataType" minOccurs="0"/>
       <xs:element name="training" type="trainingType" minOccurs="0"/>
@@ -46,16 +43,17 @@
   </xs:complexType>
 
   <!-- ═══════════════════════════════════════════════════════════════════
+       MentalModel section — present only for MentalModel configs
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="mentalModelType">
+    <xs:all>
+      <xs:element name="grammar" type="grammarType" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
        Enumerations
        ═══════════════════════════════════════════════════════════════════ -->
-  <xs:simpleType name="architectureModelEnum">
-    <xs:restriction base="xs:string">
-      <xs:enumeration value="basic"/>
-      <xs:enumeration value="Basic"/>
-      <xs:enumeration value="mental"/>
-      <xs:enumeration value="Mental"/>
-    </xs:restriction>
-  </xs:simpleType>
 
   <xs:simpleType name="modelTypeEnum">
     <xs:restriction base="xs:string">
@@ -218,7 +216,6 @@
       <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="normalize" type="xs:boolean" minOccurs="0"/>
-
       <xs:element name="lexer" type="lexerEnum" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
@@ -236,7 +233,6 @@
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="normalize" type="xs:boolean" minOccurs="0"/>
-
     </xs:all>
   </xs:complexType>
 
@@ -253,7 +249,6 @@
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="normalize" type="xs:boolean" minOccurs="0"/>
-
       <xs:element name="whatPassThrough" type="xs:boolean" minOccurs="0"/>
       <xs:element name="wherePassThrough" type="xs:boolean" minOccurs="0"/>
       <xs:element name="whenPassThrough" type="xs:boolean" minOccurs="0"/>
@@ -269,12 +264,10 @@
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="hasNorm" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="normalize" type="xs:boolean" minOccurs="0"/>
-
     </xs:all>
   </xs:complexType>
 
@@ -289,21 +282,6 @@
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="normalize" type="xs:boolean" minOccurs="0"/>
-
-    </xs:all>
-  </xs:complexType>
-
-  <xs:complexType name="syntacticSpaceType">
-    <xs:all>
-      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="normalize" type="xs:boolean" minOccurs="0"/>
-
     </xs:all>
   </xs:complexType>
 
@@ -320,18 +298,19 @@
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="quantized" type="xs:boolean" minOccurs="0"/>
       <xs:element name="normalize" type="xs:boolean" minOccurs="0"/>
-
     </xs:all>
   </xs:complexType>
 
   <!-- ═══════════════════════════════════════════════════════════════════
-       Grammar section — restricts which deep-structure rules are active
+       Grammar section (inside <mentalModel>)
        ═══════════════════════════════════════════════════════════════════ -->
   <xs:complexType name="grammarType">
     <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="START" type="xs:string"/>
       <xs:element name="S" type="xs:string"/>
       <xs:element name="C" type="xs:string"/>
       <xs:element name="P" type="xs:string"/>
+      <xs:element name="interpretation" type="unitInterval"/>
     </xs:choice>
   </xs:complexType>
 

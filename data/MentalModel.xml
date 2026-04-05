@@ -5,7 +5,6 @@
        SyntacticSpace runs composeSyntax over symbol activations each iteration.
        OutputSpace is fed by the final ConceptualSpace output. -->
   <architecture>
-    <type>mental</type>
     <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
     <symbolicOrder>1</symbolicOrder>
@@ -14,7 +13,6 @@
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
     <certainty>false</certainty>
-    <syntax>true</syntax>
     <modelType>embedding</modelType>
     <maskedPrediction>ARLM</maskedPrediction>
     <maxResponseLength>4096</maxResponseLength>
@@ -44,6 +42,10 @@
       <port>8002</port>
       <timeout>120</timeout>
     </server>
+
+  </architecture>
+
+  <mentalModel>
     <grammar>
       <START>true(S) EOF</START>
 
@@ -66,7 +68,7 @@
 
       <interpretation>0.5</interpretation>
     </grammar>
-  </architecture>
+  </mentalModel>
 
   <InputSpace>
     <nOutput>128</nOutput>
@@ -95,10 +97,8 @@
     <nDim>100</nDim>
     <nVectors>256</nVectors>
     <hasAttention>true</hasAttention>
-    <hasNorm>false</hasNorm>
     <invertible>true</invertible>
     <quantized>false</quantized>
-
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -106,7 +106,7 @@
     <nDim>100</nDim>
     <nVectors>128</nVectors>
     <passThrough>false</passThrough>
-
+    <accumulateTruth>true</accumulateTruth>
   </SymbolicSpace>
 
   <OutputSpace>
@@ -116,6 +116,5 @@
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
   </OutputSpace>
-
 
 </model>
