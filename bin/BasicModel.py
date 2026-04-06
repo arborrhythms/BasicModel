@@ -961,7 +961,7 @@ class BasicModel(BaseModel):
             XML string, or empty string if no derivation was produced.
         """
         from parse import derivation_to_xml
-        from Model import Grammar
+        from Space import Grammar
         words = [(b, v, r) for b, v, r in getattr(self, 'all_words', [])
                  if b == batch_index]
         if not words:
@@ -1679,6 +1679,12 @@ class MentalModel(BaseModel):
         TheGrammar.register_word_encoder('S', self.symbolicSpace.subspace.wordEncoding)
         TheGrammar.register_word_encoder('C', self.conceptualSpace.subspace.wordEncoding)
         TheGrammar.register_word_encoder('P', self.perceptualSpace.subspace.wordEncoding)
+
+        # Register subspaces so Grammar can access Basis operations
+        TheGrammar.register_subspace('S', self.symbolicSpace.subspace)
+        self.conceptualSpace.subspace.basis.monotonic = False
+        TheGrammar.register_subspace('C', self.conceptualSpace.subspace)
+        TheGrammar.register_subspace('P', self.perceptualSpace.subspace)
 
         self.spaces.extend([
             self.inputSpace,

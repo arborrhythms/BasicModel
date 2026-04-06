@@ -317,3 +317,148 @@ field alone is sufficient for soft consistency checks and nearest-truth
 lookups.  The symbolic closure makes the store *deductively closed* —
 turning it from a database of assertions into something closer to a
 knowledge base with inference.
+
+## 7.
+
+# Radial Operators for Hypersphere Ternary Logic
+
+## Overview
+
+RadMin, RadMax, NOT, and NON are four logical operators defined over a signed magnitude space where truth values range from -1 to +1. The semantic space is a hypersphere with zero at the origin representing **unknown**, +1 representing **true**, and -1 representing **false**.
+
+The operators are designed to respect the geometric structure of this space: sign represents direction of assertion, magnitude represents strength of assertion, and zero represents the absence of assertion.
+
+## Truth Values
+
+| Value | Meaning |
+|-------|---------|
+| +1    | True (full positive assertion) |
+| 0     | Unknown (no assertion) |
+| -1    | False (full negative assertion) |
+
+Intermediate values (e.g., +0.5, -0.3) represent partial assertions with varying degrees of confidence.
+
+## Magnitude Ordering
+
+The ordering relation ⊂ ("is a part of") is defined by magnitude:
+
+> x ⊂ y iff |x| < |y|
+
+This means "closer to zero" is "less than" in the radial sense. Zero is the weakest value; ±1 are the strongest.
+
+---
+
+## Operators
+
+### RadMin (Radial Minimum — Conjunction / AND)
+
+RadMin is a binary operator representing conjunction. It collapses toward zero on sign disagreement and takes the minimum magnitude on sign agreement.
+
+**Definition:**
+
+- If sign(x) ≠ sign(y): RadMin(x, y) = 0
+- If sign(x) = sign(y): RadMin(x, y) = sign(x) · min(|x|, |y|)
+
+**Truth Table (Ternary):**
+
+|        | **+1** | **0** | **-1** |
+|--------|--------|-------|--------|
+| **+1** | +1     | 0     | 0      |
+| **0**  | 0      | 0     | 0      |
+| **-1** | 0      | 0     | -1     |
+
+**Properties:**
+- Commutative: RadMin(x, y) = RadMin(y, x)
+- Zero is absorbing: RadMin(x, 0) = 0 for all x
+- Anti-diagonal symmetric
+- Sign disagreement produces zero (contradiction → unknown)
+
+---
+
+### RadMax (Radial Maximum — Disjunction / OR)
+
+RadMax is a binary operator representing disjunction. It collapses toward zero on sign disagreement and takes the maximum magnitude on sign agreement.
+
+**Definition:**
+
+- If sign(x) ≠ sign(y): RadMax(x, y) = 0
+- If sign(x) = sign(y): RadMax(x, y) = sign(x) · max(|x|, |y|)
+- RadMax(x, 0) = x (zero is transparent / neutral for OR)
+
+**Truth Table (Ternary):**
+
+|        | **+1** | **0** | **-1** |
+|--------|--------|-------|--------|
+| **+1** | +1     | +1    | 0      |
+| **0**  | +1     | 0     | -1     |
+| **-1** | 0      | -1    | -1     |
+
+**Properties:**
+- Commutative: RadMax(x, y) = RadMax(y, x)
+- Zero is transparent: RadMax(x, 0) = x for all x
+- Anti-diagonal symmetric
+- Sign disagreement produces zero (contradiction → unknown)
+
+---
+
+### NOT (Sign-Flipping Negation)
+
+NOT is a unary operator that inverts the sign of the assertion while preserving magnitude.
+
+**Definition:**
+
+> NOT(x) = -x
+
+**Truth Table (Ternary):**
+
+| Input | Output |
+|-------|--------|
+| +1    | -1     |
+| 0     | 0      |
+| -1    | +1     |
+
+**Properties:**
+- Involutive: NOT(NOT(x)) = x
+- Preserves magnitude: |NOT(x)| = |x|
+- Zero is a fixed point: NOT(0) = 0
+
+---
+
+### NON (Non-Affirming Negation)
+
+NON is a unary operator that drives any assertion toward zero. It represents the withdrawal of assertion rather than the inversion of assertion.
+
+**Definition:**
+
+> NON(x) = 0 for all x
+
+**Truth Table (Ternary):**
+
+| Input | Output |
+|-------|--------|
+| +1    | 0      |
+| 0     | 0      |
+| -1    | 0      |
+
+**Properties:**
+- Absorbing: NON(x) = 0 for all x
+- Idempotent: NON(NON(x)) = NON(x) = 0
+- Semantically distinct from NOT: NON does not assert the opposite; it withdraws assertion entirely
+
+---
+
+## Semantic Summary
+
+| Operator | Type   | Role                          | Behavior on Contradiction |
+|----------|--------|-------------------------------|---------------------------|
+| RadMin   | Binary | Conjunction (AND)             | Collapses to zero         |
+| RadMax   | Binary | Disjunction (OR)              | Collapses to zero         |
+| NOT      | Unary  | Sign-flipping negation        | N/A                       |
+| NON      | Unary  | Non-affirming negation        | N/A                       |
+
+## Open Questions
+
+- **Functional completeness:** Do RadMin, RadMax, NOT, and NON form a functionally complete set over the ternary radial space?
+- **Associativity:** Does RadMin(RadMin(a, b), c) = RadMin(a, RadMin(b, c)) hold for all combinations?
+- **Duality:** RadMin and RadMax are not classical duals via NOT due to differing treatment of zero (absorbing vs. transparent). What is the formal relationship between them?
+- **Extension to fuzzy domain:** In the continuous fuzzy extension (values in [-1, +1]), what is the behavior of NON? Does it drive toward zero continuously or collapse discretely?
