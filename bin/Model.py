@@ -181,7 +181,6 @@ class ErgodicLayer(Layer):
             return
         self.observe_sigma()
         self.sigma_to_ergodic()
-
 class LinearLayer(ErgodicLayer):
     """Standard linear (affine) layer.
 
@@ -259,7 +258,6 @@ class LinearLayer(ErgodicLayer):
 
         print(f"Input: {input}")
         print(f"After forward linear: {output}")
-
 class NonNegativeLinearLayer(LinearLayer):
     """LinearLayer with entry-wise non-negative W via softplus.
 
@@ -307,7 +305,6 @@ class NonNegativeLinearLayer(LinearLayer):
         if self.hasBias:
             x = x + self._effective_bias()
         return x
-
 class InvertibleLinearLayer(ErgodicLayer):
     """Exactly-invertible linear layer factored as W = L @ D_embed @ U.
 
@@ -551,6 +548,14 @@ class InvertibleLinearLayer(ErgodicLayer):
                 y = self._apply_forward(x)
         y = self.forwardBias(y)
         return y
+    def _effective_bias(self):
+        """Bias value for external use (e.g. PiLayer logit mode)."""
+        if not self.hasBias:
+            return 0
+        if self.ergodic:
+            return self.bias * self.biasWeight + self.var * self.biasNoise
+        return self.biasWeight
+
     def forwardBias(self, x):
         if self.hasBias:
             if self.ergodic:
@@ -667,7 +672,6 @@ class InvertibleLinearLayer(ErgodicLayer):
         print(f"InvertibleLinearLayer ergodic roundtrip: err={err3:.2e} OK")
 
         print("All InvertibleLinearLayer tests passed!")
-
 class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
     """InvertibleLinearLayer whose W = L @ D @ U is entry-wise non-negative.
 
@@ -756,12 +760,10 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
             x = x - self._effective_bias()                # _effective_bias ≤ 0, so subtracts ≥ 0
         return x
 
-
-class LiftingLayer(InvertibleLinearLayer):
+class MapppingLayer(InvertibleLinearLayer):
     """Bias-free, stable reversible linear layer for mapping between row/column spaces."""
     def __init__(self, nInput, nOutput, init='orthogonal'):
         super().__init__(nInput, nOutput, naive=False, hasBias=False, stable=True)
-
 class ColumnUsageTracker:
     """Monitors gradient norms per weight column and freezes low-activity columns.
 
@@ -798,7 +800,6 @@ class ColumnUsageTracker:
             self.linear.weight.grad[:, self.frozen_columns] = 0.0
     def freezeMask(self):
         return self.frozen_columns
-
 class SigmaLayer(Layer):
     """Additive (summation) layer: y = tanh(W @ x + b).
 
@@ -879,40 +880,45 @@ class SigmaLayer(Layer):
         y_inv = layer.reverse(y)
         assert torch.norm(x - y_inv) < 0.00001
         print("SigmaLayer tests passed.")
-
 class PiLayer(Layer):
-    r"""Log-space multiplicative layer: [-1,1] → [-1,1].
+    r"""Multiplicative boundary layer: [-1,1] → [-1,1].
 
-    Inputs and outputs are in [-1, 1].  An affine shift maps to
-    [ε, 1] for log-space, and the inverse maps back:
-        to_log:   x' = (x + 1) / 2 * (1 - ε) + ε    [-1,1] → [ε, 1]
-        from_log: x  = ((x' - ε) / (1 - ε)) * 2 - 1  [ε, 1] → [-1,1]
+    Two modes selected by ``useTanh``:
 
-    Forward:
-        y = from_log(exp(W @ log(to_log(x)) + b))   # b is multiplicative in data space
+    **useTanh=True (default) — logit/sigmoid, unrestricted W:**
+        to_prob:   p = (x + 1) / 2 * (1 - 2ε) + ε     [-1,1] → [ε, 1-ε]
+        from_prob: x = ((p - ε) / (1 - 2ε)) * 2 - 1    [ε, 1-ε] → [-1,1]
+        Forward:  y = from_prob(sigmoid(W @ logit(to_prob(x)) + b))
+        Reverse:  x = from_prob(sigmoid(W_inv @ (logit(to_prob(y)) − b)))
+        W is unrestricted (can be negative) — non-monotonic, handles bitonic input.
 
-    Reverse (invertible=True):
-        x = from_log(exp(W_inv @ (log(to_log(y)) − b)))
-
-    No clamping is used — the affine mapping guarantees log-safe inputs.
+    **useTanh=False — log/exp, non-negative W:**
+        to_log:   x' = (x + 1) / 2 * (1 - ε) + ε      [-1,1] → [ε, 1]
+        from_log: x  = ((x' - ε) / (1 - ε)) * 2 - 1    [ε, 1] → [-1,1]
+        Forward:  y = from_log(exp(W @ log(to_log(x)) + b))
+        Reverse:  x = from_log(exp(W_inv @ (log(to_log(y)) − b)))
+        W is non-negative — monotonic, preserves sign structure.
     """
-    # ε for the affine mapping [-1,1] → [ε, 1].
-    # 1e-6 gives log(ε) ≈ -13.8, well within float32 range.
     _eps = 1e-6
 
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
-                 invertible=False, hasBias=True, stable=True):
+                 invertible=False, hasBias=True, stable=True, useTanh=True):
         super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.stable     = stable
         self.hasBias    = hasBias
+        self.useTanh    = useTanh
         if invertible:
-            self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
-                                               naive=naive, ergodic=ergodic,
-                                               stable=stable)
+            if useTanh:
+                self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
+                                                   naive=naive, ergodic=ergodic,
+                                                   stable=stable)
+            else:
+                self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
+                                                              naive=naive, ergodic=ergodic,
+                                                              stable=stable)
         else:
-            self.layer = NonNegativeLinearLayer(nInput, nOutput, hasBias=hasBias,
-                                     naive=naive, ergodic=ergodic, stable=stable)
+            self.layer = LinearLayer(nInput, nOutput, hasBias=hasBias)
         self.layers.append(self.layer)
 
     @property
@@ -923,6 +929,20 @@ class PiLayer(Layer):
     def resample_noise(self):
         self.layer.resample_noise()
 
+    # ── useTanh=True: logit/sigmoid ──────────────────────────────────
+
+    def _to_prob(self, x):
+        """Map [-1, 1] → [ε, 1-ε]."""
+        e = self._eps
+        return (x + 1) / 2 * (1 - 2 * e) + e
+
+    def _from_prob(self, p):
+        """Map [ε, 1-ε] → [-1, 1]."""
+        e = self._eps
+        return ((p - e) / (1 - 2 * e)) * 2 - 1
+
+    # ── useTanh=False: log/exp ───────────────────────────────────────
+
     def _to_log_domain(self, x):
         """Map [-1, 1] → [ε, 1]."""
         return (x + 1) / 2 * (1 - self._eps) + self._eps
@@ -931,37 +951,48 @@ class PiLayer(Layer):
         """Map [ε, 1] → [-1, 1]."""
         return ((xp - self._eps) / (1 - self._eps)) * 2 - 1
 
+    # ── forward / reverse ────────────────────────────────────────────
+
     def forward(self, x):
         if self.layer.ergodic:
             self.resample_noise()
-        W = self.layer.compute_W_current()                 # [nIn, nOut], non-negative in both paths
+        W = self.layer.compute_W_current()
         x = x.to(W.device)
-        xp = self._to_log_domain(x)                      # [ε, 1]
-        log_x = torch.log(xp)                            # [-13.8, 0]
-        wx = log_x @ W                                   # [..., nOut], ≤ 0
-        b  = self.layer._effective_bias()
-        wx = wx - b                                       # bias in log-space (multiplicative)
-        y = torch.exp(wx)                                 # (0, 1] when b ≤ 0
-        result = self._from_log_domain(y)                 # [ε, 1] → [-1, 1]
-        return result
+        if self.useTanh:
+            p = self._to_prob(x)                          # [ε, 1-ε]
+            lx = torch.logit(p, eps=self._eps)            # bounded ≈ [-13.8, 13.8]
+            wx = lx @ W                                   # [..., nOut]
+            b  = self.layer._effective_bias()
+            wx = wx - b
+            y = torch.sigmoid(wx)                         # (0, 1)
+            return self._from_prob(y)                     # → [-1, 1]
+        else:
+            xp = self._to_log_domain(x)                   # [ε, 1]
+            log_x = torch.log(xp)                         # [-13.8, 0]
+            wx = log_x @ W                                # [..., nOut], ≤ 0
+            b  = self.layer._effective_bias()
+            wx = wx - b
+            y = torch.exp(wx)                             # (0, 1]
+            return self._from_log_domain(y)               # → [-1, 1]
 
     def reverse(self, y):
-        """Recover x from y.  Requires invertible=True.
-
-        y' = to_log(y)                                    # [-1,1] → [ε, 1]
-        x' = exp(W_inv @ (log(y') − b))                  # undo log-space bias
-        x  = from_log(x')                                 # [ε, 1] → [-1, 1]
-
-        Expects y in [-1, 1] (the forward output range).
-        """
-        W_inv = self.layer.compute_Winverse_current()       # [nOut, nIn], exact LDU inverse
+        """Recover x from y.  Requires invertible=True."""
+        W_inv = self.layer.compute_Winverse_current()
         y = y.to(W_inv.device)
-        yp = self._to_log_domain(y)                        # [-1, 1] → [ε, 1]
-        log_y = torch.log(yp)
-        b = self.layer._effective_bias()
-        log_x = (log_y + b) @ W_inv                       # [..., nIn]
-        xp = torch.exp(log_x)
-        x = self._from_log_domain(xp)
+        if self.useTanh:
+            p = self._to_prob(y)                          # [-1, 1] → [ε, 1-ε]
+            ly = torch.logit(p, eps=self._eps)
+            b = self.layer._effective_bias()
+            lx = (ly + b) @ W_inv                         # [..., nIn]
+            xp = torch.sigmoid(lx)                        # (0, 1)
+            x = self._from_prob(xp)
+        else:
+            yp = self._to_log_domain(y)                   # [-1, 1] → [ε, 1]
+            log_y = torch.log(yp)
+            b = self.layer._effective_bias()
+            log_x = (log_y + b) @ W_inv                   # [..., nIn]
+            xp = torch.exp(log_x)
+            x = self._from_log_domain(xp)
         if self.layer.ergodic:
             self.resample_noise()
         return x
@@ -1400,25 +1431,20 @@ class AssociationLayer(Layer):
         y = layer(x)
         assert y.shape == (2, 4), f"nIn!=nOut: expected (2,4), got {y.shape}"
 
-class VerbLayer(Layer):
-    """Codebook of verb weight matrices for conceptual composition.
+class LiftingLayer(Layer):
+    """Codebook of verb weight matrices for conceptual composition (lift).
 
-    Each VERB in the codebook is a learned [D, D] weight matrix that
+    Each verb in the codebook is a learned [D, D] weight matrix that
     transforms concept vectors bidirectionally (invertible linear map).
-    VERB selection is soft: cosine similarity between a query embedding
+    Verb selection is soft: cosine similarity between a query embedding
     and learned codebook keys produces blending weights.
 
-    Transitive (S → C VERB C):
+    Transitive — lift(C, C):
         VP_eff @ C1 → attention added to C2 (forward)
         VP_eff^T @ C2 → attention added to C1 (backward)
 
-    Intransitive (S → C VERB):
+    Intransitive — lift(C):
         VP_eff @ C1 → self-attention added to C1
-
-    # Future: VP → VERB C prepositional phrases would modify the
-    # VERB's attention matrix before application. The prepositional
-    # object C would gate or bias the VP weight matrix, changing
-    # the verb's semantics contextually. Deferred.
     """
     def __init__(self, nVerbs, nDim, ergodic=False):
         super().__init__(nDim, nDim)
@@ -1493,7 +1519,7 @@ class VerbLayer(Layer):
     def test():
         device = TheDevice.get()
         B, N, D, V = 4, 8, 16, 6
-        layer = VerbLayer(nVerbs=V, nDim=D)
+        layer = LiftingLayer(nVerbs=V, nDim=D)
 
         C1 = torch.randn(B, N, D, device=device)
         C2 = torch.randn(B, N, D, device=device)
@@ -1520,7 +1546,69 @@ class VerbLayer(Layer):
         assert C1_grad.grad is not None, "no gradient on C1"
         assert q_grad.grad is not None, "no gradient on query"
 
-        print("VerbLayer tests passed.")
+        print("LiftingLayer tests passed.")
+
+#endregion
+
+class LoweringLayer(Layer):
+    """Rank-reducing bottleneck for conceptual composition (lower).
+
+    Compresses a concept vector through a smaller dimension then expands
+    back: [D] → [bottleneck] → [D]. For binary lower(C, C), the second
+    argument gates the bottleneck representation to select a specific
+    instance from the set represented by the first argument.
+    """
+    def __init__(self, nDim, bottleneck=None):
+        if bottleneck is None:
+            bottleneck = max(4, nDim // 4)
+        super().__init__(nDim, nDim)
+        self.nDim = nDim
+        self.bottleneck = bottleneck
+        self.down = LinearLayer(nDim, bottleneck)
+        self.up = LinearLayer(bottleneck, nDim)
+
+    def forward(self, left, right=None):
+        """Lower a concept through the bottleneck.
+
+        Args:
+            left: [B, N, D] or [B, D] concept vectors (the set/type).
+            right: [B, N, D] or [B, D] optional selector concept.
+                   When provided, gates the bottleneck to select an instance.
+        Returns:
+            Lowered concept, same shape as left.
+        """
+        compressed = self.down.forward(left)        # [..., bottleneck]
+        if right is not None:
+            gate = torch.sigmoid(self.down.forward(right))  # [..., bottleneck]
+            compressed = compressed * gate
+        return self.up.forward(compressed)           # [..., D]
+
+    @staticmethod
+    def test():
+        device = TheDevice.get()
+        B, N, D = 4, 8, 16
+        layer = LoweringLayer(nDim=D, bottleneck=4)
+
+        left = torch.randn(B, N, D, device=device)
+        right = torch.randn(B, N, D, device=device)
+
+        # Unary
+        out = layer.forward(left)
+        assert out.shape == (B, N, D), f"unary shape: {out.shape}"
+
+        # Binary (with selector)
+        out2 = layer.forward(left, right)
+        assert out2.shape == (B, N, D), f"binary shape: {out2.shape}"
+
+        # Gradient flow
+        left_g = left.clone().requires_grad_(True)
+        right_g = right.clone().requires_grad_(True)
+        out3 = layer.forward(left_g, right_g)
+        out3.sum().backward()
+        assert left_g.grad is not None, "no gradient on left"
+        assert right_g.grad is not None, "no gradient on right"
+
+        print("LoweringLayer tests passed.")
 
 #endregion
 
@@ -2099,16 +2187,6 @@ class CorrMem(Mem):
 
 #region Logic
 
-# ── Grammar and Method classes have moved to Space.py ─────────────
-# Backward-compatible re-export (lazy to avoid circular import at load time).
-def __getattr__(name):
-    if name in ('Grammar', 'RuleDef', 'Swap', 'IsTrue', 'Equals', 'Part',
-                'Union', 'Intersection', 'Not', 'Non', 'Lift', 'Lower',
-                'Chunk', 'Method'):
-        from Space import Grammar
-        return Grammar
-    raise AttributeError(f"module 'Model' has no attribute {name!r}")
-
 class SyntacticLayer(Layer):
     """Per-space rule prediction layer for the recursive grammar.
 
@@ -2135,6 +2213,13 @@ class SyntacticLayer(Layer):
         tau:       Gumbel-softmax temperature.
     """
 
+    # Transition bias scale: (1 - interpretation) * TRANSITION_SCALE is added
+    # to the transition rule's logit. The transition rule (S→C or C→P) acts
+    # as NOP — "stop deriving this tier, pass through."
+    # Low interpretation → transition dominates → no reductions (episodic).
+    # High interpretation → grammar rules fire → composition (semantic).
+    TRANSITION_SCALE = 10.0
+
     def __init__(self, nInput, nOutput, rules, transition_rule=None,
                  max_depth=12, hidden_dim=256, grammar=None, tau=1.0):
         super().__init__(nInput, nOutput)
@@ -2142,7 +2227,10 @@ class SyntacticLayer(Layer):
         # reference (Grammar owns SyntacticLayers, SyntacticLayers reference
         # Grammar). Using object.__setattr__ bypasses nn.Module.__setattr__
         # which would register it as a submodule.
-        object.__setattr__(self, 'grammar', grammar or Grammar())
+        if grammar is None:
+            from Space import Grammar
+            grammar = Grammar()
+        object.__setattr__(self, 'grammar', grammar)
         self.rules           = list(rules)
         self.transition_rule = transition_rule
         # Build the full set of rule IDs this layer predicts over
@@ -2152,6 +2240,9 @@ class SyntacticLayer(Layer):
         self.num_rules  = len(self.all_rules)
         # Map from local index → global rule ID
         self.rule_index = {rid: i for i, rid in enumerate(self.all_rules)}
+        # Local index of the transition rule (for interpretation bias)
+        self.transition_index = (self.rule_index.get(transition_rule)
+                                 if transition_rule is not None else None)
         self.max_depth  = max_depth
         self.hidden_dim = hidden_dim
         self.tau        = tau
@@ -2162,6 +2253,13 @@ class SyntacticLayer(Layer):
         self.rule_head        = LinearLayer(hidden_dim, self.num_rules)
         self.depth_embed      = nn.Embedding(max_depth, hidden_dim)
         self.activation_fn    = nn.GELU()
+
+        # Xavier initialization so logits start in a numerically stable range.
+        # LinearLayer defaults to torch.randn which gives std=1.0; for large
+        # dims this produces huge activations that saturate softmax/gumbel.
+        for layer in [self.input_proj, self.derivation_layer, self.rule_head]:
+            nn.init.xavier_normal_(layer.W)
+        nn.init.normal_(self.depth_embed.weight, std=0.02)
 
         # Register child layers for ergodic dispatch
         self.layers = [self.input_proj, self.derivation_layer, self.rule_head]
@@ -2191,11 +2289,26 @@ class SyntacticLayer(Layer):
         all_logits = []
         all_probs  = []
 
+        # Transition bias: (1 - interpretation) * scale on the transition
+        # rule logit. The transition rule (S→C or C→P) is the NOP — "stop
+        # deriving, pass through." Low interpretation biases toward it.
+        interp = self.grammar.interpretation if self.grammar is not None else 0.5
+        transition_bias = (1.0 - interp) * self.TRANSITION_SCALE
+
         for d in range(self.max_depth):
             h = h + depth_vecs[d]
             h = self.derivation_layer.forward(h)
             h = self.activation_fn(h)
-            logits = self.rule_head.forward(h)
+            logits = self.rule_head.forward(h)  # [B, num_rules]
+
+            # Bias the transition rule logit. Detach the bias so it
+            # doesn't flow gradients — interpretation is a hyperparameter,
+            # the grammar shouldn't learn to predict NOP.
+            if self.transition_index is not None and transition_bias > 0:
+                logits = logits.clone()
+                logits[:, self.transition_index] = (
+                    logits[:, self.transition_index].detach() + transition_bias
+                )
 
             if self.training:
                 probs = F.gumbel_softmax(logits, tau=self.tau, hard=False)
@@ -2208,7 +2321,6 @@ class SyntacticLayer(Layer):
         rule_logits = torch.stack(all_logits, dim=1)
         rule_probs  = torch.stack(all_probs, dim=1)
 
-        # Map local argmax to global rule IDs
         local_predicted = rule_logits.argmax(dim=-1)
         global_predicted = torch.tensor(
             [[self.all_rules[local_predicted[b, d].item()]
@@ -2499,8 +2611,76 @@ class TruthLayer(Layer):
         tl.prune(min_norm=1e-6)
         assert len(tl) == 2
 
-#endregion
+class ChunkLayer(Layer):
+    """Learned BPE-style codebook for perceptual chunking.
 
+    Each entry stores a merge prototype (what the pair looks like) and a
+    split prototype (the two constituents).  Forward scores adjacent pairs
+    against the codebook; reverse looks up the entry to reconstruct.
+
+    The entropic gate merges a pair only when the codebook match score
+    exceeds a learned threshold — i.e. when encoding the pair as a single
+    chunk saves more bits than it costs.
+
+    Merging stops at word boundaries (whitespace characters) so that chunks
+    never cross word edges.  In the byte stream the space character (0x20)
+    and common whitespace bytes serve as boundary markers.
+    """
+
+    def __init__(self, nDim, nChunks=256):
+        super().__init__(nDim, nDim)
+        self.nDim = nDim
+        self.nChunks = nChunks
+        # Split prototypes: what each chunk decodes to  [nChunks, 2, nDim]
+        self.split = nn.Parameter(torch.randn(nChunks, 2, nDim) * 0.02)
+        # Merge prototypes: the single vector a chunk becomes  [nChunks, nDim]
+        self.merge = nn.Parameter(torch.randn(nChunks, nDim) * 0.02)
+        # Learned threshold — merge only when score exceeds this
+        self.threshold = nn.Parameter(torch.zeros(1))
+
+    def score_pair(self, v1, v2):
+        """Score a single (v1, v2) pair against all codebook entries.
+
+        Args:
+            v1: [nDim]  — left element
+            v2: [nDim]  — right element
+        Returns:
+            best_score: scalar — cosine similarity of best match
+            best_id:    int    — codebook index of best match
+        """
+        pair = torch.stack([v1, v2], dim=0)              # [2, nDim]
+        pair_flat = pair.reshape(1, -1)                   # [1, 2*nDim]
+        split_flat = self.split.reshape(self.nChunks, -1) # [K, 2*nDim]
+        sims = F.cosine_similarity(pair_flat, split_flat, dim=-1)  # [K]
+        best_score, best_id = sims.max(dim=0)
+        return best_score, best_id.item()
+
+    def encode(self, v1, v2):
+        """Encode a pair into a single chunk vector.
+
+        Returns:
+            merged: [nDim]     — the chunk vector
+            chunk_id: int      — which codebook entry was used
+        """
+        best_score, best_id = self.score_pair(v1, v2)
+        return self.merge[best_id], best_id
+
+    def decode(self, chunk_id):
+        """Decode a codebook entry back to two vectors.
+
+        Args:
+            chunk_id: int — codebook index
+        Returns:
+            v1: [nDim], v2: [nDim]
+        """
+        return self.split[chunk_id, 0], self.split[chunk_id, 1]
+
+    def should_merge(self, v1, v2):
+        """Entropic gate: merge only if score exceeds threshold."""
+        best_score, best_id = self.score_pair(v1, v2)
+        return best_score > self.threshold, best_id
+
+#endregion
 
 def test():
     torch.autograd.set_detect_anomaly(True)

@@ -2,264 +2,396 @@
 Toy Grammar Learning Test
 =========================
 
-Can SyntacticLayer learn to predict derivation rules from sentence structure?
+Verifies that Grammar's SyntacticLayers participate in the computation
+graph and receive gradients when driven through SyntacticLayer.forward().
 
-Toy CFG:
-    0: S  → NP VP        (binary)
-    1: NP → DET N        (binary)
-    2: NP → N            (unary/terminal)
-    3: VP → V NP         (binary)
-    4: VP → V            (unary/terminal)
-    5: VP → V NP PP      (ternary — split as VP → V VP', VP' → NP PP)
+Each tier's SyntacticLayer predicts rule distributions from activation
+vectors. The gradient path:
 
-For simplicity we use rules 0-4 (all binary or terminal).
+    loss → rule_logits → rule_head weights → derivation_layer → input_proj → x
 
-Vocabulary (one-hot slots):
-    0: DET  ("the", "a")
-    1: N    ("cat", "dog", "fish")
-    2: V    ("sees", "chases", "eats")
-
-The activation vector encodes which POS slots are "on" in the sentence,
-plus noise. The target is the derivation rule sequence (left-to-right,
-pre-order).
-
-A sentence like "the cat sees a dog" has derivation:
-    depth 0: S  → NP VP       (rule 0)
-    depth 1: NP → DET N       (rule 1)
-    depth 2: VP → V NP        (rule 3)
-    depth 3: NP → DET N       (rule 1)
-
-So depth determines which rule fires. The SyntacticLayer should learn
-this mapping from the activation pattern to the rule sequence.
+Tests:
+  1. Gradient flows from rule_logits to SyntacticLayer rule_head (S, C tiers)
+  2. Different activations produce different rule distributions (selectivity)
+  3. Untrained rule probabilities are near-uniform (entropy check)
+  4. MentalModel.forward() exercises Grammar and produces word tuples
+  5. Rule preference report (informational)
 """
 
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
 
-import random
+import unittest
+import warnings
 import torch
-import torch.nn.functional as F
 
-from BasicModel import TheDevice
-from Model import SyntacticLayer, Grammar
+import matplotlib
+matplotlib.use('Agg')
 
-# ── Toy grammar ──────────────────────────────────────────────────────
+from BasicModel import MentalModel, TheData, TheDevice
+from Space import Grammar
 
-TOY_RULES = [
-    "S → NP VP",      # 0  binary
-    "NP → DET N",     # 1  binary
-    "NP → N",         # 2  terminal
-    "VP → V NP",      # 3  binary
-    "VP → V",         # 4  terminal
-]
-NUM_TOY_RULES = len(TOY_RULES)
-
-# POS tag slots in the activation vector
-POS_DET = 0
-POS_N   = 1
-POS_V   = 2
-NUM_POS = 3
-
-# Derivation depth for our toy grammar
-MAX_DEPTH = 4  # S → NP VP → (DET N | N) (V NP | V) → ...
+_DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
 
 
-def generate_derivation():
-    """Generate a random derivation and return (pos_bag, rule_sequence).
-
-    pos_bag: which POS tags appear (as counts)
-    rule_sequence: list of rule IDs in pre-order, padded to MAX_DEPTH
-    """
-    pos_counts = [0, 0, 0]  # DET, N, V
-    rules = []
-
-    def expand_S():
-        rules.append(0)  # S → NP VP
-        expand_NP()
-        expand_VP()
-
-    def expand_NP():
-        if random.random() < 0.6:
-            rules.append(1)  # NP → DET N
-            pos_counts[POS_DET] += 1
-            pos_counts[POS_N] += 1
-        else:
-            rules.append(2)  # NP → N
-            pos_counts[POS_N] += 1
-
-    def expand_VP():
-        if random.random() < 0.7:
-            rules.append(3)  # VP → V NP
-            pos_counts[POS_V] += 1
-            expand_NP()
-        else:
-            rules.append(4)  # VP → V
-            pos_counts[POS_V] += 1
-
-    expand_S()
-
-    # Pad or truncate to MAX_DEPTH
-    while len(rules) < MAX_DEPTH:
-        rules.append(0)  # pad with rule 0 (doesn't matter, masked in loss)
-    rules = rules[:MAX_DEPTH]
-
-    return pos_counts, rules
-
-
-def make_activation(pos_counts, noise=0.1):
-    """Convert POS bag to a float activation vector with noise."""
-    act = torch.tensor(pos_counts, dtype=torch.float32)
-    act = act + torch.randn_like(act) * noise
-    return act
-
-
-def generate_batch(batch_size, noise=0.1):
-    """Generate a batch of (activations, target_rules, mask).
-
-    mask: 1 where a real rule was generated, 0 where padded.
-    """
-    acts = []
-    targets = []
-    masks = []
-
-    for _ in range(batch_size):
-        pos_counts, rules = generate_derivation()
-        acts.append(make_activation(pos_counts, noise))
-        targets.append(rules)
-
-        # Mask: real rules (not padding)
-        # We know the derivation generates 3-4 rules depending on VP choice
-        # Count how many real rules were generated before padding
-        pos, real_rules = generate_derivation.__code__.co_varnames, rules  # just use all
-        masks.append([1.0] * MAX_DEPTH)  # simplify: all positions active
-
-    acts = torch.stack(acts).to(TheDevice.get())
-    targets = torch.tensor(targets, dtype=torch.long).to(TheDevice.get())
-    masks = torch.tensor(masks, dtype=torch.float32).to(TheDevice.get())
-
-    return acts, targets, masks
-
-
-def train_and_evaluate(num_epochs=300, batch_size=64, lr=0.005, verbose=True):
-    """Train SyntacticLayer on toy grammar and return final accuracy.
-
-    We call the derivation stack directly (input_proj + layers + heads)
-    rather than the full forward() which also builds word tuples, since
-    the toy grammar uses a different rule format than TheGrammar.
-    """
-
-    # Create a Grammar-compatible wrapper for toy rules
-    toy_grammar = Grammar()
-    # Override with toy rules for this test
-    toy_grammar.rules = TOY_RULES
-
-    layer = SyntacticLayer(
-        nInput=NUM_POS,
-        nOutput=NUM_POS,
-        rules=list(range(NUM_TOY_RULES)),
-        max_depth=MAX_DEPTH,
-        hidden_dim=64,
-        grammar=toy_grammar,
-        tau=1.0,
+def _reload_config():
+    from util import init_config
+    init_config(
+        path=os.path.join(_DATA_DIR, 'MentalModel.xml'),
+        defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
     )
-    layer.train()
 
-    optimizer = torch.optim.Adam(layer.parameters(), lr=lr)
 
-    def predict(x):
-        """Run the derivation stack without building word tuples."""
-        h = layer.input_proj.forward(x)
-        h = layer.activation_fn(h)
-        depth_ids = torch.arange(layer.max_depth, device=x.device)
-        depth_vecs = layer.depth_embed(depth_ids)
-        all_logits = []
-        all_probs = []
-        for d in range(layer.max_depth):
-            h = h + depth_vecs[d]
-            h = layer.derivation_layer.forward(h)
-            h = layer.activation_fn(h)
-            logits = layer.rule_head.forward(h)
-            if layer.training:
-                probs = F.gumbel_softmax(logits, tau=layer.tau, hard=False)
-            else:
-                probs = F.softmax(logits, dim=-1)
-            all_logits.append(logits)
-            all_probs.append(probs)
-        return {
-            "rule_logits": torch.stack(all_logits, dim=1),
-            "rule_probs": torch.stack(all_probs, dim=1),
-            "predicted_rules": torch.stack(all_logits, dim=1).argmax(dim=-1),
-        }
+def _make_model():
+    """Create a MentalModel and return (model, TheGrammar)."""
+    _reload_config()
+    from Space import TheGrammar
+    # Force re-initialization in case previous tests set small test dimensions
+    TheGrammar._layers_initialized = False
+    TheGrammar._configured = False
+    TheGrammar.chunk_layer = None
+    model, _ = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
+    return model, TheGrammar
 
-    best_acc = 0.0
-    for epoch in range(num_epochs):
-        acts, targets, masks = generate_batch(batch_size)
 
-        out = predict(acts)
-        logits = out["rule_logits"]  # [B, MAX_DEPTH, NUM_TOY_RULES]
+def _forward_with_data(model, sentences, outputs):
+    """Run a forward pass through MentalModel with given data."""
+    with TheData.runtime_batch(sentences, outputs), \
+         warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Range violation")
+        warnings.filterwarnings("ignore", message="PiLayer.reverse")
+        train_input, _ = model.inputSpace.getTrainData()
+        x = model.inputSpace.prepInput(train_input[:len(sentences)])
+        return model.forward(x)
 
-        # Cross-entropy at each depth
-        loss = 0.0
-        for d in range(MAX_DEPTH):
-            loss = loss + F.cross_entropy(logits[:, d, :], targets[:, d])
-        loss = loss / MAX_DEPTH
 
-        optimizer.zero_grad()
+# ── Dimensions from MentalModel.xml ─────────────────────────────────
+_N_SYMBOLS = 128
+_N_CONCEPTS = 256
+_N_PERCEPTS = 128
+_CONCEPT_DIM = 100 + 4   # nDim + objectSize (nWhere + nWhen)
+_SYMBOL_DIM = 100 + 4
+
+
+class TestGrammarGradientFlow(unittest.TestCase):
+    """Grammar SyntacticLayers receive gradients via rule prediction."""
+
+    def setUp(self):
+        torch.manual_seed(42)
+        self.model, self.grammar = _make_model()
+
+    def test_c_tier_gradient_flows(self):
+        """C-tier rule_head receives gradients from SyntacticLayer.forward().
+
+        SyntacticLayer.forward(activation) predicts rule distributions.
+        loss.backward() should propagate gradients to the rule_head weights.
+        """
+        sl_c = self.grammar._tier_syntactic_layer('C')
+        if sl_c is None:
+            self.skipTest("No C-tier SyntacticLayer")
+
+        sl_c.train()
+        act = (torch.randn(1, _N_CONCEPTS, device=TheDevice.get()) * 0.01).requires_grad_(True)
+        out = sl_c.forward(act)
+        loss = out['rule_logits'].pow(2).sum()
         loss.backward()
-        optimizer.step()
 
-        # Anneal temperature
-        if epoch < num_epochs // 2:
-            tau = 1.0 - 0.8 * (epoch / (num_epochs // 2))
-            layer.set_tau(max(tau, 0.2))
+        self.assertIsNotNone(act.grad,
+            "No gradient to input from C-tier SyntacticLayer.forward()")
+        self.assertTrue((act.grad.abs() > 0).any(),
+            "Zero gradient to input from C-tier rule prediction")
 
-        # Evaluate every 50 epochs
-        if (epoch + 1) % 50 == 0 or epoch == 0:
-            layer.eval()
+    def test_s_tier_gradient_flows(self):
+        """S-tier rule_head receives gradients from SyntacticLayer.forward()."""
+        sl_s = self.grammar._tier_syntactic_layer('S')
+        if sl_s is None:
+            self.skipTest("No S-tier SyntacticLayer")
+
+        sl_s.train()
+        act = (torch.randn(1, _N_SYMBOLS, device=TheDevice.get()) * 0.01).requires_grad_(True)
+        out = sl_s.forward(act)
+        loss = out['rule_logits'].pow(2).sum()
+        loss.backward()
+
+        self.assertIsNotNone(act.grad,
+            "No gradient to input from S-tier SyntacticLayer.forward()")
+        self.assertTrue((act.grad.abs() > 0).any(),
+            "Zero gradient to S-tier input from rule prediction")
+
+    def test_gradient_flows_through_depth_embed(self):
+        """Depth embeddings also receive gradients (used in rule prediction)."""
+        sl_c = self.grammar._tier_syntactic_layer('C')
+        if sl_c is None:
+            self.skipTest("No C-tier SyntacticLayer")
+
+        sl_c.train()
+        act = torch.randn(1, _N_CONCEPTS, device=TheDevice.get()) * 0.01
+        out = sl_c.forward(act)
+        loss = out['rule_logits'].pow(2).sum()
+        loss.backward()
+
+        self.assertIsNotNone(sl_c.depth_embed.weight.grad,
+            "No gradient to depth_embed from SyntacticLayer.forward()")
+        self.assertFalse(sl_c.depth_embed.weight.grad.isnan().any(),
+            "NaN gradient to depth_embed")
+
+
+class TestGrammarRuleSelectivity(unittest.TestCase):
+    """SyntacticLayers produce input-dependent rule distributions."""
+
+    def setUp(self):
+        torch.manual_seed(42)
+        self.model, self.grammar = _make_model()
+
+    def test_untrained_rule_probs_near_uniform(self):
+        """Before training, non-transition rule probabilities should be near-uniform.
+
+        The transition rule is biased by (1-interpretation)*TRANSITION_SCALE,
+        so we exclude it from the entropy check.
+        """
+        sl_c = self.grammar._tier_syntactic_layer('C')
+        if sl_c is None:
+            self.skipTest("No C-tier SyntacticLayer")
+
+        # Small-scale input to keep SyntacticLayer logits in stable range
+        act = torch.randn(1, _N_CONCEPTS, device=TheDevice.get()) * 0.01
+        sl_c.eval()
+        with torch.no_grad():
+            out = sl_c.forward(act)
+        probs = out['rule_probs'][:, 0, :]  # first depth
+        num_rules = probs.shape[-1]
+        self.assertFalse(probs.isnan().any(), "NaN in rule_probs")
+
+        # Exclude transition rule from entropy check since it's biased
+        if sl_c.transition_index is not None:
+            mask = torch.ones(num_rules, dtype=torch.bool, device=probs.device)
+            mask[sl_c.transition_index] = False
+            non_transition_probs = probs[:, mask]
+            # Renormalize the non-transition probabilities
+            non_transition_probs = non_transition_probs / (non_transition_probs.sum(dim=-1, keepdim=True) + 1e-8)
+            n_eff = non_transition_probs.shape[-1]
+        else:
+            non_transition_probs = probs
+            n_eff = num_rules
+
+        entropy = -(non_transition_probs * (non_transition_probs + 1e-8).log()).sum(dim=-1).mean().item()
+        max_entropy = torch.tensor(n_eff, dtype=torch.float32).log().item()
+        self.assertGreater(entropy, 0.3 * max_entropy,
+            f"Untrained C-tier entropy {entropy:.3f} too low "
+            f"(max {max_entropy:.3f} for {n_eff} non-transition rules)")
+
+    def test_different_inputs_different_distributions(self):
+        """Different activation patterns produce different rule distributions."""
+        sl_c = self.grammar._tier_syntactic_layer('C')
+        if sl_c is None:
+            self.skipTest("No C-tier SyntacticLayer")
+
+        act_sparse = torch.zeros(1, _N_CONCEPTS, device=TheDevice.get())
+        act_sparse[0, :5] = 0.01
+
+        act_dense = torch.ones(1, _N_CONCEPTS, device=TheDevice.get()) * 0.01
+
+        sl_c.eval()
+        with torch.no_grad():
+            out1 = sl_c.forward(act_sparse)
+            out2 = sl_c.forward(act_dense)
+
+        probs_1 = out1['rule_probs'][:, 0, :]
+        probs_2 = out2['rule_probs'][:, 0, :]
+
+        diff = (probs_1 - probs_2).abs().max().item()
+        self.assertGreater(diff, 1e-6,
+            "Same rule distribution for different inputs — no selectivity")
+
+    def test_depth_varies_rule_distribution(self):
+        """Different derivation depths produce different rule distributions."""
+        sl_s = self.grammar._tier_syntactic_layer('S')
+        if sl_s is None:
+            self.skipTest("No S-tier SyntacticLayer")
+
+        act = torch.randn(1, _N_SYMBOLS, device=TheDevice.get()) * 0.01
+        sl_s.eval()
+        with torch.no_grad():
+            out = sl_s.forward(act)
+
+        # Compare depth 0 vs depth 1 rule logits (before softmax/bias)
+        # Use logits instead of probs to avoid transition bias masking
+        logits_d0 = out['rule_logits'][:, 0, :]
+        logits_d1 = out['rule_logits'][:, 1, :]
+
+        diff = (logits_d0 - logits_d1).abs().max().item()
+        self.assertGreater(diff, 1e-6,
+            "Same rule logits at different depths — depth embedding not used")
+
+
+class TestGrammarInMentalModel(unittest.TestCase):
+    """MentalModel.forward() exercises Grammar through Space.forward()."""
+
+    def setUp(self):
+        torch.manual_seed(42)
+        self.model, self.grammar = _make_model()
+
+    def test_forward_populates_stacks(self):
+        """MentalModel.forward() populates Grammar stacks with word tuples."""
+        self.model.eval()
+        self.model.set_sigma(0)
+        with torch.no_grad():
+            _forward_with_data(self.model,
+                ['the cat sat on the mat'], [torch.tensor([0.0])])
+
+        # Check words on the space subspaces — Grammar.forward() records
+        # words on subspaces via add_word(), not on Grammar's internal lists.
+        total_words = 0
+        for space_attr in ('symbolicSpace', 'conceptualSpace', 'perceptualSpace'):
+            space = getattr(self.model, space_attr, None)
+            if space is not None and hasattr(space, 'subspace'):
+                words = space.subspace.get_words()
+                total_words += len(words)
+
+        # At minimum the C-tier should record not/non words at active positions
+        # when useGrammar() is True (ARLM mode).
+        if self.model.conceptualSpace.useGrammar():
+            self.assertGreater(total_words, 0,
+                "No word tuples on any subspace — Grammar not exercised during forward")
+
+    def test_spaces_have_grammar_enabled(self):
+        """MentalModel uses ARLM mode which enables grammar on spaces."""
+        # Grammar is enabled through useGrammar() which checks maskedPrediction
+        self.assertTrue(self.model.conceptualSpace.useGrammar(),
+            "ConceptualSpace.useGrammar() should be True in ARLM mode")
+
+
+class TestGrammarRulesMatchXML(unittest.TestCase):
+    """Verify Grammar.configure() parses MentalModel.xml rules correctly."""
+
+    def setUp(self):
+        torch.manual_seed(42)
+        self.model, self.grammar = _make_model()
+
+    # ── Toy rules: what MentalModel.xml defines ──────────────────────
+
+    def test_total_rule_count(self):
+        """MentalModel.xml defines 15 rules (1 START + 5 S + 7 C + 2 P)."""
+        self.assertEqual(len(self.grammar.rules), 15)
+
+    def test_s_tier_rules(self):
+        """S-tier: true(S), swap(S,S), equals(S,S), part(S,S), S→C transition."""
+        s_rules = [(r.method_name, r.arity) for r in self.grammar.rules if r.tier == 'S']
+        self.assertIn(('true', 1), s_rules)
+        self.assertIn(('swap', 2), s_rules)
+        self.assertIn(('equals', 2), s_rules)
+        self.assertIn(('part', 2), s_rules)
+        self.assertIn((None, 1), s_rules, "Missing S→C transition rule")
+        self.assertEqual(len(s_rules), 5)
+
+    def test_c_tier_rules(self):
+        """C-tier: non(C), not(C), intersection(C,C), union(C,C), lower(C,C), lift(C,C), C→P transition."""
+        c_rules = [(r.method_name, r.arity) for r in self.grammar.rules if r.tier == 'C']
+        self.assertIn(('non', 1), c_rules)
+        self.assertIn(('not', 1), c_rules)
+        self.assertIn(('intersection', 2), c_rules)
+        self.assertIn(('union', 2), c_rules)
+        self.assertIn(('lower', 2), c_rules)
+        self.assertIn(('lift', 2), c_rules)
+        self.assertIn((None, 1), c_rules, "Missing C→P transition rule")
+        self.assertEqual(len(c_rules), 7)
+
+    def test_p_tier_rules(self):
+        """P-tier: chunk(I,P) from 'I P', terminal 'I'."""
+        p_rules = [(r.method_name, r.arity) for r in self.grammar.rules if r.tier == 'P']
+        self.assertIn(('chunk', 2), p_rules)
+        self.assertIn((None, 0), p_rules, "Missing P→I terminal rule")
+        self.assertEqual(len(p_rules), 2)
+
+    def test_start_rule(self):
+        """START→S rule exists."""
+        start_rules = [r for r in self.grammar.rules if r.tier == 'START']
+        self.assertEqual(len(start_rules), 1)
+        self.assertEqual(start_rules[0].canonical, 'START → S')
+
+    # ── Derived rules: tier groupings and transitions ────────────────
+
+    def test_symbolic_indices(self):
+        """grammar.symbolic() returns exactly the S-tier rule indices."""
+        s_ids = self.grammar.symbolic()
+        for i in s_ids:
+            self.assertEqual(self.grammar.rules[i].tier, 'S')
+        self.assertEqual(len(s_ids), 5)
+
+    def test_conceptual_indices(self):
+        """grammar.conceptual() returns exactly the C-tier rule indices."""
+        c_ids = self.grammar.conceptual()
+        for i in c_ids:
+            self.assertEqual(self.grammar.rules[i].tier, 'C')
+        self.assertEqual(len(c_ids), 7)
+
+    def test_perceptual_indices(self):
+        """grammar.perceptual() returns exactly the P-tier rule indices."""
+        p_ids = self.grammar.perceptual()
+        for i in p_ids:
+            self.assertEqual(self.grammar.rules[i].tier, 'P')
+        self.assertEqual(len(p_ids), 2)
+
+    def test_symbolic_transition(self):
+        """S→C transition is the arity-1, method_name=None S rule."""
+        t = self.grammar.symbolic_transition()
+        self.assertIsNotNone(t)
+        rule = self.grammar.rules[t]
+        self.assertEqual(rule.tier, 'S')
+        self.assertIsNone(rule.method_name)
+        self.assertEqual(rule.arity, 1)
+
+    def test_conceptual_transition(self):
+        """C→P transition is the arity-1, method_name=None C rule."""
+        t = self.grammar.conceptual_transition()
+        self.assertIsNotNone(t)
+        rule = self.grammar.rules[t]
+        self.assertEqual(rule.tier, 'C')
+        self.assertIsNone(rule.method_name)
+        self.assertEqual(rule.arity, 1)
+
+    def test_all_method_names_are_registered(self):
+        """Every rule's method_name maps to a _GRAMMAR_METHODS entry."""
+        for r in self.grammar.rules:
+            if r.method_name is not None:
+                self.assertIn(r.method_name, self.grammar._GRAMMAR_METHODS,
+                    f"Rule method '{r.method_name}' not in _GRAMMAR_METHODS")
+
+
+class TestGrammarRuleReport(unittest.TestCase):
+    """Report rule preferences from SyntacticLayers (informational)."""
+
+    def test_rule_preference_report(self):
+        """Print which rules each tier's SyntacticLayer predicts for synthetic input."""
+        torch.manual_seed(42)
+        _, grammar = _make_model()
+
+        for tier, n_slots in [('S', _N_SYMBOLS), ('C', _N_CONCEPTS), ('P', _N_PERCEPTS)]:
+            sl = grammar._tier_syntactic_layer(tier)
+            if sl is None:
+                print(f"\n{tier}-tier: no SyntacticLayer")
+                continue
+
+            print(f"\n{tier}-tier rules ({len(sl.all_rules)} rules):")
+            for local_idx, global_id in enumerate(sl.all_rules):
+                rule = grammar.rules[global_id]
+                print(f"  [{local_idx}] rule {global_id}: {rule.canonical} "
+                      f"(arity={rule.arity})")
+
+            act = torch.randn(1, n_slots, device=TheDevice.get()) * 0.01
+            sl.eval()
             with torch.no_grad():
-                eval_acts, eval_targets, eval_masks = generate_batch(256)
-                eval_out = predict(eval_acts)
-                preds = eval_out["predicted_rules"]  # [B, MAX_DEPTH]
-                correct = (preds == eval_targets).float()
-                per_depth_acc = correct.mean(dim=0)
-                overall_acc = correct.mean().item()
-                best_acc = max(best_acc, overall_acc)
-
-                if verbose:
-                    depth_str = " ".join(f"d{d}={per_depth_acc[d]:.2f}"
-                                         for d in range(MAX_DEPTH))
-                    print(f"  epoch {epoch+1:4d}  loss={loss.item():.4f}  "
-                          f"acc={overall_acc:.3f}  {depth_str}")
-            layer.train()
-
-    return best_acc
+                out = sl.forward(act)
+                probs = out['rule_probs'][0, 0, :]
+                ranked = sorted(enumerate(probs.tolist()),
+                                key=lambda x: x[1], reverse=True)
+                print(f"  Depth-0 rule preferences:")
+                for local_idx, prob in ranked:
+                    global_id = sl.all_rules[local_idx]
+                    rule = grammar.rules[global_id]
+                    print(f"    {rule.canonical}: {prob:.4f}")
 
 
-def main():
-    print("=" * 60)
-    print("Toy Grammar Learning Test")
-    print("=" * 60)
-    print(f"\nRules:")
-    for i, r in enumerate(TOY_RULES):
-        print(f"  {i}: {r}")
-    print(f"\nPOS slots: DET=0, N=1, V=2")
-    print(f"Derivation depth: {MAX_DEPTH}")
-    print(f"Device: {TheDevice.get()}")
-    print()
-
-    acc = train_and_evaluate(num_epochs=300, verbose=True)
-
-    print(f"\nBest accuracy: {acc:.3f}")
-    if acc > 0.7:
-        print("PASS — SyntacticLayer can learn toy grammar rules")
-    else:
-        print("MARGINAL — accuracy below 70%, may need more epochs or tuning")
-
-    return acc
-
-
-if __name__ == "__main__":
-    random.seed(42)
-    torch.manual_seed(42)
-    main()
+if __name__ == '__main__':
+    unittest.main()

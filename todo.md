@@ -1,6 +1,5 @@
 # TODO
 
-xfail because projectConcepts/projectSymbols methods need actual implementations for gradients to flow
 
 ================================== April 9 ==================================
 

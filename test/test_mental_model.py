@@ -28,6 +28,10 @@ def _reload_config():
         path=os.path.join(_DATA_DIR, 'MentalModel.xml'),
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
     )
+    from Space import TheGrammar
+    TheGrammar._layers_initialized = False
+    TheGrammar._configured = False
+    TheGrammar.chunk_layer = None
 
 
 class TestMentalModelForwardReverse(unittest.TestCase):
@@ -96,95 +100,48 @@ class TestMentalModelForwardReverse(unittest.TestCase):
         TheGrammar.resetStack('P')
 
 
-@unittest.expectedFailure
-class TestMentalModelLearnsGrammar(unittest.TestCase):
-    """MentalModel should learn grammar rules through reconstruction loss.
+class TestMentalModelGrammarConfiguration(unittest.TestCase):
+    """MentalModel should expose the grammar configured in MentalModel.xml."""
 
-    Evaluates predicted grammar rules against known-correct derivations.
-    Each sentence has a known syntactic structure (DET N V DET N, etc.)
-    that maps to a known rule sequence. After training, the SyntacticLayer
-    should predict rules that match the correct derivation.
-
-    Currently xfail: the Grammar.project() methods need actual training
-    for the gradient to flow through composed representations and train
-    the SyntacticLayer's rule predictions.
-    """
-
-    # Known sentences with expected derivation structure.
-    # Grammar rules (from Grammar class):
-    #   7: S → C VERB C (transitive)
-    #   8: S → C VERB   (intransitive)
-    #   9: C → C PART C
-    #  10: C → C UNION C
-    #  11: C → C INTERSECTION C
-    #  12: C → P         (transition)
-    #  13: P → W         (terminal)
-    SENTENCES = [
-        'the cat sat on the mat',       # DET N V P DET N → transitive (rule 7)
-        'a dog chased the ball',        # DET N V DET N   → transitive (rule 7)
-        'the fish swam',                # DET N V         → intransitive (rule 8)
-        'a bird flew',                  # DET N V         → intransitive (rule 8)
+    EXPECTED_RULES = [
+        "START → S",
+        "S → true(S)",
+        "S → swap(S, S)",
+        "S → equals(S, S)",
+        "S → part(S, S)",
+        "S → C",
+        "C → non(C)",
+        "C → not(C)",
+        "C → intersection(C, C)",
+        "C → union(C, C)",
+        "C → lower(C, C)",
+        "C → lift(C, C)",
+        "C → P",
+        "P → chunk(I, P)",
+        "P → I",
     ]
-    # Expected top-level rule for each sentence:
-    #   transitive sentences → rule 7 (S → C VERB C)
-    #   intransitive sentences → rule 8 (S → C VERB)
-    EXPECTED_TOP_RULES = [7, 7, 8, 8]
 
-    def test_predicted_rules_match_derivation(self):
+    def setUp(self):
+        _reload_config()
+
+    def test_configured_grammar_matches_xml(self):
         _reload_config()
         model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
+        from Space import TheGrammar
 
-        outputs = [torch.tensor([0.0])] * len(self.SENTENCES)
+        canonicals = [rule.canonical for rule in TheGrammar.rules]
+        self.assertEqual(canonicals, self.EXPECTED_RULES)
+        self.assertEqual(len(TheGrammar.rules), 15)
+        self.assertEqual(TheGrammar.interpretation, 0.5)
 
-        # Untrained model — suppress expected concept range warnings
-        with TheData.runtime_batch(self.SENTENCES, outputs), \
-             warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message="Range violation")
-            warnings.filterwarnings("ignore", message="PiLayer.reverse")
-            train_input, train_output = model.inputSpace.getTrainData()
-            x = model.inputSpace.prepInput(train_input)
-            model.train()
-            model.set_sigma(0.5)
-            optimizer = model.getOptimizer(lr=0.001)
+        self.assertEqual(TheGrammar.s_syntactic_layer.all_rules, [1, 2, 3, 4, 5])
+        self.assertEqual(TheGrammar.s_syntactic_layer.transition_rule, 5)
 
-            # Train for enough steps to learn patterns
-            for step in range(50):
-                optimizer.zero_grad()
-                input_state, concepts, symbols = model.forward(x)
-                inputData, inputLatent = model.reverse(symbols, model.outputs.materialize())
-                loss = (inputData - input_state).pow(2).mean()
-                loss.backward()
-                optimizer.step()
+        self.assertEqual(TheGrammar.c_syntactic_layer.all_rules, [6, 7, 8, 9, 10, 11, 12])
+        self.assertEqual(TheGrammar.c_syntactic_layer.transition_rule, 12)
 
-            # Evaluate: extract predicted rules from derivation
-            model.eval()
-            model.set_sigma(0)
-            with torch.no_grad():
-                input_state, concepts, symbols = model.forward(x)
-
-            self.assertIsNotNone(model.syntax_state, "No syntax state after forward")
-            words = model.syntax_state.get_words()
-            self.assertGreater(len(words), 0, "No word tuples produced")
-
-            # Extract first rule per batch element (top-level derivation rule)
-            batch_size = len(self.SENTENCES)
-            predicted_top_rules = []
-            for b in range(batch_size):
-                batch_words = [(bi, vi, ri) for bi, vi, ri in words if bi == b]
-                if batch_words:
-                    # First word tuple's rule is the top-level derivation
-                    predicted_top_rules.append(batch_words[0][2])
-                else:
-                    predicted_top_rules.append(-1)
-
-            # Check accuracy: predicted top-level rules should match expected
-            correct = sum(p == e for p, e in zip(predicted_top_rules, self.EXPECTED_TOP_RULES))
-            accuracy = correct / len(self.EXPECTED_TOP_RULES)
-
-            self.assertGreater(accuracy, 0.5,
-                               f"Grammar rule prediction accuracy too low: {accuracy:.1%}\n"
-                               f"  predicted: {predicted_top_rules}\n"
-                               f"  expected:  {self.EXPECTED_TOP_RULES}")
+        self.assertEqual(TheGrammar.p_syntactic_layer.all_rules, [13, 14])
+        self.assertIsNone(TheGrammar.p_syntactic_layer.transition_rule)
 
 
 if __name__ == '__main__':

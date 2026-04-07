@@ -67,7 +67,20 @@
       <port>8001</port>
       <timeout>120</timeout>
     </server>
+
+    <language>
+      <grammar>
+        <START>S</START>
+        <S>C</S>
+        <C>not(C)</C>
+        <C>P</C>
+        <P>I</P>
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+
   </architecture>
+
 
   <InputSpace>
     <nInput>0</nInput>
@@ -78,7 +91,6 @@
     <quantized>false</quantized>
     <lexer>word</lexer>
     <normalize>true</normalize>
-
   </InputSpace>
 
   <PerceptualSpace>
@@ -92,7 +104,6 @@
     <invertible>false</invertible>
     <quantized>false</quantized>
     <normalize>false</normalize>
-
   </PerceptualSpace>
 
   <ModalSpace>
@@ -109,7 +120,6 @@
     <wherePassThrough>true</wherePassThrough>
     <whenPassThrough>true</whenPassThrough>
     <normalize>false</normalize>
-
   </ModalSpace>
 
   <ConceptualSpace>
@@ -123,7 +133,6 @@
     <nonlinear>true</nonlinear>
     <quantized>false</quantized>
     <normalize>false</normalize>
-
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -135,7 +144,6 @@
     <passThrough>false</passThrough>
     <quantized>false</quantized>
     <normalize>false</normalize>
-
   </SymbolicSpace>
 
   <OutputSpace>
@@ -147,7 +155,6 @@
     <invertible>false</invertible>
     <quantized>false</quantized>
     <normalize>true</normalize>
-
   </OutputSpace>
 
 </model>

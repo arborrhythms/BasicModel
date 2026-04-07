@@ -17,7 +17,7 @@ os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 from util import TheDevice
 from Model import (
     LinearLayer, InvertibleLinearLayer, SigmaLayer,
-    PiLayer, AttentionLayer, LiftingLayer,
+    PiLayer, AttentionLayer, MapppingLayer,
 )
 
 
@@ -122,10 +122,10 @@ class TestInvertibleLinearLayer(unittest.TestCase):
 
 
 
-class TestLiftingLayer(unittest.TestCase):
+class TestMapppingLayer(unittest.TestCase):
     def _check(self, nIn, nOut, tol):
         torch.manual_seed(42)
-        layer = LiftingLayer(nIn, nOut)
+        layer = MapppingLayer(nIn, nOut)
         x = torch.randn(4, nIn).to(TheDevice.get())
         y = layer.forward(x)
         x_rec = layer.reverse(y)
@@ -229,6 +229,57 @@ class TestInvertiblePiLayer2D(unittest.TestCase):
     def test_naive_nobias(self):   self._check(True, False)
     def test_bias(self):           self._check(False, True)
     def test_nobias(self):         self._check(False, False)
+
+
+class TestPiLayerRoundtripUniformNeg1Pos1(unittest.TestCase):
+    """PiLayer.reverse(PiLayer.forward(x)) must be identity for x in [-1, 1]."""
+
+    def _check(self, nIn, nOut, naive, bias):
+        torch.manual_seed(7)
+        layer = PiLayer(nIn, nOut, naive=naive, hasBias=bias, invertible=True)
+        layer.set_sigma(0)
+        layer.train(False)
+        x = torch.rand(32, nIn).to(TheDevice.get()) * 2 - 1  # uniform [-1, 1]
+        with torch.no_grad():
+            y = layer.forward(x)
+            x_rec = layer.reverse(y)
+        err = _reconstruction_error(x, x_rec, rel=True)
+        self.assertLess(err, 1e-3,
+                        f"nIn={nIn}, nOut={nOut}, naive={naive}, bias={bias}: "
+                        f"rel err={err:.2e}")
+
+    def test_square_naive(self):       self._check(6, 6, True, True)
+    def test_square_nonnaive(self):    self._check(6, 6, False, True)
+    def test_wide_naive(self):         self._check(4, 8, True, True)
+    def test_wide_nonnaive(self):      self._check(4, 8, False, True)
+    def test_nobias_naive(self):       self._check(6, 6, True, False)
+    def test_nobias_nonnaive(self):    self._check(6, 6, False, False)
+
+
+class TestPiLayerLogitRoundtrip(unittest.TestCase):
+    """PiLayer roundtrip: symmetric logit/sigmoid, unrestricted W."""
+
+    def _check(self, nIn, nOut, naive, bias):
+        torch.manual_seed(7)
+        layer = PiLayer(nIn, nOut, naive=naive, hasBias=bias,
+                        invertible=True)
+        layer.set_sigma(0)
+        layer.train(False)
+        x = torch.rand(32, nIn).to(TheDevice.get()) * 2 - 1  # uniform [-1, 1]
+        with torch.no_grad():
+            y = layer.forward(x)
+            x_rec = layer.reverse(y)
+        err = _reconstruction_error(x, x_rec, rel=True)
+        self.assertLess(err, 1e-3,
+                        f"logit nIn={nIn}, nOut={nOut}, naive={naive}, bias={bias}: "
+                        f"rel err={err:.2e}")
+
+    def test_square_naive(self):       self._check(6, 6, True, True)
+    def test_square_nonnaive(self):    self._check(6, 6, False, True)
+    def test_wide_naive(self):         self._check(4, 8, True, True)
+    def test_wide_nonnaive(self):      self._check(4, 8, False, True)
+    def test_nobias_naive(self):       self._check(6, 6, True, False)
+    def test_nobias_nonnaive(self):    self._check(6, 6, False, False)
 
 
 class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
@@ -412,7 +463,7 @@ from Space import SubSpace
 
 def _wrap_tensor(space, x):
     """Wrap a raw tensor in the space's SubSpace so forward()/reverse() can materialize it."""
-    space.subspace.set_vectors(x)
+    space.subspace.set_event(x)
     return space.subspace
 
 
@@ -426,7 +477,7 @@ def _unwrap(vspace):
 def _clamp_subspace(vspace, lo=1e-7, hi=1.0):
     """Clamp what-vectors in a SubSpace (unit-test substitute for pipeline sigmoid)."""
     t = vspace.materialize()
-    vspace.set_vectors(t.clamp(min=lo, max=hi))
+    vspace.set_event(t.clamp(min=lo, max=hi))
     return vspace
 
 

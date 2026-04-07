@@ -397,7 +397,8 @@ class OldSyntacticLayer(Layer):
     def __init__(self, nInput, nOutput, max_depth=12, hidden_dim=256,
                  grammar=None, tau=1.0):
         super().__init__(nInput, nOutput)
-        from Model import Grammar, LinearLayer
+        from Space import Grammar
+        from Model import LinearLayer
         self.grammar    = grammar or Grammar()
         self.num_rules  = len(self.grammar)
         self.max_depth  = max_depth

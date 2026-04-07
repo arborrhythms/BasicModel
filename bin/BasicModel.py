@@ -175,13 +175,13 @@ class BaseModel(nn.Module):
             te = "NONE"
         self.train_embedding = te.upper()
         self.optimize_embedding = self.train_embedding not in ("NONE", "CBOW", "SBOW")
-        if self.optimize_embedding and isinstance(self.inputSpace.get_vectors(), Embedding):
-            emb_params = self.inputSpace.get_vectors().embedding_parameters()
+        if self.optimize_embedding and isinstance(self.inputSpace.vocabulary, Embedding):
+            emb_params = self.inputSpace.vocabulary.embedding_parameters()
             self.inputSpace.params = self.inputSpace.params + emb_params
         self.loss.embedding_scale = float(_t("embeddingScale") or 0.1)
-        if isinstance(self.inputSpace.get_vectors(), Embedding):
-            self.inputSpace.get_vectors().optimize_embedding = self.optimize_embedding
-            object.__setattr__(self.inputSpace.get_vectors(), "_model", self)
+        if isinstance(self.inputSpace.vocabulary, Embedding):
+            self.inputSpace.vocabulary.optimize_embedding = self.optimize_embedding
+            object.__setattr__(self.inputSpace.vocabulary, "_model", self)
 
         if _t("autoload"):
             wpath = TheXMLConfig.get("architecture.weightsPath")
@@ -217,8 +217,8 @@ class BaseModel(nn.Module):
         # Exclude embedding params when trainEmbedding is NONE or ARLM
         if not getattr(self, 'optimize_embedding', False):
             exclude = set()
-            if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.get_vectors(), Embedding):
-                for p in self.inputSpace.get_vectors().embedding_parameters():
+            if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.vocabulary, Embedding):
+                for p in self.inputSpace.vocabulary.embedding_parameters():
                     exclude.add(p.data_ptr())
             if exclude:
                 params = [p for p in params if p.data_ptr() not in exclude]
@@ -264,8 +264,8 @@ class BaseModel(nn.Module):
 
     def _get_embedding(self):
         """Return the Embedding instance if this model uses one, else None."""
-        if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.get_vectors(), Embedding):
-            return self.inputSpace.get_vectors()
+        if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.vocabulary, Embedding):
+            return self.inputSpace.vocabulary
         return None
 
     def save_weights(self, path=None):
@@ -735,7 +735,7 @@ class BasicModel(BaseModel):
         # Convert masked-word string labels to embedding vectors now that
         # the Embedding vocabulary is available.
         if data is not None and hasattr(data, '_lm_labels') and data._lm_labels is not None:
-            embedding = self.inputSpace.get_vectors() if self.inputSpace.subspace.event is not None else None
+            embedding = self.inputSpace.vocabulary if self.inputSpace.subspace.what is not None else None
             if embedding is not None and hasattr(embedding, 'pretrain'):
                 data.prepare_lm_targets(embedding)
                 # Move new targets to device
@@ -745,12 +745,10 @@ class BasicModel(BaseModel):
         self.symbolicSpace   = SymbolicSpace(conceptShape, spaceShape_symbol, symbolShape,
                                              conceptualSpace=self.conceptualSpace)
         # SyntacticSpace for symbolic grammar (composeSyntax + rule execution).
-        # Used by SyntacticDerivation() for symbolic derivation (rules 1-5).
+        self.spaces.extend([self.inputSpace, self.perceptualSpace, self.conceptualSpace, self.symbolicSpace])
         self.syntacticSpace = None
         if self.syntax:
             self.syntacticSpace = SyntacticSpace(symbolShape, spaceShape_syntax, symbolShape)
-        self.spaces.extend([self.inputSpace, self.perceptualSpace, self.conceptualSpace, self.symbolicSpace])
-        if self.syntacticSpace is not None:
             self.spaces.append(self.syntacticSpace)
 
         if self.conceptualOrder == 2:
@@ -771,7 +769,7 @@ class BasicModel(BaseModel):
         self.nTotalOutputSymbols = nOutputSymbols
         self.outputSpace     = OutputSpace([nOutputSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
                                            masked_prediction=(masked_prediction != 'NONE'),
-                                           vectors=self.inputSpace.get_vectors())
+                                           vectors=self.inputSpace.vocabulary)
         self.spaces.extend([self.outputSpace])
         self.inputSpace.outputSpace = self.outputSpace
 
@@ -784,11 +782,12 @@ class BasicModel(BaseModel):
 
         # Initialize Grammar layers — centralizes all methods and SyntacticLayers.
         # Must be called before self.to() to avoid missing parameters.
+        # Concept/symbol dims include objectSize since that's the actual vector width.
         from Space import TheGrammar
         TheGrammar._layers_initialized = False  # reset in case of multiple creates
         TheGrammar.init_layers(
-            concept_dim=concept_dim,
-            symbol_dim=symbol_dim,
+            concept_dim=concept_dim + obj_concept,
+            symbol_dim=symbol_dim + obj_symbol,
             n_concept_slots=nConcepts,
             n_symbol_slots=nSymbols,
             n_percept_slots=nPercepts,
@@ -826,7 +825,7 @@ class BasicModel(BaseModel):
     def StartReverse(self, symbols):
         """Reverse pass: Symbol -> Concept -> Percept -> Input (reconstruction)."""
         if isinstance(symbols, torch.Tensor):
-            self.symbolicSpace.subspace.set_vectors(symbols)
+            self.symbolicSpace.subspace.set_event(symbols)
             symbols = self.symbolicSpace.subspace
         concepts_state = self.symbolicSpace.reverse(symbols)
         percepts_state = self.conceptualSpace.reverse(concepts_state)
@@ -838,7 +837,7 @@ class BasicModel(BaseModel):
     def SubsymbolicThought(self, data):
         """Extra Percept->Concept->Symbol cycle (conceptualOrder >= 1)."""
         if isinstance(data, torch.Tensor):
-            self.perceptualSpace2.subspace.set_vectors(data)
+            self.perceptualSpace2.subspace.set_event(data)
             data = self.perceptualSpace2.subspace
         percepts_state = self.perceptualSpace2.forward(data)
         concepts_state = self.conceptualSpace2.forward(percepts_state)
@@ -852,127 +851,17 @@ class BasicModel(BaseModel):
     def SubsymbolicThoughtReverse(self, concepts, symbols):
         """Reverse of SubsymbolicThought."""
         if isinstance(symbols, torch.Tensor):
-            self.symbolicSpace2.subspace.set_vectors(symbols)
+            self.symbolicSpace2.subspace.set_event(symbols)
             symbols = self.symbolicSpace2.subspace
         concepts_state = self.symbolicSpace2.reverse(symbols)
         percepts_state = self.conceptualSpace2.reverse(concepts_state)
         percepts = percepts_state.materialize()
         return percepts
-    def SyntacticDerivation(self):
-        """Run per-space syntactic derivation via TheGrammar.
-
-        All S/R loops delegate to TheGrammar.forward(tier, ...) which owns
-        the per-tier SyntacticLayers, methods, and stacks.
-
-        Word tuples from all three tiers are collected into self.all_words
-        (using global Grammar rule IDs) for XML parse tree composition.
-
-        Returns: list of (batch, vector, rule) word tuples across all tiers.
-        """
-        from Space import TheGrammar
-        all_words = []
-
-        # ── Symbolic derivation (S-tier) ─────────────────────────
-        sym_act = self.symbols.get_activation()
-        sl_s = TheGrammar._tier_syntactic_layer('S')
-        if sym_act is not None and sl_s is not None:
-            TheGrammar.resetStack('S')
-            active_positions = sl_s._active_positions(sym_act)
-            pos_set = set()
-            for bp in active_positions:
-                pos_set.update(bp)
-            positions = sorted(pos_set)
-
-            for pos in positions:
-                mask = torch.zeros_like(sym_act)
-                mask[:, pos] = sym_act[:, pos]
-                TheGrammar.forward('S', mask)
-
-            composed = TheGrammar._s_stack[-1] if TheGrammar._s_stack else sym_act
-            words = list(TheGrammar._s_words)
-            sym_out = {"composed": composed, "words": words}
-            all_words.extend(words)
-            self._symbolic_syntax_out = sym_out
-
-        # ── Conceptual derivation (C-tier) ───────────────────────
-        con_act = self.concepts.get_activation()
-        con_vec = self.concepts.materialize()
-        sl_c = TheGrammar._tier_syntactic_layer('C')
-        if con_act is not None and sl_c is not None:
-            TheGrammar.resetStack('C')
-            active_positions = sl_c._active_positions(con_act)
-            pos_set = set()
-            for bp in active_positions:
-                pos_set.update(bp)
-            positions = sorted(pos_set)
-
-            for pos in positions:
-                mask_act = torch.zeros_like(con_act)
-                mask_act[:, pos] = con_act[:, pos]
-                mask_vec = torch.zeros_like(con_vec) if con_vec is not None else None
-                if con_vec is not None:
-                    mask_vec[:, pos] = con_vec[:, pos]
-                TheGrammar.forward('C', mask_act, vectors_or_where=mask_vec)
-
-            composed = TheGrammar._c_stack[-1] if TheGrammar._c_stack else con_vec
-            words = list(TheGrammar._c_words)
-            con_out = {"composed": composed, "words": words}
-            all_words.extend(words)
-            self._conceptual_syntax_out = con_out
-
-        # ── Perceptual derivation (P-tier) ───────────────────────
-        per_act = self.percepts.get_activation()
-        sl_p = TheGrammar._tier_syntactic_layer('P')
-        if per_act is not None and sl_p is not None:
-            TheGrammar.resetStack('P')
-            active_positions = sl_p._active_positions(per_act)
-            pos_set = set()
-            for bp in active_positions:
-                pos_set.update(bp)
-            positions = sorted(pos_set)
-            per_vec = self.percepts.materialize()
-
-            for pos in positions:
-                mask_act = torch.zeros_like(per_act)
-                mask_act[:, pos] = per_act[:, pos]
-                mask_vec = torch.zeros_like(per_vec) if per_vec is not None else None
-                if per_vec is not None:
-                    mask_vec[:, pos] = per_vec[:, pos]
-                TheGrammar.forward('P', mask_act, vectors_or_where=mask_vec)
-
-            words = list(TheGrammar._p_words)
-            per_out = {"words": words}
-            all_words.extend(words)
-            self._perceptual_syntax_out = per_out
-
-        self.all_words = all_words
-        return all_words
-
-    def get_parse_tree(self, batch_index=0):
-        """Return the XML parse tree for a batch element after forward pass.
-
-        Must be called after forward() (which runs SyntacticDerivation).
-        Uses the vocabulary from InputSpace to map vector indices to words.
-
-        Args:
-            batch_index: which batch element to emit (default 0).
-
-        Returns:
-            XML string, or empty string if no derivation was produced.
-        """
-        from parse import derivation_to_xml
-        from Space import Grammar
-        words = [(b, v, r) for b, v, r in getattr(self, 'all_words', [])
-                 if b == batch_index]
-        if not words:
-            return ""
-        vocab = self.inputSpace.get_vocabulary() if hasattr(self.inputSpace, 'get_vocabulary') else None
-        return derivation_to_xml(words, Grammar(), vocab)
 
     def SymbolicThought(self, data):
         """Extra Syntax->Symbol cycle (symbolicOrder >= 1)."""
         if isinstance(data, torch.Tensor):
-            self.syntacticSpace3.subspace.set_vectors(data)
+            self.syntacticSpace3.subspace.set_event(data)
             data = self.syntacticSpace3.subspace
         words_state = self.syntacticSpace3.forward(data)
         symbols_state = self.symbolicSpace3.forward(words_state)
@@ -984,7 +873,7 @@ class BasicModel(BaseModel):
     def SymbolicThoughtReverse(self, symbols, words):
         """Reverse of SymbolicThought."""
         if isinstance(words, torch.Tensor):
-            self.syntacticSpace3.subspace.set_vectors(words)
+            self.syntacticSpace3.subspace.set_event(words)
             words = self.syntacticSpace3.subspace
         symbols_state = self.syntacticSpace3.reverse(words)
         data_state = self.symbolicSpace3.reverse(symbols_state)
@@ -993,7 +882,7 @@ class BasicModel(BaseModel):
     def Finish(self, symbols):
         """Project concatenated symbols to task output via OutputSpace."""
         if isinstance(symbols, torch.Tensor):
-            self.outputSpace.subspace.set_vectors(symbols)
+            self.outputSpace.subspace.set_event(symbols)
             symbols = self.outputSpace.subspace
         self.outputs = self.outputSpace.forward(symbols)
         outputData = self.outputs.materialize()
@@ -1008,7 +897,7 @@ class BasicModel(BaseModel):
         reconstruct="both": reversed output + cached recon_symbols.
         """
         if isinstance(outputData, torch.Tensor):
-            self.outputSpace.subspace.set_vectors(outputData)
+            self.outputSpace.subspace.set_event(outputData)
             outputData = self.outputSpace.subspace
         mode = getattr(self, 'reconstruct', 'symbols')
         if mode == 'output':
@@ -1157,9 +1046,6 @@ class BasicModel(BaseModel):
         if isinstance(inputData, torch.Tensor):
             inputData = inputData.to(TheDevice.get())
         input, concepts, symbols = self.Start(inputData)
-        # Run per-space syntactic derivation (grammar rules on activations)
-        if self.syntax:
-            self.SyntacticDerivation()
         # Higher-order subsymbolic cycles (conceptualOrder extra passes)
         for n in range(1,self.conceptualOrder):
             NA, symbols1 = self.SubsymbolicThought(concepts)
@@ -1294,7 +1180,7 @@ class BasicModel(BaseModel):
         sbow = None
         te = getattr(self, 'train_embedding', 'NONE')
         if te in trainMod:
-            emb = self.inputSpace.get_vectors()
+            emb = self.inputSpace.vocabulary
             if isinstance(emb, Embedding):
                 sentences = self._get_sentences(split)
                 if sentences and index < len(sentences):
@@ -1554,8 +1440,6 @@ class MentalModel(BaseModel):
         self.symbolicOrder = symbolicOrder
         self.reconstruct = reconstruct.lower()
         self.masked_prediction = masked_prediction
-        self.syntax = True  # MentalModel always has syntax
-        TheXMLConfig._data.setdefault("architecture", {})["syntax"] = True
         self.nOutputSymbols = nOutput
         self.nReconSymbols = max(0, nSymbols - nOutput)
         self.nTotalOutputSymbols = nOutput
@@ -1659,16 +1543,17 @@ class MentalModel(BaseModel):
         # Concept -> Output  (fed by ConceptualSpace, not SymbolicSpace)
         self.outputSpace = OutputSpace(conceptOutputShape, spaceShape_output, outputShape,
                                        masked_prediction=(masked_prediction != 'NONE'),
-                                       vectors=self.inputSpace.get_vectors())
+                                       vectors=self.inputSpace.vocabulary)
 
         # Zero-init shape: [nSymbols, percept_dim+obj] for cat with percepts
         self._symbol_shape = [nSymbols, percept_dim + obj_percept]
 
-        # Initialize Grammar layers — centralizes all methods and SyntacticLayers
+        # Initialize Grammar layers — centralizes all methods and SyntacticLayers.
+        # Concept/symbol dims include objectSize since that's the actual vector width.
         from Space import TheGrammar
         TheGrammar.init_layers(
-            concept_dim=concept_dim,
-            symbol_dim=symbol_dim,
+            concept_dim=concept_dim + obj_concept,
+            symbol_dim=symbol_dim + obj_symbol,
             n_concept_slots=nPercepts + nSymbols,  # conceptInputShape[0]
             n_symbol_slots=nSymbols,
             n_percept_slots=nPercepts,
@@ -1709,7 +1594,7 @@ class MentalModel(BaseModel):
 
     def _wrap_reverse(self, space, tensor):
         """Wrap a raw tensor in the space's subspace for reverse()."""
-        space.subspace.set_vectors(tensor)
+        space.subspace.set_event(tensor)
         return space.subspace
 
     # ── Forward / reverse ──────────────────────────────────────────────
@@ -1729,13 +1614,8 @@ class MentalModel(BaseModel):
         symbols = torch.zeros(B, self._symbol_shape[0], self._symbol_shape[1],
                               device=percepts.device)
 
-        # 3. Clear S/R stacks (now on TheGrammar)
-        from Space import TheGrammar
-        TheGrammar.resetStack('S')
-        TheGrammar.resetStack('C')
-        TheGrammar.resetStack('P')
-
-        # 4. Iterative loop: [Percept,Symbol]->Concept->Symbol
+        # 3. Iterative loop: [Percept,Symbol]->Concept->Symbol
+        # Grammar derivation runs inside each Space.forward() when syntax=True.
         for t in range(self.conceptualOrder):
             # [Percept, Symbol_prev] -> Concept  (cat along vector dim)
             concept_input = torch.cat([percepts, symbols], dim=1)
@@ -1746,6 +1626,7 @@ class MentalModel(BaseModel):
             # Concept -> Symbol  (activation: nP+nS → nS, then sigmoid to [0,1])
             self.symbols = self.symbolicSpace.forward(
                 self._wrap_reverse(self.symbolicSpace, concepts))
+
             # Extract symbol activation [B, nSymbols] and expand to vector form
             # for concatenation with percepts in the next iteration.
             symbol_act = self.symbols.get_symbols()          # [B, nSymbols]
@@ -1760,7 +1641,7 @@ class MentalModel(BaseModel):
     def reverse(self, symbols, outputData):
         # 1. OutputSpace reverse: output -> concepts estimate
         if isinstance(outputData, torch.Tensor):
-            self.outputSpace.subspace.set_vectors(outputData)
+            self.outputSpace.subspace.set_event(outputData)
             outputData = self.outputSpace.subspace
         concepts_state = self.outputSpace.reverse(outputData)
 

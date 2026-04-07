@@ -11,6 +11,7 @@
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <processSymbols>false</processSymbols>
+    <type>mental</type>
     <ergodic>false</ergodic>
     <certainty>false</certainty>
     <modelType>embedding</modelType>
@@ -43,32 +44,28 @@
       <timeout>120</timeout>
     </server>
 
-  </architecture>
-
-  <mentalModel>
-    <grammar>
-      <START>true(S) EOF</START>
-
-      <S>swap(S, S)</S>
-      <S>equals(S, S)</S>
-      <S>part(S, S)</S>
-      <S>C</S>
-
-      <C>union(C, C)</C>
-      <C>intersection(C, C)</C>
-      <C>lower(C)</C>
-      <C>lift(C, C)</C>
-      <C>lift(C)</C>
-      <C>not(C)</C>
-      <C>non(C)</C>
-      <C>P</C>
-
-      <P>I P</P>
-      <P>ε</P>
-
+    <language>
+      <grammar>
+        <START>S</START>
+        <S>true(S)</S>
+        <S>swap(S, S)</S>
+        <S>equals(S, S)</S>
+        <S>part(S, S)</S>
+        <S>C</S>
+        <C>non(C)</C>
+        <C>not(C)</C>
+        <C>intersection(C, C)</C>
+        <C>union(C, C)</C>
+        <C>lower(C, C)</C>
+        <C>lift(C, C)</C>
+        <C>P</C>
+        <P>I P</P>
+        <P>I</P>
+      </grammar>
       <interpretation>0.5</interpretation>
-    </grammar>
-  </mentalModel>
+    </language>
+
+  </architecture>
 
   <InputSpace>
     <nOutput>128</nOutput>

@@ -29,7 +29,6 @@ import torch.optim as optim
 from torch.profiler import profile as torch_profile, ProfilerActivity, schedule as profiler_schedule
 from functools import partial
 from datetime import datetime
-
 import util
 from util import TheDevice, TheMessage
 from visualize import Report, TheReport
@@ -37,10 +36,9 @@ from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
 from Model import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
-from Model import VQLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, VerbLayer, SyntacticLayer
+from Model import VQLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, SyntacticLayer, ChunkLayer
 from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
-
-ENCODING_TARGETS = ("activation", "what", "where", "when", "event", "all")
+from collections import namedtuple as _namedtuple
 
 class Encoding(nn.Module):
     """Abstract base class for per-slot encodings in the embedding vector.
@@ -53,6 +51,7 @@ class Encoding(nn.Module):
         ``decode(encoded)`` → decoded value (tensor or scalar)
         ``forward(x)``     → stamped tensor (how values are assigned per-batch)
     """
+    TARGETS = ("activation", "what", "where", "when", "event", "all")
     nDim = 0  # subclasses must set
 
     def __init__(self, index, maxVal):
@@ -264,777 +263,6 @@ class WhenEncoding(QuadratureEncoding):
         y = te.forward(x)
         cleaned, times = te.reverse(y)
         print(f"Times decoded: {times}")
-
-# ── Grammar ──────────────────────────────────────────────────────
-
-from collections import namedtuple as _namedtuple
-RuleDef = _namedtuple('RuleDef', ['tier', 'canonical', 'arity', 'method_name'])
-
-
-class Grammar(nn.Module):
-    """Hierarchical 3-tier grammar (S, C, P) with rule methods and composition.
-
-    Owns rule execution, rule prediction (SyntacticLayer instances), and
-    shift/reduce composition logic.  Spaces delegate syntax to TheGrammar.
-
-    Simple operations (union, intersection, not, non, equals, part, chunk,
-    isTrue) delegate to Basis methods via registered subspaces, passing
-    monotonic=True for S/P tiers and monotonic=False for C tier.
-    Learnable operations (swap, lift, lower) hold parameters directly.
-    """
-
-    _DEFAULT_RULES = [
-        RuleDef('START', 'START → true(S) EOF',   1, 'true'),
-        RuleDef('S',     'S → swap(S, S)',         2, 'swap'),
-        RuleDef('S',     'S → equals(S, S)',       2, 'equals'),
-        RuleDef('S',     'S → part(S, S)',         2, 'part'),
-        RuleDef('S',     'S → C',                  1, None),      # transition
-        RuleDef('C',     'C → union(C, C)',        2, 'union'),
-        RuleDef('C',     'C → intersection(C, C)', 2, 'intersection'),
-        RuleDef('C',     'C → lower(C)',           1, 'lower'),
-        RuleDef('C',     'C → lift(C, C)',         2, 'lift'),
-        RuleDef('C',     'C → lift(C)',            1, 'lift'),
-        RuleDef('C',     'C → not(C)',             1, 'not'),
-        RuleDef('C',     'C → non(C)',             1, 'non'),
-        RuleDef('C',     'C → P',                  1, None),      # transition
-        RuleDef('P',     'P → chunk(I, P)',         2, 'chunk'),
-        RuleDef('P',     'P → ε',                  0, None),      # terminal
-    ]
-
-    _TRANSITION_IDS = {4, 12}
-
-    def __init__(self, lazy_init=True):
-        super().__init__()
-        self.rules = list(self._DEFAULT_RULES)
-        self._configured = False
-        self._lazy_init = lazy_init
-        self.interpretation = 0.5
-        # Placeholders — populated by init_layers()
-        self.s_syntactic_layer = None
-        self.c_syntactic_layer = None
-        self.p_syntactic_layer = None
-        self.verb_layer = None
-        self._layers_initialized = False
-        # Subspaces — registered by spaces after init_layers
-        self._subspaces = {}
-        # S/R stacks
-        self._s_stack = []
-        self._s_where_stack = []
-        self._s_words = []
-        self._c_stack = []
-        self._c_act_stack = []
-        self._c_words = []
-        self._p_words = []
-        # Word encoders
-        self._word_encoders = {}
-
-    # ── Basis-delegated operations ────────────────────────────────────
-
-    def _basis(self, tier):
-        """Look up the Basis for a tier from the registered subspace."""
-        ss = self._subspaces.get(tier)
-        return ss.basis if ss is not None else None
-
-    def _mono(self, tier):
-        """True if this tier uses monotonic logic (not bitonic)."""
-        b = self._basis(tier)
-        return b is None or b.monotonic
-
-    def _method_union(self, left, right, tier):
-        b = self._basis(tier)
-        if b is not None:
-            return b.disjunction(left, right, monotonic=self._mono(tier))
-        return torch.max(left, right)
-
-    def _method_intersection(self, left, right, tier):
-        b = self._basis(tier)
-        if b is not None:
-            return b.conjunction(left, right, monotonic=self._mono(tier))
-        return torch.min(left, right)
-
-    def _method_not(self, left, tier):
-        b = self._basis(tier)
-        if b is not None:
-            return b.negation(left, monotonic=self._mono(tier))
-        return -left
-
-    def _method_non(self, left, tier):
-        b = self._basis(tier)
-        if b is not None:
-            m = self._mono(tier)
-            threshold = torch.sigmoid(self.non_threshold) if m else None
-            return b.non(left, monotonic=m, threshold=threshold)
-        return torch.zeros_like(left)
-
-    def _method_equals(self, left, right, tier):
-        b = self._basis(tier)
-        if b is not None:
-            score = b.equal(left, right, monotonic=self._mono(tier))
-            while score.ndim < right.ndim:
-                score = score.unsqueeze(-1)
-            return score * right
-        return torch.min(left, right)
-
-    def _method_part(self, left, right, tier):
-        b = self._basis(tier)
-        if b is not None:
-            score = b.part(left, right, monotonic=self._mono(tier))
-            while score.ndim < right.ndim:
-                score = score.unsqueeze(-1)
-            return score * right
-        return torch.min(left, right)
-
-    def _method_chunk(self, left, right, tier):
-        b = self._basis(tier)
-        if b is not None:
-            return b.disjunction(left, right, monotonic=True)  # P-tier: always monotonic
-        if right is None:
-            return left
-        return torch.max(left, right)
-
-    def _method_true(self, left, tier):
-        """Truth evaluation: positive projection (after not/non, tree is all-positive)."""
-        b = self._basis(tier)
-        if b is not None:
-            return b.pos(left)
-        return torch.relu(left)
-
-    # ── Learnable methods ─────────────────────────────────────────────
-
-    def _method_swap(self, left, right, tier):
-        """Soft permutation via Sinkhorn-normalised logits."""
-        P = self._swap_soft_perm()
-        marker = self.swap_marker.to(left.device)
-        if left.ndim == 3:
-            m = marker.unsqueeze(0).unsqueeze(0).expand_as(left)
-        elif left.ndim == 2:
-            m = marker[:left.shape[-1]].unsqueeze(0).expand_as(left)
-        else:
-            m = marker
-        if right is None:
-            right = left
-        stack = torch.stack([left, right, m], dim=0)
-        out = torch.einsum('ij,j...->i...', P, stack)
-        return out[0]
-
-    def _swap_soft_perm(self):
-        M = self.swap_logits
-        for _ in range(self._swap_sinkhorn_iters):
-            M = M - M.logsumexp(dim=-1, keepdim=True)
-            M = M - M.logsumexp(dim=-2, keepdim=True)
-        return M.exp()
-
-    def _method_lift(self, left, right, tier):
-        """Linear lift with optional multiplication."""
-        lifted = self.lift_layer.forward(left)
-        if right is not None:
-            return lifted * right
-        return lifted
-
-    def _method_lower(self, left, tier):
-        """Rank-reducing bottleneck."""
-        return self.lower_up.forward(self.lower_down.forward(left))
-
-    # ── Rule catalog ──────────────────────────────────────────────────
-
-    def __len__(self):
-        return len(self.rules)
-
-    def __getitem__(self, idx):
-        return self.rules[idx].canonical
-
-    def arity(self, rule_id):
-        return self.rules[rule_id].arity
-
-    def method_name(self, rule_id):
-        return self.rules[rule_id].method_name
-
-    def tier(self, rule_id):
-        return self.rules[rule_id].tier
-
-    def binary_rules(self):
-        return [i for i in range(len(self.rules)) if self.rules[i].arity == 2]
-
-    # ── Configuration from XML ────────────────────────────────────────
-
-    def configure(self, grammar_dict):
-        self.rules = []
-        self._configured = True
-        if isinstance(grammar_dict, dict):
-            interp = grammar_dict.get('interpretation', 0.5)
-            self.interpretation = float(interp)
-        for lhs in ('START', 'S', 'C', 'P'):
-            raw = grammar_dict.get(lhs, [])
-            if isinstance(raw, str):
-                raw = [raw]
-            for rhs_text in raw:
-                rhs = rhs_text.strip()
-                rule_def = self._parse_rule(lhs, rhs)
-                self.rules.append(rule_def)
-
-    def _parse_rule(self, lhs, rhs):
-        if '(' in rhs:
-            func_name = rhs[:rhs.index('(')]
-            args_str = rhs[rhs.index('(') + 1:rhs.rindex(')')]
-            args = [a.strip() for a in args_str.split(',') if a.strip()]
-            arity = len(args)
-            canonical = f"{lhs} → {rhs}"
-            return RuleDef(lhs, canonical, arity, func_name)
-        if rhs == 'ε':
-            return RuleDef(lhs, f"{lhs} → ε", 0, None)
-        if rhs == 'I P':
-            return RuleDef(lhs, f"{lhs} → I P", 1, None)
-        if rhs in ('S', 'C', 'P'):
-            return RuleDef(lhs, f"{lhs} → {rhs}", 1, None)
-        raise ValueError(f"Cannot parse grammar rule: {lhs} → {rhs}")
-
-    def _ensure_configured(self):
-        if self._configured or not self._lazy_init:
-            return
-        from util import TheXMLConfig
-        cfg = None
-        for path in ("mentalModel.grammar", "architecture.grammar"):
-            try:
-                candidate = TheXMLConfig.get(path)
-                if isinstance(candidate, dict):
-                    cfg = candidate
-                    break
-            except (KeyError, AttributeError):
-                continue
-        if cfg is not None:
-            self.configure(cfg)
-
-    # ── Rule queries ──────────────────────────────────────────────────
-
-    def symbolic(self):
-        self._ensure_configured()
-        return [i for i, r in enumerate(self.rules) if r.tier == 'S' and r.method_name is not None]
-
-    def conceptual(self):
-        self._ensure_configured()
-        return [i for i, r in enumerate(self.rules) if r.tier == 'C' and r.method_name is not None]
-
-    def perceptual(self):
-        self._ensure_configured()
-        return [i for i, r in enumerate(self.rules) if r.tier == 'P']
-
-    def symbolic_transition(self):
-        self._ensure_configured()
-        for i, r in enumerate(self.rules):
-            if r.tier == 'S' and r.method_name is None and r.arity == 1:
-                return i
-        return None
-
-    def conceptual_transition(self):
-        self._ensure_configured()
-        for i, r in enumerate(self.rules):
-            if r.tier == 'C' and r.method_name is None and r.arity == 1:
-                return i
-        return None
-
-    # ── Layer initialization ──────────────────────────────────────────
-
-    def init_layers(self, concept_dim, symbol_dim,
-                    n_concept_slots, n_symbol_slots, n_percept_slots):
-        if self._layers_initialized:
-            return
-        self._ensure_configured()
-
-        # Swap parameters (S-tier)
-        self.swap_marker = nn.Parameter(torch.randn(symbol_dim) * 0.01)
-        self.swap_logits = nn.Parameter(torch.zeros(3, 3))
-        self._swap_sinkhorn_iters = 5
-
-        # Non threshold (monotonic tiers: S, P) — learnable via sigmoid
-        self.non_threshold = nn.Parameter(torch.tensor(0.0))  # sigmoid(0) = 0.5
-
-        # Lift parameters (C-tier)
-        self.lift_layer = LinearLayer(concept_dim, concept_dim)
-
-        # Lower parameters (C-tier)
-        bottleneck = max(1, concept_dim // 4)
-        self.lower_down = LinearLayer(concept_dim, bottleneck)
-        self.lower_up = LinearLayer(bottleneck, concept_dim)
-
-        # No ModuleDicts needed — all dispatch is via _BASIS_METHODS
-
-        # SyntacticLayers
-        self.s_syntactic_layer = SyntacticLayer(
-            nInput=n_symbol_slots, nOutput=n_symbol_slots,
-            rules=self.symbolic(),
-            transition_rule=self.symbolic_transition(),
-            max_depth=max(n_symbol_slots - 1, 1),
-            hidden_dim=min(256, max(64, n_symbol_slots * 4)),
-            grammar=self,
-        )
-        self.c_syntactic_layer = SyntacticLayer(
-            nInput=n_concept_slots, nOutput=n_concept_slots,
-            rules=self.conceptual(),
-            transition_rule=self.conceptual_transition(),
-            max_depth=max(n_concept_slots - 1, 1),
-            hidden_dim=min(256, max(64, n_concept_slots * 4)),
-            grammar=self,
-        )
-        self.p_syntactic_layer = SyntacticLayer(
-            nInput=n_percept_slots, nOutput=n_percept_slots,
-            rules=self.perceptual(),
-            transition_rule=None,
-            max_depth=max(n_percept_slots - 1, 1),
-            hidden_dim=min(256, max(64, n_percept_slots * 4)),
-            grammar=self,
-        )
-
-        self.verb_layer = VerbLayer(16, concept_dim)
-        self._layers_initialized = True
-
-    def register_word_encoder(self, tier, word_encoding):
-        self._word_encoders[tier] = word_encoding
-
-    def register_subspace(self, tier, subspace):
-        """Register a SubSpace so Grammar can access its Basis."""
-        self._subspaces[tier] = subspace
-
-    @property
-    def s_methods(self):
-        """Set of method names available on the S (symbolic) tier."""
-        return {r.method_name for r in self.rules if r.tier == 'S' and r.method_name}
-
-    @property
-    def c_methods(self):
-        """Set of method names available on the C (conceptual) tier."""
-        return {r.method_name for r in self.rules if r.tier == 'C' and r.method_name}
-
-    @property
-    def p_methods(self):
-        """Set of method names available on the P (perceptual) tier."""
-        return {r.method_name for r in self.rules if r.tier == 'P' and r.method_name}
-
-    # ── Tier dispatch helpers ─────────────────────────────────────────
-
-    def _tier_syntactic_layer(self, tier):
-        if tier == 'S':   return self.s_syntactic_layer
-        elif tier == 'C': return self.c_syntactic_layer
-        elif tier == 'P': return self.p_syntactic_layer
-        return None
-
-    # ── Basis-delegated method dispatch ───────────────────────────────
-
-    _GRAMMAR_METHODS = {
-        'union':        ('_method_union',        True),
-        'intersection': ('_method_intersection', True),
-        'not':          ('_method_not',           False),
-        'non':          ('_method_non',           False),
-        'equals':       ('_method_equals',        True),
-        'part':         ('_method_part',          True),
-        'chunk':        ('_method_chunk',         True),
-        'true':         ('_method_true',          False),
-        'swap':         ('_method_swap',          True),
-        'lift':         ('_method_lift',          True),
-        'lower':        ('_method_lower',         False),
-    }
-
-    # ── Rule execution ────────────────────────────────────────────────
-
-    def project(self, tier, rule_id, left, right=None):
-        """Execute a grammar rule on left (and right) operands.
-
-        All methods are dispatched via _GRAMMAR_METHODS.
-        Falls back to legacy verb_layer for 'verb' on C-tier.
-        """
-        method_name = self.rules[rule_id].method_name
-        if method_name is None:
-            return left  # transition — pass through
-
-        if method_name in self._GRAMMAR_METHODS:
-            fn_name, binary = self._GRAMMAR_METHODS[method_name]
-            fn = getattr(self, fn_name)
-            if binary:
-                if right is not None:
-                    return fn(left, right, tier)
-                return left
-            return fn(left, tier)
-
-        # Legacy: VERB on C-tier
-        if tier == 'C' and method_name == 'verb' and self.verb_layer is not None:
-            B, N, D = left.shape
-            vp_query = left.mean(dim=1)
-            if right is not None:
-                C1_out, _ = self.verb_layer.forward_transitive(left, right, vp_query)
-                return C1_out
-            return self.verb_layer.forward_reflexive(left, vp_query)
-
-        return left
-
-    # ── S/R stacks ────────────────────────────────────────────────────
-
-    def resetStack(self, tier):
-        if tier == 'S':
-            self._s_stack = []
-            self._s_where_stack = []
-            self._s_words = []
-        elif tier == 'C':
-            self._c_stack = []
-            self._c_act_stack = []
-            self._c_words = []
-        elif tier == 'P':
-            self._p_words = []
-
-    def _rewrite_rule_index(self):
-        if self.s_syntactic_layer is None:
-            return None
-        for i, rid in enumerate(self.s_syntactic_layer.all_rules):
-            if "swap" in self[rid].lower():
-                return i
-        return None
-
-    def _encode_words(self, tier, activation, best_rule_id):
-        words = []
-        encoder = self._word_encoders.get(tier)
-        if encoder is None:
-            return words
-        B = activation.shape[0]
-        for b in range(B):
-            active = (activation[b].abs() > 1e-6).nonzero(as_tuple=True)[0]
-            for v in active:
-                words.append(encoder.encode(b, v.item(), best_rule_id))
-        return words
-
-    def forward(self, tier, activation, vectors_or_where=None):
-        sl = self._tier_syntactic_layer(tier)
-        if sl is None:
-            return {"transition": False, "composed": activation, "words": []}
-        if tier == 'S':
-            return self._write_symbolic(activation, vectors_or_where, sl)
-        elif tier == 'C':
-            return self._write_conceptual(activation, vectors_or_where, sl)
-        elif tier == 'P':
-            return self._write_perceptual(activation, vectors_or_where, sl)
-        return {"transition": False, "composed": activation, "words": []}
-
-    def _write_symbolic(self, symbol_act, where, sl):
-        self._s_stack.append(symbol_act)
-        if where is not None:
-            self._s_where_stack.append(where)
-
-        all_rules = sl.all_rules
-        head = self._s_stack[-1]
-        out = sl.forward(head)
-        rule_probs = out["rule_probs"][:, 0, :]
-        best_local = rule_probs.argmax(dim=-1)[0].item()
-        best_rule_id = all_rules[best_local]
-
-        B_act = symbol_act.shape[0]
-        p_binary = torch.zeros(B_act, 1, device=rule_probs.device)
-        for local_idx, rule_id in enumerate(all_rules):
-            if self.arity(rule_id) == 2:
-                p_binary = p_binary + rule_probs[:, local_idx:local_idx + 1]
-
-        arity = self.arity(best_rule_id)
-        has_where = where is not None and len(self._s_where_stack) > 0
-        rewrite_idx = self._rewrite_rule_index() if has_where else None
-
-        if arity == 2 and len(self._s_stack) >= 2:
-            shift_result = self._s_stack[-1]
-            right = self._s_stack.pop()
-            left = self._s_stack.pop()
-
-            results = []
-            for local_idx, rule_id in enumerate(all_rules):
-                a = self.arity(rule_id)
-                if a == 2:
-                    result = self.project('S', rule_id, left, right)
-                elif a == 1:
-                    result = self.project('S', rule_id, left)
-                else:
-                    result = self.project('S', rule_id, left)
-                results.append(result)
-
-            results = torch.stack(results, dim=1)
-            reduce_result = (rule_probs.unsqueeze(-1) * results).sum(dim=1)
-            composed = p_binary * reduce_result + (1.0 - p_binary) * shift_result
-            self._s_stack.append(composed)
-
-            if has_where and rewrite_idx is not None and len(self._s_where_stack) >= 2:
-                shift_where = self._s_where_stack[-1]
-                right_where = self._s_where_stack.pop()
-                left_where = self._s_where_stack.pop()
-                rewrite_prob = rule_probs[:, rewrite_idx]
-                non_rewrite_prob = 1.0 - rewrite_prob
-                reduce_where = (non_rewrite_prob[:, None, None] * left_where
-                                + rewrite_prob[:, None, None] * right_where)
-                composed_where = (p_binary[:, :, None] * reduce_where
-                                  + (1.0 - p_binary[:, :, None]) * shift_where)
-                self._s_where_stack.append(composed_where)
-
-        elif arity == 1 and len(self._s_stack) >= 1:
-            shift_result = self._s_stack[-1]
-            operand = self._s_stack.pop()
-
-            results = []
-            for local_idx, rule_id in enumerate(all_rules):
-                a = self.arity(rule_id)
-                if a == 1:
-                    result = self.project('S', rule_id, operand)
-                else:
-                    result = self.project('S', rule_id, operand)
-                results.append(result)
-
-            results = torch.stack(results, dim=1)
-            reduce_result = (rule_probs.unsqueeze(-1) * results).sum(dim=1)
-            p_unary = 1.0 - p_binary
-            composed = p_unary * reduce_result + p_binary * shift_result
-            self._s_stack.append(composed)
-
-        transition = self.rules[best_rule_id].method_name is None and self.arity(best_rule_id) == 1
-        words = self._encode_words('S', symbol_act, best_rule_id)
-        self._s_words.extend(words)
-
-        return {
-            "transition": transition,
-            "composed": self._s_stack[-1],
-            "words": words,
-        }
-
-    def _write_conceptual(self, activation, vectors, sl):
-        self._c_stack.append(vectors)
-        self._c_act_stack.append(activation)
-
-        all_rules = sl.all_rules
-        head_act = self._c_act_stack[-1]
-        out = sl.forward(head_act)
-        rule_probs = out["rule_probs"][:, 0, :]
-        best_local = rule_probs.argmax(dim=-1)[0].item()
-        best_rule_id = all_rules[best_local]
-
-        B_act = activation.shape[0]
-        p_binary = torch.zeros(B_act, 1, device=rule_probs.device)
-        for local_idx, rule_id in enumerate(all_rules):
-            if self.arity(rule_id) == 2:
-                p_binary = p_binary + rule_probs[:, local_idx:local_idx + 1]
-
-        arity = self.arity(best_rule_id)
-
-        if arity == 2 and len(self._c_stack) >= 2:
-            shift_result = self._c_stack[-1]
-            shift_act = self._c_act_stack[-1]
-            right = self._c_stack.pop()
-            left = self._c_stack.pop()
-            right_act = self._c_act_stack.pop()
-            left_act = self._c_act_stack.pop()
-
-            results = []
-            for local_idx, rule_id in enumerate(all_rules):
-                a = self.arity(rule_id)
-                if a == 2:
-                    result = self.project('C', rule_id, left, right)
-                elif a == 1:
-                    result = self.project('C', rule_id, left)
-                else:
-                    result = self.project('C', rule_id, left)
-                results.append(result)
-
-            results = torch.stack(results, dim=1)
-            probs = rule_probs.unsqueeze(-1).unsqueeze(-1)
-            reduce_result = (probs * results).sum(dim=1)
-            p_b = p_binary.unsqueeze(-1)
-            composed = p_b * reduce_result + (1.0 - p_b) * shift_result
-            self._c_stack.append(composed)
-
-            reduce_act = reduce_result.norm(dim=-1)
-            composed_act = p_binary * reduce_act + (1.0 - p_binary) * shift_act
-            self._c_act_stack.append(composed_act)
-
-        elif arity == 1 and len(self._c_stack) >= 1:
-            shift_result = self._c_stack[-1]
-            shift_act = self._c_act_stack[-1]
-            operand = self._c_stack.pop()
-            operand_act = self._c_act_stack.pop()
-
-            results = []
-            for local_idx, rule_id in enumerate(all_rules):
-                a = self.arity(rule_id)
-                if a == 1:
-                    result = self.project('C', rule_id, operand)
-                else:
-                    result = self.project('C', rule_id, operand)
-                results.append(result)
-
-            results = torch.stack(results, dim=1)
-            probs = rule_probs.unsqueeze(-1).unsqueeze(-1)
-            reduce_result = (probs * results).sum(dim=1)
-            p_unary = 1.0 - p_binary
-            p_u = p_unary.unsqueeze(-1)
-            composed = p_u * reduce_result + (1.0 - p_u) * shift_result
-            self._c_stack.append(composed)
-
-            reduce_act = reduce_result.norm(dim=-1)
-            composed_act = p_unary * reduce_act + p_binary * shift_act
-            self._c_act_stack.append(composed_act)
-
-        transition = self.rules[best_rule_id].method_name is None and self.arity(best_rule_id) == 1
-        words = self._encode_words('C', activation, best_rule_id)
-        self._c_words.extend(words)
-
-        return {
-            "transition": transition,
-            "composed": self._c_stack[-1],
-            "words": words,
-        }
-
-    def _write_perceptual(self, activation, vectors, sl):
-        out = sl.forward(activation)
-        words = out.get("words", [])
-        self._p_words.extend(words)
-
-        composed = vectors
-        if vectors is not None:
-            composed = self.project('P', 13, vectors)
-
-        return {
-            "transition": False,
-            "composed": composed,
-            "words": words,
-        }
-
-    def reverse(self, tier, words, batch_size=1):
-        sl = self._tier_syntactic_layer(tier)
-        if sl is None:
-            return None
-        nVectors = sl.nInput
-        return sl.reverse(words, nVectors, batch_size)
-
-    # ── Batch composition ─────────────────────────────────────────────
-
-    def composeSyntax(self, tier, activation, vectors_or_where=None):
-        sl = self._tier_syntactic_layer(tier)
-        if sl is None:
-            out = {"composed": activation if vectors_or_where is None else vectors_or_where, "words": []}
-            if tier == 'S' and vectors_or_where is not None:
-                out["composed_where"] = vectors_or_where
-            return out
-
-        out = sl.forward(activation)
-        rule_probs = out["rule_probs"]
-        all_rules = sl.all_rules
-        B, N = activation.shape
-        active_positions = sl._active_positions(activation)
-        max_leaves = max((len(p) for p in active_positions), default=0)
-
-        if tier == 'C':
-            return self._compose_conceptual(out, activation, vectors_or_where,
-                                            rule_probs, all_rules, active_positions, max_leaves)
-        elif tier == 'S':
-            return self._compose_symbolic(out, activation, vectors_or_where,
-                                          rule_probs, all_rules, active_positions, max_leaves)
-        return out
-
-    def _compose_conceptual(self, out, activation, vectors,
-                            rule_probs, all_rules, active_positions, max_leaves):
-        B, N = activation.shape
-        if max_leaves == 0 or vectors is None:
-            out["composed"] = vectors
-            return out
-
-        D = vectors.shape[-1] if vectors.ndim == 3 else 1
-        masks = torch.zeros(B, max_leaves, N, device=vectors.device)
-        for b in range(B):
-            for i, pos in enumerate(active_positions[b]):
-                masks[b, i, pos] = 1.0
-        leaf_vecs = masks.unsqueeze(-1) * vectors.unsqueeze(1)
-
-        composed = leaf_vecs[:, 0, :, :]
-        sl = self.c_syntactic_layer
-        max_depth = sl.max_depth
-
-        for d in range(min(max_depth, max(max_leaves - 1, 1))):
-            if d + 1 >= max_leaves:
-                break
-            left = composed
-            right = leaf_vecs[:, d + 1, :, :]
-
-            results = []
-            for local_idx, rule_id in enumerate(all_rules):
-                a = self.arity(rule_id)
-                if a == 2:
-                    result = self.project('C', rule_id, left, right)
-                elif a == 1:
-                    result = self.project('C', rule_id, left)
-                else:
-                    result = self.project('C', rule_id, left)
-                results.append(result)
-
-            results = torch.stack(results, dim=1)
-            probs_d = rule_probs[:, d, :]
-            probs_d = probs_d.unsqueeze(-1).unsqueeze(-1)
-            composed = (probs_d * results).sum(dim=1)
-
-        out["composed"] = composed
-        return out
-
-    def _compose_symbolic(self, out, activation, where,
-                          rule_probs, all_rules, active_positions, max_leaves):
-        B, N = activation.shape
-        if max_leaves == 0:
-            out["composed"] = activation
-            if where is not None:
-                out["composed_where"] = where
-            return out
-
-        masks = torch.zeros(B, max_leaves, N, device=activation.device)
-        for b in range(B):
-            for i, pos in enumerate(active_positions[b]):
-                masks[b, i, pos] = 1.0
-        leaf_acts = masks * activation.unsqueeze(1)
-
-        has_where = where is not None
-        if has_where:
-            leaf_wheres = masks.unsqueeze(-1) * where.unsqueeze(1)
-
-        composed = leaf_acts[:, 0, :]
-        if has_where:
-            composed_where = leaf_wheres[:, 0, :, :]
-        sl = self.s_syntactic_layer
-        max_depth = sl.max_depth
-
-        rewrite_idx = self._rewrite_rule_index() if has_where else None
-
-        for d in range(min(max_depth, max(max_leaves - 1, 1))):
-            if d + 1 >= max_leaves:
-                break
-            left = composed
-            right = leaf_acts[:, d + 1, :]
-
-            results = []
-            for local_idx, rule_id in enumerate(all_rules):
-                a = self.arity(rule_id)
-                if a == 2:
-                    result = self.project('S', rule_id, left, right)
-                elif a == 1:
-                    result = self.project('S', rule_id, left)
-                else:
-                    result = self.project('S', rule_id, left)
-                results.append(result)
-
-            results = torch.stack(results, dim=1)
-            probs_d = rule_probs[:, d, :]
-            composed = (probs_d.unsqueeze(-1) * results).sum(dim=1)
-
-            if has_where and rewrite_idx is not None:
-                left_where = composed_where
-                right_where = leaf_wheres[:, d + 1, :, :]
-                rewrite_prob = probs_d[:, rewrite_idx]
-                non_rewrite_prob = 1.0 - rewrite_prob
-                composed_where = (non_rewrite_prob[:, None, None] * left_where
-                                  + rewrite_prob[:, None, None] * right_where)
-
-        out["composed"] = composed
-        if has_where:
-            out["composed_where"] = composed_where
-        return out
-
-
-TheGrammar = Grammar()
-
 class WordEncoding(Encoding):
     """Word encoding: each word is a (batch, vector, rule) 3-tuple.
 
@@ -1059,7 +287,6 @@ class WordEncoding(Encoding):
     def decode(self, word):
         """Unpack a word tuple into (batch, vector, rule)."""
         return word[0], word[1], word[2]
-
 class WhatEncoding(Encoding):
     """Handle the content-layout transform for a space's What factor.
 
@@ -1381,9 +608,16 @@ class Basis(nn.Module):
         return torch.relu(x)
 
     def distance(self, x, y, monotonic=False, dim=-1):
-        """Distance in [0, 1]. Bitonic: angular. Monotonic: mean squared L2."""
+        """Distance in [0, 1]. Bitonic: angular. Monotonic: volume-weighted L2.
+
+        Monotonic distance weights each element by max(|x|, |y|) so that
+        matching zeros contribute nothing — zero-volume elements have no
+        bearing on parthood.
+        """
         if monotonic:
-            return ((x - y) ** 2).sum(dim=dim) / x.shape[dim]
+            w = torch.max(x.abs(), y.abs())
+            total_weight = w.sum(dim=dim).clamp(min=epsilon)
+            return (w * (x - y) ** 2).sum(dim=dim) / total_weight
         return (1 - F.cosine_similarity(x, y, dim=dim)) / 2
 
     def codebookDistance(self, x):
@@ -1584,7 +818,7 @@ class Codebook(Basis):
         if self.passThrough:
             self.setW(input)
             if _vspace is not None:
-                _vspace.set_vectors(input)
+                _vspace.set_event(input)
                 return _vspace
             return input
 
@@ -1640,7 +874,7 @@ class Codebook(Basis):
         self.activeSigma = None
         self.setW(x)
         if _vspace is not None:
-            _vspace.set_vectors(x)
+            _vspace.set_event(x, compute_activation=False)
             _vspace.set_activation(act)
             return _vspace
         return x
@@ -2101,6 +1335,9 @@ class Embedding(Basis):
 
         # Phase 3: Build result tensor (all tokens now in codebook)
         result = torch.zeros([batch, self.nInput, self.nDim], device=TheDevice.get())
+        batch_indices = torch.zeros([batch, self.nInput], dtype=torch.long,
+                                     device=TheDevice.get())
+        null_idx = self.wv.key_to_index.get("\x00", 0)
         for b in range(batch):
             stream = all_streams[b]
             n_tokens = min(len(stream), self.nInput)
@@ -2115,18 +1352,20 @@ class Embedding(Basis):
                 final_offsets.append(0)
             for i, (token_text, _) in enumerate(tokens):
                 cb_idx = self._token_to_index(token_text)
+                batch_indices[b, i] = cb_idx
                 result[b, i, :] = self._encode_vector(
                     codebook[cb_idx], token_idx=cb_idx)
             # Fill remaining positions with NULL embedding (input buffer is null-terminated)
-            null_idx = self.wv.key_to_index.get("\x00")
             if null_idx is not None:
                 null_vec = self._encode_vector(codebook[null_idx], token_idx=null_idx)
                 for i in range(n_tokens, self.nInput):
+                    batch_indices[b, i] = null_idx
                     result[b, i, :] = null_vec
         if not return_meta:
             return result
         return result, {
             'tokens': batch_tokens,
+            'indices': batch_indices,
             'span_counts': span_counts,
             'final_offsets': final_offsets,
         }
@@ -2431,6 +1670,11 @@ class SubSpace(nn.Module):
         self.when   = self._coerce_basis(when, role="when")
         self.word   = word if word is not None else []  # list of (batch, vector, rule) tuples
         self._demuxed = False
+        # active: [B, N, M] per-modality indices into the Basis slots.
+        # M = number of modalities (what, where, when).
+        # active[b, n, m] = index into modality m's Basis for position n.
+        # activation: [B, N] strength gate — materialize() = event * activation.
+        self._active = None  # [B, N, M] index tensor
         self.batch = 0
         payload = self.materialize()
         if isinstance(payload, torch.Tensor) and payload.ndim > 0:
@@ -2446,13 +1690,25 @@ class SubSpace(nn.Module):
         """True when what/where/when are stored independently (not muxed into event)."""
         return self._demuxed
 
-    def set_demuxed(self, what_tensor, where_tensor=None, when_tensor=None):
-        """Store modality tensors independently. Clears event; materialize() will auto-mux.
+    def set_muxed(self, event_tensor):
+        """Store muxed event tensor directly. Clears demuxed modalities.
 
         Args:
-            what_tensor: [batch, nObj, nWhat] content vectors
-            where_tensor: [batch, nObj, nWhere] positional encoding (or None)
-            when_tensor: [batch, nObj, nWhen] temporal encoding (or None)
+            event_tensor: [B, N, D] where D = nWhat + nWhere + nWhen
+        """
+        self.event.setW(event_tensor)
+        self._demuxed = False
+
+    def set_demuxed(self, what_tensor, where_tensor=None, when_tensor=None):
+        """Store modality tensors independently. Computes active flags.
+
+        Also computes activation from what-content norms.
+        Clears event cache; call materialize() to rebuild it.
+
+        Args:
+            what_tensor: [B, N, nWhat] content vectors
+            where_tensor: [B, N, nWhere] positional encoding (or None)
+            when_tensor: [B, N, nWhen] temporal encoding (or None)
         """
         self.what.setW(what_tensor)
         if where_tensor is not None:
@@ -2461,6 +1717,33 @@ class SubSpace(nn.Module):
             self.when.setW(when_tensor)
         self.event.setW(None)  # clear muxed cache
         self._demuxed = True
+        self._compute_active(what_tensor, where_tensor, when_tensor)
+
+    def _compute_active(self, what_tensor, where_tensor=None, when_tensor=None):
+        """Compute modal presence flags from modality tensors.
+
+        active[b, n, m] = 1 if modality m is nonzero at position n, else 0.
+        Also computes event activation from what-content norms.
+
+        Args:
+            what_tensor: [B, N, nWhat]
+            where_tensor: [B, N, nWhere] or None
+            when_tensor: [B, N, nWhen] or None
+        """
+        B, N = what_tensor.shape[0], what_tensor.shape[1]
+        flags = []
+        # what is always present as a modality
+        flags.append((what_tensor.norm(dim=-1) > 1e-8).float())  # [B, N]
+        if where_tensor is not None and self.nWhere > 0:
+            flags.append((where_tensor.norm(dim=-1) > 1e-8).float())
+        if when_tensor is not None and self.nWhen > 0:
+            flags.append((when_tensor.norm(dim=-1) > 1e-8).float())
+        self._active = torch.stack(flags, dim=-1)  # [B, N, M]
+        # Event activation: what-content norm scaled to [-1, 1]
+        d = what_tensor.shape[-1]
+        act = torch.norm(what_tensor, dim=-1) / math.sqrt(d)  # [B, N] in [0, 1]
+        act = 2 * act - 1  # scale to [-1, 1]
+        self.set_activation(act)
 
     def _coerce_basis(self, value, role):
         if isinstance(value, Basis):
@@ -2507,23 +1790,82 @@ class SubSpace(nn.Module):
         """
         return self.event
 
-    def set_vectors(self, vectors, compute_activation=True):
-        """Store the current dense vectors (forward output) for materialize().
+    @property
+    def vocabulary(self):
+        """Return the content Basis (Embedding/Codebook) for codebook operations."""
+        return self.what
 
-        This is separate from the object's codebook (getW/setW) — for Embedding,
-        getW() returns the codebook while set_vectors stores the forward result.
+    def set_event(self, event_tensor, compute_activation=False):
+        """Store a muxed event tensor [B, N, D] where D = nWhat + nWhere + nWhen.
+
+        Sets activation to all-ones by default — activation should be set
+        explicitly (via normalize, attention, etc.) rather than auto-derived.
 
         Args:
-            vectors: dense tensor [B, N, D] to store.
-            compute_activation: if True (default), recompute activation as
-                the norm of each vector. Set to False when the activation
-                has been computed separately (e.g. from a derivation tree).
+            event_tensor: [B, N, D] muxed event vector.
+            compute_activation: if True, recompute activation from event norms.
         """
         if self.event is None:
             self.event = Tensor()
-        self.event.setW(vectors)
+        self.set_muxed(event_tensor)
         if compute_activation:
             self.set_activation_from_event()
+        else:
+            B, N = event_tensor.shape[0], event_tensor.shape[1]
+            self.set_activation(torch.ones(B, N, device=event_tensor.device))
+
+    def set_what(self, what_tensor):
+        """Store what-content vectors [B, N, nWhat].
+
+        Invalidates cached event so materialize() re-concatenates.
+        """
+        self.what.setW(what_tensor)
+        self.event.setW(None)
+        self._demuxed = True
+
+    def set_where(self, where_tensor):
+        """Store positional encoding vectors [B, N, nWhere].
+
+        Invalidates cached event so materialize() re-concatenates.
+        """
+        self.where.setW(where_tensor)
+        self.event.setW(None)
+        self._demuxed = True
+
+    def set_when(self, when_tensor):
+        """Store temporal encoding vectors [B, N, nWhen].
+
+        Invalidates cached event so materialize() re-concatenates.
+        """
+        self.when.setW(when_tensor)
+        self.event.setW(None)
+        self._demuxed = True
+
+    def set_forward_content(self, what_indices, where_indices=None, when_indices=None,
+                            activation=None):
+        """Set per-modality indices and activation for the forward pass.
+
+        Args:
+            what_indices: [B, N] indices into .what Basis
+            where_indices: [B, N] indices into .where Basis (or None)
+            when_indices: [B, N] indices into .when Basis (or None)
+            activation: [B, N] strength gate (or None to compute from indices)
+        """
+        B, N = what_indices.shape[0], what_indices.shape[1]
+        parts = [what_indices.unsqueeze(-1)]  # [B, N, 1]
+        if where_indices is not None:
+            parts.append(where_indices.unsqueeze(-1))
+        if when_indices is not None:
+            parts.append(when_indices.unsqueeze(-1))
+        self._active = torch.cat(parts, dim=-1)  # [B, N, M]
+        self.event.setW(None)  # clear cached event
+        self._demuxed = True
+        if activation is not None:
+            self.set_activation(activation)
+        else:
+            # Default: all indexed positions are fully active
+            act = torch.ones(B, N, device=what_indices.device)
+            self.set_activation(act)
 
     # ------------------------------------------------------------------
     # Derived sizes
@@ -2596,11 +1938,11 @@ class SubSpace(nn.Module):
     # ------------------------------------------------------------------
 
     def set_activation_from_event(self):
-        """Compute and store subspace activation from dense vectors [B, N, D].
+        """Compute activation and active flags from muxed event vectors.
 
-        Activation is the L2 norm divided by sqrt(D), then scaled to [-1, 1]
-        via ``2 * x - 1``.  A zero vector maps to -1; a unit-hypercube corner
-        (all 1s) maps to +1.
+        Activation is the L2 norm of the event divided by sqrt(D), scaled
+        to [-1, 1].  Active flags are derived by checking each modality
+        slice for nonzero content.
         """
         y = self.event.getW()
         assert y is not None and y.ndim == 3, "Must be dim==3"
@@ -2608,6 +1950,17 @@ class SubSpace(nn.Module):
         activation = torch.norm(y, dim=-1) / math.sqrt(d)  # [B, N] in [0, 1]
         activation = 2 * activation - 1                     # scale to [-1, 1]
         self.set_activation(activation)
+        # Derive active flags from modality slices
+        flags = []
+        what_slice = y[:, :, :self.nWhat]
+        flags.append((what_slice.norm(dim=-1) > 1e-8).float())
+        if self.nWhere > 0:
+            where_slice = y[:, :, self.nWhat:self.nWhat + self.nWhere]
+            flags.append((where_slice.norm(dim=-1) > 1e-8).float())
+        if self.nWhen > 0:
+            when_slice = y[:, :, self.nWhat + self.nWhere:]
+            flags.append((when_slice.norm(dim=-1) > 1e-8).float())
+        self._active = torch.stack(flags, dim=-1)  # [B, N, M]
 
     #def set_activations(self, whatA, whereA, whenA): 
     #    # to store a cross-product activation
@@ -2632,6 +1985,71 @@ class SubSpace(nn.Module):
         if self.activation is None:
             return None
         return self.activation.getW()
+
+    def get_active(self):
+        """Return modal presence flags [B, N, M] or None."""
+        return self._active
+
+    def set_active(self, active_tensor):
+        """Store modal presence flags.
+
+        Args:
+            active_tensor: [B, N, M] where M = number of modalities.
+                Binary (or soft) flags indicating which modalities are
+                populated at each position.
+        """
+        assert active_tensor.ndim == 3, \
+            f"active must be [B, N, M], got {active_tensor.shape}"
+        self._active = active_tensor
+
+    def effective_activation(self):
+        """Return effective activation: activation * product of modal flags.
+
+        Returns:
+            [B, N] tensor. A position is active only if all its modalities
+            are present AND its event activation is positive.  Returns
+            plain activation if no modal flags are set.
+        """
+        act = self.get_activation()
+        if act is None:
+            return None
+        if self._active is not None:
+            modal_gate = self._active.prod(dim=-1)  # [B, N]
+            return act * modal_gate
+        return act
+
+    def dematerialize(self):
+        """Split event → modalities, recover active flags.
+
+        Reads .event, splits into what/where/when by encoding widths,
+        computes active flags from which slices are nonzero, and
+        sets activation from event norms.
+
+        Returns:
+            dict with 'what', 'where', 'when' tensors (where present).
+        """
+        event = self.event.getW()
+        if event is None:
+            return None
+        what_tensor = event[:, :, :self.nWhat]
+        self.what.setW(what_tensor)
+
+        result = {'what': what_tensor}
+        where_tensor = None
+        when_tensor = None
+
+        if self.nWhere > 0:
+            where_tensor = event[:, :, self.nWhat:self.nWhat + self.nWhere]
+            self.where.setW(where_tensor)
+            result['where'] = where_tensor
+        if self.nWhen > 0:
+            when_tensor = event[:, :, self.nWhat + self.nWhere:]
+            self.when.setW(when_tensor)
+            result['when'] = when_tensor
+
+        self._demuxed = True
+        self._compute_active(what_tensor, where_tensor, when_tensor)
+        return result
 
     def set_symbols(self, symbols_tensor):
         """Store symbolic presence [0,1] by mapping to conceptual activation [-1,1].
@@ -2670,24 +2088,44 @@ class SubSpace(nn.Module):
         """Append a validated word tuple."""
         self.word.append(self.wordEncoding.encode(batch, vector, rule))
 
-    def materialize(self, k=None, mode="active"):
-        """Return dense tensor of the top-k most active object vectors.
+    def _lookup_modality(self, basis, indices):
+        """Look up vectors from a Basis using index tensor [B, N].
 
-        When activations have been set via set_activation(), selects the k
-        vectors with highest activation and returns them as a dense tensor.
+        For Embedding/Codebook: index into codebook rows.
+        For WhereEncoding: compute sin/cos from offset indices.
+        """
+        codebook = basis.getW()
+        if codebook is None:
+            return None
+        if codebook.ndim == 2:
+            # [V, D] codebook — index with [B, N] → [B, N, D]
+            return codebook[indices.long()]
+        # Already [B, N, D] (e.g. from set_what on a Tensor basis)
+        return codebook
+
+    def materialize(self, k=None, mode="active"):
+        """Build event from active indices, return event * activation.
+
+        Index-based path (set_forward_content): active [B, N, M] holds indices
+        into each modality's Basis. Looks up vectors from .what, .where, .when.
+
+        Legacy path (set_demuxed/set_what): reads vectors from Basis slots directly.
+
+        Muxed path: returns event directly.
 
         Args:
             k: number of vectors to return. If None, returns all vectors.
-            mode: "active" (default) returns object vectors;
-                  "activation" returns the activation tensor [batch, nVectors].
-                  If no activation is stored, computes it from event vectors.
+            mode: "active" (default) returns event * activation;
+                  "activation" returns the effective activation [batch, nVectors].
 
         Returns:
-            Tensor [batch, k, dim] of the k highest-activation vectors (mode="active"),
-            or Tensor [batch, nVectors] of activation values (mode="activation").
-            Stores selection indices in self._topk_indices for downstream use.
+            Tensor [batch, k, dim] (mode="active"),
+            or Tensor [batch, nVectors] (mode="activation").
         """
         if mode == "activation":
+            eff = self.effective_activation()
+            if eff is not None:
+                return eff
             activation = self.get_activation()
             if activation is not None:
                 return activation
@@ -2695,35 +2133,78 @@ class SubSpace(nn.Module):
             return self.get_activation()
 
         x = self.event.getW()
-        # Auto-mux: if demuxed, build event from what/where/when components
+
         if x is None and self._demuxed:
-            what_w = self.what.getW()
-            if what_w is not None:
-                parts = [what_w]
+            if self._active is not None and self._active.ndim == 3:
+                # Index-based path: active [B, N, M] holds per-modality indices
+                parts = []
+                m = 0
+                if self.what is not None:
+                    what_w = self.what.getW()
+                    if what_w is not None:
+                        if what_w.ndim == 2:
+                            # Codebook [V, D] — index lookup
+                            parts.append(what_w[self._active[:, :, m].long()])
+                        else:
+                            parts.append(what_w)
+                        m += 1
+                if self.nWhere > 0 and m < self._active.shape[-1]:
+                    where_indices = self._active[:, :, m]  # byte offsets
+                    B, N = where_indices.shape
+                    where_vecs = torch.zeros(B, N, self.nWhere,
+                                             device=where_indices.device)
+                    # Compute sinusoidal encoding from offset indices
+                    angle = where_indices.float() * self.whereEncoding.div_term
+                    where_vecs[:, :, 0] = torch.sin(angle)
+                    if self.nWhere > 1:
+                        where_vecs[:, :, 1] = torch.cos(angle)
+                    parts.append(where_vecs)
+                    m += 1
+                if self.nWhen > 0 and m < self._active.shape[-1]:
+                    when_indices = self._active[:, :, m]
+                    B, N = when_indices.shape
+                    when_vecs = torch.zeros(B, N, self.nWhen,
+                                            device=when_indices.device)
+                    angle = when_indices.float() * self.whenEncoding.div_term
+                    when_vecs[:, :, 0] = torch.sin(angle)
+                    if self.nWhen > 1:
+                        when_vecs[:, :, 1] = torch.cos(angle)
+                    parts.append(when_vecs)
+                if parts:
+                    x = torch.cat(parts, dim=-1)
+                    self.event.setW(x)
+            else:
+                # Legacy path: read vectors from Basis slots
+                parts = []
+                what_w = self.what.getW()
+                if what_w is not None and what_w.shape[-1] > 0:
+                    parts.append(what_w)
                 where_w = self.where.getW()
                 if where_w is not None and where_w.shape[-1] > 0:
                     parts.append(where_w)
                 when_w = self.when.getW()
                 if when_w is not None and when_w.shape[-1] > 0:
                     parts.append(when_w)
-                x = torch.cat(parts, dim=-1)
-                self.event.setW(x)
+                if parts:
+                    x = torch.cat(parts, dim=-1)
+                    self.event.setW(x)
+
         if x is None:
             return None
-        activation = self.get_activation()
 
-        # No activation or no selection needed — return all vectors
-        if activation is None or k is None or k >= x.shape[-2]:
-            return x
+        # Apply activation gate: materialize() = event * activation
+        act = self.get_activation()
+        if act is not None:
+            x = x * act.unsqueeze(-1)
 
-        # Select top-k by activation [batch, nVectors] → indices [batch, k]
-        _, indices = torch.topk(activation, k, dim=-1)
-        self._topk_indices = indices
+        # top-k selection if requested
+        if k is not None and k < x.shape[-2]:
+            score = act if act is not None else x.norm(dim=-1)
+            _, indices = torch.topk(score, k, dim=-1)
+            self._topk_indices = indices
+            x = torch.gather(x, -2, indices.unsqueeze(-1).expand(-1, -1, x.shape[-1]))
 
-        # Gather the corresponding vectors: [batch, k, dim]
-        indices_expanded = indices.unsqueeze(-1).expand(-1, -1, x.shape[-1])
-        selected = torch.gather(x, -2, indices_expanded)
-        return selected
+        return x
 
     # ------------------------------------------------------------------
     # Encoding target selection
@@ -2733,14 +2214,14 @@ class SubSpace(nn.Module):
         """Return the tensor for the named encoding target.
 
         Args:
-            target: one of ENCODING_TARGETS — "activation", "what", "where",
+            target: one of Encoding.TARGETS — "activation", "what", "where",
                     "when", "event", or "all".
 
         Returns:
             Tensor for the requested encoding, or a dict of {target: tensor}
             when target="all" (skipping empty encodings).
         """
-        assert target in ENCODING_TARGETS, f"Unknown target {target!r}, expected one of {ENCODING_TARGETS}"
+        assert target in Encoding.TARGETS, f"Unknown target {target!r}, expected one of {Encoding.TARGETS}"
 
         if target == "activation":
             return self.materialize(mode="activation")
@@ -2788,7 +2269,7 @@ class SubSpace(nn.Module):
             target: one of "activation", "what", "where", "when", "event".
             tensor: the tensor to store.
         """
-        assert target in ENCODING_TARGETS and target != "all", \
+        assert target in Encoding.TARGETS and target != "all", \
             f"Cannot put to target {target!r}"
 
         if target == "activation":
@@ -2796,19 +2277,17 @@ class SubSpace(nn.Module):
             return
 
         if target == "event":
-            self.set_vectors(tensor)
+            self.set_event(tensor)
             return
 
         # Demuxed mode: write to independent factor tensors
         if self._demuxed:
             if target == "what":
-                self.what.setW(tensor)
+                self.set_what(tensor)
             elif target == "where":
-                self.where.setW(tensor)
+                self.set_where(tensor)
             elif target == "when":
-                self.when.setW(tensor)
-            # Invalidate cached event so materialize() re-concatenates
-            self.event.setW(None)
+                self.set_when(tensor)
             return
 
         # Muxed mode: write into the event tensor slice
@@ -2821,7 +2300,7 @@ class SubSpace(nn.Module):
             event[:, :, self.nWhat:self.nWhat + self.nWhere] = tensor
         elif target == "when" and self.nWhen > 0:
             event[:, :, self.nWhat + self.nWhere:] = tensor
-        self.set_vectors(event, compute_activation=False)
+        self.set_event(event, compute_activation=False)
 
     # ------------------------------------------------------------------
     # Normalization
@@ -3064,7 +2543,836 @@ class SubSpace(nn.Module):
         if size == 0:
             return object
         return object[0:-size]
-    
+class Grammar(nn.Module):
+    """Hierarchical 3-tier grammar (S, C, P) with rule methods and composition.
+
+    Owns rule execution, rule prediction (SyntacticLayer instances), and
+    shift/reduce composition logic.  Spaces delegate syntax to TheGrammar.
+
+    Simple operations (union, intersection, not, non, equals, part, chunk,
+    isTrue) delegate to Basis methods via registered subspaces, passing
+    monotonic=True for S/P tiers and monotonic=False for C tier.
+    Learnable operations (swap, lift, lower) hold parameters directly.
+    """
+
+    RuleDef = _namedtuple('RuleDef', ['tier', 'canonical', 'arity', 'method_name'])
+
+    def __init__(self, lazy_init=True):
+        super().__init__()
+        self.rules = []
+        self._configured = False
+        self._lazy_init = lazy_init
+        self.interpretation = 0.5
+        # Placeholders — populated by init_layers()
+        self.s_syntactic_layer = None
+        self.c_syntactic_layer = None
+        self.p_syntactic_layer = None
+        self.lifting_layer = None
+        self.lowering_layer = None
+        self._layers_initialized = False
+        # Subspaces — registered by spaces after init_layers
+        self._subspaces = {}
+        # Chunk codebook — created lazily when P-tier has chunk rules
+        self.chunk_layer = None
+        # Non threshold — learnable gate for non() rule (sigmoid → 0.5 default)
+        self.non_threshold = nn.Parameter(torch.tensor(0.0))
+        # S/R stacks
+        self._s_stack = []
+        self._s_where_stack = []
+        self._s_words = []
+        self._c_stack = []
+        self._c_act_stack = []
+        self._c_words = []
+        self._p_words = []
+        # Word encoders
+        self._word_encoders = {}
+
+    # ── Basis-delegated operations ────────────────────────────────────
+
+    def _basis(self, tier):
+        """Look up the Basis for a tier from the registered subspace."""
+        ss = self._subspaces.get(tier)
+        return ss.basis if ss is not None else None
+
+    def _mono(self, tier):
+        """True if this tier uses monotonic logic (not bitonic)."""
+        b = self._basis(tier)
+        return b is None or b.monotonic
+
+    def _method_union(self, left, right, tier):
+        b = self._basis(tier)
+        if b is not None:
+            return b.disjunction(left, right, monotonic=self._mono(tier))
+        return torch.max(left, right)
+
+    def _method_intersection(self, left, right, tier):
+        b = self._basis(tier)
+        if b is not None:
+            return b.conjunction(left, right, monotonic=self._mono(tier))
+        return torch.min(left, right)
+
+    def _method_not(self, left, tier):
+        b = self._basis(tier)
+        if b is not None:
+            return b.negation(left, monotonic=self._mono(tier))
+        return -left
+
+    def _method_non(self, left, tier):
+        b = self._basis(tier)
+        if b is not None:
+            m = self._mono(tier)
+            threshold = torch.sigmoid(self.non_threshold) if m else None
+            return b.non(left, monotonic=m, threshold=threshold)
+        return torch.zeros_like(left)
+
+    def _method_equals(self, left, right, tier):
+        b = self._basis(tier)
+        if b is not None:
+            score = b.equal(left, right, monotonic=self._mono(tier))
+            while score.ndim < right.ndim:
+                score = score.unsqueeze(-1)
+            return score * right
+        return torch.min(left, right)
+
+    def _method_part(self, left, right, tier):
+        b = self._basis(tier)
+        if b is not None:
+            score = b.part(left, right, monotonic=self._mono(tier))
+            while score.ndim < right.ndim:
+                score = score.unsqueeze(-1)
+            return score * right
+        return torch.min(left, right)
+
+    def _method_chunk(self, left, right, tier):
+        b = self._basis(tier)
+        if b is not None:
+            return b.disjunction(left, right, monotonic=True)  # P-tier: always monotonic
+        if right is None:
+            return left
+        return torch.max(left, right)
+
+    def _method_true(self, left, tier):
+        """Truth evaluation: positive projection (after not/non, tree is all-positive)."""
+        b = self._basis(tier)
+        if b is not None:
+            return b.pos(left)
+        return torch.relu(left)
+
+    # ── Learnable methods ─────────────────────────────────────────────
+
+    def _method_swap(self, left, right, tier):
+        """Soft permutation via Sinkhorn-normalised logits."""
+        P = self._swap_soft_perm()
+        marker = self.swap_marker.to(left.device)
+        if left.ndim == 3:
+            m = marker.unsqueeze(0).unsqueeze(0).expand_as(left)
+        elif left.ndim == 2:
+            m = marker[:left.shape[-1]].unsqueeze(0).expand_as(left)
+        else:
+            m = marker
+        if right is None:
+            right = left
+        stack = torch.stack([left, right, m], dim=0)
+        out = torch.einsum('ij,j...->i...', P, stack)
+        return out[0]
+
+    def _swap_soft_perm(self):
+        M = self.swap_logits
+        for _ in range(self._swap_sinkhorn_iters):
+            M = M - M.logsumexp(dim=-1, keepdim=True)
+            M = M - M.logsumexp(dim=-2, keepdim=True)
+        return M.exp()
+
+    def _method_lift(self, left, right, tier):
+        """Lift via verb codebook: VP selects a [D,D] matrix applied to NP."""
+        vp_query = right.mean(dim=1) if right.ndim == 3 else right
+        if right is not None:
+            return self.lifting_layer.forward_transitive(left, right, vp_query)[0]
+        return self.lifting_layer.forward_reflexive(left, vp_query)
+
+    def _method_lower(self, left, right, tier):
+        """Rank-reducing bottleneck with optional instance selection."""
+        return self.lowering_layer.forward(left, right)
+
+    # ── Rule catalog ──────────────────────────────────────────────────
+
+    def __len__(self):
+        self._ensure_configured()
+        return len(self.rules)
+
+    def __getitem__(self, idx):
+        self._ensure_configured()
+        return self.rules[idx].canonical
+
+    def arity(self, rule_id):
+        return self.rules[rule_id].arity
+
+    def method_name(self, rule_id):
+        return self.rules[rule_id].method_name
+
+    def tier(self, rule_id):
+        return self.rules[rule_id].tier
+
+    def binary_rules(self):
+        return [i for i in range(len(self.rules)) if self.rules[i].arity == 2]
+
+    # ── Configuration from XML ────────────────────────────────────────
+
+    def configure(self, grammar_dict):
+        self.rules = []
+        self._configured = True
+        for lhs in ('START', 'S', 'C', 'P'):
+            raw = grammar_dict.get(lhs, [])
+            if isinstance(raw, str):
+                raw = [raw]
+            for rhs_text in raw:
+                rhs = rhs_text.strip()
+                rule_def = self._parse_rule(lhs, rhs)
+                self.rules.append(rule_def)
+
+    def _parse_rule(self, lhs, rhs):
+        if '(' in rhs:
+            func_name = rhs[:rhs.index('(')]
+            args_str = rhs[rhs.index('(') + 1:rhs.rindex(')')]
+            args = [a.strip() for a in args_str.split(',') if a.strip()]
+            arity = len(args)
+            canonical = f"{lhs} → {rhs}"
+            return self.RuleDef(lhs, canonical, arity, func_name)
+        if rhs == 'ε':
+            return self.RuleDef(lhs, f"{lhs} → ε", 0, None)
+        if rhs == 'I P':
+            return self.RuleDef(lhs, f"{lhs} → chunk(I, P)", 2, 'chunk')
+        if rhs in ('S', 'C', 'P'):
+            return self.RuleDef(lhs, f"{lhs} → {rhs}", 1, None)
+        if rhs == 'I':
+            return self.RuleDef(lhs, f"{lhs} → I", 0, None)
+        raise ValueError(f"Cannot parse grammar rule: {lhs} → {rhs}")
+
+    _NOOP_GRAMMAR = {'START': 'S', 'S': 'C', 'C': ['not(C)', 'P'], 'P': 'I'}
+
+    def _ensure_configured(self):
+        if self._configured or not self._lazy_init:
+            return
+        from util import TheXMLConfig
+        cfg = None
+        for path in ("mentalModel.grammar", "architecture.language.grammar", "architecture.grammar"):
+            try:
+                candidate = TheXMLConfig.get(path)
+                if isinstance(candidate, dict):
+                    cfg = candidate
+                    break
+            except (KeyError, AttributeError):
+                continue
+        if cfg is None:
+            cfg = self._NOOP_GRAMMAR
+        self.configure(cfg)
+        # interpretation: check language section first, then legacy mentalModel
+        for ipath in ("architecture.language.interpretation", "mentalModel.interpretation"):
+            try:
+                interp = TheXMLConfig.get(ipath)
+                self.interpretation = float(interp)
+                break
+            except (KeyError, AttributeError):
+                continue
+
+    # ── Rule queries ──────────────────────────────────────────────────
+
+    def symbolic(self):
+        self._ensure_configured()
+        return [i for i, r in enumerate(self.rules) if r.tier == 'S']
+
+    def conceptual(self):
+        self._ensure_configured()
+        return [i for i, r in enumerate(self.rules) if r.tier == 'C']
+
+    def perceptual(self):
+        self._ensure_configured()
+        return [i for i, r in enumerate(self.rules) if r.tier == 'P']
+
+    def symbolic_transition(self):
+        self._ensure_configured()
+        for i, r in enumerate(self.rules):
+            if r.tier == 'S' and r.method_name is None and r.arity == 1:
+                return i
+        return None
+
+    def conceptual_transition(self):
+        self._ensure_configured()
+        for i, r in enumerate(self.rules):
+            if r.tier == 'C' and r.method_name is None and r.arity == 1:
+                return i
+        return None
+
+    # ── Layer initialization ──────────────────────────────────────────
+
+    def init_layers(self, concept_dim, symbol_dim,
+                    n_concept_slots, n_symbol_slots, n_percept_slots):
+        if self._layers_initialized:
+            return
+        self._ensure_configured()
+
+        # Swap parameters (S-tier)
+        # Marker must cover both 2D activations (n_symbol_slots) and
+        # 3D vectors (symbol_dim), so use the larger of the two.
+        swap_size = max(symbol_dim, n_symbol_slots)
+        self.swap_marker = nn.Parameter(torch.randn(swap_size) * 0.01)
+        self.swap_logits = nn.Parameter(torch.zeros(3, 3))
+        self._swap_sinkhorn_iters = 5
+
+        # Non threshold (monotonic tiers: S, P) — learnable via sigmoid
+        self.non_threshold = nn.Parameter(torch.tensor(0.0))  # sigmoid(0) = 0.5
+
+        # Lift: codebook of verb matrices for NP+VP composition (C-tier)
+        self.lifting_layer = LiftingLayer(16, concept_dim)
+
+        # Lower: rank-reducing bottleneck for instance selection (C-tier)
+        self.lowering_layer = LoweringLayer(concept_dim)
+
+        # No ModuleDicts needed — all dispatch is via _BASIS_METHODS
+
+        # SyntacticLayers
+        self.s_syntactic_layer = SyntacticLayer(
+            nInput=n_symbol_slots, nOutput=n_symbol_slots,
+            rules=self.symbolic(),
+            transition_rule=self.symbolic_transition(),
+            max_depth=max(n_symbol_slots - 1, 1),
+            hidden_dim=min(256, max(64, n_symbol_slots * 4)),
+            grammar=self,
+        )
+        self.c_syntactic_layer = SyntacticLayer(
+            nInput=n_concept_slots, nOutput=n_concept_slots,
+            rules=self.conceptual(),
+            transition_rule=self.conceptual_transition(),
+            max_depth=max(n_concept_slots - 1, 1),
+            hidden_dim=min(256, max(64, n_concept_slots * 4)),
+            grammar=self,
+        )
+        self.p_syntactic_layer = SyntacticLayer(
+            nInput=n_percept_slots, nOutput=n_percept_slots,
+            rules=self.perceptual(),
+            transition_rule=None,
+            max_depth=max(n_percept_slots - 1, 1),
+            hidden_dim=min(256, max(64, n_percept_slots * 4)),
+            grammar=self,
+        )
+
+        self._layers_initialized = True
+
+    def register_word_encoder(self, tier, word_encoding):
+        self._word_encoders[tier] = word_encoding
+
+    def register_subspace(self, tier, subspace):
+        """Register a SubSpace so Grammar can access its Basis."""
+        self._subspaces[tier] = subspace
+
+    @property
+    def s_methods(self):
+        """Set of method names available on the S (symbolic) tier."""
+        return {r.method_name for r in self.rules if r.tier == 'S' and r.method_name}
+
+    @property
+    def c_methods(self):
+        """Set of method names available on the C (conceptual) tier."""
+        return {r.method_name for r in self.rules if r.tier == 'C' and r.method_name}
+
+    @property
+    def p_methods(self):
+        """Set of method names available on the P (perceptual) tier."""
+        return {r.method_name for r in self.rules if r.tier == 'P' and r.method_name}
+
+    # ── Tier dispatch helpers ─────────────────────────────────────────
+
+    def _tier_syntactic_layer(self, tier):
+        if tier == 'S':   return self.s_syntactic_layer
+        elif tier == 'C': return self.c_syntactic_layer
+        elif tier == 'P': return self.p_syntactic_layer
+        return None
+
+    # ── Basis-delegated method dispatch ───────────────────────────────
+
+    _GRAMMAR_METHODS = {
+        'union':        ('_method_union',        True),
+        'intersection': ('_method_intersection', True),
+        'not':          ('_method_not',           False),
+        'non':          ('_method_non',           False),
+        'equals':       ('_method_equals',        True),
+        'part':         ('_method_part',          True),
+        'chunk':        ('_method_chunk',         True),
+        'true':         ('_method_true',          False),
+        'swap':         ('_method_swap',          True),
+        'lift':         ('_method_lift',          True),
+        'lower':        ('_method_lower',         True),
+    }
+
+    # ── Rule execution ────────────────────────────────────────────────
+
+    def project(self, tier, rule_id, left, right=None):
+        """Execute a grammar rule on left (and right) operands.
+
+        All methods are dispatched via _GRAMMAR_METHODS.
+        """
+        method_name = self.rules[rule_id].method_name
+        if method_name is None:
+            return left  # transition — pass through
+
+        if method_name in self._GRAMMAR_METHODS:
+            fn_name, binary = self._GRAMMAR_METHODS[method_name]
+            fn = getattr(self, fn_name)
+            if binary:
+                if right is not None:
+                    return fn(left, right, tier)
+                return left
+            return fn(left, tier)
+
+        return left
+
+    # ── S/R stacks ────────────────────────────────────────────────────
+
+    def resetStack(self, tier):
+        if tier == 'S':
+            self._s_stack = []
+            self._s_where_stack = []
+            self._s_words = []
+        elif tier == 'C':
+            self._c_stack = []
+            self._c_act_stack = []
+            self._c_words = []
+        elif tier == 'P':
+            self._p_words = []
+
+    def _rewrite_rule_index(self):
+        if self.s_syntactic_layer is None:
+            return None
+        for i, rid in enumerate(self.s_syntactic_layer.all_rules):
+            if "swap" in self[rid].lower():
+                return i
+        return None
+
+    def _encode_words(self, tier, activation, best_rule_id):
+        words = []
+        encoder = self._word_encoders.get(tier)
+        if encoder is None:
+            return words
+        B = activation.shape[0]
+        for b in range(B):
+            active = (activation[b].abs() > 1e-6).nonzero(as_tuple=True)[0]
+            for v in active:
+                words.append(encoder.encode(b, v.item(), best_rule_id))
+        return words
+
+    def _active_positions(self, data, b):
+        """Return sorted list of active (non-zero) position indices for batch element b."""
+        if data.ndim == 3:
+            act = data[b].norm(dim=-1)
+        else:
+            act = data[b]
+        nz = act.nonzero(as_tuple=False)
+        if nz.numel() == 0:
+            return []
+        return nz.squeeze(-1).tolist()
+
+    def _top_of_stack(self, data):
+        """Find the last active (non-zero) position per batch element.
+
+        Args:
+            data: [B, N] or [B, N, D] tensor
+        Returns:
+            list of int — top-of-stack position for each batch element,
+            or -1 if the entire row is zero (empty stack).
+        """
+        tops = []
+        for b in range(data.shape[0]):
+            active = self._active_positions(data, b)
+            tops.append(active[-1] if active else -1)
+        return tops
+
+    def _top_two_of_stack(self, data):
+        """Find the last two active positions per batch element.
+
+        Returns:
+            list of (pos1, pos2) tuples — pos1 is second-to-top, pos2 is top.
+            Either may be -1 if fewer than two active positions exist.
+        """
+        result = []
+        for b in range(data.shape[0]):
+            active = self._active_positions(data, b)
+            if len(active) >= 2:
+                result.append((active[-2], active[-1]))
+            else:
+                result.append((-1, -1))
+        return result
+
+    def _is_word_boundary(self, data, b, pos):
+        """True if the vector at data[b, pos] represents whitespace.
+
+        Uses cosine similarity against the space embedding from the
+        registered P-tier subspace.  Falls back to False if no embedding
+        is available.
+        """
+        ss = self._subspaces.get('P')
+        if ss is None:
+            return False
+        try:
+            space_emb = ss.vocabulary.get_space_embedding()
+        except (AttributeError, RuntimeError):
+            return False
+        vec = data[b, pos]
+        sim = F.cosine_similarity(vec.unsqueeze(0), space_emb.unsqueeze(0), dim=-1)
+        return sim.item() > 0.9
+
+    def _chunk_rule_id(self):
+        """Return the rule_id for the P-tier chunk rule, or None."""
+        for i, r in enumerate(self.rules):
+            if r.tier == 'P' and r.method_name == 'chunk':
+                return i
+        return None
+
+    def _ensure_chunk_layer(self, nDim):
+        """Lazily create the chunk codebook when we first see P-tier data."""
+        if self.chunk_layer is None:
+            self.chunk_layer = ChunkLayer(nDim).to(
+                next(self.parameters()).device if list(self.parameters()) else 'cpu')
+
+    def _c_rule_ids(self):
+        """Return dict of method_name → rule_id for C-tier operational rules."""
+        result = {}
+        for i, r in enumerate(self.rules):
+            if r.tier == 'C' and r.method_name is not None:
+                result[r.method_name] = i
+        return result
+
+    def _conceptual_forward(self, data, subspace, sl):
+        """C-tier forward: apply grammar rules at top-of-stack.
+
+        Rule application order (per the grammar):
+          1. not(C) — flip negative concepts to positive for monotonic symbols.
+                      Fires when the concept vector is predominantly negative
+                      (mean < 0).  Gradient-preserving: uses element-wise abs().
+                      Rescales result to [-1, 1] via tanh.
+          2. non(C) — suppress low-activation concepts.
+                      Fires when the vector norm is below a learned threshold.
+                      Gradient-preserving: soft gate via sigmoid.
+                      Not fully invertible (information is lost).
+          3. All other C-tier rules (union, intersection, lift, lower) —
+             applied via SyntacticLayer. Controlled by `interpretation`
+             biasing the NOP rule: low interpretation → NOP dominates →
+             perfect reconstruction; high → composition → semantic memory.
+
+        Args:
+            data: [B, N, D] concept tensor
+            subspace: SubSpace for word recording
+            sl: SyntacticLayer for this tier
+        Returns:
+            data with conditional transformations applied
+        """
+        c_rules = self._c_rule_ids()
+        not_rid = c_rules.get('not')
+        non_rid = c_rules.get('non')
+
+        tops = self._top_of_stack(data)
+        for b, pos in enumerate(tops):
+            if pos < 0:
+                continue
+            vec = data[b, pos]
+
+            # ── not: flip negative concepts to positive ──────────────
+            if not_rid is not None:
+                if vec.mean() < 0:
+                    # Gradient-preserving absolute value + rescale to [-1, 1]
+                    data = data.clone()
+                    data[b, pos] = torch.tanh(vec.abs())
+                    subspace.add_word(b, pos, not_rid)
+
+            # ── non: suppress below-threshold activations ────────────
+            if non_rid is not None:
+                vec = data[b, pos]  # re-read after possible not()
+                norm = vec.norm()
+                gate = torch.sigmoid(norm - torch.sigmoid(self.non_threshold))
+                if gate < 0.5:
+                    data = data.clone()
+                    data[b, pos] = vec * gate  # soft suppression
+                    subspace.add_word(b, pos, non_rid)
+
+        # ── remaining C-tier rules (composition) ─────────────────────
+        # Record composition words but apply only unary rules per-position.
+        # Binary composition (union, intersection, lift, lower) is applied
+        # via composeSyntax which handles the full derivation tree.
+        for b, pos in enumerate(tops):
+            if pos < 0:
+                continue
+            for rule_id in sl.all_rules:
+                rule = self.rules[rule_id]
+                if rule.method_name in ('not', 'non', None):
+                    continue  # already handled or transition
+                subspace.add_word(b, pos, rule_id)
+
+        return data
+
+    def forward(self, tier, data, subspace):
+        """Apply grammar rules, recording words on subspace.
+
+        For P-tier with a chunk rule: iterative BPE-style merging.
+        Repeatedly merges the top two active positions while the codebook
+        score exceeds the entropic threshold.  Stops at word boundaries
+        (whitespace) — never merges across a space character.
+
+        For other tiers: applies the first operational rule at top-of-stack.
+
+        Args:
+            tier: 'S', 'C', or 'P'
+            data: tensor — [B, N] for S-tier, [B, N, D] for C/P-tier
+            subspace: SubSpace to record words on
+        Returns:
+            data (possibly transformed)
+        """
+        sl = self._tier_syntactic_layer(tier)
+        if sl is None:
+            return data
+
+        # ── P-tier chunk loop ────────────────────────────────────────
+        chunk_rid = self._chunk_rule_id() if tier == 'P' else None
+        if chunk_rid is not None and data.ndim == 3:
+            self._ensure_chunk_layer(data.shape[-1])
+            cb = self.chunk_layer
+            while True:
+                any_merged = False
+                pairs = self._top_two_of_stack(data)
+                for b, (pos1, pos2) in enumerate(pairs):
+                    if pos1 < 0 or pos2 < 0:
+                        continue
+                    # Never merge across a word boundary
+                    if self._is_word_boundary(data, b, pos2):
+                        continue
+                    v1, v2 = data[b, pos1], data[b, pos2]
+                    should, chunk_id = cb.should_merge(v1, v2)
+                    if not should:
+                        continue
+                    merged, _ = cb.encode(v1, v2)
+                    data = data.clone()
+                    data[b, pos1] = merged
+                    data[b, pos2] = 0.0
+                    # Record 4-tuple: (batch, pos1, pos2, rule_id)
+                    subspace.word.append((b, pos1, pos2, chunk_rid))
+                    any_merged = True
+                if not any_merged:
+                    break
+            return data
+
+        # ── C-tier conditional rules (not, non) ──────────────────────
+        if tier == 'C':
+            return self._conceptual_forward(data, subspace, sl)
+
+        # ── Default: single rule at top-of-stack ─────────────────────
+        tops = self._top_of_stack(data)
+        for b, pos in enumerate(tops):
+            if pos < 0:
+                continue
+            rule_id = sl.all_rules[0]
+            rule = self.rules[rule_id]
+            if rule.method_name is not None:
+                data = self.project(tier, rule_id, data)
+                subspace.add_word(b, pos, rule_id)
+        return data
+
+    def reverse(self, tier, data, subspace):
+        """Undo grammar operations using words recorded on subspace.
+
+        For chunk words (4-tuples): decode the codebook entry and restore
+        both constituent vectors at their original positions.
+
+        For other words (3-tuples): apply inverse operation at the recorded
+        position. Non-invertible rules (non, union, intersection, lift,
+        lower) are skipped — the information loss is the cost of
+        grammatical interpretation (episodic → semantic).
+
+        Args:
+            tier: 'S', 'C', or 'P'
+            data: tensor — same shape as forward output
+            subspace: SubSpace with recorded words
+        Returns:
+            data with grammar operations undone (best-effort)
+        """
+        words = subspace.get_words()
+        for word in reversed(words):
+            if len(word) == 4:
+                # Chunk word: (batch, pos1, pos2, rule_id)
+                b, pos1, pos2, rule_id = word
+                if self.chunk_layer is None:
+                    continue
+                merged = data[b, pos1]
+                # Find which codebook entry this merged vector came from
+                _, chunk_id = self.chunk_layer.score_pair(
+                    merged, torch.zeros_like(merged))
+                # Use the split prototypes to recover the pair
+                # (In practice, we should store chunk_id in the word —
+                #  for now, re-derive from the merge codebook via nearest.)
+                best_sim = -1.0
+                best_k = 0
+                for k in range(self.chunk_layer.nChunks):
+                    sim = F.cosine_similarity(
+                        merged.unsqueeze(0),
+                        self.chunk_layer.merge[k].unsqueeze(0), dim=-1)
+                    if sim.item() > best_sim:
+                        best_sim = sim.item()
+                        best_k = k
+                v1, v2 = self.chunk_layer.decode(best_k)
+                data = data.clone()
+                data[b, pos1] = v1
+                data[b, pos2] = v2
+            else:
+                # Standard word: (batch, pos, rule_id)
+                b, pos, rule_id = word
+                rule = self.rules[rule_id]
+                if rule.method_name == 'not':
+                    # Reverse of abs()+tanh: restore negative sign.
+                    # Forward mapped negative concepts to tanh(abs(v)).
+                    # Reverse: atanh to undo tanh, then negate to restore sign.
+                    data = data.clone()
+                    vec = data[b, pos]
+                    # Clamp to avoid atanh domain issues at ±1
+                    clamped = vec.clamp(-0.999, 0.999)
+                    data[b, pos] = -torch.atanh(clamped)
+                elif rule.method_name in ('non', 'union', 'intersection',
+                                          'lift', 'lower'):
+                    # Non-invertible — no-op on reverse.
+                    # The information loss is the cost of interpretation.
+                    pass
+                elif rule.method_name is not None:
+                    # Other methods (true, swap, equals, part) are not
+                    # cleanly invertible — pass through on reverse.
+                    pass
+        return data
+
+    # ── Batch composition ─────────────────────────────────────────────
+
+    def composeSyntax(self, tier, activation, vectors_or_where=None):
+        sl = self._tier_syntactic_layer(tier)
+        if sl is None:
+            out = {"composed": activation if vectors_or_where is None else vectors_or_where, "words": []}
+            if tier == 'S' and vectors_or_where is not None:
+                out["composed_where"] = vectors_or_where
+            return out
+
+        out = sl.forward(activation)
+        rule_probs = out["rule_probs"]
+        all_rules = sl.all_rules
+        B, N = activation.shape
+        active_positions = sl._active_positions(activation)
+        max_leaves = max((len(p) for p in active_positions), default=0)
+
+        if tier == 'C':
+            return self._compose_conceptual(out, activation, vectors_or_where,
+                                            rule_probs, all_rules, active_positions, max_leaves)
+        elif tier == 'S':
+            return self._compose_symbolic(out, activation, vectors_or_where,
+                                          rule_probs, all_rules, active_positions, max_leaves)
+        return out
+
+    def _compose_conceptual(self, out, activation, vectors,
+                            rule_probs, all_rules, active_positions, max_leaves):
+        B, N = activation.shape
+        if max_leaves == 0 or vectors is None:
+            out["composed"] = vectors
+            return out
+
+        D = vectors.shape[-1] if vectors.ndim == 3 else 1
+        masks = torch.zeros(B, max_leaves, N, device=vectors.device)
+        for b in range(B):
+            for i, pos in enumerate(active_positions[b]):
+                masks[b, i, pos] = 1.0
+        leaf_vecs = masks.unsqueeze(-1) * vectors.unsqueeze(1)
+
+        composed = leaf_vecs[:, 0, :, :]
+        sl = self.c_syntactic_layer
+        max_depth = sl.max_depth
+
+        for d in range(min(max_depth, max(max_leaves - 1, 1))):
+            if d + 1 >= max_leaves:
+                break
+            left = composed
+            right = leaf_vecs[:, d + 1, :, :]
+
+            results = []
+            for local_idx, rule_id in enumerate(all_rules):
+                a = self.arity(rule_id)
+                if a == 2:
+                    result = self.project('C', rule_id, left, right)
+                elif a == 1:
+                    result = self.project('C', rule_id, left)
+                else:
+                    result = self.project('C', rule_id, left)
+                results.append(result)
+
+            results = torch.stack(results, dim=1)
+            probs_d = rule_probs[:, d, :]
+            probs_d = probs_d.unsqueeze(-1).unsqueeze(-1)
+            composed = (probs_d * results).sum(dim=1)
+
+        out["composed"] = composed
+        return out
+
+    def _compose_symbolic(self, out, activation, where,
+                          rule_probs, all_rules, active_positions, max_leaves):
+        B, N = activation.shape
+        if max_leaves == 0:
+            out["composed"] = activation
+            if where is not None:
+                out["composed_where"] = where
+            return out
+
+        masks = torch.zeros(B, max_leaves, N, device=activation.device)
+        for b in range(B):
+            for i, pos in enumerate(active_positions[b]):
+                masks[b, i, pos] = 1.0
+        leaf_acts = masks * activation.unsqueeze(1)
+
+        has_where = where is not None
+        if has_where:
+            leaf_wheres = masks.unsqueeze(-1) * where.unsqueeze(1)
+
+        composed = leaf_acts[:, 0, :]
+        if has_where:
+            composed_where = leaf_wheres[:, 0, :, :]
+        sl = self.s_syntactic_layer
+        max_depth = sl.max_depth
+
+        rewrite_idx = self._rewrite_rule_index() if has_where else None
+
+        for d in range(min(max_depth, max(max_leaves - 1, 1))):
+            if d + 1 >= max_leaves:
+                break
+            left = composed
+            right = leaf_acts[:, d + 1, :]
+
+            results = []
+            for local_idx, rule_id in enumerate(all_rules):
+                a = self.arity(rule_id)
+                if a == 2:
+                    result = self.project('S', rule_id, left, right)
+                elif a == 1:
+                    result = self.project('S', rule_id, left)
+                else:
+                    result = self.project('S', rule_id, left)
+                results.append(result)
+
+            results = torch.stack(results, dim=1)
+            probs_d = rule_probs[:, d, :]
+            composed = (probs_d.unsqueeze(-1) * results).sum(dim=1)
+
+            if has_where and rewrite_idx is not None:
+                left_where = composed_where
+                right_where = leaf_wheres[:, d + 1, :, :]
+                rewrite_prob = probs_d[:, rewrite_idx]
+                non_rewrite_prob = 1.0 - rewrite_prob
+                composed_where = (non_rewrite_prob[:, None, None] * left_where
+                                  + rewrite_prob[:, None, None] * right_where)
+
+        out["composed"] = composed
+        if has_where:
+            out["composed_where"] = composed_where
+        return out
+TheGrammar = Grammar()
+
 class Space(nn.Module):
     """Base class for all spaces in the processing pipeline.
 
@@ -3139,6 +3447,7 @@ class Space(nn.Module):
             activation=self._build_activation_basis(),
         )
         self.muxedSize = self.subspace.getEncodingSize(self.nDim)
+
         self.params = []   # parameters for the optimizer (excludes temperature params)
         self.layers = nn.ModuleList()   # layer instances for paramUpdate() delegation
         self._register_requirements()
@@ -3186,6 +3495,11 @@ class Space(nn.Module):
         """Convenience accessor — delegates to subspace."""
         return self.subspace.get_vectors()
 
+    @property
+    def vocabulary(self):
+        """Return the content Basis (Embedding/Codebook) for codebook operations."""
+        return self.subspace.vocabulary
+
     def forwardBegin(self, vspace, returnVectors=False):
         """Prepare input for space-specific processing.
 
@@ -3205,7 +3519,7 @@ class Space(nn.Module):
             x = x.reshape(x.shape[0], 1, -1)  # [B, N, D] -> [B, 1, N*D]
         return x
 
-    def forwardEnd(self, x, returnVectors=False, compute_activation=True):
+    def forwardEnd(self, x, returnVectors=False, compute_activation=False):
         """Finalize output after space-specific processing.
 
         Args:
@@ -3225,12 +3539,12 @@ class Space(nn.Module):
                     self._pre_unflatten_shape = vectors.shape
                     vectors = self.subspace.objectEncoding._unflatten(
                         vectors, self.subspace.batch, forward=True)
-                    x.set_vectors(vectors, compute_activation=compute_activation)
+                    x.set_event(vectors, compute_activation=compute_activation)
             return x
         if self.subspace.flatten:
             self._pre_unflatten_shape = x.shape  # save for reverseBegin
             x = self.subspace.objectEncoding._unflatten(x, self.subspace.batch, forward=True)
-        self.subspace.set_vectors(x, compute_activation=compute_activation)
+        self.subspace.set_event(x, compute_activation=compute_activation)
         return self.subspace
 
     def reverseBegin(self, vspace, returnVectors=False):
@@ -3267,7 +3581,7 @@ class Space(nn.Module):
             return y
         if self.subspace.flatten:
             y = self.subspace.objectEncoding._unflatten(y, self.subspace.batch, forward=False)
-        self.subspace.set_vectors(y)
+        self.subspace.set_event(y)
         return self.subspace
 
     # _2d/_3d removed — all layers now operate on [..., D] natively.
@@ -3305,6 +3619,14 @@ class Space(nn.Module):
         for basis in (self.subspace.what, self.subspace.where, self.subspace.when, self.subspace.activation):
             if basis is not None and hasattr(basis, 'set_sigma'):
                 basis.set_sigma(sigma)
+
+    def useGrammar(self):
+        """Grammar requires autoregressive mode for serial token-by-token operation."""
+        try:
+            mode = TheXMLConfig.get("architecture.maskedPrediction")
+        except (KeyError, AttributeError):
+            return False
+        return str(mode).upper() in ('ARLM', 'ARUS', 'RARLM')
     def getParameters(self):
         return self.params
     def paramUpdate(self):
@@ -3346,6 +3668,11 @@ class InputSpace(Space):
     config_section = "InputSpace"
 
     def _build_object_basis(self):
+        """InputSpace .event is a writable Tensor (receives muxed forward results)."""
+        return None
+
+    def _build_what_basis(self):
+        """InputSpace .what holds the vocabulary (Embedding/Codebook/Tensor)."""
         if self.model_type == "embedding":
             basis = Embedding()
             basis.ergodic = self.ergodic
@@ -3410,7 +3737,7 @@ class InputSpace(Space):
         self.flatten = False
         self.subspace.flatten = False
         self.subspace.objectEncoding.flatten = False
-        lexical_basis = self.subspace.event
+        lexical_basis = self.subspace.what
         if isinstance(lexical_basis, Embedding):
             self.doc_spans = lexical_basis.doc_spans
             self.doc_sources = lexical_basis.doc_sources
@@ -3426,7 +3753,7 @@ class InputSpace(Space):
         self.input          = torch.FloatTensor
         self.tokenizedInput = False
         fullSize  = outputShape[0]*outputShape[1]
-        self.lift = LiftingLayer(fullSize, fullSize)
+        self.lift = MapppingLayer(fullSize, fullSize)
         self.params = self.lift.getParameters()
         self.layers = nn.ModuleList([self.lift])
     # Data client interface
@@ -3451,93 +3778,66 @@ class InputSpace(Space):
             self._cached_embedding = None  # consume once
             self.input = cached
             self._forward_input = None
-            self.forwarding_subspace = SubSpace(inputShape=self.outputShape, outputShape=self.outputShape)
-            self.forwarding_subspace.set_vectors(self.input)
-            return self.forwarding_subspace
+            self.subspace.set_event(self.input)
+            return self.subspace
 
         # Reset positional counter for each forward pass
         self.subspace.whereEncoding.p = 0
 
         batch = input.shape[0]
         nObj = self.outputShape[0]
-        object_basis = self.subspace.get_vectors()
-        lexical_basis = self.subspace.event
-        if not isinstance(lexical_basis, Embedding):
+        vocab = self.subspace.what
+        dev = TheDevice.get()
+
+        if not isinstance(vocab, Embedding):
+            # Non-text path: input is already a tensor, no codebook indices
             assert list(input.shape) == [batch, self.inputShape[0], self.inputShape[1]]
-            what = object_basis.forward(input)
+            what = vocab.forward(input)
             self._forward_input = None
+            self.subspace.set_what(what)
+            if self.nWhere > 0:
+                positions = torch.arange(nObj, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
+                self.subspace.set_where(self.subspace.whereEncoding.encode(positions))
+            if self.nWhen > 0:
+                timesteps = torch.arange(nObj, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
+                self.subspace.set_when(self.subspace.whenEncoding.encode(timesteps))
+            self.input = self.subspace.materialize()
         else:
-            what, meta = lexical_basis.forward(input, return_meta=True)
+            # Text path: get token indices and byte offsets
+            what, meta = vocab.forward(input, return_meta=True)
             self._forward_input = meta
 
-        # Build where tensor [batch, nObj, nWhere]
-        if self.nWhere > 0:
-            where = torch.zeros(batch, nObj, self.nWhere, device=TheDevice.get())
-            if isinstance(lexical_basis, Embedding) and self._forward_input is not None:
+            # what_indices: [B, N] codebook indices
+            what_indices = meta['indices']  # [B, N] long tensor
+
+            # where_indices: [B, N] byte offsets
+            if self.nWhere > 0:
+                where_indices = torch.zeros(batch, nObj, dtype=torch.long, device=dev)
                 for b, batch_tokens in enumerate(meta['tokens']):
                     for i, (_, start) in enumerate(batch_tokens):
-                        encoded = self.subspace.whereEncoding.encode(start)
-                        where[b, i, :] = encoded
+                        where_indices[b, i] = start
                     final_offset = meta['final_offsets'][b]
                     for i in range(len(batch_tokens), nObj):
-                        pad_offset = final_offset + (i - len(batch_tokens))
-                        encoded = self.subspace.whereEncoding.encode(pad_offset)
-                        where[b, i, :] = encoded
+                        where_indices[b, i] = final_offset + (i - len(batch_tokens))
             else:
-                # Non-text: use WhereEncoding.forward() on a zeros buffer
-                where = self.subspace.whereEncoding.forward(
-                    torch.zeros(batch, nObj, self.nWhere, device=TheDevice.get()))
-        else:
-            where = None
+                where_indices = None
 
-        # Build when tensor [batch, nObj, nWhen]
-        if self.nWhen > 0:
-            when = self.subspace.whenEncoding.forward(
-                torch.zeros(batch, nObj, self.nWhen, device=TheDevice.get()))
-        else:
-            when = None
+            # when_indices: [B, N] timestep indices (sequential for now)
+            if self.nWhen > 0:
+                when_indices = torch.arange(nObj, device=dev).unsqueeze(0).expand(batch, -1)
+            else:
+                when_indices = None
 
-        if self.demuxed:
-            # Demuxed path: store what/where/when independently in SubSpace.
-            # Codebook maps only to what-content; position never contaminates it.
-            self.forwarding_subspace = SubSpace(
-                inputShape=self.outputShape, outputShape=self.outputShape,
-                whereEncoding=self.subspace.whereEncoding,
-                whenEncoding=self.subspace.whenEncoding,
-            )
-            self.forwarding_subspace.set_demuxed(what, where, when)
-            self.input = self.forwarding_subspace.materialize()
-        else:
-            # Muxed path: event = concat([what, where, when], dim=-1)
-            parts = [what]
-            if where is not None:
-                parts.append(where)
-            if when is not None:
-                parts.append(when)
-            self.input = torch.cat(parts, dim=-1) if len(parts) > 1 else what
-
-            output = self.subspace.getEncodedOutputSize()
-            assert list(self.input.shape) == [batch, nObj, output]
-
-            # Return a forwarding subspace with the forward result, keeping
-            # self.subspace for the codebook (Embedding).
-            self.forwarding_subspace = SubSpace(
-                inputShape=self.outputShape, outputShape=self.outputShape,
-                whereEncoding=self.subspace.whereEncoding,
-                whenEncoding=self.subspace.whenEncoding,
-            )
-            self.forwarding_subspace.set_vectors(self.input)
+            # Set per-modality indices — materialize() looks up vectors from Basis
+            self.subspace.set_forward_content(what_indices, where_indices, when_indices)
+            self.input = self.subspace.materialize()
 
         # Scale what-content to [0,1] via data min-max (or assert if out of range).
-        self.forwarding_subspace.normalize("input", target="what",
-                                           normalize=self._normalize)
-        self.input = self.forwarding_subspace.materialize()
+        self.subspace.normalize("input", target="what",
+                                normalize=self._normalize)
+        self.input = self.subspace.materialize()
 
-        object_basis.setW(self.input)
-        if isinstance(lexical_basis, Embedding):
-            lexical_basis.setW(self.input)
-
-        return self.forwarding_subspace
+        return self.subspace
     
     def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM'):
         """Expand one sentence's embedding into N masked copies.
@@ -3628,8 +3928,7 @@ class InputSpace(Space):
             self.input = content
         content_basis.setW(self.input)
         object_basis.setW(self.input)
-        # Return forwarding subspace (not self.subspace which is the codebook)
-        self.forwarding_subspace.set_vectors(self.input)
+        self.subspace.set_event(self.input)
 
         # Word recovery — content is already denormalized, codebook is L2-normalized [-1,1]
         if isinstance(content_basis, Embedding):
@@ -3638,21 +3937,21 @@ class InputSpace(Space):
         else:
             self._recovered_input = None
 
-        self.forwarding_subspace.normalize("input", target="what",
-                                            normalize=self._normalize)
-        return self.forwarding_subspace
+        self.subspace.normalize("input", target="what",
+                                normalize=self._normalize)
+        return self.subspace
 
     def reconstruct_data(self, text=False):
         """Render the last recovered text state stored on InputSpace."""
         if getattr(self, '_recovered_input', None) is None:
             raise RuntimeError("reconstruct_data() called before reverse()")
-        return self.subspace.get_vectors().reconstruct_data(self._recovered_input, text=text)
+        return self.subspace.vocabulary.reconstruct_data(self._recovered_input, text=text)
 
     def reconstruct_to_buffer(self, buf_size=None):
         """Render the last recovered text buffer stored on InputSpace."""
         if getattr(self, '_recovered_input', None) is None:
             raise RuntimeError("reconstruct_to_buffer() called before reverse()")
-        return self.subspace.get_vectors().reconstruct_to_buffer(
+        return self.subspace.vocabulary.reconstruct_to_buffer(
             self._recovered_input, buf_size=buf_size)
 
     def get_forward_meta(self):
@@ -3663,7 +3962,7 @@ class InputSpace(Space):
         """Return one recovered token from the last InputSpace.reverse()."""
         if getattr(self, '_recovered_input', None) is None:
             return None
-        return self.subspace.get_vectors().get_recovered_word(
+        return self.subspace.vocabulary.get_recovered_word(
             self._recovered_input, batch_idx, position)
 
     # ------------------------------------------------------------------
@@ -3672,28 +3971,28 @@ class InputSpace(Space):
 
     def train_embeddings(self, words, method='CBOW'):
         """Run one CBOW/SBOW gradient step if words are available."""
-        emb = self.subspace.get_vectors()
+        emb = self.subspace.vocabulary
         if isinstance(emb, Embedding) and words:
             return emb.train_step(words, method=method)
         return None
 
     def sbow_loss(self, words):
         """Return SBOW loss tensor for joint optimization (no backward/step)."""
-        emb = self.subspace.get_vectors()
+        emb = self.subspace.vocabulary
         if isinstance(emb, Embedding) and words:
             return emb.sbow_loss(words)
         return None
 
     def _snapshot_embeddings(self):
         """Return the current WordVectors (no-op, vectors are always live)."""
-        emb = self.subspace.get_vectors()
+        emb = self.subspace.vocabulary
         if isinstance(emb, Embedding):
             return emb.wv
         return None
 
     def set_embedding_sigma(self, sigma):
         """Control exploration noise on the embedding."""
-        emb = self.subspace.get_vectors()
+        emb = self.subspace.vocabulary
         if hasattr(emb, 'set_sigma'):
             emb.set_sigma(sigma)
 
@@ -3808,7 +4107,7 @@ class InputSpace(Space):
 
     def predict(self, vector):
         """Delegates to Embedding.predict()."""
-        return self.subspace.get_vectors().predict(vector)
+        return self.subspace.vocabulary.predict(vector)
 
     # ------------------------------------------------------------------
     # ARIR helpers
@@ -3816,15 +4115,15 @@ class InputSpace(Space):
 
     def embed_token(self, word):
         """Delegates to Embedding.embed_token()."""
-        return self.subspace.get_vectors().embed_token(word)
+        return self.subspace.vocabulary.embed_token(word)
 
     def get_space_embedding(self):
         """Delegates to Embedding.get_space_embedding()."""
-        return self.subspace.get_vectors().get_space_embedding()
+        return self.subspace.vocabulary.get_space_embedding()
 
     def get_mask_embedding(self):
         """Delegates to Embedding.get_mask_embedding()."""
-        return self.subspace.get_vectors().get_mask_embedding()
+        return self.subspace.vocabulary.get_mask_embedding()
 
     # ── ARIR state machine ──────────────────────────────────────────
 
@@ -3843,7 +4142,7 @@ class InputSpace(Space):
         """
         nVec = self.outputShape[0]
         embSize = self.muxedSize
-        nWhat = self.subspace.get_vectors().embedding_dim
+        nWhat = self.subspace.vocabulary.embedding_dim
 
         if self._arir_cursor is None:
             # ── First call: embed seed, prepare buffer ──────────────
@@ -3861,7 +4160,7 @@ class InputSpace(Space):
             self._arir_byte_offset = offsets[0] if offsets else 0
 
             # Fill future positions (seed_len .. nVec-1) with NULL embeddings
-            null_emb = self.subspace.get_vectors().embed_token("\x00")
+            null_emb = self.subspace.vocabulary.embed_token("\x00")
             for k in range(seed_len, nVec):
                 self._arir_embedded[0, k, :nWhat] = null_emb[:nWhat]
                 est_offset = self._arir_byte_offset + (k - seed_len)
@@ -4082,15 +4381,27 @@ class PerceptualSpace(Space):
         x = self.forwardPi(x)
         if self.quantized:
             x = self.subspace.get_vectors().forward(x)
+        x = self._grammar_forward(x)
         vspace = self.forwardEnd(x, returnVectors=True)
         vspace.normalize("percepts", target="what", normalize=self._normalize)
         return vspace
+
+    def _grammar_forward(self, x):
+        if not self.useGrammar():
+            return x
+        return TheGrammar.forward('P', x, self.subspace)
+
+    def _grammar_reverse(self, x):
+        if not self.useGrammar():
+            return x
+        return TheGrammar.reverse('P', x, self.subspace)
 
     def reverse(self, vspace):
         """Manifesting: reconstruct input vectors from percepts via reverse PiLayer."""
         if self.passThrough:
             return vspace
         y = self.reverseBegin(vspace, returnVectors=True)
+        y = self._grammar_reverse(y)
         if self.reversible:
             y = self.reversePi(y)
         vspace = self.reverseEnd(y, returnVectors=True)
@@ -4201,7 +4512,7 @@ class ModalSpace(Space):
         # Route what through whatSpace
         what_sub = SubSpace(inputShape=[what_in.shape[1], what_in.shape[2]],
                            outputShape=[what_in.shape[1], what_in.shape[2]])
-        what_sub.set_vectors(what_in)
+        what_sub.set_what(what_in)
         what_out = self.whatSpace.forward(what_sub).materialize()
 
         # Route where through whereSpace (passthrough if no whereSpace)
@@ -4209,7 +4520,7 @@ class ModalSpace(Space):
         if self.whereSpace is not None and where_in is not None:
             where_sub = SubSpace(inputShape=[where_in.shape[1], where_in.shape[2]],
                                 outputShape=[where_in.shape[1], where_in.shape[2]])
-            where_sub.set_vectors(where_in)
+            where_sub.set_where(where_in)
             where_out = self.whereSpace.forward(where_sub).materialize()
 
         # Route when through whenSpace (passthrough if no whenSpace)
@@ -4217,7 +4528,7 @@ class ModalSpace(Space):
         if self.whenSpace is not None and when_in is not None:
             when_sub = SubSpace(inputShape=[when_in.shape[1], when_in.shape[2]],
                                outputShape=[when_in.shape[1], when_in.shape[2]])
-            when_sub.set_vectors(when_in)
+            when_sub.set_when(when_in)
             when_out = self.whenSpace.forward(when_sub).materialize()
 
         # Build output demuxed SubSpace
@@ -4237,7 +4548,7 @@ class ModalSpace(Space):
         # Reverse what
         what_sub = SubSpace(inputShape=[what_in.shape[1], what_in.shape[2]],
                            outputShape=[what_in.shape[1], what_in.shape[2]])
-        what_sub.set_vectors(what_in)
+        what_sub.set_what(what_in)
         what_rev = self.whatSpace.reverse(what_sub).materialize()
 
         # Reverse where
@@ -4245,7 +4556,7 @@ class ModalSpace(Space):
         if self.whereSpace is not None and where_in is not None:
             where_sub = SubSpace(inputShape=[where_in.shape[1], where_in.shape[2]],
                                 outputShape=[where_in.shape[1], where_in.shape[2]])
-            where_sub.set_vectors(where_in)
+            where_sub.set_where(where_in)
             where_rev = self.whereSpace.reverse(where_sub).materialize()
 
         # Reverse when
@@ -4253,7 +4564,7 @@ class ModalSpace(Space):
         if self.whenSpace is not None and when_in is not None:
             when_sub = SubSpace(inputShape=[when_in.shape[1], when_in.shape[2]],
                                outputShape=[when_in.shape[1], when_in.shape[2]])
-            when_sub.set_vectors(when_in)
+            when_sub.set_when(when_in)
             when_rev = self.whenSpace.reverse(when_sub).materialize()
 
         # Rebuild demuxed SubSpace
@@ -4360,10 +4671,21 @@ class ConceptualSpace(Space):
             y = self.attention.forward(y)
         if self.quantized:
             y = self.subspace.get_vectors().forward(y)
+        y = self._grammar_forward(y)
         vspace = self.forwardEnd(y, returnVectors=True)
         vspace.normalize("concepts", target="what", normalize=self._normalize)       # hypersphere S^(d-1)
         vspace.normalize("concepts", target="activation", normalize=self._normalize)  # tanh [-1,1]
         return vspace
+
+    def _grammar_forward(self, y):
+        if not self.useGrammar():
+            return y
+        return TheGrammar.forward('C', y, self.subspace)
+
+    def _grammar_reverse(self, y):
+        if not self.useGrammar():
+            return y
+        return TheGrammar.reverse('C', y, self.subspace)
 
     def reverse(self, vspace):
         """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer.
@@ -4372,6 +4694,7 @@ class ConceptualSpace(Space):
         guarantee output in (-1,1) for PiLayer.
         """
         y = self.reverseBegin(vspace, returnVectors=True)
+        y = self._grammar_reverse(y)
         if self.processSymbols:
             y = self.dereference(y)
         y = self.reverseSigma(y)
@@ -4390,125 +4713,6 @@ class ConceptualSpace(Space):
     @staticmethod
     def test():
         pass
-class StackSpace(SubSpace):
-    """Preallocated SubSpace with stack semantics (push/pop/peek).
-
-    Used by SymbolicSpace to hold the symbol stack during shift/reduce.
-    Each entry has what (codebook vector), where (position), and when
-    (derivation order). The stack is a contiguous region of a preallocated
-    SubSpace buffer with a position pointer.
-    """
-
-    def __init__(self, maxSize, nDim, nWhere=0, nWhen=0):
-        inputShape = [maxSize, nDim + nWhere + nWhen]
-        outputShape = [maxSize, nDim + nWhere + nWhen]
-        whereEncoding = WhereEncoding(maxSize, nWhere)
-        whenEncoding = WhenEncoding(10000, nWhen)
-        super().__init__(
-            inputShape=inputShape,
-            outputShape=outputShape,
-            whereEncoding=whereEncoding,
-            whenEncoding=whenEncoding,
-        )
-        self.maxSize = maxSize
-        self.nStackDim = nDim
-        self.pos = 0
-        self._consumed = set()
-        # Preallocate tensors for stack entries
-        self._what_buf = None   # [B, maxSize, nDim]
-        self._where_buf = None  # [B, maxSize, nWhere]
-        self._when_buf = None   # [B, maxSize, nWhen]
-        self._batch_size = 0
-
-    def reset(self, batch_size=1):
-        """Clear the stack for a new derivation."""
-        device = TheDevice.get()
-        self.pos = 0
-        self._consumed = set()
-        self._batch_size = batch_size
-        self._what_buf = torch.zeros(batch_size, self.maxSize, self.nStackDim, device=device)
-        if self.nWhere > 0:
-            self._where_buf = torch.zeros(batch_size, self.maxSize, self.nWhere, device=device)
-        if self.nWhen > 0:
-            self._when_buf = torch.zeros(batch_size, self.maxSize, self.nWhen, device=device)
-
-    def push(self, what, where=None, when=None):
-        """Push an entry onto the stack.
-
-        Args:
-            what: [B, nDim] concept vector or codebook vector
-            where: [B, nWhere] positional encoding (optional)
-            when: [B, nWhen] temporal encoding (optional)
-
-        Returns:
-            int: stack index of the pushed entry
-        """
-        idx = self.pos
-        self._what_buf[:, idx, :] = what
-        if where is not None and self._where_buf is not None:
-            self._where_buf[:, idx, :] = where
-        if when is not None and self._when_buf is not None:
-            self._when_buf[:, idx, :] = when
-        self.pos += 1
-        return idx
-
-    def pop(self):
-        """Pop the top entry from the stack.
-
-        Returns:
-            tuple: (what, where, when) tensors for the popped entry
-        """
-        self.pos -= 1
-        idx = self.pos
-        what = self._what_buf[:, idx, :]
-        where = self._where_buf[:, idx, :] if self._where_buf is not None else None
-        when = self._when_buf[:, idx, :] if self._when_buf is not None else None
-        return what, where, when
-
-    def peek(self, n=1):
-        """Return the top n entries without popping.
-
-        Returns:
-            tuple: (what, where, when) tensors [B, n, dim]
-        """
-        start = max(0, self.pos - n)
-        what = self._what_buf[:, start:self.pos, :]
-        where = self._where_buf[:, start:self.pos, :] if self._where_buf is not None else None
-        when = self._when_buf[:, start:self.pos, :] if self._when_buf is not None else None
-        return what, where, when
-
-    def mark_consumed(self, idx):
-        """Flag an entry as consumed by a reduce (still accessible)."""
-        self._consumed.add(idx)
-
-    def get_stack(self):
-        """Return all entries up to current position.
-
-        Returns:
-            tuple: (what, where, when) tensors [B, pos, dim]
-        """
-        what = self._what_buf[:, :self.pos, :]
-        where = self._where_buf[:, :self.pos, :] if self._where_buf is not None else None
-        when = self._when_buf[:, :self.pos, :] if self._when_buf is not None else None
-        return what, where, when
-
-    def get_active(self):
-        """Return unconsumed entries only.
-
-        Returns:
-            tuple: (what, where, when, indices) — indices lists active positions
-        """
-        active = [i for i in range(self.pos) if i not in self._consumed]
-        if not active:
-            return (torch.zeros(self._batch_size, 0, self.nStackDim, device=TheDevice.get()),
-                    None, None, [])
-        indices = torch.tensor(active, device=TheDevice.get())
-        what = self._what_buf[:, indices, :]
-        where = self._where_buf[:, indices, :] if self._where_buf is not None else None
-        when = self._when_buf[:, indices, :] if self._when_buf is not None else None
-        return what, where, when, active
-
-
 class SymbolicSpace(Space):
     """Codebook-backed symbol stack with swap operations.
 
@@ -4530,10 +4734,9 @@ class SymbolicSpace(Space):
         super().__init__(inputShape, spaceShape, outputShape, customVQ=True)
         self.conceptualSpace = conceptualSpace
         self.passThrough = passThrough
-        self.codebook = self.subspace.event  # Basis (Codebook) for VQ
         nConcepts = inputShape[0]
         nSymbols = spaceShape[0]
-        self.layer = InvertibleLinearLayer(nConcepts, nSymbols)
+        self.layer = PiLayer(nConcepts, nSymbols, invertible=True)
 
         # Truth accumulation: when accumulateTruth is set, SymbolicSpace
         # stores encoded truth statements with DegreeOfTruth values.
@@ -4547,14 +4750,6 @@ class SymbolicSpace(Space):
         else:
             self.truth = None
 
-        # Symbol stack — preallocated StackSpace
-        self.symbols = StackSpace(
-            maxSize=nSymbols,
-            nDim=self.nDim,
-            nWhere=self.nWhere,
-            nWhen=self.nWhen,
-        )
-
         self.layers = nn.ModuleList([self.layer])
 
         # Assign fixed where encodings to symbol positions.
@@ -4565,13 +4760,36 @@ class SymbolicSpace(Space):
         else:
             self._symbol_where = None
 
+    def _build_object_basis(self):
+        """Event is a writable Tensor — codebook lives on .what."""
+        return None
+
+    def _build_what_basis(self):
+        """Symbol codebook on .what, monotonic (negation meaningless)."""
+        basis = Codebook()
+        basis.create(
+            self.inputShape[0],
+            self.nVectors,
+            self.nDim,
+            customVQ=self.customVQ,
+            passThrough=not self.quantized,
+            monotonic=True,
+        )
+        return basis
+
+    @property
+    def vocabulary(self):
+        return self.subspace.what
+
     def forward(self, vspace):
-        """Map concept activations to symbolic stack, apply swap.
+        """Map concept activations to symbolic stack via PiLayer (Π), apply swap.
 
         1. Extract concept activation [B, nConcepts] from input subspace.
-        2. Map through invertible layer to [B, nSymbols].
-        3. Apply swap on whereEncodings of binary node children.
-        4. Store as symbolic presence.
+        2. Map through PiLayer (log-space multiplicative, monotonic) to [B, nSymbols].
+           Π naturally specifies/compresses: concepts → symbols.
+        3. Grammar derivation (if syntax=True): shift/reduce over S-tier.
+        4. Apply swap on whereEncodings of binary node children.
+        5. Store as symbolic presence.
         """
         if self.passThrough:
             return vspace
@@ -4583,6 +4801,13 @@ class SymbolicSpace(Space):
             for i in range(act.shape[0]):
                 self.truth.record(act[i], degree=1.0)
 
+        where = None
+        if self._symbol_where is not None:
+            B = act.shape[0]
+            where = self._symbol_where.unsqueeze(0).expand(B, -1, -1)
+            where = where.to(act.device)
+        act = self._grammar_forward(act, where)
+
         if self._symbol_where is not None:
             B = act.shape[0]
             where = self._symbol_where.unsqueeze(0).expand(B, -1, -1)
@@ -4591,8 +4816,8 @@ class SymbolicSpace(Space):
 
         if self.quantized:
             act_3d = act.unsqueeze(-1)
-            self.subspace.set_vectors(act_3d)
-            self.codebook.forward(self.subspace)
+            self.subspace.set_event(act_3d)
+            self.subspace.what.forward(self.subspace)
             vspace = self.forwardEnd(self.subspace)
         else:
             vspace.set_symbols(act)
@@ -4600,12 +4825,23 @@ class SymbolicSpace(Space):
         vspace.normalize("symbols", target="activation", normalize=self._normalize)
         return vspace
 
+    def _grammar_forward(self, act, where=None):
+        if not self.useGrammar():
+            return act
+        return TheGrammar.forward('S', act, self.subspace)
+
+    def _grammar_reverse(self, act):
+        if not self.useGrammar():
+            return act
+        return TheGrammar.reverse('S', act, self.subspace)
+
     def reverse(self, vspace):
-        """Map symbolic presence back to concept space, undo swap."""
+        """Map symbolic presence back to concept space via PiLayer.reverse (Π⁻¹), undo swap."""
         if self.passThrough:
             return vspace
         vspace = self.reverseBegin(vspace)
         act = vspace.materialize(mode="activation")
+        act = self._grammar_reverse(act)
         act = self.layer.reverse(act)
         if self.quantized:
             self.subspace.set_symbols(act)
@@ -4703,48 +4939,19 @@ class SyntacticSpace(Space):
             self.subspace.set_symbols(symbols)
             x = vspace.materialize()
             if x is not None:
-                self.subspace.set_vectors(x)
+                self.subspace.set_event(x)
             vspace = self.forwardEnd(self.subspace)
             vspace.normalize("symbols", target="activation", normalize=self._normalize)
             self._step += 1
             return vspace
 
-        # Extract where encoding if symbols are spatiotemporally concrete
-        where = vspace.select(target="where") if self.nWhere > 0 else None
-        if where is not None:
-            where = where.clone()  # avoid aliasing with event tensor
-
-        # S/R loop via TheGrammar
-        sl = TheGrammar._tier_syntactic_layer('S')
-        TheGrammar.resetStack('S')
-        B, N = symbols.shape
-        active_positions = sl._active_positions(symbols)
-        pos_set = set()
-        for bp in active_positions:
-            pos_set.update(bp)
-        positions = sorted(pos_set)
-
-        for pos in positions:
-            mask = torch.zeros_like(symbols)
-            mask[:, pos] = symbols[:, pos]
-            pos_where = where.clone() if where is not None else None
-            TheGrammar.forward('S', mask, vectors_or_where=pos_where)
-
-        composed = TheGrammar._s_stack[-1] if TheGrammar._s_stack else symbols
-        words = list(TheGrammar._s_words)
-
-        # Gather composed_where from S/R where stack
-        composed_where = TheGrammar._s_where_stack[-1] if TheGrammar._s_where_stack else None
-
-        self.subspace.set_words(words)
-        self.subspace.set_symbols(composed)
+        # Grammar forward: apply operational rules, record words on subspace
+        if self.useGrammar():
+            symbols = TheGrammar.forward('S', symbols, self.subspace)
+        self.subspace.set_symbols(symbols)
         x = vspace.materialize()
         if x is not None:
-            self.subspace.set_vectors(x)
-
-        # Store composed where encoding on subspace (before forwardEnd)
-        if composed_where is not None:
-            self.subspace.where.setW(composed_where)
+            self.subspace.set_event(x)
 
         vspace = self.forwardEnd(self.subspace)
         vspace.normalize("symbols", target="activation", normalize=self._normalize)
@@ -4754,18 +4961,19 @@ class SyntacticSpace(Space):
     def reverse(self, vspace):
         """Decode derivation tree to recover active symbol positions."""
         vspace = self.reverseBegin(vspace)
-        words = vspace.get_words()
-        nVectors = self.inputShape[0]
-        batch_size = max((b for b, v, r in words), default=0) + 1 if words else 1
+        symbols = vspace.get_symbols()
+        if symbols is None:
+            B = vspace.batch or 1
+            N = vspace.outputShape[0]
+            symbols = torch.ones(B, N, device=TheDevice.get())
 
-        symbols = TheGrammar.reverse('S', words, batch_size)
-        symbols = symbols.to(TheDevice.get())
+        if self.useGrammar():
+            symbols = TheGrammar.reverse('S', symbols, self.subspace)
 
         x = vspace.materialize()
         if x is not None:
-            self.subspace.set_vectors(x, compute_activation=False)
+            self.subspace.set_event(x, compute_activation=False)
         self.subspace.set_symbols(symbols)
-        self.subspace.set_words([])
         vspace = self.reverseEnd(self.subspace)
         vspace.normalize("symbols", target="activation", normalize=self._normalize)
         self._step = max(0, self._step - 1)
@@ -4868,7 +5076,7 @@ class OutputSpace(Space):
         y = self.reverseBegin(vspace, returnVectors=True)
         # Denormalize: scale from original data range to [-1,1] (inverse of forward)
         if self._normalize:
-            self.subspace.set_vectors(y)
+            self.subspace.set_event(y)
             self.subspace.denormalize("output", target="what")
             y = self.subspace.materialize()
         y = self.reverseLinear(y)
@@ -4912,7 +5120,7 @@ class OutputSpace(Space):
 
         Convenience method for tests. Production code passes vectors= to __init__.
         """
-        vs = input_space.subspace.get_vectors()
+        vs = input_space.subspace.vocabulary
         self._vocabulary = vs
         self.text_mode = isinstance(vs, Embedding)
 

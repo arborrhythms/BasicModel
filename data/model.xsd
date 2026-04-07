@@ -39,6 +39,7 @@
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="embeddingPath" type="xs:string" minOccurs="0"/>
       <xs:element name="weightsPath" type="xs:string" minOccurs="0"/>
+      <xs:element name="language" type="languageType" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -48,6 +49,7 @@
   <xs:complexType name="mentalModelType">
     <xs:all>
       <xs:element name="grammar" type="grammarType" minOccurs="0"/>
+      <xs:element name="interpretation" type="unitInterval" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -302,15 +304,21 @@
   </xs:complexType>
 
   <!-- ═══════════════════════════════════════════════════════════════════
-       Grammar section (inside <mentalModel>)
+       Language section (inside <architecture>)
        ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="languageType">
+    <xs:all>
+      <xs:element name="grammar" type="grammarType" minOccurs="0"/>
+      <xs:element name="interpretation" type="unitInterval" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
   <xs:complexType name="grammarType">
     <xs:choice minOccurs="0" maxOccurs="unbounded">
       <xs:element name="START" type="xs:string"/>
       <xs:element name="S" type="xs:string"/>
       <xs:element name="C" type="xs:string"/>
       <xs:element name="P" type="xs:string"/>
-      <xs:element name="interpretation" type="unitInterval"/>
     </xs:choice>
   </xs:complexType>
 
