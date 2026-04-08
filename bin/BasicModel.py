@@ -754,19 +754,16 @@ class BasicModel(BaseModel):
         # The output shape of the symbolic space is equal to the input shape of the output space
         #assert self.symbolicSpace.outputShape[1] == self.outputSpace.inputShape[1] # these are in conceptual space, or symbolic space if symbols emit objectSize symbols (processSymbols == True)
 
-        # Initialize Grammar layers — centralizes all methods and SyntacticLayers.
-        # Must be called before self.to() to avoid missing parameters.
-        # Concept/symbol dims include objectSize since that's the actual vector width.
+        # Initialize Grammar and SyntacticLayers (only in autoregressive modes).
         from Space import TheGrammar
-        TheGrammar._layers_initialized = False  # reset in case of multiple creates
-        TheGrammar.init_layers(
-            concept_dim=concept_dim + obj_concept,
-            symbol_dim=symbol_dim + obj_symbol,
-            n_concept_slots=nConcepts,
-            n_symbol_slots=nSymbols,
-            n_percept_slots=nPercepts,
-        )
-        self.grammar = TheGrammar  # register as submodule for optimizer
+        TheGrammar._configured = False  # reset in case of multiple creates
+        TheGrammar._ensure_configured()
+        if str(masked_prediction).upper() in ('ARLM', 'ARUS', 'RARLM'):
+            self.perceptualSpace.init_syntactic_layer(nPercepts, TheGrammar)
+            self.conceptualSpace.init_syntactic_layer(nConcepts, TheGrammar,
+                                                       concept_dim=concept_dim + obj_concept)
+            self.symbolicSpace.init_syntactic_layer(nSymbols, TheGrammar,
+                                                     symbol_dim=symbol_dim + obj_symbol)
 
         self.to(TheDevice.get())
         TheXMLConfig.validate()
@@ -1468,30 +1465,21 @@ class MentalModel(BaseModel):
         # Zero-init shape: [nSymbols, percept_dim+obj] for cat with percepts
         self._symbol_shape = [nSymbols, percept_dim + obj_percept]
 
-        # Initialize Grammar layers — centralizes all methods and SyntacticLayers.
-        # Concept/symbol dims include objectSize since that's the actual vector width.
         from Space import TheGrammar
-        TheGrammar.init_layers(
-            concept_dim=concept_dim + obj_concept,
-            symbol_dim=symbol_dim + obj_symbol,
-            n_concept_slots=nPercepts + nSymbols,  # conceptInputShape[0]
-            n_symbol_slots=nSymbols,
-            n_percept_slots=nPercepts,
-        )
-        self.grammar = TheGrammar  # register as submodule for optimizer
+        TheGrammar._configured = False
+        TheGrammar._ensure_configured()
+        # Each Space allocates its own SyntacticLayer with tier-specific parameters.
+        self.perceptualSpace.init_syntactic_layer(nPercepts, TheGrammar)
+        self.conceptualSpace.init_syntactic_layer(nPercepts + nSymbols, TheGrammar,
+                                                   concept_dim=concept_dim + obj_concept)
+        self.symbolicSpace.init_syntactic_layer(nSymbols, TheGrammar,
+                                                 symbol_dim=symbol_dim + obj_symbol)
 
-        # Register word encoders so Grammar can generate word tuples
-        TheGrammar.register_word_encoder('S', self.symbolicSpace.subspace.wordEncoding)
-        TheGrammar.register_word_encoder('C', self.conceptualSpace.subspace.wordEncoding)
-        TheGrammar.register_word_encoder('P', self.perceptualSpace.subspace.wordEncoding)
-
-        # Register subspaces so Grammar can access Basis operations
-        TheGrammar.register_subspace('S', self.symbolicSpace.subspace)
         # Store SymbolicSpace ref for ternary lift (concept↔symbol projection)
-        TheGrammar._symbolic_space = self.symbolicSpace
+        # Use object.__setattr__ to avoid nn.Module circular submodule registration
+        # (SymbolicSpace → ConceptualSpace → SyntacticLayer → SymbolicSpace)
+        object.__setattr__(self.conceptualSpace.syntacticLayer, '_symbolic_space', self.symbolicSpace)
         self.conceptualSpace.subspace.basis.monotonic = False
-        TheGrammar.register_subspace('C', self.conceptualSpace.subspace)
-        TheGrammar.register_subspace('P', self.perceptualSpace.subspace)
 
         self.spaces.extend([
             self.inputSpace,
@@ -1568,13 +1556,12 @@ class MentalModel(BaseModel):
         self._universality_score = None
         truth_layer = getattr(self.symbolicSpace, 'truth', None)
         if truth_layer is not None and len(truth_layer) > 0:
-            from Space import TheGrammar
-            svo = getattr(TheGrammar, '_last_svo', None)
+            svo = self.conceptualSpace.last_svo
             if svo is not None:
                 s, v, o = svo
+                c_sl = self.conceptualSpace.syntacticLayer
                 self._universality_score = truth_layer.universality(
-                    s, v, o, TheGrammar.lifting_layer, self.symbolicSpace)
-                TheGrammar._last_svo = None  # consumed
+                    s, v, o, c_sl.lifting_layer, self.symbolicSpace)
 
         # 5. Final Concept -> Output
         outputData = self.Finish(concepts)

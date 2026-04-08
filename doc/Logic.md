@@ -340,9 +340,9 @@ Intermediate values (e.g., +0.5, -0.3) represent partial assertions with varying
 
 ## Magnitude Ordering
 
-The ordering relation ⊂ ("is a part of") is defined by magnitude:
+The ordering relation $\subset$ ("is a part of") is defined by magnitude:
 
-> x ⊂ y iff |x| < |y|
+> $x \subset y$ iff $|x| < |y|$
 
 This means "closer to zero" is "less than" in the radial sense. Zero is the weakest value; ±1 are the strongest.
 
@@ -356,8 +356,8 @@ RadMin is a binary operator representing conjunction. It collapses toward zero o
 
 **Definition:**
 
-- If sign(x) ≠ sign(y): RadMin(x, y) = 0
-- If sign(x) = sign(y): RadMin(x, y) = sign(x) · min(|x|, |y|)
+- If $\mathrm{sign}(x) \ne \mathrm{sign}(y)$: $\mathrm{RadMin}(x, y) = 0$
+- If $\mathrm{sign}(x) = \mathrm{sign}(y)$: $\mathrm{RadMin}(x, y) = \mathrm{sign}(x) \cdot \min(|x|, |y|)$
 
 **Truth Table (Ternary):**
 
@@ -381,8 +381,8 @@ RadMax is a binary operator representing disjunction. It collapses toward zero o
 
 **Definition:**
 
-- If sign(x) ≠ sign(y): RadMax(x, y) = 0
-- If sign(x) = sign(y): RadMax(x, y) = sign(x) · max(|x|, |y|)
+- If $\mathrm{sign}(x) \ne \mathrm{sign}(y)$: $\mathrm{RadMax}(x, y) = 0$
+- If $\mathrm{sign}(x) = \mathrm{sign}(y)$: $\mathrm{RadMax}(x, y) = \mathrm{sign}(x) \cdot \max(|x|, |y|)$
 - RadMax(x, 0) = x (zero is transparent / neutral for OR)
 
 **Truth Table (Ternary):**

@@ -29,9 +29,8 @@ def _reload_config():
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
     )
     from Space import TheGrammar
-    TheGrammar._layers_initialized = False
     TheGrammar._configured = False
-    TheGrammar.chunk_layer = None
+    TheGrammar._configured = False
 
 
 class TestMentalModelForwardReverse(unittest.TestCase):
@@ -72,14 +71,15 @@ class TestMentalModelForwardReverse(unittest.TestCase):
                 self.assertEqual(inputData.shape[0], 2)
 
     def test_grammar_has_syntactic_layers(self):
-        """TheGrammar has per-tier SyntacticLayers and methods after init_layers."""
+        """TheGrammar is initialized and Spaces own SyntacticLayers after init_layers."""
         _reload_config()
         model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
         from Space import TheGrammar
-        # Grammar should be initialized with per-tier layers
-        self.assertTrue(TheGrammar._layers_initialized)
-        self.assertIsNotNone(TheGrammar.c_syntactic_layer)
-        self.assertIsNotNone(TheGrammar.s_syntactic_layer)
+        # Grammar should be initialized
+        self.assertTrue(TheGrammar._configured)
+        # SyntacticLayers are now on the Spaces, not Grammar
+        self.assertIsNotNone(model.conceptualSpace.syntacticLayer)
+        self.assertIsNotNone(model.symbolicSpace.syntacticLayer)
         # C-tier methods (equals/part are on S-tier)
         self.assertNotIn('equals', TheGrammar.c_methods)
         self.assertNotIn('part', TheGrammar.c_methods)
@@ -89,15 +89,13 @@ class TestMentalModelForwardReverse(unittest.TestCase):
         self.assertIn('equals', TheGrammar.s_methods)
         self.assertIn('part', TheGrammar.s_methods)
 
-    def test_grammar_has_resetStack(self):
-        """TheGrammar.resetStack works for all tiers."""
+    def test_subspace_words_clearable(self):
+        """SubSpace word lists can be cleared on all tiers."""
         _reload_config()
         model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
-        from Space import TheGrammar
         # Should not raise
-        TheGrammar.resetStack('S')
-        TheGrammar.resetStack('C')
-        TheGrammar.resetStack('P')
+        for space in (model.symbolicSpace, model.conceptualSpace, model.perceptualSpace):
+            space.subspace.set_words([])
 
 
 class TestMentalModelGrammarConfiguration(unittest.TestCase):
@@ -135,14 +133,14 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
         self.assertEqual(len(TheGrammar.rules), 16)
         self.assertEqual(TheGrammar.interpretation, 0.5)
 
-        self.assertEqual(TheGrammar.s_syntactic_layer.all_rules, [1, 2, 3, 4, 5])
-        self.assertEqual(TheGrammar.s_syntactic_layer.transition_rule, 5)
+        self.assertEqual(model.symbolicSpace.syntacticLayer.all_rules, [1, 2, 3, 4, 5])
+        self.assertEqual(model.symbolicSpace.syntacticLayer.transition_rule, 5)
 
-        self.assertEqual(TheGrammar.c_syntactic_layer.all_rules, [6, 7, 8, 9, 10, 11, 12, 13])
-        self.assertEqual(TheGrammar.c_syntactic_layer.transition_rule, 13)
+        self.assertEqual(model.conceptualSpace.syntacticLayer.all_rules, [6, 7, 8, 9, 10, 11, 12, 13])
+        self.assertEqual(model.conceptualSpace.syntacticLayer.transition_rule, 13)
 
-        self.assertEqual(TheGrammar.p_syntactic_layer.all_rules, [14, 15])
-        self.assertIsNone(TheGrammar.p_syntactic_layer.transition_rule)
+        self.assertEqual(model.perceptualSpace.syntacticLayer.all_rules, [14, 15])
+        self.assertIsNone(model.perceptualSpace.syntacticLayer.transition_rule)
 
 
 if __name__ == '__main__':

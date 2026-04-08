@@ -72,9 +72,9 @@
   </architecture>
 
   <InputSpace>
-    <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
+    <nOutput>128</nOutput>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <lexer>sentence</lexer>

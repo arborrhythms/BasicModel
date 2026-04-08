@@ -84,7 +84,7 @@ and restricts the active rule set by left-hand side:
 - `<P>...</P>` entries become the active perceptual rule set
 
 Rules are specified in functional notation: `equals(S, S)`, `union(C, C)`,
-`swap(S, S)`, `true(S) EOF`, `I P`, `ε`, `P`, `C`.
+`swap(S, S)`, `true(S) EOF`, `I P`, $\varepsilon$, `P`, `C`.
 
 ---
 
@@ -104,7 +104,7 @@ By grammar tier, the current XML is:
 - **S:** `swap(S, S)`, `equals(S, S)`, `part(S, S)`, then transition $S \to C$
 - **C:** `union`, `intersection`, `lower`, `lift` (binary and unary), `not`,
   `non`, then transition $C \to P$
-- **P:** structural only: `I P` and `ε`
+- **P:** structural only: `I P` and $\varepsilon$
 
 ### Plain-English Summary
 
@@ -181,7 +181,7 @@ $$
 s(X) = 2 \cdot \mathrm{mean}(\lVert x_i \rVert) - 1 \quad \in [-1, 1]
 $$
 
-Interpretation: +1 → strong presence, 0 → neutral, −1 → absence.
+Interpretation: +1 → strong presence, 0 → neutral, -1 → absence.
 
 ### Symbolic Layer (Scalars in [-1,1])
 

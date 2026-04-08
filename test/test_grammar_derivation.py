@@ -45,9 +45,8 @@ def _make_model():
     _reload_config()
     from Space import TheGrammar
     # Force re-initialization in case previous tests set small test dimensions
-    TheGrammar._layers_initialized = False
     TheGrammar._configured = False
-    TheGrammar.chunk_layer = None
+    TheGrammar._configured = False
     model, _ = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
     return model, TheGrammar
 
@@ -63,6 +62,10 @@ class TestGrammarProject(unittest.TestCase):
         self.concept_dim = 100 + 4
         self.n_symbols = 128
         self.n_concepts = 256
+        self.s_sl = self.model.symbolicSpace.syntacticLayer
+        self.s_ss = self.model.symbolicSpace.subspace
+        self.c_sl = self.model.conceptualSpace.syntacticLayer
+        self.c_ss = self.model.conceptualSpace.subspace
 
     def test_project_swap_returns_tensor(self):
         """swap(S, S) produces output of same shape."""
@@ -70,7 +73,7 @@ class TestGrammarProject(unittest.TestCase):
         left = torch.randn(B, self.n_symbols, device=TheDevice.get())
         right = torch.randn(B, self.n_symbols, device=TheDevice.get())
         # Rule 1: S → swap(S, S)
-        result = self.grammar.project('S', 1, left, right)
+        result = self.s_sl.project(self.grammar, 1, left, right)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_equals_returns_tensor(self):
@@ -78,7 +81,7 @@ class TestGrammarProject(unittest.TestCase):
         B = 2
         left = torch.randn(B, self.n_symbols, device=TheDevice.get())
         right = torch.randn(B, self.n_symbols, device=TheDevice.get())
-        result = self.grammar.project('S', 2, left, right)
+        result = self.s_sl.project(self.grammar, 2, left, right)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_part_returns_tensor(self):
@@ -86,14 +89,14 @@ class TestGrammarProject(unittest.TestCase):
         B = 2
         left = torch.randn(B, self.n_symbols, device=TheDevice.get())
         right = torch.randn(B, self.n_symbols, device=TheDevice.get())
-        result = self.grammar.project('S', 3, left, right)
+        result = self.s_sl.project(self.grammar, 3, left, right)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_transition_is_passthrough(self):
         """S → C transition passes operand through unchanged."""
         B = 2
         left = torch.randn(B, self.n_symbols, device=TheDevice.get())
-        result = self.grammar.project('S', 4, left)
+        result = self.s_sl.project(self.grammar, 4, left)
         self.assertTrue(torch.equal(result, left))
 
     def test_project_union_c_tier(self):
@@ -101,7 +104,7 @@ class TestGrammarProject(unittest.TestCase):
         B = 2
         left = torch.randn(B, self.n_concepts, self.concept_dim, device=TheDevice.get())
         right = torch.randn(B, self.n_concepts, self.concept_dim, device=TheDevice.get())
-        result = self.grammar.project('C', 5, left, right)
+        result = self.c_sl.project(self.grammar, 5, left, right)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_intersection_c_tier(self):
@@ -109,28 +112,28 @@ class TestGrammarProject(unittest.TestCase):
         B = 2
         left = torch.randn(B, self.n_concepts, self.concept_dim, device=TheDevice.get())
         right = torch.randn(B, self.n_concepts, self.concept_dim, device=TheDevice.get())
-        result = self.grammar.project('C', 6, left, right)
+        result = self.c_sl.project(self.grammar, 6, left, right)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_not_c_tier(self):
         """not(C) produces output of same shape."""
         B = 2
         left = torch.randn(B, self.n_concepts, self.concept_dim, device=TheDevice.get())
-        result = self.grammar.project('C', 10, left)
+        result = self.c_sl.project(self.grammar, 10, left)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_non_c_tier(self):
         """non(C) produces output of same shape."""
         B = 2
         left = torch.randn(B, self.n_concepts, self.concept_dim, device=TheDevice.get())
-        result = self.grammar.project('C', 11, left)
+        result = self.c_sl.project(self.grammar, 11, left)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_lower_c_tier(self):
         """lower(C) produces output of same shape."""
         B = 2
         left = torch.randn(B, self.n_concepts, self.concept_dim, device=TheDevice.get())
-        result = self.grammar.project('C', 7, left)
+        result = self.c_sl.project(self.grammar, 7, left)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_lift_binary_c_tier(self):
@@ -138,39 +141,43 @@ class TestGrammarProject(unittest.TestCase):
         B = 2
         left = torch.randn(B, self.n_concepts, self.concept_dim, device=TheDevice.get())
         right = torch.randn(B, self.n_concepts, self.concept_dim, device=TheDevice.get())
-        result = self.grammar.project('C', 8, left, right)
+        result = self.c_sl.project(self.grammar, 8, left, right)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_lift_unary_c_tier(self):
         """lift(C) produces output of same shape."""
         B = 2
         left = torch.randn(B, self.n_concepts, self.concept_dim, device=TheDevice.get())
-        result = self.grammar.project('C', 9, left)
+        result = self.c_sl.project(self.grammar, 9, left)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_true_s_tier(self):
         """true(S) produces output of same shape."""
         B = 2
         left = torch.randn(B, self.n_symbols, device=TheDevice.get())
-        result = self.grammar.project('S', 0, left)
+        result = self.s_sl.project(self.grammar, 0, left)
         self.assertEqual(result.shape, left.shape)
 
     def test_all_methods_dispatched(self):
-        """Every method_name in _GRAMMAR_METHODS is exercised by some rule."""
+        """Every method_name maps to Grammar._GRAMMAR_METHODS or a SyntacticLayer subclass."""
         dispatched = set()
         for rule in self.grammar.rules:
             if rule.method_name:
                 dispatched.add(rule.method_name)
-        expected = set(self.grammar._GRAMMAR_METHODS.keys())
-        self.assertTrue(dispatched.issubset(expected),
-                        f"Unknown methods: {dispatched - expected}")
+        # Stateless methods on Grammar
+        grammar_methods = set(self.s_sl._RULE_METHODS.keys())
+        # Parametric methods on SyntacticLayer subclasses
+        subclass_methods = {'swap', 'lift', 'lower', 'non'}
+        all_known = grammar_methods | subclass_methods
+        self.assertTrue(dispatched.issubset(all_known),
+                        f"Unknown methods: {dispatched - all_known}")
         # chunk is P-tier; all others should be covered by rules
-        self.assertTrue(expected.issubset(dispatched | {'chunk'}),
-                        f"Untested methods: {expected - dispatched}")
+        self.assertTrue(all_known.issubset(dispatched | {'chunk'}),
+                        f"Untested methods: {all_known - dispatched}")
 
 
 class TestGrammarShiftReduceStack(unittest.TestCase):
-    """Grammar.forward() applies rules and records words on subspace."""
+    """SyntacticLayer.compose() applies rules and records words on subspace."""
 
     def setUp(self):
         self.model, self.grammar = _make_model()
@@ -178,71 +185,73 @@ class TestGrammarShiftReduceStack(unittest.TestCase):
         self.concept_dim = 100 + 4
         self.n_symbols = 128
         self.n_concepts = 256
+        self.s_sl = self.model.symbolicSpace.syntacticLayer
+        self.c_sl = self.model.conceptualSpace.syntacticLayer
+        self.p_sl = self.model.perceptualSpace.syntacticLayer
 
     def _make_ss(self, shape):
         from Space import SubSpace
         return SubSpace(inputShape=shape, outputShape=shape)
 
     def test_symbolic_forward_shape(self):
-        """forward('S', ...) returns same shape activation."""
+        """compose('S', ...) returns same shape activation."""
         ss = self._make_ss([self.n_symbols, 1])
         act = torch.zeros(1, self.n_symbols, device=TheDevice.get())
         act[0, 3] = 1.0
-        result = self.grammar.forward('S', act, ss)
+        result = self.s_sl.compose(act, ss, self.grammar)
         self.assertEqual(result.shape, (1, self.n_symbols))
 
     def test_symbolic_forward_two_active(self):
-        """forward('S', ...) works with two active positions."""
+        """compose('S', ...) works with two active positions."""
         ss = self._make_ss([self.n_symbols, 1])
         act = torch.zeros(1, self.n_symbols, device=TheDevice.get())
         act[0, 2] = 1.0
         act[0, 5] = 1.0
-        result = self.grammar.forward('S', act, ss)
+        result = self.s_sl.compose(act, ss, self.grammar)
         self.assertEqual(result.shape, (1, self.n_symbols))
 
     def test_conceptual_forward_shape(self):
-        """forward('C', ...) returns same shape vectors."""
+        """compose('C', ...) returns same shape vectors."""
         ss = self._make_ss([self.n_concepts, self.concept_dim])
         vec = torch.randn(1, self.n_concepts, self.concept_dim, device=TheDevice.get())
         vec[0, 3:] = 0.0  # 3 active positions
-        result = self.grammar.forward('C', vec, ss)
+        result, _ = self.c_sl.compose(vec, ss, self.grammar)
         self.assertEqual(result.shape, (1, self.n_concepts, self.concept_dim))
 
     def test_conceptual_forward_records_words(self):
-        """forward('C', ...) records words on the subspace."""
+        """compose('C', ...) records words on the subspace."""
         ss = self._make_ss([self.n_concepts, self.concept_dim])
         vec = torch.randn(1, self.n_concepts, self.concept_dim, device=TheDevice.get())
         # Make one position negative-mean to trigger not()
         vec[0, 0] = -torch.abs(vec[0, 0])
         vec[0, 1:] = 0.0
-        self.grammar.forward('C', vec, ss)
+        _, _ = self.c_sl.compose(vec, ss, self.grammar)
         words = ss.get_words()
         self.assertGreater(len(words), 0)
 
     def test_perceptual_forward_shape(self):
-        """forward('P', ...) returns same shape vectors."""
+        """compose('P', ...) returns same shape vectors."""
         n_percepts = 128
         ss = self._make_ss([n_percepts, self.symbol_dim])
         vec = torch.randn(1, n_percepts, self.symbol_dim, device=TheDevice.get())
         vec[0, 4:] = 0.0
-        result = self.grammar.forward('P', vec, ss)
+        result = self.p_sl.compose(vec, ss, self.grammar)
         self.assertEqual(result.shape, (1, n_percepts, self.symbol_dim))
 
     def test_reset_clears_stacks(self):
-        """resetStack clears all tier stacks."""
-        self.grammar._s_stack = [torch.zeros(1, 8)]
-        self.grammar._s_words = [(0, 1, 2)]
-        self.grammar.resetStack('S')
-        self.assertEqual(len(self.grammar._s_stack), 0)
-        self.assertEqual(len(self.grammar._s_words), 0)
+        """SubSpace.set_words([]) clears the word list."""
+        ss = self._make_ss([self.n_symbols, 1])
+        ss.word = [(0, 1, 2)]
+        ss.set_words([])
+        self.assertEqual(len(ss.get_words()), 0)
 
     def test_multiple_symbolic_forward_calls(self):
-        """Multiple forward('S', ...) calls work without error."""
+        """Multiple compose() calls work without error."""
         for _ in range(3):
             ss = self._make_ss([self.n_symbols, 1])
             act = torch.zeros(1, self.n_symbols, device=TheDevice.get())
             act[0, torch.randint(self.n_symbols, (1,))] = 1.0
-            self.grammar.forward('S', act, ss)
+            self.s_sl.compose(act, ss, self.grammar)
 
 
 class TestGrammarConfigure(unittest.TestCase):
@@ -250,7 +259,7 @@ class TestGrammarConfigure(unittest.TestCase):
 
     def test_configure_from_dict(self):
         """configure() builds correct RuleDefs from a grammar dict."""
-        g = Grammar(lazy_init=False)
+        g = Grammar()
         g.configure({
             'START': ['true(S) EOF'],
             'S': ['swap(S, S)', 'equals(S, S)', 'C'],
@@ -279,7 +288,7 @@ class TestGrammarConfigure(unittest.TestCase):
 
     def test_interpretation_from_xml_config(self):
         """interpretation is read from mentalModel.interpretation, not grammar dict."""
-        g = Grammar(lazy_init=False)
+        g = Grammar()
         g.configure({
             'START': ['true(S) EOF'],
             'S': ['C'],
@@ -293,7 +302,7 @@ class TestGrammarConfigure(unittest.TestCase):
 
     def test_configure_single_string_rule(self):
         """configure() handles a single string (not list) for a tier."""
-        g = Grammar(lazy_init=False)
+        g = Grammar()
         g.configure({
             'START': 'true(S) EOF',
             'S': 'C',
@@ -304,7 +313,7 @@ class TestGrammarConfigure(unittest.TestCase):
 
     def test_tier_queries(self):
         """symbolic(), conceptual(), perceptual() return correct indices."""
-        g = Grammar(lazy_init=False)
+        g = Grammar()
         g.configure({
             'START': ['true(S) EOF'],
             'S': ['swap(S, S)', 'equals(S, S)', 'C'],
@@ -330,7 +339,7 @@ class TestGrammarConfigure(unittest.TestCase):
 
     def test_binary_rules(self):
         """binary_rules() returns only arity-2 rule indices."""
-        g = Grammar(lazy_init=False)
+        g = Grammar()
         g.configure({
             'START': ['true(S) EOF'],
             'S': ['swap(S, S)', 'C'],
@@ -345,7 +354,7 @@ class TestGrammarConfigure(unittest.TestCase):
 
     def test_transitions(self):
         """symbolic_transition() and conceptual_transition() find correct rules."""
-        g = Grammar(lazy_init=False)
+        g = Grammar()
         g.configure({
             'START': ['true(S) EOF'],
             'S': ['swap(S, S)', 'C'],
@@ -407,14 +416,13 @@ class TestMentalModelWithGrammar(unittest.TestCase):
                 sym_act = self.model.symbols.get_activation()
 
                 if sym_act is not None:
-                    ss = SubSpace(
-                        inputShape=[sym_act.shape[1], 1],
-                        outputShape=[sym_act.shape[1], 1])
-                    result = TheGrammar.forward('S', sym_act, ss)
+                    sl = self.model.symbolicSpace.syntacticLayer
+                    ss = self.model.symbolicSpace.subspace
+                    result = sl.compose(sym_act, ss, TheGrammar)
                     self.assertEqual(result.shape[0], 2)  # batch=2
 
     def test_grammar_derivation_c_tier(self):
-        """Drive Grammar.forward() on C-tier with concept vectors."""
+        """Drive ConceptualSyntacticLayer.compose() on C-tier with concept vectors."""
         sentences = ['the cat sat on the mat']
         outputs = [torch.tensor([0.0])]
 
@@ -434,10 +442,9 @@ class TestMentalModelWithGrammar(unittest.TestCase):
                 con_vec = self.model.concepts.materialize()
 
                 if con_vec is not None:
-                    ss = SubSpace(
-                        inputShape=list(con_vec.shape[1:]),
-                        outputShape=list(con_vec.shape[1:]))
-                    result = TheGrammar.forward('C', con_vec, ss)
+                    sl = self.model.conceptualSpace.syntacticLayer
+                    ss = self.model.conceptualSpace.subspace
+                    result, _ = sl.compose(con_vec, ss, TheGrammar)
                     self.assertEqual(result.ndim, 3)  # [B, N, D]
 
     def test_word_rule_ids_are_global(self):
@@ -458,14 +465,12 @@ class TestMentalModelWithGrammar(unittest.TestCase):
             with torch.no_grad():
                 self.model.forward(x)
 
-                # S-tier derivation via current API
-                from Space import SubSpace
+                # S-tier derivation via SyntacticLayer
                 sym_act = self.model.symbols.get_activation()
                 if sym_act is not None:
-                    ss = SubSpace(
-                        inputShape=[sym_act.shape[1], 1],
-                        outputShape=[sym_act.shape[1], 1])
-                    TheGrammar.forward('S', sym_act, ss)
+                    sl = self.model.symbolicSpace.syntacticLayer
+                    ss = self.model.symbolicSpace.subspace
+                    sl.compose(sym_act, ss, TheGrammar)
                     words = ss.get_words()
                     num_rules = len(TheGrammar.rules)
                     for word in words:
