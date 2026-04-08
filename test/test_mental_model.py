@@ -116,6 +116,7 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
         "C → union(C, C)",
         "C → lower(C, C)",
         "C → lift(C, C)",
+        "C → lift(C, C, C)",
         "C → P",
         "P → chunk(I, P)",
         "P → I",
@@ -131,16 +132,16 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
 
         canonicals = [rule.canonical for rule in TheGrammar.rules]
         self.assertEqual(canonicals, self.EXPECTED_RULES)
-        self.assertEqual(len(TheGrammar.rules), 15)
+        self.assertEqual(len(TheGrammar.rules), 16)
         self.assertEqual(TheGrammar.interpretation, 0.5)
 
         self.assertEqual(TheGrammar.s_syntactic_layer.all_rules, [1, 2, 3, 4, 5])
         self.assertEqual(TheGrammar.s_syntactic_layer.transition_rule, 5)
 
-        self.assertEqual(TheGrammar.c_syntactic_layer.all_rules, [6, 7, 8, 9, 10, 11, 12])
-        self.assertEqual(TheGrammar.c_syntactic_layer.transition_rule, 12)
+        self.assertEqual(TheGrammar.c_syntactic_layer.all_rules, [6, 7, 8, 9, 10, 11, 12, 13])
+        self.assertEqual(TheGrammar.c_syntactic_layer.transition_rule, 13)
 
-        self.assertEqual(TheGrammar.p_syntactic_layer.all_rules, [13, 14])
+        self.assertEqual(TheGrammar.p_syntactic_layer.all_rules, [14, 15])
         self.assertIsNone(TheGrammar.p_syntactic_layer.transition_rule)
 
 

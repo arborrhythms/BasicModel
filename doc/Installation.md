@@ -9,7 +9,7 @@
 ## Setup
 
 ```bash
-make venv   # creates .venv with dependencies
+make install   # creates .venv with dependencies
 ```
 
 This installs all Python dependencies (including PyTorch) into a
@@ -59,8 +59,9 @@ environment manually.
 | `make doc_pdf` | Generate `BasicModel.pdf` from doc chapters via pandoc |
 
 The PDF is assembled from the following chapters in order:
-`README.md`, `doc/CognitiveScienceSociety.md`, `doc/Architecture.md`,
-`doc/BasicModel.md`, `doc/MachineMinds.md`, `doc/Params.md`.
+`README.md`, `doc/Architecture.md`, `doc/BasicModel.md`, `doc/Spaces.md`,
+`doc/Language.md`, `doc/Logic.md`, `doc/Ergodic.md`, `doc/Training.md`,
+`doc/MachineMinds.md`, `doc/Params.md`, `doc/Installation.md`.
 
 ### Utilities
 

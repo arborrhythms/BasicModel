@@ -273,8 +273,8 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
     # ── Toy rules: what MentalModel.xml defines ──────────────────────
 
     def test_total_rule_count(self):
-        """MentalModel.xml defines 15 rules (1 START + 5 S + 7 C + 2 P)."""
-        self.assertEqual(len(self.grammar.rules), 15)
+        """MentalModel.xml defines 16 rules (1 START + 5 S + 8 C + 2 P)."""
+        self.assertEqual(len(self.grammar.rules), 16)
 
     def test_s_tier_rules(self):
         """S-tier: true(S), swap(S,S), equals(S,S), part(S,S), S→C transition."""
@@ -287,7 +287,7 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         self.assertEqual(len(s_rules), 5)
 
     def test_c_tier_rules(self):
-        """C-tier: non(C), not(C), intersection(C,C), union(C,C), lower(C,C), lift(C,C), C→P transition."""
+        """C-tier: non, not, intersection, union, lower, lift(binary+ternary), C→P transition."""
         c_rules = [(r.method_name, r.arity) for r in self.grammar.rules if r.tier == 'C']
         self.assertIn(('non', 1), c_rules)
         self.assertIn(('not', 1), c_rules)
@@ -295,8 +295,9 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         self.assertIn(('union', 2), c_rules)
         self.assertIn(('lower', 2), c_rules)
         self.assertIn(('lift', 2), c_rules)
+        self.assertIn(('lift', 3), c_rules)
         self.assertIn((None, 1), c_rules, "Missing C→P transition rule")
-        self.assertEqual(len(c_rules), 7)
+        self.assertEqual(len(c_rules), 8)
 
     def test_p_tier_rules(self):
         """P-tier: chunk(I,P) from 'I P', terminal 'I'."""
@@ -325,7 +326,7 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         c_ids = self.grammar.conceptual()
         for i in c_ids:
             self.assertEqual(self.grammar.rules[i].tier, 'C')
-        self.assertEqual(len(c_ids), 7)
+        self.assertEqual(len(c_ids), 8)
 
     def test_perceptual_indices(self):
         """grammar.perceptual() returns exactly the P-tier rule indices."""

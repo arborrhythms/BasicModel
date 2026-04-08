@@ -25,7 +25,7 @@ totalLoss = (1 - reconRatio) * outputLoss + reconRatio * reconstructionLoss
 | **InputSpace** | Lifts raw data into working dimensionality | LiftingLayer | nActive, nDim, nVectors |
 | **PerceptualSpace** | Multiplicative feature extraction | PiLayer | nActive, nDim, nVectors, invertible |
 | **ConceptualSpace** | Additive abstraction | SigmaLayer | nActive, nDim, nVectors, invertible |
-| **SymbolicSpace** | Discrete activation bottleneck | InvertibleLinearLayer + Codebook | nActive, nVectors, passThrough, quantized |
+| **SymbolicSpace** | Discrete activation bottleneck | PiLayer (monotonic, invertible) + Codebook | nActive, nVectors, passThrough, quantized |
 | **SyntacticSpace** | Binary derivation tree (CNF grammar) | Grammar + WordEncoding | nActive, nDim, nVectors |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
@@ -115,10 +115,10 @@ accumulate across epochs):
 1. Forward pass: input → prediction + `end_state`
 2. Compute `outputLoss` from prediction vs. target
 3. Reverse pass: `end_state` → reconstructed input
-4. Compute `reconstructionLoss` from reconstruction vs. `end_state`
+4. Compute `reconstructionLoss` from reconstruction vs. original input
 5. Backpropagate `totalLoss = (1 - reconRatio) * outputLoss + reconRatio * reconstructionLoss`
 6. If ergodic: run `paramUpdate()` (gradient energy sensor updates alpha)
-7. Optimizer step (embedding params excluded when `trainEmbedding` is `NONE` or `ARLM`)
+7. Optimizer step (embedding params excluded when `trainEmbedding` is `NONE`, `CBOW`, or `SBOW`)
 8. If `trainEmbedding` is `CBOW`, `SBOW`, or `BOTH`: run embedding update step on same sentence
 
 Alpha annealing (ergodic mode): the code-level exploration parameter starts at

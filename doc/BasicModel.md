@@ -26,7 +26,7 @@ Inputs and outputs derive from a real space that is ineffable. This essay merely
 
 The adaptable parameters of a mind are initially zero, a state known as *tabula rosa*. Learning is initiated by random perturbations of a map relative to its territory, and the degree of that exploration is referred to as *temperature*.
 
-Inputs are scaled to `[0, 1]` via the global data min/max. They are nonnegative because negative entities do not exist. To paraphrase Saint Augustine, *negative is the privation of the positive*.
+Inputs are scaled to `[-1, 1]` via the global data min/max. The signed range allows the network to represent both presence and absence symmetrically, while the philosophical point remains: to paraphrase Saint Augustine, *negative is the privation of the positive*.
 
 Outputs and Inputs are dehumanizing terms: the world is a living world, so it helps to call outputs "actions" and inputs "experiences". When minds perceive and act within the world, their mistakes are called expectation errors and performance errors.
 

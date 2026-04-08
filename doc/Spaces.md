@@ -241,7 +241,7 @@ See [Language.md](Language.md) for the full language system design.
 **Forward operation (quantized=True).**
 
 1. Extract concept activation `[B, nConcepts]` from the input subspace.
-2. Map through `InvertibleLinearLayer(nConcepts, nSymbols)` to `[B, nSymbols]`.
+2. Map through `PiLayer(nConcepts, nSymbols, invertible=True, monotonic=True)` to `[B, nSymbols]`.
 3. Store as symbolic presence `[0, 1]` via `set_symbols()`.
 4. Reshape to `[B, nSymbols, 1]` (each symbol is 1-dim) and pass through the
    codebook, which quantizes and produces a one-hot activation over codebook
@@ -250,12 +250,12 @@ See [Language.md](Language.md) for the full language system design.
 The output is a one-hot encoding over the codebook. The codebook provides dense
 vectors for downstream spaces that require `[B, N, D]` tensors.
 
-**Forward operation (quantized=False).** The invertible layer maps the activation
+**Forward operation (quantized=False).** The PiLayer maps the activation
 to symbolic presence via `set_symbols()`; vectors pass through from the input
 subspace unchanged.
 
 **Reverse operation.** Reads symbolic presence via `get_symbols()`, then the
-invertible layer's exact inverse maps `[B, nSymbols]` back to `[B, nConcepts]`,
+PiLayer's exact inverse maps `[B, nSymbols]` back to `[B, nConcepts]`,
 recovering the concept activation.
 
 **passThrough=True.** Concept vectors and activation pass through unchanged.
@@ -276,10 +276,12 @@ most highly active; negative products never activate). Each symbol receives wher
 encoding from PerceptualSpace, making symbols uniform with percepts. Internally stored
 as activation in `[-1, 1]` via the `(x+1)/2` mapping.
 
-**Layer.** `InvertibleLinearLayer(nConcepts, nSymbols)` — maps between
-activation spaces of different lengths. Exact inverse via LDU factorisation.
+**Layer.** `PiLayer(nConcepts, nSymbols, invertible=True, monotonic=True)` — maps
+between activation spaces via monotonic multiplicative transform. The `monotonic=True`
+constraint ensures weights $W \geq 0$, preserving ordering. Exact inverse via the
+internal `InvertibleLinearLayer` (LDU factorisation).
 
-**Invertibility.** Exactly invertible via the invertible layer's reverse.
+**Invertibility.** Exactly invertible via the PiLayer's reverse path.
 
 ---
 

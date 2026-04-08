@@ -16,6 +16,9 @@
     <certainty>false</certainty>
     <modelType>embedding</modelType>
     <maskedPrediction>ARLM</maskedPrediction>
+    <truthBiasScale>0.1</truthBiasScale>
+    <LuminosityWeight>0.1</LuminosityWeight>
+    <UniversalityWeight>0.1</UniversalityWeight>
     <maxResponseLength>4096</maxResponseLength>
     <weightsPath>MentalModel.ckpt</weightsPath>
     <embeddingPath>MentalModel.kv</embeddingPath>
@@ -58,6 +61,7 @@
         <C>union(C, C)</C>
         <C>lower(C, C)</C>
         <C>lift(C, C)</C>
+        <C>lift(C, C, C)</C>
         <C>P</C>
         <P>I P</P>
         <P>I</P>

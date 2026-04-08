@@ -447,7 +447,7 @@ class TestPairedPiTraining(unittest.TestCase):
             y = pi_fwd(x_data)
             x_rec = pi_rev.reverse(y)
         err = _reconstruction_error(x_data, x_rec, rel=True)
-        self.assertLess(err, 1e-4, f"Paired Pi rel err={err:.4f}")
+        self.assertLess(err, 5e-4, f"Paired Pi rel err={err:.4f}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════

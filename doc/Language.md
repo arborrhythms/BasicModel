@@ -446,18 +446,18 @@ and its parameters are trained end-to-end via the reconstruction loss.
 ### Forward Path
 
 1. Extract concept activation $[B, n_{\text{Concepts}}]$.
-2. Map through `InvertibleLinearLayer` to $[B, n_{\text{Symbols}}]$.
+2. Map through `PiLayer(monotonic=True, invertible=True)` to $[B, n_{\text{Symbols}}]$.
 3. Codebook quantization (when enabled) produces one-hot activation + vectors.
 
 ### Reverse Path
 
 1. Extract symbol activation $[B, n_{\text{Symbols}}]$.
-2. Exact inverse of the invertible layer recovers $[B, n_{\text{Concepts}}]$.
+2. Exact inverse of the PiLayer recovers $[B, n_{\text{Concepts}}]$.
 
 ### Key Properties
 
 - Symbols are **zero-dimensional** — pure activation scalars, not vectors.
-- The invertible layer allows $n_{\text{Concepts}} \neq n_{\text{Symbols}}$.
+- The PiLayer allows $n_{\text{Concepts}} \neq n_{\text{Symbols}}$.
 - `composeSyntax()` runs the symbolic SyntacticLayer and executes the soft
   superposition of swap/equals/part projections.
 

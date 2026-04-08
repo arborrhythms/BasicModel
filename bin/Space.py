@@ -2572,6 +2572,10 @@ class Grammar(nn.Module):
         self._layers_initialized = False
         # Subspaces — registered by spaces after init_layers
         self._subspaces = {}
+        # SymbolicSpace ref for ternary lift (concept↔symbol projection)
+        self._symbolic_space = None
+        # Last SVO tensors from ternary lift (for universality eval)
+        self._last_svo = None
         # Chunk codebook — created lazily when P-tier has chunk rules
         self.chunk_layer = None
         # Non threshold — learnable gate for non() rule (sigmoid → 0.5 default)
@@ -2683,8 +2687,21 @@ class Grammar(nn.Module):
             M = M - M.logsumexp(dim=-2, keepdim=True)
         return M.exp()
 
-    def _method_lift(self, left, right, tier):
-        """Lift via verb codebook: VP selects a [D,D] matrix applied to NP."""
+    def _method_lift(self, left, right, tier_or_third, tier=None):
+        """Lift via verb codebook.
+
+        Binary  lift(S, V):    intransitive — VP selects [D,D] matrix, self-applied.
+        Ternary lift(S, V, O): transitive — object restricts verb via symbol
+                               intersection, then applies to subject.
+        """
+        if isinstance(tier_or_third, torch.Tensor):
+            # Ternary: tier_or_third is the object concepts
+            obj = tier_or_third
+            self._last_svo = (left.detach(), right.detach(), obj.detach())
+            return self.lifting_layer.forward_transitive_svo(
+                left, right, obj, self._symbolic_space)
+
+        # Binary: tier_or_third is the tier string (intransitive)
         vp_query = right.mean(dim=1) if right.ndim == 3 else right
         if right is not None:
             return self.lifting_layer.forward_transitive(left, right, vp_query)[0]
@@ -2906,10 +2923,11 @@ class Grammar(nn.Module):
 
     # ── Rule execution ────────────────────────────────────────────────
 
-    def project(self, tier, rule_id, left, right=None):
-        """Execute a grammar rule on left (and right) operands.
+    def project(self, tier, rule_id, left, right=None, third=None):
+        """Execute a grammar rule on left (and optionally right/third) operands.
 
         All methods are dispatched via _GRAMMAR_METHODS.
+        Ternary rules (arity=3) pass *third* as a positional argument.
         """
         method_name = self.rules[rule_id].method_name
         if method_name is None:
@@ -2918,6 +2936,9 @@ class Grammar(nn.Module):
         if method_name in self._GRAMMAR_METHODS:
             fn_name, binary = self._GRAMMAR_METHODS[method_name]
             fn = getattr(self, fn_name)
+            arity = self.rules[rule_id].arity
+            if arity == 3 and third is not None:
+                return fn(left, right, third, tier)
             if binary:
                 if right is not None:
                     return fn(left, right, tier)
@@ -3123,16 +3144,22 @@ class Grammar(nn.Module):
 
         composed = leaf_vecs[:, 0, :, :]  # start with first leaf
 
-        for d in range(min(sl.max_depth, max(max_leaves - 1, 1))):
-            if d + 1 >= max_leaves:
-                break
+        d = 0
+        leaf_idx = 1  # next leaf to consume
+        while d < sl.max_depth and leaf_idx < max_leaves:
             left = composed
-            right = leaf_vecs[:, d + 1, :, :]
+            right = leaf_vecs[:, leaf_idx, :, :]
+
+            # Check if a ternary rule can fire (needs one more leaf)
+            has_third = leaf_idx + 1 < max_leaves
 
             results = []
             for global_id in composable_global:
                 a = self.arity(global_id)
-                if a == 2:
+                if a == 3 and has_third:
+                    third = leaf_vecs[:, leaf_idx + 1, :, :]
+                    result = self.project('C', global_id, left, right, third)
+                elif a == 2:
                     result = self.project('C', global_id, left, right)
                 else:
                     result = self.project('C', global_id, left)
@@ -3149,9 +3176,16 @@ class Grammar(nn.Module):
 
             # Record argmax rule as word
             best = probs_d.squeeze(-1).squeeze(-1).argmax(dim=-1)  # [B]
+            best_global = composable_global[best[0].item()]
             for b in range(B):
                 if d < len(active_positions[b]):
-                    subspace.add_word(b, active_positions[b][d], composable_global[best[b].item()])
+                    subspace.add_word(b, active_positions[b][min(d, len(active_positions[b]) - 1)],
+                                      composable_global[best[b].item()])
+
+            # Advance: ternary rules consume 2 leaves, others consume 1
+            best_arity = self.arity(best_global)
+            leaf_idx += (2 if best_arity == 3 and has_third else 1)
+            d += 1
 
         return composed
 

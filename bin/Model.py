@@ -1470,6 +1470,55 @@ class LiftingLayer(Layer):
         attended = torch.bmm(C1, vp_eff)                 # [B, N, D]
         return C1 + attended
 
+    def forward_transitive_svo(self, subject, verb, obj, symbolic_space):
+        """Ternary LIFT: S V O.
+
+        The object restricts the verb's lifting operation by intersecting
+        verb symbols with object symbols in symbolic space, then mapping
+        the restricted action back to conceptual space and applying it
+        to the subject.
+
+        PiLayer maps concept *activations* [B, nConcepts] → [B, nSymbols],
+        so we first extract activations from the [B, N, D] concept tensors
+        using the SubSpace norm/sqrt(D) convention, scaled to [-1, 1].
+
+        Args:
+            subject: [B, N, D] subject concepts (S).
+            verb: [B, N, D] verb concepts (V).
+            obj: [B, N, D] object concepts (O).
+            symbolic_space: SymbolicSpace for concept<->symbol projection.
+        Returns:
+            [B, N, D] lifted subject concepts.
+        """
+        pi = symbolic_space.layer
+        D = verb.shape[-1]
+
+        # 1. Extract PiLayer-compatible activations from concept tensors
+        #    Convention: norm/sqrt(D) ∈ [0,1] → 2x-1 ∈ [-1,1]
+        verb_act = (2 * verb.norm(dim=-1) / math.sqrt(D) - 1).clamp(-0.999, 0.999)
+        obj_act = (2 * obj.norm(dim=-1) / math.sqrt(D) - 1).clamp(-0.999, 0.999)
+
+        # 2. Project activations to symbolic space via PiLayer
+        verb_syms = pi.forward(verb_act)                  # [B, nSymbols]
+        obj_syms = pi.forward(obj_act)                    # [B, nSymbols]
+
+        # 3. Intersect: restrict verb by object (monotonic → min)
+        restricted_syms = torch.min(verb_syms, obj_syms)  # [B, nSymbols]
+
+        # 4. Map restricted symbols back to concept activation space
+        restricted_acts = pi.reverse(restricted_syms)     # [B, nConcepts]
+        restricted_w = (restricted_acts + 1) / 2          # → [0, 1] weights
+
+        # 5. Weight verb content by restricted activations → query
+        query = (verb * restricted_w.unsqueeze(-1)).mean(dim=1)  # [B, D]
+
+        # 6. Select verb matrix using restricted concepts as query
+        vp_eff = self._select_vp(query)                   # [B, D, D]
+
+        # 5. Apply to subject
+        fwd = torch.bmm(subject, vp_eff)                   # [B, N, D]
+        return subject + fwd
+
     @staticmethod
     def test():
         device = TheDevice.get()
@@ -1500,6 +1549,28 @@ class LiftingLayer(Layer):
         out.sum().backward()
         assert C1_grad.grad is not None, "no gradient on C1"
         assert q_grad.grad is not None, "no gradient on query"
+
+        # ── Ternary SVO ──────────────────────────────────────────
+        # Mock symbolic space: PiLayer maps activations [B, N] → [B, nSym]
+        class _MockSymSpace:
+            pass
+        mock_ss = _MockSymSpace()
+        mock_ss.layer = PiLayer(N, N, monotonic=True, invertible=True)
+        S = torch.randn(B, N, D, device=device)
+        V = torch.randn(B, N, D, device=device)
+        O = torch.randn(B, N, D, device=device)
+        result = layer.forward_transitive_svo(S, V, O, mock_ss)
+        assert result.shape == (B, N, D), f"SVO shape: {result.shape}"
+
+        # Gradient flow through SVO
+        S_g = S.clone().requires_grad_(True)
+        V_g = V.clone().requires_grad_(True)
+        O_g = O.clone().requires_grad_(True)
+        out_svo = layer.forward_transitive_svo(S_g, V_g, O_g, mock_ss)
+        out_svo.sum().backward()
+        assert S_g.grad is not None, "no gradient on subject"
+        assert V_g.grad is not None, "no gradient on verb"
+        assert O_g.grad is not None, "no gradient on object"
 
         print("LiftingLayer tests passed.")
 class LoweringLayer(Layer):
@@ -1704,6 +1775,198 @@ class TruthLayer(Layer):
 
         return truth_field.clamp(-1.0, 1.0)
 
+    # ── Luminosity ─────────────────────────────────────────────────────
+
+    def luminosity(self, pi_layer=None) -> torch.Tensor:
+        """Compute luminosity: ||min(truths)||.
+
+        Takes the element-wise min across all stored truth activations
+        (conjunction in conceptual space), then returns the L2 norm.
+
+        High luminosity = coherent, consistent truth set (bright).
+        Low luminosity  = contradictory or sparse truths (dim).
+
+        Args:
+            pi_layer: optional PiLayer to project from symbolic to
+                      conceptual dim before computing the conjunction.
+
+        Returns:
+            Scalar luminosity value >= 0.
+        """
+        n = self.count.item()
+        if n == 0:
+            return torch.tensor(0.0, device=self.truths.device)
+
+        stored = self.truths[:n]                          # (n, D)
+
+        # Project to conceptual space if needed
+        if pi_layer is not None:
+            stored = pi_layer.reverse(stored)
+
+        # Conjunction: element-wise min across all truths
+        conjunction = stored.min(dim=0).values            # (D,)
+
+        # Luminosity = norm of the positive part of the conjunction.
+        # Negative dimensions represent darkness (conflicting truths)
+        # and don't contribute to illumination.
+        return torch.relu(conjunction).norm()
+
+    # ── Universality (Golden Rule) ────────────────────────────────────
+
+    def universality(self, subject, verb, obj, lifting_layer, symbolic_space):
+        """Golden rule: measure luminosity change from K(X,Y) + K(Y,X).
+
+        1. Compute luminosity_before (baseline truth brightness).
+        2. Apply SVO: lift(S, V, O) → project → temporarily store.
+        3. Apply OVS: lift(O, V, S) → project → temporarily store.
+        4. Compute luminosity_after.
+        5. Return luminosity_after - luminosity_before.
+
+        Positive = action preserves/increases illumination (kind).
+        Negative = action diminishes illumination (unkind).
+
+        Args:
+            subject: [B, N, D] subject concepts.
+            verb: [B, N, D] verb concepts.
+            obj: [B, N, D] object concepts.
+            lifting_layer: LiftingLayer for verb application.
+            symbolic_space: SymbolicSpace for projection.
+
+        Returns:
+            Scalar universality score.
+        """
+        pi = symbolic_space.layer
+        luminosity_before = self.luminosity(pi)
+
+        # K(X, Y): original action SVO
+        result_svo = lifting_layer.forward_transitive_svo(
+            subject, verb, obj, symbolic_space)
+
+        # K(Y, X): dual action OVS
+        result_ovs = lifting_layer.forward_transitive_svo(
+            obj, verb, subject, symbolic_space)
+
+        # Project results to symbolic space (extract activations first)
+        D_dim = result_svo.shape[-1]
+        svo_act = (2 * result_svo.norm(dim=-1) / math.sqrt(D_dim) - 1).clamp(-0.999, 0.999)
+        ovs_act = (2 * result_ovs.norm(dim=-1) / math.sqrt(D_dim) - 1).clamp(-0.999, 0.999)
+        svo_syms = pi.forward(svo_act)                   # [B, nSymbols]
+        ovs_syms = pi.forward(ovs_act)                   # [B, nSymbols]
+
+        # Temporarily extend truth store
+        saved_count = self.count.item()
+        self.record(svo_syms.mean(dim=0).detach(), degree=1.0)
+        self.record(ovs_syms.mean(dim=0).detach(), degree=1.0)
+
+        luminosity_after = self.luminosity(pi)
+
+        # Restore truth store
+        self.count.fill_(saved_count)
+        self.truths[saved_count:] = 0
+
+        return luminosity_after - luminosity_before
+
+    # ── Implication Derivation ────────────────────────────────────────
+
+    @torch.no_grad()
+    def derive(self, grammar, threshold: float = 0.7,
+               attenuation: float = 0.8) -> int:
+        """Derive implied truths via pairwise mereological inference.
+
+        For each pair of stored truths, checks if one is contained in
+        the other (via Grammar ``_method_part``).  When the parthood
+        score exceeds *threshold*, a new implied truth is recorded with
+        attenuated DoT.
+
+        Args:
+            grammar: Grammar instance with ``_method_part`` method.
+            threshold: minimum parthood score to derive an implication.
+            attenuation: DoT scaling to prevent runaway chains.
+
+        Returns:
+            Number of new derived truths.
+        """
+        n = self.count.item()
+        if n < 2:
+            return 0
+
+        stored = self.truths[:n]
+        norms = stored.norm(dim=-1)
+        derived = 0
+
+        for i in range(n):
+            if norms[i] < 1e-6:
+                continue
+            for j in range(n):
+                if i == j or norms[j] < 1e-6:
+                    continue
+                if self.count >= self.max_truths:
+                    return derived
+
+                score = grammar._method_part(
+                    stored[i].unsqueeze(0), stored[j].unsqueeze(0), 'S')
+                if isinstance(score, torch.Tensor):
+                    score = score.mean().item()
+                if score > threshold:
+                    # Direction of truth_j, degree attenuated by score
+                    direction = F.normalize(stored[j].unsqueeze(0), dim=-1).squeeze(0)
+                    # Sign of truth_i's DoT (positive or negative truth)
+                    sign_i = 1.0 if stored[i].mean().item() >= 0 else -1.0
+                    degree = attenuation * score * sign_i
+                    self.record(direction, degree)
+                    derived += 1
+
+        return derived
+
+    # ── Consistency Scoring ───────────────────────────────────────────
+
+    @torch.no_grad()
+    def consistency(self, sim_threshold: float = 0.7) -> torch.Tensor:
+        """Detect logical contradictions within stored truths.
+
+        Two truths pointing in similar directions but with opposite
+        DoT signs represent a contradiction.
+
+        Args:
+            sim_threshold: minimum cosine similarity for two truths
+                to be considered "same direction".
+
+        Returns:
+            Scalar in [0, 1] where 1 = fully consistent.
+        """
+        n = self.count.item()
+        if n < 2:
+            return torch.tensor(1.0, device=self.truths.device)
+
+        stored = self.truths[:n]
+        norms = stored.norm(dim=-1)
+
+        valid = norms > 1e-6
+        if valid.sum() < 2:
+            return torch.tensor(1.0, device=self.truths.device)
+
+        directions = F.normalize(stored[valid], dim=-1)
+
+        # Pairwise cosine similarity
+        sim_matrix = directions @ directions.T  # (m, m)
+        m = directions.shape[0]
+
+        # Conflict: two stored vectors that are anti-parallel.
+        # With DoT baked in, same-content opposite-DoT truths point
+        # in opposite directions (cosine sim ≈ -1).
+        n_conflicts = 0
+        n_pairs = 0
+        for i in range(m):
+            for j in range(i + 1, m):
+                n_pairs += 1
+                if sim_matrix[i, j] < -sim_threshold:
+                    n_conflicts += 1
+
+        if n_pairs == 0:
+            return torch.tensor(1.0, device=self.truths.device)
+        return torch.tensor(1.0 - n_conflicts / n_pairs,
+                            device=self.truths.device)
+
     # ── Maintenance ───────────────────────────────────────────────────
 
     @torch.no_grad()
@@ -1770,6 +2033,76 @@ class TruthLayer(Layer):
         assert len(tl) == 3
         tl.prune(min_norm=1e-6)
         assert len(tl) == 2
+
+        # ── Luminosity ────────────────────────────────────────────
+        # Luminosity = ||min(truths)|| — conjunction then norm
+        tl2 = TruthLayer(D, max_truths=64)
+        # All-positive truth → luminosity is the norm of the min
+        pos = torch.ones(D) * 0.5
+        tl2.record(pos, degree=1.0)
+        lum = tl2.luminosity()
+        assert lum.item() > 0, f"single positive truth should have lum > 0, got {lum}"
+
+        # Adding a contradictory truth (negative) should lower luminosity
+        neg = torch.ones(D) * 0.5
+        tl2.record(neg, degree=-1.0)
+        lum2 = tl2.luminosity()
+        assert lum2 < lum, (
+            f"contradictory truth should lower luminosity: {lum2} >= {lum}")
+
+        # Empty truth layer → luminosity = 0
+        tl_empty = TruthLayer(D, max_truths=64)
+        assert tl_empty.luminosity().item() == 0.0
+
+        # ── Consistency ───────────────────────────────────────────
+        tl3 = TruthLayer(D, max_truths=64)
+        # Two consistent truths (same direction, same sign)
+        v = torch.randn(D)
+        tl3.record(v, degree=0.9)
+        tl3.record(v * 1.1, degree=0.8)
+        assert tl3.consistency().item() == 1.0, "same-sign truths should be consistent"
+
+        # Add contradictory truth (same direction, opposite sign)
+        tl3.record(v, degree=-0.9)
+        c = tl3.consistency().item()
+        assert c < 1.0, f"contradictory truth should lower consistency: {c}"
+
+        # Empty / single truth → consistent
+        tl4 = TruthLayer(D, max_truths=64)
+        assert tl4.consistency().item() == 1.0
+        tl4.record(torch.randn(D), degree=0.5)
+        assert tl4.consistency().item() == 1.0
+
+        # ── Universality ─────────────────────────────────────────
+        # PiLayer maps activations [B, N] → [B, nSym].
+        # TruthLayer nDim must match nSym (symbol dimension).
+        B, N = 2, 4
+        nSym = 6
+        tl5 = TruthLayer(nSym, max_truths=64)
+        # Store a "positive" moral axiom
+        axiom = torch.rand(nSym) * 0.5 + 0.25  # positive vector
+        tl5.record(axiom, degree=1.0)
+
+        S = torch.randn(B, N, D)
+        V = torch.randn(B, N, D)
+        O = torch.randn(B, N, D)
+
+        # Mock symbolic space: PiLayer maps [B, N] → [B, nSym]
+        class _MockSS:
+            pass
+        mock_ss = _MockSS()
+        mock_ss.layer = PiLayer(N, nSym, monotonic=True, invertible=True)
+        lifting = LiftingLayer(nVerbs=8, nDim=D)
+
+        u_score = tl5.universality(S, V, O, lifting, mock_ss)
+        assert isinstance(u_score, torch.Tensor), "universality should return tensor"
+        # Score should be finite
+        assert torch.isfinite(u_score), f"universality NaN/Inf: {u_score}"
+        # Truth store should be restored
+        assert len(tl5) == 1, f"truth store not restored: {len(tl5)}"
+
+        print("TruthLayer tests passed.")
+
 class ChunkLayer(Layer):
     """Learned BPE-style codebook for perceptual chunking.
 

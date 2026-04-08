@@ -293,45 +293,35 @@ gradient variance tracking (`observe_sigma()` / `sigma_to_ergodic()`). Subclasse
 that contain child ErgodicLayers must forward `set_sigma()` and `paramUpdate()` to
 their children.
 
-### InvertibleLinearLayer (SVD decomposition)
+### InvertibleLinearLayer (LDU factorisation)
 
 $$
-W = U \Sigma V^\top
+W = L \cdot D_{\text{embed}} \cdot U
 $$
 
-Factored into three ErgodicLayer sub-layers:
+Factored into three components (not separate sub-layers):
 
-- **InvertibleRotationLayer** (U, V): Householder+diagonal+Householder. `R = H(v_1) D_{\text{sign}} H(v_2)` where $H(\hat{v}) = I - 2\hat{v}\hat{v}^\top$. Applied directly to rows of $x$ in O(B·N) via rank-1 updates.
-- **InvertibleDiagonalLayer** ($\Sigma$): Element-wise multiply by singular values $\lambda_k$.
+- **L**: Unit lower-triangular matrix (diagonal fixed at 1). Stored as `raw_L`; the strict lower triangle is extracted at each forward call.
+- **D**: Diagonal vector of length `rank = min(nIn, nOut)`, embedded into a rectangular `[nIn, nOut]` matrix by zero-padding.
+- **U**: Unit upper-triangular matrix (diagonal fixed at 1). Stored as `raw_U`; the strict upper triangle is extracted symmetrically.
 
-When `naive=False` (default), the fast O(N) path applies sub-layers directly to $x$ rows --- each sub-layer handles its own ergodic mixing internally. When `naive=True`, $W$ is materialized and mixed at the InvertibleLinearLayer level:
+Exact inverse via triangular solves: $W^{-1} = U^{-1} \cdot D^{-1} \cdot L^{-1}$. No SVD is required.
 
-$$
-W_{\text{eff}} = \text{bias} \cdot W + \text{var} \cdot \varepsilon
-$$
+When `naive=False` (default), L, D, U are applied sequentially to $x$ --- no full $W$ materialisation. When `naive=True`, $W_{\text{eff}}$ is materialised as a dense matrix and `pinv(W_eff)` is used for the reverse path.
 
-### InvertibleRotationLayer (Householder)
-
-Parameterized by two direction vectors $v_1, v_2$ and a sign vector $d$:
+When `ergodic=True`, noise is injected at the factor level (not the matrix level) to preserve exact invertibility at all temperatures:
 
 $$
-v_k^{\text{eff}} = \text{normalize}(\text{bias} \cdot v_k + \text{var} \cdot \varepsilon_k)
+L_{\text{eff}} = I + \text{strict\_lower}(\text{raw\_L} + t \cdot \text{noise\_L})
 $$
 $$
-d^{\text{eff}} = \text{sign}(\text{bias} \cdot d + \text{var} \cdot \varepsilon_d)
+U_{\text{eff}} = I + \text{strict\_upper}(\text{raw\_U} + t \cdot \text{noise\_U})
+$$
+$$
+d_{\text{eff}} = b \cdot d_{\text{clamped}} + t \cdot \text{noise\_d}
 $$
 
-Because normalize and sign always produce valid Householder/diagonal operators, the
-rotation remains orthogonal at all values of bias/var.
-
-### InvertibleDiagonalLayer
-
-Parameterized by singular values $\lambda_k$ (initialized to 1.0 in both ergodic and
-non-ergodic modes since zero singular values would kill the signal):
-
-$$
-\lambda_k^{\text{eff}} = \text{bias} \cdot \lambda_k + \text{var} \cdot \varepsilon_k
-$$
+Because $W_{\text{eff}}$ remains in LDU form, its exact inverse is always available via the same triangular solves --- no approximation, regardless of noise level. See [Architecture.md](Architecture.md) for the full mathematical treatment.
 
 ---
 

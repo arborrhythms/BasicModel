@@ -1198,6 +1198,18 @@ class BasicModel(BaseModel):
 
         totalLoss = self.loss.total(lossOut, lossIn, sbow)
 
+        # Truth-modulated loss: penalize irrational and unkind propositions
+        truth_layer = getattr(self.symbolicSpace, 'truth', None) if hasattr(self, 'symbolicSpace') else None
+        if truth_layer is not None and len(truth_layer) > 0 and train:
+            lum = truth_layer.luminosity(self.symbolicSpace.layer)
+            lum_norm = lum.clamp(0, 1)
+            lum_weight = getattr(self, 'luminosity_weight', 0.1)
+            u_score = getattr(self, '_universality_score', None)
+            u_norm = u_score.clamp(-1, 1) if u_score is not None else torch.tensor(0.0)
+            u_weight = getattr(self, 'universality_weight', 0.1)
+            totalLoss = totalLoss * (1 + lum_weight * (1 - lum_norm)
+                                       + u_weight * (1 - u_norm))
+
         TheMessage(f"batch = {batchNum}, loss = {totalLoss} ")
 
         if train:
@@ -1340,6 +1352,11 @@ class MentalModel(BaseModel):
         self.perceptQuantized = TheXMLConfig.space("PerceptualSpace", "quantized")
         self.conceptQuantized = TheXMLConfig.space("ConceptualSpace", "quantized")
         self.conceptualOrder = conceptualOrder
+
+        # Truth integration config (optional — absent in BasicModel.xml)
+        self.truth_bias_scale = float(TheXMLConfig.get("architecture.truthBiasScale", default=0.1) or 0.1)
+        self.luminosity_weight = float(TheXMLConfig.get("architecture.LuminosityWeight", default=0.1) or 0.1)
+        self.universality_weight = float(TheXMLConfig.get("architecture.UniversalityWeight", default=0.1) or 0.1)
         self.symbolicOrder = symbolicOrder
         self.reconstruct = reconstruct.lower()
         self.masked_prediction = masked_prediction
@@ -1470,6 +1487,8 @@ class MentalModel(BaseModel):
 
         # Register subspaces so Grammar can access Basis operations
         TheGrammar.register_subspace('S', self.symbolicSpace.subspace)
+        # Store SymbolicSpace ref for ternary lift (concept↔symbol projection)
+        TheGrammar._symbolic_space = self.symbolicSpace
         self.conceptualSpace.subspace.basis.monotonic = False
         TheGrammar.register_subspace('C', self.conceptualSpace.subspace)
         TheGrammar.register_subspace('P', self.perceptualSpace.subspace)
@@ -1522,6 +1541,14 @@ class MentalModel(BaseModel):
         for t in range(self.conceptualOrder):
             # [Percept, Symbol_prev] -> Concept  (cat along vector dim)
             concept_input = torch.cat([percepts, symbols], dim=1)
+
+            # Truth bias: scale concept input by luminosity of truth set
+            truth_layer = getattr(self.symbolicSpace, 'truth', None)
+            if truth_layer is not None and len(truth_layer) > 0:
+                bias_scale = getattr(self, 'truth_bias_scale', 0.1)
+                lum = truth_layer.luminosity(self.symbolicSpace.layer)
+                concept_input = concept_input * (1 + bias_scale * lum)
+
             self.concepts = self.conceptualSpace.forward(
                 self._wrap_reverse(self.conceptualSpace, concept_input))
             concepts = self.concepts.materialize()
@@ -1536,6 +1563,18 @@ class MentalModel(BaseModel):
             symbol_act = torch.sigmoid(symbol_act)           # clamp to [0,1]
             symbols = symbol_act.unsqueeze(-1).expand(       # [B, nSymbols, dim]
                 -1, -1, percepts.shape[-1])
+
+        # 4a. Universality evaluation (if ternary LIFT fired)
+        self._universality_score = None
+        truth_layer = getattr(self.symbolicSpace, 'truth', None)
+        if truth_layer is not None and len(truth_layer) > 0:
+            from Space import TheGrammar
+            svo = getattr(TheGrammar, '_last_svo', None)
+            if svo is not None:
+                s, v, o = svo
+                self._universality_score = truth_layer.universality(
+                    s, v, o, TheGrammar.lifting_layer, self.symbolicSpace)
+                TheGrammar._last_svo = None  # consumed
 
         # 5. Final Concept -> Output
         outputData = self.Finish(concepts)

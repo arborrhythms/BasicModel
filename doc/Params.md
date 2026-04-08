@@ -62,12 +62,12 @@ Training loop and I/O settings.
 
 | Value | Embedding method | Model layers | Gradients through codebook | Description |
 |-------|-----------------|-------------|---------------------------|-------------|
-| `NONE` | Frozen | Frozen | No | Inference only; no parameters updated |
-| `CBOW` | CBOW (padded context) | Frozen | No | True CBOW: predict each word from leave-one-out context with padding |
-| `SBOW` | SBOW (centroid) | Frozen | No | Faster variant: predict each word from leave-one-out centroid |
-| `ARLM` | Frozen | Backprop | No | Train model layers only; codebook is fixed |
-| `BOTH` | SBOW post-batch | Backprop | Yes | Two optimizers: SBOW updates embeddings, Adam updates model layers |
-| `JOINT` | Single backward | Backprop | Yes | Single optimizer: $\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathcal{L}_{\text{SBOW}}$ |
+| `NONE` | Frozen | Trained | No | Embeddings frozen; only model layers train |
+| `CBOW` | CBOW (padded context) | Trained | No | CBOW reshapes embeddings via own optimizer; model layers train separately |
+| `SBOW` | SBOW (centroid) | Trained | No | Faster variant: predict each word from leave-one-out centroid |
+| `BACKPROP` | Backprop only | Trained | Yes | Codebook trained purely via model loss gradients; no SBOW/CBOW |
+| `BOTH` | SBOW post-batch | Trained | Yes | Two optimizers: SBOW updates embeddings, Adam updates model layers |
+| `JOINT` | Single backward | Trained | Yes | Single optimizer: $\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathcal{L}_{\text{SBOW}}$ |
 
 #### `<trainEmbeddingRatio>` — Embedding Loss Weight (JOINT mode)
 
@@ -149,7 +149,7 @@ See [Language.md](Language.md) for the full design.
 | `passThrough` | bool | `false` | Pass concepts through as symbols unchanged. Typically `true` for simple models. |
 | `quantized` | bool | `false` | Enable codebook quantization. When `true`, the forward path produces a one-hot activation over codebook entries. Required for the full symbolic pipeline. |
 
-**Layers:** `InvertibleLinearLayer(nConcepts, nSymbols)` maps between concept and symbol activation spaces. Codebook provides dense vectors when quantized.
+**Layers:** `PiLayer(nConcepts, nSymbols, invertible=True, monotonic=True)` maps between concept and symbol activation spaces via monotonic multiplicative transform. Codebook provides dense vectors when quantized.
 
 ---
 
@@ -306,7 +306,7 @@ In this configuration:
       <numEpochs>1</numEpochs>
       <batchSize>1</batchSize>
       <learningRate>0.001</learningRate>
-      <trainEmbedding>ARLM</trainEmbedding>
+      <trainEmbedding>BACKPROP</trainEmbedding>
       <weightsPath>BasicModel.ckpt</weightsPath>
       <embeddingPath>BasicModel.kv</embeddingPath>
       <autoload>true</autoload>
@@ -330,7 +330,7 @@ In this configuration:
 
 Key points:
 - `modelType=embedding` activates the embedding-based input pipeline alongside the neural model
-- `trainEmbedding=ARLM` trains only the network layers; the codebook is detached so no gradients flow through it
+- `trainEmbedding=BACKPROP` trains model layers with gradients flowing through the codebook; no separate SBOW/CBOW step
 - The three files partition model behaviour: **XML config** (architecture), **`.kv` embedding** (codebook), **`.ckpt` weights** (model layers)
 - `weightsPath` stores the neural model checkpoint; `embeddingPath` stores the word vectors
 - `minFrequency` gates vocabulary admission: words are buffered until their frequency ratio exceeds this threshold

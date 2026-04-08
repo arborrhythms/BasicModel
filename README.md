@@ -34,7 +34,8 @@ Model configurations are specified in XML and can be compared side-by-side. See 
 | File | Description |
 |------|-------------|
 | [bin/BasicModel.py](bin/BasicModel.py) | Main entry point: model factory, training loop, comparison plots, HTML report |
-| [bin/Model.py](bin/Model.py) | Layer library: SigmaLayer, PiLayer, ErgodicLayer, LinearLayer, spaces |
+| [bin/Model.py](bin/Model.py) | Layer library: SigmaLayer, PiLayer, ErgodicLayer, LinearLayer, TruthLayer |
+| [bin/Space.py](bin/Space.py) | Space classes: InputSpace, PerceptualSpace, ConceptualSpace, SymbolicSpace, OutputSpace, Grammar |
 | [bin/embed.py](bin/embed.py) | Word vector training: CBOW/SBOW with negative sampling, `WordVectors` (gensim-compatible `.kv`) |
 | [bin/SigmaPi.py](bin/SigmaPi.py) | Standalone demo of the SigmaPi network solving XOR |
 | [data/](data/) | XML model configurations |
