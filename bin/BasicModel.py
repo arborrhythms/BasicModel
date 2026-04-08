@@ -45,7 +45,7 @@ from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntrop
 
 from Space import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Space import Basis, Tensor, Codebook, Embedding
-from Space import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, SyntacticSpace, OutputSpace
+from Space import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
 
 class BaseModel(nn.Module):
     """Shared training, plotting, and persistence infrastructure for all models."""
@@ -670,7 +670,6 @@ class BasicModel(BaseModel):
         percept_dim = _resolve_dim("PerceptualSpace",  input_dim)
         concept_dim = _resolve_dim("ConceptualSpace",  percept_dim)
         symbol_dim  = _resolve_dim("SymbolicSpace",    concept_dim)
-        syntax_dim  = _resolve_dim("SyntacticSpace",   symbol_dim)
         output_dim  = _resolve_dim("OutputSpace",      symbol_dim)
 
         # Per-space objectSize: nWhere + nWhen (falls back to architecture, then 0)
@@ -689,7 +688,6 @@ class BasicModel(BaseModel):
         obj_percept = _obj_size("PerceptualSpace")
         obj_concept = _obj_size("ConceptualSpace")
         obj_symbol  = _obj_size("SymbolicSpace")
-        obj_syntax  = _obj_size("SyntacticSpace")
         obj_output  = _obj_size("OutputSpace")
 
         # Resolve nVectors sentinels (0 → same as output count for that space)
@@ -704,7 +702,6 @@ class BasicModel(BaseModel):
         nvec_percept = _nvec("PerceptualSpace", nPercepts)
         nvec_concept = _nvec("ConceptualSpace", nConcepts)
         nvec_symbol  = _nvec("SymbolicSpace",  nSymbols)
-        nvec_syntax  = _nvec("SyntacticSpace", nSymbols)
         nvec_output  = _nvec("OutputSpace",    nOutput)
 
         # Build I/O shape tuples: [count, dim + objectSize]
@@ -721,12 +718,8 @@ class BasicModel(BaseModel):
         spaceShape_percept = [nvec_percept, percept_dim]
         spaceShape_concept = [nvec_concept, concept_dim]
         spaceShape_symbol  = [nvec_symbol,  symbol_dim]
-        spaceShape_syntax  = [nvec_syntax,  syntax_dim]
         spaceShape_output  = [nvec_output,  output_dim]
 
-        # nOutputSymbols tracks total symbol count fed to OutputSpace.
-        # Starts with only the output-destined symbols (not reconstruction symbols).
-        # It grows as higher-order cycles (conceptualOrder, symbolicOrder) append symbols.
         nOutputSymbols = self.nOutputSymbols
         # InputSpace receives raw data (no encoding) as input but produces encoded vectors.
         rawInputShape = [nInput, input_dim]
@@ -744,27 +737,8 @@ class BasicModel(BaseModel):
         self.conceptualSpace = ConceptualSpace(perceptShape, spaceShape_concept, conceptShape)
         self.symbolicSpace   = SymbolicSpace(conceptShape, spaceShape_symbol, symbolShape,
                                              conceptualSpace=self.conceptualSpace)
-        # SyntacticSpace for symbolic grammar (composeSyntax + rule execution).
         self.spaces.extend([self.inputSpace, self.perceptualSpace, self.conceptualSpace, self.symbolicSpace])
         self.syntacticSpace = None
-        if self.syntax:
-            self.syntacticSpace = SyntacticSpace(symbolShape, spaceShape_syntax, symbolShape)
-            self.spaces.append(self.syntacticSpace)
-
-        if self.conceptualOrder == 2:
-            self.perceptualSpace2 = PerceptualSpace(conceptShape, spaceShape_percept, perceptShape)
-            self.conceptualSpace2 = ConceptualSpace(perceptShape, spaceShape_concept, conceptShape)
-            self.symbolicSpace2   = SymbolicSpace(conceptShape, spaceShape_symbol, symbolShape,
-                                                  conceptualSpace=self.conceptualSpace2)
-            nOutputSymbols += (self.conceptualOrder - 1) * self.nSymbols
-            self.spaces.extend([self.perceptualSpace2, self.conceptualSpace2, self.symbolicSpace2])
-
-        if self.symbolicOrder == 2:
-            # SyntacticSpace3 receives the full symbol tensor (nSymbols objects)
-            self.syntacticSpace3 = SyntacticSpace(symbolShape, spaceShape_syntax, symbolShape)
-            self.symbolicSpace3  = SymbolicSpace(symbolShape, spaceShape_symbol, symbolShape)
-            nOutputSymbols += (self.symbolicOrder - 1) * self.nSymbols
-            self.spaces.extend([self.syntacticSpace3, self.symbolicSpace3])
 
         self.nTotalOutputSymbols = nOutputSymbols
         self.outputSpace     = OutputSpace([nOutputSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
@@ -834,51 +808,6 @@ class BasicModel(BaseModel):
         input = input_state.materialize()
         inputData  = self.inputs.materialize()
         return inputData, input
-    def SubsymbolicThought(self, data):
-        """Extra Percept->Concept->Symbol cycle (conceptualOrder >= 1)."""
-        if isinstance(data, torch.Tensor):
-            self.perceptualSpace2.subspace.set_event(data)
-            data = self.perceptualSpace2.subspace
-        percepts_state = self.perceptualSpace2.forward(data)
-        concepts_state = self.conceptualSpace2.forward(percepts_state)
-        symbols_state  = self.symbolicSpace2.forward(concepts_state)
-        percepts = percepts_state.materialize()
-        concepts = concepts_state.materialize()
-        symbols = symbols_state.materialize()
-        if self.plot:
-            TheReport.plotActivations(figure=1, percepts=percepts, concepts=concepts)
-        return concepts, symbols
-    def SubsymbolicThoughtReverse(self, concepts, symbols):
-        """Reverse of SubsymbolicThought."""
-        if isinstance(symbols, torch.Tensor):
-            self.symbolicSpace2.subspace.set_event(symbols)
-            symbols = self.symbolicSpace2.subspace
-        concepts_state = self.symbolicSpace2.reverse(symbols)
-        percepts_state = self.conceptualSpace2.reverse(concepts_state)
-        percepts = percepts_state.materialize()
-        return percepts
-
-    def SymbolicThought(self, data):
-        """Extra Syntax->Symbol cycle (symbolicOrder >= 1)."""
-        if isinstance(data, torch.Tensor):
-            self.syntacticSpace3.subspace.set_event(data)
-            data = self.syntacticSpace3.subspace
-        words_state = self.syntacticSpace3.forward(data)
-        symbols_state = self.symbolicSpace3.forward(words_state)
-        words = words_state.materialize()
-        symbols = symbols_state.materialize()
-        if self.plot:
-            TheReport.plotActivations(figure=1, symbols=symbols)
-        return symbols, words
-    def SymbolicThoughtReverse(self, symbols, words):
-        """Reverse of SymbolicThought."""
-        if isinstance(words, torch.Tensor):
-            self.syntacticSpace3.subspace.set_event(words)
-            words = self.syntacticSpace3.subspace
-        symbols_state = self.syntacticSpace3.reverse(words)
-        data_state = self.symbolicSpace3.reverse(symbols_state)
-        data = data_state.materialize()
-        return data
     def Finish(self, symbols):
         """Project concatenated symbols to task output via OutputSpace."""
         if isinstance(symbols, torch.Tensor):
@@ -1046,16 +975,6 @@ class BasicModel(BaseModel):
         if isinstance(inputData, torch.Tensor):
             inputData = inputData.to(TheDevice.get())
         input, concepts, symbols = self.Start(inputData)
-        # Higher-order subsymbolic cycles (conceptualOrder extra passes)
-        for n in range(1,self.conceptualOrder):
-            NA, symbols1 = self.SubsymbolicThought(concepts)
-            symbols = torch.cat((symbols, symbols1), dim=1)
-        # Higher-order symbolic cycles (symbolicOrder extra passes)
-        for n in range(1,self.symbolicOrder):
-            NA, symbols2 = self.SymbolicThought(symbols)
-            symbols = torch.cat((symbols, symbols2), dim=1)
-        # Split AFTER higher-order cycles: output symbols for prediction,
-        # recon symbols for reconstruction
         if self.nReconSymbols > 0:
             self.output_symbols = symbols[:, :self.nTotalOutputSymbols, :]
             self.recon_symbols = symbols[:, self.nTotalOutputSymbols:, :]
@@ -1067,24 +986,8 @@ class BasicModel(BaseModel):
         self.inputSpace.subspace.whenEncoding.increment(batch)
         return input, symbols, outputData
     def reverse(self, symbols, outputData):
-        """Full reverse pass: unwind higher-order cycles then core reconstruction.
-
-        Slices the concatenated symbol tensor to route each chunk to its
-        corresponding reverse stage, in reverse order of the forward pass.
-        """
+        """Full reverse pass: core reconstruction."""
         symbols = self.FinishReverse(outputData)
-        nSym = round(self.nSymbols)
-        symbolIndex = 0
-        for n in range(1, self.symbolicOrder):
-            symbols1 = symbols[:, symbolIndex*nSym:(symbolIndex+1)*nSym]
-            symbolIndex += 1
-            symbols = self.SymbolicThoughtReverse(symbols, symbols1)
-        for n in range(1, self.conceptualOrder):
-            symbols1 = symbols[:, symbolIndex*nSym:(symbolIndex+1)*nSym]
-            symbolIndex += 1
-            symbols = self.SubsymbolicThoughtReverse(symbols, symbols1)
-        # Final chunk goes to the core reverse pipeline
-        symbols = symbols[:, symbolIndex * nSym:(symbolIndex + 1) * nSym]
         inputData, input = self.StartReverse(symbols)
         return inputData, input
 

@@ -191,14 +191,6 @@ def _populate_test_config(*,
             "quantized": not symbolPassThrough,
             "normalize": False,  # matches model.xml default
         },
-        "SyntacticSpace": {
-            "nActive": nWords,
-            "nDim": wordDim,
-            "nVectors": nWords,
-            "flatten": flatten,
-            "quantized": False,
-            "normalize": False,  # matches model.xml default
-        },
         "OutputSpace": {
             "nActive": nOutput,
             "nDim": outputDim,
@@ -3013,7 +3005,7 @@ class TestXorExactErgodic(unittest.TestCase):
             # Ergodic training — accumulate range warnings, emit summary at end
             with warnings.catch_warnings(record=True) as caught:
                 warnings.simplefilter("always")
-                m.runTrial(numEpochs=600, batchSize=10, lr=0.01)
+                m.runTrial(numEpochs=200, batchSize=10, lr=0.01)
 
             _emit_warning_summary(caught)
 
@@ -3439,60 +3431,6 @@ class TestSubspaceWords(unittest.TestCase):
             ss.add_word(0, 0, 99)  # bad rule
 
 
-class TestSyntacticSpaceRoundTrip(unittest.TestCase):
-    """SyntacticSpace.reverse deterministically recovers activation from derivation."""
-
-    def test_forward_reverse_recovers_activation(self):
-        """Forward → reverse round-trip: forward records derivation, reverse undoes it."""
-        _populate_test_config(
-            inputDim=3, perceptDim=3, conceptDim=3, symbolDim=1, wordDim=3,
-            nInput=4, nPercepts=4, nConcepts=20, nSymbols=20, nWords=20, nOutput=10,
-            perceptPassThrough=True, symbolPassThrough=True)
-        from BasicModel import TheXMLConfig
-        TheXMLConfig._data["architecture"]["maskedPrediction"] = "ARLM"
-        # Configure grammar with full rules so S-tier has operational rules
-        TheXMLConfig._data["architecture"].setdefault("language", {})["grammar"] = {
-            "START": "S",
-            "S": ["true(S)", "swap(S, S)", "equals(S, S)", "part(S, S)", "C"],
-            "C": ["not(C)", "P"],
-            "P": ["I P", "I"],
-        }
-        from Space import SyntacticSpace, SubSpace, TheGrammar
-        # Re-configure grammar from the new config
-        TheGrammar._configured = False
-        TheGrammar._ensure_configured()
-        # Re-initialize grammar for this test's dimensions
-        TheGrammar._layers_initialized = False
-        TheGrammar.init_layers(concept_dim=3, symbol_dim=20,
-                               n_concept_slots=20, n_symbol_slots=20, n_percept_slots=4)
-        nVectors = 20
-        nDim = 3
-        syn = SyntacticSpace([nVectors, nDim], [nVectors, nDim], [nVectors, nDim])
-        # Create input subspace with top-k=7 activation
-        ss = SubSpace(inputShape=[nVectors, nDim], outputShape=[nVectors, nDim])
-        x = torch.randn(2, nVectors, nDim).to(TheDevice.get())
-        ss.set_event(x)
-        # Build sparse symbolic presence: 7 present positions per batch
-        symbols = torch.zeros(2, nVectors, device=TheDevice.get())
-        # Pick 7 random positions per batch
-        for b in range(2):
-            indices = torch.randperm(nVectors)[:7]
-            symbols[b, indices] = 1.0
-        ss.set_symbols(symbols)
-        # Forward: generates derivation
-        out = syn.forward(ss)
-        # Verify words were produced (Grammar.forward default path records
-        # top-of-stack words — one per batch element at minimum)
-        words = out.get_words()
-        self.assertGreater(len(words), 0,
-            "No words produced — Grammar.forward() should record derivation")
-        # Reverse: should run without error
-        recovered = syn.reverse(out)
-        recovered_symbols = recovered.get_symbols()
-        self.assertIsNotNone(recovered_symbols)
-        self.assertEqual(recovered_symbols.shape, symbols.shape)
-
-
 class TestSubspaceNormalize(unittest.TestCase):
     """Tests for SubSpace.normalize()."""
 
@@ -3841,7 +3779,7 @@ class TestSyntacticLayer(unittest.TestCase):
         return g
 
     def _make_symbolic_layer(self, nInput=8, max_depth=7, hidden_dim=16):
-        from Model import SyntacticLayer
+        from Space import SyntacticLayer
         g = self._make_grammar()
         return SyntacticLayer(
             nInput=nInput, nOutput=nInput,
@@ -3853,7 +3791,7 @@ class TestSyntacticLayer(unittest.TestCase):
         ), g
 
     def _make_conceptual_layer(self, nInput=8, max_depth=7, hidden_dim=16):
-        from Model import SyntacticLayer
+        from Space import SyntacticLayer
         g = self._make_grammar()
         return SyntacticLayer(
             nInput=nInput, nOutput=nInput,
@@ -3865,7 +3803,7 @@ class TestSyntacticLayer(unittest.TestCase):
         ), g
 
     def _make_perceptual_layer(self, nInput=8, max_depth=7, hidden_dim=16):
-        from Model import SyntacticLayer
+        from Space import SyntacticLayer
         g = self._make_grammar()
         return SyntacticLayer(
             nInput=nInput, nOutput=nInput,
@@ -4024,19 +3962,6 @@ class TestShiftReduce(unittest.TestCase):
         )
         return TheGrammar
 
-    def _make_syntactic_space(self, nSym=8):
-        """Create a SyntacticSpace with minimal config for S/R testing."""
-        grammar = self._init_grammar(nSym=nSym, nDim=1)
-        from Space import SyntacticSpace
-        syn = SyntacticSpace(
-            inputShape=(nSym, 1),
-            spaceShape=(nSym, 1),
-            outputShape=(nSym, 1),
-        )
-        syn.to(TheDevice.get())
-        syn.eval()
-        return syn, grammar
-
     def test_write_symbolic_shift(self):
         """Grammar.forward('S', ...) applies rules at top-of-stack."""
         grammar = self._init_grammar()
@@ -4123,23 +4048,6 @@ class TestShiftReduce(unittest.TestCase):
         grammar._p_words = [(0, 1, 13), (0, 2, 13)]
         grammar.resetStack('P')
         self.assertEqual(len(grammar._p_words), 0)
-
-    # ── SyntacticSpace.forward() S/R integration ──────────────
-
-    def test_syntactic_forward_uses_sr(self):
-        """SyntacticSpace.forward() processes symbols via S/R loop through TheGrammar."""
-        from Space import SubSpace
-        syn, grammar = self._make_syntactic_space()
-        ss = SubSpace(inputShape=[8, 1], outputShape=[8, 1])
-        act = torch.zeros(2, 8, device=TheDevice.get())
-        act[0, 0] = 1.0
-        act[0, 2] = 1.0
-        act[1, 1] = 1.0
-        ss.set_symbols(act)
-        result = syn.forward(ss)
-        composed = result.get_symbols()
-        self.assertIsNotNone(composed)
-        self.assertEqual(composed.shape, (2, 8))
 
     # ── Grammar.read() tests ─────────────────────────────────────
 

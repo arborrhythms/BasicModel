@@ -663,3 +663,16 @@ class OldLogicLayer(Layer):
         P = LL.part(X, Y)
         X_neg = LL.neg(X)
         X_non = LL.non(X, alpha=0.2)
+
+
+# ── SyntacticSpace (moved from Space.py) ─────────────────────────────
+
+class SyntacticSpace:
+    """Moved to etc/old.py — syntax is now handled by Grammar.forward()
+    with soft superposition via SyntacticLayer, called directly from
+    ConceptualSpace and SymbolicSpace.
+
+    Original class identified logical structures over the symbolic activation
+    space using LR(1) left-to-right processing over symbols.
+    """
+    pass

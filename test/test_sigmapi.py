@@ -21,7 +21,7 @@ from Model import PiLayer, SigmaLayer, epsilon
 class TestPiLayerForward(unittest.TestCase):
     """PiLayer produces the correct output shape for 2D and 3D inputs.
 
-    PiLayer expects inputs in (0, 1].
+    PiLayer expects inputs in [-1, 1].
     """
 
     def test_3d_input_shape(self):

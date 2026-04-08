@@ -1,8 +1,5 @@
 # TODO
 
-
-================================== April 9 ==================================
-
 * TruthLayer (was LogicLayer) :
 The logical operations on symbols form a basis for propositional knowledge over all symbols.
 symbol-symbol words can be dynamically added (represented) as new symbols in SymbolicSpace

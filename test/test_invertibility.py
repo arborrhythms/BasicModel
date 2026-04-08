@@ -345,7 +345,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
             x_rec = layer.reverse(y)
             self.assertEqual(x_rec.shape, x.shape)
         err = _reconstruction_error(x, x_rec, rel=True)
-        self.assertLess(err, 0.1, f"3D rel err={err:.2e}")
+        self.assertLess(err, 1e-4, f"3D rel err={err:.2e}")
 
     def test_ergodic_roundtrip(self):
         """Non-naive with ergodic noise."""
@@ -361,7 +361,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
             y = layer.forward(x)
             x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec, rel=True)
-        self.assertLess(err, 0.3, f"Ergodic non-naive rel err={err:.2e}")
+        self.assertLess(err, 1e-4, f"Ergodic non-naive rel err={err:.2e}")
 
     def test_training_preserves_invertibility(self):
         """After gradient steps, non-naive roundtrip remains accurate."""
@@ -383,7 +383,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
             y = layer.forward(x)
             x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec, rel=True)
-        self.assertLess(err, 1e-2, f"Post-training rel err={err:.2e}")
+        self.assertLess(err, 1e-4, f"Post-training rel err={err:.2e}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -417,7 +417,7 @@ class TestPairedSigmaTraining(unittest.TestCase):
             y = sigma_fwd(x_data)
             x_rec = sigma_rev.reverse(y)
         err = _reconstruction_error(x_data, x_rec, rel=True)
-        self.assertLess(err, 0.5, f"Paired Sigma rel err={err:.4f}")
+        self.assertLess(err, 1e-4, f"Paired Sigma rel err={err:.4f}")
 
 
 class TestPairedPiTraining(unittest.TestCase):
@@ -447,7 +447,7 @@ class TestPairedPiTraining(unittest.TestCase):
             y = pi_fwd(x_data)
             x_rec = pi_rev.reverse(y)
         err = _reconstruction_error(x_data, x_rec, rel=True)
-        self.assertLess(err, 0.5, f"Paired Pi rel err={err:.4f}")
+        self.assertLess(err, 1e-4, f"Paired Pi rel err={err:.4f}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -456,7 +456,7 @@ class TestPairedPiTraining(unittest.TestCase):
 
 from BasicModel import (
     TheXMLConfig, PerceptualSpace, ConceptualSpace,
-    SymbolicSpace, OutputSpace, SyntacticSpace,
+    SymbolicSpace, OutputSpace,
 )
 from Space import SubSpace
 
@@ -508,7 +508,6 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
         "PerceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "quantized": False, "passThrough": passThrough, "hasAttention": hasAttention, "invertible": invertible},
         "ConceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "quantized": False, "hasAttention": False, "invertible": invertible},
         "SymbolicSpace":   {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "passThrough": symbolPassThrough, "quantized": False},
-        "SyntacticSpace":  {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "quantized": False, "normalize": False},
         "OutputSpace":     {"nDim": outputDim,  "nVectors": nObj, "nActive": nObj, "nWhere": 0, "nWhen": 0, "flatten": True, "quantized": False, "invertible": False},
     }
     for section, vals in overrides.items():
@@ -654,27 +653,6 @@ class TestSymbolicSpacePassthrough(unittest.TestCase):
     def test_objsize_4(self):  self._check(4)
 
 
-class TestSyntacticSpace(unittest.TestCase):
-    def _check(self, objSize):
-        _setup_object_encoding(objSize=objSize, reconstruct="FULL")
-        nObj, contentDim = 3, 6
-        embDim = contentDim + objSize
-        torch.manual_seed(42)
-        synspace = SyntacticSpace(
-            [nObj, embDim], [nObj, contentDim], [nObj, embDim],
-        )
-        synspace.eval()
-        x = torch.randn(2, nObj, embDim).to(TheDevice.get())
-        with torch.no_grad():
-            y = synspace.forward(_wrap_tensor(synspace, x))
-            x_rec = _unwrap(synspace.reverse(y))
-        err = _reconstruction_error(x, x_rec)
-        self.assertLess(err, 1e-6, f"objSize={objSize}: err={err:.2e}")
-
-    def test_objsize_0(self):  self._check(0)
-    def test_objsize_4(self):  self._check(4)
-
-
 class TestOutputSpaceReversePass(unittest.TestCase):
     """OutputSpace changes shape so roundtrip is lossy — just verify no crash."""
     def _check(self, objSize):
@@ -719,7 +697,7 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec, rel=True)
-        self.assertLess(err, 0.15, f"Ergodic roundtrip error too large: {err}")
+        self.assertLess(err, 1e-4, f"Ergodic roundtrip error too large: {err}")
 
     def test_invertible_sigma_ergodic_roundtrip(self):
         """InvertibleSigmaLayer with ergodic=True should still roundtrip after training.
@@ -737,7 +715,7 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec, rel=True)
-        self.assertLess(err, 0.3, f"Ergodic roundtrip error too large: {err}")
+        self.assertLess(err, 1e-4, f"Ergodic roundtrip error too large: {err}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -835,7 +813,7 @@ class TestSigmaLayerNonlinearRange(unittest.TestCase):
 
 
 class TestPiLayerReverseAcceptsFullRange(unittest.TestCase):
-    """PiLayer.reverse() accepts [-1, 1] input via _to_log_domain."""
+    """PiLayer.reverse() accepts [-1, 1] input via _to_mult."""
 
     def test_negative_input_accepted(self):
         torch.manual_seed(42)

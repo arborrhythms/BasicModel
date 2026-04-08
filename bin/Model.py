@@ -22,12 +22,10 @@ import time
 from typing import Optional, Tuple
 from collections import namedtuple
 
-
 epsilon = 1e-7  # to avoid log(0)
 
 # Device used by all layers.
 from util import TheXMLConfig, TheDevice
-
 from util import TheMessage
 
 #region Layers
@@ -741,24 +739,9 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
         return d
 
 
-    def _effective_bias(self):
-        """Bias for log-space use. Constrained to ≤ 0 so exp(wx+b) ∈ (0,1]."""
-        if not self.hasBias:
-            return 0
-        if self.ergodic:
-            raw = self.bias * self.biasWeight + self.var * self.biasNoise
-            return F.softplus(raw)                        # ≤ 0 even with noise
-        return F.softplus(self.biasWeight)                # ≥ 0
-
-    def forwardBias(self, x):
-        if self.hasBias:
-            x = x + self._effective_bias()                # _effective_bias ≤ 0, so adds ≥ 0
-        return x
-
-    def reverseBias(self, x):
-        if self.hasBias:
-            x = x - self._effective_bias()                # _effective_bias ≤ 0, so subtracts ≥ 0
-        return x
+    # _effective_bias, forwardBias, reverseBias inherited from
+    # InvertibleLinearLayer — no constraint needed with symmetric
+    # log domain (−∞, +∞).
 
 class MapppingLayer(InvertibleLinearLayer):
     """Bias-free, stable reversible linear layer for mapping between row/column spaces."""
@@ -800,6 +783,7 @@ class ColumnUsageTracker:
             self.linear.weight.grad[:, self.frozen_columns] = 0.0
     def freezeMask(self):
         return self.frozen_columns
+
 class SigmaLayer(Layer):
     """Additive (summation) layer: y = tanh(W @ x + b).
 
@@ -883,40 +867,39 @@ class SigmaLayer(Layer):
 class PiLayer(Layer):
     r"""Multiplicative boundary layer: [-1,1] → [-1,1].
 
-    Two modes selected by ``useTanh``:
+    Both modes share the symmetric log-domain embedding (1+x)/(1-x):
 
-    **useTanh=True (default) — logit/sigmoid, unrestricted W:**
-        to_prob:   p = (x + 1) / 2 * (1 - 2ε) + ε     [-1,1] → [ε, 1-ε]
-        from_prob: x = ((p - ε) / (1 - 2ε)) * 2 - 1    [ε, 1-ε] → [-1,1]
-        Forward:  y = from_prob(sigmoid(W @ logit(to_prob(x)) + b))
-        Reverse:  x = from_prob(sigmoid(W_inv @ (logit(to_prob(y)) − b)))
-        W is unrestricted (can be negative) — non-monotonic, handles bitonic input.
+        Forward:  z = _from_mult(exp(W @ log(_to_mult(x)) + b))
+        Reverse:  x = _from_mult(exp(W⁻¹ @ (log(_to_mult(z)) - b)))
 
-    **useTanh=False — log/exp, non-negative W:**
-        to_log:   x' = (x + 1) / 2 * (1 - ε) + ε      [-1,1] → [ε, 1]
-        from_log: x  = ((x' - ε) / (1 - ε)) * 2 - 1    [ε, 1] → [-1,1]
-        Forward:  y = from_log(exp(W @ log(to_log(x)) + b))
-        Reverse:  x = from_log(exp(W_inv @ (log(to_log(y)) − b)))
-        W is non-negative — monotonic, preserves sign structure.
+    Entry transform (1+x)/(1-x) = exp(2·atanh(x)):
+        x = 0  →  1  →  log = 0   : absent = multiplicative identity
+        x = +k and x = -k produce equal and opposite log-space contributions
+
+    Exit transform (y-1)/(y+1) is the exact inverse.
+
+    ``monotonic`` selects the weight constraint:
+        monotonic=True:  W ≥ 0 (NonNegativeInvertibleLinearLayer) — ordering preserved
+        monotonic=False: W unrestricted (InvertibleLinearLayer) — bitonic response
     """
     _eps = 1e-6
 
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
-                 invertible=False, hasBias=True, stable=True, useTanh=True):
+                 invertible=False, hasBias=True, stable=True, monotonic=False):
         super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.stable     = stable
         self.hasBias    = hasBias
-        self.useTanh    = useTanh
+        self.monotonic  = monotonic
         if invertible:
-            if useTanh:
-                self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
-                                                   naive=naive, ergodic=ergodic,
-                                                   stable=stable)
-            else:
+            if monotonic:
                 self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
                                                               naive=naive, ergodic=ergodic,
                                                               stable=stable)
+            else:
+                self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
+                                                   naive=naive, ergodic=ergodic,
+                                                   stable=stable)
         else:
             self.layer = LinearLayer(nInput, nOutput, hasBias=hasBias)
         self.layers.append(self.layer)
@@ -929,27 +912,16 @@ class PiLayer(Layer):
     def resample_noise(self):
         self.layer.resample_noise()
 
-    # ── useTanh=True: logit/sigmoid ──────────────────────────────────
+    # ── Symmetric domain transforms ──────────────────────────────────
 
-    def _to_prob(self, x):
-        """Map [-1, 1] → [ε, 1-ε]."""
-        e = self._eps
-        return (x + 1) / 2 * (1 - 2 * e) + e
+    def _to_mult(self, x):
+        """Map [-1, 1] → (0, ∞), identity at 0 → 1."""
+        x = x.clamp(-1 + self._eps, 1 - self._eps)
+        return (1 + x) / (1 - x)
 
-    def _from_prob(self, p):
-        """Map [ε, 1-ε] → [-1, 1]."""
-        e = self._eps
-        return ((p - e) / (1 - 2 * e)) * 2 - 1
-
-    # ── useTanh=False: log/exp ───────────────────────────────────────
-
-    def _to_log_domain(self, x):
-        """Map [-1, 1] → [ε, 1]."""
-        return (x + 1) / 2 * (1 - self._eps) + self._eps
-
-    def _from_log_domain(self, xp):
-        """Map [ε, 1] → [-1, 1]."""
-        return ((xp - self._eps) / (1 - self._eps)) * 2 - 1
+    def _from_mult(self, y):
+        """Map (0, ∞) → (-1, 1), identity at 1 → 0."""
+        return (y - 1) / (y + 1)
 
     # ── forward / reverse ────────────────────────────────────────────
 
@@ -958,41 +930,24 @@ class PiLayer(Layer):
             self.resample_noise()
         W = self.layer.compute_W_current()
         x = x.to(W.device)
-        if self.useTanh:
-            p = self._to_prob(x)                          # [ε, 1-ε]
-            lx = torch.logit(p, eps=self._eps)            # bounded ≈ [-13.8, 13.8]
-            wx = lx @ W                                   # [..., nOut]
-            b  = self.layer._effective_bias()
-            wx = wx - b
-            y = torch.sigmoid(wx)                         # (0, 1)
-            return self._from_prob(y)                     # → [-1, 1]
-        else:
-            xp = self._to_log_domain(x)                   # [ε, 1]
-            log_x = torch.log(xp)                         # [-13.8, 0]
-            wx = log_x @ W                                # [..., nOut], ≤ 0
-            b  = self.layer._effective_bias()
-            wx = wx - b
-            y = torch.exp(wx)                             # (0, 1]
-            return self._from_log_domain(y)               # → [-1, 1]
+        m = self._to_mult(x)                             # (0, ∞)
+        l = torch.log(m)                                  # (-∞, +∞) = 2·atanh(x)
+        wl = l @ W                                        # [..., nOut]
+        b = self.layer._effective_bias()
+        wl = wl + b                                       # unconstrained bias
+        y = torch.exp(wl)                                 # (0, ∞)
+        return self._from_mult(y)                         # → (-1, 1)
 
     def reverse(self, y):
         """Recover x from y.  Requires invertible=True."""
         W_inv = self.layer.compute_Winverse_current()
         y = y.to(W_inv.device)
-        if self.useTanh:
-            p = self._to_prob(y)                          # [-1, 1] → [ε, 1-ε]
-            ly = torch.logit(p, eps=self._eps)
-            b = self.layer._effective_bias()
-            lx = (ly + b) @ W_inv                         # [..., nIn]
-            xp = torch.sigmoid(lx)                        # (0, 1)
-            x = self._from_prob(xp)
-        else:
-            yp = self._to_log_domain(y)                   # [-1, 1] → [ε, 1]
-            log_y = torch.log(yp)
-            b = self.layer._effective_bias()
-            log_x = (log_y + b) @ W_inv                   # [..., nIn]
-            xp = torch.exp(log_x)
-            x = self._from_log_domain(xp)
+        m = self._to_mult(y)                              # (0, ∞)
+        l = torch.log(m)                                  # (-∞, +∞)
+        b = self.layer._effective_bias()
+        lx = (l - b) @ W_inv                              # [..., nIn]
+        x_mult = torch.exp(lx)                            # (0, ∞)
+        x = self._from_mult(x_mult)                       # → (-1, 1)
         if self.layer.ergodic:
             self.resample_noise()
         return x
@@ -1008,7 +963,7 @@ class PiLayer(Layer):
         y = layer(x)
         assert y.shape == (nBatch, 6, nOutput), f"shape mismatch: {y.shape}"
         assert torch.isfinite(y).all(), "PiLayer forward produced non-finite values"
-        assert torch.all(y > 0), "PiLayer output must stay positive"
+        assert torch.all(y >= -1) and torch.all(y <= 1), "PiLayer output must be in [-1, 1]"
         print(f"PiLayer forward: input {x.shape} -> output {y.shape}")
 
         def check_roundtrip(desc, **kwargs):
@@ -1049,7 +1004,7 @@ class PiLayer(Layer):
 
             y = layer.forward(x_edge)
             assert torch.isfinite(y).all(), f"{desc}: forward produced non-finite values"
-            assert torch.all(y > 0), f"{desc}: forward produced non-positive values"
+            assert torch.all(y >= -1) and torch.all(y <= 1), f"{desc}: output outside [-1, 1]"
 
             x_recon = layer.reverse(y)
             assert torch.isfinite(x_recon).all(), f"{desc}: reverse produced non-finite values"
@@ -1547,9 +1502,6 @@ class LiftingLayer(Layer):
         assert q_grad.grad is not None, "no gradient on query"
 
         print("LiftingLayer tests passed.")
-
-#endregion
-
 class LoweringLayer(Layer):
     """Rank-reducing bottleneck for conceptual composition (lower).
 
@@ -1610,6 +1562,282 @@ class LoweringLayer(Layer):
 
         print("LoweringLayer tests passed.")
 
+class TruthLayer(Layer):
+    """Truth store on SymbolicSpace: encoded truth statements scaled by DoT.
+
+    Each truth statement is processed through the model pipeline to produce
+    a symbolic activation ``[nSymbols]``.  The activation is then scaled by
+    the DegreeOfTruth before storage:
+
+        stored = activation * degree
+
+    This means the stored vector carries the DoT intrinsically:
+      - degree = +1 → full activation stored (attractor)
+      - degree = -1 → negated activation stored (disperser)
+      - degree =  0 → zero vector (inert, prunable)
+
+    The ``field()`` method projects stored truths into ConceptualSpace
+    via cosine similarity.  Because the degree is baked into the stored
+    vectors, positive-DoT truths attract and negative-DoT truths repel
+    without needing a separate degree buffer.
+
+    Propositional structure is defined by the S-tier grammar:
+      - ``part(S, S)`` — parthood / containment
+      - ``equals(S, S)`` — identity / equivalence
+    """
+
+    def __init__(self, nDim: int, max_truths: int = 1024):
+        super().__init__(nDim, nDim)
+        self.nDim = nDim
+        self.max_truths = max_truths
+
+        # Storage buffer: activation * degree (DoT baked in)
+        self.register_buffer(
+            'truths',
+            torch.zeros(max_truths, nDim),
+        )
+        self.register_buffer(
+            'count',
+            torch.tensor(0, dtype=torch.long),
+        )
+
+    # ── Record / Query ────────────────────────────────────────────────
+
+    @torch.no_grad()
+    def record(self, activation: torch.Tensor, degree: float) -> int:
+        """Store a truth: activation scaled by its DegreeOfTruth.
+
+        The stored vector is ``activation * degree``, so the DoT is
+        encoded in both the magnitude and (for negative degrees) the
+        direction of the stored representation.
+
+        Args:
+            activation: (nDim,) symbolic activation from the model pipeline.
+            degree: scalar in [-1, 1].  +1 = certainly true, -1 = certainly
+                    false, 0 = unknown/inert.
+
+        Returns:
+            Index of the stored entry.
+        """
+        if self.count >= self.max_truths:
+            raise RuntimeError(
+                f"Truth store full ({self.max_truths} entries). "
+                "Increase max_truths or prune stale entries."
+            )
+        degree = max(-1.0, min(1.0, degree))
+        idx = self.count.item()
+        self.truths[idx] = activation.detach() * degree
+        self.count += 1
+        return idx
+
+    def query(self, activation: torch.Tensor, threshold: float = 0.9
+              ) -> Optional[Tuple[int, float]]:
+        """Find the closest stored truth to ``activation``.
+
+        Compares against the *direction* of stored truths (normalised).
+        The sign of the cosine similarity tells you consonance (+) vs
+        dissonance (−) with the stored truth.
+
+        Args:
+            activation: (nDim,) or (B, nDim) query vector.
+            threshold: minimum absolute cosine similarity to count as a match.
+
+        Returns:
+            (index, similarity) of the best match, or None if no match
+            exceeds the threshold.  similarity > 0 means consonant with
+            a positive truth or dissonant with a negative truth.
+        """
+        n = self.count.item()
+        if n == 0:
+            return None
+
+        stored = self.truths[:n]                                 # (n, D)
+        q = activation.detach()
+        if q.ndim == 1:
+            q = q.unsqueeze(0)                                   # (1, D)
+
+        q_norm = torch.nn.functional.normalize(q, dim=-1)
+        s_norm = torch.nn.functional.normalize(stored, dim=-1)
+        sims = (q_norm @ s_norm.T).squeeze(0)                   # (n,)
+
+        best_abs, best_idx = sims.abs().max(dim=0)
+        if best_abs.item() < threshold:
+            return None
+        idx = best_idx.item()
+        return (idx, sims[idx].item())
+
+    # ── Truth Field ───────────────────────────────────────────────────
+
+    def field(self, concepts: torch.Tensor, eps: float = 1e-8
+              ) -> torch.Tensor:
+        """Project stored truths into a scalar truth field over concepts.
+
+        Because the DoT is baked into the stored vectors, the field
+        naturally produces attractors for positive truths and dispersers
+        for negative truths:
+
+            field(c) = (1/n) Σ_i  sim(c, truth_i)
+
+        where ``truth_i = activation_i * degree_i``.
+
+        Args:
+            concepts: (B, N, D) concept vectors in ConceptualSpace.
+
+        Returns:
+            field: (B, N) scalar field in [-1, 1].
+        """
+        n = self.count.item()
+        if n == 0:
+            return torch.zeros(
+                concepts.shape[0], concepts.shape[1],
+                device=concepts.device, dtype=concepts.dtype,
+            )
+
+        stored = self.truths[:n]                                 # (n, D)
+
+        c_norm = torch.nn.functional.normalize(
+            concepts, dim=-1, eps=eps)                            # (B, N, D)
+        # Don't normalize stored — the magnitude carries the DoT
+        # Use dot product: stronger DoT → stronger field influence
+        dots = torch.einsum('bnd,md->bnm', c_norm, stored)      # (B, N, n)
+        truth_field = dots.sum(dim=-1) / (n + eps)               # (B, N)
+
+        return truth_field.clamp(-1.0, 1.0)
+
+    # ── Maintenance ───────────────────────────────────────────────────
+
+    @torch.no_grad()
+    def prune(self, min_norm: float = 1e-6):
+        """Remove near-zero entries (truths with DoT ≈ 0).
+
+        Compacts the store in-place.
+        """
+        n = self.count.item()
+        if n == 0:
+            return
+        norms = self.truths[:n].norm(dim=-1)
+        keep = norms > min_norm
+        kept = self.truths[:n][keep]
+        new_n = kept.shape[0]
+        self.truths[:new_n] = kept
+        self.truths[new_n:] = 0
+        self.count.fill_(new_n)
+
+    def __len__(self):
+        return self.count.item()
+
+    def __repr__(self):
+        return (f"TruthLayer(nDim={self.nDim}, "
+                f"truths={self.count.item()}/{self.max_truths})")
+
+    # ── Test ──────────────────────────────────────────────────────────
+
+    @staticmethod
+    def test():
+        D = 32
+        tl = TruthLayer(D, max_truths=64)
+        assert len(tl) == 0
+
+        # Record truths — DoT is baked into the stored activation
+        t1 = torch.randn(D)
+        t2 = torch.randn(D)
+        idx1 = tl.record(t1, degree=0.9)
+        idx2 = tl.record(t2, degree=-0.7)
+        assert len(tl) == 2
+
+        # Stored vector = activation * degree
+        assert torch.allclose(tl.truths[0], t1 * 0.9, atol=1e-6)
+        assert torch.allclose(tl.truths[1], t2 * -0.7, atol=1e-6)
+
+        # Query — exact match (high similarity)
+        result = tl.query(t1, threshold=0.8)
+        assert result is not None
+        assert result[0] == 0
+        assert result[1] > 0  # consonant with positive truth
+
+        # Query — no match for random vector
+        result = tl.query(torch.randn(D), threshold=0.99)
+        assert result is None
+
+        # Field projection
+        concepts = torch.randn(2, 8, D)
+        f = tl.field(concepts)
+        assert f.shape == (2, 8)
+        assert f.min() >= -1.0 and f.max() <= 1.0
+
+        # Prune near-zero (DoT ≈ 0 produces near-zero stored vector)
+        tl.record(torch.randn(D), degree=0.0)
+        assert len(tl) == 3
+        tl.prune(min_norm=1e-6)
+        assert len(tl) == 2
+class ChunkLayer(Layer):
+    """Learned BPE-style codebook for perceptual chunking.
+
+    Each entry stores a merge prototype (what the pair looks like) and a
+    split prototype (the two constituents).  Forward scores adjacent pairs
+    against the codebook; reverse looks up the entry to reconstruct.
+
+    The entropic gate merges a pair only when the codebook match score
+    exceeds a learned threshold — i.e. when encoding the pair as a single
+    chunk saves more bits than it costs.
+
+    Merging stops at word boundaries (whitespace characters) so that chunks
+    never cross word edges.  In the byte stream the space character (0x20)
+    and common whitespace bytes serve as boundary markers.
+    """
+
+    def __init__(self, nDim, nChunks=256):
+        super().__init__(nDim, nDim)
+        self.nDim = nDim
+        self.nChunks = nChunks
+        # Split prototypes: what each chunk decodes to  [nChunks, 2, nDim]
+        self.split = nn.Parameter(torch.randn(nChunks, 2, nDim) * 0.02)
+        # Merge prototypes: the single vector a chunk becomes  [nChunks, nDim]
+        self.merge = nn.Parameter(torch.randn(nChunks, nDim) * 0.02)
+        # Learned threshold — merge only when score exceeds this
+        self.threshold = nn.Parameter(torch.zeros(1))
+
+    def score_pair(self, v1, v2):
+        """Score a single (v1, v2) pair against all codebook entries.
+
+        Args:
+            v1: [nDim]  — left element
+            v2: [nDim]  — right element
+        Returns:
+            best_score: scalar — cosine similarity of best match
+            best_id:    int    — codebook index of best match
+        """
+        pair = torch.stack([v1, v2], dim=0)              # [2, nDim]
+        pair_flat = pair.reshape(1, -1)                   # [1, 2*nDim]
+        split_flat = self.split.reshape(self.nChunks, -1) # [K, 2*nDim]
+        sims = F.cosine_similarity(pair_flat, split_flat, dim=-1)  # [K]
+        best_score, best_id = sims.max(dim=0)
+        return best_score, best_id.item()
+
+    def encode(self, v1, v2):
+        """Encode a pair into a single chunk vector.
+
+        Returns:
+            merged: [nDim]     — the chunk vector
+            chunk_id: int      — which codebook entry was used
+        """
+        best_score, best_id = self.score_pair(v1, v2)
+        return self.merge[best_id], best_id
+
+    def decode(self, chunk_id):
+        """Decode a codebook entry back to two vectors.
+
+        Args:
+            chunk_id: int — codebook index
+        Returns:
+            v1: [nDim], v2: [nDim]
+        """
+        return self.split[chunk_id, 0], self.split[chunk_id, 1]
+
+    def should_merge(self, v1, v2):
+        """Entropic gate: merge only if score exceeds threshold."""
+        best_score, best_id = self.score_pair(v1, v2)
+        return best_score > self.threshold, best_id
 #endregion
 
 #region Activation Functions
@@ -2183,503 +2411,6 @@ class CorrMem(Mem):
                     val = 0
                 amt = max(abs(in1[r]), abs(in2[c]))
                 self.output[r, c] = ((self.nTrials - amt) / self.nTrials) * self.output[r, c] + (amt / self.nTrials) * val
-#endregion
-
-#region Logic
-
-class SyntacticLayer(Layer):
-    """Per-space rule prediction layer for the recursive grammar.
-
-    Each instance handles a subset of the Grammar's rules (one cognitive
-    space's rules).  Uses a weight-tied recursive architecture with depth
-    embeddings.
-
-    **This layer only predicts rules and generates word tuples.**  It does
-    not execute operations on representations — that is done by the owning
-    space's ``projectXxx()`` method, which knows the native representation
-    type (activations, vectors, etc.).
-
-    Args:
-        nInput:    activation width (number of symbol/concept/percept slots).
-        nOutput:   same as nInput.
-        rules:     list of global Grammar rule IDs this layer handles
-                   (e.g. [1,2,3,4,5] for the symbolic space).
-        transition_rule: optional global rule ID for the transition rule
-                   (e.g. 6 for S→C).  Included in prediction but signals
-                   hand-off to the next space.
-        max_depth: maximum derivation depth.
-        hidden_dim: width of the shared derivation hidden state.
-        grammar:   Grammar instance.
-        tau:       Gumbel-softmax temperature.
-    """
-
-    # Transition bias scale: (1 - interpretation) * TRANSITION_SCALE is added
-    # to the transition rule's logit. The transition rule (S→C or C→P) acts
-    # as NOP — "stop deriving this tier, pass through."
-    # Low interpretation → transition dominates → no reductions (episodic).
-    # High interpretation → grammar rules fire → composition (semantic).
-    TRANSITION_SCALE = 10.0
-
-    def __init__(self, nInput, nOutput, rules, transition_rule=None,
-                 max_depth=12, hidden_dim=256, grammar=None, tau=1.0):
-        super().__init__(nInput, nOutput)
-        # Store grammar as non-Module attribute to avoid circular nn.Module
-        # reference (Grammar owns SyntacticLayers, SyntacticLayers reference
-        # Grammar). Using object.__setattr__ bypasses nn.Module.__setattr__
-        # which would register it as a submodule.
-        if grammar is None:
-            from Space import Grammar
-            grammar = Grammar()
-        object.__setattr__(self, 'grammar', grammar)
-        self.rules           = list(rules)
-        self.transition_rule = transition_rule
-        # Build the full set of rule IDs this layer predicts over
-        self.all_rules = list(rules)
-        if transition_rule is not None and transition_rule not in self.all_rules:
-            self.all_rules.append(transition_rule)
-        self.num_rules  = len(self.all_rules)
-        # Map from local index → global rule ID
-        self.rule_index = {rid: i for i, rid in enumerate(self.all_rules)}
-        # Local index of the transition rule (for interpretation bias)
-        self.transition_index = (self.rule_index.get(transition_rule)
-                                 if transition_rule is not None else None)
-        self.max_depth  = max_depth
-        self.hidden_dim = hidden_dim
-        self.tau        = tau
-
-        # Rule prediction network (weight-tied across depths)
-        self.input_proj       = LinearLayer(nInput, hidden_dim)
-        self.derivation_layer = LinearLayer(hidden_dim, hidden_dim)
-        self.rule_head        = LinearLayer(hidden_dim, self.num_rules)
-        self.depth_embed      = nn.Embedding(max_depth, hidden_dim)
-        self.activation_fn    = nn.GELU()
-
-        # Xavier initialization so logits start in a numerically stable range.
-        # LinearLayer defaults to torch.randn which gives std=1.0; for large
-        # dims this produces huge activations that saturate softmax/gumbel.
-        for layer in [self.input_proj, self.derivation_layer, self.rule_head]:
-            nn.init.xavier_normal_(layer.W)
-        nn.init.normal_(self.depth_embed.weight, std=0.02)
-
-        # Register child layers for ergodic dispatch
-        self.layers = [self.input_proj, self.derivation_layer, self.rule_head]
-
-    # ── forward: predict rules ────────────────────────────────────
-
-    def forward(self, x):
-        """Predict rule distributions and build word tuples.
-
-        Args:
-            x: [B, N] activation vector from the space's subspace.
-
-        Returns dict:
-            rule_logits:     [B, max_depth, num_rules]  (local indices)
-            rule_probs:      [B, max_depth, num_rules]
-            predicted_rules: [B, max_depth]             (global rule IDs)
-            words:           list of (batch, vector, rule) tuples
-        """
-        B, N = x.shape
-
-        h = self.input_proj.forward(x)
-        h = self.activation_fn(h)
-
-        depth_ids = torch.arange(self.max_depth, device=x.device)
-        depth_vecs = self.depth_embed(depth_ids)
-
-        all_logits = []
-        all_probs  = []
-
-        # Transition bias: (1 - interpretation) * scale on the transition
-        # rule logit. The transition rule (S→C or C→P) is the NOP — "stop
-        # deriving, pass through." Low interpretation biases toward it.
-        interp = self.grammar.interpretation if self.grammar is not None else 0.5
-        transition_bias = (1.0 - interp) * self.TRANSITION_SCALE
-
-        for d in range(self.max_depth):
-            h = h + depth_vecs[d]
-            h = self.derivation_layer.forward(h)
-            h = self.activation_fn(h)
-            logits = self.rule_head.forward(h)  # [B, num_rules]
-
-            # Bias the transition rule logit. Detach the bias so it
-            # doesn't flow gradients — interpretation is a hyperparameter,
-            # the grammar shouldn't learn to predict NOP.
-            if self.transition_index is not None and transition_bias > 0:
-                logits = logits.clone()
-                logits[:, self.transition_index] = (
-                    logits[:, self.transition_index].detach() + transition_bias
-                )
-
-            if self.training:
-                probs = F.gumbel_softmax(logits, tau=self.tau, hard=False)
-            else:
-                probs = F.softmax(logits, dim=-1)
-
-            all_logits.append(logits)
-            all_probs.append(probs)
-
-        rule_logits = torch.stack(all_logits, dim=1)
-        rule_probs  = torch.stack(all_probs, dim=1)
-
-        local_predicted = rule_logits.argmax(dim=-1)
-        global_predicted = torch.tensor(
-            [[self.all_rules[local_predicted[b, d].item()]
-              for d in range(self.max_depth)]
-             for b in range(B)],
-            device=x.device, dtype=torch.long
-        )
-
-        active_positions = self._active_positions(x)
-        words = self._generate_derivation(global_predicted, active_positions)
-
-        return {
-            "rule_logits":     rule_logits,
-            "rule_probs":      rule_probs,
-            "predicted_rules": global_predicted,
-            "words":           words,
-        }
-
-    # ── helpers ────────────────────────────────────────────────────
-
-    def _active_positions(self, x):
-        """Extract per-batch lists of active (nonzero) positions."""
-        B = x.shape[0]
-        positions = []
-        for b in range(B):
-            active = torch.nonzero(x[b], as_tuple=False).squeeze(-1)
-            positions.append(active.tolist())
-        return positions
-
-    def _generate_derivation(self, predicted_rules, active_positions):
-        """Build word tuples from predicted rules and active positions."""
-        B = predicted_rules.shape[0]
-        all_words = []
-        for b in range(B):
-            rules     = predicted_rules[b].tolist()
-            positions = active_positions[b]
-            n = len(positions)
-            if n == 0:
-                continue
-            if n == 1:
-                terminal = self._find_terminal_rule()
-                all_words.append((b, positions[0], terminal))
-                continue
-            pos_idx = 0
-            for rule_id in rules:
-                if pos_idx >= n - 1:
-                    break
-                arity = self.grammar.arity(rule_id)
-                if arity != 2:
-                    binary = [r for r in self.rules if self.grammar.arity(r) == 2]
-                    rule_id = binary[0] if binary else rule_id
-                all_words.append((b, positions[pos_idx], rule_id))
-                pos_idx += 1
-            terminal = self._find_terminal_rule()
-            all_words.append((b, positions[-1], terminal))
-        return all_words
-
-    def _find_terminal_rule(self):
-        """Find the terminal (arity 0) rule in this layer's rule set."""
-        for r in self.all_rules:
-            if self.grammar.arity(r) == 0:
-                return r
-        if self.transition_rule is not None:
-            return self.transition_rule
-        return self.all_rules[0]
-
-    # ── reverse: deterministic tree-walk ──────────────────────────
-
-    def reverse(self, words, nVectors, batch_size):
-        """Decode derivation to recover the activation vector."""
-        activation = torch.zeros(batch_size, nVectors, device=TheDevice.get())
-        for b, v, r in words:
-            activation[b, v] = 1.0
-        return activation
-
-    # ── utilities ─────────────────────────────────────────────────
-
-    def set_tau(self, tau):
-        """Anneal the Gumbel-softmax temperature."""
-        self.tau = tau
-
-class TruthLayer(Layer):
-    """Truth store on SymbolicSpace: encoded truth statements scaled by DoT.
-
-    Each truth statement is processed through the model pipeline to produce
-    a symbolic activation ``[nSymbols]``.  The activation is then scaled by
-    the DegreeOfTruth before storage:
-
-        stored = activation * degree
-
-    This means the stored vector carries the DoT intrinsically:
-      - degree = +1 → full activation stored (attractor)
-      - degree = -1 → negated activation stored (disperser)
-      - degree =  0 → zero vector (inert, prunable)
-
-    The ``field()`` method projects stored truths into ConceptualSpace
-    via cosine similarity.  Because the degree is baked into the stored
-    vectors, positive-DoT truths attract and negative-DoT truths repel
-    without needing a separate degree buffer.
-
-    Propositional structure is defined by the S-tier grammar:
-      - ``part(S, S)`` — parthood / containment
-      - ``equals(S, S)`` — identity / equivalence
-    """
-
-    def __init__(self, nDim: int, max_truths: int = 1024):
-        super().__init__(nDim, nDim)
-        self.nDim = nDim
-        self.max_truths = max_truths
-
-        # Storage buffer: activation * degree (DoT baked in)
-        self.register_buffer(
-            'truths',
-            torch.zeros(max_truths, nDim),
-        )
-        self.register_buffer(
-            'count',
-            torch.tensor(0, dtype=torch.long),
-        )
-
-    # ── Record / Query ────────────────────────────────────────────────
-
-    @torch.no_grad()
-    def record(self, activation: torch.Tensor, degree: float) -> int:
-        """Store a truth: activation scaled by its DegreeOfTruth.
-
-        The stored vector is ``activation * degree``, so the DoT is
-        encoded in both the magnitude and (for negative degrees) the
-        direction of the stored representation.
-
-        Args:
-            activation: (nDim,) symbolic activation from the model pipeline.
-            degree: scalar in [-1, 1].  +1 = certainly true, -1 = certainly
-                    false, 0 = unknown/inert.
-
-        Returns:
-            Index of the stored entry.
-        """
-        if self.count >= self.max_truths:
-            raise RuntimeError(
-                f"Truth store full ({self.max_truths} entries). "
-                "Increase max_truths or prune stale entries."
-            )
-        degree = max(-1.0, min(1.0, degree))
-        idx = self.count.item()
-        self.truths[idx] = activation.detach() * degree
-        self.count += 1
-        return idx
-
-    def query(self, activation: torch.Tensor, threshold: float = 0.9
-              ) -> Optional[Tuple[int, float]]:
-        """Find the closest stored truth to ``activation``.
-
-        Compares against the *direction* of stored truths (normalised).
-        The sign of the cosine similarity tells you consonance (+) vs
-        dissonance (−) with the stored truth.
-
-        Args:
-            activation: (nDim,) or (B, nDim) query vector.
-            threshold: minimum absolute cosine similarity to count as a match.
-
-        Returns:
-            (index, similarity) of the best match, or None if no match
-            exceeds the threshold.  similarity > 0 means consonant with
-            a positive truth or dissonant with a negative truth.
-        """
-        n = self.count.item()
-        if n == 0:
-            return None
-
-        stored = self.truths[:n]                                 # (n, D)
-        q = activation.detach()
-        if q.ndim == 1:
-            q = q.unsqueeze(0)                                   # (1, D)
-
-        q_norm = torch.nn.functional.normalize(q, dim=-1)
-        s_norm = torch.nn.functional.normalize(stored, dim=-1)
-        sims = (q_norm @ s_norm.T).squeeze(0)                   # (n,)
-
-        best_abs, best_idx = sims.abs().max(dim=0)
-        if best_abs.item() < threshold:
-            return None
-        idx = best_idx.item()
-        return (idx, sims[idx].item())
-
-    # ── Truth Field ───────────────────────────────────────────────────
-
-    def field(self, concepts: torch.Tensor, eps: float = 1e-8
-              ) -> torch.Tensor:
-        """Project stored truths into a scalar truth field over concepts.
-
-        Because the DoT is baked into the stored vectors, the field
-        naturally produces attractors for positive truths and dispersers
-        for negative truths:
-
-            field(c) = (1/n) Σ_i  sim(c, truth_i)
-
-        where ``truth_i = activation_i * degree_i``.
-
-        Args:
-            concepts: (B, N, D) concept vectors in ConceptualSpace.
-
-        Returns:
-            field: (B, N) scalar field in [-1, 1].
-        """
-        n = self.count.item()
-        if n == 0:
-            return torch.zeros(
-                concepts.shape[0], concepts.shape[1],
-                device=concepts.device, dtype=concepts.dtype,
-            )
-
-        stored = self.truths[:n]                                 # (n, D)
-
-        c_norm = torch.nn.functional.normalize(
-            concepts, dim=-1, eps=eps)                            # (B, N, D)
-        # Don't normalize stored — the magnitude carries the DoT
-        # Use dot product: stronger DoT → stronger field influence
-        dots = torch.einsum('bnd,md->bnm', c_norm, stored)      # (B, N, n)
-        truth_field = dots.sum(dim=-1) / (n + eps)               # (B, N)
-
-        return truth_field.clamp(-1.0, 1.0)
-
-    # ── Maintenance ───────────────────────────────────────────────────
-
-    @torch.no_grad()
-    def prune(self, min_norm: float = 1e-6):
-        """Remove near-zero entries (truths with DoT ≈ 0).
-
-        Compacts the store in-place.
-        """
-        n = self.count.item()
-        if n == 0:
-            return
-        norms = self.truths[:n].norm(dim=-1)
-        keep = norms > min_norm
-        kept = self.truths[:n][keep]
-        new_n = kept.shape[0]
-        self.truths[:new_n] = kept
-        self.truths[new_n:] = 0
-        self.count.fill_(new_n)
-
-    def __len__(self):
-        return self.count.item()
-
-    def __repr__(self):
-        return (f"TruthLayer(nDim={self.nDim}, "
-                f"truths={self.count.item()}/{self.max_truths})")
-
-    # ── Test ──────────────────────────────────────────────────────────
-
-    @staticmethod
-    def test():
-        D = 32
-        tl = TruthLayer(D, max_truths=64)
-        assert len(tl) == 0
-
-        # Record truths — DoT is baked into the stored activation
-        t1 = torch.randn(D)
-        t2 = torch.randn(D)
-        idx1 = tl.record(t1, degree=0.9)
-        idx2 = tl.record(t2, degree=-0.7)
-        assert len(tl) == 2
-
-        # Stored vector = activation * degree
-        assert torch.allclose(tl.truths[0], t1 * 0.9, atol=1e-6)
-        assert torch.allclose(tl.truths[1], t2 * -0.7, atol=1e-6)
-
-        # Query — exact match (high similarity)
-        result = tl.query(t1, threshold=0.8)
-        assert result is not None
-        assert result[0] == 0
-        assert result[1] > 0  # consonant with positive truth
-
-        # Query — no match for random vector
-        result = tl.query(torch.randn(D), threshold=0.99)
-        assert result is None
-
-        # Field projection
-        concepts = torch.randn(2, 8, D)
-        f = tl.field(concepts)
-        assert f.shape == (2, 8)
-        assert f.min() >= -1.0 and f.max() <= 1.0
-
-        # Prune near-zero (DoT ≈ 0 produces near-zero stored vector)
-        tl.record(torch.randn(D), degree=0.0)
-        assert len(tl) == 3
-        tl.prune(min_norm=1e-6)
-        assert len(tl) == 2
-
-class ChunkLayer(Layer):
-    """Learned BPE-style codebook for perceptual chunking.
-
-    Each entry stores a merge prototype (what the pair looks like) and a
-    split prototype (the two constituents).  Forward scores adjacent pairs
-    against the codebook; reverse looks up the entry to reconstruct.
-
-    The entropic gate merges a pair only when the codebook match score
-    exceeds a learned threshold — i.e. when encoding the pair as a single
-    chunk saves more bits than it costs.
-
-    Merging stops at word boundaries (whitespace characters) so that chunks
-    never cross word edges.  In the byte stream the space character (0x20)
-    and common whitespace bytes serve as boundary markers.
-    """
-
-    def __init__(self, nDim, nChunks=256):
-        super().__init__(nDim, nDim)
-        self.nDim = nDim
-        self.nChunks = nChunks
-        # Split prototypes: what each chunk decodes to  [nChunks, 2, nDim]
-        self.split = nn.Parameter(torch.randn(nChunks, 2, nDim) * 0.02)
-        # Merge prototypes: the single vector a chunk becomes  [nChunks, nDim]
-        self.merge = nn.Parameter(torch.randn(nChunks, nDim) * 0.02)
-        # Learned threshold — merge only when score exceeds this
-        self.threshold = nn.Parameter(torch.zeros(1))
-
-    def score_pair(self, v1, v2):
-        """Score a single (v1, v2) pair against all codebook entries.
-
-        Args:
-            v1: [nDim]  — left element
-            v2: [nDim]  — right element
-        Returns:
-            best_score: scalar — cosine similarity of best match
-            best_id:    int    — codebook index of best match
-        """
-        pair = torch.stack([v1, v2], dim=0)              # [2, nDim]
-        pair_flat = pair.reshape(1, -1)                   # [1, 2*nDim]
-        split_flat = self.split.reshape(self.nChunks, -1) # [K, 2*nDim]
-        sims = F.cosine_similarity(pair_flat, split_flat, dim=-1)  # [K]
-        best_score, best_id = sims.max(dim=0)
-        return best_score, best_id.item()
-
-    def encode(self, v1, v2):
-        """Encode a pair into a single chunk vector.
-
-        Returns:
-            merged: [nDim]     — the chunk vector
-            chunk_id: int      — which codebook entry was used
-        """
-        best_score, best_id = self.score_pair(v1, v2)
-        return self.merge[best_id], best_id
-
-    def decode(self, chunk_id):
-        """Decode a codebook entry back to two vectors.
-
-        Args:
-            chunk_id: int — codebook index
-        Returns:
-            v1: [nDim], v2: [nDim]
-        """
-        return self.split[chunk_id, 0], self.split[chunk_id, 1]
-
-    def should_merge(self, v1, v2):
-        """Entropic gate: merge only if score exceeds threshold."""
-        best_score, best_id = self.score_pair(v1, v2)
-        return best_score > self.threshold, best_id
-
 #endregion
 
 def test():

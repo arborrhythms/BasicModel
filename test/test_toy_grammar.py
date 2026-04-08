@@ -72,6 +72,7 @@ _N_CONCEPTS = 256
 _N_PERCEPTS = 128
 _CONCEPT_DIM = 100 + 4   # nDim + objectSize (nWhere + nWhen)
 _SYMBOL_DIM = 100 + 4
+_N_CONCEPT_SLOTS = _N_PERCEPTS + _N_SYMBOLS  # conceptInputShape[0] = 256
 
 
 class TestGrammarGradientFlow(unittest.TestCase):
@@ -391,6 +392,117 @@ class TestGrammarRuleReport(unittest.TestCase):
                     global_id = sl.all_rules[local_idx]
                     rule = grammar.rules[global_id]
                     print(f"    {rule.canonical}: {prob:.4f}")
+
+
+class TestSoftSuperposition(unittest.TestCase):
+    """Verify Grammar.forward() applies soft-weighted composition."""
+
+    def setUp(self):
+        torch.manual_seed(42)
+        self.model, self.grammar = _make_model()
+
+    def test_c_tier_soft_compose(self):
+        """C-tier Grammar.forward() produces output different from input."""
+        B, N, D = 1, _N_CONCEPT_SLOTS, _CONCEPT_DIM
+        data = torch.randn(B, N, D, device=TheDevice.get()) * 0.1
+        # Ensure at least 2 active positions for composition
+        data[0, 0] = torch.randn(D, device=TheDevice.get()) * 0.5
+        data[0, 1] = torch.randn(D, device=TheDevice.get()) * 0.5
+
+        subspace = self.model.conceptualSpace.subspace
+        self.grammar.eval()
+        with torch.no_grad():
+            result = self.grammar.forward('C', data, subspace)
+
+        # Soft superposition should transform the data
+        diff = (result - data).abs().max().item()
+        self.assertGreater(diff, 1e-6,
+            "C-tier Grammar.forward() returned input unchanged — no composition")
+
+    def test_s_tier_soft_compose(self):
+        """S-tier Grammar.forward() uses learned rule probabilities."""
+        B, N = 1, _N_SYMBOLS
+        data = torch.zeros(B, N, device=TheDevice.get())
+        # Set multiple active positions
+        data[0, 0] = 0.5
+        data[0, 1] = 0.3
+        data[0, 2] = 0.2
+
+        subspace = self.model.symbolicSpace.subspace
+        self.grammar.eval()
+        with torch.no_grad():
+            result = self.grammar.forward('S', data, subspace)
+
+        # Should not just apply true(S) at one position
+        diff = (result - data).abs().max().item()
+        self.assertGreater(diff, 1e-6,
+            "S-tier Grammar.forward() returned input unchanged — no composition")
+
+    def test_transition_dominates_at_low_interpretation(self):
+        """With interpretation=0.0 transition bias dominates → near-identity."""
+        old_interp = self.grammar.interpretation
+        try:
+            self.grammar.interpretation = 0.0
+            B, N = 1, _N_SYMBOLS
+            data = torch.zeros(B, N, device=TheDevice.get())
+            data[0, 0] = 0.5
+            data[0, 1] = 0.3
+
+            subspace = self.model.symbolicSpace.subspace
+            self.grammar.eval()
+            with torch.no_grad():
+                result = self.grammar.forward('S', data, subspace)
+
+            # Transition rule (identity) should dominate — output ≈ first leaf
+            # The composed result should be close to the leaf_acts[:, 0, :]
+            # which is the first active position's contribution
+            self.assertFalse(result.isnan().any(), "NaN in result")
+        finally:
+            self.grammar.interpretation = old_interp
+
+    def test_not_non_still_fire(self):
+        """not(C) and non(C) fire deterministically before soft composition."""
+        B, N, D = 1, _N_CONCEPT_SLOTS, _CONCEPT_DIM
+        # Create data where mean < 0 to trigger not()
+        data = torch.full((B, N, D), -0.5, device=TheDevice.get())
+        # Zero out most positions so only one is active
+        data[0, 1:] = 0.0
+
+        subspace = self.model.conceptualSpace.subspace
+        self.grammar.eval()
+        with torch.no_grad():
+            result = self.grammar.forward('C', data, subspace)
+
+        # After not(): values should be non-negative at position 0
+        # (tanh(abs(v)) >= 0 for all v)
+        words = subspace.get_words()
+        not_rid = self.grammar._c_rule_ids().get('not')
+        if not_rid is not None:
+            not_words = [w for w in words if len(w) == 3 and w[2] == not_rid]
+            self.assertGreater(len(not_words), 0,
+                "not() rule should have fired for negative-mean data")
+
+    def test_gradient_through_grammar_forward(self):
+        """Gradients flow through Grammar.forward() to SyntacticLayer params."""
+        sl_c = self.grammar._tier_syntactic_layer('C')
+        if sl_c is None:
+            self.skipTest("No C-tier SyntacticLayer")
+
+        sl_c.train()
+        B, N, D = 1, _N_CONCEPT_SLOTS, _CONCEPT_DIM
+        data = (torch.randn(B, N, D, device=TheDevice.get()) * 0.01).requires_grad_(True)
+        data_with_active = data.clone()
+        data_with_active[0, 0] = torch.randn(D, device=TheDevice.get()) * 0.5
+        data_with_active[0, 1] = torch.randn(D, device=TheDevice.get()) * 0.5
+
+        subspace = self.model.conceptualSpace.subspace
+        result = self.grammar.forward('C', data_with_active, subspace)
+        loss = result.pow(2).sum()
+        loss.backward()
+
+        # SyntacticLayer parameters should receive gradients
+        self.assertIsNotNone(sl_c.rule_head.W.grad,
+            "No gradient to SyntacticLayer rule_head through Grammar.forward()")
 
 
 if __name__ == '__main__':

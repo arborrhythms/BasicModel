@@ -17,7 +17,7 @@
     <nWhen>2</nWhen>
 
     <training>
-      <numEpochs>600</numEpochs>
+      <numEpochs>200</numEpochs>
       <learningRate>0.01</learningRate>
       <autosave>false</autosave>
       <autoload>false</autoload>

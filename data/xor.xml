@@ -12,7 +12,7 @@
     </data>
 
     <training>
-      <numEpochs>1000</numEpochs>
+      <numEpochs>200</numEpochs>
       <learningRate>0.01</learningRate>
       <autosave>true</autosave>
     </training>
