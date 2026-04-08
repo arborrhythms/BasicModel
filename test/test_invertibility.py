@@ -539,46 +539,35 @@ class TestPerceptualSpacePassthrough(unittest.TestCase):
     def test_objsize_4(self):  self._check(4)
 
 
-class TestPerceptualSpaceReversePassTrained(unittest.TestCase):
-    """PerceptualSpace with reversible=True, trained pair for roundtrip.
+class TestPiLayerInvertibleTrained(unittest.TestCase):
+    """PiLayer with invertible=True, trained for roundtrip.
 
-    PiLayer (log-space) does not interleave, so output shape matches input.
-    Isolated test — no upstream sigmoid guard from ConceptualSpace, so we
-    suppress PiLayer range warnings and patch out the strict range check.
+    Tests PiLayer directly (previously tested via PerceptualSpace, which
+    no longer uses PiLayer — it remains in SymbolicSpace).
     """
-    def _check(self, objSize):
-        _setup_object_encoding(objSize=objSize, passThrough=False, hasAttention=False,
-                               ergodic=False)
-        nObj, contentDim = 3, 6
-        embDim = contentDim + objSize
+    def _check(self, dim):
         torch.manual_seed(42)
-        pspace = PerceptualSpace(
-            [nObj, embDim], [nObj, contentDim], [nObj, embDim],
-        )
+        pi = PiLayer(dim, dim, invertible=True, monotonic=True).to(TheDevice.get())
         criterion = nn.MSELoss()
-        optimizer = optim.Adam(pspace.parameters(), lr=0.005)
-        # Input in [-1, 1] (PiLayer's expected domain)
-        x_data = (torch.rand(4, nObj, embDim).to(TheDevice.get()) * 2 - 1)
-        with warnings.catch_warnings(), \
-             patch.object(SubSpace, 'normalize', lambda *a, **kw: None):
-            warnings.filterwarnings("ignore", message="PiLayer.reverse")
-            pspace.train()
-            for _ in range(2000):
-                optimizer.zero_grad()
-                y = pspace.forward(_wrap_tensor(pspace, x_data))
-                x_rec = _unwrap(pspace.reverse(_clamp_subspace(y)))
-                loss = criterion(x_data, x_rec)
-                loss.backward()
-                optimizer.step()
-            pspace.eval()
-            with torch.no_grad():
-                y = pspace.forward(_wrap_tensor(pspace, x_data))
-                x_rec = _unwrap(pspace.reverse(_clamp_subspace(y)))
+        optimizer = optim.Adam(pi.parameters(), lr=0.005)
+        x_data = (torch.rand(4, dim).to(TheDevice.get()) * 2 - 1)
+        pi.train()
+        for _ in range(2000):
+            optimizer.zero_grad()
+            y = pi.forward(x_data)
+            x_rec = pi.reverse(y)
+            loss = criterion(x_data, x_rec)
+            loss.backward()
+            optimizer.step()
+        pi.eval()
+        with torch.no_grad():
+            y = pi.forward(x_data)
+            x_rec = pi.reverse(y)
         err = _reconstruction_error(x_data, x_rec, rel=True)
-        self.assertLess(err, 1.0, f"objSize={objSize}: rel err={err:.4f}")
+        self.assertLess(err, 1.0, f"dim={dim}: rel err={err:.4f}")
 
-    def test_objsize_0(self):  self._check(0)
-    def test_objsize_4(self):  self._check(4)
+    def test_dim_6(self):   self._check(6)
+    def test_dim_10(self):  self._check(10)
 
 
 class TestConceptualSpaceInvertible(unittest.TestCase):

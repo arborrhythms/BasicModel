@@ -287,6 +287,7 @@ class WordEncoding(Encoding):
     def decode(self, word):
         """Unpack a word tuple into (batch, vector, rule)."""
         return word[0], word[1], word[2]
+
 class WhatEncoding(Encoding):
     """Handle the content-layout transform for a space's What factor.
 
@@ -995,8 +996,15 @@ class Embedding(Basis):
         return "".join(chr(int(c) & 0xFF) for c in buf).rstrip("\x00")
 
     def _token_stream(self, text):
+        if getattr(self, 'byte_mode', False):
+            return self._byte_stream(text)
         from parse import quick_parser
         return quick_parser(self._to_text(text))
+
+    def _byte_stream(self, text):
+        """Tokenize as raw bytes: one (chr(byte), byte_offset) per byte."""
+        raw = self._to_text(text).encode('utf-8')
+        return [(chr(b), i) for i, b in enumerate(raw)]
 
     def _token_to_index(self, text):
         if text in self.pretrain.key_to_index:
@@ -1010,7 +1018,7 @@ class Embedding(Basis):
 
     def create(self, nInput=None, nVectors=None, nDim=None, passThrough=True,
                wv=None, embedding_path=None, source=None, learning_rate=0.001,
-               min_frequency=0.0, neg_samples=64):
+               min_frequency=0.0, neg_samples=64, byte_mode=False):
         """Initialise from WordVectors or load from embedding_path.
 
         Accepts the same positional signature as ``Basis.create()`` so it can
@@ -1061,9 +1069,10 @@ class Embedding(Basis):
         # target for positions beyond the real tokens.
         self.insert("\x00")
 
-        # Bootstrap codebook with printable ASCII (1–127) so any OOV word
-        # can be spelled out character-by-character.
-        for cp in range(1, 127):
+        # Bootstrap codebook with ASCII (and full 0-255 in byte mode).
+        self.byte_mode = byte_mode
+        upper = 256 if byte_mode else 127
+        for cp in range(1, upper):
             ch = chr(cp)
             if ch not in self.pretrain.key_to_index:
                 self.insert(ch)
@@ -1323,8 +1332,8 @@ class Embedding(Basis):
                     oov_words.append(token_text)
                     oov_seen.add(token_text)
 
-        # Phase 2: Batch-insert OOV words into codebook
-        if oov_words:
+        # Phase 2: Batch-insert OOV words into codebook (skip in byte mode)
+        if oov_words and not getattr(self, 'byte_mode', False):
             for word in oov_words:
                 self.insert(word)
             codebook = self.getW()  # refresh after insert
@@ -2088,6 +2097,54 @@ class SubSpace(nn.Module):
         """Append a validated word tuple."""
         self.word.append(self.wordEncoding.encode(batch, vector, rule))
 
+    # ── Stack-scanning helpers ────────────────────────────────────────
+
+    def active_positions(self, b, data=None):
+        """Return sorted list of active (non-zero) position indices for batch element b."""
+        if data is None:
+            data = self.materialize()
+        if data.ndim == 3:
+            act = data[b].norm(dim=-1)
+        else:
+            act = data[b]
+        nz = act.nonzero(as_tuple=False)
+        if nz.numel() == 0:
+            return []
+        return nz.squeeze(-1).tolist()
+
+    def top_of_stack(self, data=None):
+        """Find the last active (non-zero) position per batch element.
+
+        Returns:
+            list of int — top-of-stack position for each batch element,
+            or -1 if the entire row is zero (empty stack).
+        """
+        if data is None:
+            data = self.materialize()
+        tops = []
+        for b in range(data.shape[0]):
+            active = self.active_positions(b, data)
+            tops.append(active[-1] if active else -1)
+        return tops
+
+    def top_two_of_stack(self, data=None):
+        """Find the last two active positions per batch element.
+
+        Returns:
+            list of (pos1, pos2) tuples — pos1 is second-to-top, pos2 is top.
+            Either may be -1 if fewer than two active positions exist.
+        """
+        if data is None:
+            data = self.materialize()
+        result = []
+        for b in range(data.shape[0]):
+            active = self.active_positions(b, data)
+            if len(active) >= 2:
+                result.append((active[-2], active[-1]))
+            else:
+                result.append((-1, -1))
+        return result
+
     def _lookup_modality(self, basis, indices):
         """Look up vectors from a Basis using index tensor [B, N].
 
@@ -2684,53 +2741,6 @@ class Grammar:
         """Set of method names available on the P (perceptual) tier."""
         return {r.method_name for r in self.rules if r.tier == 'P' and r.method_name}
 
-    # ── Helpers ────────────────────────────────────────────────────────
-
-    @staticmethod
-    def _active_positions(data, b):
-        """Return sorted list of active (non-zero) position indices for batch element b."""
-        if data.ndim == 3:
-            act = data[b].norm(dim=-1)
-        else:
-            act = data[b]
-        nz = act.nonzero(as_tuple=False)
-        if nz.numel() == 0:
-            return []
-        return nz.squeeze(-1).tolist()
-
-    @staticmethod
-    def _top_of_stack(data):
-        """Find the last active (non-zero) position per batch element.
-
-        Args:
-            data: [B, N] or [B, N, D] tensor
-        Returns:
-            list of int — top-of-stack position for each batch element,
-            or -1 if the entire row is zero (empty stack).
-        """
-        tops = []
-        for b in range(data.shape[0]):
-            active = Grammar._active_positions(data, b)
-            tops.append(active[-1] if active else -1)
-        return tops
-
-    @staticmethod
-    def _top_two_of_stack(data):
-        """Find the last two active positions per batch element.
-
-        Returns:
-            list of (pos1, pos2) tuples — pos1 is second-to-top, pos2 is top.
-            Either may be -1 if fewer than two active positions exist.
-        """
-        result = []
-        for b in range(data.shape[0]):
-            active = Grammar._active_positions(data, b)
-            if len(active) >= 2:
-                result.append((active[-2], active[-1]))
-            else:
-                result.append((-1, -1))
-        return result
-
     def _c_rule_ids(self):
         """Return dict of method_name → rule_id for C-tier operational rules."""
         result = {}
@@ -3074,28 +3084,18 @@ class PerceptualSyntacticLayer(SyntacticLayer):
             self.chunk_layer = ChunkLayer(nDim).to(
                 next(self.parameters()).device if list(self.parameters()) else 'cpu')
 
-    @staticmethod
-    def _is_word_boundary(data, b, pos, subspace):
-        """True if the vector at data[b, pos] represents whitespace."""
-        if subspace is None:
-            return False
-        try:
-            space_emb = subspace.vocabulary.get_space_embedding()
-        except (AttributeError, RuntimeError):
-            return False
-        vec = data[b, pos]
-        sim = F.cosine_similarity(vec.unsqueeze(0), space_emb.unsqueeze(0), dim=-1)
-        return sim.item() > 0.9
-
     def compose(self, data, subspace, grammar):
         """Apply P-tier chunk merging.
+
+        In byte mode (subspace._byte_indices set): hard-merge at whitespace
+        boundaries first, then run learned BPE, then compact to dense word slots.
 
         Args:
             data: [B, N, D] percept tensor
             subspace: SubSpace for word recording
             grammar: Grammar instance for subspace access
         Returns:
-            data with chunk merges applied
+            data with chunk merges applied (and compacted in byte mode)
         """
         chunk_rid = self._chunk_rule_id()
         if chunk_rid is None or data.ndim != 3:
@@ -3103,13 +3103,22 @@ class PerceptualSyntacticLayer(SyntacticLayer):
 
         self._ensure_chunk_layer(data.shape[-1])
         cb = self.chunk_layer
+
+        # Byte mode: hard-merge at whitespace boundaries
+        byte_indices = getattr(subspace, '_byte_indices', None)
+        if byte_indices is not None:
+            data, span_meta = cb.hard_merge_spans(data, byte_indices)
+            subspace._byte_span_meta = span_meta
+
+        # Learned BPE loop — boundary check delegates to ChunkLayer
         while True:
             any_merged = False
-            pairs = Grammar._top_two_of_stack(data)
+            pairs = subspace.top_two_of_stack(data)
             for b, (pos1, pos2) in enumerate(pairs):
                 if pos1 < 0 or pos2 < 0:
                     continue
-                if self._is_word_boundary(data, b, pos2, subspace):
+                if cb.is_word_boundary(data, b, pos2,
+                                       subspace=subspace, byte_indices=byte_indices):
                     continue
                 v1, v2 = data[b, pos1], data[b, pos2]
                 should, chunk_id = cb.should_merge(v1, v2)
@@ -3123,18 +3132,36 @@ class PerceptualSyntacticLayer(SyntacticLayer):
                 any_merged = True
             if not any_merged:
                 break
+
+        # Byte mode: compact sparse → dense word slots
+        if byte_indices is not None:
+            nWordSlots = getattr(subspace, '_nWordSlots', data.shape[1])
+            where_enc = getattr(subspace, 'whereEncoding', None)
+            data, compact_map = cb.compact(data, nWordSlots, span_meta, where_enc)
+            subspace._compact_map = compact_map
+
         return data
 
     def decompose(self, data, subspace, grammar):
         """Reverse P-tier chunk merges using recorded 4-tuple words.
 
+        In byte mode: un-compacts first, then undoes BPE merges.
+
         Args:
-            data: [B, N, D] tensor (same shape as compose output)
+            data: [B, N, D] tensor (compacted in byte mode)
             subspace: SubSpace with recorded words
             grammar: Grammar instance (unused, kept for interface consistency)
         Returns:
             data with chunk merges undone
         """
+        # Byte mode: un-compact dense word slots back to sparse byte positions
+        compact_map = getattr(subspace, '_compact_map', None)
+        if compact_map is not None and self.chunk_layer is not None:
+            byte_indices = getattr(subspace, '_byte_indices', None)
+            nByteSlots = byte_indices.shape[1] if byte_indices is not None else data.shape[1]
+            data = self.chunk_layer.uncompact(data, compact_map, nByteSlots)
+
+        # Undo BPE merges
         words = subspace.get_words()
         for word in reversed(words):
             if len(word) != 4:
@@ -3235,7 +3262,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         non_rid = c_rules.get('non')
 
         # Phase 1: deterministic not/non at top-of-stack
-        tops = Grammar._top_of_stack(data)
+        tops = subspace.top_of_stack(data)
         for b, pos in enumerate(tops):
             if pos < 0:
                 continue
@@ -3286,7 +3313,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             return data, self.last_svo
 
         # Build per-batch active positions
-        active_positions = [Grammar._active_positions(data, b) for b in range(B)]
+        active_positions = [subspace.active_positions(b, data) for b in range(B)]
         max_leaves = max((len(p) for p in active_positions), default=0)
         if max_leaves == 0:
             return data, self.last_svo
@@ -3446,7 +3473,7 @@ class SymbolicSyntacticLayer(SyntacticLayer):
         all_rules = self.all_rules
 
         # Build per-batch active positions
-        active_positions = [Grammar._active_positions(data, b) for b in range(B)]
+        active_positions = [subspace.active_positions(b, data) for b in range(B)]
         max_leaves = max((len(p) for p in active_positions), default=0)
         if max_leaves == 0:
             return data
@@ -3820,6 +3847,7 @@ class InputSpace(Space):
                 source=self.embedding_source,
                 min_frequency=self.min_frequency,
                 neg_samples=self.neg_samples,
+                byte_mode=getattr(self, 'byte_mode', False),
             )
             return basis
 
@@ -3861,7 +3889,8 @@ class InputSpace(Space):
             self.demuxed = TheXMLConfig.space(section, "demuxed")
         except KeyError:
             self.demuxed = False
-        self.lexer = lexer  # "word", "sentence", or "grammar" — selects .cfg file
+        self.lexer = lexer  # "word", "sentence", "grammar", or "byte"
+        self.byte_mode = (lexer == "byte")
         self.ergodic = ergodic
         self.min_frequency = float(min_frequency)
         self.neg_samples = neg_samples
@@ -3975,7 +4004,7 @@ class InputSpace(Space):
 
         return self.subspace
     
-    def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM'):
+    def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM', n_words=None):
         """Expand one sentence's embedding into N masked copies.
 
         Modes:
@@ -3988,14 +4017,18 @@ class InputSpace(Space):
             embedded: [1, nVectors, embeddingSize] output of forward()
             sentence_text: original sentence string (used for word count)
             maskedPrediction: prediction mode ('MLM', 'ARLM', 'ARUS', or 'RARLM')
+            n_words: explicit word count (byte mode — from span_meta after compaction)
 
         Returns:
             (masked_batch, mask_positions):
                 masked_batch: [N, nVectors, embeddingSize]
                 mask_positions: list[int] of length N
         """
-        words = sentence_text.split()
-        N = min(len(words), self.outputShape[0])  # cap at nVectors
+        if n_words is not None:
+            N = min(n_words, embedded.shape[1])
+        else:
+            words = sentence_text.split()
+            N = min(len(words), self.outputShape[0])  # cap at nVectors
 
         # Repeat the embedded sentence N times
         masked = embedded.expand(N, -1, -1).detach().clone()  # [N, nVec, embSize]
@@ -4428,28 +4461,10 @@ class PerceptualSpace(Space):
         if passThrough:
             return
         input = self.subspace.getEncodedInputSize()
-        output = self.subspace.getEncodedOutputSize()
-        self.attention = AttentionLayer(output, output, type="transformer")
-        if self.reversible:
-            if invertible:
-                self.pi  = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
-                self.forwardPi, self.reversePi = self.pi.forward, self.pi.reverse
-                self.params = self.pi.getParameters()
-                self.layers = nn.ModuleList([self.pi])
-            else:
-                self.pi1 = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
-                self.pi2 = PiLayer(input, output, naive=naive, ergodic=ergodic, invertible=True)
-                self.forwardPi, self.reversePi = self.pi1.forward, self.pi2.reverse
-                self.params = self.pi1.getParameters() + self.pi2.getParameters()
-                self.layers = nn.ModuleList([self.pi1, self.pi2])
-        else:
-            self.pi        = PiLayer(input, output, naive=naive, ergodic=ergodic)
-            self.forwardPi = self.pi.forward
-            self.params = self.pi.getParameters()
-            self.layers = nn.ModuleList([self.pi])
-        # Grammar methods and SyntacticLayers are now on TheGrammar.
-        # Spaces delegate to TheGrammar.project('P', ...) and
-        # TheGrammar.forward('P', ...).
+        self.attention = AttentionLayer(input, input, type="transformer")
+        self.subspace._nWordSlots = outputShape[0]
+        self.params = []
+        self.layers = nn.ModuleList()
 
     def _register_requirements(self):
         """Register PerceptualSpace-specific config requirements."""
@@ -4508,13 +4523,15 @@ class PerceptualSpace(Space):
     def certainty(self, x):
         pass
     def forward(self, vspace):
-        """Perception: map input vectors to percepts via PiLayer + optional attention + VQ."""
+        """Perception: map input vectors to percepts via attention + VQ + chunking."""
         if self.passThrough:
             return vspace
+        # Pass byte values from input for boundary detection in compose()
+        if getattr(vspace, '_demuxed', False) and vspace._active is not None:
+            self.subspace._byte_indices = vspace._active[:, :, 0].long()
         x = self.forwardBegin(vspace, returnVectors=True)
         if self.hasAttention:
             x = self.attention.forward(x)
-        x = self.forwardPi(x)
         if self.quantized:
             x = self.subspace.get_vectors().forward(x)
         if self.syntacticLayer is not None:
@@ -4536,14 +4553,12 @@ class PerceptualSpace(Space):
         self.layers.append(self.syntacticLayer)
 
     def reverse(self, vspace):
-        """Manifesting: reconstruct input vectors from percepts via reverse PiLayer."""
+        """Manifesting: reconstruct input vectors from percepts."""
         if self.passThrough:
             return vspace
         y = self.reverseBegin(vspace, returnVectors=True)
         if self.syntacticLayer is not None:
             y = self.syntacticLayer.decompose(y, self.subspace, TheGrammar)
-        if self.reversible:
-            y = self.reversePi(y)
         vspace = self.reverseEnd(y, returnVectors=True)
         vspace.normalize("input", target="what", normalize=self._normalize)
         return vspace

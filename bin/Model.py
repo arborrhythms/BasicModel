@@ -2171,6 +2171,113 @@ class ChunkLayer(Layer):
         """Entropic gate: merge only if score exceeds threshold."""
         best_score, best_id = self.score_pair(v1, v2)
         return best_score > self.threshold, best_id
+
+    # ── Boundary detection ────────────────────────────────────────────
+
+    BOUNDARY_BYTES = frozenset({0x00, 0x09, 0x0A, 0x0D, 0x20})
+
+    def is_word_boundary(self, data, b, pos, subspace=None, byte_indices=None):
+        """True if position is a word boundary.
+
+        Byte mode: check byte_indices against BOUNDARY_BYTES (fast, exact).
+        Word mode: cosine similarity against space embedding (learned, soft).
+        """
+        if byte_indices is not None:
+            return byte_indices[b, pos].item() in self.BOUNDARY_BYTES
+        if subspace is None:
+            return False
+        try:
+            space_emb = subspace.vocabulary.get_space_embedding()
+        except (AttributeError, RuntimeError):
+            return False
+        vec = data[b, pos]
+        sim = F.cosine_similarity(vec.unsqueeze(0), space_emb.unsqueeze(0), dim=-1)
+        return sim.item() > 0.9
+
+    # ── Byte-mode hard merge + compaction ─────────────────────────────
+
+    def hard_merge_spans(self, data, byte_indices):
+        """Merge contiguous non-boundary byte slots via mean aggregation.
+
+        Args:
+            data: [B, N, D] byte-level vectors
+            byte_indices: [B, N] long — byte values 0-255
+        Returns:
+            data: [B, N, D] — span starts hold mean vectors, rest zeroed
+            span_meta: list[list[(start, end)]] per batch
+        """
+        B, N, D = data.shape
+        data = data.clone()
+        span_meta = []
+        for b in range(B):
+            spans = []
+            i = 0
+            while i < N:
+                bval = byte_indices[b, i].item()
+                if bval == 0:
+                    break
+                if bval in self.BOUNDARY_BYTES:
+                    data[b, i] = 0.0
+                    i += 1
+                    continue
+                start = i
+                while i < N and byte_indices[b, i].item() not in self.BOUNDARY_BYTES:
+                    i += 1
+                end = i - 1
+                data[b, start] = data[b, start:end + 1].mean(dim=0)
+                if end > start:
+                    data[b, start + 1:end + 1] = 0.0
+                spans.append((start, end))
+            span_meta.append(spans)
+        return data, span_meta
+
+    def compact(self, data, nWordSlots, span_meta, where_encoding=None):
+        """Pack active span-start positions into dense [B, nWordSlots, D].
+
+        After packing, overwrites the where-encoding dims ([-4, -3]) with
+        sinusoidal encoding of each span's start byte offset, so downstream
+        layers see word-level positional encoding instead of byte-level.
+
+        Args:
+            data: [B, N, D] sparse byte-level vectors (span starts populated)
+            nWordSlots: target dense width
+            span_meta: list[list[(start, end)]] per batch
+            where_encoding: WhereEncoding instance (for sin/cos rewrite)
+        Returns:
+            dense: [B, nWordSlots, D]
+            compact_map: list[list[(dense_idx, start, end)]] — for reverse
+        """
+        B, N, D = data.shape
+        dense = torch.zeros(B, nWordSlots, D, device=data.device)
+        compact_map = []
+        for b in range(B):
+            mapping = []
+            for dense_idx, (start, end) in enumerate(span_meta[b]):
+                if dense_idx >= nWordSlots:
+                    break
+                dense[b, dense_idx] = data[b, start]
+                mapping.append((dense_idx, start, end))
+            compact_map.append(mapping)
+
+        # Overwrite where-encoding dims with span start byte offset
+        if where_encoding is not None and where_encoding.nDim > 0:
+            where_idx = [D + i for i in where_encoding.index]  # e.g. [-4,-3] → absolute
+            for b in range(B):
+                for dense_idx, start, _end in compact_map[b]:
+                    pos_enc = where_encoding.encode(float(start))  # [2] sin/cos
+                    dense[b, dense_idx, where_idx] = pos_enc
+
+        return dense, compact_map
+
+    def uncompact(self, dense, compact_map, nByteSlots):
+        """Scatter dense word vectors back to byte positions (span copy)."""
+        B, _, D = dense.shape
+        data = torch.zeros(B, nByteSlots, D, device=dense.device)
+        for b in range(B):
+            for dense_idx, start, end in compact_map[b]:
+                span_len = end - start + 1
+                data[b, start:end + 1] = dense[b, dense_idx].unsqueeze(0).expand(span_len, -1)
+        return data
 #endregion
 
 #region Activation Functions
