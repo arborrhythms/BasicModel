@@ -5,7 +5,6 @@
   <architecture>
     <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
-    <symbolicOrder>1</symbolicOrder>
     <modelType>embedding</modelType>
     <ergodic>false</ergodic>
     <weightsPath>XOR_spaces.ckpt</weightsPath>

@@ -25,7 +25,7 @@ totalLoss = (1 - reconRatio) * outputLoss + reconRatio * reconstructionLoss
 | **InputSpace** | Lifts raw data into working dimensionality | LiftingLayer | nActive, nDim, nVectors |
 | **PerceptualSpace** | Multiplicative feature extraction | PiLayer | nActive, nDim, nVectors, invertible |
 | **ConceptualSpace** | Additive abstraction | SigmaLayer | nActive, nDim, nVectors, invertible |
-| **SymbolicSpace** | Discrete activation bottleneck | PiLayer (monotonic, invertible) + Codebook | nActive, nVectors, passThrough, quantized |
+| **SymbolicSpace** | Discrete activation bottleneck | PiLayer (monotonic, invertible) + Codebook | nActive, nVectors, passThrough, codebook |
 | **SyntacticSpace** | Binary derivation tree (CNF grammar) | Grammar + WordEncoding | nActive, nDim, nVectors |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 

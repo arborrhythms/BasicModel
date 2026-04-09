@@ -287,14 +287,12 @@ class WordEncoding(Encoding):
     def decode(self, word):
         """Unpack a word tuple into (batch, vector, rule)."""
         return word[0], word[1], word[2]
-
 class WhatEncoding(Encoding):
     """Handle the content-layout transform for a space's What factor.
 
     Unlike WhereEncoding and WhenEncoding, this encoding is not a fixed
-    quadrature code.  It owns only the layout transform used by reshaped
-    spaces: validating [batch, nObj, emb] tensors, flattening them to
-    [batch, nObj*emb] before a layer pass, and restoring them afterwards.
+    quadrature code.  It stores input/output shapes and provides
+    shape-validation stubs (forwardBegin/End, reverseBegin/End).
 
     The encoding is parameter-free and identity by default.
     """
@@ -335,53 +333,27 @@ class WhatEncoding(Encoding):
         assert list(y.shape) == [batch, self.inputShape[0], input_size]
         return y
 
-    def _flatten(self, x, batch, forward=True):
-        """Collapse [batch, nObj, dim] -> [batch, nObj*dim] for a reshaped space."""
-        if forward:
-            size = self.inputShape[1] * self.inputShape[0]
-        else:
-            size = (self.outputShape[1]) * self.outputShape[0]
-        return x.reshape(batch, size)
-
-    def _unflatten(self, y, batch, forward=True):
-        """Restore [batch, nObj*dim] -> [batch, nObj, dim] for a reshaped space."""
-        if forward:
-            per_obj = self.outputShape[1]
-            return y.reshape(batch, self.outputShape[0], per_obj)
-        else:
-            per_obj = self.inputShape[1]
-            return y.reshape(batch, self.inputShape[0], per_obj)
 class EventEncoding(Encoding):
     """Handle the content-layout transform for a space's Event factor.
 
     Unlike WhereEncoding and WhenEncoding, this encoding is not a fixed
-    quadrature code.  It owns only the layout transform used by reshaped
-    spaces: validating [batch, nObj, emb] tensors, flattening them to
-    [batch, nObj*emb] before a layer pass, and restoring them afterwards.
+    quadrature code.  It stores the input/output shapes for auxiliary
+    operations (split_aux, restore_aux) but boundary reshaping is now
+    handled by Space.forwardBegin/End via nInputDim/nOutputDim.
 
     The encoding is parameter-free and identity by default.
     """
 
-    nDim = 0  # WhatEncoding does not occupy fixed index slots
+    nDim = 0  # EventEncoding does not occupy fixed index slots
 
-    def __init__(self, inputShape=None, outputShape=None, flatten=False):
+    def __init__(self, inputShape=None, outputShape=None):
         super().__init__([], 0)
         self.inputShape = inputShape
         self.outputShape = outputShape
-        self.flatten = flatten
 
     def forward(self, objects, **kwargs):
         """Identity content pass-through."""
         return objects
-
-    # forwardBegin/End, reverseBegin/End removed — inlined into Space.forwardBegin/End
-
-    def _unflatten(self, y, batch, forward=True):
-        """Restore [batch, nObj*dim] -> [batch, nObj, dim] for a reshaped space."""
-        if forward:
-            return y.reshape(batch, self.outputShape[0], self.outputShape[1])
-        else:
-            return y.reshape(batch, self.inputShape[0], self.inputShape[1])
 
     def split_aux(self, y, nWhat):
         """Split a full object vector into content and aux fields.
@@ -1648,7 +1620,7 @@ class SubSpace(nn.Module):
     """
 
     def __init__(self, inputShape, outputShape,
-                 flatten=False,
+                 nInputDim=0, nOutputDim=0,
                  objectEncoding=None, activeEncoding=None, whatEncoding=None,
                  whereEncoding=None, whenEncoding=None, wordEncoding=None,
                  object=None, what=None, where=None, when=None, activation=None,
@@ -1659,13 +1631,15 @@ class SubSpace(nn.Module):
 
         self.activeEncoding = activeEncoding if activeEncoding is not None else ActiveEncoding()
         self.objectEncoding = objectEncoding if objectEncoding is not None else EventEncoding(
-            inputShape, outputShape, flatten=flatten)
+            inputShape, outputShape)
         self.whatEncoding   = whatEncoding if whatEncoding is not None else WhatEncoding(inputShape, outputShape)
         self.whereEncoding  = whereEncoding if whereEncoding is not None else WhereEncoding(0, 0)
         self.whenEncoding   = whenEncoding if whenEncoding is not None else WhenEncoding(0, 0)
         self.wordEncoding   = wordEncoding if wordEncoding is not None else WordEncoding()
 
-        self.flatten = flatten
+        # Resolved nInputDim/nOutputDim (0 → constructor dim, -1 → skip, >0 → explicit)
+        self._nInputDim = inputShape[1] if nInputDim == 0 else nInputDim
+        self._nOutputDim = outputShape[1] if nOutputDim == 0 else nOutputDim
         self.nWhere = self.whereEncoding.nDim
         self.nWhen = self.whenEncoding.nDim
         # nWhat: content width from outputShape (full dim minus where/when)
@@ -1885,20 +1859,28 @@ class SubSpace(nn.Module):
         return self.muxedSize
 
     def getEncodedInputSize(self):
-        """Return flattened input size (inputShape already includes muxed width)."""
-        we = self.objectEncoding
-        size = we.inputShape[1]
-        if we.flatten:
-            size *= we.inputShape[0]
-        return size
+        """Return effective input dim after nInputDim reshape."""
+        if self._nInputDim == -1:
+            return self.objectEncoding.inputShape[1]
+        return self._nInputDim
 
     def getEncodedOutputSize(self):
-        """Return flattened output size (outputShape already includes muxed width)."""
-        we = self.objectEncoding
-        size = we.outputShape[1]
-        if we.flatten:
-            size *= we.outputShape[0]
-        return size
+        """Return the layer output dim (before forwardEnd reshape).
+
+        When forwardBegin doesn't change vector count (nInputDim == inputShape[1]),
+        the layer simply maps per-vector from nInputDim → nOutputDim.
+
+        When forwardBegin DOES change vector count (e.g. flatten), the layer
+        output dim is computed so that forwardEnd can reshape to [B, oS[0], nOutputDim]:
+          layer_out = oS[0] * nOutputDim * nInputDim / (iS[0] * iS[1])
+        """
+        if self._nInputDim == -1 or self._nOutputDim == -1:
+            return self.objectEncoding.outputShape[1]
+        iS = self.objectEncoding.inputShape
+        if self._nInputDim == iS[1]:
+            return self._nOutputDim
+        oS = self.objectEncoding.outputShape
+        return oS[0] * self._nOutputDim * self._nInputDim // (iS[0] * iS[1])
 
     # ------------------------------------------------------------------
     # Properties
@@ -1914,25 +1896,17 @@ class SubSpace(nn.Module):
     # Reshape / validate helpers (delegates to objectEncoding)
     # ------------------------------------------------------------------
 
-    # forwardBegin/End, reverseBegin/End removed — inlined into Space.forwardBegin/End
-
-    def flatten(self, x, forward=True):
-        """Collapse [batch, nObj, dim] -> [batch, nObj*dim]."""
-        return self.objectEncoding._flatten(x, self.batch, forward=forward)
-
-    def unflatten(self, y, forward=True):
-        """Restore [batch, nObj*dim] -> [batch, nObj, dim]."""
-        return self.objectEncoding._unflatten(y, self.batch, forward=forward)
+    # forwardBegin/End, reverseBegin/End — handled by Space via nInputDim/nOutputDim reshape.
 
     # ------------------------------------------------------------------
     # Construction helpers
     # ------------------------------------------------------------------
 
     @classmethod
-    def from_tensor(cls, tensor, *, flatten=False,
+    def from_tensor(cls, tensor, *,
                     inputShape, outputShape, **kw):
         """Wrap an existing dense tensor into a SubSpace."""
-        return cls(flatten=flatten,
+        return cls(
                    inputShape=inputShape, outputShape=outputShape,
                    object=tensor, **kw)
 
@@ -2363,7 +2337,7 @@ class SubSpace(nn.Module):
     # Normalization
     # ------------------------------------------------------------------
 
-    def normalize(self, kind, target="activation", normalize=True, strict=False):
+    def normalize(self, kind, target="activation", normalize=False, strict=False):
         """Normalize or check range of an encoding of this subspace.
 
         When normalize=True, transforms the tensor in-place to the
@@ -2600,7 +2574,6 @@ class SubSpace(nn.Module):
         if size == 0:
             return object
         return object[0:-size]
-
 class Grammar:
     """Hierarchical 3-tier grammar (S, C, P) rule catalog.
 
@@ -3556,12 +3529,13 @@ class Space(nn.Module):
         nDim is read from ``TheXMLConfig`` (per-space config section).
       - ``nVectors``: codebook size, also from config.  May differ from
         nActive (the active count); the factory validates ``nVectors >= nActive``.
-      - ``reshape``: when True, flattens [batch, nObj, dim] -> [batch, nObj*dim]
-        before passing through layers, then unflattens after.  Required when the
-        input and output object counts differ (since layers operate on the last dim).
+      - ``nInputDim``/``nOutputDim``: configurable boundary reshape.  0 (default)
+        resolves to the constructor's dim; -1 skips reshape; a positive value
+        reshapes via ``x.reshape(B, -1, nInputDim)``.  Generalizes the old
+        ``flatten`` flag (flatten ≡ nInputDim = nInput * dim).
       - ``processSymbols``: when True, reduces full embedding vectors to scalar
         activations (norms) for the symbolic representation.
-      - ``quantized``: when True, input vectors are quantized against the
+      - ``codebook``: when True, input vectors are quantized against the
         current ``Codebook`` basis after the main layer transformation.
 
 
@@ -3580,25 +3554,49 @@ class Space(nn.Module):
         self.outputShape  = outputShape  # [nOutput,  nOutputDim]
         self.nVectors     = spaceShape[0]  # codebook size
         self.nDim         = spaceShape[1]  # content dimensionality of the codebook vectors
-        self.flatten      = TheXMLConfig.space(section, "flatten")
+        # Resolve nInputDim/nOutputDim: 0 → constructor dim, -1 → skip, >0 → explicit.
+        # Backward compat: if legacy <flatten>true</flatten> is set and nInputDim is 0,
+        # auto-compute the flat size (inputShape[0]*inputShape[1]).
+        try:
+            _flatten = TheXMLConfig.space(section, "flatten")
+        except KeyError:
+            _flatten = False
+        try:
+            raw = TheXMLConfig.space(section, "nInputDim")
+        except KeyError:
+            raw = 0
+        if raw == 0 and _flatten:
+            self.nInputDim = inputShape[0] * inputShape[1]
+        else:
+            self.nInputDim = inputShape[1] if raw == 0 else raw
+        try:
+            raw = TheXMLConfig.space(section, "nOutputDim")
+        except KeyError:
+            raw = 0
+        if raw == 0 and _flatten:
+            # Old flatten unflattened on output → restore per-vector dim
+            self.nOutputDim = outputShape[1]
+        else:
+            self.nOutputDim = outputShape[1] if raw == 0 else raw
+
         self.reversible   = str(TheXMLConfig.get("architecture.reconstruct")).upper() != "NONE"
         self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
-        self.quantized    = TheXMLConfig.space(section, "quantized")
+        self.codebook     = TheXMLConfig.space(section, "codebook")
         _nWhere = TheXMLConfig.space(section, "nWhere")
         _nWhen = TheXMLConfig.space(section, "nWhen")
-        self._normalize = TheXMLConfig.space(section, "normalize")
         self.nWhere = _nWhere
         self.nWhen = _nWhen
         self.nWhat = self.nDim
         self.muxedSize = self.nWhat + self.nWhere + self.nWhen
         self.customVQ  = customVQ
         # inputShape/outputShape already include muxed width in dim (set by factory).
-        objectEncoding = EventEncoding(inputShape, outputShape, flatten=self.flatten)
+        objectEncoding = EventEncoding(inputShape, outputShape)
         whatEncoding   = WhatEncoding(inputShape, outputShape)
         whereEncoding  = WhereEncoding(TheXMLConfig.get("architecture.nObjects"), _nWhere)
         whenEncoding   = WhenEncoding(10000, _nWhen)
         self.subspace  = SubSpace(
-            flatten=self.flatten,
+            nInputDim=self.nInputDim,
+            nOutputDim=self.nOutputDim,
             inputShape=inputShape,
             outputShape=outputShape,
             objectEncoding=objectEncoding,
@@ -3625,7 +3623,7 @@ class Space(nn.Module):
             self.nVectors,
             self.muxedSize,  # Codebook processes full event vectors
             customVQ=self.customVQ,
-            passThrough=not self.quantized,
+            passThrough=not self.codebook,
         )
         basis.ergodic = getattr(self, "ergodic", False)
         return basis
@@ -3651,10 +3649,10 @@ class Space(nn.Module):
             lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv >= _na,
             f"{section_name}: nVectors ({nV}) must be >= nActive ({nA})"
         )
-        if not self.quantized:
+        if not self.codebook:
             TheXMLConfig.require(
                 lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv == _na,
-                f"{section_name}: non-quantized space requires nVectors ({nV}) == nActive ({nA})"
+                f"{section_name}: non-codebook space requires nVectors ({nV}) == nActive ({nA})"
             )
 
     def get_vectors(self):
@@ -3672,8 +3670,8 @@ class Space(nn.Module):
         Args:
             vspace: input SubSpace.
             returnVectors: if True, materialize to a dense tensor and
-                optionally flatten. If False, pass the SubSpace through
-                without materializing (for spaces that operate on
+                reshape to [B, -1, nInputDim]. If False, pass the SubSpace
+                through without materializing (for spaces that operate on
                 activation vectors rather than event tensors).
         """
         if not returnVectors:
@@ -3681,8 +3679,11 @@ class Space(nn.Module):
             return vspace
         x = vspace.materialize()
         self.subspace.batch = x.shape[0]
-        if self.subspace.flatten:
-            x = x.reshape(x.shape[0], 1, -1)  # [B, N, D] -> [B, 1, N*D]
+        if self.nInputDim != -1:
+            self._pre_reshape_input = (x.shape[1], x.shape[2])
+            x = x.reshape(x.shape[0], -1, self.nInputDim)
+        else:
+            self._pre_reshape_input = None
         return x
 
     def forwardEnd(self, x, returnVectors=False, compute_activation=False):
@@ -3690,63 +3691,82 @@ class Space(nn.Module):
 
         Args:
             x: dense tensor (returnVectors=True) or SubSpace (returnVectors=False).
-            returnVectors: if True, unflatten and store tensor into subspace.
-                If False, SubSpace passes through with unflatten if needed.
-                All SubSpace vectors maintain [B, N, D] invariant.
+            returnVectors: if True, reshape to [B, -1, nOutputDim] and store
+                tensor into subspace.  If False, SubSpace passes through with
+                reshape applied if nOutputDim != -1.
             compute_activation: if True (default), derive activation from vectors.
                 Set to False for spaces (e.g. PerceptualSpace) where activation
                 is not meaningful.
         """
         if not returnVectors:
             # Ensure [B, N, D] invariant even for SubSpace pass-through
-            if self.subspace.flatten:
+            if self.nOutputDim != -1:
                 vectors = x.materialize()
-                if vectors is not None and vectors.ndim == 3 and vectors.shape[1] == 1:
-                    self._pre_unflatten_shape = vectors.shape
-                    vectors = self.subspace.objectEncoding._unflatten(
-                        vectors, self.subspace.batch, forward=True)
+                if vectors is not None and vectors.ndim == 3 and vectors.shape[-1] != self.nOutputDim:
+                    self._pre_reshape_output = (vectors.shape[1], vectors.shape[2])
+                    vectors = vectors.reshape(vectors.shape[0], -1, self.nOutputDim)
                     x.set_event(vectors, compute_activation=compute_activation)
+                else:
+                    self._pre_reshape_output = None
+            else:
+                self._pre_reshape_output = None
             return x
-        if self.subspace.flatten:
-            self._pre_unflatten_shape = x.shape  # save for reverseBegin
-            x = self.subspace.objectEncoding._unflatten(x, self.subspace.batch, forward=True)
+        if self.nOutputDim != -1:
+            self._pre_reshape_output = (x.shape[1], x.shape[2])
+            x = x.reshape(x.shape[0], -1, self.nOutputDim)
+        else:
+            self._pre_reshape_output = None
         self.subspace.set_event(x, compute_activation=compute_activation)
         return self.subspace
 
     def reverseBegin(self, vspace, returnVectors=False):
         """Prepare input for space-specific reverse processing.
 
+        Undoes the forwardEnd output reshape so the layer sees the same
+        shape it produced during forward.
+
         Args:
             vspace: input SubSpace.
             returnVectors: if True, materialize to a dense tensor and
-                handle flatten. If False, pass the SubSpace through
-                without materializing.
+                undo the output reshape. If False, pass the SubSpace
+                through without materializing.
         """
         if not returnVectors:
             self.subspace.batch = vspace.batch
             return vspace
         y = vspace.materialize()
         self.subspace.batch = y.shape[0]
-        if self.subspace.flatten:
-            pre = getattr(self, '_pre_unflatten_shape', None)
-            if pre is not None:
-                y = y.reshape(pre)
-            else:
-                y = y.reshape(y.shape[0], 1, -1)
+        pre = getattr(self, '_pre_reshape_output', None)
+        if pre is not None:
+            y = y.reshape(y.shape[0], pre[0], pre[1])
+        elif self.nOutputDim != -1:
+            # Fallback when reverse is called without a prior forward:
+            # reshape from [B, ?, nOutputDim] to [B, -1, layer_out_dim]
+            layer_out = self.subspace.getEncodedOutputSize()
+            if y.shape[-1] != layer_out:
+                y = y.reshape(y.shape[0], -1, layer_out)
         return y
 
     def reverseEnd(self, y, returnVectors=False):
         """Finalize output after space-specific reverse processing.
 
+        Undoes the forwardBegin input reshape so downstream sees the
+        original input shape.
+
         Args:
             y: dense tensor (returnVectors=True) or SubSpace (returnVectors=False).
-            returnVectors: if True, unflatten and store tensor into subspace.
-                If False, pass SubSpace through unchanged.
+            returnVectors: if True, undo input reshape and store tensor
+                into subspace.  If False, pass SubSpace through unchanged.
         """
         if not returnVectors:
             return y
-        if self.subspace.flatten:
-            y = self.subspace.objectEncoding._unflatten(y, self.subspace.batch, forward=False)
+        pre = getattr(self, '_pre_reshape_input', None)
+        if pre is not None:
+            y = y.reshape(y.shape[0], pre[0], pre[1])
+        elif self.nInputDim != -1:
+            # Fallback: reshape from [B, ?, nInputDim] to [B, -1, inputShape[1]]
+            if y.shape[-1] != self.inputShape[1]:
+                y = y.reshape(y.shape[0], -1, self.inputShape[1])
         self.subspace.set_event(y)
         return self.subspace
 
@@ -3897,11 +3917,12 @@ class InputSpace(Space):
         self.embedding_path = embedding_path
         self.embedding_source = data.train_input if data.train_input else None
         super().__init__(inputShape, spaceShape, outputShape)
-        # InputSpace never flattens — it operates on raw [batch, nObj, dim] tensors.
-        # Flatten is applied by downstream spaces (Perceptual, Conceptual, etc.).
-        self.flatten = False
-        self.subspace.flatten = False
-        self.subspace.objectEncoding.flatten = False
+        # InputSpace operates on raw [B, N, D] tensors directly (no forwardBegin/End).
+        # Override any flatten-derived nInputDim/nOutputDim to skip reshape.
+        self.nInputDim = -1
+        self.nOutputDim = -1
+        self.subspace._nInputDim = -1
+        self.subspace._nOutputDim = -1
         lexical_basis = self.subspace.what
         if isinstance(lexical_basis, Embedding):
             self.doc_spans = lexical_basis.doc_spans
@@ -3998,12 +4019,11 @@ class InputSpace(Space):
             self.input = self.subspace.materialize()
 
         # Scale what-content to [0,1] via data min-max (or assert if out of range).
-        self.subspace.normalize("input", target="what",
-                                normalize=self._normalize)
+        self.subspace.normalize("input", target="what", normalize=True)
         self.input = self.subspace.materialize()
 
         return self.subspace
-    
+
     def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM', n_words=None):
         """Expand one sentence's embedding into N masked copies.
 
@@ -4106,8 +4126,7 @@ class InputSpace(Space):
         else:
             self._recovered_input = None
 
-        self.subspace.normalize("input", target="what",
-                                normalize=self._normalize)
+        self.subspace.normalize("input", target="what", normalize=True)
         return self.subspace
 
     def reconstruct_data(self, text=False):
@@ -4486,10 +4505,10 @@ class PerceptualSpace(Space):
                 lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv >= _na,
                 f"PerceptualSpace: nVectors ({nV}) must be >= nOutput ({nA})"
             )
-            if not self.quantized:
+            if not self.codebook:
                 TheXMLConfig.require(
                     lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv == _na,
-                    f"PerceptualSpace: non-quantized requires nVectors ({nV}) == nOutput ({nA})"
+                    f"PerceptualSpace: non-codebook requires nVectors ({nV}) == nOutput ({nA})"
                 )
 
     def everything(self, target="what"):
@@ -4532,12 +4551,12 @@ class PerceptualSpace(Space):
         x = self.forwardBegin(vspace, returnVectors=True)
         if self.hasAttention:
             x = self.attention.forward(x)
-        if self.quantized:
+        if self.codebook:
             x = self.subspace.get_vectors().forward(x)
         if self.syntacticLayer is not None:
             x = self.syntacticLayer.compose(x, self.subspace, TheGrammar)
         vspace = self.forwardEnd(x, returnVectors=True)
-        vspace.normalize("percepts", target="what", normalize=self._normalize)
+        vspace.normalize("percepts", target="what", normalize=True)
         return vspace
 
     def init_syntactic_layer(self, n_slots, grammar):
@@ -4560,7 +4579,7 @@ class PerceptualSpace(Space):
         if self.syntacticLayer is not None:
             y = self.syntacticLayer.decompose(y, self.subspace, TheGrammar)
         vspace = self.reverseEnd(y, returnVectors=True)
-        vspace.normalize("input", target="what", normalize=self._normalize)
+        vspace.normalize("input", target="what", normalize=True)
         return vspace
 
     @staticmethod
@@ -4819,13 +4838,13 @@ class ConceptualSpace(Space):
         y = self.forwardSigma(x)
         if self.hasAttention:
             y = self.attention.forward(y)
-        if self.quantized:
+        if self.codebook:
             y = self.subspace.get_vectors().forward(y)
         if self.syntacticLayer is not None:
             y, self._last_svo = self.syntacticLayer.compose(y, self.subspace, TheGrammar)
         vspace = self.forwardEnd(y, returnVectors=True)
-        vspace.normalize("concepts", target="what", normalize=self._normalize)       # hypersphere S^(d-1)
-        vspace.normalize("concepts", target="activation", normalize=self._normalize)  # tanh [-1,1]
+        vspace.normalize("concepts", target="what")       # range check
+        vspace.normalize("concepts", target="activation")  # range check
         return vspace
 
     def init_syntactic_layer(self, n_slots, grammar, concept_dim=0):
@@ -4862,7 +4881,7 @@ class ConceptualSpace(Space):
             y = torch.tanh(y)
         self.concepts = y
         vspace = self.reverseEnd(y, returnVectors=True)
-        vspace.normalize("percepts", target="what", normalize=self._normalize)
+        vspace.normalize("percepts", target="what")  # range check
         return vspace
 
     @staticmethod
@@ -4927,7 +4946,7 @@ class SymbolicSpace(Space):
             self.nVectors,
             self.nDim,
             customVQ=self.customVQ,
-            passThrough=not self.quantized,
+            passThrough=not self.codebook,
             monotonic=True,
         )
         return basis
@@ -4970,7 +4989,7 @@ class SymbolicSpace(Space):
             where = where.to(act.device)
             self.subspace.where.setW(where)
 
-        if self.quantized:
+        if self.codebook:
             act_3d = act.unsqueeze(-1)
             self.subspace.set_event(act_3d)
             self.subspace.what.forward(self.subspace)
@@ -4978,7 +4997,7 @@ class SymbolicSpace(Space):
         else:
             vspace.set_symbols(act)
 
-        vspace.normalize("symbols", target="activation", normalize=self._normalize)
+        vspace.normalize("symbols", target="activation", normalize=True)
         return vspace
 
     def init_syntactic_layer(self, n_slots, grammar, symbol_dim=0):
@@ -5003,13 +5022,13 @@ class SymbolicSpace(Space):
         if self.syntacticLayer is not None:
             act = self.syntacticLayer.decompose(act, self.subspace, TheGrammar)
         act = self.layer.reverse(act)
-        if self.quantized:
+        if self.codebook:
             self.subspace.set_symbols(act)
             result = self.reverseEnd(self.subspace)
         else:
             vspace.set_symbols(act)
             result = vspace
-        result.normalize("concepts", target="what", normalize=self._normalize)
+        result.normalize("concepts", target="what", normalize=True)
         return result
 
     def evaluate_truth(self, vspace):
@@ -5096,10 +5115,9 @@ class OutputSpace(Space):
         x = self.forwardBegin(vspace, returnVectors=True)
         output = self.forwardLinear(x)
         # Rescale from symbolic activation [-1,1] to original data range
-        if self._normalize:
-            from data import TheData
-            output = TheData.denormalize(output, which="output")
-        if self.quantized:
+        from data import TheData
+        output = TheData.denormalize(output, which="output")
+        if self.codebook:
             output = self.subspace.get_vectors().forward(output)
         vspace = self.forwardEnd(output, returnVectors=True)
         return vspace
@@ -5108,10 +5126,9 @@ class OutputSpace(Space):
         """Being acted upon: map output back to symbolic space via reverse LinearLayer."""
         y = self.reverseBegin(vspace, returnVectors=True)
         # Denormalize: scale from original data range to [-1,1] (inverse of forward)
-        if self._normalize:
-            self.subspace.set_event(y)
-            self.subspace.denormalize("output", target="what")
-            y = self.subspace.materialize()
+        self.subspace.set_event(y)
+        self.subspace.denormalize("output", target="what")
+        y = self.subspace.materialize()
         y = self.reverseLinear(y)
         vspace = self.reverseEnd(y, returnVectors=True)
         return vspace

@@ -4,7 +4,6 @@
   <architecture>
     <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
-    <symbolicOrder>1</symbolicOrder>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <processSymbols>false</processSymbols>
@@ -48,7 +47,7 @@
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <lexer>sentence</lexer>
-    <quantized>true</quantized>
+    <codebook>true</codebook>
   </InputSpace>
 
   <PerceptualSpace>
@@ -58,7 +57,7 @@
     <passThrough>false</passThrough>
     <hasAttention>true</hasAttention>
     <invertible>true</invertible>
-    <quantized>false</quantized>
+    <codebook>false</codebook>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: nVectors = 2 * PerceptualSpace.nVectors = 128
@@ -70,7 +69,7 @@
     <hasAttention>false</hasAttention>
     <flatten>true</flatten>
     <invertible>true</invertible>
-    <quantized>true</quantized>
+    <codebook>true</codebook>
   </ConceptualSpace>
 
   <!-- SymbolicSpace: passThrough — nActive = nVectors = ConceptualSpace.nActive = 256 -->

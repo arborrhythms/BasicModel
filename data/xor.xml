@@ -3,7 +3,6 @@
   <architecture>
     <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
-    <symbolicOrder>1</symbolicOrder>
     <modelType>embedding</modelType>
     <weightsPath>xor_weights.ckpt</weightsPath>
 
@@ -24,22 +23,22 @@
     <nVectors>2</nVectors>
   </InputSpace>
 
-  <!-- PerceptualSpace: VQ codebook (nVectors=16 > nOutput=4) — quantized=true. -->
+  <!-- PerceptualSpace: VQ codebook (nVectors=16 > nOutput=4) — codebook=true. -->
   <PerceptualSpace>
     <nOutput>4</nOutput>
     <nDim>1</nDim>
     <nVectors>16</nVectors>
-    <quantized>true</quantized>
+    <codebook>true</codebook>
     <invertible>false</invertible>
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace: VQ codebook (nVectors=16 > nOutput=3) — quantized=true. -->
+  <!-- ConceptualSpace: VQ codebook (nVectors=16 > nOutput=3) — codebook=true. -->
   <ConceptualSpace>
     <nOutput>3</nOutput>
     <nDim>1</nDim>
     <nVectors>16</nVectors>
-    <quantized>true</quantized>
+    <codebook>true</codebook>
     <invertible>false</invertible>
   </ConceptualSpace>
 

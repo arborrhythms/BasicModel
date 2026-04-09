@@ -15,7 +15,6 @@ Core model settings. Training and data parameters are in nested sub-elements `<t
 | `certainty` | bool | `false` | Enable per-neuron certainty tracking in ergodic layers. Allows individual neurons to transition from exploration to exploitation at different rates. |
 | `reshape` | bool | `false` | Reshape input data for sequence processing. Required for `modelType=lm`. |
 | `conceptualOrder` | int | `1` | Order of conceptual processing. Controls how many higher-order conceptual transforms are applied. |
-| `symbolicOrder` | int | `1` | Order of symbolic processing. Controls how many higher-order symbolic transforms are applied. |
 | `processSymbols` | bool | `false` | Enable additional symbolic processing steps. |
 | `maskedPrediction` | string | `"NONE"` | Masked prediction mode: `NONE`, `MLM`, `ARLM`, `ARUS`, `RARLM`. See [Training.md](Training.md). |
 | `reconstruct` | string | `"NONE"` | Controls the reverse (reconstruction) pass. `"NONE"` disables reconstruction entirely. `"symbols"` reconstructs from cached output symbols (most common). `"output"` runs `outputSpace.reverse()` only. `"both"` combines reversed output with reconstruction symbols. Any non-`NONE` value enables the full bidirectional training pipeline. |
@@ -88,7 +87,7 @@ The entry point that lifts raw data into the model's internal representation.
 | `nVectors` | int | = `nActive` | Codebook size (total vectors in the space). Defaults to `nActive` for InputSpace. |
 | `nWhere` | int | `0` | Number of spatial/positional dimensions appended to each vector. When > 0, enables PositionalEncoding on all objects throughout the model. |
 | `nWhen` | int | `0` | Number of temporal dimensions appended to each vector. When > 0, enables TemporalEncoding on all objects throughout the model. |
-| `quantized` | bool | `false` | Whether input values are quantized/discrete. |
+| `codebook` | bool | `false` | Whether input values use codebook vector quantization. |
 | `lexer` | string | `"word"` | Tokenization mode for text inputs. Common values in the current configs are `"word"` and `"sentence"`. |
 
 **Note:** InputSpace's `inputShape` uses the data's native dimension (e.g. 784 for MNIST, `inputLength` for text), while `outputShape` uses `nDim` from TheObjectEncoding. The LiftingLayer bridges the two.
@@ -145,11 +144,11 @@ See [Language.md](Language.md) for the full design.
 |-----------|------|---------|-------------|
 | `nActive` | int | *required* | Number of active symbols. When reconstruction symbols are enabled, `nOutputSymbols = OutputSpace.nActive` are fed to output, and the rest carry reconstruction information. |
 | `nDim` | int | `1` | Dimensionality of each symbol (typically 1 — symbols are scalar activations). |
-| `nVectors` | int | = `nActive` | Codebook size. When `quantized=true`, equals the number of symbol prototypes. |
+| `nVectors` | int | = `nActive` | Codebook size. When `codebook=true`, equals the number of symbol prototypes. |
 | `passThrough` | bool | `false` | Pass concepts through as symbols unchanged. Typically `true` for simple models. |
-| `quantized` | bool | `false` | Enable codebook quantization. When `true`, the forward path produces a one-hot activation over codebook entries. Required for the full symbolic pipeline. |
+| `codebook` | bool | `false` | Enable codebook quantization. When `true`, the forward path produces a one-hot activation over codebook entries. Required for the full symbolic pipeline. |
 
-**Layers:** `PiLayer(nConcepts, nSymbols, invertible=True, monotonic=True)` maps between concept and symbol activation spaces via monotonic multiplicative transform. Codebook provides dense vectors when quantized.
+**Layers:** `PiLayer(nConcepts, nSymbols, invertible=True, monotonic=True)` maps between concept and symbol activation spaces via monotonic multiplicative transform. Codebook provides dense vectors when codebook=true.
 
 ---
 
@@ -321,7 +320,7 @@ In this configuration:
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <lexer>sentence</lexer>
-    <quantized>true</quantized>
+    <codebook>true</codebook>
   </InputSpace>
 
   <!-- ... space definitions ... -->

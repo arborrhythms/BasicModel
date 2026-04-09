@@ -3,7 +3,6 @@
   <architecture>
     <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
-    <symbolicOrder>1</symbolicOrder>
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
     <certainty>false</certainty>
@@ -30,7 +29,7 @@
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <lexer>word</lexer>
-    <quantized>false</quantized>
+    <codebook>false</codebook>
   </InputSpace>
 
   <PerceptualSpace>
@@ -39,7 +38,7 @@
     <passThrough>false</passThrough>
     <nVectors>0</nVectors>
     <invertible>false</invertible>
-    <quantized>false</quantized>
+    <codebook>false</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>
@@ -47,7 +46,7 @@
     <nDim>1</nDim>
     <nVectors>0</nVectors>
     <invertible>false</invertible>
-    <quantized>false</quantized>
+    <codebook>false</codebook>
   </ConceptualSpace>
 
   <SymbolicSpace>

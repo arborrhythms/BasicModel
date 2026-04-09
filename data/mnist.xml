@@ -22,17 +22,17 @@
     <nVectors>1</nVectors>
   </InputSpace>
 
-  <!-- VQ codebook spaces: nVectors=16 > nOutput=8 — quantized=true. -->
+  <!-- VQ codebook spaces: nVectors=16 > nOutput=8 — codebook=true. -->
   <PerceptualSpace>
     <nOutput>8</nOutput>
     <nVectors>16</nVectors>
-    <quantized>true</quantized>
+    <codebook>true</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nOutput>8</nOutput>
     <nVectors>16</nVectors>
-    <quantized>true</quantized>
+    <codebook>true</codebook>
   </ConceptualSpace>
 
   <SymbolicSpace>

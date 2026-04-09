@@ -81,7 +81,7 @@ class TestDefaultsXml(unittest.TestCase):
 
     def test_architecture_keeps_model_wide(self):
         arch = self.cfg["architecture"]
-        for key in ["reconstruct", "conceptualOrder", "symbolicOrder",
+        for key in ["reconstruct", "conceptualOrder",
                     "ergodic", "certainty", "processSymbols"]:
             self.assertIn(key, arch, f"architecture missing model-wide key '{key}'")
         trn = arch.get("training", {})

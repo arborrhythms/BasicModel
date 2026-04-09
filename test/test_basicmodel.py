@@ -107,8 +107,8 @@ def _populate_test_config(*,
                           useSubspaceActivation=False,
                           perceptPassThrough=False, symbolPassThrough=False,
                           perceptHasAttention=True, conceptHasAttention=False,
-                          invertible=False, quantized=False,
-                          perceptQuantized=None, conceptQuantized=None,
+                          invertible=False, codebook=False,
+                          perceptCodebook=None, conceptCodebook=None,
                           certainty=False,
                           demuxed=False,
                           lexer="word"):
@@ -128,13 +128,13 @@ def _populate_test_config(*,
     TheData.test_input = []
     TheData.train_output = []
     TheData.test_output = []
-    _pq = perceptQuantized if perceptQuantized is not None else quantized
-    _cq = conceptQuantized if conceptQuantized is not None else quantized
+    _pq = perceptCodebook if perceptCodebook is not None else codebook
+    _cq = conceptCodebook if conceptCodebook is not None else codebook
     _objectSize = nWhere + nWhen
     _nObjects = nInput + nPercepts + nConcepts + nSymbols + nWords + nOutput
     _symbol_dim = conceptDim if symbolPassThrough else symbolDim
     # Deep-merge test overrides onto model.xml defaults so that keys like
-    # 'normalize', 'syntax', etc. are always present.
+    # 'syntax', etc. are always present.
     _overrides = {
         "architecture": {
             "reconstruct": reconstruct,
@@ -156,9 +156,8 @@ def _populate_test_config(*,
             "nDim": inputDim,
             "nVectors": nInput,
             "flatten": False,  # InputSpace never flattens
-            "quantized": quantized,
+            "codebook": codebook,
             "demuxed": demuxed,
-            "normalize": True,  # matches model.xml default
             "lexer": lexer,
         },
         "PerceptualSpace": {
@@ -166,21 +165,19 @@ def _populate_test_config(*,
             "nDim": perceptDim,
             "nVectors": nPercepts,
             "flatten": flatten,
-            "quantized": _pq,
+            "codebook": _pq,
             "passThrough": perceptPassThrough,
             "hasAttention": perceptHasAttention,
             "invertible": invertible,
-            "normalize": False,  # matches model.xml default
         },
         "ConceptualSpace": {
             "nActive": nConcepts,
             "nDim": conceptDim,
             "nVectors": nConcepts,
             "flatten": flatten,
-            "quantized": _cq,
+            "codebook": _cq,
             "hasAttention": conceptHasAttention,
             "invertible": invertible,
-            "normalize": False,  # matches model.xml default
         },
         "SymbolicSpace": {
             "nActive": nSymbols,
@@ -188,8 +185,7 @@ def _populate_test_config(*,
             "nVectors": nSymbols,
             "flatten": flatten,
             "passThrough": symbolPassThrough,
-            "quantized": not symbolPassThrough,
-            "normalize": False,  # matches model.xml default
+            "codebook": not symbolPassThrough,
         },
         "OutputSpace": {
             "nActive": nOutput,
@@ -198,9 +194,8 @@ def _populate_test_config(*,
             "nWhere": 0,
             "nWhen": 0,
             "flatten": True,  # OutputSpace always flattens
-            "quantized": False,
+            "codebook": False,
             "invertible": False,
-            "normalize": True,  # matches model.xml default
         },
         "ModalSpace": {
             "nDim": perceptDim,
@@ -209,11 +204,10 @@ def _populate_test_config(*,
             "passThrough": False,
             "hasAttention": perceptHasAttention,
             "invertible": invertible,
-            "quantized": _pq,
+            "codebook": _pq,
             "whatPassThrough": False,
             "wherePassThrough": True,
             "whenPassThrough": True,
-            "normalize": False,  # matches model.xml default
         },
     }
     for section, vals in _overrides.items():
@@ -398,7 +392,7 @@ class TestSymPercept(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Simple path: BasicModel with conceptualOrder=1, symbolicOrder=1
+# Simple path: BasicModel with conceptualOrder=1
 # ---------------------------------------------------------------------------
 def _make_simple_model(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nWords=16, nOutput=4):
     """Helper to create a BasicModel with config set up for simple path."""
@@ -596,19 +590,20 @@ class TestSubSpaceDerivedSizes(unittest.TestCase):
     def test_getEncodedIO_no_reshape(self):
         from BasicModel import SubSpace, WhereEncoding, WhenEncoding, EventEncoding
         # Shapes already include muxed width (nWhere=2 + nWhen=2)
+        # nInputDim/nOutputDim default to 0 → resolves to inputShape[1]/outputShape[1]
         ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
-                      objectEncoding=EventEncoding([3, 12], [5, 20], flatten=False),
-                      flatten=False,
+                      objectEncoding=EventEncoding([3, 12], [5, 20]),
                       inputShape=[3, 12], outputShape=[5, 20])
         self.assertEqual(ss.getEncodedInputSize(), 12)
         self.assertEqual(ss.getEncodedOutputSize(), 20)
 
     def test_getEncodedIO_reshape(self):
         from BasicModel import SubSpace, WhereEncoding, WhenEncoding, EventEncoding
-        # Shapes already include muxed width (nWhere=2 + nWhen=2)
+        # Equivalent of old flatten=True: nInputDim = flat_in, nOutputDim = per-vector dim.
+        # Layer sees flat_in → flat_out; forwardEnd reshapes flat_out → [nOut, per_dim].
         ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
-                      objectEncoding=EventEncoding([3, 12], [5, 20], flatten=True),
-                      flatten=True,
+                      objectEncoding=EventEncoding([3, 12], [5, 20]),
+                      nInputDim=12 * 3, nOutputDim=20,
                       inputShape=[3, 12], outputShape=[5, 20])
         self.assertEqual(ss.getEncodedInputSize(), 12 * 3)
         self.assertEqual(ss.getEncodedOutputSize(), 20 * 5)
@@ -831,9 +826,9 @@ class TestSimpleModel(unittest.TestCase):
 
 
 class TestCodebookVariants(unittest.TestCase):
-    """Lock down quantized vs unquantized Codebook behavior."""
+    """Lock down codebook vs non-codebook Codebook behavior."""
 
-    def test_unquantized_passthrough(self):
+    def test_no_codebook_passthrough(self):
         from BasicModel import Codebook
         vs = Codebook()
         vs.create(4, 4, 1, passThrough=True)
@@ -841,7 +836,7 @@ class TestCodebookVariants(unittest.TestCase):
         y = vs.forward(x)
         self.assertTrue(torch.equal(x, y))
 
-    def test_quantized_shape(self):
+    def test_codebook_shape(self):
         from BasicModel import Codebook, TheXMLConfig
         _populate_test_config(nInput=4, nPercepts=4, nConcepts=4, nSymbols=4,
                               nWords=0, nOutput=4)
@@ -1015,16 +1010,16 @@ class TestSpaceBasisConstruction(unittest.TestCase):
         Space.config_section = "InputSpace"
         self.addCleanup(setattr, Space, 'config_section', None)
 
-    def test_quantized_creates_codebook(self):
+    def test_codebook_creates_codebook(self):
         from BasicModel import Codebook, Space
-        _populate_test_config(inputDim=3, nInput=4, quantized=True)
+        _populate_test_config(inputDim=3, nInput=4, codebook=True)
         s = Space([4, 3], [4, 3], [4, 3])
         self.assertIsInstance(s.get_vectors(), Codebook)
         self.assertFalse(s.get_vectors().passThrough)
 
-    def test_unquantized_creates_passthrough_codebook(self):
+    def test_no_codebook_creates_passthrough_codebook(self):
         from BasicModel import Codebook, Space
-        _populate_test_config(inputDim=3, nInput=4, quantized=False)
+        _populate_test_config(inputDim=3, nInput=4, codebook=False)
         s = Space([4, 3], [4, 3], [4, 3])
         self.assertIsInstance(s.get_vectors(), Codebook)
         self.assertTrue(s.get_vectors().passThrough)
@@ -1034,7 +1029,7 @@ class TestSpaceBasisConstruction(unittest.TestCase):
         _populate_test_config(
             inputDim=3, perceptDim=3,
             nInput=4, nPercepts=4,
-            quantized=False, perceptPassThrough=True,
+            codebook=False, perceptPassThrough=True,
             nWhere=0, nWhen=0, flatten=False,
         )
         inp = InputSpace([4, 3], [4, 3], [4, 3], model_type="simple")
@@ -1125,12 +1120,12 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         self.assertEqual(list(y.shape), [2, nOut, outEmb])
 
 
-class TestInputSpaceUnquantized(unittest.TestCase):
-    """InputSpace works with unquantized codebook (objectSize=0)."""
+class TestInputSpaceNoCodebook(unittest.TestCase):
+    """InputSpace works with non-codebook mode (objectSize=0)."""
 
-    def test_unquantized_forward_shape(self):
+    def test_no_codebook_forward_shape(self):
         from BasicModel import InputSpace
-        _populate_test_config(inputDim=1, nInput=8, nWhere=0, nWhen=0, quantized=False)
+        _populate_test_config(inputDim=1, nInput=8, nWhere=0, nWhen=0, codebook=False)
         nIn, nDim = 8, 1
         inp = InputSpace([nIn, nDim], [nIn, nDim], [nIn, nDim])
         x = torch.randn(2, nIn, nDim).to(TheDevice.get())
@@ -1191,7 +1186,6 @@ class TestBaseModelFactory(unittest.TestCase):
             model, cfg = BaseModel.from_config(path)
             self.assertIsInstance(model, BasicModel)
             self.assertEqual(model.conceptualOrder, 1)
-            self.assertEqual(model.symbolicOrder, 1)
         finally:
             os.unlink(path)
 
@@ -1665,7 +1659,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
     def test_reverse_numeric_unchanged(self):
         """Numeric reverse path should still work exactly as before."""
         _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, outputDim=1,
-                              nInput=8, nWhere=0, nWhen=0, quantized=False)
+                              nInput=8, nWhere=0, nWhen=0, codebook=False)
         from BasicModel import InputSpace
         nIn, nDim = 8, 1
         inp = InputSpace([nIn, nDim], [nIn, nDim], [nIn, nDim])
@@ -2005,26 +1999,6 @@ class TestModelTypeVariants(unittest.TestCase):
         model = BasicModel()
         model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
                      conceptualOrder=2)
-        x = torch.randn(2, 8, 1).to(TheDevice.get())
-        _, end_state, out = model.forward(x)
-        self.assertEqual(out.shape[0], 2)
-        self.assertEqual(out.shape[1], 4)
-
-    def test_symbolic_order_1(self):
-        """symbolicOrder=2 — forward only (equal object counts).
-
-        Higher-order cycles require a non-passthrough symbolic space so that
-        symbolDim > 0 for the syntactic/symbolic spaces.
-        """
-        _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=1,
-                              wordDim=1, outputDim=1,
-                              nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nWords=8, nOutput=4,
-                              perceptPassThrough=True, symbolPassThrough=False,
-                              flatten=True)
-        from BasicModel import BasicModel
-        model = BasicModel()
-        model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nWords=8, nOutput=4,
-                     symbolicOrder=2)
         x = torch.randn(2, 8, 1).to(TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
@@ -3446,7 +3420,7 @@ class TestSubspaceNormalize(unittest.TestCase):
         ss = self._make_ss()
         x = torch.randn(2, 4, 3)
         ss.set_event(x.clone())
-        ss.normalize("percepts", target="what")
+        ss.normalize("percepts", target="what", normalize=True)
         y = ss.select("what")
         self.assertTrue(torch.all(y >= -1) and torch.all(y <= 1))
         self.assertTrue(torch.allclose(y, torch.tanh(x)))
@@ -3456,7 +3430,7 @@ class TestSubspaceNormalize(unittest.TestCase):
         ss = self._make_ss()
         x = torch.randn(2, 4, 3)
         ss.set_activation(x[:, :, 0].clone())
-        ss.normalize("concepts", target="activation")
+        ss.normalize("concepts", target="activation", normalize=True)
         y = ss.get_activation()
         self.assertTrue(torch.all(y >= -1) and torch.all(y <= 1))
         self.assertTrue(torch.allclose(y, torch.tanh(x[:, :, 0])))
@@ -3466,7 +3440,7 @@ class TestSubspaceNormalize(unittest.TestCase):
         ss = self._make_ss()
         x = torch.randn(2, 4, requires_grad=True)
         ss.set_activation(x)
-        ss.normalize("symbols", target="activation")
+        ss.normalize("symbols", target="activation", normalize=True)
         y = ss.get_activation()
         # Output should be exactly 0 or 1
         self.assertTrue(torch.all((y == 0) | (y == 1)))
@@ -3481,7 +3455,7 @@ class TestSubspaceNormalize(unittest.TestCase):
         ss = self._make_ss()
         ss.set_event(torch.randn(2, 4, 3))
         with self.assertRaises(ValueError):
-            ss.normalize("bogus", target="what")
+            ss.normalize("bogus", target="what", normalize=True)
 
 
 class TestDataScaling(unittest.TestCase):
@@ -3545,7 +3519,7 @@ class TestNormalizeFlag(unittest.TestCase):
         self.assertTrue(len(w) > 0, "Should have emitted a warning")
 
     def test_normalize_true_does_modify(self):
-        """normalize=True (default) modifies the tensor."""
+        """normalize=True modifies the tensor."""
         from Space import SubSpace
         _populate_test_config(inputDim=4, nInput=4)
         ss = SubSpace(inputShape=[4, 4], outputShape=[4, 4])
@@ -3563,7 +3537,7 @@ class TestInputSpaceScaling(unittest.TestCase):
     """Tests for InputSpace min-max scaling of non-embedding data."""
 
     def test_simple_input_scaled_to_unit(self):
-        """InputSpace(normalize=True) scales passthrough what-content to [-1,1]."""
+        """InputSpace scales passthrough what-content to [-1,1]."""
         from BasicModel import InputSpace, TheData, TheXMLConfig
         TheData.load("xor")
         TheData.input_min = -3.0

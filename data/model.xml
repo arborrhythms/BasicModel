@@ -9,13 +9,12 @@
   nInput=0  sentinel: for InputSpace, derive from TheData; for other spaces,
             derive from the previous space's outputShape[0].
   nOutput=0 sentinel: same as nInput for this space (passthrough count).
-  nVectors=0 sentinel: same as nOutput (used for non-quantized spaces).
+  nVectors=0 sentinel: same as nOutput (used for non-codebook spaces).
 -->
 <model>
   <architecture>
     <modelType>simple</modelType>
     <conceptualOrder>1</conceptualOrder>
-    <symbolicOrder>1</symbolicOrder>
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
     <certainty>false</certainty>
@@ -86,75 +85,75 @@
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <nDim>1</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
-    <flatten>false</flatten>
-    <quantized>false</quantized>
+    <codebook>false</codebook>
     <lexer>word</lexer>
-    <normalize>true</normalize>
   </InputSpace>
 
   <PerceptualSpace>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <nDim>1</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
-    <flatten>false</flatten>
     <passThrough>false</passThrough>
     <hasAttention>true</hasAttention>
     <invertible>false</invertible>
-    <quantized>false</quantized>
-    <normalize>false</normalize>
+    <codebook>false</codebook>
   </PerceptualSpace>
 
   <ModalSpace>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <nDim>1</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
-    <flatten>false</flatten>
     <passThrough>false</passThrough>
     <hasAttention>true</hasAttention>
     <invertible>false</invertible>
-    <quantized>false</quantized>
+    <codebook>false</codebook>
     <whatPassThrough>false</whatPassThrough>
     <wherePassThrough>true</wherePassThrough>
     <whenPassThrough>true</whenPassThrough>
-    <normalize>false</normalize>
   </ModalSpace>
 
   <ConceptualSpace>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <nDim>1</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
-    <flatten>false</flatten>
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
     <nonlinear>true</nonlinear>
-    <quantized>false</quantized>
-    <normalize>false</normalize>
+    <codebook>false</codebook>
   </ConceptualSpace>
 
   <SymbolicSpace>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <nDim>1</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
-    <flatten>false</flatten>
     <passThrough>false</passThrough>
-    <quantized>false</quantized>
-    <normalize>false</normalize>
+    <codebook>false</codebook>
   </SymbolicSpace>
 
   <OutputSpace>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <nDim>1</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
-    <flatten>true</flatten>
     <invertible>false</invertible>
-    <quantized>false</quantized>
-    <normalize>true</normalize>
+    <codebook>false</codebook>
   </OutputSpace>
 
 </model>

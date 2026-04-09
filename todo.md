@@ -1,5 +1,10 @@
 # TODO
 
+Mapping from ConceptualSpace to SymbolicSpace has to happen only one vector at a time, since the SymbolicSpace uses a factored representation of each conceptual vector that is not stored. In other words, every concept has a nearest word with a factored representation, and processing into a new activation vector on conceptual space can be done by accumulating the symbolic activations serially. 
+
+* ShortTermMemory can be implemented by a set of Symbols that have a high LR. They should exist on top of ConceptualSpace, at the last ConceptualOrder
+* ConceptualOrder recursion should be ramsified.
+
 * Luminousity should take account of the potential for lack of orthogonality of symbols to create dissonance, which can be approximated by conceptual overlap that causes interference within conceptual space, or that fails to illuminate some area of awareness.
 
 * Universality should be tested for accurately identifying the subject and object of a transitive verb.

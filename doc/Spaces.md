@@ -41,19 +41,17 @@ per-neuron exploration level is kept consistent across the entire pipeline.
 
 ## Normalization and Ranges
 
-Every space enforces a canonical range on its vectors and activations. The
-`normalize` config flag controls the behavior: when `true`, the space
-actively normalizes its output; when `false`, it emits a warning if the
-output is out of range but does not modify it.
+Every space enforces a canonical range on its vectors and activations.
+Each space always normalizes its output to the correct range.
 
-| Space | Data Contract | Geometry | Normalization |
-|-------|--------------|----------|---------------|
-| InputSpace | Data scaled -1..1 for scalars or vector norms | Signed unit interval `[-1,1]` | `normalize=true` by default |
-| PerceptualSpace | Modal/demuxed (what/where/when encoding). Signed unit-magnitude scalars or vectors centered at the origin. No negation operator, but signed for symmetry | Signed hypercube `[-1,1]^d` | `normalize=false` by default |
-| ConceptualSpace | Combined/muxed (event encoding). Signed unit-magnitude scalars or vectors (tanh-bounded). Event norm stored on `subspace.activation` | `[-1,1]` per element (tanh) | `normalize=false` by default |
-| SymbolicSpace | Symbols are percepts. Concept-to-symbol mapping. One symbol encoded at a time (most highly active). Each symbol receives where/when from PerceptualSpace | `[0,1]` presence | `normalize=false` by default |
-| SyntacticSpace | Words are concepts encoding grammatical rules. Stored as word tuples with production rules | Word tuples `(batch, vector, rule)` | `normalize=false` by default |
-| OutputSpace | Rescaled from activation range to original data range | Data range | `normalize=true` by default |
+| Space | Data Contract | Geometry |
+|-------|--------------|----------|
+| InputSpace | Data scaled -1..1 for scalars or vector norms | Signed unit interval `[-1,1]` |
+| PerceptualSpace | Modal/demuxed (what/where/when encoding). Signed unit-magnitude scalars or vectors centered at the origin. No negation operator, but signed for symmetry | Signed hypercube `[-1,1]^d` |
+| ConceptualSpace | Combined/muxed (event encoding). Signed unit-magnitude scalars or vectors (tanh-bounded). Event norm stored on `subspace.activation` | `[-1,1]` per element (tanh) |
+| SymbolicSpace | Symbols are percepts. Concept-to-symbol mapping. One symbol encoded at a time (most highly active). Each symbol receives where/when from PerceptualSpace | `[0,1]` presence |
+| SyntacticSpace | Words are concepts encoding grammatical rules. Stored as word tuples with production rules | Word tuples `(batch, vector, rule)` |
+| OutputSpace | Rescaled from activation range to original data range | Data range |
 
 **Data scaling.** `Data` computes global scalar `input_min`/`input_max` and
 `output_min`/`output_max` from the training data at load time. InputSpace uses
@@ -101,8 +99,8 @@ table.
 
 **Numeric mode.** Tensor data is passed through unchanged; the LiftingLayer projects
 the native input dimension (e.g. 784 for MNIST) to the model's working dimensionality
-`nDim`. Non-embedding inputs are then scaled to `[-1, 1]` using the global data min/max
-(`normalize=true`), and the reverse path restores the original range.
+`nDim`. Non-embedding inputs are then scaled to `[-1, 1]` using the global data min/max,
+and the reverse path restores the original range.
 
 **Key parameters.**
 
@@ -113,8 +111,7 @@ the native input dimension (e.g. 784 for MNIST) to the model's working dimension
 | `nWhere` | Positional dimensions appended to each token vector |
 | `nWhen` | Temporal dimensions appended to each token vector |
 | `lexer` | Tokenization mode: `"word"` or `"sentence"` |
-| `quantized` | Whether input values are discrete |
-| `normalize` | Scale what-content to `[-1, 1]` (default: `true`) |
+| `codebook` | Whether input values are discrete |
 | `demuxed` | Store what/where/when independently (default: `false`) |
 
 **Layer.** `LiftingLayer` — bridges native input dimension to `nDim`.
@@ -160,15 +157,13 @@ reverse layer uses a pseudoinverse to approximately invert the forward mapping.
 | `invertible` | True: shared invertible layer; False: separate pi1/pi2 |
 | `passThrough` | Skip perceptual processing entirely |
 | `hasAttention` | Enable attention reweighting |
-| `normalize` | Normalize vectors to `[-1, 1]` via tanh (default: `false`) |
 
 **Layer.** `PiLayer` (one or two instances depending on `invertible`).
 
 **Range.** Vectors live in the signed hypercube `[-1, 1]^d` (tanh-bounded). The space
 is centered at the origin for geometric symmetry, though it has no negation operator —
 percepts represent feature magnitudes with sign indicating direction. Activation is
-`[-1, 1]`. When `normalize=true`, tanh is applied to enforce the range; when `false`,
-a warning is emitted if the output deviates.
+`[-1, 1]`. Tanh is applied to enforce the range.
 
 **Invertibility.** `invertible=True`: shared layer, exact inverse. `invertible=False`:
 separate layers, approximate pseudoinverse in reverse.
@@ -213,9 +208,8 @@ instances — `sigma1` for forward, `sigma2` for reverse.
 
 **Range.** Vectors are tanh-bounded: each element is in `[-1, 1]` (applied by SigmaLayer).
 Activation is `[-1, 1]`. The boundary between PerceptualSpace and ConceptualSpace uses
-`atanh` (forward) / `tanh` (reverse) as exact inverses. When `normalize=true`, tanh is
-applied to enforce the element-wise range; when `false`, a warning is emitted if the
-output deviates.
+`atanh` (forward) / `tanh` (reverse) as exact inverses. Tanh is applied to enforce
+the element-wise range.
 
 **Invertibility.** `invertible=True`: exact inverse via atanh + `W^{-1}`. `invertible=False`:
 separate layers with independent weights.
@@ -238,7 +232,7 @@ SymbolicSpace uses them exclusively instead of raw `get_activation` /
 
 See [Language.md](Language.md) for the full language system design.
 
-**Forward operation (quantized=True).**
+**Forward operation (codebook=True).**
 
 1. Extract concept activation `[B, nConcepts]` from the input subspace.
 2. Map through `PiLayer(nConcepts, nSymbols, invertible=True, monotonic=True)` to `[B, nSymbols]`.
@@ -250,7 +244,7 @@ See [Language.md](Language.md) for the full language system design.
 The output is a one-hot encoding over the codebook. The codebook provides dense
 vectors for downstream spaces that require `[B, N, D]` tensors.
 
-**Forward operation (quantized=False).** The PiLayer maps the activation
+**Forward operation (codebook=False).** The PiLayer maps the activation
 to symbolic presence via `set_symbols()`; vectors pass through from the input
 subspace unchanged.
 
@@ -265,10 +259,9 @@ recovering the concept activation.
 | Parameter | Description |
 |-----------|-------------|
 | `nActive` | Total number of symbols (output + reconstruction symbols) |
-| `nVectors` | Codebook size (= nSymbols when quantized) |
+| `nVectors` | Codebook size (= nSymbols when codebook=true) |
 | `passThrough` | Skip symbolic processing entirely |
-| `quantized` | Enable codebook quantization (required for one-hot output) |
-| `normalize` | Discretize symbols to `{0, 1}` via STE (default: `false`) |
+| `codebook` | Enable codebook quantization (required for one-hot output) |
 
 **Range.** Symbols are percepts: each symbol represents the presence (`1`) or absence
 (`0`) of a named entity and lives in `[0, 1]`. One symbol is encoded at a time (the
@@ -367,7 +360,7 @@ codebook entry, that entry is fed back as input, and generation continues until
 **Layer.** `LinearLayer` with `(bias, temp)` support for ergodic mode. Always
 `reshape=True`.
 
-**Range.** When `normalize=true`, the forward pass rescales output from `[-1, 1]`
+**Range.** The forward pass rescales output from `[-1, 1]`
 (symbolic activation range) to the original data range via `Data.denormalize()`.
 The reverse pass applies `Data.normalize(x, "output")` to map back to `[-1, 1]`
 before the reverse linear projection.

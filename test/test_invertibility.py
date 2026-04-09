@@ -489,7 +489,7 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
     """Configure TheXMLConfig for isolated Space tests.
 
     Overlays test-specific values on top of model.xml defaults so that
-    keys like 'normalize', 'syntax', etc. are always present.
+    keys like 'syntax', etc. are always present.
     """
     nWhere = objSize // 2 if objSize > 0 else 0
     nWhen = objSize - nWhere if objSize > 0 else 0
@@ -504,11 +504,11 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
             "nWhere": nWhere, "nWhen": nWhen,
             "embeddingPath": None, "data": {}, "training": {},
         },
-        "InputSpace":      {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": False, "quantized": False, "lexer": "word"},
-        "PerceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "quantized": False, "passThrough": passThrough, "hasAttention": hasAttention, "invertible": invertible},
-        "ConceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "quantized": False, "hasAttention": False, "invertible": invertible},
-        "SymbolicSpace":   {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "passThrough": symbolPassThrough, "quantized": False},
-        "OutputSpace":     {"nDim": outputDim,  "nVectors": nObj, "nActive": nObj, "nWhere": 0, "nWhen": 0, "flatten": True, "quantized": False, "invertible": False},
+        "InputSpace":      {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": False, "codebook": False, "lexer": "word"},
+        "PerceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "codebook": False, "passThrough": passThrough, "hasAttention": hasAttention, "invertible": invertible},
+        "ConceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "codebook": False, "hasAttention": False, "invertible": invertible},
+        "SymbolicSpace":   {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "passThrough": symbolPassThrough, "codebook": False},
+        "OutputSpace":     {"nDim": outputDim,  "nVectors": nObj, "nActive": nObj, "nWhere": 0, "nWhen": 0, "flatten": True, "codebook": False, "invertible": False},
     }
     for section, vals in overrides.items():
         if section in TheXMLConfig._data and isinstance(TheXMLConfig._data[section], dict):

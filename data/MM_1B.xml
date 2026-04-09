@@ -1,9 +1,8 @@
 <?xml version="1.0" ?>
 <model>
-  <!-- MentalModel: iterative [Percept,Symbol]→Concept→Symbol loop.
-       ConceptualSpace receives [percepts, symbols] (symbols=0 at T=1).
-       SyntacticSpace runs composeSyntax over symbol activations each iteration.
-       OutputSpace is fed by the final ConceptualSpace output. -->
+  <!-- MM_1B: MentalModel scaled to ~1B params with byte input.
+       Keeps the MentalModel topology and shifts representational width
+       into ConceptualSpace while PerceptualSpace compacts byte spans. -->
   <architecture>
     <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
@@ -19,8 +18,8 @@
     <LuminosityWeight>0.1</LuminosityWeight>
     <UniversalityWeight>0.1</UniversalityWeight>
     <maxResponseLength>4096</maxResponseLength>
-    <weightsPath>MentalModel.ckpt</weightsPath>
-    <embeddingPath>MentalModel.kv</embeddingPath>
+    <weightsPath>MM_1B.ckpt</weightsPath>
+    <embeddingPath>MM_1B.kv</embeddingPath>
 
     <data>
       <shardDir>data/fineweb</shardDir>
@@ -32,8 +31,8 @@
     <training>
       <numTrials>1</numTrials>
       <numEpochs>2</numEpochs>
-      <batchSize>8</batchSize>
-      <learningRate>0.001</learningRate>
+      <batchSize>1</batchSize>
+      <learningRate>0.0005</learningRate>
       <reverseScale>0.1</reverseScale>
       <trainEmbedding>ARLM</trainEmbedding>
       <autoload>false</autoload>
@@ -42,7 +41,7 @@
 
     <server>
       <host>127.0.0.1</host>
-      <port>8002</port>
+      <port>8003</port>
       <timeout>120</timeout>
     </server>
 
@@ -71,47 +70,59 @@
   </architecture>
 
   <InputSpace>
-    <nDim>100</nDim>
-    <nVectors>128</nVectors>
-    <nOutput>128</nOutput>
+    <nDim>1</nDim>
+    <nVectors>4096</nVectors>
+    <nOutput>4096</nOutput>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
-    <lexer>sentence</lexer>
+    <lexer>byte</lexer>
     <codebook>true</codebook>
   </InputSpace>
 
   <PerceptualSpace>
+    <nInput>4096</nInput>
+    <nVectors>512</nVectors>
+    <nDim>32</nDim>
+    <nWhere>2</nWhere>
+    <nWhen>0</nWhen>
     <nOutput>128</nOutput>
-    <nDim>100</nDim>
-    <nVectors>128</nVectors>
-    <passThrough>true</passThrough>
+
+    <passThrough>false</passThrough>
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
     <codebook>false</codebook>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace receives [Percept, Symbol] in iterative MentalModel,
-       so input count = nPercepts + nSymbols. Keeps same dim as BasicModel. -->
+  <!-- ConceptualSpace receives [Percept, Symbol] in iterative MentalModel.
+       Keep object counts MentalModel-like, but add the real representational
+       width here. -->
   <ConceptualSpace>
-    <nOutput>256</nOutput>
-    <nDim>100</nDim>
+    <nInput>256</nInput>
     <nVectors>256</nVectors>
-    <hasAttention>true</hasAttention>
+    <nDim>1024</nDim>
+    <nOutput>32</nOutput>
+
+    <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>false</codebook>
+    <flatten>true</flatten>
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <nInput>128</nInput>
+    <nVectors>1024</nVectors>
+    <nDim>4</nDim>
+    <nWhere>2</nWhere>
+    <nWhen>0</nWhen>
     <nOutput>128</nOutput>
-    <nDim>100</nDim>
-    <nVectors>128</nVectors>
+
     <passThrough>false</passThrough>
     <accumulateTruth>true</accumulateTruth>
   </SymbolicSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>
-    <nDim>100</nDim>
+    <nDim>4</nDim>
     <nVectors>1</nVectors>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>

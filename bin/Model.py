@@ -2476,7 +2476,7 @@ class ModelLoss(Loss):
                  what_scale=0.7, where_scale=0.2, when_scale=0.1,
                  embedding_scale=0.1,
                  certainty=False, nOutput=2,
-                 conceptualOrder=0, symbolicOrder=0,
+                 conceptualOrder=0,
                  nWhere=None, nWhen=None):
         super().__init__()
         self.reverse_scale = float(reverse_scale or 0.5)
@@ -2491,7 +2491,7 @@ class ModelLoss(Loss):
             self.output_criterion = CertaintyWeightedCrossEntropy()
         elif nOutput <= 2:
             self.output_criterion = nn.MSELoss()
-        elif conceptualOrder > 0 or symbolicOrder > 0:
+        elif conceptualOrder > 0:
             self.output_criterion = nn.MSELoss()
         else:
             self.output_criterion = nn.CrossEntropyLoss()

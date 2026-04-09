@@ -151,7 +151,6 @@ class BaseModel(nn.Module):
             nWords=nWords,
             nOutput=nOutput,
             conceptualOrder=arch["conceptualOrder"],
-            symbolicOrder=arch["symbolicOrder"],
             model_type=model_type,
             data=data,
             embedding_path=embedding_path,
@@ -562,7 +561,7 @@ class BasicModel(BaseModel):
     The reverse pass mirrors it:
         OutputSpace -> SymbolicSpace -> ConceptualSpace -> PerceptualSpace -> InputSpace
 
-    Higher-order processing (conceptualOrder, symbolicOrder) inserts additional
+    Higher-order processing (conceptualOrder) inserts additional
     Percept/Concept/Symbol cycles between the first SymbolicSpace and OutputSpace,
     concatenating their symbol outputs before the final projection.
 
@@ -577,21 +576,20 @@ class BasicModel(BaseModel):
         return super().create_from_config(config_path, model_type=model_type, data=data)
 
     def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
-               conceptualOrder=1, symbolicOrder=1,
+               conceptualOrder=1,
                model_type="simple", data=None, embedding_path=None,
                reverse_scale=0.5, what_scale=0.7, where_scale=0.2, when_scale=0.1,
                masked_prediction='NONE', reconstruct='NONE'):
         """Build the full space hierarchy from architecture parameters.
 
-        Config-derivable flags (reshape, ergodic, quantized, etc.) are read
+        Config-derivable flags (reshape, ergodic, codebook, etc.) are read
         from TheXMLConfig by each Space constructor.  Only runtime/pipeline
         params are passed here.
 
         Args:
             nInput/nPercepts/nConcepts/nSymbols/nOutput: object counts per space.
-            nWords: object count for the SyntacticSpace (used when symbolicOrder >= 1).
+            nWords: object count for the SyntacticSpace.
             conceptualOrder: number of extra Percept->Concept->Symbol cycles.
-            symbolicOrder: number of extra Syntax->Symbol cycles.
             model_type: "simple", "embedding", "passthrough", or "vq".
         """
         self.spaces = []  # reset — prevent stale accumulation from prior create() calls
@@ -605,9 +603,9 @@ class BasicModel(BaseModel):
         self.syntax           = False  # BasicModel: no syntax
         TheXMLConfig._data.setdefault("architecture", {})["syntax"] = False
         self.lexer            = TheXMLConfig.space("InputSpace", "lexer")
-        self.quantized        = TheXMLConfig.space("InputSpace", "quantized")
-        self.perceptQuantized = TheXMLConfig.space("PerceptualSpace", "quantized")
-        self.conceptQuantized = TheXMLConfig.space("ConceptualSpace", "quantized")
+        self.codebook         = TheXMLConfig.space("InputSpace", "codebook")
+        self.perceptCodebook  = TheXMLConfig.space("PerceptualSpace", "codebook")
+        self.conceptCodebook  = TheXMLConfig.space("ConceptualSpace", "codebook")
         self.perceptPassThrough = TheXMLConfig.space("PerceptualSpace", "passThrough")
         self.symbolPassThrough  = TheXMLConfig.space("SymbolicSpace", "passThrough")
         self.invertible       = TheXMLConfig.space("PerceptualSpace", "invertible")
@@ -636,7 +634,6 @@ class BasicModel(BaseModel):
         self.model_type       = model_type
         self.embedding_path   = embedding_path
         self.conceptualOrder  = conceptualOrder
-        self.symbolicOrder    = symbolicOrder
         self.loss = ModelLoss(reverse_scale=reverse_scale,
                          what_scale=what_scale,
                          where_scale=where_scale,
@@ -644,7 +641,6 @@ class BasicModel(BaseModel):
                          certainty=self.certainty,
                          nOutput=nOutput,
                          conceptualOrder=conceptualOrder,
-                         symbolicOrder=symbolicOrder,
                          nWhere=TheXMLConfig.get("architecture.nWhere"),
                          nWhen=TheXMLConfig.get("architecture.nWhen"))
         self.masked_prediction = masked_prediction
@@ -1324,7 +1320,7 @@ class MentalModel(BaseModel):
     infer       = BasicModel.infer
 
     def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
-               conceptualOrder=1, symbolicOrder=1,
+               conceptualOrder=1,
                model_type="simple", data=None, embedding_path=None,
                reverse_scale=0.5,
                what_scale=0.7, where_scale=0.2, when_scale=0.1,
@@ -1345,16 +1341,15 @@ class MentalModel(BaseModel):
         self.ergodic = TheXMLConfig.get("architecture.ergodic")
         self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
         self.certainty = TheXMLConfig.get("architecture.certainty")
-        self.quantized = TheXMLConfig.space("InputSpace", "quantized")
-        self.perceptQuantized = TheXMLConfig.space("PerceptualSpace", "quantized")
-        self.conceptQuantized = TheXMLConfig.space("ConceptualSpace", "quantized")
+        self.codebook = TheXMLConfig.space("InputSpace", "codebook")
+        self.perceptCodebook = TheXMLConfig.space("PerceptualSpace", "codebook")
+        self.conceptCodebook = TheXMLConfig.space("ConceptualSpace", "codebook")
         self.conceptualOrder = conceptualOrder
 
         # Truth integration config (optional — absent in BasicModel.xml)
         self.truth_bias_scale = float(TheXMLConfig.get("architecture.truthBiasScale", default=0.1) or 0.1)
         self.luminosity_weight = float(TheXMLConfig.get("architecture.LuminosityWeight", default=0.1) or 0.1)
         self.universality_weight = float(TheXMLConfig.get("architecture.UniversalityWeight", default=0.1) or 0.1)
-        self.symbolicOrder = symbolicOrder
         self.reconstruct = reconstruct.lower()
         self.masked_prediction = masked_prediction
         self.nOutputSymbols = nOutput
@@ -1369,7 +1364,6 @@ class MentalModel(BaseModel):
             when_scale=when_scale,
             nOutput=nOutput,
             conceptualOrder=conceptualOrder,
-            symbolicOrder=symbolicOrder,
             nWhere=TheXMLConfig.get("architecture.nWhere"),
             nWhen=TheXMLConfig.get("architecture.nWhen"),
         )
@@ -1609,21 +1603,21 @@ class ModelFactory:
       - modelType=passthrough → BasicModel (passthrough path)
       - modelType=vq         → BasicModel (vector-quantized path)
       - Otherwise             → SimpleModel parameterized by:
-            ergodic, certainty, quantized, normed, reverse, invert
+            ergodic, certainty, codebook, normed, reverse, invert
     """
 
     @staticmethod
-    def model_name(ergodic, certainty, quantized, normed=False, reverse=False, invert=False):
+    def model_name(ergodic, certainty, codebook, normed=False, reverse=False, invert=False):
         """Generate a human-readable model name from its flags."""
-        if not ergodic and not certainty and not quantized:
+        if not ergodic and not certainty and not codebook:
             return "SimpleModel"
         parts = []
         if ergodic:
             parts.append("Ergodic")
         if certainty:
             parts.append("Certainty")
-        if quantized:
-            parts.append("Quantized")
+        if codebook:
+            parts.append("Codebook")
         if normed:
             parts.append("Normed")
         if invert:
@@ -1660,14 +1654,25 @@ class ModelFactory:
         if model_family is None:
             model_family = XMLConfig.infer_model_kind(cfg)
 
-        # Attention is incompatible with flatten (attention expects 3D, flatten flattens to 2D)
-        if gsp(cfg, "PerceptualSpace", "flatten") and gsp(cfg, "PerceptualSpace", "hasAttention"):
+        # Attention is incompatible with reshape that changes vector count
+        # (attention expects multi-vector 3D, reshape to 1 vector collapses it).
+        def _has_reshape(space_name):
+            try:
+                nid = gsp(cfg, space_name, "nInputDim")
+            except KeyError:
+                nid = 0
+            try:
+                fl = gsp(cfg, space_name, "flatten")
+            except KeyError:
+                fl = False
+            return nid != 0 or fl
+        if _has_reshape("PerceptualSpace") and gsp(cfg, "PerceptualSpace", "hasAttention"):
             errors.append(
-                "PerceptualSpace hasAttention=True is incompatible with flatten=True. "
+                "PerceptualSpace hasAttention=True is incompatible with nInputDim reshape. "
                 "Set <hasAttention>false</hasAttention> in <PerceptualSpace>.")
-        if gsp(cfg, "ConceptualSpace", "flatten") and gsp(cfg, "ConceptualSpace", "hasAttention"):
+        if _has_reshape("ConceptualSpace") and gsp(cfg, "ConceptualSpace", "hasAttention"):
             errors.append(
-                "ConceptualSpace hasAttention=True is incompatible with flatten=True. "
+                "ConceptualSpace hasAttention=True is incompatible with nInputDim reshape. "
                 "Set <hasAttention>false</hasAttention> in <ConceptualSpace>.")
 
         # SymbolicSpace passThrough requires shape consistency with ConceptualSpace
