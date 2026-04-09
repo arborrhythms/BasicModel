@@ -15,6 +15,8 @@
   <architecture>
     <modelType>simple</modelType>
     <conceptualOrder>1</conceptualOrder>
+    <ramsified>false</ramsified>
+    <l1Lambda>0.01</l1Lambda>
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
     <certainty>false</certainty>
@@ -154,6 +156,7 @@
     <nVectors>0</nVectors>
     <invertible>false</invertible>
     <codebook>false</codebook>
+    <nonlinear>false</nonlinear>
   </OutputSpace>
 
 </model>

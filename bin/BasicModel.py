@@ -42,6 +42,7 @@ from data import Data, TheData
 from Model import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
 from Model import VQLayer, LinearLayer, AttentionLayer
 from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
+from Model import l1_proximal
 
 from Space import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Space import Basis, Tensor, Codebook, Embedding
@@ -1345,6 +1346,8 @@ class MentalModel(BaseModel):
         self.perceptCodebook = TheXMLConfig.space("PerceptualSpace", "codebook")
         self.conceptCodebook = TheXMLConfig.space("ConceptualSpace", "codebook")
         self.conceptualOrder = conceptualOrder
+        self.ramsified = TheXMLConfig.get("architecture.ramsified")
+        self.l1_lambda = float(TheXMLConfig.get("architecture.l1Lambda"))
 
         # Truth integration config (optional — absent in BasicModel.xml)
         self.truth_bias_scale = float(TheXMLConfig.get("architecture.truthBiasScale", default=0.1) or 0.1)
@@ -1451,10 +1454,15 @@ class MentalModel(BaseModel):
         # No SyntacticSpace — syntax is handled by Grammar centrally.
         self.syntacticSpace = None
 
-        # Concept -> Output  (fed by ConceptualSpace, not SymbolicSpace)
-        self.outputSpace = OutputSpace(conceptOutputShape, spaceShape_output, outputShape,
-                                       masked_prediction=(masked_prediction != 'NONE'),
-                                       vectors=self.inputSpace.vocabulary)
+        # Output: from symbols (ramsified) or concepts (default)
+        if self.ramsified:
+            self.outputSpace = OutputSpace(symbolShape, spaceShape_output, outputShape,
+                                           masked_prediction=(masked_prediction != 'NONE'),
+                                           vectors=self.inputSpace.vocabulary)
+        else:
+            self.outputSpace = OutputSpace(conceptOutputShape, spaceShape_output, outputShape,
+                                           masked_prediction=(masked_prediction != 'NONE'),
+                                           vectors=self.inputSpace.vocabulary)
 
         # Zero-init shape: [nSymbols, percept_dim+obj] for cat with percepts
         self._symbol_shape = [nSymbols, percept_dim + obj_percept]
@@ -1513,18 +1521,102 @@ class MentalModel(BaseModel):
         self.percepts = self.perceptualSpace.forward(self.inputs)
         percepts = self.percepts.materialize()  # [B, nPercepts, dim]
 
-        # 2. Initialize symbols as zeros
         B = percepts.shape[0]
+
+        if self.ramsified:
+            # ── Ramsified loop: serial per-concept Pi with L1 sparsity ──
+            # PiLayer maps on nDim axis: [B, 1, concept_dim] → [B, 1, symbol_dim].
+            # Each concept is passed individually through SymbolicSpace.forward().
+            symbol_dim = self.symbolicSpace.layer.nOutput
+            self.concept_states = []  # per-order concepts for reverse
+
+            # Feedback symbols: [B, nSymbols, percept_dim+obj] for cat with percepts
+            sym_feedback = torch.zeros(B, self._symbol_shape[0],
+                                       self._symbol_shape[1],
+                                       device=percepts.device)
+            symbolSum = None  # allocated after first ConceptualSpace forward
+
+            for t in range(self.conceptualOrder):
+                concept_input = torch.cat([percepts, sym_feedback], dim=1)
+
+                # Truth bias
+                truth_layer = getattr(self.symbolicSpace, 'truth', None)
+                if truth_layer is not None and len(truth_layer) > 0:
+                    bias_scale = getattr(self, 'truth_bias_scale', 0.1)
+                    lum = truth_layer.luminosity(self.symbolicSpace.layer)
+                    concept_input = concept_input * (1 + bias_scale * lum)
+
+                # Sigma: [percepts, sym_feedback] → concepts (same weights each order)
+                self.concepts = self.conceptualSpace.forward(
+                    self._wrap_reverse(self.conceptualSpace, concept_input))
+                concept_vectors = self.concepts.materialize()  # [B, nC, concept_dim]
+
+                # Allocate symbolSum on first pass
+                nC = concept_vectors.shape[1]
+                if symbolSum is None:
+                    symbolSum = torch.zeros(B, nC, symbol_dim,
+                                            device=percepts.device)
+
+                # Serial Pi: each concept [B, 1, D] → [B, 1, symbol_dim]
+                for i in range(nC):
+                    single = concept_vectors[:, i:i+1, :]     # [B, 1, concept_dim]
+                    result = self.symbolicSpace.forward(
+                        self._wrap_reverse(self.symbolicSpace, single))
+                    sym_vec = result.materialize()[:, 0, :]   # [B, symbol_dim]
+                    sym_vec = l1_proximal(sym_vec, self.l1_lambda)
+                    symbolSum[:, i, :] = symbolSum[:, i, :] + sym_vec
+
+                # Bound after each order
+                symbolSum = torch.tanh(symbolSum)
+
+                # Re-integration feedback: activation norms → percept dim
+                nSymFeedback = self._symbol_shape[0]
+                sym_norms = symbolSum.norm(dim=-1)            # [B, nC]
+                # Use last nSymbols vectors for feedback (symbol-derived portion)
+                if sym_norms.shape[1] > nSymFeedback:
+                    sym_norms_fb = sym_norms[:, -nSymFeedback:]
+                else:
+                    sym_norms_fb = sym_norms
+                sym_feedback = sym_norms_fb.unsqueeze(-1).expand(
+                    -1, -1, percepts.shape[-1])
+
+                # Second Sigma with updated feedback
+                concept_input2 = torch.cat([percepts, sym_feedback], dim=1)
+                self.concepts = self.conceptualSpace.forward(
+                    self._wrap_reverse(self.conceptualSpace, concept_input2))
+
+                # Cache per-order concepts (retain gradients for recon loss)
+                self.concept_states.append(self.concepts.materialize().clone())
+
+            # Universality evaluation
+            self._universality_score = None
+            truth_layer = getattr(self.symbolicSpace, 'truth', None)
+            if truth_layer is not None and len(truth_layer) > 0:
+                svo = self.conceptualSpace.last_svo
+                if svo is not None:
+                    s, v, o = svo
+                    c_sl = self.conceptualSpace.syntacticLayer
+                    self._universality_score = truth_layer.universality(
+                        s, v, o, c_sl.lifting_layer, self.symbolicSpace)
+
+            # Output from full symbol vectors [B, nConcepts, symbol_dim]
+            self.symbolicSpace.subspace.set_event(symbolSum)
+            outputData = self.Finish(self.symbolicSpace.subspace)
+            # Return activation norms expanded to percept dim for compatibility
+            sym_norms = symbolSum.norm(dim=-1)
+            symbols = sym_norms.unsqueeze(-1).expand(
+                -1, -1, percepts.shape[-1])
+            return input_state, symbols, outputData
+
+        # ── Default loop: batch Sigma-Pi ──
+        # PiLayer maps full concept vectors on nDim axis:
+        # [B, nConcepts, concept_dim] → [B, nConcepts, symbol_dim]
         symbols = torch.zeros(B, self._symbol_shape[0], self._symbol_shape[1],
                               device=percepts.device)
 
-        # 3. Iterative loop: [Percept,Symbol]->Concept->Symbol
-        # Grammar derivation runs inside each Space.forward() when syntax=True.
         for t in range(self.conceptualOrder):
-            # [Percept, Symbol_prev] -> Concept  (cat along vector dim)
             concept_input = torch.cat([percepts, symbols], dim=1)
 
-            # Truth bias: scale concept input by luminosity of truth set
             truth_layer = getattr(self.symbolicSpace, 'truth', None)
             if truth_layer is not None and len(truth_layer) > 0:
                 bias_scale = getattr(self, 'truth_bias_scale', 0.1)
@@ -1535,18 +1627,21 @@ class MentalModel(BaseModel):
                 self._wrap_reverse(self.conceptualSpace, concept_input))
             concepts = self.concepts.materialize()
 
-            # Concept -> Symbol  (activation: nP+nS → nS, then sigmoid to [0,1])
             self.symbols = self.symbolicSpace.forward(
                 self._wrap_reverse(self.symbolicSpace, concepts))
 
-            # Extract symbol activation [B, nSymbols] and expand to vector form
-            # for concatenation with percepts in the next iteration.
-            symbol_act = self.symbols.get_symbols()          # [B, nSymbols]
-            symbol_act = torch.sigmoid(symbol_act)           # clamp to [0,1]
-            symbols = symbol_act.unsqueeze(-1).expand(       # [B, nSymbols, dim]
+            # Feedback: activation norms of symbol vectors → percept dim
+            sym_vectors = self.symbols.materialize()          # [B, nC, symbol_dim]
+            sym_norms = sym_vectors.norm(dim=-1)              # [B, nC]
+            nSymFeedback = self._symbol_shape[0]
+            if sym_norms.shape[1] > nSymFeedback:
+                sym_norms_fb = sym_norms[:, -nSymFeedback:]
+            else:
+                sym_norms_fb = sym_norms
+            symbols = sym_norms_fb.unsqueeze(-1).expand(
                 -1, -1, percepts.shape[-1])
 
-        # 4a. Universality evaluation (if ternary LIFT fired)
+        # Universality evaluation
         self._universality_score = None
         truth_layer = getattr(self.symbolicSpace, 'truth', None)
         if truth_layer is not None and len(truth_layer) > 0:
@@ -1557,30 +1652,36 @@ class MentalModel(BaseModel):
                 self._universality_score = truth_layer.universality(
                     s, v, o, c_sl.lifting_layer, self.symbolicSpace)
 
-        # 5. Final Concept -> Output
         outputData = self.Finish(concepts)
         return input_state, symbols, outputData
 
     def reverse(self, symbols, outputData):
-        # 1. OutputSpace reverse: output -> concepts estimate
         if isinstance(outputData, torch.Tensor):
             self.outputSpace.subspace.set_event(outputData)
             outputData = self.outputSpace.subspace
-        concepts_state = self.outputSpace.reverse(outputData)
 
-        # 2. Unwind iterations in reverse
-        for t in reversed(range(self.conceptualOrder)):
-            # ConceptualSpace reverse: concepts -> [percepts, symbols] estimate
-            concept_input_state = self.conceptualSpace.reverse(concepts_state)
+        if self.ramsified:
+            # 1. OutputSpace reverse: output → symbolSum estimate
+            symbol_state = self.outputSpace.reverse(outputData)
 
-            if t > 0:
-                # Split into percept/symbol portions for next reverse iteration.
-                # SymbolicSpace reverse: symbol portion -> concept activation estimate
-                ci = concept_input_state.materialize()
-                symbol_portion = ci[:, self.nPercepts:, :]
-                symbols_state = self.symbolicSpace.reverse(
-                    self._wrap_reverse(self.symbolicSpace, symbol_portion))
-                concepts_state = symbols_state
+            # 2. Use last order's cached concepts for ConceptualSpace reverse
+            last_concepts = self.concept_states[-1]
+            self.conceptualSpace.subspace.set_event(last_concepts)
+            concept_input_state = self.conceptualSpace.reverse(
+                self.conceptualSpace.subspace)
+        else:
+            # 1. OutputSpace reverse: output → concepts estimate
+            concepts_state = self.outputSpace.reverse(outputData)
+
+            # 2. Unwind iterations in reverse
+            for t in reversed(range(self.conceptualOrder)):
+                concept_input_state = self.conceptualSpace.reverse(concepts_state)
+                if t > 0:
+                    ci = concept_input_state.materialize()
+                    symbol_portion = ci[:, self.nPercepts:, :]
+                    symbols_state = self.symbolicSpace.reverse(
+                        self._wrap_reverse(self.symbolicSpace, symbol_portion))
+                    concepts_state = symbols_state
 
         # 3. Split reconstructed concept input into percept portion
         concept_input = concept_input_state.materialize()

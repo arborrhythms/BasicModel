@@ -142,7 +142,7 @@ The DegreeOfTruth in $[-1, 1]$ is baked into the stored vector:
 ### TruthLayer (SymbolicSpace.truth)
 
 `TruthLayer` in `Model.py` is instantiated on `SymbolicSpace` when
-`<accumulateTruth>true</accumulateTruth>` is set in the XML config:
+`<accumulateTruth>` is set to a value > 0 (the degree of truth, 0..1):
 
 - **record(activation, degree)** — store `activation * degree`.
 - **query(activation)** — find the closest stored truth by cosine similarity.

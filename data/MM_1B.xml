@@ -117,7 +117,7 @@
     <nOutput>128</nOutput>
 
     <passThrough>false</passThrough>
-    <accumulateTruth>true</accumulateTruth>
+    <accumulateTruth>0</accumulateTruth>
   </SymbolicSpace>
 
   <OutputSpace>

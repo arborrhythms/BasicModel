@@ -3427,12 +3427,19 @@ class SymbolicSyntacticLayer(SyntacticLayer):
         """Apply S-tier soft-weighted composition.
 
         Args:
-            data: [B, N] symbol activation tensor
+            data: [B, N] or [B, N, D] symbol activation tensor
             subspace: SubSpace for word recording
             grammar: Grammar instance for rule execution
         Returns:
-            composed symbol activations [B, N]
+            composed symbol activations, same shape as input
         """
+        if data.ndim == 3:
+            # 3D vector mode: extract norms for grammar, scale vectors by result
+            norms = data.norm(dim=-1)                    # [B, N]
+            composed_norms = self.compose(norms, subspace, grammar)  # [B, N]
+            scale = composed_norms / (norms + 1e-8)      # [B, N]
+            return data * scale.unsqueeze(-1)             # [B, N, D]
+
         B, N = data.shape
 
         # Guard: skip soft superposition if data dims don't match SyntacticLayer
@@ -3492,7 +3499,7 @@ class SymbolicSyntacticLayer(SyntacticLayer):
         """Reverse S-tier operations using recorded 3-tuple words.
 
         Args:
-            data: tensor (same shape as compose output)
+            data: [B, N] or [B, N, D] tensor (same shape as compose output)
             subspace: SubSpace with recorded words
             grammar: Grammar instance for rule info
         Returns:
@@ -4908,21 +4915,23 @@ class SymbolicSpace(Space):
         super().__init__(inputShape, spaceShape, outputShape, customVQ=True)
         self.conceptualSpace = conceptualSpace
         self.passThrough = passThrough
-        nConcepts = inputShape[0]
+        # PiLayer maps on the nDim axis: concept_dim+obj → symbol_dim+obj.
+        # nVectors passes through unchanged via batched matmul.
+        nConceptDim = inputShape[1]     # concept_dim + obj (where+when)
+        nSymbolDim = outputShape[1]     # symbol_dim + obj (where+when)
         nSymbols = spaceShape[0]
-        self.layer = PiLayer(nConcepts, nSymbols, invertible=True, monotonic=True)
+        self.layer = PiLayer(nConceptDim, nSymbolDim, invertible=True, monotonic=True)
 
-        # Truth accumulation: when accumulateTruth is set, SymbolicSpace
-        # stores encoded truth statements with DegreeOfTruth values.
+        # Truth accumulation: accumulateTruth is 0..1 (DoT for recorded symbols).
+        # Default 0 (off). Server sets to 1 when processing the TruthSet,
+        # then resets to 0.  TruthLayer is always created so the server can
+        # toggle recording at runtime.
         try:
-            accumulate = TheXMLConfig.space(section, "accumulateTruth")
-        except KeyError:
-            accumulate = False
-        if accumulate:
-            from Model import TruthLayer
-            self.truth = TruthLayer(nSymbols)
-        else:
-            self.truth = None
+            self.accumulateTruth = float(TheXMLConfig.space(section, "accumulateTruth"))
+        except (KeyError, TypeError, ValueError):
+            self.accumulateTruth = 0.0
+        from Model import TruthLayer
+        self.truth = TruthLayer(nSymbolDim)
 
         self.layers = nn.ModuleList([self.layer])
 
@@ -4956,48 +4965,48 @@ class SymbolicSpace(Space):
         return self.subspace.what
 
     def forward(self, vspace):
-        """Map concept activations to symbolic stack via PiLayer (Π), apply swap.
+        """Map concept vectors to symbol vectors via PiLayer (Π).
 
-        1. Extract concept activation [B, nConcepts] from input subspace.
-        2. Map through PiLayer (log-space multiplicative, monotonic) to [B, nSymbols].
-           Π naturally specifies/compresses: concepts → symbols.
+        PiLayer maps on the nDim axis: [B, nVectors, concept_dim] →
+        [B, nVectors, symbol_dim].  nVectors passes through unchanged.
+        With a single-concept subspace [B, 1, D], produces [B, 1, symbol_dim].
+
+        1. Materialize full concept vectors from input subspace.
+        2. Map through PiLayer (log-space multiplicative, monotonic).
         3. Grammar derivation (if syntax=True): shift/reduce over S-tier.
         4. Apply swap on whereEncodings of binary node children.
-        5. Store as symbolic presence.
+        5. Store as symbol vectors in subspace event.
         """
         if self.passThrough:
             return vspace
         vspace = self.forwardBegin(vspace)
-        act = vspace.materialize(mode="activation")
-        act = self.layer.forward(act)
+        act = vspace.materialize()                        # [B, N, concept_dim]
+        act = self.layer.forward(act)                     # [B, N, symbol_dim]
 
-        if self.truth is not None:
+        if self.accumulateTruth > 0:
             for i in range(act.shape[0]):
-                self.truth.record(act[i], degree=1.0)
+                for j in range(act.shape[1]):
+                    self.truth.record(act[i, j], degree=self.accumulateTruth)
 
-        where = None
         if self._symbol_where is not None:
             B = act.shape[0]
-            where = self._symbol_where.unsqueeze(0).expand(B, -1, -1)
-            where = where.to(act.device)
+            nAct = act.shape[1]
+            # Only apply where if vector count matches stored encodings
+            if nAct == self._symbol_where.shape[0]:
+                where = self._symbol_where.unsqueeze(0).expand(B, -1, -1)
+                where = where.to(act.device)
+                self.subspace.where.setW(where)
+
         if self.syntacticLayer is not None:
             act = self.syntacticLayer.compose(act, self.subspace, TheGrammar)
 
-        if self._symbol_where is not None:
-            B = act.shape[0]
-            where = self._symbol_where.unsqueeze(0).expand(B, -1, -1)
-            where = where.to(act.device)
-            self.subspace.where.setW(where)
-
         if self.codebook:
-            act_3d = act.unsqueeze(-1)
-            self.subspace.set_event(act_3d)
+            self.subspace.set_event(act)
             self.subspace.what.forward(self.subspace)
             vspace = self.forwardEnd(self.subspace)
         else:
-            vspace.set_symbols(act)
+            self.subspace.set_event(act)
 
-        vspace.normalize("symbols", target="activation", normalize=True)
         return vspace
 
     def init_syntactic_layer(self, n_slots, grammar, symbol_dim=0):
@@ -5014,20 +5023,23 @@ class SymbolicSpace(Space):
         self.layers.append(self.syntacticLayer)
 
     def reverse(self, vspace):
-        """Map symbolic presence back to concept space via PiLayer.reverse (Π⁻¹), undo swap."""
+        """Map symbol vectors back to concept vectors via PiLayer.reverse (Π⁻¹).
+
+        Reverse maps on nDim axis: [B, N, symbol_dim] → [B, N, concept_dim].
+        """
         if self.passThrough:
             return vspace
         vspace = self.reverseBegin(vspace)
-        act = vspace.materialize(mode="activation")
+        act = vspace.materialize()                        # [B, N, symbol_dim]
         if self.syntacticLayer is not None:
             act = self.syntacticLayer.decompose(act, self.subspace, TheGrammar)
-        act = self.layer.reverse(act)
+        act = self.layer.reverse(act)                     # [B, N, concept_dim]
         if self.codebook:
-            self.subspace.set_symbols(act)
+            self.subspace.set_event(act)
             result = self.reverseEnd(self.subspace)
         else:
-            vspace.set_symbols(act)
-            result = vspace
+            self.subspace.set_event(act)
+            result = self.subspace
         result.normalize("concepts", target="what", normalize=True)
         return result
 
@@ -5079,25 +5091,34 @@ class OutputSpace(Space):
         invertible = TheXMLConfig.space(section, "invertible")
         self.masked_prediction = masked_prediction
         object.__setattr__(self, "_initial_vectors", vectors)
+        self.nonlinear_output = TheXMLConfig.space(section, "nonlinear")
         super().__init__(inputShape, spaceShape, outputShape)
         self.data = TheData
         self._vocabulary = getattr(self, '_vocabulary', None)
         self.text_mode = isinstance(self._vocabulary, Embedding)
-        input = self.subspace.getEncodedInputSize()
-        output = self.subspace.getEncodedOutputSize()
-        if self.reversible:
-            if invertible:
-                self.linear1 = InvertibleLinearLayer(input, output)
-                self.forwardLinear, self.reverseLinear = self.linear1.forward, self.linear1.reverse
-                self.layers = nn.ModuleList([self.forwardLinear])
-            else:
-                self.linear1 = LinearLayer(input, output)
-                self.linear2 = LinearLayer(output, input)
-                self.forwardLinear, self.reverseLinear = self.linear1.forward, self.linear2.forward
-                self.layers = nn.ModuleList([self.linear1, self.linear2])
+
+        if self.nonlinear_output:
+            # PiLayer activation-mode path for ramsified symbol output
+            nIn = inputShape[0]
+            nOut = outputShape[0]
+            self._piLayer = PiLayer(nIn, nOut, invertible=True, monotonic=True)
+            self.layers = nn.ModuleList([self._piLayer])
         else:
-            self.forwardLinear = LinearLayer(input, output)
-            self.layers = nn.ModuleList([self.forwardLinear])
+            input = self.subspace.getEncodedInputSize()
+            output = self.subspace.getEncodedOutputSize()
+            if self.reversible:
+                if invertible:
+                    self.linear1 = InvertibleLinearLayer(input, output)
+                    self.forwardLinear, self.reverseLinear = self.linear1.forward, self.linear1.reverse
+                    self.layers = nn.ModuleList([self.forwardLinear])
+                else:
+                    self.linear1 = LinearLayer(input, output)
+                    self.linear2 = LinearLayer(output, input)
+                    self.forwardLinear, self.reverseLinear = self.linear1.forward, self.linear2.forward
+                    self.layers = nn.ModuleList([self.linear1, self.linear2])
+            else:
+                self.forwardLinear = LinearLayer(input, output)
+                self.layers = nn.ModuleList([self.forwardLinear])
         self.params = list(self.parameters())
     def getTestOutput(self):
         if not self.data.test_output:
@@ -5111,10 +5132,19 @@ class OutputSpace(Space):
             return torch.stack(outputBatch, dim=0).unsqueeze(1).to(TheDevice.get())
         return outputBatch  # already [B, D, 1] and on device after toDevice()
     def forward(self, vspace):
-        """Acting: project flattened symbols to task output via LinearLayer."""
+        """Acting: project symbols to task output."""
+        if self.nonlinear_output:
+            # Activation-mode: PiLayer on symbol activations [B, nSymbols] → [B, nOutput]
+            act = vspace.materialize(mode="activation")
+            output = self._piLayer.forward(act)
+            from data import TheData
+            output = TheData.denormalize(output, which="output")
+            self.subspace.set_activation(output)
+            return self.subspace
+
+        # Default vector-mode: LinearLayer on flattened vectors
         x = self.forwardBegin(vspace, returnVectors=True)
         output = self.forwardLinear(x)
-        # Rescale from symbolic activation [-1,1] to original data range
         from data import TheData
         output = TheData.denormalize(output, which="output")
         if self.codebook:
@@ -5123,9 +5153,18 @@ class OutputSpace(Space):
         return vspace
 
     def reverse(self, vspace):
-        """Being acted upon: map output back to symbolic space via reverse LinearLayer."""
+        """Being acted upon: map output back to symbolic space."""
+        if self.nonlinear_output:
+            # Activation-mode: PiLayer reverse [B, nOutput] → [B, nSymbols]
+            act = vspace.materialize(mode="activation")
+            from data import TheData
+            act_norm = TheData.normalize(act, which="output")
+            symbol_act = self._piLayer.reverse(act_norm)
+            self.subspace.set_activation(symbol_act)
+            return self.subspace
+
+        # Default vector-mode
         y = self.reverseBegin(vspace, returnVectors=True)
-        # Denormalize: scale from original data range to [-1,1] (inverse of forward)
         self.subspace.set_event(y)
         self.subspace.denormalize("output", target="what")
         y = self.subspace.materialize()

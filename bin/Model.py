@@ -24,6 +24,11 @@ from collections import namedtuple
 
 epsilon = 1e-7  # to avoid log(0)
 
+
+def l1_proximal(x, lambda_val):
+    """Soft-thresholding: sign(x) * max(|x| - λ, 0).  Enforces sparsity."""
+    return torch.sign(x) * torch.clamp(torch.abs(x) - lambda_val, min=0.0)
+
 # Device used by all layers.
 from util import TheXMLConfig, TheDevice
 from util import TheMessage
@@ -1478,9 +1483,8 @@ class LiftingLayer(Layer):
         the restricted action back to conceptual space and applying it
         to the subject.
 
-        PiLayer maps concept *activations* [B, nConcepts] → [B, nSymbols],
-        so we first extract activations from the [B, N, D] concept tensors
-        using the SubSpace norm/sqrt(D) convention, scaled to [-1, 1].
+        PiLayer maps on the nDim axis: [B, N, concept_dim] → [B, N, symbol_dim].
+        Full concept vectors pass through directly.
 
         Args:
             subject: [B, N, D] subject concepts (S).
@@ -1490,33 +1494,28 @@ class LiftingLayer(Layer):
         Returns:
             [B, N, D] lifted subject concepts.
         """
-        pi = symbolic_space.layer
-        D = verb.shape[-1]
+        ss = symbolic_space
 
-        # 1. Extract PiLayer-compatible activations from concept tensors
-        #    Convention: norm/sqrt(D) ∈ [0,1] → 2x-1 ∈ [-1,1]
-        verb_act = (2 * verb.norm(dim=-1) / math.sqrt(D) - 1).clamp(-0.999, 0.999)
-        obj_act = (2 * obj.norm(dim=-1) / math.sqrt(D) - 1).clamp(-0.999, 0.999)
+        # 1. Project concept vectors to symbol space via SymbolicSpace.forward()
+        ss.subspace.set_event(verb)
+        verb_syms = ss.forward(ss.subspace).materialize()     # [B, N, symbol_dim]
+        ss.subspace.set_event(obj)
+        obj_syms = ss.forward(ss.subspace).materialize()      # [B, N, symbol_dim]
 
-        # 2. Project activations to symbolic space via PiLayer
-        verb_syms = pi.forward(verb_act)                  # [B, nSymbols]
-        obj_syms = pi.forward(obj_act)                    # [B, nSymbols]
+        # 2. Intersect: restrict verb by object (monotonic → min)
+        restricted_syms = torch.min(verb_syms, obj_syms)      # [B, N, symbol_dim]
 
-        # 3. Intersect: restrict verb by object (monotonic → min)
-        restricted_syms = torch.min(verb_syms, obj_syms)  # [B, nSymbols]
+        # 3. Map restricted symbols back to concept space
+        restricted = ss.layer.reverse(restricted_syms)        # [B, N, D]
 
-        # 4. Map restricted symbols back to concept activation space
-        restricted_acts = pi.reverse(restricted_syms)     # [B, nConcepts]
-        restricted_w = (restricted_acts + 1) / 2          # → [0, 1] weights
+        # 4. Weight verb by restricted concept norms → query
+        rw = restricted.norm(dim=-1, keepdim=True)            # [B, N, 1]
+        rw = rw / (rw.max(dim=1, keepdim=True).values + 1e-6)
+        query = (verb * rw).mean(dim=1)                       # [B, D]
 
-        # 5. Weight verb content by restricted activations → query
-        query = (verb * restricted_w.unsqueeze(-1)).mean(dim=1)  # [B, D]
-
-        # 6. Select verb matrix using restricted concepts as query
-        vp_eff = self._select_vp(query)                   # [B, D, D]
-
-        # 5. Apply to subject
-        fwd = torch.bmm(subject, vp_eff)                   # [B, N, D]
+        # 5. Select verb matrix and apply to subject
+        vp_eff = self._select_vp(query)                       # [B, D, D]
+        fwd = torch.bmm(subject, vp_eff)                      # [B, N, D]
         return subject + fwd
 
     @staticmethod
@@ -1551,11 +1550,25 @@ class LiftingLayer(Layer):
         assert q_grad.grad is not None, "no gradient on query"
 
         # ── Ternary SVO ──────────────────────────────────────────
-        # Mock symbolic space: PiLayer maps activations [B, N] → [B, nSym]
+        # Mock symbolic space: PiLayer maps on nDim axis [B, N, D] → [B, N, D]
+        class _MockSubspace:
+            def __init__(self):
+                self._event = None
+                self.batch = 0
+            def set_event(self, t, compute_activation=False):
+                self._event = t
+            def materialize(self):
+                return self._event
         class _MockSymSpace:
-            pass
-        mock_ss = _MockSymSpace()
-        mock_ss.layer = PiLayer(N, N, monotonic=True, invertible=True)
+            def __init__(self, pi):
+                self.layer = pi
+                self.subspace = _MockSubspace()
+            def forward(self, vspace):
+                act = vspace.materialize()
+                act = self.layer.forward(act)
+                vspace.set_event(act)
+                return vspace
+        mock_ss = _MockSymSpace(PiLayer(D, D, monotonic=True, invertible=True))
         S = torch.randn(B, N, D, device=device)
         V = torch.randn(B, N, D, device=device)
         O = torch.randn(B, N, D, device=device)
@@ -1835,30 +1848,29 @@ class TruthLayer(Layer):
         Returns:
             Scalar universality score.
         """
-        pi = symbolic_space.layer
-        luminosity_before = self.luminosity(pi)
+        ss = symbolic_space
+        luminosity_before = self.luminosity(ss.layer)
 
         # K(X, Y): original action SVO
         result_svo = lifting_layer.forward_transitive_svo(
-            subject, verb, obj, symbolic_space)
+            subject, verb, obj, ss)
 
         # K(Y, X): dual action OVS
         result_ovs = lifting_layer.forward_transitive_svo(
-            obj, verb, subject, symbolic_space)
+            obj, verb, subject, ss)
 
-        # Project results to symbolic space (extract activations first)
-        D_dim = result_svo.shape[-1]
-        svo_act = (2 * result_svo.norm(dim=-1) / math.sqrt(D_dim) - 1).clamp(-0.999, 0.999)
-        ovs_act = (2 * result_ovs.norm(dim=-1) / math.sqrt(D_dim) - 1).clamp(-0.999, 0.999)
-        svo_syms = pi.forward(svo_act)                   # [B, nSymbols]
-        ovs_syms = pi.forward(ovs_act)                   # [B, nSymbols]
+        # Project results to symbol space via SymbolicSpace.forward()
+        ss.subspace.set_event(result_svo)
+        svo_syms = ss.forward(ss.subspace).materialize()  # [B, N, symbol_dim]
+        ss.subspace.set_event(result_ovs)
+        ovs_syms = ss.forward(ss.subspace).materialize()  # [B, N, symbol_dim]
 
-        # Temporarily extend truth store
+        # Temporarily extend truth store (average over batch and vectors)
         saved_count = self.count.item()
-        self.record(svo_syms.mean(dim=0).detach(), degree=1.0)
-        self.record(ovs_syms.mean(dim=0).detach(), degree=1.0)
+        self.record(svo_syms.mean(dim=(0, 1)).detach(), degree=1.0)
+        self.record(ovs_syms.mean(dim=(0, 1)).detach(), degree=1.0)
 
-        luminosity_after = self.luminosity(pi)
+        luminosity_after = self.luminosity(ss.layer)
 
         # Restore truth store
         self.count.fill_(saved_count)
