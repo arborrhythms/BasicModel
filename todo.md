@@ -1,16 +1,23 @@
 # TODO
 
-* Luminousity should take account of the potential for lack of orthogonality of symbols to create dissonance, which can be approximated by conceptual overlap that causes interference within conceptual space, or that fails to illuminate some area of awareness.
-
-* Universality should be tested for accurately identifying the subject and object of a transitive verb.
-
-================================== April 17 ==================================
+## Reasoning
+* <facts> should not /bias/ learning, they should form a logical basis for it.
+* Logical operations on concepts create new conceptual spaces that can be symbolized.
+* Arbitrary conceptual spaces can be decoded into symbols.
+* Logical inference over the set of truth should result in non-contradictory propositions, and should not reduce luminousity.
+* LLMS minimize prediction loss. 
+  It would be better to maximize truth: so integrate a loss penalty for false propositions against the TruthSet as weighted by DoT
 
 ## Make sure that the mind is balanced
 * characterize one-pointedness (ShamathaSpeech, no Equals, FA)
+  * perceptually and linguistically, it decodes to a contiguous region.
 * characterize simplicity (continuity, OA)
+  * small shifts in perceptual and symbolic space are small shifts in conceptual space 
 * characterize one taste (balance dissonance and consonance)
+  * somehow feelings need to be appropriate (feelings should not be removed, as the nihilists attempt). This manifests when the objects that are loved are either real or when the representations are at least 5D (which limits the dissonance of reification).
 * characterize non-meditation (resonance)
+  * the error function is relatively small in all cases (i.e. no more learning)
+
 
 ================================== April 24 ==================================
 
@@ -26,9 +33,6 @@
 with specifically-characterized information (concrete details)
 * maybe it can learn from that data by removing or randomizing that information
 
-## Do lots of training
-* optimize
-* buy a fast machine
 
 ================================== May ? ==================================
 

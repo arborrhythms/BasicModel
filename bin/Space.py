@@ -1369,9 +1369,9 @@ class Embedding(Basis):
         """
         return self.pretrain.sbow_loss(words)
 
-    def save_embeddings(self, path):
+    def save_embeddings(self, path, truth_data=None):
         """Save current embedding vectors and vocabulary to a .pt file."""
-        self.wv.save(path)
+        self.wv.save(path, truth_data=truth_data)
 
     def reverse_raw(self, y):
         """Return the raw reverse-path vector with all subspaces intact.
@@ -2369,6 +2369,12 @@ class SubSpace(nn.Module):
         x = self.select(target)
         if x is None or x.numel() == 0:
             return
+        if target == "event":
+            assert not self._demuxed, (
+                f"normalize(target='event') requires muxed state, "
+                f"but subspace is demuxed. Use target='what'/'where'/'when' "
+                f"individually, or call set_event() first."
+            )
         if not normalize:
             is_vector = target in ("what", "where", "when", "event")
             xd = x.detach()
@@ -3229,7 +3235,9 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         Returns:
             (composed_data, svo_or_None) — svo is set if ternary lift fired
         """
-        self.last_svo = None  # reset per-compose
+        self.last_svo = None   # reset per-compose
+        self.last_rule_probs = None  # per-depth composable rule probs
+        self.last_composable_rules = None  # global rule IDs for columns
         c_rules = grammar._c_rule_ids()
         not_rid = c_rules.get('not')
         non_rid = c_rules.get('non')
@@ -3300,6 +3308,8 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         leaf_vecs = masks.unsqueeze(-1) * data.unsqueeze(1)  # [B, L, N, D]
 
         composed = leaf_vecs[:, 0, :, :]  # start with first leaf
+        self.last_composable_rules = composable_global
+        depth_probs = []  # collect per-depth renormalized probs
 
         d = 0
         leaf_idx = 1  # next leaf to consume
@@ -3327,6 +3337,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             # Extract and renormalize probabilities for composable subset
             probs_d = rule_probs[:, d, :][:, composable_local]  # [B, n_composable]
             probs_d = probs_d / (probs_d.sum(dim=-1, keepdim=True) + 1e-8)
+            depth_probs.append(probs_d.detach())                # [B, n_composable]
             probs_d = probs_d.unsqueeze(-1).unsqueeze(-1)       # [B, n_composable, 1, 1]
 
             composed = (probs_d * results).sum(dim=1)  # [B, N, D]
@@ -3344,6 +3355,8 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             leaf_idx += (2 if best_arity == 3 and has_third else 1)
             d += 1
 
+        if depth_probs:
+            self.last_rule_probs = torch.stack(depth_probs, dim=1)  # [B, depths, n_composable]
         return composed, self.last_svo
 
     def decompose(self, data, subspace, grammar):
@@ -4563,7 +4576,7 @@ class PerceptualSpace(Space):
         if self.syntacticLayer is not None:
             x = self.syntacticLayer.compose(x, self.subspace, TheGrammar)
         vspace = self.forwardEnd(x, returnVectors=True)
-        vspace.normalize("percepts", target="what", normalize=True)
+        vspace.normalize("percepts", target="event", normalize=True)
         return vspace
 
     def init_syntactic_layer(self, n_slots, grammar):
@@ -4933,7 +4946,34 @@ class SymbolicSpace(Space):
         from Model import TruthLayer
         self.truth = TruthLayer(nSymbolDim)
 
-        self.layers = nn.ModuleList([self.layer])
+        # Truth storage criterion thresholds (used by should_store())
+        def _truth_cfg(key, default):
+            try:
+                return float(TheXMLConfig.space(section, key))
+            except (KeyError, TypeError, ValueError):
+                return default
+        self._truth_min_magnitude = _truth_cfg("truthMinMagnitude", 0.3)
+        self._truth_min_novelty = _truth_cfg("truthMinNovelty", 0.5)
+        self._truth_max_inconsistency = _truth_cfg("truthMaxInconsistency", 0.3)
+
+        # Odd-even sorting network: learns a canonical ordering of symbols.
+        try:
+            sort_enabled = TheXMLConfig.space(section, "sortNetwork")
+        except (KeyError, TypeError, ValueError):
+            sort_enabled = False
+        self.sortNetwork = None
+        if sort_enabled:
+            try:
+                sort_passes_cfg = int(TheXMLConfig.space(section, "sortPasses"))
+            except (KeyError, TypeError, ValueError):
+                sort_passes_cfg = 0
+            from Model import SortingLayer
+            n_passes = sort_passes_cfg if sort_passes_cfg > 0 else None
+            self.sortNetwork = SortingLayer(nSymbolDim, n_passes=n_passes)
+
+        self.layers = nn.ModuleList(
+            [self.layer] + ([self.sortNetwork] if self.sortNetwork else [])
+        )
 
         # Assign fixed where encodings to symbol positions.
         nPercepts = inputShape[0]
@@ -4986,7 +5026,14 @@ class SymbolicSpace(Space):
         if self.accumulateTruth > 0:
             for i in range(act.shape[0]):
                 for j in range(act.shape[1]):
-                    self.truth.record(act[i, j], degree=self.accumulateTruth)
+                    vec = act[i, j]
+                    score = self.truth.should_store(
+                        vec,
+                        min_magnitude=self._truth_min_magnitude,
+                        min_novelty=self._truth_min_novelty,
+                        max_inconsistency=self._truth_max_inconsistency)
+                    if self.accumulateTruth * score > 0.5:
+                        self.truth.record(vec, degree=self.accumulateTruth)
 
         if self._symbol_where is not None:
             B = act.shape[0]
@@ -4996,6 +5043,9 @@ class SymbolicSpace(Space):
                 where = self._symbol_where.unsqueeze(0).expand(B, -1, -1)
                 where = where.to(act.device)
                 self.subspace.where.setW(where)
+
+        if self.sortNetwork is not None:
+            act = self.sortNetwork.forward(act)
 
         if self.syntacticLayer is not None:
             act = self.syntacticLayer.compose(act, self.subspace, TheGrammar)
@@ -5033,6 +5083,8 @@ class SymbolicSpace(Space):
         act = vspace.materialize()                        # [B, N, symbol_dim]
         if self.syntacticLayer is not None:
             act = self.syntacticLayer.decompose(act, self.subspace, TheGrammar)
+        if self.sortNetwork is not None:
+            act = self.sortNetwork.reverse(act)
         act = self.layer.reverse(act)                     # [B, N, concept_dim]
         if self.codebook:
             self.subspace.set_event(act)

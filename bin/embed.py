@@ -127,19 +127,27 @@ class WordVectors(nn.Module):
 
     # -- Persistence --
 
-    def save(self, path: str) -> None:
+    def save(self, path: str, truth_data: dict = None) -> None:
         """Save vectors, vocabulary, and word frequencies to a .pt file.
 
         Vectors are L2-normalized before saving so that downstream
         consumers (InputSpace) receive elements in [-1, 1].
+
+        Args:
+            path: destination file path.
+            truth_data: optional dict with ``"truths"`` tensor and ``"count"``
+                int, persisting LTM alongside the embedding artifact.
         """
         vectors = F.normalize(self._vectors.detach(), p=2, dim=1).cpu()
-        torch.save({
+        payload = {
             "vectors": vectors,
             "index_to_key": self.index_to_key,
             "counts": self.counts,
             "total_count": int(self.total_count),
-        }, path)
+        }
+        if truth_data is not None:
+            payload["truth_data"] = truth_data
+        torch.save(payload, path)
 
     @classmethod
     def load(cls, path: str) -> "WordVectors":
@@ -162,8 +170,10 @@ class WordVectors(nn.Module):
             warnings.warn(f"Replaced {n_nan} NaN embedding vectors in {path}")
         counts = data.get("counts")
         total_count = data.get("total_count", 0)
-        return cls(vectors, data["index_to_key"],
-                   counts=counts, total_count=total_count)
+        wv = cls(vectors, data["index_to_key"],
+                 counts=counts, total_count=total_count)
+        wv.truth_data = data.get("truth_data", None)
+        return wv
 
     # -- Vector access --
 

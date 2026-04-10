@@ -1033,6 +1033,97 @@ class PiLayer(Layer):
         check_stability("stable square nIn=nOut=6", naive=True, hasBias=False, nInput=6, nOutput=6)
         print("PiLayer tests passed.")
 
+class SortingLayer(Layer):
+    """NeuralSort: differentiable O(1)-depth sorting (Grover et al. 2019).
+
+    Learns a content-determined canonical ordering of vectors along dim 1.
+    A direction vector ``w`` scores each vector: sᵢ = wᵀvᵢ + bias.
+    Scores produce a soft permutation matrix via:
+
+        P[i,j] = softmax((N+1−2i)·s / τ,  dim=j)
+
+    Row i of P concentrates on the element with the i-th largest score.
+    The sorted output is P @ V — a single batched matmul, no loops.
+
+    The scale of w controls effective temperature: small w → soft
+    (uniform P, near-identity), large w → hard (crisp permutation).
+
+    Forward caches the pre-sort tensor for exact restoration in reverse().
+    """
+
+    def __init__(self, symbol_dim, n_passes=None):
+        super().__init__(symbol_dim, symbol_dim)
+        self.symbol_dim = symbol_dim
+        # n_passes accepted for config compat but unused by NeuralSort
+        self.w = nn.Parameter(torch.randn(symbol_dim) * 0.01)
+        self.bias = nn.Parameter(torch.zeros(1))
+        self._pre_sort = None
+
+    def forward(self, act):
+        """NeuralSort on [B, N, D] along dim 1 → [B, N, D]."""
+        self._pre_sort = act.clone()
+        B, N, D = act.shape
+        if N <= 1:
+            return act
+        # Score each vector: [B, N]
+        scores = (act * self.w).sum(dim=-1) + self.bias
+        # NeuralSort coefficients (1-indexed ranks)
+        rank = torch.arange(1, N + 1, device=act.device, dtype=scores.dtype)
+        coeff = (N + 1 - 2 * rank)                        # [N]
+        # logits[b,i,j] = coeff[i] * scores[b,j]
+        logits = coeff.unsqueeze(0).unsqueeze(-1) * scores.unsqueeze(1)
+        P = torch.softmax(logits, dim=-1)                  # [B, N, N]
+        return torch.bmm(P, act)                           # [B, N, D]
+
+    def reverse(self, act):
+        """Restore pre-sort tensor cached during forward."""
+        if self._pre_sort is not None:
+            return self._pre_sort
+        return act
+
+    @staticmethod
+    def test():
+        nBatch, nSeq, nDim = 4, 8, 16
+        layer = SortingLayer(symbol_dim=nDim, n_passes=None)
+        device = next(layer.parameters()).device
+
+        x = torch.randn(nBatch, nSeq, nDim, device=device)
+        y = layer.forward(x)
+        assert y.shape == x.shape, f"shape mismatch: {y.shape} vs {x.shape}"
+        assert torch.isfinite(y).all(), "forward produced non-finite values"
+
+        x_restored = layer.reverse(y)
+        assert x_restored.shape == x.shape, f"reverse shape mismatch"
+        err = (x_restored - x).abs().max().item()
+        assert err < 1e-6, f"reverse restoration error: {err}"
+
+        # Gradient flow through w and bias
+        x2 = torch.randn(nBatch, nSeq, nDim, device=device, requires_grad=True)
+        y2 = layer.forward(x2)
+        loss = y2.sum()
+        loss.backward()
+        assert layer.w.grad is not None, "no gradient on w"
+        assert layer.bias.grad is not None, "no gradient on bias"
+        assert layer.w.grad.abs().sum() > 0, "zero gradient on w"
+
+        # N=1 edge case
+        x1 = torch.randn(nBatch, 1, nDim, device=device)
+        y1 = layer.forward(x1)
+        assert torch.allclose(x1, y1), "N=1 should be identity"
+
+        # Soft permutation matrix is row-stochastic
+        x3 = torch.randn(2, 5, nDim, device=device)
+        scores = (x3 * layer.w).sum(dim=-1) + layer.bias
+        rank = torch.arange(1, 6, device=device, dtype=scores.dtype)
+        coeff = (6 - 2 * rank)
+        logits = coeff.unsqueeze(0).unsqueeze(-1) * scores.unsqueeze(1)
+        P = torch.softmax(logits, dim=-1)
+        row_sums = P.sum(dim=-1)
+        assert torch.allclose(row_sums, torch.ones_like(row_sums), atol=1e-5), \
+            "P rows must sum to 1"
+
+        print("SortingLayer tests passed.")
+
 class VQLayer(Layer):
     """Vector-quantization layer backed by a residual VQ codebook.
 
@@ -1713,6 +1804,57 @@ class TruthLayer(Layer):
         self.truths[idx] = activation.detach() * degree
         self.count += 1
         return idx
+
+    @torch.no_grad()
+    def should_store(self, activation: torch.Tensor,
+                     min_magnitude: float = 0.3,
+                     min_novelty: float = 0.5,
+                     max_inconsistency: float = 0.3) -> float:
+        """Continuous storage score in [0, 1] for truth gating.
+
+        Returns a score that is multiplied by ``accumulateTruth`` to decide
+        storage: ``store iff accumulateTruth * score > 0.5``.
+
+        At accumulateTruth=1 (truth-set processing), most legitimate
+        activations score >= 0.5 and pass — preserving legacy behavior.
+        At lower accumulateTruth, the bar rises proportionally.
+
+        Three gates (each contributes a factor in [0, 1]):
+
+        1. **Magnitude** — activation norm vs *min_magnitude*.
+        2. **Novelty** — distance from nearest stored truth.
+        3. **Consistency** — absence of contradictions.
+        """
+        # Gate 1: magnitude — smooth ramp from 0 at norm=0 to 1 at norm=min_magnitude
+        norm = activation.norm().item()
+        mag_score = min(1.0, norm / max(min_magnitude, 1e-8))
+
+        # Gate 2: novelty — 1.0 if no close match, drops toward 0 for duplicates
+        n = self.count.item()
+        sims = None
+        if n == 0:
+            nov_score = 1.0
+        else:
+            stored = self.truths[:n]
+            a_norm = F.normalize(activation.unsqueeze(0), dim=-1)
+            s_norm = F.normalize(stored, dim=-1)
+            sims = (a_norm @ s_norm.T).squeeze(0)
+            max_sim = sims.abs().max().item()
+            # novelty = 1 when max_sim=0, drops to 0 when max_sim >= (1 - min_novelty)
+            threshold = 1.0 - min_novelty
+            nov_score = max(0.0, 1.0 - max_sim / max(threshold, 1e-8))
+
+        # Gate 3: consistency — 1.0 if no contradiction, 0 if strong anti-alignment
+        if n == 0 or sims is None:
+            con_score = 1.0
+        else:
+            min_sim = sims.min().item()
+            if min_sim < -max_inconsistency:
+                con_score = 0.0
+            else:
+                con_score = 1.0
+
+        return mag_score * nov_score * con_score
 
     def query(self, activation: torch.Tensor, threshold: float = 0.9
               ) -> Optional[Tuple[int, float]]:

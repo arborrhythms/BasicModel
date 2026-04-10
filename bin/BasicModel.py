@@ -286,7 +286,11 @@ class BaseModel(nn.Module):
         TheMessage(f"[{self.name}] Weights saved to {path}")
 
     def save_embeddings(self, path=None):
-        """Snapshot current nn.Embedding weights and save the .pt artifact."""
+        """Snapshot current nn.Embedding weights and save the .pt artifact.
+
+        Also persists LTM (TruthLayer) data alongside the embeddings so
+        truths travel with the vocabulary and survive architecture changes.
+        """
         if path is None:
             path = getattr(self, 'embedding_path', None)
         if path is None:
@@ -294,9 +298,21 @@ class BaseModel(nn.Module):
         emb = self._get_embedding()
         if emb is None:
             return
+
+        # Collect truth data from SymbolicSpace for co-storage
+        truth_data = None
+        truth_layer = getattr(getattr(self, 'symbolicSpace', None), 'truth', None)
+        if truth_layer is not None and truth_layer.count.item() > 0:
+            n = truth_layer.count.item()
+            truth_data = {
+                "truths": truth_layer.truths[:n].cpu().clone(),
+                "count": n,
+            }
+
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-        emb.save_embeddings(path)
-        TheMessage(f"[{self.name}] Embeddings saved to {path}")
+        emb.save_embeddings(path, truth_data=truth_data)
+        TheMessage(f"[{self.name}] Embeddings saved to {path}"
+                   + (f" ({n} truths)" if truth_data else ""))
 
     @staticmethod
     def print_weights_info(path):
@@ -347,6 +363,18 @@ class BaseModel(nn.Module):
         with torch.no_grad():
             emb.wv._vectors.data.copy_(wv._vectors.to(emb.wv._vectors.device))
         TheMessage(f"[{self.name}] Embeddings loaded from {path}")
+
+        # Restore LTM truths if present in the embedding artifact
+        truth_data = getattr(wv, 'truth_data', None)
+        if truth_data is not None:
+            truth_layer = getattr(getattr(self, 'symbolicSpace', None), 'truth', None)
+            if truth_layer is not None:
+                n = truth_data["count"]
+                with torch.no_grad():
+                    truth_layer.truths[:n] = truth_data["truths"].to(
+                        truth_layer.truths.device)
+                    truth_layer.count.fill_(n)
+                TheMessage(f"[{self.name}] Restored {n} truths from {path}")
         return True
 
     def load_weights(self, path=None, strict=False):
@@ -1348,6 +1376,7 @@ class MentalModel(BaseModel):
         self.conceptualOrder = conceptualOrder
         self.ramsified = TheXMLConfig.get("architecture.ramsified")
         self.l1_lambda = float(TheXMLConfig.get("architecture.l1Lambda"))
+        self.stm_decay = float(TheXMLConfig.get("architecture.STM_decay", default=0.0) or 0.0)
 
         # Truth integration config (optional — absent in BasicModel.xml)
         self.truth_bias_scale = float(TheXMLConfig.get("architecture.truthBiasScale", default=0.1) or 0.1)
@@ -1528,7 +1557,14 @@ class MentalModel(BaseModel):
             # PiLayer maps on nDim axis: [B, 1, concept_dim] → [B, 1, symbol_dim].
             # Each concept is passed individually through SymbolicSpace.forward().
             symbol_dim = self.symbolicSpace.layer.nOutput
-            self.concept_states = []  # per-order concepts for reverse
+            # STM: decay existing concept states or hard-reset
+            if self.concept_states and self.stm_decay > 0:
+                self.concept_states = [
+                    s.detach() * self.stm_decay for s in self.concept_states
+                    if s.abs().max() > 1e-6  # prune dead states
+                ]
+            else:
+                self.concept_states = []
 
             # Feedback symbols: [B, nSymbols, percept_dim+obj] for cat with percepts
             sym_feedback = torch.zeros(B, self._symbol_shape[0],
@@ -1875,6 +1911,7 @@ class ModelFactory:
         def _d(key, default=None):
             return dat.get(key, default)
 
+        num_epochs = int(os.environ.get("BASIC_NUM_EPOCHS", _t("numEpochs", 3)))
         do_profile = os.environ.get("BASIC_PROFILE", "").lower() in ("1", "true") or _t("profile", False)
         if do_profile:
             with torch_profile(
@@ -1885,7 +1922,7 @@ class ModelFactory:
                 with_stack=True,
             ) as prof:
                 m.run(_t("numTrials", 1),
-                            _t("numEpochs", 3),
+                            num_epochs,
                             _t("batchSize", 10),
                             lr=_t("learningRate", 0.01), profile=prof)
 
@@ -1899,7 +1936,7 @@ class ModelFactory:
             return [(m.name, m.rCorrect, m)]
 
         m.run(_t("numTrials", 1),
-                    _t("numEpochs", 3),
+                    num_epochs,
                     _t("batchSize", 10),
                     lr=_t("learningRate", 0.01))
 

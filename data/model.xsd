@@ -41,6 +41,7 @@
       <xs:element name="language" type="languageType" minOccurs="0"/>
       <xs:element name="ramsified" type="xs:boolean" minOccurs="0"/>
       <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="STM_decay" type="xs:decimal" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -291,6 +292,11 @@
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
       <xs:element name="accumulateTruth" type="unitInterval" minOccurs="0"/>
+      <xs:element name="sortNetwork" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="sortPasses" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="truthMinMagnitude" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="truthMinNovelty" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="truthMaxInconsistency" type="xs:decimal" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 

@@ -17,6 +17,7 @@
     <conceptualOrder>1</conceptualOrder>
     <ramsified>false</ramsified>
     <l1Lambda>0.01</l1Lambda>
+    <STM_decay>0.0</STM_decay>
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
     <certainty>false</certainty>
@@ -145,6 +146,11 @@
     <nVectors>0</nVectors>
     <passThrough>false</passThrough>
     <codebook>false</codebook>
+    <sortNetwork>false</sortNetwork>
+    <sortPasses>0</sortPasses>
+    <truthMinMagnitude>0.3</truthMinMagnitude>
+    <truthMinNovelty>0.5</truthMinNovelty>
+    <truthMaxInconsistency>0.3</truthMaxInconsistency>
   </SymbolicSpace>
 
   <OutputSpace>

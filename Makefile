@@ -50,7 +50,7 @@ train :
 
 train_micro :
 	$(PYTHON) bin/train.py --model $(MODEL) --data text --log \
-		--max-docs 500 --num-shards 1 --random-shards \
+		--max-docs 500 --num-shards 1 --num-epochs 1 --random-shards \
 		$(if $(TRAIN_HOST),--host $(TRAIN_HOST) --user $(TRAIN_USER) --key-file $(TRAIN_KEY) --remote-dir $(TRAIN_DIR))
 
 train_remote :

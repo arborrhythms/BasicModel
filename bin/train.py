@@ -32,6 +32,8 @@ def parse_args():
                    help="Override maxDocs from XML config")
     p.add_argument("--num-shards", type=int, default=None,
                    help="Override numShards from XML config")
+    p.add_argument("--num-epochs", type=int, default=None,
+                   help="Override numEpochs from XML config")
     p.add_argument("--random-shards", action="store_true",
                    help="Pick random shard indices for variety across runs")
     p.add_argument("--force-embeddings", action="store_true",
@@ -148,6 +150,8 @@ def train_local(args):
         model_env["BASIC_MAX_DOCS"] = str(args.max_docs)
     if args.num_shards is not None:
         model_env["BASIC_NUM_SHARDS"] = str(args.num_shards)
+    if args.num_epochs is not None:
+        model_env["BASIC_NUM_EPOCHS"] = str(args.num_epochs)
 
     if args.profile:
         # Run BasicModel.py under cProfile via -m cProfile -o <file>
@@ -202,6 +206,8 @@ def train_remote(args):
         remote_args += ["--max-docs", str(args.max_docs)]
     if args.num_shards is not None:
         remote_args += ["--num-shards", str(args.num_shards)]
+    if args.num_epochs is not None:
+        remote_args += ["--num-epochs", str(args.num_epochs)]
     if args.random_shards:
         remote_args += ["--random-shards"]
     if args.profile:
