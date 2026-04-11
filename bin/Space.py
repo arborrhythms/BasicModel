@@ -680,7 +680,7 @@ class Tensor(Basis):
 
     def __init__(self, nVectors=0, nDim=0, W=None):
         super().__init__()
-        self.register_buffer('W', None)
+        self.W = None
         self.nVectors = nVectors
         self.nDim = nDim
         if W is not None:
@@ -706,7 +706,7 @@ class Codebook(Basis):
 
     def __init__(self):
         super().__init__()
-        self.register_buffer('W', None)
+        self.W = None
         self.customVQ = True
         self.snapDistance = 0.1
         self.eta = 0.9
@@ -3076,6 +3076,7 @@ class PerceptualSyntacticLayer(SyntacticLayer):
         Returns:
             data with chunk merges applied (and compacted in byte mode)
         """
+        subspace.word = []
         chunk_rid = self._chunk_rule_id()
         if chunk_rid is None or data.ndim != 3:
             return data
@@ -3235,6 +3236,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         Returns:
             (composed_data, svo_or_None) — svo is set if ternary lift fired
         """
+        subspace.word = []
         self.last_svo = None   # reset per-compose
         self.last_rule_probs = None  # per-depth composable rule probs
         self.last_composable_rules = None  # global rule IDs for columns
@@ -3446,6 +3448,7 @@ class SymbolicSyntacticLayer(SyntacticLayer):
         Returns:
             composed symbol activations, same shape as input
         """
+        subspace.word = []
         if data.ndim == 3:
             # 3D vector mode: extract norms for grammar, scale vectors by result
             norms = data.norm(dim=-1)                    # [B, N]

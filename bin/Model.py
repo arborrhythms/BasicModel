@@ -2121,6 +2121,52 @@ class TruthLayer(Layer):
         return torch.tensor(1.0 - n_conflicts / n_pairs,
                             device=self.truths.device)
 
+    # ── TruthLoss: Union Norm Reduction ─────────────────────────────
+
+    def falsity_penalty(self, concept_states, basis):
+        """Compute additive truth loss via union norm reduction.
+
+        For each proposition in concept_states, measure how much the
+        TruthSet union norm drops when the proposition is included.
+        Contradiction cancels dimensions (via Basis.disjunction's bitonic
+        same_sign logic), reducing the norm → positive penalty.
+
+        Agreeing propositions preserve or extend the union → no penalty.
+        Unknown propositions (zero dims) pass through → no penalty.
+        DoT weighting is implicit: high-DoT truths contribute more energy
+        to the union, so contradicting them causes a larger norm drop.
+
+        Args:
+            concept_states: (B, N, D) concept activations from forward pass.
+            basis: Basis instance with disjunction() method.
+
+        Returns:
+            Scalar penalty >= 0 (differentiable).
+        """
+        n = self.count.item()
+        if n == 0:
+            return concept_states.new_tensor(0.0)
+
+        stored = self.truths[:n]  # (n, D)
+
+        # Fold stored truths into union vector via successive disjunction
+        truth_union = stored[0]
+        for i in range(1, n):
+            truth_union = basis.disjunction(truth_union, stored[i])
+        union_norm = truth_union.norm()
+
+        # For each proposition, compute norm reduction
+        B, N, D = concept_states.shape
+        propositions = concept_states.reshape(-1, D)  # (B*N, D)
+
+        penalties = []
+        for p in range(propositions.shape[0]):
+            extended = basis.disjunction(truth_union, propositions[p])
+            reduction = union_norm - extended.norm()
+            penalties.append(torch.relu(reduction))
+
+        return torch.stack(penalties).mean()
+
     # ── Maintenance ───────────────────────────────────────────────────
 
     @torch.no_grad()

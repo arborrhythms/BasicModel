@@ -76,6 +76,56 @@ Training loop and I/O settings.
 
 ---
 
+## MentalModel Configuration
+
+The basicModel's `MentalModel.xml` defines the neural architecture.
+Three parameters control the TruthLayer integration (truth bias during
+inference and loss modification during training). All are optional;
+omitting them defaults to 0.1.
+
+| Parameter            | Type    | Default | Location         | Description                                                        |
+|----------------------|---------|---------|------------------|--------------------------------------------------------------------|
+| `truthBiasScale`     | decimal | `0.1`   | `<architecture>` | Strength of luminosity-based bias on concept input during forward. |
+| `LuminosityWeight`   | decimal | `0.1`   | `<architecture>` | Loss penalty weight for low luminosity (incoherent truths).        |
+| `UniversalityWeight` | decimal | `0.1`   | `<architecture>` | Loss penalty weight for low universality (unkind propositions).    |
+| `TruthLoss`          | decimal | `0.0`   | `<training>`     | Additive loss penalty for propositions that contradict the TruthSet. Uses union norm reduction via `Basis.disjunction()`. 0.0 = disabled. |
+| `conceptualOrder`    | int     | `1`     | `<architecture>` | Number of Percept→Concept→Symbol iterations. Higher orders use a geometrically partitioned symbolic space. |
+| `ramsified`          | boolean | `false` | `<architecture>` | Enable serial per-concept Pi with L1 sparsity. Required for partition-aware reasoning. |
+
+```xml
+<architecture>
+  <truthBiasScale>0.1</truthBiasScale>
+  <LuminosityWeight>0.1</LuminosityWeight>
+  <UniversalityWeight>0.1</UniversalityWeight>
+  <conceptualOrder>1</conceptualOrder>
+  <ramsified>false</ramsified>
+</architecture>
+
+<training>
+  <TruthLoss>0.0</TruthLoss>
+</training>
+```
+
+Luminosity and universality are **multiplicative** — they scale the total loss by
+`(1 + LuminosityWeight*(1-luminosity) + UniversalityWeight*(1-universality))`.
+TruthLoss is **additive** — it directly penalizes specific propositions that
+contradict stored truths, measured by union norm reduction. Both coexist.
+See [Ethics.md](../../doc/Ethics.md) §Universality and
+[reasoning.md](./reasoning.md) §TruthLoss for details.
+
+The grammar section of `MentalModel.xml` also defines the ternary LIFT
+rule for transitive verbs:
+
+```xml
+<C>lift(C, C)</C>      <!-- intransitive -->
+<C>lift(C, C, C)</C>   <!-- transitive SVO -->
+```
+
+See [Grammar.md](./Grammar.md) §Lift and [Ethics.md](../../doc/Ethics.md)
+§Universality for the architectural details.
+
+---
+
 ## `<InputSpace>`
 
 The entry point that lifts raw data into the model's internal representation.

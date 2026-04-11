@@ -184,6 +184,7 @@
       <xs:element name="whereScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="whenScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="negSamples" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="TruthLoss" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="maskedPrediction" type="maskedPredictionEnum" minOccurs="0"/>
       <xs:element name="trainEmbedding" type="trainEnum" minOccurs="0"/>
       <xs:element name="embeddingScale" type="nonNegativeFloat" minOccurs="0"/>

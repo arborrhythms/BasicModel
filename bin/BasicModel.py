@@ -268,6 +268,259 @@ class BaseModel(nn.Module):
             return self.inputSpace.vocabulary
         return None
 
+    # ── Reasoning Methods ────────────────────────────────────────────
+
+    def _get_truth_layer(self):
+        """Return the TruthLayer if available, else None."""
+        return getattr(getattr(self, 'symbolicSpace', None), 'truth', None)
+
+    def _get_basis(self):
+        """Return the Basis from symbolicSpace's subspace, else None."""
+        ss = getattr(self, 'symbolicSpace', None)
+        if ss is None:
+            return None
+        return getattr(getattr(ss, 'subspace', None), 'basis', None)
+
+    @torch.no_grad()
+    def isConsistent(self):
+        """Analyze the TruthSet for internal consistency.
+
+        Uses Basis.disjunction() to fold all stored truths into a single
+        summary vector. Conflicting +/-  assertions cancel dimensions.
+
+        Returns:
+            dict with keys: consistent (bool), score (float),
+            sites (tensor of dim indices below threshold),
+            union_vector (tensor).
+        """
+        truth_layer = self._get_truth_layer()
+        basis = self._get_basis()
+        if truth_layer is None or basis is None:
+            return {'consistent': True, 'score': 1.0,
+                    'sites': torch.tensor([]), 'union_vector': torch.tensor([])}
+
+        n = truth_layer.count.item()
+        if n == 0:
+            return {'consistent': True, 'score': 1.0,
+                    'sites': torch.tensor([]), 'union_vector': torch.tensor([])}
+
+        stored = truth_layer.truths[:n]  # (n, D)
+
+        # Fold via successive disjunction
+        union = stored[0].clone()
+        for i in range(1, n):
+            union = basis.disjunction(union, stored[i])
+
+        # Consistency score = mean absolute value of result
+        score = union.abs().mean().item()
+
+        # Inconsistency sites = dimensions with magnitude below threshold
+        threshold = 0.1
+        weak_dims = (union.abs() < threshold).nonzero(as_tuple=True)[0]
+
+        consistent = len(weak_dims) == 0 or score > 0.5
+
+        return {
+            'consistent': consistent,
+            'score': score,
+            'sites': weak_dims,
+            'union_vector': union,
+        }
+
+    @torch.no_grad()
+    def ground(self, activation, threshold=0.6):
+        """Find the minimal TruthSet subset that entails the query.
+
+        Uses _activation_order() to filter truths by compatible partition
+        when partitions are available.
+
+        Returns:
+            dict with keys: grounded (bool), basis (list of indices),
+            trace (list), confidence (float in [-1, 1]).
+        """
+        truth_layer = self._get_truth_layer()
+        if truth_layer is None:
+            return {'grounded': False, 'basis': [], 'trace': [], 'confidence': 0.0}
+
+        n = truth_layer.count.item()
+        if n == 0:
+            return {'grounded': False, 'basis': [], 'trace': [], 'confidence': 0.0}
+
+        stored = truth_layer.truths[:n]  # (n, D)
+        partitions = getattr(self, '_partitions', None)
+
+        # Determine query order from partition energy
+        query_order = None
+        if partitions is not None and len(partitions) > 1:
+            query_order = self._activation_order(activation, partitions)
+
+        # Normalize for cosine similarity
+        a_norm = F.normalize(activation.unsqueeze(0), dim=-1)  # (1, D)
+        s_norm = F.normalize(stored, dim=-1)                    # (n, D)
+        sims = (a_norm @ s_norm.T).squeeze(0)                   # (n,)
+
+        # Filter by compatible order if partitions exist
+        if query_order is not None and partitions is not None:
+            for i in range(n):
+                truth_order = self._activation_order(stored[i], partitions)
+                if truth_order != query_order:
+                    sims[i] = 0.0  # exclude incompatible orders
+
+        # Direct groundings: similarity > threshold
+        mask = sims.abs() > threshold
+        basis_indices = mask.nonzero(as_tuple=True)[0].tolist()
+
+        if not basis_indices:
+            # Try derivation via TruthLayer.derive() (depth capped)
+            from Space import TheGrammar
+            max_depth = 3
+            for depth in range(max_depth):
+                derived = truth_layer.derive(TheGrammar, threshold=threshold)
+                if derived == 0:
+                    break
+                # Re-check with expanded truth set
+                n_new = truth_layer.count.item()
+                stored_new = truth_layer.truths[:n_new]
+                s_norm_new = F.normalize(stored_new, dim=-1)
+                sims_new = (a_norm @ s_norm_new.T).squeeze(0)
+                mask_new = sims_new.abs() > threshold
+                basis_indices = mask_new.nonzero(as_tuple=True)[0].tolist()
+                if basis_indices:
+                    break
+
+        if not basis_indices:
+            return {'grounded': False, 'basis': [], 'trace': [], 'confidence': 0.0}
+
+        # Confidence: DoT-weighted similarity of basis entries
+        basis_sims = sims[:truth_layer.count.item()][basis_indices] if basis_indices else torch.tensor([0.0])
+        basis_norms = stored[:truth_layer.count.item()][basis_indices].norm(dim=-1)
+        confidence = (basis_sims * basis_norms).sum().item() / max(len(basis_indices), 1)
+        confidence = max(-1.0, min(1.0, confidence))
+
+        trace = [{'index': idx, 'similarity': sims[idx].item() if idx < len(sims) else 0.0}
+                 for idx in basis_indices]
+
+        return {
+            'grounded': True,
+            'basis': basis_indices,
+            'trace': trace,
+            'confidence': confidence,
+        }
+
+    @torch.no_grad()
+    def isTrue(self, activation):
+        """Ground a proposition and return a scalar DoT in [-1, 1].
+
+        Positive = true, negative = false, zero = unknown.
+        """
+        result = self.ground(activation)
+        return 0.0 if not result['grounded'] else result['confidence']
+
+    @torch.no_grad()
+    def extrapolate(self, grammar=None, seed_indices=None, max_new=64,
+                    attenuation=0.8):
+        """Generalize TruthLayer.derive() to all two-argument grammar methods.
+
+        For each pair of stored truths, apply every eligible two-argument
+        grammar method. Accept results that preserve or increase luminosity;
+        reject those that decrease it.
+
+        Args:
+            grammar: Grammar instance (defaults to TheGrammar).
+            seed_indices: optional list of truth indices to use as seeds.
+            max_new: maximum number of new truths to derive.
+            attenuation: DoT scaling for derived truths.
+
+        Returns:
+            dict with 'added' (list of new indices) and
+            'rejected' (list of (i, j, rule, delta_lum) tuples).
+        """
+        truth_layer = self._get_truth_layer()
+        if truth_layer is None:
+            return {'added': [], 'rejected': []}
+
+        if grammar is None:
+            from Space import TheGrammar
+            grammar = TheGrammar
+
+        n = truth_layer.count.item()
+        if n < 2:
+            return {'added': [], 'rejected': []}
+
+        stored = truth_layer.truths[:n]
+        partitions = getattr(self, '_partitions', None)
+
+        # Two-argument grammar methods eligible for extrapolation
+        two_arg_rules = ['union', 'intersection', 'equals', 'part']
+
+        indices = seed_indices if seed_indices is not None else list(range(n))
+        added = []
+        rejected = []
+
+        ss = getattr(self, 'symbolicSpace', None)
+        pi_layer = ss.layer if ss is not None else None
+        # Get the actual SubSpace for grammar methods (needs .basis)
+        subspace = getattr(ss, 'subspace', None) if ss is not None else None
+        # _method_* lives on SyntacticLayer, not Grammar
+        syntactic_layer = getattr(ss, 'syntacticLayer', None) if ss is not None else None
+
+        for i in indices:
+            if stored[i].norm() < 1e-6:
+                continue
+            for j in indices:
+                if i == j or stored[j].norm() < 1e-6:
+                    continue
+                if len(added) >= max_new:
+                    return {'added': added, 'rejected': rejected}
+
+                # Determine source order for partition-aware writing
+                if partitions is not None and len(partitions) > 1:
+                    order_i = self._activation_order(stored[i], partitions)
+                    order_j = self._activation_order(stored[j], partitions)
+                    if order_i != order_j:
+                        continue  # skip cross-order pairs
+
+                for rule_name in two_arg_rules:
+                    method_name = f'_method_{rule_name}'
+                    method = getattr(syntactic_layer, method_name, None)
+                    if method is None:
+                        continue
+
+                    candidate = method(stored[i].unsqueeze(0),
+                                       stored[j].unsqueeze(0), subspace)
+                    if candidate is None:
+                        continue
+                    candidate = candidate.squeeze(0)
+
+                    if candidate.norm() < 1e-6:
+                        continue
+
+                    # Luminosity non-decrease check
+                    lum_before = truth_layer.luminosity(pi_layer)
+                    saved_count = truth_layer.count.item()
+
+                    # DoT for derived truth
+                    dot_i = stored[i].norm().item()
+                    dot_j = stored[j].norm().item()
+                    degree = attenuation * min(dot_i, dot_j)
+
+                    direction = F.normalize(candidate.unsqueeze(0), dim=-1).squeeze(0)
+                    truth_layer.record(direction, degree)
+                    lum_after = truth_layer.luminosity(pi_layer)
+
+                    delta = (lum_after - lum_before).item()
+
+                    if delta >= 0:
+                        # Accept
+                        added.append(truth_layer.count.item() - 1)
+                    else:
+                        # Reject: rollback
+                        truth_layer.count.fill_(saved_count)
+                        truth_layer.truths[saved_count:] = 0
+                        rejected.append((i, j, rule_name, delta))
+
+        return {'added': added, 'rejected': rejected}
+
     def save_weights(self, path=None):
         """Persist model weights (excluding embeddings) to disk.
 
@@ -1232,6 +1485,16 @@ class BasicModel(BaseModel):
             totalLoss = totalLoss * (1 + lum_weight * (1 - lum_norm)
                                        + u_weight * (1 - u_norm))
 
+            # TruthLoss: additive penalty for false propositions via union norm reduction
+            truth_loss_w = getattr(self, 'truth_loss_weight', 0.0)
+            if truth_loss_w > 0:
+                concept_acts = self.concept_states[-1] if hasattr(self, 'concept_states') and self.concept_states else None
+                if concept_acts is not None:
+                    basis = getattr(getattr(self.symbolicSpace, 'subspace', None), 'basis', None)
+                    if basis is not None:
+                        truth_penalty = truth_layer.falsity_penalty(concept_acts, basis)
+                        totalLoss = totalLoss + truth_loss_w * truth_penalty
+
         TheMessage(f"batch = {batchNum}, loss = {totalLoss} ")
 
         if train:
@@ -1382,6 +1645,7 @@ class MentalModel(BaseModel):
         self.truth_bias_scale = float(TheXMLConfig.get("architecture.truthBiasScale", default=0.1) or 0.1)
         self.luminosity_weight = float(TheXMLConfig.get("architecture.LuminosityWeight", default=0.1) or 0.1)
         self.universality_weight = float(TheXMLConfig.get("architecture.UniversalityWeight", default=0.1) or 0.1)
+        self.truth_loss_weight = float(TheXMLConfig.training("TruthLoss", default=0.0) or 0.0)
         self.reconstruct = reconstruct.lower()
         self.masked_prediction = masked_prediction
         self.nOutputSymbols = nOutput
@@ -1521,8 +1785,48 @@ class MentalModel(BaseModel):
         ])
 
         self.inputSpace.outputSpace = self.outputSpace
+
+        # Precompute partition boundaries for partitioned symbolSum
+        self._partitions = self._order_partitions(symbol_dim + obj_symbol,
+                                                   self.conceptualOrder)
+        self.concept_states = []
+
         self.to(TheDevice.get())
         TheXMLConfig.validate()
+
+    # ── Order Partitions (Ramsification) ─────────────────────────────
+
+    @staticmethod
+    def _order_partitions(symbol_dim, conceptual_order):
+        """Compute geometric-decay partition boundaries for symbolSum.
+
+        Each conceptual order writes only to its designated slice,
+        so the symbolic space becomes self-describing: the position of
+        an activation reveals its conceptual order.
+
+        Partition sizes follow geometric decay — lower (more fundamental)
+        orders occupy larger slices:
+            order 0: [0,      D//2)       ← 1/2 of symbol_dim
+            order 1: [D//2,   3D//4)      ← 1/4
+            order 2: [3D//4,  7D//8)      ← 1/8
+            ...
+            last order: remainder of D
+        """
+        partitions, start = [], 0
+        for t in range(conceptual_order):
+            if t == conceptual_order - 1:
+                end = symbol_dim
+            else:
+                end = start + max(1, symbol_dim // (2 ** (t + 1)))
+            partitions.append((start, end))
+            start = end
+        return partitions
+
+    @staticmethod
+    def _activation_order(activation, partitions):
+        """Return the order whose partition has the highest energy."""
+        energies = [activation[s:e].norm() for s, e in partitions]
+        return int(torch.tensor(energies).argmax())
 
     # ── Helpers ───────────────────────────────────────────────────────
 
@@ -1594,13 +1898,21 @@ class MentalModel(BaseModel):
                                             device=percepts.device)
 
                 # Serial Pi: each concept [B, 1, D] → [B, 1, symbol_dim]
+                # Write-mask: each order t writes only to its partition slice
+                # Accumulate into a fresh delta to avoid in-place ops on symbolSum
+                # (which is in the computation graph after tanh on prior iterations)
+                p_start, p_end = self._partitions[t]
+                mask = torch.zeros(symbol_dim, device=percepts.device)
+                mask[p_start:p_end] = 1.0
+                delta = torch.zeros_like(symbolSum)
                 for i in range(nC):
                     single = concept_vectors[:, i:i+1, :]     # [B, 1, concept_dim]
                     result = self.symbolicSpace.forward(
                         self._wrap_reverse(self.symbolicSpace, single))
                     sym_vec = result.materialize()[:, 0, :]   # [B, symbol_dim]
                     sym_vec = l1_proximal(sym_vec, self.l1_lambda)
-                    symbolSum[:, i, :] = symbolSum[:, i, :] + sym_vec
+                    delta[:, i, :] = sym_vec * mask
+                symbolSum = symbolSum + delta
 
                 # Bound after each order
                 symbolSum = torch.tanh(symbolSum)
@@ -1699,12 +2011,26 @@ class MentalModel(BaseModel):
         if self.ramsified:
             # 1. OutputSpace reverse: output → symbolSum estimate
             symbol_state = self.outputSpace.reverse(outputData)
+            symbolSum_est = symbol_state.materialize()  # [B, nC, symbol_dim]
 
-            # 2. Use last order's cached concepts for ConceptualSpace reverse
-            last_concepts = self.concept_states[-1]
-            self.conceptualSpace.subspace.set_event(last_concepts)
-            concept_input_state = self.conceptualSpace.reverse(
-                self.conceptualSpace.subspace)
+            # 2. Partition-aware reverse: highest order → lowest
+            percept_estimates = []
+            for t in reversed(range(self.conceptualOrder)):
+                p_start, p_end = self._partitions[t]
+                sym_slice = symbolSum_est[:, :, p_start:p_end]  # partition slice
+
+                # Pad to full symbol_dim for SymbolicSpace.reverse()
+                padded = torch.zeros_like(symbolSum_est)
+                padded[:, :, p_start:p_end] = sym_slice
+                concept_est = self.symbolicSpace.reverse(
+                    self._wrap_reverse(self.symbolicSpace, padded))
+                percept_est = self.conceptualSpace.reverse(concept_est)
+                percept_estimates.append(percept_est.materialize())
+
+            # Combine percept estimates across orders (sum)
+            combined = torch.stack(percept_estimates, dim=0).sum(dim=0)
+            self.conceptualSpace.subspace.set_event(combined)
+            concept_input_state = self.conceptualSpace.subspace
         else:
             # 1. OutputSpace reverse: output → concepts estimate
             concepts_state = self.outputSpace.reverse(outputData)
@@ -1730,6 +2056,168 @@ class MentalModel(BaseModel):
         input_latent = input_state.materialize()
         input_data = self.inputs.materialize()
         return input_data, input_latent
+
+    # ── Grammar Learning (Phase 2) ────────────────────────────────────
+
+    def grammar_learning_step(self, inputTensor, optimizer):
+        """Single grammar learning step: symbolic reconstruction loss.
+
+        1. Forward: sentence → symbolSum (normal ramsified forward)
+        2. Reverse over partition slices with soft rule superposition
+        3. Re-encode reconstruction → symbolSum_hat
+        4. Loss = ||symbolSum_hat - symbolSum||^2 (symbolic level)
+        5. Optional luminosity validity penalty
+
+        Args:
+            inputTensor: input batch tensor.
+            optimizer: optimizer for grammar weights.
+
+        Returns:
+            dict with 'recon_loss' and 'validity_loss' scalars.
+        """
+        optimizer.zero_grad()
+
+        # Forward pass to get symbolSum
+        input_state, symbols, outputData = self.forward(inputTensor)
+
+        # Get the current symbolSum from the symbolic space
+        symbolSum = self.symbolicSpace.subspace.event.clone()  # [B, nC, symbol_dim]
+
+        # Reverse pass to reconstruct
+        inputPred, _ = self.reverse(symbols, outputData)
+
+        # Re-encode through forward to get symbolSum_hat
+        _, _, _ = self.forward(inputPred)
+        symbolSum_hat = self.symbolicSpace.subspace.event  # [B, nC, symbol_dim]
+
+        # Reconstruction loss at symbolic level
+        recon_loss = F.mse_loss(symbolSum_hat, symbolSum.detach())
+
+        # Optional luminosity validity penalty
+        truth_layer = self._get_truth_layer()
+        validity_loss = torch.tensor(0.0, device=recon_loss.device)
+        if truth_layer is not None and len(truth_layer) > 0:
+            pi_layer = self.symbolicSpace.layer
+            lum_before = truth_layer.luminosity(pi_layer)
+            # Check if reconstruction preserves luminosity
+            # (temporarily store reconstructed symbols)
+            saved_count = truth_layer.count.item()
+            mean_sym = symbolSum_hat.mean(dim=(0, 1)).detach()
+            if mean_sym.norm() > 1e-6:
+                truth_layer.record(mean_sym, degree=1.0)
+                lum_after = truth_layer.luminosity(pi_layer)
+                validity_loss = torch.relu(lum_before - lum_after)
+                truth_layer.count.fill_(saved_count)
+                truth_layer.truths[saved_count:] = 0
+
+        total = recon_loss + 0.1 * validity_loss
+        total.backward()
+        optimizer.step()
+
+        return {
+            'recon_loss': recon_loss.item(),
+            'validity_loss': validity_loss.item() if isinstance(validity_loss, torch.Tensor) else validity_loss,
+        }
+
+    # ── Bidirectional Reasoning Loop (Phase 3) ────────────────────────
+
+    @torch.no_grad()
+    def reason(self, givens, target=None, direction='forward', max_steps=8):
+        """Bidirectional reasoning loop.
+
+        Forward (givens → conclusion):
+            Encode givens, extrapolate new truths, check isTrue(target)
+            at each step. Stop when target DoT exceeds threshold or
+            max_steps reached.
+
+        Reverse (target → grounding):
+            Encode target, ground() to find minimal basis, extrapolate
+            if insufficient.
+
+        Args:
+            givens: tensor or list of tensors to encode as premises.
+            target: optional target activation to prove/ground.
+            direction: 'forward' or 'reverse'.
+            max_steps: maximum reasoning steps.
+
+        Returns:
+            dict with 'proved' (bool), 'confidence' (float),
+            'steps' (int), 'trace' (list of step results).
+        """
+        truth_layer = self._get_truth_layer()
+        if truth_layer is None:
+            return {'proved': False, 'confidence': 0.0,
+                    'steps': 0, 'trace': []}
+
+        pi_layer = getattr(self.symbolicSpace, 'layer', None)
+        trace = []
+
+        if direction == 'forward':
+            # Encode givens into TruthSet
+            if isinstance(givens, (list, tuple)):
+                for g in givens:
+                    if g.norm() > 1e-6:
+                        truth_layer.record(g.detach(), degree=1.0)
+            elif givens.norm() > 1e-6:
+                truth_layer.record(givens.detach(), degree=1.0)
+
+            for step in range(max_steps):
+                lum_before = truth_layer.luminosity(pi_layer)
+
+                # Extrapolate new truths
+                result = self.extrapolate(max_new=16,
+                                           attenuation=0.8 ** (step + 1))
+                trace.append({
+                    'step': step,
+                    'added': len(result['added']),
+                    'rejected': len(result['rejected']),
+                    'luminosity': lum_before.item(),
+                })
+
+                # Check target if provided
+                if target is not None:
+                    dot = self.isTrue(target)
+                    trace[-1]['target_dot'] = dot
+                    if abs(dot) > 0.5:
+                        return {'proved': True, 'confidence': dot,
+                                'steps': step + 1, 'trace': trace}
+
+                # Stop if no progress
+                if len(result['added']) == 0:
+                    break
+
+            confidence = self.isTrue(target) if target is not None else 0.0
+            return {'proved': abs(confidence) > 0.5,
+                    'confidence': confidence,
+                    'steps': len(trace), 'trace': trace}
+
+        else:  # reverse
+            if target is None:
+                return {'proved': False, 'confidence': 0.0,
+                        'steps': 0, 'trace': []}
+
+            for step in range(max_steps):
+                result = self.ground(target)
+                trace.append({
+                    'step': step,
+                    'grounded': result['grounded'],
+                    'basis_size': len(result['basis']),
+                    'confidence': result['confidence'],
+                })
+
+                if result['grounded']:
+                    return {'proved': True,
+                            'confidence': result['confidence'],
+                            'steps': step + 1, 'trace': trace}
+
+                # Extrapolate and retry
+                ext = self.extrapolate(max_new=16)
+                if len(ext['added']) == 0:
+                    break
+
+            return {'proved': False, 'confidence': 0.0,
+                    'steps': len(trace), 'trace': trace}
+
 TheMentalModel = MentalModel()
 
 class ModelFactory:

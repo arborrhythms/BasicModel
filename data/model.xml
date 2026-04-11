@@ -51,6 +51,7 @@
       <whereScale>0.2</whereScale>
       <whenScale>0.1</whenScale>
       <negSamples>64</negSamples>
+      <TruthLoss>0.0</TruthLoss>
 
       <maskedPrediction>NONE</maskedPrediction>
 
