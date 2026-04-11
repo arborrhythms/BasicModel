@@ -1143,12 +1143,17 @@ class BasicModel(BaseModel):
         if not texts:
             return
 
-        # 2. Reset truth store, run full pipeline
+        # 2. Reset truth store, enable accumulation, run full pipeline
         truth_layer.count.zero_()
+        prev_accum = self.symbolicSpace.accumulateTruth
+        self.symbolicSpace.accumulateTruth = 1.0
         self.eval()
         self.set_sigma(0)
-        with torch.no_grad(), TheData.runtime_batch(texts):
-            self.runEpoch(batchSize=len(texts), split="runtime")
+        try:
+            with torch.no_grad(), TheData.runtime_batch(texts):
+                self.runEpoch(batchSize=len(texts), split="runtime")
+        finally:
+            self.symbolicSpace.accumulateTruth = prev_accum
 
         # 3. Apply DoT to each stored activation
         n = min(truth_layer.count.item(), len(trusts))
@@ -1358,6 +1363,10 @@ class BasicModel(BaseModel):
         sbow = None
         te = getattr(self, 'train_embedding', 'NONE')
         if te in trainMod:
+            # Skip InputSpace SBOW/CBOW when lexer=bytes — perceptual SBOW
+            # replaces it (see perceptual_sbow_loss).
+            if getattr(self, 'lexer', None) == 'bytes':
+                return None
             emb = self.inputSpace.vocabulary
             if isinstance(emb, Embedding):
                 sentences = self._get_sentences(split)
@@ -1372,6 +1381,34 @@ class BasicModel(BaseModel):
                         method = 'CBOW' if te == 'CBOW' else 'SBOW'
                         self.inputSpace.train_embeddings(words, method=method)
         return sbow
+
+    def perceptual_sbow_loss(self):
+        """SBOW loss on percept vectors: leave-one-out centroid prediction.
+
+        For byte lexer mode, percepts replace word embeddings as the
+        unit of distributional similarity.  Each percept in a sentence
+        should be predictable from the centroid of the others.
+
+        Returns a scalar loss tensor, or None if < 2 percepts.
+        """
+        if not hasattr(self, 'percepts') or self.percepts is None:
+            return None
+        vecs = self.percepts.materialize()          # [B, nPercepts, dim]
+        B, N, D = vecs.shape
+        if N < 2:
+            return None
+
+        # Leave-one-out centroids per sentence: [B, N, D]
+        total = vecs.sum(dim=1, keepdim=True)       # [B, 1, D]
+        centroids = (total - vecs) / (N - 1)        # [B, N, D]
+
+        # Cosine similarity loss: each percept should match its centroid
+        c_norm = F.normalize(centroids, dim=-1)
+        v_norm = F.normalize(vecs, dim=-1)
+        cos_sim = (c_norm * v_norm).sum(dim=-1)     # [B, N]
+
+        # Loss = mean negative cosine similarity (maximize similarity)
+        return -cos_sim.mean()
 
     def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
                  optimizer=None):
@@ -1470,6 +1507,12 @@ class BasicModel(BaseModel):
         sbow = None
         if train:
             sbow = self.trainEmbeddings(('JOINT'), sentenceIdx, split)
+            # Perceptual SBOW: when lexer=bytes, train percept vectors
+            # via leave-one-out centroid prediction
+            if getattr(self, 'lexer', None) == 'bytes':
+                psbow = self.perceptual_sbow_loss()
+                if psbow is not None:
+                    sbow = psbow if sbow is None else sbow + psbow
 
         totalLoss = self.loss.total(lossOut, lossIn, sbow)
 
@@ -1879,12 +1922,15 @@ class MentalModel(BaseModel):
             for t in range(self.conceptualOrder):
                 concept_input = torch.cat([percepts, sym_feedback], dim=1)
 
-                # Truth bias
+                # Truth bias: trim concept_input to be consistent with TruthSet
                 truth_layer = getattr(self.symbolicSpace, 'truth', None)
                 if truth_layer is not None and len(truth_layer) > 0:
-                    bias_scale = getattr(self, 'truth_bias_scale', 0.1)
-                    lum = truth_layer.luminosity(self.symbolicSpace.layer)
-                    concept_input = concept_input * (1 + bias_scale * lum)
+                    basis = self.symbolicSpace.subspace.what
+                    conj = truth_layer.truth_conjunction(
+                        basis, pi_layer=self.symbolicSpace.layer)
+                    if conj is not None:
+                        concept_input = basis.conjunction(
+                            concept_input, conj.unsqueeze(0).unsqueeze(0))
 
                 # Sigma: [percepts, sym_feedback] → concepts (same weights each order)
                 self.concepts = self.conceptualSpace.forward(
@@ -1965,11 +2011,15 @@ class MentalModel(BaseModel):
         for t in range(self.conceptualOrder):
             concept_input = torch.cat([percepts, symbols], dim=1)
 
+            # Truth bias: trim concept_input to be consistent with TruthSet
             truth_layer = getattr(self.symbolicSpace, 'truth', None)
             if truth_layer is not None and len(truth_layer) > 0:
-                bias_scale = getattr(self, 'truth_bias_scale', 0.1)
-                lum = truth_layer.luminosity(self.symbolicSpace.layer)
-                concept_input = concept_input * (1 + bias_scale * lum)
+                basis = self.symbolicSpace.subspace.what
+                conj = truth_layer.truth_conjunction(
+                    basis, pi_layer=self.symbolicSpace.layer)
+                if conj is not None:
+                    concept_input = basis.conjunction(
+                        concept_input, conj.unsqueeze(0).unsqueeze(0))
 
             self.concepts = self.conceptualSpace.forward(
                 self._wrap_reverse(self.conceptualSpace, concept_input))

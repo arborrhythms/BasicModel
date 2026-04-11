@@ -99,6 +99,12 @@ def read_xml_config(xml_path):
         ep = arch.findtext("embeddingPath")
         if ep:
             result["embeddingPath"] = ep
+    # Check InputSpace lexer
+    inp = root.find(".//InputSpace")
+    if inp is not None:
+        lexer = inp.findtext("lexer")
+        if lexer:
+            result["lexer"] = lexer
     return result
 
 
@@ -124,7 +130,9 @@ def train_local(args):
         emb_path = os.path.join(proj, "output", "embeddings", "sentence.pt")
 
     # --- Phase 1: Embeddings ---
-    if args.force_embeddings or not os.path.exists(emb_path):
+    if cfg.get("lexer") == "bytes":
+        TheMessage("\n=== Phase 1: Skipped (lexer=bytes, no word embeddings) ===")
+    elif args.force_embeddings or not os.path.exists(emb_path):
         embed_cmd = [
             python, os.path.join(proj, "bin", "embed.py"), "train",
             "--config", os.path.join(proj, "data", "sentence.cfg"),

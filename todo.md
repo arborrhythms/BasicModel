@@ -1,22 +1,8 @@
 # TODO
 
-## Truth2vec
-* The server's TruthSet forms a second embedding space similar to the first. This design is called Truth2vec, which orthogonalizes a sentential embedding space that influences the original embedding space in virtue of higher-order concepts.
-* Contrastive learning algorithm for Truth2vec? No, use the embedding space, but the embedding space will be determined by bottom-up and top-down constraints. 
-* In fact, all it needs is vedana, a +- weighting over the truth space of HOC that alters the categories that are formed as would desires expressed within a belief system.
-* All words have a projection in 5-space, which is called the Where pathway
-* They also exist in a subspace that is orthogonalized with respect to that space, called the What space (AKA Gardenfor’s conceptual space)
-* A visualization consists of a set of dynamic points in that 6-space that are tied to the set of facts. So the facts can be treated as prototype vectors, each with an Truth2vec embedding that can act as a Fuzzy C-Means space for an arbitrary event (possibly abstracted from space or time as with a positional or temporal encoding). 
-* If a lot of people represent facts about “food”, we will have a good map of that space, and it will become an object space (symbolic space)
-* Feelings get pulled around by “these truths that we hold important”. Because they come from human speech, they already have a 6-embedding. So they serve as anchors that warp an N-D feeling space into a 6-D symbolic space. 
-* If we don’t turn off truth mode often enough, our feeling space will also be low rank.
-* Having a low-rank feeling space is a bad thing. Buddha and Jesus both recommend being quiet in your mind as a way of increasing the rank of your feeling space. Which means that you let the distribution of the weight space be shaped by feelings and NOT truth. But in feeling training, all have an equal value. There is only Truth in the space of absolute truth: 1.0
-* Facts are statically encoded vectors whose location is determined syntactically.
-* Feelings are dynamically encoded vectors whose location is determined syntactically.
-
 ## Sentence-Level Prediction
 * Use [Sentence Embeddings](doc/SentenceEmbeddings.pdf)
-* Turn the one-word lookahead prediction into head-first prediciton of the sentence. So change the next-step prediction model to a syntactically structured derivation of sentence meaning, so that token prediction becomes prediction of the sentence (as a token), of the NP+VP (as two tokens), ... until the full sentence has been specified. This would take the same number of production steps as a current LLM, but the iterative refinement of the next-sentence production is conceptually much different, and closer to human reasoning and refinement where there is a core truth (S) and spatial NP and temporal VP which are successively refined by adjectives and adverbs that scope the conceptual space of that kernel sentence.
+* Turn the one-word lookahead prediction into head-first prediction of the sentence. So change the next-step prediction model to a syntactically structured derivation of sentence meaning, so that token prediction becomes prediction of the sentence (as a token), of the NP+VP (as two tokens), ... until the full sentence has been specified. This would take the same number of production steps as a current LLM, but the iterative refinement of the next-sentence production is conceptually much different, and closer to human reasoning and refinement where there is a core truth (S) and spatial NP and temporal VP which are successively refined by adjectives and adverbs that scope the conceptual space of that kernel sentence.
 * Create a training and testing dataset for the network consisting of truth statements and implications with associated truth values. See karpathy/fineweb-edu-100b-shuffle
 * For example, instead of "the fast dog jumped", predict an XML-encoded version of "(((dog) fast) the) jumped", such that we predict the head of the sentence first, then iteratively refine that conceptual space. 
 
@@ -79,25 +65,19 @@ with specifically-characterized information (concrete details)
 
 ================================== ? ==================================
 
+## Vedana
+* Feelings can be given a value +-1 which shapes the Loss (loss is reduced when we have good thoughts or perceive good things)
+
 ## Reasoning System
-
-### Sigma-based truth comparison
-
-`Basis.kernel_overlap()` implements a Gaussian kernel `exp(-d² / 2(σx² + σy²))` that treats each stored truth as a region rather than a point. `Basis.activeSigma` is currently `None` everywhere — a declared slot that nothing populates. `ErgodicLayer.sigma` tracks gradient variance for exploration scheduling, which is a different quantity.
-
-To enable kernel-based truth matching: populate `activeSigma` during forward passes (e.g. from CBOW per-word sigma in `Embedding`, or activation variance across a batch), store it alongside each truth in `TruthLayer`, and switch `query()` / `ground()` / `field()` to `kernel_overlap`. In ergodic mode, gradient variance could inform σ as a proxy — high gradient variance (unstable region) → larger σ (broader match tolerance).
-
-### Derivation depth cap
-
-Default 3 steps in `ground()`. Expose as a config parameter; the right value depends on TruthSet density.
-
-### Grammar rule registry
-
-Which two-argument methods on `SyntacticLayer` are valid for `extrapolate()`? A registry of eligible methods and their approximate invertibility status would help. Currently hardcoded to `['union', 'intersection', 'equals', 'part']`.
-
-### TruthSet scale
-
-`max_truths=1024` may bottleneck once `extrapolate()` is running. Consider a tiered store (hot/cold) or vector-indexed lookup.
+* Sigma-based truth comparison
+  `Basis.kernel_overlap()` implements a Gaussian kernel `exp(-d² / 2(σx² + σy²))` that treats each stored truth as a region rather than a point. `Basis.activeSigma` is currently `None` everywhere — a declared slot that nothing populates. `ErgodicLayer.sigma` tracks gradient variance for exploration scheduling, which is a different quantity.
+  To enable kernel-based truth matching: populate `activeSigma` during forward passes (e.g. from CBOW per-word sigma in `Embedding`, or activation variance across a batch), store it alongside each truth in `TruthLayer`, and switch `query()` / `ground()` / `field()` to `kernel_overlap`. In ergodic mode, gradient variance could inform σ as a proxy — high gradient variance (unstable region) → larger σ (broader match tolerance).
+* Derivation depth cap
+  Default 3 steps in `ground()`. Expose as a config parameter; the right value depends on TruthSet density.
+* Grammar rule registry
+  Which two-argument methods on `SyntacticLayer` are valid for `extrapolate()`? A registry of eligible methods and their approximate invertibility status would help. Currently hardcoded to `['union', 'intersection', 'equals', 'part']`.
+* TruthSet scale
+  `max_truths=1024` may bottleneck once `extrapolate()` is running. Consider a tiered store (hot/cold) or vector-indexed lookup.
 
 ## Implement forgetting
 If someone has contributed information to an LLM and asked for the LLM

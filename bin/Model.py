@@ -1966,6 +1966,33 @@ class TruthLayer(Layer):
         # and don't contribute to illumination.
         return torch.relu(conjunction).norm()
 
+    def truth_conjunction(self, basis, pi_layer=None):
+        """Conjunction of all stored truths via bitonic intersection.
+
+        Folds stored truths with ``Basis.conjunction()`` (sign-aware
+        element-wise min), optionally projecting from symbolic to
+        conceptual space first via ``pi_layer.reverse()``.
+
+        Returns:
+            (D,) conjunction vector, or None if no truths stored.
+        """
+        n = self.count.item()
+        if n == 0:
+            return None
+
+        stored = self.truths[:n]                          # (n, symbol_dim)
+
+        # Project to conceptual space if needed
+        if pi_layer is not None:
+            stored = pi_layer.reverse(stored)              # (n, concept_dim)
+
+        # Fold via bitonic conjunction
+        conj = stored[0]
+        for i in range(1, n):
+            conj = basis.conjunction(conj, stored[i])
+
+        return conj
+
     # ── Universality (Golden Rule) ────────────────────────────────────
 
     def universality(self, subject, verb, obj, lifting_layer, symbolic_space):
