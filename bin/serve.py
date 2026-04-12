@@ -186,7 +186,13 @@ def chat_completions():
         except Exception as exc:
             logger.warning("Failed to store truths: %s", exc)
 
+    # Shamatha speech: restrict grammar to S -> C only
+    thought_free = body.get("thought_free", False)
+    from Space import TheGrammar
     try:
+        if thought_free:
+            TheGrammar.thought_free = True
+
         # Autoregressive inference: extend input text word by word
         predicted_words = _model.infer(user_msg, mode='ARLM')
         response_text = " ".join(predicted_words)
@@ -202,6 +208,8 @@ def chat_completions():
     except Exception as exc:
         logger.exception("Inference error")
         return jsonify({"error": "Internal model error"}), 500
+    finally:
+        TheGrammar.thought_free = False
 
 
 @app.route("/health", methods=["GET"])

@@ -86,6 +86,21 @@ and restricts the active rule set by left-hand side:
 Rules are specified in functional notation: `equals(S, S)`, `union(C, C)`,
 `swap(S, S)`, `true(S) EOF`, `I P`, $\varepsilon$, `P`, `C`.
 
+### Thought-Free Mode (Shamatha Speech)
+
+`Grammar.thought_free` is a boolean flag (default `False`) that restricts the
+symbolic tier to the $S \to C$ transition rule only.  When active,
+`Grammar.symbolic()` returns a single-element list containing the transition
+rule index, disabling all S-tier composition (swap, equals, part).
+
+The effect is **one-pointed speech**: the grammar can only descend from S to C
+without any symbolic combination.  C-tier and P-tier rules remain available,
+so invertible negation (`not(C)`) and mereological composition still function.
+
+The flag is set per-request by WikiOracle's `serve.py` before inference and
+reset in a `finally` block.  See [Params.md](Params.md) for the XML
+configuration and the WikiOracle docs for the call chain.
+
 ---
 
 ## Methods (Rule Semantics)

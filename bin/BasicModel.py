@@ -541,6 +541,110 @@ class BaseModel(nn.Module):
 
         return {'added': added, 'rejected': rejected}
 
+    # ── Contemplative Awareness Characterizations ─────────────────────
+
+    def Contiguous(self):
+        """One-Pointedness (Shamatha / Focused Attention).
+
+        Maintaining awareness of a given convex region in 5D Perceptual
+        Space.  Requires stillness: the model holds a single locus of
+        attention without wandering.
+
+        Characterisation — ShamathaSpeech mode:
+          * The symbolic grammar is restricted to a single S derivation
+            rule (S -> C), so no Equals, no swap, no compound sentences.
+          * Perceptually, the active region decodes to a *contiguous*
+            subspace — no disjoint islands of activation.
+          * Symbolically, the active symbols form a contiguous block in
+            the codebook ordering (no gaps).
+
+        Computationally, Contiguous() should verify that the current
+        model state (concept_states / STM) occupies a single connected,
+        convex region in PerceptualSpace and a contiguous span in
+        SymbolicSpace.  When thought_free mode is active the grammar
+        already enforces one-pointedness; this method characterises the
+        resulting spatial property.
+        """
+        raise NotImplementedError
+
+    def Continuous(self):
+        """Simplicity (Continuity / Open Awareness).
+
+        Developing a continuous N-dimensional awareness within space.
+        Requires continuity: small shifts in perceptual and symbolic
+        space must produce proportionally small shifts in conceptual
+        space.
+
+        Characterisation — OA (Open Awareness):
+          * The mapping PerceptualSpace -> ConceptualSpace is Lipschitz-
+            continuous: ||f(x) - f(y)|| <= K ||x - y|| for a bounded K.
+          * Equivalently, the Jacobian of the forward pass through
+            PiLayer and SigmaLayer has bounded spectral norm.
+          * In symbolic space, adjacent codebook entries map to nearby
+            concept vectors (smooth codebook topology).
+
+        Computationally, Continuous() should estimate the local Lipschitz
+        constant of the perception-to-concept mapping and verify that it
+        remains below a configured threshold, ensuring that awareness can
+        shift smoothly rather than jumping between attractors.
+        """
+        raise NotImplementedError
+
+    def Peaceful(self):
+        """One Taste (Emotional Symmetry / Balance).
+
+        Letting attachment to feelings within conceptual space be
+        uniformly 1, so that instead of adapting weight space to our
+        thoughts we adapt our feelings equanimously to our sensory space.
+        Requires emotional symmetry.
+
+        Characterisation — balance dissonance and consonance:
+          * Feelings (vedana / valence annotations) should not be removed
+            — that is the nihilist's mistake.  Instead they must be
+            *appropriate*: consonant with reality.
+          * Appropriateness manifests when the objects that are loved are
+            either real (grounded in PerceptualSpace with trust > 0) or
+            when the representations are at least 5-dimensional (which
+            limits the dissonance that arises from reification of
+            low-dimensional abstractions).
+          * The loss landscape should be symmetric w.r.t. positive and
+            negative valence — no bias toward pleasant or unpleasant
+            content in the gradient signal.
+
+        Computationally, Peaceful() should measure the balance between
+        dissonance and consonance across the TruthLayer and verify that
+        the model does not preferentially attend to or avoid any
+        particular valence.
+        """
+        raise NotImplementedError
+
+    def Done(self):
+        """Buddhahood (Non-Meditation / Resonance).
+
+        The perfection of Contiguous, Continuous, and Peaceful: the
+        elimination of dissonance.
+
+        Characterisation — non-meditation / resonance:
+          * Dissonance manifests as something to learn — a non-zero
+            gradient signal indicating mismatch between model and world.
+          * It is *not* the case that knowing everything is required to
+            remove dissonance, because the attempt to know often creates
+            dissonance (reification, attachment to views).
+          * Done() holds when the error function is relatively small in
+            all cases: no region of input space produces a large loss
+            spike.  The model has nothing more to learn — not because it
+            knows everything, but because it is at peace with what it
+            does not know.
+
+        Computationally, Done() should verify that:
+          1. Contiguous() holds (one-pointed awareness),
+          2. Continuous() holds (smooth awareness),
+          3. Peaceful() holds (balanced feelings),
+          4. The max loss across a representative sample is below a
+             configured resonance threshold.
+        """
+        raise NotImplementedError
+
     def save_weights(self, path=None):
         """Persist model weights (excluding embeddings) to disk.
 
@@ -2090,7 +2194,6 @@ class MentalModel(BaseModel):
             use_grammar = False
             sym_feedback = None
             self._merge_diffs = []
-            self._sigma_scales = []
             self._sym_feedbacks = []
         else:
             self.concept_states = []
@@ -2130,19 +2233,13 @@ class MentalModel(BaseModel):
             self.concepts = self.conceptualSpace[t].forward(self.percepts)
             concept_vectors = self.concepts.materialize()
 
-            # Scale to [-1,1] for PiLayer domain (ramsified only)
             if self.ramsified:
-                scale = concept_vectors.abs().amax(dim=-1, keepdim=True).clamp(min=1.0)
-                self._sigma_scales.append(scale)
-                concept_vectors = concept_vectors / scale
                 x = concept_vectors          # carry forward for next merge
-                self.concepts.set_event(concept_vectors)
 
             # 3. Pi: symbolic projection (indexed by t)
             self.symbols = self.symbolicSpace[t].forward(self.concepts)
             sym_vectors = self.symbols.materialize()
-            if self.ramsified:
-                sym_vectors = l1_proximal(sym_vectors, self.l1_lambda)
+            sym_vectors = l1_proximal(sym_vectors, self.l1_lambda)
 
             # 4. Feedback: activation norms for next iteration
             if self.ramsified:
@@ -2185,15 +2282,14 @@ class MentalModel(BaseModel):
 
         # Universality evaluation
         self._universality_score = None
-        if not self.ramsified:
-            truth_layer = getattr(self.symbolicSpace, 'truth', None)
-            if truth_layer is not None and len(truth_layer) > 0:
-                svo = self.conceptualSpace.last_svo
-                if svo is not None:
-                    s, v, o = svo
-                    c_sl = self.conceptualSpace.syntacticLayer
-                    self._universality_score = truth_layer.universality(
-                        s, v, o, c_sl.lifting_layer, self.symbolicSpace)
+        truth_layer = getattr(self.symbolicSpace, 'truth', None)
+        if truth_layer is not None and len(truth_layer) > 0:
+            svo = self.conceptualSpace.last_svo
+            if svo is not None:
+                s, v, o = svo
+                c_sl = self.conceptualSpace.syntacticLayer
+                self._universality_score = truth_layer.universality(
+                    s, v, o, c_sl.lifting_layer, self.symbolicSpace)
 
         # Output from first nOutputSymbols of symbol vectors
         if self.ramsified:
@@ -2231,8 +2327,7 @@ class MentalModel(BaseModel):
         # ── Reverse loop ──
         for t in reversed(range(self.conceptualOrder)):
             if self.ramsified:
-                # Undo: scale → sigma⁻¹ → feedback → unmerge
-                x = x * self._sigma_scales.pop()
+                # Undo: sigma⁻¹ → feedback → unmerge
                 self.symbols.set_event(x)
                 concept_input_state = self.conceptualSpace[t].reverse(
                     self.symbols)

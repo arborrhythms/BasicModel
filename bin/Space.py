@@ -2667,6 +2667,7 @@ class Grammar:
         self.rules = []
         self._configured = False
         self.interpretation = 0.5
+        self.thought_free = False
 
     # ── Rule catalog ──────────────────────────────────────────────────
 
@@ -2753,6 +2754,10 @@ class Grammar:
 
     def symbolic(self):
         self._ensure_configured()
+        if self.thought_free:
+            # Shamatha speech: restrict to S -> C only (one derivation rule)
+            t = self.symbolic_transition()
+            return [t] if t is not None else []
         return [i for i, r in enumerate(self.rules) if r.tier == 'S']
 
     def conceptual(self):

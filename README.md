@@ -16,6 +16,7 @@
 | [BasicModel](doc/BasicModel.md) | Cognitive science foundations |
 | [Language](doc/Language.md) | Grammar, word encoding, symbolic and syntactic spaces |
 | [Logic](doc/Logic.md) | Subsymbolic and symbolic logic operations |
+| [Reasoning](doc/Reasoning.md) | Truth methods, bidirectional reasoning, contemplative awareness stubs |
 | [MachineMinds](doc/MachineMinds.md) | What machine minds are, feel, and know |
 | [Installation](doc/Installation.md) | Setup, Makefile targets, environment variables |
 

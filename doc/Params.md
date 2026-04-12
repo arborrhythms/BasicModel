@@ -90,7 +90,7 @@ omitting them defaults to 0.1.
 | `UniversalityWeight` | decimal | `0.1`   | `<architecture>` | Loss penalty weight for low universality (unkind propositions).    |
 | `TruthLoss`          | decimal | `0.0`   | `<training>`     | Additive loss penalty for propositions that contradict the TruthSet. Uses union norm reduction via `Basis.disjunction()`. 0.0 = disabled. |
 | `conceptualOrder`    | int     | `1`     | `<architecture>` | Number of Percept→Concept→Symbol iterations. Higher orders use a geometrically partitioned symbolic space. |
-| `ramsified`          | boolean | `false` | `<architecture>` | Enable serial per-concept Pi with L1 sparsity. Required for partition-aware reasoning. |
+| `ramsified`          | boolean | `false` | `<architecture>` | Enable per-partition serial Pi layers with butterfly merge/unmerge. Required for partition-aware reasoning. |
 
 ```xml
 <architecture>

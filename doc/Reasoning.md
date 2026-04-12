@@ -130,10 +130,28 @@ partition, then combines percept estimates across orders.
 |-----------|----------|---------|-------------|
 | `<TruthLoss>` | `<training>` in model.xml | 0.0 | Weight for additive truth loss penalty |
 | `<conceptualOrder>` | `<architecture>` | 1 | Number of Percept->Concept->Symbol iterations |
-| `<ramsified>` | `<architecture>` | false | Enable serial per-concept Pi with L1 sparsity |
+| `<ramsified>` | `<architecture>` | false | Enable per-partition serial Pi layers with butterfly merge/unmerge |
 | `truthMinMagnitude` | `<SymbolicSpace>` | 0.3 | Minimum activation norm for truth storage |
 | `truthMinNovelty` | `<SymbolicSpace>` | 0.5 | Minimum novelty for truth storage |
 | `truthMaxInconsistency` | `<SymbolicSpace>` | 0.3 | Maximum inconsistency for truth storage |
+
+## Contemplative Awareness Methods
+
+Four stub methods on `BaseModel` characterize stages of contemplative
+awareness as spatial/computational properties of the model state.  Each
+raises `NotImplementedError` — they define the target characterization,
+not an implementation.
+
+| Method | Stage | Characterization |
+|--------|-------|-----------------|
+| `Contiguous()` | One-Pointedness (Shamatha / FA) | Current state occupies a single connected, convex region in PerceptualSpace and a contiguous span in SymbolicSpace. |
+| `Continuous()` | Simplicity (Continuity / OA) | Concept states flow continuously without discrete jumps; the Jacobian of the forward map is bounded. |
+| `Peaceful()` | One Taste (Emotional Symmetry) | TruthLayer luminosity is uniformly high across all stored propositions; no truth is privileged. |
+| `Done()` | Buddhahood (Non-Meditation / Resonance) | The model is a fixed point of its own forward–reverse cycle; reconstruction loss is zero. |
+
+When `thought_free` mode is active, the grammar already enforces the
+one-pointedness that `Contiguous()` characterizes (see
+[Language.md](Language.md) §Thought-Free Mode).
 
 ## Testing
 
