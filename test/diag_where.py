@@ -47,7 +47,6 @@ with torch.no_grad():
         y = self.forwardSigma(x)
         captured['cs_post_sigma'] = y.clone()
         if self.syntacticLayer is not None:
-            self._pre_compose = y.detach().clone()
             from Space import TheGrammar
             y, self._last_svo = self.syntacticLayer.compose(y, self.subspace, TheGrammar)
             captured['cs_post_compose'] = y.clone()

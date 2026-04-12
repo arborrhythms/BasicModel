@@ -278,16 +278,29 @@ class WordEncoding(Encoding):
         self.nBatch = nBatch
         self.nActive = nActive
 
-    def encode(self, batch, vector, rule, order=0):
-        """Validate and return a (batch, vector, rule, order) tuple."""
+    # Word tuple layout:
+    #   [0] batch, [1] vector (position), [2] order (depth),
+    #   [3] rule,  [4] leaf1, [5] leaf2, [6] leaf3
+    # leaf slots hold codebook indices (-1 = unused).
+    BATCH = 0
+    VECTOR = 1
+    ORDER = 2
+    RULE = 3
+    LEAF1 = 4
+    LEAF2 = 5
+    LEAF3 = 6
+
+    def encode(self, batch, vector, rule, order=0,
+               leaf1=-1, leaf2=-1, leaf3=-1):
+        """Validate and return a 7-tuple word."""
         assert 0 <= batch, f"batch {batch} must be >= 0"
         assert 0 <= vector, f"vector {vector} must be >= 0"
         assert 0 <= rule < len(TheGrammar), f"rule {rule} out of range [0, {len(TheGrammar)})"
-        return (batch, vector, rule, order)
+        return (batch, vector, order, rule, leaf1, leaf2, leaf3)
 
     def decode(self, word):
         """Unpack a word tuple into (batch, vector, rule)."""
-        return word[0], word[1], word[2]
+        return word[self.BATCH], word[self.VECTOR], word[self.RULE]
 class WhatEncoding(Encoding):
     """Handle the content-layout transform for a space's What factor.
 
@@ -587,14 +600,62 @@ class Basis(nn.Module):
         return -x
 
     def conjunction_inverse(self, result, y, monotonic=False):
-        """Best-effort inverse of conjunction. Exact where x was the min; else x >= result.
-        Domain/range [-1, 1]."""
-        return result
+        """Inverse of conjunction via codebook search.
+
+        Find the codebook vector x such that conjunction(x, cb_j) ≈ result
+        for some cb_j, returning the best-matching left operand.
+        Falls back to returning result unchanged if no codebook is available.
+        """
+        return self._binary_op_inverse(result, self.conjunction, monotonic)
 
     def disjunction_inverse(self, result, y, monotonic=False):
-        """Best-effort inverse of disjunction. Exact where x was the max; else x <= result.
-        Domain/range [-1, 1]."""
-        return result
+        """Inverse of disjunction via codebook search.
+
+        Find the codebook vector x such that disjunction(x, cb_j) ≈ result
+        for some cb_j, returning the best-matching left operand.
+        Falls back to returning result unchanged if no codebook is available.
+        """
+        return self._binary_op_inverse(result, self.disjunction, monotonic)
+
+    def _binary_op_inverse(self, result, op, monotonic):
+        """Search codebook for pair (cb[i], cb[j]) whose op(cb[i], cb[j]) ≈ result.
+
+        Returns cb[i] (the left operand) for each position in result.
+        result shape: (..., D).  Codebook shape: (K, D).
+        """
+        try:
+            cb = self.getW()  # (K, D)
+        except (NotImplementedError, AttributeError):
+            warnings.warn("_binary_op_inverse: no codebook available", stacklevel=3)
+            return result
+
+        if cb is None or cb.shape[0] == 0:
+            return result
+
+        K, D = cb.shape
+        flat = result.reshape(-1, D)  # (N, D)
+        N = flat.shape[0]
+
+        # Precompute op(cb[i], cb[j]) for all pairs → (K, K, D)
+        cb_i = cb.unsqueeze(1).expand(K, K, D)  # (K, K, D)
+        cb_j = cb.unsqueeze(0).expand(K, K, D)  # (K, K, D)
+        composed = op(cb_i, cb_j, monotonic=monotonic)  # (K, K, D)
+        composed_flat = composed.reshape(K * K, D)  # (K*K, D)
+
+        # Find closest composed pair for each position
+        # Use chunked computation to limit memory: process N positions in chunks
+        chunk_size = max(1, min(N, 2048 // K))
+        best_i = torch.empty(N, dtype=torch.long, device=result.device)
+
+        for start in range(0, N, chunk_size):
+            end = min(start + chunk_size, N)
+            # (end-start, 1, D) - (1, K*K, D) → (end-start, K*K)
+            diffs = (flat[start:end].unsqueeze(1) - composed_flat.unsqueeze(0))
+            dists = diffs.pow(2).sum(dim=-1)  # (chunk, K*K)
+            pair_idx = dists.argmin(dim=-1)   # (chunk,)
+            best_i[start:end] = pair_idx // K  # left operand index
+
+        return cb[best_i].reshape(result.shape)
 
     def pos(self, x):
         """Positive projection (ReLU). Domain [-1, 1], range [0, 1]."""
@@ -2087,9 +2148,11 @@ class SubSpace(nn.Module):
         """Return the word list."""
         return self.word
 
-    def add_word(self, batch, vector, rule, order=0):
+    def add_word(self, batch, vector, rule, order=0,
+                 leaf1=-1, leaf2=-1, leaf3=-1):
         """Append a validated word tuple."""
-        self.word.append(self.wordEncoding.encode(batch, vector, rule, order))
+        self.word.append(self.wordEncoding.encode(
+            batch, vector, rule, order, leaf1, leaf2, leaf3))
 
     # ── Stack-scanning helpers ────────────────────────────────────────
 
@@ -3334,6 +3397,17 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         c_rules = grammar._c_rule_ids()
         not_rid = c_rules.get('not')
 
+        # Snapshot codebook indices before any modifications (for decompose)
+        basis = getattr(subspace, 'basis', None)
+        cb = basis.getW() if basis is not None else None
+        if cb is not None and data.shape[-1] == cb.shape[-1]:
+            B0, N0, D0 = data.shape
+            self._leaf_cb_indices = (
+                data.detach().reshape(-1, D0) @ cb.T
+            ).argmax(dim=-1).reshape(B0, N0)
+        else:
+            self._leaf_cb_indices = None
+
         # Phase 1: deterministic not at top-of-stack
         tops = subspace.top_of_stack(data)
         for b, pos in enumerate(tops):
@@ -3393,6 +3467,16 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         if max_leaves == 0:
             return data, self.last_svo
 
+        # Record terminal words for each leaf (transition rule + codebook index)
+        cb_indices = self._leaf_cb_indices
+        t_rid = self.transition_rule if self.transition_rule is not None else composable_global[0]
+        if cb_indices is not None:
+            for b in range(B):
+                for i, pos in enumerate(active_positions[b]):
+                    if i < max_leaves:
+                        subspace.add_word(b, pos, t_rid, order=-1,
+                                          leaf1=cb_indices[b, pos].item())
+
         # Extract leaf vectors via masks
         masks = torch.zeros(B, max_leaves, N, device=data.device)
         for b in range(B):
@@ -3432,12 +3516,19 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             probs_d = rule_probs[:, d, :][:, composable_local]  # [B, n_composable]
             probs_d = probs_d / (probs_d.sum(dim=-1, keepdim=True) + 1e-8)
             depth_probs.append(probs_d.detach())                # [B, n_composable]
-            probs_d = probs_d.unsqueeze(-1).unsqueeze(-1)       # [B, n_composable, 1, 1]
 
-            composed = (probs_d * results).sum(dim=1)  # [B, N, D]
+            # Hard selection in eval mode (exact for decompose); soft mixture in training
+            best = probs_d.argmax(dim=-1)  # [B]
+            if self.training:
+                probs_d = probs_d.unsqueeze(-1).unsqueeze(-1)   # [B, n_composable, 1, 1]
+                composed = (probs_d * results).sum(dim=1)       # [B, N, D]
+            else:
+                # Select argmax rule output per batch element
+                idx = best.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)  # [B, 1, 1, 1]
+                idx = idx.expand(-1, 1, results.shape[2], results.shape[3])
+                composed = results.gather(1, idx).squeeze(1)    # [B, N, D]
 
             # Record argmax rule as word
-            best = probs_d.squeeze(-1).squeeze(-1).argmax(dim=-1)  # [B]
             best_global = composable_global[best[0].item()]
             for b in range(B):
                 if d < len(active_positions[b]):
@@ -3488,6 +3579,16 @@ class ConceptualSyntacticLayer(SyntacticLayer):
 
         # Build per-batch active positions
         active = [subspace.active_positions(b, data) for b in range(B)]
+
+        # Record terminal words for each active leaf (codebook indices from pre-Phase1)
+        cb_indices = self._leaf_cb_indices
+        t_rid = self.transition_rule if self.transition_rule is not None else composable_global[0]
+        if cb_indices is not None:
+            for b in range(B):
+                for pos in active[b]:
+                    subspace.add_word(b, pos, t_rid, order=-1,
+                                      leaf1=cb_indices[b, pos].item())
+
         d = 0
 
         while d < self.max_depth:
@@ -3518,12 +3619,17 @@ class ConceptualSyntacticLayer(SyntacticLayer):
                     probs_d = rule_probs[b:b+1, min(d, rule_probs.shape[1]-1), :]
                     probs_d = probs_d[:, composable_local]
                     probs_d = probs_d / (probs_d.sum(dim=-1, keepdim=True) + 1e-8)
-                    composed = (probs_d.unsqueeze(-1).unsqueeze(-1) * results).sum(dim=1)
+
+                    best_local = probs_d.argmax(dim=-1)[0].item()
+                    if self.training:
+                        composed = (probs_d.unsqueeze(-1).unsqueeze(-1) * results).sum(dim=1)
+                    else:
+                        composed = results[:, best_local]
 
                     new_data[b, left_pos] = composed[0, 0]
                     new_data[b, right_pos] = 0.0  # zero out consumed
 
-                    best_rid = composable_global[probs_d.argmax(dim=-1)[0].item()]
+                    best_rid = composable_global[best_local]
                     subspace.add_word(b, left_pos, best_rid, order=d)
                     new_positions.append(left_pos)
                     i += 2
@@ -3547,29 +3653,36 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         return result, self.last_svo
 
     def decompose(self, data, subspace, grammar):
-        """Reverse C-tier operations using recorded word tuples.
+        """Reconstruct pre-compose tensor from symbolic word record.
 
-        Walks words in reverse, calling reverse_project for each rule.
+        Terminal words (order == -1) carry codebook indices of the original
+        leaf vectors.  Reconstruction looks up each leaf from the codebook
+        and places it at its recorded position, producing the exact
+        pre-compose tensor without any cached tensors.
 
         Args:
-            data: tensor (same shape as compose output)
+            data: tensor (same shape as compose output, used for shape/device)
             subspace: SubSpace with recorded words
-            grammar: Grammar instance for rule info
+            grammar: Grammar instance (unused, kept for API compat)
         Returns:
-            data with grammar operations undone (best-effort)
+            [B, N, D] tensor with leaf vectors at their original positions
         """
         words = subspace.get_words()
-        for word in reversed(words):
-            if len(word) < 3:
-                continue
-            b, pos, rule_id = word[0], word[1], word[2]
-            right = word[3] if len(word) > 3 else None
-            data = data.clone()
-            val = data[b, pos].unsqueeze(0).unsqueeze(0)
-            data[b, pos] = self.reverse_project(
-                grammar, rule_id, val, right=right, subspace=subspace
-            ).squeeze(0).squeeze(0)
-        return data
+        basis = getattr(subspace, 'basis', None)
+        cb = basis.getW() if basis is not None else None
+        if cb is None:
+            return data  # no codebook — fall back to identity
+
+        result = torch.zeros_like(data)
+        for word in words:
+            if word[WordEncoding.ORDER] != -1:
+                continue  # skip rule words — only terminals carry leaves
+            b = word[WordEncoding.BATCH]
+            pos = word[WordEncoding.VECTOR]
+            cb_idx = word[WordEncoding.LEAF1]
+            if cb_idx >= 0:
+                result[b, pos] = cb[cb_idx]
+        return result
 class SymbolicSyntacticLayer(SyntacticLayer):
     """S-tier SyntacticLayer: soft-weighted composition on 2D activations.
 
@@ -3706,7 +3819,9 @@ class SymbolicSyntacticLayer(SyntacticLayer):
         for word in reversed(words):
             if len(word) < 3:
                 continue
-            b, pos, rule_id = word[0], word[1], word[2]
+            b = word[WordEncoding.BATCH]
+            pos = word[WordEncoding.VECTOR]
+            rule_id = word[WordEncoding.RULE]
             rule = grammar.rules[rule_id]
             if rule.method_name in ('non', 'union', 'intersection',
                                     'lift', 'lower'):
@@ -5008,7 +5123,7 @@ class ConceptualSpace(Space):
         # Average-merge keeps norms bounded, so tanh saturation is unnecessary
         # and harmful: cascaded atanh in reverse clamps values outside (-1,1),
         # destroying sample variance.  Per-level sigmas use saturate=False.
-        if level_shapes is not None and len(level_shapes) > 1:
+        if level_shapes is not None and len(level_shapes) >= 1:
             self._hierarchical = True
             self._level_shapes = level_shapes
             self.sigmas = nn.ModuleList()
@@ -5061,6 +5176,35 @@ class ConceptualSpace(Space):
         # TheGrammar.composeSyntax('C', ...).
         self._interpretation = TheGrammar.interpretation
 
+    def __getitem__(self, t):
+        """Index into conceptual order levels.
+
+        Non-hierarchical: returns self (shared sigma for all t).
+        Hierarchical: returns a _LevelView that routes through sigmas[t].
+        """
+        if not self._hierarchical:
+            return self
+        return self._CSLevelView(self, t)
+
+    class _CSLevelView:
+        """Proxy routing .forward()/.reverse() through a per-level sigma."""
+        def __init__(self, parent, t):
+            self._parent = parent
+            self._sigma = parent.sigmas[t]
+            self.subspace = parent.subspace
+
+        def forward(self, vspace):
+            x = vspace.materialize()
+            y = self._sigma.forward(x)
+            self._parent.subspace.set_event(y)
+            return self._parent.subspace
+
+        def reverse(self, vspace):
+            x = vspace.materialize()
+            y = self._sigma.reverse(x)
+            self._parent.subspace.set_event(y)
+            return self._parent.subspace
+
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
         # However, if the X are not normalized, the magnitudes may be taken as a degree of certainty or knowing.
@@ -5090,7 +5234,6 @@ class ConceptualSpace(Space):
         if self.codebook:
             y = self.subspace.get_vectors().forward(y)
         if self.syntacticLayer is not None:
-            self._pre_compose = y.detach().clone()
             y, self._last_svo = self.syntacticLayer.compose(y, self.subspace, TheGrammar)
         vspace = self.forwardEnd(y, returnVectors=True)
         vspace.normalize("concepts", target="what")       # range check
@@ -5123,13 +5266,7 @@ class ConceptualSpace(Space):
         """
         y = self.reverseBegin(vspace, returnVectors=True)
         if self.syntacticLayer is not None:
-            # Compose is lossy (cascading accumulator collapses leaves).
-            # Use the pre-compose sigma output for exact reconstruction.
-            pre = getattr(self, '_pre_compose', None)
-            if pre is not None:
-                y = pre
-            else:
-                y = self.syntacticLayer.decompose(y, self.subspace, TheGrammar)
+            y = self.syntacticLayer.decompose(y, self.subspace, TheGrammar)
         if self.processSymbols:
             y = self.dereference(y)
         y = self.reverseSigma(y)
@@ -5174,14 +5311,14 @@ class SymbolicSpace(Space):
         nSymbolDim = outputShape[1]     # symbol_dim + obj (where+when)
         nSymbols = spaceShape[0]
 
-        if level_shapes is not None and len(level_shapes) > 1:
+        if level_shapes is not None and len(level_shapes) >= 1:
             self._hierarchical = True
             self._level_shapes = level_shapes
             self.pi_layers = nn.ModuleList()
             for t, (n_t, d_t) in enumerate(level_shapes):
                 self.pi_layers.append(
                     PiLayer(d_t, nSymbolDim, invertible=True, monotonic=True))
-            self.layer = self.pi_layers[0]  # default for non-hierarchical codepaths
+            self.layer = self.pi_layers[0]  # default for non-ramsified codepaths
         else:
             self._hierarchical = False
             self.pi_layers = None
@@ -5252,6 +5389,35 @@ class SymbolicSpace(Space):
             monotonic=True,
         )
         return basis
+
+    def __getitem__(self, t):
+        """Index into conceptual order levels.
+
+        Non-hierarchical: returns self (shared PiLayer for all t).
+        Hierarchical: returns a _LevelView that routes through pi_layers[t].
+        """
+        if not self._hierarchical:
+            return self
+        return self._SSLevelView(self, t)
+
+    class _SSLevelView:
+        """Proxy routing .forward()/.reverse() through a per-level PiLayer."""
+        def __init__(self, parent, t):
+            self._parent = parent
+            self._pi = parent.pi_layers[t]
+            self.subspace = parent.subspace
+
+        def forward(self, vspace):
+            x = vspace.materialize()
+            y = self._pi.forward(x)
+            self._parent.subspace.set_event(y)
+            return self._parent.subspace
+
+        def reverse(self, vspace):
+            x = vspace.materialize()
+            y = self._pi.reverse(x)
+            self._parent.subspace.set_event(y)
+            return self._parent.subspace
 
     @property
     def vocabulary(self):

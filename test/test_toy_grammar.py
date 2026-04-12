@@ -483,7 +483,8 @@ class TestSoftSuperposition(unittest.TestCase):
         words = subspace.get_words()
         not_rid = self.grammar._c_rule_ids().get('not')
         if not_rid is not None:
-            not_words = [w for w in words if len(w) >= 3 and w[2] == not_rid]
+            from Space import WordEncoding
+            not_words = [w for w in words if len(w) >= 4 and w[WordEncoding.RULE] == not_rid]
             self.assertGreater(len(not_words), 0,
                 "not() rule should have fired for negative-mean data")
 

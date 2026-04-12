@@ -22,6 +22,7 @@ import matplotlib
 matplotlib.use('Agg')
 
 from BasicModel import MentalModel, TheData, TheDevice
+from Space import TheGrammar
 from util import init_config, TheXMLConfig
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
@@ -93,14 +94,18 @@ class TestHeadDivergence(unittest.TestCase):
                                       device=percept_vecs.device)
                 concept_input = torch.cat([percept_vecs, symbols], dim=1)
 
-                # Run ConceptualSpace forward (which saves _pre_compose)
+                # Run ConceptualSpace forward, then decompose to recover pre-compose
+                self.model.conceptualSpace.subspace.set_event(concept_input)
                 concepts = self.model.conceptualSpace.forward(
-                    self.model._wrap_reverse(self.model.conceptualSpace, concept_input))
+                    self.model.conceptualSpace.subspace)
 
                 post_compose = concepts.materialize()[0]  # [N, D] for batch 0
-                pre_compose = getattr(self.model.conceptualSpace, '_pre_compose', None)
-                if pre_compose is not None:
-                    pre_compose = pre_compose[0]  # [N, D] for batch 0
+                cs = self.model.conceptualSpace
+                if cs.syntacticLayer is not None:
+                    pre_compose = cs.syntacticLayer.decompose(
+                        concepts.materialize(), cs.subspace, TheGrammar)[0]
+                else:
+                    pre_compose = post_compose
 
                 # Find top-of-stack
                 tops = self.model.conceptualSpace.subspace.top_of_stack(
@@ -133,12 +138,12 @@ class TestHeadDivergence(unittest.TestCase):
                     f"'{sentence}': angle={angle_deg:.1f}° (cos={cos_sim:.4f}) "
                     f"exceeds {_MAX_ANGLE_DEG}° threshold")
 
-    def test_pre_compose_snapshot_exists(self):
-        """ConceptualSpace._pre_compose should be set after forward()."""
-        self._run_sentence("Dogs run")
-        self.assertTrue(
-            hasattr(self.model.conceptualSpace, '_pre_compose'),
-            "_pre_compose snapshot not saved by ConceptualSpace.forward()")
+    def test_decompose_reconstructs_leaves(self):
+        """decompose should reconstruct leaf vectors from codebook indices."""
+        pre, post, top = self._run_sentence("Dogs run")
+        if pre is not None and top >= 0:
+            self.assertFalse(torch.all(pre == 0),
+                             "decompose returned all-zero reconstruction")
 
 
 if __name__ == '__main__':

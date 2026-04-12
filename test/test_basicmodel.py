@@ -3393,13 +3393,14 @@ class TestSubspaceWords(unittest.TestCase):
     def test_add_word_start_state(self):
         ss = self._make_ss()
         ss.add_word(0, 0, 0)
-        self.assertEqual(ss.get_words(), [(0, 0, 0, 0)])
+        self.assertEqual(ss.get_words(), [(0, 0, 0, 0, -1, -1, -1)])
 
     def test_add_multiple_words(self):
         ss = self._make_ss()
         ss.add_word(0, 0, 0)
         ss.add_word(0, 42, 1)
-        self.assertEqual(ss.get_words(), [(0, 0, 0, 0), (0, 42, 1, 0)])
+        self.assertEqual(ss.get_words(),
+                         [(0, 0, 0, 0, -1, -1, -1), (0, 42, 0, 1, -1, -1, -1)])
 
     def test_set_words(self):
         ss = self._make_ss()

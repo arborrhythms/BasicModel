@@ -114,32 +114,34 @@ class TestButterflyMerge(unittest.TestCase):
 
 class TestWordEncoding(unittest.TestCase):
 
-    def test_4tuple_encoding(self):
-        """encode/decode with order parameter."""
+    def test_7tuple_encoding(self):
+        """encode produces 7-tuple with correct layout."""
         from Space import WordEncoding
         enc = WordEncoding()
         w = enc.encode(batch=0, vector=5, rule=3, order=2)
-        self.assertEqual(len(w), 4)
-        self.assertEqual(w, (0, 5, 3, 2))
+        self.assertEqual(len(w), 7)
+        self.assertEqual(w, (0, 5, 2, 3, -1, -1, -1))
 
     def test_default_order_zero(self):
-        """order defaults to 0 for backward compat."""
+        """order defaults to 0."""
         from Space import WordEncoding
         enc = WordEncoding()
         w = enc.encode(batch=1, vector=2, rule=0)
-        self.assertEqual(w[3], 0)
+        self.assertEqual(w[WordEncoding.ORDER], 0)
 
-    def test_backward_compat_3tuple_unpack(self):
-        """Old 3-tuple words unpack correctly with word[0], word[1], word[2]."""
-        # The decompose code uses word[0], word[1], word[2] indexing
-        # which works for both 3-tuples and 4-tuples
-        old_word = (0, 5, 3)
-        new_word = (0, 5, 3, 2)
-        self.assertEqual(old_word[0], new_word[0])
-        self.assertEqual(old_word[1], new_word[1])
-        self.assertEqual(old_word[2], new_word[2])
-        # 3-tuple has len >= 3, so the guard `if len(word) < 3: continue` passes
-        self.assertTrue(len(old_word) >= 3)
+    def test_7tuple_layout(self):
+        """Word tuple is (batch, vector, order, rule, leaf1, leaf2, leaf3)."""
+        from Space import WordEncoding
+        enc = WordEncoding()
+        w = enc.encode(batch=0, vector=5, rule=3, order=2, leaf1=10, leaf2=20)
+        self.assertEqual(len(w), 7)
+        self.assertEqual(w[WordEncoding.BATCH], 0)
+        self.assertEqual(w[WordEncoding.VECTOR], 5)
+        self.assertEqual(w[WordEncoding.ORDER], 2)
+        self.assertEqual(w[WordEncoding.RULE], 3)
+        self.assertEqual(w[WordEncoding.LEAF1], 10)
+        self.assertEqual(w[WordEncoding.LEAF2], 20)
+        self.assertEqual(w[WordEncoding.LEAF3], -1)
 
 
 # ── Hierarchical forward (requires RamsifiedModel.xml with order>1) ──
@@ -149,8 +151,8 @@ class TestHierarchicalForward(unittest.TestCase):
     def test_forward_runs(self):
         """RamsifiedModel with conceptualOrder=2 runs forward without error."""
         model = _make_model('RamsifiedModel.xml')
-        if not getattr(model, '_hierarchical', False):
-            self.skipTest("Model not hierarchical (conceptualOrder <= 1)")
+        if not model.ramsified:
+            self.skipTest("Model not ramsified")
 
         sentences = ['test sentence one', 'another test sentence']
         outputs = [torch.tensor([0.0]), torch.tensor([1.0])]
@@ -167,8 +169,8 @@ class TestHierarchicalForward(unittest.TestCase):
     def test_concept_states_populated(self):
         """Hierarchical forward populates concept_states per level."""
         model = _make_model('RamsifiedModel.xml')
-        if not getattr(model, '_hierarchical', False):
-            self.skipTest("Model not hierarchical")
+        if not model.ramsified:
+            self.skipTest("Model not ramsified")
 
         sentences = ['test one', 'test two']
         outputs = [torch.tensor([0.0]), torch.tensor([1.0])]
@@ -191,7 +193,7 @@ class TestBackwardCompat(unittest.TestCase):
     def test_mentalmodel_unchanged(self):
         """MentalModel.xml (conceptualOrder=1) still creates and forwards."""
         model = _make_model('MentalModel.xml')
-        self.assertFalse(getattr(model, '_hierarchical', False))
+        self.assertFalse(model.ramsified)
 
         sentences = ['hello world']
         outputs = [torch.tensor([0.0])]
@@ -219,8 +221,8 @@ class TestPerLevelLayers(unittest.TestCase):
     def test_conceptual_sigmas_created(self):
         """Hierarchical ConceptualSpace has per-level sigmas."""
         model = _make_model('RamsifiedModel.xml')
-        if not getattr(model, '_hierarchical', False):
-            self.skipTest("Model not hierarchical")
+        if not model.ramsified:
+            self.skipTest("Model not ramsified")
         cs = model.conceptualSpace
         self.assertTrue(cs._hierarchical)
         self.assertEqual(len(cs.sigmas), model.conceptualOrder)
@@ -228,8 +230,8 @@ class TestPerLevelLayers(unittest.TestCase):
     def test_symbolic_pi_layers_created(self):
         """Hierarchical SymbolicSpace has per-level pi_layers."""
         model = _make_model('RamsifiedModel.xml')
-        if not getattr(model, '_hierarchical', False):
-            self.skipTest("Model not hierarchical")
+        if not model.ramsified:
+            self.skipTest("Model not ramsified")
         ss = model.symbolicSpace
         self.assertTrue(ss._hierarchical)
         self.assertEqual(len(ss.pi_layers), model.conceptualOrder)
@@ -237,8 +239,8 @@ class TestPerLevelLayers(unittest.TestCase):
     def test_dim_projections_count(self):
         """Number of dim_projections = conceptualOrder (one per level)."""
         model = _make_model('RamsifiedModel.xml')
-        if not getattr(model, '_hierarchical', False):
-            self.skipTest("Model not hierarchical")
+        if not model.ramsified:
+            self.skipTest("Model not ramsified")
         cs = model.conceptualSpace
         self.assertEqual(len(cs.dim_projections), model.conceptualOrder)
 

@@ -474,7 +474,7 @@ class TestMentalModelWithGrammar(unittest.TestCase):
                     words = ss.get_words()
                     num_rules = len(TheGrammar.rules)
                     for word in words:
-                        rule_id = word[-1]  # last element is rule_id
+                        rule_id = word[3]  # word layout: (batch, vector, order, rule, ...)
                         self.assertGreaterEqual(rule_id, 0)
                         self.assertLess(rule_id, num_rules,
                                         f"Rule ID {rule_id} >= {num_rules}")
