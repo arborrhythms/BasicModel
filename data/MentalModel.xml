@@ -52,11 +52,11 @@
       <grammar>
         <START>S</START>
         <S>true(S)</S>
+        <S>non(S)</S>
         <S>swap(S, S)</S>
         <S>equals(S, S)</S>
         <S>part(S, S)</S>
         <S>C</S>
-        <C>non(C)</C>
         <C>not(C)</C>
         <C>intersection(C, C)</C>
         <C>union(C, C)</C>

@@ -1,14 +1,5 @@
 # TODO
 
-## Refine the 5M model
-* check performance on fineweb
-* tune l1Lambda and learningRate
-
-
-## Truth Set Orthogonalization
-* Use luminosity to orthogonalize the truth set, removing redundant or near-duplicate entries and resolving contradictions. 
-* The consistency measure (`TruthLayer.consistency()`) detects anti-parallel vectors; a future step would automatically prune or merge conflicting truths based on their DoT magnitudes.
-
 ## The Operation of an Enlightened Mind (mahamudra)
 * One Pointedness is maintaining awareness of a given convex region in 5D Perceptual Space. It requires stillness.
   * characterize one-pointedness (ShamathaSpeech, no Equals, FA)
@@ -85,44 +76,6 @@ For example, instead of predicting "the fast dog jumped" token-by-token left to 
 
 * Ensure words are aligned with sentences when there is a single unambiguous head.
 * Head-first prediction requires that the head can be reliably identified from the composition.
-
-## Invertible Grammar for Reconstruction
-
-For reconstruction to work through grammatical composition (rather than bypassing
-it via `_pre_compose`), the grammar must be invertible — each compose step must
-have a corresponding decompose step that recovers the original operands.
-
-### Invertible productions (safe for reconstruction)
-* **not(C)** → `Basis.negation` (bitonic: `-x`, self-inverse: `not(not(x)) = x`)
-* **Transition rules** (S→C, C→P) → pass-through (`method_name=None`), trivially invertible
-
-### Non-invertible productions (information loss)
-* **non(C)** → `Basis.non` (bitonic: zeros everything; monotonic: relu threshold).
-  Neither mode is invertible — original magnitudes are lost.
-* **union / intersection / chunk** → `Basis.disjunction / conjunction`.
-  Binary set operations: `union(a,b)` loses which elements came from `a` vs `b`.
-* **equals / part** → scalar gating (`score * right`). Loses the original magnitude.
-* **lift / lower** → parametric (verb codebook / rank reduction). Would need stored
-  state for inversion.
-* **true** → `Basis.pos` (relu). Negative values are lost.
-
-### What an invertible grammar needs
-1. **Restrict to self-inverse rules**: `not`, transition. These can be freely used.
-2. **Store forward state for quasi-invertible rules**: For rules like `non` (gate)
-   or `lift` (SVO), store the forward computation state and use it in decompose.
-   This trades memory for invertibility.
-3. **Avoid inherently lossy rules in compose**: `union`, `intersection`, `chunk`,
-   `equals`, `part`, `true` are projections that lose information. They can appear
-   in the grammar for forward/classification, but reconstruction must bypass them
-   (via `_pre_compose`).
-4. **For hierarchical mode**: Each level's compose/decompose must be independently
-   invertible. The butterfly merge `[B, N, D] → [B, N/2, 2D]` is exactly invertible
-   via reshape. Grammar-based reduction at each level needs rule-level invertibility.
-
-### Current state (MM_xor)
-MM_xor uses `_pre_compose` bypass: reconstruction goes through sigma inverse
-directly, skipping compose/decompose. This works because `reconstruct="symbols"`
-caches the pre-compose sigma output. The grammar still operates for classification.
 
 ## Future Work: Parsed Training Dataset
 It is desirable to create a small training and testing dataset for the network consisting of statements that are already parsed. This would allow direct comparison between the grammatical derivation produced by traditional English parsers and the deep structure produced by BasicModel's ConceptualSyntacticLayer.

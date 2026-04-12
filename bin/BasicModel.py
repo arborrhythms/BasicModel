@@ -388,10 +388,14 @@ class BaseModel(nn.Module):
 
         if not basis_indices:
             # Try derivation via TruthLayer.derive() (depth capped)
-            from Space import TheGrammar
+            ss = getattr(self, 'symbolicSpace', None)
+            sl = getattr(ss, 'syntacticLayer', None) if ss is not None else None
+            part_fn = getattr(sl, 'partForward', None) if sl is not None else None
             max_depth = 3
             for depth in range(max_depth):
-                derived = truth_layer.derive(TheGrammar, threshold=threshold)
+                if part_fn is None:
+                    break
+                derived = truth_layer.derive(part_fn, threshold=threshold)
                 if derived == 0:
                     break
                 # Re-check with expanded truth set
@@ -477,7 +481,7 @@ class BaseModel(nn.Module):
         pi_layer = ss.layer if ss is not None else None
         # Get the actual SubSpace for grammar methods (needs .basis)
         subspace = getattr(ss, 'subspace', None) if ss is not None else None
-        # _method_* lives on SyntacticLayer, not Grammar
+        # *Forward lives on SyntacticLayer, not Grammar
         syntactic_layer = getattr(ss, 'syntacticLayer', None) if ss is not None else None
 
         for i in indices:
@@ -497,7 +501,7 @@ class BaseModel(nn.Module):
                         continue  # skip cross-order pairs
 
                 for rule_name in two_arg_rules:
-                    method_name = f'_method_{rule_name}'
+                    method_name = f'{rule_name}Forward'
                     method = getattr(syntactic_layer, method_name, None)
                     if method is None:
                         continue

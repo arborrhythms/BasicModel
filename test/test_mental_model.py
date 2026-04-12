@@ -104,11 +104,11 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
     EXPECTED_RULES = [
         "START → S",
         "S → true(S)",
+        "S → non(S)",
         "S → swap(S, S)",
         "S → equals(S, S)",
         "S → part(S, S)",
         "S → C",
-        "C → non(C)",
         "C → not(C)",
         "C → intersection(C, C)",
         "C → union(C, C)",
@@ -133,10 +133,10 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
         self.assertEqual(len(TheGrammar.rules), 16)
         self.assertEqual(TheGrammar.interpretation, 0.5)
 
-        self.assertEqual(model.symbolicSpace.syntacticLayer.all_rules, [1, 2, 3, 4, 5])
-        self.assertEqual(model.symbolicSpace.syntacticLayer.transition_rule, 5)
+        self.assertEqual(model.symbolicSpace.syntacticLayer.all_rules, [1, 2, 3, 4, 5, 6])
+        self.assertEqual(model.symbolicSpace.syntacticLayer.transition_rule, 6)
 
-        self.assertEqual(model.conceptualSpace.syntacticLayer.all_rules, [6, 7, 8, 9, 10, 11, 12, 13])
+        self.assertEqual(model.conceptualSpace.syntacticLayer.all_rules, [7, 8, 9, 10, 11, 12, 13])
         self.assertEqual(model.conceptualSpace.syntacticLayer.transition_rule, 13)
 
         self.assertEqual(model.perceptualSpace.syntacticLayer.all_rules, [14, 15])

@@ -275,19 +275,19 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         self.assertEqual(len(self.grammar.rules), 16)
 
     def test_s_tier_rules(self):
-        """S-tier: true(S), swap(S,S), equals(S,S), part(S,S), S→C transition."""
+        """S-tier: true(S), non(S), swap(S,S), equals(S,S), part(S,S), S→C transition."""
         s_rules = [(r.method_name, r.arity) for r in self.grammar.rules if r.tier == 'S']
         self.assertIn(('true', 1), s_rules)
+        self.assertIn(('non', 1), s_rules)
         self.assertIn(('swap', 2), s_rules)
         self.assertIn(('equals', 2), s_rules)
         self.assertIn(('part', 2), s_rules)
         self.assertIn((None, 1), s_rules, "Missing S→C transition rule")
-        self.assertEqual(len(s_rules), 5)
+        self.assertEqual(len(s_rules), 6)
 
     def test_c_tier_rules(self):
-        """C-tier: non, not, intersection, union, lower, lift(binary+ternary), C→P transition."""
+        """C-tier: not, intersection, union, lower, lift(binary+ternary), C→P transition."""
         c_rules = [(r.method_name, r.arity) for r in self.grammar.rules if r.tier == 'C']
-        self.assertIn(('non', 1), c_rules)
         self.assertIn(('not', 1), c_rules)
         self.assertIn(('intersection', 2), c_rules)
         self.assertIn(('union', 2), c_rules)
@@ -295,7 +295,7 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         self.assertIn(('lift', 2), c_rules)
         self.assertIn(('lift', 3), c_rules)
         self.assertIn((None, 1), c_rules, "Missing C→P transition rule")
-        self.assertEqual(len(c_rules), 8)
+        self.assertEqual(len(c_rules), 7)
 
     def test_p_tier_rules(self):
         """P-tier: chunk(I,P) from 'I P', terminal 'I'."""
@@ -317,14 +317,14 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         s_ids = self.grammar.symbolic()
         for i in s_ids:
             self.assertEqual(self.grammar.rules[i].tier, 'S')
-        self.assertEqual(len(s_ids), 5)
+        self.assertEqual(len(s_ids), 6)
 
     def test_conceptual_indices(self):
         """grammar.conceptual() returns exactly the C-tier rule indices."""
         c_ids = self.grammar.conceptual()
         for i in c_ids:
             self.assertEqual(self.grammar.rules[i].tier, 'C')
-        self.assertEqual(len(c_ids), 8)
+        self.assertEqual(len(c_ids), 7)
 
     def test_perceptual_indices(self):
         """grammar.perceptual() returns exactly the P-tier rule indices."""

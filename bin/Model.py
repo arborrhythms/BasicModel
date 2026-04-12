@@ -1801,8 +1801,25 @@ class TruthLayer(Layer):
             )
         degree = max(-1.0, min(1.0, degree))
         idx = self.count.item()
-        self.truths[idx] = activation.detach() * degree
+        stored_vec = activation.detach() * degree
+        self.truths[idx] = stored_vec
         self.count += 1
+
+        # Warn on contradiction with existing truths
+        if idx > 0:
+            existing = self.truths[:idx]
+            s_norm = F.normalize(stored_vec.unsqueeze(0), dim=-1)
+            e_norm = F.normalize(existing, dim=-1)
+            sims = (s_norm @ e_norm.T).squeeze(0)
+            worst = sims.min()
+            if worst.item() < -0.7:
+                j = sims.argmin().item()
+                warnings.warn(
+                    f"TruthLayer: new truth [{idx}] contradicts existing "
+                    f"truth [{j}] (cosine similarity {worst.item():.3f})",
+                    stacklevel=2,
+                )
+
         return idx
 
     @torch.no_grad()
@@ -2050,17 +2067,17 @@ class TruthLayer(Layer):
     # ── Implication Derivation ────────────────────────────────────────
 
     @torch.no_grad()
-    def derive(self, grammar, threshold: float = 0.7,
+    def derive(self, part_fn, threshold: float = 0.7,
                attenuation: float = 0.8) -> int:
         """Derive implied truths via pairwise mereological inference.
 
         For each pair of stored truths, checks if one is contained in
-        the other (via Grammar ``_method_part``).  When the parthood
-        score exceeds *threshold*, a new implied truth is recorded with
-        attenuated DoT.
+        the other (via ``part_fn``).  When the parthood score exceeds
+        *threshold*, a new implied truth is recorded with attenuated DoT.
 
         Args:
-            grammar: Grammar instance with ``_method_part`` method.
+            part_fn: callable(left, right, subspace) → parthood score tensor.
+                     Typically ``syntacticLayer.partForward``.
             threshold: minimum parthood score to derive an implication.
             attenuation: DoT scaling to prevent runaway chains.
 
@@ -2084,8 +2101,8 @@ class TruthLayer(Layer):
                 if self.count >= self.max_truths:
                     return derived
 
-                score = grammar._method_part(
-                    stored[i].unsqueeze(0), stored[j].unsqueeze(0), 'S')
+                score = part_fn(
+                    stored[i].unsqueeze(0), stored[j].unsqueeze(0), None)
                 if isinstance(score, torch.Tensor):
                     score = score.mean().item()
                 if score > threshold:
@@ -2212,6 +2229,78 @@ class TruthLayer(Layer):
         self.truths[:new_n] = kept
         self.truths[new_n:] = 0
         self.count.fill_(new_n)
+
+    @torch.no_grad()
+    def orthogonalize(self, sim_threshold: float = 0.85):
+        """Remove redundant truths using luminosity as the quality measure.
+
+        For each pair with |cosine similarity| > sim_threshold, the truth
+        contributing less to luminosity is removed.  Luminosity measures
+        the norm of the positive conjunction across all truths — dropping
+        a redundant entry barely changes it, while dropping a unique entry
+        reduces it.
+
+        Args:
+            sim_threshold: similarity above which two truths are considered
+                near-duplicates.  Default 0.85.
+
+        Returns:
+            Number of truths removed.
+        """
+        n = self.count.item()
+        if n < 2:
+            return 0
+
+        stored = self.truths[:n]
+        norms = stored.norm(dim=-1)
+        valid = norms > 1e-6
+        if valid.sum() < 2:
+            return 0
+
+        directions = F.normalize(stored, dim=-1)
+        sim_matrix = directions @ directions.T           # (n, n)
+
+        # Find redundant pairs (|sim| > threshold, excluding diagonal)
+        remove = set()
+        for i in range(n):
+            if i in remove or not valid[i]:
+                continue
+            for j in range(i + 1, n):
+                if j in remove or not valid[j]:
+                    continue
+                if sim_matrix[i, j].abs().item() > sim_threshold:
+                    # Drop whichever contributes less to luminosity
+                    lum_without_i = self._luminosity_without(i)
+                    lum_without_j = self._luminosity_without(j)
+                    # Keep the one whose removal hurts luminosity more
+                    if lum_without_i >= lum_without_j:
+                        remove.add(i)
+                    else:
+                        remove.add(j)
+
+        if not remove:
+            return 0
+
+        # Compact: keep non-removed entries
+        keep_mask = torch.ones(n, dtype=torch.bool, device=stored.device)
+        for idx in remove:
+            keep_mask[idx] = False
+        kept = stored[keep_mask]
+        new_n = kept.shape[0]
+        self.truths[:new_n] = kept
+        self.truths[new_n:] = 0
+        self.count.fill_(new_n)
+        return len(remove)
+
+    def _luminosity_without(self, exclude_idx: int) -> float:
+        """Luminosity with one truth excluded (for orthogonalization)."""
+        n = self.count.item()
+        indices = [i for i in range(n) if i != exclude_idx]
+        if not indices:
+            return 0.0
+        subset = self.truths[indices]
+        conjunction = subset.min(dim=0).values
+        return torch.relu(conjunction).norm().item()
 
     def __len__(self):
         return self.count.item()

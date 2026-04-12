@@ -33,6 +33,10 @@
         <START>S</START>
         <S>C</S>
         <C>not(C)</C>
+        <C>intersection(C, C)</C>
+        <C>union(C, C)</C>
+        <C>lower(C, C)</C>
+        <C>lift(C, C)</C>
         <C>P</C>
         <P>I P</P>
         <P>I</P>

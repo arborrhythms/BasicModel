@@ -577,6 +577,25 @@ class Basis(nn.Module):
             return torch.relu(x - threshold)
         return torch.zeros_like(x)
 
+    # -- Inverse logic operations -----------------------------------------------
+
+    def negation_inverse(self, x, monotonic=False):
+        """Inverse of negation. Bitonic: exact (self-inverse). Monotonic: lossy stub.
+        Domain [-1, 1]."""
+        if monotonic:
+            return x  # relu(-x) is lossy; best-effort identity
+        return -x
+
+    def conjunction_inverse(self, result, y, monotonic=False):
+        """Best-effort inverse of conjunction. Exact where x was the min; else x >= result.
+        Domain/range [-1, 1]."""
+        return result
+
+    def disjunction_inverse(self, result, y, monotonic=False):
+        """Best-effort inverse of disjunction. Exact where x was the max; else x <= result.
+        Domain/range [-1, 1]."""
+        return result
+
     def pos(self, x):
         """Positive projection (ReLU). Domain [-1, 1], range [0, 1]."""
         return torch.relu(x)
@@ -2721,10 +2740,14 @@ class Grammar:
     # _conceptual_forward, _symbolic_forward, forward, reverse — moved to
     # specialized SyntacticLayer subclasses (ConceptualSyntacticLayer,
     # SymbolicSyntacticLayer, PerceptualSyntacticLayer).  Grammar retains
-    # only rule catalog, project(), and _method_* operations.
+    # only rule catalog, project(), and *Forward/*Reverse operations.
 
     # composeSyntax, _compose_conceptual, _compose_symbolic — removed.
     # Soft superposition is now inlined in _conceptual_forward and _symbolic_forward.
+
+    # ── C-tier operations live on SyntacticLayer / ConceptualSyntacticLayer
+    # as *Forward / *Reverse method pairs.  See _RULE_METHODS dispatch.
+
 TheGrammar = Grammar()
 class SyntacticLayer(Layer):
     """Per-space rule prediction layer for the recursive grammar.
@@ -2813,24 +2836,33 @@ class SyntacticLayer(Layer):
         b = self._basis(subspace)
         return b is None or b.monotonic
 
+    # ── Forward/Reverse dispatch ────────────────────────────────────
+    #
+    # C-tier ops (invertible): not, intersection, union, lift, lower
+    # S-tier ops (lossy, no inverse): equals, part, true, non, swap
+    # P-tier ops (invertible): chunk
+    #
+    # _RULE_METHODS maps rule name → (forwardName, reverseName|None, binary)
+
     _RULE_METHODS = {
-        'union':        ('_method_union',        True),
-        'intersection': ('_method_intersection', True),
-        'not':          ('_method_not',           False),
-        'equals':       ('_method_equals',        True),
-        'part':         ('_method_part',          True),
-        'chunk':        ('_method_chunk',         True),
-        'true':         ('_method_true',          False),
+        'union':        ('unionForward',        'unionReverse',        True),
+        'intersection': ('intersectionForward', 'intersectionReverse', True),
+        'not':          ('notForward',          'notReverse',          False),
+        'equals':       ('equalsForward',       None,                  True),
+        'part':         ('partForward',         None,                  True),
+        'chunk':        ('chunkForward',        'chunkReverse',        True),
+        'true':         ('trueForward',         None,                  False),
+        'non':          ('nonForward',          None,                  False),
     }
 
     def project(self, grammar, rule_id, left, right=None, third=None, subspace=None):
-        """Execute a grammar rule. Subclasses override for parametric rules."""
+        """Execute a grammar rule forward. Subclasses override for parametric rules."""
         method_name = grammar.rules[rule_id].method_name
         if method_name is None:
             return left  # transition — pass through
 
         if method_name in self._RULE_METHODS:
-            fn_name, binary = self._RULE_METHODS[method_name]
+            fn_name, _, binary = self._RULE_METHODS[method_name]
             fn = getattr(self, fn_name)
             if binary:
                 if right is not None:
@@ -2840,25 +2872,80 @@ class SyntacticLayer(Layer):
 
         return left
 
-    def _method_union(self, left, right, subspace):
-        b = self._basis(subspace)
-        if b is not None:
-            return b.disjunction(left, right, monotonic=self._mono(subspace))
-        return torch.max(left, right)
+    def reverse_project(self, grammar, rule_id, result, right=None, subspace=None):
+        """Execute a grammar rule inverse. Returns best-effort recovery of left operand."""
+        method_name = grammar.rules[rule_id].method_name
+        if method_name is None:
+            return result
 
-    def _method_intersection(self, left, right, subspace):
-        b = self._basis(subspace)
-        if b is not None:
-            return b.conjunction(left, right, monotonic=self._mono(subspace))
-        return torch.min(left, right)
+        if method_name in self._RULE_METHODS:
+            _, rev_name, binary = self._RULE_METHODS[method_name]
+            if rev_name is None:
+                return result  # lossy op — no inverse
+            fn = getattr(self, rev_name)
+            if binary:
+                return fn(result, right, subspace)
+            return fn(result, subspace)
 
-    def _method_not(self, left, subspace):
+        return result
+
+    # ── C-tier: invertible operations ─────────────────────────────
+
+    def notForward(self, left, subspace):
         b = self._basis(subspace)
         if b is not None:
             return b.negation(left, monotonic=self._mono(subspace))
         return -left
 
-    def _method_equals(self, left, right, subspace):
+    def notReverse(self, result, subspace):
+        b = self._basis(subspace)
+        if b is not None:
+            return b.negation_inverse(result, monotonic=self._mono(subspace))
+        return -result
+
+    def intersectionForward(self, left, right, subspace):
+        b = self._basis(subspace)
+        if b is not None:
+            return b.conjunction(left, right, monotonic=self._mono(subspace))
+        return torch.min(left, right)
+
+    def intersectionReverse(self, result, right, subspace):
+        b = self._basis(subspace)
+        if b is not None:
+            return b.conjunction_inverse(result, right, monotonic=self._mono(subspace))
+        return result
+
+    def unionForward(self, left, right, subspace):
+        b = self._basis(subspace)
+        if b is not None:
+            return b.disjunction(left, right, monotonic=self._mono(subspace))
+        return torch.max(left, right)
+
+    def unionReverse(self, result, right, subspace):
+        b = self._basis(subspace)
+        if b is not None:
+            return b.disjunction_inverse(result, right, monotonic=self._mono(subspace))
+        return result
+
+    # ── P-tier: chunk (invertible) ────────────────────────────────
+
+    def chunkForward(self, left, right, subspace):
+        b = self._basis(subspace)
+        if b is not None:
+            return b.disjunction(left, right, monotonic=True)
+        if right is None:
+            return left
+        return torch.max(left, right)
+
+    def chunkReverse(self, result, right, subspace):
+        b = self._basis(subspace)
+        if b is not None:
+            return b.disjunction_inverse(result, right, monotonic=True)
+        return result
+
+    # ── S-tier: lossy operations (no inverse) ─────────────────────
+
+    def equalsForward(self, left, right, subspace):
         b = self._basis(subspace)
         if b is not None:
             score = b.equal(left, right, monotonic=self._mono(subspace))
@@ -2867,7 +2954,7 @@ class SyntacticLayer(Layer):
             return score * right
         return torch.min(left, right)
 
-    def _method_part(self, left, right, subspace):
+    def partForward(self, left, right, subspace):
         b = self._basis(subspace)
         if b is not None:
             score = b.part(left, right, monotonic=self._mono(subspace))
@@ -2876,20 +2963,20 @@ class SyntacticLayer(Layer):
             return score * right
         return torch.min(left, right)
 
-    def _method_chunk(self, left, right, subspace):
-        b = self._basis(subspace)
-        if b is not None:
-            return b.disjunction(left, right, monotonic=True)
-        if right is None:
-            return left
-        return torch.max(left, right)
-
-    def _method_true(self, left, subspace):
-        """Truth evaluation: positive projection."""
+    def trueForward(self, left, subspace):
         b = self._basis(subspace)
         if b is not None:
             return b.pos(left)
         return torch.relu(left)
+
+    def nonForward(self, left, subspace):
+        b = self._basis(subspace)
+        if b is not None:
+            m = self._mono(subspace)
+            threshold = getattr(self, 'non_threshold', None)
+            t = torch.sigmoid(threshold) if threshold is not None else None
+            return b.non(left, monotonic=m, threshold=t)
+        return torch.zeros_like(left)
 
     # ── forward: predict rules ────────────────────────────────────
 
@@ -3155,66 +3242,78 @@ class PerceptualSyntacticLayer(SyntacticLayer):
             data[b, pos2] = v2
         return data
 class ConceptualSyntacticLayer(SyntacticLayer):
-    """C-tier SyntacticLayer: deterministic not/non + soft-weighted composition.
+    """C-tier SyntacticLayer: deterministic not + soft-weighted composition.
 
     Rule application order:
       1. not(C) — flips negative concepts to positive (mean < 0).
-      2. non(C) — suppresses low-activation concepts (norm < threshold).
-      3. Soft superposition — remaining rules weighted by predicted probs.
+      2. Soft superposition — remaining rules weighted by predicted probs.
 
-    Owns lift/lower layers and non_threshold parameter.
+    Owns lift/lower layers.
     """
+
+    _RULE_METHODS = {
+        **SyntacticLayer._RULE_METHODS,
+        'lift':  ('liftForward',  'liftReverse',  True),
+        'lower': ('lowerForward', 'lowerReverse', True),
+    }
 
     def init_conceptual_params(self, concept_dim):
         """Initialize C-tier learnable parameters. Called by Space.init_syntactic_layer."""
-        self.non_threshold = nn.Parameter(torch.tensor(0.0))  # sigmoid(0) = 0.5
         self.lifting_layer = LiftingLayer(16, concept_dim)
         self.lowering_layer = LoweringLayer(concept_dim)
         self._symbolic_space = None  # set by BasicModel after init
 
-    def _method_non(self, left, subspace):
-        b = self._basis(subspace)
-        if b is not None:
-            m = self._mono(subspace)
-            threshold = torch.sigmoid(self.non_threshold) if m else None
-            return b.non(left, monotonic=m, threshold=threshold)
-        return torch.zeros_like(left)
+    # ── C-tier projected ops: lift/lower via PiLayer ────────────────
 
-    def _method_lift(self, left, right, grammar, third=None):
-        """Lift via verb codebook. Returns (result, svo_or_None)."""
-        if third is not None:
-            svo = (left.detach(), right.detach(), third.detach())
-            result = self.lifting_layer.forward_transitive_svo(
-                left, right, third, self._symbolic_space)
-            return result, svo
-        vp_query = right.mean(dim=1) if right.ndim == 3 else right
-        if right is not None:
-            return self.lifting_layer.forward_transitive(left, right, vp_query)[0], None
-        return self.lifting_layer.forward_reflexive(left, vp_query), None
+    def _cs_layer(self):
+        """PiLayer for concept→symbol projection (ss.layer)."""
+        if self._symbolic_space is not None:
+            return getattr(self._symbolic_space, 'layer', None)
+        return None
 
-    def _method_lower(self, left, right):
-        """Rank-reducing bottleneck with optional instance selection."""
-        return self.lowering_layer.forward(left, right)
+    def liftForward(self, left, right, subspace):
+        """Projected conjunction in symbolic space: s_a * s_b."""
+        cs = self._cs_layer()
+        if cs is not None:
+            s_a = cs.forward(left)
+            s_b = cs.forward(right)
+            return s_a * s_b
+        return left * right
+
+    def liftReverse(self, result, right, subspace):
+        """Recover first operand: s_a = result / s_b, then PiLayer.reverse."""
+        cs = self._cs_layer()
+        if cs is not None:
+            s_b = cs.forward(right)
+            s_a = result / (s_b + epsilon)
+            return cs.reverse(s_a)
+        return result / (right + epsilon)
+
+    def lowerForward(self, left, right, subspace):
+        """Projected disjunction in symbolic space: s_a + s_b."""
+        cs = self._cs_layer()
+        if cs is not None:
+            s_a = cs.forward(left)
+            s_b = cs.forward(right)
+            return s_a + s_b
+        return left + right
+
+    def lowerReverse(self, result, right, subspace):
+        """Recover first operand: s_a = result - s_b, then PiLayer.reverse."""
+        cs = self._cs_layer()
+        if cs is not None:
+            s_b = cs.forward(right)
+            s_a = result - s_b
+            return cs.reverse(s_a)
+        return result - right
 
     def project(self, grammar, rule_id, left, right=None, third=None, subspace=None):
-        """Execute a rule, handling lift/lower/non locally."""
-        method_name = grammar.rules[rule_id].method_name
-        if method_name is None:
-            return left
-        if method_name == 'non':
-            return self._method_non(left, subspace)
-        if method_name == 'lift':
-            if right is not None:
-                result, svo = self._method_lift(left, right, grammar, third)
-                if svo is not None:
-                    self.last_svo = svo
-                return result
-            return left
-        if method_name == 'lower':
-            if right is not None:
-                return self._method_lower(left, right)
-            return left
-        return super().project(grammar, rule_id, left, right, subspace=subspace)
+        """Execute a rule. Lift/lower are in _RULE_METHODS via super()."""
+        return super().project(grammar, rule_id, left, right, third, subspace=subspace)
+
+    def reverse_project(self, grammar, rule_id, result, right=None, subspace=None):
+        """Inverse dispatch — delegates to super()."""
+        return super().reverse_project(grammar, rule_id, result, right, subspace=subspace)
 
     def compose(self, data, subspace, grammar, target_count=None):
         """Apply C-tier composition.
@@ -3232,12 +3331,10 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         self.last_svo = None   # reset per-compose
         self.last_rule_probs = None  # per-depth composable rule probs
         self.last_composable_rules = None  # global rule IDs for columns
-        self._non_gates = {}  # gate values for non() inversion
         c_rules = grammar._c_rule_ids()
         not_rid = c_rules.get('not')
-        non_rid = c_rules.get('non')
 
-        # Phase 1: deterministic not/non at top-of-stack
+        # Phase 1: deterministic not at top-of-stack
         tops = subspace.top_of_stack(data)
         for b, pos in enumerate(tops):
             if pos < 0:
@@ -3248,25 +3345,14 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             if not_rid is not None:
                 if vec.mean() < 0:
                     data = data.clone()
-                    data[b, pos] = self._method_not(vec.unsqueeze(0).unsqueeze(0),
-                                                     subspace).squeeze(0).squeeze(0)
+                    data[b, pos] = self.notForward(vec.unsqueeze(0).unsqueeze(0),
+                                                    subspace).squeeze(0).squeeze(0)
                     subspace.add_word(b, pos, not_rid)
-
-            # ── non: suppress via Basis.non (delegates to _method_non)
-            if non_rid is not None:
-                vec = data[b, pos]  # re-read after possible not()
-                non_result = self._method_non(
-                    vec.unsqueeze(0).unsqueeze(0), subspace
-                ).squeeze(0).squeeze(0)
-                if non_result.norm() < vec.norm():
-                    data = data.clone()
-                    data[b, pos] = non_result
-                    subspace.add_word(b, pos, non_rid)
 
         # Dispatch: hierarchical pairwise reduction or cascading accumulator
         if target_count is not None:
             return self._compose_to_target(data, subspace, grammar, target_count,
-                                           c_rules, not_rid, non_rid)
+                                           c_rules, not_rid)
 
         # Phase 2: soft-weighted composition via SyntacticLayer
         B, N, D = data.shape
@@ -3283,8 +3369,8 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         out = super().forward(activation)
         rule_probs = out['rule_probs']  # [B, max_depth, num_rules]
 
-        # Identify composable rules (exclude not/non — already applied)
-        exclude = {'not', 'non'}
+        # Identify composable rules (exclude not — already applied in Phase 1)
+        exclude = {'not'}
         composable_local = []
         composable_global = []
         for local_idx, global_id in enumerate(self.all_rules):
@@ -3368,7 +3454,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         return composed, self.last_svo
 
     def _compose_to_target(self, data, subspace, grammar, target_count,
-                           c_rules, not_rid, non_rid):
+                           c_rules, not_rid):
         """Reduce active tokens to target_count via independent pairwise grammar reductions.
 
         Used by the hierarchical forward loop. Each round pairs adjacent active
@@ -3377,8 +3463,8 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         """
         B, N, D = data.shape
 
-        # Identify composable rules (exclude not/non — already applied in Phase 1)
-        exclude = {'not', 'non'}
+        # Identify composable rules (exclude not — already applied in Phase 1)
+        exclude = {'not'}
         composable_local = []
         composable_global = []
         for local_idx, global_id in enumerate(self.all_rules):
@@ -3463,14 +3549,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
     def decompose(self, data, subspace, grammar):
         """Reverse C-tier operations using recorded word tuples.
 
-        Delegates to Basis operations for inversion wherever possible:
-          - not: Basis.negation (self-inverse for bitonic)
-          - non: Basis.non is not invertible (bitonic zeros, monotonic thresholds)
-          - union/intersection/chunk: not invertible (information loss)
-          - equals/part: not invertible (scalar gating loses magnitude)
-          - lift/lower: parametric, not invertible without stored state
-          - true: Basis.pos (relu) not invertible (negative info lost)
-          - transition (method_name=None): pass-through, no-op
+        Walks words in reverse, calling reverse_project for each rule.
 
         Args:
             data: tensor (same shape as compose output)
@@ -3484,31 +3563,29 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             if len(word) < 3:
                 continue
             b, pos, rule_id = word[0], word[1], word[2]
-            rule = grammar.rules[rule_id]
-            if rule.method_name == 'not':
-                # Basis.negation is self-inverse for bitonic (-x → -(-x) = x)
-                data = data.clone()
-                data[b, pos] = self._method_not(data[b, pos].unsqueeze(0).unsqueeze(0),
-                                                 subspace).squeeze(0).squeeze(0)
-            # All other rules delegate to Basis but are not cleanly invertible.
-            # non: Basis.non bitonic → zeros (no inverse); monotonic → relu threshold.
-            # union/intersection/chunk/equals/part/true/lift/lower: information loss.
+            right = word[3] if len(word) > 3 else None
+            data = data.clone()
+            val = data[b, pos].unsqueeze(0).unsqueeze(0)
+            data[b, pos] = self.reverse_project(
+                grammar, rule_id, val, right=right, subspace=subspace
+            ).squeeze(0).squeeze(0)
         return data
 class SymbolicSyntacticLayer(SyntacticLayer):
     """S-tier SyntacticLayer: soft-weighted composition on 2D activations.
 
-    All S-tier rules (true, swap, equals, part, transition) are applied
+    All S-tier rules (true, non, swap, equals, part, transition) are applied
     fractionally using learned rule probabilities.
 
     Owns swap parameters (Sinkhorn-normalised soft permutation).
     """
 
     def init_swap(self, symbol_dim, n_symbol_slots):
-        """Initialize swap parameters. Called by Space.init_syntactic_layer."""
+        """Initialize swap and non parameters. Called by Space.init_syntactic_layer."""
         swap_size = max(symbol_dim, n_symbol_slots, 1)
         self.swap_marker = nn.Parameter(torch.randn(swap_size) * 0.01)
         self.swap_logits = nn.Parameter(torch.zeros(3, 3))
         self._swap_sinkhorn_iters = 5
+        self.non_threshold = nn.Parameter(torch.tensor(0.0))
 
     def _swap_soft_perm(self):
         M = self.swap_logits
@@ -3517,7 +3594,7 @@ class SymbolicSyntacticLayer(SyntacticLayer):
             M = M - M.logsumexp(dim=-2, keepdim=True)
         return M.exp()
 
-    def _method_swap(self, left, right):
+    def swapForward(self, left, right, subspace=None):
         """Soft permutation via Sinkhorn-normalised logits."""
         P = self._swap_soft_perm()
         marker = self.swap_marker.to(left.device)
@@ -3533,15 +3610,13 @@ class SymbolicSyntacticLayer(SyntacticLayer):
         out = torch.einsum('ij,j...->i...', P, stack)
         return out[0]
 
+    _RULE_METHODS = {
+        **SyntacticLayer._RULE_METHODS,
+        'swap': ('swapForward', None, True),
+    }
+
     def project(self, grammar, rule_id, left, right=None, subspace=None):
-        """Execute a rule, handling swap locally."""
-        method_name = grammar.rules[rule_id].method_name
-        if method_name is None:
-            return left
-        if method_name == 'swap':
-            if right is not None:
-                return self._method_swap(left, right)
-            return left
+        """Execute a rule via _RULE_METHODS dispatch."""
         return super().project(grammar, rule_id, left, right, subspace=subspace)
 
     def compose(self, data, subspace, grammar):
@@ -5276,7 +5351,7 @@ class SymbolicSpace(Space):
     def evaluate_truth(self, vspace):
         """START-level: evaluate truth of the full stack → scalar."""
         act = vspace.materialize(mode="activation")
-        return self.syntacticLayer._method_true(act, self.subspace)
+        return self.syntacticLayer.trueForward(act, self.subspace)
 
     @staticmethod
     def test():
