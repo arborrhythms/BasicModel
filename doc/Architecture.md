@@ -35,6 +35,8 @@ for PerceptualSpace).  Codebook sizes (`nVectors`) are likewise stored on
 `TheObjectEncoding` and may differ from the active count (`nActive`); the factory
 validates `nVectors >= nActive` for every space.
 
+![MM_5M Hierarchical Progressive Bottleneck](diagrams/mm5m_architecture.svg)
+
 Layer selection depends on `<reconstruct>` and `invertible`:
 
 1. **`reconstruct=NONE`**: Use non-invertible layers (`PiLayer`, `SigmaLayer`) for
@@ -174,21 +176,26 @@ For the Sigma layer:
  $$y_j = W x + b$$
  $$y_j = b_j + \sum_{i=1}^{n} W_{ji} x_i$$
 
-For the Pi layer:
+For the Pi layer (code implementation — log-space linear):
 
- $$y_j = b_j  \cdot \prod_{i=1}^{n} \left( 1 + W_{ji} x_i \right)  $$
+ $$s_i = \log\!\frac{1 + x_i}{1 - x_i} = 2\,\mathrm{atanh}(x_i)$$
+ $$z_j = \sum_i W_{ji}\, s_i + b_j$$
+ $$y_j = \frac{e^{z_j} - 1}{e^{z_j} + 1} = \tanh(z_j / 2)$$
 
-This is not invertible, but if we are allowed twice as many outputs as inputs, we may:
-do inversion as:
-1.	Define:
-$$s_j := \sum_i \tanh^{-1}(w_{ji} x_i) = W x$$
-2.	In forward pass, use:
-$$y_j = b_j \cdot \prod_i (1 - \tanh(w_{ji} x_i)), \quad
-z_j = b_j \cdot \prod_i (1 + \tanh(w_{ji} x_i))$$
-3.	In reverse pass, compute:
-$$\gamma_j = \frac{1}{2} \log\left( \frac{z_j}{y_j} \right) = \sum_i \tanh^{-1}(\tanh(w_{ji} x_i)) = \sum_i w_{ji} x_i \Rightarrow \gamma = W x$$
-4.	Finally:
-$$x = W^{-1} \gamma$$
+The forward path maps $[-1,1] \to (0,\infty)$ via `_to_mult`, takes the log,
+applies a linear transform (InvertibleLinearLayer), exponentiates, and maps
+back via `_from_mult`.  Domain and range are both $[-1,1]$.  The reverse
+path inverts each step exactly: `_to_mult(y)`, log, $W^{-1}(z - b)$, exp,
+`_from_mult`.
+
+**Conceptual motivation.**  The classical product form
+$y_j = b_j \prod_i (1 + W_{ji} x_i)$ becomes, after taking logs, a sum
+$\log y_j = \log b_j + \sum_i \log(1 + W_{ji} x_i)$.  The code
+generalises this idea: it moves into a log-multiplicative domain via atanh,
+performs a standard linear operation there, and returns via tanh.  The atanh
+transform stretches values near $\pm 1$ toward infinity, making the layer
+sensitive to strong activations — the multiplicative structure emerges from
+the nonlinear domain transform rather than from literal products.
 
 ---
 
@@ -200,16 +207,18 @@ $$x = W^{-1} \gamma$$
 
 ---
 
-## Pi Layer Derivation
+## Pi Layer Derivation (Historical)
+
+The original motivation for the multiplicative layer was to factorise an
+exponential sum into a product of linear terms:
 
 $$e^{y_j} =  e^{b_j} + \sum_{i=1}^{n} e^{1+W_{ji} x_i}$$
-$$\log(e^{y_j}) = \log( e^{b_j} + \sum_{i=1}^{n} e^{1+W_{ji} x_i})$$
-$$\log(e^{y_j}) = \log(e^{b_j}) \cdot \log\left(\sum_{i=1}^{n} e^{1+W_{ji} x_i}\right)$$
-$$y_j = b_j \cdot \prod_{i=1}^{n}\log( e^{1+W_{ji} x_i})$$
 $$y_j = b_j \cdot \prod_{i=1}^{n} (1+W_{ji} x_i)$$
 
-*Now, is there a way to write $e^{1+W_{ji} x_i}$ as a matrix product, $W_{ji} x_i$ ?*
-If we write W and x in the log domain first, we have:
+The current implementation replaces this with the log-space linear form
+described above, which achieves the same multiplicative semantics through
+atanh/tanh domain transforms while guaranteeing exact invertibility via the
+LDU-factored InvertibleLinearLayer.
 
 ---
 

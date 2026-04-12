@@ -1,0 +1,110 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- RamsifiedModel: MentalModel with ramsified=true, conceptualOrder=2.
+       Used by test_reasoning.py::TestWriteMask::test_partition_isolation. -->
+  <architecture>
+    <reconstruct>symbols</reconstruct>
+    <conceptualOrder>2</conceptualOrder>
+    <ramsified>true</ramsified>
+    <l1Lambda>0.01</l1Lambda>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
+    <processSymbols>false</processSymbols>
+    <type>mental</type>
+    <ergodic>false</ergodic>
+    <certainty>false</certainty>
+    <modelType>embedding</modelType>
+    <maskedPrediction>ARLM</maskedPrediction>
+    <maxResponseLength>4096</maxResponseLength>
+    <weightsPath>RamsifiedModel.ckpt</weightsPath>
+    <embeddingPath>MentalModel.kv</embeddingPath>
+
+    <data>
+      <shardDir>data/fineweb</shardDir>
+      <numShards>1</numShards>
+      <maxDocs>10000</maxDocs>
+      <minFrequency>0.00001</minFrequency>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>2</numEpochs>
+      <batchSize>8</batchSize>
+      <learningRate>0.001</learningRate>
+      <reverseScale>0.1</reverseScale>
+      <trainEmbedding>ARLM</trainEmbedding>
+      <autoload>false</autoload>
+      <autosave>false</autosave>
+    </training>
+
+    <language>
+      <grammar>
+        <START>S</START>
+        <S>true(S)</S>
+        <S>swap(S, S)</S>
+        <S>equals(S, S)</S>
+        <S>part(S, S)</S>
+        <S>C</S>
+        <C>non(C)</C>
+        <C>not(C)</C>
+        <C>intersection(C, C)</C>
+        <C>union(C, C)</C>
+        <C>lower(C, C)</C>
+        <C>lift(C, C)</C>
+        <C>lift(C, C, C)</C>
+        <C>P</C>
+        <P>I P</P>
+        <P>I</P>
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+
+  </architecture>
+
+  <InputSpace>
+    <nDim>100</nDim>
+    <nVectors>128</nVectors>
+    <nOutput>128</nOutput>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
+    <lexer>sentence</lexer>
+    <codebook>true</codebook>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nOutput>128</nOutput>
+    <nDim>100</nDim>
+    <nVectors>128</nVectors>
+    <passThrough>true</passThrough>
+    <hasAttention>false</hasAttention>
+    <invertible>false</invertible>
+    <codebook>false</codebook>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nOutput>256</nOutput>
+    <nDim>100</nDim>
+    <nVectors>256</nVectors>
+    <hasAttention>false</hasAttention>
+    <invertible>true</invertible>
+    <codebook>false</codebook>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nOutput>128</nOutput>
+    <nDim>100</nDim>
+    <nVectors>128</nVectors>
+    <passThrough>false</passThrough>
+    <accumulateTruth>0</accumulateTruth>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>100</nDim>
+    <nVectors>1</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <nonlinear>false</nonlinear>
+  </OutputSpace>
+
+</model>

@@ -37,16 +37,17 @@ Objects:
   Antipodal opposition on hypersphere
 
 - **Non (non-affirming negation)**:
-  $$
-  \operatorname{non}(x) = \alpha x, \quad \alpha \in [0,1)
-  $$
-  Contraction toward zero (withdrawal of assertion)
+  `Basis.non()` — bitonic: returns zero (complete withdrawal); monotonic:
+  `relu(x - threshold)` with a learnable threshold parameter.
 
 - **Parthood**:
-  Fuzzy max-coverage:
+  `Basis.part()` — mereological containment score in $[0, 1]$:
   $$
-  P(A \to B) \in [-1,1]
+  \operatorname{part}(x, y) = \operatorname{conj}\!\bigl(1 - d(x,\, x \cap y),\; 1 - d(y,\, x \cup y)\bigr)
   $$
+  where $\cap$ is `conjunction`, $\cup$ is `disjunction`, and $d$ is
+  volume-weighted L2 distance. Returns 1 when $x$ is fully contained
+  in $y$; 0 otherwise.
 
 ---
 
@@ -71,6 +72,11 @@ Interpretation:
 
 ## 3. Symbolic Layer (Scalars in [-1,1])
 
+`Basis` supports two modes: **monotonic** (plain min/max, used by
+SymbolicSpace where `monotonic=True`) and **bitonic** (sign-aware,
+the default).  The monotonic forms are listed here; the bitonic forms
+(RadMin, RadMax) are in §7 Radial Operators.
+
 Let $a, b \in [-1,1]$.
 
 ### Negation (affirming)
@@ -79,24 +85,33 @@ $$
 $$
 
 ### Non (non-affirming)
-$$
-\operatorname{non}(a) = \alpha a
-$$
+Bitonic: $\operatorname{non}(a) = 0$.  Monotonic (learnable threshold $\tau$):
+$\operatorname{non}(a) = \operatorname{relu}(a - \tau)$.
 
-### Union
+### Union (monotonic)
 $$
 a \cup b = \max(a, b)
 $$
 
-### Intersection
+### Intersection (monotonic)
 $$
 a \cap b = \min(a, b)
 $$
 
-### Parthood (order relation)
-$$
-\operatorname{part}(a, b) = \operatorname{clamp}(b - a, -1, 1)
-$$
+### Parthood (mereological containment)
+
+`Basis.part(a, b)` returns a score in $[0, 1]$: the degree to which $a$ is
+contained in $b$, defined as $a = a \cap b$ AND $b = a \cup b$, measured by
+volume-weighted distance.  For ternary values:
+
+| part(a,b) | **+1** | **0** | **-1** |
+|-----------|--------|-------|--------|
+| **+1**    | 1      | 0     | 0      |
+| **0**     | 1      | 1     | 1      |
+| **-1**    | 0      | 0     | 1      |
+
+Zero is vacuously part of everything; same-sign values contain themselves;
+opposite signs have zero parthood.
 
 ---
 
@@ -185,19 +200,16 @@ Stored truths should satisfy two consistency conditions:
 
 The S-tier grammar provides the two propositional relations:
 
-- **part(S, S)** — containment.  "A is part of B."  Symbol A is a part of
-  symbol B to the extent that A's projection into conceptual space is
-  contained in B's: $C(A) \le C(B)$ element-wise for all elements.
-  Implemented as `min(A, B)`: when $C(A) \le C(B)$ holds, the part passes
-  through unchanged; where A exceeds B, min clips to B, enforcing
-  containment.  Asymmetric: part(A, B) does not imply part(B, A).
+- **part(S, S)** — containment.  "A is part of B."  `Basis.part(A, B)`
+  computes a mereological score in $[0, 1]$: the degree to which
+  $A = A \cap B$ and $B = A \cup B$, measured by volume-weighted distance.
+  The Grammar applies this as `score * B`, scaling the whole by the
+  parthood degree.  Asymmetric: part(A, B) does not imply part(B, A).
 
 - **equals(S, S)** — identity as mutual parthood.
-  $\text{equals}(A, B) = \text{part}(A, B) \wedge \text{part}(B, A)$.
-  This asserts both $C(A) \le C(B)$ and $C(B) \le C(A)$, therefore
-  $C(A) = C(B)$.  Implemented as `min(A, B)` (same as part, since min
-  is commutative); the semantic distinction is that equals asserts both
-  directions of containment.
+  `Basis.equal(A, B)` computes `conjunction(part(A, B), part(B, A))`.
+  The Grammar applies this as `score * B`, scaling B by the equality
+  degree.  Returns 1 only when both directions of containment hold.
 
 Together, `equals` and `part` define a partial order over symbolic activations.
 The truth store captures this order as a database of grounded propositions.
@@ -321,6 +333,8 @@ knowledge base with inference.
 ## 7.
 
 # Radial Operators for Hypersphere Ternary Logic
+
+![Ternary Logic Operators](diagrams/ternary_logic.svg)
 
 ## Overview
 
@@ -449,6 +463,8 @@ NON is a unary operator that drives any assertion toward zero. It represents the
 
 ## Luminosity
 
+![Luminosity: Truth Coherence Measure](diagrams/luminosity.svg)
+
 Luminosity measures the coherence of a truth set as a single scalar:
 
 ```
@@ -488,15 +504,12 @@ Luminosity serves two roles in the model:
 - **TruthLoss**: an additive loss penalty for propositions that
   contradict stored truths, measured by union norm reduction via
   `Basis.disjunction()`. Coexists with the multiplicative luminosity
-  modulation. See [Reasoning](../basicmodel/doc/reasoning.md) §TruthLoss.
+  modulation. See [Reasoning](Reasoning.md) §TruthLoss.
 
 - **Derive**: pairwise mereological inference via the Grammar's `part()`
   rule. When the parthood score between two truths exceeds a threshold,
   a new implied truth is recorded with attenuated DoT. Generalized by
   `extrapolate()` to all two-argument grammar methods.
-
-See also [`Socrates.pdf`](./Socrates.pdf) for Venn diagrams as a model
-of luminosity.
 
 ---
 

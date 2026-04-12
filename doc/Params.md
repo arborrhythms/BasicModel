@@ -111,7 +111,7 @@ Luminosity and universality are **multiplicative** — they scale the total loss
 TruthLoss is **additive** — it directly penalizes specific propositions that
 contradict stored truths, measured by union norm reduction. Both coexist.
 See [Ethics.md](../../doc/Ethics.md) §Universality and
-[reasoning.md](./reasoning.md) §TruthLoss for details.
+[Reasoning.md](./Reasoning.md) §TruthLoss for details.
 
 The grammar section of `MentalModel.xml` also defines the ternary LIFT
 rule for transitive verbs:

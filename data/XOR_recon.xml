@@ -27,17 +27,17 @@
     <nOutput>3</nOutput>
     <nDim>10</nDim>
     <nVectors>3</nVectors>
-    <flatten>true</flatten>
+    <nInputDim>-1</nInputDim>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
   </InputSpace>
 
-  <!-- PerceptualSpace: invertible+flatten. -->
+  <!-- PerceptualSpace: invertible, flattened input. -->
   <PerceptualSpace>
     <nOutput>3</nOutput>
     <nDim>10</nDim>
     <nVectors>3</nVectors>
-    <flatten>true</flatten>
+    <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
@@ -48,7 +48,7 @@
     <nOutput>6</nOutput>
     <nDim>10</nDim>
     <nVectors>6</nVectors>
-    <flatten>true</flatten>
+    <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
   </ConceptualSpace>
 
@@ -57,7 +57,7 @@
     <nOutput>6</nOutput>
     <nDim>10</nDim>
     <nVectors>6</nVectors>
-    <flatten>true</flatten>
+    <nInputDim>-1</nInputDim>
     <passThrough>true</passThrough>
   </SymbolicSpace>
 

@@ -2711,8 +2711,30 @@ class ModelLoss(Loss):
         self.where_scale = float(where_scale or 0.2)
         self.when_scale = float(when_scale or 0.1)
         self.embedding_scale = float(embedding_scale or 0.1)
-        self.nWhere = nWhere if nWhere is not None else TheXMLConfig.get("architecture.nWhere")
-        self.nWhen = nWhen if nWhen is not None else TheXMLConfig.get("architecture.nWhen")
+        # Resolve nWhere: prefer explicit arg, then architecture-level,
+        # then fall back to InputSpace-level (per-space nWhere overrides arch).
+        if nWhere is not None and nWhere > 0:
+            self.nWhere = nWhere
+        else:
+            arch_nw = TheXMLConfig.get("architecture.nWhere")
+            if arch_nw and arch_nw > 0:
+                self.nWhere = arch_nw
+            else:
+                try:
+                    self.nWhere = TheXMLConfig.space("InputSpace", "nWhere")
+                except KeyError:
+                    self.nWhere = 0
+        if nWhen is not None and nWhen > 0:
+            self.nWhen = nWhen
+        else:
+            arch_nn = TheXMLConfig.get("architecture.nWhen")
+            if arch_nn and arch_nn > 0:
+                self.nWhen = arch_nn
+            else:
+                try:
+                    self.nWhen = TheXMLConfig.space("InputSpace", "nWhen")
+                except KeyError:
+                    self.nWhen = 0
 
         if certainty:
             self.output_criterion = CertaintyWeightedCrossEntropy()
@@ -2727,6 +2749,11 @@ class ModelLoss(Loss):
         return self.output_criterion(pred, target)
 
     def compute(self, pred, target):
+        """Per-slot MSE with what/where/when weighting (legacy).
+
+        Used when nWhere == 0 (no positional encoding).  When nWhere > 0,
+        the training loop calls ``compute_piecewise`` instead.
+        """
         embSize = pred.shape[-1]
         nWhere = self.nWhere
         nWhen = self.nWhen
@@ -2743,6 +2770,58 @@ class ModelLoss(Loss):
             loss = loss + self.when_scale * F.mse_loss(
                 pred[..., nWhat + nWhere:], target[..., nWhat + nWhere:])
         return loss
+
+    def compute_piecewise(self, pred, target):
+        """Piecewise reconstruction loss via Chamfer distance.
+
+        Instead of per-slot MSE(pred[v], target[v]), uses bidirectional
+        nearest-neighbour matching:
+
+        - **Accuracy**: each predicted token matches its nearest original.
+        - **Coverage**: each original token is covered by some prediction.
+
+        This handles token reordering (butterfly merge may swap vector
+        positions) and eliminates error shadowing when tokens overlap in
+        position space.  The what/where/when component weights are applied
+        before computing L2 distances so the matching respects the
+        relative importance of content vs position vs time.
+        """
+        embSize = pred.shape[-1]
+        nWhere = self.nWhere
+        nWhen = self.nWhen
+        nWhat = embSize - nWhere - nWhen
+
+        # Build per-dim weight vector: sqrt so that L2 distance² = weighted MSE
+        w = pred.new_ones(embSize)
+        if nWhat > 0:
+            w[:nWhat] = self.what_scale
+        if nWhere > 0:
+            w[nWhat:nWhat + nWhere] = self.where_scale
+        if nWhen > 0:
+            w[nWhat + nWhere:] = self.when_scale
+        w = w.sqrt()
+
+        p = pred * w
+        t = target * w
+
+        # Ensure 3-D [B, N, D]
+        if p.dim() == 2:
+            p = p.unsqueeze(0)
+            t = t.unsqueeze(0)
+
+        # Pairwise squared L2 distances: [B, N_pred, N_target]
+        # ||a-b||² = ||a||² + ||b||² - 2(a·b)   (MPS-safe, no cdist)
+        p_sq = (p * p).sum(dim=-1, keepdim=True)           # [B, N, 1]
+        t_sq = (t * t).sum(dim=-1, keepdim=True)           # [B, N, 1]
+        dot = torch.bmm(p, t.transpose(1, 2))              # [B, N, N]
+        dists_sq = (p_sq - 2 * dot + t_sq.transpose(1, 2)).clamp(min=0)
+
+        # Accuracy: for each predicted token, squared distance to nearest original
+        accuracy = dists_sq.min(dim=2).values.mean()
+        # Coverage: for each original token, squared distance to nearest prediction
+        coverage = dists_sq.min(dim=1).values.mean()
+
+        return accuracy + coverage
 
     def forward(self, lossOut, lossIn=None, sbow=None):
         total = lossOut

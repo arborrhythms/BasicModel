@@ -42,6 +42,10 @@
       <xs:element name="ramsified" type="xs:boolean" minOccurs="0"/>
       <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
       <xs:element name="STM_decay" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="type" type="xs:string" minOccurs="0"/>
+      <xs:element name="truthBiasScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="LuminosityWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="UniversalityWeight" type="nonNegativeFloat" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -83,6 +87,7 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="none"/>
       <xs:enumeration value="symbols"/>
+      <xs:enumeration value="concepts"/>
       <xs:enumeration value="output"/>
       <xs:enumeration value="both"/>
     </xs:restriction>
@@ -114,6 +119,7 @@
       <xs:enumeration value="word"/>
       <xs:enumeration value="sentence"/>
       <xs:enumeration value="grammar"/>
+      <xs:enumeration value="byte"/>
     </xs:restriction>
   </xs:simpleType>
 
@@ -191,6 +197,11 @@
       <xs:element name="autoload" type="xs:boolean" minOccurs="0"/>
       <xs:element name="autosave" type="xs:boolean" minOccurs="0"/>
       <xs:element name="profile" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="sentencePrediction" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="sentenceContextWindow" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="sentenceCentroidHistory" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="sentenceLambda" type="positiveFloat" minOccurs="0"/>
+      <xs:element name="sentencePredictionScale" type="positiveFloat" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -220,7 +231,6 @@
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
       <xs:element name="lexer" type="lexerEnum" minOccurs="0"/>
     </xs:all>
@@ -235,7 +245,8 @@
       <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
@@ -252,7 +263,6 @@
       <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
@@ -272,7 +282,6 @@
       <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
@@ -289,7 +298,8 @@
       <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
       <xs:element name="accumulateTruth" type="unitInterval" minOccurs="0"/>
@@ -312,7 +322,6 @@
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="flatten" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>

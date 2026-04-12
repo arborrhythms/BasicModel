@@ -1,0 +1,67 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- Step 1: XOR_exact + type=mental (only change) -->
+  <architecture>
+    <reconstruct>symbols</reconstruct>
+    <conceptualOrder>1</conceptualOrder>
+    <modelType>embedding</modelType>
+    <ergodic>true</ergodic>
+    <naive>false</naive>
+    <type>mental</type>
+    <weightsPath></weightsPath>
+
+    <data>
+      <dataset>xor</dataset>
+    </data>
+
+    <training>
+      <numEpochs>200</numEpochs>
+      <learningRate>0.01</learningRate>
+      <autosave>false</autosave>
+      <autoload>false</autoload>
+      <reverseScale>0.5</reverseScale>
+      <maskedPrediction>NONE</maskedPrediction>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>6</nOutput>
+    <nDim>10</nDim>
+    <nVectors>6</nVectors>
+    <nInputDim>-1</nInputDim>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nOutput>6</nOutput>
+    <nDim>10</nDim>
+    <nVectors>6</nVectors>
+    <nInputDim>-1</nInputDim>
+    <invertible>true</invertible>
+    <hasAttention>false</hasAttention>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nOutput>12</nOutput>
+    <nDim>10</nDim>
+    <nVectors>12</nVectors>
+    <nInputDim>-1</nInputDim>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nOutput>6</nOutput>
+    <nDim>10</nDim>
+    <nVectors>6</nVectors>
+    <nInputDim>-1</nInputDim>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>1</nDim>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+</model>

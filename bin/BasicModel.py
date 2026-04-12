@@ -7,7 +7,7 @@ load datasets, resolve config paths, plot results, and save reports.
 """
 
 import math, os, warnings
-from collections import namedtuple
+from collections import namedtuple, deque
 from contextlib import contextmanager, nullcontext
 import numpy as np
 warnings.filterwarnings(
@@ -55,6 +55,8 @@ class BaseModel(nn.Module):
     reversible    = False
     plot           = False
     _optimizer     = None
+    sentence_predictor = None
+    sentence_prediction_scale = 0.1
 
     @staticmethod
     def load_config(config_path=None):
@@ -162,6 +164,20 @@ class BaseModel(nn.Module):
             masked_prediction=str(_t("maskedPrediction", "NONE") or "NONE").upper(),
             reconstruct=arch["reconstruct"],
         )
+
+        # Sentence-level AR prediction: requires both XML flag AND a grammar
+        # (the sentential vector comes from syntacticLayer.compose)
+        has_grammar = (hasattr(self, 'conceptualSpace')
+                       and getattr(self.conceptualSpace, 'syntacticLayer', None) is not None)
+        sp_xml = bool(TheXMLConfig.training("sentencePrediction", False))
+        self.sentence_prediction_scale = float(
+            TheXMLConfig.training("sentencePredictionScale", 0.1) or 0.1)
+        if sp_xml and has_grammar:
+            sp_window = int(TheXMLConfig.training("sentenceContextWindow", 5) or 5)
+            sp_history = int(TheXMLConfig.training("sentenceCentroidHistory", 3) or 3)
+            sp_lambda = float(TheXMLConfig.training("sentenceLambda", 1.01) or 1.01)
+            self.sentence_predictor = self.SentencePrediction(
+                sp_window, sp_history, sp_lambda)
 
         if "trainEmbedding" in arch and not isinstance(arch["trainEmbedding"], dict):
             te = arch["trainEmbedding"]
@@ -801,9 +817,6 @@ class BaseModel(nn.Module):
             for i in range(len(test_input)):
                 original = self._bytes_to_text(test_input[i])
                 buf_recon = buffer_strings[i] if i < len(buffer_strings) else ""
-                # Character-level accuracy: strip nulls only for display;
-                # pad with '\x00' (not space) to match the actual input encoding
-                # so the model is scored on correctly predicting null padding.
                 orig_stripped = original.rstrip('\x00')
                 n = max(len(orig_stripped), len(buf_recon))
                 chars_match = sum(
@@ -825,6 +838,32 @@ class BaseModel(nn.Module):
                 "Buffer Reconstruction (nWhere placement)",
                 ["Original", "Buffer", "Char Accuracy"],
                 buf_rows)
+
+            # Piecewise token-level metrics (no buffer shadowing)
+            meta = recovered_meta if isinstance(recovered_meta, dict) else {}
+            orig_tokens = meta.get('tokens', None)
+            if orig_tokens is not None:
+                pw_rows = []
+                total_tok = 0
+                match_tok = 0
+                for i in range(min(len(test_input), len(orig_tokens))):
+                    original = self._bytes_to_text(test_input[i]).rstrip('\x00')
+                    tokens = orig_tokens[i]
+                    n_tok = len(tokens)
+                    n_match = 0
+                    for word, offset in tokens:
+                        if word in ("", "\x00"):
+                            continue
+                        total_tok += 1
+                        # Check if this word appears at this offset in original
+                        if offset is not None and 0 <= offset <= len(original) - len(word):
+                            if original[offset:offset + len(word)] == word:
+                                n_match += 1
+                                match_tok += 1
+                    tok_acc = n_match / max(n_tok, 1) * 100
+                    TheMessage(f"  Piecewise: {original:30s} -> {n_match}/{n_tok} tokens matched ({tok_acc:.0f}%)")
+                pw_overall = match_tok / max(total_tok, 1) * 100
+                TheMessage(f"  Piecewise overall: {match_tok}/{total_tok} ({pw_overall:.0f}%)")
 
             # Push reconstructed data to TheData
             self.inputSpace.data.reconstructed_input = buffer_strings
@@ -1355,6 +1394,70 @@ class BasicModel(BaseModel):
         self.testLosses  = testLosses
         return accuracy
     
+    # ------------------------------------------------------------------
+    # Sentence-level AR prediction
+    # ------------------------------------------------------------------
+    class SentencePrediction:
+        """AR prediction over sentence-level concept vectors.
+
+        Maintains a rolling buffer of K previous sentence vectors and M
+        previous context centroids.  The loss has two forces:
+
+            loss = (1 - cos(s_t, ctx_t))
+                   + λ · mean(cos(s_t, ctx_{t-i})  for i in 1..M)
+
+        Attractive: pull s_t toward ctx_t (current context centroid).
+        Repulsive:  push s_t away from past centroids ctx_{t-1}..ctx_{t-M}.
+
+        λ = 1.01 makes collapse an unstable equilibrium.  Gradient flows
+        only through s_t (all stored vectors are detached).
+        """
+
+        def __init__(self, context_window=5, centroid_history=3, lam=1.01):
+            self.context_window = context_window
+            self.lam = lam
+            self.buffer = deque(maxlen=context_window)
+            self.prev_centroids = deque(maxlen=centroid_history)
+
+        def reset(self):
+            """Clear state at epoch boundaries."""
+            self.buffer.clear()
+            self.prev_centroids.clear()
+
+        def loss(self, current_vec):
+            """Compute dual-force sentence prediction loss.
+
+            Returns a scalar loss tensor, or None if insufficient context.
+            """
+            if len(self.buffer) < 1:
+                return None
+
+            # Current context centroid (detached)
+            ctx = torch.stack(list(self.buffer), dim=0).mean(dim=0)  # [D]
+
+            # Attractive: pull toward current context
+            attractive = 1.0 - F.cosine_similarity(
+                current_vec.unsqueeze(0), ctx.unsqueeze(0))  # [1]
+
+            # Repulsive: push away from previous centroids
+            if len(self.prev_centroids) > 0:
+                prev = torch.stack(list(self.prev_centroids), dim=0)  # [M', D]
+                sims = F.cosine_similarity(
+                    current_vec.unsqueeze(0), prev, dim=-1)  # [M']
+                repulsive = sims.mean()
+            else:
+                repulsive = torch.tensor(0.0, device=current_vec.device)
+
+            return attractive.squeeze() + self.lam * repulsive
+
+        def push(self, sentence_vec):
+            """Record sentence vector and update centroid history."""
+            # Store current centroid before adding new vector
+            if len(self.buffer) > 0:
+                ctx = torch.stack(list(self.buffer), dim=0).mean(dim=0)
+                self.prev_centroids.append(ctx.detach().clone())
+            self.buffer.append(sentence_vec.detach().clone())
+
     BatchResult = namedtuple('BatchResult', [
         'outputPred', 'symbols', 'lossOut', 'lossIn', 'inputPred', 'forwardInput',
     ])
@@ -1497,6 +1600,10 @@ class BasicModel(BaseModel):
                 if pred_sq.dim() == 3:
                     mask = mask.unsqueeze(-1).expand_as(pred_sq)
                 lossIn = self.loss.compute(pred_sq[mask], target_sq[mask])
+            elif self.loss.nWhere > 0:
+                # Piecewise (Chamfer) loss: per-token matching + coverage.
+                # Avoids buffer-level error shadowing when tokens overlap.
+                lossIn = self.loss.compute_piecewise(pred_sq, target_sq)
             else:
                 lossIn = self.loss.compute(pred_sq, target_sq)
         else:
@@ -1514,7 +1621,17 @@ class BasicModel(BaseModel):
                 if psbow is not None:
                     sbow = psbow if sbow is None else sbow + psbow
 
+        # Sentence-level AR prediction loss
+        sp_loss = None
+        if train and self.sentence_predictor is not None:
+            sv = getattr(self, '_current_sentence_vec', None)
+            if sv is not None:
+                sp_loss = self.sentence_predictor.loss(sv)
+                self.sentence_predictor.push(sv)
+
         totalLoss = self.loss.total(lossOut, lossIn, sbow)
+        if sp_loss is not None:
+            totalLoss = totalLoss + self.sentence_prediction_scale * sp_loss
 
         # Truth-modulated loss: penalize irrational and unkind propositions
         truth_layer = getattr(self.symbolicSpace, 'truth', None) if hasattr(self, 'symbolicSpace') else None
@@ -1579,6 +1696,8 @@ class BasicModel(BaseModel):
         inference = split == "runtime" and not training
         self.train(training)
         self.outputSpace.clearBatchResults()
+        if getattr(self, 'sentence_predictor', None) is not None:
+            self.sentence_predictor.reset()
         ctx = torch.no_grad() if not training else nullcontext()
 
 
@@ -1648,11 +1767,12 @@ TheBasicModel = BasicModel()
 class MentalModel(BaseModel):
     name = "MentalModel"
 
-    BatchResult = BasicModel.BatchResult
-    runBatch    = BasicModel.runBatch
-    runEpoch    = BasicModel.runEpoch
-    runTrial    = BasicModel.runTrial
-    infer       = BasicModel.infer
+    BatchResult      = BasicModel.BatchResult
+    runBatch         = BasicModel.runBatch
+    runEpoch         = BasicModel.runEpoch
+    runTrial         = BasicModel.runTrial
+    trainEmbeddings  = BasicModel.trainEmbeddings
+    infer            = BasicModel.infer
 
     def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
                conceptualOrder=1,
@@ -1780,25 +1900,33 @@ class MentalModel(BaseModel):
         # from nPercepts+nSymbols → nSymbols.
         conceptInputShape = [nPercepts + nSymbols, percept_dim + obj_percept]
         conceptOutputShape = [nPercepts + nSymbols, concept_dim + obj_concept]
+
+        # Hierarchical progressive bottleneck: per-level shapes when ramsified
+        if self.conceptualOrder > 1 and self.ramsified:
+            self._hierarchical = True
+            self._level_shapes_list = self._level_shapes(
+                nPercepts, percept_dim + obj_percept, self.conceptualOrder)
+        else:
+            self._hierarchical = False
+            self._level_shapes_list = None
+
         self.conceptualSpace = ConceptualSpace(conceptInputShape, spaceShape_concept,
-                                               conceptOutputShape)
+                                               conceptOutputShape,
+                                               level_shapes=self._level_shapes_list)
 
         # Concept -> Symbol  (activation: nPercepts+nSymbols → nSymbols)
         self.symbolicSpace = SymbolicSpace(conceptOutputShape, spaceShape_symbol, symbolShape,
-                                           conceptualSpace=self.conceptualSpace)
+                                           conceptualSpace=self.conceptualSpace,
+                                           level_shapes=self._level_shapes_list)
 
         # No SyntacticSpace — syntax is handled by Grammar centrally.
         self.syntacticSpace = None
 
-        # Output: from symbols (ramsified) or concepts (default)
-        if self.ramsified:
-            self.outputSpace = OutputSpace(symbolShape, spaceShape_output, outputShape,
-                                           masked_prediction=(masked_prediction != 'NONE'),
-                                           vectors=self.inputSpace.vocabulary)
-        else:
-            self.outputSpace = OutputSpace(conceptOutputShape, spaceShape_output, outputShape,
-                                           masked_prediction=(masked_prediction != 'NONE'),
-                                           vectors=self.inputSpace.vocabulary)
+        # Output: from first nOutputSymbols symbol vectors (matches BasicModel pattern)
+        outputInputShape = [self.nOutputSymbols, symbol_dim + obj_symbol]
+        self.outputSpace = OutputSpace(outputInputShape, spaceShape_output, outputShape,
+                                       masked_prediction=(masked_prediction != 'NONE'),
+                                       vectors=self.inputSpace.vocabulary)
 
         # Zero-init shape: [nSymbols, percept_dim+obj] for cat with percepts
         self._symbol_shape = [nSymbols, percept_dim + obj_percept]
@@ -1871,6 +1999,61 @@ class MentalModel(BaseModel):
         energies = [activation[s:e].norm() for s, e in partitions]
         return int(torch.tensor(energies).argmax())
 
+    # ── Hierarchical Epistemic Architecture ──────────────────────────
+
+    @staticmethod
+    def _level_shapes(n_vectors, dim, conceptual_order):
+        """Per-level (N_t, D_t) for averaging merge.
+
+        D stays constant; only N halves per level.  Averaging keeps norms
+        bounded so tanh never saturates.  Differences are cached for exact
+        inversion.
+
+            percepts:  (N, D)
+            level 0:   (N/2, D)
+            level 1:   (N/4, D)
+            ...
+            level k:   (N/2^(k+1), D)
+
+        Biological analogue: increasing receptive field (V1->V2->V4->IT).
+        """
+        shapes = []
+        for t in range(conceptual_order):
+            n = n_vectors // (2 ** (t + 1))
+            assert n > 0, \
+                f"Level {t}: n_vectors={n_vectors} not divisible by 2^{t+1}"
+            shapes.append((n, dim))
+        return shapes
+
+    def _butterfly_merge(self, x):
+        """Average-merge: [B, N, D] -> [B, N/2, D].
+
+        Averages adjacent vector pairs, keeping D constant and norms bounded.
+        Caches (left - right) differences in self._merge_diffs for exact
+        inversion in the reverse pass.
+        """
+        B, N, D = x.shape
+        assert N % 2 == 0, f"butterfly_merge requires even N, got {N}"
+        left = x[:, 0::2, :]    # [B, N/2, D]
+        right = x[:, 1::2, :]   # [B, N/2, D]
+        self._merge_diffs.append(left - right)
+        return (left + right) / 2
+
+    def _butterfly_unmerge(self, x):
+        """Exact inverse of average-merge: [B, N/2, D] -> [B, N, D].
+
+        Uses cached difference to recover both original vectors.
+        """
+        diff = self._merge_diffs.pop()  # left - right
+        left = x + diff / 2
+        right = x - diff / 2
+        B, N_half, D = left.shape
+        # Interleave left and right back to original ordering
+        out = torch.zeros(B, N_half * 2, D, device=x.device)
+        out[:, 0::2, :] = left
+        out[:, 1::2, :] = right
+        return out
+
     # ── Helpers ───────────────────────────────────────────────────────
 
     def Finish(self, data):
@@ -1899,8 +2082,85 @@ class MentalModel(BaseModel):
 
         B = percepts.shape[0]
 
-        if self.ramsified:
-            # ── Ramsified loop: serial per-concept Pi with L1 sparsity ──
+        if self.ramsified and self._hierarchical:
+            # ── Hierarchical ramsified loop: progressive bottleneck ──
+            # Each level halves vectors and doubles dims (N*D constant).
+            # Butterfly merge (non-syntactic) or grammar compose (syntactic)
+            # reduces token count per level.
+            from Space import TheGrammar
+            symbol_dim = self.symbolicSpace.layer.nOutput
+            self.concept_states = []
+
+            x = percepts  # [B, N_percept, D_percept]
+            # Grammar layers have fixed dims, incompatible with per-level shape changes.
+            # Butterfly merge is the default reduction for hierarchical mode.
+            use_grammar = False
+            sym_feedback = None
+            sym_vec = None
+            self._merge_diffs = []   # cache for exact reverse of average-merge
+            self._sigma_scales = []  # cache for exact reverse of per-level normalization
+            self._sym_feedbacks = []  # cache for exact reverse of sym_feedback addition
+
+            for t in range(self.conceptualOrder):
+                N_t, D_t = self._level_shapes_list[t]
+
+                # 1. Reduction: always merge (percepts at level 0, concepts at t>0)
+                if use_grammar:
+                    x, _svo = self.conceptualSpace.syntacticLayer.compose(
+                        x, self.conceptualSpace.subspace, TheGrammar,
+                        target_count=N_t)
+                    x = self.conceptualSpace.dim_projections[t](x)
+                else:
+                    x = self._butterfly_merge(x)  # [B, N_t, D]
+
+                # 2. Incorporate symbol feedback (average-merged to match new N)
+                if sym_feedback is not None:
+                    if not use_grammar:
+                        sym_feedback = (sym_feedback[:, 0::2, :] + sym_feedback[:, 1::2, :]) / 2
+                    self._sym_feedbacks.append(sym_feedback)
+                    x = x + sym_feedback
+                else:
+                    self._sym_feedbacks.append(None)
+
+                # 3. Per-level Sigma: conceptual transformation (saturate=False)
+                x = self.conceptualSpace.sigmas[t].forward(x)
+
+                # 4. Normalize to [-1, 1] for PiLayer domain.
+                #    Cache scale for exact inverse in reverse pass.
+                scale = x.abs().amax(dim=-1, keepdim=True).clamp(min=1.0)
+                self._sigma_scales.append(scale)
+                x = x / scale
+
+                # 5. Per-level Pi: symbolic projection
+                sym_vec = self.symbolicSpace.pi_layers[t].forward(x)
+                sym_vec = l1_proximal(sym_vec, self.l1_lambda)
+
+                # 6. Symbol feedback for next level (expanded to concept dim)
+                if t < self.conceptualOrder - 1:
+                    sym_norms = sym_vec.norm(dim=-1, keepdim=True)  # [B, N_t, 1]
+                    sym_feedback = sym_norms.expand(-1, -1, D_t)    # [B, N_t, D_t]
+
+                # 7. Cache concept states
+                self.concept_states.append(x.clone())
+
+            # Extract sentence vector
+            if self.sentence_predictor is not None and x is not None:
+                sv = x.mean(dim=1)  # [B, D_final] → average pool
+                self._current_sentence_vec = sv.mean(dim=0)
+
+            # Universality evaluation
+            self._universality_score = None
+
+            # Output from first nOutputSymbols of final symbol vectors
+            self.symbolicSpace.subspace.set_event(sym_vec)
+            output_syms = sym_vec[:, :self.nOutputSymbols, :].clone()
+            outputData = self.Finish(output_syms)
+            symbols = sym_vec.norm(dim=-1).unsqueeze(-1).expand(
+                -1, -1, percepts.shape[-1])
+            return input_state, symbols, outputData
+
+        elif self.ramsified:
+            # ── Flat ramsified loop: serial per-concept Pi with L1 sparsity ──
             # PiLayer maps on nDim axis: [B, 1, concept_dim] → [B, 1, symbol_dim].
             # Each concept is passed individually through SymbolicSpace.forward().
             symbol_dim = self.symbolicSpace.layer.nOutput
@@ -1982,6 +2242,19 @@ class MentalModel(BaseModel):
                 # Cache per-order concepts (retain gradients for recon loss)
                 self.concept_states.append(self.concepts.materialize().clone())
 
+            # Extract sentence vector (top-of-stack after composition)
+            if self.sentence_predictor is not None:
+                cv = self.concepts.materialize()
+                tops = self.conceptualSpace.subspace.top_of_stack(cv)
+                sv_list = []
+                for b in range(B):
+                    pos = tops[b]
+                    if pos >= 0:
+                        sv_list.append(cv[b, pos])
+                    else:
+                        sv_list.append(torch.zeros(cv.shape[-1], device=cv.device))
+                self._current_sentence_vec = torch.stack(sv_list, dim=0).mean(dim=0)
+
             # Universality evaluation
             self._universality_score = None
             truth_layer = getattr(self.symbolicSpace, 'truth', None)
@@ -1993,9 +2266,10 @@ class MentalModel(BaseModel):
                     self._universality_score = truth_layer.universality(
                         s, v, o, c_sl.lifting_layer, self.symbolicSpace)
 
-            # Output from full symbol vectors [B, nConcepts, symbol_dim]
+            # Output from first nOutputSymbols symbol vectors
             self.symbolicSpace.subspace.set_event(symbolSum)
-            outputData = self.Finish(self.symbolicSpace.subspace)
+            output_syms = symbolSum[:, :self.nOutputSymbols, :].clone()
+            outputData = self.Finish(output_syms)
             # Return activation norms expanded to percept dim for compatibility
             sym_norms = symbolSum.norm(dim=-1)
             symbols = sym_norms.unsqueeze(-1).expand(
@@ -2039,6 +2313,19 @@ class MentalModel(BaseModel):
             symbols = sym_norms_fb.unsqueeze(-1).expand(
                 -1, -1, percepts.shape[-1])
 
+        # Extract sentence vector (top-of-stack after composition)
+        if self.sentence_predictor is not None:
+            cv = self.concepts.materialize()
+            tops = self.conceptualSpace.subspace.top_of_stack(cv)
+            sv_list = []
+            for b in range(B):
+                pos = tops[b]
+                if pos >= 0:
+                    sv_list.append(cv[b, pos])
+                else:
+                    sv_list.append(torch.zeros(cv.shape[-1], device=cv.device))
+            self._current_sentence_vec = torch.stack(sv_list, dim=0).mean(dim=0)
+
         # Universality evaluation
         self._universality_score = None
         truth_layer = getattr(self.symbolicSpace, 'truth', None)
@@ -2050,7 +2337,9 @@ class MentalModel(BaseModel):
                 self._universality_score = truth_layer.universality(
                     s, v, o, c_sl.lifting_layer, self.symbolicSpace)
 
-        outputData = self.Finish(concepts)
+        # Output from first nOutputSymbols of symbol vectors
+        output_syms = sym_vectors[:, :self.nOutputSymbols, :].clone()
+        outputData = self.Finish(output_syms)
         return input_state, symbols, outputData
 
     def reverse(self, symbols, outputData):
@@ -2058,18 +2347,52 @@ class MentalModel(BaseModel):
             self.outputSpace.subspace.set_event(outputData)
             outputData = self.outputSpace.subspace
 
-        if self.ramsified:
-            # 1. OutputSpace reverse: output → symbolSum estimate
-            symbol_state = self.outputSpace.reverse(outputData)
-            symbolSum_est = symbol_state.materialize()  # [B, nC, symbol_dim]
+        # reconstruct="symbols": use cached forward symbols, skip OutputSpace reverse
+        use_cached = (self.reconstruct == 'symbols')
 
-            # 2. Partition-aware reverse: highest order → lowest
+        if self.ramsified and self._hierarchical:
+            # ── Hierarchical reverse: undo butterfly merges level by level ──
+            if use_cached:
+                sym_vec = self.symbolicSpace.subspace.materialize()
+            else:
+                symbol_state = self.outputSpace.reverse(outputData)
+                sym_vec = symbol_state.materialize()
+
+            # Reverse from final level back to percept shape.
+            # Forward was: merge → (+feedback) → sigma → scale → pi.
+            # Reverse: pi⁻¹ → *scale → sigma⁻¹ → (-feedback) → unmerge.
+            final_t = self.conceptualOrder - 1
+            x = self.symbolicSpace.pi_layers[final_t].reverse(sym_vec)
+            for t in reversed(range(self.conceptualOrder)):
+                # Undo normalization: restore original sigma output scale
+                scale = self._sigma_scales.pop()
+                x = x * scale
+                # Undo sigma linear transform
+                x = self.conceptualSpace.sigmas[t].reverse(x)
+                # Undo sym_feedback addition (forward: x = merge + feedback)
+                fb = self._sym_feedbacks.pop()
+                if fb is not None:
+                    x = x - fb
+                # Undo butterfly merge
+                x = self._butterfly_unmerge(x)
+
+            # x is now [B, nPercepts, percept_dim]
+            self.conceptualSpace.subspace.set_event(x)
+            concept_input_state = self.conceptualSpace.subspace
+
+        elif self.ramsified:
+            if use_cached:
+                symbolSum_est = self.symbolicSpace.subspace.materialize()
+            else:
+                symbol_state = self.outputSpace.reverse(outputData)
+                symbolSum_est = symbol_state.materialize()
+
+            # Partition-aware reverse: highest order → lowest
             percept_estimates = []
             for t in reversed(range(self.conceptualOrder)):
                 p_start, p_end = self._partitions[t]
-                sym_slice = symbolSum_est[:, :, p_start:p_end]  # partition slice
+                sym_slice = symbolSum_est[:, :, p_start:p_end]
 
-                # Pad to full symbol_dim for SymbolicSpace.reverse()
                 padded = torch.zeros_like(symbolSum_est)
                 padded[:, :, p_start:p_end] = sym_slice
                 concept_est = self.symbolicSpace.reverse(
@@ -2077,15 +2400,15 @@ class MentalModel(BaseModel):
                 percept_est = self.conceptualSpace.reverse(concept_est)
                 percept_estimates.append(percept_est.materialize())
 
-            # Combine percept estimates across orders (sum)
             combined = torch.stack(percept_estimates, dim=0).sum(dim=0)
             self.conceptualSpace.subspace.set_event(combined)
             concept_input_state = self.conceptualSpace.subspace
         else:
-            # 1. OutputSpace reverse: output → concepts estimate
-            concepts_state = self.outputSpace.reverse(outputData)
+            if use_cached:
+                concepts_state = self.concepts
+            else:
+                concepts_state = self.outputSpace.reverse(outputData)
 
-            # 2. Unwind iterations in reverse
             for t in reversed(range(self.conceptualOrder)):
                 concept_input_state = self.conceptualSpace.reverse(concepts_state)
                 if t > 0:

@@ -3,7 +3,7 @@
 The reasoning system provides four methods on `BaseModel` for truth-aware
 inference, a bidirectional reasoning loop, and a grammar learning mode.
 These build on the TruthLayer infrastructure described in
-[../../doc/Truth.md](../../doc/Truth.md) and the grammar composition
+[Logic.md](Logic.md) and the grammar composition
 described in [Language.md](Language.md).
 
 ## Partitioned Symbolic Space

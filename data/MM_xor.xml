@@ -1,0 +1,102 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- MM_xor: MentalModel topology on XOR dataset for convergence testing.
+       Based on MM_1B architecture (iterative [Percept,Symbol]->Concept->Symbol)
+       but scaled to XOR-sized dims. -->
+  <architecture>
+    <reconstruct>symbols</reconstruct>
+    <conceptualOrder>3</conceptualOrder>
+    <ramsified>true</ramsified>
+    <l1Lambda>0.01</l1Lambda>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <processSymbols>false</processSymbols>
+    <type>mental</type>
+    <ergodic>false</ergodic>
+    <certainty>false</certainty>
+    <modelType>embedding</modelType>
+    <maskedPrediction>NONE</maskedPrediction>
+    <truthBiasScale>0.1</truthBiasScale>
+    <LuminosityWeight>0.1</LuminosityWeight>
+    <UniversalityWeight>0.1</UniversalityWeight>
+    <weightsPath></weightsPath>
+
+    <data>
+      <dataset>xor</dataset>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>400</numEpochs>
+      <batchSize>4</batchSize>
+      <learningRate>0.01</learningRate>
+      <reverseScale>0.1</reverseScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+      <autosave>false</autosave>
+    </training>
+
+    <language>
+      <grammar>
+        <START>S</START>
+        <S>C</S>
+        <C>not(C)</C>
+        <C>P</C>
+        <P>I P</P>
+        <P>I</P>
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+
+  </architecture>
+
+  <InputSpace>
+    <nDim>10</nDim>
+    <nVectors>8</nVectors>
+    <nOutput>8</nOutput>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <lexer>word</lexer>
+    <codebook>true</codebook>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>10</nDim>
+    <nVectors>8</nVectors>
+    <passThrough>true</passThrough>
+    <hasAttention>false</hasAttention>
+    <invertible>false</invertible>
+    <codebook>false</codebook>
+  </PerceptualSpace>
+
+  <!-- ConceptualSpace: hierarchical mode computes per-level shapes from
+       nPercepts=8 × dim=12.  Final level: 1 vector × 96 dim.
+       XML nDim/nVectors describe the final level for non-hierarchical compat. -->
+  <ConceptualSpace>
+    <nOutput>16</nOutput>
+    <nDim>12</nDim>
+    <nVectors>16</nVectors>
+    <hasAttention>false</hasAttention>
+    <invertible>true</invertible>
+    <codebook>false</codebook>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nOutput>8</nOutput>
+    <nDim>10</nDim>
+    <nVectors>8</nVectors>
+    <passThrough>false</passThrough>
+    <accumulateTruth>0</accumulateTruth>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>1</nDim>
+    <nVectors>1</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+  </OutputSpace>
+
+</model>

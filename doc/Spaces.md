@@ -11,6 +11,8 @@ Forward:  InputSpace → PerceptualSpace → ConceptualSpace → SymbolicSpace �
 Reverse:  OutputSpace → SyntacticSpace → SymbolicSpace → ConceptualSpace → PerceptualSpace → InputSpace
 ```
 
+![WikiOracle Space Hierarchy](diagrams/vector_spaces.svg)
+
 ---
 
 ## Base Class: Space
@@ -127,24 +129,22 @@ path is a separate reconstruction procedure using the span table, not a matrix i
 interactions. Models prototype-based feature detection: each percept is a product of
 local input features.
 
-**Forward operation.**
+**Forward operation (log-space linear).**
 ```
-y_j = b_j * prod_i(1 + W_ji * x_i)
+s_i = log((1 + x_i) / (1 - x_i))          -- atanh domain transform
+z_j = W @ s + b                             -- linear in log-multiplicative space
+y_j = (exp(z_j) - 1) / (exp(z_j) + 1)     -- tanh back to [-1, 1]
 ```
-Multiplicative structure allows the layer to detect conjunctions of features.
+The atanh/tanh domain transform gives multiplicative semantics: addition in
+log-space corresponds to multiplication of the original features.
 
 **Reverse operation (invertible=True).** A single `PiLayer(invertible=True)` is shared
-for both directions. The forward pass outputs interleaved `(log_y, log_z)` pairs, where:
-```
-y_j = b_j * prod_i(1 - tanh(W_ji * x_i))
-z_j = b_j * prod_i(1 + tanh(W_ji * x_i))
-```
-The reverse pass recovers `gamma = W x` from `gamma_j = 0.5 * log(z_j / y_j)`, then
-solves for `x = W^{-1} * gamma` using InvertibleLinearLayer.
+for both directions. The reverse path inverts each step: `_to_mult(y)`, log,
+`W^{-1}(z - b)`, exp, `_from_mult`. The matrix inverse uses InvertibleLinearLayer (LDU
+factorisation) for exact inversion.
 
 **Reverse operation (invertible=False, reversible=True).** Two separate `PiLayer`
-instances — `pi1` for forward, `pi2` for reverse — each with independent weights. The
-reverse layer uses a pseudoinverse to approximately invert the forward mapping.
+instances — `pi1` for forward, `pi2` for reverse — each with independent weights.
 
 **passThrough=True.** Identity: input passes through unchanged, no Pi computation.
 

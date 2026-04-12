@@ -59,7 +59,7 @@ train_remote :
 train_micro_remote :
 	$(MAKE) train_micro TRAIN_HOST=arbormini.local
 
-xor : data/XOR_exact.xml
+xor : data/MM_xor.xml
 	make run XML1=$<
 
 tomatoes : data/tomatoes.xml

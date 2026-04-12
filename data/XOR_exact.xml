@@ -29,20 +29,20 @@
   <!-- InputSpace: nOutput=6 tokens per sentence (e.g. "hello world" has 3 tokens;
        nOutput=6 allows headroom for punctuation / longer sentences). -->
   <InputSpace>
-    <nOutput>6</nOutput>
+    <nOutput>8</nOutput>
     <nDim>10</nDim>
-    <nVectors>6</nVectors>
-    <flatten>true</flatten>
+    <nVectors>8</nVectors>
+    <nInputDim>-1</nInputDim>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
   </InputSpace>
 
-  <!-- PerceptualSpace: invertible+flatten. -->
+  <!-- PerceptualSpace: invertible, flattened input. -->
   <PerceptualSpace>
-    <nOutput>6</nOutput>
+    <nOutput>8</nOutput>
     <nDim>10</nDim>
-    <nVectors>6</nVectors>
-    <flatten>true</flatten>
+    <nVectors>8</nVectors>
+    <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
     <hasAttention>false</hasAttention>
 
@@ -50,20 +50,20 @@
 
   <!-- ConceptualSpace: nOutput=6, nVectors=6 (non-quantized: nVectors==nOutput). -->
   <ConceptualSpace>
-    <nOutput>6</nOutput>
+    <nOutput>8</nOutput>
     <nDim>10</nDim>
-    <nVectors>6</nVectors>
-    <flatten>true</flatten>
+    <nVectors>8</nVectors>
+    <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
 
   </ConceptualSpace>
 
   <!-- SymbolicSpace: nOutput = ConceptualSpace.nOutput = 6 -->
   <SymbolicSpace>
-    <nOutput>6</nOutput>
+    <nOutput>8</nOutput>
     <nDim>10</nDim>
-    <nVectors>6</nVectors>
-    <flatten>true</flatten>
+    <nVectors>8</nVectors>
+    <nInputDim>-1</nInputDim>
   </SymbolicSpace>
 
   <OutputSpace>

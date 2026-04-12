@@ -171,20 +171,20 @@ class ActiveEncoding(Encoding):
 class WhereEncoding(QuadratureEncoding):
     """Encode spatial position (nWhere) as sin/cos values in reserved embedding slots.
 
-    Writes a (sin, cos) pair into the last few dimensions of each object vector,
-    indexed by ``self.index`` (negative offsets from the end).  A monotonic
-    counter ``self.p`` assigns each object a unique position within a dataset
-    pass; it must be reset between epochs to avoid overflow.
+    Index is computed dynamically from nWhere and nWhen so the slots
+    always align with the muxed layout ``[what, where, when]``:
+      index = [-(nWhere+nWhen), ..., -(nWhen+1)]
 
-    Used by SubSpace to stamp each object with a "where" tag.
+    A monotonic counter ``self.p`` assigns each object a unique position
+    within a dataset pass; it must be reset between epochs to avoid overflow.
     """
-    index = [-4, -3]
     p = 0
 
-    def __init__(self, maxP=0, nWhere=2):
+    def __init__(self, maxP=0, nWhere=2, nWhen=0):
         if nWhere > 0:
-            print("Creating positional encoding ...")
-            super().__init__([-4, -3], maxP)
+            # Dynamic: where sits at [-(nWhere+nWhen), ..., -(nWhen+1)]
+            index = [-(nWhere + nWhen) + i for i in range(nWhere)]
+            super().__init__(index, maxP)
         else:
             Encoding.__init__(self, [], 1)  # skip QuadratureEncoding div_term
             self.nDim = 0
@@ -197,7 +197,7 @@ class WhereEncoding(QuadratureEncoding):
         batch = x.shape[0]
         n     = x.shape[1] if len(x.shape) > 1 else 1
         embeddingSize = x.shape[-1]
-        index = np.add([embeddingSize, embeddingSize], self.index)
+        index = np.add([embeddingSize] * len(self.index), self.index)
         position = torch.arange(self.p, self.p+batch*n, dtype=torch.float32, device=TheDevice.get())
         pos = self.encode(position)  # [batch*n, 2]
         y = x.clone()
@@ -208,9 +208,9 @@ class WhereEncoding(QuadratureEncoding):
 
     @staticmethod
     def test():
-        pe = WhereEncoding(100)
+        pe = WhereEncoding(100, nWhere=2, nWhen=0)
         pe.p = 0
-        x = torch.zeros([2, 4, 100], device=TheDevice.get())
+        x = torch.zeros([2, 4, 12], device=TheDevice.get())
         y = pe.forward(x)
         cleaned, offsets = pe.reverse(y)
         print(f"Positions decoded: {offsets}")
@@ -264,25 +264,26 @@ class WhenEncoding(QuadratureEncoding):
         cleaned, times = te.reverse(y)
         print(f"Times decoded: {times}")
 class WordEncoding(Encoding):
-    """Word encoding: each word is a (batch, vector, rule) 3-tuple.
+    """Word encoding: each word is a (batch, vector, rule, order) 4-tuple.
 
     Words are stored as a Python list of tuples, not muxed into the
     event tensor.  Each tuple indexes into [B, N] activation space
-    and specifies a grammar rule from TheGrammar.
+    and specifies a grammar rule from TheGrammar plus the epistemic
+    level (conceptual order) at which the rule was applied.
     """
-    nDim = 3  # (batch, vector, rule)
+    nDim = 4  # (batch, vector, rule, order)
 
     def __init__(self, nBatch=0, nActive=0):
         super().__init__([], maxVal=0)  # no index slots — not muxed
         self.nBatch = nBatch
         self.nActive = nActive
 
-    def encode(self, batch, vector, rule):
-        """Validate and return a (batch, vector, rule) tuple."""
+    def encode(self, batch, vector, rule, order=0):
+        """Validate and return a (batch, vector, rule, order) tuple."""
         assert 0 <= batch, f"batch {batch} must be >= 0"
         assert 0 <= vector, f"vector {vector} must be >= 0"
         assert 0 <= rule < len(TheGrammar), f"rule {rule} out of range [0, {len(TheGrammar)})"
-        return (batch, vector, rule)
+        return (batch, vector, rule, order)
 
     def decode(self, word):
         """Unpack a word tuple into (batch, vector, rule)."""
@@ -2067,9 +2068,9 @@ class SubSpace(nn.Module):
         """Return the word list."""
         return self.word
 
-    def add_word(self, batch, vector, rule):
+    def add_word(self, batch, vector, rule, order=0):
         """Append a validated word tuple."""
-        self.word.append(self.wordEncoding.encode(batch, vector, rule))
+        self.word.append(self.wordEncoding.encode(batch, vector, rule, order))
 
     # ── Stack-scanning helpers ────────────────────────────────────────
 
@@ -2181,25 +2182,13 @@ class SubSpace(nn.Module):
                         m += 1
                 if self.nWhere > 0 and m < self._active.shape[-1]:
                     where_indices = self._active[:, :, m]  # byte offsets
-                    B, N = where_indices.shape
-                    where_vecs = torch.zeros(B, N, self.nWhere,
-                                             device=where_indices.device)
-                    # Compute sinusoidal encoding from offset indices
-                    angle = where_indices.float() * self.whereEncoding.div_term
-                    where_vecs[:, :, 0] = torch.sin(angle)
-                    if self.nWhere > 1:
-                        where_vecs[:, :, 1] = torch.cos(angle)
+                    # Raw mux: store offsets directly via WhereEncoding.encode()
+                    where_vecs = self.whereEncoding.encode(where_indices)
                     parts.append(where_vecs)
                     m += 1
                 if self.nWhen > 0 and m < self._active.shape[-1]:
                     when_indices = self._active[:, :, m]
-                    B, N = when_indices.shape
-                    when_vecs = torch.zeros(B, N, self.nWhen,
-                                            device=when_indices.device)
-                    angle = when_indices.float() * self.whenEncoding.div_term
-                    when_vecs[:, :, 0] = torch.sin(angle)
-                    if self.nWhen > 1:
-                        when_vecs[:, :, 1] = torch.cos(angle)
+                    when_vecs = self.whenEncoding.encode(when_indices)
                     parts.append(when_vecs)
                 if parts:
                     x = torch.cat(parts, dim=-1)
@@ -2321,10 +2310,11 @@ class SubSpace(nn.Module):
                 self.set_when(tensor)
             return
 
-        # Muxed mode: write into the event tensor slice
+        # Muxed mode: clone event then splice in the new slice
         event = self.materialize()
         if event is None:
             return
+        event = event.clone()
         if target == "what":
             event[:, :, :self.nWhat] = tensor
         elif target == "where" and self.nWhere > 0:
@@ -3226,13 +3216,15 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             return left
         return super().project(grammar, rule_id, left, right, subspace=subspace)
 
-    def compose(self, data, subspace, grammar):
+    def compose(self, data, subspace, grammar, target_count=None):
         """Apply C-tier composition.
 
         Args:
             data: [B, N, D] concept tensor
             subspace: SubSpace for word recording
             grammar: Grammar instance for rule execution
+            target_count: If set, use pairwise reduction to this token count
+                          (hierarchical mode). None uses cascading accumulator.
         Returns:
             (composed_data, svo_or_None) — svo is set if ternary lift fired
         """
@@ -3240,6 +3232,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         self.last_svo = None   # reset per-compose
         self.last_rule_probs = None  # per-depth composable rule probs
         self.last_composable_rules = None  # global rule IDs for columns
+        self._non_gates = {}  # gate values for non() inversion
         c_rules = grammar._c_rule_ids()
         not_rid = c_rules.get('not')
         non_rid = c_rules.get('non')
@@ -3251,22 +3244,29 @@ class ConceptualSyntacticLayer(SyntacticLayer):
                 continue
             vec = data[b, pos]
 
-            # ── not: flip negative concepts to positive ──────────────
+            # ── not: negate via Basis.negation (bitonic: -x, self-inverse)
             if not_rid is not None:
                 if vec.mean() < 0:
                     data = data.clone()
-                    data[b, pos] = torch.tanh(vec.abs())
+                    data[b, pos] = self._method_not(vec.unsqueeze(0).unsqueeze(0),
+                                                     subspace).squeeze(0).squeeze(0)
                     subspace.add_word(b, pos, not_rid)
 
-            # ── non: suppress below-threshold activations ────────────
+            # ── non: suppress via Basis.non (delegates to _method_non)
             if non_rid is not None:
                 vec = data[b, pos]  # re-read after possible not()
-                norm = vec.norm()
-                gate = torch.sigmoid(norm - torch.sigmoid(self.non_threshold))
-                if gate < 0.5:
+                non_result = self._method_non(
+                    vec.unsqueeze(0).unsqueeze(0), subspace
+                ).squeeze(0).squeeze(0)
+                if non_result.norm() < vec.norm():
                     data = data.clone()
-                    data[b, pos] = vec * gate
+                    data[b, pos] = non_result
                     subspace.add_word(b, pos, non_rid)
+
+        # Dispatch: hierarchical pairwise reduction or cascading accumulator
+        if target_count is not None:
+            return self._compose_to_target(data, subspace, grammar, target_count,
+                                           c_rules, not_rid, non_rid)
 
         # Phase 2: soft-weighted composition via SyntacticLayer
         B, N, D = data.shape
@@ -3293,6 +3293,12 @@ class ConceptualSyntacticLayer(SyntacticLayer):
                 composable_global.append(global_id)
 
         if not composable_global:
+            return data, self.last_svo
+
+        # Need at least one binary+ rule for cascading to combine anything;
+        # unary rules just return left, consuming leaves without merging.
+        has_binary = any(grammar.arity(gid) >= 2 for gid in composable_global)
+        if not has_binary:
             return data, self.last_svo
 
         # Build per-batch active positions
@@ -3361,8 +3367,110 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             self.last_rule_probs = torch.stack(depth_probs, dim=1)  # [B, depths, n_composable]
         return composed, self.last_svo
 
+    def _compose_to_target(self, data, subspace, grammar, target_count,
+                           c_rules, not_rid, non_rid):
+        """Reduce active tokens to target_count via independent pairwise grammar reductions.
+
+        Used by the hierarchical forward loop. Each round pairs adjacent active
+        positions, applies soft-weighted grammar rules, and zeros consumed tokens
+        until the active count reaches target_count.
+        """
+        B, N, D = data.shape
+
+        # Identify composable rules (exclude not/non — already applied in Phase 1)
+        exclude = {'not', 'non'}
+        composable_local = []
+        composable_global = []
+        for local_idx, global_id in enumerate(self.all_rules):
+            if grammar.rules[global_id].method_name not in exclude:
+                composable_local.append(local_idx)
+                composable_global.append(global_id)
+
+        if not composable_global:
+            return data, self.last_svo
+
+        # Get rule probabilities from SyntacticLayer
+        activation = torch.norm(data, dim=-1) / math.sqrt(D)
+        expected_n = self.input_proj.nInput
+        if N == expected_n:
+            out = super().forward(activation)
+            rule_probs = out['rule_probs']  # [B, max_depth, num_rules]
+        else:
+            # Dims don't match SyntacticLayer — use uniform probs
+            rule_probs = torch.ones(B, self.max_depth, len(self.all_rules),
+                                    device=data.device) / len(self.all_rules)
+
+        # Build per-batch active positions
+        active = [subspace.active_positions(b, data) for b in range(B)]
+        d = 0
+
+        while d < self.max_depth:
+            max_active = max(len(a) for a in active)
+            if max_active <= target_count:
+                break
+
+            new_data = data.clone()
+            for b in range(B):
+                positions = active[b]
+                new_positions = []
+                i = 0
+                while i < len(positions) - 1 and (len(positions) - i + len(new_positions)) > target_count:
+                    left_pos, right_pos = positions[i], positions[i + 1]
+                    left = data[b:b+1, left_pos:left_pos+1, :]
+                    right = data[b:b+1, right_pos:right_pos+1, :]
+
+                    results = []
+                    for gid in composable_global:
+                        a = grammar.arity(gid)
+                        if a >= 2:
+                            r = self.project(grammar, gid, left, right, subspace=subspace)
+                        else:
+                            r = self.project(grammar, gid, left, subspace=subspace)
+                        results.append(r)
+                    results = torch.stack(results, dim=1)  # [1, n_composable, 1, D]
+
+                    probs_d = rule_probs[b:b+1, min(d, rule_probs.shape[1]-1), :]
+                    probs_d = probs_d[:, composable_local]
+                    probs_d = probs_d / (probs_d.sum(dim=-1, keepdim=True) + 1e-8)
+                    composed = (probs_d.unsqueeze(-1).unsqueeze(-1) * results).sum(dim=1)
+
+                    new_data[b, left_pos] = composed[0, 0]
+                    new_data[b, right_pos] = 0.0  # zero out consumed
+
+                    best_rid = composable_global[probs_d.argmax(dim=-1)[0].item()]
+                    subspace.add_word(b, left_pos, best_rid, order=d)
+                    new_positions.append(left_pos)
+                    i += 2
+
+                while i < len(positions):
+                    new_positions.append(positions[i])
+                    i += 1
+                active[b] = new_positions
+
+            data = new_data
+            d += 1
+
+        # Gather remaining active positions into dense [B, target_count, D]
+        max_remaining = max(len(a) for a in active)
+        result = torch.zeros(B, max_remaining, D, device=data.device)
+        for b in range(B):
+            for i, pos in enumerate(active[b]):
+                if i < max_remaining:
+                    result[b, i] = data[b, pos]
+
+        return result, self.last_svo
+
     def decompose(self, data, subspace, grammar):
-        """Reverse C-tier operations using recorded 3-tuple words.
+        """Reverse C-tier operations using recorded word tuples.
+
+        Delegates to Basis operations for inversion wherever possible:
+          - not: Basis.negation (self-inverse for bitonic)
+          - non: Basis.non is not invertible (bitonic zeros, monotonic thresholds)
+          - union/intersection/chunk: not invertible (information loss)
+          - equals/part: not invertible (scalar gating loses magnitude)
+          - lift/lower: parametric, not invertible without stored state
+          - true: Basis.pos (relu) not invertible (negative info lost)
+          - transition (method_name=None): pass-through, no-op
 
         Args:
             data: tensor (same shape as compose output)
@@ -3373,20 +3481,18 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         """
         words = subspace.get_words()
         for word in reversed(words):
-            if len(word) != 3:
+            if len(word) < 3:
                 continue
-            b, pos, rule_id = word
+            b, pos, rule_id = word[0], word[1], word[2]
             rule = grammar.rules[rule_id]
             if rule.method_name == 'not':
+                # Basis.negation is self-inverse for bitonic (-x → -(-x) = x)
                 data = data.clone()
-                vec = data[b, pos]
-                clamped = vec.clamp(-0.999, 0.999)
-                data[b, pos] = -torch.atanh(clamped)
-            elif rule.method_name in ('non', 'union', 'intersection',
-                                      'lift', 'lower'):
-                pass  # Non-invertible — information loss is cost of interpretation
-            elif rule.method_name is not None:
-                pass  # Other methods not cleanly invertible
+                data[b, pos] = self._method_not(data[b, pos].unsqueeze(0).unsqueeze(0),
+                                                 subspace).squeeze(0).squeeze(0)
+            # All other rules delegate to Basis but are not cleanly invertible.
+            # non: Basis.non bitonic → zeros (no inverse); monotonic → relu threshold.
+            # union/intersection/chunk/equals/part/true/lift/lower: information loss.
         return data
 class SymbolicSyntacticLayer(SyntacticLayer):
     """S-tier SyntacticLayer: soft-weighted composition on 2D activations.
@@ -3512,7 +3618,7 @@ class SymbolicSyntacticLayer(SyntacticLayer):
         return composed
 
     def decompose(self, data, subspace, grammar):
-        """Reverse S-tier operations using recorded 3-tuple words.
+        """Reverse S-tier operations using recorded word tuples.
 
         Args:
             data: [B, N] or [B, N, D] tensor (same shape as compose output)
@@ -3523,9 +3629,9 @@ class SymbolicSyntacticLayer(SyntacticLayer):
         """
         words = subspace.get_words()
         for word in reversed(words):
-            if len(word) != 3:
+            if len(word) < 3:
                 continue
-            b, pos, rule_id = word
+            b, pos, rule_id = word[0], word[1], word[2]
             rule = grammar.rules[rule_id]
             if rule.method_name in ('non', 'union', 'intersection',
                                     'lift', 'lower'):
@@ -3553,9 +3659,8 @@ class Space(nn.Module):
       - ``nVectors``: codebook size, also from config.  May differ from
         nActive (the active count); the factory validates ``nVectors >= nActive``.
       - ``nInputDim``/``nOutputDim``: configurable boundary reshape.  0 (default)
-        resolves to the constructor's dim; -1 skips reshape; a positive value
-        reshapes via ``x.reshape(B, -1, nInputDim)``.  Generalizes the old
-        ``flatten`` flag (flatten ≡ nInputDim = nInput * dim).
+        resolves to the constructor's dim; -1 flattens (nInput * dim); a positive
+        value reshapes via ``x.reshape(B, -1, nInputDim)``.
       - ``processSymbols``: when True, reduces full embedding vectors to scalar
         activations (norms) for the symbolic representation.
       - ``codebook``: when True, input vectors are quantized against the
@@ -3577,18 +3682,15 @@ class Space(nn.Module):
         self.outputShape  = outputShape  # [nOutput,  nOutputDim]
         self.nVectors     = spaceShape[0]  # codebook size
         self.nDim         = spaceShape[1]  # content dimensionality of the codebook vectors
-        # Resolve nInputDim/nOutputDim: 0 → constructor dim, -1 → skip, >0 → explicit.
-        # Backward compat: if legacy <flatten>true</flatten> is set and nInputDim is 0,
-        # auto-compute the flat size (inputShape[0]*inputShape[1]).
-        try:
-            _flatten = TheXMLConfig.space(section, "flatten")
-        except KeyError:
-            _flatten = False
+        # Resolve nInputDim/nOutputDim:
+        #   0  → inherit from constructor dim (inputShape[1] / outputShape[1])
+        #  -1  → flatten: nInput * dim (reshape [N, D] → [1, N*D])
+        #  >0  → explicit value
         try:
             raw = TheXMLConfig.space(section, "nInputDim")
         except KeyError:
             raw = 0
-        if raw == 0 and _flatten:
+        if raw == -1:
             self.nInputDim = inputShape[0] * inputShape[1]
         else:
             self.nInputDim = inputShape[1] if raw == 0 else raw
@@ -3596,8 +3698,7 @@ class Space(nn.Module):
             raw = TheXMLConfig.space(section, "nOutputDim")
         except KeyError:
             raw = 0
-        if raw == 0 and _flatten:
-            # Old flatten unflattened on output → restore per-vector dim
+        if raw == -1:
             self.nOutputDim = outputShape[1]
         else:
             self.nOutputDim = outputShape[1] if raw == 0 else raw
@@ -3615,7 +3716,7 @@ class Space(nn.Module):
         # inputShape/outputShape already include muxed width in dim (set by factory).
         objectEncoding = EventEncoding(inputShape, outputShape)
         whatEncoding   = WhatEncoding(inputShape, outputShape)
-        whereEncoding  = WhereEncoding(TheXMLConfig.get("architecture.nObjects"), _nWhere)
+        whereEncoding  = WhereEncoding(TheXMLConfig.get("architecture.nObjects"), _nWhere, _nWhen)
         whenEncoding   = WhenEncoding(10000, _nWhen)
         self.subspace  = SubSpace(
             nInputDim=self.nInputDim,
@@ -3951,7 +4052,19 @@ class InputSpace(Space):
             self.doc_spans = lexical_basis.doc_spans
             self.doc_sources = lexical_basis.doc_sources
             if data.train_input and self.subspace.whereEncoding.nDim > 0:
-                maxP = max(self.subspace.whereEncoding.maxVal, data.inputLength)
+                # Compute maxP from actual max byte offset in data,
+                # not from data.inputLength (buffer size), which can be
+                # far too large for short text and wastes encoding resolution.
+                if (isinstance(data.train_input, list) and data.train_input
+                        and isinstance(data.train_input[0], str)):
+                    actual_max = max(len(s.encode('utf-8'))
+                                     for s in data.train_input)
+                    # 2x margin for validation/test data that may be longer
+                    maxP = max(self.subspace.whereEncoding.maxVal,
+                               actual_max * 2)
+                else:
+                    maxP = max(self.subspace.whereEncoding.maxVal,
+                               data.inputLength)
                 self.subspace.whereEncoding.maxVal = maxP
                 self.subspace.whereEncoding.div_term = 2 * math.pi / maxP
         else:
@@ -4079,7 +4192,7 @@ class InputSpace(Space):
         # Determine which dims are content (to zero) vs position (to preserve)
         embSize = embedded.shape[-1]
         content_mask = torch.ones(embSize, dtype=torch.bool, device=TheDevice.get())
-        # Preserve nWhere dims (indices [-4, -3] from end of embedding)
+        # Preserve nWhere dims (dynamic indices from whereEncoding)
         if self.subspace.whereEncoding.nDim > 0:
             where_idx = np.add([embSize, embSize], self.subspace.whereEncoding.index)
             for wi in where_idx:
@@ -4800,7 +4913,7 @@ class ConceptualSpace(Space):
     name = "Concepts"
     config_section = "ConceptualSpace"
 
-    def __init__(self, inputShape, spaceShape, outputShape):
+    def __init__(self, inputShape, spaceShape, outputShape, level_shapes=None):
         section = self.config_section
         ergodic = TheXMLConfig.get("architecture.ergodic")
         hasAttention = TheXMLConfig.space(section, "hasAttention")
@@ -4813,27 +4926,61 @@ class ConceptualSpace(Space):
         self.hasAttention = hasAttention
         input = self.subspace.getEncodedInputSize()
         output = self.subspace.getEncodedOutputSize()
-        self.attention = AttentionLayer(output, output, type="transformer")
-        if self.reversible:
-            if invertible:
-                self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True,
+        if hasAttention:
+            self.attention = AttentionLayer(output, output, type="transformer")
+
+        # ── Hierarchical mode: per-level Sigma layers ────────────────
+        # Average-merge keeps norms bounded, so tanh saturation is unnecessary
+        # and harmful: cascaded atanh in reverse clamps values outside (-1,1),
+        # destroying sample variance.  Per-level sigmas use saturate=False.
+        if level_shapes is not None and len(level_shapes) > 1:
+            self._hierarchical = True
+            self._level_shapes = level_shapes
+            self.sigmas = nn.ModuleList()
+            for t, (n_t, d_t) in enumerate(level_shapes):
+                sig = SigmaLayer(d_t, d_t, naive=naive, ergodic=ergodic,
+                                 invertible=invertible)
+                sig.saturate = False
+                self.sigmas.append(sig)
+            # Dim projections for syntactic mode (grammar keeps D, need projection)
+            # One per level: level 0 projects from percept_dim, others from prior level
+            self.dim_projections = nn.ModuleList()
+            percept_dim = inputShape[1]  # pre-merge percept dim
+            for t, (n_t, d_t) in enumerate(level_shapes):
+                d_in = percept_dim if t == 0 else level_shapes[t - 1][1]
+                self.dim_projections.append(nn.Linear(d_in, d_t))
+            self.layers = nn.ModuleList(
+                list(self.sigmas) + list(self.dim_projections))
+            self.params = []
+            for s in self.sigmas:
+                self.params.extend(s.getParameters())
+            # Set forwardSigma to level-0 for backward compat callers
+            self.forwardSigma = self.sigmas[0].forward
+        else:
+            # ── Original single-layer mode ────────────────────────────
+            self._hierarchical = False
+            self._level_shapes = None
+            if self.reversible:
+                if invertible:
+                    self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
+                                            invertible=True, nonlinear=nonlinear)
+                    self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
+                    self.params = self.sigma.getParameters()
+                    self.layers = nn.ModuleList([self.sigma])
+                else:
+                    self.sigma1 = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
+                                             invertible=True, nonlinear=nonlinear)
+                    self.sigma2 = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
+                                             invertible=True, nonlinear=nonlinear)
+                    self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
+                    self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
+                    self.layers = nn.ModuleList([self.sigma1, self.sigma2])
+            else:
+                self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
                                         nonlinear=nonlinear)
-                self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
+                self.forwardSigma = self.sigma.forward
                 self.params = self.sigma.getParameters()
                 self.layers = nn.ModuleList([self.sigma])
-            else:
-                self.sigma1 = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True,
-                                         nonlinear=nonlinear)
-                self.sigma2 = SigmaLayer(input, output, naive=naive, ergodic=ergodic, invertible=True,
-                                         nonlinear=nonlinear)
-                self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
-                self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
-                self.layers = nn.ModuleList([self.sigma1, self.sigma2])
-        else:
-            self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic, nonlinear=nonlinear)
-            self.forwardSigma = self.sigma.forward
-            self.params = self.sigma.getParameters()
-            self.layers = nn.ModuleList([self.sigma])
         # Grammar methods and SyntacticLayers are now on TheGrammar.
         # Spaces delegate to TheGrammar.project('C', ...) and
         # TheGrammar.composeSyntax('C', ...).
@@ -4857,13 +5004,18 @@ class ConceptualSpace(Space):
         """
         x = self.forwardBegin(vspace, returnVectors=True)
         if self.nonlinear:
-            x = torch.atanh(x * (1 - 1e-6))
+            # atanh only on nWhat dims — sin/cos where/when values near ±1
+            # would explode through atanh, so leave them untransformed.
+            nW = self.subspace.nWhat
+            x_what = torch.atanh(x[:, :, :nW] * (1 - 1e-6))
+            x = torch.cat([x_what, x[:, :, nW:]], dim=-1)
         y = self.forwardSigma(x)
         if self.hasAttention:
             y = self.attention.forward(y)
         if self.codebook:
             y = self.subspace.get_vectors().forward(y)
         if self.syntacticLayer is not None:
+            self._pre_compose = y.detach().clone()
             y, self._last_svo = self.syntacticLayer.compose(y, self.subspace, TheGrammar)
         vspace = self.forwardEnd(y, returnVectors=True)
         vspace.normalize("concepts", target="what")       # range check
@@ -4896,12 +5048,21 @@ class ConceptualSpace(Space):
         """
         y = self.reverseBegin(vspace, returnVectors=True)
         if self.syntacticLayer is not None:
-            y = self.syntacticLayer.decompose(y, self.subspace, TheGrammar)
+            # Compose is lossy (cascading accumulator collapses leaves).
+            # Use the pre-compose sigma output for exact reconstruction.
+            pre = getattr(self, '_pre_compose', None)
+            if pre is not None:
+                y = pre
+            else:
+                y = self.syntacticLayer.decompose(y, self.subspace, TheGrammar)
         if self.processSymbols:
             y = self.dereference(y)
         y = self.reverseSigma(y)
         if self.nonlinear:
-            y = torch.tanh(y)
+            # tanh only on nWhat dims — mirror the forward atanh split.
+            nW = self.subspace.nWhat
+            y_what = torch.tanh(y[:, :, :nW])
+            y = torch.cat([y_what, y[:, :, nW:]], dim=-1)
         self.concepts = y
         vspace = self.reverseEnd(y, returnVectors=True)
         vspace.normalize("percepts", target="what")  # range check
@@ -4924,7 +5085,8 @@ class SymbolicSpace(Space):
     name = "Symbols"
     config_section = "SymbolicSpace"
 
-    def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None):
+    def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None,
+                 level_shapes=None):
 
         section = self.config_section
         passThrough = TheXMLConfig.space(section, "passThrough")
@@ -4936,7 +5098,19 @@ class SymbolicSpace(Space):
         nConceptDim = inputShape[1]     # concept_dim + obj (where+when)
         nSymbolDim = outputShape[1]     # symbol_dim + obj (where+when)
         nSymbols = spaceShape[0]
-        self.layer = PiLayer(nConceptDim, nSymbolDim, invertible=True, monotonic=True)
+
+        if level_shapes is not None and len(level_shapes) > 1:
+            self._hierarchical = True
+            self._level_shapes = level_shapes
+            self.pi_layers = nn.ModuleList()
+            for t, (n_t, d_t) in enumerate(level_shapes):
+                self.pi_layers.append(
+                    PiLayer(d_t, nSymbolDim, invertible=True, monotonic=True))
+            self.layer = self.pi_layers[0]  # default for non-hierarchical codepaths
+        else:
+            self._hierarchical = False
+            self.pi_layers = None
+        self.layer = PiLayer(nConceptDim, nSymbolDim, invertible=True, monotonic=True) if not self._hierarchical else self.pi_layers[0]
 
         # Truth accumulation: accumulateTruth is 0..1 (DoT for recorded symbols).
         # Default 0 (off). Server sets to 1 when processing the TruthSet,
@@ -4974,8 +5148,9 @@ class SymbolicSpace(Space):
             n_passes = sort_passes_cfg if sort_passes_cfg > 0 else None
             self.sortNetwork = SortingLayer(nSymbolDim, n_passes=n_passes)
 
+        pi_list = list(self.pi_layers) if self._hierarchical else [self.layer]
         self.layers = nn.ModuleList(
-            [self.layer] + ([self.sortNetwork] if self.sortNetwork else [])
+            pi_list + ([self.sortNetwork] if self.sortNetwork else [])
         )
 
         # Assign fixed where encodings to symbol positions.

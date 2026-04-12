@@ -33,9 +33,14 @@ def _reload_config():
     TheGrammar._configured = False
 
 
-def _make_model():
-    _reload_config()
-    model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
+def _make_model(config='MentalModel.xml'):
+    init_config(
+        path=os.path.join(_DATA_DIR, config),
+        defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
+    )
+    from Space import TheGrammar
+    TheGrammar._configured = False
+    model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, config))
     model.eval()
     return model
 
@@ -269,11 +274,7 @@ class TestWriteMask(unittest.TestCase):
 
     def test_partition_isolation(self):
         """After ramsified forward, each order's partition should be isolated."""
-        model = _make_model()
-        if not model.ramsified:
-            self.skipTest("Model not ramsified")
-        if model.conceptualOrder < 2:
-            self.skipTest("Need conceptualOrder >= 2 for partition test")
+        model = _make_model('RamsifiedModel.xml')
 
         truth_layer = model._get_truth_layer()
         D = model.symbolicSpace.layer.nOutput

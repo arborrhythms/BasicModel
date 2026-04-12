@@ -1,0 +1,154 @@
+<svg width='900' height='600' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' >
+  <rect width='900' height='600' fill='#fafafa'/>
+<defs><marker id='arrd' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2c3e50'/></marker><marker id='arrt' markerWidth='7' markerHeight='4.8999999999999995' refX='6' refY='2.4499999999999997' orient='auto'><polygon points='0 0, 7 2.4499999999999997, 0 4.8999999999999995' fill='#16a085'/></marker></defs>
+<rect x='0' y='0' width='900' height='44' fill='#2c3e50' fill-opacity='1.0' rx='0'/>
+<text x='450' y='29' text-anchor='middle' font-size='18' fill='white' font-weight='bold'>Luminosity: Truth Coherence Measure</text>
+<rect x='220' y='52' width='460' height='38' fill='#d1f2eb' fill-opacity='1.0' rx='8' stroke='#16a085' stroke-width='1.5'/>
+<text x='450' y='77' text-anchor='middle' font-size='16' fill='#16a085' font-weight='bold'>L  =  ‖ [min(truths)]⁺ ‖</text>
+<rect x='20' y='105' width='380' height='460' fill='#f8fffe' fill-opacity='1.0' rx='10' stroke='#16a085' stroke-width='1.5'/>
+<rect x='20' y='105' width='380' height='32' fill='#16a085' fill-opacity='1.0' rx='8'/><rect x='20' y='121' width='380' height='16' fill='#16a085' fill-opacity='1.0' rx='0'/><text x='210' y='130' text-anchor='middle' font-size='13' fill='white' font-weight='bold'>Consistent Truths  →  High Luminosity</text>
+<text x='210' y='155' text-anchor='middle' font-size='12' fill='#626567'>Stored truths  (activation × DoT):</text>
+<rect x='35' y='182' width='12' height='48' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='34' y1='230' x2='48' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='50' y='194' width='12' height='36' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='49' y1='230' x2='63' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='65' y='176' width='12' height='54' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='64' y1='230' x2='78' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='80' y='188' width='12' height='42' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='79' y1='230' x2='93' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='95' y='200' width='12' height='30' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='94' y1='230' x2='108' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='110' y='182' width='12' height='48' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='109' y1='230' x2='123' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='125' y='194' width='12' height='36' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='124' y1='230' x2='138' y2='230' stroke='#bbb' stroke-width='1'/>
+<text x='87.5' y='248' text-anchor='middle' font-size='11' fill='#626567'>t₁</text>
+<rect x='155' y='188' width='12' height='42' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='154' y1='230' x2='168' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='170' y='182' width='12' height='48' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='169' y1='230' x2='183' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='185' y='188' width='12' height='42' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='184' y1='230' x2='198' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='200' y='176' width='12' height='54' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='199' y1='230' x2='213' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='215' y='194' width='12' height='36' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='214' y1='230' x2='228' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='230' y='194' width='12' height='36' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='229' y1='230' x2='243' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='245' y='188' width='12' height='42' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='244' y1='230' x2='258' y2='230' stroke='#bbb' stroke-width='1'/>
+<text x='207.5' y='248' text-anchor='middle' font-size='11' fill='#626567'>t₂</text>
+<rect x='275' y='176' width='12' height='54' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='274' y1='230' x2='288' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='290' y='188' width='12' height='42' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='289' y1='230' x2='303' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='305' y='182' width='12' height='48' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='304' y1='230' x2='318' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='320' y='194' width='12' height='36' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='319' y1='230' x2='333' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='335' y='182' width='12' height='48' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='334' y1='230' x2='348' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='350' y='188' width='12' height='42' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='349' y1='230' x2='363' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='365' y='182' width='12' height='48' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='364' y1='230' x2='378' y2='230' stroke='#bbb' stroke-width='1'/>
+<text x='327.5' y='248' text-anchor='middle' font-size='11' fill='#626567'>t₃</text>
+<line x1='210' y1='258' x2='210' y2='290' stroke='#16a085' stroke-width='1.8' marker-end='url(#arrt)'/>
+<text x='210' y='306' text-anchor='middle' font-size='12' fill='#16a085'>min( t₁, t₂, t₃ )</text>
+<rect x='35' y='278' width='12' height='42' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='34' y1='320' x2='48' y2='320' stroke='#bbb' stroke-width='1'/>
+<rect x='50' y='284' width='12' height='36' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='49' y1='320' x2='63' y2='320' stroke='#bbb' stroke-width='1'/>
+<rect x='65' y='278' width='12' height='42' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='64' y1='320' x2='78' y2='320' stroke='#bbb' stroke-width='1'/>
+<rect x='80' y='284' width='12' height='36' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='79' y1='320' x2='93' y2='320' stroke='#bbb' stroke-width='1'/>
+<rect x='95' y='290' width='12' height='30' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='94' y1='320' x2='108' y2='320' stroke='#bbb' stroke-width='1'/>
+<rect x='110' y='284' width='12' height='36' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='109' y1='320' x2='123' y2='320' stroke='#bbb' stroke-width='1'/>
+<rect x='125' y='284' width='12' height='36' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='124' y1='320' x2='138' y2='320' stroke='#bbb' stroke-width='1'/>
+<text x='87.5' y='338' text-anchor='middle' font-size='11' fill='#626567'>conjunction</text>
+<line x1='210' y1='398' x2='210' y2='428' stroke='#16a085' stroke-width='1.8' marker-end='url(#arrt)'/>
+<text x='210' y='444' text-anchor='middle' font-size='12' fill='#16a085'>[conjunction]⁺  (positive part)</text>
+<rect x='35' y='416' width='12' height='42' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='34' y1='458' x2='48' y2='458' stroke='#bbb' stroke-width='1'/>
+<rect x='50' y='422' width='12' height='36' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='49' y1='458' x2='63' y2='458' stroke='#bbb' stroke-width='1'/>
+<rect x='65' y='416' width='12' height='42' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='64' y1='458' x2='78' y2='458' stroke='#bbb' stroke-width='1'/>
+<rect x='80' y='422' width='12' height='36' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='79' y1='458' x2='93' y2='458' stroke='#bbb' stroke-width='1'/>
+<rect x='95' y='428' width='12' height='30' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='94' y1='458' x2='108' y2='458' stroke='#bbb' stroke-width='1'/>
+<rect x='110' y='422' width='12' height='36' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='109' y1='458' x2='123' y2='458' stroke='#bbb' stroke-width='1'/>
+<rect x='125' y='422' width='12' height='36' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='124' y1='458' x2='138' y2='458' stroke='#bbb' stroke-width='1'/>
+<text x='87.5' y='476' text-anchor='middle' font-size='11' fill='#626567'>positive part</text>
+<rect x='35' y='550' width='330' height='34' fill='#d5f5e3' fill-opacity='1.0' rx='6' stroke='#27ae60' stroke-width='1.5'/>
+<text x='200' y='572' text-anchor='middle' font-size='13' fill='#1a7a38' font-weight='bold'>Luminosity  L ≈ 1.63   (high — truths agree)</text>
+<rect x='500' y='105' width='380' height='460' fill='#fff8f8' fill-opacity='1.0' rx='10' stroke='#c0392b' stroke-width='1.5'/>
+<rect x='500' y='105' width='380' height='32' fill='#c0392b' fill-opacity='1.0' rx='8'/><rect x='500' y='121' width='380' height='16' fill='#c0392b' fill-opacity='1.0' rx='0'/><text x='690' y='130' text-anchor='middle' font-size='13' fill='white' font-weight='bold'>Contradictory Truths  →  Low Luminosity</text>
+<rect x='530' y='182' width='12' height='48' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='529' y1='230' x2='543' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='545' y='188' width='12' height='42' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='544' y1='230' x2='558' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='560' y='176' width='12' height='54' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='559' y1='230' x2='573' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='575' y='230' width='12' height='42' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='574' y1='230' x2='588' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='590' y='194' width='12' height='36' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='589' y1='230' x2='603' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='605' y='182' width='12' height='48' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='604' y1='230' x2='618' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='620' y='230' width='12' height='30' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='619' y1='230' x2='633' y2='230' stroke='#bbb' stroke-width='1'/>
+<text x='582.5' y='248' text-anchor='middle' font-size='11' fill='#626567'>t₄  (pos/neg mixed)</text>
+<rect x='650' y='230' width='12' height='36' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='649' y1='230' x2='663' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='665' y='230' width='12' height='48' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='664' y1='230' x2='678' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='680' y='200' width='12' height='30' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='679' y1='230' x2='693' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='695' y='176' width='12' height='54' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='694' y1='230' x2='708' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='710' y='230' width='12' height='42' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='709' y1='230' x2='723' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='725' y='230' width='12' height='36' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='724' y1='230' x2='738' y2='230' stroke='#bbb' stroke-width='1'/>
+<rect x='740' y='188' width='12' height='42' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='739' y1='230' x2='753' y2='230' stroke='#bbb' stroke-width='1'/>
+<text x='702.5' y='248' text-anchor='middle' font-size='11' fill='#626567'>t₅  (neg dominant)</text>
+<line x1='625' y1='258' x2='625' y2='290' stroke='#c0392b' stroke-width='1.8' marker-end='url(#arrd)'/>
+<text x='645' y='306' text-anchor='middle' font-size='12' fill='#c0392b'>min( t₄, t₅ )</text>
+<rect x='550' y='320' width='12' height='36' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='549' y1='320' x2='563' y2='320' stroke='#bbb' stroke-width='1'/>
+<rect x='565' y='320' width='12' height='48' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='564' y1='320' x2='578' y2='320' stroke='#bbb' stroke-width='1'/>
+<rect x='580' y='290' width='12' height='30' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='579' y1='320' x2='593' y2='320' stroke='#bbb' stroke-width='1'/>
+<rect x='595' y='320' width='12' height='42' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='594' y1='320' x2='608' y2='320' stroke='#bbb' stroke-width='1'/>
+<rect x='610' y='320' width='12' height='42' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='609' y1='320' x2='623' y2='320' stroke='#bbb' stroke-width='1'/>
+<rect x='625' y='320' width='12' height='36' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='624' y1='320' x2='638' y2='320' stroke='#bbb' stroke-width='1'/>
+<rect x='640' y='320' width='12' height='30' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='639' y1='320' x2='653' y2='320' stroke='#bbb' stroke-width='1'/>
+<text x='602.5' y='338' text-anchor='middle' font-size='11' fill='#626567'>conjunction (many negative)</text>
+<line x1='582' y1='398' x2='582' y2='428' stroke='#c0392b' stroke-width='1.8' marker-end='url(#arrd)'/>
+<text x='582' y='444' text-anchor='middle' font-size='12' fill='#c0392b'>[conjunction]⁺  (positive part)</text>
+<line x1='549' y1='458' x2='563' y2='458' stroke='#bbb' stroke-width='1'/>
+<line x1='564' y1='458' x2='578' y2='458' stroke='#bbb' stroke-width='1'/>
+<rect x='580' y='428' width='12' height='30' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='579' y1='458' x2='593' y2='458' stroke='#bbb' stroke-width='1'/>
+<line x1='594' y1='458' x2='608' y2='458' stroke='#bbb' stroke-width='1'/>
+<line x1='609' y1='458' x2='623' y2='458' stroke='#bbb' stroke-width='1'/>
+<line x1='624' y1='458' x2='638' y2='458' stroke='#bbb' stroke-width='1'/>
+<line x1='639' y1='458' x2='653' y2='458' stroke='#bbb' stroke-width='1'/>
+<text x='602.5' y='476' text-anchor='middle' font-size='11' fill='#626567'>positive part (most dims zeroed)</text>
+<rect x='515' y='550' width='330' height='34' fill='#fadbd8' fill-opacity='1.0' rx='6' stroke='#c0392b' stroke-width='1.5'/>
+<text x='680' y='572' text-anchor='middle' font-size='13' fill='#922b21' font-weight='bold'>Luminosity  L ≈ 0.50   (low — contradiction)</text>
+</svg>

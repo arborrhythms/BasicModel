@@ -37,6 +37,11 @@
       <trainEmbedding>ARLM</trainEmbedding>
       <autoload>false</autoload>
       <autosave>true</autosave>
+      <sentencePrediction>true</sentencePrediction>
+      <sentenceContextWindow>5</sentenceContextWindow>
+      <sentenceCentroidHistory>3</sentenceCentroidHistory>
+      <sentenceLambda>1.01</sentenceLambda>
+      <sentencePredictionScale>0.1</sentencePredictionScale>
     </training>
 
     <server>
@@ -105,7 +110,7 @@
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>false</codebook>
-    <flatten>true</flatten>
+    <nInputDim>-1</nInputDim>
   </ConceptualSpace>
 
   <SymbolicSpace>

@@ -1,0 +1,54 @@
+<svg width='960' height='620' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' >
+  <rect width='960' height='620' fill='#fafafa'/>
+<defs><marker id='arrd' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2c3e50'/></marker><marker id='arrg' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#27ae60'/></marker></defs>
+<rect x='0' y='0' width='960' height='44' fill='#2c3e50' fill-opacity='1.0' rx='0'/>
+<text x='480' y='29' text-anchor='middle' font-size='18' fill='white' font-weight='bold'>WikiOracle Space Hierarchy</text>
+<rect x='30' y='58' width='280' height='480' fill='#eaf4fb' fill-opacity='1.0' rx='10' stroke='#2980b9' stroke-width='2'/>
+<rect x='30' y='58' width='280' height='58' fill='#2980b9' fill-opacity='1.0' rx='10'/>
+<rect x='30' y='90' width='280' height='26' fill='#2980b9' fill-opacity='1.0' rx='0'/>
+<text x='170' y='81' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>Perceptual Space</text>
+<text x='170' y='106' text-anchor='middle' font-size='11' fill='white'>[B × N × 4]  byte/word chunks</text>
+<text x='40' y='133' text-anchor='start' font-size='12' fill='#2c3e50'>• Geometric: L2 distance = perceptual nearness</text>
+<text x='40' y='165' text-anchor='start' font-size='12' fill='#2c3e50'>• RBF kernels over sensory features</text>
+<text x='40' y='197' text-anchor='start' font-size='12' fill='#2c3e50'>• 5-dim structure: MP, VP, 3×NP</text>
+<text x='40' y='229' text-anchor='start' font-size='12' fill='#2c3e50'>• SyntacticLayer: chunk-merge</text>
+<text x='40' y='261' text-anchor='start' font-size='12' fill='#2c3e50'>• Op: Prep (relocation), Has (part-whole)</text>
+<rect x='340' y='58' width='290' height='480' fill='#f5eef8' fill-opacity='1.0' rx='10' stroke='#8e44ad' stroke-width='2'/>
+<rect x='340' y='58' width='290' height='58' fill='#8e44ad' fill-opacity='1.0' rx='10'/>
+<rect x='340' y='90' width='290' height='26' fill='#8e44ad' fill-opacity='1.0' rx='0'/>
+<text x='485' y='81' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>Conceptual Space</text>
+<text x='485' y='106' text-anchor='middle' font-size='11' fill='white'>[B × N/2ᵗ × D·2ᵗ]  semantic gist</text>
+<text x='350' y='133' text-anchor='start' font-size='12' fill='#2c3e50'>• Cosine similarity = semantic nearness</text>
+<text x='350' y='165' text-anchor='start' font-size='12' fill='#2c3e50'>• SigmaLayer: y = tanh(Wx + b)  (additive)</text>
+<text x='350' y='197' text-anchor='start' font-size='12' fill='#2c3e50'>• Optional attention + VQ codebook</text>
+<text x='350' y='229' text-anchor='start' font-size='12' fill='#2c3e50'>• Ramsified: loop t = 0…T−1</text>
+<text x='350' y='261' text-anchor='start' font-size='12' fill='#2c3e50'>• Op: Union (⊕), Intersection (⊙)</text>
+<text x='350' y='293' text-anchor='start' font-size='12' fill='#2c3e50'>• TruthField: attractor/disperser regions</text>
+<rect x='660' y='58' width='280' height='480' fill='#fef9e7' fill-opacity='1.0' rx='10' stroke='#ca6f1e' stroke-width='2'/>
+<rect x='660' y='58' width='280' height='58' fill='#ca6f1e' fill-opacity='1.0' rx='10'/>
+<rect x='660' y='90' width='280' height='26' fill='#ca6f1e' fill-opacity='1.0' rx='0'/>
+<text x='800' y='81' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>Symbolic Space</text>
+<text x='800' y='106' text-anchor='middle' font-size='11' fill='white'>[B × K × symbol_dim]  discrete</text>
+<text x='670' y='133' text-anchor='start' font-size='12' fill='#2c3e50'>• PiLayer: log-space multiplicative</text>
+<text x='670' y='165' text-anchor='start' font-size='12' fill='#2c3e50'>• Codebook: snaps to nearest prototype</text>
+<text x='670' y='197' text-anchor='start' font-size='12' fill='#2c3e50'>• DoT baked into sign × magnitude</text>
+<text x='670' y='229' text-anchor='start' font-size='12' fill='#2c3e50'>• TruthLayer: record / query / field</text>
+<text x='670' y='261' text-anchor='start' font-size='12' fill='#2c3e50'>• isConsistent / ground / isTrue</text>
+<text x='670' y='293' text-anchor='start' font-size='12' fill='#2c3e50'>• extrapolate / reason()</text>
+<text x='670' y='325' text-anchor='start' font-size='12' fill='#2c3e50'>• Op: Conjunction, Disjunction, Part</text>
+<line x1='310' y1='300' x2='340' y2='300' stroke='#8e44ad' stroke-width='1.8' marker-end='url(#arrd)'/>
+<text x='325' y='290' text-anchor='middle' font-size='11' fill='#8e44ad' font-style='italic'>Sigma</text>
+<line x1='630' y1='300' x2='660' y2='300' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arrd)'/>
+<text x='645' y='290' text-anchor='middle' font-size='11' fill='#ca6f1e' font-style='italic'>Pi</text>
+<line x1='340' y1='320' x2='310' y2='320' stroke='#8e44ad' stroke-width='1.5' stroke-dasharray='5,3'/>
+<line x1='660' y1='320' x2='630' y2='320' stroke='#ca6f1e' stroke-width='1.5' stroke-dasharray='5,3'/>
+<rect x='670' y='350' width='260' height='120' fill='#d5f5e3' fill-opacity='1.0' rx='6' stroke='#27ae60' stroke-width='1.5'/>
+<text x='800' y='370' text-anchor='middle' font-size='13' fill='#1a7a38' font-weight='bold'>TruthLayer</text>
+<text x='680' y='392' text-anchor='start' font-size='11' fill='#1a7a38'>• store: activation × DoT</text>
+<text x='680' y='416' text-anchor='start' font-size='11' fill='#1a7a38'>• query by cosine sim</text>
+<text x='680' y='440' text-anchor='start' font-size='11' fill='#1a7a38'>• field(): truth attractor map</text>
+<rect x='340' y='540' width='290' height='28' fill='#e8daef' fill-opacity='1.0' rx='6' stroke='#8e44ad' stroke-width='1'/>
+<text x='485' y='558' text-anchor='middle' font-size='12' fill='#8e44ad' font-style='italic'>Ramsified loop: t = 0, 1, …, T−1</text>
+<line x1='0' y1='590' x2='960' y2='590' stroke='#ddd' stroke-width='1'/>
+<text x='480' y='610' text-anchor='middle' font-size='12' fill='#626567'>Forward: Input → Perceptual → Conceptual → Symbolic → Output     |     Reverse: Output → Symbolic → Conceptual → Perceptual</text>
+</svg>

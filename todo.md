@@ -1,21 +1,13 @@
 # TODO
 
-## Sentence-Level Prediction
-* Use [Sentence Embeddings](doc/SentenceEmbeddings.pdf)
-* Turn the one-word lookahead prediction into head-first prediction of the sentence. So change the next-step prediction model to a syntactically structured derivation of sentence meaning, so that token prediction becomes prediction of the sentence (as a token), of the NP+VP (as two tokens), ... until the full sentence has been specified. This would take the same number of production steps as a current LLM, but the iterative refinement of the next-sentence production is conceptually much different, and closer to human reasoning and refinement where there is a core truth (S) and spatial NP and temporal VP which are successively refined by adjectives and adverbs that scope the conceptual space of that kernel sentence.
-* Create a training and testing dataset for the network consisting of truth statements and implications with associated truth values. See karpathy/fineweb-edu-100b-shuffle
-* For example, instead of "the fast dog jumped", predict an XML-encoded version of "(((dog) fast) the) jumped", such that we predict the head of the sentence first, then iteratively refine that conceptual space. 
+## Refine the 5M model
+* check performance on fineweb
+* tune l1Lambda and learningRate
 
-## Mereological Operations on Conceptual Space
-* Make improvements to NanoChat that allow it to compute truth within the geometric/conceptual space of the network, giving meaning to logical operations within that space (so use mereological operations to implement the ternary logic that is currently operating over the trust entries of the HME architecture in the current design). This means replacing AND with union, OR with intersection, IMPLICATION with parthood. See [Socrates.pdf](Socrates.pdf) for a quick sketch of deriving mereological (Venn-diagram-like) logic from entailment.
-* The architecture of WikiOracle is designed as a conceptual space, in the sense of Gardenfors. Conceptual spaces are similarity spaces, where similar concepts occupy regions of space close to one another. As spaces also of truth, they are amenable to logical calculation. This is similar to existing LLM architecture: Embedding spaces encode meaningful vectors in the same way, and separating hypersurfaces (the neurons of the network) categorize that space in numerous ways, allowing calculation on that space. Summing over multiplicative connections provides the basic Boolean architectural primitives {or, and} in a continuous and learnable way, which allows logical computation on that space. However, it allows such voluminous computation that the syntax and semantics are dense compared to the English language. The trust computed by the contextual structure provided here is explicit, subject to interpretation, and much higher level. The values of certainty propagate, giving not only a next-token prediction but a measure of confidence in the computed answer.
-* See [`Socrates.pdf`](./Socrates.pdf): Venn diagram as a model of luminosity. 
-* Use parser.py to alter the NanoChat input format as in [Grammar.md](doc/Grammar.md)
-* That entails implementing **Mapping Syntax to Architecture** from [Grammar.md](doc/Grammar.md) in Nanochat
-* **Implemented:** Luminosity, implication derivation via `part()`, ternary `lift(C, C, C)`, and the full reasoning system (`isConsistent`, `ground`, `isTrue`, `extrapolate`, `reason`) are now in `TruthLayer` and `BaseModel`. See [Logic.md](doc/Logic.md) §Luminosity, [Grammar.md](doc/Grammar.md) §Lift, [Reasoning](doc/reasoning.md).
 
 ## Truth Set Orthogonalization
-* Use luminosity to orthogonalize the truth set, removing redundant or near-duplicate entries and resolving contradictions. The consistency measure (`TruthLayer.consistency()`) detects anti-parallel vectors; a future step would automatically prune or merge conflicting truths based on their DoT magnitudes.
+* Use luminosity to orthogonalize the truth set, removing redundant or near-duplicate entries and resolving contradictions. 
+* The consistency measure (`TruthLayer.consistency()`) detects anti-parallel vectors; a future step would automatically prune or merge conflicting truths based on their DoT magnitudes.
 
 ## The Operation of an Enlightened Mind (mahamudra)
 * One Pointedness is maintaining awareness of a given convex region in 5D Perceptual Space. It requires stillness.
@@ -85,3 +77,55 @@ to learn from that data, even when the data is revoked, it will be remembered
 in some vague way by the weights. So implement non-destructive forgetting:
 not making the network crazy for knowing, but by training it on the reward
 of not knowing (i.e. train it with non-affirming negation).
+
+## Meaningful Prediction
+Since we predict both words and sentences, the best prediction of future content is *meaningful*. Predictions of the next sentence should be ConceptualSpace predictions of the head (as a token), then of the NP+VP (as two tokens), iteratively refining until the full sentence has been specified as a grammatical tree — rather than strictly AR-1 over words (which is a surface-level prediction, not a meaningful prediction).
+
+For example, instead of predicting "the fast dog jumped" token-by-token left to right, predict an XML-encoded version of `(((dog) fast) the) jumped` — the head of the sentence first, then iterative refinement of that conceptual space. This takes the same number of production steps as a current LLM, but the iterative refinement of the next-sentence production is conceptually much different, and closer to human reasoning where there is a core truth (S) with spatial NP and temporal VP that are successively refined by adjectives and adverbs that scope the conceptual space of that kernel sentence.
+
+* Ensure words are aligned with sentences when there is a single unambiguous head.
+* Head-first prediction requires that the head can be reliably identified from the composition.
+
+## Invertible Grammar for Reconstruction
+
+For reconstruction to work through grammatical composition (rather than bypassing
+it via `_pre_compose`), the grammar must be invertible — each compose step must
+have a corresponding decompose step that recovers the original operands.
+
+### Invertible productions (safe for reconstruction)
+* **not(C)** → `Basis.negation` (bitonic: `-x`, self-inverse: `not(not(x)) = x`)
+* **Transition rules** (S→C, C→P) → pass-through (`method_name=None`), trivially invertible
+
+### Non-invertible productions (information loss)
+* **non(C)** → `Basis.non` (bitonic: zeros everything; monotonic: relu threshold).
+  Neither mode is invertible — original magnitudes are lost.
+* **union / intersection / chunk** → `Basis.disjunction / conjunction`.
+  Binary set operations: `union(a,b)` loses which elements came from `a` vs `b`.
+* **equals / part** → scalar gating (`score * right`). Loses the original magnitude.
+* **lift / lower** → parametric (verb codebook / rank reduction). Would need stored
+  state for inversion.
+* **true** → `Basis.pos` (relu). Negative values are lost.
+
+### What an invertible grammar needs
+1. **Restrict to self-inverse rules**: `not`, transition. These can be freely used.
+2. **Store forward state for quasi-invertible rules**: For rules like `non` (gate)
+   or `lift` (SVO), store the forward computation state and use it in decompose.
+   This trades memory for invertibility.
+3. **Avoid inherently lossy rules in compose**: `union`, `intersection`, `chunk`,
+   `equals`, `part`, `true` are projections that lose information. They can appear
+   in the grammar for forward/classification, but reconstruction must bypass them
+   (via `_pre_compose`).
+4. **For hierarchical mode**: Each level's compose/decompose must be independently
+   invertible. The butterfly merge `[B, N, D] → [B, N/2, 2D]` is exactly invertible
+   via reshape. Grammar-based reduction at each level needs rule-level invertibility.
+
+### Current state (MM_xor)
+MM_xor uses `_pre_compose` bypass: reconstruction goes through sigma inverse
+directly, skipping compose/decompose. This works because `reconstruct="symbols"`
+caches the pre-compose sigma output. The grammar still operates for classification.
+
+## Future Work: Parsed Training Dataset
+It is desirable to create a small training and testing dataset for the network consisting of statements that are already parsed. This would allow direct comparison between the grammatical derivation produced by traditional English parsers and the deep structure produced by BasicModel's ConceptualSyntacticLayer.
+
+* See `bin/parse.py` as a starting point for producing grammatical derivations via NLTK POS tagging and CFG parsing.
+* Such a dataset would also enable evaluation of head identification accuracy and composition quality.

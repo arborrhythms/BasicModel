@@ -135,6 +135,7 @@ def _populate_test_config(*,
     _symbol_dim = conceptDim if symbolPassThrough else symbolDim
     # Deep-merge test overrides onto model.xml defaults so that keys like
     # 'syntax', etc. are always present.
+    _nInputDim = -1 if flatten else 0
     _overrides = {
         "architecture": {
             "reconstruct": reconstruct,
@@ -155,7 +156,7 @@ def _populate_test_config(*,
             "nActive": nInput,
             "nDim": inputDim,
             "nVectors": nInput,
-            "flatten": False,  # InputSpace never flattens
+            "nInputDim": 0,  # InputSpace never flattens
             "codebook": codebook,
             "demuxed": demuxed,
             "lexer": lexer,
@@ -164,7 +165,7 @@ def _populate_test_config(*,
             "nActive": nPercepts,
             "nDim": perceptDim,
             "nVectors": nPercepts,
-            "flatten": flatten,
+            "nInputDim": _nInputDim,
             "codebook": _pq,
             "passThrough": perceptPassThrough,
             "hasAttention": perceptHasAttention,
@@ -174,7 +175,7 @@ def _populate_test_config(*,
             "nActive": nConcepts,
             "nDim": conceptDim,
             "nVectors": nConcepts,
-            "flatten": flatten,
+            "nInputDim": _nInputDim,
             "codebook": _cq,
             "hasAttention": conceptHasAttention,
             "invertible": invertible,
@@ -183,7 +184,7 @@ def _populate_test_config(*,
             "nActive": nSymbols,
             "nDim": _symbol_dim,
             "nVectors": nSymbols,
-            "flatten": flatten,
+            "nInputDim": _nInputDim,
             "passThrough": symbolPassThrough,
             "codebook": not symbolPassThrough,
         },
@@ -193,14 +194,14 @@ def _populate_test_config(*,
             "nVectors": nOutput,
             "nWhere": 0,
             "nWhen": 0,
-            "flatten": True,  # OutputSpace always flattens
+            "nInputDim": -1,  # OutputSpace always flattens
             "codebook": False,
             "invertible": False,
         },
         "ModalSpace": {
             "nDim": perceptDim,
             "nVectors": nPercepts,
-            "flatten": flatten,
+            "nInputDim": _nInputDim,
             "passThrough": False,
             "hasAttention": perceptHasAttention,
             "invertible": invertible,
@@ -523,7 +524,8 @@ class TestWhereEncodingRoundTrip(unittest.TestCase):
         y = pe.forward(x)
         cleaned, _ = pe.reverse(y)
         mask = torch.ones(10, dtype=torch.bool)
-        mask[[-4, -3]] = False
+        enc_idx = np.add([10] * len(pe.index), pe.index)
+        mask[enc_idx] = False
         torch.testing.assert_close(cleaned[:, :, mask], original[:, :, mask])
 
 
@@ -2349,10 +2351,11 @@ class TestExpandMasked(unittest.TestCase):
 
     def test_masked_position_is_zero_content(self):
         """Masked position has zero content dims, non-zero position dims."""
-        from BasicModel import WhereEncoding, WhenEncoding
+        from BasicModel import WhenEncoding
         masked, _ = self.inp.expand_masked(self.embedded, self.sentence)
         embSize = self.embSize
-        where_idx = np.add([embSize, embSize], WhereEncoding.index)
+        we = self.inp.subspace.whereEncoding
+        where_idx = np.add([embSize] * len(we.index), we.index)
         when_idx = np.add([embSize, embSize], WhenEncoding.index)
         pos_dims = set(where_idx.tolist() + when_idx.tolist())
         content_dims = [d for d in range(embSize) if d not in pos_dims]
@@ -2375,10 +2378,11 @@ class TestExpandMasked(unittest.TestCase):
 
     def test_position_encoding_preserved(self):
         """Position encoding (nWhere) at masked position matches original."""
-        from BasicModel import WhereEncoding, WhenEncoding
+        from BasicModel import WhenEncoding
         masked, _ = self.inp.expand_masked(self.embedded, self.sentence)
         embSize = self.embSize
-        where_idx = np.add([embSize, embSize], WhereEncoding.index)
+        we = self.inp.subspace.whereEncoding
+        where_idx = np.add([embSize] * len(we.index), we.index)
         when_idx = np.add([embSize, embSize], WhenEncoding.index)
         pos_dims = list(where_idx) + list(when_idx)
         # At masked position, positional dims should match original
@@ -2557,11 +2561,12 @@ class TestRARLM(unittest.TestCase):
 
     def test_rarlm_content_zeroed_at_masked_pos(self):
         """Content dims at the masked position are zeroed in each copy."""
-        from BasicModel import WhereEncoding, WhenEncoding
+        from BasicModel import WhenEncoding
         sentence = "hello world test"
         masked, positions = self.inp.expand_masked(self.embedded, sentence, maskedPrediction='RARLM')
         embSize = self.embSize
-        where_idx = np.add([embSize, embSize], WhereEncoding.index)
+        we = self.inp.subspace.whereEncoding
+        where_idx = np.add([embSize] * len(we.index), we.index)
         when_idx = np.add([embSize, embSize], WhenEncoding.index)
         pos_dims = set(where_idx.tolist() + when_idx.tolist())
         content_dims = [d for d in range(embSize) if d not in pos_dims]
@@ -3388,13 +3393,13 @@ class TestSubspaceWords(unittest.TestCase):
     def test_add_word_start_state(self):
         ss = self._make_ss()
         ss.add_word(0, 0, 0)
-        self.assertEqual(ss.get_words(), [(0, 0, 0)])
+        self.assertEqual(ss.get_words(), [(0, 0, 0, 0)])
 
     def test_add_multiple_words(self):
         ss = self._make_ss()
         ss.add_word(0, 0, 0)
         ss.add_word(0, 42, 1)
-        self.assertEqual(ss.get_words(), [(0, 0, 0), (0, 42, 1)])
+        self.assertEqual(ss.get_words(), [(0, 0, 0, 0), (0, 42, 1, 0)])
 
     def test_set_words(self):
         ss = self._make_ss()
