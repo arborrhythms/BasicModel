@@ -130,6 +130,13 @@ Alpha annealing (ergodic mode): the code-level exploration parameter starts at
 is the inverse of the ergodic math convention (`alpha=0` means explore); layers
 translate between them internally.
 
+When `<ramsified>true</ramsified>` and `conceptualOrder > 1`, the
+Sigma-Pi loop switches from a flat concatenation-based cycle to a
+hierarchical butterfly-merge architecture with per-level layers and a
+geometrically partitioned symbol dimension.  See
+[Reasoning.md](Reasoning.md) §Ramsified vs Non-Ramsified Architecture
+for the full comparison.
+
 See [Params.md](Params.md) for all XML configuration parameters.
 See [Training.md](Training.md) for embedding pretraining, SBOW, masked prediction
 modes, and the `<trainEmbedding>` control.

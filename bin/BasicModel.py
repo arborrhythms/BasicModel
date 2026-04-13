@@ -1911,6 +1911,14 @@ class MentalModel(BaseModel):
         self.ramsified = TheXMLConfig.get("architecture.ramsified")
         self.l1_lambda = float(TheXMLConfig.get("architecture.l1Lambda"))
         self.stm_decay = float(TheXMLConfig.get("architecture.STM_decay", default=0.0) or 0.0)
+        self._ramsified_uses_grammar = False
+        self._ramsified_state_vectors = None
+        self._ramsified_state_dim = None
+        self._ramsified_symbol_width = None
+        self._ramsified_symbol_factor = None
+        self._ramsified_pair_sigmas = None
+        self._ramsified_pair_pis = None
+        self.symbol_states = []
 
         # Truth integration config (optional — absent in BasicModel.xml)
         self.truth_bias_scale = float(TheXMLConfig.get("architecture.truthBiasScale", default=0.1) or 0.1)
@@ -2009,8 +2017,53 @@ class MentalModel(BaseModel):
         conceptInputShape = [nPercepts + nSymbols, percept_dim + obj_percept]
         conceptOutputShape = [nPercepts + nSymbols, concept_dim + obj_concept]
 
-        # Progressive bottleneck: per-level shapes when ramsified (any order)
-        if self.ramsified:
+        # Ramsified non-grammar path keeps [B, N, D] state width/arity constant
+        # and mixes information with invertible pairwise butterfly stages.
+        if self.ramsified and not self._ramsified_uses_grammar:
+            state_vectors = nPercepts
+            state_dim = percept_dim + obj_percept
+            symbol_width = symbol_dim + obj_symbol
+            state_volume = state_vectors * state_dim
+            symbol_volume = nSymbols * symbol_width
+            TheXMLConfig.require(
+                lambda cfg, _sd=state_dim, _sw=symbol_width: _sw > 0 and (_sd % _sw) == 0,
+                f"ramsified non-grammar path requires state_dim ({state_dim}) to be divisible by "
+                f"symbol_width ({symbol_width}) so n = D/S is integral"
+            )
+            TheXMLConfig.require(
+                lambda cfg, _sv=state_volume, _yv=symbol_volume: _sv == _yv,
+                f"ramsified non-grammar path requires latent/symbol volume equality: "
+                f"nPercepts*state_dim ({state_volume}) == nSymbols*symbol_width ({symbol_volume})"
+            )
+            TheXMLConfig.require(
+                lambda cfg, _n=state_vectors: _n > 0 and (_n & (_n - 1)) == 0,
+                f"ramsified non-grammar butterfly schedule requires nPercepts ({state_vectors}) "
+                f"to be a positive power of two"
+            )
+            TheXMLConfig.require(
+                lambda cfg, _r=str(TheXMLConfig.get('architecture.reconstruct')).lower(): _r == "symbols",
+                "ramsified non-grammar reverse requires reconstruct=symbols so the full symbol state "
+                "remains available for exact inversion"
+            )
+            self._ramsified_state_vectors = state_vectors
+            self._ramsified_state_dim = state_dim
+            self._ramsified_symbol_width = symbol_width
+            self._ramsified_symbol_factor = state_dim // symbol_width
+            pair_dim = 2 * state_dim
+            naive = TheXMLConfig.get("architecture.naive")
+            self._ramsified_pair_sigmas = nn.ModuleList()
+            self._ramsified_pair_pis = nn.ModuleList()
+            for _ in range(self.conceptualOrder):
+                sig = SigmaLayer(pair_dim, pair_dim, naive=naive,
+                                 ergodic=self.ergodic, invertible=True)
+                sig.saturate = False
+                self._ramsified_pair_sigmas.append(sig)
+                self._ramsified_pair_pis.append(
+                    PiLayer(pair_dim, pair_dim, invertible=True, monotonic=True)
+                )
+            self._level_shapes_list = None
+        # Progressive bottleneck: per-level shapes when ramsified grammar is enabled
+        elif self.ramsified:
             self._level_shapes_list = self._level_shapes(
                 nPercepts, percept_dim + obj_percept, self.conceptualOrder)
         else:
@@ -2160,6 +2213,96 @@ class MentalModel(BaseModel):
         out[:, 1::2, :] = right
         return out
 
+    def _ramsified_pair_enabled(self):
+        return bool(self.ramsified and not self._ramsified_uses_grammar
+                    and self._ramsified_pair_sigmas is not None
+                    and self._ramsified_pair_pis is not None)
+
+    @staticmethod
+    def _butterfly_stage_permutation(n_vectors, stage):
+        """Permutation that makes XOR-neighbors adjacent for stage ``stage``."""
+        if n_vectors <= 1:
+            return torch.arange(n_vectors, dtype=torch.long)
+        span = int(math.log2(n_vectors))
+        bit = stage % max(span, 1)
+        stride = 1 << bit
+        block = stride << 1
+        order = []
+        for start in range(0, n_vectors, block):
+            for offset in range(stride):
+                order.append(start + offset)
+                order.append(start + offset + stride)
+        return torch.tensor(order, dtype=torch.long)
+
+    @staticmethod
+    def _inverse_permutation(perm):
+        inv = torch.empty_like(perm)
+        inv[perm] = torch.arange(len(perm), device=perm.device)
+        return inv
+
+    @staticmethod
+    def _pack_pairs(x):
+        """Pack adjacent object pairs: [B, N, D] -> [B, N/2, 2D]."""
+        B, N, D = x.shape
+        assert N % 2 == 0, f"pair pack requires even N, got {N}"
+        return x.reshape(B, N // 2, 2 * D)
+
+    @staticmethod
+    def _unpack_pairs(pair_state):
+        """Unpack pair state: [B, N/2, 2D] -> [B, N, D]."""
+        B, N_half, pair_dim = pair_state.shape
+        assert pair_dim % 2 == 0, f"pair state width must be even, got {pair_dim}"
+        return pair_state.reshape(B, N_half * 2, pair_dim // 2)
+
+    def _pair_state_to_symbols(self, pair_symbols):
+        """Pair head output [B, N/2, 2D] -> configured symbol stack [B, nSymbols, S]."""
+        B, N_half, pair_dim = pair_symbols.shape
+        S = self._ramsified_symbol_width
+        n = self._ramsified_symbol_factor
+        expected = n * 2 * S
+        assert pair_dim == expected, \
+            f"pair head width {pair_dim} != n*2S {expected} (n={n}, S={S})"
+        symbol_grid = pair_symbols.reshape(B, N_half, n, 2, S)
+        symbol_grid = symbol_grid.permute(0, 1, 3, 2, 4).contiguous()
+        return symbol_grid.reshape(B, N_half * 2 * n, S)
+
+    def _symbols_to_pair_state(self, sym_vectors):
+        """Inverse reshape of _pair_state_to_symbols()."""
+        B, n_symbols, S = sym_vectors.shape
+        n = self._ramsified_symbol_factor
+        N = self._ramsified_state_vectors
+        expected = N * n
+        assert n_symbols == expected, \
+            f"symbol count {n_symbols} != N*n {expected} (N={N}, n={n})"
+        symbol_grid = sym_vectors.reshape(B, N // 2, 2, n, S)
+        symbol_grid = symbol_grid.permute(0, 1, 3, 2, 4).contiguous()
+        return symbol_grid.reshape(B, N // 2, n * 2 * S)
+
+    def _pair_stage_forward(self, x, stage_idx):
+        """One invertible butterfly stage on [B, N, D]."""
+        perm = self._butterfly_stage_permutation(x.shape[1], stage_idx).to(x.device)
+        inv_perm = self._inverse_permutation(perm)
+        x_perm = x[:, perm, :]
+        pair_input = self._pack_pairs(x_perm)
+        pair_output = self._ramsified_pair_sigmas[stage_idx].forward(pair_input)
+        pair_symbols = self._ramsified_pair_pis[stage_idx].forward(pair_output)
+        sym_vectors = self._pair_state_to_symbols(pair_symbols)
+        x_next = self._unpack_pairs(pair_output)[:, inv_perm, :]
+        return x_next, sym_vectors
+
+    def _pair_stage_reverse(self, x_next, stage_idx, pair_output=None):
+        """Inverse of _pair_stage_forward for one stage."""
+        perm = self._butterfly_stage_permutation(self._ramsified_state_vectors, stage_idx).to(
+            x_next.device if x_next is not None else pair_output.device
+        )
+        inv_perm = self._inverse_permutation(perm)
+        if pair_output is None:
+            x_perm = x_next[:, perm, :]
+            pair_output = self._pack_pairs(x_perm)
+        pair_input = self._ramsified_pair_sigmas[stage_idx].reverse(pair_output)
+        x_prev = self._unpack_pairs(pair_input)[:, inv_perm, :]
+        return x_prev
+
     # ── Helpers ───────────────────────────────────────────────────────
 
     def Finish(self, data):
@@ -2185,9 +2328,11 @@ class MentalModel(BaseModel):
         B = percepts.shape[0]
 
         # ── Pre-loop init ──
-        symbol_dim = self.symbolicSpace.layer.nOutput
-
-        if self.ramsified:
+        if self._ramsified_pair_enabled():
+            self.concept_states = []
+            self.symbol_states = []
+            x = percepts
+        elif self.ramsified:
             from Space import TheGrammar
             self.concept_states = []
             x = percepts                     # [B, N_percept, D_percept]
@@ -2197,6 +2342,7 @@ class MentalModel(BaseModel):
             self._sym_feedbacks = []
         else:
             self.concept_states = []
+            self.symbol_states = []
             sym_feedback = torch.zeros(B, self._symbol_shape[0],
                                        self._symbol_shape[1],
                                        device=percepts.device)
@@ -2206,7 +2352,12 @@ class MentalModel(BaseModel):
         # ── Sigma-Pi loop ──
         for t in range(self.conceptualOrder):
             # 1. Input construction
-            if self.ramsified:
+            if self._ramsified_pair_enabled():
+                x, sym_vectors = self._pair_stage_forward(x, t)
+                self.concept_states.append(x.clone())
+                self.symbol_states.append(sym_vectors.clone())
+                continue
+            elif self.ramsified:
                 x = self._butterfly_merge(x)
                 if sym_feedback is not None:
                     if not use_grammar:
@@ -2262,10 +2413,18 @@ class MentalModel(BaseModel):
                 self.concept_states.append(concept_vectors.clone())
 
         # ── Post-loop finalization ──
+        if self._ramsified_pair_enabled():
+            self.conceptualSpace.subspace.set_event(x)
+            self.concepts = self.conceptualSpace.subspace
+            self.symbolicSpace.subspace.set_event(sym_vectors)
+            self.symbols = self.symbolicSpace.subspace
 
         # Sentence vector
         if self.sentence_predictor is not None:
-            if self.ramsified:
+            if self._ramsified_pair_enabled():
+                sv = x.mean(dim=1)
+                self._current_sentence_vec = sv.mean(dim=0)
+            elif self.ramsified:
                 sv = concept_vectors.mean(dim=1)
                 self._current_sentence_vec = sv.mean(dim=0)
             else:
@@ -2318,7 +2477,28 @@ class MentalModel(BaseModel):
             sym_vec = output_state.materialize()
             concepts_state = output_state       # default path only
 
-        if self.ramsified:
+        if self._ramsified_pair_enabled():
+            if not use_cached:
+                raise ValueError(
+                    "ramsified non-grammar reverse requires reconstruct='symbols' "
+                    "so the full symbol state is available for exact inversion"
+                )
+            pair_output = self._ramsified_pair_pis[self.conceptualOrder - 1].reverse(
+                self._symbols_to_pair_state(sym_vec)
+            )
+            x = None
+            for t in reversed(range(self.conceptualOrder)):
+                if t == self.conceptualOrder - 1:
+                    x = self._pair_stage_reverse(None, t, pair_output=pair_output)
+                else:
+                    x = self._pair_stage_reverse(x, t)
+            self.perceptualSpace.subspace.set_event(x)
+            input_state = self.perceptualSpace.reverse(self.perceptualSpace.subspace)
+            self.inputs = self.inputSpace.reverse(input_state)
+            input_latent = input_state.materialize()
+            input_data = self.inputs.materialize()
+            return input_data, input_latent
+        elif self.ramsified:
             # Initial pi inverse from final level
             self.symbols.set_event(sym_vec)
             x = self.symbolicSpace[self.conceptualOrder - 1].reverse(
@@ -2362,6 +2542,16 @@ class MentalModel(BaseModel):
         input_latent = input_state.materialize()
         input_data = self.inputs.materialize()
         return input_data, input_latent
+
+    def set_sigma(self, sigma):
+        super().set_sigma(sigma)
+        for layer in list(self._ramsified_pair_sigmas or []) + list(self._ramsified_pair_pis or []):
+            layer.set_sigma(sigma)
+
+    def paramUpdate(self):
+        super().paramUpdate()
+        for layer in list(self._ramsified_pair_sigmas or []) + list(self._ramsified_pair_pis or []):
+            layer.paramUpdate()
 
     # ── Grammar Learning (Phase 2) ────────────────────────────────────
 
@@ -2605,6 +2795,68 @@ class ModelFactory:
             errors.append(
                 "ConceptualSpace hasAttention=True is incompatible with nInputDim reshape. "
                 "Set <hasAttention>false</hasAttention> in <ConceptualSpace>.")
+
+        if model_family == "mental" and bool(arch.get("ramsified", False)):
+            def _resolve_dim(space_name, prev_dim):
+                try:
+                    raw = gsp(cfg, space_name, "nDim")
+                except KeyError:
+                    return prev_dim
+                return prev_dim if raw == 0 else raw
+
+            def _resolve_count(space_name, prev_count):
+                try:
+                    raw = gsp(cfg, space_name, "nOutput")
+                except KeyError:
+                    return prev_count
+                return prev_count if raw == 0 else raw
+
+            def _obj_size(space_name):
+                total = 0
+                for key in ("nWhere", "nWhen"):
+                    try:
+                        total += gsp(cfg, space_name, key)
+                    except KeyError:
+                        pass
+                return total
+
+            n_input = _resolve_count("InputSpace", 0)
+            n_percepts = _resolve_count("PerceptualSpace", n_input)
+            n_concepts = _resolve_count("ConceptualSpace", n_percepts)
+            n_symbols = _resolve_count("SymbolicSpace", n_concepts)
+
+            input_dim = _resolve_dim("InputSpace", 1)
+            percept_dim = _resolve_dim("PerceptualSpace", input_dim)
+            concept_dim = _resolve_dim("ConceptualSpace", percept_dim)
+            symbol_dim = _resolve_dim("SymbolicSpace", concept_dim)
+
+            state_dim = percept_dim + _obj_size("PerceptualSpace")
+            symbol_width = symbol_dim + _obj_size("SymbolicSpace")
+
+            if n_percepts > 0 and n_symbols > 0 and state_dim > 0 and symbol_width > 0:
+                state_volume = n_percepts * state_dim
+                symbol_volume = n_symbols * symbol_width
+                if state_volume != symbol_volume:
+                    errors.append(
+                        "ramsified non-grammar path requires latent/symbol volume equality: "
+                        f"nPercepts*state_dim ({state_volume}) must equal "
+                        f"nSymbols*symbol_width ({symbol_volume})."
+                    )
+                if state_dim % symbol_width != 0:
+                    errors.append(
+                        "ramsified non-grammar path requires state_dim to be divisible by "
+                        f"symbol_width so n = D/S is integral (got D={state_dim}, S={symbol_width})."
+                    )
+                if n_percepts & (n_percepts - 1):
+                    errors.append(
+                        "ramsified non-grammar butterfly schedule requires nPercepts to be a "
+                        f"power of two (got nPercepts={n_percepts})."
+                    )
+                if str(arch.get("reconstruct", "NONE")).lower() != "symbols":
+                    errors.append(
+                        "ramsified non-grammar reverse requires reconstruct=symbols so the full "
+                        "symbol state remains available for exact inversion."
+                    )
 
         # SymbolicSpace passThrough requires shape consistency with ConceptualSpace
         sym_pt = gsp(cfg, "SymbolicSpace", "passThrough")

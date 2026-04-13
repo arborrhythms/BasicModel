@@ -118,11 +118,104 @@ symbolic reconstruction objective:
 Grammar weights emerge from gradient descent. Paraphrase-invariance holds
 because semantically similar sentences snap to nearby codebook entries.
 
-## Ramsified Reverse
+## Ramsified vs Non-Ramsified Architecture
 
-The ramsified reverse pass unwinds partition slices from highest order to
-lowest, reversing through `SymbolicSpace` and `ConceptualSpace` per
-partition, then combines percept estimates across orders.
+The `<ramsified>` flag selects between two fundamentally different
+Sigma-Pi loop implementations.  Both share the same six-space pipeline;
+they differ in how the loop body constructs its input, indexes its
+layers, and feeds information between iterations.
+
+### Non-Ramsified (default)
+
+The standard path treats the Sigma-Pi loop as a **flat, monolithic
+cycle**.  At each conceptual order `t`:
+
+1. **Input construction.**  Percepts and symbol feedback are
+   **concatenated** along the vector dimension:
+   `concept_input = cat([percepts, sym_feedback], dim=1)`,
+   producing a `[B, nPercepts+nSymbols, D]` tensor.  Every order sees
+   the full percept set plus the full symbol set.
+
+2. **Sigma** (ConceptualSpace): A single shared layer transforms the
+   combined input.
+
+3. **Pi** (SymbolicSpace): A single shared PiLayer projects concepts →
+   symbols.  All orders write to the **entire** symbol dimension.
+
+4. **Feedback**: Symbol activation norms are broadcast back to the
+   symbol portion of the input for the next iteration.
+
+5. **Reverse**: `ConceptualSpace.reverse` → peel off the symbol
+   portion → `SymbolicSpace.reverse`, repeated per order.
+
+The key property: **all conceptual orders share one undifferentiated
+symbolic space**.  There is no way to tell, from a symbol vector alone,
+which order produced it.
+
+### Ramsified
+
+The ramsified path makes the architecture **hierarchically partitioned**
+and **self-describing** via two mechanisms.
+
+**Mechanism 1 — Butterfly merge/unmerge.**  Instead of concatenating
+percepts with symbols, the ramsified path progressively compresses the
+percept sequence:
+
+```
+percepts:  [B, N, D]
+order 0:   [B, N/2, D]    ← average adjacent pairs
+order 1:   [B, N/4, D]    ← average again
+order k:   [B, N/2^(k+1), D]
+```
+
+Each merge averages adjacent vector pairs and **caches the difference**
+(`left - right`) in `self._merge_diffs` so the reverse pass can
+reconstruct the originals exactly.  This is the "butterfly" pattern —
+analogous to increasing receptive fields in visual cortex (V1→V2→V4→IT).
+
+Symbol feedback is additive (`x = x + sym_feedback`) rather than
+concatenated, and is also halved to match the current level's vector
+count.
+
+**Mechanism 2 — Geometric partition of symbol_dim.**  The symbol
+dimension `D` is statically sliced by order (see §Partitioned Symbolic
+Space above).  Each order writes **only to its slice** via per-level
+indexed Pi layers (`self.symbolicSpace[t]`, `self.conceptualSpace[t]`).
+ConceptualSpace and SymbolicSpace store `nn.ModuleList`s of per-level
+layers when `level_shapes` is provided.
+
+**Forward loop** (`BasicModel.py` `forward()`):
+
+```
+for t in range(conceptualOrder):
+    x = butterfly_merge(x)           # halve vector count
+    x = x + sym_feedback             # additive feedback
+    concepts = conceptualSpace[t](x) # per-level sigma
+    symbols  = symbolicSpace[t](concepts)  # per-level pi
+    sym_feedback = symbols.norm(...)  # for next iteration
+```
+
+**Reverse loop** (`BasicModel.py` `reverse()`):
+
+```
+x = symbolicSpace[last].reverse(sym_vec)
+for t in reversed(range(conceptualOrder)):
+    x = conceptualSpace[t].reverse(x)
+    x = x - cached_feedback[t]       # undo additive feedback
+    x = butterfly_unmerge(x)         # restore vector count
+```
+
+The butterfly unmerge uses the cached `_merge_diffs` to recover both
+original vectors from each averaged pair — the inverse is exact.
+
+### Why It Matters
+
+Non-ramsified is simpler and sufficient for `conceptualOrder=1`.
+Ramsified is required when you want **partition-aware reasoning** —
+truth grounding, consistency checks, and extrapolation that respect
+which conceptual order a proposition belongs to.  The self-describing
+property means the model's symbolic space carries structural metadata
+in its geometry, not in external bookkeeping.
 
 ## Configuration
 

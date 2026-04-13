@@ -218,31 +218,40 @@ class TestBackwardCompat(unittest.TestCase):
 
 class TestPerLevelLayers(unittest.TestCase):
 
-    def test_conceptual_sigmas_created(self):
-        """Hierarchical ConceptualSpace has per-level sigmas."""
+    def test_pair_sigmas_created(self):
+        """Ramsified non-grammar path builds per-stage pair Sigma layers."""
         model = _make_model('RamsifiedModel.xml')
         if not model.ramsified:
             self.skipTest("Model not ramsified")
-        cs = model.conceptualSpace
-        self.assertTrue(cs._hierarchical)
-        self.assertEqual(len(cs.sigmas), model.conceptualOrder)
+        self.assertTrue(model._ramsified_pair_enabled())
+        self.assertEqual(len(model._ramsified_pair_sigmas), model.conceptualOrder)
+        pair_dim = 2 * model._ramsified_state_dim
+        self.assertEqual(model._ramsified_pair_sigmas[0].nInput, pair_dim)
+        self.assertEqual(model._ramsified_pair_sigmas[0].nOutput, pair_dim)
 
-    def test_symbolic_pi_layers_created(self):
-        """Hierarchical SymbolicSpace has per-level pi_layers."""
+    def test_pair_pi_layers_created(self):
+        """Ramsified non-grammar path builds per-stage pair Pi heads."""
         model = _make_model('RamsifiedModel.xml')
         if not model.ramsified:
             self.skipTest("Model not ramsified")
-        ss = model.symbolicSpace
-        self.assertTrue(ss._hierarchical)
-        self.assertEqual(len(ss.pi_layers), model.conceptualOrder)
+        self.assertEqual(len(model._ramsified_pair_pis), model.conceptualOrder)
+        pair_dim = 2 * model._ramsified_state_dim
+        self.assertEqual(model._ramsified_pair_pis[0].nInput, pair_dim)
+        self.assertEqual(model._ramsified_pair_pis[0].nOutput, pair_dim)
 
-    def test_dim_projections_count(self):
-        """Number of dim_projections = conceptualOrder (one per level)."""
+    def test_symbol_factor_matches_configured_volume(self):
+        """Pair head reshaping matches the configured symbol volume exactly."""
         model = _make_model('RamsifiedModel.xml')
         if not model.ramsified:
             self.skipTest("Model not ramsified")
-        cs = model.conceptualSpace
-        self.assertEqual(len(cs.dim_projections), model.conceptualOrder)
+        self.assertEqual(
+            model._ramsified_state_vectors * model._ramsified_state_dim,
+            model.nSymbols * model._ramsified_symbol_width,
+        )
+        self.assertEqual(
+            model._ramsified_state_vectors * model._ramsified_symbol_factor,
+            model.nSymbols,
+        )
 
 
 if __name__ == '__main__':

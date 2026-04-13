@@ -187,6 +187,24 @@ class TestValidateConfig(unittest.TestCase):
             BasicModelFactory.validate_config(cfg)
         self.assertIn("maskedPrediction=ARIR", str(ctx.exception))
 
+    def test_ramsified_requires_latent_symbol_volume_match(self):
+        cfg = {
+            "architecture": {
+                "type": "mental",
+                "ramsified": True,
+                "reconstruct": "symbols",
+            },
+            "InputSpace": {"nOutput": 8, "nDim": 4},
+            "PerceptualSpace": {"nOutput": 8, "nDim": 4, "hasAttention": False,
+                                "invertible": False, "passThrough": True},
+            "ConceptualSpace": {"nOutput": 8, "nDim": 4, "hasAttention": False},
+            "SymbolicSpace": {"nOutput": 5, "nDim": 4, "passThrough": False},
+            "OutputSpace": {"nOutput": 1, "nDim": 1},
+        }
+        with self.assertRaises(ValueError) as ctx:
+            BasicModelFactory.validate_config(cfg, model_family="mental")
+        self.assertIn("latent/symbol volume equality", str(ctx.exception))
+
 
 class TestInferValidation(unittest.TestCase):
     def test_arir_infer_requires_reversible(self):
