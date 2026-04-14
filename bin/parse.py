@@ -634,7 +634,9 @@ def tree_to_xml(tree, indent=0):
 # Model derivation → XML
 # ---------------------------------------------------------------------------
 
-# Tag names for each grammar rule (keyed by operator substring in the rule)
+# Legacy tag-name table — kept only as a fallback for the historical
+# uppercase-keyword rule strings ("S → S AND S").  Modern rule strings are
+# function-style ("S → conjunction(S, S)") and resolve via grammar.method_name.
 _RULE_TAGS = {
     "EQUALS":       "equals",
     "AND":          "conjunction",
@@ -646,34 +648,111 @@ _RULE_TAGS = {
     "INTERSECTION": "intersection",
 }
 
-def _tag_from_rule(rule_str):
-    """Extract the XML tag name from a grammar rule string.
 
-    "S → S AND S"        → "conjunction"
-    "C → C UNION C"      → "union"
-    "S → NOT S"          → "not"
-    "S → C"              → None  (transition, transparent)
-    "P → W"              → None  (terminal, handled separately)
-    """
+def _tag_from_rule(rule_str):
+    """Fallback tag extractor for legacy uppercase-keyword rule strings."""
     for keyword, tag in _RULE_TAGS.items():
         if keyword in rule_str:
             return tag
     return None
 
 
-def derivation_to_xml(words, grammar, vocab=None, indent=0):
-    """Convert model-predicted word tuples into an XML parse tree.
+def _tag_from_grammar(grammar, rule_id):
+    """Return the XML tag for a grammar rule, or None for transparent nodes.
 
-    Reconstructs the tree from a pre-order traversal of (batch, vector, rule)
-    tuples, using the Grammar's arity to determine how many children each
-    node consumes.
+    Prefers ``grammar.method_name(rule_id)`` (the function name extracted
+    from the rule's RHS, e.g. ``'conjunction'`` for ``S → conjunction(S, S)``)
+    and falls back to the legacy keyword scan for older rule strings.
+
+    Returns None for transition rules (``S → C``, ``C → P``) and for the
+    ``P → I P`` chunk rule, both of which are rendered transparently or as
+    leaf tokens elsewhere.
+    """
+    try:
+        method = grammar.method_name(rule_id)
+    except Exception:
+        method = None
+    if method:
+        if method == 'chunk':
+            return None  # P → I P — handled at the terminal layer
+        return method
+    # Transition or terminal — try the legacy keyword table.
+    try:
+        rule_str = grammar[rule_id]
+    except Exception:
+        return None
+    return _tag_from_rule(rule_str)
+
+
+def _is_terminal(grammar, rule_id):
+    """Return True if this rule emits a surface token instead of a node."""
+    try:
+        rule_str = grammar[rule_id]
+        arity = grammar.arity(rule_id)
+        method = grammar.method_name(rule_id)
+    except Exception:
+        return False
+    if rule_str.strip().endswith("W"):
+        return True  # legacy "P → W" form
+    if rule_str.strip().endswith(" → I"):
+        return True  # modern "P → I" terminal
+    if method == 'chunk':
+        return True  # "P → I P" — treated as a terminal chunk
+    return False
+
+
+def _normalize_word(word, grammar):
+    """Coerce a word entry into ``(rule_id, vector, leaves)``.
+
+    Accepts three input shapes:
+
+    * a ``WordSubSpace`` block dict
+      ``{'rule_id': r, 'leaves': (l1, l2, l3), 'start': s}``
+    * a legacy ``WordEncoding`` 7-tuple
+      ``(batch, vector, order, rule, leaf1, leaf2, leaf3)``
+    * the older 3-tuple ``(batch, vector, rule)``
+
+    Returns ``(rule_id, vector_or_none, leaves_tuple)`` where ``leaves`` is
+    always a tuple and ``vector`` may be None when not available (the
+    WordSubSpace path identifies leaves by rule_id, not codebook position).
+    """
+    if isinstance(word, dict):
+        rule_id = int(word.get('rule_id', -1))
+        leaves = tuple(word.get('leaves', ()))
+        return rule_id, None, leaves
+    if not isinstance(word, (tuple, list)):
+        return -1, None, ()
+    if len(word) >= 7:
+        # WordEncoding 7-tuple: (batch, vector, order, rule, leaf1, leaf2, leaf3)
+        return int(word[3]), int(word[1]), tuple(int(x) for x in word[4:7])
+    if len(word) == 4:
+        # Older (batch, vector, order, rule) shape
+        return int(word[3]), int(word[1]), ()
+    if len(word) == 3:
+        # Minimal (batch, vector, rule)
+        return int(word[2]), int(word[1]), ()
+    return -1, None, ()
+
+
+def derivation_to_xml(words, grammar, vocab=None, indent=0):
+    """Convert model-predicted word entries into an XML parse tree.
+
+    Reconstructs the tree from a pre-order traversal of word entries,
+    using the Grammar's arity to determine how many children each node
+    consumes.  Accepts three input shapes (auto-detected, see
+    ``_normalize_word``):
+
+    * WordSubSpace block dicts (the modern path, produced by
+      ``WordSpace.get_blocks(b)`` / ``WordSubSpace.get_blocks(b)``)
+    * Legacy WordEncoding 7-tuples
+      ``(batch, vector, order, rule, leaf1, leaf2, leaf3)``
+    * Older 3-tuples ``(batch, vector, rule)``
 
     Args:
-        words:   list of (batch, vector, rule) tuples from SyntacticDerivation,
-                 filtered to a single batch element.
-        grammar: Grammar instance (for rule strings and arities).
-        vocab:   optional dict mapping vector index → surface word string.
-                 If None, vector indices are emitted as ``?N``.
+        words:   sequence of word entries (already filtered to one batch).
+        grammar: Grammar instance (for rule strings, arities and method names).
+        vocab:   optional dict mapping vector / leaf index → surface word.
+                 Indices missing from the vocab become ``?N``.
         indent:  starting indentation level.
 
     Returns:
@@ -688,69 +767,117 @@ def derivation_to_xml(words, grammar, vocab=None, indent=0):
     """
     idx = [0]  # mutable counter consumed by recursive descent
 
+    def _surface(v):
+        if v is None:
+            return "?"
+        if vocab is not None and v in vocab:
+            return vocab[v]
+        return f"?{v}"
+
     def _build(depth):
         if idx[0] >= len(words):
             return ""
-        b, v, r = words[idx[0]]
+        rule_id, vector, _leaves = _normalize_word(words[idx[0]], grammar)
         idx[0] += 1
-        rule_str = grammar[r]
-        arity = grammar.arity(r)
+        if rule_id < 0:
+            return ""
+        try:
+            arity = grammar.arity(rule_id)
+        except Exception:
+            arity = 0
         pad = "  " * depth
 
-        # Terminal: P → W — emit leaf node
-        if rule_str.strip().endswith("W"):
-            surface = vocab.get(v, f"?{v}") if vocab else f"?{v}"
-            return f'{pad}<token word="{surface}"/>'
+        # Terminal: emit a leaf token (either legacy P→W or modern P→I/chunk)
+        if _is_terminal(grammar, rule_id):
+            return f'{pad}<token word="{_surface(vector)}"/>'
 
-        tag = _tag_from_rule(rule_str)
+        tag = _tag_from_grammar(grammar, rule_id)
 
         # Transition rules (S→C, C→P): transparent — recurse without emitting a tag
         if tag is None:
-            return _build(depth)
+            if arity >= 1:
+                return _build(depth)
+            return ""
 
-        # Unary: <not> child </not>
-        if arity == 1:
-            lines = [f'{pad}<{tag}>']
-            lines.append(_build(depth + 1))
-            lines.append(f'{pad}</{tag}>')
-            return "\n".join(lines)
+        # Build child traversals based on rule arity (currently 0..3).
+        children = [_build(depth + 1) for _ in range(arity)]
+        # Drop empty child strings so the rendered XML stays tight.
+        children = [c for c in children if c]
 
-        # Binary: <conjunction> left right </conjunction>
-        if arity == 2:
-            lines = [f'{pad}<{tag}>']
-            lines.append(_build(depth + 1))
-            lines.append(_build(depth + 1))
-            lines.append(f'{pad}</{tag}>')
-            return "\n".join(lines)
+        if not children:
+            return f'{pad}<{tag}/>'
 
-        # Fallback (arity 0 non-terminal, non-transition) — recurse
-        return _build(depth)
+        lines = [f'{pad}<{tag}>']
+        lines.extend(children)
+        lines.append(f'{pad}</{tag}>')
+        return "\n".join(lines)
 
     return _build(indent)
 
 
 def derivation_to_xml_batch(all_words, grammar, vocab=None):
-    """Convert word tuples for an entire batch into per-element XML trees.
+    """Convert word entries for an entire batch into per-element XML trees.
+
+    Accepts the same three input shapes as :func:`derivation_to_xml` (block
+    dicts, legacy 7-tuples, or 3-tuples).  Block dicts have no batch index
+    of their own; pass them in already grouped per batch via
+    :func:`derivation_to_xml_from_wordspace` instead of mixing batches here.
 
     Args:
-        all_words: list of (batch, vector, rule) tuples (may span multiple
-                   batch elements).
+        all_words: iterable of word entries (may span multiple batch elements
+                   when given legacy tuples).
         grammar:   Grammar instance.
         vocab:     optional dict mapping vector index → surface word.
 
     Returns:
         dict mapping batch index → XML string.
     """
-    # Group by batch element
     from collections import defaultdict
     by_batch = defaultdict(list)
-    for b, v, r in all_words:
-        by_batch[b].append((b, v, r))
+    for word in all_words:
+        if isinstance(word, dict):
+            by_batch[0].append(word)  # block dicts are already per-batch
+        elif isinstance(word, (tuple, list)) and len(word) > 0:
+            by_batch[int(word[0])].append(word)
+        else:
+            by_batch[0].append(word)
 
     results = {}
     for b in sorted(by_batch):
         results[b] = derivation_to_xml(by_batch[b], grammar, vocab)
     return results
+
+
+def derivation_to_xml_from_wordspace(word_space, grammar, vocab=None, batch=0):
+    """Build a parse tree XML directly from a ``WordSpace`` / ``WordSubSpace``.
+
+    Convenience wrapper that walks the per-batch block ledger produced by
+    ``WordSubSpace.push`` (the modern, tensor-backed word stream) and feeds
+    it to :func:`derivation_to_xml`.  Use this from model code that has a
+    live ``self.wordSpace`` reference.
+
+    Args:
+        word_space: a ``WordSpace`` (with ``get_blocks(b)``) or a
+                    ``WordSubSpace`` directly.
+        grammar:    Grammar instance.
+        vocab:      optional dict mapping leaf-index → surface word.
+        batch:      which batch row to render (default 0).
+
+    Returns:
+        XML string for the requested batch row, or an empty string if the
+        word stream is empty / unavailable.
+    """
+    if word_space is None:
+        return ""
+    blocks = None
+    if hasattr(word_space, 'get_blocks'):
+        try:
+            blocks = word_space.get_blocks(batch)
+        except TypeError:
+            blocks = word_space.get_blocks()
+    if blocks is None:
+        return ""
+    return derivation_to_xml(blocks, grammar, vocab=vocab)
 
 
 # ---------------------------------------------------------------------------

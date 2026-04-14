@@ -1,12 +1,5 @@
 # TODO
 
-## Grammar additions
-* `S → S JOIN S`
-  Add a generalized sentence-join rule for `and` / `or`, so coordination is represented as one abstract composition pattern with the surface join word selecting the specific behavior.
-* `C → C P C`
-  Treat a prepositional phrase as a conceptual operation on the preceding concept, analogous to how a VP acts on its argument; this likely wants a `LIFT(C, C, C)`-style implementation where the preposition conditions the transform.
-* `S → true(swap(S))`
-  Add an explicit question/inversion path so forms like `IS NP AP` can be interpreted as truth queries over a role-swapped sentence rather than requiring a separate surface-only question grammar.
 
 ================================== April 24 ==================================
 

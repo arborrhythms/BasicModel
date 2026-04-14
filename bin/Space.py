@@ -346,7 +346,6 @@ class WhatEncoding(Encoding):
         input_size = self.inputShape[1]
         assert list(y.shape) == [batch, self.inputShape[0], input_size]
         return y
-
 class EventEncoding(Encoding):
     """Handle the content-layout transform for a space's Event factor.
 
@@ -1905,6 +1904,30 @@ class SubSpace(nn.Module):
         self.event.setW(None)
         self._demuxed = True
 
+    def demux(self, muxed):
+        """Split a muxed [B, N, D] tensor along the canonical [what|where|when]
+        column layout and store each block in the corresponding modality slot.
+
+        Used at the C → S tier boundary (Rule #2): C stays muxed as exploratory
+        soup; S-tier commitment requires axis-separated what/where/when blocks
+        so the grammar can make axis-restricted commitments (and so verbs can
+        operate as prepositions when fed axis-restricted arguments).
+
+        Args:
+            muxed: [B, N, D] tensor where D = nWhat + nWhere + nWhen.
+
+        The column split uses this SubSpace's configured widths; any block of
+        zero width is skipped (so a config with nWhere=0, nWhen=0 still works).
+        """
+        nWhat = self.nWhat
+        nWhere = self.nWhere
+        if nWhat > 0:
+            self.set_what(muxed[..., :nWhat])
+        if nWhere > 0:
+            self.set_where(muxed[..., nWhat:nWhat + nWhere])
+        if self.nWhen > 0:
+            self.set_when(muxed[..., nWhat + nWhere:])
+
     def set_forward_content(self, what_indices, where_indices=None, when_indices=None,
                             activation=None):
         """Set per-modality indices and activation for the forward pass.
@@ -2652,6 +2675,338 @@ class SubSpace(nn.Module):
         if size == 0:
             return object
         return object[0:-size]
+class WordSubSpace(SubSpace):
+    """Fixed-size word-stream stack — a SubSpace subclass with stack discipline.
+
+    Stores a sequence of derivation-step rows in the inherited
+    ``[what | where | when]`` Basis-backed column blocks of shape
+    ``[batch, max_depth, <modality_dim>]``. Each rule application emits
+    a ``(1 + max_arity)``-row block in prefix order:
+
+        row 0:             rule-identity codebook vector
+        rows 1..max_arity: leaf-identity codebook vectors
+
+    Unused leaf slots produce zero-valued rows (empty-slot sentinel —
+    consumers detect empties via ``row_what.norm() == 0``). Rows beyond
+    top-of-stack are plain zeros. Rule-identity vectors come from a
+    back-referenced ``SymbolicSpace.lookup_rule(rule_id)`` — the one
+    unified rule codebook — so ``push()`` resolves identity to a dense
+    vector at write time and ``read()`` returns a ready-to-concat
+    ``[batch, max_depth, nDim]`` muxed tensor.
+
+    **Why subclass ``SubSpace``**: the word stream's rows share the
+    peer ``[what | where | when]`` column layout with
+    ``PerceptualSubSpace`` / ``ConceptualSubSpace`` / ``SymbolicSubSpace``.
+    Re-implementing ``set_what`` / ``set_where`` / ``set_when`` on top of
+    a private buffer duplicated API surface while bypassing the ``Basis``
+    storage contract other SubSpaces use. Inheriting from SubSpace (a)
+    makes the peer-space claim structural (not duck-typed), (b) lets
+    ``ConceptualSpace`` read all three inputs via one uniform
+    ``materialize()`` call, and (c) puts all modality storage through
+    one ``Basis`` abstraction.
+
+    **Additive stack discipline**: ``push()``, ``clear()``, the
+    per-batch ``_top`` pointer, and the ``_blocks`` parse-tree ledger
+    are not part of the SubSpace contract — they sit on top. A plain
+    SubSpace is a snapshot; a WordSubSpace is a stack that happens to
+    live inside the same Basis slots a snapshot would use.
+
+    Parse-tree reconstruction walks the stack via ``get_blocks(b)``,
+    which returns the original rule_id + leaves for each pushed block.
+    """
+
+    def __init__(self, nDim, nWhat, nWhere, nWhen,
+                 max_depth, max_arity=3, batch=1):
+        # Build encodings sized to our column widths. SubSpace reads
+        # `whereEncoding.nDim` / `whenEncoding.nDim` to compute
+        # `self.nWhere` / `self.nWhen`, and derives `self.nWhat` as
+        # `outputShape[1] - nWhere - nWhen`.
+        _muxed = int(nWhat) + int(nWhere) + int(nWhen)
+        assert _muxed <= int(nDim), (
+            f"WordSubSpace columns exceed nDim: "
+            f"nWhat={nWhat} + nWhere={nWhere} + nWhen={nWhen} > nDim={nDim}")
+
+        shape = [int(max_depth), _muxed]
+        where_enc = WhereEncoding(
+            max(1, int(max_depth) * max(1, int(batch))),
+            int(nWhere), int(nWhen))
+        when_enc = WhenEncoding(10000, int(nWhen))
+
+        super().__init__(
+            inputShape=shape,
+            outputShape=shape,
+            whereEncoding=where_enc,
+            whenEncoding=when_enc,
+        )
+
+        # SubSpace.__init__ has now created Tensor()-backed Basis
+        # objects for .what/.where/.when/.event/.activation and computed
+        # self.nWhat / self.nWhere / self.nWhen / self.muxedSize from
+        # outputShape + encodings.
+        assert self.nWhat == int(nWhat) and self.nWhere == int(nWhere) \
+            and self.nWhen == int(nWhen), (
+            f"WordSubSpace column widths disagree with SubSpace post-init: "
+            f"SubSpace derived nWhat={self.nWhat} nWhere={self.nWhere} "
+            f"nWhen={self.nWhen}, expected nWhat={nWhat} nWhere={nWhere} "
+            f"nWhen={nWhen}"
+        )
+
+        # Preserve the peer-compatible total `nDim` attribute. SubSpace
+        # does not set `self.nDim`; peer spaces expose it, and
+        # consumers (e.g. `_build_word_space`) read it, so we keep it.
+        self.nDim = int(nDim)
+        self.max_depth = int(max_depth)
+        self.max_arity = int(max_arity)
+        self.block_size = 1 + self.max_arity  # rule row + leaf rows
+
+        # Allocate actual [batch, max_depth, <modality>] storage into
+        # the inherited Basis slots. This replaces the old standalone
+        # `self._buffer` — storage flows through Basis.setW() now.
+        self._allocate_storage(int(batch))
+
+        # Stack-discipline metadata (not part of SubSpace contract).
+        # Uses register_buffer so the top pointer follows `.to(device)`.
+        self.register_buffer(
+            "_top", torch.zeros(self.batch, dtype=torch.long),
+            persistent=False)
+        self._blocks = [[] for _ in range(self.batch)]
+
+        # Back-reference to the host providing lookup_rule(rule_id).
+        # Stored via `object.__setattr__` so the host (typically a
+        # `SymbolicSpace` nn.Module) is NOT registered as an nn.Module
+        # child — that would create a parent/child cycle
+        # (`symbolicSpace ↔ wordSpace.subspace`) and make
+        # `model.to(device)` recurse forever. Set by
+        # `attach_codebook_host()`; WordSpace wires this at construction.
+        object.__setattr__(self, 'rule_codebook_host', None)
+
+    # ── storage allocation via inherited Basis slots ─────────────────
+    def _allocate_storage(self, batch):
+        """Allocate zero tensors of shape ``[batch, max_depth, <modality>]``
+        into the inherited ``.what``/``.where``/``.when`` Basis slots.
+
+        Called from ``__init__`` and ``clear()`` / ``ensure_batch()``.
+        Also primes ``.event``/``.activation`` so a ``materialize()`` call
+        directly after allocation returns an all-zero tensor of the
+        expected muxed shape.
+
+        **Device**: tensors are allocated without an explicit ``device=``
+        argument so ``torch.set_default_device(TheDevice.get())``
+        (installed in ``util.py``) puts them on the process's canonical
+        device. Forcing CPU here would leave Basis storage stranded when
+        the model later moves to MPS / CUDA, breaking ``push()``'s
+        in-place writes against ``host.lookup_rule()`` vectors that are
+        already on the target device.
+        """
+        self.batch = int(batch)
+        # Populate the demuxed modality slots through the Basis contract.
+        if self.nWhat > 0:
+            self.what.setW(
+                torch.zeros(self.batch, self.max_depth, self.nWhat))
+        if self.nWhere > 0:
+            self.where.setW(
+                torch.zeros(self.batch, self.max_depth, self.nWhere))
+        if self.nWhen > 0:
+            self.when.setW(
+                torch.zeros(self.batch, self.max_depth, self.nWhen))
+        # Prime the muxed event cache and activation gate so
+        # `materialize()` returns a properly-shaped tensor even before
+        # the first `push()`.
+        muxed = torch.zeros(self.batch, self.max_depth, self.muxedSize)
+        self.event.setW(muxed)
+        self._demuxed = True
+        # All-ones activation — WordSubSpace has no gating beyond the
+        # zero rows themselves, and multiplying by ones is cheap.
+        self.set_activation(
+            torch.ones(self.batch, self.max_depth))
+
+    # ── device-propagation override ──────────────────────────────────
+    def _apply(self, fn, recurse=True):
+        """Propagate tensor-moving operations through inherited Basis
+        storage.
+
+        ``SubSpace``'s ``.what``/``.where``/``.when``/``.event`` /
+        ``.activation`` slots are backed by a ``Tensor`` Basis whose
+        internal ``W`` attribute is a plain Python reference, NOT a
+        registered buffer. As a result, vanilla ``nn.Module._apply``
+        never touches it, so ``model.to(device)`` on a SubSpace silently
+        leaves the Basis W tensors on their original device. Regular
+        SubSpace usage avoids this by always re-setting ``.W`` from a
+        fresh device-correct tensor in every forward pass — but
+        ``WordSubSpace`` allocates its whole buffer eagerly in
+        ``__init__`` and mutates it in place, so we need the Basis
+        tensors to actually follow the module to the target device.
+
+        This override walks each Basis slot and applies ``fn`` to its
+        ``W``, then calls the parent implementation to handle
+        registered buffers / parameters / submodules in the usual way.
+        """
+        for basis_attr in ('what', 'where', 'when', 'event', 'activation'):
+            basis = getattr(self, basis_attr, None)
+            if basis is None:
+                continue
+            w = basis.getW() if hasattr(basis, 'getW') else None
+            if isinstance(w, torch.Tensor):
+                basis.setW(fn(w))
+        return super()._apply(fn, recurse=recurse)
+
+    # ── codebook + batch lifecycle ───────────────────────────────────
+    def attach_codebook_host(self, host):
+        """Register an object exposing ``lookup_rule(rule_id)``.
+
+        The returned vector is embedded into the row's ``.what`` block
+        at push time, matching ``SymbolicSpace``'s codebook-on-``.what``
+        convention so peer spaces consume a uniform dense stream.
+
+        Stored via ``object.__setattr__`` — see the ``__init__``
+        back-reference comment for the nn.Module cycle rationale.
+        """
+        object.__setattr__(self, 'rule_codebook_host', host)
+
+    def ensure_batch(self, batch):
+        """Resize the buffer to ``batch`` (zeros the contents)."""
+        if int(batch) == self.batch:
+            return
+        self._allocate_storage(int(batch))
+        self._top = torch.zeros(
+            self.batch, dtype=torch.long, device=self._top.device)
+        self._blocks = [[] for _ in range(self.batch)]
+
+    def clear(self):
+        """Reset buffer to all-zero and rewind top-of-stack (per-sentence)."""
+        self._allocate_storage(self.batch)
+        if self._top is not None:
+            self._top.zero_()
+        self._blocks = [[] for _ in range(self.batch)]
+
+    # ── push / read ─────────────────────────────────────────────────
+    def _lookup(self, rule_id):
+        """Return a ``[nWhat]`` dense vector for a rule_id, or ``None``."""
+        if self.rule_codebook_host is None or rule_id is None:
+            return None
+        if rule_id < 0:
+            return None
+        host = self.rule_codebook_host
+        vec = None
+        if hasattr(host, 'lookup_rule'):
+            vec = host.lookup_rule(rule_id)
+        if vec is None:
+            return None
+        # Trim/pad to nWhat.
+        if vec.shape[-1] >= self.nWhat:
+            return vec[:self.nWhat]
+        pad = torch.zeros(self.nWhat - vec.shape[-1], device=vec.device)
+        return torch.cat([vec, pad], dim=-1)
+
+    def push(self, b, rule_id, leaves):
+        """Append a ``(1 + max_arity)``-row block to batch row ``b``.
+
+        Row 0 holds the rule-identity vector in its ``.what`` block;
+        rows 1..max_arity hold leaf-identity vectors in prefix (operand)
+        order. Unused leaf slots produce zero rows. When peer
+        ``nWhere > 0``, each row of the block gets a monotonic
+        derivation-step index written into its ``.where`` block.
+        Overflow beyond ``max_depth`` silently drops the push.
+
+        Writes go through the inherited ``Basis.setW()`` /
+        ``Basis.getW()`` contract — ``self.what.getW()`` returns a
+        mutable reference to the ``[batch, max_depth, nWhat]`` tensor
+        allocated by ``_allocate_storage``, and ``push()`` mutates that
+        in place. After mutation we invalidate the cached ``.event``
+        tensor so the next ``materialize()`` rebuilds the muxed view.
+
+        Args:
+            b: batch index.
+            rule_id: 0-based grammar rule id. Must be a valid index into
+                the unified symbolic codebook's rule sub-range.
+            leaves: iterable of rule_ids for the operand slots; entries
+                with value ``None`` or ``< 0`` are treated as empty.
+                Iterable is zero-padded / truncated to exactly
+                ``max_arity``.
+        """
+        if self.rule_codebook_host is None:
+            return
+        if b < 0 or b >= self.batch:
+            return
+        top = int(self._top[b].item())
+        if top + self.block_size > self.max_depth:
+            return  # buffer full — silently drop
+
+        # Normalize leaves to a fixed-length tuple.
+        leaves_list = list(leaves) if leaves is not None else []
+        while len(leaves_list) < self.max_arity:
+            leaves_list.append(-1)
+        leaves_list = [int(x) if x is not None else -1
+                       for x in leaves_list[:self.max_arity]]
+
+        step_idx = len(self._blocks[b])  # monotonic derivation step
+        self._blocks[b].append({
+            'start': top,
+            'rule_id': int(rule_id),
+            'leaves': tuple(leaves_list),
+        })
+
+        what_W = self.what.getW() if self.nWhat > 0 else None
+        where_W = self.where.getW() if self.nWhere > 0 else None
+
+        # Row 0: rule identity vector in .what block.
+        rule_vec = self._lookup(int(rule_id))
+        if what_W is not None and rule_vec is not None:
+            what_W[b, top] = rule_vec.to(what_W.device)
+        if where_W is not None:
+            where_W[b, top] = float(step_idx)
+
+        # Rows 1..max_arity: leaf identity vectors in .what block.
+        for k in range(self.max_arity):
+            leaf_id = leaves_list[k]
+            row = top + 1 + k
+            if leaf_id < 0:
+                continue  # empty-slot sentinel (zero row)
+            leaf_vec = self._lookup(leaf_id)
+            if what_W is not None and leaf_vec is not None:
+                what_W[b, row] = leaf_vec.to(what_W.device)
+            if where_W is not None:
+                where_W[b, row] = float(step_idx)
+
+        self._top[b] = top + self.block_size
+
+        # Invalidate the cached muxed event — next materialize()
+        # rebuilds it from the mutated .what/.where/.when Basis slots.
+        if self.event is not None:
+            self.event.setW(None)
+
+    def read(self):
+        """Return the muxed ``[batch, max_depth, nDim]`` stack tensor.
+
+        Delegates to ``SubSpace.materialize()`` which concatenates the
+        demuxed ``.what``/``.where``/``.when`` Basis blocks into one
+        muxed event tensor (and caches it on ``.event`` until the next
+        ``push()`` invalidates the cache).
+        """
+        return self.materialize()
+
+    def get_blocks(self, b):
+        """Return the parse-tree ledger for batch row ``b``.
+
+        Each entry is a dict with keys ``start`` (row index in the
+        buffer), ``rule_id`` (the pushed rule id), and ``leaves``
+        (tuple of ``max_arity`` operand rule ids; ``-1`` indicates an
+        empty slot). Used by parse-tree reconstruction and
+        invertibility tests.
+        """
+        if 0 <= b < len(self._blocks):
+            return list(self._blocks[b])
+        return []
+
+    def top_of_stack(self, b=None):
+        """Return top-of-stack row index per batch (or for one batch)."""
+        if self._top is None:
+            return 0 if b is not None else []
+        if b is not None:
+            return int(self._top[b].item())
+        return self._top.tolist()
+
+
 class Grammar:
     """Hierarchical 3-tier grammar (S, C, P) rule catalog.
 
@@ -2815,7 +3170,6 @@ class Grammar:
 
     # ── C-tier operations live on SyntacticLayer / ConceptualSyntacticLayer
     # as *Forward / *Reverse method pairs.  See _RULE_METHODS dispatch.
-
 TheGrammar = Grammar()
 class SyntacticLayer(Layer):
     """Per-space rule prediction layer for the recursive grammar.
@@ -3031,20 +3385,119 @@ class SyntacticLayer(Layer):
             return score * right
         return torch.min(left, right)
 
+    # ── S-tier trinity: true / false / non as partition of unity ──
+    # For x ∈ [-1, 1]:  true(x) + false(x) + non(x) = 1
+    #   true(x)  = max(0, x)     "I commit: yes"
+    #   false(x) = max(0, -x)    "I commit: no"
+    #   non(x)   = 1 - |x|       "I commit: indeterminate"
+    # Inputs are clamped to [-1, 1] defensively so the partition holds
+    # regardless of upstream producer conventions.
+
     def trueForward(self, left, subspace):
+        left = torch.clamp(left, -1.0, 1.0)
         b = self._basis(subspace)
         if b is not None:
             return b.pos(left)
         return torch.relu(left)
 
-    def nonForward(self, left, subspace):
+    def falseForward(self, left, subspace):
+        """Positive rectification of the negation. The 'no' commitment.
+
+        Partitions with trueForward/nonForward: true + false + non = 1.
+        """
+        left = torch.clamp(left, -1.0, 1.0)
         b = self._basis(subspace)
         if b is not None:
-            m = self._mono(subspace)
-            threshold = getattr(self, 'non_threshold', None)
-            t = torch.sigmoid(threshold) if threshold is not None else None
-            return b.non(left, monotonic=m, threshold=t)
-        return torch.zeros_like(left)
+            return b.pos(-left)
+        return torch.relu(-left)
+
+    def nonForward(self, left, subspace):
+        """Triangular residual: 1 - |x|. The 'indeterminate' commitment.
+
+        Completes the S-tier trinity partition of unity. Replaces the
+        earlier sigmoid/zero response which was incompatible with
+        true + false + non = 1.
+        """
+        left = torch.clamp(left, -1.0, 1.0)
+        return 1.0 - left.abs()
+
+    def conjunctionForward(self, left, right, subspace):
+        """S-tier sentence-level AND. Hadamard conjunction on bitonic activations.
+
+        Distinct from C-tier intersection which composes concepts; this
+        composes propositions. Delegates to Basis.conjunction when available
+        (which respects sign agreement); falls back to torch.minimum.
+        """
+        b = self._basis(subspace)
+        if b is not None:
+            return b.conjunction(left, right, monotonic=self._mono(subspace))
+        return torch.minimum(left, right)
+
+    def disjunctionForward(self, left, right, subspace):
+        """S-tier sentence-level OR. Hadamard disjunction on bitonic activations.
+
+        Distinct from C-tier union which composes concepts; this composes
+        propositions. Delegates to Basis.disjunction when available
+        (which respects sign agreement); falls back to torch.maximum.
+        """
+        b = self._basis(subspace)
+        if b is not None:
+            return b.disjunction(left, right, monotonic=self._mono(subspace))
+        return torch.maximum(left, right)
+
+    # ── Rule #2: S-tier slot selectors (what / where / when) ─────
+    # Parameter-free axis projections. Each zeros non-selected column
+    # blocks while preserving shape. The C → S boundary demux has
+    # already put the content in the canonical [what|where|when]
+    # layout (see SubSpace.demux); these selectors just mask the
+    # non-selected blocks when the activation tensor is vector-shaped.
+    #
+    # When compose() passes [B, N] scalar norms (non-vector mode) the
+    # block structure isn't accessible, so selectors degenerate to
+    # identity — the grammar's axis semantics still hold because the
+    # selected vs non-selected dimensions are carried by the
+    # subspace's modality tensors rather than the [B, N] activation.
+
+    def _split_widths(self, subspace):
+        if subspace is None:
+            return None, None, None
+        nWhat = getattr(subspace, 'nWhat', None)
+        nWhere = getattr(subspace, 'nWhere', 0)
+        nWhen = getattr(subspace, 'nWhen', 0)
+        return nWhat, nWhere, nWhen
+
+    def whatForward(self, left, subspace):
+        """Axis selector: keep what-block, zero where/when-blocks."""
+        if left.ndim < 3:
+            return left  # scalar activation mode — no columns to slice
+        nWhat, nWhere, nWhen = self._split_widths(subspace)
+        if nWhat is None or (nWhere == 0 and nWhen == 0):
+            return left
+        out = torch.zeros_like(left)
+        out[..., :nWhat] = left[..., :nWhat]
+        return out
+
+    def whereForward(self, left, subspace):
+        """Axis selector: keep where-block, zero what/when-blocks."""
+        if left.ndim < 3:
+            return left
+        nWhat, nWhere, nWhen = self._split_widths(subspace)
+        if nWhat is None or nWhere == 0:
+            return torch.zeros_like(left)
+        out = torch.zeros_like(left)
+        out[..., nWhat:nWhat + nWhere] = left[..., nWhat:nWhat + nWhere]
+        return out
+
+    def whenForward(self, left, subspace):
+        """Axis selector: keep when-block, zero what/where-blocks."""
+        if left.ndim < 3:
+            return left
+        nWhat, nWhere, nWhen = self._split_widths(subspace)
+        if nWhat is None or nWhen == 0:
+            return torch.zeros_like(left)
+        out = torch.zeros_like(left)
+        out[..., nWhat + nWhere:] = left[..., nWhat + nWhere:]
+        return out
 
     # ── forward: predict rules ────────────────────────────────────
 
@@ -3730,8 +4183,41 @@ class SymbolicSyntacticLayer(SyntacticLayer):
 
     _RULE_METHODS = {
         **SyntacticLayer._RULE_METHODS,
-        'swap': ('swapForward', None, True),
+        'swap':        ('swapForward',        None, True),
+        # Rule #1: trinity + coordination (S-tier only)
+        'false':       ('falseForward',       None, False),
+        'conjunction': ('conjunctionForward', None, True),
+        'disjunction': ('disjunctionForward', None, True),
+        # Rule #2: symbol demux slot selectors (S-tier only)
+        'what':        ('whatForward',        None, False),
+        'where':       ('whereForward',       None, False),
+        'when':        ('whenForward',        None, False),
+        # Rule #3: query (contradiction marker at accumulation point)
+        'query':       ('queryForward',       None, True),
     }
+
+    # Rule #3: Norm-drop threshold. If a new rule-application result
+    # would reduce the accumulator's norm below this fraction of its
+    # current value, the accumulation point interprets it as symbolic
+    # contradiction and emits a query word + preserves the existing
+    # accumulator instead of absorbing the cancelling contribution.
+    # Tuning note: start at 0.1 (90% reduction) per plan; too tight
+    # emits spurious queries on legitimate near-cancellations, too
+    # loose lets real contradictions collapse silently.
+    _QUERY_NORM_DROP_RATIO = 0.1
+
+    def queryForward(self, left, right, subspace=None):
+        """Query: return the preserved accumulator operand.
+
+        The query marker is pushed onto WordSubSpace at the
+        accumulation point (see `compose()`), not by this forward.
+        When the parse tree is re-evaluated downstream, `queryForward`
+        returns the first operand — the accumulator state that was
+        preserved when the cancelling contribution arrived. The second
+        operand (the dropped symbol) exists only in the parse-tree
+        record and is unused here.
+        """
+        return left
 
     def project(self, grammar, rule_id, left, right=None, subspace=None):
         """Execute a rule via _RULE_METHODS dispatch."""
@@ -3783,6 +4269,17 @@ class SymbolicSyntacticLayer(SyntacticLayer):
 
         composed = leaf_acts[:, 0, :]  # start with first leaf
 
+        # Rule #3 state: track the rule applied at the previous step
+        # per batch row, so a query push at the norm-drop site has a
+        # referent for "what was the preserved accumulator's rule".
+        # -1 = no prior rule (accumulator is still a raw leaf).
+        last_rule_per_batch = [-1 for _ in range(B)]
+        query_rid = None
+        for _idx, _gid in enumerate(all_rules):
+            if grammar.rules[_gid].method_name == 'query':
+                query_rid = _gid
+                break
+
         for d in range(min(self.max_depth, max(max_leaves - 1, 1))):
             if d + 1 >= max_leaves:
                 break
@@ -3800,13 +4297,58 @@ class SymbolicSyntacticLayer(SyntacticLayer):
 
             results = torch.stack(results, dim=1)  # [B, num_rules, N]
             probs_d = rule_probs[:, d, :]           # [B, num_rules]
-            composed = (probs_d.unsqueeze(-1) * results).sum(dim=1)  # [B, N]
+
+            # ── Rule #3: norm-drop detection at the accumulation point ──
+            # Any symbolic contradiction (A ∧ ¬A, true(A) ∧ false(A),
+            # axis-restricted variants) manifests as a significant drop
+            # in the accumulator norm when the candidate is mixed in.
+            # We detect the symptom here, push a `query` marker onto the
+            # word-stream buffer, and preserve the prior accumulator.
+            # See plan: "Rule #3 — Query at S-tier".
+            candidate = (probs_d.unsqueeze(-1) * results).sum(dim=1)  # [B, N]
+            prev_norm = left.norm(dim=-1)         # [B]
+            cand_norm = candidate.norm(dim=-1)    # [B]
+            drop_threshold = self._QUERY_NORM_DROP_RATIO * prev_norm
+            # Only fire when there was a real accumulator to cancel
+            # (prev_norm > 1e-6), and the candidate norm is below the
+            # drop threshold.
+            query_mask = (prev_norm > 1e-6) & (cand_norm < drop_threshold)
+            if query_mask.any():
+                # For batches where query fires: preserve the old accumulator.
+                # For batches where it does not: use the candidate mixture.
+                mask = query_mask.unsqueeze(-1).expand_as(candidate)  # [B, N]
+                composed = torch.where(mask, left, candidate)
+                # Push query marker onto the word-stream buffer for
+                # each batch row that tripped the check. The leaves
+                # record the rule identities of the preserved side
+                # (left_rule_id) and the incoming rule that would have
+                # caused the cancellation (right_rule_id).
+                best_for_push = probs_d.argmax(dim=-1)  # [B]
+                word_sub = getattr(self, 'word_subspace', None)
+                for b in range(B):
+                    if not bool(query_mask[b].item()):
+                        continue
+                    left_rid = last_rule_per_batch[b]
+                    right_rid = int(best_for_push[b].item())
+                    right_gid = all_rules[right_rid] if right_rid < len(all_rules) else -1
+                    if query_rid is not None and word_sub is not None:
+                        word_sub.push(b, query_rid,
+                                      leaves=(left_rid, right_gid, -1))
+                    # Preserve the prior rule identity for this batch
+                    # row — the accumulator did not advance.
+            else:
+                composed = candidate
 
             # Record argmax rule as word
             best = probs_d.argmax(dim=-1)  # [B]
             for b in range(B):
                 if d < len(active_positions[b]):
                     subspace.add_word(b, active_positions[b][d], all_rules[best[b].item()])
+                    # Track last advancing rule per batch for future
+                    # query-push referents — only update for rows
+                    # that did not trip the query mask this step.
+                    if not bool(query_mask[b].item()):
+                        last_rule_per_batch[b] = all_rules[best[b].item()]
 
         return composed
 
@@ -3834,6 +4376,118 @@ class SymbolicSyntacticLayer(SyntacticLayer):
             elif rule.method_name is not None:
                 pass  # Not cleanly invertible
         return data
+class WordSpace(nn.Module):
+    """Service space that owns the word-stream buffer and the existing
+    SyntacticLayers.
+
+    Runtime-parallel to PerceptualSpace / ConceptualSpace / SymbolicSpace
+    but functionally a buffer + composition dispatcher. Home spaces lose
+    their `self.syntacticLayer` field and instead route compose/decompose
+    calls through `self.wordSpace.forward(kind, ...)` / `.reverse(kind,
+    ...)`. The layers push their word records into `self.subspace`
+    (a `WordSubSpace`) via a back-reference set at attach time, so
+    ConceptualSpace can read a muxed view of machine state that includes
+    percepts, symbols, and words.
+
+    Usage pattern in BasicModel construction:
+        word_sub = WordSubSpace(nDim, nWhat, nWhere, nWhen, max_depth)
+        wordSpace = WordSpace(word_sub)
+        wordSpace.attach_codebook_host(symbolicSpace)
+        # after home spaces create their syntactic layers:
+        wordSpace.attach_layer('perceptual', perceptualSpace.syntacticLayer)
+        wordSpace.attach_layer('conceptual', conceptualSpace.syntacticLayer)
+        wordSpace.attach_layer('symbolic',   symbolicSpace.syntacticLayer)
+
+    Per-sentence lifecycle: BasicModel calls `clear_sentence()` at
+    sentence boundaries to rewind the buffer.
+
+    The class deliberately does NOT subclass `Space` — it has no
+    PiLayer, no codebook of its own, and no forward/reverse over a
+    fixed inputShape/outputShape. Its forward is a dispatch helper,
+    not a tensor map.
+    """
+
+    def __init__(self, word_subspace):
+        super().__init__()
+        self.subspace = word_subspace  # WordSubSpace instance
+
+        # Layers are attached post-construction via `attach_layer()`
+        # rather than built here, because each layer's constructor
+        # depends on the home space's config (rules, grammar, dims)
+        # that only the home space knows.
+        self.perceptualSyntacticLayer = None
+        self.conceptualSyntacticLayer = None
+        self.symbolicSyntacticLayer = None
+
+    # ── wiring ───────────────────────────────────────────────────────
+    def attach_codebook_host(self, host):
+        """Wire the unified rule codebook provider to WordSubSpace.
+
+        `host` must expose `lookup_rule(rule_id)` returning a dense
+        vector for the identity at that rule_id. Typically the
+        `SymbolicSpace` instance, whose `rule_codebook` is the single
+        source of truth for rule identity vectors.
+        """
+        self.subspace.attach_codebook_host(host)
+
+    def attach_layer(self, kind, layer):
+        """Transfer ownership of a SyntacticLayer from a home space.
+
+        Sets `layer.word_subspace` as a back-reference so the layer's
+        `compose()` can push records onto the shared buffer. The home
+        space should still call this even if it keeps a reference of
+        its own for compatibility during migration.
+        """
+        if layer is None:
+            return
+        attr = f'{kind}SyntacticLayer'
+        if not hasattr(self, attr):
+            raise ValueError(
+                f"WordSpace: unknown syntactic kind {kind!r}; "
+                f"expected one of 'perceptual', 'conceptual', 'symbolic'")
+        setattr(self, attr, layer)
+        layer.word_subspace = self.subspace
+
+    # ── composition dispatch ─────────────────────────────────────────
+    def forward(self, kind, *args, **kwargs):
+        """Dispatch to `<kind>SyntacticLayer.compose(...)`.
+
+        Side effect: word-emitting layers push rule-application blocks
+        onto `self.subspace`, so `read()` will return the updated stack.
+        Returns whatever the underlying `compose()` returns (typically
+        a composed activation tensor).
+        """
+        layer = getattr(self, f'{kind}SyntacticLayer', None)
+        if layer is None:
+            return None
+        return layer.compose(*args, **kwargs)
+
+    def reverse(self, kind, *args, **kwargs):
+        """Dispatch to `<kind>SyntacticLayer.decompose(...)`."""
+        layer = getattr(self, f'{kind}SyntacticLayer', None)
+        if layer is None:
+            return None
+        return layer.decompose(*args, **kwargs)
+
+    # ── buffer access + lifecycle ────────────────────────────────────
+    def read(self):
+        """Return the fixed-width stack tensor for ConceptualSpace to
+        concat with percepts and symbols.
+        """
+        return self.subspace.read()
+
+    def clear_sentence(self):
+        """Reset the stack at sentence boundaries."""
+        self.subspace.clear()
+
+    def get_blocks(self, b=0):
+        """Return the parse-tree ledger for batch row `b`."""
+        return self.subspace.get_blocks(b)
+
+    def ensure_batch(self, batch):
+        """Resize the underlying buffer to match a new batch size."""
+        self.subspace.ensure_batch(batch)
+
 
 class Space(nn.Module):
     """Base class for all spaces in the processing pipeline.
@@ -3931,9 +4585,70 @@ class Space(nn.Module):
         self.muxedSize = self.subspace.getEncodingSize(self.nDim)
 
         self.syntacticLayer = None  # populated by init_syntactic_layer() if grammar is used
+        # wordSpace is wired by BasicModel after all spaces are constructed.
+        # When set, compose/decompose call sites route through
+        # `self.wordSpace.forward(kind, ...)` / `.reverse(kind, ...)` instead
+        # of calling `self.syntacticLayer` directly. See plan:
+        # "Architectural addition — WordSpace / Ownership transfer".
+        self.wordSpace = None
         self.params = []   # parameters for the optimizer (excludes temperature params)
         self.layers = nn.ModuleList()   # layer instances for paramUpdate() delegation
         self._register_requirements()
+
+    # ── WordSpace routing helpers ────────────────────────────────────
+    def _syntactic_kind(self):
+        """Return the kind string for WordSpace dispatch ('perceptual',
+        'conceptual', 'symbolic'), or None if this space has no
+        SyntacticLayer tier. Subclasses override with a literal string.
+        """
+        return None
+
+    def _syntactic_compose(self, data, *args, **kwargs):
+        """Route `compose(...)` through WordSpace if wired, else direct.
+
+        Falls back to `self.syntacticLayer.compose(...)` when
+        `self.wordSpace` is None — useful during migration and tests
+        that construct a single space without the full model. Returns
+        whatever the underlying `compose()` returns so callers that
+        unpack tuples (e.g. ConceptualSpace → (data, svo)) keep
+        working without change.
+        """
+        kind = self._syntactic_kind()
+        if self.wordSpace is not None and kind is not None:
+            return self.wordSpace.forward(kind, data, *args, **kwargs)
+        if self.syntacticLayer is not None:
+            return self.syntacticLayer.compose(data, *args, **kwargs)
+        return data
+
+    def _syntactic_decompose(self, data, *args, **kwargs):
+        """Route `decompose(...)` through WordSpace if wired, else direct."""
+        kind = self._syntactic_kind()
+        if self.wordSpace is not None and kind is not None:
+            return self.wordSpace.reverse(kind, data, *args, **kwargs)
+        if self.syntacticLayer is not None:
+            return self.syntacticLayer.decompose(data, *args, **kwargs)
+        return data
+
+    def attach_wordSpace(self, wordSpace, kind=None):
+        """Wire the shared WordSpace.
+
+        `kind` is a safety hint — if provided, the matching layer on
+        wordSpace is also set to point at `self.syntacticLayer` via
+        `wordSpace.attach_layer(kind, self.syntacticLayer)`. Callers
+        that already called `attach_layer` directly can omit it.
+
+        The wordSpace reference is stored via ``object.__setattr__`` so
+        the WordSpace nn.Module is NOT registered as a child of this
+        Space — that would create a ``space → wordSpace → space`` cycle
+        (the wordSpace already owns the SyntacticLayer that this space
+        also references, and its codebook host is the SymbolicSpace) and
+        make ``model.to(device)`` recurse forever. The wordSpace is
+        owned at the model level instead, with each Space holding only
+        a non-Module routing pointer.
+        """
+        object.__setattr__(self, 'wordSpace', wordSpace)
+        if kind is not None and wordSpace is not None and self.syntacticLayer is not None:
+            wordSpace.attach_layer(kind, self.syntacticLayer)
 
     def _build_object_basis(self):
         basis = Codebook()
@@ -4795,6 +5510,10 @@ class PerceptualSpace(Space):
     name = "Percepts"
     config_section = "PerceptualSpace"
 
+    def _syntactic_kind(self):
+        """P-tier WordSpace dispatch key."""
+        return 'perceptual'
+
     def __init__(self, inputShape, spaceShape, outputShape):
 
         section = self.config_section
@@ -4884,8 +5603,10 @@ class PerceptualSpace(Space):
             x = self.attention.forward(x)
         if self.codebook:
             x = self.subspace.get_vectors().forward(x)
-        if self.syntacticLayer is not None:
-            x = self.syntacticLayer.compose(x, self.subspace, TheGrammar)
+        if self.syntacticLayer is not None or self.wordSpace is not None:
+            # Route through WordSpace when wired (ownership transferred
+            # to wordSpace); else call the owned layer directly.
+            x = self._syntactic_compose(x, self.subspace, TheGrammar)
         vspace = self.forwardEnd(x, returnVectors=True)
         vspace.normalize("percepts", target="event", normalize=True)
         return vspace
@@ -4907,8 +5628,8 @@ class PerceptualSpace(Space):
         if self.passThrough:
             return vspace
         y = self.reverseBegin(vspace, returnVectors=True)
-        if self.syntacticLayer is not None:
-            y = self.syntacticLayer.decompose(y, self.subspace, TheGrammar)
+        if self.syntacticLayer is not None or self.wordSpace is not None:
+            y = self._syntactic_decompose(y, self.subspace, TheGrammar)
         vspace = self.reverseEnd(y, returnVectors=True)
         vspace.normalize("input", target="what", normalize=True)
         return vspace
@@ -5108,6 +5829,10 @@ class ConceptualSpace(Space):
     name = "Concepts"
     config_section = "ConceptualSpace"
 
+    def _syntactic_kind(self):
+        """C-tier WordSpace dispatch key."""
+        return 'conceptual'
+
     def __init__(self, inputShape, spaceShape, outputShape, level_shapes=None):
         section = self.config_section
         ergodic = TheXMLConfig.get("architecture.ergodic")
@@ -5238,8 +5963,15 @@ class ConceptualSpace(Space):
             y = self.attention.forward(y)
         if self.codebook:
             y = self.subspace.get_vectors().forward(y)
-        if self.syntacticLayer is not None:
-            y, self._last_svo = self.syntacticLayer.compose(y, self.subspace, TheGrammar)
+        if self.syntacticLayer is not None or self.wordSpace is not None:
+            # ConceptualSyntacticLayer.compose returns (data, svo_or_None);
+            # preserve that contract through the WordSpace dispatcher.
+            result = self._syntactic_compose(y, self.subspace, TheGrammar)
+            if isinstance(result, tuple):
+                y, self._last_svo = result
+            else:
+                y = result
+                self._last_svo = None
         vspace = self.forwardEnd(y, returnVectors=True)
         vspace.normalize("concepts", target="what")       # range check
         vspace.normalize("concepts", target="activation")  # range check
@@ -5270,8 +6002,8 @@ class ConceptualSpace(Space):
         guarantee output in (-1,1) for PiLayer.
         """
         y = self.reverseBegin(vspace, returnVectors=True)
-        if self.syntacticLayer is not None:
-            y = self.syntacticLayer.decompose(y, self.subspace, TheGrammar)
+        if self.syntacticLayer is not None or self.wordSpace is not None:
+            y = self._syntactic_decompose(y, self.subspace, TheGrammar)
         if self.processSymbols:
             y = self.dereference(y)
         y = self.reverseSigma(y)
@@ -5301,6 +6033,10 @@ class SymbolicSpace(Space):
     """
     name = "Symbols"
     config_section = "SymbolicSpace"
+
+    def _syntactic_kind(self):
+        """S-tier WordSpace dispatch key."""
+        return 'symbolic'
 
     def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None,
                  level_shapes=None):
@@ -5377,6 +6113,15 @@ class SymbolicSpace(Space):
             self._symbol_where = self.subspace.whereEncoding.encode(positions)
         else:
             self._symbol_where = None
+
+        # Rule codebook — learned vectors for grammar rule identities.
+        # Allocated in init_syntactic_layer() once the grammar is known.
+        # Index 0 is reserved as the empty-slot sentinel (zero vector,
+        # non-training via padding_idx); indices 1..nRules map to
+        # grammar rule_ids 0..nRules-1.
+        # See plan: Architectural addition — WordSpace / Unified codebook.
+        self.rule_codebook = None
+        self.nRuleEntries = 0
 
     def _build_object_basis(self):
         """Event is a writable Tensor — codebook lives on .what."""
@@ -5471,8 +6216,16 @@ class SymbolicSpace(Space):
         if self.sortNetwork is not None:
             act = self.sortNetwork.forward(act)
 
-        if self.syntacticLayer is not None:
-            act = self.syntacticLayer.compose(act, self.subspace, TheGrammar)
+        if self.syntacticLayer is not None or self.wordSpace is not None:
+            # Rule #2: C → S axis commitment. The [B, N, D] symbol tensor
+            # is already laid out as [what | where | when] columns by
+            # convention; demuxing stores each block in its modality slot
+            # so downstream slot selectors (whatForward/whereForward/
+            # whenForward) and decompose can read axis-separated state.
+            if act.ndim == 3 and act.shape[-1] == self.subspace.muxedSize:
+                self.subspace.demux(act)
+            # Route compose through WordSpace if wired, else directly.
+            act = self._syntactic_compose(act, self.subspace, TheGrammar)
 
         if self.codebook:
             self.subspace.set_event(act)
@@ -5496,6 +6249,43 @@ class SymbolicSpace(Space):
         self.syntacticLayer.init_swap(symbol_dim, n_slots)
         self.layers.append(self.syntacticLayer)
 
+        # Allocate the unified rule codebook, sized to the grammar's S-tier
+        # rule count. Each row is a learnable vector the same width as the
+        # symbol codebook (self.nDim). Index 0 is an empty-slot sentinel
+        # (padding_idx prevents gradient). Indices 1..nRules map to rule_ids
+        # 0..nRules-1. Used by WordSubSpace.push() to embed rule identities
+        # into the word-stream buffer.
+        try:
+            nRules = int(len(grammar.symbolic()))
+        except Exception:
+            nRules = 0
+        self.nRuleEntries = nRules
+        if nRules > 0 and self.nDim > 0:
+            self.rule_codebook = nn.Embedding(nRules + 1, self.nDim, padding_idx=0)
+            nn.init.normal_(self.rule_codebook.weight, std=0.01)
+            with torch.no_grad():
+                self.rule_codebook.weight[0].zero_()
+            self.layers.append(self.rule_codebook)
+
+    def lookup_rule(self, rule_id):
+        """Return the learnable codebook vector for a grammar rule_id.
+
+        rule_id is a 0-based index into grammar.symbolic(); the codebook
+        stores it at position rule_id+1 (index 0 is the empty-slot
+        sentinel). Returns a [nDim] tensor, or None if the codebook has
+        not been allocated yet.
+        """
+        if self.rule_codebook is None:
+            return None
+        if rule_id is None or rule_id < 0 or rule_id >= self.nRuleEntries:
+            # Return the zero sentinel at index 0.
+            idx = torch.zeros(1, dtype=torch.long,
+                              device=self.rule_codebook.weight.device)
+        else:
+            idx = torch.tensor([rule_id + 1], dtype=torch.long,
+                               device=self.rule_codebook.weight.device)
+        return self.rule_codebook(idx).squeeze(0)
+
     def reverse(self, vspace):
         """Map symbol vectors back to concept vectors via PiLayer.reverse (Π⁻¹).
 
@@ -5505,8 +6295,8 @@ class SymbolicSpace(Space):
             return vspace
         vspace = self.reverseBegin(vspace)
         act = vspace.materialize()                        # [B, N, symbol_dim]
-        if self.syntacticLayer is not None:
-            act = self.syntacticLayer.decompose(act, self.subspace, TheGrammar)
+        if self.syntacticLayer is not None or self.wordSpace is not None:
+            act = self._syntactic_decompose(act, self.subspace, TheGrammar)
         if self.sortNetwork is not None:
             act = self.sortNetwork.reverse(act)
         act = self.layer.reverse(act)                     # [B, N, concept_dim]

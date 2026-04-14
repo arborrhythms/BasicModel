@@ -52,7 +52,14 @@
       <grammar>
         <START>S</START>
         <S>true(S)</S>
+        <S>false(S)</S>
         <S>non(S)</S>
+        <S>conjunction(S, S)</S>
+        <S>disjunction(S, S)</S>
+        <S>what(S)</S>
+        <S>where(S)</S>
+        <S>when(S)</S>
+        <S>query(S, S)</S>
         <S>swap(S, S)</S>
         <S>equals(S, S)</S>
         <S>part(S, S)</S>

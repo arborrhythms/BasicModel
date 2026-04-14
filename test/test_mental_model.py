@@ -101,10 +101,21 @@ class TestMentalModelForwardReverse(unittest.TestCase):
 class TestMentalModelGrammarConfiguration(unittest.TestCase):
     """MentalModel should expose the grammar configured in MentalModel.xml."""
 
+    # Expected canonical rule strings from MentalModel.xml after the
+    # trinity / coordination / demux / query extensions. The S-tier
+    # ordering follows the literal XML order: trinity → coordination →
+    # demux selectors → query → swap/equals/part → S→C transition.
     EXPECTED_RULES = [
         "START → S",
         "S → true(S)",
+        "S → false(S)",
         "S → non(S)",
+        "S → conjunction(S, S)",
+        "S → disjunction(S, S)",
+        "S → what(S)",
+        "S → where(S)",
+        "S → when(S)",
+        "S → query(S, S)",
         "S → swap(S, S)",
         "S → equals(S, S)",
         "S → part(S, S)",
@@ -130,16 +141,22 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
 
         canonicals = [rule.canonical for rule in TheGrammar.rules]
         self.assertEqual(canonicals, self.EXPECTED_RULES)
-        self.assertEqual(len(TheGrammar.rules), 16)
+        # 1 START + 13 S-tier + 7 C-tier + 2 P-tier = 23 total rules.
+        self.assertEqual(len(TheGrammar.rules), 23)
         self.assertEqual(TheGrammar.interpretation, 0.5)
 
-        self.assertEqual(model.symbolicSpace.syntacticLayer.all_rules, [1, 2, 3, 4, 5, 6])
-        self.assertEqual(model.symbolicSpace.syntacticLayer.transition_rule, 6)
+        # S-tier indices 1..13 (12 method rules + transition at index 13)
+        self.assertEqual(model.symbolicSpace.syntacticLayer.all_rules,
+                         list(range(1, 14)))
+        self.assertEqual(model.symbolicSpace.syntacticLayer.transition_rule, 13)
 
-        self.assertEqual(model.conceptualSpace.syntacticLayer.all_rules, [7, 8, 9, 10, 11, 12, 13])
-        self.assertEqual(model.conceptualSpace.syntacticLayer.transition_rule, 13)
+        # C-tier indices 14..20 (6 method rules + transition at index 20)
+        self.assertEqual(model.conceptualSpace.syntacticLayer.all_rules,
+                         list(range(14, 21)))
+        self.assertEqual(model.conceptualSpace.syntacticLayer.transition_rule, 20)
 
-        self.assertEqual(model.perceptualSpace.syntacticLayer.all_rules, [14, 15])
+        # P-tier indices 21..22 (chunk, terminal I)
+        self.assertEqual(model.perceptualSpace.syntacticLayer.all_rules, [21, 22])
         self.assertIsNone(model.perceptualSpace.syntacticLayer.transition_rule)
 
 

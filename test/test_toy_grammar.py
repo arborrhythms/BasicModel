@@ -271,19 +271,39 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
     # ── Toy rules: what MentalModel.xml defines ──────────────────────
 
     def test_total_rule_count(self):
-        """MentalModel.xml defines 16 rules (1 START + 5 S + 8 C + 2 P)."""
-        self.assertEqual(len(self.grammar.rules), 16)
+        """MentalModel.xml defines 23 rules (1 START + 13 S + 7 C + 2 P).
+
+        S-tier was extended in the trinity/coordination/demux/query plan:
+        true, false, non, conjunction, disjunction, what, where, when,
+        query, swap, equals, part, plus the S→C transition.
+        """
+        self.assertEqual(len(self.grammar.rules), 23)
 
     def test_s_tier_rules(self):
-        """S-tier: true(S), non(S), swap(S,S), equals(S,S), part(S,S), S→C transition."""
+        """S-tier covers trinity, coordination, demux, query and the
+        legacy swap/equals/part triplet plus the S→C transition.
+        """
         s_rules = [(r.method_name, r.arity) for r in self.grammar.rules if r.tier == 'S']
+        # Trinity (Rule #1)
         self.assertIn(('true', 1), s_rules)
+        self.assertIn(('false', 1), s_rules)
         self.assertIn(('non', 1), s_rules)
+        # Coordination (Rule #1)
+        self.assertIn(('conjunction', 2), s_rules)
+        self.assertIn(('disjunction', 2), s_rules)
+        # Demux selectors (Rule #2)
+        self.assertIn(('what', 1), s_rules)
+        self.assertIn(('where', 1), s_rules)
+        self.assertIn(('when', 1), s_rules)
+        # Query (Rule #3)
+        self.assertIn(('query', 2), s_rules)
+        # Legacy s-tier verbs
         self.assertIn(('swap', 2), s_rules)
         self.assertIn(('equals', 2), s_rules)
         self.assertIn(('part', 2), s_rules)
+        # S → C transition
         self.assertIn((None, 1), s_rules, "Missing S→C transition rule")
-        self.assertEqual(len(s_rules), 6)
+        self.assertEqual(len(s_rules), 13)
 
     def test_c_tier_rules(self):
         """C-tier: not, intersection, union, lower, lift(binary+ternary), C→P transition."""
@@ -317,7 +337,8 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         s_ids = self.grammar.symbolic()
         for i in s_ids:
             self.assertEqual(self.grammar.rules[i].tier, 'S')
-        self.assertEqual(len(s_ids), 6)
+        # 13 S-tier rules: see test_s_tier_rules for the full enumeration.
+        self.assertEqual(len(s_ids), 13)
 
     def test_conceptual_indices(self):
         """grammar.conceptual() returns exactly the C-tier rule indices."""

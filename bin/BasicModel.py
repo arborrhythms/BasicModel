@@ -92,6 +92,58 @@ class BaseModel(nn.Module):
         config_dir = os.path.dirname(config_path) if config_path else ProjectPaths.PROJECT_DIR
         return os.path.join(config_dir, relpath)
 
+    def _build_word_space(self):
+        """Build and wire the shared WordSpace.
+
+        The WordSubSpace's column layout matches SymbolicSpace's so consumers
+        of ``wordSpace.read()`` can concat cleanly with peer outputs. The
+        unified rule codebook lives on SymbolicSpace, so SymbolicSpace is
+        attached as the codebook host. Available to all model subclasses
+        (``BasicModel``, ``MentalModel``) so the Sigma-Pi loop can reach the
+        word stream via ``self.wordSpace``.
+        """
+        from Space import WordSpace, WordSubSpace
+        ss = getattr(self, 'symbolicSpace', None)
+        if ss is None or getattr(ss, 'subspace', None) is None:
+            return None
+        sub = ss.subspace
+        nWhere = int(getattr(sub, 'nWhere', 0) or 0)
+        nWhen = int(getattr(sub, 'nWhen', 0) or 0)
+        nWhat = int(getattr(sub, 'nWhat', 0) or 0)
+        # Total column width for the [what|where|when] block matches the
+        # peer subspace's muxedSize. Falling back to nWhat covers the
+        # degenerate "no positional axes" configuration.
+        muxed = int(getattr(sub, 'muxedSize', nWhat + nWhere + nWhen) or
+                    (nWhat + nWhere + nWhen))
+        if muxed == 0:
+            # Degenerate config: nothing to store in word rows.
+            return None
+        word_sub = WordSubSpace(
+            nDim=muxed,
+            nWhat=nWhat,
+            nWhere=nWhere,
+            nWhen=nWhen,
+            max_depth=256,
+            max_arity=3,
+            batch=1,
+        )
+        wordSpace = WordSpace(word_sub)
+        # Wire the unified rule codebook.
+        wordSpace.attach_codebook_host(ss)
+        # Transfer ownership of each home space's SyntacticLayer.
+        for kind, space in (
+                ('perceptual', getattr(self, 'perceptualSpace', None)),
+                ('conceptual', getattr(self, 'conceptualSpace', None)),
+                ('symbolic',   getattr(self, 'symbolicSpace',   None))):
+            if space is None:
+                continue
+            layer = getattr(space, 'syntacticLayer', None)
+            if layer is not None:
+                wordSpace.attach_layer(kind, layer)
+                if hasattr(space, 'attach_wordSpace'):
+                    space.attach_wordSpace(wordSpace)
+        return wordSpace
+
     def create_from_config(self, config_path=None, model_type=None, data=None):
         """Create the model using settings from an XML config file."""
         self._config_path = config_path
@@ -1022,6 +1074,7 @@ class BasicModel(BaseModel):
             model_type: "simple", "embedding", "passthrough", or "vq".
         """
         self.spaces = []  # reset — prevent stale accumulation from prior create() calls
+        self.wordSpace = None  # wired by _build_word_space() after init_syntactic_layer
         TheXMLConfig._requirements.clear()  # clear stale requirements from prior create()/tests
         # Read config-derivable flags
         self.reconstruct     = reconstruct.lower()
@@ -1189,6 +1242,10 @@ class BasicModel(BaseModel):
                                                        concept_dim=concept_dim + obj_concept)
             self.symbolicSpace.init_syntactic_layer(nSymbols, TheGrammar,
                                                      symbol_dim=symbol_dim + obj_symbol)
+            # Build the shared WordSpace — word-stream buffer + composition
+            # dispatcher — after the home spaces have their SyntacticLayers.
+            # See plan: "Architectural addition — WordSpace".
+            self.wordSpace = self._build_word_space()
 
         self.to(TheDevice.get())
         TheXMLConfig.validate()
@@ -1208,6 +1265,9 @@ class BasicModel(BaseModel):
 
     def Start(self, inputData):
         """Forward pass through the core pipeline: Input -> Percept -> Concept -> Symbol."""
+        # Per-sentence lifecycle: reset the word-stream buffer.
+        if getattr(self, 'wordSpace', None) is not None:
+            self.wordSpace.clear_sentence()
         self.inputs   = self.inputSpace.forward(inputData)
         self.percepts = self.perceptualSpace.forward(self.inputs)
         self.concepts = self.conceptualSpace.forward(self.percepts)
@@ -1890,6 +1950,7 @@ class MentalModel(BaseModel):
                masked_prediction='NONE', reconstruct='NONE', **kwargs):
 
         self.spaces = []
+        self.wordSpace = None  # wired by _build_word_space() after init_syntactic_layer
         self.reversible = str(TheXMLConfig.get("architecture.reconstruct")).upper() != "NONE"
         self.nInput = nInput
         self.nPercepts = nPercepts
@@ -2105,6 +2166,11 @@ class MentalModel(BaseModel):
         # (SymbolicSpace → ConceptualSpace → SyntacticLayer → SymbolicSpace)
         object.__setattr__(self.conceptualSpace.syntacticLayer, '_symbolic_space', self.symbolicSpace)
         self.conceptualSpace.subspace.basis.monotonic = False
+
+        # Build the shared WordSpace — word-stream buffer + composition
+        # dispatcher — after all home spaces have their SyntacticLayers.
+        # See plan: "Architectural addition — WordSpace".
+        self.wordSpace = self._build_word_space()
 
         self.spaces.extend([
             self.inputSpace,
@@ -2326,6 +2392,14 @@ class MentalModel(BaseModel):
         percepts = self.percepts.materialize()  # [B, nPercepts, dim]
 
         B = percepts.shape[0]
+
+        # Per-sentence lifecycle: reset the word-stream buffer so each
+        # forward pass starts with a clean derivation history. The
+        # buffer's capacity is fixed — rule applications inside
+        # compose() push records onto it during this pass.
+        if getattr(self, 'wordSpace', None) is not None:
+            self.wordSpace.ensure_batch(B)
+            self.wordSpace.clear_sentence()
 
         # ── Pre-loop init ──
         if self._ramsified_pair_enabled():
