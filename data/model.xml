@@ -175,6 +175,8 @@
     <l1Lambda>0.01</l1Lambda>
     <symbolResidualScale>1.0</symbolResidualScale>
     <outputSymbolResidualScale>0.0</outputSymbolResidualScale>
+    <commitmentBeta>0.25</commitmentBeta>
+    <useVQVAE>false</useVQVAE>
     <decorrelationWeight>0.0</decorrelationWeight>
     <spectralFlatnessWeight>0.0</spectralFlatnessWeight>
     <truthMinMagnitude>0.3</truthMinMagnitude>

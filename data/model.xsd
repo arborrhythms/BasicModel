@@ -310,6 +310,8 @@
       <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
       <xs:element name="symbolResidualScale" type="xs:decimal" minOccurs="0"/>
       <xs:element name="outputSymbolResidualScale" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="commitmentBeta" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="useVQVAE" type="xs:boolean" minOccurs="0"/>
       <xs:element name="decorrelationWeight" type="xs:decimal" minOccurs="0"/>
       <xs:element name="spectralFlatnessWeight" type="xs:decimal" minOccurs="0"/>
       <xs:element name="truthMinMagnitude" type="xs:decimal" minOccurs="0"/>

@@ -4689,6 +4689,12 @@ class SymbolicSpace(Space):
         self.symbol_residual_scale = _symbol_cfg("symbolResidualScale", 1.0)
         self.output_symbol_residual_scale = _symbol_cfg(
             "outputSymbolResidualScale", 0.0)
+        self.commitment_beta = _symbol_cfg("commitmentBeta", 0.25)
+        try:
+            use_vqvae_raw = TheXMLConfig.space(section, "useVQVAE")
+        except (KeyError, TypeError, ValueError):
+            use_vqvae_raw = False
+        self.use_vqvae = bool(use_vqvae_raw)
         self.decorrelation_weight = _symbol_cfg("decorrelationWeight", 0.0)
         self.spectral_flatness_weight = _symbol_cfg("spectralFlatnessWeight", 0.0)
         self.reset_symbol_objective()
@@ -5046,12 +5052,34 @@ class SymbolicSpace(Space):
             act = wordSpace.forwardSymbols(act, self.subspace)
 
         if self.codebook and quantize:
-            predicted = act.clone()
-            self.subspace.set_event(act)
+            # Capture the encoder output BEFORE quantization so we can
+            # thread its gradient through the straight-through estimator.
+            z_e = act
+            predicted = z_e.clone()
+            self.subspace.set_event(z_e)
             self.subspace.what.forward(self.subspace)
             vspace = self.forwardEnd(self.subspace)
-            target = vspace.materialize()
-            self.accumulate_symbol_objective(predicted, target)
+            quantized = vspace.materialize()
+            if self.use_vqvae:
+                # VQ-VAE straight-through: downstream sees the hard codebook
+                # pick, backward pass bypasses the non-differentiable argmin
+                # and flows as identity back into z_e.  Commitment loss then
+                # pulls the encoder toward the codebook.  The codebook itself
+                # updates via the in-house Codebook machinery (EMA / snap).
+                quantized_detached = quantized.detach()
+                z_q_ste = z_e + (quantized_detached - z_e).detach()
+                self.subspace.set_event(z_q_ste)
+                vspace = self.forwardEnd(self.subspace)
+                n = min(z_e.shape[-1], quantized_detached.shape[-1], self.nDim)
+                if self.commitment_beta > 0.0 and n > 0:
+                    commit = self.commitment_beta * F.mse_loss(
+                        z_e[..., :n], quantized_detached[..., :n])
+                    prev = self._symbol_objective_terms.get(
+                        "symbol_commitment", commit.new_tensor(0.0))
+                    self._symbol_objective_terms["symbol_commitment"] = prev + commit
+                self.accumulate_symbol_objective(predicted, quantized_detached)
+            else:
+                self.accumulate_symbol_objective(predicted, quantized)
         else:
             self.accumulate_symbol_objective(act)
             self.subspace.set_event(act)

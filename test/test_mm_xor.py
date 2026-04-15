@@ -257,6 +257,64 @@ class TestMMXorConvergence(unittest.TestCase):
         finally:
             os.unlink(cfg_path)
 
+    def test_vqvae_ste_registers_commitment_and_moves_encoder(self):
+        """With useVQVAE=true, STE path must register symbol_commitment and
+        deliver gradient through the quantization bottleneck into the encoder.
+
+        Verifies the core fix of the VQ-VAE STE follow-on: the forward pass
+        produces the hard codebook pick, while the backward pass bypasses
+        argmin so downstream losses shape the PiLayer encoder weights.
+        """
+        import torch
+
+        torch.manual_seed(123)
+        m, _, _ = _fresh_model()
+        self.assertTrue(m.symbolicSpace.use_vqvae,
+                        "MM_xor.xml should have useVQVAE=true")
+        self.assertGreater(m.symbolicSpace.commitment_beta, 0.0)
+
+        optimizer = m.getOptimizer(lr=0.01)
+
+        pi_weight_before = None
+        for p in m.symbolicSpace.layer.parameters():
+            if p.requires_grad:
+                pi_weight_before = p.detach().clone()
+                break
+        self.assertIsNotNone(pi_weight_before,
+                             "SymbolicSpace PiLayer should have trainable params")
+
+        commit_values = []
+        original_message = Models.TheMessage
+        Models.TheMessage = lambda *args, **kwargs: None
+        try:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore")
+                for _ in range(20):
+                    result, _ = m.runBatch(
+                        train=True, batchNum=0, batchSize=4,
+                        split="train", optimizer=optimizer,
+                    )
+                    self.assertIsNotNone(result)
+                    terms = m.symbolicSpace.symbol_objective_terms()
+                    self.assertIn("symbol_commitment", terms,
+                                  "STE path must register symbol_commitment")
+                    commit_values.append(
+                        float(terms["symbol_commitment"].detach().item()))
+        finally:
+            Models.TheMessage = original_message
+
+        pi_weight_after = None
+        for p in m.symbolicSpace.layer.parameters():
+            if p.requires_grad:
+                pi_weight_after = p.detach().clone()
+                break
+        moved = (pi_weight_after - pi_weight_before).abs().max().item()
+        self.assertGreater(
+            moved, 1e-5,
+            "PiLayer weights should move — STE gradient must reach the encoder")
+        self.assertTrue(all(torch.isfinite(torch.tensor(commit_values))),
+                        "symbol_commitment must stay finite over training")
+
     def test_convergence(self):
         """Train for up to 200 epochs; output loss should drop below 0.15.
 
