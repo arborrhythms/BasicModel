@@ -4549,7 +4549,11 @@ class ConceptualSpace(Space):
             self._sigma = parent.sigmas[t] if parent._hierarchical else getattr(parent, 'sigma', None)
             self.subspace = parent.subspace
 
-        def forward(self, vspace, wordSpace=None, butterfly=False):
+        def forward(self, vspace, wordSpace=None, butterfly=False, target_count=None):
+            # target_count is accepted for signature parity with
+            # ConceptualSpace.forward (the non-ramsified path passes
+            # it to route through _compose_to_target).  Hierarchical
+            # sigmas don't invoke compose, so the value is ignored.
             if butterfly and self._parent.butterfly_enabled:
                 return self._parent._forward_butterfly_level(vspace, self._t)
             x = vspace.materialize()
@@ -4574,12 +4578,20 @@ class ConceptualSpace(Space):
         return x.T @ y
     def certainty(self, x):
         return x.T @ x
-    def forward(self, vspace, wordSpace=None, butterfly=False):
+    def forward(self, vspace, wordSpace=None, butterfly=False, target_count=None):
         """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ.
 
         When nonlinear=True, applies atanh() before SigmaLayer so that the
         reverse tanh (needed to bound output to (-1,1)) has an exact
         mathematical inverse.
+
+        ``target_count`` is forwarded to ``wordSpace.forwardConcepts``
+        so the C-tier compose can use pairwise slot-mixing reduction
+        (``_compose_to_target``) instead of the default cascading
+        accumulator — the latter cannot move information across the
+        slot axis.  Pass ``target_count=nOutputSymbols`` from the
+        non-ramsified MentalModel loop so compose reduces to exactly
+        the slot count OutputSpace will read.
         """
         if butterfly and self.butterfly_enabled:
             return self._forward_butterfly_level(vspace, 0)
@@ -4596,7 +4608,8 @@ class ConceptualSpace(Space):
         if self.codebook:
             y = self.subspace.get_vectors().forward(y)
         if wordSpace is not None:
-            y, self._last_svo = wordSpace.forwardConcepts(y, self.subspace)
+            y, self._last_svo = wordSpace.forwardConcepts(
+                y, self.subspace, target_count=target_count)
         else:
             self._last_svo = None
         vspace = self.forwardEnd(y, returnVectors=True)
@@ -6304,23 +6317,44 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         return result / (right + epsilon)
 
     def lowerForward(self, left, right, subspace):
-        """Projected disjunction through symbolic space, back to concept space."""
+        """Projected disjunction through symbolic space, back to concept space.
+
+        Rescale the sum by 1/2 so it stays in ``(-1, 1)`` — the operand
+        domain that ``PiLayer.reverse`` requires.  Both ``s_a`` and
+        ``s_b`` are tanh outputs in ``(-1, 1)``; their unscaled sum lies
+        in ``(-2, 2)`` which hits the hard clamp inside ``_to_mult`` and
+        silently saturates the backward pass, yielding a badly
+        conditioned gradient that leaks into every optimizer step via
+        the soft rule mixture.  Training instability on deep chains
+        (pairwise compose over conceptualOrder iterations) traces back
+        to this saturation.  Dividing by 2 is information-preserving
+        (the reverse scales by 2) and keeps the operand strictly inside
+        the PiLayer domain.
+        """
         cs = self._cs_layer()
         if cs is not None:
             s_a = cs.forward(left)
             s_b = cs.forward(right)
-            return cs.reverse(s_a + s_b)
-        return left + right
+            return cs.reverse((s_a + s_b) / 2)
+        return (left + right) / 2
 
     def lowerReverse(self, result, right, subspace):
-        """Recover first operand: s_a = result - s_b, then PiLayer.reverse."""
+        """Recover first operand from the rescaled lower forward.
+
+        Given ``result = cs.reverse((s_a + s_b) / 2)`` we have
+        ``s_res = cs.forward(result) = (s_a + s_b) / 2``, so
+        ``s_a = 2 * s_res - s_b``.  For a valid forward pair both
+        ``s_a`` and ``s_b`` lie in ``(-1, 1)`` by construction, so
+        ``2 * s_res - s_b`` also lies in ``(-1, 1)`` and the PiLayer
+        reverse does not clamp.
+        """
         cs = self._cs_layer()
         if cs is not None:
             s_res = cs.forward(result)
             s_b = cs.forward(right)
-            s_a = s_res - s_b
+            s_a = 2 * s_res - s_b
             return cs.reverse(s_a)
-        return result - right
+        return 2 * result - right
 
     def project(self, grammar, rule_id, left, right=None, third=None, subspace=None):
         """Execute a rule. Lift/lower are in _RULE_METHODS via super()."""
@@ -6503,17 +6537,31 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         Used by the hierarchical forward loop. Each round pairs adjacent active
         positions, applies soft-weighted grammar rules, and zeros consumed tokens
         until the active count reaches target_count.
+
+        Only binary-or-greater rules participate in the pairwise reduce.
+        A unary rule by definition cannot merge two operands — including
+        one would make its per-pair output ignore ``right``, and if its
+        probability dominates the soft mixture (which happens at init
+        for any fresh SyntacticLayer with a biased softmax prior) the
+        reduce degenerates to ``composed ≈ left`` and ``right``'s
+        content is silently discarded.  ``not`` is also excluded since
+        it's already applied in Phase 1 of ``compose``.
         """
         B, N, D = data.shape
 
-        # Identify composable rules (exclude not — already applied in Phase 1)
+        # Identify composable rules (exclude not — already applied in
+        # Phase 1 — AND any rule whose arity is < 2, which can't merge
+        # a pair at all; see docstring).
         exclude = {'not'}
         composable_local = []
         composable_global = []
         for local_idx, global_id in enumerate(self.all_rules):
-            if grammar.rules[global_id].method_name not in exclude:
-                composable_local.append(local_idx)
-                composable_global.append(global_id)
+            if grammar.rules[global_id].method_name in exclude:
+                continue
+            if grammar.arity(global_id) < 2:
+                continue
+            composable_local.append(local_idx)
+            composable_global.append(global_id)
 
         if not composable_global:
             return data, self.last_svo
@@ -6594,13 +6642,16 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             data = new_data
             d += 1
 
-        # Gather remaining active positions into dense [B, target_count, D]
-        max_remaining = max(len(a) for a in active)
-        result = torch.zeros(B, max_remaining, D, device=data.device)
+        # Return a tensor with the ORIGINAL N shape so downstream
+        # (including the reverse path through ``conceptualSpace.reverse``
+        # and ``perceptualSpace.reverse``) keeps the slot-axis width it
+        # was built for.  Surviving active positions hold the reduced
+        # content; consumed positions are left zero.  Compact this down
+        # to ``[B, target_count, D]`` at the caller if needed.
+        result = torch.zeros(B, N, D, device=data.device)
         for b in range(B):
-            for i, pos in enumerate(active[b]):
-                if i < max_remaining:
-                    result[b, i] = data[b, pos]
+            for pos in active[b]:
+                result[b, pos] = data[b, pos]
 
         return result, self.last_svo
 
@@ -7173,16 +7224,27 @@ class WordSpace(Space):
             return data
         return layer.compose(data, subspace, TheGrammar)
 
-    def forwardConcepts(self, data, subspace):
+    def forwardConcepts(self, data, subspace, target_count=None):
         """C-tier compose. ``ConceptualSyntacticLayer.compose`` may
         return ``(data, svo)`` when a ternary lift fires; we preserve
         that tuple contract so callers (ConceptualSpace.forward) can
         stash the SVO on themselves for the ``last_svo`` property.
+
+        ``target_count`` routes into the pairwise reduction path in
+        ``ConceptualSyntacticLayer._compose_to_target``.  Pairwise
+        reduction slices each slot to ``[1, 1, D]`` before invoking
+        the grammar's binary rules, which degenerates the per-slot
+        PiLayer to a pure ``D→D`` map and lets the two operands'
+        content actually merge into one slot.  The cascading default
+        (``target_count=None``) keeps full ``[B, N, D]`` shapes and so
+        cannot move information across the slot axis — fine for
+        sparse-representation use but useless whenever the two
+        operands live in different slots.
         """
         layer = getattr(self, 'conceptualSyntacticLayer', None)
         if layer is None:
             return data, None
-        result = layer.compose(data, subspace, TheGrammar)
+        result = layer.compose(data, subspace, TheGrammar, target_count=target_count)
         if isinstance(result, tuple):
             return result
         return result, None

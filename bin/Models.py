@@ -2396,6 +2396,14 @@ class MentalModel(BaseModel):
             sym_feedback = torch.zeros(B, self._symbol_shape[0],
                                        self._symbol_shape[1],
                                        device=percepts.device)
+            # Cache the feedback used at each iteration of the Sigma-Pi
+            # loop so ``reverse`` can unwind the recurrent addition
+            # (``concept_input_t = percepts + sym_feedback_{t-1}``) and
+            # recover the original percepts tensor.  Without this the
+            # reverse path treats concept_input_{T-1} as if it were
+            # percepts, leaving a residual error of ||sym_feedback_{T-2}||
+            # on every forward→reverse roundtrip.
+            self._nonrams_sym_feedbacks = []
 
         sym_vectors = None
 
@@ -2418,6 +2426,9 @@ class MentalModel(BaseModel):
                         self._sym_feedbacks.append(None)
                     concept_input = x
             else:
+                # Cache the feedback used at this iteration so the
+                # reverse path can subtract it to recover percepts.
+                self._nonrams_sym_feedbacks.append(sym_feedback)
                 concept_input = self._bound_concept_input(percepts + sym_feedback)
                 # Truth bias: trim concept_input to be consistent with TruthSet
                 truth_layer = getattr(self.wordSpace, 'truth_layer', None) if self.wordSpace is not None else None
@@ -2430,10 +2441,19 @@ class MentalModel(BaseModel):
                             concept_input, conj.unsqueeze(0).unsqueeze(0))
                         concept_input = self._bound_concept_input(concept_input)
 
-            # 2. Sigma: conceptual transformation (indexed by t)
+            # 2. Sigma: conceptual transformation (indexed by t).
+            # Non-ramsified: route C-tier compose through the pairwise
+            # slot-mixing reduction so information at different input
+            # slots can actually collide in the output.  Cascading
+            # compose is per-slot and cannot move content across the
+            # slot axis, which strands XOR-style two-operand tasks.
+            # Ramsified path uses butterfly, which already mixes slots,
+            # so it doesn't need a target_count hint.
             self.percepts.set_event(concept_input)
+            c_target = None if self.ramsified else self.nOutputSymbols
             self.concepts = self.conceptualSpace[t].forward(
-                self.percepts, wordSpace=ws, butterfly=pair_enabled)
+                self.percepts, wordSpace=ws, butterfly=pair_enabled,
+                target_count=c_target)
             concept_vectors = self.concepts.materialize()
 
             if self.ramsified:
@@ -2584,8 +2604,25 @@ class MentalModel(BaseModel):
                     x = x - fb
                 x = self._butterfly_unmerge(x)
         else:
+            # Non-ramsified reverse: unwind the recurrent feedback.
+            # Forward runs
+            #     concept_input_t = percepts + sym_feedback_{t-1}
+            # for t in [0, conceptualOrder), and ``self.concepts`` holds
+            # the sigma output of the LAST iteration (concepts_{T-1}).
+            # Reversing sigma gives back concept_input_{T-1}; we then
+            # subtract the cached feedback_{T-2} (which is the last
+            # entry in ``_nonrams_sym_feedbacks`` — feedbacks are
+            # appended just before being consumed each iteration) to
+            # recover the original percepts tensor.  This is the
+            # analogue of the ramsified path's feedback unwinding at
+            # the top of this block.
             concept_input_state = self.conceptualSpace.reverse(
                 concepts_state, wordSpace=ws)
+            if getattr(self, '_nonrams_sym_feedbacks', None):
+                fb = self._nonrams_sym_feedbacks[-1]
+                if fb is not None:
+                    recovered = concept_input_state.materialize() - fb
+                    concept_input_state.set_event(recovered)
 
         # ── Post-loop: build concept_input_state for shared tail ──
         if self.ramsified:

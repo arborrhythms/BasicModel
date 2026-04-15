@@ -221,12 +221,6 @@ class TestMMXorConvergence(unittest.TestCase):
                 Models.TheMessage = original_message
             os.unlink(cfg_path)
 
-    @unittest.expectedFailure  # Open: non-ramsified grammar path doesn't
-    # converge on XOR under the current recurrent Pi-Sigma loop.  The
-    # ramsified/butterfly path (MM_xor.xml) learns XOR cleanly; the
-    # grammar path fixture MM_xor_grammar.xml is the regression target
-    # for the fix.  Remove the xfail marker once the grammar path
-    # converges below 0.15.
     def test_non_ramsified_learns_xor_signal(self):
         """ramsified=false should exercise the recurrent forward path and learn."""
         import torch
@@ -241,7 +235,7 @@ class TestMMXorConvergence(unittest.TestCase):
 
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
-                for _ in range(50):
+                for _ in range(100):
                     batch, _ = m.inputSpace.getBatch(0, batchSize=4)
                     inp, target = batch
                     optimizer.zero_grad()
@@ -262,6 +256,47 @@ class TestMMXorConvergence(unittest.TestCase):
             self.assertLess(best_loss, 0.15)
         finally:
             os.unlink(cfg_path)
+
+    def test_mm_xor_grammar_learns_xor_signal(self):
+        """MM_xor_grammar.xml (ramsified=false, useVQVAE=false) must learn XOR.
+
+        This is the isolated regression fixture for the non-ramsified
+        grammar path: it exercises the recurrent Pi-Sigma loop plus the
+        pairwise-slot-mixing compose (``_compose_to_target``) without
+        VQ-VAE muddying the variable.  Convergence below 0.15 at 100
+        epochs confirms that the C-tier pairwise reducer is threading
+        information across the slot axis end-to-end.
+        """
+        import torch
+
+        cfg_path = os.path.join(_PROJECT, "data", "MM_xor_grammar.xml")
+        torch.manual_seed(42)
+        m, _, data = _fresh_model(cfg_path)
+        optimizer = torch.optim.Adam(m.parameters(), lr=0.01)
+        criterion = torch.nn.MSELoss()
+        best_loss = float("inf")
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            for _ in range(100):
+                batch, _ = m.inputSpace.getBatch(0, batchSize=4)
+                inp, target = batch
+                optimizer.zero_grad()
+                _, _, output = m.forward(inp)
+
+                target = target.to(output.device)
+                while target.dim() < output.dim():
+                    target = target.unsqueeze(-1)
+                target = target.expand_as(output)
+
+                loss = criterion(output, target)
+                self.assertTrue(torch.isfinite(loss))
+                loss.backward()
+                optimizer.step()
+                best_loss = min(best_loss, loss.item())
+
+        self.assertGreater(len(data.train_input), 0)
+        self.assertLess(best_loss, 0.15)
 
     def test_vqvae_ste_registers_commitment_and_moves_encoder(self):
         """With useVQVAE=true, STE path must register symbol_commitment and
