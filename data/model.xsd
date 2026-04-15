@@ -13,6 +13,7 @@
         <xs:element name="ConceptualSpace" type="conceptualSpaceType" minOccurs="0"/>
         <xs:element name="SymbolicSpace" type="symbolicSpaceType" minOccurs="0"/>
         <xs:element name="OutputSpace" type="outputSpaceType" minOccurs="0"/>
+        <xs:element name="WordSpace" type="wordSpaceType" minOccurs="0"/>
       </xs:all>
     </xs:complexType>
   </xs:element>
@@ -26,7 +27,6 @@
       <xs:element name="conceptualOrder" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="processSymbols" type="xs:boolean" minOccurs="0"/>
       <xs:element name="ergodic" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
       <xs:element name="naive" type="xs:boolean" minOccurs="0"/>
       <xs:element name="reconstruct" type="reconstructEnum" minOccurs="0"/>
       <xs:element name="maskedPrediction" type="maskedPredictionEnum" minOccurs="0"/>
@@ -38,9 +38,7 @@
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="embeddingPath" type="xs:string" minOccurs="0"/>
       <xs:element name="weightsPath" type="xs:string" minOccurs="0"/>
-      <xs:element name="language" type="languageType" minOccurs="0"/>
       <xs:element name="ramsified" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
       <xs:element name="STM_decay" type="xs:decimal" minOccurs="0"/>
       <xs:element name="type" type="xs:string" minOccurs="0"/>
       <xs:element name="truthBiasScale" type="nonNegativeFloat" minOccurs="0"/>
@@ -197,6 +195,7 @@
       <xs:element name="autoload" type="xs:boolean" minOccurs="0"/>
       <xs:element name="autosave" type="xs:boolean" minOccurs="0"/>
       <xs:element name="profile" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
       <xs:element name="sentencePrediction" type="xs:boolean" minOccurs="0"/>
       <xs:element name="sentenceContextWindow" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="sentenceCentroidHistory" type="xs:positiveInteger" minOccurs="0"/>
@@ -305,6 +304,7 @@
       <xs:element name="accumulateTruth" type="unitInterval" minOccurs="0"/>
       <xs:element name="sortNetwork" type="xs:boolean" minOccurs="0"/>
       <xs:element name="sortPasses" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
       <xs:element name="truthMinMagnitude" type="xs:decimal" minOccurs="0"/>
       <xs:element name="truthMinNovelty" type="xs:decimal" minOccurs="0"/>
       <xs:element name="truthMaxInconsistency" type="xs:decimal" minOccurs="0"/>
@@ -329,7 +329,26 @@
   </xs:complexType>
 
   <!-- ═══════════════════════════════════════════════════════════════════
-       Language section (inside <architecture>)
+       WordSpace section — unified container for grammar infrastructure
+       (SyntacticLayers, TruthLayer, DiscourseSpace). Replaces the
+       former <architecture><language> block and the discourse-related
+       keys in <training>.
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="wordSpaceType">
+    <xs:all>
+      <xs:element name="useGrammar" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="syntacticHiddenDim" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="truthMaxEntries" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="discoursePrediction" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="discourseHistory" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="discourseContextWindow" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="discoursePredictionScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="language" type="languageType" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Language section (inside <WordSpace>)
        ═══════════════════════════════════════════════════════════════════ -->
   <xs:complexType name="languageType">
     <xs:all>

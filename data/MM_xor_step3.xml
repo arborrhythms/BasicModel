@@ -27,6 +27,10 @@
       <embeddingScale>0.05</embeddingScale>
     </training>
 
+  </architecture>
+
+  <WordSpace>
+    <useGrammar>false</useGrammar>
     <language>
       <grammar>
         <START>S</START>
@@ -42,7 +46,7 @@
       </grammar>
       <interpretation>0.5</interpretation>
     </language>
-  </architecture>
+  </WordSpace>
 
   <InputSpace>
     <nOutput>6</nOutput>

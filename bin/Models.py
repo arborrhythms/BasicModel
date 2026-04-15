@@ -48,6 +48,41 @@ from Spaces import Basis, Tensor, Codebook, Embedding
 from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace, WordSpace
 from parse import quick_parser
 
+class _LayerGroup:
+    """Space-like adapter for model-owned layers outside ``self.spaces``.
+
+    MentalModel's ramsified pair stack is registered directly on the model
+    because it is not a real ``Space``.  The optimizer / sigma / paramUpdate
+    plumbing, however, is standardized around ``self.spaces`` and
+    ``getParameters()``. This adapter lets those layers participate in the
+    same contract without changing their ownership or forward path.
+    """
+
+    def __init__(self, *layers):
+        self.layers = [layer for layer in layers if layer is not None]
+
+    def getParameters(self):
+        params = []
+        seen = set()
+        for layer in self.layers:
+            getter = getattr(layer, "getParameters", None)
+            layer_params = getter() if callable(getter) else layer.parameters()
+            for p in layer_params:
+                if p.data_ptr() not in seen:
+                    seen.add(p.data_ptr())
+                    params.append(p)
+        return params
+
+    def paramUpdate(self):
+        for layer in self.layers:
+            if hasattr(layer, "paramUpdate"):
+                layer.paramUpdate()
+
+    def set_sigma(self, sigma):
+        for layer in self.layers:
+            if hasattr(layer, "set_sigma"):
+                layer.set_sigma(sigma)
+
 class BaseModel(nn.Module):
     """Shared training, plotting, and persistence infrastructure for all models."""
     name           = "BaseModel"
@@ -60,7 +95,7 @@ class BaseModel(nn.Module):
     # The inter-sentence DiscourseSpace lives on ``self.wordSpace``
     # (``self.wordSpace.discourse``) rather than directly on the
     # model. Callers that need it should read through
-    # ``wordSpace``; ``discoursePrediction=False`` in training
+    # ``wordSpace``; ``<WordSpace><discoursePrediction>false`` in
     # config leaves ``wordSpace.discourse`` as ``None``.
     discourse_prediction_scale = 0.1
 
@@ -189,7 +224,7 @@ class BaseModel(nn.Module):
         # Discourse-level prediction weight (the DiscourseSpace predictor
         # contributes to ``runBatch`` loss with this scale when present).
         self.discourse_prediction_scale = float(
-            TheXMLConfig.training("discoursePredictionScale", 0.1) or 0.1)
+            TheXMLConfig.get("WordSpace.discoursePredictionScale", 0.1) or 0.1)
 
         if "trainEmbedding" in arch and not isinstance(arch["trainEmbedding"], dict):
             te = arch["trainEmbedding"]
@@ -1042,7 +1077,7 @@ class BasicModel(BaseModel):
         self.reversible      = str(TheXMLConfig.get("architecture.reconstruct")).upper() != "NONE"
         self.ergodic          = TheXMLConfig.get("architecture.ergodic")
         self.processSymbols   = TheXMLConfig.get("architecture.processSymbols")
-        self.certainty        = TheXMLConfig.get("architecture.certainty")
+        self.certainty        = TheXMLConfig.get("architecture.training.certainty")
         self.syntax           = False  # BasicModel: no syntax
         TheXMLConfig._data.setdefault("architecture", {})["syntax"] = False
         self.lexer            = TheXMLConfig.space("InputSpace", "lexer")
@@ -1960,20 +1995,22 @@ class MentalModel(BaseModel):
         self.lexer = TheXMLConfig.space("InputSpace", "lexer")
         self.ergodic = TheXMLConfig.get("architecture.ergodic")
         self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
-        self.certainty = TheXMLConfig.get("architecture.certainty")
+        self.certainty = TheXMLConfig.get("architecture.training.certainty")
         self.codebook = TheXMLConfig.space("InputSpace", "codebook")
         self.perceptCodebook = TheXMLConfig.space("PerceptualSpace", "codebook")
         self.conceptCodebook = TheXMLConfig.space("ConceptualSpace", "codebook")
         self.conceptualOrder = conceptualOrder
         self.ramsified = TheXMLConfig.get("architecture.ramsified")
         self.stm_decay = float(TheXMLConfig.get("architecture.STM_decay", default=0.0) or 0.0)
-        self._ramsified_uses_grammar = False
+        self._ramsified_uses_grammar = bool(
+            TheXMLConfig.get("WordSpace.useGrammar", False))
         self._ramsified_state_vectors = None
         self._ramsified_state_dim = None
         self._ramsified_symbol_width = None
         self._ramsified_symbol_factor = None
         self._ramsified_pair_sigmas = None
         self._ramsified_pair_pis = None
+        self.ramsifiedPair = None
         self.symbol_states = []
 
         # Truth integration config (optional — absent in BasicModel.xml)
@@ -2066,12 +2103,8 @@ class MentalModel(BaseModel):
         # Input -> Percept
         self.perceptualSpace = PerceptualSpace(inputShape, spaceShape_percept, perceptShape)
 
-        # [Percept, Symbol] -> Concept  (cat along vector dim)
-        # SigmaLayer preserves vector count, so output has nPercepts+nSymbols
-        # vectors.  SymbolicSpace's InvertibleLinearLayer maps the activation
-        # from nPercepts+nSymbols → nSymbols.
-        conceptInputShape = [nPercepts + nSymbols, percept_dim + obj_percept]
-        conceptOutputShape = [nPercepts + nSymbols, concept_dim + obj_concept]
+        conceptInputShape = [nPercepts, percept_dim + obj_percept]
+        conceptOutputShape = [nPercepts, concept_dim + obj_concept]
 
         # Ramsified non-grammar path keeps [B, N, D] state width/arity constant
         # and mixes information with invertible pairwise butterfly stages.
@@ -2117,6 +2150,10 @@ class MentalModel(BaseModel):
                 self._ramsified_pair_pis.append(
                     PiLayer(pair_dim, pair_dim, invertible=True, monotonic=True)
                 )
+            self.ramsifiedPair = _LayerGroup(
+                *self._ramsified_pair_sigmas,
+                *self._ramsified_pair_pis,
+            )
             self._level_shapes_list = None
         # Progressive bottleneck: per-level shapes when ramsified grammar is enabled
         elif self.ramsified:
@@ -2129,7 +2166,6 @@ class MentalModel(BaseModel):
                                                conceptOutputShape,
                                                level_shapes=self._level_shapes_list)
 
-        # Concept -> Symbol  (activation: nPercepts+nSymbols → nSymbols)
         self.symbolicSpace = SymbolicSpace(conceptOutputShape, spaceShape_symbol, symbolShape,
                                            conceptualSpace=self.conceptualSpace,
                                            level_shapes=self._level_shapes_list)
@@ -2143,8 +2179,7 @@ class MentalModel(BaseModel):
                                        masked_prediction=(masked_prediction != 'NONE'),
                                        vectors=self.inputSpace.vocabulary)
 
-        # Zero-init shape: [nSymbols, percept_dim+obj] for cat with percepts
-        self._symbol_shape = [nSymbols, percept_dim + obj_percept]
+        self._symbol_shape = [nPercepts, percept_dim + obj_percept]
 
         # Build WordSpace — the unified container for grammar
         # infrastructure (WordSubSpace, three SyntacticLayers, the
@@ -2158,7 +2193,7 @@ class MentalModel(BaseModel):
             conceptualSpace=self.conceptualSpace,
             symbolicSpace=self.symbolicSpace,
             nPercepts=nPercepts,
-            nConcepts=nPercepts + nSymbols,
+            nConcepts=nPercepts,
             nSymbols=nSymbols,
             concept_dim=concept_dim + obj_concept,
             symbol_dim=symbol_dim + obj_symbol,
@@ -2179,8 +2214,10 @@ class MentalModel(BaseModel):
             self.conceptualSpace,
             self.symbolicSpace,
             self.outputSpace,
-            self.wordSpace,
         ])
+        if self.ramsifiedPair is not None:
+            self.spaces.append(self.ramsifiedPair)
+        self.spaces.append(self.wordSpace)
 
         self.inputSpace.outputSpace = self.outputSpace
 
@@ -2445,7 +2482,7 @@ class MentalModel(BaseModel):
                     self._sym_feedbacks.append(None)
                 concept_input = x
             else:
-                concept_input = torch.cat([percepts, sym_feedback], dim=1)
+                concept_input = percepts + sym_feedback
                 # Truth bias: trim concept_input to be consistent with TruthSet
                 truth_layer = getattr(self.wordSpace, 'truth_layer', None) if self.wordSpace is not None else None
                 if truth_layer is not None and len(truth_layer) > 0:
@@ -2614,10 +2651,9 @@ class MentalModel(BaseModel):
             x = self.symbolicSpace[self.conceptualOrder - 1].reverse(
                 self.symbols, wordSpace=ws).materialize()
 
-        # ── Reverse loop ──
-        for t in reversed(range(self.conceptualOrder)):
-            if self.ramsified:
-                # Undo: sigma⁻¹ → feedback → unmerge
+        # ── Reverse ──
+        if self.ramsified:
+            for t in reversed(range(self.conceptualOrder)):
                 self.symbols.set_event(x)
                 concept_input_state = self.conceptualSpace[t].reverse(
                     self.symbols, wordSpace=ws)
@@ -2626,16 +2662,9 @@ class MentalModel(BaseModel):
                 if fb is not None:
                     x = x - fb
                 x = self._butterfly_unmerge(x)
-            else:
-                # cs.reverse, then peel symbols → ss.reverse for next t
-                concept_input_state = self.conceptualSpace.reverse(
-                    concepts_state, wordSpace=ws)
-                if t > 0:
-                    ci = concept_input_state.materialize()
-                    symbol_portion = ci[:, self.nPercepts:, :]
-                    concept_input_state.set_event(symbol_portion)
-                    concepts_state = self.symbolicSpace.reverse(
-                        concept_input_state, wordSpace=ws)
+        else:
+            concept_input_state = self.conceptualSpace.reverse(
+                concepts_state, wordSpace=ws)
 
         # ── Post-loop: build concept_input_state for shared tail ──
         if self.ramsified:
@@ -2652,16 +2681,6 @@ class MentalModel(BaseModel):
         input_latent = input_state.materialize()
         input_data = self.inputs.materialize()
         return input_data, input_latent
-
-    def set_sigma(self, sigma):
-        super().set_sigma(sigma)
-        for layer in list(self._ramsified_pair_sigmas or []) + list(self._ramsified_pair_pis or []):
-            layer.set_sigma(sigma)
-
-    def paramUpdate(self):
-        super().paramUpdate()
-        for layer in list(self._ramsified_pair_sigmas or []) + list(self._ramsified_pair_pis or []):
-            layer.paramUpdate()
 
     # ── Grammar Learning (Phase 2) ────────────────────────────────────
 

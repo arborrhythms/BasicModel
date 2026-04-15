@@ -40,10 +40,6 @@
       <trainEmbedding>ARLM</trainEmbedding>
       <autoload>false</autoload>
       <autosave>true</autosave>
-      <!-- Inter-sentence (discourse) prediction: ring buffer of
-           [S|W] snapshots + per-row linear predictor. Defaults for
-           history/context/scale are 8/3/0.1. -->
-      <discoursePrediction>true</discoursePrediction>
     </training>
 
     <server>
@@ -51,6 +47,16 @@
       <port>8002</port>
       <timeout>120</timeout>
     </server>
+
+  </architecture>
+
+  <WordSpace>
+    <useGrammar>false</useGrammar>
+
+    <!-- Inter-sentence (discourse) prediction: ring buffer of
+         [S|W] snapshots + per-row linear predictor. Defaults for
+         history/context/scale are 8/3/0.1. -->
+    <discoursePrediction>true</discoursePrediction>
 
     <language>
       <grammar>
@@ -80,8 +86,7 @@
       </grammar>
       <interpretation>0.5</interpretation>
     </language>
-
-  </architecture>
+  </WordSpace>
 
   <InputSpace>
     <nDim>100</nDim>

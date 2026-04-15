@@ -16,11 +16,9 @@
     <modelType>simple</modelType>
     <conceptualOrder>1</conceptualOrder>
     <ramsified>false</ramsified>
-    <l1Lambda>0.01</l1Lambda>
     <STM_decay>0.0</STM_decay>
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
-    <certainty>false</certainty>
     <naive>false</naive>
     <reconstruct>none</reconstruct>
 
@@ -63,6 +61,7 @@
       <autoload>true</autoload>
       <autosave>false</autosave>
       <profile>false</profile>
+      <certainty>false</certainty>
     </training>
 
     <server>
@@ -70,6 +69,26 @@
       <port>8001</port>
       <timeout>120</timeout>
     </server>
+
+  </architecture>
+
+  <WordSpace>
+    <!-- Toggle for the ramsified butterfly vs. grammar compose path.
+         false = fixed butterfly pair layers (fast, topology-only).
+         true  = SyntacticLayer.compose() via wordSpace (grammar-driven). -->
+    <useGrammar>false</useGrammar>
+
+    <!-- SyntacticLayer MLP hidden size (prev hardcoded 64..256). -->
+    <syntacticHiddenDim>64</syntacticHiddenDim>
+
+    <!-- Truth memory capacity (TruthLayer is owned by WordSpace). -->
+    <truthMaxEntries>1024</truthMaxEntries>
+
+    <!-- Inter-sentence prediction (DiscourseSpace). Off by default. -->
+    <discoursePrediction>false</discoursePrediction>
+    <discourseHistory>8</discourseHistory>
+    <discourseContextWindow>3</discourseContextWindow>
+    <discoursePredictionScale>0.1</discoursePredictionScale>
 
     <language>
       <grammar>
@@ -81,8 +100,7 @@
       </grammar>
       <interpretation>0.5</interpretation>
     </language>
-
-  </architecture>
+  </WordSpace>
 
 
   <InputSpace>
@@ -149,6 +167,7 @@
     <codebook>false</codebook>
     <sortNetwork>false</sortNetwork>
     <sortPasses>0</sortPasses>
+    <l1Lambda>0.01</l1Lambda>
     <truthMinMagnitude>0.3</truthMinMagnitude>
     <truthMinNovelty>0.5</truthMinNovelty>
     <truthMaxInconsistency>0.3</truthMaxInconsistency>

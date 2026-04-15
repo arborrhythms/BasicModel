@@ -474,7 +474,7 @@ class TestGrammarConfigure(_GrammarTestBase):
         self.assertIsNone(g.method_name(3))   # transition
 
     def test_interpretation_from_xml_config(self):
-        """interpretation is read from mentalModel.interpretation, not grammar dict."""
+        """interpretation is read from WordSpace.language.interpretation, not grammar dict."""
         g = Spaces.Grammar()
         g.configure({
             'START': ['true(S) EOF'],

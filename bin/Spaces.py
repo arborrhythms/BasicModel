@@ -930,7 +930,6 @@ class Codebook(Basis):
         self.setW(x)
         if _vspace is not None:
             _vspace.set_event(x, compute_activation=False)
-            _vspace.set_activation(act)
             return _vspace
         return x
 
@@ -3334,7 +3333,8 @@ class Space(nn.Module):
         return self.params
     def paramUpdate(self):
         for l in self.layers:
-            l.paramUpdate()
+            if hasattr(l, 'paramUpdate'):
+                l.paramUpdate()
 class InputSpace(Space):
     """Receives the source buffer from Data() and encodes it as vectors.
 
@@ -4517,7 +4517,7 @@ class SymbolicSpace(Space):
         # stack sparse. The Pi projection is the only place this belongs.
         try:
             self.l1_lambda = float(
-                TheXMLConfig.get("architecture.l1Lambda"))
+                TheXMLConfig.get("SymbolicSpace.l1Lambda"))
         except (KeyError, TypeError, ValueError):
             self.l1_lambda = 0.0
 
@@ -4599,7 +4599,7 @@ class SymbolicSpace(Space):
 
         ``sign(x) * max(|x| - l1_lambda, 0)``. Applied to the ``materialize()``
         output of each Pi pass; ``l1_lambda`` is loaded from
-        ``architecture.l1Lambda`` at construction time.
+        ``SymbolicSpace.l1Lambda`` at construction time.
         """
         if self.l1_lambda <= 0.0:
             return x
@@ -4703,6 +4703,7 @@ class SymbolicSpace(Space):
             vspace = self.forwardEnd(self.subspace)
         else:
             self.subspace.set_event(act)
+            vspace = self.forwardEnd(self.subspace)
 
         return vspace
 
@@ -5118,25 +5119,20 @@ class Grammar:
         if self._configured:
             return
         cfg = None
-        for path in ("mentalModel.grammar", "architecture.language.grammar", "architecture.grammar"):
-            try:
-                candidate = TheXMLConfig.get(path)
-                if isinstance(candidate, dict):
-                    cfg = candidate
-                    break
-            except (KeyError, AttributeError):
-                continue
+        try:
+            candidate = TheXMLConfig.get("WordSpace.language.grammar")
+            if isinstance(candidate, dict):
+                cfg = candidate
+        except (KeyError, AttributeError):
+            pass
         if cfg is None:
             cfg = self._NOOP_GRAMMAR
         self.configure(cfg)
-        # interpretation: check language section first, then legacy mentalModel
-        for ipath in ("architecture.language.interpretation", "mentalModel.interpretation"):
-            try:
-                interp = TheXMLConfig.get(ipath)
-                self.interpretation = float(interp)
-                break
-            except (KeyError, AttributeError):
-                continue
+        try:
+            interp = TheXMLConfig.get("WordSpace.language.interpretation")
+            self.interpretation = float(interp)
+        except (KeyError, AttributeError, TypeError, ValueError):
+            pass
 
     # ── Rule queries ──────────────────────────────────────────────────
 
@@ -5827,38 +5823,40 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         return None
 
     def liftForward(self, left, right, subspace):
-        """Projected conjunction in symbolic space: s_a * s_b."""
+        """Projected conjunction through symbolic space, back to concept space."""
         cs = self._cs_layer()
         if cs is not None:
             s_a = cs.forward(left)
             s_b = cs.forward(right)
-            return s_a * s_b
+            return cs.reverse(s_a * s_b)
         return left * right
 
     def liftReverse(self, result, right, subspace):
         """Recover first operand: s_a = result / s_b, then PiLayer.reverse."""
         cs = self._cs_layer()
         if cs is not None:
+            s_res = cs.forward(result)
             s_b = cs.forward(right)
-            s_a = result / (s_b + epsilon)
+            s_a = s_res / (s_b + epsilon)
             return cs.reverse(s_a)
         return result / (right + epsilon)
 
     def lowerForward(self, left, right, subspace):
-        """Projected disjunction in symbolic space: s_a + s_b."""
+        """Projected disjunction through symbolic space, back to concept space."""
         cs = self._cs_layer()
         if cs is not None:
             s_a = cs.forward(left)
             s_b = cs.forward(right)
-            return s_a + s_b
+            return cs.reverse(s_a + s_b)
         return left + right
 
     def lowerReverse(self, result, right, subspace):
         """Recover first operand: s_a = result - s_b, then PiLayer.reverse."""
         cs = self._cs_layer()
         if cs is not None:
+            s_res = cs.forward(result)
             s_b = cs.forward(right)
-            s_a = result - s_b
+            s_a = s_res - s_b
             return cs.reverse(s_a)
         return result - right
 
@@ -6445,7 +6443,7 @@ class WordSpace(Space):
     """
 
     name = "Words"
-    config_section = None  # no XML section; skip _register_requirements
+    config_section = "WordSpace"
 
     def __init__(self, perceptualSpace, conceptualSpace, symbolicSpace,
                  nPercepts, nConcepts, nSymbols,
@@ -6508,8 +6506,7 @@ class WordSpace(Space):
         # Lives on WordSpace so SymbolicSpace doesn't have to carry it
         # alongside its already heavy pi/sort/codebook machinery.
         try:
-            max_truths = int(TheXMLConfig.space(
-                "SymbolicSpace", "truthMaxEntries"))
+            max_truths = int(TheXMLConfig.get("WordSpace.truthMaxEntries"))
         except (KeyError, TypeError, ValueError):
             max_truths = 1024
         self.truth_layer = TruthLayer(symbol_dim, max_truths=max_truths)
@@ -6520,19 +6517,19 @@ class WordSpace(Space):
                 self.params.append(p)
 
         # 7. DiscourseSpace — optional inter-sentence substrate.
-        # Gated on the <discoursePrediction> training flag; tasks
-        # without inter-sentence structure (XOR, MNIST) leave it off.
+        # Gated on <WordSpace><discoursePrediction>; tasks without
+        # inter-sentence structure (XOR, MNIST) leave it off.
         self.discourse = None
-        if bool(TheXMLConfig.training("discoursePrediction", False)):
+        if bool(TheXMLConfig.get("WordSpace.discoursePrediction", False)):
             try:
                 n_sym_rows = int(symbolicSpace.outputShape[0])
             except (AttributeError, IndexError, TypeError):
                 n_sym_rows = int(getattr(symbolicSpace, 'nVectors', 0) or 0)
             if n_sym_rows > 0 and muxed > 0:
-                history_len = int(TheXMLConfig.training(
-                    "discourseHistory", 8) or 8)
-                context_window = int(TheXMLConfig.training(
-                    "discourseContextWindow", 3) or 3)
+                history_len = int(TheXMLConfig.get(
+                    "WordSpace.discourseHistory", 8) or 8)
+                context_window = int(TheXMLConfig.get(
+                    "WordSpace.discourseContextWindow", 3) or 3)
                 self.discourse = InterSentenceLayer(
                     n_symbols=n_sym_rows,
                     max_depth=int(getattr(
@@ -6583,13 +6580,22 @@ class WordSpace(Space):
                 self.params.append(p)
 
     # ── private factory helpers: build + wire SyntacticLayers ────────
+    def _resolve_hidden_dim(self, n_slots):
+        try:
+            configured = int(TheXMLConfig.get("WordSpace.syntacticHiddenDim"))
+            if configured > 0:
+                return configured
+        except (KeyError, TypeError, ValueError):
+            pass
+        return min(256, max(64, n_slots * 4))
+
     def _build_perceptual_layer(self, space, n_slots, grammar):
         layer = PerceptualSyntacticLayer(
             nInput=n_slots, nOutput=n_slots,
             rules=grammar.perceptual(),
             transition_rule=None,
             max_depth=max(n_slots - 1, 1),
-            hidden_dim=min(256, max(64, n_slots * 4)),
+            hidden_dim=self._resolve_hidden_dim(n_slots),
             grammar=grammar,
         )
         self.attach_layer('perceptual', layer)
@@ -6602,7 +6608,7 @@ class WordSpace(Space):
             rules=grammar.conceptual(),
             transition_rule=grammar.conceptual_transition(),
             max_depth=max(n_slots - 1, 1),
-            hidden_dim=min(256, max(64, n_slots * 4)),
+            hidden_dim=self._resolve_hidden_dim(n_slots),
             grammar=grammar,
         )
         layer.init_conceptual_params(concept_dim)
@@ -6616,7 +6622,7 @@ class WordSpace(Space):
             rules=grammar.symbolic(),
             transition_rule=grammar.symbolic_transition(),
             max_depth=max(n_slots - 1, 1),
-            hidden_dim=min(256, max(64, n_slots * 4)),
+            hidden_dim=self._resolve_hidden_dim(n_slots),
             grammar=grammar,
         )
         layer.init_swap(symbol_dim, n_slots)

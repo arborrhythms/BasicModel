@@ -37,6 +37,10 @@
       <autosave>false</autosave>
     </training>
 
+  </architecture>
+
+  <WordSpace>
+    <useGrammar>false</useGrammar>
     <language>
       <grammar>
         <START>S</START>
@@ -51,8 +55,7 @@
       </grammar>
       <interpretation>0.5</interpretation>
     </language>
-
-  </architecture>
+  </WordSpace>
 
   <InputSpace>
     <nDim>10</nDim>

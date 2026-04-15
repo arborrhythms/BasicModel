@@ -81,11 +81,11 @@ class TestDefaultsXml(unittest.TestCase):
     def test_architecture_keeps_model_wide(self):
         arch = self.cfg["architecture"]
         for key in ["reconstruct", "conceptualOrder",
-                    "ergodic", "certainty", "processSymbols"]:
+                    "ergodic", "processSymbols"]:
             self.assertIn(key, arch, f"architecture missing model-wide key '{key}'")
         trn = arch.get("training", {})
         for key in ["numTrials", "numEpochs", "batchSize", "learningRate",
-                    "autoload", "autosave"]:
+                    "autoload", "autosave", "certainty"]:
             self.assertIn(key, trn, f"architecture.training missing key '{key}'")
         # weightsPath and embeddingPath are at architecture level, not training
         for key in ["weightsPath", "embeddingPath"]:

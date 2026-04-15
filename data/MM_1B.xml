@@ -50,6 +50,10 @@
       <timeout>120</timeout>
     </server>
 
+  </architecture>
+
+  <WordSpace>
+    <useGrammar>false</useGrammar>
     <language>
       <grammar>
         <START>S</START>
@@ -71,8 +75,7 @@
       </grammar>
       <interpretation>0.5</interpretation>
     </language>
-
-  </architecture>
+  </WordSpace>
 
   <InputSpace>
     <nDim>1</nDim>

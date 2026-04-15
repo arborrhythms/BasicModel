@@ -7,13 +7,11 @@
     <reconstruct>symbols</reconstruct>
     <conceptualOrder>3</conceptualOrder>
     <ramsified>true</ramsified>
-    <l1Lambda>0.01</l1Lambda>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <processSymbols>false</processSymbols>
     <type>mental</type>
     <ergodic>false</ergodic>
-    <certainty>false</certainty>
     <modelType>embedding</modelType>
     <maskedPrediction>NONE</maskedPrediction>
     <truthBiasScale>0.1</truthBiasScale>
@@ -35,23 +33,8 @@
       <embeddingScale>0.05</embeddingScale>
       <autoload>false</autoload>
       <autosave>false</autosave>
+      <certainty>false</certainty>
     </training>
-
-    <language>
-      <grammar>
-        <START>S</START>
-        <S>C</S>
-        <C>not(C)</C>
-        <C>intersection(C, C)</C>
-        <C>union(C, C)</C>
-        <C>lower(C, C)</C>
-        <C>lift(C, C)</C>
-        <C>P</C>
-        <P>I P</P>
-        <P>I</P>
-      </grammar>
-      <interpretation>0.5</interpretation>
-    </language>
 
   </architecture>
 
@@ -68,6 +51,8 @@
   <PerceptualSpace>
     <nOutput>8</nOutput>
     <nDim>10</nDim>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
     <nVectors>8</nVectors>
     <passThrough>true</passThrough>
     <hasAttention>false</hasAttention>
@@ -75,13 +60,10 @@
     <codebook>false</codebook>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace: hierarchical mode computes per-level shapes from
-       nPercepts=8 × dim=12.  Final level: 1 vector × 96 dim.
-       XML nDim/nVectors describe the final level for non-hierarchical compat. -->
   <ConceptualSpace>
-    <nOutput>16</nOutput>
-    <nDim>12</nDim>
-    <nVectors>16</nVectors>
+    <nOutput>8</nOutput>
+    <nDim>10</nDim>
+    <nVectors>8</nVectors>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>false</codebook>
@@ -92,7 +74,9 @@
     <nDim>10</nDim>
     <nVectors>8</nVectors>
     <passThrough>false</passThrough>
+    <l1Lambda>0.01</l1Lambda>
     <accumulateTruth>0</accumulateTruth>
+    <codebook>true</codebook>
   </SymbolicSpace>
 
   <OutputSpace>
@@ -102,5 +86,24 @@
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
   </OutputSpace>
+
+  <WordSpace>
+    <useGrammar>false</useGrammar>
+    <language>
+      <grammar>
+        <START>S</START>
+        <S>C</S>
+        <C>not(C)</C>
+        <C>intersection(C, C)</C>
+        <C>union(C, C)</C>
+        <C>lower(C, C)</C>
+        <C>lift(C, C)</C>
+        <C>P</C>
+        <P>I P</P>
+        <P>I</P>
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+  </WordSpace>
 
 </model>

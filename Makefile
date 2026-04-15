@@ -42,7 +42,7 @@ install :
 
 
 run :
-	cd bin && PYTHONPATH=. ../.venv/bin/python BasicModel.py $(XML1)
+	cd bin && PYTHONPATH=. ../.venv/bin/python Models.py $(XML1)
 
 train :
 	$(PYTHON) bin/train.py --model $(MODEL) --data text --log \
