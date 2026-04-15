@@ -42,11 +42,12 @@ from data import Data, TheData
 from Model import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
 from Model import VQLayer, LinearLayer, AttentionLayer
 from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
-from Model import l1_proximal
 
 from Space import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Space import Basis, Tensor, Codebook, Embedding
-from Space import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
+from Space import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace, WordSpace
+from Space import TheGrammar
+from parse import quick_parser
 
 class BaseModel(nn.Module):
     """Shared training, plotting, and persistence infrastructure for all models."""
@@ -57,6 +58,12 @@ class BaseModel(nn.Module):
     _optimizer     = None
     sentence_predictor = None
     sentence_prediction_scale = 0.1
+    # The inter-sentence DiscourseSpace lives on ``self.wordSpace``
+    # (``self.wordSpace.discourse``) rather than directly on the
+    # model. Callers that need it should read through
+    # ``wordSpace``; ``discoursePrediction=False`` in training
+    # config leaves ``wordSpace.discourse`` as ``None``.
+    discourse_prediction_scale = 0.1
 
     @staticmethod
     def load_config(config_path=None):
@@ -91,58 +98,6 @@ class BaseModel(nn.Module):
         config_path = getattr(self, "_config_path", None)
         config_dir = os.path.dirname(config_path) if config_path else ProjectPaths.PROJECT_DIR
         return os.path.join(config_dir, relpath)
-
-    def _build_word_space(self):
-        """Build and wire the shared WordSpace.
-
-        The WordSubSpace's column layout matches SymbolicSpace's so consumers
-        of ``wordSpace.read()`` can concat cleanly with peer outputs. The
-        unified rule codebook lives on SymbolicSpace, so SymbolicSpace is
-        attached as the codebook host. Available to all model subclasses
-        (``BasicModel``, ``MentalModel``) so the Sigma-Pi loop can reach the
-        word stream via ``self.wordSpace``.
-        """
-        from Space import WordSpace, WordSubSpace
-        ss = getattr(self, 'symbolicSpace', None)
-        if ss is None or getattr(ss, 'subspace', None) is None:
-            return None
-        sub = ss.subspace
-        nWhere = int(getattr(sub, 'nWhere', 0) or 0)
-        nWhen = int(getattr(sub, 'nWhen', 0) or 0)
-        nWhat = int(getattr(sub, 'nWhat', 0) or 0)
-        # Total column width for the [what|where|when] block matches the
-        # peer subspace's muxedSize. Falling back to nWhat covers the
-        # degenerate "no positional axes" configuration.
-        muxed = int(getattr(sub, 'muxedSize', nWhat + nWhere + nWhen) or
-                    (nWhat + nWhere + nWhen))
-        if muxed == 0:
-            # Degenerate config: nothing to store in word rows.
-            return None
-        word_sub = WordSubSpace(
-            nDim=muxed,
-            nWhat=nWhat,
-            nWhere=nWhere,
-            nWhen=nWhen,
-            max_depth=256,
-            max_arity=3,
-            batch=1,
-        )
-        wordSpace = WordSpace(word_sub)
-        # Wire the unified rule codebook.
-        wordSpace.attach_codebook_host(ss)
-        # Transfer ownership of each home space's SyntacticLayer.
-        for kind, space in (
-                ('perceptual', getattr(self, 'perceptualSpace', None)),
-                ('conceptual', getattr(self, 'conceptualSpace', None)),
-                ('symbolic',   getattr(self, 'symbolicSpace',   None))):
-            if space is None:
-                continue
-            layer = getattr(space, 'syntacticLayer', None)
-            if layer is not None:
-                wordSpace.attach_layer(kind, layer)
-                if hasattr(space, 'attach_wordSpace'):
-                    space.attach_wordSpace(wordSpace)
-        return wordSpace
 
     def create_from_config(self, config_path=None, model_type=None, data=None):
         """Create the model using settings from an XML config file."""
@@ -218,9 +173,11 @@ class BaseModel(nn.Module):
         )
 
         # Sentence-level AR prediction: requires both XML flag AND a grammar
-        # (the sentential vector comes from syntacticLayer.compose)
-        has_grammar = (hasattr(self, 'conceptualSpace')
-                       and getattr(self.conceptualSpace, 'syntacticLayer', None) is not None)
+        # (the sentential vector comes from the C-tier SyntacticLayer's
+        # compose, which WordSpace now owns post-ownership-transfer).
+        ws = self.wordSpace
+        has_grammar = (ws is not None
+                       and getattr(ws, 'conceptualSyntacticLayer', None) is not None)
         sp_xml = bool(TheXMLConfig.training("sentencePrediction", False))
         self.sentence_prediction_scale = float(
             TheXMLConfig.training("sentencePredictionScale", 0.1) or 0.1)
@@ -230,6 +187,10 @@ class BaseModel(nn.Module):
             sp_lambda = float(TheXMLConfig.training("sentenceLambda", 1.01) or 1.01)
             self.sentence_predictor = self.SentencePrediction(
                 sp_window, sp_history, sp_lambda)
+        # Discourse-level prediction weight (the DiscourseSpace predictor
+        # contributes to ``runBatch`` loss with this scale when present).
+        self.discourse_prediction_scale = float(
+            TheXMLConfig.training("discoursePredictionScale", 0.1) or 0.1)
 
         if "trainEmbedding" in arch and not isinstance(arch["trainEmbedding"], dict):
             te = arch["trainEmbedding"]
@@ -263,25 +224,23 @@ class BaseModel(nn.Module):
         pass
 
     def getOptimizer(self, lr=0.01):
-        """Build an Adam optimizer over all space parameters.
+        """Build an Adam optimizer over all trainable parameters.
 
-        Uses getParameters() from each Space (the universal training contract),
-        which excludes temperature params managed by alpha_update.
-        Falls back to standard PyTorch parameters() when not in ergodic mode.
+        Walks ``self.spaces`` collecting params via each space's
+        ``getParameters()`` (which excludes alpha-managed params).
+        Dedup by tensor ``data_ptr`` so a parameter owned by multiple
+        modules is only optimized once.
 
-        When trainEmbedding is NONE or ARLM, embedding parameters are excluded
-        from the optimizer.
+        When ``trainEmbedding`` is NONE or ARLM, embedding parameters
+        are excluded from the optimizer.
         """
-        if getattr(self, 'ergodic', True):
-            params = []
-            seen = set()
-            for s in self.spaces:
-                for p in s.getParameters():
-                    if p.data_ptr() not in seen:
-                        seen.add(p.data_ptr())
-                        params.append(p)
-        else:
-            params = list(self.parameters())
+        params = []
+        seen = set()
+        for s in self.spaces:
+            for p in s.getParameters():
+                if p.data_ptr() not in seen:
+                    seen.add(p.data_ptr())
+                    params.append(p)
         # Exclude embedding params when trainEmbedding is NONE or ARLM
         if not getattr(self, 'optimize_embedding', False):
             exclude = set()
@@ -339,8 +298,12 @@ class BaseModel(nn.Module):
     # ── Reasoning Methods ────────────────────────────────────────────
 
     def _get_truth_layer(self):
-        """Return the TruthLayer if available, else None."""
-        return getattr(getattr(self, 'symbolicSpace', None), 'truth', None)
+        """Return the TruthLayer if available, else None.
+
+        The TruthLayer now lives on ``WordSpace``; when the grammar
+        path that builds WordSpace is disabled there is no layer.
+        """
+        return self.wordSpace.truth_layer if self.wordSpace is not None else None
 
     def _get_basis(self):
         """Return the Basis from symbolicSpace's subspace, else None."""
@@ -439,9 +402,11 @@ class BaseModel(nn.Module):
         basis_indices = mask.nonzero(as_tuple=True)[0].tolist()
 
         if not basis_indices:
-            # Try derivation via TruthLayer.derive() (depth capped)
-            ss = getattr(self, 'symbolicSpace', None)
-            sl = getattr(ss, 'syntacticLayer', None) if ss is not None else None
+            # Try derivation via TruthLayer.derive() (depth capped).
+            # After ownership transfer, the S-tier SyntacticLayer lives
+            # on WordSpace, not on SymbolicSpace.
+            ws = self.wordSpace
+            sl = getattr(ws, 'symbolicSyntacticLayer', None) if ws is not None else None
             part_fn = getattr(sl, 'partForward', None) if sl is not None else None
             max_depth = 3
             for depth in range(max_depth):
@@ -512,7 +477,6 @@ class BaseModel(nn.Module):
             return {'added': [], 'rejected': []}
 
         if grammar is None:
-            from Space import TheGrammar
             grammar = TheGrammar
 
         n = truth_layer.count.item()
@@ -533,8 +497,11 @@ class BaseModel(nn.Module):
         pi_layer = ss.layer if ss is not None else None
         # Get the actual SubSpace for grammar methods (needs .basis)
         subspace = getattr(ss, 'subspace', None) if ss is not None else None
-        # *Forward lives on SyntacticLayer, not Grammar
-        syntactic_layer = getattr(ss, 'syntacticLayer', None) if ss is not None else None
+        # *Forward lives on the S-tier SyntacticLayer, which WordSpace
+        # now owns post-ownership-transfer.
+        ws = self.wordSpace
+        syntactic_layer = (getattr(ws, 'symbolicSyntacticLayer', None)
+                           if ws is not None else None)
 
         for i in indices:
             if stored[i].norm() < 1e-6:
@@ -1074,7 +1041,7 @@ class BasicModel(BaseModel):
             model_type: "simple", "embedding", "passthrough", or "vq".
         """
         self.spaces = []  # reset — prevent stale accumulation from prior create() calls
-        self.wordSpace = None  # wired by _build_word_space() after init_syntactic_layer
+        self.wordSpace = None  # wired below once the home spaces exist
         TheXMLConfig._requirements.clear()  # clear stale requirements from prior create()/tests
         # Read config-derivable flags
         self.reconstruct     = reconstruct.lower()
@@ -1232,20 +1199,29 @@ class BasicModel(BaseModel):
         # The output shape of the symbolic space is equal to the input shape of the output space
         #assert self.symbolicSpace.outputShape[1] == self.outputSpace.inputShape[1] # these are in conceptual space, or symbolic space if symbols emit objectSize symbols (processSymbols == True)
 
-        # Initialize Grammar and SyntacticLayers (only in autoregressive modes).
-        from Space import TheGrammar
-        TheGrammar._configured = False  # reset in case of multiple creates
-        TheGrammar._ensure_configured()
+        # Initialize Grammar, WordSpace, and all three SyntacticLayers
+        # (only in autoregressive modes). ``WordSpace.__init__`` owns
+        # grammar config, word-stream buffer sizing, SyntacticLayer
+        # construction, the TruthLayer, and (conditionally) the
+        # DiscourseSpace substrate. See plan: "Architectural
+        # addition — WordSpace".
         if str(masked_prediction).upper() in ('ARLM', 'ARUS', 'RARLM'):
-            self.perceptualSpace.init_syntactic_layer(nPercepts, TheGrammar)
-            self.conceptualSpace.init_syntactic_layer(nConcepts, TheGrammar,
-                                                       concept_dim=concept_dim + obj_concept)
-            self.symbolicSpace.init_syntactic_layer(nSymbols, TheGrammar,
-                                                     symbol_dim=symbol_dim + obj_symbol)
-            # Build the shared WordSpace — word-stream buffer + composition
-            # dispatcher — after the home spaces have their SyntacticLayers.
-            # See plan: "Architectural addition — WordSpace".
-            self.wordSpace = self._build_word_space()
+            self.wordSpace = WordSpace(
+                perceptualSpace=self.perceptualSpace,
+                conceptualSpace=self.conceptualSpace,
+                symbolicSpace=self.symbolicSpace,
+                nPercepts=nPercepts,
+                nConcepts=nConcepts,
+                nSymbols=nSymbols,
+                concept_dim=concept_dim + obj_concept,
+                symbol_dim=symbol_dim + obj_symbol,
+            )
+            # Register WordSpace with the Space-walking training
+            # contract so ``getOptimizer`` collects its parameters
+            # (including the truth layer and, if present, the
+            # discourse predictor) via the uniform ``getParameters``
+            # path.
+            self.spaces.append(self.wordSpace)
 
         self.to(TheDevice.get())
         TheXMLConfig.validate()
@@ -1265,13 +1241,14 @@ class BasicModel(BaseModel):
 
     def Start(self, inputData):
         """Forward pass through the core pipeline: Input -> Percept -> Concept -> Symbol."""
+        ws = self.wordSpace
         # Per-sentence lifecycle: reset the word-stream buffer.
-        if getattr(self, 'wordSpace', None) is not None:
-            self.wordSpace.clear_sentence()
+        if ws is not None:
+            ws.clear_sentence()
         self.inputs   = self.inputSpace.forward(inputData)
-        self.percepts = self.perceptualSpace.forward(self.inputs)
-        self.concepts = self.conceptualSpace.forward(self.percepts)
-        self.symbols  = self.symbolicSpace.forward(self.concepts)
+        self.percepts = self.perceptualSpace.forward(self.inputs, wordSpace=ws)
+        self.concepts = self.conceptualSpace.forward(self.percepts, wordSpace=ws)
+        self.symbols  = self.symbolicSpace.forward(self.concepts, wordSpace=ws)
         input = self.inputs.materialize()
         concepts = self.concepts.materialize()
         symbols = self.symbols.materialize()
@@ -1280,12 +1257,13 @@ class BasicModel(BaseModel):
         return input, concepts, symbols
     def StartReverse(self, symbols):
         """Reverse pass: Symbol -> Concept -> Percept -> Input (reconstruction)."""
+        ws = self.wordSpace
         if isinstance(symbols, torch.Tensor):
             self.symbolicSpace.subspace.set_event(symbols)
             symbols = self.symbolicSpace.subspace
-        concepts_state = self.symbolicSpace.reverse(symbols)
-        percepts_state = self.conceptualSpace.reverse(concepts_state)
-        input_state = self.perceptualSpace.reverse(percepts_state)
+        concepts_state = self.symbolicSpace.reverse(symbols, wordSpace=ws)
+        percepts_state = self.conceptualSpace.reverse(concepts_state, wordSpace=ws)
+        input_state = self.perceptualSpace.reverse(percepts_state, wordSpace=ws)
         self.inputs = self.inputSpace.reverse(input_state)
         input = input_state.materialize()
         inputData  = self.inputs.materialize()
@@ -1322,17 +1300,18 @@ class BasicModel(BaseModel):
         return output_symbols
 
     def store_truths(self, entries):
-        """Encode truth entries via runEpoch and store in SymbolicSpace.truth.
+        """Encode truth entries via runEpoch and store in WordSpace.truth_layer.
 
         Truths are processed through the full pipeline by running a
         standard inference epoch.  SymbolicSpace.forward() records raw
-        activations into the TruthLayer.  After the epoch completes,
-        each stored activation is scaled by its DegreeOfTruth.
+        activations into the TruthLayer via ``self.wordSpace.truth_layer``.
+        After the epoch completes, each stored activation is scaled by
+        its DegreeOfTruth.
 
         Args:
             entries: list of dicts with 'content' and 'trust' keys.
         """
-        truth_layer = getattr(self.symbolicSpace, 'truth', None)
+        truth_layer = getattr(self.wordSpace, 'truth_layer', None) if self.wordSpace is not None else None
         if truth_layer is None:
             return
 
@@ -1643,7 +1622,6 @@ class BasicModel(BaseModel):
                 sentences = self._get_sentences(split)
                 if sentences and index < len(sentences):
                     sentence = sentences[index]
-                    from parse import quick_parser
                     words = [t for t, _ in quick_parser(sentence)]
                     if te in ('JOINT'):
                         sbow = self.inputSpace.sbow_loss(words)
@@ -1797,12 +1775,33 @@ class BasicModel(BaseModel):
                 sp_loss = self.sentence_predictor.loss(sv)
                 self.sentence_predictor.push(sv)
 
+        # Discourse-level [S, W] prediction loss. The pattern is
+        # predict-then-snapshot: use the existing history to predict
+        # what the next sentence should look like, MSE against the
+        # actual (s, w) pair this forward just produced, then push
+        # the actual pair into history for the next iteration.
+        # First-sentence case (empty history) returns predicted=None;
+        # we skip the loss and just push the snapshot.
+        discourse_loss = None
+        discourse = getattr(self.wordSpace, 'discourse', None) if self.wordSpace is not None else None
+        if train and discourse is not None:
+            s_tensor = getattr(self, '_current_discourse_s', None)
+            w_tensor = getattr(self, '_current_discourse_w', None)
+            if s_tensor is not None and w_tensor is not None:
+                predicted = discourse.predict_next()
+                if predicted is not None:
+                    discourse_loss = discourse.loss(
+                        predicted, s_tensor, w_tensor)
+                discourse.snapshot(s_tensor, w_tensor)
+
         totalLoss = self.loss.total(lossOut, lossIn, sbow)
         if sp_loss is not None:
             totalLoss = totalLoss + self.sentence_prediction_scale * sp_loss
+        if discourse_loss is not None:
+            totalLoss = totalLoss + self.discourse_prediction_scale * discourse_loss
 
         # Truth-modulated loss: penalize irrational and unkind propositions
-        truth_layer = getattr(self.symbolicSpace, 'truth', None) if hasattr(self, 'symbolicSpace') else None
+        truth_layer = getattr(self.wordSpace, 'truth_layer', None) if self.wordSpace is not None else None
         if truth_layer is not None and len(truth_layer) > 0 and train:
             lum = truth_layer.luminosity(self.symbolicSpace.layer)
             lum_norm = lum.clamp(0, 1)
@@ -1866,6 +1865,9 @@ class BasicModel(BaseModel):
         self.outputSpace.clearBatchResults()
         if getattr(self, 'sentence_predictor', None) is not None:
             self.sentence_predictor.reset()
+        ws = self.wordSpace
+        if ws is not None and getattr(ws, 'discourse', None) is not None:
+            ws.discourse.reset()
         ctx = torch.no_grad() if not training else nullcontext()
 
 
@@ -1950,7 +1952,7 @@ class MentalModel(BaseModel):
                masked_prediction='NONE', reconstruct='NONE', **kwargs):
 
         self.spaces = []
-        self.wordSpace = None  # wired by _build_word_space() after init_syntactic_layer
+        self.wordSpace = None  # wired below once the home spaces exist
         self.reversible = str(TheXMLConfig.get("architecture.reconstruct")).upper() != "NONE"
         self.nInput = nInput
         self.nPercepts = nPercepts
@@ -1970,7 +1972,6 @@ class MentalModel(BaseModel):
         self.conceptCodebook = TheXMLConfig.space("ConceptualSpace", "codebook")
         self.conceptualOrder = conceptualOrder
         self.ramsified = TheXMLConfig.get("architecture.ramsified")
-        self.l1_lambda = float(TheXMLConfig.get("architecture.l1Lambda"))
         self.stm_decay = float(TheXMLConfig.get("architecture.STM_decay", default=0.0) or 0.0)
         self._ramsified_uses_grammar = False
         self._ramsified_state_vectors = None
@@ -2151,26 +2152,32 @@ class MentalModel(BaseModel):
         # Zero-init shape: [nSymbols, percept_dim+obj] for cat with percepts
         self._symbol_shape = [nSymbols, percept_dim + obj_percept]
 
-        from Space import TheGrammar
-        TheGrammar._configured = False
-        TheGrammar._ensure_configured()
-        # Each Space allocates its own SyntacticLayer with tier-specific parameters.
-        self.perceptualSpace.init_syntactic_layer(nPercepts, TheGrammar)
-        self.conceptualSpace.init_syntactic_layer(nPercepts + nSymbols, TheGrammar,
-                                                   concept_dim=concept_dim + obj_concept)
-        self.symbolicSpace.init_syntactic_layer(nSymbols, TheGrammar,
-                                                 symbol_dim=symbol_dim + obj_symbol)
+        # Build WordSpace — the unified container for grammar
+        # infrastructure (WordSubSpace, three SyntacticLayers, the
+        # TruthLayer, and conditionally the DiscourseSpace substrate).
+        # Its ``__init__`` configures the grammar, sizes the word
+        # buffer from SymbolicSpace's column layout, builds each tier's
+        # SyntacticLayer, and back-wires the home spaces so
+        # compose/decompose routes through ``self.wordSpace``.
+        self.wordSpace = WordSpace(
+            perceptualSpace=self.perceptualSpace,
+            conceptualSpace=self.conceptualSpace,
+            symbolicSpace=self.symbolicSpace,
+            nPercepts=nPercepts,
+            nConcepts=nPercepts + nSymbols,
+            nSymbols=nSymbols,
+            concept_dim=concept_dim + obj_concept,
+            symbol_dim=symbol_dim + obj_symbol,
+        )
 
-        # Store SymbolicSpace ref for ternary lift (concept↔symbol projection)
-        # Use object.__setattr__ to avoid nn.Module circular submodule registration
-        # (SymbolicSpace → ConceptualSpace → SyntacticLayer → SymbolicSpace)
-        object.__setattr__(self.conceptualSpace.syntacticLayer, '_symbolic_space', self.symbolicSpace)
+        # Store SymbolicSpace ref for ternary lift (concept↔symbol projection).
+        # The C-tier SyntacticLayer now lives on WordSpace under the
+        # ownership-transfer refactor. Use ``object.__setattr__`` to
+        # avoid nn.Module circular submodule registration
+        # (SymbolicSpace → ConceptualSpace → SyntacticLayer → SymbolicSpace).
+        object.__setattr__(self.wordSpace.conceptualSyntacticLayer,
+                           '_symbolic_space', self.symbolicSpace)
         self.conceptualSpace.subspace.basis.monotonic = False
-
-        # Build the shared WordSpace — word-stream buffer + composition
-        # dispatcher — after all home spaces have their SyntacticLayers.
-        # See plan: "Architectural addition — WordSpace".
-        self.wordSpace = self._build_word_space()
 
         self.spaces.extend([
             self.inputSpace,
@@ -2178,6 +2185,7 @@ class MentalModel(BaseModel):
             self.conceptualSpace,
             self.symbolicSpace,
             self.outputSpace,
+            self.wordSpace,
         ])
 
         self.inputSpace.outputSpace = self.outputSpace
@@ -2385,10 +2393,12 @@ class MentalModel(BaseModel):
         if isinstance(inputData, torch.Tensor):
             inputData = inputData.to(TheDevice.get())
 
+        ws = self.wordSpace
+
         # 1. Input -> Percept
         self.inputs = self.inputSpace.forward(inputData)
         input_state = self.inputs.materialize()
-        self.percepts = self.perceptualSpace.forward(self.inputs)
+        self.percepts = self.perceptualSpace.forward(self.inputs, wordSpace=ws)
         percepts = self.percepts.materialize()  # [B, nPercepts, dim]
 
         B = percepts.shape[0]
@@ -2397,7 +2407,7 @@ class MentalModel(BaseModel):
         # forward pass starts with a clean derivation history. The
         # buffer's capacity is fixed — rule applications inside
         # compose() push records onto it during this pass.
-        if getattr(self, 'wordSpace', None) is not None:
+        if self.wordSpace is not None:
             self.wordSpace.ensure_batch(B)
             self.wordSpace.clear_sentence()
 
@@ -2407,7 +2417,6 @@ class MentalModel(BaseModel):
             self.symbol_states = []
             x = percepts
         elif self.ramsified:
-            from Space import TheGrammar
             self.concept_states = []
             x = percepts                     # [B, N_percept, D_percept]
             use_grammar = False
@@ -2444,7 +2453,7 @@ class MentalModel(BaseModel):
             else:
                 concept_input = torch.cat([percepts, sym_feedback], dim=1)
                 # Truth bias: trim concept_input to be consistent with TruthSet
-                truth_layer = getattr(self.symbolicSpace, 'truth', None)
+                truth_layer = getattr(self.wordSpace, 'truth_layer', None) if self.wordSpace is not None else None
                 if truth_layer is not None and len(truth_layer) > 0:
                     basis = self.symbolicSpace.subspace.what
                     conj = truth_layer.truth_conjunction(
@@ -2455,16 +2464,17 @@ class MentalModel(BaseModel):
 
             # 2. Sigma: conceptual transformation (indexed by t)
             self.percepts.set_event(concept_input)
-            self.concepts = self.conceptualSpace[t].forward(self.percepts)
+            self.concepts = self.conceptualSpace[t].forward(self.percepts, wordSpace=ws)
             concept_vectors = self.concepts.materialize()
 
             if self.ramsified:
                 x = concept_vectors          # carry forward for next merge
 
-            # 3. Pi: symbolic projection (indexed by t)
-            self.symbols = self.symbolicSpace[t].forward(self.concepts)
+            # 3. Pi: symbolic projection (indexed by t). Sparsity via
+            # l1_proximal is applied inside SymbolicSpace.forward, so the
+            # materialized event is already soft-thresholded.
+            self.symbols = self.symbolicSpace[t].forward(self.concepts, wordSpace=ws)
             sym_vectors = self.symbols.materialize()
-            sym_vectors = l1_proximal(sym_vectors, self.l1_lambda)
 
             # 4. Feedback: activation norms for next iteration
             if self.ramsified:
@@ -2513,14 +2523,45 @@ class MentalModel(BaseModel):
                         sv_list.append(torch.zeros(cv.shape[-1], device=cv.device))
                 self._current_sentence_vec = torch.stack(sv_list, dim=0).mean(dim=0)
 
+        # Discourse snapshot — stash the final (S, W) pair so runBatch
+        # can compute a next-sentence prediction loss against it.
+        # S is the symbolic materialization (already committed).
+        # W is the WordSubSpace's read() of the current per-sentence
+        # stack — captured now, before ``Start()`` clears the stack for
+        # the next sentence. We stash raw tensors; DiscourseSpace's
+        # ``snapshot()`` mean-pools batch and pads/truncates to fit.
+        self._current_discourse_s = None
+        self._current_discourse_w = None
+        discourse = getattr(self.wordSpace, 'discourse', None) if self.wordSpace is not None else None
+        if discourse is not None:
+            # S: the symbolic state at the end of the Sigma-Pi loop.
+            try:
+                s_state = self.symbolicSpace.subspace.materialize()
+            except Exception:
+                s_state = sym_vectors
+            # W: the word-buffer read. Shape is
+            # [batch, max_depth, muxedSize]; empty when no words were
+            # pushed (zero tensor per the sentinel convention).
+            try:
+                w_state = self.wordSpace.read()
+            except Exception:
+                w_state = None
+            if w_state is None:
+                w_state = torch.zeros(
+                    discourse.max_depth,
+                    discourse.n_dim,
+                    device=s_state.device, dtype=s_state.dtype)
+            self._current_discourse_s = s_state.detach()
+            self._current_discourse_w = w_state.detach()
+
         # Universality evaluation
         self._universality_score = None
-        truth_layer = getattr(self.symbolicSpace, 'truth', None)
+        truth_layer = getattr(self.wordSpace, 'truth_layer', None) if self.wordSpace is not None else None
         if truth_layer is not None and len(truth_layer) > 0:
             svo = self.conceptualSpace.last_svo
             if svo is not None:
                 s, v, o = svo
-                c_sl = self.conceptualSpace.syntacticLayer
+                c_sl = self.wordSpace.conceptualSyntacticLayer
                 self._universality_score = truth_layer.universality(
                     s, v, o, c_sl.lifting_layer, self.symbolicSpace)
 
@@ -2535,6 +2576,7 @@ class MentalModel(BaseModel):
         return input_state, symbols, outputData
 
     def reverse(self, symbols, outputData):
+        ws = self.wordSpace
         if isinstance(outputData, torch.Tensor):
             self.outputSpace.subspace.set_event(outputData)
             outputData = self.outputSpace.subspace
@@ -2567,7 +2609,7 @@ class MentalModel(BaseModel):
                 else:
                     x = self._pair_stage_reverse(x, t)
             self.perceptualSpace.subspace.set_event(x)
-            input_state = self.perceptualSpace.reverse(self.perceptualSpace.subspace)
+            input_state = self.perceptualSpace.reverse(self.perceptualSpace.subspace, wordSpace=ws)
             self.inputs = self.inputSpace.reverse(input_state)
             input_latent = input_state.materialize()
             input_data = self.inputs.materialize()
@@ -2576,7 +2618,7 @@ class MentalModel(BaseModel):
             # Initial pi inverse from final level
             self.symbols.set_event(sym_vec)
             x = self.symbolicSpace[self.conceptualOrder - 1].reverse(
-                self.symbols).materialize()
+                self.symbols, wordSpace=ws).materialize()
 
         # ── Reverse loop ──
         for t in reversed(range(self.conceptualOrder)):
@@ -2584,7 +2626,7 @@ class MentalModel(BaseModel):
                 # Undo: sigma⁻¹ → feedback → unmerge
                 self.symbols.set_event(x)
                 concept_input_state = self.conceptualSpace[t].reverse(
-                    self.symbols)
+                    self.symbols, wordSpace=ws)
                 x = concept_input_state.materialize()
                 fb = self._sym_feedbacks.pop()
                 if fb is not None:
@@ -2593,13 +2635,13 @@ class MentalModel(BaseModel):
             else:
                 # cs.reverse, then peel symbols → ss.reverse for next t
                 concept_input_state = self.conceptualSpace.reverse(
-                    concepts_state)
+                    concepts_state, wordSpace=ws)
                 if t > 0:
                     ci = concept_input_state.materialize()
                     symbol_portion = ci[:, self.nPercepts:, :]
                     concept_input_state.set_event(symbol_portion)
                     concepts_state = self.symbolicSpace.reverse(
-                        concept_input_state)
+                        concept_input_state, wordSpace=ws)
 
         # ── Post-loop: build concept_input_state for shared tail ──
         if self.ramsified:
@@ -2611,7 +2653,7 @@ class MentalModel(BaseModel):
 
         # PerceptualSpace reverse -> InputSpace reverse
         concept_input_state.set_event(percepts_portion)
-        input_state = self.perceptualSpace.reverse(concept_input_state)
+        input_state = self.perceptualSpace.reverse(concept_input_state, wordSpace=ws)
         self.inputs = self.inputSpace.reverse(input_state)
         input_latent = input_state.materialize()
         input_data = self.inputs.materialize()
@@ -2787,7 +2829,6 @@ class MentalModel(BaseModel):
 
             return {'proved': False, 'confidence': 0.0,
                     'steps': len(trace), 'trace': trace}
-
 TheMentalModel = MentalModel()
 
 class ModelFactory:

@@ -78,8 +78,8 @@ class TestMentalModelForwardReverse(unittest.TestCase):
         # Grammar should be initialized
         self.assertTrue(TheGrammar._configured)
         # SyntacticLayers are now on the Spaces, not Grammar
-        self.assertIsNotNone(model.conceptualSpace.syntacticLayer)
-        self.assertIsNotNone(model.symbolicSpace.syntacticLayer)
+        self.assertIsNotNone(model.wordSpace.conceptualSyntacticLayer)
+        self.assertIsNotNone(model.wordSpace.symbolicSyntacticLayer)
         # C-tier methods (equals/part are on S-tier)
         self.assertNotIn('equals', TheGrammar.c_methods)
         self.assertNotIn('part', TheGrammar.c_methods)
@@ -146,18 +146,18 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
         self.assertEqual(TheGrammar.interpretation, 0.5)
 
         # S-tier indices 1..13 (12 method rules + transition at index 13)
-        self.assertEqual(model.symbolicSpace.syntacticLayer.all_rules,
+        self.assertEqual(model.wordSpace.symbolicSyntacticLayer.all_rules,
                          list(range(1, 14)))
-        self.assertEqual(model.symbolicSpace.syntacticLayer.transition_rule, 13)
+        self.assertEqual(model.wordSpace.symbolicSyntacticLayer.transition_rule, 13)
 
         # C-tier indices 14..20 (6 method rules + transition at index 20)
-        self.assertEqual(model.conceptualSpace.syntacticLayer.all_rules,
+        self.assertEqual(model.wordSpace.conceptualSyntacticLayer.all_rules,
                          list(range(14, 21)))
-        self.assertEqual(model.conceptualSpace.syntacticLayer.transition_rule, 20)
+        self.assertEqual(model.wordSpace.conceptualSyntacticLayer.transition_rule, 20)
 
         # P-tier indices 21..22 (chunk, terminal I)
-        self.assertEqual(model.perceptualSpace.syntacticLayer.all_rules, [21, 22])
-        self.assertIsNone(model.perceptualSpace.syntacticLayer.transition_rule)
+        self.assertEqual(model.wordSpace.perceptualSyntacticLayer.all_rules, [21, 22])
+        self.assertIsNone(model.wordSpace.perceptualSyntacticLayer.transition_rule)
 
 
 if __name__ == '__main__':

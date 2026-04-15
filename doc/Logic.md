@@ -137,8 +137,9 @@ that compose propositions about the world.
 
 A **truth statement** is any assertion that the model has meaningfully
 processed through the full pipeline (InputSpace → ... → SymbolicSpace),
-producing a symbolic activation vector.  The `TruthLayer` on SymbolicSpace
-stores these activations **scaled by** the DegreeOfTruth:
+producing a symbolic activation vector.  The `TruthLayer` — owned by
+`WordSpace` and reachable as `self.wordSpace.truth_layer` — stores these
+activations **scaled by** the DegreeOfTruth:
 
 $$
 \text{stored} = \text{activation} \times \text{degree}
@@ -154,9 +155,11 @@ The DegreeOfTruth in $[-1, 1]$ is baked into the stored vector:
 | -1 < d < 0 | scaled, negated | weak disperser |
 | -1 | negated activation | disperser |
 
-### TruthLayer (SymbolicSpace.truth)
+### TruthLayer (WordSpace.truth_layer)
 
-`TruthLayer` in `Model.py` is instantiated on `SymbolicSpace` when
+`TruthLayer` in `Model.py` is instantiated by `WordSpace.__init__`
+alongside the three SyntacticLayers. `SymbolicSpace.forward` reads it via
+`self.wordSpace.truth_layer` and records activations when
 `<accumulateTruth>` is set to a value > 0 (the degree of truth, 0..1):
 
 - **record(activation, degree)** — store `activation * degree`.
@@ -281,8 +284,8 @@ where $c_a$ is the concept vector underlying $a$.
 
 This gives a scalar degree of verification in $[-1, 1]$ without requiring
 the incoming statement to exactly match any stored truth.  Cosine
-similarity in SymbolicSpace (`query()`) can also find the single closest
-truth and return its degree, which is useful for point lookups.
+similarity via `wordSpace.truth_layer.query()` can also find the single
+closest truth and return its degree, which is useful for point lookups.
 
 ### Logical Entailment (augmenting geometry with symbolic closure)
 

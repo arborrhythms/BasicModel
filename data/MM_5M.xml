@@ -43,6 +43,18 @@
       <sentenceCentroidHistory>3</sentenceCentroidHistory>
       <sentenceLambda>1.01</sentenceLambda>
       <sentencePredictionScale>0.1</sentencePredictionScale>
+
+      <!-- Inter-sentence (discourse-level) prediction. DiscourseSpace
+           keeps a rolling ring buffer of per-sentence [S|W] snapshots
+           and trains a per-row linear predictor over the last
+           ``discourseContextWindow`` snapshots. Defaults in BasicModel
+           are 8/3/0.1; declared explicitly here so the config shows
+           the knobs. Under MM_5M's peer dims (n_sentence=384,
+           n_dim=4), the predictor is ~52 params — effectively free. -->
+      <discoursePrediction>true</discoursePrediction>
+      <discourseHistory>8</discourseHistory>
+      <discourseContextWindow>3</discourseContextWindow>
+      <discoursePredictionScale>0.1</discoursePredictionScale>
     </training>
 
     <server>

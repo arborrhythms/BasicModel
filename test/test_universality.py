@@ -123,7 +123,7 @@ def _get_lift_confidence(model, grammar):
     averaged over the batch.  Returns 0.0 if composition didn't run or
     if the ternary lift rule is not among the composable rules.
     """
-    sl = model.conceptualSpace.syntacticLayer
+    sl = model.wordSpace.conceptualSyntacticLayer
     probs = sl.last_rule_probs          # [B, depths, n_composable] or None
     rules = sl.last_composable_rules    # list of global rule IDs or None
     if probs is None or rules is None:
@@ -269,7 +269,7 @@ class TestLuminosityOfKindness(unittest.TestCase):
         from Space import TheGrammar
         self.grammar = TheGrammar
         # Seed the truth store so luminosity is non-trivial
-        truth_layer = self.model.symbolicSpace.truth
+        truth_layer = self.model.wordSpace.truth_layer
         with torch.no_grad():
             for _ in range(5):
                 v = torch.randn(truth_layer.nDim)
@@ -304,8 +304,8 @@ class TestLuminosityOfKindness(unittest.TestCase):
             return None, None
 
         s, v, o = svo
-        truth_layer = self.model.symbolicSpace.truth
-        lifting_layer = self.model.conceptualSpace.syntacticLayer.lifting_layer
+        truth_layer = self.model.wordSpace.truth_layer
+        lifting_layer = self.model.wordSpace.conceptualSyntacticLayer.lifting_layer
         ss = self.model.symbolicSpace
 
         with torch.no_grad():

@@ -40,6 +40,10 @@
       <trainEmbedding>ARLM</trainEmbedding>
       <autoload>false</autoload>
       <autosave>true</autosave>
+      <!-- Inter-sentence (discourse) prediction: ring buffer of
+           [S|W] snapshots + per-row linear predictor. Defaults for
+           history/context/scale are 8/3/0.1. -->
+      <discoursePrediction>true</discoursePrediction>
     </training>
 
     <server>

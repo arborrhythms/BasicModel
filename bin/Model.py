@@ -24,11 +24,6 @@ from collections import namedtuple
 
 epsilon = 1e-7  # to avoid log(0)
 
-
-def l1_proximal(x, lambda_val):
-    """Soft-thresholding: sign(x) * max(|x| - λ, 0).  Enforces sparsity."""
-    return torch.sign(x) * torch.clamp(torch.abs(x) - lambda_val, min=0.0)
-
 # Device used by all layers.
 from util import TheXMLConfig, TheDevice
 from util import TheMessage
@@ -2418,7 +2413,221 @@ class TruthLayer(Layer):
         assert len(tl5) == 1, f"truth store not restored: {len(tl5)}"
 
         print("TruthLayer tests passed.")
+class DiscourseSpace(Layer):
+    """Inter-sentence substrate: per-sentence ``[S | W]`` snapshots +
+    next-sentence predictor + predicted-sentence resolver.
 
+    **What it is.** WordSpace clears at every sentence boundary — its
+    buffer is intentionally per-sentence. Inter-sentence prediction
+    needs something the plan called out explicitly: a muxed view of
+    both what the sentence committed (SymbolicSpace's final
+    ``materialize()``) and how it was said (WordSpace's ``read()``
+    buffer). DiscourseSpace is the "buffer of snapshots across
+    sentences, cleared at topic/discourse boundary" analog of
+    WordSpace, sitting one level up. The architectural pattern is
+    identical — a fixed buffer + a dispatcher / predictor on top —
+    at a different time scale.
+
+    **Snapshot shape.** Each sentence produces an
+    ``[n_sentence, n_dim]`` row where
+    ``n_sentence = n_symbols + max_depth``. S fills rows
+    ``[0 : n_symbols]``; W fills rows ``[n_symbols : n_sentence]``.
+    Both inputs share the peer ``[what | where | when]`` column
+    layout, so the concat along the N axis is a plain
+    ``torch.cat([s, w], dim=0)`` with no per-source branching.
+
+    Subclasses ``Layer`` (not ``Space``): DiscourseSpace has no
+    SubSpace, no what/where/when basis slots, and no forward/reverse
+    tensor-map contract. It lives inside ``WordSpace.layers`` so the
+    Layer ergodic interface (``paramUpdate`` / ``set_sigma`` /
+    ``observe_sigma`` / ``sigma_to_ergodic``) reaches the predictor
+    via the same walk WordSpace uses for its SyntacticLayers.
+    """
+
+    name = "Discourse"
+
+    def __init__(self, n_symbols, max_depth, n_dim,
+                 history_len=8, context_window=3):
+        # n_sentence rows × n_dim cols is the space the predictor maps
+        # between; Layer's nInput / nOutput fields carry the flattened
+        # count for any legacy consumers that read them.
+        n_sentence = int(n_symbols) + int(max_depth)
+        flat = n_sentence * int(n_dim)
+        super().__init__(flat, flat)
+
+        self.n_symbols = int(n_symbols)
+        self.max_depth = int(max_depth)
+        self.n_dim = int(n_dim)
+        self.n_sentence = n_sentence
+        self.history_len = int(history_len)
+        self.context_window = int(context_window)
+
+        # Snapshot ring buffer. Registered as a non-persistent buffer
+        # so ``.to(device)`` follows it without saving it in
+        # checkpoints — the contents are per-epoch transient state.
+        self.register_buffer(
+            "_snapshots",
+            torch.zeros(self.history_len, self.n_sentence, self.n_dim),
+            persistent=False)
+        self.register_buffer(
+            "_snap_count",
+            torch.zeros((), dtype=torch.long),
+            persistent=False)
+
+        # Per-row linear predictor: for each row in ``n_sentence`` we
+        # concat its ``context_window`` history vectors into a
+        # ``[context_window * n_dim]`` input and map it back to
+        # ``[n_dim]``. This keeps param count to
+        # ``~(context_window * n_dim) * n_dim`` vs. the billions a
+        # full-flatten design would need at production sizes.
+        # ``InvertibleLinearLayer`` participates in the ergodic walk,
+        # so adding it to ``self.layers`` wires up ``set_sigma`` /
+        # ``paramUpdate`` propagation from WordSpace's ergodic
+        # interface down through DiscourseSpace to the predictor.
+        self.predictor = InvertibleLinearLayer(
+            self.context_window * self.n_dim, self.n_dim,
+            ergodic=True)
+        self.layers = [self.predictor]
+
+    # ── snapshot & history ───────────────────────────────────────────
+    def _fit_rows(self, x, target_rows):
+        """Pad-or-truncate ``x`` along its row axis to exactly
+        ``target_rows``. Accepts ``[rows, dim]`` or ``[B, rows, dim]``;
+        always returns ``[target_rows, dim]`` (batch is mean-pooled
+        for buffer storage because the discourse substrate is
+        sentence-level and batch-free).
+        """
+        if x.ndim == 3:
+            x = x.mean(dim=0)
+        rows = x.shape[0]
+        if rows == target_rows:
+            return x
+        if rows > target_rows:
+            return x[:target_rows]
+        pad = torch.zeros(
+            target_rows - rows, x.shape[-1],
+            dtype=x.dtype, device=x.device)
+        return torch.cat([x, pad], dim=0)
+
+    def _fit_dim(self, x):
+        """Pad-or-truncate ``x`` along its column axis to exactly
+        ``self.n_dim``. Handles configs where S and W have mismatched
+        n_dim (e.g. muxed vs. what-only)."""
+        cur = x.shape[-1]
+        if cur == self.n_dim:
+            return x
+        if cur > self.n_dim:
+            return x[..., :self.n_dim]
+        return F.pad(x, (0, self.n_dim - cur))
+
+    def _assemble(self, s_tensor, w_tensor):
+        """Build one ``[n_sentence, n_dim]`` row from S + W tensors."""
+        s = self._fit_rows(s_tensor, self.n_symbols)
+        w = self._fit_rows(w_tensor, self.max_depth)
+        s = self._fit_dim(s)
+        w = self._fit_dim(w)
+        return torch.cat([s, w], dim=0)
+
+    def snapshot(self, s_tensor, w_tensor):
+        """Push a ``[S | W]`` concatenation into the history ring."""
+        row = self._assemble(s_tensor, w_tensor).detach()
+        n = int(self._snap_count.item())
+        if n < self.history_len:
+            self._snapshots[n] = row
+            self._snap_count.fill_(n + 1)
+        else:
+            # Ring: shift left, append at end.
+            self._snapshots[:-1] = self._snapshots[1:].clone()
+            self._snapshots[-1] = row
+
+    def reset(self):
+        """Clear the history ring (called at epoch boundaries)."""
+        self._snapshots.zero_()
+        self._snap_count.zero_()
+
+    def __len__(self):
+        return int(self._snap_count.item())
+
+    def latest_snapshot(self):
+        """Return the most recently pushed snapshot, or ``None``."""
+        n = int(self._snap_count.item())
+        if n == 0:
+            return None
+        return self._snapshots[n - 1]
+
+    # ── prediction ───────────────────────────────────────────────────
+    def _build_context(self):
+        """Return the ``[context_window, n_sentence, n_dim]`` input
+        tensor for the predictor, zero-padded at the front when
+        history is short. Returns ``None`` if history is empty.
+        """
+        n = int(self._snap_count.item())
+        if n == 0:
+            return None
+        k = min(n, self.context_window)
+        ctx = self._snapshots[n - k:n]  # [k, n_sentence, n_dim]
+        if k < self.context_window:
+            pad = torch.zeros(
+                self.context_window - k, self.n_sentence, self.n_dim,
+                dtype=ctx.dtype, device=ctx.device)
+            ctx = torch.cat([pad, ctx], dim=0)
+        return ctx
+
+    def predict_next(self):
+        """Produce a predicted ``[n_sentence, n_dim]`` tensor for the
+        next sentence, or ``None`` if history is empty.
+        """
+        ctx = self._build_context()
+        if ctx is None:
+            return None
+        per_row = ctx.permute(1, 0, 2).reshape(
+            self.n_sentence, self.context_window * self.n_dim)
+        return self.predictor(per_row)
+
+    def split(self, predicted):
+        """Split a predicted ``[n_sentence, n_dim]`` tensor into
+        ``(S_pred, W_pred)`` parts.
+        """
+        s = predicted[:self.n_symbols]
+        w = predicted[self.n_symbols:]
+        return s, w
+
+    def loss(self, predicted, target_s, target_w):
+        """MSE loss between a predicted ``[n_sentence, n_dim]`` tensor
+        and the actual next sentence's ``[S, W]`` pair.
+        """
+        target = self._assemble(target_s, target_w)
+        return F.mse_loss(predicted, target)
+
+    # ── resolution: predicted [S, W] → sentence ──────────────────────
+    def resolve(self, predicted, model):
+        """Decode a predicted ``[n_sentence, n_dim]`` tensor into a
+        concrete sentence string via ``OutputSpace.reconstruct_buffer``.
+        """
+        s_pred, w_pred = self.split(predicted)
+        output_space = getattr(model, "outputSpace", None)
+        if output_space is None or not getattr(output_space, "text_mode", False):
+            return s_pred, w_pred
+
+        vectors = s_pred.unsqueeze(0)
+        emb = getattr(output_space, "_vocabulary", None)
+        if emb is not None and hasattr(emb, "content_dim"):
+            cd = int(emb.content_dim)
+            if vectors.shape[-1] < cd:
+                pad = torch.zeros(
+                    vectors.shape[0], vectors.shape[1],
+                    cd - vectors.shape[-1],
+                    dtype=vectors.dtype, device=vectors.device)
+                vectors = torch.cat([vectors, pad], dim=-1)
+            elif vectors.shape[-1] > cd:
+                vectors = vectors[..., :cd]
+        try:
+            strings = output_space.reconstruct_buffer(vectors)
+        except Exception:
+            return s_pred, w_pred
+        if isinstance(strings, list) and len(strings) > 0:
+            return strings[0]
+        return strings
 class ChunkLayer(Layer):
     """Learned BPE-style codebook for perceptual chunking.
 

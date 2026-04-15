@@ -83,8 +83,9 @@ class TestHeadDivergence(unittest.TestCase):
 
             # Forward through Input → Percept → Concept
             with torch.no_grad():
+                ws = getattr(self.model, 'wordSpace', None)
                 inputs = self.model.inputSpace.forward(inputTensor)
-                percepts = self.model.perceptualSpace.forward(inputs)
+                percepts = self.model.perceptualSpace.forward(inputs, wordSpace=ws)
                 percept_vecs = percepts.materialize()
                 B = percept_vecs.shape[0]
 
@@ -97,12 +98,13 @@ class TestHeadDivergence(unittest.TestCase):
                 # Run ConceptualSpace forward, then decompose to recover pre-compose
                 self.model.conceptualSpace.subspace.set_event(concept_input)
                 concepts = self.model.conceptualSpace.forward(
-                    self.model.conceptualSpace.subspace)
+                    self.model.conceptualSpace.subspace, wordSpace=ws)
 
                 post_compose = concepts.materialize()[0]  # [N, D] for batch 0
                 cs = self.model.conceptualSpace
-                if cs.syntacticLayer is not None:
-                    pre_compose = cs.syntacticLayer.decompose(
+                c_sl = getattr(self.model.wordSpace, 'conceptualSyntacticLayer', None) if getattr(self.model, 'wordSpace', None) is not None else None
+                if c_sl is not None:
+                    pre_compose = c_sl.decompose(
                         concepts.materialize(), cs.subspace, TheGrammar)[0]
                 else:
                     pre_compose = post_compose

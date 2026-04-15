@@ -119,9 +119,9 @@ class TestGrammarProject(_GrammarTestBase):
         self.concept_dim = 100 + 4
         self.n_symbols = 128
         self.n_concepts = 256
-        self.s_sl = self.model.symbolicSpace.syntacticLayer
+        self.s_sl = self.model.wordSpace.symbolicSyntacticLayer
         self.s_ss = self.model.symbolicSpace.subspace
-        self.c_sl = self.model.conceptualSpace.syntacticLayer
+        self.c_sl = self.model.wordSpace.conceptualSyntacticLayer
         self.c_ss = self.model.conceptualSpace.subspace
 
     # ── Helpers ─────────────────────────────────────────────────────
@@ -374,9 +374,9 @@ class TestGrammarShiftReduceStack(_GrammarTestBase):
         self.concept_dim = 100 + 4
         self.n_symbols = 128
         self.n_concepts = 256
-        self.s_sl = self.model.symbolicSpace.syntacticLayer
-        self.c_sl = self.model.conceptualSpace.syntacticLayer
-        self.p_sl = self.model.perceptualSpace.syntacticLayer
+        self.s_sl = self.model.wordSpace.symbolicSyntacticLayer
+        self.c_sl = self.model.wordSpace.conceptualSyntacticLayer
+        self.p_sl = self.model.wordSpace.perceptualSyntacticLayer
 
     def _make_ss(self, shape):
         from Space import SubSpace
@@ -605,7 +605,7 @@ class TestMentalModelWithGrammar(_GrammarTestBase):
                 sym_act = self.model.symbols.get_activation()
 
                 if sym_act is not None:
-                    sl = self.model.symbolicSpace.syntacticLayer
+                    sl = self.model.wordSpace.symbolicSyntacticLayer
                     ss = self.model.symbolicSpace.subspace
                     result = sl.compose(sym_act, ss, TheGrammar)
                     self.assertEqual(result.shape[0], 2)  # batch=2
@@ -631,7 +631,7 @@ class TestMentalModelWithGrammar(_GrammarTestBase):
                 con_vec = self.model.concepts.materialize()
 
                 if con_vec is not None:
-                    sl = self.model.conceptualSpace.syntacticLayer
+                    sl = self.model.wordSpace.conceptualSyntacticLayer
                     ss = self.model.conceptualSpace.subspace
                     result, _ = sl.compose(con_vec, ss, TheGrammar)
                     self.assertEqual(result.ndim, 3)  # [B, N, D]
@@ -657,7 +657,7 @@ class TestMentalModelWithGrammar(_GrammarTestBase):
                 # S-tier derivation via SyntacticLayer
                 sym_act = self.model.symbols.get_activation()
                 if sym_act is not None:
-                    sl = self.model.symbolicSpace.syntacticLayer
+                    sl = self.model.wordSpace.symbolicSyntacticLayer
                     ss = self.model.symbolicSpace.subspace
                     sl.compose(sym_act, ss, TheGrammar)
                     words = ss.get_words()
@@ -701,7 +701,7 @@ class TestRule1TrinityCoordination(_GrammarTestBase):
 
     def setUp(self):
         self.model, self.grammar = _make_model()
-        self.s_sl = self.model.symbolicSpace.syntacticLayer
+        self.s_sl = self.model.wordSpace.symbolicSyntacticLayer
         self.s_ss = self.model.symbolicSpace.subspace
 
     def test_trinity_partition_of_unity(self):
@@ -775,7 +775,7 @@ class TestRule2DemuxAndSelectors(_GrammarTestBase):
 
     def setUp(self):
         self.model, self.grammar = _make_model()
-        self.s_sl = self.model.symbolicSpace.syntacticLayer
+        self.s_sl = self.model.wordSpace.symbolicSyntacticLayer
         self.s_ss = self.model.symbolicSpace.subspace
 
     def test_subspace_has_canonical_layout(self):
@@ -886,7 +886,7 @@ class TestRule3Query(_GrammarTestBase):
 
     def setUp(self):
         self.model, self.grammar = _make_model()
-        self.s_sl = self.model.symbolicSpace.syntacticLayer
+        self.s_sl = self.model.wordSpace.symbolicSyntacticLayer
 
     def test_query_forward_returns_left(self):
         """queryForward(left, right, ss) returns the preserved left operand."""
@@ -1054,7 +1054,7 @@ class TestWordSpaceServiceLayer(_GrammarTestBase):
         self.assertIsNotNone(self.word_space.perceptualSyntacticLayer)
         # Sanity: those references match the home spaces' layers.
         self.assertIs(self.word_space.symbolicSyntacticLayer,
-                      self.model.symbolicSpace.syntacticLayer)
+                      self.model.wordSpace.symbolicSyntacticLayer)
 
     def test_layer_back_reference_set(self):
         """attach_layer() sets layer.word_subspace as a back-reference."""

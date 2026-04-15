@@ -87,7 +87,7 @@ class TestGrammarGradientFlow(unittest.TestCase):
         SyntacticLayer.forward(activation) predicts rule distributions.
         loss.backward() should propagate gradients to the rule_head weights.
         """
-        sl_c = self.model.conceptualSpace.syntacticLayer
+        sl_c = self.model.wordSpace.conceptualSyntacticLayer
         if sl_c is None:
             self.skipTest("No C-tier SyntacticLayer")
 
@@ -104,7 +104,7 @@ class TestGrammarGradientFlow(unittest.TestCase):
 
     def test_s_tier_gradient_flows(self):
         """S-tier rule_head receives gradients from SyntacticLayer.forward()."""
-        sl_s = self.model.symbolicSpace.syntacticLayer
+        sl_s = self.model.wordSpace.symbolicSyntacticLayer
         if sl_s is None:
             self.skipTest("No S-tier SyntacticLayer")
 
@@ -121,7 +121,7 @@ class TestGrammarGradientFlow(unittest.TestCase):
 
     def test_gradient_flows_through_depth_embed(self):
         """Depth embeddings also receive gradients (used in rule prediction)."""
-        sl_c = self.model.conceptualSpace.syntacticLayer
+        sl_c = self.model.wordSpace.conceptualSyntacticLayer
         if sl_c is None:
             self.skipTest("No C-tier SyntacticLayer")
 
@@ -150,7 +150,7 @@ class TestGrammarRuleSelectivity(unittest.TestCase):
         The transition rule is biased by (1-interpretation)*TRANSITION_SCALE,
         so we exclude it from the entropy check.
         """
-        sl_c = self.model.conceptualSpace.syntacticLayer
+        sl_c = self.model.wordSpace.conceptualSyntacticLayer
         if sl_c is None:
             self.skipTest("No C-tier SyntacticLayer")
 
@@ -183,7 +183,7 @@ class TestGrammarRuleSelectivity(unittest.TestCase):
 
     def test_different_inputs_different_distributions(self):
         """Different activation patterns produce different rule distributions."""
-        sl_c = self.model.conceptualSpace.syntacticLayer
+        sl_c = self.model.wordSpace.conceptualSyntacticLayer
         if sl_c is None:
             self.skipTest("No C-tier SyntacticLayer")
 
@@ -206,7 +206,7 @@ class TestGrammarRuleSelectivity(unittest.TestCase):
 
     def test_depth_varies_rule_distribution(self):
         """Different derivation depths produce different rule distributions."""
-        sl_s = self.model.symbolicSpace.syntacticLayer
+        sl_s = self.model.wordSpace.symbolicSyntacticLayer
         if sl_s is None:
             self.skipTest("No S-tier SyntacticLayer")
 
@@ -251,13 +251,13 @@ class TestGrammarInMentalModel(unittest.TestCase):
 
         # At minimum the C-tier should record not/non words at active positions
         # when syntacticLayer is present (ARLM mode).
-        if self.model.conceptualSpace.syntacticLayer is not None:
+        if self.model.wordSpace.conceptualSyntacticLayer is not None:
             self.assertGreater(total_words, 0,
                 "No word tuples on any subspace — Grammar not exercised during forward")
 
     def test_spaces_have_grammar_enabled(self):
         """MentalModel uses ARLM mode which enables grammar on spaces."""
-        self.assertIsNotNone(self.model.conceptualSpace.syntacticLayer,
+        self.assertIsNotNone(self.model.wordSpace.conceptualSyntacticLayer,
             "ConceptualSpace should have a SyntacticLayer in ARLM mode")
 
 
@@ -374,7 +374,7 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
 
     def test_all_method_names_are_registered(self):
         """Every rule's method_name maps to Grammar or a SyntacticLayer subclass."""
-        all_known = set(self.model.symbolicSpace.syntacticLayer._RULE_METHODS.keys()) | {'swap', 'lift', 'lower', 'non'}
+        all_known = set(self.model.wordSpace.symbolicSyntacticLayer._RULE_METHODS.keys()) | {'swap', 'lift', 'lower', 'non'}
         for r in self.grammar.rules:
             if r.method_name is not None:
                 self.assertIn(r.method_name, all_known,
@@ -390,9 +390,9 @@ class TestGrammarRuleReport(unittest.TestCase):
         model, grammar = _make_model()
 
         tier_map = {
-            'S': (model.symbolicSpace.syntacticLayer, _N_SYMBOLS),
-            'C': (model.conceptualSpace.syntacticLayer, _N_CONCEPTS),
-            'P': (model.perceptualSpace.syntacticLayer, _N_PERCEPTS),
+            'S': (model.wordSpace.symbolicSyntacticLayer, _N_SYMBOLS),
+            'C': (model.wordSpace.conceptualSyntacticLayer, _N_CONCEPTS),
+            'P': (model.wordSpace.perceptualSyntacticLayer, _N_PERCEPTS),
         }
         for tier, (sl, n_slots) in tier_map.items():
             if sl is None:
@@ -434,7 +434,7 @@ class TestSoftSuperposition(unittest.TestCase):
         data[0, 0] = torch.randn(D, device=TheDevice.get()) * 0.5
         data[0, 1] = torch.randn(D, device=TheDevice.get()) * 0.5
 
-        sl = self.model.conceptualSpace.syntacticLayer
+        sl = self.model.wordSpace.conceptualSyntacticLayer
         subspace = self.model.conceptualSpace.subspace
         sl.eval()
         with torch.no_grad():
@@ -454,7 +454,7 @@ class TestSoftSuperposition(unittest.TestCase):
         data[0, 1] = 0.3
         data[0, 2] = 0.2
 
-        sl = self.model.symbolicSpace.syntacticLayer
+        sl = self.model.wordSpace.symbolicSyntacticLayer
         subspace = self.model.symbolicSpace.subspace
         sl.eval()
         with torch.no_grad():
@@ -475,7 +475,7 @@ class TestSoftSuperposition(unittest.TestCase):
             data[0, 0] = 0.5
             data[0, 1] = 0.3
 
-            sl = self.model.symbolicSpace.syntacticLayer
+            sl = self.model.wordSpace.symbolicSyntacticLayer
             subspace = self.model.symbolicSpace.subspace
             sl.eval()
             with torch.no_grad():
@@ -494,7 +494,7 @@ class TestSoftSuperposition(unittest.TestCase):
         # Zero out most positions so only one is active
         data[0, 1:] = 0.0
 
-        sl = self.model.conceptualSpace.syntacticLayer
+        sl = self.model.wordSpace.conceptualSyntacticLayer
         subspace = self.model.conceptualSpace.subspace
         sl.eval()
         with torch.no_grad():
@@ -511,7 +511,7 @@ class TestSoftSuperposition(unittest.TestCase):
 
     def test_gradient_through_grammar_forward(self):
         """Gradients flow through compose() to SyntacticLayer params."""
-        sl_c = self.model.conceptualSpace.syntacticLayer
+        sl_c = self.model.wordSpace.conceptualSyntacticLayer
         if sl_c is None:
             self.skipTest("No C-tier SyntacticLayer")
 

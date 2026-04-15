@@ -38,6 +38,8 @@ from data import Data, TheData
 from Model import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
 from Model import VQLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
 from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
+from Model import SortingLayer, TruthLayer, DiscourseSpace
+from parse import quick_parser
 from collections import namedtuple as _namedtuple
 
 class Encoding(nn.Module):
@@ -1050,7 +1052,6 @@ class Embedding(Basis):
     def _token_stream(self, text):
         if getattr(self, 'byte_mode', False):
             return self._byte_stream(text)
-        from parse import quick_parser
         return quick_parser(self._to_text(text))
 
     def _byte_stream(self, text):
@@ -2539,7 +2540,6 @@ class SubSpace(nn.Module):
             return hard - soft.detach() + soft  # straight-through estimator
         elif kind == "input":
             if is_vector:
-                from data import TheData
                 return TheData.normalize(x, which="input")  # [0,1] via global min-max
             return x
         else:
@@ -2563,7 +2563,6 @@ class SubSpace(nn.Module):
         if x is None or x.numel() == 0:
             return
         is_vector = target in ("what", "where", "when", "event")
-        from data import TheData
         if kind == "percepts":
             # logit: inverse of sigmoid
             x = x.clamp(min=epsilon, max=1 - epsilon)
@@ -2753,7 +2752,8 @@ class WordSubSpace(SubSpace):
 
         # Preserve the peer-compatible total `nDim` attribute. SubSpace
         # does not set `self.nDim`; peer spaces expose it, and
-        # consumers (e.g. `_build_word_space`) read it, so we keep it.
+        # ``WordSpace.__init__`` reads it when sizing the word buffer, so
+        # we keep it.
         self.nDim = int(nDim)
         self.max_depth = int(max_depth)
         self.max_arity = int(max_arity)
@@ -3007,6 +3007,2040 @@ class WordSubSpace(SubSpace):
         return self._top.tolist()
 
 
+class Space(nn.Module):
+    """Base class for all spaces in the processing pipeline.
+
+    The model is organized as a chain of spaces, each transforming object
+    vectors from one representation to the next:
+
+        InputSpace -> PerceptualSpace -> ConceptualSpace -> SymbolicSpace -> OutputSpace
+
+    When ``reversible=True``, the chain also runs in reverse (OutputSpace
+    back to InputSpace), enabling reconstruction of the input from the latent
+    representation.
+
+    Key parameters:
+      - ``inputShape``/``outputShape``: each is [nObjects, nDim] describing the
+        count and content-dimensionality of vectors entering/leaving this space.
+        nDim is read from ``TheXMLConfig`` (per-space config section).
+      - ``nVectors``: codebook size, also from config.  May differ from
+        nActive (the active count); the factory validates ``nVectors >= nActive``.
+      - ``nInputDim``/``nOutputDim``: configurable boundary reshape.  0 (default)
+        resolves to the constructor's dim; -1 flattens (nInput * dim); a positive
+        value reshapes via ``x.reshape(B, -1, nInputDim)``.
+      - ``processSymbols``: when True, reduces full embedding vectors to scalar
+        activations (norms) for the symbolic representation.
+      - ``codebook``: when True, input vectors are quantized against the
+        current ``Codebook`` basis after the main layer transformation.
+
+
+    ``set_sigma(sigma)`` propagates exploration meta-parameters (1=explore, 0=suppress)
+    from BasicModel down to all layers and Basis slots in this space.
+    """
+    name         = ""
+    activation   = None
+    config_section = None  # set by subclasses
+
+    def __init__(self, inputShape, spaceShape, outputShape, customVQ=True):
+        super(Space, self).__init__()
+        section = self.config_section
+        self.inputShape   = inputShape   # [nInput,   nInputDim]
+        self.spaceShape   = spaceShape   # [nVectors, nDim]  — codebook / internal basis
+        self.outputShape  = outputShape  # [nOutput,  nOutputDim]
+        self.nVectors     = spaceShape[0]  # codebook size
+        self.nDim         = spaceShape[1]  # content dimensionality of the codebook vectors
+        # Resolve nInputDim/nOutputDim:
+        #   0  → inherit from constructor dim (inputShape[1] / outputShape[1])
+        #  -1  → flatten: nInput * dim (reshape [N, D] → [1, N*D])
+        #  >0  → explicit value
+        try:
+            raw = TheXMLConfig.space(section, "nInputDim")
+        except KeyError:
+            raw = 0
+        if raw == -1:
+            self.nInputDim = inputShape[0] * inputShape[1]
+        else:
+            self.nInputDim = inputShape[1] if raw == 0 else raw
+        try:
+            raw = TheXMLConfig.space(section, "nOutputDim")
+        except KeyError:
+            raw = 0
+        if raw == -1:
+            self.nOutputDim = outputShape[1]
+        else:
+            self.nOutputDim = outputShape[1] if raw == 0 else raw
+
+        self.reversible   = str(TheXMLConfig.get("architecture.reconstruct")).upper() != "NONE"
+        self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
+        self.codebook     = TheXMLConfig.space(section, "codebook")
+        _nWhere = TheXMLConfig.space(section, "nWhere")
+        _nWhen = TheXMLConfig.space(section, "nWhen")
+        self.nWhere = _nWhere
+        self.nWhen = _nWhen
+        self.nWhat = self.nDim
+        self.muxedSize = self.nWhat + self.nWhere + self.nWhen
+        self.customVQ  = customVQ
+        # inputShape/outputShape already include muxed width in dim (set by factory).
+        objectEncoding = EventEncoding(inputShape, outputShape)
+        whatEncoding   = WhatEncoding(inputShape, outputShape)
+        whereEncoding  = WhereEncoding(TheXMLConfig.get("architecture.nObjects"), _nWhere, _nWhen)
+        whenEncoding   = WhenEncoding(10000, _nWhen)
+        self.subspace  = SubSpace(
+            nInputDim=self.nInputDim,
+            nOutputDim=self.nOutputDim,
+            inputShape=inputShape,
+            outputShape=outputShape,
+            objectEncoding=objectEncoding,
+            whatEncoding=whatEncoding,
+            whereEncoding=whereEncoding,
+            whenEncoding=whenEncoding,
+            object=self._build_object_basis(),
+            what=self._build_what_basis(),
+            where=self._build_where_basis(),
+            when=self._build_when_basis(),
+            activation=self._build_activation_basis(),
+        )
+        self.muxedSize = self.subspace.getEncodingSize(self.nDim)
+
+        # wordSpace is still held as a non-Module pointer so the few
+        # call sites that reach across to ``wordSpace.truth_layer``
+        # (SymbolicSpace) keep working; composition dispatch is no
+        # longer done here — home spaces take ``wordSpace`` as a
+        # per-call parameter and call ``wordSpace.forwardPercepts`` /
+        # ``.forwardConcepts`` / ``.forwardSymbols`` (and the reverse
+        # variants) explicitly.
+        self.wordSpace = None
+        self.params = []   # parameters for the optimizer (excludes temperature params)
+        self.layers = nn.ModuleList()   # layer instances for paramUpdate() delegation
+        self._register_requirements()
+
+    def attach_wordSpace(self, wordSpace):
+        """Wire the shared WordSpace as a non-Module routing pointer.
+
+        The wordSpace reference is stored via ``object.__setattr__`` so
+        the WordSpace nn.Module is NOT registered as a child of this
+        Space — that would create a ``space → wordSpace → space`` cycle
+        (WordSpace already owns the SyntacticLayer and its codebook
+        host is the SymbolicSpace) and make ``model.to(device)``
+        recurse forever. The wordSpace is owned at the model level
+        instead, with each Space holding only this non-Module pointer.
+        Layer attachment is done directly via
+        ``wordSpace.attach_layer(kind, layer)`` by the WordSpace
+        factory methods, not by this helper.
+        """
+        object.__setattr__(self, 'wordSpace', wordSpace)
+
+    def _build_object_basis(self):
+        basis = Codebook()
+        basis.create(
+            self.inputShape[0],
+            self.nVectors,
+            self.muxedSize,  # Codebook processes full event vectors
+            customVQ=self.customVQ,
+            passThrough=not self.codebook,
+        )
+        basis.ergodic = getattr(self, "ergodic", False)
+        return basis
+
+    def _build_what_basis(self):
+        return None
+
+    def _build_where_basis(self):
+        return None
+
+    def _build_when_basis(self):
+        return None
+
+    def _build_activation_basis(self):
+        return None
+
+    def _register_requirements(self):
+        """Register base-class config requirements."""
+        section_name = self.config_section
+        nV = self.nVectors
+        nA = self.outputShape[0]
+        TheXMLConfig.require(
+            lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv >= _na,
+            f"{section_name}: nVectors ({nV}) must be >= nActive ({nA})"
+        )
+        if not self.codebook:
+            TheXMLConfig.require(
+                lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv == _na,
+                f"{section_name}: non-codebook space requires nVectors ({nV}) == nActive ({nA})"
+            )
+
+    def get_vectors(self):
+        """Convenience accessor — delegates to subspace."""
+        return self.subspace.get_vectors()
+
+    @property
+    def vocabulary(self):
+        """Return the content Basis (Embedding/Codebook) for codebook operations."""
+        return self.subspace.vocabulary
+
+    def forwardBegin(self, vspace, returnVectors=False):
+        """Prepare input for space-specific processing.
+
+        Args:
+            vspace: input SubSpace.
+            returnVectors: if True, materialize to a dense tensor and
+                reshape to [B, -1, nInputDim]. If False, pass the SubSpace
+                through without materializing (for spaces that operate on
+                activation vectors rather than event tensors).
+        """
+        if not returnVectors:
+            self.subspace.batch = vspace.batch
+            return vspace
+        x = vspace.materialize()
+        self.subspace.batch = x.shape[0]
+        if self.nInputDim != -1:
+            self._pre_reshape_input = (x.shape[1], x.shape[2])
+            x = x.reshape(x.shape[0], -1, self.nInputDim)
+        else:
+            self._pre_reshape_input = None
+        return x
+
+    def forwardEnd(self, x, returnVectors=False, compute_activation=False):
+        """Finalize output after space-specific processing.
+
+        Args:
+            x: dense tensor (returnVectors=True) or SubSpace (returnVectors=False).
+            returnVectors: if True, reshape to [B, -1, nOutputDim] and store
+                tensor into subspace.  If False, SubSpace passes through with
+                reshape applied if nOutputDim != -1.
+            compute_activation: if True (default), derive activation from vectors.
+                Set to False for spaces (e.g. PerceptualSpace) where activation
+                is not meaningful.
+        """
+        if not returnVectors:
+            # Ensure [B, N, D] invariant even for SubSpace pass-through
+            if self.nOutputDim != -1:
+                vectors = x.materialize()
+                if vectors is not None and vectors.ndim == 3 and vectors.shape[-1] != self.nOutputDim:
+                    self._pre_reshape_output = (vectors.shape[1], vectors.shape[2])
+                    vectors = vectors.reshape(vectors.shape[0], -1, self.nOutputDim)
+                    x.set_event(vectors, compute_activation=compute_activation)
+                else:
+                    self._pre_reshape_output = None
+            else:
+                self._pre_reshape_output = None
+            return x
+        if self.nOutputDim != -1:
+            self._pre_reshape_output = (x.shape[1], x.shape[2])
+            x = x.reshape(x.shape[0], -1, self.nOutputDim)
+        else:
+            self._pre_reshape_output = None
+        self.subspace.set_event(x, compute_activation=compute_activation)
+        return self.subspace
+
+    def reverseBegin(self, vspace, returnVectors=False):
+        """Prepare input for space-specific reverse processing.
+
+        Undoes the forwardEnd output reshape so the layer sees the same
+        shape it produced during forward.
+
+        Args:
+            vspace: input SubSpace.
+            returnVectors: if True, materialize to a dense tensor and
+                undo the output reshape. If False, pass the SubSpace
+                through without materializing.
+        """
+        if not returnVectors:
+            self.subspace.batch = vspace.batch
+            return vspace
+        y = vspace.materialize()
+        self.subspace.batch = y.shape[0]
+        pre = getattr(self, '_pre_reshape_output', None)
+        if pre is not None:
+            y = y.reshape(y.shape[0], pre[0], pre[1])
+        elif self.nOutputDim != -1:
+            # Fallback when reverse is called without a prior forward:
+            # reshape from [B, ?, nOutputDim] to [B, -1, layer_out_dim]
+            layer_out = self.subspace.getEncodedOutputSize()
+            if y.shape[-1] != layer_out:
+                y = y.reshape(y.shape[0], -1, layer_out)
+        return y
+
+    def reverseEnd(self, y, returnVectors=False):
+        """Finalize output after space-specific reverse processing.
+
+        Undoes the forwardBegin input reshape so downstream sees the
+        original input shape.
+
+        Args:
+            y: dense tensor (returnVectors=True) or SubSpace (returnVectors=False).
+            returnVectors: if True, undo input reshape and store tensor
+                into subspace.  If False, pass SubSpace through unchanged.
+        """
+        if not returnVectors:
+            return y
+        pre = getattr(self, '_pre_reshape_input', None)
+        if pre is not None:
+            y = y.reshape(y.shape[0], pre[0], pre[1])
+        elif self.nInputDim != -1:
+            # Fallback: reshape from [B, ?, nInputDim] to [B, -1, inputShape[1]]
+            if y.shape[-1] != self.inputShape[1]:
+                y = y.reshape(y.shape[0], -1, self.inputShape[1])
+        self.subspace.set_event(y)
+        return self.subspace
+
+    # _2d/_3d removed — all layers now operate on [..., D] natively.
+
+    def lookup(self, x):
+        activation = x[0]
+        x = x.unsqueeze(0).unsqueeze(0)
+        x = torch.cat([torch.zeros([1,1, TheXMLConfig.space("ConceptualSpace", "nDim")], device=TheDevice.get()), x[:,:,1:]], dim=2)
+        output, index, _ = self.subspace.get_vectors().quantize(x)
+        #output[:,:,0:conceptDim] = output[:,:,0:conceptDim] * activation  # multiply the codebook vector by the activation
+        return output
+    def dereference(self, symbols):
+        # we get [ batch x nConcepts x symbolEmbedding ],
+        # and must compute [ batch x nConcepts x conceptEmbedding ]
+        batch = symbols.shape[0]
+        nActive = self.outputShape[0]
+        assert list(symbols.shape) == [batch, nActive, TheXMLConfig.space("SymbolicSpace", "nDim") + self.muxedSize - self.nWhat], "Incorrect input size for dereference"
+        objects = torch.zeros(batch, nActive, self.muxedSize, device=TheDevice.get())
+        for b in range(batch):
+            for s in range(nActive):
+                x = self.lookup(symbols[b,s,:])
+                objects[b,s,:] = x
+        assert list(objects.shape) == [batch, nActive, self.muxedSize], "Incorrect output size for dereference"
+        return objects
+
+    def stats(self, x):
+        #codebookUse = self.subspace.get_vectors().codebookUse
+        #TheMessage(f"{self.name} Codebook activation: { np.sum(self.subspace.get_vectors().codebookAct.get()) }")
+        return
+    def set_sigma(self, sigma):
+        """Propagate exploration meta-parameters to all layers and Basis slots.
+
+        ``self.subspace`` may be ``None`` (DiscourseSpace) or a non-SubSpace
+        buffer without Basis objects (WordSpace's ``WordSubSpace``). In those
+        cases we only walk ``self.layers`` — no basis slots exist to update.
+        """
+        for l in self.layers:
+            if hasattr(l, 'set_sigma'):
+                l.set_sigma(sigma)
+        sub = getattr(self, 'subspace', None)
+        if sub is None:
+            return
+        if not all(hasattr(sub, attr) for attr in ('what', 'where', 'when', 'activation')):
+            return
+        for basis in (sub.what, sub.where, sub.when, sub.activation):
+            if basis is not None and hasattr(basis, 'set_sigma'):
+                basis.set_sigma(sigma)
+
+    def getParameters(self):
+        return self.params
+    def paramUpdate(self):
+        for l in self.layers:
+            l.paramUpdate()
+class InputSpace(Space):
+    """Receives the source buffer from Data() and encodes it as vectors.
+
+    For text: delegates tokenization to Lex, which produces a span table
+    (start, end, type) over the source buffer.  Each span is encoded as a
+    vector with nWhat (token content via the active ``Basis`` / ``Codebook``)
+    and nWhere
+    (positional encoding from the span's start offset).  A whole sentence
+    is sent at once as a batch of [nWhat + nWhere] vectors.
+
+    For numeric data: the tensor path is unchanged — no span table, no Lex,
+    and objectEncoding contributes nothing when nWhat/nWhere are absent.
+
+    reverse() reconstructs the source buffer from the latent state by
+    decoding nWhat back to token IDs and using nWhere for positioning.
+
+    Future: parse.py integration
+    ----------------------------
+    parse.py can produce constituent span tables (NP, VP, PP, etc.) over
+    the same source buffer that Lex tokenizes.  If a convention is found
+    for representing syntactic constituent information in per-space encoding
+    (e.g. a new nSyntax dimension, or extending symbolDim to carry the
+    constituent type), then InputSpace could encode both word-level and
+    constituent-level spans.  This would require:
+      1. A shared grammar available to both InputSpace and OutputSpace.
+      2. An objectEncoding dimension convention for constituent types
+         agreed upon by both sides.
+      3. OutputSpace would use a generative grammar (inverse of parse.py's
+         analytical grammar) to expand constituent-tagged symbols into
+         structured token sequences in the destination buffer.
+    Until such a convention is established, parse.py is not used here.
+    """
+    name = "Inputs"
+    config_section = "InputSpace"
+
+    def _build_object_basis(self):
+        """InputSpace .event is a writable Tensor (receives muxed forward results)."""
+        return None
+
+    def _build_what_basis(self):
+        """InputSpace .what holds the vocabulary (Embedding/Codebook/Tensor)."""
+        if self.model_type == "embedding":
+            basis = Embedding()
+            basis.ergodic = self.ergodic
+            basis.create(
+                self.inputShape[0],
+                self.outputShape[0],
+                self.nDim,
+                embedding_path=self.embedding_path,
+                source=self.embedding_source,
+                min_frequency=self.min_frequency,
+                neg_samples=self.neg_samples,
+                byte_mode=getattr(self, 'byte_mode', False),
+            )
+            return basis
+
+        if self.model_type == "vq":
+            basis = Codebook()
+            basis.create(
+                self.inputShape[0],
+                self.nVectors,
+                self.nDim,
+                customVQ=self.customVQ,
+                passThrough=False,
+            )
+            return basis
+
+        if self.model_type in ("passthrough", "simple"):
+            basis = Tensor()
+            basis.create(
+                self.inputShape[0],
+                self.outputShape[0],
+                self.nDim,
+                passThrough=True,
+            )
+            return basis
+
+        raise RuntimeError("Unexpected model_type")
+
+    def __init__(self, inputShape, spaceShape, outputShape, model_type="simple"):
+
+        section = self.config_section
+        ergodic = TheXMLConfig.get("architecture.ergodic")
+        lexer = TheXMLConfig.space(section, "lexer")
+        min_frequency = float(TheXMLConfig.data_param("minFrequency", 0.0))
+        neg_samples = int(TheXMLConfig.training("negSamples", 64))
+        embedding_path = TheXMLConfig.get("architecture.embeddingPath", None) or None
+        data = TheData
+        self.data = data
+        self.model_type = model_type
+        try:
+            self.demuxed = TheXMLConfig.space(section, "demuxed")
+        except KeyError:
+            self.demuxed = False
+        self.lexer = lexer  # "word", "sentence", "grammar", or "byte"
+        self.byte_mode = (lexer == "byte")
+        self.ergodic = ergodic
+        self.min_frequency = float(min_frequency)
+        self.neg_samples = neg_samples
+        self.embedding_path = embedding_path
+        self.embedding_source = data.train_input if data.train_input else None
+        super().__init__(inputShape, spaceShape, outputShape)
+        # InputSpace operates on raw [B, N, D] tensors directly (no forwardBegin/End).
+        # Override any flatten-derived nInputDim/nOutputDim to skip reshape.
+        self.nInputDim = -1
+        self.nOutputDim = -1
+        self.subspace._nInputDim = -1
+        self.subspace._nOutputDim = -1
+        lexical_basis = self.subspace.what
+        if isinstance(lexical_basis, Embedding):
+            self.doc_spans = lexical_basis.doc_spans
+            self.doc_sources = lexical_basis.doc_sources
+            if data.train_input and self.subspace.whereEncoding.nDim > 0:
+                # Compute maxP from actual max byte offset in data,
+                # not from data.inputLength (buffer size), which can be
+                # far too large for short text and wastes encoding resolution.
+                if (isinstance(data.train_input, list) and data.train_input
+                        and isinstance(data.train_input[0], str)):
+                    actual_max = max(len(s.encode('utf-8'))
+                                     for s in data.train_input)
+                    # 2x margin for validation/test data that may be longer
+                    maxP = max(self.subspace.whereEncoding.maxVal,
+                               actual_max * 2)
+                else:
+                    maxP = max(self.subspace.whereEncoding.maxVal,
+                               data.inputLength)
+                self.subspace.whereEncoding.maxVal = maxP
+                self.subspace.whereEncoding.div_term = 2 * math.pi / maxP
+        else:
+            self.doc_spans = []
+            self.doc_sources = []
+
+        # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
+        self.input          = torch.FloatTensor
+        self.tokenizedInput = False
+        fullSize  = outputShape[0]*outputShape[1]
+        self.lift = MapppingLayer(fullSize, fullSize)
+        self.params = self.lift.getParameters()
+        self.layers = nn.ModuleList([self.lift])
+    # Data client interface
+    def getTrainData(self):
+        return self.data.train_input, self.data.train_output
+    def getTestData(self):
+        return self.data.test_input, self.data.test_output
+    def prepInput(self, inputBatch):
+        if isinstance(inputBatch, list):
+            tensors = [self.data.stringTensor(s) if isinstance(s, str) else s
+                       for s in inputBatch]
+            return torch.stack(tensors, dim=0).unsqueeze(1).to(TheDevice.get())
+        return inputBatch  # already [B, D, 1] and on device after toDevice()
+    def shuffle(self):
+        self.data.shuffle()
+    # The world presenting itself
+    def forward(self, input, mask=None):
+        # ARIR cache bypass: if _cached_embedding is set, use it directly
+        # instead of re-lexing / re-embedding.
+        cached = getattr(self, '_cached_embedding', None)
+        if cached is not None:
+            self._cached_embedding = None  # consume once
+            self.input = cached
+            self._forward_input = None
+            self.subspace.set_event(self.input)
+            return self.subspace
+
+        # Reset positional counter for each forward pass
+        self.subspace.whereEncoding.p = 0
+
+        batch = input.shape[0]
+        nObj = self.outputShape[0]
+        vocab = self.subspace.what
+        dev = TheDevice.get()
+
+        if not isinstance(vocab, Embedding):
+            # Non-text path: input is already a tensor, no codebook indices
+            assert list(input.shape) == [batch, self.inputShape[0], self.inputShape[1]]
+            what = vocab.forward(input)
+            self._forward_input = None
+            self.subspace.set_what(what)
+            if self.nWhere > 0:
+                positions = torch.arange(nObj, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
+                self.subspace.set_where(self.subspace.whereEncoding.encode(positions))
+            if self.nWhen > 0:
+                timesteps = torch.arange(nObj, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
+                self.subspace.set_when(self.subspace.whenEncoding.encode(timesteps))
+            self.input = self.subspace.materialize()
+        else:
+            # Text path: get token indices and byte offsets
+            what, meta = vocab.forward(input, return_meta=True)
+            self._forward_input = meta
+
+            # what_indices: [B, N] codebook indices
+            what_indices = meta['indices']  # [B, N] long tensor
+
+            # where_indices: [B, N] byte offsets
+            if self.nWhere > 0:
+                where_indices = torch.zeros(batch, nObj, dtype=torch.long, device=dev)
+                for b, batch_tokens in enumerate(meta['tokens']):
+                    for i, (_, start) in enumerate(batch_tokens):
+                        where_indices[b, i] = start
+                    final_offset = meta['final_offsets'][b]
+                    for i in range(len(batch_tokens), nObj):
+                        where_indices[b, i] = final_offset + (i - len(batch_tokens))
+            else:
+                where_indices = None
+
+            # when_indices: [B, N] timestep indices (sequential for now)
+            if self.nWhen > 0:
+                when_indices = torch.arange(nObj, device=dev).unsqueeze(0).expand(batch, -1)
+            else:
+                when_indices = None
+
+            # Set per-modality indices — materialize() looks up vectors from Basis
+            self.subspace.set_forward_content(what_indices, where_indices, when_indices)
+            self.input = self.subspace.materialize()
+
+        # Scale what-content to [0,1] via data min-max (or assert if out of range).
+        self.subspace.normalize("input", target="what", normalize=True)
+        self.input = self.subspace.materialize()
+
+        return self.subspace
+
+    def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM', n_words=None):
+        """Expand one sentence's embedding into N masked copies.
+
+        Modes:
+            MLM: Zero content at position i, preserve position encoding.
+            ARLM: Zero content at position i, truncate all future positions (j > i).
+            ARUS: Same as ARLM (output-side behavior differs in OutputSpace).
+            RARLM: Zero content at position (N-1-i), truncate all previous positions (j < pos).
+
+        Args:
+            embedded: [1, nVectors, embeddingSize] output of forward()
+            sentence_text: original sentence string (used for word count)
+            maskedPrediction: prediction mode ('MLM', 'ARLM', 'ARUS', or 'RARLM')
+            n_words: explicit word count (byte mode — from span_meta after compaction)
+
+        Returns:
+            (masked_batch, mask_positions):
+                masked_batch: [N, nVectors, embeddingSize]
+                mask_positions: list[int] of length N
+        """
+        if n_words is not None:
+            N = min(n_words, embedded.shape[1])
+        else:
+            words = sentence_text.split()
+            N = min(len(words), self.outputShape[0])  # cap at nVectors
+
+        # Repeat the embedded sentence N times
+        masked = embedded.expand(N, -1, -1).detach().clone()  # [N, nVec, embSize]
+
+        # Determine which dims are content (to zero) vs position (to preserve)
+        embSize = embedded.shape[-1]
+        content_mask = torch.ones(embSize, dtype=torch.bool, device=TheDevice.get())
+        # Preserve nWhere dims (dynamic indices from whereEncoding)
+        if self.subspace.whereEncoding.nDim > 0:
+            where_idx = np.add([embSize, embSize], self.subspace.whereEncoding.index)
+            for wi in where_idx:
+                if 0 <= wi < embSize:
+                    content_mask[wi] = False
+        # Preserve nWhen dims (indices [-2, -1] from end of embedding)
+        if self.subspace.whenEncoding.nDim > 0:
+            when_idx = np.add([embSize, embSize], self.subspace.whenEncoding.index)
+            for wi in when_idx:
+                if 0 <= wi < embSize:
+                    content_mask[wi] = False
+
+        # Determine mask position for each copy
+        for i in range(N):
+            pos = (N - 1 - i) if maskedPrediction == 'RARLM' else i
+            masked[i, pos, content_mask] = 0.0
+
+        # ARLM/ARUS: truncate all future positions (j > i)
+        if maskedPrediction in ('ARLM', 'ARUS'):
+            for i in range(N):
+                if i + 1 < masked.shape[1]:
+                    masked[i, i + 1:, :] = 0.0
+
+        # RARLM: truncate all previous positions (j < pos)
+        if maskedPrediction == 'RARLM':
+            for i in range(N):
+                pos = N - 1 - i
+                if pos > 0:
+                    masked[i, :pos, :] = 0.0
+
+        if maskedPrediction == 'RARLM':
+            return masked, list(range(N - 1, -1, -1))
+        return masked, list(range(N))
+
+    def reverse(self, vspace):
+        y = self.reverseBegin(vspace, returnVectors=True)
+        # Store full vector (all subspaces) for MSE loss BEFORE partitioning
+        object_basis = self.subspace.get_vectors()
+        content_basis = self.subspace.what if isinstance(self.subspace.what, Embedding) else object_basis
+        raw = object_basis.reverse_raw(y)
+        self.reconstructed = raw.detach()
+        nWhat = content_basis.content_dim
+        object_encoding = self.subspace.objectEncoding
+        if object_encoding is not None:
+            content, aux = object_encoding.split_aux(y, nWhat)
+        else:
+            if y.shape[-1] <= nWhat:
+                content, aux = y.clone(), None
+            else:
+                content, aux = y[:, :, :nWhat].clone(), y[:, :, nWhat:].clone()
+        # Partition into nWhat/nWhere/nWhen for display
+        content = content_basis.reverse(content)
+        if object_encoding is not None:
+            self.input = object_encoding.restore_aux(content, aux)
+        elif aux is not None:
+            self.input = torch.cat([content, aux], dim=-1)
+        else:
+            self.input = content
+        content_basis.setW(self.input)
+        object_basis.setW(self.input)
+        self.subspace.set_event(self.input)
+
+        # Word recovery — content is already denormalized, codebook is L2-normalized [-1,1]
+        if isinstance(content_basis, Embedding):
+            self._recovered_input = content_basis.decode_reverse_meta(
+                self.input, subspace=self.subspace)
+        else:
+            self._recovered_input = None
+
+        self.subspace.normalize("input", target="what", normalize=True)
+        return self.subspace
+
+    def reconstruct_data(self, text=False):
+        """Render the last recovered text state stored on InputSpace."""
+        if getattr(self, '_recovered_input', None) is None:
+            raise RuntimeError("reconstruct_data() called before reverse()")
+        return self.subspace.vocabulary.reconstruct_data(self._recovered_input, text=text)
+
+    def reconstruct_to_buffer(self, buf_size=None):
+        """Render the last recovered text buffer stored on InputSpace."""
+        if getattr(self, '_recovered_input', None) is None:
+            raise RuntimeError("reconstruct_to_buffer() called before reverse()")
+        return self.subspace.vocabulary.reconstruct_to_buffer(
+            self._recovered_input, buf_size=buf_size)
+
+    def get_forward_meta(self):
+        """Return the last forward-pass lexical metadata for text input."""
+        return getattr(self, '_forward_input', None)
+
+    def get_recovered_word(self, batch_idx, position):
+        """Return one recovered token from the last InputSpace.reverse()."""
+        if getattr(self, '_recovered_input', None) is None:
+            return None
+        return self.subspace.vocabulary.get_recovered_word(
+            self._recovered_input, batch_idx, position)
+
+    # ------------------------------------------------------------------
+    # Training policy — InputSpace decides WHEN, Embedding does HOW
+    # ------------------------------------------------------------------
+
+    def train_embeddings(self, words, method='CBOW'):
+        """Run one CBOW/SBOW gradient step if words are available."""
+        emb = self.subspace.vocabulary
+        if isinstance(emb, Embedding) and words:
+            return emb.train_step(words, method=method)
+        return None
+
+    def sbow_loss(self, words):
+        """Return SBOW loss tensor for joint optimization (no backward/step)."""
+        emb = self.subspace.vocabulary
+        if isinstance(emb, Embedding) and words:
+            return emb.sbow_loss(words)
+        return None
+
+    def _snapshot_embeddings(self):
+        """Return the current WordVectors (no-op, vectors are always live)."""
+        emb = self.subspace.vocabulary
+        if isinstance(emb, Embedding):
+            return emb.wv
+        return None
+
+    def set_embedding_sigma(self, sigma):
+        """Control exploration noise on the embedding."""
+        emb = self.subspace.vocabulary
+        if hasattr(emb, 'set_sigma'):
+            emb.set_sigma(sigma)
+
+    def getBatch(self, batchNum, batchSize=10, split="train"):
+        """Return next batch of (input, output) data and the next batchNum.
+
+        For standard mode: slices train_input/train_output by batchSize.
+        For masked prediction: takes sentence batchNum, embeds it,
+            expands into N masked copies (one per word), computes N targets.
+            Batch size is dynamic (= words in sentence).
+
+        Args:
+            batchNum: current batch index
+            batchSize: number of examples per batch (standard mode only)
+            split: "train", "test", or "validation"
+
+        Returns:
+            ((inputBatch, outputBatch), nextBatchNum)
+            Returns (None, batchNum) when data is exhausted.
+        """
+        # Select data for the requested split
+        if split == "train" or split == "runtime":
+            inputData = self.data.train_input
+            outputData = self.data.train_output
+        elif split == "test":
+            inputData = self.data.test_input
+            outputData = self.data.test_output
+        elif split == "validation":
+            inputData = self.data.validation_input
+            outputData = self.data.validation_output
+        else:
+            raise ValueError(f"Unknown split: {split}")
+
+        # ── ARIR state machine ──────────────────────────────────────
+        if split == "runtime" and getattr(self.data, '_runtime_mode', None) == 'ARIR':
+            return self._getBatch_arir(inputData, batchNum)
+
+        # Use standard (non-masked) path when: no masked prediction configured,
+        # or runtime split with no sentences staged (inference via runBatch).
+        # Raw strings for masked prediction — all splits store strings directly
+        if (isinstance(inputData, list) and inputData
+                and isinstance(inputData[0], str)):
+            sentences = inputData
+        else:
+            sentences = None
+        use_masked = (hasattr(self.data, 'masked_prediction')
+                      and self.data.masked_prediction != 'NONE'
+                      and sentences is not None)
+        if not use_masked:
+            # Standard mode: fixed-size batch slicing
+            i = batchNum * batchSize
+            if i >= len(inputData):
+                return None, batchNum
+            inputBatch = inputData[i:i + batchSize]
+            inputTensor = self.prepInput(inputBatch)
+            if outputData is not None:
+                outputBatch = outputData[i:i + batchSize]
+                outputTensor = self.outputSpace.prepOutput(outputBatch)
+            else:
+                outputTensor = None
+            self._unmasked_embedding = None
+            self._mask_positions = None
+            return (inputTensor, outputTensor), batchNum + 1
+        else:
+            # Masked prediction: one sentence -> N masked examples.
+            # Embed once, use that embedding for both targets and masked input.
+            if batchNum >= len(sentences):
+                return None, batchNum
+            sentence = sentences[batchNum]
+            inputTensor = self.prepInput(inputData[batchNum:batchNum + 1])
+
+            # Embed once — retain gradient graph for the masked input path.
+            # Targets are detached (they're labels, not part of the forward graph).
+            embedded = self.forward(inputTensor).materialize()  # [1, nVec, embSize]
+
+            # Compute targets from detached embedding (labels, no gradient needed)
+            targets = self.outputSpace.expand_masked(
+                embedded.detach(), sentence, self.data.masked_prediction)
+
+            # Build masked copies from the live embedding (retains gradient graph)
+            masked_batch, mask_positions = self.expand_masked(
+                embedded, sentence, self.data.masked_prediction)
+
+            # Cache unmasked embedding for reconstruction loss target
+            self._unmasked_embedding = embedded.detach()  # [1, nVec, embSize]
+            self._mask_positions = mask_positions           # list[int], len=N
+
+            # Hand masked embedding to forward() via cache — no re-embedding,
+            # but gradient flows back through masked_batch → embedded → embedding weights
+            self._cached_embedding = masked_batch
+
+            return (inputTensor, targets), batchNum + 1
+
+    def get_reconstruction_target(self):
+        """Return (target, mask) for reconstruction loss.
+
+        target: [batch, nVec, embSize] — unmasked post-encoding embedding
+        mask:   [batch, nVec] bool — True at masked positions to compute loss on.
+                None when maskedPrediction=NONE (use whole buffer).
+        """
+        unmasked = getattr(self, '_unmasked_embedding', None)
+        positions = getattr(self, '_mask_positions', None)
+        if unmasked is None or positions is None:
+            return None, None
+        N = len(positions)
+        nVec = unmasked.shape[1]
+        target = unmasked.expand(N, -1, -1)
+        mask = torch.zeros(N, nVec, dtype=torch.bool, device=TheDevice.get())
+        for i, pos in enumerate(positions):
+            mask[i, pos] = True
+        return target, mask
+
+    def predict(self, vector):
+        """Delegates to Embedding.predict()."""
+        return self.subspace.vocabulary.predict(vector)
+
+    # ------------------------------------------------------------------
+    # ARIR helpers
+    # ------------------------------------------------------------------
+
+    def embed_token(self, word):
+        """Delegates to Embedding.embed_token()."""
+        return self.subspace.vocabulary.embed_token(word)
+
+    def get_space_embedding(self):
+        """Delegates to Embedding.get_space_embedding()."""
+        return self.subspace.vocabulary.get_space_embedding()
+
+    def get_mask_embedding(self):
+        """Delegates to Embedding.get_mask_embedding()."""
+        return self.subspace.vocabulary.get_mask_embedding()
+
+    # ── ARIR state machine ──────────────────────────────────────────
+
+    def _getBatch_arir(self, inputData, batchNum):
+        """ARIR state machine for getBatch(): embed seed, then iteratively
+        place [MASK] and read back reconstructed latent vectors.
+
+        First call (cursor is None):
+            Embed seed text, fill future with spaces, place [MASK] at seed_len.
+
+        Subsequent calls (cursor is not None):
+            Read reconstruction from previous reverse pass, decode word,
+            write reconstructed latent at previous cursor, advance, place [MASK].
+
+        Returns None when cursor reaches nVec, EOF detected, or max_chars exceeded.
+        """
+        nVec = self.outputShape[0]
+        embSize = self.muxedSize
+        nWhat = self.subspace.vocabulary.embedding_dim
+
+        if self._arir_cursor is None:
+            # ── First call: embed seed, prepare buffer ──────────────
+            inputTensor = self.prepInput(inputData)
+            embedded = self.forward(inputTensor)  # [1, nVec, embSize]
+            self._arir_embedded = embedded.detach().clone()
+
+            # Read span count from the lex pass
+            meta = getattr(self, '_forward_input', None) or {}
+            counts = meta.get('span_counts', [])
+            seed_len = counts[0] if counts else 1
+
+            # Read byte offset from the lex pass
+            offsets = meta.get('final_offsets', [])
+            self._arir_byte_offset = offsets[0] if offsets else 0
+
+            # Fill future positions (seed_len .. nVec-1) with NULL embeddings
+            null_emb = self.subspace.vocabulary.embed_token("\x00")
+            for k in range(seed_len, nVec):
+                self._arir_embedded[0, k, :nWhat] = null_emb[:nWhat]
+                est_offset = self._arir_byte_offset + (k - seed_len)
+                self._arir_stamp_where(self._arir_embedded, k, est_offset)
+
+            # Set cursor and place [MASK] at seed_len
+            self._arir_cursor = seed_len
+            self._arir_embedded[0, self._arir_cursor, :nWhat] = 0.0
+            self._arir_stamp_where(
+                self._arir_embedded, self._arir_cursor, self._arir_byte_offset
+            )
+
+            # Inject via the cached-embedding bypass in forward()
+            self._cached_embedding = self._arir_embedded.clone()
+
+            # Return a dummy input tensor (forward() will use _cached_embedding)
+            dummy_input = inputTensor
+            return (dummy_input, None), batchNum + 1
+
+        else:
+            # ── Subsequent calls: read reconstruction, advance cursor ──
+            prev_cursor = self._arir_cursor
+
+            # Read decoded word from previous reverse pass
+            word = self.get_recovered_word(0, prev_cursor)
+
+            # EOF check
+            if word is None or word == '' or word == '\x00':
+                self._arir_reset()
+                return None, batchNum
+
+            # Record the token
+            self._arir_tokens.append(word)
+            self._arir_total_chars += len(word)
+
+            # Max chars check
+            if self._arir_total_chars >= self._arir_max_chars:
+                self._arir_reset()
+                return None, batchNum
+
+            # Write reconstructed latent vector at current cursor
+            # (no codebook lookup -- stay in latent space)
+            recon = self.reconstructed  # [1, nVec, embSize] from reverse()
+            self._arir_embedded[0, prev_cursor, :nWhat] = recon[0, prev_cursor, :nWhat]
+            self._arir_stamp_where(
+                self._arir_embedded, prev_cursor, self._arir_byte_offset
+            )
+
+            # Advance byte offset for positional encoding
+            self._arir_byte_offset += len(word.encode('utf-8'))
+
+            # Write reconstructed vectors beyond cursor as steering signal
+            for k in range(prev_cursor + 1, nVec):
+                self._arir_embedded[0, k, :nWhat] = recon[0, k, :nWhat]
+                # Keep existing positional encoding at those positions
+
+            # Advance cursor
+            self._arir_cursor = prev_cursor + 1
+
+            # Buffer full check
+            if self._arir_cursor >= nVec:
+                self._arir_reset()
+                return None, batchNum
+
+            # Place [MASK] at new cursor
+            self._arir_embedded[0, self._arir_cursor, :nWhat] = 0.0
+            self._arir_stamp_where(
+                self._arir_embedded, self._arir_cursor, self._arir_byte_offset
+            )
+
+            # Inject via cached-embedding bypass
+            self._cached_embedding = self._arir_embedded.clone()
+
+            # Return dummy input (forward() will use _cached_embedding)
+            dummy_input = torch.zeros(1, device=TheDevice.get())
+            return (dummy_input, None), batchNum + 1
+
+    def _arir_reset(self):
+        """Reset all ARIR state attributes."""
+        self._arir_cursor = None
+        self._arir_embedded = None
+        self._arir_byte_offset = 0
+        self._arir_tokens = []
+        self._arir_max_chars = 256
+        self._arir_total_chars = 0
+
+    def get_predicted_tokens(self):
+        """Return the list of tokens predicted during ARIR inference."""
+        return getattr(self, '_arir_tokens', [])
+
+    def _arir_stamp_where(self, buf, pos_idx, byte_off):
+        """Stamp positional encoding at a buffer position via subspace.whereEncoding."""
+        if self.subspace.whereEncoding.nDim > 0:
+            self.subspace.whereEncoding.stamp(buf, 0, pos_idx, byte_off)
+class PerceptualSpace(Space):
+    """Transforms raw input vectors into percepts via a PiLayer.
+
+    In the forward data flow: InputSpace -> **PerceptualSpace** -> ConceptualSpace.
+    Uses a PiLayer (log-space multiplicative layer) to map input embeddings to
+    perceptual embeddings, optionally followed by self-attention and VQ
+    codebook quantization.
+
+    When ``reversible=True`` and ``invertible=True``, a single layer
+    serves both directions (shared weights).  Without invertibility, two
+    PiLayers with separate weights are used: forward() on
+    one, reverse() on the other.  **Note:** the non-invertible reverse
+    path currently involves a matrix pseudoinverse (``pinv``) which may
+    be numerically unstable; this is not a recommended code path.
+
+    ``passThrough=True`` makes this a no-op (identity), useful when the input
+    is already in the desired perceptual form.
+    """
+    name = "Percepts"
+    config_section = "PerceptualSpace"
+
+    def __init__(self, inputShape, spaceShape, outputShape):
+
+        section = self.config_section
+        passThrough = TheXMLConfig.space(section, "passThrough")
+        ergodic = TheXMLConfig.get("architecture.ergodic")
+        hasAttention = TheXMLConfig.space(section, "hasAttention")
+        invertible = TheXMLConfig.space(section, "invertible")
+        naive = TheXMLConfig.get("architecture.naive")
+        super().__init__(inputShape, spaceShape, outputShape)
+        self.passThrough = passThrough
+        self.ergodic = ergodic
+        self.hasAttention = hasAttention
+        self.invertible = invertible
+        if passThrough:
+            return
+        input = self.subspace.getEncodedInputSize()
+        self.attention = AttentionLayer(input, input, type="transformer")
+        self.subspace._nWordSlots = outputShape[0]
+        self.params = []
+        self.layers = nn.ModuleList()
+
+    def _register_requirements(self):
+        """Register PerceptualSpace-specific config requirements."""
+        # passThrough spaces are identity mappings — shape constraints don't apply.
+        passThrough = TheXMLConfig.space(self.config_section, "passThrough")
+        if passThrough:
+            return
+
+        nV = self.nVectors
+        nA = self.outputShape[0]   # nOutput
+        nI = self.inputShape[0]    # nInput
+        nI_dim = self.inputShape[1]
+        nA_dim = self.outputShape[1]
+
+        invertible = TheXMLConfig.space(self.config_section, "invertible")
+        if not invertible:
+            # Standard checks
+            TheXMLConfig.require(
+                lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv >= _na,
+                f"PerceptualSpace: nVectors ({nV}) must be >= nOutput ({nA})"
+            )
+            if not self.codebook:
+                TheXMLConfig.require(
+                    lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv == _na,
+                    f"PerceptualSpace: non-codebook requires nVectors ({nV}) == nOutput ({nA})"
+                )
+
+    def everything(self, target="what"):
+        """The universal whole — vertex (1,1,...,1) of the perceptual hypercube.
+
+        Valid only in perceptual space where vectors are sigmoid-normalized
+        to [0,1]^d and mereological operations (min/max) apply.
+
+        Args:
+            target: encoding target — "what", "event", or "activation".
+        """
+        dim = {"what": self.nDim, "event": self.muxedSize,
+               "activation": self.outputShape[0]}[target]
+        return torch.ones(dim, device=TheDevice.get())
+
+    def nothing(self, target="what"):
+        """The empty set — origin (0,0,...,0) of the perceptual hypercube.
+
+        Valid only in perceptual space where vectors are sigmoid-normalized
+        to [0,1]^d and mereological operations (min/max) apply.
+
+        Args:
+            target: encoding target — "what", "event", or "activation".
+        """
+        dim = {"what": self.nDim, "event": self.muxedSize,
+               "activation": self.outputShape[0]}[target]
+        return torch.zeros(dim, device=TheDevice.get())
+
+    def distance(self, x, y):
+        return torch.prod( [1-x, 1-y] )
+    def certainty(self, x):
+        pass
+    def forward(self, vspace, wordSpace=None):
+        """Perception: map input vectors to percepts via attention + VQ + chunking."""
+        if self.passThrough:
+            return vspace
+        # Pass byte values from input for boundary detection in compose()
+        if getattr(vspace, '_demuxed', False) and vspace._active is not None:
+            self.subspace._byte_indices = vspace._active[:, :, 0].long()
+        x = self.forwardBegin(vspace, returnVectors=True)
+        if self.hasAttention:
+            x = self.attention.forward(x)
+        if self.codebook:
+            x = self.subspace.get_vectors().forward(x)
+        if wordSpace is not None:
+            x = wordSpace.forwardPercepts(x, self.subspace)
+        vspace = self.forwardEnd(x, returnVectors=True)
+        vspace.normalize("percepts", target="event", normalize=True)
+        return vspace
+
+    def reverse(self, vspace, wordSpace=None):
+        """Manifesting: reconstruct input vectors from percepts."""
+        if self.passThrough:
+            return vspace
+        y = self.reverseBegin(vspace, returnVectors=True)
+        if wordSpace is not None:
+            y = wordSpace.reversePercepts(y, self.subspace)
+        vspace = self.reverseEnd(y, returnVectors=True)
+        vspace.normalize("input", target="what", normalize=True)
+        return vspace
+
+    @staticmethod
+    def test():
+        pass
+class ModalSpace(Space):
+    """Composite space routing what/where/when through independent PerceptualSpaces.
+
+    Default: what branch is processed (PiLayer), where/when branches are passthrough.
+    When nWhere=nWhen=0, degenerates to a single PerceptualSpace on the full embedding.
+
+    Per-branch passthrough flags are read from <ModalSpace> config:
+        whatPassThrough  (default False)
+        wherePassThrough (default True)
+        whenPassThrough  (default True)
+    """
+    name = "Percepts"
+    config_section = "ModalSpace"
+
+    def __init__(self, inputShape, spaceShape, outputShape):
+        section = self.config_section
+        super().__init__(inputShape, spaceShape, outputShape)
+
+        # Per-branch passthrough defaults
+        try:
+            whatPT = TheXMLConfig.space(section, "whatPassThrough")
+        except KeyError:
+            whatPT = False
+        try:
+            wherePT = TheXMLConfig.space(section, "wherePassThrough")
+        except KeyError:
+            wherePT = True
+        try:
+            whenPT = TheXMLConfig.space(section, "whenPassThrough")
+        except KeyError:
+            whenPT = True
+
+        # Derive branch shapes (symmetric — subtract off the modality you don't need)
+        whatDim = self.muxedSize - self.nWhere - self.nWhen
+        whatInputShape = [inputShape[0], whatDim]
+        whatOutputShape = [outputShape[0], whatDim]
+        whatSpaceShape = [spaceShape[0], spaceShape[1]]
+
+        # Build what branch — override passThrough in config temporarily
+        saved_pt = TheXMLConfig._data.get("PerceptualSpace", {}).get("passThrough")
+        TheXMLConfig._data.setdefault("PerceptualSpace", {})["passThrough"] = whatPT
+        self.whatSpace = PerceptualSpace(whatInputShape, whatSpaceShape, whatOutputShape)
+        TheXMLConfig._data["PerceptualSpace"]["passThrough"] = saved_pt
+
+        # Build where branch (if nWhere > 0)
+        if self.nWhere > 0:
+            whereShape = [inputShape[0], self.nWhere]
+            whereSpaceShape = [spaceShape[0], self.nWhere]
+            saved_pt = TheXMLConfig._data.get("PerceptualSpace", {}).get("passThrough")
+            TheXMLConfig._data["PerceptualSpace"]["passThrough"] = wherePT
+            self.whereSpace = PerceptualSpace(whereShape, whereSpaceShape, whereShape)
+            TheXMLConfig._data["PerceptualSpace"]["passThrough"] = saved_pt
+        else:
+            self.whereSpace = None
+
+        # Build when branch (if nWhen > 0)
+        if self.nWhen > 0:
+            whenShape = [inputShape[0], self.nWhen]
+            whenSpaceShape = [spaceShape[0], self.nWhen]
+            saved_pt = TheXMLConfig._data.get("PerceptualSpace", {}).get("passThrough")
+            TheXMLConfig._data["PerceptualSpace"]["passThrough"] = whenPT
+            self.whenSpace = PerceptualSpace(whenShape, whenSpaceShape, whenShape)
+            TheXMLConfig._data["PerceptualSpace"]["passThrough"] = saved_pt
+        else:
+            self.whenSpace = None
+
+        # Collect parameters and layers from all branches
+        self.params = list(self.whatSpace.getParameters())
+        self.layers = nn.ModuleList([self.whatSpace])
+        if self.whereSpace is not None:
+            self.params.extend(self.whereSpace.getParameters())
+            self.layers.append(self.whereSpace)
+        if self.whenSpace is not None:
+            self.params.extend(self.whenSpace.getParameters())
+            self.layers.append(self.whenSpace)
+
+    def _register_requirements(self):
+        """ModalSpace manages its own branch requirements."""
+        pass
+
+    def forward(self, vspace):
+        """Route each modality through its branch PerceptualSpace."""
+        if vspace.is_demuxed:
+            what_in = vspace.what.getW()
+            where_in = vspace.where.getW() if vspace.where is not None else None
+            when_in = vspace.when.getW() if vspace.when is not None else None
+        else:
+            # Fallback: split muxed event into branches
+            event = vspace.materialize()
+            what_in = event[..., :self.nWhat]
+            where_in = event[..., self.nWhat:self.nWhat + self.nWhere] if self.nWhere > 0 else None
+            when_in = event[..., self.nWhat + self.nWhere:] if self.nWhen > 0 else None
+
+        # Route what through whatSpace
+        what_sub = SubSpace(inputShape=[what_in.shape[1], what_in.shape[2]],
+                           outputShape=[what_in.shape[1], what_in.shape[2]])
+        what_sub.set_what(what_in)
+        what_out = self.whatSpace.forward(what_sub).materialize()
+
+        # Route where through whereSpace (passthrough if no whereSpace)
+        where_out = where_in
+        if self.whereSpace is not None and where_in is not None:
+            where_sub = SubSpace(inputShape=[where_in.shape[1], where_in.shape[2]],
+                                outputShape=[where_in.shape[1], where_in.shape[2]])
+            where_sub.set_where(where_in)
+            where_out = self.whereSpace.forward(where_sub).materialize()
+
+        # Route when through whenSpace (passthrough if no whenSpace)
+        when_out = when_in
+        if self.whenSpace is not None and when_in is not None:
+            when_sub = SubSpace(inputShape=[when_in.shape[1], when_in.shape[2]],
+                               outputShape=[when_in.shape[1], when_in.shape[2]])
+            when_sub.set_when(when_in)
+            when_out = self.whenSpace.forward(when_sub).materialize()
+
+        # Build output demuxed SubSpace
+        out = SubSpace(inputShape=self.outputShape, outputShape=self.outputShape,
+                      whereEncoding=self.subspace.whereEncoding,
+                      whenEncoding=self.subspace.whenEncoding)
+        out.set_demuxed(what_out, where_out, when_out)
+        return out
+
+    def reverse(self, vspace):
+        """Split event into modalities, reverse each branch, rebuild."""
+        event = vspace.materialize()
+        what_in = event[..., :self.nWhat]
+        where_in = event[..., self.nWhat:self.nWhat + self.nWhere] if self.nWhere > 0 else None
+        when_in = event[..., self.nWhat + self.nWhere:] if self.nWhen > 0 else None
+
+        # Reverse what
+        what_sub = SubSpace(inputShape=[what_in.shape[1], what_in.shape[2]],
+                           outputShape=[what_in.shape[1], what_in.shape[2]])
+        what_sub.set_what(what_in)
+        what_rev = self.whatSpace.reverse(what_sub).materialize()
+
+        # Reverse where
+        where_rev = where_in
+        if self.whereSpace is not None and where_in is not None:
+            where_sub = SubSpace(inputShape=[where_in.shape[1], where_in.shape[2]],
+                                outputShape=[where_in.shape[1], where_in.shape[2]])
+            where_sub.set_where(where_in)
+            where_rev = self.whereSpace.reverse(where_sub).materialize()
+
+        # Reverse when
+        when_rev = when_in
+        if self.whenSpace is not None and when_in is not None:
+            when_sub = SubSpace(inputShape=[when_in.shape[1], when_in.shape[2]],
+                               outputShape=[when_in.shape[1], when_in.shape[2]])
+            when_sub.set_when(when_in)
+            when_rev = self.whenSpace.reverse(when_sub).materialize()
+
+        # Rebuild demuxed SubSpace
+        out = SubSpace(inputShape=self.inputShape, outputShape=self.inputShape,
+                      whereEncoding=self.subspace.whereEncoding,
+                      whenEncoding=self.subspace.whenEncoding)
+        out.set_demuxed(what_rev, where_rev, when_rev)
+        return out
+
+    def set_sigma(self, sigma):
+        """Propagate exploration meta-parameters to all branch spaces."""
+        self.whatSpace.set_sigma(sigma)
+        if self.whereSpace is not None:
+            self.whereSpace.set_sigma(sigma)
+        if self.whenSpace is not None:
+            self.whenSpace.set_sigma(sigma)
+
+    def getParameters(self):
+        return self.params
+
+    def paramUpdate(self):
+        self.whatSpace.paramUpdate()
+        if self.whereSpace is not None:
+            self.whereSpace.paramUpdate()
+        if self.whenSpace is not None:
+            self.whenSpace.paramUpdate()
+class ConceptualSpace(Space):
+    """Transforms percepts into concepts via a SigmaLayer (summation layer).
+
+    In the forward data flow: PerceptualSpace -> **ConceptualSpace** -> SymbolicSpace.
+    Uses a SigmaLayer to combine perceptual features into conceptual
+    representations.  The SigmaLayer computes weighted sums (inner products)
+    rather than the permutation-equivariant operations of PiLayer.
+
+    Supports optional self-attention and VQ codebook quantization.
+
+    When ``invertible=True``, uses a InvertibleSigmaLayer whose inverse is
+    exact.  When ``reversible=True`` without invertibility, a separate
+    SigmaLayer is trained for the reverse direction.
+    """
+    name = "Concepts"
+    config_section = "ConceptualSpace"
+
+    def __init__(self, inputShape, spaceShape, outputShape, level_shapes=None):
+        section = self.config_section
+        ergodic = TheXMLConfig.get("architecture.ergodic")
+        hasAttention = TheXMLConfig.space(section, "hasAttention")
+        invertible = TheXMLConfig.space(section, "invertible")
+        nonlinear = TheXMLConfig.space(section, "nonlinear")
+        naive = TheXMLConfig.get("architecture.naive")
+        super().__init__(inputShape, spaceShape, outputShape)
+        self.nonlinear = nonlinear
+        self.ergodic = ergodic
+        self.hasAttention = hasAttention
+        input = self.subspace.getEncodedInputSize()
+        output = self.subspace.getEncodedOutputSize()
+        if hasAttention:
+            self.attention = AttentionLayer(output, output, type="transformer")
+
+        # ── Hierarchical mode: per-level Sigma layers ────────────────
+        # Average-merge keeps norms bounded, so tanh saturation is unnecessary
+        # and harmful: cascaded atanh in reverse clamps values outside (-1,1),
+        # destroying sample variance.  Per-level sigmas use saturate=False.
+        if level_shapes is not None and len(level_shapes) >= 1:
+            self._hierarchical = True
+            self._level_shapes = level_shapes
+            self.sigmas = nn.ModuleList()
+            for t, (n_t, d_t) in enumerate(level_shapes):
+                sig = SigmaLayer(d_t, d_t, naive=naive, ergodic=ergodic,
+                                 invertible=invertible)
+                sig.saturate = False
+                self.sigmas.append(sig)
+            # Dim projections for syntactic mode (grammar keeps D, need projection)
+            # One per level: level 0 projects from percept_dim, others from prior level
+            self.dim_projections = nn.ModuleList()
+            percept_dim = inputShape[1]  # pre-merge percept dim
+            for t, (n_t, d_t) in enumerate(level_shapes):
+                d_in = percept_dim if t == 0 else level_shapes[t - 1][1]
+                self.dim_projections.append(nn.Linear(d_in, d_t))
+            self.layers = nn.ModuleList(
+                list(self.sigmas) + list(self.dim_projections))
+            self.params = []
+            for s in self.sigmas:
+                self.params.extend(s.getParameters())
+            # Set forwardSigma to level-0 for backward compat callers
+            self.forwardSigma = self.sigmas[0].forward
+        else:
+            # ── Original single-layer mode ────────────────────────────
+            self._hierarchical = False
+            self._level_shapes = None
+            if self.reversible:
+                if invertible:
+                    self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
+                                            invertible=True, nonlinear=nonlinear)
+                    self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
+                    self.params = self.sigma.getParameters()
+                    self.layers = nn.ModuleList([self.sigma])
+                else:
+                    self.sigma1 = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
+                                             invertible=True, nonlinear=nonlinear)
+                    self.sigma2 = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
+                                             invertible=True, nonlinear=nonlinear)
+                    self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
+                    self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
+                    self.layers = nn.ModuleList([self.sigma1, self.sigma2])
+            else:
+                self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
+                                        nonlinear=nonlinear)
+                self.forwardSigma = self.sigma.forward
+                self.params = self.sigma.getParameters()
+                self.layers = nn.ModuleList([self.sigma])
+        # Grammar methods and SyntacticLayers are now on TheGrammar.
+        # Spaces delegate to TheGrammar.project('C', ...) and
+        # TheGrammar.composeSyntax('C', ...).
+        self._interpretation = TheGrammar.interpretation
+        self._last_svo = None
+
+    def __getitem__(self, t):
+        """Index into conceptual order levels.
+
+        Non-hierarchical: returns self (shared sigma for all t).
+        Hierarchical: returns a _LevelView that routes through sigmas[t].
+        """
+        if not self._hierarchical:
+            return self
+        return self._CSLevelView(self, t)
+
+    class _CSLevelView:
+        """Proxy routing .forward()/.reverse() through a per-level sigma.
+
+        Accepts ``wordSpace`` for signature parity with the non-hierarchical
+        path, but ignores it — hierarchical sigmas don't invoke compose.
+        """
+        def __init__(self, parent, t):
+            self._parent = parent
+            self._sigma = parent.sigmas[t]
+            self.subspace = parent.subspace
+
+        def forward(self, vspace, wordSpace=None):
+            x = vspace.materialize()
+            y = self._sigma.forward(x)
+            self._parent.subspace.set_event(y)
+            return self._parent.subspace
+
+        def reverse(self, vspace, wordSpace=None):
+            x = vspace.materialize()
+            y = self._sigma.reverse(x)
+            self._parent.subspace.set_event(y)
+            return self._parent.subspace
+
+    def distance(self, x, y):
+        # This is a dot-product distance that assumes the X are normalized.
+        # However, if the X are not normalized, the magnitudes may be taken as a degree of certainty or knowing.
+        # In which case, how do they grow from ignorance to certainty?
+        # They would do so naturally if the input vectors are normalized.
+        # It would also be possible to use a tunable transfer function.
+        return x.T @ y
+    def certainty(self, x):
+        return x.T @ x
+    def forward(self, vspace, wordSpace=None):
+        """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ.
+
+        When nonlinear=True, applies atanh() before SigmaLayer so that the
+        reverse tanh (needed to bound output to (-1,1)) has an exact
+        mathematical inverse.
+        """
+        x = self.forwardBegin(vspace, returnVectors=True)
+        if self.nonlinear:
+            # atanh only on nWhat dims — sin/cos where/when values near ±1
+            # would explode through atanh, so leave them untransformed.
+            nW = self.subspace.nWhat
+            x_what = torch.atanh(x[:, :, :nW] * (1 - 1e-6))
+            x = torch.cat([x_what, x[:, :, nW:]], dim=-1)
+        y = self.forwardSigma(x)
+        if self.hasAttention:
+            y = self.attention.forward(y)
+        if self.codebook:
+            y = self.subspace.get_vectors().forward(y)
+        if wordSpace is not None:
+            y, self._last_svo = wordSpace.forwardConcepts(y, self.subspace)
+        else:
+            self._last_svo = None
+        vspace = self.forwardEnd(y, returnVectors=True)
+        vspace.normalize("concepts", target="what")       # range check
+        vspace.normalize("concepts", target="activation")  # range check
+        return vspace
+
+    @property
+    def last_svo(self):
+        """Return SVO tuple from last ternary lift, or None."""
+        return self._last_svo
+
+    def reverse(self, vspace, wordSpace=None):
+        """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer.
+
+        When nonlinear=True, applies tanh() after reverse SigmaLayer to
+        guarantee output in (-1,1) for PiLayer.
+        """
+        y = self.reverseBegin(vspace, returnVectors=True)
+        if wordSpace is not None:
+            y = wordSpace.reverseConcepts(y, self.subspace)
+        if self.processSymbols:
+            y = self.dereference(y)
+        y = self.reverseSigma(y)
+        if self.nonlinear:
+            # tanh only on nWhat dims — mirror the forward atanh split.
+            nW = self.subspace.nWhat
+            y_what = torch.tanh(y[:, :, :nW])
+            y = torch.cat([y_what, y[:, :, nW:]], dim=-1)
+        self.concepts = y
+        vspace = self.reverseEnd(y, returnVectors=True)
+        vspace.normalize("percepts", target="what")  # range check
+        return vspace
+
+    @staticmethod
+    def test():
+        pass
+class SymbolicSpace(Space):
+    """Codebook-backed symbol stack with swap operations.
+
+    In the forward data flow: ConceptualSpace -> **SymbolicSpace** -> OutputSpace.
+    The symbol stack (StackSpace) holds entries produced by ConceptualSpace's
+    shift/reduce loop. Each entry has what (codebook index), where (position),
+    and when (derivation order).
+
+    S-tier operations (swap) operate on whereEncodings of node children.
+    The START-level true() evaluates the full stack activation → scalar.
+    """
+    name = "Symbols"
+    config_section = "SymbolicSpace"
+
+    def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None,
+                 level_shapes=None):
+
+        section = self.config_section
+        passThrough = TheXMLConfig.space(section, "passThrough")
+        super().__init__(inputShape, spaceShape, outputShape, customVQ=True)
+        self.conceptualSpace = conceptualSpace
+        self.passThrough = passThrough
+        # PiLayer maps on the nDim axis: concept_dim+obj → symbol_dim+obj.
+        # nVectors passes through unchanged via batched matmul.
+        nConceptDim = inputShape[1]     # concept_dim + obj (where+when)
+        nSymbolDim = outputShape[1]     # symbol_dim + obj (where+when)
+        nSymbols = spaceShape[0]
+
+        if level_shapes is not None and len(level_shapes) >= 1:
+            self._hierarchical = True
+            self._level_shapes = level_shapes
+            self.pi_layers = nn.ModuleList()
+            for t, (n_t, d_t) in enumerate(level_shapes):
+                self.pi_layers.append(
+                    PiLayer(d_t, nSymbolDim, invertible=True, monotonic=True))
+            self.layer = self.pi_layers[0]  # default for non-ramsified codepaths
+        else:
+            self._hierarchical = False
+            self.pi_layers = None
+        self.layer = PiLayer(nConceptDim, nSymbolDim, invertible=True, monotonic=True) if not self._hierarchical else self.pi_layers[0]
+
+        # L1 sparsity on symbolic activations: soft-threshold applied to
+        # ``materialize()`` output after each Pi pass, to keep the symbol
+        # stack sparse. The Pi projection is the only place this belongs.
+        try:
+            self.l1_lambda = float(
+                TheXMLConfig.get("architecture.l1Lambda"))
+        except (KeyError, TypeError, ValueError):
+            self.l1_lambda = 0.0
+
+        # Truth accumulation: accumulateTruth is 0..1 (DoT for recorded symbols).
+        # Default 0 (off). Server sets to 1 when processing the TruthSet,
+        # then resets to 0. The TruthLayer lives on ``WordSpace``; callers
+        # reach it via ``self.wordSpace.truth_layer`` (see forward() below
+        # and the truth-using paths in BasicModel).
+        try:
+            self.accumulateTruth = float(TheXMLConfig.space(section, "accumulateTruth"))
+        except (KeyError, TypeError, ValueError):
+            self.accumulateTruth = 0.0
+
+        # Truth storage criterion thresholds (used by should_store())
+        def _truth_cfg(key, default):
+            try:
+                return float(TheXMLConfig.space(section, key))
+            except (KeyError, TypeError, ValueError):
+                return default
+        self._truth_min_magnitude = _truth_cfg("truthMinMagnitude", 0.3)
+        self._truth_min_novelty = _truth_cfg("truthMinNovelty", 0.5)
+        self._truth_max_inconsistency = _truth_cfg("truthMaxInconsistency", 0.3)
+
+        # Odd-even sorting network: learns a canonical ordering of symbols.
+        try:
+            sort_enabled = TheXMLConfig.space(section, "sortNetwork")
+        except (KeyError, TypeError, ValueError):
+            sort_enabled = False
+        self.sortNetwork = None
+        if sort_enabled:
+            try:
+                sort_passes_cfg = int(TheXMLConfig.space(section, "sortPasses"))
+            except (KeyError, TypeError, ValueError):
+                sort_passes_cfg = 0
+            n_passes = sort_passes_cfg if sort_passes_cfg > 0 else None
+            self.sortNetwork = SortingLayer(nSymbolDim, n_passes=n_passes)
+
+        pi_list = list(self.pi_layers) if self._hierarchical else [self.layer]
+        self.layers = nn.ModuleList(
+            pi_list + ([self.sortNetwork] if self.sortNetwork else [])
+        )
+
+        # Assign fixed where encodings to symbol positions.
+        nPercepts = inputShape[0]
+        if self.nWhere > 0:
+            positions = torch.arange(nPercepts, nPercepts + nSymbols, dtype=torch.float32)
+            self._symbol_where = self.subspace.whereEncoding.encode(positions)
+        else:
+            self._symbol_where = None
+
+        # Rule codebook — learned vectors for grammar rule identities.
+        # Allocated in init_syntactic_layer() once the grammar is known.
+        # Index 0 is reserved as the empty-slot sentinel (zero vector,
+        # non-training via padding_idx); indices 1..nRules map to
+        # grammar rule_ids 0..nRules-1.
+        # See plan: Architectural addition — WordSpace / Unified codebook.
+        self.rule_codebook = None
+        self.nRuleEntries = 0
+
+    def _build_object_basis(self):
+        """Event is a writable Tensor — codebook lives on .what."""
+        return None
+
+    def _build_what_basis(self):
+        """Symbol codebook on .what, monotonic (negation meaningless)."""
+        basis = Codebook()
+        basis.create(
+            self.inputShape[0],
+            self.nVectors,
+            self.nDim,
+            customVQ=self.customVQ,
+            passThrough=not self.codebook,
+            monotonic=True,
+        )
+        return basis
+
+    def l1_proximal(self, x):
+        """Soft-threshold symbolic activations to enforce sparsity.
+
+        ``sign(x) * max(|x| - l1_lambda, 0)``. Applied to the ``materialize()``
+        output of each Pi pass; ``l1_lambda`` is loaded from
+        ``architecture.l1Lambda`` at construction time.
+        """
+        if self.l1_lambda <= 0.0:
+            return x
+        return torch.sign(x) * torch.clamp(
+            torch.abs(x) - self.l1_lambda, min=0.0)
+
+    def __getitem__(self, t):
+        """Index into conceptual order levels.
+
+        Non-hierarchical: returns self (shared PiLayer for all t).
+        Hierarchical: returns a _LevelView that routes through pi_layers[t].
+        """
+        if not self._hierarchical:
+            return self
+        return self._SSLevelView(self, t)
+
+    class _SSLevelView:
+        """Proxy routing .forward()/.reverse() through a per-level PiLayer.
+
+        Accepts ``wordSpace`` for signature parity with the non-hierarchical
+        path, but ignores it — hierarchical Pi layers don't invoke compose.
+        """
+        def __init__(self, parent, t):
+            self._parent = parent
+            self._pi = parent.pi_layers[t]
+            self.subspace = parent.subspace
+
+        def forward(self, vspace, wordSpace=None):
+            x = vspace.materialize()
+            y = self._pi.forward(x)
+            self._parent.subspace.set_event(y)
+            return self._parent.subspace
+
+        def reverse(self, vspace, wordSpace=None):
+            x = vspace.materialize()
+            y = self._pi.reverse(x)
+            self._parent.subspace.set_event(y)
+            return self._parent.subspace
+
+    @property
+    def vocabulary(self):
+        return self.subspace.what
+
+    def forward(self, vspace, wordSpace=None):
+        """Map concept vectors to symbol vectors via PiLayer (Π).
+
+        PiLayer maps on the nDim axis: [B, nVectors, concept_dim] →
+        [B, nVectors, symbol_dim].  nVectors passes through unchanged.
+        With a single-concept subspace [B, 1, D], produces [B, 1, symbol_dim].
+
+        1. Materialize full concept vectors from input subspace.
+        2. Map through PiLayer (log-space multiplicative, monotonic).
+        3. Grammar derivation (if syntax=True): shift/reduce over S-tier.
+        4. Apply swap on whereEncodings of binary node children.
+        5. Store as symbol vectors in subspace event.
+        """
+        if self.passThrough:
+            return vspace
+        vspace = self.forwardBegin(vspace)
+        act = vspace.materialize()                        # [B, N, concept_dim]
+        act = self.layer.forward(act)                     # [B, N, symbol_dim]
+        act = self.l1_proximal(act)                       # sparsity soft-threshold
+
+        if self.accumulateTruth > 0 and wordSpace is not None:
+            truth_layer = getattr(wordSpace, 'truth_layer', None)
+            if truth_layer is not None:
+                for i in range(act.shape[0]):
+                    for j in range(act.shape[1]):
+                        vec = act[i, j]
+                        score = truth_layer.should_store(
+                            vec,
+                            min_magnitude=self._truth_min_magnitude,
+                            min_novelty=self._truth_min_novelty,
+                            max_inconsistency=self._truth_max_inconsistency)
+                        if self.accumulateTruth * score > 0.5:
+                            truth_layer.record(vec, degree=self.accumulateTruth)
+
+        if self._symbol_where is not None:
+            B = act.shape[0]
+            nAct = act.shape[1]
+            # Only apply where if vector count matches stored encodings
+            if nAct == self._symbol_where.shape[0]:
+                where = self._symbol_where.unsqueeze(0).expand(B, -1, -1)
+                where = where.to(act.device)
+                self.subspace.where.setW(where)
+
+        if self.sortNetwork is not None:
+            act = self.sortNetwork.forward(act)
+
+        if wordSpace is not None:
+            # Rule #2: C → S axis commitment. The demux side effect
+            # (populating the subspace's what/where/when modality slots
+            # from the muxed [B, N, D] tensor) happens inside
+            # forwardSymbols() so the axis-separated state is live
+            # before any slot selector runs.
+            act = wordSpace.forwardSymbols(act, self.subspace)
+
+        if self.codebook:
+            self.subspace.set_event(act)
+            self.subspace.what.forward(self.subspace)
+            vspace = self.forwardEnd(self.subspace)
+        else:
+            self.subspace.set_event(act)
+
+        return vspace
+
+    def init_rule_codebook(self, grammar):
+        """Allocate the unified rule codebook for WordSubSpace lookups.
+
+        Sized to the grammar's S-tier rule count. Each row is a learnable
+        vector the same width as the symbol codebook (self.nDim). Index 0
+        is an empty-slot sentinel (padding_idx prevents gradient). Indices
+        1..nRules map to rule_ids 0..nRules-1. Used by WordSubSpace.push()
+        to embed rule identities into the word-stream buffer.
+
+        Idempotent: calling twice is a no-op after the first allocation.
+        Called by ``WordSpace._build_symbolic_layer`` as part of the
+        unified grammar-infrastructure construction path.
+        """
+        if self.rule_codebook is not None:
+            return
+        try:
+            nRules = int(len(grammar.symbolic()))
+        except Exception:
+            nRules = 0
+        self.nRuleEntries = nRules
+        if nRules > 0 and self.nDim > 0:
+            self.rule_codebook = nn.Embedding(nRules + 1, self.nDim, padding_idx=0)
+            nn.init.normal_(self.rule_codebook.weight, std=0.01)
+            with torch.no_grad():
+                self.rule_codebook.weight[0].zero_()
+            self.layers.append(self.rule_codebook)
+
+    def lookup_rule(self, rule_id):
+        """Return the learnable codebook vector for a grammar rule_id.
+
+        rule_id is a 0-based index into grammar.symbolic(); the codebook
+        stores it at position rule_id+1 (index 0 is the empty-slot
+        sentinel). Returns a [nDim] tensor, or None if the codebook has
+        not been allocated yet.
+        """
+        if self.rule_codebook is None:
+            return None
+        if rule_id is None or rule_id < 0 or rule_id >= self.nRuleEntries:
+            # Return the zero sentinel at index 0.
+            idx = torch.zeros(1, dtype=torch.long,
+                              device=self.rule_codebook.weight.device)
+        else:
+            idx = torch.tensor([rule_id + 1], dtype=torch.long,
+                               device=self.rule_codebook.weight.device)
+        return self.rule_codebook(idx).squeeze(0)
+
+    def reverse(self, vspace, wordSpace=None):
+        """Map symbol vectors back to concept vectors via PiLayer.reverse (Π⁻¹).
+
+        Reverse maps on nDim axis: [B, N, symbol_dim] → [B, N, concept_dim].
+        """
+        if self.passThrough:
+            return vspace
+        vspace = self.reverseBegin(vspace)
+        act = vspace.materialize()                        # [B, N, symbol_dim]
+        if wordSpace is not None:
+            act = wordSpace.reverseSymbols(act, self.subspace)
+        if self.sortNetwork is not None:
+            act = self.sortNetwork.reverse(act)
+        act = self.layer.reverse(act)                     # [B, N, concept_dim]
+        if self.codebook:
+            self.subspace.set_event(act)
+            result = self.reverseEnd(self.subspace)
+        else:
+            self.subspace.set_event(act)
+            result = self.subspace
+        result.normalize("concepts", target="what", normalize=True)
+        return result
+
+    def evaluate_truth(self, vspace, wordSpace=None):
+        """START-level: evaluate truth of the full stack → scalar.
+
+        Reads ``trueForward`` from the S-tier SyntacticLayer owned by
+        WordSpace. Returns a passthrough when no WordSpace is wired
+        (e.g. unit tests constructing a SymbolicSpace in isolation).
+        """
+        act = vspace.materialize(mode="activation")
+        if wordSpace is None:
+            return act
+        layer = getattr(wordSpace, 'symbolicSyntacticLayer', None)
+        if layer is None:
+            return act
+        return layer.trueForward(act, self.subspace)
+
+    @staticmethod
+    def test():
+        pass
+class OutputSpace(Space):
+    """Maps symbolic vectors to task targets (classification logits, regression values).
+
+    In the forward data flow: SymbolicSpace -> **OutputSpace** -> loss.
+    Uses a LinearLayer to project the (flattened) symbolic representation down
+    to the target dimensionality.  Always uses reshape=True since the number of
+    input objects (symbols) typically differs from the number of outputs.
+
+    ``text_mode``: when enabled via ``set_text_mode()``, supports reconstructing
+    text from symbolic vectors by snapping to the nearest codebook entry and
+    recovering byte-offset positions.
+    """
+    name = "Outputs"
+    config_section = "OutputSpace"
+    text_mode = False
+
+    def _register_requirements(self):
+        """OutputSpace always reshapes; nVectors and nActive are independently specified."""
+        pass
+
+    def _build_object_basis(self):
+        # OutputSpace always uses its own Tensor basis for forward results.
+        # The Embedding reference (if any) is stored separately for text_mode reverse.
+        initial_vectors = getattr(self, "_initial_vectors", None)
+        if isinstance(initial_vectors, Basis):
+            self._vocabulary = initial_vectors  # keep for text_mode reverse
+        basis = Tensor()
+        basis.create(
+            self.inputShape[0],
+            self.outputShape[0],
+            self.muxedSize,  # full event width
+            passThrough=True,
+        )
+        return basis
+
+    def __init__(self, inputShape, spaceShape, outputShape, masked_prediction=False, vectors=None):
+        section = self.config_section
+        invertible = TheXMLConfig.space(section, "invertible")
+        self.masked_prediction = masked_prediction
+        object.__setattr__(self, "_initial_vectors", vectors)
+        self.nonlinear_output = TheXMLConfig.space(section, "nonlinear")
+        super().__init__(inputShape, spaceShape, outputShape)
+        self.data = TheData
+        self._vocabulary = getattr(self, '_vocabulary', None)
+        self.text_mode = isinstance(self._vocabulary, Embedding)
+
+        if self.nonlinear_output:
+            # PiLayer activation-mode path for ramsified symbol output
+            nIn = inputShape[0]
+            nOut = outputShape[0]
+            self._piLayer = PiLayer(nIn, nOut, invertible=True, monotonic=True)
+            self.layers = nn.ModuleList([self._piLayer])
+        else:
+            input = self.subspace.getEncodedInputSize()
+            output = self.subspace.getEncodedOutputSize()
+            if self.reversible:
+                if invertible:
+                    self.linear1 = InvertibleLinearLayer(input, output)
+                    self.forwardLinear, self.reverseLinear = self.linear1.forward, self.linear1.reverse
+                    self.layers = nn.ModuleList([self.forwardLinear])
+                else:
+                    self.linear1 = LinearLayer(input, output)
+                    self.linear2 = LinearLayer(output, input)
+                    self.forwardLinear, self.reverseLinear = self.linear1.forward, self.linear2.forward
+                    self.layers = nn.ModuleList([self.linear1, self.linear2])
+            else:
+                self.forwardLinear = LinearLayer(input, output)
+                self.layers = nn.ModuleList([self.forwardLinear])
+        self.params = list(self.parameters())
+    def getTestOutput(self):
+        if not self.data.test_output:
+            return None
+        out = self.data.test_output
+        if isinstance(out, list):
+            out = torch.stack(out)
+        return out.squeeze(-1) if out.ndim == 3 else out
+    def prepOutput(self, outputBatch):
+        if isinstance(outputBatch, list):
+            return torch.stack(outputBatch, dim=0).unsqueeze(1).to(TheDevice.get())
+        return outputBatch  # already [B, D, 1] and on device after toDevice()
+    def forward(self, vspace):
+        """Acting: project symbols to task output."""
+        if self.nonlinear_output:
+            # Activation-mode: PiLayer on symbol activations [B, nSymbols] → [B, nOutput]
+            act = vspace.materialize(mode="activation")
+            output = self._piLayer.forward(act)
+            output = TheData.denormalize(output, which="output")
+            self.subspace.set_activation(output)
+            return self.subspace
+
+        # Default vector-mode: LinearLayer on flattened vectors
+        x = self.forwardBegin(vspace, returnVectors=True)
+        output = self.forwardLinear(x)
+        output = TheData.denormalize(output, which="output")
+        if self.codebook:
+            output = self.subspace.get_vectors().forward(output)
+        vspace = self.forwardEnd(output, returnVectors=True)
+        return vspace
+
+    def reverse(self, vspace):
+        """Being acted upon: map output back to symbolic space."""
+        if self.nonlinear_output:
+            # Activation-mode: PiLayer reverse [B, nOutput] → [B, nSymbols]
+            act = vspace.materialize(mode="activation")
+            act_norm = TheData.normalize(act, which="output")
+            symbol_act = self._piLayer.reverse(act_norm)
+            self.subspace.set_activation(symbol_act)
+            return self.subspace
+
+        # Default vector-mode
+        y = self.reverseBegin(vspace, returnVectors=True)
+        self.subspace.set_event(y)
+        self.subspace.denormalize("output", target="what")
+        y = self.subspace.materialize()
+        y = self.reverseLinear(y)
+        vspace = self.reverseEnd(y, returnVectors=True)
+        return vspace
+
+    def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM'):
+        """Extract target embedding vectors from the embedded sentence.
+
+        Each target is the original embedded word vector at the masked position,
+        paralleling InputSpace.expand_masked() which creates masked copies.
+
+        Modes:
+            MLM/ARLM: Target[i] = embedded word i.
+            ARUS: Zero vectors (loss suppressed in runEpoch).
+            RARLM: Targets in reverse order (matching reverse mask positions).
+
+        Args:
+            embedded: [1, nVectors, embeddingSize] from InputSpace.forward()
+            sentence_text: original sentence string (for word count)
+            maskedPrediction: prediction mode ('MLM', 'ARLM', 'ARUS', or 'RARLM')
+
+        Returns:
+            targets: [N, 1, embeddingSize] tensor of target word embeddings
+        """
+        words = sentence_text.split()
+        N = min(len(words), embedded.shape[1])
+        embSize = embedded.shape[-1]
+        if N == 0:
+            return torch.zeros(0, 1, embSize, device=TheDevice.get())
+        # Extract the first N full word vectors (nWhat + nWhere + nWhen)
+        targets = embedded[0, :N, :].clone()  # [N, embSize]
+        if maskedPrediction == 'ARUS':
+            targets = torch.zeros_like(targets)
+        elif maskedPrediction == 'RARLM':
+            targets = targets.flip(0)
+        return targets.unsqueeze(1)  # [N, 1, embSize]
+    # --- Text reconstruction from symbolic vectors ---
+    def set_text_mode(self, input_space):
+        """Share InputSpace's Embedding so OutputSpace can reconstruct text.
+
+        Convenience method for tests. Production code passes vectors= to __init__.
+        """
+        vs = input_space.subspace.vocabulary
+        self._vocabulary = vs
+        self.text_mode = isinstance(vs, Embedding)
+
+    def _reverse_text_vectors(self, vectors):
+        emb = self._vocabulary
+        nWhat = emb.content_dim
+        object_encoding = self.subspace.objectEncoding
+        if object_encoding is not None:
+            content, aux = object_encoding.split_aux(vectors, nWhat)
+        else:
+            if vectors.shape[-1] <= nWhat:
+                content, aux = vectors.clone(), None
+            else:
+                content, aux = vectors[:, :, :nWhat].clone(), vectors[:, :, nWhat:].clone()
+        content = emb.reverse(content)
+        if object_encoding is not None:
+            restored = object_encoding.restore_aux(content, aux)
+        elif aux is not None:
+            restored = torch.cat([content, aux], dim=-1)
+        else:
+            restored = content
+        return restored, emb.decode_reverse_meta(restored, subspace=self.subspace)
+
+    def reconstruct_tokens(self, vectors):
+        """Return positioned tokens decoded from symbolic vectors.
+
+        Delegates to the Basis / Embedding reverse() path.
+        """
+        if not self.text_mode:
+            raise RuntimeError("reconstruct_tokens() requires text_mode.")
+        _, meta = self._reverse_text_vectors(vectors)
+        return meta['tokens']
+
+    def reconstruct_data(self, vectors):
+        """Reconstruct words and positions from symbolic vectors.
+
+        Delegates to the Basis / Embedding reverse() which handles
+        Encoding stripping, codebook snapping, and reassembly.
+
+        Args:
+            vectors: Tensor of shape [batch, nVec, embeddingSize] containing
+                     symbolic vectors with nWhat content and nWhere positioning.
+
+        Returns:
+            (recovered_words, recovered_offsets) where:
+              - recovered_words is a list of lists of strings, one per batch element
+              - recovered_offsets is a list of lists of floats (byte offsets),
+                one per batch element.  None entries mean nWhere was absent (zero).
+        """
+        if not self.text_mode:
+            raise RuntimeError("reconstruct_data() called but text_mode is not enabled. "
+                               "Call set_text_mode(input_space) first.")
+        recovered_tokens = self.reconstruct_tokens(vectors)
+        return (
+            [[word for word, _ in batch] for batch in recovered_tokens],
+            [[offset for _, offset in batch] for batch in recovered_tokens],
+        )
+
+    def reconstruct_buffer(self, vectors, buf_size=256):
+        """Reconstruct a destination buffer string from symbolic vectors.
+
+        Uses nWhere byte offsets (when present) to place words at specific
+        positions; falls back to consecutive placement when nWhere is absent.
+
+        Args:
+            vectors: Tensor of shape [batch, nVec, embeddingSize].
+            buf_size: Size of the destination buffer in bytes.
+
+        Returns:
+            List of strings, one per batch element.
+        """
+        _, meta = self._reverse_text_vectors(vectors)
+        return self._vocabulary.reconstruct_to_buffer(
+            meta, buf_size=buf_size)
+
+    def clearBatchResults(self):
+        """Clear accumulated batch results. Called at start of each runEpoch."""
+        self._batch_results = []
+
+    def putBatch(self, result):
+        """Collect output from a completed batch (symmetric with getBatch).
+
+        Results are cleared at the start of each runEpoch() via clearBatchResults().
+
+        Args:
+            result: BatchResult namedtuple from runBatch().
+        """
+        if not hasattr(self, '_batch_results'):
+            self._batch_results = []
+        self._batch_results.append(result)
+
+
 class Grammar:
     """Hierarchical 3-tier grammar (S, C, P) rule catalog.
 
@@ -3083,7 +5117,6 @@ class Grammar:
     def _ensure_configured(self):
         if self._configured:
             return
-        from util import TheXMLConfig
         cfg = None
         for path in ("mentalModel.grammar", "architecture.language.grammar", "architecture.grammar"):
             try:
@@ -3171,6 +5204,7 @@ class Grammar:
     # ── C-tier operations live on SyntacticLayer / ConceptualSyntacticLayer
     # as *Forward / *Reverse method pairs.  See _RULE_METHODS dispatch.
 TheGrammar = Grammar()
+
 class SyntacticLayer(Layer):
     """Per-space rule prediction layer for the recursive grammar.
 
@@ -4376,48 +6410,141 @@ class SymbolicSyntacticLayer(SyntacticLayer):
             elif rule.method_name is not None:
                 pass  # Not cleanly invertible
         return data
-class WordSpace(nn.Module):
-    """Service space that owns the word-stream buffer and the existing
-    SyntacticLayers.
+class WordSpace(Space):
+    """Service space that owns the word-stream buffer, the SyntacticLayers,
+    the truth store, and the inter-sentence discourse substrate.
 
     Runtime-parallel to PerceptualSpace / ConceptualSpace / SymbolicSpace
-    but functionally a buffer + composition dispatcher. Home spaces lose
-    their `self.syntacticLayer` field and instead route compose/decompose
-    calls through `self.wordSpace.forward(kind, ...)` / `.reverse(kind,
-    ...)`. The layers push their word records into `self.subspace`
-    (a `WordSubSpace`) via a back-reference set at attach time, so
-    ConceptualSpace can read a muxed view of machine state that includes
-    percepts, symbols, and words.
+    but functionally a buffer + composition dispatcher. WordSpace owns
+    the SyntacticLayers directly; home spaces receive ``wordSpace`` as
+    a per-call parameter on ``forward(vspace, wordSpace=...)`` /
+    ``reverse(vspace, wordSpace=...)`` and reach the layers via the
+    explicit per-tier methods ``forwardPercepts`` / ``forwardConcepts``
+    / ``forwardSymbols`` (and the matching ``reverse*`` variants). The
+    layers push their word records into ``self.subspace`` (a
+    ``WordSubSpace``) via a back-reference set at construction time, so
+    ConceptualSpace can read a muxed view of machine state that
+    includes percepts, symbols, and words.
 
-    Usage pattern in BasicModel construction:
-        word_sub = WordSubSpace(nDim, nWhat, nWhere, nWhen, max_depth)
-        wordSpace = WordSpace(word_sub)
-        wordSpace.attach_codebook_host(symbolicSpace)
-        # after home spaces create their syntactic layers:
-        wordSpace.attach_layer('perceptual', perceptualSpace.syntacticLayer)
-        wordSpace.attach_layer('conceptual', conceptualSpace.syntacticLayer)
-        wordSpace.attach_layer('symbolic',   symbolicSpace.syntacticLayer)
+    One unified constructor builds everything: WordSubSpace, all three
+    SyntacticLayers, TruthLayer, and (conditionally) DiscourseSpace.
+    XML config drives the truth-store capacity and discourse-prediction
+    gating.
 
-    Per-sentence lifecycle: BasicModel calls `clear_sentence()` at
+    Per-sentence lifecycle: BasicModel calls ``clear_sentence()`` at
     sentence boundaries to rewind the buffer.
 
-    The class deliberately does NOT subclass `Space` — it has no
-    PiLayer, no codebook of its own, and no forward/reverse over a
-    fixed inputShape/outputShape. Its forward is a dispatch helper,
-    not a tensor map.
+    Subclasses ``Space`` for the universal training contract
+    (``getParameters`` / ``paramUpdate`` / ``set_sigma``), but
+    bypasses ``Space.__init__`` because there is no factory-style
+    input/output/codebook shape tuple — the subspace is a
+    ``WordSubSpace`` built from the symbolic peer's column layout
+    and all children are registered directly into ``self.layers`` /
+    ``self.params`` so the inherited training-contract walks still
+    work.
     """
 
-    def __init__(self, word_subspace):
-        super().__init__()
-        self.subspace = word_subspace  # WordSubSpace instance
+    name = "Words"
+    config_section = None  # no XML section; skip _register_requirements
 
-        # Layers are attached post-construction via `attach_layer()`
-        # rather than built here, because each layer's constructor
-        # depends on the home space's config (rules, grammar, dims)
-        # that only the home space knows.
+    def __init__(self, perceptualSpace, conceptualSpace, symbolicSpace,
+                 nPercepts, nConcepts, nSymbols,
+                 concept_dim, symbol_dim):
+        # Bypass Space.__init__ — WordSpace doesn't fit the factory
+        # style. Call nn.Module directly and populate the Space-contract
+        # fields by hand.
+        nn.Module.__init__(self)
+
+        # 1. Grammar must be configured before any SyntacticLayer
+        # construction can resolve rule sets / transition rules.
+        TheGrammar._configured = False
+        TheGrammar._ensure_configured()
+        grammar = TheGrammar
+
+        # 2. Size WordSubSpace from SymbolicSpace's subspace column
+        # layout so downstream consumers of wordSpace.read() concat
+        # cleanly with peer tensors.
+        sub = symbolicSpace.subspace
+        nWhere = int(getattr(sub, 'nWhere', 0) or 0)
+        nWhen  = int(getattr(sub, 'nWhen',  0) or 0)
+        nWhat  = int(getattr(sub, 'nWhat',  0) or 0)
+        muxed  = int(getattr(sub, 'muxedSize', nWhat + nWhere + nWhen)
+                     or (nWhat + nWhere + nWhen))
+        self.subspace = WordSubSpace(
+            nDim=muxed, nWhat=nWhat, nWhere=nWhere, nWhen=nWhen,
+            max_depth=256, max_arity=3, batch=1,
+        )
+
+        # 3. Space-contract fields.
+        self.layers = nn.ModuleList()
+        self.params = []
+        self.wordSpace = None                        # no parent wordSpace
+        self.nDim = muxed
+        self.nWhat = nWhat
+        self.nWhere = nWhere
+        self.nWhen = nWhen
+        self.muxedSize = muxed
+        self.inputShape  = [0, muxed]
+        self.outputShape = [0, muxed]
+        self.spaceShape  = [0, muxed]
+
+        # 4. Layer slots (filled below).
         self.perceptualSyntacticLayer = None
         self.conceptualSyntacticLayer = None
         self.symbolicSyntacticLayer = None
+
+        # 5. Build the three SyntacticLayers, each of which back-wires
+        # the home space's ``wordSpace`` routing pointer.
+        if perceptualSpace is not None:
+            self._build_perceptual_layer(perceptualSpace, nPercepts, grammar)
+        if conceptualSpace is not None:
+            self._build_conceptual_layer(
+                conceptualSpace, nConcepts, grammar, concept_dim)
+        if symbolicSpace is not None:
+            self._build_symbolic_layer(
+                symbolicSpace, nSymbols, grammar, symbol_dim)
+
+        # 6. TruthLayer — shared truth store for symbolic activations.
+        # Lives on WordSpace so SymbolicSpace doesn't have to carry it
+        # alongside its already heavy pi/sort/codebook machinery.
+        try:
+            max_truths = int(TheXMLConfig.space(
+                "SymbolicSpace", "truthMaxEntries"))
+        except (KeyError, TypeError, ValueError):
+            max_truths = 1024
+        self.truth_layer = TruthLayer(symbol_dim, max_truths=max_truths)
+        if self.truth_layer not in self.layers:
+            self.layers.append(self.truth_layer)
+        for p in self.truth_layer.parameters():
+            if all(p is not q for q in self.params):
+                self.params.append(p)
+
+        # 7. DiscourseSpace — optional inter-sentence substrate.
+        # Gated on the <discoursePrediction> training flag; tasks
+        # without inter-sentence structure (XOR, MNIST) leave it off.
+        self.discourse = None
+        if bool(TheXMLConfig.training("discoursePrediction", False)):
+            try:
+                n_sym_rows = int(symbolicSpace.outputShape[0])
+            except (AttributeError, IndexError, TypeError):
+                n_sym_rows = int(getattr(symbolicSpace, 'nVectors', 0) or 0)
+            if n_sym_rows > 0 and muxed > 0:
+                history_len = int(TheXMLConfig.training(
+                    "discourseHistory", 8) or 8)
+                context_window = int(TheXMLConfig.training(
+                    "discourseContextWindow", 3) or 3)
+                self.discourse = DiscourseSpace(
+                    n_symbols=n_sym_rows,
+                    max_depth=int(getattr(
+                        self.subspace, 'max_depth', 256) or 256),
+                    n_dim=muxed,
+                    history_len=history_len,
+                    context_window=context_window,
+                )
+                self.layers.append(self.discourse)
+                for p in self.discourse.parameters():
+                    if all(p is not q for q in self.params):
+                        self.params.append(p)
 
     # ── wiring ───────────────────────────────────────────────────────
     def attach_codebook_host(self, host):
@@ -4431,12 +6558,14 @@ class WordSpace(nn.Module):
         self.subspace.attach_codebook_host(host)
 
     def attach_layer(self, kind, layer):
-        """Transfer ownership of a SyntacticLayer from a home space.
+        """Register a pre-built SyntacticLayer as this WordSpace's
+        ``<kind>SyntacticLayer``.
 
-        Sets `layer.word_subspace` as a back-reference so the layer's
-        `compose()` can push records onto the shared buffer. The home
-        space should still call this even if it keeps a reference of
-        its own for compatibility during migration.
+        Sets ``layer.word_subspace`` as a back-reference so compose()
+        can push onto the shared buffer, appends the layer to
+        ``self.layers`` for ``Space.paramUpdate`` delegation, and
+        merges its parameters into ``self.params`` for the curated
+        ``Space.getParameters`` walk.
         """
         if layer is None:
             return
@@ -4447,27 +6576,110 @@ class WordSpace(nn.Module):
                 f"expected one of 'perceptual', 'conceptual', 'symbolic'")
         setattr(self, attr, layer)
         layer.word_subspace = self.subspace
+        if layer not in self.layers:
+            self.layers.append(layer)
+        for p in layer.parameters():
+            if all(p is not q for q in self.params):
+                self.params.append(p)
 
-    # ── composition dispatch ─────────────────────────────────────────
-    def forward(self, kind, *args, **kwargs):
-        """Dispatch to `<kind>SyntacticLayer.compose(...)`.
+    # ── private factory helpers: build + wire SyntacticLayers ────────
+    def _build_perceptual_layer(self, space, n_slots, grammar):
+        layer = PerceptualSyntacticLayer(
+            nInput=n_slots, nOutput=n_slots,
+            rules=grammar.perceptual(),
+            transition_rule=None,
+            max_depth=max(n_slots - 1, 1),
+            hidden_dim=min(256, max(64, n_slots * 4)),
+            grammar=grammar,
+        )
+        self.attach_layer('perceptual', layer)
+        space.attach_wordSpace(self)
+        return layer
 
-        Side effect: word-emitting layers push rule-application blocks
-        onto `self.subspace`, so `read()` will return the updated stack.
-        Returns whatever the underlying `compose()` returns (typically
-        a composed activation tensor).
+    def _build_conceptual_layer(self, space, n_slots, grammar, concept_dim):
+        layer = ConceptualSyntacticLayer(
+            nInput=n_slots, nOutput=n_slots,
+            rules=grammar.conceptual(),
+            transition_rule=grammar.conceptual_transition(),
+            max_depth=max(n_slots - 1, 1),
+            hidden_dim=min(256, max(64, n_slots * 4)),
+            grammar=grammar,
+        )
+        layer.init_conceptual_params(concept_dim)
+        self.attach_layer('conceptual', layer)
+        space.attach_wordSpace(self)
+        return layer
+
+    def _build_symbolic_layer(self, space, n_slots, grammar, symbol_dim):
+        layer = SymbolicSyntacticLayer(
+            nInput=n_slots, nOutput=n_slots,
+            rules=grammar.symbolic(),
+            transition_rule=grammar.symbolic_transition(),
+            max_depth=max(n_slots - 1, 1),
+            hidden_dim=min(256, max(64, n_slots * 4)),
+            grammar=grammar,
+        )
+        layer.init_swap(symbol_dim, n_slots)
+        space.init_rule_codebook(grammar)
+        self.attach_codebook_host(space)
+        self.attach_layer('symbolic', layer)
+        space.attach_wordSpace(self)
+        return layer
+
+    # ── per-tier composition methods ─────────────────────────────────
+    def forwardPercepts(self, data, subspace):
+        """P-tier compose. Side effect: word-emitting pushes onto the
+        buffer. Returns the composed activation.
         """
-        layer = getattr(self, f'{kind}SyntacticLayer', None)
+        layer = getattr(self, 'perceptualSyntacticLayer', None)
         if layer is None:
-            return None
-        return layer.compose(*args, **kwargs)
+            return data
+        return layer.compose(data, subspace, TheGrammar)
 
-    def reverse(self, kind, *args, **kwargs):
-        """Dispatch to `<kind>SyntacticLayer.decompose(...)`."""
-        layer = getattr(self, f'{kind}SyntacticLayer', None)
+    def forwardConcepts(self, data, subspace):
+        """C-tier compose. ``ConceptualSyntacticLayer.compose`` may
+        return ``(data, svo)`` when a ternary lift fires; we preserve
+        that tuple contract so callers (ConceptualSpace.forward) can
+        stash the SVO on themselves for the ``last_svo`` property.
+        """
+        layer = getattr(self, 'conceptualSyntacticLayer', None)
         if layer is None:
-            return None
-        return layer.decompose(*args, **kwargs)
+            return data, None
+        result = layer.compose(data, subspace, TheGrammar)
+        if isinstance(result, tuple):
+            return result
+        return result, None
+
+    def forwardSymbols(self, data, subspace):
+        """S-tier compose. Includes the Rule #2 demux side effect: the
+        muxed [B, N, D] symbol tensor gets split into what/where/when
+        modality slots before compose runs, so slot selectors see
+        axis-separated state.
+        """
+        layer = getattr(self, 'symbolicSyntacticLayer', None)
+        if layer is None:
+            return data
+        if data.ndim == 3 and data.shape[-1] == subspace.muxedSize:
+            subspace.demux(data)
+        return layer.compose(data, subspace, TheGrammar)
+
+    def reversePercepts(self, data, subspace):
+        layer = getattr(self, 'perceptualSyntacticLayer', None)
+        if layer is None:
+            return data
+        return layer.decompose(data, subspace, TheGrammar)
+
+    def reverseConcepts(self, data, subspace):
+        layer = getattr(self, 'conceptualSyntacticLayer', None)
+        if layer is None:
+            return data
+        return layer.decompose(data, subspace, TheGrammar)
+
+    def reverseSymbols(self, data, subspace):
+        layer = getattr(self, 'symbolicSyntacticLayer', None)
+        if layer is None:
+            return data
+        return layer.decompose(data, subspace, TheGrammar)
 
     # ── buffer access + lifecycle ────────────────────────────────────
     def read(self):
@@ -4488,2081 +6700,3 @@ class WordSpace(nn.Module):
         """Resize the underlying buffer to match a new batch size."""
         self.subspace.ensure_batch(batch)
 
-
-class Space(nn.Module):
-    """Base class for all spaces in the processing pipeline.
-
-    The model is organized as a chain of spaces, each transforming object
-    vectors from one representation to the next:
-
-        InputSpace -> PerceptualSpace -> ConceptualSpace -> SymbolicSpace -> OutputSpace
-
-    When ``reversible=True``, the chain also runs in reverse (OutputSpace
-    back to InputSpace), enabling reconstruction of the input from the latent
-    representation.
-
-    Key parameters:
-      - ``inputShape``/``outputShape``: each is [nObjects, nDim] describing the
-        count and content-dimensionality of vectors entering/leaving this space.
-        nDim is read from ``TheXMLConfig`` (per-space config section).
-      - ``nVectors``: codebook size, also from config.  May differ from
-        nActive (the active count); the factory validates ``nVectors >= nActive``.
-      - ``nInputDim``/``nOutputDim``: configurable boundary reshape.  0 (default)
-        resolves to the constructor's dim; -1 flattens (nInput * dim); a positive
-        value reshapes via ``x.reshape(B, -1, nInputDim)``.
-      - ``processSymbols``: when True, reduces full embedding vectors to scalar
-        activations (norms) for the symbolic representation.
-      - ``codebook``: when True, input vectors are quantized against the
-        current ``Codebook`` basis after the main layer transformation.
-
-
-    ``set_sigma(sigma)`` propagates exploration meta-parameters (1=explore, 0=suppress)
-    from BasicModel down to all layers and Basis slots in this space.
-    """
-    name         = ""
-    activation   = None
-    config_section = None  # set by subclasses
-
-    def __init__(self, inputShape, spaceShape, outputShape, customVQ=True):
-        super(Space, self).__init__()
-        section = self.config_section
-        self.inputShape   = inputShape   # [nInput,   nInputDim]
-        self.spaceShape   = spaceShape   # [nVectors, nDim]  — codebook / internal basis
-        self.outputShape  = outputShape  # [nOutput,  nOutputDim]
-        self.nVectors     = spaceShape[0]  # codebook size
-        self.nDim         = spaceShape[1]  # content dimensionality of the codebook vectors
-        # Resolve nInputDim/nOutputDim:
-        #   0  → inherit from constructor dim (inputShape[1] / outputShape[1])
-        #  -1  → flatten: nInput * dim (reshape [N, D] → [1, N*D])
-        #  >0  → explicit value
-        try:
-            raw = TheXMLConfig.space(section, "nInputDim")
-        except KeyError:
-            raw = 0
-        if raw == -1:
-            self.nInputDim = inputShape[0] * inputShape[1]
-        else:
-            self.nInputDim = inputShape[1] if raw == 0 else raw
-        try:
-            raw = TheXMLConfig.space(section, "nOutputDim")
-        except KeyError:
-            raw = 0
-        if raw == -1:
-            self.nOutputDim = outputShape[1]
-        else:
-            self.nOutputDim = outputShape[1] if raw == 0 else raw
-
-        self.reversible   = str(TheXMLConfig.get("architecture.reconstruct")).upper() != "NONE"
-        self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
-        self.codebook     = TheXMLConfig.space(section, "codebook")
-        _nWhere = TheXMLConfig.space(section, "nWhere")
-        _nWhen = TheXMLConfig.space(section, "nWhen")
-        self.nWhere = _nWhere
-        self.nWhen = _nWhen
-        self.nWhat = self.nDim
-        self.muxedSize = self.nWhat + self.nWhere + self.nWhen
-        self.customVQ  = customVQ
-        # inputShape/outputShape already include muxed width in dim (set by factory).
-        objectEncoding = EventEncoding(inputShape, outputShape)
-        whatEncoding   = WhatEncoding(inputShape, outputShape)
-        whereEncoding  = WhereEncoding(TheXMLConfig.get("architecture.nObjects"), _nWhere, _nWhen)
-        whenEncoding   = WhenEncoding(10000, _nWhen)
-        self.subspace  = SubSpace(
-            nInputDim=self.nInputDim,
-            nOutputDim=self.nOutputDim,
-            inputShape=inputShape,
-            outputShape=outputShape,
-            objectEncoding=objectEncoding,
-            whatEncoding=whatEncoding,
-            whereEncoding=whereEncoding,
-            whenEncoding=whenEncoding,
-            object=self._build_object_basis(),
-            what=self._build_what_basis(),
-            where=self._build_where_basis(),
-            when=self._build_when_basis(),
-            activation=self._build_activation_basis(),
-        )
-        self.muxedSize = self.subspace.getEncodingSize(self.nDim)
-
-        self.syntacticLayer = None  # populated by init_syntactic_layer() if grammar is used
-        # wordSpace is wired by BasicModel after all spaces are constructed.
-        # When set, compose/decompose call sites route through
-        # `self.wordSpace.forward(kind, ...)` / `.reverse(kind, ...)` instead
-        # of calling `self.syntacticLayer` directly. See plan:
-        # "Architectural addition — WordSpace / Ownership transfer".
-        self.wordSpace = None
-        self.params = []   # parameters for the optimizer (excludes temperature params)
-        self.layers = nn.ModuleList()   # layer instances for paramUpdate() delegation
-        self._register_requirements()
-
-    # ── WordSpace routing helpers ────────────────────────────────────
-    def _syntactic_kind(self):
-        """Return the kind string for WordSpace dispatch ('perceptual',
-        'conceptual', 'symbolic'), or None if this space has no
-        SyntacticLayer tier. Subclasses override with a literal string.
-        """
-        return None
-
-    def _syntactic_compose(self, data, *args, **kwargs):
-        """Route `compose(...)` through WordSpace if wired, else direct.
-
-        Falls back to `self.syntacticLayer.compose(...)` when
-        `self.wordSpace` is None — useful during migration and tests
-        that construct a single space without the full model. Returns
-        whatever the underlying `compose()` returns so callers that
-        unpack tuples (e.g. ConceptualSpace → (data, svo)) keep
-        working without change.
-        """
-        kind = self._syntactic_kind()
-        if self.wordSpace is not None and kind is not None:
-            return self.wordSpace.forward(kind, data, *args, **kwargs)
-        if self.syntacticLayer is not None:
-            return self.syntacticLayer.compose(data, *args, **kwargs)
-        return data
-
-    def _syntactic_decompose(self, data, *args, **kwargs):
-        """Route `decompose(...)` through WordSpace if wired, else direct."""
-        kind = self._syntactic_kind()
-        if self.wordSpace is not None and kind is not None:
-            return self.wordSpace.reverse(kind, data, *args, **kwargs)
-        if self.syntacticLayer is not None:
-            return self.syntacticLayer.decompose(data, *args, **kwargs)
-        return data
-
-    def attach_wordSpace(self, wordSpace, kind=None):
-        """Wire the shared WordSpace.
-
-        `kind` is a safety hint — if provided, the matching layer on
-        wordSpace is also set to point at `self.syntacticLayer` via
-        `wordSpace.attach_layer(kind, self.syntacticLayer)`. Callers
-        that already called `attach_layer` directly can omit it.
-
-        The wordSpace reference is stored via ``object.__setattr__`` so
-        the WordSpace nn.Module is NOT registered as a child of this
-        Space — that would create a ``space → wordSpace → space`` cycle
-        (the wordSpace already owns the SyntacticLayer that this space
-        also references, and its codebook host is the SymbolicSpace) and
-        make ``model.to(device)`` recurse forever. The wordSpace is
-        owned at the model level instead, with each Space holding only
-        a non-Module routing pointer.
-        """
-        object.__setattr__(self, 'wordSpace', wordSpace)
-        if kind is not None and wordSpace is not None and self.syntacticLayer is not None:
-            wordSpace.attach_layer(kind, self.syntacticLayer)
-
-    def _build_object_basis(self):
-        basis = Codebook()
-        basis.create(
-            self.inputShape[0],
-            self.nVectors,
-            self.muxedSize,  # Codebook processes full event vectors
-            customVQ=self.customVQ,
-            passThrough=not self.codebook,
-        )
-        basis.ergodic = getattr(self, "ergodic", False)
-        return basis
-
-    def _build_what_basis(self):
-        return None
-
-    def _build_where_basis(self):
-        return None
-
-    def _build_when_basis(self):
-        return None
-
-    def _build_activation_basis(self):
-        return None
-
-    def _register_requirements(self):
-        """Register base-class config requirements."""
-        section_name = self.config_section
-        nV = self.nVectors
-        nA = self.outputShape[0]
-        TheXMLConfig.require(
-            lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv >= _na,
-            f"{section_name}: nVectors ({nV}) must be >= nActive ({nA})"
-        )
-        if not self.codebook:
-            TheXMLConfig.require(
-                lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv == _na,
-                f"{section_name}: non-codebook space requires nVectors ({nV}) == nActive ({nA})"
-            )
-
-    def get_vectors(self):
-        """Convenience accessor — delegates to subspace."""
-        return self.subspace.get_vectors()
-
-    @property
-    def vocabulary(self):
-        """Return the content Basis (Embedding/Codebook) for codebook operations."""
-        return self.subspace.vocabulary
-
-    def forwardBegin(self, vspace, returnVectors=False):
-        """Prepare input for space-specific processing.
-
-        Args:
-            vspace: input SubSpace.
-            returnVectors: if True, materialize to a dense tensor and
-                reshape to [B, -1, nInputDim]. If False, pass the SubSpace
-                through without materializing (for spaces that operate on
-                activation vectors rather than event tensors).
-        """
-        if not returnVectors:
-            self.subspace.batch = vspace.batch
-            return vspace
-        x = vspace.materialize()
-        self.subspace.batch = x.shape[0]
-        if self.nInputDim != -1:
-            self._pre_reshape_input = (x.shape[1], x.shape[2])
-            x = x.reshape(x.shape[0], -1, self.nInputDim)
-        else:
-            self._pre_reshape_input = None
-        return x
-
-    def forwardEnd(self, x, returnVectors=False, compute_activation=False):
-        """Finalize output after space-specific processing.
-
-        Args:
-            x: dense tensor (returnVectors=True) or SubSpace (returnVectors=False).
-            returnVectors: if True, reshape to [B, -1, nOutputDim] and store
-                tensor into subspace.  If False, SubSpace passes through with
-                reshape applied if nOutputDim != -1.
-            compute_activation: if True (default), derive activation from vectors.
-                Set to False for spaces (e.g. PerceptualSpace) where activation
-                is not meaningful.
-        """
-        if not returnVectors:
-            # Ensure [B, N, D] invariant even for SubSpace pass-through
-            if self.nOutputDim != -1:
-                vectors = x.materialize()
-                if vectors is not None and vectors.ndim == 3 and vectors.shape[-1] != self.nOutputDim:
-                    self._pre_reshape_output = (vectors.shape[1], vectors.shape[2])
-                    vectors = vectors.reshape(vectors.shape[0], -1, self.nOutputDim)
-                    x.set_event(vectors, compute_activation=compute_activation)
-                else:
-                    self._pre_reshape_output = None
-            else:
-                self._pre_reshape_output = None
-            return x
-        if self.nOutputDim != -1:
-            self._pre_reshape_output = (x.shape[1], x.shape[2])
-            x = x.reshape(x.shape[0], -1, self.nOutputDim)
-        else:
-            self._pre_reshape_output = None
-        self.subspace.set_event(x, compute_activation=compute_activation)
-        return self.subspace
-
-    def reverseBegin(self, vspace, returnVectors=False):
-        """Prepare input for space-specific reverse processing.
-
-        Undoes the forwardEnd output reshape so the layer sees the same
-        shape it produced during forward.
-
-        Args:
-            vspace: input SubSpace.
-            returnVectors: if True, materialize to a dense tensor and
-                undo the output reshape. If False, pass the SubSpace
-                through without materializing.
-        """
-        if not returnVectors:
-            self.subspace.batch = vspace.batch
-            return vspace
-        y = vspace.materialize()
-        self.subspace.batch = y.shape[0]
-        pre = getattr(self, '_pre_reshape_output', None)
-        if pre is not None:
-            y = y.reshape(y.shape[0], pre[0], pre[1])
-        elif self.nOutputDim != -1:
-            # Fallback when reverse is called without a prior forward:
-            # reshape from [B, ?, nOutputDim] to [B, -1, layer_out_dim]
-            layer_out = self.subspace.getEncodedOutputSize()
-            if y.shape[-1] != layer_out:
-                y = y.reshape(y.shape[0], -1, layer_out)
-        return y
-
-    def reverseEnd(self, y, returnVectors=False):
-        """Finalize output after space-specific reverse processing.
-
-        Undoes the forwardBegin input reshape so downstream sees the
-        original input shape.
-
-        Args:
-            y: dense tensor (returnVectors=True) or SubSpace (returnVectors=False).
-            returnVectors: if True, undo input reshape and store tensor
-                into subspace.  If False, pass SubSpace through unchanged.
-        """
-        if not returnVectors:
-            return y
-        pre = getattr(self, '_pre_reshape_input', None)
-        if pre is not None:
-            y = y.reshape(y.shape[0], pre[0], pre[1])
-        elif self.nInputDim != -1:
-            # Fallback: reshape from [B, ?, nInputDim] to [B, -1, inputShape[1]]
-            if y.shape[-1] != self.inputShape[1]:
-                y = y.reshape(y.shape[0], -1, self.inputShape[1])
-        self.subspace.set_event(y)
-        return self.subspace
-
-    # _2d/_3d removed — all layers now operate on [..., D] natively.
-
-    def lookup(self, x):
-        activation = x[0]
-        x = x.unsqueeze(0).unsqueeze(0)
-        x = torch.cat([torch.zeros([1,1, TheXMLConfig.space("ConceptualSpace", "nDim")], device=TheDevice.get()), x[:,:,1:]], dim=2)
-        output, index, _ = self.subspace.get_vectors().quantize(x)
-        #output[:,:,0:conceptDim] = output[:,:,0:conceptDim] * activation  # multiply the codebook vector by the activation
-        return output
-    def dereference(self, symbols):
-        # we get [ batch x nConcepts x symbolEmbedding ],
-        # and must compute [ batch x nConcepts x conceptEmbedding ]
-        batch = symbols.shape[0]
-        nActive = self.outputShape[0]
-        assert list(symbols.shape) == [batch, nActive, TheXMLConfig.space("SymbolicSpace", "nDim") + self.muxedSize - self.nWhat], "Incorrect input size for dereference"
-        objects = torch.zeros(batch, nActive, self.muxedSize, device=TheDevice.get())
-        for b in range(batch):
-            for s in range(nActive):
-                x = self.lookup(symbols[b,s,:])
-                objects[b,s,:] = x
-        assert list(objects.shape) == [batch, nActive, self.muxedSize], "Incorrect output size for dereference"
-        return objects
-
-    def stats(self, x):
-        #codebookUse = self.subspace.get_vectors().codebookUse
-        #TheMessage(f"{self.name} Codebook activation: { np.sum(self.subspace.get_vectors().codebookAct.get()) }")
-        return
-    def set_sigma(self, sigma):
-        """Propagate exploration meta-parameters to all layers and Basis slots."""
-        for l in self.layers:
-            if hasattr(l, 'set_sigma'):
-                l.set_sigma(sigma)
-        for basis in (self.subspace.what, self.subspace.where, self.subspace.when, self.subspace.activation):
-            if basis is not None and hasattr(basis, 'set_sigma'):
-                basis.set_sigma(sigma)
-
-    def init_syntactic_layer(self, n_slots, grammar):
-        """Override in subclasses that use grammar. Default: no-op."""
-        self.syntacticLayer = None
-
-    def getParameters(self):
-        return self.params
-    def paramUpdate(self):
-        for l in self.layers:
-            l.paramUpdate()
-class InputSpace(Space):
-    """Receives the source buffer from Data() and encodes it as vectors.
-
-    For text: delegates tokenization to Lex, which produces a span table
-    (start, end, type) over the source buffer.  Each span is encoded as a
-    vector with nWhat (token content via the active ``Basis`` / ``Codebook``)
-    and nWhere
-    (positional encoding from the span's start offset).  A whole sentence
-    is sent at once as a batch of [nWhat + nWhere] vectors.
-
-    For numeric data: the tensor path is unchanged — no span table, no Lex,
-    and objectEncoding contributes nothing when nWhat/nWhere are absent.
-
-    reverse() reconstructs the source buffer from the latent state by
-    decoding nWhat back to token IDs and using nWhere for positioning.
-
-    Future: parse.py integration
-    ----------------------------
-    parse.py can produce constituent span tables (NP, VP, PP, etc.) over
-    the same source buffer that Lex tokenizes.  If a convention is found
-    for representing syntactic constituent information in per-space encoding
-    (e.g. a new nSyntax dimension, or extending symbolDim to carry the
-    constituent type), then InputSpace could encode both word-level and
-    constituent-level spans.  This would require:
-      1. A shared grammar available to both InputSpace and OutputSpace.
-      2. An objectEncoding dimension convention for constituent types
-         agreed upon by both sides.
-      3. OutputSpace would use a generative grammar (inverse of parse.py's
-         analytical grammar) to expand constituent-tagged symbols into
-         structured token sequences in the destination buffer.
-    Until such a convention is established, parse.py is not used here.
-    """
-    name = "Inputs"
-    config_section = "InputSpace"
-
-    def _build_object_basis(self):
-        """InputSpace .event is a writable Tensor (receives muxed forward results)."""
-        return None
-
-    def _build_what_basis(self):
-        """InputSpace .what holds the vocabulary (Embedding/Codebook/Tensor)."""
-        if self.model_type == "embedding":
-            basis = Embedding()
-            basis.ergodic = self.ergodic
-            basis.create(
-                self.inputShape[0],
-                self.outputShape[0],
-                self.nDim,
-                embedding_path=self.embedding_path,
-                source=self.embedding_source,
-                min_frequency=self.min_frequency,
-                neg_samples=self.neg_samples,
-                byte_mode=getattr(self, 'byte_mode', False),
-            )
-            return basis
-
-        if self.model_type == "vq":
-            basis = Codebook()
-            basis.create(
-                self.inputShape[0],
-                self.nVectors,
-                self.nDim,
-                customVQ=self.customVQ,
-                passThrough=False,
-            )
-            return basis
-
-        if self.model_type in ("passthrough", "simple"):
-            basis = Tensor()
-            basis.create(
-                self.inputShape[0],
-                self.outputShape[0],
-                self.nDim,
-                passThrough=True,
-            )
-            return basis
-
-        raise RuntimeError("Unexpected model_type")
-
-    def __init__(self, inputShape, spaceShape, outputShape, model_type="simple"):
-
-        section = self.config_section
-        ergodic = TheXMLConfig.get("architecture.ergodic")
-        lexer = TheXMLConfig.space(section, "lexer")
-        min_frequency = float(TheXMLConfig.data_param("minFrequency", 0.0))
-        neg_samples = int(TheXMLConfig.training("negSamples", 64))
-        embedding_path = TheXMLConfig.get("architecture.embeddingPath", None) or None
-        data = TheData
-        self.data = data
-        self.model_type = model_type
-        try:
-            self.demuxed = TheXMLConfig.space(section, "demuxed")
-        except KeyError:
-            self.demuxed = False
-        self.lexer = lexer  # "word", "sentence", "grammar", or "byte"
-        self.byte_mode = (lexer == "byte")
-        self.ergodic = ergodic
-        self.min_frequency = float(min_frequency)
-        self.neg_samples = neg_samples
-        self.embedding_path = embedding_path
-        self.embedding_source = data.train_input if data.train_input else None
-        super().__init__(inputShape, spaceShape, outputShape)
-        # InputSpace operates on raw [B, N, D] tensors directly (no forwardBegin/End).
-        # Override any flatten-derived nInputDim/nOutputDim to skip reshape.
-        self.nInputDim = -1
-        self.nOutputDim = -1
-        self.subspace._nInputDim = -1
-        self.subspace._nOutputDim = -1
-        lexical_basis = self.subspace.what
-        if isinstance(lexical_basis, Embedding):
-            self.doc_spans = lexical_basis.doc_spans
-            self.doc_sources = lexical_basis.doc_sources
-            if data.train_input and self.subspace.whereEncoding.nDim > 0:
-                # Compute maxP from actual max byte offset in data,
-                # not from data.inputLength (buffer size), which can be
-                # far too large for short text and wastes encoding resolution.
-                if (isinstance(data.train_input, list) and data.train_input
-                        and isinstance(data.train_input[0], str)):
-                    actual_max = max(len(s.encode('utf-8'))
-                                     for s in data.train_input)
-                    # 2x margin for validation/test data that may be longer
-                    maxP = max(self.subspace.whereEncoding.maxVal,
-                               actual_max * 2)
-                else:
-                    maxP = max(self.subspace.whereEncoding.maxVal,
-                               data.inputLength)
-                self.subspace.whereEncoding.maxVal = maxP
-                self.subspace.whereEncoding.div_term = 2 * math.pi / maxP
-        else:
-            self.doc_spans = []
-            self.doc_sources = []
-
-        # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
-        self.input          = torch.FloatTensor
-        self.tokenizedInput = False
-        fullSize  = outputShape[0]*outputShape[1]
-        self.lift = MapppingLayer(fullSize, fullSize)
-        self.params = self.lift.getParameters()
-        self.layers = nn.ModuleList([self.lift])
-    # Data client interface
-    def getTrainData(self):
-        return self.data.train_input, self.data.train_output
-    def getTestData(self):
-        return self.data.test_input, self.data.test_output
-    def prepInput(self, inputBatch):
-        if isinstance(inputBatch, list):
-            tensors = [self.data.stringTensor(s) if isinstance(s, str) else s
-                       for s in inputBatch]
-            return torch.stack(tensors, dim=0).unsqueeze(1).to(TheDevice.get())
-        return inputBatch  # already [B, D, 1] and on device after toDevice()
-    def shuffle(self):
-        self.data.shuffle()
-    # The world presenting itself
-    def forward(self, input, mask=None):
-        # ARIR cache bypass: if _cached_embedding is set, use it directly
-        # instead of re-lexing / re-embedding.
-        cached = getattr(self, '_cached_embedding', None)
-        if cached is not None:
-            self._cached_embedding = None  # consume once
-            self.input = cached
-            self._forward_input = None
-            self.subspace.set_event(self.input)
-            return self.subspace
-
-        # Reset positional counter for each forward pass
-        self.subspace.whereEncoding.p = 0
-
-        batch = input.shape[0]
-        nObj = self.outputShape[0]
-        vocab = self.subspace.what
-        dev = TheDevice.get()
-
-        if not isinstance(vocab, Embedding):
-            # Non-text path: input is already a tensor, no codebook indices
-            assert list(input.shape) == [batch, self.inputShape[0], self.inputShape[1]]
-            what = vocab.forward(input)
-            self._forward_input = None
-            self.subspace.set_what(what)
-            if self.nWhere > 0:
-                positions = torch.arange(nObj, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
-                self.subspace.set_where(self.subspace.whereEncoding.encode(positions))
-            if self.nWhen > 0:
-                timesteps = torch.arange(nObj, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
-                self.subspace.set_when(self.subspace.whenEncoding.encode(timesteps))
-            self.input = self.subspace.materialize()
-        else:
-            # Text path: get token indices and byte offsets
-            what, meta = vocab.forward(input, return_meta=True)
-            self._forward_input = meta
-
-            # what_indices: [B, N] codebook indices
-            what_indices = meta['indices']  # [B, N] long tensor
-
-            # where_indices: [B, N] byte offsets
-            if self.nWhere > 0:
-                where_indices = torch.zeros(batch, nObj, dtype=torch.long, device=dev)
-                for b, batch_tokens in enumerate(meta['tokens']):
-                    for i, (_, start) in enumerate(batch_tokens):
-                        where_indices[b, i] = start
-                    final_offset = meta['final_offsets'][b]
-                    for i in range(len(batch_tokens), nObj):
-                        where_indices[b, i] = final_offset + (i - len(batch_tokens))
-            else:
-                where_indices = None
-
-            # when_indices: [B, N] timestep indices (sequential for now)
-            if self.nWhen > 0:
-                when_indices = torch.arange(nObj, device=dev).unsqueeze(0).expand(batch, -1)
-            else:
-                when_indices = None
-
-            # Set per-modality indices — materialize() looks up vectors from Basis
-            self.subspace.set_forward_content(what_indices, where_indices, when_indices)
-            self.input = self.subspace.materialize()
-
-        # Scale what-content to [0,1] via data min-max (or assert if out of range).
-        self.subspace.normalize("input", target="what", normalize=True)
-        self.input = self.subspace.materialize()
-
-        return self.subspace
-
-    def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM', n_words=None):
-        """Expand one sentence's embedding into N masked copies.
-
-        Modes:
-            MLM: Zero content at position i, preserve position encoding.
-            ARLM: Zero content at position i, truncate all future positions (j > i).
-            ARUS: Same as ARLM (output-side behavior differs in OutputSpace).
-            RARLM: Zero content at position (N-1-i), truncate all previous positions (j < pos).
-
-        Args:
-            embedded: [1, nVectors, embeddingSize] output of forward()
-            sentence_text: original sentence string (used for word count)
-            maskedPrediction: prediction mode ('MLM', 'ARLM', 'ARUS', or 'RARLM')
-            n_words: explicit word count (byte mode — from span_meta after compaction)
-
-        Returns:
-            (masked_batch, mask_positions):
-                masked_batch: [N, nVectors, embeddingSize]
-                mask_positions: list[int] of length N
-        """
-        if n_words is not None:
-            N = min(n_words, embedded.shape[1])
-        else:
-            words = sentence_text.split()
-            N = min(len(words), self.outputShape[0])  # cap at nVectors
-
-        # Repeat the embedded sentence N times
-        masked = embedded.expand(N, -1, -1).detach().clone()  # [N, nVec, embSize]
-
-        # Determine which dims are content (to zero) vs position (to preserve)
-        embSize = embedded.shape[-1]
-        content_mask = torch.ones(embSize, dtype=torch.bool, device=TheDevice.get())
-        # Preserve nWhere dims (dynamic indices from whereEncoding)
-        if self.subspace.whereEncoding.nDim > 0:
-            where_idx = np.add([embSize, embSize], self.subspace.whereEncoding.index)
-            for wi in where_idx:
-                if 0 <= wi < embSize:
-                    content_mask[wi] = False
-        # Preserve nWhen dims (indices [-2, -1] from end of embedding)
-        if self.subspace.whenEncoding.nDim > 0:
-            when_idx = np.add([embSize, embSize], self.subspace.whenEncoding.index)
-            for wi in when_idx:
-                if 0 <= wi < embSize:
-                    content_mask[wi] = False
-
-        # Determine mask position for each copy
-        for i in range(N):
-            pos = (N - 1 - i) if maskedPrediction == 'RARLM' else i
-            masked[i, pos, content_mask] = 0.0
-
-        # ARLM/ARUS: truncate all future positions (j > i)
-        if maskedPrediction in ('ARLM', 'ARUS'):
-            for i in range(N):
-                if i + 1 < masked.shape[1]:
-                    masked[i, i + 1:, :] = 0.0
-
-        # RARLM: truncate all previous positions (j < pos)
-        if maskedPrediction == 'RARLM':
-            for i in range(N):
-                pos = N - 1 - i
-                if pos > 0:
-                    masked[i, :pos, :] = 0.0
-
-        if maskedPrediction == 'RARLM':
-            return masked, list(range(N - 1, -1, -1))
-        return masked, list(range(N))
-
-    def reverse(self, vspace):
-        y = self.reverseBegin(vspace, returnVectors=True)
-        # Store full vector (all subspaces) for MSE loss BEFORE partitioning
-        object_basis = self.subspace.get_vectors()
-        content_basis = self.subspace.what if isinstance(self.subspace.what, Embedding) else object_basis
-        raw = object_basis.reverse_raw(y)
-        self.reconstructed = raw.detach()
-        nWhat = content_basis.content_dim
-        object_encoding = self.subspace.objectEncoding
-        if object_encoding is not None:
-            content, aux = object_encoding.split_aux(y, nWhat)
-        else:
-            if y.shape[-1] <= nWhat:
-                content, aux = y.clone(), None
-            else:
-                content, aux = y[:, :, :nWhat].clone(), y[:, :, nWhat:].clone()
-        # Partition into nWhat/nWhere/nWhen for display
-        content = content_basis.reverse(content)
-        if object_encoding is not None:
-            self.input = object_encoding.restore_aux(content, aux)
-        elif aux is not None:
-            self.input = torch.cat([content, aux], dim=-1)
-        else:
-            self.input = content
-        content_basis.setW(self.input)
-        object_basis.setW(self.input)
-        self.subspace.set_event(self.input)
-
-        # Word recovery — content is already denormalized, codebook is L2-normalized [-1,1]
-        if isinstance(content_basis, Embedding):
-            self._recovered_input = content_basis.decode_reverse_meta(
-                self.input, subspace=self.subspace)
-        else:
-            self._recovered_input = None
-
-        self.subspace.normalize("input", target="what", normalize=True)
-        return self.subspace
-
-    def reconstruct_data(self, text=False):
-        """Render the last recovered text state stored on InputSpace."""
-        if getattr(self, '_recovered_input', None) is None:
-            raise RuntimeError("reconstruct_data() called before reverse()")
-        return self.subspace.vocabulary.reconstruct_data(self._recovered_input, text=text)
-
-    def reconstruct_to_buffer(self, buf_size=None):
-        """Render the last recovered text buffer stored on InputSpace."""
-        if getattr(self, '_recovered_input', None) is None:
-            raise RuntimeError("reconstruct_to_buffer() called before reverse()")
-        return self.subspace.vocabulary.reconstruct_to_buffer(
-            self._recovered_input, buf_size=buf_size)
-
-    def get_forward_meta(self):
-        """Return the last forward-pass lexical metadata for text input."""
-        return getattr(self, '_forward_input', None)
-
-    def get_recovered_word(self, batch_idx, position):
-        """Return one recovered token from the last InputSpace.reverse()."""
-        if getattr(self, '_recovered_input', None) is None:
-            return None
-        return self.subspace.vocabulary.get_recovered_word(
-            self._recovered_input, batch_idx, position)
-
-    # ------------------------------------------------------------------
-    # Training policy — InputSpace decides WHEN, Embedding does HOW
-    # ------------------------------------------------------------------
-
-    def train_embeddings(self, words, method='CBOW'):
-        """Run one CBOW/SBOW gradient step if words are available."""
-        emb = self.subspace.vocabulary
-        if isinstance(emb, Embedding) and words:
-            return emb.train_step(words, method=method)
-        return None
-
-    def sbow_loss(self, words):
-        """Return SBOW loss tensor for joint optimization (no backward/step)."""
-        emb = self.subspace.vocabulary
-        if isinstance(emb, Embedding) and words:
-            return emb.sbow_loss(words)
-        return None
-
-    def _snapshot_embeddings(self):
-        """Return the current WordVectors (no-op, vectors are always live)."""
-        emb = self.subspace.vocabulary
-        if isinstance(emb, Embedding):
-            return emb.wv
-        return None
-
-    def set_embedding_sigma(self, sigma):
-        """Control exploration noise on the embedding."""
-        emb = self.subspace.vocabulary
-        if hasattr(emb, 'set_sigma'):
-            emb.set_sigma(sigma)
-
-    def getBatch(self, batchNum, batchSize=10, split="train"):
-        """Return next batch of (input, output) data and the next batchNum.
-
-        For standard mode: slices train_input/train_output by batchSize.
-        For masked prediction: takes sentence batchNum, embeds it,
-            expands into N masked copies (one per word), computes N targets.
-            Batch size is dynamic (= words in sentence).
-
-        Args:
-            batchNum: current batch index
-            batchSize: number of examples per batch (standard mode only)
-            split: "train", "test", or "validation"
-
-        Returns:
-            ((inputBatch, outputBatch), nextBatchNum)
-            Returns (None, batchNum) when data is exhausted.
-        """
-        # Select data for the requested split
-        if split == "train" or split == "runtime":
-            inputData = self.data.train_input
-            outputData = self.data.train_output
-        elif split == "test":
-            inputData = self.data.test_input
-            outputData = self.data.test_output
-        elif split == "validation":
-            inputData = self.data.validation_input
-            outputData = self.data.validation_output
-        else:
-            raise ValueError(f"Unknown split: {split}")
-
-        # ── ARIR state machine ──────────────────────────────────────
-        if split == "runtime" and getattr(self.data, '_runtime_mode', None) == 'ARIR':
-            return self._getBatch_arir(inputData, batchNum)
-
-        # Use standard (non-masked) path when: no masked prediction configured,
-        # or runtime split with no sentences staged (inference via runBatch).
-        # Raw strings for masked prediction — all splits store strings directly
-        if (isinstance(inputData, list) and inputData
-                and isinstance(inputData[0], str)):
-            sentences = inputData
-        else:
-            sentences = None
-        use_masked = (hasattr(self.data, 'masked_prediction')
-                      and self.data.masked_prediction != 'NONE'
-                      and sentences is not None)
-        if not use_masked:
-            # Standard mode: fixed-size batch slicing
-            i = batchNum * batchSize
-            if i >= len(inputData):
-                return None, batchNum
-            inputBatch = inputData[i:i + batchSize]
-            inputTensor = self.prepInput(inputBatch)
-            if outputData is not None:
-                outputBatch = outputData[i:i + batchSize]
-                outputTensor = self.outputSpace.prepOutput(outputBatch)
-            else:
-                outputTensor = None
-            self._unmasked_embedding = None
-            self._mask_positions = None
-            return (inputTensor, outputTensor), batchNum + 1
-        else:
-            # Masked prediction: one sentence -> N masked examples.
-            # Embed once, use that embedding for both targets and masked input.
-            if batchNum >= len(sentences):
-                return None, batchNum
-            sentence = sentences[batchNum]
-            inputTensor = self.prepInput(inputData[batchNum:batchNum + 1])
-
-            # Embed once — retain gradient graph for the masked input path.
-            # Targets are detached (they're labels, not part of the forward graph).
-            embedded = self.forward(inputTensor).materialize()  # [1, nVec, embSize]
-
-            # Compute targets from detached embedding (labels, no gradient needed)
-            targets = self.outputSpace.expand_masked(
-                embedded.detach(), sentence, self.data.masked_prediction)
-
-            # Build masked copies from the live embedding (retains gradient graph)
-            masked_batch, mask_positions = self.expand_masked(
-                embedded, sentence, self.data.masked_prediction)
-
-            # Cache unmasked embedding for reconstruction loss target
-            self._unmasked_embedding = embedded.detach()  # [1, nVec, embSize]
-            self._mask_positions = mask_positions           # list[int], len=N
-
-            # Hand masked embedding to forward() via cache — no re-embedding,
-            # but gradient flows back through masked_batch → embedded → embedding weights
-            self._cached_embedding = masked_batch
-
-            return (inputTensor, targets), batchNum + 1
-
-    def get_reconstruction_target(self):
-        """Return (target, mask) for reconstruction loss.
-
-        target: [batch, nVec, embSize] — unmasked post-encoding embedding
-        mask:   [batch, nVec] bool — True at masked positions to compute loss on.
-                None when maskedPrediction=NONE (use whole buffer).
-        """
-        unmasked = getattr(self, '_unmasked_embedding', None)
-        positions = getattr(self, '_mask_positions', None)
-        if unmasked is None or positions is None:
-            return None, None
-        N = len(positions)
-        nVec = unmasked.shape[1]
-        target = unmasked.expand(N, -1, -1)
-        mask = torch.zeros(N, nVec, dtype=torch.bool, device=TheDevice.get())
-        for i, pos in enumerate(positions):
-            mask[i, pos] = True
-        return target, mask
-
-    def predict(self, vector):
-        """Delegates to Embedding.predict()."""
-        return self.subspace.vocabulary.predict(vector)
-
-    # ------------------------------------------------------------------
-    # ARIR helpers
-    # ------------------------------------------------------------------
-
-    def embed_token(self, word):
-        """Delegates to Embedding.embed_token()."""
-        return self.subspace.vocabulary.embed_token(word)
-
-    def get_space_embedding(self):
-        """Delegates to Embedding.get_space_embedding()."""
-        return self.subspace.vocabulary.get_space_embedding()
-
-    def get_mask_embedding(self):
-        """Delegates to Embedding.get_mask_embedding()."""
-        return self.subspace.vocabulary.get_mask_embedding()
-
-    # ── ARIR state machine ──────────────────────────────────────────
-
-    def _getBatch_arir(self, inputData, batchNum):
-        """ARIR state machine for getBatch(): embed seed, then iteratively
-        place [MASK] and read back reconstructed latent vectors.
-
-        First call (cursor is None):
-            Embed seed text, fill future with spaces, place [MASK] at seed_len.
-
-        Subsequent calls (cursor is not None):
-            Read reconstruction from previous reverse pass, decode word,
-            write reconstructed latent at previous cursor, advance, place [MASK].
-
-        Returns None when cursor reaches nVec, EOF detected, or max_chars exceeded.
-        """
-        nVec = self.outputShape[0]
-        embSize = self.muxedSize
-        nWhat = self.subspace.vocabulary.embedding_dim
-
-        if self._arir_cursor is None:
-            # ── First call: embed seed, prepare buffer ──────────────
-            inputTensor = self.prepInput(inputData)
-            embedded = self.forward(inputTensor)  # [1, nVec, embSize]
-            self._arir_embedded = embedded.detach().clone()
-
-            # Read span count from the lex pass
-            meta = getattr(self, '_forward_input', None) or {}
-            counts = meta.get('span_counts', [])
-            seed_len = counts[0] if counts else 1
-
-            # Read byte offset from the lex pass
-            offsets = meta.get('final_offsets', [])
-            self._arir_byte_offset = offsets[0] if offsets else 0
-
-            # Fill future positions (seed_len .. nVec-1) with NULL embeddings
-            null_emb = self.subspace.vocabulary.embed_token("\x00")
-            for k in range(seed_len, nVec):
-                self._arir_embedded[0, k, :nWhat] = null_emb[:nWhat]
-                est_offset = self._arir_byte_offset + (k - seed_len)
-                self._arir_stamp_where(self._arir_embedded, k, est_offset)
-
-            # Set cursor and place [MASK] at seed_len
-            self._arir_cursor = seed_len
-            self._arir_embedded[0, self._arir_cursor, :nWhat] = 0.0
-            self._arir_stamp_where(
-                self._arir_embedded, self._arir_cursor, self._arir_byte_offset
-            )
-
-            # Inject via the cached-embedding bypass in forward()
-            self._cached_embedding = self._arir_embedded.clone()
-
-            # Return a dummy input tensor (forward() will use _cached_embedding)
-            dummy_input = inputTensor
-            return (dummy_input, None), batchNum + 1
-
-        else:
-            # ── Subsequent calls: read reconstruction, advance cursor ──
-            prev_cursor = self._arir_cursor
-
-            # Read decoded word from previous reverse pass
-            word = self.get_recovered_word(0, prev_cursor)
-
-            # EOF check
-            if word is None or word == '' or word == '\x00':
-                self._arir_reset()
-                return None, batchNum
-
-            # Record the token
-            self._arir_tokens.append(word)
-            self._arir_total_chars += len(word)
-
-            # Max chars check
-            if self._arir_total_chars >= self._arir_max_chars:
-                self._arir_reset()
-                return None, batchNum
-
-            # Write reconstructed latent vector at current cursor
-            # (no codebook lookup -- stay in latent space)
-            recon = self.reconstructed  # [1, nVec, embSize] from reverse()
-            self._arir_embedded[0, prev_cursor, :nWhat] = recon[0, prev_cursor, :nWhat]
-            self._arir_stamp_where(
-                self._arir_embedded, prev_cursor, self._arir_byte_offset
-            )
-
-            # Advance byte offset for positional encoding
-            self._arir_byte_offset += len(word.encode('utf-8'))
-
-            # Write reconstructed vectors beyond cursor as steering signal
-            for k in range(prev_cursor + 1, nVec):
-                self._arir_embedded[0, k, :nWhat] = recon[0, k, :nWhat]
-                # Keep existing positional encoding at those positions
-
-            # Advance cursor
-            self._arir_cursor = prev_cursor + 1
-
-            # Buffer full check
-            if self._arir_cursor >= nVec:
-                self._arir_reset()
-                return None, batchNum
-
-            # Place [MASK] at new cursor
-            self._arir_embedded[0, self._arir_cursor, :nWhat] = 0.0
-            self._arir_stamp_where(
-                self._arir_embedded, self._arir_cursor, self._arir_byte_offset
-            )
-
-            # Inject via cached-embedding bypass
-            self._cached_embedding = self._arir_embedded.clone()
-
-            # Return dummy input (forward() will use _cached_embedding)
-            dummy_input = torch.zeros(1, device=TheDevice.get())
-            return (dummy_input, None), batchNum + 1
-
-    def _arir_reset(self):
-        """Reset all ARIR state attributes."""
-        self._arir_cursor = None
-        self._arir_embedded = None
-        self._arir_byte_offset = 0
-        self._arir_tokens = []
-        self._arir_max_chars = 256
-        self._arir_total_chars = 0
-
-    def get_predicted_tokens(self):
-        """Return the list of tokens predicted during ARIR inference."""
-        return getattr(self, '_arir_tokens', [])
-
-    def _arir_stamp_where(self, buf, pos_idx, byte_off):
-        """Stamp positional encoding at a buffer position via subspace.whereEncoding."""
-        if self.subspace.whereEncoding.nDim > 0:
-            self.subspace.whereEncoding.stamp(buf, 0, pos_idx, byte_off)
-class PerceptualSpace(Space):
-    """Transforms raw input vectors into percepts via a PiLayer.
-
-    In the forward data flow: InputSpace -> **PerceptualSpace** -> ConceptualSpace.
-    Uses a PiLayer (log-space multiplicative layer) to map input embeddings to
-    perceptual embeddings, optionally followed by self-attention and VQ
-    codebook quantization.
-
-    When ``reversible=True`` and ``invertible=True``, a single layer
-    serves both directions (shared weights).  Without invertibility, two
-    PiLayers with separate weights are used: forward() on
-    one, reverse() on the other.  **Note:** the non-invertible reverse
-    path currently involves a matrix pseudoinverse (``pinv``) which may
-    be numerically unstable; this is not a recommended code path.
-
-    ``passThrough=True`` makes this a no-op (identity), useful when the input
-    is already in the desired perceptual form.
-    """
-    name = "Percepts"
-    config_section = "PerceptualSpace"
-
-    def _syntactic_kind(self):
-        """P-tier WordSpace dispatch key."""
-        return 'perceptual'
-
-    def __init__(self, inputShape, spaceShape, outputShape):
-
-        section = self.config_section
-        passThrough = TheXMLConfig.space(section, "passThrough")
-        ergodic = TheXMLConfig.get("architecture.ergodic")
-        hasAttention = TheXMLConfig.space(section, "hasAttention")
-        invertible = TheXMLConfig.space(section, "invertible")
-        naive = TheXMLConfig.get("architecture.naive")
-        super().__init__(inputShape, spaceShape, outputShape)
-        self.passThrough = passThrough
-        self.ergodic = ergodic
-        self.hasAttention = hasAttention
-        self.invertible = invertible
-        if passThrough:
-            return
-        input = self.subspace.getEncodedInputSize()
-        self.attention = AttentionLayer(input, input, type="transformer")
-        self.subspace._nWordSlots = outputShape[0]
-        self.params = []
-        self.layers = nn.ModuleList()
-
-    def _register_requirements(self):
-        """Register PerceptualSpace-specific config requirements."""
-        # passThrough spaces are identity mappings — shape constraints don't apply.
-        passThrough = TheXMLConfig.space(self.config_section, "passThrough")
-        if passThrough:
-            return
-
-        nV = self.nVectors
-        nA = self.outputShape[0]   # nOutput
-        nI = self.inputShape[0]    # nInput
-        nI_dim = self.inputShape[1]
-        nA_dim = self.outputShape[1]
-
-        invertible = TheXMLConfig.space(self.config_section, "invertible")
-        if not invertible:
-            # Standard checks
-            TheXMLConfig.require(
-                lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv >= _na,
-                f"PerceptualSpace: nVectors ({nV}) must be >= nOutput ({nA})"
-            )
-            if not self.codebook:
-                TheXMLConfig.require(
-                    lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv == _na,
-                    f"PerceptualSpace: non-codebook requires nVectors ({nV}) == nOutput ({nA})"
-                )
-
-    def everything(self, target="what"):
-        """The universal whole — vertex (1,1,...,1) of the perceptual hypercube.
-
-        Valid only in perceptual space where vectors are sigmoid-normalized
-        to [0,1]^d and mereological operations (min/max) apply.
-
-        Args:
-            target: encoding target — "what", "event", or "activation".
-        """
-        dim = {"what": self.nDim, "event": self.muxedSize,
-               "activation": self.outputShape[0]}[target]
-        return torch.ones(dim, device=TheDevice.get())
-
-    def nothing(self, target="what"):
-        """The empty set — origin (0,0,...,0) of the perceptual hypercube.
-
-        Valid only in perceptual space where vectors are sigmoid-normalized
-        to [0,1]^d and mereological operations (min/max) apply.
-
-        Args:
-            target: encoding target — "what", "event", or "activation".
-        """
-        dim = {"what": self.nDim, "event": self.muxedSize,
-               "activation": self.outputShape[0]}[target]
-        return torch.zeros(dim, device=TheDevice.get())
-
-    def distance(self, x, y):
-        return torch.prod( [1-x, 1-y] )
-    def certainty(self, x):
-        pass
-    def forward(self, vspace):
-        """Perception: map input vectors to percepts via attention + VQ + chunking."""
-        if self.passThrough:
-            return vspace
-        # Pass byte values from input for boundary detection in compose()
-        if getattr(vspace, '_demuxed', False) and vspace._active is not None:
-            self.subspace._byte_indices = vspace._active[:, :, 0].long()
-        x = self.forwardBegin(vspace, returnVectors=True)
-        if self.hasAttention:
-            x = self.attention.forward(x)
-        if self.codebook:
-            x = self.subspace.get_vectors().forward(x)
-        if self.syntacticLayer is not None or self.wordSpace is not None:
-            # Route through WordSpace when wired (ownership transferred
-            # to wordSpace); else call the owned layer directly.
-            x = self._syntactic_compose(x, self.subspace, TheGrammar)
-        vspace = self.forwardEnd(x, returnVectors=True)
-        vspace.normalize("percepts", target="event", normalize=True)
-        return vspace
-
-    def init_syntactic_layer(self, n_slots, grammar):
-        """Create the P-tier SyntacticLayer."""
-        self.syntacticLayer = PerceptualSyntacticLayer(
-            nInput=n_slots, nOutput=n_slots,
-            rules=grammar.perceptual(),
-            transition_rule=None,
-            max_depth=max(n_slots - 1, 1),
-            hidden_dim=min(256, max(64, n_slots * 4)),
-            grammar=grammar,
-        )
-        self.layers.append(self.syntacticLayer)
-
-    def reverse(self, vspace):
-        """Manifesting: reconstruct input vectors from percepts."""
-        if self.passThrough:
-            return vspace
-        y = self.reverseBegin(vspace, returnVectors=True)
-        if self.syntacticLayer is not None or self.wordSpace is not None:
-            y = self._syntactic_decompose(y, self.subspace, TheGrammar)
-        vspace = self.reverseEnd(y, returnVectors=True)
-        vspace.normalize("input", target="what", normalize=True)
-        return vspace
-
-    @staticmethod
-    def test():
-        pass
-class ModalSpace(Space):
-    """Composite space routing what/where/when through independent PerceptualSpaces.
-
-    Default: what branch is processed (PiLayer), where/when branches are passthrough.
-    When nWhere=nWhen=0, degenerates to a single PerceptualSpace on the full embedding.
-
-    Per-branch passthrough flags are read from <ModalSpace> config:
-        whatPassThrough  (default False)
-        wherePassThrough (default True)
-        whenPassThrough  (default True)
-    """
-    name = "Percepts"
-    config_section = "ModalSpace"
-
-    def __init__(self, inputShape, spaceShape, outputShape):
-        section = self.config_section
-        super().__init__(inputShape, spaceShape, outputShape)
-
-        # Per-branch passthrough defaults
-        try:
-            whatPT = TheXMLConfig.space(section, "whatPassThrough")
-        except KeyError:
-            whatPT = False
-        try:
-            wherePT = TheXMLConfig.space(section, "wherePassThrough")
-        except KeyError:
-            wherePT = True
-        try:
-            whenPT = TheXMLConfig.space(section, "whenPassThrough")
-        except KeyError:
-            whenPT = True
-
-        # Derive branch shapes (symmetric — subtract off the modality you don't need)
-        whatDim = self.muxedSize - self.nWhere - self.nWhen
-        whatInputShape = [inputShape[0], whatDim]
-        whatOutputShape = [outputShape[0], whatDim]
-        whatSpaceShape = [spaceShape[0], spaceShape[1]]
-
-        # Build what branch — override passThrough in config temporarily
-        saved_pt = TheXMLConfig._data.get("PerceptualSpace", {}).get("passThrough")
-        TheXMLConfig._data.setdefault("PerceptualSpace", {})["passThrough"] = whatPT
-        self.whatSpace = PerceptualSpace(whatInputShape, whatSpaceShape, whatOutputShape)
-        TheXMLConfig._data["PerceptualSpace"]["passThrough"] = saved_pt
-
-        # Build where branch (if nWhere > 0)
-        if self.nWhere > 0:
-            whereShape = [inputShape[0], self.nWhere]
-            whereSpaceShape = [spaceShape[0], self.nWhere]
-            saved_pt = TheXMLConfig._data.get("PerceptualSpace", {}).get("passThrough")
-            TheXMLConfig._data["PerceptualSpace"]["passThrough"] = wherePT
-            self.whereSpace = PerceptualSpace(whereShape, whereSpaceShape, whereShape)
-            TheXMLConfig._data["PerceptualSpace"]["passThrough"] = saved_pt
-        else:
-            self.whereSpace = None
-
-        # Build when branch (if nWhen > 0)
-        if self.nWhen > 0:
-            whenShape = [inputShape[0], self.nWhen]
-            whenSpaceShape = [spaceShape[0], self.nWhen]
-            saved_pt = TheXMLConfig._data.get("PerceptualSpace", {}).get("passThrough")
-            TheXMLConfig._data["PerceptualSpace"]["passThrough"] = whenPT
-            self.whenSpace = PerceptualSpace(whenShape, whenSpaceShape, whenShape)
-            TheXMLConfig._data["PerceptualSpace"]["passThrough"] = saved_pt
-        else:
-            self.whenSpace = None
-
-        # Collect parameters and layers from all branches
-        self.params = list(self.whatSpace.getParameters())
-        self.layers = nn.ModuleList([self.whatSpace])
-        if self.whereSpace is not None:
-            self.params.extend(self.whereSpace.getParameters())
-            self.layers.append(self.whereSpace)
-        if self.whenSpace is not None:
-            self.params.extend(self.whenSpace.getParameters())
-            self.layers.append(self.whenSpace)
-
-    def _register_requirements(self):
-        """ModalSpace manages its own branch requirements."""
-        pass
-
-    def forward(self, vspace):
-        """Route each modality through its branch PerceptualSpace."""
-        if vspace.is_demuxed:
-            what_in = vspace.what.getW()
-            where_in = vspace.where.getW() if vspace.where is not None else None
-            when_in = vspace.when.getW() if vspace.when is not None else None
-        else:
-            # Fallback: split muxed event into branches
-            event = vspace.materialize()
-            what_in = event[..., :self.nWhat]
-            where_in = event[..., self.nWhat:self.nWhat + self.nWhere] if self.nWhere > 0 else None
-            when_in = event[..., self.nWhat + self.nWhere:] if self.nWhen > 0 else None
-
-        # Route what through whatSpace
-        what_sub = SubSpace(inputShape=[what_in.shape[1], what_in.shape[2]],
-                           outputShape=[what_in.shape[1], what_in.shape[2]])
-        what_sub.set_what(what_in)
-        what_out = self.whatSpace.forward(what_sub).materialize()
-
-        # Route where through whereSpace (passthrough if no whereSpace)
-        where_out = where_in
-        if self.whereSpace is not None and where_in is not None:
-            where_sub = SubSpace(inputShape=[where_in.shape[1], where_in.shape[2]],
-                                outputShape=[where_in.shape[1], where_in.shape[2]])
-            where_sub.set_where(where_in)
-            where_out = self.whereSpace.forward(where_sub).materialize()
-
-        # Route when through whenSpace (passthrough if no whenSpace)
-        when_out = when_in
-        if self.whenSpace is not None and when_in is not None:
-            when_sub = SubSpace(inputShape=[when_in.shape[1], when_in.shape[2]],
-                               outputShape=[when_in.shape[1], when_in.shape[2]])
-            when_sub.set_when(when_in)
-            when_out = self.whenSpace.forward(when_sub).materialize()
-
-        # Build output demuxed SubSpace
-        out = SubSpace(inputShape=self.outputShape, outputShape=self.outputShape,
-                      whereEncoding=self.subspace.whereEncoding,
-                      whenEncoding=self.subspace.whenEncoding)
-        out.set_demuxed(what_out, where_out, when_out)
-        return out
-
-    def reverse(self, vspace):
-        """Split event into modalities, reverse each branch, rebuild."""
-        event = vspace.materialize()
-        what_in = event[..., :self.nWhat]
-        where_in = event[..., self.nWhat:self.nWhat + self.nWhere] if self.nWhere > 0 else None
-        when_in = event[..., self.nWhat + self.nWhere:] if self.nWhen > 0 else None
-
-        # Reverse what
-        what_sub = SubSpace(inputShape=[what_in.shape[1], what_in.shape[2]],
-                           outputShape=[what_in.shape[1], what_in.shape[2]])
-        what_sub.set_what(what_in)
-        what_rev = self.whatSpace.reverse(what_sub).materialize()
-
-        # Reverse where
-        where_rev = where_in
-        if self.whereSpace is not None and where_in is not None:
-            where_sub = SubSpace(inputShape=[where_in.shape[1], where_in.shape[2]],
-                                outputShape=[where_in.shape[1], where_in.shape[2]])
-            where_sub.set_where(where_in)
-            where_rev = self.whereSpace.reverse(where_sub).materialize()
-
-        # Reverse when
-        when_rev = when_in
-        if self.whenSpace is not None and when_in is not None:
-            when_sub = SubSpace(inputShape=[when_in.shape[1], when_in.shape[2]],
-                               outputShape=[when_in.shape[1], when_in.shape[2]])
-            when_sub.set_when(when_in)
-            when_rev = self.whenSpace.reverse(when_sub).materialize()
-
-        # Rebuild demuxed SubSpace
-        out = SubSpace(inputShape=self.inputShape, outputShape=self.inputShape,
-                      whereEncoding=self.subspace.whereEncoding,
-                      whenEncoding=self.subspace.whenEncoding)
-        out.set_demuxed(what_rev, where_rev, when_rev)
-        return out
-
-    def set_sigma(self, sigma):
-        """Propagate exploration meta-parameters to all branch spaces."""
-        self.whatSpace.set_sigma(sigma)
-        if self.whereSpace is not None:
-            self.whereSpace.set_sigma(sigma)
-        if self.whenSpace is not None:
-            self.whenSpace.set_sigma(sigma)
-
-    def getParameters(self):
-        return self.params
-
-    def paramUpdate(self):
-        self.whatSpace.paramUpdate()
-        if self.whereSpace is not None:
-            self.whereSpace.paramUpdate()
-        if self.whenSpace is not None:
-            self.whenSpace.paramUpdate()
-class ConceptualSpace(Space):
-    """Transforms percepts into concepts via a SigmaLayer (summation layer).
-
-    In the forward data flow: PerceptualSpace -> **ConceptualSpace** -> SymbolicSpace.
-    Uses a SigmaLayer to combine perceptual features into conceptual
-    representations.  The SigmaLayer computes weighted sums (inner products)
-    rather than the permutation-equivariant operations of PiLayer.
-
-    Supports optional self-attention and VQ codebook quantization.
-
-    When ``invertible=True``, uses a InvertibleSigmaLayer whose inverse is
-    exact.  When ``reversible=True`` without invertibility, a separate
-    SigmaLayer is trained for the reverse direction.
-    """
-    name = "Concepts"
-    config_section = "ConceptualSpace"
-
-    def _syntactic_kind(self):
-        """C-tier WordSpace dispatch key."""
-        return 'conceptual'
-
-    def __init__(self, inputShape, spaceShape, outputShape, level_shapes=None):
-        section = self.config_section
-        ergodic = TheXMLConfig.get("architecture.ergodic")
-        hasAttention = TheXMLConfig.space(section, "hasAttention")
-        invertible = TheXMLConfig.space(section, "invertible")
-        nonlinear = TheXMLConfig.space(section, "nonlinear")
-        naive = TheXMLConfig.get("architecture.naive")
-        super().__init__(inputShape, spaceShape, outputShape)
-        self.nonlinear = nonlinear
-        self.ergodic = ergodic
-        self.hasAttention = hasAttention
-        input = self.subspace.getEncodedInputSize()
-        output = self.subspace.getEncodedOutputSize()
-        if hasAttention:
-            self.attention = AttentionLayer(output, output, type="transformer")
-
-        # ── Hierarchical mode: per-level Sigma layers ────────────────
-        # Average-merge keeps norms bounded, so tanh saturation is unnecessary
-        # and harmful: cascaded atanh in reverse clamps values outside (-1,1),
-        # destroying sample variance.  Per-level sigmas use saturate=False.
-        if level_shapes is not None and len(level_shapes) >= 1:
-            self._hierarchical = True
-            self._level_shapes = level_shapes
-            self.sigmas = nn.ModuleList()
-            for t, (n_t, d_t) in enumerate(level_shapes):
-                sig = SigmaLayer(d_t, d_t, naive=naive, ergodic=ergodic,
-                                 invertible=invertible)
-                sig.saturate = False
-                self.sigmas.append(sig)
-            # Dim projections for syntactic mode (grammar keeps D, need projection)
-            # One per level: level 0 projects from percept_dim, others from prior level
-            self.dim_projections = nn.ModuleList()
-            percept_dim = inputShape[1]  # pre-merge percept dim
-            for t, (n_t, d_t) in enumerate(level_shapes):
-                d_in = percept_dim if t == 0 else level_shapes[t - 1][1]
-                self.dim_projections.append(nn.Linear(d_in, d_t))
-            self.layers = nn.ModuleList(
-                list(self.sigmas) + list(self.dim_projections))
-            self.params = []
-            for s in self.sigmas:
-                self.params.extend(s.getParameters())
-            # Set forwardSigma to level-0 for backward compat callers
-            self.forwardSigma = self.sigmas[0].forward
-        else:
-            # ── Original single-layer mode ────────────────────────────
-            self._hierarchical = False
-            self._level_shapes = None
-            if self.reversible:
-                if invertible:
-                    self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
-                                            invertible=True, nonlinear=nonlinear)
-                    self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
-                    self.params = self.sigma.getParameters()
-                    self.layers = nn.ModuleList([self.sigma])
-                else:
-                    self.sigma1 = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
-                                             invertible=True, nonlinear=nonlinear)
-                    self.sigma2 = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
-                                             invertible=True, nonlinear=nonlinear)
-                    self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
-                    self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
-                    self.layers = nn.ModuleList([self.sigma1, self.sigma2])
-            else:
-                self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
-                                        nonlinear=nonlinear)
-                self.forwardSigma = self.sigma.forward
-                self.params = self.sigma.getParameters()
-                self.layers = nn.ModuleList([self.sigma])
-        # Grammar methods and SyntacticLayers are now on TheGrammar.
-        # Spaces delegate to TheGrammar.project('C', ...) and
-        # TheGrammar.composeSyntax('C', ...).
-        self._interpretation = TheGrammar.interpretation
-
-    def __getitem__(self, t):
-        """Index into conceptual order levels.
-
-        Non-hierarchical: returns self (shared sigma for all t).
-        Hierarchical: returns a _LevelView that routes through sigmas[t].
-        """
-        if not self._hierarchical:
-            return self
-        return self._CSLevelView(self, t)
-
-    class _CSLevelView:
-        """Proxy routing .forward()/.reverse() through a per-level sigma."""
-        def __init__(self, parent, t):
-            self._parent = parent
-            self._sigma = parent.sigmas[t]
-            self.subspace = parent.subspace
-
-        def forward(self, vspace):
-            x = vspace.materialize()
-            y = self._sigma.forward(x)
-            self._parent.subspace.set_event(y)
-            return self._parent.subspace
-
-        def reverse(self, vspace):
-            x = vspace.materialize()
-            y = self._sigma.reverse(x)
-            self._parent.subspace.set_event(y)
-            return self._parent.subspace
-
-    def distance(self, x, y):
-        # This is a dot-product distance that assumes the X are normalized.
-        # However, if the X are not normalized, the magnitudes may be taken as a degree of certainty or knowing.
-        # In which case, how do they grow from ignorance to certainty?
-        # They would do so naturally if the input vectors are normalized.
-        # It would also be possible to use a tunable transfer function.
-        return x.T @ y
-    def certainty(self, x):
-        return x.T @ x
-    def forward(self, vspace):
-        """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ.
-
-        When nonlinear=True, applies atanh() before SigmaLayer so that the
-        reverse tanh (needed to bound output to (-1,1)) has an exact
-        mathematical inverse.
-        """
-        x = self.forwardBegin(vspace, returnVectors=True)
-        if self.nonlinear:
-            # atanh only on nWhat dims — sin/cos where/when values near ±1
-            # would explode through atanh, so leave them untransformed.
-            nW = self.subspace.nWhat
-            x_what = torch.atanh(x[:, :, :nW] * (1 - 1e-6))
-            x = torch.cat([x_what, x[:, :, nW:]], dim=-1)
-        y = self.forwardSigma(x)
-        if self.hasAttention:
-            y = self.attention.forward(y)
-        if self.codebook:
-            y = self.subspace.get_vectors().forward(y)
-        if self.syntacticLayer is not None or self.wordSpace is not None:
-            # ConceptualSyntacticLayer.compose returns (data, svo_or_None);
-            # preserve that contract through the WordSpace dispatcher.
-            result = self._syntactic_compose(y, self.subspace, TheGrammar)
-            if isinstance(result, tuple):
-                y, self._last_svo = result
-            else:
-                y = result
-                self._last_svo = None
-        vspace = self.forwardEnd(y, returnVectors=True)
-        vspace.normalize("concepts", target="what")       # range check
-        vspace.normalize("concepts", target="activation")  # range check
-        return vspace
-
-    def init_syntactic_layer(self, n_slots, grammar, concept_dim=0):
-        """Create the C-tier SyntacticLayer."""
-        self.syntacticLayer = ConceptualSyntacticLayer(
-            nInput=n_slots, nOutput=n_slots,
-            rules=grammar.conceptual(),
-            transition_rule=grammar.conceptual_transition(),
-            max_depth=max(n_slots - 1, 1),
-            hidden_dim=min(256, max(64, n_slots * 4)),
-            grammar=grammar,
-        )
-        self.syntacticLayer.init_conceptual_params(concept_dim)
-        self.layers.append(self.syntacticLayer)
-
-    @property
-    def last_svo(self):
-        """Return SVO tuple from last ternary lift, or None."""
-        return getattr(self, '_last_svo', None)
-
-    def reverse(self, vspace):
-        """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer.
-
-        When nonlinear=True, applies tanh() after reverse SigmaLayer to
-        guarantee output in (-1,1) for PiLayer.
-        """
-        y = self.reverseBegin(vspace, returnVectors=True)
-        if self.syntacticLayer is not None or self.wordSpace is not None:
-            y = self._syntactic_decompose(y, self.subspace, TheGrammar)
-        if self.processSymbols:
-            y = self.dereference(y)
-        y = self.reverseSigma(y)
-        if self.nonlinear:
-            # tanh only on nWhat dims — mirror the forward atanh split.
-            nW = self.subspace.nWhat
-            y_what = torch.tanh(y[:, :, :nW])
-            y = torch.cat([y_what, y[:, :, nW:]], dim=-1)
-        self.concepts = y
-        vspace = self.reverseEnd(y, returnVectors=True)
-        vspace.normalize("percepts", target="what")  # range check
-        return vspace
-
-    @staticmethod
-    def test():
-        pass
-class SymbolicSpace(Space):
-    """Codebook-backed symbol stack with swap operations.
-
-    In the forward data flow: ConceptualSpace -> **SymbolicSpace** -> OutputSpace.
-    The symbol stack (StackSpace) holds entries produced by ConceptualSpace's
-    shift/reduce loop. Each entry has what (codebook index), where (position),
-    and when (derivation order).
-
-    S-tier operations (swap) operate on whereEncodings of node children.
-    The START-level true() evaluates the full stack activation → scalar.
-    """
-    name = "Symbols"
-    config_section = "SymbolicSpace"
-
-    def _syntactic_kind(self):
-        """S-tier WordSpace dispatch key."""
-        return 'symbolic'
-
-    def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None,
-                 level_shapes=None):
-
-        section = self.config_section
-        passThrough = TheXMLConfig.space(section, "passThrough")
-        super().__init__(inputShape, spaceShape, outputShape, customVQ=True)
-        self.conceptualSpace = conceptualSpace
-        self.passThrough = passThrough
-        # PiLayer maps on the nDim axis: concept_dim+obj → symbol_dim+obj.
-        # nVectors passes through unchanged via batched matmul.
-        nConceptDim = inputShape[1]     # concept_dim + obj (where+when)
-        nSymbolDim = outputShape[1]     # symbol_dim + obj (where+when)
-        nSymbols = spaceShape[0]
-
-        if level_shapes is not None and len(level_shapes) >= 1:
-            self._hierarchical = True
-            self._level_shapes = level_shapes
-            self.pi_layers = nn.ModuleList()
-            for t, (n_t, d_t) in enumerate(level_shapes):
-                self.pi_layers.append(
-                    PiLayer(d_t, nSymbolDim, invertible=True, monotonic=True))
-            self.layer = self.pi_layers[0]  # default for non-ramsified codepaths
-        else:
-            self._hierarchical = False
-            self.pi_layers = None
-        self.layer = PiLayer(nConceptDim, nSymbolDim, invertible=True, monotonic=True) if not self._hierarchical else self.pi_layers[0]
-
-        # Truth accumulation: accumulateTruth is 0..1 (DoT for recorded symbols).
-        # Default 0 (off). Server sets to 1 when processing the TruthSet,
-        # then resets to 0.  TruthLayer is always created so the server can
-        # toggle recording at runtime.
-        try:
-            self.accumulateTruth = float(TheXMLConfig.space(section, "accumulateTruth"))
-        except (KeyError, TypeError, ValueError):
-            self.accumulateTruth = 0.0
-        from Model import TruthLayer
-        self.truth = TruthLayer(nSymbolDim)
-
-        # Truth storage criterion thresholds (used by should_store())
-        def _truth_cfg(key, default):
-            try:
-                return float(TheXMLConfig.space(section, key))
-            except (KeyError, TypeError, ValueError):
-                return default
-        self._truth_min_magnitude = _truth_cfg("truthMinMagnitude", 0.3)
-        self._truth_min_novelty = _truth_cfg("truthMinNovelty", 0.5)
-        self._truth_max_inconsistency = _truth_cfg("truthMaxInconsistency", 0.3)
-
-        # Odd-even sorting network: learns a canonical ordering of symbols.
-        try:
-            sort_enabled = TheXMLConfig.space(section, "sortNetwork")
-        except (KeyError, TypeError, ValueError):
-            sort_enabled = False
-        self.sortNetwork = None
-        if sort_enabled:
-            try:
-                sort_passes_cfg = int(TheXMLConfig.space(section, "sortPasses"))
-            except (KeyError, TypeError, ValueError):
-                sort_passes_cfg = 0
-            from Model import SortingLayer
-            n_passes = sort_passes_cfg if sort_passes_cfg > 0 else None
-            self.sortNetwork = SortingLayer(nSymbolDim, n_passes=n_passes)
-
-        pi_list = list(self.pi_layers) if self._hierarchical else [self.layer]
-        self.layers = nn.ModuleList(
-            pi_list + ([self.sortNetwork] if self.sortNetwork else [])
-        )
-
-        # Assign fixed where encodings to symbol positions.
-        nPercepts = inputShape[0]
-        if self.nWhere > 0:
-            positions = torch.arange(nPercepts, nPercepts + nSymbols, dtype=torch.float32)
-            self._symbol_where = self.subspace.whereEncoding.encode(positions)
-        else:
-            self._symbol_where = None
-
-        # Rule codebook — learned vectors for grammar rule identities.
-        # Allocated in init_syntactic_layer() once the grammar is known.
-        # Index 0 is reserved as the empty-slot sentinel (zero vector,
-        # non-training via padding_idx); indices 1..nRules map to
-        # grammar rule_ids 0..nRules-1.
-        # See plan: Architectural addition — WordSpace / Unified codebook.
-        self.rule_codebook = None
-        self.nRuleEntries = 0
-
-    def _build_object_basis(self):
-        """Event is a writable Tensor — codebook lives on .what."""
-        return None
-
-    def _build_what_basis(self):
-        """Symbol codebook on .what, monotonic (negation meaningless)."""
-        basis = Codebook()
-        basis.create(
-            self.inputShape[0],
-            self.nVectors,
-            self.nDim,
-            customVQ=self.customVQ,
-            passThrough=not self.codebook,
-            monotonic=True,
-        )
-        return basis
-
-    def __getitem__(self, t):
-        """Index into conceptual order levels.
-
-        Non-hierarchical: returns self (shared PiLayer for all t).
-        Hierarchical: returns a _LevelView that routes through pi_layers[t].
-        """
-        if not self._hierarchical:
-            return self
-        return self._SSLevelView(self, t)
-
-    class _SSLevelView:
-        """Proxy routing .forward()/.reverse() through a per-level PiLayer."""
-        def __init__(self, parent, t):
-            self._parent = parent
-            self._pi = parent.pi_layers[t]
-            self.subspace = parent.subspace
-
-        def forward(self, vspace):
-            x = vspace.materialize()
-            y = self._pi.forward(x)
-            self._parent.subspace.set_event(y)
-            return self._parent.subspace
-
-        def reverse(self, vspace):
-            x = vspace.materialize()
-            y = self._pi.reverse(x)
-            self._parent.subspace.set_event(y)
-            return self._parent.subspace
-
-    @property
-    def vocabulary(self):
-        return self.subspace.what
-
-    def forward(self, vspace):
-        """Map concept vectors to symbol vectors via PiLayer (Π).
-
-        PiLayer maps on the nDim axis: [B, nVectors, concept_dim] →
-        [B, nVectors, symbol_dim].  nVectors passes through unchanged.
-        With a single-concept subspace [B, 1, D], produces [B, 1, symbol_dim].
-
-        1. Materialize full concept vectors from input subspace.
-        2. Map through PiLayer (log-space multiplicative, monotonic).
-        3. Grammar derivation (if syntax=True): shift/reduce over S-tier.
-        4. Apply swap on whereEncodings of binary node children.
-        5. Store as symbol vectors in subspace event.
-        """
-        if self.passThrough:
-            return vspace
-        vspace = self.forwardBegin(vspace)
-        act = vspace.materialize()                        # [B, N, concept_dim]
-        act = self.layer.forward(act)                     # [B, N, symbol_dim]
-
-        if self.accumulateTruth > 0:
-            for i in range(act.shape[0]):
-                for j in range(act.shape[1]):
-                    vec = act[i, j]
-                    score = self.truth.should_store(
-                        vec,
-                        min_magnitude=self._truth_min_magnitude,
-                        min_novelty=self._truth_min_novelty,
-                        max_inconsistency=self._truth_max_inconsistency)
-                    if self.accumulateTruth * score > 0.5:
-                        self.truth.record(vec, degree=self.accumulateTruth)
-
-        if self._symbol_where is not None:
-            B = act.shape[0]
-            nAct = act.shape[1]
-            # Only apply where if vector count matches stored encodings
-            if nAct == self._symbol_where.shape[0]:
-                where = self._symbol_where.unsqueeze(0).expand(B, -1, -1)
-                where = where.to(act.device)
-                self.subspace.where.setW(where)
-
-        if self.sortNetwork is not None:
-            act = self.sortNetwork.forward(act)
-
-        if self.syntacticLayer is not None or self.wordSpace is not None:
-            # Rule #2: C → S axis commitment. The [B, N, D] symbol tensor
-            # is already laid out as [what | where | when] columns by
-            # convention; demuxing stores each block in its modality slot
-            # so downstream slot selectors (whatForward/whereForward/
-            # whenForward) and decompose can read axis-separated state.
-            if act.ndim == 3 and act.shape[-1] == self.subspace.muxedSize:
-                self.subspace.demux(act)
-            # Route compose through WordSpace if wired, else directly.
-            act = self._syntactic_compose(act, self.subspace, TheGrammar)
-
-        if self.codebook:
-            self.subspace.set_event(act)
-            self.subspace.what.forward(self.subspace)
-            vspace = self.forwardEnd(self.subspace)
-        else:
-            self.subspace.set_event(act)
-
-        return vspace
-
-    def init_syntactic_layer(self, n_slots, grammar, symbol_dim=0):
-        """Create the S-tier SyntacticLayer."""
-        self.syntacticLayer = SymbolicSyntacticLayer(
-            nInput=n_slots, nOutput=n_slots,
-            rules=grammar.symbolic(),
-            transition_rule=grammar.symbolic_transition(),
-            max_depth=max(n_slots - 1, 1),
-            hidden_dim=min(256, max(64, n_slots * 4)),
-            grammar=grammar,
-        )
-        self.syntacticLayer.init_swap(symbol_dim, n_slots)
-        self.layers.append(self.syntacticLayer)
-
-        # Allocate the unified rule codebook, sized to the grammar's S-tier
-        # rule count. Each row is a learnable vector the same width as the
-        # symbol codebook (self.nDim). Index 0 is an empty-slot sentinel
-        # (padding_idx prevents gradient). Indices 1..nRules map to rule_ids
-        # 0..nRules-1. Used by WordSubSpace.push() to embed rule identities
-        # into the word-stream buffer.
-        try:
-            nRules = int(len(grammar.symbolic()))
-        except Exception:
-            nRules = 0
-        self.nRuleEntries = nRules
-        if nRules > 0 and self.nDim > 0:
-            self.rule_codebook = nn.Embedding(nRules + 1, self.nDim, padding_idx=0)
-            nn.init.normal_(self.rule_codebook.weight, std=0.01)
-            with torch.no_grad():
-                self.rule_codebook.weight[0].zero_()
-            self.layers.append(self.rule_codebook)
-
-    def lookup_rule(self, rule_id):
-        """Return the learnable codebook vector for a grammar rule_id.
-
-        rule_id is a 0-based index into grammar.symbolic(); the codebook
-        stores it at position rule_id+1 (index 0 is the empty-slot
-        sentinel). Returns a [nDim] tensor, or None if the codebook has
-        not been allocated yet.
-        """
-        if self.rule_codebook is None:
-            return None
-        if rule_id is None or rule_id < 0 or rule_id >= self.nRuleEntries:
-            # Return the zero sentinel at index 0.
-            idx = torch.zeros(1, dtype=torch.long,
-                              device=self.rule_codebook.weight.device)
-        else:
-            idx = torch.tensor([rule_id + 1], dtype=torch.long,
-                               device=self.rule_codebook.weight.device)
-        return self.rule_codebook(idx).squeeze(0)
-
-    def reverse(self, vspace):
-        """Map symbol vectors back to concept vectors via PiLayer.reverse (Π⁻¹).
-
-        Reverse maps on nDim axis: [B, N, symbol_dim] → [B, N, concept_dim].
-        """
-        if self.passThrough:
-            return vspace
-        vspace = self.reverseBegin(vspace)
-        act = vspace.materialize()                        # [B, N, symbol_dim]
-        if self.syntacticLayer is not None or self.wordSpace is not None:
-            act = self._syntactic_decompose(act, self.subspace, TheGrammar)
-        if self.sortNetwork is not None:
-            act = self.sortNetwork.reverse(act)
-        act = self.layer.reverse(act)                     # [B, N, concept_dim]
-        if self.codebook:
-            self.subspace.set_event(act)
-            result = self.reverseEnd(self.subspace)
-        else:
-            self.subspace.set_event(act)
-            result = self.subspace
-        result.normalize("concepts", target="what", normalize=True)
-        return result
-
-    def evaluate_truth(self, vspace):
-        """START-level: evaluate truth of the full stack → scalar."""
-        act = vspace.materialize(mode="activation")
-        return self.syntacticLayer.trueForward(act, self.subspace)
-
-    @staticmethod
-    def test():
-        pass
-class OutputSpace(Space):
-    """Maps symbolic vectors to task targets (classification logits, regression values).
-
-    In the forward data flow: SymbolicSpace -> **OutputSpace** -> loss.
-    Uses a LinearLayer to project the (flattened) symbolic representation down
-    to the target dimensionality.  Always uses reshape=True since the number of
-    input objects (symbols) typically differs from the number of outputs.
-
-    ``text_mode``: when enabled via ``set_text_mode()``, supports reconstructing
-    text from symbolic vectors by snapping to the nearest codebook entry and
-    recovering byte-offset positions.
-    """
-    name = "Outputs"
-    config_section = "OutputSpace"
-    text_mode = False
-
-    def _register_requirements(self):
-        """OutputSpace always reshapes; nVectors and nActive are independently specified."""
-        pass
-
-    def _build_object_basis(self):
-        # OutputSpace always uses its own Tensor basis for forward results.
-        # The Embedding reference (if any) is stored separately for text_mode reverse.
-        initial_vectors = getattr(self, "_initial_vectors", None)
-        if isinstance(initial_vectors, Basis):
-            self._vocabulary = initial_vectors  # keep for text_mode reverse
-        basis = Tensor()
-        basis.create(
-            self.inputShape[0],
-            self.outputShape[0],
-            self.muxedSize,  # full event width
-            passThrough=True,
-        )
-        return basis
-
-    def __init__(self, inputShape, spaceShape, outputShape, masked_prediction=False, vectors=None):
-        section = self.config_section
-        invertible = TheXMLConfig.space(section, "invertible")
-        self.masked_prediction = masked_prediction
-        object.__setattr__(self, "_initial_vectors", vectors)
-        self.nonlinear_output = TheXMLConfig.space(section, "nonlinear")
-        super().__init__(inputShape, spaceShape, outputShape)
-        self.data = TheData
-        self._vocabulary = getattr(self, '_vocabulary', None)
-        self.text_mode = isinstance(self._vocabulary, Embedding)
-
-        if self.nonlinear_output:
-            # PiLayer activation-mode path for ramsified symbol output
-            nIn = inputShape[0]
-            nOut = outputShape[0]
-            self._piLayer = PiLayer(nIn, nOut, invertible=True, monotonic=True)
-            self.layers = nn.ModuleList([self._piLayer])
-        else:
-            input = self.subspace.getEncodedInputSize()
-            output = self.subspace.getEncodedOutputSize()
-            if self.reversible:
-                if invertible:
-                    self.linear1 = InvertibleLinearLayer(input, output)
-                    self.forwardLinear, self.reverseLinear = self.linear1.forward, self.linear1.reverse
-                    self.layers = nn.ModuleList([self.forwardLinear])
-                else:
-                    self.linear1 = LinearLayer(input, output)
-                    self.linear2 = LinearLayer(output, input)
-                    self.forwardLinear, self.reverseLinear = self.linear1.forward, self.linear2.forward
-                    self.layers = nn.ModuleList([self.linear1, self.linear2])
-            else:
-                self.forwardLinear = LinearLayer(input, output)
-                self.layers = nn.ModuleList([self.forwardLinear])
-        self.params = list(self.parameters())
-    def getTestOutput(self):
-        if not self.data.test_output:
-            return None
-        out = self.data.test_output
-        if isinstance(out, list):
-            out = torch.stack(out)
-        return out.squeeze(-1) if out.ndim == 3 else out
-    def prepOutput(self, outputBatch):
-        if isinstance(outputBatch, list):
-            return torch.stack(outputBatch, dim=0).unsqueeze(1).to(TheDevice.get())
-        return outputBatch  # already [B, D, 1] and on device after toDevice()
-    def forward(self, vspace):
-        """Acting: project symbols to task output."""
-        if self.nonlinear_output:
-            # Activation-mode: PiLayer on symbol activations [B, nSymbols] → [B, nOutput]
-            act = vspace.materialize(mode="activation")
-            output = self._piLayer.forward(act)
-            from data import TheData
-            output = TheData.denormalize(output, which="output")
-            self.subspace.set_activation(output)
-            return self.subspace
-
-        # Default vector-mode: LinearLayer on flattened vectors
-        x = self.forwardBegin(vspace, returnVectors=True)
-        output = self.forwardLinear(x)
-        from data import TheData
-        output = TheData.denormalize(output, which="output")
-        if self.codebook:
-            output = self.subspace.get_vectors().forward(output)
-        vspace = self.forwardEnd(output, returnVectors=True)
-        return vspace
-
-    def reverse(self, vspace):
-        """Being acted upon: map output back to symbolic space."""
-        if self.nonlinear_output:
-            # Activation-mode: PiLayer reverse [B, nOutput] → [B, nSymbols]
-            act = vspace.materialize(mode="activation")
-            from data import TheData
-            act_norm = TheData.normalize(act, which="output")
-            symbol_act = self._piLayer.reverse(act_norm)
-            self.subspace.set_activation(symbol_act)
-            return self.subspace
-
-        # Default vector-mode
-        y = self.reverseBegin(vspace, returnVectors=True)
-        self.subspace.set_event(y)
-        self.subspace.denormalize("output", target="what")
-        y = self.subspace.materialize()
-        y = self.reverseLinear(y)
-        vspace = self.reverseEnd(y, returnVectors=True)
-        return vspace
-
-    def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM'):
-        """Extract target embedding vectors from the embedded sentence.
-
-        Each target is the original embedded word vector at the masked position,
-        paralleling InputSpace.expand_masked() which creates masked copies.
-
-        Modes:
-            MLM/ARLM: Target[i] = embedded word i.
-            ARUS: Zero vectors (loss suppressed in runEpoch).
-            RARLM: Targets in reverse order (matching reverse mask positions).
-
-        Args:
-            embedded: [1, nVectors, embeddingSize] from InputSpace.forward()
-            sentence_text: original sentence string (for word count)
-            maskedPrediction: prediction mode ('MLM', 'ARLM', 'ARUS', or 'RARLM')
-
-        Returns:
-            targets: [N, 1, embeddingSize] tensor of target word embeddings
-        """
-        words = sentence_text.split()
-        N = min(len(words), embedded.shape[1])
-        embSize = embedded.shape[-1]
-        if N == 0:
-            return torch.zeros(0, 1, embSize, device=TheDevice.get())
-        # Extract the first N full word vectors (nWhat + nWhere + nWhen)
-        targets = embedded[0, :N, :].clone()  # [N, embSize]
-        if maskedPrediction == 'ARUS':
-            targets = torch.zeros_like(targets)
-        elif maskedPrediction == 'RARLM':
-            targets = targets.flip(0)
-        return targets.unsqueeze(1)  # [N, 1, embSize]
-    # --- Text reconstruction from symbolic vectors ---
-    def set_text_mode(self, input_space):
-        """Share InputSpace's Embedding so OutputSpace can reconstruct text.
-
-        Convenience method for tests. Production code passes vectors= to __init__.
-        """
-        vs = input_space.subspace.vocabulary
-        self._vocabulary = vs
-        self.text_mode = isinstance(vs, Embedding)
-
-    def _reverse_text_vectors(self, vectors):
-        emb = self._vocabulary
-        nWhat = emb.content_dim
-        object_encoding = self.subspace.objectEncoding
-        if object_encoding is not None:
-            content, aux = object_encoding.split_aux(vectors, nWhat)
-        else:
-            if vectors.shape[-1] <= nWhat:
-                content, aux = vectors.clone(), None
-            else:
-                content, aux = vectors[:, :, :nWhat].clone(), vectors[:, :, nWhat:].clone()
-        content = emb.reverse(content)
-        if object_encoding is not None:
-            restored = object_encoding.restore_aux(content, aux)
-        elif aux is not None:
-            restored = torch.cat([content, aux], dim=-1)
-        else:
-            restored = content
-        return restored, emb.decode_reverse_meta(restored, subspace=self.subspace)
-
-    def reconstruct_tokens(self, vectors):
-        """Return positioned tokens decoded from symbolic vectors.
-
-        Delegates to the Basis / Embedding reverse() path.
-        """
-        if not self.text_mode:
-            raise RuntimeError("reconstruct_tokens() requires text_mode.")
-        _, meta = self._reverse_text_vectors(vectors)
-        return meta['tokens']
-
-    def reconstruct_data(self, vectors):
-        """Reconstruct words and positions from symbolic vectors.
-
-        Delegates to the Basis / Embedding reverse() which handles
-        Encoding stripping, codebook snapping, and reassembly.
-
-        Args:
-            vectors: Tensor of shape [batch, nVec, embeddingSize] containing
-                     symbolic vectors with nWhat content and nWhere positioning.
-
-        Returns:
-            (recovered_words, recovered_offsets) where:
-              - recovered_words is a list of lists of strings, one per batch element
-              - recovered_offsets is a list of lists of floats (byte offsets),
-                one per batch element.  None entries mean nWhere was absent (zero).
-        """
-        if not self.text_mode:
-            raise RuntimeError("reconstruct_data() called but text_mode is not enabled. "
-                               "Call set_text_mode(input_space) first.")
-        recovered_tokens = self.reconstruct_tokens(vectors)
-        return (
-            [[word for word, _ in batch] for batch in recovered_tokens],
-            [[offset for _, offset in batch] for batch in recovered_tokens],
-        )
-
-    def reconstruct_buffer(self, vectors, buf_size=256):
-        """Reconstruct a destination buffer string from symbolic vectors.
-
-        Uses nWhere byte offsets (when present) to place words at specific
-        positions; falls back to consecutive placement when nWhere is absent.
-
-        Args:
-            vectors: Tensor of shape [batch, nVec, embeddingSize].
-            buf_size: Size of the destination buffer in bytes.
-
-        Returns:
-            List of strings, one per batch element.
-        """
-        _, meta = self._reverse_text_vectors(vectors)
-        return self._vocabulary.reconstruct_to_buffer(
-            meta, buf_size=buf_size)
-
-    def clearBatchResults(self):
-        """Clear accumulated batch results. Called at start of each runEpoch."""
-        self._batch_results = []
-
-    def putBatch(self, result):
-        """Collect output from a completed batch (symmetric with getBatch).
-
-        Results are cleared at the start of each runEpoch() via clearBatchResults().
-
-        Args:
-            result: BatchResult namedtuple from runBatch().
-        """
-        if not hasattr(self, '_batch_results'):
-            self._batch_results = []
-        self._batch_results.append(result)
