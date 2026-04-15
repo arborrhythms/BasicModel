@@ -173,6 +173,10 @@
     <sortNetwork>false</sortNetwork>
     <sortPasses>0</sortPasses>
     <l1Lambda>0.01</l1Lambda>
+    <symbolResidualScale>1.0</symbolResidualScale>
+    <outputSymbolResidualScale>0.0</outputSymbolResidualScale>
+    <decorrelationWeight>0.0</decorrelationWeight>
+    <spectralFlatnessWeight>0.0</spectralFlatnessWeight>
     <truthMinMagnitude>0.3</truthMinMagnitude>
     <truthMinNovelty>0.5</truthMinNovelty>
     <truthMaxInconsistency>0.3</truthMaxInconsistency>

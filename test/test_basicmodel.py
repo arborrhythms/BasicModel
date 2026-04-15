@@ -3265,6 +3265,15 @@ class TestSubspaceNormalize(unittest.TestCase):
         self.assertTrue(torch.all(y >= -1) and torch.all(y <= 1))
         self.assertTrue(torch.allclose(y, torch.tanh(x)))
 
+    def test_percepts_reverse_normalize_roundtrip(self):
+        """reverse=True applies atanh as the inverse percept normalization."""
+        ss = self._make_ss()
+        x = torch.randn(2, 4, 3) * 0.25
+        ss.set_event(x.clone())
+        ss.normalize("percepts", target="event", normalize=True)
+        ss.normalize("percepts", target="event", normalize=True, reverse=True)
+        self.assertTrue(torch.allclose(ss.materialize(), x, atol=1e-6))
+
     def test_concepts_range(self):
         """normalize('concepts') produces values in [-1, 1] via tanh."""
         ss = self._make_ss()
@@ -3274,6 +3283,13 @@ class TestSubspaceNormalize(unittest.TestCase):
         y = ss.get_activation()
         self.assertTrue(torch.all(y >= -1) and torch.all(y <= 1))
         self.assertTrue(torch.allclose(y, torch.tanh(x[:, :, 0])))
+
+    def test_reverse_requires_normalize_true(self):
+        """reverse=True is an inverse transform, not a range check."""
+        ss = self._make_ss()
+        ss.set_event(torch.randn(2, 4, 3))
+        with self.assertRaises(ValueError):
+            ss.normalize("percepts", target="event", normalize=False, reverse=True)
 
     def test_symbols_discrete(self):
         """normalize('symbols') produces {0, 1} integers with STE gradients."""
@@ -3296,6 +3312,80 @@ class TestSubspaceNormalize(unittest.TestCase):
         ss.set_event(torch.randn(2, 4, 3))
         with self.assertRaises(ValueError):
             ss.normalize("bogus", target="what", normalize=True)
+
+
+class TestSymbolObjective(unittest.TestCase):
+    """SymbolicSpace uses residual-first objective terms."""
+
+    def test_symbol_objective_residual_primary_l1_secondary(self):
+        _populate_test_config(conceptDim=3, symbolDim=3,
+                              nConcepts=2, nSymbols=2,
+                              perceptHasAttention=False)
+        sym = Models.SymbolicSpace(
+            inputShape=[2, 3],
+            spaceShape=[2, 3],
+            outputShape=[2, 3],
+        )
+        sym.symbol_residual_scale = 2.0
+        sym.l1_lambda = 0.1
+        sym.decorrelation_weight = 0.0
+        sym.spectral_flatness_weight = 0.0
+        sym.reset_symbol_objective()
+
+        predicted = torch.tensor(
+            [[[1.0, -2.0, 3.0], [0.5, -0.5, 1.5]]],
+            requires_grad=True,
+        )
+        target = torch.zeros_like(predicted)
+        sym.accumulate_symbol_objective(predicted, target)
+
+        terms = sym.symbol_objective_terms()
+        self.assertIn("symbol_residual", terms)
+        self.assertIn("symbol_l1", terms)
+        self.assertTrue(torch.allclose(
+            terms["symbol_residual"],
+            2.0 * torch.nn.functional.mse_loss(predicted, target),
+        ))
+        self.assertTrue(torch.allclose(
+            terms["symbol_l1"],
+            0.1 * predicted.abs().mean(),
+        ))
+
+        loss = sym.symbol_objective_loss()
+        loss.backward()
+        self.assertIsNotNone(predicted.grad)
+        self.assertGreater(predicted.grad.abs().sum().item(), 0.0)
+
+    def test_symbol_objective_uses_nearest_codebook_target(self):
+        _populate_test_config(conceptDim=3, symbolDim=3,
+                              nConcepts=2, nSymbols=2,
+                              perceptHasAttention=False)
+        sym = Models.SymbolicSpace(
+            inputShape=[2, 3],
+            spaceShape=[2, 3],
+            outputShape=[2, 3],
+        )
+        sym.symbol_residual_scale = 1.0
+        sym.l1_lambda = 0.0
+        sym.subspace.what.setW(torch.tensor([
+            [0.0, 0.0, 0.0],
+            [1.0, 1.0, 1.0],
+        ]))
+        sym.reset_symbol_objective()
+
+        predicted = torch.tensor(
+            [[[0.9, 1.1, 1.0], [0.1, -0.1, 0.0]]],
+            requires_grad=True,
+        )
+        sym.accumulate_symbol_objective(predicted, use_codebook_target=True)
+
+        terms = sym.symbol_objective_terms()
+        target = torch.tensor([[[1.0, 1.0, 1.0], [0.0, 0.0, 0.0]]])
+        self.assertIn("symbol_residual", terms)
+        self.assertTrue(torch.allclose(
+            terms["symbol_residual"],
+            torch.nn.functional.mse_loss(predicted, target),
+        ))
 
 
 class TestDataScaling(unittest.TestCase):

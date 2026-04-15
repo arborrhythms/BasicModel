@@ -1119,13 +1119,17 @@ class Embedding(Basis):
         if wv is None:
             wv = self._load_embeddings(embedding_path=embedding_path, nDim=nDim)
         if wv is None:
-            # No matching embeddings on disk — start with a single placeholder.
-            # Real words are added dynamically during forward passes via insert().
+            # No matching embeddings on disk — start with \x00 at index 0.
+            # This is both the EOS/padding sentinel AND the first real
+            # byte, which makes byte_value == codebook_index throughout
+            # the full 0..255 range.  ChunkLayer.BOUNDARY_BYTES assumes
+            # this alignment (see code review).  Real words are added
+            # dynamically during forward passes via insert().
             dim = nDim or 20
             print(f"Starting with dynamic {dim}-dim embedding (words added at runtime)")
             placeholder = torch.randn(1, dim, device=TheDevice.get())
             placeholder = F.normalize(placeholder, p=2, dim=1)
-            wv = WordVectors(placeholder, ["<pad>"])
+            wv = WordVectors(placeholder, ["\x00"])
         self.wv = wv
         vocab_size = len(wv)
         vector_size = wv.vector_size
@@ -1147,13 +1151,11 @@ class Embedding(Basis):
         self.min_frequency = float(min_frequency)
         self._pending_counts: dict = {}
 
-        # Add \x00 as the EOS/padding sentinel.
-        # A real character with a learned embedding — used to fill padding
-        # positions in _forward_lex so the model has a concrete reconstruction
-        # target for positions beyond the real tokens.
-        self.insert("\x00")
-
         # Bootstrap codebook with ASCII (and full 0-255 in byte mode).
+        # \x00 is already at index 0 from the placeholder row above; fill
+        # chr(1)..chr(upper-1) at indices 1..upper-1 so byte_value aligns
+        # with codebook_index.  ChunkLayer.BOUNDARY_BYTES (space, tab, LF,
+        # CR, NUL) depends on this alignment to detect word boundaries.
         self.byte_mode = byte_mode
         upper = 256 if byte_mode else 127
         for cp in range(1, upper):
@@ -2464,12 +2466,16 @@ class SubSpace(nn.Module):
     # Normalization
     # ------------------------------------------------------------------
 
-    def normalize(self, kind, target="activation", normalize=False, strict=False):
+    def normalize(self, kind, target="activation", normalize=False, strict=False,
+                  reverse=False):
         """Normalize or check range of an encoding of this subspace.
 
         When normalize=True, transforms the tensor in-place to the
         correct range for the space kind.  When normalize=False,
         checks whether the tensor is already in range.
+
+        When reverse=True with normalize=True, applies the inverse of
+        the normalizing transform in the same target scope.
 
         When strict=True (nonlinear path), raises ValueError on
         out-of-range input — the sigmoid/logit pair guarantees the
@@ -2477,12 +2483,10 @@ class SubSpace(nn.Module):
         emits a warning — allows exploring the unconstrained path.
 
         Geometry-aware:
-          - "percepts" on vectors → sigmoid + clamp [0,1] (hypercube)
-          - "percepts" on activation → sigmoid [0,1]
-          - "concepts" on vectors → L2 unit-norm (hypersphere)
-          - "concepts" on activation → tanh [-1,1]
+          - "percepts" on vectors/activation → tanh [-1,1]
+          - "concepts" on vectors/activation → tanh [-1,1]
           - "symbols" → STE round {0,1} (activation only)
-          - "input" on vectors → min-max scale to [0,1]
+          - "input" on vectors → min-max scale to [-1,1]
 
         Args:
             kind: "percepts", "concepts", "symbols", or "input".
@@ -2492,6 +2496,7 @@ class SubSpace(nn.Module):
                 If False, check range only.
             strict: if True, raise ValueError on violation.
                 If False, emit a warning.
+            reverse: if True, apply the inverse normalizing transform.
         """
         x = self.select(target)
         if x is None or x.numel() == 0:
@@ -2502,6 +2507,23 @@ class SubSpace(nn.Module):
                 f"but subspace is demuxed. Use target='what'/'where'/'when' "
                 f"individually, or call set_event() first."
             )
+        if reverse and not normalize:
+            raise ValueError("reverse=True requires normalize=True")
+
+        # Non-finite gate: values arriving here should already be finite.
+        # A nan/inf at this point means an upstream layer produced garbage
+        # (exploding PiLayer, division by zero in attention, etc.).  Catch
+        # it at the normalize boundary so the error is attributed to the
+        # space that produced it rather than silently propagating.
+        finite_mask = torch.isfinite(x.detach())
+        if not finite_mask.all():
+            n_bad = int((~finite_mask).sum().item())
+            msg = (f"Non-finite values in kind={kind!r}, target={target!r}: "
+                   f"{n_bad}/{x.numel()} entries are nan/inf.")
+            if strict:
+                raise ValueError(msg)
+            else:
+                warnings.warn(msg)
         if not normalize:
             is_vector = target in ("what", "where", "when", "event")
             xd = x.detach()
@@ -2549,44 +2571,75 @@ class SubSpace(nn.Module):
                         else:
                             warnings.warn(msg)
             return
-        normalized = self._apply_normalization(kind, x, target=target)
+        if reverse:
+            normalized = self._apply_reverse_normalization(kind, x, target=target)
+        else:
+            normalized = self._apply_normalization(kind, x, target=target)
         self.put(target, normalized)
 
     def _apply_normalization(self, kind, x, target="activation"):
         """Apply normalization function to tensor x.
 
         The combination of kind and target determines the geometry:
-          - Perceptual vectors and activations use tanh [-1,1].
-          - Conceptual vectors and activations use tanh [-1,1].
+          - Perceptual vectors and activations use (1-eps)*tanh → (-(1-eps), 1-eps).
+          - Conceptual vectors and activations use (1-eps)*tanh → (-(1-eps), 1-eps).
           - Activations use scalar transfer functions (tanh/STE).
+
+        The ``(1-eps)`` shrinkage is a minimal regularizer that keeps the
+        output strictly away from ±1, so that the inverse (atanh) is
+        always finite without requiring a clamp.  The reverse path
+        (see ``_apply_reverse_normalization``) divides by ``(1-eps)``
+        before ``atanh``, preserving exact invertibility for the full
+        range of real inputs — no branches, no clamp.
         """
         is_vector = target in ("what", "where", "when", "event")
         if kind == "percepts":
-            return torch.tanh(x)
+            return (1.0 - epsilon) * torch.tanh(x)
         elif kind == "concepts":
-            return torch.tanh(x)
+            return (1.0 - epsilon) * torch.tanh(x)
         elif kind == "symbols":
             soft = torch.sigmoid(x)
             hard = torch.round(soft)
             return hard - soft.detach() + soft  # straight-through estimator
         elif kind == "input":
             if is_vector:
-                return TheData.normalize(x, which="input")  # [0,1] via global min-max
+                return TheData.normalize(x, which="input")  # [-1,1] via global min-max
             return x
         else:
             raise ValueError(f"Unknown normalization kind: {kind!r}")
+
+    def _apply_reverse_normalization(self, kind, x, target="activation"):
+        """Apply the exact inverse of ``_apply_normalization``.
+
+        For percepts/concepts, the forward pass is ``y = (1-eps)*tanh(x)``
+        and the inverse is ``x = atanh(y / (1-eps))``.  Because ``y``
+        is strictly inside ``(-(1-eps), 1-eps)``, ``y / (1-eps)`` is
+        strictly inside ``(-1, 1)`` and ``atanh`` is finite without any
+        clamp.  This preserves the reverse pass as a true inverse of the
+        forward pass, which ``test_forward_reverse_reconstructs_input_state``
+        verifies to 1e-6 tolerance.
+        """
+        is_vector = target in ("what", "where", "when", "event")
+        if kind in ("percepts", "concepts"):
+            return torch.atanh(x / (1.0 - epsilon))
+        elif kind == "input" and is_vector:
+            return TheData.denormalize(x, which="input")
+        elif kind == "symbols":
+            raise RuntimeError("Cannot reverse-normalize symbols")
+        else:
+            raise ValueError(f"Unknown reversible normalization kind: {kind!r}")
 
     def denormalize(self, kind, target="activation"):
         """Reverse the normalization applied by normalize().
 
         Only meaningful for kinds with invertible transforms:
-          - "input" on vectors → scale from [0,1] back to [input_min, input_max]
+          - "input" on vectors → scale from [-1,1] back to [input_min, input_max]
           - "output" on vectors → scale from [output_min, output_max] to [-1,1]
 
         Invertible transforms:
-          - "percepts" → logit (inverse sigmoid): [0,1] → ℝ
+          - "percepts" → atanh (inverse tanh): [-1,1] → ℝ
           - "concepts" → atanh (inverse tanh): [-1,1] → ℝ
-          - "input" on vectors → scale from [0,1] back to [input_min, input_max]
+          - "input" on vectors → scale from [-1,1] back to [input_min, input_max]
           - "output" on vectors → scale from [output_min, output_max] to [-1,1]
           - "symbols" (STE round) is not invertible and is skipped.
         """
@@ -2594,19 +2647,8 @@ class SubSpace(nn.Module):
         if x is None or x.numel() == 0:
             return
         is_vector = target in ("what", "where", "when", "event")
-        if kind == "percepts":
-            # logit: inverse of sigmoid
-            x = x.clamp(min=epsilon, max=1 - epsilon)
-            self.put(target, torch.log(x / (1 - x)))
-        elif kind == "concepts":
-            if is_vector:
-                raise RuntimeError("Cannot denormalize")
-            else:
-                # atanh: inverse of tanh
-                x = x.clamp(min=-1 + epsilon, max=1 - epsilon)
-                self.put(target, torch.atanh(x))
-        elif kind == "input" and is_vector:
-            self.put(target, TheData.denormalize(x, which="input"))
+        if kind in ("percepts", "concepts", "input"):
+            self.normalize(kind, target=target, normalize=True, reverse=True)
         elif kind == "output" and is_vector:
             self.put(target, TheData.normalize(x, which="output"))
 
@@ -3186,14 +3228,16 @@ class Space(nn.Module):
         return None
 
     def _register_requirements(self):
-        """Register base-class config requirements."""
+        """Register base-class config requirements.
+
+        Codebook spaces sample with replacement, so ``nVectors`` can be
+        smaller, equal, or larger than ``nActive`` — any positive value
+        is valid.  Non-codebook spaces still require ``nVectors == nActive``
+        because they use a direct one-to-one vector store.
+        """
         section_name = self.config_section
         nV = self.nVectors
         nA = self.outputShape[0]
-        TheXMLConfig.require(
-            lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv >= _na,
-            f"{section_name}: nVectors ({nV}) must be >= nActive ({nA})"
-        )
         if not self.codebook:
             TheXMLConfig.require(
                 lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv == _na,
@@ -3401,6 +3445,20 @@ class InputSpace(Space):
     """
     name = "Inputs"
     config_section = "InputSpace"
+
+    def _register_requirements(self):
+        """InputSpace vocabularies are inherently sampling-with-replacement.
+
+        The ``<codebook>`` XML flag in InputSpace controls downstream
+        quantization behaviour, *not* whether the vocabulary allows a
+        vocab-size (``nVectors``) independent from the buffer size
+        (``nActive`` / ``nOutput``).  A byte-mode InputSpace with
+        ``nVectors=256`` and ``nOutput=32`` is perfectly valid: every
+        one of the 32 output positions draws (with replacement) from
+        the 256-entry vocabulary.  So we impose no cross-constraint
+        here.
+        """
+        pass
 
     def _build_object_basis(self):
         """InputSpace .event is a writable Tensor (receives muxed forward results)."""
@@ -4064,11 +4122,9 @@ class PerceptualSpace(Space):
 
         invertible = TheXMLConfig.space(self.config_section, "invertible")
         if not invertible:
-            # Standard checks
-            TheXMLConfig.require(
-                lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv >= _na,
-                f"PerceptualSpace: nVectors ({nV}) must be >= nOutput ({nA})"
-            )
+            # Codebook sampling is with replacement, so nVectors is
+            # independent of nOutput.  Non-codebook still needs a
+            # direct one-to-one mapping.
             if not self.codebook:
                 TheXMLConfig.require(
                     lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv == _na,
@@ -4105,7 +4161,7 @@ class PerceptualSpace(Space):
         return torch.prod( [1-x, 1-y] )
     def certainty(self, x):
         pass
-    def forward(self, vspace, wordSpace=None):
+    def forward(self, vspace, wordSpace=None, quantize=True):
         """Perception: map input vectors to percepts via attention + VQ + chunking."""
         if self.passThrough:
             return vspace
@@ -4115,7 +4171,7 @@ class PerceptualSpace(Space):
         x = self.forwardBegin(vspace, returnVectors=True)
         if self.hasAttention:
             x = self.attention.forward(x)
-        if self.codebook:
+        if self.codebook and quantize:
             x = self.subspace.get_vectors().forward(x)
         if wordSpace is not None:
             x = wordSpace.forwardPercepts(x, self.subspace)
@@ -4127,6 +4183,9 @@ class PerceptualSpace(Space):
         """Manifesting: reconstruct input vectors from percepts."""
         if self.passThrough:
             return vspace
+        if self.invertible:
+            vspace.normalize("percepts", target="event",
+                             normalize=True, reverse=True)
         y = self.reverseBegin(vspace, returnVectors=True)
         if wordSpace is not None:
             y = wordSpace.reversePercepts(y, self.subspace)
@@ -4618,14 +4677,21 @@ class SymbolicSpace(Space):
             self.pi_layers = None
         self.layer = PiLayer(nConceptDim, nSymbolDim, invertible=True, monotonic=True) if not self._hierarchical else self.pi_layers[0]
 
-        # L1 sparsity on symbolic activations: soft-threshold applied to
-        # ``materialize()`` output after each Pi pass, to keep the symbol
-        # stack sparse. The Pi projection is the only place this belongs.
-        try:
-            self.l1_lambda = float(
-                TheXMLConfig.get("SymbolicSpace.l1Lambda"))
-        except (KeyError, TypeError, ValueError):
-            self.l1_lambda = 0.0
+        # Symbol objective: residual accuracy is primary; L1 remains a
+        # secondary compactness pressure on latent activations.
+        def _symbol_cfg(key, default):
+            try:
+                return float(TheXMLConfig.space(section, key))
+            except (KeyError, TypeError, ValueError):
+                return default
+
+        self.l1_lambda = _symbol_cfg("l1Lambda", 0.0)
+        self.symbol_residual_scale = _symbol_cfg("symbolResidualScale", 1.0)
+        self.output_symbol_residual_scale = _symbol_cfg(
+            "outputSymbolResidualScale", 0.0)
+        self.decorrelation_weight = _symbol_cfg("decorrelationWeight", 0.0)
+        self.spectral_flatness_weight = _symbol_cfg("spectralFlatnessWeight", 0.0)
+        self.reset_symbol_objective()
 
         # Truth accumulation: accumulateTruth is 0..1 (DoT for recorded symbols).
         # Default 0 (off). Server sets to 1 when processing the TruthSet,
@@ -4729,6 +4795,7 @@ class SymbolicSpace(Space):
         assert pair_output is not None, f"missing butterfly pair output for stage {stage_idx}"
         pair_symbols = self.butterfly_pis[stage_idx].forward(pair_output)
         sym_vectors = self._pair_state_to_symbols(pair_symbols)
+        self.accumulate_symbol_objective(sym_vectors, use_codebook_target=True)
         self.subspace.set_event(sym_vectors)
         return self.subspace
 
@@ -4761,16 +4828,118 @@ class SymbolicSpace(Space):
         return basis
 
     def l1_proximal(self, x):
-        """Soft-threshold symbolic activations to enforce sparsity.
+        """Soft-threshold activations used as a sparsity bias.
 
-        ``sign(x) * max(|x| - l1_lambda, 0)``. Applied to the ``materialize()``
-        output of each Pi pass; ``l1_lambda`` is loaded from
-        ``SymbolicSpace.l1Lambda`` at construction time.
+        Only active when ``self.codebook`` is true.  L1 on continuous
+        (non-codebook) symbol activations is meaningless — shrinking
+        magnitudes just compresses the latent without selecting a
+        shorter codeword.  When a codebook is present, L1 acts as a
+        proxy for a compactness pressure that prefers fewer, smaller
+        code selections.  (See also MDL proposal in §2 of code review.)
         """
-        if self.l1_lambda <= 0.0:
+        if not self.codebook or self.l1_lambda <= 0.0:
             return x
         return torch.sign(x) * torch.clamp(
             torch.abs(x) - self.l1_lambda, min=0.0)
+
+    def reset_symbol_objective(self):
+        self._symbol_objective_terms = {}
+        self._symbol_objective_count = 0
+
+    def _decorrelation_loss(self, residual):
+        flat = residual.reshape(-1, residual.shape[-1])
+        if flat.shape[0] < 2 or flat.shape[-1] < 2:
+            return residual.new_tensor(0.0)
+        flat = flat - flat.mean(dim=0, keepdim=True)
+        std = flat.std(dim=0, unbiased=False, keepdim=True).clamp_min(epsilon)
+        flat = flat / std
+        corr = flat.transpose(0, 1) @ flat / max(flat.shape[0], 1)
+        eye = torch.eye(corr.shape[0], device=corr.device, dtype=corr.dtype)
+        return ((corr * (1 - eye)) ** 2).mean()
+
+    def _spectral_flatness_loss(self, residual):
+        if residual.shape[-1] < 2:
+            return residual.new_tensor(0.0)
+        power = torch.fft.rfft(residual, dim=-1).abs().square() + epsilon
+        log_power = torch.log(power)
+        return (log_power - log_power.mean(dim=-1, keepdim=True)).square().mean()
+
+    def _nearest_symbol_target(self, predicted):
+        """Nearest codebook symbols as detached residual targets."""
+        if not self.codebook:
+            return None
+        basis = getattr(self.subspace, "what", None)
+        if basis is None or getattr(basis, "passThrough", False):
+            return None
+        weight = basis.getW() if hasattr(basis, "getW") else None
+        if weight is None or weight.numel() == 0:
+            return None
+        flat = predicted.reshape(-1, predicted.shape[-1])
+        weight = weight.detach().to(device=flat.device, dtype=flat.dtype)
+        weight = weight.reshape(-1, weight.shape[-1])
+        n = min(flat.shape[-1], weight.shape[-1])
+        if n <= 0:
+            return None
+        flat_content = flat[:, :n]
+        weight_content = weight[:, :n]
+        flat_sq = (flat_content * flat_content).sum(dim=-1, keepdim=True)
+        weight_sq = (weight_content * weight_content).sum(dim=-1).unsqueeze(0)
+        dists = flat_sq - 2 * (flat_content @ weight_content.T) + weight_sq
+        indices = dists.argmin(dim=-1)
+        target = flat.detach().clone()
+        target[:, :n] = weight_content[indices]
+        return target.reshape_as(predicted)
+
+    def accumulate_symbol_objective(self, predicted, target=None,
+                                    use_codebook_target=False,
+                                    residual_scale=None):
+        """Accumulate residual-first symbol objective terms for one Pi pass."""
+        terms = {}
+        residual = None
+        if target is None and use_codebook_target:
+            target = self._nearest_symbol_target(predicted)
+        scale = self.symbol_residual_scale if residual_scale is None else residual_scale
+        if target is not None and scale > 0.0:
+            target = target.detach()
+            residual = predicted - target
+            terms["symbol_residual"] = (
+                scale * F.mse_loss(predicted, target)
+            )
+        # L1 only makes sense when symbols are discretized through a
+        # codebook; on continuous symbols it would just shrink magnitudes
+        # without promoting compactness of the codebook selection itself.
+        if self.codebook and self.l1_lambda > 0.0:
+            terms["symbol_l1"] = self.l1_lambda * predicted.abs().mean()
+        if residual is not None and self.decorrelation_weight > 0.0:
+            terms["symbol_decorrelation"] = (
+                self.decorrelation_weight * self._decorrelation_loss(residual)
+            )
+        if residual is not None and self.spectral_flatness_weight > 0.0:
+            terms["symbol_spectral_flatness"] = (
+                self.spectral_flatness_weight * self._spectral_flatness_loss(residual)
+            )
+        if not terms:
+            return
+        for key, value in terms.items():
+            self._symbol_objective_terms[key] = (
+                self._symbol_objective_terms.get(key, value.new_tensor(0.0)) + value
+            )
+        self._symbol_objective_count += 1
+
+    def symbol_objective_terms(self):
+        if not self._symbol_objective_terms:
+            return {}
+        count = max(self._symbol_objective_count, 1)
+        return {
+            key: value / count
+            for key, value in self._symbol_objective_terms.items()
+        }
+
+    def symbol_objective_loss(self):
+        terms = self.symbol_objective_terms()
+        if not terms:
+            return None
+        return sum(terms.values())
 
     def __getitem__(self, t):
         """Index into conceptual order levels.
@@ -4794,11 +4963,15 @@ class SymbolicSpace(Space):
             self._pi = parent.pi_layers[t] if parent._hierarchical else parent.layer
             self.subspace = parent.subspace
 
-        def forward(self, vspace, wordSpace=None, butterfly=False):
+        def forward(self, vspace, wordSpace=None, butterfly=False, quantize=True):
             if butterfly and self._parent.butterfly_enabled:
                 return self._parent._forward_butterfly_level(self._t)
             x = vspace.materialize()
             y = self._pi.forward(x)
+            if quantize:
+                y = self._parent.l1_proximal(y)
+            self._parent.accumulate_symbol_objective(
+                y, use_codebook_target=quantize)
             self._parent.subspace.set_event(y)
             return self._parent.subspace
 
@@ -4814,7 +4987,7 @@ class SymbolicSpace(Space):
     def vocabulary(self):
         return self.subspace.what
 
-    def forward(self, vspace, wordSpace=None, butterfly=False):
+    def forward(self, vspace, wordSpace=None, butterfly=False, quantize=True):
         """Map concept vectors to symbol vectors via PiLayer (Π).
 
         PiLayer maps on the nDim axis: [B, nVectors, concept_dim] →
@@ -4825,7 +4998,8 @@ class SymbolicSpace(Space):
         2. Map through PiLayer (log-space multiplicative, monotonic).
         3. Grammar derivation (if syntax=True): shift/reduce over S-tier.
         4. Apply swap on whereEncodings of binary node children.
-        5. Store as symbol vectors in subspace event.
+        5. Optionally quantize into the symbol codebook.
+        6. Store as symbol vectors in subspace event.
         """
         if butterfly and self.butterfly_enabled:
             return self._forward_butterfly_level(0)
@@ -4834,7 +5008,8 @@ class SymbolicSpace(Space):
         vspace = self.forwardBegin(vspace)
         act = vspace.materialize()                        # [B, N, concept_dim]
         act = self.layer.forward(act)                     # [B, N, symbol_dim]
-        act = self.l1_proximal(act)                       # sparsity soft-threshold
+        if quantize:
+            act = self.l1_proximal(act)                   # sparsity bias only
 
         if self.accumulateTruth > 0 and wordSpace is not None:
             truth_layer = getattr(wordSpace, 'truth_layer', None)
@@ -4870,11 +5045,15 @@ class SymbolicSpace(Space):
             # before any slot selector runs.
             act = wordSpace.forwardSymbols(act, self.subspace)
 
-        if self.codebook:
+        if self.codebook and quantize:
+            predicted = act.clone()
             self.subspace.set_event(act)
             self.subspace.what.forward(self.subspace)
             vspace = self.forwardEnd(self.subspace)
+            target = vspace.materialize()
+            self.accumulate_symbol_objective(predicted, target)
         else:
+            self.accumulate_symbol_objective(act)
             self.subspace.set_event(act)
             vspace = self.forwardEnd(self.subspace)
 
@@ -6749,8 +6928,8 @@ class WordSpace(Space):
            ``truth_loss_weight * falsity_penalty(symbol_acts, basis)``
            using ``symbolic_space.subspace.basis``.  ``symbol_acts``
            should be the last entry of the model's ``symbol_states``
-           cache — the post-pi, post-l1-proximal activations from
-           the final Sigma-Pi iteration.  Both operands of the
+           cache — the post-pi activations from the final Sigma-Pi
+           iteration.  Both operands of the
            disjunction then live in symbol space by construction
            (stored truths were also recorded from symbol-space
            activations in ``SymbolicSpace.forwardEnd``).

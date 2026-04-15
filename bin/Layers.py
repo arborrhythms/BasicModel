@@ -935,8 +935,7 @@ class PiLayer(Layer):
         wl = l @ W                                        # [..., nOut]
         b = self.layer._effective_bias()
         wl = wl + b                                       # unconstrained bias
-        y = torch.exp(wl)                                 # (0, ∞)
-        return self._from_mult(y)                         # → (-1, 1)
+        return torch.tanh(wl / 2)                         # → (-1, 1)
 
     def reverse(self, y):
         """Recover x from y.  Requires invertible=True."""
@@ -946,8 +945,7 @@ class PiLayer(Layer):
         l = torch.log(m)                                  # (-∞, +∞)
         b = self.layer._effective_bias()
         lx = (l - b) @ W_inv                              # [..., nIn]
-        x_mult = torch.exp(lx)                            # (0, ∞)
-        x = self._from_mult(x_mult)                       # → (-1, 1)
+        x = torch.tanh(lx / 2)                            # → (-1, 1)
         if self.layer.ergodic:
             self.resample_noise()
         return x
@@ -2758,7 +2756,7 @@ class ChunkLayer(Layer):
             byte_indices: [B, N] long — byte values 0-255
         Returns:
             data: [B, N, D] — span starts hold mean vectors, rest zeroed
-            span_meta: list[list[(start, end)]] per batch
+            span_meta: list[list[(start, end, original_vectors)]] per batch
         """
         B, N, D = data.shape
         data = data.clone()
@@ -2778,10 +2776,11 @@ class ChunkLayer(Layer):
                 while i < N and byte_indices[b, i].item() not in self.BOUNDARY_BYTES:
                     i += 1
                 end = i - 1
+                original = data[b, start:end + 1].clone()
                 data[b, start] = data[b, start:end + 1].mean(dim=0)
                 if end > start:
                     data[b, start + 1:end + 1] = 0.0
-                spans.append((start, end))
+                spans.append((start, end, original))
             span_meta.append(spans)
         return data, span_meta
 
@@ -2795,29 +2794,32 @@ class ChunkLayer(Layer):
         Args:
             data: [B, N, D] sparse byte-level vectors (span starts populated)
             nWordSlots: target dense width
-            span_meta: list[list[(start, end)]] per batch
+            span_meta: list[list[(start, end)]] or
+                list[list[(start, end, original_vectors)]] per batch
             where_encoding: WhereEncoding instance (for sin/cos rewrite)
         Returns:
             dense: [B, nWordSlots, D]
-            compact_map: list[list[(dense_idx, start, end)]] — for reverse
+            compact_map: list[list[(dense_idx, start, end, original_vectors)]] — for reverse
         """
         B, N, D = data.shape
         dense = torch.zeros(B, nWordSlots, D, device=data.device)
         compact_map = []
         for b in range(B):
             mapping = []
-            for dense_idx, (start, end) in enumerate(span_meta[b]):
+            for dense_idx, span in enumerate(span_meta[b]):
                 if dense_idx >= nWordSlots:
                     break
+                start, end = span[0], span[1]
+                original = span[2] if len(span) > 2 else None
                 dense[b, dense_idx] = data[b, start]
-                mapping.append((dense_idx, start, end))
+                mapping.append((dense_idx, start, end, original))
             compact_map.append(mapping)
 
         # Overwrite where-encoding dims with span start byte offset
         if where_encoding is not None and where_encoding.nDim > 0:
             where_idx = [D + i for i in where_encoding.index]  # e.g. [-4,-3] → absolute
             for b in range(B):
-                for dense_idx, start, _end in compact_map[b]:
+                for dense_idx, start, _end, _original in compact_map[b]:
                     pos_enc = where_encoding.encode(float(start))  # [2] sin/cos
                     dense[b, dense_idx, where_idx] = pos_enc
 
@@ -2828,9 +2830,14 @@ class ChunkLayer(Layer):
         B, _, D = dense.shape
         data = torch.zeros(B, nByteSlots, D, device=dense.device)
         for b in range(B):
-            for dense_idx, start, end in compact_map[b]:
+            for item in compact_map[b]:
+                dense_idx, start, end = item[:3]
+                original = item[3] if len(item) > 3 else None
                 span_len = end - start + 1
-                data[b, start:end + 1] = dense[b, dense_idx].unsqueeze(0).expand(span_len, -1)
+                if original is not None:
+                    data[b, start:end + 1] = original.to(device=dense.device, dtype=dense.dtype)
+                else:
+                    data[b, start:end + 1] = dense[b, dense_idx].unsqueeze(0).expand(span_len, -1)
         return data
 #endregion
 
@@ -3152,7 +3159,7 @@ class ModelLoss(Loss):
 
     def forward(self, lossOut, lossIn=None, sbow=None):
         total = lossOut
-        if lossIn is not None and not torch.isnan(lossIn):
+        if lossIn is not None and torch.isfinite(lossIn).all():
             rr = self.reverse_scale
             total = (1 - rr) * lossOut + rr * lossIn
         if sbow is not None:
@@ -3161,6 +3168,240 @@ class ModelLoss(Loss):
 
     def total(self, lossOut, lossIn=None, sbow=None):
         return self(lossOut, lossIn, sbow)
+
+class Error:
+    """Central registry for per-batch error/loss terms.
+
+    ``Error`` is a bookkeeping client of ``Loss``: individual sites still
+    compute their pred-vs-target comparisons via a ``Loss`` instance (or
+    any other path that produces a scalar tensor), and then register the
+    result here with a name, weight, originating space, and category.
+
+    Why a registry? There are currently 12+ loss terms accumulated across
+    four different call sites (``ModelLoss``, ``BasicModel.runBatch``,
+    ``SymbolicSpace.accumulate_symbol_objective``, ``WordSpace.truth_modulated_loss``).
+    Debugging convergence problems used to require grepping each site to
+    answer "what fraction of today's gradient came from which term?".
+    The registry makes that a one-call breakdown, and supports:
+
+      * ``.total()``      — weighted sum for backprop
+      * ``.breakdown()``  — per-term scalars for logging
+      * ``.snapshot()`` + ``.covariance()`` — running covariance across
+                            batches, so you can detect terms that fight
+                            each other (anti-correlation) or that carry
+                            no signal (zero variance).
+      * ``.disable(cat)`` / ``.enable(cat)`` — one-line ablation by
+                            category (``"reconstruction"``, ``"symbol"``,
+                            ``"truth"``, ``"discourse"``, ``"embedding"``,
+                            ``"prediction"``).
+
+    ``Error`` never enforces specific math — the caller decides how each
+    term is computed and chooses its weight (usually from a config knob).
+    The class just collects, sums, and reports.
+
+    Usage pattern inside ``runBatch``:
+
+        TheError.reset()
+        TheError.compute("reconstruction", pred, target,
+                          method="compute", weight=self.loss.reverse_scale,
+                          space="InputSpace", category="reconstruction")
+        TheError.add("symbol_residual", sym_term, weight=1.0,
+                      space="SymbolicSpace", category="symbol")
+        total = TheError.total()          # for backprop
+        TheError.snapshot()                # record for covariance
+    """
+
+    _CATEGORIES = (
+        "reconstruction", "prediction", "symbol",
+        "truth", "discourse", "embedding", "other",
+    )
+
+    def __init__(self, loss: Loss = None, history_max: int = 1024):
+        self._loss: Loss = loss
+        self._terms: dict = {}   # name -> {weight, value, space, category, count}
+        self._history: list = []  # each entry is {name: weighted_scalar}
+        self._history_max = int(history_max)
+        self._disabled: set = set()
+
+    # ---- setup ---------------------------------------------------------
+
+    def attach(self, loss: Loss):
+        """Associate a ``Loss`` instance for ``compute()`` delegation.
+
+        Optional: callers may use ``.add()`` directly and skip ``attach``.
+        """
+        self._loss = loss
+
+    def reset(self):
+        """Clear the per-batch term store.  Preserves history."""
+        self._terms.clear()
+
+    def disable(self, category: str):
+        """Exclude all terms of this category from ``.total()``."""
+        if category not in self._CATEGORIES:
+            warnings.warn(f"Error.disable: unknown category {category!r}; "
+                          f"will still work but consider adding it to "
+                          f"Error._CATEGORIES for consistency.")
+        self._disabled.add(category)
+
+    def enable(self, category: str):
+        self._disabled.discard(category)
+
+    @property
+    def disabled_categories(self):
+        return frozenset(self._disabled)
+
+    # ---- accumulation --------------------------------------------------
+
+    def add(self, name: str, value, *, weight: float = 1.0,
+            space: str = None, category: str = "other"):
+        """Register a pre-computed scalar term.
+
+        Repeated ``name`` values are summed (useful when a term is
+        contributed from multiple layers).  ``value`` may be ``None``
+        (the call becomes a no-op) or a scalar tensor.
+        """
+        if value is None:
+            return
+        if not isinstance(value, torch.Tensor):
+            value = torch.as_tensor(value)
+        rec = self._terms.get(name)
+        if rec is None:
+            self._terms[name] = {
+                "weight": float(weight),
+                "value": value,
+                "space": space,
+                "category": category,
+                "count": 1,
+            }
+        else:
+            rec["value"] = rec["value"] + value
+            rec["count"] += 1
+
+    def compute(self, name: str, pred, target, *,
+                weight: float = 1.0, method: str = "compute",
+                space: str = None, category: str = "reconstruction"):
+        """Compute a term via the attached ``Loss`` instance, then register it.
+
+        ``method`` names a ``Loss`` method (``"compute"``,
+        ``"compute_piecewise"``, ``"output"``, or a subclass extension).
+        Returns the raw (unweighted) loss tensor for convenience — the
+        registry stores the unweighted value and applies ``weight`` at
+        ``.total()`` time.
+        """
+        if self._loss is None:
+            raise RuntimeError(
+                "Error.compute() requires an attached Loss instance; "
+                "call TheError.attach(model_loss) first."
+            )
+        fn = getattr(self._loss, method, None)
+        if fn is None:
+            raise AttributeError(
+                f"Error.compute: Loss has no method {method!r}")
+        value = fn(pred, target)
+        self.add(name, value, weight=weight, space=space, category=category)
+        return value
+
+    # ---- aggregation / inspection --------------------------------------
+
+    def total(self):
+        """Return the weighted sum of all enabled terms (or ``None``)."""
+        if not self._terms:
+            return None
+        total = None
+        for rec in self._terms.values():
+            if rec["category"] in self._disabled:
+                continue
+            contrib = rec["weight"] * rec["value"]
+            total = contrib if total is None else total + contrib
+        return total
+
+    def breakdown(self):
+        """Per-term snapshot keyed by name.
+
+        Each entry is ``{weight, value, weighted, space, category, count}``
+        where ``value`` and ``weighted`` are Python floats when the term
+        is a scalar, or ``None`` for multi-element tensors.
+        """
+        out = {}
+        for name, rec in self._terms.items():
+            v_tensor = rec["value"]
+            if isinstance(v_tensor, torch.Tensor) and v_tensor.numel() == 1:
+                value_f = float(v_tensor.detach().item())
+            else:
+                value_f = None
+            out[name] = {
+                "weight": rec["weight"],
+                "value": value_f,
+                "weighted": rec["weight"] * value_f if value_f is not None else None,
+                "space": rec["space"],
+                "category": rec["category"],
+                "count": rec["count"],
+            }
+        return out
+
+    def snapshot(self):
+        """Record the current weighted breakdown for covariance analysis.
+
+        Only scalar terms are recorded; multi-element tensors are
+        skipped (they contribute to ``.total()`` via backprop but not
+        to the history).
+        """
+        snap = {}
+        for name, rec in self._terms.items():
+            v = rec["value"]
+            if isinstance(v, torch.Tensor) and v.numel() == 1:
+                snap[name] = rec["weight"] * float(v.detach().item())
+        if snap:
+            self._history.append(snap)
+            if len(self._history) > self._history_max:
+                self._history.pop(0)
+
+    def covariance(self, n_steps: int = None):
+        """Running covariance of weighted term values across recent snapshots.
+
+        Returns ``{"names": [...], "cov": tensor[T,T]}`` where T is the
+        number of terms that appeared in the selected window.  Any term
+        absent from a given snapshot is treated as zero for that step.
+        """
+        if not self._history:
+            return {"names": [], "cov": torch.zeros(0, 0)}
+        hist = self._history if n_steps is None else self._history[-n_steps:]
+        names = sorted({k for s in hist for k in s.keys()})
+        if not names:
+            return {"names": [], "cov": torch.zeros(0, 0)}
+        mat = torch.zeros(len(hist), len(names))
+        for i, s in enumerate(hist):
+            for j, n in enumerate(names):
+                mat[i, j] = s.get(n, 0.0)
+        centered = mat - mat.mean(dim=0, keepdim=True)
+        denom = max(len(hist) - 1, 1)
+        cov = (centered.transpose(0, 1) @ centered) / denom
+        return {"names": names, "cov": cov}
+
+    def format_breakdown(self) -> str:
+        """Single-line summary of all terms, ordered by weighted magnitude."""
+        bd = self.breakdown()
+        rows = []
+        for name, entry in bd.items():
+            w = entry["weighted"]
+            if w is None:
+                continue
+            rows.append((abs(w), name, entry["weight"], entry["value"], w,
+                         entry["category"]))
+        rows.sort(reverse=True)
+        parts = [
+            f"{name}[{cat}]={val:.4g}*{wt:.4g}={wval:.4g}"
+            for _, name, wt, val, wval, cat in rows
+        ]
+        return " | ".join(parts) if parts else "<empty>"
+
+# Module-level singleton.  Callers do ``from Layers import TheError`` and
+# then ``TheError.reset() / .add(...) / .total()``.  A single ``Error``
+# instance is kept at module scope so every space and every loss term
+# registers into the same bookkeeping store per process.
+TheError = Error()
+
 class CertaintyWeightedMAELoss(Loss):
     """MAE loss weighted by prediction magnitude (certainty).
 

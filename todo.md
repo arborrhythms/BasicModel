@@ -1,18 +1,205 @@
 # TODO
 
-The MentalModel answers the question "what is the truest thing we can say of this experience?".
-The way it does that is to preserve energy from the input as light or illumination.
-If the machine tries to maximize illumination directly, it might push weights high, so weight vectors are normed: they must match the input.  
-This is another way of saying "match the input within a constrained set of praameters such that the difference between the input and the prediction is zero".
+# Follow-on 1: VQ-VAE straight-through codebook for SymbolicSpace
 
-If there is no truth that the machine can see, it says nothing.
-The one execption to this is that if the machine sees a contradiction, whihc would otherwise result in darkness, it can offer up one of the alternatives as a question.
+## Goal
 
-Currently, each layer has a contract not to exceed -1..1
-If we attempt to maximize the norm of the signal at any level, we will obviously need a strong guarantee of signal stablility first.
+Replace the `accumulate_output_symbol_residual` chicken-and-egg coupling
+with a proper VQ-VAE straight-through estimator so the symbol codebook
+trains from BOTH reconstruction AND output prediction losses, through
+the real downstream task instead of through a moving target produced by
+`OutputSpace.reverse`.
 
-Using MM_5M.xml as a model starting point, please tst these things, and without writing any code, make recommendations about how we can guarantee stability.
-If we cannot achieve signal maximization at leach layer as a loss criterion, let me know that also.
+## Files to touch
+
+- `bin/Spaces.py` — `SymbolicSpace.forward`, `accumulate_symbol_objective`,
+  `_nearest_symbol_target`, `_build_what_basis`, `l1_proximal`, and the
+  class docstring.
+- `bin/Models.py` — `BasicModel.accumulate_output_symbol_residual` (retire
+  or gut); `BasicModel.runBatch` symbol-objective wiring.
+- `data/model.xml`, `data/model.xsd` — add `commitmentBeta` knob, deprecate
+  `outputSymbolResidualScale`.
+- `test/test_mm_xor.py` — new test: after training MM_xor, codebook entries
+  actually moved AND residual is monotonically decreasing.
+
+## Design
+
+Standard VQ-VAE quantization path:
+
+    def forward(self, vspace, wordSpace=None, butterfly=False, quantize=True):
+        ...
+        z_e = self.layer.forward(x)                        # continuous encoder output
+        if quantize and self.codebook:
+            e_k = self._nearest_symbol_target(z_e)         # hard codebook selection
+            z_q_ste = z_e + (e_k.detach() - z_e).detach()  # straight-through
+            # Pair of losses pushes encoder and codebook toward each other
+            self.accumulate_symbol_objective(
+                z_e, target=e_k,
+                residual_scale=self.symbol_residual_scale,  # codebook loss
+            )
+            self.accumulate_symbol_objective(
+                z_e, target=e_k.detach(),
+                residual_scale=self.commitment_beta,        # commitment loss
+            )
+            y = z_q_ste                                    # downstream sees quantized
+        else:
+            y = z_e
+        ...
+
+Key properties:
+
+- Forward is discrete (hard codebook pick), so downstream sees words.
+- Backward bypasses argmin via straight-through, so gradient from
+  reconstruction + output losses flows back through `z_e` into the
+  encoder weights AND into the codebook via the codebook/commitment
+  losses.
+- NO dependence on `OutputSpace.reverse` — the residual target is the
+  codebook entry itself, not a decoded output target.
+
+## Config
+
+Add to `data/model.xml` (SymbolicSpace):
+
+    <commitmentBeta>0.25</commitmentBeta>
+
+And to `data/model.xsd` under the SymbolicSpace type.
+
+Set `outputSymbolResidualScale` default to `0.0` (already is); mark the
+path as deprecated in a comment. Leave the code in place per the
+"keep legacy code alongside new code" rule — gate the new path on a
+config flag like `<useVQVAE>true</useVQVAE>`.
+
+## Validation
+
+- MM_xor.xml should still converge, but now with `ramsified=false` AND
+  codebook active (the entire original failure mode).
+- Codebook entries at end of training should be distinct from their
+  random init (dist > some threshold) — add a test for this.
+- `TheError.breakdown()` should show `symbol_residual` decreasing over
+  batches, `symbol_commitment` also decreasing.
+- Cross-check: `TheError.total() ≈ totalLoss` should still hold in
+  shadow mode (meaning the legacy gradient path and the new registry
+  agree numerically on the total).
+
+## Out of scope for this diff
+
+- MDL entropy-on-selection (the `p(k)` softmax idea). VQ-VAE + STE is
+  enough to get the user-requested "codebook trains from output AND
+  reconstruction"; MDL is a separate compactness pressure that should
+  land after VQ-VAE is stable.
+
+## Prior context (read before starting)
+
+- `bin/Spaces.py::SymbolicSpace.accumulate_symbol_objective` — the current
+  residual-first objective that this plan replaces.
+- `bin/Spaces.py::SymbolicSpace._nearest_symbol_target` — already performs
+  L2 argmin against the codebook weight matrix; reusable.
+- `bin/Models.py::BasicModel.accumulate_output_symbol_residual` — the
+  function with the chicken-and-egg bug (residual target comes from
+  `OutputSpace.reverse`, which is being trained concurrently).
+- `bin/Layers.py::Error` / `TheError` singleton — use for per-term
+  logging of `symbol_codebook` and `symbol_commitment` alongside
+  existing `symbol_residual`.
+
+
+===================================================================
+# Follow-on 2: BPE chunking for ChunkLayer
+
+## Goal
+
+`ChunkLayer` should be stable and semantically meaningful across batches
+so that downstream layers see consistent word boundaries. The current
+whitespace-boundary approach is fragile and doesn't generalize beyond
+ASCII whitespace. Replace the no-codebook path with real BPE; keep the
+current behavior (with-codebook path) as a fast fallback.
+
+## Mode semantics
+
+- `<codebook>true</codebook>` — existing behavior. Each span is looked
+  up in a codebook; reconstruction is exact via the stored original
+  bytes. Fast, works for small vocabularies.
+- `<codebook>false</codebook>` — new BPE behavior. The layer owns a
+  learned merge table; forward applies greedy-longest-match to produce
+  chunks; chunks are stored in a BPE vocabulary with their literal byte
+  sequences; training extends the vocabulary by merging the highest-
+  frequency adjacent pair in the current batch.
+
+## Files to touch
+
+Use MM_bpe.xml for a simple model that might be used to test
+
+- `bin/Layers.py` — `ChunkLayer` class:
+  - `__init__(..., bpe=False, target_vocab_size=1024)`
+  - `merges: list[tuple[int,int]]` — ordered merge table
+  - `vocab: dict[tuple[int,...], int]` — variable-length byte-sequence to chunk-id
+  - `forward(byte_indices)` — greedy longest-match when bpe mode
+  - `train_step(byte_indices)` — count adjacent pair frequencies, add
+    most-frequent pair to merges, grow vocab
+  - `hard_merge_spans` — keeps its current role for the codebook path,
+    switches to BPE-span application when in bpe mode
+  - `uncompact` — unchanged; the stored `original` tensor still gives
+    exact reconstruction
+- `data/model.xml`, `data/model.xsd` — add to `PerceptualSpace`:
+
+      <chunkBPE>false</chunkBPE>
+      <chunkTargetVocabSize>1024</chunkTargetVocabSize>
+      <chunkMinPairFrequency>2</chunkMinPairFrequency>
+
+- `test/test_mm_xor.py` — new test: train on a small byte corpus, verify
+  merges table grows monotonically and that frequent byte pairs (e.g.,
+  'th', 'he') end up in the vocabulary.
+
+## Design notes
+
+1. **Stability across batches.** Merges table is persisted across
+   `forward()` calls and only grows (or is periodically pruned by
+   frequency). Downstream layers see the same chunk id for the same
+   byte sequence every batch.
+2. **Greedy longest-match forward.** At each position, try the longest
+   merge in the table that starts there; fall back to single byte.
+   O(N · max_merge_len) per row, fine for small vocabularies.
+3. **Training as frequency counting.** `train_step` walks the current
+   batch, counts adjacent `(token_i, token_{i+1})` pairs across all
+   rows, picks the top-k pairs (by frequency, above threshold) and
+   appends them as new merges. Vocab grows by the number of new merges.
+4. **Reversibility.** Each stored span still carries its literal original
+   bytes (current `original` tuple element). `uncompact` just writes
+   them back; the merge table is for forward encoding only.
+5. **Cold start.** Initial merges table is empty → every forward is
+   single-byte → reconstruction is identity → no BPE benefit until
+   training has run for a few batches. That's correct cold-start
+   behavior; document it.
+
+## Validation
+
+- With `chunkBPE=false`: MM_xor and other tests unchanged (legacy path).
+- With `chunkBPE=true`: train on a small text corpus (`'hello hello world
+  world the the'`), verify after N batches that `'he'`, `'lo'`, `'wo'`,
+  `'th'` etc. appear in `ChunkLayer.vocab`.
+- Roundtrip: `uncompact(compact(byte_indices))` still reconstructs
+  `byte_indices` exactly in both modes.
+- Invariance across batches: same input → same chunk ids.
+
+## Out of scope
+
+- Tokenizer compatibility with HuggingFace BPE (we're building our own
+  table, not importing sentencepiece / tiktoken).
+- SentencePiece / Unigram LM — stick with BPE for predictability.
+- Multi-lingual unicode normalization — byte-mode BPE is what we need.
+
+## Prior context (read before starting)
+
+- `bin/Layers.py::ChunkLayer` — existing whitespace/boundary-byte
+  segmentation logic. The `BOUNDARY_BYTES` frozenset and the
+  `hard_merge_spans` / `compact` / `uncompact` trio are the surface to
+  refactor.
+- `bin/Spaces.py::Embedding.create` — now uses `['\x00']` as the
+  placeholder, so `byte_value == codebook_index` alignment holds
+  (this was broken in the pre-fix version; do not re-introduce `<pad>`).
+- `data/MM_xor.xml` — reference configuration with
+  `<PerceptualSpace><invertible>true</invertible><codebook>true</codebook></PerceptualSpace>`,
+  demonstrates the codebook-path that must stay working.
+
 
 ================================== April 24 ==================================
 

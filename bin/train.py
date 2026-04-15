@@ -130,8 +130,8 @@ def train_local(args):
         emb_path = os.path.join(proj, "output", "embeddings", "sentence.pt")
 
     # --- Phase 1: Embeddings ---
-    if cfg.get("lexer") == "bytes":
-        TheMessage("\n=== Phase 1: Skipped (lexer=bytes, no word embeddings) ===")
+    if cfg.get("lexer") in ("byte", "bytes"):
+        TheMessage("\n=== Phase 1: Skipped (lexer=byte, no word embeddings) ===")
     elif args.force_embeddings or not os.path.exists(emb_path):
         embed_cmd = [
             python, os.path.join(proj, "bin", "embed.py"), "train",

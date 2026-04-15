@@ -41,11 +41,11 @@
   <InputSpace>
     <nDim>10</nDim>
     <nVectors>8</nVectors>
-    <nOutput>8</nOutput>
+    <nOutput>32</nOutput>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
-    <lexer>word</lexer>
-    <codebook>true</codebook>
+    <lexer>byte</lexer>
+    <codebook>false</codebook>
   </InputSpace>
 
   <PerceptualSpace>
@@ -54,10 +54,10 @@
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <nVectors>8</nVectors>
-    <passThrough>true</passThrough>
+    <passThrough>false</passThrough>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>false</codebook>
+    <codebook>true</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>

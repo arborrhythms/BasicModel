@@ -42,6 +42,7 @@ from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
 from Layers import VQLayer, LinearLayer, AttentionLayer
 from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
+from Layers import Error, TheError
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
@@ -1225,6 +1226,8 @@ class BasicModel(BaseModel):
         # Per-sentence lifecycle: reset the word-stream buffer.
         if ws is not None:
             ws.clear_sentence()
+        if hasattr(self, 'symbolicSpace'):
+            self.symbolicSpace.reset_symbol_objective()
         self.inputs   = self.inputSpace.forward(inputData)
         self.percepts = self.perceptualSpace.forward(self.inputs, wordSpace=ws)
         self.concepts = self.conceptualSpace.forward(self.percepts, wordSpace=ws)
@@ -1529,9 +1532,9 @@ class BasicModel(BaseModel):
         sbow = None
         te = getattr(self, 'train_embedding', 'NONE')
         if te in trainMod:
-            # Skip InputSpace SBOW/CBOW when lexer=bytes — perceptual SBOW
+            # Skip InputSpace SBOW/CBOW when lexer=byte — perceptual SBOW
             # replaces it (see perceptual_sbow_loss).
-            if getattr(self, 'lexer', None) == 'bytes':
+            if getattr(self, 'lexer', None) in ('byte', 'bytes'):
                 return None
             emb = self.inputSpace.vocabulary
             if isinstance(emb, Embedding):
@@ -1572,8 +1575,55 @@ class BasicModel(BaseModel):
         v_norm = F.normalize(vecs, dim=-1)
         cos_sim = (c_norm * v_norm).sum(dim=-1)     # [B, N]
 
-        # Loss = mean negative cosine similarity (maximize similarity)
-        return -cos_sim.mean()
+        # Non-negative cosine loss: 0 means each percept matches the
+        # leave-one-out centroid exactly.
+        return (1 - cos_sim).mean()
+
+    def accumulate_output_symbol_residual(self, outputTensor, outputDataPred):
+        """Use supervised output targets to form a symbol-space residual.
+
+        The target output is reversed through OutputSpace into the symbol
+        domain, then compared with the output-facing symbols from the
+        forward pass.  This provides a primary symbol residual even for
+        continuous paths that intentionally avoid codebook quantization.
+        """
+        if not self.reversible or not hasattr(self, 'symbolicSpace'):
+            return
+        residual_scale = getattr(
+            self.symbolicSpace, 'output_symbol_residual_scale', 0.0)
+        if residual_scale <= 0.0:
+            return
+        try:
+            pred_symbols = self.symbolicSpace.subspace.materialize()
+        except Exception:
+            return
+        if pred_symbols is None or pred_symbols.numel() == 0:
+            return
+        n = min(getattr(self, 'nOutputSymbols', pred_symbols.shape[1]),
+                pred_symbols.shape[1])
+        pred_symbols = pred_symbols[:, :n, :]
+
+        target_event = outputTensor.to(outputDataPred.device)
+        while target_event.dim() < outputDataPred.dim():
+            target_event = target_event.unsqueeze(-1)
+        target_event = target_event.expand_as(outputDataPred)
+
+        self.outputSpace.subspace.set_event(target_event)
+        try:
+            target_space = self.outputSpace.reverse(self.outputSpace.subspace)
+            target_symbols = target_space.materialize()
+        finally:
+            self.outputSpace.subspace.set_event(outputDataPred)
+        if target_symbols is None or target_symbols.numel() == 0:
+            return
+        n = min(n, target_symbols.shape[1])
+        if n <= 0:
+            return
+        self.symbolicSpace.accumulate_symbol_objective(
+            pred_symbols[:, :n, :],
+            target_symbols[:, :n, :],
+            residual_scale=residual_scale,
+        )
 
     def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
                  optimizer=None):
@@ -1603,6 +1653,15 @@ class BasicModel(BaseModel):
 
         if train:
             optimizer.zero_grad()
+
+        # Start a fresh error-term registration window for this batch.
+        # TheError accumulates a breakdown of every loss term (category,
+        # space, weight, value) alongside the legacy ``totalLoss`` path,
+        # so later sites can call ``TheError.breakdown()`` /
+        # ``TheError.covariance()`` without having to rewire the backprop
+        # source.  See Layers.Error docstring for usage.
+        TheError.reset()
+        TheError.attach(self.loss)
 
         # Forward pass (masking, if any, is applied inside InputSpace.forward())
         forwardInput, symbols, outputDataPred = self.forward(inputTensor)
@@ -1638,10 +1697,20 @@ class BasicModel(BaseModel):
         outputPred = outputDataPred.squeeze()
         output     = outputTensor.squeeze()
         lossOut    = self.loss.output(outputPred, output)
+        self.accumulate_output_symbol_residual(outputTensor, outputDataPred)
 
         # ARUS: suppress output loss (unsupervised — no target signal)
         if hasattr(self, 'masked_prediction') and self.masked_prediction == 'ARUS':
             lossOut = torch.tensor(0.0, device=TheDevice.get())
+
+        # Register output term: (1 - reverse_scale) is the effective
+        # weight in ModelLoss.forward, matching the legacy composition
+        # so TheError.total() shadows the legacy totalLoss.
+        TheError.add(
+            "output", lossOut,
+            weight=1.0 - self.loss.reverse_scale,
+            space="OutputSpace", category="prediction",
+        )
 
         use_recon = self.reversible and self.loss.reverse_scale > 0
         if use_recon:
@@ -1668,6 +1737,11 @@ class BasicModel(BaseModel):
                 lossIn = self.loss.compute_piecewise(pred_sq, target_sq)
             else:
                 lossIn = self.loss.compute(pred_sq, target_sq)
+            TheError.add(
+                "reconstruction", lossIn,
+                weight=self.loss.reverse_scale,
+                space="InputSpace", category="reconstruction",
+            )
         else:
             inputDataPred = None
             lossIn = None
@@ -1676,12 +1750,18 @@ class BasicModel(BaseModel):
         sbow = None
         if train:
             sbow = self.trainEmbeddings(('JOINT'), sentenceIdx, split)
-            # Perceptual SBOW: when lexer=bytes, train percept vectors
+            # Perceptual SBOW: when lexer=byte, train percept vectors
             # via leave-one-out centroid prediction
-            if getattr(self, 'lexer', None) == 'bytes':
+            if getattr(self, 'lexer', None) in ('byte', 'bytes'):
                 psbow = self.perceptual_sbow_loss()
                 if psbow is not None:
                     sbow = psbow if sbow is None else sbow + psbow
+            if sbow is not None:
+                TheError.add(
+                    "embedding_sbow", sbow,
+                    weight=self.loss.embedding_scale,
+                    space="WordSpace", category="embedding",
+                )
 
         # Inter-sentence contrastive loss. DiscourseSpace computes a
         # dual-force cosine loss over the full flattened ``[S | W]``
@@ -1702,6 +1782,25 @@ class BasicModel(BaseModel):
         totalLoss = self.loss.total(lossOut, lossIn, sbow)
         if discourse_loss is not None:
             totalLoss = totalLoss + self.sentence_prediction_scale * discourse_loss
+            TheError.add(
+                "discourse", discourse_loss,
+                weight=self.sentence_prediction_scale,
+                space="DiscourseSpace", category="discourse",
+            )
+        symbol_loss = None
+        if hasattr(self, 'symbolicSpace'):
+            symbol_loss = self.symbolicSpace.symbol_objective_loss()
+            if symbol_loss is not None:
+                totalLoss = totalLoss + symbol_loss
+                # Per-term symbol objective registration.  The weights
+                # are already baked into each term by accumulate_symbol_objective,
+                # so we register with weight=1.0 and category="symbol".
+                for term_name, term_value in \
+                        self.symbolicSpace.symbol_objective_terms().items():
+                    TheError.add(
+                        term_name, term_value, weight=1.0,
+                        space="SymbolicSpace", category="symbol",
+                    )
 
         # Truth-modulated loss: delegated to WordSpace since the
         # TruthLayer lives there.  WordSpace handles the empty-store
@@ -1721,6 +1820,35 @@ class BasicModel(BaseModel):
                 luminosity_weight=getattr(self, 'luminosity_weight', 0.1),
                 universality_weight=getattr(self, 'universality_weight', 0.1),
                 truth_loss_weight=getattr(self, 'truth_loss_weight', 0.0),
+            )
+
+        # Snapshot the breakdown before the backward pass so later
+        # calls to TheError.covariance() can see it in the history
+        # even if the step is aborted by a non-finite detector below.
+        TheError.snapshot()
+
+        if not torch.isfinite(totalLoss).all():
+            def _loss_value(name, value):
+                if value is None:
+                    return f"{name}=None"
+                if isinstance(value, torch.Tensor):
+                    finite = torch.isfinite(value).all().item()
+                    if value.numel() == 1:
+                        return f"{name}={value.detach().item()} finite={finite}"
+                    return f"{name}=shape{tuple(value.shape)} finite={finite}"
+                return f"{name}={value}"
+
+            details = ", ".join([
+                _loss_value("lossOut", lossOut),
+                _loss_value("lossIn", lossIn),
+                _loss_value("sbow", sbow),
+                _loss_value("discourse", discourse_loss),
+                _loss_value("symbol", symbol_loss),
+                _loss_value("total", totalLoss),
+            ])
+            raise FloatingPointError(
+                f"Non-finite total loss in {self.name}.runBatch("
+                f"split={split}, batch={batchNum}): {details}"
             )
 
         TheMessage(f"batch = {batchNum}, loss = {totalLoss} ")
@@ -1809,8 +1937,8 @@ class BasicModel(BaseModel):
                 if training and masked_pred:
                     self.trainEmbeddings(('CBOW', 'SBOW', 'BOTH'), batchNum, split)
 
-                outErr = result.lossOut.item()
-                inErr = result.lossIn.item()
+                outErr = result.lossOut.item() if result.lossOut is not None else 0.0
+                inErr = result.lossIn.item() if result.lossIn is not None else 0.0
 
                 outputDataPred = result.outputPred.clone().detach().squeeze()
                 outputChunks.append(outputDataPred)
@@ -1841,6 +1969,8 @@ class MentalModel(BaseModel):
     runEpoch         = BasicModel.runEpoch
     runTrial         = BasicModel.runTrial
     trainEmbeddings  = BasicModel.trainEmbeddings
+    perceptual_sbow_loss = BasicModel.perceptual_sbow_loss
+    accumulate_output_symbol_residual = BasicModel.accumulate_output_symbol_residual
     infer            = BasicModel.infer
 
     def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
@@ -2187,6 +2317,33 @@ class MentalModel(BaseModel):
             and getattr(self.symbolicSpace, "butterfly_enabled", False)
         )
 
+    def _bound_concept_input(self, x):
+        """Keep recurrent concept inputs inside ConceptualSpace's logit domain."""
+        if getattr(self.conceptualSpace, "nonlinear", False):
+            return x.clamp(min=-1 + epsilon, max=1 - epsilon)
+        return x
+
+    def _symbol_feedback_from_vectors(self, sym_vectors, n_feedback, feedback_dim):
+        """Project symbolic state back to the percept-shaped feedback tensor."""
+        feedback = sym_vectors
+        if feedback.shape[1] >= n_feedback:
+            feedback = feedback[:, -n_feedback:, :]
+        else:
+            pad = torch.zeros(
+                feedback.shape[0],
+                n_feedback - feedback.shape[1],
+                feedback.shape[2],
+                device=feedback.device,
+                dtype=feedback.dtype,
+            )
+            feedback = torch.cat([feedback, pad], dim=1)
+
+        if feedback.shape[-1] == feedback_dim:
+            return self._bound_concept_input(feedback)
+
+        norms = feedback.norm(dim=-1, keepdim=True)
+        return self._bound_concept_input(norms.expand(-1, -1, feedback_dim))
+
     # ── Helpers ───────────────────────────────────────────────────────
 
     def Finish(self, data):
@@ -2208,7 +2365,11 @@ class MentalModel(BaseModel):
         # 1. Input -> Percept
         self.inputs = self.inputSpace.forward(inputData)
         input_state = self.inputs.materialize()
-        self.percepts = self.perceptualSpace.forward(self.inputs, wordSpace=ws)
+        percept_quantize = not (
+            self.reversible and getattr(self.perceptualSpace, "invertible", False)
+        )
+        self.percepts = self.perceptualSpace.forward(
+            self.inputs, wordSpace=ws, quantize=percept_quantize)
         percepts = self.percepts.materialize()  # [B, nPercepts, dim]
 
         B = percepts.shape[0]
@@ -2223,6 +2384,7 @@ class MentalModel(BaseModel):
 
         # ── Pre-loop init ──
         self.symbol_states = []
+        self.symbolicSpace.reset_symbol_objective()
         if self.ramsified:
             x = percepts                     # [B, N_percept, D_percept]
             if not self._ramsified_pair_enabled():
@@ -2256,7 +2418,7 @@ class MentalModel(BaseModel):
                         self._sym_feedbacks.append(None)
                     concept_input = x
             else:
-                concept_input = percepts + sym_feedback
+                concept_input = self._bound_concept_input(percepts + sym_feedback)
                 # Truth bias: trim concept_input to be consistent with TruthSet
                 truth_layer = getattr(self.wordSpace, 'truth_layer', None) if self.wordSpace is not None else None
                 if truth_layer is not None and len(truth_layer) > 0:
@@ -2266,6 +2428,7 @@ class MentalModel(BaseModel):
                     if conj is not None:
                         concept_input = basis.conjunction(
                             concept_input, conj.unsqueeze(0).unsqueeze(0))
+                        concept_input = self._bound_concept_input(concept_input)
 
             # 2. Sigma: conceptual transformation (indexed by t)
             self.percepts.set_event(concept_input)
@@ -2276,32 +2439,30 @@ class MentalModel(BaseModel):
             if self.ramsified:
                 x = concept_vectors          # carry forward for next merge
 
-            # 3. Pi: symbolic projection (indexed by t). Sparsity via
-            # l1_proximal is applied inside SymbolicSpace.forward, so the
-            # materialized event is already soft-thresholded.
+            # 3. Pi: symbolic projection (indexed by t). Symbol residual
+            # and L1 compactness are accumulated as objective terms by
+            # SymbolicSpace.forward. The non-ramsified feedback path stays
+            # continuous; ramsified/codebook paths may apply proximal
+            # sparsity before symbol commitment.
             self.symbols = self.symbolicSpace[t].forward(
-                self.concepts, wordSpace=ws, butterfly=pair_enabled)
+                self.concepts, wordSpace=ws, butterfly=pair_enabled,
+                quantize=self.ramsified)
             sym_vectors = self.symbols.materialize()
 
-            # 4. Feedback: activation norms for next iteration
+            # 4. Feedback for next iteration
             if self.ramsified:
                 if not pair_enabled and t < self.conceptualOrder - 1:
                     N_t, D_t = self._level_shapes_list[t]
                     sym_norms = sym_vectors.norm(dim=-1, keepdim=True)
                     sym_feedback = sym_norms.expand(-1, -1, D_t)
             else:
-                sym_norms = sym_vectors.norm(dim=-1)
                 nSymFeedback = self._symbol_shape[0]
-                if sym_norms.shape[1] > nSymFeedback:
-                    sym_norms_fb = sym_norms[:, -nSymFeedback:]
-                else:
-                    sym_norms_fb = sym_norms
-                sym_feedback = sym_norms_fb.unsqueeze(-1).expand(
-                    -1, -1, percepts.shape[-1])
+                sym_feedback = self._symbol_feedback_from_vectors(
+                    sym_vectors, nSymFeedback, percepts.shape[-1])
 
             # 5. Cache symbol states.  The Sigma-Pi loop produces
-            # post-pi, post-l1_proximal ``sym_vectors`` at every
-            # iteration; stashing those gives the truth penalty a
+            # post-pi ``sym_vectors`` at every iteration; stashing
+            # those gives the truth penalty a
             # handle on the committed symbolic activations in the
             # same space as the stored truths.
             if self.ramsified:
