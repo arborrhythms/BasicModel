@@ -15,11 +15,12 @@ import torch
 import torch.nn.functional as F
 import pytest
 import matplotlib
+import Models
+import Spaces
+import Layers
 matplotlib.use('Agg')
 
-from BasicModel import MentalModel, BaseModel, TheData, TheDevice
 from util import init_config, ProjectPaths, TheXMLConfig
-from Model import TruthLayer
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
 
@@ -29,8 +30,7 @@ def _reload_config():
         path=os.path.join(_DATA_DIR, 'MentalModel.xml'),
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
     )
-    from Space import TheGrammar
-    TheGrammar._configured = False
+    Spaces.TheGrammar._configured = False
 
 
 def _make_model(config='MentalModel.xml'):
@@ -38,9 +38,8 @@ def _make_model(config='MentalModel.xml'):
         path=os.path.join(_DATA_DIR, config),
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
     )
-    from Space import TheGrammar
-    TheGrammar._configured = False
-    model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, config))
+    Spaces.TheGrammar._configured = False
+    model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, config))
     model.eval()
     return model
 
@@ -53,7 +52,7 @@ class TestOrderPartitions(unittest.TestCase):
         """Partitions must cover [0, symbol_dim) without overlap or gap."""
         for dim in [16, 32, 64, 128, 256]:
             for order in [1, 2, 3, 4, 5]:
-                parts = MentalModel._order_partitions(dim, order)
+                parts = Models.MentalModel._order_partitions(dim, order)
                 self.assertEqual(len(parts), order)
                 # First starts at 0
                 self.assertEqual(parts[0][0], 0)
@@ -68,7 +67,7 @@ class TestOrderPartitions(unittest.TestCase):
 
     def test_geometric_decay(self):
         """Lower orders should have larger slices."""
-        parts = MentalModel._order_partitions(128, 4)
+        parts = Models.MentalModel._order_partitions(128, 4)
         sizes = [e - s for s, e in parts]
         # Order 0 should be largest
         self.assertGreater(sizes[0], sizes[1])
@@ -76,20 +75,20 @@ class TestOrderPartitions(unittest.TestCase):
 
     def test_single_order(self):
         """With conceptualOrder=1, one partition covers everything."""
-        parts = MentalModel._order_partitions(64, 1)
+        parts = Models.MentalModel._order_partitions(64, 1)
         self.assertEqual(parts, [(0, 64)])
 
     def test_activation_order(self):
         """_activation_order returns the order with highest partition energy."""
-        parts = MentalModel._order_partitions(16, 2)
+        parts = Models.MentalModel._order_partitions(16, 2)
         # Energy in first partition
         act1 = torch.zeros(16)
         act1[:8] = 1.0
-        self.assertEqual(MentalModel._activation_order(act1, parts), 0)
+        self.assertEqual(Models.MentalModel._activation_order(act1, parts), 0)
         # Energy in second partition
         act2 = torch.zeros(16)
         act2[8:] = 1.0
-        self.assertEqual(MentalModel._activation_order(act2, parts), 1)
+        self.assertEqual(Models.MentalModel._activation_order(act2, parts), 1)
 
 
 # ── Step 3: isConsistent ──────────────────────────────────────────────
@@ -176,18 +175,17 @@ class TestGroundAndIsTrue(unittest.TestCase):
 class TestTruthLoss(unittest.TestCase):
 
     def _make_basis(self):
-        from Space import Basis
-        return Basis()
+        return Spaces.Basis()
 
     def test_empty_truth_set_no_penalty(self):
-        tl = TruthLayer(nDim=8)
+        tl = Layers.TruthLayer(nDim=8)
         basis = self._make_basis()
         concepts = torch.randn(2, 3, 8)
         penalty = tl.falsity_penalty(concepts, basis)
         self.assertEqual(penalty.item(), 0.0)
 
     def test_agreeing_proposition_low_penalty(self):
-        tl = TruthLayer(nDim=8)
+        tl = Layers.TruthLayer(nDim=8)
         basis = self._make_basis()
         # Store a positive truth
         truth = torch.ones(8) * 0.5
@@ -198,7 +196,7 @@ class TestTruthLoss(unittest.TestCase):
         self.assertAlmostEqual(penalty.item(), 0.0, places=4)
 
     def test_contradicting_proposition_positive_penalty(self):
-        tl = TruthLayer(nDim=8)
+        tl = Layers.TruthLayer(nDim=8)
         basis = self._make_basis()
         # Store a positive truth
         truth = torch.ones(8) * 0.5
@@ -209,7 +207,7 @@ class TestTruthLoss(unittest.TestCase):
         self.assertGreater(penalty.item(), 0.0)
 
     def test_unknown_proposition_zero_penalty(self):
-        tl = TruthLayer(nDim=8)
+        tl = Layers.TruthLayer(nDim=8)
         basis = self._make_basis()
         truth = torch.ones(8) * 0.5
         tl.record(truth, degree=1.0)
@@ -224,7 +222,7 @@ class TestTruthLoss(unittest.TestCase):
         self.assertEqual(getattr(model, 'truth_loss_weight', 0.0), 0.0)
 
     def test_penalty_is_differentiable(self):
-        tl = TruthLayer(nDim=8)
+        tl = Layers.TruthLayer(nDim=8)
         basis = self._make_basis()
         truth = torch.ones(8) * 0.5
         tl.record(truth, degree=1.0)
@@ -282,7 +280,7 @@ class TestWriteMask(unittest.TestCase):
         sentences = ['test sentence one', 'test sentence two']
         outputs = [torch.tensor([0.0]), torch.tensor([1.0])]
 
-        with TheData.runtime_batch(sentences, outputs), \
+        with Models.TheData.runtime_batch(sentences, outputs), \
              warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             train_input, _ = model.inputSpace.getTrainData()

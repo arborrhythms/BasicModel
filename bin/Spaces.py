@@ -35,10 +35,10 @@ from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
-from Model import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
-from Model import VQLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
-from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
-from Model import SortingLayer, TruthLayer, DiscourseSpace
+from Layers import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
+from Layers import VQLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
+from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
+from Layers import SortingLayer, TruthLayer, InterSentenceLayer
 from parse import quick_parser
 from collections import namedtuple as _namedtuple
 
@@ -6533,7 +6533,7 @@ class WordSpace(Space):
                     "discourseHistory", 8) or 8)
                 context_window = int(TheXMLConfig.training(
                     "discourseContextWindow", 3) or 3)
-                self.discourse = DiscourseSpace(
+                self.discourse = InterSentenceLayer(
                     n_symbols=n_sym_rows,
                     max_depth=int(getattr(
                         self.subspace, 'max_depth', 256) or 256),

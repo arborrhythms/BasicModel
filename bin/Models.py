@@ -39,14 +39,13 @@ from util import ProjectPaths, XMLConfig, compile, TheXMLConfig, init_config, in
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
 
-from Model import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
-from Model import VQLayer, LinearLayer, AttentionLayer
-from Model import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
+from Layers import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
+from Layers import VQLayer, LinearLayer, AttentionLayer
+from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 
-from Space import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
-from Space import Basis, Tensor, Codebook, Embedding
-from Space import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace, WordSpace
-from Space import TheGrammar
+from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
+from Spaces import Basis, Tensor, Codebook, Embedding
+from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace, WordSpace
 from parse import quick_parser
 
 class BaseModel(nn.Module):
@@ -454,8 +453,7 @@ class BaseModel(nn.Module):
         return 0.0 if not result['grounded'] else result['confidence']
 
     @torch.no_grad()
-    def extrapolate(self, grammar=None, seed_indices=None, max_new=64,
-                    attenuation=0.8):
+    def extrapolate(self, seed_indices=None, max_new=64, attenuation=0.8):
         """Generalize TruthLayer.derive() to all two-argument grammar methods.
 
         For each pair of stored truths, apply every eligible two-argument
@@ -463,7 +461,6 @@ class BaseModel(nn.Module):
         reject those that decrease it.
 
         Args:
-            grammar: Grammar instance (defaults to TheGrammar).
             seed_indices: optional list of truth indices to use as seeds.
             max_new: maximum number of new truths to derive.
             attenuation: DoT scaling for derived truths.
@@ -475,9 +472,6 @@ class BaseModel(nn.Module):
         truth_layer = self._get_truth_layer()
         if truth_layer is None:
             return {'added': [], 'rejected': []}
-
-        if grammar is None:
-            grammar = TheGrammar
 
         n = truth_layer.count.item()
         if n < 2:

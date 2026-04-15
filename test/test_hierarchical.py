@@ -12,9 +12,10 @@ import unittest
 import warnings
 import torch
 import matplotlib
+import Models
+import Spaces
 matplotlib.use('Agg')
 
-from BasicModel import MentalModel, BaseModel, TheData, TheDevice
 from util import init_config, ProjectPaths, TheXMLConfig
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
@@ -25,9 +26,8 @@ def _make_model(config='MentalModel.xml'):
         path=os.path.join(_DATA_DIR, config),
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
     )
-    from Space import TheGrammar
-    TheGrammar._configured = False
-    model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, config))
+    Spaces.TheGrammar._configured = False
+    model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, config))
     model.eval()
     return model
 
@@ -38,20 +38,20 @@ class TestLevelShapes(unittest.TestCase):
 
     def test_constant_dim(self):
         """D stays constant across all levels (average merge keeps D fixed)."""
-        shapes = MentalModel._level_shapes(1024, 4, 8)
+        shapes = Models.MentalModel._level_shapes(1024, 4, 8)
         for n, d in shapes:
             self.assertEqual(d, 4)
 
     def test_single_order(self):
         """conceptualOrder=1 returns a single post-merge shape."""
-        shapes = MentalModel._level_shapes(64, 8, 1)
+        shapes = Models.MentalModel._level_shapes(64, 8, 1)
         self.assertEqual(len(shapes), 1)
         # Post-merge: 64/2 = 32 vectors, D stays 8
         self.assertEqual(shapes[0], (32, 8))
 
     def test_eight_levels(self):
         """8 levels: N halves each time, D constant."""
-        shapes = MentalModel._level_shapes(1024, 4, 8)
+        shapes = Models.MentalModel._level_shapes(1024, 4, 8)
         self.assertEqual(len(shapes), 8)
         # Level 0: 1024/2=512, D=4
         self.assertEqual(shapes[0], (512, 4))
@@ -64,7 +64,7 @@ class TestLevelShapes(unittest.TestCase):
 
     def test_two_levels(self):
         """Simple 2-level case."""
-        shapes = MentalModel._level_shapes(8, 4, 2)
+        shapes = Models.MentalModel._level_shapes(8, 4, 2)
         # Level 0: 8/2=4, D=4. Level 1: 8/4=2, D=4
         self.assertEqual(shapes, [(4, 4), (2, 4)])
 
@@ -75,8 +75,8 @@ class _MergeHelper:
     """Lightweight stand-in for MentalModel merge/unmerge (instance methods)."""
     def __init__(self):
         self._merge_diffs = []
-    _butterfly_merge = MentalModel._butterfly_merge
-    _butterfly_unmerge = MentalModel._butterfly_unmerge
+    _butterfly_merge = Models.MentalModel._butterfly_merge
+    _butterfly_unmerge = Models.MentalModel._butterfly_unmerge
 
 
 class TestButterflyMerge(unittest.TestCase):
@@ -116,32 +116,29 @@ class TestWordEncoding(unittest.TestCase):
 
     def test_7tuple_encoding(self):
         """encode produces 7-tuple with correct layout."""
-        from Space import WordEncoding
-        enc = WordEncoding()
+        enc = Spaces.WordEncoding()
         w = enc.encode(batch=0, vector=5, rule=3, order=2)
         self.assertEqual(len(w), 7)
         self.assertEqual(w, (0, 5, 2, 3, -1, -1, -1))
 
     def test_default_order_zero(self):
         """order defaults to 0."""
-        from Space import WordEncoding
-        enc = WordEncoding()
+        enc = Spaces.WordEncoding()
         w = enc.encode(batch=1, vector=2, rule=0)
-        self.assertEqual(w[WordEncoding.ORDER], 0)
+        self.assertEqual(w[Spaces.WordEncoding.ORDER], 0)
 
     def test_7tuple_layout(self):
         """Word tuple is (batch, vector, order, rule, leaf1, leaf2, leaf3)."""
-        from Space import WordEncoding
-        enc = WordEncoding()
+        enc = Spaces.WordEncoding()
         w = enc.encode(batch=0, vector=5, rule=3, order=2, leaf1=10, leaf2=20)
         self.assertEqual(len(w), 7)
-        self.assertEqual(w[WordEncoding.BATCH], 0)
-        self.assertEqual(w[WordEncoding.VECTOR], 5)
-        self.assertEqual(w[WordEncoding.ORDER], 2)
-        self.assertEqual(w[WordEncoding.RULE], 3)
-        self.assertEqual(w[WordEncoding.LEAF1], 10)
-        self.assertEqual(w[WordEncoding.LEAF2], 20)
-        self.assertEqual(w[WordEncoding.LEAF3], -1)
+        self.assertEqual(w[Spaces.WordEncoding.BATCH], 0)
+        self.assertEqual(w[Spaces.WordEncoding.VECTOR], 5)
+        self.assertEqual(w[Spaces.WordEncoding.ORDER], 2)
+        self.assertEqual(w[Spaces.WordEncoding.RULE], 3)
+        self.assertEqual(w[Spaces.WordEncoding.LEAF1], 10)
+        self.assertEqual(w[Spaces.WordEncoding.LEAF2], 20)
+        self.assertEqual(w[Spaces.WordEncoding.LEAF3], -1)
 
 
 # ── Hierarchical forward (requires RamsifiedModel.xml with order>1) ──
@@ -157,7 +154,7 @@ class TestHierarchicalForward(unittest.TestCase):
         sentences = ['test sentence one', 'another test sentence']
         outputs = [torch.tensor([0.0]), torch.tensor([1.0])]
 
-        with TheData.runtime_batch(sentences, outputs), \
+        with Models.TheData.runtime_batch(sentences, outputs), \
              warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             train_input, _ = model.inputSpace.getTrainData()
@@ -175,7 +172,7 @@ class TestHierarchicalForward(unittest.TestCase):
         sentences = ['test one', 'test two']
         outputs = [torch.tensor([0.0]), torch.tensor([1.0])]
 
-        with TheData.runtime_batch(sentences, outputs), \
+        with Models.TheData.runtime_batch(sentences, outputs), \
              warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             train_input, _ = model.inputSpace.getTrainData()
@@ -198,7 +195,7 @@ class TestBackwardCompat(unittest.TestCase):
         sentences = ['hello world']
         outputs = [torch.tensor([0.0])]
 
-        with TheData.runtime_batch(sentences, outputs), \
+        with Models.TheData.runtime_batch(sentences, outputs), \
              warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             train_input, _ = model.inputSpace.getTrainData()

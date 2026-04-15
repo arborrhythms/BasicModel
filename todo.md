@@ -1,5 +1,19 @@
 # TODO
 
+This machine answers the question "what is the truest thing we can say of this experience?".
+The way it does that is to preserve energy from the input as light or illumination.
+If the machine tries to maximize illumination directly, it might push weights high, so weight vectors are normed: they must match the input.  
+This is another way of saying "match the input within a constrained set of praameters such that the difference between the input and the prediction is zero".
+
+If there is no truth that the machine can see, it says nothing.
+The one execption to this is that if the machine sees a contradiction, whihc would otherwise result in darkness, it can offer up one of the alternatives as a question.
+
+Currently, each layer has a contract not to exceed -1..1
+If we attempt to maximize the norm of the signal at any level, we will obviously need a strong guarantee of signal stablility first.
+
+
+
+Create 1B model
 
 ================================== April 24 ==================================
 

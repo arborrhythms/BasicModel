@@ -26,6 +26,9 @@ _CONFIG = os.path.join(_PROJECT, "data", "XOR_spaces.xml")
 _TEST = os.path.dirname(os.path.abspath(__file__))
 if _TEST not in sys.path:
     sys.path.insert(0, _TEST)
+
+import Models
+
 from test_basicmodel import _populate_test_config, _obj_size
 
 _HAS_NLTK = importlib.util.find_spec("nltk") is not None
@@ -39,8 +42,7 @@ class TestXORSpacesConfigParsing(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from BasicModel import BaseModel
-        cls.cfg = BaseModel.load_config(_CONFIG)
+        cls.cfg = Models.BaseModel.load_config(_CONFIG)
 
     def test_config_loads(self):
         self.assertIn("architecture", self.cfg)
@@ -98,7 +100,6 @@ class TestLoadInline(unittest.TestCase):
     """TheData.loadInline() correctly parses pipe-separated sentences."""
 
     def test_four_training_examples(self):
-        from BasicModel import Data
         dat = {
             "input": [
                 {"_": "zero xor zero|zero xor one|one xor zero|one xor one", "use": "train"},
@@ -109,7 +110,7 @@ class TestLoadInline(unittest.TestCase):
                 {"_": "0|0",     "use": "test"},
             ],
         }
-        data = Data()
+        data = Models.Data()
         data.loadInline(dat)
         # processLM stores string tensors for train_input
         self.assertEqual(len(data.train_input), 4)
@@ -117,7 +118,6 @@ class TestLoadInline(unittest.TestCase):
 
     def test_labels_as_float_tensors(self):
         import torch
-        from BasicModel import Data
         dat = {
             "input": [
                 {"_": "zero xor zero|zero xor one", "use": "train"},
@@ -128,7 +128,7 @@ class TestLoadInline(unittest.TestCase):
                 {"_": "0|1", "use": "test"},
             ],
         }
-        data = Data()
+        data = Models.Data()
         data.loadInline(dat)
         # Each output is a 1-D float tensor
         for t in data.test_output:
@@ -137,13 +137,12 @@ class TestLoadInline(unittest.TestCase):
 
     def test_single_input_element_not_list(self):
         """A single <input> (no duplication) is normalised to a list."""
-        from BasicModel import Data
         # When only one element, parser returns a dict (not a list)
         dat = {
             "input": {"_": "hello world|foo bar", "use": "train"},
             "output": {"_": "0|1", "use": "train"},
         }
-        data = Data()
+        data = Models.Data()
         data.loadInline(dat)
         self.assertEqual(len(data.train_input), 2)
 
@@ -158,26 +157,24 @@ class TestXORSpacesModel(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import torch
-        from BasicModel import BasicModel, TheData
         # Load config, extract inline data into TheData singleton
-        cfg = BasicModel.load_config(_CONFIG)
+        cfg = Models.BasicModel.load_config(_CONFIG)
         arch = cfg.get("architecture", {})
         dat = arch.get("data", {})
 
-        TheData.load("inline", dat=dat)
-        cls.data = TheData
+        Models.TheData.load("inline", dat=dat)
+        cls.data = Models.TheData
 
-        cls.model = BasicModel()
-        cls.model.create_from_config(_CONFIG, data=TheData)
+        cls.model = Models.BasicModel()
+        cls.model.create_from_config(_CONFIG, data=Models.TheData)
 
     def test_model_has_input_space(self):
         self.assertTrue(hasattr(self.model, "inputSpace"))
 
     def test_space_char_in_vocab(self):
         """ASCII bootstrap ensures space chr(32) is always in vocabulary."""
-        from BasicModel import Embedding
         emb = self.model.inputSpace.vocabulary
-        self.assertIsInstance(emb, Embedding,
+        self.assertIsInstance(emb, Models.Embedding,
                               "InputSpace should use Embedding for text model")
         self.assertIn(" ", emb.pretrain.key_to_index,
                       "Space character must be in vocabulary (ASCII bootstrap)")
@@ -231,28 +228,26 @@ class TestSpacePrediction(unittest.TestCase):
         being inserted between them — spaces must come from predicted tokens.
         """
         import torch
-        from BasicModel import (InputSpace, TheData, OutputSpace,
-                                TheXMLConfig, Embedding)
 
         nInput = 8
         _populate_test_config(inputDim=10, nInput=nInput,
                               nPercepts=nInput, nConcepts=nInput,
                               nSymbols=nInput, nWords=nInput, nOutput=nInput,
                               nWhere=2, nWhen=2, flatten=True)
-        TheData.load("xor")
+        Models.TheData.load("xor")
 
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         emb = inp.vocabulary
-        self.assertIsInstance(emb, Embedding)
+        self.assertIsInstance(emb, Models.Embedding)
 
-        _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
-        _odim = TheXMLConfig.space("OutputSpace", "nDim")
+        _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
+        _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
-        os_ = OutputSpace([nInput, _sdim + _obj_sym], [4, _odim], [4, _odim])
+        os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [4, _odim], [4, _odim])
         os_.set_text_mode(inp)
 
         codebook = emb.wv._vectors.detach()
@@ -284,28 +279,26 @@ class TestSpacePrediction(unittest.TestCase):
     def test_space_token_predicted_by_reverse(self):
         """When a space vector is placed in output, it decodes to ' '."""
         import torch
-        from BasicModel import (InputSpace, TheData, OutputSpace,
-                                TheXMLConfig, Embedding)
 
         nInput = 8
         _populate_test_config(inputDim=10, nInput=nInput,
                               nPercepts=nInput, nConcepts=nInput,
                               nSymbols=nInput, nWords=nInput, nOutput=nInput,
                               nWhere=2, nWhen=2, flatten=True)
-        TheData.load("xor")
+        Models.TheData.load("xor")
 
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         emb = inp.vocabulary
         self.assertIn(" ", emb.pretrain.key_to_index)
 
-        _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
-        _odim = TheXMLConfig.space("OutputSpace", "nDim")
+        _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
+        _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
-        os_ = OutputSpace([nInput, _sdim + _obj_sym], [4, _odim], [4, _odim])
+        os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [4, _odim], [4, _odim])
         os_.set_text_mode(inp)
 
         space_idx = emb.pretrain.key_to_index[" "]
@@ -340,23 +333,22 @@ class TestNullEOS(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import torch
-        from BasicModel import InputSpace, TheData, OutputSpace, TheXMLConfig, Embedding
 
         nInput = 8
         _populate_test_config(inputDim=10, nInput=nInput,
                               nPercepts=nInput, nConcepts=nInput,
                               nSymbols=nInput, nWords=nInput, nOutput=nInput,
                               nWhere=2, nWhen=2, flatten=True)
-        TheData.load("xor")
+        Models.TheData.load("xor")
 
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        cls.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
+        cls.inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
                              model_type="embedding")
         cls.emb = cls.inp.vocabulary
-        _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
-        _odim = TheXMLConfig.space("OutputSpace", "nDim")
-        cls.os_ = OutputSpace([nInput, _sdim], [4, _odim], [4, _odim])
+        _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
+        _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
+        cls.os_ = Models.OutputSpace([nInput, _sdim], [4, _odim], [4, _odim])
         cls.os_.set_text_mode(cls.inp)
 
     def test_null_char_in_embedding_vocab(self):
@@ -395,7 +387,6 @@ class TestNullEOS(unittest.TestCase):
         Expected output:   word_A + \\x00  (stopped before B, buffer terminated)
         """
         import torch
-        from BasicModel import TheXMLConfig
 
         emb = self.emb
         self.assertIn("\x00", emb.pretrain.key_to_index)
@@ -436,7 +427,6 @@ class TestNullEOS(unittest.TestCase):
         first N slots and the rest are padding (zero vectors → \\x00).
         """
         import torch
-        from BasicModel import TheXMLConfig
 
         emb = self.emb
         self.assertIn("\x00", emb.pretrain.key_to_index)

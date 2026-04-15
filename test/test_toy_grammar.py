@@ -27,10 +27,10 @@ import warnings
 import torch
 
 import matplotlib
+import Models
+import Spaces
 matplotlib.use('Agg')
 
-from BasicModel import MentalModel, TheData, TheDevice
-from Space import Grammar
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
 
@@ -46,17 +46,16 @@ def _reload_config():
 def _make_model():
     """Create a MentalModel and return (model, TheGrammar)."""
     _reload_config()
-    from Space import TheGrammar
     # Force re-initialization in case previous tests set small test dimensions
-    TheGrammar._configured = False
-    TheGrammar._configured = False
-    model, _ = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
-    return model, TheGrammar
+    Spaces.TheGrammar._configured = False
+    Spaces.TheGrammar._configured = False
+    model, _ = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
+    return model, Spaces.TheGrammar
 
 
 def _forward_with_data(model, sentences, outputs):
     """Run a forward pass through MentalModel with given data."""
-    with TheData.runtime_batch(sentences, outputs), \
+    with Models.TheData.runtime_batch(sentences, outputs), \
          warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Range violation")
         warnings.filterwarnings("ignore", message="PiLayer.reverse")
@@ -92,7 +91,7 @@ class TestGrammarGradientFlow(unittest.TestCase):
             self.skipTest("No C-tier SyntacticLayer")
 
         sl_c.train()
-        act = (torch.randn(1, _N_CONCEPTS, device=TheDevice.get()) * 0.01).requires_grad_(True)
+        act = (torch.randn(1, _N_CONCEPTS, device=Models.TheDevice.get()) * 0.01).requires_grad_(True)
         out = sl_c.forward(act)
         loss = out['rule_logits'].pow(2).sum()
         loss.backward()
@@ -109,7 +108,7 @@ class TestGrammarGradientFlow(unittest.TestCase):
             self.skipTest("No S-tier SyntacticLayer")
 
         sl_s.train()
-        act = (torch.randn(1, _N_SYMBOLS, device=TheDevice.get()) * 0.01).requires_grad_(True)
+        act = (torch.randn(1, _N_SYMBOLS, device=Models.TheDevice.get()) * 0.01).requires_grad_(True)
         out = sl_s.forward(act)
         loss = out['rule_logits'].pow(2).sum()
         loss.backward()
@@ -126,7 +125,7 @@ class TestGrammarGradientFlow(unittest.TestCase):
             self.skipTest("No C-tier SyntacticLayer")
 
         sl_c.train()
-        act = torch.randn(1, _N_CONCEPTS, device=TheDevice.get()) * 0.01
+        act = torch.randn(1, _N_CONCEPTS, device=Models.TheDevice.get()) * 0.01
         out = sl_c.forward(act)
         loss = out['rule_logits'].pow(2).sum()
         loss.backward()
@@ -155,7 +154,7 @@ class TestGrammarRuleSelectivity(unittest.TestCase):
             self.skipTest("No C-tier SyntacticLayer")
 
         # Small-scale input to keep SyntacticLayer logits in stable range
-        act = torch.randn(1, _N_CONCEPTS, device=TheDevice.get()) * 0.01
+        act = torch.randn(1, _N_CONCEPTS, device=Models.TheDevice.get()) * 0.01
         sl_c.eval()
         with torch.no_grad():
             out = sl_c.forward(act)
@@ -187,10 +186,10 @@ class TestGrammarRuleSelectivity(unittest.TestCase):
         if sl_c is None:
             self.skipTest("No C-tier SyntacticLayer")
 
-        act_sparse = torch.zeros(1, _N_CONCEPTS, device=TheDevice.get())
+        act_sparse = torch.zeros(1, _N_CONCEPTS, device=Models.TheDevice.get())
         act_sparse[0, :5] = 0.01
 
-        act_dense = torch.ones(1, _N_CONCEPTS, device=TheDevice.get()) * 0.01
+        act_dense = torch.ones(1, _N_CONCEPTS, device=Models.TheDevice.get()) * 0.01
 
         sl_c.eval()
         with torch.no_grad():
@@ -210,7 +209,7 @@ class TestGrammarRuleSelectivity(unittest.TestCase):
         if sl_s is None:
             self.skipTest("No S-tier SyntacticLayer")
 
-        act = torch.randn(1, _N_SYMBOLS, device=TheDevice.get()) * 0.01
+        act = torch.randn(1, _N_SYMBOLS, device=Models.TheDevice.get()) * 0.01
         sl_s.eval()
         with torch.no_grad():
             out = sl_s.forward(act)
@@ -405,7 +404,7 @@ class TestGrammarRuleReport(unittest.TestCase):
                 print(f"  [{local_idx}] rule {global_id}: {rule.canonical} "
                       f"(arity={rule.arity})")
 
-            act = torch.randn(1, n_slots, device=TheDevice.get()) * 0.01
+            act = torch.randn(1, n_slots, device=Models.TheDevice.get()) * 0.01
             sl.eval()
             with torch.no_grad():
                 out = sl.forward(act)
@@ -429,10 +428,10 @@ class TestSoftSuperposition(unittest.TestCase):
     def test_c_tier_soft_compose(self):
         """C-tier compose() produces output different from input."""
         B, N, D = 1, _N_CONCEPT_SLOTS, _CONCEPT_DIM
-        data = torch.randn(B, N, D, device=TheDevice.get()) * 0.1
+        data = torch.randn(B, N, D, device=Models.TheDevice.get()) * 0.1
         # Ensure at least 2 active positions for composition
-        data[0, 0] = torch.randn(D, device=TheDevice.get()) * 0.5
-        data[0, 1] = torch.randn(D, device=TheDevice.get()) * 0.5
+        data[0, 0] = torch.randn(D, device=Models.TheDevice.get()) * 0.5
+        data[0, 1] = torch.randn(D, device=Models.TheDevice.get()) * 0.5
 
         sl = self.model.wordSpace.conceptualSyntacticLayer
         subspace = self.model.conceptualSpace.subspace
@@ -448,7 +447,7 @@ class TestSoftSuperposition(unittest.TestCase):
     def test_s_tier_soft_compose(self):
         """S-tier compose() uses learned rule probabilities."""
         B, N = 1, _N_SYMBOLS
-        data = torch.zeros(B, N, device=TheDevice.get())
+        data = torch.zeros(B, N, device=Models.TheDevice.get())
         # Set multiple active positions
         data[0, 0] = 0.5
         data[0, 1] = 0.3
@@ -471,7 +470,7 @@ class TestSoftSuperposition(unittest.TestCase):
         try:
             self.grammar.interpretation = 0.0
             B, N = 1, _N_SYMBOLS
-            data = torch.zeros(B, N, device=TheDevice.get())
+            data = torch.zeros(B, N, device=Models.TheDevice.get())
             data[0, 0] = 0.5
             data[0, 1] = 0.3
 
@@ -490,7 +489,7 @@ class TestSoftSuperposition(unittest.TestCase):
         """not(C) and non(C) fire deterministically before soft composition."""
         B, N, D = 1, _N_CONCEPT_SLOTS, _CONCEPT_DIM
         # Create data where mean < 0 to trigger not()
-        data = torch.full((B, N, D), -0.5, device=TheDevice.get())
+        data = torch.full((B, N, D), -0.5, device=Models.TheDevice.get())
         # Zero out most positions so only one is active
         data[0, 1:] = 0.0
 
@@ -504,8 +503,7 @@ class TestSoftSuperposition(unittest.TestCase):
         words = subspace.get_words()
         not_rid = self.grammar._c_rule_ids().get('not')
         if not_rid is not None:
-            from Space import WordEncoding
-            not_words = [w for w in words if len(w) >= 4 and w[WordEncoding.RULE] == not_rid]
+            not_words = [w for w in words if len(w) >= 4 and w[Spaces.WordEncoding.RULE] == not_rid]
             self.assertGreater(len(not_words), 0,
                 "not() rule should have fired for negative-mean data")
 
@@ -517,10 +515,10 @@ class TestSoftSuperposition(unittest.TestCase):
 
         sl_c.train()
         B, N, D = 1, _N_CONCEPT_SLOTS, _CONCEPT_DIM
-        data = (torch.randn(B, N, D, device=TheDevice.get()) * 0.01).requires_grad_(True)
+        data = (torch.randn(B, N, D, device=Models.TheDevice.get()) * 0.01).requires_grad_(True)
         data_with_active = data.clone()
-        data_with_active[0, 0] = torch.randn(D, device=TheDevice.get()) * 0.5
-        data_with_active[0, 1] = torch.randn(D, device=TheDevice.get()) * 0.5
+        data_with_active[0, 0] = torch.randn(D, device=Models.TheDevice.get()) * 0.5
+        data_with_active[0, 1] = torch.randn(D, device=Models.TheDevice.get()) * 0.5
 
         subspace = self.model.conceptualSpace.subspace
         result, _ = sl_c.compose(data_with_active, subspace, self.grammar)

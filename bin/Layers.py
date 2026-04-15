@@ -2413,7 +2413,7 @@ class TruthLayer(Layer):
         assert len(tl5) == 1, f"truth store not restored: {len(tl5)}"
 
         print("TruthLayer tests passed.")
-class DiscourseSpace(Layer):
+class InterSentenceLayer(Layer):
     """Inter-sentence substrate: per-sentence ``[S | W]`` snapshots +
     next-sentence predictor + predicted-sentence resolver.
 

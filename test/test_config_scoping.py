@@ -4,10 +4,10 @@ import os, sys, unittest
 _BIN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
+import Models
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 
-from BasicModel import BasicModelFactory
 
 
 class TestGetSpaceParam(unittest.TestCase):
@@ -18,7 +18,7 @@ class TestGetSpaceParam(unittest.TestCase):
             "architecture": {"hasAttention": True},
             "PerceptualSpace": {"hasAttention": False},
         }
-        result = BasicModelFactory.get_space_param(cfg, "PerceptualSpace", "hasAttention")
+        result = Models.BasicModelFactory.get_space_param(cfg, "PerceptualSpace", "hasAttention")
         self.assertFalse(result)
 
     def test_falls_back_to_architecture(self):
@@ -26,21 +26,20 @@ class TestGetSpaceParam(unittest.TestCase):
             "architecture": {"invertible": True},
             "PerceptualSpace": {"nActive": 4},
         }
-        result = BasicModelFactory.get_space_param(cfg, "PerceptualSpace", "invertible")
+        result = Models.BasicModelFactory.get_space_param(cfg, "PerceptualSpace", "invertible")
         self.assertTrue(result)
 
     def test_raises_when_missing_everywhere(self):
         cfg = {"architecture": {}, "PerceptualSpace": {}}
         with self.assertRaises(KeyError):
-            BasicModelFactory.get_space_param(cfg, "PerceptualSpace", "nonExistentKey")
+            Models.BasicModelFactory.get_space_param(cfg, "PerceptualSpace", "nonExistentKey")
 
     def test_space_section_missing_entirely(self):
         cfg = {"architecture": {"invertible": True}}
-        result = BasicModelFactory.get_space_param(cfg, "ConceptualSpace", "invertible")
+        result = Models.BasicModelFactory.get_space_param(cfg, "ConceptualSpace", "invertible")
         self.assertTrue(result)
 
 
-from BasicModel import BaseModel, BasicModel
 
 
 class TestDefaultsXml(unittest.TestCase):
@@ -51,7 +50,7 @@ class TestDefaultsXml(unittest.TestCase):
         defaults_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             "data", "model.xml")
-        cls.cfg = BaseModel.load_config(defaults_path)
+        cls.cfg = Models.BaseModel.load_config(defaults_path)
 
     def test_has_space_sections(self):
         for name in ["InputSpace", "PerceptualSpace", "ConceptualSpace",
@@ -133,10 +132,9 @@ class TestCreateFromConfig(unittest.TestCase):
   <OutputSpace><nOutput>1</nOutput><nDim>1</nDim></OutputSpace>
 </model>""")
         try:
-            from BasicModel import BasicModel, TheData
-            TheData.load("xor")
-            m = BasicModel()
-            m.create_from_config(xml, data=TheData)
+            Models.TheData.load("xor")
+            m = Models.BasicModel()
+            m.create_from_config(xml, data=Models.TheData)
             self.assertEqual(m.nInput, 2)
             self.assertEqual(m.nPercepts, 4)
             self.assertEqual(m.nConcepts, 3)
@@ -158,7 +156,7 @@ class TestValidateConfig(unittest.TestCase):
             "SymbolicSpace": {"passThrough": False},
         }
         with self.assertRaises(ValueError) as ctx:
-            BasicModelFactory.validate_config(cfg)
+            Models.BasicModelFactory.validate_config(cfg)
         self.assertIn("hasAttention", str(ctx.exception))
 
     def test_attention_reshape_ok_when_false(self):
@@ -170,7 +168,7 @@ class TestValidateConfig(unittest.TestCase):
             "SymbolicSpace": {"passThrough": False},
         }
         # Should not raise
-        BasicModelFactory.validate_config(cfg)
+        Models.BasicModelFactory.validate_config(cfg)
 
     def test_arir_requires_reconstruction(self):
         cfg = {
@@ -184,7 +182,7 @@ class TestValidateConfig(unittest.TestCase):
             "SymbolicSpace": {"passThrough": False},
         }
         with self.assertRaises(ValueError) as ctx:
-            BasicModelFactory.validate_config(cfg)
+            Models.BasicModelFactory.validate_config(cfg)
         self.assertIn("maskedPrediction=ARIR", str(ctx.exception))
 
     def test_ramsified_requires_latent_symbol_volume_match(self):
@@ -202,13 +200,13 @@ class TestValidateConfig(unittest.TestCase):
             "OutputSpace": {"nOutput": 1, "nDim": 1},
         }
         with self.assertRaises(ValueError) as ctx:
-            BasicModelFactory.validate_config(cfg, model_family="mental")
+            Models.BasicModelFactory.validate_config(cfg, model_family="mental")
         self.assertIn("latent/symbol volume equality", str(ctx.exception))
 
 
 class TestInferValidation(unittest.TestCase):
     def test_arir_infer_requires_reversible(self):
-        model = BasicModel()
+        model = Models.BasicModel()
         model.reversible = False
         with self.assertRaises(ValueError) as ctx:
             model.infer("hello", max_length=1, mode="ARIR")

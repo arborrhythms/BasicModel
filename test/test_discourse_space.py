@@ -25,10 +25,11 @@ import unittest
 import warnings
 import torch
 import matplotlib
+import Models
+import Spaces
+import Layers
 matplotlib.use('Agg')
 
-from BasicModel import MentalModel, TheData, TheDevice
-from Model import DiscourseSpace
 from util import init_config, TheXMLConfig
 
 
@@ -40,8 +41,7 @@ def _reload_config():
         path=os.path.join(_DATA_DIR, 'MentalModel.xml'),
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
     )
-    from Space import TheGrammar
-    TheGrammar._configured = False
+    Spaces.TheGrammar._configured = False
 
 
 def _release_allocator_cache():
@@ -85,7 +85,7 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
     CTX = 2
 
     def _make(self):
-        return DiscourseSpace(
+        return Layers.InterSentenceLayer(
             n_symbols=self.N_SYMBOLS,
             max_depth=self.MAX_DEPTH,
             n_dim=self.N_DIM,
@@ -270,7 +270,7 @@ class TestDiscourseSpaceIntegration(_DiscourseTestBase):
 
     def _build_model(self):
         _reload_config()
-        model, cfg = MentalModel.from_config(
+        model, cfg = Models.MentalModel.from_config(
             os.path.join(_DATA_DIR, 'MentalModel.xml'))
         return model, cfg
 
@@ -295,7 +295,7 @@ class TestDiscourseSpaceIntegration(_DiscourseTestBase):
         sentences = ['the cat sat on the mat']
         outputs = [torch.tensor([0.0])]
 
-        with TheData.runtime_batch(sentences, outputs), \
+        with Models.TheData.runtime_batch(sentences, outputs), \
              warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="Range violation")
             warnings.filterwarnings("ignore", message="PiLayer.reverse")
@@ -324,8 +324,8 @@ class TestDiscourseSpaceIntegration(_DiscourseTestBase):
         d = self.model.wordSpace.discourse
         self.assertEqual(len(d), 0)
         # Build correctly-sized dummy tensors and push.
-        s = torch.randn(d.n_symbols, d.n_dim, device=TheDevice.get())
-        w = torch.zeros(d.max_depth, d.n_dim, device=TheDevice.get())
+        s = torch.randn(d.n_symbols, d.n_dim, device=Models.TheDevice.get())
+        w = torch.zeros(d.max_depth, d.n_dim, device=Models.TheDevice.get())
         d.snapshot(s, w)
         self.assertEqual(len(d), 1)
         d.reset()
@@ -338,8 +338,8 @@ class TestDiscourseSpaceIntegration(_DiscourseTestBase):
         runEpoch does), and confirming the count goes back to zero."""
         self.model, self.cfg = self._build_model()
         d = self.model.wordSpace.discourse
-        s = torch.randn(d.n_symbols, d.n_dim, device=TheDevice.get())
-        w = torch.zeros(d.max_depth, d.n_dim, device=TheDevice.get())
+        s = torch.randn(d.n_symbols, d.n_dim, device=Models.TheDevice.get())
+        w = torch.zeros(d.max_depth, d.n_dim, device=Models.TheDevice.get())
         d.snapshot(s, w)
         self.assertEqual(len(d), 1)
         # Mirror runEpoch's behavior

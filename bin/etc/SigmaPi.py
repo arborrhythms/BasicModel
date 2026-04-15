@@ -13,7 +13,7 @@ import torch.optim as optim
 import numpy as np
 import util
 import matplotlib.pyplot as plt
-from Model import Layer, SigmaLayer, PiLayer, VQLayer
+from Layers import Layer, SigmaLayer, PiLayer, VQLayer
 from visualize import TheReport
 
 # When embeddingDim == 1, logical 0/1 are scalar tensors.

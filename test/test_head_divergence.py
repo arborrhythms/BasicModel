@@ -19,10 +19,10 @@ import math
 import warnings
 import torch
 import matplotlib
+import Models
+import Spaces
 matplotlib.use('Agg')
 
-from BasicModel import MentalModel, TheData, TheDevice
-from Space import TheGrammar
 from util import init_config, TheXMLConfig
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
@@ -42,9 +42,8 @@ def _reload_config():
 def _make_model():
     """Create a MentalModel with grammar enabled."""
     _reload_config()
-    from Space import TheGrammar
-    TheGrammar._configured = False
-    model, _ = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
+    Spaces.TheGrammar._configured = False
+    model, _ = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
     return model
 
 
@@ -71,7 +70,7 @@ class TestHeadDivergence(unittest.TestCase):
         """
         # Stage the sentence as a runtime batch (outputs must be tensors)
         outputs = [torch.tensor([0.0])]
-        with TheData.runtime_batch([sentence], outputs), \
+        with Models.TheData.runtime_batch([sentence], outputs), \
              warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="Range violation")
             warnings.filterwarnings("ignore", message="PiLayer.reverse")
@@ -105,7 +104,7 @@ class TestHeadDivergence(unittest.TestCase):
                 c_sl = getattr(self.model.wordSpace, 'conceptualSyntacticLayer', None) if getattr(self.model, 'wordSpace', None) is not None else None
                 if c_sl is not None:
                     pre_compose = c_sl.decompose(
-                        concepts.materialize(), cs.subspace, TheGrammar)[0]
+                        concepts.materialize(), cs.subspace, Spaces.TheGrammar)[0]
                 else:
                     pre_compose = post_compose
 

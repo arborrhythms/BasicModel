@@ -2,17 +2,18 @@
 """Diagnostic: trace where encoding through forward-reverse cycle in MM_xor."""
 import sys, os, math
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
+import Models
+import Spaces
 os.chdir(os.path.join(os.path.dirname(__file__), '..'))
 
 import torch
-from BasicModel import MentalModel
 from util import TheXMLConfig, TheDevice
 from data import TheData
 
 TheDevice.set("cpu")
 TheData.load("xor")
 
-model = MentalModel()
+model = Models.MentalModel()
 model.create_from_config(config_path="data/MM_xor.xml", data=TheData)
 model.eval()
 
@@ -49,8 +50,7 @@ with torch.no_grad():
         ws = getattr(self, 'wordSpace', None)
         c_sl = getattr(ws, 'conceptualSyntacticLayer', None) if ws is not None else None
         if c_sl is not None:
-            from Space import TheGrammar
-            y, self._last_svo = c_sl.compose(y, self.subspace, TheGrammar)
+            y, self._last_svo = c_sl.compose(y, self.subspace, Spaces.TheGrammar)
             captured['cs_post_compose'] = y.clone()
         vspace = self.forwardEnd(y, returnVectors=True)
         vspace.normalize("concepts", target="what")

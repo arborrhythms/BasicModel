@@ -13,9 +13,9 @@ import torch.optim as optim
 _BIN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
+import Layers
 
 from util import TheDevice
-from Model import PiLayer, SigmaLayer, epsilon
 
 
 class TestPiLayerForward(unittest.TestCase):
@@ -26,26 +26,26 @@ class TestPiLayerForward(unittest.TestCase):
 
     def test_3d_input_shape(self):
         nBatch, nInput, nOutput, nSymbols = 5, 3, 4, 6
-        layer = PiLayer(nInput, nOutput)
+        layer = Layers.PiLayer(nInput, nOutput)
         layer.set_sigma(0)
-        x = torch.rand(nBatch, nSymbols, nInput).clamp(min=epsilon).to(TheDevice.get())
+        x = torch.rand(nBatch, nSymbols, nInput).clamp(min=Layers.epsilon).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (nBatch, nSymbols, nOutput))
 
     def test_2d_input_shape(self):
         nBatch, nInput, nOutput = 4, 3, 5
-        layer = PiLayer(nInput, nOutput)
+        layer = Layers.PiLayer(nInput, nOutput)
         layer.set_sigma(0)
-        x = torch.rand(nBatch, nInput).clamp(min=epsilon).to(TheDevice.get())
+        x = torch.rand(nBatch, nInput).clamp(min=Layers.epsilon).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (nBatch, nOutput))
 
     def test_gradient_flows(self):
-        layer = PiLayer(2, 3, ergodic=True)
+        layer = Layers.PiLayer(2, 3, ergodic=True)
         with torch.no_grad():
             layer.var.fill_(0.001)
             layer.bias.fill_(0.999)
-        x = torch.rand(4, 2).clamp(min=epsilon).to(TheDevice.get()).requires_grad_(True)
+        x = torch.rand(4, 2).clamp(min=Layers.epsilon).to(TheDevice.get()).requires_grad_(True)
         y = layer(x)
         loss = y.sum()
         loss.backward()
@@ -58,7 +58,7 @@ class TestSigmaLayerForward(unittest.TestCase):
 
     def test_3d_input_shape(self):
         nBatch, nInput, nOutput, nSymbols = 4, 3, 5, 6
-        layer = SigmaLayer(nInput, nOutput)
+        layer = Layers.SigmaLayer(nInput, nOutput)
         layer.set_sigma(0)
         x = torch.randn(nBatch, nSymbols, nInput).to(TheDevice.get())
         y = layer(x)
@@ -66,7 +66,7 @@ class TestSigmaLayerForward(unittest.TestCase):
 
     def test_output_bounded_by_tanh(self):
         """With saturate=True (default), outputs should be in [-1, 1]."""
-        layer = SigmaLayer(4, 3)
+        layer = Layers.SigmaLayer(4, 3)
         layer.set_sigma(0)
         x = torch.randn(10, 4).to(TheDevice.get()) * 10  # large inputs
         y = layer(x)
@@ -74,7 +74,7 @@ class TestSigmaLayerForward(unittest.TestCase):
         self.assertTrue(torch.all(y <= 1.0))
 
     def test_gradient_flows(self):
-        layer = SigmaLayer(3, 2)
+        layer = Layers.SigmaLayer(3, 2)
         layer.set_sigma(0)
         x = torch.randn(4, 3).to(TheDevice.get()).requires_grad_(True)
         y = layer(x)
@@ -100,8 +100,8 @@ class TestPiSigmaXOR(unittest.TestCase):
         best_loss = float('inf')
         for seed in (123, 99, 42):
             torch.manual_seed(seed)
-            pi = PiLayer(2, 3)
-            sigma = SigmaLayer(3, 1)
+            pi = Layers.PiLayer(2, 3)
+            sigma = Layers.SigmaLayer(3, 1)
             pi.set_sigma(0)
             sigma.set_sigma(0)
             optimizer = optim.Adam(chain(pi.parameters(), sigma.parameters()), lr=0.001)

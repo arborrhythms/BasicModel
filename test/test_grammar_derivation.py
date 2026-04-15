@@ -23,11 +23,11 @@ import unittest
 import warnings
 import torch
 import matplotlib
+import Models
+import Spaces
 matplotlib.use('Agg')
 
-from BasicModel import MentalModel, TheData, TheDevice
-from Space import Grammar
-RuleDef = Grammar.RuleDef
+RuleDef = Spaces.Grammar.RuleDef
 from util import init_config, TheXMLConfig
 
 
@@ -44,12 +44,11 @@ def _reload_config():
 def _make_model():
     """Create a MentalModel and return (model, TheGrammar)."""
     _reload_config()
-    from Space import TheGrammar
     # Force re-initialization in case previous tests set small test dimensions
-    TheGrammar._configured = False
-    TheGrammar._configured = False
-    model, _ = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
-    return model, TheGrammar
+    Spaces.TheGrammar._configured = False
+    Spaces.TheGrammar._configured = False
+    model, _ = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
+    return model, Spaces.TheGrammar
 
 
 def _release_allocator_cache():
@@ -157,10 +156,10 @@ class TestGrammarProject(_GrammarTestBase):
         )
 
     def _S(self, B=2):
-        return torch.randn(B, self.n_symbols, device=TheDevice.get())
+        return torch.randn(B, self.n_symbols, device=Models.TheDevice.get())
 
     def _C(self, B=2):
-        return torch.randn(B, self.n_concepts, self.concept_dim, device=TheDevice.get())
+        return torch.randn(B, self.n_concepts, self.concept_dim, device=Models.TheDevice.get())
 
     # ── S-tier rules ────────────────────────────────────────────────
 
@@ -379,13 +378,12 @@ class TestGrammarShiftReduceStack(_GrammarTestBase):
         self.p_sl = self.model.wordSpace.perceptualSyntacticLayer
 
     def _make_ss(self, shape):
-        from Space import SubSpace
-        return SubSpace(inputShape=shape, outputShape=shape)
+        return Spaces.SubSpace(inputShape=shape, outputShape=shape)
 
     def test_symbolic_forward_shape(self):
         """compose('S', ...) returns same shape activation."""
         ss = self._make_ss([self.n_symbols, 1])
-        act = torch.zeros(1, self.n_symbols, device=TheDevice.get())
+        act = torch.zeros(1, self.n_symbols, device=Models.TheDevice.get())
         act[0, 3] = 1.0
         result = self.s_sl.compose(act, ss, self.grammar)
         self.assertEqual(result.shape, (1, self.n_symbols))
@@ -393,7 +391,7 @@ class TestGrammarShiftReduceStack(_GrammarTestBase):
     def test_symbolic_forward_two_active(self):
         """compose('S', ...) works with two active positions."""
         ss = self._make_ss([self.n_symbols, 1])
-        act = torch.zeros(1, self.n_symbols, device=TheDevice.get())
+        act = torch.zeros(1, self.n_symbols, device=Models.TheDevice.get())
         act[0, 2] = 1.0
         act[0, 5] = 1.0
         result = self.s_sl.compose(act, ss, self.grammar)
@@ -402,7 +400,7 @@ class TestGrammarShiftReduceStack(_GrammarTestBase):
     def test_conceptual_forward_shape(self):
         """compose('C', ...) returns same shape vectors."""
         ss = self._make_ss([self.n_concepts, self.concept_dim])
-        vec = torch.randn(1, self.n_concepts, self.concept_dim, device=TheDevice.get())
+        vec = torch.randn(1, self.n_concepts, self.concept_dim, device=Models.TheDevice.get())
         vec[0, 3:] = 0.0  # 3 active positions
         result, _ = self.c_sl.compose(vec, ss, self.grammar)
         self.assertEqual(result.shape, (1, self.n_concepts, self.concept_dim))
@@ -410,7 +408,7 @@ class TestGrammarShiftReduceStack(_GrammarTestBase):
     def test_conceptual_forward_records_words(self):
         """compose('C', ...) records words on the subspace."""
         ss = self._make_ss([self.n_concepts, self.concept_dim])
-        vec = torch.randn(1, self.n_concepts, self.concept_dim, device=TheDevice.get())
+        vec = torch.randn(1, self.n_concepts, self.concept_dim, device=Models.TheDevice.get())
         # Make one position negative-mean to trigger not()
         vec[0, 0] = -torch.abs(vec[0, 0])
         vec[0, 1:] = 0.0
@@ -422,7 +420,7 @@ class TestGrammarShiftReduceStack(_GrammarTestBase):
         """compose('P', ...) returns same shape vectors."""
         n_percepts = 128
         ss = self._make_ss([n_percepts, self.symbol_dim])
-        vec = torch.randn(1, n_percepts, self.symbol_dim, device=TheDevice.get())
+        vec = torch.randn(1, n_percepts, self.symbol_dim, device=Models.TheDevice.get())
         vec[0, 4:] = 0.0
         result = self.p_sl.compose(vec, ss, self.grammar)
         self.assertEqual(result.shape, (1, n_percepts, self.symbol_dim))
@@ -438,7 +436,7 @@ class TestGrammarShiftReduceStack(_GrammarTestBase):
         """Multiple compose() calls work without error."""
         for _ in range(3):
             ss = self._make_ss([self.n_symbols, 1])
-            act = torch.zeros(1, self.n_symbols, device=TheDevice.get())
+            act = torch.zeros(1, self.n_symbols, device=Models.TheDevice.get())
             act[0, torch.randint(self.n_symbols, (1,))] = 1.0
             self.s_sl.compose(act, ss, self.grammar)
 
@@ -448,7 +446,7 @@ class TestGrammarConfigure(_GrammarTestBase):
 
     def test_configure_from_dict(self):
         """configure() builds correct RuleDefs from a grammar dict."""
-        g = Grammar()
+        g = Spaces.Grammar()
         g.configure({
             'START': ['true(S) EOF'],
             'S': ['swap(S, S)', 'equals(S, S)', 'C'],
@@ -477,7 +475,7 @@ class TestGrammarConfigure(_GrammarTestBase):
 
     def test_interpretation_from_xml_config(self):
         """interpretation is read from mentalModel.interpretation, not grammar dict."""
-        g = Grammar()
+        g = Spaces.Grammar()
         g.configure({
             'START': ['true(S) EOF'],
             'S': ['C'],
@@ -491,7 +489,7 @@ class TestGrammarConfigure(_GrammarTestBase):
 
     def test_configure_single_string_rule(self):
         """configure() handles a single string (not list) for a tier."""
-        g = Grammar()
+        g = Spaces.Grammar()
         g.configure({
             'START': 'true(S) EOF',
             'S': 'C',
@@ -502,7 +500,7 @@ class TestGrammarConfigure(_GrammarTestBase):
 
     def test_tier_queries(self):
         """symbolic(), conceptual(), perceptual() return correct indices."""
-        g = Grammar()
+        g = Spaces.Grammar()
         g.configure({
             'START': ['true(S) EOF'],
             'S': ['swap(S, S)', 'equals(S, S)', 'C'],
@@ -528,7 +526,7 @@ class TestGrammarConfigure(_GrammarTestBase):
 
     def test_binary_rules(self):
         """binary_rules() returns only arity-2 rule indices."""
-        g = Grammar()
+        g = Spaces.Grammar()
         g.configure({
             'START': ['true(S) EOF'],
             'S': ['swap(S, S)', 'C'],
@@ -543,7 +541,7 @@ class TestGrammarConfigure(_GrammarTestBase):
 
     def test_transitions(self):
         """symbolic_transition() and conceptual_transition() find correct rules."""
-        g = Grammar()
+        g = Spaces.Grammar()
         g.configure({
             'START': ['true(S) EOF'],
             'S': ['swap(S, S)', 'C'],
@@ -569,7 +567,7 @@ class TestMentalModelWithGrammar(_GrammarTestBase):
         sentences = ['the cat sat on the mat', 'a dog chased the ball']
         outputs = [torch.tensor([0.0]), torch.tensor([1.0])]
 
-        with TheData.runtime_batch(sentences, outputs), \
+        with Models.TheData.runtime_batch(sentences, outputs), \
              warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="Range violation")
             warnings.filterwarnings("ignore", message="PiLayer.reverse")
@@ -589,7 +587,7 @@ class TestMentalModelWithGrammar(_GrammarTestBase):
         sentences = ['the cat sat on the mat', 'a dog chased the ball']
         outputs = [torch.tensor([0.0]), torch.tensor([1.0])]
 
-        with TheData.runtime_batch(sentences, outputs), \
+        with Models.TheData.runtime_batch(sentences, outputs), \
              warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="Range violation")
             warnings.filterwarnings("ignore", message="PiLayer.reverse")
@@ -601,13 +599,12 @@ class TestMentalModelWithGrammar(_GrammarTestBase):
             with torch.no_grad():
                 self.model.forward(x)
 
-                from Space import TheGrammar, SubSpace
                 sym_act = self.model.symbols.get_activation()
 
                 if sym_act is not None:
                     sl = self.model.wordSpace.symbolicSyntacticLayer
                     ss = self.model.symbolicSpace.subspace
-                    result = sl.compose(sym_act, ss, TheGrammar)
+                    result = sl.compose(sym_act, ss, Spaces.TheGrammar)
                     self.assertEqual(result.shape[0], 2)  # batch=2
 
     def test_grammar_derivation_c_tier(self):
@@ -615,7 +612,7 @@ class TestMentalModelWithGrammar(_GrammarTestBase):
         sentences = ['the cat sat on the mat']
         outputs = [torch.tensor([0.0])]
 
-        with TheData.runtime_batch(sentences, outputs), \
+        with Models.TheData.runtime_batch(sentences, outputs), \
              warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="Range violation")
             warnings.filterwarnings("ignore", message="PiLayer.reverse")
@@ -627,22 +624,20 @@ class TestMentalModelWithGrammar(_GrammarTestBase):
             with torch.no_grad():
                 self.model.forward(x)
 
-                from Space import TheGrammar, SubSpace
                 con_vec = self.model.concepts.materialize()
 
                 if con_vec is not None:
                     sl = self.model.wordSpace.conceptualSyntacticLayer
                     ss = self.model.conceptualSpace.subspace
-                    result, _ = sl.compose(con_vec, ss, TheGrammar)
+                    result, _ = sl.compose(con_vec, ss, Spaces.TheGrammar)
                     self.assertEqual(result.ndim, 3)  # [B, N, D]
 
     def test_word_rule_ids_are_global(self):
         """Word tuples use global Grammar rule IDs."""
-        from Space import TheGrammar
         sentences = ['the cat sat on the mat']
         outputs = [torch.tensor([0.0])]
 
-        with TheData.runtime_batch(sentences, outputs), \
+        with Models.TheData.runtime_batch(sentences, outputs), \
              warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="Range violation")
             warnings.filterwarnings("ignore", message="PiLayer.reverse")
@@ -659,9 +654,9 @@ class TestMentalModelWithGrammar(_GrammarTestBase):
                 if sym_act is not None:
                     sl = self.model.wordSpace.symbolicSyntacticLayer
                     ss = self.model.symbolicSpace.subspace
-                    sl.compose(sym_act, ss, TheGrammar)
+                    sl.compose(sym_act, ss, Spaces.TheGrammar)
                     words = ss.get_words()
-                    num_rules = len(TheGrammar.rules)
+                    num_rules = len(Spaces.TheGrammar.rules)
                     for word in words:
                         rule_id = word[3]  # word layout: (batch, vector, order, rule, ...)
                         self.assertGreaterEqual(rule_id, 0)
@@ -673,7 +668,7 @@ class TestMentalModelWithGrammar(_GrammarTestBase):
         sentences = ['the cat sat on the mat']
         outputs = [torch.tensor([0.0])]
 
-        with TheData.runtime_batch(sentences, outputs), \
+        with Models.TheData.runtime_batch(sentences, outputs), \
              warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="Range violation")
             warnings.filterwarnings("ignore", message="PiLayer.reverse")
@@ -706,7 +701,7 @@ class TestRule1TrinityCoordination(_GrammarTestBase):
 
     def test_trinity_partition_of_unity(self):
         """For x in [-1, 1]: true(x) + false(x) + non(x) == 1."""
-        x = torch.linspace(-1.0, 1.0, 21, device=TheDevice.get())
+        x = torch.linspace(-1.0, 1.0, 21, device=Models.TheDevice.get())
         t = self.s_sl.trueForward(x, self.s_ss)
         f = self.s_sl.falseForward(x, self.s_ss)
         n = self.s_sl.nonForward(x, self.s_ss)
@@ -719,9 +714,9 @@ class TestRule1TrinityCoordination(_GrammarTestBase):
     def test_trinity_endpoints(self):
         """Endpoints lock to one operator: x=+1→true, x=-1→false, x=0→non."""
         s_sl, ss = self.s_sl, self.s_ss
-        one = torch.tensor([1.0], device=TheDevice.get())
-        zero = torch.tensor([0.0], device=TheDevice.get())
-        neg = torch.tensor([-1.0], device=TheDevice.get())
+        one = torch.tensor([1.0], device=Models.TheDevice.get())
+        zero = torch.tensor([0.0], device=Models.TheDevice.get())
+        neg = torch.tensor([-1.0], device=Models.TheDevice.get())
         # x = +1
         self.assertAlmostEqual(s_sl.trueForward(one, ss).item(),  1.0, places=5)
         self.assertAlmostEqual(s_sl.falseForward(one, ss).item(), 0.0, places=5)
@@ -737,20 +732,20 @@ class TestRule1TrinityCoordination(_GrammarTestBase):
 
     def test_conjunction_idempotent(self):
         """conjunction(s, s) returns s (Hadamard min idempotency)."""
-        s = torch.rand(2, 16, device=TheDevice.get()) * 2 - 1  # [-1, 1]
+        s = torch.rand(2, 16, device=Models.TheDevice.get()) * 2 - 1  # [-1, 1]
         out = self.s_sl.conjunctionForward(s, s, self.s_ss)
         self.assertTrue(torch.allclose(out, s, atol=1e-5))
 
     def test_disjunction_idempotent(self):
         """disjunction(s, s) returns s (Hadamard max idempotency)."""
-        s = torch.rand(2, 16, device=TheDevice.get()) * 2 - 1
+        s = torch.rand(2, 16, device=Models.TheDevice.get()) * 2 - 1
         out = self.s_sl.disjunctionForward(s, s, self.s_ss)
         self.assertTrue(torch.allclose(out, s, atol=1e-5))
 
     def test_conjunction_disjunction_distinct(self):
         """conjunction and disjunction differ on non-equal inputs."""
-        a = torch.tensor([0.2, -0.4, 0.7], device=TheDevice.get())
-        b = torch.tensor([0.5,  0.1, 0.3], device=TheDevice.get())
+        a = torch.tensor([0.2, -0.4, 0.7], device=Models.TheDevice.get())
+        b = torch.tensor([0.5,  0.1, 0.3], device=Models.TheDevice.get())
         c = self.s_sl.conjunctionForward(a, b, self.s_ss)
         d = self.s_sl.disjunctionForward(a, b, self.s_ss)
         self.assertFalse(torch.allclose(c, d))
@@ -792,7 +787,7 @@ class TestRule2DemuxAndSelectors(_GrammarTestBase):
         D = ss.muxedSize
         muxed = torch.randn(2, ss.event.codebook.weight.shape[0]
                             if hasattr(ss.event, 'codebook') else 8, D,
-                            device=TheDevice.get())
+                            device=Models.TheDevice.get())
         ss.demux(muxed)
         # Read back via get_what/get_where/get_when (SubSpace API).
         what = ss.what.getW() if hasattr(ss.what, 'getW') else None
@@ -818,7 +813,7 @@ class TestRule2DemuxAndSelectors(_GrammarTestBase):
         if ss.nWhere == 0 and ss.nWhen == 0:
             self.skipTest("config has no where/when columns to mask")
         D = ss.muxedSize
-        x = torch.randn(2, 8, D, device=TheDevice.get())
+        x = torch.randn(2, 8, D, device=Models.TheDevice.get())
         out = self.s_sl.whatForward(x, ss)
         # what block preserved
         if ss.nWhat > 0:
@@ -832,7 +827,7 @@ class TestRule2DemuxAndSelectors(_GrammarTestBase):
         if ss.nWhere == 0:
             self.skipTest("config has nWhere=0 — no where block to select")
         D = ss.muxedSize
-        x = torch.randn(2, 8, D, device=TheDevice.get())
+        x = torch.randn(2, 8, D, device=Models.TheDevice.get())
         out = self.s_sl.whereForward(x, ss)
         # what block zeroed
         self.assertTrue(torch.all(out[..., :ss.nWhat] == 0))
@@ -849,7 +844,7 @@ class TestRule2DemuxAndSelectors(_GrammarTestBase):
         if ss.nWhen == 0:
             self.skipTest("config has nWhen=0 — no when block to select")
         D = ss.muxedSize
-        x = torch.randn(2, 8, D, device=TheDevice.get())
+        x = torch.randn(2, 8, D, device=Models.TheDevice.get())
         out = self.s_sl.whenForward(x, ss)
         # what block zeroed
         self.assertTrue(torch.all(out[..., :ss.nWhat] == 0))
@@ -866,7 +861,7 @@ class TestRule2DemuxAndSelectors(_GrammarTestBase):
         if ss.nWhere == 0 and ss.nWhen == 0 and ss.nWhat == 0:
             self.skipTest("degenerate column layout")
         D = ss.muxedSize
-        x = torch.randn(2, 8, D, device=TheDevice.get())
+        x = torch.randn(2, 8, D, device=Models.TheDevice.get())
         s = (self.s_sl.whatForward(x, ss)
              + self.s_sl.whereForward(x, ss)
              + self.s_sl.whenForward(x, ss))
@@ -890,8 +885,8 @@ class TestRule3Query(_GrammarTestBase):
 
     def test_query_forward_returns_left(self):
         """queryForward(left, right, ss) returns the preserved left operand."""
-        left = torch.tensor([0.7, -0.2, 0.5], device=TheDevice.get())
-        right = torch.tensor([-0.7, 0.2, -0.5], device=TheDevice.get())
+        left = torch.tensor([0.7, -0.2, 0.5], device=Models.TheDevice.get())
+        right = torch.tensor([-0.7, 0.2, -0.5], device=Models.TheDevice.get())
         out = self.s_sl.queryForward(left, right, subspace=None)
         self.assertTrue(torch.equal(out, left))
 
@@ -946,7 +941,6 @@ class TestWordSubSpaceBuffer(_GrammarTestBase):
     """WordSubSpace push/read/clear semantics + column-layout sharing."""
 
     def setUp(self):
-        from Space import WordSubSpace
         self.model, self.grammar = _make_model()
         self.host = self.model.symbolicSpace
         # Mirror SymbolicSubSpace's column layout to test the peer-sharing
@@ -956,7 +950,7 @@ class TestWordSubSpaceBuffer(_GrammarTestBase):
         self.nWhat = sub.nWhat
         self.nWhere = sub.nWhere
         self.nWhen = sub.nWhen
-        self.word_sub = WordSubSpace(
+        self.word_sub = Spaces.WordSubSpace(
             nDim=self.nDim, nWhat=self.nWhat, nWhere=self.nWhere,
             nWhen=self.nWhen, max_depth=32, max_arity=3, batch=1)
         self.word_sub.attach_codebook_host(self.host)
@@ -1163,7 +1157,7 @@ class TestNoCycleInModuleTree(_GrammarTestBase):
         """model.to(device) completes — exercises nn.Module._apply over the tree."""
         model, _ = _make_model()
         try:
-            model.to(TheDevice.get())  # should be a no-op or quick cycle
+            model.to(Models.TheDevice.get())  # should be a no-op or quick cycle
         except RecursionError as exc:
             self.fail(f"model.to() recursed forever — cycle in nn.Module tree: {exc}")
 

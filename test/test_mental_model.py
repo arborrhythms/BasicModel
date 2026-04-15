@@ -13,9 +13,10 @@ import unittest
 import warnings
 import torch
 import matplotlib
+import Models
+import Spaces
 matplotlib.use('Agg')
 
-from BasicModel import MentalModel, TheData, TheDevice
 from util import init_config, ProjectPaths, TheXMLConfig
 
 
@@ -28,9 +29,8 @@ def _reload_config():
         path=os.path.join(_DATA_DIR, 'MentalModel.xml'),
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
     )
-    from Space import TheGrammar
-    TheGrammar._configured = False
-    TheGrammar._configured = False
+    Spaces.TheGrammar._configured = False
+    Spaces.TheGrammar._configured = False
 
 
 class TestMentalModelForwardReverse(unittest.TestCase):
@@ -41,12 +41,12 @@ class TestMentalModelForwardReverse(unittest.TestCase):
 
     def test_forward_reverse_runs(self):
         _reload_config()
-        model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
+        model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
         sentences = ['the cat sat on the mat', 'a dog chased the ball']
         outputs = [torch.tensor([0.0]), torch.tensor([1.0])]
 
         # Untrained model — suppress range checks (shape-only test)
-        with TheData.runtime_batch(sentences, outputs), \
+        with Models.TheData.runtime_batch(sentences, outputs), \
              warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="Range violation")
             warnings.filterwarnings("ignore", message="PiLayer.reverse")
@@ -73,26 +73,25 @@ class TestMentalModelForwardReverse(unittest.TestCase):
     def test_grammar_has_syntactic_layers(self):
         """TheGrammar is initialized and Spaces own SyntacticLayers after init_layers."""
         _reload_config()
-        model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
-        from Space import TheGrammar
+        model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
         # Grammar should be initialized
-        self.assertTrue(TheGrammar._configured)
+        self.assertTrue(Spaces.TheGrammar._configured)
         # SyntacticLayers are now on the Spaces, not Grammar
         self.assertIsNotNone(model.wordSpace.conceptualSyntacticLayer)
         self.assertIsNotNone(model.wordSpace.symbolicSyntacticLayer)
         # C-tier methods (equals/part are on S-tier)
-        self.assertNotIn('equals', TheGrammar.c_methods)
-        self.assertNotIn('part', TheGrammar.c_methods)
-        self.assertIn('union', TheGrammar.c_methods)
-        self.assertIn('not', TheGrammar.c_methods)
+        self.assertNotIn('equals', Spaces.TheGrammar.c_methods)
+        self.assertNotIn('part', Spaces.TheGrammar.c_methods)
+        self.assertIn('union', Spaces.TheGrammar.c_methods)
+        self.assertIn('not', Spaces.TheGrammar.c_methods)
         # S-tier methods
-        self.assertIn('equals', TheGrammar.s_methods)
-        self.assertIn('part', TheGrammar.s_methods)
+        self.assertIn('equals', Spaces.TheGrammar.s_methods)
+        self.assertIn('part', Spaces.TheGrammar.s_methods)
 
     def test_subspace_words_clearable(self):
         """SubSpace word lists can be cleared on all tiers."""
         _reload_config()
-        model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
+        model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
         # Should not raise
         for space in (model.symbolicSpace, model.conceptualSpace, model.perceptualSpace):
             space.subspace.set_words([])
@@ -136,14 +135,13 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
 
     def test_configured_grammar_matches_xml(self):
         _reload_config()
-        model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
-        from Space import TheGrammar
+        model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
 
-        canonicals = [rule.canonical for rule in TheGrammar.rules]
+        canonicals = [rule.canonical for rule in Spaces.TheGrammar.rules]
         self.assertEqual(canonicals, self.EXPECTED_RULES)
         # 1 START + 13 S-tier + 7 C-tier + 2 P-tier = 23 total rules.
-        self.assertEqual(len(TheGrammar.rules), 23)
-        self.assertEqual(TheGrammar.interpretation, 0.5)
+        self.assertEqual(len(Spaces.TheGrammar.rules), 23)
+        self.assertEqual(Spaces.TheGrammar.interpretation, 0.5)
 
         # S-tier indices 1..13 (12 method rules + transition at index 13)
         self.assertEqual(model.wordSpace.symbolicSyntacticLayer.all_rules,

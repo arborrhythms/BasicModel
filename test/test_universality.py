@@ -24,9 +24,10 @@ import warnings
 import torch
 import pytest
 import matplotlib
+import Models
+import Spaces
 matplotlib.use('Agg')
 
-from BasicModel import MentalModel, TheData, TheDevice
 from util import init_config, TheXMLConfig
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
@@ -69,14 +70,13 @@ def _reload_config():
         path=os.path.join(_DATA_DIR, 'MentalModel.xml'),
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
     )
-    from Space import TheGrammar
-    TheGrammar._configured = False
+    Spaces.TheGrammar._configured = False
 
 
 def _make_model():
     """Create a MentalModel with grammar and truth support."""
     _reload_config()
-    model, cfg = MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
+    model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
     return model
 
 
@@ -86,7 +86,7 @@ def _run_forward(model, sentences):
     Suppresses range warnings from untrained weights.
     """
     outputs = [torch.tensor([0.0])] * len(sentences)
-    with TheData.runtime_batch(sentences, outputs), \
+    with Models.TheData.runtime_batch(sentences, outputs), \
          warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Range violation")
         warnings.filterwarnings("ignore", message="PiLayer.reverse")
@@ -160,8 +160,7 @@ class TestSVOIdentification(unittest.TestCase):
 
     def setUp(self):
         self.model = _make_model()
-        from Space import TheGrammar
-        self.grammar = TheGrammar
+        self.grammar = Spaces.TheGrammar
 
     @pytest.mark.xfail(reason="untrained model: lift confidence near chance", strict=False)
     def test_lift_confidence_on_transitive_sentence(self):
@@ -266,8 +265,7 @@ class TestLuminosityOfKindness(unittest.TestCase):
 
     def setUp(self):
         self.model = _make_model()
-        from Space import TheGrammar
-        self.grammar = TheGrammar
+        self.grammar = Spaces.TheGrammar
         # Seed the truth store so luminosity is non-trivial
         truth_layer = self.model.wordSpace.truth_layer
         with torch.no_grad():

@@ -29,9 +29,10 @@ import torch.nn as nn
 _BIN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
+import Models
+import Spaces
+import Layers
 
-from BasicModel import TheDevice
-from Space import SubSpace
 
 _RUN_SLOW = os.getenv("RUN_SLOW") == "1"
 
@@ -44,20 +45,19 @@ def _wrap_tensor(space, x):
 
 def _unwrap(vspace):
     """Extract the dense tensor from a SubSpace returned by forward()/reverse()."""
-    if isinstance(vspace, SubSpace):
+    if isinstance(vspace, Models.SubSpace):
         return vspace.materialize()
     return vspace
 
 
 def _obj_size(section):
     """Compute per-space objectSize from config (nWhere + nWhen)."""
-    from BasicModel import TheXMLConfig
     try:
-        nw = TheXMLConfig.space(section, "nWhere")
+        nw = Models.TheXMLConfig.space(section, "nWhere")
     except KeyError:
         nw = 0
     try:
-        nn = TheXMLConfig.space(section, "nWhen")
+        nn = Models.TheXMLConfig.space(section, "nWhen")
     except KeyError:
         nn = 0
     return nw + nn
@@ -117,17 +117,16 @@ def _populate_test_config(*,
     Space constructors read nDim/nVectors from TheXMLConfig.  In production,
     the XML file provides these.  In tests, this helper provides them directly.
     """
-    from BasicModel import TheXMLConfig, TheData
     from util import init_config, ProjectPaths
     import os
     # Always load model.xml defaults first so all keys are present
     init_config(defaults_path=os.path.join(ProjectPaths.DATA_DIR, "model.xml"))
     # Reset global state to prevent cross-test pollution
-    TheXMLConfig._requirements.clear()
-    TheData.train_input = []
-    TheData.test_input = []
-    TheData.train_output = []
-    TheData.test_output = []
+    Models.TheXMLConfig._requirements.clear()
+    Models.TheData.train_input = []
+    Models.TheData.test_input = []
+    Models.TheData.train_output = []
+    Models.TheData.test_output = []
     _pq = perceptCodebook if perceptCodebook is not None else codebook
     _cq = conceptCodebook if conceptCodebook is not None else codebook
     _objectSize = nWhere + nWhen
@@ -212,10 +211,10 @@ def _populate_test_config(*,
         },
     }
     for section, vals in _overrides.items():
-        if section in TheXMLConfig._data and isinstance(TheXMLConfig._data[section], dict):
-            TheXMLConfig._data[section].update(vals)
+        if section in Models.TheXMLConfig._data and isinstance(Models.TheXMLConfig._data[section], dict):
+            Models.TheXMLConfig._data[section].update(vals)
         else:
-            TheXMLConfig._data[section] = vals
+            Models.TheXMLConfig._data[section] = vals
 
 
 # ---------------------------------------------------------------------------
@@ -223,38 +222,34 @@ def _populate_test_config(*,
 # ---------------------------------------------------------------------------
 class TestLinearLayer(unittest.TestCase):
     def test_forward_shape(self):
-        from Model import LinearLayer
-        layer = LinearLayer(nInput=4, nOutput=3)
-        x = torch.randn(2, 4).to(TheDevice.get())
+        layer = Models.LinearLayer(nInput=4, nOutput=3)
+        x = torch.randn(2, 4).to(Models.TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 3))
 
     def test_with_identity_weight(self):
-        from Model import LinearLayer
-        layer = LinearLayer(nInput=4, nOutput=4, ergodic=True)  # ergodic init = eye
-        x = torch.randn(1, 4).to(TheDevice.get())
+        layer = Models.LinearLayer(nInput=4, nOutput=4, ergodic=True)  # ergodic init = eye
+        x = torch.randn(1, 4).to(Models.TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (1, 4))
 
 
 class TestInvertibleLinearLayer(unittest.TestCase):
     def test_forward_reverse_square(self):
-        from Model import InvertibleLinearLayer
-        layer = InvertibleLinearLayer(nInput=4, nOutput=4)
+        layer = Layers.InvertibleLinearLayer(nInput=4, nOutput=4)
         layer.set_sigma(0)
-        x = torch.randn(2, 4).to(TheDevice.get())
+        x = torch.randn(2, 4).to(Models.TheDevice.get())
         y = layer(x)
         x_rec = layer.reverse(y)
         self.assertTrue(torch.allclose(x, x_rec, atol=1e-4),
                         f"LDU reverse error: {(x - x_rec).abs().max():.6f}")
 
     def test_forward_reverse_ergodic(self):
-        from Model import InvertibleLinearLayer
-        layer = InvertibleLinearLayer(nInput=4, nOutput=4, ergodic=True, stable=True)
+        layer = Layers.InvertibleLinearLayer(nInput=4, nOutput=4, ergodic=True, stable=True)
         with torch.no_grad():
             layer.var.fill_(0.2)
             layer.bias.fill_(0.8)
-        x = torch.randn(2, 4).to(TheDevice.get())
+        x = torch.randn(2, 4).to(Models.TheDevice.get())
         y = layer(x)
         x_rec = layer.reverse(y)
         err = (x - x_rec).norm() / x.norm()
@@ -264,79 +259,69 @@ class TestInvertibleLinearLayer(unittest.TestCase):
 
 class TestSigmaLayer(unittest.TestCase):
     def test_forward_shape(self):
-        from Model import SigmaLayer
-        layer = SigmaLayer(nInput=8, nOutput=4)
-        x = torch.randn(2, 8).to(TheDevice.get())
+        layer = Layers.SigmaLayer(nInput=8, nOutput=4)
+        x = torch.randn(2, 8).to(Models.TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 4))
 
 
 class TestPiLayer(unittest.TestCase):
     def test_forward_shape(self):
-        from Model import PiLayer
-        layer = PiLayer(nInput=6, nOutput=3)
-        x = torch.randn(2, 6).to(TheDevice.get())
+        layer = Layers.PiLayer(nInput=6, nOutput=3)
+        x = torch.randn(2, 6).to(Models.TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 3))
 
 
 class TestInvertibleSigmaLayer(unittest.TestCase):
     def test_forward_shape(self):
-        from Model import SigmaLayer
-        layer = SigmaLayer(nInput=4, nOutput=4, invertible=True)
-        x = torch.randn(2, 4).to(TheDevice.get()) * 0.3
+        layer = Layers.SigmaLayer(nInput=4, nOutput=4, invertible=True)
+        x = torch.randn(2, 4).to(Models.TheDevice.get()) * 0.3
         y = layer(x)
         self.assertEqual(y.shape, (2, 4))
 
     def test_reverse_shape(self):
-        from Model import SigmaLayer
-        layer = SigmaLayer(nInput=4, nOutput=4, invertible=True)
-        y = torch.randn(2, 4).to(TheDevice.get()) * 0.3
+        layer = Layers.SigmaLayer(nInput=4, nOutput=4, invertible=True)
+        y = torch.randn(2, 4).to(Models.TheDevice.get()) * 0.3
         x = layer.reverse(y)
         self.assertEqual(x.shape, (2, 4))
 
 
 class TestAttentionLayer(unittest.TestCase):
     def test_asymmetric_forward_shape(self):
-        from Model import AttentionLayer
-        layer = AttentionLayer(nInput=8, nOutput=4, type="asymmetric")
-        x = torch.randn(2, 5, 8).to(TheDevice.get())
+        layer = Layers.AttentionLayer(nInput=8, nOutput=4, type="asymmetric")
+        x = torch.randn(2, 5, 8).to(Models.TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 5, 4))
 
     def test_symmetric_forward_shape(self):
-        from Model import AttentionLayer
-        layer = AttentionLayer(nInput=8, nOutput=4, type="symmetric")
-        x = torch.randn(2, 5, 8).to(TheDevice.get())
+        layer = Layers.AttentionLayer(nInput=8, nOutput=4, type="symmetric")
+        x = torch.randn(2, 5, 8).to(Models.TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 5, 4))
 
     def test_transformer_forward_shape(self):
-        from Model import AttentionLayer
-        layer = AttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
-        x = torch.randn(2, 5, 8).to(TheDevice.get())
+        layer = Layers.AttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
+        x = torch.randn(2, 5, 8).to(Models.TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 5, 4))
 
     def test_transformer_single_object(self):
         """Single-object 3D input [B, 1, D] -> [B, 1, nOut]."""
-        from Model import AttentionLayer
-        layer = AttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
-        x = torch.randn(2, 1, 8).to(TheDevice.get())
+        layer = Layers.AttentionLayer(nInput=8, nOutput=4, nHeads=2, type="transformer")
+        x = torch.randn(2, 1, 8).to(Models.TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (2, 1, 4))
 
     def test_inline(self):
-        from Model import AttentionLayer
-        AttentionLayer.test()
+        Layers.AttentionLayer.test()
 
 
 class TestMemory(unittest.TestCase):
     def test_mem_update(self):
-        from Model import Mem
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="FigureCanvasAgg")
-            Mem.test()  # Runs the built-in test
+            Layers.Mem.test()  # Runs the built-in test
 
 
 # ---------------------------------------------------------------------------
@@ -397,13 +382,12 @@ class TestSymPercept(unittest.TestCase):
 # ---------------------------------------------------------------------------
 def _make_simple_model(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nWords=16, nOutput=4):
     """Helper to create a BasicModel with config set up for simple path."""
-    from BasicModel import BasicModel
     _populate_test_config(
         inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
         nInput=nInput, nPercepts=nPercepts, nConcepts=nConcepts,
         nSymbols=nSymbols, nWords=nWords, nOutput=nOutput,
         symbolPassThrough=True)
-    return BasicModel()
+    return Models.BasicModel()
 
 
 class TestSimpleModelCreation(unittest.TestCase):
@@ -418,10 +402,9 @@ class TestSimpleModelCreation(unittest.TestCase):
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
             perceptPassThrough=True, symbolPassThrough=True, flatten=True)
-        from BasicModel import BasicModel
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
-        x = torch.randn(2, 28*28, 1).to(TheDevice.get())  # batch of 2, flattened MNIST, dim=1
+        x = torch.randn(2, 28*28, 1).to(Models.TheDevice.get())  # batch of 2, flattened MNIST, dim=1
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)  # batch size preserved
 
@@ -432,10 +415,9 @@ class TestSimpleModelCreation(unittest.TestCase):
             nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
             perceptPassThrough=True, symbolPassThrough=True,
             ergodic=True, certainty=True, flatten=True)
-        from BasicModel import BasicModel
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
-        x = torch.randn(2, 28*28, 1).to(TheDevice.get())
+        x = torch.randn(2, 28*28, 1).to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
 
@@ -445,13 +427,11 @@ class TestSimpleModelCreation(unittest.TestCase):
 # ---------------------------------------------------------------------------
 class TestBasicModelCreation(unittest.TestCase):
     def test_encodings(self):
-        from BasicModel import WhereEncoding, WhenEncoding
-        WhereEncoding.test()
-        WhenEncoding.test()
+        Models.WhereEncoding.test()
+        Models.WhenEncoding.test()
 
     def test_config_loading(self):
-        from BasicModel import BasicModel
-        cfg = BasicModel.load_config()
+        cfg = Models.BasicModel.load_config()
         # model.xml should exist and parse
         self.assertIsInstance(cfg, dict)
         if cfg:
@@ -460,9 +440,8 @@ class TestBasicModelCreation(unittest.TestCase):
 
 class TestWeightPersistence(unittest.TestCase):
     def test_save_load_roundtrip(self):
-        from Model import LinearLayer
-        layer = LinearLayer(nInput=4, nOutput=3)
-        x = torch.randn(1, 4).to(TheDevice.get())
+        layer = Models.LinearLayer(nInput=4, nOutput=3)
+        x = torch.randn(1, 4).to(Models.TheDevice.get())
         y_before = layer(x).detach().clone()
 
         with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f:
@@ -470,7 +449,7 @@ class TestWeightPersistence(unittest.TestCase):
         try:
             torch.save(layer.state_dict(), path)
             # Create a fresh layer and load
-            layer2 = LinearLayer(nInput=4, nOutput=3)
+            layer2 = Models.LinearLayer(nInput=4, nOutput=3)
             layer2.load_state_dict(torch.load(path, weights_only=True))
             y_after = layer2(x).detach()
             self.assertTrue(torch.allclose(y_before, y_after, atol=1e-6),
@@ -487,10 +466,9 @@ class TestWhereEncodingRoundTrip(unittest.TestCase):
     """WhereEncoding: encode → reverse → decode recovers the original offset."""
 
     def test_stamp_round_trip(self):
-        from BasicModel import WhereEncoding
         maxP = 4096
-        pe = WhereEncoding(maxP)
-        buf = torch.zeros(1, 1, 10, device=TheDevice.get())
+        pe = Models.WhereEncoding(maxP)
+        buf = torch.zeros(1, 1, 10, device=Models.TheDevice.get())
         offsets = [0, 1, 5, 11, 42, 100, 255, 1000]
         for offset in offsets:
             pe.stamp(buf, 0, 0, offset)
@@ -499,12 +477,11 @@ class TestWhereEncodingRoundTrip(unittest.TestCase):
                 msg=f"stamp/reverse round-trip failed for offset={offset}")
 
     def test_forward_decode_round_trip(self):
-        from BasicModel import WhereEncoding
         maxP = 256
-        pe = WhereEncoding(maxP)
+        pe = Models.WhereEncoding(maxP)
         pe.p = 0
         batch, n = 4, 3
-        x = torch.zeros(batch, n, 10, device=TheDevice.get())
+        x = torch.zeros(batch, n, 10, device=Models.TheDevice.get())
         y = pe.forward(x)
         _, decoded = pe.reverse(y)
         for b in range(batch):
@@ -516,10 +493,9 @@ class TestWhereEncodingRoundTrip(unittest.TestCase):
 
     def test_content_preserved(self):
         """Content dimensions (non-encoding slots) survive the round-trip."""
-        from BasicModel import WhereEncoding
-        pe = WhereEncoding(1000)
+        pe = Models.WhereEncoding(1000)
         pe.p = 0
-        x = torch.randn(2, 3, 10, device=TheDevice.get())
+        x = torch.randn(2, 3, 10, device=Models.TheDevice.get())
         original = x.clone()
         y = pe.forward(x)
         cleaned, _ = pe.reverse(y)
@@ -533,11 +509,10 @@ class TestWhenEncodingRoundTrip(unittest.TestCase):
     """WhenEncoding: forward → reverse recovers the original time."""
 
     def test_forward_reverse_round_trip(self):
-        from BasicModel import WhenEncoding
         maxT = 10000
-        te = WhenEncoding(maxT)
+        te = Models.WhenEncoding(maxT)
         te.t = 0
-        x = torch.zeros(5, 2, 10, device=TheDevice.get())
+        x = torch.zeros(5, 2, 10, device=Models.TheDevice.get())
         y = te.forward(x)
         _, decoded = te.reverse(y)
         expected = torch.arange(0, 5, dtype=torch.float32)
@@ -549,11 +524,10 @@ class TestWhenEncodingRoundTrip(unittest.TestCase):
 
     def test_large_time_values(self):
         """Round-trip works for time values well into the range."""
-        from BasicModel import WhenEncoding
         maxT = 10000
-        te = WhenEncoding(maxT)
+        te = Models.WhenEncoding(maxT)
         te.t = 500
-        x = torch.zeros(3, 1, 10, device=TheDevice.get())
+        x = torch.zeros(3, 1, 10, device=Models.TheDevice.get())
         y = te.forward(x)
         _, decoded = te.reverse(y)
         expected = torch.arange(500, 503, dtype=torch.float32)
@@ -564,10 +538,9 @@ class TestWhenEncodingRoundTrip(unittest.TestCase):
 
     def test_content_preserved(self):
         """Content dimensions (non-encoding slots) survive the round-trip."""
-        from BasicModel import WhenEncoding
-        te = WhenEncoding(10000)
+        te = Models.WhenEncoding(10000)
         te.t = 0
-        x = torch.randn(2, 3, 10, device=TheDevice.get())
+        x = torch.randn(2, 3, 10, device=Models.TheDevice.get())
         original = x.clone()
         y = te.forward(x)
         cleaned, _ = te.reverse(y)
@@ -582,37 +555,33 @@ class TestSubSpaceDerivedSizes(unittest.TestCase):
     """SubSpace.getEncodingSize, getEncodedInputSize, getEncodedOutputSize match EventEncoding math."""
 
     def test_getEncodingSize_returns_muxedSize(self):
-        from BasicModel import SubSpace, WhereEncoding, WhenEncoding
-        ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
+        ss = Models.SubSpace(whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
                       inputShape=[3, 8], outputShape=[3, 8])
         # muxedSize = nWhat(4) + nWhere(2) + nWhen(2) = 8 (inputShape[1])
         self.assertEqual(ss.getEncodingSize(8), 8)
         self.assertEqual(ss.muxedSize, 8)
 
     def test_getEncodedIO_no_reshape(self):
-        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, EventEncoding
         # Shapes already include muxed width (nWhere=2 + nWhen=2)
         # nInputDim/nOutputDim default to 0 → resolves to inputShape[1]/outputShape[1]
-        ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
-                      objectEncoding=EventEncoding([3, 12], [5, 20]),
+        ss = Models.SubSpace(whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
+                      objectEncoding=Models.EventEncoding([3, 12], [5, 20]),
                       inputShape=[3, 12], outputShape=[5, 20])
         self.assertEqual(ss.getEncodedInputSize(), 12)
         self.assertEqual(ss.getEncodedOutputSize(), 20)
 
     def test_getEncodedIO_reshape(self):
-        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, EventEncoding
         # Equivalent of old flatten=True: nInputDim = flat_in, nOutputDim = per-vector dim.
         # Layer sees flat_in → flat_out; forwardEnd reshapes flat_out → [nOut, per_dim].
-        ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
-                      objectEncoding=EventEncoding([3, 12], [5, 20]),
+        ss = Models.SubSpace(whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
+                      objectEncoding=Models.EventEncoding([3, 12], [5, 20]),
                       nInputDim=12 * 3, nOutputDim=20,
                       inputShape=[3, 12], outputShape=[5, 20])
         self.assertEqual(ss.getEncodedInputSize(), 12 * 3)
         self.assertEqual(ss.getEncodedOutputSize(), 20 * 5)
 
     def test_zero_nWhere_nWhen(self):
-        from BasicModel import SubSpace, EventEncoding
-        ss = SubSpace(objectEncoding=EventEncoding([2, 10], [2, 10]),
+        ss = Models.SubSpace(objectEncoding=Models.EventEncoding([2, 10], [2, 10]),
                       inputShape=[2, 10], outputShape=[2, 10])
         self.assertEqual(ss.getEncodedInputSize(), 10)
         self.assertEqual(ss.getEncodedOutputSize(), 10)
@@ -622,29 +591,25 @@ class TestSubSpaceMaterialize(unittest.TestCase):
     """SubSpace.materialize() returns the expected dense tensor."""
 
     def test_materialize_tensor(self):
-        from BasicModel import SubSpace, Tensor, WhereEncoding, WhenEncoding
         t = torch.randn(2, 4, 12)
-        ss = SubSpace.from_tensor(t, whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
+        ss = Models.SubSpace.from_tensor(t, whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
                                   inputShape=[4, 8], outputShape=[4, 8])
         result = ss.materialize()
         self.assertIs(result, t)
-        self.assertIsInstance(ss.event, Tensor)
+        self.assertIsInstance(ss.event, Models.Tensor)
 
     def test_materialize_none_when_unset(self):
-        from BasicModel import SubSpace, WhereEncoding, WhenEncoding
-        ss = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
+        ss = Models.SubSpace(whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
                       inputShape=[4, 8], outputShape=[4, 8])
         self.assertIsNone(ss.materialize())
 
     def test_shape_property(self):
-        from BasicModel import SubSpace
         t = torch.randn(2, 4, 12)
-        ss = SubSpace.from_tensor(t, inputShape=[4, 8], outputShape=[4, 8])
+        ss = Models.SubSpace.from_tensor(t, inputShape=[4, 8], outputShape=[4, 8])
         self.assertEqual(ss.shape, torch.Size([2, 4, 12]))
 
     def test_shape_property_none(self):
-        from BasicModel import SubSpace
-        ss = SubSpace(inputShape=[4, 8], outputShape=[4, 8])
+        ss = Models.SubSpace(inputShape=[4, 8], outputShape=[4, 8])
         self.assertIsNone(ss.shape)
 
 
@@ -652,14 +617,12 @@ class TestSubSpaceProperties(unittest.TestCase):
     """SubSpace batch tracking."""
 
     def test_batch_from_tensor(self):
-        from BasicModel import SubSpace
-        t = torch.randn(5, 4, 8, device=TheDevice.get())
-        ss = SubSpace.from_tensor(t, inputShape=[4, 4], outputShape=[4, 4])
+        t = torch.randn(5, 4, 8, device=Models.TheDevice.get())
+        ss = Models.SubSpace.from_tensor(t, inputShape=[4, 4], outputShape=[4, 4])
         self.assertEqual(ss.batch, 5)
 
     def test_batch_zero_when_empty(self):
-        from BasicModel import SubSpace
-        ss = SubSpace(inputShape=[4, 8], outputShape=[4, 8])
+        ss = Models.SubSpace(inputShape=[4, 8], outputShape=[4, 8])
         self.assertEqual(ss.batch, 0)
 
 
@@ -667,11 +630,10 @@ class TestSubSpaceConstruction(unittest.TestCase):
     """SubSpace.from_tensor and from_components helpers."""
 
     def test_from_tensor(self):
-        from BasicModel import SubSpace, Tensor, WhereEncoding, WhenEncoding
         t = torch.randn(2, 3, 10)
-        ss = SubSpace.from_tensor(t, whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
+        ss = Models.SubSpace.from_tensor(t, whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
                                   inputShape=[3, 6], outputShape=[3, 6])
-        self.assertIsInstance(ss.event, Tensor)
+        self.assertIsInstance(ss.event, Models.Tensor)
         self.assertIs(ss.event.W, t)
         self.assertEqual(ss.nWhere, 2)
         self.assertEqual(ss.nWhen, 2)
@@ -679,39 +641,36 @@ class TestSubSpaceConstruction(unittest.TestCase):
         self.assertEqual(ss.inputShape, [3, 6])
 
     def test_from_components(self):
-        from BasicModel import SubSpace, ActiveEncoding, Tensor, WhereEncoding, WhenEncoding
         object = torch.randn(2, 4, 8)
         act = torch.ones(2, 4)
-        ae = ActiveEncoding()
-        ss = SubSpace.from_components(
+        ae = Models.ActiveEncoding()
+        ss = Models.SubSpace.from_components(
             object=object, activation=act, activeEncoding=ae,
-            whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
+            whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
             inputShape=[4, 4], outputShape=[4, 4])
-        self.assertIsInstance(ss.event, Tensor)
-        self.assertIsInstance(ss.activation, Tensor)
+        self.assertIsInstance(ss.event, Models.Tensor)
+        self.assertIsInstance(ss.activation, Models.Tensor)
         self.assertIs(ss.event.W, object)
         self.assertIs(ss.activation.W, act)
         self.assertIs(ss.activeEncoding, ae)
 
     def test_from_components_defaults_initialized(self):
         """All modalities are initialized (as empty Tensor bases) even with no args."""
-        from BasicModel import SubSpace, Tensor
-        ss = SubSpace.from_components(inputShape=[4, 8], outputShape=[4, 8])
-        self.assertIsInstance(ss.event, Tensor)
-        self.assertIsInstance(ss.activation, Tensor)
-        self.assertIsInstance(ss.where, Tensor)
-        self.assertIsInstance(ss.when, Tensor)
+        ss = Models.SubSpace.from_components(inputShape=[4, 8], outputShape=[4, 8])
+        self.assertIsInstance(ss.event, Models.Tensor)
+        self.assertIsInstance(ss.activation, Models.Tensor)
+        self.assertIsInstance(ss.where, Models.Tensor)
+        self.assertIsInstance(ss.when, Models.Tensor)
 
 
 class TestSubSpaceActiveEncoding(unittest.TestCase):
     """ActiveEncoding round-trip through SubSpace."""
 
     def test_activation_stored_and_retrievable(self):
-        from BasicModel import SubSpace, ActiveEncoding
-        ae = ActiveEncoding()
+        ae = Models.ActiveEncoding()
         act = torch.tensor([[0.5, 0.8, 0.1]])  # [1, 3] — batch=1, nVectors=3
         encoded = ae.encode(act.squeeze(0))
-        ss = SubSpace(activeEncoding=ae, inputShape=[3, 8], outputShape=[3, 8])
+        ss = Models.SubSpace(activeEncoding=ae, inputShape=[3, 8], outputShape=[3, 8])
         ss.set_activation(act)
         retrieved = ss.get_activation()
         torch.testing.assert_close(retrieved, act)
@@ -720,12 +679,11 @@ class TestSubSpaceActiveEncoding(unittest.TestCase):
 
     def test_two_spaces_independent_encoding(self):
         """Two SubSpaces can have different muxedSize without shared coupling."""
-        from BasicModel import SubSpace, WhereEncoding, WhenEncoding, EventEncoding
         # ss1: nWhere=2, nWhen=2, muxedSize=12
-        ss1 = SubSpace(whereEncoding=WhereEncoding(1, 2), whenEncoding=WhenEncoding(10000, 2),
-                        objectEncoding=EventEncoding([3, 12], [3, 12]),
+        ss1 = Models.SubSpace(whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
+                        objectEncoding=Models.EventEncoding([3, 12], [3, 12]),
                         inputShape=[3, 12], outputShape=[3, 12])
-        ss2 = SubSpace(objectEncoding=EventEncoding([3, 16], [3, 16]),
+        ss2 = Models.SubSpace(objectEncoding=Models.EventEncoding([3, 16], [3, 16]),
                         inputShape=[3, 16], outputShape=[3, 16])
         self.assertEqual(ss1.muxedSize, 12)
         self.assertEqual(ss2.muxedSize, 16)
@@ -746,37 +704,34 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
         self.B = 2  # batch
 
     def test_conceptual_space_forward_shape(self):
-        from BasicModel import ConceptualSpace, TheXMLConfig
         nIn, nOut, nDim = 4, 4, 8
-        cs = ConceptualSpace([nIn, nDim], [nOut, nDim], [nOut, nDim])
-        inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("InputSpace", "nDim"))
-        x = torch.randn(self.B, nIn, inEmb).to(TheDevice.get())
+        cs = Models.ConceptualSpace([nIn, nDim], [nOut, nDim], [nOut, nDim])
+        inEmb = Models.TheXMLConfig.encodingSize(Models.TheXMLConfig.space("InputSpace", "nDim"))
+        x = torch.randn(self.B, nIn, inEmb).to(Models.TheDevice.get())
         y = _unwrap(cs(_wrap_tensor(cs, x)))
-        outEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("ConceptualSpace", "nDim"))
+        outEmb = Models.TheXMLConfig.encodingSize(Models.TheXMLConfig.space("ConceptualSpace", "nDim"))
         self.assertEqual(list(y.shape), [self.B, nOut, outEmb])
 
     def test_conceptual_space_reverse_shape(self):
-        from BasicModel import ConceptualSpace, TheXMLConfig
         _populate_test_config(
             inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0, wordDim=1, outputDim=4,
             nInput=4, nPercepts=4, nConcepts=4, nSymbols=4, nWords=4, nOutput=4,
             flatten=True, reconstruct="FULL")
         nIn, nOut, nDim = 4, 4, 8
-        cs = ConceptualSpace([nIn, nDim], [nOut, nDim], [nOut, nDim])
-        outEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("ConceptualSpace", "nDim"))
-        y = torch.randn(self.B, nOut, outEmb).to(TheDevice.get())
+        cs = Models.ConceptualSpace([nIn, nDim], [nOut, nDim], [nOut, nDim])
+        outEmb = Models.TheXMLConfig.encodingSize(Models.TheXMLConfig.space("ConceptualSpace", "nDim"))
+        y = torch.randn(self.B, nOut, outEmb).to(Models.TheDevice.get())
         x = _unwrap(cs.reverse(_wrap_tensor(cs, y)))
-        inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("InputSpace", "nDim"))
+        inEmb = Models.TheXMLConfig.encodingSize(Models.TheXMLConfig.space("InputSpace", "nDim"))
         self.assertEqual(list(x.shape), [self.B, nIn, inEmb])
 
     def test_output_space_forward_shape(self):
-        from BasicModel import OutputSpace, TheXMLConfig
         nIn, nOut = 4, 4
-        os_ = OutputSpace([nIn, 8], [nOut, 4], [nOut, 4])
+        os_ = Models.OutputSpace([nIn, 8], [nOut, 4], [nOut, 4])
         inEmb = os_.inputShape[1]
-        x = torch.randn(self.B, nIn, inEmb).to(TheDevice.get())
+        x = torch.randn(self.B, nIn, inEmb).to(Models.TheDevice.get())
         y = _unwrap(os_(_wrap_tensor(os_, x)))
-        self.assertEqual(list(y.shape), [self.B, nOut, TheXMLConfig.space("OutputSpace", "nDim")])
+        self.assertEqual(list(y.shape), [self.B, nOut, Models.TheXMLConfig.space("OutputSpace", "nDim")])
 
 
 class TestSimpleModel(unittest.TestCase):
@@ -788,10 +743,9 @@ class TestSimpleModel(unittest.TestCase):
             nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True,
             ergodic=True, flatten=True)
-        from BasicModel import BasicModel
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice.get())
+        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -803,10 +757,9 @@ class TestSimpleModel(unittest.TestCase):
             nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True,
             flatten=True)
-        from BasicModel import BasicModel
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice.get())
+        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -817,10 +770,9 @@ class TestSimpleModel(unittest.TestCase):
             nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True,
             ergodic=True, flatten=True, reconstruct="FULL")
-        from BasicModel import BasicModel
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice.get())
+        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         data, start_state = model.reverse(end_state, out)
         self.assertEqual(data.shape[0], 2)
@@ -831,21 +783,19 @@ class TestCodebookVariants(unittest.TestCase):
     """Lock down codebook vs non-codebook Codebook behavior."""
 
     def test_no_codebook_passthrough(self):
-        from BasicModel import Codebook
-        vs = Codebook()
+        vs = Models.Codebook()
         vs.create(4, 4, 1, passThrough=True)
-        x = torch.randn(2, 4, 1).to(TheDevice.get())
+        x = torch.randn(2, 4, 1).to(Models.TheDevice.get())
         y = vs.forward(x)
         self.assertTrue(torch.equal(x, y))
 
     def test_codebook_shape(self):
-        from BasicModel import Codebook, TheXMLConfig
         _populate_test_config(nInput=4, nPercepts=4, nConcepts=4, nSymbols=4,
                               nWords=0, nOutput=4)
-        vs = Codebook()
+        vs = Models.Codebook()
         vs.create(4, 4, 3, customVQ=False)
-        vs = vs.to(TheDevice.get())
-        x = torch.randn(2, 4, 3).to(TheDevice.get())
+        vs = vs.to(Models.TheDevice.get())
+        x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
         y = vs.forward(x)
         # Basis.nDim is actual width — no objectSize padding
         self.assertEqual(list(y.shape), [2, 4, 3])
@@ -853,9 +803,8 @@ class TestCodebookVariants(unittest.TestCase):
 
 class TestBasisContract(unittest.TestCase):
     def test_tensor_identity_materialization(self):
-        from BasicModel import Tensor
-        payload = torch.randn(2, 3, 4, device=TheDevice.get())
-        basis = Tensor()
+        payload = torch.randn(2, 3, 4, device=Models.TheDevice.get())
+        basis = Models.Tensor()
         basis.create(3, 3, 4, passThrough=True)
         out = basis.forward(payload)
         self.assertIs(out, payload)
@@ -864,11 +813,10 @@ class TestBasisContract(unittest.TestCase):
         self.assertIs(rev, payload)
 
     def test_invalid_geometry_requires_2d_prototype_matrix(self):
-        from BasicModel import Tensor
-        basis = Tensor(W=torch.randn(2, 3, 4, device=TheDevice.get()))
+        basis = Models.Tensor(W=torch.randn(2, 3, 4, device=Models.TheDevice.get()))
         basis.create(3, 3, 4, passThrough=True)
         with self.assertRaises(RuntimeError):
-            basis.codebookDistance(torch.randn(2, 4, device=TheDevice.get()))
+            basis.codebookDistance(torch.randn(2, 4, device=Models.TheDevice.get()))
 
 
 class TestModelEndToEnd(unittest.TestCase):
@@ -880,10 +828,9 @@ class TestModelEndToEnd(unittest.TestCase):
             nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True,
             ergodic=True, flatten=True)
-        from BasicModel import BasicModel
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice.get())
+        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -895,10 +842,9 @@ class TestModelEndToEnd(unittest.TestCase):
             nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True,
             flatten=True)
-        from BasicModel import BasicModel
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice.get())
+        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -910,10 +856,9 @@ class TestModelEndToEnd(unittest.TestCase):
             nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True,
             ergodic=True, flatten=True, reconstruct="FULL")
-        from BasicModel import BasicModel
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice.get())
+        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         data, start_state = model.reverse(end_state, out)
         self.assertEqual(data.shape[0], 2)
@@ -921,19 +866,17 @@ class TestModelEndToEnd(unittest.TestCase):
 
     def test_simple_model_loss_runs(self):
         """Verify forward + loss + backward doesn't crash."""
-        from BasicModel import CertaintyWeightedCrossEntropy
         _populate_test_config(
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True,
             ergodic=True, certainty=True, flatten=True)
-        from BasicModel import BasicModel
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice.get())
-        target = torch.randn(2, 4).to(TheDevice.get())
+        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
+        target = torch.randn(2, 4).to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
-        loss_fn = CertaintyWeightedCrossEntropy()
+        loss_fn = Models.CertaintyWeightedCrossEntropy()
         loss = loss_fn(out.squeeze(), target)
         loss.backward()
         # No crash = pass
@@ -943,19 +886,17 @@ class TestUniversalTrainingContract(unittest.TestCase):
     """All spaces expose getParameters() and paramUpdate()."""
 
     def test_space_has_training_contract(self):
-        from BasicModel import Space
         _populate_test_config(inputDim=8, nInput=4)
-        Space.config_section = "InputSpace"
-        s = Space([4, 8], [4, 8], [4, 8])
-        Space.config_section = None
+        Models.Space.config_section = "InputSpace"
+        s = Models.Space([4, 8], [4, 8], [4, 8])
+        Models.Space.config_section = None
         self.assertEqual(s.getParameters(), [])
         s.paramUpdate()  # should be a no-op, not crash
 
     def test_conceptual_space_has_training_contract(self):
-        from BasicModel import ConceptualSpace
         _populate_test_config(inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0, outputDim=4,
                               nConcepts=4)
-        cs = ConceptualSpace([4, 8], [4, 8], [4, 8])
+        cs = Models.ConceptualSpace([4, 8], [4, 8], [4, 8])
         params = cs.getParameters()
         self.assertIsInstance(params, list)
         cs.paramUpdate()  # no crash
@@ -965,30 +906,28 @@ class TestSigmaLayerDeterministic(unittest.TestCase):
     """SigmaLayer(ergodic=False) behaves like LinearLayer + Tanh."""
 
     def test_deterministic_matches_linear_tanh(self):
-        from Model import SigmaLayer, LinearLayer
         torch.manual_seed(42)
         nIn, nOut = 8, 4
-        sigma = SigmaLayer(nIn, nOut, ergodic=False)
+        sigma = Layers.SigmaLayer(nIn, nOut, ergodic=False)
         sigma.train()
 
         # Build a matching LinearLayer + Tanh with same weights
-        linear = LinearLayer(nIn, nOut, hasBias=True)
+        linear = Models.LinearLayer(nIn, nOut, hasBias=True)
         with torch.no_grad():
             linear.W.copy_(sigma.layer.W)
             linear.bias.copy_(sigma.layer.bias)
         tanh = torch.nn.Tanh()
 
-        x = torch.randn(2, nIn).to(TheDevice.get())
+        x = torch.randn(2, nIn).to(Models.TheDevice.get())
         y_sigma = sigma(x)
         y_manual = tanh(linear(x))
         self.assertTrue(torch.allclose(y_sigma, y_manual, atol=1e-6),
                         f"Deterministic SigmaLayer should match LinearLayer+Tanh")
 
     def test_deterministic_same_train_eval(self):
-        from Model import SigmaLayer
         nIn, nOut = 8, 4
-        sigma = SigmaLayer(nIn, nOut, ergodic=False)
-        x = torch.randn(2, nIn).to(TheDevice.get())
+        sigma = Layers.SigmaLayer(nIn, nOut, ergodic=False)
+        x = torch.randn(2, nIn).to(Models.TheDevice.get())
 
         sigma.train()
         y_train = sigma(x).detach().clone()
@@ -998,8 +937,7 @@ class TestSigmaLayerDeterministic(unittest.TestCase):
                         "Non-ergodic mode should produce same output in train and eval")
 
     def test_non_ergodic_default(self):
-        from Model import SigmaLayer
-        sigma = SigmaLayer(nInput=8, nOutput=4)
+        sigma = Layers.SigmaLayer(nInput=8, nOutput=4)
         self.assertFalse(sigma.ergodic)
 
 
@@ -1007,51 +945,47 @@ class TestSpaceBasisConstruction(unittest.TestCase):
     """Space builds its basis during construction."""
 
     def setUp(self):
-        from BasicModel import Space
         _populate_test_config(inputDim=3, nInput=4)
-        Space.config_section = "InputSpace"
-        self.addCleanup(setattr, Space, 'config_section', None)
+        Models.Space.config_section = "InputSpace"
+        self.addCleanup(setattr, Models.Space, 'config_section', None)
 
     def test_codebook_creates_codebook(self):
-        from BasicModel import Codebook, Space
         _populate_test_config(inputDim=3, nInput=4, codebook=True)
-        s = Space([4, 3], [4, 3], [4, 3])
-        self.assertIsInstance(s.get_vectors(), Codebook)
+        s = Models.Space([4, 3], [4, 3], [4, 3])
+        self.assertIsInstance(s.get_vectors(), Models.Codebook)
         self.assertFalse(s.get_vectors().passThrough)
 
     def test_no_codebook_creates_passthrough_codebook(self):
-        from BasicModel import Codebook, Space
         _populate_test_config(inputDim=3, nInput=4, codebook=False)
-        s = Space([4, 3], [4, 3], [4, 3])
-        self.assertIsInstance(s.get_vectors(), Codebook)
+        s = Models.Space([4, 3], [4, 3], [4, 3])
+        self.assertIsInstance(s.get_vectors(), Models.Codebook)
         self.assertTrue(s.get_vectors().passThrough)
 
     def test_forward_subspace_round_trip_keeps_runtime_state(self):
-        from BasicModel import InputSpace, PerceptualSpace, SubSpace
         _populate_test_config(
             inputDim=3, perceptDim=3,
             nInput=4, nPercepts=4,
             codebook=False, perceptPassThrough=True,
             nWhere=0, nWhen=0, flatten=False,
         )
-        inp = InputSpace([4, 3], [4, 3], [4, 3], model_type="simple")
-        per = PerceptualSpace([4, 3], [4, 3], [4, 3])
-        x = torch.randn(2, 4, 3).to(TheDevice.get())
+        inp = Models.InputSpace([4, 3], [4, 3], [4, 3], model_type="simple")
+        per = Models.PerceptualSpace([4, 3], [4, 3], [4, 3])
+        x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
 
         inp.forward(x)
         input_state = inp.subspace
-        self.assertIsInstance(input_state, SubSpace)
+        self.assertIsInstance(input_state, Models.SubSpace)
         # event holds the (possibly normalized) tensor after forward
         input_event = input_state.event.getW()
         self.assertIsNotNone(input_event)
         self.assertEqual(list(input_event.shape), [2, 4, 3])
 
         percept_state = per.forward(input_state)
-        self.assertIsInstance(percept_state, SubSpace)
+        self.assertIsInstance(percept_state, Models.SubSpace)
         self.assertTrue(torch.equal(percept_state.event.getW(), input_event))
 
         reversed_state = per.reverse(percept_state)
-        self.assertIsInstance(reversed_state, SubSpace)
+        self.assertIsInstance(reversed_state, Models.SubSpace)
         self.assertTrue(torch.equal(reversed_state.event.getW(), input_event))
 
 
@@ -1066,59 +1000,53 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
 
     def test_ergodic_forward_shape(self):
         self._set_zero_object_encoding(ergodic=True)
-        from BasicModel import ConceptualSpace
         nVec, nDim, cDim = 8, 1, 1
-        cs = ConceptualSpace([nVec, nDim], [nVec, cDim], [nVec, cDim])
-        x = torch.randn(2, nVec, nDim).to(TheDevice.get())
+        cs = Models.ConceptualSpace([nVec, nDim], [nVec, cDim], [nVec, cDim])
+        x = torch.randn(2, nVec, nDim).to(Models.TheDevice.get())
         y = _unwrap(cs(_wrap_tensor(cs, x)))
         self.assertEqual(list(y.shape), [2, nVec, cDim])
 
     def test_non_ergodic_forward_shape(self):
         self._set_zero_object_encoding(ergodic=False)
-        from BasicModel import ConceptualSpace
         nVec, nDim, cDim = 8, 1, 1
-        cs = ConceptualSpace([nVec, nDim], [nVec, cDim], [nVec, cDim])
-        x = torch.randn(2, nVec, nDim).to(TheDevice.get())
+        cs = Models.ConceptualSpace([nVec, nDim], [nVec, cDim], [nVec, cDim])
+        x = torch.randn(2, nVec, nDim).to(Models.TheDevice.get())
         y = _unwrap(cs(_wrap_tensor(cs, x)))
         self.assertEqual(list(y.shape), [2, nVec, cDim])
 
     def test_ergodic_flag_stored(self):
         self._set_zero_object_encoding(ergodic=True)
-        from BasicModel import ConceptualSpace
-        cs_erg = ConceptualSpace([8, 1], [8, 1], [8, 1])
+        cs_erg = Models.ConceptualSpace([8, 1], [8, 1], [8, 1])
         self.assertTrue(cs_erg.ergodic)
         self._set_zero_object_encoding(ergodic=False)
-        cs_det = ConceptualSpace([8, 1], [8, 1], [8, 1])
+        cs_det = Models.ConceptualSpace([8, 1], [8, 1], [8, 1])
         self.assertFalse(cs_det.ergodic)
 
     def test_ergodic_reverse_shape(self):
         self._set_zero_object_encoding(ergodic=True, reconstruct="FULL")
-        from BasicModel import ConceptualSpace
         nVec, nDim, cDim = 8, 1, 1
-        cs = ConceptualSpace([nVec, nDim], [nVec, cDim], [nVec, cDim])
-        y = torch.randn(2, nVec, cDim).to(TheDevice.get())
+        cs = Models.ConceptualSpace([nVec, nDim], [nVec, cDim], [nVec, cDim])
+        y = torch.randn(2, nVec, cDim).to(Models.TheDevice.get())
         x = _unwrap(cs.reverse(_wrap_tensor(cs, y)))
         self.assertEqual(list(x.shape), [2, nVec, nDim])
 
     def test_ergodic_exposes_params(self):
         self._set_zero_object_encoding(ergodic=True)
-        from BasicModel import ConceptualSpace
-        cs = ConceptualSpace([8, 1], [8, 1], [8, 1])
+        cs = Models.ConceptualSpace([8, 1], [8, 1], [8, 1])
         params = cs.getParameters()
         self.assertIsInstance(params, list)
         self.assertGreater(len(params), 0)
 
     def test_canonical_forward_still_works(self):
         """Existing ConceptualSpace (with objectSize > 0) still works after changes."""
-        from BasicModel import ConceptualSpace, TheXMLConfig
         _populate_test_config(inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0, outputDim=4,
                               nConcepts=4)
         nIn, nOut = 4, 4
-        cs = ConceptualSpace([nIn, 8], [nOut, 8], [nOut, 8])
-        inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("InputSpace", "nDim"))
-        x = torch.randn(2, nIn, inEmb).to(TheDevice.get())
+        cs = Models.ConceptualSpace([nIn, 8], [nOut, 8], [nOut, 8])
+        inEmb = Models.TheXMLConfig.encodingSize(Models.TheXMLConfig.space("InputSpace", "nDim"))
+        x = torch.randn(2, nIn, inEmb).to(Models.TheDevice.get())
         y = _unwrap(cs(_wrap_tensor(cs, x)))
-        outEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("ConceptualSpace", "nDim"))
+        outEmb = Models.TheXMLConfig.encodingSize(Models.TheXMLConfig.space("ConceptualSpace", "nDim"))
         self.assertEqual(list(y.shape), [2, nOut, outEmb])
 
 
@@ -1126,11 +1054,10 @@ class TestInputSpaceNoCodebook(unittest.TestCase):
     """InputSpace works with non-codebook mode (objectSize=0)."""
 
     def test_no_codebook_forward_shape(self):
-        from BasicModel import InputSpace
         _populate_test_config(inputDim=1, nInput=8, nWhere=0, nWhen=0, codebook=False)
         nIn, nDim = 8, 1
-        inp = InputSpace([nIn, nDim], [nIn, nDim], [nIn, nDim])
-        x = torch.randn(2, nIn, nDim).to(TheDevice.get())
+        inp = Models.InputSpace([nIn, nDim], [nIn, nDim], [nIn, nDim])
+        x = torch.randn(2, nIn, nDim).to(Models.TheDevice.get())
         y = _unwrap(inp(x))
         self.assertEqual(list(y.shape), [2, nIn, nDim])
 
@@ -1139,22 +1066,20 @@ class TestOutputSpaceZeroObjectSize(unittest.TestCase):
     """OutputSpace works with objectSize=0."""
 
     def test_forward_shape_zero_object_size(self):
-        from BasicModel import OutputSpace
         _populate_test_config(symbolDim=1, outputDim=1, nOutput=3, nWhere=0, nWhen=0,
                               flatten=True)
         nIn, nOut = 4, 3
-        os_ = OutputSpace([nIn, 1], [nOut, 1], [nOut, 1])
-        x = torch.randn(2, nIn, 1).to(TheDevice.get())
+        os_ = Models.OutputSpace([nIn, 1], [nOut, 1], [nOut, 1])
+        x = torch.randn(2, nIn, 1).to(Models.TheDevice.get())
         y = _unwrap(os_(_wrap_tensor(os_, x)))
         self.assertEqual(list(y.shape), [2, nOut, 1])
 
     def test_reverse_shape_zero_object_size(self):
-        from BasicModel import OutputSpace
         _populate_test_config(symbolDim=1, outputDim=1, nOutput=3, nWhere=0, nWhen=0,
                               flatten=True, reconstruct="FULL")
         nIn, nOut = 4, 3
-        os_ = OutputSpace([nIn, 1], [nOut, 1], [nOut, 1])
-        y = torch.randn(2, nOut, 1).to(TheDevice.get())
+        os_ = Models.OutputSpace([nIn, 1], [nOut, 1], [nOut, 1])
+        y = torch.randn(2, nOut, 1).to(Models.TheDevice.get())
         x = _unwrap(os_.reverse(_wrap_tensor(os_, y)))
         self.assertEqual(list(x.shape), [2, nIn, 1])
 
@@ -1163,7 +1088,6 @@ class TestBaseModelFactory(unittest.TestCase):
     """BaseModel.from_config factory creates the correct model type."""
 
     def test_factory_creates_simple_model(self):
-        from BasicModel import BaseModel, BasicModel
         xml = """<model>
   <architecture>
     <nInput>16</nInput>
@@ -1185,14 +1109,13 @@ class TestBaseModelFactory(unittest.TestCase):
             f.write(xml)
             path = f.name
         try:
-            model, cfg = BaseModel.from_config(path)
-            self.assertIsInstance(model, BasicModel)
+            model, cfg = Models.BaseModel.from_config(path)
+            self.assertIsInstance(model, Models.BasicModel)
             self.assertEqual(model.conceptualOrder, 1)
         finally:
             os.unlink(path)
 
     def test_factory_creates_basic_model(self):
-        from BasicModel import BaseModel, BasicModel as BM
         # nSymbols must equal nConcepts (SymbolicSpace 1:1 mapping constraint),
         # and nPercepts must be 2*nConcepts (InvertiblePiLayer invertibility).
         xml = """<model>
@@ -1213,13 +1136,12 @@ class TestBaseModelFactory(unittest.TestCase):
             f.write(xml)
             path = f.name
         try:
-            model, cfg = BaseModel.from_config(path)
-            self.assertIsInstance(model, BM)
+            model, cfg = Models.BaseModel.from_config(path)
+            self.assertIsInstance(model, Models.BasicModel)
         finally:
             os.unlink(path)
 
     def test_factory_creates_mental_model(self):
-        from BasicModel import BaseModel, MentalModel
         xml = """<model>
   <architecture>
     <type>mental</type>
@@ -1231,8 +1153,8 @@ class TestBaseModelFactory(unittest.TestCase):
             f.write(xml)
             path = f.name
         try:
-            model, cfg = BaseModel.from_config(path)
-            self.assertIsInstance(model, MentalModel)
+            model, cfg = Models.BaseModel.from_config(path)
+            self.assertIsInstance(model, Models.MentalModel)
             self.assertIs(model.inputSpace.outputSpace, model.outputSpace)
         finally:
             os.unlink(path)
@@ -1242,16 +1164,14 @@ class TestDataTextStorage(unittest.TestCase):
     """Text datasets store raw strings in train_input (tensorized lazily)."""
 
     def test_train_input_strings_for_text(self):
-        from BasicModel import Data
-        data = Data()
+        data = Models.Data()
         data.load("xor")  # XOR uses text examples
         self.assertIsInstance(data.train_input, list)
         self.assertIsInstance(data.train_input[0], str)
 
     def test_train_input_tensors_for_numeric(self):
         """Numeric datasets store tensors in train_input."""
-        from BasicModel import Data
-        data = Data()
+        data = Models.Data()
         data.load("mnist")
         self.assertIsInstance(data.train_input, torch.Tensor)
 
@@ -1263,18 +1183,16 @@ class TestSymbolDimZeroPassthrough(unittest.TestCase):
     def test_passthrough_symbolic_space_has_zero_symbol_dim(self):
         """When symbolPassThrough=True, symbolDim should be 0 and
         embedding size should not be inflated by a symbol dimension."""
-        from BasicModel import TheXMLConfig
         _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0,
                               outputDim=1, nWhere=0, nWhen=0)
-        self.assertEqual(TheXMLConfig.space("SymbolicSpace", "nDim"), 0)
-        self.assertEqual(TheXMLConfig.encodingSize(0), 0)
+        self.assertEqual(Models.TheXMLConfig.space("SymbolicSpace", "nDim"), 0)
+        self.assertEqual(Models.TheXMLConfig.encodingSize(0), 0)
 
     def test_objectencoding_zero_contribution_when_unused(self):
         """ObjectEncoding must not inflate tensor size when nWhere=0, nWhen=0."""
-        from BasicModel import TheXMLConfig
         _populate_test_config(nWhere=0, nWhen=0)
         nDim = 10
-        self.assertEqual(TheXMLConfig.encodingSize(nDim), nDim)
+        self.assertEqual(Models.TheXMLConfig.encodingSize(nDim), nDim)
 
 
 class TestInputSpaceLexIntegration(unittest.TestCase):
@@ -1283,24 +1201,22 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
 
     def _make_text_data(self):
         """Load XOR text data into TheData singleton."""
-        from BasicModel import TheData
-        TheData.load("xor")
-        return TheData
+        Models.TheData.load("xor")
+        return Models.TheData
 
     def _make_input_space(self, lexer="word"):
         """Create an InputSpace with model_type='embedding' from XOR text data."""
-        from BasicModel import InputSpace, TheData, TheXMLConfig, WhereEncoding, WhenEncoding
         nInput = 8
         _populate_test_config(inputDim=1, nInput=nInput,
-                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               lexer=lexer)
         self._make_text_data()
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
-        return inp, TheData
+        return inp, Models.TheData
 
     def test_token_stream_available(self):
         """InputSpace with model_type='embedding' can tokenize via _token_stream."""
@@ -1352,7 +1268,6 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
 
     def test_object_encoding_applied(self):
         """ObjectEncoding (nWhere + nWhen) is applied to forward() output."""
-        from BasicModel import TheXMLConfig
         inp, data = self._make_input_space()
         batch_size = 1
         inputBatch = data.train_input[0:batch_size]
@@ -1374,12 +1289,11 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
 
     def test_numeric_output_unchanged(self):
         """Numeric OutputSpace should still produce [B, nOutput] tensor."""
-        from BasicModel import OutputSpace
         _populate_test_config(symbolDim=1, outputDim=1, nOutput=3, nWhere=0, nWhen=0,
                               flatten=True)
         nIn, nOut = 4, 3
-        os_ = OutputSpace([nIn, 1], [nOut, 1], [nOut, 1])
-        x = torch.randn(2, nIn, 1).to(TheDevice.get())
+        os_ = Models.OutputSpace([nIn, 1], [nOut, 1], [nOut, 1])
+        x = torch.randn(2, nIn, 1).to(Models.TheDevice.get())
         y = _unwrap(os_(_wrap_tensor(os_, x)))
         self.assertEqual(list(y.shape), [2, nOut, 1])
         # text_mode should be False for numeric data
@@ -1387,53 +1301,49 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
 
     def test_text_mode_false_without_lex(self):
         """OutputSpace without lex info should have text_mode=False."""
-        from BasicModel import OutputSpace
         _populate_test_config(inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0, outputDim=4,
                               nOutput=4, flatten=True)
         nIn, nOut = 4, 4
-        os_ = OutputSpace([nIn, 8], [nOut, 4], [nOut, 4])
+        os_ = Models.OutputSpace([nIn, 8], [nOut, 4], [nOut, 4])
         self.assertFalse(os_.text_mode)
 
     def test_vectors_constructor_enables_reconstruction(self):
         """Passing vectors= shares the embedding basis with OutputSpace."""
-        from BasicModel import InputSpace, TheData, OutputSpace, TheXMLConfig, WhereEncoding, WhenEncoding
-        TheData.load("xor")
+        Models.TheData.load("xor")
         nInput = 8
         _populate_test_config(inputDim=1, nInput=nInput,
-                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               flatten=True)
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         nOut = 8
-        _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
-        _odim = TheXMLConfig.space("OutputSpace", "nDim")
+        _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
+        _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
-        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vocabulary)
+        os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vocabulary)
         self.assertTrue(os_.text_mode)
 
     def test_reconstruct_from_known_vectors(self):
         """Given codebook vectors with nWhere, reconstruct_data should recover words at positions."""
         import math
-        from BasicModel import (InputSpace, TheData, OutputSpace, TheXMLConfig,
-                                WhereEncoding, WhenEncoding)
-        TheData.load("xor")
+        Models.TheData.load("xor")
         nInput = 8
         _populate_test_config(inputDim=10, nInput=nInput,
-                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               flatten=True)
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         nOut = 4
-        _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
-        _odim = TheXMLConfig.space("OutputSpace", "nDim")
+        _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
+        _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
-        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vocabulary)
+        os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vocabulary)
 
         # Build synthetic vectors from known codebook entries with known nWhere
         codebook = inp.vocabulary.getW().detach()
@@ -1445,7 +1355,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         # Pick first two non-[MASK] words from the codebook
         batch = 1
         nVec = 2
-        vectors = torch.zeros([batch, nVec, embSize]).to(TheDevice.get())
+        vectors = torch.zeros([batch, nVec, embSize]).to(Models.TheDevice.get())
         expected_words = []
         # Skip [MASK] (zero vector) — cosine matching can't recover it
         usable = [j for j, w in enumerate(words_list) if w != "[MASK]"]
@@ -1459,23 +1369,21 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
 
     def test_reconstruct_consecutive_no_nwhere(self):
         """When nWhere is zero, tokens are written consecutively."""
-        from BasicModel import (InputSpace, TheData, OutputSpace, TheXMLConfig,
-                                WhereEncoding, WhenEncoding)
-        TheData.load("xor")
+        Models.TheData.load("xor")
         nInput = 8
         _populate_test_config(inputDim=10, nInput=nInput,
-                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               flatten=True)
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         nOut = 4
-        _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
-        _odim = TheXMLConfig.space("OutputSpace", "nDim")
+        _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
+        _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
-        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vocabulary)
+        os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vocabulary)
 
         # Build vectors with nWhere = 0 (all zeros)
         codebook = inp.vocabulary.getW().detach()
@@ -1484,7 +1392,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
 
         batch = 1
         nVec = 2
-        vectors = torch.zeros([batch, nVec, embSize]).to(TheDevice.get())
+        vectors = torch.zeros([batch, nVec, embSize]).to(Models.TheDevice.get())
         expected_words = []
         # Skip [MASK] (zero vector) — cosine matching can't recover it
         usable = [j for j, w in enumerate(words_list) if w != "[MASK]"]
@@ -1500,23 +1408,21 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
     def test_reconstruct_to_buffer(self):
         """reconstruct_data with to_buffer=True produces a string with positioned words."""
         import math
-        from BasicModel import (InputSpace, TheData, OutputSpace, TheXMLConfig,
-                                WhereEncoding, WhenEncoding)
-        TheData.load("xor")
+        Models.TheData.load("xor")
         nInput = 8
         _populate_test_config(inputDim=10, nInput=nInput,
-                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               flatten=True)
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         nOut = 4
-        _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
-        _odim = TheXMLConfig.space("OutputSpace", "nDim")
+        _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
+        _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
-        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vocabulary)
+        os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vocabulary)
 
         # Build synthetic vectors with nWhere at known positions
         codebook = inp.vocabulary.getW().detach()
@@ -1527,7 +1433,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
 
         batch = 1
         nVec = 2
-        vectors = torch.zeros([batch, nVec, embSize]).to(TheDevice.get())
+        vectors = torch.zeros([batch, nVec, embSize]).to(Models.TheDevice.get())
         # Skip [MASK] and \x00 (both zero vectors) — cosine matching can't recover them
         usable = [j for j, w in enumerate(words_list) if w not in ("[MASK]", "\x00")]
         # Word 0 at offset 0, word 1 at offset 6
@@ -1544,28 +1450,26 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
 
     def test_forward_reverse_shapes_unchanged(self):
         """forward() and reverse() tensor shapes must not change with text_mode."""
-        from BasicModel import (InputSpace, TheData, OutputSpace, TheXMLConfig,
-                                WhereEncoding, WhenEncoding)
-        TheData.load("xor")
+        Models.TheData.load("xor")
         nInput = 8
         _populate_test_config(inputDim=1, symbolDim=1, outputDim=1,
                               nInput=nInput, nOutput=4,
-                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               flatten=True, reconstruct="FULL")
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         nOut = 4
-        _sdim = TheXMLConfig.space("SymbolicSpace", "nDim") or TheXMLConfig.space("ConceptualSpace", "nDim")
-        _odim = TheXMLConfig.space("OutputSpace", "nDim")
+        _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
+        _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
-        os_ = OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vocabulary)
-        inEmb = TheXMLConfig.encodingSize(TheXMLConfig.space("SymbolicSpace", "nDim"))
-        x = torch.randn(2, nInput, inEmb).to(TheDevice.get())
+        os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vocabulary)
+        inEmb = Models.TheXMLConfig.encodingSize(Models.TheXMLConfig.space("SymbolicSpace", "nDim"))
+        x = torch.randn(2, nInput, inEmb).to(Models.TheDevice.get())
         y = os_(_wrap_tensor(os_, x))
-        self.assertEqual(list(_unwrap(y).shape), [2, nOut, TheXMLConfig.space("OutputSpace", "nDim")])
+        self.assertEqual(list(_unwrap(y).shape), [2, nOut, Models.TheXMLConfig.space("OutputSpace", "nDim")])
         # Reverse path should also be unchanged
         rev = _unwrap(os_.reverse(y))
         self.assertEqual(list(rev.shape), [2, nInput, inEmb])
@@ -1576,18 +1480,17 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
 
     def _make_text_input_space(self):
         """Create an InputSpace with model_type='embedding' from XOR text data."""
-        from BasicModel import InputSpace, TheData, TheXMLConfig, WhereEncoding, WhenEncoding
         nInput = 8
         _populate_test_config(inputDim=10, nInput=nInput,
-                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               flatten=True)
-        TheData.load("xor")
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        Models.TheData.load("xor")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
-        return inp, TheData
+        return inp, Models.TheData
 
     def test_reverse_recovers_words(self):
         """forward -> reverse should recover the original lexical tokens.
@@ -1662,10 +1565,9 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         """Numeric reverse path should still work exactly as before."""
         _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, outputDim=1,
                               nInput=8, nWhere=0, nWhen=0, codebook=False)
-        from BasicModel import InputSpace
         nIn, nDim = 8, 1
-        inp = InputSpace([nIn, nDim], [nIn, nDim], [nIn, nDim])
-        x = torch.randn(2, nIn, nDim).to(TheDevice.get())
+        inp = Models.InputSpace([nIn, nDim], [nIn, nDim], [nIn, nDim])
+        x = torch.randn(2, nIn, nDim).to(Models.TheDevice.get())
         y = inp.forward(x)
         result = _unwrap(inp.reverse(y))
         # Numeric path returns tensor, not text
@@ -1677,30 +1579,28 @@ class TestLexerConfig(unittest.TestCase):
 
     def test_embedding_can_tokenize(self):
         """Embedding model_type can tokenize text via _token_stream."""
-        from BasicModel import InputSpace, TheData, TheXMLConfig
-        TheData.load("xor")
+        Models.TheData.load("xor")
         nInput = 8
         _populate_test_config(inputDim=1, nInput=nInput)
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
         tokens = inp.vocabulary._token_stream("test input")
         self.assertEqual(tokens[0][0], "test")
 
     def test_embedding_creates_reversible_dictionary(self):
         """Embedding model_type creates Embedding with Lex-backed codebook."""
-        from BasicModel import InputSpace, TheData, TheXMLConfig, Embedding
-        TheData.load("xor")
+        Models.TheData.load("xor")
         nInput = 8
         _populate_test_config(inputDim=1, nInput=nInput)
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
-        self.assertIsInstance(inp.vocabulary, Embedding)
+        self.assertIsInstance(inp.vocabulary, Models.Embedding)
 
 
 class TestEmbeddingLexDelegation(unittest.TestCase):
@@ -1720,8 +1620,7 @@ class TestEmbeddingLexDelegation(unittest.TestCase):
         - All Lex categories are included (WORD, SPACE, SEPARATOR, PUNCT)
         - SPACE is emitted between words within a sentence
         """
-        from BasicModel import Embedding
-        emb = Embedding()
+        emb = Models.Embedding()
         result = emb.tokenize(self._make_batch("the dog barks"))
         self.assertEqual(len(result), 1)
         # WORD("the") SPACE(" ") WORD("dog") SPACE(" ") WORD("barks")
@@ -1729,8 +1628,7 @@ class TestEmbeddingLexDelegation(unittest.TestCase):
 
     def test_tokenize_splits_sentence_ending_punctuation(self):
         """tokenize() separates punctuation from words; all tokens returned."""
-        from BasicModel import Embedding
-        emb = Embedding()
+        emb = Models.Embedding()
         result = emb.tokenize(self._make_batch("the dog barks."))
         # quick_parser regex: words, punct, spaces are separate tokens
         # "the dog barks." → ["the", " ", "dog", " ", "barks", "."]
@@ -1741,9 +1639,8 @@ class TestEmbeddingLexDelegation(unittest.TestCase):
 
     def test_forward_returns_token_metadata(self):
         """forward(return_meta=True) replaces old encoding wrappers."""
-        from BasicModel import Embedding
         _populate_test_config(nWhere=0, nWhen=0)
-        emb = Embedding()
+        emb = Models.Embedding()
         emb.create(
             nInput=8,
             nVectors=8,
@@ -1765,9 +1662,8 @@ class TestEmbeddingLexDelegation(unittest.TestCase):
 class TestMaskCodebookEntry(unittest.TestCase):
     def test_mask_codebook_entry_is_zero(self):
         """get_mask_embedding() returns a zero vector; [MASK] is not in vocab."""
-        from BasicModel import Embedding
         _populate_test_config(nWhere=0, nWhen=0)
-        emb = Embedding()
+        emb = Models.Embedding()
         emb.create(nInput=10, nVectors=2, nDim=10, embedding_path=None)
         self.assertNotIn("[MASK]", emb.pretrain.key_to_index)
         mask_vec = emb.get_mask_embedding()
@@ -1777,9 +1673,8 @@ class TestMaskCodebookEntry(unittest.TestCase):
 
 class TestEmbeddingErgodicForward(unittest.TestCase):
     def test_codebook_owns_exploration_state(self):
-        from BasicModel import Codebook, Embedding
-        vs = Codebook()
-        emb = Embedding()
+        vs = Models.Codebook()
+        emb = Models.Embedding()
         self.assertFalse(vs.ergodic)
         self.assertAlmostEqual(vs.sigma_kappa, 0.01)
         self.assertFalse(emb.ergodic)
@@ -1792,9 +1687,8 @@ class TestEmbeddingErgodicForward(unittest.TestCase):
         return padded.unsqueeze(0)
 
     def _make_embedding(self, text="the dog"):
-        from BasicModel import Embedding
         _populate_test_config(nWhere=0, nWhen=0)
-        emb = Embedding()
+        emb = Models.Embedding()
         emb.create(nInput=8, nVectors=8, nDim=10, embedding_path=None, source=[text])
         return emb
 
@@ -1878,8 +1772,7 @@ class TestLoadEmbeddingsEnwiki(unittest.TestCase):
         if not _RUN_SLOW:
             cls.wv = None
             return
-        from BasicModel import Embedding
-        cls.wv = Embedding._load_embeddings(embedding_path=cls.ENWIKI_PATH)
+        cls.wv = Models.Embedding._load_embeddings(embedding_path=cls.ENWIKI_PATH)
 
     @unittest.skipIf(not _RUN_SLOW, "slow — set RUN_SLOW=1")
     def test_load_enwiki(self):
@@ -1906,8 +1799,7 @@ class TestLoadEmbeddingsEnwiki(unittest.TestCase):
             path = f.name
         wv.save(path)
         try:
-            from BasicModel import Embedding
-            loaded = Embedding._load_embeddings(embedding_path=path, nDim=20)
+            loaded = Models.Embedding._load_embeddings(embedding_path=path, nDim=20)
             self.assertIsNotNone(loaded)
             self.assertEqual(len(loaded), 2)
             self.assertIn("hello", loaded)
@@ -1916,13 +1808,11 @@ class TestLoadEmbeddingsEnwiki(unittest.TestCase):
 
     def test_load_none_path(self):
         """_load_embeddings returns None when no path given."""
-        from BasicModel import Embedding
-        self.assertIsNone(Embedding._load_embeddings(embedding_path=None))
+        self.assertIsNone(Models.Embedding._load_embeddings(embedding_path=None))
 
     def test_load_missing_file(self):
         """_load_embeddings returns None for nonexistent path."""
-        from BasicModel import Embedding
-        self.assertIsNone(Embedding._load_embeddings(embedding_path="/tmp/no_such_file.pt"))
+        self.assertIsNone(Models.Embedding._load_embeddings(embedding_path="/tmp/no_such_file.pt"))
 
 
 class TestXorForwardPass(unittest.TestCase):
@@ -1930,16 +1820,15 @@ class TestXorForwardPass(unittest.TestCase):
 
     def test_xor_forward_produces_output(self):
         """InputSpace with model_type='embedding' can forward xor data through Embedding."""
-        from BasicModel import InputSpace, TheData, TheXMLConfig
         nInput = 8
         _populate_test_config(inputDim=1, nInput=nInput)
-        TheData.load("xor")
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        Models.TheData.load("xor")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                          model_type="embedding")
-        inputTensor = inp.prepInput(TheData.train_input[:2])
+        inputTensor = inp.prepInput(Models.TheData.train_input[:2])
         result = _unwrap(inp.forward(inputTensor))
         self.assertEqual(result.shape[0], 2)  # batch size
         self.assertEqual(result.shape[1], inp.outputShape[0])
@@ -1950,15 +1839,14 @@ class TestErgodicMnistReport(unittest.TestCase):
 
     def test_forward_layer_weight_accessible(self):
         """mnistReport can access the forward linear layer weight matrix."""
-        from BasicModel import OutputSpace, LinearLayer
         _populate_test_config(outputDim=1, symbolDim=1, nOutput=10,
                               flatten=True, reconstruct="FULL")
-        os_ = OutputSpace([10, 1], [10, 1], [10, 1])
+        os_ = Models.OutputSpace([10, 1], [10, 1], [10, 1])
         # The bug was: forwardLinear is a bound method, not a layer
         # After fix: we can get the layer via linear1
         fwd_layer = (os_.linear1 if hasattr(os_, 'linear1') else os_.forwardLinear)
         self.assertTrue(hasattr(fwd_layer, 'W'))
-        self.assertIsInstance(fwd_layer, LinearLayer)
+        self.assertIsInstance(fwd_layer, Models.LinearLayer)
 
 
 # ---------------------------------------------------------------------------
@@ -1975,10 +1863,9 @@ class TestModelTypeVariants(unittest.TestCase):
             invertible=True, ergodic=True, reconstruct="FULL",
             perceptPassThrough=True, symbolPassThrough=True,
             flatten=True)
-        from BasicModel import BasicModel
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice.get())
+        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -1997,11 +1884,10 @@ class TestModelTypeVariants(unittest.TestCase):
                               nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
                               perceptPassThrough=True, symbolPassThrough=False,
                               flatten=True)
-        from BasicModel import BasicModel
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
                      conceptualOrder=2)
-        x = torch.randn(2, 8, 1).to(TheDevice.get())
+        x = torch.randn(2, 8, 1).to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -2014,8 +1900,7 @@ class TestModelTypeVariants(unittest.TestCase):
             ergodic=False, reconstruct="FULL",
             perceptPassThrough=True, symbolPassThrough=True,
             flatten=True)
-        from BasicModel import BasicModel
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1)
         _, end_state, out = model.forward(x)
@@ -2033,8 +1918,7 @@ class TestModelTypeVariants(unittest.TestCase):
             perceptHasAttention=False,
             perceptPassThrough=False, symbolPassThrough=True,
             flatten=True, naive=True)
-        from BasicModel import BasicModel
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 8, 1)
         _, end_state, out = model.forward(x)
@@ -2049,8 +1933,7 @@ class TestModelTypeVariants(unittest.TestCase):
             conceptHasAttention=True,
             perceptPassThrough=True, symbolPassThrough=True,
             flatten=True)
-        from BasicModel import BasicModel
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1)
         # Untrained model with nonlinear=False — expect concept range warnings
@@ -2072,7 +1955,6 @@ class TestReconstructionSymbols(unittest.TestCase):
         """
         import tempfile
         import xml.etree.ElementTree as ET
-        from BasicModel import BasicModel, TheData
 
         xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
         tree = ET.parse(xml_path)
@@ -2109,9 +1991,9 @@ class TestReconstructionSymbols(unittest.TestCase):
         tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
         tree.write(tmp, xml_declaration=True)
         tmp.close()
-        TheData.load("xor")
-        m = BasicModel()
-        m.create_from_config(tmp.name, data=TheData)
+        Models.TheData.load("xor")
+        m = Models.BasicModel()
+        m.create_from_config(tmp.name, data=Models.TheData)
         os.unlink(tmp.name)
         return m
 
@@ -2174,7 +2056,6 @@ class TestReconstructionSymbols(unittest.TestCase):
         Uses XOR_recon.xml which is purpose-built for this test:
         nActive=3 input (no padding), nSymbols=6, nOutput=1 (5 recon symbols).
         """
-        from BasicModel import BasicModel, TheData
         import xml.etree.ElementTree as ET
 
         xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_recon.xml")
@@ -2193,9 +2074,9 @@ class TestReconstructionSymbols(unittest.TestCase):
 
         try:
             torch.manual_seed(42)
-            TheData.load("xor")
-            m = BasicModel()
-            m.create_from_config(tmp.name, data=TheData)
+            Models.TheData.load("xor")
+            m = Models.BasicModel()
+            m.create_from_config(tmp.name, data=Models.TheData)
 
             # Train with sigma annealing via runTrial
             m.runTrial(numEpochs=600, batchSize=10, lr=0.01)
@@ -2219,7 +2100,6 @@ class TestReconstructionSymbols(unittest.TestCase):
         The non-naive path uses SVD-based compute_Winverse() for numerically
         stable inversion (no pinv fallback).
         """
-        from BasicModel import BasicModel, BasicModelFactory, TheData
         import xml.etree.ElementTree as ET
 
         xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
@@ -2238,9 +2118,9 @@ class TestReconstructionSymbols(unittest.TestCase):
 
         try:
             torch.manual_seed(42)
-            TheData.load("xor")
-            m = BasicModel()
-            m.create_from_config(tmp.name, data=TheData)
+            Models.TheData.load("xor")
+            m = Models.BasicModel()
+            m.create_from_config(tmp.name, data=Models.TheData)
 
             # Ergodic training — accumulate range warnings, emit summary at end
             with warnings.catch_warnings(record=True) as caught:
@@ -2293,16 +2173,15 @@ class TestXor3dReversePass(unittest.TestCase):
 
     def test_construct_and_forward_reverse(self):
         import warnings
-        from BasicModel import BasicModel, TheData
         import xml.etree.ElementTree as ET
 
         xml_path = os.path.join(os.path.dirname(_BIN), "data", "xor_3d.xml")
         torch.manual_seed(42)
-        TheData.load("xor")
-        m = BasicModel()
+        Models.TheData.load("xor")
+        m = Models.BasicModel()
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="PerceptualSpace: reversible=True with invertible=False")
-            m.create_from_config(xml_path, data=TheData)
+            m.create_from_config(xml_path, data=Models.TheData)
 
         # Forward pass
         test_input, test_output = m.inputSpace.getTestData()
@@ -2319,20 +2198,19 @@ class TestExpandMasked(unittest.TestCase):
     """InputSpace.expand_masked() produces N masked copies of a sentence embedding."""
 
     def setUp(self):
-        from BasicModel import (WhereEncoding, WhenEncoding, InputSpace, TheData, TheXMLConfig)
         _populate_test_config(inputDim=1, nInput=8,
-                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim)
+                              nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim)
 
         # Build a minimal InputSpace with embedding from XOR data
-        TheData.load("xor")
+        Models.TheData.load("xor")
         nInput = 8
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        self.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        self.inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                               model_type="embedding")
         # Run a forward pass to get a real embedded tensor
-        inputBatch = TheData.train_input[0:1]
+        inputBatch = Models.TheData.train_input[0:1]
         inputTensor = self.inp.prepInput(inputBatch)
         self.embedded = _unwrap(self.inp.forward(inputTensor))  # [1, nVec, embSize]
         self.sentence = "hello world"  # matches XOR training data
@@ -2351,12 +2229,11 @@ class TestExpandMasked(unittest.TestCase):
 
     def test_masked_position_is_zero_content(self):
         """Masked position has zero content dims, non-zero position dims."""
-        from BasicModel import WhenEncoding
         masked, _ = self.inp.expand_masked(self.embedded, self.sentence)
         embSize = self.embSize
         we = self.inp.subspace.whereEncoding
         where_idx = np.add([embSize] * len(we.index), we.index)
-        when_idx = np.add([embSize, embSize], WhenEncoding.index)
+        when_idx = np.add([embSize, embSize], Models.WhenEncoding.index)
         pos_dims = set(where_idx.tolist() + when_idx.tolist())
         content_dims = [d for d in range(embSize) if d not in pos_dims]
         # In copy i, position i should have zero content
@@ -2378,12 +2255,11 @@ class TestExpandMasked(unittest.TestCase):
 
     def test_position_encoding_preserved(self):
         """Position encoding (nWhere) at masked position matches original."""
-        from BasicModel import WhenEncoding
         masked, _ = self.inp.expand_masked(self.embedded, self.sentence)
         embSize = self.embSize
         we = self.inp.subspace.whereEncoding
         where_idx = np.add([embSize] * len(we.index), we.index)
-        when_idx = np.add([embSize, embSize], WhenEncoding.index)
+        when_idx = np.add([embSize, embSize], Models.WhenEncoding.index)
         pos_dims = list(where_idx) + list(when_idx)
         # At masked position, positional dims should match original
         for i in range(masked.shape[0]):
@@ -2409,32 +2285,30 @@ class TestExpandMasked(unittest.TestCase):
 class TestExpandMaskedTargets(unittest.TestCase):
     def setUp(self):
         """Create an OutputSpace + Embedding to test expand_masked."""
-        from BasicModel import (WhereEncoding, WhenEncoding,
-                                InputSpace, OutputSpace, TheData, TheXMLConfig)
         _populate_test_config(inputDim=1, symbolDim=1, outputDim=1,
                               nInput=8, nOutput=4,
-                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               flatten=True)
 
         # Build a minimal InputSpace with embedding from XOR data
-        TheData.load("xor")
+        Models.TheData.load("xor")
         nInput = 8
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        self.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        self.inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                               model_type="embedding")
         self.emb = self.inp.subspace.vocabulary
 
         # Build a minimal OutputSpace — input carries symbol objectSize
         _obj_sym = _obj_size("SymbolicSpace")
-        self.out = OutputSpace([8, 1 + _obj_sym], [4, 1], [4, 1])
+        self.out = Models.OutputSpace([8, 1 + _obj_sym], [4, 1], [4, 1])
 
     def _make_embedded(self, n_words, emb_size=None):
         """Create a synthetic [1, n_words, embSize] embedded sentence."""
         if emb_size is None:
             emb_size = self.emb.wv._vectors.shape[1] + 4  # content + nWhere + nWhen
-        return torch.randn(1, n_words, emb_size, device=TheDevice.get())
+        return torch.randn(1, n_words, emb_size, device=Models.TheDevice.get())
 
     def test_expand_masked_shape(self):
         """N words produce [N, 1, embSize] target tensor."""
@@ -2470,7 +2344,6 @@ class TestMaskedPredictionIntegration(unittest.TestCase):
     def _create_xor_embedding_model(self):
         """Create an XOR embedding model via create_from_config (autoload off)."""
         import xml.etree.ElementTree as ET
-        from BasicModel import BasicModel, TheData
 
         xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
         tree = ET.parse(xml_path)
@@ -2485,9 +2358,9 @@ class TestMaskedPredictionIntegration(unittest.TestCase):
         tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
         tree.write(tmp, xml_declaration=True)
         tmp.close()
-        TheData.load("xor")
-        m = BasicModel()
-        m.create_from_config(tmp.name, data=TheData)
+        Models.TheData.load("xor")
+        m = Models.BasicModel()
+        m.create_from_config(tmp.name, data=Models.TheData)
         os.unlink(tmp.name)
         return m
 
@@ -2523,18 +2396,17 @@ class TestRARLM(unittest.TestCase):
     """RARLM mode masks from end and truncates previous positions."""
 
     def setUp(self):
-        from BasicModel import (WhereEncoding, WhenEncoding, InputSpace, TheData, TheXMLConfig)
         _populate_test_config(inputDim=1, nInput=8,
-                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim)
+                              nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim)
 
-        TheData.load("xor")
+        Models.TheData.load("xor")
         nInput = 8
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        self.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        self.inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                               model_type="embedding")
-        inputBatch = TheData.train_input[0:1]
+        inputBatch = Models.TheData.train_input[0:1]
         inputTensor = self.inp.prepInput(inputBatch)
         self.embedded = _unwrap(self.inp.forward(inputTensor))
         self.embSize = self.embedded.shape[-1]
@@ -2561,13 +2433,12 @@ class TestRARLM(unittest.TestCase):
 
     def test_rarlm_content_zeroed_at_masked_pos(self):
         """Content dims at the masked position are zeroed in each copy."""
-        from BasicModel import WhenEncoding
         sentence = "hello world test"
         masked, positions = self.inp.expand_masked(self.embedded, sentence, maskedPrediction='RARLM')
         embSize = self.embSize
         we = self.inp.subspace.whereEncoding
         where_idx = np.add([embSize] * len(we.index), we.index)
-        when_idx = np.add([embSize, embSize], WhenEncoding.index)
+        when_idx = np.add([embSize, embSize], Models.WhenEncoding.index)
         pos_dims = set(where_idx.tolist() + when_idx.tolist())
         content_dims = [d for d in range(embSize) if d not in pos_dims]
         for i, pos in enumerate(positions):
@@ -2580,29 +2451,27 @@ class TestRARLMTargets(unittest.TestCase):
     """RARLM targets are in reverse word order."""
 
     def setUp(self):
-        from BasicModel import (WhereEncoding, WhenEncoding,
-                                InputSpace, OutputSpace, TheData, TheXMLConfig)
         _populate_test_config(inputDim=1, symbolDim=1, outputDim=1,
                               nInput=8, nOutput=4,
-                              nWhere=WhereEncoding.nDim, nWhen=WhenEncoding.nDim,
+                              nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               flatten=True)
 
-        TheData.load("xor")
+        Models.TheData.load("xor")
         nInput = 8
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        self.inp = InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        self.inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
                               model_type="embedding")
         self.emb = self.inp.subspace.vocabulary
 
         _obj_sym = _obj_size("SymbolicSpace")
-        self.out = OutputSpace([8, 1 + _obj_sym], [4, 1], [4, 1])
+        self.out = Models.OutputSpace([8, 1 + _obj_sym], [4, 1], [4, 1])
 
     def test_rarlm_targets_reversed(self):
         """RARLM targets are MLM targets in reverse order."""
         emb_size = self.emb.wv._vectors.shape[1] + 4
-        embedded = torch.randn(1, 2, emb_size, device=TheDevice.get())
+        embedded = torch.randn(1, 2, emb_size, device=Models.TheDevice.get())
         mlm_targets = self.out.expand_masked(embedded, "hello world", maskedPrediction='MLM')
         rarlm_targets = self.out.expand_masked(embedded, "hello world", maskedPrediction='RARLM')
         # RARLM targets should be MLM targets reversed
@@ -2616,7 +2485,6 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
     def _create_model(self, train_embeddings):
         """Create an XOR embedding model with specified trainEmbeddings flag."""
         import xml.etree.ElementTree as ET
-        from BasicModel import BasicModel, TheData
 
         xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
         tree = ET.parse(xml_path)
@@ -2635,17 +2503,16 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
         tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
         tree.write(tmp, xml_declaration=True)
         tmp.close()
-        TheData.load("xor")
-        m = BasicModel()
-        m.create_from_config(tmp.name, data=TheData)
+        Models.TheData.load("xor")
+        m = Models.BasicModel()
+        m.create_from_config(tmp.name, data=Models.TheData)
         os.unlink(tmp.name)
         return m
 
     def test_train_embeddings_includes_emb_params(self):
         """When trainEmbeddings=true, _emb.weight is in optimizer params."""
-        from BasicModel import Embedding
         m = self._create_model(True)
-        self.assertIsInstance(m.inputSpace.vocabulary, Embedding)
+        self.assertIsInstance(m.inputSpace.vocabulary, Models.Embedding)
         emb_weight = m.inputSpace.vocabulary.wv._vectors
         optimizer = m.getOptimizer(lr=0.001)
         opt_params = [p.data_ptr() for group in optimizer.param_groups for p in group['params']]
@@ -2654,9 +2521,8 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
 
     def test_frozen_embeddings_default(self):
         """When trainEmbeddings=false, _emb.weight is NOT in optimizer params."""
-        from BasicModel import Embedding
         m = self._create_model(False)
-        self.assertIsInstance(m.inputSpace.vocabulary, Embedding)
+        self.assertIsInstance(m.inputSpace.vocabulary, Models.Embedding)
         emb_weight = m.inputSpace.vocabulary.wv._vectors
         optimizer = m.getOptimizer(lr=0.001)
         opt_params = [p.data_ptr() for group in optimizer.param_groups for p in group['params']]
@@ -2665,12 +2531,11 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
 
     def test_joint_mode_passes_sbow_to_total_loss(self):
         """runBatch must forward JOINT sbow loss into ModelLoss.total()."""
-        from BasicModel import Embedding
         m = self._create_model("joint")
-        self.assertIsInstance(m.inputSpace.vocabulary, Embedding)
+        self.assertIsInstance(m.inputSpace.vocabulary, Models.Embedding)
 
         optimizer = m.getOptimizer(lr=0.001)
-        sentinel = torch.tensor(1.2345, device=TheDevice.get())
+        sentinel = torch.tensor(1.2345, device=Models.TheDevice.get())
         seen = {}
 
         original_total = m.loss.total
@@ -2709,8 +2574,7 @@ class TestWeightShapeMismatch(unittest.TestCase):
 
     def _make_model(self, vocab_size, dim=8):
         """Create a minimal nn.Module with an embedding of given vocab_size."""
-        from BasicModel import BasicModel
-        m = BasicModel()
+        m = Models.BasicModel()
         m.name = "TestModel"
         # Directly set up a simple module structure to test shape-mismatch logic
         m.emb = nn.Embedding(vocab_size, dim)
@@ -2755,13 +2619,12 @@ class TestVocabSaveRestore(unittest.TestCase):
 
     def test_save_load_with_vocab(self):
         """Embedding vocab round-trips through the embedding file."""
-        from BasicModel import BasicModel, TheData, Embedding
 
         xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
-        TheData.load("xor")
+        Models.TheData.load("xor")
 
-        m1 = BasicModel()
-        m1.create_from_config(xml_path, data=TheData)
+        m1 = Models.BasicModel()
+        m1.create_from_config(xml_path, data=Models.TheData)
 
         # Add extra words to grow the vocab
         emb1 = m1._get_embedding()
@@ -2776,8 +2639,8 @@ class TestVocabSaveRestore(unittest.TestCase):
             m1.save_embeddings(emb_path)
 
             # Create a fresh model (will have smaller vocab)
-            m2 = BasicModel()
-            m2.create_from_config(xml_path, data=TheData)
+            m2 = Models.BasicModel()
+            m2.create_from_config(xml_path, data=Models.TheData)
             emb2 = m2._get_embedding()
             self.assertNotEqual(len(emb2.pretrain.index_to_key), len(vocab_before))
 
@@ -2798,14 +2661,13 @@ class TestTrainingUpdatesWeights(unittest.TestCase):
 
     def test_xor_weights_change_after_one_epoch(self):
         """XOR model weights must differ after 1 epoch of training."""
-        from BasicModel import BasicModel, TheData
 
         # XOR_exact.xml has autoload=false, autosave=false
         xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
-        TheData.load("xor")
+        Models.TheData.load("xor")
 
-        m = BasicModel()
-        m.create_from_config(xml_path, data=TheData)
+        m = Models.BasicModel()
+        m.create_from_config(xml_path, data=Models.TheData)
 
         weights_before = {k: v.clone() for k, v in m.state_dict().items()}
 
@@ -2824,30 +2686,27 @@ class TestRuntimeBatch(unittest.TestCase):
     """runtime_batch() context manager stages transient data."""
 
     def test_runtime_batch_sets_and_restores(self):
-        from BasicModel import TheData
-        TheData.load("xor")
-        original_train = list(TheData.train_input)
-        original_output = list(TheData.train_output)
-        with TheData.runtime_batch(["hello world"], [[0]]):
-            self.assertEqual(TheData.train_input, ["hello world"])
-            self.assertEqual(TheData.train_output, [[0]])
-        self.assertEqual(list(TheData.train_input), original_train)
-        self.assertEqual(list(TheData.train_output), original_output)
+        Models.TheData.load("xor")
+        original_train = list(Models.TheData.train_input)
+        original_output = list(Models.TheData.train_output)
+        with Models.TheData.runtime_batch(["hello world"], [[0]]):
+            self.assertEqual(Models.TheData.train_input, ["hello world"])
+            self.assertEqual(Models.TheData.train_output, [[0]])
+        self.assertEqual(list(Models.TheData.train_input), original_train)
+        self.assertEqual(list(Models.TheData.train_output), original_output)
 
     def test_runtime_batch_restores_on_exception(self):
-        from BasicModel import TheData
-        TheData.load("xor")
-        original_train = list(TheData.train_input)
+        Models.TheData.load("xor")
+        original_train = list(Models.TheData.train_input)
         with self.assertRaises(ValueError):
-            with TheData.runtime_batch(["test"], [[1]]):
+            with Models.TheData.runtime_batch(["test"], [[1]]):
                 raise ValueError("boom")
-        self.assertEqual(list(TheData.train_input), original_train)
+        self.assertEqual(list(Models.TheData.train_input), original_train)
 
     def test_runtime_batch_stores_strings(self):
-        from BasicModel import TheData
-        TheData.load("xor")
-        with TheData.runtime_batch(["hello world"]):
-            self.assertEqual(TheData.train_input, ["hello world"])
+        Models.TheData.load("xor")
+        with Models.TheData.runtime_batch(["hello world"]):
+            self.assertEqual(Models.TheData.train_input, ["hello world"])
 
 
 class TestRuntimeGetBatch(unittest.TestCase):
@@ -2856,7 +2715,6 @@ class TestRuntimeGetBatch(unittest.TestCase):
     def test_runtime_getBatch_returns_batch(self):
         import tempfile
         import xml.etree.ElementTree as ET
-        from BasicModel import BasicModel, TheData
 
         xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
         tree = ET.parse(xml_path)
@@ -2871,14 +2729,14 @@ class TestRuntimeGetBatch(unittest.TestCase):
         tmp.close()
 
         torch.manual_seed(42)
-        TheData.load("xor")
-        m = BasicModel()
-        m.create_from_config(tmp.name, data=TheData)
+        Models.TheData.load("xor")
+        m = Models.BasicModel()
+        m.create_from_config(tmp.name, data=Models.TheData)
         os.unlink(tmp.name)
 
         rt_input = ["hello world"]
         rt_output = [torch.tensor([0], dtype=torch.float)]
-        with TheData.runtime_batch(rt_input, rt_output):
+        with Models.TheData.runtime_batch(rt_input, rt_output):
             batch, nextBatch = m.inputSpace.getBatch(0, 1, "runtime")
             self.assertIsNotNone(batch)
             inp, out = batch
@@ -2894,7 +2752,6 @@ class TestReconstructionLossGradient(unittest.TestCase):
         Uses XOR_pos.xml (nWhere=true, nWhen=true) so both content and positional
         dimensions participate in the reconstruction loss.
         """
-        from BasicModel import BasicModel, TheData
         import xml.etree.ElementTree as ET
 
         xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_pos.xml")
@@ -2912,9 +2769,9 @@ class TestReconstructionLossGradient(unittest.TestCase):
 
         try:
             torch.manual_seed(42)
-            TheData.load("xor")
-            m = BasicModel()
-            m.create_from_config(tmp.name, data=TheData)
+            Models.TheData.load("xor")
+            m = Models.BasicModel()
+            m.create_from_config(tmp.name, data=Models.TheData)
 
             self.assertTrue(m.reversible)
             self.assertGreater(m.loss.reverse_scale, 0)
@@ -2953,7 +2810,6 @@ class TestXorExactErgodic(unittest.TestCase):
         Requires stable=True on the invertible PiLayer to prevent log(1-tanh)
         from hitting -inf when ergodic noise drives WX large early in training.
         """
-        from BasicModel import BasicModel, TheData
         import xml.etree.ElementTree as ET
 
         xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
@@ -2977,9 +2833,9 @@ class TestXorExactErgodic(unittest.TestCase):
 
         try:
             torch.manual_seed(42)
-            TheData.load("xor")
-            m = BasicModel()
-            m.create_from_config(tmp.name, data=TheData)
+            Models.TheData.load("xor")
+            m = Models.BasicModel()
+            m.create_from_config(tmp.name, data=Models.TheData)
 
             # Ergodic training — accumulate range warnings, emit summary at end
             with warnings.catch_warnings(record=True) as caught:
@@ -3009,31 +2865,28 @@ class TestSubspaceActivation(unittest.TestCase):
 
     def test_set_get_activation(self):
         """set_activation / get_activation round-trip."""
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
-        activation = torch.randn(2, 4).to(TheDevice.get())
+        ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        activation = torch.randn(2, 4).to(Models.TheDevice.get())
         ss.set_activation(activation)
         got = ss.get_activation()
         self.assertTrue(torch.equal(activation, got))
 
     def test_set_activation_squeeze(self):
         """set_activation accepts [batch, n, 1] and squeezes."""
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
-        activation = torch.randn(2, 4, 1).to(TheDevice.get())
+        ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        activation = torch.randn(2, 4, 1).to(Models.TheDevice.get())
         ss.set_activation(activation)
         got = ss.get_activation()
         self.assertEqual(got.shape, (2, 4))
 
     def test_materialize_topk(self):
         """Materialize(k) returns top-k vectors by activation, gated."""
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[8, 3], outputShape=[8, 3])
+        ss = Models.SubSpace(inputShape=[8, 3], outputShape=[8, 3])
         # Create a known tensor: 8 vectors of dim 3
-        x = torch.arange(24, dtype=torch.float32).reshape(1, 8, 3).to(TheDevice.get())
+        x = torch.arange(24, dtype=torch.float32).reshape(1, 8, 3).to(Models.TheDevice.get())
         ss.set_event(x)
         # Set activation: highest at indices 7, 5, 3, 1
-        activation = torch.tensor([[0.1, 0.8, 0.2, 0.7, 0.3, 0.9, 0.4, 1.0]]).to(TheDevice.get())
+        activation = torch.tensor([[0.1, 0.8, 0.2, 0.7, 0.3, 0.9, 0.4, 1.0]]).to(Models.TheDevice.get())
         ss.set_activation(activation)
         selected = ss.materialize(k=4)
         self.assertEqual(selected.shape, (1, 4, 3))
@@ -3046,11 +2899,10 @@ class TestSubspaceActivation(unittest.TestCase):
 
     def test_materialize_k_none(self):
         """Materialize(k=None) returns event * activation."""
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
-        x = torch.randn(2, 4, 3).to(TheDevice.get())
+        ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
         ss.set_event(x)
-        activation = torch.randn(2, 4).to(TheDevice.get())
+        activation = torch.randn(2, 4).to(Models.TheDevice.get())
         ss.set_activation(activation)
         result = ss.materialize(k=None)
         expected = x * activation.unsqueeze(-1)
@@ -3058,11 +2910,10 @@ class TestSubspaceActivation(unittest.TestCase):
 
     def test_materialize_k_geq_nspace(self):
         """Materialize(k >= nSpace) returns event * activation."""
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
-        x = torch.randn(2, 4, 3).to(TheDevice.get())
+        ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
         ss.set_event(x)
-        activation = torch.randn(2, 4).to(TheDevice.get())
+        activation = torch.randn(2, 4).to(Models.TheDevice.get())
         ss.set_activation(activation)
         expected = x * activation.unsqueeze(-1)
         result = ss.materialize(k=4)
@@ -3073,9 +2924,8 @@ class TestSubspaceActivation(unittest.TestCase):
 
     def test_materialize_activation_mode_with_stored(self):
         """materialize(mode='activation') returns stored activation."""
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
-        x = torch.randn(2, 4, 3).to(TheDevice.get())
+        ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
         ss.set_event(x)
         # set_event defaults to unit activation
         result = ss.materialize(mode="activation")
@@ -3084,9 +2934,8 @@ class TestSubspaceActivation(unittest.TestCase):
 
     def test_materialize_activation_mode_computes_from_event(self):
         """materialize(mode='activation') computes activation when not stored."""
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
-        x = torch.randn(2, 4, 3).to(TheDevice.get())
+        ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
         # Store event directly without setting activation
         ss.event.setW(x)
         ss.activation.setW(None)
@@ -3097,8 +2946,7 @@ class TestSubspaceActivation(unittest.TestCase):
 
     def test_materialize_activation_mode_no_data_asserts(self):
         """materialize(mode='activation') asserts when no event vectors exist."""
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
         ss.event.setW(None)
         ss.activation.setW(None)
         with self.assertRaises(AssertionError):
@@ -3106,9 +2954,8 @@ class TestSubspaceActivation(unittest.TestCase):
 
     def test_materialize_default_mode_unchanged(self):
         """materialize() with default mode='active' behaves as before."""
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[4, 3], outputShape=[4, 3])
-        x = torch.randn(2, 4, 3).to(TheDevice.get())
+        ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
         ss.set_event(x)
         result = ss.materialize()
         self.assertTrue(torch.equal(result, x))
@@ -3119,8 +2966,7 @@ class TestGrammar(unittest.TestCase):
 
     def _make_grammar(self):
         """Create a Grammar with the current model.xml rules."""
-        from Space import Grammar
-        g = Grammar()
+        g = Spaces.Grammar()
         g.configure({
             "START": "S",
             "S": "C",
@@ -3164,8 +3010,7 @@ class TestGrammar(unittest.TestCase):
 
     def test_configure_from_dict(self):
         """Grammar.configure() parses functional notation from dict."""
-        from Space import Grammar
-        g = Grammar()
+        g = Spaces.Grammar()
         g.configure({
             "S": ["swap(S, S)", "equals(S, S)", "C"],
             "C": ["union(C, C)", "P"],
@@ -3177,8 +3022,7 @@ class TestGrammar(unittest.TestCase):
 
     def test_configure_single_rule_string(self):
         """Single rule as string (not list) works."""
-        from Space import Grammar
-        g = Grammar()
+        g = Spaces.Grammar()
         g.configure({"S": "C", "C": "P", "P": "\u03b5"})
         self.assertEqual(g.symbolic(), [0])      # S→C transition
         self.assertEqual(g.conceptual(), [1])    # C→P transition
@@ -3186,8 +3030,7 @@ class TestGrammar(unittest.TestCase):
 
     def test_configure_unknown_rule_raises(self):
         """Unknown rule text raises ValueError."""
-        from Space import Grammar
-        g = Grammar()
+        g = Spaces.Grammar()
         with self.assertRaises(ValueError):
             g.configure({"S": ["UNKNOWN RULE"]})
 
@@ -3203,8 +3046,7 @@ class TestGrammar(unittest.TestCase):
 
     def test_transition_none_when_not_configured(self):
         """Transition returns None if not in active set."""
-        from Space import Grammar
-        g = Grammar()
+        g = Spaces.Grammar()
         g.configure({"S": "swap(S, S)", "C": "union(C, C)", "P": "\u03b5"})
         self.assertIsNone(g.symbolic_transition())   # no S->C
         self.assertIsNone(g.conceptual_transition())  # no C->P
@@ -3214,8 +3056,7 @@ class TestGrammarOperations(unittest.TestCase):
     """Tests for S-tier boolean propositions and operators via Grammar.project()."""
 
     def _make_grammar(self):
-        from Space import Grammar, Codebook, SymbolicSyntacticLayer
-        g = Grammar()
+        g = Spaces.Grammar()
         g.configure({
             "START": "true(S)",
             "S": ["swap(S, S)", "equals(S, S)", "part(S, S)", "C"],
@@ -3223,13 +3064,12 @@ class TestGrammarOperations(unittest.TestCase):
             "P": "I",
         })
         # Register a monotonic basis so methods dispatch through Basis logic
-        from Space import SubSpace
-        self._ss = SubSpace(inputShape=[8, 4], outputShape=[8, 4])
-        basis = Codebook()
+        self._ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
+        basis = Models.Codebook()
         basis.create(8, 8, 4, monotonic=True)
         self._ss.what = basis
         # Create S-tier SyntacticLayer with swap parameters
-        self._s_sl = SymbolicSyntacticLayer(
+        self._s_sl = Spaces.SymbolicSyntacticLayer(
             nInput=4, nOutput=4,
             rules=g.symbolic(),
             transition_rule=g.symbolic_transition(),
@@ -3333,8 +3173,7 @@ class TestGrammarOperations(unittest.TestCase):
 
     def test_part_zero_volume_ignored(self):
         """Matching zeros don't inflate parthood — zero volume contributes nothing."""
-        from Space import Basis
-        b = Basis()
+        b = Spaces.Basis()
         # Orthogonal: shared zeros shouldn't create parthood
         x = torch.tensor([1.0, 0.0, 0.0, 0.0])
         y = torch.tensor([0.0, 0.0, 0.0, 1.0])
@@ -3354,27 +3193,23 @@ class TestWordEncoding(unittest.TestCase):
     """Tests for WordEncoding."""
 
     def test_encode_decode_roundtrip(self):
-        from Space import WordEncoding
-        we = WordEncoding(nBatch=4, nActive=64)
+        we = Spaces.WordEncoding(nBatch=4, nActive=64)
         word = we.encode(2, 42, 1)
         b, v, r = we.decode(word)
         self.assertEqual((b, v, r), (2, 42, 1))
 
     def test_encode_validates_rule(self):
-        from Space import WordEncoding
-        we = WordEncoding(nBatch=4, nActive=64)
+        we = Spaces.WordEncoding(nBatch=4, nActive=64)
         with self.assertRaises(AssertionError):
             we.encode(0, 0, 99)  # rule out of range
 
     def test_encode_validates_negative_batch(self):
-        from Space import WordEncoding
-        we = WordEncoding(nBatch=4, nActive=64)
+        we = Spaces.WordEncoding(nBatch=4, nActive=64)
         with self.assertRaises(AssertionError):
             we.encode(-1, 0, 0)
 
     def test_encode_validates_negative_vector(self):
-        from Space import WordEncoding
-        we = WordEncoding(nBatch=4, nActive=64)
+        we = Spaces.WordEncoding(nBatch=4, nActive=64)
         with self.assertRaises(AssertionError):
             we.encode(0, -1, 0)
 
@@ -3383,8 +3218,7 @@ class TestSubspaceWords(unittest.TestCase):
     """Tests for SubSpace word support."""
 
     def _make_ss(self):
-        from Space import SubSpace
-        return SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        return Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
 
     def test_words_default_empty(self):
         ss = self._make_ss()
@@ -3418,8 +3252,7 @@ class TestSubspaceNormalize(unittest.TestCase):
     """Tests for SubSpace.normalize()."""
 
     def _make_ss(self):
-        from Space import SubSpace
-        return SubSpace(inputShape=[4, 3], outputShape=[4, 3])
+        return Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
 
     def test_percepts_range(self):
         """normalize('percepts') produces values in [-1, 1] via tanh."""
@@ -3469,38 +3302,35 @@ class TestDataScaling(unittest.TestCase):
 
     def test_xor_data_ranges(self):
         """After loading XOR, Data has correct input/output min/max."""
-        from BasicModel import TheData
-        TheData.load("xor")
+        Models.TheData.load("xor")
         # XOR uses text input (embedded, L2-normalized) and binary labels
-        self.assertEqual(TheData.input_min, -1.0)
-        self.assertEqual(TheData.input_max, 1.0)
-        self.assertEqual(TheData.output_min, 0.0)
-        self.assertEqual(TheData.output_max, 1.0)
+        self.assertEqual(Models.TheData.input_min, -1.0)
+        self.assertEqual(Models.TheData.input_max, 1.0)
+        self.assertEqual(Models.TheData.output_min, 0.0)
+        self.assertEqual(Models.TheData.output_max, 1.0)
 
     def test_normalize_denormalize_roundtrip(self):
         """Data.normalize and Data.denormalize are inverses."""
-        from BasicModel import TheData
-        TheData.input_min = -5.0
-        TheData.input_max = 5.0
-        TheData.output_min = -5.0
-        TheData.output_max = 5.0
+        Models.TheData.input_min = -5.0
+        Models.TheData.input_max = 5.0
+        Models.TheData.output_min = -5.0
+        Models.TheData.output_max = 5.0
         x = torch.tensor([[-5.0, 0.0, 5.0]])
-        scaled = TheData.normalize(x, which="input")
+        scaled = Models.TheData.normalize(x, which="input")
         self.assertTrue(torch.allclose(scaled, torch.tensor([[-1.0, 0.0, 1.0]])))
-        roundtrip = TheData.denormalize(scaled, which="input")
+        roundtrip = Models.TheData.denormalize(scaled, which="input")
         self.assertTrue(torch.allclose(roundtrip, x))
         # denormalize(output): [-1,1] -> [min,max]
         act = torch.tensor([[-1.0, 0.0, 1.0]])
-        rescaled = TheData.denormalize(act, which="output")
+        rescaled = Models.TheData.denormalize(act, which="output")
         self.assertTrue(torch.allclose(rescaled, torch.tensor([[-5.0, 0.0, 5.0]])))
 
     def test_degenerate_range_noop(self):
         """When min==max, scaling is a no-op (returns input unchanged)."""
-        from BasicModel import TheData
-        TheData.input_min = 3.0
-        TheData.input_max = 3.0
+        Models.TheData.input_min = 3.0
+        Models.TheData.input_max = 3.0
         x = torch.tensor([[1.0, 2.0, 3.0]])
-        self.assertTrue(torch.equal(TheData.normalize(x, which="input"), x))
+        self.assertTrue(torch.equal(Models.TheData.normalize(x, which="input"), x))
 
 
 class TestNormalizeFlag(unittest.TestCase):
@@ -3508,9 +3338,8 @@ class TestNormalizeFlag(unittest.TestCase):
 
     def test_normalize_false_does_not_modify(self):
         """normalize=False checks range but does not modify the tensor."""
-        from Space import SubSpace
         _populate_test_config(inputDim=4, nInput=4)
-        ss = SubSpace(inputShape=[4, 4], outputShape=[4, 4])
+        ss = Models.SubSpace(inputShape=[4, 4], outputShape=[4, 4])
         # Set vectors that are NOT in [0,1] range
         x = torch.randn(2, 4, 4) * 5
         ss.set_event(x.clone())
@@ -3526,9 +3355,8 @@ class TestNormalizeFlag(unittest.TestCase):
 
     def test_normalize_true_does_modify(self):
         """normalize=True modifies the tensor."""
-        from Space import SubSpace
         _populate_test_config(inputDim=4, nInput=4)
-        ss = SubSpace(inputShape=[4, 4], outputShape=[4, 4])
+        ss = Models.SubSpace(inputShape=[4, 4], outputShape=[4, 4])
         x = torch.randn(2, 4, 4) * 5
         ss.set_event(x.clone())
         original = ss.materialize().clone()
@@ -3544,17 +3372,16 @@ class TestInputSpaceScaling(unittest.TestCase):
 
     def test_simple_input_scaled_to_unit(self):
         """InputSpace scales passthrough what-content to [-1,1]."""
-        from BasicModel import InputSpace, TheData, TheXMLConfig
-        TheData.load("xor")
-        TheData.input_min = -3.0
-        TheData.input_max = 3.0
+        Models.TheData.load("xor")
+        Models.TheData.input_min = -3.0
+        Models.TheData.input_max = 3.0
         nInput = 4
         _populate_test_config(inputDim=4, nInput=nInput, nWhere=0, nWhen=0)
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
-        inp = InputSpace([nInput, _idim], [_invec, _idim],
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
+        inp = Models.InputSpace([nInput, _idim], [_invec, _idim],
                          [nInput, _idim], model_type="simple")
-        x = torch.FloatTensor([[[-3, -1, 1, 3]] * nInput]).to(TheDevice.get())
+        x = torch.FloatTensor([[[-3, -1, 1, 3]] * nInput]).to(Models.TheDevice.get())
         result = inp.forward(x)
         what = result.select("what")
         self.assertTrue(torch.all(what >= -1.01) and torch.all(what <= 1.01),
@@ -3571,10 +3398,9 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
             nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10,
             perceptPassThrough=True, symbolPassThrough=True, flatten=True,
             useSubspaceActivation=True)
-        from BasicModel import BasicModel
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
-        x = torch.randn(2, 28*28, 1).to(TheDevice.get())
+        x = torch.randn(2, 28*28, 1).to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)  # batch size preserved
 
@@ -3585,18 +3411,16 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
             nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True, flatten=True,
             useSubspaceActivation=True)
-        from BasicModel import BasicModel
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(TheDevice.get())
+        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
         model.forward(x)
 
         # Check that activations are stored on spaces that compute them.
         # InputSpace (entry point) and passthrough spaces don't set activation —
         # they forward the upstream SubSpace unchanged.
-        from BasicModel import InputSpace
         for space in model.spaces:
-            if isinstance(space, InputSpace):
+            if isinstance(space, Models.InputSpace):
                 continue
             if getattr(space, 'passThrough', False):
                 continue
@@ -3616,16 +3440,15 @@ class TestInputSpaceDemuxed(unittest.TestCase):
 
     def test_demuxed_slots_populated(self):
         """InputSpace(demuxed=True).forward() populates what, where, when independently."""
-        from BasicModel import InputSpace, TheData, TheXMLConfig
-        TheData.load("xor")
+        Models.TheData.load("xor")
         nInput = 4
         _populate_test_config(inputDim=8, nInput=nInput, nWhere=2, nWhen=2, demuxed=True)
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        inp = InputSpace([nInput, _idim], [_invec, _idim],
+        inp = Models.InputSpace([nInput, _idim], [_invec, _idim],
                          [nInput, _idim + _obj], model_type="simple")
-        x = torch.randn(2, nInput, _idim).to(TheDevice.get())
+        x = torch.randn(2, nInput, _idim).to(Models.TheDevice.get())
         result = inp.forward(x)
         self.assertTrue(result.is_demuxed)
         self.assertEqual(list(result.what.getW().shape), [2, nInput, _idim])
@@ -3634,40 +3457,38 @@ class TestInputSpaceDemuxed(unittest.TestCase):
 
     def test_materialize_produces_muxed(self):
         """InputSpace(demuxed=True).materialize() produces concat([what, where, when])."""
-        from BasicModel import InputSpace, TheData, TheXMLConfig
-        TheData.load("xor")
+        Models.TheData.load("xor")
         nInput = 4
         _populate_test_config(inputDim=8, nInput=nInput, nWhere=2, nWhen=2, demuxed=True)
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        inp = InputSpace([nInput, _idim], [_invec, _idim],
+        inp = Models.InputSpace([nInput, _idim], [_invec, _idim],
                          [nInput, _idim + _obj], model_type="simple")
-        x = torch.randn(2, nInput, _idim).to(TheDevice.get())
+        x = torch.randn(2, nInput, _idim).to(Models.TheDevice.get())
         result = inp.forward(x)
         muxed = result.materialize()
         self.assertEqual(list(muxed.shape), [2, nInput, _idim + _obj])
 
     def test_equivalence_with_muxed_input_space(self):
         """InputSpace(demuxed=True).materialize() == InputSpace(demuxed=False).materialize()."""
-        from BasicModel import InputSpace, TheData, TheXMLConfig
-        TheData.load("xor")
+        Models.TheData.load("xor")
         nInput = 4
 
         # Build muxed (legacy) InputSpace
         _populate_test_config(inputDim=8, nInput=nInput, nWhere=2, nWhen=2, demuxed=False)
-        _idim = TheXMLConfig.space("InputSpace", "nDim")
-        _invec = TheXMLConfig.space("InputSpace", "nVectors")
+        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
         _obj = _obj_size("InputSpace")
-        legacy = InputSpace([nInput, _idim], [_invec, _idim],
+        legacy = Models.InputSpace([nInput, _idim], [_invec, _idim],
                             [nInput, _idim + _obj], model_type="simple")
 
         # Build demuxed InputSpace
         _populate_test_config(inputDim=8, nInput=nInput, nWhere=2, nWhen=2, demuxed=True)
-        demuxed = InputSpace([nInput, _idim], [_invec, _idim],
+        demuxed = Models.InputSpace([nInput, _idim], [_invec, _idim],
                              [nInput, _idim + _obj], model_type="simple")
 
-        x = torch.randn(2, nInput, _idim).to(TheDevice.get())
+        x = torch.randn(2, nInput, _idim).to(Models.TheDevice.get())
         legacy_out = _unwrap(legacy.forward(x))
         demuxed_out = _unwrap(demuxed.forward(x))
         self.assertTrue(torch.allclose(legacy_out, demuxed_out, atol=1e-5),
@@ -3679,7 +3500,6 @@ class TestModalSpace(unittest.TestCase):
 
     def test_forward_shape(self):
         """ModalSpace.forward() produces correct muxed output shape."""
-        from BasicModel import ModalSpace, SubSpace, TheXMLConfig
         nInput = 4
         nWhere = 2
         nWhen = 2
@@ -3689,12 +3509,12 @@ class TestModalSpace(unittest.TestCase):
                               nWhere=nWhere, nWhen=nWhen,
                               perceptPassThrough=True)
         muxed_w = nDim + nWhere + nWhen
-        space = ModalSpace([nInput, muxed_w], [nInput, nDim], [nInput, muxed_w])
+        space = Models.ModalSpace([nInput, muxed_w], [nInput, nDim], [nInput, muxed_w])
         # Build a demuxed input
-        what_t = torch.randn(2, nInput, nDim).to(TheDevice.get())
-        where_t = torch.randn(2, nInput, nWhere).to(TheDevice.get())
-        when_t = torch.randn(2, nInput, nWhen).to(TheDevice.get())
-        ss = SubSpace(inputShape=[nInput, muxed_w], outputShape=[nInput, muxed_w])
+        what_t = torch.randn(2, nInput, nDim).to(Models.TheDevice.get())
+        where_t = torch.randn(2, nInput, nWhere).to(Models.TheDevice.get())
+        when_t = torch.randn(2, nInput, nWhen).to(Models.TheDevice.get())
+        ss = Models.SubSpace(inputShape=[nInput, muxed_w], outputShape=[nInput, muxed_w])
         ss.set_demuxed(what_t, where_t, when_t)
         result = space.forward(ss)
         materialized = result.materialize()
@@ -3702,19 +3522,18 @@ class TestModalSpace(unittest.TestCase):
 
     def test_degenerate_no_position(self):
         """With nWhere=nWhen=0, ModalSpace degenerates to a single PerceptualSpace."""
-        from BasicModel import ModalSpace, SubSpace, TheXMLConfig
         nInput = 4
         nDim = 8
         _populate_test_config(inputDim=nDim, perceptDim=nDim,
                               nInput=nInput, nPercepts=nInput,
                               nWhere=0, nWhen=0,
                               perceptPassThrough=True)
-        space = ModalSpace([nInput, nDim], [nInput, nDim], [nInput, nDim])
+        space = Models.ModalSpace([nInput, nDim], [nInput, nDim], [nInput, nDim])
         self.assertIsNone(space.whereSpace)
         self.assertIsNone(space.whenSpace)
         # Forward with muxed input (no demux needed)
-        x = torch.randn(2, nInput, nDim).to(TheDevice.get())
-        ss = SubSpace(inputShape=[nInput, nDim], outputShape=[nInput, nDim])
+        x = torch.randn(2, nInput, nDim).to(Models.TheDevice.get())
+        ss = Models.SubSpace(inputShape=[nInput, nDim], outputShape=[nInput, nDim])
         ss.set_event(x)
         result = space.forward(ss)
         self.assertEqual(list(result.materialize().shape), [2, nInput, nDim])
@@ -3725,8 +3544,7 @@ class TestBasicModelDemuxed(unittest.TestCase):
 
     def test_create_from_config(self):
         """BasicModel with demuxed=True creates InputSpace(demuxed) + ModalSpace."""
-        from BasicModel import BasicModel, InputSpace, ModalSpace, TheData
-        TheData.load("xor")
+        Models.TheData.load("xor")
         _populate_test_config(
             inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0,
             outputDim=4,
@@ -3734,19 +3552,19 @@ class TestBasicModelDemuxed(unittest.TestCase):
             nWhere=2, nWhen=2,
             demuxed=True,
             flatten=True, perceptPassThrough=True)
-        model = BasicModel()
+        model = Models.BasicModel()
         model.create(nInput=4, nPercepts=4, nConcepts=4, nSymbols=4, nOutput=4,
                      model_type="simple")
-        self.assertIsInstance(model.inputSpace, InputSpace)
+        self.assertIsInstance(model.inputSpace, Models.InputSpace)
         self.assertTrue(model.inputSpace.demuxed)
-        self.assertIsInstance(model.perceptualSpace, ModalSpace)
+        self.assertIsInstance(model.perceptualSpace, Models.ModalSpace)
 
 
 class TestSyntacticLayer(unittest.TestCase):
     """Tests for SyntacticLayer — per-space grammar with executable rules."""
 
     def _dev(self):
-        return TheDevice.get()
+        return Models.TheDevice.get()
 
     def _make_grammar(self):
         """Create a Grammar with the full MentalModel.xml rules."""
@@ -3756,15 +3574,13 @@ class TestSyntacticLayer(unittest.TestCase):
             path=os.path.join(ProjectPaths.DATA_DIR, 'MentalModel.xml'),
             defaults_path=os.path.join(ProjectPaths.DATA_DIR, 'model.xml'),
         )
-        from Space import Grammar
-        g = Grammar()
+        g = Spaces.Grammar()
         g._ensure_configured()
         return g
 
     def _make_symbolic_layer(self, nInput=8, max_depth=7, hidden_dim=16):
-        from Space import SyntacticLayer
         g = self._make_grammar()
-        return SyntacticLayer(
+        return Spaces.SyntacticLayer(
             nInput=nInput, nOutput=nInput,
             rules=g.symbolic(),
             transition_rule=g.symbolic_transition(),
@@ -3774,9 +3590,8 @@ class TestSyntacticLayer(unittest.TestCase):
         ), g
 
     def _make_conceptual_layer(self, nInput=8, max_depth=7, hidden_dim=16):
-        from Space import SyntacticLayer
         g = self._make_grammar()
-        return SyntacticLayer(
+        return Spaces.SyntacticLayer(
             nInput=nInput, nOutput=nInput,
             rules=g.conceptual(),
             transition_rule=g.conceptual_transition(),
@@ -3786,9 +3601,8 @@ class TestSyntacticLayer(unittest.TestCase):
         ), g
 
     def _make_perceptual_layer(self, nInput=8, max_depth=7, hidden_dim=16):
-        from Space import SyntacticLayer
         g = self._make_grammar()
-        return SyntacticLayer(
+        return Spaces.SyntacticLayer(
             nInput=nInput, nOutput=nInput,
             rules=g.perceptual(),
             transition_rule=None,
@@ -3924,57 +3738,54 @@ class TestShiftReduce(unittest.TestCase):
             nInput=nSym, nPercepts=nSym, nConcepts=nSym, nSymbols=nSym,
             nWords=nSym, nOutput=nSym,
             perceptPassThrough=True, symbolPassThrough=True)
-        from BasicModel import TheXMLConfig
-        TheXMLConfig._data["architecture"]["syntax"] = True
-        TheXMLConfig._data["architecture"]["maskedPrediction"] = "ARLM"
+        Models.TheXMLConfig._data["architecture"]["syntax"] = True
+        Models.TheXMLConfig._data["architecture"]["maskedPrediction"] = "ARLM"
         # Configure grammar with full rules
-        TheXMLConfig._data["architecture"].setdefault("language", {})["grammar"] = {
+        Models.TheXMLConfig._data["architecture"].setdefault("language", {})["grammar"] = {
             "START": "S",
             "S": ["true(S)", "swap(S, S)", "equals(S, S)", "part(S, S)", "C"],
             "C": ["non(C)", "not(C)", "intersection(C, C)", "union(C, C)",
                   "lower(C, C)", "lift(C, C)", "P"],
             "P": ["I P", "I"],
         }
-        from Space import TheGrammar, SymbolicSyntacticLayer, ConceptualSyntacticLayer, PerceptualSyntacticLayer
-        TheGrammar._configured = False
-        TheGrammar._ensure_configured()
-        TheGrammar._configured = False
-        TheGrammar._ensure_configured()
+        Spaces.TheGrammar._configured = False
+        Spaces.TheGrammar._ensure_configured()
+        Spaces.TheGrammar._configured = False
+        Spaces.TheGrammar._ensure_configured()
         # Create per-tier SyntacticLayers (normally done by Spaces)
-        s_sl = SymbolicSyntacticLayer(
+        s_sl = Spaces.SymbolicSyntacticLayer(
             nInput=nSym, nOutput=nSym,
-            rules=TheGrammar.symbolic(),
-            transition_rule=TheGrammar.symbolic_transition(),
+            rules=Spaces.TheGrammar.symbolic(),
+            transition_rule=Spaces.TheGrammar.symbolic_transition(),
             max_depth=max(nSym - 1, 1),
             hidden_dim=min(256, max(64, nSym * 4)),
-            grammar=TheGrammar,
+            grammar=Spaces.TheGrammar,
         )
         s_sl.init_swap(nSym, nSym)
-        c_sl = ConceptualSyntacticLayer(
+        c_sl = Spaces.ConceptualSyntacticLayer(
             nInput=nSym, nOutput=nSym,
-            rules=TheGrammar.conceptual(),
-            transition_rule=TheGrammar.conceptual_transition(),
+            rules=Spaces.TheGrammar.conceptual(),
+            transition_rule=Spaces.TheGrammar.conceptual_transition(),
             max_depth=max(nSym - 1, 1),
             hidden_dim=min(256, max(64, nSym * 4)),
-            grammar=TheGrammar,
+            grammar=Spaces.TheGrammar,
         )
         c_sl.init_conceptual_params(nDim)
-        p_sl = PerceptualSyntacticLayer(
+        p_sl = Spaces.PerceptualSyntacticLayer(
             nInput=nSym, nOutput=nSym,
-            rules=TheGrammar.perceptual(),
+            rules=Spaces.TheGrammar.perceptual(),
             transition_rule=None,
             max_depth=max(nSym - 1, 1),
             hidden_dim=min(256, max(64, nSym * 4)),
-            grammar=TheGrammar,
+            grammar=Spaces.TheGrammar,
         )
-        return TheGrammar, s_sl, c_sl, p_sl
+        return Spaces.TheGrammar, s_sl, c_sl, p_sl
 
     def test_write_symbolic_shift(self):
         """SymbolicSyntacticLayer.compose() applies rules at top-of-stack."""
         grammar, s_sl, c_sl, p_sl = self._init_grammar()
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[8, 1], outputShape=[8, 1])
-        act = torch.zeros(1, 8, device=TheDevice.get())
+        ss = Models.SubSpace(inputShape=[8, 1], outputShape=[8, 1])
+        act = torch.zeros(1, 8, device=Models.TheDevice.get())
         act[0, 3] = 1.0  # one active position
         result = s_sl.compose(act, ss, grammar)
         self.assertEqual(result.shape, (1, 8))
@@ -3982,9 +3793,8 @@ class TestShiftReduce(unittest.TestCase):
     def test_write_symbolic_stack_grows(self):
         """Applying grammar to two active positions records words."""
         grammar, s_sl, c_sl, p_sl = self._init_grammar()
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[8, 1], outputShape=[8, 1])
-        act = torch.zeros(1, 8, device=TheDevice.get())
+        ss = Models.SubSpace(inputShape=[8, 1], outputShape=[8, 1])
+        act = torch.zeros(1, 8, device=Models.TheDevice.get())
         act[0, 2] = 1.0
         act[0, 5] = 1.0  # two active positions
         result = s_sl.compose(act, ss, grammar)
@@ -3993,8 +3803,7 @@ class TestShiftReduce(unittest.TestCase):
     def test_resetStack_symbolic(self):
         """SubSpace.set_words([]) clears the word list."""
         grammar, s_sl, c_sl, p_sl = self._init_grammar()
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[8, 1], outputShape=[8, 1])
+        ss = Models.SubSpace(inputShape=[8, 1], outputShape=[8, 1])
         ss.word = [(0, 1, 2), (0, 3, 4)]
         ss.set_words([])
         self.assertEqual(len(ss.get_words()), 0)
@@ -4004,9 +3813,8 @@ class TestShiftReduce(unittest.TestCase):
     def test_write_conceptual_shift(self):
         """ConceptualSyntacticLayer.compose() applies rules to concept vectors."""
         grammar, s_sl, c_sl, p_sl = self._init_grammar(nDim=4)
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[8, 4], outputShape=[8, 4])
-        vectors = torch.randn(1, 8, 4, device=TheDevice.get())
+        ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
+        vectors = torch.randn(1, 8, 4, device=Models.TheDevice.get())
         vectors[0, 3:] = 0.0  # only 3 active positions
         result, _ = c_sl.compose(vectors, ss, grammar)
         self.assertEqual(result.shape, (1, 8, 4))
@@ -4014,9 +3822,8 @@ class TestShiftReduce(unittest.TestCase):
     def test_write_conceptual_stack_grows(self):
         """Multiple active concept positions get grammar rules applied."""
         grammar, s_sl, c_sl, p_sl = self._init_grammar(nDim=4)
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[8, 4], outputShape=[8, 4])
-        vectors = torch.randn(1, 8, 4, device=TheDevice.get())
+        ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
+        vectors = torch.randn(1, 8, 4, device=Models.TheDevice.get())
         vectors[0, 4:] = 0.0  # 4 active positions
         result, _ = c_sl.compose(vectors, ss, grammar)
         self.assertEqual(result.shape, (1, 8, 4))
@@ -4024,8 +3831,7 @@ class TestShiftReduce(unittest.TestCase):
     def test_resetStack_conceptual(self):
         """SubSpace.set_words([]) clears the word list."""
         grammar, s_sl, c_sl, p_sl = self._init_grammar(nDim=4)
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[8, 4], outputShape=[8, 4])
+        ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
         ss.word = [(0, 1, 2)]
         ss.set_words([])
         self.assertEqual(len(ss.get_words()), 0)
@@ -4035,9 +3841,8 @@ class TestShiftReduce(unittest.TestCase):
     def test_write_perceptual_shift(self):
         """PerceptualSyntacticLayer.compose() applies perceptual rules."""
         grammar, s_sl, c_sl, p_sl = self._init_grammar(nDim=4)
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[8, 4], outputShape=[8, 4])
-        vectors = torch.randn(1, 8, 4, device=TheDevice.get())
+        ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
+        vectors = torch.randn(1, 8, 4, device=Models.TheDevice.get())
         vectors[0, 4:] = 0.0  # 4 active positions
         result = p_sl.compose(vectors, ss, grammar)
         self.assertEqual(result.shape, (1, 8, 4))
@@ -4045,8 +3850,7 @@ class TestShiftReduce(unittest.TestCase):
     def test_resetStack_perceptual(self):
         """SubSpace.set_words([]) clears the word list."""
         grammar, s_sl, c_sl, p_sl = self._init_grammar(nDim=4)
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[8, 4], outputShape=[8, 4])
+        ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
         ss.word = [(0, 1, 13), (0, 2, 13)]
         ss.set_words([])
         self.assertEqual(len(ss.get_words()), 0)
@@ -4056,12 +3860,11 @@ class TestShiftReduce(unittest.TestCase):
     def test_read_symbolic(self):
         """SymbolicSyntacticLayer.decompose() undoes grammar operations on activation."""
         grammar, s_sl, c_sl, p_sl = self._init_grammar()
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[8, 1], outputShape=[8, 1])
+        ss = Models.SubSpace(inputShape=[8, 1], outputShape=[8, 1])
         # Record a word, then reverse
         swap_rid = [r for r in grammar.symbolic() if grammar.rules[r].method_name == 'swap'][0]
         ss.add_word(0, 3, swap_rid)
-        act = torch.zeros(1, 8, device=TheDevice.get())
+        act = torch.zeros(1, 8, device=Models.TheDevice.get())
         act[0, 3] = 1.0
         result = s_sl.decompose(act, ss, grammar)
         self.assertEqual(result.shape, (1, 8))
@@ -4069,21 +3872,19 @@ class TestShiftReduce(unittest.TestCase):
     def test_read_conceptual(self):
         """ConceptualSyntacticLayer.decompose() undoes grammar operations on vectors."""
         grammar, s_sl, c_sl, p_sl = self._init_grammar(nDim=4)
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[8, 4], outputShape=[8, 4])
+        ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
         not_rid = [r for r in grammar.conceptual() if grammar.rules[r].method_name == 'not'][0]
         ss.add_word(0, 2, not_rid)
-        vectors = torch.randn(1, 8, 4, device=TheDevice.get())
+        vectors = torch.randn(1, 8, 4, device=Models.TheDevice.get())
         result = c_sl.decompose(vectors, ss, grammar)
         self.assertEqual(result.shape, (1, 8, 4))
 
     def test_read_perceptual(self):
         """PerceptualSyntacticLayer.decompose() undoes grammar operations on vectors."""
         grammar, s_sl, c_sl, p_sl = self._init_grammar(nDim=4)
-        from Space import SubSpace
-        ss = SubSpace(inputShape=[8, 4], outputShape=[8, 4])
+        ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
         # No words recorded — decompose should be identity
-        vectors = torch.randn(1, 8, 4, device=TheDevice.get())
+        vectors = torch.randn(1, 8, 4, device=Models.TheDevice.get())
         result = p_sl.decompose(vectors, ss, grammar)
         self.assertEqual(result.shape, (1, 8, 4))
 

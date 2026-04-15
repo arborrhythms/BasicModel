@@ -20,16 +20,12 @@ from pathlib import Path
 
 _project = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_project / "bin"))
+
+import Models
+
 os.chdir(_project / "bin")
 
 import torch
-from BasicModel import (
-    BasicModel,
-    BasicModelFactory,
-    BaseModel,
-    Data,
-    TheDevice,
-)
 from util import ProjectPaths
 
 # ---------------------------------------------------------------------------
@@ -45,13 +41,13 @@ def bench_training():
     import io
     from contextlib import redirect_stdout, redirect_stderr
 
-    cfg = BaseModel.load_config(BENCH_XML)
+    cfg = Models.BaseModel.load_config(BENCH_XML)
     train = cfg.get("training", {})
     dataset = train.get("dataset", "xor")
-    data = Data()
+    data = Models.Data()
     data.load(dataset)
 
-    m = BasicModel()
+    m = Models.BasicModel()
     cfg = m.create_from_config(BENCH_XML, data=data)
     train = cfg["training"]
 
@@ -78,7 +74,7 @@ def bench_training():
 
 
 def main():
-    print(f"Device:     {TheDevice}")
+    print(f"Device:     {Models.TheDevice}")
     print(f"Config:     {os.path.basename(BENCH_XML)}")
     print(f"Epochs:     {BENCH_EPOCHS}")
     print(f"PyTorch:    {torch.__version__}")

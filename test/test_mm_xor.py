@@ -15,23 +15,23 @@ _BIN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
 _PROJECT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
+import Models
+import Spaces
 
 _CONFIG = os.path.join(_PROJECT, "data", "MM_xor.xml")
 
 
 def _fresh_model():
     """Create a fresh MentalModel with XOR data loaded."""
-    from BasicModel import MentalModel, TheData
     from util import init_config
     init_config(
         path=_CONFIG,
         defaults_path=os.path.join(_PROJECT, "data", "model.xml"),
     )
-    from Space import TheGrammar
-    TheGrammar._configured = False
-    m, cfg = MentalModel.from_config(_CONFIG)
-    TheData.load("xor")
-    return m, cfg, TheData
+    Spaces.TheGrammar._configured = False
+    m, cfg = Models.MentalModel.from_config(_CONFIG)
+    Models.TheData.load("xor")
+    return m, cfg, Models.TheData
 
 
 class TestMMXorConvergence(unittest.TestCase):
@@ -79,7 +79,6 @@ class TestMMXorConvergence(unittest.TestCase):
         making SGD (batchSize=1) too noisy to converge reliably.
         """
         import torch
-        from BasicModel import TheData
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")

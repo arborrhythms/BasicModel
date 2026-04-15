@@ -18,11 +18,11 @@ _BIN = os.path.dirname(os.path.abspath(__file__))
 _PROJECT = os.path.dirname(_BIN)
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
+import Models
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 
 import torch
-from BasicModel import BasicModel, BasicModelFactory, BaseModel, TheData
 
 # ---------------------------------------------------------------------------
 # Alpha schedule factories
@@ -173,9 +173,9 @@ def create_model(ergodic=False):
     tree.write(tmp, xml_declaration=True)
     tmp.close()
 
-    TheData.load("xor")
-    m = BasicModel()
-    m.create_from_config(tmp.name, data=TheData)
+    Models.TheData.load("xor")
+    m = Models.BasicModel()
+    m.create_from_config(tmp.name, data=Models.TheData)
     os.unlink(tmp.name)
     return m
 

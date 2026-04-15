@@ -261,18 +261,18 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 os.environ.pop("BASICMODEL_DEVICE", None)
 
 import torch
-from BasicModel import BasicModel, TheData, TheDevice
+import Models
 
 cfg_path = "{config}"
-cfg = BasicModel.load_config(cfg_path)
+cfg = Models.BasicModel.load_config(cfg_path)
 arch = cfg.get("architecture", {{}})
-TheData.load(arch.get("dataset", "text"),
+Models.TheData.load(arch.get("dataset", "text"),
              num_shards=arch.get("numShards", 1),
              max_docs=min(arch.get("maxDocs", 100), 100),
              shard_dir=arch.get("shardDir"))
 
-model = BasicModel()
-model.create_from_config(cfg_path, data=TheData)
+model = Models.BasicModel()
+model.create_from_config(cfg_path, data=Models.TheData)
 model.eval()
 
 # Check device of model parameters
@@ -287,7 +287,7 @@ for name, b in model.named_buffers():
 
 # Check device of training data
 data_devices = set()
-for t in TheData.train_input[:5]:
+for t in Models.TheData.train_input[:5]:
     if isinstance(t, torch.Tensor):
         data_devices.add(str(t.device))
 
@@ -303,7 +303,7 @@ with torch.no_grad():
     out_device = str(out.device)
 
 result = {{
-    "device": str(TheDevice),
+    "device": str(Models.TheDevice),
     "param_devices": sorted(param_devices),
     "buffer_devices": sorted(buffer_devices),
     "data_devices": sorted(data_devices),
