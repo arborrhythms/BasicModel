@@ -5,7 +5,6 @@
     <conceptualOrder>1</conceptualOrder>
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
-    <certainty>false</certainty>
     <modelType>embedding</modelType>
     <weightsPath>weights.ckpt</weightsPath>
 
@@ -20,6 +19,7 @@
       <learningRate>0.01</learningRate>
       <autoload>true</autoload>
       <autosave>false</autosave>
+      <certainty>false</certainty>
     </training>
   </architecture>
 

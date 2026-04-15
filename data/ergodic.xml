@@ -2,7 +2,6 @@
 <model>
   <architecture>
     <ergodic>true</ergodic>
-    <certainty>true</certainty>
     <modelType>simple</modelType>
 
     <data>
@@ -13,6 +12,7 @@
       <numTrials>1</numTrials>
       <numEpochs>10</numEpochs>
       <batchSize>64</batchSize>
+      <certainty>true</certainty>
     </training>
   </architecture>
 

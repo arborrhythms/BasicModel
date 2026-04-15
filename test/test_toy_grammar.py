@@ -65,12 +65,14 @@ def _forward_with_data(model, sentences, outputs):
 
 
 # ── Dimensions from MentalModel.xml ─────────────────────────────────
+# Refactored geometry: nPercepts == nConcepts == nSymbols (no [P,S] concat;
+# state mixing happens via the iterative Sigma-Pi loop, not slot expansion).
 _N_SYMBOLS = 128
-_N_CONCEPTS = 256
+_N_CONCEPTS = 128
 _N_PERCEPTS = 128
 _CONCEPT_DIM = 100 + 4   # nDim + objectSize (nWhere + nWhen)
 _SYMBOL_DIM = 100 + 4
-_N_CONCEPT_SLOTS = _N_PERCEPTS + _N_SYMBOLS  # conceptInputShape[0] = 256
+_N_CONCEPT_SLOTS = _N_CONCEPTS  # conceptInputShape[0] = 128
 
 
 class TestGrammarGradientFlow(unittest.TestCase):

@@ -8,7 +8,6 @@
     <nWhen>2</nWhen>
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
-    <certainty>false</certainty>
     <modelType>embedding</modelType>
     <maxResponseLength>4096</maxResponseLength>
     <weightsPath>BasicModel.ckpt</weightsPath>
@@ -36,6 +35,7 @@
       <sentenceCentroidHistory>3</sentenceCentroidHistory>
       <sentenceLambda>1.01</sentenceLambda>
       <sentencePredictionScale>0.1</sentencePredictionScale>
+      <certainty>false</certainty>
     </training>
 
     <server>

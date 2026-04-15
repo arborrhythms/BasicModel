@@ -2162,21 +2162,31 @@ class TruthLayer(Layer):
 
     # ── TruthLoss: Union Norm Reduction ─────────────────────────────
 
-    def falsity_penalty(self, concept_states, basis):
+    def falsity_penalty(self, symbol_states, basis):
         """Compute additive truth loss via union norm reduction.
 
-        For each proposition in concept_states, measure how much the
+        For each proposition in ``symbol_states``, measure how much the
         TruthSet union norm drops when the proposition is included.
-        Contradiction cancels dimensions (via Basis.disjunction's bitonic
-        same_sign logic), reducing the norm → positive penalty.
+        Contradiction cancels dimensions (via ``Basis.disjunction``'s
+        bitonic same-sign logic), reducing the norm → positive penalty.
 
         Agreeing propositions preserve or extend the union → no penalty.
         Unknown propositions (zero dims) pass through → no penalty.
         DoT weighting is implicit: high-DoT truths contribute more energy
         to the union, so contradicting them causes a larger norm drop.
 
+        Both sides of the disjunction live in symbol space by
+        construction: stored truths are recorded from
+        ``SymbolicSpace.forwardEnd``, and ``symbol_states`` should be
+        the post-pi activations cached during the Sigma-Pi loop (the
+        model's ``self.symbol_states[-1]``).  Using symbols rather
+        than pre-pi concepts keeps both operands in the basis's
+        native space.
+
         Args:
-            concept_states: (B, N, D) concept activations from forward pass.
+            symbol_states: (B, N, D) symbolic activations from the
+                forward pass (post-pi, post-l1_proximal — the
+                committed beliefs).
             basis: Basis instance with disjunction() method.
 
         Returns:
@@ -2184,7 +2194,7 @@ class TruthLayer(Layer):
         """
         n = self.count.item()
         if n == 0:
-            return concept_states.new_tensor(0.0)
+            return symbol_states.new_tensor(0.0)
 
         stored = self.truths[:n]  # (n, D)
 
@@ -2195,8 +2205,8 @@ class TruthLayer(Layer):
         union_norm = truth_union.norm()
 
         # For each proposition, compute norm reduction
-        B, N, D = concept_states.shape
-        propositions = concept_states.reshape(-1, D)  # (B*N, D)
+        B, N, D = symbol_states.shape
+        propositions = symbol_states.reshape(-1, D)  # (B*N, D)
 
         penalties = []
         for p in range(propositions.shape[0]):
@@ -2414,19 +2424,17 @@ class TruthLayer(Layer):
 
         print("TruthLayer tests passed.")
 class InterSentenceLayer(Layer):
-    """Inter-sentence substrate: per-sentence ``[S | W]`` snapshots +
-    next-sentence predictor + predicted-sentence resolver.
+    """Inter-sentence substrate: per-sentence ``[S | W]`` snapshots
+    scored by a contrastive dual-force cosine loss.
 
     **What it is.** WordSpace clears at every sentence boundary — its
-    buffer is intentionally per-sentence. Inter-sentence prediction
-    needs something the plan called out explicitly: a muxed view of
-    both what the sentence committed (SymbolicSpace's final
-    ``materialize()``) and how it was said (WordSpace's ``read()``
-    buffer). DiscourseSpace is the "buffer of snapshots across
-    sentences, cleared at topic/discourse boundary" analog of
-    WordSpace, sitting one level up. The architectural pattern is
-    identical — a fixed buffer + a dispatcher / predictor on top —
-    at a different time scale.
+    buffer is intentionally per-sentence. Inter-sentence coherence
+    needs something one tier higher: a muxed view of both what the
+    sentence committed (SymbolicSpace's final ``materialize()``) and
+    how it was said (WordSpace's ``read()`` buffer). DiscourseSpace
+    is the "buffer of snapshots across sentences, cleared at topic /
+    discourse boundary" analog of WordSpace — same fixed-buffer
+    pattern one scale up.
 
     **Snapshot shape.** Each sentence produces an
     ``[n_sentence, n_dim]`` row where
@@ -2436,21 +2444,37 @@ class InterSentenceLayer(Layer):
     layout, so the concat along the N axis is a plain
     ``torch.cat([s, w], dim=0)`` with no per-source branching.
 
+    **Loss.** Dual-force cosine similarity over the full flattened
+    ``[n_sentence * n_dim]`` snapshot vector::
+
+        loss(s_t) = (1 - cos(s_t, ctx_t))
+                    + λ · mean(cos(s_t, ctx_{t-i}) for i in 1..M)
+
+    where ``ctx_t`` is the mean of the most recent ``context_window``
+    snapshots and ``ctx_{t-i}`` are older centroids stored in a ring
+    of length ``centroid_history``. Attractive pull toward the nearby
+    context + repulsive push from older contexts makes
+    representational collapse an unstable equilibrium at λ ≈ 1.01.
+    Gradient flows only through the live ``s_tensor`` / ``w_tensor``
+    arguments; all stored history is detached.
+
     Subclasses ``Layer`` (not ``Space``): DiscourseSpace has no
     SubSpace, no what/where/when basis slots, and no forward/reverse
     tensor-map contract. It lives inside ``WordSpace.layers`` so the
     Layer ergodic interface (``paramUpdate`` / ``set_sigma`` /
-    ``observe_sigma`` / ``sigma_to_ergodic``) reaches the predictor
-    via the same walk WordSpace uses for its SyntacticLayers.
+    ``observe_sigma`` / ``sigma_to_ergodic``) can reach any future
+    learnable sub-modules via the same walk WordSpace uses for its
+    SyntacticLayers. The contrastive loss itself has no learnable
+    parameters.
     """
 
     name = "Discourse"
 
     def __init__(self, n_symbols, max_depth, n_dim,
-                 history_len=8, context_window=3):
-        # n_sentence rows × n_dim cols is the space the predictor maps
-        # between; Layer's nInput / nOutput fields carry the flattened
-        # count for any legacy consumers that read them.
+                 context_window=3, centroid_history=3, lam=1.01):
+        # n_sentence rows × n_dim cols is the shape of a single
+        # snapshot; Layer's nInput / nOutput fields carry the
+        # flattened count for any legacy consumers that read them.
         n_sentence = int(n_symbols) + int(max_depth)
         flat = n_sentence * int(n_dim)
         super().__init__(flat, flat)
@@ -2459,35 +2483,43 @@ class InterSentenceLayer(Layer):
         self.max_depth = int(max_depth)
         self.n_dim = int(n_dim)
         self.n_sentence = n_sentence
-        self.history_len = int(history_len)
         self.context_window = int(context_window)
+        self.centroid_history = int(centroid_history)
+        self.lam = float(lam)
 
-        # Snapshot ring buffer. Registered as a non-persistent buffer
-        # so ``.to(device)`` follows it without saving it in
-        # checkpoints — the contents are per-epoch transient state.
+        # Recent buffer: last K = context_window snapshots. Their mean
+        # is the current attractive target.  Registered as a
+        # non-persistent buffer so ``.to(device)`` follows it without
+        # saving it in checkpoints — the contents are per-epoch
+        # transient state.
         self.register_buffer(
-            "_snapshots",
-            torch.zeros(self.history_len, self.n_sentence, self.n_dim),
+            "_recent",
+            torch.zeros(self.context_window, self.n_sentence, self.n_dim),
             persistent=False)
         self.register_buffer(
-            "_snap_count",
+            "_recent_count",
             torch.zeros((), dtype=torch.long),
             persistent=False)
 
-        # Per-row linear predictor: for each row in ``n_sentence`` we
-        # concat its ``context_window`` history vectors into a
-        # ``[context_window * n_dim]`` input and map it back to
-        # ``[n_dim]``. This keeps param count to
-        # ``~(context_window * n_dim) * n_dim`` vs. the billions a
-        # full-flatten design would need at production sizes.
-        # ``InvertibleLinearLayer`` participates in the ergodic walk,
-        # so adding it to ``self.layers`` wires up ``set_sigma`` /
-        # ``paramUpdate`` propagation from WordSpace's ergodic
-        # interface down through DiscourseSpace to the predictor.
-        self.predictor = InvertibleLinearLayer(
-            self.context_window * self.n_dim, self.n_dim,
-            ergodic=True)
-        self.layers = [self.predictor]
+        # Previous centroids: M = centroid_history older snapshot-
+        # window centroids the current sentence should be repelled
+        # from.  A new centroid is folded in whenever the recent
+        # buffer evicts its oldest entry.
+        self.register_buffer(
+            "_prev_centroids",
+            torch.zeros(self.centroid_history, self.n_sentence, self.n_dim),
+            persistent=False)
+        self.register_buffer(
+            "_prev_count",
+            torch.zeros((), dtype=torch.long),
+            persistent=False)
+
+        # No learnable parameters — the contrastive loss has no
+        # predictor.  ``self.layers`` stays empty so the ergodic walk
+        # finds nothing to touch here, but the field is kept so the
+        # Layer base-class machinery (``paramUpdate`` et al.) still
+        # iterates cleanly.
+        self.layers = []
 
     # ── snapshot & history ───────────────────────────────────────────
     def _fit_rows(self, x, target_rows):
@@ -2528,106 +2560,103 @@ class InterSentenceLayer(Layer):
         w = self._fit_dim(w)
         return torch.cat([s, w], dim=0)
 
+    def _recent_centroid(self):
+        """Mean of the recent-buffer entries currently in use, or
+        ``None`` when the buffer is empty.  Returned tensor is
+        detached (it comes from the stored non-persistent buffer).
+        """
+        n = int(self._recent_count.item())
+        if n == 0:
+            return None
+        return self._recent[:n].mean(dim=0)
+
     def snapshot(self, s_tensor, w_tensor):
-        """Push a ``[S | W]`` concatenation into the history ring."""
+        """Commit a ``[S | W]`` snapshot to history.
+
+        Ring semantics: when the recent buffer is full, fold its
+        current centroid into ``_prev_centroids`` (so the repulsive
+        force has fresh fodder), then shift the recent ring left and
+        append the new row at the end.  Stored tensors are detached.
+        """
         row = self._assemble(s_tensor, w_tensor).detach()
-        n = int(self._snap_count.item())
-        if n < self.history_len:
-            self._snapshots[n] = row
-            self._snap_count.fill_(n + 1)
+        n = int(self._recent_count.item())
+        if n < self.context_window:
+            self._recent[n] = row
+            self._recent_count.fill_(n + 1)
+            return
+        # Recent buffer is full: snapshot its centroid into the
+        # prev_centroids ring before evicting the oldest row.
+        ctx = self._recent.mean(dim=0).detach()
+        m = int(self._prev_count.item())
+        if m < self.centroid_history:
+            self._prev_centroids[m] = ctx
+            self._prev_count.fill_(m + 1)
         else:
-            # Ring: shift left, append at end.
-            self._snapshots[:-1] = self._snapshots[1:].clone()
-            self._snapshots[-1] = row
+            self._prev_centroids[:-1] = self._prev_centroids[1:].clone()
+            self._prev_centroids[-1] = ctx
+        # Shift recent left and append the new row at the end.
+        self._recent[:-1] = self._recent[1:].clone()
+        self._recent[-1] = row
 
     def reset(self):
-        """Clear the history ring (called at epoch boundaries)."""
-        self._snapshots.zero_()
-        self._snap_count.zero_()
+        """Clear both rings (called at epoch boundaries)."""
+        self._recent.zero_()
+        self._recent_count.zero_()
+        self._prev_centroids.zero_()
+        self._prev_count.zero_()
 
     def __len__(self):
-        return int(self._snap_count.item())
+        return int(self._recent_count.item())
 
     def latest_snapshot(self):
         """Return the most recently pushed snapshot, or ``None``."""
-        n = int(self._snap_count.item())
+        n = int(self._recent_count.item())
         if n == 0:
             return None
-        return self._snapshots[n - 1]
+        return self._recent[n - 1]
 
-    # ── prediction ───────────────────────────────────────────────────
-    def _build_context(self):
-        """Return the ``[context_window, n_sentence, n_dim]`` input
-        tensor for the predictor, zero-padded at the front when
-        history is short. Returns ``None`` if history is empty.
+    def split(self, snapshot):
+        """Split a ``[n_sentence, n_dim]`` snapshot into its
+        ``(S, W)`` parts.
         """
-        n = int(self._snap_count.item())
-        if n == 0:
-            return None
-        k = min(n, self.context_window)
-        ctx = self._snapshots[n - k:n]  # [k, n_sentence, n_dim]
-        if k < self.context_window:
-            pad = torch.zeros(
-                self.context_window - k, self.n_sentence, self.n_dim,
-                dtype=ctx.dtype, device=ctx.device)
-            ctx = torch.cat([pad, ctx], dim=0)
-        return ctx
-
-    def predict_next(self):
-        """Produce a predicted ``[n_sentence, n_dim]`` tensor for the
-        next sentence, or ``None`` if history is empty.
-        """
-        ctx = self._build_context()
-        if ctx is None:
-            return None
-        per_row = ctx.permute(1, 0, 2).reshape(
-            self.n_sentence, self.context_window * self.n_dim)
-        return self.predictor(per_row)
-
-    def split(self, predicted):
-        """Split a predicted ``[n_sentence, n_dim]`` tensor into
-        ``(S_pred, W_pred)`` parts.
-        """
-        s = predicted[:self.n_symbols]
-        w = predicted[self.n_symbols:]
+        s = snapshot[:self.n_symbols]
+        w = snapshot[self.n_symbols:]
         return s, w
 
-    def loss(self, predicted, target_s, target_w):
-        """MSE loss between a predicted ``[n_sentence, n_dim]`` tensor
-        and the actual next sentence's ``[S, W]`` pair.
-        """
-        target = self._assemble(target_s, target_w)
-        return F.mse_loss(predicted, target)
+    # ── contrastive loss ─────────────────────────────────────────────
+    def loss(self, s_tensor, w_tensor):
+        """Dual-force contrastive loss over the full flattened
+        ``[n_sentence * n_dim]`` snapshot vector.
 
-    # ── resolution: predicted [S, W] → sentence ──────────────────────
-    def resolve(self, predicted, model):
-        """Decode a predicted ``[n_sentence, n_dim]`` tensor into a
-        concrete sentence string via ``OutputSpace.reconstruct_buffer``.
-        """
-        s_pred, w_pred = self.split(predicted)
-        output_space = getattr(model, "outputSpace", None)
-        if output_space is None or not getattr(output_space, "text_mode", False):
-            return s_pred, w_pred
+        - Attractive: ``1 - cos(current, recent_centroid)``
+        - Repulsive:  ``lam * mean(cos(current, prev_centroid_i))``
 
-        vectors = s_pred.unsqueeze(0)
-        emb = getattr(output_space, "_vocabulary", None)
-        if emb is not None and hasattr(emb, "content_dim"):
-            cd = int(emb.content_dim)
-            if vectors.shape[-1] < cd:
-                pad = torch.zeros(
-                    vectors.shape[0], vectors.shape[1],
-                    cd - vectors.shape[-1],
-                    dtype=vectors.dtype, device=vectors.device)
-                vectors = torch.cat([vectors, pad], dim=-1)
-            elif vectors.shape[-1] > cd:
-                vectors = vectors[..., :cd]
-        try:
-            strings = output_space.reconstruct_buffer(vectors)
-        except Exception:
-            return s_pred, w_pred
-        if isinstance(strings, list) and len(strings) > 0:
-            return strings[0]
-        return strings
+        Returns ``None`` when the recent buffer is empty (first
+        sentence has no context to contrast against).  Gradient flows
+        through the live ``s_tensor`` / ``w_tensor`` arguments; all
+        stored history is detached.
+        """
+        ctx = self._recent_centroid()
+        if ctx is None:
+            return None
+
+        current = self._assemble(s_tensor, w_tensor)
+        current_flat = current.reshape(-1)
+        ctx_flat = ctx.reshape(-1)
+
+        attractive = 1.0 - F.cosine_similarity(
+            current_flat.unsqueeze(0), ctx_flat.unsqueeze(0))
+
+        m = int(self._prev_count.item())
+        if m > 0:
+            prev = self._prev_centroids[:m].reshape(m, -1)
+            sims = F.cosine_similarity(
+                current_flat.unsqueeze(0), prev, dim=-1)
+            repulsive = sims.mean()
+        else:
+            repulsive = torch.tensor(0.0, device=current_flat.device)
+
+        return attractive.squeeze() + self.lam * repulsive
 class ChunkLayer(Layer):
     """Learned BPE-style codebook for perceptual chunking.
 

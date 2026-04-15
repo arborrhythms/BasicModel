@@ -142,14 +142,15 @@ def _populate_test_config(*,
             "naive": naive,
             "processSymbols": processSymbols,
             "useSubspaceActivation": useSubspaceActivation,
-            "certainty": certainty,
             "objectSize": _objectSize,
             "nObjects": _nObjects,
             "nWhere": nWhere,
             "nWhen": nWhen,
             "embeddingPath": None,
             "data": {},
-            "training": {},
+            "training": {
+                "certainty": certainty,
+            },
         },
         "InputSpace": {
             "nActive": nInput,
@@ -3740,16 +3741,15 @@ class TestShiftReduce(unittest.TestCase):
             perceptPassThrough=True, symbolPassThrough=True)
         Models.TheXMLConfig._data["architecture"]["syntax"] = True
         Models.TheXMLConfig._data["architecture"]["maskedPrediction"] = "ARLM"
-        # Configure grammar with full rules
-        Models.TheXMLConfig._data["architecture"].setdefault("language", {})["grammar"] = {
+        # Configure grammar with full rules. Grammar._ensure_configured reads
+        # from WordSpace.language.grammar, not architecture.language.grammar.
+        Models.TheXMLConfig._data.setdefault("WordSpace", {}).setdefault("language", {})["grammar"] = {
             "START": "S",
             "S": ["true(S)", "swap(S, S)", "equals(S, S)", "part(S, S)", "C"],
             "C": ["non(C)", "not(C)", "intersection(C, C)", "union(C, C)",
                   "lower(C, C)", "lift(C, C)", "P"],
             "P": ["I P", "I"],
         }
-        Spaces.TheGrammar._configured = False
-        Spaces.TheGrammar._ensure_configured()
         Spaces.TheGrammar._configured = False
         Spaces.TheGrammar._ensure_configured()
         # Create per-tier SyntacticLayers (normally done by Spaces)

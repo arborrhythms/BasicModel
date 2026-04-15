@@ -13,7 +13,6 @@
     <processSymbols>false</processSymbols>
     <type>mental</type>
     <ergodic>false</ergodic>
-    <certainty>false</certainty>
     <modelType>embedding</modelType>
     <maskedPrediction>NONE</maskedPrediction>
     <truthBiasScale>0.1</truthBiasScale>

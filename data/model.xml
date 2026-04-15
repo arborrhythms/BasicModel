@@ -62,6 +62,17 @@
       <autosave>false</autosave>
       <profile>false</profile>
       <certainty>false</certainty>
+
+      <!-- Inter-sentence contrastive loss (DiscourseSpace).  Off by
+           default.  The loss is a dual-force cosine similarity over
+           the flattened [S|W] snapshot: attractive toward the recent
+           context centroid, repulsive from older centroids.  No
+           learnable parameters. -->
+      <sentencePrediction>false</sentencePrediction>
+      <sentenceContextWindow>3</sentenceContextWindow>
+      <sentenceCentroidHistory>3</sentenceCentroidHistory>
+      <sentenceLambda>1.01</sentenceLambda>
+      <sentencePredictionScale>0.1</sentencePredictionScale>
     </training>
 
     <server>
@@ -83,12 +94,6 @@
 
     <!-- Truth memory capacity (TruthLayer is owned by WordSpace). -->
     <truthMaxEntries>1024</truthMaxEntries>
-
-    <!-- Inter-sentence prediction (DiscourseSpace). Off by default. -->
-    <discoursePrediction>false</discoursePrediction>
-    <discourseHistory>8</discourseHistory>
-    <discourseContextWindow>3</discourseContextWindow>
-    <discoursePredictionScale>0.1</discoursePredictionScale>
 
     <language>
       <grammar>

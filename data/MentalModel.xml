@@ -14,7 +14,6 @@
     <processSymbols>false</processSymbols>
     <type>mental</type>
     <ergodic>false</ergodic>
-    <certainty>false</certainty>
     <modelType>embedding</modelType>
     <maskedPrediction>ARLM</maskedPrediction>
     <truthBiasScale>0.1</truthBiasScale>
@@ -40,6 +39,12 @@
       <trainEmbedding>ARLM</trainEmbedding>
       <autoload>false</autoload>
       <autosave>true</autosave>
+      <certainty>false</certainty>
+
+      <!-- Inter-sentence (discourse) prediction: ring buffer of
+           [S|W] snapshots + per-row linear predictor. Defaults for
+           history/context/scale are 8/3/0.1. -->
+      <sentencePrediction>true</sentencePrediction>
     </training>
 
     <server>
@@ -52,11 +57,6 @@
 
   <WordSpace>
     <useGrammar>false</useGrammar>
-
-    <!-- Inter-sentence (discourse) prediction: ring buffer of
-         [S|W] snapshots + per-row linear predictor. Defaults for
-         history/context/scale are 8/3/0.1. -->
-    <discoursePrediction>true</discoursePrediction>
 
     <language>
       <grammar>
@@ -108,12 +108,12 @@
     <codebook>false</codebook>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace receives [Percept, Symbol] in iterative MentalModel,
-       so input count = nPercepts + nSymbols. Keeps same dim as BasicModel. -->
+  <!-- ConceptualSpace: matches percept/symbol row count; state mixing
+       happens via iterative Sigma-Pi (not concatenation). -->
   <ConceptualSpace>
-    <nOutput>256</nOutput>
+    <nOutput>128</nOutput>
     <nDim>100</nDim>
-    <nVectors>256</nVectors>
+    <nVectors>128</nVectors>
     <hasAttention>true</hasAttention>
     <invertible>true</invertible>
     <codebook>false</codebook>

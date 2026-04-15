@@ -12,7 +12,6 @@
     <processSymbols>false</processSymbols>
     <type>mental</type>
     <ergodic>false</ergodic>
-    <certainty>false</certainty>
     <modelType>embedding</modelType>
     <maskedPrediction>ARLM</maskedPrediction>
     <maxResponseLength>4096</maxResponseLength>
@@ -35,6 +34,7 @@
       <trainEmbedding>ARLM</trainEmbedding>
       <autoload>false</autoload>
       <autosave>false</autosave>
+      <certainty>false</certainty>
     </training>
 
   </architecture>
@@ -85,9 +85,9 @@
   </PerceptualSpace>
 
   <ConceptualSpace>
-    <nOutput>256</nOutput>
+    <nOutput>128</nOutput>
     <nDim>100</nDim>
-    <nVectors>256</nVectors>
+    <nVectors>128</nVectors>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>false</codebook>

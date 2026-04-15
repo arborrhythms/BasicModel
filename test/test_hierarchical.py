@@ -163,8 +163,8 @@ class TestHierarchicalForward(unittest.TestCase):
                 result = model.forward(x)
         self.assertIsNotNone(result)
 
-    def test_concept_states_populated(self):
-        """Hierarchical forward populates concept_states per level."""
+    def test_symbol_states_populated(self):
+        """Hierarchical forward populates symbol_states per level."""
         model = _make_model('RamsifiedModel.xml')
         if not model.ramsified:
             self.skipTest("Model not ramsified")
@@ -180,7 +180,7 @@ class TestHierarchicalForward(unittest.TestCase):
             with torch.no_grad():
                 model.forward(x)
 
-        self.assertEqual(len(model.concept_states), model.conceptualOrder)
+        self.assertEqual(len(model.symbol_states), model.conceptualOrder)
 
 
 # ── Backward compat: non-hierarchical models still work ──────────────
@@ -221,20 +221,22 @@ class TestPerLevelLayers(unittest.TestCase):
         if not model.ramsified:
             self.skipTest("Model not ramsified")
         self.assertTrue(model._ramsified_pair_enabled())
-        self.assertEqual(len(model._ramsified_pair_sigmas), model.conceptualOrder)
+        sigmas = model.conceptualSpace.butterfly_sigmas
+        self.assertEqual(len(sigmas), model.conceptualOrder)
         pair_dim = 2 * model._ramsified_state_dim
-        self.assertEqual(model._ramsified_pair_sigmas[0].nInput, pair_dim)
-        self.assertEqual(model._ramsified_pair_sigmas[0].nOutput, pair_dim)
+        self.assertEqual(sigmas[0].nInput, pair_dim)
+        self.assertEqual(sigmas[0].nOutput, pair_dim)
 
     def test_pair_pi_layers_created(self):
         """Ramsified non-grammar path builds per-stage pair Pi heads."""
         model = _make_model('RamsifiedModel.xml')
         if not model.ramsified:
             self.skipTest("Model not ramsified")
-        self.assertEqual(len(model._ramsified_pair_pis), model.conceptualOrder)
+        pis = model.symbolicSpace.butterfly_pis
+        self.assertEqual(len(pis), model.conceptualOrder)
         pair_dim = 2 * model._ramsified_state_dim
-        self.assertEqual(model._ramsified_pair_pis[0].nInput, pair_dim)
-        self.assertEqual(model._ramsified_pair_pis[0].nOutput, pair_dim)
+        self.assertEqual(pis[0].nInput, pair_dim)
+        self.assertEqual(pis[0].nOutput, pair_dim)
 
     def test_symbol_factor_matches_configured_volume(self):
         """Pair head reshaping matches the configured symbol volume exactly."""

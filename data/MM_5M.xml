@@ -12,7 +12,6 @@
     <processSymbols>false</processSymbols>
     <type>mental</type>
     <ergodic>false</ergodic>
-    <certainty>false</certainty>
     <modelType>embedding</modelType>
     <maskedPrediction>ARLM</maskedPrediction>
     <truthBiasScale>0.1</truthBiasScale>
@@ -43,6 +42,7 @@
       <sentenceCentroidHistory>3</sentenceCentroidHistory>
       <sentenceLambda>1.01</sentenceLambda>
       <sentencePredictionScale>0.1</sentencePredictionScale>
+      <certainty>false</certainty>
     </training>
 
     <server>
@@ -52,49 +52,6 @@
     </server>
 
   </architecture>
-
-  <WordSpace>
-    <useGrammar>false</useGrammar>
-
-    <!-- Inter-sentence (discourse-level) prediction. DiscourseSpace
-         keeps a rolling ring buffer of per-sentence [S|W] snapshots
-         and trains a per-row linear predictor over the last
-         ``discourseContextWindow`` snapshots. Under MM_5M's peer
-         dims (n_sentence=384, n_dim=4), the predictor is ~52 params. -->
-    <discoursePrediction>true</discoursePrediction>
-    <discourseHistory>8</discourseHistory>
-    <discourseContextWindow>3</discourseContextWindow>
-    <discoursePredictionScale>0.1</discoursePredictionScale>
-
-    <language>
-      <grammar>
-        <START>S</START>
-        <S>true(S)</S>
-        <S>false(S)</S>
-        <S>non(S)</S>
-        <S>conjunction(S, S)</S>
-        <S>disjunction(S, S)</S>
-        <S>what(S)</S>
-        <S>where(S)</S>
-        <S>when(S)</S>
-        <S>query(S, S)</S>
-        <S>swap(S, S)</S>
-        <S>equals(S, S)</S>
-        <S>part(S, S)</S>
-        <S>C</S>
-        <C>not(C)</C>
-        <C>intersection(C, C)</C>
-        <C>union(C, C)</C>
-        <C>lower(C, C)</C>
-        <C>lift(C, C)</C>
-        <C>lift(C, C, C)</C>
-        <C>P</C>
-        <P>I P</P>
-        <P>I</P>
-      </grammar>
-      <interpretation>0.5</interpretation>
-    </language>
-  </WordSpace>
 
   <InputSpace>
     <nDim>1</nDim>
@@ -150,5 +107,39 @@
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
   </OutputSpace>
+
+
+  <WordSpace>
+    <useGrammar>false</useGrammar>
+
+    <language>
+      <grammar>
+        <START>S</START>
+        <S>true(S)</S>
+        <S>false(S)</S>
+        <S>non(S)</S>
+        <S>conjunction(S, S)</S>
+        <S>disjunction(S, S)</S>
+        <S>what(S)</S>
+        <S>where(S)</S>
+        <S>when(S)</S>
+        <S>query(S, S)</S>
+        <S>swap(S, S)</S>
+        <S>equals(S, S)</S>
+        <S>part(S, S)</S>
+        <S>C</S>
+        <C>not(C)</C>
+        <C>intersection(C, C)</C>
+        <C>union(C, C)</C>
+        <C>lower(C, C)</C>
+        <C>lift(C, C)</C>
+        <C>lift(C, C, C)</C>
+        <C>P</C>
+        <P>I P</P>
+        <P>I</P>
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+  </WordSpace>
 
 </model>

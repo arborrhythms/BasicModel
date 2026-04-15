@@ -42,6 +42,38 @@ from Layers import SortingLayer, TruthLayer, InterSentenceLayer
 from parse import quick_parser
 from collections import namedtuple as _namedtuple
 
+def _butterfly_stage_permutation(n_vectors, stage, device=None):
+    """Permutation that makes XOR-neighbors adjacent for a butterfly stage."""
+    if n_vectors <= 1:
+        return torch.arange(n_vectors, dtype=torch.long, device=device)
+    span = int(math.log2(n_vectors))
+    bit = stage % max(span, 1)
+    stride = 1 << bit
+    block = stride << 1
+    order = []
+    for start in range(0, n_vectors, block):
+        for offset in range(stride):
+            order.append(start + offset)
+            order.append(start + offset + stride)
+    return torch.tensor(order, dtype=torch.long, device=device)
+
+def _butterfly_inverse_permutation(perm):
+    inv = torch.empty_like(perm)
+    inv[perm] = torch.arange(len(perm), device=perm.device)
+    return inv
+
+def _butterfly_pack_pairs(x):
+    """Pack adjacent object pairs: [B, N, D] -> [B, N/2, 2D]."""
+    B, N, D = x.shape
+    assert N % 2 == 0, f"pair pack requires even N, got {N}"
+    return x.reshape(B, N // 2, 2 * D)
+
+def _butterfly_unpack_pairs(pair_state):
+    """Unpack pair state: [B, N/2, 2D] -> [B, N, D]."""
+    B, N_half, pair_dim = pair_state.shape
+    assert pair_dim % 2 == 0, f"pair state width must be even, got {pair_dim}"
+    return pair_state.reshape(B, N_half * 2, pair_dim // 2)
+
 class Encoding(nn.Module):
     """Abstract base class for per-slot encodings in the embedding vector.
 
@@ -4297,7 +4329,8 @@ class ConceptualSpace(Space):
     name = "Concepts"
     config_section = "ConceptualSpace"
 
-    def __init__(self, inputShape, spaceShape, outputShape, level_shapes=None):
+    def __init__(self, inputShape, spaceShape, outputShape, level_shapes=None,
+                 butterfly_config=None):
         section = self.config_section
         ergodic = TheXMLConfig.get("architecture.ergodic")
         hasAttention = TheXMLConfig.space(section, "hasAttention")
@@ -4365,11 +4398,75 @@ class ConceptualSpace(Space):
                 self.forwardSigma = self.sigma.forward
                 self.params = self.sigma.getParameters()
                 self.layers = nn.ModuleList([self.sigma])
+        self.butterfly_enabled = False
+        self.butterfly_sigmas = None
+        self._butterfly_state_vectors = None
+        self._butterfly_pair_outputs = None
+        if butterfly_config is not None:
+            self.butterfly_enabled = True
+            self._butterfly_state_vectors = butterfly_config["state_vectors"]
+            pair_dim = 2 * butterfly_config["state_dim"]
+            self.butterfly_sigmas = nn.ModuleList()
+            for _ in range(butterfly_config["conceptual_order"]):
+                sig = SigmaLayer(
+                    pair_dim, pair_dim,
+                    naive=butterfly_config["naive"],
+                    ergodic=butterfly_config["ergodic"],
+                    invertible=True,
+                )
+                sig.saturate = False
+                self.butterfly_sigmas.append(sig)
+                self.layers.append(sig)
+                self.params.extend(sig.getParameters())
+            self._butterfly_pair_outputs = [None] * butterfly_config["conceptual_order"]
+
         # Grammar methods and SyntacticLayers are now on TheGrammar.
         # Spaces delegate to TheGrammar.project('C', ...) and
         # TheGrammar.composeSyntax('C', ...).
         self._interpretation = TheGrammar.interpretation
         self._last_svo = None
+
+    def get_butterfly_pair_output(self, stage_idx):
+        if self._butterfly_pair_outputs is None:
+            return None
+        return self._butterfly_pair_outputs[stage_idx]
+
+    def set_butterfly_pair_output(self, stage_idx, pair_output):
+        if self._butterfly_pair_outputs is None:
+            return
+        self._butterfly_pair_outputs[stage_idx] = pair_output
+
+    def butterfly_state_from_pair_output(self, pair_output, stage_idx):
+        perm = _butterfly_stage_permutation(
+            self._butterfly_state_vectors, stage_idx, device=pair_output.device)
+        inv_perm = _butterfly_inverse_permutation(perm)
+        return _butterfly_unpack_pairs(pair_output)[:, inv_perm, :]
+
+    def _forward_butterfly_level(self, vspace, stage_idx):
+        x = vspace.materialize()
+        perm = _butterfly_stage_permutation(x.shape[1], stage_idx, device=x.device)
+        x_perm = x[:, perm, :]
+        pair_input = _butterfly_pack_pairs(x_perm)
+        pair_output = self.butterfly_sigmas[stage_idx].forward(pair_input)
+        self.set_butterfly_pair_output(stage_idx, pair_output)
+        x_next = self.butterfly_state_from_pair_output(pair_output, stage_idx)
+        self.subspace.set_event(x_next)
+        return self.subspace
+
+    def _reverse_butterfly_level(self, vspace, stage_idx):
+        x_next = vspace.materialize()
+        pair_output = self.get_butterfly_pair_output(stage_idx)
+        perm = _butterfly_stage_permutation(
+            self._butterfly_state_vectors, stage_idx, device=x_next.device)
+        inv_perm = _butterfly_inverse_permutation(perm)
+        if pair_output is None:
+            x_perm = x_next[:, perm, :]
+            pair_output = _butterfly_pack_pairs(x_perm)
+        pair_input = self.butterfly_sigmas[stage_idx].reverse(pair_output)
+        x_prev = _butterfly_unpack_pairs(pair_input)[:, inv_perm, :]
+        self.set_butterfly_pair_output(stage_idx, None)
+        self.subspace.set_event(x_prev)
+        return self.subspace
 
     def __getitem__(self, t):
         """Index into conceptual order levels.
@@ -4377,7 +4474,7 @@ class ConceptualSpace(Space):
         Non-hierarchical: returns self (shared sigma for all t).
         Hierarchical: returns a _LevelView that routes through sigmas[t].
         """
-        if not self._hierarchical:
+        if not self._hierarchical and not self.butterfly_enabled:
             return self
         return self._CSLevelView(self, t)
 
@@ -4389,16 +4486,21 @@ class ConceptualSpace(Space):
         """
         def __init__(self, parent, t):
             self._parent = parent
-            self._sigma = parent.sigmas[t]
+            self._t = t
+            self._sigma = parent.sigmas[t] if parent._hierarchical else getattr(parent, 'sigma', None)
             self.subspace = parent.subspace
 
-        def forward(self, vspace, wordSpace=None):
+        def forward(self, vspace, wordSpace=None, butterfly=False):
+            if butterfly and self._parent.butterfly_enabled:
+                return self._parent._forward_butterfly_level(vspace, self._t)
             x = vspace.materialize()
             y = self._sigma.forward(x)
             self._parent.subspace.set_event(y)
             return self._parent.subspace
 
-        def reverse(self, vspace, wordSpace=None):
+        def reverse(self, vspace, wordSpace=None, butterfly=False):
+            if butterfly and self._parent.butterfly_enabled:
+                return self._parent._reverse_butterfly_level(vspace, self._t)
             x = vspace.materialize()
             y = self._sigma.reverse(x)
             self._parent.subspace.set_event(y)
@@ -4413,13 +4515,15 @@ class ConceptualSpace(Space):
         return x.T @ y
     def certainty(self, x):
         return x.T @ x
-    def forward(self, vspace, wordSpace=None):
+    def forward(self, vspace, wordSpace=None, butterfly=False):
         """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ.
 
         When nonlinear=True, applies atanh() before SigmaLayer so that the
         reverse tanh (needed to bound output to (-1,1)) has an exact
         mathematical inverse.
         """
+        if butterfly and self.butterfly_enabled:
+            return self._forward_butterfly_level(vspace, 0)
         x = self.forwardBegin(vspace, returnVectors=True)
         if self.nonlinear:
             # atanh only on nWhat dims — sin/cos where/when values near ±1
@@ -4446,12 +4550,14 @@ class ConceptualSpace(Space):
         """Return SVO tuple from last ternary lift, or None."""
         return self._last_svo
 
-    def reverse(self, vspace, wordSpace=None):
+    def reverse(self, vspace, wordSpace=None, butterfly=False):
         """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer.
 
         When nonlinear=True, applies tanh() after reverse SigmaLayer to
         guarantee output in (-1,1) for PiLayer.
         """
+        if butterfly and self.butterfly_enabled:
+            return self._reverse_butterfly_level(vspace, 0)
         y = self.reverseBegin(vspace, returnVectors=True)
         if wordSpace is not None:
             y = wordSpace.reverseConcepts(y, self.subspace)
@@ -4486,7 +4592,7 @@ class SymbolicSpace(Space):
     config_section = "SymbolicSpace"
 
     def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None,
-                 level_shapes=None):
+                 level_shapes=None, butterfly_config=None):
 
         section = self.config_section
         passThrough = TheXMLConfig.space(section, "passThrough")
@@ -4568,6 +4674,23 @@ class SymbolicSpace(Space):
         else:
             self._symbol_where = None
 
+        self.butterfly_enabled = False
+        self.butterfly_pis = None
+        self._butterfly_symbol_width = None
+        self._butterfly_symbol_factor = None
+        if butterfly_config is not None:
+            self.butterfly_enabled = True
+            self._butterfly_symbol_width = butterfly_config["symbol_width"]
+            self._butterfly_symbol_factor = butterfly_config["symbol_factor"]
+            pair_dim = 2 * butterfly_config["state_dim"]
+            self.butterfly_pis = nn.ModuleList()
+            for _ in range(butterfly_config["conceptual_order"]):
+                pi = PiLayer(pair_dim, pair_dim, invertible=True, monotonic=True)
+                self.butterfly_pis.append(pi)
+                self.layers.append(pi)
+
+        self.params = list(self.parameters())
+
         # Rule codebook — learned vectors for grammar rule identities.
         # Allocated in init_syntactic_layer() once the grammar is known.
         # Index 0 is reserved as the empty-slot sentinel (zero vector,
@@ -4576,6 +4699,49 @@ class SymbolicSpace(Space):
         # See plan: Architectural addition — WordSpace / Unified codebook.
         self.rule_codebook = None
         self.nRuleEntries = 0
+
+    def _pair_state_to_symbols(self, pair_symbols):
+        """Pair head output [B, N/2, 2D] -> configured symbol stack [B, nSymbols, S]."""
+        B, N_half, pair_dim = pair_symbols.shape
+        S = self._butterfly_symbol_width
+        n = self._butterfly_symbol_factor
+        expected = n * 2 * S
+        assert pair_dim == expected, \
+            f"pair head width {pair_dim} != n*2S {expected} (n={n}, S={S})"
+        symbol_grid = pair_symbols.reshape(B, N_half, n, 2, S)
+        symbol_grid = symbol_grid.permute(0, 1, 3, 2, 4).contiguous()
+        return symbol_grid.reshape(B, N_half * 2 * n, S)
+
+    def _symbols_to_pair_state(self, sym_vectors):
+        """Inverse reshape of _pair_state_to_symbols()."""
+        B, n_symbols, S = sym_vectors.shape
+        n = self._butterfly_symbol_factor
+        N = self.conceptualSpace._butterfly_state_vectors
+        expected = N * n
+        assert n_symbols == expected, \
+            f"symbol count {n_symbols} != N*n {expected} (N={N}, n={n})"
+        symbol_grid = sym_vectors.reshape(B, N // 2, 2, n, S)
+        symbol_grid = symbol_grid.permute(0, 1, 3, 2, 4).contiguous()
+        return symbol_grid.reshape(B, N // 2, n * 2 * S)
+
+    def _forward_butterfly_level(self, stage_idx):
+        pair_output = self.conceptualSpace.get_butterfly_pair_output(stage_idx)
+        assert pair_output is not None, f"missing butterfly pair output for stage {stage_idx}"
+        pair_symbols = self.butterfly_pis[stage_idx].forward(pair_output)
+        sym_vectors = self._pair_state_to_symbols(pair_symbols)
+        self.subspace.set_event(sym_vectors)
+        return self.subspace
+
+    def _reverse_butterfly_level(self, vspace, stage_idx):
+        sym_vectors = vspace.materialize()
+        pair_output = self.butterfly_pis[stage_idx].reverse(
+            self._symbols_to_pair_state(sym_vectors)
+        )
+        self.conceptualSpace.set_butterfly_pair_output(stage_idx, pair_output)
+        concept_vectors = self.conceptualSpace.butterfly_state_from_pair_output(
+            pair_output, stage_idx)
+        self.subspace.set_event(concept_vectors)
+        return self.subspace
 
     def _build_object_basis(self):
         """Event is a writable Tensor — codebook lives on .what."""
@@ -4612,7 +4778,7 @@ class SymbolicSpace(Space):
         Non-hierarchical: returns self (shared PiLayer for all t).
         Hierarchical: returns a _LevelView that routes through pi_layers[t].
         """
-        if not self._hierarchical:
+        if not self._hierarchical and not self.butterfly_enabled:
             return self
         return self._SSLevelView(self, t)
 
@@ -4624,16 +4790,21 @@ class SymbolicSpace(Space):
         """
         def __init__(self, parent, t):
             self._parent = parent
-            self._pi = parent.pi_layers[t]
+            self._t = t
+            self._pi = parent.pi_layers[t] if parent._hierarchical else parent.layer
             self.subspace = parent.subspace
 
-        def forward(self, vspace, wordSpace=None):
+        def forward(self, vspace, wordSpace=None, butterfly=False):
+            if butterfly and self._parent.butterfly_enabled:
+                return self._parent._forward_butterfly_level(self._t)
             x = vspace.materialize()
             y = self._pi.forward(x)
             self._parent.subspace.set_event(y)
             return self._parent.subspace
 
-        def reverse(self, vspace, wordSpace=None):
+        def reverse(self, vspace, wordSpace=None, butterfly=False):
+            if butterfly and self._parent.butterfly_enabled:
+                return self._parent._reverse_butterfly_level(vspace, self._t)
             x = vspace.materialize()
             y = self._pi.reverse(x)
             self._parent.subspace.set_event(y)
@@ -4643,7 +4814,7 @@ class SymbolicSpace(Space):
     def vocabulary(self):
         return self.subspace.what
 
-    def forward(self, vspace, wordSpace=None):
+    def forward(self, vspace, wordSpace=None, butterfly=False):
         """Map concept vectors to symbol vectors via PiLayer (Π).
 
         PiLayer maps on the nDim axis: [B, nVectors, concept_dim] →
@@ -4656,6 +4827,8 @@ class SymbolicSpace(Space):
         4. Apply swap on whereEncodings of binary node children.
         5. Store as symbol vectors in subspace event.
         """
+        if butterfly and self.butterfly_enabled:
+            return self._forward_butterfly_level(0)
         if self.passThrough:
             return vspace
         vspace = self.forwardBegin(vspace)
@@ -4733,6 +4906,7 @@ class SymbolicSpace(Space):
             with torch.no_grad():
                 self.rule_codebook.weight[0].zero_()
             self.layers.append(self.rule_codebook)
+            self.params = list(self.parameters())
 
     def lookup_rule(self, rule_id):
         """Return the learnable codebook vector for a grammar rule_id.
@@ -4753,11 +4927,13 @@ class SymbolicSpace(Space):
                                device=self.rule_codebook.weight.device)
         return self.rule_codebook(idx).squeeze(0)
 
-    def reverse(self, vspace, wordSpace=None):
+    def reverse(self, vspace, wordSpace=None, butterfly=False):
         """Map symbol vectors back to concept vectors via PiLayer.reverse (Π⁻¹).
 
         Reverse maps on nDim axis: [B, N, symbol_dim] → [B, N, concept_dim].
         """
+        if butterfly and self.butterfly_enabled:
+            return self._reverse_butterfly_level(vspace, 0)
         if self.passThrough:
             return vspace
         vspace = self.reverseBegin(vspace)
@@ -6517,31 +6693,100 @@ class WordSpace(Space):
                 self.params.append(p)
 
         # 7. DiscourseSpace — optional inter-sentence substrate.
-        # Gated on <WordSpace><discoursePrediction>; tasks without
-        # inter-sentence structure (XOR, MNIST) leave it off.
+        # Gated on <architecture><training><sentencePrediction>; tasks
+        # without inter-sentence structure (XOR, MNIST) leave it off.
+        # The contrastive loss has no learnable parameters; the three
+        # training keys that survive are ``sentenceContextWindow``
+        # (recent buffer depth used for the attractive centroid),
+        # ``sentenceCentroidHistory`` (older centroids used for the
+        # repulsive force), and ``sentenceLambda`` (repulsive scale).
         self.discourse = None
-        if bool(TheXMLConfig.get("WordSpace.discoursePrediction", False)):
+        if bool(TheXMLConfig.training("sentencePrediction", False)):
             try:
                 n_sym_rows = int(symbolicSpace.outputShape[0])
             except (AttributeError, IndexError, TypeError):
                 n_sym_rows = int(getattr(symbolicSpace, 'nVectors', 0) or 0)
             if n_sym_rows > 0 and muxed > 0:
-                history_len = int(TheXMLConfig.get(
-                    "WordSpace.discourseHistory", 8) or 8)
-                context_window = int(TheXMLConfig.get(
-                    "WordSpace.discourseContextWindow", 3) or 3)
+                context_window = int(TheXMLConfig.training(
+                    "sentenceContextWindow", 3) or 3)
+                centroid_history = int(TheXMLConfig.training(
+                    "sentenceCentroidHistory", 3) or 3)
+                sentence_lambda = float(TheXMLConfig.training(
+                    "sentenceLambda", 1.01) or 1.01)
                 self.discourse = InterSentenceLayer(
                     n_symbols=n_sym_rows,
                     max_depth=int(getattr(
                         self.subspace, 'max_depth', 256) or 256),
                     n_dim=muxed,
-                    history_len=history_len,
                     context_window=context_window,
+                    centroid_history=centroid_history,
+                    lam=sentence_lambda,
                 )
                 self.layers.append(self.discourse)
                 for p in self.discourse.parameters():
                     if all(p is not q for q in self.params):
                         self.params.append(p)
+
+    # ── truth-modulated loss ─────────────────────────────────────────
+    def truth_modulated_loss(self, total_loss, symbolic_space,
+                             symbol_acts=None, universality_score=None,
+                             luminosity_weight=0.1, universality_weight=0.1,
+                             truth_loss_weight=0.0):
+        """Apply the WordSpace-owned TruthLayer modulation to a loss.
+
+        The transform has two parts:
+
+        1. **Multiplicative modulation** — penalize irrational and
+           unkind propositions by scaling ``total_loss`` by
+           ``(1 + lum_w * (1 - lum_norm) + u_w * (1 - u_norm))``,
+           where ``lum_norm = luminosity(symbolic_space.layer).clamp(0, 1)``
+           and ``u_norm = universality_score.clamp(-1, 1)`` (or 0
+           when the caller has no universality score cached yet).
+
+        2. **Additive falsity penalty** — when
+           ``truth_loss_weight > 0`` and the caller provides
+           committed symbol activations, add
+           ``truth_loss_weight * falsity_penalty(symbol_acts, basis)``
+           using ``symbolic_space.subspace.basis``.  ``symbol_acts``
+           should be the last entry of the model's ``symbol_states``
+           cache — the post-pi, post-l1-proximal activations from
+           the final Sigma-Pi iteration.  Both operands of the
+           disjunction then live in symbol space by construction
+           (stored truths were also recorded from symbol-space
+           activations in ``SymbolicSpace.forwardEnd``).
+
+        Returns ``total_loss`` unchanged when the TruthLayer is
+        absent or empty (bootstrap case with no truths recorded
+        yet).  The caller is responsible for only invoking this in
+        train mode — the method itself has no ``train`` flag.
+
+        All inputs that reach outside WordSpace (``symbolic_space``,
+        ``symbol_acts``, ``universality_score``, the three weights)
+        are passed explicitly so WordSpace never needs a back-
+        reference to the model.
+        """
+        if self.truth_layer is None or len(self.truth_layer) == 0:
+            return total_loss
+
+        lum = self.truth_layer.luminosity(symbolic_space.layer)
+        lum_norm = lum.clamp(0, 1)
+        if universality_score is not None:
+            u_norm = universality_score.clamp(-1, 1)
+        else:
+            u_norm = torch.tensor(0.0, device=total_loss.device)
+
+        total_loss = total_loss * (1 + luminosity_weight * (1 - lum_norm)
+                                     + universality_weight * (1 - u_norm))
+
+        if truth_loss_weight > 0 and symbol_acts is not None:
+            basis = getattr(
+                getattr(symbolic_space, 'subspace', None), 'basis', None)
+            if basis is not None:
+                truth_penalty = self.truth_layer.falsity_penalty(
+                    symbol_acts, basis)
+                total_loss = total_loss + truth_loss_weight * truth_penalty
+
+        return total_loss
 
     # ── wiring ───────────────────────────────────────────────────────
     def attach_codebook_host(self, host):
@@ -6705,4 +6950,3 @@ class WordSpace(Space):
     def ensure_batch(self, batch):
         """Resize the underlying buffer to match a new batch size."""
         self.subspace.ensure_batch(batch)
-

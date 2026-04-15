@@ -7,7 +7,7 @@ load datasets, resolve config paths, plot results, and save reports.
 """
 
 import math, os, warnings
-from collections import namedtuple, deque
+from collections import namedtuple
 from contextlib import contextmanager, nullcontext
 import numpy as np
 warnings.filterwarnings(
@@ -48,41 +48,6 @@ from Spaces import Basis, Tensor, Codebook, Embedding
 from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace, WordSpace
 from parse import quick_parser
 
-class _LayerGroup:
-    """Space-like adapter for model-owned layers outside ``self.spaces``.
-
-    MentalModel's ramsified pair stack is registered directly on the model
-    because it is not a real ``Space``.  The optimizer / sigma / paramUpdate
-    plumbing, however, is standardized around ``self.spaces`` and
-    ``getParameters()``. This adapter lets those layers participate in the
-    same contract without changing their ownership or forward path.
-    """
-
-    def __init__(self, *layers):
-        self.layers = [layer for layer in layers if layer is not None]
-
-    def getParameters(self):
-        params = []
-        seen = set()
-        for layer in self.layers:
-            getter = getattr(layer, "getParameters", None)
-            layer_params = getter() if callable(getter) else layer.parameters()
-            for p in layer_params:
-                if p.data_ptr() not in seen:
-                    seen.add(p.data_ptr())
-                    params.append(p)
-        return params
-
-    def paramUpdate(self):
-        for layer in self.layers:
-            if hasattr(layer, "paramUpdate"):
-                layer.paramUpdate()
-
-    def set_sigma(self, sigma):
-        for layer in self.layers:
-            if hasattr(layer, "set_sigma"):
-                layer.set_sigma(sigma)
-
 class BaseModel(nn.Module):
     """Shared training, plotting, and persistence infrastructure for all models."""
     name           = "BaseModel"
@@ -90,14 +55,13 @@ class BaseModel(nn.Module):
     reversible    = False
     plot           = False
     _optimizer     = None
-    sentence_predictor = None
-    sentence_prediction_scale = 0.1
-    # The inter-sentence DiscourseSpace lives on ``self.wordSpace``
+    # Scale applied to the DiscourseSpace contrastive loss. The
+    # inter-sentence DiscourseSpace lives on ``self.wordSpace``
     # (``self.wordSpace.discourse``) rather than directly on the
     # model. Callers that need it should read through
-    # ``wordSpace``; ``<WordSpace><discoursePrediction>false`` in
+    # ``wordSpace``; ``<training><sentencePrediction>false`` in
     # config leaves ``wordSpace.discourse`` as ``None``.
-    discourse_prediction_scale = 0.1
+    sentence_prediction_scale = 0.1
 
     @staticmethod
     def load_config(config_path=None):
@@ -206,25 +170,12 @@ class BaseModel(nn.Module):
             reconstruct=arch["reconstruct"],
         )
 
-        # Sentence-level AR prediction: requires both XML flag AND a grammar
-        # (the sentential vector comes from the C-tier SyntacticLayer's
-        # compose, which WordSpace now owns post-ownership-transfer).
-        ws = self.wordSpace
-        has_grammar = (ws is not None
-                       and getattr(ws, 'conceptualSyntacticLayer', None) is not None)
-        sp_xml = bool(TheXMLConfig.training("sentencePrediction", False))
+        # Inter-sentence contrastive loss weight. DiscourseSpace (owned
+        # by WordSpace) contributes a dual-force cosine loss to
+        # ``runBatch`` with this scale when ``<training><sentencePrediction>``
+        # is true. Gated inside Spaces.WordSpace construction.
         self.sentence_prediction_scale = float(
             TheXMLConfig.training("sentencePredictionScale", 0.1) or 0.1)
-        if sp_xml and has_grammar:
-            sp_window = int(TheXMLConfig.training("sentenceContextWindow", 5) or 5)
-            sp_history = int(TheXMLConfig.training("sentenceCentroidHistory", 3) or 3)
-            sp_lambda = float(TheXMLConfig.training("sentenceLambda", 1.01) or 1.01)
-            self.sentence_predictor = self.SentencePrediction(
-                sp_window, sp_history, sp_lambda)
-        # Discourse-level prediction weight (the DiscourseSpace predictor
-        # contributes to ``runBatch`` loss with this scale when present).
-        self.discourse_prediction_scale = float(
-            TheXMLConfig.get("WordSpace.discoursePredictionScale", 0.1) or 0.1)
 
         if "trainEmbedding" in arch and not isinstance(arch["trainEmbedding"], dict):
             te = arch["trainEmbedding"]
@@ -607,7 +558,7 @@ class BaseModel(nn.Module):
             the codebook ordering (no gaps).
 
         Computationally, Contiguous() should verify that the current
-        model state (concept_states / STM) occupies a single connected,
+        model state (symbol_states / STM) occupies a single connected,
         convex region in PerceptualSpace and a contiguous span in
         SymbolicSpace.  When thought_free mode is active the grammar
         already enforces one-pointedness; this method characterises the
@@ -1570,70 +1521,6 @@ class BasicModel(BaseModel):
         self.testLosses  = testLosses
         return accuracy
     
-    # ------------------------------------------------------------------
-    # Sentence-level AR prediction
-    # ------------------------------------------------------------------
-    class SentencePrediction:
-        """AR prediction over sentence-level concept vectors.
-
-        Maintains a rolling buffer of K previous sentence vectors and M
-        previous context centroids.  The loss has two forces:
-
-            loss = (1 - cos(s_t, ctx_t))
-                   + λ · mean(cos(s_t, ctx_{t-i})  for i in 1..M)
-
-        Attractive: pull s_t toward ctx_t (current context centroid).
-        Repulsive:  push s_t away from past centroids ctx_{t-1}..ctx_{t-M}.
-
-        λ = 1.01 makes collapse an unstable equilibrium.  Gradient flows
-        only through s_t (all stored vectors are detached).
-        """
-
-        def __init__(self, context_window=5, centroid_history=3, lam=1.01):
-            self.context_window = context_window
-            self.lam = lam
-            self.buffer = deque(maxlen=context_window)
-            self.prev_centroids = deque(maxlen=centroid_history)
-
-        def reset(self):
-            """Clear state at epoch boundaries."""
-            self.buffer.clear()
-            self.prev_centroids.clear()
-
-        def loss(self, current_vec):
-            """Compute dual-force sentence prediction loss.
-
-            Returns a scalar loss tensor, or None if insufficient context.
-            """
-            if len(self.buffer) < 1:
-                return None
-
-            # Current context centroid (detached)
-            ctx = torch.stack(list(self.buffer), dim=0).mean(dim=0)  # [D]
-
-            # Attractive: pull toward current context
-            attractive = 1.0 - F.cosine_similarity(
-                current_vec.unsqueeze(0), ctx.unsqueeze(0))  # [1]
-
-            # Repulsive: push away from previous centroids
-            if len(self.prev_centroids) > 0:
-                prev = torch.stack(list(self.prev_centroids), dim=0)  # [M', D]
-                sims = F.cosine_similarity(
-                    current_vec.unsqueeze(0), prev, dim=-1)  # [M']
-                repulsive = sims.mean()
-            else:
-                repulsive = torch.tensor(0.0, device=current_vec.device)
-
-            return attractive.squeeze() + self.lam * repulsive
-
-        def push(self, sentence_vec):
-            """Record sentence vector and update centroid history."""
-            # Store current centroid before adding new vector
-            if len(self.buffer) > 0:
-                ctx = torch.stack(list(self.buffer), dim=0).mean(dim=0)
-                self.prev_centroids.append(ctx.detach().clone())
-            self.buffer.append(sentence_vec.detach().clone())
-
     BatchResult = namedtuple('BatchResult', [
         'outputPred', 'symbols', 'lossOut', 'lossIn', 'inputPred', 'forwardInput',
     ])
@@ -1796,60 +1683,45 @@ class BasicModel(BaseModel):
                 if psbow is not None:
                     sbow = psbow if sbow is None else sbow + psbow
 
-        # Sentence-level AR prediction loss
-        sp_loss = None
-        if train and self.sentence_predictor is not None:
-            sv = getattr(self, '_current_sentence_vec', None)
-            if sv is not None:
-                sp_loss = self.sentence_predictor.loss(sv)
-                self.sentence_predictor.push(sv)
-
-        # Discourse-level [S, W] prediction loss. The pattern is
-        # predict-then-snapshot: use the existing history to predict
-        # what the next sentence should look like, MSE against the
-        # actual (s, w) pair this forward just produced, then push
-        # the actual pair into history for the next iteration.
-        # First-sentence case (empty history) returns predicted=None;
-        # we skip the loss and just push the snapshot.
+        # Inter-sentence contrastive loss. DiscourseSpace computes a
+        # dual-force cosine loss over the full flattened ``[S | W]``
+        # snapshot vector: attractive toward the recent context
+        # centroid, repulsive from older centroids. Gradient flows
+        # through the live ``(s_tensor, w_tensor)`` pair while the
+        # stored history is detached. First-sentence case (empty
+        # recent buffer) returns ``None`` and we just snapshot.
         discourse_loss = None
         discourse = getattr(self.wordSpace, 'discourse', None) if self.wordSpace is not None else None
         if train and discourse is not None:
             s_tensor = getattr(self, '_current_discourse_s', None)
             w_tensor = getattr(self, '_current_discourse_w', None)
             if s_tensor is not None and w_tensor is not None:
-                predicted = discourse.predict_next()
-                if predicted is not None:
-                    discourse_loss = discourse.loss(
-                        predicted, s_tensor, w_tensor)
+                discourse_loss = discourse.loss(s_tensor, w_tensor)
                 discourse.snapshot(s_tensor, w_tensor)
 
         totalLoss = self.loss.total(lossOut, lossIn, sbow)
-        if sp_loss is not None:
-            totalLoss = totalLoss + self.sentence_prediction_scale * sp_loss
         if discourse_loss is not None:
-            totalLoss = totalLoss + self.discourse_prediction_scale * discourse_loss
+            totalLoss = totalLoss + self.sentence_prediction_scale * discourse_loss
 
-        # Truth-modulated loss: penalize irrational and unkind propositions
-        truth_layer = getattr(self.wordSpace, 'truth_layer', None) if self.wordSpace is not None else None
-        if truth_layer is not None and len(truth_layer) > 0 and train:
-            lum = truth_layer.luminosity(self.symbolicSpace.layer)
-            lum_norm = lum.clamp(0, 1)
-            lum_weight = getattr(self, 'luminosity_weight', 0.1)
-            u_score = getattr(self, '_universality_score', None)
-            u_norm = u_score.clamp(-1, 1) if u_score is not None else torch.tensor(0.0)
-            u_weight = getattr(self, 'universality_weight', 0.1)
-            totalLoss = totalLoss * (1 + lum_weight * (1 - lum_norm)
-                                       + u_weight * (1 - u_norm))
-
-            # TruthLoss: additive penalty for false propositions via union norm reduction
-            truth_loss_w = getattr(self, 'truth_loss_weight', 0.0)
-            if truth_loss_w > 0:
-                concept_acts = self.concept_states[-1] if hasattr(self, 'concept_states') and self.concept_states else None
-                if concept_acts is not None:
-                    basis = getattr(getattr(self.symbolicSpace, 'subspace', None), 'basis', None)
-                    if basis is not None:
-                        truth_penalty = truth_layer.falsity_penalty(concept_acts, basis)
-                        totalLoss = totalLoss + truth_loss_w * truth_penalty
+        # Truth-modulated loss: delegated to WordSpace since the
+        # TruthLayer lives there.  WordSpace handles the empty-store
+        # guard internally; we only gate on ``train``.  The falsity
+        # penalty operand is the last cached symbol activation —
+        # stored truths are also recorded from symbol space, so both
+        # sides of the disjunction live in the basis's native space.
+        if train and self.wordSpace is not None:
+            symbol_acts = None
+            if hasattr(self, 'symbol_states') and self.symbol_states:
+                symbol_acts = self.symbol_states[-1]
+            totalLoss = self.wordSpace.truth_modulated_loss(
+                totalLoss,
+                symbolic_space=self.symbolicSpace,
+                symbol_acts=symbol_acts,
+                universality_score=getattr(self, '_universality_score', None),
+                luminosity_weight=getattr(self, 'luminosity_weight', 0.1),
+                universality_weight=getattr(self, 'universality_weight', 0.1),
+                truth_loss_weight=getattr(self, 'truth_loss_weight', 0.0),
+            )
 
         TheMessage(f"batch = {batchNum}, loss = {totalLoss} ")
 
@@ -1892,8 +1764,6 @@ class BasicModel(BaseModel):
         inference = split == "runtime" and not training
         self.train(training)
         self.outputSpace.clearBatchResults()
-        if getattr(self, 'sentence_predictor', None) is not None:
-            self.sentence_predictor.reset()
         ws = self.wordSpace
         if ws is not None and getattr(ws, 'discourse', None) is not None:
             ws.discourse.reset()
@@ -2008,10 +1878,6 @@ class MentalModel(BaseModel):
         self._ramsified_state_dim = None
         self._ramsified_symbol_width = None
         self._ramsified_symbol_factor = None
-        self._ramsified_pair_sigmas = None
-        self._ramsified_pair_pis = None
-        self.ramsifiedPair = None
-        self.symbol_states = []
 
         # Truth integration config (optional — absent in BasicModel.xml)
         self.truth_bias_scale = float(TheXMLConfig.get("architecture.truthBiasScale", default=0.1) or 0.1)
@@ -2106,6 +1972,8 @@ class MentalModel(BaseModel):
         conceptInputShape = [nPercepts, percept_dim + obj_percept]
         conceptOutputShape = [nPercepts, concept_dim + obj_concept]
 
+        butterfly_config = None
+
         # Ramsified non-grammar path keeps [B, N, D] state width/arity constant
         # and mixes information with invertible pairwise butterfly stages.
         if self.ramsified and not self._ramsified_uses_grammar:
@@ -2138,22 +2006,15 @@ class MentalModel(BaseModel):
             self._ramsified_state_dim = state_dim
             self._ramsified_symbol_width = symbol_width
             self._ramsified_symbol_factor = state_dim // symbol_width
-            pair_dim = 2 * state_dim
-            naive = TheXMLConfig.get("architecture.naive")
-            self._ramsified_pair_sigmas = nn.ModuleList()
-            self._ramsified_pair_pis = nn.ModuleList()
-            for _ in range(self.conceptualOrder):
-                sig = SigmaLayer(pair_dim, pair_dim, naive=naive,
-                                 ergodic=self.ergodic, invertible=True)
-                sig.saturate = False
-                self._ramsified_pair_sigmas.append(sig)
-                self._ramsified_pair_pis.append(
-                    PiLayer(pair_dim, pair_dim, invertible=True, monotonic=True)
-                )
-            self.ramsifiedPair = _LayerGroup(
-                *self._ramsified_pair_sigmas,
-                *self._ramsified_pair_pis,
-            )
+            butterfly_config = {
+                "conceptual_order": self.conceptualOrder,
+                "state_vectors": state_vectors,
+                "state_dim": state_dim,
+                "symbol_width": symbol_width,
+                "symbol_factor": state_dim // symbol_width,
+                "ergodic": self.ergodic,
+                "naive": TheXMLConfig.get("architecture.naive"),
+            }
             self._level_shapes_list = None
         # Progressive bottleneck: per-level shapes when ramsified grammar is enabled
         elif self.ramsified:
@@ -2164,11 +2025,13 @@ class MentalModel(BaseModel):
 
         self.conceptualSpace = ConceptualSpace(conceptInputShape, spaceShape_concept,
                                                conceptOutputShape,
-                                               level_shapes=self._level_shapes_list)
+                                               level_shapes=self._level_shapes_list,
+                                               butterfly_config=butterfly_config)
 
         self.symbolicSpace = SymbolicSpace(conceptOutputShape, spaceShape_symbol, symbolShape,
                                            conceptualSpace=self.conceptualSpace,
-                                           level_shapes=self._level_shapes_list)
+                                           level_shapes=self._level_shapes_list,
+                                           butterfly_config=butterfly_config)
 
         # No SyntacticSpace — syntax is handled by Grammar centrally.
         self.syntacticSpace = None
@@ -2215,8 +2078,6 @@ class MentalModel(BaseModel):
             self.symbolicSpace,
             self.outputSpace,
         ])
-        if self.ramsifiedPair is not None:
-            self.spaces.append(self.ramsifiedPair)
         self.spaces.append(self.wordSpace)
 
         self.inputSpace.outputSpace = self.outputSpace
@@ -2224,7 +2085,7 @@ class MentalModel(BaseModel):
         # Precompute partition boundaries for partitioned symbolSum
         self._partitions = self._order_partitions(symbol_dim + obj_symbol,
                                                    self.conceptualOrder)
-        self.concept_states = []
+        self.symbol_states = []
 
         self.to(TheDevice.get())
         TheXMLConfig.validate()
@@ -2319,94 +2180,12 @@ class MentalModel(BaseModel):
         return out
 
     def _ramsified_pair_enabled(self):
-        return bool(self.ramsified and not self._ramsified_uses_grammar
-                    and self._ramsified_pair_sigmas is not None
-                    and self._ramsified_pair_pis is not None)
-
-    @staticmethod
-    def _butterfly_stage_permutation(n_vectors, stage):
-        """Permutation that makes XOR-neighbors adjacent for stage ``stage``."""
-        if n_vectors <= 1:
-            return torch.arange(n_vectors, dtype=torch.long)
-        span = int(math.log2(n_vectors))
-        bit = stage % max(span, 1)
-        stride = 1 << bit
-        block = stride << 1
-        order = []
-        for start in range(0, n_vectors, block):
-            for offset in range(stride):
-                order.append(start + offset)
-                order.append(start + offset + stride)
-        return torch.tensor(order, dtype=torch.long)
-
-    @staticmethod
-    def _inverse_permutation(perm):
-        inv = torch.empty_like(perm)
-        inv[perm] = torch.arange(len(perm), device=perm.device)
-        return inv
-
-    @staticmethod
-    def _pack_pairs(x):
-        """Pack adjacent object pairs: [B, N, D] -> [B, N/2, 2D]."""
-        B, N, D = x.shape
-        assert N % 2 == 0, f"pair pack requires even N, got {N}"
-        return x.reshape(B, N // 2, 2 * D)
-
-    @staticmethod
-    def _unpack_pairs(pair_state):
-        """Unpack pair state: [B, N/2, 2D] -> [B, N, D]."""
-        B, N_half, pair_dim = pair_state.shape
-        assert pair_dim % 2 == 0, f"pair state width must be even, got {pair_dim}"
-        return pair_state.reshape(B, N_half * 2, pair_dim // 2)
-
-    def _pair_state_to_symbols(self, pair_symbols):
-        """Pair head output [B, N/2, 2D] -> configured symbol stack [B, nSymbols, S]."""
-        B, N_half, pair_dim = pair_symbols.shape
-        S = self._ramsified_symbol_width
-        n = self._ramsified_symbol_factor
-        expected = n * 2 * S
-        assert pair_dim == expected, \
-            f"pair head width {pair_dim} != n*2S {expected} (n={n}, S={S})"
-        symbol_grid = pair_symbols.reshape(B, N_half, n, 2, S)
-        symbol_grid = symbol_grid.permute(0, 1, 3, 2, 4).contiguous()
-        return symbol_grid.reshape(B, N_half * 2 * n, S)
-
-    def _symbols_to_pair_state(self, sym_vectors):
-        """Inverse reshape of _pair_state_to_symbols()."""
-        B, n_symbols, S = sym_vectors.shape
-        n = self._ramsified_symbol_factor
-        N = self._ramsified_state_vectors
-        expected = N * n
-        assert n_symbols == expected, \
-            f"symbol count {n_symbols} != N*n {expected} (N={N}, n={n})"
-        symbol_grid = sym_vectors.reshape(B, N // 2, 2, n, S)
-        symbol_grid = symbol_grid.permute(0, 1, 3, 2, 4).contiguous()
-        return symbol_grid.reshape(B, N // 2, n * 2 * S)
-
-    def _pair_stage_forward(self, x, stage_idx):
-        """One invertible butterfly stage on [B, N, D]."""
-        perm = self._butterfly_stage_permutation(x.shape[1], stage_idx).to(x.device)
-        inv_perm = self._inverse_permutation(perm)
-        x_perm = x[:, perm, :]
-        pair_input = self._pack_pairs(x_perm)
-        pair_output = self._ramsified_pair_sigmas[stage_idx].forward(pair_input)
-        pair_symbols = self._ramsified_pair_pis[stage_idx].forward(pair_output)
-        sym_vectors = self._pair_state_to_symbols(pair_symbols)
-        x_next = self._unpack_pairs(pair_output)[:, inv_perm, :]
-        return x_next, sym_vectors
-
-    def _pair_stage_reverse(self, x_next, stage_idx, pair_output=None):
-        """Inverse of _pair_stage_forward for one stage."""
-        perm = self._butterfly_stage_permutation(self._ramsified_state_vectors, stage_idx).to(
-            x_next.device if x_next is not None else pair_output.device
+        return bool(
+            self.ramsified
+            and not self._ramsified_uses_grammar
+            and getattr(self.conceptualSpace, "butterfly_enabled", False)
+            and getattr(self.symbolicSpace, "butterfly_enabled", False)
         )
-        inv_perm = self._inverse_permutation(perm)
-        if pair_output is None:
-            x_perm = x_next[:, perm, :]
-            pair_output = self._pack_pairs(x_perm)
-        pair_input = self._ramsified_pair_sigmas[stage_idx].reverse(pair_output)
-        x_prev = self._unpack_pairs(pair_input)[:, inv_perm, :]
-        return x_prev
 
     # ── Helpers ───────────────────────────────────────────────────────
 
@@ -2443,20 +2222,15 @@ class MentalModel(BaseModel):
             self.wordSpace.clear_sentence()
 
         # ── Pre-loop init ──
-        if self._ramsified_pair_enabled():
-            self.concept_states = []
-            self.symbol_states = []
-            x = percepts
-        elif self.ramsified:
-            self.concept_states = []
+        self.symbol_states = []
+        if self.ramsified:
             x = percepts                     # [B, N_percept, D_percept]
-            use_grammar = False
-            sym_feedback = None
-            self._merge_diffs = []
-            self._sym_feedbacks = []
+            if not self._ramsified_pair_enabled():
+                use_grammar = False
+                sym_feedback = None
+                self._merge_diffs = []
+                self._sym_feedbacks = []
         else:
-            self.concept_states = []
-            self.symbol_states = []
             sym_feedback = torch.zeros(B, self._symbol_shape[0],
                                        self._symbol_shape[1],
                                        device=percepts.device)
@@ -2465,22 +2239,22 @@ class MentalModel(BaseModel):
 
         # ── Sigma-Pi loop ──
         for t in range(self.conceptualOrder):
+            pair_enabled = self._ramsified_pair_enabled()
+
             # 1. Input construction
-            if self._ramsified_pair_enabled():
-                x, sym_vectors = self._pair_stage_forward(x, t)
-                self.concept_states.append(x.clone())
-                self.symbol_states.append(sym_vectors.clone())
-                continue
-            elif self.ramsified:
-                x = self._butterfly_merge(x)
-                if sym_feedback is not None:
-                    if not use_grammar:
-                        sym_feedback = (sym_feedback[:, 0::2, :] + sym_feedback[:, 1::2, :]) / 2
-                    self._sym_feedbacks.append(sym_feedback)
-                    x = x + sym_feedback
+            if self.ramsified:
+                if pair_enabled:
+                    concept_input = x
                 else:
-                    self._sym_feedbacks.append(None)
-                concept_input = x
+                    x = self._butterfly_merge(x)
+                    if sym_feedback is not None:
+                        if not use_grammar:
+                            sym_feedback = (sym_feedback[:, 0::2, :] + sym_feedback[:, 1::2, :]) / 2
+                        self._sym_feedbacks.append(sym_feedback)
+                        x = x + sym_feedback
+                    else:
+                        self._sym_feedbacks.append(None)
+                    concept_input = x
             else:
                 concept_input = percepts + sym_feedback
                 # Truth bias: trim concept_input to be consistent with TruthSet
@@ -2490,12 +2264,13 @@ class MentalModel(BaseModel):
                     conj = truth_layer.truth_conjunction(
                         basis, pi_layer=self.symbolicSpace.layer)
                     if conj is not None:
-                            concept_input = basis.conjunction(
-                                concept_input, conj.unsqueeze(0).unsqueeze(0))
+                        concept_input = basis.conjunction(
+                            concept_input, conj.unsqueeze(0).unsqueeze(0))
 
             # 2. Sigma: conceptual transformation (indexed by t)
             self.percepts.set_event(concept_input)
-            self.concepts = self.conceptualSpace[t].forward(self.percepts, wordSpace=ws)
+            self.concepts = self.conceptualSpace[t].forward(
+                self.percepts, wordSpace=ws, butterfly=pair_enabled)
             concept_vectors = self.concepts.materialize()
 
             if self.ramsified:
@@ -2504,12 +2279,13 @@ class MentalModel(BaseModel):
             # 3. Pi: symbolic projection (indexed by t). Sparsity via
             # l1_proximal is applied inside SymbolicSpace.forward, so the
             # materialized event is already soft-thresholded.
-            self.symbols = self.symbolicSpace[t].forward(self.concepts, wordSpace=ws)
+            self.symbols = self.symbolicSpace[t].forward(
+                self.concepts, wordSpace=ws, butterfly=pair_enabled)
             sym_vectors = self.symbols.materialize()
 
             # 4. Feedback: activation norms for next iteration
             if self.ramsified:
-                if t < self.conceptualOrder - 1:
+                if not pair_enabled and t < self.conceptualOrder - 1:
                     N_t, D_t = self._level_shapes_list[t]
                     sym_norms = sym_vectors.norm(dim=-1, keepdim=True)
                     sym_feedback = sym_norms.expand(-1, -1, D_t)
@@ -2523,9 +2299,13 @@ class MentalModel(BaseModel):
                 sym_feedback = sym_norms_fb.unsqueeze(-1).expand(
                     -1, -1, percepts.shape[-1])
 
-            # 5. Cache concept states
+            # 5. Cache symbol states.  The Sigma-Pi loop produces
+            # post-pi, post-l1_proximal ``sym_vectors`` at every
+            # iteration; stashing those gives the truth penalty a
+            # handle on the committed symbolic activations in the
+            # same space as the stored truths.
             if self.ramsified:
-                self.concept_states.append(concept_vectors.clone())
+                self.symbol_states.append(sym_vectors.clone())
 
         # ── Post-loop finalization ──
         if self._ramsified_pair_enabled():
@@ -2533,26 +2313,6 @@ class MentalModel(BaseModel):
             self.concepts = self.conceptualSpace.subspace
             self.symbolicSpace.subspace.set_event(sym_vectors)
             self.symbols = self.symbolicSpace.subspace
-
-        # Sentence vector
-        if self.sentence_predictor is not None:
-            if self._ramsified_pair_enabled():
-                sv = x.mean(dim=1)
-                self._current_sentence_vec = sv.mean(dim=0)
-            elif self.ramsified:
-                sv = concept_vectors.mean(dim=1)
-                self._current_sentence_vec = sv.mean(dim=0)
-            else:
-                cv = self.concepts.materialize()
-                tops = self.conceptualSpace.subspace.top_of_stack(cv)
-                sv_list = []
-                for b in range(B):
-                    pos = tops[b]
-                    if pos >= 0:
-                        sv_list.append(cv[b, pos])
-                    else:
-                        sv_list.append(torch.zeros(cv.shape[-1], device=cv.device))
-                self._current_sentence_vec = torch.stack(sv_list, dim=0).mean(dim=0)
 
         # Discourse snapshot — stash the final (S, W) pair so runBatch
         # can compute a next-sentence prediction loss against it.
@@ -2630,15 +2390,15 @@ class MentalModel(BaseModel):
                     "ramsified non-grammar reverse requires reconstruct='symbols' "
                     "so the full symbol state is available for exact inversion"
                 )
-            pair_output = self._ramsified_pair_pis[self.conceptualOrder - 1].reverse(
-                self._symbols_to_pair_state(sym_vec)
-            )
-            x = None
+            self.symbolicSpace.subspace.set_event(sym_vec)
+            x = self.symbolicSpace[self.conceptualOrder - 1].reverse(
+                self.symbolicSpace.subspace, wordSpace=ws, butterfly=True
+            ).materialize()
             for t in reversed(range(self.conceptualOrder)):
-                if t == self.conceptualOrder - 1:
-                    x = self._pair_stage_reverse(None, t, pair_output=pair_output)
-                else:
-                    x = self._pair_stage_reverse(x, t)
+                self.conceptualSpace.subspace.set_event(x)
+                x = self.conceptualSpace[t].reverse(
+                    self.conceptualSpace.subspace, wordSpace=ws, butterfly=True
+                ).materialize()
             self.perceptualSpace.subspace.set_event(x)
             input_state = self.perceptualSpace.reverse(self.perceptualSpace.subspace, wordSpace=ws)
             self.inputs = self.inputSpace.reverse(input_state)
