@@ -77,7 +77,7 @@
     <l1Lambda>0.01</l1Lambda>
     <accumulateTruth>0</accumulateTruth>
     <codebook>true</codebook>
-    <useVQVAE>false</useVQVAE>
+    <useVQVAE>true</useVQVAE>
     <commitmentBeta>0.25</commitmentBeta>
   </SymbolicSpace>
 
