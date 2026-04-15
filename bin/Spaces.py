@@ -4801,6 +4801,25 @@ class SymbolicSpace(Space):
         assert pair_output is not None, f"missing butterfly pair output for stage {stage_idx}"
         pair_symbols = self.butterfly_pis[stage_idx].forward(pair_output)
         sym_vectors = self._pair_state_to_symbols(pair_symbols)
+        # VQ-VAE commitment loss: soft encoder→codebook pull.  The
+        # butterfly forward is inherently reversible (pair PiLayers are
+        # invertible) so we do NOT quantize or STE-wrap sym_vectors —
+        # that would break exact inversion in the butterfly reverse.
+        # Commitment alone gives the codebook-alignment signal.
+        if (self.use_vqvae and self.codebook
+                and self.commitment_beta > 0.0):
+            target = self._nearest_symbol_target(sym_vectors)
+            if target is not None:
+                target_detached = target.detach().to(
+                    device=sym_vectors.device, dtype=sym_vectors.dtype)
+                n = min(sym_vectors.shape[-1],
+                        target_detached.shape[-1], self.nDim)
+                if n > 0:
+                    commit = self.commitment_beta * F.mse_loss(
+                        sym_vectors[..., :n], target_detached[..., :n])
+                    prev = self._symbol_objective_terms.get(
+                        "symbol_commitment", commit.new_tensor(0.0))
+                    self._symbol_objective_terms["symbol_commitment"] = prev + commit
         self.accumulate_symbol_objective(sym_vectors, use_codebook_target=True)
         self.subspace.set_event(sym_vectors)
         return self.subspace
@@ -5051,35 +5070,69 @@ class SymbolicSpace(Space):
             # before any slot selector runs.
             act = wordSpace.forwardSymbols(act, self.subspace)
 
-        if self.codebook and quantize:
-            # Capture the encoder output BEFORE quantization so we can
-            # thread its gradient through the straight-through estimator.
+        # VQ-VAE modes (gated on ``self.use_vqvae``):
+        #   reversible model  → continuous forward + commitment loss only.
+        #       The reverse path requires exact invertibility
+        #       (``pi.reverse(pi.forward(x)) == x``).  A hard-quantized
+        #       forward would break that, so we keep ``act`` continuous
+        #       and rely on commitment loss to pull the encoder toward
+        #       the nearest codebook entry.  The commitment loss alone
+        #       suffices: the encoder already receives gradient through
+        #       the continuous forward, so no STE is needed.
+        #   non-reversible model → STE forward.  Downstream sees the
+        #       hard codebook pick, backward flows as identity through
+        #       the quantization bottleneck back into the encoder.
+        #   non-VQVAE, caller opted into quantize → legacy path unchanged.
+        use_vqvae_reversible = self.use_vqvae and self.reversible and self.codebook
+        use_vqvae_nonreversible = (self.use_vqvae and not self.reversible
+                                   and self.codebook)
+        legacy_quantize = (not self.use_vqvae) and self.codebook and quantize
+        if use_vqvae_reversible:
+            # Continuous forward — event carries z_e so reverse is exact.
+            z_e = act
+            predicted = z_e.clone()
+            self.subspace.set_event(z_e)
+            vspace = self.forwardEnd(self.subspace)
+            target = self._nearest_symbol_target(z_e)
+            if target is not None and self.commitment_beta > 0.0:
+                target_detached = target.detach().to(
+                    device=z_e.device, dtype=z_e.dtype)
+                n = min(z_e.shape[-1], target_detached.shape[-1], self.nDim)
+                if n > 0:
+                    commit = self.commitment_beta * F.mse_loss(
+                        z_e[..., :n], target_detached[..., :n])
+                    prev = self._symbol_objective_terms.get(
+                        "symbol_commitment", commit.new_tensor(0.0))
+                    self._symbol_objective_terms["symbol_commitment"] = prev + commit
+            self.accumulate_symbol_objective(predicted, target)
+        elif use_vqvae_nonreversible:
+            # STE: forward = hard quantized, backward = identity to z_e.
             z_e = act
             predicted = z_e.clone()
             self.subspace.set_event(z_e)
             self.subspace.what.forward(self.subspace)
             vspace = self.forwardEnd(self.subspace)
             quantized = vspace.materialize()
-            if self.use_vqvae:
-                # VQ-VAE straight-through: downstream sees the hard codebook
-                # pick, backward pass bypasses the non-differentiable argmin
-                # and flows as identity back into z_e.  Commitment loss then
-                # pulls the encoder toward the codebook.  The codebook itself
-                # updates via the in-house Codebook machinery (EMA / snap).
-                quantized_detached = quantized.detach()
-                z_q_ste = z_e + (quantized_detached - z_e).detach()
-                self.subspace.set_event(z_q_ste)
-                vspace = self.forwardEnd(self.subspace)
-                n = min(z_e.shape[-1], quantized_detached.shape[-1], self.nDim)
-                if self.commitment_beta > 0.0 and n > 0:
-                    commit = self.commitment_beta * F.mse_loss(
-                        z_e[..., :n], quantized_detached[..., :n])
-                    prev = self._symbol_objective_terms.get(
-                        "symbol_commitment", commit.new_tensor(0.0))
-                    self._symbol_objective_terms["symbol_commitment"] = prev + commit
-                self.accumulate_symbol_objective(predicted, quantized_detached)
-            else:
-                self.accumulate_symbol_objective(predicted, quantized)
+            quantized_detached = quantized.detach()
+            z_q_ste = z_e + (quantized_detached - z_e).detach()
+            self.subspace.set_event(z_q_ste)
+            vspace = self.forwardEnd(self.subspace)
+            n = min(z_e.shape[-1], quantized_detached.shape[-1], self.nDim)
+            if self.commitment_beta > 0.0 and n > 0:
+                commit = self.commitment_beta * F.mse_loss(
+                    z_e[..., :n], quantized_detached[..., :n])
+                prev = self._symbol_objective_terms.get(
+                    "symbol_commitment", commit.new_tensor(0.0))
+                self._symbol_objective_terms["symbol_commitment"] = prev + commit
+            self.accumulate_symbol_objective(predicted, quantized_detached)
+        elif legacy_quantize:
+            # Legacy hard-quantize path (pre-VQVAE behavior).
+            predicted = act.clone()
+            self.subspace.set_event(act)
+            self.subspace.what.forward(self.subspace)
+            vspace = self.forwardEnd(self.subspace)
+            target = vspace.materialize()
+            self.accumulate_symbol_objective(predicted, target)
         else:
             self.accumulate_symbol_objective(act)
             self.subspace.set_event(act)
@@ -6069,10 +6122,36 @@ class PerceptualSyntacticLayer(SyntacticLayer):
         return None
 
     def _ensure_chunk_layer(self, nDim):
-        """Lazily create the chunk codebook when we first see P-tier data."""
+        """Lazily create the chunk codebook when we first see P-tier data.
+
+        BPE mode and the target vocab size / minimum pair frequency are
+        read from ``PerceptualSpace`` config.  Legacy defaults
+        (``chunkBPE=false``) keep the whitespace-boundary behavior
+        unchanged; ``chunkBPE=true`` switches the layer into greedy
+        longest-match BPE with a learned merge table that grows during
+        ``train_step``.
+        """
         if self.chunk_layer is None:
-            self.chunk_layer = ChunkLayer(nDim).to(
-                next(self.parameters()).device if list(self.parameters()) else 'cpu')
+            def _pcfg(key, default):
+                try:
+                    return TheXMLConfig.space("PerceptualSpace", key)
+                except (KeyError, TypeError, ValueError):
+                    return default
+            bpe = bool(_pcfg("chunkBPE", False))
+            try:
+                target_vocab = int(_pcfg("chunkTargetVocabSize", 1024))
+            except (TypeError, ValueError):
+                target_vocab = 1024
+            try:
+                min_pair_freq = int(_pcfg("chunkMinPairFrequency", 2))
+            except (TypeError, ValueError):
+                min_pair_freq = 2
+            self.chunk_layer = ChunkLayer(
+                nDim,
+                bpe=bpe,
+                target_vocab_size=target_vocab,
+                min_pair_frequency=min_pair_freq,
+            ).to(next(self.parameters()).device if list(self.parameters()) else 'cpu')
 
     def compose(self, data, subspace, grammar):
         """Apply P-tier chunk merging.

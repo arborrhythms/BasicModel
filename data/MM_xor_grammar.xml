@@ -1,12 +1,13 @@
 <?xml version="1.0" ?>
 <model>
-  <!-- MM_xor: MentalModel topology on XOR dataset for convergence testing.
-       Based on MM_1B architecture (iterative [Percept,Symbol]->Concept->Symbol)
-       but scaled to XOR-sized dims. -->
+  <!-- MM_xor_grammar: non-ramsified (grammatical) variant of MM_xor.
+       Used to regression-test the grammar processing path in isolation
+       from the ramsified butterfly path.  Keep this file in sync with
+       MM_xor.xml except for <ramsified>false</ramsified>. -->
   <architecture>
     <reconstruct>symbols</reconstruct>
     <conceptualOrder>3</conceptualOrder>
-    <ramsified>true</ramsified>
+    <ramsified>false</ramsified>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <processSymbols>false</processSymbols>
@@ -77,7 +78,7 @@
     <l1Lambda>0.01</l1Lambda>
     <accumulateTruth>0</accumulateTruth>
     <codebook>true</codebook>
-    <useVQVAE>true</useVQVAE>
+    <useVQVAE>false</useVQVAE>
     <commitmentBeta>0.25</commitmentBeta>
   </SymbolicSpace>
 

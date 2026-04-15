@@ -2671,7 +2671,8 @@ class ChunkLayer(Layer):
     and common whitespace bytes serve as boundary markers.
     """
 
-    def __init__(self, nDim, nChunks=256):
+    def __init__(self, nDim, nChunks=256, bpe=False,
+                 target_vocab_size=1024, min_pair_frequency=2):
         super().__init__(nDim, nDim)
         self.nDim = nDim
         self.nChunks = nChunks
@@ -2681,6 +2682,23 @@ class ChunkLayer(Layer):
         self.merge = nn.Parameter(torch.randn(nChunks, nDim) * 0.02)
         # Learned threshold — merge only when score exceeds this
         self.threshold = nn.Parameter(torch.zeros(1))
+        # ── BPE state (active only when ``bpe`` is True) ──────────────────
+        # Cold-start: empty merges table, vocab seeded with 256 single-byte
+        # ids so byte_value == chunk_id for the 0..255 range.  This mirrors
+        # the Embedding.create() placement of bytes at codebook indices
+        # 0..255 (see Spaces.py — ``byte_value == codebook_index``).
+        self.bpe = bool(bpe)
+        self.target_vocab_size = int(target_vocab_size)
+        self.min_pair_frequency = int(min_pair_frequency)
+        self.merges = []            # list[tuple[int, int]] in insertion order
+        self.vocab = {}             # dict[tuple[int,...], int]
+        self.id_to_bytes = {}       # dict[int, tuple[int,...]]
+        for i in range(256):
+            key = (i,)
+            self.vocab[key] = i
+            self.id_to_bytes[i] = key
+        self._next_id = 256
+        self._max_merge_len = 1
 
     def score_pair(self, v1, v2):
         """Score a single (v1, v2) pair against all codebook entries.
@@ -2746,18 +2764,139 @@ class ChunkLayer(Layer):
         sim = F.cosine_similarity(vec.unsqueeze(0), space_emb.unsqueeze(0), dim=-1)
         return sim.item() > 0.9
 
+    # ── BPE forward + training ────────────────────────────────────────
+
+    def forward(self, byte_indices):
+        """Greedy longest-match BPE encoding of a batch of byte sequences.
+
+        Active only in BPE mode (``self.bpe == True``); in legacy mode
+        this is an identity pass-through so existing downstream callers
+        keep their previous semantics.
+
+        Args:
+            byte_indices: ``[B, N]`` long tensor of byte values 0..255.
+                A zero entry terminates the row (padding sentinel).
+        Returns:
+            When ``bpe`` is True:
+                ``(chunks, spans)`` — ``chunks`` is ``list[list[int]]`` of
+                chunk ids per row; ``spans`` is ``list[list[(start, end,
+                key)]]`` where ``key`` is the byte-tuple backing that
+                chunk.  ``end`` is inclusive.
+            When ``bpe`` is False:
+                ``byte_indices`` unchanged.
+        """
+        if not self.bpe:
+            return byte_indices
+        if byte_indices.dim() != 2:
+            raise ValueError(
+                f"ChunkLayer.forward expects [B, N] byte indices, got "
+                f"{tuple(byte_indices.shape)}")
+        B, N = byte_indices.shape
+        rows = byte_indices.tolist()
+        all_chunks = []
+        all_spans = []
+        for b in range(B):
+            row = rows[b]
+            chunks = []
+            spans = []
+            i = 0
+            while i < N:
+                bval = row[i]
+                if bval == 0:
+                    break
+                matched_key = None
+                matched_len = 1
+                upper = min(self._max_merge_len, N - i)
+                for L in range(upper, 0, -1):
+                    key = tuple(row[i:i + L])
+                    if key in self.vocab:
+                        matched_key = key
+                        matched_len = L
+                        break
+                if matched_key is None:
+                    matched_key = (bval,)
+                    matched_len = 1
+                chunk_id = self.vocab[matched_key]
+                chunks.append(chunk_id)
+                spans.append((i, i + matched_len - 1, matched_key))
+                i += matched_len
+            all_chunks.append(chunks)
+            all_spans.append(spans)
+        return all_chunks, all_spans
+
+    def train_step(self, byte_indices, k_merges=1):
+        """Learn up to ``k_merges`` new BPE merges from pair frequencies.
+
+        Encodes the batch with the current merge table, counts adjacent
+        ``(id_i, id_{i+1})`` pair frequencies across all rows, and
+        promotes the top-k pairs whose count meets
+        ``min_pair_frequency`` into new vocab entries.  Returns the
+        number of new merges added (0 when none qualify).
+
+        Idempotent w.r.t. vocab size: stops once ``len(vocab)`` reaches
+        ``target_vocab_size``.  No-op in legacy (``bpe=False``) mode.
+        """
+        if not self.bpe:
+            return 0
+        if len(self.vocab) >= self.target_vocab_size:
+            return 0
+        all_chunks, _ = self.forward(byte_indices)
+        from collections import Counter
+        counts = Counter()
+        for chunks in all_chunks:
+            for a, b in zip(chunks, chunks[1:]):
+                counts[(a, b)] += 1
+        if not counts:
+            return 0
+        added = 0
+        for pair, freq in counts.most_common(k_merges):
+            if freq < self.min_pair_frequency:
+                break
+            if len(self.vocab) >= self.target_vocab_size:
+                break
+            left_bytes = self.id_to_bytes.get(pair[0])
+            right_bytes = self.id_to_bytes.get(pair[1])
+            if left_bytes is None or right_bytes is None:
+                continue
+            new_key = left_bytes + right_bytes
+            if new_key in self.vocab:
+                continue
+            new_id = self._next_id
+            self._next_id += 1
+            self.vocab[new_key] = new_id
+            self.id_to_bytes[new_id] = new_key
+            self.merges.append(pair)
+            if len(new_key) > self._max_merge_len:
+                self._max_merge_len = len(new_key)
+            added += 1
+        return added
+
     # ── Byte-mode hard merge + compaction ─────────────────────────────
 
     def hard_merge_spans(self, data, byte_indices):
-        """Merge contiguous non-boundary byte slots via mean aggregation.
+        """Merge contiguous byte slots into spans via mean aggregation.
+
+        Dispatches on ``self.bpe``:
+          - ``bpe=False`` (legacy): whitespace-boundary spans via
+            ``BOUNDARY_BYTES``.
+          - ``bpe=True``: spans come from the learned BPE merge table
+            (greedy longest-match via ``self.forward``).  When training,
+            runs a single ``train_step`` first so the merge table grows
+            from this batch's pair statistics.
 
         Args:
-            data: [B, N, D] byte-level vectors
-            byte_indices: [B, N] long — byte values 0-255
+            data: ``[B, N, D]`` byte-level vectors.
+            byte_indices: ``[B, N]`` long — byte values 0..255.
         Returns:
-            data: [B, N, D] — span starts hold mean vectors, rest zeroed
-            span_meta: list[list[(start, end, original_vectors)]] per batch
+            ``(data, span_meta)`` where ``data`` has span-start slots
+            holding mean vectors (rest zeroed) and ``span_meta`` is
+            ``list[list[(start, end, original_vectors)]]`` per batch row.
         """
+        if self.bpe:
+            if self.training:
+                self.train_step(byte_indices)
+            return self._hard_merge_spans_bpe(data, byte_indices)
+
         B, N, D = data.shape
         data = data.clone()
         span_meta = []
@@ -2776,6 +2915,34 @@ class ChunkLayer(Layer):
                 while i < N and byte_indices[b, i].item() not in self.BOUNDARY_BYTES:
                     i += 1
                 end = i - 1
+                original = data[b, start:end + 1].clone()
+                data[b, start] = data[b, start:end + 1].mean(dim=0)
+                if end > start:
+                    data[b, start + 1:end + 1] = 0.0
+                spans.append((start, end, original))
+            span_meta.append(spans)
+        return data, span_meta
+
+    def _hard_merge_spans_bpe(self, data, byte_indices):
+        """BPE-mode span construction.
+
+        Each BPE chunk produced by ``self.forward`` becomes one span;
+        the span-start slot holds the mean of the span's byte vectors
+        and the trailing slots are zeroed, matching the layout that
+        ``compact`` / ``uncompact`` expect.  The original pre-merge
+        byte vectors are stored in ``span_meta`` so reconstruction via
+        ``uncompact`` is exact — the merge table is used only for
+        forward segmentation, never for decoding bytes.
+        """
+        B, N, D = data.shape
+        data = data.clone()
+        _, raw_spans = self.forward(byte_indices)
+        span_meta = []
+        for b in range(B):
+            spans = []
+            for start, end, _key in raw_spans[b]:
+                if end >= N:
+                    end = N - 1
                 original = data[b, start:end + 1].clone()
                 data[b, start] = data[b, start:end + 1].mean(dim=0)
                 if end > start:

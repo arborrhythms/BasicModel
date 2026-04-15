@@ -130,6 +130,9 @@
     <hasAttention>true</hasAttention>
     <invertible>false</invertible>
     <codebook>false</codebook>
+    <chunkBPE>false</chunkBPE>
+    <chunkTargetVocabSize>1024</chunkTargetVocabSize>
+    <chunkMinPairFrequency>2</chunkMinPairFrequency>
   </PerceptualSpace>
 
   <ModalSpace>

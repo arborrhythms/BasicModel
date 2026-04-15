@@ -253,6 +253,9 @@
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="chunkBPE" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="chunkTargetVocabSize" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="chunkMinPairFrequency" type="xs:positiveInteger" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 

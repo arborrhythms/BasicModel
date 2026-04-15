@@ -58,6 +58,9 @@
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>true</codebook>
+    <chunkBPE>true</chunkBPE>
+    <chunkTargetVocabSize>512</chunkTargetVocabSize>
+    <chunkMinPairFrequency>2</chunkMinPairFrequency>
   </PerceptualSpace>
 
   <ConceptualSpace>
