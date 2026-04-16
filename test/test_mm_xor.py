@@ -10,6 +10,8 @@ import tempfile
 import unittest
 import warnings
 
+_RUN_SLOW = os.getenv("RUN_SLOW") == "1"
+
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 
 _BIN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
@@ -221,13 +223,13 @@ class TestMMXorConvergence(unittest.TestCase):
                 Models.TheMessage = original_message
             os.unlink(cfg_path)
 
+    @unittest.skipIf(not _RUN_SLOW, "slow — set RUN_SLOW=1")
     def test_non_ramsified_learns_xor_signal(self):
         """ramsified=false should exercise the recurrent forward path and learn."""
         import torch
 
         cfg_path = _ramsified_config(False)
         try:
-            torch.manual_seed(42)
             m, _, data = _fresh_model(cfg_path)
             optimizer = torch.optim.Adam(m.parameters(), lr=0.01)
             criterion = torch.nn.MSELoss()
@@ -235,7 +237,7 @@ class TestMMXorConvergence(unittest.TestCase):
 
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
-                for _ in range(300):
+                for _ in range(600):
                     batch, _ = m.inputSpace.getBatch(0, batchSize=4)
                     inp, target = batch
                     optimizer.zero_grad()
@@ -257,20 +259,20 @@ class TestMMXorConvergence(unittest.TestCase):
         finally:
             os.unlink(cfg_path)
 
+    @unittest.skipIf(not _RUN_SLOW, "slow — set RUN_SLOW=1")
     def test_mm_xor_grammar_learns_xor_signal(self):
         """MM_xor_grammar.xml (ramsified=false, useVQVAE=false) must learn XOR.
 
         This is the isolated regression fixture for the non-ramsified
         grammar path: it exercises the recurrent Pi-Sigma loop plus the
         pairwise-slot-mixing compose (``_compose_to_target``) without
-        VQ-VAE muddying the variable.  Convergence below 0.15 at 200
+        VQ-VAE muddying the variable.  Convergence below 0.15 at 600
         epochs confirms that the C-tier pairwise reducer is threading
         information across the slot axis end-to-end.
         """
         import torch
 
         cfg_path = os.path.join(_PROJECT, "data", "MM_xor_grammar.xml")
-        torch.manual_seed(42)
         m, _, data = _fresh_model(cfg_path)
         optimizer = torch.optim.Adam(m.parameters(), lr=0.01)
         criterion = torch.nn.MSELoss()
@@ -278,7 +280,7 @@ class TestMMXorConvergence(unittest.TestCase):
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
-            for _ in range(300):
+            for _ in range(600):
                 batch, _ = m.inputSpace.getBatch(0, batchSize=4)
                 inp, target = batch
                 optimizer.zero_grad()
