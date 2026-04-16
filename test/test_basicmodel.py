@@ -405,7 +405,7 @@ class TestSimpleModelCreation(unittest.TestCase):
             perceptPassThrough=True, symbolPassThrough=True, flatten=True)
         model = Models.BasicModel()
         model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
-        x = torch.randn(2, 28*28, 1).to(Models.TheDevice.get())  # batch of 2, flattened MNIST, dim=1
+        x = torch.randn(2, 28*28, 1).tanh().to(Models.TheDevice.get())  # batch of 2, flattened MNIST, dim=1
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)  # batch size preserved
 
@@ -418,7 +418,7 @@ class TestSimpleModelCreation(unittest.TestCase):
             ergodic=True, certainty=True, flatten=True)
         model = Models.BasicModel()
         model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
-        x = torch.randn(2, 28*28, 1).to(Models.TheDevice.get())
+        x = torch.randn(2, 28*28, 1).tanh().to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
 
@@ -708,7 +708,7 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
         nIn, nOut, nDim = 4, 4, 8
         cs = Models.ConceptualSpace([nIn, nDim], [nOut, nDim], [nOut, nDim])
         inEmb = Models.TheXMLConfig.encodingSize(Models.TheXMLConfig.space("InputSpace", "nDim"))
-        x = torch.randn(self.B, nIn, inEmb).to(Models.TheDevice.get())
+        x = torch.randn(self.B, nIn, inEmb).tanh().to(Models.TheDevice.get())
         y = _unwrap(cs(_wrap_tensor(cs, x)))
         outEmb = Models.TheXMLConfig.encodingSize(Models.TheXMLConfig.space("ConceptualSpace", "nDim"))
         self.assertEqual(list(y.shape), [self.B, nOut, outEmb])
@@ -721,7 +721,7 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
         nIn, nOut, nDim = 4, 4, 8
         cs = Models.ConceptualSpace([nIn, nDim], [nOut, nDim], [nOut, nDim])
         outEmb = Models.TheXMLConfig.encodingSize(Models.TheXMLConfig.space("ConceptualSpace", "nDim"))
-        y = torch.randn(self.B, nOut, outEmb).to(Models.TheDevice.get())
+        y = torch.randn(self.B, nOut, outEmb).tanh().to(Models.TheDevice.get())
         x = _unwrap(cs.reverse(_wrap_tensor(cs, y)))
         inEmb = Models.TheXMLConfig.encodingSize(Models.TheXMLConfig.space("InputSpace", "nDim"))
         self.assertEqual(list(x.shape), [self.B, nIn, inEmb])
@@ -746,7 +746,7 @@ class TestSimpleModel(unittest.TestCase):
             ergodic=True, flatten=True)
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
+        x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -760,7 +760,7 @@ class TestSimpleModel(unittest.TestCase):
             flatten=True)
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
+        x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -773,7 +773,7 @@ class TestSimpleModel(unittest.TestCase):
             ergodic=True, flatten=True, reconstruct="FULL")
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
+        x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         data, start_state = model.reverse(end_state, out)
         self.assertEqual(data.shape[0], 2)
@@ -831,7 +831,7 @@ class TestModelEndToEnd(unittest.TestCase):
             ergodic=True, flatten=True)
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
+        x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -845,7 +845,7 @@ class TestModelEndToEnd(unittest.TestCase):
             flatten=True)
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
+        x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -859,7 +859,7 @@ class TestModelEndToEnd(unittest.TestCase):
             ergodic=True, flatten=True, reconstruct="FULL")
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
+        x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         data, start_state = model.reverse(end_state, out)
         self.assertEqual(data.shape[0], 2)
@@ -874,7 +874,7 @@ class TestModelEndToEnd(unittest.TestCase):
             ergodic=True, certainty=True, flatten=True)
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
+        x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
         target = torch.randn(2, 4).to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         loss_fn = Models.CertaintyWeightedCrossEntropy()
@@ -912,11 +912,9 @@ class TestSigmaLayerDeterministic(unittest.TestCase):
         sigma = Layers.SigmaLayer(nIn, nOut, ergodic=False)
         sigma.train()
 
-        # Build a matching LinearLayer + Tanh with same weights
         linear = Models.LinearLayer(nIn, nOut, hasBias=True)
         with torch.no_grad():
             linear.W.copy_(sigma.layer.W)
-            linear.bias.copy_(sigma.layer.bias)
         tanh = torch.nn.Tanh()
 
         x = torch.randn(2, nIn).to(Models.TheDevice.get())
@@ -1003,7 +1001,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         self._set_zero_object_encoding(ergodic=True)
         nVec, nDim, cDim = 8, 1, 1
         cs = Models.ConceptualSpace([nVec, nDim], [nVec, cDim], [nVec, cDim])
-        x = torch.randn(2, nVec, nDim).to(Models.TheDevice.get())
+        x = torch.randn(2, nVec, nDim).tanh().to(Models.TheDevice.get())
         y = _unwrap(cs(_wrap_tensor(cs, x)))
         self.assertEqual(list(y.shape), [2, nVec, cDim])
 
@@ -1011,7 +1009,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         self._set_zero_object_encoding(ergodic=False)
         nVec, nDim, cDim = 8, 1, 1
         cs = Models.ConceptualSpace([nVec, nDim], [nVec, cDim], [nVec, cDim])
-        x = torch.randn(2, nVec, nDim).to(Models.TheDevice.get())
+        x = torch.randn(2, nVec, nDim).tanh().to(Models.TheDevice.get())
         y = _unwrap(cs(_wrap_tensor(cs, x)))
         self.assertEqual(list(y.shape), [2, nVec, cDim])
 
@@ -1027,7 +1025,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         self._set_zero_object_encoding(ergodic=True, reconstruct="FULL")
         nVec, nDim, cDim = 8, 1, 1
         cs = Models.ConceptualSpace([nVec, nDim], [nVec, cDim], [nVec, cDim])
-        y = torch.randn(2, nVec, cDim).to(Models.TheDevice.get())
+        y = torch.randn(2, nVec, cDim).tanh().to(Models.TheDevice.get())
         x = _unwrap(cs.reverse(_wrap_tensor(cs, y)))
         self.assertEqual(list(x.shape), [2, nVec, nDim])
 
@@ -1045,7 +1043,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
         nIn, nOut = 4, 4
         cs = Models.ConceptualSpace([nIn, 8], [nOut, 8], [nOut, 8])
         inEmb = Models.TheXMLConfig.encodingSize(Models.TheXMLConfig.space("InputSpace", "nDim"))
-        x = torch.randn(2, nIn, inEmb).to(Models.TheDevice.get())
+        x = torch.randn(2, nIn, inEmb).tanh().to(Models.TheDevice.get())
         y = _unwrap(cs(_wrap_tensor(cs, x)))
         outEmb = Models.TheXMLConfig.encodingSize(Models.TheXMLConfig.space("ConceptualSpace", "nDim"))
         self.assertEqual(list(y.shape), [2, nOut, outEmb])
@@ -1866,7 +1864,7 @@ class TestModelTypeVariants(unittest.TestCase):
             flatten=True)
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
+        x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -1888,7 +1886,7 @@ class TestModelTypeVariants(unittest.TestCase):
         model = Models.BasicModel()
         model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
                      conceptualOrder=2)
-        x = torch.randn(2, 8, 1).to(Models.TheDevice.get())
+        x = torch.randn(2, 8, 1).tanh().to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -1903,7 +1901,7 @@ class TestModelTypeVariants(unittest.TestCase):
             flatten=True)
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1)
+        x = torch.randn(2, 16, 1).tanh()
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
@@ -1936,11 +1934,8 @@ class TestModelTypeVariants(unittest.TestCase):
             flatten=True)
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1)
-        # Untrained model with nonlinear=False — expect concept range warnings
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message="Range violation")
-            _, end_state, out = model.forward(x)
+        x = torch.randn(2, 16, 1).tanh()
+        _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
 
@@ -3428,21 +3423,18 @@ class TestNormalizeFlag(unittest.TestCase):
     """Tests for the normalize flag on SubSpace.normalize()."""
 
     def test_normalize_false_does_not_modify(self):
-        """normalize=False checks range but does not modify the tensor."""
+        """normalize=False asserts range and does not modify the tensor."""
         _populate_test_config(inputDim=4, nInput=4)
         ss = Models.SubSpace(inputShape=[4, 4], outputShape=[4, 4])
-        # Set vectors that are NOT in [0,1] range
+        # Set vectors that are NOT in [-1,1] range
         x = torch.randn(2, 4, 4) * 5
         ss.set_event(x.clone())
         original = ss.materialize().clone()
-        import warnings
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
+        with self.assertRaises(AssertionError):
             ss.normalize("percepts", target="what", normalize=False)
         after = ss.materialize()
         self.assertTrue(torch.equal(original, after),
                         "normalize=False should not modify the tensor")
-        self.assertTrue(len(w) > 0, "Should have emitted a warning")
 
     def test_normalize_true_does_modify(self):
         """normalize=True modifies the tensor."""
@@ -3491,7 +3483,7 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
             useSubspaceActivation=True)
         model = Models.BasicModel()
         model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
-        x = torch.randn(2, 28*28, 1).to(Models.TheDevice.get())
+        x = torch.randn(2, 28*28, 1).tanh().to(Models.TheDevice.get())
         _, end_state, out = model.forward(x)
         self.assertEqual(out.shape[0], 2)  # batch size preserved
 

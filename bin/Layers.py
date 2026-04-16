@@ -196,7 +196,7 @@ class LinearLayer(ErgodicLayer):
         if ergodic:
             self.W = nn.Parameter(torch.eye(self.nInput, self.nOutput))
         else:
-            self.W = nn.Parameter(torch.randn(self.nInput, self.nOutput))
+            self.W = nn.Parameter((2 * torch.rand(self.nInput, self.nOutput) - 1) / self.nInput)
         if self.hasBias:
             self.biasWeight = nn.Parameter(torch.zeros(1, nOutput))
         if ergodic:
@@ -791,22 +791,22 @@ class SigmaLayer(Layer):
     is available via the exact LDU inverse.  When ``invertible=False``
     (default), uses a plain LinearLayer.
 
-    The logit/sigmoid domain transforms that map between (0,1) and (-1,1)
-    are applied by ConceptualSpace, not here — they encode the pipeline
-    contract (perceptual→conceptual boundary), not a property of this layer.
+    Weight initialization (non-ergodic) is scaled by 1/nInput so that
+    the output stays in [-1, 1] at init when input is in [-1, 1].
 
     All ergodic machinery lives in the inner layer; SigmaLayer dispatches
     the ergodic interface (set_sigma, observe_sigma, etc.) there.
     """
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
-                 invertible=False, nonlinear=False):
+                 invertible=False, nonlinear=False, stable=False):
         super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.ergodic    = ergodic
-        self.saturate   = True
+        self.nonlinear  = nonlinear
+        self.stable     = stable
         self.activation = torch.zeros(1, nOutput, 1)
         if invertible:
-            self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic)
+            self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic, stable=stable)
         else:
             self.layer = LinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic)
         self.layers.append(self.layer)
@@ -817,19 +817,18 @@ class SigmaLayer(Layer):
     def var(self):  return self.layer.var
 
     def forward(self, x):
+        if self.nonlinear:
+            x = torch.atanh(x * (1 - epsilon))
         y = self.layer.forward(x)
-        if self.saturate:
-            self.activation = torch.tanh(y)
-            y = self.activation.clone()
-        return y
+        self.activation = torch.tanh(y)
+        return self.activation.clone()
 
     def reverse(self, y):
-        """Invert tanh then apply W⁻¹. Requires invertible=True."""
-        if self.saturate:
-            y = y.clamp(min=-1 + epsilon, max=1 - epsilon)
-            self.activation = torch.atanh(y)
-            y = self.activation.clone()
-        x = self.layer.reverse(y)
+        """Invert tanh then apply W⁻¹ then tanh. Requires invertible=True."""
+        self.activation = torch.atanh(y * (1 - epsilon))
+        x = self.layer.reverse(self.activation.clone())
+        if self.nonlinear:
+            x = torch.tanh(x)
         return x
 
     @staticmethod

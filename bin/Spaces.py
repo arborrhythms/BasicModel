@@ -2466,27 +2466,23 @@ class SubSpace(nn.Module):
     # Normalization
     # ------------------------------------------------------------------
 
-    def normalize(self, kind, target="activation", normalize=False, strict=False,
+    def normalize(self, kind, target="activation", normalize=False,
                   reverse=False):
-        """Normalize or check range of an encoding of this subspace.
+        """Assert range or apply normalization to an encoding of this subspace.
 
-        When normalize=True, transforms the tensor in-place to the
-        correct range for the space kind.  When normalize=False,
-        checks whether the tensor is already in range.
+        When normalize=False (default): checks that values are finite and
+        in the expected range for the space kind.  In ergodic mode,
+        violations emit a warning; otherwise they raise AssertionError.
 
-        When reverse=True with normalize=True, applies the inverse of
-        the normalizing transform in the same target scope.
+        When normalize=True: applies the normalizing transform in-place
+        (e.g. tanh for percepts/concepts, STE for symbols).
 
-        When strict=True (nonlinear path), raises ValueError on
-        out-of-range input — the sigmoid/logit pair guarantees the
-        range contract so a violation is a real bug.  When strict=False,
-        emits a warning — allows exploring the unconstrained path.
+        When reverse=True with normalize=True: applies the inverse transform.
 
-        Geometry-aware:
-          - "percepts" on vectors/activation → tanh [-1,1]
-          - "concepts" on vectors/activation → tanh [-1,1]
-          - "symbols" → STE round {0,1} (activation only)
-          - "input" on vectors → min-max scale to [-1,1]
+        Range contracts:
+          - "percepts", "concepts": elements in [-1, 1]
+          - "symbols": elements in [0, 1]
+          - "input": elements in [-1, 1]
 
         Args:
             kind: "percepts", "concepts", "symbols", or "input".
@@ -2494,9 +2490,8 @@ class SubSpace(nn.Module):
                     "when", "event", or "all".
             normalize: if True, apply the normalization in-place.
                 If False, check range only.
-            strict: if True, raise ValueError on violation.
-                If False, emit a warning.
             reverse: if True, apply the inverse normalizing transform.
+                Requires normalize=True.
         """
         x = self.select(target)
         if x is None or x.numel() == 0:
@@ -2510,67 +2505,38 @@ class SubSpace(nn.Module):
         if reverse and not normalize:
             raise ValueError("reverse=True requires normalize=True")
 
-        # Non-finite gate: values arriving here should already be finite.
-        # A nan/inf at this point means an upstream layer produced garbage
-        # (exploding PiLayer, division by zero in attention, etc.).  Catch
-        # it at the normalize boundary so the error is attributed to the
-        # space that produced it rather than silently propagating.
-        finite_mask = torch.isfinite(x.detach())
-        if not finite_mask.all():
-            n_bad = int((~finite_mask).sum().item())
-            msg = (f"Non-finite values in kind={kind!r}, target={target!r}: "
-                   f"{n_bad}/{x.numel()} entries are nan/inf.")
-            if strict:
-                raise ValueError(msg)
-            else:
-                warnings.warn(msg)
+        # ── Range check (normalize=False) ────────────────────────────
         if not normalize:
-            is_vector = target in ("what", "where", "when", "event")
+            strict = not TheXMLConfig.get("architecture.ergodic")
             xd = x.detach()
-            if not is_vector:
-                # Activation: scalar range [-1, 1]
-                lo, hi = -1, 1
-                xmin, xmax = xd.min().item(), xd.max().item()
-                if xmin - lo < -1e-2 or xmax - hi > 1e-2:
-                    msg = (f"Range violation: kind={kind!r}, target={target!r} "
-                           f"range [{xmin:.6f}, {xmax:.6f}] outside [{lo}, {hi}].")
-                    if strict:
-                        raise ValueError(msg)
-                    else:
-                        warnings.warn(msg)
-            elif kind == "concepts":
-                # Concepts: elements in [-1, 1] (tanh)
-                xmin, xmax = xd.min().item(), xd.max().item()
-                if xmin < -1 - 1e-2 or xmax > 1 + 1e-2:
-                    msg = (f"Range violation: kind={kind!r}, target={target!r} "
-                           f"range [{xmin:.6f}, {xmax:.6f}] outside [-1, 1].")
-                    if strict:
-                        raise ValueError(msg)
-                    else:
-                        warnings.warn(msg)
-            elif kind == "percepts":
-                # Percepts: elements in [-1, 1] (tanh)
-                xmin, xmax = xd.min().item(), xd.max().item()
-                if xmin < -1 - 1e-2 or xmax > 1 + 1e-2:
-                    msg = (f"Range violation: kind={kind!r}, target={target!r} "
-                           f"range [{xmin:.6f}, {xmax:.6f}] outside [-1, 1].")
-                    if strict:
-                        raise ValueError(msg)
-                    else:
-                        warnings.warn(msg)
+            # Non-finite check
+            finite_ok = torch.isfinite(xd).all()
+            if not finite_ok:
+                msg = (f"Non-finite values in kind={kind!r}, target={target!r}: "
+                       f"{int((~torch.isfinite(xd)).sum().item())}/{xd.numel()} "
+                       f"entries are nan/inf.")
+                if strict:
+                    assert False, msg
+                else:
+                    warnings.warn(msg)
+                return
+            # Range check — vectors are always [-1, 1]; symbol activations are [0, 1]
+            is_vector = target in ("what", "where", "when", "event")
+            if kind == "symbols" and not is_vector:
+                lo, hi = 0, 1
             else:
-                # symbols [0,1], input [-1,1]
-                lo, hi = {"symbols": (0, 1), "input": (-1, 1)}.get(kind, (None, None))
-                if lo is not None:
-                    xmin, xmax = xd.min().item(), xd.max().item()
-                    if xmin - lo < -1e-2 or xmax - hi > 1e-2:
-                        msg = (f"Range violation: kind={kind!r}, target={target!r} "
-                               f"range [{xmin:.6f}, {xmax:.6f}] outside [{lo}, {hi}].")
-                        if strict:
-                            raise ValueError(msg)
-                        else:
-                            warnings.warn(msg)
+                lo, hi = -1, 1
+            xmin, xmax = xd.min().item(), xd.max().item()
+            if xmin < lo - 1e-2 or xmax > hi + 1e-2:
+                msg = (f"Range violation: kind={kind!r}, target={target!r} "
+                       f"range [{xmin:.6f}, {xmax:.6f}] outside [{lo}, {hi}].")
+                if strict:
+                    assert False, msg
+                else:
+                    warnings.warn(msg)
             return
+
+        # ── Apply normalization (normalize=True) ─────────────────────
         if reverse:
             normalized = self._apply_reverse_normalization(kind, x, target=target)
         else:
@@ -4439,21 +4405,24 @@ class ConceptualSpace(Space):
             if self.reversible:
                 if invertible:
                     self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
-                                            invertible=True, nonlinear=nonlinear)
+                                            invertible=True, nonlinear=nonlinear,
+                                            stable=True)
                     self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
                     self.params = self.sigma.getParameters()
                     self.layers = nn.ModuleList([self.sigma])
                 else:
                     self.sigma1 = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
-                                             invertible=True, nonlinear=nonlinear)
+                                             invertible=True, nonlinear=nonlinear,
+                                             stable=True)
                     self.sigma2 = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
-                                             invertible=True, nonlinear=nonlinear)
+                                             invertible=True, nonlinear=nonlinear,
+                                             stable=True)
                     self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
                     self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
                     self.layers = nn.ModuleList([self.sigma1, self.sigma2])
             else:
                 self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
-                                        nonlinear=nonlinear)
+                                        nonlinear=nonlinear, stable=True)
                 self.forwardSigma = self.sigma.forward
                 self.params = self.sigma.getParameters()
                 self.layers = nn.ModuleList([self.sigma])
@@ -4578,12 +4547,13 @@ class ConceptualSpace(Space):
         return x.T @ y
     def certainty(self, x):
         return x.T @ x
+
     def forward(self, vspace, wordSpace=None, butterfly=False, target_count=None):
         """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ.
 
-        When nonlinear=True, applies atanh() before SigmaLayer so that the
-        reverse tanh (needed to bound output to (-1,1)) has an exact
-        mathematical inverse.
+        When nonlinear=True (stable=True on SigmaLayer), the weight matrix
+        is L1-column-normalized so the output stays in [-1, 1] without
+        requiring tanh saturation.
 
         ``target_count`` is forwarded to ``wordSpace.forwardConcepts``
         so the C-tier compose can use pairwise slot-mixing reduction
@@ -4596,12 +4566,6 @@ class ConceptualSpace(Space):
         if butterfly and self.butterfly_enabled:
             return self._forward_butterfly_level(vspace, 0)
         x = self.forwardBegin(vspace, returnVectors=True)
-        if self.nonlinear:
-            # atanh only on nWhat dims — sin/cos where/when values near ±1
-            # would explode through atanh, so leave them untransformed.
-            nW = self.subspace.nWhat
-            x_what = torch.atanh(x[:, :, :nW] * (1 - 1e-6))
-            x = torch.cat([x_what, x[:, :, nW:]], dim=-1)
         y = self.forwardSigma(x)
         if self.hasAttention:
             y = self.attention.forward(y)
@@ -4614,6 +4578,7 @@ class ConceptualSpace(Space):
             self._last_svo = None
         vspace = self.forwardEnd(y, returnVectors=True)
         vspace.normalize("concepts", target="what")       # range check
+        vspace.normalize("concepts", target="where")      # range check
         vspace.normalize("concepts", target="activation")  # range check
         return vspace
 
@@ -4623,11 +4588,7 @@ class ConceptualSpace(Space):
         return self._last_svo
 
     def reverse(self, vspace, wordSpace=None, butterfly=False):
-        """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer.
-
-        When nonlinear=True, applies tanh() after reverse SigmaLayer to
-        guarantee output in (-1,1) for PiLayer.
-        """
+        """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer."""
         if butterfly and self.butterfly_enabled:
             return self._reverse_butterfly_level(vspace, 0)
         y = self.reverseBegin(vspace, returnVectors=True)
@@ -4636,14 +4597,10 @@ class ConceptualSpace(Space):
         if self.processSymbols:
             y = self.dereference(y)
         y = self.reverseSigma(y)
-        if self.nonlinear:
-            # tanh only on nWhat dims — mirror the forward atanh split.
-            nW = self.subspace.nWhat
-            y_what = torch.tanh(y[:, :, :nW])
-            y = torch.cat([y_what, y[:, :, nW:]], dim=-1)
         self.concepts = y
         vspace = self.reverseEnd(y, returnVectors=True)
-        vspace.normalize("percepts", target="what")  # range check
+        vspace.normalize("percepts", target="what")   # range check
+        vspace.normalize("percepts", target="where")  # range check
         return vspace
 
     @staticmethod
@@ -5151,6 +5108,8 @@ class SymbolicSpace(Space):
             self.subspace.set_event(act)
             vspace = self.forwardEnd(self.subspace)
 
+        vspace.normalize("symbols", target="what")   # range check
+        vspace.normalize("symbols", target="where")  # range check
         return vspace
 
     def init_rule_codebook(self, grammar):
@@ -5223,6 +5182,7 @@ class SymbolicSpace(Space):
             self.subspace.set_event(act)
             result = self.subspace
         result.normalize("concepts", target="what", normalize=True)
+        result.normalize("concepts", target="where")  # range check
         return result
 
     def evaluate_truth(self, vspace, wordSpace=None):

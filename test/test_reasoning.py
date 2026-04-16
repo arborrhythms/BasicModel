@@ -124,8 +124,10 @@ class TestIsConsistent(unittest.TestCase):
         # Two truths pointing in opposite directions (contradiction)
         t1 = torch.ones(D) * 0.5
         t2 = -torch.ones(D) * 0.5  # exact negation
-        truth_layer.record(t1, degree=1.0)
-        truth_layer.record(t2, degree=1.0)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="TruthLayer.*contradicts")
+            truth_layer.record(t1, degree=1.0)
+            truth_layer.record(t2, degree=1.0)
         result = model.isConsistent()
         # Disjunction of opposite-sign vectors → zero → low score
         self.assertLess(result['score'], 0.5)
@@ -260,7 +262,9 @@ class TestExtrapolate(unittest.TestCase):
         t2 = torch.randn(D)
         truth_layer.record(t1, degree=0.8)
         truth_layer.record(t2, degree=0.7)
-        result = model.extrapolate(max_new=4)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="TruthLayer.*contradicts")
+            result = model.extrapolate(max_new=4)
         # Should derive at least something (union, intersection, etc.)
         total = len(result['added']) + len(result['rejected'])
         self.assertGreater(total, 0, "Grammar methods should produce candidates")

@@ -857,7 +857,7 @@ class TestConceptualSpaceReverseRangeCheck(unittest.TestCase):
             cspace.reverse(y)
 
     def test_nonlinear_extreme_input_bounded(self):
-        """Even with extreme concept values, sigmoid keeps output in (0, 1)."""
+        """With nonlinear=True, reverse output stays in [-1, 1] via tanh."""
         _setup_object_encoding(objSize=0, invertible=True,                               flatten=True, hasAttention=False)
         nObj, contentDim = 3, 6
         torch.manual_seed(42)
@@ -865,17 +865,17 @@ class TestConceptualSpaceReverseRangeCheck(unittest.TestCase):
             [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
         )
         cspace.eval()
-        # Near-boundary tanh output: values close to ±1
         extreme = torch.ones(2, nObj, contentDim) * 0.999
         extreme[0] *= -1
         with torch.no_grad():
-            # Should NOT raise — sigmoid bounds the reverse output
-            cspace.reverse(_wrap_tensor(cspace, extreme))
+            result = cspace.reverse(_wrap_tensor(cspace, extreme))
+        x = result.materialize()
+        self.assertTrue(torch.all(x >= -1) and torch.all(x <= 1),
+                        f"Reverse output should be in [-1, 1], got [{x.min():.4f}, {x.max():.4f}]")
 
-    def test_no_nonlinear_warns_on_out_of_range(self):
-        """With nonlinear=False, out-of-range output emits warning not error."""
+    def test_no_nonlinear_asserts_on_out_of_range(self):
+        """With nonlinear=False, non-ergodic reverse raises AssertionError."""
         _setup_object_encoding(objSize=0, invertible=True,                               flatten=True, hasAttention=False)
-        # Override nonlinear to False for this test
         Models.TheXMLConfig._data["ConceptualSpace"]["nonlinear"] = False
         nObj, contentDim = 3, 6
         torch.manual_seed(42)
@@ -883,11 +883,11 @@ class TestConceptualSpaceReverseRangeCheck(unittest.TestCase):
             [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
         )
         cspace.eval()
-        # Extreme input — without sigmoid, reverse output will exceed [0, 1]
         extreme = torch.ones(2, nObj, contentDim) * 0.999
         extreme[0] *= -1
-        with self.assertWarns(UserWarning):
+        with self.assertRaises(AssertionError):
             with torch.no_grad():
                 cspace.reverse(_wrap_tensor(cspace, extreme))
+        Models.TheXMLConfig._data["ConceptualSpace"]["nonlinear"] = True
         # Restore default
         Models.TheXMLConfig._data["ConceptualSpace"]["nonlinear"] = True

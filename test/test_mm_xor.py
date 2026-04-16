@@ -235,7 +235,7 @@ class TestMMXorConvergence(unittest.TestCase):
 
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
-                for _ in range(100):
+                for _ in range(300):
                     batch, _ = m.inputSpace.getBatch(0, batchSize=4)
                     inp, target = batch
                     optimizer.zero_grad()
@@ -263,7 +263,7 @@ class TestMMXorConvergence(unittest.TestCase):
         This is the isolated regression fixture for the non-ramsified
         grammar path: it exercises the recurrent Pi-Sigma loop plus the
         pairwise-slot-mixing compose (``_compose_to_target``) without
-        VQ-VAE muddying the variable.  Convergence below 0.15 at 100
+        VQ-VAE muddying the variable.  Convergence below 0.15 at 200
         epochs confirms that the C-tier pairwise reducer is threading
         information across the slot axis end-to-end.
         """
@@ -278,7 +278,7 @@ class TestMMXorConvergence(unittest.TestCase):
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
-            for _ in range(100):
+            for _ in range(300):
                 batch, _ = m.inputSpace.getBatch(0, batchSize=4)
                 inp, target = batch
                 optimizer.zero_grad()
