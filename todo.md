@@ -1,6 +1,112 @@
 # TODO
 
+================================== Active Projects ==================================
 
+## 1. Remove `ramsified` parameter and code; replace with `useButterflies` + `useGrammar`
+
+The `ramsified` flag has been superseded by two orthogonal flags. The code still
+carries `ramsified` everywhere — remove it. The four quadrants and their intended
+architectures:
+
+|                     | **No Grammar**                                 | **Grammar**                               |
+|---------------------|------------------------------------------------|-------------------------------------------|
+| **No Butterflies**  | Large flattened sigma (original)               | Grammar-directed composition              |
+| **Butterflies**     | Pairwise mixing                                | ❌ Excluded (permutations fight constituency) |
+
+### Scope
+- **Models.py (55 mentions)**: delete `self.ramsified`, `self._ramsified_uses_grammar`,
+  `self._ramsified_pair_enabled()`; rename `_ramsified_state_*` → `_butterfly_state_*`;
+  restructure forward/reverse dispatch around (`useButterflies`, `useGrammar`);
+  drop the legacy `elif self.ramsified and not self._ramsified_uses_grammar:` branch
+  (no config uses it any longer); drop `use_stages` key from butterfly_config.
+- **Spaces.py (5 mentions)**: remove butterfly code folded into `ButterflyStage` (see
+  parallel cleanup below). Drop `butterfly=` kwargs from `_CSLevelView` / `_SSLevelView`
+  and main `forward`/`reverse`, remove early-return branches, fold `butterfly_stages`
+  into `self.sigmas` / `self.pi_layers`.
+- **data/model.xsd**: remove `<ramsified>` element.
+- **data/*.xml (11 files)**: remove `<ramsified>` element. All live configs are:
+  - `useButterflies=true, useGrammar=false` → butterflies (MM_5M, MM_400M, MM_shamatha,
+    MM_xor, MM_xor_step4, RamsifiedModel)
+  - `useButterflies=false, useGrammar=false` → flattened sigma (MM_bpe, MentalModel,
+    model, MM_grammar, MM_xor_grammar)
+  - No live config is `useButterflies=false, useGrammar=true` yet — but that's the
+    intended slot for grammar-directed composition; verify MM_grammar / MM_xor_grammar
+    should flip `useGrammar=true`.
+- **test/** (4 files, ~40 mentions): `test_hierarchical.py`, `test_mm_xor.py`,
+  `test_config_scoping.py`, `test_reasoning.py` — rename `_ramsified_config()` helpers,
+  drop `model.ramsified` checks in favor of `useButterflies`/`useGrammar`.
+- **doc/** (5 files, ~9 mentions): `Spaces.md`, `Params.md`, `Architecture.md`,
+  `Reasoning.md` — update terminology to useButterflies/useGrammar.
+
+### Current status (entering this work)
+- Orthogonal flags `useButterflies` and `useGrammar` already parsed in
+  Models.py with legacy fallback (lines ~2008–2020). Exclusion of
+  butterflies+grammar already raises `ValueError`.
+- `ButterflyStage` class exists in `bin/Layers.py` and is wired through
+  `butterfly_config["use_stages"]: True`. The `use_stages=False` legacy
+  butterfly path in Spaces.py is dead — no live config uses it.
+- Test suite: 639 pass, 1 pre-existing flaky (test_sigmapi XOR convergence,
+  platform-specific local minimum 0.1298 vs 0.1 threshold; unrelated).
+
+---
+
+## 2. Stage 2: sequential concept→symbol mapping via accumulate pattern
+
+(Deferred from butterfly refactor — to resume after Project 1.)
+
+### Goal
+Stage 1 established pairwise sigma/pi (butterflies) with N-halving, keeping D
+constant. Stage 2 makes the conceptual codebook **wide AND deep** so a large
+STM (short-term memory) activation pattern can drive sequential symbolic
+emission.
+
+### Architecture sketch
+- **Wide conceptual codebook**: ConceptualSpace's codebook holds many vectors,
+  each of moderate dimension. The *forward* pass produces an activation
+  pattern across this codebook — this *is* STM.
+- **STM = concept_states**: treat the per-batch concept activation vector as
+  the STM. No separate STM memory; it's an interpretation of what's already
+  computed.
+- **LTM = TruthLayer snapshots**: truths stored in TruthLayer are the LTM.
+  Pi + L1 bridge STM→LTM (commit highly-active concepts as truths).
+- **Sequential symbolic emission**: instead of one-shot Pi over the whole
+  STM, call `SymbolicSpace.forward(..., accumulate=True)` repeatedly. Each
+  call emits the *next* symbol and accumulates it (running average or
+  winner-take-all) into the emitted sequence. This matches how a decoder
+  AR-generates tokens but the "tokens" here are symbols grounded in the
+  conceptual codebook.
+- **Context**: with Percept/Symbol/Word spaces all using the same nDim
+  (nDim=4 + nWhere=2 = 6-dim vectors), we can concatenate
+  `[percept + symbol + word, nDims + nEncoding]` and feed as a wide input
+  to ConceptualSpace. nActive is the LLM context window; nWhere
+  auto-increments from 0 (sequential symbol indices, not byte offsets).
+
+### What's in place
+- `SymbolicSpace.accumulate_symbol_objective(sym_vectors, target=...)`
+  exists and caches nearest codebook targets.
+- InputSpace nActive / nWhere semantics documented in
+  `memory/project_inputspace_context.md`.
+- Span-table architecture is live (see
+  `memory/project_span_table_architecture.md`).
+
+### What's needed
+- Add `accumulate: bool = False` kwarg to `SymbolicSpace.forward()` that
+  routes emission through a running-average accumulator instead of emitting
+  a full symbol grid in one shot.
+- MentalModel loop: instead of one Pi call per conceptual stage, drive Pi
+  with `accumulate=True` in a sequential inner loop, pulling one symbol at
+  a time from the STM.
+- Define how the Wide codebook is trained: currently codebook is
+  nSymbols-wide; Stage 2 wants nConcepts-wide (with nConcepts >> nSymbols).
+  This likely means a separate ConceptualBasis distinct from SymbolicBasis,
+  with Pi doing the codebook lookup.
+
+### Open questions
+- Should accumulate be per-symbol (one call → one symbol) or per-batch
+  (one call → whole sequence, internally AR)?
+- How does STM decay interact with accumulation? (STM_decay is in the
+  config but currently only bleeds into concept_states, not symbolic
+  emission.)
 
 ================================== April 24 ==================================
 

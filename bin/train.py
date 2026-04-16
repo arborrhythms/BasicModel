@@ -121,7 +121,7 @@ def train_local(args):
     if not os.path.isabs(xml_path):
         xml_path = os.path.join(proj, xml_path)
 
-    # Read embeddingPath from XML — output embeddings where BasicModel.py expects them
+    # Read embeddingPath from XML — output embeddings where Models.py expects them
     cfg = read_xml_config(xml_path)
     emb_relpath = cfg.get("embeddingPath")
     if emb_relpath:
@@ -150,8 +150,9 @@ def train_local(args):
         TheMessage(f"\n=== Phase 1: Embeddings exist at {emb_path}, skipping ===")
 
     # --- Phase 2: Model training ---
-    # Pass overrides via env so BasicModel.py respects them over XML config
+    # Pass overrides via env so Models.py respects them over XML config
     model_env = dict(env)
+    model_env["PYTHONUNBUFFERED"] = "1"  # flush stdout line-by-line for live logging
     if args.data is not None:
         model_env["BASIC_DATASET"] = args.data
     if args.max_docs is not None:
@@ -161,15 +162,17 @@ def train_local(args):
     if args.num_epochs is not None:
         model_env["BASIC_NUM_EPOCHS"] = str(args.num_epochs)
 
+    entry = os.path.join(proj, "bin", "Models.py")
+
     if args.profile:
-        # Run BasicModel.py under cProfile via -m cProfile -o <file>
+        # Run under cProfile via -m cProfile -o <file>
         prof_dir = os.path.join(proj, "output", "profiles")
         os.makedirs(prof_dir, exist_ok=True)
         ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         prof_path = os.path.join(prof_dir, f"train_{ts}.prof")
         model_cmd = [
             python, "-m", "cProfile", "-o", prof_path,
-            os.path.join(proj, "bin", "BasicModel.py"), args.model,
+            entry, args.model,
         ]
         TheMessage(f"\n=== Phase 2: Training model (profiling → {prof_path}) ===")
         run(model_cmd, cwd=os.path.join(proj, "bin"), env=model_env)
@@ -181,7 +184,7 @@ def train_local(args):
         TheMessage(f"\nFull profile saved to {prof_path}")
         TheMessage("View interactively:  snakeviz " + prof_path)
     else:
-        model_cmd = [python, os.path.join(proj, "bin", "BasicModel.py"), args.model]
+        model_cmd = [python, entry, args.model]
         TheMessage("\n=== Phase 2: Training model ===")
         run(model_cmd, cwd=os.path.join(proj, "bin"), env=model_env)
 
@@ -222,7 +225,7 @@ def train_remote(args):
         remote_args += ["--profile"]
     # SSH and run — forward selected env vars that affect training behaviour
     remote_env_vars = "PYTHONUNBUFFERED=1 PYTHONPATH=bin"
-    for var in ("BASICMODEL_DEVICE", "BASICMODEL_COMPILE"):
+    for var in ("BASICMODEL_DEVICE", "MODEL_COMPILE"):
         val = os.environ.get(var)
         if val:
             remote_env_vars = f"{var}={val} {remote_env_vars}"

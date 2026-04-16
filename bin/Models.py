@@ -2004,6 +2004,21 @@ class MentalModel(BaseModel):
         self.stm_decay = float(TheXMLConfig.get("architecture.STM_decay", default=0.0) or 0.0)
         self._ramsified_uses_grammar = bool(
             TheXMLConfig.get("WordSpace.useGrammar", False))
+
+        # New orthogonal flags: useButterflies + useGrammar
+        raw_butterflies = TheXMLConfig.get("architecture.useButterflies", default=None)
+        if raw_butterflies is not None:
+            self.useButterflies = bool(raw_butterflies)
+        else:
+            # Legacy fallback: derive from ramsified
+            self.useButterflies = bool(self.ramsified and not self._ramsified_uses_grammar)
+        self.useGrammar = self._ramsified_uses_grammar
+
+        if self.useButterflies and self.useGrammar:
+            raise ValueError(
+                "useButterflies=true + useGrammar=true is excluded: "
+                "butterfly permutations fight constituency structure")
+
         self._ramsified_state_vectors = None
         self._ramsified_state_dim = None
         self._ramsified_symbol_width = None
@@ -2100,13 +2115,57 @@ class MentalModel(BaseModel):
         self.perceptualSpace = PerceptualSpace(inputShape, spaceShape_percept, perceptShape)
 
         conceptInputShape = [nPercepts, percept_dim + obj_percept]
-        conceptOutputShape = [nPercepts, concept_dim + obj_concept]
+
+        # Effective conceptOutputShape: if ConceptualSpace specifies
+        # nOutputDim, the forwardEnd reshape changes the output layout.
+        # Use the volume-preserving shape [N', nOutputDim] where
+        # N' = input_volume / nOutputDim (sigma is square/invertible).
+        try:
+            _c_nOutputDim = TheXMLConfig.space("ConceptualSpace", "nOutputDim")
+        except KeyError:
+            _c_nOutputDim = 0
+        if _c_nOutputDim > 0:
+            _c_input_volume = conceptInputShape[0] * conceptInputShape[1]
+            conceptOutputShape = [_c_input_volume // _c_nOutputDim, _c_nOutputDim]
+        else:
+            conceptOutputShape = [nPercepts, concept_dim + obj_concept]
 
         butterfly_config = None
 
-        # Ramsified non-grammar path keeps [B, N, D] state width/arity constant
-        # and mixes information with invertible pairwise butterfly stages.
-        if self.ramsified and not self._ramsified_uses_grammar:
+        # ── Butterfly path: pairwise sigma/pi with N-halving ──
+        if self.useButterflies:
+            state_vectors = nPercepts
+            state_dim = percept_dim + obj_percept
+            symbol_width = symbol_dim + obj_symbol
+            n_stages = min(self.conceptualOrder, int(math.log2(state_vectors)))
+            TheXMLConfig.require(
+                lambda cfg, _n=state_vectors: _n > 0 and (_n & (_n - 1)) == 0,
+                f"butterfly path requires nPercepts ({state_vectors}) "
+                f"to be a positive power of two"
+            )
+            TheXMLConfig.require(
+                lambda cfg, _r=str(TheXMLConfig.get('architecture.reconstruct')).lower(): _r == "symbols",
+                "butterfly reverse requires reconstruct=symbols so the full symbol state "
+                "remains available for exact inversion"
+            )
+            self._ramsified_state_vectors = state_vectors
+            self._ramsified_state_dim = state_dim
+            self._ramsified_symbol_width = symbol_width
+            self._ramsified_symbol_factor = state_dim // symbol_width if symbol_width > 0 else 1
+            butterfly_config = {
+                "conceptual_order": n_stages,
+                "state_vectors": state_vectors,
+                "state_dim": state_dim,
+                "symbol_width": symbol_width,
+                "symbol_factor": state_dim // symbol_width if symbol_width > 0 else 1,
+                "ergodic": self.ergodic,
+                "naive": TheXMLConfig.get("architecture.naive"),
+                "use_stages": True,   # ButterflyStage wrappers with N-halving
+            }
+            self._level_shapes_list = self._level_shapes(
+                nPercepts, state_dim, n_stages)
+        # Legacy ramsified non-grammar path (constant N, no merge)
+        elif self.ramsified and not self._ramsified_uses_grammar:
             state_vectors = nPercepts
             state_dim = percept_dim + obj_percept
             symbol_width = symbol_dim + obj_symbol
@@ -2144,6 +2203,7 @@ class MentalModel(BaseModel):
                 "symbol_factor": state_dim // symbol_width,
                 "ergodic": self.ergodic,
                 "naive": TheXMLConfig.get("architecture.naive"),
+                "use_stages": False,  # legacy: raw butterfly_sigmas, no merge
             }
             self._level_shapes_list = None
         # Progressive bottleneck: per-level shapes when ramsified grammar is enabled
@@ -2464,9 +2524,10 @@ class MentalModel(BaseModel):
             # SymbolicSpace.forward. The non-ramsified feedback path stays
             # continuous; ramsified/codebook paths may apply proximal
             # sparsity before symbol commitment.
+            is_last_step = (t == self.conceptualOrder - 1)
             self.symbols = self.symbolicSpace[t].forward(
                 self.concepts, wordSpace=ws, butterfly=pair_enabled,
-                quantize=self.ramsified)
+                quantize=self.ramsified, is_last=is_last_step)
             sym_vectors = self.symbols.materialize()
 
             # 4. Feedback for next iteration
@@ -3137,7 +3198,7 @@ if __name__ == "__main__":
         metavar="BACKEND",
         help=(
             "Compilation backend: none, inductor, eager, aot_eager. "
-            "Overrides BASICMODEL_COMPILE env var."
+            "Overrides MODEL_COMPILE env var."
         ),
     )
     parser.add_argument(

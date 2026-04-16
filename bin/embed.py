@@ -731,7 +731,7 @@ if __name__ == '__main__':
     train_p.add_argument('--compile', default=None,
                          metavar='BACKEND',
                          help='Compilation backend: none, inductor, eager, aot_eager. '
-                              'Overrides BASICMODEL_COMPILE env var.')
+                              'Overrides MODEL_COMPILE env var.')
 
     # --- prune subcommand ---
     prune_p = sub.add_parser("prune", help="Remove low-frequency words from a .kv codebook")

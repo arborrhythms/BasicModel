@@ -5,6 +5,7 @@
     <reconstruct>symbols</reconstruct>
     <conceptualOrder>3</conceptualOrder>
     <ramsified>true</ramsified>
+    <useButterflies>true</useButterflies>
     <modelType>embedding</modelType>
     <ergodic>true</ergodic>
     <naive>false</naive>

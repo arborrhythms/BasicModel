@@ -1,11 +1,17 @@
 <?xml version="1.0" ?>
 <model>
-  <!-- MM_1B: MentalModel scaled to ~1B params with byte input.
-       Keeps the MentalModel topology and shifts representational width
-       into ConceptualSpace while PerceptualSpace compacts byte spans. -->
+  <!-- MM_1B: Enhanced MM_5M scaled to ~1B params.
+       True MM_5M architecture: low-dim percepts/symbols (4), high-dim
+       conceptual lifting (16 verbs x 7296^2 = ~852M params).
+       Ramsified butterfly path: pair_dim=8, conceptualOrder=14.
+       BPE chunk merging: 1024 bytes -> 512 percepts.
+       Volume: 512 percepts x 4 = 512 symbols x 4. -->
   <architecture>
-    <reconstruct>concepts</reconstruct>
-    <conceptualOrder>1</conceptualOrder>
+    <reconstruct>symbols</reconstruct>
+    <conceptualOrder>14</conceptualOrder>
+    <ramsified>true</ramsified>
+    <useButterflies>true</useButterflies>
+    <l1Lambda>0.01</l1Lambda>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <processSymbols>false</processSymbols>
@@ -17,8 +23,8 @@
     <LuminosityWeight>0.1</LuminosityWeight>
     <UniversalityWeight>0.1</UniversalityWeight>
     <maxResponseLength>4096</maxResponseLength>
-    <weightsPath>MM_1B.ckpt</weightsPath>
-    <embeddingPath>MM_1B.kv</embeddingPath>
+    <weightsPath>MM_400M.ckpt</weightsPath>
+    <embeddingPath>MM_400M.kv</embeddingPath>
 
     <data>
       <shardDir>data/fineweb</shardDir>
@@ -31,7 +37,7 @@
       <numTrials>1</numTrials>
       <numEpochs>2</numEpochs>
       <batchSize>1</batchSize>
-      <learningRate>0.0005</learningRate>
+      <learningRate>0.0003</learningRate>
       <reverseScale>0.1</reverseScale>
       <trainEmbedding>ARLM</trainEmbedding>
       <autoload>false</autoload>
@@ -41,66 +47,75 @@
       <sentenceCentroidHistory>3</sentenceCentroidHistory>
       <sentenceLambda>1.01</sentenceLambda>
       <sentencePredictionScale>0.1</sentencePredictionScale>
-      <certainty>false</certainty>
     </training>
+
+    <certainty>false</certainty>
 
     <server>
       <host>127.0.0.1</host>
       <port>8003</port>
-      <timeout>120</timeout>
+      <timeout>600</timeout>
     </server>
 
   </architecture>
 
   <InputSpace>
-    <nDim>1</nDim>
-    <nVectors>4096</nVectors>
-    <nOutput>4096</nOutput>
+    <nDim>4</nDim>
+    <nVectors>65535</nVectors>
+    <nOutput>2048</nOutput>
     <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
-    <lexer>byte</lexer>
+    <nWhen>0</nWhen>
+    <lexer>word</lexer>
     <codebook>true</codebook>
   </InputSpace>
 
   <PerceptualSpace>
-    <nInput>4096</nInput>
-    <nVectors>512</nVectors>
-    <nDim>32</nDim>
+    <nVectors>2048</nVectors>
+    <nDim>4</nDim>
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
-    <nOutput>128</nOutput>
+    <nOutput>2048</nOutput>
 
     <passThrough>false</passThrough>
     <hasAttention>false</hasAttention>
-    <invertible>false</invertible>
+    <invertible>true</invertible>
     <codebook>false</codebook>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace receives [Percept, Symbol] in iterative MentalModel.
-       Keep object counts MentalModel-like, but add the real representational
-       width here. -->
+  <!-- ConceptualSpace: high-dim for conceptual lifting.
+       nOutput/nVectors=0 auto-resolve to nPercepts (512).
+       LiftingLayer: 16 verb matrices of ~6148x6148 = ~604M params. -->
+  <!-- ConceptualSpace: flatten percepts → one 12288-dim vector,
+       sigma 12288→12288, then reshape to [6, 2048].
+       nVectors=0 auto-resolves to nConcepts (6) for non-codebook. -->
   <ConceptualSpace>
-    <nInput>256</nInput>
-    <nVectors>256</nVectors>
-    <nDim>1024</nDim>
-    <nOutput>32</nOutput>
+    <nInput>1</nInput>
+    <nInputDim>-1</nInputDim>
+    <nVectors>6</nVectors>
+    <nDim>2048</nDim>
+    <nWhere>2</nWhere>
+    <nWhen>0</nWhen>
+    <nOutput>6</nOutput>
+    <nOutputDim>2048</nOutputDim>
 
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>false</codebook>
-    <nInputDim>-1</nInputDim>
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nInput>128</nInput>
-    <nVectors>1024</nVectors>
+    <nInput>1</nInput>
+    <nInputDim>-1</nInputDim>
+    <nVectors>8192</nVectors>
     <nDim>4</nDim>
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
-    <nOutput>128</nOutput>
+    <nOutput>2048</nOutput>
+    <nOutputDim>6</nOutputDim>
 
     <passThrough>false</passThrough>
     <accumulateTruth>0</accumulateTruth>
+    <codebook>true</codebook>
   </SymbolicSpace>
 
   <OutputSpace>
@@ -113,15 +128,24 @@
 
   <WordSpace>
     <useGrammar>false</useGrammar>
+    <nWhere>2</nWhere>
+
     <language>
       <grammar>
         <START>S</START>
         <S>true(S)</S>
+        <S>false(S)</S>
+        <S>non(S)</S>
+        <S>conjunction(S, S)</S>
+        <S>disjunction(S, S)</S>
+        <S>what(S)</S>
+        <S>where(S)</S>
+        <S>when(S)</S>
+        <S>query(S, S)</S>
         <S>swap(S, S)</S>
         <S>equals(S, S)</S>
         <S>part(S, S)</S>
         <S>C</S>
-        <C>non(C)</C>
         <C>not(C)</C>
         <C>intersection(C, C)</C>
         <C>union(C, C)</C>

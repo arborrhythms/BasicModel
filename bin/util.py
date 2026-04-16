@@ -224,7 +224,7 @@ _COMPILE_BACKENDS = ("inductor", "eager", "aot_eager")
 _COMPILE_OFF      = frozenset({"none", "off", "false", "0", "no"})
 
 def auto_compile_backend():
-    """Select the compilation backend from BASICMODEL_COMPILE env var.
+    """Select the compilation backend from MODEL_COMPILE env var.
 
     Recognised values (case-insensitive):
       none / off / false / 0 / no  → skip compilation entirely (return "none")
@@ -233,7 +233,7 @@ def auto_compile_backend():
       aot_eager                    → force torch.compile(backend='aot_eager')
       (empty / unset)              → auto: try inductor → eager → aot_eager
     """
-    override = os.environ.get("BASICMODEL_COMPILE", "").strip().lower()
+    override = os.environ.get("MODEL_COMPILE", "").strip().lower()
     if not override:
         return "auto"
     if override in _COMPILE_OFF:
@@ -241,7 +241,7 @@ def auto_compile_backend():
     if override in _COMPILE_BACKENDS:
         return override
     raise ValueError(
-        f"Unknown BASICMODEL_COMPILE value '{override}'. "
+        f"Unknown MODEL_COMPILE value '{override}'. "
         f"Valid values: none, {', '.join(_COMPILE_BACKENDS)}"
     )
 
@@ -319,7 +319,7 @@ def _patch_inductor_paths():
 def compile(model, verbose=True):
     """Try to torch.compile the model; return the (possibly compiled) model.
 
-    Respects TheCompileBackend (set by BASICMODEL_COMPILE env var):
+    Respects TheCompileBackend (set by MODEL_COMPILE env var):
       "none" → skip compilation entirely.
       "auto" → try inductor → eager → aot_eager, return first success.
       <name> → try only that backend; fall back to uncompiled on failure.
@@ -331,7 +331,7 @@ def compile(model, verbose=True):
             print(text)
 
     if TheCompileBackend == "none":
-        _msg("Model compilation skipped (BASICMODEL_COMPILE=none)")
+        _msg("Model compilation skipped (MODEL_COMPILE=none)")
         return model
 
     _patch_inductor_paths()
@@ -628,7 +628,18 @@ class XMLConfig:
                         try:
                             val = float(text)
                         except ValueError:
-                            val = text
+                            # Simple arithmetic: evaluate expressions
+                            # containing only digits, *, +, -, /, parens,
+                            # and whitespace (e.g. "8192*6", "4+2").
+                            import re
+                            if re.fullmatch(r'[\d\s\+\-\*\/\(\)\.]+', text):
+                                try:
+                                    result = eval(text)  # safe: only digits+ops
+                                    val = int(result) if result == int(result) else float(result)
+                                except Exception:
+                                    val = text
+                            else:
+                                val = text
                 if elem.attrib:
                     return {"_": val, **elem.attrib}
                 return val

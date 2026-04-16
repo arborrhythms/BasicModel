@@ -220,23 +220,39 @@ class TestPerLevelLayers(unittest.TestCase):
         model = _make_model('RamsifiedModel.xml')
         if not model.ramsified:
             self.skipTest("Model not ramsified")
-        self.assertTrue(model._ramsified_pair_enabled())
-        sigmas = model.conceptualSpace.butterfly_sigmas
-        self.assertEqual(len(sigmas), model.conceptualOrder)
         pair_dim = 2 * model._ramsified_state_dim
-        self.assertEqual(sigmas[0].nInput, pair_dim)
-        self.assertEqual(sigmas[0].nOutput, pair_dim)
+        # New path: ButterflyStage wrappers around SigmaLayers
+        stages = model.conceptualSpace.butterfly_stages
+        if stages is not None:
+            self.assertEqual(len(stages), model.conceptualOrder)
+            self.assertEqual(stages[0].inner.nInput, pair_dim)
+            self.assertEqual(stages[0].inner.nOutput, pair_dim)
+        else:
+            # Legacy path: raw butterfly_sigmas
+            self.assertTrue(model._ramsified_pair_enabled())
+            sigmas = model.conceptualSpace.butterfly_sigmas
+            self.assertEqual(len(sigmas), model.conceptualOrder)
+            self.assertEqual(sigmas[0].nInput, pair_dim)
+            self.assertEqual(sigmas[0].nOutput, pair_dim)
 
     def test_pair_pi_layers_created(self):
         """Ramsified non-grammar path builds per-stage pair Pi heads."""
         model = _make_model('RamsifiedModel.xml')
         if not model.ramsified:
             self.skipTest("Model not ramsified")
-        pis = model.symbolicSpace.butterfly_pis
-        self.assertEqual(len(pis), model.conceptualOrder)
         pair_dim = 2 * model._ramsified_state_dim
-        self.assertEqual(pis[0].nInput, pair_dim)
-        self.assertEqual(pis[0].nOutput, pair_dim)
+        # New path: ButterflyStage wrappers around PiLayers
+        stages = model.symbolicSpace.butterfly_stages
+        if stages is not None:
+            self.assertEqual(len(stages), model.conceptualOrder)
+            self.assertEqual(stages[0].inner.nInput, pair_dim)
+            self.assertEqual(stages[0].inner.nOutput, pair_dim)
+        else:
+            # Legacy path: raw butterfly_pis
+            pis = model.symbolicSpace.butterfly_pis
+            self.assertEqual(len(pis), model.conceptualOrder)
+            self.assertEqual(pis[0].nInput, pair_dim)
+            self.assertEqual(pis[0].nOutput, pair_dim)
 
     def test_symbol_factor_matches_configured_volume(self):
         """Pair head reshaping matches the configured symbol volume exactly."""

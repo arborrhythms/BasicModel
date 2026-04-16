@@ -35,44 +35,12 @@ from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
-from Layers import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
+from Layers import Layer, PiLayer, SigmaLayer, ButterflyStage  # Import custom layers from Model.py
 from Layers import VQLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
 from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import SortingLayer, TruthLayer, InterSentenceLayer
 from parse import quick_parser
 from collections import namedtuple as _namedtuple
-
-def _butterfly_stage_permutation(n_vectors, stage, device=None):
-    """Permutation that makes XOR-neighbors adjacent for a butterfly stage."""
-    if n_vectors <= 1:
-        return torch.arange(n_vectors, dtype=torch.long, device=device)
-    span = int(math.log2(n_vectors))
-    bit = stage % max(span, 1)
-    stride = 1 << bit
-    block = stride << 1
-    order = []
-    for start in range(0, n_vectors, block):
-        for offset in range(stride):
-            order.append(start + offset)
-            order.append(start + offset + stride)
-    return torch.tensor(order, dtype=torch.long, device=device)
-
-def _butterfly_inverse_permutation(perm):
-    inv = torch.empty_like(perm)
-    inv[perm] = torch.arange(len(perm), device=perm.device)
-    return inv
-
-def _butterfly_pack_pairs(x):
-    """Pack adjacent object pairs: [B, N, D] -> [B, N/2, 2D]."""
-    B, N, D = x.shape
-    assert N % 2 == 0, f"pair pack requires even N, got {N}"
-    return x.reshape(B, N // 2, 2 * D)
-
-def _butterfly_unpack_pairs(pair_state):
-    """Unpack pair state: [B, N/2, 2D] -> [B, N, D]."""
-    B, N_half, pair_dim = pair_state.shape
-    assert pair_dim % 2 == 0, f"pair state width must be even, got {pair_dim}"
-    return pair_state.reshape(B, N_half * 2, pair_dim // 2)
 
 class Encoding(nn.Module):
     """Abstract base class for per-slot encodings in the embedding vector.
@@ -3526,10 +3494,19 @@ class InputSpace(Space):
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
         self.input          = torch.FloatTensor
         self.tokenizedInput = False
-        fullSize  = outputShape[0]*outputShape[1]
-        self.lift = MapppingLayer(fullSize, fullSize)
-        self.params = self.lift.getParameters()
-        self.layers = nn.ModuleList([self.lift])
+        # Byte lexer inputs are discrete indices (0-255) looked up via
+        # Embedding — a global linear lift over the flattened buffer is
+        # unnecessary and prohibitively expensive for large nOutput.
+        # Only create the MappingLayer for non-byte (continuous) inputs.
+        if self.byte_mode:
+            self.lift = None
+            self.params = []
+            self.layers = nn.ModuleList()
+        else:
+            fullSize  = outputShape[0]*outputShape[1]
+            self.lift = MapppingLayer(fullSize, fullSize)
+            self.params = self.lift.getParameters()
+            self.layers = nn.ModuleList([self.lift])
     # Data client interface
     def getTrainData(self):
         return self.data.train_input, self.data.train_output
@@ -4366,6 +4343,7 @@ class ConceptualSpace(Space):
         self.nonlinear = nonlinear
         self.ergodic = ergodic
         self.hasAttention = hasAttention
+        # last_svo is a @property backed by _last_svo (set during forward)
         input = self.subspace.getEncodedInputSize()
         output = self.subspace.getEncodedOutputSize()
         if hasAttention:
@@ -4396,8 +4374,9 @@ class ConceptualSpace(Space):
             self.params = []
             for s in self.sigmas:
                 self.params.extend(s.getParameters())
-            # Set forwardSigma to level-0 for backward compat callers
+            # Set forwardSigma/reverseSigma to level-0 for backward compat callers
             self.forwardSigma = self.sigmas[0].forward
+            self.reverseSigma = self.sigmas[0].reverse
         else:
             # ── Original single-layer mode ────────────────────────────
             self._hierarchical = False
@@ -4426,27 +4405,55 @@ class ConceptualSpace(Space):
                 self.forwardSigma = self.sigma.forward
                 self.params = self.sigma.getParameters()
                 self.layers = nn.ModuleList([self.sigma])
+        # ── Butterfly mode: ButterflyStage wrappers around SigmaLayers ──
+        # Each stage does permute → pack → sigma → unpack → merge,
+        # halving N while keeping D constant.  The sigma is 2D×2D.
         self.butterfly_enabled = False
-        self.butterfly_sigmas = None
+        self.butterfly_stages = None
         self._butterfly_state_vectors = None
+        # Legacy fields kept for backward compat with old ramsified path
+        self.butterfly_sigmas = None
         self._butterfly_pair_outputs = None
         if butterfly_config is not None:
             self.butterfly_enabled = True
             self._butterfly_state_vectors = butterfly_config["state_vectors"]
             pair_dim = 2 * butterfly_config["state_dim"]
-            self.butterfly_sigmas = nn.ModuleList()
-            for _ in range(butterfly_config["conceptual_order"]):
-                sig = SigmaLayer(
-                    pair_dim, pair_dim,
-                    naive=butterfly_config["naive"],
-                    ergodic=butterfly_config["ergodic"],
-                    invertible=True,
-                )
-                sig.saturate = False
-                self.butterfly_sigmas.append(sig)
-                self.layers.append(sig)
-                self.params.extend(sig.getParameters())
-            self._butterfly_pair_outputs = [None] * butterfly_config["conceptual_order"]
+            n_stages = butterfly_config["conceptual_order"]
+            initial_n = butterfly_config["state_vectors"]
+            use_butterfly_stages = butterfly_config.get("use_stages", True)
+
+            if use_butterfly_stages:
+                # New path: ButterflyStage wrappers
+                self.butterfly_stages = nn.ModuleList()
+                for t in range(n_stages):
+                    sig = SigmaLayer(
+                        pair_dim, pair_dim,
+                        naive=butterfly_config["naive"],
+                        ergodic=butterfly_config["ergodic"],
+                        invertible=True,
+                    )
+                    sig.saturate = False
+                    stage = ButterflyStage(
+                        sig, stage_idx=t, initial_n=initial_n,
+                        is_last=(t == n_stages - 1))
+                    self.butterfly_stages.append(stage)
+                    self.layers.append(stage)
+                    self.params.extend(sig.getParameters())
+            else:
+                # Legacy path: raw butterfly_sigmas (no merge, no ButterflyStage)
+                self.butterfly_sigmas = nn.ModuleList()
+                for _ in range(n_stages):
+                    sig = SigmaLayer(
+                        pair_dim, pair_dim,
+                        naive=butterfly_config["naive"],
+                        ergodic=butterfly_config["ergodic"],
+                        invertible=True,
+                    )
+                    sig.saturate = False
+                    self.butterfly_sigmas.append(sig)
+                    self.layers.append(sig)
+                    self.params.extend(sig.getParameters())
+                self._butterfly_pair_outputs = [None] * n_stages
 
         # Grammar methods and SyntacticLayers are now on TheGrammar.
         # Spaces delegate to TheGrammar.project('C', ...) and
@@ -4509,20 +4516,32 @@ class ConceptualSpace(Space):
     class _CSLevelView:
         """Proxy routing .forward()/.reverse() through a per-level sigma.
 
+        When butterfly_stages are available, ``_sigma`` points to a
+        ButterflyStage wrapper — the butterfly mechanics (permute, pack,
+        merge) are internal to the layer.  No butterfly flag needed.
+
         Accepts ``wordSpace`` for signature parity with the non-hierarchical
         path, but ignores it — hierarchical sigmas don't invoke compose.
         """
         def __init__(self, parent, t):
             self._parent = parent
             self._t = t
-            self._sigma = parent.sigmas[t] if parent._hierarchical else getattr(parent, 'sigma', None)
+            if parent.butterfly_stages is not None:
+                self._sigma = parent.butterfly_stages[t]
+            elif parent._hierarchical:
+                self._sigma = parent.sigmas[t]
+            else:
+                self._sigma = getattr(parent, 'sigma', None)
             self.subspace = parent.subspace
 
         def forward(self, vspace, wordSpace=None, butterfly=False, target_count=None):
-            # target_count is accepted for signature parity with
-            # ConceptualSpace.forward (the non-ramsified path passes
-            # it to route through _compose_to_target).  Hierarchical
-            # sigmas don't invoke compose, so the value is ignored.
+            # ButterflyStage path: no early return, butterfly is internal
+            if self._parent.butterfly_stages is not None:
+                x = vspace.materialize()
+                y = self._sigma.forward(x)
+                self._parent.subspace.set_event(y)
+                return self._parent.subspace
+            # Legacy butterfly path (raw butterfly_sigmas, no merge)
             if butterfly and self._parent.butterfly_enabled:
                 return self._parent._forward_butterfly_level(vspace, self._t)
             x = vspace.materialize()
@@ -4531,6 +4550,13 @@ class ConceptualSpace(Space):
             return self._parent.subspace
 
         def reverse(self, vspace, wordSpace=None, butterfly=False):
+            # ButterflyStage path
+            if self._parent.butterfly_stages is not None:
+                x = vspace.materialize()
+                y = self._sigma.reverse(x)
+                self._parent.subspace.set_event(y)
+                return self._parent.subspace
+            # Legacy butterfly path
             if butterfly and self._parent.butterfly_enabled:
                 return self._parent._reverse_butterfly_level(vspace, self._t)
             x = vspace.materialize()
@@ -4716,7 +4742,11 @@ class SymbolicSpace(Space):
         else:
             self._symbol_where = None
 
+        # ── Butterfly mode: ButterflyStage wrappers around PiLayers ──
+        # Pi operates on sigma's merged output — no further merge (is_last=True).
         self.butterfly_enabled = False
+        self.butterfly_stages = None
+        # Legacy fields kept for backward compat with old ramsified path
         self.butterfly_pis = None
         self._butterfly_symbol_width = None
         self._butterfly_symbol_factor = None
@@ -4725,16 +4755,33 @@ class SymbolicSpace(Space):
             self._butterfly_symbol_width = butterfly_config["symbol_width"]
             self._butterfly_symbol_factor = butterfly_config["symbol_factor"]
             pair_dim = 2 * butterfly_config["state_dim"]
-            self.butterfly_pis = nn.ModuleList()
-            for _ in range(butterfly_config["conceptual_order"]):
-                pi = PiLayer(pair_dim, pair_dim, invertible=True, monotonic=True)
-                self.butterfly_pis.append(pi)
-                self.layers.append(pi)
+            n_stages = butterfly_config["conceptual_order"]
+            initial_n = butterfly_config["state_vectors"]
+            use_butterfly_stages = butterfly_config.get("use_stages", True)
+
+            if use_butterfly_stages:
+                # New path: ButterflyStage wrappers (is_last=True: no merge)
+                self.butterfly_stages = nn.ModuleList()
+                for t in range(n_stages):
+                    pi = PiLayer(pair_dim, pair_dim, invertible=True, monotonic=True)
+                    # Pi operates on sigma's merged output (N/2^(t+1)),
+                    # so its initial_n accounts for sigma's merge
+                    stage = ButterflyStage(
+                        pi, stage_idx=t, initial_n=initial_n // 2,
+                        is_last=True)  # no merge — sigma already merged
+                    self.butterfly_stages.append(stage)
+                    self.layers.append(stage)
+            else:
+                # Legacy path: raw butterfly_pis (shared pair_output with CS)
+                self.butterfly_pis = nn.ModuleList()
+                for _ in range(n_stages):
+                    pi = PiLayer(pair_dim, pair_dim, invertible=True, monotonic=True)
+                    self.butterfly_pis.append(pi)
+                    self.layers.append(pi)
 
         self.params = list(self.parameters())
 
         # Rule codebook — learned vectors for grammar rule identities.
-        # Allocated in init_syntactic_layer() once the grammar is known.
         # Index 0 is reserved as the empty-slot sentinel (zero vector,
         # non-training via padding_idx); indices 1..nRules map to
         # grammar rule_ids 0..nRules-1.
@@ -4766,31 +4813,36 @@ class SymbolicSpace(Space):
         symbol_grid = symbol_grid.permute(0, 1, 3, 2, 4).contiguous()
         return symbol_grid.reshape(B, N // 2, n * 2 * S)
 
-    def _forward_butterfly_level(self, stage_idx):
+    def _forward_butterfly_level(self, stage_idx, is_last=False):
         pair_output = self.conceptualSpace.get_butterfly_pair_output(stage_idx)
         assert pair_output is not None, f"missing butterfly pair output for stage {stage_idx}"
         pair_symbols = self.butterfly_pis[stage_idx].forward(pair_output)
         sym_vectors = self._pair_state_to_symbols(pair_symbols)
-        # VQ-VAE commitment loss: soft encoder→codebook pull.  The
-        # butterfly forward is inherently reversible (pair PiLayers are
-        # invertible) so we do NOT quantize or STE-wrap sym_vectors —
-        # that would break exact inversion in the butterfly reverse.
-        # Commitment alone gives the codebook-alignment signal.
-        if (self.use_vqvae and self.codebook
-                and self.commitment_beta > 0.0):
-            target = self._nearest_symbol_target(sym_vectors)
-            if target is not None:
-                target_detached = target.detach().to(
-                    device=sym_vectors.device, dtype=sym_vectors.dtype)
-                n = min(sym_vectors.shape[-1],
-                        target_detached.shape[-1], self.nDim)
-                if n > 0:
-                    commit = self.commitment_beta * F.mse_loss(
-                        sym_vectors[..., :n], target_detached[..., :n])
-                    prev = self._symbol_objective_terms.get(
-                        "symbol_commitment", commit.new_tensor(0.0))
-                    self._symbol_objective_terms["symbol_commitment"] = prev + commit
-        self.accumulate_symbol_objective(sym_vectors, use_codebook_target=True)
+        # Codebook alignment losses (VQ commitment + symbol residual) are
+        # expensive: they need a full nearest-neighbour lookup against the
+        # codebook for every flattened symbol row.  With ARLM batches this
+        # can be millions of rows.  Only compute on the *last* butterfly
+        # step — intermediate steps are not the final symbolic state.
+        if is_last:
+            # Compute nearest codebook target ONCE — used by both VQ
+            # commitment and symbol objective (avoids a redundant full
+            # codebook scan).
+            nearest_target = self._nearest_symbol_target(sym_vectors)
+            # VQ-VAE commitment loss: soft encoder→codebook pull.
+            if (self.use_vqvae and self.codebook
+                    and self.commitment_beta > 0.0):
+                if nearest_target is not None:
+                    target_detached = nearest_target.detach().to(
+                        device=sym_vectors.device, dtype=sym_vectors.dtype)
+                    n = min(sym_vectors.shape[-1],
+                            target_detached.shape[-1], self.nDim)
+                    if n > 0:
+                        commit = self.commitment_beta * F.mse_loss(
+                            sym_vectors[..., :n], target_detached[..., :n])
+                        prev = self._symbol_objective_terms.get(
+                            "symbol_commitment", commit.new_tensor(0.0))
+                        self._symbol_objective_terms["symbol_commitment"] = prev + commit
+            self.accumulate_symbol_objective(sym_vectors, target=nearest_target)
         self.subspace.set_event(sym_vectors)
         return self.subspace
 
@@ -4859,8 +4911,42 @@ class SymbolicSpace(Space):
         log_power = torch.log(power)
         return (log_power - log_power.mean(dim=-1, keepdim=True)).square().mean()
 
+    @staticmethod
+    def _vq_chunk_budget():
+        """Memory budget (bytes) for VQ distance matrix chunks.
+
+        With d content dims and K codebook entries, each row of the
+        distance matrix costs K * 4 bytes.  The budget controls how
+        many rows are processed per matmul.  Larger budgets mean fewer
+        sequential chunks — critical for ARLM batches where N can
+        reach hundreds of thousands.
+        """
+        device = str(TheDevice.get())
+        if 'cuda' in device:
+            try:
+                props = torch.cuda.get_device_properties(device)
+                return max(256 << 20, props.total_mem // 4)
+            except Exception:
+                pass
+        # MPS (Apple Silicon) or ROCm without CUDA properties:
+        # use 4 GiB — safe on any ≥16 GB unified/GPU memory system.
+        if 'mps' in device or 'cuda' in device:
+            return 4 << 30
+        # CPU fallback
+        return 2 << 30
+
     def _nearest_symbol_target(self, predicted):
-        """Nearest codebook symbols as detached residual targets."""
+        """Nearest codebook symbols as detached residual targets.
+
+        The core operation is a batched L2-nearest-neighbour lookup:
+        for each of N flattened symbol rows (d content dims), find the
+        closest of K codebook entries.  This decomposes into the matmul
+        ``[N, d] @ [d, K]`` plus per-row and per-codebook-entry norms.
+
+        With d = 4 the matmul is trivially fast; the bottleneck is the
+        [N, K] output matrix.  We chunk over N to keep that matrix
+        within the memory budget from ``_vq_chunk_budget()``.
+        """
         if not self.codebook:
             return None
         basis = getattr(self.subspace, "what", None)
@@ -4877,10 +4963,28 @@ class SymbolicSpace(Space):
             return None
         flat_content = flat[:, :n]
         weight_content = weight[:, :n]
-        flat_sq = (flat_content * flat_content).sum(dim=-1, keepdim=True)
-        weight_sq = (weight_content * weight_content).sum(dim=-1).unsqueeze(0)
-        dists = flat_sq - 2 * (flat_content @ weight_content.T) + weight_sq
-        indices = dists.argmin(dim=-1)
+        weight_sq = (weight_content * weight_content).sum(dim=-1).unsqueeze(0)  # [1, K]
+
+        K = weight_content.shape[0]
+        budget = self._vq_chunk_budget()
+        max_rows = max(1, budget // (K * 4))
+        N = flat_content.shape[0]
+
+        if N <= max_rows:
+            # Single matmul: [N, d] @ [d, K] → [N, K]
+            flat_sq = (flat_content * flat_content).sum(dim=-1, keepdim=True)
+            dists = flat_sq - 2 * (flat_content @ weight_content.T) + weight_sq
+            indices = dists.argmin(dim=-1)
+        else:
+            # Chunked: each chunk is [chunk, d] @ [d, K]
+            indices = torch.empty(N, dtype=torch.long, device=flat.device)
+            for start in range(0, N, max_rows):
+                end = min(start + max_rows, N)
+                chunk = flat_content[start:end]
+                chunk_sq = (chunk * chunk).sum(dim=-1, keepdim=True)
+                chunk_dists = chunk_sq - 2 * (chunk @ weight_content.T) + weight_sq
+                indices[start:end] = chunk_dists.argmin(dim=-1)
+
         target = flat.detach().clone()
         target[:, :n] = weight_content[indices]
         return target.reshape_as(predicted)
@@ -4949,18 +5053,50 @@ class SymbolicSpace(Space):
     class _SSLevelView:
         """Proxy routing .forward()/.reverse() through a per-level PiLayer.
 
+        When butterfly_stages are available, ``_pi`` points to a
+        ButterflyStage wrapper — butterfly mechanics are internal.
+
         Accepts ``wordSpace`` for signature parity with the non-hierarchical
         path, but ignores it — hierarchical Pi layers don't invoke compose.
         """
         def __init__(self, parent, t):
             self._parent = parent
             self._t = t
-            self._pi = parent.pi_layers[t] if parent._hierarchical else parent.layer
+            if parent.butterfly_stages is not None:
+                self._pi = parent.butterfly_stages[t]
+            elif parent._hierarchical:
+                self._pi = parent.pi_layers[t]
+            else:
+                self._pi = parent.layer
             self.subspace = parent.subspace
 
-        def forward(self, vspace, wordSpace=None, butterfly=False, quantize=True):
+        def forward(self, vspace, wordSpace=None, butterfly=False, quantize=True,
+                    is_last=False):
+            # ButterflyStage path: no early return
+            if self._parent.butterfly_stages is not None:
+                x = vspace.materialize()
+                y = self._pi.forward(x)
+                if is_last:
+                    nearest_target = self._parent._nearest_symbol_target(y)
+                    if (self._parent.use_vqvae and self._parent.codebook
+                            and self._parent.commitment_beta > 0.0
+                            and nearest_target is not None):
+                        target_detached = nearest_target.detach().to(
+                            device=y.device, dtype=y.dtype)
+                        n = min(y.shape[-1], target_detached.shape[-1],
+                                self._parent.nDim)
+                        if n > 0:
+                            commit = self._parent.commitment_beta * F.mse_loss(
+                                y[..., :n], target_detached[..., :n])
+                            prev = self._parent._symbol_objective_terms.get(
+                                "symbol_commitment", y.new_tensor(0.0))
+                            self._parent._symbol_objective_terms["symbol_commitment"] = prev + commit
+                    self._parent.accumulate_symbol_objective(y, target=nearest_target)
+                self._parent.subspace.set_event(y)
+                return self._parent.subspace
+            # Legacy butterfly path (shared pair_output with CS)
             if butterfly and self._parent.butterfly_enabled:
-                return self._parent._forward_butterfly_level(self._t)
+                return self._parent._forward_butterfly_level(self._t, is_last=is_last)
             x = vspace.materialize()
             y = self._pi.forward(x)
             if quantize:
@@ -4971,6 +5107,13 @@ class SymbolicSpace(Space):
             return self._parent.subspace
 
         def reverse(self, vspace, wordSpace=None, butterfly=False):
+            # ButterflyStage path
+            if self._parent.butterfly_stages is not None:
+                x = vspace.materialize()
+                y = self._pi.reverse(x)
+                self._parent.subspace.set_event(y)
+                return self._parent.subspace
+            # Legacy butterfly path
             if butterfly and self._parent.butterfly_enabled:
                 return self._parent._reverse_butterfly_level(vspace, self._t)
             x = vspace.materialize()
@@ -4982,7 +5125,8 @@ class SymbolicSpace(Space):
     def vocabulary(self):
         return self.subspace.what
 
-    def forward(self, vspace, wordSpace=None, butterfly=False, quantize=True):
+    def forward(self, vspace, wordSpace=None, butterfly=False, quantize=True,
+                is_last=False):
         """Map concept vectors to symbol vectors via PiLayer (Π).
 
         PiLayer maps on the nDim axis: [B, nVectors, concept_dim] →
@@ -4997,7 +5141,7 @@ class SymbolicSpace(Space):
         6. Store as symbol vectors in subspace event.
         """
         if butterfly and self.butterfly_enabled:
-            return self._forward_butterfly_level(0)
+            return self._forward_butterfly_level(0, is_last=is_last)
         if self.passThrough:
             return vspace
         vspace = self.forwardBegin(vspace)
@@ -6097,12 +6241,15 @@ class PerceptualSyntacticLayer(SyntacticLayer):
     def _ensure_chunk_layer(self, nDim):
         """Lazily create the chunk codebook when we first see P-tier data.
 
-        BPE mode and the target vocab size / minimum pair frequency are
-        read from ``PerceptualSpace`` config.  Legacy defaults
-        (``chunkBPE=false``) keep the whitespace-boundary behavior
-        unchanged; ``chunkBPE=true`` switches the layer into greedy
-        longest-match BPE with a learned merge table that grows during
-        ``train_step``.
+        BPE mode and the minimum pair frequency are read from
+        ``PerceptualSpace`` config.  The BPE target vocabulary size is
+        derived from the codebook's ``nVectors`` (falling back to
+        ``chunkTargetVocabSize`` for legacy configs, then 1024).
+
+        Legacy defaults (``chunkBPE=false``) keep the whitespace-boundary
+        behavior unchanged; ``chunkBPE=true`` switches the layer into
+        greedy longest-match BPE with a learned merge table that grows
+        during ``train_step``.
         """
         if self.chunk_layer is None:
             def _pcfg(key, default):
@@ -6111,10 +6258,17 @@ class PerceptualSyntacticLayer(SyntacticLayer):
                 except (KeyError, TypeError, ValueError):
                     return default
             bpe = bool(_pcfg("chunkBPE", False))
+            # Derive target vocab from codebook nVectors; fall back to
+            # legacy chunkTargetVocabSize, then 1024.
             try:
-                target_vocab = int(_pcfg("chunkTargetVocabSize", 1024))
+                target_vocab = int(_pcfg("nVectors", 0))
             except (TypeError, ValueError):
-                target_vocab = 1024
+                target_vocab = 0
+            if target_vocab <= 0:
+                try:
+                    target_vocab = int(_pcfg("chunkTargetVocabSize", 1024))
+                except (TypeError, ValueError):
+                    target_vocab = 1024
             try:
                 min_pair_freq = int(_pcfg("chunkMinPairFrequency", 2))
             except (TypeError, ValueError):
@@ -6244,7 +6398,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
     }
 
     def init_conceptual_params(self, concept_dim):
-        """Initialize C-tier learnable parameters. Called by Space.init_syntactic_layer."""
+        """Initialize C-tier learnable parameters."""
         self.lifting_layer = LiftingLayer(16, concept_dim)
         self.lowering_layer = LoweringLayer(concept_dim)
         self._symbolic_space = None  # set by BasicModel after init
@@ -6656,7 +6810,7 @@ class SymbolicSyntacticLayer(SyntacticLayer):
     """
 
     def init_swap(self, symbol_dim, n_symbol_slots):
-        """Initialize swap and non parameters. Called by Space.init_syntactic_layer."""
+        """Initialize swap and non parameters."""
         swap_size = max(symbol_dim, n_symbol_slots, 1)
         self.swap_marker = nn.Parameter(torch.randn(swap_size) * 0.01)
         self.swap_logits = nn.Parameter(torch.zeros(3, 3))

@@ -7,6 +7,7 @@
     <reconstruct>symbols</reconstruct>
     <conceptualOrder>3</conceptualOrder>
     <ramsified>true</ramsified>
+    <useButterflies>true</useButterflies>
     <l1Lambda>0.01</l1Lambda>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>

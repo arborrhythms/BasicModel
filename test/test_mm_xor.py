@@ -55,6 +55,10 @@ def _ramsified_config(enabled):
     return _variant_config([
         ("<ramsified>true</ramsified>", f"<ramsified>{value}</ramsified>"),
         ("<ramsified>false</ramsified>", f"<ramsified>{value}</ramsified>"),
+        ("<useButterflies>true</useButterflies>",
+         f"<useButterflies>{value}</useButterflies>"),
+        ("<useButterflies>false</useButterflies>",
+         f"<useButterflies>{value}</useButterflies>"),
     ])
 
 

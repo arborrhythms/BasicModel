@@ -1025,6 +1025,172 @@ class PiLayer(Layer):
         check_stability("stable square nIn=nOut=6", naive=True, hasBias=False, nInput=6, nOutput=6)
         print("PiLayer tests passed.")
 
+class ButterflyStage(Layer):
+    """Butterfly wrapper: permute → pack → inner layer → unpack → merge.
+
+    Wraps a SigmaLayer or PiLayer to implement one stage of a butterfly
+    network with N-halving.  The inner layer sees pairs of adjacent
+    vectors packed into ``[B, N/2, 2D]`` and produces ``[B, N/2, 2D]``.
+    After unpacking back to ``[B, N, D]``, an average-merge halves N
+    to ``[B, N/2, D]``, caching the difference for exact inversion.
+
+    From the Space's perspective, ``ButterflyStage.forward(x)`` is a
+    drop-in replacement for ``SigmaLayer.forward(x)`` — the butterfly
+    mechanics are an implementation detail of the layer.
+
+    Args:
+        inner: the SigmaLayer or PiLayer to wrap (operates on 2D dims).
+        stage_idx: butterfly stage index (determines permutation pattern).
+        initial_n: vector count at stage 0 (N halves each stage).
+        is_last: if True, skip the merge (output stays [B, N_t, D]).
+    """
+
+    def __init__(self, inner, stage_idx, initial_n, is_last=False):
+        pair_dim = inner.nInput
+        assert pair_dim % 2 == 0, (
+            f"ButterflyStage inner layer nInput must be even (got {pair_dim})")
+        super().__init__(pair_dim // 2, pair_dim // 2)
+        self.inner = inner
+        self.stage_idx = stage_idx
+        self.initial_n = initial_n
+        self.is_last = is_last
+        self._merge_diff = None
+        self.layers = [inner]
+
+    @property
+    def n_current(self):
+        """Vector count at this stage's input."""
+        return self.initial_n // (2 ** self.stage_idx)
+
+    @staticmethod
+    def _permutation(n_vectors, stage, device=None):
+        """Permutation that makes XOR-neighbors adjacent for a butterfly stage."""
+        if n_vectors <= 1:
+            return torch.arange(n_vectors, dtype=torch.long, device=device)
+        span = int(math.log2(n_vectors))
+        bit = stage % max(span, 1)
+        stride = 1 << bit
+        block = stride << 1
+        order = []
+        for start in range(0, n_vectors, block):
+            for offset in range(stride):
+                order.append(start + offset)
+                order.append(start + offset + stride)
+        return torch.tensor(order, dtype=torch.long, device=device)
+
+    @staticmethod
+    def _inverse_permutation(perm):
+        inv = torch.empty_like(perm)
+        inv[perm] = torch.arange(len(perm), device=perm.device)
+        return inv
+
+    def forward(self, x):
+        """[B, N_t, D] → [B, N_t/2, D] (or [B, N_t, D] if is_last)."""
+        B, N, D = x.shape
+        # 1. Permute: reorder vectors so XOR-neighbors are adjacent
+        perm = self._permutation(N, self.stage_idx, device=x.device)
+        x_perm = x[:, perm, :]
+        # 2. Pack pairs: [B, N, D] → [B, N/2, 2D]
+        pair_input = x_perm.reshape(B, N // 2, 2 * D)
+        # 3. Inner layer: [B, N/2, 2D] → [B, N/2, 2D]
+        pair_output = self.inner.forward(pair_input)
+        # 4. Unpack: [B, N/2, 2D] → [B, N, D]
+        inv_perm = self._inverse_permutation(perm)
+        x_out = pair_output.reshape(B, N, D)[:, inv_perm, :]
+        # 5. Merge: [B, N, D] → [B, N/2, D] (skip on last stage)
+        if self.is_last:
+            return x_out
+        left = x_out[:, 0::2, :]
+        right = x_out[:, 1::2, :]
+        self._merge_diff = left - right
+        return (left + right) / 2
+
+    def reverse(self, y):
+        """[B, N_t/2, D] → [B, N_t, D] (or [B, N_t, D] if is_last)."""
+        # 1. Unmerge: [B, N/2, D] → [B, N, D]
+        if self.is_last:
+            x_out = y
+        else:
+            diff = self._merge_diff
+            assert diff is not None, "ButterflyStage.reverse called without prior forward"
+            left = y + diff / 2
+            right = y - diff / 2
+            B, N_half, D = left.shape
+            x_out = torch.zeros(B, N_half * 2, D, device=y.device, dtype=y.dtype)
+            x_out[:, 0::2, :] = left
+            x_out[:, 1::2, :] = right
+            self._merge_diff = None
+        B, N, D = x_out.shape
+        # 2. Permute (same permutation as forward)
+        perm = self._permutation(N, self.stage_idx, device=x_out.device)
+        x_perm = x_out[:, perm, :]
+        # 3. Pack: [B, N, D] → [B, N/2, 2D]
+        pair_output = x_perm.reshape(B, N // 2, 2 * D)
+        # 4. Inner layer reverse: [B, N/2, 2D] → [B, N/2, 2D]
+        pair_input = self.inner.reverse(pair_output)
+        # 5. Unpack + inverse permute: [B, N/2, 2D] → [B, N, D]
+        inv_perm = self._inverse_permutation(perm)
+        x_in = pair_input.reshape(B, N, D)[:, inv_perm, :]
+        return x_in
+
+    @staticmethod
+    def test():
+        """Verify forward→reverse roundtrip and N-halving."""
+        D = 6
+        N = 16
+        B = 4
+
+        # Test with SigmaLayer inner
+        sigma = SigmaLayer(2 * D, 2 * D, invertible=True, naive=True)
+        sigma.set_sigma(0.0)
+
+        # Non-last stage: should halve N
+        stage = ButterflyStage(sigma, stage_idx=0, initial_n=N, is_last=False)
+        x = torch.randn(B, N, D)
+        y = stage.forward(x)
+        assert y.shape == (B, N // 2, D), f"Expected ({B}, {N//2}, {D}), got {y.shape}"
+        x_recon = stage.reverse(y)
+        assert x_recon.shape == (B, N, D), f"Reverse shape: {x_recon.shape}"
+        error = (x - x_recon).norm() / x.norm()
+        assert error < 1e-4, f"Roundtrip error: {error:.2e}"
+
+        # Last stage: should keep N
+        stage_last = ButterflyStage(
+            SigmaLayer(2 * D, 2 * D, invertible=True, naive=True),
+            stage_idx=0, initial_n=N, is_last=True)
+        stage_last.inner.set_sigma(0.0)
+        y_last = stage_last.forward(x)
+        assert y_last.shape == (B, N, D), f"Last stage shape: {y_last.shape}"
+        x_recon_last = stage_last.reverse(y_last)
+        error_last = (x - x_recon_last).norm() / x.norm()
+        assert error_last < 1e-4, f"Last stage roundtrip error: {error_last:.2e}"
+
+        # Multi-stage pipeline: N=16 → 8 → 4 → 2
+        stages = []
+        n = N
+        for i in range(3):
+            s = ButterflyStage(
+                SigmaLayer(2 * D, 2 * D, invertible=True, naive=True),
+                stage_idx=i, initial_n=N, is_last=(i == 2))
+            s.inner.set_sigma(0.0)
+            stages.append(s)
+
+        x = torch.randn(B, N, D)
+        state = x
+        for s in stages:
+            state = s.forward(state)
+        # After 2 merges + 1 last: N=16→8→4 (last keeps 4)
+        assert state.shape == (B, 4, D), f"Pipeline output: {state.shape}"
+
+        for s in reversed(stages):
+            state = s.reverse(state)
+        assert state.shape == (B, N, D), f"Pipeline reverse: {state.shape}"
+        error = (x - state).norm() / x.norm()
+        assert error < 1e-4, f"Pipeline roundtrip error: {error:.2e}"
+
+        print("ButterflyStage tests passed.")
+
+
 class SortingLayer(Layer):
     """NeuralSort: differentiable O(1)-depth sorting (Grover et al. 2019).
 

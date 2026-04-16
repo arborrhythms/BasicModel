@@ -16,6 +16,7 @@
     <modelType>simple</modelType>
     <conceptualOrder>1</conceptualOrder>
     <ramsified>false</ramsified>
+    <useButterflies>false</useButterflies>
     <STM_decay>0.0</STM_decay>
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
