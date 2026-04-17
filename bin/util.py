@@ -227,11 +227,11 @@ def auto_compile_backend():
     """Select the compilation backend from MODEL_COMPILE env var.
 
     Recognised values (case-insensitive):
-      none / off / false / 0 / no  → skip compilation entirely (return "none")
-      inductor                     → force torch.compile(backend='inductor')
-      eager                        → force torch.compile(backend='eager')
-      aot_eager                    → force torch.compile(backend='aot_eager')
-      (empty / unset)              → auto: try inductor → eager → aot_eager
+      none / off / false / 0 / no  -> skip compilation entirely (return "none")
+      inductor                     -> force torch.compile(backend='inductor')
+      eager                        -> force torch.compile(backend='eager')
+      aot_eager                    -> force torch.compile(backend='aot_eager')
+      (empty / unset)              -> auto: try inductor -> eager -> aot_eager
     """
     override = os.environ.get("MODEL_COMPILE", "").strip().lower()
     if not override:
@@ -320,9 +320,9 @@ def compile(model, verbose=True):
     """Try to torch.compile the model; return the (possibly compiled) model.
 
     Respects TheCompileBackend (set by MODEL_COMPILE env var):
-      "none" → skip compilation entirely.
-      "auto" → try inductor → eager → aot_eager, return first success.
-      <name> → try only that backend; fall back to uncompiled on failure.
+      "none" -> skip compilation entirely.
+      "auto" -> try inductor -> eager -> aot_eager, return first success.
+      <name> -> try only that backend; fall back to uncompiled on failure.
 
     Patches inductor compile commands first when paths contain spaces.
     """
@@ -379,7 +379,7 @@ class XMLConfig:
     reload/overlay for multi-file config inheritance.
 
     ``get()`` raises ``KeyError`` when the path is absent and no
-    *default* is supplied — so missing configuration is surfaced
+    *default* is supplied -- so missing configuration is surfaced
     immediately rather than propagating ``None`` through the system.
     """
 
@@ -476,7 +476,7 @@ class XMLConfig:
     def require(self, check, description):
         """Register a config constraint.
 
-        *check* is a callable ``check(cfg) → bool``.  Returning
+        *check* is a callable ``check(cfg) -> bool``.  Returning
         ``False`` or raising an exception means the requirement failed.
         """
         self._requirements.append((check, description))
@@ -539,14 +539,17 @@ class XMLConfig:
         """
         return self.get(f"architecture.data.{key}", default)
 
-    def space(self, space_name, key):
+    _MISSING = object()
+
+    def space(self, space_name, key, default=_MISSING):
         """Lookup key in <SpaceName>, fall back to <architecture>.
 
         Space sections are top-level siblings of <architecture> in the XML.
         Equivalent to BasicModelFactory.get_space_param.
 
-        Raises ``KeyError`` when the key is absent from both the
-        space section and the architecture section.
+        Raises ``KeyError`` when the key is absent from both the space
+        section and the architecture section -- unless ``default`` is
+        provided, in which case it is returned.
         """
         # Try space-specific section first (top-level)
         if space_name in self._data:
@@ -557,6 +560,8 @@ class XMLConfig:
         arch = self.section("architecture")
         if key in arch:
             return arch[key]
+        if default is not XMLConfig._MISSING:
+            return default
         raise KeyError(
             f"Config key {key!r} not found in section {space_name!r} "
             f"or 'architecture'"
@@ -742,23 +747,14 @@ class ProjectPaths:
 _VALID_USE_GRAMMAR = ("all", "thoughtFree", "none")
 
 
-def parse_use_grammar(value, thought_free: bool = False) -> str:
-    """Normalize useGrammar config into the tri-state {"all", "thoughtFree", "none"}.
-
-    Accepts:
-      - tri-state string (preferred)
-      - legacy boolean (with thought_free sidecar, for backward compat)
-    """
-    if isinstance(value, bool):
-        if not value:
-            return "none"
-        return "thoughtFree" if thought_free else "all"
-    if isinstance(value, str):
-        if value not in _VALID_USE_GRAMMAR:
-            raise ValueError(
-                f"useGrammar must be one of {_VALID_USE_GRAMMAR}, got {value!r}"
-            )
-        return value
-    raise ValueError(
-        f"useGrammar must be string or bool, got {type(value).__name__}"
-    )
+def parse_use_grammar(value) -> str:
+    """Normalize useGrammar config into the tri-state {"all", "thoughtFree", "none"}."""
+    if not isinstance(value, str):
+        raise ValueError(
+            f"useGrammar must be a string, got {type(value).__name__}"
+        )
+    if value not in _VALID_USE_GRAMMAR:
+        raise ValueError(
+            f"useGrammar must be one of {_VALID_USE_GRAMMAR}, got {value!r}"
+        )
+    return value

@@ -6,7 +6,6 @@ matplotlib
 datasets
 scikit-learn
 pandas
-vector_quantize_pytorch
 torchvision
 nltk
 pytest

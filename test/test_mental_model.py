@@ -2,7 +2,7 @@
 
 Verifies that MentalModel can:
 1. Create from MentalModel.xml and run forward+reverse (passing)
-2. Learn the toy grammar through the full pipeline (xfail — needs projectConcepts implementations)
+2. Learn the toy grammar through the full pipeline (xfail -- needs projectConcepts implementations)
 """
 
 import sys
@@ -45,7 +45,7 @@ class TestMentalModelForwardReverse(unittest.TestCase):
         sentences = ['the cat sat on the mat', 'a dog chased the ball']
         outputs = [torch.tensor([0.0]), torch.tensor([1.0])]
 
-        # Untrained model — suppress range checks (shape-only test)
+        # Untrained model -- suppress range checks (shape-only test)
         with Models.TheData.runtime_batch(sentences, outputs), \
              warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="Range violation")
@@ -102,32 +102,32 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
 
     # Expected canonical rule strings from MentalModel.xml after the
     # trinity / coordination / demux / query extensions. The S-tier
-    # ordering follows the literal XML order: trinity → coordination →
-    # demux selectors → query → swap/equals/part → S→C transition.
+    # ordering follows the literal XML order: trinity -> coordination ->
+    # demux selectors -> query -> swap/equals/part -> S->C transition.
     EXPECTED_RULES = [
-        "START → S",
-        "S → true(S)",
-        "S → false(S)",
-        "S → non(S)",
-        "S → conjunction(S, S)",
-        "S → disjunction(S, S)",
-        "S → what(S)",
-        "S → where(S)",
-        "S → when(S)",
-        "S → query(S, S)",
-        "S → swap(S, S)",
-        "S → equals(S, S)",
-        "S → part(S, S)",
-        "S → C",
-        "C → not(C)",
-        "C → intersection(C, C)",
-        "C → union(C, C)",
-        "C → lower(C, C)",
-        "C → lift(C, C)",
-        "C → lift(C, C, C)",
-        "C → P",
-        "P → chunk(I, P)",
-        "P → I",
+        "START -> S",
+        "S -> true(S)",
+        "S -> false(S)",
+        "S -> non(S)",
+        "S -> conjunction(S, S)",
+        "S -> disjunction(S, S)",
+        "S -> what(S)",
+        "S -> where(S)",
+        "S -> when(S)",
+        "S -> query(S, S)",
+        "S -> swap(S, S)",
+        "S -> equals(S, S)",
+        "S -> part(S, S)",
+        "S -> C",
+        "C -> not(C)",
+        "C -> intersection(C, C)",
+        "C -> union(C, C)",
+        "C -> lower(C, C)",
+        "C -> lift(C, C)",
+        "C -> lift(C, C, C)",
+        "C -> P",
+        "P -> chunk(I, P)",
+        "P -> I",
     ]
 
     def setUp(self):

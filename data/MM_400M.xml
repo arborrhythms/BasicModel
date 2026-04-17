@@ -35,7 +35,7 @@
     <training>
       <numTrials>1</numTrials>
       <numEpochs>2</numEpochs>
-      <batchSize>1</batchSize>
+      <batchSize>64</batchSize>
       <learningRate>0.0003</learningRate>
       <reverseScale>0.1</reverseScale>
       <trainEmbedding>ARLM</trainEmbedding>
@@ -126,7 +126,7 @@
   </OutputSpace>
 
   <WordSpace>
-    <useGrammar>false</useGrammar>
+    <useGrammar>none</useGrammar>
     <nWhere>2</nWhere>
 
     <language>

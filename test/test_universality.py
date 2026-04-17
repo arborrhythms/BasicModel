@@ -1,5 +1,5 @@
 """
-Universality Test — SVO Recognition & Luminosity of Kind Behavior
+Universality Test -- SVO Recognition & Luminosity of Kind Behavior
 ==================================================================
 
 Tests the model's ability to:
@@ -32,7 +32,7 @@ from util import init_config, TheXMLConfig
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
 
-# ── Test Corpus ──────────────────────────────────────────────────────
+# -- Test Corpus ------------------------------------------------------
 # Every sentence uses a transitive verb (S V O structure).
 # "kind" sentences: the action is prosocial / reversible without harm.
 # "unkind" sentences: the action is antisocial / harmful under reversal.
@@ -134,7 +134,7 @@ def _get_lift_confidence(model, grammar):
         return 0.0
 
     col = rules.index(lift_rid)
-    # probs[:, :, col] → [B, depths]; take max over depths, mean over batch
+    # probs[:, :, col] -> [B, depths]; take max over depths, mean over batch
     return probs[:, :, col].max(dim=1).values.mean().item()
 
 
@@ -154,7 +154,7 @@ class TestSVOIdentification(unittest.TestCase):
     (b) produce distinct S, V, O vectors that reconstruct correctly.
 
     Merely having the lift fire in soft superposition (with 1/6 random
-    weight) does not count — the model must be confident it is seeing
+    weight) does not count -- the model must be confident it is seeing
     transitive syntax.
     """
 
@@ -169,7 +169,7 @@ class TestSVOIdentification(unittest.TestCase):
         conf = _get_lift_confidence(self.model, self.grammar)
         self.assertGreaterEqual(conf, LIFT_CONFIDENCE_THRESHOLD,
             f"lift(C,C,C) confidence {conf:.3f} < {LIFT_CONFIDENCE_THRESHOLD} "
-            f"— model is not confident it is seeing transitive syntax")
+            f"-- model is not confident it is seeing transitive syntax")
 
     @pytest.mark.xfail(reason="untrained model: SVO roles not learned", strict=False)
     def test_svo_vectors_are_distinct(self):
@@ -200,9 +200,9 @@ class TestSVOIdentification(unittest.TestCase):
         """Reverse pass should place S, V, O tokens in correct sentence positions.
 
         For "the teacher helped the student":
-          positions 0-1 → subject phrase ("the teacher")
-          position  2   → verb ("helped")
-          positions 3-4 → object phrase ("the student")
+          positions 0-1 -> subject phrase ("the teacher")
+          position  2   -> verb ("helped")
+          positions 3-4 -> object phrase ("the student")
         """
         _run_forward(self.model, ["the teacher helped the student"])
         conf = _get_lift_confidence(self.model, self.grammar)
@@ -255,9 +255,9 @@ class TestLuminosityOfKindness(unittest.TestCase):
     """Kind actions should produce greater luminosity than unkind actions.
 
     Universality (golden rule) predicts that kind actions are reversible:
-    "the teacher helped the student" ≈ "the student helped the teacher"
+    "the teacher helped the student" ~= "the student helped the teacher"
     in terms of truth-store coherence.  Unkind actions break under reversal:
-    "the bully punched the kid" ≠ "the kid punched the bully" in coherence.
+    "the bully punched the kid" != "the kid punched the bully" in coherence.
 
     These tests are gated on correct SVO identification.  If the model
     cannot extract SVO, the luminosity comparison is meaningless.
@@ -350,7 +350,7 @@ class TestLuminosityOfKindness(unittest.TestCase):
 
         This is the core prediction of the golden rule: prosocial actions
         produce more symmetric (higher) universality than antisocial ones.
-        Gated on >= 90% lift confidence — only sentences where the model
+        Gated on >= 90% lift confidence -- only sentences where the model
         confidently selects transitive syntax contribute to the comparison.
         """
         kind_scores = []
@@ -369,7 +369,7 @@ class TestLuminosityOfKindness(unittest.TestCase):
             unkind_scores.append(score)
 
         if not kind_scores or not unkind_scores:
-            self.skipTest("SVO not confidently identified — cannot compare luminosity")
+            self.skipTest("SVO not confidently identified -- cannot compare luminosity")
 
         kind_mean = sum(kind_scores) / len(kind_scores)
         unkind_mean = sum(unkind_scores) / len(unkind_scores)

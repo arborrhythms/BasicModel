@@ -1,4 +1,4 @@
-"""BasicModel HTTP server — WikiOracle integration.
+"""BasicModel HTTP server -- WikiOracle integration.
 
 Provides an OpenAI-compatible /chat/completions endpoint so WikiOracle
 can query BasicModel the same way it queries NanoChat.
@@ -41,7 +41,7 @@ logging.basicConfig(level=logging.INFO, format="[BasicModel] %(message)s")
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 1_000_000  # 1MB request body limit
 
-# Global model reference — set by main()
+# Global model reference -- set by main()
 _model = None
 _model_config = {}
 

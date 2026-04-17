@@ -1,4 +1,4 @@
-"""BasicModel test suite — exercises all core modules.
+"""BasicModel test suite -- exercises all core modules.
 
 Covers:
   - Model.py   layer tests (LinearLayer, Invertible*, PiLayer, SigmaLayer, etc.)
@@ -112,7 +112,7 @@ def _populate_test_config(*,
                           certainty=False,
                           demuxed=False,
                           lexer="word"):
-    """Populate TheXMLConfig._data — test equivalent of XML loading.
+    """Populate TheXMLConfig._data -- test equivalent of XML loading.
 
     Space constructors read nDim/nVectors from TheXMLConfig.  In production,
     the XML file provides these.  In tests, this helper provides them directly.
@@ -219,7 +219,7 @@ def _populate_test_config(*,
 
 
 # ---------------------------------------------------------------------------
-# Model.py — Layer tests
+# Model.py -- Layer tests
 # ---------------------------------------------------------------------------
 class TestLinearLayer(unittest.TestCase):
     def test_forward_shape(self):
@@ -326,7 +326,7 @@ class TestMemory(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# SPNN.py — Classical neural network
+# SPNN.py -- Classical neural network
 # ---------------------------------------------------------------------------
 class TestSPNN(unittest.TestCase):
     def test_xor_creation(self):
@@ -340,13 +340,13 @@ class TestSPNN(unittest.TestCase):
         from SPNN import SPNN
         net = SPNN("tanh", False)
         net.loadXOR()
-        # Run a few epochs — just check it doesn't crash
+        # Run a few epochs -- just check it doesn't crash
         for _ in range(3):
             net.run()
 
 
 # ---------------------------------------------------------------------------
-# SigmaPi.py — Product-sum network
+# SigmaPi.py -- Product-sum network
 # ---------------------------------------------------------------------------
 class TestSigmaPi(unittest.TestCase):
     def test_logical_function_net_creation(self):
@@ -358,7 +358,7 @@ class TestSigmaPi(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# SymPercept.py — Bidirectional linear learning
+# SymPercept.py -- Bidirectional linear learning
 # ---------------------------------------------------------------------------
 class TestSymPercept(unittest.TestCase):
     def test_bidirectional_creation(self):
@@ -424,7 +424,7 @@ class TestSimpleModelCreation(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# BasicModel.py — Full model
+# BasicModel.py -- Full model
 # ---------------------------------------------------------------------------
 class TestBasicModelCreation(unittest.TestCase):
     def test_encodings(self):
@@ -464,7 +464,7 @@ class TestWeightPersistence(unittest.TestCase):
 # Encoding round-trip tests
 # ---------------------------------------------------------------------------
 class TestWhereEncodingRoundTrip(unittest.TestCase):
-    """WhereEncoding: encode → reverse → decode recovers the original offset."""
+    """WhereEncoding: encode -> reverse -> decode recovers the original offset."""
 
     def test_stamp_round_trip(self):
         maxP = 4096
@@ -507,7 +507,7 @@ class TestWhereEncodingRoundTrip(unittest.TestCase):
 
 
 class TestWhenEncodingRoundTrip(unittest.TestCase):
-    """WhenEncoding: forward → reverse recovers the original time."""
+    """WhenEncoding: forward -> reverse recovers the original time."""
 
     def test_forward_reverse_round_trip(self):
         maxT = 10000
@@ -550,7 +550,7 @@ class TestWhenEncodingRoundTrip(unittest.TestCase):
         torch.testing.assert_close(cleaned[:, :, mask], original[:, :, mask])
 
 
-# SubSpace — derived sizes, materialization, construction helpers
+# SubSpace -- derived sizes, materialization, construction helpers
 # ---------------------------------------------------------------------------
 class TestSubSpaceDerivedSizes(unittest.TestCase):
     """SubSpace.getEncodingSize, getEncodedInputSize, getEncodedOutputSize match EventEncoding math."""
@@ -564,7 +564,7 @@ class TestSubSpaceDerivedSizes(unittest.TestCase):
 
     def test_getEncodedIO_no_reshape(self):
         # Shapes already include muxed width (nWhere=2 + nWhen=2)
-        # nInputDim/nOutputDim default to 0 → resolves to inputShape[1]/outputShape[1]
+        # nInputDim/nOutputDim default to 0 -> resolves to inputShape[1]/outputShape[1]
         ss = Models.SubSpace(whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
                       objectEncoding=Models.EventEncoding([3, 12], [5, 20]),
                       inputShape=[3, 12], outputShape=[5, 20])
@@ -573,7 +573,7 @@ class TestSubSpaceDerivedSizes(unittest.TestCase):
 
     def test_getEncodedIO_reshape(self):
         # Equivalent of old flatten=True: nInputDim = flat_in, nOutputDim = per-vector dim.
-        # Layer sees flat_in → flat_out; forwardEnd reshapes flat_out → [nOut, per_dim].
+        # Layer sees flat_in -> flat_out; forwardEnd reshapes flat_out -> [nOut, per_dim].
         ss = Models.SubSpace(whereEncoding=Models.WhereEncoding(1, 2), whenEncoding=Models.WhenEncoding(10000, 2),
                       objectEncoding=Models.EventEncoding([3, 12], [5, 20]),
                       nInputDim=12 * 3, nOutputDim=20,
@@ -669,7 +669,7 @@ class TestSubSpaceActiveEncoding(unittest.TestCase):
 
     def test_activation_stored_and_retrievable(self):
         ae = Models.ActiveEncoding()
-        act = torch.tensor([[0.5, 0.8, 0.1]])  # [1, 3] — batch=1, nVectors=3
+        act = torch.tensor([[0.5, 0.8, 0.1]])  # [1, 3] -- batch=1, nVectors=3
         encoded = ae.encode(act.squeeze(0))
         ss = Models.SubSpace(activeEncoding=ae, inputShape=[3, 8], outputShape=[3, 8])
         ss.set_activation(act)
@@ -798,7 +798,7 @@ class TestCodebookVariants(unittest.TestCase):
         vs = vs.to(Models.TheDevice.get())
         x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
         y = vs.forward(x)
-        # Basis.nDim is actual width — no objectSize padding
+        # Basis.nDim is actual width -- no objectSize padding
         self.assertEqual(list(y.shape), [2, 4, 3])
 
 
@@ -1356,7 +1356,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         nVec = 2
         vectors = torch.zeros([batch, nVec, embSize]).to(Models.TheDevice.get())
         expected_words = []
-        # Skip [MASK] (zero vector) — cosine matching can't recover it
+        # Skip [MASK] (zero vector) -- cosine matching can't recover it
         usable = [j for j, w in enumerate(words_list) if w != "[MASK]"]
         for slot, j in enumerate(usable[:nVec]):
             vectors[0, slot, :nWhat] = codebook[j][:nWhat]
@@ -1393,7 +1393,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         nVec = 2
         vectors = torch.zeros([batch, nVec, embSize]).to(Models.TheDevice.get())
         expected_words = []
-        # Skip [MASK] (zero vector) — cosine matching can't recover it
+        # Skip [MASK] (zero vector) -- cosine matching can't recover it
         usable = [j for j, w in enumerate(words_list) if w != "[MASK]"]
         for slot, j in enumerate(usable[:nVec]):
             vectors[0, slot, :embSize - _obj_size("InputSpace")] = \
@@ -1433,7 +1433,7 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         batch = 1
         nVec = 2
         vectors = torch.zeros([batch, nVec, embSize]).to(Models.TheDevice.get())
-        # Skip [MASK] and \x00 (both zero vectors) — cosine matching can't recover them
+        # Skip [MASK] and \x00 (both zero vectors) -- cosine matching can't recover them
         usable = [j for j, w in enumerate(words_list) if w not in ("[MASK]", "\x00")]
         # Word 0 at offset 0, word 1 at offset 6
         for slot, j in enumerate(usable[:nVec]):
@@ -1497,7 +1497,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         Content tokens (non-whitespace) must match exactly.  Trailing
         padding is space-filled, so the last token from tokenize() is a
         long whitespace run; the reverse path may recover a shorter
-        space token — both are correct padding representations.
+        space token -- both are correct padding representations.
         """
         inp, data = self._make_text_input_space()
         batch_size = 2
@@ -1630,7 +1630,7 @@ class TestEmbeddingLexDelegation(unittest.TestCase):
         emb = Models.Embedding()
         result = emb.tokenize(self._make_batch("the dog barks."))
         # quick_parser regex: words, punct, spaces are separate tokens
-        # "the dog barks." → ["the", " ", "dog", " ", "barks", "."]
+        # "the dog barks." -> ["the", " ", "dog", " ", "barks", "."]
         self.assertIn("barks", result[0])
         self.assertNotIn("barks.", result[0])
         self.assertIn(".", result[0])
@@ -1773,7 +1773,7 @@ class TestLoadEmbeddingsEnwiki(unittest.TestCase):
             return
         cls.wv = Models.Embedding._load_embeddings(embedding_path=cls.ENWIKI_PATH)
 
-    @unittest.skipIf(not _RUN_SLOW, "slow — set RUN_SLOW=1")
+    @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
     def test_load_enwiki(self):
         """Verify txt format properties and nDim-filter logic from a single load."""
         # Basic load: file loaded once in setUpClass
@@ -1782,7 +1782,7 @@ class TestLoadEmbeddingsEnwiki(unittest.TestCase):
         self.assertGreater(len(self.wv), 1000)
         self.assertIn("the", self.wv)
         # nDim filter: _load_embeddings(nDim=50) returns None because 100 != 50.
-        # The filter condition is: wv.vector_size != nDim → return None.
+        # The filter condition is: wv.vector_size != nDim -> return None.
         # We verify the precondition without a second slow file load.
         self.assertNotEqual(self.wv.vector_size, 50,
                             "vector_size should be 100; nDim=50 filter would return None")
@@ -1849,13 +1849,13 @@ class TestErgodicMnistReport(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# TestModelTypeVariants — missing model type combinations
+# TestModelTypeVariants -- missing model type combinations
 # ---------------------------------------------------------------------------
 class TestModelTypeVariants(unittest.TestCase):
     """Exercise BasicModel.create() with configuration combinations not yet covered."""
 
     def test_invertible(self):
-        """invertible=True with ergodic, reversible — forward + reverse."""
+        """invertible=True with ergodic, reversible -- forward + reverse."""
         _populate_test_config(
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
@@ -1873,7 +1873,7 @@ class TestModelTypeVariants(unittest.TestCase):
         self.assertEqual(data.shape[1], 16)
 
     def test_conceptual_order_1(self):
-        """conceptualOrder=2 — forward only (equal object counts).
+        """conceptualOrder=2 -- forward only (equal object counts).
 
         Higher-order cycles require a non-passthrough symbolic space so that
         symbolDim > 0 for the second perceptual/conceptual/symbolic spaces.
@@ -1892,7 +1892,7 @@ class TestModelTypeVariants(unittest.TestCase):
         self.assertEqual(out.shape[1], 4)
 
     def test_non_ergodic_reverse(self):
-        """ergodic=False with reversible=True — forward + reverse."""
+        """ergodic=False with reversible=True -- forward + reverse."""
         _populate_test_config(
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
@@ -1910,7 +1910,7 @@ class TestModelTypeVariants(unittest.TestCase):
         self.assertEqual(data.shape[1], 16)
 
     def test_percept_no_attention(self):
-        """perceptHasAttention=False, perceptPassThrough=False — forward only."""
+        """perceptHasAttention=False, perceptPassThrough=False -- forward only."""
         _populate_test_config(
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
@@ -1925,7 +1925,7 @@ class TestModelTypeVariants(unittest.TestCase):
         self.assertEqual(out.shape[1], 4)
 
     def test_concept_with_attention(self):
-        """conceptHasAttention=True — forward only."""
+        """conceptHasAttention=True -- forward only."""
         _populate_test_config(
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4,
@@ -1947,7 +1947,7 @@ class TestReconstructionSymbols(unittest.TestCase):
         """Helper: create XOR model from XOR_exact.xml with given symbol/output counts.
 
         Also patches ConceptualSpace/nVectors to match nSymbols, because
-        SymbolicSpace requires inputShape[0] == nVectors (1:1 concept→symbol mapping).
+        SymbolicSpace requires inputShape[0] == nVectors (1:1 concept->symbol mapping).
         """
         import tempfile
         import xml.etree.ElementTree as ET
@@ -1962,7 +1962,7 @@ class TestReconstructionSymbols(unittest.TestCase):
             auto = ET.SubElement(root.find("architecture"), "autoload")
         auto.text = "false"
 
-        # Patch symbol count (and concepts to match — SymbolicSpace requires nConcepts == nSymbols)
+        # Patch symbol count (and concepts to match -- SymbolicSpace requires nConcepts == nSymbols)
         sym_active = root.find("SymbolicSpace/nOutput")
         if sym_active is not None:
             sym_active.text = str(nSymbols)
@@ -2118,7 +2118,7 @@ class TestReconstructionSymbols(unittest.TestCase):
             m = Models.BasicModel()
             m.create_from_config(tmp.name, data=Models.TheData)
 
-            # Ergodic training — accumulate range warnings, emit summary at end
+            # Ergodic training -- accumulate range warnings, emit summary at end
             with warnings.catch_warnings(record=True) as caught:
                 warnings.simplefilter("always")
 
@@ -2296,7 +2296,7 @@ class TestExpandMaskedTargets(unittest.TestCase):
                               model_type="embedding")
         self.emb = self.inp.subspace.vocabulary
 
-        # Build a minimal OutputSpace — input carries symbol objectSize
+        # Build a minimal OutputSpace -- input carries symbol objectSize
         _obj_sym = _obj_size("SymbolicSpace")
         self.out = Models.OutputSpace([8, 1 + _obj_sym], [4, 1], [4, 1])
 
@@ -2563,7 +2563,7 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Weight persistence — save/load round-trip with shape mismatches
+# Weight persistence -- save/load round-trip with shape mismatches
 # ---------------------------------------------------------------------------
 class TestWeightShapeMismatch(unittest.TestCase):
     """Verify save_weights / load_weights handles vocab-size changes."""
@@ -2833,7 +2833,7 @@ class TestXorExactErgodic(unittest.TestCase):
             m = Models.BasicModel()
             m.create_from_config(tmp.name, data=Models.TheData)
 
-            # Ergodic training — accumulate range warnings, emit summary at end
+            # Ergodic training -- accumulate range warnings, emit summary at end
             with warnings.catch_warnings(record=True) as caught:
                 warnings.simplefilter("always")
                 m.runTrial(numEpochs=200, batchSize=10, lr=0.01)
@@ -2977,17 +2977,17 @@ class TestGrammar(unittest.TestCase):
 
     def test_indexing(self):
         g = self._make_grammar()
-        self.assertEqual(g[0], "START → S")
-        self.assertEqual(g[1], "S → C")
-        self.assertEqual(g[2], "C → not(C)")
-        self.assertEqual(g[3], "C → P")
-        self.assertEqual(g[4], "P → I")
+        self.assertEqual(g[0], "START -> S")
+        self.assertEqual(g[1], "S -> C")
+        self.assertEqual(g[2], "C -> not(C)")
+        self.assertEqual(g[3], "C -> P")
+        self.assertEqual(g[4], "P -> I")
 
     def test_arity_transitions(self):
         g = self._make_grammar()
-        self.assertEqual(g.arity(0), 1)  # START → S
-        self.assertEqual(g.arity(1), 1)  # S → C
-        self.assertEqual(g.arity(3), 1)  # C → P
+        self.assertEqual(g.arity(0), 1)  # START -> S
+        self.assertEqual(g.arity(1), 1)  # S -> C
+        self.assertEqual(g.arity(3), 1)  # C -> P
 
     def test_arity_not(self):
         g = self._make_grammar()
@@ -2995,14 +2995,14 @@ class TestGrammar(unittest.TestCase):
 
     def test_arity_terminal(self):
         g = self._make_grammar()
-        self.assertEqual(g.arity(4), 0)  # P → I is terminal
+        self.assertEqual(g.arity(4), 0)  # P -> I is terminal
 
     def test_space_partitions(self):
         """Tier partitions for current grammar."""
         g = self._make_grammar()
-        self.assertEqual(g.symbolic(), [1])      # S→C transition
-        self.assertEqual(g.conceptual(), [2, 3]) # not(C), C→P transition
-        self.assertEqual(g.perceptual(), [4])    # P→I terminal
+        self.assertEqual(g.symbolic(), [1])      # S->C transition
+        self.assertEqual(g.conceptual(), [2, 3]) # not(C), C->P transition
+        self.assertEqual(g.perceptual(), [4])    # P->I terminal
 
     def test_configure_from_dict(self):
         """Grammar.configure() parses functional notation from dict."""
@@ -3010,18 +3010,18 @@ class TestGrammar(unittest.TestCase):
         g.configure({
             "S": ["swap(S, S)", "equals(S, S)", "C"],
             "C": ["union(C, C)", "P"],
-            "P": ["I P", "\u03b5"],
+            "P": ["I P", "epsilon"],
         })
-        self.assertEqual(g.symbolic(), [0, 1, 2])    # swap, equals, S→C
-        self.assertEqual(g.conceptual(), [3, 4])      # union, C→P
+        self.assertEqual(g.symbolic(), [0, 1, 2])    # swap, equals, S->C
+        self.assertEqual(g.conceptual(), [3, 4])      # union, C->P
         self.assertEqual(g.perceptual(), [5, 6])      # I P, epsilon
 
     def test_configure_single_rule_string(self):
         """Single rule as string (not list) works."""
         g = Spaces.Grammar()
-        g.configure({"S": "C", "C": "P", "P": "\u03b5"})
-        self.assertEqual(g.symbolic(), [0])      # S→C transition
-        self.assertEqual(g.conceptual(), [1])    # C→P transition
+        g.configure({"S": "C", "C": "P", "P": "epsilon"})
+        self.assertEqual(g.symbolic(), [0])      # S->C transition
+        self.assertEqual(g.conceptual(), [1])    # C->P transition
         self.assertEqual(g.perceptual(), [2])    # epsilon
 
     def test_configure_unknown_rule_raises(self):
@@ -3043,7 +3043,7 @@ class TestGrammar(unittest.TestCase):
     def test_transition_none_when_not_configured(self):
         """Transition returns None if not in active set."""
         g = Spaces.Grammar()
-        g.configure({"S": "swap(S, S)", "C": "union(C, C)", "P": "\u03b5"})
+        g.configure({"S": "swap(S, S)", "C": "union(C, C)", "P": "epsilon"})
         self.assertIsNone(g.symbolic_transition())   # no S->C
         self.assertIsNone(g.conceptual_transition())  # no C->P
 
@@ -3082,7 +3082,7 @@ class TestGrammarOperations(unittest.TestCase):
         raise KeyError(f"No rule with method_name={name!r}")
 
     def test_true_positive_projection(self):
-        """true(S) applies ReLU — positive values pass, negatives zeroed."""
+        """true(S) applies ReLU -- positive values pass, negatives zeroed."""
         g = self._make_grammar()
         rid = self._find_rule(g, 'true')
         x = torch.tensor([[0.8, -0.3, 0.5, -1.0]])
@@ -3096,11 +3096,11 @@ class TestGrammarOperations(unittest.TestCase):
         rid = self._find_rule(g, 'equals')
         x = torch.tensor([[0.5, 0.8, 0.3, 0.9]])
         result = self._s_sl.project(g, rid, x, x.clone(), subspace=self._ss)
-        # Identical vectors → equals score ≈ 1.0 → result ≈ right
+        # Identical vectors -> equals score ~= 1.0 -> result ~= right
         self.assertTrue(torch.allclose(result, x, atol=1e-5))
 
     def test_equals_orthogonal_is_zero(self):
-        """equals(S, S) on orthogonal vectors returns zero — no shared content."""
+        """equals(S, S) on orthogonal vectors returns zero -- no shared content."""
         g = self._make_grammar()
         rid = self._find_rule(g, 'equals')
         x = torch.tensor([[1.0, 0.0, 0.0, 0.0]])
@@ -3115,7 +3115,7 @@ class TestGrammarOperations(unittest.TestCase):
         x = torch.tensor([[0.3, 0.2, 0.0, 0.0]])
         y = torch.tensor([[0.5, 0.8, 0.4, 0.6]])
         result = self._s_sl.project(g, rid, x, y, subspace=self._ss)
-        # x ≤ y element-wise → part score high → result ≈ y * score
+        # x <= y element-wise -> part score high -> result ~= y * score
         self.assertTrue(result.norm() > 0.1)
 
     def test_part_not_subset_scores_low(self):
@@ -3131,14 +3131,14 @@ class TestGrammarOperations(unittest.TestCase):
                            result_big_in_small.norm().item())
 
     def test_swap_is_learnable_permutation(self):
-        """swap(S, S) applies soft permutation — output differs from inputs."""
+        """swap(S, S) applies soft permutation -- output differs from inputs."""
         g = self._make_grammar()
         rid = self._find_rule(g, 'swap')
         left = torch.tensor([[0.8, 0.5, 0.3, 0.1]])
         right = torch.tensor([[0.1, 0.3, 0.5, 0.8]])
         result = self._s_sl.project(g, rid, left, right)
         self.assertEqual(result.shape, left.shape)
-        # Result should be a mixture — not identical to either input
+        # Result should be a mixture -- not identical to either input
         self.assertFalse(torch.equal(result, left))
         self.assertFalse(torch.equal(result, right))
 
@@ -3168,7 +3168,7 @@ class TestGrammarOperations(unittest.TestCase):
         self.assertTrue(torch.allclose(score_xy, score_yx, atol=1e-5))
 
     def test_part_zero_volume_ignored(self):
-        """Matching zeros don't inflate parthood — zero volume contributes nothing."""
+        """Matching zeros don't inflate parthood -- zero volume contributes nothing."""
         b = Spaces.Basis()
         # Orthogonal: shared zeros shouldn't create parthood
         x = torch.tensor([1.0, 0.0, 0.0, 0.0])
@@ -3500,7 +3500,7 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
         model.forward(x)
 
         # Check that activations are stored on spaces that compute them.
-        # InputSpace (entry point) and passthrough spaces don't set activation —
+        # InputSpace (entry point) and passthrough spaces don't set activation --
         # they forward the upstream SubSpace unchanged.
         for space in model.spaces:
             if isinstance(space, Models.InputSpace):
@@ -3644,7 +3644,7 @@ class TestBasicModelDemuxed(unittest.TestCase):
 
 
 class TestSyntacticLayer(unittest.TestCase):
-    """Tests for SyntacticLayer — per-space grammar with executable rules."""
+    """Tests for SyntacticLayer -- per-space grammar with executable rules."""
 
     def _dev(self):
         return Models.TheDevice.get()
@@ -3694,7 +3694,7 @@ class TestSyntacticLayer(unittest.TestCase):
             grammar=g,
         ), g
 
-    # ── Shape tests ───────────────────────────────────────────────
+    # -- Shape tests -----------------------------------------------
 
     def test_symbolic_forward_shapes(self):
         layer, g = self._make_symbolic_layer()
@@ -3721,7 +3721,7 @@ class TestSyntacticLayer(unittest.TestCase):
         n_per_rules = len(g.perceptual())
         self.assertEqual(out["rule_logits"].shape, (2, 7, n_per_rules))
 
-    # ── Space projection operation tests ─────────────────────────
+    # -- Space projection operation tests -------------------------
 
     def test_symbolic_and_is_min(self):
         """AND (Gödel t-norm): min(left, right)."""
@@ -3762,7 +3762,7 @@ class TestSyntacticLayer(unittest.TestCase):
         expected = torch.tensor([[[0.3, 0.8], [0.7, 0.1]]])
         self.assertTrue(torch.allclose(result, expected))
 
-    # ── Gradient flow (rule prediction) ────────────────────────────
+    # -- Gradient flow (rule prediction) ----------------------------
 
     def test_gradient_flows_through_rule_prediction(self):
         layer, g = self._make_symbolic_layer()
@@ -3774,7 +3774,7 @@ class TestSyntacticLayer(unittest.TestCase):
         self.assertIsNotNone(x.grad)
         self.assertTrue((x.grad.abs() > 0).any())
 
-    # ── Eval mode ────────��─────────────────────────────���──────────
+    # -- Eval mode --------��-----------------------------���----------
 
     def test_eval_uses_softmax(self):
         layer, g = self._make_symbolic_layer()
@@ -3784,7 +3784,7 @@ class TestSyntacticLayer(unittest.TestCase):
         sums = out["rule_probs"].sum(dim=-1)
         self.assertTrue(torch.allclose(sums, torch.ones_like(sums), atol=1e-5))
 
-    # ── Reverse ─────────────��─────────────────────────────────────
+    # -- Reverse -------------��-------------------------------------
 
     def test_reverse_recovers_positions(self):
         layer, g = self._make_symbolic_layer()
@@ -3798,7 +3798,7 @@ class TestSyntacticLayer(unittest.TestCase):
         self.assertEqual(activation[0, 7].item(), 1.0)
         self.assertEqual(activation[0, 0].item(), 0.0)
 
-    # ── Utilities ─────────────────────────────────────────────────
+    # -- Utilities -------------------------------------------------
 
     def test_set_tau(self):
         layer, g = self._make_symbolic_layer()
@@ -3812,7 +3812,7 @@ class TestShiftReduce(unittest.TestCase):
     def _init_grammar(self, nSym=8, nDim=4):
         """Initialize TheGrammar with layers for S/R testing.
 
-        Returns (grammar, s_sl, c_sl, p_sl) — Grammar plus per-tier
+        Returns (grammar, s_sl, c_sl, p_sl) -- Grammar plus per-tier
         SyntacticLayer instances for direct compose/decompose calls.
         """
         _populate_test_config(
@@ -3890,7 +3890,7 @@ class TestShiftReduce(unittest.TestCase):
         ss.set_words([])
         self.assertEqual(len(ss.get_words()), 0)
 
-    # ── Conceptual tier write / resetStack tests ─────────────────
+    # -- Conceptual tier write / resetStack tests -----------------
 
     def test_write_conceptual_shift(self):
         """ConceptualSyntacticLayer.compose() applies rules to concept vectors."""
@@ -3918,7 +3918,7 @@ class TestShiftReduce(unittest.TestCase):
         ss.set_words([])
         self.assertEqual(len(ss.get_words()), 0)
 
-    # ── Perceptual tier write / resetStack tests ─────────────────
+    # -- Perceptual tier write / resetStack tests -----------------
 
     def test_write_perceptual_shift(self):
         """PerceptualSyntacticLayer.compose() applies perceptual rules."""
@@ -3937,7 +3937,7 @@ class TestShiftReduce(unittest.TestCase):
         ss.set_words([])
         self.assertEqual(len(ss.get_words()), 0)
 
-    # ── SyntacticLayer.decompose() tests ─────────────────────────
+    # -- SyntacticLayer.decompose() tests -------------------------
 
     def test_read_symbolic(self):
         """SymbolicSyntacticLayer.decompose() undoes grammar operations on activation."""
@@ -3965,7 +3965,7 @@ class TestShiftReduce(unittest.TestCase):
         """PerceptualSyntacticLayer.decompose() undoes grammar operations on vectors."""
         grammar, s_sl, c_sl, p_sl = self._init_grammar(nDim=4)
         ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
-        # No words recorded — decompose should be identity
+        # No words recorded -- decompose should be identity
         vectors = torch.randn(1, 8, 4, device=Models.TheDevice.get())
         result = p_sl.decompose(vectors, ss, grammar)
         self.assertEqual(result.shape, (1, 8, 4))

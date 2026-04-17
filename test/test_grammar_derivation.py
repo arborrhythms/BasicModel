@@ -1,5 +1,5 @@
 """
-Grammar Derivation Test — MentalModel + Grammar
+Grammar Derivation Test -- MentalModel + Grammar
 =================================================
 
 Verifies that Grammar.forward() and its shift/reduce stacks correctly
@@ -55,7 +55,7 @@ def _release_allocator_cache():
     """Drop accelerator-side allocator caches so freed tensors really free.
 
     MentalModel holds a ``[13312, 13312]`` mapping-layer parameter plus the
-    rest of the graph — a single instance is hundreds of megabytes. Without
+    rest of the graph -- a single instance is hundreds of megabytes. Without
     this, successive ``setUp()`` calls accumulate until MPS (30 GiB limit)
     OOMs somewhere in the run. ``gc.collect()`` reclaims the Python
     references; ``empty_cache()`` returns the freed blocks to the OS.
@@ -100,7 +100,7 @@ class _GrammarTestBase(unittest.TestCase):
 class TestGrammarProject(_GrammarTestBase):
     """Grammar.project() dispatches rule methods correctly.
 
-    Rule ids are looked up dynamically by ``(method_name, arity, tier)`` —
+    Rule ids are looked up dynamically by ``(method_name, arity, tier)`` --
     NEVER hardcode an integer index here. Hardcoded indices are a
     persistent footgun: when the grammar is extended (e.g. trinity +
     coordination + demux + query in this branch), every position shifts
@@ -123,7 +123,7 @@ class TestGrammarProject(_GrammarTestBase):
         self.c_sl = self.model.wordSpace.conceptualSyntacticLayer
         self.c_ss = self.model.conceptualSpace.subspace
 
-    # ── Helpers ─────────────────────────────────────────────────────
+    # -- Helpers -----------------------------------------------------
 
     def _rule_id(self, method_name, arity, tier=None):
         """Look up a rule id by (method_name, arity[, tier]). Fails the
@@ -139,19 +139,19 @@ class TestGrammarProject(_GrammarTestBase):
             return i
         self.fail(
             f"No grammar rule found for method={method_name!r} "
-            f"arity={arity} tier={tier!r} — rules currently configured: "
+            f"arity={arity} tier={tier!r} -- rules currently configured: "
             f"{[r.canonical for r in self.grammar.rules]}"
         )
 
     def _transition_rule_id(self, from_tier, to_tier):
         """Look up the synthetic transition rule (no method, arity 1)
-        whose canonical form is `<from_tier> → <to_tier>`."""
-        target = f"{from_tier} → {to_tier}"
+        whose canonical form is `<from_tier> -> <to_tier>`."""
+        target = f"{from_tier} -> {to_tier}"
         for i, rule in enumerate(self.grammar.rules):
             if rule.method_name is None and rule.canonical == target:
                 return i
         self.fail(
-            f"No transition rule {target!r} — rules: "
+            f"No transition rule {target!r} -- rules: "
             f"{[r.canonical for r in self.grammar.rules]}"
         )
 
@@ -161,66 +161,66 @@ class TestGrammarProject(_GrammarTestBase):
     def _C(self, B=2):
         return torch.randn(B, self.n_concepts, self.concept_dim, device=Models.TheDevice.get())
 
-    # ── S-tier rules ────────────────────────────────────────────────
+    # -- S-tier rules ------------------------------------------------
 
     def test_project_true_s_tier(self):
-        """true(S) — looked up by name, NOT by hardcoded index."""
+        """true(S) -- looked up by name, NOT by hardcoded index."""
         rule_id = self._rule_id('true', arity=1, tier='S')
         left = self._S()
         result = self.s_sl.project(self.grammar, rule_id, left)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_false_s_tier(self):
-        """false(S) — Rule #1 trinity addition."""
+        """false(S) -- Rule #1 trinity addition."""
         rule_id = self._rule_id('false', arity=1, tier='S')
         left = self._S()
         result = self.s_sl.project(self.grammar, rule_id, left)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_non_s_tier(self):
-        """non(S) — triangular residual (Rule #1 replaces sigmoid form)."""
+        """non(S) -- triangular residual (Rule #1 replaces sigmoid form)."""
         rule_id = self._rule_id('non', arity=1, tier='S')
         left = self._S().clamp(-1.0, 1.0)
         result = self.s_sl.project(self.grammar, rule_id, left)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_conjunction_s_tier(self):
-        """conjunction(S, S) — Hadamard min over bitonic activations."""
+        """conjunction(S, S) -- Hadamard min over bitonic activations."""
         rule_id = self._rule_id('conjunction', arity=2, tier='S')
         left, right = self._S(), self._S()
         result = self.s_sl.project(self.grammar, rule_id, left, right)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_disjunction_s_tier(self):
-        """disjunction(S, S) — Hadamard max over bitonic activations."""
+        """disjunction(S, S) -- Hadamard max over bitonic activations."""
         rule_id = self._rule_id('disjunction', arity=2, tier='S')
         left, right = self._S(), self._S()
         result = self.s_sl.project(self.grammar, rule_id, left, right)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_what_s_tier(self):
-        """what(S) — Rule #2 slot selector."""
+        """what(S) -- Rule #2 slot selector."""
         rule_id = self._rule_id('what', arity=1, tier='S')
         left = self._S()
         result = self.s_sl.project(self.grammar, rule_id, left)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_where_s_tier(self):
-        """where(S) — Rule #2 slot selector."""
+        """where(S) -- Rule #2 slot selector."""
         rule_id = self._rule_id('where', arity=1, tier='S')
         left = self._S()
         result = self.s_sl.project(self.grammar, rule_id, left)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_when_s_tier(self):
-        """when(S) — Rule #2 slot selector."""
+        """when(S) -- Rule #2 slot selector."""
         rule_id = self._rule_id('when', arity=1, tier='S')
         left = self._S()
         result = self.s_sl.project(self.grammar, rule_id, left)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_query_s_tier(self):
-        """query(S, S) — Rule #3 returns preserved (left) operand."""
+        """query(S, S) -- Rule #3 returns preserved (left) operand."""
         rule_id = self._rule_id('query', arity=2, tier='S')
         left, right = self._S(), self._S()
         result = self.s_sl.project(self.grammar, rule_id, left, right)
@@ -229,72 +229,72 @@ class TestGrammarProject(_GrammarTestBase):
         self.assertTrue(torch.equal(result, left))
 
     def test_project_swap_s_tier(self):
-        """swap(S, S) — soft permutation via Sinkhorn logits."""
+        """swap(S, S) -- soft permutation via Sinkhorn logits."""
         rule_id = self._rule_id('swap', arity=2, tier='S')
         left, right = self._S(), self._S()
         result = self.s_sl.project(self.grammar, rule_id, left, right)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_equals_s_tier(self):
-        """equals(S, S) — S-tier lossy operation."""
+        """equals(S, S) -- S-tier lossy operation."""
         rule_id = self._rule_id('equals', arity=2, tier='S')
         left, right = self._S(), self._S()
         result = self.s_sl.project(self.grammar, rule_id, left, right)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_part_s_tier(self):
-        """part(S, S) — S-tier lossy operation."""
+        """part(S, S) -- S-tier lossy operation."""
         rule_id = self._rule_id('part', arity=2, tier='S')
         left, right = self._S(), self._S()
         result = self.s_sl.project(self.grammar, rule_id, left, right)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_s_to_c_transition_passthrough(self):
-        """S → C transition passes operand through unchanged."""
+        """S -> C transition passes operand through unchanged."""
         rule_id = self._transition_rule_id('S', 'C')
         left = self._S()
         result = self.s_sl.project(self.grammar, rule_id, left)
         self.assertTrue(torch.equal(result, left))
 
-    # ── C-tier rules ────────────────────────────────────────────────
+    # -- C-tier rules ------------------------------------------------
 
     def test_project_not_c_tier(self):
-        """not(C) — invertible negation, dispatched on C-tier layer."""
+        """not(C) -- invertible negation, dispatched on C-tier layer."""
         rule_id = self._rule_id('not', arity=1, tier='C')
         left = self._C()
         result = self.c_sl.project(self.grammar, rule_id, left)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_intersection_c_tier(self):
-        """intersection(C, C) — invertible Hadamard min."""
+        """intersection(C, C) -- invertible Hadamard min."""
         rule_id = self._rule_id('intersection', arity=2, tier='C')
         left, right = self._C(), self._C()
         result = self.c_sl.project(self.grammar, rule_id, left, right)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_union_c_tier(self):
-        """union(C, C) — invertible Hadamard max."""
+        """union(C, C) -- invertible Hadamard max."""
         rule_id = self._rule_id('union', arity=2, tier='C')
         left, right = self._C(), self._C()
         result = self.c_sl.project(self.grammar, rule_id, left, right)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_lower_c_tier(self):
-        """lower(C, C) — projected disjunction in symbolic space."""
+        """lower(C, C) -- projected disjunction in symbolic space."""
         rule_id = self._rule_id('lower', arity=2, tier='C')
         left, right = self._C(), self._C()
         result = self.c_sl.project(self.grammar, rule_id, left, right)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_lift_binary_c_tier(self):
-        """lift(C, C) — projected conjunction in symbolic space."""
+        """lift(C, C) -- projected conjunction in symbolic space."""
         rule_id = self._rule_id('lift', arity=2, tier='C')
         left, right = self._C(), self._C()
         result = self.c_sl.project(self.grammar, rule_id, left, right)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_lift_ternary_c_tier(self):
-        """lift(C, C, C) — SVO ternary lift; shape preserved on first arg."""
+        """lift(C, C, C) -- SVO ternary lift; shape preserved on first arg."""
         rule_id = self._rule_id('lift', arity=3, tier='C')
         left, mid, right = self._C(), self._C(), self._C()
         # Ternary lift goes through the same project() entry point;
@@ -303,13 +303,13 @@ class TestGrammarProject(_GrammarTestBase):
         self.assertEqual(result.shape, left.shape)
 
     def test_project_c_to_p_transition_passthrough(self):
-        """C → P transition passes operand through unchanged."""
+        """C -> P transition passes operand through unchanged."""
         rule_id = self._transition_rule_id('C', 'P')
         left = self._C()
         result = self.c_sl.project(self.grammar, rule_id, left)
         self.assertTrue(torch.equal(result, left))
 
-    # ── Coverage check ──────────────────────────────────────────────
+    # -- Coverage check ----------------------------------------------
 
     def test_all_methods_dispatched(self):
         """Every method_name maps to Grammar._GRAMMAR_METHODS or a SyntacticLayer subclass."""
@@ -332,7 +332,7 @@ class TestGrammarProject(_GrammarTestBase):
         """Regression guard: this class must not regress to hardcoded ids.
 
         The previous version of TestGrammarProject hardcoded rule_id
-        integers as the second argument to project() — e.g. passing a
+        integers as the second argument to project() -- e.g. passing a
         literal index instead of looking the rule up by name. Those
         indices silently drifted out of sync with the grammar every
         time a rule was added. The shape-only assertions kept passing
@@ -451,22 +451,22 @@ class TestGrammarConfigure(_GrammarTestBase):
             'START': ['true(S) EOF'],
             'S': ['swap(S, S)', 'equals(S, S)', 'C'],
             'C': ['union(C, C)', 'not(C)', 'P'],
-            'P': ['ε'],
+            'P': ['epsilon'],
         })
         self.assertEqual(len(g.rules), 8)
 
         # Check tiers
         self.assertEqual(g.rules[0].tier, 'START')
         self.assertEqual(g.rules[1].tier, 'S')
-        self.assertEqual(g.rules[3].tier, 'S')  # transition S→C
+        self.assertEqual(g.rules[3].tier, 'S')  # transition S->C
         self.assertEqual(g.rules[4].tier, 'C')
         self.assertEqual(g.rules[7].tier, 'P')
 
         # Check arities
-        self.assertEqual(g.arity(0), 1)   # true(S) — unary
-        self.assertEqual(g.arity(1), 2)   # swap(S, S) — binary
-        self.assertEqual(g.arity(3), 1)   # S → C — transition
-        self.assertEqual(g.arity(7), 0)   # P → ε — terminal
+        self.assertEqual(g.arity(0), 1)   # true(S) -- unary
+        self.assertEqual(g.arity(1), 2)   # swap(S, S) -- binary
+        self.assertEqual(g.arity(3), 1)   # S -> C -- transition
+        self.assertEqual(g.arity(7), 0)   # P -> epsilon -- terminal
 
         # Check methods
         self.assertEqual(g.method_name(0), 'true')
@@ -480,7 +480,7 @@ class TestGrammarConfigure(_GrammarTestBase):
             'START': ['true(S) EOF'],
             'S': ['C'],
             'C': ['P'],
-            'P': ['ε'],
+            'P': ['epsilon'],
         })
         # Only tier rules, no interpretation key in grammar dict
         self.assertEqual(len(g.rules), 4)
@@ -494,7 +494,7 @@ class TestGrammarConfigure(_GrammarTestBase):
             'START': 'true(S) EOF',
             'S': 'C',
             'C': 'P',
-            'P': 'ε',
+            'P': 'epsilon',
         })
         self.assertEqual(len(g.rules), 4)
 
@@ -505,23 +505,23 @@ class TestGrammarConfigure(_GrammarTestBase):
             'START': ['true(S) EOF'],
             'S': ['swap(S, S)', 'equals(S, S)', 'C'],
             'C': ['union(C, C)', 'not(C)', 'P'],
-            'P': ['ε'],
+            'P': ['epsilon'],
         })
         sym = g.symbolic()
         con = g.conceptual()
         per = g.perceptual()
 
-        # Symbolic: swap, equals, S→C transition
+        # Symbolic: swap, equals, S->C transition
         self.assertEqual(len(sym), 3)
         for i in sym:
             self.assertEqual(g.tier(i), 'S')
 
-        # Conceptual: union, not, C→P transition
+        # Conceptual: union, not, C->P transition
         self.assertEqual(len(con), 3)
         for i in con:
             self.assertEqual(g.tier(i), 'C')
 
-        # Perceptual: ε
+        # Perceptual: epsilon
         self.assertEqual(len(per), 1)
 
     def test_binary_rules(self):
@@ -531,7 +531,7 @@ class TestGrammarConfigure(_GrammarTestBase):
             'START': ['true(S) EOF'],
             'S': ['swap(S, S)', 'C'],
             'C': ['union(C, C)', 'not(C)', 'P'],
-            'P': ['ε'],
+            'P': ['epsilon'],
         })
         binary = g.binary_rules()
         for i in binary:
@@ -546,14 +546,14 @@ class TestGrammarConfigure(_GrammarTestBase):
             'START': ['true(S) EOF'],
             'S': ['swap(S, S)', 'C'],
             'C': ['union(C, C)', 'P'],
-            'P': ['ε'],
+            'P': ['epsilon'],
         })
         s_trans = g.symbolic_transition()
         c_trans = g.conceptual_transition()
         self.assertIsNotNone(s_trans)
         self.assertIsNotNone(c_trans)
-        self.assertEqual(g.rules[s_trans].canonical, 'S → C')
-        self.assertEqual(g.rules[c_trans].canonical, 'C → P')
+        self.assertEqual(g.rules[s_trans].canonical, 'S -> C')
+        self.assertEqual(g.rules[c_trans].canonical, 'C -> P')
 
 
 class TestMentalModelWithGrammar(_GrammarTestBase):
@@ -712,7 +712,7 @@ class TestRule1TrinityCoordination(_GrammarTestBase):
             f"{(partition - 1.0).abs().max().item()}")
 
     def test_trinity_endpoints(self):
-        """Endpoints lock to one operator: x=+1→true, x=-1→false, x=0→non."""
+        """Endpoints lock to one operator: x=+1->true, x=-1->false, x=0->non."""
         s_sl, ss = self.s_sl, self.s_ss
         one = torch.tensor([1.0], device=Models.TheDevice.get())
         zero = torch.tensor([0.0], device=Models.TheDevice.get())
@@ -725,7 +725,7 @@ class TestRule1TrinityCoordination(_GrammarTestBase):
         self.assertAlmostEqual(s_sl.trueForward(neg, ss).item(),  0.0, places=5)
         self.assertAlmostEqual(s_sl.falseForward(neg, ss).item(), 1.0, places=5)
         self.assertAlmostEqual(s_sl.nonForward(neg, ss).item(),   0.0, places=5)
-        # x = 0 — pure indeterminate
+        # x = 0 -- pure indeterminate
         self.assertAlmostEqual(s_sl.trueForward(zero, ss).item(),  0.0, places=5)
         self.assertAlmostEqual(s_sl.falseForward(zero, ss).item(), 0.0, places=5)
         self.assertAlmostEqual(s_sl.nonForward(zero, ss).item(),   1.0, places=5)
@@ -782,7 +782,7 @@ class TestRule2DemuxAndSelectors(_GrammarTestBase):
         self.assertEqual(ss.muxedSize, ss.nWhat + ss.nWhere + ss.nWhen)
 
     def test_demux_round_trip(self):
-        """demux → set_*; the column blocks reconstruct the original tensor."""
+        """demux -> set_*; the column blocks reconstruct the original tensor."""
         ss = self.s_ss
         D = ss.muxedSize
         muxed = torch.randn(2, ss.event.codebook.weight.shape[0]
@@ -825,7 +825,7 @@ class TestRule2DemuxAndSelectors(_GrammarTestBase):
         """whereForward keeps the .where column block, zeros the rest."""
         ss = self.s_ss
         if ss.nWhere == 0:
-            self.skipTest("config has nWhere=0 — no where block to select")
+            self.skipTest("config has nWhere=0 -- no where block to select")
         D = ss.muxedSize
         x = torch.randn(2, 8, D, device=Models.TheDevice.get())
         out = self.s_sl.whereForward(x, ss)
@@ -842,7 +842,7 @@ class TestRule2DemuxAndSelectors(_GrammarTestBase):
         """whenForward keeps the .when column block, zeros the rest."""
         ss = self.s_ss
         if ss.nWhen == 0:
-            self.skipTest("config has nWhen=0 — no when block to select")
+            self.skipTest("config has nWhen=0 -- no when block to select")
         D = ss.muxedSize
         x = torch.randn(2, 8, D, device=Models.TheDevice.get())
         out = self.s_sl.whenForward(x, ss)
@@ -927,7 +927,7 @@ class TestUnifiedRuleCodebook(_GrammarTestBase):
             self.assertEqual(vec.shape[0], self.ss.nDim)
 
     def test_sentinel_is_zero_vector(self):
-        """Index 0 is the empty-slot sentinel — a zero vector that never trains."""
+        """Index 0 is the empty-slot sentinel -- a zero vector that never trains."""
         sentinel = self.ss.rule_codebook.weight[0]
         self.assertTrue(torch.allclose(sentinel, torch.zeros_like(sentinel)))
 
@@ -1084,7 +1084,7 @@ class TestWordSpaceServiceLayer(_GrammarTestBase):
 
 
 class TestParseDerivationToXml(_GrammarTestBase):
-    """parse.derivation_to_xml accepts both legacy tuples and WordSubSpace blocks."""
+    """parse.derivation_to_xml accepts WordSubSpace blocks."""
 
     def setUp(self):
         self.model, self.grammar = _make_model()
@@ -1109,14 +1109,6 @@ class TestParseDerivationToXml(_GrammarTestBase):
         rid, vec, leaves = self._normalize_word(block, self.grammar)
         self.assertEqual(rid, 5)
         self.assertIsNone(vec)
-        self.assertEqual(leaves, (1, 2, -1))
-
-    def test_normalize_word_accepts_legacy_tuple(self):
-        """_normalize_word handles the legacy 7-tuple."""
-        word = (0, 3, 0, 5, 1, 2, -1)  # (batch, vector, order, rule, leaves...)
-        rid, vec, leaves = self._normalize_word(word, self.grammar)
-        self.assertEqual(rid, 5)
-        self.assertEqual(vec, 3)
         self.assertEqual(leaves, (1, 2, -1))
 
     def test_xml_from_wordspace_round_trip(self):
@@ -1144,7 +1136,7 @@ class TestNoCycleInModuleTree(_GrammarTestBase):
     The two back-references (Space.wordSpace and WordSubSpace.rule_codebook_host)
     are stored via object.__setattr__ to bypass nn.Module child registration.
     If either one regresses to a normal setattr, model.to(device) recurses
-    forever — the recursion-error symptom we hit during initial integration.
+    forever -- the recursion-error symptom we hit during initial integration.
     """
 
     def test_modules_iter_terminates(self):
@@ -1154,12 +1146,12 @@ class TestNoCycleInModuleTree(_GrammarTestBase):
         self.assertGreater(count, 0)
 
     def test_to_device_no_recursion_error(self):
-        """model.to(device) completes — exercises nn.Module._apply over the tree."""
+        """model.to(device) completes -- exercises nn.Module._apply over the tree."""
         model, _ = _make_model()
         try:
             model.to(Models.TheDevice.get())  # should be a no-op or quick cycle
         except RecursionError as exc:
-            self.fail(f"model.to() recursed forever — cycle in nn.Module tree: {exc}")
+            self.fail(f"model.to() recursed forever -- cycle in nn.Module tree: {exc}")
 
 
 if __name__ == '__main__':

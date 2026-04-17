@@ -1,6 +1,6 @@
 # Architecture
 
-> **Stage 2 in progress.** A wide ConceptualSpace codebook (nVectors ≫ nOutput), a shared `SparsityRegularizer` attached to Perceptual / Conceptual / Symbolic spaces, a three-way PerceptualSpace chunking switch (`raw | bpe | lexicon`), and a tri-state `useGrammar` config (`all | thoughtFree | none`) are landing progressively. Design: [`specs/2026-04-16-stage2-wide-conceptual-codebook-design.md`](specs/2026-04-16-stage2-wide-conceptual-codebook-design.md). Plan: [`plans/2026-04-16-stage2-wide-conceptual-codebook-plan.md`](plans/2026-04-16-stage2-wide-conceptual-codebook-plan.md). Phases 1–5.1/5.2 are in; Task 5.3 (merged mode-blind outer forward loop) is deferred — WordSpace's actual shape is a per-tier dispatcher rather than a single `forward(ss)`, so the outer-loop refactor needs a design addendum before implementation.
+> **Stage 2 in progress.** A wide ConceptualSpace codebook (nVectors $\gg$ nOutput), a shared `SparsityRegularizer` attached to Perceptual / Conceptual / Symbolic spaces, a three-way PerceptualSpace chunking switch (`raw | bpe | lexicon`), and a tri-state `useGrammar` config (`all | thoughtFree | none`) are landing progressively. Design: [`specs/2026-04-16-stage2-wide-conceptual-codebook-design.md`](specs/2026-04-16-stage2-wide-conceptual-codebook-design.md). Plan: [`plans/2026-04-16-stage2-wide-conceptual-codebook-plan.md`](plans/2026-04-16-stage2-wide-conceptual-codebook-plan.md). Phases 1-5.1/5.2 are in; Task 5.3 (merged mode-blind outer forward loop) is deferred -- WordSpace's actual shape is a per-tier dispatcher rather than a single `forward(ss)`, so the outer-loop refactor needs a design addendum before implementation.
 
 ## Overview
 
@@ -8,8 +8,8 @@ BasicModel is a bidirectional neural architecture organized as a pipeline of six
 **spaces**, each implementing a distinct representational transformation:
 
 ```
-Forward:  InputSpace → PerceptualSpace → ConceptualSpace → SymbolicSpace → SyntacticSpace → OutputSpace
-Reverse:  OutputSpace → SyntacticSpace → SymbolicSpace → ConceptualSpace → PerceptualSpace → InputSpace
+Forward:  InputSpace $\rightarrow$ PerceptualSpace $\rightarrow$ ConceptualSpace $\rightarrow$ SymbolicSpace $\rightarrow$ SyntacticSpace $\rightarrow$ OutputSpace
+Reverse:  OutputSpace $\rightarrow$ SyntacticSpace $\rightarrow$ SymbolicSpace $\rightarrow$ ConceptualSpace $\rightarrow$ PerceptualSpace $\rightarrow$ InputSpace
 ```
 
 The forward pass transforms raw input into predictions. The reverse pass
@@ -45,7 +45,7 @@ Layer selection depends on `<reconstruct>` and `invertible`:
    the forward pass only. No reverse pipeline is created.
 2. **`reconstruct=<any>` + `invertible`**: A single invertible layer (`InvertiblePiLayer`,
    `InvertibleSigmaLayer`) serves both directions, sharing weights.
-3. **`reconstruct=<any>` + not `invertible`**: Two layers with separate weights —
+3. **`reconstruct=<any>` + not `invertible`**: Two layers with separate weights --
    call `forward()` on one and `reverse()` on the other.  This avoids the
    expressivity limitation where a non-invertible layer's forward pass cannot
    represent the inverse of another (e.g., PiLayer's product structure is not
@@ -63,8 +63,8 @@ presented.
 
 To solve this, the `nSymbols` produced by SymbolicSpace are split:
 
-- **`nOutputSymbols`** `= OutputSpace.nActive` — fed to OutputSpace for prediction
-- **`nReconSymbols`** `= nSymbols - nOutputSymbols` — carried in `end_state` for reconstruction
+- **`nOutputSymbols`** `= OutputSpace.nActive` -- fed to OutputSpace for prediction
+- **`nReconSymbols`** `= nSymbols - nOutputSymbols` -- carried in `end_state` for reconstruction
 
 This is essentially a skip connection through the symbolic bottleneck: an extra channel
 that preserves information lost in the output projection. Reconstruction symbols receive
@@ -99,7 +99,7 @@ The partial overlap means:
   combined gradient and finds a consistent descent direction.
 
 This resolves the fundamental tension between forward prediction and backward
-reconstruction in bidirectional architectures — a problem first identified in
+reconstruction in bidirectional architectures -- a problem first identified in
 A.M. Rogers, T.T. Shannon, and G.G. Lendaris, "A comparison of DHP based
 antecedent parameter tuning strategies for fuzzy control," *Proceedings Joint
 9th IFSA World Congress and 20th NAFIPS International Conference*, Vancouver,
@@ -116,9 +116,9 @@ approach handles this case naturally.
 Training uses the single Adam optimizer with persistent state (momentum/variance
 accumulate across epochs):
 
-1. Forward pass: input → prediction + `end_state`
+1. Forward pass: input $\rightarrow$ prediction + `end_state`
 2. Compute `outputLoss` from prediction vs. target
-3. Reverse pass: `end_state` → reconstructed input
+3. Reverse pass: `end_state` $\rightarrow$ reconstructed input
 4. Compute `reconstructionLoss` from reconstruction vs. original input
 5. Backpropagate `totalLoss = (1 - reconRatio) * outputLoss + reconRatio * reconstructionLoss`
 6. If ergodic: run `paramUpdate()` (gradient energy sensor updates alpha)
@@ -137,9 +137,9 @@ the Sigma-Pi loop switches from a flat concatenation-based cycle to a
 pairwise butterfly architecture with per-level ButterflyStage wrappers
 and a geometrically partitioned symbol dimension.  `<useGrammar>true</useGrammar>`
 (in `<WordSpace>`) selects a grammar-directed progressive-bottleneck
-variant instead.  The two flags are mutually exclusive — butterfly
+variant instead.  The two flags are mutually exclusive -- butterfly
 permutations fight constituency structure.  See
-[Reasoning.md](Reasoning.md) §Architecture Quadrants for the full
+[Reasoning.md](Reasoning.md) Section Architecture Quadrants for the full
 comparison.
 
 See [Params.md](Params.md) for all XML configuration parameters.
@@ -188,7 +188,7 @@ For the Sigma layer:
  $$y_j = W x + b$$
  $$y_j = b_j + \sum_{i=1}^{n} W_{ji} x_i$$
 
-For the Pi layer (code implementation — log-space linear):
+For the Pi layer (code implementation -- log-space linear):
 
  $$s_i = \log\!\frac{1 + x_i}{1 - x_i} = 2\,\mathrm{atanh}(x_i)$$
  $$z_j = \sum_i W_{ji}\, s_i + b_j$$
@@ -206,7 +206,7 @@ $\log y_j = \log b_j + \sum_i \log(1 + W_{ji} x_i)$.  The code
 generalises this idea: it moves into a log-multiplicative domain via atanh,
 performs a standard linear operation there, and returns via tanh.  The atanh
 transform stretches values near $\pm 1$ toward infinity, making the layer
-sensitive to strong activations — the multiplicative structure emerges from
+sensitive to strong activations -- the multiplicative structure emerges from
 the nonlinear domain transform rather than from literal products.
 
 ---
@@ -236,7 +236,7 @@ LDU-factored InvertibleLinearLayer.
 
 ## Invertible Linear Layer (LDU)
 
-### InvertibleLinearLayer — LDU Factorisation
+### InvertibleLinearLayer -- LDU Factorisation
 
 The core invertible linear primitive factors the weight matrix W as:
 
@@ -263,24 +263,24 @@ W^{-1} = U^{-1} @ D^{-1} @ L^{-1}
 Each factor is inverted by a triangular solve (`torch.linalg.solve_triangular`). No SVD
 is required, and the inverse is exact as long as all diagonal entries of D are nonzero.
 
-**Parameter count.** nIn² + rank + nOut² total parameters. Initialized at L = I, d = 1,
+**Parameter count.** nIn$^2$ + rank + nOut$^2$ total parameters. Initialized at L = I, d = 1,
 U = I so that the initial map is the identity.
 
 ### Ergodic Noise Injection (Factor-Level)
 
-Rather than the matrix-level blend `W_eff = b·W + t·N` (which destroys the LDU
+Rather than the matrix-level blend `W_eff = b$\cdot$W + t$\cdot$N` (which destroys the LDU
 structure and makes the inverse approximate), noise is injected directly into the raw
 parameters of each factor before the triangular structure is extracted:
 
 ```
-L_eff = I + strict_lower(raw_L + t · noise_raw_L)
-U_eff = I + strict_upper(raw_U + t · noise_raw_U)
-d_eff = b · d_effective + t · noise_d
+L_eff = I + strict_lower(raw_L + t $\cdot$ noise_raw_L)
+U_eff = I + strict_upper(raw_U + t $\cdot$ noise_raw_U)
+d_eff = b $\cdot$ d_effective + t $\cdot$ noise_d
 W_eff = L_eff @ D_eff_embed @ U_eff
 ```
 
 Because `W_eff` is still in LDU form, its exact inverse is always available by the same
-triangular solves — no approximation, regardless of the noise level.
+triangular solves -- no approximation, regardless of the noise level.
 
 ### stable=True
 
@@ -289,7 +289,7 @@ When `stable=True`, `_d_effective()` clamps each diagonal entry `d_i` to magnitu
 
 ```
 d_clamped_i = sign(d_i) * clamp(|d_i|, eps, 1)
-d_eff = b · d_clamped + t · noise_d
+d_eff = b $\cdot$ d_clamped + t $\cdot$ noise_d
 ```
 
 This keeps `d_eff` bounded away from zero, preventing `W_eff` from becoming singular.
@@ -316,14 +316,14 @@ allowing each factor's gradients to flow independently.
 
 Noise buffers (`noise_raw_L`, `noise_raw_U`, `noise_d`) are:
 
-1. **Resampled at the start of every ergodic `forward()`** — new noise is drawn before
+1. **Resampled at the start of every ergodic `forward()`** -- new noise is drawn before
    constructing `W_eff`.
-2. **Resampled again at the end of every ergodic `reverse()`** — fresh noise is drawn
+2. **Resampled again at the end of every ergodic `reverse()`** -- fresh noise is drawn
    after the reverse computation completes.
 
 The window between the two calls is exactly when `reverse()` needs to reconstruct the
 same `L_eff`, `U_eff`, `d_eff` that `forward()` used. Because the buffers are not
-resampled during that window, `reverse()` reads the stored buffers directly — no
+resampled during that window, `reverse()` reads the stored buffers directly -- no
 explicit caching of `W_eff` is required.
 
 ### Class Renames
@@ -333,7 +333,7 @@ The LDU layer supersedes the previous SVD-based implementation:
 | Old name | New name | Status |
 |----------|----------|--------|
 | `LULayer` | `InvertibleLinearLayer` | Renamed |
-| `InvertibleLinearLayer` (SVD) | — | Removed |
+| `InvertibleLinearLayer` (SVD) | -- | Removed |
 | `InvertibleSigmaLayer` | `SigmaLayer(invertible=True)` | Merged |
 | `InvertiblePiLayer` | `PiLayer(invertible=True)` | Merged |
 

@@ -26,7 +26,7 @@ The scope of this paper is Large Language Models, or reinforcement learning wher
 
 ---
 
-## Part I: What Machine Minds Are — Weight Ergodicity
+## Part I: What Machine Minds Are -- Weight Ergodicity
 
 ### Weights as Ergodic Samples
 
@@ -46,7 +46,7 @@ distribution.
 
 This perspective comes from **Lagrangian Field-theoretic Gradient Control**
 (LFGC), which treats the weight landscape as a field where the boundary
-conditions — input data, output targets, and architectural constraints — shape
+conditions -- input data, output targets, and architectural constraints -- shape
 the distribution from which weights are drawn. Rather than searching for a
 single optimal point, the network explores the manifold of solutions consistent
 with its boundary conditions. The ergodic hypothesis guarantees that time
@@ -102,7 +102,7 @@ a result of the difference over time of the weight biases.
 
 ---
 
-## Part II: What Machine Minds Feel — Network Invertibility
+## Part II: What Machine Minds Feel -- Network Invertibility
 
 ### Bidirectional Perception
 
@@ -113,14 +113,14 @@ and activation functions.
 
 ### Symbols, Worldlines, and Karmic Inertia
 
-The symbols or tokens that an LLM processes are not arbitrary labels — they have
+The symbols or tokens that an LLM processes are not arbitrary labels -- they have
 meanings given to them by **worldlines**. A worldline is the trajectory of a
 concept through training: the accumulated history of contexts in which a token
 has appeared, the gradients that have shaped its embedding, and the network
 states it has participated in. The meaning of a symbol is the integral of its
 worldline.
 
-Weight adaptation — or even inference — puts a **force** into the system. That
+Weight adaptation -- or even inference -- puts a **force** into the system. That
 force will adapt either the system's inputs or its outputs, depending on which
 has less **karmic inertia**. Karmic inertia is the resistance of a
 representation to change: a well-established embedding with a long worldline
@@ -129,9 +129,9 @@ novel or ambiguous token has low karmic inertia. The network's bidirectional
 architecture means this force propagates in both directions:
 
 - **Forward (encoding):** the input representation adapts to match the network's
-  learned categories — perception is shaped by expectation.
+  learned categories -- perception is shaped by expectation.
 - **Reverse (decoding):** the network's internal state adapts to reconstruct the
-  input — expectation is grounded in perception.
+  input -- expectation is grounded in perception.
 
 The invertible architecture makes both directions explicit and trainable, rather
 than relying on separate encoder/decoder networks with independent weights.
@@ -158,7 +158,7 @@ respectively as the *recognizer* (or representer) and the *generalizer*.
 
 ---
 
-## Part III: What Machine Minds Know — Output Certainty
+## Part III: What Machine Minds Know -- Output Certainty
 
 ### Certainty vs. Probability
 

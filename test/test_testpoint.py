@@ -1,4 +1,4 @@
-"""Testpoint — embedding probes and server queries.
+"""Testpoint -- embedding probes and server queries.
 
 Prints diagnostic values so a human can evaluate embedding quality
 and inference behavior. Runs as part of `make test`.
@@ -62,12 +62,12 @@ class TestEmbeddingProbes(unittest.TestCase):
         found = 0
         for word in probes:
             if word not in self.wv:
-                print(f"  {word:15s}  — not in vocab")
+                print(f"  {word:15s}  -- not in vocab")
                 continue
             found += 1
             neighbors = self.wv.neighbors(word, topn=5)
             top = ", ".join(f"{w}({s:.2f})" for w, s in neighbors)
-            print(f"  {word:15s} → {top}")
+            print(f"  {word:15s} -> {top}")
         self.assertGreaterEqual(found, 5, "Too few probe words in vocab")
 
     def test_similarity_pairs(self):
@@ -85,7 +85,7 @@ class TestEmbeddingProbes(unittest.TestCase):
                 print(f"  sim({w1}, {w2}) = {sim:.4f}")
             else:
                 missing = w1 if w1 not in self.wv else w2
-                print(f"  sim({w1}, {w2}) — '{missing}' not in vocab")
+                print(f"  sim({w1}, {w2}) -- '{missing}' not in vocab")
 
     def test_self_similarity(self):
         """Every word's nearest neighbor has positive similarity."""

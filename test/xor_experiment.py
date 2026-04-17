@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""XOR convergence experiment: explore alpha schedules × LR × ergodic.
+"""XOR convergence experiment: explore alpha schedules * LR * ergodic.
 
 Goal: drive both output and reconstruction losses to zero.
 
@@ -29,11 +29,11 @@ import torch
 # ---------------------------------------------------------------------------
 
 def alpha_none(epoch, numEpochs):
-    """No annealing — pure exploitation from the start."""
+    """No annealing -- pure exploitation from the start."""
     return 0.0
 
 def alpha_linear(epoch, numEpochs):
-    """Original linear 1→0."""
+    """Original linear 1->0."""
     return 1.0 - epoch / max(1, numEpochs - 1)
 
 def alpha_fast_linear(epoch, numEpochs):

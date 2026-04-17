@@ -139,7 +139,7 @@ def generate_report(test_dir=None):
                 testpoint_output.append((testname, stdout.strip()))
         report.add_table(filename, ["Test", "Status", "Duration", "Details"], rows)
 
-    # Testpoint diagnostic section — embedding probes and server queries
+    # Testpoint diagnostic section -- embedding probes and server queries
     if testpoint_output:
         tp_rows = []
         for testname, output in testpoint_output:

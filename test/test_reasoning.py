@@ -44,7 +44,7 @@ def _make_model(config='MentalModel.xml'):
     return model
 
 
-# ── Step 1: Order Partitions ──────────────────────────────────────────
+# -- Step 1: Order Partitions ------------------------------------------
 
 class TestOrderPartitions(unittest.TestCase):
 
@@ -91,7 +91,7 @@ class TestOrderPartitions(unittest.TestCase):
         self.assertEqual(Models.MentalModel._activation_order(act2, parts), 1)
 
 
-# ── Step 3: isConsistent ──────────────────────────────────────────────
+# -- Step 3: isConsistent ----------------------------------------------
 
 class TestIsConsistent(unittest.TestCase):
 
@@ -129,11 +129,11 @@ class TestIsConsistent(unittest.TestCase):
             truth_layer.record(t1, degree=1.0)
             truth_layer.record(t2, degree=1.0)
         result = model.isConsistent()
-        # Disjunction of opposite-sign vectors → zero → low score
+        # Disjunction of opposite-sign vectors -> zero -> low score
         self.assertLess(result['score'], 0.5)
 
 
-# ── Steps 4-5: ground, isTrue ────────────────────────────────────────
+# -- Steps 4-5: ground, isTrue ----------------------------------------
 
 class TestGroundAndIsTrue(unittest.TestCase):
 
@@ -172,7 +172,7 @@ class TestGroundAndIsTrue(unittest.TestCase):
         self.assertEqual(model.isTrue(act), 0.0)
 
 
-# ── Step 6: TruthLoss (falsity_penalty) ──────────────────────────────
+# -- Step 6: TruthLoss (falsity_penalty) ------------------------------
 
 class TestTruthLoss(unittest.TestCase):
 
@@ -203,7 +203,7 @@ class TestTruthLoss(unittest.TestCase):
         # Store a positive truth
         truth = torch.ones(8) * 0.5
         tl.record(truth, degree=1.0)
-        # Proposition in opposite direction → contradiction → norm reduction
+        # Proposition in opposite direction -> contradiction -> norm reduction
         prop = -torch.ones(1, 1, 8) * 0.5
         penalty = tl.falsity_penalty(prop, basis)
         self.assertGreater(penalty.item(), 0.0)
@@ -213,7 +213,7 @@ class TestTruthLoss(unittest.TestCase):
         basis = self._make_basis()
         truth = torch.ones(8) * 0.5
         tl.record(truth, degree=1.0)
-        # Zero proposition → unknown → no effect on union
+        # Zero proposition -> unknown -> no effect on union
         prop = torch.zeros(1, 1, 8)
         penalty = tl.falsity_penalty(prop, basis)
         self.assertAlmostEqual(penalty.item(), 0.0, places=4)
@@ -236,7 +236,7 @@ class TestTruthLoss(unittest.TestCase):
         self.assertIsNotNone(leaf.grad)
 
 
-# ── Step 7: extrapolate ──────────────────────────────────────────────
+# -- Step 7: extrapolate ----------------------------------------------
 
 class TestExtrapolate(unittest.TestCase):
 
@@ -245,7 +245,7 @@ class TestExtrapolate(unittest.TestCase):
         truth_layer = model._get_truth_layer()
         if truth_layer is None:
             self.skipTest("No TruthLayer available")
-        # Only 1 truth → can't pair
+        # Only 1 truth -> can't pair
         D = truth_layer.nDim
         truth_layer.record(torch.randn(D), degree=0.8)
         result = model.extrapolate()
@@ -270,7 +270,7 @@ class TestExtrapolate(unittest.TestCase):
         self.assertGreater(total, 0, "Grammar methods should produce candidates")
 
 
-# ── Step 1 integration: write-mask isolation ─────────────────────────
+# -- Step 1 integration: write-mask isolation -------------------------
 
 class TestWriteMask(unittest.TestCase):
 
@@ -293,7 +293,7 @@ class TestWriteMask(unittest.TestCase):
                 model.forward(x)
 
 
-# ── Step 9: reason() ─────────────────────────────────────────────────
+# -- Step 9: reason() -------------------------------------------------
 
 class TestReason(unittest.TestCase):
 
@@ -315,14 +315,14 @@ class TestReason(unittest.TestCase):
         self.assertFalse(result['proved'])
 
 
-# ── English-level tests (require trained model) ──────────────────────
+# -- English-level tests (require trained model) ----------------------
 
 @pytest.mark.xfail(reason="requires trained model with populated TruthSet", run=False)
 def test_syllogism_all_men_mortal():
     # Given: "all men are mortal", "Socrates is a man"
     # Expect: isTrue(encode("Socrates is mortal")) > 0.5
     model = _make_model()
-    pass  # encode sentences → activations → reason()
+    pass  # encode sentences -> activations -> reason()
 
 
 @pytest.mark.xfail(reason="requires trained model with populated TruthSet", run=False)
@@ -336,14 +336,14 @@ def test_syllogism_contrapositive():
 @pytest.mark.xfail(reason="requires trained model", run=False)
 def test_inconsistency_detected():
     # TruthSet: "the ball is red" (+1) and "the ball is not red" (-1)
-    # Expect: isConsistent() → consistent=False
+    # Expect: isConsistent() -> consistent=False
     model = _make_model()
     pass
 
 
 @pytest.mark.xfail(reason="requires trained model with synonym coverage", run=False)
 def test_semantic_equivalence_paraphrase():
-    # "the canine bounded" ≈ "the dog ran" in conceptual space (cosine sim > 0.7)
+    # "the canine bounded" ~= "the dog ran" in conceptual space (cosine sim > 0.7)
     model = _make_model()
     pass
 

@@ -16,7 +16,6 @@
     <modelType>simple</modelType>
     <conceptualOrder>1</conceptualOrder>
     <useButterflies>false</useButterflies>
-    <STM_decay>0.0</STM_decay>
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
     <naive>false</naive>
@@ -42,7 +41,7 @@
     <training>
       <numTrials>1</numTrials>
       <numEpochs>3</numEpochs>
-      <batchSize>10</batchSize>
+      <batchSize>64</batchSize>
       <learningRate>0.001</learningRate>
       <reverseScale>0.5</reverseScale>
       <whatScale>0.7</whatScale>
@@ -84,7 +83,7 @@
   </architecture>
 
   <WordSpace>
-    <useGrammar>false</useGrammar>
+    <useGrammar>none</useGrammar>
 
     <!-- SyntacticLayer MLP hidden size (prev hardcoded 64..256). -->
     <syntacticHiddenDim>64</syntacticHiddenDim>

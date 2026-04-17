@@ -32,7 +32,7 @@ def _make_model(config='MentalModel.xml'):
     return model
 
 
-# ── _level_shapes ────────────────────────────────────────────────────
+# -- _level_shapes ----------------------------------------------------
 
 class TestLevelShapes(unittest.TestCase):
 
@@ -69,7 +69,7 @@ class TestLevelShapes(unittest.TestCase):
         self.assertEqual(shapes, [(4, 4), (2, 4)])
 
 
-# ── _butterfly_merge / _butterfly_unmerge ────────────────────────────
+# -- _butterfly_merge / _butterfly_unmerge ----------------------------
 
 class _MergeHelper:
     """Lightweight stand-in for MentalModel merge/unmerge (instance methods)."""
@@ -110,7 +110,7 @@ class TestButterflyMerge(unittest.TestCase):
         self.assertTrue(torch.allclose(x, recovered))
 
 
-# ── WordEncoding 4-tuple ─────────────────────────────────────────────
+# -- WordEncoding 4-tuple ---------------------------------------------
 
 class TestWordEncoding(unittest.TestCase):
 
@@ -141,7 +141,7 @@ class TestWordEncoding(unittest.TestCase):
         self.assertEqual(w[Spaces.WordEncoding.LEAF3], -1)
 
 
-# ── Hierarchical forward (requires RamsifiedModel.xml with order>1) ──
+# -- Hierarchical forward (requires RamsifiedModel.xml with order>1) --
 
 class TestHierarchicalForward(unittest.TestCase):
 
@@ -183,7 +183,7 @@ class TestHierarchicalForward(unittest.TestCase):
         self.assertEqual(len(model.symbol_states), model.conceptualOrder)
 
 
-# ── Backward compat: non-hierarchical models still work ──────────────
+# -- Backward compat: non-hierarchical models still work --------------
 
 class TestBackwardCompat(unittest.TestCase):
 
@@ -211,7 +211,7 @@ class TestBackwardCompat(unittest.TestCase):
         self.assertIsNone(model.symbolicSpace.pi_layers)
 
 
-# ── Per-level layer construction ─────────────────────────────────────
+# -- Per-level layer construction -------------------------------------
 
 class TestPerLevelLayers(unittest.TestCase):
 

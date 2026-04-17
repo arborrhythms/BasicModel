@@ -1,7 +1,7 @@
 # basicmodel/test/test_sparsity_regularizer.py
 import torch
 
-from basicmodel.bin.Layers import SparsityRegularizer
+from Layers import SparsityRegularizer
 
 
 def test_identity_when_lambda_zero():
@@ -15,7 +15,7 @@ def test_soft_threshold_shrinks_small_values():
     reg = SparsityRegularizer(l1_lambda=0.5)
     x = torch.tensor([0.1, 0.4, 0.9, -0.3, -0.7])
     out = reg(x)
-    # |x| < 0.5 → 0; otherwise sign(x) * (|x| - 0.5)
+    # |x| < 0.5 -> 0; otherwise sign(x) * (|x| - 0.5)
     expected = torch.tensor([0.0, 0.0, 0.4, 0.0, -0.2])
     assert torch.allclose(out, expected)
 
@@ -39,6 +39,6 @@ def test_preserves_grad():
 
 def test_symbolic_space_uses_sparsity_regularizer():
     """SymbolicSpace.l1_proximal delegates to SparsityRegularizer."""
-    from basicmodel.bin.Spaces import SymbolicSpace
+    from Spaces import SymbolicSpace
     assert hasattr(SymbolicSpace, "_build_sparsity_regularizer"), \
         "SymbolicSpace should expose a factory for its regularizer"

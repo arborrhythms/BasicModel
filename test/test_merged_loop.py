@@ -1,74 +1,102 @@
-"""Tests for the Stage 2 merged-loop scaffolding: WordSpace.done(),
-WordSpace.reset_emit_state(), SymbolicSpace.empty_state().
+"""Tests for the Stage 2 Task 1 unified outer loop.
 
-The full mode-blind outer loop is a separate task (5.3). These tests only
-verify the building blocks are in place.
+The unified outer loop lives in ``MentalModel.forward`` and handles the
+flat (non-butterfly, non-grammar) configuration. Butterfly and
+grammar="all" still use their specialized paths.
+
+These tests verify:
+* ``SymbolicSpace.empty_state`` is callable and shape-correct -- the
+  unified loop's seed for ``ss``.
+* The j-loop runs ``conceptualOrder`` times (via
+  ``_unified_j_iterations`` counter).
+* ``conceptualOrder==0`` -> zero j-iterations + a single pre-seed C->S
+  pass (spec's implicit j=-1); concepts/symbols are still populated.
 """
-import inspect
+import os
+import warnings
 
-from basicmodel.bin.Spaces import WordSpace, SymbolicSpace
+import torch
 
-
-def test_wordspace_exposes_done_method():
-    assert callable(getattr(WordSpace, "done", None))
-
-
-def test_wordspace_exposes_reset_emit_state():
-    assert callable(getattr(WordSpace, "reset_emit_state", None))
+from Spaces import SymbolicSpace
 
 
-def test_wordspace_exposes_note_emit():
-    assert callable(getattr(WordSpace, "note_emit", None))
-
-
-def test_symbolicspace_exposes_empty_state():
+def test_symbolicspace_empty_state_is_callable():
+    """Used to seed ``ss`` in the unified loop."""
     assert callable(getattr(SymbolicSpace, "empty_state", None))
 
 
-def test_wordspace_done_terminates_after_single_emit_without_parent():
-    """Without _parent set, done() falls back to single-emit semantics
-    (parallel-mode default)."""
-    # We construct a bare object bypassing __init__ to avoid full model setup.
-    ws = WordSpace.__new__(WordSpace)
-    ws._emit_count = 0
-    ws._n_percepts_consumed = 0
-    ws._parent = None
-    assert ws.done() is False
-    ws.note_emit()
-    assert ws.done() is True
+def test_symbolicspace_empty_state_shape():
+    """empty_state returns zeros of shape [batch, nOutput, nDim]."""
+    space = SymbolicSpace.__new__(SymbolicSpace)
+    space.outputShape = (5, 7)
+    state = space.empty_state(batch=3)
+    assert tuple(state.shape) == (3, 5, 7)
+    assert state.abs().sum().item() == 0.0
 
 
-def test_wordspace_done_serial_requires_nPercepts_emits():
-    """With _parent.useGrammar=='all', done() needs nPercepts consumed emissions."""
-    ws = WordSpace.__new__(WordSpace)
-    ws._emit_count = 0
-    ws._n_percepts_consumed = 0
+def _load_mental_model(conceptualOrder: int = 1):
+    """Build a MentalModel from MentalModel.xml with the requested
+    conceptualOrder, via an XML patch."""
+    import xml.etree.ElementTree as ET
+    import tempfile
+    import Models
 
-    class FakeParent:
-        useGrammar = "all"
-        nPercepts = 3
+    src = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "data", "MentalModel.xml")
+    tree = ET.parse(src)
+    root = tree.getroot()
+    arch = root.find("architecture")
+    co = arch.find("conceptualOrder")
+    if co is None:
+        co = ET.SubElement(arch, "conceptualOrder")
+    co.text = str(conceptualOrder)
 
-    ws._parent = FakeParent()
-    assert ws.done() is False
-    ws.note_emit(consumed_percept=True)
-    assert ws.done() is False
-    ws.note_emit(consumed_percept=True)
-    assert ws.done() is False
-    ws.note_emit(consumed_percept=True)
-    assert ws.done() is True
+    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False)
+    tree.write(tmp.name)
+    tmp.close()
 
-
-def test_wordspace_reset_emit_state_restores_zero():
-    ws = WordSpace.__new__(WordSpace)
-    ws._emit_count = 5
-    ws._n_percepts_consumed = 5
-    ws.reset_emit_state()
-    assert ws._emit_count == 0
-    assert ws._n_percepts_consumed == 0
+    torch.manual_seed(0)
+    model, _ = Models.MentalModel.from_config(tmp.name)
+    return model, tmp.name
 
 
-def test_done_method_lives_on_wordspace_class():
-    """Sanity: the implementation source references _parent.useGrammar."""
-    src = inspect.getsource(WordSpace.done)
-    assert "useGrammar" in src
-    assert "all" in src
+def _run_single_batch(model):
+    """Run one forward pass on two trivial sentences."""
+    import Models
+    sentences = ['the cat sat on the mat', 'a dog chased the ball']
+    outputs = [torch.tensor([0.0]), torch.tensor([1.0])]
+    with Models.TheData.runtime_batch(sentences, outputs), \
+         warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Range violation")
+        warnings.filterwarnings("ignore", message="PiLayer.reverse")
+        train_input, _ = model.inputSpace.getTrainData()
+        x = model.inputSpace.prepInput(train_input[:2])
+        model.eval()
+        model.set_sigma(0)
+        with torch.no_grad():
+            model.forward(x)
+
+
+def test_unified_loop_runs_conceptualorder_iterations():
+    """conceptualOrder=3 -> j-loop fires three times."""
+    model, path = _load_mental_model(conceptualOrder=3)
+    try:
+        _run_single_batch(model)
+        assert model._unified_j_iterations == 3
+    finally:
+        os.unlink(path)
+
+
+def test_unified_loop_conceptualorder_zero_pre_seed_only():
+    """conceptualOrder=0 -> zero j-iterations + a single pre-seed
+    C->S pass. concepts/symbols are still populated so OutputSpace has
+    state to consume."""
+    model, path = _load_mental_model(conceptualOrder=0)
+    try:
+        _run_single_batch(model)
+        assert model._unified_j_iterations == 0
+        assert model.concepts is not None
+        assert model.symbols is not None
+    finally:
+        os.unlink(path)

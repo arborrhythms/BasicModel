@@ -1,4 +1,4 @@
-"""BasicModel chat client — sends queries to the /chat/completions endpoint.
+"""BasicModel chat client -- sends queries to the /chat/completions endpoint.
 
 Usage:
     python bm.py                          # interactive mode

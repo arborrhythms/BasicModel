@@ -30,7 +30,7 @@ from util import compile as util_compile, TheDevice
 
 
 class MatMulModel(nn.Module):
-    """Model that chains large matrix ops: linear → softmax → linear → layernorm."""
+    """Model that chains large matrix ops: linear -> softmax -> linear -> layernorm."""
     def __init__(self, dim=512, depth=4):
         super().__init__()
         self.layers = nn.ModuleList()

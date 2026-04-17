@@ -91,7 +91,7 @@ class TestMMXorConvergence(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             batch, _ = m.inputSpace.getBatch(0, batchSize=1)
-            self.assertIsNotNone(batch, "getBatch returned None — data not loaded")
+            self.assertIsNotNone(batch, "getBatch returned None -- data not loaded")
             inp, _ = batch
             with torch.no_grad():
                 result = m.forward(inp)
@@ -225,7 +225,7 @@ class TestMMXorConvergence(unittest.TestCase):
                 Models.TheMessage = original_message
             os.unlink(cfg_path)
 
-    @unittest.skipIf(not _RUN_SLOW, "slow — set RUN_SLOW=1")
+    @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
     def test_non_butterfly_learns_xor_signal(self):
         """useButterflies=false should exercise the recurrent forward path and learn."""
         import torch
@@ -266,7 +266,7 @@ class TestMMXorConvergence(unittest.TestCase):
         """Shared body: grammar-path XOR convergence on a given config path.
 
         The grammar path has a bimodal convergence landscape on XOR:
-        ≈30% of random inits fall into a zero-loss basin, the rest
+        ~=30% of random inits fall into a zero-loss basin, the rest
         plateau near 1/6.  We retry up to ``max_attempts`` times with
         different seeds and pass if any attempt converges, isolating
         the test from init-sensitivity (an architecture concern, not a
@@ -310,18 +310,18 @@ class TestMMXorConvergence(unittest.TestCase):
         self.assertGreater(len(data.train_input), 0)
         self.assertLess(best_ever, threshold)
 
-    @unittest.skipIf(not _RUN_SLOW, "slow — set RUN_SLOW=1")
+    @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
     def test_mm_grammar_learns_xor_signal(self):
         """MM_grammar.xml learns XOR via the grammar-directed composition path.
 
         Coverage for the (useButterflies=false, useGrammar=true)
-        quadrant — the progressive-bottleneck branch in forward/reverse
+        quadrant -- the progressive-bottleneck branch in forward/reverse
         with VQ-VAE symbol discretization enabled.
         """
         cfg_path = os.path.join(_PROJECT, "data", "MM_grammar.xml")
         self._grammar_xor_convergence(cfg_path)
 
-    @unittest.skipIf(not _RUN_SLOW, "slow — set RUN_SLOW=1")
+    @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
     def test_mm_grammar_without_vqvae_learns_xor_signal(self):
         """MM_grammar.xml with useVQVAE flipped to false learns XOR.
 
@@ -409,7 +409,7 @@ class TestMMXorConvergence(unittest.TestCase):
                 max_move = delta
         self.assertGreater(
             len(moved_names), 0,
-            f"Commitment gradient must reach the encoder — no SymbolicSpace "
+            f"Commitment gradient must reach the encoder -- no SymbolicSpace "
             f"params moved (max Δ={max_move:.2e})")
         self.assertTrue(all(torch.isfinite(torch.tensor(commit_values))),
                         "symbol_commitment must stay finite over training")

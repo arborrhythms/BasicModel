@@ -6,7 +6,7 @@ hardcode bias=1, temp=0). Ergodic mode destabilizes completely. The bottleneck
 is the separate forward/reverse optimizers fighting over shared parameters.
 
 This round tests:
-  A) Combined loss: single optimizer, loss = output_loss + λ * recon_loss
+  A) Combined loss: single optimizer, loss = output_loss + lambda_ * recon_loss
   B) Asymmetric LR: forward optimizer at higher LR, reverse at lower LR
   C) LR decay via scheduler
   D) Gradient clipping
@@ -312,7 +312,7 @@ def run_experiment():
     for lr in [0.01, 0.005, 0.001]:
         for rw in [0.1, 0.5, 1.0, 2.0]:
             configs.append({
-                "label": f"combined lr={lr} λ={rw}",
+                "label": f"combined lr={lr} lambda_={rw}",
                 "fn": "combined", "ergodic": False,
                 "lr": lr, "recon_weight": rw, "alpha_fn": alpha_none,
                 "grad_clip": 0.0, "lr_decay": 1.0,

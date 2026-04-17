@@ -93,7 +93,7 @@ class TestPiSigmaXOR(unittest.TestCase):
         Y = Y.unsqueeze(1)
 
         # Seed 42 hits a local minimum (~0.125) on CPU but converges on MPS.
-        # Try multiple seeds — the test verifies PiLayer+SigmaLayer *can*
+        # Try multiple seeds -- the test verifies PiLayer+SigmaLayer *can*
         # learn XOR, not that every random init converges.
         criterion = nn.MSELoss()
         from itertools import chain

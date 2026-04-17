@@ -118,10 +118,10 @@ symbolic reconstruction objective:
 Grammar weights emerge from gradient descent. Paraphrase-invariance holds
 because semantically similar sentences snap to nearby codebook entries.
 
-## Architecture Quadrants: useButterflies × useGrammar
+## Architecture Quadrants: useButterflies $\times$ useGrammar
 
-Two orthogonal flags — `<useButterflies>` (under `<architecture>`) and
-`<useGrammar>` (under `<WordSpace>`) — select among three valid
+Two orthogonal flags -- `<useButterflies>` (under `<architecture>`) and
+`<useGrammar>` (under `<WordSpace>`) -- select among three valid
 Sigma-Pi architectures.  Butterflies and grammar are mutually
 exclusive: butterfly permutations fight the constituency structure
 that grammar composition requires, so the (true, true) quadrant is
@@ -130,7 +130,7 @@ rejected at load time.
 |                          | **useGrammar=false**                | **useGrammar=true**                  |
 |--------------------------|--------------------------------------|--------------------------------------|
 | **useButterflies=false** | Flat shared sigma (default)          | Grammar-directed composition         |
-| **useButterflies=true**  | Pairwise butterfly mixing            | ❌ excluded                          |
+| **useButterflies=true**  | Pairwise butterfly mixing            | [x] excluded                          |
 
 ### Flat (both false)
 
@@ -148,14 +148,14 @@ At each iteration `t`:
 2. **Sigma** (ConceptualSpace): A single shared layer transforms the
    combined input.
 
-3. **Pi** (SymbolicSpace): A single shared PiLayer projects concepts →
+3. **Pi** (SymbolicSpace): A single shared PiLayer projects concepts $\rightarrow$
    symbols.  All orders write to the entire symbol dimension.
 
 4. **Feedback**: Symbol activation norms are broadcast back to the
    symbol portion of the input for the next iteration.
 
-5. **Reverse**: `ConceptualSpace.reverse` → peel off the symbol
-   portion → `SymbolicSpace.reverse`, repeated per order.
+5. **Reverse**: `ConceptualSpace.reverse` $\rightarrow$ peel off the symbol
+   portion $\rightarrow$ `SymbolicSpace.reverse`, repeated per order.
 
 Key property: **all conceptual orders share one undifferentiated
 symbolic space**.  There is no way to tell, from a symbol vector
@@ -164,7 +164,7 @@ alone, which order produced it.
 ### Butterfly (useButterflies=true, useGrammar=false)
 
 ButterflyStage wrappers around per-level Sigma and Pi layers permute
-inputs, pack adjacent pairs, apply the layer, unpack, and merge —
+inputs, pack adjacent pairs, apply the layer, unpack, and merge --
 halving `N` at each conceptual order while keeping `D` constant.  The
 merge is internal to the ButterflyStage (no external
 `_butterfly_merge`/`_butterfly_unmerge` stack); the reverse path
@@ -172,8 +172,8 @@ inverts each stage exactly.  `<reconstruct>symbols</reconstruct>` is
 required so the full symbol state is available for exact inversion.
 
 Analogous to increasing receptive fields in visual cortex
-(V1→V2→V4→IT), the pairwise mixing lets information flow across the
-slot axis — making this path suitable for tasks like XOR where
+(V1$\rightarrow$V2$\rightarrow$V4$\rightarrow$IT), the pairwise mixing lets information flow across the
+slot axis -- making this path suitable for tasks like XOR where
 information at different input slots must collide.
 
 ### Grammar-directed (useButterflies=false, useGrammar=true)
@@ -183,7 +183,7 @@ Progressive-bottleneck path with an external pair-average merge
 in `_merge_diffs`), per-level indexed Sigma/Pi
 (`conceptualSpace[t]` / `symbolicSpace[t]`), and cached symbol
 feedback (`_sym_feedbacks`).  The symbol dimension is geometrically
-partitioned so each order writes only to its slice — gives
+partitioned so each order writes only to its slice -- gives
 **partition-aware reasoning**: truth grounding, consistency checks,
 and extrapolation that respect which conceptual order a proposition
 belongs to.
@@ -210,7 +210,7 @@ for t in reversed(range(conceptualOrder)):
 ```
 
 The butterfly unmerge uses the cached `_merge_diffs` to recover both
-original vectors from each averaged pair — the inverse is exact.
+original vectors from each averaged pair -- the inverse is exact.
 
 ## Configuration
 
@@ -228,7 +228,7 @@ original vectors from each averaged pair — the inverse is exact.
 
 Four stub methods on `BaseModel` characterize stages of contemplative
 awareness as spatial/computational properties of the model state.  Each
-raises `NotImplementedError` — they define the target characterization,
+raises `NotImplementedError` -- they define the target characterization,
 not an implementation.
 
 | Method | Stage | Characterization |
@@ -236,11 +236,11 @@ not an implementation.
 | `Contiguous()` | One-Pointedness (Shamatha / FA) | Current state occupies a single connected, convex region in PerceptualSpace and a contiguous span in SymbolicSpace. |
 | `Continuous()` | Simplicity (Continuity / OA) | Concept states flow continuously without discrete jumps; the Jacobian of the forward map is bounded. |
 | `Peaceful()` | One Taste (Emotional Symmetry) | TruthLayer luminosity is uniformly high across all stored propositions; no truth is privileged. |
-| `Done()` | Buddhahood (Non-Meditation / Resonance) | The model is a fixed point of its own forward–reverse cycle; reconstruction loss is zero. |
+| `Done()` | Buddhahood (Non-Meditation / Resonance) | The model is a fixed point of its own forward-reverse cycle; reconstruction loss is zero. |
 
 When `thought_free` mode is active, the grammar already enforces the
 one-pointedness that `Contiguous()` characterizes (see
-[Language.md](Language.md) §Thought-Free Mode).
+[Language.md](Language.md) Section Thought-Free Mode).
 
 ## Testing
 

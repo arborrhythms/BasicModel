@@ -30,11 +30,11 @@ Data loading and filtering settings.
 |-----------|------|---------|-------------|
 | `dataset` | string | `"xor"` | Dataset to load. Determines input/output data via `TheData.load()`. Common values: `"xor"`, `"mnist"`, `"text"`. |
 | `minFrequency` | float | `0.0` | Minimum word frequency ratio for vocabulary admission. Words below this threshold are held in a pending buffer until they accumulate enough occurrences. `0.0` admits all words immediately. |
-| `shardDir` | string | — | Directory containing text shards for streaming datasets (e.g. `"data/fineweb"`). |
+| `shardDir` | string | -- | Directory containing text shards for streaming datasets (e.g. `"data/fineweb"`). |
 | `numShards` | int | `1` | Number of shards to load from `shardDir`. |
 | `maxDocs` | int | `10000` | Maximum number of documents to load per shard. |
-| `classificationMin` | float | — | Minimum threshold for classification accuracy reporting. |
-| `classificationMax` | float | — | Maximum threshold for classification accuracy reporting. |
+| `classificationMin` | float | -- | Minimum threshold for classification accuracy reporting. |
+| `classificationMax` | float | -- | Maximum threshold for classification accuracy reporting. |
 
 ---
 
@@ -51,13 +51,13 @@ Training loop and I/O settings.
 | `reconRatio` | float | `0.5` | Weight of reconstruction loss in combined loss: `total = (1-r)*output + r*recon`. |
 | `trainEmbedding` | string | `"NONE"` | Embedding update mode. Controls both the embedding training method and whether gradients flow through the codebook. See table below and [Training.md](Training.md). |
 | `trainEmbeddingRatio` | float | `0.1` | Weight $\lambda$ of embedding loss in JOINT mode: $\mathcal{L} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathcal{L}_{\text{emb}}$. Ignored by other modes. |
-| `weightsPath` | string | `"output/BasicModel.ckpt"` | File path for saving/loading model weights checkpoint. Filename conventionally matches the XML config (e.g. `BasicModel.xml` → `output/BasicModel.ckpt`). |
-| `embeddingPath` | string | — | File path for the word vector store (`.kv` extension, gensim-compatible `KeyedVectors`). When absent, embedding training is skipped. |
+| `weightsPath` | string | `"output/BasicModel.ckpt"` | File path for saving/loading model weights checkpoint. Filename conventionally matches the XML config (e.g. `BasicModel.xml` $\rightarrow$ `output/BasicModel.ckpt`). |
+| `embeddingPath` | string | -- | File path for the word vector store (`.kv` extension, gensim-compatible `KeyedVectors`). When absent, embedding training is skipped. |
 | `autoload` | bool | `true` | Automatically load weights from `weightsPath` on model creation. Set to `false` for fresh training. |
 | `autosave` | bool | `false` | Automatically save weights after training completes. |
-| `negSamples` | int | `64` | Number of negative samples per positive example for CBOW/SBOW training. Controls memory usage: `O(batch × negSamples × dim)` vs `O(batch × vocab)` for full softmax. |
+| `negSamples` | int | `64` | Number of negative samples per positive example for CBOW/SBOW training. Controls memory usage: `O(batch $\times$ negSamples $\times$ dim)` vs `O(batch $\times$ vocab)` for full softmax. |
 
-#### `<trainEmbedding>` — Embedding Update Modes
+#### `<trainEmbedding>` -- Embedding Update Modes
 
 | Value | Embedding method | Model layers | Gradients through codebook | Description |
 |-------|-----------------|-------------|---------------------------|-------------|
@@ -68,7 +68,7 @@ Training loop and I/O settings.
 | `BOTH` | SBOW post-batch | Trained | Yes | Two optimizers: SBOW updates embeddings, Adam updates model layers |
 | `JOINT` | Single backward | Trained | Yes | Single optimizer: $\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{model}} + \lambda \cdot \mathcal{L}_{\text{SBOW}}$ |
 
-#### `<trainEmbeddingRatio>` — Embedding Loss Weight (JOINT mode)
+#### `<trainEmbeddingRatio>` -- Embedding Loss Weight (JOINT mode)
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -89,7 +89,7 @@ omitting them defaults to 0.1.
 | `LuminosityWeight`   | decimal | `0.1`   | `<architecture>` | Loss penalty weight for low luminosity (incoherent truths).        |
 | `UniversalityWeight` | decimal | `0.1`   | `<architecture>` | Loss penalty weight for low universality (unkind propositions).    |
 | `TruthLoss`          | decimal | `0.0`   | `<training>`     | Additive loss penalty for propositions that contradict the TruthSet. Uses union norm reduction via `Basis.disjunction()`. 0.0 = disabled. |
-| `conceptualOrder`    | int     | `1`     | `<architecture>` | Number of Percept→Concept→Symbol iterations. Higher orders use a geometrically partitioned symbolic space. |
+| `conceptualOrder`    | int     | `1`     | `<architecture>` | Number of Percept$\rightarrow$Concept$\rightarrow$Symbol iterations. Higher orders use a geometrically partitioned symbolic space. |
 | `useButterflies`     | boolean | `false` | `<architecture>` | Enable pairwise sigma/pi mixing via ButterflyStage (N-halving per conceptual order). Mutually exclusive with `useGrammar`. |
 | `useGrammar`         | boolean | `false` | `<WordSpace>`    | Enable grammar-directed per-level composition (progressive bottleneck). Mutually exclusive with `useButterflies`. |
 
@@ -107,12 +107,12 @@ omitting them defaults to 0.1.
 </training>
 ```
 
-Luminosity and universality are **multiplicative** — they scale the total loss by
+Luminosity and universality are **multiplicative** -- they scale the total loss by
 `(1 + LuminosityWeight*(1-luminosity) + UniversalityWeight*(1-universality))`.
-TruthLoss is **additive** — it directly penalizes specific propositions that
+TruthLoss is **additive** -- it directly penalizes specific propositions that
 contradict stored truths, measured by union norm reduction. Both coexist.
-See [Ethics.md](../../doc/Ethics.md) §Universality and
-[Reasoning.md](./Reasoning.md) §TruthLoss for details.
+See [Ethics.md](../../doc/Ethics.md) Section Universality and
+[Reasoning.md](./Reasoning.md) Section TruthLoss for details.
 
 The grammar section of `MentalModel.xml` also defines the ternary LIFT
 rule for transitive verbs:
@@ -122,8 +122,8 @@ rule for transitive verbs:
 <C>lift(C, C, C)</C>   <!-- transitive SVO -->
 ```
 
-See [Grammar.md](./Grammar.md) §Lift and [Ethics.md](../../doc/Ethics.md)
-§Universality for the architectural details.
+See [Grammar.md](./Grammar.md) Section Lift and [Ethics.md](../../doc/Ethics.md)
+Section Universality for the architectural details.
 
 ---
 
@@ -133,7 +133,7 @@ The entry point that lifts raw data into the model's internal representation.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `nActive` | int | *required* | Sequence length: maximum number of tokens per input. For XOR: 2 (two binary inputs). For text models, OOV words are spelled out as individual characters, so a single word may consume multiple slots — a short sentence with many OOV words can exceed this limit and trigger a truncation warning suggesting a lower `<minFrequency>`. |
+| `nActive` | int | *required* | Sequence length: maximum number of tokens per input. For XOR: 2 (two binary inputs). For text models, OOV words are spelled out as individual characters, so a single word may consume multiple slots -- a short sentence with many OOV words can exceed this limit and trigger a truncation warning suggesting a lower `<minFrequency>`. |
 | `nDim` | int | `1` | Dimensionality of each input vector. Set on TheObjectEncoding via XML; not passed to the Space constructor. |
 | `nVectors` | int | = `nActive` | Codebook size (total vectors in the space). Defaults to `nActive` for InputSpace. |
 | `nWhere` | int | `0` | Number of spatial/positional dimensions appended to each vector. When > 0, enables PositionalEncoding on all objects throughout the model. |
@@ -160,7 +160,7 @@ Transforms lifted input into perceptual features via Pi layers (multiplicative i
 | `hasAttention` | bool | `true` | Enable attention mechanism in this space. |
 | `passThrough` | bool | `false` | Skip perceptual processing entirely; pass input through unchanged. |
 
-**Layers:** Pi layers — multiplicative: `y_j = b_j * prod_i(1 + W_ji * x_i)`. See Architecture.md.
+**Layers:** Pi layers -- multiplicative: `y_j = b_j * prod_i(1 + W_ji * x_i)`. See Architecture.md.
 
 **Note:** `InvertiblePiLayer` has been merged into `PiLayer(invertible=True)`; the standalone class is removed.
 
@@ -179,7 +179,7 @@ Transforms perceptual features into abstract concepts via Sigma layers (additive
 | `hasAttention` | bool | `false` | Enable attention in conceptual processing. |
 | `hasNorm` | bool | `false` | Enable layer normalization in this space. |
 
-**Layers:** Sigma layers — additive: `y_j = tanh(W x + b)`. See Architecture.md.
+**Layers:** Sigma layers -- additive: `y_j = tanh(W x + b)`. See Architecture.md.
 
 **Note:** `InvertibleSigmaLayer` has been merged into `SigmaLayer(invertible=True)`; the standalone class is removed.
 
@@ -187,14 +187,14 @@ Transforms perceptual features into abstract concepts via Sigma layers (additive
 
 ## `<SymbolicSpace>`
 
-Discrete symbolic representation — the information bottleneck between perception and output.
+Discrete symbolic representation -- the information bottleneck between perception and output.
 Maps concept activations to a one-hot encoding over a codebook of symbol prototypes.
 See [Language.md](Language.md) for the full design.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nActive` | int | *required* | Number of active symbols. When reconstruction symbols are enabled, `nOutputSymbols = OutputSpace.nActive` are fed to output, and the rest carry reconstruction information. |
-| `nDim` | int | `1` | Dimensionality of each symbol (typically 1 — symbols are scalar activations). |
+| `nDim` | int | `1` | Dimensionality of each symbol (typically 1 -- symbols are scalar activations). |
 | `nVectors` | int | = `nActive` | Codebook size. When `codebook=true`, equals the number of symbol prototypes. |
 | `passThrough` | bool | `false` | Pass concepts through as symbols unchanged. Typically `true` for simple models. |
 | `codebook` | bool | `false` | Enable codebook quantization. When `true`, the forward path produces a one-hot activation over codebook entries. Required for the full symbolic pipeline. |
@@ -242,7 +242,7 @@ set via XML directly; they are configured programmatically when constructing the
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `naive` | bool | `False` | `False`: apply L, D, U sequentially via triangular solves — no W materialisation, backprop through each factor separately. `True`: materialise `W_eff` as a dense matrix and use `pinv(W_eff)` for the reverse pass. The `naive=True` path is slower and uses more memory; it exists for debugging and validation. |
+| `naive` | bool | `False` | `False`: apply L, D, U sequentially via triangular solves -- no W materialisation, backprop through each factor separately. `True`: materialise `W_eff` as a dense matrix and use `pinv(W_eff)` for the reverse pass. The `naive=True` path is slower and uses more memory; it exists for debugging and validation. |
 | `stable` | bool | `False` | Clamps each diagonal entry `d_i` to magnitude `[eps, 1]` with sign preserved in `_d_effective()` before the ergodic blend. Keeps `W_eff` bounded away from singularity. This is the only stability constraint on d; no additional clamp is applied to `d_eff`. |
 | `ergodic` | bool | `False` | Enables factor-level noise injection. When `True`, registers noise buffers `noise_raw_L`, `noise_raw_U`, `noise_d` and zero-initialises the learned parameters. Noise is resampled at the start of each `forward()` and at the end of each `reverse()`. |
 

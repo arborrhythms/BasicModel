@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-parse.py — English sentence → XML parse tree (5D grammar)
+parse.py -- English sentence -> XML parse tree (5D grammar)
 
 Converts a plain English sentence into an XML tree following the operator
 inventory defined in Grammar.md.  The pipeline is:
 
-    tokenize  →  POS-tag  →  build CFG  →  Earley parse  →  emit XML
+    tokenize  ->  POS-tag  ->  build CFG  ->  Earley parse  ->  emit XML
 
 Two-pass parsing strategy:
-    Pass 1 — strict: each word gets one category from NLTK's POS tagger.
-    Pass 2 — broad:  on failure, WordNet synset lookup adds alternative
+    Pass 1 -- strict: each word gets one category from NLTK's POS tagger.
+    Pass 2 -- broad:  on failure, WordNet synset lookup adds alternative
              categories, and the parser retries.
 
 If both passes fail, every word is emitted as a <token word="..."/> leaf.
@@ -102,7 +102,7 @@ def _punctuation_from_grammar():
     return chars
 
 # ---------------------------------------------------------------------------
-# POS mapping: Penn Treebank tag → grammar terminal
+# POS mapping: Penn Treebank tag -> grammar terminal
 # ---------------------------------------------------------------------------
 
 def ptb_to_grammar(word, tag):
@@ -114,12 +114,12 @@ def ptb_to_grammar(word, tag):
     _ensure_grammar()
     low = word.lower()
 
-    # Function words — lookup in grammar-derived table
+    # Function words -- lookup in grammar-derived table
     if low in _FUNC_WORDS:
         return [_FUNC_WORDS[low]]
 
     # Contraction fragments from NLTK tokenization
-    # "won't" → ["wo", "n't"], "can't" → ["ca", "n't"]
+    # "won't" -> ["wo", "n't"], "can't" -> ["ca", "n't"]
     if low in ("wo", "ca"):
         return ["ADV"]
 
@@ -147,7 +147,7 @@ def ptb_to_grammar(word, tag):
     if tag in ("DT", "PDT", "WDT"):
         return ["DET"]
 
-    # Prepositions not in grammar → adjective fallback
+    # Prepositions not in grammar -> adjective fallback
     if tag in ("IN", "TO", "RP"):
         return ["ADJ"]
 
@@ -155,15 +155,15 @@ def ptb_to_grammar(word, tag):
     if tag == "CC":
         return ["OR"]
 
-    # Modal auxiliaries → adverb (modality via MP)
+    # Modal auxiliaries -> adverb (modality via MP)
     if tag == "MD":
         return ["ADV"]
 
-    # Possessive ending, foreign words, etc. → adjective fallback
+    # Possessive ending, foreign words, etc. -> adjective fallback
     if tag in ("POS", "FW"):
         return ["ADJ"]
 
-    # Unknown → noun (least committal)
+    # Unknown -> noun (least committal)
     return ["N"]
 
 
@@ -185,14 +185,14 @@ def wordnet_categories(word):
     if low in _FUNC_WORDS:
         cats.append(_FUNC_WORDS[low])
 
-    # Modal auxiliaries (including contraction fragments) → ADV only
+    # Modal auxiliaries (including contraction fragments) -> ADV only
     if low in ("can", "could", "will", "would", "shall", "should",
                "may", "might", "must", "wo", "ca"):
         if "ADV" not in cats:
             cats.append("ADV")
         return cats
 
-    # Pronouns → N
+    # Pronouns -> N
     if low in ("i", "me", "you", "he", "him", "she", "it",
                "we", "us", "they", "them", "what", "who", "whom"):
         if "N" not in cats:
@@ -250,16 +250,16 @@ def build_grammar(tagged_tokens):
 
 
 # ---------------------------------------------------------------------------
-# Tree → XML transformer
+# Tree -> XML transformer
 # ---------------------------------------------------------------------------
 
 def _definitive_surface(op_tree):
     """Extract surface word and optional negation from DEF/HAS nonterminal.
 
-    DEF → IS             → ('is', None)    — definitive identity
-    DEF → IS NOT         → ('is', "n't")   — negated definitive
-    HAS → POSSESS        → ('has', None)   — definitive possession
-    HAS → POSSESS NOT    → ('has', 'not')  — negated definitive possession
+    DEF -> IS             -> ('is', None)    -- definitive identity
+    DEF -> IS NOT         -> ('is', "n't")   -- negated definitive
+    HAS -> POSSESS        -> ('has', None)   -- definitive possession
+    HAS -> POSSESS NOT    -> ('has', 'not')  -- negated definitive possession
     """
     ch = list(op_tree)
     base = ch[0]
@@ -279,7 +279,7 @@ def _not_tag(surface_word):
 def _emit_definitive(pad, indent, op_tag, op_tree, subject, predicate):
     """Emit XML for a definitive construction (is/has).
 
-    When the DEF/HAS nonterminal contains negation (DEF → IS NOT),
+    When the DEF/HAS nonterminal contains negation (DEF -> IS NOT),
     the negation wraps the predicate:
 
         <is word="is">               <is word="is">
@@ -308,15 +308,15 @@ def tree_to_xml(tree, indent=0):
     """Convert an NLTK parse tree into indented XML following Grammar.md.
 
     Each production rule maps to a specific operator:
-        union        — rank-lifting composition (predication, prepositional, modal)
-        intersection — rank-dropping composition (adjective/adverb narrowing)
-        conjunction  — accumulative coordination (and)
-        disjunction  — alternative coordination (or)
-        is / has     — definitive identity / possession (via _emit_definitive)
-        not / non    — negation / privation
-        prep         — preposition relocating attention head
+        union        -- rank-lifting composition (predication, prepositional, modal)
+        intersection -- rank-dropping composition (adjective/adverb narrowing)
+        conjunction  -- accumulative coordination (and)
+        disjunction  -- alternative coordination (or)
+        is / has     -- definitive identity / possession (via _emit_definitive)
+        not / non    -- negation / privation
+        prep         -- preposition relocating attention head
 
-    Terminal nonterminals (N, ADJ, V, …) emit self-closing XML leaves.
+    Terminal nonterminals (N, ADJ, V, ...) emit self-closing XML leaves.
     Operator-word terminals (IS, POSSESS, NOT, AND, OR) return None
     because their surface words are emitted by the parent operator element.
     """
@@ -379,7 +379,7 @@ def tree_to_xml(tree, indent=0):
             lines.append(f"{pad}</union>")
             return "\n".join(lines)
 
-        # Definitive rules — DEF/HAS nonterminals handle negation internally
+        # Definitive rules -- DEF/HAS nonterminals handle negation internally
         if child_labels == ["NP", "DEF", "NP"]:
             return _emit_definitive(pad, indent, "is", children[1], children[0], children[2])
 
@@ -581,7 +581,7 @@ def tree_to_xml(tree, indent=0):
             # Bare determiner: pass through to leaf
             return tree_to_xml(children[0], indent)
         if child_labels == ["ADJ", "AP"]:
-            # Adjective narrowing: "quick brown" → intersect(quick, brown)
+            # Adjective narrowing: "quick brown" -> intersect(quick, brown)
             lines = [f"{pad}<intersection>"]
             lines.append(tree_to_xml(children[0], indent + 1))
             lines.append(tree_to_xml(children[1], indent + 1))
@@ -602,7 +602,7 @@ def tree_to_xml(tree, indent=0):
             # Bare adverb: pass through to leaf
             return tree_to_xml(children[0], indent)
         if child_labels == ["ADV", "MP"]:
-            # Adverb narrowing: "very probably" → intersect(very, probably)
+            # Adverb narrowing: "very probably" -> intersect(very, probably)
             lines = [f"{pad}<intersection>"]
             lines.append(tree_to_xml(children[0], indent + 1))
             lines.append(tree_to_xml(children[1], indent + 1))
@@ -618,7 +618,7 @@ def tree_to_xml(tree, indent=0):
             lines.append(f"{pad}</prep>")
             return "\n".join(lines)
 
-    # Fallback: unrecognised production — emit children as-is.
+    # Fallback: unrecognised production -- emit children as-is.
     # This should not normally be reached; it guards against grammar
     # extensions that add new rules without updating tree_to_xml().
     parts = []
@@ -631,107 +631,56 @@ def tree_to_xml(tree, indent=0):
 
 
 # ---------------------------------------------------------------------------
-# Model derivation → XML
+# Model derivation -> XML
 # ---------------------------------------------------------------------------
-
-# Legacy tag-name table — kept only as a fallback for the historical
-# uppercase-keyword rule strings ("S → S AND S").  Modern rule strings are
-# function-style ("S → conjunction(S, S)") and resolve via grammar.method_name.
-_RULE_TAGS = {
-    "EQUALS":       "equals",
-    "AND":          "conjunction",
-    "OR":           "disjunction",
-    "NOT":          "not",
-    "NON":          "non",
-    "PART":         "part",
-    "UNION":        "union",
-    "INTERSECTION": "intersection",
-}
-
-
-def _tag_from_rule(rule_str):
-    """Fallback tag extractor for legacy uppercase-keyword rule strings."""
-    for keyword, tag in _RULE_TAGS.items():
-        if keyword in rule_str:
-            return tag
-    return None
-
 
 def _tag_from_grammar(grammar, rule_id):
     """Return the XML tag for a grammar rule, or None for transparent nodes.
 
-    Prefers ``grammar.method_name(rule_id)`` (the function name extracted
-    from the rule's RHS, e.g. ``'conjunction'`` for ``S → conjunction(S, S)``)
-    and falls back to the legacy keyword scan for older rule strings.
+    Uses ``grammar.method_name(rule_id)`` -- the function name extracted
+    from the rule's RHS, e.g. ``'conjunction'`` for ``S -> conjunction(S, S)``.
 
-    Returns None for transition rules (``S → C``, ``C → P``) and for the
-    ``P → I P`` chunk rule, both of which are rendered transparently or as
+    Returns None for transition rules (``S -> C``, ``C -> P``) and for the
+    ``P -> I P`` chunk rule, both of which are rendered transparently or as
     leaf tokens elsewhere.
     """
     try:
         method = grammar.method_name(rule_id)
     except Exception:
         method = None
-    if method:
-        if method == 'chunk':
-            return None  # P → I P — handled at the terminal layer
-        return method
-    # Transition or terminal — try the legacy keyword table.
-    try:
-        rule_str = grammar[rule_id]
-    except Exception:
+    if not method:
         return None
-    return _tag_from_rule(rule_str)
+    if method == 'chunk':
+        return None  # P -> I P -- handled at the terminal layer
+    return method
 
 
 def _is_terminal(grammar, rule_id):
     """Return True if this rule emits a surface token instead of a node."""
     try:
         rule_str = grammar[rule_id]
-        arity = grammar.arity(rule_id)
         method = grammar.method_name(rule_id)
     except Exception:
         return False
-    if rule_str.strip().endswith("W"):
-        return True  # legacy "P → W" form
-    if rule_str.strip().endswith(" → I"):
-        return True  # modern "P → I" terminal
+    if rule_str.strip().endswith(" -> I"):
+        return True  # "P -> I" terminal
     if method == 'chunk':
-        return True  # "P → I P" — treated as a terminal chunk
+        return True  # "P -> I P" -- treated as a terminal chunk
     return False
 
 
 def _normalize_word(word, grammar):
-    """Coerce a word entry into ``(rule_id, vector, leaves)``.
+    """Coerce a ``WordSubSpace`` block dict into ``(rule_id, vector, leaves)``.
 
-    Accepts three input shapes:
-
-    * a ``WordSubSpace`` block dict
-      ``{'rule_id': r, 'leaves': (l1, l2, l3), 'start': s}``
-    * a legacy ``WordEncoding`` 7-tuple
-      ``(batch, vector, order, rule, leaf1, leaf2, leaf3)``
-    * the older 3-tuple ``(batch, vector, rule)``
-
-    Returns ``(rule_id, vector_or_none, leaves_tuple)`` where ``leaves`` is
-    always a tuple and ``vector`` may be None when not available (the
-    WordSubSpace path identifies leaves by rule_id, not codebook position).
+    Block dict shape: ``{'rule_id': r, 'leaves': (l1, l2, l3), 'start': s}``.
+    Returns ``(rule_id, None, leaves_tuple)`` -- leaves are identified by
+    rule_id, not codebook position, so vector is always None here.
     """
-    if isinstance(word, dict):
-        rule_id = int(word.get('rule_id', -1))
-        leaves = tuple(word.get('leaves', ()))
-        return rule_id, None, leaves
-    if not isinstance(word, (tuple, list)):
+    if not isinstance(word, dict):
         return -1, None, ()
-    if len(word) >= 7:
-        # WordEncoding 7-tuple: (batch, vector, order, rule, leaf1, leaf2, leaf3)
-        return int(word[3]), int(word[1]), tuple(int(x) for x in word[4:7])
-    if len(word) == 4:
-        # Older (batch, vector, order, rule) shape
-        return int(word[3]), int(word[1]), ()
-    if len(word) == 3:
-        # Minimal (batch, vector, rule)
-        return int(word[2]), int(word[1]), ()
-    return -1, None, ()
+    rule_id = int(word.get('rule_id', -1))
+    leaves = tuple(word.get('leaves', ()))
+    return rule_id, None, leaves
 
 
 def derivation_to_xml(words, grammar, vocab=None, indent=0):
@@ -739,19 +688,13 @@ def derivation_to_xml(words, grammar, vocab=None, indent=0):
 
     Reconstructs the tree from a pre-order traversal of word entries,
     using the Grammar's arity to determine how many children each node
-    consumes.  Accepts three input shapes (auto-detected, see
-    ``_normalize_word``):
-
-    * WordSubSpace block dicts (the modern path, produced by
-      ``WordSpace.get_blocks(b)`` / ``WordSubSpace.get_blocks(b)``)
-    * Legacy WordEncoding 7-tuples
-      ``(batch, vector, order, rule, leaf1, leaf2, leaf3)``
-    * Older 3-tuples ``(batch, vector, rule)``
+    consumes. Input entries are ``WordSubSpace`` block dicts produced by
+    ``WordSpace.get_blocks(b)`` / ``WordSubSpace.get_blocks(b)``.
 
     Args:
         words:   sequence of word entries (already filtered to one batch).
         grammar: Grammar instance (for rule strings, arities and method names).
-        vocab:   optional dict mapping vector / leaf index → surface word.
+        vocab:   optional dict mapping vector / leaf index -> surface word.
                  Indices missing from the vocab become ``?N``.
         indent:  starting indentation level.
 
@@ -787,13 +730,13 @@ def derivation_to_xml(words, grammar, vocab=None, indent=0):
             arity = 0
         pad = "  " * depth
 
-        # Terminal: emit a leaf token (either legacy P→W or modern P→I/chunk)
+        # Terminal: emit a leaf token (P->I or P->I P chunk).
         if _is_terminal(grammar, rule_id):
             return f'{pad}<token word="{_surface(vector)}"/>'
 
         tag = _tag_from_grammar(grammar, rule_id)
 
-        # Transition rules (S→C, C→P): transparent — recurse without emitting a tag
+        # Transition rules (S->C, C->P): transparent -- recurse without emitting a tag
         if tag is None:
             if arity >= 1:
                 return _build(depth)
@@ -818,27 +761,24 @@ def derivation_to_xml(words, grammar, vocab=None, indent=0):
 def derivation_to_xml_batch(all_words, grammar, vocab=None):
     """Convert word entries for an entire batch into per-element XML trees.
 
-    Accepts the same three input shapes as :func:`derivation_to_xml` (block
-    dicts, legacy 7-tuples, or 3-tuples).  Block dicts have no batch index
-    of their own; pass them in already grouped per batch via
-    :func:`derivation_to_xml_from_wordspace` instead of mixing batches here.
+    Accepts WordSubSpace block dicts only. Block dicts have no batch
+    index of their own; pass them already grouped per batch via
+    :func:`derivation_to_xml_from_wordspace` instead of mixing batches
+    here.
 
     Args:
-        all_words: iterable of word entries (may span multiple batch elements
-                   when given legacy tuples).
+        all_words: iterable of WordSubSpace block dicts.
         grammar:   Grammar instance.
-        vocab:     optional dict mapping vector index → surface word.
+        vocab:     optional dict mapping vector index -> surface word.
 
     Returns:
-        dict mapping batch index → XML string.
+        dict mapping batch index -> XML string.
     """
     from collections import defaultdict
     by_batch = defaultdict(list)
     for word in all_words:
         if isinstance(word, dict):
-            by_batch[0].append(word)  # block dicts are already per-batch
-        elif isinstance(word, (tuple, list)) and len(word) > 0:
-            by_batch[int(word[0])].append(word)
+            by_batch[0].append(word)
         else:
             by_batch[0].append(word)
 
@@ -860,7 +800,7 @@ def derivation_to_xml_from_wordspace(word_space, grammar, vocab=None, batch=0):
         word_space: a ``WordSpace`` (with ``get_blocks(b)``) or a
                     ``WordSubSpace`` directly.
         grammar:    Grammar instance.
-        vocab:      optional dict mapping leaf-index → surface word.
+        vocab:      optional dict mapping leaf-index -> surface word.
         batch:      which batch row to render (default 0).
 
     Returns:
@@ -885,7 +825,7 @@ def derivation_to_xml_from_wordspace(word_space, grammar, vocab=None, batch=0):
 # ---------------------------------------------------------------------------
 
 def has_clause_coord(tree):
-    """Check if tree uses clause coordination (S → S AND/OR S).
+    """Check if tree uses clause coordination (S -> S AND/OR S).
 
     Used by _select_tree() to prefer parses that capture clause-level
     coordination over those that bury coordinators inside NPs or VPs.
@@ -905,7 +845,7 @@ def fix_noun_modifiers(grammar_tokens):
 
     English frequently uses nouns as modifiers ("chicken soup", "car door").
     The POS tagger labels both words as nouns, but the grammar needs the
-    first one to also be available as an adjective so NP → AP NP can fire.
+    first one to also be available as an adjective so NP -> AP NP can fire.
     This pass adds "ADJ" as an alternative terminal for any noun that
     immediately precedes another noun.
     """
@@ -965,7 +905,7 @@ def parser(sentence):
 _QUICK_TOK = __import__('re').compile(r'[a-zA-Z]+|[0-9]+|[^a-zA-Z0-9\s]+|\s+')
 
 def quick_parser(sentence):
-    """Fast flat parse — regex split into words, punctuation, and spaces.
+    """Fast flat parse -- regex split into words, punctuation, and spaces.
 
     Returns a list of (token_text, byte_start) tuples.  Every character
     in the input is covered by exactly one token (words, punctuation runs,
@@ -984,8 +924,8 @@ def parse(sentence):
     """Tokenize, POS-tag, parse, and emit XML for a sentence.
 
     Two-pass strategy:
-      Pass 1 — trust NLTK's POS tagger (strict, one category per word).
-      Pass 2 — on failure, fall back to WordNet synset lookup for broader
+      Pass 1 -- trust NLTK's POS tagger (strict, one category per word).
+      Pass 2 -- on failure, fall back to WordNet synset lookup for broader
                category alternatives, and retry.
     """
     _ensure_nltk()
@@ -1074,7 +1014,7 @@ from lex import Lex
 # Module-level Lex instance for buffer parsing
 _buffer_lex = Lex()
 
-# Default sentence config — loaded lazily on first parse_buffer call
+# Default sentence config -- loaded lazily on first parse_buffer call
 _SENTENCE_CFG_PATH = Path(__file__).resolve().parent.parent / "data" / "sentence.cfg"
 _sentence_cfg = None
 
@@ -1206,7 +1146,7 @@ def parse_buffer(buf, start=0, config=None):
     complete, trailing = _group_sentences(lex_tokens)
 
     if not complete:
-        # No complete sentences — everything is a trailing fragment
+        # No complete sentences -- everything is a trailing fragment
         return {'sentences': []}, start
 
     sentences = []
@@ -1224,7 +1164,7 @@ def parse_buffer(buf, start=0, config=None):
     if trailing:
         next_pos = trailing[0]['start']
     else:
-        # All consumed — advance past trailing whitespace
+        # All consumed -- advance past trailing whitespace
         next_pos = sentences[-1]['end']
         while next_pos < len(buf) and buf[next_pos] in ' \n\r\t':
             next_pos += 1

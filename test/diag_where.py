@@ -20,8 +20,8 @@ model.eval()
 we = model.inputSpace.subspace.whereEncoding
 dt = we.div_term
 print(f"WhereEncoding: maxVal={we.maxVal}, div_term={dt:.8f}, index={we.index}")
-print(f"  offset 0 → sin={math.sin(0):.6f}, cos={math.cos(0):.6f}")
-print(f"  offset 6 → sin={math.sin(6*dt):.6f}, cos={math.cos(6*dt):.6f}")
+print(f"  offset 0 -> sin={math.sin(0):.6f}, cos={math.cos(0):.6f}")
+print(f"  offset 6 -> sin={math.sin(6*dt):.6f}, cos={math.cos(6*dt):.6f}")
 print(f"  angular diff = {6*dt:.6f} rad")
 print()
 

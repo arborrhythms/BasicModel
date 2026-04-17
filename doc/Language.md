@@ -9,8 +9,8 @@ method** executes all candidate rules in soft superposition, weighted by those
 probabilities.
 
 ```
-PerceptualSpace  →  ConceptualSpace  →  SymbolicSpace  →  OutputSpace
-  rules 13–14 (P)    rules 5–12 (C)      rules 1–3 (S)
+PerceptualSpace  $\rightarrow$  ConceptualSpace  $\rightarrow$  SymbolicSpace  $\rightarrow$  OutputSpace
+  rules 13-14 (P)    rules 5-12 (C)      rules 1-3 (S)
   structural          mereological        logical
   [B, N, D] vectors   [B, N, D] vectors   [B, N] activations
 ```
@@ -23,14 +23,14 @@ perceptual terminal.
 
 ## Grammar
 
-`TheGrammar` is a singleton `Grammar` instance with 15 rules (IDs 0–14)
+`TheGrammar` is a singleton `Grammar` instance with 15 rules (IDs 0-14)
 partitioned across three cognitive levels plus one start rule:
 
 ### START Rule
 
 | Rule | Production | Arity | Method |
 |------|-----------|-------|--------|
-| 0 | START → true(S) EOF | 1 | `trueMethod` |
+| 0 | START $\rightarrow$ true(S) EOF | 1 | `trueMethod` |
 
 ### Symbolic Rules (SymbolicSpace)
 
@@ -39,7 +39,7 @@ partitioned across three cognitive levels plus one start rule:
 | 1 | $S \to \text{swap}(S,\ S)$ | 2 | `swapMethod` |
 | 2 | $S \to \text{equals}(S,\ S)$ | 2 | `equalsMethod` |
 | 3 | $S \to \text{part}(S,\ S)$ | 2 | `partMethod` |
-| 4 | $S \to C$ | 1 | — (transition) |
+| 4 | $S \to C$ | 1 | -- (transition) |
 
 ### Conceptual Rules (ConceptualSpace)
 
@@ -52,27 +52,27 @@ partitioned across three cognitive levels plus one start rule:
 | 9 | $C \to \text{lift}(C)$ | 1 | `liftMethod` |
 | 10 | $C \to \text{not}(C)$ | 1 | `notMethod` |
 | 11 | $C \to \text{non}(C)$ | 1 | `nonMethod` |
-| 12 | $C \to P$ | 1 | — (transition) |
+| 12 | $C \to P$ | 1 | -- (transition) |
 
 ### Perceptual Rules (PerceptualSpace)
 
 | Rule | Production | Arity | Method |
 |------|-----------|-------|--------|
-| 13 | $P \to I\ P$ | 1 | — (recursive) |
-| 14 | $P \to \varepsilon$ | 0 | — (terminal) |
+| 13 | $P \to I\ P$ | 1 | -- (recursive) |
+| 14 | $P \to \varepsilon$ | 0 | -- (terminal) |
 
 ### Space-Level Accessors
 
-- `Grammar.symbolic()` → `[1, 2, 3]`
-- `Grammar.conceptual()` → `[5, 6, 7, 8, 9, 10, 11]`
-- `Grammar.perceptual()` → `[13, 14]`
+- `Grammar.symbolic()` $\rightarrow$ `[1, 2, 3]`
+- `Grammar.conceptual()` $\rightarrow$ `[5, 6, 7, 8, 9, 10, 11]`
+- `Grammar.perceptual()` $\rightarrow$ `[13, 14]`
 
 ### Transition Rules
 
 Rules 4 ($S \to C$) and 12 ($C \to P$) are **transitions** between grammar
 levels.  They have arity 1 at their own level (the RHS nonterminal is a
 different symbol than the LHS).  In the XML parse tree output, transitions
-are transparent — they do not emit tags.
+are transparent -- they do not emit tags.
 
 ### Grammar Configuration
 
@@ -123,40 +123,40 @@ By grammar tier, the current XML is:
 
 ### Plain-English Summary
 
-- **trueMethod** — used by START → true(S) EOF.  Collapses the final symbolic
+- **trueMethod** -- used by START $\rightarrow$ true(S) EOF.  Collapses the final symbolic
   activation into a scalar truth score by taking mean squared activation.
   "How strongly true/present is the finished statement?"
 
-- **swapMethod** — used by S → swap(S, S).  Swaps or softly mixes the
+- **swapMethod** -- used by S $\rightarrow$ swap(S, S).  Swaps or softly mixes the
   children's *where* encodings, not their identities.  "Same two things, but
   exchange their positions/roles."
 
-- **equalsMethod** — used by S → equals(S, S).  On vectors it computes cosine
+- **equalsMethod** -- used by S $\rightarrow$ equals(S, S).  On vectors it computes cosine
   similarity and uses that as a gate on the right child; on activations it
   applies a learned association and multiplies by the right child.  "Pass the
   right thing upward only to the degree the left matches it."
 
-- **partMethod** — used by S → part(S, S).  Elementwise min(left, right).
+- **partMethod** -- used by S $\rightarrow$ part(S, S).  Elementwise min(left, right).
   "Keep only the overlapping part."
 
-- **unionMethod** — used by C → union(C, C).  Elementwise max(left, right).
+- **unionMethod** -- used by C $\rightarrow$ union(C, C).  Elementwise max(left, right).
   "Merge both concepts and keep whatever either one contains."
 
-- **intersectionMethod** — used by C → intersection(C, C).  Elementwise
+- **intersectionMethod** -- used by C $\rightarrow$ intersection(C, C).  Elementwise
   min(left, right).  "Keep only what both concepts share."
 
-- **lowerMethod** — used by C → lower(C).  Compresses through a bottleneck and
+- **lowerMethod** -- used by C $\rightarrow$ lower(C).  Compresses through a bottleneck and
   expands back out.  "Make the concept simpler/coarser, then reconstruct it."
 
-- **liftMethod** — used by C → lift(C, C) and C → lift(C).  Applies a learned
+- **liftMethod** -- used by C $\rightarrow$ lift(C, C) and C $\rightarrow$ lift(C).  Applies a learned
   linear transform to the left child; in the binary form, multiplies that by the
   right child.  "Reinterpret or elevate the left concept, optionally constrained
   by the right one."
 
-- **notMethod** — used by C → not(C).  Negates the vector.  "Invert the
+- **notMethod** -- used by C $\rightarrow$ not(C).  Negates the vector.  "Invert the
   concept."
 
-- **nonMethod** — used by C → non(C).  Scales the vector by a learned sigmoid
+- **nonMethod** -- used by C $\rightarrow$ non(C).  Scales the vector by a learned sigmoid
   factor.  "Soft negation or attenuation, not full logical inversion."
 
 ### Implementation Notes
@@ -190,13 +190,13 @@ Objects are vector sets $(B, N, D)$ interpreted as RBF / luminosity fields.
 
 ### Symbolization
 
-Map vectors → scalar truth strength:
+Map vectors $\rightarrow$ scalar truth strength:
 
 $$
 s(X) = 2 \cdot \mathrm{mean}(\lVert x_i \rVert) - 1 \quad \in [-1, 1]
 $$
 
-Interpretation: +1 → strong presence, 0 → neutral, -1 → absence.
+Interpretation: +1 $\rightarrow$ strong presence, 0 $\rightarrow$ neutral, -1 $\rightarrow$ absence.
 
 ### Symbolic Layer (Scalars in [-1,1])
 
@@ -219,9 +219,9 @@ symbolization = norm projection.
 
 Each word is a 3-tuple `(batch, vector, rule)`:
 
-- **batch** — index into the batch dimension $[0, B)$
-- **vector** — index into the activation vector $[0, N)$
-- **rule** — grammar rule ID from `TheGrammar` $[0, 15)$
+- **batch** -- index into the batch dimension $[0, B)$
+- **vector** -- index into the activation vector $[0, N)$
+- **rule** -- grammar rule ID from `TheGrammar` $[0, 15)$
 
 Words are stored as a Python list of tuples on the SubSpace.  The list is a
 **derivation tree** in pre-order: the first entry is the root, and binary rules
@@ -257,9 +257,9 @@ The `rule_head` output dimension equals the number of rules in that space
 
 ### Differentiable Rule Selection
 
-- **Training:** `gumbel_softmax(logits, tau)` — soft one-hot, gradients flow
+- **Training:** `gumbel_softmax(logits, tau)` -- soft one-hot, gradients flow
   through all candidate rules proportional to their probability.
-- **Eval:** `softmax` + `argmax` — discrete rule selection.
+- **Eval:** `softmax` + `argmax` -- discrete rule selection.
 - **Annealing:** Temperature $\tau$ starts at 1.0 (diffuse) and decreases toward
   0.1 (near-discrete) over training.
 
@@ -279,11 +279,11 @@ Operates on **$[B, N]$ scalar activations** (cross-symbol attention/association)
 
 | Rule | Implementation |
 |------|---------------|
-| EQUALS | `AssociationLayer(type="symmetric")` — Hopfield-like bidirectional associative memory.  Learns which symbols retrieve which other symbols.  Output modulated by right's activation. |
-| AND | $\min(l, r)$ — Godel t-norm (fuzzy conjunction) |
-| OR | $\max(l, r)$ — Godel t-conorm (fuzzy disjunction) |
-| NOT | $1 - x$ — standard complement |
-| NON | $\sigma(\alpha) \cdot x$ — learnable dampening ($\alpha$ is a parameter) |
+| EQUALS | `AssociationLayer(type="symmetric")` -- Hopfield-like bidirectional associative memory.  Learns which symbols retrieve which other symbols.  Output modulated by right's activation. |
+| AND | $\min(l, r)$ -- Godel t-norm (fuzzy conjunction) |
+| OR | $\max(l, r)$ -- Godel t-conorm (fuzzy disjunction) |
+| NOT | $1 - x$ -- standard complement |
+| NON | $\sigma(\alpha) \cdot x$ -- learnable dampening ($\alpha$ is a parameter) |
 
 ### ConceptualSpace: `projectConcepts(rule_id, left, right)`
 
@@ -292,9 +292,9 @@ continuous concept space).
 
 | Rule | Implementation |
 |------|---------------|
-| PART | $\min(l, r)$ — parthood: the overlap region |
-| UNION | $\max(l, r)$ — mereological union: combined extent |
-| INTERSECTION | $\min(l, r)$ — mereological intersection: shared region |
+| PART | $\min(l, r)$ -- parthood: the overlap region |
+| UNION | $\max(l, r)$ -- mereological union: combined extent |
+| INTERSECTION | $\min(l, r)$ -- mereological intersection: shared region |
 
 ### PerceptualSpace: `projectPercepts(rule_id, vspace)`
 
@@ -388,9 +388,9 @@ These are not shift/reduce operations.
 
 ### BasicModel
 
-Forward: `InputSpace → PerceptualSpace → ConceptualSpace → SymbolicSpace → OutputSpace`
+Forward: `InputSpace $\rightarrow$ PerceptualSpace $\rightarrow$ ConceptualSpace $\rightarrow$ SymbolicSpace $\rightarrow$ OutputSpace`
 
-Reverse: `OutputSpace → SymbolicSpace → ConceptualSpace → PerceptualSpace → InputSpace`
+Reverse: `OutputSpace $\rightarrow$ SymbolicSpace $\rightarrow$ ConceptualSpace $\rightarrow$ PerceptualSpace $\rightarrow$ InputSpace`
 
 BasicModel does not use syntax.
 
@@ -398,7 +398,7 @@ BasicModel does not use syntax.
 
 The iterative `MentalModel` loop is:
 
-1. `InputSpace → PerceptualSpace`
+1. `InputSpace $\rightarrow$ PerceptualSpace`
 2. Repeat `conceptualOrder` times:
    - concatenate `[percepts, previous_symbols]`
    - `ConceptualSpace.forward(...)`
@@ -422,7 +422,7 @@ The model emits an XML parse tree via `parse.derivation_to_xml()`.  Word tuples
 from all three spaces are collected (with global Grammar rule IDs) and
 reconstructed into a tree by recursive descent over the pre-order word list.
 
-Transition rules ($S \to C$, $C \to P$) are transparent — they do not emit XML
+Transition rules ($S \to C$, $C \to P$) are transparent -- they do not emit XML
 tags.  Terminal rules ($P \to \varepsilon$) emit `<token>` leaves.  All other
 rules emit their named tag (`<conjunction>`, `<equals>`, `<not>`, `<union>`,
 etc.).
@@ -445,10 +445,10 @@ Example for "dogs AND NOT cats":
 The `AssociationLayer` is a cross-symbol associative memory used by the EQUALS
 rule.  Two modes are available:
 
-- **`type="symmetric"`** — Hopfield-like: learns projection $A$, computes
+- **`type="symmetric"`** -- Hopfield-like: learns projection $A$, computes
   association scores $A^T A$, softmax-retrieves the associated pattern.
   Associations are symmetric ($A \equiv B \Leftrightarrow B \equiv A$).
-- **`type="hopfield"`** — Modern Hopfield: separate query/key projections,
+- **`type="hopfield"`** -- Modern Hopfield: separate query/key projections,
   softmax-gated retrieval.
 
 Input and output are both $[B, N]$ activation vectors.  The layer is learnable
@@ -471,7 +471,7 @@ and its parameters are trained end-to-end via the reconstruction loss.
 
 ### Key Properties
 
-- Symbols are **zero-dimensional** — pure activation scalars, not vectors.
+- Symbols are **zero-dimensional** -- pure activation scalars, not vectors.
 - The PiLayer allows $n_{\text{Concepts}} \neq n_{\text{Symbols}}$.
 - `composeSyntax()` runs the symbolic SyntacticLayer and executes the soft
   superposition of swap/equals/part projections.
@@ -513,6 +513,6 @@ Under `MentalModel.xml`:
   the task loss
 
 The syntax system is best understood as a real, parameterized, differentiable
-grammar module — configured by XML rule subsets, implemented with shift/reduce
-helpers and batch composition helpers — but not yet placed on a strong loss
+grammar module -- configured by XML rule subsets, implemented with shift/reduce
+helpers and batch composition helpers -- but not yet placed on a strong loss
 path in the stock `MentalModel.xml` loop.

@@ -23,7 +23,7 @@ Limits:
 - `<disjunction word="or">`: binary alternative coordination (surface word on attribute)
 - `<not word="...">`: unary negation (surface word: `not`, `n't`)
 - `<non word="...">`: unary privation (surface word: `non`). Shares the NOT nonterminal with `<not>`; the XML tag is chosen by surface word
-- `<prep word="...">`: unary prepositional relation (all prepositions — spatial such as `over`, `under`, `in`, `out` and non-spatial such as `of`, `to`, `for`, `with` — live in perceptual space and relocate the attention head without changing dimensionality)
+- `<prep word="...">`: unary prepositional relation (all prepositions -- spatial such as `over`, `under`, `in`, `out` and non-spatial such as `of`, `to`, `for`, `with` -- live in perceptual space and relocate the attention head without changing dimensionality)
 - `<is word="...">`: identity or definition (surface word on attribute)
 - `<has word="...">`: possession or parthood (surface word on attribute)
 
@@ -44,14 +44,14 @@ Limits:
 These are not XML elements but shorthand for common subtree patterns:
 
 - **S** (sentence)
-- **NP** (noun phrase): `[AP n]` — modifier phrase followed by a noun head
-- **VP** (verb phrase): `[(adv|MP|adj)* v]` — optional adverbs, modal phrases, or verb modifiers followed by a verb head
-- **AP** (adjectival phrase): `[(adj|det|deg)* (adj|det)]` — adjectives, determiners, and degree modifiers; handles all narrowing modifiers
-- **MP** (modal phrase): `[adv* adv]` — zero or more adverb modifiers followed by an adverb head
+- **NP** (noun phrase): `[AP n]` -- modifier phrase followed by a noun head
+- **VP** (verb phrase): `[(adv|MP|adj)* v]` -- optional adverbs, modal phrases, or verb modifiers followed by a verb head
+- **AP** (adjectival phrase): `[(adj|det|deg)* (adj|det)]` -- adjectives, determiners, and degree modifiers; handles all narrowing modifiers
+- **MP** (modal phrase): `[adv* adv]` -- zero or more adverb modifiers followed by an adverb head
 - **PP** (prepositional phrase)
-- **IS** (definitive operator): `[copula NOT?]` — definitive surface word, optionally followed by negation
-- **HAS** (possession operator): `[possess NOT?]` — possession surface word, optionally followed by negation
-- **NOT** (negation): covers both `not`/`n't` (→ `<not>`) and `non` (→ `<non>`)
+- **IS** (definitive operator): `[copula NOT?]` -- definitive surface word, optionally followed by negation
+- **HAS** (possession operator): `[possess NOT?]` -- possession surface word, optionally followed by negation
+- **NOT** (negation): covers both `not`/`n't` ($\rightarrow$ `<not>`) and `non` ($\rightarrow$ `<non>`)
 
 ### Production Rules
 
@@ -59,88 +59,88 @@ These are not XML elements but shorthand for common subtree patterns:
 
 | Rule          | Operator          | Meaning                                             |
 | ------------- | ----------------- | --------------------------------------------------- |
-| S → NP        | —                 | bare noun phrase as sentence                        |
-| S → NP VP     | `<union>`         | predication: VP applied to subject                  |
-| S → MP S      | `<union>`         | modal augmentation                                  |
-| S → PP S      | `<union>`         | pre-sentential PP adjunct                           |
-| S → NP IS NP  | `<is>`            | is of definition                                    |
-| S → NP IS AP  | `<is>`            | is of predication                                   |
-| S → NP HAS NP | `<has>`           | parthood                                            |
-| S → NOT S     | `<not>` / `<non>` | negation, affirming and non-affirming               |
-| S → S `and` S | `<conjunction>`   | clause coordination                                 |
-| S → S `or` S  | `<disjunction>`   | clause disjunction                                  |
-| S → IS NP AP  | `<is>`            | question of predication (inverted)                  |
-| S → IS NP NP  | `<is>`            | question of definition with NP predicate (inverted) |
-| S → v NP VP   | `<union>`         | auxiliary question (inverted)                       |
+| S $\rightarrow$ NP        | --                 | bare noun phrase as sentence                        |
+| S $\rightarrow$ NP VP     | `<union>`         | predication: VP applied to subject                  |
+| S $\rightarrow$ MP S      | `<union>`         | modal augmentation                                  |
+| S $\rightarrow$ PP S      | `<union>`         | pre-sentential PP adjunct                           |
+| S $\rightarrow$ NP IS NP  | `<is>`            | is of definition                                    |
+| S $\rightarrow$ NP IS AP  | `<is>`            | is of predication                                   |
+| S $\rightarrow$ NP HAS NP | `<has>`           | parthood                                            |
+| S $\rightarrow$ NOT S     | `<not>` / `<non>` | negation, affirming and non-affirming               |
+| S $\rightarrow$ S `and` S | `<conjunction>`   | clause coordination                                 |
+| S $\rightarrow$ S `or` S  | `<disjunction>`   | clause disjunction                                  |
+| S $\rightarrow$ IS NP AP  | `<is>`            | question of predication (inverted)                  |
+| S $\rightarrow$ IS NP NP  | `<is>`            | question of definition with NP predicate (inverted) |
+| S $\rightarrow$ v NP VP   | `<union>`         | auxiliary question (inverted)                       |
 
 **Noun Phrase:**
 
 | Rule             | Operator         | Meaning                             |
 | ---------------- | ---------------- | ----------------------------------- |
-| NP → n           | —                | bare noun                           |
-| NP → AP NP       | `<intersection>` | modifier narrowing                  |
-| NP → NP PP       | `<union>`        | NP modified by prepositional phrase |
-| NP → NP `and` NP | `<conjunction>`  | accumulative coordination           |
-| NP → NP `or` NP  | `<disjunction>`  | alternative coordination            |
+| NP $\rightarrow$ n           | --                | bare noun                           |
+| NP $\rightarrow$ AP NP       | `<intersection>` | modifier narrowing                  |
+| NP $\rightarrow$ NP PP       | `<union>`        | NP modified by prepositional phrase |
+| NP $\rightarrow$ NP `and` NP | `<conjunction>`  | accumulative coordination           |
+| NP $\rightarrow$ NP `or` NP  | `<disjunction>`  | alternative coordination            |
 
 **Verb Phrase:**
 
 | Rule          | Operator         | Meaning                         |
 | ------------- | ---------------- | ------------------------------- |
-| VP → v        | —                | intransitive                    |
-| VP → v NP     | `<union>`        | transitive verb + direct object |
-| VP → adv VP.  | `<intersection>` | adverb narrowing                |
-| VP → MP VP    | `<union>`        | modal augmentation              |
-| VP → adj VP.  | `<intersection>` | verb modifier narrowing         |
-| VP → v PP     | `<union>`        | verb + PP complement            |
-| VP → v S      | `<union>`        | verb + clause complement        |
-| VP → v MP     | `<union>`        | post-verbal adverb              |
-| VP → VP PP    | `<union>`        | post-verbal PP modification     |
-| VP → IS VP    | `<union>`        | passive/progressive auxiliary   |
-| VP → `not` VP | `<not>`          | VP-internal negation            |
+| VP $\rightarrow$ v        | --                | intransitive                    |
+| VP $\rightarrow$ v NP     | `<union>`        | transitive verb + direct object |
+| VP $\rightarrow$ adv VP.  | `<intersection>` | adverb narrowing                |
+| VP $\rightarrow$ MP VP    | `<union>`        | modal augmentation              |
+| VP $\rightarrow$ adj VP.  | `<intersection>` | verb modifier narrowing         |
+| VP $\rightarrow$ v PP     | `<union>`        | verb + PP complement            |
+| VP $\rightarrow$ v S      | `<union>`        | verb + clause complement        |
+| VP $\rightarrow$ v MP     | `<union>`        | post-verbal adverb              |
+| VP $\rightarrow$ VP PP    | `<union>`        | post-verbal PP modification     |
+| VP $\rightarrow$ IS VP    | `<union>`        | passive/progressive auxiliary   |
+| VP $\rightarrow$ `not` VP | `<not>`          | VP-internal negation            |
 
 **Adjectival Phrase:**
 
 | Rule        | Operator         | Meaning             |
 | ----------- | ---------------- | ------------------- |
-| AP → adj    | —                | bare adjective      |
-| AP → det    | —                | bare determiner     |
-| AP → adj AP | `<intersection>` | adjective narrowing |
-| AP → deg AP | `<intersection>` | degree hedging      |
+| AP $\rightarrow$ adj    | --                | bare adjective      |
+| AP $\rightarrow$ det    | --                | bare determiner     |
+| AP $\rightarrow$ adj AP | `<intersection>` | adjective narrowing |
+| AP $\rightarrow$ deg AP | `<intersection>` | degree hedging      |
 
 **Modal Phrase:**
 
 | Rule        | Operator         | Meaning          |
 | ----------- | ---------------- | ---------------- |
-| MP → adv    | —                | bare adverb      |
-| MP → adv MP | `<intersection>` | adverb narrowing |
+| MP $\rightarrow$ adv    | --                | bare adverb      |
+| MP $\rightarrow$ adv MP | `<intersection>` | adverb narrowing |
 
 **Prepositional Phrase:**
 
 | Rule      | Operator | Meaning                  |
 | --------- | -------- | ------------------------ |
-| PP → p NP | `<prep>` | preposition + complement |
+| PP $\rightarrow$ p NP | `<prep>` | preposition + complement |
 
 **Definitive:**
 
 | Rule          | Meaning                                         |
 | ------------- | ----------------------------------------------- |
-| IS → `is`     | bare definitive (`is`, `are`, `was`, `were`, …) |
-| IS → `is` NOT | negated definitive (`isn't`, `is not`, …)       |
+| IS $\rightarrow$ `is`     | bare definitive (`is`, `are`, `was`, `were`, ...) |
+| IS $\rightarrow$ `is` NOT | negated definitive (`isn't`, `is not`, ...)       |
 
 **Possession:**
 
 | Rule            | Meaning                                     |
 | --------------- | ------------------------------------------- |
-| HAS → `has`     | bare possession (`has`, `have`, `had`, …)   |
-| HAS → `has` NOT | negated possession (`hasn't`, `has not`, …) |
+| HAS $\rightarrow$ `has`     | bare possession (`has`, `have`, `had`, ...)   |
+| HAS $\rightarrow$ `has` NOT | negated possession (`hasn't`, `has not`, ...) |
 
 **Negation:**
 
 | Rule        | XML tag | Meaning                 |
 | ----------- | ------- | ----------------------- |
-| NOT → `not` | `<not>` | negation (`not`, `n't`) |
-| NOT → `non` | `<non>` | privation (`non`)       |
+| NOT $\rightarrow$ `not` | `<not>` | negation (`not`, `n't`) |
+| NOT $\rightarrow$ `non` | `<non>` | privation (`non`)       |
 
 ## Surface Preservation Rule
 
@@ -233,9 +233,9 @@ probably((jumps(over(the(lazy(dog)) and the(sleepy(cat)))))(the(quick(brown(fox)
   Example: `NP VP` (predication), `MP S` (modal augmentation), `v NP` (transitive).
 - `<intersection>`: use when composition narrows, selects, or restricts within a space (Hadamard masking, rank dropping). Covers adjective narrowing, determiner selection, and any other narrowing.
   Example: `brown fox`, `the fox`, `quick brown fox`.
-- `<conjunction word="and">`: use when coordinating by accumulation — both operands are gathered together. The surface word goes on the attribute.
+- `<conjunction word="and">`: use when coordinating by accumulation -- both operands are gathered together. The surface word goes on the attribute.
   Example: `<conjunction word="and">dogs, cats</conjunction>`.
-- `<disjunction word="or">`: use when coordinating by presenting alternatives — one or the other. The surface word goes on the attribute.
+- `<disjunction word="or">`: use when coordinating by presenting alternatives -- one or the other. The surface word goes on the attribute.
   Example: `<disjunction word="or">dogs, cats</disjunction>`.
 - `<prep word="...">`: use when any preposition (spatial or non-spatial) establishes a relation. All prepositions live in perceptual space and relocate the attention head without changing dimensionality. The preposition goes on the operator attribute; the single child is the complement.
   Example: `<prep word="over">the dog</prep>`, `<prep word="of">France</prep>`.
@@ -352,20 +352,20 @@ Negation (`the fox does not jump`):
 Practical special cases:
 
 - Determiners and articles appear as `det` under `intersection`.
-- All prepositions (spatial and non-spatial) appear as the `word` attribute on `<prep>`, e.g. `<prep word="over">...</prep>`, `<prep word="of">...</prep>`. Both types live in perceptual space and form PPs via `PP → p NP`.
+- All prepositions (spatial and non-spatial) appear as the `word` attribute on `<prep>`, e.g. `<prep word="over">...</prep>`, `<prep word="of">...</prep>`. Both types live in perceptual space and form PPs via `PP $\rightarrow$ p NP`.
 - Surface `and` is preserved as the `word` attribute on `conjunction`, e.g. `<conjunction word="and">...</conjunction>`.
 - Surface `or` is preserved as the `word` attribute on `disjunction`, e.g. `<disjunction word="or">...</disjunction>`.
-- Modal adverbs such as `probably` stay `adv` within an MP and take sentence scope via `S → MP S` (union). Manner adverbs such as `quickly` narrow the verb via `VP → adv VP` (intersection).
-- Degree modifiers such as `very`, `quite`, `somewhat`, `rather` hedge an adjective and are mapped to `deg`; they narrow via `AP → deg AP` (intersection).
-- Modal auxiliaries such as `must`, `should`, and `can` express modality and are mapped to `adv`; they modify the verb via `VP → MP VP` (union).
-- Coordinating `but`, `yet`, `nor` are treated as conjunction (like `and`) for clause coordination via `S → S and S`.
-- Subordinating conjunctions such as `because`, `since`, `although` are treated as conjunction for clause-level coordination via `S → S and S`.
-- Verb-complement clauses such as "I think [the fox jumps]" use `VP → v S` (union); the embedded clause is a full sentence.
+- Modal adverbs such as `probably` stay `adv` within an MP and take sentence scope via `S $\rightarrow$ MP S` (union). Manner adverbs such as `quickly` narrow the verb via `VP $\rightarrow$ adv VP` (intersection).
+- Degree modifiers such as `very`, `quite`, `somewhat`, `rather` hedge an adjective and are mapped to `deg`; they narrow via `AP $\rightarrow$ deg AP` (intersection).
+- Modal auxiliaries such as `must`, `should`, and `can` express modality and are mapped to `adv`; they modify the verb via `VP $\rightarrow$ MP VP` (union).
+- Coordinating `but`, `yet`, `nor` are treated as conjunction (like `and`) for clause coordination via `S $\rightarrow$ S and S`.
+- Subordinating conjunctions such as `because`, `since`, `although` are treated as conjunction for clause-level coordination via `S $\rightarrow$ S and S`.
+- Verb-complement clauses such as "I think [the fox jumps]" use `VP $\rightarrow$ v S` (union); the embedded clause is a full sentence.
 - Definitive forms such as `is`, `are`, `was`, `were`, `has`, and `have` should be tested against `<is>` or `<has>` before falling back to `<v>`.
-- Negated definitives such as `isn't`, `hasn't` are handled by the IS and HAS nonterminals: `IS → is NOT`, `HAS → has NOT`. The negation scopes over the predicate: `<is word="is"><not word="n't">predicate</not></is>`.
-- `NOT` covers both negation (`not`, `n't` → `<not>`) and privation (`non` → `<non>`). English does not disambiguate at the surface level, so both share a single nonterminal.
+- Negated definitives such as `isn't`, `hasn't` are handled by the IS and HAS nonterminals: `IS $\rightarrow$ is NOT`, `HAS $\rightarrow$ has NOT`. The negation scopes over the predicate: `<is word="is"><not word="n't">predicate</not></is>`.
+- `NOT` covers both negation (`not`, `n't` $\rightarrow$ `<not>`) and privation (`non` $\rightarrow$ `<non>`). English does not disambiguate at the surface level, so both share a single nonterminal.
 - Contraction fragments such as `wo` (from `won't`) and `ca` (from `can't`) are mapped to `<adv>` (modal) so they enter through MP.
-- Post-verbal adverbs such as "runs quickly" use `VP → v MP` (union), symmetric with pre-verbal `VP → MP VP`.
+- Post-verbal adverbs such as "runs quickly" use `VP $\rightarrow$ v MP` (union), symmetric with pre-verbal `VP $\rightarrow$ MP VP`.
 - Terminal punctuation should usually be emitted outside the clause operator it closes.
 
 ## Short Parsing Procedure
@@ -406,15 +406,15 @@ This section outlines the formal operations used to assemble and disassemble ope
 
 Every sentence lives in a uniform five-dimensional perceptual space:
 
-- **1 dimension from MP** — modality (possibility, necessity, certainty)
-- **1 dimension from VP** — predication (action, process, event)
-- **3 dimensions from NP** — the nominal subject (entity in context)
+- **1 dimension from MP** -- modality (possibility, necessity, certainty)
+- **1 dimension from VP** -- predication (action, process, event)
+- **3 dimensions from NP** -- the nominal subject (entity in context)
 
-When MP is absent, the sentence carries an implicit assertoric modality ("truly" — the unmarked case). When VP is absent, the sentence carries an implicit existential predicate ("exists" — the unmarked case). These defaults are linked: $VP \to \varepsilon$ if and only if $MP \to \varepsilon$.
+When MP is absent, the sentence carries an implicit assertoric modality ("truly" -- the unmarked case). When VP is absent, the sentence carries an implicit existential predicate ("exists" -- the unmarked case). These defaults are linked: $VP \to \varepsilon$ if and only if $MP \to \varepsilon$.
 
-Definitive sentences (`S → NP is NP`, `S → NP has NP`) do not fit this pattern. They compare or relate two five-dimensional objects rather than predicating within one.
+Definitive sentences (`S $\rightarrow$ NP is NP`, `S $\rightarrow$ NP has NP`) do not fit this pattern. They compare or relate two five-dimensional objects rather than predicating within one.
 
-The implicit "exists" deserves particular attention. A bare noun as sentence — "Fire!" — silently asserts existence. This grammatical convenience mirrors what Buddhist philosophy identifies as the root of conceptual error: treating phenomena as if they possess inherent, permanent selfhood (*svabhāva*). When "exists" is left implicit, the noun appears to exist in its own right, independent of causes and conditions. Making the existential predicate explicit — "fire exists" — restores the processual character of phenomena: existence is something that happens, not something that inheres. See [BuddhistParallels](BuddhistParallels.md#implicit-existence-and-svabhāva) for the full parallel.
+The implicit "exists" deserves particular attention. A bare noun as sentence -- "Fire!" -- silently asserts existence. This grammatical convenience mirrors what Buddhist philosophy identifies as the root of conceptual error: treating phenomena as if they possess inherent, permanent selfhood (*svabhava*). When "exists" is left implicit, the noun appears to exist in its own right, independent of causes and conditions. Making the existential predicate explicit -- "fire exists" -- restores the processual character of phenomena: existence is something that happens, not something that inheres. See [BuddhistParallels](BuddhistParallels.md#implicit-existence-and-svabhava) for the full parallel.
 
 #### Prep
 
@@ -586,15 +586,15 @@ and applies it reflexively to the subject: `S' = S + VP_eff @ S`.
 
 **Ternary (transitive):** The object restricts which symbols the verb
 activates. Verb and object concept activations are projected to symbolic
-space via PiLayer, intersected (element-wise min — the monotonic
+space via PiLayer, intersected (element-wise min -- the monotonic
 analogue of conjunction), then projected back to conceptual activations.
 These restricted activations weight the verb content to produce a query
 that selects the verb matrix, which is then applied to the subject:
 
 ```
-verb_act, obj_act  →  PiLayer  →  min(verb_syms, obj_syms)
-     →  PiLayer.reverse  →  weight verb content  →  _select_vp
-     →  vp_eff [D,D]  →  S + bmm(S, vp_eff)
+verb_act, obj_act  $\rightarrow$  PiLayer  $\rightarrow$  min(verb_syms, obj_syms)
+     $\rightarrow$  PiLayer.reverse  $\rightarrow$  weight verb content  $\rightarrow$  _select_vp
+     $\rightarrow$  vp_eff [D,D]  $\rightarrow$  S + bmm(S, vp_eff)
 ```
 
 The ternary rule is dispatched when the Grammar's C-tier soft composition

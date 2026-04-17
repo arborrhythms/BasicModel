@@ -134,7 +134,7 @@ class BaseModel(nn.Module):
             raw = _s(space, "nOutput")
             return prev if raw == 0 else raw
 
-        # InputSpace: if nOutput=0, derive from data at create() time (passed as 0 → handled there)
+        # InputSpace: if nOutput=0, derive from data at create() time (passed as 0 -> handled there)
         nInput    = _s("InputSpace", "nOutput")   # 0 = let create() derive from data
         nPercepts = _resolve("PerceptualSpace", nInput)
         nConcepts = _resolve("ConceptualSpace", nPercepts)
@@ -280,7 +280,7 @@ class BaseModel(nn.Module):
             return self.inputSpace.vocabulary
         return None
 
-    # ── Reasoning Methods ────────────────────────────────────────────
+    # -- Reasoning Methods --------------------------------------------
 
     def _get_truth_layer(self):
         """Return the TruthLayer if available, else None.
@@ -540,7 +540,7 @@ class BaseModel(nn.Module):
 
         return {'added': added, 'rejected': rejected}
 
-    # ── Contemplative Awareness Characterizations ─────────────────────
+    # -- Contemplative Awareness Characterizations ---------------------
 
     def Contiguous(self):
         """One-Pointedness (Shamatha / Focused Attention).
@@ -549,11 +549,11 @@ class BaseModel(nn.Module):
         Space.  Requires stillness: the model holds a single locus of
         attention without wandering.
 
-        Characterisation — ShamathaSpeech mode:
+        Characterisation -- ShamathaSpeech mode:
           * The symbolic grammar is restricted to a single S derivation
             rule (S -> C), so no Equals, no swap, no compound sentences.
           * Perceptually, the active region decodes to a *contiguous*
-            subspace — no disjoint islands of activation.
+            subspace -- no disjoint islands of activation.
           * Symbolically, the active symbols form a contiguous block in
             the codebook ordering (no gaps).
 
@@ -574,7 +574,7 @@ class BaseModel(nn.Module):
         space must produce proportionally small shifts in conceptual
         space.
 
-        Characterisation — OA (Open Awareness):
+        Characterisation -- OA (Open Awareness):
           * The mapping PerceptualSpace -> ConceptualSpace is Lipschitz-
             continuous: ||f(x) - f(y)|| <= K ||x - y|| for a bounded K.
           * Equivalently, the Jacobian of the forward pass through
@@ -597,9 +597,9 @@ class BaseModel(nn.Module):
         thoughts we adapt our feelings equanimously to our sensory space.
         Requires emotional symmetry.
 
-        Characterisation — balance dissonance and consonance:
+        Characterisation -- balance dissonance and consonance:
           * Feelings (vedana / valence annotations) should not be removed
-            — that is the nihilist's mistake.  Instead they must be
+            -- that is the nihilist's mistake.  Instead they must be
             *appropriate*: consonant with reality.
           * Appropriateness manifests when the objects that are loved are
             either real (grounded in PerceptualSpace with trust > 0) or
@@ -607,7 +607,7 @@ class BaseModel(nn.Module):
             limits the dissonance that arises from reification of
             low-dimensional abstractions).
           * The loss landscape should be symmetric w.r.t. positive and
-            negative valence — no bias toward pleasant or unpleasant
+            negative valence -- no bias toward pleasant or unpleasant
             content in the gradient signal.
 
         Computationally, Peaceful() should measure the balance between
@@ -623,15 +623,15 @@ class BaseModel(nn.Module):
         The perfection of Contiguous, Continuous, and Peaceful: the
         elimination of dissonance.
 
-        Characterisation — non-meditation / resonance:
-          * Dissonance manifests as something to learn — a non-zero
+        Characterisation -- non-meditation / resonance:
+          * Dissonance manifests as something to learn -- a non-zero
             gradient signal indicating mismatch between model and world.
           * It is *not* the case that knowing everything is required to
             remove dissonance, because the attempt to know often creates
             dissonance (reification, attachment to views).
           * Done() holds when the error function is relatively small in
             all cases: no region of input space produces a large loss
-            spike.  The model has nothing more to learn — not because it
+            spike.  The model has nothing more to learn -- not because it
             knows everything, but because it is at peace with what it
             does not know.
 
@@ -649,13 +649,13 @@ class BaseModel(nn.Module):
 
         Embedding weights live in a separate artifact (the .kv/.pt file
         specified by <embeddingPath> in the XML config).  The three files
-        — XML config, embedding artifact, weights checkpoint — partition
+        -- XML config, embedding artifact, weights checkpoint -- partition
         the model's behaviour and are managed independently.
         """
         if path is None:
             path = os.path.join(ProjectPaths.OUTPUT_DIR, "weights.ckpt")
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        # Filter out embedding parameters — they belong to the .kv artifact
+        # Filter out embedding parameters -- they belong to the .kv artifact
         state = {k: v for k, v in self.state_dict().items()
                  if "wv._vectors" not in k}
         torch.save({"state_dict": state}, path)
@@ -726,7 +726,7 @@ class BaseModel(nn.Module):
         expected_dim = emb.wv.vector_size
         if wv.vector_size != expected_dim:
             TheMessage(
-                f"[{self.name}] Embedding dimension mismatch — cannot load {path}\n"
+                f"[{self.name}] Embedding dimension mismatch -- cannot load {path}\n"
                 f"  File has {wv.vector_size}-dim vectors, model expects {expected_dim}-dim.\n"
                 f"  To fix: correct <nDim> in the model XML to match the saved embeddings,\n"
                 f"          or delete/move {path} to start fresh."
@@ -787,7 +787,7 @@ class BaseModel(nn.Module):
         missing = [k for k in model_state if k not in state]
         unexpected = [k for k in state if k not in model_state]
         if mismatches or missing or unexpected:
-            lines = [f"[{self.name}] Weight file mismatch — cannot load {path}"]
+            lines = [f"[{self.name}] Weight file mismatch -- cannot load {path}"]
             if mismatches:
                 lines.append("  Shape mismatches:")
                 for key, saved_shape, model_shape in mismatches[:10]:
@@ -1020,7 +1020,7 @@ class BasicModel(BaseModel):
             conceptualOrder: number of extra Percept->Concept->Symbol cycles.
             model_type: "simple", "embedding", "passthrough", or "vq".
         """
-        self.spaces = []  # reset — prevent stale accumulation from prior create() calls
+        self.spaces = []  # reset -- prevent stale accumulation from prior create() calls
         self.wordSpace = None  # wired below once the home spaces exist
         TheXMLConfig._requirements.clear()  # clear stale requirements from prior create()/tests
         # Read config-derivable flags
@@ -1032,7 +1032,10 @@ class BasicModel(BaseModel):
         self.syntax           = False  # BasicModel: no syntax
         TheXMLConfig._data.setdefault("architecture", {})["syntax"] = False
         self.lexer            = TheXMLConfig.space("InputSpace", "lexer")
-        self.codebook         = TheXMLConfig.space("InputSpace", "codebook")
+        # The lexicon lives on PerceptualSpace via its chunking_mode.
+        # InputSpace.codebook defaults to false; configs that set it
+        # true opt into the InputSpace lexical path.
+        self.codebook         = TheXMLConfig.space("InputSpace", "codebook", default=False)
         self.perceptCodebook  = TheXMLConfig.space("PerceptualSpace", "codebook")
         self.conceptCodebook  = TheXMLConfig.space("ConceptualSpace", "codebook")
         self.perceptPassThrough = TheXMLConfig.space("PerceptualSpace", "passThrough")
@@ -1115,7 +1118,7 @@ class BasicModel(BaseModel):
         obj_symbol  = _obj_size("SymbolicSpace")
         obj_output  = _obj_size("OutputSpace")
 
-        # Resolve nVectors sentinels (0 → same as output count for that space)
+        # Resolve nVectors sentinels (0 -> same as output count for that space)
         def _nvec(section, n_out):
             try:
                 raw = TheXMLConfig.space(section, "nVectors")
@@ -1138,7 +1141,7 @@ class BasicModel(BaseModel):
         outputShape  = [nOutput,   output_dim  + obj_output]
 
         # Build codebook (space-internal) shape tuples: [nVectors, nDim]
-        # spaceShape uses raw content dim — codebook vectors don't include objectSize.
+        # spaceShape uses raw content dim -- codebook vectors don't include objectSize.
         spaceShape_input   = [nvec_input,   input_dim]
         spaceShape_percept = [nvec_percept, percept_dim]
         spaceShape_concept = [nvec_concept, concept_dim]
@@ -1184,7 +1187,7 @@ class BasicModel(BaseModel):
         # grammar config, word-stream buffer sizing, SyntacticLayer
         # construction, the TruthLayer, and (conditionally) the
         # DiscourseSpace substrate. See plan: "Architectural
-        # addition — WordSpace".
+        # addition -- WordSpace".
         if str(masked_prediction).upper() in ('ARLM', 'ARUS', 'RARLM'):
             self.wordSpace = WordSpace(
                 perceptualSpace=self.perceptualSpace,
@@ -1338,7 +1341,7 @@ class BasicModel(BaseModel):
         ``pushInput()``, and repeats.  Each iteration re-lexes and
         re-embeds the full (growing) input.
 
-        ``ARIR`` (autoregressive input reconstruction, default): TODO —
+        ``ARIR`` (autoregressive input reconstruction, default): TODO --
         reconstructs a degraded input in-place, reusing the lexing and
         codebook lookup from the initial forward pass.  See design plan
         in ``docs/plans/``.
@@ -1531,7 +1534,7 @@ class BasicModel(BaseModel):
         sbow = None
         te = getattr(self, 'train_embedding', 'NONE')
         if te in trainMod:
-            # Skip InputSpace SBOW/CBOW when lexer=byte — perceptual SBOW
+            # Skip InputSpace SBOW/CBOW when lexer=byte -- perceptual SBOW
             # replaces it (see perceptual_sbow_loss).
             if getattr(self, 'lexer', None) in ('byte', 'bytes'):
                 return None
@@ -1698,7 +1701,7 @@ class BasicModel(BaseModel):
         lossOut    = self.loss.output(outputPred, output)
         self.accumulate_output_symbol_residual(outputTensor, outputDataPred)
 
-        # ARUS: suppress output loss (unsupervised — no target signal)
+        # ARUS: suppress output loss (unsupervised -- no target signal)
         if hasattr(self, 'masked_prediction') and self.masked_prediction == 'ARUS':
             lossOut = torch.tensor(0.0, device=TheDevice.get())
 
@@ -1804,7 +1807,7 @@ class BasicModel(BaseModel):
         # Truth-modulated loss: delegated to WordSpace since the
         # TruthLayer lives there.  WordSpace handles the empty-store
         # guard internally; we only gate on ``train``.  The falsity
-        # penalty operand is the last cached symbol activation —
+        # penalty operand is the last cached symbol activation --
         # stored truths are also recorded from symbol space, so both
         # sides of the disjunction live in the basis's native space.
         if train and self.wordSpace is not None:
@@ -1995,14 +1998,15 @@ class MentalModel(BaseModel):
         self.ergodic = TheXMLConfig.get("architecture.ergodic")
         self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
         self.certainty = TheXMLConfig.get("architecture.training.certainty")
-        self.codebook = TheXMLConfig.space("InputSpace", "codebook")
+        # InputSpace.codebook defaults to false; see the matching note in
+        # BasicModel.create.
+        self.codebook = TheXMLConfig.space("InputSpace", "codebook", default=False)
         self.perceptCodebook = TheXMLConfig.space("PerceptualSpace", "codebook")
         self.conceptCodebook = TheXMLConfig.space("ConceptualSpace", "codebook")
         self.conceptualOrder = conceptualOrder
-        self.stm_decay = float(TheXMLConfig.get("architecture.STM_decay", default=0.0) or 0.0)
 
         # Orthogonal architecture flags.  useButterflies and useGrammar
-        # are mutually exclusive — butterfly permutations fight
+        # are mutually exclusive -- butterfly permutations fight
         # constituency structure.
         self.useButterflies = bool(
             TheXMLConfig.get("architecture.useButterflies", default=False))
@@ -2011,15 +2015,9 @@ class MentalModel(BaseModel):
         except ModuleNotFoundError:
             from util import parse_use_grammar
         _raw_use_grammar = TheXMLConfig.get(
-            "WordSpace.useGrammar", default=False
+            "WordSpace.useGrammar", default="none"
         )
-        # Legacy sidecar: if config has a boolean, consult thought_free too.
-        _legacy_tf = bool(TheXMLConfig.get(
-            "WordSpace.language.thought_free", default=False
-        ))
-        self.useGrammar = parse_use_grammar(
-            _raw_use_grammar, thought_free=_legacy_tf
-        )
+        self.useGrammar = parse_use_grammar(_raw_use_grammar)
         # thoughtFree is structurally equivalent to conceptualOrder=0: no
         # higher-order P/C/S cycles. Reject the nonsense combination early.
         TheXMLConfig.require(
@@ -2042,7 +2040,7 @@ class MentalModel(BaseModel):
         self._butterfly_symbol_width = None
         self._butterfly_symbol_factor = None
 
-        # Truth integration config (optional — absent in BasicModel.xml)
+        # Truth integration config (optional -- absent in BasicModel.xml)
         self.truth_bias_scale = float(TheXMLConfig.get("architecture.truthBiasScale", default=0.1) or 0.1)
         self.luminosity_weight = float(TheXMLConfig.get("architecture.LuminosityWeight", default=0.1) or 0.1)
         self.universality_weight = float(TheXMLConfig.get("architecture.UniversalityWeight", default=0.1) or 0.1)
@@ -2065,7 +2063,7 @@ class MentalModel(BaseModel):
             nWhen=TheXMLConfig.get("architecture.nWhen"),
         )
 
-        # Resolve dims, chaining through the pipeline (nDim=0 → same as input dim)
+        # Resolve dims, chaining through the pipeline (nDim=0 -> same as input dim)
         def _resolve_dim(section, prev_dim):
             try:
                 raw = TheXMLConfig.space(section, "nDim")
@@ -2097,7 +2095,7 @@ class MentalModel(BaseModel):
         obj_symbol  = _obj_size("SymbolicSpace")
         obj_output  = _obj_size("OutputSpace")
 
-        # Resolve nVectors sentinels (0 → same as output count for that space)
+        # Resolve nVectors sentinels (0 -> same as output count for that space)
         def _nvec(section, n_out):
             try:
                 raw = TheXMLConfig.space(section, "nVectors")
@@ -2150,7 +2148,7 @@ class MentalModel(BaseModel):
 
         butterfly_config = None
 
-        # ── Butterfly path: pairwise sigma/pi with N-halving ──
+        # -- Butterfly path: pairwise sigma/pi with N-halving --
         if self.useButterflies:
             state_vectors = nPercepts
             state_dim = percept_dim + obj_percept
@@ -2181,7 +2179,7 @@ class MentalModel(BaseModel):
             }
             self._level_shapes_list = self._level_shapes(
                 nPercepts, state_dim, n_stages)
-        # ── Grammar path: progressive bottleneck per conceptual order ──
+        # -- Grammar path: progressive bottleneck per conceptual order --
         elif self.useGrammar == "all":
             self._level_shapes_list = self._level_shapes(
                 nPercepts, percept_dim + obj_percept, self.conceptualOrder)
@@ -2198,7 +2196,7 @@ class MentalModel(BaseModel):
                                            level_shapes=self._level_shapes_list,
                                            butterfly_config=butterfly_config)
 
-        # No SyntacticSpace — syntax is handled by Grammar centrally.
+        # No SyntacticSpace -- syntax is handled by Grammar centrally.
         self.syntacticSpace = None
 
         # Output: from first nOutputSymbols symbol vectors (matches BasicModel pattern)
@@ -2209,7 +2207,7 @@ class MentalModel(BaseModel):
 
         self._symbol_shape = [nPercepts, percept_dim + obj_percept]
 
-        # Build WordSpace — the unified container for grammar
+        # Build WordSpace -- the unified container for grammar
         # infrastructure (WordSubSpace, three SyntacticLayers, the
         # TruthLayer, and conditionally the DiscourseSpace substrate).
         # Its ``__init__`` configures the grammar, sizes the word
@@ -2227,11 +2225,11 @@ class MentalModel(BaseModel):
             symbol_dim=symbol_dim + obj_symbol,
         )
 
-        # Store SymbolicSpace ref for ternary lift (concept↔symbol projection).
+        # Store SymbolicSpace ref for ternary lift (concept<->symbol projection).
         # The C-tier SyntacticLayer now lives on WordSpace under the
         # ownership-transfer refactor. Use ``object.__setattr__`` to
         # avoid nn.Module circular submodule registration
-        # (SymbolicSpace → ConceptualSpace → SyntacticLayer → SymbolicSpace).
+        # (SymbolicSpace -> ConceptualSpace -> SyntacticLayer -> SymbolicSpace).
         object.__setattr__(self.wordSpace.conceptualSyntacticLayer,
                            '_symbolic_space', self.symbolicSpace)
         self.conceptualSpace.subspace.basis.monotonic = False
@@ -2255,7 +2253,7 @@ class MentalModel(BaseModel):
         self.to(TheDevice.get())
         TheXMLConfig.validate()
 
-    # ── Order Partitions (Ramsification) ─────────────────────────────
+    # -- Order Partitions (Ramsification) -----------------------------
 
     @staticmethod
     def _order_partitions(symbol_dim, conceptual_order):
@@ -2265,11 +2263,11 @@ class MentalModel(BaseModel):
         so the symbolic space becomes self-describing: the position of
         an activation reveals its conceptual order.
 
-        Partition sizes follow geometric decay — lower (more fundamental)
+        Partition sizes follow geometric decay -- lower (more fundamental)
         orders occupy larger slices:
-            order 0: [0,      D//2)       ← 1/2 of symbol_dim
-            order 1: [D//2,   3D//4)      ← 1/4
-            order 2: [3D//4,  7D//8)      ← 1/8
+            order 0: [0,      D//2)       <- 1/2 of symbol_dim
+            order 1: [D//2,   3D//4)      <- 1/4
+            order 2: [3D//4,  7D//8)      <- 1/8
             ...
             last order: remainder of D
         """
@@ -2289,7 +2287,7 @@ class MentalModel(BaseModel):
         energies = [activation[s:e].norm() for s, e in partitions]
         return int(torch.tensor(energies).argmax())
 
-    # ── Hierarchical Epistemic Architecture ──────────────────────────
+    # -- Hierarchical Epistemic Architecture --------------------------
 
     @staticmethod
     def _level_shapes(n_vectors, dim, conceptual_order):
@@ -2371,7 +2369,7 @@ class MentalModel(BaseModel):
         norms = feedback.norm(dim=-1, keepdim=True)
         return self._bound_concept_input(norms.expand(-1, -1, feedback_dim))
 
-    # ── Helpers ───────────────────────────────────────────────────────
+    # -- Helpers -------------------------------------------------------
 
     def Finish(self, data):
         """Project through OutputSpace."""
@@ -2381,7 +2379,7 @@ class MentalModel(BaseModel):
         self.outputs = self.outputSpace.forward(data)
         return self.outputs.materialize()
 
-    # ── Forward / reverse ──────────────────────────────────────────────
+    # -- Forward / reverse ----------------------------------------------
 
     def forward(self, inputData):
         if isinstance(inputData, torch.Tensor):
@@ -2403,13 +2401,13 @@ class MentalModel(BaseModel):
 
         # Per-sentence lifecycle: reset the word-stream buffer so each
         # forward pass starts with a clean derivation history. The
-        # buffer's capacity is fixed — rule applications inside
+        # buffer's capacity is fixed -- rule applications inside
         # compose() push records onto it during this pass.
         if self.wordSpace is not None:
             self.wordSpace.ensure_batch(B)
             self.wordSpace.clear_sentence()
 
-        # ── Pre-loop init ──
+        # -- Pre-loop init --
         self.symbol_states = []
         self.symbolicSpace.reset_symbol_objective()
 
@@ -2424,20 +2422,23 @@ class MentalModel(BaseModel):
             self._merge_diffs = []
             self._sym_feedbacks = []
         else:
-            # Flat recurrent path: feedback is concatenated, not merged.
-            sym_feedback = torch.zeros(B, self._symbol_shape[0],
-                                       self._symbol_shape[1],
-                                       device=percepts.device)
-            # Cache the feedback used at each iteration so ``reverse`` can
-            # unwind the recurrent addition and recover the original
-            # percepts tensor.
+            # Flat: feedback is carried via the symbolic state ``ss``
+            # that threads between iterations. The reverse path reads
+            # _nonrams_sym_feedbacks to unwind the recurrent addition.
+            ss = self.symbolicSpace.empty_state(batch=B).to(percepts.device)
             self._nonrams_sym_feedbacks = []
 
         sym_vectors = None
+        self._unified_j_iterations = 0
 
-        # ── Sigma-Pi loop ──
+        # -- Unified Sigma-Pi loop --
+        # One ``for t in range(conceptualOrder)`` covers all three modes.
+        # Mode-specific logic:
+        #   * concept_input construction (merge step vs percept+ss feedback)
+        #   * target_count hint to ConceptualSpace.compose
+        #   * quantize flag passed to SymbolicSpace.forward
+        #   * feedback update at the end of each iteration
         for t in range(self.conceptualOrder):
-
             # 1. Input construction
             if self.useButterflies:
                 concept_input = x
@@ -2451,28 +2452,18 @@ class MentalModel(BaseModel):
                     self._sym_feedbacks.append(None)
                 concept_input = x
             else:
-                self._nonrams_sym_feedbacks.append(sym_feedback)
-                concept_input = self._bound_concept_input(percepts + sym_feedback)
-                truth_layer = getattr(self.wordSpace, 'truth_layer', None) if self.wordSpace is not None else None
-                if truth_layer is not None and len(truth_layer) > 0:
-                    basis = self.symbolicSpace.subspace.what
-                    conj = truth_layer.truth_conjunction(
-                        basis, pi_layer=self.symbolicSpace.layer)
-                    if conj is not None:
-                        concept_input = basis.conjunction(
-                            concept_input, conj.unsqueeze(0).unsqueeze(0))
-                        concept_input = self._bound_concept_input(concept_input)
+                ss_feedback = self._symbol_feedback_from_vectors(
+                    ss, self._symbol_shape[0], percepts.shape[-1])
+                self._nonrams_sym_feedbacks.append(ss_feedback)
+                concept_input = self._bound_concept_input(percepts + ss_feedback)
 
             # 2. Sigma (conceptual transformation)
             self.percepts.set_event(concept_input)
-            # Flat path: hint the C-tier compose to reduce to nOutputSymbols.
-            # Butterfly/grammar paths use per-level layers that already move
-            # information across the slot axis.
-            c_target = None if (self.useButterflies or self.useGrammar == "all") else self.nOutputSymbols
+            c_target = (None if (self.useButterflies or self.useGrammar == "all")
+                        else self.nOutputSymbols)
             self.concepts = self.conceptualSpace[t].forward(
                 self.percepts, wordSpace=ws, target_count=c_target)
             concept_vectors = self.concepts.materialize()
-
             if self.useButterflies or self.useGrammar == "all":
                 x = concept_vectors          # carry forward for next merge
 
@@ -2486,30 +2477,42 @@ class MentalModel(BaseModel):
 
             # 4. Feedback for next iteration
             if self.useGrammar == "all" and t < self.conceptualOrder - 1:
-                N_t, D_t = self._level_shapes_list[t]
+                _N_t, D_t = self._level_shapes_list[t]
                 sym_norms = sym_vectors.norm(dim=-1, keepdim=True)
                 sym_feedback = sym_norms.expand(-1, -1, D_t)
             elif not (self.useButterflies or self.useGrammar == "all"):
-                nSymFeedback = self._symbol_shape[0]
-                sym_feedback = self._symbol_feedback_from_vectors(
-                    sym_vectors, nSymFeedback, percepts.shape[-1])
+                ss = sym_vectors
 
-            # 5. Cache symbol states for truth penalty (butterfly & grammar only).
-            if self.useButterflies or self.useGrammar == "all":
-                self.symbol_states.append(sym_vectors.clone())
+            # 5. Cache symbol states for truth penalty.
+            self.symbol_states.append(sym_vectors.clone())
+            self._unified_j_iterations += 1
 
-        # ── Post-loop finalization ──
+        # thoughtFree / none modes enforce conceptualOrder==0. The loop
+        # ran zero times, so do a single pre-seed C->S pass (the spec's
+        # "implicit j=-1") so OutputSpace has concept/symbol state.
+        if (self.conceptualOrder == 0
+                and not self.useButterflies
+                and self.useGrammar != "all"):
+            self._nonrams_sym_feedbacks.append(ss)
+            self.percepts.set_event(self._bound_concept_input(percepts))
+            self.concepts = self.conceptualSpace[0].forward(
+                self.percepts, wordSpace=ws, target_count=self.nOutputSymbols)
+            self.symbols = self.symbolicSpace[0].forward(
+                self.concepts, wordSpace=ws, quantize=False, is_last=True)
+            sym_vectors = self.symbols.materialize()
+
+        # -- Post-loop finalization (butterfly only) --
         if self.useButterflies:
             self.conceptualSpace.subspace.set_event(x)
             self.concepts = self.conceptualSpace.subspace
             self.symbolicSpace.subspace.set_event(sym_vectors)
             self.symbols = self.symbolicSpace.subspace
 
-        # Discourse snapshot — stash the final (S, W) pair so runBatch
+        # Discourse snapshot -- stash the final (S, W) pair so runBatch
         # can compute a next-sentence prediction loss against it.
         # S is the symbolic materialization (already committed).
         # W is the WordSubSpace's read() of the current per-sentence
-        # stack — captured now, before ``Start()`` clears the stack for
+        # stack -- captured now, before ``Start()`` clears the stack for
         # the next sentence. We stash raw tensors; DiscourseSpace's
         # ``snapshot()`` mean-pools batch and pads/truncates to fit.
         self._current_discourse_s = None
@@ -2621,7 +2624,7 @@ class MentalModel(BaseModel):
                     recovered = concept_input_state.materialize() - fb
                     concept_input_state.set_event(recovered)
 
-        # ── Shared tail: percept/input reverse ──
+        # -- Shared tail: percept/input reverse --
         concept_input = concept_input_state.materialize()
         percepts_portion = concept_input[:, :self.nPercepts, :]
 
@@ -2632,14 +2635,14 @@ class MentalModel(BaseModel):
         input_data = self.inputs.materialize()
         return input_data, input_latent
 
-    # ── Grammar Learning (Phase 2) ────────────────────────────────────
+    # -- Grammar Learning (Phase 2) ------------------------------------
 
     def grammar_learning_step(self, inputTensor, optimizer):
         """Single grammar learning step: symbolic reconstruction loss.
 
-        1. Forward: sentence → symbolSum (normal useGrammar forward)
+        1. Forward: sentence -> symbolSum (normal useGrammar forward)
         2. Reverse over partition slices with soft rule superposition
-        3. Re-encode reconstruction → symbolSum_hat
+        3. Re-encode reconstruction -> symbolSum_hat
         4. Loss = ||symbolSum_hat - symbolSum||^2 (symbolic level)
         5. Optional luminosity validity penalty
 
@@ -2694,18 +2697,18 @@ class MentalModel(BaseModel):
             'validity_loss': validity_loss.item() if isinstance(validity_loss, torch.Tensor) else validity_loss,
         }
 
-    # ── Bidirectional Reasoning Loop (Phase 3) ────────────────────────
+    # -- Bidirectional Reasoning Loop (Phase 3) ------------------------
 
     @torch.no_grad()
     def reason(self, givens, target=None, direction='forward', max_steps=8):
         """Bidirectional reasoning loop.
 
-        Forward (givens → conclusion):
+        Forward (givens -> conclusion):
             Encode givens, extrapolate new truths, check isTrue(target)
             at each step. Stop when target DoT exceeds threshold or
             max_steps reached.
 
-        Reverse (target → grounding):
+        Reverse (target -> grounding):
             Encode target, ground() to find minimal basis, extrapolate
             if insufficient.
 
@@ -2798,10 +2801,10 @@ class ModelFactory:
     """Create, train, and evaluate models from an XML config file.
 
     Dispatches to the right model class based on <architecture> flags:
-      - modelType=embedding   → BasicModel (embedding/language model path)
-      - modelType=passthrough → BasicModel (passthrough path)
-      - modelType=vq         → BasicModel (vector-quantized path)
-      - Otherwise             → SimpleModel parameterized by:
+      - modelType=embedding   -> BasicModel (embedding/language model path)
+      - modelType=passthrough -> BasicModel (passthrough path)
+      - modelType=vq         -> BasicModel (vector-quantized path)
+      - Otherwise             -> SimpleModel parameterized by:
             ergodic, certainty, codebook, normed, reverse, invert
     """
 
@@ -3006,7 +3009,7 @@ class ModelFactory:
 
     @staticmethod
     def run(config_path):
-        """Main entry point — create, train, and evaluate a model from XML config."""
+        """Main entry point -- create, train, and evaluate a model from XML config."""
         # Pre-read config for dataset loading (needed before create_from_config)
         defaults_path = os.path.join(ProjectPaths.DATA_DIR, "model.xml")
         init_config(path=config_path, defaults_path=defaults_path)

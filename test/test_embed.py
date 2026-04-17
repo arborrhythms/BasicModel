@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 import numpy as np
 import torch
 
-# torch.jit.script_method deprecation — PyTorch internal, fires during embed import
+# torch.jit.script_method deprecation -- PyTorch internal, fires during embed import
 warnings.filterwarnings("ignore", message=".*script_method.*",
                         category=DeprecationWarning)
 
@@ -94,7 +94,7 @@ class TestStreamingSBOWTrainer(unittest.TestCase):
         t = StreamingSBOWTrainer(vector_size=20, min_count=3)
         t.scan_document("The dog barks. The cat barks.")
         t.build_vocab()
-        # "The" appears twice, "barks" appears twice — neither hits 3
+        # "The" appears twice, "barks" appears twice -- neither hits 3
         for word, idx in t.word_to_idx.items():
             self.assertGreaterEqual(t.word_counts[word], 3,
                                     f"{word} promoted with count {t.word_counts[word]}")

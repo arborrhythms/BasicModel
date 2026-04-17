@@ -82,20 +82,20 @@ class NewPiLayer(Layer):
     r"""Log-space multiplicative layer.
 
     Forward:
-        y = exp(clamp(W @ log(clamp(x, ε, 1)) + b, log(ε), 0))
+        y = exp(clamp(W @ log(clamp(x, epsilon, 1)) + b, log(epsilon), 0))
 
     Inputs are expected in (0, 1].  In log-space the layer is a simple
     affine map, and clamps keep the result in (0, 1].  Unlike OldPiLayer
-    this does **not** require nOutput = 2 * nInput for invertibility —
+    this does **not** require nOutput = 2 * nInput for invertibility --
     the invertible variant uses the same InvertibleLinearLayer but
     operates directly in log-space without interleaving.
 
     When ``stable=True`` (default) the clamp operations are applied.
     When ``stable=False`` the clamps are omitted (caller guarantees
-    inputs are in range and the affine result stays in [log(ε), 0]).
+    inputs are in range and the affine result stays in [log(epsilon), 0]).
 
     When ``invertible=True``:
-        Reverse: x = exp(W_inv @ (log(clamp(y, ε, 1)) − b))
+        Reverse: x = exp(W_inv @ (log(clamp(y, epsilon, 1)) - b))
     """
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
                  invertible=False, hasBias=True, stable=True):
@@ -156,7 +156,7 @@ class NewPiLayer(Layer):
     def reverse(self, y):
         """Recover x from y.  Requires invertible=True.
 
-        x = exp(W_inv @ (log(clamp(y, ε, 1)) − b))
+        x = exp(W_inv @ (log(clamp(y, epsilon, 1)) - b))
         """
         W_inv = self.layer.compute_Winverse_current()     # [nOut, nIn]
         y = y.to(W_inv.device)
@@ -381,7 +381,7 @@ class OldSyntacticLayer(Layer):
     A single shared derivation layer and rule head are applied repeatedly
     at each depth, with a learned depth embedding added to the hidden
     state so the shared weights can specialize by tree level.  This is
-    a recursive (weight-tied) architecture — the same transformation
+    a recursive (weight-tied) architecture -- the same transformation
     applies at every level of the derivation, mirroring the recursive
     nature of natural-language syntax.
 
@@ -389,7 +389,7 @@ class OldSyntacticLayer(Layer):
     layer for ``max_depth`` steps, predicts a rule distribution at each
     step via Gumbel-softmax, and assembles word tuples.
 
-    **Reverse:** deterministic tree-walk — reads word tuples and
+    **Reverse:** deterministic tree-walk -- reads word tuples and
     reconstructs the activation vector by marking referenced positions
     as active.  No learned weights; gradients do not flow through reverse.
     """
@@ -493,13 +493,13 @@ class OldSyntacticLayer(Layer):
         self.tau = tau
 
 
-# ── Old LogicLayer (fuzzy mereology statics) ─────────────────────────────
+# -- Old LogicLayer (fuzzy mereology statics) -----------------------------
 # Moved here 2026-04-04.  Replaced by TruthLayer in Model.py.
 
 class OldLogicLayer(Layer):
     """Fuzzy mereology and negation operations on vector sets.
 
-    All methods are static — the class carries no learnable parameters.
+    All methods are static -- the class carries no learnable parameters.
     Kept for reference and testing; superseded by TruthLayer
     (truth-store design) in Model.py.
     """
@@ -665,10 +665,10 @@ class OldLogicLayer(Layer):
         X_non = LL.non(X, alpha=0.2)
 
 
-# ── SyntacticSpace (moved from Space.py) ─────────────────────────────
+# -- SyntacticSpace (moved from Space.py) -----------------------------
 
 class SyntacticSpace:
-    """Moved to etc/old.py — syntax is now handled by Grammar.forward()
+    """Moved to etc/old.py -- syntax is now handled by Grammar.forward()
     with soft superposition via SyntacticLayer, called directly from
     ConceptualSpace and SymbolicSpace.
 

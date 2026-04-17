@@ -15,7 +15,7 @@
     <training>
       <numTrials>1</numTrials>
       <numEpochs>10</numEpochs>
-      <batchSize>10</batchSize>
+      <batchSize>64</batchSize>
       <learningRate>0.01</learningRate>
       <autoload>true</autoload>
       <autosave>false</autosave>

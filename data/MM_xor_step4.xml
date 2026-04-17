@@ -31,7 +31,7 @@
   </architecture>
 
   <WordSpace>
-    <useGrammar>false</useGrammar>
+    <useGrammar>none</useGrammar>
     <language>
       <grammar>
         <START>S</START>

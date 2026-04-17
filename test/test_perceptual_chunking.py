@@ -1,5 +1,5 @@
 import pytest
-from basicmodel.bin.Spaces import PerceptualSpace
+from Spaces import PerceptualSpace
 
 
 def test_chunking_mode_raw_returns_bytes():
@@ -16,7 +16,7 @@ def test_chunking_mode_lexicon_splits_on_spaces():
 
 
 def test_chunking_mode_bpe_returns_learned_segments():
-    # Expect BPE to produce consistent subword tokens — smoke test only.
+    # Expect BPE to produce consistent subword tokens -- smoke test only.
     byte_stream = b"running"
     units = PerceptualSpace.chunk_static(byte_stream, mode="bpe")
     assert isinstance(units, list)

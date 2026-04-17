@@ -2,14 +2,14 @@
 """XOR experiment 3: Deep dive into reconstruction loss plateau.
 
 Key findings so far:
-  - Combined loss drives output → 0 reliably
+  - Combined loss drives output -> 0 reliably
   - Reconstruction plateaus ~0.036-0.050
   - Ergodic mode broken (50% accuracy)
   - Forward/reverse layers are separate (pi1/pi2, sigma1/sigma2)
   - Optimizers recreated every epoch (no momentum history!)
 
 This round investigates:
-  1. Loss curve shape — is recon stuck from start or converging then plateau?
+  1. Loss curve shape -- is recon stuck from start or converging then plateau?
   2. Persistent optimizer (keep Adam state across epochs)
   3. Higher recon weight to force more reconstruction learning
   4. Separate forward-only phase then joint training

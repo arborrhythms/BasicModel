@@ -24,61 +24,59 @@ try:
 except ImportError:
     make_dot = None
 from sklearn.decomposition import PCA
-# VectorQuantize: prefer the external vector_quantize_pytorch package when
-# available; fall back to a minimal in-repo implementation that supports
-# the subset of the API Codebook actually uses (formerly vq_compat.py).
-try:
-    from vector_quantize_pytorch import VectorQuantize
-except Exception:
-    import torch.nn.functional as _vq_F
-    class VectorQuantize(nn.Module):
-        def __init__(
-            self,
-            dim,
-            codebook_size,
-            commitment_weight=1.0,
-            use_cosine_sim=False,
-            **kwargs,
-        ):
-            super().__init__()
-            self.dim = dim
-            self.codebook_size = codebook_size
-            self.commitment_weight = commitment_weight
-            self.use_cosine_sim = use_cosine_sim
-            self.codebook = torch.randn(codebook_size, dim)
+# Minimal in-repo VectorQuantize -- covers the subset of the
+# vector_quantize_pytorch API Codebook uses (forward, .codebook, EMA hook
+# stub). The external package was removed once the commitment loss, STE
+# path, and rotation trick were owned by Codebook directly.
+_vq_F = F
+class VectorQuantize(nn.Module):
+    def __init__(
+        self,
+        dim,
+        codebook_size,
+        commitment_weight=1.0,
+        use_cosine_sim=False,
+        **kwargs,
+    ):
+        super().__init__()
+        self.dim = dim
+        self.codebook_size = codebook_size
+        self.commitment_weight = commitment_weight
+        self.use_cosine_sim = use_cosine_sim
+        self.codebook = torch.randn(codebook_size, dim)
 
-        @property
-        def codebook(self):
-            return self._parameters["_codebook"]
+    @property
+    def codebook(self):
+        return self._parameters["_codebook"]
 
-        @codebook.setter
-        def codebook(self, value):
-            param = value if isinstance(value, nn.Parameter) else nn.Parameter(value.detach().clone())
-            if "_codebook" in self._parameters:
-                self._parameters["_codebook"] = param
-            else:
-                self.register_parameter("_codebook", param)
-            self.codebook_size = param.shape[0]
+    @codebook.setter
+    def codebook(self, value):
+        param = value if isinstance(value, nn.Parameter) else nn.Parameter(value.detach().clone())
+        if "_codebook" in self._parameters:
+            self._parameters["_codebook"] = param
+        else:
+            self.register_parameter("_codebook", param)
+        self.codebook_size = param.shape[0]
 
-        def forward(self, x, return_all_codes=False, **kwargs):
-            original_shape = x.shape
-            flat = x.reshape(-1, original_shape[-1])
-            codebook = self.codebook
-            if self.use_cosine_sim:
-                flat_cmp = _vq_F.normalize(flat, dim=-1)
-                codebook_cmp = _vq_F.normalize(codebook, dim=-1)
-                indices = (flat_cmp @ codebook_cmp.T).argmax(dim=-1)
-            else:
-                indices = torch.cdist(flat, codebook).argmin(dim=-1)
-            quantized_raw = codebook[indices].reshape(original_shape)
-            commit_loss = self.commitment_weight * _vq_F.mse_loss(
-                x, quantized_raw.detach()
-            )
-            quantized = x + (quantized_raw - x).detach()
-            indices = indices.reshape(original_shape[:-1])
-            if return_all_codes:
-                return quantized, indices, commit_loss, quantized.unsqueeze(0)
-            return quantized, indices, commit_loss
+    def forward(self, x, return_all_codes=False, **kwargs):
+        original_shape = x.shape
+        flat = x.reshape(-1, original_shape[-1])
+        codebook = self.codebook
+        if self.use_cosine_sim:
+            flat_cmp = _vq_F.normalize(flat, dim=-1)
+            codebook_cmp = _vq_F.normalize(codebook, dim=-1)
+            indices = (flat_cmp @ codebook_cmp.T).argmax(dim=-1)
+        else:
+            indices = torch.cdist(flat, codebook).argmin(dim=-1)
+        quantized_raw = codebook[indices].reshape(original_shape)
+        commit_loss = self.commitment_weight * _vq_F.mse_loss(
+            x, quantized_raw.detach()
+        )
+        quantized = x + (quantized_raw - x).detach()
+        indices = indices.reshape(original_shape[:-1])
+        if return_all_codes:
+            return quantized, indices, commit_loss, quantized.unsqueeze(0)
+        return quantized, indices, commit_loss
 import torch.optim as optim
 from torch.profiler import profile as torch_profile, ProfilerActivity, schedule as profiler_schedule
 from functools import partial
@@ -121,9 +119,9 @@ class Encoding(nn.Module):
     ``self.index`` (negative offsets from the end of the embedding).
 
     Subclasses implement:
-        ``encode(value)``  → tensor [..., nDim]
-        ``decode(encoded)`` → decoded value (tensor or scalar)
-        ``forward(x)``     → stamped tensor (how values are assigned per-batch)
+        ``encode(value)``  -> tensor [..., nDim]
+        ``decode(encoded)`` -> decoded value (tensor or scalar)
+        ``forward(x)``     -> stamped tensor (how values are assigned per-batch)
     """
     TARGETS = ("activation", "what", "where", "when", "event", "all")
     nDim = 0  # subclasses must set
@@ -163,7 +161,7 @@ class Encoding(nn.Module):
 class QuadratureEncoding(Encoding):
     """Sin/cos quadrature encoding (nDim=2).
 
-    Encodes scalar values as (sin, cos) pairs at frequency ``div_term = 2π/maxVal``.
+    Encodes scalar values as (sin, cos) pairs at frequency ``div_term = 2pi/maxVal``.
     Exactly invertible via ``atan2(sin, cos) / div_term``.
 
     Subclasses implement ``forward()`` to define how values are assigned
@@ -222,7 +220,7 @@ class ActiveEncoding(Encoding):
     """Per-slot scalar activation encoding (fuzzy sparsity).
 
     Occupies 1 dimension in the embedding vector (nDim=1).
-    encode/decode are identity — the producing Space decides how
+    encode/decode are identity -- the producing Space decides how
     to compute activation values (norm-based, sum-based, etc.).
     ActiveEncoding is the carrier, not the formula.
     """
@@ -292,7 +290,7 @@ class WhenEncoding(QuadratureEncoding):
     """Encode temporal order (nWhen) as sin/cos values in reserved embedding slots.
 
     Uses the same quadrature encoding as PositionalEncoding: a (sin, cos) pair
-    at a single frequency ``div_term = 2π/maxVal``.  This is exactly invertible
+    at a single frequency ``div_term = 2pi/maxVal``.  This is exactly invertible
     via ``atan2(sin, cos) / div_term``.
 
     A global time counter ``self.t`` is incremented explicitly via
@@ -348,7 +346,7 @@ class WordEncoding(Encoding):
     nDim = 4  # (batch, vector, rule, order)
 
     def __init__(self, nBatch=0, nActive=0):
-        super().__init__([], maxVal=0)  # no index slots — not muxed
+        super().__init__([], maxVal=0)  # no index slots -- not muxed
         self.nBatch = nBatch
         self.nActive = nActive
 
@@ -476,7 +474,7 @@ class Basis(nn.Module):
 
     def __init__(self):
         super().__init__()
-        # W is NOT stored here — subclasses own the storage.
+        # W is NOT stored here -- subclasses own the storage.
         # Tensor/Codebook use register_buffer; Embedding uses wv._vectors.
         self.activation = None
         self.activeSigma = None
@@ -657,7 +655,7 @@ class Basis(nn.Module):
         return -x
 
     def non(self, x, monotonic=False, threshold=None):
-        """Non-affirming negation. Bitonic: → 0. Monotonic: learnable threshold.
+        """Non-affirming negation. Bitonic: -> 0. Monotonic: learnable threshold.
         Domain [-1, 1]. Range [0, 1] (monotonic) or {0} (bitonic)."""
         if monotonic and threshold is not None:
             return torch.relu(x - threshold)
@@ -675,7 +673,7 @@ class Basis(nn.Module):
     def conjunction_inverse(self, result, y, monotonic=False):
         """Inverse of conjunction via codebook search.
 
-        Find the codebook vector x such that conjunction(x, cb_j) ≈ result
+        Find the codebook vector x such that conjunction(x, cb_j) ~= result
         for some cb_j, returning the best-matching left operand.
         Falls back to returning result unchanged if no codebook is available.
         """
@@ -684,14 +682,14 @@ class Basis(nn.Module):
     def disjunction_inverse(self, result, y, monotonic=False):
         """Inverse of disjunction via codebook search.
 
-        Find the codebook vector x such that disjunction(x, cb_j) ≈ result
+        Find the codebook vector x such that disjunction(x, cb_j) ~= result
         for some cb_j, returning the best-matching left operand.
         Falls back to returning result unchanged if no codebook is available.
         """
         return self._binary_op_inverse(result, self.disjunction, monotonic)
 
     def _binary_op_inverse(self, result, op, monotonic):
-        """Search codebook for pair (cb[i], cb[j]) whose op(cb[i], cb[j]) ≈ result.
+        """Search codebook for pair (cb[i], cb[j]) whose op(cb[i], cb[j]) ~= result.
 
         Returns cb[i] (the left operand) for each position in result.
         result shape: (..., D).  Codebook shape: (K, D).
@@ -709,7 +707,7 @@ class Basis(nn.Module):
         flat = result.reshape(-1, D)  # (N, D)
         N = flat.shape[0]
 
-        # Precompute op(cb[i], cb[j]) for all pairs → (K, K, D)
+        # Precompute op(cb[i], cb[j]) for all pairs -> (K, K, D)
         cb_i = cb.unsqueeze(1).expand(K, K, D)  # (K, K, D)
         cb_j = cb.unsqueeze(0).expand(K, K, D)  # (K, K, D)
         composed = op(cb_i, cb_j, monotonic=monotonic)  # (K, K, D)
@@ -722,7 +720,7 @@ class Basis(nn.Module):
 
         for start in range(0, N, chunk_size):
             end = min(start + chunk_size, N)
-            # (end-start, 1, D) - (1, K*K, D) → (end-start, K*K)
+            # (end-start, 1, D) - (1, K*K, D) -> (end-start, K*K)
             diffs = (flat[start:end].unsqueeze(1) - composed_flat.unsqueeze(0))
             dists = diffs.pow(2).sum(dim=-1)  # (chunk, K*K)
             pair_idx = dists.argmin(dim=-1)   # (chunk,)
@@ -738,7 +736,7 @@ class Basis(nn.Module):
         """Distance in [0, 1]. Bitonic: angular. Monotonic: volume-weighted L2.
 
         Monotonic distance weights each element by max(|x|, |y|) so that
-        matching zeros contribute nothing — zero-volume elements have no
+        matching zeros contribute nothing -- zero-volume elements have no
         bearing on parthood.
         """
         if monotonic:
@@ -753,7 +751,7 @@ class Basis(nn.Module):
         return x @ vec.T / max(self.nDim, 1)
 
     # -- Mereological operations --------------------------------------------
-    # part(x, y): degree to which x is part of y (x ⊆ y).
+    # part(x, y): degree to which x is part of y (x  subset  y).
     # Defined as: x == intersection(x,y) AND y == union(x,y).
     # All return values in [0, 1].
 
@@ -846,6 +844,11 @@ class Tensor(Basis):
         return self.W
 
     def setW(self, value):
+        # nn.Module.__setattr__ refuses to replace a registered Parameter
+        # with a plain tensor (torch >=2.11). W flip-flops between the two
+        # across lifecycle calls; clear the slot first so either is legal.
+        if "W" in self._parameters:
+            del self._parameters["W"]
         self.W = value
 
     def forward(self, x):
@@ -855,8 +858,49 @@ class Tensor(Basis):
     def reverse(self, y, **kwargs):
         self.setW(y)
         return y
+
+
 class Codebook(Basis):
     """Prototype basis with vector quantization and reverse snapping support."""
+
+    class _RotationTrickFn(torch.autograd.Function):
+        """Rotation-trick gradient estimator for VQ codebooks.
+
+        Forward returns ``q``. Backward rotates the upstream gradient from
+        ``q``'s direction back to ``e``'s direction (per row, via the
+        Householder reflection that maps ``hat(q) -> hat(e)``) and scales
+        by ``||q|| / ||e||`` so magnitude information is preserved. Only
+        ``e`` receives gradient; ``q`` does not (the codebook is trained
+        through the separate commitment loss and EMA updates).
+        """
+
+        @staticmethod
+        def forward(ctx, e, q):
+            ctx.save_for_backward(e.detach(), q.detach())
+            return q
+
+        @staticmethod
+        def backward(ctx, grad_q):
+            e, q = ctx.saved_tensors
+            eps = 1e-8
+            flat_shape = (-1, e.shape[-1])
+            e_flat = e.reshape(flat_shape)
+            q_flat = q.reshape(flat_shape)
+            g_flat = grad_q.reshape(flat_shape)
+
+            e_norm = e_flat.norm(dim=-1, keepdim=True).clamp(min=eps)
+            q_norm = q_flat.norm(dim=-1, keepdim=True).clamp(min=eps)
+            e_hat = e_flat / e_norm
+            q_hat = q_flat / q_norm
+
+            # Householder reflection with v = q_hat - e_hat maps q_hat -> e_hat.
+            v = q_hat - e_hat
+            v_dot_v = (v * v).sum(dim=-1, keepdim=True).clamp(min=eps)
+            v_dot_g = (v * g_flat).sum(dim=-1, keepdim=True)
+            reflected = g_flat - 2.0 * v_dot_g / v_dot_v * v
+            scaled = reflected * (q_norm / e_norm)
+            grad_e = scaled.reshape(grad_q.shape)
+            return grad_e, None
 
     def __init__(self):
         super().__init__()
@@ -867,11 +911,19 @@ class Codebook(Basis):
         self.alpha = 0.0
         self.codebookSize = 0
         self.vq = None
+        # Latest commitment loss from the most recent forward/quantize pass.
+        # Consumer sites (SymbolicSpace._symbol_objective_terms,
+        # ConceptualSpace.forward, etc.) read and clear this between steps.
+        self.last_commit_loss = None
 
     def getW(self):
         return self.W
 
     def setW(self, value):
+        # See Tensor.setW for the rationale -- W alternates between
+        # nn.Parameter (from VectorQuantize.codebook) and plain tensor.
+        if "W" in self._parameters:
+            del self._parameters["W"]
         self.W = value
 
     def getSize(self):
@@ -908,6 +960,14 @@ class Codebook(Basis):
                 commitment_weight=1.0,
                 rotation_trick=True,
             )
+            # Initialize codebook entries in [-1, 1] so downstream range
+            # checks on the concepts/symbols 'what' field pass on the
+            # first forward pass. The prior external package did its own
+            # initialization; the in-repo fallback uses raw torch.randn.
+            with torch.no_grad():
+                init = self.vq.codebook.detach()
+                init = init / init.abs().amax(dim=-1, keepdim=True).clamp(min=1e-8)
+                self.vq.codebook = init
             self.setW(self.vq.codebook)
         else:
             W = torch.randn([nVec, self.nDim], device=TheDevice.get())
@@ -918,13 +978,16 @@ class Codebook(Basis):
 
     def quantize(self, x):
         if self.passThrough:
-            return x, None, torch.tensor(0.0, device=x.device, dtype=x.dtype)
+            zero = torch.tensor(0.0, device=x.device, dtype=x.dtype)
+            self.last_commit_loss = zero
+            return x, None, zero
         if self.customVQ:
             quantized, indices, commit_loss = self.vq(
                 x,
                 ema_update_weight=self.updateWeights,
             )
             self.setW(self.vq.codebook)
+            self.last_commit_loss = commit_loss
             return quantized, indices, commit_loss
         weight = self._prototype_weight(context="quantize")
         flat = x.reshape(-1, x.shape[-1])
@@ -933,14 +996,126 @@ class Codebook(Basis):
         quantized = weight[indices]
         quantized = quantized.reshape(*x.shape[:-1], weight.shape[-1])
         indices = indices.reshape(x.shape[:-1])
-        loss = torch.tensor(0.0, device=x.device, dtype=x.dtype)
+        loss = self.commit_loss(x, quantized)
+        self.last_commit_loss = loss
         return quantized, indices, loss
+
+    @staticmethod
+    def apply_gradient_estimator(e, q, mode="snap"):
+        """Combine encoder output ``e`` and quantized output ``q`` into a
+        forward signal carrying a chosen gradient estimator.
+
+        Modes:
+          ``snap``      -- forward ``q``, zero gradient back to ``e``.
+          ``ste``       -- forward ``q``, backward identity to ``e`` (the
+                           straight-through estimator).
+          ``rotation``  -- forward ``q``, backward rotates the upstream
+                           gradient from ``q``'s direction back to ``e``'s
+                           direction and scales by ``||q|| / ||e||``.
+
+        Always returns a tensor shaped like ``q``.
+        """
+        if mode == "snap":
+            return q.detach()
+        if mode == "ste":
+            return e + (q - e).detach()
+        if mode == "rotation":
+            return Codebook._RotationTrickFn.apply(e, q)
+        raise ValueError(
+            f"Codebook.apply_gradient_estimator: unknown mode {mode!r}; "
+            "expected one of 'snap', 'ste', 'rotation'.")
+
+    def commit_loss(self, e, q):
+        """Commitment loss (the encoder side of the VQ-VAE objective).
+
+        Returns ``commitment_weight * MSE(e, sg[q])`` where the quantized
+        codes are detached so the gradient flows only into ``e``. If the
+        codebook is in ``passThrough`` mode or hasn't been initialized,
+        returns a zero scalar on ``e``'s device/dtype.
+        """
+        beta = 1.0
+        if self.customVQ and self.vq is not None:
+            beta = float(getattr(self.vq, "commitment_weight", 1.0))
+        if self.passThrough or e.numel() == 0 or q.numel() == 0:
+            return e.new_tensor(0.0)
+        n = min(e.shape[-1], q.shape[-1])
+        if n <= 0:
+            return e.new_tensor(0.0)
+        return beta * F.mse_loss(e[..., :n], q[..., :n].detach())
+
+    # -- Per-entry freezing (Task 3: ColumnUsageTracker analogue) ------
+    # When an entry's sigma (running stdev of gradient norm across a window)
+    # falls below ``freeze_threshold``, the entry has converged and we
+    # zero its gradient from here on. Distinct from ColumnUsageTracker:
+    # operates on codebook rows and uses sigma (ergodic measure) rather than
+    # raw grad-norm mean.
+    def _ensure_freezing_buffers(self, n):
+        if getattr(self, "_grad_norm_history", None) is None:
+            self._grad_norm_history = []
+        # Pin freezing state to CPU so device swaps on the codebook weight
+        # don't split the state across devices.
+        if getattr(self, "usage_sigma", None) is None or self.usage_sigma.shape[0] != n:
+            self.usage_sigma = torch.zeros(n, device="cpu")
+        if getattr(self, "frozen_entries", None) is None or self.frozen_entries.shape[0] != n:
+            self.frozen_entries = torch.zeros(n, dtype=torch.bool, device="cpu")
+
+    def _record_codebook_grad(self, grad):
+        # grad shape: (nVectors, nDim)
+        per_entry = grad.detach().norm(dim=-1).cpu()
+        n = per_entry.shape[0]
+        self._ensure_freezing_buffers(n)
+        self._grad_norm_history.append(per_entry)
+        if len(self._grad_norm_history) > int(getattr(self, "freeze_window", 10)):
+            self._grad_norm_history.pop(0)
+        if len(self._grad_norm_history) >= 2:
+            stacked = torch.stack(self._grad_norm_history, dim=0)
+            # sigma = std over the window; "consistent grad-norm" => small sigma.
+            self.usage_sigma = stacked.std(dim=0, unbiased=False)
+        # Zero the gradient rows of already-frozen entries so the
+        # optimizer can't drift them.
+        if self.frozen_entries.any():
+            mask = self.frozen_entries.to(device=grad.device)
+            grad = grad.clone()
+            grad[mask] = 0.0
+        return grad
+
+    def attach_freeze_hook(self, threshold=0.01, window=10):
+        """Register a backward hook on the codebook weight that records
+        per-entry gradient norms and honors the frozen mask. Idempotent.
+        """
+        self.freeze_threshold = float(threshold)
+        self.freeze_window = int(window)
+        w = self.getW()
+        if w is None or not isinstance(w, nn.Parameter):
+            return False
+        if getattr(self, "_freeze_hook_handle", None) is not None:
+            return True
+        self._ensure_freezing_buffers(w.shape[0])
+        self._freeze_hook_handle = w.register_hook(self._record_codebook_grad)
+        return True
+
+    def freeze_well_learned(self, threshold=None):
+        """Mark entries whose sigma has dropped below ``threshold`` as frozen.
+
+        Returns the number of newly-frozen entries. Call after each
+        optimizer step (or periodically) so the hook can zero their
+        gradients on subsequent backward passes.
+        """
+        if threshold is None:
+            threshold = float(getattr(self, "freeze_threshold", 0.01))
+        if getattr(self, "usage_sigma", None) is None:
+            return 0
+        to_freeze = (self.usage_sigma < threshold)
+        already = self.frozen_entries
+        new_mask = to_freeze & (~already)
+        self.frozen_entries = already | to_freeze
+        return int(new_mask.sum().item())
 
     def forward(self, input, topK: int = 0):
         """Codebook forward. When ``topK > 0`` and less than the codebook
         size, ``self.activation`` is pruned to the top-K strongest entries
-        per batch row — realizing the wide-codebook narrow-output pattern
-        where nVectors ≫ nOutput. ``topK=0`` preserves legacy behavior.
+        per batch row -- realizing the wide-codebook narrow-output pattern
+        where nVectors >> nOutput. ``topK=0`` preserves legacy behavior.
         """
         _vspace = None
         if isinstance(input, SubSpace):
@@ -1115,7 +1290,7 @@ class Embedding(Basis):
         return None
 
     def setW(self, value):
-        """Embedding W is managed by wv._vectors — setW is a no-op."""
+        """Embedding W is managed by wv._vectors -- setW is a no-op."""
         pass
 
     @staticmethod
@@ -1157,7 +1332,7 @@ class Embedding(Basis):
 
         If *wv* is provided, use it directly.  Otherwise load from
         *embedding_path* if given (.pt or .txt).  When no file is found or
-        path is None, starts with an empty vocabulary — new words are
+        path is None, starts with an empty vocabulary -- new words are
         added dynamically during forward passes via ``insert()``.
 
         If *source* is provided, build per-document lexer token streams and
@@ -1166,7 +1341,7 @@ class Embedding(Basis):
         if wv is None:
             wv = self._load_embeddings(embedding_path=embedding_path, nDim=nDim)
         if wv is None:
-            # No matching embeddings on disk — start with \x00 at index 0.
+            # No matching embeddings on disk -- start with \x00 at index 0.
             # This is both the EOS/padding sentinel AND the first real
             # byte, which makes byte_value == codebook_index throughout
             # the full 0..255 range.  ChunkLayer.BOUNDARY_BYTES assumes
@@ -1515,8 +1690,8 @@ class Embedding(Basis):
     def train_step(self, words, method='CBOW'):
         """One sentence-level embedding gradient step.  Returns loss or None.
 
-        method: 'CBOW' — predict each word from padded leave-one-out context
-                'SBOW' — predict each word from leave-one-out centroid (faster)
+        method: 'CBOW' -- predict each word from padded leave-one-out context
+                'SBOW' -- predict each word from leave-one-out centroid (faster)
         """
         if method == 'SBOW':
             return self.pretrain.sbow_step(words)
@@ -1537,7 +1712,7 @@ class Embedding(Basis):
     def reverse_raw(self, y):
         """Return the raw reverse-path vector with all subspaces intact.
 
-        Does NOT strip encoding overhead — the full vector (nWhat + nWhere + nWhen)
+        Does NOT strip encoding overhead -- the full vector (nWhat + nWhere + nWhen)
         is preserved for MSE loss computation.
 
         Returns: raw tensor [batch, nVec, embSize] with positions intact.
@@ -1798,7 +1973,7 @@ class SubSpace(nn.Module):
         self.whenEncoding   = whenEncoding if whenEncoding is not None else WhenEncoding(0, 0)
         self.wordEncoding   = wordEncoding if wordEncoding is not None else WordEncoding()
 
-        # Resolved nInputDim/nOutputDim (0 → constructor dim, -1 → skip, >0 → explicit)
+        # Resolved nInputDim/nOutputDim (0 -> constructor dim, -1 -> skip, >0 -> explicit)
         self._nInputDim = inputShape[1] if nInputDim == 0 else nInputDim
         self._nOutputDim = outputShape[1] if nOutputDim == 0 else nOutputDim
         self.nWhere = self.whereEncoding.nDim
@@ -1817,7 +1992,7 @@ class SubSpace(nn.Module):
         # active: [B, N, M] per-modality indices into the Basis slots.
         # M = number of modalities (what, where, when).
         # active[b, n, m] = index into modality m's Basis for position n.
-        # activation: [B, N] strength gate — materialize() = event * activation.
+        # activation: [B, N] strength gate -- materialize() = event * activation.
         self._active = None  # [B, N, M] index tensor
         self.batch = 0
         payload = self.materialize()
@@ -1942,7 +2117,7 @@ class SubSpace(nn.Module):
     def set_event(self, event_tensor, compute_activation=False):
         """Store a muxed event tensor [B, N, D] where D = nWhat + nWhere + nWhen.
 
-        Sets activation to all-ones by default — activation should be set
+        Sets activation to all-ones by default -- activation should be set
         explicitly (via normalize, attention, etc.) rather than auto-derived.
 
         Args:
@@ -1989,7 +2164,7 @@ class SubSpace(nn.Module):
         """Split a muxed [B, N, D] tensor along the canonical [what|where|when]
         column layout and store each block in the corresponding modality slot.
 
-        Used at the C → S tier boundary (Rule #2): C stays muxed as exploratory
+        Used at the C -> S tier boundary (Rule #2): C stays muxed as exploratory
         soup; S-tier commitment requires axis-separated what/where/when blocks
         so the grammar can make axis-restricted commitments (and so verbs can
         operate as prepositions when fed axis-restricted arguments).
@@ -2053,7 +2228,7 @@ class SubSpace(nn.Module):
         """Return the layer output dim (before forwardEnd reshape).
 
         When forwardBegin doesn't change vector count (nInputDim == inputShape[1]),
-        the layer simply maps per-vector from nInputDim → nOutputDim.
+        the layer simply maps per-vector from nInputDim -> nOutputDim.
 
         When forwardBegin DOES change vector count (e.g. flatten), the layer
         output dim is computed so that forwardEnd can reshape to [B, oS[0], nOutputDim]:
@@ -2081,7 +2256,7 @@ class SubSpace(nn.Module):
     # Reshape / validate helpers (delegates to objectEncoding)
     # ------------------------------------------------------------------
 
-    # forwardBegin/End, reverseBegin/End — handled by Space via nInputDim/nOutputDim reshape.
+    # forwardBegin/End, reverseBegin/End -- handled by Space via nInputDim/nOutputDim reshape.
 
     # ------------------------------------------------------------------
     # Construction helpers
@@ -2187,7 +2362,7 @@ class SubSpace(nn.Module):
         return act
 
     def dematerialize(self):
-        """Split event → modalities, recover active flags.
+        """Split event -> modalities, recover active flags.
 
         Reads .event, splits into what/where/when by encoding widths,
         computes active flags from which slices are nonzero, and
@@ -2258,7 +2433,7 @@ class SubSpace(nn.Module):
         self.word.append(self.wordEncoding.encode(
             batch, vector, rule, order, leaf1, leaf2, leaf3))
 
-    # ── Stack-scanning helpers ────────────────────────────────────────
+    # -- Stack-scanning helpers ----------------------------------------
 
     def active_positions(self, b, data=None):
         """Return sorted list of active (non-zero) position indices for batch element b."""
@@ -2277,7 +2452,7 @@ class SubSpace(nn.Module):
         """Find the last active (non-zero) position per batch element.
 
         Returns:
-            list of int — top-of-stack position for each batch element,
+            list of int -- top-of-stack position for each batch element,
             or -1 if the entire row is zero (empty stack).
         """
         if data is None:
@@ -2292,7 +2467,7 @@ class SubSpace(nn.Module):
         """Find the last two active positions per batch element.
 
         Returns:
-            list of (pos1, pos2) tuples — pos1 is second-to-top, pos2 is top.
+            list of (pos1, pos2) tuples -- pos1 is second-to-top, pos2 is top.
             Either may be -1 if fewer than two active positions exist.
         """
         if data is None:
@@ -2316,7 +2491,7 @@ class SubSpace(nn.Module):
         if codebook is None:
             return None
         if codebook.ndim == 2:
-            # [V, D] codebook — index with [B, N] → [B, N, D]
+            # [V, D] codebook -- index with [B, N] -> [B, N, D]
             return codebook[indices.long()]
         # Already [B, N, D] (e.g. from set_what on a Tensor basis)
         return codebook
@@ -2361,7 +2536,7 @@ class SubSpace(nn.Module):
                     what_w = self.what.getW()
                     if what_w is not None:
                         if what_w.ndim == 2:
-                            # Codebook [V, D] — index lookup
+                            # Codebook [V, D] -- index lookup
                             parts.append(what_w[self._active[:, :, m].long()])
                         else:
                             parts.append(what_w)
@@ -2420,7 +2595,7 @@ class SubSpace(nn.Module):
         """Return the tensor for the named encoding target.
 
         Args:
-            target: one of Encoding.TARGETS — "activation", "what", "where",
+            target: one of Encoding.TARGETS -- "activation", "what", "where",
                     "when", "event", or "all".
 
         Returns:
@@ -2533,7 +2708,7 @@ class SubSpace(nn.Module):
 
         Args:
             kind: "percepts", "concepts", "symbols", or "input".
-            target: encoding target — "activation", "what", "where",
+            target: encoding target -- "activation", "what", "where",
                     "when", "event", or "all".
             normalize: if True, apply the normalization in-place.
                 If False, check range only.
@@ -2552,7 +2727,7 @@ class SubSpace(nn.Module):
         if reverse and not normalize:
             raise ValueError("reverse=True requires normalize=True")
 
-        # ── Range check (normalize=False) ────────────────────────────
+        # -- Range check (normalize=False) ----------------------------
         if not normalize:
             strict = not TheXMLConfig.get("architecture.ergodic")
             xd = x.detach()
@@ -2567,7 +2742,7 @@ class SubSpace(nn.Module):
                 else:
                     warnings.warn(msg)
                 return
-            # Range check — vectors are always [-1, 1]; symbol activations are [0, 1]
+            # Range check -- vectors are always [-1, 1]; symbol activations are [0, 1]
             is_vector = target in ("what", "where", "when", "event")
             if kind == "symbols" and not is_vector:
                 lo, hi = 0, 1
@@ -2583,7 +2758,7 @@ class SubSpace(nn.Module):
                     warnings.warn(msg)
             return
 
-        # ── Apply normalization (normalize=True) ─────────────────────
+        # -- Apply normalization (normalize=True) ---------------------
         if reverse:
             normalized = self._apply_reverse_normalization(kind, x, target=target)
         else:
@@ -2594,16 +2769,16 @@ class SubSpace(nn.Module):
         """Apply normalization function to tensor x.
 
         The combination of kind and target determines the geometry:
-          - Perceptual vectors and activations use (1-eps)*tanh → (-(1-eps), 1-eps).
-          - Conceptual vectors and activations use (1-eps)*tanh → (-(1-eps), 1-eps).
+          - Perceptual vectors and activations use (1-eps)*tanh -> (-(1-eps), 1-eps).
+          - Conceptual vectors and activations use (1-eps)*tanh -> (-(1-eps), 1-eps).
           - Activations use scalar transfer functions (tanh/STE).
 
         The ``(1-eps)`` shrinkage is a minimal regularizer that keeps the
-        output strictly away from ±1, so that the inverse (atanh) is
+        output strictly away from +-1, so that the inverse (atanh) is
         always finite without requiring a clamp.  The reverse path
         (see ``_apply_reverse_normalization``) divides by ``(1-eps)``
         before ``atanh``, preserving exact invertibility for the full
-        range of real inputs — no branches, no clamp.
+        range of real inputs -- no branches, no clamp.
         """
         is_vector = target in ("what", "where", "when", "event")
         if kind == "percepts":
@@ -2646,14 +2821,14 @@ class SubSpace(nn.Module):
         """Reverse the normalization applied by normalize().
 
         Only meaningful for kinds with invertible transforms:
-          - "input" on vectors → scale from [-1,1] back to [input_min, input_max]
-          - "output" on vectors → scale from [output_min, output_max] to [-1,1]
+          - "input" on vectors -> scale from [-1,1] back to [input_min, input_max]
+          - "output" on vectors -> scale from [output_min, output_max] to [-1,1]
 
         Invertible transforms:
-          - "percepts" → atanh (inverse tanh): [-1,1] → ℝ
-          - "concepts" → atanh (inverse tanh): [-1,1] → ℝ
-          - "input" on vectors → scale from [-1,1] back to [input_min, input_max]
-          - "output" on vectors → scale from [output_min, output_max] to [-1,1]
+          - "percepts" -> atanh (inverse tanh): [-1,1] -> R
+          - "concepts" -> atanh (inverse tanh): [-1,1] -> R
+          - "input" on vectors -> scale from [-1,1] back to [input_min, input_max]
+          - "output" on vectors -> scale from [output_min, output_max] to [-1,1]
           - "symbols" (STE round) is not invertible and is skipped.
         """
         x = self.select(target)
@@ -2679,8 +2854,8 @@ class SubSpace(nn.Module):
         Args:
             x: tensor to measure. If None, uses self.select(target).
             target: encoding target to measure.
-            reduce: "batch" → mean over objects → [B] (default),
-                    "vector" → per-object → [B, N].
+            reduce: "batch" -> mean over objects -> [B] (default),
+                    "vector" -> per-object -> [B, N].
 
         Returns:
             Tensor of luminosity values.
@@ -2699,7 +2874,7 @@ class SubSpace(nn.Module):
 
         Agreement at each dimension is the smaller magnitude when signs
         match (both confirm at least that much).  When signs disagree,
-        agreement is zero — the representations contradict.
+        agreement is zero -- the representations contradict.
 
         The MSE of the agreement vector gives the luminosity of truth
         between the two signals.
@@ -2708,7 +2883,7 @@ class SubSpace(nn.Module):
             x1, x2: tensors to compare (same shape).
             target: encoding target (for documentation; tensors are
                     passed explicitly).
-            reduce: "batch" → [B], "vector" → [B, N].
+            reduce: "batch" -> [B], "vector" -> [B, N].
 
         Returns:
             Tensor of truth-luminosity values.
@@ -2761,7 +2936,7 @@ class SubSpace(nn.Module):
             return object
         return object[0:-size]
 class WordSubSpace(SubSpace):
-    """Fixed-size word-stream stack — a SubSpace subclass with stack discipline.
+    """Fixed-size word-stream stack -- a SubSpace subclass with stack discipline.
 
     Stores a sequence of derivation-step rows in the inherited
     ``[what | where | when]`` Basis-backed column blocks of shape
@@ -2771,11 +2946,11 @@ class WordSubSpace(SubSpace):
         row 0:             rule-identity codebook vector
         rows 1..max_arity: leaf-identity codebook vectors
 
-    Unused leaf slots produce zero-valued rows (empty-slot sentinel —
+    Unused leaf slots produce zero-valued rows (empty-slot sentinel --
     consumers detect empties via ``row_what.norm() == 0``). Rows beyond
     top-of-stack are plain zeros. Rule-identity vectors come from a
-    back-referenced ``SymbolicSpace.lookup_rule(rule_id)`` — the one
-    unified rule codebook — so ``push()`` resolves identity to a dense
+    back-referenced ``SymbolicSpace.lookup_rule(rule_id)`` -- the one
+    unified rule codebook -- so ``push()`` resolves identity to a dense
     vector at write time and ``read()`` returns a ready-to-concat
     ``[batch, max_depth, nDim]`` muxed tensor.
 
@@ -2792,7 +2967,7 @@ class WordSubSpace(SubSpace):
 
     **Additive stack discipline**: ``push()``, ``clear()``, the
     per-batch ``_top`` pointer, and the ``_blocks`` parse-tree ledger
-    are not part of the SubSpace contract — they sit on top. A plain
+    are not part of the SubSpace contract -- they sit on top. A plain
     SubSpace is a snapshot; a WordSubSpace is a stack that happens to
     live inside the same Basis slots a snapshot would use.
 
@@ -2847,7 +3022,7 @@ class WordSubSpace(SubSpace):
 
         # Allocate actual [batch, max_depth, <modality>] storage into
         # the inherited Basis slots. This replaces the old standalone
-        # `self._buffer` — storage flows through Basis.setW() now.
+        # `self._buffer` -- storage flows through Basis.setW() now.
         self._allocate_storage(int(batch))
 
         # Stack-discipline metadata (not part of SubSpace contract).
@@ -2860,13 +3035,13 @@ class WordSubSpace(SubSpace):
         # Back-reference to the host providing lookup_rule(rule_id).
         # Stored via `object.__setattr__` so the host (typically a
         # `SymbolicSpace` nn.Module) is NOT registered as an nn.Module
-        # child — that would create a parent/child cycle
-        # (`symbolicSpace ↔ wordSpace.subspace`) and make
+        # child -- that would create a parent/child cycle
+        # (`symbolicSpace <-> wordSpace.subspace`) and make
         # `model.to(device)` recurse forever. Set by
         # `attach_codebook_host()`; WordSpace wires this at construction.
         object.__setattr__(self, 'rule_codebook_host', None)
 
-    # ── storage allocation via inherited Basis slots ─────────────────
+    # -- storage allocation via inherited Basis slots -----------------
     def _allocate_storage(self, batch):
         """Allocate zero tensors of shape ``[batch, max_depth, <modality>]``
         into the inherited ``.what``/``.where``/``.when`` Basis slots.
@@ -2901,12 +3076,12 @@ class WordSubSpace(SubSpace):
         muxed = torch.zeros(self.batch, self.max_depth, self.muxedSize)
         self.event.setW(muxed)
         self._demuxed = True
-        # All-ones activation — WordSubSpace has no gating beyond the
+        # All-ones activation -- WordSubSpace has no gating beyond the
         # zero rows themselves, and multiplying by ones is cheap.
         self.set_activation(
             torch.ones(self.batch, self.max_depth))
 
-    # ── device-propagation override ──────────────────────────────────
+    # -- device-propagation override ----------------------------------
     def _apply(self, fn, recurse=True):
         """Propagate tensor-moving operations through inherited Basis
         storage.
@@ -2918,7 +3093,7 @@ class WordSubSpace(SubSpace):
         never touches it, so ``model.to(device)`` on a SubSpace silently
         leaves the Basis W tensors on their original device. Regular
         SubSpace usage avoids this by always re-setting ``.W`` from a
-        fresh device-correct tensor in every forward pass — but
+        fresh device-correct tensor in every forward pass -- but
         ``WordSubSpace`` allocates its whole buffer eagerly in
         ``__init__`` and mutates it in place, so we need the Basis
         tensors to actually follow the module to the target device.
@@ -2936,7 +3111,7 @@ class WordSubSpace(SubSpace):
                 basis.setW(fn(w))
         return super()._apply(fn, recurse=recurse)
 
-    # ── codebook + batch lifecycle ───────────────────────────────────
+    # -- codebook + batch lifecycle -----------------------------------
     def attach_codebook_host(self, host):
         """Register an object exposing ``lookup_rule(rule_id)``.
 
@@ -2944,7 +3119,7 @@ class WordSubSpace(SubSpace):
         at push time, matching ``SymbolicSpace``'s codebook-on-``.what``
         convention so peer spaces consume a uniform dense stream.
 
-        Stored via ``object.__setattr__`` — see the ``__init__``
+        Stored via ``object.__setattr__`` -- see the ``__init__``
         back-reference comment for the nn.Module cycle rationale.
         """
         object.__setattr__(self, 'rule_codebook_host', host)
@@ -2965,7 +3140,7 @@ class WordSubSpace(SubSpace):
             self._top.zero_()
         self._blocks = [[] for _ in range(self.batch)]
 
-    # ── push / read ─────────────────────────────────────────────────
+    # -- push / read -------------------------------------------------
     def _lookup(self, rule_id):
         """Return a ``[nWhat]`` dense vector for a rule_id, or ``None``."""
         if self.rule_codebook_host is None or rule_id is None:
@@ -2995,7 +3170,7 @@ class WordSubSpace(SubSpace):
         Overflow beyond ``max_depth`` silently drops the push.
 
         Writes go through the inherited ``Basis.setW()`` /
-        ``Basis.getW()`` contract — ``self.what.getW()`` returns a
+        ``Basis.getW()`` contract -- ``self.what.getW()`` returns a
         mutable reference to the ``[batch, max_depth, nWhat]`` tensor
         allocated by ``_allocate_storage``, and ``push()`` mutates that
         in place. After mutation we invalidate the cached ``.event``
@@ -3016,7 +3191,7 @@ class WordSubSpace(SubSpace):
             return
         top = int(self._top[b].item())
         if top + self.block_size > self.max_depth:
-            return  # buffer full — silently drop
+            return  # buffer full -- silently drop
 
         # Normalize leaves to a fixed-length tuple.
         leaves_list = list(leaves) if leaves is not None else []
@@ -3056,7 +3231,7 @@ class WordSubSpace(SubSpace):
 
         self._top[b] = top + self.block_size
 
-        # Invalidate the cached muxed event — next materialize()
+        # Invalidate the cached muxed event -- next materialize()
         # rebuilds it from the mutated .what/.where/.when Basis slots.
         if self.event is not None:
             self.event.setW(None)
@@ -3131,14 +3306,14 @@ class Space(nn.Module):
         super(Space, self).__init__()
         section = self.config_section
         self.inputShape   = inputShape   # [nInput,   nInputDim]
-        self.spaceShape   = spaceShape   # [nVectors, nDim]  — codebook / internal basis
+        self.spaceShape   = spaceShape   # [nVectors, nDim]  -- codebook / internal basis
         self.outputShape  = outputShape  # [nOutput,  nOutputDim]
         self.nVectors     = spaceShape[0]  # codebook size
         self.nDim         = spaceShape[1]  # content dimensionality of the codebook vectors
         # Resolve nInputDim/nOutputDim:
-        #   0  → inherit from constructor dim (inputShape[1] / outputShape[1])
-        #  -1  → flatten: nInput * dim (reshape [N, D] → [1, N*D])
-        #  >0  → explicit value
+        #   0  -> inherit from constructor dim (inputShape[1] / outputShape[1])
+        #  -1  -> flatten: nInput * dim (reshape [N, D] -> [1, N*D])
+        #  >0  -> explicit value
         try:
             raw = TheXMLConfig.space(section, "nInputDim")
         except KeyError:
@@ -3191,7 +3366,7 @@ class Space(nn.Module):
         # wordSpace is still held as a non-Module pointer so the few
         # call sites that reach across to ``wordSpace.truth_layer``
         # (SymbolicSpace) keep working; composition dispatch is no
-        # longer done here — home spaces take ``wordSpace`` as a
+        # longer done here -- home spaces take ``wordSpace`` as a
         # per-call parameter and call ``wordSpace.forwardPercepts`` /
         # ``.forwardConcepts`` / ``.forwardSymbols`` (and the reverse
         # variants) explicitly.
@@ -3205,7 +3380,7 @@ class Space(nn.Module):
 
         The wordSpace reference is stored via ``object.__setattr__`` so
         the WordSpace nn.Module is NOT registered as a child of this
-        Space — that would create a ``space → wordSpace → space`` cycle
+        Space -- that would create a ``space -> wordSpace -> space`` cycle
         (WordSpace already owns the SyntacticLayer and its codebook
         host is the SymbolicSpace) and make ``model.to(device)``
         recurse forever. The wordSpace is owned at the model level
@@ -3244,7 +3419,7 @@ class Space(nn.Module):
         """Register base-class config requirements.
 
         Codebook spaces sample with replacement, so ``nVectors`` can be
-        smaller, equal, or larger than ``nActive`` — any positive value
+        smaller, equal, or larger than ``nActive`` -- any positive value
         is valid.  Non-codebook spaces still require ``nVectors == nActive``
         because they use a direct one-to-one vector store.
         """
@@ -3258,7 +3433,7 @@ class Space(nn.Module):
             )
 
     def get_vectors(self):
-        """Convenience accessor — delegates to subspace."""
+        """Convenience accessor -- delegates to subspace."""
         return self.subspace.get_vectors()
 
     @property
@@ -3372,7 +3547,7 @@ class Space(nn.Module):
         self.subspace.set_event(y)
         return self.subspace
 
-    # _2d/_3d removed — all layers now operate on [..., D] natively.
+    # _2d/_3d removed -- all layers now operate on [..., D] natively.
 
     def lookup(self, x):
         activation = x[0]
@@ -3404,7 +3579,7 @@ class Space(nn.Module):
 
         ``self.subspace`` may be ``None`` (DiscourseSpace) or a non-SubSpace
         buffer without Basis objects (WordSpace's ``WordSubSpace``). In those
-        cases we only walk ``self.layers`` — no basis slots exist to update.
+        cases we only walk ``self.layers`` -- no basis slots exist to update.
         """
         for l in self.layers:
             if hasattr(l, 'set_sigma'):
@@ -3434,7 +3609,7 @@ class InputSpace(Space):
     (positional encoding from the span's start offset).  A whole sentence
     is sent at once as a batch of [nWhat + nWhere] vectors.
 
-    For numeric data: the tensor path is unchanged — no span table, no Lex,
+    For numeric data: the tensor path is unchanged -- no span table, no Lex,
     and objectEncoding contributes nothing when nWhat/nWhere are absent.
 
     reverse() reconstructs the source buffer from the latent state by
@@ -3574,7 +3749,7 @@ class InputSpace(Space):
         self.input          = torch.FloatTensor
         self.tokenizedInput = False
         # Byte lexer inputs are discrete indices (0-255) looked up via
-        # Embedding — a global linear lift over the flattened buffer is
+        # Embedding -- a global linear lift over the flattened buffer is
         # unnecessary and prohibitively expensive for large nOutput.
         # Only create the MappingLayer for non-byte (continuous) inputs.
         if self.byte_mode:
@@ -3658,7 +3833,7 @@ class InputSpace(Space):
             else:
                 when_indices = None
 
-            # Set per-modality indices — materialize() looks up vectors from Basis
+            # Set per-modality indices -- materialize() looks up vectors from Basis
             self.subspace.set_forward_content(what_indices, where_indices, when_indices)
             self.input = self.subspace.materialize()
 
@@ -3681,7 +3856,7 @@ class InputSpace(Space):
             embedded: [1, nVectors, embeddingSize] output of forward()
             sentence_text: original sentence string (used for word count)
             maskedPrediction: prediction mode ('MLM', 'ARLM', 'ARUS', or 'RARLM')
-            n_words: explicit word count (byte mode — from span_meta after compaction)
+            n_words: explicit word count (byte mode -- from span_meta after compaction)
 
         Returns:
             (masked_batch, mask_positions):
@@ -3763,7 +3938,7 @@ class InputSpace(Space):
         object_basis.setW(self.input)
         self.subspace.set_event(self.input)
 
-        # Word recovery — content is already denormalized, codebook is L2-normalized [-1,1]
+        # Word recovery -- content is already denormalized, codebook is L2-normalized [-1,1]
         if isinstance(content_basis, Embedding):
             self._recovered_input = content_basis.decode_reverse_meta(
                 self.input, subspace=self.subspace)
@@ -3798,7 +3973,7 @@ class InputSpace(Space):
             self._recovered_input, batch_idx, position)
 
     # ------------------------------------------------------------------
-    # Training policy — InputSpace decides WHEN, Embedding does HOW
+    # Training policy -- InputSpace decides WHEN, Embedding does HOW
     # ------------------------------------------------------------------
 
     def train_embeddings(self, words, method='CBOW'):
@@ -3858,13 +4033,13 @@ class InputSpace(Space):
         else:
             raise ValueError(f"Unknown split: {split}")
 
-        # ── ARIR state machine ──────────────────────────────────────
+        # -- ARIR state machine --------------------------------------
         if split == "runtime" and getattr(self.data, '_runtime_mode', None) == 'ARIR':
             return self._getBatch_arir(inputData, batchNum)
 
         # Use standard (non-masked) path when: no masked prediction configured,
         # or runtime split with no sentences staged (inference via runBatch).
-        # Raw strings for masked prediction — all splits store strings directly
+        # Raw strings for masked prediction -- all splits store strings directly
         if (isinstance(inputData, list) and inputData
                 and isinstance(inputData[0], str)):
             sentences = inputData
@@ -3896,7 +4071,7 @@ class InputSpace(Space):
             sentence = sentences[batchNum]
             inputTensor = self.prepInput(inputData[batchNum:batchNum + 1])
 
-            # Embed once — retain gradient graph for the masked input path.
+            # Embed once -- retain gradient graph for the masked input path.
             # Targets are detached (they're labels, not part of the forward graph).
             embedded = self.forward(inputTensor).materialize()  # [1, nVec, embSize]
 
@@ -3912,8 +4087,8 @@ class InputSpace(Space):
             self._unmasked_embedding = embedded.detach()  # [1, nVec, embSize]
             self._mask_positions = mask_positions           # list[int], len=N
 
-            # Hand masked embedding to forward() via cache — no re-embedding,
-            # but gradient flows back through masked_batch → embedded → embedding weights
+            # Hand masked embedding to forward() via cache -- no re-embedding,
+            # but gradient flows back through masked_batch -> embedded -> embedding weights
             self._cached_embedding = masked_batch
 
             return (inputTensor, targets), batchNum + 1
@@ -3921,8 +4096,8 @@ class InputSpace(Space):
     def get_reconstruction_target(self):
         """Return (target, mask) for reconstruction loss.
 
-        target: [batch, nVec, embSize] — unmasked post-encoding embedding
-        mask:   [batch, nVec] bool — True at masked positions to compute loss on.
+        target: [batch, nVec, embSize] -- unmasked post-encoding embedding
+        mask:   [batch, nVec] bool -- True at masked positions to compute loss on.
                 None when maskedPrediction=NONE (use whole buffer).
         """
         unmasked = getattr(self, '_unmasked_embedding', None)
@@ -3957,7 +4132,7 @@ class InputSpace(Space):
         """Delegates to Embedding.get_mask_embedding()."""
         return self.subspace.vocabulary.get_mask_embedding()
 
-    # ── ARIR state machine ──────────────────────────────────────────
+    # -- ARIR state machine ------------------------------------------
 
     def _getBatch_arir(self, inputData, batchNum):
         """ARIR state machine for getBatch(): embed seed, then iteratively
@@ -3977,7 +4152,7 @@ class InputSpace(Space):
         nWhat = self.subspace.vocabulary.embedding_dim
 
         if self._arir_cursor is None:
-            # ── First call: embed seed, prepare buffer ──────────────
+            # -- First call: embed seed, prepare buffer --------------
             inputTensor = self.prepInput(inputData)
             embedded = self.forward(inputTensor)  # [1, nVec, embSize]
             self._arir_embedded = embedded.detach().clone()
@@ -4013,7 +4188,7 @@ class InputSpace(Space):
             return (dummy_input, None), batchNum + 1
 
         else:
-            # ── Subsequent calls: read reconstruction, advance cursor ──
+            # -- Subsequent calls: read reconstruction, advance cursor --
             prev_cursor = self._arir_cursor
 
             # Read decoded word from previous reverse pass
@@ -4137,7 +4312,7 @@ class PerceptualSpace(Space):
 
     def _register_requirements(self):
         """Register PerceptualSpace-specific config requirements."""
-        # passThrough spaces are identity mappings — shape constraints don't apply.
+        # passThrough spaces are identity mappings -- shape constraints don't apply.
         passThrough = TheXMLConfig.space(self.config_section, "passThrough")
         if passThrough:
             return
@@ -4160,26 +4335,26 @@ class PerceptualSpace(Space):
                 )
 
     def everything(self, target="what"):
-        """The universal whole — vertex (1,1,...,1) of the perceptual hypercube.
+        """The universal whole -- vertex (1,1,...,1) of the perceptual hypercube.
 
         Valid only in perceptual space where vectors are sigmoid-normalized
         to [0,1]^d and mereological operations (min/max) apply.
 
         Args:
-            target: encoding target — "what", "event", or "activation".
+            target: encoding target -- "what", "event", or "activation".
         """
         dim = {"what": self.nDim, "event": self.muxedSize,
                "activation": self.outputShape[0]}[target]
         return torch.ones(dim, device=TheDevice.get())
 
     def nothing(self, target="what"):
-        """The empty set — origin (0,0,...,0) of the perceptual hypercube.
+        """The empty set -- origin (0,0,...,0) of the perceptual hypercube.
 
         Valid only in perceptual space where vectors are sigmoid-normalized
         to [0,1]^d and mereological operations (min/max) apply.
 
         Args:
-            target: encoding target — "what", "event", or "activation".
+            target: encoding target -- "what", "event", or "activation".
         """
         dim = {"what": self.nDim, "event": self.muxedSize,
                "activation": self.outputShape[0]}[target]
@@ -4202,7 +4377,7 @@ class PerceptualSpace(Space):
         if mode == "lexicon":
             return stream.split()
         if mode == "bpe":
-            # Cold-start BPE: no merges table available here → fall back to
+            # Cold-start BPE: no merges table available here -> fall back to
             # single bytes. The real BPE path runs through ChunkLayer (see
             # basicmodel/bin/Layers.py) once merges have been learned.
             return [bytes([b]) for b in stream]
@@ -4285,13 +4460,13 @@ class ModalSpace(Space):
         except KeyError:
             whenPT = True
 
-        # Derive branch shapes (symmetric — subtract off the modality you don't need)
+        # Derive branch shapes (symmetric -- subtract off the modality you don't need)
         whatDim = self.muxedSize - self.nWhere - self.nWhen
         whatInputShape = [inputShape[0], whatDim]
         whatOutputShape = [outputShape[0], whatDim]
         whatSpaceShape = [spaceShape[0], spaceShape[1]]
 
-        # Build what branch — override passThrough in config temporarily
+        # Build what branch -- override passThrough in config temporarily
         saved_pt = TheXMLConfig._data.get("PerceptualSpace", {}).get("passThrough")
         TheXMLConfig._data.setdefault("PerceptualSpace", {})["passThrough"] = whatPT
         self.whatSpace = PerceptualSpace(whatInputShape, whatSpaceShape, whatOutputShape)
@@ -4463,7 +4638,7 @@ class ConceptualSpace(Space):
         if hasAttention:
             self.attention = AttentionLayer(output, output, type="transformer")
 
-        # ── Hierarchical mode: per-level Sigma layers ────────────────
+        # -- Hierarchical mode: per-level Sigma layers ----------------
         # Average-merge keeps norms bounded, so tanh saturation is unnecessary
         # and harmful: cascaded atanh in reverse clamps values outside (-1,1),
         # destroying sample variance.  Per-level sigmas use saturate=False.
@@ -4472,7 +4647,7 @@ class ConceptualSpace(Space):
             self._level_shapes = level_shapes
             self.sigmas = nn.ModuleList()
             if butterfly_config is not None:
-                # Butterfly variant: SigmaLayer is 2D×2D, wrapped in a
+                # Butterfly variant: SigmaLayer is 2D*2D, wrapped in a
                 # ButterflyStage that permutes, packs, sigma-applies,
                 # unpacks and merges (halves N).
                 pair_dim = 2 * butterfly_config["state_dim"]
@@ -4518,7 +4693,7 @@ class ConceptualSpace(Space):
             self.forwardSigma = self.sigmas[0].forward
             self.reverseSigma = self.sigmas[0].reverse
         else:
-            # ── Original single-layer mode ────────────────────────────
+            # -- Original single-layer mode ----------------------------
             self._hierarchical = False
             self._level_shapes = None
             if self.reversible:
@@ -4565,7 +4740,7 @@ class ConceptualSpace(Space):
         """Proxy routing .forward()/.reverse() through a per-level sigma.
 
         Accepts ``wordSpace`` for signature parity with the non-hierarchical
-        path, but ignores it — hierarchical sigmas don't invoke compose.
+        path, but ignores it -- hierarchical sigmas don't invoke compose.
         """
         def __init__(self, parent, t):
             self._parent = parent
@@ -4608,7 +4783,7 @@ class ConceptualSpace(Space):
         ``target_count`` is forwarded to ``wordSpace.forwardConcepts``
         so the C-tier compose can use pairwise slot-mixing reduction
         (``_compose_to_target``) instead of the default cascading
-        accumulator — the latter cannot move information across the
+        accumulator -- the latter cannot move information across the
         slot axis.  Pass ``target_count=nOutputSymbols`` from the
         non-butterfly MentalModel loop so compose reduces to exactly
         the slot count OutputSpace will read.
@@ -4676,21 +4851,21 @@ class SymbolicSpace(Space):
     and when (derivation order).
 
     S-tier operations (swap) operate on whereEncodings of node children.
-    The START-level true() evaluates the full stack activation → scalar.
+    The START-level true() evaluates the full stack activation -> scalar.
     """
     name = "Symbols"
     config_section = "SymbolicSpace"
 
-    def empty_state(self):
-        """Return a zero tensor the shape of this space's symbolic state.
+    def empty_state(self, batch=1):
+        """Return a zero tensor shaped like this space's symbolic state.
 
-        Used by the Stage 2 merged outer loop to initialize ``ss`` before
-        the first concept emission. Per-word vs per-sentence scope is
-        governed by the loop, not by this method.
+        Used by the unified merged outer loop to seed ``ss`` before the
+        first concept emission. ``batch`` sizes the leading axis; the
+        rest comes from ``outputShape``.
         """
         nOutput = int(self.outputShape[0])
         nDim = int(self.outputShape[1])
-        return torch.zeros(1, nOutput, nDim, device=TheDevice.get())
+        return torch.zeros(int(batch), nOutput, nDim, device=TheDevice.get())
 
     def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None,
                  level_shapes=None, butterfly_config=None):
@@ -4700,7 +4875,7 @@ class SymbolicSpace(Space):
         super().__init__(inputShape, spaceShape, outputShape, customVQ=True)
         self.conceptualSpace = conceptualSpace
         self.passThrough = passThrough
-        # PiLayer maps on the nDim axis: concept_dim+obj → symbol_dim+obj.
+        # PiLayer maps on the nDim axis: concept_dim+obj -> symbol_dim+obj.
         # nVectors passes through unchanged via batched matmul.
         nConceptDim = inputShape[1]     # concept_dim + obj (where+when)
         nSymbolDim = outputShape[1]     # symbol_dim + obj (where+when)
@@ -4721,7 +4896,7 @@ class SymbolicSpace(Space):
                     # Pi operates on sigma's merged output (N already halved).
                     stage = ButterflyStage(
                         pi, stage_idx=t, initial_n=initial_n // 2,
-                        is_last=True)  # no merge — sigma already merged
+                        is_last=True)  # no merge -- sigma already merged
                     self.pi_layers.append(stage)
             else:
                 self._butterfly_symbol_width = None
@@ -4756,6 +4931,19 @@ class SymbolicSpace(Space):
         except (KeyError, TypeError, ValueError):
             use_vqvae_raw = False
         self.use_vqvae = bool(use_vqvae_raw)
+        try:
+            raw_mode = TheXMLConfig.space(section, "gradientMode")
+        except (KeyError, TypeError, ValueError):
+            raw_mode = None
+        if raw_mode is None:
+            self.gradient_mode = "ste"
+        else:
+            mode_str = str(raw_mode).strip().lower()
+            if mode_str not in ("snap", "ste", "rotation"):
+                raise ValueError(
+                    f"SymbolicSpace gradientMode={raw_mode!r} is invalid; "
+                    "expected one of 'snap', 'ste', 'rotation'.")
+            self.gradient_mode = mode_str
         self.decorrelation_weight = _symbol_cfg("decorrelationWeight", 0.0)
         self.spectral_flatness_weight = _symbol_cfg("spectralFlatnessWeight", 0.0)
         self.reset_symbol_objective()
@@ -4809,16 +4997,16 @@ class SymbolicSpace(Space):
 
         self.params = list(self.parameters())
 
-        # Rule codebook — learned vectors for grammar rule identities.
+        # Rule codebook -- learned vectors for grammar rule identities.
         # Index 0 is reserved as the empty-slot sentinel (zero vector,
         # non-training via padding_idx); indices 1..nRules map to
         # grammar rule_ids 0..nRules-1.
-        # See plan: Architectural addition — WordSpace / Unified codebook.
+        # See plan: Architectural addition -- WordSpace / Unified codebook.
         self.rule_codebook = None
         self.nRuleEntries = 0
 
     def _build_object_basis(self):
-        """Event is a writable Tensor — codebook lives on .what."""
+        """Event is a writable Tensor -- codebook lives on .what."""
         return None
 
     def _build_what_basis(self):
@@ -4883,7 +5071,7 @@ class SymbolicSpace(Space):
         With d content dims and K codebook entries, each row of the
         distance matrix costs K * 4 bytes.  The budget controls how
         many rows are processed per matmul.  Larger budgets mean fewer
-        sequential chunks — critical for ARLM batches where N can
+        sequential chunks -- critical for ARLM batches where N can
         reach hundreds of thousands.
         """
         device = str(TheDevice.get())
@@ -4894,7 +5082,7 @@ class SymbolicSpace(Space):
             except Exception:
                 pass
         # MPS (Apple Silicon) or ROCm without CUDA properties:
-        # use 4 GiB — safe on any ≥16 GB unified/GPU memory system.
+        # use 4 GiB -- safe on any >=16 GB unified/GPU memory system.
         if 'mps' in device or 'cuda' in device:
             return 4 << 30
         # CPU fallback
@@ -4936,7 +5124,7 @@ class SymbolicSpace(Space):
         N = flat_content.shape[0]
 
         if N <= max_rows:
-            # Single matmul: [N, d] @ [d, K] → [N, K]
+            # Single matmul: [N, d] @ [d, K] -> [N, K]
             flat_sq = (flat_content * flat_content).sum(dim=-1, keepdim=True)
             dists = flat_sq - 2 * (flat_content @ weight_content.T) + weight_sq
             indices = dists.argmin(dim=-1)
@@ -5074,9 +5262,9 @@ class SymbolicSpace(Space):
         return self.subspace.what
 
     def forward(self, vspace, wordSpace=None, quantize=True, is_last=False):
-        """Map concept vectors to symbol vectors via PiLayer (Π).
+        """Map concept vectors to symbol vectors via PiLayer (Pi).
 
-        PiLayer maps on the nDim axis: [B, nVectors, concept_dim] →
+        PiLayer maps on the nDim axis: [B, nVectors, concept_dim] ->
         [B, nVectors, symbol_dim].  nVectors passes through unchanged.
         With a single-concept subspace [B, 1, D], produces [B, 1, symbol_dim].
 
@@ -5122,7 +5310,7 @@ class SymbolicSpace(Space):
             act = self.sortNetwork.forward(act)
 
         if wordSpace is not None:
-            # Rule #2: C → S axis commitment. The demux side effect
+            # Rule #2: C -> S axis commitment. The demux side effect
             # (populating the subspace's what/where/when modality slots
             # from the muxed [B, N, D] tensor) happens inside
             # forwardSymbols() so the axis-separated state is live
@@ -5130,7 +5318,7 @@ class SymbolicSpace(Space):
             act = wordSpace.forwardSymbols(act, self.subspace)
 
         # VQ-VAE modes (gated on ``self.use_vqvae``):
-        #   reversible model  → continuous forward + commitment loss only.
+        #   reversible model  -> continuous forward + commitment loss only.
         #       The reverse path requires exact invertibility
         #       (``pi.reverse(pi.forward(x)) == x``).  A hard-quantized
         #       forward would break that, so we keep ``act`` continuous
@@ -5138,16 +5326,19 @@ class SymbolicSpace(Space):
         #       the nearest codebook entry.  The commitment loss alone
         #       suffices: the encoder already receives gradient through
         #       the continuous forward, so no STE is needed.
-        #   non-reversible model → STE forward.  Downstream sees the
+        #   non-reversible model -> STE forward.  Downstream sees the
         #       hard codebook pick, backward flows as identity through
         #       the quantization bottleneck back into the encoder.
-        #   non-VQVAE, caller opted into quantize → legacy path unchanged.
+        #   non-VQVAE + codebook + caller opted into quantize ->
+        #       hard-quantize forward, no gradient estimator (commitment
+        #       loss is not accumulated either; the codebook is updated
+        #       via its manual EMA path in Codebook.forward).
         use_vqvae_reversible = self.use_vqvae and self.reversible and self.codebook
         use_vqvae_nonreversible = (self.use_vqvae and not self.reversible
                                    and self.codebook)
-        legacy_quantize = (not self.use_vqvae) and self.codebook and quantize
+        hard_quantize = (not self.use_vqvae) and self.codebook and quantize
         if use_vqvae_reversible:
-            # Continuous forward — event carries z_e so reverse is exact.
+            # Continuous forward -- event carries z_e so reverse is exact.
             z_e = act
             predicted = z_e.clone()
             self.subspace.set_event(z_e)
@@ -5165,17 +5356,19 @@ class SymbolicSpace(Space):
                     self._symbol_objective_terms["symbol_commitment"] = prev + commit
             self.accumulate_symbol_objective(predicted, target)
         elif use_vqvae_nonreversible:
-            # STE: forward = hard quantized, backward = identity to z_e.
+            # Non-reversible VQVAE: forward = hard quantized, backward uses
+            # the configured gradient estimator (snap/ste/rotation).
             z_e = act
             predicted = z_e.clone()
             self.subspace.set_event(z_e)
             self.subspace.what.forward(self.subspace)
             vspace = self.forwardEnd(self.subspace)
             quantized = vspace.materialize()
-            quantized_detached = quantized.detach()
-            z_q_ste = z_e + (quantized_detached - z_e).detach()
-            self.subspace.set_event(z_q_ste)
+            z_q = Codebook.apply_gradient_estimator(
+                z_e, quantized, mode=self.gradient_mode)
+            self.subspace.set_event(z_q)
             vspace = self.forwardEnd(self.subspace)
+            quantized_detached = quantized.detach()
             n = min(z_e.shape[-1], quantized_detached.shape[-1], self.nDim)
             if self.commitment_beta > 0.0 and n > 0:
                 commit = self.commitment_beta * F.mse_loss(
@@ -5183,9 +5376,18 @@ class SymbolicSpace(Space):
                 prev = self._symbol_objective_terms.get(
                     "symbol_commitment", commit.new_tensor(0.0))
                 self._symbol_objective_terms["symbol_commitment"] = prev + commit
+            # Also pick up the codebook-internal commit loss (VQ's own
+            # encoder-commitment term). Previously discarded; now threaded
+            # into the objective so it actually drives learning.
+            cb_commit = getattr(self.subspace.what, "last_commit_loss", None)
+            if cb_commit is not None and torch.is_tensor(cb_commit) and cb_commit.requires_grad:
+                prev = self._symbol_objective_terms.get(
+                    "codebook_commit", cb_commit.new_tensor(0.0))
+                self._symbol_objective_terms["codebook_commit"] = prev + cb_commit
             self.accumulate_symbol_objective(predicted, quantized_detached)
-        elif legacy_quantize:
-            # Legacy hard-quantize path (pre-VQVAE behavior).
+        elif hard_quantize:
+            # Non-VQVAE hard-quantize: run the codebook forward to snap
+            # to the nearest entry and use that as the symbol target.
             predicted = act.clone()
             self.subspace.set_event(act)
             self.subspace.what.forward(self.subspace)
@@ -5249,9 +5451,9 @@ class SymbolicSpace(Space):
         return self.rule_codebook(idx).squeeze(0)
 
     def reverse(self, vspace, wordSpace=None):
-        """Map symbol vectors back to concept vectors via PiLayer.reverse (Π⁻¹).
+        """Map symbol vectors back to concept vectors via PiLayer.reverse (Pi^-^1).
 
-        Reverse maps on nDim axis: [B, N, symbol_dim] → [B, N, concept_dim].
+        Reverse maps on nDim axis: [B, N, symbol_dim] -> [B, N, concept_dim].
         """
         if self.passThrough:
             return vspace
@@ -5273,7 +5475,7 @@ class SymbolicSpace(Space):
         return result
 
     def evaluate_truth(self, vspace, wordSpace=None):
-        """START-level: evaluate truth of the full stack → scalar.
+        """START-level: evaluate truth of the full stack -> scalar.
 
         Reads ``trueForward`` from the S-tier SyntacticLayer owned by
         WordSpace. Returns a passthrough when no WordSpace is wired
@@ -5373,7 +5575,7 @@ class OutputSpace(Space):
     def forward(self, vspace):
         """Acting: project symbols to task output."""
         if self.nonlinear_output:
-            # Activation-mode: PiLayer on symbol activations [B, nSymbols] → [B, nOutput]
+            # Activation-mode: PiLayer on symbol activations [B, nSymbols] -> [B, nOutput]
             act = vspace.materialize(mode="activation")
             output = self._piLayer.forward(act)
             output = TheData.denormalize(output, which="output")
@@ -5392,7 +5594,7 @@ class OutputSpace(Space):
     def reverse(self, vspace):
         """Being acted upon: map output back to symbolic space."""
         if self.nonlinear_output:
-            # Activation-mode: PiLayer reverse [B, nOutput] → [B, nSymbols]
+            # Activation-mode: PiLayer reverse [B, nOutput] -> [B, nSymbols]
             act = vspace.materialize(mode="activation")
             act_norm = TheData.normalize(act, which="output")
             symbol_act = self._piLayer.reverse(act_norm)
@@ -5555,7 +5757,7 @@ class Grammar:
         self.interpretation = 0.5
         self.thought_free = False
 
-    # ── Rule catalog ──────────────────────────────────────────────────
+    # -- Rule catalog --------------------------------------------------
 
     def __len__(self):
         self._ensure_configured()
@@ -5577,7 +5779,7 @@ class Grammar:
     def binary_rules(self):
         return [i for i in range(len(self.rules)) if self.rules[i].arity == 2]
 
-    # ── Configuration from XML ────────────────────────────────────────
+    # -- Configuration from XML ----------------------------------------
 
     def configure(self, grammar_dict):
         self.rules = []
@@ -5597,17 +5799,17 @@ class Grammar:
             args_str = rhs[rhs.index('(') + 1:rhs.rindex(')')]
             args = [a.strip() for a in args_str.split(',') if a.strip()]
             arity = len(args)
-            canonical = f"{lhs} → {rhs}"
+            canonical = f"{lhs} -> {rhs}"
             return self.RuleDef(lhs, canonical, arity, func_name)
-        if rhs == 'ε':
-            return self.RuleDef(lhs, f"{lhs} → ε", 0, None)
+        if rhs == 'epsilon':
+            return self.RuleDef(lhs, f"{lhs} -> epsilon", 0, None)
         if rhs == 'I P':
-            return self.RuleDef(lhs, f"{lhs} → chunk(I, P)", 2, 'chunk')
+            return self.RuleDef(lhs, f"{lhs} -> chunk(I, P)", 2, 'chunk')
         if rhs in ('S', 'C', 'P'):
-            return self.RuleDef(lhs, f"{lhs} → {rhs}", 1, None)
+            return self.RuleDef(lhs, f"{lhs} -> {rhs}", 1, None)
         if rhs == 'I':
-            return self.RuleDef(lhs, f"{lhs} → I", 0, None)
-        raise ValueError(f"Cannot parse grammar rule: {lhs} → {rhs}")
+            return self.RuleDef(lhs, f"{lhs} -> I", 0, None)
+        raise ValueError(f"Cannot parse grammar rule: {lhs} -> {rhs}")
 
     _NOOP_GRAMMAR = {'START': 'S', 'S': 'C', 'C': ['not(C)', 'P'], 'P': 'I'}
 
@@ -5630,7 +5832,7 @@ class Grammar:
         except (KeyError, AttributeError, TypeError, ValueError):
             pass
 
-    # ── Rule queries ──────────────────────────────────────────────────
+    # -- Rule queries --------------------------------------------------
 
     def symbolic(self):
         self._ensure_configured()
@@ -5678,22 +5880,22 @@ class Grammar:
         return {r.method_name for r in self.rules if r.tier == 'P' and r.method_name}
 
     def _c_rule_ids(self):
-        """Return dict of method_name → rule_id for C-tier operational rules."""
+        """Return dict of method_name -> rule_id for C-tier operational rules."""
         result = {}
         for i, r in enumerate(self.rules):
             if r.tier == 'C' and r.method_name is not None:
                 result[r.method_name] = i
         return result
 
-    # _conceptual_forward, _symbolic_forward, forward, reverse — moved to
+    # _conceptual_forward, _symbolic_forward, forward, reverse -- moved to
     # specialized SyntacticLayer subclasses (ConceptualSyntacticLayer,
     # SymbolicSyntacticLayer, PerceptualSyntacticLayer).  Grammar retains
     # only rule catalog, project(), and *Forward/*Reverse operations.
 
-    # composeSyntax, _compose_conceptual, _compose_symbolic — removed.
+    # composeSyntax, _compose_conceptual, _compose_symbolic -- removed.
     # Soft superposition is now inlined in _conceptual_forward and _symbolic_forward.
 
-    # ── C-tier operations live on SyntacticLayer / ConceptualSyntacticLayer
+    # -- C-tier operations live on SyntacticLayer / ConceptualSyntacticLayer
     # as *Forward / *Reverse method pairs.  See _RULE_METHODS dispatch.
 TheGrammar = Grammar()
 
@@ -5705,7 +5907,7 @@ class SyntacticLayer(Layer):
     embeddings.
 
     **This layer only predicts rules and generates word tuples.**  It does
-    not execute operations on representations — that is done by the owning
+    not execute operations on representations -- that is done by the owning
     space's ``projectXxx()`` method, which knows the native representation
     type (activations, vectors, etc.).
 
@@ -5715,7 +5917,7 @@ class SyntacticLayer(Layer):
         rules:     list of global Grammar rule IDs this layer handles
                    (e.g. [1,2,3,4,5] for the symbolic space).
         transition_rule: optional global rule ID for the transition rule
-                   (e.g. 6 for S→C).  Included in prediction but signals
+                   (e.g. 6 for S->C).  Included in prediction but signals
                    hand-off to the next space.
         max_depth: maximum derivation depth.
         hidden_dim: width of the shared derivation hidden state.
@@ -5724,10 +5926,10 @@ class SyntacticLayer(Layer):
     """
 
     # Transition bias scale: (1 - interpretation) * TRANSITION_SCALE is added
-    # to the transition rule's logit. The transition rule (S→C or C→P) acts
-    # as NOP — "stop deriving this tier, pass through."
-    # Low interpretation → transition dominates → no reductions (episodic).
-    # High interpretation → grammar rules fire → composition (semantic).
+    # to the transition rule's logit. The transition rule (S->C or C->P) acts
+    # as NOP -- "stop deriving this tier, pass through."
+    # Low interpretation -> transition dominates -> no reductions (episodic).
+    # High interpretation -> grammar rules fire -> composition (semantic).
     TRANSITION_SCALE = 10.0
 
     def __init__(self, nInput, nOutput, rules, transition_rule=None,
@@ -5747,7 +5949,7 @@ class SyntacticLayer(Layer):
         if transition_rule is not None and transition_rule not in self.all_rules:
             self.all_rules.append(transition_rule)
         self.num_rules  = len(self.all_rules)
-        # Map from local index → global rule ID
+        # Map from local index -> global rule ID
         self.rule_index = {rid: i for i, rid in enumerate(self.all_rules)}
         # Local index of the transition rule (for interpretation bias)
         self.transition_index = (self.rule_index.get(transition_rule)
@@ -5773,7 +5975,7 @@ class SyntacticLayer(Layer):
         # Register child layers for ergodic dispatch
         self.layers = [self.input_proj, self.derivation_layer, self.rule_head]
 
-    # ── Basis-delegated rule execution ────────────────────────────
+    # -- Basis-delegated rule execution ----------------------------
 
     def _basis(self, subspace):
         """Return the Basis from a SubSpace (or None)."""
@@ -5784,13 +5986,13 @@ class SyntacticLayer(Layer):
         b = self._basis(subspace)
         return b is None or b.monotonic
 
-    # ── Forward/Reverse dispatch ────────────────────────────────────
+    # -- Forward/Reverse dispatch ------------------------------------
     #
     # C-tier ops (invertible): not, intersection, union, lift, lower
     # S-tier ops (lossy, no inverse): equals, part, true, non, swap
     # P-tier ops (invertible): chunk
     #
-    # _RULE_METHODS maps rule name → (forwardName, reverseName|None, binary)
+    # _RULE_METHODS maps rule name -> (forwardName, reverseName|None, binary)
 
     _RULE_METHODS = {
         'union':        ('unionForward',        'unionReverse',        True),
@@ -5807,7 +6009,7 @@ class SyntacticLayer(Layer):
         """Execute a grammar rule forward. Subclasses override for parametric rules."""
         method_name = grammar.rules[rule_id].method_name
         if method_name is None:
-            return left  # transition — pass through
+            return left  # transition -- pass through
 
         if method_name in self._RULE_METHODS:
             fn_name, _, binary = self._RULE_METHODS[method_name]
@@ -5829,7 +6031,7 @@ class SyntacticLayer(Layer):
         if method_name in self._RULE_METHODS:
             _, rev_name, binary = self._RULE_METHODS[method_name]
             if rev_name is None:
-                return result  # lossy op — no inverse
+                return result  # lossy op -- no inverse
             fn = getattr(self, rev_name)
             if binary:
                 return fn(result, right, subspace)
@@ -5837,7 +6039,7 @@ class SyntacticLayer(Layer):
 
         return result
 
-    # ── C-tier: invertible operations ─────────────────────────────
+    # -- C-tier: invertible operations -----------------------------
 
     def notForward(self, left, subspace):
         b = self._basis(subspace)
@@ -5875,7 +6077,7 @@ class SyntacticLayer(Layer):
             return b.disjunction_inverse(result, right, monotonic=self._mono(subspace))
         return result
 
-    # ── P-tier: chunk (invertible) ────────────────────────────────
+    # -- P-tier: chunk (invertible) --------------------------------
 
     def chunkForward(self, left, right, subspace):
         b = self._basis(subspace)
@@ -5891,7 +6093,7 @@ class SyntacticLayer(Layer):
             return b.disjunction_inverse(result, right, monotonic=True)
         return result
 
-    # ── S-tier: lossy operations (no inverse) ─────────────────────
+    # -- S-tier: lossy operations (no inverse) ---------------------
 
     def equalsForward(self, left, right, subspace):
         b = self._basis(subspace)
@@ -5911,8 +6113,8 @@ class SyntacticLayer(Layer):
             return score * right
         return torch.min(left, right)
 
-    # ── S-tier trinity: true / false / non as partition of unity ──
-    # For x ∈ [-1, 1]:  true(x) + false(x) + non(x) = 1
+    # -- S-tier trinity: true / false / non as partition of unity --
+    # For x  in  [-1, 1]:  true(x) + false(x) + non(x) = 1
     #   true(x)  = max(0, x)     "I commit: yes"
     #   false(x) = max(0, -x)    "I commit: no"
     #   non(x)   = 1 - |x|       "I commit: indeterminate"
@@ -5971,16 +6173,16 @@ class SyntacticLayer(Layer):
             return b.disjunction(left, right, monotonic=self._mono(subspace))
         return torch.maximum(left, right)
 
-    # ── Rule #2: S-tier slot selectors (what / where / when) ─────
+    # -- Rule #2: S-tier slot selectors (what / where / when) -----
     # Parameter-free axis projections. Each zeros non-selected column
-    # blocks while preserving shape. The C → S boundary demux has
+    # blocks while preserving shape. The C -> S boundary demux has
     # already put the content in the canonical [what|where|when]
     # layout (see SubSpace.demux); these selectors just mask the
     # non-selected blocks when the activation tensor is vector-shaped.
     #
     # When compose() passes [B, N] scalar norms (non-vector mode) the
     # block structure isn't accessible, so selectors degenerate to
-    # identity — the grammar's axis semantics still hold because the
+    # identity -- the grammar's axis semantics still hold because the
     # selected vs non-selected dimensions are carried by the
     # subspace's modality tensors rather than the [B, N] activation.
 
@@ -5995,7 +6197,7 @@ class SyntacticLayer(Layer):
     def whatForward(self, left, subspace):
         """Axis selector: keep what-block, zero where/when-blocks."""
         if left.ndim < 3:
-            return left  # scalar activation mode — no columns to slice
+            return left  # scalar activation mode -- no columns to slice
         nWhat, nWhere, nWhen = self._split_widths(subspace)
         if nWhat is None or (nWhere == 0 and nWhen == 0):
             return left
@@ -6025,7 +6227,7 @@ class SyntacticLayer(Layer):
         out[..., nWhat + nWhere:] = left[..., nWhat + nWhere:]
         return out
 
-    # ── forward: predict rules ────────────────────────────────────
+    # -- forward: predict rules ------------------------------------
 
     def forward(self, x):
         """Predict rule distributions and build word tuples.
@@ -6051,7 +6253,7 @@ class SyntacticLayer(Layer):
         all_probs  = []
 
         # Transition bias: (1 - interpretation) * scale on the transition
-        # rule logit. The transition rule (S→C or C→P) is the NOP — "stop
+        # rule logit. The transition rule (S->C or C->P) is the NOP -- "stop
         # deriving, pass through." Low interpretation biases toward it.
         interp = self.grammar.interpretation if self.grammar is not None else 0.5
         transition_bias = (1.0 - interp) * self.TRANSITION_SCALE
@@ -6063,7 +6265,7 @@ class SyntacticLayer(Layer):
             logits = self.rule_head.forward(h)  # [B, num_rules]
 
             # Bias the transition rule logit. Detach the bias so it
-            # doesn't flow gradients — interpretation is a hyperparameter,
+            # doesn't flow gradients -- interpretation is a hyperparameter,
             # the grammar shouldn't learn to predict NOP.
             if self.transition_index is not None and transition_bias > 0:
                 logits = logits.clone()
@@ -6100,7 +6302,7 @@ class SyntacticLayer(Layer):
             "words":           words,
         }
 
-    # ── helpers ────────────────────────────────────────────────────
+    # -- helpers ----------------------------------------------------
 
     def _active_positions(self, x):
         """Extract per-batch lists of active (nonzero) positions."""
@@ -6148,7 +6350,7 @@ class SyntacticLayer(Layer):
             return self.transition_rule
         return self.all_rules[0]
 
-    # ── reverse: deterministic tree-walk ──────────────────────────
+    # -- reverse: deterministic tree-walk --------------------------
 
     def reverse(self, words, nVectors, batch_size):
         """Decode derivation to recover the activation vector."""
@@ -6157,7 +6359,7 @@ class SyntacticLayer(Layer):
             activation[b, v] = 1.0
         return activation
 
-    # ── utilities ─────────────────────────────────────────────────
+    # -- utilities -------------------------------------------------
 
     def set_tau(self, tau):
         """Anneal the Gumbel-softmax temperature."""
@@ -6250,7 +6452,7 @@ class PerceptualSyntacticLayer(SyntacticLayer):
             data, span_meta = cb.hard_merge_spans(data, byte_indices)
             subspace._byte_span_meta = span_meta
 
-        # Learned BPE loop — boundary check delegates to ChunkLayer
+        # Learned BPE loop -- boundary check delegates to ChunkLayer
         while True:
             any_merged = False
             pairs = subspace.top_two_of_stack(data)
@@ -6273,7 +6475,7 @@ class PerceptualSyntacticLayer(SyntacticLayer):
             if not any_merged:
                 break
 
-        # Byte mode: compact sparse → dense word slots
+        # Byte mode: compact sparse -> dense word slots
         if byte_indices is not None:
             nWordSlots = getattr(subspace, '_nWordSlots', data.shape[1])
             where_enc = getattr(subspace, 'whereEncoding', None)
@@ -6328,8 +6530,8 @@ class ConceptualSyntacticLayer(SyntacticLayer):
     """C-tier SyntacticLayer: deterministic not + soft-weighted composition.
 
     Rule application order:
-      1. not(C) — flips negative concepts to positive (mean < 0).
-      2. Soft superposition — remaining rules weighted by predicted probs.
+      1. not(C) -- flips negative concepts to positive (mean < 0).
+      2. Soft superposition -- remaining rules weighted by predicted probs.
 
     Owns lift/lower layers.
     """
@@ -6346,10 +6548,10 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         self.lowering_layer = LoweringLayer(concept_dim)
         self._symbolic_space = None  # set by BasicModel after init
 
-    # ── C-tier projected ops: lift/lower via PiLayer ────────────────
+    # -- C-tier projected ops: lift/lower via PiLayer ----------------
 
     def _cs_layer(self):
-        """PiLayer for concept→symbol projection (ss.layer)."""
+        """PiLayer for concept->symbol projection (ss.layer)."""
         if self._symbolic_space is not None:
             return getattr(self._symbolic_space, 'layer', None)
         return None
@@ -6376,7 +6578,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
     def lowerForward(self, left, right, subspace):
         """Projected disjunction through symbolic space, back to concept space.
 
-        Rescale the sum by 1/2 so it stays in ``(-1, 1)`` — the operand
+        Rescale the sum by 1/2 so it stays in ``(-1, 1)`` -- the operand
         domain that ``PiLayer.reverse`` requires.  Both ``s_a`` and
         ``s_b`` are tanh outputs in ``(-1, 1)``; their unscaled sum lies
         in ``(-2, 2)`` which hits the hard clamp inside ``_to_mult`` and
@@ -6418,7 +6620,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         return super().project(grammar, rule_id, left, right, third, subspace=subspace)
 
     def reverse_project(self, grammar, rule_id, result, right=None, subspace=None):
-        """Inverse dispatch — delegates to super()."""
+        """Inverse dispatch -- delegates to super()."""
         return super().reverse_project(grammar, rule_id, result, right, subspace=subspace)
 
     def compose(self, data, subspace, grammar, target_count=None):
@@ -6431,7 +6633,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             target_count: If set, use pairwise reduction to this token count
                           (hierarchical mode). None uses cascading accumulator.
         Returns:
-            (composed_data, svo_or_None) — svo is set if ternary lift fired
+            (composed_data, svo_or_None) -- svo is set if ternary lift fired
         """
         subspace.word = []
         self.last_svo = None   # reset per-compose
@@ -6458,7 +6660,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
                 continue
             vec = data[b, pos]
 
-            # ── not: negate via Basis.negation (bitonic: -x, self-inverse)
+            # -- not: negate via Basis.negation (bitonic: -x, self-inverse)
             if not_rid is not None:
                 if vec.mean() < 0:
                     data = data.clone()
@@ -6486,7 +6688,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         out = super().forward(activation)
         rule_probs = out['rule_probs']  # [B, max_depth, num_rules]
 
-        # Identify composable rules (exclude not — already applied in Phase 1)
+        # Identify composable rules (exclude not -- already applied in Phase 1)
         exclude = {'not'}
         composable_local = []
         composable_global = []
@@ -6596,18 +6798,18 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         until the active count reaches target_count.
 
         Only binary-or-greater rules participate in the pairwise reduce.
-        A unary rule by definition cannot merge two operands — including
+        A unary rule by definition cannot merge two operands -- including
         one would make its per-pair output ignore ``right``, and if its
         probability dominates the soft mixture (which happens at init
         for any fresh SyntacticLayer with a biased softmax prior) the
-        reduce degenerates to ``composed ≈ left`` and ``right``'s
+        reduce degenerates to ``composed ~= left`` and ``right``'s
         content is silently discarded.  ``not`` is also excluded since
         it's already applied in Phase 1 of ``compose``.
         """
         B, N, D = data.shape
 
-        # Identify composable rules (exclude not — already applied in
-        # Phase 1 — AND any rule whose arity is < 2, which can't merge
+        # Identify composable rules (exclude not -- already applied in
+        # Phase 1 -- AND any rule whose arity is < 2, which can't merge
         # a pair at all; see docstring).
         exclude = {'not'}
         composable_local = []
@@ -6630,7 +6832,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             out = super().forward(activation)
             rule_probs = out['rule_probs']  # [B, max_depth, num_rules]
         else:
-            # Dims don't match SyntacticLayer — use uniform probs
+            # Dims don't match SyntacticLayer -- use uniform probs
             rule_probs = torch.ones(B, self.max_depth, len(self.all_rules),
                                     device=data.device) / len(self.all_rules)
 
@@ -6731,12 +6933,12 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         basis = getattr(subspace, 'basis', None)
         cb = basis.getW() if basis is not None else None
         if cb is None:
-            return data  # no codebook — fall back to identity
+            return data  # no codebook -- fall back to identity
 
         result = torch.zeros_like(data)
         for word in words:
             if word[WordEncoding.ORDER] != -1:
-                continue  # skip rule words — only terminals carry leaves
+                continue  # skip rule words -- only terminals carry leaves
             b = word[WordEncoding.BATCH]
             pos = word[WordEncoding.VECTOR]
             cb_idx = word[WordEncoding.LEAF1]
@@ -6814,7 +7016,7 @@ class SymbolicSyntacticLayer(SyntacticLayer):
         The query marker is pushed onto WordSubSpace at the
         accumulation point (see `compose()`), not by this forward.
         When the parse tree is re-evaluated downstream, `queryForward`
-        returns the first operand — the accumulator state that was
+        returns the first operand -- the accumulator state that was
         preserved when the cancelling contribution arrived. The second
         operand (the dropped symbol) exists only in the parse-tree
         record and is unused here.
@@ -6900,13 +7102,13 @@ class SymbolicSyntacticLayer(SyntacticLayer):
             results = torch.stack(results, dim=1)  # [B, num_rules, N]
             probs_d = rule_probs[:, d, :]           # [B, num_rules]
 
-            # ── Rule #3: norm-drop detection at the accumulation point ──
-            # Any symbolic contradiction (A ∧ ¬A, true(A) ∧ false(A),
+            # -- Rule #3: norm-drop detection at the accumulation point --
+            # Any symbolic contradiction (A  and  not A, true(A)  and  false(A),
             # axis-restricted variants) manifests as a significant drop
             # in the accumulator norm when the candidate is mixed in.
             # We detect the symptom here, push a `query` marker onto the
             # word-stream buffer, and preserve the prior accumulator.
-            # See plan: "Rule #3 — Query at S-tier".
+            # See plan: "Rule #3 -- Query at S-tier".
             candidate = (probs_d.unsqueeze(-1) * results).sum(dim=1)  # [B, N]
             prev_norm = left.norm(dim=-1)         # [B]
             cand_norm = candidate.norm(dim=-1)    # [B]
@@ -6937,7 +7139,7 @@ class SymbolicSyntacticLayer(SyntacticLayer):
                         word_sub.push(b, query_rid,
                                       leaves=(left_rid, right_gid, -1))
                     # Preserve the prior rule identity for this batch
-                    # row — the accumulator did not advance.
+                    # row -- the accumulator did not advance.
             else:
                 composed = candidate
 
@@ -6947,7 +7149,7 @@ class SymbolicSyntacticLayer(SyntacticLayer):
                 if d < len(active_positions[b]):
                     subspace.add_word(b, active_positions[b][d], all_rules[best[b].item()])
                     # Track last advancing rule per batch for future
-                    # query-push referents — only update for rows
+                    # query-push referents -- only update for rows
                     # that did not trip the query mask this step.
                     if not bool(query_mask[b].item()):
                         last_rule_per_batch[b] = all_rules[best[b].item()]
@@ -7005,7 +7207,7 @@ class WordSpace(Space):
     Subclasses ``Space`` for the universal training contract
     (``getParameters`` / ``paramUpdate`` / ``set_sigma``), but
     bypasses ``Space.__init__`` because there is no factory-style
-    input/output/codebook shape tuple — the subspace is a
+    input/output/codebook shape tuple -- the subspace is a
     ``WordSubSpace`` built from the symbolic peer's column layout
     and all children are registered directly into ``self.layers`` /
     ``self.params`` so the inherited training-contract walks still
@@ -7018,7 +7220,7 @@ class WordSpace(Space):
     def __init__(self, perceptualSpace, conceptualSpace, symbolicSpace,
                  nPercepts, nConcepts, nSymbols,
                  concept_dim, symbol_dim):
-        # Bypass Space.__init__ — WordSpace doesn't fit the factory
+        # Bypass Space.__init__ -- WordSpace doesn't fit the factory
         # style. Call nn.Module directly and populate the Space-contract
         # fields by hand.
         nn.Module.__init__(self)
@@ -7072,7 +7274,7 @@ class WordSpace(Space):
             self._build_symbolic_layer(
                 symbolicSpace, nSymbols, grammar, symbol_dim)
 
-        # 6. TruthLayer — shared truth store for symbolic activations.
+        # 6. TruthLayer -- shared truth store for symbolic activations.
         # Lives on WordSpace so SymbolicSpace doesn't have to carry it
         # alongside its already heavy pi/sort/codebook machinery.
         try:
@@ -7086,7 +7288,7 @@ class WordSpace(Space):
             if all(p is not q for q in self.params):
                 self.params.append(p)
 
-        # 7. DiscourseSpace — optional inter-sentence substrate.
+        # 7. DiscourseSpace -- optional inter-sentence substrate.
         # Gated on <architecture><training><sentencePrediction>; tasks
         # without inter-sentence structure (XOR, MNIST) leave it off.
         # The contrastive loss has no learnable parameters; the three
@@ -7121,7 +7323,7 @@ class WordSpace(Space):
                     if all(p is not q for q in self.params):
                         self.params.append(p)
 
-    # ── truth-modulated loss ─────────────────────────────────────────
+    # -- truth-modulated loss -----------------------------------------
     def truth_modulated_loss(self, total_loss, symbolic_space,
                              symbol_acts=None, universality_score=None,
                              luminosity_weight=0.1, universality_weight=0.1,
@@ -7130,20 +7332,20 @@ class WordSpace(Space):
 
         The transform has two parts:
 
-        1. **Multiplicative modulation** — penalize irrational and
+        1. **Multiplicative modulation** -- penalize irrational and
            unkind propositions by scaling ``total_loss`` by
            ``(1 + lum_w * (1 - lum_norm) + u_w * (1 - u_norm))``,
            where ``lum_norm = luminosity(symbolic_space.layer).clamp(0, 1)``
            and ``u_norm = universality_score.clamp(-1, 1)`` (or 0
            when the caller has no universality score cached yet).
 
-        2. **Additive falsity penalty** — when
+        2. **Additive falsity penalty** -- when
            ``truth_loss_weight > 0`` and the caller provides
            committed symbol activations, add
            ``truth_loss_weight * falsity_penalty(symbol_acts, basis)``
            using ``symbolic_space.subspace.basis``.  ``symbol_acts``
            should be the last entry of the model's ``symbol_states``
-           cache — the post-pi activations from the final Sigma-Pi
+           cache -- the post-pi activations from the final Sigma-Pi
            iteration.  Both operands of the
            disjunction then live in symbol space by construction
            (stored truths were also recorded from symbol-space
@@ -7152,7 +7354,7 @@ class WordSpace(Space):
         Returns ``total_loss`` unchanged when the TruthLayer is
         absent or empty (bootstrap case with no truths recorded
         yet).  The caller is responsible for only invoking this in
-        train mode — the method itself has no ``train`` flag.
+        train mode -- the method itself has no ``train`` flag.
 
         All inputs that reach outside WordSpace (``symbolic_space``,
         ``symbol_acts``, ``universality_score``, the three weights)
@@ -7182,7 +7384,7 @@ class WordSpace(Space):
 
         return total_loss
 
-    # ── wiring ───────────────────────────────────────────────────────
+    # -- wiring -------------------------------------------------------
     def attach_codebook_host(self, host):
         """Wire the unified rule codebook provider to WordSubSpace.
 
@@ -7218,7 +7420,7 @@ class WordSpace(Space):
             if all(p is not q for q in self.params):
                 self.params.append(p)
 
-    # ── private factory helpers: build + wire SyntacticLayers ────────
+    # -- private factory helpers: build + wire SyntacticLayers --------
     def _resolve_hidden_dim(self, n_slots):
         try:
             configured = int(TheXMLConfig.get("WordSpace.syntacticHiddenDim"))
@@ -7271,7 +7473,7 @@ class WordSpace(Space):
         space.attach_wordSpace(self)
         return layer
 
-    # ── per-tier composition methods ─────────────────────────────────
+    # -- per-tier composition methods ---------------------------------
     def forwardPercepts(self, data, subspace):
         """P-tier compose. Side effect: word-emitting pushes onto the
         buffer. Returns the composed activation.
@@ -7291,10 +7493,10 @@ class WordSpace(Space):
         ``ConceptualSyntacticLayer._compose_to_target``.  Pairwise
         reduction slices each slot to ``[1, 1, D]`` before invoking
         the grammar's binary rules, which degenerates the per-slot
-        PiLayer to a pure ``D→D`` map and lets the two operands'
+        PiLayer to a pure ``D->D`` map and lets the two operands'
         content actually merge into one slot.  The cascading default
         (``target_count=None``) keeps full ``[B, N, D]`` shapes and so
-        cannot move information across the slot axis — fine for
+        cannot move information across the slot axis -- fine for
         sparse-representation use but useless whenever the two
         operands live in different slots.
         """
@@ -7337,7 +7539,7 @@ class WordSpace(Space):
             return data
         return layer.decompose(data, subspace, TheGrammar)
 
-    # ── buffer access + lifecycle ────────────────────────────────────
+    # -- buffer access + lifecycle ------------------------------------
     def read(self):
         """Return the fixed-width stack tensor for ConceptualSpace to
         concat with percepts and symbols.
@@ -7347,43 +7549,6 @@ class WordSpace(Space):
     def clear_sentence(self):
         """Reset the stack at sentence boundaries."""
         self.subspace.clear()
-        self.reset_emit_state()
-
-    # ── Merged-loop termination signal (Stage 2) ──────────────────────
-    # ``_emit_count`` / ``_n_percepts_consumed`` track how many words the
-    # outer loop has emitted, so the merged processing loop can ask
-    # ``done()`` instead of branching on mode. These counters are
-    # populated by the outer loop (see Models.py), not by WordSpace's own
-    # per-tier forwards — WordSpace is a dispatcher, not a word emitter.
-    _emit_count = 0
-    _n_percepts_consumed = 0
-    _parent = None  # set by BasicModel at construction for done() checks
-
-    def note_emit(self, consumed_percept: bool = False):
-        """Called by the outer loop after each word emission."""
-        self._emit_count += 1
-        if consumed_percept:
-            self._n_percepts_consumed += 1
-
-    def reset_emit_state(self):
-        """Called at sentence boundaries to restart the termination counters."""
-        self._emit_count = 0
-        self._n_percepts_consumed = 0
-
-    def done(self) -> bool:
-        """Return True when the outer loop should terminate for this sentence.
-
-        Serial mode (``useGrammar=="all"``): done after nPercepts emissions.
-        Parallel / raw (``thoughtFree`` / ``none``): done after a single emit.
-        """
-        parent = self._parent
-        if parent is None:
-            return self._emit_count >= 1
-        use_grammar = getattr(parent, "useGrammar", "none")
-        if use_grammar == "all":
-            n_percepts = int(getattr(parent, "nPercepts", 1) or 1)
-            return self._n_percepts_consumed >= n_percepts
-        return self._emit_count >= 1
 
     def get_blocks(self, b=0):
         """Return the parse-tree ledger for batch row `b`."""

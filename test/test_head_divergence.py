@@ -1,5 +1,5 @@
 """
-Head Divergence Test — sentence vector vs. head word
+Head Divergence Test -- sentence vector vs. head word
 =====================================================
 
 Verifies that the sentence vector (top-of-stack after composition) does
@@ -80,7 +80,7 @@ class TestHeadDivergence(unittest.TestCase):
                 return None, None, -1
             inputTensor, _ = batch
 
-            # Forward through Input → Percept → Concept
+            # Forward through Input -> Percept -> Concept
             with torch.no_grad():
                 ws = getattr(self.model, 'wordSpace', None)
                 inputs = self.model.inputSpace.forward(inputTensor)
@@ -136,8 +136,8 @@ class TestHeadDivergence(unittest.TestCase):
 
                 self.assertGreater(
                     cos_sim, _MIN_COS,
-                    f"'{sentence}': angle={angle_deg:.1f}° (cos={cos_sim:.4f}) "
-                    f"exceeds {_MAX_ANGLE_DEG}° threshold")
+                    f"'{sentence}': angle={angle_deg:.1f}deg (cos={cos_sim:.4f}) "
+                    f"exceeds {_MAX_ANGLE_DEG}deg threshold")
 
     def test_decompose_reconstructs_leaves(self):
         """decompose should reconstruct leaf vectors from codebook indices."""

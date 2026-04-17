@@ -28,7 +28,7 @@
     <training>
       <numTrials>1</numTrials>
       <numEpochs>2</numEpochs>
-      <batchSize>8</batchSize>
+      <batchSize>64</batchSize>
       <learningRate>0.001</learningRate>
       <reverseScale>0.1</reverseScale>
       <trainEmbedding>ARLM</trainEmbedding>
@@ -40,7 +40,7 @@
   </architecture>
 
   <WordSpace>
-    <useGrammar>false</useGrammar>
+    <useGrammar>none</useGrammar>
     <language>
       <grammar>
         <START>S</START>

@@ -1,7 +1,7 @@
-"""Word embedding pipeline: FineWeb-EDU → lex → parse → CBOW → BasicModel.kv
+"""Word embedding pipeline: FineWeb-EDU -> lex -> parse -> CBOW -> BasicModel.kv
 
 Training phase that produces a static word embedding artifact. InputSpace
-loads this artifact at startup — it does not train.
+loads this artifact at startup -- it does not train.
 
 Pipeline stages:
   1. Stream text documents from FineWeb-EDU parquet shards
@@ -264,7 +264,7 @@ class WordVectors(nn.Module):
             print()
 
 
-# FineWeb-EDU streaming — canonical implementation lives in data.py
+# FineWeb-EDU streaming -- canonical implementation lives in data.py
 from data import download_shard, get_shard_paths, iter_documents  # noqa: F401
 
 
@@ -277,7 +277,7 @@ class PretrainModel:
 
     Supports both bulk training (``train``) and incremental single-sentence
     updates (``train_step``).  Operates directly on the WordVectors'
-    nn.Parameter — no separate nn.Embedding.
+    nn.Parameter -- no separate nn.Embedding.
     """
 
     def __init__(self, wv: WordVectors, learning_rate=0.01, neg_samples=64):
@@ -297,7 +297,7 @@ class PretrainModel:
             lr=learning_rate,
         )
 
-        # Per-word gradient variance (sigma) — lazy-initialized in observe_sigma
+        # Per-word gradient variance (sigma) -- lazy-initialized in observe_sigma
         self.sigma = None
         self.sigma_mean = None
         self.sigma_step = 0
@@ -334,7 +334,7 @@ class PretrainModel:
     # -- single-sentence update ------------------------------------------------
 
     def _neg_sampling_loss(self, queries, target_idx):
-        """Negative sampling loss: −log σ(q·w⁺) − Σ log σ(−q·wₖ⁻).
+        """Negative sampling loss: -log sigma(q*w^+) - Sigma log sigma(-q*w_k^-).
 
         Args:
             queries: [N, dim] query vectors (context centroids).
@@ -492,7 +492,7 @@ class StreamingSBOWTrainer:
     """Two-pass SBOW trainer: build vocab first, then stream-train per sentence.
 
     Pass 1: Stream documents to count words and build vocabulary.
-    Pass 2: Stream documents again, train SBOW per sentence — each word
+    Pass 2: Stream documents again, train SBOW per sentence -- each word
             predicted from its leave-one-out centroid via full softmax.
     The model is allocated once at its final size.  Uses SGD to avoid
     the 2x memory overhead of Adam's momentum buffers.
@@ -680,14 +680,14 @@ def prune_embeddings(path, min_frequency, output=None):
     total = int(wv.total_count)
 
     if total == 0:
-        print(f"No frequency data in {path} (total_count=0) — nothing to prune.")
+        print(f"No frequency data in {path} (total_count=0) -- nothing to prune.")
         return
 
     prune_indices = [i for i, word in enumerate(wv.index_to_key)
                      if wv.counts[i] / total < min_frequency]
     old_size = len(wv)
     n_pruned = wv.remove(prune_indices)
-    print(f"Vocabulary: {old_size} → {len(wv)}  ({n_pruned} pruned below {min_frequency})")
+    print(f"Vocabulary: {old_size} -> {len(wv)}  ({n_pruned} pruned below {min_frequency})")
 
     out_path = output or path
     wv.save(out_path)

@@ -9,7 +9,7 @@
 | Document | Description |
 |---|---|
 | [Architecture](doc/Architecture.md) | Pipeline design, layer types, invertible LDU factorisation |
-| [Spaces](doc/Spaces.md) | All six spaces: Input → Perceptual → Conceptual → Symbolic → Syntactic → Output |
+| [Spaces](doc/Spaces.md) | All six spaces: Input $\rightarrow$ Perceptual $\rightarrow$ Conceptual $\rightarrow$ Symbolic $\rightarrow$ Syntactic $\rightarrow$ Output |
 | [Ergodic](doc/Ergodic.md) | Gradient energy sensor, adaptive exploration, factor-level noise injection |
 | [Training](doc/Training.md) | Two-phase training, SBOW embeddings, masked prediction modes |
 | [Params](doc/Params.md) | Complete XML configuration reference |
@@ -24,9 +24,9 @@
 
 BasicModel is a parameterized neural architecture with three independent levers:
 
-- **Ergodic** — adaptive bias-variance control via a gradient energy sensor (not gradient descent)
-- **Certainty** — per-neuron certainty tracking; neurons graduate from exploration to exploitation independently
-- **Reversible** — bidirectional training: forward prediction + backward reconstruction in a single optimizer pass
+- **Ergodic** -- adaptive bias-variance control via a gradient energy sensor (not gradient descent)
+- **Certainty** -- per-neuron certainty tracking; neurons graduate from exploration to exploitation independently
+- **Reversible** -- bidirectional training: forward prediction + backward reconstruction in a single optimizer pass
 
 Model configurations are specified in XML and can be compared side-by-side. See [doc/Architecture.md](doc/Architecture.md) for the full mathematical treatment.
 
@@ -109,7 +109,7 @@ See [doc/Params.md](doc/Params.md) for the full parameter reference.
 
 Each run produces an HTML report (timestamped in `output/`) containing:
 
-- **Error per Epoch** — training and test loss curves
-- **Accuracy per Digit** — per-class accuracy breakdown
+- **Error per Epoch** -- training and test loss curves
+- **Accuracy per Digit** -- per-class accuracy breakdown
 
 In compare mode, additional overlay plots show combined loss and accuracy across models with color-coded legends.

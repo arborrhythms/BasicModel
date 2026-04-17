@@ -7,7 +7,7 @@ Part A: Why is ergodic always 50%?
   - Check if paramUpdate() is destabilizing
 
 Part B: Can widening the symbolic bottleneck reduce recon loss?
-  - nSymbols=3 (current) → 4, 6, 8
+  - nSymbols=3 (current) -> 4, 6, 8
   - Test if recon loss drops with more symbols
 """
 

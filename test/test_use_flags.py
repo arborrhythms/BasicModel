@@ -28,10 +28,10 @@ def _load(cfg_name):
 # can't silently flip them.  Configs that cannot instantiate on the current
 # tree are excluded; their loading failures are pre-existing issues
 # (unrelated to the ramsified refactor) and are tracked separately:
-#   - model.xml         — BasicModel template, not a MentalModel
-#   - MM_5M.xml         — reconstruct=concepts fails validate_config
-#   - MM_shamatha.xml   — ConceptualSpace nVectors!=nActive
-#   - MM_xor_step4.xml  — ConceptualSpace nVectors!=nActive
+#   - model.xml         -- BasicModel template, not a MentalModel
+#   - MM_5M.xml         -- reconstruct=concepts fails validate_config
+#   - MM_shamatha.xml   -- ConceptualSpace nVectors!=nActive
+#   - MM_xor_step4.xml  -- ConceptualSpace nVectors!=nActive
 EXPECTED = {
     "MM_400M.xml":           (True,  "none"),
     "MM_xor.xml":            (True,  "none"),

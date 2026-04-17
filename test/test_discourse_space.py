@@ -1,4 +1,4 @@
-"""Tests for DiscourseSpace — inter-sentence [S, W] snapshot substrate.
+"""Tests for DiscourseSpace -- inter-sentence [S, W] snapshot substrate.
 
 DiscourseSpace is a service space that sits above WordSpace. It owns
 two rings of per-sentence ``[S | W]`` concatenations (a recent buffer
@@ -7,12 +7,12 @@ the repulsive force), plus a contrastive dual-force cosine loss over
 the full flattened snapshot vector. It has no learnable parameters.
 
 Covers:
-  1. Unit-level DiscourseSpace behavior (no model) — snapshot round
+  1. Unit-level DiscourseSpace behavior (no model) -- snapshot round
      trip, padding/truncation, ring eviction + centroid folding,
      contrastive loss arithmetic (attractive alone, attractive +
      repulsive), reset, split, gradient flow through the live
      (s, w) arguments.
-  2. BasicModel integration — that building a MentalModel wires
+  2. BasicModel integration -- that building a MentalModel wires
      DiscourseSpace in, that forward() populates the pending snapshot
      attributes, and that runBatch-equivalent flow pushes snapshots
      into history.
@@ -99,10 +99,10 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
             lam=self.LAM,
         )
 
-    # ── snapshot / ring plumbing ─────────────────────────────────────
+    # -- snapshot / ring plumbing -------------------------------------
 
     def test_snapshot_roundtrip(self):
-        """snapshot() → latest_snapshot() returns the assembled row."""
+        """snapshot() -> latest_snapshot() returns the assembled row."""
         d = self._make()
         s = torch.randn(self.N_SYMBOLS, self.N_DIM)
         w = torch.randn(self.MAX_DEPTH, self.N_DIM)
@@ -149,7 +149,7 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
         self.assertTrue(torch.allclose(
             oldest, torch.full_like(oldest, tags[1])))
         # Exactly one centroid should have been folded into prev_centroids
-        # — the mean of the pre-eviction recent window (tags[0], tags[1]).
+        # -- the mean of the pre-eviction recent window (tags[0], tags[1]).
         self.assertEqual(int(d._prev_count.item()), 1)
         expected_prev = torch.full_like(d._prev_centroids[0],
                                         (tags[0] + tags[1]) / 2.0)
@@ -233,7 +233,7 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
         w = torch.randn(self.MAX_DEPTH, self.N_DIM)
         self.assertIsNone(d.loss(s, w))
 
-    # ── contrastive loss ────────────────────────────────────────────
+    # -- contrastive loss --------------------------------------------
 
     def test_loss_attractive_only_matches_manual(self):
         """With just one snapshot (no prev_centroids), the loss should
@@ -258,7 +258,7 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
         self.assertTrue(torch.allclose(loss, manual.squeeze()))
 
     def test_loss_attractive_plus_repulsive(self):
-        """With ≥1 prev_centroid, the loss should equal
+        """With >=1 prev_centroid, the loss should equal
         attractive + lam * mean(cos(current, prev_i)).
         """
         d = self._make()
@@ -303,7 +303,7 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
     def test_loss_gradient_flows_through_current(self):
         """The contrastive loss has no learnable parameters, but
         gradient must still reach the live (s, w) arguments passed in
-        — that is the signal the rest of the model learns from.
+        -- that is the signal the rest of the model learns from.
         """
         d = self._make()
         # Prime history (detached, stored in buffers).
@@ -324,7 +324,7 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
                         "no gradient on w_cur")
 
     def test_history_is_detached(self):
-        """Stored snapshots must not carry graph history — the loss
+        """Stored snapshots must not carry graph history -- the loss
         on a later sentence shouldn't try to backprop through the
         pushed tensors (they were detached at snapshot time).
         """
@@ -337,7 +337,7 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
         w_cur = torch.randn(self.MAX_DEPTH, self.N_DIM, requires_grad=True)
         loss = d.loss(s_cur, w_cur)
         loss.backward()
-        # The historical tensors should NOT have received gradient —
+        # The historical tensors should NOT have received gradient --
         # snapshot() detached them.
         self.assertTrue(s_hist.grad is None
                         or s_hist.grad.abs().sum().item() == 0)
@@ -406,7 +406,7 @@ class TestDiscourseSpaceIntegration(_DiscourseTestBase):
 
     def test_discourse_history_grows(self):
         """Running snapshot() directly on the model's wordSpace.discourse
-        increments the count — sanity check that the connection is
+        increments the count -- sanity check that the connection is
         live."""
         self.model, self.cfg = self._build_model()
         d = self.model.wordSpace.discourse

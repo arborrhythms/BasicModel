@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Orchestrate BasicModel training: embeddings → model.
+"""Orchestrate BasicModel training: embeddings -> model.
 
 Usage:
     python train.py                           # local, defaults
@@ -133,7 +133,7 @@ def train_local(args):
     if not os.path.isabs(xml_path):
         xml_path = os.path.join(proj, xml_path)
 
-    # Read embeddingPath from XML — output embeddings where Models.py expects them
+    # Read embeddingPath from XML -- output embeddings where Models.py expects them
     cfg = read_xml_config(xml_path)
     emb_relpath = cfg.get("embeddingPath")
     if emb_relpath:
@@ -156,7 +156,7 @@ def train_local(args):
             embed_cmd += ["--max-docs", str(args.max_docs)]
         if args.random_shards:
             embed_cmd += ["--random-shards"]
-        TheMessage(f"\n=== Phase 1: Training embeddings → {emb_path} ===")
+        TheMessage(f"\n=== Phase 1: Training embeddings -> {emb_path} ===")
         run(embed_cmd, cwd=proj, env=env)
     else:
         TheMessage(f"\n=== Phase 1: Embeddings exist at {emb_path}, skipping ===")
@@ -186,7 +186,7 @@ def train_local(args):
             python, "-m", "cProfile", "-o", prof_path,
             entry, args.model,
         ]
-        TheMessage(f"\n=== Phase 2: Training model (profiling → {prof_path}) ===")
+        TheMessage(f"\n=== Phase 2: Training model (profiling -> {prof_path}) ===")
         run(model_cmd, cwd=os.path.join(proj, "bin"), env=model_env)
 
         # Print summary
@@ -235,7 +235,7 @@ def train_remote(args):
         remote_args += ["--random-shards"]
     if args.profile:
         remote_args += ["--profile"]
-    # SSH and run — forward selected env vars that affect training behaviour
+    # SSH and run -- forward selected env vars that affect training behaviour
     remote_env_vars = "PYTHONUNBUFFERED=1 PYTHONPATH=bin"
     for var in ("BASICMODEL_DEVICE", "MODEL_COMPILE"):
         val = os.environ.get(var)

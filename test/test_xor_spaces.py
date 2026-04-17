@@ -1,4 +1,4 @@
-"""XOR_spaces testpoint — inline dataset, tokenizer, and space prediction.
+"""XOR_spaces testpoint -- inline dataset, tokenizer, and space prediction.
 
 Exercises:
   - XML parser: ``<input use="train">`` / ``<output use="train">`` attributes
@@ -56,7 +56,7 @@ class TestXORSpacesConfigParsing(unittest.TestCase):
         """<input use="train"> is parsed with 'use' and '_' keys."""
         dat = self.cfg["architecture"]["data"]
         inputs = dat.get("input")
-        # Two <input> elements → list
+        # Two <input> elements -> list
         self.assertIsInstance(inputs, list, "Expected list of input entries")
         self.assertEqual(len(inputs), 2)
         uses = {item["use"] for item in inputs}
@@ -183,7 +183,7 @@ class TestXORSpacesModel(unittest.TestCase):
         """XOR sentence words are added to vocabulary during data loading."""
         emb = self.model.inputSpace.vocabulary
         # Words appear in training data; they should be added via forward passes
-        # or they may still be pending — we only assert ASCII chars are present
+        # or they may still be pending -- we only assert ASCII chars are present
         for ch in "zero one xor":
             if ch == " ":
                 continue  # already tested above
@@ -225,7 +225,7 @@ class TestSpacePrediction(unittest.TestCase):
         """reconstruct_buffer consecutive path uses ''.join(), not ' '.join().
 
         Verify that two adjacent tokens are concatenated without an extra space
-        being inserted between them — spaces must come from predicted tokens.
+        being inserted between them -- spaces must come from predicted tokens.
         """
         import torch
 
@@ -264,7 +264,7 @@ class TestSpacePrediction(unittest.TestCase):
         vectors = torch.zeros([batch, nVec, embSize])
         expected = []
         for slot, j in enumerate(usable[:nVec]):
-            # Assign only content dims; positional slots remain 0 → consecutive mode
+            # Assign only content dims; positional slots remain 0 -> consecutive mode
             vectors[0, slot, :nWhat] = codebook[j][:nWhat]
             expected.append(words_list[j])
 
@@ -307,7 +307,7 @@ class TestSpacePrediction(unittest.TestCase):
         nWhat = inp.nWhat  # content dims only
 
         vectors = torch.zeros([1, 1, embSize])
-        # Assign only the content dims; positional slots remain 0 → consecutive mode
+        # Assign only the content dims; positional slots remain 0 -> consecutive mode
         vectors[0, 0, :nWhat] = codebook[space_idx][:nWhat]
 
         result = os_.reconstruct_buffer(vectors)
@@ -354,7 +354,7 @@ class TestNullEOS(unittest.TestCase):
     def test_null_char_in_embedding_vocab(self):
         """\\x00 must be registered in the Embedding vocabulary.
 
-        This is the EOS/padding sentinel — its presence guarantees that the
+        This is the EOS/padding sentinel -- its presence guarantees that the
         nearest-neighbour lookup in reconstruct_buffer can resolve the zero
         vector to '\\x00' rather than an arbitrary ASCII character.
         """
@@ -366,7 +366,7 @@ class TestNullEOS(unittest.TestCase):
     def test_null_embedding_is_regular_vector(self):
         """The \\x00 codebook entry has a regular nonzero embedding.
 
-        \\x00 participates in the vocabulary like any other token — it is NOT
+        \\x00 participates in the vocabulary like any other token -- it is NOT
         the zero vector.  Zero-vector slots are detected in reconstruct_data by
         the abs-sum threshold check (< 1e-8) and mapped directly to '\\x00'
         before the nearest-neighbour cosine lookup.
@@ -404,7 +404,7 @@ class TestNullEOS(unittest.TestCase):
         )
         word_text = words_list[word_idx]
 
-        # Build 3-slot sequence: [word, \x00, word] — only content dims; no positional
+        # Build 3-slot sequence: [word, \x00, word] -- only content dims; no positional
         batch, nVec = 1, 3
         vectors = torch.zeros([batch, nVec, embSize])
         vectors[0, 0, :nWhat] = codebook[word_idx][:nWhat]   # slot 0: real word
@@ -424,7 +424,7 @@ class TestNullEOS(unittest.TestCase):
         """A sequence ending with \\x00 vectors produces text without trailing garbage.
 
         Mirrors the XOR reconstruction scenario: the sentence occupies the
-        first N slots and the rest are padding (zero vectors → \\x00).
+        first N slots and the rest are padding (zero vectors -> \\x00).
         """
         import torch
 
@@ -475,7 +475,7 @@ class TestXORTokenization(unittest.TestCase):
 
     1. Identify exactly 3 WORD tokens per sentence (no SEPARATOR, no PUNCT).
     2. Reconstruct the original text as word + ' ' + word + ' ' + word by
-       joining the token texts with a space character — verifying that
+       joining the token texts with a space character -- verifying that
        round-trip fidelity holds and the spaces are the only glue.
     3. Accept a SEPARATOR-terminated version so it parses under sentence.cfg
        as a complete sentence (SENT -> WORDS SEPARATOR).
@@ -505,7 +505,7 @@ class TestXORTokenization(unittest.TestCase):
     def test_three_word_tokens_per_sentence(self):
         """Each XOR sentence yields exactly 3 WORD tokens and 2 SPACE tokens, 0 SEPARATOR.
 
-        Pattern: WORD SPACE WORD SPACE WORD — 5 tokens total, one sentence.
+        Pattern: WORD SPACE WORD SPACE WORD -- 5 tokens total, one sentence.
         """
         for sentence in self.XOR_SENTENCES:
             tokens = self._lex_sentence(sentence)
@@ -529,7 +529,7 @@ class TestXORTokenization(unittest.TestCase):
     def test_word_space_word_space_word_round_trip(self):
         """Concatenating all token texts (WORD + SPACE interleaved) reproduces the original.
 
-        Pattern: word + SPACE + word + SPACE + word — spaces are predicted tokens,
+        Pattern: word + SPACE + word + SPACE + word -- spaces are predicted tokens,
         not auto-inserted glue.  Round-trip uses ''.join(), not ' '.join().
         """
         for sentence in self.XOR_SENTENCES:

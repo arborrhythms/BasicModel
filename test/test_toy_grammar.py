@@ -8,7 +8,7 @@ graph and receive gradients when driven through SyntacticLayer.forward().
 Each tier's SyntacticLayer predicts rule distributions from activation
 vectors. The gradient path:
 
-    loss → rule_logits → rule_head weights → derivation_layer → input_proj → x
+    loss -> rule_logits -> rule_head weights -> derivation_layer -> input_proj -> x
 
 Tests:
   1. Gradient flows from rule_logits to SyntacticLayer rule_head (S, C tiers)
@@ -64,7 +64,7 @@ def _forward_with_data(model, sentences, outputs):
         return model.forward(x)
 
 
-# ── Dimensions from MentalModel.xml ─────────────────────────────────
+# -- Dimensions from MentalModel.xml ---------------------------------
 # Refactored geometry: nPercepts == nConcepts == nSymbols (no [P,S] concat;
 # state mixing happens via the iterative Sigma-Pi loop, not slot expansion).
 _N_SYMBOLS = 128
@@ -203,7 +203,7 @@ class TestGrammarRuleSelectivity(unittest.TestCase):
 
         diff = (probs_1 - probs_2).abs().max().item()
         self.assertGreater(diff, 1e-6,
-            "Same rule distribution for different inputs — no selectivity")
+            "Same rule distribution for different inputs -- no selectivity")
 
     def test_depth_varies_rule_distribution(self):
         """Different derivation depths produce different rule distributions."""
@@ -223,7 +223,7 @@ class TestGrammarRuleSelectivity(unittest.TestCase):
 
         diff = (logits_d0 - logits_d1).abs().max().item()
         self.assertGreater(diff, 1e-6,
-            "Same rule logits at different depths — depth embedding not used")
+            "Same rule logits at different depths -- depth embedding not used")
 
 
 class TestGrammarInMentalModel(unittest.TestCase):
@@ -241,7 +241,7 @@ class TestGrammarInMentalModel(unittest.TestCase):
             _forward_with_data(self.model,
                 ['the cat sat on the mat'], [torch.tensor([0.0])])
 
-        # Check words on the space subspaces — Grammar.forward() records
+        # Check words on the space subspaces -- Grammar.forward() records
         # words on subspaces via add_word(), not on Grammar's internal lists.
         total_words = 0
         for space_attr in ('symbolicSpace', 'conceptualSpace', 'perceptualSpace'):
@@ -254,7 +254,7 @@ class TestGrammarInMentalModel(unittest.TestCase):
         # when syntacticLayer is present (ARLM mode).
         if self.model.wordSpace.conceptualSyntacticLayer is not None:
             self.assertGreater(total_words, 0,
-                "No word tuples on any subspace — Grammar not exercised during forward")
+                "No word tuples on any subspace -- Grammar not exercised during forward")
 
     def test_spaces_have_grammar_enabled(self):
         """MentalModel uses ARLM mode which enables grammar on spaces."""
@@ -269,20 +269,20 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         torch.manual_seed(42)
         self.model, self.grammar = _make_model()
 
-    # ── Toy rules: what MentalModel.xml defines ──────────────────────
+    # -- Toy rules: what MentalModel.xml defines ----------------------
 
     def test_total_rule_count(self):
         """MentalModel.xml defines 23 rules (1 START + 13 S + 7 C + 2 P).
 
         S-tier was extended in the trinity/coordination/demux/query plan:
         true, false, non, conjunction, disjunction, what, where, when,
-        query, swap, equals, part, plus the S→C transition.
+        query, swap, equals, part, plus the S->C transition.
         """
         self.assertEqual(len(self.grammar.rules), 23)
 
     def test_s_tier_rules(self):
         """S-tier covers trinity, coordination, demux, query and the
-        legacy swap/equals/part triplet plus the S→C transition.
+        legacy swap/equals/part triplet plus the S->C transition.
         """
         s_rules = [(r.method_name, r.arity) for r in self.grammar.rules if r.tier == 'S']
         # Trinity (Rule #1)
@@ -302,12 +302,12 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         self.assertIn(('swap', 2), s_rules)
         self.assertIn(('equals', 2), s_rules)
         self.assertIn(('part', 2), s_rules)
-        # S → C transition
-        self.assertIn((None, 1), s_rules, "Missing S→C transition rule")
+        # S -> C transition
+        self.assertIn((None, 1), s_rules, "Missing S->C transition rule")
         self.assertEqual(len(s_rules), 13)
 
     def test_c_tier_rules(self):
-        """C-tier: not, intersection, union, lower, lift(binary+ternary), C→P transition."""
+        """C-tier: not, intersection, union, lower, lift(binary+ternary), C->P transition."""
         c_rules = [(r.method_name, r.arity) for r in self.grammar.rules if r.tier == 'C']
         self.assertIn(('not', 1), c_rules)
         self.assertIn(('intersection', 2), c_rules)
@@ -315,23 +315,23 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         self.assertIn(('lower', 2), c_rules)
         self.assertIn(('lift', 2), c_rules)
         self.assertIn(('lift', 3), c_rules)
-        self.assertIn((None, 1), c_rules, "Missing C→P transition rule")
+        self.assertIn((None, 1), c_rules, "Missing C->P transition rule")
         self.assertEqual(len(c_rules), 7)
 
     def test_p_tier_rules(self):
         """P-tier: chunk(I,P) from 'I P', terminal 'I'."""
         p_rules = [(r.method_name, r.arity) for r in self.grammar.rules if r.tier == 'P']
         self.assertIn(('chunk', 2), p_rules)
-        self.assertIn((None, 0), p_rules, "Missing P→I terminal rule")
+        self.assertIn((None, 0), p_rules, "Missing P->I terminal rule")
         self.assertEqual(len(p_rules), 2)
 
     def test_start_rule(self):
-        """START→S rule exists."""
+        """START->S rule exists."""
         start_rules = [r for r in self.grammar.rules if r.tier == 'START']
         self.assertEqual(len(start_rules), 1)
-        self.assertEqual(start_rules[0].canonical, 'START → S')
+        self.assertEqual(start_rules[0].canonical, 'START -> S')
 
-    # ── Derived rules: tier groupings and transitions ────────────────
+    # -- Derived rules: tier groupings and transitions ----------------
 
     def test_symbolic_indices(self):
         """grammar.symbolic() returns exactly the S-tier rule indices."""
@@ -356,7 +356,7 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         self.assertEqual(len(p_ids), 2)
 
     def test_symbolic_transition(self):
-        """S→C transition is the arity-1, method_name=None S rule."""
+        """S->C transition is the arity-1, method_name=None S rule."""
         t = self.grammar.symbolic_transition()
         self.assertIsNotNone(t)
         rule = self.grammar.rules[t]
@@ -365,7 +365,7 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         self.assertEqual(rule.arity, 1)
 
     def test_conceptual_transition(self):
-        """C→P transition is the arity-1, method_name=None C rule."""
+        """C->P transition is the arity-1, method_name=None C rule."""
         t = self.grammar.conceptual_transition()
         self.assertIsNotNone(t)
         rule = self.grammar.rules[t]
@@ -444,7 +444,7 @@ class TestSoftSuperposition(unittest.TestCase):
         # Soft superposition should transform the data
         diff = (result - data).abs().max().item()
         self.assertGreater(diff, 1e-6,
-            "C-tier compose() returned input unchanged — no composition")
+            "C-tier compose() returned input unchanged -- no composition")
 
     def test_s_tier_soft_compose(self):
         """S-tier compose() uses learned rule probabilities."""
@@ -464,10 +464,10 @@ class TestSoftSuperposition(unittest.TestCase):
         # Should not just apply true(S) at one position
         diff = (result - data).abs().max().item()
         self.assertGreater(diff, 1e-6,
-            "S-tier compose() returned input unchanged — no composition")
+            "S-tier compose() returned input unchanged -- no composition")
 
     def test_transition_dominates_at_low_interpretation(self):
-        """With interpretation=0.0 transition bias dominates → near-identity."""
+        """With interpretation=0.0 transition bias dominates -> near-identity."""
         old_interp = self.grammar.interpretation
         try:
             self.grammar.interpretation = 0.0
@@ -482,7 +482,7 @@ class TestSoftSuperposition(unittest.TestCase):
             with torch.no_grad():
                 result = sl.compose(data, subspace, self.grammar)
 
-            # Transition rule (identity) should dominate — output ≈ first leaf
+            # Transition rule (identity) should dominate -- output ~= first leaf
             self.assertFalse(result.isnan().any(), "NaN in result")
         finally:
             self.grammar.interpretation = old_interp

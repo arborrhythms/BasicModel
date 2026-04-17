@@ -109,7 +109,7 @@ class TestLexBuffer(unittest.TestCase):
         lex = Lex()
         tokens = lex.lex_buffer("foo.   bar", 0)
         categories = [t['category'] for t in tokens]
-        # Expected: WORD, SEPARATOR, WORD — no SPACE between sentences
+        # Expected: WORD, SEPARATOR, WORD -- no SPACE between sentences
         self.assertNotIn('SPACE', categories,
                          f"No SPACE expected after SEPARATOR; got {categories}")
         self.assertEqual(categories, ['WORD', 'SEPARATOR', 'WORD'])

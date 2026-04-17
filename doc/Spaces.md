@@ -7,8 +7,8 @@ representational transformation. Data flows forward from raw input to task outpu
 the reverse pass reconstructs the original input from the symbolic representation.
 
 ```
-Forward:  InputSpace → PerceptualSpace → ConceptualSpace → SymbolicSpace → SyntacticSpace → OutputSpace
-Reverse:  OutputSpace → SyntacticSpace → SymbolicSpace → ConceptualSpace → PerceptualSpace → InputSpace
+Forward:  InputSpace $\rightarrow$ PerceptualSpace $\rightarrow$ ConceptualSpace $\rightarrow$ SymbolicSpace $\rightarrow$ SyntacticSpace $\rightarrow$ OutputSpace
+Reverse:  OutputSpace $\rightarrow$ SyntacticSpace $\rightarrow$ SymbolicSpace $\rightarrow$ ConceptualSpace $\rightarrow$ PerceptualSpace $\rightarrow$ InputSpace
 ```
 
 ![WikiOracle Space Hierarchy](diagrams/vector_spaces.svg)
@@ -84,17 +84,17 @@ PerceptualSpaces. Downstream spaces see an identical muxed tensor via
 **Role.** Receives the raw source buffer from `Data()` and lifts it into the model's
 internal working dimensionality.
 
-**Text mode — forward.** Delegates tokenization to `Lex`, which produces a span table
-of `(start, end, type)` entries — one span per token. Each span is converted to a
+**Text mode -- forward.** Delegates tokenization to `Lex`, which produces a span table
+of `(start, end, type)` entries -- one span per token. Each span is converted to a
 vector with two components:
 
-- `nWhat` dimensions — token content, encoded via `Basis` / `Codebook` (the word
+- `nWhat` dimensions -- token content, encoded via `Basis` / `Codebook` (the word
   embedding lookup).
-- `nWhere` dimensions — positional information derived from the character offset.
+- `nWhere` dimensions -- positional information derived from the character offset.
 
 The result is a `[nActive, nWhat + nWhere]` tensor representing the tokenized sentence.
 
-**Text mode — reverse.** Reconstructs the source string from the latent state by
+**Text mode -- reverse.** Reconstructs the source string from the latent state by
 inverting the span encoding: each vector is mapped back to its nearest codebook entry
 (word embedding), then spans are reassembled into characters using the stored offset
 table.
@@ -116,7 +116,7 @@ and the reverse path restores the original range.
 | `codebook` | Whether input values are discrete |
 | `demuxed` | Store what/where/when independently (default: `false`) |
 
-**Layer.** `LiftingLayer` — bridges native input dimension to `nDim`.
+**Layer.** `LiftingLayer` -- bridges native input dimension to `nDim`.
 
 **Invertibility.** InputSpace is always non-invertible in the strict sense; the reverse
 path is a separate reconstruction procedure using the span table, not a matrix inverse.
@@ -144,7 +144,7 @@ for both directions. The reverse path inverts each step: `_to_mult(y)`, log,
 factorisation) for exact inversion.
 
 **Reverse operation (invertible=False, reversible=True).** Two separate `PiLayer`
-instances — `pi1` for forward, `pi2` for reverse — each with independent weights.
+instances -- `pi1` for forward, `pi2` for reverse -- each with independent weights.
 
 **passThrough=True.** Identity: input passes through unchanged, no Pi computation.
 
@@ -161,7 +161,7 @@ instances — `pi1` for forward, `pi2` for reverse — each with independent wei
 **Layer.** `PiLayer` (one or two instances depending on `invertible`).
 
 **Range.** Vectors live in the signed hypercube `[-1, 1]^d` (tanh-bounded). The space
-is centered at the origin for geometric symmetry, though it has no negation operator —
+is centered at the origin for geometric symmetry, though it has no negation operator --
 percepts represent feature magnitudes with sign indicating direction. Activation is
 `[-1, 1]`. Tanh is applied to enforce the range.
 
@@ -192,7 +192,7 @@ The matrix inverse `W^{-1}` is computed via `InvertibleLinearLayer` (LDU
 factorisation), so no SVD is required and the inverse is exact.
 
 **Reverse operation (invertible=False, reversible=True).** Two separate `SigmaLayer`
-instances — `sigma1` for forward, `sigma2` for reverse.
+instances -- `sigma1` for forward, `sigma2` for reverse.
 
 **Key parameters.**
 
@@ -220,7 +220,7 @@ separate layers with independent weights.
 
 **Role.** Converts continuous concept activations into a discrete set of active
 symbols. This is the information bottleneck of the pipeline: rich
-perceptual–conceptual representations are compressed into a sparse presence
+perceptual-conceptual representations are compressed into a sparse presence
 pattern over a codebook of symbol prototypes.
 
 **Symbols are percepts.** Each symbol represents the presence (`1`) or absence
@@ -269,7 +269,7 @@ most highly active; negative products never activate). Each symbol receives wher
 encoding from PerceptualSpace, making symbols uniform with percepts. Internally stored
 as activation in `[-1, 1]` via the `(x+1)/2` mapping.
 
-**Layer.** `PiLayer(nConcepts, nSymbols, invertible=True, monotonic=True)` — maps
+**Layer.** `PiLayer(nConcepts, nSymbols, invertible=True, monotonic=True)` -- maps
 between activation spaces via monotonic multiplicative transform. The `monotonic=True`
 constraint ensures weights $W \geq 0$, preserving ordering. Exact inverse via the
 internal `InvertibleLinearLayer` (LDU factorisation).
@@ -279,7 +279,7 @@ internal `InvertibleLinearLayer` (LDU factorisation).
 per-level PiLayers in `self.pi_layers` (ButterflyStage-wrapped when `useButterflies`
 is active).  The symbol dimension is geometrically partitioned so each order
 writes only to its designated slice.  See [Reasoning.md](Reasoning.md)
-§Architecture Quadrants.
+Section Architecture Quadrants.
 
 **Invertibility.** Exactly invertible via the PiLayer's reverse path.
 
@@ -299,7 +299,7 @@ about differentiable tree structure.
 
 1. Read symbolic presence via `get_symbols()` (nonzero entries are present symbols).
 2. For N present symbols per batch, generate a CNF derivation: N-1 binary rules
-   (randomly selected) + 1 terminal (S → W).
+   (randomly selected) + 1 terminal (S $\rightarrow$ W).
 3. Store the derivation as word tuples on the output subspace. Vectors and
    symbolic presence pass through unchanged via `set_symbols()`.
 
@@ -310,7 +310,7 @@ about differentiable tree structure.
 2. Reconstruct the symbolic presence vector deterministically from the derivation
    via `set_symbols()`.
 
-The round-trip `forward → (delete symbols) → reverse` recovers the original
+The round-trip `forward $\rightarrow$ (delete symbols) $\rightarrow$ reverse` recovers the original
 present positions exactly.
 
 **Key parameters.**

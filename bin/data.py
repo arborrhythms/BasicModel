@@ -200,7 +200,7 @@ class Data():
             v = getattr(self, attr)
             if isinstance(v, torch.Tensor):
                 v = v.to(TheDevice.get())
-                if v.ndim == 2:          # [N, D] → [N, D, 1]
+                if v.ndim == 2:          # [N, D] -> [N, D, 1]
                     v = v.unsqueeze(2)
                 setattr(self, attr, v)
             elif isinstance(v, list):
@@ -220,7 +220,7 @@ class Data():
             self.input_min = self.train_input.min().item()
             self.input_max = self.train_input.max().item()
         else:
-            # Text data: embedded, L2-normalized → elements in [-1, 1]
+            # Text data: embedded, L2-normalized -> elements in [-1, 1]
             self.input_min = -1.0
             self.input_max = 1.0
         if isinstance(self.train_output, torch.Tensor):
@@ -237,8 +237,8 @@ class Data():
 
         Args:
             x: tensor to normalize.
-            which: "input" scales [input_min, input_max] → [-1, 1].
-                   "output" scales [output_min, output_max] → [-1, 1].
+            which: "input" scales [input_min, input_max] -> [-1, 1].
+                   "output" scales [output_min, output_max] -> [-1, 1].
         """
         if which == "input":
             if self.input_min is None or self.input_max is None or self.input_max == self.input_min:
@@ -254,8 +254,8 @@ class Data():
 
         Args:
             x: tensor to denormalize.
-            which: "input" scales [-1, 1] → [input_min, input_max].
-                   "output" scales [-1, 1] → [output_min, output_max].
+            which: "input" scales [-1, 1] -> [input_min, input_max].
+                   "output" scales [-1, 1] -> [output_min, output_max].
         """
         if which == "input":
             if self.input_min is None or self.input_max is None or self.input_max == self.input_min:
@@ -502,19 +502,19 @@ class Data():
         self.combinedTokens = train_tokens + validation_tokens + test_tokens
         self.combinedTokens = list(set(self.combinedTokens))
 
-        # Store raw strings — tensorized lazily in prepInput()
+        # Store raw strings -- tensorized lazily in prepInput()
         self.train_input  = list(train_tokens)
         self.validation_input  = list(validation_tokens)
         self.test_input  = list(test_tokens)
 
-        # For masked LM, labels are target word strings — store for later
+        # For masked LM, labels are target word strings -- store for later
         # conversion to embedding vectors by prepare_lm_targets().
         # For non-LM tasks, labels are numeric lists.
         if not train_labels:
             # Masked prediction mode: targets computed at runtime
             # Raw sentences are already in train_input/validation_input/test_input
             self.masked_prediction = 'MLM'
-            # Sentinel outputs for OutputSpace sizing — shape must match embedding dim
+            # Sentinel outputs for OutputSpace sizing -- shape must match embedding dim
             # (actual targets computed at runtime by expand_masked)
             self.train_output = [torch.zeros(1) for _ in train_tokens]
             self.validation_output = [torch.zeros(1) for _ in validation_tokens]
@@ -618,7 +618,7 @@ class Data():
         ascii_values = list(string.encode('ascii', errors='replace'))[:self.inputLength]
         tensor = torch.tensor(ascii_values, dtype=torch.int8)
         if tensor.size(0) < self.inputLength:
-            # Pad with NULL (0) — input buffer is variable-length, null-terminated
+            # Pad with NULL (0) -- input buffer is variable-length, null-terminated
             tensor = F.pad(tensor, (0, self.inputLength - tensor.size(0)), 'constant', 0)
         return tensor
 

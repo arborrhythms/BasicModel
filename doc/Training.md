@@ -21,9 +21,9 @@ The output path is read from `<embeddingPath>` in the XML config.
 
 ```
 FineWeb-EDU parquet shards
-    → Pass 1: stream documents, lex + parse, count words, build vocabulary
-    → Pass 2: stream documents again, train SBOW per sentence, discard examples
-    → Save WordVectors to sentence.pt
+    $\rightarrow$ Pass 1: stream documents, lex + parse, count words, build vocabulary
+    $\rightarrow$ Pass 2: stream documents again, train SBOW per sentence, discard examples
+    $\rightarrow$ Save WordVectors to sentence.pt
 ```
 
 ### SBOW (Sentence Bag of Words)
@@ -59,7 +59,7 @@ too close to a centroid it doesn't belong to increases the denominator and is
 pushed away with force proportional to its softmax probability.
 This adaptive repulsion distributes vectors across the embedding space.
 
-This gives N positive and N × (V-1) repulsive updates per sentence. Every
+This gives N positive and N $\times$ (V-1) repulsive updates per sentence. Every
 word in the sentence is a positive example (unlike CBOW which picks one target).
 
 ```python
@@ -111,12 +111,12 @@ The trainer uses two passes over the data to avoid dynamic model resizing:
 
 ### Memory Considerations
 
-The dominant memory cost is the linear output head: `vocab_size × vector_size` parameters
+The dominant memory cost is the linear output head: `vocab_size $\times$ vector_size` parameters
 plus optimizer state. With 200K vocabulary and 100 dimensions:
 
-- Embedding: 200K × 100 × 4 bytes = ~80MB
-- Linear head: 100 × 200K × 4 bytes = ~80MB
-- Adam optimizer: 2× momentum buffers = ~320MB total
+- Embedding: 200K $\times$ 100 $\times$ 4 bytes = ~80MB
+- Linear head: 100 $\times$ 200K $\times$ 4 bytes = ~80MB
+- Adam optimizer: 2$\times$ momentum buffers = ~320MB total
 
 The full softmax computes `(N, vocab_size)` logits per sentence. For large vocabularies
 this can be expensive. Training runs on CPU by default (`BASICMODEL_DEVICE=cpu`) to
@@ -170,12 +170,12 @@ optimizer's parameter list.
 
 | `trainEmbedding` | `detach()` in forward/reverse | In main optimizer | Embedding method |
 |------------------|------------------------------|-------------------|-----------------|
-| `NONE` | Yes — codebook is a frozen lookup | No | Frozen |
-| `CBOW` | Yes — codebook is a frozen lookup | No | CBOW (own optimizer) |
-| `SBOW` | Yes — codebook is a frozen lookup | No | SBOW (own optimizer) |
-| `BACKPROP` | No — gradients flow through codebook | Yes | Model loss only |
-| `BOTH` | No — gradients flow through codebook | Yes | SBOW + backprop |
-| `JOINT` | No — gradients flow through codebook | Yes | Single combined loss |
+| `NONE` | Yes -- codebook is a frozen lookup | No | Frozen |
+| `CBOW` | Yes -- codebook is a frozen lookup | No | CBOW (own optimizer) |
+| `SBOW` | Yes -- codebook is a frozen lookup | No | SBOW (own optimizer) |
+| `BACKPROP` | No -- gradients flow through codebook | Yes | Model loss only |
+| `BOTH` | No -- gradients flow through codebook | Yes | SBOW + backprop |
+| `JOINT` | No -- gradients flow through codebook | Yes | Single combined loss |
 
 **`NONE` is the recommended mode for constrained hardware** (e.g. Apple MPS
 with <16GB). The codebook from Phase 1 is frozen, all memory and compute go
@@ -234,7 +234,7 @@ The network's output loss uses MSE against the target word's embedding vector, n
 cross-entropy over vocabulary indices. This is an architectural advantage:
 
 - A prediction near "cat" when the target is "kitten" incurs less loss than a prediction
-  near "democracy" — the embedding space captures semantic similarity.
+  near "democracy" -- the embedding space captures semantic similarity.
 - Output dimensionality is the embedding dimension (~100) rather than the vocabulary
   size (~200K), reducing parameter count.
 
@@ -243,14 +243,14 @@ cross-entropy over vocabulary indices. This is an architectural advantage:
 Each batch (one sentence in masked prediction mode):
 
 1. Embed sentence, expand to N masked copies (one per word position)
-2. Forward through network: InputSpace → Percept → Concept → Symbol → Output
+2. Forward through network: InputSpace $\rightarrow$ Percept $\rightarrow$ Concept $\rightarrow$ Symbol $\rightarrow$ Output
 3. Compute output loss (MSE against target word embeddings)
 4. If reversible: reverse pass reconstructs input, compute reconstruction loss
-5. Combined loss = `(1 - recon_ratio) × output_loss + recon_ratio × recon_loss`
-6. If `train` is `JOINT`: add `trainEmbeddingRatio × sbow_loss` to the combined loss
+5. Combined loss = `(1 - recon_ratio) $\times$ output_loss + recon_ratio $\times$ recon_loss`
+6. If `train` is `JOINT`: add `trainEmbeddingRatio $\times$ sbow_loss` to the combined loss
 7. Backprop + optimizer step (includes embedding params for `BACKPROP`, `BOTH`, `JOINT`; excludes for `NONE`, `CBOW`, `SBOW`)
 8. If `train` is `CBOW`, `SBOW`, or `BOTH`: run embedding step on same sentence
-9. (removed — [MASK] is just the zero vector, not a vocabulary entry)
+9. (removed -- [MASK] is just the zero vector, not a vocabulary entry)
 
 ---
 
@@ -261,7 +261,7 @@ Each batch (one sentence in masked prediction mode):
 | Targets per sentence | 1 (pick one word) | N (every word) | N (one per masked position) |
 | Context | Other N-1 words | Leave-one-out centroid of N-1 | All unmasked words (+ future truncation for ARLM/RARLM) |
 | Positive updates | 1 per step | N per step | N per step |
-| Repulsive force | vocab-1 implicit via softmax | N × (vocab-1) via softmax | Implicit via MSE in embedding space |
+| Repulsive force | vocab-1 implicit via softmax | N $\times$ (vocab-1) via softmax | Implicit via MSE in embedding space |
 | Signal density | Low (1 gradient per sentence) | High (N gradients per sentence) | High (N gradients per sentence) |
 | Loss function | Cross-entropy over vocabulary | Cross-entropy over vocabulary | MSE over embedding vectors |
 | Updates embeddings directly | Yes (own optimizer) | Yes (own optimizer) | Only for `BACKPROP`/`BOTH`/`JOINT` |
@@ -310,7 +310,7 @@ gradient with respect to the logit for any non-target word $k \neq w_i$ is:
 
 $$\frac{\partial \mathcal{L}_i}{\partial z_{i,k}} = P(k \mid c_i)$$
 
-Words with high softmax probability — those too close to the centroid — receive
+Words with high softmax probability -- those too close to the centroid -- receive
 the strongest repulsive gradient. Words already far away have near-zero probability
 and are left alone. This adaptive repulsion naturally spreads vectors across the
 hypersphere.

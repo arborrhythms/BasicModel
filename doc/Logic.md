@@ -4,12 +4,12 @@
 
 This document defines the logic system at two levels:
 
-1. **Subsymbolic (vector / field level)** — geometry in ConceptualSpace
-2. **Symbolic (scalar level in [-1,1])** — order + polarity in SymbolicSpace
-3. **Rationality** — propositional truth store built on top of both
+1. **Subsymbolic (vector / field level)** -- geometry in ConceptualSpace
+2. **Symbolic (scalar level in [-1,1])** -- order + polarity in SymbolicSpace
+3. **Rationality** -- propositional truth store built on top of both
 
 The executable implementations of the subsymbolic and symbolic operators are
-the `Method` subclasses documented in Language.md § Methods.
+the `Method` subclasses documented in Language.md Section  Methods.
 
 ---
 
@@ -37,11 +37,11 @@ Objects:
   Antipodal opposition on hypersphere
 
 - **Non (non-affirming negation)**:
-  `Basis.non()` — bitonic: returns zero (complete withdrawal); monotonic:
+  `Basis.non()` -- bitonic: returns zero (complete withdrawal); monotonic:
   `relu(x - threshold)` with a learnable threshold parameter.
 
 - **Parthood**:
-  `Basis.part()` — mereological containment score in $[0, 1]$:
+  `Basis.part()` -- mereological containment score in $[0, 1]$:
   $$
   \operatorname{part}(x, y) = \operatorname{conj}\!\bigl(1 - d(x,\, x \cap y),\; 1 - d(y,\, x \cup y)\bigr)
   $$
@@ -53,7 +53,7 @@ Objects:
 
 ## 2. Symbolization
 
-Map vectors → scalar truth strength
+Map vectors $\rightarrow$ scalar truth strength
 
 For $X \in (B, N, D)$:
 
@@ -64,9 +64,9 @@ $$
 Range: [-1, 1]
 
 Interpretation:
-- +1 → strong presence
--  0 → neutral
-- -1 → absence
+- +1 $\rightarrow$ strong presence
+-  0 $\rightarrow$ neutral
+- -1 $\rightarrow$ absence
 
 ---
 
@@ -75,7 +75,7 @@ Interpretation:
 `Basis` supports two modes: **monotonic** (plain min/max, used by
 SymbolicSpace where `monotonic=True`) and **bitonic** (sign-aware,
 the default).  The monotonic forms are listed here; the bitonic forms
-(RadMin, RadMax) are in §7 Radial Operators.
+(RadMin, RadMax) are in Section 7 Radial Operators.
 
 Let $a, b \in [-1,1]$.
 
@@ -136,9 +136,9 @@ that compose propositions about the world.
 ### Truth Statements
 
 A **truth statement** is any assertion that the model has meaningfully
-processed through the full pipeline (InputSpace → ... → SymbolicSpace),
-producing a symbolic activation vector.  The `TruthLayer` — owned by
-`WordSpace` and reachable as `self.wordSpace.truth_layer` — stores these
+processed through the full pipeline (InputSpace $\rightarrow$ ... $\rightarrow$ SymbolicSpace),
+producing a symbolic activation vector.  The `TruthLayer` -- owned by
+`WordSpace` and reachable as `self.wordSpace.truth_layer` -- stores these
 activations **scaled by** the DegreeOfTruth:
 
 $$
@@ -162,9 +162,9 @@ alongside the three SyntacticLayers. `SymbolicSpace.forward` reads it via
 `self.wordSpace.truth_layer` and records activations when
 `<accumulateTruth>` is set to a value > 0 (the degree of truth, 0..1):
 
-- **record(activation, degree)** — store `activation * degree`.
-- **query(activation)** — find the closest stored truth by cosine similarity.
-- **field(concepts)** — project all stored truths into ConceptualSpace as a
+- **record(activation, degree)** -- store `activation * degree`.
+- **query(activation)** -- find the closest stored truth by cosine similarity.
+- **field(concepts)** -- project all stored truths into ConceptualSpace as a
   scalar field over concept vectors.
 
 ### Truth Field
@@ -191,11 +191,11 @@ This field has two kinds of regions:
 
 Stored truths should satisfy two consistency conditions:
 
-1. **Internal consonance** — truths should be mutually consistent.  If
+1. **Internal consonance** -- truths should be mutually consistent.  If
    $\text{part}(A, B)$ has degree +1, and $\text{part}(B, C)$ has degree +1,
    then $\text{part}(A, C)$ should not have degree -1.
 
-2. **External consonance** — incoming statements processed through the pipeline
+2. **External consonance** -- incoming statements processed through the pipeline
    should be evaluated against the truth field.  High similarity to a +1 truth
    is consonance; high similarity to a -1 truth is dissonance.
 
@@ -203,13 +203,13 @@ Stored truths should satisfy two consistency conditions:
 
 The S-tier grammar provides the two propositional relations:
 
-- **part(S, S)** — containment.  "A is part of B."  `Basis.part(A, B)`
+- **part(S, S)** -- containment.  "A is part of B."  `Basis.part(A, B)`
   computes a mereological score in $[0, 1]$: the degree to which
   $A = A \cap B$ and $B = A \cup B$, measured by volume-weighted distance.
   The Grammar applies this as `score * B`, scaling the whole by the
   parthood degree.  Asymmetric: part(A, B) does not imply part(B, A).
 
-- **equals(S, S)** — identity as mutual parthood.
+- **equals(S, S)** -- identity as mutual parthood.
   `Basis.equal(A, B)` computes `conjunction(part(A, B), part(B, A))`.
   The Grammar applies this as `score * B`, scaling B by the equality
   degree.  Returns 1 only when both directions of containment hold.
@@ -255,12 +255,12 @@ $$
 where $c_j$ is the unit-normalised concept vector for truth $j$.
 
 - $d_j > 0$: truth $j$ is consonant with the set (supported by neighbours)
-- $d_j \approx 0$: truth $j$ is independent (orthogonal — neither supported
+- $d_j \approx 0$: truth $j$ is independent (orthogonal -- neither supported
   nor contradicted)
 - $d_j < 0$: truth $j$ is dissonant (contradicted by neighbours)
 
 This is a leave-one-out consistency check.  It does not require symbolic
-logic — it falls out of the geometry of the stored vectors and the DoT
+logic -- it falls out of the geometry of the stored vectors and the DoT
 already baked into them.  A disperser ($\text{DoT} < 0$) near an
 attractor ($\text{DoT} > 0$) will naturally produce negative field values,
 flagging the contradiction.
@@ -278,9 +278,9 @@ where $c_a$ is the concept vector underlying $a$.
 
 | $v$ | Interpretation |
 |-----|---------------|
-| $v \to +1$ | strong support — statement aligns with stored attractors |
-| $v \approx 0$ | no opinion — statement is orthogonal to stored knowledge |
-| $v \to -1$ | strong contradiction — statement aligns with dispersers |
+| $v \to +1$ | strong support -- statement aligns with stored attractors |
+| $v \approx 0$ | no opinion -- statement is orthogonal to stored knowledge |
+| $v \to -1$ | strong contradiction -- statement aligns with dispersers |
 
 This gives a scalar degree of verification in $[-1, 1]$ without requiring
 the incoming statement to exactly match any stored truth.  Cosine
@@ -289,7 +289,7 @@ closest truth and return its degree, which is useful for point lookups.
 
 ### Logical Entailment (augmenting geometry with symbolic closure)
 
-The subsymbolic field checks above detect *geometric* consistency — truths
+The subsymbolic field checks above detect *geometric* consistency -- truths
 that point in contradictory directions in the embedding space.  But they
 do not enforce *logical* entailments.  Consider:
 
@@ -298,7 +298,7 @@ do not enforce *logical* entailments.  Consider:
 - The transitive closure $\text{part}(A, C)$ is *entailed* but not stored.
 
 If a statement $\neg\text{part}(A, C)$ arrives, the field check may not
-flag it — $A$ and $C$ could be geometrically distant even though the
+flag it -- $A$ and $C$ could be geometrically distant even though the
 chain of parthood connects them.  Geometry captures similarity, not
 inference chains.
 
@@ -317,7 +317,7 @@ propositional structure of stored truths:
    - $\text{equals}(A, B) \wedge \text{equals}(B, C) \Rightarrow \text{equals}(A, C)$
    - $\text{equals}(A, B) \wedge \text{part}(A, C) \Rightarrow \text{part}(B, C)$
 
-   Each entailed proposition inherits a DoT from its premises — the
+   Each entailed proposition inherits a DoT from its premises -- the
    minimum (intersection) of the premise DoTs, following the symbolic
    intersection rule $a \cap b = \min(a, b)$.
 
@@ -329,7 +329,7 @@ propositional structure of stored truths:
 This is worth implementing when the truth store is used for reasoning
 (verification, planning) rather than just retrieval.  The geometric
 field alone is sufficient for soft consistency checks and nearest-truth
-lookups.  The symbolic closure makes the store *deductively closed* —
+lookups.  The symbolic closure makes the store *deductively closed* --
 turning it from a database of assertions into something closer to a
 knowledge base with inference.
 
@@ -361,13 +361,13 @@ The ordering relation $\subset$ ("is a part of") is defined by magnitude:
 
 > $x \subset y$ iff $|x| < |y|$
 
-This means "closer to zero" is "less than" in the radial sense. Zero is the weakest value; ±1 are the strongest.
+This means "closer to zero" is "less than" in the radial sense. Zero is the weakest value; $\pm$1 are the strongest.
 
 ---
 
 ## Operators
 
-### RadMin (Radial Minimum — Conjunction / AND)
+### RadMin (Radial Minimum -- Conjunction / AND)
 
 RadMin is a binary operator representing conjunction. It collapses toward zero on sign disagreement and takes the minimum magnitude on sign agreement.
 
@@ -388,11 +388,11 @@ RadMin is a binary operator representing conjunction. It collapses toward zero o
 - Commutative: RadMin(x, y) = RadMin(y, x)
 - Zero is absorbing: RadMin(x, 0) = 0 for all x
 - Anti-diagonal symmetric
-- Sign disagreement produces zero (contradiction → unknown)
+- Sign disagreement produces zero (contradiction $\rightarrow$ unknown)
 
 ---
 
-### RadMax (Radial Maximum — Disjunction / OR)
+### RadMax (Radial Maximum -- Disjunction / OR)
 
 RadMax is a binary operator representing disjunction. It collapses toward zero on sign disagreement and takes the maximum magnitude on sign agreement.
 
@@ -414,7 +414,7 @@ RadMax is a binary operator representing disjunction. It collapses toward zero o
 - Commutative: RadMax(x, y) = RadMax(y, x)
 - Zero is transparent: RadMax(x, 0) = x for all x
 - Anti-diagonal symmetric
-- Sign disagreement produces zero (contradiction → unknown)
+- Sign disagreement produces zero (contradiction $\rightarrow$ unknown)
 
 ---
 
@@ -475,7 +475,7 @@ luminosity = ||relu(min(truths))||
 ```
 
 The element-wise min across all stored truth activations computes the
-**conjunction** — the point where all truths agree. `relu` removes
+**conjunction** -- the point where all truths agree. `relu` removes
 negative dimensions (darkness from conflicting truths), and the L2 norm
 gives the brightness.
 
@@ -491,7 +491,7 @@ Luminosity serves two roles in the model:
 
 2. **Loss modification**: low luminosity increases training loss,
    penalizing irrational propositions. See [Ethics.md](./Ethics.md)
-   §Universality for the full formula.
+   Section Universality for the full formula.
 
 ### Supporting measures
 
@@ -507,7 +507,7 @@ Luminosity serves two roles in the model:
 - **TruthLoss**: an additive loss penalty for propositions that
   contradict stored truths, measured by union norm reduction via
   `Basis.disjunction()`. Coexists with the multiplicative luminosity
-  modulation. See [Reasoning](Reasoning.md) §TruthLoss.
+  modulation. See [Reasoning](Reasoning.md) Section TruthLoss.
 
 - **Derive**: pairwise mereological inference via the Grammar's `part()`
   rule. When the parthood score between two truths exceeds a threshold,

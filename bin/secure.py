@@ -1,6 +1,6 @@
 """Input security for BasicModel.
 
-Prompt injection detection and input guard. Self-contained — no external
+Prompt injection detection and input guard. Self-contained -- no external
 dependencies beyond stdlib.
 
 WikiOracle's bin/security.py re-exports these and adds output safety
@@ -15,7 +15,7 @@ from typing import Optional
 
 
 # ---------------------------------------------------------------------------
-# Input Guard — prompt injection detection
+# Input Guard -- prompt injection detection
 # ---------------------------------------------------------------------------
 
 _INJECTION_PATTERNS = [

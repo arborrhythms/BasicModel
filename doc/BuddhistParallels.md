@@ -3,10 +3,10 @@
 ## Purpose
 
 WikiOracle's truth ontology closely parallels the epistemological framework
-of Buddhist **pramāṇa theory**, particularly as developed by Dignāga, Dharmakīrti,
-and — for the tetralemma — Nāgārjuna.
+of Buddhist **pramana theory**, particularly as developed by Dignaga, Dharmakirti,
+and -- for the tetralemma -- Nagarjuna.
 
-Pramāṇa theory asks a simple question:
+Pramana theory asks a simple question:
 
 > How does a *valid cognizer* obtain reliable knowledge?
 
@@ -17,27 +17,27 @@ This document maps WikiOracle's ontology to the **sources of valid cognition**
 recognized in Buddhist logic and explains how the **tetralemma** can be
 interpreted using **Kleene logic** and **non-affirming negation**.
 
-## Valid Cognition in Dharmakīrti
+## Valid Cognition in Dharmakirti
 
-In Dharmakīrti's system there are **two primary pramāṇas**:
+In Dharmakirti's system there are **two primary pramanas**:
 
 | Source of Cognition | Sanskrit    | Meaning                                                                  |
 | ------------------- | ----------- | ------------------------------------------------------------------------ |
-| Direct perception   | *pratyakṣa* | immediate, non-conceptual awareness of unique particulars (*svalakṣaṇa*) |
-| Inference           | *anumāna*   | conceptual reasoning operating on universals (*sāmānyalakṣaṇa*)          |
+| Direct perception   | *pratyaksa* | immediate, non-conceptual awareness of unique particulars (*svalaksana*) |
+| Inference           | *anumana*   | conceptual reasoning operating on universals (*samanyalaksana*)          |
 
-Dharmakīrti identifies **four subtypes of pratyakṣa**: sensory perception (*indriya*), mental perception (*mānasa*), self-awareness (*svasaṃvedana*), and yogic perception (*yogijñāna*).
+Dharmakirti identifies **four subtypes of pratyaksa**: sensory perception (*indriya*), mental perception (*manasa*), self-awareness (*svasamvedana*), and yogic perception (*yogijnana*).
 
-Other knowledge sources — including testimony (*śabda*) — are considered **derivative**. Dharmakīrti reduces all testimonial knowledge to a form of inference: one *infers* the truth of a claim from the reliability of the speaker (*āpta*, "trustworthy person"). This is not a separate pramāṇa but a special case of *anumāna*.
+Other knowledge sources -- including testimony (*sabda*) -- are considered **derivative**. Dharmakirti reduces all testimonial knowledge to a form of inference: one *infers* the truth of a claim from the reliability of the speaker (*apta*, "trustworthy person"). This is not a separate pramana but a special case of *anumana*.
 
-A valid cognition produces **true conceptual knowledge** (*pramā*).
+A valid cognition produces **true conceptual knowledge** (*prama*).
 
-In WikiOracle, the two pramāṇas map cleanly:
+In WikiOracle, the two pramanas map cleanly:
 
-* **pratyakṣa** → Feeling (direct, pre-conceptual, *svasaṃvedana*)
-* **anumāna** → Fact and Operator (conceptual, propositional)
+* **pratyaksa** $\rightarrow$ Feeling (direct, pre-conceptual, *svasamvedana*)
+* **anumana** $\rightarrow$ Fact and Operator (conceptual, propositional)
 
-Testimony is not a separate source — it is inference from trust, which is exactly how WikiOracle treats Indirect Truth.
+Testimony is not a separate source -- it is inference from trust, which is exactly how WikiOracle treats Indirect Truth.
 
 ## Mapping to WikiOracle Truth Objects
 
@@ -47,28 +47,28 @@ WikiOracle expresses the same epistemic structure through six truth types, organ
 
 | WikiOracle Type | Epistemic Role                                              | Buddhist Equivalent                  | Sanskrit                     |
 | --------------- | ----------------------------------------------------------- | ------------------------------------ | ---------------------------- |
-| **Feeling**     | immediate hedonic tone; ±1 = *vedanā* (pleasant/unpleasant) | direct perception — self-awareness   | *pratyakṣa* / *svasaṃvedana* |
-| **Fact**        | conceptual proposition with truth value in [-1, +1]         | inference — conceptual cognition     | *anumāna* / *kalpanā*        |
-| **Operator**    | logical transformation (and/or/not/non) deriving new truth  | logical pervasion — formal reasoning | *vyāpti* / *prayoga*         |
+| **Feeling**     | immediate hedonic tone; $\pm$1 = *vedana* (pleasant/unpleasant) | direct perception -- self-awareness   | *pratyaksa* / *svasamvedana* |
+| **Fact**        | conceptual proposition with truth value in [-1, +1]         | inference -- conceptual cognition     | *anumana* / *kalpana*        |
+| **Operator**    | logical transformation (and/or/not/non) deriving new truth  | logical pervasion -- formal reasoning | *vyapti* / *prayoga*         |
 
-Feelings are *pratyakṣa* because they are pre-conceptual, non-linguistic, and immediate — the raw experiential signal before conceptual elaboration. Dharmakīrti is explicit: pratyakṣa apprehends unique particulars (*svalakṣaṇa*) and is non-conceptual (*nirvikalpaka*). The moment something is formulated as a proposition with a truth value, it is conceptual and falls under *anumāna*.
+Feelings are *pratyaksa* because they are pre-conceptual, non-linguistic, and immediate -- the raw experiential signal before conceptual elaboration. Dharmakirti is explicit: pratyaksa apprehends unique particulars (*svalaksana*) and is non-conceptual (*nirvikalpaka*). The moment something is formulated as a proposition with a truth value, it is conceptual and falls under *anumana*.
 
 ### Indirect Truth
 
 | WikiOracle Type | Epistemic Role                                        | Buddhist Equivalent                 | Sanskrit                  |
 | --------------- | ----------------------------------------------------- | ----------------------------------- | ------------------------- |
-| **Reference**   | citation grounding a claim in a verifiable source     | scripture / textual source          | *āgama*                   |
-| **Provider**    | another cognizer supplying claims and truth           | trustworthy person / valid cognizer | *āpta* / *pramāṇa-puruṣa* |
-| **Authority**   | reference to another body of conversations and truths | trustworthy testimony               | *āpta-vacana*             |
+| **Reference**   | citation grounding a claim in a verifiable source     | scripture / textual source          | *agama*                   |
+| **Provider**    | another cognizer supplying claims and truth           | trustworthy person / valid cognizer | *apta* / *pramana-purusa* |
+| **Authority**   | reference to another body of conversations and truths | trustworthy testimony               | *apta-vacana*             |
 
-Dharmakīrti argues that testimonial knowledge involves three components: the *text* itself (*āgama* — Reference), the *person* who produced it (*āpta* — Provider), and the *inferential warrant* for trusting that person's testimony (*āpta-vacana* — Authority). All three reduce to inference from the reliability of the source.
+Dharmakirti argues that testimonial knowledge involves three components: the *text* itself (*agama* -- Reference), the *person* who produced it (*apta* -- Provider), and the *inferential warrant* for trusting that person's testimony (*apta-vacana* -- Authority). All three reduce to inference from the reliability of the source.
 
 ### The Epistemic Pipeline
 
 These correspond to the full epistemic pipeline:
 
 ```
-feeling (direct perception) → fact (conceptual judgment) → operator → new fact
+feeling (direct perception) $\rightarrow$ fact (conceptual judgment) $\rightarrow$ operator $\rightarrow$ new fact
 ```
 
 Authorities influence **which providers are trusted**, but logical validity
@@ -99,18 +99,18 @@ truth is **frame-indexed**.
 
 ## Tetralemma Interpretation
 
-Buddhist logic frequently uses the **catuṣkoṭi (tetralemma)**, as articulated by Nāgārjuna in the *Mūlamadhyamakakārikā*:
+Buddhist logic frequently uses the **catuskoti (tetralemma)**, as articulated by Nagarjuna in the *Mulamadhyamakakarika*:
 
 | Classical Form | Sanskrit                 | WikiOracle Interpretation                         | Truth Type          |
 | -------------- | ------------------------ | ------------------------------------------------- | ------------------- |
 | True           | *asti*                   | affirmed                                          | `<fact trust="+1">` |
-| False          | *nāsti*                  | negated                                           | `<fact trust="-1">` |
-| Both           | *ubhaya*                 | indeterminate — neither affirmed nor negated      | `<fact trust="0">`  |
+| False          | *nasti*                  | negated                                           | `<fact trust="-1">` |
+| Both           | *ubhaya*                 | indeterminate -- neither affirmed nor negated      | `<fact trust="0">`  |
 | Neither        | *anubhaya* / *avaktavya* | outside the truth lattice entirely; inexpressible | `<feeling>`         |
 
 The "both" (*ubhaya*) position represents the indeterminate case: within a single frame, the proposition is neither established as true nor as false. Across multiple frames, the same value represents genuine frame disagreement.
 
-The "neither" (*anubhaya*) position is what Nāgārjuna uses to indicate that a proposition falls outside the domain of truth-evaluation entirely. Feelings occupy this position: they are experiential, not propositional.
+The "neither" (*anubhaya*) position is what Nagarjuna uses to indicate that a proposition falls outside the domain of truth-evaluation entirely. Feelings occupy this position: they are experiential, not propositional.
 
 ## Kleene Logic and Epistemic States
 
@@ -120,10 +120,10 @@ similar to **Kleene logic**:
 | Value      | Meaning                                          | Tetralemma      |
 | ---------- | ------------------------------------------------ | --------------- |
 | +1 (True)  | affirmed conceptual cognition                    | True (*asti*)   |
-| -1 (False) | negated conceptual cognition                     | False (*nāsti*) |
-| 0 (Both)   | indeterminate — insufficient to affirm or negate | Both (*ubhaya*) |
+| -1 (False) | negated conceptual cognition                     | False (*nasti*) |
+| 0 (Both)   | indeterminate -- insufficient to affirm or negate | Both (*ubhaya*) |
 
-The fourth tetralemma state — Neither — is occupied by Feelings, which are not truth-evaluable propositions and therefore fall outside the Kleene lattice entirely.
+The fourth tetralemma state -- Neither -- is occupied by Feelings, which are not truth-evaluable propositions and therefore fall outside the Kleene lattice entirely.
 
 When multiple frames are considered simultaneously,
 the "both" state emerges naturally as frame disagreement.
@@ -134,19 +134,19 @@ Buddhist logic distinguishes two types of negation:
 
 | Type                   | Sanskrit              | Meaning                                    |
 | ---------------------- | --------------------- | ------------------------------------------ |
-| Affirming negation     | *paryudāsa*           | negation implying an alternative predicate |
-| Non-affirming negation | *prasajya-pratiṣedha* | pure removal of a predicate                |
+| Affirming negation     | *paryudasa*           | negation implying an alternative predicate |
+| Non-affirming negation | *prasajya-pratisedha* | pure removal of a predicate                |
 
-WikiOracle's logical operators map to Dharmakīrti's theory of inference:
+WikiOracle's logical operators map to Dharmakirti's theory of inference:
 
 | WikiOracle Operator | Buddhist Equivalent                       | Sanskrit              |
 | ------------------- | ----------------------------------------- | --------------------- |
-| `<not>`             | affirming negation — implies the opposite | *paryudāsa*           |
-| `<non>`             | non-affirming negation — pure removal     | *prasajya-pratiṣedha* |
-| `<and>`             | positive concomitance — co-presence       | *anvaya*              |
-| `<or>`              | negative concomitance — co-absence        | *vyatireka*           |
+| `<not>`             | affirming negation -- implies the opposite | *paryudasa*           |
+| `<non>`             | non-affirming negation -- pure removal     | *prasajya-pratisedha* |
+| `<and>`             | positive concomitance -- co-presence       | *anvaya*              |
+| `<or>`              | negative concomitance -- co-absence        | *vyatireka*           |
 
-All operators are instances of **logical pervasion** (*vyāpti*) — the necessary connection between reason and conclusion that grounds valid inference.
+All operators are instances of **logical pervasion** (*vyapti*) -- the necessary connection between reason and conclusion that grounds valid inference.
 
 The `non()` operator is of particular interest. It removes commitment to a proposition without asserting its opposite:
 
@@ -158,7 +158,7 @@ interprets as:
 
 > the conceptual commitment to *a* is removed.
 
-This produces **epistemic openness** rather than contradiction. Dharmakīrti holds that valid cognition stabilizes reliable conceptual constructions while invalid cognition is removed through non-affirming negation. In WikiOracle this dynamic can be interpreted computationally: true cognitions deepen stable conceptual attractors, while false cognitions weaken them, producing a truth-weighted energy landscape similar to a Hopfield memory system.
+This produces **epistemic openness** rather than contradiction. Dharmakirti holds that valid cognition stabilizes reliable conceptual constructions while invalid cognition is removed through non-affirming negation. In WikiOracle this dynamic can be interpreted computationally: true cognitions deepen stable conceptual attractors, while false cognitions weaken them, producing a truth-weighted energy landscape similar to a Hopfield memory system.
 
 ## Truth Lattice
 
@@ -167,47 +167,47 @@ Combining frames and epistemic states yields the following structure:
 | State                | Interpretation                                 | Examples                                         |
 | -------------------- | ---------------------------------------------- | ------------------------------------------------ |
 | True (*asti*)        | affirmed in frame                              | `<fact trust="+1">`                              |
-| False (*nāsti*)      | rejected in frame                              | `<fact trust="-1">`                              |
+| False (*nasti*)      | rejected in frame                              | `<fact trust="-1">`                              |
 | Both (*ubhaya*)      | indeterminate or disagreement across frames    | `<fact trust="0">` / frame-indexed contradiction |
-| Neither (*anubhaya*) | outside the truth lattice; not truth-evaluable | `<feeling>` — excluded from training             |
+| Neither (*anubhaya*) | outside the truth lattice; not truth-evaluable | `<feeling>` -- excluded from training             |
 
-## Feelings, Vedanā, and the "Neither" Position
+## Feelings, Vedana, and the "Neither" Position
 
-Feelings occupy the *neither* position in the tetralemma. They are not truth-evaluable propositions — they are **direct perception** (*pratyakṣa*), specifically **self-awareness** (*svasaṃvedana*): the reflexive, unmediated presence of experiential content to the cognizing mind.
+Feelings occupy the *neither* position in the tetralemma. They are not truth-evaluable propositions -- they are **direct perception** (*pratyaksa*), specifically **self-awareness** (*svasamvedana*): the reflexive, unmediated presence of experiential content to the cognizing mind.
 
-The ±1 values of a Feeling correspond to **vedanā** (hedonic tone):
+The $\pm$1 values of a Feeling correspond to **vedana** (hedonic tone):
 
-* **+1**: *sukha-vedanā* — pleasant feeling
-* **-1**: *duḥkha-vedanā* — unpleasant feeling
+* **+1**: *sukha-vedana* -- pleasant feeling
+* **-1**: *duhkha-vedana* -- unpleasant feeling
 
-Vedanā arises from contact (*sparśa*) — the meeting of sense organ, sense object, and consciousness. It is pre-conceptual and non-linguistic: the raw signal before conceptual elaboration occurs.
+Vedana arises from contact (*sparsa*) -- the meeting of sense organ, sense object, and consciousness. It is pre-conceptual and non-linguistic: the raw signal before conceptual elaboration occurs.
 
-Facts, by contrast, are *anumāna* (inference) — conceptual judgments expressed as propositions. Dharmakīrti is explicit: the moment something is formulated as a proposition with a truth value, it is conceptual and therefore falls under inference, not perception.
+Facts, by contrast, are *anumana* (inference) -- conceptual judgments expressed as propositions. Dharmakirti is explicit: the moment something is formulated as a proposition with a truth value, it is conceptual and therefore falls under inference, not perception.
 
 In WikiOracle:
 
-* Feelings are **excluded from model training** — they do not update NanoChat weights.
-* Feelings are **excluded from TruthSets** — they carry no epistemic weight.
+* Feelings are **excluded from model training** -- they do not update NanoChat weights.
+* Feelings are **excluded from TruthSets** -- they carry no epistemic weight.
 * Poetry, greetings, hedged claims, and subjective expressions are canonical examples.
 
 This preserves the tetralemma without logical explosion.
 
-## Implicit Existence and Svabhāva
+## Implicit Existence and Svabhava
 
-WikiOracle's [grammar](Grammar.md#the-five-dimensional-sentence) allows sentences without an explicit verb phrase: `S → NP`. The bare noun phrase — "Fire!" — carries an implicit existential predicate ("exists"). This grammatical default has a philosophical cost.
+WikiOracle's [grammar](Grammar.md#the-five-dimensional-sentence) allows sentences without an explicit verb phrase: `S $\rightarrow$ NP`. The bare noun phrase -- "Fire!" -- carries an implicit existential predicate ("exists"). This grammatical default has a philosophical cost.
 
-Nāgārjuna's *Mūlamadhyamakakārikā* argues that the fundamental error of conceptual thought is the attribution of **svabhāva** (inherent existence, own-nature) to phenomena. When we say "fire" without predicating existence explicitly, the noun appears to stand on its own — as if fire possesses a permanent, independent self. This is precisely the reification that the doctrine of **śūnyatā** (emptiness) challenges.
+Nagarjuna's *Mulamadhyamakakarika* argues that the fundamental error of conceptual thought is the attribution of **svabhava** (inherent existence, own-nature) to phenomena. When we say "fire" without predicating existence explicitly, the noun appears to stand on its own -- as if fire possesses a permanent, independent self. This is precisely the reification that the doctrine of **sunyata** (emptiness) challenges.
 
 | Concept               | Sanskrit             | Meaning                                                             |
 | --------------------- | -------------------- | ------------------------------------------------------------------- |
-| Inherent existence    | *svabhāva*           | the mistaken belief that things exist independently and permanently |
-| No-self               | *anattā* / *anātman* | nothing possesses a fixed, independent self                         |
-| Dependent origination | *pratītyasamutpāda*  | things arise only in dependence on causes and conditions            |
-| Emptiness             | *śūnyatā*            | phenomena are empty of inherent existence                           |
+| Inherent existence    | *svabhava*           | the mistaken belief that things exist independently and permanently |
+| No-self               | *anatta* / *anatman* | nothing possesses a fixed, independent self                         |
+| Dependent origination | *pratityasamutpada*  | things arise only in dependence on causes and conditions            |
+| Emptiness             | *sunyata*            | phenomena are empty of inherent existence                           |
 
-Making the existential predicate explicit — "fire exists" — restores what Nāgārjuna insists upon: existence is a *relation* (between causes, conditions, and the phenomenon), not an *attribute* (inherent in the noun). The verb "exists" is not redundant; it is the grammatical trace of dependent origination.
+Making the existential predicate explicit -- "fire exists" -- restores what Nagarjuna insists upon: existence is a *relation* (between causes, conditions, and the phenomenon), not an *attribute* (inherent in the noun). The verb "exists" is not redundant; it is the grammatical trace of dependent origination.
 
-The grammar's rule that $VP \to \varepsilon$ if and only if $MP \to \varepsilon$ reinforces this point. When the existential predicate is absent, so is the modal frame. The noun floats free of both process and possibility — the exact condition Nāgārjuna identifies as the root of conceptual grasping (*upādāna*).
+The grammar's rule that $VP \to \varepsilon$ if and only if $MP \to \varepsilon$ reinforces this point. When the existential predicate is absent, so is the modal frame. The noun floats free of both process and possibility -- the exact condition Nagarjuna identifies as the root of conceptual grasping (*upadana*).
 
 ## Summary
 
@@ -215,16 +215,16 @@ WikiOracle's ontology forms a computational analogue of Buddhist epistemology.
 
 | WikiOracle | Category       | Buddhist Epistemology                             | Sanskrit                                |
 | ---------- | -------------- | ------------------------------------------------- | --------------------------------------- |
-| Feeling    | Direct Truth   | direct perception / self-awareness / hedonic tone | *pratyakṣa* / *svasaṃvedana* / *vedanā* |
-| Fact       | Direct Truth   | inference / conceptual cognition                  | *anumāna* / *kalpanā*                   |
-| Operator   | Direct Truth   | logical pervasion / formal reasoning              | *vyāpti* / *prayoga*                    |
-| Reference  | Indirect Truth | scripture / textual source                        | *āgama*                                 |
-| Provider   | Indirect Truth | trustworthy person / valid cognizer               | *āpta* / *pramāṇa-puruṣa*               |
-| Authority  | Indirect Truth | trustworthy testimony                             | *āpta-vacana*                           |
+| Feeling    | Direct Truth   | direct perception / self-awareness / hedonic tone | *pratyaksa* / *svasamvedana* / *vedana* |
+| Fact       | Direct Truth   | inference / conceptual cognition                  | *anumana* / *kalpana*                   |
+| Operator   | Direct Truth   | logical pervasion / formal reasoning              | *vyapti* / *prayoga*                    |
+| Reference  | Indirect Truth | scripture / textual source                        | *agama*                                 |
+| Provider   | Indirect Truth | trustworthy person / valid cognizer               | *apta* / *pramana-purusa*               |
+| Authority  | Indirect Truth | trustworthy testimony                             | *apta-vacana*                           |
 
 The system therefore models **conventional truth dynamics** in a way
-consistent with the logical structure described by Dharmakīrti and
-the tetralemma as articulated by Nāgārjuna.
+consistent with the logical structure described by Dharmakirti and
+the tetralemma as articulated by Nagarjuna.
 
 Plural frames coexist, inference operates within frames,
 feelings provide the perceptual ground from which concepts arise,

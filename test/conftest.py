@@ -1,4 +1,4 @@
-"""pytest configuration — add bin/etc to sys.path for optional submodules."""
+"""pytest configuration -- add bin/etc to sys.path for optional submodules."""
 import os
 import sys
 

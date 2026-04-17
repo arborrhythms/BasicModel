@@ -28,7 +28,7 @@
     <training>
       <numTrials>1</numTrials>
       <numEpochs>400</numEpochs>
-      <batchSize>4</batchSize>
+      <batchSize>64</batchSize>
       <learningRate>0.01</learningRate>
       <reverseScale>0.1</reverseScale>
       <trainEmbedding>JOINT</trainEmbedding>
@@ -92,7 +92,7 @@
   </OutputSpace>
 
   <WordSpace>
-    <useGrammar>true</useGrammar>
+    <useGrammar>all</useGrammar>
     <language>
       <grammar>
         <START>S</START>

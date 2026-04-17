@@ -19,7 +19,7 @@ def drotation_dtheta(theta):
     """
     Returns the derivative of the 2D rotation matrix with respect to theta.
 
-    d/dθ [cosθ, -sinθ; sinθ, cosθ] = [-sinθ, -cosθ; cosθ, -sinθ]
+    d/dtheta [costheta, -sintheta; sintheta, costheta] = [-sintheta, -costheta; costheta, -sintheta]
     """
     c, s = np.cos(theta), np.sin(theta)
     return np.array([[-s, -c],
@@ -36,7 +36,7 @@ class BidirectionalLinearNumpy:
       - D = diag(diag) is a diagonal matrix.
 
     Its inverse is computed analytically via:
-       W⁻¹ = R2ᵀ @ D⁻¹ @ R1ᵀ.
+       W^-^1 = R2^T @ D^-^1 @ R1^T.
 
     The model parameters are:
        theta1, theta2 (scalars) and diag (a 2-element vector).
@@ -60,7 +60,7 @@ class BidirectionalLinearNumpy:
         R1 = rotation(self.theta1)
         R2 = rotation(self.theta2)
         D_inv = np.diag(1.0 / self.diag)
-        # Since rotation matrices are orthogonal: R⁻¹ = Rᵀ.
+        # Since rotation matrices are orthogonal: R^-^1 = R^T.
         return R2.T @ D_inv @ R1.T
 
     def forward(self, x):
@@ -75,7 +75,7 @@ def compute_loss(model, x, y, alpha=0.8, beta = 0.2):
     """
     Computes the loss as the product of:
        L_forward = MSE(x @ W, y)
-       L_reverse = MSE(y @ W⁻¹, x)
+       L_reverse = MSE(y @ W^-^1, x)
     """
     W = model.get_weight()
     y_pred = x @ W
@@ -102,15 +102,15 @@ def analytic_gradients(model, x, y):
     with respect to the parameters theta1, theta2, and diag.
 
     We first compute the gradients of the forward loss L_forward and reverse loss L_reverse
-    with respect to the weight matrices W and W⁻¹.
+    with respect to the weight matrices W and W^-^1.
 
     Let:
-       grad_W = ∂L_forward/∂W = (2/n) * xᵀ (xW - y)
-       grad_Winv = ∂L_reverse/∂W⁻¹ = (2/n) * yᵀ (yW⁻¹ - x)
+       grad_W = dL_forward/dW = (2/n) * x^T (xW - y)
+       grad_Winv = dL_reverse/dW^-^1 = (2/n) * y^T (yW^-^1 - x)
 
     Then, by the chain rule, for any parameter p:
 
-       dL/dp = L_reverse * <grad_W, dW/dp> + L_forward * <grad_Winv, dW⁻¹/dp>
+       dL/dp = L_reverse * <grad_W, dW/dp> + L_forward * <grad_Winv, dW^-^1/dp>
 
     where <A, B> denotes the elementwise Frobenius inner product.
     """
@@ -141,7 +141,7 @@ def analytic_gradients(model, x, y):
     dR1 = drotation_dtheta(model.theta1)  # shape (2,2)
     # dW/dtheta1 = dR1/dtheta1 @ D @ R2.
     dW_dtheta1 = dR1 @ D @ R2
-    # dW_inv/dtheta1 = R2ᵀ @ D_inv @ (dR1/dtheta1)ᵀ.
+    # dW_inv/dtheta1 = R2^T @ D_inv @ (dR1/dtheta1)^T.
     dWinv_dtheta1 = R2.T @ D_inv @ dR1.T
     grad_theta1 = L_reverse * np.sum(grad_W * dW_dtheta1) + L_forward * np.sum(grad_Winv * dWinv_dtheta1)
 
@@ -149,7 +149,7 @@ def analytic_gradients(model, x, y):
     dR2 = drotation_dtheta(model.theta2)  # shape (2,2)
     # dW/dtheta2 = R1 @ D @ dR2/dtheta2.
     dW_dtheta2 = R1 @ D @ dR2
-    # dW_inv/dtheta2 = (dR2/dtheta2)ᵀ @ D_inv @ R1ᵀ.
+    # dW_inv/dtheta2 = (dR2/dtheta2)^T @ D_inv @ R1^T.
     dWinv_dtheta2 = dR2.T @ D_inv @ R1.T
     grad_theta2 = L_reverse * np.sum(grad_W * dW_dtheta2) + L_forward * np.sum(grad_Winv * dWinv_dtheta2)
 
@@ -161,7 +161,7 @@ def analytic_gradients(model, x, y):
         E[i, i] = 1.0
         dW_ddi = R1 @ E @ R2
 
-        # dW_inv/d(diag[i]) = - R2ᵀ @ E @ R1ᵀ / (diag[i]²).
+        # dW_inv/d(diag[i]) = - R2^T @ E @ R1^T / (diag[i]^2).
         dWinv_ddi = - R2.T @ E @ R1.T / (model.diag[i] ** 2)
 
         grad_diag[i] = (L_reverse * np.sum(grad_W * dW_ddi) +
@@ -233,12 +233,12 @@ def train_bidirectional_model(num_epochs=100, lr=0.001, num_samples=128):
             print(f"Epoch {epoch + 1}/{num_epochs}, Product Loss: {loss:.6f}")
 
     # Compute theoretical best performance via least squares regression.
-    # Forward mapping: find W_ls such that x_train @ W_ls ≈ y_train.
+    # Forward mapping: find W_ls such that x_train @ W_ls ~= y_train.
     A               = true_W
     forward_pred    = x_train @ A
     loss_forward_ls = np.mean((forward_pred - y_train) ** 2)
 
-    # Reverse mapping: find W_ls such that y_train @ W_ls ≈ x_train.
+    # Reverse mapping: find W_ls such that y_train @ W_ls ~= x_train.
     A_reverse       = np.linalg.pinv(true_W)
     reverse_pred    = y_train @ A_reverse
     loss_reverse_ls = np.mean((reverse_pred - x_train) ** 2)

@@ -2,11 +2,11 @@
 
 Verifies the new BPE path in ``ChunkLayer``:
 
-  1. Cold-start invariants — empty merge table, 256 single-byte ids.
+  1. Cold-start invariants -- empty merge table, 256 single-byte ids.
   2. ``train_step`` grows ``merges`` and ``vocab`` monotonically on a
      small repeating text corpus; frequent byte pairs end up in the
      vocab.
-  3. Greedy longest-match ``forward`` is deterministic across batches —
+  3. Greedy longest-match ``forward`` is deterministic across batches --
      identical input yields identical chunk ids.
   4. ``hard_merge_spans`` + ``compact`` + ``uncompact`` still roundtrips
      exactly in BPE mode (span-stored originals drive reconstruction).

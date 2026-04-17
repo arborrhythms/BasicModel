@@ -94,12 +94,12 @@ class Lex:
             list of {'start': int, 'end': int, 'text': str, 'category': str}
 
         Each token is categorized as one of:
-            'WORD'      — alphabetic runs (including mid-word apostrophes/hyphens)
-            'NUMBER'    — digit runs
-            'SEPARATOR' — sentence-ending punctuation (. ! ?)
-            'PUNCT'     — all other non-whitespace single characters
+            'WORD'      -- alphabetic runs (including mid-word apostrophes/hyphens)
+            'NUMBER'    -- digit runs
+            'SEPARATOR' -- sentence-ending punctuation (. ! ?)
+            'PUNCT'     -- all other non-whitespace single characters
 
-        Sentence grouping is NOT done here — that is parse's job.
+        Sentence grouping is NOT done here -- that is parse's job.
         Only WORD tokens update self.vocab.
         """
         text = buf[start:]
@@ -128,7 +128,7 @@ class Lex:
         while i < n:
             ch = text[i]
 
-            # Whitespace run — SPACE token only within a sentence (not after SEPARATOR)
+            # Whitespace run -- SPACE token only within a sentence (not after SEPARATOR)
             if ch in ' \n\r\t':
                 j = i + 1
                 while j < n and text[j] in ' \n\r\t':
@@ -138,7 +138,7 @@ class Lex:
                 i = j
                 continue
 
-            # Alphabetic run (WORD) — includes mid-word apostrophes and hyphens
+            # Alphabetic run (WORD) -- includes mid-word apostrophes and hyphens
             if ch.isalpha():
                 j = i + 1
                 while j < n:

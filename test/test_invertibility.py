@@ -44,7 +44,7 @@ class TestInvertibleLinearLayer(unittest.TestCase):
         layer = Layers.InvertibleLinearLayer(nIn, nOut, naive=naive, hasBias=hasBias)
         layer.set_sigma(0)
         if nIn <= nOut:
-            # Square / expand: left-invertible → reverse(forward(x)) ≈ x
+            # Square / expand: left-invertible -> reverse(forward(x)) ~= x
             x = torch.randn(*batch, nIn).to(TheDevice.get())
             y = layer.forward(x)
             x_rec = layer.reverse(y)
@@ -52,7 +52,7 @@ class TestInvertibleLinearLayer(unittest.TestCase):
             self.assertLess(err, tol,
                             f"{nIn}->{nOut} naive={naive} hasBias={hasBias}: err={err:.2e}")
         else:
-            # Contract (nIn > nOut): right-invertible → forward(reverse(y)) ≈ y
+            # Contract (nIn > nOut): right-invertible -> forward(reverse(y)) ~= y
             y = torch.randn(*batch, nOut).to(TheDevice.get())
             x_rev = layer.reverse(y)
             y_rec = layer.forward(x_rev)
@@ -93,16 +93,16 @@ class TestInvertibleLinearLayer(unittest.TestCase):
             layer.var.fill_(0.2)
             layer.bias.fill_(0.8)
         if nIn <= nOut:
-            # Square / expand: left-invertible → reverse(forward(x)) ≈ x
+            # Square / expand: left-invertible -> reverse(forward(x)) ~= x
             x = torch.randn(3, nIn).to(TheDevice.get())
             y = layer.forward(x)
             x_rec = layer.reverse(y)
             err = _reconstruction_error(x, x_rec, rel=True)
         else:
-            # Contract (nIn > nOut): forward→reverse use the same ergodic factors
+            # Contract (nIn > nOut): forward->reverse use the same ergodic factors
             # (forward resamples, reverse uses the stored buffers).  The map is
             # surjective so reverse(forward(x)) only recovers the row-space
-            # component of x; the expected relative error is ≈ sqrt((nIn-nOut)/nIn).
+            # component of x; the expected relative error is ~= sqrt((nIn-nOut)/nIn).
             # Use a generous tolerance to verify the ergodic path runs correctly.
             x = torch.randn(3, nIn).to(TheDevice.get())
             y = layer.forward(x)
@@ -111,7 +111,7 @@ class TestInvertibleLinearLayer(unittest.TestCase):
         self.assertLess(err, tol,
                         f"ergodic {nIn}->{nOut} naive={naive} stable={stable}: err={err:.2e}")
 
-    # ergodic roundtrip: factor-level noise injection → exact inverse
+    # ergodic roundtrip: factor-level noise injection -> exact inverse
     def test_ergodic_square_naive(self):        self._check_ergodic(5, 5, True,  False, 1e-3)
     def test_ergodic_square(self):              self._check_ergodic(5, 5, False, False, 1e-3)
     def test_ergodic_expand(self):              self._check_ergodic(5, 8, False, False, 1e-3)
@@ -286,7 +286,7 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
 
     These tests verify forward/reverse roundtrip across 2D, 3D, bias,
     ergodic, and training scenarios.  PiLayer (log-space) does not
-    interleave — output shape matches input shape.
+    interleave -- output shape matches input shape.
     """
 
     def test_2d_roundtrip(self):
@@ -537,7 +537,7 @@ class TestPiLayerInvertibleTrained(unittest.TestCase):
     """PiLayer with invertible=True, trained for roundtrip.
 
     Tests PiLayer directly (previously tested via PerceptualSpace, which
-    no longer uses PiLayer — it remains in SymbolicSpace).
+    no longer uses PiLayer -- it remains in SymbolicSpace).
     """
     def _check(self, dim):
         torch.manual_seed(42)
@@ -576,7 +576,7 @@ class TestConceptualSpaceInvertible(unittest.TestCase):
         )
         cspace.eval()
         cspace.sigma.set_sigma(0)
-        # Input in (0,1) — logit in ConceptualSpace.forward() expects this range
+        # Input in (0,1) -- logit in ConceptualSpace.forward() expects this range
         x = (torch.rand(2, nObj, embDim) * 0.8 + 0.1).to(TheDevice.get())
         with torch.no_grad():
             y = cspace.forward(_wrap_tensor(cspace, x))
@@ -602,7 +602,7 @@ class TestConceptualSpacePairedSigma(unittest.TestCase):
             [nObj, embDim], [nObj, contentDim], [nObj, embDim],
         )
         cspace.eval()
-        # Input in (0,1) — logit in ConceptualSpace.forward() expects this range
+        # Input in (0,1) -- logit in ConceptualSpace.forward() expects this range
         x = (torch.rand(2, nObj, embDim) * 0.8 + 0.1).to(TheDevice.get())
         with torch.no_grad():
             y = cspace.forward(_wrap_tensor(cspace, x))
@@ -637,7 +637,7 @@ class TestSymbolicSpacePassthrough(unittest.TestCase):
 
 
 class TestOutputSpaceReversePass(unittest.TestCase):
-    """OutputSpace changes shape so roundtrip is lossy — just verify no crash."""
+    """OutputSpace changes shape so roundtrip is lossy -- just verify no crash."""
     def _check(self, objSize):
         _setup_object_encoding(objSize=objSize, outputDim=2, reconstruct="FULL",
                                flatten=True)
@@ -764,7 +764,7 @@ class TestSigmaLayerNonlinearRange(unittest.TestCase):
                         f"SigmaLayer fwd above 1: max={y.max().item():.6f}")
 
     def test_reverse_range(self):
-        """atanh→W_inv produces unconstrained output (no sigmoid here)."""
+        """atanh->W_inv produces unconstrained output (no sigmoid here)."""
         torch.manual_seed(42)
         layer = Layers.SigmaLayer(6, 6, invertible=True)
         layer.set_sigma(0)
@@ -785,7 +785,7 @@ class TestSigmaLayerNonlinearRange(unittest.TestCase):
                         f"SigmaLayer roundtrip error: {err:.2e}")
 
     def test_reverse_extreme_input(self):
-        """Values near ±1 should not produce NaN in reverse."""
+        """Values near +-1 should not produce NaN in reverse."""
         torch.manual_seed(42)
         layer = Layers.SigmaLayer(4, 4, invertible=True)
         layer.set_sigma(0)
@@ -821,7 +821,7 @@ class TestPerceptualSpaceReverseRangeCheck(unittest.TestCase):
     """PerceptualSpace.reverse() checks output is in [-1, 1] (input range)."""
 
     def test_roundtrip_output_in_range(self):
-        """Forward→reverse roundtrip should produce output in [-1, 1]."""
+        """Forward->reverse roundtrip should produce output in [-1, 1]."""
         _setup_object_encoding(objSize=0, invertible=True, hasAttention=False,
                                flatten=True)
         nObj, contentDim = 3, 6
@@ -833,7 +833,7 @@ class TestPerceptualSpaceReverseRangeCheck(unittest.TestCase):
         x = torch.rand(2, nObj, contentDim) * 2 - 1  # [-1, 1]
         with torch.no_grad():
             y = pspace.forward(_wrap_tensor(pspace, x))
-            # Should NOT raise — PiLayer reverse maps back to [-1, 1]
+            # Should NOT raise -- PiLayer reverse maps back to [-1, 1]
             pspace.reverse(y)
 
 
@@ -849,11 +849,11 @@ class TestConceptualSpaceReverseRangeCheck(unittest.TestCase):
             [nObj, contentDim], [nObj, contentDim], [nObj, contentDim],
         )
         cspace.eval()
-        # Input in (0,1) — logit expects this range
+        # Input in (0,1) -- logit expects this range
         x = torch.rand(2, nObj, contentDim) * 0.8 + 0.1
         with torch.no_grad():
             y = cspace.forward(_wrap_tensor(cspace, x))
-            # Should NOT raise — sigmoid bounds output to (0, 1)
+            # Should NOT raise -- sigmoid bounds output to (0, 1)
             cspace.reverse(y)
 
     def test_nonlinear_extreme_input_bounded(self):
