@@ -24,7 +24,6 @@ try:
 except ImportError:
     make_dot = None
 from sklearn.decomposition import PCA
-from vector_quantize_pytorch import ResidualVQ, VectorQuantize
 import torch.optim as optim
 from torch.profiler import profile as torch_profile, ProfilerActivity, schedule as profiler_schedule
 from functools import partial
@@ -40,7 +39,7 @@ from embed import WordVectors, PretrainModel
 from data import Data, TheData
 
 from Layers import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
-from Layers import VQLayer, LinearLayer, AttentionLayer
+from Layers import LinearLayer, AttentionLayer
 from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import Error, TheError
 
@@ -2007,11 +2006,33 @@ class MentalModel(BaseModel):
         # constituency structure.
         self.useButterflies = bool(
             TheXMLConfig.get("architecture.useButterflies", default=False))
-        self.useGrammar = bool(
-            TheXMLConfig.get("WordSpace.useGrammar", default=False))
-        if self.useButterflies and self.useGrammar:
+        try:
+            from basicmodel.bin.util import parse_use_grammar
+        except ModuleNotFoundError:
+            from util import parse_use_grammar
+        _raw_use_grammar = TheXMLConfig.get(
+            "WordSpace.useGrammar", default=False
+        )
+        # Legacy sidecar: if config has a boolean, consult thought_free too.
+        _legacy_tf = bool(TheXMLConfig.get(
+            "WordSpace.language.thought_free", default=False
+        ))
+        self.useGrammar = parse_use_grammar(
+            _raw_use_grammar, thought_free=_legacy_tf
+        )
+        # thoughtFree is structurally equivalent to conceptualOrder=0: no
+        # higher-order P/C/S cycles. Reject the nonsense combination early.
+        TheXMLConfig.require(
+            lambda cfg, _ug=self.useGrammar, _co=self.conceptualOrder:
+                _ug != "thoughtFree" or _co == 0,
+            f"useGrammar='thoughtFree' requires conceptualOrder=0 "
+            f"(got useGrammar={self.useGrammar!r}, "
+            f"conceptualOrder={self.conceptualOrder})"
+        )
+        # Butterflies still conflict with full constituency grammar.
+        if self.useButterflies and self.useGrammar == "all":
             raise ValueError(
-                "useButterflies=true + useGrammar=true is excluded: "
+                "useButterflies=true + useGrammar=\"all\" is excluded: "
                 "butterfly permutations fight constituency structure")
 
         # Butterfly-path state cache (populated in the useButterflies branch
@@ -2161,7 +2182,7 @@ class MentalModel(BaseModel):
             self._level_shapes_list = self._level_shapes(
                 nPercepts, state_dim, n_stages)
         # ── Grammar path: progressive bottleneck per conceptual order ──
-        elif self.useGrammar:
+        elif self.useGrammar == "all":
             self._level_shapes_list = self._level_shapes(
                 nPercepts, percept_dim + obj_percept, self.conceptualOrder)
         else:
@@ -2396,7 +2417,7 @@ class MentalModel(BaseModel):
             # ButterflyStage merges internally; no external merge stack.
             x = percepts                     # [B, N_percept, D_percept]
             sym_feedback = None
-        elif self.useGrammar:
+        elif self.useGrammar == "all":
             # Progressive-bottleneck path: external pair-average merge.
             x = percepts
             sym_feedback = None
@@ -2420,7 +2441,7 @@ class MentalModel(BaseModel):
             # 1. Input construction
             if self.useButterflies:
                 concept_input = x
-            elif self.useGrammar:
+            elif self.useGrammar == "all":
                 x = self._butterfly_merge(x)
                 if sym_feedback is not None:
                     sym_feedback = (sym_feedback[:, 0::2, :] + sym_feedback[:, 1::2, :]) / 2
@@ -2447,12 +2468,12 @@ class MentalModel(BaseModel):
             # Flat path: hint the C-tier compose to reduce to nOutputSymbols.
             # Butterfly/grammar paths use per-level layers that already move
             # information across the slot axis.
-            c_target = None if (self.useButterflies or self.useGrammar) else self.nOutputSymbols
+            c_target = None if (self.useButterflies or self.useGrammar == "all") else self.nOutputSymbols
             self.concepts = self.conceptualSpace[t].forward(
                 self.percepts, wordSpace=ws, target_count=c_target)
             concept_vectors = self.concepts.materialize()
 
-            if self.useButterflies or self.useGrammar:
+            if self.useButterflies or self.useGrammar == "all":
                 x = concept_vectors          # carry forward for next merge
 
             # 3. Pi (symbolic projection)
@@ -2464,17 +2485,17 @@ class MentalModel(BaseModel):
             sym_vectors = self.symbols.materialize()
 
             # 4. Feedback for next iteration
-            if self.useGrammar and t < self.conceptualOrder - 1:
+            if self.useGrammar == "all" and t < self.conceptualOrder - 1:
                 N_t, D_t = self._level_shapes_list[t]
                 sym_norms = sym_vectors.norm(dim=-1, keepdim=True)
                 sym_feedback = sym_norms.expand(-1, -1, D_t)
-            elif not (self.useButterflies or self.useGrammar):
+            elif not (self.useButterflies or self.useGrammar == "all"):
                 nSymFeedback = self._symbol_shape[0]
                 sym_feedback = self._symbol_feedback_from_vectors(
                     sym_vectors, nSymFeedback, percepts.shape[-1])
 
             # 5. Cache symbol states for truth penalty (butterfly & grammar only).
-            if self.useButterflies or self.useGrammar:
+            if self.useButterflies or self.useGrammar == "all":
                 self.symbol_states.append(sym_vectors.clone())
 
         # ── Post-loop finalization ──
@@ -2527,7 +2548,7 @@ class MentalModel(BaseModel):
                     s, v, o, c_sl.lifting_layer, self.symbolicSpace)
 
         # Output from first nOutputSymbols of symbol vectors
-        if self.useButterflies or self.useGrammar:
+        if self.useButterflies or self.useGrammar == "all":
             self.symbolicSpace.subspace.set_event(sym_vectors)
         output_syms = sym_vectors[:, :self.nOutputSymbols, :].clone()
         outputData = self.Finish(output_syms)
@@ -2574,7 +2595,7 @@ class MentalModel(BaseModel):
             input_data = self.inputs.materialize()
             return input_data, input_latent
 
-        if self.useGrammar:
+        if self.useGrammar == "all":
             # Progressive-bottleneck: peel off last pi, then per-level
             # reverse with external unmerge and feedback subtraction.
             self.symbols.set_event(sym_vec)

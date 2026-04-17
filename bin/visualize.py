@@ -431,7 +431,10 @@ class Report:
         """Uses Torchviz to visualize the computation graph."""
         if not self.enabled:
             return
-        from basicmodel.bin.Models import TheData
+        try:
+            from basicmodel.bin.Models import TheData
+        except ModuleNotFoundError:
+            from Models import TheData
         model.eval()
         output, input, _, _ = model.runTest(TheData.test_input, TheData.test_output)
         dot = make_dot(output, params=dict(model.named_parameters()))

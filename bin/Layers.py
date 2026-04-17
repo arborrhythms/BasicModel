@@ -15,7 +15,6 @@ import math
 import random
 import torch.nn as nn
 import torch.nn.functional as F
-from vector_quantize_pytorch import ResidualVQ, VectorQuantize
 from itertools import chain
 import torch.optim as optim
 import time
@@ -29,6 +28,33 @@ from util import TheXMLConfig, TheDevice
 from util import TheMessage
 
 #region Layers
+
+
+class SparsityRegularizer(nn.Module):
+    """Soft-threshold L1 proximal operator.
+
+    Shared by PerceptualSpace, ConceptualSpace, and SymbolicSpace so a
+    single sparsity implementation is reused across tiers. Extracted from
+    ``SymbolicSpace.l1_proximal``.
+
+    Acts as identity when disabled or when ``l1_lambda <= 0``. Otherwise
+    applies ``sign(x) * max(|x| - l1_lambda, 0)``, which zeros activations
+    below the threshold and shrinks survivors.
+    """
+
+    def __init__(self, l1_lambda: float = 0.0, enabled: bool = True):
+        super().__init__()
+        self.l1_lambda = float(l1_lambda)
+        self.enabled = bool(enabled)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if not self.enabled or self.l1_lambda <= 0.0:
+            return x
+        return torch.sign(x) * torch.clamp(
+            torch.abs(x) - self.l1_lambda, min=0.0
+        )
+
+
 class Layer(nn.Module):
     """Base class for custom layers with optional symbol/object axis swapping.
 
@@ -1282,40 +1308,6 @@ class SortingLayer(Layer):
 
         print("SortingLayer tests passed.")
 
-class VQLayer(Layer):
-    """Vector-quantization layer backed by a residual VQ codebook.
-
-    Flattens the input to (N, dim), quantizes each vector against a
-    learned codebook using cosine similarity, and returns the codes from
-    all quantizer stages.  The reverse pass is not implemented because
-    codebook lookup is not uniquely invertible.
-    """
-    nOutput = 0
-
-    def __init__(self, dim, codebookSize, numQuantizers):
-        super(VQLayer, self).__init__(dim, dim)
-        self.vq = ResidualVQ(
-            dim=dim,
-            codebook_size=codebookSize,
-            num_quantizers=numQuantizers,
-            decay=0.8,
-            commitment_weight=1.0,
-            use_cosine_sim=True,
-            rotation_trick=True,  # rotation trick gradient estimator (vs STE)
-        )
-
-    def distance(self, x, y):
-        """Euclidean distance between two tensors."""
-        return torch.sqrt(torch.sum((x - y) ** 2))
-
-    def forward(self, x, t=0):
-        batch = len(x)
-        x = x.reshape((-1, self.nInput))
-        quantized, indices, commit_loss, all_codes = self.vq(x, return_all_codes=True)
-        return all_codes
-
-    def reverse(self, y, t=0):
-        raise ValueError("VQLayer reverse is not defined; codebook lookup is not invertible.")
 class DecisionBoundaryLayer(Layer):
     """Learns a hyperplane normal vector via online updates (not backprop).
 

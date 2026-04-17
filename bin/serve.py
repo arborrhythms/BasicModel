@@ -106,7 +106,10 @@ def add_security_headers(response):
 
 def _load_model(config_path=None):
     """Load BasicModel with config from BasicModel.xml."""
-    from basicmodel.bin.Models import BasicModel
+    try:
+        from basicmodel.bin.Models import BasicModel
+    except ModuleNotFoundError:
+        from Models import BasicModel
     from data import TheData
 
     if config_path is None:
@@ -188,7 +191,10 @@ def chat_completions():
 
     # Shamatha speech: restrict grammar to S -> C only
     thought_free = body.get("thought_free", False)
-    from basicmodel.bin.Spaces import TheGrammar
+    try:
+        from basicmodel.bin.Spaces import TheGrammar
+    except ModuleNotFoundError:
+        from Spaces import TheGrammar
     try:
         if thought_free:
             TheGrammar.thought_free = True

@@ -33,12 +33,12 @@ def _load(cfg_name):
 #   - MM_shamatha.xml   — ConceptualSpace nVectors!=nActive
 #   - MM_xor_step4.xml  — ConceptualSpace nVectors!=nActive
 EXPECTED = {
-    "MM_400M.xml":           (True,  False),
-    "MM_xor.xml":            (True,  False),
-    "RamsifiedModel.xml":    (True,  False),
-    "MM_bpe.xml":            (False, False),
-    "MentalModel.xml":       (False, False),
-    "MM_grammar.xml":        (False, True),
+    "MM_400M.xml":           (True,  "none"),
+    "MM_xor.xml":            (True,  "none"),
+    "RamsifiedModel.xml":    (True,  "none"),
+    "MM_bpe.xml":            (False, "none"),
+    "MentalModel.xml":       (False, "none"),
+    "MM_grammar.xml":        (False, "all"),
 }
 
 
@@ -53,11 +53,11 @@ class TestOrthogonalFlags(unittest.TestCase):
                         bool(m.useButterflies), expect_bf,
                         f"{cfg}: useButterflies expected {expect_bf}")
                     self.assertEqual(
-                        bool(m.useGrammar), expect_gr,
-                        f"{cfg}: useGrammar expected {expect_gr}")
+                        m.useGrammar, expect_gr,
+                        f"{cfg}: useGrammar expected {expect_gr!r}")
                     # The exclusion invariant must hold.
                     self.assertFalse(
-                        m.useButterflies and m.useGrammar,
+                        m.useButterflies and m.useGrammar == "all",
                         f"{cfg}: butterflies+grammar excluded")
 
 

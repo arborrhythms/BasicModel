@@ -256,6 +256,15 @@
       <xs:element name="chunkBPE" type="xs:boolean" minOccurs="0"/>
       <xs:element name="chunkTargetVocabSize" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="chunkMinPairFrequency" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="chunking" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="raw"/>
+            <xs:enumeration value="bpe"/>
+            <xs:enumeration value="lexicon"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
     </xs:all>
   </xs:complexType>
 
@@ -348,9 +357,24 @@
        sentenceCentroidHistory / sentenceLambda /
        sentencePredictionScale).
        ═══════════════════════════════════════════════════════════════════ -->
+  <xs:simpleType name="useGrammarType">
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="all"/>
+          <xs:enumeration value="thoughtFree"/>
+          <xs:enumeration value="none"/>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base="xs:boolean"/>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+
   <xs:complexType name="wordSpaceType">
     <xs:all>
-      <xs:element name="useGrammar" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="useGrammar" type="useGrammarType" minOccurs="0"/>
       <xs:element name="syntacticHiddenDim" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="truthMaxEntries" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="language" type="languageType" minOccurs="0"/>

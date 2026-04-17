@@ -9,12 +9,133 @@ import random
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 import util
 import matplotlib.pyplot as plt
-from Layers import Layer, SigmaLayer, PiLayer, VQLayer
+from Layers import Layer, SigmaLayer, PiLayer
 from visualize import TheReport
+
+# ResidualVQ: prefer the external vector_quantize_pytorch package; fall
+# back to a minimal in-repo implementation (formerly vq_compat.py) that
+# supports the subset of the API VQLayer uses.
+try:
+    from vector_quantize_pytorch import ResidualVQ, VectorQuantize
+except Exception:
+    class VectorQuantize(nn.Module):
+        def __init__(self, dim, codebook_size, commitment_weight=1.0,
+                     use_cosine_sim=False, **kwargs):
+            super().__init__()
+            self.dim = dim
+            self.codebook_size = codebook_size
+            self.commitment_weight = commitment_weight
+            self.use_cosine_sim = use_cosine_sim
+            self.codebook = torch.randn(codebook_size, dim)
+
+        @property
+        def codebook(self):
+            return self._parameters["_codebook"]
+
+        @codebook.setter
+        def codebook(self, value):
+            param = value if isinstance(value, nn.Parameter) else nn.Parameter(value.detach().clone())
+            if "_codebook" in self._parameters:
+                self._parameters["_codebook"] = param
+            else:
+                self.register_parameter("_codebook", param)
+            self.codebook_size = param.shape[0]
+
+        def forward(self, x, return_all_codes=False, **kwargs):
+            original_shape = x.shape
+            flat = x.reshape(-1, original_shape[-1])
+            codebook = self.codebook
+            if self.use_cosine_sim:
+                flat_cmp = F.normalize(flat, dim=-1)
+                codebook_cmp = F.normalize(codebook, dim=-1)
+                indices = (flat_cmp @ codebook_cmp.T).argmax(dim=-1)
+            else:
+                indices = torch.cdist(flat, codebook).argmin(dim=-1)
+            quantized_raw = codebook[indices].reshape(original_shape)
+            commit_loss = self.commitment_weight * F.mse_loss(
+                x, quantized_raw.detach()
+            )
+            quantized = x + (quantized_raw - x).detach()
+            indices = indices.reshape(original_shape[:-1])
+            if return_all_codes:
+                return quantized, indices, commit_loss, quantized.unsqueeze(0)
+            return quantized, indices, commit_loss
+
+    class ResidualVQ(nn.Module):
+        def __init__(self, dim, codebook_size, num_quantizers=1, **kwargs):
+            super().__init__()
+            self.layers = nn.ModuleList([
+                VectorQuantize(
+                    dim=dim,
+                    codebook_size=codebook_size,
+                    commitment_weight=kwargs.get("commitment_weight", 1.0),
+                    use_cosine_sim=kwargs.get("use_cosine_sim", False),
+                )
+                for _ in range(num_quantizers)
+            ])
+
+        def forward(self, x, return_all_codes=False, **kwargs):
+            residual = x
+            quantized_total = torch.zeros_like(x)
+            all_indices, all_codes = [], []
+            total_loss = x.new_tensor(0.0)
+            for layer in self.layers:
+                quantized, indices, commit_loss = layer(residual, **kwargs)
+                quantized_total = quantized_total + quantized
+                residual = residual - quantized.detach()
+                total_loss = total_loss + commit_loss
+                all_indices.append(indices)
+                all_codes.append(quantized)
+            stacked_indices = torch.stack(all_indices, dim=0)
+            stacked_codes = torch.stack(all_codes, dim=0)
+            if return_all_codes:
+                return quantized_total, stacked_indices, total_loss, stacked_codes
+            return quantized_total, stacked_indices, total_loss
+
+
+class VQLayer(Layer):
+    """Vector-quantization layer backed by a residual VQ codebook.
+
+    Flattens the input to (N, dim), quantizes each vector against a
+    learned codebook using cosine similarity, and returns the codes from
+    all quantizer stages.  The reverse pass is not implemented because
+    codebook lookup is not uniquely invertible.
+
+    Moved from Layers.py into this module because SigmaPi.py is the only
+    remaining consumer (and the forward call in LogicalFunctionNet below
+    is itself commented out).
+    """
+    nOutput = 0
+
+    def __init__(self, dim, codebookSize, numQuantizers):
+        super(VQLayer, self).__init__(dim, dim)
+        self.vq = ResidualVQ(
+            dim=dim,
+            codebook_size=codebookSize,
+            num_quantizers=numQuantizers,
+            decay=0.8,
+            commitment_weight=1.0,
+            use_cosine_sim=True,
+            rotation_trick=True,  # rotation trick gradient estimator (vs STE)
+        )
+
+    def distance(self, x, y):
+        """Euclidean distance between two tensors."""
+        return torch.sqrt(torch.sum((x - y) ** 2))
+
+    def forward(self, x, t=0):
+        batch = len(x)
+        x = x.reshape((-1, self.nInput))
+        quantized, indices, commit_loss, all_codes = self.vq(x, return_all_codes=True)
+        return all_codes
+
+    def reverse(self, y, t=0):
+        raise ValueError("VQLayer reverse is not defined; codebook lookup is not invertible.")
 
 # When embeddingDim == 1, logical 0/1 are scalar tensors.
 # Setting embeddingDim > 1 hides the XOR in random high-dimensional

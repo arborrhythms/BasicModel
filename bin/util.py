@@ -737,3 +737,28 @@ class ProjectPaths:
         if not os.path.isabs(path):
             return os.path.join(cls.PROJECT_DIR, path)
         return path
+
+
+_VALID_USE_GRAMMAR = ("all", "thoughtFree", "none")
+
+
+def parse_use_grammar(value, thought_free: bool = False) -> str:
+    """Normalize useGrammar config into the tri-state {"all", "thoughtFree", "none"}.
+
+    Accepts:
+      - tri-state string (preferred)
+      - legacy boolean (with thought_free sidecar, for backward compat)
+    """
+    if isinstance(value, bool):
+        if not value:
+            return "none"
+        return "thoughtFree" if thought_free else "all"
+    if isinstance(value, str):
+        if value not in _VALID_USE_GRAMMAR:
+            raise ValueError(
+                f"useGrammar must be one of {_VALID_USE_GRAMMAR}, got {value!r}"
+            )
+        return value
+    raise ValueError(
+        f"useGrammar must be string or bool, got {type(value).__name__}"
+    )

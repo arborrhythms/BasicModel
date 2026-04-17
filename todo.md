@@ -1,62 +1,223 @@
 # TODO
 
-## sequential concept→symbol mapping via accumulate pattern
+================================== Codebook VQ Consolidation ==================================
 
-(Deferred from butterfly refactor — to resume after Project 1.)
+## Remove `vector_quantize_pytorch`; own VQ in Codebook
 
-### Goal
-Stage 1 established pairwise sigma/pi (butterflies) with N-halving, keeping D
-constant. Stage 2 makes the conceptual codebook **wide AND deep** so a large
-STM (short-term memory) activation pattern can drive sequential symbolic
-emission.
+The external `vector_quantize_pytorch` package's outputs (commit_loss,
+rotation_trick gradients, dead-code revival, EMA) are currently
+instantiated but not consumed by the training loop — all three callers
+of `Codebook.quantize()` discard `commit_loss` with `_`. Reclaim the
+machinery, drop the dependency.
 
-### Architecture sketch
-- **Wide conceptual codebook**: ConceptualSpace's codebook holds many vectors,
-  each of moderate dimension. The *forward* pass produces an activation
-  pattern across this codebook — this *is* STM.
-- **STM = concept_states**: treat the per-batch concept activation vector as
-  the STM. No separate STM memory; it's an interpretation of what's already
-  computed.
-- **LTM = TruthLayer snapshots**: truths stored in TruthLayer are the LTM.
-  Pi + L1 bridge STM→LTM (commit highly-active concepts as truths).
-- **Sequential symbolic emission**: instead of one-shot Pi over the whole
-  STM, call `SymbolicSpace.forward(..., accumulate=True)` repeatedly. Each
-  call emits the *next* symbol and accumulates it (running average or
-  winner-take-all) into the emitted sequence. This matches how a decoder
-  AR-generates tokens but the "tokens" here are symbols grounded in the
-  conceptual codebook.
-- **Context**: with Percept/Symbol/Word spaces all using the same nDim
-  (nDim=4 + nWhere=2 = 6-dim vectors), we can concatenate
-  `[percept + symbol + word, nDims + nEncoding]` and feed as a wide input
-  to ConceptualSpace. nActive is the LLM context window; nWhere
-  auto-increments from 0 (sequential symbol indices, not byte offsets).
+### 1. Add gradient-estimator dispatch on `Codebook`
 
-### What's in place
-- `SymbolicSpace.accumulate_symbol_objective(sym_vectors, target=...)`
-  exists and caches nearest codebook targets.
-- InputSpace nActive / nWhere semantics documented in
-  `memory/project_inputspace_context.md`.
-- Span-table architecture is live (see
-  `memory/project_span_table_architecture.md`).
+Add a helper `Codebook.apply_gradient_estimator(e, q, mode)` with three
+modes:
 
-### What's needed
-- Add `accumulate: bool = False` kwarg to `SymbolicSpace.forward()` that
-  routes emission through a running-average accumulator instead of emitting
-  a full symbol grid in one shot.
-- MentalModel loop: instead of one Pi call per conceptual stage, drive Pi
-  with `accumulate=True` in a sequential inner loop, pulling one symbol at
-  a time from the STM.
-- Define how the Wide codebook is trained: currently codebook is
-  nSymbols-wide; Stage 2 wants nConcepts-wide (with nConcepts >> nSymbols).
-  This likely means a separate ConceptualBasis distinct from SymbolicBasis,
-  with Pi doing the codebook lookup.
+- `"snap"` — forward `q`, zero gradient to `e` (current default when
+  `customVQ=False`).
+- `"ste"` — forward `q`, backward identity to `e`. One-liner:
+  `e + (q - e).detach()`. Already used inline at `Spaces.py:5122` in
+  `SymbolicSpace.forward`'s `use_vqvae_nonreversible` branch —
+  consolidate so there is one implementation.
+- `"rotation"` — forward `q`, backward applies a Householder-rotation
+  of the upstream gradient from `q`'s direction back to `e`'s
+  direction, scaled by `||q|| / ||e||`. Implement as a
+  `torch.autograd.Function` (~20 lines).
 
-### Open questions
-- Should accumulate be per-symbol (one call → one symbol) or per-batch
-  (one call → whole sequence, internally AR)?
-- How does STM decay interact with accumulation? (STM_decay is in the
-  config but currently only bleeds into concept_states, not symbolic
-  emission.)
+Wire via a new config key `<gradientMode>snap|ste|rotation</gradientMode>`
+under each space's codebook section (SymbolicSpace first; extend to
+ConceptualSpace later if useful). Default `"snap"` keeps existing
+behavior.
+
+**Refactor site:** `Spaces.py:5122` — replace
+`z_q_ste = z_e + (quantized_detached - z_e).detach()` with
+`z_q_ste = self.subspace.what.apply_gradient_estimator(z_e, quantized, mode="ste")`.
+
+**Tests:** extend `basicmodel/test/test_wide_concept_codebook.py`:
+- `"snap"` → `e.grad` is zero after backward.
+- `"ste"` → `e.grad == incoming_grad`.
+- `"rotation"` → `e.grad.norm() ≈ incoming_grad.norm() * (||q||/||e||)`
+  and direction differs from incoming when `e` and `q` aren't
+  collinear.
+
+### 2. Port VQ-VAE features into `Codebook` directly
+
+Subsume the external package's features into the existing `customVQ`
+branch of `Codebook`:
+
+- **Commitment loss**: add `Codebook.commit_loss(e, q)` returning
+  `self.commitment_weight * F.mse_loss(e, q.detach())`. Stop discarding
+  it at the three consumer sites (`Spaces.py:911`, `Spaces.py:3327`,
+  `Layers.py` VQLayer usage). Thread it into `_symbol_objective_terms`
+  alongside the existing `symbol_commitment` bookkeeping already in
+  SymbolicSpace (`Spaces.py:~5107`).
+- **Dead-code revival**: periodically identify codebook entries whose
+  EMA weight has fallen below `threshold_ema_dead_code` and re-seed
+  them from the most-surprising recent encoder outputs. Can reuse the
+  existing EMA update slot in `Codebook.updateWeights`.
+- **EMA updates**: keep the simpler manual EMA in `Codebook.forward`
+  (`w[idx, :] = self.eta * w[idx, :] + (1 - self.eta) * x[b, v, :]`).
+  The external package's structured EMA callback doesn't add value
+  here.
+
+### 3. Per-entry codebook freezing via `ColumnUsageTracker` + σ
+
+`Layers.ColumnUsageTracker` already tracks per-column gradient norms and
+freezes low-activity columns in linear layers
+(`basicmodel/bin/Layers.py:777`). Adapt that pattern for codebook
+entries: track per-entry activation frequency (from
+`Codebook.activation`, which already exists at `Spaces.py:908`) and
+freeze entries whose σ-weighted usage crosses a stability threshold.
+
+Design sketch:
+- Each `Codebook` gets a `usage_sigma` buffer `[nVectors]` accumulated
+  across batches: `usage_sigma += sigma_of(activation)` where
+  `sigma_of` follows the ergodic-mode sigma logic (see
+  `Layers.py` search for `sigma` / `observe_sigma`).
+- A `Codebook.freeze_well_learned(threshold)` method walks
+  `usage_sigma` and zeroes the gradient for entries whose σ has
+  dropped below `threshold` (i.e. the entry has stabilized —
+  consistent gradient norm over a window implies the entry has
+  converged).
+- Similarity to `ColumnUsageTracker.freeze()`: sliding window of
+  gradient norms; freeze when mean norm falls below threshold.
+  Difference: operates on codebook entries, not linear-layer columns,
+  and uses σ (ergodic measure) rather than raw grad-norm.
+
+**Test plan:**
+- Unit test: feed a codebook with stable activation over N batches;
+  verify `freeze_well_learned()` marks the stable entries frozen.
+- Unit test: feed a codebook with fluctuating activation; verify those
+  entries remain unfrozen.
+- Integration test: full training step with freezing enabled — ensure
+  frozen entries retain their values across the optimizer step.
+
+### 4. Remove the external package
+
+Once steps 1–3 are in place and tests are green:
+
+- Delete the try/except fallback blocks for `VectorQuantize` and
+  `ResidualVQ` in `basicmodel/bin/Spaces.py` and
+  `basicmodel/bin/etc/SigmaPi.py` (they were inlined there when
+  `vq_compat.py` was removed).
+- Remove `vector_quantize_pytorch` from requirements
+  (`basicmodel/.venv` dependency list, pyproject / requirements.txt
+  wherever it lives).
+- `Codebook.customVQ=True` branch collapses away; the manual path
+  becomes the only path with the gradient-estimator dispatch from
+  step 1 and the VQ-VAE features from step 2.
+- `VQLayer` in `basicmodel/bin/etc/SigmaPi.py` either gets reworked
+  to use manual residual-VQ logic or is removed outright (its
+  forward path in `LogicalFunctionNet` is already commented out).
+
+================================== Stage 2 — Next ==================================
+
+## Stage 2 follow-up: outer-loop refactor + residual cleanup
+
+Spec: [basicmodel/doc/specs/2026-04-16-stage2-wide-conceptual-codebook-design.md](basicmodel/doc/specs/2026-04-16-stage2-wide-conceptual-codebook-design.md)
+Prior plan (mostly landed): [basicmodel/doc/plans/2026-04-16-stage2-wide-conceptual-codebook-plan.md](basicmodel/doc/plans/2026-04-16-stage2-wide-conceptual-codebook-plan.md)
+
+### 1. Outer-loop refactor (originally Task 5.3, revised)
+
+Drop mode-specific branching in the outer forward pipeline. WordSpace is
+not invoked from the outer scope — it threads through as `wordSpace=...`
+on C/S forwards as today. The loop is a plain `for j in
+range(self.conceptualOrder)` — no `while`, no `done()`. Because
+`useGrammar=="thoughtFree" ⇒ conceptualOrder==0` is enforced at
+config-load, all modes share a single loop body without runtime mode
+checks.
+
+Target pseudocode for `BasicModel.forward` (and `MentalModel.forward` if
+it diverges):
+
+```
+is_ = self.inputSpace.forward(sample_in)
+ps = self.perceptSpace.forward(is_, wordSpace=self.wordSpace)
+ss = self.symbolSpace.empty_state()
+ws = self.wordSpace.subspace.read()
+for j in range(self.conceptualOrder):
+    cs = self.conceptSpace.forward([ps, ss, ws], wordSpace=self.wordSpace)
+    # Top-K is already applied inside Codebook.forward when nVectors > nOutput.
+    for k in range(cs.shape[-2]):
+        ss = self.symbolSpace.forward(cs[..., k, :], wordSpace=self.wordSpace)
+return self.outputSpace.forward([ps, ss])
+```
+
+Implementation notes:
+- Current `BasicModel.forward` orchestrates per-tier calls with
+  grammar-path / butterfly-path branching at `Models.py:~2164` (`elif
+  self.useGrammar == "all":`). Identify the top-level branch that maps
+  to this simpler loop and replace it.
+- Gate behind a new `architecture.legacyLoop` config flag (default
+  `false` once validated) so existing configs can opt into the pre-
+  refactor path while this is being validated.
+- Parallel (`thoughtFree`) and raw (`none`) modes have `conceptualOrder
+  == 0`, so the j-loop body runs zero times. The seed emission must
+  still happen — decide whether the post-loop emission is (a) an
+  implicit j=-1 pre-seed C→S pass, or (b) done by driving the loop with
+  `range(max(conceptualOrder, 1))` and then deciding inside. Prefer (a)
+  since it keeps the assertion literal.
+- Tests to add in `basicmodel/test/test_merged_loop.py`:
+  - `useGrammar="all"` with `conceptualOrder=3` runs three j-iterations.
+  - `useGrammar="thoughtFree"` with `conceptualOrder=0` runs the pre-
+    seed emission once, no j-iterations.
+  - Full training-loop smoke test unchanged for existing configs.
+
+### 2. Delete unused scaffolding
+
+Earlier Task 5.1+5.2 added scaffolding that the revised Task 5.3 does
+**not** use. After Task 1 lands cleanly, delete:
+- `WordSpace.done()`, `note_emit()`, `reset_emit_state()`, `_parent`,
+  `_emit_count`, `_n_percepts_consumed` (in `basicmodel/bin/Spaces.py`)
+- `SymbolicSpace.empty_state()` — unless the refactor ends up calling
+  it to seed `ss`; check both call sites before removing.
+- The corresponding tests in `basicmodel/test/test_merged_loop.py`
+  (replace with the integration tests listed above).
+
+### 3. Kill dead `stm_decay` wiring
+
+`architecture.STM_decay` is read into `self.stm_decay` at
+`basicmodel/bin/Models.py:2003` and never consumed. Remove the config
+key from the XSD and the load-site. Small one-line cleanup.
+
+### 4. Lexicon migration (InputSpace → PerceptualSpace)
+
+The spec moves the lexicon from `InputSpace.codebook` to
+`PerceptualSpace`. Stage 2 added the three-way chunking switch on
+PerceptualSpace but did **not** remove the InputSpace lexicon code — the
+legacy path stays live. A follow-up plan should:
+- Make `InputSpace.codebook=false` the validated default.
+- Verify PerceptualSpace's `chunking_mode` is the only lexical path in
+  the pipeline.
+- Migrate existing configs one by one after smoke-testing each.
+
+### 5. Parallel-mode supervision signal
+
+The spec's open item: what loss supervises `ss` in `thoughtFree` /
+`none` modes, where grammar doesn't compose?
+- Candidate A: multi-label BCE over the symbol codebook indices.
+- Candidate B: cosine to a bag-of-symbols target superposition.
+- Candidate C: reuse the existing output-reconstruction loss.
+Empirical exploration needed — one training run per candidate, compare
+convergence.
+
+### 6. Checkpoint migration for the boolean → tri-state `useGrammar` change
+
+The loader's legacy fallback (`parse_use_grammar` with `thought_free`
+sidecar) makes existing checkpoints/configs load correctly, but a
+one-time migration script that rewrites old XML configs in place would
+reduce drift. Low priority; the legacy path is stable.
+
+### 7. `useGrammar="none"` assertion (decided to skip)
+
+Considered but rejected: `useGrammar=="none" ⇒ conceptualOrder==0`
+would break six legitimate butterfly configs where `conceptualOrder`
+drives butterfly N-halving stage count, not grammar composition. The
+`thoughtFree` assertion is sufficient.
+
+================================== MentalModel ==================================
 
 ================================== April 24 ==================================
 

@@ -1,4 +1,24 @@
+ifeq ($(OS),Windows_NT)
+SHELL := C:/msys64/usr/bin/bash.exe
+else
 SHELL := /bin/bash
+endif
+ifeq ($(OS),Windows_NT)
+VENV_BIN_DIR := Scripts
+VENV_PYTHON  := .venv/$(VENV_BIN_DIR)/python.exe
+VENV_PIP     := .venv/$(VENV_BIN_DIR)/pip.exe
+VENV_ARGS    := --system-site-packages
+PYTHON_BOOTSTRAP ?= py -3.12
+else
+VENV_BIN_DIR := bin
+VENV_PYTHON  := .venv/$(VENV_BIN_DIR)/python
+VENV_PIP     := .venv/$(VENV_BIN_DIR)/pip
+VENV_ARGS    :=
+PYTHON_BOOTSTRAP ?= python3
+endif
+
+VENV_PYTHON_FROM_BIN := ../$(VENV_PYTHON)
+VENV_STAMP := .venv/.installed-$(VENV_BIN_DIR)
 
 # --- PDF generation options (inlined from Make.mk) ----------------------------
 PD_TEMPLATE := /bits/projects/custom_template.tex
@@ -12,7 +32,7 @@ PDF_CHAPTERS := README.md  doc/Installation.md doc/Architecture.md doc/BasicMode
 XML1 ?= data/simple.xml
 XML2 ?= data/ergodic-only.xml
 MODEL ?= data/BasicModel.xml
-PYTHON := PYTHONPATH=bin .venv/bin/python
+PYTHON := PYTHONPATH=bin $(VENV_PYTHON)
 
 # SSH defaults for ArborMini.local
 TRAIN_HOST ?=
@@ -33,22 +53,24 @@ MAKE_PDF = pandoc $(PDFOPTS) \
 
 all : xor
 
-install :
-	deactivate 2>/dev/null || true
+$(VENV_STAMP): requirements.txt
 	rm -rf .venv
-	python3 -m venv .venv
-	.venv/bin/pip install --upgrade pip setuptools wheel
-	.venv/bin/pip install -r requirements.txt
+	$(PYTHON_BOOTSTRAP) -m venv $(VENV_ARGS) .venv
+	"$(VENV_PYTHON)" -m pip install --upgrade pip setuptools wheel
+	"$(VENV_PYTHON)" -m pip install -r requirements.txt
+	@touch "$@"
+
+install : $(VENV_STAMP)
 
 
-run :
-	cd bin && PYTHONPATH=. ../.venv/bin/python Models.py $(XML1)
+run : $(VENV_STAMP)
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) Models.py $(XML1)
 
-train :
+train : $(VENV_STAMP)
 	$(PYTHON) bin/train.py --model $(MODEL) --data text --log \
 		$(if $(TRAIN_HOST),--host $(TRAIN_HOST) --user $(TRAIN_USER) --key-file $(TRAIN_KEY) --remote-dir $(TRAIN_DIR))
 
-train_micro :
+train_micro : $(VENV_STAMP)
 	$(PYTHON) bin/train.py --model $(MODEL) --data text --log \
 		--max-docs 500 --num-shards 1 --num-epochs 1 --random-shards \
 		$(if $(TRAIN_HOST),--host $(TRAIN_HOST) --user $(TRAIN_USER) --key-file $(TRAIN_KEY) --remote-dir $(TRAIN_DIR))
@@ -60,42 +82,42 @@ train_micro_remote :
 	$(MAKE) train_micro TRAIN_HOST=arbormini.local
 
 xor : data/MM_xor.xml
-	make run XML1=$<
+	$(MAKE) run XML1=$<
 
 tomatoes : data/tomatoes.xml
-	make run XML1=$<
+	$(MAKE) run XML1=$<
 
 ergodic : data/ergodic.xml
-	make run XML1=$<
+	$(MAKE) run XML1=$<
 
 simple : data/simple.xml
-	make run XML1=$<
+	$(MAKE) run XML1=$<
 
 mnist : data/mnist.xml
-	make run XML1=$<
+	$(MAKE) run XML1=$<
 
-SigmaPi :
-	cd bin && PYTHONPATH=. ../.venv/bin/python SigmaPi.py
+SigmaPi : $(VENV_STAMP)
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) SigmaPi.py
 
-SymPercept :
-	cd bin && PYTHONPATH=. ../.venv/bin/python SymPercept.py
+SymPercept : $(VENV_STAMP)
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) SymPercept.py
 
-SPNN :
-	cd bin && PYTHONPATH=. ../.venv/bin/python SPNN.py
+SPNN : $(VENV_STAMP)
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) SPNN.py
 
 
-compare :
-	cd bin && PYTHONPATH=. ../.venv/bin/python BasicModel.py --compare $(XML1) $(XML2)
+compare : $(VENV_STAMP)
+	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) BasicModel.py --compare $(XML1) $(XML2)
 
-test :
-	BASICMODEL_DEVICE=cpu PYTHONPATH=bin .venv/bin/python test/test_report.py
+test : $(VENV_STAMP)
+	BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py
 
-test_all :
-	BASICMODEL_DEVICE=cpu PYTHONPATH=bin .venv/bin/python test/test_report.py
+test_all : $(VENV_STAMP)
+	BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py
 
-bench :
+bench : $(VENV_STAMP)
 	@echo "=== Baseline (no env tweaks) ==="
-	PYTHONPATH=bin .venv/bin/python test/bench_training.py
+	PYTHONPATH=bin $(VENV_PYTHON) test/bench_training.py
 
 clean :
 	rm -f BasicModel.pdf

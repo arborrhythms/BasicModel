@@ -24,7 +24,61 @@ try:
 except ImportError:
     make_dot = None
 from sklearn.decomposition import PCA
-from vector_quantize_pytorch import ResidualVQ, VectorQuantize
+# VectorQuantize: prefer the external vector_quantize_pytorch package when
+# available; fall back to a minimal in-repo implementation that supports
+# the subset of the API Codebook actually uses (formerly vq_compat.py).
+try:
+    from vector_quantize_pytorch import VectorQuantize
+except Exception:
+    import torch.nn.functional as _vq_F
+    class VectorQuantize(nn.Module):
+        def __init__(
+            self,
+            dim,
+            codebook_size,
+            commitment_weight=1.0,
+            use_cosine_sim=False,
+            **kwargs,
+        ):
+            super().__init__()
+            self.dim = dim
+            self.codebook_size = codebook_size
+            self.commitment_weight = commitment_weight
+            self.use_cosine_sim = use_cosine_sim
+            self.codebook = torch.randn(codebook_size, dim)
+
+        @property
+        def codebook(self):
+            return self._parameters["_codebook"]
+
+        @codebook.setter
+        def codebook(self, value):
+            param = value if isinstance(value, nn.Parameter) else nn.Parameter(value.detach().clone())
+            if "_codebook" in self._parameters:
+                self._parameters["_codebook"] = param
+            else:
+                self.register_parameter("_codebook", param)
+            self.codebook_size = param.shape[0]
+
+        def forward(self, x, return_all_codes=False, **kwargs):
+            original_shape = x.shape
+            flat = x.reshape(-1, original_shape[-1])
+            codebook = self.codebook
+            if self.use_cosine_sim:
+                flat_cmp = _vq_F.normalize(flat, dim=-1)
+                codebook_cmp = _vq_F.normalize(codebook, dim=-1)
+                indices = (flat_cmp @ codebook_cmp.T).argmax(dim=-1)
+            else:
+                indices = torch.cdist(flat, codebook).argmin(dim=-1)
+            quantized_raw = codebook[indices].reshape(original_shape)
+            commit_loss = self.commitment_weight * _vq_F.mse_loss(
+                x, quantized_raw.detach()
+            )
+            quantized = x + (quantized_raw - x).detach()
+            indices = indices.reshape(original_shape[:-1])
+            if return_all_codes:
+                return quantized, indices, commit_loss, quantized.unsqueeze(0)
+            return quantized, indices, commit_loss
 import torch.optim as optim
 from torch.profiler import profile as torch_profile, ProfilerActivity, schedule as profiler_schedule
 from functools import partial
@@ -36,11 +90,29 @@ from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer, ButterflyStage  # Import custom layers from Model.py
-from Layers import VQLayer, LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
+from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
 from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
-from Layers import SortingLayer, TruthLayer, InterSentenceLayer
+from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegularizer
 from parse import quick_parser
 from collections import namedtuple as _namedtuple
+
+
+def topk_by_magnitude_per_batch(x: torch.Tensor, k: int) -> torch.Tensor:
+    """Zero out all but the top-k entries by |x| along the last dim, per row.
+
+    Shape: x is (..., W). Returns tensor of same shape where each row has
+    at most k nonzero entries (the k largest by absolute value).
+    """
+    if k <= 0:
+        return torch.zeros_like(x)
+    W = x.shape[-1]
+    if k >= W:
+        return x
+    _, idx = torch.topk(x.abs(), k=k, dim=-1)
+    mask = torch.zeros_like(x, dtype=torch.bool)
+    mask.scatter_(-1, idx, True)
+    return torch.where(mask, x, torch.zeros_like(x))
+
 
 class Encoding(nn.Module):
     """Abstract base class for per-slot encodings in the embedding vector.
@@ -864,7 +936,12 @@ class Codebook(Basis):
         loss = torch.tensor(0.0, device=x.device, dtype=x.dtype)
         return quantized, indices, loss
 
-    def forward(self, input):
+    def forward(self, input, topK: int = 0):
+        """Codebook forward. When ``topK > 0`` and less than the codebook
+        size, ``self.activation`` is pruned to the top-K strongest entries
+        per batch row — realizing the wide-codebook narrow-output pattern
+        where nVectors ≫ nOutput. ``topK=0`` preserves legacy behavior.
+        """
         _vspace = None
         if isinstance(input, SubSpace):
             _vspace = input
@@ -925,6 +1002,8 @@ class Codebook(Basis):
                         act[b, idx] = nearestDist[0]
                     if self.training:
                         w[idx, :] = self.eta * w[idx, :] + (1 - self.eta) * x[b, v, :]
+        if topK and 0 < topK < act.shape[-1]:
+            act = topk_by_magnitude_per_batch(act, k=topK)
         self.activation = act
         self.activeSigma = None
         self.setW(x)
@@ -4042,6 +4121,12 @@ class PerceptualSpace(Space):
         self.ergodic = ergodic
         self.hasAttention = hasAttention
         self.invertible = invertible
+        try:
+            self.chunking_mode = str(
+                TheXMLConfig.space(section, "chunking") or "lexicon"
+            )
+        except KeyError:
+            self.chunking_mode = "lexicon"
         if passThrough:
             return
         input = self.subspace.getEncodedInputSize()
@@ -4104,6 +4189,27 @@ class PerceptualSpace(Space):
         return torch.prod( [1-x, 1-y] )
     def certainty(self, x):
         pass
+    @staticmethod
+    def chunk_static(stream: bytes, mode: str) -> list:
+        """Three-way chunking switch: raw | bpe | lexicon.
+
+        - raw: split into single bytes.
+        - lexicon: split on whitespace (word-level).
+        - bpe: cold-start BPE (byte-level fallback when no trained merges).
+        """
+        if mode == "raw":
+            return [bytes([b]) for b in stream]
+        if mode == "lexicon":
+            return stream.split()
+        if mode == "bpe":
+            # Cold-start BPE: no merges table available here → fall back to
+            # single bytes. The real BPE path runs through ChunkLayer (see
+            # basicmodel/bin/Layers.py) once merges have been learned.
+            return [bytes([b]) for b in stream]
+        raise ValueError(
+            f"chunking mode must be raw|bpe|lexicon, got {mode!r}"
+        )
+
     def forward(self, vspace, wordSpace=None, quantize=True):
         """Perception: map input vectors to percepts via attention + VQ + chunking."""
         if self.passThrough:
@@ -4116,6 +4222,14 @@ class PerceptualSpace(Space):
             x = self.attention.forward(x)
         if self.codebook and quantize:
             x = self.subspace.get_vectors().forward(x)
+        # Shared sparsity regularizer on the percept activations. No-op when
+        # l1_lambda defaults to 0; attribute-only so configs opt in.
+        if not hasattr(self, "_sparsity"):
+            self._sparsity = SparsityRegularizer(
+                l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
+                enabled=bool(getattr(self, "codebook", False)),
+            )
+        x = self._sparsity(x)
         if wordSpace is not None:
             x = wordSpace.forwardPercepts(x, self.subspace)
         vspace = self.forwardEnd(x, returnVectors=True)
@@ -4504,7 +4618,22 @@ class ConceptualSpace(Space):
         if self.hasAttention:
             y = self.attention.forward(y)
         if self.codebook:
-            y = self.subspace.get_vectors().forward(y)
+            # Wide-codebook top-K: when nVectors > nOutput, route through the
+            # content Codebook with topK=nOutput so the per-codebook-entry
+            # activation is pruned to the nOutput strongest survivors.
+            if (isinstance(self.subspace.what, Codebook)
+                    and self.nVectors > self.outputShape[0]):
+                y = self.subspace.what.forward(y, topK=self.outputShape[0])
+            else:
+                y = self.subspace.get_vectors().forward(y)
+        # Shared sparsity regularizer on the concept activations. No-op when
+        # l1_lambda defaults to 0; attribute-only so configs opt in.
+        if not hasattr(self, "_sparsity"):
+            self._sparsity = SparsityRegularizer(
+                l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
+                enabled=bool(getattr(self, "codebook", False)),
+            )
+        y = self._sparsity(y)
         if wordSpace is not None:
             y, self._last_svo = wordSpace.forwardConcepts(
                 y, self.subspace, target_count=target_count)
@@ -4551,6 +4680,17 @@ class SymbolicSpace(Space):
     """
     name = "Symbols"
     config_section = "SymbolicSpace"
+
+    def empty_state(self):
+        """Return a zero tensor the shape of this space's symbolic state.
+
+        Used by the Stage 2 merged outer loop to initialize ``ss`` before
+        the first concept emission. Per-word vs per-sentence scope is
+        governed by the loop, not by this method.
+        """
+        nOutput = int(self.outputShape[0])
+        nDim = int(self.outputShape[1])
+        return torch.zeros(1, nOutput, nDim, device=TheDevice.get())
 
     def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None,
                  level_shapes=None, butterfly_config=None):
@@ -4694,20 +4834,25 @@ class SymbolicSpace(Space):
         )
         return basis
 
+    @classmethod
+    def _build_sparsity_regularizer(cls, l1_lambda, codebook_enabled):
+        return SparsityRegularizer(
+            l1_lambda=float(l1_lambda or 0.0),
+            enabled=bool(codebook_enabled),
+        )
+
     def l1_proximal(self, x):
         """Soft-threshold activations used as a sparsity bias.
 
-        Only active when ``self.codebook`` is true.  L1 on continuous
-        (non-codebook) symbol activations is meaningless — shrinking
-        magnitudes just compresses the latent without selecting a
-        shorter codeword.  When a codebook is present, L1 acts as a
-        proxy for a compactness pressure that prefers fewer, smaller
-        code selections.  (See also MDL proposal in §2 of code review.)
+        Delegates to the shared SparsityRegularizer. Kept as a thin
+        wrapper for backward compatibility with call sites in this file
+        and in Models.py.
         """
-        if not self.codebook or self.l1_lambda <= 0.0:
-            return x
-        return torch.sign(x) * torch.clamp(
-            torch.abs(x) - self.l1_lambda, min=0.0)
+        if not hasattr(self, "_sparsity"):
+            self._sparsity = self._build_sparsity_regularizer(
+                self.l1_lambda, self.codebook
+            )
+        return self._sparsity(x)
 
     def reset_symbol_objective(self):
         self._symbol_objective_terms = {}
@@ -7202,6 +7347,43 @@ class WordSpace(Space):
     def clear_sentence(self):
         """Reset the stack at sentence boundaries."""
         self.subspace.clear()
+        self.reset_emit_state()
+
+    # ── Merged-loop termination signal (Stage 2) ──────────────────────
+    # ``_emit_count`` / ``_n_percepts_consumed`` track how many words the
+    # outer loop has emitted, so the merged processing loop can ask
+    # ``done()`` instead of branching on mode. These counters are
+    # populated by the outer loop (see Models.py), not by WordSpace's own
+    # per-tier forwards — WordSpace is a dispatcher, not a word emitter.
+    _emit_count = 0
+    _n_percepts_consumed = 0
+    _parent = None  # set by BasicModel at construction for done() checks
+
+    def note_emit(self, consumed_percept: bool = False):
+        """Called by the outer loop after each word emission."""
+        self._emit_count += 1
+        if consumed_percept:
+            self._n_percepts_consumed += 1
+
+    def reset_emit_state(self):
+        """Called at sentence boundaries to restart the termination counters."""
+        self._emit_count = 0
+        self._n_percepts_consumed = 0
+
+    def done(self) -> bool:
+        """Return True when the outer loop should terminate for this sentence.
+
+        Serial mode (``useGrammar=="all"``): done after nPercepts emissions.
+        Parallel / raw (``thoughtFree`` / ``none``): done after a single emit.
+        """
+        parent = self._parent
+        if parent is None:
+            return self._emit_count >= 1
+        use_grammar = getattr(parent, "useGrammar", "none")
+        if use_grammar == "all":
+            n_percepts = int(getattr(parent, "nPercepts", 1) or 1)
+            return self._n_percepts_consumed >= n_percepts
+        return self._emit_count >= 1
 
     def get_blocks(self, b=0):
         """Return the parse-tree ledger for batch row `b`."""

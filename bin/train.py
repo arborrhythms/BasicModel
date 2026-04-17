@@ -64,6 +64,18 @@ def project_dir():
     return str(Path(__file__).resolve().parent.parent)
 
 
+def venv_python(proj):
+    """Return the in-project venv Python executable for this platform."""
+    candidates = [
+        os.path.join(proj, ".venv", "Scripts", "python.exe"),
+        os.path.join(proj, ".venv", "bin", "python"),
+    ]
+    for candidate in candidates:
+        if os.path.exists(candidate):
+            return candidate
+    return candidates[0] if os.name == "nt" else candidates[1]
+
+
 _log_file = None   # set by main() when --log is active
 
 
@@ -111,7 +123,7 @@ def read_xml_config(xml_path):
 def train_local(args):
     """Run training locally: embeddings then model."""
     proj = project_dir()
-    python = os.path.join(proj, ".venv", "bin", "python")
+    python = venv_python(proj)
     env = {**os.environ, "PYTHONPATH": os.path.join(proj, "bin"),
            "PYTORCH_MPS_HIGH_WATERMARK_RATIO": "0.0",
            "PYTHONUNBUFFERED": "1"}
@@ -231,7 +243,11 @@ def train_remote(args):
             remote_env_vars = f"{var}={val} {remote_env_vars}"
 
     TheMessage(f"\n=== Running training on {args.host} ===")
-    remote_cmd = f"cd {args.remote_dir} && {remote_env_vars} .venv/bin/python {' '.join(remote_args)}"
+    remote_cmd = (
+        f"cd {args.remote_dir} && "
+        f"py=.venv/bin/python; [ -x \"$py\" ] || py=.venv/Scripts/python.exe; "
+        f"{remote_env_vars} \"$py\" {' '.join(remote_args)}"
+    )
     ssh_cmd = [
         "ssh", "-i", key,
         f"{args.user}@{args.host}",
