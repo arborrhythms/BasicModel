@@ -274,11 +274,12 @@ between activation spaces via monotonic multiplicative transform. The `monotonic
 constraint ensures weights $W \geq 0$, preserving ordering. Exact inverse via the
 internal `InvertibleLinearLayer` (LDU factorisation).
 
-**Ramsified mode.** When `<ramsified>true</ramsified>`, SymbolicSpace stores an
-`nn.ModuleList` of per-level PiLayers (one per conceptual order), each sized for
-its level's halved vector count.  The symbol dimension is geometrically partitioned
-so each order writes only to its designated slice.  See
-[Reasoning.md](Reasoning.md) §Ramsified vs Non-Ramsified Architecture.
+**Hierarchical mode.** When `<useButterflies>true</useButterflies>` or
+`<useGrammar>true</useGrammar>`, SymbolicSpace stores an `nn.ModuleList` of
+per-level PiLayers in `self.pi_layers` (ButterflyStage-wrapped when `useButterflies`
+is active).  The symbol dimension is geometrically partitioned so each order
+writes only to its designated slice.  See [Reasoning.md](Reasoning.md)
+§Architecture Quadrants.
 
 **Invertibility.** Exactly invertible via the PiLayer's reverse path.
 

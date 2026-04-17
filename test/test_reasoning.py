@@ -275,7 +275,7 @@ class TestExtrapolate(unittest.TestCase):
 class TestWriteMask(unittest.TestCase):
 
     def test_partition_isolation(self):
-        """After ramsified forward, each order's partition should be isolated."""
+        """After butterfly forward, each order's partition should be isolated."""
         model = _make_model('RamsifiedModel.xml')
 
         truth_layer = model._get_truth_layer()

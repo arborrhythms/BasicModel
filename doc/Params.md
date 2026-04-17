@@ -90,7 +90,8 @@ omitting them defaults to 0.1.
 | `UniversalityWeight` | decimal | `0.1`   | `<architecture>` | Loss penalty weight for low universality (unkind propositions).    |
 | `TruthLoss`          | decimal | `0.0`   | `<training>`     | Additive loss penalty for propositions that contradict the TruthSet. Uses union norm reduction via `Basis.disjunction()`. 0.0 = disabled. |
 | `conceptualOrder`    | int     | `1`     | `<architecture>` | Number of Percept→Concept→Symbol iterations. Higher orders use a geometrically partitioned symbolic space. |
-| `ramsified`          | boolean | `false` | `<architecture>` | Enable per-partition serial Pi layers with butterfly merge/unmerge. Required for partition-aware reasoning. |
+| `useButterflies`     | boolean | `false` | `<architecture>` | Enable pairwise sigma/pi mixing via ButterflyStage (N-halving per conceptual order). Mutually exclusive with `useGrammar`. |
+| `useGrammar`         | boolean | `false` | `<WordSpace>`    | Enable grammar-directed per-level composition (progressive bottleneck). Mutually exclusive with `useButterflies`. |
 
 ```xml
 <architecture>
@@ -98,7 +99,7 @@ omitting them defaults to 0.1.
   <LuminosityWeight>0.1</LuminosityWeight>
   <UniversalityWeight>0.1</UniversalityWeight>
   <conceptualOrder>1</conceptualOrder>
-  <ramsified>false</ramsified>
+  <useButterflies>false</useButterflies>
 </architecture>
 
 <training>

@@ -2000,29 +2000,26 @@ class MentalModel(BaseModel):
         self.perceptCodebook = TheXMLConfig.space("PerceptualSpace", "codebook")
         self.conceptCodebook = TheXMLConfig.space("ConceptualSpace", "codebook")
         self.conceptualOrder = conceptualOrder
-        self.ramsified = TheXMLConfig.get("architecture.ramsified")
         self.stm_decay = float(TheXMLConfig.get("architecture.STM_decay", default=0.0) or 0.0)
-        self._ramsified_uses_grammar = bool(
-            TheXMLConfig.get("WordSpace.useGrammar", False))
 
-        # New orthogonal flags: useButterflies + useGrammar
-        raw_butterflies = TheXMLConfig.get("architecture.useButterflies", default=None)
-        if raw_butterflies is not None:
-            self.useButterflies = bool(raw_butterflies)
-        else:
-            # Legacy fallback: derive from ramsified
-            self.useButterflies = bool(self.ramsified and not self._ramsified_uses_grammar)
-        self.useGrammar = self._ramsified_uses_grammar
-
+        # Orthogonal architecture flags.  useButterflies and useGrammar
+        # are mutually exclusive — butterfly permutations fight
+        # constituency structure.
+        self.useButterflies = bool(
+            TheXMLConfig.get("architecture.useButterflies", default=False))
+        self.useGrammar = bool(
+            TheXMLConfig.get("WordSpace.useGrammar", default=False))
         if self.useButterflies and self.useGrammar:
             raise ValueError(
                 "useButterflies=true + useGrammar=true is excluded: "
                 "butterfly permutations fight constituency structure")
 
-        self._ramsified_state_vectors = None
-        self._ramsified_state_dim = None
-        self._ramsified_symbol_width = None
-        self._ramsified_symbol_factor = None
+        # Butterfly-path state cache (populated in the useButterflies branch
+        # below).  Named after ButterflyStage.
+        self._butterfly_state_vectors = None
+        self._butterfly_state_dim = None
+        self._butterfly_symbol_width = None
+        self._butterfly_symbol_factor = None
 
         # Truth integration config (optional — absent in BasicModel.xml)
         self.truth_bias_scale = float(TheXMLConfig.get("architecture.truthBiasScale", default=0.1) or 0.1)
@@ -2148,10 +2145,10 @@ class MentalModel(BaseModel):
                 "butterfly reverse requires reconstruct=symbols so the full symbol state "
                 "remains available for exact inversion"
             )
-            self._ramsified_state_vectors = state_vectors
-            self._ramsified_state_dim = state_dim
-            self._ramsified_symbol_width = symbol_width
-            self._ramsified_symbol_factor = state_dim // symbol_width if symbol_width > 0 else 1
+            self._butterfly_state_vectors = state_vectors
+            self._butterfly_state_dim = state_dim
+            self._butterfly_symbol_width = symbol_width
+            self._butterfly_symbol_factor = state_dim // symbol_width if symbol_width > 0 else 1
             butterfly_config = {
                 "conceptual_order": n_stages,
                 "state_vectors": state_vectors,
@@ -2160,54 +2157,11 @@ class MentalModel(BaseModel):
                 "symbol_factor": state_dim // symbol_width if symbol_width > 0 else 1,
                 "ergodic": self.ergodic,
                 "naive": TheXMLConfig.get("architecture.naive"),
-                "use_stages": True,   # ButterflyStage wrappers with N-halving
             }
             self._level_shapes_list = self._level_shapes(
                 nPercepts, state_dim, n_stages)
-        # Legacy ramsified non-grammar path (constant N, no merge)
-        elif self.ramsified and not self._ramsified_uses_grammar:
-            state_vectors = nPercepts
-            state_dim = percept_dim + obj_percept
-            symbol_width = symbol_dim + obj_symbol
-            state_volume = state_vectors * state_dim
-            symbol_volume = nSymbols * symbol_width
-            TheXMLConfig.require(
-                lambda cfg, _sd=state_dim, _sw=symbol_width: _sw > 0 and (_sd % _sw) == 0,
-                f"ramsified non-grammar path requires state_dim ({state_dim}) to be divisible by "
-                f"symbol_width ({symbol_width}) so n = D/S is integral"
-            )
-            TheXMLConfig.require(
-                lambda cfg, _sv=state_volume, _yv=symbol_volume: _sv == _yv,
-                f"ramsified non-grammar path requires latent/symbol volume equality: "
-                f"nPercepts*state_dim ({state_volume}) == nSymbols*symbol_width ({symbol_volume})"
-            )
-            TheXMLConfig.require(
-                lambda cfg, _n=state_vectors: _n > 0 and (_n & (_n - 1)) == 0,
-                f"ramsified non-grammar butterfly schedule requires nPercepts ({state_vectors}) "
-                f"to be a positive power of two"
-            )
-            TheXMLConfig.require(
-                lambda cfg, _r=str(TheXMLConfig.get('architecture.reconstruct')).lower(): _r == "symbols",
-                "ramsified non-grammar reverse requires reconstruct=symbols so the full symbol state "
-                "remains available for exact inversion"
-            )
-            self._ramsified_state_vectors = state_vectors
-            self._ramsified_state_dim = state_dim
-            self._ramsified_symbol_width = symbol_width
-            self._ramsified_symbol_factor = state_dim // symbol_width
-            butterfly_config = {
-                "conceptual_order": self.conceptualOrder,
-                "state_vectors": state_vectors,
-                "state_dim": state_dim,
-                "symbol_width": symbol_width,
-                "symbol_factor": state_dim // symbol_width,
-                "ergodic": self.ergodic,
-                "naive": TheXMLConfig.get("architecture.naive"),
-                "use_stages": False,  # legacy: raw butterfly_sigmas, no merge
-            }
-            self._level_shapes_list = None
-        # Progressive bottleneck: per-level shapes when ramsified grammar is enabled
-        elif self.ramsified:
+        # ── Grammar path: progressive bottleneck per conceptual order ──
+        elif self.useGrammar:
             self._level_shapes_list = self._level_shapes(
                 nPercepts, percept_dim + obj_percept, self.conceptualOrder)
         else:
@@ -2369,14 +2323,6 @@ class MentalModel(BaseModel):
         out[:, 1::2, :] = right
         return out
 
-    def _ramsified_pair_enabled(self):
-        return bool(
-            self.ramsified
-            and not self._ramsified_uses_grammar
-            and getattr(self.conceptualSpace, "butterfly_enabled", False)
-            and getattr(self.symbolicSpace, "butterfly_enabled", False)
-        )
-
     def _bound_concept_input(self, x):
         """Keep recurrent concept inputs inside ConceptualSpace's logit domain."""
         if getattr(self.conceptualSpace, "nonlinear", False):
@@ -2445,52 +2391,47 @@ class MentalModel(BaseModel):
         # ── Pre-loop init ──
         self.symbol_states = []
         self.symbolicSpace.reset_symbol_objective()
-        if self.ramsified:
+
+        if self.useButterflies:
+            # ButterflyStage merges internally; no external merge stack.
             x = percepts                     # [B, N_percept, D_percept]
-            if not self._ramsified_pair_enabled():
-                use_grammar = False
-                sym_feedback = None
-                self._merge_diffs = []
-                self._sym_feedbacks = []
+            sym_feedback = None
+        elif self.useGrammar:
+            # Progressive-bottleneck path: external pair-average merge.
+            x = percepts
+            sym_feedback = None
+            self._merge_diffs = []
+            self._sym_feedbacks = []
         else:
+            # Flat recurrent path: feedback is concatenated, not merged.
             sym_feedback = torch.zeros(B, self._symbol_shape[0],
                                        self._symbol_shape[1],
                                        device=percepts.device)
-            # Cache the feedback used at each iteration of the Sigma-Pi
-            # loop so ``reverse`` can unwind the recurrent addition
-            # (``concept_input_t = percepts + sym_feedback_{t-1}``) and
-            # recover the original percepts tensor.  Without this the
-            # reverse path treats concept_input_{T-1} as if it were
-            # percepts, leaving a residual error of ||sym_feedback_{T-2}||
-            # on every forward→reverse roundtrip.
+            # Cache the feedback used at each iteration so ``reverse`` can
+            # unwind the recurrent addition and recover the original
+            # percepts tensor.
             self._nonrams_sym_feedbacks = []
 
         sym_vectors = None
 
         # ── Sigma-Pi loop ──
         for t in range(self.conceptualOrder):
-            pair_enabled = self._ramsified_pair_enabled()
 
             # 1. Input construction
-            if self.ramsified:
-                if pair_enabled:
-                    concept_input = x
+            if self.useButterflies:
+                concept_input = x
+            elif self.useGrammar:
+                x = self._butterfly_merge(x)
+                if sym_feedback is not None:
+                    sym_feedback = (sym_feedback[:, 0::2, :] + sym_feedback[:, 1::2, :]) / 2
+                    self._sym_feedbacks.append(sym_feedback)
+                    x = x + sym_feedback
                 else:
-                    x = self._butterfly_merge(x)
-                    if sym_feedback is not None:
-                        if not use_grammar:
-                            sym_feedback = (sym_feedback[:, 0::2, :] + sym_feedback[:, 1::2, :]) / 2
-                        self._sym_feedbacks.append(sym_feedback)
-                        x = x + sym_feedback
-                    else:
-                        self._sym_feedbacks.append(None)
-                    concept_input = x
+                    self._sym_feedbacks.append(None)
+                concept_input = x
             else:
-                # Cache the feedback used at this iteration so the
-                # reverse path can subtract it to recover percepts.
                 self._nonrams_sym_feedbacks.append(sym_feedback)
                 concept_input = self._bound_concept_input(percepts + sym_feedback)
-                # Truth bias: trim concept_input to be consistent with TruthSet
                 truth_layer = getattr(self.wordSpace, 'truth_layer', None) if self.wordSpace is not None else None
                 if truth_layer is not None and len(truth_layer) > 0:
                     basis = self.symbolicSpace.subspace.what
@@ -2501,56 +2442,43 @@ class MentalModel(BaseModel):
                             concept_input, conj.unsqueeze(0).unsqueeze(0))
                         concept_input = self._bound_concept_input(concept_input)
 
-            # 2. Sigma: conceptual transformation (indexed by t).
-            # Non-ramsified: route C-tier compose through the pairwise
-            # slot-mixing reduction so information at different input
-            # slots can actually collide in the output.  Cascading
-            # compose is per-slot and cannot move content across the
-            # slot axis, which strands XOR-style two-operand tasks.
-            # Ramsified path uses butterfly, which already mixes slots,
-            # so it doesn't need a target_count hint.
+            # 2. Sigma (conceptual transformation)
             self.percepts.set_event(concept_input)
-            c_target = None if self.ramsified else self.nOutputSymbols
+            # Flat path: hint the C-tier compose to reduce to nOutputSymbols.
+            # Butterfly/grammar paths use per-level layers that already move
+            # information across the slot axis.
+            c_target = None if (self.useButterflies or self.useGrammar) else self.nOutputSymbols
             self.concepts = self.conceptualSpace[t].forward(
-                self.percepts, wordSpace=ws, butterfly=pair_enabled,
-                target_count=c_target)
+                self.percepts, wordSpace=ws, target_count=c_target)
             concept_vectors = self.concepts.materialize()
 
-            if self.ramsified:
+            if self.useButterflies or self.useGrammar:
                 x = concept_vectors          # carry forward for next merge
 
-            # 3. Pi: symbolic projection (indexed by t). Symbol residual
-            # and L1 compactness are accumulated as objective terms by
-            # SymbolicSpace.forward. The non-ramsified feedback path stays
-            # continuous; ramsified/codebook paths may apply proximal
-            # sparsity before symbol commitment.
+            # 3. Pi (symbolic projection)
             is_last_step = (t == self.conceptualOrder - 1)
+            quantize_sym = bool(self.useButterflies)
             self.symbols = self.symbolicSpace[t].forward(
-                self.concepts, wordSpace=ws, butterfly=pair_enabled,
-                quantize=self.ramsified, is_last=is_last_step)
+                self.concepts, wordSpace=ws,
+                quantize=quantize_sym, is_last=is_last_step)
             sym_vectors = self.symbols.materialize()
 
             # 4. Feedback for next iteration
-            if self.ramsified:
-                if not pair_enabled and t < self.conceptualOrder - 1:
-                    N_t, D_t = self._level_shapes_list[t]
-                    sym_norms = sym_vectors.norm(dim=-1, keepdim=True)
-                    sym_feedback = sym_norms.expand(-1, -1, D_t)
-            else:
+            if self.useGrammar and t < self.conceptualOrder - 1:
+                N_t, D_t = self._level_shapes_list[t]
+                sym_norms = sym_vectors.norm(dim=-1, keepdim=True)
+                sym_feedback = sym_norms.expand(-1, -1, D_t)
+            elif not (self.useButterflies or self.useGrammar):
                 nSymFeedback = self._symbol_shape[0]
                 sym_feedback = self._symbol_feedback_from_vectors(
                     sym_vectors, nSymFeedback, percepts.shape[-1])
 
-            # 5. Cache symbol states.  The Sigma-Pi loop produces
-            # post-pi ``sym_vectors`` at every iteration; stashing
-            # those gives the truth penalty a
-            # handle on the committed symbolic activations in the
-            # same space as the stored truths.
-            if self.ramsified:
+            # 5. Cache symbol states for truth penalty (butterfly & grammar only).
+            if self.useButterflies or self.useGrammar:
                 self.symbol_states.append(sym_vectors.clone())
 
         # ── Post-loop finalization ──
-        if self._ramsified_pair_enabled():
+        if self.useButterflies:
             self.conceptualSpace.subspace.set_event(x)
             self.concepts = self.conceptualSpace.subspace
             self.symbolicSpace.subspace.set_event(sym_vectors)
@@ -2599,7 +2527,7 @@ class MentalModel(BaseModel):
                     s, v, o, c_sl.lifting_layer, self.symbolicSpace)
 
         # Output from first nOutputSymbols of symbol vectors
-        if self.ramsified:
+        if self.useButterflies or self.useGrammar:
             self.symbolicSpace.subspace.set_event(sym_vectors)
         output_syms = sym_vectors[:, :self.nOutputSymbols, :].clone()
         outputData = self.Finish(output_syms)
@@ -2614,47 +2542,44 @@ class MentalModel(BaseModel):
             self.outputSpace.subspace.set_event(outputData)
             outputData = self.outputSpace.subspace
 
-        # reconstruct="symbols": use cached forward symbols, skip OutputSpace reverse
         use_cached = (self.reconstruct == 'symbols')
 
-        # ── Pre-loop: recover state from forward pass or outputSpace.reverse ──
         if use_cached:
             sym_vec = self.symbolicSpace.subspace.materialize()
-            concepts_state = self.concepts      # default path only
+            concepts_state = self.concepts
         else:
             output_state = self.outputSpace.reverse(outputData)
             sym_vec = output_state.materialize()
-            concepts_state = output_state       # default path only
+            concepts_state = output_state
 
-        if self._ramsified_pair_enabled():
+        if self.useButterflies:
+            # ButterflyStage inverts each stage; reconstruct='symbols'
+            # gives us the full symbol state at the final level.
             if not use_cached:
                 raise ValueError(
-                    "ramsified non-grammar reverse requires reconstruct='symbols' "
+                    "useButterflies requires reconstruct='symbols' "
                     "so the full symbol state is available for exact inversion"
                 )
             self.symbolicSpace.subspace.set_event(sym_vec)
             x = self.symbolicSpace[self.conceptualOrder - 1].reverse(
-                self.symbolicSpace.subspace, wordSpace=ws, butterfly=True
-            ).materialize()
+                self.symbolicSpace.subspace, wordSpace=ws).materialize()
             for t in reversed(range(self.conceptualOrder)):
                 self.conceptualSpace.subspace.set_event(x)
                 x = self.conceptualSpace[t].reverse(
-                    self.conceptualSpace.subspace, wordSpace=ws, butterfly=True
-                ).materialize()
+                    self.conceptualSpace.subspace, wordSpace=ws).materialize()
             self.perceptualSpace.subspace.set_event(x)
             input_state = self.perceptualSpace.reverse(self.perceptualSpace.subspace, wordSpace=ws)
             self.inputs = self.inputSpace.reverse(input_state)
             input_latent = input_state.materialize()
             input_data = self.inputs.materialize()
             return input_data, input_latent
-        elif self.ramsified:
-            # Initial pi inverse from final level
+
+        if self.useGrammar:
+            # Progressive-bottleneck: peel off last pi, then per-level
+            # reverse with external unmerge and feedback subtraction.
             self.symbols.set_event(sym_vec)
             x = self.symbolicSpace[self.conceptualOrder - 1].reverse(
                 self.symbols, wordSpace=ws).materialize()
-
-        # ── Reverse ──
-        if self.ramsified:
             for t in reversed(range(self.conceptualOrder)):
                 self.symbols.set_event(x)
                 concept_input_state = self.conceptualSpace[t].reverse(
@@ -2664,19 +2589,9 @@ class MentalModel(BaseModel):
                 if fb is not None:
                     x = x - fb
                 x = self._butterfly_unmerge(x)
+            concept_input_state.set_event(x)
         else:
-            # Non-ramsified reverse: unwind the recurrent feedback.
-            # Forward runs
-            #     concept_input_t = percepts + sym_feedback_{t-1}
-            # for t in [0, conceptualOrder), and ``self.concepts`` holds
-            # the sigma output of the LAST iteration (concepts_{T-1}).
-            # Reversing sigma gives back concept_input_{T-1}; we then
-            # subtract the cached feedback_{T-2} (which is the last
-            # entry in ``_nonrams_sym_feedbacks`` — feedbacks are
-            # appended just before being consumed each iteration) to
-            # recover the original percepts tensor.  This is the
-            # analogue of the ramsified path's feedback unwinding at
-            # the top of this block.
+            # Flat recurrent path: reverse sigma, subtract cached feedback.
             concept_input_state = self.conceptualSpace.reverse(
                 concepts_state, wordSpace=ws)
             if getattr(self, '_nonrams_sym_feedbacks', None):
@@ -2685,15 +2600,10 @@ class MentalModel(BaseModel):
                     recovered = concept_input_state.materialize() - fb
                     concept_input_state.set_event(recovered)
 
-        # ── Post-loop: build concept_input_state for shared tail ──
-        if self.ramsified:
-            concept_input_state.set_event(x)
-
-        # Split reconstructed concept input into percept portion
+        # ── Shared tail: percept/input reverse ──
         concept_input = concept_input_state.materialize()
         percepts_portion = concept_input[:, :self.nPercepts, :]
 
-        # PerceptualSpace reverse -> InputSpace reverse
         concept_input_state.set_event(percepts_portion)
         input_state = self.perceptualSpace.reverse(concept_input_state, wordSpace=ws)
         self.inputs = self.inputSpace.reverse(input_state)
@@ -2706,7 +2616,7 @@ class MentalModel(BaseModel):
     def grammar_learning_step(self, inputTensor, optimizer):
         """Single grammar learning step: symbolic reconstruction loss.
 
-        1. Forward: sentence → symbolSum (normal ramsified forward)
+        1. Forward: sentence → symbolSum (normal useGrammar forward)
         2. Reverse over partition slices with soft rule superposition
         3. Re-encode reconstruction → symbolSum_hat
         4. Loss = ||symbolSum_hat - symbolSum||^2 (symbolic level)
@@ -2943,7 +2853,8 @@ class ModelFactory:
                 "ConceptualSpace hasAttention=True is incompatible with nInputDim reshape. "
                 "Set <hasAttention>false</hasAttention> in <ConceptualSpace>.")
 
-        if model_family == "mental" and bool(arch.get("ramsified", False)):
+        use_butterflies = bool(arch.get("useButterflies", False))
+        if model_family == "mental" and use_butterflies:
             def _resolve_dim(space_name, prev_dim):
                 try:
                     raw = gsp(cfg, space_name, "nDim")
@@ -2985,23 +2896,23 @@ class ModelFactory:
                 symbol_volume = n_symbols * symbol_width
                 if state_volume != symbol_volume:
                     errors.append(
-                        "ramsified non-grammar path requires latent/symbol volume equality: "
+                        "useButterflies=true requires latent/symbol volume equality: "
                         f"nPercepts*state_dim ({state_volume}) must equal "
                         f"nSymbols*symbol_width ({symbol_volume})."
                     )
                 if state_dim % symbol_width != 0:
                     errors.append(
-                        "ramsified non-grammar path requires state_dim to be divisible by "
+                        "useButterflies=true requires state_dim to be divisible by "
                         f"symbol_width so n = D/S is integral (got D={state_dim}, S={symbol_width})."
                     )
                 if n_percepts & (n_percepts - 1):
                     errors.append(
-                        "ramsified non-grammar butterfly schedule requires nPercepts to be a "
+                        "useButterflies=true butterfly schedule requires nPercepts to be a "
                         f"power of two (got nPercepts={n_percepts})."
                     )
                 if str(arch.get("reconstruct", "NONE")).lower() != "symbols":
                     errors.append(
-                        "ramsified non-grammar reverse requires reconstruct=symbols so the full "
+                        "useButterflies=true reverse requires reconstruct=symbols so the full "
                         "symbol state remains available for exact inversion."
                     )
 

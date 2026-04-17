@@ -146,10 +146,10 @@ class TestWordEncoding(unittest.TestCase):
 class TestHierarchicalForward(unittest.TestCase):
 
     def test_forward_runs(self):
-        """RamsifiedModel with conceptualOrder=2 runs forward without error."""
+        """`RamsifiedModel.xml` with conceptualOrder=2 runs forward without error."""
         model = _make_model('RamsifiedModel.xml')
-        if not model.ramsified:
-            self.skipTest("Model not ramsified")
+        if not model.useButterflies:
+            self.skipTest("Model not butterfly-enabled")
 
         sentences = ['test sentence one', 'another test sentence']
         outputs = [torch.tensor([0.0]), torch.tensor([1.0])]
@@ -166,8 +166,8 @@ class TestHierarchicalForward(unittest.TestCase):
     def test_symbol_states_populated(self):
         """Hierarchical forward populates symbol_states per level."""
         model = _make_model('RamsifiedModel.xml')
-        if not model.ramsified:
-            self.skipTest("Model not ramsified")
+        if not model.useButterflies:
+            self.skipTest("Model not butterfly-enabled")
 
         sentences = ['test one', 'test two']
         outputs = [torch.tensor([0.0]), torch.tensor([1.0])]
@@ -190,7 +190,7 @@ class TestBackwardCompat(unittest.TestCase):
     def test_mentalmodel_unchanged(self):
         """MentalModel.xml (conceptualOrder=1) still creates and forwards."""
         model = _make_model('MentalModel.xml')
-        self.assertFalse(model.ramsified)
+        self.assertFalse(model.useButterflies)
 
         sentences = ['hello world']
         outputs = [torch.tensor([0.0])]
@@ -216,55 +216,39 @@ class TestBackwardCompat(unittest.TestCase):
 class TestPerLevelLayers(unittest.TestCase):
 
     def test_pair_sigmas_created(self):
-        """Ramsified non-grammar path builds per-stage pair Sigma layers."""
+        """Butterfly path builds per-stage pair Sigma layers."""
         model = _make_model('RamsifiedModel.xml')
-        if not model.ramsified:
-            self.skipTest("Model not ramsified")
-        pair_dim = 2 * model._ramsified_state_dim
-        # New path: ButterflyStage wrappers around SigmaLayers
-        stages = model.conceptualSpace.butterfly_stages
-        if stages is not None:
-            self.assertEqual(len(stages), model.conceptualOrder)
-            self.assertEqual(stages[0].inner.nInput, pair_dim)
-            self.assertEqual(stages[0].inner.nOutput, pair_dim)
-        else:
-            # Legacy path: raw butterfly_sigmas
-            self.assertTrue(model._ramsified_pair_enabled())
-            sigmas = model.conceptualSpace.butterfly_sigmas
-            self.assertEqual(len(sigmas), model.conceptualOrder)
-            self.assertEqual(sigmas[0].nInput, pair_dim)
-            self.assertEqual(sigmas[0].nOutput, pair_dim)
+        if not model.useButterflies:
+            self.skipTest("Model not butterfly-enabled")
+        pair_dim = 2 * model._butterfly_state_dim
+        # ButterflyStage wrappers live directly in sigmas now.
+        stages = model.conceptualSpace.sigmas
+        self.assertEqual(len(stages), model.conceptualOrder)
+        self.assertEqual(stages[0].inner.nInput, pair_dim)
+        self.assertEqual(stages[0].inner.nOutput, pair_dim)
 
     def test_pair_pi_layers_created(self):
-        """Ramsified non-grammar path builds per-stage pair Pi heads."""
+        """Butterfly path builds per-stage pair Pi heads."""
         model = _make_model('RamsifiedModel.xml')
-        if not model.ramsified:
-            self.skipTest("Model not ramsified")
-        pair_dim = 2 * model._ramsified_state_dim
-        # New path: ButterflyStage wrappers around PiLayers
-        stages = model.symbolicSpace.butterfly_stages
-        if stages is not None:
-            self.assertEqual(len(stages), model.conceptualOrder)
-            self.assertEqual(stages[0].inner.nInput, pair_dim)
-            self.assertEqual(stages[0].inner.nOutput, pair_dim)
-        else:
-            # Legacy path: raw butterfly_pis
-            pis = model.symbolicSpace.butterfly_pis
-            self.assertEqual(len(pis), model.conceptualOrder)
-            self.assertEqual(pis[0].nInput, pair_dim)
-            self.assertEqual(pis[0].nOutput, pair_dim)
+        if not model.useButterflies:
+            self.skipTest("Model not butterfly-enabled")
+        pair_dim = 2 * model._butterfly_state_dim
+        stages = model.symbolicSpace.pi_layers
+        self.assertEqual(len(stages), model.conceptualOrder)
+        self.assertEqual(stages[0].inner.nInput, pair_dim)
+        self.assertEqual(stages[0].inner.nOutput, pair_dim)
 
     def test_symbol_factor_matches_configured_volume(self):
         """Pair head reshaping matches the configured symbol volume exactly."""
         model = _make_model('RamsifiedModel.xml')
-        if not model.ramsified:
-            self.skipTest("Model not ramsified")
+        if not model.useButterflies:
+            self.skipTest("Model not butterfly-enabled")
         self.assertEqual(
-            model._ramsified_state_vectors * model._ramsified_state_dim,
-            model.nSymbols * model._ramsified_symbol_width,
+            model._butterfly_state_vectors * model._butterfly_state_dim,
+            model.nSymbols * model._butterfly_symbol_width,
         )
         self.assertEqual(
-            model._ramsified_state_vectors * model._ramsified_symbol_factor,
+            model._butterfly_state_vectors * model._butterfly_symbol_factor,
             model.nSymbols,
         )
 

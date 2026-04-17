@@ -185,11 +185,11 @@ class TestValidateConfig(unittest.TestCase):
             Models.BasicModelFactory.validate_config(cfg)
         self.assertIn("maskedPrediction=ARIR", str(ctx.exception))
 
-    def test_ramsified_requires_latent_symbol_volume_match(self):
+    def test_butterfly_requires_latent_symbol_volume_match(self):
         cfg = {
             "architecture": {
                 "type": "mental",
-                "ramsified": True,
+                "useButterflies": True,
                 "reconstruct": "symbols",
             },
             "InputSpace": {"nOutput": 8, "nDim": 4},

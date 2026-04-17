@@ -7,7 +7,6 @@
   <architecture>
     <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
-    <ramsified>false</ramsified>
     <useButterflies>false</useButterflies>
     <l1Lambda>0.01</l1Lambda>
     <nWhere>2</nWhere>

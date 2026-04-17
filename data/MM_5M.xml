@@ -5,7 +5,6 @@
   <architecture>
     <reconstruct>concepts</reconstruct>
     <conceptualOrder>8</conceptualOrder>
-    <ramsified>true</ramsified>
     <useButterflies>true</useButterflies>
     <l1Lambda>0.01</l1Lambda>
     <nWhere>2</nWhere>

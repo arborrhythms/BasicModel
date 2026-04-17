@@ -21,7 +21,7 @@
 <text x='350' y='133' text-anchor='start' font-size='12' fill='#2c3e50'>• Cosine similarity = semantic nearness</text>
 <text x='350' y='165' text-anchor='start' font-size='12' fill='#2c3e50'>• SigmaLayer: y = tanh(Wx + b)  (additive)</text>
 <text x='350' y='197' text-anchor='start' font-size='12' fill='#2c3e50'>• Optional attention + VQ codebook</text>
-<text x='350' y='229' text-anchor='start' font-size='12' fill='#2c3e50'>• Ramsified: loop t = 0…T−1</text>
+<text x='350' y='229' text-anchor='start' font-size='12' fill='#2c3e50'>• Sigma-Pi loop: t = 0…T−1</text>
 <text x='350' y='261' text-anchor='start' font-size='12' fill='#2c3e50'>• Op: Union (⊕), Intersection (⊙)</text>
 <text x='350' y='293' text-anchor='start' font-size='12' fill='#2c3e50'>• TruthField: attractor/disperser regions</text>
 <rect x='660' y='58' width='280' height='480' fill='#fef9e7' fill-opacity='1.0' rx='10' stroke='#ca6f1e' stroke-width='2'/>
@@ -48,7 +48,7 @@
 <text x='680' y='416' text-anchor='start' font-size='11' fill='#1a7a38'>• query by cosine sim</text>
 <text x='680' y='440' text-anchor='start' font-size='11' fill='#1a7a38'>• field(): truth attractor map</text>
 <rect x='340' y='540' width='290' height='28' fill='#e8daef' fill-opacity='1.0' rx='6' stroke='#8e44ad' stroke-width='1'/>
-<text x='485' y='558' text-anchor='middle' font-size='12' fill='#8e44ad' font-style='italic'>Ramsified loop: t = 0, 1, …, T−1</text>
+<text x='485' y='558' text-anchor='middle' font-size='12' fill='#8e44ad' font-style='italic'>Sigma-Pi loop: t = 0, 1, …, T−1</text>
 <line x1='0' y1='590' x2='960' y2='590' stroke='#ddd' stroke-width='1'/>
 <text x='480' y='610' text-anchor='middle' font-size='12' fill='#626567'>Forward: Input → Perceptual → Conceptual → Symbolic → Output     |     Reverse: Output → Symbolic → Conceptual → Perceptual</text>
 </svg>

@@ -6,7 +6,6 @@
   <architecture>
     <reconstruct>symbols</reconstruct>
     <conceptualOrder>3</conceptualOrder>
-    <ramsified>false</ramsified>
     <useButterflies>false</useButterflies>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>

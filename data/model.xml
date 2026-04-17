@@ -15,7 +15,6 @@
   <architecture>
     <modelType>simple</modelType>
     <conceptualOrder>1</conceptualOrder>
-    <ramsified>false</ramsified>
     <useButterflies>false</useButterflies>
     <STM_decay>0.0</STM_decay>
     <processSymbols>false</processSymbols>
@@ -85,9 +84,6 @@
   </architecture>
 
   <WordSpace>
-    <!-- Toggle for the ramsified butterfly vs. grammar compose path.
-         false = fixed butterfly pair layers (fast, topology-only).
-         true  = SyntacticLayer.compose() via wordSpace (grammar-driven). -->
     <useGrammar>false</useGrammar>
 
     <!-- SyntacticLayer MLP hidden size (prev hardcoded 64..256). -->

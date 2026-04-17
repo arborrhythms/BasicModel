@@ -1,12 +1,13 @@
 <?xml version="1.0" ?>
 <model>
-  <!-- MM_xor: MentalModel topology on XOR dataset for convergence testing.
-       Based on MM_1B architecture (iterative [Percept,Symbol]->Concept->Symbol)
-       but scaled to XOR-sized dims. -->
+  <!-- MM_grammar: MentalModel on XOR via the grammar-directed composition
+       path (useGrammar=true, useButterflies=false) with VQ-VAE enabled.
+       Sibling: MM_xor_grammar.xml is the useVQVAE=false variant used for
+       isolated regression of the recurrent Pi-Sigma + pairwise compose
+       without VQ-VAE muddying the variable. -->
   <architecture>
     <reconstruct>symbols</reconstruct>
     <conceptualOrder>3</conceptualOrder>
-    <ramsified>false</ramsified>
     <useButterflies>false</useButterflies>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
@@ -91,7 +92,7 @@
   </OutputSpace>
 
   <WordSpace>
-    <useGrammar>false</useGrammar>
+    <useGrammar>true</useGrammar>
     <language>
       <grammar>
         <START>S</START>

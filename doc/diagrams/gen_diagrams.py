@@ -347,7 +347,7 @@ def make_vector_spaces():
              "• Cosine similarity = semantic nearness",
              "• SigmaLayer: y = tanh(Wx + b)  (additive)",
              "• Optional attention + VQ codebook",
-             "• Ramsified: loop t = 0…T−1",
+             "• Sigma-Pi loop: t = 0…T−1",
              "• Op: Union (⊕), Intersection (⊙)",
              "• TruthField: attractor/disperser regions",
          ], 340, 58, 290, 480),
@@ -392,9 +392,9 @@ def make_vector_spaces():
     for i, t in enumerate(["store: activation × DoT", "query by cosine sim", "field(): truth attractor map"]):
         parts.append(txt(680, 392 + i*24, "• " + t, anchor="start", fs=11, fill=GRN_DK))
 
-    # Ramsification annotation
+    # Sigma-Pi loop annotation
     parts.append(rect(340, 540, 290, 28, PURP_L, stroke=PURP, sw=1, rx=6))
-    parts.append(txt(485, 558, "Ramsified loop: t = 0, 1, …, T−1", fs=12, fill=PURP, italic=True))
+    parts.append(txt(485, 558, "Sigma-Pi loop: t = 0, 1, …, T−1", fs=12, fill=PURP, italic=True))
 
     # Bottom caption
     parts.append(line(0, 590, W, 590, stroke="#ddd", sw=1))

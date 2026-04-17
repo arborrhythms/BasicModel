@@ -118,29 +118,38 @@ symbolic reconstruction objective:
 Grammar weights emerge from gradient descent. Paraphrase-invariance holds
 because semantically similar sentences snap to nearby codebook entries.
 
-## Ramsified vs Non-Ramsified Architecture
+## Architecture Quadrants: useButterflies × useGrammar
 
-The `<ramsified>` flag selects between two fundamentally different
-Sigma-Pi loop implementations.  Both share the same six-space pipeline;
-they differ in how the loop body constructs its input, indexes its
-layers, and feeds information between iterations.
+Two orthogonal flags — `<useButterflies>` (under `<architecture>`) and
+`<useGrammar>` (under `<WordSpace>`) — select among three valid
+Sigma-Pi architectures.  Butterflies and grammar are mutually
+exclusive: butterfly permutations fight the constituency structure
+that grammar composition requires, so the (true, true) quadrant is
+rejected at load time.
 
-### Non-Ramsified (default)
+|                          | **useGrammar=false**                | **useGrammar=true**                  |
+|--------------------------|--------------------------------------|--------------------------------------|
+| **useButterflies=false** | Flat shared sigma (default)          | Grammar-directed composition         |
+| **useButterflies=true**  | Pairwise butterfly mixing            | ❌ excluded                          |
 
-The standard path treats the Sigma-Pi loop as a **flat, monolithic
-cycle**.  At each conceptual order `t`:
+### Flat (both false)
+
+A single shared SigmaLayer and PiLayer operate on a concatenated
+`[percepts, symbols]` tensor at every conceptual order.  All orders
+share one undifferentiated symbolic space.  Sufficient for
+`conceptualOrder=1`.
+
+At each iteration `t`:
 
 1. **Input construction.**  Percepts and symbol feedback are
    **concatenated** along the vector dimension:
-   `concept_input = cat([percepts, sym_feedback], dim=1)`,
-   producing a `[B, nPercepts+nSymbols, D]` tensor.  Every order sees
-   the full percept set plus the full symbol set.
+   `concept_input = cat([percepts, sym_feedback], dim=1)`.
 
 2. **Sigma** (ConceptualSpace): A single shared layer transforms the
    combined input.
 
 3. **Pi** (SymbolicSpace): A single shared PiLayer projects concepts →
-   symbols.  All orders write to the **entire** symbol dimension.
+   symbols.  All orders write to the entire symbol dimension.
 
 4. **Feedback**: Symbol activation norms are broadcast back to the
    symbol portion of the input for the next iteration.
@@ -148,74 +157,60 @@ cycle**.  At each conceptual order `t`:
 5. **Reverse**: `ConceptualSpace.reverse` → peel off the symbol
    portion → `SymbolicSpace.reverse`, repeated per order.
 
-The key property: **all conceptual orders share one undifferentiated
-symbolic space**.  There is no way to tell, from a symbol vector alone,
-which order produced it.
+Key property: **all conceptual orders share one undifferentiated
+symbolic space**.  There is no way to tell, from a symbol vector
+alone, which order produced it.
 
-### Ramsified
+### Butterfly (useButterflies=true, useGrammar=false)
 
-The ramsified path makes the architecture **hierarchically partitioned**
-and **self-describing** via two mechanisms.
+ButterflyStage wrappers around per-level Sigma and Pi layers permute
+inputs, pack adjacent pairs, apply the layer, unpack, and merge —
+halving `N` at each conceptual order while keeping `D` constant.  The
+merge is internal to the ButterflyStage (no external
+`_butterfly_merge`/`_butterfly_unmerge` stack); the reverse path
+inverts each stage exactly.  `<reconstruct>symbols</reconstruct>` is
+required so the full symbol state is available for exact inversion.
 
-**Mechanism 1 — Butterfly merge/unmerge.**  Instead of concatenating
-percepts with symbols, the ramsified path progressively compresses the
-percept sequence:
+Analogous to increasing receptive fields in visual cortex
+(V1→V2→V4→IT), the pairwise mixing lets information flow across the
+slot axis — making this path suitable for tasks like XOR where
+information at different input slots must collide.
 
-```
-percepts:  [B, N, D]
-order 0:   [B, N/2, D]    ← average adjacent pairs
-order 1:   [B, N/4, D]    ← average again
-order k:   [B, N/2^(k+1), D]
-```
+### Grammar-directed (useButterflies=false, useGrammar=true)
 
-Each merge averages adjacent vector pairs and **caches the difference**
-(`left - right`) in `self._merge_diffs` so the reverse pass can
-reconstruct the originals exactly.  This is the "butterfly" pattern —
-analogous to increasing receptive fields in visual cortex (V1→V2→V4→IT).
+Progressive-bottleneck path with an external pair-average merge
+(`_butterfly_merge` on the vector axis, caching `left - right` diffs
+in `_merge_diffs`), per-level indexed Sigma/Pi
+(`conceptualSpace[t]` / `symbolicSpace[t]`), and cached symbol
+feedback (`_sym_feedbacks`).  The symbol dimension is geometrically
+partitioned so each order writes only to its slice — gives
+**partition-aware reasoning**: truth grounding, consistency checks,
+and extrapolation that respect which conceptual order a proposition
+belongs to.
 
-Symbol feedback is additive (`x = x + sym_feedback`) rather than
-concatenated, and is also halved to match the current level's vector
-count.
-
-**Mechanism 2 — Geometric partition of symbol_dim.**  The symbol
-dimension `D` is statically sliced by order (see §Partitioned Symbolic
-Space above).  Each order writes **only to its slice** via per-level
-indexed Pi layers (`self.symbolicSpace[t]`, `self.conceptualSpace[t]`).
-ConceptualSpace and SymbolicSpace store `nn.ModuleList`s of per-level
-layers when `level_shapes` is provided.
-
-**Forward loop** (`BasicModel.py` `forward()`):
+Forward loop:
 
 ```
 for t in range(conceptualOrder):
-    x = butterfly_merge(x)           # halve vector count
-    x = x + sym_feedback             # additive feedback
-    concepts = conceptualSpace[t](x) # per-level sigma
+    x = butterfly_merge(x)               # halve vector count (external)
+    x = x + sym_feedback                 # additive feedback
+    concepts = conceptualSpace[t](x)     # per-level sigma
     symbols  = symbolicSpace[t](concepts)  # per-level pi
-    sym_feedback = symbols.norm(...)  # for next iteration
+    sym_feedback = symbols.norm(...)     # for next iteration
 ```
 
-**Reverse loop** (`BasicModel.py` `reverse()`):
+Reverse loop:
 
 ```
 x = symbolicSpace[last].reverse(sym_vec)
 for t in reversed(range(conceptualOrder)):
     x = conceptualSpace[t].reverse(x)
-    x = x - cached_feedback[t]       # undo additive feedback
-    x = butterfly_unmerge(x)         # restore vector count
+    x = x - cached_feedback[t]           # undo additive feedback
+    x = butterfly_unmerge(x)             # restore vector count
 ```
 
 The butterfly unmerge uses the cached `_merge_diffs` to recover both
 original vectors from each averaged pair — the inverse is exact.
-
-### Why It Matters
-
-Non-ramsified is simpler and sufficient for `conceptualOrder=1`.
-Ramsified is required when you want **partition-aware reasoning** —
-truth grounding, consistency checks, and extrapolation that respect
-which conceptual order a proposition belongs to.  The self-describing
-property means the model's symbolic space carries structural metadata
-in its geometry, not in external bookkeeping.
 
 ## Configuration
 
@@ -223,7 +218,8 @@ in its geometry, not in external bookkeeping.
 |-----------|----------|---------|-------------|
 | `<TruthLoss>` | `<training>` in model.xml | 0.0 | Weight for additive truth loss penalty |
 | `<conceptualOrder>` | `<architecture>` | 1 | Number of Percept->Concept->Symbol iterations |
-| `<ramsified>` | `<architecture>` | false | Enable per-partition serial Pi layers with butterfly merge/unmerge |
+| `<useButterflies>` | `<architecture>` | false | Pairwise butterfly mixing with N-halving per conceptual order |
+| `<useGrammar>`     | `<WordSpace>`    | false | Grammar-directed composition with progressive bottleneck |
 | `truthMinMagnitude` | `<SymbolicSpace>` | 0.3 | Minimum activation norm for truth storage |
 | `truthMinNovelty` | `<SymbolicSpace>` | 0.5 | Minimum novelty for truth storage |
 | `truthMaxInconsistency` | `<SymbolicSpace>` | 0.3 | Maximum inconsistency for truth storage |

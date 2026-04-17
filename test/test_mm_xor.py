@@ -49,12 +49,10 @@ def _variant_config(replacements):
     return tmp.name
 
 
-def _ramsified_config(enabled):
-    """Write a temporary MM_xor config with an explicit ramsified setting."""
+def _butterfly_config(enabled):
+    """Write a temporary MM_xor config with an explicit useButterflies setting."""
     value = "true" if enabled else "false"
     return _variant_config([
-        ("<ramsified>true</ramsified>", f"<ramsified>{value}</ramsified>"),
-        ("<ramsified>false</ramsified>", f"<ramsified>{value}</ramsified>"),
         ("<useButterflies>true</useButterflies>",
          f"<useButterflies>{value}</useButterflies>"),
         ("<useButterflies>false</useButterflies>",
@@ -116,15 +114,15 @@ class TestMMXorConvergence(unittest.TestCase):
             input_data.squeeze(), forward_input.squeeze())
         self.assertLess(err.item(), 1e-6)
 
-    def test_non_ramsified_forward_keeps_continuous_symbols(self):
-        """The non-ramsified recurrent path should not collapse via symbol VQ."""
+    def test_non_butterfly_forward_keeps_continuous_symbols(self):
+        """The non-butterfly recurrent path should not collapse via symbol VQ."""
         import torch
 
-        cfg_path = _ramsified_config(False)
+        cfg_path = _butterfly_config(False)
         try:
             torch.manual_seed(42)
             m, _, _ = _fresh_model(cfg_path)
-            self.assertFalse(m.ramsified)
+            self.assertFalse(m.useButterflies)
             m.eval()
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
@@ -138,11 +136,11 @@ class TestMMXorConvergence(unittest.TestCase):
         finally:
             os.unlink(cfg_path)
 
-    def test_non_ramsified_runbatch_losses_stay_finite(self):
+    def test_non_butterfly_runbatch_losses_stay_finite(self):
         """The public train/reverse loss path should stay finite."""
         import torch
 
-        cfg_path = _ramsified_config(False)
+        cfg_path = _butterfly_config(False)
         try:
             torch.manual_seed(42)
             m, _, _ = _fresh_model(cfg_path)
@@ -181,15 +179,15 @@ class TestMMXorConvergence(unittest.TestCase):
                 Models.TheMessage = original_message
             os.unlink(cfg_path)
 
-    def test_ramsified_runbatch_losses_stay_finite(self):
-        """The ramsified symbol-codebook path should stay finite."""
+    def test_butterfly_runbatch_losses_stay_finite(self):
+        """The butterfly symbol-codebook path should stay finite."""
         import torch
 
-        cfg_path = _ramsified_config(True)
+        cfg_path = _butterfly_config(True)
         try:
             torch.manual_seed(42)
             m, _, _ = _fresh_model(cfg_path)
-            self.assertTrue(m.ramsified)
+            self.assertTrue(m.useButterflies)
             optimizer = m.getOptimizer(lr=0.01)
 
             totals = []
@@ -228,11 +226,11 @@ class TestMMXorConvergence(unittest.TestCase):
             os.unlink(cfg_path)
 
     @unittest.skipIf(not _RUN_SLOW, "slow — set RUN_SLOW=1")
-    def test_non_ramsified_learns_xor_signal(self):
-        """ramsified=false should exercise the recurrent forward path and learn."""
+    def test_non_butterfly_learns_xor_signal(self):
+        """useButterflies=false should exercise the recurrent forward path and learn."""
         import torch
 
-        cfg_path = _ramsified_config(False)
+        cfg_path = _butterfly_config(False)
         try:
             m, _, data = _fresh_model(cfg_path)
             optimizer = torch.optim.Adam(m.parameters(), lr=0.01)
@@ -263,28 +261,20 @@ class TestMMXorConvergence(unittest.TestCase):
         finally:
             os.unlink(cfg_path)
 
-    @unittest.skipIf(not _RUN_SLOW, "slow — set RUN_SLOW=1")
-    def test_mm_xor_grammar_learns_xor_signal(self):
-        """MM_xor_grammar.xml (ramsified=false, useVQVAE=false) must learn XOR.
-
-        This is the isolated regression fixture for the non-ramsified
-        grammar path: it exercises the recurrent Pi-Sigma loop plus the
-        pairwise-slot-mixing compose (``_compose_to_target``) without
-        VQ-VAE muddying the variable.  Convergence below 0.15 at 600
-        epochs confirms that the C-tier pairwise reducer is threading
-        information across the slot axis end-to-end.
-        """
+    def _grammar_xor_convergence(self, cfg_path, epochs=600, threshold=0.15):
+        """Shared body: grammar-path XOR convergence on a given config path."""
         import torch
 
-        cfg_path = os.path.join(_PROJECT, "data", "MM_xor_grammar.xml")
         m, _, data = _fresh_model(cfg_path)
+        self.assertFalse(m.useButterflies)
+        self.assertTrue(m.useGrammar)
         optimizer = torch.optim.Adam(m.parameters(), lr=0.01)
         criterion = torch.nn.MSELoss()
         best_loss = float("inf")
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
-            for _ in range(600):
+            for _ in range(epochs):
                 batch, _ = m.inputSpace.getBatch(0, batchSize=4)
                 inp, target = batch
                 optimizer.zero_grad()
@@ -302,7 +292,43 @@ class TestMMXorConvergence(unittest.TestCase):
                 best_loss = min(best_loss, loss.item())
 
         self.assertGreater(len(data.train_input), 0)
-        self.assertLess(best_loss, 0.15)
+        self.assertLess(best_loss, threshold)
+
+    @unittest.skipIf(not _RUN_SLOW, "slow — set RUN_SLOW=1")
+    def test_mm_grammar_learns_xor_signal(self):
+        """MM_grammar.xml learns XOR via the grammar-directed composition path.
+
+        Coverage for the (useButterflies=false, useGrammar=true)
+        quadrant — the progressive-bottleneck branch in forward/reverse
+        with VQ-VAE symbol discretization enabled.
+        """
+        cfg_path = os.path.join(_PROJECT, "data", "MM_grammar.xml")
+        self._grammar_xor_convergence(cfg_path)
+
+    @unittest.skipIf(not _RUN_SLOW, "slow — set RUN_SLOW=1")
+    def test_mm_grammar_without_vqvae_learns_xor_signal(self):
+        """MM_grammar.xml with useVQVAE flipped to false learns XOR.
+
+        Isolated regression fixture: exercises the grammar path without
+        VQ-VAE commitment loss muddying the variable.  Convergence here
+        confirms the C-tier pairwise reducer and progressive-bottleneck
+        Pi-Sigma loop thread information across the slot axis end-to-end.
+        """
+        src = os.path.join(_PROJECT, "data", "MM_grammar.xml")
+        with open(src, "r", encoding="utf-8") as fh:
+            text = fh.read()
+        text = text.replace(
+            "<useVQVAE>true</useVQVAE>",
+            "<useVQVAE>false</useVQVAE>",
+            1,
+        )
+        tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False)
+        tmp.write(text)
+        tmp.close()
+        try:
+            self._grammar_xor_convergence(tmp.name)
+        finally:
+            os.unlink(tmp.name)
 
     def test_vqvae_ste_registers_commitment_and_moves_encoder(self):
         """With useVQVAE=true, STE path must register symbol_commitment and
@@ -324,7 +350,7 @@ class TestMMXorConvergence(unittest.TestCase):
 
         # Snapshot every trainable SymbolicSpace parameter.  Which Pi
         # instance actually carries the forward (self.layer vs.
-        # butterfly_pis[*] vs. pi_layers[*]) depends on ramsified /
+        # butterfly_pis[*] vs. pi_layers[*]) depends on useButterflies /
         # butterfly config, so we check for movement across the whole
         # set instead of a single named Pi.
         params_before = {

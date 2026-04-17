@@ -4357,23 +4357,49 @@ class ConceptualSpace(Space):
             self._hierarchical = True
             self._level_shapes = level_shapes
             self.sigmas = nn.ModuleList()
-            for t, (n_t, d_t) in enumerate(level_shapes):
-                sig = SigmaLayer(d_t, d_t, naive=naive, ergodic=ergodic,
-                                 invertible=invertible)
-                sig.saturate = False
-                self.sigmas.append(sig)
-            # Dim projections for syntactic mode (grammar keeps D, need projection)
-            # One per level: level 0 projects from percept_dim, others from prior level
+            if butterfly_config is not None:
+                # Butterfly variant: SigmaLayer is 2D×2D, wrapped in a
+                # ButterflyStage that permutes, packs, sigma-applies,
+                # unpacks and merges (halves N).
+                pair_dim = 2 * butterfly_config["state_dim"]
+                initial_n = butterfly_config["state_vectors"]
+                n_stages = butterfly_config["conceptual_order"]
+                for t in range(n_stages):
+                    sig = SigmaLayer(
+                        pair_dim, pair_dim,
+                        naive=butterfly_config["naive"],
+                        ergodic=butterfly_config["ergodic"],
+                        invertible=True,
+                    )
+                    sig.saturate = False
+                    stage = ButterflyStage(
+                        sig, stage_idx=t, initial_n=initial_n,
+                        is_last=(t == n_stages - 1))
+                    self.sigmas.append(stage)
+            else:
+                for t, (n_t, d_t) in enumerate(level_shapes):
+                    sig = SigmaLayer(d_t, d_t, naive=naive, ergodic=ergodic,
+                                     invertible=invertible)
+                    sig.saturate = False
+                    self.sigmas.append(sig)
+            # Dim projections only meaningful for the grammar path (non-butterfly).
+            # One per level: level 0 projects from percept_dim, others from prior level.
             self.dim_projections = nn.ModuleList()
-            percept_dim = inputShape[1]  # pre-merge percept dim
-            for t, (n_t, d_t) in enumerate(level_shapes):
-                d_in = percept_dim if t == 0 else level_shapes[t - 1][1]
-                self.dim_projections.append(nn.Linear(d_in, d_t))
+            if butterfly_config is None:
+                percept_dim = inputShape[1]  # pre-merge percept dim
+                for t, (n_t, d_t) in enumerate(level_shapes):
+                    d_in = percept_dim if t == 0 else level_shapes[t - 1][1]
+                    self.dim_projections.append(nn.Linear(d_in, d_t))
             self.layers = nn.ModuleList(
                 list(self.sigmas) + list(self.dim_projections))
             self.params = []
             for s in self.sigmas:
-                self.params.extend(s.getParameters())
+                # ButterflyStage forwards .getParameters() to the inner sigma
+                # via .parameters(); fall back if the stage doesn't expose it.
+                if hasattr(s, "getParameters"):
+                    self.params.extend(s.getParameters())
+                else:
+                    self.params.extend(list(s.parameters()))
             # Set forwardSigma/reverseSigma to level-0 for backward compat callers
             self.forwardSigma = self.sigmas[0].forward
             self.reverseSigma = self.sigmas[0].reverse
@@ -4405,103 +4431,11 @@ class ConceptualSpace(Space):
                 self.forwardSigma = self.sigma.forward
                 self.params = self.sigma.getParameters()
                 self.layers = nn.ModuleList([self.sigma])
-        # ── Butterfly mode: ButterflyStage wrappers around SigmaLayers ──
-        # Each stage does permute → pack → sigma → unpack → merge,
-        # halving N while keeping D constant.  The sigma is 2D×2D.
-        self.butterfly_enabled = False
-        self.butterfly_stages = None
-        self._butterfly_state_vectors = None
-        # Legacy fields kept for backward compat with old ramsified path
-        self.butterfly_sigmas = None
-        self._butterfly_pair_outputs = None
-        if butterfly_config is not None:
-            self.butterfly_enabled = True
-            self._butterfly_state_vectors = butterfly_config["state_vectors"]
-            pair_dim = 2 * butterfly_config["state_dim"]
-            n_stages = butterfly_config["conceptual_order"]
-            initial_n = butterfly_config["state_vectors"]
-            use_butterfly_stages = butterfly_config.get("use_stages", True)
-
-            if use_butterfly_stages:
-                # New path: ButterflyStage wrappers
-                self.butterfly_stages = nn.ModuleList()
-                for t in range(n_stages):
-                    sig = SigmaLayer(
-                        pair_dim, pair_dim,
-                        naive=butterfly_config["naive"],
-                        ergodic=butterfly_config["ergodic"],
-                        invertible=True,
-                    )
-                    sig.saturate = False
-                    stage = ButterflyStage(
-                        sig, stage_idx=t, initial_n=initial_n,
-                        is_last=(t == n_stages - 1))
-                    self.butterfly_stages.append(stage)
-                    self.layers.append(stage)
-                    self.params.extend(sig.getParameters())
-            else:
-                # Legacy path: raw butterfly_sigmas (no merge, no ButterflyStage)
-                self.butterfly_sigmas = nn.ModuleList()
-                for _ in range(n_stages):
-                    sig = SigmaLayer(
-                        pair_dim, pair_dim,
-                        naive=butterfly_config["naive"],
-                        ergodic=butterfly_config["ergodic"],
-                        invertible=True,
-                    )
-                    sig.saturate = False
-                    self.butterfly_sigmas.append(sig)
-                    self.layers.append(sig)
-                    self.params.extend(sig.getParameters())
-                self._butterfly_pair_outputs = [None] * n_stages
-
         # Grammar methods and SyntacticLayers are now on TheGrammar.
         # Spaces delegate to TheGrammar.project('C', ...) and
         # TheGrammar.composeSyntax('C', ...).
         self._interpretation = TheGrammar.interpretation
         self._last_svo = None
-
-    def get_butterfly_pair_output(self, stage_idx):
-        if self._butterfly_pair_outputs is None:
-            return None
-        return self._butterfly_pair_outputs[stage_idx]
-
-    def set_butterfly_pair_output(self, stage_idx, pair_output):
-        if self._butterfly_pair_outputs is None:
-            return
-        self._butterfly_pair_outputs[stage_idx] = pair_output
-
-    def butterfly_state_from_pair_output(self, pair_output, stage_idx):
-        perm = _butterfly_stage_permutation(
-            self._butterfly_state_vectors, stage_idx, device=pair_output.device)
-        inv_perm = _butterfly_inverse_permutation(perm)
-        return _butterfly_unpack_pairs(pair_output)[:, inv_perm, :]
-
-    def _forward_butterfly_level(self, vspace, stage_idx):
-        x = vspace.materialize()
-        perm = _butterfly_stage_permutation(x.shape[1], stage_idx, device=x.device)
-        x_perm = x[:, perm, :]
-        pair_input = _butterfly_pack_pairs(x_perm)
-        pair_output = self.butterfly_sigmas[stage_idx].forward(pair_input)
-        self.set_butterfly_pair_output(stage_idx, pair_output)
-        x_next = self.butterfly_state_from_pair_output(pair_output, stage_idx)
-        self.subspace.set_event(x_next)
-        return self.subspace
-
-    def _reverse_butterfly_level(self, vspace, stage_idx):
-        x_next = vspace.materialize()
-        pair_output = self.get_butterfly_pair_output(stage_idx)
-        perm = _butterfly_stage_permutation(
-            self._butterfly_state_vectors, stage_idx, device=x_next.device)
-        inv_perm = _butterfly_inverse_permutation(perm)
-        if pair_output is None:
-            x_perm = x_next[:, perm, :]
-            pair_output = _butterfly_pack_pairs(x_perm)
-        pair_input = self.butterfly_sigmas[stage_idx].reverse(pair_output)
-        x_prev = _butterfly_unpack_pairs(pair_input)[:, inv_perm, :]
-        self.set_butterfly_pair_output(stage_idx, None)
-        self.subspace.set_event(x_prev)
-        return self.subspace
 
     def __getitem__(self, t):
         """Index into conceptual order levels.
@@ -4509,16 +4443,12 @@ class ConceptualSpace(Space):
         Non-hierarchical: returns self (shared sigma for all t).
         Hierarchical: returns a _LevelView that routes through sigmas[t].
         """
-        if not self._hierarchical and not self.butterfly_enabled:
+        if not self._hierarchical:
             return self
         return self._CSLevelView(self, t)
 
     class _CSLevelView:
         """Proxy routing .forward()/.reverse() through a per-level sigma.
-
-        When butterfly_stages are available, ``_sigma`` points to a
-        ButterflyStage wrapper — the butterfly mechanics (permute, pack,
-        merge) are internal to the layer.  No butterfly flag needed.
 
         Accepts ``wordSpace`` for signature parity with the non-hierarchical
         path, but ignores it — hierarchical sigmas don't invoke compose.
@@ -4526,39 +4456,19 @@ class ConceptualSpace(Space):
         def __init__(self, parent, t):
             self._parent = parent
             self._t = t
-            if parent.butterfly_stages is not None:
-                self._sigma = parent.butterfly_stages[t]
-            elif parent._hierarchical:
+            if parent._hierarchical:
                 self._sigma = parent.sigmas[t]
             else:
                 self._sigma = getattr(parent, 'sigma', None)
             self.subspace = parent.subspace
 
-        def forward(self, vspace, wordSpace=None, butterfly=False, target_count=None):
-            # ButterflyStage path: no early return, butterfly is internal
-            if self._parent.butterfly_stages is not None:
-                x = vspace.materialize()
-                y = self._sigma.forward(x)
-                self._parent.subspace.set_event(y)
-                return self._parent.subspace
-            # Legacy butterfly path (raw butterfly_sigmas, no merge)
-            if butterfly and self._parent.butterfly_enabled:
-                return self._parent._forward_butterfly_level(vspace, self._t)
+        def forward(self, vspace, wordSpace=None, target_count=None):
             x = vspace.materialize()
             y = self._sigma.forward(x)
             self._parent.subspace.set_event(y)
             return self._parent.subspace
 
-        def reverse(self, vspace, wordSpace=None, butterfly=False):
-            # ButterflyStage path
-            if self._parent.butterfly_stages is not None:
-                x = vspace.materialize()
-                y = self._sigma.reverse(x)
-                self._parent.subspace.set_event(y)
-                return self._parent.subspace
-            # Legacy butterfly path
-            if butterfly and self._parent.butterfly_enabled:
-                return self._parent._reverse_butterfly_level(vspace, self._t)
+        def reverse(self, vspace, wordSpace=None):
             x = vspace.materialize()
             y = self._sigma.reverse(x)
             self._parent.subspace.set_event(y)
@@ -4574,7 +4484,7 @@ class ConceptualSpace(Space):
     def certainty(self, x):
         return x.T @ x
 
-    def forward(self, vspace, wordSpace=None, butterfly=False, target_count=None):
+    def forward(self, vspace, wordSpace=None, target_count=None):
         """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ.
 
         When nonlinear=True (stable=True on SigmaLayer), the weight matrix
@@ -4586,11 +4496,9 @@ class ConceptualSpace(Space):
         (``_compose_to_target``) instead of the default cascading
         accumulator — the latter cannot move information across the
         slot axis.  Pass ``target_count=nOutputSymbols`` from the
-        non-ramsified MentalModel loop so compose reduces to exactly
+        non-butterfly MentalModel loop so compose reduces to exactly
         the slot count OutputSpace will read.
         """
-        if butterfly and self.butterfly_enabled:
-            return self._forward_butterfly_level(vspace, 0)
         x = self.forwardBegin(vspace, returnVectors=True)
         y = self.forwardSigma(x)
         if self.hasAttention:
@@ -4613,10 +4521,8 @@ class ConceptualSpace(Space):
         """Return SVO tuple from last ternary lift, or None."""
         return self._last_svo
 
-    def reverse(self, vspace, wordSpace=None, butterfly=False):
+    def reverse(self, vspace, wordSpace=None):
         """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer."""
-        if butterfly and self.butterfly_enabled:
-            return self._reverse_butterfly_level(vspace, 0)
         y = self.reverseBegin(vspace, returnVectors=True)
         if wordSpace is not None:
             y = wordSpace.reverseConcepts(y, self.subspace)
@@ -4664,14 +4570,33 @@ class SymbolicSpace(Space):
             self._hierarchical = True
             self._level_shapes = level_shapes
             self.pi_layers = nn.ModuleList()
-            for t, (n_t, d_t) in enumerate(level_shapes):
-                self.pi_layers.append(
-                    PiLayer(d_t, nSymbolDim, invertible=True, monotonic=True))
-            self.layer = self.pi_layers[0]  # default for non-ramsified codepaths
+            if butterfly_config is not None:
+                pair_dim = 2 * butterfly_config["state_dim"]
+                initial_n = butterfly_config["state_vectors"]
+                n_stages = butterfly_config["conceptual_order"]
+                self._butterfly_symbol_width = butterfly_config["symbol_width"]
+                self._butterfly_symbol_factor = butterfly_config["symbol_factor"]
+                for t in range(n_stages):
+                    pi = PiLayer(pair_dim, pair_dim, invertible=True, monotonic=True)
+                    # Pi operates on sigma's merged output (N already halved).
+                    stage = ButterflyStage(
+                        pi, stage_idx=t, initial_n=initial_n // 2,
+                        is_last=True)  # no merge — sigma already merged
+                    self.pi_layers.append(stage)
+            else:
+                self._butterfly_symbol_width = None
+                self._butterfly_symbol_factor = None
+                for t, (n_t, d_t) in enumerate(level_shapes):
+                    self.pi_layers.append(
+                        PiLayer(d_t, nSymbolDim, invertible=True, monotonic=True))
+            self.layer = self.pi_layers[0]  # default for non-hierarchical callers
         else:
             self._hierarchical = False
             self.pi_layers = None
-        self.layer = PiLayer(nConceptDim, nSymbolDim, invertible=True, monotonic=True) if not self._hierarchical else self.pi_layers[0]
+            self._butterfly_symbol_width = None
+            self._butterfly_symbol_factor = None
+        if not self._hierarchical:
+            self.layer = PiLayer(nConceptDim, nSymbolDim, invertible=True, monotonic=True)
 
         # Symbol objective: residual accuracy is primary; L1 remains a
         # secondary compactness pressure on latent activations.
@@ -4742,43 +4667,6 @@ class SymbolicSpace(Space):
         else:
             self._symbol_where = None
 
-        # ── Butterfly mode: ButterflyStage wrappers around PiLayers ──
-        # Pi operates on sigma's merged output — no further merge (is_last=True).
-        self.butterfly_enabled = False
-        self.butterfly_stages = None
-        # Legacy fields kept for backward compat with old ramsified path
-        self.butterfly_pis = None
-        self._butterfly_symbol_width = None
-        self._butterfly_symbol_factor = None
-        if butterfly_config is not None:
-            self.butterfly_enabled = True
-            self._butterfly_symbol_width = butterfly_config["symbol_width"]
-            self._butterfly_symbol_factor = butterfly_config["symbol_factor"]
-            pair_dim = 2 * butterfly_config["state_dim"]
-            n_stages = butterfly_config["conceptual_order"]
-            initial_n = butterfly_config["state_vectors"]
-            use_butterfly_stages = butterfly_config.get("use_stages", True)
-
-            if use_butterfly_stages:
-                # New path: ButterflyStage wrappers (is_last=True: no merge)
-                self.butterfly_stages = nn.ModuleList()
-                for t in range(n_stages):
-                    pi = PiLayer(pair_dim, pair_dim, invertible=True, monotonic=True)
-                    # Pi operates on sigma's merged output (N/2^(t+1)),
-                    # so its initial_n accounts for sigma's merge
-                    stage = ButterflyStage(
-                        pi, stage_idx=t, initial_n=initial_n // 2,
-                        is_last=True)  # no merge — sigma already merged
-                    self.butterfly_stages.append(stage)
-                    self.layers.append(stage)
-            else:
-                # Legacy path: raw butterfly_pis (shared pair_output with CS)
-                self.butterfly_pis = nn.ModuleList()
-                for _ in range(n_stages):
-                    pi = PiLayer(pair_dim, pair_dim, invertible=True, monotonic=True)
-                    self.butterfly_pis.append(pi)
-                    self.layers.append(pi)
-
         self.params = list(self.parameters())
 
         # Rule codebook — learned vectors for grammar rule identities.
@@ -4788,74 +4676,6 @@ class SymbolicSpace(Space):
         # See plan: Architectural addition — WordSpace / Unified codebook.
         self.rule_codebook = None
         self.nRuleEntries = 0
-
-    def _pair_state_to_symbols(self, pair_symbols):
-        """Pair head output [B, N/2, 2D] -> configured symbol stack [B, nSymbols, S]."""
-        B, N_half, pair_dim = pair_symbols.shape
-        S = self._butterfly_symbol_width
-        n = self._butterfly_symbol_factor
-        expected = n * 2 * S
-        assert pair_dim == expected, \
-            f"pair head width {pair_dim} != n*2S {expected} (n={n}, S={S})"
-        symbol_grid = pair_symbols.reshape(B, N_half, n, 2, S)
-        symbol_grid = symbol_grid.permute(0, 1, 3, 2, 4).contiguous()
-        return symbol_grid.reshape(B, N_half * 2 * n, S)
-
-    def _symbols_to_pair_state(self, sym_vectors):
-        """Inverse reshape of _pair_state_to_symbols()."""
-        B, n_symbols, S = sym_vectors.shape
-        n = self._butterfly_symbol_factor
-        N = self.conceptualSpace._butterfly_state_vectors
-        expected = N * n
-        assert n_symbols == expected, \
-            f"symbol count {n_symbols} != N*n {expected} (N={N}, n={n})"
-        symbol_grid = sym_vectors.reshape(B, N // 2, 2, n, S)
-        symbol_grid = symbol_grid.permute(0, 1, 3, 2, 4).contiguous()
-        return symbol_grid.reshape(B, N // 2, n * 2 * S)
-
-    def _forward_butterfly_level(self, stage_idx, is_last=False):
-        pair_output = self.conceptualSpace.get_butterfly_pair_output(stage_idx)
-        assert pair_output is not None, f"missing butterfly pair output for stage {stage_idx}"
-        pair_symbols = self.butterfly_pis[stage_idx].forward(pair_output)
-        sym_vectors = self._pair_state_to_symbols(pair_symbols)
-        # Codebook alignment losses (VQ commitment + symbol residual) are
-        # expensive: they need a full nearest-neighbour lookup against the
-        # codebook for every flattened symbol row.  With ARLM batches this
-        # can be millions of rows.  Only compute on the *last* butterfly
-        # step — intermediate steps are not the final symbolic state.
-        if is_last:
-            # Compute nearest codebook target ONCE — used by both VQ
-            # commitment and symbol objective (avoids a redundant full
-            # codebook scan).
-            nearest_target = self._nearest_symbol_target(sym_vectors)
-            # VQ-VAE commitment loss: soft encoder→codebook pull.
-            if (self.use_vqvae and self.codebook
-                    and self.commitment_beta > 0.0):
-                if nearest_target is not None:
-                    target_detached = nearest_target.detach().to(
-                        device=sym_vectors.device, dtype=sym_vectors.dtype)
-                    n = min(sym_vectors.shape[-1],
-                            target_detached.shape[-1], self.nDim)
-                    if n > 0:
-                        commit = self.commitment_beta * F.mse_loss(
-                            sym_vectors[..., :n], target_detached[..., :n])
-                        prev = self._symbol_objective_terms.get(
-                            "symbol_commitment", commit.new_tensor(0.0))
-                        self._symbol_objective_terms["symbol_commitment"] = prev + commit
-            self.accumulate_symbol_objective(sym_vectors, target=nearest_target)
-        self.subspace.set_event(sym_vectors)
-        return self.subspace
-
-    def _reverse_butterfly_level(self, vspace, stage_idx):
-        sym_vectors = vspace.materialize()
-        pair_output = self.butterfly_pis[stage_idx].reverse(
-            self._symbols_to_pair_state(sym_vectors)
-        )
-        self.conceptualSpace.set_butterfly_pair_output(stage_idx, pair_output)
-        concept_vectors = self.conceptualSpace.butterfly_state_from_pair_output(
-            pair_output, stage_idx)
-        self.subspace.set_event(concept_vectors)
-        return self.subspace
 
     def _build_object_basis(self):
         """Event is a writable Tensor — codebook lives on .what."""
@@ -5046,36 +4866,34 @@ class SymbolicSpace(Space):
         Non-hierarchical: returns self (shared PiLayer for all t).
         Hierarchical: returns a _LevelView that routes through pi_layers[t].
         """
-        if not self._hierarchical and not self.butterfly_enabled:
+        if not self._hierarchical:
             return self
         return self._SSLevelView(self, t)
 
     class _SSLevelView:
-        """Proxy routing .forward()/.reverse() through a per-level PiLayer.
-
-        When butterfly_stages are available, ``_pi`` points to a
-        ButterflyStage wrapper — butterfly mechanics are internal.
-
-        Accepts ``wordSpace`` for signature parity with the non-hierarchical
-        path, but ignores it — hierarchical Pi layers don't invoke compose.
-        """
+        """Proxy routing .forward()/.reverse() through a per-level PiLayer."""
         def __init__(self, parent, t):
             self._parent = parent
             self._t = t
-            if parent.butterfly_stages is not None:
-                self._pi = parent.butterfly_stages[t]
-            elif parent._hierarchical:
+            if parent._hierarchical:
                 self._pi = parent.pi_layers[t]
             else:
                 self._pi = parent.layer
             self.subspace = parent.subspace
 
-        def forward(self, vspace, wordSpace=None, butterfly=False, quantize=True,
-                    is_last=False):
-            # ButterflyStage path: no early return
-            if self._parent.butterfly_stages is not None:
-                x = vspace.materialize()
-                y = self._pi.forward(x)
+        def forward(self, vspace, wordSpace=None, quantize=True, is_last=False):
+            x = vspace.materialize()
+            y = self._pi.forward(x)
+            # Butterfly path: ``_pi`` is a ButterflyStage.  Codebook-aware
+            # losses are expensive on full symbol grids (millions of rows
+            # under ARLM), so they run only on the terminal stage.
+            # Grammar / plain-hierarchical path: per-level PiLayer.
+            # Intermediate stages contribute training signal via
+            # ``accumulate_symbol_objective`` on every step, matching the
+            # pre-refactor contract; without it the non-terminal Pi
+            # layers receive no loss gradient and the model plateaus.
+            is_butterfly = isinstance(self._pi, ButterflyStage)
+            if is_butterfly:
                 if is_last:
                     nearest_target = self._parent._nearest_symbol_target(y)
                     if (self._parent.use_vqvae and self._parent.codebook
@@ -5092,30 +4910,15 @@ class SymbolicSpace(Space):
                                 "symbol_commitment", y.new_tensor(0.0))
                             self._parent._symbol_objective_terms["symbol_commitment"] = prev + commit
                     self._parent.accumulate_symbol_objective(y, target=nearest_target)
-                self._parent.subspace.set_event(y)
-                return self._parent.subspace
-            # Legacy butterfly path (shared pair_output with CS)
-            if butterfly and self._parent.butterfly_enabled:
-                return self._parent._forward_butterfly_level(self._t, is_last=is_last)
-            x = vspace.materialize()
-            y = self._pi.forward(x)
-            if quantize:
-                y = self._parent.l1_proximal(y)
-            self._parent.accumulate_symbol_objective(
-                y, use_codebook_target=quantize)
+            else:
+                if quantize:
+                    y = self._parent.l1_proximal(y)
+                self._parent.accumulate_symbol_objective(
+                    y, use_codebook_target=quantize)
             self._parent.subspace.set_event(y)
             return self._parent.subspace
 
-        def reverse(self, vspace, wordSpace=None, butterfly=False):
-            # ButterflyStage path
-            if self._parent.butterfly_stages is not None:
-                x = vspace.materialize()
-                y = self._pi.reverse(x)
-                self._parent.subspace.set_event(y)
-                return self._parent.subspace
-            # Legacy butterfly path
-            if butterfly and self._parent.butterfly_enabled:
-                return self._parent._reverse_butterfly_level(vspace, self._t)
+        def reverse(self, vspace, wordSpace=None):
             x = vspace.materialize()
             y = self._pi.reverse(x)
             self._parent.subspace.set_event(y)
@@ -5125,8 +4928,7 @@ class SymbolicSpace(Space):
     def vocabulary(self):
         return self.subspace.what
 
-    def forward(self, vspace, wordSpace=None, butterfly=False, quantize=True,
-                is_last=False):
+    def forward(self, vspace, wordSpace=None, quantize=True, is_last=False):
         """Map concept vectors to symbol vectors via PiLayer (Π).
 
         PiLayer maps on the nDim axis: [B, nVectors, concept_dim] →
@@ -5140,8 +4942,6 @@ class SymbolicSpace(Space):
         5. Optionally quantize into the symbol codebook.
         6. Store as symbol vectors in subspace event.
         """
-        if butterfly and self.butterfly_enabled:
-            return self._forward_butterfly_level(0, is_last=is_last)
         if self.passThrough:
             return vspace
         vspace = self.forwardBegin(vspace)
@@ -5303,13 +5103,11 @@ class SymbolicSpace(Space):
                                device=self.rule_codebook.weight.device)
         return self.rule_codebook(idx).squeeze(0)
 
-    def reverse(self, vspace, wordSpace=None, butterfly=False):
+    def reverse(self, vspace, wordSpace=None):
         """Map symbol vectors back to concept vectors via PiLayer.reverse (Π⁻¹).
 
         Reverse maps on nDim axis: [B, N, symbol_dim] → [B, N, concept_dim].
         """
-        if butterfly and self.butterfly_enabled:
-            return self._reverse_butterfly_level(vspace, 0)
         if self.passThrough:
             return vspace
         vspace = self.reverseBegin(vspace)
@@ -5394,7 +5192,7 @@ class OutputSpace(Space):
         self.text_mode = isinstance(self._vocabulary, Embedding)
 
         if self.nonlinear_output:
-            # PiLayer activation-mode path for ramsified symbol output
+            # PiLayer activation-mode path for butterfly symbol output
             nIn = inputShape[0]
             nOut = outputShape[0]
             self._piLayer = PiLayer(nIn, nOut, invertible=True, monotonic=True)

@@ -1,56 +1,6 @@
 # TODO
 
-================================== Active Projects ==================================
-
-## 1. Remove `ramsified` parameter and code; replace with `useButterflies` + `useGrammar`
-
-The `ramsified` flag has been superseded by two orthogonal flags. The code still
-carries `ramsified` everywhere — remove it. The four quadrants and their intended
-architectures:
-
-|                     | **No Grammar**                                 | **Grammar**                               |
-|---------------------|------------------------------------------------|-------------------------------------------|
-| **No Butterflies**  | Large flattened sigma (original)               | Grammar-directed composition              |
-| **Butterflies**     | Pairwise mixing                                | ❌ Excluded (permutations fight constituency) |
-
-### Scope
-- **Models.py (55 mentions)**: delete `self.ramsified`, `self._ramsified_uses_grammar`,
-  `self._ramsified_pair_enabled()`; rename `_ramsified_state_*` → `_butterfly_state_*`;
-  restructure forward/reverse dispatch around (`useButterflies`, `useGrammar`);
-  drop the legacy `elif self.ramsified and not self._ramsified_uses_grammar:` branch
-  (no config uses it any longer); drop `use_stages` key from butterfly_config.
-- **Spaces.py (5 mentions)**: remove butterfly code folded into `ButterflyStage` (see
-  parallel cleanup below). Drop `butterfly=` kwargs from `_CSLevelView` / `_SSLevelView`
-  and main `forward`/`reverse`, remove early-return branches, fold `butterfly_stages`
-  into `self.sigmas` / `self.pi_layers`.
-- **data/model.xsd**: remove `<ramsified>` element.
-- **data/*.xml (11 files)**: remove `<ramsified>` element. All live configs are:
-  - `useButterflies=true, useGrammar=false` → butterflies (MM_5M, MM_400M, MM_shamatha,
-    MM_xor, MM_xor_step4, RamsifiedModel)
-  - `useButterflies=false, useGrammar=false` → flattened sigma (MM_bpe, MentalModel,
-    model, MM_grammar, MM_xor_grammar)
-  - No live config is `useButterflies=false, useGrammar=true` yet — but that's the
-    intended slot for grammar-directed composition; verify MM_grammar / MM_xor_grammar
-    should flip `useGrammar=true`.
-- **test/** (4 files, ~40 mentions): `test_hierarchical.py`, `test_mm_xor.py`,
-  `test_config_scoping.py`, `test_reasoning.py` — rename `_ramsified_config()` helpers,
-  drop `model.ramsified` checks in favor of `useButterflies`/`useGrammar`.
-- **doc/** (5 files, ~9 mentions): `Spaces.md`, `Params.md`, `Architecture.md`,
-  `Reasoning.md` — update terminology to useButterflies/useGrammar.
-
-### Current status (entering this work)
-- Orthogonal flags `useButterflies` and `useGrammar` already parsed in
-  Models.py with legacy fallback (lines ~2008–2020). Exclusion of
-  butterflies+grammar already raises `ValueError`.
-- `ButterflyStage` class exists in `bin/Layers.py` and is wired through
-  `butterfly_config["use_stages"]: True`. The `use_stages=False` legacy
-  butterfly path in Spaces.py is dead — no live config uses it.
-- Test suite: 639 pass, 1 pre-existing flaky (test_sigmapi XOR convergence,
-  platform-specific local minimum 0.1298 vs 0.1 threshold; unrelated).
-
----
-
-## 2. Stage 2: sequential concept→symbol mapping via accumulate pattern
+## sequential concept→symbol mapping via accumulate pattern
 
 (Deferred from butterfly refactor — to resume after Project 1.)
 

@@ -38,7 +38,6 @@
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="embeddingPath" type="xs:string" minOccurs="0"/>
       <xs:element name="weightsPath" type="xs:string" minOccurs="0"/>
-      <xs:element name="ramsified" type="xs:boolean" minOccurs="0"/>
       <xs:element name="useButterflies" type="xs:boolean" minOccurs="0"/>
       <xs:element name="STM_decay" type="xs:decimal" minOccurs="0"/>
       <xs:element name="type" type="xs:string" minOccurs="0"/>
