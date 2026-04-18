@@ -331,6 +331,7 @@
       <xs:element name="sortNetwork" type="xs:boolean" minOccurs="0"/>
       <xs:element name="sortPasses" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="discontinuityLambda" type="xs:decimal" minOccurs="0"/>
       <xs:element name="symbolResidualScale" type="xs:decimal" minOccurs="0"/>
       <xs:element name="outputSymbolResidualScale" type="xs:decimal" minOccurs="0"/>
       <xs:element name="commitmentBeta" type="nonNegativeFloat" minOccurs="0"/>

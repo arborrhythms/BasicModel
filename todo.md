@@ -1,10 +1,73 @@
-# TODO
+# AR Sentence Prediction Integration
 
+**Goal:** Predict the current sentence from past sentence history before each ARLM next-word step. The prediction seeds the intuitive (perceptual→conceptual) pathway, guiding word generation via `prediction × sentenceConfidence`.
 
-* **Mask parameter on S-> derivations** (`Spaces.py:6013-6152` SyntacticLayer + subclasses). Add `mask: Optional[Tensor]` of shape `[nSymbols]` (subset-of-symbols frame) to all *Forward / *Reverse methods and the project / reverse_project dispatch. Under a constant Mask, equality must be transitive; Belnap-Dunn AND / OR / NOT / eq / part operators should run on bivector vectors restricted to the masked symbols. Rename internal references to "frame" to "Mask" as part of this.
-* **Discontinuity penalty on symbol vectors** (`Layers.py:1865` SparsityRegularizer or a new `SmoothingRegularizer`). Add a term that penalizes `|S[i+1] - S[i]|` across the symbol vector S in addition to the L1 sparsity norm. Config key `architecture.discontinuityLambda`.
-* **EnsureConsistency + clarifying-question UX** (`Layers.py:2274` TruthLayer.consistency, `Models.py:1287-1332` store_truths, `basicmodel/bin/serve.py:143-216` /chat/completions). Extend `consistency()` to return a structured report `(score, contradictions: List[(idx_i, idx_j, description)])`. Add a `suggest_clarifications()` method that generates natural-language questions. Add an optional `"clarifications"` field to the /chat/completions response so inconsistent truth sets can prompt the user to refine, then return a consistent truth set alongside the conversation.
-* for grammar = hought_free (shamatha speech), there is no negation. So ensure that negation only manifests at/after SymbolicSpace
+---
+
+## Components
+
+### 1. LTM — SymbolicSpace sentence store
+- Add `ltm_s` and `ltm_w` persistent ring buffers to `SymbolicSpace` (or extend `WordSpace.discourse`)
+- `ltm_store(s_vec, w_vec)`: commit the current sentence's S+W snapshot to LTM at each sentence boundary
+- `ltm_retrieve(query, top_k=3)`: cosine-similarity lookup over the LTM ring; returns a top-K weighted mean for use as context
+- Config: `<ltmSize>` (default 64 sentences)
+- Buffer is non-persistent (transient per run), kept detached — no backprop through history
+
+### 2. STM — ConceptualSpace gamma trace
+- Add `stm` buffer to `ConceptualSpace`: exponentially decaying trace over concept activations
+- Update rule at end of each forward pass: `stm = γ * stm + (1−γ) * concept_act`
+- `γ` configurable via `<stmGamma>` (default 0.9)
+- Reset to zero at document boundaries, not sentence boundaries — the trace carries the conceptual thread across sentences within a document
+- Dim matches `concept_dim`; non-persistent buffer
+
+### 3. SentencePredictor module
+- New `SentencePredictor` layer (add to `Layers.py`)
+- Input: `concat([ltm_retrieve(stm), stm])` → Linear → Tanh → `predicted_sentence_vec`
+- Runs **per-batch, once per sentence** — not per token
+- `sentenceConfidence = clamp(cosine_similarity(predicted_sentence_vec, actual_sentence_vec), 0, 1)`
+- Prediction loss: `L_sentence = 1 − cos(predicted_sentence_vec, actual_S_W_snapshot)`
+- Separate from the ARLM per-symbol predictor (which runs per token over S and W)
+
+### 4. ARLM integration
+- **Before** the ARLM next-word generation loop: run `SentencePredictor`
+- Compute seed: `seed = predicted_sentence_vec × sentenceConfidence`  
+- Project `seed` to `concept_dim` and **add as a bias to the ConceptualSpace input**:  
+  `concept_input[:, :nPercepts, :] += seed_projected`
+- The sentence-level prediction provides the "gist"; the per-symbol ARLM predictor handles token-level details
+- `sentenceConfidence` is used as a scalar gate — low confidence means the seed has little effect
+
+### 5. Training
+- `L_sentence` added to total loss, scaled by `sentencePredictionScale` (existing config key)
+- STM and LTM contents are always detached — no BPTT through history
+- Sentence predictor parameters included in the main optimizer
+- Loss is only computed when `_recent` buffer is non-empty (skip first sentence, consistent with existing discourse loss guard)
+
+### 6. Config additions (XML)
+```xml
+<training>
+  <!-- existing -->
+  <sentencePrediction>true</sentencePrediction>
+  <sentencePredictionScale>0.1</sentencePredictionScale>
+  <!-- new -->
+  <ltmSize>64</ltmSize>           <!-- LTM ring buffer depth (sentences) -->
+  <stmGamma>0.9</stmGamma>        <!-- STM exponential decay factor -->
+</training>
+```
+
+---
+
+## Implementation Order
+
+1. **STM**: Add `stm` buffer + update step to `ConceptualSpace.forward()` — gated on `stmGamma > 0`
+2. **LTM**: Add `ltm_store` / `ltm_retrieve` methods to `SymbolicSpace` (or `InterSentenceLayer`) — ring buffer over S+W snapshots
+3. **SentencePredictor**: New layer in `Layers.py` — takes `(stm, ltm_context)`, outputs `predicted_sentence_vec` + `sentenceConfidence`
+4. **Wiring**: In `BasicModel.forward()`, run `SentencePredictor` before the ARLM loop; compute and inject `seed` into `concept_input`
+5. **Loss**: Add `L_sentence` to `runBatch()` total loss via the existing `sentence_prediction_scale` path
+6. **Config**: Add `<ltmSize>` and `<stmGamma>` to XML schema and `TheXMLConfig` reads
+7. **Tests**: `test_ltm_store_retrieve`, `test_stm_decay`, `test_sentence_predictor_forward`, `test_seed_injection`, `test_ar_sentence_loss`
+
+---
+
 
 ================================== April 24 ==================================
 

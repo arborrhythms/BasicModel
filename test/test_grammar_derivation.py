@@ -555,6 +555,66 @@ class TestGrammarConfigure(_GrammarTestBase):
         self.assertEqual(g.rules[s_trans].canonical, 'S -> C')
         self.assertEqual(g.rules[c_trans].canonical, 'C -> P')
 
+    def test_thought_free_excludes_c_not(self):
+        """Under shamatha, conceptual() and c_methods exclude the 'not' rule."""
+        g = Spaces.Grammar()
+        g.configure({
+            'START': ['S'],
+            'S': ['C'],
+            'C': ['not(C)', 'intersection(C, C)', 'union(C, C)', 'P'],
+            'P': ['epsilon'],
+        })
+        # Baseline: 'not' is present
+        self.assertIn('not', g.c_methods)
+        not_ids = [i for i in g.conceptual() if g.rules[i].method_name == 'not']
+        self.assertEqual(len(not_ids), 1)
+
+        g.thought_free = True
+        try:
+            self.assertNotIn('not', g.c_methods)
+            not_ids_tf = [i for i in g.conceptual()
+                          if g.rules[i].method_name == 'not']
+            self.assertEqual(not_ids_tf, [])
+        finally:
+            g.thought_free = False
+
+    def test_thought_free_preserves_other_c_rules(self):
+        """Shamatha only removes 'not'; intersection/union/lift/lower stay."""
+        g = Spaces.Grammar()
+        g.configure({
+            'START': ['S'],
+            'S': ['C'],
+            'C': ['not(C)', 'intersection(C, C)', 'union(C, C)',
+                  'lift(C, C)', 'lower(C, C)', 'P'],
+            'P': ['epsilon'],
+        })
+        g.thought_free = True
+        try:
+            methods = g.c_methods
+            for keep in ('intersection', 'union', 'lift', 'lower'):
+                self.assertIn(keep, methods)
+            # 'not' is the only thing removed
+            self.assertNotIn('not', methods)
+        finally:
+            g.thought_free = False
+
+    def test_not_restored_when_flag_cleared(self):
+        """Flipping thought_free back to False restores 'not' in both accessors."""
+        g = Spaces.Grammar()
+        g.configure({
+            'START': ['S'],
+            'S': ['C'],
+            'C': ['not(C)', 'intersection(C, C)', 'P'],
+            'P': ['epsilon'],
+        })
+        g.thought_free = True
+        self.assertNotIn('not', g.c_methods)
+        g.thought_free = False
+        self.assertIn('not', g.c_methods)
+        not_ids = [i for i in g.conceptual()
+                   if g.rules[i].method_name == 'not']
+        self.assertEqual(len(not_ids), 1)
+
 
 class TestMentalModelWithGrammar(_GrammarTestBase):
     """MentalModel forward path exercises Grammar layers."""

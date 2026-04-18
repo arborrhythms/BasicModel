@@ -1357,6 +1357,8 @@ class BasicModel(BaseModel):
 
         # 2. Reset truth store, enable accumulation, run full pipeline
         truth_layer.count.zero_()
+        truth_layer._sources = []
+        truth_layer._trusts = []
         prev_accum = self.symbolicSpace.accumulateTruth
         self.symbolicSpace.accumulateTruth = 1.0
         self.eval()
@@ -1371,6 +1373,32 @@ class BasicModel(BaseModel):
         n = min(truth_layer.count.item(), len(trusts))
         for i in range(n):
             truth_layer.truths[i] *= trusts[i]
+
+        # 4. Attach sources/trusts for clarification surfacing, run the
+        # consistency report, and cache any clarification messages on
+        # the model for the serve layer to expose.
+        stored_count = truth_layer.count.item()
+        truth_layer._sources = (
+            list(texts[:stored_count])
+            + [None] * max(0, stored_count - len(texts))
+        )
+        truth_layer._trusts = (
+            list(trusts[:stored_count])
+            + [None] * max(0, stored_count - len(trusts))
+        )
+        basis = getattr(getattr(self.symbolicSpace, 'subspace', None),
+                        'basis', None)
+        try:
+            score, contradictions = truth_layer.consistency(
+                basis=basis, return_report=True
+            )
+        except Exception:
+            score, contradictions = None, []
+        self._last_truth_score = float(score) if score is not None else None
+        self._last_clarifications = (
+            truth_layer.suggest_clarifications(basis=basis)
+            if contradictions else []
+        )
 
     def infer(self, text, max_length=None, mode=None):
         """Autoregressive inference via the standard batch pipeline.

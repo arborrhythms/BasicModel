@@ -90,7 +90,7 @@ from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer, ButterflyStage  # Import custom layers from Model.py
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
 from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
-from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegularizer, ImpenetrableLayer
+from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegularizer, SmoothingRegularizer, ImpenetrableLayer
 from parse import quick_parser
 from collections import namedtuple as _namedtuple
 
@@ -5041,6 +5041,7 @@ class SymbolicSpace(Space):
                 return default
 
         self.l1_lambda = _symbol_cfg("l1Lambda", 0.0)
+        self.discontinuity_lambda = _symbol_cfg("discontinuityLambda", 0.0)
         self.symbol_residual_scale = _symbol_cfg("symbolResidualScale", 1.0)
         self.output_symbol_residual_scale = _symbol_cfg(
             "outputSymbolResidualScale", 0.0)
@@ -5170,6 +5171,19 @@ class SymbolicSpace(Space):
                 self.l1_lambda, self.codebook
             )
         return self._sparsity(x)
+
+    def smoothing_penalty(self, x):
+        """Total-variation penalty along the concept axis of symbol activations.
+
+        Bivector-aware via pair-max collapse; 0 when discontinuityLambda=0
+        or when disabled. See Layers.SmoothingRegularizer.
+        """
+        if not hasattr(self, "_smoothing"):
+            self._smoothing = SmoothingRegularizer(
+                lam=float(self.discontinuity_lambda or 0.0),
+                enabled=bool(self.discontinuity_lambda and self.discontinuity_lambda > 0.0),
+            )
+        return self._smoothing(x)
 
     def _build_impenetrable_layer(self):
         return ImpenetrableLayer(
@@ -5316,6 +5330,8 @@ class SymbolicSpace(Space):
         # without promoting compactness of the codebook selection itself.
         if self.codebook and self.l1_lambda > 0.0:
             terms["symbol_l1"] = self.l1_lambda * predicted.abs().mean()
+        if self.discontinuity_lambda and self.discontinuity_lambda > 0.0:
+            terms["symbol_smoothing"] = self.smoothing_penalty(predicted)
         if residual is not None and self.decorrelation_weight > 0.0:
             terms["symbol_decorrelation"] = (
                 self.decorrelation_weight * self._decorrelation_loss(residual)
@@ -6013,7 +6029,10 @@ class Grammar:
 
     def conceptual(self):
         self._ensure_configured()
-        return [i for i, r in enumerate(self.rules) if r.tier == 'C']
+        rules = [i for i, r in enumerate(self.rules) if r.tier == 'C']
+        if self.thought_free:
+            rules = [i for i in rules if self.rules[i].method_name != 'not']
+        return rules
 
     def perceptual(self):
         self._ensure_configured()
@@ -6040,8 +6059,14 @@ class Grammar:
 
     @property
     def c_methods(self):
-        """Set of method names available on the C (conceptual) tier."""
-        return {r.method_name for r in self.rules if r.tier == 'C' and r.method_name}
+        """Set of method names available on the C (conceptual) tier.
+
+        Under shamatha (``thought_free=True``) the ``not`` method is omitted
+        so negation only manifests at/after SymbolicSpace.
+        """
+        return {r.method_name for r in self.rules
+                if r.tier == 'C' and r.method_name
+                and not (self.thought_free and r.method_name == 'not')}
 
     @property
     def p_methods(self):
@@ -6155,6 +6180,40 @@ class SyntacticLayer(Layer):
         b = self._basis(subspace)
         return b is None or b.monotonic
 
+    @staticmethod
+    def _expand_mask(mask, feature_dim):
+        """Expand a concept-axis mask ``[K]`` to a storage mask ``[feature_dim]``.
+
+        When ``feature_dim == 2 * K`` the input is interpreted as bivector
+        storage and the mask is repeated so paired poles ``(2k, 2k+1)`` stay
+        co-masked. When ``feature_dim == K`` the mask is used as-is.
+        Returns a tensor on the caller's device/dtype.
+        """
+        if mask is None:
+            return None
+        if not torch.is_tensor(mask):
+            mask = torch.as_tensor(mask, dtype=torch.float32)
+        mask = mask.to(dtype=torch.float32)
+        K = mask.shape[-1]
+        if feature_dim == 2 * K:
+            return mask.repeat_interleave(2)
+        if feature_dim == K:
+            return mask
+        # Fallback: if neither matches, broadcast / truncate conservatively.
+        if feature_dim < K:
+            return mask[:feature_dim]
+        return torch.cat([mask, mask.new_zeros(feature_dim - K)], dim=-1)
+
+    def _apply_mask(self, out, mask):
+        """Multiply output by expanded mask along its last axis. No-op when
+        ``mask is None``."""
+        if mask is None or not torch.is_tensor(out):
+            return out
+        m = self._expand_mask(mask, out.shape[-1])
+        if m is None:
+            return out
+        return out * m.to(device=out.device, dtype=out.dtype)
+
     # -- Forward/Reverse dispatch ------------------------------------
     #
     # C-tier ops (invertible): not, intersection, union, lift, lower
@@ -6174,8 +6233,13 @@ class SyntacticLayer(Layer):
         'non':          ('nonForward',          None,                  False),
     }
 
-    def project(self, grammar, rule_id, left, right=None, third=None, subspace=None):
-        """Execute a grammar rule forward. Subclasses override for parametric rules."""
+    def project(self, grammar, rule_id, left, right=None, third=None, subspace=None,
+                mask=None):
+        """Execute a grammar rule forward. Subclasses override for parametric rules.
+
+        ``mask`` (optional concept-axis Mask of shape ``[K]``) is forwarded
+        to the dispatched operator. ``None`` preserves legacy behavior.
+        """
         method_name = grammar.rules[rule_id].method_name
         if method_name is None:
             return left  # transition -- pass through
@@ -6185,13 +6249,14 @@ class SyntacticLayer(Layer):
             fn = getattr(self, fn_name)
             if binary:
                 if right is not None:
-                    return fn(left, right, subspace)
+                    return fn(left, right, subspace, mask=mask)
                 return left
-            return fn(left, subspace)
+            return fn(left, subspace, mask=mask)
 
         return left
 
-    def reverse_project(self, grammar, rule_id, result, right=None, subspace=None):
+    def reverse_project(self, grammar, rule_id, result, right=None, subspace=None,
+                        mask=None):
         """Execute a grammar rule inverse. Returns best-effort recovery of left operand."""
         method_name = grammar.rules[rule_id].method_name
         if method_name is None:
@@ -6203,68 +6268,97 @@ class SyntacticLayer(Layer):
                 return result  # lossy op -- no inverse
             fn = getattr(self, rev_name)
             if binary:
-                return fn(result, right, subspace)
-            return fn(result, subspace)
+                return fn(result, right, subspace, mask=mask)
+            return fn(result, subspace, mask=mask)
 
         return result
 
     # -- C-tier: invertible operations -----------------------------
 
-    def notForward(self, left, subspace):
+    def notForward(self, left, subspace, mask=None):
         b = self._basis(subspace)
         if b is not None:
-            return b.negation(left, monotonic=self._mono(subspace))
-        return -left
+            out = b.negation(left, monotonic=self._mono(subspace))
+        else:
+            out = -left
+        return self._apply_mask(out, mask)
 
-    def notReverse(self, result, subspace):
+    def notReverse(self, result, subspace, mask=None):
         b = self._basis(subspace)
         if b is not None:
-            return b.negation_inverse(result, monotonic=self._mono(subspace))
-        return -result
+            out = b.negation_inverse(result, monotonic=self._mono(subspace))
+        else:
+            out = -result
+        return self._apply_mask(out, mask)
 
-    def intersectionForward(self, left, right, subspace):
+    def intersectionForward(self, left, right, subspace, mask=None):
         b = self._basis(subspace)
         if b is not None:
-            return b.conjunction(left, right, monotonic=self._mono(subspace))
-        return torch.min(left, right)
+            out = b.conjunction(left, right, monotonic=self._mono(subspace))
+        else:
+            out = torch.min(left, right)
+        return self._apply_mask(out, mask)
 
-    def intersectionReverse(self, result, right, subspace):
+    def intersectionReverse(self, result, right, subspace, mask=None):
         b = self._basis(subspace)
         if b is not None:
-            return b.conjunction_inverse(result, right, monotonic=self._mono(subspace))
-        return result
+            out = b.conjunction_inverse(result, right, monotonic=self._mono(subspace))
+        else:
+            out = result
+        return self._apply_mask(out, mask)
 
-    def unionForward(self, left, right, subspace):
+    def unionForward(self, left, right, subspace, mask=None):
         b = self._basis(subspace)
         if b is not None:
-            return b.disjunction(left, right, monotonic=self._mono(subspace))
-        return torch.max(left, right)
+            out = b.disjunction(left, right, monotonic=self._mono(subspace))
+        else:
+            out = torch.max(left, right)
+        return self._apply_mask(out, mask)
 
-    def unionReverse(self, result, right, subspace):
+    def unionReverse(self, result, right, subspace, mask=None):
         b = self._basis(subspace)
         if b is not None:
-            return b.disjunction_inverse(result, right, monotonic=self._mono(subspace))
-        return result
+            out = b.disjunction_inverse(result, right, monotonic=self._mono(subspace))
+        else:
+            out = result
+        return self._apply_mask(out, mask)
 
     # -- P-tier: chunk (invertible) --------------------------------
 
-    def chunkForward(self, left, right, subspace):
+    def chunkForward(self, left, right, subspace, mask=None):
         b = self._basis(subspace)
         if b is not None:
-            return b.disjunction(left, right, monotonic=True)
-        if right is None:
-            return left
-        return torch.max(left, right)
+            out = b.disjunction(left, right, monotonic=True)
+        elif right is None:
+            out = left
+        else:
+            out = torch.max(left, right)
+        return self._apply_mask(out, mask)
 
-    def chunkReverse(self, result, right, subspace):
+    def chunkReverse(self, result, right, subspace, mask=None):
         b = self._basis(subspace)
         if b is not None:
-            return b.disjunction_inverse(result, right, monotonic=True)
-        return result
+            out = b.disjunction_inverse(result, right, monotonic=True)
+        else:
+            out = result
+        return self._apply_mask(out, mask)
 
     # -- S-tier: lossy operations (no inverse) ---------------------
 
-    def equalsForward(self, left, right, subspace):
+    def equalsForward(self, left, right, subspace, mask=None):
+        """Equality score * right. Under a mask, agreement is computed only
+        on the selected concept dims, so the relation is transitive on that
+        subset (equal on fixed dims ⇒ equal on those dims transitively).
+        """
+        if mask is not None:
+            m = self._expand_mask(mask, left.shape[-1])
+            m = m.to(device=left.device, dtype=left.dtype)
+            denom = m.sum().clamp(min=1.0)
+            agree = 1.0 - ((left - right).abs() * m).sum(dim=-1) / denom
+            agree = agree.clamp(0.0, 1.0)
+            while agree.ndim < right.ndim:
+                agree = agree.unsqueeze(-1)
+            return self._apply_mask(agree * right, mask)
         b = self._basis(subspace)
         if b is not None:
             score = b.equal(left, right, monotonic=self._mono(subspace))
@@ -6273,14 +6367,16 @@ class SyntacticLayer(Layer):
             return score * right
         return torch.min(left, right)
 
-    def partForward(self, left, right, subspace):
+    def partForward(self, left, right, subspace, mask=None):
         b = self._basis(subspace)
         if b is not None:
             score = b.part(left, right, monotonic=self._mono(subspace))
             while score.ndim < right.ndim:
                 score = score.unsqueeze(-1)
-            return score * right
-        return torch.min(left, right)
+            out = score * right
+        else:
+            out = torch.min(left, right)
+        return self._apply_mask(out, mask)
 
     # -- S-tier trinity: true / false / non as partition of unity --
     # For x  in  [-1, 1]:  true(x) + false(x) + non(x) = 1
@@ -6290,14 +6386,16 @@ class SyntacticLayer(Layer):
     # Inputs are clamped to [-1, 1] defensively so the partition holds
     # regardless of upstream producer conventions.
 
-    def trueForward(self, left, subspace):
+    def trueForward(self, left, subspace, mask=None):
         left = torch.clamp(left, -1.0, 1.0)
         b = self._basis(subspace)
         if b is not None:
-            return b.pos(left)
-        return torch.relu(left)
+            out = b.pos(left)
+        else:
+            out = torch.relu(left)
+        return self._apply_mask(out, mask)
 
-    def falseForward(self, left, subspace):
+    def falseForward(self, left, subspace, mask=None):
         """Positive rectification of the negation. The 'no' commitment.
 
         Partitions with trueForward/nonForward: true + false + non = 1.
@@ -6305,10 +6403,12 @@ class SyntacticLayer(Layer):
         left = torch.clamp(left, -1.0, 1.0)
         b = self._basis(subspace)
         if b is not None:
-            return b.pos(-left)
-        return torch.relu(-left)
+            out = b.pos(-left)
+        else:
+            out = torch.relu(-left)
+        return self._apply_mask(out, mask)
 
-    def nonForward(self, left, subspace):
+    def nonForward(self, left, subspace, mask=None):
         """Triangular residual: 1 - |x|. The 'indeterminate' commitment.
 
         Completes the S-tier trinity partition of unity. Replaces the
@@ -6316,9 +6416,10 @@ class SyntacticLayer(Layer):
         true + false + non = 1.
         """
         left = torch.clamp(left, -1.0, 1.0)
-        return 1.0 - left.abs()
+        out = 1.0 - left.abs()
+        return self._apply_mask(out, mask)
 
-    def conjunctionForward(self, left, right, subspace):
+    def conjunctionForward(self, left, right, subspace, mask=None):
         """S-tier sentence-level AND. Hadamard conjunction on bitonic activations.
 
         Distinct from C-tier intersection which composes concepts; this
@@ -6327,10 +6428,12 @@ class SyntacticLayer(Layer):
         """
         b = self._basis(subspace)
         if b is not None:
-            return b.conjunction(left, right, monotonic=self._mono(subspace))
-        return torch.minimum(left, right)
+            out = b.conjunction(left, right, monotonic=self._mono(subspace))
+        else:
+            out = torch.minimum(left, right)
+        return self._apply_mask(out, mask)
 
-    def disjunctionForward(self, left, right, subspace):
+    def disjunctionForward(self, left, right, subspace, mask=None):
         """S-tier sentence-level OR. Hadamard disjunction on bitonic activations.
 
         Distinct from C-tier union which composes concepts; this composes
@@ -6339,8 +6442,10 @@ class SyntacticLayer(Layer):
         """
         b = self._basis(subspace)
         if b is not None:
-            return b.disjunction(left, right, monotonic=self._mono(subspace))
-        return torch.maximum(left, right)
+            out = b.disjunction(left, right, monotonic=self._mono(subspace))
+        else:
+            out = torch.maximum(left, right)
+        return self._apply_mask(out, mask)
 
     # -- Rule #2: S-tier slot selectors (what / where / when) -----
     # Parameter-free axis projections. Each zeros non-selected column
@@ -6363,38 +6468,38 @@ class SyntacticLayer(Layer):
         nWhen = getattr(subspace, 'nWhen', 0)
         return nWhat, nWhere, nWhen
 
-    def whatForward(self, left, subspace):
+    def whatForward(self, left, subspace, mask=None):
         """Axis selector: keep what-block, zero where/when-blocks."""
         if left.ndim < 3:
-            return left  # scalar activation mode -- no columns to slice
+            return self._apply_mask(left, mask)  # scalar mode -- no columns
         nWhat, nWhere, nWhen = self._split_widths(subspace)
         if nWhat is None or (nWhere == 0 and nWhen == 0):
-            return left
+            return self._apply_mask(left, mask)
         out = torch.zeros_like(left)
         out[..., :nWhat] = left[..., :nWhat]
-        return out
+        return self._apply_mask(out, mask)
 
-    def whereForward(self, left, subspace):
+    def whereForward(self, left, subspace, mask=None):
         """Axis selector: keep where-block, zero what/when-blocks."""
         if left.ndim < 3:
-            return left
+            return self._apply_mask(left, mask)
         nWhat, nWhere, nWhen = self._split_widths(subspace)
         if nWhat is None or nWhere == 0:
-            return torch.zeros_like(left)
+            return self._apply_mask(torch.zeros_like(left), mask)
         out = torch.zeros_like(left)
         out[..., nWhat:nWhat + nWhere] = left[..., nWhat:nWhat + nWhere]
-        return out
+        return self._apply_mask(out, mask)
 
-    def whenForward(self, left, subspace):
+    def whenForward(self, left, subspace, mask=None):
         """Axis selector: keep when-block, zero what/where-blocks."""
         if left.ndim < 3:
-            return left
+            return self._apply_mask(left, mask)
         nWhat, nWhere, nWhen = self._split_widths(subspace)
         if nWhat is None or nWhen == 0:
-            return torch.zeros_like(left)
+            return self._apply_mask(torch.zeros_like(left), mask)
         out = torch.zeros_like(left)
         out[..., nWhat + nWhere:] = left[..., nWhat + nWhere:]
-        return out
+        return self._apply_mask(out, mask)
 
     # -- forward: predict rules ------------------------------------
 
@@ -6725,26 +6830,30 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             return getattr(self._symbolic_space, 'layer', None)
         return None
 
-    def liftForward(self, left, right, subspace):
+    def liftForward(self, left, right, subspace, mask=None):
         """Projected conjunction through symbolic space, back to concept space."""
         cs = self._cs_layer()
         if cs is not None:
             s_a = cs.forward(left)
             s_b = cs.forward(right)
-            return cs.reverse(s_a * s_b)
-        return left * right
+            out = cs.reverse(s_a * s_b)
+        else:
+            out = left * right
+        return self._apply_mask(out, mask)
 
-    def liftReverse(self, result, right, subspace):
+    def liftReverse(self, result, right, subspace, mask=None):
         """Recover first operand: s_a = result / s_b, then PiLayer.reverse."""
         cs = self._cs_layer()
         if cs is not None:
             s_res = cs.forward(result)
             s_b = cs.forward(right)
             s_a = s_res / (s_b + epsilon)
-            return cs.reverse(s_a)
-        return result / (right + epsilon)
+            out = cs.reverse(s_a)
+        else:
+            out = result / (right + epsilon)
+        return self._apply_mask(out, mask)
 
-    def lowerForward(self, left, right, subspace):
+    def lowerForward(self, left, right, subspace, mask=None):
         """Projected disjunction through symbolic space, back to concept space.
 
         Rescale the sum by 1/2 so it stays in ``(-1, 1)`` -- the operand
@@ -6763,10 +6872,12 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         if cs is not None:
             s_a = cs.forward(left)
             s_b = cs.forward(right)
-            return cs.reverse((s_a + s_b) / 2)
-        return (left + right) / 2
+            out = cs.reverse((s_a + s_b) / 2)
+        else:
+            out = (left + right) / 2
+        return self._apply_mask(out, mask)
 
-    def lowerReverse(self, result, right, subspace):
+    def lowerReverse(self, result, right, subspace, mask=None):
         """Recover first operand from the rescaled lower forward.
 
         Given ``result = cs.reverse((s_a + s_b) / 2)`` we have
@@ -6781,16 +6892,22 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             s_res = cs.forward(result)
             s_b = cs.forward(right)
             s_a = 2 * s_res - s_b
-            return cs.reverse(s_a)
-        return 2 * result - right
+            out = cs.reverse(s_a)
+        else:
+            out = 2 * result - right
+        return self._apply_mask(out, mask)
 
-    def project(self, grammar, rule_id, left, right=None, third=None, subspace=None):
+    def project(self, grammar, rule_id, left, right=None, third=None, subspace=None,
+                mask=None):
         """Execute a rule. Lift/lower are in _RULE_METHODS via super()."""
-        return super().project(grammar, rule_id, left, right, third, subspace=subspace)
+        return super().project(grammar, rule_id, left, right, third,
+                               subspace=subspace, mask=mask)
 
-    def reverse_project(self, grammar, rule_id, result, right=None, subspace=None):
+    def reverse_project(self, grammar, rule_id, result, right=None, subspace=None,
+                        mask=None):
         """Inverse dispatch -- delegates to super()."""
-        return super().reverse_project(grammar, rule_id, result, right, subspace=subspace)
+        return super().reverse_project(grammar, rule_id, result, right,
+                                       subspace=subspace, mask=mask)
 
     def compose(self, data, subspace, grammar, target_count=None):
         """Apply C-tier composition.
@@ -7138,7 +7255,7 @@ class SymbolicSyntacticLayer(SyntacticLayer):
             M = M - M.logsumexp(dim=-2, keepdim=True)
         return M.exp()
 
-    def swapForward(self, left, right, subspace=None):
+    def swapForward(self, left, right, subspace=None, mask=None):
         """Soft permutation via Sinkhorn-normalised logits."""
         P = self._swap_soft_perm()
         marker = self.swap_marker.to(left.device)
@@ -7152,7 +7269,7 @@ class SymbolicSyntacticLayer(SyntacticLayer):
             right = left
         stack = torch.stack([left, right, m], dim=0)
         out = torch.einsum('ij,j...->i...', P, stack)
-        return out[0]
+        return self._apply_mask(out[0], mask)
 
     _RULE_METHODS = {
         **SyntacticLayer._RULE_METHODS,
@@ -7179,7 +7296,7 @@ class SymbolicSyntacticLayer(SyntacticLayer):
     # loose lets real contradictions collapse silently.
     _QUERY_NORM_DROP_RATIO = 0.1
 
-    def queryForward(self, left, right, subspace=None):
+    def queryForward(self, left, right, subspace=None, mask=None):
         """Query: return the preserved accumulator operand.
 
         The query marker is pushed onto WordSubSpace at the
@@ -7190,11 +7307,12 @@ class SymbolicSyntacticLayer(SyntacticLayer):
         operand (the dropped symbol) exists only in the parse-tree
         record and is unused here.
         """
-        return left
+        return self._apply_mask(left, mask)
 
-    def project(self, grammar, rule_id, left, right=None, subspace=None):
+    def project(self, grammar, rule_id, left, right=None, subspace=None, mask=None):
         """Execute a rule via _RULE_METHODS dispatch."""
-        return super().project(grammar, rule_id, left, right, subspace=subspace)
+        return super().project(grammar, rule_id, left, right,
+                               subspace=subspace, mask=mask)
 
     def compose(self, data, subspace, grammar):
         """Apply S-tier soft-weighted composition.

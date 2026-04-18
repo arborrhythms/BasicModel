@@ -203,14 +203,18 @@ def chat_completions():
         predicted_words = _model.infer(user_msg, mode='ARLM')
         response_text = " ".join(predicted_words)
 
-        return jsonify({
+        response = {
             "choices": [{
                 "message": {
                     "role": "assistant",
                     "content": f"<conversation>{response_text}</conversation>",
                 }
             }]
-        })
+        }
+        clarifications = getattr(_model, "_last_clarifications", None)
+        if clarifications:
+            response["clarifications"] = list(clarifications)
+        return jsonify(response)
     except Exception as exc:
         logger.exception("Inference error")
         return jsonify({"error": "Internal model error"}), 500

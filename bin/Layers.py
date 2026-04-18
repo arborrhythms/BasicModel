@@ -1889,6 +1889,42 @@ class SparsityRegularizer(Layer):
         )
 
 
+class SmoothingRegularizer(Layer):
+    """Total-variation penalty on consecutive concepts of a symbol vector.
+
+    Complements ``SparsityRegularizer`` by pressuring the symbol vector toward
+    a piecewise-flat profile in addition to an L1 sparsity norm. Penalises
+    ``|S[..., k+1] - S[..., k]|`` and returns a scalar.
+
+    In bivector mode (even last dim) the operand is reshaped to
+    ``[..., K, 2]`` and collapsed along the pole axis with ``amax`` before
+    differencing. This respects the paired-index convention from the
+    bivector encoding: indices ``2k`` and ``2k+1`` are poles of the same
+    concept -- penalising their difference would fight the Belnap-Dunn
+    encoding, so we measure discontinuity between *distinct* concepts only.
+
+    Acts as identity (returns scalar zero) when disabled or ``lam <= 0``.
+    """
+
+    def __init__(self, lam: float = 0.0, enabled: bool = True):
+        super().__init__(0, 0)
+        self.lam = float(lam)
+        self.enabled = bool(enabled)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if not self.enabled or self.lam <= 0.0:
+            return x.new_tensor(0.0) if torch.is_tensor(x) else torch.tensor(0.0)
+        if x.shape[-1] >= 2 and x.shape[-1] % 2 == 0:
+            pair = x.reshape(*x.shape[:-1], x.shape[-1] // 2, 2)
+            collapsed = pair.amax(dim=-1)
+        else:
+            collapsed = x
+        if collapsed.shape[-1] < 2:
+            return x.new_tensor(0.0)
+        diff = collapsed[..., 1:] - collapsed[..., :-1]
+        return self.lam * diff.abs().mean()
+
+
 class ImpenetrableLayer(Layer):
     """Mereological orthogonality regularizer on a symbol codebook.
 
@@ -2047,6 +2083,11 @@ class TruthLayer(Layer):
             'count',
             torch.tensor(0, dtype=torch.long),
         )
+        # Parallel metadata used by suggest_clarifications(). Indexed
+        # alongside truths[:count]; missing entries fall back to a
+        # generic "(truth #i)" reference.
+        self._sources = []
+        self._trusts = []
 
     # -- Record / Query ------------------------------------------------
 
@@ -2507,35 +2548,72 @@ class TruthLayer(Layer):
 
     @torch.no_grad()
     def consistency(self, sim_threshold: float = 0.7,
-                    pair_threshold: float = 0.3) -> torch.Tensor:
+                    pair_threshold: float = 0.3,
+                    basis=None,
+                    part_threshold: float = 0.3,
+                    return_report: bool = False):
         """Detect logical contradictions within stored truths.
 
-        Bivector path (even last dim): a contradiction is a concept
-        index with both poles co-active within a single stored truth
-        (Belnap-Dunn BOTH). Score = 1 - (fraction of (truth, concept)
-        slots that are BOTH-hot). Anti-parallel cosine is NOT a
-        contradiction here -- it's the expected encoding of A vs not(A).
+        Default (``return_report=False``) returns a scalar score for
+        back-compat. With ``return_report=True`` returns
+        ``(score, contradictions)`` where ``contradictions`` is a list
+        of ``(idx_i, idx_j, description)`` tuples describing cross-truth
+        part-of relations with opposite sign polarity.
+
+        Bivector path (even last dim):
+        - Scalar (default): 1 - (fraction of (truth, concept) slots that
+          are BOTH-hot within a single truth). Anti-parallel cosine is
+          NOT a contradiction; under bivector encoding A and not(A)
+          land on orthogonal paired indices.
+        - Report path: ignores within-truth BOTH (valid catuṣkoṭi) and
+          instead emits one entry per cross-truth pair (i, j) where
+          ``max(basis.part(i, j), basis.part(j, i)) >= part_threshold``
+          and the two truths have opposite sign polarity (one mostly
+          positive-pole, the other mostly negative-pole). When
+          ``basis`` is omitted, a structural proxy via positive-pole
+          overlap ratio is used so the caller still gets a report.
 
         Legacy path (odd last dim): two truths pointing in opposite
-        directions (anti-parallel cosine) represent a contradiction.
+        directions (anti-parallel cosine) represent a contradiction;
+        the report path simply emits those anti-parallel pairs.
 
         Args:
             sim_threshold: legacy cosine threshold for anti-parallel
                 truths to count as conflicting.
             pair_threshold: bivector threshold above which both poles
                 of a concept are considered co-active (BOTH).
+            basis: optional Basis with a ``part(a, b, monotonic=True)``
+                method. Used only by the report path; omit for the
+                scalar default.
+            part_threshold: minimum part-of score to count (i, j) as a
+                containment relation under the report path.
+            return_report: when True, return ``(score, contradictions)``.
 
         Returns:
-            Scalar in [0, 1] where 1 = fully consistent.
+            Scalar in [0, 1] where 1 = fully consistent, OR a tuple
+            ``(score, contradictions)`` when ``return_report=True``.
         """
         n = self.count.item()
         if n < 1:
-            return torch.tensor(1.0, device=self.truths.device)
+            score = torch.tensor(1.0, device=self.truths.device)
+            return (score, []) if return_report else score
 
         stored = self.truths[:n]
+        bivector = stored.shape[-1] % 2 == 0
 
-        # Bivector within-truth BOTH check
-        if stored.shape[-1] % 2 == 0:
+        if return_report:
+            contradictions = self._detect_contradictions(
+                stored, basis, part_threshold, sim_threshold
+            )
+            n_pairs = max(1, (n * (n - 1)) // 2)
+            score = torch.tensor(
+                float(max(0.0, 1.0 - len(contradictions) / n_pairs)),
+                device=self.truths.device,
+            )
+            return score, contradictions
+
+        # Scalar back-compat path.
+        if bivector:
             pos = self._positive_poles(stored)
             neg = self._negative_poles(stored)
             both_hot = (pos > pair_threshold) & (neg > pair_threshold)
@@ -2545,7 +2623,7 @@ class TruthLayer(Layer):
             frac = both_hot.float().mean()
             return (1.0 - frac).clamp(0.0, 1.0).to(self.truths.device)
 
-        # Legacy pairwise anti-parallel check
+        # Legacy pairwise anti-parallel check.
         if n < 2:
             return torch.tensor(1.0, device=self.truths.device)
 
@@ -2555,9 +2633,7 @@ class TruthLayer(Layer):
             return torch.tensor(1.0, device=self.truths.device)
 
         directions = F.normalize(stored[valid], dim=-1)
-
-        # Pairwise cosine similarity
-        sim_matrix = directions @ directions.T  # (m, m)
+        sim_matrix = directions @ directions.T
         m = directions.shape[0]
 
         n_conflicts = 0
@@ -2572,6 +2648,123 @@ class TruthLayer(Layer):
             return torch.tensor(1.0, device=self.truths.device)
         return torch.tensor(1.0 - n_conflicts / n_pairs,
                             device=self.truths.device)
+
+    def _detect_contradictions(self, stored, basis, part_threshold,
+                               sim_threshold):
+        """Return List[(i, j, description)] of cross-truth contradictions.
+
+        Bivector: pair (i, j) is a contradiction when one is a
+        part-of the other (``max(part(i, j), part(j, i)) >=
+        part_threshold``) and the two have opposite sign polarity.
+        Legacy (odd last dim): pair is a contradiction when cosine
+        similarity is below ``-sim_threshold``.
+        """
+        n = stored.shape[0]
+        contradictions = []
+        if n < 2:
+            return contradictions
+
+        bivector = stored.shape[-1] % 2 == 0
+
+        if bivector:
+            for i in range(n):
+                for j in range(i + 1, n):
+                    p_ij = self._part_score(stored[i], stored[j], basis)
+                    p_ji = self._part_score(stored[j], stored[i], basis)
+                    score = max(p_ij, p_ji)
+                    if score < part_threshold:
+                        continue
+                    if self._sign(stored[i]) == self._sign(stored[j]):
+                        continue
+                    contradictions.append(
+                        (i, j,
+                         f"part-of (score={score:.2f}) with opposite "
+                         f"sign polarity")
+                    )
+            return contradictions
+
+        # Legacy: anti-parallel pairs.
+        norms = stored.norm(dim=-1)
+        for i in range(n):
+            if norms[i] < 1e-6:
+                continue
+            ni = F.normalize(stored[i].unsqueeze(0), dim=-1).squeeze(0)
+            for j in range(i + 1, n):
+                if norms[j] < 1e-6:
+                    continue
+                nj = F.normalize(stored[j].unsqueeze(0), dim=-1).squeeze(0)
+                sim = float((ni * nj).sum().item())
+                if sim < -sim_threshold:
+                    contradictions.append(
+                        (i, j, f"anti-parallel (cos={sim:.2f})")
+                    )
+        return contradictions
+
+    def _part_score(self, a, b, basis):
+        """Scalar part-of score for (a, b). Uses basis when provided,
+        otherwise a positive-pole overlap proxy on bivector storage."""
+        if basis is not None and hasattr(basis, "part"):
+            score = basis.part(a, b, monotonic=True)
+            if torch.is_tensor(score):
+                return float(score.mean().item())
+            return float(score)
+        # Structural proxy: how much of b's positive-pole energy is
+        # covered by a's positive-pole energy.
+        if a.shape[-1] % 2 == 0:
+            a_pos = self._positive_poles(a)
+            b_pos = self._positive_poles(b)
+            denom = float(b_pos.abs().sum().item()) + 1e-8
+            return float(torch.minimum(a_pos, b_pos).sum().item()) / denom
+        denom = float(b.abs().sum().item()) + 1e-8
+        return float(torch.minimum(a, b).clamp_min(0).sum().item()) / denom
+
+    def _sign(self, v):
+        """Return +1 if v is predominantly positive-pole, -1 otherwise.
+
+        Bivector: compare summed positive-pole mass to summed
+        negative-pole mass. Legacy: use the sign of the mean activation.
+        """
+        if v.shape[-1] % 2 == 0:
+            pos = self._positive_poles(v).abs().sum().item()
+            neg = self._negative_poles(v).abs().sum().item()
+            return 1 if pos >= neg else -1
+        return 1 if v.mean().item() >= 0 else -1
+
+    def suggest_clarifications(self, basis=None,
+                               part_threshold: float = 0.3) -> list:
+        """Generate one user-facing message per detected contradiction.
+
+        The template is fixed (for test stability and translation
+        ease): ::
+
+            "'{source_i}' (trust={trust_i}) and '{source_j}' "
+            "(trust={trust_j}) appear to contradict — please revise "
+            "to enable more rational thought."
+
+        Missing source falls back to ``"(truth #i)"`` and missing trust
+        to ``"unknown"``.
+        """
+        _, contradictions = self.consistency(
+            basis=basis, part_threshold=part_threshold, return_report=True
+        )
+        messages = []
+        sources = getattr(self, "_sources", []) or []
+        trusts = getattr(self, "_trusts", []) or []
+        for i, j, _desc in contradictions:
+            src_i = sources[i] if i < len(sources) and sources[i] else None
+            src_j = sources[j] if j < len(sources) and sources[j] else None
+            trust_i = trusts[i] if i < len(trusts) and trusts[i] is not None else None
+            trust_j = trusts[j] if j < len(trusts) and trusts[j] is not None else None
+            label_i = f"'{src_i}'" if src_i is not None else f"(truth #{i})"
+            label_j = f"'{src_j}'" if src_j is not None else f"(truth #{j})"
+            t_i = f"{trust_i:g}" if trust_i is not None else "unknown"
+            t_j = f"{trust_j:g}" if trust_j is not None else "unknown"
+            messages.append(
+                f"{label_i} (trust={t_i}) and {label_j} (trust={t_j}) "
+                f"appear to contradict — please revise to enable more "
+                f"rational thought."
+            )
+        return messages
 
     # -- TruthLoss: Union Norm Reduction -----------------------------
 
