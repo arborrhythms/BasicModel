@@ -1889,6 +1889,126 @@ class SparsityRegularizer(Layer):
         )
 
 
+class ImpenetrableLayer(Layer):
+    """Mereological orthogonality regularizer on a symbol codebook.
+
+    Pushes distinct codebook rows to be disjoint under Belnap-Dunn monotonic
+    parthood so paraconsistency (BOTH pole active) does not collapse into
+    schizophrenia (symbols indistinguishable). Three terms:
+
+    1. Antisymmetry: penalizes mutual parthood `P[i,j] * P[j,i]` for i != j.
+       In bivector mode the paired poles (2k, 2k+1) are excluded -- they are
+       negations of each other, not separate concepts.
+    2. Transitivity: samples `n_triples` random (a, b, c) triples and
+       penalizes `relu(min(P_ab, P_bc) - P_ac)`.
+    3. Anti-collapse variance floor: `relu(variance_floor - cb.std.mean())`
+       keeps rows from converging to a single point.
+
+    Returns a scalar. When ``enabled`` is false, or all weights are zero, the
+    layer short-circuits to zero without touching the codebook.
+    """
+
+    def __init__(self, antisymmetry_weight: float = 0.1,
+                 transitivity_weight: float = 0.05,
+                 variance_floor: float = 0.01,
+                 enabled: bool = True,
+                 bivector: bool = False,
+                 n_triples: int = 64):
+        super().__init__(0, 0)
+        self.antisymmetry_weight = float(antisymmetry_weight)
+        self.transitivity_weight = float(transitivity_weight)
+        self.variance_floor = float(variance_floor)
+        self.enabled = bool(enabled)
+        self.bivector = bool(bivector)
+        self.n_triples = int(n_triples)
+        # Diagnostic slots populated on each forward pass.
+        self.last_antisymmetry = None
+        self.last_transitivity = None
+        self.last_variance = None
+
+    def _pairwise_parthood(self, codebook: torch.Tensor,
+                           basis) -> torch.Tensor:
+        """Compute P[i, j] = part(cb[i], cb[j]) for all K*K pairs.
+
+        Returns a [K, K] tensor of scalar parthood scores.
+        """
+        K = codebook.shape[0]
+        cb_i = codebook.unsqueeze(1).expand(K, K, -1)
+        cb_j = codebook.unsqueeze(0).expand(K, K, -1)
+        return basis.part(cb_i, cb_j, monotonic=True)
+
+    def _paired_pole_mask(self, K: int, device) -> torch.Tensor:
+        """Return a [K, K] bool mask marking paired-pole positions (2k, 2k+1)
+        and their mirror (2k+1, 2k) as True. Used to exclude negation pairs
+        from the antisymmetry penalty.
+        """
+        mask = torch.zeros(K, K, dtype=torch.bool, device=device)
+        pairs = K // 2
+        if pairs <= 0:
+            return mask
+        idx = torch.arange(pairs, device=device)
+        mask[2 * idx, 2 * idx + 1] = True
+        mask[2 * idx + 1, 2 * idx] = True
+        return mask
+
+    def forward(self, codebook: torch.Tensor, basis=None) -> torch.Tensor:
+        zero = (codebook.new_tensor(0.0) if isinstance(codebook, torch.Tensor)
+                else torch.tensor(0.0))
+        self.last_antisymmetry = None
+        self.last_transitivity = None
+        self.last_variance = None
+        if not self.enabled:
+            return zero
+        if codebook is None or not isinstance(codebook, torch.Tensor):
+            return zero
+        if codebook.ndim != 2 or codebook.shape[0] < 2:
+            return zero
+        want_anti = self.antisymmetry_weight > 0.0 and basis is not None
+        want_trans = self.transitivity_weight > 0.0 and basis is not None
+        want_var = self.variance_floor > 0.0
+        if not (want_anti or want_trans or want_var):
+            return zero
+
+        K = codebook.shape[0]
+        total = zero
+        P = None
+        if want_anti or want_trans:
+            P = self._pairwise_parthood(codebook, basis)
+
+        if want_anti:
+            eye = torch.eye(K, device=codebook.device, dtype=torch.bool)
+            excl = eye.clone()
+            if self.bivector and K % 2 == 0:
+                excl = excl | self._paired_pole_mask(K, codebook.device)
+            mutual = P * P.transpose(0, 1)
+            keep = (~excl).float()
+            denom = keep.sum().clamp_min(1.0)
+            anti = (mutual * keep).sum() / denom
+            self.last_antisymmetry = anti.detach()
+            total = total + self.antisymmetry_weight * anti
+
+        if want_trans and self.n_triples > 0:
+            n = self.n_triples
+            a = torch.randint(0, K, (n,), device=codebook.device)
+            b = torch.randint(0, K, (n,), device=codebook.device)
+            c = torch.randint(0, K, (n,), device=codebook.device)
+            P_ab = P[a, b]
+            P_bc = P[b, c]
+            P_ac = P[a, c]
+            violation = torch.relu(torch.min(P_ab, P_bc) - P_ac)
+            trans = violation.mean()
+            self.last_transitivity = trans.detach()
+            total = total + self.transitivity_weight * trans
+
+        if want_var:
+            std = codebook.std(dim=0, unbiased=False).mean()
+            var_pen = torch.relu(codebook.new_tensor(self.variance_floor) - std)
+            self.last_variance = var_pen.detach()
+            total = total + var_pen
+
+        return total
+
+
 class TruthLayer(Layer):
     """Truth store on SymbolicSpace: encoded truth statements scaled by DoT.
 
@@ -1931,17 +2051,29 @@ class TruthLayer(Layer):
     # -- Record / Query ------------------------------------------------
 
     @torch.no_grad()
-    def record(self, activation: torch.Tensor, degree: float) -> int:
+    def record(self, activation: torch.Tensor, degree: float,
+               basis=None) -> int:
         """Store a truth: activation scaled by its DegreeOfTruth.
 
-        The stored vector is ``activation * degree``, so the DoT is
-        encoded in both the magnitude and (for negative degrees) the
-        direction of the stored representation.
+        Bivector path (``basis`` provided and ``basis.monotonic`` and
+        ``activation.shape[-1]`` is even): indices 2k / 2k+1 encode the
+        positive / negative poles of concept k. For ``degree >= 0``,
+        store ``activation * degree`` (positive poles already hot). For
+        ``degree < 0``, paired-index flip via ``basis.negation(...,
+        monotonic=True)`` lands the mass on the negative poles, then
+        scale by ``|degree|``. This preserves Belnap-Dunn semantics:
+        asserting A and asserting not(A) are orthogonal, not cancelling.
+
+        Legacy path (no basis or odd last dim): the stored vector is
+        ``activation * degree``, so the DoT is encoded in both the
+        magnitude and (for negative degrees) the sign.
 
         Args:
             activation: (nDim,) symbolic activation from the model pipeline.
             degree: scalar in [-1, 1].  +1 = certainly true, -1 = certainly
                     false, 0 = unknown/inert.
+            basis: optional Basis with negation(monotonic=True). When
+                   provided and monotonic, enables bivector storage.
 
         Returns:
             Index of the stored entry.
@@ -1953,12 +2085,27 @@ class TruthLayer(Layer):
             )
         degree = max(-1.0, min(1.0, degree))
         idx = self.count.item()
-        stored_vec = activation.detach() * degree
+        vec = activation.detach()
+
+        bivector_mode = (
+            basis is not None
+            and getattr(basis, 'monotonic', False)
+            and vec.shape[-1] % 2 == 0
+        )
+
+        if bivector_mode and degree < 0:
+            vec = basis.negation(vec, monotonic=True)
+            stored_vec = vec * abs(degree)
+        else:
+            stored_vec = vec * degree
         self.truths[idx] = stored_vec
         self.count += 1
 
-        # Warn on contradiction with existing truths
-        if idx > 0:
+        # Legacy contradiction warning: anti-parallel cosine only applies
+        # to bitonic storage. Under bivector, A and not(A) land on
+        # orthogonal paired indices (cosine 0, not -1), so this branch
+        # is skipped.
+        if not bivector_mode and idx > 0:
             existing = self.truths[:idx]
             s_norm = F.normalize(stored_vec.unsqueeze(0), dim=-1)
             e_norm = F.normalize(existing, dim=-1)
@@ -2101,11 +2248,28 @@ class TruthLayer(Layer):
 
     # -- Luminosity -----------------------------------------------------
 
-    def luminosity(self, pi_layer=None) -> torch.Tensor:
-        """Compute luminosity: ||min(truths)||.
+    def _positive_poles(self, v: torch.Tensor) -> torch.Tensor:
+        """Extract positive poles from a bivector storage vector.
 
-        Takes the element-wise min across all stored truth activations
-        (conjunction in conceptual space), then returns the L2 norm.
+        Under the paired-index convention, even indices are positive
+        poles and odd indices are negative poles of the same concept.
+        """
+        return v[..., 0::2]
+
+    def _negative_poles(self, v: torch.Tensor) -> torch.Tensor:
+        """Extract negative poles from a bivector storage vector."""
+        return v[..., 1::2]
+
+    def luminosity(self, pi_layer=None) -> torch.Tensor:
+        """Compute luminosity: ||relu(min(positive_poles(truths)))||.
+
+        Bivector path (even last dim): luminosity is the L2 norm of the
+        element-wise min across positive poles only. Contradictions land
+        on paired negative-pole indices and cannot dim the positive
+        conjunction under Belnap-Dunn.
+
+        Legacy path (odd last dim): element-wise min across all truths,
+        positive-part norm (unchanged).
 
         High luminosity = coherent, consistent truth set (bright).
         Low luminosity  = contradictory or sparse truths (dim).
@@ -2127,13 +2291,82 @@ class TruthLayer(Layer):
         if pi_layer is not None:
             stored = pi_layer.reverse(stored)
 
+        if stored.shape[-1] % 2 == 0:
+            stored = self._positive_poles(stored)
+
         # Conjunction: element-wise min across all truths
-        conjunction = stored.min(dim=0).values            # (D,)
+        conjunction = stored.min(dim=0).values            # (D/2,) or (D,)
 
         # Luminosity = norm of the positive part of the conjunction.
-        # Negative dimensions represent darkness (conflicting truths)
-        # and don't contribute to illumination.
         return torch.relu(conjunction).norm()
+
+    def darkness(self, pi_layer=None) -> torch.Tensor:
+        """Diagnostic: ||relu(min(negative_poles(truths)))||.
+
+        Mirror of ``luminosity`` on the negative-pole half of bivector
+        storage. Elevated darkness means many truths have co-active
+        negative poles (i.e. a shared "not-X" conjunction). Returns 0
+        for non-bivector storage (odd last dim).
+        """
+        n = self.count.item()
+        if n == 0:
+            return torch.tensor(0.0, device=self.truths.device)
+
+        stored = self.truths[:n]
+        if pi_layer is not None:
+            stored = pi_layer.reverse(stored)
+
+        if stored.shape[-1] % 2 != 0:
+            return torch.tensor(0.0, device=self.truths.device)
+
+        neg = self._negative_poles(stored)
+        conjunction = neg.min(dim=0).values
+        return torch.relu(conjunction).norm()
+
+    def tetralemma_balance_penalty(self, bivector_activation: torch.Tensor,
+                               allow_excluded_middle: int = 1,
+                               allow_contradiction: int = 0,
+                               neither_threshold: float = 0.1) -> torch.Tensor:
+        """Penalize forbidden corners of the Belnap-Dunn 4-valued lattice.
+
+        ``bivector_activation`` is a `[..., 2K]` tensor with pairs
+        `(t+, t-)` per concept. Each concept lives in one of four corners:
+
+            T = (1, 0)   F = (0, 1)
+            N = (0, 0)   B = (1, 1)
+
+        Flags control which corners are penalized:
+            allow_excluded_middle == -1  =>  penalize N (force classical LEM)
+            allow_excluded_middle ==  1  =>  permit N (Kleene default)
+            allow_contradiction   ==  0  =>  penalize B (non-contradiction)
+            allow_contradiction   ==  1  =>  permit B (paraconsistent / LP)
+
+        ``neither_threshold`` is the activation level below which a concept
+        is considered "dark" (no commitment). Scaled linearly so the penalty
+        is well-behaved near the threshold.
+
+        Returns a scalar tensor. Odd last dim -> returns 0 (non-bivector).
+        """
+        act = bivector_activation
+        zero = act.new_tensor(0.0) if torch.is_tensor(act) else torch.tensor(0.0)
+        if act is None or not torch.is_tensor(act):
+            return zero
+        if act.shape[-1] % 2 != 0:
+            return zero
+
+        pair = act.reshape(*act.shape[:-1], act.shape[-1] // 2, 2)
+        t_pos = pair[..., 0]
+        t_neg = pair[..., 1]
+
+        total = zero
+        if int(allow_excluded_middle) == -1:
+            hottest = torch.maximum(t_pos, t_neg)
+            total = total + torch.relu(
+                act.new_tensor(float(neither_threshold)) - hottest
+            ).mean()
+        if int(allow_contradiction) == 0:
+            total = total + (t_pos * t_neg).mean()
+        return total
 
     def truth_conjunction(self, basis, pi_layer=None):
         """Conjunction of all stored truths via bitonic intersection.
@@ -2205,8 +2438,9 @@ class TruthLayer(Layer):
 
         # Temporarily extend truth store (average over batch and vectors)
         saved_count = self.count.item()
-        self.record(svo_syms.mean(dim=(0, 1)).detach(), degree=1.0)
-        self.record(ovs_syms.mean(dim=(0, 1)).detach(), degree=1.0)
+        basis = getattr(getattr(ss, 'subspace', None), 'basis', None)
+        self.record(svo_syms.mean(dim=(0, 1)).detach(), degree=1.0, basis=basis)
+        self.record(ovs_syms.mean(dim=(0, 1)).detach(), degree=1.0, basis=basis)
 
         luminosity_after = self.luminosity(ss.layer)
 
@@ -2220,7 +2454,7 @@ class TruthLayer(Layer):
 
     @torch.no_grad()
     def derive(self, part_fn, threshold: float = 0.7,
-               attenuation: float = 0.8) -> int:
+               attenuation: float = 0.8, basis=None) -> int:
         """Derive implied truths via pairwise mereological inference.
 
         For each pair of stored truths, checks if one is contained in
@@ -2232,6 +2466,7 @@ class TruthLayer(Layer):
                      Typically ``syntacticLayer.partForward``.
             threshold: minimum parthood score to derive an implication.
             attenuation: DoT scaling to prevent runaway chains.
+            basis: optional Basis forwarded to record() for bivector storage.
 
         Returns:
             Number of new derived truths.
@@ -2263,7 +2498,7 @@ class TruthLayer(Layer):
                     # Sign of truth_i's DoT (positive or negative truth)
                     sign_i = 1.0 if stored[i].mean().item() >= 0 else -1.0
                     degree = attenuation * score * sign_i
-                    self.record(direction, degree)
+                    self.record(direction, degree, basis=basis)
                     derived += 1
 
         return derived
@@ -2271,26 +2506,50 @@ class TruthLayer(Layer):
     # -- Consistency Scoring -------------------------------------------
 
     @torch.no_grad()
-    def consistency(self, sim_threshold: float = 0.7) -> torch.Tensor:
+    def consistency(self, sim_threshold: float = 0.7,
+                    pair_threshold: float = 0.3) -> torch.Tensor:
         """Detect logical contradictions within stored truths.
 
-        Two truths pointing in similar directions but with opposite
-        DoT signs represent a contradiction.
+        Bivector path (even last dim): a contradiction is a concept
+        index with both poles co-active within a single stored truth
+        (Belnap-Dunn BOTH). Score = 1 - (fraction of (truth, concept)
+        slots that are BOTH-hot). Anti-parallel cosine is NOT a
+        contradiction here -- it's the expected encoding of A vs not(A).
+
+        Legacy path (odd last dim): two truths pointing in opposite
+        directions (anti-parallel cosine) represent a contradiction.
 
         Args:
-            sim_threshold: minimum cosine similarity for two truths
-                to be considered "same direction".
+            sim_threshold: legacy cosine threshold for anti-parallel
+                truths to count as conflicting.
+            pair_threshold: bivector threshold above which both poles
+                of a concept are considered co-active (BOTH).
 
         Returns:
             Scalar in [0, 1] where 1 = fully consistent.
         """
         n = self.count.item()
-        if n < 2:
+        if n < 1:
             return torch.tensor(1.0, device=self.truths.device)
 
         stored = self.truths[:n]
-        norms = stored.norm(dim=-1)
 
+        # Bivector within-truth BOTH check
+        if stored.shape[-1] % 2 == 0:
+            pos = self._positive_poles(stored)
+            neg = self._negative_poles(stored)
+            both_hot = (pos > pair_threshold) & (neg > pair_threshold)
+            total = both_hot.numel()
+            if total == 0:
+                return torch.tensor(1.0, device=self.truths.device)
+            frac = both_hot.float().mean()
+            return (1.0 - frac).clamp(0.0, 1.0).to(self.truths.device)
+
+        # Legacy pairwise anti-parallel check
+        if n < 2:
+            return torch.tensor(1.0, device=self.truths.device)
+
+        norms = stored.norm(dim=-1)
         valid = norms > 1e-6
         if valid.sum() < 2:
             return torch.tensor(1.0, device=self.truths.device)
@@ -2301,9 +2560,6 @@ class TruthLayer(Layer):
         sim_matrix = directions @ directions.T  # (m, m)
         m = directions.shape[0]
 
-        # Conflict: two stored vectors that are anti-parallel.
-        # With DoT baked in, same-content opposite-DoT truths point
-        # in opposite directions (cosine sim ~= -1).
         n_conflicts = 0
         n_pairs = 0
         for i in range(m):
@@ -2461,6 +2717,8 @@ class TruthLayer(Layer):
         if not indices:
             return 0.0
         subset = self.truths[indices]
+        if subset.shape[-1] % 2 == 0:
+            subset = self._positive_poles(subset)
         conjunction = subset.min(dim=0).values
         return torch.relu(conjunction).norm().item()
 

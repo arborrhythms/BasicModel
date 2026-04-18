@@ -90,7 +90,7 @@ from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer, ButterflyStage  # Import custom layers from Model.py
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
 from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
-from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegularizer
+from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegularizer, ImpenetrableLayer
 from parse import quick_parser
 from collections import namedtuple as _namedtuple
 
@@ -648,10 +648,20 @@ class Basis(nn.Module):
         return core + x_zero * y + y_zero * x
 
     def negation(self, x, monotonic=False):
-        """Negation. Bitonic: sign flip. Monotonic: extract negative magnitudes as positive.
+        """Negation. Bitonic: sign flip. Monotonic: paired-index flip (bivector).
+        Monotonic storage is [..., 2K] where index 2k is the positive pole of
+        concept k and 2k+1 is the negative pole. Negation swaps the two poles.
         Domain [-1, 1]. Range: bitonic [-1, 1], monotonic [0, 1]."""
         if monotonic:
-            return torch.relu(-x)
+            n = x.shape[-1]
+            if n % 2 != 0:
+                raise ValueError(
+                    f"Basis.negation(monotonic=True) requires an even last dim "
+                    f"(bivector paired-index encoding); got shape {tuple(x.shape)}"
+                )
+            pair = x.reshape(*x.shape[:-1], n // 2, 2)
+            flipped = pair.flip(dims=(-1,))
+            return flipped.reshape(*x.shape)
         return -x
 
     def non(self, x, monotonic=False, threshold=None):
@@ -664,11 +674,9 @@ class Basis(nn.Module):
     # -- Inverse logic operations -----------------------------------------------
 
     def negation_inverse(self, x, monotonic=False):
-        """Inverse of negation. Bitonic: exact (self-inverse). Monotonic: lossy stub.
-        Domain [-1, 1]."""
-        if monotonic:
-            return x  # relu(-x) is lossy; best-effort identity
-        return -x
+        """Inverse of negation. Self-inverse in both modes.
+        Bitonic: sign flip. Monotonic: paired-index flip."""
+        return self.negation(x, monotonic=monotonic)
 
     def conjunction_inverse(self, result, y, monotonic=False):
         """Inverse of conjunction via codebook search.
@@ -5057,6 +5065,12 @@ class SymbolicSpace(Space):
             self.gradient_mode = mode_str
         self.decorrelation_weight = _symbol_cfg("decorrelationWeight", 0.0)
         self.spectral_flatness_weight = _symbol_cfg("spectralFlatnessWeight", 0.0)
+        # ImpenetrableLayer weights: mereological orthogonality regularizer on
+        # the codebook. Defaults to 0 (no-op) so existing configs are
+        # unchanged; see Layers.ImpenetrableLayer for semantics.
+        self.impenetrable_antisymmetry = _symbol_cfg("impenetrableAntisymmetry", 0.0)
+        self.impenetrable_transitivity = _symbol_cfg("impenetrableTransitivity", 0.0)
+        self.impenetrable_variance = _symbol_cfg("impenetrableVariance", 0.0)
         self.reset_symbol_objective()
 
         # Truth accumulation: accumulateTruth is 0..1 (DoT for recorded symbols).
@@ -5121,11 +5135,15 @@ class SymbolicSpace(Space):
         return None
 
     def _build_what_basis(self):
-        """Symbol codebook on .what, monotonic (negation meaningless)."""
+        """Symbol codebook on .what, monotonic with bivector paired-index encoding.
+        Storage is doubled: index 2k = positive pole of concept k, 2k+1 = negative pole.
+        Both poles may be simultaneously active (BOTH) or both near zero (NEITHER),
+        supporting Belnap-Dunn FDE / Nagarjuna's catuskoti.
+        """
         basis = Codebook()
         basis.create(
             self.inputShape[0],
-            self.nVectors,
+            2 * self.nVectors,
             self.nDim,
             customVQ=self.customVQ,
             passThrough=not self.codebook,
@@ -5152,6 +5170,31 @@ class SymbolicSpace(Space):
                 self.l1_lambda, self.codebook
             )
         return self._sparsity(x)
+
+    def _build_impenetrable_layer(self):
+        return ImpenetrableLayer(
+            antisymmetry_weight=float(self.impenetrable_antisymmetry or 0.0),
+            transitivity_weight=float(self.impenetrable_transitivity or 0.0),
+            variance_floor=float(self.impenetrable_variance or 0.0),
+            enabled=True,
+            bivector=True,
+        )
+
+    def impenetrable_loss(self):
+        """Return the ImpenetrableLayer regularizer over the current codebook.
+
+        Returns a scalar tensor. If no codebook has been built yet, or all
+        weights are zero, returns a zero scalar on the current device.
+        """
+        if not hasattr(self, "_impenetrable"):
+            self._impenetrable = self._build_impenetrable_layer()
+        basis = getattr(self.subspace, "basis", None)
+        if basis is None:
+            return torch.zeros((), device=TheDevice.get())
+        W = basis.getW() if hasattr(basis, "getW") else None
+        if W is None or not isinstance(W, torch.Tensor):
+            return torch.zeros((), device=TheDevice.get())
+        return self._impenetrable(W, basis)
 
     def reset_symbol_objective(self):
         self._symbol_objective_terms = {}
@@ -5291,12 +5334,25 @@ class SymbolicSpace(Space):
 
     def symbol_objective_terms(self):
         if not self._symbol_objective_terms:
-            return {}
-        count = max(self._symbol_objective_count, 1)
-        return {
-            key: value / count
-            for key, value in self._symbol_objective_terms.items()
-        }
+            averaged = {}
+        else:
+            count = max(self._symbol_objective_count, 1)
+            averaged = {
+                key: value / count
+                for key, value in self._symbol_objective_terms.items()
+            }
+        # ImpenetrableLayer operates on the codebook itself, not on per-
+        # prediction residuals, so it is computed once per term-collection
+        # rather than accumulated per Pi pass.
+        if (self.impenetrable_antisymmetry > 0.0
+                or self.impenetrable_transitivity > 0.0
+                or self.impenetrable_variance > 0.0):
+            imp = self.impenetrable_loss()
+            if imp is not None and torch.is_tensor(imp) and imp.requires_grad:
+                averaged["symbol_impenetrable"] = imp
+            elif imp is not None and torch.is_tensor(imp) and imp.abs().item() > 0.0:
+                averaged["symbol_impenetrable"] = imp
+        return averaged
 
     def symbol_objective_loss(self):
         terms = self.symbol_objective_terms()
@@ -5397,6 +5453,7 @@ class SymbolicSpace(Space):
         if self.accumulateTruth > 0 and wordSpace is not None:
             truth_layer = getattr(wordSpace, 'truth_layer', None)
             if truth_layer is not None:
+                basis = getattr(self.subspace, 'basis', None)
                 for i in range(act.shape[0]):
                     for j in range(act.shape[1]):
                         vec = act[i, j]
@@ -5406,7 +5463,8 @@ class SymbolicSpace(Space):
                             min_novelty=self._truth_min_novelty,
                             max_inconsistency=self._truth_max_inconsistency)
                         if self.accumulateTruth * score > 0.5:
-                            truth_layer.record(vec, degree=self.accumulateTruth)
+                            truth_layer.record(vec, degree=self.accumulateTruth,
+                                               basis=basis)
 
         if self._symbol_where is not None:
             B = act.shape[0]
@@ -7438,7 +7496,10 @@ class WordSpace(Space):
     def truth_modulated_loss(self, total_loss, symbolic_space,
                              symbol_acts=None, universality_score=None,
                              luminosity_weight=0.1, universality_weight=0.1,
-                             truth_loss_weight=0.0):
+                             truth_loss_weight=0.0,
+                             allow_excluded_middle=1,
+                             allow_contradiction=0,
+                             balance_weight=0.1):
         """Apply the WordSpace-owned TruthLayer modulation to a loss.
 
         The transform has two parts:
@@ -7492,6 +7553,21 @@ class WordSpace(Space):
                 truth_penalty = self.truth_layer.falsity_penalty(
                     symbol_acts, basis)
                 total_loss = total_loss + truth_loss_weight * truth_penalty
+
+        # Belnap-Dunn balance penalty: discourages forbidden corners (N, B)
+        # on committed symbol activations. Runs whenever the knobs select a
+        # non-permissive corner and symbol_acts are provided.
+        wants_balance = (int(allow_excluded_middle) == -1
+                         or int(allow_contradiction) == 0)
+        if (balance_weight > 0 and wants_balance
+                and symbol_acts is not None
+                and torch.is_tensor(symbol_acts)
+                and symbol_acts.shape[-1] % 2 == 0):
+            balance = self.truth_layer.tetralemma_balance_penalty(
+                symbol_acts,
+                allow_excluded_middle=int(allow_excluded_middle),
+                allow_contradiction=int(allow_contradiction))
+            total_loss = total_loss + balance_weight * balance
 
         return total_loss
 

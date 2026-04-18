@@ -1,6 +1,11 @@
 # TODO
 
 
+* **Mask parameter on S-> derivations** (`Spaces.py:6013-6152` SyntacticLayer + subclasses). Add `mask: Optional[Tensor]` of shape `[nSymbols]` (subset-of-symbols frame) to all *Forward / *Reverse methods and the project / reverse_project dispatch. Under a constant Mask, equality must be transitive; Belnap-Dunn AND / OR / NOT / eq / part operators should run on bivector vectors restricted to the masked symbols. Rename internal references to "frame" to "Mask" as part of this.
+* **Discontinuity penalty on symbol vectors** (`Layers.py:1865` SparsityRegularizer or a new `SmoothingRegularizer`). Add a term that penalizes `|S[i+1] - S[i]|` across the symbol vector S in addition to the L1 sparsity norm. Config key `architecture.discontinuityLambda`.
+* **EnsureConsistency + clarifying-question UX** (`Layers.py:2274` TruthLayer.consistency, `Models.py:1287-1332` store_truths, `basicmodel/bin/serve.py:143-216` /chat/completions). Extend `consistency()` to return a structured report `(score, contradictions: List[(idx_i, idx_j, description)])`. Add a `suggest_clarifications()` method that generates natural-language questions. Add an optional `"clarifications"` field to the /chat/completions response so inconsistent truth sets can prompt the user to refine, then return a consistent truth set alongside the conversation.
+* for grammar = hought_free (shamatha speech), there is no negation. So ensure that negation only manifests at/after SymbolicSpace
+
 ================================== April 24 ==================================
 
 # Ask Solid community for a simple file-getting interface

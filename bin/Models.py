@@ -298,6 +298,24 @@ class BaseModel(nn.Module):
         return getattr(getattr(ss, 'subspace', None), 'basis', None)
 
     @torch.no_grad()
+    def _clamp_symbolic_codebook(self):
+        """Keep the SymbolicSpace bivector codebook inside the [0,1] pair box.
+
+        Called after ``optimizer.step()``. The SymbolicSpace codebook is
+        monotonic (paired-index pos/neg poles), so each scalar lives in
+        [0,1]. Gradient updates can push entries outside this box; clamp
+        directly on the Parameter data so the invariant holds going into
+        the next forward pass.
+        """
+        basis = self._get_basis()
+        if basis is None or not getattr(basis, 'monotonic', False):
+            return
+        W = getattr(basis, 'W', None)
+        if W is None or not isinstance(W, torch.Tensor):
+            return
+        W.data.clamp_(0.0, 1.0)
+
+    @torch.no_grad()
     def isConsistent(self):
         """Analyze the TruthSet for internal consistency.
 
@@ -524,7 +542,7 @@ class BaseModel(nn.Module):
                     degree = attenuation * min(dot_i, dot_j)
 
                     direction = F.normalize(candidate.unsqueeze(0), dim=-1).squeeze(0)
-                    truth_layer.record(direction, degree)
+                    truth_layer.record(direction, degree, basis=self._get_basis())
                     lum_after = truth_layer.luminosity(pi_layer)
 
                     delta = (lum_after - lum_before).item()
@@ -779,6 +797,29 @@ class BaseModel(nn.Module):
         # This produces an actionable diagnostic instead of a raw PyTorch error.
         model_state = {k: v for k, v in self.state_dict().items()
                        if "wv._vectors" not in k}
+
+        # Bivector migration: pre-bivector checkpoints have a [K, D] symbolic
+        # codebook, while the current model expects [2K, D]. Duplicate each
+        # row into the positive-pole slot (row 2k), leaving the negative-pole
+        # slot (row 2k+1) zero. One-time bridge; no reverse migration.
+        for k, saved_v in list(state.items()):
+            if k not in model_state:
+                continue
+            model_v = model_state[k]
+            if (saved_v.dim() == 2 and model_v.dim() == 2
+                    and saved_v.shape[1] == model_v.shape[1]
+                    and model_v.shape[0] == 2 * saved_v.shape[0]
+                    and "symbolicSpace" in k):
+                migrated = torch.zeros_like(model_v)
+                migrated[0::2] = saved_v
+                state[k] = migrated
+                warnings.warn(
+                    f"Bivector migration: expanded {k} from "
+                    f"{list(saved_v.shape)} to {list(model_v.shape)} "
+                    f"(positive poles only; negative poles zero).",
+                    stacklevel=2,
+                )
+
         mismatches = [
             (k, list(state[k].shape), list(model_state[k].shape))
             for k in state if k in model_state
@@ -1832,6 +1873,8 @@ class BasicModel(BaseModel):
                 luminosity_weight=getattr(self, 'luminosity_weight', 0.1),
                 universality_weight=getattr(self, 'universality_weight', 0.1),
                 truth_loss_weight=getattr(self, 'truth_loss_weight', 0.0),
+                allow_excluded_middle=getattr(self, 'allow_excluded_middle', 1),
+                allow_contradiction=getattr(self, 'allow_contradiction', 0),
             )
 
         # Snapshot the breakdown before the backward pass so later
@@ -1870,6 +1913,7 @@ class BasicModel(BaseModel):
             if self.ergodic:
                 self.paramUpdate()
             optimizer.step()
+            self._clamp_symbolic_codebook()
 
         result = self.BatchResult(
             outputPred=outputDataPred,
@@ -2127,6 +2171,13 @@ class MentalModel(BaseModel):
         self.truth_bias_scale = float(TheXMLConfig.get("architecture.truthBiasScale", default=0.1) or 0.1)
         self.luminosity_weight = float(TheXMLConfig.get("architecture.LuminosityWeight", default=0.1) or 0.1)
         self.universality_weight = float(TheXMLConfig.get("architecture.UniversalityWeight", default=0.1) or 0.1)
+        # Belnap-Dunn balance knobs. Defaults mirror Kleene 3-valued logic:
+        #   allowExcludedMiddle=1  permit NEITHER (epistemic uncertainty)
+        #   allowContradiction=0   forbid BOTH (classical non-contradiction)
+        self.allow_excluded_middle = int(
+            TheXMLConfig.get("architecture.allowExcludedMiddle", default=1) or 1)
+        self.allow_contradiction = int(
+            TheXMLConfig.get("architecture.allowContradiction", default=0) or 0)
         self.truth_loss_weight = float(TheXMLConfig.training("TruthLoss", default=0.0) or 0.0)
         self.reconstruct = reconstruct.lower()
         self.masked_prediction = masked_prediction
@@ -2765,7 +2816,7 @@ class MentalModel(BaseModel):
             saved_count = truth_layer.count.item()
             mean_sym = symbolSum_hat.mean(dim=(0, 1)).detach()
             if mean_sym.norm() > 1e-6:
-                truth_layer.record(mean_sym, degree=1.0)
+                truth_layer.record(mean_sym, degree=1.0, basis=self._get_basis())
                 lum_after = truth_layer.luminosity(pi_layer)
                 validity_loss = torch.relu(lum_before - lum_after)
                 truth_layer.count.fill_(saved_count)
@@ -2774,6 +2825,7 @@ class MentalModel(BaseModel):
         total = recon_loss + 0.1 * validity_loss
         total.backward()
         optimizer.step()
+        self._clamp_symbolic_codebook()
 
         return {
             'recon_loss': recon_loss.item(),
@@ -2814,13 +2866,14 @@ class MentalModel(BaseModel):
         trace = []
 
         if direction == 'forward':
+            basis = self._get_basis()
             # Encode givens into TruthSet
             if isinstance(givens, (list, tuple)):
                 for g in givens:
                     if g.norm() > 1e-6:
-                        truth_layer.record(g.detach(), degree=1.0)
+                        truth_layer.record(g.detach(), degree=1.0, basis=basis)
             elif givens.norm() > 1e-6:
-                truth_layer.record(givens.detach(), degree=1.0)
+                truth_layer.record(givens.detach(), degree=1.0, basis=basis)
 
             for step in range(max_steps):
                 lum_before = truth_layer.luminosity(pi_layer)

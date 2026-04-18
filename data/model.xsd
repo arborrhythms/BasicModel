@@ -43,6 +43,15 @@
       <xs:element name="truthBiasScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="LuminosityWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="UniversalityWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Belnap-Dunn balance knobs: select which corners of {T,F,N,B} are
+           permitted during training.
+             allowExcludedMiddle:  1  = permit NEITHER (default, Kleene)
+                                  -1  = forbid NEITHER (classical LEM)
+             allowContradiction:   0  = forbid BOTH (default, non-contradiction)
+                                   1  = permit BOTH (paraconsistent / LP)
+       -->
+      <xs:element name="allowExcludedMiddle" type="xs:integer" minOccurs="0"/>
+      <xs:element name="allowContradiction" type="xs:integer" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -328,6 +337,9 @@
       <xs:element name="useVQVAE" type="xs:boolean" minOccurs="0"/>
       <xs:element name="decorrelationWeight" type="xs:decimal" minOccurs="0"/>
       <xs:element name="spectralFlatnessWeight" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="impenetrableAntisymmetry" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="impenetrableTransitivity" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="impenetrableVariance" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="truthMinMagnitude" type="xs:decimal" minOccurs="0"/>
       <xs:element name="truthMinNovelty" type="xs:decimal" minOccurs="0"/>
       <xs:element name="truthMaxInconsistency" type="xs:decimal" minOccurs="0"/>
