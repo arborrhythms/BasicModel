@@ -2814,22 +2814,24 @@ class SubSpace(nn.Module):
         """Apply normalization function to tensor x.
 
         The combination of kind and target determines the geometry:
-          - Perceptual vectors and activations use (1-eps)*tanh -> (-(1-eps), 1-eps).
-          - Conceptual vectors and activations use (1-eps)*tanh -> (-(1-eps), 1-eps).
+          - Perceptual vectors and activations use clamped tanh -> [-(1-eps), 1-eps].
+          - Conceptual vectors and activations use clamped tanh -> [-(1-eps), 1-eps].
           - Activations use scalar transfer functions (tanh/STE).
 
-        The ``(1-eps)`` shrinkage is a minimal regularizer that keeps the
-        output strictly away from +-1, so that the inverse (atanh) is
-        always finite without requiring a clamp.  The reverse path
-        (see ``_apply_reverse_normalization``) divides by ``(1-eps)``
-        before ``atanh``, preserving exact invertibility for the full
-        range of real inputs -- no branches, no clamp.
+        Forward and reverse are made symmetric by clamping both sides
+        into the closed interval ``[-(1-eps), 1-eps]``.  Any bijection
+        between R and a closed sub-interval of (-1, 1) must fail at the
+        boundary (``atanh`` diverges at +-1), so we accept a tiny
+        roundtrip error in the saturated tail in exchange for the same
+        bounded domain on both paths -- this lets reverse absorb
+        codebook/STE outputs that can sit exactly at +-1 without
+        special-casing.
         """
         is_vector = target in ("what", "where", "when", "event")
         if kind == "percepts":
-            return (1.0 - epsilon) * torch.tanh(x)
+            return torch.tanh(x).clamp(min=-1.0 + epsilon, max=1.0 - epsilon)
         elif kind == "concepts":
-            return (1.0 - epsilon) * torch.tanh(x)
+            return torch.tanh(x).clamp(min=-1.0 + epsilon, max=1.0 - epsilon)
         elif kind == "symbols":
             soft = torch.sigmoid(x)
             hard = torch.round(soft)
@@ -2842,19 +2844,18 @@ class SubSpace(nn.Module):
             raise ValueError(f"Unknown normalization kind: {kind!r}")
 
     def _apply_reverse_normalization(self, kind, x, target="activation"):
-        """Apply the exact inverse of ``_apply_normalization``.
+        """Apply the (approximate) inverse of ``_apply_normalization``.
 
-        For percepts/concepts, the forward pass is ``y = (1-eps)*tanh(x)``
-        and the inverse is ``x = atanh(y / (1-eps))``.  Because ``y``
-        is strictly inside ``(-(1-eps), 1-eps)``, ``y / (1-eps)`` is
-        strictly inside ``(-1, 1)`` and ``atanh`` is finite without any
-        clamp.  This preserves the reverse pass as a true inverse of the
-        forward pass, which ``test_forward_reverse_reconstructs_input_state``
-        verifies to 1e-6 tolerance.
+        Forward is ``y = clamp(tanh(x), -(1-eps), 1-eps)``; reverse is
+        ``x = atanh(clamp(y, -(1-eps), 1-eps))``.  The clamp is
+        symmetric so that codebook/STE values sitting exactly at +-1
+        round-trip through ``atanh`` without diverging.  For non-
+        saturated ``x``, the roundtrip is exact to ``atanh`` precision.
         """
         is_vector = target in ("what", "where", "when", "event")
         if kind in ("percepts", "concepts"):
-            return torch.atanh(x / (1.0 - epsilon))
+            z = x.clamp(min=-1.0 + epsilon, max=1.0 - epsilon)
+            return torch.atanh(z)
         elif kind == "input" and is_vector:
             return TheData.denormalize(x, which="input")
         elif kind == "symbols":

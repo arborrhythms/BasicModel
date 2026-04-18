@@ -35,6 +35,7 @@ TheMessage = util.TheMessage
 
 from visualize import Report, TheReport
 from util import ProjectPaths, XMLConfig, compile, TheXMLConfig, init_config, init_compile_backend
+import util as _util
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
 
@@ -242,6 +243,61 @@ class BaseModel(nn.Module):
             return
         lr = self._optimizer.param_groups[0]['lr']
         self._optimizer = self.getOptimizer(lr=lr)
+
+    def _assert_finite_train_state(self, what):
+        """Fail at the update site when a parameter or gradient goes non-finite.
+
+        Gated by MODEL_DEBUG (see util.py). The inner checks are ``assert``
+        statements so ``python -O`` strips them entirely; MODEL_DEBUG also
+        short-circuits the iteration so the per-parameter loop is skipped
+        without -O.
+        """
+        if not _util.MODEL_DEBUG:
+            return
+        for name, param in self.named_parameters():
+            if param is None:
+                continue
+            pdata = param.detach()
+            assert torch.isfinite(pdata).all(), (
+                f"Non-finite parameter {name!r} {what}: "
+                f"{int((~torch.isfinite(pdata)).sum().item())}/{pdata.numel()} "
+                f"entries are nan/inf."
+            )
+            if param.grad is not None:
+                grad = param.grad.detach()
+                assert torch.isfinite(grad).all(), (
+                    f"Non-finite gradient for {name!r} {what}: "
+                    f"{int((~torch.isfinite(grad)).sum().item())}/{grad.numel()} "
+                    f"entries are nan/inf."
+                )
+
+    def _debug_tensor_stats(self, name, value):
+        """Print compact tensor stats when MODEL_DEBUG is enabled.
+
+        Cannot use ``assert`` (printing has side effects), so only the
+        MODEL_DEBUG gate applies.
+        """
+        if not _util.MODEL_DEBUG:
+            return
+        if value is None or not torch.is_tensor(value):
+            TheMessage(f"[recon-debug] {name}: {value}")
+            return
+        x = value.detach()
+        finite = torch.isfinite(x)
+        count = x.numel()
+        bad = int((~finite).sum().item())
+        if finite.any():
+            xf = x[finite]
+            xmin = xf.min().item()
+            xmax = xf.max().item()
+            xmean = xf.float().mean().item()
+        else:
+            xmin = xmax = xmean = float("nan")
+        TheMessage(
+            f"[recon-debug] {name}: shape={tuple(x.shape)} "
+            f"bad={bad}/{count} range=[{xmin:.6g}, {xmax:.6g}] "
+            f"mean={xmean:.6g}"
+        )
 
     def run(self, numTrials=1, numEpochs=1, batchSize=10, lr=0.001, profile=None):
         """Run multiple independent trials, recreating the model each time.
@@ -1288,9 +1344,17 @@ class BasicModel(BaseModel):
             self.symbolicSpace.subspace.set_event(symbols)
             symbols = self.symbolicSpace.subspace
         concepts_state = self.symbolicSpace.reverse(symbols, wordSpace=ws)
+        self._debug_tensor_stats(
+            "reverse.concepts_state", concepts_state.materialize())
         percepts_state = self.conceptualSpace.reverse(concepts_state, wordSpace=ws)
+        self._debug_tensor_stats(
+            "reverse.percepts_state", percepts_state.materialize())
         input_state = self.perceptualSpace.reverse(percepts_state, wordSpace=ws)
+        self._debug_tensor_stats(
+            "reverse.input_state", input_state.materialize())
         self.inputs = self.inputSpace.reverse(input_state)
+        self._debug_tensor_stats(
+            "reverse.inputs", self.inputs.materialize())
         input = input_state.materialize()
         inputData  = self.inputs.materialize()
         return inputData, input
@@ -1798,6 +1862,7 @@ class BasicModel(BaseModel):
             inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
             pred_sq = inputDataPred
             masked_pred = hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE'
+            self._debug_tensor_stats("pred_sq", pred_sq)
 
             # Use pre-masked, post-encoding target when available
             recon_target, recon_mask = self.inputSpace.get_reconstruction_target()
@@ -1805,12 +1870,17 @@ class BasicModel(BaseModel):
                 target_sq = recon_target.squeeze()
             else:
                 target_sq = forwardInput.squeeze()
+            self._debug_tensor_stats("target_sq", target_sq)
+            if recon_mask is not None:
+                self._debug_tensor_stats("recon_mask", recon_mask)
 
             if masked_pred and recon_mask is not None and pred_sq.dim() >= 2:
                 # Masked prediction: compute loss only at masked positions
                 mask = recon_mask
                 if pred_sq.dim() == 3:
                     mask = mask.unsqueeze(-1).expand_as(pred_sq)
+                self._debug_tensor_stats("pred_masked", pred_sq[mask])
+                self._debug_tensor_stats("target_masked", target_sq[mask])
                 lossIn = self.loss.compute(pred_sq[mask], target_sq[mask])
             elif self.loss.nWhere > 0:
                 # Piecewise (Chamfer) loss: per-token matching + coverage.
@@ -1818,6 +1888,7 @@ class BasicModel(BaseModel):
                 lossIn = self.loss.compute_piecewise(pred_sq, target_sq)
             else:
                 lossIn = self.loss.compute(pred_sq, target_sq)
+            self._debug_tensor_stats("lossIn", lossIn)
             TheError.add(
                 "reconstruction", lossIn,
                 weight=self.loss.reverse_scale,
@@ -1938,9 +2009,11 @@ class BasicModel(BaseModel):
 
         if train:
             totalLoss.backward()
+            self._assert_finite_train_state("after backward")
             if self.ergodic:
                 self.paramUpdate()
             optimizer.step()
+            self._assert_finite_train_state("after optimizer.step")
             self._clamp_symbolic_codebook()
 
         result = self.BatchResult(
@@ -2063,15 +2136,36 @@ class BasicModel(BaseModel):
                                 embedded, inp_items,
                                 self.masked_prediction, pos,
                             ))
+                        valid_rows = [i for i, p in enumerate(mask_positions)
+                                      if p >= 0]
+                        if not valid_rows:
+                            continue
+                        step_input = inputTensor
+                        step_unmasked = embedded.detach()
+                        step_B = B
+                        if len(valid_rows) != len(mask_positions):
+                            # Rows shorter than this AR position are not
+                            # examples; do not train them toward a zero target.
+                            row_idx = torch.tensor(
+                                valid_rows, device=embedded.device,
+                                dtype=torch.long)
+                            masked = masked.index_select(0, row_idx)
+                            targets = targets.index_select(0, row_idx)
+                            step_input = inputTensor.index_select(0, row_idx)
+                            step_unmasked = step_unmasked.index_select(
+                                0, row_idx)
+                            mask_positions = [
+                                mask_positions[i] for i in valid_rows]
+                            step_B = len(valid_rows)
                         self.inputSpace._cached_embedding = masked
                         self.inputSpace._unmasked_embedding = (
-                            embedded.detach())
+                            step_unmasked)
                         self.inputSpace._mask_positions = mask_positions
                         result, _ = self.runBatch(
                             train=training, batchNum=step,
-                            batchSize=B, split=split,
+                            batchSize=step_B, split=split,
                             optimizer=optimizer,
-                            batch_override=(inputTensor,
+                            batch_override=(step_input,
                                             targets.unsqueeze(1)),
                         )
                         if result is not None:

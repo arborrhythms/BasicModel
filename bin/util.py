@@ -256,6 +256,37 @@ def init_compile_backend(backend=None):
 
 
 # ---------------------------------------------------------------------------
+# Debug mode
+# ---------------------------------------------------------------------------
+#
+# MODEL_DEBUG gates expensive in-training checks (finite-param guards, tensor
+# stat dumps).  Two layers of control:
+#   1. Python's ``-O`` flag strips ``assert`` statements at bytecode compile
+#      time (``__debug__`` becomes False), so asserts used as guards cost
+#      nothing in an optimized run.
+#   2. The MODEL_DEBUG env var toggles the runtime branches that wrap the
+#      asserts (and any side-effecting stat prints, which cannot be expressed
+#      as asserts).  MODEL_DEBUG=0 short-circuits before the tensor ops.
+# Callers should gate with ``if not MODEL_DEBUG: return`` and then use
+# ``assert`` for the actual check so ``-O`` strips the inner work too.
+
+_DEBUG_ON = {"1", "true", "yes", "on"}
+
+
+def _read_model_debug():
+    return os.environ.get("MODEL_DEBUG", "").strip().lower() in _DEBUG_ON
+
+
+MODEL_DEBUG = _read_model_debug()
+
+
+def init_model_debug(enabled=None):
+    """Override the process-wide debug flag.  None re-reads MODEL_DEBUG."""
+    global MODEL_DEBUG
+    MODEL_DEBUG = _read_model_debug() if enabled is None else bool(enabled)
+
+
+# ---------------------------------------------------------------------------
 # Model compilation
 # ---------------------------------------------------------------------------
 
@@ -332,8 +363,12 @@ def compile(model, verbose=True):
 
     if TheCompileBackend == "none":
         _msg("Model compilation skipped (MODEL_COMPILE=none)")
+        _msg(f"Debug checks: {'ON (MODEL_DEBUG)' if MODEL_DEBUG else 'OFF'}"
+             f"{'' if __debug__ else ' [asserts stripped by -O]'}")
         return model
 
+    _msg(f"Debug checks: {'ON (MODEL_DEBUG)' if MODEL_DEBUG else 'OFF'}"
+         f"{'' if __debug__ else ' [asserts stripped by -O]'}")
     _patch_inductor_paths()
 
     backends = _COMPILE_BACKENDS if TheCompileBackend == "auto" else (TheCompileBackend,)
