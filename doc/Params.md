@@ -46,7 +46,8 @@ Training loop and I/O settings.
 |-----------|------|---------|-------------|
 | `numTrials` | int | `1` | Number of independent training runs. |
 | `numEpochs` | int | `3` | Number of training epochs per trial. |
-| `batchSize` | int | `10` | Mini-batch size for training. |
+| `batchSize` | int | `10` | Number of contiguous streams through the dataset. Each batch row `b` receives the next item from stream `b`, so temporal context is coherent across steps. Capped at split length, so small eval sets yield one rectangular batch. |
+| `numWorkers` | int | `0` | DataLoader prefetch workers. `0` means synchronous in-process batch assembly. |
 | `learningRate` | float | `0.001` | Learning rate for the Adam optimizer. |
 | `reconRatio` | float | `0.5` | Weight of reconstruction loss in combined loss: `total = (1-r)*output + r*recon`. |
 | `trainEmbedding` | string | `"NONE"` | Embedding update mode. Controls both the embedding training method and whether gradients flow through the codebook. See table below and [Training.md](Training.md). |

@@ -240,17 +240,30 @@ cross-entropy over vocabulary indices. This is an architectural advantage:
 
 ### Training Loop
 
-Each batch (one sentence in masked prediction mode):
+Data flows through a `SentenceStreamDataset` wrapped in a PyTorch `DataLoader`.
+The ordered training list is split into `B = batchSize` contiguous slabs of
+length `L = len(split) // B`; at step `t` the loader yields a B-wide batch
+where row `b` is item `b * L + t`. Each batch row therefore carries its own
+document-order stream, so temporal context is coherent across steps. No
+per-epoch global shuffle is applied. `numWorkers > 0` enables async prefetch.
 
-1. Embed sentence, expand to N masked copies (one per word position)
-2. Forward through network: InputSpace $\rightarrow$ Percept $\rightarrow$ Concept $\rightarrow$ Symbol $\rightarrow$ Output
-3. Compute output loss (MSE against target word embeddings)
-4. If reversible: reverse pass reconstructs input, compute reconstruction loss
-5. Combined loss = `(1 - recon_ratio) $\times$ output_loss + recon_ratio $\times$ recon_loss`
-6. If `train` is `JOINT`: add `trainEmbeddingRatio $\times$ sbow_loss` to the combined loss
-7. Backprop + optimizer step (includes embedding params for `BACKPROP`, `BOTH`, `JOINT`; excludes for `NONE`, `CBOW`, `SBOW`)
-8. If `train` is `CBOW`, `SBOW`, or `BOTH`: run embedding step on same sentence
-9. (removed -- [MASK] is just the zero vector, not a vocabulary entry)
+For each B-wide batch in masked prediction mode:
+
+1. Embed the B sentences once into `[B, nVec, embeddingSize]`
+2. For each word position `pos` in `0..N-1` (N = max words in the batch,
+   capped at `nVec`):
+   1. Mask row `b` at position `pos` (or `N_b-1-pos` for RARLM), truncate
+      future tokens for ARLM, preserve where/when positional dims
+   2. Forward through network: InputSpace $\rightarrow$ Percept $\rightarrow$ Concept $\rightarrow$ Symbol $\rightarrow$ Output
+   3. Compute output loss (MSE against target word embeddings)
+   4. If reversible: reverse pass reconstructs input, compute reconstruction loss
+   5. Combined loss = `(1 - recon_ratio) $\times$ output_loss + recon_ratio $\times$ recon_loss`
+   6. If `train` is `JOINT`: add `trainEmbeddingRatio $\times$ sbow_loss` to the combined loss
+   7. Backprop + optimizer step (includes embedding params for `BACKPROP`, `BOTH`, `JOINT`; excludes for `NONE`, `CBOW`, `SBOW`)
+3. If `train` is `CBOW`, `SBOW`, or `BOTH`: run one embedding step per fetched batch
+
+Non-masked modes (`maskedPrediction=NONE`) do a single forward/backward/step
+per B-wide batch instead of looping over positions.
 
 ---
 

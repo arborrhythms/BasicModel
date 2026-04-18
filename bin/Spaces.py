@@ -3772,6 +3772,14 @@ class InputSpace(Space):
                        for s in inputBatch]
             return torch.stack(tensors, dim=0).unsqueeze(1).to(TheDevice.get())
         return inputBatch  # already [B, D, 1] and on device after toDevice()
+
+    def prep_sentence_batch(self, sentences):
+        """Turn a tuple/list of B sentence strings into a [B, nVec, 1] tensor.
+
+        Thin wrapper over ``prepInput`` kept separate from ``getBatch`` so the
+        streaming path does not touch the legacy cursor-based code.
+        """
+        return self.prepInput(list(sentences))
     def shuffle(self):
         self.data.shuffle()
     # The world presenting itself
@@ -3909,6 +3917,69 @@ class InputSpace(Space):
         if maskedPrediction == 'RARLM':
             return masked, list(range(N - 1, -1, -1))
         return masked, list(range(N))
+
+    def expand_masked_batched(self, embedded, sentences, maskedPrediction,
+                              pos):
+        """Apply per-position masking to a B-wide embedded batch.
+
+        ``embedded`` has shape [B, nVectors, embeddingSize]. For each row we
+        mask position ``pos`` (or ``N-1-pos`` for RARLM) using the same
+        content/positional dim discrimination as ``expand_masked``, and
+        return the masked batch, the per-row targets at that position, and
+        the mask index used for each row.
+
+        Rows whose sentence has fewer than ``pos+1`` words are passed
+        through unchanged and their target row is left zero; the caller
+        is responsible for skipping those rows via a loss mask.
+
+        Args:
+            embedded: [B, nVec, embSize] output of forward()
+            sentences: list[str] of length B, parallel to embedded
+            maskedPrediction: 'MLM' / 'ARLM' / 'ARUS' / 'RARLM'
+            pos: which word index to mask in each row
+
+        Returns:
+            (masked, targets, mask_positions):
+                masked:         [B, nVec, embSize] gradient-connected to embedded
+                targets:        [B, embSize] detached target vectors
+                mask_positions: list[int] of length B -- resolved mask index
+                                per row (-1 for rows that were passed through)
+        """
+        B, nVec, embSize = embedded.shape
+        dev = embedded.device
+        masked = embedded.clone()
+
+        content_mask = torch.ones(embSize, dtype=torch.bool, device=dev)
+        if self.subspace.whereEncoding.nDim > 0:
+            where_idx = np.add([embSize] * len(self.subspace.whereEncoding.index),
+                               self.subspace.whereEncoding.index)
+            for wi in where_idx:
+                if 0 <= wi < embSize:
+                    content_mask[wi] = False
+        if self.subspace.whenEncoding.nDim > 0:
+            when_idx = np.add([embSize] * len(self.subspace.whenEncoding.index),
+                              self.subspace.whenEncoding.index)
+            for wi in when_idx:
+                if 0 <= wi < embSize:
+                    content_mask[wi] = False
+
+        targets = torch.zeros(B, embSize, device=dev)
+        mask_positions = [-1] * B
+        for b in range(B):
+            words = sentences[b].split()
+            N = min(len(words), nVec)
+            if N == 0 or pos >= N:
+                continue
+            p = (N - 1 - pos) if maskedPrediction == 'RARLM' else pos
+            targets[b] = embedded[b, p].detach()
+            masked[b, p, content_mask] = 0.0
+            if maskedPrediction in ('ARLM', 'ARUS') and p + 1 < nVec:
+                masked[b, p + 1:, :] = 0.0
+            if maskedPrediction == 'RARLM' and p > 0:
+                masked[b, :p, :] = 0.0
+            mask_positions[b] = p
+
+        return masked, targets, mask_positions
 
     def reverse(self, vspace):
         y = self.reverseBegin(vspace, returnVectors=True)
@@ -4109,7 +4180,10 @@ class InputSpace(Space):
         target = unmasked.expand(N, -1, -1)
         mask = torch.zeros(N, nVec, dtype=torch.bool, device=TheDevice.get())
         for i, pos in enumerate(positions):
-            mask[i, pos] = True
+            # pos < 0 signals "skip this row" in the streaming path
+            # (sentence too short at the current mask position).
+            if pos >= 0:
+                mask[i, pos] = True
         return target, mask
 
     def predict(self, vector):

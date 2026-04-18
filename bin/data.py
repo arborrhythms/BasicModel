@@ -19,6 +19,7 @@ import pyarrow.parquet as pq
 import requests
 import torch
 import torch.nn.functional as F
+from torch.utils.data import IterableDataset, DataLoader
 from datasets import load_dataset
 
 import util
@@ -99,6 +100,66 @@ def iter_documents(shard_paths, max_docs=None):
                 count += 1
                 if max_docs is not None and count >= max_docs:
                     return
+
+
+class SentenceStreamDataset(IterableDataset):
+    """Yields B-wide batches from B contiguous streams of the dataset.
+
+    The ordered ``inputs`` sequence is split into ``num_streams`` contiguous
+    slabs of equal length ``L = len(inputs) // num_streams`` (any tail
+    shorter than ``num_streams`` is dropped so every step is rectangular).
+    At step ``t`` the dataset yields a batch of ``num_streams`` items, where
+    position ``b`` is ``inputs[b * L + t]`` -- so batch row ``b`` sees a
+    coherent document-order stream across all steps.
+
+    ``inputs`` may be a list (of strings or per-item tensors) or a pre-
+    stacked tensor of shape ``[N, ...]``. ``outputs`` is a parallel
+    structure; pass ``None`` for unsupervised / inference paths. When
+    supplied, each step yields ``(input_batch, output_batch)``; otherwise
+    just ``input_batch``.
+
+    Designed to be wrapped in ``DataLoader(ds, batch_size=None, ...)`` so
+    the dataset self-batches and the DataLoader only provides async
+    prefetch.
+    """
+
+    def __init__(self, inputs, num_streams, outputs=None):
+        n = (inputs.shape[0] if isinstance(inputs, torch.Tensor)
+             else len(inputs))
+        if n == 0:
+            raise ValueError("SentenceStreamDataset: inputs is empty")
+        if num_streams < 1:
+            raise ValueError(f"num_streams must be >= 1, got {num_streams}")
+        if num_streams > n:
+            raise ValueError(
+                f"num_streams={num_streams} exceeds available items={n}"
+            )
+        self.inputs = inputs
+        self.outputs = outputs
+        self.num_streams = num_streams
+        self.stream_length = n // num_streams
+
+    def __len__(self):
+        return self.stream_length
+
+    @staticmethod
+    def _slice(data, indices):
+        if data is None:
+            return None
+        if isinstance(data, torch.Tensor):
+            return data[indices]
+        return [data[i] for i in indices]
+
+    def __iter__(self):
+        L = self.stream_length
+        B = self.num_streams
+        for t in range(L):
+            indices = [b * L + t for b in range(B)]
+            inp = self._slice(self.inputs, indices)
+            if self.outputs is None:
+                yield inp
+            else:
+                yield inp, self._slice(self.outputs, indices)
 
 
 # ---------------------------------------------------------------------------
@@ -453,7 +514,9 @@ class Data():
         """Load training text from FineWeb-EDU parquet shards.
 
         Uses the same shard infrastructure as embed.py so the model trains
-        on the same corpus that produced the word embeddings.
+        on the same corpus that produced the word embeddings. Documents
+        are kept in canonical shard order so ``SentenceStreamDataset`` can
+        produce contiguous streams.
         """
         if shard_dir is None:
             shard_dir = os.path.join(ProjectPaths.DATA_DIR, "fineweb")
@@ -473,7 +536,6 @@ class Data():
             raise RuntimeError("No documents found in shards.")
 
         # Split 80/10/10 into train/validation/test
-        random.shuffle(docs)
         n = len(docs)
         n_val = max(1, n // 10)
         n_test = max(1, n // 10)
@@ -491,7 +553,7 @@ class Data():
 
         print(f"Loaded {n_train} train, {n_val} val, {n_test} test documents")
         self.processLM(data)
-    def processLM(self, data, permute=True):
+    def processLM(self, data):
         train_tokens      = data["train"]["text"]
         train_labels      = data["train"]["label"]
         validation_tokens = data["validation"]["text"]
@@ -536,17 +598,41 @@ class Data():
             self.validation_output = [torch.tensor(l, dtype=torch.float) for l in validation_labels]
             self.test_output = [torch.tensor(l, dtype=torch.float) for l in test_labels]
 
-        if permute:
-            rand_indx = torch.randperm(len(self.train_output))
-            self.train_input  = [self.train_input[i] for i in rand_indx]
-            self.train_output = [self.train_output[i] for i in rand_indx]
-            if self._lm_labels is not None:
-                self._lm_labels["train"] = [self._lm_labels["train"][i] for i in rand_indx]
-
     def tokenize(self, TheLanguageModel):
         self.train_input      = TheLanguageModel.tokenize(self.train_input)
         self.validation_input = TheLanguageModel.tokenize(self.validation_input)
         self.test_input       = TheLanguageModel.tokenize(self.test_input)
+
+    def data_loader(self, split, num_streams, num_workers=0,
+                    prefetch_factor=None, pin_memory=False):
+        """Return a DataLoader over the given split as B contiguous streams.
+
+        ``split`` selects one of ``train`` / ``validation`` / ``test``.
+        ``num_streams`` is the effective batch size. It is capped at the
+        number of available items so callers never need to worry about
+        tiny eval splits (``batchSize=10`` on a 4-item XOR test set yields
+        one batch of 4 rows). ``num_workers`` and ``prefetch_factor`` are
+        forwarded to ``torch.utils.data.DataLoader``. The dataset self-
+        batches (yields ``(inputs, outputs)`` per step), so
+        ``batch_size=None`` on the DataLoader.
+        """
+        inputs = getattr(self, f"{split}_input")
+        outputs = getattr(self, f"{split}_output", None)
+        n = (inputs.shape[0] if isinstance(inputs, torch.Tensor)
+             else len(inputs))
+        if n == 0:
+            raise RuntimeError(
+                f"data_loader: {split}_input is empty -- "
+                "load() before building a loader"
+            )
+        streams = max(1, min(num_streams, n))
+        ds = SentenceStreamDataset(inputs, num_streams=streams,
+                                   outputs=outputs)
+        kwargs = {"batch_size": None, "num_workers": num_workers,
+                  "pin_memory": pin_memory}
+        if num_workers > 0 and prefetch_factor is not None:
+            kwargs["prefetch_factor"] = prefetch_factor
+        return DataLoader(ds, **kwargs)
     def data(self):
         data = {
             "train": {

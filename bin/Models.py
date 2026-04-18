@@ -1509,8 +1509,6 @@ class BasicModel(BaseModel):
                 accuracy += [correct / total]
                 TheMessage(f"Test Accuracy: {100 * correct / total:.2f}%")
 
-            self.inputSpace.shuffle()
-
             if profile:
                 profile.step()
 
@@ -1628,7 +1626,7 @@ class BasicModel(BaseModel):
         )
 
     def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
-                 optimizer=None):
+                 optimizer=None, batch_override=None):
         """Run a single batch: forward pass, loss, and (if training) backward + step.
 
         Args:
@@ -1637,15 +1635,22 @@ class BasicModel(BaseModel):
             batchSize: number of examples per batch.
             split: "train", "test", or "validation".
             optimizer: pre-built optimizer (required when train=True).
+            batch_override: optional ``(inputTensor, outputTensor)`` pair that
+                bypasses ``InputSpace.getBatch`` -- used by the streaming path
+                where the DataLoader has already produced the batch and
+                ``InputSpace._cached_embedding`` carries the masked embedding.
 
         Returns:
             (BatchResult, nextBatchNum) on success, or (None, batchNum) when
             the dataset is exhausted.
         """
         sentenceIdx = batchNum  # sentence index before getBatch increments
-        batch, batchNum = self.inputSpace.getBatch(batchNum, batchSize, split)
-        if batch is None:
-            return None, batchNum
+        if batch_override is not None:
+            batch = batch_override
+        else:
+            batch, batchNum = self.inputSpace.getBatch(batchNum, batchSize, split)
+            if batch is None:
+                return None, batchNum
 
         inputTensor, outputTensor = batch
         masked_pred = hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE'
@@ -1874,17 +1879,20 @@ class BasicModel(BaseModel):
     def runEpoch(self, optimizer=None, batchSize=10, split="train"):
         """Run one epoch over the dataset (training if optimizer given, eval if None).
 
-        Uses getBatch() stream interface for flexible batch iteration.
-        Delegates per-batch work to ``runBatch()``.
+        Drives batching with a ``SentenceStreamDataset`` DataLoader so every
+        split is consumed as ``B = batchSize`` contiguous streams. ``B`` is
+        capped at ``len(split)`` by ``data_loader``, so small eval sets
+        degrade gracefully.
 
         In inference mode (split="runtime", no optimizer): skips loss
         construction, output accumulation, progress printing, and CBOW
-        updates.  Returns immediately after the getBatch/runBatch loop.
+        updates. Uses ``InputSpace.getBatch`` directly for ARIR state
+        machine compatibility.
 
         Args:
             optimizer: pre-built Adam optimizer (persistent across epochs).
                        Pass None for evaluation mode.
-            batchSize: number of examples per batch (standard mode only)
+            batchSize: requested batch size (capped by split length).
             split: "train", "test", or "validation"
 
         Returns (output_loss, reconstruction_loss, all_predictions, last_reconstruction).
@@ -1899,8 +1907,9 @@ class BasicModel(BaseModel):
             ws.discourse.reset()
         ctx = torch.no_grad() if not training else nullcontext()
 
-
-        # Inference fast path: skip loss construction and accumulation
+        # Inference fast path: skip loss construction and accumulation.
+        # Runtime ARIR / inference use getBatch directly because its state
+        # machine is stateful across calls.
         if inference:
             with ctx:
                 batchNum = 0
@@ -1914,40 +1923,109 @@ class BasicModel(BaseModel):
                     self.outputSpace.putBatch(result)
             return 0, 0, [], []
 
-        # Training / evaluation path
         allOutput = []
-        outputChunks = []
         allInput = []
+        outputChunks = []
         inputChunks = []
-        outErr = 0
-        inErr = 0
-        masked_pred = hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE'
+        outErr = 0.0
+        inErr = 0.0
+        masked_pred = (hasattr(self, 'masked_prediction')
+                       and self.masked_prediction != 'NONE')
+
+        def record(result):
+            """Book-keep one runBatch result into the shared accumulators."""
+            nonlocal outErr, inErr
+            self.outputSpace.putBatch(result)
+            if result.lossOut is not None:
+                outErr = result.lossOut.item()
+            if result.lossIn is not None:
+                inErr = result.lossIn.item()
+            outputChunks.append(result.outputPred.clone().detach().squeeze())
+            if self.reversible and result.inputPred is not None:
+                inputChunks.append(result.inputPred.clone().detach().squeeze())
+
+        num_workers = getattr(self, '_num_workers', 0)
+        loader = self.inputSpace.data.data_loader(
+            split=split,
+            num_streams=batchSize,
+            num_workers=num_workers,
+            prefetch_factor=(2 if num_workers > 0 else None),
+            pin_memory=(TheDevice.get().type == "cuda"),
+        )
 
         with ctx:
-            batchNum = 0
-            while True:
-                result, batchNum = self.runBatch(
-                    train=training, batchNum=batchNum, batchSize=batchSize,
-                    split=split, optimizer=optimizer,
-                )
-                if result is None:
-                    break
+            step = 0
+            for inp_items, out_items in loader:
+                B = (inp_items.shape[0] if isinstance(inp_items, torch.Tensor)
+                     else len(inp_items))
+                inputTensor = self.inputSpace.prepInput(inp_items)
+                outputTensor = self.outputSpace.prepOutput(out_items)
 
-                self.outputSpace.putBatch(result)
+                text_batch = (isinstance(inp_items, list)
+                              and inp_items
+                              and isinstance(inp_items[0], str))
 
-                # Embedding training (post-batch, needs batchNum for sentence lookup)
-                if training and masked_pred:
-                    self.trainEmbeddings(('CBOW', 'SBOW', 'BOTH'), batchNum, split)
+                if masked_pred and text_batch:
+                    # Per-position masking over the B-wide sentence batch.
+                    # Embed once per fetched batch and reuse across mask
+                    # positions so we do not re-tokenize / re-lookup.
+                    with torch.no_grad():
+                        embedded = (self.inputSpace
+                                    .forward(inputTensor)
+                                    .materialize())
+                    # Reset the positional counter the forward() call
+                    # incremented -- the cached-embedding bypass does not
+                    # advance .p itself.
+                    self.inputSpace.subspace.whereEncoding.p = 0
 
-                outErr = result.lossOut.item() if result.lossOut is not None else 0.0
-                inErr = result.lossIn.item() if result.lossIn is not None else 0.0
+                    nVec = embedded.shape[1]
+                    N = min(max(len(s.split()) for s in inp_items), nVec)
+                    for pos in range(N):
+                        masked, targets, mask_positions = (
+                            self.inputSpace.expand_masked_batched(
+                                embedded, inp_items,
+                                self.masked_prediction, pos,
+                            ))
+                        self.inputSpace._cached_embedding = masked
+                        self.inputSpace._unmasked_embedding = (
+                            embedded.detach())
+                        self.inputSpace._mask_positions = mask_positions
+                        result, _ = self.runBatch(
+                            train=training, batchNum=step,
+                            batchSize=B, split=split,
+                            optimizer=optimizer,
+                            batch_override=(inputTensor,
+                                            targets.unsqueeze(1)),
+                        )
+                        if result is not None:
+                            record(result)
+                        step += 1
 
-                outputDataPred = result.outputPred.clone().detach().squeeze()
-                outputChunks.append(outputDataPred)
-
-                if self.reversible and result.inputPred is not None:
-                    inputDataPred = result.inputPred.clone().detach().squeeze()
-                    inputChunks.append(inputDataPred)
+                    # Embedding training once per fetched batch -- feed
+                    # each sentence's words directly (no index into
+                    # train_input needed).
+                    if (training
+                            and getattr(self, 'lexer', None)
+                            not in ('byte', 'bytes')):
+                        te = getattr(self, 'train_embedding', 'NONE')
+                        if te in ('CBOW', 'SBOW', 'BOTH'):
+                            method = 'CBOW' if te == 'CBOW' else 'SBOW'
+                            for sentence in inp_items:
+                                words = [t for t, _
+                                         in quick_parser(sentence)]
+                                self.inputSpace.train_embeddings(
+                                    words, method=method)
+                else:
+                    # Single forward/backward per B-wide batch.
+                    result, _ = self.runBatch(
+                        train=training, batchNum=step,
+                        batchSize=B, split=split,
+                        optimizer=optimizer,
+                        batch_override=(inputTensor, outputTensor),
+                    )
+                    if result is not None:
+                        record(result)
+                    step += 1
 
         if inputChunks:
             if outputChunks[0].dim() == 0:
@@ -3022,6 +3100,11 @@ class ModelFactory:
         # Environment overrides for num_shards/max_docs (set by train.py)
         num_shards = int(os.environ.get("BASIC_NUM_SHARDS", dat.get("numShards", 1)))
         max_docs = int(os.environ.get("BASIC_MAX_DOCS", dat.get("maxDocs", 10000)))
+
+        # DataLoader prefetch workers: 0 means synchronous in-process
+        # batch assembly (default for small / local runs).
+        _num_workers = int(trn.get("numWorkers", 0))
+
         TheData.load(dataset,
                      num_shards=num_shards,
                      max_docs=max_docs,
@@ -3029,9 +3112,12 @@ class ModelFactory:
                      dat=dat)
 
         m, _ = BaseModel.from_config(config_path, data=TheData)
+        m._num_workers = _num_workers
         TheMessage(f"Device: {TheDevice}")
 
         m = compile(m)
+        # compile() may return a wrapper; preserve the flag there too.
+        m._num_workers = _num_workers
 
         def _t(key, default=None):
             return trn.get(key, default)

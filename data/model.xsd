@@ -181,6 +181,9 @@
       <xs:element name="numTrials" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="numEpochs" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="batchSize" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- DataLoader prefetch workers. 0 means synchronous in-process
+           batch assembly. -->
+      <xs:element name="numWorkers" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="learningRate" type="positiveFloat" minOccurs="0"/>
       <xs:element name="reverseScale" type="unitInterval" minOccurs="0"/>
       <xs:element name="whatScale" type="nonNegativeFloat" minOccurs="0"/>

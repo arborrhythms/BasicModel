@@ -1,6 +1,8 @@
 <?xml version="1.0" ?>
 <model>
-  <!-- BasicModel chatbot: ~80K params, masked-word prediction with reconstruction -->
+  <!-- Streaming-path micro smoke: 200 docs, 1 epoch, batchSize=4.
+       Exercises SentenceStreamDataset + _runEpoch_streaming end-to-end
+       without the cost of a full BasicModel training run. -->
   <architecture>
     <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
@@ -10,27 +12,28 @@
     <ergodic>false</ergodic>
     <modelType>embedding</modelType>
     <maxResponseLength>4096</maxResponseLength>
-    <weightsPath>BasicModel.ckpt</weightsPath>
-    <embeddingPath>BasicModel.kv</embeddingPath>
+    <weightsPath>stream_smoke.ckpt</weightsPath>
+    <embeddingPath>stream_smoke.kv</embeddingPath>
 
     <data>
+      <dataset>text</dataset>
       <shardDir>data/fineweb</shardDir>
       <numShards>1</numShards>
-      <maxDocs>10000</maxDocs>
+      <maxDocs>200</maxDocs>
       <minFrequency>0.00001</minFrequency>
     </data>
 
     <training>
       <numTrials>1</numTrials>
-      <numEpochs>2</numEpochs>
-      <batchSize>64</batchSize>
-      <numWorkers>1</numWorkers>
+      <numEpochs>1</numEpochs>
+      <batchSize>4</batchSize>
+      <numWorkers>0</numWorkers>
       <learningRate>0.001</learningRate>
       <reverseScale>0.1</reverseScale>
       <maskedPrediction>ARLM</maskedPrediction>
       <trainEmbedding>ARLM</trainEmbedding>
-      <autoload>true</autoload>
-      <autosave>true</autosave>
+      <autoload>false</autoload>
+      <autosave>false</autosave>
       <sentencePrediction>true</sentencePrediction>
       <sentenceContextWindow>5</sentenceContextWindow>
       <sentenceCentroidHistory>3</sentenceCentroidHistory>
@@ -66,8 +69,6 @@
     <codebook>false</codebook>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace: nVectors = 2 * PerceptualSpace.nVectors = 128
-       (invertible doubles sequence length). nActive = 2 * InputSpace.nActive = 256. -->
   <ConceptualSpace>
     <nOutput>128</nOutput>
     <nDim>100</nDim>
@@ -78,7 +79,6 @@
     <codebook>true</codebook>
   </ConceptualSpace>
 
-  <!-- SymbolicSpace: passThrough — nActive = nVectors = ConceptualSpace.nActive = 256 -->
   <SymbolicSpace>
     <nOutput>128</nOutput>
     <nDim>100</nDim>
