@@ -294,3 +294,135 @@ def test_prep_sentence_batch_delegates_to_prepinput():
         proxy, ("s0", "s1", "s2"))
     assert result == "sentinel"
     assert seen["batch"] == ["s0", "s1", "s2"]
+
+
+# ---------------------------------------------------------------------------
+# Codebook.setW activations must not overwrite the codebook Parameter
+# ---------------------------------------------------------------------------
+
+def test_codebook_setw_preserves_parameter_against_activation():
+    """Regression for the checkpoint-corruption bug: once a Codebook holds
+    its VQ codebook as an ``nn.Parameter``, subsequent ``setW(activation)``
+    calls must stash the activation in a transient slot -- never replace
+    the Parameter.
+
+    Symptom that used to bite: save_weights serialises
+    ``subspace.event.W`` with a batch-shaped tensor (``[B, N, D]``)
+    instead of the codebook (``[V, D]``), and a fresh model can no
+    longer load the checkpoint.
+    """
+    import torch.nn as nn
+    import Spaces
+
+    cb = Spaces.Codebook()
+    # Install a fake codebook Parameter shaped [V=4, D=3] the way
+    # ``addVectors`` would.
+    codebook = nn.Parameter(torch.eye(4, 3))
+    cb.setW(codebook)
+    assert "W" in cb._parameters, "codebook must register as a Parameter"
+    saved_shape = list(cb.state_dict()["W"].shape)
+    assert saved_shape == [4, 3]
+
+    # Now push an activation through setW -- shape [B=2, N=4, D=3], the
+    # exact pattern that happens during the forward pass.
+    activation = torch.randn(2, 4, 3)
+    cb.setW(activation)
+
+    # The codebook Parameter must still be the registered W.
+    assert "W" in cb._parameters, (
+        "setW(activation) must not strip the codebook Parameter"
+    )
+    state = cb.state_dict()
+    assert "W" in state
+    assert list(state["W"].shape) == [4, 3], (
+        f"state_dict W must still be the codebook (shape [4, 3]); "
+        f"got {list(state['W'].shape)} -- activations leaked into "
+        "state_dict again"
+    )
+
+    # getW() must return the transient activation while cached, so the
+    # forward pipeline still sees what it stored.
+    got = cb.getW()
+    assert got.shape == (2, 4, 3)
+    assert torch.equal(got, activation)
+
+    # Clearing the activation via setW(None) must preserve the codebook.
+    cb.setW(None)
+    assert "W" in cb._parameters
+    restored = cb.getW()
+    assert torch.equal(restored, codebook), (
+        "after setW(None) getW() should fall back to the codebook Parameter"
+    )
+
+
+# ---------------------------------------------------------------------------
+# toDevice must keep list-of-tensor splits on CPU so DataLoader workers
+# can pickle them across process boundaries.
+# ---------------------------------------------------------------------------
+
+def test_todevice_keeps_list_of_tensor_outputs_on_cpu():
+    """List-of-tensor splits (masked-LM placeholder outputs, per-sentence
+    targets) must stay on CPU after ``toDevice()``. Live CUDA tensors
+    can't be shipped from a DataLoader worker process back to the main
+    process; the workers crash with 'Attempted to send CUDA tensor
+    received from another process' when we try.
+
+    This test uses whatever device ``TheDevice`` resolves to locally
+    (CPU in CI), but the invariant it asserts -- ``toDevice()`` leaves
+    list tensors alone -- is what prevents the crash on CUDA hosts.
+    """
+    import data as data_mod
+
+    td = data_mod.Data()
+    td.train_input = ["a b c", "d e f", "g h i", "j k l"]
+    # Per-sentence placeholder tensors, as ``processLM`` creates for
+    # masked-prediction mode.
+    placeholder = [torch.zeros(1) for _ in td.train_input]
+    td.train_output = placeholder
+    td.validation_input = []
+    td.validation_output = []
+    td.test_input = []
+    td.test_output = []
+
+    td.toDevice()
+
+    # The list identity / tensor identity should be preserved -- toDevice
+    # must not have cloned each element onto some other device.
+    assert td.train_output is placeholder, (
+        "toDevice unexpectedly rebuilt the list-of-tensor split"
+    )
+    for t in td.train_output:
+        assert t.device.type == "cpu", (
+            f"list-of-tensor output element moved off CPU: {t.device}"
+        )
+
+
+def test_data_loader_list_outputs_survive_worker_pickling():
+    """End-to-end: a streaming DataLoader with ``num_workers=1`` over a
+    list-of-tensor output split must not raise. The worker must be able
+    to pickle each slice back to the main process.
+
+    Skipped on platforms where ``fork`` isn't available and spawning is
+    too slow to be worth running in the fast suite.
+    """
+    import multiprocessing as mp
+    if mp.get_start_method(allow_none=True) == "spawn":
+        pytest.skip("spawn start-method is too slow for a fast unit test")
+
+    import data as data_mod
+
+    td = data_mod.Data()
+    td.train_input = [f"sent {i}" for i in range(8)]
+    td.train_output = [torch.zeros(1) for _ in td.train_input]
+    td.toDevice()  # must leave the list on CPU
+
+    loader = td.data_loader(
+        split="train", num_streams=4,
+        num_workers=1, prefetch_factor=2,
+    )
+    batches = list(loader)
+    assert len(batches) == 2   # stream_length = 8 // 4
+    inp0, out0 = batches[0]
+    assert list(inp0) == ["sent 0", "sent 2", "sent 4", "sent 6"]
+    assert all(isinstance(t, torch.Tensor) for t in out0)
+    assert all(t.device.type == "cpu" for t in out0)

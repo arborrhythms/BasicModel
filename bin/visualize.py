@@ -241,6 +241,10 @@ class Report:
         else:
             _, predicted = torch.max(y_pred, 1)
             _, actual = torch.max(model.outputSpace.getTestOutput(), 1)
+        # test_output now lives on CPU (list-of-tensors kept off the
+        # accelerator so DataLoader workers can pickle slices); align
+        # ``actual`` to the prediction device before comparisons.
+        actual = actual.to(predicted.device)
 
         nClasses = int(actual.max().item()) + 1
         if model.certainty:

@@ -249,11 +249,19 @@ class Data():
         self._compute_ranges()
         self.toDevice()
     def toDevice(self):
-        """Move all data tensors to TheDevice and pre-shape for training.
+        """Move pre-stacked data tensors to TheDevice and pre-shape them.
 
-        Adds the trailing dimension (unsqueeze) that prepInput/prepOutput
-        previously applied per-batch, so the hot loop can skip both the
-        unsqueeze and the redundant .to() call.
+        Applies the trailing-dim unsqueeze that ``prepInput`` / ``prepOutput``
+        used to apply per-batch so the hot loop avoids both the unsqueeze
+        and a redundant ``.to()`` call.
+
+        List-of-tensor splits (e.g. masked-LM placeholder outputs, per-
+        sentence targets) are deliberately left on CPU: the streaming
+        ``DataLoader`` pickles slices of these lists across worker
+        processes, and live CUDA tensors can't cross that boundary.
+        ``prepInput`` / ``prepOutput`` still call ``.to(TheDevice.get())``
+        after stacking in the main process, so the per-batch transfer
+        cost stays O(batch) rather than O(dataset).
         """
         for attr in ("train_input", "train_output",
                       "test_input", "test_output",
@@ -265,10 +273,18 @@ class Data():
                     v = v.unsqueeze(2)
                 setattr(self, attr, v)
             elif isinstance(v, list):
-                setattr(self, attr, [
-                    t.to(TheDevice.get()) if isinstance(t, torch.Tensor) else t
-                    for t in v
-                ])
+                # List-of-tensors must live on CPU: the streaming
+                # DataLoader pickles slices of these lists across worker
+                # processes, and live accelerator tensors (CUDA / MPS)
+                # cannot be reduced for cross-process sharing. The
+                # default torch device may be an accelerator in this
+                # environment, so tensors created via plain
+                # ``torch.zeros(...)`` in ``processLM`` may already be
+                # off-CPU -- move them back here, in place, to preserve
+                # list identity for any external references.
+                for i, t in enumerate(v):
+                    if isinstance(t, torch.Tensor) and t.device.type != "cpu":
+                        v[i] = t.cpu()
 
     def _compute_ranges(self):
         """Compute global scalar min/max for input and output data.
@@ -628,6 +644,36 @@ class Data():
         streams = max(1, min(num_streams, n))
         ds = SentenceStreamDataset(inputs, num_streams=streams,
                                    outputs=outputs)
+
+        # Live CUDA tensors can't cross DataLoader worker process
+        # boundaries (torch.multiprocessing reductions fail with
+        # "Attempted to send CUDA tensor received from another process").
+        # ``toDevice()`` moves both stacked tensor splits and list-of-
+        # tensor splits onto CUDA, so we have to check both shapes. If
+        # anything the worker would yield is CUDA-resident, collapse to
+        # in-process batching and skip pin_memory (which only applies to
+        # host tensors).
+        def _has_cuda(x):
+            if x is None:
+                return False
+            if isinstance(x, torch.Tensor):
+                return x.is_cuda
+            if isinstance(x, (list, tuple)) and len(x) > 0:
+                head = x[0]
+                return isinstance(head, torch.Tensor) and head.is_cuda
+            return False
+
+        on_cuda = _has_cuda(inputs) or _has_cuda(outputs)
+        if on_cuda:
+            if num_workers > 0:
+                print(
+                    f"[data_loader] {split} data is on CUDA; forcing "
+                    f"num_workers=0 (requested {num_workers}) to avoid "
+                    "cross-process CUDA tensor sharing."
+                )
+                num_workers = 0
+            pin_memory = False
+
         kwargs = {"batch_size": None, "num_workers": num_workers,
                   "pin_memory": pin_memory}
         if num_workers > 0 and prefetch_factor is not None:

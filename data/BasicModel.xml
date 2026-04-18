@@ -88,10 +88,10 @@
 
   <OutputSpace>
     <nOutput>1</nOutput>
-    <nDim>104</nDim>
+    <nDim>100</nDim>
     <nVectors>1</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
   </OutputSpace>
 
 </model>

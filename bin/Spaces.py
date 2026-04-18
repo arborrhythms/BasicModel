@@ -905,6 +905,11 @@ class Codebook(Basis):
     def __init__(self):
         super().__init__()
         self.W = None
+        # Transient per-forward activation payload. Held separately from
+        # self.W so the codebook Parameter (self.W once ``addVectors`` has
+        # run) is never overwritten -- activations must not end up in
+        # state_dict.
+        self._active_payload = None
         self.customVQ = True
         self.snapDistance = 0.1
         self.eta = 0.9
@@ -917,14 +922,46 @@ class Codebook(Basis):
         self.last_commit_loss = None
 
     def getW(self):
+        # While an activation payload is cached, callers see it; otherwise
+        # they see the codebook Parameter.
+        if self._active_payload is not None:
+            return self._active_payload
         return self.W
 
     def setW(self, value):
-        # See Tensor.setW for the rationale -- W alternates between
-        # nn.Parameter (from VectorQuantize.codebook) and plain tensor.
+        """Assign W without ever clobbering the codebook Parameter.
+
+        The ``event`` slot on a SubSpace is dual-purpose: at build time it
+        receives the VQ codebook (``nn.Parameter`` via ``addVectors``) and
+        at forward time it receives transient muxed activations. If we
+        blindly let activations replace the Parameter, they leak into
+        ``state_dict()`` and the checkpoint ends up recording a
+        batch-shaped tensor instead of the codebook. Route non-Parameter
+        writes to ``_active_payload`` so the codebook stays put.
+
+        ``value=None`` clears only the transient activation; the codebook
+        Parameter (if any) is preserved.
+        """
+        if value is None:
+            self._active_payload = None
+            return
+        if isinstance(value, nn.Parameter):
+            # Register (or re-register) the codebook Parameter. Clear any
+            # stale activation so subsequent getW() returns the codebook.
+            if "W" in self._parameters:
+                del self._parameters["W"]
+            self.W = value
+            self._active_payload = None
+            return
+        # Plain tensor -- an activation. If a codebook is already held,
+        # cache the activation without disturbing the Parameter. If there
+        # is no codebook yet (e.g. non-customVQ init passes a plain
+        # tensor), fall back to the legacy slot so callers still see it.
         if "W" in self._parameters:
-            del self._parameters["W"]
+            self._active_payload = value
+            return
         self.W = value
+        self._active_payload = None
 
     def getSize(self):
         return self.nVectors

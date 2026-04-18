@@ -1497,6 +1497,10 @@ class BasicModel(BaseModel):
             elif allOut.dim() == 1:
                 predicted = (allOut > 0.5).long()
                 actual = (self.outputSpace.getTestOutput().squeeze() > 0.5).long()
+                # test_output now lives on CPU (list-of-tensors kept off the
+                # accelerator so DataLoader workers can pickle slices); align
+                # to the model's device for comparison.
+                actual = actual.to(predicted.device)
                 total   = predicted.size(0)
                 correct = (predicted == actual).sum().item()
                 accuracy += [correct / total]
@@ -1504,6 +1508,7 @@ class BasicModel(BaseModel):
             else:
                 _, predicted = torch.max(allOut, 1)
                 _, actual = torch.max(self.outputSpace.getTestOutput(), 1)
+                actual = actual.to(predicted.device)
                 total   = predicted.size(0)
                 correct = (predicted == actual).sum().item()
                 accuracy += [correct / total]
