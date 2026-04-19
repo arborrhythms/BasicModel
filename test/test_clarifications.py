@@ -36,7 +36,7 @@ class _StubBasis:
              torch.tensor(float(score)))
         )
 
-    def part(self, a, b, monotonic=True):
+    def part(self, a, b, monotonic=True, scalar=False):
         for ae, be, score in self.entries:
             if torch.equal(ae, a) and torch.equal(be, b):
                 return score

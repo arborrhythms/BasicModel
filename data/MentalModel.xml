@@ -73,9 +73,9 @@
         <S>query(S, S)</S>
         <S>swap(S, S)</S>
         <S>equals(S, S)</S>
-        <S>part(S, S)</S>
         <S>C</S>
         <C>not(C)</C>
+        <C>part(C, C)</C>
         <C>intersection(C, C)</C>
         <C>union(C, C)</C>
         <C>lower(C, C)</C>

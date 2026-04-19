@@ -1,9 +1,13 @@
-"""Tests for ImpenetrableLayer -- mereological orthogonality regularizer.
+"""Tests for ImpenetrableLayer -- mereological separation regularizer.
 
-Phase 2 of the Belnap-Dunn bivector plan: the ImpenetrableLayer pushes
-distinct codebook rows toward disjointness via an antisymmetry penalty,
-enforces transitive parthood, and maintains a variance floor so rows
-don't collapse to a single point.
+Five-relations design: each ordered pair (i, j) of codebook rows is
+classified via clipped-cosine parthood into one of {disjoint, part_ij,
+part_ji, equal, overlap}. The penalty is
+``overlap_strength(i, j) * |trust(i) - trust(j)|`` where
+``overlap_strength = min(P[i,j], P[j,i]) * (1 - max(P[i,j], P[j,i])**k)``
+damps to zero as the pair approaches identity (equal). See
+basicmodel/doc/BuddhistParallels.md for the 4-valued (quaternary) truth
+semantics the codebook underwrites.
 """
 
 import os
@@ -24,99 +28,96 @@ def _basis(K=8, D=4):
     return b
 
 
-class TestAntisymmetry(unittest.TestCase):
+class _FakeVQ:
+    """Minimal VQ stand-in carrying an EMA `cluster_size` trust signal."""
+    def __init__(self, cluster_size):
+        self.cluster_size = torch.as_tensor(cluster_size, dtype=torch.float32)
 
-    def test_loss_zero_when_disjoint(self):
+
+def _attach_vq(basis, cluster_size):
+    basis.vq = _FakeVQ(cluster_size)
+    return basis
+
+
+class TestOverlapPenalty(unittest.TestCase):
+    """`overlap * |trust-diff|` is the only source of penalty beyond variance."""
+
+    def test_disjoint_codebook_zero_loss(self):
+        """Orthogonal rows -- no overlap -> zero overlap loss regardless of trust."""
         torch.manual_seed(0)
         K, D = 4, 4
-        basis = _basis(K=K, D=D)
-        # Each row owns one unique dim -> disjoint supports, so part(i, j) ~= 0
-        # for all i != j and the antisymmetry penalty is ~0.
         cb = torch.eye(K, D)
+        basis = _attach_vq(_basis(K=K, D=D), [1.0, 2.0, 3.0, 4.0])
         layer = ImpenetrableLayer(
-            antisymmetry_weight=1.0, transitivity_weight=0.0,
-            variance_floor=0.0, bivector=False)
+            overlap_weight=1.0, variance_floor=0.0)
         loss = layer(cb, basis)
-        self.assertLess(loss.item(), 0.05)
+        self.assertLess(loss.item(), 1e-4)
+        counts = layer.last_relation_counts
+        self.assertIsNotNone(counts)
+        # All off-diagonal pairs disjoint -> K*(K-1) disjoint pairs.
+        self.assertEqual(counts["disjoint"], K * (K - 1))
+        self.assertEqual(counts["overlap"], 0)
 
-    def test_loss_penalizes_mutual_parthood(self):
+    def test_equal_rows_damped_to_zero_loss(self):
+        """Rows (nearly) identical -- damp factor zeroes the overlap penalty."""
         K, D = 4, 4
-        basis = _basis(K=K, D=D)
-        # Two identical rows => P[0, 1] = P[1, 0] ~= 1 => mutual parthood high.
         cb = torch.zeros(K, D)
         cb[0] = torch.tensor([1.0, 1.0, 0.0, 0.0])
-        cb[1] = torch.tensor([1.0, 1.0, 0.0, 0.0])
-        # Make rows 2, 3 unrelated to avoid other contributions.
+        cb[1] = torch.tensor([1.0, 1.0, 0.0, 0.0])  # identical to row 0
         cb[2] = torch.tensor([0.0, 0.0, 1.0, 0.0])
         cb[3] = torch.tensor([0.0, 0.0, 0.0, 1.0])
+        # Mismatched trust on the equal pair; damp factor must still zero out.
+        basis = _attach_vq(_basis(K=K, D=D), [9.0, 1.0, 1.0, 1.0])
         layer = ImpenetrableLayer(
-            antisymmetry_weight=1.0, transitivity_weight=0.0,
-            variance_floor=0.0, bivector=False)
+            overlap_weight=1.0, variance_floor=0.0,
+            equal_suppression=4.0)
         loss = layer(cb, basis)
-        self.assertGreater(loss.item(), 0.05)
+        self.assertLess(loss.item(), 5e-3)
 
-    def test_paired_poles_excluded_in_bivector(self):
-        K, D = 4, 4
-        basis = _basis(K=K, D=D)
-        # Row 0 and row 1 are mutual parts; under bivector they are a paired
-        # pole (2k=0, 2k+1=1) and must be excluded from the penalty.
+    def test_overlap_matched_trust_zero_loss(self):
+        """Overlapping rows with equal VQ counts -> |trust-diff| = 0 -> zero loss."""
+        K, D = 3, 4
         cb = torch.zeros(K, D)
-        cb[0] = torch.tensor([1.0, 0.0, 0.0, 0.0])
-        cb[1] = torch.tensor([1.0, 0.0, 0.0, 0.0])
-        cb[2] = torch.tensor([0.0, 1.0, 0.0, 0.0])
-        cb[3] = torch.tensor([0.0, 0.0, 1.0, 0.0])
-        bivector = ImpenetrableLayer(
-            antisymmetry_weight=1.0, transitivity_weight=0.0,
-            variance_floor=0.0, bivector=True)
-        classical = ImpenetrableLayer(
-            antisymmetry_weight=1.0, transitivity_weight=0.0,
-            variance_floor=0.0, bivector=False)
-        biv_loss = bivector(cb, basis).item()
-        cls_loss = classical(cb, basis).item()
-        # Bivector mode must produce a strictly smaller penalty because the
-        # (0, 1) pair is excluded.
-        self.assertLess(biv_loss, cls_loss)
-
-
-class TestTransitivity(unittest.TestCase):
-
-    def test_triangle_violation_penalized(self):
-        torch.manual_seed(1)
-        D = 5
-        # Construct a chain a subset b subset c, but deliberately sabotage
-        # a subset c so transitivity is violated.
-        cb = torch.zeros(4, D)
-        cb[0] = torch.tensor([1.0, 0.0, 0.0, 0.0, 0.0])
-        cb[1] = torch.tensor([1.0, 1.0, 0.0, 0.0, 0.0])
-        cb[2] = torch.tensor([1.0, 1.0, 1.0, 0.0, 0.0])
-        # Padding row (unused)
-        cb[3] = torch.tensor([0.0, 0.0, 0.0, 1.0, 1.0])
-        basis = _basis(K=4, D=D)
-        # Force the sampler to always pick (0, 1, 2) by monkey-patching
-        # the triple indices via torch.manual_seed + enough samples.
-        torch.manual_seed(2)
+        cb[0] = torch.tensor([1.0, 0.5, 0.0, 0.0])
+        cb[1] = torch.tensor([0.5, 1.0, 0.0, 0.0])  # partial overlap with row 0
+        cb[2] = torch.tensor([0.0, 0.0, 1.0, 0.0])
+        # All trusts equal -> diff 0 everywhere.
+        basis = _attach_vq(_basis(K=K, D=D), [1.0, 1.0, 1.0])
         layer = ImpenetrableLayer(
-            antisymmetry_weight=0.0, transitivity_weight=1.0,
-            variance_floor=0.0, n_triples=256, bivector=False)
+            overlap_weight=1.0, variance_floor=0.0)
         loss = layer(cb, basis)
-        # Chain is actually transitive here (a subset b subset c AND a subset c),
-        # so transitivity loss should be ~0. Flip the sign below to verify
-        # the opposite case.
-        self.assertLessEqual(loss.item(), 0.1)
+        self.assertAlmostEqual(loss.item(), 0.0, places=5)
 
-    def test_transitive_chain_zero(self):
-        D = 6
-        cb = torch.zeros(3, D)
-        cb[0] = torch.tensor([1.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-        cb[1] = torch.tensor([1.0, 1.0, 0.0, 0.0, 0.0, 0.0])
-        cb[2] = torch.tensor([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
-        basis = _basis(K=3, D=D)
-        torch.manual_seed(3)
+    def test_overlap_mismatched_trust_penalized(self):
+        """Same shape, different VQ counts -> overlap loss > 0."""
+        K, D = 3, 4
+        cb = torch.zeros(K, D)
+        cb[0] = torch.tensor([1.0, 0.5, 0.0, 0.0])
+        cb[1] = torch.tensor([0.5, 1.0, 0.0, 0.0])  # partial overlap
+        cb[2] = torch.tensor([0.0, 0.0, 1.0, 0.0])
+        # Very different trusts for the overlapping pair.
+        basis = _attach_vq(_basis(K=K, D=D), [10.0, 1.0, 1.0])
         layer = ImpenetrableLayer(
-            antisymmetry_weight=0.0, transitivity_weight=1.0,
-            variance_floor=0.0, n_triples=128, bivector=False)
+            overlap_weight=1.0, variance_floor=0.0)
         loss = layer(cb, basis)
-        self.assertLessEqual(loss.item(), 0.05)
+        self.assertGreater(loss.item(), 0.0)
+        counts = layer.last_relation_counts
+        self.assertIsNotNone(counts)
+        self.assertGreaterEqual(counts["overlap"], 2)  # (0,1) and (1,0)
+
+    def test_relation_counts_partition_non_diagonal(self):
+        """Sum of the five relation counts equals K*(K-1) (all ordered off-diagonal pairs)."""
+        torch.manual_seed(5)
+        K, D = 5, 4
+        cb = torch.randn(K, D)
+        basis = _attach_vq(_basis(K=K, D=D), [1.0] * K)
+        layer = ImpenetrableLayer(
+            overlap_weight=1.0, variance_floor=0.0)
+        layer(cb, basis)
+        counts = layer.last_relation_counts
+        self.assertIsNotNone(counts)
+        total = sum(counts.values())
+        self.assertEqual(total, K * (K - 1))
 
 
 class TestVarianceFloor(unittest.TestCase):
@@ -126,8 +127,7 @@ class TestVarianceFloor(unittest.TestCase):
         cb = torch.full((K, D), 0.5)  # all rows identical -> std = 0
         basis = _basis(K=K, D=D)
         layer = ImpenetrableLayer(
-            antisymmetry_weight=0.0, transitivity_weight=0.0,
-            variance_floor=0.1, bivector=False)
+            overlap_weight=0.0, variance_floor=0.1)
         loss = layer(cb, basis)
         self.assertAlmostEqual(loss.item(), 0.1, places=5)
 
@@ -137,8 +137,7 @@ class TestVarianceFloor(unittest.TestCase):
         cb = torch.rand(K, D)
         basis = _basis(K=K, D=D)
         layer = ImpenetrableLayer(
-            antisymmetry_weight=0.0, transitivity_weight=0.0,
-            variance_floor=0.01, bivector=False)
+            overlap_weight=0.0, variance_floor=0.01)
         loss = layer(cb, basis)
         # Random rows should easily clear a floor of 0.01.
         self.assertAlmostEqual(loss.item(), 0.0, places=5)
@@ -146,37 +145,36 @@ class TestVarianceFloor(unittest.TestCase):
 
 class TestDisabled(unittest.TestCase):
 
-    def test_disabled_layer_returns_zero(self):
-        basis = _basis(K=4, D=3)
+    def test_disabled_short_circuits(self):
+        """enabled=False -> loss=0 and basis is never accessed."""
+        class _FailBasis:
+            def part(self, *a, **kw):
+                raise AssertionError("basis.part must not be called when disabled")
+            vq = None
         cb = torch.rand(4, 3)
         layer = ImpenetrableLayer(
-            antisymmetry_weight=1.0, transitivity_weight=1.0,
-            variance_floor=0.1, enabled=False, bivector=True)
-        self.assertAlmostEqual(layer(cb, basis).item(), 0.0, places=7)
+            overlap_weight=1.0, variance_floor=0.1, enabled=False)
+        self.assertAlmostEqual(layer(cb, _FailBasis()).item(), 0.0, places=7)
 
     def test_all_zero_weights_returns_zero(self):
         basis = _basis(K=4, D=3)
         cb = torch.rand(4, 3)
         layer = ImpenetrableLayer(
-            antisymmetry_weight=0.0, transitivity_weight=0.0,
-            variance_floor=0.0, bivector=True)
+            overlap_weight=0.0, variance_floor=0.0)
         self.assertAlmostEqual(layer(cb, basis).item(), 0.0, places=7)
 
 
 class TestWiring(unittest.TestCase):
-    """Exercises SymbolicSpace.impenetrable_loss accessor contract."""
+    """`ImpenetrableLayer` accessor contract on null inputs."""
 
-    def test_accessor_returns_zero_tensor_without_codebook(self):
-        layer = ImpenetrableLayer(
-            antisymmetry_weight=0.5, transitivity_weight=0.0,
-            variance_floor=0.0, bivector=True)
-
-        # Simulate "no codebook yet" by passing None.
+    def test_returns_zero_tensor_without_codebook(self):
         class _FakeBasis:
+            vq = None
             def getW(self):
                 return None
-            def part(self, x, y, monotonic=False):
-                raise AssertionError("should not be called")
+            def part(self, *a, **kw):
+                raise AssertionError("should not be called when codebook is None")
+        layer = ImpenetrableLayer(overlap_weight=0.5, variance_floor=0.0)
         result = layer(None, _FakeBasis())
         self.assertAlmostEqual(result.item(), 0.0, places=7)
 

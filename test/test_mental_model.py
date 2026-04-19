@@ -79,14 +79,15 @@ class TestMentalModelForwardReverse(unittest.TestCase):
         # SyntacticLayers are now on the Spaces, not Grammar
         self.assertIsNotNone(model.wordSpace.conceptualSyntacticLayer)
         self.assertIsNotNone(model.wordSpace.symbolicSyntacticLayer)
-        # C-tier methods (equals/part are on S-tier)
+        # C-tier methods: part is now on C-tier (mereological parthood);
+        # equals stays on S-tier (delegates to concept-level equality).
         self.assertNotIn('equals', Spaces.TheGrammar.c_methods)
-        self.assertNotIn('part', Spaces.TheGrammar.c_methods)
+        self.assertIn('part', Spaces.TheGrammar.c_methods)
         self.assertIn('union', Spaces.TheGrammar.c_methods)
         self.assertIn('not', Spaces.TheGrammar.c_methods)
         # S-tier methods
         self.assertIn('equals', Spaces.TheGrammar.s_methods)
-        self.assertIn('part', Spaces.TheGrammar.s_methods)
+        self.assertNotIn('part', Spaces.TheGrammar.s_methods)
 
     def test_subspace_words_clearable(self):
         """SubSpace word lists can be cleared on all tiers."""
@@ -101,9 +102,10 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
     """MentalModel should expose the grammar configured in MentalModel.xml."""
 
     # Expected canonical rule strings from MentalModel.xml after the
-    # trinity / coordination / demux / query extensions. The S-tier
-    # ordering follows the literal XML order: trinity -> coordination ->
-    # demux selectors -> query -> swap/equals/part -> S->C transition.
+    # mereological refactor. S-tier: trinity -> coordination -> demux
+    # selectors -> query -> swap/equals -> S->C transition. C-tier now
+    # includes part (mereological parthood) alongside not / intersection /
+    # union / lower / lift.
     EXPECTED_RULES = [
         "START -> S",
         "S -> true(S)",
@@ -117,9 +119,9 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
         "S -> query(S, S)",
         "S -> swap(S, S)",
         "S -> equals(S, S)",
-        "S -> part(S, S)",
         "S -> C",
         "C -> not(C)",
+        "C -> part(C, C)",
         "C -> intersection(C, C)",
         "C -> union(C, C)",
         "C -> lower(C, C)",
@@ -139,18 +141,18 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
 
         canonicals = [rule.canonical for rule in Spaces.TheGrammar.rules]
         self.assertEqual(canonicals, self.EXPECTED_RULES)
-        # 1 START + 13 S-tier + 7 C-tier + 2 P-tier = 23 total rules.
+        # 1 START + 12 S-tier + 8 C-tier + 2 P-tier = 23 total rules.
         self.assertEqual(len(Spaces.TheGrammar.rules), 23)
         self.assertEqual(Spaces.TheGrammar.interpretation, 0.5)
 
-        # S-tier indices 1..13 (12 method rules + transition at index 13)
+        # S-tier indices 1..12 (11 method rules + transition at index 12)
         self.assertEqual(model.wordSpace.symbolicSyntacticLayer.all_rules,
-                         list(range(1, 14)))
-        self.assertEqual(model.wordSpace.symbolicSyntacticLayer.transition_rule, 13)
+                         list(range(1, 13)))
+        self.assertEqual(model.wordSpace.symbolicSyntacticLayer.transition_rule, 12)
 
-        # C-tier indices 14..20 (6 method rules + transition at index 20)
+        # C-tier indices 13..20 (7 method rules + transition at index 20)
         self.assertEqual(model.wordSpace.conceptualSyntacticLayer.all_rules,
-                         list(range(14, 21)))
+                         list(range(13, 21)))
         self.assertEqual(model.wordSpace.conceptualSyntacticLayer.transition_rule, 20)
 
         # P-tier indices 21..22 (chunk, terminal I)

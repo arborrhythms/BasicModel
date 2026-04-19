@@ -14,8 +14,9 @@ WikiOracle formalizes the same process computationally through a set of
 structured truth objects.
 
 This document maps WikiOracle's ontology to the **sources of valid cognition**
-recognized in Buddhist logic and explains how the **tetralemma** can be
-interpreted using **Kleene logic** and **non-affirming negation**.
+recognized in Buddhist logic and explains how the **tetralemma** is
+represented using **4-valued (quaternary) truth logic** and
+**non-affirming negation**.
 
 ## Valid Cognition in Dharmakirti
 
@@ -97,36 +98,38 @@ Example:
 Both may be recorded simultaneously without contradiction because
 truth is **frame-indexed**.
 
-## Tetralemma Interpretation
+## Quaternary Truth and the Catuskoti
 
-Buddhist logic frequently uses the **catuskoti (tetralemma)**, as articulated by Nagarjuna in the *Mulamadhyamakakarika*:
+WikiOracle's concept activation is a 2-dim bivector `[aP, aN]` encoding
+the four corners of Nagarjuna's tetralemma (*catuskoti*), as articulated
+in the *Mulamadhyamakakarika*:
 
-| Classical Form | Sanskrit                 | WikiOracle Interpretation                         | Truth Type          |
-| -------------- | ------------------------ | ------------------------------------------------- | ------------------- |
-| True           | *asti*                   | affirmed                                          | `<fact trust="+1">` |
-| False          | *nasti*                  | negated                                           | `<fact trust="-1">` |
-| Both           | *ubhaya*                 | indeterminate -- neither affirmed nor negated      | `<fact trust="0">`  |
-| Neither        | *anubhaya* / *avaktavya* | outside the truth lattice entirely; inexpressible | `<feeling>`         |
+| State                | Sanskrit   | `[aP, aN]` | WikiOracle reading                                              |
+| -------------------- | ---------- | ---------- | --------------------------------------------------------------- |
+| True                 | *asti*     | `[1, 0]`   | affirmed                                                        |
+| False                | *nasti*    | `[0, 1]`   | negated                                                         |
+| Both (inconsistency) | *ubhaya*   | `[1, 1]`   | same concept affirmed **and** negated (e.g., across frames/sources) |
+| Neither (unknown)    | *anubhaya* | `[0, 0]`   | neither affirmed nor negated                                    |
 
-The "both" (*ubhaya*) position represents the indeterminate case: within a single frame, the proposition is neither established as true nor as false. Across multiple frames, the same value represents genuine frame disagreement.
+Operations on the activation are 4-valued (quaternary truth logic),
+respecting De Morgan under pole-swap negation `¬[aP, aN] = [aN, aP]`:
 
-The "neither" (*anubhaya*) position is what Nagarjuna uses to indicate that a proposition falls outside the domain of truth-evaluation entirely. Feelings occupy this position: they are experiential, not propositional.
+- Conjunction: `[min(aP, bP), max(aN, bN)]` (truth-min, falsity-max)
+- Disjunction: `[max(aP, bP), min(aN, bN)]`
 
-## Kleene Logic and Epistemic States
+The *Both* corner is no longer conflated with *indeterminate*, nor
+exiled to the `<feeling>` type. Inconsistency is a first-class
+activation state which the loss can detect and suppress (see
+`TruthLayer.tetralemma_balance_penalty` and
+`TruthLayer.consistency` / `suggest_clarifications`).
 
-Within a single frame, WikiOracle uses a three-valued epistemic logic
-similar to **Kleene logic**:
+Feelings (*vedana*) continue to occupy the *Neither* position
+semantically -- pre-conceptual, outside propositional truth -- but
+are distinguishable from *unknown* concepts by carrying no codebook
+commitment at all.
 
-| Value      | Meaning                                          | Tetralemma      |
-| ---------- | ------------------------------------------------ | --------------- |
-| +1 (True)  | affirmed conceptual cognition                    | True (*asti*)   |
-| -1 (False) | negated conceptual cognition                     | False (*nasti*) |
-| 0 (Both)   | indeterminate -- insufficient to affirm or negate | Both (*ubhaya*) |
-
-The fourth tetralemma state -- Neither -- is occupied by Feelings, which are not truth-evaluable propositions and therefore fall outside the Kleene lattice entirely.
-
-When multiple frames are considered simultaneously,
-the "both" state emerges naturally as frame disagreement.
+When multiple frames are considered simultaneously, the *Both* state
+emerges naturally as frame disagreement.
 
 ## Negation and Logical Operators
 

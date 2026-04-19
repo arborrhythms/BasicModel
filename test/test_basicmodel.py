@@ -668,15 +668,49 @@ class TestSubSpaceActiveEncoding(unittest.TestCase):
     """ActiveEncoding round-trip through SubSpace."""
 
     def test_activation_stored_and_retrievable(self):
+        """Legacy scalar [B, N] is lifted to 4-valued bivector [B, N, 2]."""
         ae = Models.ActiveEncoding()
-        act = torch.tensor([[0.5, 0.8, 0.1]])  # [1, 3] -- batch=1, nVectors=3
-        encoded = ae.encode(act.squeeze(0))
+        self.assertEqual(ae.nDim, 2)
+        act_scalar = torch.tensor([[0.5, 0.8, 0.1]])  # [1, 3]
         ss = Models.SubSpace(activeEncoding=ae, inputShape=[3, 8], outputShape=[3, 8])
-        ss.set_activation(act)
+        ss.set_activation(act_scalar)
         retrieved = ss.get_activation()
-        torch.testing.assert_close(retrieved, act)
-        decoded = ae.decode(encoded)
-        torch.testing.assert_close(decoded, act.squeeze(0))
+        # Positive scalars lift to [x, 0] (TRUE pole with magnitude).
+        expected = torch.stack([act_scalar, torch.zeros_like(act_scalar)], dim=-1)
+        torch.testing.assert_close(retrieved, expected)
+
+    def test_activation_bivector_roundtrip(self):
+        """Full [B, N, 2] bivector passes through unchanged."""
+        ae = Models.ActiveEncoding()
+        ss = Models.SubSpace(activeEncoding=ae, inputShape=[3, 8], outputShape=[3, 8])
+        bivec = torch.tensor([[[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]]])  # TRUE, FALSE, BOTH
+        ss.set_activation(bivec)
+        retrieved = ss.get_activation()
+        torch.testing.assert_close(retrieved, bivec)
+
+    def test_activation_four_corners(self):
+        """Tetralemma corners round-trip and reduce to expected presence."""
+        ae = Models.ActiveEncoding()
+        ss = Models.SubSpace(activeEncoding=ae, inputShape=[4, 8], outputShape=[4, 8])
+        corners = torch.tensor([[[1.0, 0.0],   # TRUE (asti)
+                                 [0.0, 1.0],   # FALSE (nasti)
+                                 [1.0, 1.0],   # BOTH (ubhaya)
+                                 [0.0, 0.0]]]) # NEITHER (anubhaya)
+        ss.set_activation(corners)
+        retrieved = ss.get_activation()
+        torch.testing.assert_close(retrieved, corners)
+        # Presence = max(aP, aN): TRUE/FALSE/BOTH all present, NEITHER gated off.
+        pres = ss.activation_presence()
+        torch.testing.assert_close(pres, torch.tensor([[1.0, 1.0, 1.0, 0.0]]))
+
+    def test_activation_negative_scalar_lifts_to_false_pole(self):
+        """Legacy negative scalar lifts to [0, |x|] (FALSE pole)."""
+        ae = Models.ActiveEncoding()
+        ss = Models.SubSpace(activeEncoding=ae, inputShape=[2, 8], outputShape=[2, 8])
+        ss.set_activation(torch.tensor([[-0.7, 0.4]]))
+        retrieved = ss.get_activation()
+        expected = torch.tensor([[[0.0, 0.7], [0.4, 0.0]]])
+        torch.testing.assert_close(retrieved, expected)
 
     def test_two_spaces_independent_encoding(self):
         """Two SubSpaces can have different muxedSize without shared coupling."""
@@ -2860,20 +2894,27 @@ class TestSubspaceActivation(unittest.TestCase):
     """Tests for the SubSpace.materialize(k) and activation machinery."""
 
     def test_set_get_activation(self):
-        """set_activation / get_activation round-trip."""
+        """set_activation / get_activation round-trip.
+
+        Scalar [B, N] is lifted to the 4-valued bivector [B, N, 2]:
+        positive values go to the TRUE pole, negatives to FALSE.
+        """
         ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
         activation = torch.randn(2, 4).to(Models.TheDevice.get())
         ss.set_activation(activation)
         got = ss.get_activation()
-        self.assertTrue(torch.equal(activation, got))
+        expected = torch.stack(
+            [torch.relu(activation), torch.relu(-activation)], dim=-1)
+        self.assertTrue(torch.equal(got, expected))
 
-    def test_set_activation_squeeze(self):
-        """set_activation accepts [batch, n, 1] and squeezes."""
+    def test_set_activation_bivector_passthrough(self):
+        """set_activation accepts [B, N, 2] bivector unchanged."""
         ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
-        activation = torch.randn(2, 4, 1).to(Models.TheDevice.get())
-        ss.set_activation(activation)
+        bivec = torch.rand(2, 4, 2).to(Models.TheDevice.get())
+        ss.set_activation(bivec)
         got = ss.get_activation()
-        self.assertEqual(got.shape, (2, 4))
+        self.assertEqual(got.shape, (2, 4, 2))
+        self.assertTrue(torch.equal(got, bivec))
 
     def test_materialize_topk(self):
         """Materialize(k) returns top-k vectors by activation, gated."""
@@ -2894,24 +2935,28 @@ class TestSubspaceActivation(unittest.TestCase):
                             f"Position {i}: expected vector at index {idx}")
 
     def test_materialize_k_none(self):
-        """Materialize(k=None) returns event * activation."""
+        """Materialize(k=None) returns event * presence.
+
+        Presence = max(aP, aN) = |activation| for a scalar lifted to the
+        bivector, so the effective gate is abs(scalar).
+        """
         ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
         x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
         ss.set_event(x)
         activation = torch.randn(2, 4).to(Models.TheDevice.get())
         ss.set_activation(activation)
         result = ss.materialize(k=None)
-        expected = x * activation.unsqueeze(-1)
+        expected = x * activation.abs().unsqueeze(-1)
         self.assertTrue(torch.equal(result, expected))
 
     def test_materialize_k_geq_nspace(self):
-        """Materialize(k >= nSpace) returns event * activation."""
+        """Materialize(k >= nSpace) returns event * presence."""
         ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
         x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
         ss.set_event(x)
         activation = torch.randn(2, 4).to(Models.TheDevice.get())
         ss.set_activation(activation)
-        expected = x * activation.unsqueeze(-1)
+        expected = x * activation.abs().unsqueeze(-1)
         result = ss.materialize(k=4)
         self.assertTrue(torch.equal(result, expected))
         result2 = ss.materialize(k=10)
@@ -2929,16 +2974,26 @@ class TestSubspaceActivation(unittest.TestCase):
         self.assertTrue(torch.allclose(result, expected))
 
     def test_materialize_activation_mode_computes_from_event(self):
-        """materialize(mode='activation') computes activation when not stored."""
+        """materialize(mode='activation') computes 4-valued activation when
+        not stored, reduced to presence = max(aP, aN).
+        """
         ss = Models.SubSpace(inputShape=[4, 3], outputShape=[4, 3])
         x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
         # Store event directly without setting activation
         ss.event.setW(x)
         ss.activation.setW(None)
         result = ss.materialize(mode="activation")
-        d = x.shape[-1]
-        expected = 2 * torch.norm(x, dim=-1) / math.sqrt(d) - 1
-        self.assertTrue(torch.allclose(result, expected))
+        # Presence derived from the bivector [aP, aN]:
+        #   aP = ||relu(what)|| / sqrt(nWhat)
+        #   aN = ||relu(-what)|| / sqrt(nWhat)
+        # materialize(mode='activation') returns effective_activation()
+        # which is presence * modal_gate. Since no _active is set, gate = 1.
+        what_slice = x[:, :, :ss.nWhat]
+        d = max(ss.nWhat, 1)
+        pos = torch.relu(what_slice).norm(dim=-1) / math.sqrt(d)
+        neg = torch.relu(-what_slice).norm(dim=-1) / math.sqrt(d)
+        expected_presence = torch.maximum(pos.clamp(0.0, 1.0), neg.clamp(0.0, 1.0))
+        self.assertTrue(torch.allclose(result, expected_presence))
 
     def test_materialize_activation_mode_no_data_asserts(self):
         """materialize(mode='activation') asserts when no event vectors exist."""
@@ -3055,8 +3110,8 @@ class TestGrammarOperations(unittest.TestCase):
         g = Spaces.Grammar()
         g.configure({
             "START": "true(S)",
-            "S": ["swap(S, S)", "equals(S, S)", "part(S, S)", "C"],
-            "C": ["not(C)", "P"],
+            "S": ["swap(S, S)", "equals(S, S)", "C"],
+            "C": ["not(C)", "part(C, C)", "P"],
             "P": "I",
         })
         # Register a monotonic basis so methods dispatch through Basis logic
@@ -3072,6 +3127,14 @@ class TestGrammarOperations(unittest.TestCase):
             max_depth=3, hidden_dim=16, grammar=g,
         )
         self._s_sl.init_swap(4, 4)
+        # Create C-tier SyntacticLayer for part(C, C) tests
+        self._c_sl = Spaces.ConceptualSyntacticLayer(
+            nInput=4, nOutput=4,
+            rules=g.conceptual(),
+            transition_rule=g.conceptual_transition(),
+            max_depth=3, hidden_dim=16, grammar=g,
+        )
+        self._c_sl.init_conceptual_params(4)
         return g
 
     def _find_rule(self, g, name):
@@ -3109,23 +3172,23 @@ class TestGrammarOperations(unittest.TestCase):
         self.assertTrue(torch.allclose(result, torch.zeros_like(result), atol=1e-5))
 
     def test_part_subset_scores_high(self):
-        """part(S, S) where x is contained in y scores high."""
+        """part(C, C) where x is contained in y scores high."""
         g = self._make_grammar()
         rid = self._find_rule(g, 'part')
         x = torch.tensor([[0.3, 0.2, 0.0, 0.0]])
         y = torch.tensor([[0.5, 0.8, 0.4, 0.6]])
-        result = self._s_sl.project(g, rid, x, y, subspace=self._ss)
+        result = self._c_sl.project(g, rid, x, y, subspace=self._ss)
         # x <= y element-wise -> part score high -> result ~= y * score
         self.assertTrue(result.norm() > 0.1)
 
     def test_part_not_subset_scores_low(self):
-        """part(S, S) where x exceeds y in some dims scores lower."""
+        """part(C, C) where x exceeds y in some dims scores lower."""
         g = self._make_grammar()
         rid = self._find_rule(g, 'part')
         x = torch.tensor([[0.9, 0.9, 0.9, 0.9]])
         y = torch.tensor([[0.1, 0.1, 0.1, 0.1]])
-        result_big_in_small = self._s_sl.project(g, rid, x, y, subspace=self._ss)
-        result_small_in_big = self._s_sl.project(g, rid, y, x, subspace=self._ss)
+        result_big_in_small = self._c_sl.project(g, rid, x, y, subspace=self._ss)
+        result_small_in_big = self._c_sl.project(g, rid, y, x, subspace=self._ss)
         # x is NOT part of y, but y IS part of x
         self.assertGreater(result_small_in_big.norm().item(),
                            result_big_in_small.norm().item())
@@ -3168,21 +3231,341 @@ class TestGrammarOperations(unittest.TestCase):
         self.assertTrue(torch.allclose(score_xy, score_yx, atol=1e-5))
 
     def test_part_zero_volume_ignored(self):
-        """Matching zeros don't inflate parthood -- zero volume contributes nothing."""
+        """Empty-set conventions for the scalar clipped-cosine parthood."""
         b = Spaces.Basis()
-        # Orthogonal: shared zeros shouldn't create parthood
+        # Orthogonal: dot = 0 -> clipped = 0 -> part = 0
         x = torch.tensor([1.0, 0.0, 0.0, 0.0])
         y = torch.tensor([0.0, 0.0, 0.0, 1.0])
-        self.assertAlmostEqual(b.part(x, y, monotonic=True).item(), 0.0, places=5)
-        # Subset: x <= y everywhere x has content
+        self.assertAlmostEqual(b.part(x, y, scalar=True).item(), 0.0, places=5)
+        # Parallel same direction: part = 1
         x2 = torch.tensor([0.3, 0.2, 0.0, 0.0])
-        y2 = torch.tensor([0.5, 0.8, 0.4, 0.6])
-        self.assertAlmostEqual(b.part(x2, y2, monotonic=True).item(), 1.0, places=5)
+        y2 = torch.tensor([0.6, 0.4, 0.0, 0.0])
+        self.assertAlmostEqual(b.part(x2, y2, scalar=True).item(), 1.0, places=5)
         # Empty set is part of everything
         z = torch.zeros(4)
-        self.assertAlmostEqual(b.part(z, x, monotonic=True).item(), 1.0, places=5)
+        self.assertAlmostEqual(b.part(z, x, scalar=True).item(), 1.0, places=5)
         # Non-empty is not part of empty
-        self.assertAlmostEqual(b.part(x, z, monotonic=True).item(), 0.0, places=5)
+        self.assertAlmostEqual(b.part(x, z, scalar=True).item(), 0.0, places=5)
+
+
+class TestBasisMereology(unittest.TestCase):
+    """Scalar form (scalar=True) of the mereological suite: clipped-cosine
+    parthood and the region indicators derived from it."""
+
+    def test_part_satisfies_boole_contrapositive(self):
+        b = Spaces.Basis()
+        x = torch.tensor([0.5, -0.3, 0.4])
+        y = torch.tensor([0.2, 0.6, -0.1])
+        self.assertAlmostEqual(
+            b.part(x, y, scalar=True).item(),
+            b.part(-y, -x, scalar=True).item(),
+            places=6,
+        )
+
+    def test_part_is_clipped_cosine(self):
+        b = Spaces.Basis()
+        x = torch.tensor([1.0, 0.0, 0.0])
+        y = torch.tensor([0.5, 0.5, 0.0])
+        self.assertAlmostEqual(b.part(x, y, scalar=True).item(), math.sqrt(0.5), places=5)
+
+    def test_part_opposite_directions_zero(self):
+        b = Spaces.Basis()
+        x = torch.tensor([1.0, 0.0])
+        y = torch.tensor([-1.0, 0.0])
+        self.assertAlmostEqual(b.part(x, y, scalar=True).item(), 0.0, places=5)
+
+    def test_whole_is_part_reversed(self):
+        b = Spaces.Basis()
+        x = torch.tensor([0.5, 0.5, 0.0])
+        y = torch.tensor([1.0, 0.0, 0.0])
+        self.assertAlmostEqual(
+            b.whole(x, y, scalar=True).item(),
+            b.part(y, x, scalar=True).item(),
+            places=6,
+        )
+
+    def test_equal_is_mutual_parthood(self):
+        b = Spaces.Basis()
+        x = torch.tensor([0.5, 0.5, 0.0])
+        y = torch.tensor([1.0, 0.0, 0.0])
+        expected = b.part(x, y, scalar=True).item() * b.part(y, x, scalar=True).item()
+        self.assertAlmostEqual(b.equal(x, y, scalar=True).item(), expected, places=6)
+
+    def test_overlap_true_when_both_strictly_partial(self):
+        b = Spaces.Basis()
+        x = torch.tensor([1.0, 0.5, 0.0])
+        y = torch.tensor([0.5, 1.0, 0.0])
+        # cos > 0 and < 1 -> equal in (0, 1) -> overlap region.
+        self.assertTrue(bool(b.overlap(x, y, scalar=True).item()))
+
+    def test_overlap_false_when_parallel(self):
+        b = Spaces.Basis()
+        x = torch.tensor([1.0, 0.0, 0.0])
+        y = torch.tensor([2.0, 0.0, 0.0])
+        # cosine == 1 -> equal == 1 -> outside (0, 1).
+        self.assertFalse(bool(b.overlap(x, y, scalar=True).item()))
+
+    def test_underlap_true_when_disjoint(self):
+        b = Spaces.Basis()
+        x = torch.tensor([1.0, 0.0, 0.0])
+        y = torch.tensor([-1.0, 0.0, 0.0])
+        # cosine negative -> clipped to 0 -> equal == 0.
+        self.assertTrue(bool(b.underlap(x, y, scalar=True).item()))
+
+    def test_underlap_false_when_partially_overlapping(self):
+        b = Spaces.Basis()
+        x = torch.tensor([1.0, 1.0, 0.0])
+        y = torch.tensor([1.0, 0.0, 0.0])
+        self.assertFalse(bool(b.underlap(x, y, scalar=True).item()))
+
+    def test_scalar_mereology_respects_boole_contrapositive(self):
+        """Scalar members (part/whole/equal/boundary) are invariant under
+        (A, B) -> (-B, -A)."""
+        b = Spaces.Basis()
+        torch.manual_seed(0)
+        x = torch.randn(4)
+        y = torch.randn(4)
+        for name in ("part", "whole", "equal", "boundary"):
+            fn = getattr(b, name)
+            self.assertAlmostEqual(
+                fn(x, y, scalar=True).item(),
+                fn(-y, -x, scalar=True).item(),
+                places=5,
+                msg=f"{name} fails Boole contrapositive",
+            )
+
+    def test_region_mereology_respects_boole_contrapositive(self):
+        """Boolean region indicators (overlap/underlap) are invariant under
+        (A, B) -> (-B, -A)."""
+        b = Spaces.Basis()
+        torch.manual_seed(0)
+        x = torch.randn(4)
+        y = torch.randn(4)
+        for name in ("overlap", "underlap"):
+            fn = getattr(b, name)
+            self.assertEqual(
+                bool(fn(x, y, scalar=True).item()),
+                bool(fn(-y, -x, scalar=True).item()),
+                msg=f"{name} fails Boole contrapositive",
+            )
+
+    def test_boundary_zero_under_clipped_cosine(self):
+        """Under clipped cosine, part is symmetric so boundary = 0."""
+        b = Spaces.Basis()
+        torch.manual_seed(1)
+        x = torch.randn(4)
+        y = torch.randn(4)
+        self.assertAlmostEqual(b.boundary(x, y, scalar=True).item(), 0.0, places=5)
+
+    def test_equal_three_region_partition(self):
+        """equal in [0, 1] partitions into underlap (=0), overlap (in (0,1)),
+        identity (=1), disjoint and exhaustive."""
+        b = Spaces.Basis()
+        # Underlap: opposite directions -> equal = 0
+        x_u = torch.tensor([1.0, 0.0])
+        y_u = torch.tensor([-1.0, 0.0])
+        self.assertAlmostEqual(b.equal(x_u, y_u, scalar=True).item(), 0.0, places=5)
+        self.assertTrue(bool(b.underlap(x_u, y_u, scalar=True).item()))
+        self.assertFalse(bool(b.overlap(x_u, y_u, scalar=True).item()))
+        # Overlap: non-aligned, non-orthogonal -> 0 < equal < 1
+        x_o = torch.tensor([1.0, 1.0])
+        y_o = torch.tensor([1.0, 0.0])
+        e_o = b.equal(x_o, y_o, scalar=True).item()
+        self.assertGreater(e_o, 0.0)
+        self.assertLess(e_o, 1.0)
+        self.assertTrue(bool(b.overlap(x_o, y_o, scalar=True).item()))
+        self.assertFalse(bool(b.underlap(x_o, y_o, scalar=True).item()))
+        # Identity: parallel same direction -> equal = 1
+        x_i = torch.tensor([1.0, 0.0])
+        y_i = torch.tensor([2.0, 0.0])
+        self.assertAlmostEqual(b.equal(x_i, y_i, scalar=True).item(), 1.0, places=5)
+        self.assertFalse(bool(b.overlap(x_i, y_i, scalar=True).item()))
+        self.assertFalse(bool(b.underlap(x_i, y_i, scalar=True).item()))
+
+
+class TestBasisMereologyVector(unittest.TestCase):
+    """Default vector form of the mereological suite on Basis.
+
+    part(x, y)     = x * (y / ||y||)          elementwise
+    whole(x, y)    = (1 - x) * (y / ||y||)
+    equal(x, y)    = part(x, y) * part(y, x)
+    overlap(x, y)  = min(part(x, y), part(y, x))
+    underlap(x, y) = min(whole(x, y), whole(y, x))
+    boundary(x, y) = |part(x, y) - part(y, x)|
+    """
+
+    def test_part_vector_equals_x_times_yhat(self):
+        b = Spaces.Basis()
+        x = torch.tensor([0.4, 0.6, 0.2])
+        y = torch.tensor([0.0, 3.0, 0.0])     # ||y|| = 3, y_hat = [0,1,0]
+        expected = torch.tensor([0.0, 0.6, 0.0])
+        self.assertTrue(torch.allclose(b.part(x, y), expected, atol=1e-6))
+
+    def test_part_vector_has_same_shape_as_x(self):
+        b = Spaces.Basis()
+        x = torch.randn(2, 5, 7)
+        y = torch.randn(2, 5, 7)
+        self.assertEqual(b.part(x, y).shape, x.shape)
+
+    def test_whole_vector_equals_one_minus_x_times_yhat(self):
+        b = Spaces.Basis()
+        x = torch.tensor([0.4, 0.6, 0.2])
+        y = torch.tensor([0.0, 3.0, 0.0])
+        expected = torch.tensor([0.6, 0.4, 0.8]) * torch.tensor([0.0, 1.0, 0.0])
+        self.assertTrue(torch.allclose(b.whole(x, y), expected, atol=1e-6))
+
+    def test_part_plus_whole_equals_yhat(self):
+        """(x + (1 - x)) * y_hat = y_hat"""
+        b = Spaces.Basis()
+        x = torch.tensor([0.3, 0.7, 0.1, 0.9])
+        y = torch.tensor([1.0, 2.0, 0.5, 1.5])
+        y_hat = y / torch.norm(y)
+        self.assertTrue(torch.allclose(b.part(x, y) + b.whole(x, y), y_hat, atol=1e-6))
+
+    def test_equal_vector_is_elementwise_product_of_parts(self):
+        b = Spaces.Basis()
+        x = torch.tensor([0.5, 0.8, 0.3])
+        y = torch.tensor([0.2, 0.9, 0.4])
+        expected = b.part(x, y) * b.part(y, x)
+        self.assertTrue(torch.allclose(b.equal(x, y), expected, atol=1e-6))
+
+    def test_overlap_vector_is_elementwise_min_of_parts(self):
+        b = Spaces.Basis()
+        x = torch.tensor([0.5, 0.8, 0.3])
+        y = torch.tensor([0.2, 0.9, 0.4])
+        expected = torch.minimum(b.part(x, y), b.part(y, x))
+        self.assertTrue(torch.allclose(b.overlap(x, y), expected, atol=1e-6))
+
+    def test_underlap_vector_is_elementwise_min_of_wholes(self):
+        b = Spaces.Basis()
+        x = torch.tensor([0.5, 0.8, 0.3])
+        y = torch.tensor([0.2, 0.9, 0.4])
+        expected = torch.minimum(b.whole(x, y), b.whole(y, x))
+        self.assertTrue(torch.allclose(b.underlap(x, y), expected, atol=1e-6))
+
+    def test_boundary_vector_is_elementwise_abs_diff(self):
+        b = Spaces.Basis()
+        x = torch.tensor([0.5, 0.8, 0.3])
+        y = torch.tensor([0.2, 0.9, 0.4])
+        expected = torch.abs(b.part(x, y) - b.part(y, x))
+        self.assertTrue(torch.allclose(b.boundary(x, y), expected, atol=1e-6))
+
+    def test_part_orthogonal_unit_axes_is_zero_vector(self):
+        """TRUE=[1,0] projected onto FALSE=[0,1] direction: zero vector.
+        Demonstrates tetralemma disjointness on the bivector."""
+        b = Spaces.Basis()
+        true_corner = torch.tensor([1.0, 0.0])
+        false_corner = torch.tensor([0.0, 1.0])
+        p = b.part(true_corner, false_corner)
+        self.assertTrue(torch.allclose(p, torch.zeros(2), atol=1e-6))
+
+    def test_part_parallel_unit_axes_preserves_direction(self):
+        """BOTH=[1,1] projected onto TRUE=[1,0] gives [1,0]: only the
+        true-pole coordinate survives."""
+        b = Spaces.Basis()
+        both_corner = torch.tensor([1.0, 1.0])
+        true_corner = torch.tensor([1.0, 0.0])
+        p = b.part(both_corner, true_corner)
+        self.assertTrue(torch.allclose(p, torch.tensor([1.0, 0.0]), atol=1e-6))
+
+    def test_copart_vector_is_y_minus_x(self):
+        """Vector copart(x, y) = y - x: the y-content not accounted for by x."""
+        b = Spaces.Basis()
+        x = torch.tensor([0.3, 0.5, 0.2])
+        y = torch.tensor([0.8, 0.4, 0.7])
+        expected = y - x
+        self.assertTrue(torch.allclose(b.copart(x, y), expected, atol=1e-6))
+
+    def test_copart_scalar_is_complement_of_part(self):
+        """Scalar copart(x, y) = 1 - part(x, y, scalar=True)."""
+        b = Spaces.Basis()
+        x = torch.tensor([1.0, 0.0, 0.0])
+        y = torch.tensor([0.5, 0.5, 0.0])
+        p = b.part(x, y, scalar=True).item()
+        self.assertAlmostEqual(b.copart(x, y, scalar=True).item(), 1.0 - p, places=6)
+
+    def test_copart_scalar_zero_when_identical_directions(self):
+        """x parallel to y -> part = 1 -> copart scalar = 0."""
+        b = Spaces.Basis()
+        x = torch.tensor([1.0, 0.0, 0.0])
+        y = torch.tensor([2.0, 0.0, 0.0])
+        self.assertAlmostEqual(b.copart(x, y, scalar=True).item(), 0.0, places=5)
+
+    def test_copart_scalar_one_when_orthogonal(self):
+        """x orthogonal to y -> part = 0 -> copart scalar = 1."""
+        b = Spaces.Basis()
+        x = torch.tensor([1.0, 0.0])
+        y = torch.tensor([0.0, 1.0])
+        self.assertAlmostEqual(b.copart(x, y, scalar=True).item(), 1.0, places=5)
+
+
+class TestMaskAsActiveFilter(unittest.TestCase):
+    """MASK applied with a position-axis alignment zeros ``_active`` rows.
+
+    When the mask length matches ``out.shape[-2]`` (the position axis)
+    and a ``subspace`` is supplied, ``_apply_mask`` multiplies the
+    subspace's ``_active`` tensor by the mask instead of doing an
+    element-wise multiply on ``out``. This is the MASK-as-filter
+    interpretation: masked positions are suppressed downstream via
+    ``SubSpace.materialize()``'s active-gate.
+    """
+
+    class _StubSubspace:
+        def __init__(self, B, N, M):
+            self._active = torch.ones(B, N, M)
+
+    def _layer(self):
+        g = Spaces.Grammar()
+        g.configure({
+            "START": "C",
+            "S": ["C"],
+            "C": ["not(C)", "P"],
+            "P": "I",
+        })
+        layer = Spaces.ConceptualSyntacticLayer(
+            nInput=4, nOutput=4,
+            rules=g.conceptual(),
+            transition_rule=g.conceptual_transition(),
+            max_depth=2, hidden_dim=8, grammar=g,
+        )
+        layer.init_conceptual_params(4)
+        return layer
+
+    def test_position_axis_mask_zeros_active_row(self):
+        layer = self._layer()
+        stub = self._StubSubspace(B=1, N=3, M=2)
+        out = torch.randn(1, 3, 4)
+        mask = torch.tensor([1.0, 0.0, 1.0])
+        ret = layer._apply_mask(out, mask, subspace=stub)
+        # Position 1 is zeroed on _active; positions 0 and 2 unchanged.
+        self.assertTrue(torch.all(stub._active[:, 0, :] == 1.0))
+        self.assertTrue(torch.all(stub._active[:, 1, :] == 0.0))
+        self.assertTrue(torch.all(stub._active[:, 2, :] == 1.0))
+        # out is returned unchanged on the position-axis path.
+        self.assertTrue(torch.allclose(ret, out))
+
+    def test_feature_axis_mask_still_multiplies_out(self):
+        """When mask aligns with the feature axis (out.shape[-1]), it
+        multiplies ``out`` element-wise and leaves ``_active`` alone."""
+        layer = self._layer()
+        stub = self._StubSubspace(B=1, N=3, M=2)
+        out = torch.ones(1, 3, 4)
+        mask = torch.tensor([1.0, 0.0, 1.0, 0.0])  # shape[-1] == 4
+        ret = layer._apply_mask(out, mask, subspace=stub)
+        expected = torch.tensor([[[1.0, 0.0, 1.0, 0.0]] * 3])
+        self.assertTrue(torch.allclose(ret, expected))
+        # _active is untouched on the feature-axis path.
+        self.assertTrue(torch.all(stub._active == 1.0))
+
+    def test_no_subspace_falls_back_to_feature_axis(self):
+        """Without a subspace, a mask matching the feature axis still
+        multiplies ``out``."""
+        layer = self._layer()
+        out = torch.ones(1, 3, 4)
+        mask = torch.tensor([1.0, 0.0, 1.0, 1.0])
+        ret = layer._apply_mask(out, mask, subspace=None)
+        expected = torch.tensor([[[1.0, 0.0, 1.0, 1.0]] * 3])
+        self.assertTrue(torch.allclose(ret, expected))
 
 
 class TestWordEncoding(unittest.TestCase):
@@ -3270,14 +3653,20 @@ class TestSubspaceNormalize(unittest.TestCase):
         self.assertTrue(torch.allclose(ss.materialize(), x, atol=1e-6))
 
     def test_concepts_range(self):
-        """normalize('concepts') produces values in [-1, 1] via tanh."""
+        """normalize('concepts') produces bivector entries in [0, 1] via tanh.
+
+        Activation is now a 4-valued bivector [aP, aN]; normalization applies
+        tanh element-wise, so each pole stays non-negative.
+        """
         ss = self._make_ss()
-        x = torch.randn(2, 4, 3)
-        ss.set_activation(x[:, :, 0].clone())
+        scalar = torch.randn(2, 4)
+        ss.set_activation(scalar.clone())
+        # set_activation lifted scalar -> bivector [relu(x), relu(-x)].
+        lifted = torch.stack([torch.relu(scalar), torch.relu(-scalar)], dim=-1)
         ss.normalize("concepts", target="activation", normalize=True)
         y = ss.get_activation()
         self.assertTrue(torch.all(y >= -1) and torch.all(y <= 1))
-        self.assertTrue(torch.allclose(y, torch.tanh(x[:, :, 0])))
+        self.assertTrue(torch.allclose(y, torch.tanh(lifted), atol=1e-6))
 
     def test_reverse_requires_normalize_true(self):
         """reverse=True is an inverse transform, not a range check."""
@@ -3496,7 +3885,9 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
             useSubspaceActivation=True)
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
-        x = torch.randn(2, 16, 1).to(Models.TheDevice.get())
+        # SigmaLayer.nonlinear=True applies atanh; input must be in [-1, 1]
+        # or atanh produces NaN. Matches the companion test above.
+        x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
         model.forward(x)
 
         # Check that activations are stored on spaces that compute them.

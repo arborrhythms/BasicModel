@@ -43,9 +43,11 @@
       <xs:element name="truthBiasScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="LuminosityWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="UniversalityWeight" type="nonNegativeFloat" minOccurs="0"/>
-      <!-- Belnap-Dunn balance knobs: select which corners of {T,F,N,B} are
-           permitted during training.
-             allowExcludedMiddle:  1  = permit NEITHER (default, Kleene)
+      <!-- Quaternary-corner balance knobs (tetralemma / catuskoti): select
+           which corners of {T, F, N, B} are permitted during training. See
+           basicmodel/doc/BuddhistParallels.md for the 4-valued (quaternary)
+           truth semantics.
+             allowExcludedMiddle:  1  = permit NEITHER (default)
                                   -1  = forbid NEITHER (classical LEM)
              allowContradiction:   0  = forbid BOTH (default, non-contradiction)
                                    1  = permit BOTH (paraconsistent / LP)

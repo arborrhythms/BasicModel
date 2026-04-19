@@ -217,14 +217,17 @@ class QuadratureEncoding(Encoding):
             buf[batch_idx, pos_idx, idx[0]] = math.sin(angle)
             buf[batch_idx, pos_idx, idx[1]] = math.cos(angle)
 class ActiveEncoding(Encoding):
-    """Per-slot scalar activation encoding (fuzzy sparsity).
+    """Per-slot 4-valued (quaternary) truth activation.
 
-    Occupies 1 dimension in the embedding vector (nDim=1).
-    encode/decode are identity -- the producing Space decides how
-    to compute activation values (norm-based, sum-based, etc.).
-    ActiveEncoding is the carrier, not the formula.
+    Carries a bivector [aP, aN] per position encoding the four corners of
+    the tetralemma (catuskoti): TRUE=[1,0], FALSE=[0,1], BOTH=[1,1],
+    NEITHER=[0,0]. See basicmodel/doc/BuddhistParallels.md for the
+    Nagarjuna-style semantics.
+
+    encode/decode are identity -- the producing Space decides how to
+    compute activation values. ActiveEncoding is the carrier.
     """
-    nDim = 1
+    nDim = 2
 
     def __init__(self, maxVal=1.0):
         super().__init__([-5], maxVal)
@@ -236,9 +239,7 @@ class ActiveEncoding(Encoding):
         return activation.unsqueeze(-1) if activation.dim() == 0 else activation
 
     def decode(self, encoded):
-        """Identity decode: return scalar activation."""
-        if isinstance(encoded, torch.Tensor):
-            return encoded.squeeze(-1)
+        """Identity decode: return activation tensor."""
         return encoded
 class WhereEncoding(QuadratureEncoding):
     """Encode spatial position (nWhere) as sin/cos values in reserved embedding slots.
@@ -648,21 +649,25 @@ class Basis(nn.Module):
         return core + x_zero * y + y_zero * x
 
     def negation(self, x, monotonic=False):
-        """Negation. Bitonic: sign flip. Monotonic: paired-index flip (bivector).
-        Monotonic storage is [..., 2K] where index 2k is the positive pole of
-        concept k and 2k+1 is the negative pole. Negation swaps the two poles.
+        """Negation.
+        Bitonic: sign flip (-x).
+        Monotonic, last-dim == 2: swap (pos, neg) -- the tetralemma flip
+          on a demuxed `.what` bivector [aP, aN] -> [aN, aP].
+        Monotonic, last-dim == 2K (legacy paired-index storage): pair flip.
         Domain [-1, 1]. Range: bitonic [-1, 1], monotonic [0, 1]."""
-        if monotonic:
-            n = x.shape[-1]
-            if n % 2 != 0:
-                raise ValueError(
-                    f"Basis.negation(monotonic=True) requires an even last dim "
-                    f"(bivector paired-index encoding); got shape {tuple(x.shape)}"
-                )
+        if not monotonic:
+            return -x
+        n = x.shape[-1]
+        if n == 2:
+            return x.flip(dims=(-1,))
+        if n % 2 == 0:
             pair = x.reshape(*x.shape[:-1], n // 2, 2)
             flipped = pair.flip(dims=(-1,))
             return flipped.reshape(*x.shape)
-        return -x
+        raise ValueError(
+            f"Basis.negation(monotonic=True) requires even last dim; "
+            f"got shape {tuple(x.shape)}"
+        )
 
     def non(self, x, monotonic=False, threshold=None):
         """Non-affirming negation. Bitonic: -> 0. Monotonic: learnable threshold.
@@ -759,38 +764,130 @@ class Basis(nn.Module):
         return x @ vec.T / max(self.nDim, 1)
 
     # -- Mereological operations --------------------------------------------
-    # part(x, y): degree to which x is part of y (x  subset  y).
-    # Defined as: x == intersection(x,y) AND y == union(x,y).
-    # All return values in [0, 1].
+    # Parthood is the fundamental mereological operation. Every member of
+    # the suite (whole, equal, overlap, underlap, boundary) has both a
+    # vector form (default) that operates over the concept space and a
+    # scalar form (scalar=True) that reduces to [0, 1] / bool.
+    #
+    # Vector forms (scalar=False):
+    #     part(x, y)     = x * (y / ||y||)                     elementwise
+    #     whole(x, y)    = (1 - x) * (y / ||y||)               elementwise
+    #     equal(x, y)    = part(x, y) * part(y, x)             elementwise
+    #     overlap(x, y)  = min(part(x, y), part(y, x))         elementwise
+    #     underlap(x, y) = min(whole(x, y), whole(y, x))       elementwise
+    #     boundary(x, y) = |part(x, y) - part(y, x)|           elementwise
+    #
+    # Scalar forms (scalar=True): clipped-cosine parthood and the
+    # region-indicator relations derived from it. See each method.
 
-    def part(self, x, y, monotonic=False):
-        """Parthood in [0, 1]. 1 = x is part of y."""
+    def part(self, x, y, monotonic=False, scalar=False):
+        """Part of x under y.
+
+        Vector form (default, scalar=False):
+            part(x, y) = x * (y / ||y||)   -- elementwise projection of
+            x into y's unit direction. Returns a tensor shaped like x.
+
+        Scalar form (scalar=True): clipped cosine projection in [0, 1].
+            part(x, y) = max(0, x.y) / (||x|| * ||y||)
+        Satisfies Boole's contrapositive: part(x, y) = part(-y, -x).
+        Empty-set conventions:
+            part(empty, y) = 1, part(x, empty) = 0, part(empty, empty) = 1.
+        """
+        ny_raw = self.norm(y)
+        ny = ny_raw.clamp(min=epsilon)
+        if not scalar:
+            return x * (y / ny.unsqueeze(-1))
+        nx = self.norm(x)
+        dot = (x * y).sum(dim=-1)
+        clipped = torch.clamp(dot, min=0.0)
+        denom = (nx * ny).clamp(min=epsilon)
+        score = (clipped / denom).clamp(0.0, 1.0)
+        empty_x = nx < epsilon
+        empty_y = ny_raw < epsilon
+        ones = torch.ones_like(score)
+        zeros = torch.zeros_like(score)
+        return torch.where(empty_x, ones, torch.where(empty_y, zeros, score))
+
+    def whole(self, x, y, monotonic=False, scalar=False):
+        """Whole(x, y): complement of x in y's unit direction.
+
+        Vector form (default):
+            whole(x, y) = (1 - x) * (y / ||y||)
+        Scalar form: degree to which x contains y, i.e. part(y, x, scalar=True).
+        """
+        if scalar:
+            return self.part(y, x, monotonic=monotonic, scalar=True)
+        ny = self.norm(y).clamp(min=epsilon).unsqueeze(-1)
+        return (1.0 - x) * (y / ny)
+
+    def equal(self, x, y, monotonic=False, scalar=False):
+        """Mutual parthood.
+
+        Vector form:  equal(x, y) = part(x, y) * part(y, x)   (elementwise)
+        Scalar form:  equal(x, y) = part(x, y, scalar=True) * part(y, x, scalar=True)
+            partitions [0, 1] into three regions:
+                equal == 0       -> underlap (disjoint)
+                0 < equal < 1    -> overlap  (strictly partial)
+                equal == 1       -> identity (perfect mutual parthood)
+        """
+        p_xy = self.part(x, y, monotonic=monotonic, scalar=scalar)
+        p_yx = self.part(y, x, monotonic=monotonic, scalar=scalar)
+        return p_xy * p_yx
+
+    def overlap(self, x, y, monotonic=False, scalar=False):
+        """Overlap.
+
+        Vector form:  elementwise min of part(x, y) and part(y, x) -- the
+            shared-parthood coordinates.
+        Scalar form:  boolean region indicator 0 < equal(..., scalar=True) < 1.
+        """
+        if scalar:
+            e = self.equal(x, y, monotonic=monotonic, scalar=True)
+            return (e > 0) & (e < 1)
+        return torch.minimum(
+            self.part(x, y, monotonic=monotonic),
+            self.part(y, x, monotonic=monotonic),
+        )
+
+    def underlap(self, x, y, monotonic=False, scalar=False):
+        """Underlap.
+
+        Vector form:  elementwise min of whole(x, y) and whole(y, x) -- the
+            shared-wholeness coordinates (mutual complement).
+        Scalar form:  boolean region indicator equal(..., scalar=True) == 0.
+        """
+        if scalar:
+            e = self.equal(x, y, monotonic=monotonic, scalar=True)
+            return e == 0
+        return torch.minimum(
+            self.whole(x, y, monotonic=monotonic),
+            self.whole(y, x, monotonic=monotonic),
+        )
+
+    def boundary(self, x, y, monotonic=False, scalar=False):
+        """Boundary: directional asymmetry of parthood.
+
+        Vector form:  |part(x, y) - part(y, x)|   (elementwise)
+        Scalar form:  |part(x, y, scalar=True) - part(y, x, scalar=True)|
+            Zero under clipped-cosine parthood (cosine is symmetric).
+        """
         m = monotonic
-        intersection = self.conjunction(x, y, monotonic=m)
-        union = self.disjunction(x, y, monotonic=m)
-        cond1 = 1 - self.distance(x, intersection, monotonic=True)
-        cond2 = 1 - self.distance(y, union, monotonic=True)
-        return self.conjunction(cond1, cond2, monotonic=m)
+        return torch.abs(
+            self.part(x, y, monotonic=m, scalar=scalar)
+            - self.part(y, x, monotonic=m, scalar=scalar)
+        )
 
-    def whole(self, x, y, monotonic=False):
-        """Wholeness: degree to which x contains y."""
-        return self.part(y, x, monotonic=monotonic)
+    def copart(self, x, y, monotonic=False, scalar=False):
+        """Copart of x under y: the part of y not accounted for by x.
 
-    def equal(self, x, y, monotonic=False):
-        """Equality: mutual parthood. 1 = mereologically identical."""
-        m = monotonic
-        return self.conjunction(self.part(x, y, monotonic=m),
-                                self.part(y, x, monotonic=m), monotonic=m)
-
-    def overlap(self, x, y, monotonic=False):
-        """Overlap in [0, 1]: degree to which x and y share parts."""
-        max_norm = torch.max(self.norm(x), self.norm(y)).clamp(min=epsilon)
-        return self.norm(self.conjunction(x, y, monotonic=monotonic)) / max_norm
-
-    def boundary(self, x, y, monotonic=False):
-        """Boundary: asymmetry of containment between x and y."""
-        m = monotonic
-        return torch.abs(self.part(x, y, monotonic=m) - self.whole(x, y, monotonic=m))
+        Vector form (default):
+            copart(x, y) = y - x
+        Scalar form (scalar=True): complement of parthood in [0, 1].
+            copart(x, y) = 1 - part(x, y, scalar=True)
+        """
+        if scalar:
+            return (1.0 - self.part(x, y, monotonic=monotonic, scalar=True)).clamp(0.0, 1.0)
+        return y - x
 
     def active_dense(self):
         w = self.getW()
@@ -2084,17 +2181,19 @@ class SubSpace(nn.Module):
         self._compute_active(what_tensor, where_tensor, when_tensor)
 
     def _compute_active(self, what_tensor, where_tensor=None, when_tensor=None):
-        """Compute modal presence flags from modality tensors.
+        """Compute modal presence flags and 4-valued (quaternary) activation.
 
         active[b, n, m] = 1 if modality m is nonzero at position n, else 0.
-        Also computes event activation from what-content norms.
+        Activation is the tetralemma bivector [aP, aN]:
+            aP = ||relu(what)|| / sqrt(nWhat)    (positive content)
+            aN = ||relu(-what)|| / sqrt(nWhat)   (negative content)
+        See basicmodel/doc/BuddhistParallels.md for the catuskoti mapping.
 
         Args:
             what_tensor: [B, N, nWhat]
             where_tensor: [B, N, nWhere] or None
             when_tensor: [B, N, nWhen] or None
         """
-        B, N = what_tensor.shape[0], what_tensor.shape[1]
         flags = []
         # what is always present as a modality
         flags.append((what_tensor.norm(dim=-1) > 1e-8).float())  # [B, N]
@@ -2103,10 +2202,10 @@ class SubSpace(nn.Module):
         if when_tensor is not None and self.nWhen > 0:
             flags.append((when_tensor.norm(dim=-1) > 1e-8).float())
         self._active = torch.stack(flags, dim=-1)  # [B, N, M]
-        # Event activation: what-content norm scaled to [-1, 1]
-        d = what_tensor.shape[-1]
-        act = torch.norm(what_tensor, dim=-1) / math.sqrt(d)  # [B, N] in [0, 1]
-        act = 2 * act - 1  # scale to [-1, 1]
+        d = max(what_tensor.shape[-1], 1)
+        pos = torch.relu(what_tensor).norm(dim=-1) / math.sqrt(d)
+        neg = torch.relu(-what_tensor).norm(dim=-1) / math.sqrt(d)
+        act = torch.stack([pos.clamp(0.0, 1.0), neg.clamp(0.0, 1.0)], dim=-1)
         self.set_activation(act)
 
     def _coerce_basis(self, value, role):
@@ -2326,21 +2425,25 @@ class SubSpace(nn.Module):
     # ------------------------------------------------------------------
 
     def set_activation_from_event(self):
-        """Compute activation and active flags from muxed event vectors.
+        """Compute 4-valued activation and active flags from muxed event vectors.
 
-        Activation is the L2 norm of the event divided by sqrt(D), scaled
-        to [-1, 1].  Active flags are derived by checking each modality
-        slice for nonzero content.
+        Activation is the tetralemma bivector [aP, aN] derived from the
+        what-slice:
+            aP = ||relu(what)|| / sqrt(nWhat)
+            aN = ||relu(-what)|| / sqrt(nWhat)
+        Active flags are derived by checking each modality slice for
+        nonzero content.
         """
         y = self.event.getW()
         assert y is not None and y.ndim == 3, "Must be dim==3"
-        d = y.shape[-1]
-        activation = torch.norm(y, dim=-1) / math.sqrt(d)  # [B, N] in [0, 1]
-        activation = 2 * activation - 1                     # scale to [-1, 1]
-        self.set_activation(activation)
+        what_slice = y[:, :, :self.nWhat]
+        d = max(self.nWhat, 1)
+        pos = torch.relu(what_slice).norm(dim=-1) / math.sqrt(d)
+        neg = torch.relu(-what_slice).norm(dim=-1) / math.sqrt(d)
+        act = torch.stack([pos.clamp(0.0, 1.0), neg.clamp(0.0, 1.0)], dim=-1)
+        self.set_activation(act)
         # Derive active flags from modality slices
         flags = []
-        what_slice = y[:, :, :self.nWhat]
         flags.append((what_slice.norm(dim=-1) > 1e-8).float())
         if self.nWhere > 0:
             where_slice = y[:, :, self.nWhat:self.nWhat + self.nWhere]
@@ -2354,25 +2457,55 @@ class SubSpace(nn.Module):
     #    # to store a cross-product activation
     #    return
     def set_activation(self, activation_tensor):
-        """Store scalar subspace activation for each object vector.
+        """Store 4-valued (quaternary) activation for each object vector.
+
+        Accepts either the full tetralemma bivector [B, N, 2] = [aP, aN]
+        or a legacy scalar [B, N] which is lifted to the bivector:
+            x > 0  -> [x, 0]   (positive truth)
+            x < 0  -> [0, -x]  (negative truth)
+            x == 0 -> [0, 0]   (NEITHER)
 
         Args:
-            activation_tensor: [batch, nVectors] or [batch, nVectors, 1]
-                scalar activation values per vector.
+            activation_tensor: [B, N, 2] bivector or [B, N] legacy scalar.
         """
-        if activation_tensor.ndim == 3:
-            assert activation_tensor.shape[-1] == 1, \
-                f"activation last dim must be 1, got {activation_tensor.shape}"
-            activation_tensor = activation_tensor.squeeze(-1)
-        assert activation_tensor.ndim == 2, \
-            f"activation must be [batch, nVectors], got {activation_tensor.shape}"
+        nd = self.activeEncoding.nDim
+        if activation_tensor.ndim == 2:
+            if nd == 2:
+                pos = torch.relu(activation_tensor)
+                neg = torch.relu(-activation_tensor)
+                activation_tensor = torch.stack([pos, neg], dim=-1)
+            # nd == 1 path: leave as [B, N]
+        elif activation_tensor.ndim == 3:
+            assert activation_tensor.shape[-1] == nd, (
+                f"activation last dim must be {nd}, got {activation_tensor.shape}"
+            )
+        else:
+            raise AssertionError(
+                f"activation must be [B, N] or [B, N, {nd}], got {activation_tensor.shape}"
+            )
         self.activation.setW(activation_tensor)
 
     def get_activation(self):
-        """Return stored activation [batch, nVectors] or None."""
+        """Return stored activation [B, N, nDim] or None."""
         if self.activation is None:
             return None
         return self.activation.getW()
+
+    def activation_presence(self):
+        """Scalar presence gate reduced from the activation tensor.
+
+        For the 4-valued bivector [aP, aN], presence = max(aP, aN) --
+        either pole being lit means the position carries information
+        (TRUE, FALSE, or BOTH all count as present; only NEITHER=[0,0]
+        gates the position off).
+        Returns [B, N] or None.
+        """
+        act = self.get_activation()
+        if act is None:
+            return None
+        if act.ndim == 3:
+            return act.max(dim=-1).values
+        return act
 
     def get_active(self):
         """Return modal presence flags [B, N, M] or None."""
@@ -2394,17 +2527,19 @@ class SubSpace(nn.Module):
         """Return effective activation: activation * product of modal flags.
 
         Returns:
-            [B, N] tensor. A position is active only if all its modalities
-            are present AND its event activation is positive.  Returns
-            plain activation if no modal flags are set.
+            [B, N] scalar tensor. A position is active only if all its
+            modalities are present AND its event activation is positive.
+            Scalar form comes from activation_presence() which reduces the
+            4-valued bivector via max(aP, aN). See BuddhistParallels.md
+            for the tetralemma mapping.
         """
-        act = self.get_activation()
-        if act is None:
+        pres = self.activation_presence()
+        if pres is None:
             return None
         if self._active is not None:
             modal_gate = self._active.prod(dim=-1)  # [B, N]
-            return act * modal_gate
-        return act
+            return pres * modal_gate
+        return pres
 
     def dematerialize(self):
         """Split event -> modalities, recover active flags.
@@ -2564,11 +2699,11 @@ class SubSpace(nn.Module):
             eff = self.effective_activation()
             if eff is not None:
                 return eff
-            activation = self.get_activation()
-            if activation is not None:
-                return activation
+            pres = self.activation_presence()
+            if pres is not None:
+                return pres
             self.set_activation_from_event()
-            return self.get_activation()
+            return self.activation_presence()
 
         x = self.event.getW()
 
@@ -2618,14 +2753,17 @@ class SubSpace(nn.Module):
         if x is None:
             return None
 
-        # Apply activation gate: materialize() = event * activation
-        act = self.get_activation()
-        if act is not None:
-            x = x * act.unsqueeze(-1)
+        # Apply activation gate: materialize() = event * activation_presence.
+        # The 4-valued bivector is reduced to a scalar presence (max of
+        # poles) for event gating; see BuddhistParallels.md for the
+        # tetralemma mapping.
+        pres = self.activation_presence()
+        if pres is not None:
+            x = x * pres.unsqueeze(-1)
 
         # top-k selection if requested
         if k is not None and k < x.shape[-2]:
-            score = act if act is not None else x.norm(dim=-1)
+            score = pres if pres is not None else x.norm(dim=-1)
             _, indices = torch.topk(score, k, dim=-1)
             self._topk_indices = indices
             x = torch.gather(x, -2, indices.unsqueeze(-1).expand(-1, -1, x.shape[-1]))
@@ -2650,6 +2788,12 @@ class SubSpace(nn.Module):
         assert target in Encoding.TARGETS, f"Unknown target {target!r}, expected one of {Encoding.TARGETS}"
 
         if target == "activation":
+            # Return the stored bivector as-is (4-valued quaternary truth).
+            # For a gated scalar gate, callers should use effective_activation()
+            # or materialize(mode="activation").
+            act = self.get_activation()
+            if act is not None:
+                return act
             return self.materialize(mode="activation")
 
         if target == "all":
@@ -4995,6 +5139,12 @@ class SymbolicSpace(Space):
         super().__init__(inputShape, spaceShape, outputShape, customVQ=True)
         self.conceptualSpace = conceptualSpace
         self.passThrough = passThrough
+        # Symbols carry 4-valued (quaternary) truth in .what via a 2-dim
+        # bivector [pos_pole, neg_pole]. Override the inherited content
+        # width accordingly so the codebook row = 2 + nWhere + nWhen.
+        # See basicmodel/doc/BuddhistParallels.md for the tetralemma.
+        self.subspace.nWhat = 2
+        self.subspace.muxedSize = 2 + self.subspace.nWhere + self.subspace.nWhen
         # PiLayer maps on the nDim axis: concept_dim+obj -> symbol_dim+obj.
         # nVectors passes through unchanged via batched matmul.
         nConceptDim = inputShape[1]     # concept_dim + obj (where+when)
@@ -5067,11 +5217,12 @@ class SymbolicSpace(Space):
             self.gradient_mode = mode_str
         self.decorrelation_weight = _symbol_cfg("decorrelationWeight", 0.0)
         self.spectral_flatness_weight = _symbol_cfg("spectralFlatnessWeight", 0.0)
-        # ImpenetrableLayer weights: mereological orthogonality regularizer on
-        # the codebook. Defaults to 0 (no-op) so existing configs are
-        # unchanged; see Layers.ImpenetrableLayer for semantics.
-        self.impenetrable_antisymmetry = _symbol_cfg("impenetrableAntisymmetry", 0.0)
-        self.impenetrable_transitivity = _symbol_cfg("impenetrableTransitivity", 0.0)
+        # ImpenetrableLayer: mereological separation regularizer on the
+        # codebook. Defaults to 0 (no-op) so existing configs are unchanged.
+        # ``impenetrableOverlap`` replaces the legacy antisymmetry+transitivity
+        # pair with a single ``overlap * |trust-diff|`` penalty driven by
+        # clipped-cosine parthood. See Layers.ImpenetrableLayer.
+        self.impenetrable_overlap = _symbol_cfg("impenetrableOverlap", 0.0)
         self.impenetrable_variance = _symbol_cfg("impenetrableVariance", 0.0)
         self.reset_symbol_objective()
 
@@ -5137,16 +5288,21 @@ class SymbolicSpace(Space):
         return None
 
     def _build_what_basis(self):
-        """Symbol codebook on .what, monotonic with bivector paired-index encoding.
-        Storage is doubled: index 2k = positive pole of concept k, 2k+1 = negative pole.
-        Both poles may be simultaneously active (BOTH) or both near zero (NEITHER),
-        supporting Belnap-Dunn FDE / Nagarjuna's catuskoti.
+        """Symbol codebook on .what, monotonic. One row per symbol.
+
+        Row width = 2 + nWhere + nWhen. The leading 2 dims carry the
+        bivector [pos_pole, neg_pole] encoding the 4-valued truth of the
+        symbol (tetralemma: TRUE=[1,0], FALSE=[0,1], BOTH=[1,1],
+        NEITHER=[0,0]). Trailing nWhere+nWhen dims carry per-symbol
+        positional/temporal template info. Negation operates on the
+        leading 2 dims only (see BuddhistParallels.md for the catuskoti
+        mapping).
         """
         basis = Codebook()
         basis.create(
             self.inputShape[0],
-            2 * self.nVectors,
-            self.nDim,
+            self.nVectors,
+            2 + self.nWhere + self.nWhen,
             customVQ=self.customVQ,
             passThrough=not self.codebook,
             monotonic=True,
@@ -5188,11 +5344,9 @@ class SymbolicSpace(Space):
 
     def _build_impenetrable_layer(self):
         return ImpenetrableLayer(
-            antisymmetry_weight=float(self.impenetrable_antisymmetry or 0.0),
-            transitivity_weight=float(self.impenetrable_transitivity or 0.0),
+            overlap_weight=float(self.impenetrable_overlap or 0.0),
             variance_floor=float(self.impenetrable_variance or 0.0),
             enabled=True,
-            bivector=True,
         )
 
     def impenetrable_loss(self):
@@ -5361,8 +5515,7 @@ class SymbolicSpace(Space):
         # ImpenetrableLayer operates on the codebook itself, not on per-
         # prediction residuals, so it is computed once per term-collection
         # rather than accumulated per Pi pass.
-        if (self.impenetrable_antisymmetry > 0.0
-                or self.impenetrable_transitivity > 0.0
+        if (self.impenetrable_overlap > 0.0
                 or self.impenetrable_variance > 0.0):
             imp = self.impenetrable_loss()
             if imp is not None and torch.is_tensor(imp) and imp.requires_grad:
@@ -6205,10 +6358,30 @@ class SyntacticLayer(Layer):
             return mask[:feature_dim]
         return torch.cat([mask, mask.new_zeros(feature_dim - K)], dim=-1)
 
-    def _apply_mask(self, out, mask):
-        """Multiply output by expanded mask along its last axis. No-op when
-        ``mask is None``."""
+    def _apply_mask(self, out, mask, subspace=None):
+        """Apply a mask either along the feature axis (default) or the
+        position axis (when ``subspace`` is provided and ``mask`` aligns
+        with ``out.shape[-2]``).
+
+        Feature-axis path: element-wise multiply along the last dim.
+        Position-axis path: zero the corresponding rows on
+        ``subspace._active`` so ``SubSpace.materialize()`` gating propagates
+        the mask downstream. Returns ``out`` unchanged in this case.
+        No-op when ``mask is None``.
+        """
         if mask is None or not torch.is_tensor(out):
+            return out
+        if (subspace is not None
+                and torch.is_tensor(mask)
+                and out.ndim >= 2
+                and mask.shape[-1] == out.shape[-2]
+                and getattr(subspace, "_active", None) is not None):
+            active = subspace._active
+            # mask aligns with the N (position) axis of _active = [..., N, M].
+            # Append a singleton trailing dim for M; broadcasting handles
+            # any leading batch dims automatically.
+            m = mask.to(device=active.device, dtype=active.dtype).unsqueeze(-1)
+            subspace._active = active * m
             return out
         m = self._expand_mask(mask, out.shape[-1])
         if m is None:
@@ -6282,7 +6455,7 @@ class SyntacticLayer(Layer):
             out = b.negation(left, monotonic=self._mono(subspace))
         else:
             out = -left
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     def notReverse(self, result, subspace, mask=None):
         b = self._basis(subspace)
@@ -6290,7 +6463,7 @@ class SyntacticLayer(Layer):
             out = b.negation_inverse(result, monotonic=self._mono(subspace))
         else:
             out = -result
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     def intersectionForward(self, left, right, subspace, mask=None):
         b = self._basis(subspace)
@@ -6298,7 +6471,7 @@ class SyntacticLayer(Layer):
             out = b.conjunction(left, right, monotonic=self._mono(subspace))
         else:
             out = torch.min(left, right)
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     def intersectionReverse(self, result, right, subspace, mask=None):
         b = self._basis(subspace)
@@ -6306,7 +6479,7 @@ class SyntacticLayer(Layer):
             out = b.conjunction_inverse(result, right, monotonic=self._mono(subspace))
         else:
             out = result
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     def unionForward(self, left, right, subspace, mask=None):
         b = self._basis(subspace)
@@ -6314,7 +6487,7 @@ class SyntacticLayer(Layer):
             out = b.disjunction(left, right, monotonic=self._mono(subspace))
         else:
             out = torch.max(left, right)
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     def unionReverse(self, result, right, subspace, mask=None):
         b = self._basis(subspace)
@@ -6322,7 +6495,7 @@ class SyntacticLayer(Layer):
             out = b.disjunction_inverse(result, right, monotonic=self._mono(subspace))
         else:
             out = result
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     # -- P-tier: chunk (invertible) --------------------------------
 
@@ -6334,7 +6507,7 @@ class SyntacticLayer(Layer):
             out = left
         else:
             out = torch.max(left, right)
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     def chunkReverse(self, result, right, subspace, mask=None):
         b = self._basis(subspace)
@@ -6342,14 +6515,20 @@ class SyntacticLayer(Layer):
             out = b.disjunction_inverse(result, right, monotonic=True)
         else:
             out = result
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     # -- S-tier: lossy operations (no inverse) ---------------------
 
     def equalsForward(self, left, right, subspace, mask=None):
-        """Equality score * right. Under a mask, agreement is computed only
-        on the selected concept dims, so the relation is transitive on that
-        subset (equal on fixed dims ⇒ equal on those dims transitively).
+        """S -> equals(S, S): agreement score via concept-level mutual parthood.
+
+        When called from the S-tier with a wired SymbolicSpace back-reference,
+        reverse-project both operands from S to C via the owning
+        SymbolicSpace's PiLayer, then delegate to the C-tier Basis.equal
+        (mutual parthood, scalar=True) on the bitonic concept subspace.
+        Otherwise fall back to the local subspace basis or elementwise min.
+
+        Under a mask, agreement is computed only on the selected dims.
         """
         if mask is not None:
             m = self._expand_mask(mask, left.shape[-1])
@@ -6359,10 +6538,36 @@ class SyntacticLayer(Layer):
             agree = agree.clamp(0.0, 1.0)
             while agree.ndim < right.ndim:
                 agree = agree.unsqueeze(-1)
-            return self._apply_mask(agree * right, mask)
+            return self._apply_mask(agree * right, mask, subspace=subspace)
+
+        sym_space = getattr(self, "_symbolic_space", None)
+        concept_space = getattr(sym_space, "conceptualSpace", None) if sym_space else None
+        concept_basis = None
+        if concept_space is not None:
+            c_sub = getattr(concept_space, "subspace", None)
+            concept_basis = getattr(c_sub, "basis", None) if c_sub else None
+        pi = getattr(sym_space, "layer", None) if sym_space else None
+
+        # Reverse-project only when the operand actually looks like a per-symbol
+        # vector (last dim == PiLayer's nOutput). Activations over symbol
+        # indices [B, K] fall through to the local subspace basis.
+        pi_output_dim = getattr(pi, "nOutput", None) if pi is not None else None
+        if (concept_basis is not None
+                and pi is not None
+                and hasattr(pi, "reverse")
+                and pi_output_dim is not None
+                and left.shape[-1] == pi_output_dim
+                and right.shape[-1] == pi_output_dim):
+            left_c = pi.reverse(left)
+            right_c = pi.reverse(right)
+            score = concept_basis.equal(left_c, right_c, monotonic=False, scalar=True)
+            while score.ndim < right.ndim:
+                score = score.unsqueeze(-1)
+            return score * right
+
         b = self._basis(subspace)
         if b is not None:
-            score = b.equal(left, right, monotonic=self._mono(subspace))
+            score = b.equal(left, right, monotonic=self._mono(subspace), scalar=True)
             while score.ndim < right.ndim:
                 score = score.unsqueeze(-1)
             return score * right
@@ -6371,13 +6576,13 @@ class SyntacticLayer(Layer):
     def partForward(self, left, right, subspace, mask=None):
         b = self._basis(subspace)
         if b is not None:
-            score = b.part(left, right, monotonic=self._mono(subspace))
+            score = b.part(left, right, monotonic=self._mono(subspace), scalar=True)
             while score.ndim < right.ndim:
                 score = score.unsqueeze(-1)
             out = score * right
         else:
             out = torch.min(left, right)
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     # -- S-tier trinity: true / false / non as partition of unity --
     # For x  in  [-1, 1]:  true(x) + false(x) + non(x) = 1
@@ -6394,7 +6599,7 @@ class SyntacticLayer(Layer):
             out = b.pos(left)
         else:
             out = torch.relu(left)
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     def falseForward(self, left, subspace, mask=None):
         """Positive rectification of the negation. The 'no' commitment.
@@ -6407,7 +6612,7 @@ class SyntacticLayer(Layer):
             out = b.pos(-left)
         else:
             out = torch.relu(-left)
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     def nonForward(self, left, subspace, mask=None):
         """Triangular residual: 1 - |x|. The 'indeterminate' commitment.
@@ -6418,7 +6623,7 @@ class SyntacticLayer(Layer):
         """
         left = torch.clamp(left, -1.0, 1.0)
         out = 1.0 - left.abs()
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     def conjunctionForward(self, left, right, subspace, mask=None):
         """S-tier sentence-level AND. Hadamard conjunction on bitonic activations.
@@ -6432,7 +6637,7 @@ class SyntacticLayer(Layer):
             out = b.conjunction(left, right, monotonic=self._mono(subspace))
         else:
             out = torch.minimum(left, right)
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     def disjunctionForward(self, left, right, subspace, mask=None):
         """S-tier sentence-level OR. Hadamard disjunction on bitonic activations.
@@ -6446,7 +6651,7 @@ class SyntacticLayer(Layer):
             out = b.disjunction(left, right, monotonic=self._mono(subspace))
         else:
             out = torch.maximum(left, right)
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     # -- Rule #2: S-tier slot selectors (what / where / when) -----
     # Parameter-free axis projections. Each zeros non-selected column
@@ -6472,35 +6677,35 @@ class SyntacticLayer(Layer):
     def whatForward(self, left, subspace, mask=None):
         """Axis selector: keep what-block, zero where/when-blocks."""
         if left.ndim < 3:
-            return self._apply_mask(left, mask)  # scalar mode -- no columns
+            return self._apply_mask(left, mask, subspace=subspace)  # scalar mode -- no columns
         nWhat, nWhere, nWhen = self._split_widths(subspace)
         if nWhat is None or (nWhere == 0 and nWhen == 0):
-            return self._apply_mask(left, mask)
+            return self._apply_mask(left, mask, subspace=subspace)
         out = torch.zeros_like(left)
         out[..., :nWhat] = left[..., :nWhat]
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     def whereForward(self, left, subspace, mask=None):
         """Axis selector: keep where-block, zero what/when-blocks."""
         if left.ndim < 3:
-            return self._apply_mask(left, mask)
+            return self._apply_mask(left, mask, subspace=subspace)
         nWhat, nWhere, nWhen = self._split_widths(subspace)
         if nWhat is None or nWhere == 0:
-            return self._apply_mask(torch.zeros_like(left), mask)
+            return self._apply_mask(torch.zeros_like(left), mask, subspace=subspace)
         out = torch.zeros_like(left)
         out[..., nWhat:nWhat + nWhere] = left[..., nWhat:nWhat + nWhere]
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     def whenForward(self, left, subspace, mask=None):
         """Axis selector: keep when-block, zero what/where-blocks."""
         if left.ndim < 3:
-            return self._apply_mask(left, mask)
+            return self._apply_mask(left, mask, subspace=subspace)
         nWhat, nWhere, nWhen = self._split_widths(subspace)
         if nWhat is None or nWhen == 0:
-            return self._apply_mask(torch.zeros_like(left), mask)
+            return self._apply_mask(torch.zeros_like(left), mask, subspace=subspace)
         out = torch.zeros_like(left)
         out[..., nWhat + nWhere:] = left[..., nWhat + nWhere:]
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     # -- forward: predict rules ------------------------------------
 
@@ -6840,7 +7045,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             out = cs.reverse(s_a * s_b)
         else:
             out = left * right
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     def liftReverse(self, result, right, subspace, mask=None):
         """Recover first operand: s_a = result / s_b, then PiLayer.reverse."""
@@ -6852,7 +7057,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             out = cs.reverse(s_a)
         else:
             out = result / (right + epsilon)
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     def lowerForward(self, left, right, subspace, mask=None):
         """Projected disjunction through symbolic space, back to concept space.
@@ -6876,7 +7081,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             out = cs.reverse((s_a + s_b) / 2)
         else:
             out = (left + right) / 2
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     def lowerReverse(self, result, right, subspace, mask=None):
         """Recover first operand from the rescaled lower forward.
@@ -6896,7 +7101,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             out = cs.reverse(s_a)
         else:
             out = 2 * result - right
-        return self._apply_mask(out, mask)
+        return self._apply_mask(out, mask, subspace=subspace)
 
     def project(self, grammar, rule_id, left, right=None, third=None, subspace=None,
                 mask=None):
@@ -7248,6 +7453,9 @@ class SymbolicSyntacticLayer(SyntacticLayer):
         self.swap_logits = nn.Parameter(torch.zeros(3, 3))
         self._swap_sinkhorn_iters = 5
         self.non_threshold = nn.Parameter(torch.tensor(0.0))
+        # Set by WordSpace._build_symbolic_layer so equalsForward can
+        # reverse-project S operands back to C and delegate to Basis.equal.
+        self._symbolic_space = None
 
     def _swap_soft_perm(self):
         M = self.swap_logits
@@ -7270,7 +7478,7 @@ class SymbolicSyntacticLayer(SyntacticLayer):
             right = left
         stack = torch.stack([left, right, m], dim=0)
         out = torch.einsum('ij,j...->i...', P, stack)
-        return self._apply_mask(out[0], mask)
+        return self._apply_mask(out[0], mask, subspace=subspace)
 
     _RULE_METHODS = {
         **SyntacticLayer._RULE_METHODS,
@@ -7308,7 +7516,7 @@ class SymbolicSyntacticLayer(SyntacticLayer):
         operand (the dropped symbol) exists only in the parse-tree
         record and is unused here.
         """
-        return self._apply_mask(left, mask)
+        return self._apply_mask(left, mask, subspace=subspace)
 
     def project(self, grammar, rule_id, left, right=None, subspace=None, mask=None):
         """Execute a rule via _RULE_METHODS dispatch."""
@@ -7674,17 +7882,23 @@ class WordSpace(Space):
                     symbol_acts, basis)
                 total_loss = total_loss + truth_loss_weight * truth_penalty
 
-        # Belnap-Dunn balance penalty: discourages forbidden corners (N, B)
-        # on committed symbol activations. Runs whenever the knobs select a
-        # non-permissive corner and symbol_acts are provided.
+        # Quaternary-corner balance penalty: discourages forbidden corners
+        # (N, B) on committed symbol activations. Runs whenever the knobs
+        # select a non-permissive corner and symbol_acts are provided.
+        # Under the current SymbolicSpace layout each row is
+        # [pos_pole, neg_pole, where..., when...] -- slice the leading
+        # bivector before passing to the paired-index penalty so that
+        # positional-template dims don't spuriously register as N/B.
+        # See basicmodel/doc/BuddhistParallels.md and doc/Spaces.md.
         wants_balance = (int(allow_excluded_middle) == -1
                          or int(allow_contradiction) == 0)
         if (balance_weight > 0 and wants_balance
                 and symbol_acts is not None
                 and torch.is_tensor(symbol_acts)
-                and symbol_acts.shape[-1] % 2 == 0):
+                and symbol_acts.shape[-1] >= 2):
+            bivector = symbol_acts[..., :2]
             balance = self.truth_layer.tetralemma_balance_penalty(
-                symbol_acts,
+                bivector,
                 allow_excluded_middle=int(allow_excluded_middle),
                 allow_contradiction=int(allow_contradiction))
             total_loss = total_loss + balance_weight * balance
@@ -7774,6 +7988,7 @@ class WordSpace(Space):
             grammar=grammar,
         )
         layer.init_swap(symbol_dim, n_slots)
+        layer._symbolic_space = space
         space.init_rule_codebook(grammar)
         self.attach_codebook_host(space)
         self.attach_layer('symbolic', layer)

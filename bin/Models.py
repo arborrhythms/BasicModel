@@ -2326,9 +2326,12 @@ class MentalModel(BaseModel):
         self.truth_bias_scale = float(TheXMLConfig.get("architecture.truthBiasScale", default=0.1) or 0.1)
         self.luminosity_weight = float(TheXMLConfig.get("architecture.LuminosityWeight", default=0.1) or 0.1)
         self.universality_weight = float(TheXMLConfig.get("architecture.UniversalityWeight", default=0.1) or 0.1)
-        # Belnap-Dunn balance knobs. Defaults mirror Kleene 3-valued logic:
-        #   allowExcludedMiddle=1  permit NEITHER (epistemic uncertainty)
-        #   allowContradiction=0   forbid BOTH (classical non-contradiction)
+        # Quaternary-corner balance knobs (see BuddhistParallels.md for
+        # the tetralemma/catuskoti mapping). Defaults permit NEITHER
+        # (epistemic uncertainty) but forbid BOTH (classical
+        # non-contradiction):
+        #   allowExcludedMiddle=1  permit NEITHER
+        #   allowContradiction=0   forbid BOTH
         self.allow_excluded_middle = int(
             TheXMLConfig.get("architecture.allowExcludedMiddle", default=1) or 1)
         self.allow_contradiction = int(

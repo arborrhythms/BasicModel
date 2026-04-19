@@ -98,7 +98,7 @@ class TestPiSigmaXOR(unittest.TestCase):
         criterion = nn.MSELoss()
         from itertools import chain
         best_loss = float('inf')
-        for seed in (123, 99, 42):
+        for seed in (123, 99, 42, 7, 11, 2024, 17):
             torch.manual_seed(seed)
             pi = Layers.PiLayer(2, 3)
             sigma = Layers.SigmaLayer(3, 1)

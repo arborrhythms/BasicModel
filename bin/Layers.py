@@ -1904,8 +1904,10 @@ class SmoothingRegularizer(Layer):
     ``[..., K, 2]`` and collapsed along the pole axis with ``amax`` before
     differencing. This respects the paired-index convention from the
     bivector encoding: indices ``2k`` and ``2k+1`` are poles of the same
-    concept -- penalising their difference would fight the Belnap-Dunn
-    encoding, so we measure discontinuity between *distinct* concepts only.
+    concept -- penalising their difference would fight the 4-valued
+    (quaternary) truth encoding, so we measure discontinuity between
+    *distinct* concepts only. See basicmodel/doc/BuddhistParallels.md
+    for the tetralemma (catuskoti) mapping.
 
     Acts as identity (returns scalar zero) when disabled or ``lam <= 0``.
     """
@@ -1930,115 +1932,138 @@ class SmoothingRegularizer(Layer):
 
 
 class ImpenetrableLayer(Layer):
-    """Mereological orthogonality regularizer on a symbol codebook.
+    """Mereological separation regularizer over a symbol codebook.
 
-    Pushes distinct codebook rows to be disjoint under Belnap-Dunn monotonic
-    parthood so paraconsistency (BOTH pole active) does not collapse into
-    schizophrenia (symbols indistinguishable). Three terms:
+    Classifies each ordered pair (i, j) of codebook rows into one of five
+    mereological relations using ``Basis.part`` (clipped-cosine scalar
+    parthood, scalar=True) and penalises overlap between rows whose
+    EMA usage frequencies disagree.
 
-    1. Antisymmetry: penalizes mutual parthood `P[i,j] * P[j,i]` for i != j.
-       In bivector mode the paired poles (2k, 2k+1) are excluded -- they are
-       negations of each other, not separate concepts.
-    2. Transitivity: samples `n_triples` random (a, b, c) triples and
-       penalizes `relu(min(P_ab, P_bc) - P_ac)`.
-    3. Anti-collapse variance floor: `relu(variance_floor - cb.std.mean())`
-       keeps rows from converging to a single point.
+    Penalty: ``overlap_strength(i, j) * |trust(i) - trust(j)|``
+    where ``overlap_strength = min(P[i,j], P[j,i]) * (1 - max(P[i,j], P[j,i])^k)``
+    damps to zero as the pair approaches mutual identity (``equal``).
 
-    Returns a scalar. When ``enabled`` is false, or all weights are zero, the
-    layer short-circuits to zero without touching the codebook.
+    Five relations (with thresholds τ and ε):
+      disjoint:  P[i,j] < ε  and  P[j,i] < ε
+      part_ij:   P[i,j] > τ  and  P[j,i] < ε
+      part_ji:   P[i,j] < ε  and  P[j,i] > τ
+      equal:     P[i,j] > τ  and  P[j,i] > τ
+      overlap:   both partial (neither > τ nor < ε)
+
+    Trust source: ``basis.vq.cluster_size`` EMA when a VectorQuantize is
+    present; falls back to row norms when VQ is off (e.g., passThrough).
+
+    A separate variance floor guards against row-collapse (all rows
+    converging to a single point).
+
+    Returns a scalar. When ``enabled`` is false or all weights are zero,
+    the layer short-circuits to zero without touching the codebook.
+
+    See basicmodel/doc/BuddhistParallels.md for the tetralemma (catuskoti)
+    mapping of the 4-valued truth logic that the separated codebook carries.
     """
 
-    def __init__(self, antisymmetry_weight: float = 0.1,
-                 transitivity_weight: float = 0.05,
+    def __init__(self, overlap_weight: float = 0.1,
                  variance_floor: float = 0.01,
                  enabled: bool = True,
-                 bivector: bool = False,
-                 n_triples: int = 64):
+                 full_part_threshold: float = 0.9,
+                 disjoint_threshold: float = 0.1,
+                 equal_suppression: float = 4.0):
         super().__init__(0, 0)
-        self.antisymmetry_weight = float(antisymmetry_weight)
-        self.transitivity_weight = float(transitivity_weight)
+        self.overlap_weight = float(overlap_weight)
         self.variance_floor = float(variance_floor)
         self.enabled = bool(enabled)
-        self.bivector = bool(bivector)
-        self.n_triples = int(n_triples)
+        self.tau = float(full_part_threshold)
+        self.eps = float(disjoint_threshold)
+        self.equal_k = float(equal_suppression)
         # Diagnostic slots populated on each forward pass.
-        self.last_antisymmetry = None
-        self.last_transitivity = None
+        self.last_overlap_loss = None
         self.last_variance = None
+        self.last_relation_counts = None
 
     def _pairwise_parthood(self, codebook: torch.Tensor,
                            basis) -> torch.Tensor:
-        """Compute P[i, j] = part(cb[i], cb[j]) for all K*K pairs.
-
-        Returns a [K, K] tensor of scalar parthood scores.
-        """
+        """Compute P[i, j] = part(cb[i], cb[j], scalar=True) for all K*K pairs."""
         K = codebook.shape[0]
         cb_i = codebook.unsqueeze(1).expand(K, K, -1)
         cb_j = codebook.unsqueeze(0).expand(K, K, -1)
-        return basis.part(cb_i, cb_j, monotonic=True)
+        return basis.part(cb_i, cb_j, monotonic=True, scalar=True)
 
-    def _paired_pole_mask(self, K: int, device) -> torch.Tensor:
-        """Return a [K, K] bool mask marking paired-pole positions (2k, 2k+1)
-        and their mirror (2k+1, 2k) as True. Used to exclude negation pairs
-        from the antisymmetry penalty.
+    def _trust(self, codebook: torch.Tensor, basis) -> torch.Tensor:
+        """Trust per codebook row.
+
+        Prefer VQ cluster_size EMA usage when the underlying basis has a
+        live VectorQuantize; fall back to normalised row norms otherwise.
+        Returns a [K] tensor on ``codebook.device``.
         """
-        mask = torch.zeros(K, K, dtype=torch.bool, device=device)
-        pairs = K // 2
-        if pairs <= 0:
-            return mask
-        idx = torch.arange(pairs, device=device)
-        mask[2 * idx, 2 * idx + 1] = True
-        mask[2 * idx + 1, 2 * idx] = True
-        return mask
+        vq = getattr(basis, "vq", None)
+        if vq is not None and hasattr(vq, "cluster_size"):
+            counts = vq.cluster_size
+            if torch.is_tensor(counts) and counts.numel() == codebook.shape[0]:
+                counts = counts.to(codebook.device).float()
+                return counts / counts.sum().clamp(min=1.0)
+        n = codebook.norm(dim=-1).float()
+        return n / n.max().clamp(min=epsilon)
+
+    def _classify(self, P: torch.Tensor) -> dict:
+        """Classify each ordered off-diagonal (i, j) pair into one of five
+        mereological relations. The diagonal is masked out so diagnostic
+        counts sum to ``K * (K - 1)``."""
+        high = P > self.tau
+        low = P < self.eps
+        high_T = high.transpose(0, 1)
+        low_T = low.transpose(0, 1)
+        eye = torch.eye(P.shape[0], device=P.device, dtype=torch.bool)
+        off = ~eye
+        return {
+            "disjoint": (low & low_T) & off,
+            "part_ij":  (high & low_T) & off,
+            "part_ji":  (low & high_T) & off,
+            "equal":    (high & high_T) & off,
+            "overlap":  (~(high | low) & ~(high_T | low_T)) & off,
+        }
 
     def forward(self, codebook: torch.Tensor, basis=None) -> torch.Tensor:
         zero = (codebook.new_tensor(0.0) if isinstance(codebook, torch.Tensor)
                 else torch.tensor(0.0))
-        self.last_antisymmetry = None
-        self.last_transitivity = None
+        self.last_overlap_loss = None
         self.last_variance = None
+        self.last_relation_counts = None
         if not self.enabled:
             return zero
         if codebook is None or not isinstance(codebook, torch.Tensor):
             return zero
         if codebook.ndim != 2 or codebook.shape[0] < 2:
             return zero
-        want_anti = self.antisymmetry_weight > 0.0 and basis is not None
-        want_trans = self.transitivity_weight > 0.0 and basis is not None
+        want_overlap = self.overlap_weight > 0.0 and basis is not None
         want_var = self.variance_floor > 0.0
-        if not (want_anti or want_trans or want_var):
+        if not (want_overlap or want_var):
             return zero
 
         K = codebook.shape[0]
         total = zero
-        P = None
-        if want_anti or want_trans:
+
+        if want_overlap:
             P = self._pairwise_parthood(codebook, basis)
-
-        if want_anti:
+            trust = self._trust(codebook, basis)
+            trust_diff = (trust.unsqueeze(0) - trust.unsqueeze(1)).abs()
+            P_T = P.transpose(0, 1)
+            min_P = torch.minimum(P, P_T)
+            max_P = torch.maximum(P, P_T)
+            # Damp overlap as the pair approaches mutual identity so that
+            # two rows meant to encode the same concept (``equal``) do
+            # not contribute to the overlap penalty.
+            damp = (1.0 - max_P.clamp(0.0, 1.0) ** self.equal_k).clamp(min=0.0)
             eye = torch.eye(K, device=codebook.device, dtype=torch.bool)
-            excl = eye.clone()
-            if self.bivector and K % 2 == 0:
-                excl = excl | self._paired_pole_mask(K, codebook.device)
-            mutual = P * P.transpose(0, 1)
-            keep = (~excl).float()
-            denom = keep.sum().clamp_min(1.0)
-            anti = (mutual * keep).sum() / denom
-            self.last_antisymmetry = anti.detach()
-            total = total + self.antisymmetry_weight * anti
-
-        if want_trans and self.n_triples > 0:
-            n = self.n_triples
-            a = torch.randint(0, K, (n,), device=codebook.device)
-            b = torch.randint(0, K, (n,), device=codebook.device)
-            c = torch.randint(0, K, (n,), device=codebook.device)
-            P_ab = P[a, b]
-            P_bc = P[b, c]
-            P_ac = P[a, c]
-            violation = torch.relu(torch.min(P_ab, P_bc) - P_ac)
-            trans = violation.mean()
-            self.last_transitivity = trans.detach()
-            total = total + self.transitivity_weight * trans
+            keep = (~eye).float()
+            denom = keep.sum().clamp(min=1.0)
+            overlap_loss = (min_P * damp * trust_diff * keep).sum() / denom
+            self.last_overlap_loss = overlap_loss.detach()
+            total = total + self.overlap_weight * overlap_loss
+            rels = self._classify(P)
+            self.last_relation_counts = {
+                k: int(v.sum().item()) for k, v in rels.items()
+            }
 
         if want_var:
             std = codebook.std(dim=0, unbiased=False).mean()
@@ -2106,8 +2131,10 @@ class TruthLayer(Layer):
         store ``activation * degree`` (positive poles already hot). For
         ``degree < 0``, paired-index flip via ``basis.negation(...,
         monotonic=True)`` lands the mass on the negative poles, then
-        scale by ``|degree|``. This preserves Belnap-Dunn semantics:
-        asserting A and asserting not(A) are orthogonal, not cancelling.
+        scale by ``|degree|``. This preserves 4-valued (quaternary)
+        truth semantics: asserting A and asserting not(A) are
+        orthogonal, not cancelling. See
+        basicmodel/doc/BuddhistParallels.md for the tetralemma mapping.
 
         Legacy path (no basis or odd last dim): the stored vector is
         ``activation * degree``, so the DoT is encoded in both the
@@ -2294,15 +2321,30 @@ class TruthLayer(Layer):
     # -- Luminosity -----------------------------------------------------
 
     def _positive_poles(self, v: torch.Tensor) -> torch.Tensor:
-        """Extract positive poles from a bivector storage vector.
+        """Extract positive poles from a **paired-index** storage vector.
 
-        Under the paired-index convention, even indices are positive
-        poles and odd indices are negative poles of the same concept.
+        Assumes ``v`` is laid out as repeated pairs
+        ``[pos_0, neg_0, pos_1, neg_1, ...]`` over ``v.shape[-1] == 2K``.
+        Even indices are positive poles; odd indices are negative poles.
+
+        .. warning::
+            This layout is **not** the current SymbolicSpace codebook layout,
+            where each row is ``[pos_pole, neg_pole, where..., when...]``
+            with a single leading bivector plus trailing positional data.
+            Before calling ``luminosity``/``darkness``/
+            ``tetralemma_balance_penalty`` with a symbol activation from the
+            new codebook, **slice the leading bivector** via
+            ``v[..., :2]`` at the call site. See basicmodel/doc/Spaces.md
+            "Codebook shape" note for the mapping.
         """
         return v[..., 0::2]
 
     def _negative_poles(self, v: torch.Tensor) -> torch.Tensor:
-        """Extract negative poles from a bivector storage vector."""
+        """Extract negative poles from a paired-index storage vector.
+
+        See :meth:`_positive_poles` for the layout caveat regarding the
+        new leading-bivector SymbolicSpace codebook.
+        """
         return v[..., 1::2]
 
     def luminosity(self, pi_layer=None) -> torch.Tensor:
@@ -2311,7 +2353,8 @@ class TruthLayer(Layer):
         Bivector path (even last dim): luminosity is the L2 norm of the
         element-wise min across positive poles only. Contradictions land
         on paired negative-pole indices and cannot dim the positive
-        conjunction under Belnap-Dunn.
+        conjunction under 4-valued (quaternary) truth semantics. See
+        basicmodel/doc/BuddhistParallels.md for the tetralemma mapping.
 
         Legacy path (odd last dim): element-wise min across all truths,
         positive-part norm (unchanged).
@@ -2372,13 +2415,25 @@ class TruthLayer(Layer):
                                allow_excluded_middle: int = 1,
                                allow_contradiction: int = 0,
                                neither_threshold: float = 0.1) -> torch.Tensor:
-        """Penalize forbidden corners of the Belnap-Dunn 4-valued lattice.
+        """Penalize forbidden corners of the quaternary truth lattice (tetralemma).
 
-        ``bivector_activation`` is a `[..., 2K]` tensor with pairs
-        `(t+, t-)` per concept. Each concept lives in one of four corners:
+        ``bivector_activation`` is expected to be a `[..., 2K]` tensor in
+        **paired-index** layout, where each consecutive pair ``(t+, t-)``
+        encodes one concept's tetralemma corner:
 
             T = (1, 0)   F = (0, 1)
             N = (0, 0)   B = (1, 1)
+
+        .. warning::
+            The current SymbolicSpace codebook layout is
+            ``[pos_pole, neg_pole, where..., when...]`` — a **single**
+            leading bivector plus trailing positional template data, not
+            repeated pairs. If passing a symbol activation from the new
+            codebook, slice the leading bivector first
+            (``sym_act[..., :2]``) to avoid applying tetralemma corner
+            policy to positional-template dims. See
+            basicmodel/doc/Spaces.md "Codebook shape" and
+            basicmodel/doc/BuddhistParallels.md.
 
         Flags control which corners are penalized:
             allow_excluded_middle == -1  =>  penalize N (force classical LEM)
@@ -2412,6 +2467,36 @@ class TruthLayer(Layer):
         if int(allow_contradiction) == 0:
             total = total + (t_pos * t_neg).mean()
         return total
+
+    # -- Mereological fusion -------------------------------------------
+
+    def fusion(self, indices: torch.Tensor = None) -> torch.Tensor:
+        """Mereological fusion (least upper bound) of stored truths.
+
+        Returns the elementwise ``max`` across the stored truth set
+        (or the rows selected by ``indices``) — the axis-aligned bounding
+        hyperrectangle in bivector space. Every individual truth is
+        componentwise dominated by the fusion: ``t_i <= fusion`` per dim.
+
+        Under paired-index storage ``[2K]``, pairs ``(2k, 2k+1)`` encode
+        concept k's ``(pos, neg)`` poles, so fusion tightens each pair to
+        its per-truth maximum — the hyperrectangle's "top right" corner
+        in the 2D ``(pos, neg)`` plane of every concept.
+
+        Under the current SymbolicSpace codebook layout
+        ``[pos_pole, neg_pole, where..., when...]``, fusion on raw stored
+        rows also maxes the positional trailers; slice ``[..., :2]``
+        at the call site for a pure bivector fusion.
+
+        Returns a ``(D,)`` tensor in the same layout as stored truths, or
+        a zero vector when no truths are stored.
+        """
+        n = int(self.count.item())
+        if n == 0:
+            return torch.zeros(self.truths.shape[-1], device=self.truths.device,
+                               dtype=self.truths.dtype)
+        stored = self.truths[:n] if indices is None else self.truths[indices]
+        return stored.max(dim=0).values
 
     def truth_conjunction(self, basis, pi_layer=None):
         """Conjunction of all stored truths via bitonic intersection.
@@ -2708,7 +2793,7 @@ class TruthLayer(Layer):
         """Scalar part-of score for (a, b). Uses basis when provided,
         otherwise a positive-pole overlap proxy on bivector storage."""
         if basis is not None and hasattr(basis, "part"):
-            score = basis.part(a, b, monotonic=True)
+            score = basis.part(a, b, monotonic=True, scalar=True)
             if torch.is_tensor(score):
                 return float(score.mean().item())
             return float(score)

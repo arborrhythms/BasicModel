@@ -1,10 +1,12 @@
 """Tests for bivector (paired-index) monotonic encoding.
 
-Phase 1 of the Belnap-Dunn bivector plan: the SymbolicSpace codebook
-stores paired positive/negative poles (index 2k / 2k+1), Basis.negation
-with monotonic=True swaps paired indices, the post-optimizer clamp
-keeps values in [0, 1], and pre-bivector checkpoints migrate by row
-duplication.
+Phase 1 of the 4-valued (quaternary) truth bivector plan: the
+SymbolicSpace codebook stores paired positive/negative poles (index
+2k / 2k+1), Basis.negation with monotonic=True swaps paired indices,
+the post-optimizer clamp keeps values in [0, 1], and pre-bivector
+checkpoints migrate by row duplication. See
+basicmodel/doc/BuddhistParallels.md for the tetralemma (catuskoti)
+mapping.
 """
 
 import os

@@ -207,12 +207,48 @@ instances -- `sigma1` for forward, `sigma2` for reverse.
 **Layer.** `SigmaLayer` (one or two instances depending on `invertible`).
 
 **Range.** Vectors are tanh-bounded: each element is in `[-1, 1]` (applied by SigmaLayer).
-Activation is `[-1, 1]`. The boundary between PerceptualSpace and ConceptualSpace uses
+The boundary between PerceptualSpace and ConceptualSpace uses
 `atanh` (forward) / `tanh` (reverse) as exact inverses. Tanh is applied to enforce
 the element-wise range.
 
+**Activation carrier.** `ActiveEncoding.nDim = 2`: activation is a 2-dim
+bivector `[aP, aN]` per position, encoding the four corners of the
+tetralemma (*catuskoti*):
+
+| State            | `[aP, aN]` |
+|------------------|------------|
+| TRUE (*asti*)    | `[1, 0]`   |
+| FALSE (*nasti*)  | `[0, 1]`   |
+| BOTH (*ubhaya*)  | `[1, 1]`   |
+| NEITHER (*anubhaya*) | `[0, 0]` |
+
+BOTH encodes first-class inconsistency (same position affirmed and
+negated by independent sources/frames); NEITHER encodes unknown
+(neither affirmed nor negated).  Operations obey De Morgan under
+pole-swap negation `¬[aP, aN] = [aN, aP]`:
+
+- Conjunction: `[min(aP, bP), max(aN, bN)]`
+- Disjunction: `[max(aP, bP), min(aN, bN)]`
+
+See [BuddhistParallels.md](BuddhistParallels.md).
+
 **Invertibility.** `invertible=True`: exact inverse via atanh + `W^{-1}`. `invertible=False`:
 separate layers with independent weights.
+
+**MASK on `SubSpace._active`.** `SubSpace` tracks two orthogonal
+per-position tensors: `activation` (the 4-valued truth bivector above)
+and `_active` shaped `[B, N, M]` where $M$ is the number of modality
+presence flags (what / where / when).  Grammar-rule masking is shape-
+disambiguated by `_apply_mask`:
+
+| Mask shape   | Effect                                                       |
+|--------------|--------------------------------------------------------------|
+| Aligns with `out.shape[-1]` (feature axis) | Element-wise multiply on the output tensor. |
+| Aligns with `out.shape[-2]` (position axis) | Zero the masked rows of `subspace._active`; `materialize()` then gates those positions downstream. |
+
+This makes MASK a first-class filter on the presence flags rather than
+an arithmetic multiplication, so masked positions propagate their
+"absent" status through the pipeline's active-materialization path.
 
 ---
 
@@ -268,6 +304,16 @@ recovering the concept activation.
 most highly active; negative products never activate). Each symbol receives where/when
 encoding from PerceptualSpace, making symbols uniform with percepts. Internally stored
 as activation in `[-1, 1]` via the `(x+1)/2` mapping.
+
+**Codebook shape.** The symbol codebook has one row per symbol, full muxed
+width: `SymbolicSpace.subspace.what.getW().shape == (nVectors, 2 + nWhere + nWhen)`
+with `nWhat = 2`.  The leading 2 dims of each row carry the bivector
+`[pos_pole, neg_pole]` encoding the 4-valued (quaternary) truth of the
+symbol via the tetralemma / *catuskoti*: TRUE=[1,0], FALSE=[0,1],
+BOTH=[1,1], NEITHER=[0,0].  Trailing `nWhere + nWhen` dims carry
+per-symbol positional/temporal template info.  `Basis.negation` swaps
+`(pos, neg)` on the leading 2 dims only.  See
+[BuddhistParallels.md](BuddhistParallels.md) for the catuskoti mapping.
 
 **Layer.** `PiLayer(nConcepts, nSymbols, invertible=True, monotonic=True)` -- maps
 between activation spaces via monotonic multiplicative transform. The `monotonic=True`

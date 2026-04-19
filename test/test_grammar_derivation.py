@@ -242,11 +242,11 @@ class TestGrammarProject(_GrammarTestBase):
         result = self.s_sl.project(self.grammar, rule_id, left, right)
         self.assertEqual(result.shape, left.shape)
 
-    def test_project_part_s_tier(self):
-        """part(S, S) -- S-tier lossy operation."""
-        rule_id = self._rule_id('part', arity=2, tier='S')
-        left, right = self._S(), self._S()
-        result = self.s_sl.project(self.grammar, rule_id, left, right)
+    def test_project_part_c_tier(self):
+        """part(C, C) -- mereological parthood, C-tier after refactor."""
+        rule_id = self._rule_id('part', arity=2, tier='C')
+        left, right = self._C(), self._C()
+        result = self.c_sl.project(self.grammar, rule_id, left, right)
         self.assertEqual(result.shape, left.shape)
 
     def test_project_s_to_c_transition_passthrough(self):

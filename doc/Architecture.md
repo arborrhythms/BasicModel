@@ -174,8 +174,26 @@ discrete one-hot encoding via an invertible layer and codebook. SyntacticSpace
 generates a derivation tree from the active symbols, stored as word tuples
 `(batch, vector, rule)`.
 
-See [Language.md](Language.md) for the full grammar, word encoding, and open
-implementation questions about differentiable tree structure and rule operations.
+**Mereological grammar (tier-partitioned rule catalog).**
+
+- **C-tier** (bitonic conceptual operations):
+  `not(C)`, `intersection(C, C)`, `union(C, C)`, `part(C, C)`
+- **S-tier** (monotonic symbolic operations):
+  `equals(S, S)`, `swap(S, S)`, `query(S, S)`, `S → C` (projection)
+
+Parthood (`part`) is the **fundamental** mereological operation, realized
+as clipped cosine projection on the bitonic concept subspace.  The full
+mereological suite (`whole`, `equal`, `overlap`, `underlap`, `boundary`)
+composes through `part` on `Basis`.  `equals(S, S)` is S-tier propositional
+identity: it reverse-projects both symbolic operands through the PiLayer
+and delegates to `Basis.equal` (mutual parthood) on the concept subspace.
+Two symbols are equal when they reverse-project to equal concepts.
+
+See [Logic.md](Logic.md) for the parthood formula and suite,
+[Mereology.md](Mereology.md) for the five-relations reference and the
+`ImpenetrableLayer` regularizer, and [Language.md](Language.md) for the
+full grammar, word encoding, and open implementation questions about
+differentiable tree structure and rule operations.
 
 ---
 

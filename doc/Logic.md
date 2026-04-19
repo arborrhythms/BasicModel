@@ -40,14 +40,15 @@ Objects:
   `Basis.non()` -- bitonic: returns zero (complete withdrawal); monotonic:
   `relu(x - threshold)` with a learnable threshold parameter.
 
-- **Parthood**:
-  `Basis.part()` -- mereological containment score in $[0, 1]$:
+- **Parthood** (fundamental):
+  `Basis.part()` -- clipped cosine projection in $[0, 1]$:
   $$
-  \operatorname{part}(x, y) = \operatorname{conj}\!\bigl(1 - d(x,\, x \cap y),\; 1 - d(y,\, x \cup y)\bigr)
+  \operatorname{part}(x, y) = \frac{\max(0,\; x \cdot y)}{\lVert x \rVert \cdot \lVert y \rVert}
   $$
-  where $\cap$ is `conjunction`, $\cup$ is `disjunction`, and $d$ is
-  volume-weighted L2 distance. Returns 1 when $x$ is fully contained
-  in $y$; 0 otherwise.
+  Satisfies Boole's contrapositive $\operatorname{part}(x, y) = \operatorname{part}(-y, -x)$
+  trivially (dot product and norms are both sign-invariant under joint
+  negation). The full mereological suite (`whole`, `equal`, `overlap`,
+  `underlap`, `boundary`) composes through `part`.
 
 ---
 
@@ -98,20 +99,55 @@ $$
 a \cap b = \min(a, b)
 $$
 
-### Parthood (mereological containment)
+### Parthood as Projection
 
-`Basis.part(a, b)` returns a score in $[0, 1]$: the degree to which $a$ is
-contained in $b$, defined as $a = a \cap b$ AND $b = a \cup b$, measured by
-volume-weighted distance.  For ternary values:
+Parthood is the **fundamental mereological operation**.  For two
+concepts $A, B \in \mathbb{R}^D$:
+
+$$
+\operatorname{part}(A, B) = \frac{\max(0,\; A \cdot B)}{\lVert A \rVert \cdot \lVert B \rVert}
+$$
+
+This clipped cosine projection is in $[0, 1]$.  It satisfies Boole's
+contrapositive $\operatorname{part}(A, B) = \operatorname{part}(-B, -A)$
+trivially because $(-B) \cdot (-A) = A \cdot B$ and norms are
+sign-invariant.
+
+The full mereological suite composes through `part`:
+
+| Method              | Formula                                        |
+|---------------------|------------------------------------------------|
+| `whole(A, B)`       | `part(B, A)`                                   |
+| `equal(A, B)`       | `part(A, B) · part(B, A)`                      |
+| `overlap(A, B)`     | `0 < equal(A, B) < 1`  (region indicator)      |
+| `underlap(A, B)`    | `equal(A, B) == 0`     (region indicator)      |
+| `boundary(A, B)`    | <code>&#124;part(A, B) − part(B, A)&#124;</code>  (zero under clipped cosine) |
+
+`equal(A, B) ∈ [0, 1]` partitions into three disjoint regions:
+
+- `equal = 0` → **underlap** (disjoint)
+- `0 < equal < 1` → **overlap** (strictly partial)
+- `equal = 1` → **identity** (perfect mutual parthood)
+
+Under clipped cosine `part(A, B) = part(B, A)` (cosine is symmetric), so
+`equal` reduces to `part²`.  Asymmetric classical subsumption is recovered
+**relationally** via figure/ground: compare `part(A, B)` against
+`part(A, ¬B)`.  This is what makes Boole's contrapositive hold exactly.
+
+See [Mereology.md](Mereology.md) for the full five-relations reference
+and the `ImpenetrableLayer` regularizer that enforces these relations
+on the symbol codebook.
+
+For ternary scalar values, the monotonic projection reduces to:
 
 | part(a,b) | **+1** | **0** | **-1** |
 |-----------|--------|-------|--------|
-| **+1**    | 1      | 0     | 0      |
+| **+1**    | 1      | 1     | 0      |
 | **0**     | 1      | 1     | 1      |
-| **-1**    | 0      | 0     | 1      |
+| **-1**    | 0      | 1     | 1      |
 
-Zero is vacuously part of everything; same-sign values contain themselves;
-opposite signs have zero parthood.
+Zero is vacuously part of everything (empty-set convention); same-sign
+values fully contain each other; opposite signs have zero parthood.
 
 ---
 
@@ -201,21 +237,23 @@ Stored truths should satisfy two consistency conditions:
 
 ### Propositional Structure
 
-The S-tier grammar provides the two propositional relations:
+Parthood is a C-tier operation (conceptual containment); equals is the
+S-tier propositional relation that delegates to the concept-space suite:
 
-- **part(S, S)** -- containment.  "A is part of B."  `Basis.part(A, B)`
-  computes a mereological score in $[0, 1]$: the degree to which
-  $A = A \cap B$ and $B = A \cup B$, measured by volume-weighted distance.
-  The Grammar applies this as `score * B`, scaling the whole by the
-  parthood degree.  Asymmetric: part(A, B) does not imply part(B, A).
+- **part(C, C)** -- containment in concept space.  "A is part of B."
+  `Basis.part(A, B)` is a clipped cosine projection in $[0, 1]$.  The
+  Grammar applies this as `score * B`, scaling the whole by the
+  parthood degree.
 
-- **equals(S, S)** -- identity as mutual parthood.
-  `Basis.equal(A, B)` computes `conjunction(part(A, B), part(B, A))`.
-  The Grammar applies this as `score * B`, scaling B by the equality
-  degree.  Returns 1 only when both directions of containment hold.
+- **equals(S, S)** -- identity as mutual parthood on reverse-projected
+  concepts.  `equalsForward` reverse-projects both symbolic operands
+  through the PiLayer and delegates to `Basis.equal` (mutual parthood)
+  on the bitonic concept subspace.  Returns 1 only when the two symbols
+  reverse-project to equal concepts.
 
-Together, `equals` and `part` define a partial order over symbolic activations.
-The truth store captures this order as a database of grounded propositions.
+Together, `equals` (S-tier) and `part` (C-tier) define a partial order
+over symbolic activations through concept-space identity.  The truth
+store captures this order as a database of grounded propositions.
 
 ### Truth Accumulation Pipeline
 
@@ -492,6 +530,42 @@ Luminosity serves two roles in the model:
 2. **Loss modification**: low luminosity increases training loss,
    penalizing irrational propositions. See [Ethics.md](./Ethics.md)
    Section Universality for the full formula.
+
+### Fusion
+
+Fusion is the **mereological least upper bound** of the stored truth
+set: the elementwise max over every stored truth vector.
+
+```
+fusion = max_i truths[i]
+```
+
+In bivector space (paired-index `[p0, n0, p1, n1, ...]`), the fusion
+vector names the top-right corner of an axis-aligned bounding
+hyperrectangle — the smallest hyperrectangle dominating every stored
+truth componentwise.  This is the geometric dual of luminosity:
+
+- **Luminosity** = `||relu(min(truths))||` — the greatest lower bound
+  (GLB / meet), scalar coherence.  Answers *where do truths agree?*
+- **Fusion** = `max(truths)` — the least upper bound (LUB / join),
+  vector coverage.  Answers *what region do truths collectively
+  cover?*
+
+Trust (DegreeOfTruth) is already baked into each stored truth via
+`record`: `stored[i] = activation_i * degree_i`.  Fusion over
+trust-scaled truths therefore gives a trust-weighted LUB — a truth
+stored with `degree=0.3` contributes only `0.3 * activation` to the max.
+
+**Layout caveat.** The TruthLayer's paired-index slicing (`[..., 0::2]`
+for positive poles, `[..., 1::2]` for negative) assumes a *repeated*
+bivector layout `[p0, n0, p1, n1, ...]`.  The SymbolicSpace codebook
+uses a different layout — a *leading* bivector plus positional
+trailers: `[pos, neg, where..., when...]`.  Callers that feed
+SymbolicSpace symbol activations into `luminosity()`,
+`tetralemma_balance_penalty()`, or related methods must slice the
+leading 2 dims first (`acts[..., :2]`) to isolate the bivector from
+positional content; see the `truth_loss` call-site in
+`basicmodel/bin/Spaces.py` for the canonical pattern.
 
 ### Supporting measures
 

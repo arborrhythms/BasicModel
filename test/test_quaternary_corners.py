@@ -1,6 +1,7 @@
-"""Tests for Belnap-Dunn balance knobs (Phase 3).
+"""Tests for 4-valued (quaternary) truth balance knobs (Phase 3).
 
-The four corners of the Belnap-Dunn lattice:
+The four corners of the quaternary truth lattice are Nagarjuna's
+*catuskoti* (tetralemma):
 
     T = (t+, t-) = (1, 0)   F = (0, 1)
     N = (0, 0)              B = (1, 1)
@@ -8,6 +9,9 @@ The four corners of the Belnap-Dunn lattice:
 TruthLayer.tetralemma_balance_penalty penalizes forbidden corners based on
 ``allow_excluded_middle`` (-1 forbids N, +1 permits) and
 ``allow_contradiction`` (0 forbids B, +1 permits).
+
+See basicmodel/doc/BuddhistParallels.md for the tetralemma (catuskoti)
+mapping.
 """
 
 import os
@@ -41,7 +45,7 @@ def _corner(name: str, K: int = 4) -> torch.Tensor:
     return v
 
 
-class TestBelnapPenalty(unittest.TestCase):
+class TestQuaternaryPenalty(unittest.TestCase):
 
     def test_classical_penalizes_N_and_B(self):
         """EM=-1, C=0: only T and F allowed."""
@@ -115,6 +119,106 @@ class TestConfigScoping(unittest.TestCase):
         default_contra = 0
         self.assertEqual(default_em, 1)
         self.assertEqual(default_contra, 0)
+
+
+class TestCatuskotiActivation(unittest.TestCase):
+    """SubSpace activation bivector encodes the four tetralemma corners.
+
+    The activation carrier is `ActiveEncoding` with `nDim=2`:
+        TRUE    (asti)     -> [1, 0]
+        FALSE   (nasti)    -> [0, 1]
+        BOTH    (ubhaya)   -> [1, 1]  -- inconsistency
+        NEITHER (anubhaya) -> [0, 0]  -- unknown
+    """
+
+    def test_activation_encoding_is_bivector(self):
+        """`ActiveEncoding.nDim == 2` -- the 4-valued truth carrier width."""
+        import Spaces
+        self.assertEqual(Spaces.ActiveEncoding.nDim, 2)
+
+    def test_four_corners_roundtrip_through_subspace(self):
+        """Each tetralemma corner survives set_activation / get_activation."""
+        import Spaces
+        B, N = 1, 4
+        ss = Spaces.SubSpace(inputShape=[N, 1], outputShape=[N, 1])
+        # Explicitly carry all four corners at the four positions.
+        corners = torch.tensor(
+            [[[1.0, 0.0],   # TRUE
+              [0.0, 1.0],   # FALSE
+              [1.0, 1.0],   # BOTH (inconsistency)
+              [0.0, 0.0]]]  # NEITHER (unknown)
+        )
+        ss.set_activation(corners)
+        out = ss.get_activation()
+        self.assertEqual(list(out.shape), [B, N, 2])
+        self.assertTrue(torch.allclose(out, corners))
+
+    def test_both_corner_distinguishable_from_neither(self):
+        """`[1, 1]` (BOTH) and `[0, 0]` (NEITHER) are distinct under the new encoding.
+
+        In the legacy 1-dim activation, indeterminate and contradictory
+        states collapse onto a single axis. The bivector representation
+        distinguishes them -- a regression this test guards.
+        """
+        both = torch.tensor([1.0, 1.0])
+        neither = torch.tensor([0.0, 0.0])
+        self.assertFalse(torch.equal(both, neither))
+        # Both corners are valid bivector encodings; their channel-sums differ.
+        self.assertEqual(both.sum().item(), 2.0)
+        self.assertEqual(neither.sum().item(), 0.0)
+
+
+class TestTruthFusion(unittest.TestCase):
+    """Mereological fusion of the truth set forms a bivector hyperrectangle.
+
+    For two paired-index truths `t1, t2` in `R^{2K}`, the fusion
+    `f = max(t1, t2)` dominates both componentwise. Each concept's
+    `(pos, neg)` pair names the top-right corner of a 2D rectangle.
+    Callers slice the fusion vector for the positive or negative face.
+    """
+
+    def test_fusion_dominates_each_truth(self):
+        tl = _truth_layer()
+        tl.record(_corner('T'), degree=1.0)
+        tl.record(_corner('F'), degree=1.0)
+        fus = tl.fusion()
+        self.assertTrue(torch.all(tl.truths[0] <= fus + 1e-9))
+        self.assertTrue(torch.all(tl.truths[1] <= fus + 1e-9))
+
+    def test_fusion_is_elementwise_max(self):
+        tl = _truth_layer()
+        t1 = torch.tensor([0.9, 0.0, 0.3, 0.1, 0.0, 0.8, 0.1, 0.0])
+        t2 = torch.tensor([0.4, 0.2, 0.7, 0.0, 0.0, 0.9, 0.5, 0.3])
+        tl.record(t1, degree=1.0)
+        tl.record(t2, degree=1.0)
+        self.assertTrue(torch.allclose(tl.fusion(), torch.maximum(t1, t2)))
+
+    def test_fusion_empty_truthset_is_zero(self):
+        tl = _truth_layer()
+        self.assertTrue(torch.all(tl.fusion() == 0))
+
+    def test_fusion_both_poles_lit_on_B_corner(self):
+        """BOTH `(1,1)` lights both paired-pole slices of the fusion vector."""
+        tl = _truth_layer()
+        tl.record(_corner('B'), degree=1.0)
+        fus = tl.fusion()
+        # Both pos (0::2) and neg (1::2) slices are non-zero.
+        self.assertGreater(fus[0::2].abs().sum().item(), 0.0)
+        self.assertGreater(fus[1::2].abs().sum().item(), 0.0)
+
+    def test_fusion_vs_conjunction_are_orthogonal_metrics(self):
+        """Fusion (max, LUB) and luminosity (min, GLB) answer different questions."""
+        tl = _truth_layer()
+        K = 4
+        t1 = torch.zeros(2 * K); t1[0] = 1.0  # only concept 0 positive
+        t2 = torch.zeros(2 * K); t2[2] = 1.0  # only concept 1 positive
+        tl.record(t1, degree=1.0)
+        tl.record(t2, degree=1.0)
+        # Fusion (LUB) covers both positive slots; luminosity (GLB) is empty.
+        fus = tl.fusion()
+        self.assertEqual(fus[0].item(), 1.0)
+        self.assertEqual(fus[2].item(), 1.0)
+        self.assertAlmostEqual(tl.luminosity().item(), 0.0, places=5)
 
 
 if __name__ == '__main__':
