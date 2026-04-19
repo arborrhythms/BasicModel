@@ -1485,6 +1485,10 @@ class AttentionLayer(Layer):
         if mask is not None:
             scores = scores.masked_fill(~mask, float("-inf"))
         attn = F.softmax(scores, dim=-1)
+        # Cached for diagnostic readers (e.g. InterSentenceLayer uses
+        # the last-position entropy as a confidence signal).  Detached
+        # so holding it doesn't pin the graph.
+        self.last_attn = attn.detach()
         output = torch.matmul(attn, value)
         output = output.transpose(1, 2).contiguous().view(batch, n_obj, self.nHidden)
         output = self.Out(output)
@@ -3079,7 +3083,8 @@ class InterSentenceLayer(Layer):
     name = "Discourse"
 
     def __init__(self, n_symbols, max_depth, n_dim,
-                 context_window=3, centroid_history=3, lam=1.01):
+                 context_window=12, centroid_history=3, lam=1.01,
+                 concept_dim=None):
         # n_sentence rows * n_dim cols is the shape of a single
         # snapshot; Layer's nInput / nOutput fields carry the
         # flattened count for any legacy consumers that read them.
@@ -3091,9 +3096,14 @@ class InterSentenceLayer(Layer):
         self.max_depth = int(max_depth)
         self.n_dim = int(n_dim)
         self.n_sentence = n_sentence
+        self.snapshot_dim = flat
         self.context_window = int(context_window)
         self.centroid_history = int(centroid_history)
         self.lam = float(lam)
+        # concept_dim is the target dim for the priming cast.  When
+        # None, the predictor and cast are not built -- the layer
+        # degrades to pure contrastive behavior (legacy path).
+        self.concept_dim = int(concept_dim) if concept_dim is not None else None
 
         # Recent buffer: last K = context_window snapshots. Their mean
         # is the current attractive target.  Registered as a
@@ -3122,12 +3132,33 @@ class InterSentenceLayer(Layer):
             torch.zeros((), dtype=torch.long),
             persistent=False)
 
-        # No learnable parameters -- the contrastive loss has no
-        # predictor.  ``self.layers`` stays empty so the ergodic walk
-        # finds nothing to touch here, but the field is kept so the
-        # Layer base-class machinery (``paramUpdate`` et al.) still
-        # iterates cleanly.
+        # Learnable pieces for the AR sentence predictor.  Only built
+        # when concept_dim is provided (i.e. the caller wants the
+        # predictive/priming pathway).  Layer.layers carries them so
+        # the ergodic walk reaches their parameters.
         self.layers = []
+        self.predictor = None
+        self.cast = None
+        if self.concept_dim is not None:
+            # Causal self-attention over [N, snapshot_dim].  Output
+            # at the final position is the predicted next snapshot.
+            # Transformer mode with a causal mask so every position
+            # also supplies a predict-next training signal (only the
+            # last is read at inference).
+            #
+            # snapshot_dim can be large (n_sentence * n_dim); a
+            # bottleneck hidden dim keeps Q/K/V manageable.
+            predictor_hidden = min(self.snapshot_dim, 256)
+            self.predictor = AttentionLayer(
+                nInput=self.snapshot_dim,
+                nOutput=self.snapshot_dim,
+                nHidden=predictor_hidden,
+                type="transformer",
+                nHeads=1,
+            )
+            self.cast = LinearLayer(self.snapshot_dim, self.concept_dim)
+            self.layers.append(self.predictor)
+            self.layers.append(self.cast)
 
     # -- snapshot & history -------------------------------------------
     def _fit_rows(self, x, target_rows):
@@ -3232,7 +3263,7 @@ class InterSentenceLayer(Layer):
         return s, w
 
     # -- contrastive loss ---------------------------------------------
-    def loss(self, s_tensor, w_tensor):
+    def contrastive_loss(self, s_tensor, w_tensor):
         """Dual-force contrastive loss over the full flattened
         ``[n_sentence * n_dim]`` snapshot vector.
 
@@ -3265,6 +3296,102 @@ class InterSentenceLayer(Layer):
             repulsive = torch.tensor(0.0, device=current_flat.device)
 
         return attractive.squeeze() + self.lam * repulsive
+
+    # -- AR sentence prediction ---------------------------------------
+    def _causal_mask(self, n, device):
+        """Lower-triangular bool mask [1, n, n]: True = attend."""
+        m = torch.ones(n, n, dtype=torch.bool, device=device).tril_()
+        return m.unsqueeze(0)
+
+    def predict(self):
+        """Run the AR predictor over the current recent buffer.
+
+        Returns ``(predicted_snapshot, confidence)`` where
+
+          - ``predicted_snapshot``: flattened snapshot vector of shape
+            ``[snapshot_dim]``, or ``None`` if the recent buffer is
+            empty or the predictor was not built.
+          - ``confidence``: scalar tensor in ``[0, 1]``, derived from
+            the last-position attention entropy (focused attention =
+            high confidence).  Returns ``None`` alongside a ``None``
+            prediction.
+
+        The recent buffer is batch-free (snapshots are batch-pooled
+        at store time); the predictor runs once per sentence, not
+        per batch element.
+        """
+        if self.predictor is None:
+            return None, None
+        n = int(self._recent_count.item())
+        if n == 0:
+            return None, None
+        # [n, n_sentence, n_dim] -> [n, snapshot_dim] -> [1, n, D]
+        seq = self._recent[:n].reshape(n, self.snapshot_dim).unsqueeze(0)
+        self.predictor.set_mask(self._causal_mask(n, seq.device))
+        try:
+            out = self.predictor(seq)              # [1, n, snapshot_dim]
+        finally:
+            # Clear the mask so the shared instance doesn't leak a
+            # stale mask into any other caller.
+            self.predictor.set_mask(None)
+        predicted = out[0, -1]                      # [snapshot_dim]
+
+        # Confidence from attention entropy at the last position.
+        # AttentionLayer caches the most recent attention weights as
+        # ``last_attn`` of shape [B=1, nHeads=1, N, N].  The final
+        # row is the query's distribution over the N keys (respecting
+        # the causal mask, so only the lower triangle carries mass).
+        attn = getattr(self.predictor, 'last_attn', None)
+        if attn is None:
+            confidence = torch.tensor(0.0, device=predicted.device)
+        else:
+            last_row = attn[0, 0, -1]               # [n]
+            eps = 1e-12
+            h = -(last_row * (last_row + eps).log()).sum()
+            # Normalize by log(max(n, 2)) to avoid divide-by-zero at
+            # n=1.  At n=1 the attention is a point mass so h=0 and
+            # confidence is 1 regardless of the denominator; the
+            # guard just keeps the arithmetic finite.
+            denom = float(torch.log(torch.tensor(max(n, 2),
+                dtype=last_row.dtype, device=last_row.device)))
+            confidence = (1.0 - h / denom).clamp(0.0, 1.0)
+        return predicted, confidence
+
+    def predictive_loss(self, s_tensor, w_tensor, predicted):
+        """Cosine-distance loss between the AR-predicted snapshot and
+        the actual ``[S | W]`` snapshot assembled from the live
+        ``(s_tensor, w_tensor)`` pair.
+
+        Returns ``None`` when ``predicted`` is ``None`` (first sentence
+        cold-start, or predictor disabled).  Gradient flows through
+        both ``predicted`` (via the predictor's parameters) and the
+        live ``s/w`` arguments.
+        """
+        if predicted is None:
+            return None
+        actual_flat = self._assemble(s_tensor, w_tensor).reshape(-1)
+        pred_flat = predicted.reshape(-1)
+        sim = F.cosine_similarity(
+            pred_flat.unsqueeze(0), actual_flat.unsqueeze(0))
+        return (1.0 - sim).squeeze()
+
+    def prime(self, predicted, confidence, scale):
+        """Cast a predicted snapshot into concept space and gate it.
+
+        Returns ``cast(predicted) * confidence * scale`` as a tensor
+        of shape ``[concept_dim]``, or ``None`` when inputs are
+        missing or the cast is not built.  Caller is responsible for
+        broadcasting across batch/position axes of ``concept_input``.
+        """
+        if (self.cast is None
+                or predicted is None
+                or confidence is None):
+            return None
+        # cast expects a 2D [B, in]; wrap and unwrap the singleton.
+        cast_out = self.cast(predicted.unsqueeze(0)).squeeze(0)
+        return cast_out * confidence * float(scale)
+
+
 class ChunkLayer(Layer):
     """Learned BPE-style codebook for perceptual chunking.
 

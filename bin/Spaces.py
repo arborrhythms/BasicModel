@@ -7592,7 +7592,7 @@ class WordSpace(Space):
                 n_sym_rows = int(getattr(symbolicSpace, 'nVectors', 0) or 0)
             if n_sym_rows > 0 and muxed > 0:
                 context_window = int(TheXMLConfig.training(
-                    "sentenceContextWindow", 3) or 3)
+                    "sentenceContextWindow", 12) or 12)
                 centroid_history = int(TheXMLConfig.training(
                     "sentenceCentroidHistory", 3) or 3)
                 sentence_lambda = float(TheXMLConfig.training(
@@ -7605,6 +7605,7 @@ class WordSpace(Space):
                     context_window=context_window,
                     centroid_history=centroid_history,
                     lam=sentence_lambda,
+                    concept_dim=int(concept_dim),
                 )
                 self.layers.append(self.discourse)
                 for p in self.discourse.parameters():

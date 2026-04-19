@@ -215,6 +215,9 @@
       <xs:element name="sentenceCentroidHistory" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="sentenceLambda" type="positiveFloat" minOccurs="0"/>
       <xs:element name="sentencePredictionScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="sentencePredictiveScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="sentenceContrastiveScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="sentencePrimingScale" type="nonNegativeFloat" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -370,7 +373,8 @@
        its training hyperparameters live under <architecture><training>
        (sentencePrediction / sentenceContextWindow /
        sentenceCentroidHistory / sentenceLambda /
-       sentencePredictionScale).
+       sentencePredictionScale / sentencePredictiveScale /
+       sentenceContrastiveScale / sentencePrimingScale).
        ═══════════════════════════════════════════════════════════════════ -->
   <xs:simpleType name="useGrammarType">
     <xs:restriction base="xs:string">

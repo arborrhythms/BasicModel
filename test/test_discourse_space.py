@@ -123,7 +123,7 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
         self.assertIsNone(d.latest_snapshot())
         s = torch.randn(self.N_SYMBOLS, self.N_DIM)
         w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        self.assertIsNone(d.loss(s, w))
+        self.assertIsNone(d.contrastive_loss(s, w))
 
     def test_ring_eviction_folds_centroid(self):
         """When the recent buffer is full, the next snapshot folds the
@@ -231,7 +231,7 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
         self.assertIsNone(d.latest_snapshot())
         s = torch.randn(self.N_SYMBOLS, self.N_DIM)
         w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        self.assertIsNone(d.loss(s, w))
+        self.assertIsNone(d.contrastive_loss(s, w))
 
     # -- contrastive loss --------------------------------------------
 
@@ -247,7 +247,7 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
 
         s_cur = torch.randn(self.N_SYMBOLS, self.N_DIM)
         w_cur = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        loss = d.loss(s_cur, w_cur)
+        loss = d.contrastive_loss(s_cur, w_cur)
         self.assertIsNotNone(loss)
 
         # Manual computation:
@@ -271,7 +271,7 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
 
         s_cur = torch.randn(self.N_SYMBOLS, self.N_DIM)
         w_cur = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        loss = d.loss(s_cur, w_cur)
+        loss = d.contrastive_loss(s_cur, w_cur)
         self.assertIsNotNone(loss)
 
         # Manual: attractive + lam * mean_over_prev(cos)
@@ -295,7 +295,7 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
         s = torch.randn(self.N_SYMBOLS, self.N_DIM)
         w = torch.randn(self.MAX_DEPTH, self.N_DIM)
         d.snapshot(s, w)
-        loss = d.loss(s, w)
+        loss = d.contrastive_loss(s, w)
         self.assertIsNotNone(loss)
         self.assertTrue(torch.allclose(
             loss, torch.zeros_like(loss), atol=1e-6))
@@ -313,7 +313,7 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
 
         s_cur = torch.randn(self.N_SYMBOLS, self.N_DIM, requires_grad=True)
         w_cur = torch.randn(self.MAX_DEPTH, self.N_DIM, requires_grad=True)
-        loss = d.loss(s_cur, w_cur)
+        loss = d.contrastive_loss(s_cur, w_cur)
         self.assertIsNotNone(loss)
         loss.backward()
         self.assertIsNotNone(s_cur.grad)
@@ -335,7 +335,7 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
 
         s_cur = torch.randn(self.N_SYMBOLS, self.N_DIM, requires_grad=True)
         w_cur = torch.randn(self.MAX_DEPTH, self.N_DIM, requires_grad=True)
-        loss = d.loss(s_cur, w_cur)
+        loss = d.contrastive_loss(s_cur, w_cur)
         loss.backward()
         # The historical tensors should NOT have received gradient --
         # snapshot() detached them.
@@ -343,6 +343,171 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
                         or s_hist.grad.abs().sum().item() == 0)
         self.assertTrue(w_hist.grad is None
                         or w_hist.grad.abs().sum().item() == 0)
+
+
+class TestDiscoursePredictor(_DiscourseTestBase):
+    """Unit tests for the AR-sentence predictor pathway.
+
+    Covers the three methods added to InterSentenceLayer when
+    ``concept_dim`` is provided: ``predict`` (next-snapshot + its
+    attention-entropy confidence), ``predictive_loss`` (cosine
+    distance vs. the actual next snapshot), and ``prime`` (cast into
+    concept_dim gated by confidence and scale).
+    """
+
+    N_SYMBOLS = 4
+    MAX_DEPTH = 6
+    N_DIM = 8
+    CTX = 4
+    CENTROID_HIST = 2
+    LAM = 1.01
+    CONCEPT_DIM = 12
+
+    def _make(self, concept_dim=None):
+        return Layers.InterSentenceLayer(
+            n_symbols=self.N_SYMBOLS,
+            max_depth=self.MAX_DEPTH,
+            n_dim=self.N_DIM,
+            context_window=self.CTX,
+            centroid_history=self.CENTROID_HIST,
+            lam=self.LAM,
+            concept_dim=concept_dim,
+        )
+
+    def test_predict_empty_buffer(self):
+        """With zero snapshots recorded, predict() should return
+        ``(None, None)`` -- there is nothing to attend over."""
+        d = self._make(concept_dim=self.CONCEPT_DIM)
+        pred, conf = d.predict()
+        self.assertIsNone(pred)
+        self.assertIsNone(conf)
+
+    def test_predict_shape(self):
+        """After at least one snapshot, predict() should return a
+        1-D tensor of length ``snapshot_dim`` and a scalar
+        confidence."""
+        d = self._make(concept_dim=self.CONCEPT_DIM)
+        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
+        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
+        d.snapshot(s, w)
+        pred, conf = d.predict()
+        self.assertIsNotNone(pred)
+        self.assertEqual(tuple(pred.shape), (d.snapshot_dim,))
+        self.assertIsNotNone(conf)
+        self.assertEqual(conf.ndim, 0)
+
+    def test_confidence_range(self):
+        """Confidence is derived from attention entropy, so it must
+        stay in ``[0, 1]``."""
+        d = self._make(concept_dim=self.CONCEPT_DIM)
+        for _ in range(3):
+            s = torch.randn(self.N_SYMBOLS, self.N_DIM)
+            w = torch.randn(self.MAX_DEPTH, self.N_DIM)
+            d.snapshot(s, w)
+        _, conf = d.predict()
+        self.assertIsNotNone(conf)
+        c = float(conf.item())
+        self.assertGreaterEqual(c, 0.0)
+        self.assertLessEqual(c, 1.0)
+
+    def test_predictive_loss_zero_when_pred_equals_actual(self):
+        """If the predicted snapshot equals the assembled actual one,
+        the cosine distance should be ~0."""
+        d = self._make(concept_dim=self.CONCEPT_DIM)
+        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
+        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
+        actual_flat = d._assemble(s, w).reshape(-1).detach()
+        loss = d.predictive_loss(s, w, actual_flat)
+        self.assertIsNotNone(loss)
+        self.assertTrue(torch.allclose(
+            loss, torch.zeros_like(loss), atol=1e-6))
+
+    def test_predictive_loss_none_when_no_prediction(self):
+        """predictive_loss() with ``predicted=None`` returns None."""
+        d = self._make(concept_dim=self.CONCEPT_DIM)
+        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
+        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
+        self.assertIsNone(d.predictive_loss(s, w, None))
+
+    def test_cast_shape(self):
+        """prime() output shape is ``[concept_dim]`` (1-D)."""
+        d = self._make(concept_dim=self.CONCEPT_DIM)
+        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
+        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
+        d.snapshot(s, w)
+        pred, conf = d.predict()
+        bias = d.prime(pred, conf, 0.5)
+        self.assertIsNotNone(bias)
+        self.assertEqual(tuple(bias.shape), (self.CONCEPT_DIM,))
+
+    def test_prime_zero_when_scale_zero(self):
+        """prime() scaled by 0.0 returns a zero tensor (no bias)."""
+        d = self._make(concept_dim=self.CONCEPT_DIM)
+        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
+        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
+        d.snapshot(s, w)
+        pred, conf = d.predict()
+        bias = d.prime(pred, conf, 0.0)
+        self.assertIsNotNone(bias)
+        self.assertTrue(torch.allclose(
+            bias, torch.zeros_like(bias), atol=1e-6))
+
+    def test_prime_none_without_concept_dim(self):
+        """When ``concept_dim`` isn't set, the cast isn't built and
+        prime() falls back to None (legacy contrastive-only path)."""
+        d = self._make(concept_dim=None)
+        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
+        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
+        d.snapshot(s, w)
+        # predict() also returns (None, None) in this legacy mode.
+        pred, conf = d.predict()
+        self.assertIsNone(pred)
+        self.assertIsNone(conf)
+        bias = d.prime(pred, conf, 0.1)
+        self.assertIsNone(bias)
+
+    def test_contrastive_unaffected_by_predictor(self):
+        """Adding the predictor/cast must not change the value of the
+        contrastive loss on the same inputs."""
+        s = torch.randn(self.N_SYMBOLS, self.N_DIM)
+        w = torch.randn(self.MAX_DEPTH, self.N_DIM)
+        s_hist = torch.randn(self.N_SYMBOLS, self.N_DIM)
+        w_hist = torch.randn(self.MAX_DEPTH, self.N_DIM)
+
+        d_plain = self._make(concept_dim=None)
+        d_plain.snapshot(s_hist, w_hist)
+        loss_plain = d_plain.contrastive_loss(s, w)
+
+        d_pred = self._make(concept_dim=self.CONCEPT_DIM)
+        d_pred.snapshot(s_hist, w_hist)
+        loss_pred = d_pred.contrastive_loss(s, w)
+
+        self.assertIsNotNone(loss_plain)
+        self.assertIsNotNone(loss_pred)
+        self.assertTrue(torch.allclose(loss_plain, loss_pred, atol=1e-6))
+
+    def test_predictive_loss_gradient_flows_through_predictor(self):
+        """The predictive loss has learnable parameters in the
+        predictor; gradient must reach at least one of them."""
+        d = self._make(concept_dim=self.CONCEPT_DIM)
+        s_hist = torch.randn(self.N_SYMBOLS, self.N_DIM)
+        w_hist = torch.randn(self.MAX_DEPTH, self.N_DIM)
+        d.snapshot(s_hist, w_hist)
+
+        pred, _ = d.predict()
+        self.assertIsNotNone(pred)
+
+        s_cur = torch.randn(self.N_SYMBOLS, self.N_DIM, requires_grad=True)
+        w_cur = torch.randn(self.MAX_DEPTH, self.N_DIM, requires_grad=True)
+        loss = d.predictive_loss(s_cur, w_cur, pred)
+        self.assertIsNotNone(loss)
+        loss.backward()
+
+        any_param_grad = any(
+            p.grad is not None and p.grad.abs().sum().item() > 0
+            for p in d.predictor.parameters())
+        self.assertTrue(any_param_grad,
+                        "no gradient reached the predictor parameters")
 
 
 class TestDiscourseSpaceIntegration(_DiscourseTestBase):
@@ -435,6 +600,46 @@ class TestDiscourseSpaceIntegration(_DiscourseTestBase):
         if ws is not None and getattr(ws, 'discourse', None) is not None:
             ws.discourse.reset()
         self.assertEqual(len(d), 0)
+
+    def test_discourse_predictor_wired_when_concept_dim_available(self):
+        """When MentalModel builds WordSpace with a concept_dim, the
+        discourse layer's predictor/cast should be built -- this is
+        what enables the AR priming path."""
+        self.model, self.cfg = self._build_model()
+        d = self.model.wordSpace.discourse
+        self.assertIsNotNone(d.concept_dim)
+        self.assertIsNotNone(d.predictor)
+        self.assertIsNotNone(d.cast)
+
+    def test_predicted_snapshot_cached_after_forward(self):
+        """forward() caches ``_predicted_snapshot`` and
+        ``_predicted_confidence`` on self (after at least one prior
+        snapshot has been recorded) so runBatch can pick them up."""
+        self.model, self.cfg = self._build_model()
+        d = self.model.wordSpace.discourse
+        # Seed one prior snapshot so predict() has context.
+        s = torch.randn(d.n_symbols, d.n_dim, device=Models.TheDevice.get())
+        w = torch.zeros(d.max_depth, d.n_dim, device=Models.TheDevice.get())
+        d.snapshot(s, w)
+
+        sentences = ['the cat sat on the mat']
+        outputs = [torch.tensor([0.0])]
+        with Models.TheData.runtime_batch(sentences, outputs), \
+             warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="Range violation")
+            warnings.filterwarnings("ignore", message="PiLayer.reverse")
+            train_input, _ = self.model.inputSpace.getTrainData()
+            x = self.model.inputSpace.prepInput(train_input[:1])
+            self.model.eval()
+            self.model.set_sigma(0)
+            with torch.no_grad():
+                try:
+                    self.model.forward(x)
+                except ValueError:
+                    self.skipTest("Untrained model range violation")
+
+        self.assertIsNotNone(getattr(self.model, '_predicted_snapshot', None))
+        self.assertIsNotNone(getattr(self.model, '_predicted_confidence', None))
 
 
 if __name__ == '__main__':

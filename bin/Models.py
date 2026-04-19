@@ -63,6 +63,9 @@ class BaseModel(nn.Module):
     # ``wordSpace``; ``<training><sentencePrediction>false`` in
     # config leaves ``wordSpace.discourse`` as ``None``.
     sentence_prediction_scale = 0.1
+    sentence_contrastive_scale = 0.1
+    sentence_predictive_scale = 0.1
+    sentence_priming_scale = 0.05
 
     @staticmethod
     def load_config(config_path=None):
@@ -177,6 +180,17 @@ class BaseModel(nn.Module):
         # is true. Gated inside Spaces.WordSpace construction.
         self.sentence_prediction_scale = float(
             TheXMLConfig.training("sentencePredictionScale", 0.1) or 0.1)
+        # Contrastive scale falls back to the legacy
+        # sentencePredictionScale so existing configs keep behaving
+        # as before for the contrastive term.
+        self.sentence_contrastive_scale = float(
+            TheXMLConfig.training(
+                "sentenceContrastiveScale",
+                self.sentence_prediction_scale) or self.sentence_prediction_scale)
+        self.sentence_predictive_scale = float(
+            TheXMLConfig.training("sentencePredictiveScale", 0.1) or 0.1)
+        self.sentence_priming_scale = float(
+            TheXMLConfig.training("sentencePrimingScale", 0.05) or 0.05)
 
         if "trainEmbedding" in arch and not isinstance(arch["trainEmbedding"], dict):
             te = arch["trainEmbedding"]
@@ -1915,28 +1929,46 @@ class BasicModel(BaseModel):
                     space="WordSpace", category="embedding",
                 )
 
-        # Inter-sentence contrastive loss. DiscourseSpace computes a
-        # dual-force cosine loss over the full flattened ``[S | W]``
-        # snapshot vector: attractive toward the recent context
-        # centroid, repulsive from older centroids. Gradient flows
-        # through the live ``(s_tensor, w_tensor)`` pair while the
-        # stored history is detached. First-sentence case (empty
-        # recent buffer) returns ``None`` and we just snapshot.
-        discourse_loss = None
+        # Inter-sentence discourse losses. DiscourseSpace produces
+        # two complementary terms over the flattened ``[S | W]``
+        # snapshot vector:
+        #   * contrastive -- dual-force cosine, attractive toward
+        #     the recent context centroid, repulsive from older
+        #     centroids.  Expands the codebook.
+        #   * predictive  -- cosine distance between the AR
+        #     sentence predictor's output and the actual current
+        #     snapshot.  Collapses the codebook.
+        # Both share gradient through the live ``(s_tensor, w_tensor)``
+        # pair; stored history is detached.  First-sentence / empty
+        # buffer cases return ``None`` and we just snapshot.
+        discourse_contrastive = None
+        discourse_predictive = None
         discourse = getattr(self.wordSpace, 'discourse', None) if self.wordSpace is not None else None
         if train and discourse is not None:
             s_tensor = getattr(self, '_current_discourse_s', None)
             w_tensor = getattr(self, '_current_discourse_w', None)
             if s_tensor is not None and w_tensor is not None:
-                discourse_loss = discourse.loss(s_tensor, w_tensor)
+                discourse_contrastive = discourse.contrastive_loss(
+                    s_tensor, w_tensor)
+                predicted = getattr(self, '_predicted_snapshot', None)
+                if predicted is not None:
+                    discourse_predictive = discourse.predictive_loss(
+                        s_tensor, w_tensor, predicted)
                 discourse.snapshot(s_tensor, w_tensor)
 
         totalLoss = self.loss.total(lossOut, lossIn, sbow)
-        if discourse_loss is not None:
-            totalLoss = totalLoss + self.sentence_prediction_scale * discourse_loss
+        if discourse_contrastive is not None:
+            totalLoss = totalLoss + self.sentence_contrastive_scale * discourse_contrastive
             TheError.add(
-                "discourse", discourse_loss,
-                weight=self.sentence_prediction_scale,
+                "discourse_contrastive", discourse_contrastive,
+                weight=self.sentence_contrastive_scale,
+                space="DiscourseSpace", category="discourse",
+            )
+        if discourse_predictive is not None:
+            totalLoss = totalLoss + self.sentence_predictive_scale * discourse_predictive
+            TheError.add(
+                "discourse_predictive", discourse_predictive,
+                weight=self.sentence_predictive_scale,
                 space="DiscourseSpace", category="discourse",
             )
         symbol_loss = None
@@ -1996,7 +2028,8 @@ class BasicModel(BaseModel):
                 _loss_value("lossOut", lossOut),
                 _loss_value("lossIn", lossIn),
                 _loss_value("sbow", sbow),
-                _loss_value("discourse", discourse_loss),
+                _loss_value("discourse_contrastive", discourse_contrastive),
+                _loss_value("discourse_predictive", discourse_predictive),
                 _loss_value("symbol", symbol_loss),
                 _loss_value("total", totalLoss),
             ])
@@ -2663,6 +2696,22 @@ class MentalModel(BaseModel):
             self.wordSpace.ensure_batch(B)
             self.wordSpace.clear_sentence()
 
+        # AR sentence prediction: snapshot-level prediction from
+        # past-sentence history.  Runs once per forward(); the
+        # output is (a) cast into concept_dim and added as a
+        # priming bias to concept_input at t=0, and (b) kept on
+        # self for the predictive loss that runBatch computes
+        # against the actual snapshot assembled after forward().
+        self._predicted_snapshot = None
+        self._predicted_confidence = None
+        discourse_for_prime = (
+            self.wordSpace.discourse
+            if self.wordSpace is not None else None)
+        if discourse_for_prime is not None:
+            pred, conf = discourse_for_prime.predict()
+            self._predicted_snapshot = pred
+            self._predicted_confidence = conf
+
         # -- Pre-loop init --
         self.symbol_states = []
         self.symbolicSpace.reset_symbol_objective()
@@ -2712,6 +2761,20 @@ class MentalModel(BaseModel):
                     ss, self._symbol_shape[0], percepts.shape[-1])
                 self._nonrams_sym_feedbacks.append(ss_feedback)
                 concept_input = self._bound_concept_input(percepts + ss_feedback)
+
+            # 1b. Sentence priming bias: inject the AR-sentence
+            # prediction (cast into concept_dim and gated by
+            # attention-entropy confidence) at t=0.  Subsequent
+            # sigma-pi iterations read the already-primed concept
+            # state via ss_feedback, so priming only applies on the
+            # first iteration.
+            if t == 0 and discourse_for_prime is not None:
+                bias = discourse_for_prime.prime(
+                    self._predicted_snapshot,
+                    self._predicted_confidence,
+                    self.sentence_priming_scale)
+                if bias is not None:
+                    concept_input = concept_input + bias.view(1, 1, -1)
 
             # 2. Sigma (conceptual transformation)
             self.percepts.set_event(concept_input)

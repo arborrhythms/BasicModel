@@ -68,10 +68,20 @@
            context centroid, repulsive from older centroids.  No
            learnable parameters. -->
       <sentencePrediction>false</sentencePrediction>
-      <sentenceContextWindow>3</sentenceContextWindow>
+      <sentenceContextWindow>12</sentenceContextWindow>
       <sentenceCentroidHistory>3</sentenceCentroidHistory>
       <sentenceLambda>1.01</sentenceLambda>
       <sentencePredictionScale>0.1</sentencePredictionScale>
+      <!-- AR predictive loss: cosine distance between the AR
+           sentence predictor's output and the actual current [S|W]
+           snapshot.  Paired with the contrastive loss as a
+           collapse/expand tension on the snapshot geometry. -->
+      <sentencePredictiveScale>0.1</sentencePredictiveScale>
+      <sentenceContrastiveScale>0.1</sentenceContrastiveScale>
+      <!-- Priming: AR prediction cast into concept_dim and added as
+           a bias to concept_input before the sigma-pi loop.  Scaled
+           by confidence * sentencePrimingScale.  Default small. -->
+      <sentencePrimingScale>0.05</sentencePrimingScale>
     </training>
 
     <server>
