@@ -1142,9 +1142,23 @@ class SyntacticLayer(Layer):
         from ``_live_pairs`` (live-pipeline; P_live = #alive - 1 per batch,
         padded to the max across batches). The shared mask derives
         alive-pair count per batch row and masks tail slots as dead.
+
+        Runtime feature dim: chart compose can be invoked with D ranging
+        from the symbol-codebook bivector width (2) to the muxed symbol
+        width (nDim + nWhere + nWhen). The pair-scorer was sized with
+        ``feature_dim`` at construction; if the live tensor arrives with
+        a different D, rebuild the MLP lazily rather than fail in the
+        ``nn.Linear`` shape check.
         """
         B, P, _, D = pairs.shape
         H = hidden.shape[-1]
+        if D != self._pair_feature_dim:
+            self.pair_scorer = nn.Sequential(
+                nn.Linear(H + 2 * D, H),
+                nn.GELU(),
+                nn.Linear(H, 1),
+            ).to(hidden.device)
+            self._pair_feature_dim = D
         h = hidden.unsqueeze(1).expand(B, P, H)
         flat = pairs.reshape(B, P, 2 * D)
         feat = torch.cat([h, flat], dim=-1)

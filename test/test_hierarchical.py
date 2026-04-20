@@ -115,6 +115,18 @@ class TestButterflyMerge(unittest.TestCase):
 
 class TestWordEncoding(unittest.TestCase):
 
+    def setUp(self):
+        # WordEncoding.encode validates ``rule`` against ``len(TheGrammar)``.
+        # These tests poke rule IDs 0-3, so give the grammar enough rules
+        # for them to fit. Other tests in this process may have left
+        # ``TheGrammar`` in a minimal-configuration state; force a
+        # reconfigure with four upward rules so validation passes.
+        Language.TheGrammar._configured = False
+        Language.TheGrammar.configure({'upward': {
+            'S': ['not(S)', 'intersection(S, S)',
+                  'union(S, S)', 'lower(S, S)']
+        }})
+
     def test_7tuple_encoding(self):
         """encode produces 7-tuple with correct layout."""
         enc = Spaces.WordEncoding()
