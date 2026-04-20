@@ -49,9 +49,11 @@ with torch.no_grad():
         y = self.forwardSigma(x)
         captured['cs_post_sigma'] = y.clone()
         ws = getattr(self, 'wordSpace', None)
-        c_sl = getattr(ws, 'conceptualSyntacticLayer', None) if ws is not None else None
+        c_sl = getattr(ws, 'syntacticLayer', None) if ws is not None else None
         if c_sl is not None:
-            y, self._last_svo = c_sl.compose(y, self.subspace, Language.TheGrammar)
+            result = c_sl.compose(y, self.subspace, Language.TheGrammar)
+            y = result[0] if isinstance(result, tuple) else result
+            self._last_svo = None
             captured['cs_post_compose'] = y.clone()
         vspace = self.forwardEnd(y, returnVectors=True)
         vspace.normalize("concepts", target="what")

@@ -59,6 +59,9 @@
 
       <autoload>true</autoload>
       <autosave>false</autosave>
+      <!-- Save an in-progress weights/embedding checkpoint every N training
+           optimizer steps. 0 disables periodic checkpoints. -->
+      <checkpointEveryBatches>0</checkpointEveryBatches>
       <profile>false</profile>
       <certainty>false</certainty>
 

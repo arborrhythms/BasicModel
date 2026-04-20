@@ -77,9 +77,8 @@ class TestMentalModelForwardReverse(unittest.TestCase):
         model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
         # Grammar should be initialized
         self.assertTrue(Language.TheGrammar._configured)
-        # SyntacticLayers are now on the Spaces, not Grammar
-        self.assertIsNotNone(model.wordSpace.conceptualSyntacticLayer)
-        self.assertIsNotNone(model.wordSpace.symbolicSyntacticLayer)
+        # Post S-tier merge: a single unified SyntacticLayer on WordSpace.
+        self.assertIsNotNone(model.wordSpace.syntacticLayer)
         # After the C->S merge, all method rules live on S-tier.
         self.assertIn('equals', Language.TheGrammar.s_methods)
         self.assertIn('part', Language.TheGrammar.s_methods)
@@ -133,18 +132,10 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
         self.assertEqual(len(Language.TheGrammar.rules), 17)
         self.assertEqual(Language.TheGrammar.interpretation, 0.5)
 
-        # S-tier indices 0..16 (17 method rules, no transition).
-        self.assertEqual(model.wordSpace.symbolicSyntacticLayer.all_rules,
+        # Post S-tier merge: unified SyntacticLayer owns every rule.
+        self.assertEqual(model.wordSpace.syntacticLayer.all_rules,
                          list(range(0, 17)))
-        self.assertIsNone(model.wordSpace.symbolicSyntacticLayer.transition_rule)
-
-        # C-tier is empty.
-        self.assertEqual(model.wordSpace.conceptualSyntacticLayer.all_rules, [])
-        self.assertIsNone(model.wordSpace.conceptualSyntacticLayer.transition_rule)
-
-        # P-tier is empty (no grammar rules; P handled outside grammar).
-        self.assertEqual(model.wordSpace.perceptualSyntacticLayer.all_rules, [])
-        self.assertIsNone(model.wordSpace.perceptualSyntacticLayer.transition_rule)
+        self.assertIsNone(model.wordSpace.syntacticLayer.transition_rule)
 
 
 if __name__ == '__main__':

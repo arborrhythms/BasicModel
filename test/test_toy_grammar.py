@@ -89,7 +89,7 @@ class TestGrammarGradientFlow(unittest.TestCase):
         SyntacticLayer.forward(activation) predicts rule distributions.
         loss.backward() should propagate gradients to the rule_head weights.
         """
-        sl_c = self.model.wordSpace.conceptualSyntacticLayer
+        sl_c = self.model.wordSpace.syntacticLayer
         if sl_c is None or sl_c.num_rules == 0:
             self.skipTest("No C-tier rules after C->S merge")
 
@@ -106,7 +106,7 @@ class TestGrammarGradientFlow(unittest.TestCase):
 
     def test_s_tier_gradient_flows(self):
         """S-tier rule_head receives gradients from SyntacticLayer.forward()."""
-        sl_s = self.model.wordSpace.symbolicSyntacticLayer
+        sl_s = self.model.wordSpace.syntacticLayer
         if sl_s is None:
             self.skipTest("No S-tier SyntacticLayer")
 
@@ -123,7 +123,7 @@ class TestGrammarGradientFlow(unittest.TestCase):
 
     def test_gradient_flows_through_depth_embed(self):
         """Depth embeddings also receive gradients (used in rule prediction)."""
-        sl_c = self.model.wordSpace.conceptualSyntacticLayer
+        sl_c = self.model.wordSpace.syntacticLayer
         if sl_c is None or sl_c.num_rules == 0:
             self.skipTest("No C-tier rules after C->S merge")
 
@@ -152,7 +152,7 @@ class TestGrammarRuleSelectivity(unittest.TestCase):
         The transition rule is biased by (1-interpretation)*TRANSITION_SCALE,
         so we exclude it from the entropy check.
         """
-        sl_c = self.model.wordSpace.conceptualSyntacticLayer
+        sl_c = self.model.wordSpace.syntacticLayer
         if sl_c is None:
             self.skipTest("No C-tier SyntacticLayer")
 
@@ -185,7 +185,7 @@ class TestGrammarRuleSelectivity(unittest.TestCase):
 
     def test_different_inputs_different_distributions(self):
         """Different activation patterns produce different rule distributions."""
-        sl_c = self.model.wordSpace.conceptualSyntacticLayer
+        sl_c = self.model.wordSpace.syntacticLayer
         if sl_c is None or sl_c.num_rules == 0:
             self.skipTest("No C-tier rules after C->S merge")
 
@@ -208,7 +208,7 @@ class TestGrammarRuleSelectivity(unittest.TestCase):
 
     def test_depth_varies_rule_distribution(self):
         """Different derivation depths produce different rule distributions."""
-        sl_s = self.model.wordSpace.symbolicSyntacticLayer
+        sl_s = self.model.wordSpace.syntacticLayer
         if sl_s is None:
             self.skipTest("No S-tier SyntacticLayer")
 
@@ -253,13 +253,13 @@ class TestGrammarInMentalModel(unittest.TestCase):
 
         # At minimum the C-tier should record not/non words at active positions
         # when syntacticLayer is present (ARLM mode).
-        if self.model.wordSpace.conceptualSyntacticLayer is not None:
+        if self.model.wordSpace.syntacticLayer is not None:
             self.assertGreater(total_words, 0,
                 "No word tuples on any subspace -- Grammar not exercised during forward")
 
     def test_spaces_have_grammar_enabled(self):
         """MentalModel uses ARLM mode which enables grammar on spaces."""
-        self.assertIsNotNone(self.model.wordSpace.conceptualSyntacticLayer,
+        self.assertIsNotNone(self.model.wordSpace.syntacticLayer,
             "ConceptualSpace should have a SyntacticLayer in ARLM mode")
 
 
@@ -340,7 +340,7 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
 
     def test_all_method_names_are_registered(self):
         """Every rule's method_name maps to Grammar or a SyntacticLayer subclass."""
-        all_known = set(self.model.wordSpace.symbolicSyntacticLayer._RULE_METHODS.keys()) | {'swap', 'lift', 'lower', 'non'}
+        all_known = set(self.model.wordSpace.syntacticLayer._RULE_METHODS.keys()) | {'swap', 'lift', 'lower', 'non'}
         for r in self.grammar.rules:
             if r.method_name is not None:
                 self.assertIn(r.method_name, all_known,
@@ -356,9 +356,9 @@ class TestGrammarRuleReport(unittest.TestCase):
         model, grammar = _make_model()
 
         tier_map = {
-            'S': (model.wordSpace.symbolicSyntacticLayer, _N_SYMBOLS),
-            'C': (model.wordSpace.conceptualSyntacticLayer, _N_CONCEPTS),
-            'P': (model.wordSpace.perceptualSyntacticLayer, _N_PERCEPTS),
+            'S': (model.wordSpace.syntacticLayer, _N_SYMBOLS),
+            'C': (model.wordSpace.syntacticLayer, _N_CONCEPTS),
+            'P': (model.wordSpace.syntacticLayer, _N_PERCEPTS),
         }
         for tier, (sl, n_slots) in tier_map.items():
             if sl is None:
@@ -394,7 +394,7 @@ class TestSoftSuperposition(unittest.TestCase):
 
     def test_c_tier_soft_compose(self):
         """C-tier compose() produces output different from input."""
-        sl = self.model.wordSpace.conceptualSyntacticLayer
+        sl = self.model.wordSpace.syntacticLayer
         if sl is None or sl.num_rules == 0:
             self.skipTest("No C-tier rules after C->S merge")
         B, N, D = 1, _N_CONCEPT_SLOTS, _CONCEPT_DIM
@@ -422,14 +422,14 @@ class TestSoftSuperposition(unittest.TestCase):
         data[0, 1] = 0.3
         data[0, 2] = 0.2
 
-        sl = self.model.wordSpace.symbolicSyntacticLayer
+        sl = self.model.wordSpace.syntacticLayer
         subspace = self.model.symbolicSpace.subspace
         sl.eval()
         with torch.no_grad():
-            result = sl.compose(data, subspace, self.grammar)
+            composed, _ = sl.compose(data, subspace, self.grammar)
 
         # Should not just apply true(S) at one position
-        diff = (result - data).abs().max().item()
+        diff = (composed - data).abs().max().item()
         self.assertGreater(diff, 1e-6,
             "S-tier compose() returned input unchanged -- no composition")
 
@@ -443,20 +443,20 @@ class TestSoftSuperposition(unittest.TestCase):
             data[0, 0] = 0.5
             data[0, 1] = 0.3
 
-            sl = self.model.wordSpace.symbolicSyntacticLayer
+            sl = self.model.wordSpace.syntacticLayer
             subspace = self.model.symbolicSpace.subspace
             sl.eval()
             with torch.no_grad():
-                result = sl.compose(data, subspace, self.grammar)
+                composed, _ = sl.compose(data, subspace, self.grammar)
 
             # Transition rule (identity) should dominate -- output ~= first leaf
-            self.assertFalse(result.isnan().any(), "NaN in result")
+            self.assertFalse(composed.isnan().any(), "NaN in result")
         finally:
             self.grammar.interpretation = old_interp
 
     def test_gradient_through_grammar_forward(self):
         """Gradients flow through compose() to SyntacticLayer params."""
-        sl_c = self.model.wordSpace.conceptualSyntacticLayer
+        sl_c = self.model.wordSpace.syntacticLayer
         if sl_c is None or sl_c.num_rules == 0:
             self.skipTest("No C-tier rules after C->S merge")
 

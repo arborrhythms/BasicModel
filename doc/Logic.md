@@ -237,23 +237,22 @@ Stored truths should satisfy two consistency conditions:
 
 ### Propositional Structure
 
-Parthood is a C-tier operation (conceptual containment); equals is the
-S-tier propositional relation that delegates to the concept-space suite:
+Both parthood and equality are S-tier operations on the bivector
+SymbolicSubSpace after the 2026-04-19 C/P/S merge:
 
-- **part(C, C)** -- containment in concept space.  "A is part of B."
-  `Basis.part(A, B)` is a clipped cosine projection in $[0, 1]$.  The
-  Grammar applies this as `score * B`, scaling the whole by the
-  parthood degree.
+- **part(S, S)** -- containment on the bivector symbol subspace.
+  "A is part of B." `Basis.part(A, B)` is a clipped cosine projection
+  in $[0, 1]$.  The Grammar applies this as `score * B`, scaling the
+  whole by the parthood degree.
 
-- **equals(S, S)** -- identity as mutual parthood on reverse-projected
-  concepts.  `equalsForward` reverse-projects both symbolic operands
-  through the PiLayer and delegates to `Basis.equal` (mutual parthood)
-  on the bitonic concept subspace.  Returns 1 only when the two symbols
-  reverse-project to equal concepts.
+- **equals(S, S)** -- identity as mutual parthood.  `equalsForward`
+  delegates to `Basis.equal` (mutual parthood) on the bivector
+  SymbolicSubSpace.  Returns 1 only when the two symbols are parts
+  of each other.
 
-Together, `equals` (S-tier) and `part` (C-tier) define a partial order
-over symbolic activations through concept-space identity.  The truth
-store captures this order as a database of grounded propositions.
+Together, `equals` and `part` define a partial order over symbolic
+activations.  The truth store captures this order as a database of
+grounded propositions.
 
 ### Truth Accumulation Pipeline
 

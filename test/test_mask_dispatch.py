@@ -25,7 +25,7 @@ import Language  # noqa: E402
 
 
 def _make_layer(K=4):
-    """Build a SymbolicSyntacticLayer + bivector SubSpace for K concepts.
+    """Build a SyntacticLayer + bivector SubSpace for K concepts.
 
     Storage dim is 2K (bivector paired-index encoding). Returns
     ``(layer, subspace, grammar)``.
@@ -40,7 +40,7 @@ def _make_layer(K=4):
     basis = Models.Codebook()
     basis.create(2 * K, 2 * K, 2 * K, monotonic=True)
     subspace.what = basis
-    layer = Language.SymbolicSyntacticLayer(
+    layer = Language.SyntacticLayer(
         nInput=2 * K, nOutput=2 * K,
         rules=g.symbolic(),
         transition_rule=g.symbolic_transition(),

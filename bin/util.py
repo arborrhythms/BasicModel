@@ -804,6 +804,29 @@ class ProjectPaths:
         return path
 
 
+def atomic_torch_save(obj, path):
+    """torch.save to ``{path}.tmp`` then atomically rename onto ``path``.
+
+    Leaves the original ``path`` untouched if the save fails. Any stale
+    ``{path}.tmp`` orphan at the target (from a prior crashed save) is
+    removed first, and a partial tmp from this save is cleaned up on
+    failure so orphans cannot accumulate.
+    """
+    tmp_path = f"{path}.tmp"
+    if os.path.exists(tmp_path):
+        os.remove(tmp_path)
+    try:
+        torch.save(obj, tmp_path)
+    except BaseException:
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+        raise
+    os.replace(tmp_path, path)
+
+
 _VALID_USE_GRAMMAR = ("all", "thoughtFree", "none")
 
 

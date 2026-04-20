@@ -3093,7 +3093,7 @@ class TestGrammarOperations(unittest.TestCase):
         basis.create(8, 8, 4, monotonic=True)
         self._ss.what = basis
         # Create S-tier SyntacticLayer with swap parameters
-        self._s_sl = Language.SymbolicSyntacticLayer(
+        self._s_sl = Language.SyntacticLayer(
             nInput=4, nOutput=4,
             rules=g.symbolic(),
             transition_rule=g.symbolic_transition(),
@@ -3482,13 +3482,13 @@ class TestMaskAsActiveFilter(unittest.TestCase):
     def _layer(self):
         g = Language.Grammar()
         g.configure({"S": ["not(S)", "union(S, S)"]})
-        layer = Language.ConceptualSyntacticLayer(
+        layer = Language.SyntacticLayer(
             nInput=4, nOutput=4,
             rules=[],
             transition_rule=None,
             max_depth=2, hidden_dim=8, grammar=g,
         )
-        layer.init_conceptual_params(4)
+        layer.init_swap(4, 4)
         return layer
 
     def test_position_axis_mask_zeros_active_row(self):
@@ -4163,7 +4163,7 @@ class TestShiftReduce(unittest.TestCase):
     def _init_grammar(self, nSym=8, nDim=4):
         """Initialize TheGrammar with an S-tier layer for S/R testing.
 
-        Returns (grammar, s_sl) -- Grammar plus SymbolicSyntacticLayer.
+        Returns (grammar, s_sl) -- Grammar plus unified SyntacticLayer.
         After the C->S merge, only S-tier carries rules.
         """
         _populate_test_config(
@@ -4180,7 +4180,7 @@ class TestShiftReduce(unittest.TestCase):
         }
         Language.TheGrammar._configured = False
         Language.TheGrammar._ensure_configured()
-        s_sl = Language.SymbolicSyntacticLayer(
+        s_sl = Language.SyntacticLayer(
             nInput=nSym, nOutput=nSym,
             rules=Language.TheGrammar.symbolic(),
             transition_rule=Language.TheGrammar.symbolic_transition(),
@@ -4192,13 +4192,13 @@ class TestShiftReduce(unittest.TestCase):
         return Language.TheGrammar, s_sl
 
     def test_write_symbolic_shift(self):
-        """SymbolicSyntacticLayer.compose() applies rules at top-of-stack."""
+        """SyntacticLayer.compose() applies rules at top-of-stack."""
         grammar, s_sl = self._init_grammar()
         ss = Models.SubSpace(inputShape=[8, 1], outputShape=[8, 1])
         act = torch.zeros(1, 8, device=Models.TheDevice.get())
         act[0, 3] = 1.0  # one active position
-        result = s_sl.compose(act, ss, grammar)
-        self.assertEqual(result.shape, (1, 8))
+        composed, _ = s_sl.compose(act, ss, grammar)
+        self.assertEqual(composed.shape, (1, 8))
 
     def test_write_symbolic_stack_grows(self):
         """Applying grammar to two active positions records words."""
@@ -4207,8 +4207,8 @@ class TestShiftReduce(unittest.TestCase):
         act = torch.zeros(1, 8, device=Models.TheDevice.get())
         act[0, 2] = 1.0
         act[0, 5] = 1.0  # two active positions
-        result = s_sl.compose(act, ss, grammar)
-        self.assertEqual(result.shape, (1, 8))
+        composed, _ = s_sl.compose(act, ss, grammar)
+        self.assertEqual(composed.shape, (1, 8))
 
     def test_resetStack_symbolic(self):
         """SubSpace.set_words([]) clears the word list."""

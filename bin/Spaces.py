@@ -3548,9 +3548,8 @@ class Space(nn.Module):
         # call sites that reach across to ``wordSpace.truth_layer``
         # (SymbolicSpace) keep working; composition dispatch is no
         # longer done here -- home spaces take ``wordSpace`` as a
-        # per-call parameter and call ``wordSpace.forwardPercepts`` /
-        # ``.forwardConcepts`` / ``.forwardSymbols`` (and the reverse
-        # variants) explicitly.
+        # per-call parameter and call ``wordSpace.forwardSymbols`` /
+        # ``.reverseSymbols`` explicitly.
         self.wordSpace = None
         self.params = []   # parameters for the optimizer (excludes temperature params)
         self.layers = nn.ModuleList()   # layer instances for paramUpdate() delegation
@@ -5027,13 +5026,10 @@ class ConceptualSpace(Space):
         is L1-column-normalized so the output stays in [-1, 1] without
         requiring tanh saturation.
 
-        ``target_count`` is forwarded to ``wordSpace.forwardConcepts``
-        so the C-tier compose can use pairwise slot-mixing reduction
-        (``_compose_to_target``) instead of the default cascading
-        accumulator -- the latter cannot move information across the
-        slot axis.  Pass ``target_count=nOutputSymbols`` from the
-        non-butterfly MentalModel loop so compose reduces to exactly
-        the slot count OutputSpace will read.
+        ``target_count`` is accepted for API compatibility with the
+        pre-merge signature but is now ignored: compositional rules
+        live on the S-tier unified ``SyntacticLayer`` and no longer
+        run through ``ConceptualSpace.forward``.
         """
         x = self.forwardBegin(vspace, returnVectors=True)
         y = self.forwardSigma(x)
@@ -5056,11 +5052,11 @@ class ConceptualSpace(Space):
                 enabled=bool(getattr(self, "codebook", False)),
             )
         y = self._sparsity(y)
-        if wordSpace is not None:
-            y, self._last_svo = wordSpace.forwardConcepts(
-                y, self.subspace, target_count=target_count)
-        else:
-            self._last_svo = None
+        # Post S-tier merge: compositional rules live on S only. The
+        # concept space no longer runs its own lift/lower pipeline;
+        # `_last_svo` is retained as None for API compatibility with
+        # callers that still read `ConceptualSpace.last_svo`.
+        self._last_svo = None
         vspace = self.forwardEnd(y, returnVectors=True)
         vspace.normalize("concepts", target="what")       # range check
         vspace.normalize("concepts", target="where")      # range check
@@ -5075,8 +5071,7 @@ class ConceptualSpace(Space):
     def reverse(self, vspace, wordSpace=None):
         """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer."""
         y = self.reverseBegin(vspace, returnVectors=True)
-        if wordSpace is not None:
-            y = wordSpace.reverseConcepts(y, self.subspace)
+        # Post S-tier merge: no reverseConcepts on the concept space.
         if self.processSymbols:
             y = self.dereference(y)
         y = self.reverseSigma(y)
@@ -5750,14 +5745,14 @@ class SymbolicSpace(Space):
     def _op_for_rule(self, rule_id, wordSpace=None):
         """Return a callable ``(self_sub, inc_sub) -> new_what`` for ``rule_id``.
 
-        Dispatches through the ``SymbolicSyntacticLayer.project(...)`` owned
+        Dispatches through the unified ``SyntacticLayer.project(...)`` owned
         by ``wordSpace`` when wired; otherwise returns the left operand
         unchanged (a pass-through that still exercises the forward pipeline
         -- useful for harness tests that do not attach a WordSpace).
         """
         layer = None
         if wordSpace is not None:
-            layer = getattr(wordSpace, 'symbolicSyntacticLayer', None)
+            layer = getattr(wordSpace, 'syntacticLayer', None)
 
         def op(self_sub, inc_sub):
             left = self_sub.what.getW()
@@ -5870,7 +5865,7 @@ class SymbolicSpace(Space):
                         for _ in range(current.ndim - new_what.ndim):
                             new_what = new_what.unsqueeze(0)
                     new_what = new_what.expand_as(current).contiguous()
-            if torch.is_tensor(new_what) and float(new_what.abs().sum()) < 1e-9:
+            if torch.is_tensor(new_what) and float(new_what.detach().abs().sum()) < 1e-9:
                 # Pure pass-through op on a zeroed codebook would leave
                 # .what unchanged; inject the pos_vec's first-nWhat entries
                 # so downstream code sees a real update.  Broadcasts across
@@ -6125,7 +6120,7 @@ class SymbolicSpace(Space):
         act = vspace.materialize(mode="activation")
         if wordSpace is None:
             return act
-        layer = getattr(wordSpace, 'symbolicSyntacticLayer', None)
+        layer = getattr(wordSpace, 'syntacticLayer', None)
         if layer is None:
             return act
         return layer.trueForward(act, self.subspace)

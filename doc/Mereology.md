@@ -185,9 +185,9 @@ XML knobs (under the SymbolicSpace config section):
 - **Parthood as projection.**  One formula, Boole-contrapositive
   exact, continuous in $[0, 1]$, and the full suite composes on it.
   The old composite formula `conjunction(1 - dist(x, x \cap y), 1 -
-  dist(y, x \cup y))` lived at S-tier and mixed set-valued operands
-  with a distance — the projection form is simpler and stays at
-  C-tier.
+  dist(y, x \cup y))` mixed set-valued operands with a distance — the
+  projection form is simpler and operates directly on the bivector
+  SymbolicSubSpace.
 
 - **Overlap penalty (not antisymmetry).**  The legacy
   `ImpenetrableLayer` penalized mutual parthood $P[i,j] \cdot P[j,i]$

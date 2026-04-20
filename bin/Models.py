@@ -57,6 +57,9 @@ class BaseModel(nn.Module):
     reversible    = False
     plot           = False
     _optimizer     = None
+    checkpoint_every_batches = 0
+    _training_step_count = 0
+    _autosave_on_exception = False
     # Scale applied to the DiscourseSpace contrastive loss. The
     # inter-sentence DiscourseSpace lives on ``self.wordSpace``
     # (``self.wordSpace.discourse``) rather than directly on the
@@ -213,6 +216,14 @@ class BaseModel(nn.Module):
             self.inputSpace.vocabulary.optimize_embedding = self.optimize_embedding
             object.__setattr__(self.inputSpace.vocabulary, "_model", self)
 
+        self.checkpoint_every_batches = int(os.environ.get(
+            "BASIC_CHECKPOINT_EVERY_BATCHES",
+            _t("checkpointEveryBatches", 0) or 0,
+        ))
+        self._training_step_count = 0
+        self._autosave_on_exception = bool(_t("autosave", False)) or \
+            self.checkpoint_every_batches > 0
+
         if _t("autoload"):
             wpath = TheXMLConfig.get("architecture.weightsPath")
             wpath = self._resolve_artifact_path(wpath)
@@ -258,6 +269,49 @@ class BaseModel(nn.Module):
             return
         lr = self._optimizer.param_groups[0]['lr']
         self._optimizer = self.getOptimizer(lr=lr)
+
+    def _checkpoint_path(self, suffix=None):
+        """Resolve the configured checkpoint path, optionally adding a suffix."""
+        path = TheXMLConfig.get("architecture.weightsPath", None)
+        if path:
+            path = self._resolve_artifact_path(path)
+        else:
+            path = ProjectPaths.output_path(f"{self.name}.ckpt")
+        if suffix:
+            root, ext = os.path.splitext(path)
+            path = f"{root}.{suffix}{ext or '.ckpt'}"
+        return path
+
+    def save_training_checkpoint(self, reason="checkpoint", suffix=None):
+        """Save model weights and embeddings during or after training."""
+        path = self._checkpoint_path(suffix=suffix)
+        TheMessage(f"[{self.name}] Saving training checkpoint ({reason})")
+        self.save_weights(path)
+        self.save_embeddings()
+        return path
+
+    def _maybe_save_periodic_checkpoint(self):
+        interval = int(getattr(self, "checkpoint_every_batches", 0) or 0)
+        if interval <= 0:
+            return
+        step = int(getattr(self, "_training_step_count", 0) or 0)
+        if step > 0 and step % interval == 0:
+            self.save_training_checkpoint(reason=f"batch {step}")
+
+    def _save_exception_checkpoint(self, exc):
+        if not getattr(self, "_autosave_on_exception", False):
+            return
+        try:
+            path = self.save_training_checkpoint(
+                reason=f"exception: {type(exc).__name__}",
+                suffix="emergency",
+            )
+            TheMessage(f"[{self.name}] Emergency checkpoint saved to {path}")
+        except Exception as save_exc:
+            TheMessage(
+                f"[{self.name}] Emergency checkpoint failed after "
+                f"{type(exc).__name__}: {save_exc}"
+            )
 
     def _assert_finite_train_state(self, what):
         """Fail at the update site when a parameter or gradient goes non-finite.
@@ -330,7 +384,14 @@ class BaseModel(nn.Module):
             TheMessage(f"\nTrial [{trial + 1}/{numTrials}]")
             if has_config and (trial > 0 or not already_configured):
                 self.create_from_config(self._config_path, data=self._config_data)
-            acc[trial, :] = self.runTrial(numEpochs=numEpochs, batchSize=batchSize, lr=lr, profile=profile)
+            try:
+                acc[trial, :] = self.runTrial(
+                    numEpochs=numEpochs, batchSize=batchSize, lr=lr,
+                    profile=profile,
+                )
+            except Exception as exc:
+                self._save_exception_checkpoint(exc)
+                raise
 
         np.savetxt(ProjectPaths.output_path(f"{self.name}.csv"), np.array(acc), delimiter=",")
         return acc
@@ -480,7 +541,7 @@ class BaseModel(nn.Module):
             # After ownership transfer, the S-tier SyntacticLayer lives
             # on WordSpace, not on SymbolicSpace.
             ws = self.wordSpace
-            sl = getattr(ws, 'symbolicSyntacticLayer', None) if ws is not None else None
+            sl = getattr(ws, 'syntacticLayer', None) if ws is not None else None
             part_fn = getattr(sl, 'partForward', None) if sl is not None else None
             max_depth = 3
             for depth in range(max_depth):
@@ -569,7 +630,7 @@ class BaseModel(nn.Module):
         # *Forward lives on the S-tier SyntacticLayer, which WordSpace
         # now owns post-ownership-transfer.
         ws = self.wordSpace
-        syntactic_layer = (getattr(ws, 'symbolicSyntacticLayer', None)
+        syntactic_layer = (getattr(ws, 'syntacticLayer', None)
                            if ws is not None else None)
 
         for i in indices:
@@ -747,7 +808,7 @@ class BaseModel(nn.Module):
         # Filter out embedding parameters -- they belong to the .kv artifact
         state = {k: v for k, v in self.state_dict().items()
                  if "wv._vectors" not in k}
-        torch.save({"state_dict": state}, path)
+        util.atomic_torch_save({"state_dict": state}, path)
         TheMessage(f"[{self.name}] Weights saved to {path}")
 
     def save_embeddings(self, path=None):
@@ -2049,6 +2110,10 @@ class BasicModel(BaseModel):
             optimizer.step()
             self._assert_finite_train_state("after optimizer.step")
             self._clamp_symbolic_codebook()
+            self._training_step_count = (
+                int(getattr(self, "_training_step_count", 0) or 0) + 1
+            )
+            self._maybe_save_periodic_checkpoint()
 
         result = self.BatchResult(
             outputPred=outputDataPred,
@@ -2518,13 +2583,10 @@ class MentalModel(BaseModel):
             symbol_dim=symbol_dim + obj_symbol,
         )
 
-        # Store SymbolicSpace ref for ternary lift (concept<->symbol projection).
-        # The C-tier SyntacticLayer now lives on WordSpace under the
-        # ownership-transfer refactor. Use ``object.__setattr__`` to
-        # avoid nn.Module circular submodule registration
-        # (SymbolicSpace -> ConceptualSpace -> SyntacticLayer -> SymbolicSpace).
-        object.__setattr__(self.wordSpace.conceptualSyntacticLayer,
-                           '_symbolic_space', self.symbolicSpace)
+        # Post S-tier merge: compositional rules live on the single
+        # unified SyntacticLayer, which does not need a back-reference
+        # to SymbolicSpace (the older ternary-lift path used by C-tier
+        # compose has been removed).
         self.conceptualSpace.subspace.basis.monotonic = False
 
         self.spaces.extend([
@@ -2862,16 +2924,30 @@ class MentalModel(BaseModel):
             self._current_discourse_s = s_state.detach()
             self._current_discourse_w = w_state.detach()
 
-        # Universality evaluation
+        # Universality evaluation (Golden Rule)
+        #
+        # Route (subject, verb, object) concept tensors through
+        # LiftingLayer + TruthLayer to measure luminosity change under
+        # S/O reversal. Kind actions preserve illumination; unkind
+        # actions diminish it. The SVO tap lives on the unified
+        # SyntacticLayer and populates ``last_svo`` for canonical
+        # 3-token transitive inputs (a positional heuristic). Irregular
+        # inputs and an empty truth store both fall through to None,
+        # which ``truth_modulated_loss`` handles as "no score". The
+        # grammar-learned SVO identification that will replace the
+        # positional tap is spec'd in ``doc/LearnedSVO.md``.
         self._universality_score = None
-        truth_layer = getattr(self.wordSpace, 'truth_layer', None) if self.wordSpace is not None else None
-        if truth_layer is not None and len(truth_layer) > 0:
-            svo = self.conceptualSpace.last_svo
-            if svo is not None:
-                s, v, o = svo
-                c_sl = self.wordSpace.conceptualSyntacticLayer
-                self._universality_score = truth_layer.universality(
-                    s, v, o, c_sl.lifting_layer, self.symbolicSpace)
+        truth_layer = (self.wordSpace.truth_layer
+                       if self.wordSpace is not None else None)
+        syntactic_layer = (self.wordSpace.syntacticLayer
+                           if self.wordSpace is not None else None)
+        svo = syntactic_layer.last_svo if syntactic_layer is not None else None
+        lifting_layer = syntactic_layer.lifting_layer if syntactic_layer is not None else None
+        if (truth_layer is not None and len(truth_layer) > 0
+                and svo is not None and lifting_layer is not None):
+            s, v, o = svo
+            self._universality_score = truth_layer.universality(
+                s, v, o, lifting_layer, self.symbolicSpace)
 
         # Output from first nOutputSymbols of symbol vectors
         if self.useButterflies or self.useGrammar == "all":
@@ -3402,10 +3478,7 @@ class ModelFactory:
                     lr=_t("learningRate", 0.01))
 
         if _t("autosave", False):
-            wpath = TheXMLConfig.get("architecture.weightsPath", "weights.ckpt")
-            wpath = m._resolve_artifact_path(wpath)
-            m.save_weights(wpath)
-            m.save_embeddings()
+            m.save_training_checkpoint(reason="final autosave")
 
         return [(m.name, m.rCorrect, m)]
 BasicModelFactory = ModelFactory

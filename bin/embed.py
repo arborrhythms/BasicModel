@@ -28,6 +28,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 from typing import List, Tuple, Optional
 
+from util import atomic_torch_save
+
 from parse import parse_buffer, set_sentence_cfg
 import util
 
@@ -147,7 +149,7 @@ class WordVectors(nn.Module):
         }
         if truth_data is not None:
             payload["truth_data"] = truth_data
-        torch.save(payload, path)
+        atomic_torch_save(payload, path)
 
     @classmethod
     def load(cls, path: str) -> "WordVectors":

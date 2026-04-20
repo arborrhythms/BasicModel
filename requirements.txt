@@ -1,6 +1,6 @@
 flask
 numpy
-torch
+torch>=2.5
 torchviz
 matplotlib
 datasets

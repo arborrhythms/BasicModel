@@ -102,7 +102,7 @@ class TestHeadDivergence(unittest.TestCase):
 
                 post_compose = concepts.materialize()[0]  # [N, D] for batch 0
                 cs = self.model.conceptualSpace
-                c_sl = getattr(self.model.wordSpace, 'conceptualSyntacticLayer', None) if getattr(self.model, 'wordSpace', None) is not None else None
+                c_sl = getattr(self.model.wordSpace, 'syntacticLayer', None) if getattr(self.model, 'wordSpace', None) is not None else None
                 if c_sl is not None:
                     pre_compose = c_sl.decompose(
                         concepts.materialize(), cs.subspace, Language.TheGrammar)[0]

@@ -212,6 +212,7 @@
       <xs:element name="embeddingScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="autoload" type="xs:boolean" minOccurs="0"/>
       <xs:element name="autosave" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="checkpointEveryBatches" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="profile" type="xs:boolean" minOccurs="0"/>
       <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
       <!-- Inter-sentence contrastive loss (DiscourseSpace):

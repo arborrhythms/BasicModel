@@ -56,6 +56,7 @@ Training loop and I/O settings.
 | `embeddingPath` | string | -- | File path for the word vector store (`.kv` extension, gensim-compatible `KeyedVectors`). When absent, embedding training is skipped. |
 | `autoload` | bool | `true` | Automatically load weights from `weightsPath` on model creation. Set to `false` for fresh training. |
 | `autosave` | bool | `false` | Automatically save weights after training completes. |
+| `checkpointEveryBatches` | int | `0` | Save in-progress weights and embeddings every N optimizer steps. `0` disables periodic checkpoints. Training exceptions also write an `.emergency.ckpt` when `autosave` or periodic checkpoints are enabled. |
 | `negSamples` | int | `64` | Number of negative samples per positive example for CBOW/SBOW training. Controls memory usage: `O(batch $\times$ negSamples $\times$ dim)` vs `O(batch $\times$ vocab)` for full softmax. |
 
 #### `<trainEmbedding>` -- Embedding Update Modes

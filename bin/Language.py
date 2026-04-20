@@ -24,16 +24,16 @@ from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer, ButterflyStage  # Import custom layers from Model.py
-from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
-from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
-from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegularizer, SmoothingRegularizer, ImpenetrableLayer
+from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, ChunkLayer
+from Layers import ColumnUsageTracker, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
+from Layers import SortingLayer, TruthLayer, LiftingLayer, InterSentenceLayer, SparsityRegularizer, SmoothingRegularizer, ImpenetrableLayer
 from parse import quick_parser
 from collections import namedtuple as _namedtuple
 
 
 from Layers import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
 from Layers import LinearLayer, AttentionLayer
-from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
+from Layers import ColumnUsageTracker, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import Error, TheError
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding, WordEncoding
@@ -46,15 +46,11 @@ class Grammar:
     The C (conceptual) tier has been merged into S: all compositional
     operations (not, part, intersection, union, lift, lower) are now S-tier
     productions.  The P (perceptual) tier has been removed from the
-    grammar.  The C/P query helpers (conceptual(), perceptual(),
-    c_methods, p_methods) are retained for backward compatibility with
-    ConceptualSyntacticLayer / PerceptualSyntacticLayer, which now
-    always receive an empty rule set.
+    grammar.
 
     Owns the rule definitions parsed from XML config.  All learnable
-    parameters and rule execution live on the tier-specific SyntacticLayer
-    subclasses (SymbolicSyntacticLayer, ConceptualSyntacticLayer,
-    PerceptualSyntacticLayer).
+    parameters and rule execution live on a single unified
+    ``SyntacticLayer`` instance owned by ``WordSpace``.
     """
 
     RuleDef = _namedtuple('RuleDef', ['tier', 'canonical', 'arity', 'method_name'])
@@ -168,29 +164,22 @@ class Grammar:
                 result[r.method_name] = i
         return result
 
-    # _conceptual_forward, _symbolic_forward, forward, reverse -- moved to
-    # specialized SyntacticLayer subclasses (ConceptualSyntacticLayer,
-    # SymbolicSyntacticLayer, PerceptualSyntacticLayer).  Grammar retains
-    # only rule catalog, project(), and *Forward/*Reverse operations.
-
-    # composeSyntax, _compose_conceptual, _compose_symbolic -- removed.
-    # Soft superposition is now inlined in _conceptual_forward and _symbolic_forward.
-
-    # -- C-tier operations live on SyntacticLayer / ConceptualSyntacticLayer
+    # All compositional rules live on the unified SyntacticLayer class
     # as *Forward / *Reverse method pairs.  See _RULE_METHODS dispatch.
 TheGrammar = Grammar()
 
 class SyntacticLayer(Layer):
-    """Per-space rule prediction layer for the recursive grammar.
+    """Unified rule-prediction and rule-execution layer for the grammar.
 
-    Each instance handles a subset of the Grammar's rules (one cognitive
-    space's rules).  Uses a weight-tied recursive architecture with depth
-    embeddings.
+    Post-refactor (2026-04-19) this single class owns every compositional
+    rule (union, intersection, not, lift, lower, equals, part, true, false,
+    non, conjunction, disjunction, swap, what, where, when, query, chunk).
+    The prior per-tier subclasses
+    (``PerceptualSyntacticLayer`` / ``ConceptualSyntacticLayer`` /
+    ``SymbolicSyntacticLayer``) have been merged into this class.
 
-    **This layer only predicts rules and generates word tuples.**  It does
-    not execute operations on representations -- that is done by the owning
-    space's ``projectXxx()`` method, which knows the native representation
-    type (activations, vectors, etc.).
+    Uses a weight-tied recursive architecture with depth embeddings for
+    rule prediction and dispatches rule bodies through ``_RULE_METHODS``.
 
     Args:
         nInput:    activation width (number of symbol/concept/percept slots).
@@ -255,6 +244,17 @@ class SyntacticLayer(Layer):
 
         # Register child layers for ergodic dispatch
         self.layers = [self.input_proj, self.derivation_layer, self.rule_head]
+
+        # Per-compose caches. compose() resets these each call; pre-init
+        # here so read sites (e.g. MentalModel universality hook) can read
+        # safely on layers whose compose hasn't fired.
+        self.last_svo = None
+        self.last_rule_probs = None
+        self.last_composable_rules = None
+        # LiftingLayer is instantiated by init_lifting() from
+        # WordSpace._build_syntactic_layer. Pre-init so universality
+        # read sites can test for None without a missing-attr trap.
+        self.lifting_layer = None
 
     # -- Basis-delegated rule execution ----------------------------
 
@@ -329,15 +329,33 @@ class SyntacticLayer(Layer):
     #
     # _RULE_METHODS maps rule name -> (forwardName, reverseName|None, binary)
 
+    # Unified rule table (post-subclass-merge, 2026-04-19). The three
+    # former subclasses (PerceptualSyntacticLayer, ConceptualSyntacticLayer,
+    # SymbolicSyntacticLayer) have been collapsed into this class.
     _RULE_METHODS = {
+        # C-tier invertible concept ops
         'union':        ('unionForward',        'unionReverse',        True),
         'intersection': ('intersectionForward', 'intersectionReverse', True),
         'not':          ('notForward',          'notReverse',          False),
+        # Lift / lower are now in-space binary algebra (PiLayer round-trip
+        # removed when the three subclasses merged).
+        'lift':         ('liftForward',         'liftReverse',         True),
+        'lower':        ('lowerForward',        'lowerReverse',        True),
+        # S-tier lossy ops
         'equals':       ('equalsForward',       None,                  True),
         'part':         ('partForward',         None,                  True),
-        'chunk':        ('chunkForward',        'chunkReverse',        True),
         'true':         ('trueForward',         None,                  False),
+        'false':        ('falseForward',        None,                  False),
         'non':          ('nonForward',          None,                  False),
+        'conjunction':  ('conjunctionForward',  None,                  True),
+        'disjunction':  ('disjunctionForward',  None,                  True),
+        'swap':         ('swapForward',         None,                  True),
+        'what':         ('whatForward',         None,                  False),
+        'where':        ('whereForward',        None,                  False),
+        'when':         ('whenForward',         None,                  False),
+        'query':        ('queryForward',        None,                  True),
+        # P-tier invertible merge
+        'chunk':        ('chunkForward',        'chunkReverse',        True),
     }
 
     def project(self, grammar, rule_id, left, right=None, third=None, subspace=None,
@@ -784,300 +802,227 @@ class SyntacticLayer(Layer):
             activation[b, v] = 1.0
         return activation
 
-    # -- utilities -------------------------------------------------
-
-    def set_tau(self, tau):
-        """Anneal the Gumbel-softmax temperature."""
-        self.tau = tau
-class PerceptualSyntacticLayer(SyntacticLayer):
-    """P-tier SyntacticLayer: BPE-style chunk merging.
-
-    Owns the chunk codebook and iterative merge loop.  Repeatedly merges
-    the top two active positions while the codebook score exceeds the
-    entropic threshold.  Stops at word boundaries (whitespace).
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.chunk_layer = None  # created lazily on first P-tier data
-
-    def _chunk_rule_id(self):
-        """Return the rule_id for the P-tier chunk rule, or None."""
-        for r in self.all_rules:
-            if self.grammar.rules[r].method_name == 'chunk':
-                return r
-        return None
-
-    def _ensure_chunk_layer(self, nDim):
-        """Lazily create the chunk codebook when we first see P-tier data.
-
-        BPE mode and the minimum pair frequency are read from
-        ``PerceptualSpace`` config.  The BPE target vocabulary size is
-        derived from the codebook's ``nVectors`` (falling back to
-        ``chunkTargetVocabSize`` for legacy configs, then 1024).
-
-        Legacy defaults (``chunkBPE=false``) keep the whitespace-boundary
-        behavior unchanged; ``chunkBPE=true`` switches the layer into
-        greedy longest-match BPE with a learned merge table that grows
-        during ``train_step``.
-        """
-        if self.chunk_layer is None:
-            def _pcfg(key, default):
-                try:
-                    return TheXMLConfig.space("PerceptualSpace", key)
-                except (KeyError, TypeError, ValueError):
-                    return default
-            bpe = bool(_pcfg("chunkBPE", False))
-            # Derive target vocab from codebook nVectors; fall back to
-            # legacy chunkTargetVocabSize, then 1024.
-            try:
-                target_vocab = int(_pcfg("nVectors", 0))
-            except (TypeError, ValueError):
-                target_vocab = 0
-            if target_vocab <= 0:
-                try:
-                    target_vocab = int(_pcfg("chunkTargetVocabSize", 1024))
-                except (TypeError, ValueError):
-                    target_vocab = 1024
-            try:
-                min_pair_freq = int(_pcfg("chunkMinPairFrequency", 2))
-            except (TypeError, ValueError):
-                min_pair_freq = 2
-            self.chunk_layer = ChunkLayer(
-                nDim,
-                bpe=bpe,
-                target_vocab_size=target_vocab,
-                min_pair_frequency=min_pair_freq,
-            ).to(next(self.parameters()).device if list(self.parameters()) else 'cpu')
-
-    def compose(self, data, subspace, grammar):
-        """Apply P-tier chunk merging.
-
-        In byte mode (subspace._byte_indices set): hard-merge at whitespace
-        boundaries first, then run learned BPE, then compact to dense word slots.
-
-        Args:
-            data: [B, N, D] percept tensor
-            subspace: SubSpace for word recording
-            grammar: Grammar instance for subspace access
-        Returns:
-            data with chunk merges applied (and compacted in byte mode)
-        """
-        subspace.word = []
-        chunk_rid = self._chunk_rule_id()
-        if chunk_rid is None or data.ndim != 3:
-            return data
-
-        self._ensure_chunk_layer(data.shape[-1])
-        cb = self.chunk_layer
-
-        # Byte mode: hard-merge at whitespace boundaries
-        byte_indices = getattr(subspace, '_byte_indices', None)
-        if byte_indices is not None:
-            data, span_meta = cb.hard_merge_spans(data, byte_indices)
-            subspace._byte_span_meta = span_meta
-
-        # Learned BPE loop -- boundary check delegates to ChunkLayer
-        while True:
-            any_merged = False
-            pairs = subspace.top_two_of_stack(data)
-            for b, (pos1, pos2) in enumerate(pairs):
-                if pos1 < 0 or pos2 < 0:
-                    continue
-                if cb.is_word_boundary(data, b, pos2,
-                                       subspace=subspace, byte_indices=byte_indices):
-                    continue
-                v1, v2 = data[b, pos1], data[b, pos2]
-                should, chunk_id = cb.should_merge(v1, v2)
-                if not should:
-                    continue
-                merged, _ = cb.encode(v1, v2)
-                data = data.clone()
-                data[b, pos1] = merged
-                data[b, pos2] = 0.0
-                subspace.word.append((b, pos1, pos2, chunk_rid))
-                any_merged = True
-            if not any_merged:
-                break
-
-        # Byte mode: compact sparse -> dense word slots
-        if byte_indices is not None:
-            nWordSlots = getattr(subspace, '_nWordSlots', data.shape[1])
-            where_enc = getattr(subspace, 'whereEncoding', None)
-            data, compact_map = cb.compact(data, nWordSlots, span_meta, where_enc)
-            subspace._compact_map = compact_map
-
-        return data
-
-    def decompose(self, data, subspace, grammar):
-        """Reverse P-tier chunk merges using recorded 4-tuple words.
-
-        In byte mode: un-compacts first, then undoes BPE merges.
-
-        Args:
-            data: [B, N, D] tensor (compacted in byte mode)
-            subspace: SubSpace with recorded words
-            grammar: Grammar instance (unused, kept for interface consistency)
-        Returns:
-            data with chunk merges undone
-        """
-        # Byte mode: un-compact dense word slots back to sparse byte positions
-        compact_map = getattr(subspace, '_compact_map', None)
-        if compact_map is not None and self.chunk_layer is not None:
-            byte_indices = getattr(subspace, '_byte_indices', None)
-            nByteSlots = byte_indices.shape[1] if byte_indices is not None else data.shape[1]
-            data = self.chunk_layer.uncompact(data, compact_map, nByteSlots)
-
-        # Undo BPE merges
-        words = subspace.get_words()
-        for word in reversed(words):
-            if len(word) != 4:
-                continue
-            b, pos1, pos2, rule_id = word
-            if self.chunk_layer is None:
-                continue
-            merged = data[b, pos1]
-            best_sim = -1.0
-            best_k = 0
-            for k in range(self.chunk_layer.nChunks):
-                sim = F.cosine_similarity(
-                    merged.unsqueeze(0),
-                    self.chunk_layer.merge[k].unsqueeze(0), dim=-1)
-                if sim.item() > best_sim:
-                    best_sim = sim.item()
-                    best_k = k
-            v1, v2 = self.chunk_layer.decode(best_k)
-            data = data.clone()
-            data[b, pos1] = v1
-            data[b, pos2] = v2
-        return data
-class ConceptualSyntacticLayer(SyntacticLayer):
-    """C-tier SyntacticLayer: deterministic not + soft-weighted composition.
-
-    Rule application order:
-      1. not(C) -- flips negative concepts to positive (mean < 0).
-      2. Soft superposition -- remaining rules weighted by predicted probs.
-
-    Owns lift/lower layers.
-    """
-
-    _RULE_METHODS = {
-        **SyntacticLayer._RULE_METHODS,
-        'lift':  ('liftForward',  'liftReverse',  True),
-        'lower': ('lowerForward', 'lowerReverse', True),
-    }
-
-    def init_conceptual_params(self, concept_dim):
-        """Initialize C-tier learnable parameters."""
-        self.lifting_layer = LiftingLayer(16, concept_dim)
-        self.lowering_layer = LoweringLayer(concept_dim)
-        self._symbolic_space = None  # set by BasicModel after init
-
-    # -- C-tier projected ops: lift/lower via PiLayer ----------------
-
-    def _cs_layer(self):
-        """PiLayer for concept->symbol projection (ss.layer)."""
-        if self._symbolic_space is not None:
-            return getattr(self._symbolic_space, 'layer', None)
-        return None
+    # -- lift / lower: in-space algebra (post PiLayer round-trip removal) --
 
     def liftForward(self, left, right, subspace, mask=None):
-        """Projected conjunction through symbolic space, back to concept space."""
-        cs = self._cs_layer()
-        if cs is not None:
-            s_a = cs.forward(left)
-            s_b = cs.forward(right)
-            out = cs.reverse(s_a * s_b)
-        else:
-            out = left * right
+        """In-space lift: elementwise product. Post-merge (2026-04-19)
+        the old PiLayer round-trip (forward to S, multiply, reverse to C)
+        collapses to the in-space body because the caller already has the
+        forwarded operands.
+        """
+        out = left * right
         return self._apply_mask(out, mask, subspace=subspace)
 
     def liftReverse(self, result, right, subspace, mask=None):
-        """Recover first operand: s_a = result / s_b, then PiLayer.reverse."""
-        cs = self._cs_layer()
-        if cs is not None:
-            s_res = cs.forward(result)
-            s_b = cs.forward(right)
-            s_a = s_res / (s_b + epsilon)
-            out = cs.reverse(s_a)
-        else:
-            out = result / (right + epsilon)
+        """Recover first operand from the elementwise product."""
+        out = result / (right + epsilon)
         return self._apply_mask(out, mask, subspace=subspace)
 
     def lowerForward(self, left, right, subspace, mask=None):
-        """Projected disjunction through symbolic space, back to concept space.
-
-        Rescale the sum by 1/2 so it stays in ``(-1, 1)`` -- the operand
-        domain that ``PiLayer.reverse`` requires.  Both ``s_a`` and
-        ``s_b`` are tanh outputs in ``(-1, 1)``; their unscaled sum lies
-        in ``(-2, 2)`` which hits the hard clamp inside ``_to_mult`` and
-        silently saturates the backward pass, yielding a badly
-        conditioned gradient that leaks into every optimizer step via
-        the soft rule mixture.  Training instability on deep chains
-        (pairwise compose over conceptualOrder iterations) traces back
-        to this saturation.  Dividing by 2 is information-preserving
-        (the reverse scales by 2) and keeps the operand strictly inside
-        the PiLayer domain.
-        """
-        cs = self._cs_layer()
-        if cs is not None:
-            s_a = cs.forward(left)
-            s_b = cs.forward(right)
-            out = cs.reverse((s_a + s_b) / 2)
-        else:
-            out = (left + right) / 2
+        """In-space lower: arithmetic mean."""
+        out = (left + right) / 2
         return self._apply_mask(out, mask, subspace=subspace)
 
     def lowerReverse(self, result, right, subspace, mask=None):
-        """Recover first operand from the rescaled lower forward.
-
-        Given ``result = cs.reverse((s_a + s_b) / 2)`` we have
-        ``s_res = cs.forward(result) = (s_a + s_b) / 2``, so
-        ``s_a = 2 * s_res - s_b``.  For a valid forward pair both
-        ``s_a`` and ``s_b`` lie in ``(-1, 1)`` by construction, so
-        ``2 * s_res - s_b`` also lies in ``(-1, 1)`` and the PiLayer
-        reverse does not clamp.
-        """
-        cs = self._cs_layer()
-        if cs is not None:
-            s_res = cs.forward(result)
-            s_b = cs.forward(right)
-            s_a = 2 * s_res - s_b
-            out = cs.reverse(s_a)
-        else:
-            out = 2 * result - right
+        """Recover first operand from the mean."""
+        out = 2 * result - right
         return self._apply_mask(out, mask, subspace=subspace)
 
-    def project(self, grammar, rule_id, left, right=None, third=None, subspace=None,
-                mask=None):
-        """Execute a rule. Lift/lower are in _RULE_METHODS via super()."""
-        return super().project(grammar, rule_id, left, right, third,
-                               subspace=subspace, mask=mask)
+    # -- swap: Sinkhorn-normalised soft permutation ------------------
 
-    def reverse_project(self, grammar, rule_id, result, right=None, subspace=None,
-                        mask=None):
-        """Inverse dispatch -- delegates to super()."""
-        return super().reverse_project(grammar, rule_id, result, right,
-                                       subspace=subspace, mask=mask)
+    def init_swap(self, symbol_dim, n_symbol_slots):
+        """Initialize swap and non parameters. Called unconditionally on
+        the unified SyntacticLayer at construction time."""
+        swap_size = max(symbol_dim, n_symbol_slots, 1)
+        self.swap_marker = nn.Parameter(torch.randn(swap_size) * 0.01)
+        self.swap_logits = nn.Parameter(torch.zeros(3, 3))
+        self._swap_sinkhorn_iters = 5
+        self.non_threshold = nn.Parameter(torch.tensor(0.0))
+
+    def init_lifting(self, concept_dim, nVerbs=16):
+        """Instantiate the LiftingLayer used by TruthLayer.universality.
+
+        The codebook holds ``nVerbs`` learned verb matrices ([D, D])
+        that act on concept vectors of dimension ``concept_dim``. The
+        layer is the endpoint for Golden-Rule scoring: ``forward_transitive_svo``
+        routes (subject, verb, object) through the verb codebook so the
+        TruthLayer can measure luminosity change under S/O reversal.
+        Registered as a submodule so its parameters participate in training.
+        """
+        try:
+            configured = int(TheXMLConfig.get("architecture.VerbCodebookSize"))
+            if configured > 0:
+                nVerbs = configured
+        except (KeyError, TypeError, ValueError):
+            pass
+        self.lifting_layer = LiftingLayer(nVerbs=nVerbs, nDim=concept_dim)
+
+    def _swap_soft_perm(self):
+        M = self.swap_logits
+        for _ in range(self._swap_sinkhorn_iters):
+            M = M - M.logsumexp(dim=-1, keepdim=True)
+            M = M - M.logsumexp(dim=-2, keepdim=True)
+        return M.exp()
+
+    def swapForward(self, left, right, subspace=None, mask=None):
+        """Soft permutation via Sinkhorn-normalised logits."""
+        P = self._swap_soft_perm()
+        marker = self.swap_marker.to(left.device)
+        if left.ndim == 3:
+            D = left.shape[-1]
+            m = marker[:D].unsqueeze(0).unsqueeze(0).expand_as(left)
+        elif left.ndim == 2:
+            m = marker[:left.shape[-1]].unsqueeze(0).expand_as(left)
+        else:
+            m = marker
+        if right is None:
+            right = left
+        stack = torch.stack([left, right, m], dim=0)
+        out = torch.einsum('ij,j...->i...', P, stack)
+        return self._apply_mask(out[0], mask, subspace=subspace)
+
+    # -- Rule #3: query (contradiction marker at accumulation point) --
+    # Norm-drop threshold. If a new rule-application result would reduce
+    # the accumulator's norm below this fraction of its current value,
+    # the accumulation point interprets it as symbolic contradiction and
+    # emits a query word + preserves the existing accumulator instead of
+    # absorbing the cancelling contribution.
+    _QUERY_NORM_DROP_RATIO = 0.1
+
+    def queryForward(self, left, right, subspace=None, mask=None):
+        """Query: return the preserved accumulator operand.
+
+        The query marker is pushed onto WordSubSpace at the accumulation
+        point (see `compose()`), not by this forward. When the parse tree
+        is re-evaluated downstream, `queryForward` returns the first
+        operand -- the accumulator state that was preserved when the
+        cancelling contribution arrived.
+        """
+        return self._apply_mask(left, mask, subspace=subspace)
+
+    # -- compose / decompose: unified driver ------------------------
 
     def compose(self, data, subspace, grammar, target_count=None):
-        """Apply C-tier composition.
+        """Apply composition to a batch of activations or vectors.
 
-        Args:
-            data: [B, N, D] concept tensor
-            subspace: SubSpace for word recording
-            grammar: Grammar instance for rule execution
-            target_count: If set, use pairwise reduction to this token count
-                          (hierarchical mode). None uses cascading accumulator.
-        Returns:
-            (composed_data, svo_or_None) -- svo is set if ternary lift fired
+        Handles both 3D ``[B, N, D]`` (vector mode) and 2D ``[B, N]``
+        (activation mode, used by the old S-tier path). In 2D mode the
+        grammar acts on norms; the returned tensor has the same shape.
+
+        When ``target_count`` is supplied (3D only), pairwise reduction
+        drives the active token count down to that value.
+
+        Returns ``(composed, svo_or_None)`` -- ``svo`` is reserved for
+        ternary lift output; currently always ``None``.
         """
         subspace.word = []
-        self.last_svo = None   # reset per-compose
-        self.last_rule_probs = None  # per-depth composable rule probs
-        self.last_composable_rules = None  # global rule IDs for columns
-        c_rules = grammar._s_rule_ids()
-        not_rid = c_rules.get('not')
+        self.last_svo = None
+        self.last_rule_probs = None
+        self.last_composable_rules = None
+
+        if data.ndim == 2:
+            composed = self._compose_activation(data, subspace, grammar)
+            return composed, self.last_svo
+
+        return self._compose_vector(data, subspace, grammar, target_count)
+
+    def _compose_activation(self, data, subspace, grammar):
+        """2D path: [B, N] activation mode. Used for S-tier compose on
+        norms and for the 2D-input branch of the unified compose.
+        """
+        B, N = data.shape
+
+        # Guard: skip soft superposition if data dims don't match
+        expected_n = self.input_proj.nInput
+        if N != expected_n or self.num_rules == 0:
+            return data
+
+        out = self.forward(data)
+        rule_probs = out['rule_probs']  # [B, max_depth, num_rules]
+        all_rules = self.all_rules
+
+        active_positions = [subspace.active_positions(b, data) for b in range(B)]
+        max_leaves = max((len(p) for p in active_positions), default=0)
+        if max_leaves == 0:
+            return data
+
+        masks = torch.zeros(B, max_leaves, N, device=data.device)
+        for b in range(B):
+            for i, pos in enumerate(active_positions[b]):
+                if i < max_leaves:
+                    masks[b, i, pos] = 1.0
+        leaf_acts = masks * data.unsqueeze(1)  # [B, L, N]
+
+        composed = leaf_acts[:, 0, :]
+
+        last_rule_per_batch = [-1 for _ in range(B)]
+        query_rid = None
+        for _gid in all_rules:
+            if grammar.rules[_gid].method_name == 'query':
+                query_rid = _gid
+                break
+
+        for d in range(min(self.max_depth, max(max_leaves - 1, 1))):
+            if d + 1 >= max_leaves:
+                break
+            left = composed
+            right = leaf_acts[:, d + 1, :]
+
+            results = []
+            for rule_id in all_rules:
+                a = grammar.arity(rule_id)
+                if a == 2:
+                    result = self.project(grammar, rule_id, left, right,
+                                          subspace=subspace)
+                else:
+                    result = self.project(grammar, rule_id, left,
+                                          subspace=subspace)
+                results.append(result)
+
+            results = torch.stack(results, dim=1)  # [B, num_rules, N]
+            probs_d = rule_probs[:, d, :]          # [B, num_rules]
+
+            # Rule #3: norm-drop detection at the accumulation point
+            candidate = (probs_d.unsqueeze(-1) * results).sum(dim=1)  # [B, N]
+            prev_norm = left.norm(dim=-1)         # [B]
+            cand_norm = candidate.norm(dim=-1)    # [B]
+            drop_threshold = self._QUERY_NORM_DROP_RATIO * prev_norm
+            query_mask = (prev_norm > 1e-6) & (cand_norm < drop_threshold)
+            if query_mask.any():
+                mask_exp = query_mask.unsqueeze(-1).expand_as(candidate)
+                composed = torch.where(mask_exp, left, candidate)
+                best_for_push = probs_d.argmax(dim=-1)
+                word_sub = getattr(self, 'word_subspace', None)
+                for b in range(B):
+                    if not bool(query_mask[b].item()):
+                        continue
+                    left_rid = last_rule_per_batch[b]
+                    right_rid = int(best_for_push[b].item())
+                    right_gid = all_rules[right_rid] if right_rid < len(all_rules) else -1
+                    if query_rid is not None and word_sub is not None:
+                        word_sub.push(b, query_rid,
+                                      leaves=(left_rid, right_gid, -1))
+            else:
+                composed = candidate
+
+            best = probs_d.argmax(dim=-1)
+            for b in range(B):
+                if d < len(active_positions[b]):
+                    subspace.add_word(b, active_positions[b][d],
+                                      all_rules[best[b].item()])
+                    if not bool(query_mask[b].item()):
+                        last_rule_per_batch[b] = all_rules[best[b].item()]
+
+        return composed
+
+    def _compose_vector(self, data, subspace, grammar, target_count=None):
+        """3D path: [B, N, D] vector mode. Phase 1 deterministic not at
+        top-of-stack, then either ``_compose_to_target`` pairwise reduction
+        or Phase 2 cascading soft-weighted composition with query/norm-drop
+        detection.
+        """
+        s_rules = grammar._s_rule_ids()
+        not_rid = s_rules.get('not')
 
         # Snapshot codebook indices before any modifications (for decompose)
         basis = getattr(subspace, 'basis', None)
@@ -1096,36 +1041,31 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             if pos < 0:
                 continue
             vec = data[b, pos]
-
-            # -- not: negate via Basis.negation (bitonic: -x, self-inverse)
             if not_rid is not None:
                 if vec.mean() < 0:
                     data = data.clone()
-                    data[b, pos] = self.notForward(vec.unsqueeze(0).unsqueeze(0),
-                                                    subspace).squeeze(0).squeeze(0)
+                    data[b, pos] = self.notForward(
+                        vec.unsqueeze(0).unsqueeze(0),
+                        subspace).squeeze(0).squeeze(0)
                     subspace.add_word(b, pos, not_rid)
 
-        # Dispatch: hierarchical pairwise reduction or cascading accumulator
         if target_count is not None:
-            return self._compose_to_target(data, subspace, grammar, target_count,
-                                           c_rules, not_rid)
+            return self._compose_to_target(data, subspace, grammar,
+                                           target_count, s_rules, not_rid)
 
-        # Phase 2: soft-weighted composition via SyntacticLayer
+        # Phase 2: soft-weighted cascading composition
         B, N, D = data.shape
 
-        # Guard: skip soft superposition if data dims don't match SyntacticLayer
         expected_n = self.input_proj.nInput
-        if N != expected_n:
+        if N != expected_n or self.num_rules == 0:
             return data, self.last_svo
 
-        # Derive [B, N] activation for SyntacticLayer
         activation = torch.norm(data, dim=-1) / math.sqrt(D)
 
-        # Get rule probabilities from SyntacticLayer
-        out = super().forward(activation)
+        out = self.forward(activation)
         rule_probs = out['rule_probs']  # [B, max_depth, num_rules]
 
-        # Identify composable rules (exclude not -- already applied in Phase 1)
+        # Composable rules: exclude not (already applied in Phase 1)
         exclude = {'not'}
         composable_local = []
         composable_global = []
@@ -1137,19 +1077,15 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         if not composable_global:
             return data, self.last_svo
 
-        # Need at least one binary+ rule for cascading to combine anything;
-        # unary rules just return left, consuming leaves without merging.
         has_binary = any(grammar.arity(gid) >= 2 for gid in composable_global)
         if not has_binary:
             return data, self.last_svo
 
-        # Build per-batch active positions
         active_positions = [subspace.active_positions(b, data) for b in range(B)]
         max_leaves = max((len(p) for p in active_positions), default=0)
         if max_leaves == 0:
             return data, self.last_svo
 
-        # Record terminal words for each leaf (transition rule + codebook index)
         cb_indices = self._leaf_cb_indices
         t_rid = self.transition_rule if self.transition_rule is not None else composable_global[0]
         if cb_indices is not None:
@@ -1159,7 +1095,6 @@ class ConceptualSyntacticLayer(SyntacticLayer):
                         subspace.add_word(b, pos, t_rid, order=-1,
                                           leaf1=cb_indices[b, pos].item())
 
-        # Extract leaf vectors via masks
         masks = torch.zeros(B, max_leaves, N, device=data.device)
         for b in range(B):
             for i, pos in enumerate(active_positions[b]):
@@ -1167,17 +1102,37 @@ class ConceptualSyntacticLayer(SyntacticLayer):
                     masks[b, i, pos] = 1.0
         leaf_vecs = masks.unsqueeze(-1) * data.unsqueeze(1)  # [B, L, N, D]
 
-        composed = leaf_vecs[:, 0, :, :]  # start with first leaf
+        # Positional SVO tap. For canonical 3-token transitive inputs,
+        # leaves 0/1/2 coincide with subject/verb/object, which is
+        # what test_universality.py exercises. Non-canonical inputs
+        # (other lengths, word order) leave ``last_svo`` None; the
+        # MentalModel hook treats None as "no universality score".
+        # The grammar-learned replacement is spec'd in doc/LearnedSVO.md.
+        min_leaves = min((len(p) for p in active_positions), default=0)
+        if min_leaves >= 3 and max_leaves >= 3:
+            self.last_svo = (
+                leaf_vecs[:, 0, :, :],
+                leaf_vecs[:, 1, :, :],
+                leaf_vecs[:, 2, :, :],
+            )
+
+        composed = leaf_vecs[:, 0, :, :]
         self.last_composable_rules = composable_global
-        depth_probs = []  # collect per-depth renormalized probs
+        depth_probs = []
+
+        # query rid for contradiction marker (if present in grammar)
+        query_rid = None
+        for _gid in self.all_rules:
+            if grammar.rules[_gid].method_name == 'query':
+                query_rid = _gid
+                break
+        last_rule_per_batch = [-1 for _ in range(B)]
 
         d = 0
-        leaf_idx = 1  # next leaf to consume
+        leaf_idx = 1
         while d < self.max_depth and leaf_idx < max_leaves:
             left = composed
             right = leaf_vecs[:, leaf_idx, :, :]
-
-            # Check if a ternary rule can fire (needs one more leaf)
             has_third = leaf_idx + 1 < max_leaves
 
             results = []
@@ -1185,69 +1140,79 @@ class ConceptualSyntacticLayer(SyntacticLayer):
                 a = grammar.arity(global_id)
                 if a == 3 and has_third:
                     third = leaf_vecs[:, leaf_idx + 1, :, :]
-                    result = self.project(grammar, global_id, left, right, third, subspace=subspace)
+                    result = self.project(grammar, global_id, left, right,
+                                          third, subspace=subspace)
                 elif a == 2:
-                    result = self.project(grammar, global_id, left, right, subspace=subspace)
+                    result = self.project(grammar, global_id, left, right,
+                                          subspace=subspace)
                 else:
-                    result = self.project(grammar, global_id, left, subspace=subspace)
+                    result = self.project(grammar, global_id, left,
+                                          subspace=subspace)
                 results.append(result)
 
             results = torch.stack(results, dim=1)  # [B, n_composable, N, D]
 
-            # Extract and renormalize probabilities for composable subset
-            probs_d = rule_probs[:, d, :][:, composable_local]  # [B, n_composable]
+            probs_d = rule_probs[:, d, :][:, composable_local]
             probs_d = probs_d / (probs_d.sum(dim=-1, keepdim=True) + 1e-8)
-            depth_probs.append(probs_d.detach())                # [B, n_composable]
+            depth_probs.append(probs_d.detach())
 
-            # Hard selection in eval mode (exact for decompose); soft mixture in training
             best = probs_d.argmax(dim=-1)  # [B]
+
+            # Phase 2 candidate mixture
             if self.training:
-                probs_d = probs_d.unsqueeze(-1).unsqueeze(-1)   # [B, n_composable, 1, 1]
-                composed = (probs_d * results).sum(dim=1)       # [B, N, D]
+                probs_bcast = probs_d.unsqueeze(-1).unsqueeze(-1)
+                candidate = (probs_bcast * results).sum(dim=1)  # [B, N, D]
             else:
-                # Select argmax rule output per batch element
-                idx = best.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)  # [B, 1, 1, 1]
+                idx = best.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
                 idx = idx.expand(-1, 1, results.shape[2], results.shape[3])
-                composed = results.gather(1, idx).squeeze(1)    # [B, N, D]
+                candidate = results.gather(1, idx).squeeze(1)   # [B, N, D]
+
+            # Query / norm-drop: detect symbolic contradiction at the
+            # accumulation point and preserve the prior accumulator.
+            # Norm collapses the [N, D] axes to a scalar per batch row.
+            prev_norm = left.reshape(B, -1).norm(dim=-1)
+            cand_norm = candidate.reshape(B, -1).norm(dim=-1)
+            drop_threshold = self._QUERY_NORM_DROP_RATIO * prev_norm
+            query_mask = (prev_norm > 1e-6) & (cand_norm < drop_threshold)
+            if query_mask.any():
+                mask_exp = query_mask.view(B, 1, 1).expand_as(candidate)
+                composed = torch.where(mask_exp, left, candidate)
+                word_sub = getattr(self, 'word_subspace', None)
+                for b in range(B):
+                    if not bool(query_mask[b].item()):
+                        continue
+                    left_rid = last_rule_per_batch[b]
+                    right_gid = composable_global[int(best[b].item())]
+                    if query_rid is not None and word_sub is not None:
+                        word_sub.push(b, query_rid,
+                                      leaves=(left_rid, right_gid, -1))
+            else:
+                composed = candidate
 
             # Record argmax rule as word
-            best_global = composable_global[best[0].item()]
+            best_global = composable_global[int(best[0].item())]
             for b in range(B):
                 if d < len(active_positions[b]):
-                    subspace.add_word(b, active_positions[b][min(d, len(active_positions[b]) - 1)],
-                                      composable_global[best[b].item()])
+                    subspace.add_word(
+                        b,
+                        active_positions[b][min(d, len(active_positions[b]) - 1)],
+                        composable_global[int(best[b].item())])
+                    if not bool(query_mask[b].item()):
+                        last_rule_per_batch[b] = composable_global[int(best[b].item())]
 
-            # Advance: ternary rules consume 2 leaves, others consume 1
             best_arity = grammar.arity(best_global)
             leaf_idx += (2 if best_arity == 3 and has_third else 1)
             d += 1
 
         if depth_probs:
-            self.last_rule_probs = torch.stack(depth_probs, dim=1)  # [B, depths, n_composable]
+            self.last_rule_probs = torch.stack(depth_probs, dim=1)
         return composed, self.last_svo
 
     def _compose_to_target(self, data, subspace, grammar, target_count,
-                           c_rules, not_rid):
-        """Reduce active tokens to target_count via independent pairwise grammar reductions.
-
-        Used by the hierarchical forward loop. Each round pairs adjacent active
-        positions, applies soft-weighted grammar rules, and zeros consumed tokens
-        until the active count reaches target_count.
-
-        Only binary-or-greater rules participate in the pairwise reduce.
-        A unary rule by definition cannot merge two operands -- including
-        one would make its per-pair output ignore ``right``, and if its
-        probability dominates the soft mixture (which happens at init
-        for any fresh SyntacticLayer with a biased softmax prior) the
-        reduce degenerates to ``composed ~= left`` and ``right``'s
-        content is silently discarded.  ``not`` is also excluded since
-        it's already applied in Phase 1 of ``compose``.
-        """
+                           s_rules, not_rid):
+        """Reduce active tokens to target_count via pairwise grammar reductions."""
         B, N, D = data.shape
 
-        # Identify composable rules (exclude not -- already applied in
-        # Phase 1 -- AND any rule whose arity is < 2, which can't merge
-        # a pair at all; see docstring).
         exclude = {'not'}
         composable_local = []
         composable_global = []
@@ -1262,21 +1227,17 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         if not composable_global:
             return data, self.last_svo
 
-        # Get rule probabilities from SyntacticLayer
         activation = torch.norm(data, dim=-1) / math.sqrt(D)
         expected_n = self.input_proj.nInput
-        if N == expected_n:
-            out = super().forward(activation)
-            rule_probs = out['rule_probs']  # [B, max_depth, num_rules]
+        if N == expected_n and self.num_rules > 0:
+            out = self.forward(activation)
+            rule_probs = out['rule_probs']
         else:
-            # Dims don't match SyntacticLayer -- use uniform probs
-            rule_probs = torch.ones(B, self.max_depth, len(self.all_rules),
-                                    device=data.device) / len(self.all_rules)
+            rule_probs = torch.ones(B, self.max_depth, max(len(self.all_rules), 1),
+                                    device=data.device) / max(len(self.all_rules), 1)
 
-        # Build per-batch active positions
         active = [subspace.active_positions(b, data) for b in range(B)]
 
-        # Record terminal words for each active leaf (codebook indices from pre-Phase1)
         cb_indices = self._leaf_cb_indices
         t_rid = self.transition_rule if self.transition_rule is not None else composable_global[0]
         if cb_indices is not None:
@@ -1286,7 +1247,6 @@ class ConceptualSyntacticLayer(SyntacticLayer):
                                       leaf1=cb_indices[b, pos].item())
 
         d = 0
-
         while d < self.max_depth:
             max_active = max(len(a) for a in active)
             if max_active <= target_count:
@@ -1310,7 +1270,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
                         else:
                             r = self.project(grammar, gid, left, subspace=subspace)
                         results.append(r)
-                    results = torch.stack(results, dim=1)  # [1, n_composable, 1, D]
+                    results = torch.stack(results, dim=1)
 
                     probs_d = rule_probs[b:b+1, min(d, rule_probs.shape[1]-1), :]
                     probs_d = probs_d[:, composable_local]
@@ -1323,7 +1283,7 @@ class ConceptualSyntacticLayer(SyntacticLayer):
                         composed = results[:, best_local]
 
                     new_data[b, left_pos] = composed[0, 0]
-                    new_data[b, right_pos] = 0.0  # zero out consumed
+                    new_data[b, right_pos] = 0.0
 
                     best_rid = composable_global[best_local]
                     subspace.add_word(b, left_pos, best_rid, order=d)
@@ -1338,12 +1298,6 @@ class ConceptualSyntacticLayer(SyntacticLayer):
             data = new_data
             d += 1
 
-        # Return a tensor with the ORIGINAL N shape so downstream
-        # (including the reverse path through ``conceptualSpace.reverse``
-        # and ``perceptualSpace.reverse``) keeps the slot-axis width it
-        # was built for.  Surviving active positions hold the reduced
-        # content; consumed positions are left zero.  Compact this down
-        # to ``[B, target_count, D]`` at the caller if needed.
         result = torch.zeros(B, N, D, device=data.device)
         for b in range(B):
             for pos in active[b]:
@@ -1352,275 +1306,52 @@ class ConceptualSyntacticLayer(SyntacticLayer):
         return result, self.last_svo
 
     def decompose(self, data, subspace, grammar):
-        """Reconstruct pre-compose tensor from symbolic word record.
+        """Reconstruct pre-compose tensor from the symbolic word record.
 
         Terminal words (order == -1) carry codebook indices of the original
         leaf vectors.  Reconstruction looks up each leaf from the codebook
         and places it at its recorded position, producing the exact
-        pre-compose tensor without any cached tensors.
-
-        Args:
-            data: tensor (same shape as compose output, used for shape/device)
-            subspace: SubSpace with recorded words
-            grammar: Grammar instance (unused, kept for API compat)
-        Returns:
-            [B, N, D] tensor with leaf vectors at their original positions
+        pre-compose tensor without any cached tensors.  For 2D activation
+        input (or when no codebook is available) the data is returned
+        as-is -- the only surviving rule-word inverses (not, union,
+        intersection, lift, lower) were already absorbed into the leaf
+        representations in compose.
         """
-        words = subspace.get_words()
         basis = getattr(subspace, 'basis', None)
         cb = basis.getW() if basis is not None else None
-        if cb is None:
-            return data  # no codebook -- fall back to identity
+        if cb is None or data.ndim < 3 or data.shape[-1] != cb.shape[-1]:
+            # No usable codebook -- fall through to the S-tier-style rule
+            # reversal pass (currently a no-op; rules are lossy).
+            words = subspace.get_words()
+            for word in reversed(words):
+                if len(word) < 3:
+                    continue
+                rule_id = word[WordEncoding.RULE]
+                rule = grammar.rules[rule_id]
+                if rule.method_name in ('non', 'union', 'intersection',
+                                        'lift', 'lower'):
+                    pass  # Non-invertible in this degraded path
+                elif rule.method_name is not None:
+                    pass  # Not cleanly invertible
+            return data
 
+        words = subspace.get_words()
         result = torch.zeros_like(data)
         for word in words:
             if word[WordEncoding.ORDER] != -1:
-                continue  # skip rule words -- only terminals carry leaves
+                continue
             b = word[WordEncoding.BATCH]
             pos = word[WordEncoding.VECTOR]
             cb_idx = word[WordEncoding.LEAF1]
             if cb_idx >= 0:
                 result[b, pos] = cb[cb_idx]
         return result
-class SymbolicSyntacticLayer(SyntacticLayer):
-    """S-tier SyntacticLayer: soft-weighted composition on 2D activations.
 
-    All S-tier rules (true, non, swap, equals, part, transition) are applied
-    fractionally using learned rule probabilities.
+    # -- utilities -------------------------------------------------
 
-    Owns swap parameters (Sinkhorn-normalised soft permutation).
-    """
-
-    def init_swap(self, symbol_dim, n_symbol_slots):
-        """Initialize swap and non parameters."""
-        swap_size = max(symbol_dim, n_symbol_slots, 1)
-        self.swap_marker = nn.Parameter(torch.randn(swap_size) * 0.01)
-        self.swap_logits = nn.Parameter(torch.zeros(3, 3))
-        self._swap_sinkhorn_iters = 5
-        self.non_threshold = nn.Parameter(torch.tensor(0.0))
-        # Set by WordSpace._build_symbolic_layer so equalsForward can
-        # reverse-project S operands back to C and delegate to Basis.equal.
-        self._symbolic_space = None
-
-    def _swap_soft_perm(self):
-        M = self.swap_logits
-        for _ in range(self._swap_sinkhorn_iters):
-            M = M - M.logsumexp(dim=-1, keepdim=True)
-            M = M - M.logsumexp(dim=-2, keepdim=True)
-        return M.exp()
-
-    def swapForward(self, left, right, subspace=None, mask=None):
-        """Soft permutation via Sinkhorn-normalised logits."""
-        P = self._swap_soft_perm()
-        marker = self.swap_marker.to(left.device)
-        if left.ndim == 3:
-            m = marker.unsqueeze(0).unsqueeze(0).expand_as(left)
-        elif left.ndim == 2:
-            m = marker[:left.shape[-1]].unsqueeze(0).expand_as(left)
-        else:
-            m = marker
-        if right is None:
-            right = left
-        stack = torch.stack([left, right, m], dim=0)
-        out = torch.einsum('ij,j...->i...', P, stack)
-        return self._apply_mask(out[0], mask, subspace=subspace)
-
-    _RULE_METHODS = {
-        **SyntacticLayer._RULE_METHODS,
-        'swap':        ('swapForward',        None, True),
-        # Rule #1: trinity + coordination (S-tier only)
-        'false':       ('falseForward',       None, False),
-        'conjunction': ('conjunctionForward', None, True),
-        'disjunction': ('disjunctionForward', None, True),
-        # Rule #2: symbol demux slot selectors (S-tier only)
-        'what':        ('whatForward',        None, False),
-        'where':       ('whereForward',       None, False),
-        'when':        ('whenForward',        None, False),
-        # Rule #3: query (contradiction marker at accumulation point)
-        'query':       ('queryForward',       None, True),
-    }
-
-    # Rule #3: Norm-drop threshold. If a new rule-application result
-    # would reduce the accumulator's norm below this fraction of its
-    # current value, the accumulation point interprets it as symbolic
-    # contradiction and emits a query word + preserves the existing
-    # accumulator instead of absorbing the cancelling contribution.
-    # Tuning note: start at 0.1 (90% reduction) per plan; too tight
-    # emits spurious queries on legitimate near-cancellations, too
-    # loose lets real contradictions collapse silently.
-    _QUERY_NORM_DROP_RATIO = 0.1
-
-    def queryForward(self, left, right, subspace=None, mask=None):
-        """Query: return the preserved accumulator operand.
-
-        The query marker is pushed onto WordSubSpace at the
-        accumulation point (see `compose()`), not by this forward.
-        When the parse tree is re-evaluated downstream, `queryForward`
-        returns the first operand -- the accumulator state that was
-        preserved when the cancelling contribution arrived. The second
-        operand (the dropped symbol) exists only in the parse-tree
-        record and is unused here.
-        """
-        return self._apply_mask(left, mask, subspace=subspace)
-
-    def project(self, grammar, rule_id, left, right=None, subspace=None, mask=None):
-        """Execute a rule via _RULE_METHODS dispatch."""
-        return super().project(grammar, rule_id, left, right,
-                               subspace=subspace, mask=mask)
-
-    def compose(self, data, subspace, grammar):
-        """Apply S-tier soft-weighted composition.
-
-        Args:
-            data: [B, N] or [B, N, D] symbol activation tensor
-            subspace: SubSpace for word recording
-            grammar: Grammar instance for rule execution
-        Returns:
-            composed symbol activations, same shape as input
-        """
-        subspace.word = []
-        if data.ndim == 3:
-            # 3D vector mode: extract norms for grammar, scale vectors by result
-            norms = data.norm(dim=-1)                    # [B, N]
-            composed_norms = self.compose(norms, subspace, grammar)  # [B, N]
-            scale = composed_norms / (norms + 1e-8)      # [B, N]
-            return data * scale.unsqueeze(-1)             # [B, N, D]
-
-        B, N = data.shape
-
-        # Guard: skip soft superposition if data dims don't match SyntacticLayer
-        expected_n = self.input_proj.nInput
-        if N != expected_n:
-            return data
-
-        # Get rule probabilities from SyntacticLayer
-        out = super().forward(data)
-        rule_probs = out['rule_probs']  # [B, max_depth, num_rules]
-        all_rules = self.all_rules
-
-        # Build per-batch active positions
-        active_positions = [subspace.active_positions(b, data) for b in range(B)]
-        max_leaves = max((len(p) for p in active_positions), default=0)
-        if max_leaves == 0:
-            return data
-
-        # Extract leaf activations via masks
-        masks = torch.zeros(B, max_leaves, N, device=data.device)
-        for b in range(B):
-            for i, pos in enumerate(active_positions[b]):
-                if i < max_leaves:
-                    masks[b, i, pos] = 1.0
-        leaf_acts = masks * data.unsqueeze(1)  # [B, L, N]
-
-        composed = leaf_acts[:, 0, :]  # start with first leaf
-
-        # Rule #3 state: track the rule applied at the previous step
-        # per batch row, so a query push at the norm-drop site has a
-        # referent for "what was the preserved accumulator's rule".
-        # -1 = no prior rule (accumulator is still a raw leaf).
-        last_rule_per_batch = [-1 for _ in range(B)]
-        query_rid = None
-        for _idx, _gid in enumerate(all_rules):
-            if grammar.rules[_gid].method_name == 'query':
-                query_rid = _gid
-                break
-
-        for d in range(min(self.max_depth, max(max_leaves - 1, 1))):
-            if d + 1 >= max_leaves:
-                break
-            left = composed
-            right = leaf_acts[:, d + 1, :]
-
-            results = []
-            for rule_id in all_rules:
-                a = grammar.arity(rule_id)
-                if a == 2:
-                    result = self.project(grammar, rule_id, left, right, subspace=subspace)
-                else:
-                    result = self.project(grammar, rule_id, left, subspace=subspace)
-                results.append(result)
-
-            results = torch.stack(results, dim=1)  # [B, num_rules, N]
-            probs_d = rule_probs[:, d, :]           # [B, num_rules]
-
-            # -- Rule #3: norm-drop detection at the accumulation point --
-            # Any symbolic contradiction (A  and  not A, true(A)  and  false(A),
-            # axis-restricted variants) manifests as a significant drop
-            # in the accumulator norm when the candidate is mixed in.
-            # We detect the symptom here, push a `query` marker onto the
-            # word-stream buffer, and preserve the prior accumulator.
-            # See plan: "Rule #3 -- Query at S-tier".
-            candidate = (probs_d.unsqueeze(-1) * results).sum(dim=1)  # [B, N]
-            prev_norm = left.norm(dim=-1)         # [B]
-            cand_norm = candidate.norm(dim=-1)    # [B]
-            drop_threshold = self._QUERY_NORM_DROP_RATIO * prev_norm
-            # Only fire when there was a real accumulator to cancel
-            # (prev_norm > 1e-6), and the candidate norm is below the
-            # drop threshold.
-            query_mask = (prev_norm > 1e-6) & (cand_norm < drop_threshold)
-            if query_mask.any():
-                # For batches where query fires: preserve the old accumulator.
-                # For batches where it does not: use the candidate mixture.
-                mask = query_mask.unsqueeze(-1).expand_as(candidate)  # [B, N]
-                composed = torch.where(mask, left, candidate)
-                # Push query marker onto the word-stream buffer for
-                # each batch row that tripped the check. The leaves
-                # record the rule identities of the preserved side
-                # (left_rule_id) and the incoming rule that would have
-                # caused the cancellation (right_rule_id).
-                best_for_push = probs_d.argmax(dim=-1)  # [B]
-                word_sub = getattr(self, 'word_subspace', None)
-                for b in range(B):
-                    if not bool(query_mask[b].item()):
-                        continue
-                    left_rid = last_rule_per_batch[b]
-                    right_rid = int(best_for_push[b].item())
-                    right_gid = all_rules[right_rid] if right_rid < len(all_rules) else -1
-                    if query_rid is not None and word_sub is not None:
-                        word_sub.push(b, query_rid,
-                                      leaves=(left_rid, right_gid, -1))
-                    # Preserve the prior rule identity for this batch
-                    # row -- the accumulator did not advance.
-            else:
-                composed = candidate
-
-            # Record argmax rule as word
-            best = probs_d.argmax(dim=-1)  # [B]
-            for b in range(B):
-                if d < len(active_positions[b]):
-                    subspace.add_word(b, active_positions[b][d], all_rules[best[b].item()])
-                    # Track last advancing rule per batch for future
-                    # query-push referents -- only update for rows
-                    # that did not trip the query mask this step.
-                    if not bool(query_mask[b].item()):
-                        last_rule_per_batch[b] = all_rules[best[b].item()]
-
-        return composed
-
-    def decompose(self, data, subspace, grammar):
-        """Reverse S-tier operations using recorded word tuples.
-
-        Args:
-            data: [B, N] or [B, N, D] tensor (same shape as compose output)
-            subspace: SubSpace with recorded words
-            grammar: Grammar instance for rule info
-        Returns:
-            data with grammar operations undone (best-effort)
-        """
-        words = subspace.get_words()
-        for word in reversed(words):
-            if len(word) < 3:
-                continue
-            b = word[WordEncoding.BATCH]
-            pos = word[WordEncoding.VECTOR]
-            rule_id = word[WordEncoding.RULE]
-            rule = grammar.rules[rule_id]
-            if rule.method_name in ('non', 'union', 'intersection',
-                                    'lift', 'lower'):
-                pass  # Non-invertible
-            elif rule.method_name is not None:
-                pass  # Not cleanly invertible
-        return data
+    def set_tau(self, tau):
+        """Anneal the Gumbel-softmax temperature."""
+        self.tau = tau
 
 
 class PoSStack:
@@ -1672,23 +1403,22 @@ class ReconstructionStack:
 
 
 class WordSpace(Space):
-    """Service space that owns the word-stream buffer, the SyntacticLayers,
+    """Service space that owns the word-stream buffer, the SyntacticLayer,
     the truth store, and the inter-sentence discourse substrate.
 
     Runtime-parallel to PerceptualSpace / ConceptualSpace / SymbolicSpace
-    but functionally a buffer + composition dispatcher. WordSpace owns
-    the SyntacticLayers directly; home spaces receive ``wordSpace`` as
-    a per-call parameter on ``forward(vspace, wordSpace=...)`` /
-    ``reverse(vspace, wordSpace=...)`` and reach the layers via the
-    explicit per-tier methods ``forwardPercepts`` / ``forwardConcepts``
-    / ``forwardSymbols`` (and the matching ``reverse*`` variants). The
-    layers push their word records into ``self.subspace`` (a
-    ``WordSubSpace``) via a back-reference set at construction time, so
-    ConceptualSpace can read a muxed view of machine state that
-    includes percepts, symbols, and words.
+    but functionally a buffer + composition dispatcher. WordSpace owns a
+    single unified ``SyntacticLayer``; home spaces receive ``wordSpace``
+    as a per-call parameter on ``forward(vspace, wordSpace=...)`` /
+    ``reverse(vspace, wordSpace=...)`` and reach the layer via
+    ``forwardSymbols`` / ``reverseSymbols``. The layer pushes its word
+    records into ``self.subspace`` (a ``WordSubSpace``) via a
+    back-reference set at construction time, so ConceptualSpace can read
+    a muxed view of machine state that includes percepts, symbols, and
+    words.
 
-    One unified constructor builds everything: WordSubSpace, all three
-    SyntacticLayers, TruthLayer, and (conditionally) DiscourseSpace.
+    One unified constructor builds everything: WordSubSpace, the
+    SyntacticLayer, TruthLayer, and (conditionally) DiscourseSpace.
     XML config drives the truth-store capacity and discourse-prediction
     gating.
 
@@ -1749,20 +1479,21 @@ class WordSpace(Space):
         self.outputShape = [0, muxed]
         self.spaceShape  = [0, muxed]
 
-        # 4. Layer slots (filled below).
-        self.perceptualSyntacticLayer = None
-        self.conceptualSyntacticLayer = None
-        self.symbolicSyntacticLayer = None
+        # 4. Unified SyntacticLayer slot (filled below). Post subclass-
+        # merge (2026-04-19) there is a single SyntacticLayer that owns
+        # every compositional rule and is called from SymbolicSpace.
+        self.syntacticLayer = None
 
-        # 5. Build the three SyntacticLayers, each of which back-wires
-        # the home space's ``wordSpace`` routing pointer.
+        # 5. Build the SyntacticLayer anchored at SymbolicSpace.  The
+        # perceptual and conceptual spaces also get a ``wordSpace``
+        # back-reference so they can route through the shared buffer,
+        # but only the symbolic space's compose() fires the layer.
         if perceptualSpace is not None:
-            self._build_perceptual_layer(perceptualSpace, nPercepts, grammar)
+            perceptualSpace.attach_wordSpace(self)
         if conceptualSpace is not None:
-            self._build_conceptual_layer(
-                conceptualSpace, nConcepts, grammar, concept_dim)
+            conceptualSpace.attach_wordSpace(self)
         if symbolicSpace is not None:
-            self._build_symbolic_layer(
+            self._build_syntactic_layer(
                 symbolicSpace, nSymbols, grammar, symbol_dim)
 
         # 6. TruthLayer -- shared truth store for symbolic activations.
@@ -1813,11 +1544,17 @@ class WordSpace(Space):
         max_depth = int(nPercepts)
         pos_dim = 4  # matches pos_codebook / pos_stack nDim
         rule_in_features = max_depth * pos_dim
-        self._rule_predictor_in_features = rule_in_features
+        # When nPercepts=0 (minimal test configs with no PerceptualSpace),
+        # rule_in_features is 0; nn.Linear(0, 0) would emit a "zero-element
+        # tensor init is a no-op" UserWarning. Widen to 1 feature so init
+        # is well-defined. predict_rule pads the flattened stack to the
+        # same target_len, so the head stays consistent with the stack.
+        self._rule_predictor_in_features = max(1, rule_in_features)
         self.rule_predictor = nn.Sequential(
-            nn.Linear(rule_in_features, rule_in_features),
+            nn.Linear(self._rule_predictor_in_features,
+                      self._rule_predictor_in_features),
             nn.Tanh(),
-            nn.Linear(rule_in_features, n_rules),
+            nn.Linear(self._rule_predictor_in_features, max(1, n_rules)),
         )
         for p in self.rule_predictor.parameters():
             if all(p is not q for q in self.params):
@@ -2048,22 +1785,20 @@ class WordSpace(Space):
 
     def attach_layer(self, kind, layer):
         """Register a pre-built SyntacticLayer as this WordSpace's
-        ``<kind>SyntacticLayer``.
+        ``syntacticLayer``.
 
-        Sets ``layer.word_subspace`` as a back-reference so compose()
-        can push onto the shared buffer, appends the layer to
+        The ``kind`` argument is retained for backward compatibility
+        with external callers but is no longer meaningful; every
+        invocation targets the single unified layer.  Sets
+        ``layer.word_subspace`` as a back-reference so compose() can
+        push onto the shared buffer, appends the layer to
         ``self.layers`` for ``Space.paramUpdate`` delegation, and
         merges its parameters into ``self.params`` for the curated
         ``Space.getParameters`` walk.
         """
         if layer is None:
             return
-        attr = f'{kind}SyntacticLayer'
-        if not hasattr(self, attr):
-            raise ValueError(
-                f"WordSpace: unknown syntactic kind {kind!r}; "
-                f"expected one of 'perceptual', 'conceptual', 'symbolic'")
-        setattr(self, attr, layer)
+        self.syntacticLayer = layer
         layer.word_subspace = self.subspace
         if layer not in self.layers:
             self.layers.append(layer)
@@ -2071,7 +1806,7 @@ class WordSpace(Space):
             if all(p is not q for q in self.params):
                 self.params.append(p)
 
-    # -- private factory helpers: build + wire SyntacticLayers --------
+    # -- private factory helper: build + wire the SyntacticLayer -----
     def _resolve_hidden_dim(self, n_slots):
         try:
             configured = int(TheXMLConfig.get("WordSpace.syntacticHiddenDim"))
@@ -2081,35 +1816,17 @@ class WordSpace(Space):
             pass
         return min(256, max(64, n_slots * 4))
 
-    def _build_perceptual_layer(self, space, n_slots, grammar):
-        layer = PerceptualSyntacticLayer(
-            nInput=n_slots, nOutput=n_slots,
-            rules=[],
-            transition_rule=None,
-            max_depth=max(n_slots - 1, 1),
-            hidden_dim=self._resolve_hidden_dim(n_slots),
-            grammar=grammar,
-        )
-        self.attach_layer('perceptual', layer)
-        space.attach_wordSpace(self)
-        return layer
+    def _build_syntactic_layer(self, space, n_slots, grammar, symbol_dim):
+        """Build the unified SyntacticLayer anchored at the symbolic space.
 
-    def _build_conceptual_layer(self, space, n_slots, grammar, concept_dim):
-        layer = ConceptualSyntacticLayer(
-            nInput=n_slots, nOutput=n_slots,
-            rules=[],
-            transition_rule=None,
-            max_depth=max(n_slots - 1, 1),
-            hidden_dim=self._resolve_hidden_dim(n_slots),
-            grammar=grammar,
-        )
-        layer.init_conceptual_params(concept_dim)
-        self.attach_layer('conceptual', layer)
-        space.attach_wordSpace(self)
-        return layer
-
-    def _build_symbolic_layer(self, space, n_slots, grammar, symbol_dim):
-        layer = SymbolicSyntacticLayer(
+        Post subclass-merge (2026-04-19): ``rules`` comes from
+        ``grammar.symbolic()`` (all compositional rules live on S),
+        ``init_swap`` is always called because every instance now
+        supports the full rule set, and there is a single
+        ``self.syntacticLayer`` attribute instead of three per-tier
+        slots.
+        """
+        layer = SyntacticLayer(
             nInput=n_slots, nOutput=n_slots,
             rules=grammar.symbolic(),
             transition_rule=grammar.symbolic_transition(),
@@ -2118,74 +1835,36 @@ class WordSpace(Space):
             grammar=grammar,
         )
         layer.init_swap(symbol_dim, n_slots)
-        layer._symbolic_space = space
+        layer.init_lifting(symbol_dim)
         self.attach_codebook_host(space)
-        self.attach_layer('symbolic', layer)
+        self.attach_layer('syntactic', layer)
         space.attach_wordSpace(self)
         return layer
 
-    # -- per-tier composition methods ---------------------------------
-    def forwardPercepts(self, data, subspace):
-        """P-tier compose. Side effect: word-emitting pushes onto the
-        buffer. Returns the composed activation.
-        """
-        layer = getattr(self, 'perceptualSyntacticLayer', None)
-        if layer is None:
-            return data
-        return layer.compose(data, subspace, TheGrammar)
-
-    def forwardConcepts(self, data, subspace, target_count=None):
-        """C-tier compose. ``ConceptualSyntacticLayer.compose`` may
-        return ``(data, svo)`` when a ternary lift fires; we preserve
-        that tuple contract so callers (ConceptualSpace.forward) can
-        stash the SVO on themselves for the ``last_svo`` property.
-
-        ``target_count`` routes into the pairwise reduction path in
-        ``ConceptualSyntacticLayer._compose_to_target``.  Pairwise
-        reduction slices each slot to ``[1, 1, D]`` before invoking
-        the grammar's binary rules, which degenerates the per-slot
-        PiLayer to a pure ``D->D`` map and lets the two operands'
-        content actually merge into one slot.  The cascading default
-        (``target_count=None``) keeps full ``[B, N, D]`` shapes and so
-        cannot move information across the slot axis -- fine for
-        sparse-representation use but useless whenever the two
-        operands live in different slots.
-        """
-        layer = getattr(self, 'conceptualSyntacticLayer', None)
-        if layer is None:
-            return data, None
-        result = layer.compose(data, subspace, TheGrammar, target_count=target_count)
-        if isinstance(result, tuple):
-            return result
-        return result, None
-
+    # -- composition dispatch ----------------------------------------
     def forwardSymbols(self, data, subspace):
-        """S-tier compose. Includes the Rule #2 demux side effect: the
-        muxed [B, N, D] symbol tensor gets split into what/where/when
-        modality slots before compose runs, so slot selectors see
-        axis-separated state.
+        """Compose via the unified SyntacticLayer.
+
+        Dispatches to ``self.syntacticLayer.compose(data, subspace, grammar)``.
+        Includes the Rule #2 demux side effect: the muxed [B, N, D] symbol
+        tensor gets split into what/where/when modality slots before
+        compose runs, so slot selectors see axis-separated state.
+        Returns the composed tensor (stripping the SVO slot of the
+        compose tuple so callers keep the pre-merge tensor contract).
         """
-        layer = getattr(self, 'symbolicSyntacticLayer', None)
+        layer = self.syntacticLayer
         if layer is None:
             return data
-        if data.ndim == 3 and data.shape[-1] == subspace.muxedSize:
+        if data.ndim == 3 and data.shape[-1] == getattr(subspace, 'muxedSize', -1):
             subspace.demux(data)
-        return layer.compose(data, subspace, TheGrammar)
-
-    def reversePercepts(self, data, subspace):
-        layer = getattr(self, 'perceptualSyntacticLayer', None)
-        if layer is None:
-            return data
-        return layer.decompose(data, subspace, TheGrammar)
-
-    def reverseConcepts(self, data, subspace):
-        layer = getattr(self, 'conceptualSyntacticLayer', None)
-        if layer is None:
-            return data
-        return layer.decompose(data, subspace, TheGrammar)
+        result = layer.compose(data, subspace, TheGrammar)
+        if isinstance(result, tuple):
+            return result[0]
+        return result
 
     def reverseSymbols(self, data, subspace):
-        layer = getattr(self, 'symbolicSyntacticLayer', None)
+        """Reverse-compose via the unified SyntacticLayer."""
+        layer = self.syntacticLayer
         if layer is None:
             return data
         return layer.decompose(data, subspace, TheGrammar)
