@@ -42,10 +42,11 @@ _POST_REWRITE_GRAMMAR = {
         'lower(S, S)',
         'lift(S, S)',
     ],
-    'P': [
-        'I P',    # chunk(I, P)
-        'I',      # terminal
-    ],
+    # Phase-A note: the previous P-tier entries have been removed from this
+    # fixture. They were originally included to verify the old "silently
+    # ignore non-S keys" rejection policy. After 2026-04-20 multi-LHS
+    # configure, any non-S key is parsed as a typed production, so the
+    # fixture now ships only the 17 S-tier productions it's locking in.
 }
 
 

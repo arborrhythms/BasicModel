@@ -121,6 +121,7 @@ bench : $(VENV_STAMP)
 
 clean :
 	rm -f BasicModel.pdf
+	rm -rf output/*
 
 doc_pdf : BasicModel.pdf
 

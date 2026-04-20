@@ -97,8 +97,9 @@ class TestMentalModelForwardReverse(unittest.TestCase):
 class TestMentalModelGrammarConfiguration(unittest.TestCase):
     """MentalModel should expose the grammar configured in MentalModel.xml."""
 
-    # Expected canonical rule strings from MentalModel.xml after the
-    # mereological refactor. All rules are S-tier (no C-tier).
+    # Expected canonical rule strings from MentalModel.xml.
+    # 17 legacy function-call rules + 2 typed upward productions
+    # + 1 downward production = 20 total, all on the S dispatch tier.
     EXPECTED_RULES = [
         "S -> true(S)",
         "S -> false(S)",
@@ -117,6 +118,9 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
         "S -> union(S, S)",
         "S -> lower(S, S)",
         "S -> lift(S, S)",
+        "S -> S VO",
+        "VO -> V O",
+        "S -> C",
     ]
 
     def setUp(self):
@@ -128,13 +132,12 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
 
         canonicals = [rule.canonical for rule in Language.TheGrammar.rules]
         self.assertEqual(canonicals, self.EXPECTED_RULES)
-        # 17 S-tier rules. C and P are empty.
-        self.assertEqual(len(Language.TheGrammar.rules), 17)
+        self.assertEqual(len(Language.TheGrammar.rules), 20)
         self.assertEqual(Language.TheGrammar.interpretation, 0.5)
 
         # Post S-tier merge: unified SyntacticLayer owns every rule.
         self.assertEqual(model.wordSpace.syntacticLayer.all_rules,
-                         list(range(0, 17)))
+                         list(range(0, 20)))
         self.assertIsNone(model.wordSpace.syntacticLayer.transition_rule)
 
 

@@ -3056,21 +3056,27 @@ class TestGrammar(unittest.TestCase):
         self.assertEqual(g.symbolic(), [0])
 
     def test_configure_unknown_rule_raises(self):
+        # After Phase A, whitespace-separated identifiers parse as a
+        # typed merge rule. An unparseable RHS must contain non-identifier
+        # tokens (e.g. digits or punctuation outside function-call syntax).
         g = Language.Grammar()
         with self.assertRaises(ValueError):
-            g.configure({"S": ["UNKNOWN RULE"]})
+            g.configure({"S": ["123 456"]})
 
-    def test_configure_rejects_c_tier(self):
-        """C-tier keys in the dict are silently ignored."""
+    def test_configure_multi_lhs_keys(self):
+        """Phase A: non-S LHS keys (VO, NP, VP, ...) are accepted as typed rules."""
         g = Language.Grammar()
-        g.configure({"S": "not(S)", "C": "union(C, C)"})
-        self.assertEqual(len(g), 1)
+        g.configure({"S": "S VO", "VO": "V O"})
+        self.assertEqual(len(g), 2)
+        self.assertEqual(g.rules[0].lhs, "S")
+        self.assertEqual(g.rules[1].lhs, "VO")
 
-    def test_configure_rejects_p_tier(self):
-        """P-tier keys in the dict are silently ignored."""
+    def test_configure_s_first_ordering(self):
+        """S stays first even when declared after other keys."""
         g = Language.Grammar()
-        g.configure({"S": "not(S)", "P": "I"})
-        self.assertEqual(len(g), 1)
+        g.configure({"VO": "V O", "S": "S VO"})
+        self.assertEqual(g.rules[0].lhs, "S")
+        self.assertEqual(g.rules[1].lhs, "VO")
 
     def test_symbolic_transition_none(self):
         """With no S->S epsilon rule, symbolic_transition() is None."""

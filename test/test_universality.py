@@ -291,14 +291,19 @@ class TestLuminosityOfKindness(unittest.TestCase):
     def _get_svo_and_luminosity(self, sentence):
         """Run forward, extract confident SVO, compute universality score.
 
-        Post S-tier merge: the C-tier ternary-lift path is gone (all
-        compositional rules live on the unified S-tier SyntacticLayer),
-        so ``conceptualSpace.last_svo`` is always None and there is no
-        ``lifting_layer`` instance to route through. The xfail-guarded
-        callers already tolerate this by skipping on ``(None, None)``.
+        LearnedSVO path: SVO lives on the unified S-tier
+        ``syntacticLayer.last_svo`` (grammar-derived from the
+        chart-compose derivation trace), and the universality score
+        computed during ``MentalModel.forward`` lands on
+        ``model._universality_score``. The xfail-guarded callers
+        tolerate ``(None, None)`` when the untrained model's chart
+        compose doesn't pick the canonical S -> S VO / VO -> V O path.
         """
         _run_forward(self.model, [sentence])
-        return None, None
+        sl = self.model.wordSpace.syntacticLayer if self.model.wordSpace else None
+        svo = sl.last_svo if sl is not None else None
+        score = getattr(self.model, '_universality_score', None)
+        return svo, score
 
     @pytest.mark.xfail(reason="untrained model: universality scoring not calibrated",
                         strict=False)

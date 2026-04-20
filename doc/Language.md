@@ -67,22 +67,44 @@ S-tier rule list.
 
 ### Grammar Configuration
 
-`Grammar.configure()` loads an XML `<grammar>` section (inside `<WordSpace>
-<language>`) and parses **only** `<S>` entries:
+`Grammar.configure()` loads an XML `<grammar>` section (inside
+`<WordSpace><language>`).  The block splits into `<upward>` (parsing /
+chart compose) and `<downward>` (generation from a deep symbolic state).
+Each child element is a nonterminal — `S`, `VO`, `NP`, `VP`, `V`, `O`,
+`C`, ... — and its body is the RHS in one of two forms:
 
 ```xml
 <grammar>
-  <S>true(S)</S>
-  <S>swap(S, S)</S>
-  <S>equals(S, S)</S>
-  ...
+  <upward>
+    <!-- Function-call form (legacy S-tier ops). Fixed dispatch name; -->
+    <!-- parsed into rules that still live on ``S``.                  -->
+    <S>not(S)</S>
+    <S>swap(S, S)</S>
+    <S>lift(S, S)</S>
+
+    <!-- Bare-symbol form (typed productions). LHS = element tag;     -->
+    <!-- RHS = whitespace-separated nonterminal / terminal categories. -->
+    <!-- Dispatch method is always ``merge``.                          -->
+    <S>S VO</S>
+    <VO>V O</VO>
+  </upward>
+  <downward>
+    <!-- One-shot head emission: project the deep state onto a        -->
+    <!-- codebook and emit the best-match atom. Dispatch is           -->
+    <!-- ``emit_head``; no function-call form is accepted.             -->
+    <S>C</S>
+  </downward>
 </grammar>
 ```
 
-Rules are specified in functional notation: `swap(S, S)`, `not(S)`,
-`intersection(S, S)`, etc.  Non-`<S>` keys (legacy `<C>`, `<P>`) are
-silently dropped during parse.  The XSD at `data/model.xsd` enforces
-the S-only structure.
+`Grammar.rules_upward` / `Grammar.rules_downward` hold the two rule
+sets; `Grammar.rules` is their union.  Each `RuleDef` namedtuple carries
+`(tier, canonical, arity, method_name, lhs, rhs_symbols)` — the last two
+fields drive the typed-category compatibility mask in the chart compose
+(see below).  Legacy flat `<S>...</S>` directly under `<grammar>`
+(without the upward/downward wrapper) is still accepted by
+`Grammar.configure()` for Python callers, but XMLs shipped in this repo
+use the split form so the XSD can validate them.
 
 ### Thought-Free Mode (Shamatha Speech)
 
@@ -378,7 +400,10 @@ dispatches on input rank:
 - `data.ndim == 3`  -->  `_compose_vector`     (3D bivector mode,
   with optional pairwise reduction via `_compose_to_target`)
 
-Returns `(composed, svo_or_None)`; `svo` is currently always `None`.
+Returns `(composed, svo_or_None)`.  `svo` is a
+`(subject, verb, object)` tuple of `[B, 1, D]` tensors when the
+chart-compose path (see below) finds a canonical `S -> S VO` firing
+and its matching `VO -> V O`; otherwise `None`.
 
 ### Phase 1: deterministic `not`
 
@@ -531,6 +556,159 @@ At each outer iteration $d$:
 
 Finally, extract the non-zero subset of `data` at the surviving
 positions, zero-fill the rest, and return.
+
+---
+
+## Chart-like Compose (typed SVO)
+
+Selected by `<WordSpace><chartCompose>true</chartCompose></WordSpace>`.
+The cascade-based `_compose_vector` above builds a strictly left-
+associative tree `(((leaf0, leaf1), leaf2), ...)`; it cannot produce
+`(S, (V, O))` from an `N V N` sentence because step 1 is forced to
+merge `leaf[0]` with `leaf[1]` (an `N V` pair) and no rule in a typed
+grammar fires on that shape.  Chart compose replaces the cascade with
+per-step pair selection, so the model can reduce `V O` first and then
+`S VO` second.
+
+### Pair-scorer + per-step argmax
+
+At each depth step:
+
+1. A pair-scorer MLP takes the current rule-prediction hidden state
+   plus `(left, right)` feature slices and produces a softmax over the
+   `N_alive - 1` adjacent live-leaf pairs.  Input width is
+   `hidden_dim + 2 * feature_dim`; `feature_dim` is a first-class
+   `SyntacticLayer.__init__` kwarg so the pair-scorer lines up with the
+   actual leaf dim at compose time (not `n_slots`, which tests happen
+   to set equal to `D`).
+2. The rule head emits the usual per-depth softmax over composable
+   rules (upward rules only; downward is emit-time, not chart-time).
+3. A **compatibility mask** `compat[B, P, R]` zeroes out `(pair, rule)`
+   combinations whose typed LHS/RHS categories don't match the pair's
+   slot categories.  Function-call rules (legacy, `rhs_symbols = None`)
+   are always compatible.  Category `0` (`'?'`) is a wildcard, so
+   unseeded leaves can match any typed rule during warmup.
+4. The joint `pair_probs * rule_probs * compat` is renormalised.  In
+   training the merge output is the soft mixture; at eval the argmax
+   pair / rule pick the concrete merge site.
+5. The merged vector replaces the left slot in an out-of-place
+   `torch.where`-style update (inplace mutation on the live tensor
+   would break autograd because `live = data.clone()` carries
+   `grad_fn`).  The right slot is marked dead via the alive mask; the
+   merged slot's category becomes the rule's LHS.
+
+The reduction runs for at most `N - 1` steps, so `N` live leaves
+collapse to one in `N - 1` merges.
+
+### Category tensor + POS seeding
+
+Alongside `data: [B, N, D]`, the chart path carries
+`category: [B, N]` of category IDs (the `Grammar.rules`-derived table
+is stored on `SyntacticLayer._category_names` / `_category_index`,
+with `'?'` at index 0 as the wildcard).  `_seed_category` lets
+upstream code pre-populate slot categories.
+
+`WordSpace._seed_layer_categories` wires NLTK POS tagging as the
+seeder: on each `forwardSymbols` call it reads
+`inputSpace._last_tokens` (stashed by the text path on every
+forward), runs `nltk.pos_tag`, maps Penn tags through
+`map_nltk_tags_to_categories` (Penn `NN*`/`PRP` -> `N`, `VB*` -> `V`,
+`JJ*` -> `ADJ`, `RB*` -> `ADV`, `DT` -> `DET`, `IN` -> `PREP`,
+`CC` -> `CONJ`, fallback `'?'`), and calls `_seed_category` on the
+layer.  If NLTK's `averaged_perceptron_tagger` data is missing it
+self-downloads once.  Non-text inputs silently skip seeding —
+wildcard `?` keeps the compat mask permissive.
+
+### Derivation trace
+
+`SyntacticLayer._derivation_trace` is a per-batch list (one list per
+row in the batch) of 5-tuples
+`(rule_id, left_slot, right_slot, merged_slot, merged_category)`
+appended on every chart merge.  The trace is the only surface that
+downstream readers (SVO extractor, future reconstruct templates) rely
+on; the `live` tensor is already compacted by the time compose
+returns.
+
+### Grammar-derived SVO
+
+`SyntacticLayer._extract_svo_from_trace` walks each batch row's trace
+after chart compose finishes:
+
+1. Find the last `S -> S VO` entry (outermost reduction).
+2. Find the matching `VO -> V O` entry whose `merged_slot` equals
+   the outer rule's right arg.
+3. Pull `subject` from the outer's left slot, `verb` from the inner's
+   left, `object` from the inner's right.  Each is a `[1, D]` slice of
+   the original pre-compose `data`.
+
+Rows that don't contain the canonical pair of firings get a zero `[1, D]`
+placeholder; if every row in a batch fails, `last_svo` stays `None` so
+`truth_modulated_loss` treats it as "no score".  There is no positional
+fallback — the earlier heuristic that labelled positions `0/1/2` as
+`S/V/O` is gone.  Consumers read `SyntacticLayer.last_svo` exactly as
+before.
+
+## Downward Head Emission (`S -> C`)
+
+Selected by
+`<WordSpace><downwardGeneration>true</downwardGeneration></WordSpace>`.
+After the upward parse reduces `N` leaves to a single root vector,
+`MentalModel.forward` takes that root (`sym_vectors[:, 0, :]`) and
+calls `WordSpace.reconstruct(state, inputSpace)`, which runs the
+downward `S -> C` rule as a one-shot projection onto a codebook.
+
+### `SyntacticLayer.emit_head(state, codebook) -> (best_idx, contained, residual)`
+
+Projection-coefficient scoring, not cosine:
+
+$$
+W_{\text{norm}} = W / \lVert W\rVert_{2,\text{row-wise}}
+\qquad
+\text{scores} = \mathrm{clamp}_{\ge 0}(\text{state} \cdot W_{\text{norm}}^\top)
+$$
+
+The per-row argmax is `best_idx`.  Because `state` is *not* L2-
+normalised (only the codebook rows are), the score is "how much of
+atom $k$ lives in the state" rather than a pure angle.  The resulting
+`contained = scores[:, k] * W_{\text{norm}}[k]` is the slice of the
+atom actually contained in the state; `residual = state - contained` is
+the leftover meaning a future expansion step (NP / VP templates) could
+consume.
+
+### `WordSpace.reconstruct(state, codebook_space)`
+
+Any space whose `.subspace.basis` exposes a `getW() -> [V, D]` works.
+`InputSpace` (word embedding) is the intended source — projecting the
+deep state onto word-vectors picks the vocabulary entry that best
+matches the sentence's composed meaning, and `.wv.index_to_key` decodes
+the head index back to a token.  `SymbolicSpace` (internal atom
+codebook) is also valid once a codebook is populated there.  When the
+codebook is unwired (passthrough `Codebook` with `getW() == None`),
+`reconstruct` returns a trivial `heads=[0]*B` so the loss path never
+crashes on a `None` codebook.
+
+Returns `{heads: list[int] (len B), contained: [B, D], residual: [B, D],
+state: [B, D]}`.  `MentalModel.forward` stashes `heads` as
+`self._predicted_head` — a per-batch list of vocabulary indices — so a
+training loss can compare against a supervised head token, and so
+`bin/interact_head.py` (interactive smoke test) can print the decoded
+word after each forward pass.
+
+### Stable hooks already wired
+
+- `SyntacticLayer.last_svo: Optional[Tuple[Tensor, Tensor, Tensor]]`
+- `SyntacticLayer.lifting_layer: LiftingLayer` (created in
+  `init_lifting`, called from `WordSpace._build_syntactic_layer`)
+- `MentalModel.forward` reads both, invokes
+  `truth_layer.universality(s, v, o, lifting_layer, symbolicSpace)`,
+  and stores `self._universality_score`; `truth_modulated_loss`
+  integrates the score into the training loss.
+- `MentalModel._predicted_head: Optional[list[int]]` set by the
+  downward pass above.
+
+The historical design narrative (why chart compose was needed, why a
+cheaper hybrid doesn't work, curriculum plan for training) lives in
+`doc/plans/2026-04-20-LearnedSVO-integration.md` for archaeologists.
 
 ---
 

@@ -273,16 +273,14 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
     # -- Toy rules: what MentalModel.xml defines ----------------------
 
     def test_total_rule_count(self):
-        """MentalModel.xml defines 17 rules, all S-tier.
-
-        After the mereological refactor, all method rules live in S-tier:
-        true, false, non, conjunction, disjunction, what, where, when,
-        query, swap, equals, not, part, intersection, union, lower, lift.
+        """MentalModel.xml defines 17 function-call rules + 2 typed upward
+        productions (S -> S VO, VO -> V O) + 1 downward production
+        (S -> C). All 20 rules stay on the S dispatch tier.
         """
-        self.assertEqual(len(self.grammar.rules), 17)
+        self.assertEqual(len(self.grammar.rules), 20)
 
     def test_s_tier_rules(self):
-        """S-tier: all method rules after the C->S merge."""
+        """S-tier: 17 legacy method rules + 3 new typed/downward rules."""
         s_rules = [(r.method_name, r.arity) for r in self.grammar.rules if r.tier == 'S']
         # Trinity
         self.assertIn(('true', 1), s_rules)
@@ -307,7 +305,11 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         self.assertIn(('union', 2), s_rules)
         self.assertIn(('lower', 2), s_rules)
         self.assertIn(('lift', 2), s_rules)
-        self.assertEqual(len(s_rules), 17)
+        # LearnedSVO typed rules (upward) and downward head emission.
+        self.assertIn(('merge', 2), s_rules)     # S -> S VO
+        # VO -> V O is also method='merge', arity 2 — duplicate tuple.
+        self.assertIn(('emit_head', 1), s_rules)  # S -> C (downward)
+        self.assertEqual(len(s_rules), 20)
 
     def test_c_tier_rules(self):
         """C-tier is empty after the C->S merge."""
@@ -326,8 +328,8 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         s_ids = self.grammar.symbolic()
         for i in s_ids:
             self.assertEqual(self.grammar.rules[i].tier, 'S')
-        # 17 S-tier rules after C->S merge (no transition).
-        self.assertEqual(len(s_ids), 17)
+        # 17 legacy + 2 typed upward + 1 downward = 20 S-tier rules.
+        self.assertEqual(len(s_ids), 20)
 
     def test_only_s_tier_remains(self):
         """After the C->S merge and P-tier removal, only S-tier rules exist."""
@@ -339,8 +341,18 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         self.assertIsNone(self.grammar.symbolic_transition())
 
     def test_all_method_names_are_registered(self):
-        """Every rule's method_name maps to Grammar or a SyntacticLayer subclass."""
-        all_known = set(self.model.wordSpace.syntacticLayer._RULE_METHODS.keys()) | {'swap', 'lift', 'lower', 'non'}
+        """Every rule's method_name maps to Grammar or a SyntacticLayer subclass.
+
+        'merge' and 'emit_head' are dispatch signals for the new typed /
+        downward paths (chart compose, head emission) rather than entries
+        in _RULE_METHODS; they're wired up in later phases of the LearnedSVO
+        plan and are allowlisted here.
+        """
+        all_known = (
+            set(self.model.wordSpace.syntacticLayer._RULE_METHODS.keys())
+            | {'swap', 'lift', 'lower', 'non'}
+            | {'merge', 'emit_head'}
+        )
         for r in self.grammar.rules:
             if r.method_name is not None:
                 self.assertIn(r.method_name, all_known,

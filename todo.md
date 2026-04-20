@@ -1,3 +1,21 @@
+I want to speed up the training loop.
+Current serial training loop (when using ARLM):
+
+embed once
+N times:
+    mask one position
+    run full MentalModel
+    reverse
+New causal grammar cost:
+
+Desired serial (ARLM) loop (i.e. when not using butterflies):
+
+embed once
+one left-to-right pass:
+    update grammar state
+    emit forward prediction
+if <reconstruction> != NONE:
+    reverse
 
 
 ================================== April 24 ==================================

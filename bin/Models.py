@@ -2582,6 +2582,9 @@ class MentalModel(BaseModel):
             concept_dim=concept_dim + obj_concept,
             symbol_dim=symbol_dim + obj_symbol,
         )
+        # Phase C.2: WordSpace needs a back-ref to InputSpace for NLTK
+        # POS seeding of the chart-compose category tensor.
+        self.wordSpace._input_space_ref = self.inputSpace
 
         # Post S-tier merge: compositional rules live on the single
         # unified SyntacticLayer, which does not need a back-reference
@@ -2930,12 +2933,13 @@ class MentalModel(BaseModel):
         # LiftingLayer + TruthLayer to measure luminosity change under
         # S/O reversal. Kind actions preserve illumination; unkind
         # actions diminish it. The SVO tap lives on the unified
-        # SyntacticLayer and populates ``last_svo`` for canonical
-        # 3-token transitive inputs (a positional heuristic). Irregular
+        # SyntacticLayer and populates ``last_svo`` by walking the
+        # chart-compose derivation trace for the canonical
+        # ``S -> S VO`` / ``VO -> V O`` pair of firings. Irregular
         # inputs and an empty truth store both fall through to None,
-        # which ``truth_modulated_loss`` handles as "no score". The
-        # grammar-learned SVO identification that will replace the
-        # positional tap is spec'd in ``doc/LearnedSVO.md``.
+        # which ``truth_modulated_loss`` handles as "no score". See
+        # ``doc/Language.md`` (Chart-like Compose section) for the
+        # derivation mechanics.
         self._universality_score = None
         truth_layer = (self.wordSpace.truth_layer
                        if self.wordSpace is not None else None)
@@ -2948,6 +2952,24 @@ class MentalModel(BaseModel):
             s, v, o = svo
             self._universality_score = truth_layer.universality(
                 s, v, o, lifting_layer, self.symbolicSpace)
+
+        # Downward head emission (S -> C). MVP: run WordSpace.reconstruct
+        # on the root symbol (slot 0 after chart-compose) when the
+        # downwardGeneration flag is on; stash the codebook idx list on
+        # self so the loss fn (or an interactive caller) can map heads
+        # back to vocabulary words via ``inputSpace.decodeIdx``.
+        # The codebook is the InputSpace's word embedding: projecting
+        # the deep state onto word-vectors picks the vocabulary entry
+        # that best matches the sentence's composed meaning.
+        self._predicted_head = None
+        try:
+            gen_on = bool(TheXMLConfig.get('WordSpace.downwardGeneration'))
+        except KeyError:
+            gen_on = False
+        if gen_on and self.wordSpace is not None:
+            final_state = sym_vectors[:, 0, :]
+            result = self.wordSpace.reconstruct(final_state, self.inputSpace)
+            self._predicted_head = result['heads']
 
         # Output from first nOutputSymbols of symbol vectors
         if self.useButterflies or self.useGrammar == "all":

@@ -104,9 +104,19 @@
     <!-- Truth memory capacity (TruthLayer is owned by WordSpace). -->
     <truthMaxEntries>1024</truthMaxEntries>
 
+    <!-- Phase B: chart-like pair selection in compose.
+         false = legacy left-associative cascade. -->
+    <chartCompose>false</chartCompose>
+
+    <!-- Phase D: emit a codebook head via WordSpace.reconstruct().
+         false = forward() does not populate ``_predicted_head``. -->
+    <downwardGeneration>false</downwardGeneration>
+
     <language>
       <grammar>
-        <S>not(S)</S>
+        <upward>
+          <S>not(S)</S>
+        </upward>
       </grammar>
       <interpretation>0.5</interpretation>
     </language>

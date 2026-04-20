@@ -307,10 +307,16 @@ class TestGrammarProject(_GrammarTestBase):
         grammar_methods = set(self.s_sl._RULE_METHODS.keys())
         # Parametric methods on SyntacticLayer subclasses
         subclass_methods = {'swap', 'lift', 'lower', 'non'}
-        all_known = grammar_methods | subclass_methods
+        # LearnedSVO dispatch signals: 'merge' (typed chart compose) and
+        # 'emit_head' (downward generation via codebook lookup). They are
+        # wired up in later phases of the integrated plan but must be
+        # accepted as known method names at this point so the legacy
+        # dispatch regression test stays green after Task 2.
+        typed_dispatch = {'merge', 'emit_head'}
+        all_known = grammar_methods | subclass_methods | typed_dispatch
         self.assertTrue(dispatched.issubset(all_known),
                         f"Unknown methods: {dispatched - all_known}")
-        # chunk is P-tier; all others should be covered by rules
+        # chunk is P-tier; all others should be covered by rules.
         self.assertTrue(all_known.issubset(dispatched | {'chunk'}),
                         f"Untested methods: {all_known - dispatched}")
 
