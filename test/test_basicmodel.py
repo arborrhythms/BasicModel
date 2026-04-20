@@ -31,6 +31,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 import Models
 import Spaces
+import Language
 import Layers
 
 
@@ -3013,106 +3014,78 @@ class TestSubspaceActivation(unittest.TestCase):
 
 
 class TestGrammar(unittest.TestCase):
-    """Tests for Grammar with current simplified rule set."""
+    """Tests for Grammar (S-tier only)."""
 
     def _make_grammar(self):
-        """Create a Grammar with the current model.xml rules."""
-        g = Spaces.Grammar()
+        g = Language.Grammar()
         g.configure({
-            "START": "S",
-            "S": "C",
-            "C": ["not(C)", "P"],
-            "P": "I",
+            "S": ["swap(S, S)", "not(S)", "union(S, S)"],
         })
         return g
 
     def test_length(self):
         g = self._make_grammar()
-        self.assertEqual(len(g), 5)
+        self.assertEqual(len(g), 3)
 
     def test_indexing(self):
         g = self._make_grammar()
-        self.assertEqual(g[0], "START -> S")
-        self.assertEqual(g[1], "S -> C")
-        self.assertEqual(g[2], "C -> not(C)")
-        self.assertEqual(g[3], "C -> P")
-        self.assertEqual(g[4], "P -> I")
+        self.assertEqual(g[0], "S -> swap(S, S)")
+        self.assertEqual(g[1], "S -> not(S)")
+        self.assertEqual(g[2], "S -> union(S, S)")
 
-    def test_arity_transitions(self):
+    def test_arity(self):
         g = self._make_grammar()
-        self.assertEqual(g.arity(0), 1)  # START -> S
-        self.assertEqual(g.arity(1), 1)  # S -> C
-        self.assertEqual(g.arity(3), 1)  # C -> P
-
-    def test_arity_not(self):
-        g = self._make_grammar()
-        self.assertEqual(g.arity(2), 1)  # not(C) is unary
-
-    def test_arity_terminal(self):
-        g = self._make_grammar()
-        self.assertEqual(g.arity(4), 0)  # P -> I is terminal
+        self.assertEqual(g.arity(0), 2)  # swap
+        self.assertEqual(g.arity(1), 1)  # not
+        self.assertEqual(g.arity(2), 2)  # union
 
     def test_space_partitions(self):
-        """Tier partitions for current grammar."""
         g = self._make_grammar()
-        self.assertEqual(g.symbolic(), [1])      # S->C transition
-        self.assertEqual(g.conceptual(), [2, 3]) # not(C), C->P transition
-        self.assertEqual(g.perceptual(), [4])    # P->I terminal
+        self.assertEqual(g.symbolic(), [0, 1, 2])
 
     def test_configure_from_dict(self):
-        """Grammar.configure() parses functional notation from dict."""
-        g = Spaces.Grammar()
+        g = Language.Grammar()
         g.configure({
-            "S": ["swap(S, S)", "equals(S, S)", "C"],
-            "C": ["union(C, C)", "P"],
-            "P": ["I P", "epsilon"],
+            "S": ["swap(S, S)", "equals(S, S)", "union(S, S)"],
         })
-        self.assertEqual(g.symbolic(), [0, 1, 2])    # swap, equals, S->C
-        self.assertEqual(g.conceptual(), [3, 4])      # union, C->P
-        self.assertEqual(g.perceptual(), [5, 6])      # I P, epsilon
+        self.assertEqual(g.symbolic(), [0, 1, 2])
 
     def test_configure_single_rule_string(self):
-        """Single rule as string (not list) works."""
-        g = Spaces.Grammar()
-        g.configure({"S": "C", "C": "P", "P": "epsilon"})
-        self.assertEqual(g.symbolic(), [0])      # S->C transition
-        self.assertEqual(g.conceptual(), [1])    # C->P transition
-        self.assertEqual(g.perceptual(), [2])    # epsilon
+        g = Language.Grammar()
+        g.configure({"S": "not(S)"})
+        self.assertEqual(g.symbolic(), [0])
 
     def test_configure_unknown_rule_raises(self):
-        """Unknown rule text raises ValueError."""
-        g = Spaces.Grammar()
+        g = Language.Grammar()
         with self.assertRaises(ValueError):
             g.configure({"S": ["UNKNOWN RULE"]})
 
-    def test_symbolic_transition(self):
-        """symbolic_transition() returns S->C rule."""
-        g = self._make_grammar()
-        self.assertEqual(g.symbolic_transition(), 1)
+    def test_configure_rejects_c_tier(self):
+        """C-tier keys in the dict are silently ignored."""
+        g = Language.Grammar()
+        g.configure({"S": "not(S)", "C": "union(C, C)"})
+        self.assertEqual(len(g), 1)
 
-    def test_conceptual_transition(self):
-        """conceptual_transition() returns C->P rule."""
-        g = self._make_grammar()
-        self.assertEqual(g.conceptual_transition(), 3)
+    def test_configure_rejects_p_tier(self):
+        """P-tier keys in the dict are silently ignored."""
+        g = Language.Grammar()
+        g.configure({"S": "not(S)", "P": "I"})
+        self.assertEqual(len(g), 1)
 
-    def test_transition_none_when_not_configured(self):
-        """Transition returns None if not in active set."""
-        g = Spaces.Grammar()
-        g.configure({"S": "swap(S, S)", "C": "union(C, C)", "P": "epsilon"})
-        self.assertIsNone(g.symbolic_transition())   # no S->C
-        self.assertIsNone(g.conceptual_transition())  # no C->P
+    def test_symbolic_transition_none(self):
+        """With no S->S epsilon rule, symbolic_transition() is None."""
+        g = self._make_grammar()
+        self.assertIsNone(g.symbolic_transition())
 
 
 class TestGrammarOperations(unittest.TestCase):
     """Tests for S-tier boolean propositions and operators via Grammar.project()."""
 
     def _make_grammar(self):
-        g = Spaces.Grammar()
+        g = Language.Grammar()
         g.configure({
-            "START": "true(S)",
-            "S": ["swap(S, S)", "equals(S, S)", "C"],
-            "C": ["not(C)", "part(C, C)", "P"],
-            "P": "I",
+            "S": ["true(S)", "swap(S, S)", "equals(S, S)",
+                  "not(S)", "part(S, S)"],
         })
         # Register a monotonic basis so methods dispatch through Basis logic
         self._ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
@@ -3120,21 +3093,13 @@ class TestGrammarOperations(unittest.TestCase):
         basis.create(8, 8, 4, monotonic=True)
         self._ss.what = basis
         # Create S-tier SyntacticLayer with swap parameters
-        self._s_sl = Spaces.SymbolicSyntacticLayer(
+        self._s_sl = Language.SymbolicSyntacticLayer(
             nInput=4, nOutput=4,
             rules=g.symbolic(),
             transition_rule=g.symbolic_transition(),
             max_depth=3, hidden_dim=16, grammar=g,
         )
         self._s_sl.init_swap(4, 4)
-        # Create C-tier SyntacticLayer for part(C, C) tests
-        self._c_sl = Spaces.ConceptualSyntacticLayer(
-            nInput=4, nOutput=4,
-            rules=g.conceptual(),
-            transition_rule=g.conceptual_transition(),
-            max_depth=3, hidden_dim=16, grammar=g,
-        )
-        self._c_sl.init_conceptual_params(4)
         return g
 
     def _find_rule(self, g, name):
@@ -3177,7 +3142,7 @@ class TestGrammarOperations(unittest.TestCase):
         rid = self._find_rule(g, 'part')
         x = torch.tensor([[0.3, 0.2, 0.0, 0.0]])
         y = torch.tensor([[0.5, 0.8, 0.4, 0.6]])
-        result = self._c_sl.project(g, rid, x, y, subspace=self._ss)
+        result = self._s_sl.project(g, rid,x, y, subspace=self._ss)
         # x <= y element-wise -> part score high -> result ~= y * score
         self.assertTrue(result.norm() > 0.1)
 
@@ -3187,8 +3152,8 @@ class TestGrammarOperations(unittest.TestCase):
         rid = self._find_rule(g, 'part')
         x = torch.tensor([[0.9, 0.9, 0.9, 0.9]])
         y = torch.tensor([[0.1, 0.1, 0.1, 0.1]])
-        result_big_in_small = self._c_sl.project(g, rid, x, y, subspace=self._ss)
-        result_small_in_big = self._c_sl.project(g, rid, y, x, subspace=self._ss)
+        result_big_in_small = self._s_sl.project(g, rid,x, y, subspace=self._ss)
+        result_small_in_big = self._s_sl.project(g, rid,y, x, subspace=self._ss)
         # x is NOT part of y, but y IS part of x
         self.assertGreater(result_small_in_big.norm().item(),
                            result_big_in_small.norm().item())
@@ -3515,17 +3480,12 @@ class TestMaskAsActiveFilter(unittest.TestCase):
             self._active = torch.ones(B, N, M)
 
     def _layer(self):
-        g = Spaces.Grammar()
-        g.configure({
-            "START": "C",
-            "S": ["C"],
-            "C": ["not(C)", "P"],
-            "P": "I",
-        })
-        layer = Spaces.ConceptualSyntacticLayer(
+        g = Language.Grammar()
+        g.configure({"S": ["not(S)", "union(S, S)"]})
+        layer = Language.ConceptualSyntacticLayer(
             nInput=4, nOutput=4,
-            rules=g.conceptual(),
-            transition_rule=g.conceptual_transition(),
+            rules=[],
+            transition_rule=None,
             max_depth=2, hidden_dim=8, grammar=g,
         )
         layer.init_conceptual_params(4)
@@ -3573,9 +3533,9 @@ class TestWordEncoding(unittest.TestCase):
 
     def test_encode_decode_roundtrip(self):
         we = Spaces.WordEncoding(nBatch=4, nActive=64)
-        word = we.encode(2, 42, 1)
+        word = we.encode(2, 42, 0)
         b, v, r = we.decode(word)
-        self.assertEqual((b, v, r), (2, 42, 1))
+        self.assertEqual((b, v, r), (2, 42, 0))
 
     def test_encode_validates_rule(self):
         we = Spaces.WordEncoding(nBatch=4, nActive=64)
@@ -3611,9 +3571,9 @@ class TestSubspaceWords(unittest.TestCase):
     def test_add_multiple_words(self):
         ss = self._make_ss()
         ss.add_word(0, 0, 0)
-        ss.add_word(0, 42, 1)
+        ss.add_word(0, 42, 0)
         self.assertEqual(ss.get_words(),
-                         [(0, 0, 0, 0, -1, -1, -1), (0, 42, 0, 1, -1, -1, -1)])
+                         [(0, 0, 0, 0, -1, -1, -1), (0, 42, 0, 0, -1, -1, -1)])
 
     def test_set_words(self):
         ss = self._make_ss()
@@ -4048,13 +4008,13 @@ class TestSyntacticLayer(unittest.TestCase):
             path=os.path.join(ProjectPaths.DATA_DIR, 'MentalModel.xml'),
             defaults_path=os.path.join(ProjectPaths.DATA_DIR, 'model.xml'),
         )
-        g = Spaces.Grammar()
+        g = Language.Grammar()
         g._ensure_configured()
         return g
 
     def _make_symbolic_layer(self, nInput=8, max_depth=7, hidden_dim=16):
         g = self._make_grammar()
-        return Spaces.SyntacticLayer(
+        return Language.SyntacticLayer(
             nInput=nInput, nOutput=nInput,
             rules=g.symbolic(),
             transition_rule=g.symbolic_transition(),
@@ -4065,10 +4025,10 @@ class TestSyntacticLayer(unittest.TestCase):
 
     def _make_conceptual_layer(self, nInput=8, max_depth=7, hidden_dim=16):
         g = self._make_grammar()
-        return Spaces.SyntacticLayer(
+        return Language.SyntacticLayer(
             nInput=nInput, nOutput=nInput,
-            rules=g.conceptual(),
-            transition_rule=g.conceptual_transition(),
+            rules=[],
+            transition_rule=None,
             max_depth=max_depth,
             hidden_dim=hidden_dim,
             grammar=g,
@@ -4076,9 +4036,9 @@ class TestSyntacticLayer(unittest.TestCase):
 
     def _make_perceptual_layer(self, nInput=8, max_depth=7, hidden_dim=16):
         g = self._make_grammar()
-        return Spaces.SyntacticLayer(
+        return Language.SyntacticLayer(
             nInput=nInput, nOutput=nInput,
-            rules=g.perceptual(),
+            rules=[],
             transition_rule=None,
             max_depth=max_depth,
             hidden_dim=hidden_dim,
@@ -4101,16 +4061,16 @@ class TestSyntacticLayer(unittest.TestCase):
         layer, g = self._make_conceptual_layer()
         x = torch.randn(2, 8).to(self._dev())
         out = layer.forward(x)
-        n_con_rules = len(g.conceptual())  # includes transition
-        self.assertEqual(out["rule_logits"].shape, (2, 7, n_con_rules))
+        # C-tier has no rules after C->S merge; forward returns empty rule axis.
+        self.assertEqual(out["rule_logits"].shape, (2, 7, 0))
         self.assertNotIn("composed_activation", out)
 
     def test_perceptual_forward_shapes(self):
         layer, g = self._make_perceptual_layer()
         x = torch.randn(2, 8).to(self._dev())
         out = layer.forward(x)
-        n_per_rules = len(g.perceptual())
-        self.assertEqual(out["rule_logits"].shape, (2, 7, n_per_rules))
+        # P-tier has no rules; forward returns empty rule axis.
+        self.assertEqual(out["rule_logits"].shape, (2, 7, 0))
 
     # -- Space projection operation tests -------------------------
 
@@ -4201,10 +4161,10 @@ class TestShiftReduce(unittest.TestCase):
     """Tests for Grammar shift/reduce (TheGrammar.write / resetStack)."""
 
     def _init_grammar(self, nSym=8, nDim=4):
-        """Initialize TheGrammar with layers for S/R testing.
+        """Initialize TheGrammar with an S-tier layer for S/R testing.
 
-        Returns (grammar, s_sl, c_sl, p_sl) -- Grammar plus per-tier
-        SyntacticLayer instances for direct compose/decompose calls.
+        Returns (grammar, s_sl) -- Grammar plus SymbolicSyntacticLayer.
+        After the C->S merge, only S-tier carries rules.
         """
         _populate_test_config(
             inputDim=nDim, perceptDim=nDim, conceptDim=nDim, symbolDim=1,
@@ -4214,49 +4174,26 @@ class TestShiftReduce(unittest.TestCase):
             perceptPassThrough=True, symbolPassThrough=True)
         Models.TheXMLConfig._data["architecture"]["syntax"] = True
         Models.TheXMLConfig._data["architecture"]["maskedPrediction"] = "ARLM"
-        # Configure grammar with full rules. Grammar._ensure_configured reads
-        # from WordSpace.language.grammar, not architecture.language.grammar.
         Models.TheXMLConfig._data.setdefault("WordSpace", {}).setdefault("language", {})["grammar"] = {
-            "START": "S",
-            "S": ["true(S)", "swap(S, S)", "equals(S, S)", "part(S, S)", "C"],
-            "C": ["non(C)", "not(C)", "intersection(C, C)", "union(C, C)",
-                  "lower(C, C)", "lift(C, C)", "P"],
-            "P": ["I P", "I"],
+            "S": ["true(S)", "swap(S, S)", "equals(S, S)", "part(S, S)",
+                  "non(S)", "not(S)", "intersection(S, S)", "union(S, S)"],
         }
-        Spaces.TheGrammar._configured = False
-        Spaces.TheGrammar._ensure_configured()
-        # Create per-tier SyntacticLayers (normally done by Spaces)
-        s_sl = Spaces.SymbolicSyntacticLayer(
+        Language.TheGrammar._configured = False
+        Language.TheGrammar._ensure_configured()
+        s_sl = Language.SymbolicSyntacticLayer(
             nInput=nSym, nOutput=nSym,
-            rules=Spaces.TheGrammar.symbolic(),
-            transition_rule=Spaces.TheGrammar.symbolic_transition(),
+            rules=Language.TheGrammar.symbolic(),
+            transition_rule=Language.TheGrammar.symbolic_transition(),
             max_depth=max(nSym - 1, 1),
             hidden_dim=min(256, max(64, nSym * 4)),
-            grammar=Spaces.TheGrammar,
+            grammar=Language.TheGrammar,
         )
         s_sl.init_swap(nSym, nSym)
-        c_sl = Spaces.ConceptualSyntacticLayer(
-            nInput=nSym, nOutput=nSym,
-            rules=Spaces.TheGrammar.conceptual(),
-            transition_rule=Spaces.TheGrammar.conceptual_transition(),
-            max_depth=max(nSym - 1, 1),
-            hidden_dim=min(256, max(64, nSym * 4)),
-            grammar=Spaces.TheGrammar,
-        )
-        c_sl.init_conceptual_params(nDim)
-        p_sl = Spaces.PerceptualSyntacticLayer(
-            nInput=nSym, nOutput=nSym,
-            rules=Spaces.TheGrammar.perceptual(),
-            transition_rule=None,
-            max_depth=max(nSym - 1, 1),
-            hidden_dim=min(256, max(64, nSym * 4)),
-            grammar=Spaces.TheGrammar,
-        )
-        return Spaces.TheGrammar, s_sl, c_sl, p_sl
+        return Language.TheGrammar, s_sl
 
     def test_write_symbolic_shift(self):
         """SymbolicSyntacticLayer.compose() applies rules at top-of-stack."""
-        grammar, s_sl, c_sl, p_sl = self._init_grammar()
+        grammar, s_sl = self._init_grammar()
         ss = Models.SubSpace(inputShape=[8, 1], outputShape=[8, 1])
         act = torch.zeros(1, 8, device=Models.TheDevice.get())
         act[0, 3] = 1.0  # one active position
@@ -4265,7 +4202,7 @@ class TestShiftReduce(unittest.TestCase):
 
     def test_write_symbolic_stack_grows(self):
         """Applying grammar to two active positions records words."""
-        grammar, s_sl, c_sl, p_sl = self._init_grammar()
+        grammar, s_sl = self._init_grammar()
         ss = Models.SubSpace(inputShape=[8, 1], outputShape=[8, 1])
         act = torch.zeros(1, 8, device=Models.TheDevice.get())
         act[0, 2] = 1.0
@@ -4275,56 +4212,9 @@ class TestShiftReduce(unittest.TestCase):
 
     def test_resetStack_symbolic(self):
         """SubSpace.set_words([]) clears the word list."""
-        grammar, s_sl, c_sl, p_sl = self._init_grammar()
+        grammar, s_sl = self._init_grammar()
         ss = Models.SubSpace(inputShape=[8, 1], outputShape=[8, 1])
         ss.word = [(0, 1, 2), (0, 3, 4)]
-        ss.set_words([])
-        self.assertEqual(len(ss.get_words()), 0)
-
-    # -- Conceptual tier write / resetStack tests -----------------
-
-    def test_write_conceptual_shift(self):
-        """ConceptualSyntacticLayer.compose() applies rules to concept vectors."""
-        grammar, s_sl, c_sl, p_sl = self._init_grammar(nDim=4)
-        ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
-        vectors = torch.randn(1, 8, 4, device=Models.TheDevice.get())
-        vectors[0, 3:] = 0.0  # only 3 active positions
-        result, _ = c_sl.compose(vectors, ss, grammar)
-        self.assertEqual(result.shape, (1, 8, 4))
-
-    def test_write_conceptual_stack_grows(self):
-        """Multiple active concept positions get grammar rules applied."""
-        grammar, s_sl, c_sl, p_sl = self._init_grammar(nDim=4)
-        ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
-        vectors = torch.randn(1, 8, 4, device=Models.TheDevice.get())
-        vectors[0, 4:] = 0.0  # 4 active positions
-        result, _ = c_sl.compose(vectors, ss, grammar)
-        self.assertEqual(result.shape, (1, 8, 4))
-
-    def test_resetStack_conceptual(self):
-        """SubSpace.set_words([]) clears the word list."""
-        grammar, s_sl, c_sl, p_sl = self._init_grammar(nDim=4)
-        ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
-        ss.word = [(0, 1, 2)]
-        ss.set_words([])
-        self.assertEqual(len(ss.get_words()), 0)
-
-    # -- Perceptual tier write / resetStack tests -----------------
-
-    def test_write_perceptual_shift(self):
-        """PerceptualSyntacticLayer.compose() applies perceptual rules."""
-        grammar, s_sl, c_sl, p_sl = self._init_grammar(nDim=4)
-        ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
-        vectors = torch.randn(1, 8, 4, device=Models.TheDevice.get())
-        vectors[0, 4:] = 0.0  # 4 active positions
-        result = p_sl.compose(vectors, ss, grammar)
-        self.assertEqual(result.shape, (1, 8, 4))
-
-    def test_resetStack_perceptual(self):
-        """SubSpace.set_words([]) clears the word list."""
-        grammar, s_sl, c_sl, p_sl = self._init_grammar(nDim=4)
-        ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
-        ss.word = [(0, 1, 13), (0, 2, 13)]
         ss.set_words([])
         self.assertEqual(len(ss.get_words()), 0)
 
@@ -4332,7 +4222,7 @@ class TestShiftReduce(unittest.TestCase):
 
     def test_read_symbolic(self):
         """SymbolicSyntacticLayer.decompose() undoes grammar operations on activation."""
-        grammar, s_sl, c_sl, p_sl = self._init_grammar()
+        grammar, s_sl = self._init_grammar()
         ss = Models.SubSpace(inputShape=[8, 1], outputShape=[8, 1])
         # Record a word, then reverse
         swap_rid = [r for r in grammar.symbolic() if grammar.rules[r].method_name == 'swap'][0]
@@ -4341,25 +4231,6 @@ class TestShiftReduce(unittest.TestCase):
         act[0, 3] = 1.0
         result = s_sl.decompose(act, ss, grammar)
         self.assertEqual(result.shape, (1, 8))
-
-    def test_read_conceptual(self):
-        """ConceptualSyntacticLayer.decompose() undoes grammar operations on vectors."""
-        grammar, s_sl, c_sl, p_sl = self._init_grammar(nDim=4)
-        ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
-        not_rid = [r for r in grammar.conceptual() if grammar.rules[r].method_name == 'not'][0]
-        ss.add_word(0, 2, not_rid)
-        vectors = torch.randn(1, 8, 4, device=Models.TheDevice.get())
-        result = c_sl.decompose(vectors, ss, grammar)
-        self.assertEqual(result.shape, (1, 8, 4))
-
-    def test_read_perceptual(self):
-        """PerceptualSyntacticLayer.decompose() undoes grammar operations on vectors."""
-        grammar, s_sl, c_sl, p_sl = self._init_grammar(nDim=4)
-        ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
-        # No words recorded -- decompose should be identity
-        vectors = torch.randn(1, 8, 4, device=Models.TheDevice.get())
-        result = p_sl.decompose(vectors, ss, grammar)
-        self.assertEqual(result.shape, (1, 8, 4))
 
 
 if __name__ == "__main__":

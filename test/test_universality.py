@@ -26,6 +26,7 @@ import pytest
 import matplotlib
 import Models
 import Spaces
+import Language
 matplotlib.use('Agg')
 
 from util import init_config, TheXMLConfig
@@ -70,7 +71,7 @@ def _reload_config():
         path=os.path.join(_DATA_DIR, 'MentalModel.xml'),
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
     )
-    Spaces.TheGrammar._configured = False
+    Language.TheGrammar._configured = False
 
 
 def _make_model():
@@ -160,7 +161,7 @@ class TestSVOIdentification(unittest.TestCase):
 
     def setUp(self):
         self.model = _make_model()
-        self.grammar = Spaces.TheGrammar
+        self.grammar = Language.TheGrammar
 
     @pytest.mark.xfail(reason="untrained model: lift confidence near chance", strict=False)
     def test_lift_confidence_on_transitive_sentence(self):
@@ -265,7 +266,7 @@ class TestLuminosityOfKindness(unittest.TestCase):
 
     def setUp(self):
         self.model = _make_model()
-        self.grammar = Spaces.TheGrammar
+        self.grammar = Language.TheGrammar
         # Seed the truth store so luminosity is non-trivial
         truth_layer = self.model.wordSpace.truth_layer
         with torch.no_grad():

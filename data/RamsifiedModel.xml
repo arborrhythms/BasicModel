@@ -43,22 +43,17 @@
     <useGrammar>none</useGrammar>
     <language>
       <grammar>
-        <START>S</START>
         <S>true(S)</S>
         <S>swap(S, S)</S>
         <S>equals(S, S)</S>
         <S>part(S, S)</S>
-        <S>C</S>
-        <C>non(C)</C>
-        <C>not(C)</C>
-        <C>intersection(C, C)</C>
-        <C>union(C, C)</C>
-        <C>lower(C, C)</C>
-        <C>lift(C, C)</C>
-        <C>lift(C, C, C)</C>
-        <C>P</C>
-        <P>I P</P>
-        <P>I</P>
+        <S>non(S)</S>
+        <S>not(S)</S>
+        <S>intersection(S, S)</S>
+        <S>union(S, S)</S>
+        <S>lower(S, S)</S>
+        <S>lift(S, S)</S>
+        <S>lift(S, S, S)</S>
       </grammar>
       <interpretation>0.5</interpretation>
     </language>

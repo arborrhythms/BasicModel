@@ -103,11 +103,7 @@
 
     <language>
       <grammar>
-        <START>S</START>
-        <S>C</S>
-        <C>not(C)</C>
-        <C>P</C>
-        <P>I</P>
+        <S>not(S)</S>
       </grammar>
       <interpretation>0.5</interpretation>
     </language>

@@ -192,9 +192,9 @@ def chat_completions():
     # Shamatha speech: restrict grammar to S -> C only
     thought_free = body.get("thought_free", False)
     try:
-        from basicmodel.bin.Spaces import TheGrammar
+        from basicmodel.bin.Language import TheGrammar
     except ModuleNotFoundError:
-        from Spaces import TheGrammar
+        from Language import TheGrammar
     try:
         if thought_free:
             TheGrammar.thought_free = True

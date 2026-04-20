@@ -21,6 +21,7 @@ import torch
 import matplotlib
 import Models
 import Spaces
+import Language
 matplotlib.use('Agg')
 
 from util import init_config, TheXMLConfig
@@ -42,7 +43,7 @@ def _reload_config():
 def _make_model():
     """Create a MentalModel with grammar enabled."""
     _reload_config()
-    Spaces.TheGrammar._configured = False
+    Language.TheGrammar._configured = False
     model, _ = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
     return model
 
@@ -104,7 +105,7 @@ class TestHeadDivergence(unittest.TestCase):
                 c_sl = getattr(self.model.wordSpace, 'conceptualSyntacticLayer', None) if getattr(self.model, 'wordSpace', None) is not None else None
                 if c_sl is not None:
                     pre_compose = c_sl.decompose(
-                        concepts.materialize(), cs.subspace, Spaces.TheGrammar)[0]
+                        concepts.materialize(), cs.subspace, Language.TheGrammar)[0]
                 else:
                     pre_compose = post_compose
 

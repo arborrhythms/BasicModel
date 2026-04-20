@@ -12,13 +12,14 @@ if _BIN not in sys.path:
 
 import Models
 import Spaces
+import Language
 from util import init_config
 
 
 def _load(cfg_name):
     path = os.path.join(_DATA, cfg_name)
     init_config(path=path, defaults_path=os.path.join(_DATA, "model.xml"))
-    Spaces.TheGrammar._configured = False
+    Language.TheGrammar._configured = False
     model, _cfg = Models.MentalModel.from_config(path)
     model.eval()
     return model

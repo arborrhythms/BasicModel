@@ -698,12 +698,37 @@ class XMLConfig:
 
         if not os.path.exists(path):
             return {}
+        XMLConfig._validate_against_schema(path)
         tree = ET.parse(path)
         root = tree.getroot()
         cfg = {}
         for section in root:
             cfg[section.tag] = _parse_element(section)
         return cfg
+
+    @staticmethod
+    def _validate_against_schema(xml_path):
+        """Soft-validate xml_path against data/model.xsd (warn on mismatch)."""
+        xsd_path = os.path.join(os.path.dirname(os.path.abspath(xml_path)),
+                                "model.xsd")
+        if not os.path.exists(xsd_path):
+            return
+        try:
+            from lxml import etree as _lxml_etree
+        except ImportError:
+            return
+        try:
+            schema = _lxml_etree.XMLSchema(_lxml_etree.parse(xsd_path))
+            doc = _lxml_etree.parse(xml_path)
+            if not schema.validate(doc):
+                import warnings
+                details = "; ".join(
+                    f"line {e.line}: {e.message}" for e in schema.error_log)
+                warnings.warn(
+                    f"XML schema validation failed for {xml_path}: {details}",
+                    RuntimeWarning, stacklevel=3)
+        except Exception:
+            pass
 
     @staticmethod
     def infer_model_kind(cfg):

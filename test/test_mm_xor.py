@@ -20,6 +20,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 import Models
 import Spaces
+import Language
 
 _CONFIG = os.path.join(_PROJECT, "data", "MM_xor.xml")
 
@@ -31,7 +32,7 @@ def _fresh_model(config_path=_CONFIG):
         path=config_path,
         defaults_path=os.path.join(_PROJECT, "data", "model.xml"),
     )
-    Spaces.TheGrammar._configured = False
+    Language.TheGrammar._configured = False
     m, cfg = Models.MentalModel.from_config(config_path)
     Models.TheData.load("xor")
     return m, cfg, Models.TheData

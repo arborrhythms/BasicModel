@@ -4,6 +4,7 @@ import sys, os, math
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
 import Models
 import Spaces
+import Language
 os.chdir(os.path.join(os.path.dirname(__file__), '..'))
 
 import torch
@@ -50,7 +51,7 @@ with torch.no_grad():
         ws = getattr(self, 'wordSpace', None)
         c_sl = getattr(ws, 'conceptualSyntacticLayer', None) if ws is not None else None
         if c_sl is not None:
-            y, self._last_svo = c_sl.compose(y, self.subspace, Spaces.TheGrammar)
+            y, self._last_svo = c_sl.compose(y, self.subspace, Language.TheGrammar)
             captured['cs_post_compose'] = y.clone()
         vspace = self.forwardEnd(y, returnVectors=True)
         vspace.normalize("concepts", target="what")

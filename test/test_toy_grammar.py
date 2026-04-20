@@ -29,6 +29,7 @@ import torch
 import matplotlib
 import Models
 import Spaces
+import Language
 matplotlib.use('Agg')
 
 
@@ -47,10 +48,10 @@ def _make_model():
     """Create a MentalModel and return (model, TheGrammar)."""
     _reload_config()
     # Force re-initialization in case previous tests set small test dimensions
-    Spaces.TheGrammar._configured = False
-    Spaces.TheGrammar._configured = False
+    Language.TheGrammar._configured = False
+    Language.TheGrammar._configured = False
     model, _ = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
-    return model, Spaces.TheGrammar
+    return model, Language.TheGrammar
 
 
 def _forward_with_data(model, sentences, outputs):
@@ -89,8 +90,8 @@ class TestGrammarGradientFlow(unittest.TestCase):
         loss.backward() should propagate gradients to the rule_head weights.
         """
         sl_c = self.model.wordSpace.conceptualSyntacticLayer
-        if sl_c is None:
-            self.skipTest("No C-tier SyntacticLayer")
+        if sl_c is None or sl_c.num_rules == 0:
+            self.skipTest("No C-tier rules after C->S merge")
 
         sl_c.train()
         act = (torch.randn(1, _N_CONCEPTS, device=Models.TheDevice.get()) * 0.01).requires_grad_(True)
@@ -123,8 +124,8 @@ class TestGrammarGradientFlow(unittest.TestCase):
     def test_gradient_flows_through_depth_embed(self):
         """Depth embeddings also receive gradients (used in rule prediction)."""
         sl_c = self.model.wordSpace.conceptualSyntacticLayer
-        if sl_c is None:
-            self.skipTest("No C-tier SyntacticLayer")
+        if sl_c is None or sl_c.num_rules == 0:
+            self.skipTest("No C-tier rules after C->S merge")
 
         sl_c.train()
         act = torch.randn(1, _N_CONCEPTS, device=Models.TheDevice.get()) * 0.01
@@ -185,8 +186,8 @@ class TestGrammarRuleSelectivity(unittest.TestCase):
     def test_different_inputs_different_distributions(self):
         """Different activation patterns produce different rule distributions."""
         sl_c = self.model.wordSpace.conceptualSyntacticLayer
-        if sl_c is None:
-            self.skipTest("No C-tier SyntacticLayer")
+        if sl_c is None or sl_c.num_rules == 0:
+            self.skipTest("No C-tier rules after C->S merge")
 
         act_sparse = torch.zeros(1, _N_CONCEPTS, device=Models.TheDevice.get())
         act_sparse[0, :5] = 0.01
@@ -272,66 +273,51 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
     # -- Toy rules: what MentalModel.xml defines ----------------------
 
     def test_total_rule_count(self):
-        """MentalModel.xml defines 23 rules (1 START + 13 S + 7 C + 2 P).
+        """MentalModel.xml defines 17 rules, all S-tier.
 
-        S-tier was extended in the trinity/coordination/demux/query plan:
+        After the mereological refactor, all method rules live in S-tier:
         true, false, non, conjunction, disjunction, what, where, when,
-        query, swap, equals, part, plus the S->C transition.
+        query, swap, equals, not, part, intersection, union, lower, lift.
         """
-        self.assertEqual(len(self.grammar.rules), 23)
+        self.assertEqual(len(self.grammar.rules), 17)
 
     def test_s_tier_rules(self):
-        """S-tier: trinity, coordination, demux, query, swap, equals,
-        plus the S->C transition. ``part`` moved to C-tier (mereology).
-        """
+        """S-tier: all method rules after the C->S merge."""
         s_rules = [(r.method_name, r.arity) for r in self.grammar.rules if r.tier == 'S']
-        # Trinity (Rule #1)
+        # Trinity
         self.assertIn(('true', 1), s_rules)
         self.assertIn(('false', 1), s_rules)
         self.assertIn(('non', 1), s_rules)
-        # Coordination (Rule #1)
+        # Coordination
         self.assertIn(('conjunction', 2), s_rules)
         self.assertIn(('disjunction', 2), s_rules)
-        # Demux selectors (Rule #2)
+        # Demux selectors
         self.assertIn(('what', 1), s_rules)
         self.assertIn(('where', 1), s_rules)
         self.assertIn(('when', 1), s_rules)
-        # Query (Rule #3)
+        # Query
         self.assertIn(('query', 2), s_rules)
-        # Legacy s-tier verbs
+        # Legacy S verbs
         self.assertIn(('swap', 2), s_rules)
         self.assertIn(('equals', 2), s_rules)
-        # S -> C transition
-        self.assertIn((None, 1), s_rules, "Missing S->C transition rule")
-        # ``part`` no longer in S-tier after the mereological refactor.
-        self.assertNotIn(('part', 2), s_rules)
-        self.assertEqual(len(s_rules), 12)
+        # Formerly C-tier, now S-tier
+        self.assertIn(('not', 1), s_rules)
+        self.assertIn(('part', 2), s_rules)
+        self.assertIn(('intersection', 2), s_rules)
+        self.assertIn(('union', 2), s_rules)
+        self.assertIn(('lower', 2), s_rules)
+        self.assertIn(('lift', 2), s_rules)
+        self.assertEqual(len(s_rules), 17)
 
     def test_c_tier_rules(self):
-        """C-tier: not, part, intersection, union, lower, lift(binary+ternary), C->P transition."""
+        """C-tier is empty after the C->S merge."""
         c_rules = [(r.method_name, r.arity) for r in self.grammar.rules if r.tier == 'C']
-        self.assertIn(('not', 1), c_rules)
-        self.assertIn(('part', 2), c_rules)
-        self.assertIn(('intersection', 2), c_rules)
-        self.assertIn(('union', 2), c_rules)
-        self.assertIn(('lower', 2), c_rules)
-        self.assertIn(('lift', 2), c_rules)
-        self.assertIn(('lift', 3), c_rules)
-        self.assertIn((None, 1), c_rules, "Missing C->P transition rule")
-        self.assertEqual(len(c_rules), 8)
+        self.assertEqual(c_rules, [])
 
     def test_p_tier_rules(self):
-        """P-tier: chunk(I,P) from 'I P', terminal 'I'."""
+        """P-tier is empty after P-tier removal from grammar."""
         p_rules = [(r.method_name, r.arity) for r in self.grammar.rules if r.tier == 'P']
-        self.assertIn(('chunk', 2), p_rules)
-        self.assertIn((None, 0), p_rules, "Missing P->I terminal rule")
-        self.assertEqual(len(p_rules), 2)
-
-    def test_start_rule(self):
-        """START->S rule exists."""
-        start_rules = [r for r in self.grammar.rules if r.tier == 'START']
-        self.assertEqual(len(start_rules), 1)
-        self.assertEqual(start_rules[0].canonical, 'START -> S')
+        self.assertEqual(p_rules, [])
 
     # -- Derived rules: tier groupings and transitions ----------------
 
@@ -340,40 +326,17 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         s_ids = self.grammar.symbolic()
         for i in s_ids:
             self.assertEqual(self.grammar.rules[i].tier, 'S')
-        # 12 S-tier rules after part moved to C-tier.
-        self.assertEqual(len(s_ids), 12)
+        # 17 S-tier rules after C->S merge (no transition).
+        self.assertEqual(len(s_ids), 17)
 
-    def test_conceptual_indices(self):
-        """grammar.conceptual() returns exactly the C-tier rule indices."""
-        c_ids = self.grammar.conceptual()
-        for i in c_ids:
-            self.assertEqual(self.grammar.rules[i].tier, 'C')
-        self.assertEqual(len(c_ids), 8)
-
-    def test_perceptual_indices(self):
-        """grammar.perceptual() returns exactly the P-tier rule indices."""
-        p_ids = self.grammar.perceptual()
-        for i in p_ids:
-            self.assertEqual(self.grammar.rules[i].tier, 'P')
-        self.assertEqual(len(p_ids), 2)
+    def test_only_s_tier_remains(self):
+        """After the C->S merge and P-tier removal, only S-tier rules exist."""
+        for rule in self.grammar.rules:
+            self.assertEqual(rule.tier, 'S')
 
     def test_symbolic_transition(self):
-        """S->C transition is the arity-1, method_name=None S rule."""
-        t = self.grammar.symbolic_transition()
-        self.assertIsNotNone(t)
-        rule = self.grammar.rules[t]
-        self.assertEqual(rule.tier, 'S')
-        self.assertIsNone(rule.method_name)
-        self.assertEqual(rule.arity, 1)
-
-    def test_conceptual_transition(self):
-        """C->P transition is the arity-1, method_name=None C rule."""
-        t = self.grammar.conceptual_transition()
-        self.assertIsNotNone(t)
-        rule = self.grammar.rules[t]
-        self.assertEqual(rule.tier, 'C')
-        self.assertIsNone(rule.method_name)
-        self.assertEqual(rule.arity, 1)
+        """No S->C transition after the C->S merge."""
+        self.assertIsNone(self.grammar.symbolic_transition())
 
     def test_all_method_names_are_registered(self):
         """Every rule's method_name maps to Grammar or a SyntacticLayer subclass."""
@@ -431,13 +394,15 @@ class TestSoftSuperposition(unittest.TestCase):
 
     def test_c_tier_soft_compose(self):
         """C-tier compose() produces output different from input."""
+        sl = self.model.wordSpace.conceptualSyntacticLayer
+        if sl is None or sl.num_rules == 0:
+            self.skipTest("No C-tier rules after C->S merge")
         B, N, D = 1, _N_CONCEPT_SLOTS, _CONCEPT_DIM
         data = torch.randn(B, N, D, device=Models.TheDevice.get()) * 0.1
         # Ensure at least 2 active positions for composition
         data[0, 0] = torch.randn(D, device=Models.TheDevice.get()) * 0.5
         data[0, 1] = torch.randn(D, device=Models.TheDevice.get()) * 0.5
 
-        sl = self.model.wordSpace.conceptualSyntacticLayer
         subspace = self.model.conceptualSpace.subspace
         sl.eval()
         with torch.no_grad():
@@ -489,33 +454,11 @@ class TestSoftSuperposition(unittest.TestCase):
         finally:
             self.grammar.interpretation = old_interp
 
-    def test_not_non_still_fire(self):
-        """not(C) and non(C) fire deterministically before soft composition."""
-        B, N, D = 1, _N_CONCEPT_SLOTS, _CONCEPT_DIM
-        # Create data where mean < 0 to trigger not()
-        data = torch.full((B, N, D), -0.5, device=Models.TheDevice.get())
-        # Zero out most positions so only one is active
-        data[0, 1:] = 0.0
-
-        sl = self.model.wordSpace.conceptualSyntacticLayer
-        subspace = self.model.conceptualSpace.subspace
-        sl.eval()
-        with torch.no_grad():
-            result, _ = sl.compose(data, subspace, self.grammar)
-
-        # After not(): values should be non-negative at position 0
-        words = subspace.get_words()
-        not_rid = self.grammar._c_rule_ids().get('not')
-        if not_rid is not None:
-            not_words = [w for w in words if len(w) >= 4 and w[Spaces.WordEncoding.RULE] == not_rid]
-            self.assertGreater(len(not_words), 0,
-                "not() rule should have fired for negative-mean data")
-
     def test_gradient_through_grammar_forward(self):
         """Gradients flow through compose() to SyntacticLayer params."""
         sl_c = self.model.wordSpace.conceptualSyntacticLayer
-        if sl_c is None:
-            self.skipTest("No C-tier SyntacticLayer")
+        if sl_c is None or sl_c.num_rules == 0:
+            self.skipTest("No C-tier rules after C->S merge")
 
         sl_c.train()
         B, N, D = 1, _N_CONCEPT_SLOTS, _CONCEPT_DIM

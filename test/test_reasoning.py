@@ -17,6 +17,7 @@ import pytest
 import matplotlib
 import Models
 import Spaces
+import Language
 import Layers
 matplotlib.use('Agg')
 
@@ -30,7 +31,7 @@ def _reload_config():
         path=os.path.join(_DATA_DIR, 'MentalModel.xml'),
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
     )
-    Spaces.TheGrammar._configured = False
+    Language.TheGrammar._configured = False
 
 
 def _make_model(config='MentalModel.xml'):
@@ -38,7 +39,7 @@ def _make_model(config='MentalModel.xml'):
         path=os.path.join(_DATA_DIR, config),
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
     )
-    Spaces.TheGrammar._configured = False
+    Language.TheGrammar._configured = False
     model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, config))
     model.eval()
     return model

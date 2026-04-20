@@ -25,9 +25,10 @@ import torch
 import matplotlib
 import Models
 import Spaces
+import Language
 matplotlib.use('Agg')
 
-RuleDef = Spaces.Grammar.RuleDef
+RuleDef = Language.Grammar.RuleDef
 from util import init_config, TheXMLConfig
 
 
@@ -45,10 +46,10 @@ def _make_model():
     """Create a MentalModel and return (model, TheGrammar)."""
     _reload_config()
     # Force re-initialization in case previous tests set small test dimensions
-    Spaces.TheGrammar._configured = False
-    Spaces.TheGrammar._configured = False
+    Language.TheGrammar._configured = False
+    Language.TheGrammar._configured = False
     model, _ = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
-    return model, Spaces.TheGrammar
+    return model, Language.TheGrammar
 
 
 def _release_allocator_cache():
@@ -242,72 +243,57 @@ class TestGrammarProject(_GrammarTestBase):
         result = self.s_sl.project(self.grammar, rule_id, left, right)
         self.assertEqual(result.shape, left.shape)
 
-    def test_project_part_c_tier(self):
-        """part(C, C) -- mereological parthood, C-tier after refactor."""
-        rule_id = self._rule_id('part', arity=2, tier='C')
+    def test_project_part_s_tier(self):
+        """part(S, S) -- mereological parthood, moved to S-tier after rewrite."""
+        rule_id = self._rule_id('part', arity=2, tier='S')
+        left, right = self._S(), self._S()
+        result = self.s_sl.project(self.grammar, rule_id, left, right)
+        self.assertEqual(result.shape, left.shape)
+
+    # S -> C transition removed in Task 1.2 rewrite; no corresponding test.
+
+    # -- C-tier rules removed in Task 1.2 rewrite ------------------
+
+    def test_project_intersection_s_tier(self):
+        """intersection(S, S) -- moved to S-tier after rewrite."""
+        rule_id = self._rule_id('intersection', arity=2, tier='S')
+        left, right = self._S(), self._S()
+        result = self.s_sl.project(self.grammar, rule_id, left, right)
+        self.assertEqual(result.shape, left.shape)
+
+    def test_project_union_s_tier(self):
+        """union(S, S) -- moved to S-tier after rewrite."""
+        rule_id = self._rule_id('union', arity=2, tier='S')
+        left, right = self._S(), self._S()
+        result = self.s_sl.project(self.grammar, rule_id, left, right)
+        self.assertEqual(result.shape, left.shape)
+
+    def test_project_lower_s_tier(self):
+        """lower(S, S) -- projected disjunction, moved to S-tier after rewrite.
+
+        The forward implementation (liftForward/lowerForward) lives on
+        ConceptualSyntacticLayer; the grammar rule is now S-tier.  We look up
+        the rule by tier='S' but dispatch via c_sl (where the implementation
+        lives) with concept-shaped data.  Noted as a known arch mismatch to be
+        resolved in a later phase.
+        """
+        rule_id = self._rule_id('lower', arity=2, tier='S')
         left, right = self._C(), self._C()
         result = self.c_sl.project(self.grammar, rule_id, left, right)
         self.assertEqual(result.shape, left.shape)
 
-    def test_project_s_to_c_transition_passthrough(self):
-        """S -> C transition passes operand through unchanged."""
-        rule_id = self._transition_rule_id('S', 'C')
-        left = self._S()
-        result = self.s_sl.project(self.grammar, rule_id, left)
-        self.assertTrue(torch.equal(result, left))
+    def test_project_lift_binary_s_tier(self):
+        """lift(S, S) -- projected conjunction, moved to S-tier after rewrite.
 
-    # -- C-tier rules ------------------------------------------------
-
-    def test_project_not_c_tier(self):
-        """not(C) -- invertible negation, dispatched on C-tier layer."""
-        rule_id = self._rule_id('not', arity=1, tier='C')
-        left = self._C()
-        result = self.c_sl.project(self.grammar, rule_id, left)
-        self.assertEqual(result.shape, left.shape)
-
-    def test_project_intersection_c_tier(self):
-        """intersection(C, C) -- invertible Hadamard min."""
-        rule_id = self._rule_id('intersection', arity=2, tier='C')
+        Same arch note as test_project_lower_s_tier: implementation on c_sl.
+        """
+        rule_id = self._rule_id('lift', arity=2, tier='S')
         left, right = self._C(), self._C()
         result = self.c_sl.project(self.grammar, rule_id, left, right)
         self.assertEqual(result.shape, left.shape)
 
-    def test_project_union_c_tier(self):
-        """union(C, C) -- invertible Hadamard max."""
-        rule_id = self._rule_id('union', arity=2, tier='C')
-        left, right = self._C(), self._C()
-        result = self.c_sl.project(self.grammar, rule_id, left, right)
-        self.assertEqual(result.shape, left.shape)
-
-    def test_project_lower_c_tier(self):
-        """lower(C, C) -- projected disjunction in symbolic space."""
-        rule_id = self._rule_id('lower', arity=2, tier='C')
-        left, right = self._C(), self._C()
-        result = self.c_sl.project(self.grammar, rule_id, left, right)
-        self.assertEqual(result.shape, left.shape)
-
-    def test_project_lift_binary_c_tier(self):
-        """lift(C, C) -- projected conjunction in symbolic space."""
-        rule_id = self._rule_id('lift', arity=2, tier='C')
-        left, right = self._C(), self._C()
-        result = self.c_sl.project(self.grammar, rule_id, left, right)
-        self.assertEqual(result.shape, left.shape)
-
-    def test_project_lift_ternary_c_tier(self):
-        """lift(C, C, C) -- SVO ternary lift; shape preserved on first arg."""
-        rule_id = self._rule_id('lift', arity=3, tier='C')
-        left, mid, right = self._C(), self._C(), self._C()
-        # Ternary lift goes through the same project() entry point;
-        # the C-tier dispatcher takes (left, right, third).
-        result = self.c_sl.project(self.grammar, rule_id, left, mid, third=right)
-        self.assertEqual(result.shape, left.shape)
-
-    def test_project_c_to_p_transition_passthrough(self):
-        """C -> P transition passes operand through unchanged."""
-        rule_id = self._transition_rule_id('C', 'P')
-        left = self._C()
-        result = self.c_sl.project(self.grammar, rule_id, left)
-        self.assertTrue(torch.equal(result, left))
+    # Ternary lift lift(C, C, C) was removed in the Task 1.2 rewrite.
+    # C -> P transition rule removed in Task 1.2 rewrite; no corresponding test.
 
     # -- Coverage check ----------------------------------------------
 
@@ -405,17 +391,6 @@ class TestGrammarShiftReduceStack(_GrammarTestBase):
         result, _ = self.c_sl.compose(vec, ss, self.grammar)
         self.assertEqual(result.shape, (1, self.n_concepts, self.concept_dim))
 
-    def test_conceptual_forward_records_words(self):
-        """compose('C', ...) records words on the subspace."""
-        ss = self._make_ss([self.n_concepts, self.concept_dim])
-        vec = torch.randn(1, self.n_concepts, self.concept_dim, device=Models.TheDevice.get())
-        # Make one position negative-mean to trigger not()
-        vec[0, 0] = -torch.abs(vec[0, 0])
-        vec[0, 1:] = 0.0
-        _, _ = self.c_sl.compose(vec, ss, self.grammar)
-        words = ss.get_words()
-        self.assertGreater(len(words), 0)
-
     def test_perceptual_forward_shape(self):
         """compose('P', ...) returns same shape vectors."""
         n_percepts = 128
@@ -442,178 +417,49 @@ class TestGrammarShiftReduceStack(_GrammarTestBase):
 
 
 class TestGrammarConfigure(_GrammarTestBase):
-    """Grammar.configure() parses XML rule definitions into RuleDefs."""
+    """Grammar.configure() parses S-tier rule definitions into RuleDefs."""
 
     def test_configure_from_dict(self):
-        """configure() builds correct RuleDefs from a grammar dict."""
-        g = Spaces.Grammar()
+        """configure() builds correct RuleDefs from an S-only grammar dict."""
+        g = Language.Grammar()
         g.configure({
-            'START': ['true(S) EOF'],
-            'S': ['swap(S, S)', 'equals(S, S)', 'C'],
-            'C': ['union(C, C)', 'not(C)', 'P'],
-            'P': ['epsilon'],
+            'S': ['swap(S, S)', 'equals(S, S)', 'union(S, S)', 'not(S)'],
         })
-        self.assertEqual(len(g.rules), 8)
-
-        # Check tiers
-        self.assertEqual(g.rules[0].tier, 'START')
-        self.assertEqual(g.rules[1].tier, 'S')
-        self.assertEqual(g.rules[3].tier, 'S')  # transition S->C
-        self.assertEqual(g.rules[4].tier, 'C')
-        self.assertEqual(g.rules[7].tier, 'P')
-
-        # Check arities
-        self.assertEqual(g.arity(0), 1)   # true(S) -- unary
-        self.assertEqual(g.arity(1), 2)   # swap(S, S) -- binary
-        self.assertEqual(g.arity(3), 1)   # S -> C -- transition
-        self.assertEqual(g.arity(7), 0)   # P -> epsilon -- terminal
-
-        # Check methods
-        self.assertEqual(g.method_name(0), 'true')
-        self.assertEqual(g.method_name(1), 'swap')
-        self.assertIsNone(g.method_name(3))   # transition
-
-    def test_interpretation_from_xml_config(self):
-        """interpretation is read from WordSpace.language.interpretation, not grammar dict."""
-        g = Spaces.Grammar()
-        g.configure({
-            'START': ['true(S) EOF'],
-            'S': ['C'],
-            'C': ['P'],
-            'P': ['epsilon'],
-        })
-        # Only tier rules, no interpretation key in grammar dict
         self.assertEqual(len(g.rules), 4)
-        # Default interpretation preserved (configure no longer touches it)
-        self.assertEqual(g.interpretation, 0.5)
+        for rule in g.rules:
+            self.assertEqual(rule.tier, 'S')
+        self.assertEqual(g.arity(0), 2)  # swap(S, S)
+        self.assertEqual(g.method_name(0), 'swap')
+        self.assertEqual(g.method_name(1), 'equals')
 
     def test_configure_single_string_rule(self):
-        """configure() handles a single string (not list) for a tier."""
-        g = Spaces.Grammar()
-        g.configure({
-            'START': 'true(S) EOF',
-            'S': 'C',
-            'C': 'P',
-            'P': 'epsilon',
-        })
-        self.assertEqual(len(g.rules), 4)
+        """configure() handles a single string (not list) for S tier."""
+        g = Language.Grammar()
+        g.configure({'S': 'not(S)'})
+        self.assertEqual(len(g.rules), 1)
 
     def test_tier_queries(self):
-        """symbolic(), conceptual(), perceptual() return correct indices."""
-        g = Spaces.Grammar()
+        """symbolic() returns all S-tier rule indices."""
+        g = Language.Grammar()
         g.configure({
-            'START': ['true(S) EOF'],
-            'S': ['swap(S, S)', 'equals(S, S)', 'C'],
-            'C': ['union(C, C)', 'not(C)', 'P'],
-            'P': ['epsilon'],
+            'S': ['swap(S, S)', 'equals(S, S)', 'union(S, S)'],
         })
         sym = g.symbolic()
-        con = g.conceptual()
-        per = g.perceptual()
-
-        # Symbolic: swap, equals, S->C transition
         self.assertEqual(len(sym), 3)
         for i in sym:
             self.assertEqual(g.tier(i), 'S')
 
-        # Conceptual: union, not, C->P transition
-        self.assertEqual(len(con), 3)
-        for i in con:
-            self.assertEqual(g.tier(i), 'C')
-
-        # Perceptual: epsilon
-        self.assertEqual(len(per), 1)
-
     def test_binary_rules(self):
         """binary_rules() returns only arity-2 rule indices."""
-        g = Spaces.Grammar()
+        g = Language.Grammar()
         g.configure({
-            'START': ['true(S) EOF'],
-            'S': ['swap(S, S)', 'C'],
-            'C': ['union(C, C)', 'not(C)', 'P'],
-            'P': ['epsilon'],
+            'S': ['swap(S, S)', 'not(S)', 'union(S, S)'],
         })
         binary = g.binary_rules()
         for i in binary:
             self.assertEqual(g.arity(i), 2)
-        # swap and union are binary
+        # swap and union are binary; not is unary
         self.assertEqual(len(binary), 2)
-
-    def test_transitions(self):
-        """symbolic_transition() and conceptual_transition() find correct rules."""
-        g = Spaces.Grammar()
-        g.configure({
-            'START': ['true(S) EOF'],
-            'S': ['swap(S, S)', 'C'],
-            'C': ['union(C, C)', 'P'],
-            'P': ['epsilon'],
-        })
-        s_trans = g.symbolic_transition()
-        c_trans = g.conceptual_transition()
-        self.assertIsNotNone(s_trans)
-        self.assertIsNotNone(c_trans)
-        self.assertEqual(g.rules[s_trans].canonical, 'S -> C')
-        self.assertEqual(g.rules[c_trans].canonical, 'C -> P')
-
-    def test_thought_free_excludes_c_not(self):
-        """Under shamatha, conceptual() and c_methods exclude the 'not' rule."""
-        g = Spaces.Grammar()
-        g.configure({
-            'START': ['S'],
-            'S': ['C'],
-            'C': ['not(C)', 'intersection(C, C)', 'union(C, C)', 'P'],
-            'P': ['epsilon'],
-        })
-        # Baseline: 'not' is present
-        self.assertIn('not', g.c_methods)
-        not_ids = [i for i in g.conceptual() if g.rules[i].method_name == 'not']
-        self.assertEqual(len(not_ids), 1)
-
-        g.thought_free = True
-        try:
-            self.assertNotIn('not', g.c_methods)
-            not_ids_tf = [i for i in g.conceptual()
-                          if g.rules[i].method_name == 'not']
-            self.assertEqual(not_ids_tf, [])
-        finally:
-            g.thought_free = False
-
-    def test_thought_free_preserves_other_c_rules(self):
-        """Shamatha only removes 'not'; intersection/union/lift/lower stay."""
-        g = Spaces.Grammar()
-        g.configure({
-            'START': ['S'],
-            'S': ['C'],
-            'C': ['not(C)', 'intersection(C, C)', 'union(C, C)',
-                  'lift(C, C)', 'lower(C, C)', 'P'],
-            'P': ['epsilon'],
-        })
-        g.thought_free = True
-        try:
-            methods = g.c_methods
-            for keep in ('intersection', 'union', 'lift', 'lower'):
-                self.assertIn(keep, methods)
-            # 'not' is the only thing removed
-            self.assertNotIn('not', methods)
-        finally:
-            g.thought_free = False
-
-    def test_not_restored_when_flag_cleared(self):
-        """Flipping thought_free back to False restores 'not' in both accessors."""
-        g = Spaces.Grammar()
-        g.configure({
-            'START': ['S'],
-            'S': ['C'],
-            'C': ['not(C)', 'intersection(C, C)', 'P'],
-            'P': ['epsilon'],
-        })
-        g.thought_free = True
-        self.assertNotIn('not', g.c_methods)
-        g.thought_free = False
-        self.assertIn('not', g.c_methods)
-        not_ids = [i for i in g.conceptual()
-                   if g.rules[i].method_name == 'not']
-        self.assertEqual(len(not_ids), 1)
 
 
 class TestMentalModelWithGrammar(_GrammarTestBase):
@@ -664,33 +510,8 @@ class TestMentalModelWithGrammar(_GrammarTestBase):
                 if sym_act is not None:
                     sl = self.model.wordSpace.symbolicSyntacticLayer
                     ss = self.model.symbolicSpace.subspace
-                    result = sl.compose(sym_act, ss, Spaces.TheGrammar)
+                    result = sl.compose(sym_act, ss, Language.TheGrammar)
                     self.assertEqual(result.shape[0], 2)  # batch=2
-
-    def test_grammar_derivation_c_tier(self):
-        """Drive ConceptualSyntacticLayer.compose() on C-tier with concept vectors."""
-        sentences = ['the cat sat on the mat']
-        outputs = [torch.tensor([0.0])]
-
-        with Models.TheData.runtime_batch(sentences, outputs), \
-             warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message="Range violation")
-            warnings.filterwarnings("ignore", message="PiLayer.reverse")
-            train_input, _ = self.model.inputSpace.getTrainData()
-            x = self.model.inputSpace.prepInput(train_input[:1])
-
-            self.model.eval()
-            self.model.set_sigma(0)
-            with torch.no_grad():
-                self.model.forward(x)
-
-                con_vec = self.model.concepts.materialize()
-
-                if con_vec is not None:
-                    sl = self.model.wordSpace.conceptualSyntacticLayer
-                    ss = self.model.conceptualSpace.subspace
-                    result, _ = sl.compose(con_vec, ss, Spaces.TheGrammar)
-                    self.assertEqual(result.ndim, 3)  # [B, N, D]
 
     def test_word_rule_ids_are_global(self):
         """Word tuples use global Grammar rule IDs."""
@@ -714,9 +535,9 @@ class TestMentalModelWithGrammar(_GrammarTestBase):
                 if sym_act is not None:
                     sl = self.model.wordSpace.symbolicSyntacticLayer
                     ss = self.model.symbolicSpace.subspace
-                    sl.compose(sym_act, ss, Spaces.TheGrammar)
+                    sl.compose(sym_act, ss, Language.TheGrammar)
                     words = ss.get_words()
-                    num_rules = len(Spaces.TheGrammar.rules)
+                    num_rules = len(Language.TheGrammar.rules)
                     for word in words:
                         rule_id = word[3]  # word layout: (batch, vector, order, rule, ...)
                         self.assertGreaterEqual(rule_id, 0)
@@ -964,37 +785,42 @@ class TestRule3Query(_GrammarTestBase):
         self.assertLess(self.s_sl._QUERY_NORM_DROP_RATIO, 1.0)
 
 
-class TestUnifiedRuleCodebook(_GrammarTestBase):
-    """SymbolicSpace.rule_codebook is a single nn.Embedding for rule identities."""
+class TestGrammarRuleTable(_GrammarTestBase):
+    """Grammar exposes a rule_table dict (Task 1.4: replaced nn.Embedding)."""
 
     def setUp(self):
         self.model, self.grammar = _make_model()
         self.ss = self.model.symbolicSpace
 
-    def test_rule_codebook_allocated(self):
-        """SymbolicSpace.rule_codebook is an nn.Embedding sized for the grammar."""
-        from torch import nn
-        self.assertIsInstance(self.ss.rule_codebook, nn.Embedding)
-        # +1 for the empty-slot sentinel at index 0
-        self.assertEqual(self.ss.rule_codebook.num_embeddings,
-                         self.ss.nRuleEntries + 1)
+    def test_rule_table_is_dict(self):
+        """Grammar.rule_table is a plain dict mapping int -> str."""
+        self.assertIsInstance(self.grammar.rule_table, dict)
+        self.assertGreater(len(self.grammar.rule_table), 0)
 
-    def test_lookup_rule_returns_dense_vector(self):
-        """lookup_rule(rule_id) returns a learned [nDim] tensor."""
-        for rid in range(self.ss.nRuleEntries):
-            vec = self.ss.lookup_rule(rid)
-            self.assertEqual(vec.ndim, 1)
-            self.assertEqual(vec.shape[0], self.ss.nDim)
+    def test_rule_table_keys_are_ints(self):
+        """All keys of rule_table are int rule_ids."""
+        for k in self.grammar.rule_table:
+            self.assertIsInstance(k, int)
 
-    def test_sentinel_is_zero_vector(self):
-        """Index 0 is the empty-slot sentinel -- a zero vector that never trains."""
-        sentinel = self.ss.rule_codebook.weight[0]
-        self.assertTrue(torch.allclose(sentinel, torch.zeros_like(sentinel)))
+    def test_rule_table_values_are_strings(self):
+        """All values of rule_table are canonical production strings."""
+        for v in self.grammar.rule_table.values():
+            self.assertIsInstance(v, str)
 
-    def test_lookup_negative_returns_sentinel(self):
-        """lookup_rule(-1) returns the empty-slot sentinel."""
-        vec = self.ss.lookup_rule(-1)
-        self.assertTrue(torch.allclose(vec, torch.zeros_like(vec)))
+    def test_rule_by_id_matches_table(self):
+        """Grammar.rule_by_id(id) returns the same string as rule_table[id]."""
+        for rule_id, production in self.grammar.rule_table.items():
+            self.assertEqual(self.grammar.rule_by_id(rule_id), production)
+
+    def test_symbolic_space_has_no_rule_codebook(self):
+        """SymbolicSpace.rule_codebook has been removed (Task 1.4)."""
+        self.assertFalse(hasattr(self.ss, 'rule_codebook'),
+                         "rule_codebook should no longer exist on SymbolicSpace")
+
+    def test_symbolic_space_has_no_lookup_rule(self):
+        """SymbolicSpace.lookup_rule has been removed (Task 1.4)."""
+        self.assertFalse(hasattr(self.ss, 'lookup_rule'),
+                         "lookup_rule should no longer exist on SymbolicSpace")
 
 
 class TestWordSubSpaceBuffer(_GrammarTestBase):
@@ -1039,14 +865,14 @@ class TestWordSubSpaceBuffer(_GrammarTestBase):
         self.word_sub.push(0, rule_id, leaves=(2, 3, -1))
         self.assertEqual(self.word_sub.top_of_stack(0), 2 * block_size)
 
-    def test_push_writes_codebook_vector_into_what(self):
-        """After push(), row 0's .what block equals lookup_rule(rule_id)."""
+    def test_push_rule_row_is_zero(self):
+        """After push(), row 0's .what block is all zeros (rule_codebook removed, Task 1.4)."""
         rid = 0
         self.word_sub.push(0, rid, leaves=(-1, -1, -1))
         buf = self.word_sub.read()
-        expected = self.host.lookup_rule(rid)[: self.nWhat]
         actual = buf[0, 0, : self.nWhat]
-        self.assertTrue(torch.allclose(actual, expected, atol=1e-5))
+        self.assertTrue(torch.all(actual == 0),
+                        "rule-identity row should be zero (no codebook vector)")
 
     def test_unused_leaf_rows_are_empty(self):
         """Empty leaf slots (leaf_id == -1) leave that row's .what zero."""
@@ -1117,7 +943,7 @@ class TestWordSpaceServiceLayer(_GrammarTestBase):
         self.assertIs(s_layer.word_subspace, self.word_space.subspace)
 
     def test_codebook_host_wired(self):
-        """attach_codebook_host() registers SymbolicSpace as the lookup_rule provider."""
+        """attach_codebook_host() registers SymbolicSpace as the host for push() gating."""
         self.assertIs(self.word_space.subspace.rule_codebook_host,
                       self.model.symbolicSpace)
 

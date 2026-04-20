@@ -46,7 +46,8 @@ from Layers import Error, TheError
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
-from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace, WordSpace
+from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
+from Language import WordSpace
 from parse import quick_parser
 
 class BaseModel(nn.Module):
@@ -177,7 +178,7 @@ class BaseModel(nn.Module):
         # Inter-sentence contrastive loss weight. DiscourseSpace (owned
         # by WordSpace) contributes a dual-force cosine loss to
         # ``runBatch`` with this scale when ``<training><sentencePrediction>``
-        # is true. Gated inside Spaces.WordSpace construction.
+        # is true. Gated inside Language.WordSpace construction.
         self.sentence_prediction_scale = float(
             TheXMLConfig.training("sentencePredictionScale", 0.1) or 0.1)
         # Contrastive scale falls back to the legacy

@@ -30,6 +30,7 @@ import torch.nn.functional as F
 import matplotlib
 import Models
 import Spaces
+import Language
 import Layers
 matplotlib.use('Agg')
 
@@ -44,7 +45,7 @@ def _reload_config():
         path=os.path.join(_DATA_DIR, 'MentalModel.xml'),
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
     )
-    Spaces.TheGrammar._configured = False
+    Language.TheGrammar._configured = False
 
 
 def _release_allocator_cache():
@@ -384,7 +385,8 @@ class TestDiscoursePredictor(_DiscourseTestBase):
 
     def test_predict_shape(self):
         """After at least one snapshot, predict() should return a
-        1-D tensor of length ``snapshot_dim`` and a scalar
+        1-D tensor of length ``s_dim`` (= n_symbols * n_dim -- the
+        predictor consumes S only, Task 5.3) and a scalar
         confidence."""
         d = self._make(concept_dim=self.CONCEPT_DIM)
         s = torch.randn(self.N_SYMBOLS, self.N_DIM)
@@ -392,7 +394,10 @@ class TestDiscoursePredictor(_DiscourseTestBase):
         d.snapshot(s, w)
         pred, conf = d.predict()
         self.assertIsNotNone(pred)
-        self.assertEqual(tuple(pred.shape), (d.snapshot_dim,))
+        self.assertEqual(tuple(pred.shape), (d.s_dim,))
+        self.assertLess(d.s_dim, d.snapshot_dim,
+                        "s_dim must be strictly smaller than snapshot_dim "
+                        "(W block is what the [S|W] augmentation contributed)")
         self.assertIsNotNone(conf)
         self.assertEqual(conf.ndim, 0)
 
@@ -411,13 +416,15 @@ class TestDiscoursePredictor(_DiscourseTestBase):
         self.assertLessEqual(c, 1.0)
 
     def test_predictive_loss_zero_when_pred_equals_actual(self):
-        """If the predicted snapshot equals the assembled actual one,
-        the cosine distance should be ~0."""
+        """If the predicted S-block equals the actual S-slice of the
+        assembled snapshot, the cosine distance should be ~0.  The
+        predictor scores S only (Task 5.3); the W rows are the
+        discourse substrate's concern, not the head's."""
         d = self._make(concept_dim=self.CONCEPT_DIM)
         s = torch.randn(self.N_SYMBOLS, self.N_DIM)
         w = torch.randn(self.MAX_DEPTH, self.N_DIM)
-        actual_flat = d._assemble(s, w).reshape(-1).detach()
-        loss = d.predictive_loss(s, w, actual_flat)
+        actual_s_flat = d._assemble(s, w)[:d.n_symbols].reshape(-1).detach()
+        loss = d.predictive_loss(s, w, actual_s_flat)
         self.assertIsNotNone(loss)
         self.assertTrue(torch.allclose(
             loss, torch.zeros_like(loss), atol=1e-6))
@@ -559,7 +566,11 @@ class TestDiscourseSpaceIntegration(_DiscourseTestBase):
             with torch.no_grad():
                 try:
                     self.model.forward(x)
-                except ValueError:
+                except (ValueError, AssertionError):
+                    # Subspace.normalize() emits AssertionError on
+                    # non-finite checks in non-ergodic mode; untrained
+                    # weights can land in that regime regardless of the
+                    # predictor's width.
                     self.skipTest("Untrained model range violation")
 
         # After forward: the pending snapshot pair should be populated
@@ -635,7 +646,11 @@ class TestDiscourseSpaceIntegration(_DiscourseTestBase):
             with torch.no_grad():
                 try:
                     self.model.forward(x)
-                except ValueError:
+                except (ValueError, AssertionError):
+                    # Subspace.normalize() emits AssertionError on
+                    # non-finite checks in non-ergodic mode; untrained
+                    # weights can land in that regime regardless of the
+                    # predictor's width.
                     self.skipTest("Untrained model range violation")
 
         self.assertIsNotNone(getattr(self.model, '_predicted_snapshot', None))

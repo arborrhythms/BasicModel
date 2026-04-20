@@ -14,6 +14,7 @@
         <xs:element name="SymbolicSpace" type="symbolicSpaceType" minOccurs="0"/>
         <xs:element name="OutputSpace" type="outputSpaceType" minOccurs="0"/>
         <xs:element name="WordSpace" type="wordSpaceType" minOccurs="0"/>
+        <xs:element name="embeddings" type="embeddingsType" minOccurs="0"/>
       </xs:all>
     </xs:complexType>
   </xs:element>
@@ -54,6 +55,10 @@
        -->
       <xs:element name="allowExcludedMiddle" type="xs:integer" minOccurs="0"/>
       <xs:element name="allowContradiction" type="xs:integer" minOccurs="0"/>
+      <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="discontinuityLambda" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="useSubspaceActivation" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -312,6 +317,8 @@
       <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
       <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
@@ -391,7 +398,20 @@
       <xs:element name="useGrammar" type="useGrammarType" minOccurs="0"/>
       <xs:element name="syntacticHiddenDim" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="truthMaxEntries" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="language" type="languageType" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="embeddingsType">
+    <xs:all>
+      <xs:element name="numShards" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="maxDocs" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="vectorSize" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="trainingEpochs" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="minCount" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="artifactPath" type="xs:string" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -406,12 +426,9 @@
   </xs:complexType>
 
   <xs:complexType name="grammarType">
-    <xs:choice minOccurs="0" maxOccurs="unbounded">
-      <xs:element name="START" type="xs:string"/>
-      <xs:element name="S" type="xs:string"/>
-      <xs:element name="C" type="xs:string"/>
-      <xs:element name="P" type="xs:string"/>
-    </xs:choice>
+    <xs:sequence>
+      <xs:element name="S" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
   </xs:complexType>
 
 </xs:schema>

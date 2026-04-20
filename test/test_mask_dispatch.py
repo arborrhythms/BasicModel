@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
 
 import Models  # noqa: E402
 import Spaces  # noqa: E402
+import Language  # noqa: E402
 
 
 def _make_layer(K=4):
@@ -29,18 +30,17 @@ def _make_layer(K=4):
     Storage dim is 2K (bivector paired-index encoding). Returns
     ``(layer, subspace, grammar)``.
     """
-    g = Spaces.Grammar()
+    g = Language.Grammar()
     g.configure({
         "S": ["true(S)", "false(S)", "non(S)", "conjunction(S, S)",
-              "disjunction(S, S)", "equals(S, S)", "part(S, S)", "C"],
-        "C": ["not(C)", "intersection(C, C)", "union(C, C)", "P"],
-        "P": "I",
+              "disjunction(S, S)", "equals(S, S)", "part(S, S)",
+              "not(S)", "intersection(S, S)", "union(S, S)"],
     })
     subspace = Models.SubSpace(inputShape=[2 * K, 2 * K], outputShape=[2 * K, 2 * K])
     basis = Models.Codebook()
     basis.create(2 * K, 2 * K, 2 * K, monotonic=True)
     subspace.what = basis
-    layer = Spaces.SymbolicSyntacticLayer(
+    layer = Language.SymbolicSyntacticLayer(
         nInput=2 * K, nOutput=2 * K,
         rules=g.symbolic(),
         transition_rule=g.symbolic_transition(),

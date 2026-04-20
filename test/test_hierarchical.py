@@ -14,6 +14,7 @@ import torch
 import matplotlib
 import Models
 import Spaces
+import Language
 matplotlib.use('Agg')
 
 from util import init_config, ProjectPaths, TheXMLConfig
@@ -26,7 +27,7 @@ def _make_model(config='MentalModel.xml'):
         path=os.path.join(_DATA_DIR, config),
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
     )
-    Spaces.TheGrammar._configured = False
+    Language.TheGrammar._configured = False
     model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, config))
     model.eval()
     return model

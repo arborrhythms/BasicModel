@@ -3182,6 +3182,13 @@ class InterSentenceLayer(Layer):
         self.n_dim = int(n_dim)
         self.n_sentence = n_sentence
         self.snapshot_dim = flat
+        # S-only flattened width: the prediction head operates on the
+        # symbolic sub-block of the snapshot only.  The discourse
+        # substrate (buffers, contrastive loss, snapshot history) still
+        # stores the full [S | W] rows -- augmenting the predictor's
+        # input with W was the redundant coupling that Task 5.3
+        # removed.
+        self.s_dim = self.n_symbols * self.n_dim
         self.context_window = int(context_window)
         self.centroid_history = int(centroid_history)
         self.lam = float(lam)
@@ -3225,23 +3232,27 @@ class InterSentenceLayer(Layer):
         self.predictor = None
         self.cast = None
         if self.concept_dim is not None:
-            # Causal self-attention over [N, snapshot_dim].  Output
-            # at the final position is the predicted next snapshot.
-            # Transformer mode with a causal mask so every position
-            # also supplies a predict-next training signal (only the
-            # last is read at inference).
+            # Causal self-attention over [N, s_dim].  Output at the
+            # final position is the predicted next S-block.  The
+            # predictor consumes S only; W is the "how it was said"
+            # view already captured by the per-sentence WordSpace
+            # buffer, so feeding it here was redundant [S|W]
+            # augmentation (Task 5.3 removed it).  Transformer mode
+            # with a causal mask so every position also supplies a
+            # predict-next training signal (only the last is read at
+            # inference).
             #
-            # snapshot_dim can be large (n_sentence * n_dim); a
+            # s_dim can still be non-trivial (n_symbols * n_dim); a
             # bottleneck hidden dim keeps Q/K/V manageable.
-            predictor_hidden = min(self.snapshot_dim, 256)
+            predictor_hidden = min(self.s_dim, 256)
             self.predictor = AttentionLayer(
-                nInput=self.snapshot_dim,
-                nOutput=self.snapshot_dim,
+                nInput=self.s_dim,
+                nOutput=self.s_dim,
                 nHidden=predictor_hidden,
                 type="transformer",
                 nHeads=1,
             )
-            self.cast = LinearLayer(self.snapshot_dim, self.concept_dim)
+            self.cast = LinearLayer(self.s_dim, self.concept_dim)
             self.layers.append(self.predictor)
             self.layers.append(self.cast)
 
@@ -3393,9 +3404,12 @@ class InterSentenceLayer(Layer):
 
         Returns ``(predicted_snapshot, confidence)`` where
 
-          - ``predicted_snapshot``: flattened snapshot vector of shape
-            ``[snapshot_dim]``, or ``None`` if the recent buffer is
-            empty or the predictor was not built.
+          - ``predicted_snapshot``: flattened S-block vector of shape
+            ``[s_dim]`` (= ``n_symbols * n_dim``), or ``None`` if the
+            recent buffer is empty or the predictor was not built.
+            The predictor consumes S only -- the W block of each
+            stored row is sliced off before attention so the head is
+            not coupled to buffer-surface features (Task 5.3).
           - ``confidence``: scalar tensor in ``[0, 1]``, derived from
             the last-position attention entropy (focused attention =
             high confidence).  Returns ``None`` alongside a ``None``
@@ -3410,16 +3424,21 @@ class InterSentenceLayer(Layer):
         n = int(self._recent_count.item())
         if n == 0:
             return None, None
-        # [n, n_sentence, n_dim] -> [n, snapshot_dim] -> [1, n, D]
-        seq = self._recent[:n].reshape(n, self.snapshot_dim).unsqueeze(0)
+        # _recent rows are [n_sentence, n_dim] with S in [0:n_symbols]
+        # and W in [n_symbols:].  Slice the S rows out and flatten to
+        # feed the narrower predictor.
+        # [n, n_sentence, n_dim] -> [n, n_symbols, n_dim]
+        #                        -> [n, s_dim] -> [1, n, s_dim]
+        s_rows = self._recent[:n, :self.n_symbols, :]
+        seq = s_rows.reshape(n, self.s_dim).unsqueeze(0)
         self.predictor.set_mask(self._causal_mask(n, seq.device))
         try:
-            out = self.predictor(seq)              # [1, n, snapshot_dim]
+            out = self.predictor(seq)              # [1, n, s_dim]
         finally:
             # Clear the mask so the shared instance doesn't leak a
             # stale mask into any other caller.
             self.predictor.set_mask(None)
-        predicted = out[0, -1]                      # [snapshot_dim]
+        predicted = out[0, -1]                      # [s_dim]
 
         # Confidence from attention entropy at the last position.
         # AttentionLayer caches the most recent attention weights as
@@ -3443,18 +3462,28 @@ class InterSentenceLayer(Layer):
         return predicted, confidence
 
     def predictive_loss(self, s_tensor, w_tensor, predicted):
-        """Cosine-distance loss between the AR-predicted snapshot and
-        the actual ``[S | W]`` snapshot assembled from the live
+        """Cosine-distance loss between the AR-predicted S-block and
+        the actual S-slice of the snapshot assembled from the live
         ``(s_tensor, w_tensor)`` pair.
+
+        The predictor consumes S only (Task 5.3), so the comparison
+        is also S-only: the W rows of ``_assemble`` are still used by
+        the contrastive loss, but this loss only scores the symbolic
+        block that the head actually predicted.
 
         Returns ``None`` when ``predicted`` is ``None`` (first sentence
         cold-start, or predictor disabled).  Gradient flows through
         both ``predicted`` (via the predictor's parameters) and the
-        live ``s/w`` arguments.
+        live ``s_tensor`` arguments; ``w_tensor`` is still accepted
+        for symmetry with the contrastive API but does not contribute
+        to this loss.
         """
         if predicted is None:
             return None
-        actual_flat = self._assemble(s_tensor, w_tensor).reshape(-1)
+        # Take the S rows only from the assembled snapshot and flatten
+        # to match the predictor's [s_dim] output shape.
+        actual = self._assemble(s_tensor, w_tensor)
+        actual_flat = actual[:self.n_symbols].reshape(-1)
         pred_flat = predicted.reshape(-1)
         sim = F.cosine_similarity(
             pred_flat.unsqueeze(0), actual_flat.unsqueeze(0))
