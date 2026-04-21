@@ -41,28 +41,6 @@ from Spaces import Basis, Tensor, Codebook, Embedding
 from Spaces import SubSpace, WordSubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
 
 
-_NLTK_TAG_TO_CATEGORY = {
-    'DT': 'DET',
-    'NN': 'N', 'NNS': 'N', 'NNP': 'N', 'NNPS': 'N', 'PRP': 'N',
-    'VB': 'V', 'VBD': 'V', 'VBG': 'V', 'VBN': 'V', 'VBP': 'V', 'VBZ': 'V',
-    'JJ': 'ADJ', 'JJR': 'ADJ', 'JJS': 'ADJ',
-    'RB': 'ADV', 'RBR': 'ADV', 'RBS': 'ADV',
-    'IN': 'PREP', 'CC': 'CONJ',
-}
-
-
-def map_nltk_tags_to_categories(tokens):
-    """Run nltk.pos_tag and project tags to the typed-grammar categories."""
-    import nltk
-    try:
-        tagged = nltk.pos_tag(tokens)
-    except LookupError:
-        nltk.download('averaged_perceptron_tagger', quiet=True)
-        nltk.download('averaged_perceptron_tagger_eng', quiet=True)
-        tagged = nltk.pos_tag(tokens)
-    return [_NLTK_TAG_TO_CATEGORY.get(tag, '?') for _, tag in tagged]
-
-
 class Grammar:
     """Single-tier (S) grammar rule catalog (post-rewrite, 2026-04-19).
 
@@ -364,8 +342,7 @@ class SyntacticLayer(Layer):
         # emission.
         self._derivation_trace = None
         # Category machinery (Phase C). Populated lazily on first chart
-        # compose; overwritten by _seed_category when POS/DET seeding is
-        # wired.
+        # compose; tests may seed categories directly via _seed_category.
         self._category_names = None
         self._category_index = None
         self._last_category = None
@@ -1926,12 +1903,6 @@ class WordSpace(Space):
         # merge (2026-04-19) there is a single SyntacticLayer that owns
         # every compositional rule and is called from SymbolicSpace.
         self.syntacticLayer = None
-        # Back-ref to InputSpace for NLTK POS seeding of the chart-compose
-        # category tensor. Wired by MentalModel.__init__.
-        self._input_space_ref = None
-        self._category_cache_key = None
-        self._category_cache = None
-
         # 5. Build the SyntacticLayer anchored at SymbolicSpace.  The
         # perceptual and conceptual spaces also get a ``wordSpace``
         # back-reference so they can route through the shared buffer,
@@ -2306,38 +2277,10 @@ class WordSpace(Space):
             return data
         if data.ndim == 3 and data.shape[-1] == getattr(subspace, 'muxedSize', -1):
             subspace.demux(data)
-        self._seed_layer_categories(layer, data.shape[:2])
         result = layer.compose(data, subspace, TheGrammar)
         if isinstance(result, tuple):
             return result[0]
         return result
-
-    def _seed_layer_categories(self, layer, shape):
-        """Seed SyntacticLayer's category tensor via NLTK POS tags on the
-        last tokens seen by InputSpace. Silent no-op if no tokens available.
-        """
-        input_space = self._input_space_ref
-        if input_space is None:
-            return
-        tokens = getattr(input_space, '_last_tokens', None)
-        if not tokens:
-            return
-        B, N = shape
-        cache_key = (id(tokens), B, N)
-        if self._category_cache_key == cache_key:
-            cat = self._category_cache
-        else:
-            layer._ensure_category_table(TheGrammar)
-            cat = torch.full((B, N), 0, dtype=torch.long)
-            for b, row in enumerate(tokens):
-                if b >= B or not row:
-                    continue
-                cats = map_nltk_tags_to_categories(list(row)[:N])
-                for p, name in enumerate(cats):
-                    cat[b, p] = layer._category_index.get(name, 0)
-            self._category_cache_key = cache_key
-            self._category_cache = cat
-        layer._seed_category(cat)
 
     def reverseSymbols(self, data, subspace):
         """Reverse-compose via the unified SyntacticLayer."""

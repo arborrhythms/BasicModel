@@ -2701,10 +2701,6 @@ class MentalModel(BaseModel):
             concept_dim=concept_dim + obj_concept,
             symbol_dim=symbol_dim + obj_symbol,
         )
-        # Phase C.2: WordSpace needs a back-ref to InputSpace for NLTK
-        # POS seeding of the chart-compose category tensor.
-        self.wordSpace._input_space_ref = self.inputSpace
-
         # Post S-tier merge: compositional rules live on the single
         # unified SyntacticLayer, which does not need a back-reference
         # to SymbolicSpace (the older ternary-lift path used by C-tier

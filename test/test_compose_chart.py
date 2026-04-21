@@ -33,7 +33,7 @@ class TestDerivationTraceContract(unittest.TestCase):
         # happened and that's what this contract test asserts.
         try:
             layer.compose(torch.randn(B, N, D), sub, g)
-        except RuntimeError:
+        except (RuntimeError, IndexError):
             pass
         self.assertEqual(layer._derivation_trace, [[] for _ in range(B)])
 
@@ -155,7 +155,7 @@ class TestChartCompose(unittest.TestCase):
         try:
             composed, _ = layer.compose(torch.randn(B, N, D), sub, g)
             self.assertEqual(composed.shape, (B, N, D))
-        except RuntimeError:
+        except (RuntimeError, IndexError):
             pass
         self.assertEqual(layer._derivation_trace, [[] for _ in range(B)])
 

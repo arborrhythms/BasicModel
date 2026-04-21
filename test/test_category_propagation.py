@@ -68,13 +68,5 @@ class TestCategoryPropagation(unittest.TestCase):
         self.assertEqual(layer._derivation_trace[0], [])
 
 
-class TestNLTKPOSSeeding(unittest.TestCase):
-    def test_basic_map(self):
-        from Language import map_nltk_tags_to_categories
-        cats = map_nltk_tags_to_categories(
-            ['the', 'teacher', 'helped', 'the', 'student'])
-        self.assertEqual(cats, ['DET', 'N', 'V', 'DET', 'N'])
-
-
 if __name__ == '__main__':
     unittest.main()

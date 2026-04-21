@@ -3920,10 +3920,6 @@ class InputSpace(Space):
         self.neg_samples = neg_samples
         self.embedding_path = embedding_path
         self.embedding_source = data.train_input if data.train_input else None
-        # Per-batch token-surface lists populated by forward() on the text
-        # path; consumed by WordSpace._seed_layer_categories for NLTK POS
-        # seeding of the chart-compose category tensor.
-        self._last_tokens = []
         super().__init__(inputShape, spaceShape, outputShape)
         # InputSpace operates on raw [B, N, D] tensors directly (no forwardBegin/End).
         # Override any flatten-derived nInputDim/nOutputDim to skip reshape.
@@ -4088,13 +4084,6 @@ class InputSpace(Space):
             # Text path: get token indices and byte offsets
             what, meta = vocab.forward(input, return_meta=True)
             self._forward_input = meta
-
-            # Stash per-batch token-surface lists for NLTK POS seeding in
-            # WordSpace._seed_layer_categories (Phase C chart compose).
-            # meta['tokens'] is [B][N] of (surface, byte_offset) pairs.
-            self._last_tokens = [
-                [tok for tok, _ in row] for row in meta.get('tokens', [])
-            ]
 
             # what_indices: [B, N] codebook indices
             what_indices = meta['indices']  # [B, N] long tensor
@@ -6470,4 +6459,3 @@ class OutputSpace(Space):
         if not hasattr(self, '_batch_results'):
             self._batch_results = []
         self._batch_results.append(result)
-
