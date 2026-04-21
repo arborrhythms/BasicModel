@@ -1,0 +1,315 @@
+"""Tests for the streaming AR training loop refactor.
+
+Plan reference: basicmodel/doc/plans/2026-04-20-streaming-ar-training-loop.md
+Spec reference: basicmodel/doc/specs/2026-04-20-streaming-ar-training-loop-design.md
+"""
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
+
+from Layers import Layer
+
+
+def test_layer_has_start_method():
+    """Layer base class exposes a Start() method that is callable."""
+    layer = Layer(nInput=4, nOutput=4)
+    assert callable(getattr(layer, "Start", None))
+    layer.Start()   # no-op at the base, must not raise
+
+
+def test_layer_start_cascades_to_children():
+    """Layer.Start() walks self.layers and calls Start() on each child."""
+    parent = Layer(nInput=4, nOutput=4)
+    child_a = Layer(nInput=4, nOutput=4)
+    child_b = Layer(nInput=4, nOutput=4)
+    called = []
+    child_a.Start = lambda: called.append('a')
+    child_b.Start = lambda: called.append('b')
+    parent.layers = [child_a, child_b]
+    parent.Start()
+    assert called == ['a', 'b']
+
+
+def test_subspace_has_reset_event():
+    """SubSpace.reset_event() clears the cached event tensor."""
+    from Spaces import SubSpace
+    assert callable(getattr(SubSpace, "reset_event", None))
+
+
+def test_space_has_start_method():
+    """Space base class exposes a Start() method."""
+    from Spaces import Space
+    assert callable(getattr(Space, "Start", None))
+
+
+def test_arir_requires_reconstruct_not_none():
+    """A config with maskedPrediction=ARIR and reconstruct=NONE is rejected."""
+    import tempfile
+    import xml.etree.ElementTree as ET
+
+    import pytest
+
+    import Models
+    import Language
+
+    src = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "data", "MentalModel.xml")
+    tree = ET.parse(src)
+    root = tree.getroot()
+    arch = root.find("architecture")
+    # maskedPrediction lives under architecture/training (not architecture).
+    training = arch.find("training")
+    if training is None:
+        training = ET.SubElement(arch, "training")
+    mp = training.find("maskedPrediction")
+    if mp is None:
+        mp = ET.SubElement(training, "maskedPrediction")
+    mp.text = "ARIR"
+    rc = arch.find("reconstruct")
+    if rc is None:
+        rc = ET.SubElement(arch, "reconstruct")
+    rc.text = "NONE"
+
+    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False)
+    tree.write(tmp.name)
+    tmp.close()
+
+    try:
+        Language.TheGrammar._configured = False
+        with pytest.raises((ValueError, AssertionError, RuntimeError)):
+            Models.MentalModel.from_config(tmp.name)
+    finally:
+        os.unlink(tmp.name)
+
+
+def test_arlm_forward_returns_predictions_list_and_no_reconstruction():
+    """ARLM: forward() returns (input_state, symbols, predictions_list, None).
+
+    The outer pos loop in MentalModel.forward() emits one prediction per
+    revealed token. ARLM does not reconstruct -- the fourth return value
+    is always None.
+    """
+    import tempfile
+    import xml.etree.ElementTree as ET
+    import warnings
+
+    import torch
+
+    import Models
+    import Language
+
+    # Build a MentalModel with maskedPrediction=ARLM in the right XML path.
+    src = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "data", "MentalModel.xml")
+    tree = ET.parse(src)
+    root = tree.getroot()
+    arch = root.find("architecture")
+    training = arch.find("training")
+    if training is None:
+        training = ET.SubElement(arch, "training")
+    mp = training.find("maskedPrediction")
+    if mp is None:
+        mp = ET.SubElement(training, "maskedPrediction")
+    mp.text = "ARLM"
+
+    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False)
+    tree.write(tmp.name)
+    tmp.close()
+
+    try:
+        Language.TheGrammar._configured = False
+        model, _ = Models.MentalModel.from_config(tmp.name)
+
+        sentences = ['the cat sat on the mat']
+        outputs = [torch.tensor([0.0])]
+        with Models.TheData.runtime_batch(sentences, outputs):
+            train_input, _ = model.inputSpace.getTrainData()
+            x = model.inputSpace.prepInput(train_input[:1])
+
+            model.eval()
+            model.set_sigma(0)
+            with torch.no_grad(), warnings.catch_warnings():
+                warnings.filterwarnings("ignore")
+                out = model.forward(x)
+
+        assert len(out) == 4, f"expected 4-tuple return, got {len(out)}"
+        _, _, predictions, reconstruction = out
+        assert isinstance(predictions, list), \
+            f"ARLM must return a list of predictions, got {type(predictions)}"
+        assert len(predictions) > 0, \
+            "ARLM must emit at least one per-pos prediction"
+        assert reconstruction is None, \
+            "ARLM must not produce a reconstruction"
+    finally:
+        os.unlink(tmp.name)
+
+
+def test_arlm_runbatch_trains_without_reverse():
+    """ARLM runBatch runs forward+loss+backward+step without calling reverse().
+
+    This is the key speedup: the previous per-position mask-and-rerun
+    training loop called reverse() N times per sentence. The new
+    streaming loop never calls reverse() under ARLM.
+    """
+    import tempfile
+    import xml.etree.ElementTree as ET
+    import warnings
+
+    import torch
+
+    import Models
+    import Language
+
+    src = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "data", "MentalModel.xml")
+    tree = ET.parse(src)
+    root = tree.getroot()
+    arch = root.find("architecture")
+    training = arch.find("training")
+    if training is None:
+        training = ET.SubElement(arch, "training")
+    mp = training.find("maskedPrediction")
+    if mp is None:
+        mp = ET.SubElement(training, "maskedPrediction")
+    mp.text = "ARLM"
+
+    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False)
+    tree.write(tmp.name)
+    tmp.close()
+
+    try:
+        Language.TheGrammar._configured = False
+        model, _ = Models.MentalModel.from_config(tmp.name)
+        opt = model.getOptimizer(lr=0.01)
+
+        # Count reverse() calls to verify ARLM does not invoke it.
+        reverse_calls = {'n': 0}
+        original_reverse = model.reverse
+
+        def tracking_reverse(*args, **kwargs):
+            reverse_calls['n'] += 1
+            return original_reverse(*args, **kwargs)
+
+        model.reverse = tracking_reverse
+
+        sentences = ['the cat sat on the mat']
+        outputs = [torch.tensor([0.0])]
+        with Models.TheData.runtime_batch(sentences, outputs), \
+             warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            train_input, output_target = model.inputSpace.getTrainData()
+            x = model.inputSpace.prepInput(train_input[:1])
+            y = model.outputSpace.prepOutput(output_target[:1])
+            result, _ = model.runBatch(
+                train=True, batchNum=0, batchSize=1, split="train",
+                optimizer=opt, batch_override=(x, y))
+
+        assert result is not None, "runBatch should return a BatchResult"
+        assert reverse_calls['n'] == 0, \
+            f"ARLM must not call reverse() during training; got {reverse_calls['n']} calls"
+    finally:
+        os.unlink(tmp.name)
+
+
+def test_basicmodel_arlm_runbatch_uses_streaming_predictions():
+    """BasicModel ARLM returns per-token predictions and runBatch consumes them.
+
+    Regression for BasicModel.xml: ARLM must not fall through to the
+    non-AR scalar-output MSE path, where text dummy targets have shape [B]
+    while predictions have embedding width.
+    """
+    import tempfile
+    import xml.etree.ElementTree as ET
+    import warnings
+
+    import torch
+
+    import Models
+    import Language
+
+    src = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "data", "stream_smoke.xml")
+    tree = ET.parse(src)
+    root = tree.getroot()
+    arch = root.find("architecture")
+    training = arch.find("training")
+    training.find("maskedPrediction").text = "ARLM"
+    training.find("autoload").text = "false"
+    training.find("sentencePrediction").text = "false"
+
+    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False)
+    tree.write(tmp.name)
+    tmp.close()
+
+    try:
+        Language.TheGrammar._configured = False
+        Models.TheData.load("xor")
+        model, _ = Models.BasicModel.from_config(tmp.name)
+        assert model.__class__.__name__ == "BasicModel"
+
+        sentences = ['the cat sat on the mat']
+        outputs = [torch.tensor([0.0])]
+        with Models.TheData.runtime_batch(sentences, outputs), \
+             warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            train_input, output_target = model.inputSpace.getTrainData()
+            x = model.inputSpace.prepInput(train_input[:1])
+            y = model.outputSpace.prepOutput(output_target[:1])
+
+            model.eval()
+            model.set_sigma(0)
+            with torch.no_grad():
+                _, _, predictions, reconstruction = model.forward(x)
+                result, _ = model.runBatch(
+                    train=False, batchNum=0, batchSize=1, split="train",
+                    batch_override=(x, y))
+
+        assert isinstance(predictions, list)
+        assert len(predictions) > 0
+        assert reconstruction is None
+        assert result is not None
+        assert result.lossOut is not None
+    finally:
+        os.unlink(tmp.name)
+
+
+def test_mentalmodel_start_resets_and_embeds():
+    """MentalModel.Start(inputData) resets spaces, initializes symbolic_state,
+    and embeds the input via inputSpace.forward()."""
+    import warnings
+
+    import torch
+
+    import Models
+    import Language
+
+    # Build a minimal MentalModel from MM_xor.xml (small + fast).
+    src = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "data", "MM_xor.xml")
+    Language.TheGrammar._configured = False
+    model, _ = Models.MentalModel.from_config(src)
+
+    # Fabricate a valid input tensor via getTrainData.
+    Models.TheData.load("xor")
+    train_input, _ = model.inputSpace.getTrainData()
+    x = model.inputSpace.prepInput(train_input[:2])
+
+    # After Start(), self.inputs is non-None and self.symbolic_state is
+    # initialized with the right shape.
+    model.eval()
+    with torch.no_grad(), warnings.catch_warnings():
+        warnings.filterwarnings("ignore")
+        model.Start(x)
+
+    assert getattr(model, 'inputs', None) is not None
+    assert getattr(model, 'symbolic_state', None) is not None
+    # symbolic_state shape: [B, nOutput, nDim] from SymbolicSpace.outputShape
+    sshape = tuple(model.symbolic_state.shape)
+    assert len(sshape) == 3
+    assert sshape[0] == x.shape[0]   # batch dim matches

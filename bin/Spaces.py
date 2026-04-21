@@ -2259,6 +2259,18 @@ class SubSpace(nn.Module):
         """Return the content Basis (Embedding/Codebook) for codebook operations."""
         return self.what
 
+    def reset_event(self):
+        """Clear the cached event tensor.
+
+        Called from Space.Start() at the top of each MentalModel.forward()
+        so that state carried across the outer pos loop does not leak into
+        the next DataLoader yield. Preserves the Tensor wrapper so later
+        set_event/setW calls that assume it exists continue to work; only
+        the underlying tensor data is dropped.
+        """
+        if self.event is not None and hasattr(self.event, 'setW'):
+            self.event.setW(None)
+
     def set_event(self, event_tensor, compute_activation=False):
         """Store a muxed event tensor [B, N, D] where D = nWhat + nWhere + nWhen.
 
@@ -3779,6 +3791,20 @@ class Space(nn.Module):
         for l in self.layers:
             if hasattr(l, 'paramUpdate'):
                 l.paramUpdate()
+
+    def Start(self):
+        """Per-sentence state reset. Cascades to child layers and subspace.
+
+        Called from MentalModel.Start() once per forward() invocation.
+        Subclasses with additional per-call state override this, calling
+        super().Start() first.
+        """
+        for layer in self.layers:
+            if hasattr(layer, 'Start'):
+                layer.Start()
+        sub = getattr(self, 'subspace', None)
+        if sub is not None and hasattr(sub, 'reset_event'):
+            sub.reset_event()
 class InputSpace(Space):
     """Receives the source buffer from Data() and encodes it as vectors.
 
@@ -3932,6 +3958,20 @@ class InputSpace(Space):
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
         self.input          = torch.FloatTensor
         self.tokenizedInput = False
+        # Sliding-window context buffer for AR modes. Persists across
+        # MentalModel.forward() calls within a stream so the model sees
+        # cross-sentence context. Lazy init on first slide_and_append
+        # (need B and embSize to size it). Reset via ``reset_buffer``.
+        # See basicmodel/doc/specs/2026-04-20-streaming-ar-training-loop-design.md
+        self._ar_buffer = None
+        # Raw sentence strings stashed by prepInput for MentalModel.forward()
+        # to compute the outer-loop iteration count N without rethreading
+        # inp_items through runBatch's call signature.
+        self._last_sentences = None
+        # ARIR-inference cache bypass: the runtime state machine stages a
+        # pre-built embedding here; forward() consumes it once instead of
+        # re-lexing. AR training does not use this.
+        self._cached_embedding = None
         # Byte lexer inputs are discrete indices (0-255) looked up via
         # Embedding -- a global linear lift over the flattened buffer is
         # unnecessary and prohibitively expensive for large nOutput.
@@ -3951,11 +3991,54 @@ class InputSpace(Space):
     def getTestData(self):
         return self.data.test_input, self.data.test_output
     def prepInput(self, inputBatch):
+        # Stash raw sentence strings for the AR outer loop in
+        # MentalModel.forward() -- lets it compute N without rewiring
+        # inp_items through runBatch's call signature.
+        if (isinstance(inputBatch, list) and inputBatch
+                and isinstance(inputBatch[0], str)):
+            self._last_sentences = list(inputBatch)
+        else:
+            self._last_sentences = None
+
         if isinstance(inputBatch, list):
             tensors = [self.data.stringTensor(s) if isinstance(s, str) else s
                        for s in inputBatch]
             return torch.stack(tensors, dim=0).unsqueeze(1).to(TheDevice.get())
         return inputBatch  # already [B, D, 1] and on device after toDevice()
+
+    def reset_buffer(self):
+        """Clear the sliding-window AR buffer.
+
+        Called at epoch boundaries or when the user wants a fresh context.
+        MentalModel.Start() does NOT call this -- buffer persists across
+        forward() calls within a stream by design.
+        """
+        self._ar_buffer = None
+
+    def slide_and_append(self, token_embeddings):
+        """Slide the AR buffer left by one slot and append new tokens on the right.
+
+        ``token_embeddings`` is ``[B, embSize]`` -- a single new token per
+        batch row. The buffer is lazily created on first call with shape
+        ``[B, nActive, embSize]``, where nActive is the InputSpace's active
+        vector count (context window size).
+
+        Returns the updated buffer as a ``[B, nActive, embSize]`` tensor.
+        """
+        B, embSize = token_embeddings.shape
+        nActive = int(self.outputShape[0])
+        if (self._ar_buffer is None
+                or self._ar_buffer.shape[0] != B
+                or self._ar_buffer.shape[2] != embSize):
+            self._ar_buffer = torch.zeros(
+                B, nActive, embSize,
+                device=token_embeddings.device,
+                dtype=token_embeddings.dtype,
+            )
+        # Slide left by one; set rightmost slot to the new token.
+        self._ar_buffer = torch.roll(self._ar_buffer, shifts=-1, dims=1)
+        self._ar_buffer[:, -1, :] = token_embeddings
+        return self._ar_buffer
 
     def prep_sentence_batch(self, sentences):
         """Turn a tuple/list of B sentence strings into a [B, nVec, 1] tensor.
@@ -3968,12 +4051,14 @@ class InputSpace(Space):
         self.data.shuffle()
     # The world presenting itself
     def forward(self, input, mask=None):
-        # ARIR cache bypass: if _cached_embedding is set, use it directly
-        # instead of re-lexing / re-embedding.
-        cached = getattr(self, '_cached_embedding', None)
-        if cached is not None:
+        # ARIR-inference cache bypass: the ARIR runtime state machine
+        # injects a pre-built embedding tensor via ``_cached_embedding`` so
+        # forward() skips lex/embed and uses the staged latent directly.
+        # The AR training path does NOT use this -- it relies on the
+        # persistent sliding-window buffer (``_ar_buffer``) instead.
+        if self._cached_embedding is not None:
+            self.input = self._cached_embedding
             self._cached_embedding = None  # consume once
-            self.input = cached
             self._forward_input = None
             self.subspace.set_event(self.input)
             return self.subspace

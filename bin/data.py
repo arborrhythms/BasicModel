@@ -610,9 +610,13 @@ class Data():
             self.test_output = [torch.zeros(1) for _ in test_labels]
         else:
             self._lm_labels = None
-            self.train_output = [torch.tensor(l, dtype=torch.float) for l in train_labels]
-            self.validation_output = [torch.tensor(l, dtype=torch.float) for l in validation_labels]
-            self.test_output = [torch.tensor(l, dtype=torch.float) for l in test_labels]
+            # ``torch.as_tensor`` is tensor-aware: for tensor inputs it
+            # avoids the "copy-construct from a tensor" deprecation
+            # warning that ``torch.tensor`` triggers; for list inputs it
+            # builds a new tensor like ``torch.tensor`` does.
+            self.train_output = [torch.as_tensor(l, dtype=torch.float) for l in train_labels]
+            self.validation_output = [torch.as_tensor(l, dtype=torch.float) for l in validation_labels]
+            self.test_output = [torch.as_tensor(l, dtype=torch.float) for l in test_labels]
 
     def tokenize(self, TheLanguageModel):
         self.train_input      = TheLanguageModel.tokenize(self.train_input)

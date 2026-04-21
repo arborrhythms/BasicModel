@@ -1479,8 +1479,11 @@ class SyntacticLayer(Layer):
         cb = basis.getW() if basis is not None else None
         if cb is not None and data.shape[-1] == cb.shape[-1]:
             B0, N0, D0 = data.shape
+            # ``cb`` may be 2D [V, D0] or 3D [batch, V, D0]; ``mT`` swaps the
+            # last two dims for matmul in both cases without the ``.T``
+            # deprecation on non-2D tensors.
             self._leaf_cb_indices = (
-                data.detach().reshape(-1, D0) @ cb.T
+                data.detach().reshape(-1, D0) @ cb.mT
             ).argmax(dim=-1).reshape(B0, N0)
         else:
             self._leaf_cb_indices = None
@@ -1926,6 +1929,8 @@ class WordSpace(Space):
         # Back-ref to InputSpace for NLTK POS seeding of the chart-compose
         # category tensor. Wired by MentalModel.__init__.
         self._input_space_ref = None
+        self._category_cache_key = None
+        self._category_cache = None
 
         # 5. Build the SyntacticLayer anchored at SymbolicSpace.  The
         # perceptual and conceptual spaces also get a ``wordSpace``
@@ -2318,14 +2323,20 @@ class WordSpace(Space):
         if not tokens:
             return
         B, N = shape
-        layer._ensure_category_table(TheGrammar)
-        cat = torch.full((B, N), 0, dtype=torch.long)
-        for b, row in enumerate(tokens):
-            if b >= B or not row:
-                continue
-            cats = map_nltk_tags_to_categories(list(row)[:N])
-            for p, name in enumerate(cats):
-                cat[b, p] = layer._category_index.get(name, 0)
+        cache_key = (id(tokens), B, N)
+        if self._category_cache_key == cache_key:
+            cat = self._category_cache
+        else:
+            layer._ensure_category_table(TheGrammar)
+            cat = torch.full((B, N), 0, dtype=torch.long)
+            for b, row in enumerate(tokens):
+                if b >= B or not row:
+                    continue
+                cats = map_nltk_tags_to_categories(list(row)[:N])
+                for p, name in enumerate(cats):
+                    cat[b, p] = layer._category_index.get(name, 0)
+            self._category_cache_key = cache_key
+            self._category_cache = cat
         layer._seed_category(cat)
 
     def reverseSymbols(self, data, subspace):

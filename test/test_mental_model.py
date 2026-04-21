@@ -57,7 +57,7 @@ class TestMentalModelForwardReverse(unittest.TestCase):
             model.eval()
             model.set_sigma(0)
             with torch.no_grad():
-                input_state, concepts, symbols = model.forward(x)
+                input_state, symbols, predictions, reconstruction = model.forward(x)
 
             self.assertEqual(symbols.ndim, 3)
             self.assertEqual(symbols.shape[0], 2)  # batch=2

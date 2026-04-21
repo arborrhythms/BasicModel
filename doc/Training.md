@@ -247,23 +247,58 @@ where row `b` is item `b * L + t`. Each batch row therefore carries its own
 document-order stream, so temporal context is coherent across steps. No
 per-epoch global shuffle is applied. `numWorkers > 0` enables async prefetch.
 
-For each B-wide batch in masked prediction mode:
+For each B-wide batch in AR modes (`ARLM` / `ARUS` / `ARIR`):
 
-1. Embed the B sentences once into `[B, nVec, embeddingSize]`
-2. For each word position `pos` in `0..N-1` (N = max words in the batch,
-   capped at `nVec`):
-   1. Mask row `b` at position `pos` (or `N_b-1-pos` for RARLM), truncate
-      future tokens for ARLM, preserve where/when positional dims
-   2. Forward through network: InputSpace $\rightarrow$ Percept $\rightarrow$ Concept $\rightarrow$ Symbol $\rightarrow$ Output
-   3. Compute output loss (MSE against target word embeddings)
-   4. If reversible: reverse pass reconstructs input, compute reconstruction loss
-   5. Combined loss = `(1 - recon_ratio) $\times$ output_loss + recon_ratio $\times$ recon_loss`
-   6. If `train` is `JOINT`: add `trainEmbeddingRatio $\times$ sbow_loss` to the combined loss
-   7. Backprop + optimizer step (includes embedding params for `BACKPROP`, `BOTH`, `JOINT`; excludes for `NONE`, `CBOW`, `SBOW`)
-3. If `train` is `CBOW`, `SBOW`, or `BOTH`: run one embedding step per fetched batch
+1. `MentalModel.Start(inputData)` cascades reset through every Space and
+   Layer (clearing per-sentence scratch) and embeds the input once into
+   `[B, nVec, embeddingSize]`. The sliding-window AR buffer on
+   `InputSpace` is **not** reset -- it persists across forward() calls,
+   giving the model cross-sentence context.
+2. The outer token-consumption loop runs inside `MentalModel.forward()`:
 
-Non-masked modes (`maskedPrediction=NONE`) do a single forward/backward/step
-per B-wide batch instead of looping over positions.
+   ```
+   for pos in range(N):
+       set_event(inputSpace._ar_buffer)        # pre-slide buffer state
+       for t in range(conceptualOrder):
+           # existing sigma / pi / feedback body; state carries across pos
+       predictions.append(Finish(symbols))     # predict embedded[:, pos, :]
+       inputSpace.slide_and_append(embedded[:, pos, :])
+   ```
+
+   Percept / concept / symbol / `symbolic_state` tensors persist across
+   the outer loop within a single `forward()` call. The sliding buffer
+   persists across `forward()` calls until explicit
+   `InputSpace.reset_buffer()` (e.g. at epoch boundaries).
+
+3. For `ARIR` only, a single terminal `reverse(symbols)` after the pos
+   loop produces a `[B, N, D]` reconstruction.
+
+4. `runBatch` computes the loss once via `TheError.add`:
+   - `ARLM`: output prediction only (per-pos predictions stacked to `[B, N, D]`).
+   - `ARUS`: no output term (suppressed); no reconstruction.
+   - `ARIR`: output prediction + reconstruction, weighted by `reverseScale`.
+
+5. One `backward()` + `optimizer.step()` per DataLoader yield. Compared
+   to the previous N-passes-per-sentence loop, this saves N-1 reverse
+   calls per AR sentence and collapses N optimizer steps into one.
+
+6. Embedding training (`trainEmbedding` in `CBOW`/`SBOW`/`BOTH`) runs
+   once per batch after the forward/backward cycle.
+
+Non-AR modes (`maskedPrediction=NONE`) do a single forward/backward/step
+per B-wide batch through the same `runBatch` code path, skipping the
+outer pos loop.
+
+Mode contract:
+
+| Mode   | Per-pos output | Terminal reverse | Reconstruction loss |
+|--------|----------------|--------------------------------|-----------------|
+| `ARLM` | Yes            | No (ignores `<reconstruct>`)   | Not trained     |
+| `ARUS` | No             | No (ignores `<reconstruct>`)   | Not trained     |
+| `ARIR` | Yes            | Yes                            | Over `[B, N, D]` |
+
+`<maskedPrediction>ARIR</maskedPrediction>` requires
+`<reconstruct>` to be something other than `NONE` at validation.
 
 ---
 

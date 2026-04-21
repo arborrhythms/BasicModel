@@ -1404,15 +1404,91 @@ class BasicModel(BaseModel):
         if hasattr(self, 'symbolicSpace'):
             self.symbolicSpace.reset_symbol_objective()
         self.inputs   = self.inputSpace.forward(inputData)
-        self.percepts = self.perceptualSpace.forward(self.inputs, wordSpace=ws)
-        self.concepts = self.conceptualSpace.forward(self.percepts, wordSpace=ws)
-        self.symbols  = self.symbolicSpace.forward(self.concepts, wordSpace=ws)
-        input = self.inputs.materialize()
-        concepts = self.concepts.materialize()
-        symbols = self.symbols.materialize()
+        input, concepts, symbols = self._run_forward_pipeline(self.inputs)
         if self.plot:
             TheReport.plotActivations(figure=1, concepts=concepts)
         return input, concepts, symbols
+
+    def _run_forward_pipeline(self, inputs):
+        """Run the BasicModel pipeline after InputSpace has produced a state."""
+        ws = self.wordSpace
+        self.inputs = inputs
+        self.percepts = self.perceptualSpace.forward(self.inputs, wordSpace=ws)
+        self.concepts = self.conceptualSpace.forward(self.percepts, wordSpace=ws)
+        self.symbols  = self.symbolicSpace.forward(self.concepts, wordSpace=ws)
+        input = inputs.materialize()
+        concepts = self.concepts.materialize()
+        symbols = self.symbols.materialize()
+        return input, concepts, symbols
+
+    def _start_ar_forward(self, inputData):
+        """Reset per-forward state and embed once for streaming AR modes."""
+        if isinstance(inputData, torch.Tensor):
+            inputData = inputData.to(TheDevice.get())
+        for space in self.spaces:
+            if hasattr(space, 'Start'):
+                space.Start()
+        if hasattr(self, 'symbolicSpace'):
+            self.symbolicSpace.reset_symbol_objective()
+        self.inputs = self.inputSpace.forward(inputData)
+        if self.wordSpace is not None:
+            self.wordSpace.clear_sentence()
+        return self.inputs.materialize()
+
+    def _ar_token_count(self, embedded):
+        """Return the token positions to stream and cache a valid-position mask."""
+        self._ar_valid_pos = None
+        batch = embedded.shape[0]
+        max_slots = embedded.shape[1]
+        if max_slots <= 0:
+            return 0
+
+        def _from_counts(counts):
+            counts = [min(max(int(c), 0), max_slots) for c in counts]
+            n_steps = min(max(max(counts, default=0), 1), max_slots)
+            valid_pos = torch.zeros(
+                batch, n_steps, dtype=torch.bool, device=embedded.device)
+            for b, count in enumerate(counts[:batch]):
+                valid_pos[b, :min(count, n_steps)] = True
+            self._ar_valid_pos = valid_pos
+            return n_steps
+
+        meta = getattr(self.inputSpace, "_forward_input", None)
+        tokens = meta.get("tokens") if isinstance(meta, dict) else None
+        if tokens:
+            return _from_counts(len(row) for row in tokens)
+        sentences = getattr(self.inputSpace, "_last_sentences", None)
+        if sentences:
+            return _from_counts(len(str(s).split()) for s in sentences)
+        return max_slots
+
+    def _current_ar_buffer(self, batch, emb_size, device, dtype):
+        """Return InputSpace's streaming context buffer, creating it if needed."""
+        buffer = self.inputSpace._ar_buffer
+        n_active = int(self.inputSpace.outputShape[0])
+        if (
+            buffer is None
+            or buffer.shape[0] != batch
+            or buffer.shape[1] != n_active
+            or buffer.shape[2] != emb_size
+        ):
+            buffer = torch.zeros(
+                batch, n_active, emb_size,
+                device=device, dtype=dtype,
+            )
+            self.inputSpace._ar_buffer = buffer
+        return buffer
+
+    def _split_output_symbols(self, symbols):
+        """Cache output/reconstruction symbol slices and return output symbols."""
+        if self.nReconSymbols > 0:
+            self.output_symbols = symbols[:, :self.nTotalOutputSymbols, :]
+            self.recon_symbols = symbols[:, self.nTotalOutputSymbols:, :]
+        else:
+            self.output_symbols = symbols
+            self.recon_symbols = None
+        return self.output_symbols
+
     def StartReverse(self, symbols):
         """Reverse pass: Symbol -> Concept -> Percept -> Input (reconstruction)."""
         ws = self.wordSpace
@@ -1629,22 +1705,56 @@ class BasicModel(BaseModel):
     def forward(self, inputData):
         """Full forward pass: core pipeline + higher-order cycles + output projection.
 
-        Returns (output_prediction, perceptual_state).
-        Symbols from each processing stage are concatenated before OutputSpace.
+        Returns (input_state, symbols, predictions, reconstruction). For BasicModel,
+        ``predictions`` is either the single output prediction tensor or, in
+        streaming AR modes, a list of per-token prediction tensors.
+        ``reconstruction`` is always None (BasicModel reverse runs from runBatch
+        when reversible). The 4-tuple shape is shared with MentalModel so the
+        common runBatch can unpack uniformly.
         """
         if isinstance(inputData, torch.Tensor):
             inputData = inputData.to(TheDevice.get())
+        self._ar_valid_pos = None
+
+        is_runtime_arir = (
+            self.inputSpace.data is not None
+            and getattr(self.inputSpace.data, '_runtime_mode', None) == 'ARIR'
+        )
+        is_ar_mode = (
+            self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
+            and not is_runtime_arir
+        )
+        if is_ar_mode:
+            input = self._start_ar_forward(inputData)
+            embedded = self.inputs.materialize()
+            batch, _, emb_size = embedded.shape
+            n_steps = self._ar_token_count(embedded)
+            predictions = []
+            symbols = None
+            for pos in range(n_steps):
+                buffer = self._current_ar_buffer(
+                    batch, emb_size, embedded.device, embedded.dtype)
+                self.inputs.set_event(buffer)
+                _, _, symbols = self._run_forward_pipeline(self.inputs)
+                output_symbols = self._split_output_symbols(symbols)
+                pred = self.Finish(output_symbols)
+                if pred.dim() == 3 and pred.shape[1] == 1:
+                    pred = pred.squeeze(1)
+                predictions.append(pred)
+                self.inputSpace.slide_and_append(embedded[:, pos, :])
+
+            reconstruction = None
+            if self.masked_prediction == 'ARIR':
+                last_pred = predictions[-1] if predictions else None
+                reconstruction, _ = self.reverse(symbols, last_pred)
+            return input, symbols, predictions, reconstruction
+
         input, concepts, symbols = self.Start(inputData)
-        if self.nReconSymbols > 0:
-            self.output_symbols = symbols[:, :self.nTotalOutputSymbols, :]
-            self.recon_symbols = symbols[:, self.nTotalOutputSymbols:, :]
-        else:
-            self.output_symbols = symbols
-            self.recon_symbols = None
+        self._split_output_symbols(symbols)
         outputData = self.Finish(self.output_symbols)
         batch = input.shape[0]
         self.inputSpace.subspace.whenEncoding.increment(batch)
-        return input, symbols, outputData
+        return input, symbols, outputData, None
     def reverse(self, symbols, outputData):
         """Full reverse pass: core reconstruction."""
         symbols = self.FinishReverse(outputData)
@@ -1850,9 +1960,8 @@ class BasicModel(BaseModel):
             split: "train", "test", or "validation".
             optimizer: pre-built optimizer (required when train=True).
             batch_override: optional ``(inputTensor, outputTensor)`` pair that
-                bypasses ``InputSpace.getBatch`` -- used by the streaming path
-                where the DataLoader has already produced the batch and
-                ``InputSpace._cached_embedding`` carries the masked embedding.
+                bypasses ``InputSpace.getBatch`` -- used by the DataLoader
+                streaming path in ``runEpoch``.
 
         Returns:
             (BatchResult, nextBatchNum) on success, or (None, batchNum) when
@@ -1884,15 +1993,23 @@ class BasicModel(BaseModel):
         TheError.reset()
         TheError.attach(self.loss)
 
-        # Forward pass (masking, if any, is applied inside InputSpace.forward())
-        forwardInput, symbols, outputDataPred = self.forward(inputTensor)
+        # Forward pass. Returns a 4-tuple. For AR modes (ARLM/ARUS/ARIR),
+        # ``predictions`` is a list of per-pos tensors and ``reconstruction``
+        # is the ARIR terminal reverse output (None for ARLM/ARUS). For
+        # non-AR modes, ``predictions`` is a single [B, outDim] tensor and
+        # ``reconstruction`` is None.
+        forwardInput, symbols, predictions, reconstruction = self.forward(inputTensor)
+        is_ar_mode = isinstance(predictions, list)
+        # Stack predictions list to a single tensor for downstream use.
+        outputDataPred = (torch.stack(predictions, dim=1)
+                          if is_ar_mode else predictions)
 
         if arir_mode:
-            # ARIR inference: no output loss, but always run reverse pass
-            # so that reconstructed vectors and _recovered_words are available
-            # for the next getBatch() call.
-            inputPred = None
-            if self.reversible:
+            # ARIR inference: no output loss, but the forward pass (AR path)
+            # already produced a terminal reconstruction; pass it through.
+            inputPred = reconstruction
+            if inputPred is None and self.reversible:
+                # Fallback for non-AR ARIR runtime mode.
                 _, inputPred = self.reverse(symbols, outputDataPred)
             return self.BatchResult(
                 outputPred=outputDataPred, symbols=symbols,
@@ -1915,56 +2032,95 @@ class BasicModel(BaseModel):
                 "if targets are required."
             )
 
-        outputPred = outputDataPred.squeeze()
-        output     = outputTensor.squeeze()
-        lossOut    = self.loss.output(outputPred, output)
-        self.accumulate_output_symbol_residual(outputTensor, outputDataPred)
+        if is_ar_mode:
+            # AR modes: per-pos predictions. Target at pos=t is the
+            # ``what`` content of the token the model predicts given
+            # prior context, taken from the embedded input.
+            #
+            # OutputSpace and InputSpace can have different muxed widths:
+            # InputSpace carries [what + where + when] (e.g. 100+2+2=104),
+            # OutputSpace typically carries only [what] (100). We compare
+            # only the leading ``pred`` dims, treating the where/when of
+            # the target as side info that is not predicted.
+            pred_stack = outputDataPred          # [B, N, predDim]
+            N = pred_stack.shape[1]
+            predDim = pred_stack.shape[-1]
+            target_stack = forwardInput[:, :N, :predDim]  # [B, N, predDim]
+            # Per-row valid-position mask from forward(): rows shorter
+            # than N have padded positions whose targets are NULL/zero
+            # embeddings -- training on those teaches the model to
+            # predict padding. Mask them out before the loss.
+            valid_pos = self._ar_valid_pos
+            if valid_pos is not None:
+                mask = valid_pos[:, :N].unsqueeze(-1).expand_as(pred_stack)
+                pred_stack = pred_stack[mask].view(-1, predDim)
+                target_stack = target_stack[mask].view(-1, predDim)
+            if self.masked_prediction == 'ARUS':
+                lossOut = torch.tensor(0.0, device=TheDevice.get())
+                output_weight = 0.0
+            elif pred_stack.numel() == 0:
+                # All rows were padding (zero-length batch). No signal.
+                lossOut = torch.tensor(0.0, device=TheDevice.get())
+                output_weight = 0.0
+            else:
+                lossOut = self.loss.output(pred_stack, target_stack)
+                # ARIR blends output with reconstruction via reverse_scale;
+                # ARLM has no reconstruction term so the output gets full weight.
+                output_weight = ((1 - self.loss.reverse_scale)
+                                 if self.masked_prediction == 'ARIR' else 1.0)
+        else:
+            # Non-AR: today's behavior.
+            outputPred = outputDataPred.squeeze()
+            output     = outputTensor.squeeze()
+            lossOut    = self.loss.output(outputPred, output)
+            self.accumulate_output_symbol_residual(outputTensor, outputDataPred)
+            output_weight = 1.0 - self.loss.reverse_scale
 
-        # ARUS: suppress output loss (unsupervised -- no target signal)
-        if hasattr(self, 'masked_prediction') and self.masked_prediction == 'ARUS':
-            lossOut = torch.tensor(0.0, device=TheDevice.get())
-
-        # Register output term: (1 - reverse_scale) is the effective
-        # weight in ModelLoss.forward, matching the legacy composition
-        # so TheError.total() shadows the legacy totalLoss.
         TheError.add(
             "output", lossOut,
-            weight=1.0 - self.loss.reverse_scale,
+            weight=output_weight,
             space="OutputSpace", category="prediction",
         )
 
-        use_recon = self.reversible and self.loss.reverse_scale > 0
-        if use_recon:
+        # Reconstruction term.
+        if is_ar_mode:
+            # AR modes: reconstruction is non-None only under ARIR.
+            if reconstruction is not None:
+                pred_sq = reconstruction
+                recon_target, _ = self.inputSpace.get_reconstruction_target()
+                target_sq = (recon_target if recon_target is not None
+                             else forwardInput)
+                # Align sequence dim.
+                if pred_sq.shape[1] != target_sq.shape[1]:
+                    M = min(pred_sq.shape[1], target_sq.shape[1])
+                    pred_sq = pred_sq[:, :M, :]
+                    target_sq = target_sq[:, :M, :]
+                lossIn = self.loss.compute(pred_sq, target_sq)
+                TheError.add(
+                    "reconstruction", lossIn,
+                    weight=self.loss.reverse_scale,
+                    space="InputSpace", category="reconstruction",
+                )
+                inputDataPred = reconstruction
+            else:
+                inputDataPred = None
+                lossIn = None
+        elif self.reversible and self.loss.reverse_scale > 0:
+            # Non-AR reversible: today's reverse branch.
             inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
             pred_sq = inputDataPred
-            masked_pred = hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE'
-            self._debug_tensor_stats("pred_sq", pred_sq)
-
-            # Use pre-masked, post-encoding target when available
             recon_target, recon_mask = self.inputSpace.get_reconstruction_target()
-            if recon_target is not None:
-                target_sq = recon_target.squeeze()
-            else:
-                target_sq = forwardInput.squeeze()
-            self._debug_tensor_stats("target_sq", target_sq)
-            if recon_mask is not None:
-                self._debug_tensor_stats("recon_mask", recon_mask)
-
-            if masked_pred and recon_mask is not None and pred_sq.dim() >= 2:
-                # Masked prediction: compute loss only at masked positions
+            target_sq = (recon_target.squeeze() if recon_target is not None
+                         else forwardInput.squeeze())
+            if recon_mask is not None and pred_sq.dim() >= 2:
                 mask = recon_mask
                 if pred_sq.dim() == 3:
                     mask = mask.unsqueeze(-1).expand_as(pred_sq)
-                self._debug_tensor_stats("pred_masked", pred_sq[mask])
-                self._debug_tensor_stats("target_masked", target_sq[mask])
                 lossIn = self.loss.compute(pred_sq[mask], target_sq[mask])
             elif self.loss.nWhere > 0:
-                # Piecewise (Chamfer) loss: per-token matching + coverage.
-                # Avoids buffer-level error shadowing when tokens overlap.
                 lossIn = self.loss.compute_piecewise(pred_sq, target_sq)
             else:
                 lossIn = self.loss.compute(pred_sq, target_sq)
-            self._debug_tensor_stats("lossIn", lossIn)
             TheError.add(
                 "reconstruction", lossIn,
                 weight=self.loss.reverse_scale,
@@ -2154,6 +2310,12 @@ class BasicModel(BaseModel):
         ws = self.wordSpace
         if ws is not None and getattr(ws, 'discourse', None) is not None:
             ws.discourse.reset()
+        # Reset the sliding-window AR context buffer at split/epoch
+        # boundaries so validation does not inherit train-time context and
+        # epoch N does not continue from epoch N-1's last sentence. The
+        # buffer still persists across DataLoader yields within this call.
+        if hasattr(self.inputSpace, 'reset_buffer'):
+            self.inputSpace.reset_buffer()
         ctx = torch.no_grad() if not training else nullcontext()
 
         # Inference fast path: skip loss construction and accumulation.
@@ -2178,8 +2340,6 @@ class BasicModel(BaseModel):
         inputChunks = []
         outErr = 0.0
         inErr = 0.0
-        masked_pred = (hasattr(self, 'masked_prediction')
-                       and self.masked_prediction != 'NONE')
 
         def record(result):
             """Book-keep one runBatch result into the shared accumulators."""
@@ -2210,92 +2370,39 @@ class BasicModel(BaseModel):
                 inputTensor = self.inputSpace.prepInput(inp_items)
                 outputTensor = self.outputSpace.prepOutput(out_items)
 
+                # Unified path: AR modes drive their outer pos loop
+                # inside MentalModel.forward() via the sliding-window
+                # buffer on InputSpace; non-AR modes run one pass. See
+                # basicmodel/doc/specs/2026-04-20-streaming-ar-training-loop-design.md
+                result, _ = self.runBatch(
+                    train=training, batchNum=step,
+                    batchSize=B, split=split,
+                    optimizer=optimizer,
+                    batch_override=(inputTensor, outputTensor),
+                )
+                if result is not None:
+                    record(result)
+                step += 1
+
+                # Per-batch CBOW/SBOW embedding training for text AR
+                # modes, preserved from the old AR branch.
                 text_batch = (isinstance(inp_items, list)
                               and inp_items
                               and isinstance(inp_items[0], str))
-
-                if masked_pred and text_batch:
-                    # Per-position masking over the B-wide sentence batch.
-                    # Embed once per fetched batch and reuse across mask
-                    # positions so we do not re-tokenize / re-lookup.
-                    with torch.no_grad():
-                        embedded = (self.inputSpace
-                                    .forward(inputTensor)
-                                    .materialize())
-                    # Reset the positional counter the forward() call
-                    # incremented -- the cached-embedding bypass does not
-                    # advance .p itself.
-                    self.inputSpace.subspace.whereEncoding.p = 0
-
-                    nVec = embedded.shape[1]
-                    N = min(max(len(s.split()) for s in inp_items), nVec)
-                    for pos in range(N):
-                        masked, targets, mask_positions = (
-                            self.inputSpace.expand_masked_batched(
-                                embedded, inp_items,
-                                self.masked_prediction, pos,
-                            ))
-                        valid_rows = [i for i, p in enumerate(mask_positions)
-                                      if p >= 0]
-                        if not valid_rows:
-                            continue
-                        step_input = inputTensor
-                        step_unmasked = embedded.detach()
-                        step_B = B
-                        if len(valid_rows) != len(mask_positions):
-                            # Rows shorter than this AR position are not
-                            # examples; do not train them toward a zero target.
-                            row_idx = torch.tensor(
-                                valid_rows, device=embedded.device,
-                                dtype=torch.long)
-                            masked = masked.index_select(0, row_idx)
-                            targets = targets.index_select(0, row_idx)
-                            step_input = inputTensor.index_select(0, row_idx)
-                            step_unmasked = step_unmasked.index_select(
-                                0, row_idx)
-                            mask_positions = [
-                                mask_positions[i] for i in valid_rows]
-                            step_B = len(valid_rows)
-                        self.inputSpace._cached_embedding = masked
-                        self.inputSpace._unmasked_embedding = (
-                            step_unmasked)
-                        self.inputSpace._mask_positions = mask_positions
-                        result, _ = self.runBatch(
-                            train=training, batchNum=step,
-                            batchSize=step_B, split=split,
-                            optimizer=optimizer,
-                            batch_override=(step_input,
-                                            targets.unsqueeze(1)),
-                        )
-                        if result is not None:
-                            record(result)
-                        step += 1
-
-                    # Embedding training once per fetched batch -- feed
-                    # each sentence's words directly (no index into
-                    # train_input needed).
-                    if (training
-                            and getattr(self, 'lexer', None)
-                            not in ('byte', 'bytes')):
-                        te = getattr(self, 'train_embedding', 'NONE')
-                        if te in ('CBOW', 'SBOW', 'BOTH'):
-                            method = 'CBOW' if te == 'CBOW' else 'SBOW'
-                            for sentence in inp_items:
-                                words = [t for t, _
-                                         in quick_parser(sentence)]
-                                self.inputSpace.train_embeddings(
-                                    words, method=method)
-                else:
-                    # Single forward/backward per B-wide batch.
-                    result, _ = self.runBatch(
-                        train=training, batchNum=step,
-                        batchSize=B, split=split,
-                        optimizer=optimizer,
-                        batch_override=(inputTensor, outputTensor),
-                    )
-                    if result is not None:
-                        record(result)
-                    step += 1
+                is_ar_mode = (hasattr(self, 'masked_prediction')
+                              and self.masked_prediction
+                              in ('ARLM', 'ARUS', 'ARIR'))
+                if (training and is_ar_mode and text_batch
+                        and getattr(self, 'lexer', None)
+                        not in ('byte', 'bytes')):
+                    te = getattr(self, 'train_embedding', 'NONE')
+                    if te in ('CBOW', 'SBOW', 'BOTH'):
+                        method = 'CBOW' if te == 'CBOW' else 'SBOW'
+                        for sentence in inp_items:
+                            words = [t for t, _
+                                     in quick_parser(sentence)]
+                            self.inputSpace.train_embeddings(
+                                words, method=method)
 
         if inputChunks:
             if outputChunks[0].dim() == 0:
@@ -2380,6 +2487,18 @@ class MentalModel(BaseModel):
             raise ValueError(
                 "useButterflies=true + useGrammar=\"all\" is excluded: "
                 "butterfly permutations fight constituency structure")
+
+        # ARIR mode exists to train input reconstruction. Without a reverse
+        # pass (reconstruct=NONE), there is nothing to train -- the mode is
+        # meaningless. ARLM/ARUS do not reverse; <reconstruct> is inert in
+        # those modes and unconstrained.
+        _mp = str(masked_prediction).upper()
+        _rc = str(TheXMLConfig.get("architecture.reconstruct")).upper()
+        TheXMLConfig.require(
+            lambda cfg, _mp=_mp, _rc=_rc: _mp != 'ARIR' or _rc != 'NONE',
+            f"maskedPrediction=ARIR requires reconstruct != 'NONE' "
+            f"(got maskedPrediction={_mp!r}, reconstruct={_rc!r})"
+        )
 
         # Butterfly-path state cache (populated in the useButterflies branch
         # below).  Named after ButterflyStage.
@@ -2642,8 +2761,12 @@ class MentalModel(BaseModel):
     @staticmethod
     def _activation_order(activation, partitions):
         """Return the order whose partition has the highest energy."""
-        energies = [activation[s:e].norm() for s, e in partitions]
-        return int(torch.tensor(energies).argmax())
+        # ``.norm()`` returns zero-dim tensors; stack instead of rewrapping
+        # via ``torch.tensor([...])`` to avoid the "copy-construct from a
+        # tensor" deprecation warning.
+        energies = torch.stack(
+            [activation[s:e].norm() for s, e in partitions])
+        return int(energies.argmax())
 
     # -- Hierarchical Epistemic Architecture --------------------------
 
@@ -2737,81 +2860,84 @@ class MentalModel(BaseModel):
         self.outputs = self.outputSpace.forward(data)
         return self.outputs.materialize()
 
-    # -- Forward / reverse ----------------------------------------------
+    def Start(self, inputData):
+        """Per-sentence state reset + input embedding.
 
-    def forward(self, inputData):
+        Cascades reset to every Space (and every Layer within), clears the
+        cached event on each subspace, initializes ``self.symbolic_state``
+        for the flat recurrent path, and embeds the input once.
+
+        Does NOT run the downstream pipeline -- the outer pos loop in
+        forward() does that. See spec:
+        basicmodel/doc/specs/2026-04-20-streaming-ar-training-loop-design.md
+
+        Returns the materialized input state for callers that need it.
+        """
         if isinstance(inputData, torch.Tensor):
             inputData = inputData.to(TheDevice.get())
 
-        ws = self.wordSpace
+        # 1. Cascade reset to all Spaces -> Layers -> subspace.event.
+        for space in self.spaces:
+            if hasattr(space, 'Start'):
+                space.Start()
 
-        # 1. Input -> Percept
+        # 2. Per-sentence scratch fields (accumulated across the outer
+        # pos loop, reset across forward() calls).
+        self.symbol_states = []
+        self._nonrams_sym_feedbacks = []
+        if hasattr(self, 'symbolicSpace'):
+            self.symbolicSpace.reset_symbol_objective()
+
+        # 3. Embed once. Per-pos masking in forward() will update the
+        # cached subspace event in place.
         self.inputs = self.inputSpace.forward(inputData)
         input_state = self.inputs.materialize()
-        percept_quantize = not (
-            self.reversible and getattr(self.perceptualSpace, "invertible", False)
-        )
-        self.percepts = self.perceptualSpace.forward(
-            self.inputs, wordSpace=ws, quantize=percept_quantize)
-        percepts = self.percepts.materialize()  # [B, nPercepts, dim]
+        B = input_state.shape[0]
 
-        B = percepts.shape[0]
-
-        # Per-sentence lifecycle: reset the word-stream buffer so each
-        # forward pass starts with a clean derivation history. The
-        # buffer's capacity is fixed -- rule applications inside
-        # compose() push records onto it during this pass.
+        # 4. WordSpace per-sentence lifecycle (after embedding so batch
+        # sizing is known).
         if self.wordSpace is not None:
             self.wordSpace.ensure_batch(B)
             self.wordSpace.clear_sentence()
 
-        # AR sentence prediction: snapshot-level prediction from
-        # past-sentence history.  Runs once per forward(); the
-        # output is (a) cast into concept_dim and added as a
-        # priming bias to concept_input at t=0, and (b) kept on
-        # self for the predictive loss that runBatch computes
-        # against the actual snapshot assembled after forward().
-        self._predicted_snapshot = None
-        self._predicted_confidence = None
-        discourse_for_prime = (
-            self.wordSpace.discourse
-            if self.wordSpace is not None else None)
-        if discourse_for_prime is not None:
-            pred, conf = discourse_for_prime.predict()
-            self._predicted_snapshot = pred
-            self._predicted_confidence = conf
+        # 5. Seed flat-path symbolic feedback state.
+        self.symbolic_state = self.symbolicSpace.empty_state(batch=B).to(input_state.device)
 
-        # -- Pre-loop init --
-        self.symbol_states = []
-        self.symbolicSpace.reset_symbol_objective()
+        return input_state
 
+    # -- Forward / reverse ----------------------------------------------
+
+    def _run_conceptual_order(self, percepts, B, discourse_for_prime, ws, apply_prime):
+        """Run one pass of the inner conceptualOrder loop.
+
+        Reads and writes instance state (self.percepts, self.concepts,
+        self.symbols, self.symbolic_state, self._sym_feedbacks,
+        self._nonrams_sym_feedbacks, self.symbol_states). Returns the
+        final iteration's sym_vectors tensor, and (for butterfly /
+        useGrammar==all paths) the running ``x`` tensor.
+
+        Called from forward() -- once per pos in the outer AR loop, or
+        once total in the non-AR path.
+
+        Args:
+            percepts: [B, nPercepts, dim] current percept materialization.
+            B: batch size.
+            discourse_for_prime: discourse predictor or None.
+            ws: wordSpace reference.
+            apply_prime: whether to apply the discourse prime bias at t=0.
+                True on the first outer iteration only.
+        """
         if self.useButterflies:
-            # ButterflyStage merges internally; no external merge stack.
-            x = percepts                     # [B, N_percept, D_percept]
-            sym_feedback = None
-        elif self.useGrammar == "all":
-            # Progressive-bottleneck path: external pair-average merge.
             x = percepts
             sym_feedback = None
-            self._merge_diffs = []
-            self._sym_feedbacks = []
+        elif self.useGrammar == "all":
+            x = percepts
+            sym_feedback = None
         else:
-            # Flat: feedback is carried via the symbolic state ``ss``
-            # that threads between iterations. The reverse path reads
-            # _nonrams_sym_feedbacks to unwind the recurrent addition.
-            ss = self.symbolicSpace.empty_state(batch=B).to(percepts.device)
-            self._nonrams_sym_feedbacks = []
+            x = None
+            sym_feedback = None
 
         sym_vectors = None
-        self._unified_j_iterations = 0
-
-        # -- Unified Sigma-Pi loop --
-        # One ``for t in range(conceptualOrder)`` covers all three modes.
-        # Mode-specific logic:
-        #   * concept_input construction (merge step vs percept+ss feedback)
-        #   * target_count hint to ConceptualSpace.compose
-        #   * quantize flag passed to SymbolicSpace.forward
-        #   * feedback update at the end of each iteration
         for t in range(self.conceptualOrder):
             # 1. Input construction
             if self.useButterflies:
@@ -2827,17 +2953,12 @@ class MentalModel(BaseModel):
                 concept_input = x
             else:
                 ss_feedback = self._symbol_feedback_from_vectors(
-                    ss, self._symbol_shape[0], percepts.shape[-1])
+                    self.symbolic_state, self._symbol_shape[0], percepts.shape[-1])
                 self._nonrams_sym_feedbacks.append(ss_feedback)
                 concept_input = self._bound_concept_input(percepts + ss_feedback)
 
-            # 1b. Sentence priming bias: inject the AR-sentence
-            # prediction (cast into concept_dim and gated by
-            # attention-entropy confidence) at t=0.  Subsequent
-            # sigma-pi iterations read the already-primed concept
-            # state via ss_feedback, so priming only applies on the
-            # first iteration.
-            if t == 0 and discourse_for_prime is not None:
+            # 1b. Sentence priming bias at t=0 of the first outer iteration.
+            if t == 0 and apply_prime and discourse_for_prime is not None:
                 bias = discourse_for_prime.prime(
                     self._predicted_snapshot,
                     self._predicted_confidence,
@@ -2853,7 +2974,7 @@ class MentalModel(BaseModel):
                 self.percepts, wordSpace=ws, target_count=c_target)
             concept_vectors = self.concepts.materialize()
             if self.useButterflies or self.useGrammar == "all":
-                x = concept_vectors          # carry forward for next merge
+                x = concept_vectors
 
             # 3. Pi (symbolic projection)
             is_last_step = (t == self.conceptualOrder - 1)
@@ -2869,19 +2990,16 @@ class MentalModel(BaseModel):
                 sym_norms = sym_vectors.norm(dim=-1, keepdim=True)
                 sym_feedback = sym_norms.expand(-1, -1, D_t)
             elif not (self.useButterflies or self.useGrammar == "all"):
-                ss = sym_vectors
+                self.symbolic_state = sym_vectors
 
-            # 5. Cache symbol states for truth penalty.
             self.symbol_states.append(sym_vectors.clone())
             self._unified_j_iterations += 1
 
-        # thoughtFree / none modes enforce conceptualOrder==0. The loop
-        # ran zero times, so do a single pre-seed C->S pass (the spec's
-        # "implicit j=-1") so OutputSpace has concept/symbol state.
+        # thoughtFree / none modes (conceptualOrder==0): implicit j=-1.
         if (self.conceptualOrder == 0
                 and not self.useButterflies
                 and self.useGrammar != "all"):
-            self._nonrams_sym_feedbacks.append(ss)
+            self._nonrams_sym_feedbacks.append(self.symbolic_state)
             self.percepts.set_event(self._bound_concept_input(percepts))
             self.concepts = self.conceptualSpace[0].forward(
                 self.percepts, wordSpace=ws, target_count=self.nOutputSymbols)
@@ -2889,12 +3007,143 @@ class MentalModel(BaseModel):
                 self.concepts, wordSpace=ws, quantize=False, is_last=True)
             sym_vectors = self.symbols.materialize()
 
-        # -- Post-loop finalization (butterfly only) --
+        # Butterfly-path post-loop commit to subspace events.
         if self.useButterflies:
             self.conceptualSpace.subspace.set_event(x)
             self.concepts = self.conceptualSpace.subspace
             self.symbolicSpace.subspace.set_event(sym_vectors)
             self.symbols = self.symbolicSpace.subspace
+
+        return sym_vectors
+
+    def forward(self, inputData):
+        """Forward pass.
+
+        Non-AR (masked_prediction='NONE'): single pass through the inner
+        conceptualOrder loop. Returns (input_state, symbols, predictions,
+        None) where predictions is a single [B, outDim] tensor.
+
+        AR (masked_prediction in {ARLM, ARUS, ARIR}): outer pos loop slides
+        a persistent sliding-window buffer on InputSpace, running the
+        inner conceptualOrder loop once per pos and emitting a per-pos
+        prediction. The target at pos=t is ``embedded[:, t, :]`` (the
+        token that is about to slide in next; the model predicts what it
+        is about to see, given prior context). State
+        (percepts/concepts/symbols/symbolic_state) carries across the
+        outer loop within a single forward() call. The sliding buffer
+        persists across forward() calls within a stream, providing
+        cross-sentence context. Returns (input_state, symbols,
+        predictions_list, reconstruction_or_None).
+
+        See spec:
+        basicmodel/doc/specs/2026-04-20-streaming-ar-training-loop-design.md
+        """
+        ws = self.wordSpace
+
+        # 1. Reset + embed (Start() cascade).
+        input_state = self.Start(inputData)
+        embedded = self.inputs.materialize()   # [B, N_max, embSize]
+        B = embedded.shape[0]
+
+        # 2. Discourse prediction (once per forward, pre-loop).
+        self._predicted_snapshot = None
+        self._predicted_confidence = None
+        discourse_for_prime = (
+            self.wordSpace.discourse
+            if self.wordSpace is not None else None)
+        if discourse_for_prime is not None:
+            pred, conf = discourse_for_prime.predict()
+            self._predicted_snapshot = pred
+            self._predicted_confidence = conf
+
+        # 3. Initialize path-specific scratch.
+        self._unified_j_iterations = 0
+        self._ar_valid_pos = None
+        if self.useGrammar == "all":
+            self._merge_diffs = []
+            self._sym_feedbacks = []
+
+        # 4. Dispatch: AR vs non-AR. ARIR runtime inference injects a
+        # pre-built embedding via InputSpace._cached_embedding (consumed
+        # in Start() above) -- that path expects a single-pass forward,
+        # not the training-time outer pos loop. The state machine's
+        # tokens are staged into the muxed event directly; the training
+        # sliding buffer would double-slide them.
+        is_runtime_arir = (
+            self.inputSpace.data is not None
+            and getattr(self.inputSpace.data, '_runtime_mode', None) == 'ARIR')
+        is_ar_mode = (self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
+                      and not is_runtime_arir)
+
+        if not is_ar_mode:
+            # Non-AR path: single pass.
+            percept_quantize = not (
+                self.reversible and getattr(
+                    self.perceptualSpace, "invertible", False))
+            self.percepts = self.perceptualSpace.forward(
+                self.inputs, wordSpace=ws, quantize=percept_quantize)
+            percepts = self.percepts.materialize()
+            sym_vectors = self._run_conceptual_order(
+                percepts, B, discourse_for_prime, ws, apply_prime=True)
+        else:
+            # AR path: outer pos loop with sliding buffer.
+            # Determine N (how many new tokens to slide in this forward)
+            # and build a per-row valid-position mask so short rows do
+            # not train the model to predict their padded NULL tokens.
+            inp_items = self.inputSpace._last_sentences
+            if inp_items is not None:
+                counts = [min(len(s.split()), embedded.shape[1])
+                          for s in inp_items]
+                N = max(counts) if counts else 0
+                valid_pos = torch.zeros(
+                    B, N, dtype=torch.bool, device=embedded.device)
+                for b, c in enumerate(counts):
+                    valid_pos[b, :c] = True
+            else:
+                N = embedded.shape[1]
+                valid_pos = None
+            self._ar_valid_pos = valid_pos
+
+            predictions = []
+            percepts = None
+            sym_vectors = None
+            for pos in range(N):
+                # Set the InputSpace subspace event to the current buffer
+                # (pre-slide). The buffer carries cross-sentence context.
+                buffer = self.inputSpace._ar_buffer
+                if buffer is None:
+                    # Lazy init on first use in this stream.
+                    buffer = torch.zeros(
+                        B, int(self.inputSpace.outputShape[0]),
+                        embedded.shape[-1],
+                        device=embedded.device, dtype=embedded.dtype,
+                    )
+                    self.inputSpace._ar_buffer = buffer
+                self.inputs.set_event(buffer)
+
+                # Run percept -> conceptual -> symbol pipeline on the buffer.
+                percept_quantize = not (
+                    self.reversible and getattr(
+                        self.perceptualSpace, "invertible", False))
+                self.percepts = self.perceptualSpace.forward(
+                    self.inputs, wordSpace=ws, quantize=percept_quantize)
+                percepts = self.percepts.materialize()
+                sym_vectors = self._run_conceptual_order(
+                    percepts, B, discourse_for_prime, ws,
+                    apply_prime=(pos == 0))
+
+                # Emit per-pos prediction (target is embedded[:, pos, :]).
+                output_syms = sym_vectors[:, :self.nOutputSymbols, :].clone()
+                pred = self.Finish(output_syms)
+                # Finish() may emit [B, 1, D] when nOutput=1; squeeze that
+                # so the stacked predictions cleanly align with the per-pos
+                # target of shape [B, D].
+                if pred.dim() == 3 and pred.shape[1] == 1:
+                    pred = pred.squeeze(1)
+                predictions.append(pred)
+
+                # Slide the just-seen token into the buffer for next pos.
+                self.inputSpace.slide_and_append(embedded[:, pos, :])
 
         # Discourse snapshot -- stash the final (S, W) pair so runBatch
         # can compute a next-sentence prediction loss against it.
@@ -2971,15 +3220,32 @@ class MentalModel(BaseModel):
             result = self.wordSpace.reconstruct(final_state, self.inputSpace)
             self._predicted_head = result['heads']
 
-        # Output from first nOutputSymbols of symbol vectors
+        # Commit butterfly / useGrammar=all symbol state to the subspace
+        # so downstream reverse()/introspection reads it consistently.
         if self.useButterflies or self.useGrammar == "all":
             self.symbolicSpace.subspace.set_event(sym_vectors)
-        output_syms = sym_vectors[:, :self.nOutputSymbols, :].clone()
-        outputData = self.Finish(output_syms)
+
         symbols = sym_vectors.norm(dim=-1).unsqueeze(-1).expand(
             -1, -1, percepts.shape[-1])
 
-        return input_state, symbols, outputData
+        if not is_ar_mode:
+            # Non-AR: emit single output prediction as today.
+            output_syms = sym_vectors[:, :self.nOutputSymbols, :].clone()
+            outputData = self.Finish(output_syms)
+            return input_state, symbols, outputData, None
+
+        # AR modes: per-pos predictions already accumulated. Terminal
+        # reverse only for ARIR. reverse() with ``reconstruct='symbols'``
+        # ignores outputData (the canonical ARIR setting); for
+        # reconstruct='output'/'both' we pass the final prediction so the
+        # reverse chain has a valid output-side operand.
+        reconstruction = None
+        if self.masked_prediction == 'ARIR':
+            last_pred = predictions[-1] if predictions else None
+            recon_input, _ = self.reverse(symbols, last_pred)
+            reconstruction = recon_input
+
+        return input_state, symbols, predictions, reconstruction
 
     def reverse(self, symbols, outputData):
         ws = self.wordSpace
@@ -3077,7 +3343,7 @@ class MentalModel(BaseModel):
         optimizer.zero_grad()
 
         # Forward pass to get symbolSum
-        input_state, symbols, outputData = self.forward(inputTensor)
+        input_state, symbols, outputData, _ = self.forward(inputTensor)
 
         # Get the current symbolSum from the symbolic space
         symbolSum = self.symbolicSpace.subspace.event.clone()  # [B, nC, symbol_dim]
@@ -3086,7 +3352,7 @@ class MentalModel(BaseModel):
         inputPred, _ = self.reverse(symbols, outputData)
 
         # Re-encode through forward to get symbolSum_hat
-        _, _, _ = self.forward(inputPred)
+        _, _, _, _ = self.forward(inputPred)
         symbolSum_hat = self.symbolicSpace.subspace.event  # [B, nC, symbol_dim]
 
         # Reconstruction loss at symbolic level

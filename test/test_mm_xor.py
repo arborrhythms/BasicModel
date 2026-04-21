@@ -96,7 +96,7 @@ class TestMMXorConvergence(unittest.TestCase):
             inp, _ = batch
             with torch.no_grad():
                 result = m.forward(inp)
-        self.assertEqual(len(result), 3)
+        self.assertEqual(len(result), 4)
 
     def test_forward_reverse_reconstructs_input_state(self):
         """Reversible MM_xor should recover the encoded input state."""
@@ -109,7 +109,7 @@ class TestMMXorConvergence(unittest.TestCase):
             batch, _ = m.inputSpace.getBatch(0, batchSize=4)
             inp, _ = batch
             with torch.no_grad():
-                forward_input, symbols, output = m.forward(inp)
+                forward_input, symbols, output, _ = m.forward(inp)
                 input_data, _ = m.reverse(symbols, output)
         err = torch.nn.functional.mse_loss(
             input_data.squeeze(), forward_input.squeeze())
@@ -244,7 +244,7 @@ class TestMMXorConvergence(unittest.TestCase):
                     batch, _ = m.inputSpace.getBatch(0, batchSize=4)
                     inp, target = batch
                     optimizer.zero_grad()
-                    _, _, output = m.forward(inp)
+                    _, _, output, _ = m.forward(inp)
 
                     target = target.to(output.device)
                     while target.dim() < output.dim():
@@ -291,7 +291,7 @@ class TestMMXorConvergence(unittest.TestCase):
                     batch, _ = m.inputSpace.getBatch(0, batchSize=4)
                     inp, target = batch
                     optimizer.zero_grad()
-                    _, _, output = m.forward(inp)
+                    _, _, output, _ = m.forward(inp)
 
                     target = target.to(output.device)
                     while target.dim() < output.dim():
@@ -447,7 +447,7 @@ class TestMMXorConvergence(unittest.TestCase):
                     inp, target = batch
 
                     optimizer.zero_grad()
-                    _, _, output = m.forward(inp)
+                    _, _, output, _ = m.forward(inp)
 
                     target = target.to(output.device)
                     while target.dim() < output.dim():

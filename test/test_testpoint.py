@@ -299,7 +299,7 @@ inp_device = str(inp_tensor.device)
 with torch.no_grad():
     # getBatch() returns raw input for all modes; masking (if any) is applied
     # inside InputSpace.forward(), so we always call model.forward().
-    _, _, out = model.forward(inp_tensor)
+    _, _, out, _ = model.forward(inp_tensor)
     out_device = str(out.device)
 
 result = {{

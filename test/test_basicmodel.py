@@ -407,7 +407,7 @@ class TestSimpleModelCreation(unittest.TestCase):
         model = Models.BasicModel()
         model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
         x = torch.randn(2, 28*28, 1).tanh().to(Models.TheDevice.get())  # batch of 2, flattened MNIST, dim=1
-        _, end_state, out = model.forward(x)
+        _, end_state, out, _ = model.forward(x)
         self.assertEqual(out.shape[0], 2)  # batch size preserved
 
     def test_simple_model_ergodic(self):
@@ -420,7 +420,7 @@ class TestSimpleModelCreation(unittest.TestCase):
         model = Models.BasicModel()
         model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
         x = torch.randn(2, 28*28, 1).tanh().to(Models.TheDevice.get())
-        _, end_state, out = model.forward(x)
+        _, end_state, out, _ = model.forward(x)
         self.assertEqual(out.shape[0], 2)
 
 
@@ -782,7 +782,7 @@ class TestSimpleModel(unittest.TestCase):
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
-        _, end_state, out = model.forward(x)
+        _, end_state, out, _ = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
         self.assertEqual(end_state.shape[0], 2)
@@ -796,7 +796,7 @@ class TestSimpleModel(unittest.TestCase):
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
-        _, end_state, out = model.forward(x)
+        _, end_state, out, _ = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
 
@@ -809,7 +809,7 @@ class TestSimpleModel(unittest.TestCase):
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
-        _, end_state, out = model.forward(x)
+        _, end_state, out, _ = model.forward(x)
         data, start_state = model.reverse(end_state, out)
         self.assertEqual(data.shape[0], 2)
         self.assertEqual(data.shape[1], 16)
@@ -867,7 +867,7 @@ class TestModelEndToEnd(unittest.TestCase):
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
-        _, end_state, out = model.forward(x)
+        _, end_state, out, _ = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
         self.assertEqual(end_state.shape[0], 2)
@@ -881,7 +881,7 @@ class TestModelEndToEnd(unittest.TestCase):
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
-        _, end_state, out = model.forward(x)
+        _, end_state, out, _ = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
         self.assertEqual(end_state.shape[0], 2)
@@ -895,7 +895,7 @@ class TestModelEndToEnd(unittest.TestCase):
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
-        _, end_state, out = model.forward(x)
+        _, end_state, out, _ = model.forward(x)
         data, start_state = model.reverse(end_state, out)
         self.assertEqual(data.shape[0], 2)
         self.assertEqual(data.shape[1], 16)
@@ -911,7 +911,7 @@ class TestModelEndToEnd(unittest.TestCase):
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
         target = torch.randn(2, 4).to(Models.TheDevice.get())
-        _, end_state, out = model.forward(x)
+        _, end_state, out, _ = model.forward(x)
         loss_fn = Models.CertaintyWeightedCrossEntropy()
         loss = loss_fn(out.squeeze(), target)
         loss.backward()
@@ -1900,7 +1900,7 @@ class TestModelTypeVariants(unittest.TestCase):
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).tanh().to(Models.TheDevice.get())
-        _, end_state, out = model.forward(x)
+        _, end_state, out, _ = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
         data, start_state = model.reverse(end_state, out)
@@ -1922,7 +1922,7 @@ class TestModelTypeVariants(unittest.TestCase):
         model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
                      conceptualOrder=2)
         x = torch.randn(2, 8, 1).tanh().to(Models.TheDevice.get())
-        _, end_state, out = model.forward(x)
+        _, end_state, out, _ = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
 
@@ -1937,7 +1937,7 @@ class TestModelTypeVariants(unittest.TestCase):
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).tanh()
-        _, end_state, out = model.forward(x)
+        _, end_state, out, _ = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
         data, start_state = model.reverse(end_state, out)
@@ -1955,7 +1955,7 @@ class TestModelTypeVariants(unittest.TestCase):
         model = Models.BasicModel()
         model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 8, 1)
-        _, end_state, out = model.forward(x)
+        _, end_state, out, _ = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
 
@@ -1970,7 +1970,7 @@ class TestModelTypeVariants(unittest.TestCase):
         model = Models.BasicModel()
         model.create(nInput=16, nPercepts=16, nConcepts=8, nSymbols=8, nOutput=4)
         x = torch.randn(2, 16, 1).tanh()
-        _, end_state, out = model.forward(x)
+        _, end_state, out, _ = model.forward(x)
         self.assertEqual(out.shape[0], 2)
         self.assertEqual(out.shape[1], 4)
 
@@ -2047,7 +2047,7 @@ class TestReconstructionSymbols(unittest.TestCase):
         test_input, _ = m.inputSpace.getTestData()
         x = m.inputSpace.prepInput(test_input[:2])
         with torch.no_grad():
-            forwardInput, symbols, outputPred = m.forward(x)
+            forwardInput, symbols, outputPred, _ = m.forward(x)
         # Output should have batch dim = 2
         self.assertEqual(outputPred.shape[0], 2)
 
@@ -2058,7 +2058,7 @@ class TestReconstructionSymbols(unittest.TestCase):
         test_input, _ = m.inputSpace.getTestData()
         x = m.inputSpace.prepInput(test_input[:2])
         with torch.no_grad():
-            forwardInput, symbols, outputPred = m.forward(x)
+            forwardInput, symbols, outputPred, _ = m.forward(x)
         # recon_symbols should be [batch, nReconSymbols, dim]
         self.assertIsNotNone(m.recon_symbols)
         self.assertEqual(m.recon_symbols.shape[0], 2)   # batch
@@ -2071,7 +2071,7 @@ class TestReconstructionSymbols(unittest.TestCase):
         test_input, _ = m.inputSpace.getTestData()
         x = m.inputSpace.prepInput(test_input[:2])
         with torch.no_grad():
-            forwardInput, symbols, outputPred = m.forward(x)
+            forwardInput, symbols, outputPred, _ = m.forward(x)
             inputData, inputPred = m.reverse(symbols, outputPred)
         # Should not raise; inputData should have batch dimension
         self.assertEqual(inputData.shape[0], 2)
@@ -3839,7 +3839,7 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
         model = Models.BasicModel()
         model.create(nInput=28*28, nPercepts=28*28, nConcepts=20, nSymbols=20, nOutput=10)
         x = torch.randn(2, 28*28, 1).tanh().to(Models.TheDevice.get())
-        _, end_state, out = model.forward(x)
+        _, end_state, out, _ = model.forward(x)
         self.assertEqual(out.shape[0], 2)  # batch size preserved
 
     def test_subspace_activation_stored(self):

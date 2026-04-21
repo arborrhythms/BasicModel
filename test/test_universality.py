@@ -96,8 +96,8 @@ def _run_forward(model, sentences):
         model.eval()
         model.set_sigma(0)
         with torch.no_grad():
-            input_state, concepts, symbols = model.forward(x)
-    return input_state, concepts, symbols
+            input_state, symbols, _, _ = model.forward(x)
+    return input_state, symbols, symbols
 
 
 # Minimum confidence the model must assign to lift(C,C,C) for a
@@ -334,8 +334,12 @@ class TestLuminosityOfKindness(unittest.TestCase):
             svo, score = self._get_svo_and_luminosity(sent)
             if svo is None:
                 self.skipTest(f"SVO not confidently identified for: {sent!r}")
-            # Weaker claim: just check it's computable (not NaN)
-            self.assertFalse(torch.isnan(torch.tensor(score)).item(),
+            # Weaker claim: just check it's computable (not NaN).
+            # ``score`` comes from model._universality_score as a scalar
+            # tensor; pass it directly to torch.isnan instead of rewrapping
+            # (which triggers the "copy-construct from tensor" warning).
+            score_t = score if torch.is_tensor(score) else torch.tensor(float(score))
+            self.assertFalse(torch.isnan(score_t).item(),
                 f"Universality score is NaN for: {sent!r}")
 
     @pytest.mark.xfail(reason="untrained model: kind/unkind distinction not learned",

@@ -66,6 +66,17 @@ class Layer(nn.Module):
         for layer in self.layers:
             layer.sigma_to_ergodic()
 
+    def Start(self):
+        """Per-sentence state reset. Cascades to child layers.
+
+        Layers with per-call state (e.g. cached ButterflyStage diffs,
+        accumulating regularizer buffers) override this to clear that
+        state. The default walks self.layers.
+        """
+        for layer in self.layers:
+            if hasattr(layer, 'Start'):
+                layer.Start()
+
     def forward(self, x):
         """Identity pass-through (subclasses override)."""
         batch = x.shape[0]

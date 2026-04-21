@@ -63,7 +63,7 @@ with torch.no_grad():
     import types
     cs.forward = types.MethodType(hooked_forward, cs)
 
-    input_state, symbols, outputData = model.forward(test_tensor)
+    input_state, symbols, outputData, _ = model.forward(test_tensor)
 
     # Restore
     cs.forward = types.MethodType(orig_fwd, cs)

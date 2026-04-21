@@ -3,7 +3,7 @@
   <!-- MM_5M: MentalModel ~5M params with byte input and hierarchical
        progressive bottleneck. 8 levels from 1024x4 to 4x1024 (N*D=4096). -->
   <architecture>
-    <reconstruct>concepts</reconstruct>
+    <reconstruct>symbols</reconstruct>
     <conceptualOrder>8</conceptualOrder>
     <useButterflies>true</useButterflies>
     <l1Lambda>0.01</l1Lambda>
@@ -90,11 +90,13 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
+    <nInput>4</nInput>
+    <nInputDim>1024</nInputDim>
     <nVectors>1024</nVectors>
     <nDim>4</nDim>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
-    <nOutput>128</nOutput>
+    <nOutput>1024</nOutput>
 
     <passThrough>false</passThrough>
     <accumulateTruth>0</accumulateTruth>

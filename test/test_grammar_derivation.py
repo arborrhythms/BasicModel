@@ -489,7 +489,7 @@ class TestMentalModelWithGrammar(_GrammarTestBase):
             self.model.eval()
             self.model.set_sigma(0)
             with torch.no_grad():
-                input_state, symbols, output = self.model.forward(x)
+                input_state, symbols, output, _ = self.model.forward(x)
 
             self.assertEqual(symbols.ndim, 3)
             self.assertEqual(symbols.shape[0], 2)
@@ -566,7 +566,7 @@ class TestMentalModelWithGrammar(_GrammarTestBase):
             self.model.eval()
             self.model.set_sigma(0)
             with torch.no_grad():
-                input_state, symbols, output = self.model.forward(x)
+                input_state, symbols, output, _ = self.model.forward(x)
                 try:
                     inputData, inputLatent = self.model.reverse(
                         symbols, self.model.outputs.materialize())

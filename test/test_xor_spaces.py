@@ -199,8 +199,8 @@ class TestXORSpacesModel(unittest.TestCase):
         inp, _ = batch
         with torch.no_grad():
             out = self.model.forward(inp)
-        # forward() returns (symbols, recon, output)
-        self.assertEqual(len(out), 3)
+        # forward() returns (input_state, symbols, output, reconstruction)
+        self.assertEqual(len(out), 4)
 
     def test_output_shape(self):
         """Output tensor has shape [batch, nOutput, outputDim]."""
@@ -209,7 +209,7 @@ class TestXORSpacesModel(unittest.TestCase):
         batch, _ = self.model.inputSpace.getBatch(0, batchSize=1)
         inp, _ = batch
         with torch.no_grad():
-            _, _, output = self.model.forward(inp)
+            _, _, output, _ = self.model.forward(inp)
         self.assertEqual(output.shape[0], 1)   # batch
         self.assertEqual(output.shape[1], self.model.nOutput)
 
