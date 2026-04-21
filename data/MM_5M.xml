@@ -54,20 +54,20 @@
   </architecture>
 
   <InputSpace>
-    <nDim>1</nDim>
-    <nVectors>4096</nVectors>
-    <nOutput>4096</nOutput>
+    <nDim>6</nDim>
+    <nVectors>1024</nVectors>
+    <nOutput>1024</nOutput>
     <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
-    <lexer>byte</lexer>
+    <nWhen>0</nWhen>
+    <lexer>word</lexer>
     <codebook>false</codebook>
   </InputSpace>
 
   <PerceptualSpace>
-    <nInput>4096</nInput>
-    <nVectors>65535</nVectors>
-    <nDim>4</nDim>
-    <nWhere>0</nWhere>
+    <nInput>1024</nInput>
+    <nVectors>8192</nVectors>
+    <nDim>6</nDim>
+    <nWhere>2</nWhere>
     <nWhen>0</nWhen>
     <nOutput>1024</nOutput>
 
@@ -80,9 +80,9 @@
   <!-- ConceptualSpace: final level shape is 4x1024.
        Hierarchical mode computes per-level shapes dynamically via _level_shapes. -->
   <ConceptualSpace>
-    <nOutput>4</nOutput>
+    <nOutput>8</nOutput>
     <nDim>1024</nDim>
-    <nVectors>4</nVectors>
+    <nVectors>8</nVectors>
 
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
@@ -90,11 +90,11 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nInput>4</nInput>
-    <nInputDim>1024</nInputDim>
+    <nInput>1024</nInput>
+    <nInputDim>8</nInputDim>
     <nVectors>1024</nVectors>
-    <nDim>4</nDim>
-    <nWhere>0</nWhere>
+    <nDim>6</nDim>
+    <nWhere>2</nWhere>
     <nWhen>0</nWhen>
     <nOutput>1024</nOutput>
 

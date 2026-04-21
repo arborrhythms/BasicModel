@@ -44,6 +44,10 @@ class VectorQuantize(nn.Module):
         self.commitment_weight = commitment_weight
         self.use_cosine_sim = use_cosine_sim
         self.codebook = torch.randn(codebook_size, dim)
+        # Owner-space tag for error messages (set post-construction by the
+        # owning Space via ``_tag_vq_name``).  Left empty-string when the
+        # VQ was built outside a Space context (tests, standalone use).
+        self.name = ""
 
     @property
     def codebook(self):
@@ -62,12 +66,30 @@ class VectorQuantize(nn.Module):
         original_shape = x.shape
         flat = x.reshape(-1, original_shape[-1])
         codebook = self.codebook
-        if self.use_cosine_sim:
-            flat_cmp = _vq_F.normalize(flat, dim=-1)
-            codebook_cmp = _vq_F.normalize(codebook, dim=-1)
-            indices = (flat_cmp @ codebook_cmp.T).argmax(dim=-1)
-        else:
-            indices = torch.cdist(flat, codebook).argmin(dim=-1)
+        # The pairwise distance/similarity matrix has shape [flat.N, V] and
+        # must fit in a single allocation (MPS enforces a per-buffer cap,
+        # CUDA raises OOM).  Intercept the failure to name the offending
+        # Space/basis and the projected allocation size instead of
+        # bubbling up a bare "Invalid buffer size" from Metal.
+        N = flat.shape[0]
+        V = codebook.shape[0]
+        gib = (N * V * 4) / (1024 ** 3)  # float32 bytes -> GiB
+        try:
+            if self.use_cosine_sim:
+                flat_cmp = _vq_F.normalize(flat, dim=-1)
+                codebook_cmp = _vq_F.normalize(codebook, dim=-1)
+                indices = (flat_cmp @ codebook_cmp.T).argmax(dim=-1)
+            else:
+                indices = torch.cdist(flat, codebook).argmin(dim=-1)
+        except RuntimeError as e:
+            owner = self.name or "<unnamed VQ>"
+            raise RuntimeError(
+                f"VectorQuantize[{owner}]: distance matrix allocation "
+                f"failed. flat={tuple(flat.shape)}, codebook={tuple(codebook.shape)}, "
+                f"pairwise matrix = [{N}, {V}] float32 = {gib:.2f} GiB. "
+                f"Reduce {owner}.nVectors, reduce batchSize, or chunk "
+                f"the quantize call. Original error: {e}"
+            ) from e
         quantized_raw = codebook[indices].reshape(original_shape)
         commit_loss = self.commitment_weight * _vq_F.mse_loss(
             x, quantized_raw.detach()
@@ -3563,6 +3585,15 @@ class Space(nn.Module):
         )
         self.muxedSize = self.subspace.getEncodingSize(self.nDim)
 
+        # Tag each owned VQ with "SectionName.role" so VectorQuantize.forward's
+        # OOM message can name the offending codebook ("PerceptualSpace.what"
+        # rather than an anonymous buffer-size traceback).
+        for _role in ("object", "what", "where", "when", "activation"):
+            _basis = getattr(self.subspace, _role, None)
+            _vq = getattr(_basis, "vq", None) if _basis is not None else None
+            if _vq is not None:
+                _vq.name = f"{self.config_section}.{_role}"
+
         # wordSpace is still held as a non-Module pointer so the few
         # call sites that reach across to ``wordSpace.truth_layer``
         # (SymbolicSpace) keep working; composition dispatch is no
@@ -4652,6 +4683,33 @@ class PerceptualSpace(Space):
                     f"PerceptualSpace: non-codebook requires nVectors ({nV}) == nOutput ({nA})"
                 )
 
+        # Upstream/downstream muxed-width compatibility.  The reshape in
+        # forwardBegin ([B, N, D] -> [B, -1, nInputDim]) requires that
+        # upstream.nOutput * upstream.muxedWidth be a multiple of
+        # self.nInputDim.  In the common case this means upstream's
+        # muxed width (nDim+nWhere+nWhen) equals this space's.  Caught
+        # here so a byte/embedding-dim mismatch surfaces as a config
+        # error instead of a raw torch "shape invalid for input of
+        # size N" at runtime.
+        up = "InputSpace"
+        up_nDim = TheXMLConfig.space(up, "nDim")
+        up_nWhere = TheXMLConfig.space(up, "nWhere")
+        up_nWhen = TheXMLConfig.space(up, "nWhen")
+        up_nOutput = TheXMLConfig.space(up, "nOutput")
+        up_muxed = up_nDim + up_nWhere + up_nWhen
+        self_nInputDim = self.nInputDim
+        TheXMLConfig.require(
+            lambda cfg, _u=up_nOutput, _m=up_muxed, _d=self_nInputDim:
+                _d == -1 or (_u * _m) % _d == 0,
+            f"PerceptualSpace: InputSpace muxed vector width "
+            f"(nDim={up_nDim}+nWhere={up_nWhere}+nWhen={up_nWhen}={up_muxed}) "
+            f"times nOutput ({up_nOutput}) = {up_nOutput * up_muxed} must "
+            f"be a multiple of PerceptualSpace.nInputDim "
+            f"(nDim+nWhere+nWhen={self_nInputDim}). "
+            f"Fix: set InputSpace's nDim/nWhere/nWhen so its muxed width "
+            f"divides PerceptualSpace.nInputDim."
+        )
+
     def _build_what_basis(self):
         """Lexicon home: build the Embedding when running in text mode."""
         if self.model_type != "embedding":
@@ -4738,14 +4796,35 @@ class PerceptualSpace(Space):
             [tok for tok, _ in row] for row in meta.get('tokens', [])
         ]
         what_indices = meta['indices']
+        # Embedding returns [B, nInput=PerceptualSpace.inputShape[0]] but the
+        # subspace muxes to N=nObj=PerceptualSpace.outputShape[0].  Truncate so
+        # what/where/when share the same N inside set_forward_content.
+        if what_indices.shape[1] > nObj:
+            what_indices = what_indices[:, :nObj]
         if self.nWhere > 0:
             where_indices = torch.zeros(batch, nObj, dtype=torch.long, device=dev)
+            max_tokens_seen = 0
             for b, batch_tokens in enumerate(meta['tokens']):
-                for i, (_, start) in enumerate(batch_tokens):
-                    where_indices[b, i] = start
+                # Tokenizer may yield more tokens than nObj slots; truncate.
+                raw_len = len(batch_tokens)
+                if raw_len > max_tokens_seen:
+                    max_tokens_seen = raw_len
+                n_tok = min(raw_len, nObj)
+                for i in range(n_tok):
+                    where_indices[b, i] = batch_tokens[i][1]
                 final_offset = meta['final_offsets'][b]
-                for i in range(len(batch_tokens), nObj):
-                    where_indices[b, i] = final_offset + (i - len(batch_tokens))
+                for i in range(n_tok, nObj):
+                    where_indices[b, i] = final_offset + (i - n_tok)
+            if max_tokens_seen > nObj:
+                warnings.warn(
+                    f"PerceptualSpace._lex_and_embed: input produced "
+                    f"{max_tokens_seen} tokens but nOutput={nObj}; "
+                    f"truncating {max_tokens_seen - nObj} tokens. "
+                    f"Increase PerceptualSpace.nOutput (and ensure it "
+                    f"still matches nPercepts/volume requirements) or "
+                    f"pre-chunk the input so each doc fits in {nObj} tokens.",
+                    stacklevel=2,
+                )
         else:
             where_indices = None
         if self.nWhen > 0:

@@ -2658,16 +2658,10 @@ class MentalModel(BaseModel):
             state_dim = percept_dim + obj_percept
             symbol_width = symbol_dim + obj_symbol
             n_stages = min(self.conceptualOrder, int(math.log2(state_vectors)))
-            TheXMLConfig.require(
-                lambda cfg, _n=state_vectors: _n > 0 and (_n & (_n - 1)) == 0,
-                f"butterfly path requires nPercepts ({state_vectors}) "
-                f"to be a positive power of two"
-            )
-            TheXMLConfig.require(
-                lambda cfg, _r=str(TheXMLConfig.get('architecture.reconstruct')).lower(): _r == "symbols",
-                "butterfly reverse requires reconstruct=symbols so the full symbol state "
-                "remains available for exact inversion"
-            )
+            # Butterfly power-of-two / reconstruct=symbols / volume equality /
+            # state_dim divisibility requirements are registered in
+            # ModelFactory.validate_config (see Models.py:3669+) and fire there
+            # before model construction.
             self._butterfly_state_vectors = state_vectors
             self._butterfly_state_dim = state_dim
             self._butterfly_symbol_width = symbol_width
@@ -3669,27 +3663,36 @@ class ModelFactory:
             if n_percepts > 0 and n_symbols > 0 and state_dim > 0 and symbol_width > 0:
                 state_volume = n_percepts * state_dim
                 symbol_volume = n_symbols * symbol_width
-                if state_volume != symbol_volume:
-                    errors.append(
-                        "useButterflies=true requires latent/symbol volume equality: "
-                        f"nPercepts*state_dim ({state_volume}) must equal "
-                        f"nSymbols*symbol_width ({symbol_volume})."
-                    )
-                if state_dim % symbol_width != 0:
-                    errors.append(
-                        "useButterflies=true requires state_dim to be divisible by "
-                        f"symbol_width so n = D/S is integral (got D={state_dim}, S={symbol_width})."
-                    )
-                if n_percepts & (n_percepts - 1):
-                    errors.append(
-                        "useButterflies=true butterfly schedule requires nPercepts to be a "
-                        f"power of two (got nPercepts={n_percepts})."
-                    )
-                if str(arch.get("reconstruct", "NONE")).lower() != "symbols":
-                    errors.append(
-                        "useButterflies=true reverse requires reconstruct=symbols so the full "
-                        "symbol state remains available for exact inversion."
-                    )
+                TheXMLConfig.require(
+                    lambda cfg, _sv=state_volume, _yv=symbol_volume: _sv == _yv,
+                    f"useButterflies=true requires latent/symbol volume equality: "
+                    f"nPercepts*state_dim ({state_volume}) must equal "
+                    f"nSymbols*symbol_width ({symbol_volume}). Fix: adjust "
+                    f"PerceptualSpace.nOutput/nDim/nWhere/nWhen or "
+                    f"SymbolicSpace.nOutput/nDim/nWhere/nWhen so the two "
+                    f"volumes match."
+                )
+                TheXMLConfig.require(
+                    lambda cfg, _d=state_dim, _s=symbol_width: _s > 0 and _d % _s == 0,
+                    f"useButterflies=true requires state_dim to be divisible by "
+                    f"symbol_width so n = D/S is integral (got D={state_dim}, "
+                    f"S={symbol_width}). Fix: set PerceptualSpace muxed width "
+                    f"(nDim+nWhere+nWhen) to a multiple of SymbolicSpace muxed "
+                    f"width (nDim+nWhere+nWhen)."
+                )
+                TheXMLConfig.require(
+                    lambda cfg, _np=n_percepts: _np > 0 and (_np & (_np - 1)) == 0,
+                    f"useButterflies=true butterfly schedule requires nPercepts "
+                    f"to be a positive power of two (got nPercepts={n_percepts}). "
+                    f"Fix: set PerceptualSpace.nOutput to 2^k (e.g. 512, 1024, 2048)."
+                )
+                TheXMLConfig.require(
+                    lambda cfg, _r=str(arch.get("reconstruct", "NONE")).lower(): _r == "symbols",
+                    f"useButterflies=true reverse requires reconstruct=symbols "
+                    f"so the full symbol state remains available for exact inversion "
+                    f"(got reconstruct={arch.get('reconstruct', 'NONE')!r}). "
+                    f"Fix: set <reconstruct>symbols</reconstruct> in <architecture>."
+                )
 
         # SymbolicSpace passThrough requires shape consistency with ConceptualSpace
         sym_pt = gsp(cfg, "SymbolicSpace", "passThrough")
@@ -3742,6 +3745,15 @@ class ModelFactory:
         if errors:
             raise ValueError(
                 "XML config inconsistencies:\n  - " + "\n  - ".join(errors))
+
+        # Fire any requirements registered above (butterfly volume/divisibility/
+        # power-of-two/reconstruct, etc.) at validate_config time, so they
+        # surface as config errors *before* model construction, alongside the
+        # errors.append path.  Any remaining requirements registered later
+        # (inside Space._register_requirements during __init__) will fire
+        # via the second TheXMLConfig.validate() call at the end of
+        # MentalModel.__init__.
+        TheXMLConfig.validate()
 
     @staticmethod
     def resolve_xml(path):
