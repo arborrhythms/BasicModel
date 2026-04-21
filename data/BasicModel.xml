@@ -24,7 +24,7 @@
       <numTrials>1</numTrials>
       <numEpochs>2</numEpochs>
       <batchSize>128</batchSize>
-      <numWorkers>1</numWorkers>
+      <numWorkers>2</numWorkers>
       <learningRate>0.001</learningRate>
       <reverseScale>0.1</reverseScale>
       <maskedPrediction>ARLM</maskedPrediction>

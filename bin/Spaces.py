@@ -442,6 +442,60 @@ class WhatEncoding(Encoding):
         input_size = self.inputShape[1]
         assert list(y.shape) == [batch, self.inputShape[0], input_size]
         return y
+
+    # -- Text-token layout on the What basis ------------------------------
+    #
+    # When an InputSpace runs in embedding (text) mode, the lexer's output
+    # is packed into the What basis as null-terminated UTF-8 bytes. The
+    # buffer has shape [batch, nObj, nWhat]: within each slot, up to
+    # ``nWhat - 1`` bytes hold the token and the final byte is reserved
+    # for the 0x00 terminator. These two helpers are the single writer /
+    # reader pair for that layout -- InputSpace.forward uses encode_tokens
+    # to write the buffer, PerceptualSpace._embed uses
+    # decode_tokens to read it back.
+    def encode_tokens(self, tokens_per_batch, batch, nObj, nWhat, device):
+        """Pack token strings into a [B, N, nWhat] null-terminated byte buffer.
+
+        ``tokens_per_batch[b][i]`` is the UTF-8 string for slot i of batch
+        row b (empty string = empty slot). Tokens longer than
+        ``nWhat - 1`` bytes are truncated; a trailing 0 byte terminates
+        each slot.
+        """
+        buf = torch.zeros(batch, nObj, nWhat, dtype=torch.long, device=device)
+        for b, row in enumerate(tokens_per_batch):
+            for i in range(min(len(row), nObj)):
+                text = row[i]
+                if not text:
+                    continue
+                raw = text.encode('utf-8')[: nWhat - 1]
+                for j, byte in enumerate(raw):
+                    buf[b, i, j] = byte
+        return buf
+
+    def decode_tokens(self, buf):
+        """Unpack a [B, N, nWhat] null-terminated byte buffer into strings.
+
+        Returns a list[list[str]] of shape [B][N]. Slots whose first byte
+        is 0 decode to ``""``. Invalid UTF-8 sequences are replaced.
+        """
+        batch = buf.shape[0]
+        n_obj = buf.shape[1]
+        out = []
+        for b in range(batch):
+            row = []
+            for n in range(n_obj):
+                bytes_row = buf[b, n].tolist()
+                try:
+                    end = bytes_row.index(0)
+                except ValueError:
+                    end = len(bytes_row)
+                if end == 0:
+                    row.append("")
+                else:
+                    row.append(
+                        bytes(bytes_row[:end]).decode('utf-8', errors='replace'))
+            out.append(row)
+        return out
 class EventEncoding(Encoding):
     """Handle the content-layout transform for a space's Event factor.
 
@@ -3957,7 +4011,7 @@ class InputSpace(Space):
         self.doc_spans = []
         self.doc_sources = []
         # Text mode: Reference to PerceptualSpace so InputSpace.forward()
-        # can invoke _lex_and_embed to produce the muxed target embedding
+        # can invoke _embed to produce the muxed target embedding
         # (InputSpace no longer owns the codebook).
         self._peer_perceptual = None
 
@@ -4053,6 +4107,67 @@ class InputSpace(Space):
         sentence tuple directly without any batch-cursor bookkeeping.
         """
         return self.prepInput(list(sentences))
+
+    def _lex_batch(self, input):
+        """Tokenize a raw byte tensor into null-terminated UTF-8 byte slots.
+
+        Pure lexer -- no codebook access, no OOV discovery, no index
+        resolution. Those live on PerceptualSpace.
+
+        Returns: (what_buf, where_idx, when_idx)
+          what_buf: [B, nObj, nWhat] long tensor of UTF-8 bytes, null-terminated.
+            Each slot holds one token's bytes followed by a null; tokens longer
+            than nWhat-1 bytes are truncated. Empty/padding slots are all-zero.
+          where_idx: [B, nObj] long tensor of byte offsets into the source.
+          when_idx:  [B, nObj] long tensor of sequential positions.
+
+        Requires self._peer_perceptual to be wired (BasicModel/MentalModel do
+        this) because the tokenizer (_token_stream) currently lives on the
+        peer's vocabulary.
+        """
+        assert self._peer_perceptual is not None, \
+            "InputSpace._lex_batch requires _peer_perceptual (lexer owner)"
+        vocab = self._peer_perceptual.vocabulary
+        dev = TheDevice.get()
+
+        if input.dim() == 3:
+            input = input.squeeze(1)
+        if input.dim() == 1:
+            input = input.unsqueeze(0)
+        batch = input.shape[0]
+        nObj = self.outputShape[0]
+        nWhat = self.subspace.nWhat
+
+        tokens_per_batch = []
+        where_idx = torch.zeros(batch, nObj, dtype=torch.long, device=dev)
+        when_idx = torch.arange(nObj, device=dev).unsqueeze(0).expand(batch, -1).contiguous()
+
+        for b in range(batch):
+            stream = vocab._token_stream(input[b])
+            # Reserve one slot for an explicit empty-word EOS sentinel so
+            # every sentence terminates with the null-encoding -- the AR
+            # generative loop reads this as its stop signal.
+            n_tokens = min(len(stream), nObj - 1)
+            row = []
+            for i in range(n_tokens):
+                token_text, start = stream[i]
+                row.append(token_text)
+                where_idx[b, i] = start
+            row.append("")  # empty-word EOS sentinel -> null_idx
+            tokens_per_batch.append(row)
+            if n_tokens > 0:
+                last_text, last_start = stream[n_tokens - 1]
+                final_offset = last_start + len(last_text.encode('utf-8'))
+            else:
+                final_offset = 0
+            for i in range(n_tokens, nObj):
+                where_idx[b, i] = final_offset + (i - n_tokens)
+
+        what_buf = self.subspace.whatEncoding.encode_tokens(
+            tokens_per_batch, batch, nObj, nWhat, dev)
+
+        return what_buf, where_idx, when_idx
+
     def shuffle(self):
         self.data.shuffle()
     # The world presenting itself
@@ -4072,15 +4187,16 @@ class InputSpace(Space):
         self.subspace.whereEncoding.p = 0
 
         if self.model_type == "embedding":
-            # Text mode: the lexicon lives on PerceptualSpace.  Stash the
-            # raw buffer for PerceptualSpace._lex_and_embed (which runs
-            # the embedding forward on the single downstream path) and
-            # return.  Running the embedding here too would create a
-            # second graph through the same Parameter, whose saved
-            # tensors leak across training iterations because nothing
-            # backward()s through this branch and the references aren't
-            # GC'd until the next forward overwrites them.
-            self.subspace._raw_input = input
+            # Text mode: InputSpace is a pure lexer. Pack tokens as
+            # null-terminated UTF-8 bytes into subspace.what.W,
+            # byte offsets into subspace.where.W, sequential positions
+            # into subspace.when.W. PerceptualSpace decodes the buffer
+            # and owns all codebook work (OOV, insert, index resolution,
+            # embedding lookup, chunking).
+            what_buf, where_idx, when_idx = self._lex_batch(input)
+            self.subspace.what.setW(what_buf)
+            self.subspace.where.setW(where_idx)
+            self.subspace.when.setW(when_idx)
             self._forward_input = None
             return self.subspace
 
@@ -4500,64 +4616,109 @@ class PerceptualSpace(Space):
             f"chunking mode must be raw|bpe|lexicon, got {mode!r}"
         )
 
-    def _lex_and_embed(self, upstream_vspace):
-        """Run vocabulary.forward on the upstream raw input, populate this
-        space's subspace with what/where/when indices, and materialize.
-        """
-        raw_input = upstream_vspace._raw_input
-        batch = raw_input.shape[0]
-        nObj = self.outputShape[0]
-        vocab = self.subspace.what
-        dev = TheDevice.get()
+    def _embed(self, upstream_vspace):
+        """Decode the upstream null-terminated UTF-8 byte buffer into tokens,
+        do codebook work (OOV discovery + insert + index resolution), populate
+        this subspace with what/where/when indices, and materialize.
 
-        self.subspace.whereEncoding.p = 0
-        what, meta = vocab.forward(raw_input, return_meta=True)
-        self._forward_input = meta
-        self._last_tokens = [
-            [tok for tok, _ in row] for row in meta.get('tokens', [])
-        ]
-        what_indices = meta['indices']
-        # Embedding returns [B, nInput=PerceptualSpace.inputShape[0]] but the
-        # subspace muxes to N=nObj=PerceptualSpace.outputShape[0].  Truncate so
-        # what/where/when share the same N inside set_forward_content.
-        if what_indices.shape[1] > nObj:
-            what_indices = what_indices[:, :nObj]
+        InputSpace.forward has already populated upstream_vspace with:
+          - what.W:  [B, N, nWhat] null-terminated UTF-8 byte buffer
+          - where.W: [B, N] byte offsets (long)
+          - when.W:  [B, N] sequential positions (long)
+
+        This method owns all codebook operations. InputSpace never touches
+        the codebook.
+        """
+        what_buf = upstream_vspace.what.getW()
+        if what_buf is None:
+            raise RuntimeError(
+                "PerceptualSpace._embed: upstream subspace.what is empty. "
+                "InputSpace.forward must lex into subspace.what.W before "
+                "PerceptualSpace.forward runs.")
+
+        dev = TheDevice.get()
+        batch = what_buf.shape[0]
+        n_upstream = what_buf.shape[1]
+        nObj = self.outputShape[0]
+        codebook = self.subspace.what  # Embedding (the lexicon lives here)
+
+        # Decode byte buffer -> token text per slot, via the upstream
+        # subspace's WhatEncoding (single source of truth for the
+        # null-terminated layout).
+        batch_tokens = upstream_vspace.whatEncoding.decode_tokens(what_buf)
+        max_tokens_seen = 0
+        for row in batch_tokens:
+            # Largest index of a non-empty slot, plus one (0 if all empty).
+            for n in range(len(row) - 1, -1, -1):
+                if row[n]:
+                    row_len = n + 1
+                    break
+            else:
+                row_len = 0
+            if row_len > max_tokens_seen:
+                max_tokens_seen = row_len
+        if max_tokens_seen > nObj:
+            warnings.warn(
+                f"PerceptualSpace._embed: input produced "
+                f"{max_tokens_seen} tokens but nOutput={nObj}; "
+                f"truncating {max_tokens_seen - nObj} tokens.",
+                stacklevel=2,
+            )
+
+        # OOV discovery + insert on our codebook
+        oov_seen = set()
+        oov_words = []
+        for row in batch_tokens:
+            for text in row[:nObj]:
+                if (text and text not in codebook.pretrain.key_to_index
+                        and text not in oov_seen):
+                    oov_words.append(text)
+                    oov_seen.add(text)
+        if oov_words and not getattr(codebook, 'byte_mode', False):
+            for word in oov_words:
+                codebook.insert(word)
+            if codebook.optimize_embedding:
+                model = getattr(codebook, '_model', None)
+                if model is not None:
+                    model.rebuild_optimizer()
+
+        # Index resolution: token text -> codebook index per slot.
+        null_idx = codebook.wv.key_to_index.get("\x00", 0)
+        what_indices = torch.full(
+            (batch, nObj), null_idx, dtype=torch.long, device=dev)
+        for b, row in enumerate(batch_tokens):
+            for n in range(min(len(row), nObj)):
+                text = row[n]
+                if text:
+                    what_indices[b, n] = codebook._token_to_index(text)
+
+        # where / when come straight from the upstream buffer.
+        where_raw = upstream_vspace.where.getW()
+        when_raw = upstream_vspace.when.getW()
         if self.nWhere > 0:
-            where_indices = torch.zeros(batch, nObj, dtype=torch.long, device=dev)
-            max_tokens_seen = 0
-            for b, batch_tokens in enumerate(meta['tokens']):
-                # Tokenizer may yield more tokens than nObj slots; truncate.
-                raw_len = len(batch_tokens)
-                if raw_len > max_tokens_seen:
-                    max_tokens_seen = raw_len
-                n_tok = min(raw_len, nObj)
-                for i in range(n_tok):
-                    where_indices[b, i] = batch_tokens[i][1]
-                final_offset = meta['final_offsets'][b]
-                for i in range(n_tok, nObj):
-                    where_indices[b, i] = final_offset + (i - n_tok)
-            if max_tokens_seen > nObj:
-                warnings.warn(
-                    f"PerceptualSpace._lex_and_embed: input produced "
-                    f"{max_tokens_seen} tokens but nOutput={nObj}; "
-                    f"truncating {max_tokens_seen - nObj} tokens. "
-                    f"Increase PerceptualSpace.nOutput (and ensure it "
-                    f"still matches nPercepts/volume requirements) or "
-                    f"pre-chunk the input so each doc fits in {nObj} tokens.",
-                    stacklevel=2,
-                )
+            if where_raw is not None:
+                where_indices = where_raw[:, :nObj].long()
+            else:
+                where_indices = torch.zeros(batch, nObj, dtype=torch.long, device=dev)
         else:
             where_indices = None
         if self.nWhen > 0:
-            when_indices = torch.arange(nObj, device=dev).unsqueeze(0).expand(batch, -1)
+            if when_raw is not None:
+                when_indices = when_raw[:, :nObj].long()
+            else:
+                when_indices = torch.arange(
+                    nObj, device=dev).unsqueeze(0).expand(batch, -1)
         else:
             when_indices = None
+
+        self.subspace.whereEncoding.p = 0
         self.subspace.set_forward_content(what_indices, where_indices, when_indices)
         self.subspace.normalize("input", target="what", normalize=True)
-        # Pre-attention embedded/muxed tensor. InputSpace.subspace no longer
-        # materializes this in text mode (it stages only _raw_input), so
-        # _run_forward_pipeline reads it from here to assemble forwardInput.
+        # Pre-attention embedded/muxed tensor. Stashed here because
+        # InputSpace no longer materializes in text mode.
         self._embedded_input = self.subspace.materialize()
+        self._last_tokens = batch_tokens
+        self._forward_input = {'tokens': batch_tokens, 'indices': what_indices}
         return self.subspace
 
     def forward(self, vspace, wordSpace=None, quantize=True):
@@ -4565,16 +4726,16 @@ class PerceptualSpace(Space):
         if isinstance(self.subspace.what, Embedding):
             mode = self.chunking_mode
             if mode == "lexicon":
-                vspace = self._lex_and_embed(vspace)
-            elif mode == "raw":
+                vspace = self._embed(vspace)
+            elif mode == "cached":
                 raise NotImplementedError(
-                    "PerceptualSpace chunking='raw' not yet wired; use 'lexicon'.")
+                    "PerceptualSpace chunking='cached' not yet wired; use 'lexicon'.")
             elif mode == "bpe":
                 raise NotImplementedError(
                     "PerceptualSpace chunking='bpe' not yet wired; use 'lexicon'.")
             else:
                 raise ValueError(
-                    f"PerceptualSpace chunking must be raw|bpe|lexicon, got {mode!r}")
+                    f"PerceptualSpace chunking must be lexicon|cached|bpe, got {mode!r}")
         if self.passThrough:
             return vspace
         # Pass byte values from input for boundary detection in compose()
@@ -4619,7 +4780,7 @@ class PerceptualSpace(Space):
         object_basis = self.subspace.get_vectors()
         # Text mode: the subspace already holds per-position muxed vectors
         # ([B, nVec, nWhat+nWhere+nWhen]). Skip reverseBegin's flatten-undo
-        # reshape (which assumes a forwardEnd flatten that _lex_and_embed
+        # reshape (which assumes a forwardEnd flatten that _embed
         # does not perform) and work with the raw per-position tensor.
         y = vspace.materialize()
         self.subspace.batch = y.shape[0]

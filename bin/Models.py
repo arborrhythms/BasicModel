@@ -34,7 +34,7 @@ TheDevice = util.TheDevice
 TheMessage = util.TheMessage
 
 from visualize import Report, TheReport
-from util import ProjectPaths, XMLConfig, compile, TheXMLConfig, init_config, init_compile_backend
+from util import ProjectPaths, XMLConfig, compile, TheXMLConfig, init_config, init_compile_backend, amp_context, init_model_amp
 import util as _util
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
@@ -1330,7 +1330,7 @@ class BasicModel(BaseModel):
         if isinstance(self.perceptualSpace.vocabulary, Embedding):
             # object.__setattr__ bypasses nn.Module submodule registration so
             # the PerceptualSpace reference is not double-counted in state_dict.
-            # Text-mode InputSpace.forward calls _lex_and_embed (lexicon lives there).
+            # Text-mode InputSpace.forward calls _embed (lexicon lives there).
             object.__setattr__(self.inputSpace, '_peer_perceptual',
                                self.perceptualSpace)
         # Convert masked-word string labels to embedding vectors now that
@@ -1424,10 +1424,10 @@ class BasicModel(BaseModel):
         self.symbols  = self.symbolicSpace.forward(self.concepts, wordSpace=ws)
         input = inputs.materialize()
         if input is None:
-            # Text mode: InputSpace stages _raw_input only; the post-embed,
-            # pre-attention muxed tensor is cached by PerceptualSpace in
-            # _lex_and_embed. Callers (plotting) expect that pre-attention
-            # representation, not post-VQ percepts.
+            # Text mode: the post-embed, pre-attention muxed tensor is
+            # cached by PerceptualSpace in _embed. Callers
+            # (plotting) expect that pre-attention representation, not
+            # post-VQ percepts.
             input = self.perceptualSpace._embedded_input
         concepts = self.concepts.materialize()
         symbols = self.symbols.materialize()
@@ -1447,9 +1447,9 @@ class BasicModel(BaseModel):
             self.wordSpace.clear_sentence()
         embedded = self.inputs.materialize()
         if embedded is None and self.inputSpace.model_type == "embedding":
-            # Text mode: lexicon lives on PerceptualSpace.  Run _lex_and_embed
+            # Text mode: lexicon lives on PerceptualSpace.  Run _embed
             # to produce the embedded sequence the AR loop slides over.
-            self.perceptualSpace._lex_and_embed(self.inputs)
+            self.perceptualSpace._embed(self.inputs)
             embedded = self.perceptualSpace._embedded_input
         return embedded
 
@@ -1696,8 +1696,11 @@ class BasicModel(BaseModel):
             with torch.no_grad(), TheData.runtime_batch([text]):
                 batchNum=0
                 while True:
+                    inputTensor = self.inputSpace.prepInput(
+                        list(TheData.train_input))
                     result, batchNum = self.runBatch(
                         train=False, batchNum=batchNum, batchSize=1, split="runtime",
+                        batch_override=(inputTensor, None),
                     )
                     if result is None:
                         break
@@ -1997,8 +2000,11 @@ class BasicModel(BaseModel):
             batch = result
         else:
             raise RuntimeError(
-                "runBatch: no batch_override and not in ARIR runtime mode. "
-                "Callers must pass batch_override or set _runtime_mode='ARIR'."
+                "runBatch: no batch_override supplied. Callers must pass "
+                "batch_override=(inputTensor, outputTensor) -- ARLM/ARUS "
+                "infer() prep via InputSpace.prepInput, training path "
+                "via the DataLoader in runEpoch. ARIR is the only runtime "
+                "mode with a dedicated state machine (arir_step)."
             )
 
         inputTensor, outputTensor = batch
@@ -2018,234 +2024,238 @@ class BasicModel(BaseModel):
         TheError.reset()
         TheError.attach(self.loss)
 
-        # Forward pass. Returns a 4-tuple. For AR modes (ARLM/ARUS/ARIR),
-        # ``predictions`` is a list of per-pos tensors and ``reconstruction``
-        # is the ARIR terminal reverse output (None for ARLM/ARUS). For
-        # non-AR modes, ``predictions`` is a single [B, outDim] tensor and
-        # ``reconstruction`` is None.
-        forwardInput, symbols, predictions, reconstruction = self.forward(inputTensor)
-        is_ar_mode = isinstance(predictions, list)
-        # Stack predictions list to a single tensor for downstream use.
-        outputDataPred = (torch.stack(predictions, dim=1)
-                          if is_ar_mode else predictions)
+        # AMP: DEBUG DISABLED
+        amp_scaler = None
+        from contextlib import nullcontext as _nc
+        with _nc():
+            # Forward pass. Returns a 4-tuple. For AR modes (ARLM/ARUS/ARIR),
+            # ``predictions`` is a list of per-pos tensors and ``reconstruction``
+            # is the ARIR terminal reverse output (None for ARLM/ARUS). For
+            # non-AR modes, ``predictions`` is a single [B, outDim] tensor and
+            # ``reconstruction`` is None.
+            forwardInput, symbols, predictions, reconstruction = self.forward(inputTensor)
+            is_ar_mode = isinstance(predictions, list)
+            # Stack predictions list to a single tensor for downstream use.
+            outputDataPred = (torch.stack(predictions, dim=1)
+                              if is_ar_mode else predictions)
 
-        if arir_mode:
-            # ARIR inference: no output loss, but the forward pass (AR path)
-            # already produced a terminal reconstruction; pass it through.
-            inputPred = reconstruction
-            if inputPred is None and self.reversible:
-                # Fallback for non-AR ARIR runtime mode.
-                _, inputPred = self.reverse(symbols, outputDataPred)
-            return self.BatchResult(
-                outputPred=outputDataPred, symbols=symbols,
-                lossOut=None, lossIn=None,
-                inputPred=inputPred, forwardInput=forwardInput,
-            ), batchNum
+            if arir_mode:
+                # ARIR inference: no output loss, but the forward pass (AR path)
+                # already produced a terminal reconstruction; pass it through.
+                inputPred = reconstruction
+                if inputPred is None and self.reversible:
+                    # Fallback for non-AR ARIR runtime mode.
+                    _, inputPred = self.reverse(symbols, outputDataPred)
+                return self.BatchResult(
+                    outputPred=outputDataPred, symbols=symbols,
+                    lossOut=None, lossIn=None,
+                    inputPred=inputPred, forwardInput=forwardInput,
+                ), batchNum
 
-        if inference_only:
-            # Inference path: forward only, no loss, no reverse.
-            return self.BatchResult(
-                outputPred=outputDataPred, symbols=symbols,
-                lossOut=None, lossIn=None,
-                inputPred=None, forwardInput=forwardInput,
-            ), batchNum
+            if inference_only:
+                # Inference path: forward only, no loss, no reverse.
+                return self.BatchResult(
+                    outputPred=outputDataPred, symbols=symbols,
+                    lossOut=None, lossIn=None,
+                    inputPred=None, forwardInput=forwardInput,
+                ), batchNum
 
-        if outputTensor is None:
-            raise RuntimeError(
-                f"runBatch: missing output targets for split='{split}'. "
-                "For inference use split='runtime', or stage runtime_batch(..., outputs=...) "
-                "if targets are required."
+            if outputTensor is None:
+                raise RuntimeError(
+                    f"runBatch: missing output targets for split='{split}'. "
+                    "For inference use split='runtime', or stage runtime_batch(..., outputs=...) "
+                    "if targets are required."
+                )
+
+            if is_ar_mode:
+                # AR modes: per-pos predictions. Target at pos=t is the
+                # ``what`` content of the token the model predicts given
+                # prior context, taken from the embedded input.
+                #
+                # OutputSpace and InputSpace can have different muxed widths:
+                # InputSpace carries [what + where + when] (e.g. 100+2+2=104),
+                # OutputSpace typically carries only [what] (100). We compare
+                # only the leading ``pred`` dims, treating the where/when of
+                # the target as side info that is not predicted.
+                pred_stack = outputDataPred          # [B, N, predDim]
+                N = pred_stack.shape[1]
+                predDim = pred_stack.shape[-1]
+                target_stack = forwardInput[:, :N, :predDim]  # [B, N, predDim]
+                # Per-row valid-position mask from forward(): rows shorter
+                # than N have padded positions whose targets are NULL/zero
+                # embeddings -- training on those teaches the model to
+                # predict padding. Mask them out before the loss.
+                valid_pos = self._ar_valid_pos
+                if valid_pos is not None:
+                    mask = valid_pos[:, :N].unsqueeze(-1).expand_as(pred_stack)
+                    pred_stack = pred_stack[mask].view(-1, predDim)
+                    target_stack = target_stack[mask].view(-1, predDim)
+                if self.masked_prediction == 'ARUS':
+                    lossOut = torch.tensor(0.0, device=TheDevice.get())
+                    output_weight = 0.0
+                elif pred_stack.numel() == 0:
+                    # All rows were padding (zero-length batch). No signal.
+                    lossOut = torch.tensor(0.0, device=TheDevice.get())
+                    output_weight = 0.0
+                else:
+                    lossOut = self.loss.output(pred_stack, target_stack)
+                    # ARIR blends output with reconstruction via reverse_scale;
+                    # ARLM has no reconstruction term so the output gets full weight.
+                    output_weight = ((1 - self.loss.reverse_scale)
+                                     if self.masked_prediction == 'ARIR' else 1.0)
+            else:
+                # Non-AR: today's behavior.
+                outputPred = outputDataPred.squeeze()
+                output     = outputTensor.squeeze()
+                lossOut    = self.loss.output(outputPred, output)
+                self.accumulate_output_symbol_residual(outputTensor, outputDataPred)
+                output_weight = 1.0 - self.loss.reverse_scale
+
+            TheError.add(
+                "output", lossOut,
+                weight=output_weight,
+                space="OutputSpace", category="prediction",
             )
 
-        if is_ar_mode:
-            # AR modes: per-pos predictions. Target at pos=t is the
-            # ``what`` content of the token the model predicts given
-            # prior context, taken from the embedded input.
-            #
-            # OutputSpace and InputSpace can have different muxed widths:
-            # InputSpace carries [what + where + when] (e.g. 100+2+2=104),
-            # OutputSpace typically carries only [what] (100). We compare
-            # only the leading ``pred`` dims, treating the where/when of
-            # the target as side info that is not predicted.
-            pred_stack = outputDataPred          # [B, N, predDim]
-            N = pred_stack.shape[1]
-            predDim = pred_stack.shape[-1]
-            target_stack = forwardInput[:, :N, :predDim]  # [B, N, predDim]
-            # Per-row valid-position mask from forward(): rows shorter
-            # than N have padded positions whose targets are NULL/zero
-            # embeddings -- training on those teaches the model to
-            # predict padding. Mask them out before the loss.
-            valid_pos = self._ar_valid_pos
-            if valid_pos is not None:
-                mask = valid_pos[:, :N].unsqueeze(-1).expand_as(pred_stack)
-                pred_stack = pred_stack[mask].view(-1, predDim)
-                target_stack = target_stack[mask].view(-1, predDim)
-            if self.masked_prediction == 'ARUS':
-                lossOut = torch.tensor(0.0, device=TheDevice.get())
-                output_weight = 0.0
-            elif pred_stack.numel() == 0:
-                # All rows were padding (zero-length batch). No signal.
-                lossOut = torch.tensor(0.0, device=TheDevice.get())
-                output_weight = 0.0
-            else:
-                lossOut = self.loss.output(pred_stack, target_stack)
-                # ARIR blends output with reconstruction via reverse_scale;
-                # ARLM has no reconstruction term so the output gets full weight.
-                output_weight = ((1 - self.loss.reverse_scale)
-                                 if self.masked_prediction == 'ARIR' else 1.0)
-        else:
-            # Non-AR: today's behavior.
-            outputPred = outputDataPred.squeeze()
-            output     = outputTensor.squeeze()
-            lossOut    = self.loss.output(outputPred, output)
-            self.accumulate_output_symbol_residual(outputTensor, outputDataPred)
-            output_weight = 1.0 - self.loss.reverse_scale
-
-        TheError.add(
-            "output", lossOut,
-            weight=output_weight,
-            space="OutputSpace", category="prediction",
-        )
-
-        # Reconstruction term.
-        if is_ar_mode:
-            # AR modes: reconstruction is non-None only under ARIR.
-            if reconstruction is not None:
-                pred_sq = reconstruction
-                target_sq = forwardInput
-                # Align sequence dim.
-                if pred_sq.shape[1] != target_sq.shape[1]:
-                    M = min(pred_sq.shape[1], target_sq.shape[1])
-                    pred_sq = pred_sq[:, :M, :]
-                    target_sq = target_sq[:, :M, :]
-                lossIn = self.loss.compute(pred_sq, target_sq)
+            # Reconstruction term.
+            if is_ar_mode:
+                # AR modes: reconstruction is non-None only under ARIR.
+                if reconstruction is not None:
+                    pred_sq = reconstruction
+                    target_sq = forwardInput
+                    # Align sequence dim.
+                    if pred_sq.shape[1] != target_sq.shape[1]:
+                        M = min(pred_sq.shape[1], target_sq.shape[1])
+                        pred_sq = pred_sq[:, :M, :]
+                        target_sq = target_sq[:, :M, :]
+                    lossIn = self.loss.compute(pred_sq, target_sq)
+                    TheError.add(
+                        "reconstruction", lossIn,
+                        weight=self.loss.reverse_scale,
+                        space="InputSpace", category="reconstruction",
+                    )
+                    inputDataPred = reconstruction
+                else:
+                    inputDataPred = None
+                    lossIn = None
+            elif self.reversible and self.loss.reverse_scale > 0:
+                # Non-AR reversible: today's reverse branch.
+                inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
+                pred_sq = inputDataPred
+                target_sq = forwardInput.squeeze()
+                if self.loss.nWhere > 0:
+                    lossIn = self.loss.compute_piecewise(pred_sq, target_sq)
+                else:
+                    lossIn = self.loss.compute(pred_sq, target_sq)
                 TheError.add(
                     "reconstruction", lossIn,
                     weight=self.loss.reverse_scale,
                     space="InputSpace", category="reconstruction",
                 )
-                inputDataPred = reconstruction
             else:
                 inputDataPred = None
                 lossIn = None
-        elif self.reversible and self.loss.reverse_scale > 0:
-            # Non-AR reversible: today's reverse branch.
-            inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
-            pred_sq = inputDataPred
-            target_sq = forwardInput.squeeze()
-            if self.loss.nWhere > 0:
-                lossIn = self.loss.compute_piecewise(pred_sq, target_sq)
-            else:
-                lossIn = self.loss.compute(pred_sq, target_sq)
-            TheError.add(
-                "reconstruction", lossIn,
-                weight=self.loss.reverse_scale,
-                space="InputSpace", category="reconstruction",
-            )
-        else:
-            inputDataPred = None
-            lossIn = None
 
-        # JOINT mode: compute SBOW embedding loss
-        sbow = None
-        if train:
-            sbow = self.trainEmbeddings(('JOINT'), sentenceIdx, split)
-            # Perceptual SBOW: when lexer=byte, train percept vectors
-            # via leave-one-out centroid prediction
-            if getattr(self, 'lexer', None) in ('byte', 'bytes'):
-                psbow = self.perceptual_sbow_loss()
-                if psbow is not None:
-                    sbow = psbow if sbow is None else sbow + psbow
-            if sbow is not None:
-                TheError.add(
-                    "embedding_sbow", sbow,
-                    weight=self.loss.embedding_scale,
-                    space="WordSpace", category="embedding",
-                )
-
-        # Inter-sentence discourse losses. DiscourseSpace produces
-        # two complementary terms over the flattened ``[S | W]``
-        # snapshot vector:
-        #   * contrastive -- dual-force cosine, attractive toward
-        #     the recent context centroid, repulsive from older
-        #     centroids.  Expands the codebook.
-        #   * predictive  -- cosine distance between the AR
-        #     sentence predictor's output and the actual current
-        #     snapshot.  Collapses the codebook.
-        # Both share gradient through the live ``(s_tensor, w_tensor)``
-        # pair; stored history is detached.  First-sentence / empty
-        # buffer cases return ``None`` and we just snapshot.
-        discourse_contrastive = None
-        discourse_predictive = None
-        discourse = getattr(self.wordSpace, 'discourse', None) if self.wordSpace is not None else None
-        if train and discourse is not None:
-            s_tensor = getattr(self, '_current_discourse_s', None)
-            w_tensor = getattr(self, '_current_discourse_w', None)
-            if s_tensor is not None and w_tensor is not None:
-                discourse_contrastive = discourse.contrastive_loss(
-                    s_tensor, w_tensor)
-                predicted = getattr(self, '_predicted_snapshot', None)
-                if predicted is not None:
-                    discourse_predictive = discourse.predictive_loss(
-                        s_tensor, w_tensor, predicted)
-                discourse.snapshot(s_tensor, w_tensor)
-
-        totalLoss = self.loss.total(lossOut, lossIn, sbow)
-        if discourse_contrastive is not None:
-            totalLoss = totalLoss + self.sentence_contrastive_scale * discourse_contrastive
-            TheError.add(
-                "discourse_contrastive", discourse_contrastive,
-                weight=self.sentence_contrastive_scale,
-                space="DiscourseSpace", category="discourse",
-            )
-        if discourse_predictive is not None:
-            totalLoss = totalLoss + self.sentence_predictive_scale * discourse_predictive
-            TheError.add(
-                "discourse_predictive", discourse_predictive,
-                weight=self.sentence_predictive_scale,
-                space="DiscourseSpace", category="discourse",
-            )
-        symbol_loss = None
-        if hasattr(self, 'symbolicSpace'):
-            symbol_loss = self.symbolicSpace.symbol_objective_loss()
-            if symbol_loss is not None:
-                totalLoss = totalLoss + symbol_loss
-                # Per-term symbol objective registration.  The weights
-                # are already baked into each term by accumulate_symbol_objective,
-                # so we register with weight=1.0 and category="symbol".
-                for term_name, term_value in \
-                        self.symbolicSpace.symbol_objective_terms().items():
+            # JOINT mode: compute SBOW embedding loss
+            sbow = None
+            if train:
+                sbow = self.trainEmbeddings(('JOINT'), sentenceIdx, split)
+                # Perceptual SBOW: when lexer=byte, train percept vectors
+                # via leave-one-out centroid prediction
+                if getattr(self, 'lexer', None) in ('byte', 'bytes'):
+                    psbow = self.perceptual_sbow_loss()
+                    if psbow is not None:
+                        sbow = psbow if sbow is None else sbow + psbow
+                if sbow is not None:
                     TheError.add(
-                        term_name, term_value, weight=1.0,
-                        space="SymbolicSpace", category="symbol",
+                        "embedding_sbow", sbow,
+                        weight=self.loss.embedding_scale,
+                        space="WordSpace", category="embedding",
                     )
 
-        # Truth-modulated loss: delegated to WordSpace since the
-        # TruthLayer lives there.  WordSpace handles the empty-store
-        # guard internally; we only gate on ``train``.  The falsity
-        # penalty operand is the last cached symbol activation --
-        # stored truths are also recorded from symbol space, so both
-        # sides of the disjunction live in the basis's native space.
-        if train and self.wordSpace is not None:
-            symbol_acts = None
-            if hasattr(self, 'symbol_states') and self.symbol_states:
-                symbol_acts = self.symbol_states[-1]
-            totalLoss = self.wordSpace.truth_modulated_loss(
-                totalLoss,
-                symbolic_space=self.symbolicSpace,
-                symbol_acts=symbol_acts,
-                universality_score=getattr(self, '_universality_score', None),
-                luminosity_weight=getattr(self, 'luminosity_weight', 0.1),
-                universality_weight=getattr(self, 'universality_weight', 0.1),
-                truth_loss_weight=getattr(self, 'truth_loss_weight', 0.0),
-                allow_excluded_middle=getattr(self, 'allow_excluded_middle', 1),
-                allow_contradiction=getattr(self, 'allow_contradiction', 0),
-            )
+            # Inter-sentence discourse losses. DiscourseSpace produces
+            # two complementary terms over the flattened ``[S | W]``
+            # snapshot vector:
+            #   * contrastive -- dual-force cosine, attractive toward
+            #     the recent context centroid, repulsive from older
+            #     centroids.  Expands the codebook.
+            #   * predictive  -- cosine distance between the AR
+            #     sentence predictor's output and the actual current
+            #     snapshot.  Collapses the codebook.
+            # Both share gradient through the live ``(s_tensor, w_tensor)``
+            # pair; stored history is detached.  First-sentence / empty
+            # buffer cases return ``None`` and we just snapshot.
+            discourse_contrastive = None
+            discourse_predictive = None
+            discourse = getattr(self.wordSpace, 'discourse', None) if self.wordSpace is not None else None
+            if train and discourse is not None:
+                s_tensor = getattr(self, '_current_discourse_s', None)
+                w_tensor = getattr(self, '_current_discourse_w', None)
+                if s_tensor is not None and w_tensor is not None:
+                    discourse_contrastive = discourse.contrastive_loss(
+                        s_tensor, w_tensor)
+                    predicted = getattr(self, '_predicted_snapshot', None)
+                    if predicted is not None:
+                        discourse_predictive = discourse.predictive_loss(
+                            s_tensor, w_tensor, predicted)
+                    discourse.snapshot(s_tensor, w_tensor)
 
-        # Snapshot the breakdown before the backward pass so later
-        # calls to TheError.covariance() can see it in the history
-        # even if the step is aborted by a non-finite detector below.
-        TheError.snapshot()
+            totalLoss = self.loss.total(lossOut, lossIn, sbow)
+            if discourse_contrastive is not None:
+                totalLoss = totalLoss + self.sentence_contrastive_scale * discourse_contrastive
+                TheError.add(
+                    "discourse_contrastive", discourse_contrastive,
+                    weight=self.sentence_contrastive_scale,
+                    space="DiscourseSpace", category="discourse",
+                )
+            if discourse_predictive is not None:
+                totalLoss = totalLoss + self.sentence_predictive_scale * discourse_predictive
+                TheError.add(
+                    "discourse_predictive", discourse_predictive,
+                    weight=self.sentence_predictive_scale,
+                    space="DiscourseSpace", category="discourse",
+                )
+            symbol_loss = None
+            if hasattr(self, 'symbolicSpace'):
+                symbol_loss = self.symbolicSpace.symbol_objective_loss()
+                if symbol_loss is not None:
+                    totalLoss = totalLoss + symbol_loss
+                    # Per-term symbol objective registration.  The weights
+                    # are already baked into each term by accumulate_symbol_objective,
+                    # so we register with weight=1.0 and category="symbol".
+                    for term_name, term_value in \
+                            self.symbolicSpace.symbol_objective_terms().items():
+                        TheError.add(
+                            term_name, term_value, weight=1.0,
+                            space="SymbolicSpace", category="symbol",
+                        )
+
+            # Truth-modulated loss: delegated to WordSpace since the
+            # TruthLayer lives there.  WordSpace handles the empty-store
+            # guard internally; we only gate on ``train``.  The falsity
+            # penalty operand is the last cached symbol activation --
+            # stored truths are also recorded from symbol space, so both
+            # sides of the disjunction live in the basis's native space.
+            if train and self.wordSpace is not None:
+                symbol_acts = None
+                if hasattr(self, 'symbol_states') and self.symbol_states:
+                    symbol_acts = self.symbol_states[-1]
+                totalLoss = self.wordSpace.truth_modulated_loss(
+                    totalLoss,
+                    symbolic_space=self.symbolicSpace,
+                    symbol_acts=symbol_acts,
+                    universality_score=getattr(self, '_universality_score', None),
+                    luminosity_weight=getattr(self, 'luminosity_weight', 0.1),
+                    universality_weight=getattr(self, 'universality_weight', 0.1),
+                    truth_loss_weight=getattr(self, 'truth_loss_weight', 0.0),
+                    allow_excluded_middle=getattr(self, 'allow_excluded_middle', 1),
+                    allow_contradiction=getattr(self, 'allow_contradiction', 0),
+                )
+
+            # Snapshot the breakdown before the backward pass so later
+            # calls to TheError.covariance() can see it in the history
+            # even if the step is aborted by a non-finite detector below.
+            TheError.snapshot()
 
         if not torch.isfinite(totalLoss).all():
             def _loss_value(name, value):
@@ -2272,14 +2282,28 @@ class BasicModel(BaseModel):
                 f"split={split}, batch={batchNum}): {details}"
             )
 
-        TheMessage(f"batch = {batchNum}, loss = {totalLoss} ")
+        # Plain f-string without totalLoss -- interpolating a tensor's
+        # __format__ forces a device sync every batch.  The epoch summary
+        # still carries per-epoch losses; per-batch loss is available via
+        # MODEL_DEBUG if needed.
+        TheMessage(f"batch = {batchNum}")
 
         if train:
-            totalLoss.backward()
-            self._assert_finite_train_state("after backward")
-            if self.ergodic:
-                self.paramUpdate()
-            optimizer.step()
+            if amp_scaler is not None:
+                # fp16 on CUDA: scale grads to avoid underflow, then unscale
+                # inside scaler.step() before the actual optimizer update.
+                amp_scaler.scale(totalLoss).backward()
+                self._assert_finite_train_state("after backward")
+                if self.ergodic:
+                    self.paramUpdate()
+                amp_scaler.step(optimizer)
+                amp_scaler.update()
+            else:
+                totalLoss.backward()
+                self._assert_finite_train_state("after backward")
+                if self.ergodic:
+                    self.paramUpdate()
+                optimizer.step()
             self._assert_finite_train_state("after optimizer.step")
             self._clamp_symbolic_codebook()
             self._training_step_count = (
@@ -2367,7 +2391,11 @@ class BasicModel(BaseModel):
             if self.reversible and result.inputPred is not None:
                 inputChunks.append(result.inputPred.clone().detach().squeeze())
 
-        num_workers = getattr(self, '_num_workers', 0)
+        # Data splits live on CPU (see Data.toDevice); prepInput/prepOutput
+        # move per-batch to device in the main process, so workers just
+        # pickle CPU tensors. XML <numWorkers> sets _num_workers; callers
+        # that bypass the XML config fall back to 2.
+        num_workers = getattr(self, '_num_workers', 2)
         loader = self.inputSpace.data.data_loader(
             split=split,
             num_streams=batchSize,
@@ -2900,16 +2928,16 @@ class MentalModel(BaseModel):
         self.inputs = self.inputSpace.forward(inputData)
         input_state = self.inputs.materialize()
         if input_state is None:
-            # Text mode: InputSpace stages ``_raw_input`` only; the
-            # Embedding lives on PerceptualSpace and runs in
-            # _lex_and_embed during perceptualSpace.forward().  Use the
-            # raw buffer shape to size batch / device for the rest of
-            # Start().  The ``input_state`` return value is populated
-            # by _run_forward_pipeline's fallback to
+            # Text mode: InputSpace populates subspace.what/where/when with
+            # the lexed byte buffer; the Embedding lives on PerceptualSpace
+            # and runs in _embed during perceptualSpace.forward().
+            # Use the byte buffer's shape to size batch / device for the
+            # rest of Start(); the ``input_state`` return value is
+            # populated by _run_forward_pipeline's fallback to
             # perceptualSpace._embedded_input after PerceptualSpace runs.
-            raw = self.inputs._raw_input
-            B = raw.shape[0]
-            device = raw.device
+            buf = self.inputs.what.getW()
+            B = buf.shape[0]
+            device = buf.device
         else:
             B = input_state.shape[0]
             device = input_state.device
@@ -3064,12 +3092,12 @@ class MentalModel(BaseModel):
         input_state = self.Start(inputData)
         embedded = self.inputs.materialize()   # [B, N_max, embSize]
         if embedded is None:
-            # Text mode: InputSpace only stages ``_raw_input``; the
-            # materialized embedding is produced by PerceptualSpace
-            # (_lex_and_embed).  Size batch off the raw buffer; the
-            # ``embedded`` tensor is only used by the AR outer loop,
-            # which is not active in this mode.
-            B = self.inputs._raw_input.shape[0]
+            # Text mode: InputSpace only populates the lexed byte buffer
+            # (subspace.what/where/when); the materialized embedding is
+            # produced by PerceptualSpace (_embed). Size batch
+            # off the byte buffer; the ``embedded`` tensor is only used
+            # by the AR outer loop, which is not active in this mode.
+            B = self.inputs.what.getW().shape[0]
         else:
             B = embedded.shape[0]
 
@@ -3116,9 +3144,9 @@ class MentalModel(BaseModel):
         else:
             # AR path: outer pos loop with sliding buffer.
             if embedded is None and self.inputSpace.model_type == "embedding":
-                # Text mode: run _lex_and_embed to produce the sequence the
+                # Text mode: run _embed to produce the sequence the
                 # AR loop slides over (lexicon lives on PerceptualSpace).
-                self.perceptualSpace._lex_and_embed(self.inputs)
+                self.perceptualSpace._embed(self.inputs)
                 embedded = self.perceptualSpace._embedded_input
             # Truncate BPTT at forward() boundaries: detach the persistent
             # sliding buffer so gradients do not chain into prior batches'
@@ -3256,7 +3284,13 @@ class MentalModel(BaseModel):
             gen_on = False
         if gen_on and self.wordSpace is not None:
             final_state = sym_vectors[:, 0, :]
-            result = self.wordSpace.reconstruct(final_state, self.inputSpace)
+            # Text mode: the word-vocab codebook lives on PerceptualSpace
+            # (Embedding ownership moved there). Numerical mode: the
+            # codebook is still on InputSpace.
+            codebook_space = (self.perceptualSpace
+                              if self.inputSpace.model_type == "embedding"
+                              else self.inputSpace)
+            result = self.wordSpace.reconstruct(final_state, codebook_space)
             self._predicted_head = result['heads']
 
         # Commit butterfly / useGrammar=all symbol state to the subspace
@@ -3388,21 +3422,26 @@ class MentalModel(BaseModel):
         """
         optimizer.zero_grad()
 
-        # Forward pass to get symbolSum
-        input_state, symbols, outputData, _ = self.forward(inputTensor)
+        # AMP wraps forward / reverse / re-forward.  The luminosity block
+        # below uses .item() against truth-layer state and must see fp32,
+        # so it stays outside the autocast region.
+        amp_cm, amp_scaler = amp_context()
+        with amp_cm:
+            # Forward pass to get symbolSum
+            input_state, symbols, outputData, _ = self.forward(inputTensor)
 
-        # Get the current symbolSum from the symbolic space
-        symbolSum = self.symbolicSpace.subspace.event.clone()  # [B, nC, symbol_dim]
+            # Get the current symbolSum from the symbolic space
+            symbolSum = self.symbolicSpace.subspace.event.clone()  # [B, nC, symbol_dim]
 
-        # Reverse pass to reconstruct
-        inputPred, _ = self.reverse(symbols, outputData)
+            # Reverse pass to reconstruct
+            inputPred, _ = self.reverse(symbols, outputData)
 
-        # Re-encode through forward to get symbolSum_hat
-        _, _, _, _ = self.forward(inputPred)
-        symbolSum_hat = self.symbolicSpace.subspace.event  # [B, nC, symbol_dim]
+            # Re-encode through forward to get symbolSum_hat
+            _, _, _, _ = self.forward(inputPred)
+            symbolSum_hat = self.symbolicSpace.subspace.event  # [B, nC, symbol_dim]
 
-        # Reconstruction loss at symbolic level
-        recon_loss = F.mse_loss(symbolSum_hat, symbolSum.detach())
+            # Reconstruction loss at symbolic level
+            recon_loss = F.mse_loss(symbolSum_hat, symbolSum.detach())
 
         # Optional luminosity validity penalty
         truth_layer = self._get_truth_layer()
@@ -3422,8 +3461,13 @@ class MentalModel(BaseModel):
                 truth_layer.truths[saved_count:] = 0
 
         total = recon_loss + 0.1 * validity_loss
-        total.backward()
-        optimizer.step()
+        if amp_scaler is not None:
+            amp_scaler.scale(total).backward()
+            amp_scaler.step(optimizer)
+            amp_scaler.update()
+        else:
+            total.backward()
+            optimizer.step()
         self._clamp_symbolic_codebook()
 
         return {
@@ -3770,6 +3814,15 @@ class ModelFactory:
         arch = cfg.get("architecture", {})
         dat = arch.get("data", {})
         trn = arch.get("training", {})
+
+        # AMP hydration: env var wins (matches MODEL_COMPILE precedent).
+        # XML <architecture><amp> is a checked-in default applied only when
+        # the env var is unset.
+        if not os.environ.get("MODEL_AMP"):
+            xml_amp = arch.get("amp")
+            if xml_amp:
+                os.environ["MODEL_AMP"] = str(xml_amp)
+                init_model_amp()
 
         dataset = os.environ.get("BASIC_DATASET", dat.get("dataset"))
         # Environment overrides for num_shards/max_docs (set by train.py)

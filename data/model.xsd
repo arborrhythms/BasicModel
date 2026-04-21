@@ -59,6 +59,7 @@
       <xs:element name="discontinuityLambda" type="xs:decimal" minOccurs="0"/>
       <xs:element name="useSubspaceActivation" type="xs:boolean" minOccurs="0"/>
       <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="amp" type="ampModeEnum" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -93,6 +94,14 @@
       <xs:enumeration value="ARLM"/>
       <xs:enumeration value="ARUS"/>
       <xs:enumeration value="RARLM"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ampModeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="off"/>
+      <xs:enumeration value="fp16"/>
+      <xs:enumeration value="bf16"/>
     </xs:restriction>
   </xs:simpleType>
 

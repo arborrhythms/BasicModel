@@ -31,6 +31,7 @@
       <numTrials>1</numTrials>
       <numEpochs>2</numEpochs>
       <batchSize>64</batchSize>
+      <numWorkers>2</numWorkers>
       <learningRate>0.0005</learningRate>
       <reverseScale>0.1</reverseScale>
       <maskedPrediction>ARIR</maskedPrediction>
@@ -87,6 +88,7 @@
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
     <codebook>true</codebook>
+    <chunking>lexicon</chunking>
   </ConceptualSpace>
 
   <SymbolicSpace>

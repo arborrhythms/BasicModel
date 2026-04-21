@@ -153,7 +153,15 @@ class SentenceStreamDataset(IterableDataset):
     def __iter__(self):
         L = self.stream_length
         B = self.num_streams
-        for t in range(L):
+        # Shard the timestep range across DataLoader workers so num_workers>0
+        # doesn't replay the same batches num_workers times. Each worker gets
+        # every Nth step starting at its worker_id.
+        worker_info = torch.utils.data.get_worker_info()
+        if worker_info is None:
+            start, stride = 0, 1
+        else:
+            start, stride = worker_info.id, worker_info.num_workers
+        for t in range(start, L, stride):
             indices = [b * L + t for b in range(B)]
             inp = self._slice(self.inputs, indices)
             if self.outputs is None:
@@ -645,33 +653,58 @@ class Data():
         ds = SentenceStreamDataset(inputs, num_streams=streams,
                                    outputs=outputs)
 
-        # Live CUDA tensors can't cross DataLoader worker process
-        # boundaries (torch.multiprocessing reductions fail with
-        # "Attempted to send CUDA tensor received from another process").
-        # ``toDevice()`` moves both stacked tensor splits and list-of-
-        # tensor splits onto CUDA, so we have to check both shapes. If
-        # anything the worker would yield is CUDA-resident, collapse to
-        # in-process batching and skip pin_memory (which only applies to
-        # host tensors).
-        def _has_cuda(x):
+        # Live accelerator tensors (CUDA / MPS) can't cross DataLoader
+        # worker process boundaries: torch.multiprocessing reductions fail
+        # for CUDA with "Attempted to send CUDA tensor received from
+        # another process", and forking with MPS loaded can deadlock the
+        # child process. ``toDevice()`` moves both stacked tensor splits
+        # and list-of-tensor splits onto the accelerator, so we have to
+        # check both shapes. If anything the worker would yield is
+        # accelerator-resident, collapse to in-process batching and skip
+        # pin_memory (which only applies to host tensors).
+        def _is_accel(t):
+            return isinstance(t, torch.Tensor) and t.device.type in ("cuda", "mps")
+
+        def _has_accel(x):
             if x is None:
                 return False
-            if isinstance(x, torch.Tensor):
-                return x.is_cuda
+            if _is_accel(x):
+                return True
             if isinstance(x, (list, tuple)) and len(x) > 0:
-                head = x[0]
-                return isinstance(head, torch.Tensor) and head.is_cuda
+                return _is_accel(x[0])
             return False
 
-        on_cuda = _has_cuda(inputs) or _has_cuda(outputs)
-        if on_cuda:
+        on_accel = _has_accel(inputs) or _has_accel(outputs)
+        if on_accel:
             if num_workers > 0:
+                dev_type = (inputs.device.type
+                            if isinstance(inputs, torch.Tensor)
+                            else inputs[0].device.type)
                 print(
-                    f"[data_loader] {split} data is on CUDA; forcing "
+                    f"[data_loader] {split} data is on {dev_type}; forcing "
                     f"num_workers=0 (requested {num_workers}) to avoid "
-                    "cross-process CUDA tensor sharing."
+                    "cross-process accelerator tensor sharing."
                 )
                 num_workers = 0
+            pin_memory = False
+
+        # macOS + Python 3.12 + IterableDataset: PyTorch bug pytorch/
+        # pytorch#155157 -- worker processes never terminate and/or hang
+        # the iterator. Reproduces on both arm64 and x86_64 across torch
+        # 2.2 through 2.7; no upstream fix as of this writing. Forking
+        # with MPS state loaded (pytorch/pytorch#87688) and fork +
+        # pin_memory (pytorch/pytorch#130610) compound the problem. The
+        # only robust workaround is to run in-process on this platform.
+        import sys
+        is_py312_plus = sys.version_info >= (3, 12)
+        if (sys.platform == "darwin" and is_py312_plus
+                and num_workers > 0):
+            print(
+                f"[data_loader] macOS + Python {sys.version_info.major}."
+                f"{sys.version_info.minor} + IterableDataset hits "
+                "pytorch/pytorch#155157; forcing num_workers=0."
+            )
+            num_workers = 0
             pin_memory = False
 
         kwargs = {"batch_size": None, "num_workers": num_workers,

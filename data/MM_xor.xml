@@ -25,7 +25,7 @@
 
     <training>
       <numTrials>1</numTrials>
-      <numEpochs>400</numEpochs>
+      <numEpochs>200</numEpochs>
       <batchSize>64</batchSize>
       <learningRate>0.01</learningRate>
       <reverseScale>0.1</reverseScale>

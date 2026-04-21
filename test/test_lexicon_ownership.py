@@ -166,5 +166,76 @@ def test_inputspace_lexicon_helper_is_gone():
     assert not hasattr(Spaces.InputSpace, '_lexicon')
 
 
+def test_inputspace_has_lex_batch():
+    from bin import Spaces
+    assert hasattr(Spaces.InputSpace, '_lex_batch'), \
+        "InputSpace should own lexing via _lex_batch (pure lexer, no codebook)"
+
+
+def test_inputspace_forward_does_not_stash_raw_input():
+    """After lex move: embedding-mode InputSpace.forward no longer sets
+    subspace._raw_input (lexing happens locally; subspace.what.W holds the
+    null-terminated byte buffer)."""
+    from bin import Spaces
+    import inspect
+    src = inspect.getsource(Spaces.InputSpace.forward)
+    assert '_raw_input' not in src, \
+        "InputSpace.forward should no longer stash _raw_input; " \
+        "lexing happens in-space and subspace.what/where/when are populated directly."
+
+
+def test_perceptualspace_embed_reads_subspace_not_raw():
+    """After lex move: PerceptualSpace._embed decodes the upstream
+    byte buffer (subspace.what.W), not _raw_input. Tokenization no longer
+    hides inside vocab.forward(raw_input, return_meta=True)."""
+    from bin import Spaces
+    import inspect
+    src = inspect.getsource(Spaces.PerceptualSpace._embed)
+    assert '_raw_input' not in src, \
+        "_embed should read upstream subspace.what.W, not _raw_input"
+    assert 'vocab.forward' not in src, \
+        "_embed should not call vocab.forward (that does lexing); " \
+        "use codebook lookup on pre-lexed byte buffer instead."
+
+
+def test_perceptualspace_lex_and_embed_renamed_to_embed():
+    """After Task 4: the old _lex_and_embed name is gone -- the method is
+    codebook-only now (it doesn't lex) so it's just _embed."""
+    from bin import Spaces
+    assert not hasattr(Spaces.PerceptualSpace, '_lex_and_embed'), \
+        "_lex_and_embed was renamed to _embed; delete the old reference"
+    assert hasattr(Spaces.PerceptualSpace, '_embed'), \
+        "_embed must exist after Task 4 rename"
+
+
+def test_what_encoding_roundtrip():
+    """WhatEncoding.encode_tokens / decode_tokens are the single
+    reader/writer for the null-terminated byte layout on .what.W."""
+    import torch
+    from bin.Spaces import WhatEncoding
+    enc = WhatEncoding([2, 10], [2, 10])  # nObj=2, per-slot dim irrelevant here
+    nWhat = 8
+    tokens = [["hello", "world"], ["", "hi"]]
+    buf = enc.encode_tokens(tokens, batch=2, nObj=2, nWhat=nWhat,
+                            device=torch.device("cpu"))
+    assert buf.shape == (2, 2, nWhat)
+    # null terminator is present in used slots
+    assert buf[0, 0, 5].item() == 0  # after "hello" (5 bytes)
+    decoded = enc.decode_tokens(buf)
+    assert decoded == tokens
+
+
+def test_what_encoding_truncates_oversized_tokens():
+    """Tokens whose UTF-8 encoding exceeds nWhat-1 are truncated."""
+    import torch
+    from bin.Spaces import WhatEncoding
+    enc = WhatEncoding([1, 4], [1, 4])
+    nWhat = 4  # 3 bytes for content + 1 null
+    buf = enc.encode_tokens([["abcdef"]], batch=1, nObj=1, nWhat=nWhat,
+                            device=torch.device("cpu"))
+    decoded = enc.decode_tokens(buf)
+    assert decoded == [["abc"]]
+
+
 if __name__ == "__main__":
     unittest.main()

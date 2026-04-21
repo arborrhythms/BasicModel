@@ -9,6 +9,7 @@ import sys
 import sysconfig
 import tempfile
 import warnings
+from contextlib import nullcontext
 from functools import lru_cache
 import torch
 
@@ -382,6 +383,81 @@ def compile(model, verbose=True):
 
     _msg("Model compilation failed, running eager")
     return model
+
+
+# ---------------------------------------------------------------------------
+# Automatic mixed precision
+# ---------------------------------------------------------------------------
+#
+# MODEL_AMP gates torch.autocast around forward/backward regions.  Default is
+# off (bit-identical to pre-change behavior).  Valid values:
+#   off / none / false / 0 / no  -> fp32 (no autocast)
+#   bf16                         -> torch.autocast(dtype=bfloat16), no scaler
+#   fp16                         -> torch.autocast(dtype=float16); on CUDA
+#                                   a singleton GradScaler is returned
+# MPS has no working autocast path; fp16 on CPU is also unsupported by
+# torch -- both fall back to fp32 with a one-shot warning.
+# Env var wins; XML <amp> is a checked-in default applied only when the
+# env var is unset (see ModelFactory.run for the hydration).
+
+_AMP_MODES = ("off", "fp16", "bf16")
+_AMP_OFF   = frozenset({"", "none", "off", "false", "0", "no"})
+_AMP_WARNED = False
+
+
+def _read_model_amp():
+    raw = os.environ.get("MODEL_AMP", "").strip().lower()
+    if raw in _AMP_OFF:
+        return "off"
+    if raw in _AMP_MODES:
+        return raw
+    raise ValueError(
+        f"Unknown MODEL_AMP value {raw!r}. "
+        f"Valid values: off, {', '.join(m for m in _AMP_MODES if m != 'off')}"
+    )
+
+
+MODEL_AMP = _read_model_amp()
+TheAmpScaler = None  # lazily constructed on first fp16+cuda call
+
+
+def init_model_amp(mode=None):
+    """Override the process-wide AMP mode.  None re-reads MODEL_AMP."""
+    global MODEL_AMP, TheAmpScaler, _AMP_WARNED
+    MODEL_AMP = _read_model_amp() if mode is None else mode
+    TheAmpScaler = None
+    _AMP_WARNED = False
+
+
+def amp_context():
+    """Return ``(autocast_cm, scaler)`` for the current MODEL_AMP setting.
+
+    The context manager is a fresh instance each call (autocast CMs are
+    single-use).  The scaler is a process-wide singleton so optimizer
+    step/update bookkeeping stays consistent across batches.
+    """
+    global TheAmpScaler, _AMP_WARNED
+    mode = MODEL_AMP
+    if mode == "off":
+        return nullcontext(), None
+    dev = TheDevice.type  # "cpu" | "cuda" | "mps" (ROCm exposes "cuda")
+    if dev == "mps":
+        if not _AMP_WARNED:
+            print(f"MODEL_AMP={mode} unsupported on MPS; running fp32.")
+            _AMP_WARNED = True
+        return nullcontext(), None
+    if dev == "cpu" and mode == "fp16":
+        if not _AMP_WARNED:
+            print("MODEL_AMP=fp16 unsupported on CPU; running fp32.")
+            _AMP_WARNED = True
+        return nullcontext(), None
+    dtype = torch.float16 if mode == "fp16" else torch.bfloat16
+    cm = torch.autocast(device_type=dev, dtype=dtype)
+    if mode == "fp16" and dev == "cuda":
+        if TheAmpScaler is None:
+            TheAmpScaler = torch.amp.GradScaler("cuda")
+        return cm, TheAmpScaler
+    return cm, None
 
 
 # ---------------------------------------------------------------------------

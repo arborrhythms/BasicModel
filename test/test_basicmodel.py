@@ -83,6 +83,10 @@ def _build_text_pair(nInput):
                                  [nInput, _pdim],
                                  [nInput, _pdim + _pobj],
                                  model_type="embedding")
+    # Wire the peer reference BasicModel.create_from_config normally installs.
+    # InputSpace._lex_batch requires the PerceptualSpace back-pointer so it
+    # can delegate tokenization to the owning lexicon.
+    object.__setattr__(inp, '_peer_perceptual', psp)
     return inp, psp
 
 
@@ -90,7 +94,7 @@ def _text_embed(inp, psp, raw_input):
     """Run raw text input through InputSpace then PerceptualSpace's lex+embed.
     Returns the post-embedding tensor [batch, nVectors, embSize]."""
     inp_sub = inp.forward(raw_input)
-    psp_sub = psp._lex_and_embed(inp_sub)
+    psp_sub = psp._embed(inp_sub)
     return psp_sub.materialize()
 
 
@@ -1546,7 +1550,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         inputTensor = inp.prepInput(inputBatch)
         expected_tokens = psp.vocabulary.tokenize(inputTensor)
         # Forward pass through input->perceptual
-        latent = psp._lex_and_embed(inp.forward(inputTensor))
+        latent = psp._embed(inp.forward(inputTensor))
         # Reverse pass via PerceptualSpace
         psp.reverse(latent)
         recovered = psp.reconstruct_data()
@@ -1568,7 +1572,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         inp, psp, data = self._make_text_input_space()
         all_inputs = data.train_input
         inputTensor = inp.prepInput(all_inputs)
-        latent = psp._lex_and_embed(inp.forward(inputTensor))
+        latent = psp._embed(inp.forward(inputTensor))
         psp.reverse(latent)
         recovered = psp.reconstruct_data()
         expected = psp.vocabulary.tokenize(inputTensor)
@@ -1590,7 +1594,7 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         batch_size = 2
         inputBatch = data.train_input[0:batch_size]
         inputTensor = inp.prepInput(inputBatch)
-        latent = psp._lex_and_embed(inp.forward(inputTensor))
+        latent = psp._embed(inp.forward(inputTensor))
         psp.reverse(latent)
         joined = psp.reconstruct_data(text=True)
         self.assertIsInstance(joined[0], str)

@@ -13,7 +13,7 @@
     </data>
 
     <training>
-      <numEpochs>200</numEpochs>
+      <numEpochs>400</numEpochs>
       <learningRate>0.01</learningRate>
       <autosave>false</autosave>
       <autoload>false</autoload>
@@ -35,6 +35,8 @@
     <nInputDim>-1</nInputDim>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
+    <lexer>word</lexer>
+    <codebook>false</codebook>
   </InputSpace>
 
   <!-- PerceptualSpace: invertible, flattened input. -->
@@ -45,7 +47,8 @@
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
     <hasAttention>false</hasAttention>
-
+    <codebook>true</codebook>
+    
   </PerceptualSpace>
 
   <!-- ConceptualSpace: nOutput=6, nVectors=6 (non-quantized: nVectors==nOutput). -->
