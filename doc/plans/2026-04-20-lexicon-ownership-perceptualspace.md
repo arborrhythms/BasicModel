@@ -736,11 +736,146 @@ Suggested message: `chore: complete lexicon-ownership move to PerceptualSpace`.
 
 ---
 
+## Task 11: Wire up the `chunking_mode` dispatch on PerceptualSpace
+
+**Files:**
+- Modify: `basicmodel/bin/Spaces.py` — make `PerceptualSpace.forward` (and `_lex_and_embed`) dispatch on `self.chunking_mode` instead of unconditionally running the lexicon path.
+- Modify: `basicmodel/test/test_lexicon_ownership.py` — add pinning tests for the three-way switch.
+
+**Motivation:** After Task 10, the Embedding lives on PerceptualSpace, but `PerceptualSpace.forward` still unconditionally runs the lexicon path whenever `self.subspace.what` is an `Embedding`. The declared switch at [Spaces.py:4639-4643](basicmodel/bin/Spaces.py:4639) (`self.chunking_mode` ∈ {"lexicon","raw","bpe"}) is read but never consumed. This task makes the switch live: `"lexicon"` runs the moved Embedding path; `"raw"` and `"bpe"` raise `NotImplementedError` with a clear message so future implementers know exactly where to plug in. `ChunkLayer` at [Layers.py:3520](basicmodel/bin/Layers.py:3520) is the intended home of the `"bpe"` branch, but wiring it is out of scope for this plan.
+
+- [ ] **Step 1: Write the failing switch tests**
+
+Append to `basicmodel/test/test_lexicon_ownership.py`:
+
+```python
+class TestChunkingModeSwitch(unittest.TestCase):
+    """The chunking_mode switch on PerceptualSpace must be live, not dormant."""
+
+    def _build_with_chunking(self, mode):
+        """Build a text-mode model with <PerceptualSpace><chunking>mode."""
+        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
+        tree = ET.parse(xml_path)
+        root = tree.getroot()
+        auto = root.find("architecture/autoload")
+        if auto is None:
+            auto = ET.SubElement(root.find("architecture"), "autoload")
+        auto.text = "false"
+        ps = root.find("PerceptualSpace")
+        if ps is None:
+            ps = ET.SubElement(root, "PerceptualSpace")
+        ch = ps.find("chunking")
+        if ch is None:
+            ch = ET.SubElement(ps, "chunking")
+        ch.text = mode
+        tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
+        tree.write(tmp, xml_declaration=True)
+        tmp.close()
+        Models.TheData.load("xor")
+        m = Models.BasicModel()
+        m.create_from_config(tmp.name, data=Models.TheData)
+        os.unlink(tmp.name)
+        return m
+
+    def test_lexicon_mode_is_default(self):
+        m = _build_text_model()
+        self.assertEqual(m.perceptualSpace.chunking_mode, "lexicon")
+
+    def test_lexicon_mode_runs_embedding_path(self):
+        m = self._build_with_chunking("lexicon")
+        # The embedding path is live: a forward pass succeeds and populates tokens.
+        m.Start(["hello world"])
+        out = m.run()
+        self.assertIsNotNone(out)
+        self.assertTrue(hasattr(m.perceptualSpace, "_last_tokens"))
+
+    def test_raw_mode_raises_not_implemented(self):
+        m = self._build_with_chunking("raw")
+        with self.assertRaises(NotImplementedError) as cm:
+            m.Start(["hello"])
+            m.run()
+        self.assertIn("raw", str(cm.exception).lower())
+
+    def test_bpe_mode_raises_not_implemented(self):
+        m = self._build_with_chunking("bpe")
+        with self.assertRaises(NotImplementedError) as cm:
+            m.Start(["hello"])
+            m.run()
+        self.assertIn("bpe", str(cm.exception).lower())
+        self.assertIn("ChunkLayer", str(cm.exception))
+```
+
+- [ ] **Step 2: Run the new tests to verify they fail**
+
+```
+basicmodel/.venv/bin/python -m unittest basicmodel.test.test_lexicon_ownership.TestChunkingModeSwitch -v
+```
+
+Expected: `test_lexicon_mode_is_default` and `test_lexicon_mode_runs_embedding_path` may PASS (the current code already defaults to `"lexicon"` and runs the Embedding path after Task 10). The `raw` and `bpe` tests MUST FAIL — they currently fall through to the Embedding path and either silently run or crash with an unrelated error, not `NotImplementedError`.
+
+If the default-mode tests pass pre-change, that is fine — they are regression guards for Task 11's dispatch, not new behavior.
+
+- [ ] **Step 3: Gate `_lex_and_embed` on `chunking_mode == "lexicon"`**
+
+In `basicmodel/bin/Spaces.py`, edit `PerceptualSpace.forward` at the text-mode branch added in Task 5. Before calling `_lex_and_embed`, dispatch on `self.chunking_mode`:
+
+```python
+def forward(self, vspace, wordSpace=None, quantize=True):
+    if isinstance(self.subspace.what, Embedding):
+        mode = self.chunking_mode
+        if mode == "lexicon":
+            vspace = self._lex_and_embed(vspace)
+        elif mode == "raw":
+            raise NotImplementedError(
+                "PerceptualSpace chunking_mode='raw' is declared but not wired. "
+                "Intended behavior: bypass the Embedding and emit one index per "
+                "input byte. Implement in PerceptualSpace._chunk_raw."
+            )
+        elif mode == "bpe":
+            raise NotImplementedError(
+                "PerceptualSpace chunking_mode='bpe' is declared but not wired. "
+                "Intended behavior: run ChunkLayer (see basicmodel/bin/Layers.py:3520) "
+                "to produce learned BPE boundaries and token indices."
+            )
+        else:
+            raise ValueError(
+                f"PerceptualSpace.chunking_mode must be one of "
+                f"{{'lexicon','raw','bpe'}}, got {mode!r}"
+            )
+    if self.passThrough:
+        return vspace
+    # ... existing body unchanged ...
+```
+
+- [ ] **Step 4: Run the switch tests again**
+
+```
+basicmodel/.venv/bin/python -m unittest basicmodel.test.test_lexicon_ownership.TestChunkingModeSwitch -v
+```
+
+Expected: all four PASS.
+
+- [ ] **Step 5: Re-run the full lexicon-ownership suite to confirm nothing regressed**
+
+```
+basicmodel/.venv/bin/python -m unittest basicmodel.test.test_lexicon_ownership -v
+basicmodel/.venv/bin/python -m unittest basicmodel.test.test_basicmodel -v
+```
+
+Expected: all PASS.
+
+- [ ] **Step 6: Commit (checkpoint)**
+
+Suggested message: `feat(perceptualspace): wire chunking_mode dispatch (lexicon live, raw/bpe stubbed)`.
+
+---
+
 ## Self-Review Checklist (run before handing off)
 
 - [ ] Every `inputSpace.vocabulary` reference in `basicmodel/bin/` and `basicmodel/test/` is either gone, retargeted, or knowingly kept (Codebook/Tensor non-text cases).
 - [ ] `_get_embedding`, `save_embeddings`, `load_embeddings`, `_restore_vocab` callsite, `OutputSpace(..., vectors=…)` (both call sites), and the optimizer wiring all read `perceptualSpace.vocabulary`.
 - [ ] PerceptualSpace owns: the Embedding Basis, the text-path forward (`_lex_and_embed`), the text-path reverse, `train_embeddings`, `sbow_loss`, `_snapshot_embeddings`, `set_embedding_sigma`, `reconstruct_data`, `reconstruct_to_buffer`, `get_recovered_word`, `doc_spans`, `doc_sources`.
+- [ ] `PerceptualSpace.forward` dispatches on `chunking_mode`: `"lexicon"` runs the Embedding path; `"raw"` and `"bpe"` raise `NotImplementedError` with clear messages.
 - [ ] InputSpace.forward is a thin pass-through in text mode; non-text Codebook/Tensor paths are unchanged.
 - [ ] `test_lexicon_ownership.py` passes; `test_basicmodel.py` and `test_xor_spaces.py` pass; full discover-run is green.
 - [ ] No `getattr` was added as defensive padding (per `feedback_no_defensive_getattr`).
@@ -748,6 +883,8 @@ Suggested message: `chore: complete lexicon-ownership move to PerceptualSpace`.
 
 ## Follow-up (out of scope; suggest as a separate plan if needed)
 
+- Implement `PerceptualSpace._chunk_raw` (the `"raw"` branch): byte-index emission bypassing the Embedding.
+- Wire `ChunkLayer` into `PerceptualSpace._chunk_bpe` (the `"bpe"` branch): instantiate the layer, feed it byte streams, consume its boundaries/tokens.
 - Move `<lexer>`, `<minFrequency>`, etc. from `<InputSpace>` to a new `<PerceptualSpace>` sub-section in the XML schema, with a deprecation shim that reads the old keys.
 - Decide whether `InputSpace` should exist at all once it has nothing to do in text mode, or whether the raw-input staging role (AR sliding buffer, `prepInput`, `_cached_embedding`) justifies keeping it.
 - Audit `Language.py` / `WordSpace` for any analogous moves (truth layer, discourse predictor) that should also follow the lexicon to PerceptualSpace.

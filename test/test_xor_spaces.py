@@ -173,7 +173,7 @@ class TestXORSpacesModel(unittest.TestCase):
 
     def test_space_char_in_vocab(self):
         """ASCII bootstrap ensures space chr(32) is always in vocabulary."""
-        emb = self.model.inputSpace.vocabulary
+        emb = self.model.perceptualSpace.vocabulary
         self.assertIsInstance(emb, Models.Embedding,
                               "InputSpace should use Embedding for text model")
         self.assertIn(" ", emb.pretrain.key_to_index,
@@ -181,7 +181,7 @@ class TestXORSpacesModel(unittest.TestCase):
 
     def test_xor_words_in_vocab(self):
         """XOR sentence words are added to vocabulary during data loading."""
-        emb = self.model.inputSpace.vocabulary
+        emb = self.model.perceptualSpace.vocabulary
         # Words appear in training data; they should be added via forward passes
         # or they may still be pending -- we only assert ASCII chars are present
         for ch in "zero one xor":
@@ -230,30 +230,30 @@ class TestSpacePrediction(unittest.TestCase):
         import torch
 
         nInput = 8
-        _populate_test_config(inputDim=10, nInput=nInput,
+        _populate_test_config(inputDim=10, perceptDim=10, nInput=nInput,
                               nPercepts=nInput, nConcepts=nInput,
                               nSymbols=nInput, nWords=nInput, nOutput=nInput,
                               nWhere=2, nWhen=2, flatten=True)
         Models.TheData.load("xor")
 
-        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
-        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
-        _obj = _obj_size("InputSpace")
-        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        _pdim = Models.TheXMLConfig.space("PerceptualSpace", "nDim")
+        _pvec = Models.TheXMLConfig.space("PerceptualSpace", "nVectors")
+        _obj = _obj_size("PerceptualSpace")
+        psp = Models.PerceptualSpace([nInput, _pdim], [_pvec, _pdim], [nInput, _pdim + _obj],
                          model_type="embedding")
-        emb = inp.vocabulary
+        emb = psp.vocabulary
         self.assertIsInstance(emb, Models.Embedding)
 
         _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
         os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [4, _odim], [4, _odim])
-        os_.set_text_mode(inp)
+        os_.set_text_mode(psp)
 
         codebook = emb.wv._vectors.detach()
         words_list = emb.wv.index_to_key
-        embSize = inp.muxedSize
-        nWhat = inp.nWhat  # content dims only
+        embSize = psp.muxedSize
+        nWhat = psp.nWhat  # content dims only
 
         # Find two non-[MASK] tokens that are NOT the space or \x00 sentinel
         usable = [j for j, w in enumerate(words_list)
@@ -281,30 +281,30 @@ class TestSpacePrediction(unittest.TestCase):
         import torch
 
         nInput = 8
-        _populate_test_config(inputDim=10, nInput=nInput,
+        _populate_test_config(inputDim=10, perceptDim=10, nInput=nInput,
                               nPercepts=nInput, nConcepts=nInput,
                               nSymbols=nInput, nWords=nInput, nOutput=nInput,
                               nWhere=2, nWhen=2, flatten=True)
         Models.TheData.load("xor")
 
-        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
-        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
-        _obj = _obj_size("InputSpace")
-        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
+        _pdim = Models.TheXMLConfig.space("PerceptualSpace", "nDim")
+        _pvec = Models.TheXMLConfig.space("PerceptualSpace", "nVectors")
+        _obj = _obj_size("PerceptualSpace")
+        psp = Models.PerceptualSpace([nInput, _pdim], [_pvec, _pdim], [nInput, _pdim + _obj],
                          model_type="embedding")
-        emb = inp.vocabulary
+        emb = psp.vocabulary
         self.assertIn(" ", emb.pretrain.key_to_index)
 
         _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
         os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [4, _odim], [4, _odim])
-        os_.set_text_mode(inp)
+        os_.set_text_mode(psp)
 
         space_idx = emb.pretrain.key_to_index[" "]
         codebook = emb.wv._vectors.detach()
-        embSize = inp.muxedSize
-        nWhat = inp.nWhat  # content dims only
+        embSize = psp.muxedSize
+        nWhat = psp.nWhat  # content dims only
 
         vectors = torch.zeros([1, 1, embSize])
         # Assign only the content dims; positional slots remain 0 -> consecutive mode
@@ -335,21 +335,21 @@ class TestNullEOS(unittest.TestCase):
         import torch
 
         nInput = 8
-        _populate_test_config(inputDim=10, nInput=nInput,
+        _populate_test_config(inputDim=10, perceptDim=10, nInput=nInput,
                               nPercepts=nInput, nConcepts=nInput,
                               nSymbols=nInput, nWords=nInput, nOutput=nInput,
                               nWhere=2, nWhen=2, flatten=True)
         Models.TheData.load("xor")
 
-        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
-        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
-        cls.inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim],
+        _pdim = Models.TheXMLConfig.space("PerceptualSpace", "nDim")
+        _pvec = Models.TheXMLConfig.space("PerceptualSpace", "nVectors")
+        cls.psp = Models.PerceptualSpace([nInput, _pdim], [_pvec, _pdim], [nInput, _pdim],
                              model_type="embedding")
-        cls.emb = cls.inp.vocabulary
+        cls.emb = cls.psp.vocabulary
         _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
         cls.os_ = Models.OutputSpace([nInput, _sdim], [4, _odim], [4, _odim])
-        cls.os_.set_text_mode(cls.inp)
+        cls.os_.set_text_mode(cls.psp)
 
     def test_null_char_in_embedding_vocab(self):
         """\\x00 must be registered in the Embedding vocabulary.
@@ -393,8 +393,8 @@ class TestNullEOS(unittest.TestCase):
 
         codebook = emb.wv._vectors.detach()
         words_list = emb.wv.index_to_key
-        embSize = self.inp.muxedSize
-        nWhat = self.inp.nWhat
+        embSize = self.psp.muxedSize
+        nWhat = self.psp.nWhat
 
         null_idx = emb.pretrain.key_to_index["\x00"]
 
@@ -433,8 +433,8 @@ class TestNullEOS(unittest.TestCase):
 
         codebook = emb.wv._vectors.detach()
         words_list = emb.wv.index_to_key
-        embSize = self.inp.muxedSize
-        nWhat = self.inp.nWhat
+        embSize = self.psp.muxedSize
+        nWhat = self.psp.nWhat
 
         null_idx = emb.pretrain.key_to_index["\x00"]
 

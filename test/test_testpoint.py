@@ -300,7 +300,9 @@ with torch.no_grad():
     # getBatch() returns raw input for all modes; masking (if any) is applied
     # inside InputSpace.forward(), so we always call model.forward().
     _, _, out, _ = model.forward(inp_tensor)
-    out_device = str(out.device)
+    # AR modes return a list of per-token prediction tensors.
+    first = out[0] if isinstance(out, list) else out
+    out_device = str(first.device)
 
 result = {{
     "device": str(Models.TheDevice),

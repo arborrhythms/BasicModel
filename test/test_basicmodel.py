@@ -64,6 +64,36 @@ def _obj_size(section):
     return nw + nn
 
 
+def _build_text_pair(nInput):
+    """Build an (InputSpace, PerceptualSpace) pair for text-mode tests.
+
+    The lexicon now lives on PerceptualSpace; tests that want a post-embed
+    tensor from raw text must drive both spaces. PerceptualSpace's output
+    count matches InputSpace's output count so the embedded tensor has
+    shape [batch, nInput, embSize].
+    """
+    _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
+    _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
+    _iobj = _obj_size("InputSpace")
+    _pdim = Models.TheXMLConfig.space("PerceptualSpace", "nDim")
+    _pobj = _obj_size("PerceptualSpace")
+    inp = Models.InputSpace([nInput, _idim], [_invec, _idim],
+                            [nInput, _idim + _iobj], model_type="embedding")
+    psp = Models.PerceptualSpace([nInput, _idim + _iobj],
+                                 [nInput, _pdim],
+                                 [nInput, _pdim + _pobj],
+                                 model_type="embedding")
+    return inp, psp
+
+
+def _text_embed(inp, psp, raw_input):
+    """Run raw text input through InputSpace then PerceptualSpace's lex+embed.
+    Returns the post-embedding tensor [batch, nVectors, embSize]."""
+    inp_sub = inp.forward(raw_input)
+    psp_sub = psp._lex_and_embed(inp_sub)
+    return psp_sub.materialize()
+
+
 def _xml_uses_embedding(filename):
     import xml.etree.ElementTree as ET
 
@@ -1239,57 +1269,53 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
         return Models.TheData
 
     def _make_input_space(self, lexer="word"):
-        """Create an InputSpace with model_type='embedding' from XOR text data."""
+        """Create an (InputSpace, PerceptualSpace) pair from XOR text data."""
         nInput = 8
-        _populate_test_config(inputDim=1, nInput=nInput,
+        _populate_test_config(inputDim=1, perceptDim=10, nInput=nInput,
                               nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               lexer=lexer)
         self._make_text_data()
-        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
-        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
-        _obj = _obj_size("InputSpace")
-        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
-                         model_type="embedding")
-        return inp, Models.TheData
+        inp, psp = _build_text_pair(nInput)
+        return inp, psp, Models.TheData
 
     def test_token_stream_available(self):
-        """InputSpace with model_type='embedding' can tokenize via _token_stream."""
-        inp, _ = self._make_input_space()
-        emb = inp.vocabulary
+        """PerceptualSpace with model_type='embedding' can tokenize via _token_stream."""
+        _, psp, _ = self._make_input_space()
+        emb = psp.vocabulary
         tokens = emb._token_stream("hello world")
         self.assertIsInstance(tokens, list)
         self.assertEqual(tokens[0][0], "hello")
 
     def test_per_doc_spans_created(self):
-        """InputSpace stores per-document `(text, start)` token streams."""
-        inp, _ = self._make_input_space()
-        self.assertTrue(hasattr(inp, 'doc_spans'))
-        self.assertIsInstance(inp.doc_spans, list)
-        for tokens in inp.doc_spans:
+        """PerceptualSpace stores per-document `(text, start)` token streams."""
+        _, psp, _ = self._make_input_space()
+        self.assertTrue(hasattr(psp, 'doc_spans'))
+        self.assertIsInstance(psp.doc_spans, list)
+        for tokens in psp.doc_spans:
             self.assertIsInstance(tokens, list)
             self.assertTrue(all(isinstance(tok, tuple) for tok in tokens))
             self.assertTrue(all(len(tok) == 2 for tok in tokens))
 
     def test_per_doc_span_counts(self):
         """Each document token stream includes the lexical space token."""
-        inp, _ = self._make_input_space()
-        for tokens in inp.doc_spans:
+        _, psp, _ = self._make_input_space()
+        for tokens in psp.doc_spans:
             self.assertEqual(len(tokens), 3)
 
     def test_forward_produces_correct_shape(self):
         """forward() with Lex path produces [batch, nInput, embeddingSize]."""
-        inp, data = self._make_input_space()
+        inp, psp, data = self._make_input_space()
         batch_size = 2
         inputBatch = data.train_input[0:batch_size]
         inputTensor = inp.prepInput(inputBatch)
-        output = _unwrap(inp.forward(inputTensor))
-        embSize = inp.subspace.getEncodedOutputSize()
-        self.assertEqual(list(output.shape), [batch_size, inp.outputShape[0], embSize])
+        output = _text_embed(inp, psp, inputTensor)
+        embSize = psp.subspace.getEncodedOutputSize()
+        self.assertEqual(list(output.shape), [batch_size, psp.outputShape[0], embSize])
 
     def test_doc_spans_store_token_offsets(self):
         """Embedding stores token text alongside byte starts."""
-        inp, _ = self._make_input_space()
-        emb = inp.vocabulary
+        _, psp, _ = self._make_input_space()
+        emb = psp.vocabulary
         # Find the "hello world" doc (order may vary after shuffling)
         hw = None
         for spans in emb.doc_spans:
@@ -1302,16 +1328,16 @@ class TestInputSpaceLexIntegration(unittest.TestCase):
 
     def test_object_encoding_applied(self):
         """ObjectEncoding (nWhere + nWhen) is applied to forward() output."""
-        inp, data = self._make_input_space()
+        inp, psp, data = self._make_input_space()
         batch_size = 1
         inputBatch = data.train_input[0:batch_size]
         inputTensor = inp.prepInput(inputBatch)
-        inp.subspace.whereEncoding.p = 0
-        output = _unwrap(inp.forward(inputTensor))
+        psp.subspace.whereEncoding.p = 0
+        output = _text_embed(inp, psp, inputTensor)
         # With nWhere > 0, the reserved encoding dims should be non-zero
         # (ObjectEncoding.forward stamps sin/cos into the last objectSize dims)
         embSize = output.shape[-1]
-        objSize = _obj_size("InputSpace")
+        objSize = _obj_size("PerceptualSpace")
         if objSize > 0:
             encoding_dims = output[0, 0, -objSize:]
             self.assertFalse(torch.all(encoding_dims == 0).item(),
@@ -1345,19 +1371,15 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         """Passing vectors= shares the embedding basis with OutputSpace."""
         Models.TheData.load("xor")
         nInput = 8
-        _populate_test_config(inputDim=1, nInput=nInput,
+        _populate_test_config(inputDim=1, perceptDim=10, nInput=nInput,
                               nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               flatten=True)
-        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
-        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
-        _obj = _obj_size("InputSpace")
-        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
-                         model_type="embedding")
+        inp, psp = _build_text_pair(nInput)
         nOut = 8
         _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
-        os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vocabulary)
+        os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=psp.vocabulary)
         self.assertTrue(os_.text_mode)
 
     def test_reconstruct_from_known_vectors(self):
@@ -1365,26 +1387,22 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         import math
         Models.TheData.load("xor")
         nInput = 8
-        _populate_test_config(inputDim=10, nInput=nInput,
+        _populate_test_config(inputDim=10, perceptDim=10, nInput=nInput,
                               nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               flatten=True)
-        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
-        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
-        _obj = _obj_size("InputSpace")
-        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
-                         model_type="embedding")
+        inp, psp = _build_text_pair(nInput)
         nOut = 4
         _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
-        os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vocabulary)
+        os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=psp.vocabulary)
 
         # Build synthetic vectors from known codebook entries with known nWhere
-        codebook = inp.vocabulary.getW().detach()
-        words_list = inp.vocabulary.wv.index_to_key
-        embSize = inp.muxedSize
-        nWhat = embSize - _obj_size("InputSpace")
-        where = inp.subspace.whereEncoding
+        codebook = psp.vocabulary.getW().detach()
+        words_list = psp.vocabulary.wv.index_to_key
+        embSize = psp.muxedSize
+        nWhat = embSize - _obj_size("PerceptualSpace")
+        where = psp.subspace.whereEncoding
 
         # Pick first two non-[MASK] words from the codebook
         batch = 1
@@ -1405,24 +1423,20 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         """When nWhere is zero, tokens are written consecutively."""
         Models.TheData.load("xor")
         nInput = 8
-        _populate_test_config(inputDim=10, nInput=nInput,
+        _populate_test_config(inputDim=10, perceptDim=10, nInput=nInput,
                               nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               flatten=True)
-        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
-        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
-        _obj = _obj_size("InputSpace")
-        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
-                         model_type="embedding")
+        inp, psp = _build_text_pair(nInput)
         nOut = 4
         _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
-        os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vocabulary)
+        os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=psp.vocabulary)
 
         # Build vectors with nWhere = 0 (all zeros)
-        codebook = inp.vocabulary.getW().detach()
-        words_list = inp.vocabulary.wv.index_to_key
-        embSize = inp.muxedSize
+        codebook = psp.vocabulary.getW().detach()
+        words_list = psp.vocabulary.wv.index_to_key
+        embSize = psp.muxedSize
 
         batch = 1
         nVec = 2
@@ -1431,8 +1445,8 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         # Skip [MASK] (zero vector) -- cosine matching can't recover it
         usable = [j for j, w in enumerate(words_list) if w != "[MASK]"]
         for slot, j in enumerate(usable[:nVec]):
-            vectors[0, slot, :embSize - _obj_size("InputSpace")] = \
-                codebook[j, :embSize - _obj_size("InputSpace")]
+            vectors[0, slot, :embSize - _obj_size("PerceptualSpace")] = \
+                codebook[j, :embSize - _obj_size("PerceptualSpace")]
             expected_words.append(words_list[j])
         # nWhere left as zero -> consecutive mode
 
@@ -1444,26 +1458,22 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
         import math
         Models.TheData.load("xor")
         nInput = 8
-        _populate_test_config(inputDim=10, nInput=nInput,
+        _populate_test_config(inputDim=10, perceptDim=10, nInput=nInput,
                               nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               flatten=True)
-        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
-        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
-        _obj = _obj_size("InputSpace")
-        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
-                         model_type="embedding")
+        inp, psp = _build_text_pair(nInput)
         nOut = 4
         _sdim = Models.TheXMLConfig.space("SymbolicSpace", "nDim") or Models.TheXMLConfig.space("ConceptualSpace", "nDim")
         _odim = Models.TheXMLConfig.space("OutputSpace", "nDim")
         _obj_sym = _obj_size("SymbolicSpace")
-        os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=inp.vocabulary)
+        os_ = Models.OutputSpace([nInput, _sdim + _obj_sym], [nOut, _odim], [nOut, _odim], vectors=psp.vocabulary)
 
         # Build synthetic vectors with nWhere at known positions
-        codebook = inp.vocabulary.getW().detach()
-        words_list = inp.vocabulary.wv.index_to_key
-        embSize = inp.muxedSize
-        nWhat = inp.nWhat
-        where = inp.subspace.whereEncoding
+        codebook = psp.vocabulary.getW().detach()
+        words_list = psp.vocabulary.wv.index_to_key
+        embSize = psp.muxedSize
+        nWhat = psp.nWhat
+        where = psp.subspace.whereEncoding
 
         batch = 1
         nVec = 2
@@ -1510,21 +1520,17 @@ class TestOutputSpaceTextReconstruction(unittest.TestCase):
 
 
 class TestInputSpaceTextRoundTrip(unittest.TestCase):
-    """InputSpace.reverse() must reconstruct text from latent state."""
+    """PerceptualSpace.reverse() must reconstruct text from latent state."""
 
     def _make_text_input_space(self):
-        """Create an InputSpace with model_type='embedding' from XOR text data."""
+        """Create an (InputSpace, PerceptualSpace) pair from XOR text data."""
         nInput = 8
-        _populate_test_config(inputDim=10, nInput=nInput,
+        _populate_test_config(inputDim=10, perceptDim=10, nInput=nInput,
                               nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               flatten=True)
         Models.TheData.load("xor")
-        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
-        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
-        _obj = _obj_size("InputSpace")
-        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
-                         model_type="embedding")
-        return inp, Models.TheData
+        inp, psp = _build_text_pair(nInput)
+        return inp, psp, Models.TheData
 
     def test_reverse_recovers_words(self):
         """forward -> reverse should recover the original lexical tokens.
@@ -1534,18 +1540,18 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
         long whitespace run; the reverse path may recover a shorter
         space token -- both are correct padding representations.
         """
-        inp, data = self._make_text_input_space()
+        inp, psp, data = self._make_text_input_space()
         batch_size = 2
         inputBatch = data.train_input[0:batch_size]
         inputTensor = inp.prepInput(inputBatch)
-        expected_tokens = inp.vocabulary.tokenize(inputTensor)
-        # Forward pass
-        latent = inp.forward(inputTensor)
-        # Reverse pass
-        inp.reverse(latent)
-        recovered = inp.reconstruct_data()
+        expected_tokens = psp.vocabulary.tokenize(inputTensor)
+        # Forward pass through input->perceptual
+        latent = psp._lex_and_embed(inp.forward(inputTensor))
+        # Reverse pass via PerceptualSpace
+        psp.reverse(latent)
+        recovered = psp.reconstruct_data()
         for b in range(batch_size):
-            nVec = inp.outputShape[0]
+            nVec = psp.outputShape[0]
             exp = expected_tokens[b][:nVec]
             rec = recovered[b][:len(exp)]
             # Content tokens must match; padding tokens just need to be whitespace
@@ -1559,14 +1565,14 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
 
     def test_reverse_recovers_all_xor_examples(self):
         """All XOR examples should round-trip as lexical token streams."""
-        inp, data = self._make_text_input_space()
+        inp, psp, data = self._make_text_input_space()
         all_inputs = data.train_input
         inputTensor = inp.prepInput(all_inputs)
-        latent = inp.forward(inputTensor)
-        inp.reverse(latent)
-        recovered = inp.reconstruct_data()
-        expected = inp.vocabulary.tokenize(inputTensor)
-        nVec = inp.outputShape[0]
+        latent = psp._lex_and_embed(inp.forward(inputTensor))
+        psp.reverse(latent)
+        recovered = psp.reconstruct_data()
+        expected = psp.vocabulary.tokenize(inputTensor)
+        nVec = psp.outputShape[0]
         for b in range(len(all_inputs)):
             exp = expected[b][:nVec]
             rec = recovered[b][:len(exp)]
@@ -1580,13 +1586,13 @@ class TestInputSpaceTextRoundTrip(unittest.TestCase):
 
     def test_reconstruct_data_joins_words(self):
         """reconstruct_data(text=True) renders the whitespace buffer."""
-        inp, data = self._make_text_input_space()
+        inp, psp, data = self._make_text_input_space()
         batch_size = 2
         inputBatch = data.train_input[0:batch_size]
         inputTensor = inp.prepInput(inputBatch)
-        latent = inp.forward(inputTensor)
-        inp.reverse(latent)
-        joined = inp.reconstruct_data(text=True)
+        latent = psp._lex_and_embed(inp.forward(inputTensor))
+        psp.reverse(latent)
+        joined = psp.reconstruct_data(text=True)
         self.assertIsInstance(joined[0], str)
         # Reconstructed text should match original input (ignoring trailing null/space padding)
         for b in range(batch_size):
@@ -1615,26 +1621,18 @@ class TestLexerConfig(unittest.TestCase):
         """Embedding model_type can tokenize text via _token_stream."""
         Models.TheData.load("xor")
         nInput = 8
-        _populate_test_config(inputDim=1, nInput=nInput)
-        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
-        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
-        _obj = _obj_size("InputSpace")
-        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
-                         model_type="embedding")
-        tokens = inp.vocabulary._token_stream("test input")
+        _populate_test_config(inputDim=1, perceptDim=10, nInput=nInput)
+        inp, psp = _build_text_pair(nInput)
+        tokens = psp.vocabulary._token_stream("test input")
         self.assertEqual(tokens[0][0], "test")
 
     def test_embedding_creates_reversible_dictionary(self):
         """Embedding model_type creates Embedding with Lex-backed codebook."""
         Models.TheData.load("xor")
         nInput = 8
-        _populate_test_config(inputDim=1, nInput=nInput)
-        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
-        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
-        _obj = _obj_size("InputSpace")
-        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
-                         model_type="embedding")
-        self.assertIsInstance(inp.vocabulary, Models.Embedding)
+        _populate_test_config(inputDim=1, perceptDim=10, nInput=nInput)
+        inp, psp = _build_text_pair(nInput)
+        self.assertIsInstance(psp.vocabulary, Models.Embedding)
 
 
 class TestEmbeddingLexDelegation(unittest.TestCase):
@@ -1850,22 +1848,18 @@ class TestLoadEmbeddingsEnwiki(unittest.TestCase):
 
 
 class TestXorForwardPass(unittest.TestCase):
-    """Embedding-backed InputSpace handles xor.xml forward pass without assertion error."""
+    """Embedding-backed text path handles xor.xml forward pass without assertion error."""
 
     def test_xor_forward_produces_output(self):
-        """InputSpace with model_type='embedding' can forward xor data through Embedding."""
+        """InputSpace + PerceptualSpace can forward xor data through Embedding."""
         nInput = 8
-        _populate_test_config(inputDim=1, nInput=nInput)
+        _populate_test_config(inputDim=1, perceptDim=10, nInput=nInput)
         Models.TheData.load("xor")
-        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
-        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
-        _obj = _obj_size("InputSpace")
-        inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
-                         model_type="embedding")
+        inp, psp = _build_text_pair(nInput)
         inputTensor = inp.prepInput(Models.TheData.train_input[:2])
-        result = _unwrap(inp.forward(inputTensor))
+        result = _text_embed(inp, psp, inputTensor)
         self.assertEqual(result.shape[0], 2)  # batch size
-        self.assertEqual(result.shape[1], inp.outputShape[0])
+        self.assertEqual(result.shape[1], psp.outputShape[0])
 
 
 class TestErgodicMnistReport(unittest.TestCase):
@@ -2176,7 +2170,7 @@ class TestReconstructionSymbols(unittest.TestCase):
             # Check reconstruction quality: at least 75% of inputs must
             # perfectly reconstruct (some words may snap to wrong codebook
             # entry when the reverse path is approximate).
-            recon_texts = m.inputSpace.reconstruct_data(text=True)
+            recon_texts = m.perceptualSpace.reconstruct_data(text=True)
             perfect = 0
             for i in range(len(test_input)):
                 original = m._bytes_to_text(test_input[i])
@@ -2221,29 +2215,26 @@ class TestXor3dReversePass(unittest.TestCase):
         with torch.no_grad():
             m.runEpoch(batchSize=len(test_input), split="test")
 
-        # Verify no crash and shapes are consistent
-        self.assertIsNotNone(m.inputSpace.reconstructed)
+        # Verify no crash and shapes are consistent.  Reconstructed state
+        # now lives on PerceptualSpace (text mode owns the Embedding there).
+        self.assertIsNotNone(m.perceptualSpace.reconstructed)
 
 
 class TestExpandMasked(unittest.TestCase):
     """InputSpace.expand_masked() produces N masked copies of a sentence embedding."""
 
     def setUp(self):
-        _populate_test_config(inputDim=1, nInput=8,
+        _populate_test_config(inputDim=1, perceptDim=10, nInput=8,
                               nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim)
 
-        # Build a minimal InputSpace with embedding from XOR data
+        # Build an InputSpace + PerceptualSpace pair with embedding from XOR data
         Models.TheData.load("xor")
         nInput = 8
-        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
-        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
-        _obj = _obj_size("InputSpace")
-        self.inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
-                              model_type="embedding")
-        # Run a forward pass to get a real embedded tensor
+        self.inp, self.psp = _build_text_pair(nInput)
+        # Run a forward pass through both spaces to get a real embedded tensor
         inputBatch = Models.TheData.train_input[0:1]
         inputTensor = self.inp.prepInput(inputBatch)
-        self.embedded = _unwrap(self.inp.forward(inputTensor))  # [1, nVec, embSize]
+        self.embedded = _text_embed(self.inp, self.psp, inputTensor)  # [1, nVec, embSize]
         self.sentence = "hello world"  # matches XOR training data
         self.embSize = self.embedded.shape[-1]
         self.nVec = self.embedded.shape[1]
@@ -2316,20 +2307,16 @@ class TestExpandMasked(unittest.TestCase):
 class TestExpandMaskedTargets(unittest.TestCase):
     def setUp(self):
         """Create an OutputSpace + Embedding to test expand_masked."""
-        _populate_test_config(inputDim=1, symbolDim=1, outputDim=1,
+        _populate_test_config(inputDim=1, perceptDim=10, symbolDim=1, outputDim=1,
                               nInput=8, nOutput=4,
                               nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               flatten=True)
 
-        # Build a minimal InputSpace with embedding from XOR data
+        # Build an InputSpace + PerceptualSpace pair with embedding from XOR data
         Models.TheData.load("xor")
         nInput = 8
-        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
-        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
-        _obj = _obj_size("InputSpace")
-        self.inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
-                              model_type="embedding")
-        self.emb = self.inp.subspace.vocabulary
+        self.inp, self.psp = _build_text_pair(nInput)
+        self.emb = self.psp.subspace.vocabulary
 
         # Build a minimal OutputSpace -- input carries symbol objectSize
         _obj_sym = _obj_size("SymbolicSpace")
@@ -2427,19 +2414,15 @@ class TestRARLM(unittest.TestCase):
     """RARLM mode masks from end and truncates previous positions."""
 
     def setUp(self):
-        _populate_test_config(inputDim=1, nInput=8,
+        _populate_test_config(inputDim=1, perceptDim=10, nInput=8,
                               nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim)
 
         Models.TheData.load("xor")
         nInput = 8
-        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
-        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
-        _obj = _obj_size("InputSpace")
-        self.inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
-                              model_type="embedding")
+        self.inp, self.psp = _build_text_pair(nInput)
         inputBatch = Models.TheData.train_input[0:1]
         inputTensor = self.inp.prepInput(inputBatch)
-        self.embedded = _unwrap(self.inp.forward(inputTensor))
+        self.embedded = _text_embed(self.inp, self.psp, inputTensor)
         self.embSize = self.embedded.shape[-1]
 
     def test_rarlm_masks_from_end(self):
@@ -2482,19 +2465,15 @@ class TestRARLMTargets(unittest.TestCase):
     """RARLM targets are in reverse word order."""
 
     def setUp(self):
-        _populate_test_config(inputDim=1, symbolDim=1, outputDim=1,
+        _populate_test_config(inputDim=1, perceptDim=10, symbolDim=1, outputDim=1,
                               nInput=8, nOutput=4,
                               nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
                               flatten=True)
 
         Models.TheData.load("xor")
         nInput = 8
-        _idim = Models.TheXMLConfig.space("InputSpace", "nDim")
-        _invec = Models.TheXMLConfig.space("InputSpace", "nVectors")
-        _obj = _obj_size("InputSpace")
-        self.inp = Models.InputSpace([nInput, _idim], [_invec, _idim], [nInput, _idim + _obj],
-                              model_type="embedding")
-        self.emb = self.inp.subspace.vocabulary
+        self.inp, self.psp = _build_text_pair(nInput)
+        self.emb = self.psp.subspace.vocabulary
 
         _obj_sym = _obj_size("SymbolicSpace")
         self.out = Models.OutputSpace([8, 1 + _obj_sym], [4, 1], [4, 1])
@@ -2543,8 +2522,8 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
     def test_train_embeddings_includes_emb_params(self):
         """When trainEmbeddings=true, _emb.weight is in optimizer params."""
         m = self._create_model(True)
-        self.assertIsInstance(m.inputSpace.vocabulary, Models.Embedding)
-        emb_weight = m.inputSpace.vocabulary.wv._vectors
+        self.assertIsInstance(m.perceptualSpace.vocabulary, Models.Embedding)
+        emb_weight = m.perceptualSpace.vocabulary.wv._vectors
         optimizer = m.getOptimizer(lr=0.001)
         opt_params = [p.data_ptr() for group in optimizer.param_groups for p in group['params']]
         self.assertIn(emb_weight.data_ptr(), opt_params,
@@ -2553,8 +2532,8 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
     def test_frozen_embeddings_default(self):
         """When trainEmbeddings=false, _emb.weight is NOT in optimizer params."""
         m = self._create_model(False)
-        self.assertIsInstance(m.inputSpace.vocabulary, Models.Embedding)
-        emb_weight = m.inputSpace.vocabulary.wv._vectors
+        self.assertIsInstance(m.perceptualSpace.vocabulary, Models.Embedding)
+        emb_weight = m.perceptualSpace.vocabulary.wv._vectors
         optimizer = m.getOptimizer(lr=0.001)
         opt_params = [p.data_ptr() for group in optimizer.param_groups for p in group['params']]
         self.assertNotIn(emb_weight.data_ptr(), opt_params,
@@ -2563,7 +2542,7 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
     def test_joint_mode_passes_sbow_to_total_loss(self):
         """runBatch must forward JOINT sbow loss into ModelLoss.total()."""
         m = self._create_model("joint")
-        self.assertIsInstance(m.inputSpace.vocabulary, Models.Embedding)
+        self.assertIsInstance(m.perceptualSpace.vocabulary, Models.Embedding)
 
         optimizer = m.getOptimizer(lr=0.001)
         sentinel = torch.tensor(1.2345, device=Models.TheDevice.get())
@@ -2681,8 +2660,8 @@ class TestVocabSaveRestore(unittest.TestCase):
             self.assertEqual(list(emb2.pretrain.index_to_key), vocab_before)
             # Embedding shapes must match exactly
             torch.testing.assert_close(
-                m2.state_dict()["inputSpace.subspace.what.wv._vectors"],
-                m1.state_dict()["inputSpace.subspace.what.wv._vectors"])
+                m2.state_dict()["perceptualSpace.subspace.what.wv._vectors"],
+                m1.state_dict()["perceptualSpace.subspace.what.wv._vectors"])
         finally:
             os.unlink(emb_path)
 
@@ -2822,7 +2801,7 @@ class TestReconstructionLossGradient(unittest.TestCase):
             result.lossIn.backward()
 
             # Gradient must reach the codebook
-            emb = m.inputSpace.vocabulary
+            emb = m.perceptualSpace.vocabulary
             codebook_param = emb.wv._vectors
             self.assertIsNotNone(codebook_param.grad,
                 "Codebook parameter should have gradients from lossIn")

@@ -13,7 +13,6 @@
     <type>mental</type>
     <ergodic>false</ergodic>
     <modelType>embedding</modelType>
-    <maskedPrediction>ARLM</maskedPrediction>
     <truthBiasScale>0.1</truthBiasScale>
     <LuminosityWeight>0.1</LuminosityWeight>
     <UniversalityWeight>0.1</UniversalityWeight>
@@ -34,6 +33,7 @@
       <batchSize>64</batchSize>
       <learningRate>0.0005</learningRate>
       <reverseScale>0.1</reverseScale>
+      <maskedPrediction>ARIR</maskedPrediction>
       <trainEmbedding>ARLM</trainEmbedding>
       <autoload>false</autoload>
       <autosave>true</autosave>
@@ -60,12 +60,12 @@
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <lexer>byte</lexer>
-    <codebook>true</codebook>
+    <codebook>false</codebook>
   </InputSpace>
 
   <PerceptualSpace>
     <nInput>4096</nInput>
-    <nVectors>1024</nVectors>
+    <nVectors>65535</nVectors>
     <nDim>4</nDim>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
@@ -74,7 +74,7 @@
     <passThrough>false</passThrough>
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
-    <codebook>false</codebook>
+    <codebook>true</codebook>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: final level shape is 4x1024.
@@ -86,7 +86,7 @@
 
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
-    <codebook>false</codebook>
+    <codebook>true</codebook>
   </ConceptualSpace>
 
   <SymbolicSpace>

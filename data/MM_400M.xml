@@ -64,7 +64,7 @@
     <nOutput>2048</nOutput>
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
-    <lexer>word</lexer>
+    <lexer>byte</lexer>
     <codebook>true</codebook>
   </InputSpace>
 
@@ -99,7 +99,7 @@
 
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>false</codebook>
+    <codebook>true</codebook>
   </ConceptualSpace>
 
   <SymbolicSpace>

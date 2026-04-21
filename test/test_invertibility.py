@@ -496,6 +496,11 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
             "naive": False, "processSymbols": False, "certainty": False,
             "objectSize": objSize, "nObjects": nObjects,
             "nWhere": nWhere, "nWhen": nWhen,
+            # Isolated Space tests stage pre-built tensors directly and
+            # never invoke the Embedding lexer; force model_type to a
+            # non-embedding value so PerceptualSpace does not build an
+            # Embedding basis if a prior test left modelType="embedding".
+            "modelType": "simple",
             "embeddingPath": None, "data": {}, "training": {},
         },
         "InputSpace":      {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": False, "codebook": False, "lexer": "word"},

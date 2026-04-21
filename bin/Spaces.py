@@ -1050,6 +1050,8 @@ class Codebook(Basis):
         """
         if value is None:
             self._active_payload = None
+            if "W" not in self._parameters:
+                self.W = None
             return
         if isinstance(value, nn.Parameter):
             # Register (or re-register) the codebook Parameter. Clear any
@@ -2719,6 +2721,11 @@ class SubSpace(nn.Module):
             return self.activation_presence()
 
         x = self.event.getW()
+        # When demuxed, a 2D tensor here is the Codebook Parameter (a
+        # row-per-prototype codebook), not a cached muxed event. Treat it
+        # as "no cached event" so we rebuild from the modality indices.
+        if self._demuxed and x is not None and x.ndim < 3:
+            x = None
 
         if x is None and self._demuxed:
             if self._active is not None and self._active.ndim == 3:
@@ -3859,22 +3866,13 @@ class InputSpace(Space):
         return None
 
     def _build_what_basis(self):
-        """InputSpace .what holds the vocabulary (Embedding/Codebook/Tensor)."""
-        if self.model_type == "embedding":
-            basis = Embedding()
-            basis.ergodic = self.ergodic
-            basis.create(
-                self.inputShape[0],
-                self.outputShape[0],
-                self.nDim,
-                embedding_path=self.embedding_path,
-                source=self.embedding_source,
-                min_frequency=self.min_frequency,
-                neg_samples=self.neg_samples,
-                byte_mode=getattr(self, 'byte_mode', False),
-            )
-            return basis
+        """InputSpace .what holds non-lexical bases (Codebook/Tensor only).
 
+        The Embedding (lexicon) is owned by PerceptualSpace -- see
+        PerceptualSpace._build_what_basis.
+        """
+        if self.model_type == "embedding":
+            return None  # owned by PerceptualSpace.subspace.what
         if self.model_type == "vq":
             basis = Codebook()
             basis.create(
@@ -3885,7 +3883,6 @@ class InputSpace(Space):
                 passThrough=False,
             )
             return basis
-
         if self.model_type in ("passthrough", "simple"):
             basis = Tensor()
             basis.create(
@@ -3895,7 +3892,6 @@ class InputSpace(Space):
                 passThrough=True,
             )
             return basis
-
         raise RuntimeError("Unexpected model_type")
 
     def __init__(self, inputShape, spaceShape, outputShape, model_type="simple"):
@@ -3927,29 +3923,16 @@ class InputSpace(Space):
         self.nOutputDim = -1
         self.subspace._nInputDim = -1
         self.subspace._nOutputDim = -1
-        lexical_basis = self.subspace.what
-        if isinstance(lexical_basis, Embedding):
-            self.doc_spans = lexical_basis.doc_spans
-            self.doc_sources = lexical_basis.doc_sources
-            if data.train_input and self.subspace.whereEncoding.nDim > 0:
-                # Compute maxP from actual max byte offset in data,
-                # not from data.inputLength (buffer size), which can be
-                # far too large for short text and wastes encoding resolution.
-                if (isinstance(data.train_input, list) and data.train_input
-                        and isinstance(data.train_input[0], str)):
-                    actual_max = max(len(s.encode('utf-8'))
-                                     for s in data.train_input)
-                    # 2x margin for validation/test data that may be longer
-                    maxP = max(self.subspace.whereEncoding.maxVal,
-                               actual_max * 2)
-                else:
-                    maxP = max(self.subspace.whereEncoding.maxVal,
-                               data.inputLength)
-                self.subspace.whereEncoding.maxVal = maxP
-                self.subspace.whereEncoding.div_term = 2 * math.pi / maxP
-        else:
-            self.doc_spans = []
-            self.doc_sources = []
+        self.doc_spans = []
+        self.doc_sources = []
+        # Text mode: Embedding lives on PerceptualSpace; BasicModel wires
+        # this reference after PerceptualSpace is constructed so that
+        # InputSpace.forward() can tokenize without owning the codebook.
+        self._peer_embedding = None
+        # Text mode: Reference to PerceptualSpace so getBatch can invoke
+        # _lex_and_embed to produce the muxed target embedding for masked
+        # prediction (InputSpace no longer embeds in forward()).
+        self._peer_perceptual = None
 
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
         self.input          = torch.FloatTensor
@@ -4059,61 +4042,39 @@ class InputSpace(Space):
             self.subspace.set_event(self.input)
             return self.subspace
 
-        # Reset positional counter for each forward pass
         self.subspace.whereEncoding.p = 0
 
+        if self.model_type == "embedding":
+            # Text mode: the lexicon lives on PerceptualSpace.  Stash the
+            # raw buffer for PerceptualSpace._lex_and_embed (which runs
+            # the embedding forward on the single downstream path) and
+            # return.  Running the embedding here too would create a
+            # second graph through the same Parameter, whose saved
+            # tensors leak across training iterations because nothing
+            # backward()s through this branch and the references aren't
+            # GC'd until the next forward overwrites them.
+            self.subspace._raw_input = input
+            self._forward_input = None
+            return self.subspace
+
+        # Non-text path: vocab is Codebook/Tensor.
+        vocab = self.subspace.what
         batch = input.shape[0]
         nObj = self.outputShape[0]
-        vocab = self.subspace.what
         dev = TheDevice.get()
-
-        if not isinstance(vocab, Embedding):
-            # Non-text path: input is already a tensor, no codebook indices
-            assert list(input.shape) == [batch, self.inputShape[0], self.inputShape[1]]
-            what = vocab.forward(input)
-            self._forward_input = None
-            self.subspace.set_what(what)
-            if self.nWhere > 0:
-                positions = torch.arange(nObj, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
-                self.subspace.set_where(self.subspace.whereEncoding.encode(positions))
-            if self.nWhen > 0:
-                timesteps = torch.arange(nObj, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
-                self.subspace.set_when(self.subspace.whenEncoding.encode(timesteps))
-            self.input = self.subspace.materialize()
-        else:
-            # Text path: get token indices and byte offsets
-            what, meta = vocab.forward(input, return_meta=True)
-            self._forward_input = meta
-
-            # what_indices: [B, N] codebook indices
-            what_indices = meta['indices']  # [B, N] long tensor
-
-            # where_indices: [B, N] byte offsets
-            if self.nWhere > 0:
-                where_indices = torch.zeros(batch, nObj, dtype=torch.long, device=dev)
-                for b, batch_tokens in enumerate(meta['tokens']):
-                    for i, (_, start) in enumerate(batch_tokens):
-                        where_indices[b, i] = start
-                    final_offset = meta['final_offsets'][b]
-                    for i in range(len(batch_tokens), nObj):
-                        where_indices[b, i] = final_offset + (i - len(batch_tokens))
-            else:
-                where_indices = None
-
-            # when_indices: [B, N] timestep indices (sequential for now)
-            if self.nWhen > 0:
-                when_indices = torch.arange(nObj, device=dev).unsqueeze(0).expand(batch, -1)
-            else:
-                when_indices = None
-
-            # Set per-modality indices -- materialize() looks up vectors from Basis
-            self.subspace.set_forward_content(what_indices, where_indices, when_indices)
-            self.input = self.subspace.materialize()
-
-        # Scale what-content to [0,1] via data min-max (or assert if out of range).
+        assert list(input.shape) == [batch, self.inputShape[0], self.inputShape[1]]
+        what = vocab.forward(input)
+        self._forward_input = None
+        self.subspace.set_what(what)
+        if self.nWhere > 0:
+            positions = torch.arange(nObj, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
+            self.subspace.set_where(self.subspace.whereEncoding.encode(positions))
+        if self.nWhen > 0:
+            timesteps = torch.arange(nObj, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
+            self.subspace.set_when(self.subspace.whenEncoding.encode(timesteps))
+        self.input = self.subspace.materialize()
         self.subspace.normalize("input", target="what", normalize=True)
         self.input = self.subspace.materialize()
-
         return self.subspace
 
     def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM', n_words=None):
@@ -4247,6 +4208,18 @@ class InputSpace(Space):
         return masked, targets, mask_positions
 
     def reverse(self, vspace):
+        if self.model_type == "embedding":
+            # Text mode: PerceptualSpace already ran the text reverse and
+            # produced the reconstructed muxed tensor on its own subspace.
+            # Propagate that state into our subspace so
+            # inputSpace.subspace.materialize() reflects the *reconstructed*
+            # tokens (not the forward-pass embedding) -- loss code reads
+            # this as pred_sq while forwardInput (our own forward state) is
+            # target_sq.
+            y = vspace.materialize()
+            if y is not None:
+                self.subspace.set_event(y)
+            return self.subspace
         y = self.reverseBegin(vspace, returnVectors=True)
         # Store full vector (all subspaces) for MSE loss BEFORE partitioning
         object_basis = self.subspace.get_vectors()
@@ -4284,60 +4257,13 @@ class InputSpace(Space):
         self.subspace.normalize("input", target="what", normalize=True)
         return self.subspace
 
-    def reconstruct_data(self, text=False):
-        """Render the last recovered text state stored on InputSpace."""
-        if getattr(self, '_recovered_input', None) is None:
-            raise RuntimeError("reconstruct_data() called before reverse()")
-        return self.subspace.vocabulary.reconstruct_data(self._recovered_input, text=text)
-
-    def reconstruct_to_buffer(self, buf_size=None):
-        """Render the last recovered text buffer stored on InputSpace."""
-        if getattr(self, '_recovered_input', None) is None:
-            raise RuntimeError("reconstruct_to_buffer() called before reverse()")
-        return self.subspace.vocabulary.reconstruct_to_buffer(
-            self._recovered_input, buf_size=buf_size)
-
     def get_forward_meta(self):
         """Return the last forward-pass lexical metadata for text input."""
         return getattr(self, '_forward_input', None)
 
-    def get_recovered_word(self, batch_idx, position):
-        """Return one recovered token from the last InputSpace.reverse()."""
-        if getattr(self, '_recovered_input', None) is None:
-            return None
-        return self.subspace.vocabulary.get_recovered_word(
-            self._recovered_input, batch_idx, position)
-
     # ------------------------------------------------------------------
     # Training policy -- InputSpace decides WHEN, Embedding does HOW
     # ------------------------------------------------------------------
-
-    def train_embeddings(self, words, method='CBOW'):
-        """Run one CBOW/SBOW gradient step if words are available."""
-        emb = self.subspace.vocabulary
-        if isinstance(emb, Embedding) and words:
-            return emb.train_step(words, method=method)
-        return None
-
-    def sbow_loss(self, words):
-        """Return SBOW loss tensor for joint optimization (no backward/step)."""
-        emb = self.subspace.vocabulary
-        if isinstance(emb, Embedding) and words:
-            return emb.sbow_loss(words)
-        return None
-
-    def _snapshot_embeddings(self):
-        """Return the current WordVectors (no-op, vectors are always live)."""
-        emb = self.subspace.vocabulary
-        if isinstance(emb, Embedding):
-            return emb.wv
-        return None
-
-    def set_embedding_sigma(self, sigma):
-        """Control exploration noise on the embedding."""
-        emb = self.subspace.vocabulary
-        if hasattr(emb, 'set_sigma'):
-            emb.set_sigma(sigma)
 
     def getBatch(self, batchNum, batchSize=10, split="train"):
         """Return next batch of (input, output) data and the next batchNum.
@@ -4409,7 +4335,14 @@ class InputSpace(Space):
 
             # Embed once -- retain gradient graph for the masked input path.
             # Targets are detached (they're labels, not part of the forward graph).
-            embedded = self.forward(inputTensor).materialize()  # [1, nVec, embSize]
+            vspace = self.forward(inputTensor)
+            embedded = vspace.materialize()  # [1, nVec, embSize]
+            if embedded is None and self.model_type == "embedding":
+                # Text mode: lexicon lives on PerceptualSpace.  Delegate the
+                # lex+embed+mux to it so we get back the same muxed tensor
+                # the masked-prediction target stack expects.
+                self._peer_perceptual._lex_and_embed(vspace)
+                embedded = self._peer_perceptual._embedded_input
 
             # Compute targets from detached embedding (labels, no gradient needed)
             targets = self.outputSpace.expand_masked(
@@ -4451,9 +4384,18 @@ class InputSpace(Space):
                 mask[i, pos] = True
         return target, mask
 
+    def _lexicon(self):
+        """Return the Embedding -- lives on PerceptualSpace post-refactor,
+        stashed as ``_peer_embedding`` by the model constructor.  Fall back
+        to ``self.subspace.vocabulary`` for non-text modes where the
+        subspace still owns a Codebook."""
+        if self._peer_embedding is not None:
+            return self._peer_embedding
+        return self.subspace.vocabulary
+
     def predict(self, vector):
         """Delegates to Embedding.predict()."""
-        return self.subspace.vocabulary.predict(vector)
+        return self._lexicon().predict(vector)
 
     # ------------------------------------------------------------------
     # ARIR helpers
@@ -4461,15 +4403,15 @@ class InputSpace(Space):
 
     def embed_token(self, word):
         """Delegates to Embedding.embed_token()."""
-        return self.subspace.vocabulary.embed_token(word)
+        return self._lexicon().embed_token(word)
 
     def get_space_embedding(self):
         """Delegates to Embedding.get_space_embedding()."""
-        return self.subspace.vocabulary.get_space_embedding()
+        return self._lexicon().get_space_embedding()
 
     def get_mask_embedding(self):
         """Delegates to Embedding.get_mask_embedding()."""
-        return self.subspace.vocabulary.get_mask_embedding()
+        return self._lexicon().get_mask_embedding()
 
     # -- ARIR state machine ------------------------------------------
 
@@ -4488,7 +4430,7 @@ class InputSpace(Space):
         """
         nVec = self.outputShape[0]
         embSize = self.muxedSize
-        nWhat = self.subspace.vocabulary.embedding_dim
+        nWhat = self._lexicon().embedding_dim
 
         if self._arir_cursor is None:
             # -- First call: embed seed, prepare buffer --------------
@@ -4506,7 +4448,7 @@ class InputSpace(Space):
             self._arir_byte_offset = offsets[0] if offsets else 0
 
             # Fill future positions (seed_len .. nVec-1) with NULL embeddings
-            null_emb = self.subspace.vocabulary.embed_token("\x00")
+            null_emb = self._lexicon().embed_token("\x00")
             for k in range(seed_len, nVec):
                 self._arir_embedded[0, k, :nWhat] = null_emb[:nWhat]
                 est_offset = self._arir_byte_offset + (k - seed_len)
@@ -4622,7 +4564,7 @@ class PerceptualSpace(Space):
     name = "Percepts"
     config_section = "PerceptualSpace"
 
-    def __init__(self, inputShape, spaceShape, outputShape):
+    def __init__(self, inputShape, spaceShape, outputShape, model_type=None):
 
         section = self.config_section
         passThrough = TheXMLConfig.space(section, "passThrough")
@@ -4630,17 +4572,54 @@ class PerceptualSpace(Space):
         hasAttention = TheXMLConfig.space(section, "hasAttention")
         invertible = TheXMLConfig.space(section, "invertible")
         naive = TheXMLConfig.get("architecture.naive")
-        super().__init__(inputShape, spaceShape, outputShape)
+
+        # Stash all attributes BEFORE super().__init__() since _build_what_basis runs inside it
         self.passThrough = passThrough
         self.ergodic = ergodic
         self.hasAttention = hasAttention
         self.invertible = invertible
+
+        # Stash Embedding-construction inputs (read from config BEFORE super().__init__).
+        # Explicit `model_type=` argument wins over architecture.modelType so
+        # callers (mainly tests) can opt into "embedding" without rewriting
+        # the XML config.
+        self.model_type = model_type or TheXMLConfig.get("architecture.modelType")
+        self.embedding_path = TheXMLConfig.get("architecture.embeddingPath", None) or None
+        self.lexer = TheXMLConfig.space("InputSpace", "lexer")
+        self.byte_mode = (self.lexer == "byte")
+        self.min_frequency = float(TheXMLConfig.data_param("minFrequency", 0.0))
+        self.neg_samples = int(TheXMLConfig.training("negSamples", 64))
+        self.embedding_source = TheData.train_input if TheData.train_input else None
+
+        super().__init__(inputShape, spaceShape, outputShape)
+        lexical_basis = self.subspace.what
+        if isinstance(lexical_basis, Embedding):
+            self.doc_spans = lexical_basis.doc_spans
+            self.doc_sources = lexical_basis.doc_sources
+            data = TheData
+            if data.train_input and self.subspace.whereEncoding.nDim > 0:
+                if (isinstance(data.train_input, list) and data.train_input
+                        and isinstance(data.train_input[0], str)):
+                    actual_max = max(len(s.encode('utf-8'))
+                                     for s in data.train_input)
+                    maxP = max(self.subspace.whereEncoding.maxVal,
+                               actual_max * 2)
+                else:
+                    maxP = max(self.subspace.whereEncoding.maxVal,
+                               data.inputLength)
+                self.subspace.whereEncoding.maxVal = maxP
+                self.subspace.whereEncoding.div_term = 2 * math.pi / maxP
+        else:
+            self.doc_spans = []
+            self.doc_sources = []
         try:
             self.chunking_mode = str(
                 TheXMLConfig.space(section, "chunking") or "lexicon"
             )
         except KeyError:
             self.chunking_mode = "lexicon"
+        self._recovered_input = None
+        self._embedded_input = None
         if passThrough:
             return
         input = self.subspace.getEncodedInputSize()
@@ -4672,6 +4651,24 @@ class PerceptualSpace(Space):
                     lambda cfg, _nv=nV, _na=nA: _nv == 0 or _nv == _na,
                     f"PerceptualSpace: non-codebook requires nVectors ({nV}) == nOutput ({nA})"
                 )
+
+    def _build_what_basis(self):
+        """Lexicon home: build the Embedding when running in text mode."""
+        if self.model_type != "embedding":
+            return None
+        basis = Embedding()
+        basis.ergodic = self.ergodic
+        basis.create(
+            self.inputShape[0],
+            self.outputShape[0],
+            self.nDim,
+            embedding_path=self.embedding_path,
+            source=self.embedding_source,
+            min_frequency=self.min_frequency,
+            neg_samples=self.neg_samples,
+            byte_mode=self.byte_mode,
+        )
+        return basis
 
     def everything(self, target="what"):
         """The universal whole -- vertex (1,1,...,1) of the perceptual hypercube.
@@ -4724,8 +4721,61 @@ class PerceptualSpace(Space):
             f"chunking mode must be raw|bpe|lexicon, got {mode!r}"
         )
 
+    def _lex_and_embed(self, upstream_vspace):
+        """Run vocabulary.forward on the upstream raw input, populate this
+        space's subspace with what/where/when indices, and materialize.
+        """
+        raw_input = upstream_vspace._raw_input
+        batch = raw_input.shape[0]
+        nObj = self.outputShape[0]
+        vocab = self.subspace.what
+        dev = TheDevice.get()
+
+        self.subspace.whereEncoding.p = 0
+        what, meta = vocab.forward(raw_input, return_meta=True)
+        self._forward_input = meta
+        self._last_tokens = [
+            [tok for tok, _ in row] for row in meta.get('tokens', [])
+        ]
+        what_indices = meta['indices']
+        if self.nWhere > 0:
+            where_indices = torch.zeros(batch, nObj, dtype=torch.long, device=dev)
+            for b, batch_tokens in enumerate(meta['tokens']):
+                for i, (_, start) in enumerate(batch_tokens):
+                    where_indices[b, i] = start
+                final_offset = meta['final_offsets'][b]
+                for i in range(len(batch_tokens), nObj):
+                    where_indices[b, i] = final_offset + (i - len(batch_tokens))
+        else:
+            where_indices = None
+        if self.nWhen > 0:
+            when_indices = torch.arange(nObj, device=dev).unsqueeze(0).expand(batch, -1)
+        else:
+            when_indices = None
+        self.subspace.set_forward_content(what_indices, where_indices, when_indices)
+        self.subspace.normalize("input", target="what", normalize=True)
+        # Pre-attention embedded/muxed tensor. InputSpace.subspace no longer
+        # materializes this in text mode (it stages only _raw_input), so
+        # _run_forward_pipeline reads it from here to assemble forwardInput
+        # for MLM/RARLM target stacks.
+        self._embedded_input = self.subspace.materialize()
+        return self.subspace
+
     def forward(self, vspace, wordSpace=None, quantize=True):
         """Perception: map input vectors to percepts via attention + VQ + chunking."""
+        if isinstance(self.subspace.what, Embedding):
+            mode = self.chunking_mode
+            if mode == "lexicon":
+                vspace = self._lex_and_embed(vspace)
+            elif mode == "raw":
+                raise NotImplementedError(
+                    "PerceptualSpace chunking='raw' not yet wired; use 'lexicon'.")
+            elif mode == "bpe":
+                raise NotImplementedError(
+                    "PerceptualSpace chunking='bpe' not yet wired; use 'lexicon'.")
+            else:
+                raise ValueError(
+                    f"PerceptualSpace chunking must be raw|bpe|lexicon, got {mode!r}")
         if self.passThrough:
             return vspace
         # Pass byte values from input for boundary detection in compose()
@@ -4750,6 +4800,9 @@ class PerceptualSpace(Space):
 
     def reverse(self, vspace, wordSpace=None):
         """Manifesting: reconstruct input vectors from percepts."""
+        if isinstance(self.subspace.what, Embedding):
+            self._reverse_text(vspace)
+            return vspace
         if self.passThrough:
             return vspace
         if self.invertible:
@@ -4759,6 +4812,89 @@ class PerceptualSpace(Space):
         vspace = self.reverseEnd(y, returnVectors=True)
         vspace.normalize("input", target="what", normalize=True)
         return vspace
+
+    def _reverse_text(self, vspace):
+        """Text-mode reverse: decode embedding vectors back to tokens and store
+        recovered metadata on this PerceptualSpace for the reconstruct methods."""
+        content_basis = self.subspace.what  # Embedding lives here after Task 5
+        object_basis = self.subspace.get_vectors()
+        # Text mode: the subspace already holds per-position muxed vectors
+        # ([B, nVec, nWhat+nWhere+nWhen]). Skip reverseBegin's flatten-undo
+        # reshape (which assumes a forwardEnd flatten that _lex_and_embed
+        # does not perform) and work with the raw per-position tensor.
+        y = vspace.materialize()
+        self.subspace.batch = y.shape[0]
+        raw = object_basis.reverse_raw(y)
+        self.reconstructed = raw.detach()
+        nWhat = content_basis.content_dim
+        object_encoding = self.subspace.objectEncoding
+        if object_encoding is not None:
+            content, aux = object_encoding.split_aux(y, nWhat)
+        else:
+            if y.shape[-1] <= nWhat:
+                content, aux = y.clone(), None
+            else:
+                content, aux = y[:, :, :nWhat].clone(), y[:, :, nWhat:].clone()
+        content = content_basis.reverse(content)
+        if object_encoding is not None:
+            self.input = object_encoding.restore_aux(content, aux)
+        elif aux is not None:
+            self.input = torch.cat([content, aux], dim=-1)
+        else:
+            self.input = content
+        content_basis.setW(self.input)
+        object_basis.setW(self.input)
+        self.subspace.set_event(self.input)
+        self._recovered_input = content_basis.decode_reverse_meta(
+            self.input, subspace=self.subspace)
+        self.subspace.normalize("input", target="what", normalize=True)
+
+    def reconstruct_data(self, text=False):
+        """Render the last recovered text state stored on PerceptualSpace."""
+        if self._recovered_input is None:
+            raise RuntimeError("reconstruct_data() called before reverse()")
+        return self.subspace.what.reconstruct_data(self._recovered_input, text=text)
+
+    def reconstruct_to_buffer(self, buf_size=None):
+        """Render the last recovered text buffer stored on PerceptualSpace."""
+        if self._recovered_input is None:
+            raise RuntimeError("reconstruct_to_buffer() called before reverse()")
+        return self.subspace.what.reconstruct_to_buffer(
+            self._recovered_input, buf_size=buf_size)
+
+    def get_recovered_word(self, batch_idx, position):
+        """Return one recovered token from the last PerceptualSpace._reverse_text()."""
+        if self._recovered_input is None:
+            return None
+        return self.subspace.what.get_recovered_word(
+            self._recovered_input, batch_idx, position)
+
+    def train_embeddings(self, words, method='CBOW'):
+        """Run one CBOW/SBOW gradient step if words are available."""
+        emb = self.subspace.vocabulary
+        if isinstance(emb, Embedding) and words:
+            return emb.train_step(words, method=method)
+        return None
+
+    def sbow_loss(self, words):
+        """Return SBOW loss tensor for joint optimization (no backward/step)."""
+        emb = self.subspace.vocabulary
+        if isinstance(emb, Embedding) and words:
+            return emb.sbow_loss(words)
+        return None
+
+    def _snapshot_embeddings(self):
+        """Return the current WordVectors (no-op, vectors are always live)."""
+        emb = self.subspace.vocabulary
+        if isinstance(emb, Embedding):
+            return emb.wv
+        return None
+
+    def set_embedding_sigma(self, sigma):
+        """Control exploration noise on the embedding."""
+        emb = self.subspace.vocabulary
+        if hasattr(emb, 'set_sigma'):
+            emb.set_sigma(sigma)
 
     @staticmethod
     def test():

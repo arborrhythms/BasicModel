@@ -208,13 +208,13 @@ class BaseModel(nn.Module):
             te = "NONE"
         self.train_embedding = te.upper()
         self.optimize_embedding = self.train_embedding not in ("NONE", "CBOW", "SBOW")
-        if self.optimize_embedding and isinstance(self.inputSpace.vocabulary, Embedding):
-            emb_params = self.inputSpace.vocabulary.embedding_parameters()
-            self.inputSpace.params = self.inputSpace.params + emb_params
+        if self.optimize_embedding and isinstance(self.perceptualSpace.vocabulary, Embedding):
+            emb_params = self.perceptualSpace.vocabulary.embedding_parameters()
+            self.perceptualSpace.params = self.perceptualSpace.params + emb_params
         self.loss.embedding_scale = float(_t("embeddingScale") or 0.1)
-        if isinstance(self.inputSpace.vocabulary, Embedding):
-            self.inputSpace.vocabulary.optimize_embedding = self.optimize_embedding
-            object.__setattr__(self.inputSpace.vocabulary, "_model", self)
+        if isinstance(self.perceptualSpace.vocabulary, Embedding):
+            self.perceptualSpace.vocabulary.optimize_embedding = self.optimize_embedding
+            object.__setattr__(self.perceptualSpace.vocabulary, "_model", self)
 
         self.checkpoint_every_batches = int(os.environ.get(
             "BASIC_CHECKPOINT_EVERY_BATCHES",
@@ -256,8 +256,8 @@ class BaseModel(nn.Module):
         # Exclude embedding params when trainEmbedding is NONE or ARLM
         if not getattr(self, 'optimize_embedding', False):
             exclude = set()
-            if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.vocabulary, Embedding):
-                for p in self.inputSpace.vocabulary.embedding_parameters():
+            if hasattr(self, 'perceptualSpace') and isinstance(self.perceptualSpace.vocabulary, Embedding):
+                for p in self.perceptualSpace.vocabulary.embedding_parameters():
                     exclude.add(p.data_ptr())
             if exclude:
                 params = [p for p in params if p.data_ptr() not in exclude]
@@ -408,8 +408,8 @@ class BaseModel(nn.Module):
 
     def _get_embedding(self):
         """Return the Embedding instance if this model uses one, else None."""
-        if hasattr(self, 'inputSpace') and isinstance(self.inputSpace.vocabulary, Embedding):
-            return self.inputSpace.vocabulary
+        if hasattr(self, 'perceptualSpace') and isinstance(self.perceptualSpace.vocabulary, Embedding):
+            return self.perceptualSpace.vocabulary
         return None
 
     # -- Reasoning Methods --------------------------------------------
@@ -1048,9 +1048,9 @@ class BaseModel(nn.Module):
         rows = []
         # Use reconstruct_data() for lex-based models (embedding vectors, not bytes)
         use_lex_recon = (self.inputSpace.model_type == "embedding" and
-                         self.inputSpace.get_recovered_word(0, 0) is not None)
+                         self.perceptualSpace.get_recovered_word(0, 0) is not None)
         if use_lex_recon:
-            recon_text_list = self.inputSpace.reconstruct_data(text=True)
+            recon_text_list = self.perceptualSpace.reconstruct_data(text=True)
         for i in range(len(test_input)):
             original = self._bytes_to_text(test_input[i])
             if use_lex_recon:
@@ -1087,10 +1087,10 @@ class BaseModel(nn.Module):
             rows)
 
         # Buffer reconstruction via nWhere byte offsets (non-differentiable display)
-        recovered_meta = getattr(self.inputSpace, '_recovered_input', None)
+        recovered_meta = self.perceptualSpace._recovered_input
         if use_lex_recon and recovered_meta is not None:
             buf_size = max(len(test_input[0].tolist()) if isinstance(test_input[0], torch.Tensor) else 64, 64)
-            buffer_strings = self.inputSpace.reconstruct_to_buffer(buf_size=buf_size)
+            buffer_strings = self.perceptualSpace.reconstruct_to_buffer(buf_size=buf_size)
             buf_rows = []
             total_chars = 0
             matching_chars = 0
@@ -1326,15 +1326,25 @@ class BasicModel(BaseModel):
         rawInputShape = [nInput, input_dim]
         self.inputSpace      = self._make_input_space(rawInputShape, spaceShape_input, inputShape,
                                                       model_type=model_type)
+        self.perceptualSpace = self._make_perceptual_space(inputShape, spaceShape_percept, perceptShape)
+        if isinstance(self.perceptualSpace.vocabulary, Embedding):
+            # object.__setattr__ bypasses nn.Module submodule registration so
+            # the Embedding is not double-counted in state_dict (it already
+            # appears under perceptualSpace.subspace.what).
+            object.__setattr__(self.inputSpace, '_peer_embedding',
+                               self.perceptualSpace.vocabulary)
+            # Same trick for the PerceptualSpace reference so text-mode
+            # getBatch can call _lex_and_embed (lexicon lives there).
+            object.__setattr__(self.inputSpace, '_peer_perceptual',
+                               self.perceptualSpace)
         # Convert masked-word string labels to embedding vectors now that
-        # the Embedding vocabulary is available.
+        # the Embedding vocabulary is available on PerceptualSpace.
         if data is not None and hasattr(data, '_lm_labels') and data._lm_labels is not None:
-            embedding = self.inputSpace.vocabulary if self.inputSpace.subspace.what is not None else None
+            embedding = self.perceptualSpace.vocabulary
             if embedding is not None and hasattr(embedding, 'pretrain'):
                 data.prepare_lm_targets(embedding)
                 # Move new targets to device
                 data.toDevice()
-        self.perceptualSpace = self._make_perceptual_space(inputShape, spaceShape_percept, perceptShape)
         self.conceptualSpace = ConceptualSpace(perceptShape, spaceShape_concept, conceptShape)
         self.symbolicSpace   = SymbolicSpace(conceptShape, spaceShape_symbol, symbolShape,
                                              conceptualSpace=self.conceptualSpace)
@@ -1344,7 +1354,7 @@ class BasicModel(BaseModel):
         self.nTotalOutputSymbols = nOutputSymbols
         self.outputSpace     = OutputSpace([nOutputSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
                                            masked_prediction=(masked_prediction != 'NONE'),
-                                           vectors=self.inputSpace.vocabulary)
+                                           vectors=self.perceptualSpace.vocabulary)
         self.spaces.extend([self.outputSpace])
         self.inputSpace.outputSpace = self.outputSpace
 
@@ -1417,6 +1427,12 @@ class BasicModel(BaseModel):
         self.concepts = self.conceptualSpace.forward(self.percepts, wordSpace=ws)
         self.symbols  = self.symbolicSpace.forward(self.concepts, wordSpace=ws)
         input = inputs.materialize()
+        if input is None:
+            # Text mode: InputSpace stages _raw_input only; the post-embed,
+            # pre-attention muxed tensor is cached by PerceptualSpace in
+            # _lex_and_embed. Callers (MLM/RARLM target stacks, plotting)
+            # expect that pre-attention representation, not post-VQ percepts.
+            input = self.perceptualSpace._embedded_input
         concepts = self.concepts.materialize()
         symbols = self.symbols.materialize()
         return input, concepts, symbols
@@ -1433,7 +1449,13 @@ class BasicModel(BaseModel):
         self.inputs = self.inputSpace.forward(inputData)
         if self.wordSpace is not None:
             self.wordSpace.clear_sentence()
-        return self.inputs.materialize()
+        embedded = self.inputs.materialize()
+        if embedded is None and self.inputSpace.model_type == "embedding":
+            # Text mode: lexicon lives on PerceptualSpace.  Run _lex_and_embed
+            # to produce the embedded sequence the AR loop slides over.
+            self.perceptualSpace._lex_and_embed(self.inputs)
+            embedded = self.perceptualSpace._embedded_input
+        return embedded
 
     def _ar_token_count(self, embedded):
         """Return the token positions to stream and cache a valid-position mask."""
@@ -1726,7 +1748,7 @@ class BasicModel(BaseModel):
         )
         if is_ar_mode:
             input = self._start_ar_forward(inputData)
-            embedded = self.inputs.materialize()
+            embedded = input
             batch, _, emb_size = embedded.shape
             n_steps = self._ar_token_count(embedded)
             predictions = []
@@ -1860,18 +1882,18 @@ class BasicModel(BaseModel):
             # replaces it (see perceptual_sbow_loss).
             if getattr(self, 'lexer', None) in ('byte', 'bytes'):
                 return None
-            emb = self.inputSpace.vocabulary
+            emb = self.perceptualSpace.vocabulary
             if isinstance(emb, Embedding):
                 sentences = self._get_sentences(split)
                 if sentences and index < len(sentences):
                     sentence = sentences[index]
                     words = [t for t, _ in quick_parser(sentence)]
                     if te in ('JOINT'):
-                        sbow = self.inputSpace.sbow_loss(words)
+                        sbow = self.perceptualSpace.sbow_loss(words)
                     elif te in ('CBOW', 'SBOW', 'BOTH'):
                         # CBOW uses padded context; SBOW and BOTH use the faster centroid method
                         method = 'CBOW' if te == 'CBOW' else 'SBOW'
-                        self.inputSpace.train_embeddings(words, method=method)
+                        self.perceptualSpace.train_embeddings(words, method=method)
         return sbow
 
     def perceptual_sbow_loss(self):
@@ -2401,7 +2423,7 @@ class BasicModel(BaseModel):
                         for sentence in inp_items:
                             words = [t for t, _
                                      in quick_parser(sentence)]
-                            self.inputSpace.train_embeddings(
+                            self.perceptualSpace.train_embeddings(
                                 words, method=method)
 
         if inputChunks:
@@ -2606,6 +2628,11 @@ class MentalModel(BaseModel):
 
         # Input -> Percept
         self.perceptualSpace = PerceptualSpace(inputShape, spaceShape_percept, perceptShape)
+        if isinstance(self.perceptualSpace.vocabulary, Embedding):
+            object.__setattr__(self.inputSpace, '_peer_embedding',
+                               self.perceptualSpace.vocabulary)
+            object.__setattr__(self.inputSpace, '_peer_perceptual',
+                               self.perceptualSpace)
 
         conceptInputShape = [nPercepts, percept_dim + obj_percept]
 
@@ -2680,7 +2707,7 @@ class MentalModel(BaseModel):
         outputInputShape = [self.nOutputSymbols, symbol_dim + obj_symbol]
         self.outputSpace = OutputSpace(outputInputShape, spaceShape_output, outputShape,
                                        masked_prediction=(masked_prediction != 'NONE'),
-                                       vectors=self.inputSpace.vocabulary)
+                                       vectors=self.perceptualSpace.vocabulary)
 
         self._symbol_shape = [nPercepts, percept_dim + obj_percept]
 
@@ -2888,7 +2915,20 @@ class MentalModel(BaseModel):
         # cached subspace event in place.
         self.inputs = self.inputSpace.forward(inputData)
         input_state = self.inputs.materialize()
-        B = input_state.shape[0]
+        if input_state is None:
+            # Text mode: InputSpace stages ``_raw_input`` only; the
+            # Embedding lives on PerceptualSpace and runs in
+            # _lex_and_embed during perceptualSpace.forward().  Use the
+            # raw buffer shape to size batch / device for the rest of
+            # Start().  The ``input_state`` return value is populated
+            # by _run_forward_pipeline's fallback to
+            # perceptualSpace._embedded_input after PerceptualSpace runs.
+            raw = self.inputs._raw_input
+            B = raw.shape[0]
+            device = raw.device
+        else:
+            B = input_state.shape[0]
+            device = input_state.device
 
         # 4. WordSpace per-sentence lifecycle (after embedding so batch
         # sizing is known).
@@ -2897,7 +2937,7 @@ class MentalModel(BaseModel):
             self.wordSpace.clear_sentence()
 
         # 5. Seed flat-path symbolic feedback state.
-        self.symbolic_state = self.symbolicSpace.empty_state(batch=B).to(input_state.device)
+        self.symbolic_state = self.symbolicSpace.empty_state(batch=B).to(device)
 
         return input_state
 
@@ -3039,7 +3079,15 @@ class MentalModel(BaseModel):
         # 1. Reset + embed (Start() cascade).
         input_state = self.Start(inputData)
         embedded = self.inputs.materialize()   # [B, N_max, embSize]
-        B = embedded.shape[0]
+        if embedded is None:
+            # Text mode: InputSpace only stages ``_raw_input``; the
+            # materialized embedding is produced by PerceptualSpace
+            # (_lex_and_embed).  Size batch off the raw buffer; the
+            # ``embedded`` tensor is only used by the AR outer loop,
+            # which is not active in this mode.
+            B = self.inputs._raw_input.shape[0]
+        else:
+            B = embedded.shape[0]
 
         # 2. Discourse prediction (once per forward, pre-loop).
         self._predicted_snapshot = None
@@ -3083,6 +3131,17 @@ class MentalModel(BaseModel):
                 percepts, B, discourse_for_prime, ws, apply_prime=True)
         else:
             # AR path: outer pos loop with sliding buffer.
+            if embedded is None and self.inputSpace.model_type == "embedding":
+                # Text mode: run _lex_and_embed to produce the sequence the
+                # AR loop slides over (lexicon lives on PerceptualSpace).
+                self.perceptualSpace._lex_and_embed(self.inputs)
+                embedded = self.perceptualSpace._embedded_input
+            # Truncate BPTT at forward() boundaries: detach the persistent
+            # sliding buffer so gradients do not chain into prior batches'
+            # graph (otherwise backward recurses through the full epoch's
+            # history and blows the native stack).
+            if self.inputSpace._ar_buffer is not None:
+                self.inputSpace._ar_buffer = self.inputSpace._ar_buffer.detach()
             # Determine N (how many new tokens to slide in this forward)
             # and build a per-row valid-position mask so short rows do
             # not train the model to predict their padded NULL tokens.
@@ -3223,6 +3282,13 @@ class MentalModel(BaseModel):
 
         symbols = sym_vectors.norm(dim=-1).unsqueeze(-1).expand(
             -1, -1, percepts.shape[-1])
+
+        # Text mode: InputSpace doesn't own the Embedding, so its
+        # materialize() returns None in Start().  Populate input_state
+        # from PerceptualSpace, which ran the lexicon during its
+        # forward() call above.
+        if input_state is None:
+            input_state = self.perceptualSpace._embedded_input
 
         if not is_ar_mode:
             # Non-AR: emit single output prediction as today.
