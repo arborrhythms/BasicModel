@@ -195,7 +195,12 @@ class TestXORSpacesModel(unittest.TestCase):
         """Forward pass on the first XOR training sentence completes without error."""
         import torch
         self.model.eval()
-        batch, _ = self.model.inputSpace.getBatch(0, batchSize=1)
+        loader = self.model.inputSpace.data.data_loader(split="train", num_streams=1)
+        inp_items, out_items = next(iter(loader))
+        inputTensor = self.model.inputSpace.prepInput(inp_items)
+        outputTensor = (self.model.outputSpace.prepOutput(out_items)
+                        if out_items is not None else None)
+        batch = (inputTensor, outputTensor)
         inp, _ = batch
         with torch.no_grad():
             out = self.model.forward(inp)
@@ -206,7 +211,12 @@ class TestXORSpacesModel(unittest.TestCase):
         """Output tensor has shape [batch, nOutput, outputDim]."""
         import torch
         self.model.eval()
-        batch, _ = self.model.inputSpace.getBatch(0, batchSize=1)
+        loader = self.model.inputSpace.data.data_loader(split="train", num_streams=1)
+        inp_items, out_items = next(iter(loader))
+        inputTensor = self.model.inputSpace.prepInput(inp_items)
+        outputTensor = (self.model.outputSpace.prepOutput(out_items)
+                        if out_items is not None else None)
+        batch = (inputTensor, outputTensor)
         inp, _ = batch
         with torch.no_grad():
             _, _, output, _ = self.model.forward(inp)

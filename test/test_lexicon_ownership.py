@@ -114,5 +114,57 @@ class TestWeightSpacePartition(unittest.TestCase):
             self.assertGreater(os.path.getsize(kv_path), 0)
 
 
+def test_inputspace_expand_masked_is_gone():
+    from bin import Spaces
+    assert not hasattr(Spaces.InputSpace, 'expand_masked'), \
+        "InputSpace.expand_masked should be deleted (MLM removed)"
+
+def test_outputspace_expand_masked_is_gone():
+    from bin import Spaces
+    assert not hasattr(Spaces.OutputSpace, 'expand_masked'), \
+        "OutputSpace.expand_masked should be deleted (MLM removed)"
+
+
+def test_inputspace_arir_step_is_public():
+    from bin import Spaces
+    assert hasattr(Spaces.InputSpace, 'arir_step'), \
+        "InputSpace.arir_step should be a public method (promoted from _getBatch_arir)"
+
+
+def test_inputspace_getbatch_is_gone():
+    from bin import Spaces
+    assert not hasattr(Spaces.InputSpace, 'getBatch'), \
+        "InputSpace.getBatch should be deleted"
+
+
+def test_inputspace_peer_embedding_is_gone():
+    from bin import Spaces
+    import inspect
+    src = inspect.getsource(Spaces.InputSpace.__init__)
+    assert '_peer_embedding' not in src, \
+        "_peer_embedding shortcut is gone; use _peer_perceptual.vocabulary"
+
+def test_inputspace_predict_is_gone():
+    from bin import Spaces
+    assert not hasattr(Spaces.InputSpace, 'predict'), \
+        "InputSpace.predict delegator deleted; callers use perceptualSpace.vocabulary.predict"
+
+def test_inputspace_embed_token_is_gone():
+    from bin import Spaces
+    assert not hasattr(Spaces.InputSpace, 'embed_token')
+
+def test_inputspace_get_space_embedding_is_gone():
+    from bin import Spaces
+    assert not hasattr(Spaces.InputSpace, 'get_space_embedding')
+
+def test_inputspace_get_mask_embedding_is_gone():
+    from bin import Spaces
+    assert not hasattr(Spaces.InputSpace, 'get_mask_embedding')
+
+def test_inputspace_lexicon_helper_is_gone():
+    from bin import Spaces
+    assert not hasattr(Spaces.InputSpace, '_lexicon')
+
+
 if __name__ == "__main__":
     unittest.main()

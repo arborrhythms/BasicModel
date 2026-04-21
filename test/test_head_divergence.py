@@ -76,10 +76,14 @@ class TestHeadDivergence(unittest.TestCase):
             warnings.filterwarnings("ignore", message="Range violation")
             warnings.filterwarnings("ignore", message="PiLayer.reverse")
 
-            batch, _ = self.model.inputSpace.getBatch(0, 1, "runtime")
+            loader = self.model.inputSpace.data.data_loader(split="train", num_streams=1)
+            inp_items, out_items = next(iter(loader))
+            inputTensor = self.model.inputSpace.prepInput(inp_items)
+            outputTensor = (self.model.outputSpace.prepOutput(out_items)
+                            if out_items is not None else None)
+            batch = (inputTensor, outputTensor)
             if batch is None:
                 return None, None, -1
-            inputTensor, _ = batch
 
             # Forward through Input -> Percept -> Concept
             with torch.no_grad():

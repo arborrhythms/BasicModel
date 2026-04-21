@@ -3956,13 +3956,9 @@ class InputSpace(Space):
         self.subspace._nOutputDim = -1
         self.doc_spans = []
         self.doc_sources = []
-        # Text mode: Embedding lives on PerceptualSpace; BasicModel wires
-        # this reference after PerceptualSpace is constructed so that
-        # InputSpace.forward() can tokenize without owning the codebook.
-        self._peer_embedding = None
-        # Text mode: Reference to PerceptualSpace so getBatch can invoke
-        # _lex_and_embed to produce the muxed target embedding for masked
-        # prediction (InputSpace no longer embeds in forward()).
+        # Text mode: Reference to PerceptualSpace so InputSpace.forward()
+        # can invoke _lex_and_embed to produce the muxed target embedding
+        # (InputSpace no longer owns the codebook).
         self._peer_perceptual = None
 
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
@@ -4053,8 +4049,8 @@ class InputSpace(Space):
     def prep_sentence_batch(self, sentences):
         """Turn a tuple/list of B sentence strings into a [B, nVec, 1] tensor.
 
-        Thin wrapper over ``prepInput`` kept separate from ``getBatch`` so the
-        streaming path does not touch the legacy cursor-based code.
+        Thin wrapper over ``prepInput`` so the streaming path can convert a
+        sentence tuple directly without any batch-cursor bookkeeping.
         """
         return self.prepInput(list(sentences))
     def shuffle(self):
@@ -4107,136 +4103,6 @@ class InputSpace(Space):
         self.subspace.normalize("input", target="what", normalize=True)
         self.input = self.subspace.materialize()
         return self.subspace
-
-    def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM', n_words=None):
-        """Expand one sentence's embedding into N masked copies.
-
-        Modes:
-            MLM: Zero content at position i, preserve position encoding.
-            ARLM: Zero content at position i, truncate all future positions (j > i).
-            ARUS: Same as ARLM (output-side behavior differs in OutputSpace).
-            RARLM: Zero content at position (N-1-i), truncate all previous positions (j < pos).
-
-        Args:
-            embedded: [1, nVectors, embeddingSize] output of forward()
-            sentence_text: original sentence string (used for word count)
-            maskedPrediction: prediction mode ('MLM', 'ARLM', 'ARUS', or 'RARLM')
-            n_words: explicit word count (byte mode -- from span_meta after compaction)
-
-        Returns:
-            (masked_batch, mask_positions):
-                masked_batch: [N, nVectors, embeddingSize]
-                mask_positions: list[int] of length N
-        """
-        if n_words is not None:
-            N = min(n_words, embedded.shape[1])
-        else:
-            words = sentence_text.split()
-            N = min(len(words), self.outputShape[0])  # cap at nVectors
-
-        # Repeat the embedded sentence N times
-        masked = embedded.expand(N, -1, -1).detach().clone()  # [N, nVec, embSize]
-
-        # Determine which dims are content (to zero) vs position (to preserve)
-        embSize = embedded.shape[-1]
-        content_mask = torch.ones(embSize, dtype=torch.bool, device=TheDevice.get())
-        # Preserve nWhere dims (dynamic indices from whereEncoding)
-        if self.subspace.whereEncoding.nDim > 0:
-            where_idx = np.add([embSize, embSize], self.subspace.whereEncoding.index)
-            for wi in where_idx:
-                if 0 <= wi < embSize:
-                    content_mask[wi] = False
-        # Preserve nWhen dims (indices [-2, -1] from end of embedding)
-        if self.subspace.whenEncoding.nDim > 0:
-            when_idx = np.add([embSize, embSize], self.subspace.whenEncoding.index)
-            for wi in when_idx:
-                if 0 <= wi < embSize:
-                    content_mask[wi] = False
-
-        # Determine mask position for each copy
-        for i in range(N):
-            pos = (N - 1 - i) if maskedPrediction == 'RARLM' else i
-            masked[i, pos, content_mask] = 0.0
-
-        # ARLM/ARUS: truncate all future positions (j > i)
-        if maskedPrediction in ('ARLM', 'ARUS'):
-            for i in range(N):
-                if i + 1 < masked.shape[1]:
-                    masked[i, i + 1:, :] = 0.0
-
-        # RARLM: truncate all previous positions (j < pos)
-        if maskedPrediction == 'RARLM':
-            for i in range(N):
-                pos = N - 1 - i
-                if pos > 0:
-                    masked[i, :pos, :] = 0.0
-
-        if maskedPrediction == 'RARLM':
-            return masked, list(range(N - 1, -1, -1))
-        return masked, list(range(N))
-
-    def expand_masked_batched(self, embedded, sentences, maskedPrediction,
-                              pos):
-        """Apply per-position masking to a B-wide embedded batch.
-
-        ``embedded`` has shape [B, nVectors, embeddingSize]. For each row we
-        mask position ``pos`` (or ``N-1-pos`` for RARLM) using the same
-        content/positional dim discrimination as ``expand_masked``, and
-        return the masked batch, the per-row targets at that position, and
-        the mask index used for each row.
-
-        Rows whose sentence has fewer than ``pos+1`` words are passed
-        through unchanged and their target row is left zero; the caller
-        is responsible for skipping those rows via a loss mask.
-
-        Args:
-            embedded: [B, nVec, embSize] output of forward()
-            sentences: list[str] of length B, parallel to embedded
-            maskedPrediction: 'MLM' / 'ARLM' / 'ARUS' / 'RARLM'
-            pos: which word index to mask in each row
-
-        Returns:
-            (masked, targets, mask_positions):
-                masked:         [B, nVec, embSize] gradient-connected to embedded
-                targets:        [B, embSize] detached target vectors
-                mask_positions: list[int] of length B -- resolved mask index
-                                per row (-1 for rows that were passed through)
-        """
-        B, nVec, embSize = embedded.shape
-        dev = embedded.device
-        masked = embedded.clone()
-
-        content_mask = torch.ones(embSize, dtype=torch.bool, device=dev)
-        if self.subspace.whereEncoding.nDim > 0:
-            where_idx = np.add([embSize] * len(self.subspace.whereEncoding.index),
-                               self.subspace.whereEncoding.index)
-            for wi in where_idx:
-                if 0 <= wi < embSize:
-                    content_mask[wi] = False
-        if self.subspace.whenEncoding.nDim > 0:
-            when_idx = np.add([embSize] * len(self.subspace.whenEncoding.index),
-                              self.subspace.whenEncoding.index)
-            for wi in when_idx:
-                if 0 <= wi < embSize:
-                    content_mask[wi] = False
-
-        targets = torch.zeros(B, embSize, device=dev)
-        mask_positions = [-1] * B
-        for b in range(B):
-            words = sentences[b].split()
-            N = min(len(words), nVec)
-            if N == 0 or pos >= N:
-                continue
-            p = (N - 1 - pos) if maskedPrediction == 'RARLM' else pos
-            targets[b] = embedded[b, p].detach()
-            masked[b, p, content_mask] = 0.0
-            if maskedPrediction in ('ARLM', 'ARUS') and p + 1 < nVec:
-                masked[b, p + 1:, :] = 0.0
-            if maskedPrediction == 'RARLM' and p > 0:
-                masked[b, :p, :] = 0.0
-            mask_positions[b] = p
-
-        return masked, targets, mask_positions
 
     def reverse(self, vspace):
         if self.model_type == "embedding":
@@ -4292,162 +4158,17 @@ class InputSpace(Space):
         """Return the last forward-pass lexical metadata for text input."""
         return getattr(self, '_forward_input', None)
 
-    # ------------------------------------------------------------------
-    # Training policy -- InputSpace decides WHEN, Embedding does HOW
-    # ------------------------------------------------------------------
-
-    def getBatch(self, batchNum, batchSize=10, split="train"):
-        """Return next batch of (input, output) data and the next batchNum.
-
-        For standard mode: slices train_input/train_output by batchSize.
-        For masked prediction: takes sentence batchNum, embeds it,
-            expands into N masked copies (one per word), computes N targets.
-            Batch size is dynamic (= words in sentence).
-
-        Args:
-            batchNum: current batch index
-            batchSize: number of examples per batch (standard mode only)
-            split: "train", "test", or "validation"
-
-        Returns:
-            ((inputBatch, outputBatch), nextBatchNum)
-            Returns (None, batchNum) when data is exhausted.
-        """
-        # Select data for the requested split
-        if split == "train" or split == "runtime":
-            inputData = self.data.train_input
-            outputData = self.data.train_output
-        elif split == "test":
-            inputData = self.data.test_input
-            outputData = self.data.test_output
-        elif split == "validation":
-            inputData = self.data.validation_input
-            outputData = self.data.validation_output
-        else:
-            raise ValueError(f"Unknown split: {split}")
-
-        # -- ARIR state machine --------------------------------------
-        if split == "runtime" and getattr(self.data, '_runtime_mode', None) == 'ARIR':
-            return self._getBatch_arir(inputData, batchNum)
-
-        # Use standard (non-masked) path when: no masked prediction configured,
-        # or runtime split with no sentences staged (inference via runBatch).
-        # Raw strings for masked prediction -- all splits store strings directly
-        if (isinstance(inputData, list) and inputData
-                and isinstance(inputData[0], str)):
-            sentences = inputData
-        else:
-            sentences = None
-        use_masked = (hasattr(self.data, 'masked_prediction')
-                      and self.data.masked_prediction != 'NONE'
-                      and sentences is not None)
-        if not use_masked:
-            # Standard mode: fixed-size batch slicing
-            i = batchNum * batchSize
-            if i >= len(inputData):
-                return None, batchNum
-            inputBatch = inputData[i:i + batchSize]
-            inputTensor = self.prepInput(inputBatch)
-            if outputData is not None:
-                outputBatch = outputData[i:i + batchSize]
-                outputTensor = self.outputSpace.prepOutput(outputBatch)
-            else:
-                outputTensor = None
-            self._unmasked_embedding = None
-            self._mask_positions = None
-            return (inputTensor, outputTensor), batchNum + 1
-        else:
-            # Masked prediction: one sentence -> N masked examples.
-            # Embed once, use that embedding for both targets and masked input.
-            if batchNum >= len(sentences):
-                return None, batchNum
-            sentence = sentences[batchNum]
-            inputTensor = self.prepInput(inputData[batchNum:batchNum + 1])
-
-            # Embed once -- retain gradient graph for the masked input path.
-            # Targets are detached (they're labels, not part of the forward graph).
-            vspace = self.forward(inputTensor)
-            embedded = vspace.materialize()  # [1, nVec, embSize]
-            if embedded is None and self.model_type == "embedding":
-                # Text mode: lexicon lives on PerceptualSpace.  Delegate the
-                # lex+embed+mux to it so we get back the same muxed tensor
-                # the masked-prediction target stack expects.
-                self._peer_perceptual._lex_and_embed(vspace)
-                embedded = self._peer_perceptual._embedded_input
-
-            # Compute targets from detached embedding (labels, no gradient needed)
-            targets = self.outputSpace.expand_masked(
-                embedded.detach(), sentence, self.data.masked_prediction)
-
-            # Build masked copies from the live embedding (retains gradient graph)
-            masked_batch, mask_positions = self.expand_masked(
-                embedded, sentence, self.data.masked_prediction)
-
-            # Cache unmasked embedding for reconstruction loss target
-            self._unmasked_embedding = embedded.detach()  # [1, nVec, embSize]
-            self._mask_positions = mask_positions           # list[int], len=N
-
-            # Hand masked embedding to forward() via cache -- no re-embedding,
-            # but gradient flows back through masked_batch -> embedded -> embedding weights
-            self._cached_embedding = masked_batch
-
-            return (inputTensor, targets), batchNum + 1
-
     def get_reconstruction_target(self):
         """Return (target, mask) for reconstruction loss.
 
-        target: [batch, nVec, embSize] -- unmasked post-encoding embedding
-        mask:   [batch, nVec] bool -- True at masked positions to compute loss on.
-                None when maskedPrediction=NONE (use whole buffer).
+        Always returns (None, None); callers fall back to forwardInput.
         """
-        unmasked = getattr(self, '_unmasked_embedding', None)
-        positions = getattr(self, '_mask_positions', None)
-        if unmasked is None or positions is None:
-            return None, None
-        N = len(positions)
-        nVec = unmasked.shape[1]
-        target = unmasked.expand(N, -1, -1)
-        mask = torch.zeros(N, nVec, dtype=torch.bool, device=TheDevice.get())
-        for i, pos in enumerate(positions):
-            # pos < 0 signals "skip this row" in the streaming path
-            # (sentence too short at the current mask position).
-            if pos >= 0:
-                mask[i, pos] = True
-        return target, mask
-
-    def _lexicon(self):
-        """Return the Embedding -- lives on PerceptualSpace post-refactor,
-        stashed as ``_peer_embedding`` by the model constructor.  Fall back
-        to ``self.subspace.vocabulary`` for non-text modes where the
-        subspace still owns a Codebook."""
-        if self._peer_embedding is not None:
-            return self._peer_embedding
-        return self.subspace.vocabulary
-
-    def predict(self, vector):
-        """Delegates to Embedding.predict()."""
-        return self._lexicon().predict(vector)
-
-    # ------------------------------------------------------------------
-    # ARIR helpers
-    # ------------------------------------------------------------------
-
-    def embed_token(self, word):
-        """Delegates to Embedding.embed_token()."""
-        return self._lexicon().embed_token(word)
-
-    def get_space_embedding(self):
-        """Delegates to Embedding.get_space_embedding()."""
-        return self._lexicon().get_space_embedding()
-
-    def get_mask_embedding(self):
-        """Delegates to Embedding.get_mask_embedding()."""
-        return self._lexicon().get_mask_embedding()
+        return None, None
 
     # -- ARIR state machine ------------------------------------------
 
-    def _getBatch_arir(self, inputData, batchNum):
-        """ARIR state machine for getBatch(): embed seed, then iteratively
+    def arir_step(self, inputData, batchNum):
+        """ARIR state machine: embed seed, then iteratively
         place [MASK] and read back reconstructed latent vectors.
 
         First call (cursor is None):
@@ -4461,7 +4182,7 @@ class InputSpace(Space):
         """
         nVec = self.outputShape[0]
         embSize = self.muxedSize
-        nWhat = self._lexicon().embedding_dim
+        nWhat = self._peer_perceptual.vocabulary.embedding_dim
 
         if self._arir_cursor is None:
             # -- First call: embed seed, prepare buffer --------------
@@ -4479,7 +4200,7 @@ class InputSpace(Space):
             self._arir_byte_offset = offsets[0] if offsets else 0
 
             # Fill future positions (seed_len .. nVec-1) with NULL embeddings
-            null_emb = self._lexicon().embed_token("\x00")
+            null_emb = self._peer_perceptual.vocabulary.embed_token("\x00")
             for k in range(seed_len, nVec):
                 self._arir_embedded[0, k, :nWhat] = null_emb[:nWhat]
                 est_offset = self._arir_byte_offset + (k - seed_len)
@@ -4835,8 +4556,7 @@ class PerceptualSpace(Space):
         self.subspace.normalize("input", target="what", normalize=True)
         # Pre-attention embedded/muxed tensor. InputSpace.subspace no longer
         # materializes this in text mode (it stages only _raw_input), so
-        # _run_forward_pipeline reads it from here to assemble forwardInput
-        # for MLM/RARLM target stacks.
+        # _run_forward_pipeline reads it from here to assemble forwardInput.
         self._embedded_input = self.subspace.materialize()
         return self.subspace
 
@@ -6546,37 +6266,6 @@ class OutputSpace(Space):
         vspace = self.reverseEnd(y, returnVectors=True)
         return vspace
 
-    def expand_masked(self, embedded, sentence_text, maskedPrediction='MLM'):
-        """Extract target embedding vectors from the embedded sentence.
-
-        Each target is the original embedded word vector at the masked position,
-        paralleling InputSpace.expand_masked() which creates masked copies.
-
-        Modes:
-            MLM/ARLM: Target[i] = embedded word i.
-            ARUS: Zero vectors (loss suppressed in runEpoch).
-            RARLM: Targets in reverse order (matching reverse mask positions).
-
-        Args:
-            embedded: [1, nVectors, embeddingSize] from InputSpace.forward()
-            sentence_text: original sentence string (for word count)
-            maskedPrediction: prediction mode ('MLM', 'ARLM', 'ARUS', or 'RARLM')
-
-        Returns:
-            targets: [N, 1, embeddingSize] tensor of target word embeddings
-        """
-        words = sentence_text.split()
-        N = min(len(words), embedded.shape[1])
-        embSize = embedded.shape[-1]
-        if N == 0:
-            return torch.zeros(0, 1, embSize, device=TheDevice.get())
-        # Extract the first N full word vectors (nWhat + nWhere + nWhen)
-        targets = embedded[0, :N, :].clone()  # [N, embSize]
-        if maskedPrediction == 'ARUS':
-            targets = torch.zeros_like(targets)
-        elif maskedPrediction == 'RARLM':
-            targets = targets.flip(0)
-        return targets.unsqueeze(1)  # [N, 1, embSize]
     # --- Text reconstruction from symbolic vectors ---
     def set_text_mode(self, input_space):
         """Share InputSpace's Embedding so OutputSpace can reconstruct text.
@@ -6664,7 +6353,7 @@ class OutputSpace(Space):
         self._batch_results = []
 
     def putBatch(self, result):
-        """Collect output from a completed batch (symmetric with getBatch).
+        """Collect output from a completed batch (counterpart to data_loader).
 
         Results are cleared at the start of each runEpoch() via clearBatchResults().
 

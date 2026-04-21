@@ -1329,12 +1329,8 @@ class BasicModel(BaseModel):
         self.perceptualSpace = self._make_perceptual_space(inputShape, spaceShape_percept, perceptShape)
         if isinstance(self.perceptualSpace.vocabulary, Embedding):
             # object.__setattr__ bypasses nn.Module submodule registration so
-            # the Embedding is not double-counted in state_dict (it already
-            # appears under perceptualSpace.subspace.what).
-            object.__setattr__(self.inputSpace, '_peer_embedding',
-                               self.perceptualSpace.vocabulary)
-            # Same trick for the PerceptualSpace reference so text-mode
-            # getBatch can call _lex_and_embed (lexicon lives there).
+            # the PerceptualSpace reference is not double-counted in state_dict.
+            # Text-mode InputSpace.forward calls _lex_and_embed (lexicon lives there).
             object.__setattr__(self.inputSpace, '_peer_perceptual',
                                self.perceptualSpace)
         # Convert masked-word string labels to embedding vectors now that
@@ -1430,8 +1426,8 @@ class BasicModel(BaseModel):
         if input is None:
             # Text mode: InputSpace stages _raw_input only; the post-embed,
             # pre-attention muxed tensor is cached by PerceptualSpace in
-            # _lex_and_embed. Callers (MLM/RARLM target stacks, plotting)
-            # expect that pre-attention representation, not post-VQ percepts.
+            # _lex_and_embed. Callers (plotting) expect that pre-attention
+            # representation, not post-VQ percepts.
             input = self.perceptualSpace._embedded_input
         concepts = self.concepts.materialize()
         symbols = self.symbols.materialize()
@@ -1706,7 +1702,7 @@ class BasicModel(BaseModel):
                     if result is None:
                         break
 
-                    decoded = self.inputSpace.predict(result.outputPred)
+                    decoded = self.perceptualSpace.vocabulary.predict(result.outputPred)
                     word = decoded[0]
 
                     if word is None or word == '' or word == '\x00':
@@ -1977,28 +1973,35 @@ class BasicModel(BaseModel):
 
         Args:
             train: whether to compute gradients and update parameters.
-            batchNum: opaque cursor returned by getBatch for the next batch.
+            batchNum: opaque cursor for the next batch position.
             batchSize: number of examples per batch.
             split: "train", "test", or "validation".
             optimizer: pre-built optimizer (required when train=True).
-            batch_override: optional ``(inputTensor, outputTensor)`` pair that
-                bypasses ``InputSpace.getBatch`` -- used by the DataLoader
-                streaming path in ``runEpoch``.
+            batch_override: optional ``(inputTensor, outputTensor)`` pair;
+                the primary dispatch path used by the DataLoader streaming
+                path in ``runEpoch``.
 
         Returns:
             (BatchResult, nextBatchNum) on success, or (None, batchNum) when
             the dataset is exhausted.
         """
-        sentenceIdx = batchNum  # sentence index before getBatch increments
+        sentenceIdx = batchNum  # sentence index before batchNum increments
         if batch_override is not None:
             batch = batch_override
-        else:
-            batch, batchNum = self.inputSpace.getBatch(batchNum, batchSize, split)
-            if batch is None:
+        elif (split == "runtime"
+              and getattr(self.inputSpace.data, '_runtime_mode', None) == 'ARIR'):
+            inputData = self.inputSpace.data.train_input
+            result, batchNum = self.inputSpace.arir_step(inputData, batchNum)
+            if result is None:
                 return None, batchNum
+            batch = result
+        else:
+            raise RuntimeError(
+                "runBatch: no batch_override and not in ARIR runtime mode. "
+                "Callers must pass batch_override or set _runtime_mode='ARIR'."
+            )
 
         inputTensor, outputTensor = batch
-        masked_pred = hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE'
         inference_only = not train and split == "runtime"
         arir_mode = (split == "runtime"
                      and getattr(self.inputSpace.data, '_runtime_mode', None) == 'ARIR')
@@ -2109,9 +2112,7 @@ class BasicModel(BaseModel):
             # AR modes: reconstruction is non-None only under ARIR.
             if reconstruction is not None:
                 pred_sq = reconstruction
-                recon_target, _ = self.inputSpace.get_reconstruction_target()
-                target_sq = (recon_target if recon_target is not None
-                             else forwardInput)
+                target_sq = forwardInput
                 # Align sequence dim.
                 if pred_sq.shape[1] != target_sq.shape[1]:
                     M = min(pred_sq.shape[1], target_sq.shape[1])
@@ -2131,15 +2132,8 @@ class BasicModel(BaseModel):
             # Non-AR reversible: today's reverse branch.
             inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
             pred_sq = inputDataPred
-            recon_target, recon_mask = self.inputSpace.get_reconstruction_target()
-            target_sq = (recon_target.squeeze() if recon_target is not None
-                         else forwardInput.squeeze())
-            if recon_mask is not None and pred_sq.dim() >= 2:
-                mask = recon_mask
-                if pred_sq.dim() == 3:
-                    mask = mask.unsqueeze(-1).expand_as(pred_sq)
-                lossIn = self.loss.compute(pred_sq[mask], target_sq[mask])
-            elif self.loss.nWhere > 0:
+            target_sq = forwardInput.squeeze()
+            if self.loss.nWhere > 0:
                 lossIn = self.loss.compute_piecewise(pred_sq, target_sq)
             else:
                 lossIn = self.loss.compute(pred_sq, target_sq)
@@ -2313,8 +2307,7 @@ class BasicModel(BaseModel):
 
         In inference mode (split="runtime", no optimizer): skips loss
         construction, output accumulation, progress printing, and CBOW
-        updates. Uses ``InputSpace.getBatch`` directly for ARIR state
-        machine compatibility.
+        updates. Routes ARIR runtime mode through ``arir_step`` directly.
 
         Args:
             optimizer: pre-built Adam optimizer (persistent across epochs).
@@ -2341,8 +2334,7 @@ class BasicModel(BaseModel):
         ctx = torch.no_grad() if not training else nullcontext()
 
         # Inference fast path: skip loss construction and accumulation.
-        # Runtime ARIR / inference use getBatch directly because its state
-        # machine is stateful across calls.
+        # Runtime ARIR / inference route through arir_step (stateful across calls).
         if inference:
             with ctx:
                 batchNum = 0
@@ -2629,8 +2621,6 @@ class MentalModel(BaseModel):
         # Input -> Percept
         self.perceptualSpace = PerceptualSpace(inputShape, spaceShape_percept, perceptShape)
         if isinstance(self.perceptualSpace.vocabulary, Embedding):
-            object.__setattr__(self.inputSpace, '_peer_embedding',
-                               self.perceptualSpace.vocabulary)
             object.__setattr__(self.inputSpace, '_peer_perceptual',
                                self.perceptualSpace)
 

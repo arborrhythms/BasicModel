@@ -27,8 +27,11 @@ print(f"  angular diff = {6*dt:.6f} rad")
 print()
 
 # Run one forward pass
-batch, _ = model.inputSpace.getBatch(0, batchSize=4, split="test")
-test_tensor, output_tensor = batch
+loader = model.inputSpace.data.data_loader(split="test", num_streams=4)
+inp_items, out_items = next(iter(loader))
+test_tensor = model.inputSpace.prepInput(inp_items)
+output_tensor = (model.outputSpace.prepOutput(out_items)
+                 if out_items is not None else None)
 
 with torch.no_grad():
     # Hook into ConceptualSpace to capture pre/post sigma

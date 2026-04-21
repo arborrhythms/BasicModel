@@ -291,13 +291,16 @@ for t in Models.TheData.train_input[:5]:
     if isinstance(t, torch.Tensor):
         data_devices.add(str(t.device))
 
-# Check that getBatch produces tensors on the right device
-batch, _ = model.inputSpace.getBatch(0, batchSize=2)
-inp_tensor, out_tensor = batch
+# Check that data_loader produces tensors on the right device
+loader = model.inputSpace.data.data_loader(split="train", num_streams=2)
+inp_items, out_items = next(iter(loader))
+inp_tensor = model.inputSpace.prepInput(inp_items)
+out_tensor = (model.outputSpace.prepOutput(out_items)
+              if out_items is not None else None)
 inp_device = str(inp_tensor.device)
 
 with torch.no_grad():
-    # getBatch() returns raw input for all modes; masking (if any) is applied
+    # prepInput() returns raw input for all modes; masking (if any) is applied
     # inside InputSpace.forward(), so we always call model.forward().
     _, _, out, _ = model.forward(inp_tensor)
     # AR modes return a list of per-token prediction tensors.

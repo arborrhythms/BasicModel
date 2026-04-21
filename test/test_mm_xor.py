@@ -91,8 +91,13 @@ class TestMMXorConvergence(unittest.TestCase):
         m.eval()
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
-            batch, _ = m.inputSpace.getBatch(0, batchSize=1)
-            self.assertIsNotNone(batch, "getBatch returned None -- data not loaded")
+            loader = m.inputSpace.data.data_loader(split="train", num_streams=1)
+            inp_items, out_items = next(iter(loader))
+            inputTensor = m.inputSpace.prepInput(inp_items)
+            outputTensor = (m.outputSpace.prepOutput(out_items)
+                            if out_items is not None else None)
+            batch = (inputTensor, outputTensor)
+            self.assertIsNotNone(batch, "data_loader returned None -- data not loaded")
             inp, _ = batch
             with torch.no_grad():
                 result = m.forward(inp)
@@ -106,7 +111,12 @@ class TestMMXorConvergence(unittest.TestCase):
         m.eval()
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
-            batch, _ = m.inputSpace.getBatch(0, batchSize=4)
+            loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
+            inp_items, out_items = next(iter(loader))
+            inputTensor = m.inputSpace.prepInput(inp_items)
+            outputTensor = (m.outputSpace.prepOutput(out_items)
+                            if out_items is not None else None)
+            batch = (inputTensor, outputTensor)
             inp, _ = batch
             with torch.no_grad():
                 forward_input, symbols, output, _ = m.forward(inp)
@@ -127,7 +137,12 @@ class TestMMXorConvergence(unittest.TestCase):
             m.eval()
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
-                batch, _ = m.inputSpace.getBatch(0, batchSize=4)
+                loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
+                inp_items, out_items = next(iter(loader))
+                inputTensor = m.inputSpace.prepInput(inp_items)
+                outputTensor = (m.outputSpace.prepOutput(out_items)
+                                if out_items is not None else None)
+                batch = (inputTensor, outputTensor)
                 inp, _ = batch
                 with torch.no_grad():
                     m.forward(inp)
@@ -160,13 +175,19 @@ class TestMMXorConvergence(unittest.TestCase):
             Models.TheMessage = lambda *args, **kwargs: None
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
+                loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
                 for _ in range(30):
+                    inp_items, out_items = next(iter(loader))
+                    inputTensor = m.inputSpace.prepInput(inp_items)
+                    outputTensor = (m.outputSpace.prepOutput(out_items)
+                                    if out_items is not None else None)
                     result, _ = m.runBatch(
                         train=True,
                         batchNum=0,
                         batchSize=4,
                         split="train",
                         optimizer=optimizer,
+                        batch_override=(inputTensor, outputTensor),
                     )
                     self.assertIsNotNone(result)
                     self.assertTrue(torch.isfinite(result.lossOut))
@@ -204,13 +225,19 @@ class TestMMXorConvergence(unittest.TestCase):
             Models.TheMessage = lambda *args, **kwargs: None
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
+                loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
                 for _ in range(30):
+                    inp_items, out_items = next(iter(loader))
+                    inputTensor = m.inputSpace.prepInput(inp_items)
+                    outputTensor = (m.outputSpace.prepOutput(out_items)
+                                    if out_items is not None else None)
                     result, _ = m.runBatch(
                         train=True,
                         batchNum=0,
                         batchSize=4,
                         split="train",
                         optimizer=optimizer,
+                        batch_override=(inputTensor, outputTensor),
                     )
                     self.assertIsNotNone(result)
                     self.assertTrue(torch.isfinite(result.lossOut))
@@ -240,8 +267,13 @@ class TestMMXorConvergence(unittest.TestCase):
 
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
+                loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
                 for _ in range(600):
-                    batch, _ = m.inputSpace.getBatch(0, batchSize=4)
+                    inp_items, out_items = next(iter(loader))
+                    inputTensor = m.inputSpace.prepInput(inp_items)
+                    outputTensor = (m.outputSpace.prepOutput(out_items)
+                                    if out_items is not None else None)
+                    batch = (inputTensor, outputTensor)
                     inp, target = batch
                     optimizer.zero_grad()
                     _, _, output, _ = m.forward(inp)
@@ -287,8 +319,13 @@ class TestMMXorConvergence(unittest.TestCase):
 
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
+                loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
                 for _ in range(epochs):
-                    batch, _ = m.inputSpace.getBatch(0, batchSize=4)
+                    inp_items, out_items = next(iter(loader))
+                    inputTensor = m.inputSpace.prepInput(inp_items)
+                    outputTensor = (m.outputSpace.prepOutput(out_items)
+                                    if out_items is not None else None)
+                    batch = (inputTensor, outputTensor)
                     inp, target = batch
                     optimizer.zero_grad()
                     _, _, output, _ = m.forward(inp)
@@ -384,10 +421,16 @@ class TestMMXorConvergence(unittest.TestCase):
         try:
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore")
+                loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
                 for _ in range(20):
+                    inp_items, out_items = next(iter(loader))
+                    inputTensor = m.inputSpace.prepInput(inp_items)
+                    outputTensor = (m.outputSpace.prepOutput(out_items)
+                                    if out_items is not None else None)
                     result, _ = m.runBatch(
                         train=True, batchNum=0, batchSize=4,
                         split="train", optimizer=optimizer,
+                        batch_override=(inputTensor, outputTensor),
                     )
                     self.assertIsNotNone(result)
                     terms = m.symbolicSpace.symbol_objective_terms()
@@ -439,9 +482,14 @@ class TestMMXorConvergence(unittest.TestCase):
                 self.assertGreater(len(data.train_input), 0,
                                    "XOR training data is empty")
 
+                loader = m.inputSpace.data.data_loader(split="train", num_streams=n_samples)
                 for epoch in range(200):
                     m.train()
-                    batch, _ = m.inputSpace.getBatch(0, batchSize=n_samples)
+                    inp_items, out_items = next(iter(loader))
+                    inputTensor = m.inputSpace.prepInput(inp_items)
+                    outputTensor = (m.outputSpace.prepOutput(out_items)
+                                    if out_items is not None else None)
+                    batch = (inputTensor, outputTensor)
                     if batch is None:
                         continue
                     inp, target = batch

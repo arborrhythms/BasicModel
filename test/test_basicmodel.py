@@ -2219,275 +2219,6 @@ class TestXor3dReversePass(unittest.TestCase):
         # now lives on PerceptualSpace (text mode owns the Embedding there).
         self.assertIsNotNone(m.perceptualSpace.reconstructed)
 
-
-class TestExpandMasked(unittest.TestCase):
-    """InputSpace.expand_masked() produces N masked copies of a sentence embedding."""
-
-    def setUp(self):
-        _populate_test_config(inputDim=1, perceptDim=10, nInput=8,
-                              nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim)
-
-        # Build an InputSpace + PerceptualSpace pair with embedding from XOR data
-        Models.TheData.load("xor")
-        nInput = 8
-        self.inp, self.psp = _build_text_pair(nInput)
-        # Run a forward pass through both spaces to get a real embedded tensor
-        inputBatch = Models.TheData.train_input[0:1]
-        inputTensor = self.inp.prepInput(inputBatch)
-        self.embedded = _text_embed(self.inp, self.psp, inputTensor)  # [1, nVec, embSize]
-        self.sentence = "hello world"  # matches XOR training data
-        self.embSize = self.embedded.shape[-1]
-        self.nVec = self.embedded.shape[1]
-
-    def test_expand_masked_shape(self):
-        """3-word sentence produces [3, nVec, embSize] masked batch."""
-        sentence = "hello loving world"
-        words = sentence.split()
-        masked, positions = self.inp.expand_masked(self.embedded, sentence)
-        self.assertEqual(masked.shape[0], len(words))
-        self.assertEqual(masked.shape[1], self.nVec)
-        self.assertEqual(masked.shape[2], self.embSize)
-        self.assertEqual(positions, [0, 1, 2])
-
-    def test_masked_position_is_zero_content(self):
-        """Masked position has zero content dims, non-zero position dims."""
-        masked, _ = self.inp.expand_masked(self.embedded, self.sentence)
-        embSize = self.embSize
-        we = self.inp.subspace.whereEncoding
-        where_idx = np.add([embSize] * len(we.index), we.index)
-        when_idx = np.add([embSize, embSize], Models.WhenEncoding.index)
-        pos_dims = set(where_idx.tolist() + when_idx.tolist())
-        content_dims = [d for d in range(embSize) if d not in pos_dims]
-        # In copy i, position i should have zero content
-        for i in range(masked.shape[0]):
-            content_vals = masked[i, i, content_dims]
-            self.assertTrue(torch.all(content_vals == 0.0),
-                            f"Copy {i}: content at masked pos should be zero, "
-                            f"got max={content_vals.abs().max().item():.6f}")
-
-    def test_non_masked_positions_unchanged(self):
-        """Non-masked positions identical to original."""
-        masked, _ = self.inp.expand_masked(self.embedded, self.sentence)
-        # In copy 1, position 0 should match original position 0
-        self.assertTrue(torch.allclose(masked[1, 0], self.embedded[0, 0]),
-                        "Non-masked position should match original")
-        # In copy 0, position 1 should match original position 1
-        self.assertTrue(torch.allclose(masked[0, 1], self.embedded[0, 1]),
-                        "Non-masked position should match original")
-
-    def test_position_encoding_preserved(self):
-        """Position encoding (nWhere) at masked position matches original."""
-        masked, _ = self.inp.expand_masked(self.embedded, self.sentence)
-        embSize = self.embSize
-        we = self.inp.subspace.whereEncoding
-        where_idx = np.add([embSize] * len(we.index), we.index)
-        when_idx = np.add([embSize, embSize], Models.WhenEncoding.index)
-        pos_dims = list(where_idx) + list(when_idx)
-        # At masked position, positional dims should match original
-        for i in range(masked.shape[0]):
-            for d in pos_dims:
-                self.assertAlmostEqual(
-                    masked[i, i, d].item(),
-                    self.embedded[0, i, d].item(),
-                    places=5,
-                    msg=f"Copy {i}, dim {d}: position encoding not preserved"
-                )
-
-    def test_arlm_truncates_future(self):
-        """ARLM mode zeros all positions after the masked position."""
-        sentence = "hello world"
-        masked, positions = self.inp.expand_masked(self.embedded, sentence, maskedPrediction='ARLM')
-        # In copy 0, positions 1+ should be completely zero
-        self.assertTrue(torch.all(masked[0, 1:, :] == 0.0))
-        # In copy 1, positions 2+ should be completely zero (if they exist)
-        if masked.shape[1] > 2:
-            self.assertTrue(torch.all(masked[1, 2:, :] == 0.0))
-
-
-class TestExpandMaskedTargets(unittest.TestCase):
-    def setUp(self):
-        """Create an OutputSpace + Embedding to test expand_masked."""
-        _populate_test_config(inputDim=1, perceptDim=10, symbolDim=1, outputDim=1,
-                              nInput=8, nOutput=4,
-                              nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
-                              flatten=True)
-
-        # Build an InputSpace + PerceptualSpace pair with embedding from XOR data
-        Models.TheData.load("xor")
-        nInput = 8
-        self.inp, self.psp = _build_text_pair(nInput)
-        self.emb = self.psp.subspace.vocabulary
-
-        # Build a minimal OutputSpace -- input carries symbol objectSize
-        _obj_sym = _obj_size("SymbolicSpace")
-        self.out = Models.OutputSpace([8, 1 + _obj_sym], [4, 1], [4, 1])
-
-    def _make_embedded(self, n_words, emb_size=None):
-        """Create a synthetic [1, n_words, embSize] embedded sentence."""
-        if emb_size is None:
-            emb_size = self.emb.wv._vectors.shape[1] + 4  # content + nWhere + nWhen
-        return torch.randn(1, n_words, emb_size, device=Models.TheDevice.get())
-
-    def test_expand_masked_shape(self):
-        """N words produce [N, 1, embSize] target tensor."""
-        embedded = self._make_embedded(3)
-        targets = self.out.expand_masked(embedded, "hello world test")
-        self.assertEqual(targets.shape[0], 3)
-        self.assertEqual(targets.shape[1], 1)
-        self.assertEqual(targets.shape[2], embedded.shape[-1])
-
-    def test_expand_masked_known_word(self):
-        """Target for word i matches embedded[0, i, :]."""
-        embedded = self._make_embedded(1)
-        targets = self.out.expand_masked(embedded, "hello")
-        torch.testing.assert_close(targets[0, 0], embedded[0, 0])
-
-    def test_expand_masked_unknown_word(self):
-        """Even unknown words get their embedded vector as target."""
-        embedded = self._make_embedded(1)
-        targets = self.out.expand_masked(embedded, "xyzzynotaword123")
-        torch.testing.assert_close(targets[0, 0], embedded[0, 0])
-
-    def test_arus_returns_zero_targets(self):
-        """ARUS mode returns all-zero target vectors."""
-        embedded = self._make_embedded(2)
-        targets = self.out.expand_masked(embedded, "hello world", maskedPrediction='ARUS')
-        self.assertTrue(torch.all(targets == 0.0))
-        self.assertEqual(targets.shape[0], 2)
-
-
-class TestMaskedPredictionIntegration(unittest.TestCase):
-    """Integration tests for maskedPrediction stream interface."""
-
-    def _create_xor_embedding_model(self):
-        """Create an XOR embedding model via create_from_config (autoload off)."""
-        import xml.etree.ElementTree as ET
-
-        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_exact.xml")
-        tree = ET.parse(xml_path)
-        root = tree.getroot()
-
-        # Ensure autoload is off
-        auto = root.find("architecture/autoload")
-        if auto is None:
-            auto = ET.SubElement(root.find("architecture"), "autoload")
-        auto.text = "false"
-
-        tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
-        tree.write(tmp, xml_declaration=True)
-        tmp.close()
-        Models.TheData.load("xor")
-        m = Models.BasicModel()
-        m.create_from_config(tmp.name, data=Models.TheData)
-        os.unlink(tmp.name)
-        return m
-
-    def setUp(self):
-        self.model = self._create_xor_embedding_model()
-
-    def test_getbatch_standard_mode(self):
-        """getBatch in standard mode returns correct batches and exhausts."""
-        inp = self.model.inputSpace
-        batch, nextNum = inp.getBatch(0, batchSize=2, split="train")
-        self.assertIsNotNone(batch)
-        inputTensor, outputTensor = batch
-        self.assertEqual(inputTensor.shape[0], 2)  # batch of 2
-        self.assertEqual(nextNum, 1)
-        # Eventually exhausts
-        batchNum = 0
-        count = 0
-        while True:
-            batch, batchNum = inp.getBatch(batchNum, batchSize=2, split="train")
-            if batch is None:
-                break
-            count += 1
-        self.assertGreater(count, 0)
-
-    def test_getbatch_test_split(self):
-        """getBatch works with test split."""
-        inp = self.model.inputSpace
-        batch, nextNum = inp.getBatch(0, batchSize=2, split="test")
-        self.assertIsNotNone(batch)
-
-
-class TestRARLM(unittest.TestCase):
-    """RARLM mode masks from end and truncates previous positions."""
-
-    def setUp(self):
-        _populate_test_config(inputDim=1, perceptDim=10, nInput=8,
-                              nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim)
-
-        Models.TheData.load("xor")
-        nInput = 8
-        self.inp, self.psp = _build_text_pair(nInput)
-        inputBatch = Models.TheData.train_input[0:1]
-        inputTensor = self.inp.prepInput(inputBatch)
-        self.embedded = _text_embed(self.inp, self.psp, inputTensor)
-        self.embSize = self.embedded.shape[-1]
-
-    def test_rarlm_masks_from_end(self):
-        """RARLM masks position (N-1-i) and zeros previous positions."""
-        sentence = "hello world test"
-        masked, positions = self.inp.expand_masked(self.embedded, sentence, maskedPrediction='RARLM')
-        N = len(sentence.split())
-        self.assertEqual(masked.shape[0], N)
-        # Copy 0: position 2 masked, positions 0-1 zeroed
-        self.assertTrue(torch.all(masked[0, :2, :] == 0.0),
-                        "Copy 0: positions before masked pos should be zeroed")
-        # Copy 1: position 1 masked, position 0 zeroed
-        self.assertTrue(torch.all(masked[1, :1, :] == 0.0),
-                        "Copy 1: positions before masked pos should be zeroed")
-        # Copy 2: position 0 masked, nothing zeroed before it (pos=0)
-
-    def test_rarlm_mask_positions_reversed(self):
-        """RARLM returns mask_positions in reverse order [N-1, ..., 0]."""
-        sentence = "hello world test"
-        _, positions = self.inp.expand_masked(self.embedded, sentence, maskedPrediction='RARLM')
-        self.assertEqual(positions, [2, 1, 0])
-
-    def test_rarlm_content_zeroed_at_masked_pos(self):
-        """Content dims at the masked position are zeroed in each copy."""
-        sentence = "hello world test"
-        masked, positions = self.inp.expand_masked(self.embedded, sentence, maskedPrediction='RARLM')
-        embSize = self.embSize
-        we = self.inp.subspace.whereEncoding
-        where_idx = np.add([embSize] * len(we.index), we.index)
-        when_idx = np.add([embSize, embSize], Models.WhenEncoding.index)
-        pos_dims = set(where_idx.tolist() + when_idx.tolist())
-        content_dims = [d for d in range(embSize) if d not in pos_dims]
-        for i, pos in enumerate(positions):
-            content_vals = masked[i, pos, content_dims]
-            self.assertTrue(torch.all(content_vals == 0.0),
-                            f"Copy {i}: content at masked pos {pos} should be zero")
-
-
-class TestRARLMTargets(unittest.TestCase):
-    """RARLM targets are in reverse word order."""
-
-    def setUp(self):
-        _populate_test_config(inputDim=1, perceptDim=10, symbolDim=1, outputDim=1,
-                              nInput=8, nOutput=4,
-                              nWhere=Models.WhereEncoding.nDim, nWhen=Models.WhenEncoding.nDim,
-                              flatten=True)
-
-        Models.TheData.load("xor")
-        nInput = 8
-        self.inp, self.psp = _build_text_pair(nInput)
-        self.emb = self.psp.subspace.vocabulary
-
-        _obj_sym = _obj_size("SymbolicSpace")
-        self.out = Models.OutputSpace([8, 1 + _obj_sym], [4, 1], [4, 1])
-
-    def test_rarlm_targets_reversed(self):
-        """RARLM targets are MLM targets in reverse order."""
-        emb_size = self.emb.wv._vectors.shape[1] + 4
-        embedded = torch.randn(1, 2, emb_size, device=Models.TheDevice.get())
-        mlm_targets = self.out.expand_masked(embedded, "hello world", maskedPrediction='MLM')
-        rarlm_targets = self.out.expand_masked(embedded, "hello world", maskedPrediction='RARLM')
-        # RARLM targets should be MLM targets reversed
-        torch.testing.assert_close(rarlm_targets, mlm_targets.flip(0))
-
-
 @unittest.skipIf(not _XOR_EXACT_USES_EMBEDDING, "Model doesn't use Embedding")
 class TestTrainEmbeddingsFlag(unittest.TestCase):
     """trainEmbeddings config flag controls whether embedding weights are in optimizer."""
@@ -2564,12 +2295,18 @@ class TestTrainEmbeddingsFlag(unittest.TestCase):
         m.trainEmbeddings = fake_train_embeddings
         m.loss.reverse_scale = 0.0
 
+        loader = m.inputSpace.data.data_loader(split="train", num_streams=1)
+        inp_items, out_items = next(iter(loader))
+        inputTensor = m.inputSpace.prepInput(inp_items)
+        outputTensor = (m.outputSpace.prepOutput(out_items)
+                        if out_items is not None else None)
         result, _ = m.runBatch(
             train=True,
             batchNum=0,
             batchSize=1,
             split="train",
             optimizer=optimizer,
+            batch_override=(inputTensor, outputTensor),
         )
 
         self.assertIsNotNone(result)
@@ -2719,10 +2456,10 @@ class TestRuntimeBatch(unittest.TestCase):
             self.assertEqual(Models.TheData.train_input, ["hello world"])
 
 
-class TestRuntimeGetBatch(unittest.TestCase):
-    """getBatch(split='runtime') serves staged runtime data."""
+class TestRuntimeDataLoader(unittest.TestCase):
+    """data_loader(split='train') serves staged runtime data via runtime_batch."""
 
-    def test_runtime_getBatch_returns_batch(self):
+    def test_runtime_data_loader_returns_batch(self):
         import tempfile
         import xml.etree.ElementTree as ET
 
@@ -2747,7 +2484,13 @@ class TestRuntimeGetBatch(unittest.TestCase):
         rt_input = ["hello world"]
         rt_output = [torch.tensor([0], dtype=torch.float)]
         with Models.TheData.runtime_batch(rt_input, rt_output):
-            batch, nextBatch = m.inputSpace.getBatch(0, 1, "runtime")
+            loader = m.inputSpace.data.data_loader(split="train", num_streams=1)
+            inp_items, out_items = next(iter(loader))
+            inputTensor = m.inputSpace.prepInput(inp_items)
+            outputTensor = (m.outputSpace.prepOutput(out_items)
+                            if out_items is not None else None)
+            batch = (inputTensor, outputTensor)
+            nextBatch = 1
             self.assertIsNotNone(batch)
             inp, out = batch
             self.assertEqual(inp.shape[0], 1)  # batch size 1
@@ -2789,9 +2532,15 @@ class TestReconstructionLossGradient(unittest.TestCase):
             m.set_sigma(0.5)
             m.train(True)
             # Run a single batch WITHOUT internal backward (train=False)
+            loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
+            inp_items, out_items = next(iter(loader))
+            inputTensor = m.inputSpace.prepInput(inp_items)
+            outputTensor = (m.outputSpace.prepOutput(out_items)
+                            if out_items is not None else None)
             result, _ = m.runBatch(
                 batchNum=0, batchSize=4,
                 split="train", train=False,
+                batch_override=(inputTensor, outputTensor),
             )
 
             self.assertIsNotNone(result.lossIn)

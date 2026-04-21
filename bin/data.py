@@ -589,11 +589,7 @@ class Data():
         # conversion to embedding vectors by prepare_lm_targets().
         # For non-LM tasks, labels are numeric lists.
         if not train_labels:
-            # Masked prediction mode: targets computed at runtime
-            # Raw sentences are already in train_input/validation_input/test_input
-            self.masked_prediction = 'MLM'
-            # Sentinel outputs for OutputSpace sizing -- shape must match embedding dim
-            # (actual targets computed at runtime by expand_masked)
+            # No labels provided: sentinel outputs for OutputSpace sizing.
             self.train_output = [torch.zeros(1) for _ in train_tokens]
             self.validation_output = [torch.zeros(1) for _ in validation_tokens]
             self.test_output = [torch.zeros(1) for _ in test_tokens]
