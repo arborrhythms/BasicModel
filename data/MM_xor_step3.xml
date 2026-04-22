@@ -2,7 +2,6 @@
 <model>
   <!-- Step 3: Step 2 + grammar -->
   <architecture>
-    <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
     <modelType>embedding</modelType>
     <ergodic>true</ergodic>

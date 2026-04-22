@@ -1,7 +1,6 @@
 <?xml version="1.0" ?>
 <model>
   <architecture>
-    <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
     <modelType>embedding</modelType>
     <weightsPath>xor_weights.ckpt</weightsPath>

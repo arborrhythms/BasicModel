@@ -4,7 +4,6 @@
        Based on MM_1B architecture (iterative [Percept,Symbol]->Concept->Symbol)
        but scaled to XOR-sized dims. -->
   <architecture>
-    <reconstruct>symbols</reconstruct>
     <conceptualOrder>3</conceptualOrder>
     <useButterflies>false</useButterflies>
     <nWhere>0</nWhere>

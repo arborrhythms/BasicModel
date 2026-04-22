@@ -2,7 +2,6 @@
 <model>
   <!-- Step 4: Step 3 + useButterflies=true, conceptualOrder=3, nVectors=8 (hierarchical butterfly) -->
   <architecture>
-    <reconstruct>symbols</reconstruct>
     <conceptualOrder>3</conceptualOrder>
     <useButterflies>true</useButterflies>
     <modelType>embedding</modelType>

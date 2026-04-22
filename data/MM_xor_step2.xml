@@ -2,7 +2,6 @@
 <model>
   <!-- Step 2: Step 1 + nWhere=2 -->
   <architecture>
-    <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
     <modelType>embedding</modelType>
     <ergodic>true</ergodic>

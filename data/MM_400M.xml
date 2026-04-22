@@ -7,7 +7,6 @@
        BPE chunk merging: 1024 bytes -> 512 percepts.
        Volume: 512 percepts x 4 = 512 symbols x 4. -->
   <architecture>
-    <reconstruct>symbols</reconstruct>
     <conceptualOrder>4</conceptualOrder>
     <useButterflies>true</useButterflies>
     <l1Lambda>0.01</l1Lambda>

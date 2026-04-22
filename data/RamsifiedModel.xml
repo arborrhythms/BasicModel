@@ -3,7 +3,6 @@
   <!-- RamsifiedModel: MentalModel with useButterflies=true, conceptualOrder=2.
        Used by test_reasoning.py::TestWriteMask::test_partition_isolation. -->
   <architecture>
-    <reconstruct>symbols</reconstruct>
     <conceptualOrder>2</conceptualOrder>
     <useButterflies>true</useButterflies>
     <l1Lambda>0.01</l1Lambda>

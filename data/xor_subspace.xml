@@ -8,7 +8,6 @@
 -->
 <model>
   <architecture>
-    <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
     <modelType>embedding</modelType>
     <useSubspaceActivation>true</useSubspaceActivation>

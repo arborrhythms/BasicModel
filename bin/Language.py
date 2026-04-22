@@ -2342,6 +2342,10 @@ class WordSpace(Space):
         """Reset the stack at sentence boundaries."""
         self.subspace.clear()
 
+    def Reset(self):
+        """Phase 2: per-sentence teardown called by Model.forward's Reset cascade."""
+        self.clear_sentence()
+
     def get_blocks(self, b=0):
         """Return the parse-tree ledger for batch row `b`."""
         return self.subspace.get_blocks(b)

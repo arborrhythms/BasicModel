@@ -30,6 +30,8 @@ _VENV_PYTHON = os.path.join(_PROJECT, ".venv", "bin", "python")
 
 SERVER_URL = "http://127.0.0.1:8001"
 
+_RUN_SLOW = os.getenv("RUN_SLOW") == "1"
+
 
 # ---------------------------------------------------------------------------
 # Embedding probes
@@ -203,6 +205,7 @@ class TestServerQueries(unittest.TestCase):
         print(f"\n  Health: ok={body['ok']}, model={body['model']}")
         self.assertTrue(body["ok"])
 
+    @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
     def test_demo_queries(self):
         """Print inference output for sample prompts (visual check)."""
         queries = [
@@ -218,6 +221,7 @@ class TestServerQueries(unittest.TestCase):
             print(f"  >> {q}")
             print(f"  << {short}")
 
+    @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
     def test_response_format(self):
         """Response is wrapped in <conversation> tags."""
         resp = _chat("hello world")

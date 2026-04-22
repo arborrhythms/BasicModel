@@ -103,9 +103,10 @@ def _make_integrated_system(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
 
 def test_forward_updates_self_subspace_from_incoming():
     sym, ws = _make_integrated_system()
+    sym.wordSpace = ws
     sym.subspace.what.setW(torch.zeros_like(sym.subspace.what.getW()))
     incoming = sym._build_incoming_subspace(pos_vector=torch.tensor([0.5, 0.0, 0.3]))
-    sym.forward(incoming, wordSpace=ws)
+    sym.forward(incoming)
     out = sym.subspace.what.getW()
     assert not torch.equal(out, torch.zeros_like(out)), (
         "forward() did not update self.subspace.what"
@@ -114,12 +115,13 @@ def test_forward_updates_self_subspace_from_incoming():
 
 def test_multiple_forwards_accumulate_until_percepts_exhausted():
     sym, ws = _make_integrated_system()
+    sym.wordSpace = ws
     percepts = [torch.tensor([0.5, 0.0, 0.0]),
                 torch.tensor([0.0, 0.4, 0.0]),
                 torch.tensor([0.2, 0.1, 0.3])]
     for p in percepts:
         incoming = sym._build_incoming_subspace(pos_vector=p)
-        sym.forward(incoming, wordSpace=ws)
+        sym.forward(incoming)
     assert ws.pos_stack.depth() == len(percepts)
 
 

@@ -14,12 +14,12 @@
 <model>
   <architecture>
     <modelType>simple</modelType>
+    <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
     <useButterflies>false</useButterflies>
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>
     <naive>false</naive>
-    <reconstruct>none</reconstruct>
 
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>

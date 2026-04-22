@@ -7,7 +7,6 @@
   <architecture>
     <type>mental</type>
     <modelType>embedding</modelType>
-    <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
     <useButterflies>false</useButterflies>
     <!-- Pair-scorer contract: D (effective feature dim) == nInput (n_slots).

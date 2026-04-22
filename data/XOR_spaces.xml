@@ -3,7 +3,6 @@
   <!-- XOR_spaces: whole-sentence XOR with inline data, modelled after XOR_exact.xml.
        Architecture is perfectly invertible (invertible=true everywhere). -->
   <architecture>
-    <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
     <modelType>embedding</modelType>
     <ergodic>false</ergodic>

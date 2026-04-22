@@ -5,7 +5,6 @@
        SyntacticSpace runs composeSyntax over symbol activations each iteration.
        OutputSpace is fed by the final ConceptualSpace output. -->
   <architecture>
-    <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
     <useButterflies>false</useButterflies>
     <l1Lambda>0.01</l1Lambda>

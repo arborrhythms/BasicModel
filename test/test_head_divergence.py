@@ -89,7 +89,7 @@ class TestHeadDivergence(unittest.TestCase):
             with torch.no_grad():
                 ws = getattr(self.model, 'wordSpace', None)
                 inputs = self.model.inputSpace.forward(inputTensor)
-                percepts = self.model.perceptualSpace.forward(inputs, wordSpace=ws)
+                percepts = self.model.perceptualSpace.forward(inputs)
                 percept_vecs = percepts.materialize()
                 B = percept_vecs.shape[0]
 
@@ -102,7 +102,7 @@ class TestHeadDivergence(unittest.TestCase):
                 # Run ConceptualSpace forward, then decompose to recover pre-compose
                 self.model.conceptualSpace.subspace.set_event(concept_input)
                 concepts = self.model.conceptualSpace.forward(
-                    self.model.conceptualSpace.subspace, wordSpace=ws)
+                    self.model.conceptualSpace.subspace)
 
                 post_compose = concepts.materialize()[0]  # [N, D] for batch 0
                 cs = self.model.conceptualSpace

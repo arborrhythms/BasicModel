@@ -6,7 +6,6 @@
        isolated regression of the recurrent Pi-Sigma + pairwise compose
        without VQ-VAE muddying the variable. -->
   <architecture>
-    <reconstruct>symbols</reconstruct>
     <conceptualOrder>3</conceptualOrder>
     <useButterflies>false</useButterflies>
     <nWhere>0</nWhere>

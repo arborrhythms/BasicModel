@@ -1,7 +1,6 @@
 <?xml version="1.0" ?>
 <model>
   <architecture>
-    <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
     <processSymbols>false</processSymbols>
     <ergodic>false</ergodic>

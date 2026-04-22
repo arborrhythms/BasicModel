@@ -1,4 +1,30 @@
+# Projects
 
+## docs/superpowers/specs/2026-04-22-model-serial-mode-design.md.
+
+## Reintroduce SentencePredictor as a Layer
+
+The legacy discourse priming bias (`discourse.prime(predicted_snapshot, confidence, sentence_priming_scale)`)
+that used to be injected into `concept_input` at stage t=0 in `_run_conceptual_order`
+was removed when the Sequential pipeline landed. Reintroduce it as a Layer — not
+a Pipeline glue — on ConceptualSpace (or SymbolicSpace). The Layer should read
+`wordSpace.discourse.predict()` and apply the bias to its input tensor. Doing
+this as a Layer keeps it co-located with the Space's own math and avoids
+polluting the cross-stage Pipeline glue inventory.
+
+## Delete legacy code
+
+The legacy (`_forward_legacy`, `_reverse_legacy`, `_forward_dispatch`,
+`_run_conceptual_order`, `_run_forward_pipeline`, `_start_ar_forward`, and the
+body of the pre-Phase-2 `forward()`) is no longer called on any live code path.
+Keep for one or two more iterations as reference, then delete wholesale. Diff
+against git history for what was there.
+
+Inside Spaces.py the pattern `def forward(self, subspace): ... return
+self._forward_legacy(subspace, ...)` can be inlined once `_forward_legacy` is
+deleted.
+
+---
 
 diff -U3 -- basicmodel/bin/serve.py basicmodel/bin/serve.py
 --- a/basicmodel/bin/serve.py
@@ -193,3 +219,6 @@ It is desirable to create a small training and testing dataset for the network c
 
 * See `bin/parse.py` as a starting point for producing grammatical derivations via NLTK POS tagging and CFG parsing.
 * Such a dataset would also enable evaluation of head identification accuracy and composition quality.
+
+
+## consider adding Percepts to the front of the Symbols array

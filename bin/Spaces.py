@@ -1494,21 +1494,35 @@ class Codebook(Basis):
             quantized3d = quantized.reshape(batch, n_tokens, self.nDim)
             k = min(self.nVectors, err.shape[1])
             _, indices_smallest = torch.topk(err, k=k, dim=1, largest=False)
-            for i in range(indices_smallest.shape[0]):
-                claimed = set()
-                for j in range(indices_smallest.shape[1]):
-                    row_idx = indices_smallest[i, j].item()
-                    cb_idx = indices[i, row_idx].item()
-                    if cb_idx in claimed:
-                        continue
-                    claimed.add(cb_idx)
-                    x3d[i, row_idx, :] = quantized3d[i, row_idx, :]
-                    if err[i, row_idx] <= self.snapDistance:
-                        cosSim = self.distance(
-                            input3d[i, row_idx, :].clone(),
-                            quantized3d[i, row_idx, :self.nDim].clone(),
-                        )
-                        act[i, cb_idx] = cosSim + self.alpha * random.random()
+
+            # Previous code walked this top-k set in Python and used .item()
+            # for row/codebook ids, forcing device sync per token. Keep the
+            # same "best row per codebook entry per batch" contract in tensor
+            # form: ignore rows outside the top-k error set, then reduce by
+            # minimum error for each codebook id.
+            selected = torch.zeros_like(err, dtype=torch.bool)
+            selected.scatter_(1, indices_smallest, True)
+            selected_err = torch.where(
+                selected, err, torch.full_like(err, float("inf")))
+            best_err = torch.full(
+                (batch, self.codebookSize),
+                float("inf"),
+                device=err.device,
+                dtype=err.dtype,
+            )
+            best_err.scatter_reduce_(
+                1, indices, selected_err, reduce="amin", include_self=True)
+
+            claimed = selected & (err <= best_err.gather(1, indices))
+            x3d = torch.where(claimed.unsqueeze(-1), quantized3d, x3d)
+
+            snap = claimed & (err <= self.snapDistance)
+            scores = self.distance(input3d, quantized3d[..., :self.nDim])
+            if self.alpha:
+                scores = scores + self.alpha * torch.rand_like(scores)
+            batch_idx = torch.arange(
+                batch, device=indices.device).unsqueeze(1).expand_as(indices)
+            act[batch_idx[snap], indices[snap]] = scores[snap]
             x = x3d.reshape(x.shape)
         else:
             w = self.getW()
@@ -2318,9 +2332,13 @@ class SubSpace(nn.Module):
                  object=None, what=None, where=None, when=None, activation=None,
                  word=None):
         super().__init__()
-        # Phase 1: set by the model after construction via space.subspace.normalizer.
-        # Must be wired before any forward/reverse call that normalizes input/output.
-        self.normalizer = None
+        # Phase 1: default normalizer uses the global TheData. Model
+        # construction overrides this with its own Normalizer instance
+        # (so tests can mock TheData via a different source).
+        # SubSpaces instantiated standalone in tests get the global-backed
+        # Normalizer by default — no None-dispatch required.
+        from Models import Normalizer as _Normalizer
+        self.normalizer = _Normalizer(TheData)
         self.inputShape = inputShape    # [nActive, nDim]
         self.outputShape = outputShape  # [nActive, nDim]
 
@@ -2367,6 +2385,34 @@ class SubSpace(nn.Module):
     def is_demuxed(self):
         """True when what/where/when are stored independently (not muxed into event)."""
         return self._demuxed
+
+    def is_empty(self):
+        """True when this SubSpace has no work to do.
+
+        Pipeline modules short-circuit when this returns True (no codebook
+        inserts, no pos_stack pushes, no side effects). Checks shapes
+        directly from the underlying Basis tensors to avoid the cost and
+        side effects of materialize() (which gates the event by activation
+        presence and can trip on transient shape mismatches).
+        """
+        # inputShape is authoritative when its N is 0.
+        if self.inputShape[0] == 0:
+            return True
+        # Otherwise look at whichever tensor is currently populated.
+        for source in (self.event, self.what):
+            if source is None:
+                continue
+            try:
+                w = source.getW()
+            except Exception:
+                continue
+            if w is None:
+                continue
+            if w.ndim >= 2 and (w.shape[0] == 0 or w.shape[1] == 0):
+                return True
+            if w.ndim >= 1 and w.numel() > 0:
+                return False
+        return False
 
     def set_muxed(self, event_tensor):
         """Store muxed event tensor directly. Clears demuxed modalities.
@@ -3763,7 +3809,7 @@ class Space(nn.Module):
         else:
             self.nOutputDim = outputShape[1] if raw == 0 else raw
 
-        self.reversible   = str(TheXMLConfig.get("architecture.reconstruct")).upper() != "NONE"
+        self.reversible   = True
         self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
         self.codebook     = TheXMLConfig.space(section, "codebook")
         _nWhere = TheXMLConfig.space(section, "nWhere")
@@ -4041,11 +4087,12 @@ class Space(nn.Module):
                 l.paramUpdate()
 
     def Start(self):
-        """Per-sentence state reset. Cascades to child layers and subspace.
+        """One-shot per-run initialization.
 
-        Called from MentalModel.Start() once per forward() invocation.
-        Subclasses with additional per-call state override this, calling
-        super().Start() first.
+        Called from MentalModel.Start() once at the top of model.forward(),
+        before the pipeline's iteration loop. Subclasses override to
+        initialize per-run state (e.g., InputSpace resets its streaming
+        cursor and sliding buffer here).
         """
         for layer in self.layers:
             if hasattr(layer, 'Start'):
@@ -4054,8 +4101,18 @@ class Space(nn.Module):
         if sub is not None and hasattr(sub, 'Start'):
             sub.Start()
 
+    def Reset(self):
+        """Per-sentence/batch-boundary teardown.
+
+        Called at sentence boundaries (Phase 2 model.forward's Reset
+        cascade). Default is a no-op; subclasses override — e.g.,
+        WordSpace.Reset clears the per-sentence stack.
+        """
+        return None
+
     def End(self):
-        """Per-batch teardown. Counterpart to Start().
+        """Per-batch teardown. Counterpart to Start() at the end of the
+        outer Run().
 
         Cascades End() to child layers and subspace so cached per-batch
         state does not persist across batch boundaries. Subclasses with
@@ -4341,8 +4398,123 @@ class InputSpace(Space):
 
     def shuffle(self):
         self.data.shuffle()
+
+    def Start(self):
+        """One-shot per-run init.
+
+        Resets the streaming cursor so the next sequence of forward()
+        calls restarts at position 0. The sliding AR buffer (_ar_buffer)
+        is NOT reset here — it persists across model.forward() calls
+        within a stream so the model sees cross-sentence context. Call
+        ``reset_buffer()`` explicitly to clear it (e.g., at epoch
+        boundaries).
+        """
+        super().Start()
+        self._seq_cursor = 0
+        self._ar_embedded = None
+        self._ar_total = 0
+
     # The world presenting itself
-    def forward(self, input, mask=None):
+    def forward(self, inputData):
+        """Stateful streaming source for the Sequential pipeline.
+
+        Each call emits the next SubSpace "position" for the downstream
+        pipeline. The caller (Model.forward's while-loop) passes the same
+        raw ``inputData`` on every iteration; this method tracks its own
+        position via ``self._seq_cursor`` (reset by Start()).
+
+        Semantics:
+          * Non-AR: first call processes ``inputData`` via _forward_legacy
+            and returns the full SubSpace; subsequent calls return empty.
+          * AR training: each call slides the next embedded token into
+            _ar_buffer and returns the buffer view; empty once exhausted.
+          * AR inference (ARIR): predicted-back-into-input flow consumes
+            one token per call; a 0x00 token terminates by returning empty.
+
+        Legacy callers with kwargs (mask=, etc.) call ``_forward_legacy``
+        directly.
+        """
+        if inputData is None:
+            return self._empty_like_subspace()
+        if hasattr(inputData, "is_empty") and not isinstance(inputData, torch.Tensor) and inputData.is_empty():
+            return inputData
+        cursor = getattr(self, "_seq_cursor", 0)
+        is_ar = self.masked_prediction in ('ARLM', 'ARUS', 'ARIR') if hasattr(self, 'masked_prediction') else False
+
+        if not is_ar:
+            # Non-AR: stateless — always process the full input. The
+            # model's outer while-loop enforces single-iteration
+            # termination for non-AR modes.
+            return self._forward_legacy(inputData)
+
+        # AR mode: emit one position per call.
+        if cursor == 0:
+            # First call: lex/embed once. The embedded tensor source is
+            # what the sliding buffer draws from. The underlying byte
+            # buffer (``subspace.what``) is our NULL sentinel source.
+            self._forward_legacy(inputData)
+            embedded = self.subspace.materialize()
+            if embedded is None and self.model_type == "embedding":
+                # Text mode: lexicon lives on the peer PerceptualSpace.
+                peer = getattr(self, '_peer_perceptual', None)
+                if peer is not None:
+                    peer._embed(self.subspace)
+                    embedded = peer._embedded_input
+            self._ar_embedded = embedded
+            # Safety cap: never go past the padded buffer length.
+            self._ar_total = embedded.shape[1] if embedded is not None else 0
+
+        # Safety cap: beyond the padded buffer has nothing to emit.
+        if cursor >= self._ar_total:
+            return self._empty_like_subspace()
+
+        # NULL-byte sentinel: inspect the raw byte at cursor (the position
+        # about to be emitted) in ``subspace.what``. If every batch row
+        # has a 0x00 there, the sentence is over — emit empty. Text/byte
+        # mode stores byte indices; numeric mode has no raw bytes and
+        # falls through.
+        try:
+            what_w = self.subspace.what.getW()
+            if what_w is not None and what_w.ndim == 2:
+                if torch.all(what_w[:, cursor] == 0):
+                    return self._empty_like_subspace()
+        except Exception:
+            pass
+
+        embedded = self._ar_embedded
+        B = embedded.shape[0]
+        emb_size = embedded.shape[-1]
+        n_active = int(self.outputShape[0])
+        buffer = self._ar_buffer
+        if (buffer is None
+                or buffer.shape[0] != B
+                or buffer.shape[1] != n_active
+                or buffer.shape[2] != emb_size):
+            buffer = torch.zeros(
+                B, n_active, emb_size,
+                device=embedded.device, dtype=embedded.dtype,
+            )
+            self._ar_buffer = buffer
+
+        if cursor > 0:
+            self.slide_and_append(embedded[:, cursor - 1, :])
+
+        self.subspace.set_event(self._ar_buffer)
+        self._seq_cursor = cursor + 1
+        return self.subspace
+
+    def _empty_like_subspace(self):
+        """Return a SubSpace with materialized shape [B, 0, D] — the termination sentinel."""
+        template = self.subspace
+        ss = SubSpace(
+            (0, template.inputShape[1]),
+            (0, template.outputShape[1]),
+            nInputDim=template._nInputDim,
+            nOutputDim=template._nOutputDim,
+        )
+        return ss
+
+    def _forward_legacy(self, input):
         # ARIR-inference cache bypass: the ARIR runtime state machine
         # injects a pre-built embedding tensor via ``_cached_embedding`` so
         # forward() skips lex/embed and uses the staged latent directly.
@@ -4391,7 +4563,12 @@ class InputSpace(Space):
         self.input = self.subspace.materialize()
         return self.subspace
 
-    def reverse(self, vspace):
+    def reverse(self, subspace):
+        if hasattr(subspace, "is_empty") and subspace.is_empty():
+            return subspace
+        return self._reverse_legacy(subspace)
+
+    def _reverse_legacy(self, vspace):
         if self.model_type == "embedding":
             # Text mode: PerceptualSpace already ran the text reverse and
             # produced the reconstructed muxed tensor on its own subspace.
@@ -4921,7 +5098,22 @@ class PerceptualSpace(Space):
         self._forward_input = {'tokens': batch_tokens, 'indices': what_indices}
         return self.subspace
 
-    def forward(self, vspace, wordSpace=None, quantize=True):
+    def forward(self, subspace):
+        """Single-arg Sequential-path entry.
+
+        Draws quantize from instance attribute ``self.quantize`` (set by
+        build_pipelines() to match legacy's percept_quantize logic), then
+        delegates to ``_forward_legacy``. Callers that need specific kwargs
+        call ``_forward_legacy`` directly.
+        """
+        if subspace.is_empty():
+            return subspace
+        return self._forward_legacy(
+            subspace,
+            quantize=getattr(self, "quantize", True),
+        )
+
+    def _forward_legacy(self, vspace, wordSpace=None, quantize=True):
         """Perception: map input vectors to percepts via attention + VQ + chunking."""
         if isinstance(self.subspace.what, Embedding):
             mode = self.chunking_mode
@@ -4942,10 +5134,15 @@ class PerceptualSpace(Space):
         if getattr(vspace, '_demuxed', False) and vspace._active is not None:
             self.subspace._byte_indices = vspace._active[:, :, 0].long()
         x = self.forwardBegin(vspace, returnVectors=True)
-        if self.hasAttention:
-            x = self.attention.forward(x)
+        # Attention is currently unused in PerceptualSpace; leaving the
+        # AttentionLayer attribute intact for backward compat but skipping
+        # the call so the codebook lookup can slide (see below) without
+        # worrying about cross-position mixing.
+        # if self.hasAttention:
+        #     x = self.attention.forward(x)
         if self.codebook and quantize:
-            x = self.subspace.get_vectors().forward(x)
+            cb = self.subspace.get_vectors()
+            x = cb.forward(x)
         # Shared sparsity regularizer on the percept activations. No-op when
         # l1_lambda defaults to 0; attribute-only so configs opt in.
         if not hasattr(self, "_sparsity"):
@@ -4958,7 +5155,12 @@ class PerceptualSpace(Space):
         vspace.normalize("percepts", target="event", normalize=True)
         return vspace
 
-    def reverse(self, vspace, wordSpace=None):
+    def reverse(self, subspace):
+        if subspace.is_empty():
+            return subspace
+        return self._reverse_legacy(subspace)
+
+    def _reverse_legacy(self, vspace, wordSpace=None):
         """Manifesting: reconstruct input vectors from percepts."""
         if isinstance(self.subspace.what, Embedding):
             self._reverse_text(vspace)
@@ -5160,7 +5362,12 @@ class ModalSpace(Space):
         """ModalSpace manages its own branch requirements."""
         pass
 
-    def forward(self, vspace):
+    def forward(self, subspace):
+        if subspace.is_empty():
+            return subspace
+        return self._forward_legacy(subspace)
+
+    def _forward_legacy(self, vspace):
         """Route each modality through its branch PerceptualSpace."""
         if vspace.is_demuxed:
             what_in = vspace.what.getW()
@@ -5202,7 +5409,12 @@ class ModalSpace(Space):
         out.set_demuxed(what_out, where_out, when_out)
         return out
 
-    def reverse(self, vspace):
+    def reverse(self, subspace):
+        if subspace.is_empty():
+            return subspace
+        return self._reverse_legacy(subspace)
+
+    def _reverse_legacy(self, vspace):
         """Split event into modalities, reverse each branch, rebuild."""
         event = vspace.materialize()
         what_in = event[..., :self.nWhat]
@@ -5399,17 +5611,27 @@ class ConceptualSpace(Space):
                 self._sigma = getattr(parent, 'sigma', None)
             self.subspace = parent.subspace
 
-        def forward(self, vspace, wordSpace=None, target_count=None):
+        def _forward_legacy(self, vspace, wordSpace=None, target_count=None):
             x = vspace.materialize()
             y = self._sigma.forward(x)
             self._parent.subspace.set_event(y)
             return self._parent.subspace
 
-        def reverse(self, vspace, wordSpace=None):
+        def forward(self, subspace):
+            if hasattr(subspace, "is_empty") and subspace.is_empty():
+                return subspace
+            return self._forward_legacy(subspace)
+
+        def _reverse_legacy(self, vspace, wordSpace=None):
             x = vspace.materialize()
             y = self._sigma.reverse(x)
             self._parent.subspace.set_event(y)
             return self._parent.subspace
+
+        def reverse(self, subspace):
+            if hasattr(subspace, "is_empty") and subspace.is_empty():
+                return subspace
+            return self._reverse_legacy(subspace)
 
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
@@ -5421,7 +5643,15 @@ class ConceptualSpace(Space):
     def certainty(self, x):
         return x.T @ x
 
-    def forward(self, vspace, wordSpace=None, target_count=None):
+    def forward(self, subspace):
+        if subspace.is_empty():
+            return subspace
+        # Kwargs fall through to _forward_legacy's defaults in the Sequential
+        # path (wordSpace=None, target_count=None). Legacy callers call
+        # _forward_legacy directly with explicit kwargs.
+        return self._forward_legacy(subspace)
+
+    def _forward_legacy(self, vspace, wordSpace=None, target_count=None):
         """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ.
 
         When nonlinear=True (stable=True on SigmaLayer), the weight matrix
@@ -5470,7 +5700,12 @@ class ConceptualSpace(Space):
         """Return SVO tuple from last ternary lift, or None."""
         return self._last_svo
 
-    def reverse(self, vspace, wordSpace=None):
+    def reverse(self, subspace):
+        if subspace.is_empty():
+            return subspace
+        return self._reverse_legacy(subspace)
+
+    def _reverse_legacy(self, vspace, wordSpace=None):
         """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer."""
         y = self.reverseBegin(vspace, returnVectors=True)
         # Post S-tier merge: no reverseConcepts on the concept space.
@@ -6032,7 +6267,7 @@ class SymbolicSpace(Space):
                 self._pi = parent.layer
             self.subspace = parent.subspace
 
-        def forward(self, vspace, wordSpace=None, quantize=True, is_last=False):
+        def _forward_legacy(self, vspace, wordSpace=None, quantize=True, is_last=False):
             x = vspace.materialize()
             y = self._pi.forward(x)
             # Butterfly path: ``_pi`` is a ButterflyStage.  Codebook-aware
@@ -6069,11 +6304,36 @@ class SymbolicSpace(Space):
             self._parent.subspace.set_event(y)
             return self._parent.subspace
 
-        def reverse(self, vspace, wordSpace=None):
+        def forward(self, subspace):
+            if hasattr(subspace, "is_empty") and subspace.is_empty():
+                return subspace
+            # Per-stage flags live on the parent's stage tables (set by
+            # ``MentalModel.build_pipelines``). Fall back to plain attrs
+            # for callers that haven't populated the table.
+            t = self._t
+            il_table = getattr(self._parent, "_stage_is_last", None)
+            qz_table = getattr(self._parent, "_stage_quantize", None)
+            is_last = (il_table[t] if il_table is not None and t < len(il_table)
+                       else getattr(self._parent, "is_last", False))
+            quantize = (qz_table[t] if qz_table is not None and t < len(qz_table)
+                        else getattr(self._parent, "quantize", True))
+            return self._forward_legacy(
+                subspace,
+                quantize=quantize,
+                is_last=is_last,
+                wordSpace=getattr(self._parent, "wordSpace", None),
+            )
+
+        def _reverse_legacy(self, vspace, wordSpace=None):
             x = vspace.materialize()
             y = self._pi.reverse(x)
             self._parent.subspace.set_event(y)
             return self._parent.subspace
+
+        def reverse(self, subspace):
+            if hasattr(subspace, "is_empty") and subspace.is_empty():
+                return subspace
+            return self._reverse_legacy(subspace)
 
     @property
     def vocabulary(self):
@@ -6296,7 +6556,23 @@ class SymbolicSpace(Space):
 
         return self.subspace
 
-    def forward(self, vspace, wordSpace=None, quantize=True, is_last=False):
+    def forward(self, subspace):
+        """Single-arg Sequential-path entry.
+
+        Draws quantize/is_last/wordSpace from instance attributes set by
+        build_pipelines(). Callers that need specific kwargs call
+        ``_forward_legacy`` directly.
+        """
+        if subspace.is_empty():
+            return subspace
+        return self._forward_dispatch(
+            subspace,
+            quantize=getattr(self, "quantize", True),
+            is_last=getattr(self, "is_last", False),
+            wordSpace=getattr(self, "wordSpace", None),
+        )
+
+    def _forward_dispatch(self, vspace, wordSpace=None, quantize=True, is_last=False):
         """Dispatch to legacy concept->symbol forward OR rule-dispatch forward.
 
         Task 6.2 split: if ``vspace`` was built by ``_build_incoming_subspace``
@@ -6307,8 +6583,9 @@ class SymbolicSpace(Space):
         Otherwise preserve the legacy PiLayer/grammar derivation/codebook
         pipeline unchanged.
 
-        Legacy preferred path is ``_forward_legacy`` -- ``forward`` keeps its
-        public signature so every existing call site continues to work.
+        Legacy preferred path is ``_forward_legacy`` -- ``_forward_dispatch``
+        keeps the multi-arg public signature so every existing call site
+        that was updated to use ``_forward_legacy`` continues to work.
         """
         if getattr(vspace, '_rule_dispatch', False):
             return self._forward_with_rule_dispatch(
@@ -6488,7 +6765,12 @@ class SymbolicSpace(Space):
         vspace.normalize("symbols", target="where")  # range check
         return vspace
 
-    def reverse(self, vspace, wordSpace=None):
+    def reverse(self, subspace):
+        if subspace.is_empty():
+            return subspace
+        return self._reverse_legacy(subspace)
+
+    def _reverse_legacy(self, vspace, wordSpace=None):
         """Map symbol vectors back to concept vectors via PiLayer.reverse (Pi^-^1).
 
         Reverse maps on nDim axis: [B, N, symbol_dim] -> [B, N, concept_dim].
@@ -6576,6 +6858,19 @@ class OutputSpace(Space):
         self._vocabulary = getattr(self, '_vocabulary', None)
         self.text_mode = isinstance(self._vocabulary, Embedding)
 
+        # OutputSpace aggregates the full symbol stream into the task output:
+        # the LinearLayer must span all nSymbols*symbol_dim inputs (not act
+        # per-slot). Force nInputDim to the flattened input width so
+        # forwardBegin reshapes [B, nSymbols, symDim] -> [B, 1, flat_in].
+        # nOutputDim stays at outputShape[1] so forwardEnd reshapes the
+        # linear's [B, 1, nOutput*outputDim] back to [B, nOutput, outputDim].
+        # Skip on degenerate zero shapes; getEncodedOutputSize would divide
+        # by iS[0]*iS[1]=0.
+        if not self.nonlinear_output and inputShape[0] > 0 and inputShape[1] > 0:
+            flat_in = inputShape[0] * inputShape[1]
+            self.nInputDim = flat_in
+            self.subspace._nInputDim = flat_in
+
         if self.nonlinear_output:
             # PiLayer activation-mode path for butterfly symbol output
             nIn = inputShape[0]
@@ -6610,7 +6905,12 @@ class OutputSpace(Space):
         if isinstance(outputBatch, list):
             return torch.stack(outputBatch, dim=0).unsqueeze(1).to(TheDevice.get())
         return outputBatch  # already [B, D, 1] and on device after toDevice()
-    def forward(self, vspace):
+    def forward(self, subspace):
+        if subspace.is_empty():
+            return subspace
+        return self._forward_legacy(subspace)
+
+    def _forward_legacy(self, vspace):
         """Acting: project symbols to task output."""
         if self.nonlinear_output:
             # Activation-mode: PiLayer on symbol activations [B, nSymbols] -> [B, nOutput]
@@ -6627,7 +6927,12 @@ class OutputSpace(Space):
         vspace = self.forwardEnd(output, returnVectors=True)
         return vspace
 
-    def reverse(self, vspace):
+    def reverse(self, subspace):
+        if subspace.is_empty():
+            return subspace
+        return self._reverse_legacy(subspace)
+
+    def _reverse_legacy(self, vspace):
         """Being acted upon: map output back to symbolic space."""
         if self.nonlinear_output:
             # Activation-mode: PiLayer reverse [B, nOutput] -> [B, nSymbols]

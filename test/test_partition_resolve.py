@@ -231,7 +231,8 @@ def test_symbol_codebook_quantizes_activation_not_what():
     concept_input = torch.zeros(1, 2, 4)   # [B=1, N=2, concept_dim=4]
     sym.subspace.set_event(concept_input)
 
-    output = sym.forward(sym.subspace, quantize=True)
+    sym.quantize = True
+    output = sym.forward(sym.subspace)
     activations = output.activation.getW()
 
     # Assertion 1: activation is 1-D [B, N] after resolve(), not [B, N, 2].

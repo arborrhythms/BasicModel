@@ -49,6 +49,10 @@ from Spaces import Basis, Tensor, Codebook, Embedding
 from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
 from Language import WordSpace
 from parse import quick_parser
+from Pipeline import (
+    AdditiveFeedbackGlue, ButterflyGlue, CachePoint,
+    GrammarMergeGlue, ReverseAdapter, StageWrapper,
+)
 
 
 class Normalizer:
@@ -195,7 +199,6 @@ class BaseModel(nn.Module):
             where_scale=_t("whereScale"),
             when_scale=_t("whenScale"),
             masked_prediction=str(_t("maskedPrediction", "NONE") or "NONE").upper(),
-            reconstruct=arch["reconstruct"],
         )
 
         # Inter-sentence contrastive loss weight. DiscourseSpace (owned
@@ -1200,7 +1203,7 @@ class BasicModel(BaseModel):
                conceptualOrder=1,
                model_type="simple", data=None, embedding_path=None,
                reverse_scale=0.5, what_scale=0.7, where_scale=0.2, when_scale=0.1,
-               masked_prediction='NONE', reconstruct='NONE'):
+               masked_prediction='NONE'):
         """Build the full space hierarchy from architecture parameters.
 
         Config-derivable flags (reshape, ergodic, codebook, etc.) are read
@@ -1216,9 +1219,7 @@ class BasicModel(BaseModel):
         self.spaces = []  # reset -- prevent stale accumulation from prior create() calls
         self.wordSpace = None  # wired below once the home spaces exist
         TheXMLConfig._requirements.clear()  # clear stale requirements from prior create()/tests
-        # Read config-derivable flags
-        self.reconstruct     = reconstruct.lower()
-        self.reversible      = str(TheXMLConfig.get("architecture.reconstruct")).upper() != "NONE"
+        self.reversible      = True
         self.ergodic          = TheXMLConfig.get("architecture.ergodic")
         self.processSymbols   = TheXMLConfig.get("architecture.processSymbols")
         self.certainty        = TheXMLConfig.get("architecture.training.certainty")
@@ -1251,9 +1252,6 @@ class BasicModel(BaseModel):
             f"nSymbols ({nSymbols}) must be >= nOutput ({nOutput}): "
             f"the symbolic bottleneck must have at least as many symbols as outputs"
         )
-        self.nOutputSymbols   = nOutput
-        self.nReconSymbols    = max(0, nSymbols - nOutput)
-        self.recon_symbols    = None
         self.nWords           = nWords
         self.data             = data
         self.model_type       = model_type
@@ -1341,7 +1339,6 @@ class BasicModel(BaseModel):
         spaceShape_symbol  = [nvec_symbol,  symbol_dim]
         spaceShape_output  = [nvec_output,  output_dim]
 
-        nOutputSymbols = self.nOutputSymbols
         # InputSpace receives raw data (no encoding) as input but produces encoded vectors.
         rawInputShape = [nInput, input_dim]
         self.inputSpace      = self._make_input_space(rawInputShape, spaceShape_input, inputShape,
@@ -1367,8 +1364,7 @@ class BasicModel(BaseModel):
         self.spaces.extend([self.inputSpace, self.perceptualSpace, self.conceptualSpace, self.symbolicSpace])
         self.syntacticSpace = None
 
-        self.nTotalOutputSymbols = nOutputSymbols
-        self.outputSpace     = OutputSpace([nOutputSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
+        self.outputSpace     = OutputSpace([nSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
                                            masked_prediction=(masked_prediction != 'NONE'),
                                            vectors=self.perceptualSpace.vocabulary)
         self.spaces.extend([self.outputSpace])
@@ -1413,6 +1409,9 @@ class BasicModel(BaseModel):
             if hasattr(space, 'subspace'):
                 space.subspace.normalizer = self.normalizer
 
+        # Phase 2: Sequential pipeline is the only path.
+        self.build_pipelines()
+
         self.to(TheDevice.get())
         TheXMLConfig.validate()
 
@@ -1428,6 +1427,56 @@ class BasicModel(BaseModel):
         if demuxed:
             return ModalSpace(inputShape, spaceShape, outputShape)
         return PerceptualSpace(inputShape, spaceShape, outputShape)
+
+    def build_pipelines(self):
+        """Phase 2: assemble the Sequential pipelines for BasicModel.
+
+        BasicModel has a flat structure (no conceptualOrder unrolling),
+        so no glue stages are needed.
+
+        The pipeline starts from perceptualSpace (not inputSpace) because
+        Start() has already called inputSpace.forward() before the
+        pipeline is invoked. self.inputs (the InputSpace subspace output)
+        is passed as the entry point to pipeline_fwd.
+        """
+        # Cache the subspace flowing out of symbolicSpace so _forward_sequential
+        # can recover it after pipeline_fwd. Needed because passthrough
+        # symbolicSpace doesn't populate its own .subspace.
+        self.symbol_cache = CachePoint()
+
+        fwd_modules = [
+            self.perceptualSpace,
+            self.conceptualSpace,
+            self.symbolicSpace,
+            self.symbol_cache,
+            self.outputSpace,
+        ]
+
+        # Set per-stage attributes used by the single-arg forward() wrappers.
+        self.symbolicSpace.is_last = True
+        self.symbolicSpace.quantize = False
+        if self.wordSpace is not None:
+            self.symbolicSpace.wordSpace = self.wordSpace
+
+        all_spaces = [self.inputSpace, self.perceptualSpace,
+                      self.conceptualSpace, self.symbolicSpace, self.outputSpace]
+        any_invertible = any(getattr(s, "invertible", False) for s in all_spaces)
+
+        if any_invertible:
+            self.pipeline_fwd = nn.Sequential(*fwd_modules)
+            self.pipeline_rev = nn.Sequential(
+                *[ReverseAdapter(m) for m in reversed(fwd_modules)]
+            )
+            self.pipeline_rt = None
+            self.midpoint_cache = None
+        else:
+            self.midpoint_cache = CachePoint()
+            rev_modules = [ReverseAdapter(m) for m in reversed(fwd_modules)]
+            self.pipeline_rt = nn.Sequential(
+                *fwd_modules, self.midpoint_cache, *rev_modules
+            )
+            self.pipeline_fwd = nn.Sequential(*fwd_modules)
+            self.pipeline_rev = None
 
     def Start(self, inputData):
         """Forward pass through the core pipeline: Input -> Percept -> Concept -> Symbol.
@@ -1466,9 +1515,9 @@ class BasicModel(BaseModel):
         """Run the BasicModel pipeline after InputSpace has produced a state."""
         ws = self.wordSpace
         self.inputs = inputs
-        self.percepts = self.perceptualSpace.forward(self.inputs, wordSpace=ws)
-        self.concepts = self.conceptualSpace.forward(self.percepts, wordSpace=ws)
-        self.symbols  = self.symbolicSpace.forward(self.concepts, wordSpace=ws)
+        self.percepts = self.perceptualSpace._forward_legacy(self.inputs, wordSpace=ws)
+        self.concepts = self.conceptualSpace._forward_legacy(self.percepts, wordSpace=ws)
+        self.symbols  = self.symbolicSpace._forward_legacy(self.concepts, wordSpace=ws)
         input = inputs.materialize()
         if input is None:
             # Text mode: the post-embed, pre-attention muxed tensor is
@@ -1544,29 +1593,19 @@ class BasicModel(BaseModel):
             self.inputSpace._ar_buffer = buffer
         return buffer
 
-    def _split_output_symbols(self, symbols):
-        """Cache output/reconstruction symbol slices and return output symbols."""
-        if self.nReconSymbols > 0:
-            self.output_symbols = symbols[:, :self.nTotalOutputSymbols, :]
-            self.recon_symbols = symbols[:, self.nTotalOutputSymbols:, :]
-        else:
-            self.output_symbols = symbols
-            self.recon_symbols = None
-        return self.output_symbols
-
     def StartReverse(self, symbols):
         """Reverse pass: Symbol -> Concept -> Percept -> Input (reconstruction)."""
         ws = self.wordSpace
         if isinstance(symbols, torch.Tensor):
             self.symbolicSpace.subspace.set_event(symbols)
             symbols = self.symbolicSpace.subspace
-        concepts_state = self.symbolicSpace.reverse(symbols, wordSpace=ws)
+        concepts_state = self.symbolicSpace._reverse_legacy(symbols, wordSpace=ws)
         self._debug_tensor_stats(
             "reverse.concepts_state", concepts_state.materialize())
-        percepts_state = self.conceptualSpace.reverse(concepts_state, wordSpace=ws)
+        percepts_state = self.conceptualSpace._reverse_legacy(concepts_state, wordSpace=ws)
         self._debug_tensor_stats(
             "reverse.percepts_state", percepts_state.materialize())
-        input_state = self.perceptualSpace.reverse(percepts_state, wordSpace=ws)
+        input_state = self.perceptualSpace._reverse_legacy(percepts_state, wordSpace=ws)
         self._debug_tensor_stats(
             "reverse.input_state", input_state.materialize())
         self.inputs = self.inputSpace.reverse(input_state)
@@ -1593,31 +1632,6 @@ class BasicModel(BaseModel):
         if self.plot:
             TheReport.plotActivations(figure=1, symbols=symbols)
         return outputData
-    def FinishReverse(self, outputData):
-        """Reconstruct the symbol tensor from output for the reverse pass.
-
-        reconstruct="symbols" (default): use cached forward symbols only.
-        reconstruct="output": use outputSpace.reverse(outputData) only.
-        reconstruct="both": reversed output + cached recon_symbols.
-
-        Input-range normalization happens here (not in OutputSpace.reverse)
-        so the space pipeline stays global-data-free.
-        """
-        if isinstance(outputData, torch.Tensor):
-            outputData = self.normalizer.normalize(outputData, which="output")
-            self.outputSpace.subspace.set_event(outputData)
-            outputData = self.outputSpace.subspace
-        mode = getattr(self, 'reconstruct', 'symbols')
-        if mode == 'output':
-            return self.outputSpace.reverse(outputData).materialize()
-        elif mode == 'both':
-            output_symbols = self.outputSpace.reverse(outputData).materialize()
-        else:  # 'symbols'
-            output_symbols = self.output_symbols
-        if self.recon_symbols is not None and self.nReconSymbols > 0:
-            return torch.cat([output_symbols, self.recon_symbols], dim=1)
-        return output_symbols
-
     def store_truths(self, entries):
         """Encode truth entries via runEpoch and store in WordSpace.truth_layer.
 
@@ -1783,6 +1797,74 @@ class BasicModel(BaseModel):
         return tokens
 
     def forward(self, inputData):
+        """Sequential pipeline forward (only path)."""
+        return self._forward_sequential(inputData)
+
+    def _forward_sequential(self, inputData):
+        """Phase 2 non-AR forward via nn.Sequential (BasicModel).
+
+        Non-AR only in this pass; AR mode lands in follow-up work.
+        Reconstruction is left as None (deferred).
+        """
+        if isinstance(inputData, torch.Tensor):
+            inputData = inputData.to(TheDevice.get())
+        self._ar_valid_pos = None
+
+        is_runtime_arir = (
+            self.inputSpace.data is not None
+            and getattr(self.inputSpace.data, '_runtime_mode', None) == 'ARIR'
+        )
+        is_ar_mode = (
+            self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
+            and not is_runtime_arir
+        )
+        if is_ar_mode:
+            # AR mode not yet implemented in Sequential path; fall back to legacy.
+            return self._forward_legacy(inputData)
+
+        # Non-AR path: reset state, embed, run pipeline.
+        for space in self.spaces:
+            if hasattr(space, 'Start'):
+                space.Start()
+        ws = self.wordSpace
+        if ws is not None:
+            ws.clear_sentence()
+        if hasattr(self, 'symbolicSpace'):
+            self.symbolicSpace.reset_symbol_objective()
+
+        self.inputs = self.inputSpace.forward(inputData)
+
+        if self.inputs.is_empty():
+            return None, None, None, None
+
+        # Run the Sequential pipeline (perceptualSpace → ... → outputSpace).
+        result_subspace = self.pipeline_fwd(self.inputs)
+
+        # Embedded input is populated by PerceptualSpace during the pipeline.
+        # Fall back to it when InputSpace does not materialize (text mode).
+        input_state = self.inputs.materialize()
+        if input_state is None:
+            input_state = getattr(self.perceptualSpace, '_embedded_input', None)
+
+        # Extract prediction from the OutputSpace subspace.
+        if self.outputSpace.nonlinear_output:
+            outputData = result_subspace.materialize(mode="activation")
+        else:
+            outputData = result_subspace.materialize()
+        if outputData is not None:
+            outputData = self.normalizer.denormalize(outputData, which="output")
+
+        # Recover symbols from the cached post-symbolicSpace subspace.
+        # (SymbolicSpace in passThrough mode does not populate its own .subspace;
+        # the cache sits between it and OutputSpace.)
+        sym_sub = self.symbol_cache.last
+        symbols = sym_sub.materialize() if sym_sub is not None else None
+
+        batch = input_state.shape[0] if input_state is not None else 1
+        self.inputSpace.subspace.whenEncoding.increment(batch)
+        return input_state, symbols, outputData, None
+
+    def _forward_legacy(self, inputData):
         """Full forward pass: core pipeline + higher-order cycles + output projection.
 
         Returns (input_state, symbols, predictions, reconstruction). For BasicModel,
@@ -1816,8 +1898,7 @@ class BasicModel(BaseModel):
                     batch, emb_size, embedded.device, embedded.dtype)
                 self.inputs.set_event(buffer)
                 _, _, symbols = self._run_forward_pipeline(self.inputs)
-                output_symbols = self._split_output_symbols(symbols)
-                pred = self.Finish(output_symbols)
+                pred = self.Finish(symbols)
                 if pred.dim() == 3 and pred.shape[1] == 1:
                     pred = pred.squeeze(1)
                 predictions.append(pred)
@@ -1830,14 +1911,12 @@ class BasicModel(BaseModel):
             return input, symbols, predictions, reconstruction
 
         input, concepts, symbols = self.Start(inputData)
-        self._split_output_symbols(symbols)
-        outputData = self.Finish(self.output_symbols)
+        outputData = self.Finish(symbols)
         batch = input.shape[0]
         self.inputSpace.subspace.whenEncoding.increment(batch)
         return input, symbols, outputData, None
     def reverse(self, symbols, outputData):
-        """Full reverse pass: core reconstruction."""
-        symbols = self.FinishReverse(outputData)
+        """Full reverse pass: symbols -> concepts -> percepts -> input."""
         inputData, input = self.StartReverse(symbols)
         return inputData, input
 
@@ -2003,8 +2082,7 @@ class BasicModel(BaseModel):
             return
         if pred_symbols is None or pred_symbols.numel() == 0:
             return
-        n = min(getattr(self, 'nOutputSymbols', pred_symbols.shape[1]),
-                pred_symbols.shape[1])
+        n = min(self.nSymbols, pred_symbols.shape[1])
         pred_symbols = pred_symbols[:, :n, :]
 
         target_event = outputTensor.to(outputDataPred.device)
@@ -2542,11 +2620,11 @@ class MentalModel(BaseModel):
                model_type="simple", data=None, embedding_path=None,
                reverse_scale=0.5,
                what_scale=0.7, where_scale=0.2, when_scale=0.1,
-               masked_prediction='NONE', reconstruct='NONE', **kwargs):
+               masked_prediction='NONE', **kwargs):
 
         self.spaces = []
         self.wordSpace = None  # wired below once the home spaces exist
-        self.reversible = str(TheXMLConfig.get("architecture.reconstruct")).upper() != "NONE"
+        self.reversible = True
         self.nInput = nInput
         self.nPercepts = nPercepts
         self.nConcepts = nConcepts
@@ -2595,18 +2673,6 @@ class MentalModel(BaseModel):
                 "useButterflies=true + useGrammar=\"all\" is excluded: "
                 "butterfly permutations fight constituency structure")
 
-        # ARIR mode exists to train input reconstruction. Without a reverse
-        # pass (reconstruct=NONE), there is nothing to train -- the mode is
-        # meaningless. ARLM/ARUS do not reverse; <reconstruct> is inert in
-        # those modes and unconstrained.
-        _mp = str(masked_prediction).upper()
-        _rc = str(TheXMLConfig.get("architecture.reconstruct")).upper()
-        TheXMLConfig.require(
-            lambda cfg, _mp=_mp, _rc=_rc: _mp != 'ARIR' or _rc != 'NONE',
-            f"maskedPrediction=ARIR requires reconstruct != 'NONE' "
-            f"(got maskedPrediction={_mp!r}, reconstruct={_rc!r})"
-        )
-
         # Butterfly-path state cache (populated in the useButterflies branch
         # below).  Named after ButterflyStage.
         self._butterfly_state_vectors = None
@@ -2629,12 +2695,7 @@ class MentalModel(BaseModel):
         self.allow_contradiction = int(
             TheXMLConfig.get("architecture.allowContradiction", default=0) or 0)
         self.truth_loss_weight = float(TheXMLConfig.training("TruthLoss", default=0.0) or 0.0)
-        self.reconstruct = reconstruct.lower()
         self.masked_prediction = masked_prediction
-        self.nOutputSymbols = nOutput
-        self.nReconSymbols = max(0, nSymbols - nOutput)
-        self.nTotalOutputSymbols = nOutput
-        self.recon_symbols = None
 
         self.loss = ModelLoss(
             reverse_scale=reverse_scale,
@@ -2780,8 +2841,16 @@ class MentalModel(BaseModel):
         # No SyntacticSpace -- syntax is handled by Grammar centrally.
         self.syntacticSpace = None
 
-        # Output: from first nOutputSymbols symbol vectors (matches BasicModel pattern)
-        outputInputShape = [self.nOutputSymbols, symbol_dim + obj_symbol]
+        # Output: receives the actual final symbol stream from the pipeline.
+        # Butterfly path halves N at every stage except the last, so the
+        # tensor entering OutputSpace has fewer vectors than ``nSymbols``.
+        if self.useButterflies:
+            n_stages_eff = min(self.conceptualOrder,
+                               int(math.log2(nPercepts)) if nPercepts > 1 else 0)
+            output_n = nPercepts // (2 ** max(0, n_stages_eff - 1))
+        else:
+            output_n = nSymbols
+        outputInputShape = [output_n, symbol_dim + obj_symbol]
         self.outputSpace = OutputSpace(outputInputShape, spaceShape_output, outputShape,
                                        masked_prediction=(masked_prediction != 'NONE'),
                                        vectors=self.perceptualSpace.vocabulary)
@@ -2835,8 +2904,121 @@ class MentalModel(BaseModel):
                                                    self.conceptualOrder)
         self.symbol_states = []
 
+        # Phase 2: Sequential pipeline is the only path.
+        self.build_pipelines()
+
         self.to(TheDevice.get())
         TheXMLConfig.validate()
+
+    # -- Phase 2: Sequential pipeline ----------------------------------
+
+    def _glue_class(self):
+        if self.useButterflies:
+            return ButterflyGlue
+        if self.useGrammar == "all":
+            return GrammarMergeGlue
+        return AdditiveFeedbackGlue
+
+    def build_pipelines(self):
+        """Phase 2: assemble the unrolled Sequential pipelines for MentalModel.
+
+        Pipeline shape:
+            inputSpace -> perceptualSpace ->
+            (conceptualSpace[t] -> Glue(stage_idx=t) -> symbolicSpace[t])×T ->
+            outputSpace
+
+        Where T = self.conceptualOrder. Per-stage views from
+        Space.__getitem__ are wrapped in StageWrapper (since the proxy
+        objects aren't nn.Module instances).
+        """
+        T = int(self.conceptualOrder)
+        Glue = self._glue_class()
+
+        # PerceptualSpace quantize: matches legacy's percept_quantize logic.
+        # Reversible+invertible configurations skip codebook quantization to
+        # preserve exact-invertibility of the perceptual step.
+        self.perceptualSpace.quantize = not (
+            self.reversible and getattr(self.perceptualSpace, "invertible", False))
+
+        # Per-stage SymbolicSpace flags. ``__getitem__`` returns a fresh
+        # ``_SSLevelView`` each call (in hierarchical mode), so flags set
+        # on a transient view are lost. Stash a per-t flag table on the
+        # parent; ``StageWrapper`` reads it when invoking forward.
+        is_last_table = []
+        quantize_table = []
+        for t in range(T):
+            is_last = (t == T - 1)
+            quantize = True if self.useButterflies else (not is_last)
+            is_last_table.append(is_last)
+            quantize_table.append(quantize)
+        self.symbolicSpace._stage_is_last = is_last_table
+        self.symbolicSpace._stage_quantize = quantize_table
+        self.symbolicSpace.wordSpace = self.wordSpace  # rule 3 ownership
+
+        # Determine initial_n per stage for the N-halving glues.
+        # Butterfly halves N each stage; non-butterfly keeps N fixed.
+        try:
+            base_n = int(self.perceptualSpace.subspace.inputShape[0])
+        except Exception:
+            base_n = int(getattr(self, "nPercepts", 0))
+
+        fwd_modules = [self.inputSpace, self.perceptualSpace]
+        for t in range(T):
+            cs_stage = self.conceptualSpace[t]
+            ss_stage = self.symbolicSpace[t]
+            # Per-stage view may be a non-nn.Module proxy; wrap for Sequential.
+            if not isinstance(cs_stage, nn.Module):
+                cs_stage = StageWrapper(cs_stage)
+            if not isinstance(ss_stage, nn.Module):
+                ss_stage = StageWrapper(ss_stage)
+
+            fwd_modules.append(cs_stage)
+
+            # Cross-stage glue selection:
+            #  - Butterfly mode: the ButterflyStage inside each Conceptual
+            #    and Symbolic stage already handles N-halving internally,
+            #    so we do NOT insert a ButterflyGlue here (that would
+            #    double-halve and drive N to zero).
+            #  - Grammar mode: average-merge between stages.
+            #  - Additive feedback mode: combine previous symbols with
+            #    current percepts.
+            if Glue is ButterflyGlue:
+                pass  # ButterflyStage already handles merge internally
+            elif Glue is GrammarMergeGlue:
+                stage_n = base_n // (2 ** t)
+                fwd_modules.append(
+                    Glue(stage_idx=t, initial_n=stage_n, is_last=(t == T - 1))
+                )
+            else:
+                prev = (self.symbolicSpace[t - 1].subspace if t > 0
+                        else self.symbolicSpace[T - 1].subspace)
+                fwd_modules.append(
+                    AdditiveFeedbackGlue(stage_idx=t, feedback_source=prev)
+                )
+
+            fwd_modules.append(ss_stage)
+
+        fwd_modules.append(self.outputSpace)
+
+        all_spaces = [self.inputSpace, self.perceptualSpace,
+                      self.conceptualSpace, self.symbolicSpace, self.outputSpace]
+        any_invertible = any(getattr(s, "invertible", False) for s in all_spaces)
+
+        if any_invertible:
+            self.pipeline_fwd = nn.Sequential(*fwd_modules)
+            self.pipeline_rev = nn.Sequential(
+                *[ReverseAdapter(m) for m in reversed(fwd_modules)]
+            )
+            self.pipeline_rt = None
+            self.midpoint_cache = None
+        else:
+            self.midpoint_cache = CachePoint()
+            rev_modules = [ReverseAdapter(m) for m in reversed(fwd_modules)]
+            self.pipeline_rt = nn.Sequential(
+                *fwd_modules, self.midpoint_cache, *rev_modules
+            )
+            self.pipeline_fwd = nn.Sequential(*fwd_modules)
+            self.pipeline_rev = None
 
     # -- Order Partitions (Ramsification) -----------------------------
 
@@ -3110,8 +3292,8 @@ class MentalModel(BaseModel):
             # 2. Sigma (conceptual transformation)
             self.percepts.set_event(concept_input)
             c_target = (None if (self.useButterflies or self.useGrammar == "all")
-                        else self.nOutputSymbols)
-            self.concepts = self.conceptualSpace[t].forward(
+                        else self.nSymbols)
+            self.concepts = self.conceptualSpace[t]._forward_legacy(
                 self.percepts, wordSpace=ws, target_count=c_target)
             concept_vectors = self.concepts.materialize()
             if self.useButterflies or self.useGrammar == "all":
@@ -3120,7 +3302,7 @@ class MentalModel(BaseModel):
             # 3. Pi (symbolic projection)
             is_last_step = (t == self.conceptualOrder - 1)
             quantize_sym = bool(self.useButterflies)
-            self.symbols = self.symbolicSpace[t].forward(
+            self.symbols = self.symbolicSpace[t]._forward_legacy(
                 self.concepts, wordSpace=ws,
                 quantize=quantize_sym, is_last=is_last_step)
             sym_vectors = self.symbols.materialize()
@@ -3142,9 +3324,9 @@ class MentalModel(BaseModel):
                 and self.useGrammar != "all"):
             self._nonrams_sym_feedbacks.append(self.symbolic_state)
             self.percepts.set_event(self._bound_concept_input(percepts))
-            self.concepts = self.conceptualSpace[0].forward(
-                self.percepts, wordSpace=ws, target_count=self.nOutputSymbols)
-            self.symbols = self.symbolicSpace[0].forward(
+            self.concepts = self.conceptualSpace[0]._forward_legacy(
+                self.percepts, wordSpace=ws, target_count=self.nSymbols)
+            self.symbols = self.symbolicSpace[0]._forward_legacy(
                 self.concepts, wordSpace=ws, quantize=False, is_last=True)
             sym_vectors = self.symbols.materialize()
 
@@ -3158,6 +3340,251 @@ class MentalModel(BaseModel):
         return sym_vectors
 
     def forward(self, inputData):
+        """Sequential pipeline forward (only path)."""
+        return self._forward_sequential(inputData)
+
+    # ----- Sequential path helpers -----
+
+    def _is_ar_mode(self):
+        """True when the current config is AR (ARLM/ARUS/ARIR at training time)."""
+        is_runtime_arir = (
+            self.inputSpace.data is not None
+            and getattr(self.inputSpace.data, '_runtime_mode', None) == 'ARIR'
+        )
+        return (self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
+                and not is_runtime_arir)
+
+    def _extract_prediction_sequential(self, fwd_out):
+        """Materialize OutputSpace's subspace and denormalize to task range."""
+        if fwd_out is None:
+            return None
+        if self.outputSpace.nonlinear_output:
+            outputData = fwd_out.materialize(mode="activation")
+        else:
+            outputData = fwd_out.materialize()
+        if outputData is None:
+            return None
+        return self.normalizer.denormalize(outputData, which="output")
+
+    def _should_reconstruct(self):
+        """True when reverse reconstruction should run after the forward loop.
+
+        Mirrors the legacy `_forward_legacy` semantics: only ARIR triggers
+        an automatic reverse pass (input reconstruction). Non-AR and
+        ARLM/ARUS callers invoke `model.reverse()` explicitly when they
+        need it.
+        """
+        return self.masked_prediction == 'ARIR'
+
+    def _run_reverse_sequential(self, last_forward_result):
+        """Case A reconstruction: run pipeline_rev once after the forward loop."""
+        if self.pipeline_rev is None or last_forward_result is None:
+            return None
+        return self.pipeline_rev(last_forward_result)
+
+    def _forward_sequential(self, inputData):
+        """Phase 2 unified forward via nn.Sequential.
+
+        Shape of the Run:
+          Start() cascade (one-shot init; resets InputSpace streaming cursor)
+          Reset() cascade (per-sentence teardown; clears WordSpace stack)
+          while not empty:
+              result = pipeline_fwd(inputData)   # InputSpace streams positions
+              collect prediction
+          if reconstructing:
+              reconstruction = pipeline_rev(last_result)
+          End() cascade (per-batch teardown)
+
+        Termination: InputSpace.forward emits an empty SubSpace ([B, 0, D])
+        when the input is exhausted (non-AR: after one call; AR training:
+        after N_tokens; AR inference: when 0x00 is fed back in).
+
+        Discourse snapshot / universality / predicted head are not
+        populated on this path (the methods remain on the model for
+        future wiring).
+        """
+        if isinstance(inputData, torch.Tensor):
+            inputData = inputData.to(TheDevice.get())
+
+        # Start() cascade: one-shot per-run init for every space.
+        for space in self.spaces:
+            if hasattr(space, 'Start'):
+                space.Start()
+
+        # Reset() cascade: per-sentence teardown (clears WordSpace stack, etc.).
+        for space in self.spaces:
+            if hasattr(space, 'Reset'):
+                space.Reset()
+
+        # Per-run scratch state used by Finish/loss.
+        self.symbol_states = []
+        self._nonrams_sym_feedbacks = []
+        self._unified_j_iterations = 0
+        if hasattr(self, 'symbolicSpace'):
+            self.symbolicSpace.reset_symbol_objective()
+
+        # Seed the flat-path symbolic feedback state based on batch size.
+        B = inputData.shape[0] if isinstance(inputData, torch.Tensor) else 1
+        device = (inputData.device if isinstance(inputData, torch.Tensor)
+                  else TheDevice.get())
+        if self.wordSpace is not None:
+            self.wordSpace.ensure_batch(B)
+        self.symbolic_state = self.symbolicSpace.empty_state(batch=B).to(device)
+
+        # Discourse prediction (once per forward, pre-loop). Mirrors
+        # _forward_legacy: predicts the next snapshot from prior
+        # snapshots so runBatch can score the priming term.
+        self._predicted_snapshot = None
+        self._predicted_confidence = None
+        discourse_for_prime = (
+            self.wordSpace.discourse
+            if self.wordSpace is not None else None)
+        if discourse_for_prime is not None:
+            pred, conf = discourse_for_prime.predict()
+            self._predicted_snapshot = pred
+            self._predicted_confidence = conf
+
+        # Identify the SymbolicSpace stage indices in pipeline_fwd so we
+        # can capture per-stage symbol vectors for symbol_states.
+        # Two cases:
+        #   * Non-hierarchical: symbolicSpace[t] returns symbolicSpace itself
+        #     (an nn.Module); inserted directly without StageWrapper. Detect
+        #     by ``mod is self.symbolicSpace``.
+        #   * Hierarchical / butterfly: symbolicSpace[t] returns a
+        #     _SSLevelView whose ``_parent`` is symbolicSpace; wrapped in
+        #     StageWrapper. Detect via ``mod._stage._parent``.
+        ss_module_indices = set()
+        for i, mod in enumerate(self.pipeline_fwd):
+            if mod is self.symbolicSpace:
+                ss_module_indices.add(i)
+                continue
+            stage = getattr(mod, '_stage', None)
+            if stage is None:
+                continue
+            parent = getattr(stage, '_parent', None)
+            if stage is self.symbolicSpace or parent is self.symbolicSpace:
+                ss_module_indices.add(i)
+
+        # While-loop: InputSpace streams positions (stateful cursor);
+        # empty-sentinel terminates.
+        reconstructing = self._should_reconstruct()
+        predictions = []
+        last_forward_result = None
+        while True:
+            cur = inputData
+            captured_states = []
+            for i, mod in enumerate(self.pipeline_fwd):
+                cur = mod(cur)
+                if i in ss_module_indices:
+                    sv = cur.materialize() if hasattr(cur, 'materialize') else None
+                    if sv is not None:
+                        captured_states.append(sv.clone())
+            result = cur
+            if result is None or (hasattr(result, 'is_empty') and result.is_empty()):
+                break
+            self.symbol_states = captured_states
+            self._unified_j_iterations = len(captured_states)
+            last_forward_result = result
+            pred = self._extract_prediction_sequential(result)
+            predictions.append(pred)
+            # Non-AR modes run the pipeline once per call; AR modes keep
+            # streaming via InputSpace's cursor until exhaustion / null byte.
+            if self.masked_prediction not in ('ARLM', 'ARUS', 'ARIR'):
+                break
+
+        reconstruction = None
+        if reconstructing and last_forward_result is not None:
+            reconstruction = self._run_reverse_sequential(last_forward_result)
+
+        # Symbols tensor in legacy shape: norm-of-symbols expanded to
+        # percept_dim so downstream callers (plots, loss) work.
+        sym_vectors = self.symbolicSpace.subspace.materialize()
+        symbols = sym_vectors
+        if sym_vectors is not None:
+            percepts_t = (self.perceptualSpace.subspace.materialize()
+                          if hasattr(self.perceptualSpace, 'subspace') else None)
+            if percepts_t is not None and percepts_t.ndim >= 3:
+                symbols = sym_vectors.norm(dim=-1).unsqueeze(-1).expand(
+                    -1, -1, percepts_t.shape[-1])
+
+        # Input state for the return tuple: materialize inputSpace.subspace
+        # (InputSpace already populated it during its first streaming call).
+        input_state = self.inputSpace.subspace.materialize()
+        if input_state is None:
+            input_state = getattr(self.perceptualSpace, '_embedded_input', None)
+
+        # Expose per-stage subspaces as model attributes for reverse(),
+        # introspection, and tests that read them after forward().
+        self.inputs = self.inputSpace.subspace
+        self.percepts = self.perceptualSpace.subspace
+        self.concepts = self.conceptualSpace.subspace
+        self.symbols = self.symbolicSpace.subspace
+        self.outputs = self.outputSpace.subspace
+
+        # Discourse snapshot: stash the final (S, W) pair so runBatch can
+        # compute a next-sentence prediction loss against it. Mirrors
+        # _forward_legacy.
+        self._current_discourse_s = None
+        self._current_discourse_w = None
+        discourse = (self.wordSpace.discourse
+                     if self.wordSpace is not None else None)
+        if discourse is not None:
+            try:
+                s_state = self.symbolicSpace.subspace.materialize()
+            except Exception:
+                s_state = sym_vectors
+            try:
+                w_state = self.wordSpace.read()
+            except Exception:
+                w_state = None
+            if w_state is None and s_state is not None:
+                w_state = torch.zeros(
+                    discourse.max_depth, discourse.n_dim,
+                    device=s_state.device, dtype=s_state.dtype)
+            if s_state is not None:
+                self._current_discourse_s = s_state.detach()
+                self._current_discourse_w = w_state.detach()
+
+        # Universality (Golden Rule) score, parallel to _forward_legacy.
+        self._universality_score = None
+        truth_layer = (self.wordSpace.truth_layer
+                       if self.wordSpace is not None else None)
+        syntactic_layer = (self.wordSpace.syntacticLayer
+                           if self.wordSpace is not None else None)
+        svo = syntactic_layer.last_svo if syntactic_layer is not None else None
+        lifting_layer = (syntactic_layer.lifting_layer
+                         if syntactic_layer is not None else None)
+        if (truth_layer is not None and len(truth_layer) > 0
+                and svo is not None and lifting_layer is not None):
+            s, v, o = svo
+            self._universality_score = truth_layer.universality(
+                s, v, o, lifting_layer, self.symbolicSpace)
+
+        # Downward head emission (S -> C). Mirrors _forward_legacy.
+        self._predicted_head = None
+        try:
+            gen_on = bool(TheXMLConfig.get('WordSpace.downwardGeneration'))
+        except KeyError:
+            gen_on = False
+        if (gen_on and self.wordSpace is not None
+                and sym_vectors is not None and sym_vectors.ndim >= 3):
+            final_state = sym_vectors[:, 0, :]
+            codebook_space = (self.perceptualSpace
+                              if self.inputSpace.model_type == "embedding"
+                              else self.inputSpace)
+            result = self.wordSpace.reconstruct(final_state, codebook_space)
+            self._predicted_head = result['heads']
+
+        # Note: End() cascade lives in Run() (per the serial_mode design).
+        # forward() leaves state intact so reverse() can read cached
+        # subspace event tensors.
+
+        if self.masked_prediction in ('ARLM', 'ARUS', 'ARIR'):
+            return input_state, symbols, predictions, reconstruction
+        outputData = predictions[0] if predictions else None
+        return input_state, symbols, outputData, reconstruction
+
+    def _forward_legacy(self, inputData):
         """Forward pass.
 
         Non-AR (masked_prediction='NONE'): single pass through the inner
@@ -3229,7 +3656,7 @@ class MentalModel(BaseModel):
             percept_quantize = not (
                 self.reversible and getattr(
                     self.perceptualSpace, "invertible", False))
-            self.percepts = self.perceptualSpace.forward(
+            self.percepts = self.perceptualSpace._forward_legacy(
                 self.inputs, wordSpace=ws, quantize=percept_quantize)
             percepts = self.percepts.materialize()
             sym_vectors = self._run_conceptual_order(
@@ -3285,7 +3712,7 @@ class MentalModel(BaseModel):
                 percept_quantize = not (
                     self.reversible and getattr(
                         self.perceptualSpace, "invertible", False))
-                self.percepts = self.perceptualSpace.forward(
+                self.percepts = self.perceptualSpace._forward_legacy(
                     self.inputs, wordSpace=ws, quantize=percept_quantize)
                 percepts = self.percepts.materialize()
                 sym_vectors = self._run_conceptual_order(
@@ -3293,8 +3720,7 @@ class MentalModel(BaseModel):
                     apply_prime=(pos == 0))
 
                 # Emit per-pos prediction (target is embedded[:, pos, :]).
-                output_syms = sym_vectors[:, :self.nOutputSymbols, :].clone()
-                pred = self.Finish(output_syms)
+                pred = self.Finish(sym_vectors)
                 # Finish() may emit [B, 1, D] when nOutput=1; squeeze that
                 # so the stacked predictions cleanly align with the per-pos
                 # target of shape [B, D].
@@ -3402,16 +3828,12 @@ class MentalModel(BaseModel):
             input_state = self.perceptualSpace._embedded_input
 
         if not is_ar_mode:
-            # Non-AR: emit single output prediction as today.
-            output_syms = sym_vectors[:, :self.nOutputSymbols, :].clone()
-            outputData = self.Finish(output_syms)
+            # Non-AR: emit single output prediction from the full set of symbols.
+            outputData = self.Finish(sym_vectors)
             return input_state, symbols, outputData, None
 
         # AR modes: per-pos predictions already accumulated. Terminal
-        # reverse only for ARIR. reverse() with ``reconstruct='symbols'``
-        # ignores outputData (the canonical ARIR setting); for
-        # reconstruct='output'/'both' we pass the final prediction so the
-        # reverse chain has a valid output-side operand.
+        # reverse only for ARIR.
         reconstruction = None
         if self.masked_prediction == 'ARIR':
             last_pred = predictions[-1] if predictions else None
@@ -3422,38 +3844,20 @@ class MentalModel(BaseModel):
 
     def reverse(self, symbols, outputData):
         ws = self.wordSpace
-        if isinstance(outputData, torch.Tensor):
-            outputData = self.normalizer.normalize(outputData, which="output")
-            self.outputSpace.subspace.set_event(outputData)
-            outputData = self.outputSpace.subspace
 
-        use_cached = (self.reconstruct == 'symbols')
-
-        if use_cached:
-            sym_vec = self.symbolicSpace.subspace.materialize()
-            concepts_state = self.concepts
-        else:
-            output_state = self.outputSpace.reverse(outputData)
-            sym_vec = output_state.materialize()
-            concepts_state = output_state
+        sym_vec = self.symbolicSpace.subspace.materialize()
+        concepts_state = self.concepts
 
         if self.useButterflies:
-            # ButterflyStage inverts each stage; reconstruct='symbols'
-            # gives us the full symbol state at the final level.
-            if not use_cached:
-                raise ValueError(
-                    "useButterflies requires reconstruct='symbols' "
-                    "so the full symbol state is available for exact inversion"
-                )
             self.symbolicSpace.subspace.set_event(sym_vec)
-            x = self.symbolicSpace[self.conceptualOrder - 1].reverse(
+            x = self.symbolicSpace[self.conceptualOrder - 1]._reverse_legacy(
                 self.symbolicSpace.subspace, wordSpace=ws).materialize()
             for t in reversed(range(self.conceptualOrder)):
                 self.conceptualSpace.subspace.set_event(x)
-                x = self.conceptualSpace[t].reverse(
+                x = self.conceptualSpace[t]._reverse_legacy(
                     self.conceptualSpace.subspace, wordSpace=ws).materialize()
             self.perceptualSpace.subspace.set_event(x)
-            input_state = self.perceptualSpace.reverse(self.perceptualSpace.subspace, wordSpace=ws)
+            input_state = self.perceptualSpace._reverse_legacy(self.perceptualSpace.subspace, wordSpace=ws)
             self.inputs = self.inputSpace.reverse(input_state)
             input_latent = input_state.materialize()
             input_data = self.inputs.materialize()
@@ -3463,11 +3867,11 @@ class MentalModel(BaseModel):
             # Progressive-bottleneck: peel off last pi, then per-level
             # reverse with external unmerge and feedback subtraction.
             self.symbols.set_event(sym_vec)
-            x = self.symbolicSpace[self.conceptualOrder - 1].reverse(
+            x = self.symbolicSpace[self.conceptualOrder - 1]._reverse_legacy(
                 self.symbols, wordSpace=ws).materialize()
             for t in reversed(range(self.conceptualOrder)):
                 self.symbols.set_event(x)
-                concept_input_state = self.conceptualSpace[t].reverse(
+                concept_input_state = self.conceptualSpace[t]._reverse_legacy(
                     self.symbols, wordSpace=ws)
                 x = concept_input_state.materialize()
                 fb = self._sym_feedbacks.pop()
@@ -3477,7 +3881,7 @@ class MentalModel(BaseModel):
             concept_input_state.set_event(x)
         else:
             # Flat recurrent path: reverse sigma, subtract cached feedback.
-            concept_input_state = self.conceptualSpace.reverse(
+            concept_input_state = self.conceptualSpace._reverse_legacy(
                 concepts_state, wordSpace=ws)
             if getattr(self, '_nonrams_sym_feedbacks', None):
                 fb = self._nonrams_sym_feedbacks[-1]
@@ -3490,7 +3894,7 @@ class MentalModel(BaseModel):
         percepts_portion = concept_input[:, :self.nPercepts, :]
 
         concept_input_state.set_event(percepts_portion)
-        input_state = self.perceptualSpace.reverse(concept_input_state, wordSpace=ws)
+        input_state = self.perceptualSpace._reverse_legacy(concept_input_state, wordSpace=ws)
         self.inputs = self.inputSpace.reverse(input_state)
         input_latent = input_state.materialize()
         input_data = self.inputs.materialize()
@@ -3745,6 +4149,18 @@ class ModelFactory:
             errors.append(
                 "PerceptualSpace hasAttention=True is incompatible with nInputDim reshape. "
                 "Set <hasAttention>false</hasAttention> in <PerceptualSpace>.")
+
+        # ARIR mode auto-runs the reverse pass to produce a reconstruction.
+        # That makes no sense if reconstruct is disabled.
+        training = arch.get("training", {})
+        mp = str(training.get("maskedPrediction", "NONE")).upper()
+        rc = str(arch.get("reconstruct", "")).upper()
+        if mp == "ARIR" and rc == "NONE":
+            errors.append(
+                "maskedPrediction=ARIR requires <reconstruct> to be set "
+                "(not 'NONE'); ARIR runs the reverse path and needs a "
+                "reconstruction target. Set <reconstruct>symbols</reconstruct> "
+                "(or another non-NONE value) under <architecture>.")
         if _has_reshape("ConceptualSpace") and gsp(cfg, "ConceptualSpace", "hasAttention"):
             errors.append(
                 "ConceptualSpace hasAttention=True is incompatible with nInputDim reshape. "
@@ -3814,13 +4230,6 @@ class ModelFactory:
                     f"to be a positive power of two (got nPercepts={n_percepts}). "
                     f"Fix: set PerceptualSpace.nOutput to 2^k (e.g. 512, 1024, 2048)."
                 )
-                TheXMLConfig.require(
-                    lambda cfg, _r=str(arch.get("reconstruct", "NONE")).lower(): _r == "symbols",
-                    f"useButterflies=true reverse requires reconstruct=symbols "
-                    f"so the full symbol state remains available for exact inversion "
-                    f"(got reconstruct={arch.get('reconstruct', 'NONE')!r}). "
-                    f"Fix: set <reconstruct>symbols</reconstruct> in <architecture>."
-                )
 
         # SymbolicSpace passThrough requires shape consistency with ConceptualSpace
         sym_pt = gsp(cfg, "SymbolicSpace", "passThrough")
@@ -3846,24 +4255,18 @@ class ModelFactory:
 
         # Invertible PerceptualSpace shape constraints are registered inside
         # PerceptualSpace._register_requirements() (not here) to keep them self-contained.
-        reversible = arch.get("reconstruct", "NONE").upper() != "NONE"
-        masked_prediction = str(arch.get("training", {}).get("maskedPrediction", "NONE") or "NONE").upper()
-        if masked_prediction == "ARIR" and not reversible:
-            errors.append(
-                "maskedPrediction=ARIR requires reconstruct != NONE. "
-                "ARIR is autoregressive input reconstruction, so the model must "
-                "have a reverse path."
-            )
         percept_inv = gsp(cfg, "PerceptualSpace", "invertible")
         percept_pt = gsp(cfg, "PerceptualSpace", "passThrough")
         # Note: invertible PerceptualSpace shape constraints (nOutput == 2*nInput or
         # 4*nInput*inputDim == nOutput*outputDim for reshape) are registered as
         # requirements inside PerceptualSpace._register_requirements(), not here.
 
-        # Warn about reversible + not invertible: uses pinv which may be numerically unstable
-        if reversible and not percept_inv and not percept_pt:
+        # Warn when PerceptualSpace is neither invertible nor passThrough:
+        # the reverse path uses a matrix pseudoinverse (pinv) which may be
+        # numerically unstable.
+        if not percept_inv and not percept_pt:
             warnings.warn(
-                "PerceptualSpace: reversible=True with invertible=False uses two "
+                "PerceptualSpace: invertible=False uses two "
                 "InvertiblePiLayers with separate weights. The reverse path involves "
                 "a matrix pseudoinverse (pinv) which may be numerically unstable. "
                 "Consider setting <invertible>true</invertible> for shared-weight "

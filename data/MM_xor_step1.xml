@@ -2,7 +2,6 @@
 <model>
   <!-- Step 1: XOR_exact + type=mental (only change) -->
   <architecture>
-    <reconstruct>symbols</reconstruct>
     <conceptualOrder>1</conceptualOrder>
     <modelType>embedding</modelType>
     <ergodic>true</ergodic>

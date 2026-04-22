@@ -2026,44 +2026,18 @@ class TestReconstructionSymbols(unittest.TestCase):
         os.unlink(tmp.name)
         return m
 
-    def test_nOutputSymbols_computed(self):
-        """nOutputSymbols and nReconSymbols are computed from nSymbols and nOutput."""
-        m = self._create_xor_model(nSymbols=3, nOutput=1)
-        self.assertEqual(m.nOutputSymbols, 1)
-        self.assertEqual(m.nReconSymbols, 2)
-
-    def test_no_recon_symbols_when_equal(self):
-        """When nSymbols == nOutput, there are no reconstruction symbols."""
-        m = self._create_xor_model(nSymbols=3, nOutput=3)
-        self.assertEqual(m.nOutputSymbols, 3)
-        self.assertEqual(m.nReconSymbols, 0)
-
     def test_forward_output_shape_unchanged(self):
-        """Forward pass output shape is [batch, nOutput] regardless of recon symbols."""
+        """Forward pass output shape is [batch, nOutput] regardless of nSymbols."""
         m = self._create_xor_model(nSymbols=3, nOutput=1)
         m.train(False)
         test_input, _ = m.inputSpace.getTestData()
         x = m.inputSpace.prepInput(test_input[:2])
         with torch.no_grad():
             forwardInput, symbols, outputPred, _ = m.forward(x)
-        # Output should have batch dim = 2
         self.assertEqual(outputPred.shape[0], 2)
 
-    def test_recon_symbols_cached(self):
-        """After forward(), model.recon_symbols has correct shape."""
-        m = self._create_xor_model(nSymbols=3, nOutput=1)
-        m.train(False)
-        test_input, _ = m.inputSpace.getTestData()
-        x = m.inputSpace.prepInput(test_input[:2])
-        with torch.no_grad():
-            forwardInput, symbols, outputPred, _ = m.forward(x)
-        # recon_symbols should be [batch, nReconSymbols, dim]
-        self.assertIsNotNone(m.recon_symbols)
-        self.assertEqual(m.recon_symbols.shape[0], 2)   # batch
-        self.assertEqual(m.recon_symbols.shape[1], 2)    # nReconSymbols
-
-    def test_reverse_uses_recon_symbols(self):
-        """Reverse pass produces output with correct shape when recon symbols present."""
+    def test_reverse_uses_all_symbols(self):
+        """Reverse pass produces output with correct shape from the full symbol stream."""
         m = self._create_xor_model(nSymbols=3, nOutput=1)
         m.train(False)
         test_input, _ = m.inputSpace.getTestData()
@@ -2071,55 +2045,7 @@ class TestReconstructionSymbols(unittest.TestCase):
         with torch.no_grad():
             forwardInput, symbols, outputPred, _ = m.forward(x)
             inputData, inputPred = m.reverse(symbols, outputPred)
-        # Should not raise; inputData should have batch dimension
         self.assertEqual(inputData.shape[0], 2)
-
-    def test_nsymbols_less_than_noutput_raises(self):
-        """Creating a model with nSymbols < nOutput should raise."""
-        with self.assertRaises(ValueError):
-            self._create_xor_model(nSymbols=2, nOutput=3)
-
-    def test_xor_training_with_recon_symbols(self):
-        """Training with recon symbols works end-to-end and output loss converges.
-
-        Uses XOR_recon.xml which is purpose-built for this test:
-        nActive=3 input (no padding), nSymbols=6, nOutput=1 (5 recon symbols).
-        """
-        import xml.etree.ElementTree as ET
-
-        xml_path = os.path.join(os.path.dirname(_BIN), "data", "XOR_recon.xml")
-        tree = ET.parse(xml_path)
-        root = tree.getroot()
-
-        # Ensure autoload is off
-        auto = root.find("architecture/autoload")
-        if auto is None:
-            auto = ET.SubElement(root.find("architecture"), "autoload")
-        auto.text = "false"
-
-        tmp = tempfile.NamedTemporaryFile(mode="wb", suffix=".xml", delete=False)
-        tree.write(tmp, xml_declaration=True)
-        tmp.close()
-
-        try:
-            torch.manual_seed(42)
-            Models.TheData.load("xor")
-            m = Models.BasicModel()
-            m.create_from_config(tmp.name, data=Models.TheData)
-
-            # Train with sigma annealing via runTrial
-            m.runTrial(numEpochs=600, batchSize=10, lr=0.01)
-
-            # Recon symbols should have been present during training
-            self.assertIsNotNone(m.recon_symbols,
-                                 "recon_symbols should be populated after training")
-
-            # Output loss should converge
-            outErr = m.trainLosses[0][-1] if m.trainLosses[0] else 1.0
-            self.assertLess(outErr, 0.01,
-                            f"Output loss ({outErr:.4f}) should converge for XOR")
-        finally:
-            os.unlink(tmp.name)
 
     def test_xor_perfect_reconstruction(self):
         """After training, all 4 XOR inputs reconstruct to the correct words.
