@@ -25,9 +25,16 @@ except ImportError:
     make_dot = None
 from sklearn.decomposition import PCA
 # Minimal in-repo VectorQuantize -- covers the subset of the
-# vector_quantize_pytorch API Codebook uses (forward, .codebook, EMA hook
-# stub). The external package was removed once the commitment loss, STE
-# path, and rotation trick were owned by Codebook directly.
+# vector_quantize_pytorch API Codebook uses. Reimplements the three
+# features we care about on the non-library path: EMA codebook updates,
+# dead-code replacement, and the rotation-trick STE (arXiv:2410.06424).
+# Codebook can still opt into the real library via ``use_library_vq=True``;
+# this class exists so the repo behaves equivalently when the external
+# package is absent.
+try:
+    from vector_quantize_pytorch import VectorQuantize as LibraryVectorQuantize
+except Exception:
+    LibraryVectorQuantize = None
 _vq_F = F
 class VectorQuantize(nn.Module):
     def __init__(
@@ -36,6 +43,10 @@ class VectorQuantize(nn.Module):
         codebook_size,
         commitment_weight=1.0,
         use_cosine_sim=False,
+        decay=0.8,
+        threshold_ema_dead_code=0,
+        rotation_trick=False,
+        eps=1e-5,
         **kwargs,
     ):
         super().__init__()
@@ -43,10 +54,21 @@ class VectorQuantize(nn.Module):
         self.codebook_size = codebook_size
         self.commitment_weight = commitment_weight
         self.use_cosine_sim = use_cosine_sim
+        self.decay = float(decay)
+        self.threshold_ema_dead_code = int(threshold_ema_dead_code)
+        self.rotation_trick = bool(rotation_trick)
+        self.eps = float(eps)
         self.codebook = torch.randn(codebook_size, dim)
+        # EMA accumulators used by ``update_ema``. ``cluster_size`` counts
+        # how many inputs snap to each code (bootstrapped at 1.0 to match
+        # the library default so the first-step smoothed divisor is never
+        # zero). ``embed_avg`` is the running sum of the assigned inputs;
+        # the codebook is rewritten as ``embed_avg / cluster_size`` (with
+        # laplace smoothing) each training step.
+        self.register_buffer("cluster_size", torch.ones(codebook_size))
+        self.register_buffer("embed_avg", self.codebook.data.clone())
         # Owner-space tag for error messages (set post-construction by the
-        # owning Space via ``_tag_vq_name``).  Left empty-string when the
-        # VQ was built outside a Space context (tests, standalone use).
+        # owning Space via ``_tag_vq_name``).
         self.name = ""
 
     @property
@@ -61,8 +83,45 @@ class VectorQuantize(nn.Module):
         else:
             self.register_parameter("_codebook", param)
         self.codebook_size = param.shape[0]
+        # Keep EMA buffers consistent when the codebook is reassigned
+        # externally (e.g. the post-init rescale in Codebook.addVectors).
+        # Reset embed_avg to the new values; reshape cluster_size if the
+        # codebook size changed.
+        if "embed_avg" in self._buffers:
+            self._buffers["embed_avg"] = param.data.clone()
+        if "cluster_size" in self._buffers:
+            cs = self._buffers["cluster_size"]
+            if cs.shape[0] != param.shape[0]:
+                self._buffers["cluster_size"] = torch.ones(
+                    param.shape[0], device=cs.device, dtype=cs.dtype
+                )
 
-    def forward(self, x, return_all_codes=False, **kwargs):
+    @staticmethod
+    def _rotate_to(src, tgt):
+        """Rotation-trick STE from arXiv:2410.06424 -- forwards ``tgt`` but
+        rotates the upstream gradient from ``tgt``'s direction back to
+        ``src``'s direction and rescales by ``||tgt|| / ||src||`` so
+        magnitude is preserved. Mirrors ``vector_quantize_pytorch``'s
+        ``rotate_to`` / ``efficient_rotation_trick_transform``.
+        """
+        eps = 1e-8
+        orig_shape = src.shape
+        e = src.reshape(-1, src.shape[-1])
+        q = tgt.reshape(-1, tgt.shape[-1])
+        norm_e = e.norm(dim=-1, keepdim=True).clamp(min=eps)
+        norm_q = q.norm(dim=-1, keepdim=True).clamp(min=eps)
+        e_hat = e / norm_e
+        q_hat = q / norm_q
+        w = e_hat + q_hat
+        w = w / w.norm(dim=-1, keepdim=True).clamp(min=eps)
+        w = w.detach()
+        e_dot_w = (e * w).sum(dim=-1, keepdim=True)
+        e_dot_u = (e * e_hat.detach()).sum(dim=-1, keepdim=True)
+        out = e - 2.0 * e_dot_w * w + 2.0 * e_dot_u * q_hat.detach()
+        scale = (norm_q / norm_e).detach()
+        return (out * scale).reshape(orig_shape)
+
+    def forward(self, x, return_all_codes=False, freeze_codebook=False, **kwargs):
         original_shape = x.shape
         flat = x.reshape(-1, original_shape[-1])
         codebook = self.codebook
@@ -94,7 +153,59 @@ class VectorQuantize(nn.Module):
         commit_loss = self.commitment_weight * _vq_F.mse_loss(
             x, quantized_raw.detach()
         )
-        quantized = x + (quantized_raw - x).detach()
+
+        # EMA codebook update + dead-code replacement. Without these the
+        # codebook gets no gradient (commit_loss detaches the quantized
+        # side and STE is a no-op for the codes) so codes never track the
+        # data distribution. Mirrors ``EuclideanCodebook.update_ema`` and
+        # ``expire_codes_`` in vector_quantize_pytorch.
+        if self.training and not freeze_codebook:
+            with torch.no_grad():
+                flat_f = flat.float()
+                onehot = _vq_F.one_hot(indices, num_classes=V).to(flat_f.dtype)
+                cluster_size_batch = onehot.sum(dim=0)
+                embed_sum = onehot.t() @ flat_f
+                self.cluster_size.mul_(self.decay).add_(
+                    cluster_size_batch.to(self.cluster_size.dtype),
+                    alpha=1.0 - self.decay,
+                )
+                self.embed_avg.mul_(self.decay).add_(
+                    embed_sum.to(self.embed_avg.dtype),
+                    alpha=1.0 - self.decay,
+                )
+                n = self.cluster_size.sum()
+                cs_smooth = (
+                    (self.cluster_size + self.eps)
+                    / (n + V * self.eps)
+                    * n
+                )
+                new_embed = self.embed_avg / cs_smooth.unsqueeze(-1)
+                if self.use_cosine_sim:
+                    new_embed = _vq_F.normalize(new_embed, dim=-1)
+                self.codebook.data.copy_(new_embed.to(self.codebook.dtype))
+                if self.threshold_ema_dead_code > 0:
+                    expired = self.cluster_size < self.threshold_ema_dead_code
+                    if bool(expired.any()):
+                        n_expired = int(expired.sum().item())
+                        sample_idx = torch.randint(
+                            0, flat.shape[0], (n_expired,), device=flat.device,
+                        )
+                        sampled = flat[sample_idx].to(self.codebook.dtype)
+                        if self.use_cosine_sim:
+                            sampled = _vq_F.normalize(sampled, dim=-1)
+                        self.codebook.data[expired] = sampled
+                        thr = float(self.threshold_ema_dead_code)
+                        self.cluster_size[expired] = thr
+                        self.embed_avg[expired] = sampled.to(
+                            self.embed_avg.dtype
+                        ) * thr
+
+        # Gradient estimator for the quantized output: rotation trick when
+        # requested and the input carries gradient, otherwise vanilla STE.
+        if self.rotation_trick and self.training and x.requires_grad:
+            quantized = self._rotate_to(x, quantized_raw)
+        else:
+            quantized = x + (quantized_raw - x).detach()
         indices = indices.reshape(original_shape[:-1])
         if return_all_codes:
             return quantized, indices, commit_loss, quantized.unsqueeze(0)
@@ -1093,6 +1204,16 @@ class Codebook(Basis):
         # state_dict.
         self._active_payload = None
         self.customVQ = True
+        # When True, ``addVectors`` instantiates ``vector_quantize_pytorch``'s
+        # VectorQuantize (which does EMA codebook updates and dead-code
+        # replacement). Default False keeps the in-repo snap-only stub.
+        # Read from ``architecture.useLibraryVQ`` so an XML config can flip
+        # it on without editing code.
+        try:
+            cfg_flag = TheXMLConfig.get("architecture.useLibraryVQ", False)
+        except Exception:
+            cfg_flag = False
+        self.use_library_vq = bool(cfg_flag)
         self.snapDistance = 0.1
         self.eta = 0.9
         self.alpha = 0.0
@@ -1173,7 +1294,11 @@ class Codebook(Basis):
         """Allocate ``nVec`` prototype entries using the configured backend."""
         self.codebookSize = nVec
         if self.customVQ:
-            self.vq = VectorQuantize(
+            if self.use_library_vq and LibraryVectorQuantize is not None:
+                vq_cls = LibraryVectorQuantize
+            else:
+                vq_cls = VectorQuantize
+            self.vq = vq_cls(
                 dim=self.nDim,
                 codebook_size=nVec,
                 threshold_ema_dead_code=1,
@@ -1181,14 +1306,14 @@ class Codebook(Basis):
                 commitment_weight=1.0,
                 rotation_trick=True,
             )
-            # Initialize codebook entries in [-1, 1] so downstream range
-            # checks on the concepts/symbols 'what' field pass on the
-            # first forward pass. The prior external package did its own
-            # initialization; the in-repo fallback uses raw torch.randn.
-            with torch.no_grad():
-                init = self.vq.codebook.detach()
-                init = init / init.abs().amax(dim=-1, keepdim=True).clamp(min=1e-8)
-                self.vq.codebook = init
+            # The external library does its own codebook initialization;
+            # the in-repo stub uses raw torch.randn so we rescale to [-1, 1]
+            # to satisfy downstream range checks on the 'what' field.
+            if vq_cls is VectorQuantize:
+                with torch.no_grad():
+                    init = self.vq.codebook.detach()
+                    init = init / init.abs().amax(dim=-1, keepdim=True).clamp(min=1e-8)
+                    self.vq.codebook = init
             self.setW(self.vq.codebook)
         else:
             W = torch.randn([nVec, self.nDim], device=TheDevice.get())
@@ -1526,12 +1651,22 @@ class Embedding(Basis):
     def _token_stream(self, text):
         if getattr(self, 'byte_mode', False):
             return self._byte_stream(text)
+        mode = getattr(self, 'chunking_mode', 'lexicon')
+        if mode in ('raw', 'bpe'):
+            # Both raw and cold-start BPE fall back to per-character
+            # tokenization. The real BPE path runs through ChunkingLayer
+            # once merges have been learned.
+            return self._char_stream(text)
         return quick_parser(self._to_text(text))
 
     def _byte_stream(self, text):
         """Tokenize as raw bytes: one (chr(byte), byte_offset) per byte."""
         raw = self._to_text(text).encode('utf-8')
         return [(chr(b), i) for i, b in enumerate(raw)]
+
+    def _char_stream(self, text):
+        """Tokenize text as per-character units with positional indices."""
+        return [(ch, i) for i, ch in enumerate(self._to_text(text))]
 
     def _token_to_index(self, text):
         if text in self.pretrain.key_to_index:
@@ -2337,17 +2472,31 @@ class SubSpace(nn.Module):
         """Return the content Basis (Embedding/Codebook) for codebook operations."""
         return self.what
 
-    def reset_event(self):
-        """Clear the cached event tensor.
+    def Start(self):
+        """Clear the cached event tensor at the start of a batch.
 
-        Called from Space.Start() at the top of each MentalModel.forward()
-        so that state carried across the outer pos loop does not leak into
-        the next DataLoader yield. Preserves the Tensor wrapper so later
-        set_event/setW calls that assume it exists continue to work; only
-        the underlying tensor data is dropped.
+        Counterpart to End(); both drop the underlying tensor data while
+        preserving the Tensor wrapper so later set_event/setW calls that
+        assume it exists continue to work. Called from Space.Start() so
+        state carried across the outer pos loop does not leak into the
+        next DataLoader yield.
         """
         if self.event is not None and hasattr(self.event, 'setW'):
             self.event.setW(None)
+
+    def End(self):
+        """Clear the cached event tensor at the end of a batch.
+
+        Counterpart to Start(); same semantics (drop the tensor data).
+        Called from Space.End() so cached per-batch state is released
+        before the next batch begins.
+        """
+        if self.event is not None and hasattr(self.event, 'setW'):
+            self.event.setW(None)
+
+    # Legacy alias. New code should use Start() / End() for symmetry
+    # with Space.Start() / Space.End() and Layer.Start() / Layer.End().
+    reset_event = End
 
     def set_event(self, event_tensor, compute_activation=False):
         """Store a muxed event tensor [B, N, D] where D = nWhat + nWhere + nWhen.
@@ -3895,8 +4044,23 @@ class Space(nn.Module):
             if hasattr(layer, 'Start'):
                 layer.Start()
         sub = getattr(self, 'subspace', None)
-        if sub is not None and hasattr(sub, 'reset_event'):
-            sub.reset_event()
+        if sub is not None and hasattr(sub, 'Start'):
+            sub.Start()
+
+    def End(self):
+        """Per-batch teardown. Counterpart to Start().
+
+        Cascades End() to child layers and subspace so cached per-batch
+        state does not persist across batch boundaries. Subclasses with
+        additional per-batch caches override this and call super().End()
+        first.
+        """
+        for layer in self.layers:
+            if hasattr(layer, 'End'):
+                layer.End()
+        sub = getattr(self, 'subspace', None)
+        if sub is not None and hasattr(sub, 'End'):
+            sub.End()
 class InputSpace(Space):
     """Receives the source buffer from Data() and encodes it as vectors.
 
@@ -4486,6 +4650,26 @@ class PerceptualSpace(Space):
             )
         except KeyError:
             self.chunking_mode = "lexicon"
+        # Propagate to the Embedding so its _token_stream honors the mode.
+        if isinstance(lexical_basis, Embedding):
+            lexical_basis.chunking_mode = self.chunking_mode
+        # ChunkLayer BPE configuration. chunkBPE=true enables the learned
+        # BPE merge table on ChunkLayer; otherwise the layer runs in its
+        # legacy whitespace-boundary mode.
+        try:
+            self.chunkBPE = bool(TheXMLConfig.space(section, "chunkBPE"))
+        except KeyError:
+            self.chunkBPE = False
+        try:
+            self.chunkTargetVocabSize = int(
+                TheXMLConfig.space(section, "chunkTargetVocabSize") or 1024)
+        except (KeyError, TypeError, ValueError):
+            self.chunkTargetVocabSize = 1024
+        try:
+            self.chunkMinPairFrequency = int(
+                TheXMLConfig.space(section, "chunkMinPairFrequency") or 2)
+        except (KeyError, TypeError, ValueError):
+            self.chunkMinPairFrequency = 2
         self._recovered_input = None
         self._embedded_input = None
         if passThrough:
@@ -4495,6 +4679,15 @@ class PerceptualSpace(Space):
         self.subspace._nWordSlots = outputShape[0]
         self.params = []
         self.layers = nn.ModuleList()
+        # ChunkLayer carries the learned BPE merge table; active when
+        # chunkBPE=true or chunking='bpe'. Built lazily in compose() when
+        # dims are known, but eagerly when the config requests BPE.
+        self.chunk_layer = ChunkLayer(
+            self.nDim,
+            bpe=self.chunkBPE,
+            target_vocab_size=self.chunkTargetVocabSize,
+            min_pair_frequency=self.chunkMinPairFrequency,
+        )
 
     def _register_requirements(self):
         """Register PerceptualSpace-specific config requirements."""
@@ -4778,6 +4971,12 @@ class PerceptualSpace(Space):
         recovered metadata on this PerceptualSpace for the reconstruct methods."""
         content_basis = self.subspace.what  # Embedding lives here after Task 5
         object_basis = self.subspace.get_vectors()
+        # Undo the percepts normalization applied in forward() so the
+        # text-mode reverse operates in the same pre-normalize scale
+        # the regular reverse() path expects.
+        if self.invertible:
+            vspace.normalize("percepts", target="event",
+                             normalize=True, reverse=True)
         # Text mode: the subspace already holds per-position muxed vectors
         # ([B, nVec, nWhat+nWhere+nWhen]). Skip reverseBegin's flatten-undo
         # reshape (which assumes a forwardEnd flatten that _embed
@@ -4819,6 +5018,21 @@ class PerceptualSpace(Space):
         """Render the last recovered text buffer stored on PerceptualSpace."""
         if self._recovered_input is None:
             raise RuntimeError("reconstruct_to_buffer() called before reverse()")
+        # WhereEncoding periodicity must cover the render buffer. When
+        # ``maxVal < buf_size`` the sin/cos quadrature aliases: numerical
+        # noise near angle=0 (true offset 0) decodes to ~maxVal, which
+        # lands inside the valid render range and stamps the word at a
+        # spurious offset instead of being filtered out by _render_tokens'
+        # out-of-range check. Observed regression: XOR "hello world" ->
+        # "hello" stamped at offset maxVal=nObjects instead of 0.
+        where_enc = getattr(self.subspace, "whereEncoding", None)
+        if (buf_size is not None and where_enc is not None
+                and where_enc.nDim > 0):
+            assert where_enc.maxVal >= buf_size, (
+                f"WhereEncoding periodicity ({where_enc.maxVal}) must be "
+                f">= render buffer size ({buf_size}). Raise "
+                f"architecture.nObjects to at least {buf_size}."
+            )
         return self.subspace.what.reconstruct_to_buffer(
             self._recovered_input, buf_size=buf_size)
 

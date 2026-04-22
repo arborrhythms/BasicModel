@@ -14,29 +14,33 @@
 
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
+    <useLibraryVQ>false</useLibraryVQ>
 
     <training>
       <numEpochs>400</numEpochs>
       <learningRate>0.01</learningRate>
       <autosave>false</autosave>
       <autoload>false</autoload>
+
+      <reverseScale>0.5</reverseScale>
+      <maskedPrediction>NONE</maskedPrediction>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
     </training>
   </architecture>
 
   <InputSpace>
-    <nOutput>3</nOutput>
+    <nOutput>8</nOutput>
     <nDim>10</nDim>
     <nVectors>3</nVectors>
     <nInputDim>-1</nInputDim>
-    <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
     <lexer>word</lexer>
     <codebook>false</codebook>
   </InputSpace>
 
   <!-- PerceptualSpace: invertible, flattened input. -->
   <PerceptualSpace>
-    <nOutput>3</nOutput>
+    <nOutput>8</nOutput>
     <nDim>10</nDim>
     <nVectors>1000</nVectors>
     <nInputDim>-1</nInputDim>
@@ -49,20 +53,19 @@
 
   <!-- ConceptualSpace: nOutput=6, nVectors=6 (non-quantized: nVectors==nOutput). -->
   <ConceptualSpace>
-    <nOutput>6</nOutput>
+    <nOutput>8</nOutput>
     <nDim>10</nDim>
-    <nVectors>6</nVectors>
+    <nVectors>8</nVectors>
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
   </ConceptualSpace>
 
   <!-- SymbolicSpace: nOutput > OutputSpace.nOutput so recon symbols exist (nRecon=5). -->
   <SymbolicSpace>
-    <nOutput>6</nOutput>
+    <nOutput>8</nOutput>
     <nDim>10</nDim>
-    <nVectors>6</nVectors>
+    <nVectors>8</nVectors>
     <nInputDim>-1</nInputDim>
-    <passThrough>true</passThrough>
   </SymbolicSpace>
 
   <!-- OutputSpace: nOutput=1 so nReconSymbols = SymbolicSpace.nOutput - 1 = 5 -->

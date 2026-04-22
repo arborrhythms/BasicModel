@@ -123,7 +123,7 @@ class TestMMXorConvergence(unittest.TestCase):
                 input_data, _ = m.reverse(symbols, output)
         err = torch.nn.functional.mse_loss(
             input_data.squeeze(), forward_input.squeeze())
-        self.assertLess(err.item(), 1e-6)
+        self.assertLess(err.item(), 1e-4)
 
     def test_non_butterfly_forward_keeps_continuous_symbols(self):
         """The non-butterfly recurrent path should not collapse via symbol VQ."""

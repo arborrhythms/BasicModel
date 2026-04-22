@@ -1402,7 +1402,15 @@ class BasicModel(BaseModel):
         return PerceptualSpace(inputShape, spaceShape, outputShape)
 
     def Start(self, inputData):
-        """Forward pass through the core pipeline: Input -> Percept -> Concept -> Symbol."""
+        """Forward pass through the core pipeline: Input -> Percept -> Concept -> Symbol.
+
+        Cascades Start() to every Space (and layer within) so cached
+        per-batch state (subspace event tensors, per-layer scratch) from
+        the previous batch does not leak into this one.
+        """
+        for space in self.spaces:
+            if hasattr(space, 'Start'):
+                space.Start()
         ws = self.wordSpace
         # Per-sentence lifecycle: reset the word-stream buffer.
         if ws is not None:
@@ -1414,6 +1422,17 @@ class BasicModel(BaseModel):
         if self.plot:
             TheReport.plotActivations(figure=1, concepts=concepts)
         return input, concepts, symbols
+
+    def End(self):
+        """Per-batch teardown. Cascades End() to every Space.
+
+        Counterpart to Start() -- releases per-batch cached state so it
+        does not persist across batch boundaries. Called from runBatch
+        after forward + reverse + loss have consumed the cached state.
+        """
+        for space in self.spaces:
+            if hasattr(space, 'End'):
+                space.End()
 
     def _run_forward_pipeline(self, inputs):
         """Run the BasicModel pipeline after InputSpace has produced a state."""
@@ -2046,19 +2065,23 @@ class BasicModel(BaseModel):
                 if inputPred is None and self.reversible:
                     # Fallback for non-AR ARIR runtime mode.
                     _, inputPred = self.reverse(symbols, outputDataPred)
-                return self.BatchResult(
+                result = self.BatchResult(
                     outputPred=outputDataPred, symbols=symbols,
                     lossOut=None, lossIn=None,
                     inputPred=inputPred, forwardInput=forwardInput,
-                ), batchNum
+                )
+                self.End()
+                return result, batchNum
 
             if inference_only:
                 # Inference path: forward only, no loss, no reverse.
-                return self.BatchResult(
+                result = self.BatchResult(
                     outputPred=outputDataPred, symbols=symbols,
                     lossOut=None, lossIn=None,
                     inputPred=None, forwardInput=forwardInput,
-                ), batchNum
+                )
+                self.End()
+                return result, batchNum
 
             if outputTensor is None:
                 raise RuntimeError(
@@ -2319,6 +2342,7 @@ class BasicModel(BaseModel):
             inputPred=inputDataPred,
             forwardInput=forwardInput,
         )
+        self.End()
         return result, batchNum
 
     def runEpoch(self, optimizer=None, batchSize=10, split="train"):
@@ -2952,6 +2976,18 @@ class MentalModel(BaseModel):
         self.symbolic_state = self.symbolicSpace.empty_state(batch=B).to(device)
 
         return input_state
+
+    def End(self):
+        """Per-batch teardown. Counterpart to Start().
+
+        Cascades End() to every Space so cached per-batch state
+        (subspace event tensors, per-layer scratch) is released before
+        the next batch begins. Called from runBatch after
+        forward + reverse + loss have consumed the cached state.
+        """
+        for space in self.spaces:
+            if hasattr(space, 'End'):
+                space.End()
 
     # -- Forward / reverse ----------------------------------------------
 

@@ -77,6 +77,18 @@ class Layer(nn.Module):
             if hasattr(layer, 'Start'):
                 layer.Start()
 
+    def End(self):
+        """Per-batch teardown. Counterpart to Start().
+
+        Cascades End() to child layers so any per-call scratch state
+        cleared in Start() is also released at batch completion. The
+        default walks self.layers; subclasses with additional per-call
+        caches override to drop them.
+        """
+        for layer in self.layers:
+            if hasattr(layer, 'End'):
+                layer.End()
+
     def forward(self, x):
         """Identity pass-through (subclasses override)."""
         batch = x.shape[0]
