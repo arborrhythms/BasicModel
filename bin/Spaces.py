@@ -2318,6 +2318,9 @@ class SubSpace(nn.Module):
                  object=None, what=None, where=None, when=None, activation=None,
                  word=None):
         super().__init__()
+        # Phase 1: set by the model after construction via space.subspace.normalizer.
+        # Must be wired before any forward/reverse call that normalizes input/output.
+        self.normalizer = None
         self.inputShape = inputShape    # [nActive, nDim]
         self.outputShape = outputShape  # [nActive, nDim]
 
@@ -3227,7 +3230,7 @@ class SubSpace(nn.Module):
             return hard - soft.detach() + soft  # straight-through estimator
         elif kind == "input":
             if is_vector:
-                return TheData.normalize(x, which="input")  # [-1,1] via global min-max
+                return self.normalizer.normalize(x, which="input")
             return x
         else:
             raise ValueError(f"Unknown normalization kind: {kind!r}")
@@ -3246,7 +3249,7 @@ class SubSpace(nn.Module):
             z = x.clamp(min=-1.0 + epsilon, max=1.0 - epsilon)
             return torch.atanh(z)
         elif kind == "input" and is_vector:
-            return TheData.denormalize(x, which="input")
+            return self.normalizer.denormalize(x, which="input")
         elif kind == "symbols":
             raise RuntimeError("Cannot reverse-normalize symbols")
         else:
@@ -3273,7 +3276,7 @@ class SubSpace(nn.Module):
         if kind in ("percepts", "concepts", "input"):
             self.normalize(kind, target=target, normalize=True, reverse=True)
         elif kind == "output" and is_vector:
-            self.put(target, TheData.normalize(x, which="output"))
+            self.put(target, self.normalizer.normalize(x, which="output"))
 
     # ------------------------------------------------------------------
     # Luminosity
@@ -3729,6 +3732,10 @@ class Space(nn.Module):
 
     def __init__(self, inputShape, spaceShape, outputShape, customVQ=True):
         super(Space, self).__init__()
+        # Phase 1: set by the model after construction. Spaces call
+        # self.normalizer.{normalize,denormalize} instead of reaching into
+        # the TheData global.
+        self.normalizer = None
         section = self.config_section
         self.inputShape   = inputShape   # [nInput,   nInputDim]
         self.spaceShape   = spaceShape   # [nVectors, nDim]  -- codebook / internal basis
@@ -6609,14 +6616,12 @@ class OutputSpace(Space):
             # Activation-mode: PiLayer on symbol activations [B, nSymbols] -> [B, nOutput]
             act = vspace.materialize(mode="activation")
             output = self._piLayer.forward(act)
-            output = TheData.denormalize(output, which="output")
             self.subspace.set_activation(output)
             return self.subspace
 
         # Default vector-mode: LinearLayer on flattened vectors
         x = self.forwardBegin(vspace, returnVectors=True)
         output = self.forwardLinear(x)
-        output = TheData.denormalize(output, which="output")
         if self.codebook:
             output = self.subspace.get_vectors().forward(output)
         vspace = self.forwardEnd(output, returnVectors=True)
@@ -6627,8 +6632,7 @@ class OutputSpace(Space):
         if self.nonlinear_output:
             # Activation-mode: PiLayer reverse [B, nOutput] -> [B, nSymbols]
             act = vspace.materialize(mode="activation")
-            act_norm = TheData.normalize(act, which="output")
-            symbol_act = self._piLayer.reverse(act_norm)
+            symbol_act = self._piLayer.reverse(act)
             self.subspace.set_activation(symbol_act)
             return self.subspace
 

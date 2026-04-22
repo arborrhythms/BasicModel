@@ -50,6 +50,26 @@ from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, Con
 from Language import WordSpace
 from parse import quick_parser
 
+
+class Normalizer:
+    """Thin wrapper over TheData's min/max scaling.
+
+    Spaces hold a reference to an instance of this class (set during
+    model construction) and call ``self.normalizer.{normalize,denormalize}``
+    instead of reaching into the TheData global. Keeps the forward/reverse
+    contract free of module-level data coupling.
+    """
+
+    def __init__(self, source):
+        self._source = source
+
+    def normalize(self, x, which="input"):
+        return self._source.normalize(x, which=which)
+
+    def denormalize(self, x, which="input"):
+        return self._source.denormalize(x, which=which)
+
+
 class BaseModel(nn.Module):
     """Shared training, plotting, and persistence infrastructure for all models."""
     name           = "BaseModel"
@@ -1385,6 +1405,14 @@ class BasicModel(BaseModel):
             # path.
             self.spaces.append(self.wordSpace)
 
+        # Phase 1: wire a Normalizer onto every space so spaces can call
+        # self.normalizer.{normalize,denormalize} instead of the TheData global.
+        self.normalizer = Normalizer(TheData)
+        for space in self.spaces:
+            space.normalizer = self.normalizer
+            if hasattr(space, 'subspace'):
+                space.subspace.normalizer = self.normalizer
+
         self.to(TheDevice.get())
         TheXMLConfig.validate()
 
@@ -1548,12 +1576,20 @@ class BasicModel(BaseModel):
         inputData  = self.inputs.materialize()
         return inputData, input
     def Finish(self, symbols):
-        """Project concatenated symbols to task output via OutputSpace."""
+        """Project concatenated symbols to task output via OutputSpace.
+
+        Output-range denormalization happens here (not in OutputSpace.forward)
+        so the space pipeline stays global-data-free.
+        """
         if isinstance(symbols, torch.Tensor):
             self.outputSpace.subspace.set_event(symbols)
             symbols = self.outputSpace.subspace
         self.outputs = self.outputSpace.forward(symbols)
-        outputData = self.outputs.materialize()
+        if self.outputSpace.nonlinear_output:
+            outputData = self.outputs.materialize(mode="activation")
+        else:
+            outputData = self.outputs.materialize()
+        outputData = self.normalizer.denormalize(outputData, which="output")
         if self.plot:
             TheReport.plotActivations(figure=1, symbols=symbols)
         return outputData
@@ -1563,8 +1599,12 @@ class BasicModel(BaseModel):
         reconstruct="symbols" (default): use cached forward symbols only.
         reconstruct="output": use outputSpace.reverse(outputData) only.
         reconstruct="both": reversed output + cached recon_symbols.
+
+        Input-range normalization happens here (not in OutputSpace.reverse)
+        so the space pipeline stays global-data-free.
         """
         if isinstance(outputData, torch.Tensor):
+            outputData = self.normalizer.normalize(outputData, which="output")
             self.outputSpace.subspace.set_event(outputData)
             outputData = self.outputSpace.subspace
         mode = getattr(self, 'reconstruct', 'symbols')
@@ -1972,7 +2012,8 @@ class BasicModel(BaseModel):
             target_event = target_event.unsqueeze(-1)
         target_event = target_event.expand_as(outputDataPred)
 
-        self.outputSpace.subspace.set_event(target_event)
+        target_event_norm = self.normalizer.normalize(target_event, which="output")
+        self.outputSpace.subspace.set_event(target_event_norm)
         try:
             target_space = self.outputSpace.reverse(self.outputSpace.subspace)
             target_symbols = target_space.materialize()
@@ -2781,6 +2822,14 @@ class MentalModel(BaseModel):
 
         self.inputSpace.outputSpace = self.outputSpace
 
+        # Phase 1: wire a Normalizer onto every space so spaces can call
+        # self.normalizer.{normalize,denormalize} instead of the TheData global.
+        self.normalizer = Normalizer(TheData)
+        for space in self.spaces:
+            space.normalizer = self.normalizer
+            if hasattr(space, 'subspace'):
+                space.subspace.normalizer = self.normalizer
+
         # Precompute partition boundaries for partitioned symbolSum
         self._partitions = self._order_partitions(symbol_dim + obj_symbol,
                                                    self.conceptualOrder)
@@ -2912,12 +2961,20 @@ class MentalModel(BaseModel):
     # -- Helpers -------------------------------------------------------
 
     def Finish(self, data):
-        """Project through OutputSpace."""
+        """Project through OutputSpace.
+
+        Output-range denormalization happens here (not in OutputSpace.forward)
+        so the space pipeline stays global-data-free.
+        """
         if isinstance(data, torch.Tensor):
             self.outputSpace.subspace.set_event(data)
             data = self.outputSpace.subspace
         self.outputs = self.outputSpace.forward(data)
-        return self.outputs.materialize()
+        if self.outputSpace.nonlinear_output:
+            outputData = self.outputs.materialize(mode="activation")
+        else:
+            outputData = self.outputs.materialize()
+        return self.normalizer.denormalize(outputData, which="output")
 
     def Start(self, inputData):
         """Per-sentence state reset + input embedding.
@@ -3366,6 +3423,7 @@ class MentalModel(BaseModel):
     def reverse(self, symbols, outputData):
         ws = self.wordSpace
         if isinstance(outputData, torch.Tensor):
+            outputData = self.normalizer.normalize(outputData, which="output")
             self.outputSpace.subspace.set_event(outputData)
             outputData = self.outputSpace.subspace
 
