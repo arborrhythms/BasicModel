@@ -145,6 +145,7 @@
     <hasAttention>true</hasAttention>
     <invertible>false</invertible>
     <codebook>false</codebook>
+    <chunking>lexicon</chunking>
     <chunkBPE>false</chunkBPE>
     <chunkTargetVocabSize>1024</chunkTargetVocabSize>
     <chunkMinPairFrequency>2</chunkMinPairFrequency>

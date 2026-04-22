@@ -139,6 +139,14 @@ def _load_model(config_path=None):
 _MAX_MSG_LEN = 10_000  # max chars per user message
 _MAX_MESSAGES = 50     # max messages in a request
 
+# HTTP generation budget. ARLM reruns the model per generated token,
+# so a request that uses the XML-wide maxResponseLength (typically
+# thousands of characters) can sit in inference long enough for the
+# urllib client to time out.  Cap server-side: default 64 generated
+# characters, honor explicit max_tokens requests but clamp to 128.
+_DEFAULT_GEN_BUDGET = 64
+_MAX_GEN_BUDGET = 128
+
 
 @app.route("/chat/completions", methods=["POST"])
 def chat_completions():
@@ -175,6 +183,15 @@ def chat_completions():
     if not user_msg:
         return jsonify({"error": "No user message found"}), 400
 
+    # Resolve generation budget: honor explicit max_tokens but clamp,
+    # fall back to the default when unset / invalid.
+    raw_budget = body.get("max_tokens")
+    try:
+        gen_budget = int(raw_budget) if raw_budget is not None else _DEFAULT_GEN_BUDGET
+    except (TypeError, ValueError):
+        gen_budget = _DEFAULT_GEN_BUDGET
+    gen_budget = max(1, min(gen_budget, _MAX_GEN_BUDGET))
+
     # Prompt injection guard
     injection = guard_input(user_msg)
     if injection:
@@ -199,8 +216,11 @@ def chat_completions():
         if thought_free:
             TheGrammar.thought_free = True
 
-        # Autoregressive inference: extend input text word by word
-        predicted_words = _model.infer(user_msg, mode='ARLM')
+        # Autoregressive inference: extend input text word by word,
+        # bounded by the server's generation budget so slow ARLM runs
+        # cannot sit longer than the HTTP client's read timeout.
+        predicted_words = _model.infer(
+            user_msg, mode='ARLM', max_length=gen_budget)
         response_text = " ".join(predicted_words)
 
         response = {
@@ -265,6 +285,18 @@ def main():
     _model, _model_config = _load_model(config_path)
     logger.info("Model loaded: %d parameters",
                 sum(p.numel() for p in _model.parameters()))
+
+    # Warm up the inference path so that torch.compile's one-time
+    # compilation cost is paid BEFORE /health reports ready.  Without
+    # this, the first /chat/completions request pays ~24s of compile
+    # overhead on top of normal inference and trips the client's
+    # 30s read timeout.
+    logger.info("Warming up inference path...")
+    try:
+        _model.infer("warmup", mode='ARLM', max_length=4)
+        logger.info("Warmup complete.")
+    except Exception as exc:
+        logger.warning("Warmup failed (continuing anyway): %s", exc)
 
     arch = _model_config.get("architecture", {})
     srv = arch.get("server", {})

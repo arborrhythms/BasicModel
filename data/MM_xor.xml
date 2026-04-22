@@ -45,7 +45,7 @@
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <lexer>word</lexer>
-    <codebook>true</codebook>
+    <codebook>false</codebook>
   </InputSpace>
 
   <PerceptualSpace>
@@ -54,10 +54,9 @@
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <nVectors>8</nVectors>
-    <passThrough>true</passThrough>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>false</codebook>
+    <codebook>true</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>

@@ -1,5 +1,5 @@
 import pytest
-from Spaces import PerceptualSpace
+from Spaces import Embedding, PerceptualSpace
 
 
 def test_chunking_mode_raw_returns_bytes():
@@ -40,3 +40,19 @@ def test_perceptual_space_exposes_chunking_mode_attribute():
     import inspect
     src = inspect.getsource(PerceptualSpace.__init__)
     assert "self.chunking_mode" in src
+
+
+def test_embedding_token_stream_honors_raw_chunking_mode():
+    emb = Embedding()
+    emb.byte_mode = False
+    emb.chunking_mode = "raw"
+
+    assert emb._token_stream("Az") == [("A", 0), ("z", 1)]
+
+
+def test_embedding_token_stream_honors_bpe_fallback_mode():
+    emb = Embedding()
+    emb.byte_mode = False
+    emb.chunking_mode = "bpe"
+
+    assert emb._token_stream("hi") == [("h", 0), ("i", 1)]

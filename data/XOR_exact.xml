@@ -43,12 +43,12 @@
   <PerceptualSpace>
     <nOutput>8</nOutput>
     <nDim>10</nDim>
-    <nVectors>8</nVectors>
+    <nVectors>1000</nVectors>
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
     <hasAttention>false</hasAttention>
     <codebook>true</codebook>
-    
+    <chunking>lexicon</chunking>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: nOutput=6, nVectors=6 (non-quantized: nVectors==nOutput). -->

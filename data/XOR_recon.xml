@@ -16,7 +16,7 @@
     <nWhen>2</nWhen>
 
     <training>
-      <numEpochs>200</numEpochs>
+      <numEpochs>400</numEpochs>
       <learningRate>0.01</learningRate>
       <autosave>false</autosave>
       <autoload>false</autoload>
@@ -30,16 +30,20 @@
     <nInputDim>-1</nInputDim>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
+    <lexer>word</lexer>
+    <codebook>false</codebook>
   </InputSpace>
 
   <!-- PerceptualSpace: invertible, flattened input. -->
   <PerceptualSpace>
     <nOutput>3</nOutput>
     <nDim>10</nDim>
-    <nVectors>3</nVectors>
+    <nVectors>1000</nVectors>
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
     <hasAttention>false</hasAttention>
+    <codebook>true</codebook>
+    <chunking>lexicon</chunking>
   </PerceptualSpace>
 
 
