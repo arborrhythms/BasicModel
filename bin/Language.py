@@ -2343,7 +2343,8 @@ class WordSpace(Space):
         self.subspace.clear()
 
     def Reset(self):
-        """Phase 2: per-sentence teardown called by Model.forward's Reset cascade."""
+        """Per-sentence teardown called by runBatch's Reset cascade."""
+        super().Reset()
         self.clear_sentence()
 
     def get_blocks(self, b=0):

@@ -3,10 +3,7 @@
 Each class here is an nn.Module with a single-arg forward(subspace) ->
 subspace contract. These fit between Spaces in nn.Sequential and
 encapsulate cross-stage machinery (butterfly merge, grammar merge,
-additive feedback, output split) that used to be inlined in
-MentalModel._run_conceptual_order.
-
-Design: basicmodel/doc/specs/2026-04-21-model-sequential-refactor-design.md
+additive feedback, output split).
 """
 import torch
 import torch.nn as nn

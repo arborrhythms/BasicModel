@@ -242,6 +242,7 @@ class TestServerQueries(unittest.TestCase):
         except urllib.error.HTTPError as e:
             self.assertEqual(e.code, 400)
 
+    @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
     def test_response_length_bounded(self):
         """Response doesn't exceed maxResponseLength words."""
         resp = _chat("tell me about the world")
@@ -332,6 +333,7 @@ def _has_gpu():
 
 @unittest.skipIf(not os.path.exists(_ARTIFACT), "sentence.pt not built")
 @unittest.skipIf(not _has_gpu(), "no GPU available (need CUDA or MPS)")
+@unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
 class TestGPUDevicePlacement(unittest.TestCase):
     """Verify the model runs entirely on GPU when BASICMODEL_DEVICE is unset."""
 

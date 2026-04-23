@@ -3143,6 +3143,54 @@ class TruthLayer(Layer):
         assert len(tl5) == 1, f"truth store not restored: {len(tl5)}"
 
         print("TruthLayer tests passed.")
+
+
+class SentencePrimingLayer(Layer):
+    """Sentence priming bias attached to ConceptualSpace.
+
+    On the first forward call of each sentence, reads
+    ``wordSpace.discourse.predict()`` and adds
+    ``prime(predicted, confidence, scale)`` as a bias to the input
+    tensor. Subsequent forward calls within the same sentence pass
+    through unchanged. ``Reset()`` re-arms the predictor for the next
+    sentence.
+    """
+
+    def __init__(self, wordSpace_ref, scale=0.05):
+        super().__init__(0, 0)
+        # wordSpace_ref is a callable so the Layer can resolve the
+        # wordSpace lazily (avoids module-init ordering hazards).
+        self._wordSpace_ref = wordSpace_ref
+        self.scale = float(scale)
+        self._fired_this_sentence = False
+
+    def _discourse(self):
+        ws = self._wordSpace_ref() if callable(self._wordSpace_ref) \
+            else self._wordSpace_ref
+        if ws is None:
+            return None
+        return getattr(ws, "discourse", None)
+
+    def forward(self, x):
+        if self._fired_this_sentence:
+            return x
+        self._fired_this_sentence = True
+        disc = self._discourse()
+        if disc is None:
+            return x
+        pred, conf = disc.predict()
+        bias = disc.prime(pred, conf, self.scale)
+        if bias is None:
+            return x
+        return x + bias.view(1, 1, -1)
+
+    def reverse(self, y):
+        return y
+
+    def Reset(self):
+        self._fired_this_sentence = False
+
+
 class InterSentenceLayer(Layer):
     """Inter-sentence substrate: per-sentence ``[S | W]`` snapshots
     scored by a contrastive dual-force cosine loss.

@@ -34,6 +34,10 @@ def parse_args():
                    help="Override numShards from XML config")
     p.add_argument("--num-epochs", type=int, default=None,
                    help="Override numEpochs from XML config")
+    p.add_argument("--max-tokens", type=int, default=None,
+                   help="Cap AR training/eval positions per document for "
+                        "quick smoke runs. Full training uses the XML "
+                        "InputSpace.nOutput cap when omitted.")
     p.add_argument("--random-shards", action="store_true",
                    help="Pick random shard indices for variety across runs")
     p.add_argument("--force-embeddings", action="store_true",
@@ -173,6 +177,8 @@ def train_local(args):
         model_env["BASIC_NUM_SHARDS"] = str(args.num_shards)
     if args.num_epochs is not None:
         model_env["BASIC_NUM_EPOCHS"] = str(args.num_epochs)
+    if args.max_tokens is not None:
+        model_env["BASIC_MAX_TOKENS"] = str(args.max_tokens)
 
     entry = os.path.join(proj, "bin", "Models.py")
 
@@ -231,6 +237,8 @@ def train_remote(args):
         remote_args += ["--num-shards", str(args.num_shards)]
     if args.num_epochs is not None:
         remote_args += ["--num-epochs", str(args.num_epochs)]
+    if args.max_tokens is not None:
+        remote_args += ["--max-tokens", str(args.max_tokens)]
     if args.random_shards:
         remote_args += ["--random-shards"]
     if args.profile:
@@ -302,6 +310,8 @@ def main():
             train_local(args)
     finally:
         if _log_file:
+            sys.stdout = sys.__stdout__
+            sys.stderr = sys.__stderr__
             _log_file.close()
 
 
