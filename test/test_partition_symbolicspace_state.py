@@ -122,7 +122,7 @@ def test_multiple_forwards_accumulate_until_percepts_exhausted():
     for p in percepts:
         incoming = sym._build_incoming_subspace(pos_vector=p)
         sym.forward(incoming)
-    assert ws.pos_stack.depth() == len(percepts)
+    assert ws.pos_stack.depth(0) == len(percepts)
 
 
 # ---------------------------------------------------------------------------

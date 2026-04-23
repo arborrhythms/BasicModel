@@ -146,15 +146,17 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
         self.assertTrue(torch.allclose(
             latest, torch.full_like(latest, tags[-1])))
         # The oldest recent entry is tags[1] (tags[0] was evicted).
-        oldest = d._recent[0]
+        # Buffers carry a leading B=1 dim under the Task 3 microbatch
+        # refactor; row 0 is the legacy single-row content.
+        oldest = d._recent[0, 0]
         self.assertTrue(torch.allclose(
             oldest, torch.full_like(oldest, tags[1])))
         # Exactly one centroid should have been folded into prev_centroids
         # -- the mean of the pre-eviction recent window (tags[0], tags[1]).
-        self.assertEqual(int(d._prev_count.item()), 1)
-        expected_prev = torch.full_like(d._prev_centroids[0],
+        self.assertEqual(int(d._prev_count[0].item()), 1)
+        expected_prev = torch.full_like(d._prev_centroids[0, 0],
                                         (tags[0] + tags[1]) / 2.0)
-        self.assertTrue(torch.allclose(d._prev_centroids[0], expected_prev))
+        self.assertTrue(torch.allclose(d._prev_centroids[0, 0], expected_prev))
 
     def test_prev_centroids_ring_overflow(self):
         """Folding more than CENTROID_HIST centroids evicts the oldest
@@ -169,7 +171,7 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
             w = torch.full((self.MAX_DEPTH, self.N_DIM), float(i))
             d.snapshot(s, w)
         # prev_centroids should be saturated at CENTROID_HIST.
-        self.assertEqual(int(d._prev_count.item()), self.CENTROID_HIST)
+        self.assertEqual(int(d._prev_count[0].item()), self.CENTROID_HIST)
 
     def test_fit_rows_truncate(self):
         """_fit_rows with too many rows truncates, too few pads."""
@@ -185,13 +187,19 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
         self.assertTrue(torch.allclose(
             y[self.N_SYMBOLS - 2:], torch.zeros(2, self.N_DIM)))
 
-    def test_fit_rows_batch_pool(self):
-        """3D input is mean-pooled along the batch axis."""
+    def test_fit_rows_preserves_batch_axis(self):
+        """3D input keeps its batch axis (Task 3 dropped the mean-pool).
+
+        The microbatch refactor needs each row's snapshot kept
+        independent through ``_fit_rows`` so the snapshot path can
+        write per-row state into the per-B rings.  The legacy
+        ``mean(dim=0)`` collapse is gone.
+        """
         d = self._make()
         x = torch.randn(5, self.N_SYMBOLS, self.N_DIM)
         y = d._fit_rows(x, self.N_SYMBOLS)
-        self.assertEqual(y.shape, (self.N_SYMBOLS, self.N_DIM))
-        self.assertTrue(torch.allclose(y, x.mean(dim=0)))
+        self.assertEqual(y.shape, (5, self.N_SYMBOLS, self.N_DIM))
+        self.assertTrue(torch.allclose(y, x))
 
     def test_fit_dim_pad_and_truncate(self):
         """_fit_dim handles column mismatches."""
@@ -275,13 +283,14 @@ class TestDiscourseSpaceUnit(_DiscourseTestBase):
         loss = d.contrastive_loss(s_cur, w_cur)
         self.assertIsNotNone(loss)
 
-        # Manual: attractive + lam * mean_over_prev(cos)
+        # Manual: attractive + lam * mean_over_prev(cos).  Buffers carry
+        # a leading B=1 dim under Task 3; row 0 is the legacy state.
         current = d._assemble(s_cur, w_cur).reshape(-1)
         ctx = d._recent_centroid().reshape(-1)
         attractive = 1.0 - F.cosine_similarity(
             current.unsqueeze(0), ctx.unsqueeze(0))
-        m = int(d._prev_count.item())
-        prev = d._prev_centroids[:m].reshape(m, -1)
+        m = int(d._prev_count[0].item())
+        prev = d._prev_centroids[0, :m].reshape(m, -1)
         sims = F.cosine_similarity(current.unsqueeze(0), prev, dim=-1)
         repulsive = sims.mean()
         manual = attractive.squeeze() + self.LAM * repulsive

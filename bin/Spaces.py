@@ -70,6 +70,9 @@ class VectorQuantize(nn.Module):
         # Owner-space tag for error messages (set post-construction by the
         # owning Space via ``_tag_vq_name``).
         self.name = ""
+        # Per-instance row-chunk override for the cdist/argmax intermediate.
+        # ``None`` => derive from ``_VQ_CHUNK_TARGET_ELEMS`` at forward time.
+        self._vq_chunk_rows = None
 
     @property
     def codebook(self):
@@ -121,33 +124,69 @@ class VectorQuantize(nn.Module):
         scale = (norm_q / norm_e).detach()
         return (out * scale).reshape(orig_shape)
 
+    # Default byte budget for one VQ distance/similarity tile.  4 GiB
+    # leaves ample headroom on 64 GB unified-memory accelerators (the
+    # AMD Strix Halo target) while keeping the per-tile allocation well
+    # below per-buffer caps on current GPU stacks.  Small VQs (V < 64K)
+    # never trigger chunking on first call.  Override per-instance via
+    # ``vq._vq_chunk_rows``.
+    _VQ_CHUNK_TARGET_BYTES = 4 * (1 << 30)  # 4 GiB
+
     def forward(self, x, return_all_codes=False, freeze_codebook=False, **kwargs):
         original_shape = x.shape
         flat = x.reshape(-1, original_shape[-1])
         codebook = self.codebook
-        # The pairwise distance/similarity matrix has shape [flat.N, V] and
-        # must fit in a single allocation (MPS enforces a per-buffer cap,
-        # CUDA raises OOM).  Intercept the failure to name the offending
-        # Space/basis and the projected allocation size instead of
-        # bubbling up a bare "Invalid buffer size" from Metal.
         N = flat.shape[0]
         V = codebook.shape[0]
+        D = codebook.shape[1]
         gib = (N * V * 4) / (1024 ** 3)  # float32 bytes -> GiB
+
+        # Chunk over rows of `flat`.  The [chunk, V] intermediate
+        # (cdist or matmul) is the dominant allocation; the EMA path
+        # below avoids the [N, V] one_hot entirely via bincount +
+        # index_add_, so chunk size is bounded only by this matrix.
+        chunk = self._vq_chunk_rows
+        if chunk is None:
+            max_pairs = self._VQ_CHUNK_TARGET_BYTES // 4  # float32 bytes
+            chunk = max(1, max_pairs // max(V, 1))
+        chunk = min(chunk, N) if N > 0 else 1
+
+        # ``indices`` is the argmin/argmax of distances; the gather that
+        # follows (codebook[indices]) carries no gradient back through the
+        # selection, so the entire indices computation can run under
+        # ``no_grad`` to skip saving cdist/matmul intermediates for the
+        # backward pass.  EMA update has its own ``no_grad`` block below.
         try:
-            if self.use_cosine_sim:
-                flat_cmp = _vq_F.normalize(flat, dim=-1)
-                codebook_cmp = _vq_F.normalize(codebook, dim=-1)
-                indices = (flat_cmp @ codebook_cmp.T).argmax(dim=-1)
-            else:
-                indices = torch.cdist(flat, codebook).argmin(dim=-1)
+            with torch.no_grad():
+                if self.use_cosine_sim:
+                    cb_cmp = _vq_F.normalize(codebook, dim=-1)
+                    if N <= chunk:
+                        flat_cmp = _vq_F.normalize(flat, dim=-1)
+                        indices = (flat_cmp @ cb_cmp.T).argmax(dim=-1)
+                    else:
+                        parts = []
+                        for s in range(0, N, chunk):
+                            sub_cmp = _vq_F.normalize(flat[s:s+chunk], dim=-1)
+                            parts.append((sub_cmp @ cb_cmp.T).argmax(dim=-1))
+                        indices = torch.cat(parts, dim=0)
+                else:
+                    if N <= chunk:
+                        indices = torch.cdist(flat, codebook).argmin(dim=-1)
+                    else:
+                        parts = []
+                        for s in range(0, N, chunk):
+                            parts.append(
+                                torch.cdist(flat[s:s+chunk], codebook).argmin(dim=-1))
+                        indices = torch.cat(parts, dim=0)
         except RuntimeError as e:
             owner = self.name or "<unnamed VQ>"
             raise RuntimeError(
                 f"VectorQuantize[{owner}]: distance matrix allocation "
-                f"failed. flat={tuple(flat.shape)}, codebook={tuple(codebook.shape)}, "
+                f"failed even after chunking. flat={tuple(flat.shape)}, "
+                f"codebook={tuple(codebook.shape)}, chunk={chunk}, "
                 f"pairwise matrix = [{N}, {V}] float32 = {gib:.2f} GiB. "
-                f"Reduce {owner}.nVectors, reduce batchSize, or chunk "
-                f"the quantize call. Original error: {e}"
+                f"Reduce {owner}.nVectors, reduce batchSize, or set "
+                f"vq._vq_chunk_rows to a smaller value. Original error: {e}"
             ) from e
         quantized_raw = codebook[indices].reshape(original_shape)
         commit_loss = self.commitment_weight * _vq_F.mse_loss(
@@ -162,9 +201,17 @@ class VectorQuantize(nn.Module):
         if self.training and not freeze_codebook:
             with torch.no_grad():
                 flat_f = flat.float()
-                onehot = _vq_F.one_hot(indices, num_classes=V).to(flat_f.dtype)
-                cluster_size_batch = onehot.sum(dim=0)
-                embed_sum = onehot.t() @ flat_f
+                # Equivalent to ``one_hot(indices, V).t() @ flat_f`` but
+                # without ever allocating the [N, V] one-hot tensor: at
+                # body-scale microbatch (N in the millions) that matrix
+                # alone passes the GPU per-buffer cap.
+                cluster_size_batch = torch.bincount(
+                    indices, minlength=V
+                ).to(flat_f.dtype)
+                embed_sum = torch.zeros(
+                    V, D, device=flat_f.device, dtype=flat_f.dtype,
+                )
+                embed_sum.index_add_(0, indices, flat_f)
                 self.cluster_size.mul_(self.decay).add_(
                     cluster_size_batch.to(self.cluster_size.dtype),
                     alpha=1.0 - self.decay,
@@ -225,7 +272,7 @@ from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, Associati
 from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegularizer, SmoothingRegularizer, ImpenetrableLayer
 from Layers import Error
-from parse import quick_parser
+from util import parse
 from collections import namedtuple as _namedtuple
 
 
@@ -1305,7 +1352,12 @@ class Codebook(Basis):
                 threshold_ema_dead_code=1,
                 decay=decay,
                 commitment_weight=1.0,
-                rotation_trick=True,
+                # Rotation-trick STE (arXiv:2410.06424) was reported to
+                # trigger gradient-accumulation OOMs on HIP/ROCm with
+                # microbatch AR.  Vanilla STE
+                # (x + (quantized - x).detach()) is the classical VQ-VAE
+                # estimator -- trains fine, uses a smaller autograd graph.
+                rotation_trick=False,
             )
             # The external library does its own codebook initialization;
             # the in-repo stub uses raw torch.randn so we rescale to [-1, 1]
@@ -1665,19 +1717,16 @@ class Embedding(Basis):
 
     def _token_stream(self, text):
         if getattr(self, 'byte_mode', False):
-            return self._byte_stream(text)
+            return parse(self._to_text(text), lex='bytes')
+        if getattr(self, 'lexer_mode', 'word') == 'sentence':
+            return parse(self._to_text(text), lex='sentences')
         mode = getattr(self, 'chunking_mode', 'lexicon')
         if mode in ('raw', 'bpe'):
             # Both raw and cold-start BPE fall back to per-character
             # tokenization. The real BPE path runs through ChunkingLayer
             # once merges have been learned.
             return self._char_stream(text)
-        return quick_parser(self._to_text(text))
-
-    def _byte_stream(self, text):
-        """Tokenize as raw bytes: one (chr(byte), byte_offset) per byte."""
-        raw = self._to_text(text).encode('utf-8')
-        return [(chr(b), i) for i, b in enumerate(raw)]
+        return parse(self._to_text(text), lex='words')
 
     def _char_stream(self, text):
         """Tokenize text as per-character units with positional indices."""
@@ -2386,6 +2435,20 @@ class SubSpace(nn.Module):
         self.errors = Error()
         self.serial_cache = {}
 
+        # Microbatch-AR contract (Task 5 of 2026-04-22 plan).
+        # k_axis=True means the event tensor has shape [B, K, N, D]
+        # (stem output before the body's FlattenKWrapper folds K into B).
+        # valid_mask_bk: [B, K] bool, True where the window's target
+        # token is non-NULL. Built by the stem; consumed by runBatch.
+        self.k_axis = False
+        self.valid_mask_bk = None
+        # stem_embedded=True signals downstream stages that InputSpace has
+        # already performed lex+embed in the microbatch AR path; the body's
+        # PerceptualSpace must skip its own _embed (which would clobber the
+        # K-windowed event with a fresh [B, N, D] re-embed of the original
+        # byte buffer).
+        self.stem_embedded = False
+
         payload = self.materialize()
         if isinstance(payload, torch.Tensor) and payload.ndim > 0:
             self.batch = payload.shape[0]
@@ -2400,12 +2463,21 @@ class SubSpace(nn.Module):
         by reference so later writes (e.g., ``SymbolicSpace.forward`` adding
         a commitment term) land in the same accumulator that
         ``OutputSpace`` / ``runBatch`` will read.
+
+        Also propagates the microbatch-AR routing attrs (``k_axis``,
+        ``valid_mask_bk``, ``stem_embedded``).  These are stem-route
+        contracts that stages downstream of FlattenKWrapper currently do
+        not read, but propagation keeps the contract explicit and prevents
+        a stale value on a recycled subspace from misrouting the body.
         """
         if other is None:
             return
         self.wordSpace = other.wordSpace
         self.errors = other.errors
         self.serial_cache = other.serial_cache
+        self.k_axis = other.k_axis
+        self.valid_mask_bk = other.valid_mask_bk
+        self.stem_embedded = other.stem_embedded
 
     @property
     def basis(self):
@@ -3089,9 +3161,14 @@ class SubSpace(nn.Module):
         # The 4-valued bivector is reduced to a scalar presence (max of
         # poles) for event gating; see BuddhistParallels.md for the
         # tetralemma mapping.
-        pres = self.activation_presence()
-        if pres is not None:
-            x = x * pres.unsqueeze(-1)
+        # When k_axis=True, the event has a leading [B, K, ...] shape that
+        # the [B, N] presence tensor cannot broadcast into. Stem windows
+        # are emitted pre-gated (zero-padded for absent positions), so
+        # skip the multiply in that case.
+        if not self.k_axis:
+            pres = self.activation_presence()
+            if pres is not None:
+                x = x * pres.unsqueeze(-1)
 
         # top-k selection if requested
         if k is not None and k < x.shape[-2]:
@@ -4274,7 +4351,7 @@ class InputSpace(Space):
             self.demuxed = TheXMLConfig.space(section, "demuxed")
         except KeyError:
             self.demuxed = False
-        self.lexer = lexer  # "word", "sentence", "grammar", or "byte"
+        self.lexer = lexer  # "word", "sentence", or "byte"
         self.byte_mode = (lexer == "byte")
         self.ergodic = ergodic
         self.min_frequency = float(min_frequency)
@@ -4298,21 +4375,17 @@ class InputSpace(Space):
         # Size of the embedding is Batch Size (2) X Sequence Length (3) X Embedding Dimension (100)
         self.input          = torch.FloatTensor
         self.tokenizedInput = False
-        # Sliding-window context buffer for AR modes. Persists across
-        # MentalModel.forward() calls within a stream so the model sees
-        # cross-sentence context. Lazy init on first slide_and_append
-        # (need B and embSize to size it). Reset via ``reset_buffer``.
-        # See basicmodel/doc/specs/2026-04-20-streaming-ar-training-loop-design.md
-        self._ar_buffer = None
         # Pipeline-seed: the Model's WordSpace reference. InputSpace is
         # the only stage that creates subspaces from raw input, so it
         # stamps this onto every outgoing subspace and downstream stages
         # propagate via copy_context. Registered by BaseModel.create_from_config
         # once WordSpace exists.
         self._model_wordSpace = None
-        # End-of-stream sentinel. forward() sets this to True when the
-        # NULL byte is detected at the current cursor; runBatch reads it
-        # to fire the per-sentence Reset cascade and clears it.
+        # End-of-stream sentinel. Initialized to False (scalar) before
+        # any forward() call. Microbatch AR forward() promotes it to a
+        # [B] bool where each row is True when that row's targets are
+        # entirely NULL. runBatch reduces via .all() for the per-sentence
+        # Reset cascade, then clears it back to False.
         self._end_of_stream = False
         # Raw sentence strings stashed by prepInput for MentalModel.forward()
         # to compute the outer-loop iteration count N without rethreading
@@ -4369,40 +4442,6 @@ class InputSpace(Space):
         # Pre-stamp our own subspace; regular returns hand it out unchanged.
         if self.subspace is not None:
             self.subspace.wordSpace = ws
-
-    def reset_buffer(self):
-        """Clear the sliding-window AR buffer.
-
-        Called at epoch boundaries or when the user wants a fresh context.
-        MentalModel.Start() does NOT call this -- buffer persists across
-        forward() calls within a stream by design.
-        """
-        self._ar_buffer = None
-
-    def slide_and_append(self, token_embeddings):
-        """Slide the AR buffer left by one slot and append new tokens on the right.
-
-        ``token_embeddings`` is ``[B, embSize]`` -- a single new token per
-        batch row. The buffer is lazily created on first call with shape
-        ``[B, nActive, embSize]``, where nActive is the InputSpace's active
-        vector count (context window size).
-
-        Returns the updated buffer as a ``[B, nActive, embSize]`` tensor.
-        """
-        B, embSize = token_embeddings.shape
-        nActive = int(self.outputShape[0])
-        if (self._ar_buffer is None
-                or self._ar_buffer.shape[0] != B
-                or self._ar_buffer.shape[2] != embSize):
-            self._ar_buffer = torch.zeros(
-                B, nActive, embSize,
-                device=token_embeddings.device,
-                dtype=token_embeddings.dtype,
-            )
-        # Slide left by one; set rightmost slot to the new token.
-        self._ar_buffer = torch.roll(self._ar_buffer, shifts=-1, dims=1)
-        self._ar_buffer[:, -1, :] = token_embeddings
-        return self._ar_buffer
 
     def prep_sentence_batch(self, sentences):
         """Turn a tuple/list of B sentence strings into a [B, nVec, 1] tensor.
@@ -4476,133 +4515,125 @@ class InputSpace(Space):
         self.data.shuffle()
 
     def Start(self):
-        """One-shot per-run init.
-
-        Resets the streaming cursor so the next sequence of forward()
-        calls restarts at position 0. The sliding AR buffer (_ar_buffer)
-        is NOT reset here — it persists across model.forward() calls
-        within a stream so the model sees cross-sentence context. Call
-        ``reset_buffer()`` explicitly to clear it (e.g., at epoch
-        boundaries).
-        """
+        """One-shot per-run init."""
         super().Start()
-        self._seq_cursor = 0
         self._ar_embedded = None
         self._ar_total = 0
 
     def Reset(self):
-        """Per-sentence teardown for streaming AR state.
-
-        Clears the persistent sliding buffer so the next sentence starts
-        with a fresh buffer, and resets the streaming cursor so forward()
-        re-embeds on the first call.
-        """
+        """Per-sentence teardown for AR state."""
         super().Reset()
-        self._ar_buffer = None
         self._ar_embedded = None
         self._ar_total = 0
-        self._seq_cursor = 0
         self._cached_embedding = None
         self._end_of_stream = False
 
     # The world presenting itself
     def forward(self, inputData):
-        """Stateful streaming source for the Sequential pipeline.
+        """Single-call stem source for the microbatch AR pipeline.
 
-        Each call emits the next SubSpace "position" for the downstream
-        pipeline. The caller (Model.forward's while-loop) passes the same
-        raw ``inputData`` on every iteration; this method tracks its own
-        position via ``self._seq_cursor`` (reset by Start()).
+        Lexes/embeds the input once and emits ALL K windows in a single
+        subspace whose event has shape [B, K, N, D] with k_axis=True.
 
         Semantics:
-          * Non-AR: first call lexes/embeds ``inputData`` and returns the
-            full SubSpace; subsequent calls return empty.
-          * AR training: each call slides the next embedded token into
-            _ar_buffer and returns the buffer view; empty once exhausted.
-          * AR inference (ARIR): predicted-back-into-input flow consumes
-            one token per call; a 0x00 token terminates by returning empty.
+          * Non-AR: K=1 single-window pass-through (subspace event keeps
+            its existing [B, N, D] shape; k_axis stays False).
+          * AR training: K = T (one prediction per token via
+            progressive-prefix windows from a pad-N-then-unfold).
+          * ARIR inference: each call feeds an N-length buffer (T==N),
+            so K=1 and the head produces one prediction per call. The
+            ARIR runtime maintains the buffer across calls.
 
+        Sets self._end_of_stream as a [B] bool — True for rows whose
+        targets are entirely NULL (empty sentence). ``self.subspace``
+        carries valid_mask_bk: [B, K] bool for runBatch.
         """
         if inputData is None:
             return self._empty_like_subspace()
         if hasattr(inputData, "is_empty") and not isinstance(inputData, torch.Tensor) and inputData.is_empty():
             return inputData
-        cursor = getattr(self, "_seq_cursor", 0)
+
         is_ar = self.masked_prediction in ('ARLM', 'ARUS', 'ARIR') if hasattr(self, 'masked_prediction') else False
+        is_runtime_arir = (
+            self.data is not None
+            and self.data._runtime_mode == 'ARIR'
+        )
 
         if not is_ar:
-            # Non-AR: stateless — always process the full input. The
-            # model's outer while-loop enforces single-iteration
-            # termination for non-AR modes.
-            return self._lex_and_embed(inputData)
+            # Non-AR: pass through unchanged. No K axis. Cascade
+            # ensure_microbatch(B, 1) so the body's per-row state is sized
+            # to match the input batch -- this is the K=1 degenerate of
+            # the microbatch contract.
+            sub = self._lex_and_embed(inputData)
+            event = sub.materialize()
+            ws = self._model_wordSpace
+            if ws is not None and event is not None and event.dim() >= 1:
+                ws.ensure_microbatch(int(event.shape[0]), 1)
+            return sub
 
-        # AR mode: emit one position per call.
-        if cursor == 0:
-            # First call: lex/embed once. The embedded tensor source is
-            # what the sliding buffer draws from. The underlying byte
-            # buffer (``subspace.what``) is our NULL sentinel source.
-            self._lex_and_embed(inputData)
-            embedded = self.subspace.materialize()
-            if embedded is None and self.model_type == "embedding":
-                # Text mode: lexicon lives on the peer PerceptualSpace.
-                peer = getattr(self, '_peer_perceptual', None)
-                if peer is not None:
-                    peer._embed(self.subspace)
-                    embedded = peer._embedded_input
-            self._ar_embedded = embedded
-            # Safety cap: never go past the padded buffer length.
-            self._ar_total = embedded.shape[1] if embedded is not None else 0
+        # Lex/embed once -- produces _ar_embedded of shape [B, T, D].
+        self._lex_and_embed(inputData)
+        embedded = self.subspace.materialize()
+        if embedded is None and self.model_type == "embedding":
+            peer = self._peer_perceptual
+            if peer is not None:
+                peer._embed(self.subspace)
+                embedded = peer._embedded_input
+        self._ar_embedded = embedded
 
-        # Safety cap: beyond the padded buffer has nothing to emit.
-        if cursor >= self._ar_total:
-            return self._empty_like_subspace()
+        if embedded is None:
+            return self.subspace
 
-        # NULL sentinel detection. Two complementary signals:
-        #   1. Raw-byte mode: ``subspace.what.getW()[:, cursor] == 0`` means
-        #      the NULL byte is about to be emitted.
-        #   2. Embedded mode: ``_ar_embedded[:, cursor-1, :]`` all zeros means
-        #      the token the AR loop is about to slide in is the NULL
-        #      embedding (ARIR inference feeds predicted tokens back; a
-        #      collapse-to-zero prediction terminates the stream).
-        # Either signal triggers end-of-stream.
-        try:
-            what_w = self.subspace.what.getW()
-            if what_w is not None and what_w.ndim == 2:
-                if torch.all(what_w[:, cursor] == 0):
-                    self._end_of_stream = True
-                    return self._empty_like_subspace()
-        except Exception:
-            pass
-        if cursor > 0 and self._ar_embedded is not None:
-            try:
-                prev_emb = self._ar_embedded[:, cursor - 1, :]
-                if torch.all(prev_emb == 0):
-                    self._end_of_stream = True
-                    return self._empty_like_subspace()
-            except Exception:
-                pass
+        B, T, D = embedded.shape
+        N = int(self.outputShape[0])
 
-        embedded = self._ar_embedded
-        B = embedded.shape[0]
-        emb_size = embedded.shape[-1]
-        n_active = int(self.outputShape[0])
-        buffer = self._ar_buffer
-        if (buffer is None
-                or buffer.shape[0] != B
-                or buffer.shape[1] != n_active
-                or buffer.shape[2] != emb_size):
-            buffer = torch.zeros(
-                B, n_active, emb_size,
-                device=embedded.device, dtype=embedded.dtype,
-            )
-            self._ar_buffer = buffer
+        if is_runtime_arir:
+            # ARIR inference path. Buffer is already the N-length window.
+            if T < N:
+                pad = torch.zeros(B, N - T, D,
+                                  device=embedded.device, dtype=embedded.dtype)
+                embedded = torch.cat([embedded, pad], dim=1)
+                T = N
+            windows = embedded.unfold(1, N, 1).permute(0, 1, 3, 2).contiguous()
+            K = windows.shape[1]
+            # Inference always "valid"; runtime decides termination via predictions.
+            valid_mask = torch.ones(B, K, dtype=torch.bool, device=embedded.device)
+        else:
+            # AR training. Pad N zeros on the LEFT to recreate the legacy
+            # cursor-based progressive-prefix windows: window k = the
+            # buffer state at cursor k (k zero-pad slots followed by
+            # emb[0..k-1] right-aligned). Take first K=T windows so each
+            # window k targets emb[k]; the unused (K=T+1)-th window
+            # would have no ground-truth target.
+            pad = torch.zeros(B, N, D, device=embedded.device, dtype=embedded.dtype)
+            padded = torch.cat([pad, embedded], dim=1)  # [B, T+N, D]
+            unfolded = padded.unfold(1, N, 1).permute(0, 1, 3, 2).contiguous()
+            # unfolded shape: [B, T+1, N, D] -- take first T windows.
+            K = T
+            windows = unfolded[:, :K, :, :]
+            # Validity mask: target at window k is embedded[:, k, :].
+            # NULL = all-zero embedding (lex pads short sentences this way).
+            valid_mask = (embedded.abs().sum(dim=-1) > 0)  # [B, T] = [B, K]
 
-        if cursor > 0:
-            self.slide_and_append(embedded[:, cursor - 1, :])
+        sub = self.subspace
+        sub.set_event(windows)
+        sub.k_axis = True
+        sub.valid_mask_bk = valid_mask
+        sub.stem_embedded = True
 
-        self.subspace.set_event(self._ar_buffer)
-        self._seq_cursor = cursor + 1
-        return self.subspace
+        # Per-row end-of-stream: True for rows with no valid windows.
+        self._end_of_stream = ~valid_mask.any(dim=1)  # [B] bool
+
+        # Cascade ensure_microbatch(B, K) so the body's per-row state
+        # (subspace, stacks, last_svo) is sized to B*K. _stm_fired stays
+        # at B; discourse buffers also size to B*K. This must happen
+        # before the body runs so its FlattenKWrapper sees correctly
+        # sized substrates.
+        ws = self._model_wordSpace
+        if ws is not None:
+            ws.ensure_microbatch(B, K)
+
+        return sub
 
     def _empty_like_subspace(self):
         """Return a SubSpace with materialized shape [B, 0, D] — the termination sentinel."""
@@ -4629,8 +4660,8 @@ class InputSpace(Space):
         # ARIR-inference cache bypass: the ARIR runtime state machine
         # injects a pre-built embedding tensor via ``_cached_embedding`` so
         # forward() skips lex/embed and uses the staged latent directly.
-        # The AR training path does NOT use this -- it relies on the
-        # persistent sliding-window buffer (``_ar_buffer``) instead.
+        # AR training does not use this -- it lexes/embeds each call and
+        # builds progressive-prefix windows via unfold.
         if self._cached_embedding is not None:
             self.input = self._cached_embedding
             self._cached_embedding = None  # consume once
@@ -4953,6 +4984,7 @@ class PerceptualSpace(Space):
         # Propagate to the Embedding so its _token_stream honors the mode.
         if isinstance(lexical_basis, Embedding):
             lexical_basis.chunking_mode = self.chunking_mode
+            lexical_basis.lexer_mode = self.lexer
         # ChunkLayer BPE configuration. chunkBPE=true enables the learned
         # BPE merge table on ChunkLayer; otherwise the layer runs in its
         # legacy whitespace-boundary mode.
@@ -5272,7 +5304,12 @@ class PerceptualSpace(Space):
                 return self.subspace
 
         # Cold path: full compute.
-        if isinstance(self.subspace.what, Embedding):
+        # Microbatch AR: InputSpace has already performed lex+embed and
+        # populated subspace.event with [B*K, N, D] (k_axis flag was just
+        # cleared by FlattenKWrapper, but stem_embedded=True remains).
+        # Skip the lexicon _embed which would clobber that event with a
+        # fresh [B, N, D] re-embed of the original byte buffer.
+        if isinstance(self.subspace.what, Embedding) and not vspace.stem_embedded:
             mode = self.chunking_mode
             if mode == "lexicon":
                 vspace = self._embed(vspace)
@@ -5732,11 +5769,21 @@ class ConceptualSpace(Space):
         # it); stage the biased tensor in our own subspace instead.
         ws = vspace.wordSpace
         if ws is not None:
-            bias = ws.stm_residual()
-            if bias is not None:
-                event = vspace.materialize()
-                if event is not None:
-                    self.subspace.set_event(event + bias.view(1, 1, -1))
+            event = vspace.materialize()
+            if event is not None:
+                # Derive (B, K) from wordspace state: ensure_microbatch
+                # keeps _stm_fired at B and ws.batch at B*K.  In legacy
+                # single-row paths B=K=1 trivially.
+                B = int(ws._stm_fired.shape[0])
+                BK_actual = int(event.shape[0])
+                K = max(1, BK_actual // max(1, B))
+                assert B * K == BK_actual, (
+                    f"ConceptualSpace stm gating: event batch={BK_actual} "
+                    f"not a multiple of source-row count B={B}")
+                bias = ws.stm_residual_microbatch(B, K)
+                if bias is not None:
+                    # bias: [B*K, concept_dim]; broadcast over N positions.
+                    self.subspace.set_event(event + bias.unsqueeze(1))
                     vspace = self.subspace
         x = self.forwardBegin(vspace, returnVectors=True)
         y = self.forwardSigma(x)
@@ -5756,7 +5803,7 @@ class ConceptualSpace(Space):
         y = self._sparsity(y)
         ws = vspace.wordSpace
         if ws is not None:
-            ws.last_svo = None
+            ws.clear_last_svo()
         vspace = self.forwardEnd(y, returnVectors=True)
         vspace.normalize("concepts", target="what")       # range check
         vspace.normalize("concepts", target="where")      # range check
@@ -6370,14 +6417,17 @@ class SymbolicSpace(Space):
         """
         def mixed(self_sub, inc_sub):
             total = None
-            for rid, p in enumerate(rule_probs):
-                if float(p.detach().item()) < 1e-6:
+            # One sync for the whole prob vector; grad still flows via
+            # the original tensor below.
+            probs_list = rule_probs.detach().tolist()
+            for rid, p_val in enumerate(probs_list):
+                if p_val < 1e-6:
                     continue
                 out = self._op_for_rule(rid, wordSpace=wordSpace)(
                     self_sub, inc_sub)
                 if out is None:
                     continue
-                contribution = out * p
+                contribution = out * rule_probs[rid]
                 total = contribution if total is None else total + contribution
             return total
 
@@ -6416,11 +6466,14 @@ class SymbolicSpace(Space):
         active = active.flatten().to(dtype=torch.float32)
 
         # Step 2 -- PoS lookup + push onto the stack.
+        # NB(microbatch): hard-coded b=0 because the surrounding code path
+        # already collapses to row-0 (active=active[0] above). Once the body
+        # iterates over B*K rows (Task 9 cutover), thread the row index here.
         pos_vec = wordSpace.pos_lookup(active)
-        wordSpace.pos_stack.push(pos_vec)
+        wordSpace.pos_stack.push(0, pos_vec)
 
         # Step 3 -- rule distribution.
-        rule_logits = wordSpace.predict_rule()
+        rule_logits = wordSpace.predict_rule(0)
         rule_probs = torch.softmax(rule_logits, dim=-1)
 
         # Step 4 -- apply chosen rule.

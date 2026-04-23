@@ -140,7 +140,6 @@
     <xs:restriction base="xs:string">
       <xs:enumeration value="word"/>
       <xs:enumeration value="sentence"/>
-      <xs:enumeration value="grammar"/>
       <xs:enumeration value="byte"/>
     </xs:restriction>
   </xs:simpleType>

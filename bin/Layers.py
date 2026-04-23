@@ -3221,7 +3221,7 @@ class InterSentenceLayer(Layer):
 
     def __init__(self, n_symbols, max_depth, n_dim,
                  context_window=12, centroid_history=3, lam=1.01,
-                 concept_dim=None):
+                 concept_dim=None, batch=1):
         # n_sentence rows * n_dim cols is the shape of a single
         # snapshot; Layer's nInput / nOutput fields carry the
         # flattened count for any legacy consumers that read them.
@@ -3249,31 +3249,39 @@ class InterSentenceLayer(Layer):
         # degrades to pure contrastive behavior (legacy path).
         self.concept_dim = int(concept_dim) if concept_dim is not None else None
 
-        # Recent buffer: last K = context_window snapshots. Their mean
-        # is the current attractive target.  Registered as a
-        # non-persistent buffer so ``.to(device)`` follows it without
-        # saving it in checkpoints -- the contents are per-epoch
-        # transient state.
+        # Per-batch substrate. Microbatch refactor (Task 3): each row
+        # owns an independent recent ring + prev-centroids ring +
+        # counts; cross-row aggregation only happens at the loss
+        # reduction.  ``ensure_batch(B)`` reallocates when B grows.
+        self._batch = int(batch)
+
+        # Recent buffer: last K = context_window snapshots per row.
+        # Their per-row mean is the current attractive target.
+        # Registered as a non-persistent buffer so ``.to(device)``
+        # follows it without saving it in checkpoints -- the contents
+        # are per-epoch transient state.
         self.register_buffer(
             "_recent",
-            torch.zeros(self.context_window, self.n_sentence, self.n_dim),
+            torch.zeros(self._batch, self.context_window,
+                        self.n_sentence, self.n_dim),
             persistent=False)
         self.register_buffer(
             "_recent_count",
-            torch.zeros((), dtype=torch.long),
+            torch.zeros(self._batch, dtype=torch.long),
             persistent=False)
 
-        # Previous centroids: M = centroid_history older snapshot-
-        # window centroids the current sentence should be repelled
-        # from.  A new centroid is folded in whenever the recent
-        # buffer evicts its oldest entry.
+        # Previous centroids: per row, M = centroid_history older
+        # snapshot-window centroids the current sentence should be
+        # repelled from.  A new centroid is folded in whenever the
+        # recent buffer evicts its oldest entry.
         self.register_buffer(
             "_prev_centroids",
-            torch.zeros(self.centroid_history, self.n_sentence, self.n_dim),
+            torch.zeros(self._batch, self.centroid_history,
+                        self.n_sentence, self.n_dim),
             persistent=False)
         self.register_buffer(
             "_prev_count",
-            torch.zeros((), dtype=torch.long),
+            torch.zeros(self._batch, dtype=torch.long),
             persistent=False)
 
         # Learnable pieces for the AR sentence predictor.  Only built
@@ -3308,25 +3316,58 @@ class InterSentenceLayer(Layer):
             self.layers.append(self.predictor)
             self.layers.append(self.cast)
 
+    # -- per-batch resize ---------------------------------------------
+    def ensure_batch(self, batch):
+        """Resize per-row substrate to a new batch size.
+
+        Reallocates the four ring buffers and their counts; per-row
+        state is zeroed.  Stays a no-op when ``batch`` already
+        matches.  Cascaded from ``WordSpace.ensure_batch`` at
+        ``Models.Start`` so the body's per-(B*K) state is sized
+        correctly under the microbatch refactor.
+        """
+        batch = int(batch)
+        if batch == self._batch:
+            return
+        self._batch = batch
+        device = self._recent.device
+        dtype = self._recent.dtype
+        self._recent = torch.zeros(
+            batch, self.context_window, self.n_sentence, self.n_dim,
+            dtype=dtype, device=device)
+        self._recent_count = torch.zeros(
+            batch, dtype=torch.long, device=device)
+        self._prev_centroids = torch.zeros(
+            batch, self.centroid_history, self.n_sentence, self.n_dim,
+            dtype=dtype, device=device)
+        self._prev_count = torch.zeros(
+            batch, dtype=torch.long, device=device)
+
     # -- snapshot & history -------------------------------------------
     def _fit_rows(self, x, target_rows):
         """Pad-or-truncate ``x`` along its row axis to exactly
-        ``target_rows``. Accepts ``[rows, dim]`` or ``[B, rows, dim]``;
-        always returns ``[target_rows, dim]`` (batch is mean-pooled
-        for buffer storage because the discourse substrate is
-        sentence-level and batch-free).
+        ``target_rows``.  Accepts ``[rows, dim]`` (B=1 legacy) or
+        ``[B, rows, dim]`` (microbatch); preserves the input rank in
+        the output.
+
+        Microbatch refactor (Task 3): the legacy ``x.mean(dim=0)``
+        mean-pool is gone -- per-row state must stay distinct so the
+        body's B*K rows do not corrupt each other.
         """
-        if x.ndim == 3:
-            x = x.mean(dim=0)
-        rows = x.shape[0]
+        is_2d = (x.ndim == 2)
+        if is_2d:
+            x = x.unsqueeze(0)
+        B, rows, dim = x.shape
         if rows == target_rows:
-            return x
-        if rows > target_rows:
-            return x[:target_rows]
-        pad = torch.zeros(
-            target_rows - rows, x.shape[-1],
-            dtype=x.dtype, device=x.device)
-        return torch.cat([x, pad], dim=0)
+            out = x
+        elif rows > target_rows:
+            out = x[:, :target_rows, :]
+        else:
+            pad = torch.zeros(
+                B, target_rows - rows, dim,
+                dtype=x.dtype, device=x.device)
+            out = torch.cat([x, pad], dim=1)
+        return out.squeeze(0) if is_2d else out
 
     def _fit_dim(self, x):
         """Pad-or-truncate ``x`` along its column axis to exactly
@@ -3340,67 +3381,141 @@ class InterSentenceLayer(Layer):
         return F.pad(x, (0, self.n_dim - cur))
 
     def _assemble(self, s_tensor, w_tensor):
-        """Build one ``[n_sentence, n_dim]`` row from S + W tensors."""
+        """Assemble an ``[S | W]`` row from S + W tensors.
+
+        Returns ``[n_sentence, n_dim]`` for 2D inputs (B=1 legacy
+        path) and ``[B, n_sentence, n_dim]`` for 3D inputs.
+        """
         s = self._fit_rows(s_tensor, self.n_symbols)
         w = self._fit_rows(w_tensor, self.max_depth)
         s = self._fit_dim(s)
         w = self._fit_dim(w)
-        return torch.cat([s, w], dim=0)
+        # Concat on the row axis: dim=0 for 2D, dim=-2 for 3D both work.
+        return torch.cat([s, w], dim=-2)
 
-    def _recent_centroid(self):
+    def _recent_centroid(self, b=None):
         """Mean of the recent-buffer entries currently in use, or
         ``None`` when the buffer is empty.  Returned tensor is
         detached (it comes from the stored non-persistent buffer).
+
+        With ``b=None`` and ``self._batch == 1``, returns
+        ``[n_sentence, n_dim]`` (legacy shape).  With explicit ``b``
+        or batched layer, returns the per-row centroid for that row
+        as ``[n_sentence, n_dim]``, or ``None`` if row b is empty.
         """
-        n = int(self._recent_count.item())
+        if b is None:
+            if self._batch != 1:
+                raise ValueError(
+                    "_recent_centroid(b=None) only legal for batch=1; "
+                    "use _recent_centroid(b) for per-row layers")
+            n = int(self._recent_count[0].item())
+            if n == 0:
+                return None
+            return self._recent[0, :n].mean(dim=0)
+        n = int(self._recent_count[b].item())
         if n == 0:
             return None
-        return self._recent[:n].mean(dim=0)
+        return self._recent[b, :n].mean(dim=0)
 
-    def snapshot(self, s_tensor, w_tensor):
+    def snapshot(self, s_tensor, w_tensor, mask=None):
         """Commit a ``[S | W]`` snapshot to history.
 
-        Ring semantics: when the recent buffer is full, fold its
-        current centroid into ``_prev_centroids`` (so the repulsive
+        Ring semantics (per row): when the recent buffer is full, fold
+        its current centroid into ``_prev_centroids`` (so the repulsive
         force has fresh fodder), then shift the recent ring left and
         append the new row at the end.  Stored tensors are detached.
+
+        Inputs may be 2D ``[rows, dim]`` (B=1 legacy) or 3D
+        ``[B, rows, dim]``.  ``mask`` is an optional ``[B] bool``
+        selecting which rows ended a sentence this step (defaults to
+        all True).  Mask is ignored for 2D inputs.
+
+        Backward compat: if the layer is sized at B=1 and a 3D input
+        with batch B>1 is given, the rows are mean-pooled into the
+        single stored row.  Production sizes the layer to B*K via
+        ``ensure_batch`` at ``Models.Start`` (Task 9), making the
+        mean-pool path obsolete in the post-cutover world.
         """
         row = self._assemble(s_tensor, w_tensor).detach()
-        n = int(self._recent_count.item())
+        if row.ndim == 2:
+            # B=1 legacy: route through row 0.
+            self._snapshot_row(0, row)
+            return
+        B = row.shape[0]
+        if self._batch == 1 and B != 1:
+            # Legacy fallback: collapse the input batch into the single
+            # stored row.  Used pre-Task-9 when the model still hasn't
+            # cascaded ensure_batch through Start().
+            self._snapshot_row(0, row.mean(dim=0))
+            return
+        assert B == self._batch, (
+            f"snapshot row-batch {B} != layer batch {self._batch}; "
+            "call ensure_batch first")
+        if mask is None:
+            for b in range(B):
+                self._snapshot_row(b, row[b])
+        else:
+            for b in range(B):
+                if bool(mask[b]):
+                    self._snapshot_row(b, row[b])
+
+    def _snapshot_row(self, b, row):
+        """Push one already-assembled row into row ``b``'s rings."""
+        n = int(self._recent_count[b].item())
         if n < self.context_window:
-            self._recent[n] = row
-            self._recent_count.fill_(n + 1)
+            self._recent[b, n] = row
+            self._recent_count[b] = n + 1
             return
         # Recent buffer is full: snapshot its centroid into the
         # prev_centroids ring before evicting the oldest row.
-        ctx = self._recent.mean(dim=0).detach()
-        m = int(self._prev_count.item())
+        ctx = self._recent[b].mean(dim=0).detach()
+        m = int(self._prev_count[b].item())
         if m < self.centroid_history:
-            self._prev_centroids[m] = ctx
-            self._prev_count.fill_(m + 1)
+            self._prev_centroids[b, m] = ctx
+            self._prev_count[b] = m + 1
         else:
-            self._prev_centroids[:-1] = self._prev_centroids[1:].clone()
-            self._prev_centroids[-1] = ctx
-        # Shift recent left and append the new row at the end.
-        self._recent[:-1] = self._recent[1:].clone()
-        self._recent[-1] = row
+            self._prev_centroids[b, :-1] = self._prev_centroids[b, 1:].clone()
+            self._prev_centroids[b, -1] = ctx
+        self._recent[b, :-1] = self._recent[b, 1:].clone()
+        self._recent[b, -1] = row
 
     def reset(self):
-        """Clear both rings (called at epoch boundaries)."""
+        """Clear both rings on every row (epoch boundary)."""
         self._recent.zero_()
         self._recent_count.zero_()
         self._prev_centroids.zero_()
         self._prev_count.zero_()
 
     def __len__(self):
-        return int(self._recent_count.item())
+        """Count of recent entries.  For B=1 returns the single row's
+        count (legacy); for B>1 returns the max across rows so a
+        non-empty layer reports ``len > 0``.
+        """
+        if self._batch == 1:
+            return int(self._recent_count[0].item())
+        return int(self._recent_count.max().item())
 
-    def latest_snapshot(self):
-        """Return the most recently pushed snapshot, or ``None``."""
-        n = int(self._recent_count.item())
+    def latest_snapshot(self, b=None):
+        """Return the most recently pushed snapshot.
+
+        With ``b=None`` and ``self._batch == 1``, returns
+        ``[n_sentence, n_dim]`` (legacy shape) or ``None`` if empty.
+        With ``b`` provided, returns row ``b``'s latest snapshot or
+        ``None`` if that row is empty.
+        """
+        if b is None:
+            if self._batch != 1:
+                raise ValueError(
+                    "latest_snapshot(b=None) only legal for batch=1; "
+                    "use latest_snapshot(b) for per-row layers")
+            n = int(self._recent_count[0].item())
+            if n == 0:
+                return None
+            return self._recent[0, n - 1]
+        n = int(self._recent_count[b].item())
         if n == 0:
             return None
-        return self._recent[n - 1]
+        return self._recent[b, n - 1]
 
     def split(self, snapshot):
         """Split a ``[n_sentence, n_dim]`` snapshot into its
@@ -3418,31 +3533,63 @@ class InterSentenceLayer(Layer):
         - Attractive: ``1 - cos(current, recent_centroid)``
         - Repulsive:  ``lam * mean(cos(current, prev_centroid_i))``
 
-        Returns ``None`` when the recent buffer is empty (first
-        sentence has no context to contrast against).  Gradient flows
-        through the live ``s_tensor`` / ``w_tensor`` arguments; all
-        stored history is detached.
-        """
-        ctx = self._recent_centroid()
-        if ctx is None:
-            return None
+        Inputs may be 2D ``[rows, dim]`` (B=1 legacy) or 3D
+        ``[B, rows, dim]``.  The 3D path computes per-row losses and
+        returns the mean over rows that have context (rows whose
+        ``_recent_count`` is zero are skipped).  Returns ``None`` when
+        no row has any context to contrast against.
 
+        Gradient flows through the live ``s_tensor`` / ``w_tensor``
+        arguments; all stored history is detached.
+        """
         current = self._assemble(s_tensor, w_tensor)
+        if current.ndim == 2:
+            ctx = self._recent_centroid()
+            if ctx is None:
+                return None
+            return self._contrastive_one_row(0, current, ctx)
+        B = current.shape[0]
+        if self._batch == 1 and B != 1:
+            # Legacy fallback: pool the input batch and score against
+            # the single stored row.  Used pre-Task-9.
+            current_pooled = current.mean(dim=0)
+            ctx = self._recent_centroid()
+            if ctx is None:
+                return None
+            return self._contrastive_one_row(0, current_pooled, ctx)
+        assert B == self._batch, (
+            f"contrastive_loss row-batch {B} != layer batch "
+            f"{self._batch}; call ensure_batch first")
+        per_row = []
+        for b in range(B):
+            ctx_b = self._recent_centroid(b)
+            if ctx_b is None:
+                continue
+            per_row.append(self._contrastive_one_row(b, current[b], ctx_b))
+        if not per_row:
+            return None
+        stacked = torch.stack(per_row)
+        return stacked.mean()
+
+    def _contrastive_one_row(self, b, current, ctx):
+        """Compute attractive + repulsive contrastive scalar for row b.
+
+        ``current`` is ``[n_sentence, n_dim]`` and ``ctx`` is the
+        already-fetched per-row centroid for row b.
+        """
         current_flat = current.reshape(-1)
         ctx_flat = ctx.reshape(-1)
-
         attractive = 1.0 - F.cosine_similarity(
             current_flat.unsqueeze(0), ctx_flat.unsqueeze(0))
-
-        m = int(self._prev_count.item())
+        m = int(self._prev_count[b].item())
         if m > 0:
-            prev = self._prev_centroids[:m].reshape(m, -1)
+            prev = self._prev_centroids[b, :m].reshape(m, -1)
             sims = F.cosine_similarity(
                 current_flat.unsqueeze(0), prev, dim=-1)
             repulsive = sims.mean()
         else:
-            repulsive = torch.tensor(0.0, device=current_flat.device)
-
+            repulsive = torch.tensor(
+                0.0, device=current_flat.device, dtype=current_flat.dtype)
         return attractive.squeeze() + self.lam * repulsive
 
     # -- AR sentence prediction ---------------------------------------
@@ -3451,37 +3598,62 @@ class InterSentenceLayer(Layer):
         m = torch.ones(n, n, dtype=torch.bool, device=device).tril_()
         return m.unsqueeze(0)
 
-    def predict(self):
-        """Run the AR predictor over the current recent buffer.
+    def predict(self, b=None):
+        """Run the AR predictor over the recent buffer.
 
-        Returns ``(predicted_snapshot, confidence)`` where
+        With ``b=None``: behaves as before for B=1 layers (returns
+        ``([s_dim], scalar)`` legacy shape).  For B>1 layers, returns
+        per-row stacked tensors ``([B, s_dim], [B])`` -- rows whose
+        recent buffer is empty get zero predictions/confidences.
+        Returns ``(None, None)`` when no row has any context (or when
+        the predictor isn't built).
 
-          - ``predicted_snapshot``: flattened S-block vector of shape
-            ``[s_dim]`` (= ``n_symbols * n_dim``), or ``None`` if the
-            recent buffer is empty or the predictor was not built.
-            The predictor consumes S only -- the W block of each
-            stored row is sliced off before attention so the head is
-            not coupled to buffer-surface features (Task 5.3).
-          - ``confidence``: scalar tensor in ``[0, 1]``, derived from
-            the last-position attention entropy (focused attention =
-            high confidence).  Returns ``None`` alongside a ``None``
-            prediction.
+        With explicit ``b``: returns ``([s_dim], scalar)`` for that row,
+        or ``(None, None)`` if row b's recent buffer is empty.
 
-        The recent buffer is batch-free (snapshots are batch-pooled
-        at store time); the predictor runs once per sentence, not
-        per batch element.
+        The predictor consumes S only -- the W block of each stored
+        row is sliced off before attention so the head is not coupled
+        to buffer-surface features (Task 5.3).  Confidence is derived
+        from the last-position attention entropy (focused attention =
+        high confidence).
         """
         if self.predictor is None:
             return None, None
-        n = int(self._recent_count.item())
+        if b is not None:
+            return self._predict_row(b)
+        if self._batch == 1:
+            return self._predict_row(0)
+        # Batched: per-row stack so callers don't need a Python loop.
+        per_pred = []
+        per_conf = []
+        any_valid = False
+        device = self._recent.device
+        dtype = self._recent.dtype
+        zero_p = torch.zeros(self.s_dim, device=device, dtype=dtype)
+        zero_c = torch.zeros((), device=device, dtype=dtype)
+        for bi in range(self._batch):
+            p, c = self._predict_row(bi)
+            if p is None:
+                per_pred.append(zero_p)
+                per_conf.append(zero_c)
+            else:
+                per_pred.append(p)
+                per_conf.append(c)
+                any_valid = True
+        if not any_valid:
+            return None, None
+        return torch.stack(per_pred), torch.stack(per_conf)
+
+    def _predict_row(self, b):
+        """Single-row predictor: returns ``([s_dim], scalar)`` or
+        ``(None, None)`` for an empty row."""
+        n = int(self._recent_count[b].item())
         if n == 0:
             return None, None
-        # _recent rows are [n_sentence, n_dim] with S in [0:n_symbols]
-        # and W in [n_symbols:].  Slice the S rows out and flatten to
-        # feed the narrower predictor.
-        # [n, n_sentence, n_dim] -> [n, n_symbols, n_dim]
-        #                        -> [n, s_dim] -> [1, n, s_dim]
-        s_rows = self._recent[:n, :self.n_symbols, :]
+        # _recent[b] rows are [n_sentence, n_dim] with S in
+        # [0:n_symbols].  Slice out the S rows and flatten to feed
+        # the narrower predictor.
+        s_rows = self._recent[b, :n, :self.n_symbols, :]
         seq = s_rows.reshape(n, self.s_dim).unsqueeze(0).detach().clone()
         self.predictor.set_mask(self._causal_mask(n, seq.device))
         try:
@@ -3491,12 +3663,6 @@ class InterSentenceLayer(Layer):
             # stale mask into any other caller.
             self.predictor.set_mask(None)
         predicted = out[0, -1]                      # [s_dim]
-
-        # Confidence from attention entropy at the last position.
-        # AttentionLayer caches the most recent attention weights as
-        # ``last_attn`` of shape [B=1, nHeads=1, N, N].  The final
-        # row is the query's distribution over the N keys (respecting
-        # the causal mask, so only the lower triangle carries mass).
         attn = getattr(self.predictor, 'last_attn', None)
         if attn is None:
             confidence = torch.tensor(0.0, device=predicted.device)
@@ -3518,6 +3684,11 @@ class InterSentenceLayer(Layer):
         the actual S-slice of the snapshot assembled from the live
         ``(s_tensor, w_tensor)`` pair.
 
+        Inputs may be 2D ``[rows, dim]`` (B=1 legacy, ``predicted``
+        shape ``[s_dim]``) or 3D ``[B, rows, dim]`` (``predicted``
+        shape ``[B, s_dim]``).  The 3D path returns the mean of the
+        per-row cosine distances.
+
         The predictor consumes S only (Task 5.3), so the comparison
         is also S-only: the W rows of ``_assemble`` are still used by
         the contrastive loss, but this loss only scores the symbolic
@@ -3532,30 +3703,55 @@ class InterSentenceLayer(Layer):
         """
         if predicted is None:
             return None
-        # Take the S rows only from the assembled snapshot and flatten
-        # to match the predictor's [s_dim] output shape.
         actual = self._assemble(s_tensor, w_tensor)
-        actual_flat = actual[:self.n_symbols].reshape(-1)
-        pred_flat = predicted.reshape(-1)
-        sim = F.cosine_similarity(
-            pred_flat.unsqueeze(0), actual_flat.unsqueeze(0))
-        return (1.0 - sim).squeeze()
+        if actual.ndim == 2:
+            # Legacy B=1: [n_sentence, n_dim] -> [s_dim]
+            actual_flat = actual[:self.n_symbols].reshape(-1)
+            pred_flat = predicted.reshape(-1)
+            sim = F.cosine_similarity(
+                pred_flat.unsqueeze(0), actual_flat.unsqueeze(0))
+            return (1.0 - sim).squeeze()
+        B = actual.shape[0]
+        if self._batch == 1 and B != 1:
+            # Legacy fallback: pool the input batch into one row and
+            # compare against the (single) stored prediction.
+            actual_pooled = actual.mean(dim=0)
+            actual_flat = actual_pooled[:self.n_symbols].reshape(-1)
+            pred_flat = predicted.reshape(-1)
+            sim = F.cosine_similarity(
+                pred_flat.unsqueeze(0), actual_flat.unsqueeze(0))
+            return (1.0 - sim).squeeze()
+        # 3D batched: [B, n_sentence, n_dim] -> [B, s_dim]
+        actual_flat = actual[:, :self.n_symbols, :].reshape(B, -1)
+        if predicted.ndim == 1:
+            # Single prediction broadcast across the batch.
+            pred_flat = predicted.reshape(1, -1).expand(B, -1)
+        else:
+            pred_flat = predicted.reshape(B, -1)
+        sim = F.cosine_similarity(pred_flat, actual_flat, dim=-1)  # [B]
+        return (1.0 - sim).mean()
 
     def prime(self, predicted, confidence, scale):
         """Cast a predicted snapshot into concept space and gate it.
 
-        Returns ``cast(predicted) * confidence * scale`` as a tensor
-        of shape ``[concept_dim]``, or ``None`` when inputs are
-        missing or the cast is not built.  Caller is responsible for
-        broadcasting across batch/position axes of ``concept_input``.
+        Returns ``cast(predicted) * confidence * scale``.  Shape is
+        ``[concept_dim]`` for 1D ``predicted`` (single row) and
+        ``[B, concept_dim]`` for 2D ``predicted`` (batched
+        per-row predictions).  Returns ``None`` when inputs are
+        missing or the cast is not built.
         """
         if (self.cast is None
                 or predicted is None
                 or confidence is None):
             return None
-        # cast expects a 2D [B, in]; wrap and unwrap the singleton.
-        cast_out = self.cast(predicted.unsqueeze(0)).squeeze(0)
-        return cast_out * confidence * float(scale)
+        if predicted.ndim == 1:
+            # cast expects a 2D [B, in]; wrap and unwrap the singleton.
+            cast_out = self.cast(predicted.unsqueeze(0)).squeeze(0)
+            return cast_out * confidence * float(scale)
+        # Batched: cast operates on [B, s_dim] -> [B, concept_dim].
+        cast_out = self.cast(predicted)
+        # Confidence is [B]; broadcast over concept_dim.
+        return cast_out * confidence.unsqueeze(-1) * float(scale)
 
 
 class ChunkLayer(Layer):

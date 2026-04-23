@@ -976,53 +976,6 @@ class TestWordSpaceServiceLayer(_GrammarTestBase):
         self.assertEqual(blocks[0]['rule_id'], 1)
 
 
-class TestParseDerivationToXml(_GrammarTestBase):
-    """parse.derivation_to_xml accepts WordSubSpace blocks."""
-
-    def setUp(self):
-        self.model, self.grammar = _make_model()
-        from parse import (
-            derivation_to_xml, derivation_to_xml_from_wordspace,
-            _normalize_word, _is_terminal,
-        )
-        self.derivation_to_xml = derivation_to_xml
-        self.derivation_to_xml_from_wordspace = derivation_to_xml_from_wordspace
-        self._normalize_word = _normalize_word
-        self._is_terminal = _is_terminal
-
-    def _find_rule(self, name, arity=None):
-        for i, r in enumerate(self.grammar.rules):
-            if r.method_name == name and (arity is None or r.arity == arity):
-                return i
-        return None
-
-    def test_normalize_word_accepts_block_dict(self):
-        """_normalize_word handles a WordSubSpace block dict."""
-        block = {'start': 0, 'rule_id': 5, 'leaves': (1, 2, -1)}
-        rid, vec, leaves = self._normalize_word(block, self.grammar)
-        self.assertEqual(rid, 5)
-        self.assertIsNone(vec)
-        self.assertEqual(leaves, (1, 2, -1))
-
-    def test_xml_from_wordspace_round_trip(self):
-        """Push a unary and a binary rule, render, expect tags in the output."""
-        word_space = self.model.wordSpace
-        if word_space is None:
-            self.skipTest("WordSpace not built for this model")
-        word_space.clear_sentence()
-        # Pick a unary symbolic rule (e.g. true) and a binary one (e.g. conjunction)
-        true_rid = self._find_rule('true', arity=1)
-        conj_rid = self._find_rule('conjunction', arity=2)
-        if true_rid is None or conj_rid is None:
-            self.skipTest("required rules not present in this grammar")
-        word_space.subspace.push(0, true_rid, leaves=(-1, -1, -1))
-        word_space.subspace.push(0, conj_rid, leaves=(true_rid, true_rid, -1))
-        xml = self.derivation_to_xml_from_wordspace(
-            word_space, self.grammar, batch=0)
-        self.assertIn('<true', xml)
-        self.assertIn('<conjunction', xml)
-
-
 class TestNoCycleInModuleTree(_GrammarTestBase):
     """Regression guard: WordSpace wiring must not create an nn.Module cycle.
 

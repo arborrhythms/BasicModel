@@ -65,13 +65,18 @@ def test_sequential_builds_pipeline_fwd_and_rev():
 
 
 def test_sequential_unrolls_conceptual_order():
-    """Pipeline has T (conceptualOrder) conceptual+symbolic stage pairs."""
+    """Pipeline has T (conceptualOrder) conceptual+symbolic stage pairs.
+
+    The microbatch-AR pipeline buries the per-stage modules inside a
+    FlattenKWrapper-wrapped Sequential body, so this walks the module
+    tree rather than the top-level pipeline list.
+    """
     model = _model()
     T = len(model.conceptualSpaces)
-    modules = list(model.pipeline_fwd)
     from Spaces import ConceptualSpace, SymbolicSpace
-    cs_count = sum(1 for m in modules if isinstance(m, ConceptualSpace))
-    ss_count = sum(1 for m in modules if isinstance(m, SymbolicSpace))
+    all_modules = list(model.pipeline_fwd.modules())
+    cs_count = sum(1 for m in all_modules if isinstance(m, ConceptualSpace))
+    ss_count = sum(1 for m in all_modules if isinstance(m, SymbolicSpace))
     assert cs_count == T, f"expected {T} ConceptualSpaces, got {cs_count}"
     assert ss_count == T, f"expected {T} SymbolicSpaces, got {ss_count}"
 
@@ -94,14 +99,20 @@ def test_sequential_reconstruction_produced():
         "reversible model.reverse() must produce a reconstruction")
 
 
-def test_sequential_ar_mode_produces_prediction_list():
-    """AR mode returns a list of per-position predictions."""
+def test_sequential_ar_mode_produces_prediction_tensor():
+    """AR mode returns a [B, K, N, predDim] tensor (microbatch path).
+
+    The legacy serial AR loop returned a Python list of per-position
+    [B, N, predDim] tensors; the microbatch refactor replaced that with
+    a single emit of all K windows in parallel.
+    """
     model = _model(masked_prediction='ARLM')
     out = model.forward(_xor_input())
     predictions = out[2]
-    assert isinstance(predictions, list), (
-        f"AR mode expected predictions to be list, got {type(predictions).__name__}")
-    assert len(predictions) >= 1
+    assert isinstance(predictions, torch.Tensor), (
+        f"AR mode expected predictions tensor, got {type(predictions).__name__}")
+    assert predictions.dim() == 4, (
+        f"AR predictions must be [B, K, N, predDim], got shape {tuple(predictions.shape)}")
 
 
 def test_basic_model_ar_sequential_path():
@@ -116,33 +127,35 @@ def test_basic_model_ar_sequential_path():
     model.masked_prediction = 'ARLM'
     out = model.forward(_xor_input())
     preds = out[2]
-    assert isinstance(preds, list), (
-        f"BasicModel AR should return list, got {type(preds).__name__}")
-    assert len(preds) >= 1
+    assert isinstance(preds, torch.Tensor), (
+        f"BasicModel AR should return tensor, got {type(preds).__name__}")
+    assert preds.dim() == 4, (
+        f"AR predictions must be [B, K, N, predDim], got shape {tuple(preds.shape)}")
 
 
-def test_input_space_null_byte_check_logic():
-    """Null-byte sentinel: all-zero embedding → empty subspace.
+def test_input_space_null_byte_emits_zero_validity():
+    """All-zero target embeddings produce False entries in valid_mask_bk.
 
-    Unit-tests the detection logic directly, since AR inference (which
-    feeds predictions back into input) is not wired yet. Simulates a
-    cached embedding where position 1 is all zeros.
+    The legacy per-call slide loop emitted a sentinel empty subspace
+    when the just-slid token was null. The microbatch path produces all
+    K windows in one call and tags each with [B, K] validity instead;
+    every all-zero target row should map to False.
     """
     import torch as _t
     model = _model(masked_prediction='ARLM')
     inp = model.inputSpace
-    # Prime the AR streaming state directly (bypass first-call lex/embed).
-    inp._seq_cursor = 2  # about to emit position 2
-    inp._ar_total = 3
-    inp._ar_embedded = _t.tensor(
+    # Stub the embed step so InputSpace.forward runs the unfold/mask path
+    # against a tensor we control directly.
+    inp._lex_and_embed = lambda _x: inp.subspace
+    embedded = _t.tensor(
         [[[0.1, 0.2],
-          [0.0, 0.0],   # position 1: null-byte embedding (about to slide)
+          [0.0, 0.0],
           [0.3, 0.4]]],
         dtype=_t.float32,
     )
-    inp._ar_buffer = None
-    # cursor>0 → checks embedded[:, cursor-1, :] which is position 1 (all zeros).
-    result = inp.forward(_xor_input())
-    assert result.is_empty(), (
-        "InputSpace should emit empty sentinel when the just-slid token "
-        "is all-zero (null-byte sentinel)")
+    inp.subspace.set_event(embedded)
+    sub = inp.forward(_xor_input())
+    assert sub.k_axis is True
+    assert sub.valid_mask_bk is not None
+    # Position 1's target embedding is all zeros → that window is invalid.
+    assert sub.valid_mask_bk[0, 1].item() is False

@@ -38,7 +38,7 @@ with specifically-characterized information (concrete details)
 ## Future Work: Parsed Training Dataset
 It is desirable to create a small training and testing dataset for the network consisting of statements that are already parsed. This would allow direct comparison between the grammatical derivation produced by traditional English parsers and the deep structure produced by BasicModel's ConceptualSyntacticLayer.
 
-* See `bin/parse.py` as a starting point for producing grammatical derivations via NLTK POS tagging and CFG parsing.
+* `bin/parse.py` now holds only tokenization and model-derivation-to-XML helpers; English POS tagging has been removed. A future parsed-training dataset would need an external tagger integrated at data-prep time.
 * Such a dataset would also enable evaluation of head identification accuracy and composition quality.
 
 

@@ -11,7 +11,6 @@ Exercises:
 import os
 import sys
 import unittest
-import importlib.util
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
@@ -30,8 +29,6 @@ if _TEST not in sys.path:
 import Models
 
 from test_basicmodel import _populate_test_config, _obj_size
-
-_HAS_NLTK = importlib.util.find_spec("nltk") is not None
 
 # ---------------------------------------------------------------------------
 # Config parsing
@@ -470,147 +467,6 @@ class TestNullEOS(unittest.TestCase):
             text, expected,
             f"Trailing \\x00 slots should collapse to one terminator; expected {expected!r}, got {text!r}",
         )
-
-
-# ---------------------------------------------------------------------------
-# Tokenization: word-space-word-space-word pattern
-# ---------------------------------------------------------------------------
-
-class TestXORTokenization(unittest.TestCase):
-    """Verify Lex tokenizes XOR sentences as word-space-word-space-word.
-
-    Each XOR sentence ("zero xor zero", "one xor one", etc.) consists of
-    three alphabetic words separated by single spaces.  The Lex tokenizer
-    should:
-
-    1. Identify exactly 3 WORD tokens per sentence (no SEPARATOR, no PUNCT).
-    2. Reconstruct the original text as word + ' ' + word + ' ' + word by
-       joining the token texts with a space character -- verifying that
-       round-trip fidelity holds and the spaces are the only glue.
-    3. Accept a SEPARATOR-terminated version so it parses under sentence.cfg
-       as a complete sentence (SENT -> WORDS SEPARATOR).
-    """
-
-    XOR_SENTENCES = [
-        "zero xor zero",
-        "zero xor one",
-        "one xor zero",
-        "one xor one",
-    ]
-
-    @classmethod
-    def setUpClass(cls):
-        import sys, os
-        _BIN = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
-        if _BIN not in sys.path:
-            sys.path.insert(0, _BIN)
-        from lex import Lex
-        cls.Lex = Lex
-
-    def _lex_sentence(self, text):
-        """Return all tokens from lex_buffer for *text*."""
-        lex = self.Lex()
-        return lex.lex_buffer(text, 0)
-
-    def test_three_word_tokens_per_sentence(self):
-        """Each XOR sentence yields exactly 3 WORD tokens and 2 SPACE tokens, 0 SEPARATOR.
-
-        Pattern: WORD SPACE WORD SPACE WORD -- 5 tokens total, one sentence.
-        """
-        for sentence in self.XOR_SENTENCES:
-            tokens = self._lex_sentence(sentence)
-            word_tokens  = [t for t in tokens if t["category"] == "WORD"]
-            space_tokens = [t for t in tokens if t["category"] == "SPACE"]
-            other_tokens = [t for t in tokens
-                            if t["category"] not in ("WORD", "SPACE")]
-            self.assertEqual(
-                len(word_tokens), 3,
-                f"{sentence!r}: expected 3 WORD tokens, got {len(word_tokens)}: {word_tokens}",
-            )
-            self.assertEqual(
-                len(space_tokens), 2,
-                f"{sentence!r}: expected 2 SPACE tokens, got {len(space_tokens)}: {space_tokens}",
-            )
-            self.assertEqual(
-                len(other_tokens), 0,
-                f"{sentence!r}: unexpected non-WORD/SPACE tokens: {other_tokens}",
-            )
-
-    def test_word_space_word_space_word_round_trip(self):
-        """Concatenating all token texts (WORD + SPACE interleaved) reproduces the original.
-
-        Pattern: word + SPACE + word + SPACE + word -- spaces are predicted tokens,
-        not auto-inserted glue.  Round-trip uses ''.join(), not ' '.join().
-        """
-        for sentence in self.XOR_SENTENCES:
-            tokens = self._lex_sentence(sentence)
-            reconstructed = "".join(t["text"] for t in tokens)
-            self.assertEqual(
-                reconstructed, sentence,
-                f"Round-trip failed for {sentence!r}: got {reconstructed!r}",
-            )
-
-    def test_token_texts_are_xor_vocabulary_words(self):
-        """WORD token texts are exactly the XOR vocabulary: 'zero', 'one', 'xor'.
-        SPACE token texts are single space characters.
-        """
-        xor_vocab = {"zero", "one", "xor"}
-        for sentence in self.XOR_SENTENCES:
-            tokens = self._lex_sentence(sentence)
-            for tok in tokens:
-                if tok["category"] == "WORD":
-                    self.assertIn(
-                        tok["text"], xor_vocab,
-                        f"{sentence!r}: unexpected WORD token {tok['text']!r}",
-                    )
-                else:
-                    self.assertEqual(
-                        tok["text"], " ",
-                        f"{sentence!r}: SPACE token text should be ' ', got {tok['text']!r}",
-                    )
-
-    def test_separates_into_left_op_right(self):
-        """XOR sentences follow A xor B structure: WORD[0]='A', WORD[1]='xor', WORD[2]='B'."""
-        for sentence in self.XOR_SENTENCES:
-            tokens = self._lex_sentence(sentence)
-            words = [t["text"] for t in tokens if t["category"] == "WORD"]
-            self.assertEqual(len(words), 3)
-            self.assertEqual(words[1], "xor",
-                             f"{sentence!r}: middle WORD should be 'xor', got {words[1]!r}")
-            self.assertIn(words[0], ("zero", "one"),
-                          f"{sentence!r}: left operand {words[0]!r} not in {{zero, one}}")
-            self.assertIn(words[2], ("zero", "one"),
-                          f"{sentence!r}: right operand {words[2]!r} not in {{zero, one}}")
-
-    @unittest.skipIf(not _HAS_NLTK, "nltk not available")
-    def test_sentence_cfg_parses_with_separator(self):
-        """Token categories match sentence.cfg grammar when a SEPARATOR is appended.
-
-        sentence.cfg: SENT -> WORDS SEPARATOR; WORDS -> WORDS SPACE WORD | WORD
-        The XOR sentences have pattern WORD SPACE WORD SPACE WORD; appending a
-        SEPARATOR makes them parseable as a complete sentence.
-        """
-        from nltk.grammar import CFG
-        from nltk.parse.earleychart import EarleyChartParser
-
-        import os
-        cfg_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "data", "sentence.cfg",
-        )
-        grammar = CFG.fromstring(open(cfg_path).read())
-        parser = EarleyChartParser(grammar)
-
-        for sentence in self.XOR_SENTENCES:
-            tokens = self._lex_sentence(sentence)
-            # sentence.cfg includes SPACE as an explicit non-terminal between words
-            categories = [t["category"] for t in tokens] + ["SEPARATOR"]
-            trees = list(parser.parse(categories))
-            self.assertGreater(
-                len(trees), 0,
-                f"{sentence!r} + '.' did not parse under sentence.cfg "
-                f"(categories: {categories})",
-            )
 
 
 if __name__ == "__main__":

@@ -141,10 +141,12 @@ def test_arlm_forward_returns_predictions_list_and_no_reconstruction():
 
         assert len(out) == 4, f"expected 4-tuple return, got {len(out)}"
         _, _, predictions, reconstruction = out
-        assert isinstance(predictions, list), \
-            f"ARLM must return a list of predictions, got {type(predictions)}"
-        assert len(predictions) > 0, \
-            "ARLM must emit at least one per-pos prediction"
+        assert isinstance(predictions, torch.Tensor), \
+            f"ARLM must return a [B, K, N, predDim] tensor, got {type(predictions)}"
+        assert predictions.dim() == 4, \
+            f"ARLM predictions must be 4D [B, K, N, predDim], got {tuple(predictions.shape)}"
+        assert predictions.shape[1] > 0, \
+            "ARLM must emit at least one per-cursor prediction (K > 0)"
         assert reconstruction is None, \
             "ARLM must not produce a reconstruction"
     finally:
@@ -274,8 +276,9 @@ def test_basicmodel_arlm_runbatch_uses_streaming_predictions():
                     train=False, batchNum=0, batchSize=1, split="train",
                     batch_override=(x, y))
 
-        assert isinstance(predictions, list)
-        assert len(predictions) > 0
+        assert isinstance(predictions, torch.Tensor)
+        assert predictions.dim() == 4
+        assert predictions.shape[1] > 0
         assert reconstruction is None
         assert result is not None
         assert result.lossOut is not None

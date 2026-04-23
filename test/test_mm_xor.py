@@ -70,6 +70,7 @@ class TestMMXorConvergence(unittest.TestCase):
         import matplotlib
         matplotlib.use('Agg')
 
+        torch.manual_seed(13)
         m, cfg, data = _fresh_model()
         cls.model = m
         cls.data = data

@@ -27,7 +27,7 @@ from Layers import Layer, PiLayer, SigmaLayer, ButterflyStage  # Import custom l
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, ChunkLayer
 from Layers import ColumnUsageTracker, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import SortingLayer, TruthLayer, LiftingLayer, InterSentenceLayer, SparsityRegularizer, SmoothingRegularizer, ImpenetrableLayer
-from parse import quick_parser
+from util import parse
 from collections import namedtuple as _namedtuple
 
 
@@ -1081,16 +1081,21 @@ class SyntacticLayer(Layer):
             cand_norm = candidate.norm(dim=-1)    # [B]
             drop_threshold = self._QUERY_NORM_DROP_RATIO * prev_norm
             query_mask = (prev_norm > 1e-6) & (cand_norm < drop_threshold)
+            # One sync per tensor per d-step, not per b-row.
+            query_mask_list = query_mask.tolist()
+            best = probs_d.argmax(dim=-1)
+            best_list = best.tolist()
             if query_mask.any():
                 mask_exp = query_mask.unsqueeze(-1).expand_as(candidate)
                 composed = torch.where(mask_exp, left, candidate)
                 best_for_push = probs_d.argmax(dim=-1)
+                best_push_list = best_for_push.tolist()
                 word_sub = getattr(self, 'word_subspace', None)
                 for b in range(B):
-                    if not bool(query_mask[b].item()):
+                    if not query_mask_list[b]:
                         continue
                     left_rid = last_rule_per_batch[b]
-                    right_rid = int(best_for_push[b].item())
+                    right_rid = best_push_list[b]
                     right_gid = all_rules[right_rid] if right_rid < len(all_rules) else -1
                     if query_rid is not None and word_sub is not None:
                         word_sub.push(b, query_rid,
@@ -1098,13 +1103,12 @@ class SyntacticLayer(Layer):
             else:
                 composed = candidate
 
-            best = probs_d.argmax(dim=-1)
             for b in range(B):
                 if d < len(active_positions[b]):
-                    subspace.add_word(b, active_positions[b][d],
-                                      all_rules[best[b].item()])
-                    if not bool(query_mask[b].item()):
-                        last_rule_per_batch[b] = all_rules[best[b].item()]
+                    best_gid = all_rules[best_list[b]]
+                    subspace.add_word(b, active_positions[b][d], best_gid)
+                    if not query_mask_list[b]:
+                        last_rule_per_batch[b] = best_gid
 
         return composed
 
@@ -1153,10 +1157,12 @@ class SyntacticLayer(Layer):
         Returns (pair_tensor [B, P_max, 2, D], list[list[(l, r)]]).
         """
         B, N, D = live.shape
+        # One sync to bring the alive mask to Python; inner scan is free.
+        alive_list = alive.tolist()
         batch_pairs = []
         max_P = 0
         for b in range(B):
-            positions = [i for i in range(N) if bool(alive[b, i].item())]
+            positions = [i for i in range(N) if alive_list[b][i]]
             pairs = list(zip(positions[:-1], positions[1:]))
             batch_pairs.append(pairs)
             max_P = max(max_P, len(pairs))
@@ -1364,10 +1370,13 @@ class SyntacticLayer(Layer):
             # is a wildcard -- unseeded leaves match any typed rule.
             P_here, R_here = pair_tensor.shape[1], len(composable_global)
             compat = torch.zeros(B, P_here, R_here, device=data.device)
+            # One sync for the whole category tensor; inner lookups are free.
+            category_list = category.tolist()
             for b in range(B):
+                cat_row = category_list[b]
                 for p, (ls, rs) in enumerate(pair_positions[b]):
-                    cl = int(category[b, ls].item())
-                    cr = int(category[b, rs].item())
+                    cl = cat_row[ls]
+                    cr = cat_row[rs]
                     for r, (lhs_req, rhs_req) in enumerate(rule_rhs_ids):
                         rhs_syms = grammar.rules[composable_global[r]].rhs_symbols
                         if rhs_syms is None:
@@ -1519,11 +1528,14 @@ class SyntacticLayer(Layer):
         cb_indices = self._leaf_cb_indices
         t_rid = self.transition_rule if self.transition_rule is not None else composable_global[0]
         if cb_indices is not None:
+            # One sync for the whole index tensor; inner lookups are free.
+            cb_indices_list = cb_indices.tolist()
             for b in range(B):
+                cb_row = cb_indices_list[b]
                 for i, pos in enumerate(active_positions[b]):
                     if i < max_leaves:
                         subspace.add_word(b, pos, t_rid, order=-1,
-                                          leaf1=cb_indices[b, pos].item())
+                                          leaf1=cb_row[pos])
 
         masks = torch.zeros(B, max_leaves, N, device=data.device)
         for b in range(B):
@@ -1594,15 +1606,18 @@ class SyntacticLayer(Layer):
             cand_norm = candidate.reshape(B, -1).norm(dim=-1)
             drop_threshold = self._QUERY_NORM_DROP_RATIO * prev_norm
             query_mask = (prev_norm > 1e-6) & (cand_norm < drop_threshold)
+            # One sync per tensor per d-step, not per b-row.
+            query_mask_list = query_mask.tolist()
+            best_list = best.tolist()
             if query_mask.any():
                 mask_exp = query_mask.view(B, 1, 1).expand_as(candidate)
                 composed = torch.where(mask_exp, left, candidate)
                 word_sub = getattr(self, 'word_subspace', None)
                 for b in range(B):
-                    if not bool(query_mask[b].item()):
+                    if not query_mask_list[b]:
                         continue
                     left_rid = last_rule_per_batch[b]
-                    right_gid = composable_global[int(best[b].item())]
+                    right_gid = composable_global[best_list[b]]
                     if query_rid is not None and word_sub is not None:
                         word_sub.push(b, query_rid,
                                       leaves=(left_rid, right_gid, -1))
@@ -1610,15 +1625,16 @@ class SyntacticLayer(Layer):
                 composed = candidate
 
             # Record argmax rule as word
-            best_global = composable_global[int(best[0].item())]
+            best_global = composable_global[best_list[0]]
             for b in range(B):
                 if d < len(active_positions[b]):
+                    best_gid_b = composable_global[best_list[b]]
                     subspace.add_word(
                         b,
                         active_positions[b][min(d, len(active_positions[b]) - 1)],
-                        composable_global[int(best[b].item())])
-                    if not bool(query_mask[b].item()):
-                        last_rule_per_batch[b] = composable_global[int(best[b].item())]
+                        best_gid_b)
+                    if not query_mask_list[b]:
+                        last_rule_per_batch[b] = best_gid_b
 
             best_arity = grammar.arity(best_global)
             leaf_idx += (2 if best_arity == 3 and has_third else 1)
@@ -1661,10 +1677,13 @@ class SyntacticLayer(Layer):
         cb_indices = self._leaf_cb_indices
         t_rid = self.transition_rule if self.transition_rule is not None else composable_global[0]
         if cb_indices is not None:
+            # One sync for the whole index tensor; inner lookups are free.
+            cb_indices_list = cb_indices.tolist()
             for b in range(B):
+                cb_row = cb_indices_list[b]
                 for pos in active[b]:
                     subspace.add_word(b, pos, t_rid, order=-1,
-                                      leaf1=cb_indices[b, pos].item())
+                                      leaf1=cb_row[pos])
 
         d = 0
         while d < self.max_depth:
@@ -1775,51 +1794,98 @@ class SyntacticLayer(Layer):
 
 
 class PoSStack:
-    """Ordered push/pop stack of PoS vectors, fixed dim per row."""
+    """Per-row push/pop stack of PoS vectors. List-of-lists backing for B>1.
 
-    def __init__(self, dim):
-        self._dim = dim
-        self._entries = []
+    Storage is one Python list per batch row (``self._entries[b]``).
+    The spec proposed a ``[B, max_depth, dim]`` tensor backing, but
+    in-place ``__setitem__`` on a non-grad tensor breaks autograd
+    propagation back to the pushed vec — and the rule-predictor
+    gradient test depends on that propagation. List-of-lists preserves
+    autograd through ``torch.cat`` in ``flatten`` while still giving
+    per-row isolation under microbatch ``B*K`` rows.
+    """
 
-    def push(self, vec):
+    def __init__(self, dim, batch=1, max_depth=64):
+        self._dim = int(dim)
+        self._batch = int(batch)
+        self._max_depth = int(max_depth)
+        self._entries = [[] for _ in range(self._batch)]
+
+    def ensure_batch(self, batch):
+        batch = int(batch)
+        if batch == self._batch:
+            return
+        self._batch = batch
+        self._entries = [[] for _ in range(self._batch)]
+
+    def push(self, b, vec):
         assert vec.shape == (self._dim,), (
             f"PoSStack dim={self._dim}, got vec shape {tuple(vec.shape)}"
         )
-        self._entries.append(vec)
+        assert len(self._entries[b]) < self._max_depth, (
+            f"PoSStack overflow at row {b}: max_depth={self._max_depth}"
+        )
+        self._entries[b].append(vec)
 
-    def pop(self):
-        return self._entries.pop()
+    def pop(self, b):
+        return self._entries[b].pop()
 
-    def depth(self):
-        return len(self._entries)
+    def depth(self, b):
+        return len(self._entries[b])
 
-    def flatten(self):
-        if not self._entries:
+    def flatten(self, b):
+        if not self._entries[b]:
             return torch.zeros(0)
-        return torch.cat(self._entries, dim=0)
+        return torch.cat(self._entries[b], dim=0)
 
 
 class ReconstructionStack:
-    """Tuple stack of (rule_id, word_id) entries for surface reconstruction.
+    """Per-row tuple stack of (rule_id, word_id). Tensor-backed for B>1.
 
-    Temporary placeholder until generation-from-meaning is solved. Not
-    consumed by the rule predictor or sentence prediction.
+    Storage is ``[B, max_depth, 2] long`` with a ``[B] long`` top index.
+    Push-only in production today; peek/pop kept for tests and future
+    generation-from-meaning consumers. Not consumed by the rule
+    predictor or sentence prediction.
     """
 
-    def __init__(self):
-        self._entries = []
+    def __init__(self, batch=1, max_depth=64):
+        self._batch = int(batch)
+        self._max_depth = int(max_depth)
+        self._entries = torch.zeros(self._batch, self._max_depth, 2,
+                                    dtype=torch.long)
+        self._top = torch.zeros(self._batch, dtype=torch.long)
 
-    def push(self, rule_id, word_id):
-        self._entries.append((int(rule_id), int(word_id)))
+    def ensure_batch(self, batch):
+        batch = int(batch)
+        if batch == self._batch:
+            return
+        self._batch = batch
+        self._entries = torch.zeros(batch, self._max_depth, 2,
+                                    dtype=torch.long)
+        self._top = torch.zeros(batch, dtype=torch.long)
 
-    def peek(self):
-        return self._entries[-1]
+    def push(self, b, rule_id, word_id):
+        idx = int(self._top[b].item())
+        assert idx < self._max_depth, (
+            f"ReconstructionStack overflow at row {b}: max_depth={self._max_depth}"
+        )
+        self._entries[b, idx, 0] = int(rule_id)
+        self._entries[b, idx, 1] = int(word_id)
+        self._top[b] += 1
 
-    def pop(self):
-        return self._entries.pop()
+    def peek(self, b):
+        idx = int(self._top[b].item()) - 1
+        return (int(self._entries[b, idx, 0].item()),
+                int(self._entries[b, idx, 1].item()))
 
-    def depth(self):
-        return len(self._entries)
+    def pop(self, b):
+        self._top[b] -= 1
+        idx = int(self._top[b].item())
+        return (int(self._entries[b, idx, 0].item()),
+                int(self._entries[b, idx, 1].item()))
+
+    def depth(self, b):
+        return int(self._top[b].item())
 
 
 class WordSpace(Space):
@@ -2015,35 +2081,140 @@ class WordSpace(Space):
                     if all(p is not q for q in self.params):
                         self.params.append(p)
 
-        # -- pipeline-carried state ---------------------------------------
-        # last_svo: (subject, verb, object) snapshot from the most recent
-        # chart-compose trace. Written by ConceptualSpace.forward via
-        # ``vspace.wordSpace.last_svo = ...``; read by SyntacticLayer and
-        # truth-store consumers. Cleared by Reset() on sentence boundary.
-        self.last_svo = None
+        # -- pipeline-carried per-batch state -----------------------------
+        # batch / svo_dim track the per-row state allocations below.
+        # ensure_batch() resizes them in step.
+        self.batch = 1
+        self.svo_dim = int(symbol_dim)
 
-        # STM-residual: fires once per sentence on the first
-        # stm_residual() call; Reset() re-arms the flag.
-        self._stm_fired = False
+        # last_svo: (subject, verb, object) snapshot from the most recent
+        # chart-compose trace. Stored as [B, 3, svo_dim] + a [B] bool valid
+        # mask so each batch row is independent. Written via set_last_svo;
+        # cleared by clear_last_svo (also at Reset on sentence boundary).
+        # Registered as buffers so .to(device) moves them with the module.
+        self.register_buffer(
+            "_last_svo", torch.zeros(self.batch, 3, self.svo_dim))
+        self.register_buffer(
+            "_svo_valid", torch.zeros(self.batch, dtype=torch.bool))
+
+        # STM-residual: fires once per sentence per row on the first
+        # stm_residual(b) call; arm_stm() / Reset() re-arm. Buffer for
+        # device-tracking parity with the SVO state above.
+        self.register_buffer(
+            "_stm_fired", torch.zeros(self.batch, dtype=torch.bool))
         self.stm_residual_scale = float(
             TheXMLConfig.training("sentencePrimingScale", 0.05) or 0.05)
 
-    def stm_residual(self):
-        """Discourse prediction bias applied once per sentence.
+    # -- per-row last_svo accessors ---------------------------------------
+    def set_last_svo(self, b, subj, verb, obj):
+        """Write the SVO triple for batch row ``b``."""
+        self._last_svo[b, 0] = subj
+        self._last_svo[b, 1] = verb
+        self._last_svo[b, 2] = obj
+        self._svo_valid[b] = True
+
+    def get_last_svo(self, b):
+        """Return ``(subj, verb, obj)`` tensors for batch row ``b``."""
+        e = self._last_svo[b]
+        return e[0], e[1], e[2]
+
+    def svo_valid(self, b):
+        """True iff set_last_svo has fired for row ``b`` since last clear."""
+        return bool(self._svo_valid[b].item())
+
+    def clear_last_svo(self, b=None):
+        """Clear the SVO valid mask for row ``b`` (or all rows when None)."""
+        if b is None:
+            self._svo_valid.zero_()
+        else:
+            self._svo_valid[b] = False
+
+    # -- per-row STM-fired accessors --------------------------------------
+    def stm_fired(self, b):
+        """True iff stm_residual(b) has fired since last arm."""
+        return bool(self._stm_fired[b].item())
+
+    def mark_stm_fired(self, b):
+        """Mark row ``b`` as having fired its STM residual this sentence."""
+        self._stm_fired[b] = True
+
+    def arm_stm(self, b=None):
+        """Re-arm row ``b`` (or all rows when None) for the next sentence."""
+        if b is None:
+            self._stm_fired.zero_()
+        else:
+            self._stm_fired[b] = False
+
+    def stm_residual(self, b=0):
+        """Discourse prediction bias applied once per sentence per row.
 
         Reads ``self.discourse.predict()`` and returns
         ``discourse.prime(predicted, confidence, scale)``, or ``None`` when
         discourse is unavailable, not yet built, or the bias already fired
-        this sentence.  ``Reset()`` re-arms.
+        this sentence for row ``b``.  ``arm_stm(b)`` / ``Reset()`` re-arms.
+
+        ``b`` defaults to 0 for back-compat with single-row callers; the
+        Task 9 cutover threads the row index from the body iteration.
         """
-        if self._stm_fired:
+        if self.stm_fired(b):
             return None
-        self._stm_fired = True
+        self.mark_stm_fired(b)
         disc = self.discourse
         if disc is None:
             return None
         pred, conf = disc.predict()
         return disc.prime(pred, conf, self.stm_residual_scale)
+
+    def stm_residual_microbatch(self, B, K):
+        """Vectorized STM residual for the microbatch body.
+
+        For each source row ``b`` in ``[0, B)``: if ``_stm_fired[b]`` is
+        False, this call contributes one discourse-bias term that broadcasts
+        across all ``K`` windows derived from that source row.  Sources
+        already fired contribute zero.  After the call, every source that
+        contributed is marked fired.
+
+        Returns a ``[B*K, concept_dim]`` tensor, or ``None`` when discourse
+        is unavailable or every source row has already fired this sentence.
+
+        The call site (ConceptualSpace.forward) broadcasts the result over
+        the ``N`` axis via ``bias.unsqueeze(1)``.
+        """
+        BK = int(B) * int(K)
+        not_fired = ~self._stm_fired  # [B] bool
+        if not bool(not_fired.any().item()):
+            return None
+        disc = self.discourse
+        if disc is None:
+            return None
+        pred, conf = disc.predict()
+        if pred is None or conf is None:
+            return None
+        bias_full = disc.prime(pred, conf, self.stm_residual_scale)
+        if bias_full is None:
+            return None
+        # predict() returns 1D ``[s_dim]`` for B=1 layers and 2D ``[B*K,
+        # s_dim]`` for batched layers; prime() preserves that rank.  Lift
+        # 1D to a single-row 2D tensor so downstream broadcasting is uniform.
+        if bias_full.ndim == 1:
+            bias_full = bias_full.unsqueeze(0)
+        # Expand a single-row discourse output up to the body batch when
+        # discourse and body have diverged (legacy non-microbatch paths
+        # leave discourse at its construction batch).
+        if bias_full.shape[0] != BK:
+            if bias_full.shape[0] == 1:
+                bias_full = bias_full.expand(BK, -1).contiguous()
+            else:
+                # Mismatched and not broadcastable: keep semantics safe by
+                # skipping the bias rather than mis-broadcasting.
+                return None
+        # Gate per source row: each source's bias broadcasts to its K
+        # windows; sources already fired are masked to zero.
+        gate = not_fired.repeat_interleave(int(K)).to(bias_full.device)
+        bias_full = bias_full * gate.to(bias_full.dtype).unsqueeze(-1)
+        # Mark sources that contributed.
+        self._stm_fired = self._stm_fired | not_fired
+        return bias_full
 
     # -- PoS helpers --------------------------------------------------
     def pos_lookup(self, active_symbols):
@@ -2078,10 +2249,10 @@ class WordSpace(Space):
         return w[idx]
 
     # -- rule predictor ------------------------------------------------
-    def predict_rule(self):
-        """Emit softmax logits over the rule table from the full PoS stack.
+    def predict_rule(self, b=0):
+        """Emit softmax logits over the rule table from row ``b``'s PoS stack.
 
-        Reads ``self.pos_stack.flatten()`` as a 1-D tensor of length
+        Reads ``self.pos_stack.flatten(b)`` as a 1-D tensor of length
         ``depth * pos_dim``.  Zero-pads up to
         ``self._rule_predictor_in_features`` when the stack is shallower
         than ``max_depth``; truncates (keeping the most recent frames) when
@@ -2092,7 +2263,7 @@ class WordSpace(Space):
         assert self.rule_predictor[-1].out_features == len(TheGrammar.rule_table), (
             "Grammar reconfigured after WordSpace construction; rule_predictor stale"
         )
-        flat = self.pos_stack.flatten()
+        flat = self.pos_stack.flatten(b)
         target_len = self._rule_predictor_in_features
         numel = flat.numel()
         # Pick a device/dtype anchor that follows the rule_predictor, so
@@ -2116,24 +2287,24 @@ class WordSpace(Space):
             flat = flat[numel - target_len:]
         return self.rule_predictor(flat.unsqueeze(0)).squeeze(0)
 
-    def predict_rule_hard(self):
+    def predict_rule_hard(self, b=0):
         """Return argmax rule_id for inference.
 
         Detached from autograd (wraps predict_rule in no_grad). If gradients
         through the argmax path are ever needed (e.g., REINFORCE baseline,
-        Gumbel-argmax), call predict_rule().argmax() directly instead.
+        Gumbel-argmax), call predict_rule(b).argmax() directly instead.
         """
         with torch.no_grad():
-            return int(self.predict_rule().argmax().item())
+            return int(self.predict_rule(b).argmax().item())
 
     # -- reconstruction stack -----------------------------------------
-    def record_derivation(self, rule_id, word_id):
-        """Record a (rule_id, word_id) derivation step on the reconstruction stack.
+    def record_derivation(self, rule_id, word_id, b=0):
+        """Record a (rule_id, word_id) derivation step on row ``b``'s reconstruction stack.
 
         Placeholder surface until generation-from-meaning is solved. The
         stack is not consumed by the rule predictor or sentence prediction.
         """
-        self.reconstruction_stack.push(rule_id, word_id)
+        self.reconstruction_stack.push(b, rule_id, word_id)
 
     # -- truth-modulated loss -----------------------------------------
     def truth_modulated_loss(self, total_loss, symbolic_space,
@@ -2376,16 +2547,60 @@ class WordSpace(Space):
         """Per-sentence teardown called by runBatch's Reset cascade."""
         super().Reset()
         self.clear_sentence()
-        # Re-arm the STM residual so the next sentence fires once; drop
-        # the stale SVO so composed-chart readers don't carry it across
-        # sentence boundaries.
-        self._stm_fired = False
-        self.last_svo = None
+        # Re-arm STM residual on every row so the next sentence fires
+        # once per row; drop the stale per-row SVO so composed-chart
+        # readers don't carry it across sentence boundaries.
+        self.arm_stm()
+        self.clear_last_svo()
 
     def get_blocks(self, b=0):
         """Return the parse-tree ledger for batch row `b`."""
         return self.subspace.get_blocks(b)
 
     def ensure_batch(self, batch):
-        """Resize the underlying buffer to match a new batch size."""
+        """Resize the underlying buffer + per-batch stacks to a new batch size.
+
+        ensure_batch is the single fan-out point for every per-row buffer
+        WordSpace owns: the WordSubSpace event, the PoSStack /
+        ReconstructionStack stacks, and the Task-2 ``last_svo`` /
+        ``_stm_fired`` tensors.  Reallocates fresh storage; per-row state
+        is zeroed.
+        """
+        batch = int(batch)
+        if batch == self.batch:
+            # Cascade still runs in case callers grew their own state
+            # without going through the WordSpace.batch counter.
+            self.subspace.ensure_batch(batch)
+            self.pos_stack.ensure_batch(batch)
+            self.reconstruction_stack.ensure_batch(batch)
+            return
+        self.batch = batch
         self.subspace.ensure_batch(batch)
+        self.pos_stack.ensure_batch(batch)
+        self.reconstruction_stack.ensure_batch(batch)
+        # Keep the new buffers on the existing device so .to(device)
+        # invariants survive the resize.
+        device = self._last_svo.device
+        self._last_svo = torch.zeros(batch, 3, self.svo_dim, device=device)
+        self._svo_valid = torch.zeros(batch, dtype=torch.bool, device=device)
+        self._stm_fired = torch.zeros(batch, dtype=torch.bool, device=device)
+
+    def ensure_microbatch(self, B, K):
+        """Resize per-row state for the microbatch AR pipeline.
+
+        Body-side state (subspace, stacks, last_svo, svo_valid) is sized
+        to B*K — each window has its own row inside the body's flattened
+        view. _stm_fired stays at B because STM firing is a per-source-row
+        once-per-sentence event shared across all K windows of that row.
+        Discourse buffers (InterSentenceLayer) also stay at B: discourse
+        history accumulates across sentences within one source stream,
+        and all K windows of a stream share that history (the post-body
+        snapshot collapses K to mirror legacy last-cursor semantics).
+        """
+        BK = int(B) * int(K)
+        self.ensure_batch(BK)
+        device = self._stm_fired.device
+        if self._stm_fired.shape[0] != int(B):
+            self._stm_fired = torch.zeros(int(B), dtype=torch.bool, device=device)
+        if self.discourse is not None and hasattr(self.discourse, 'ensure_batch'):
+            self.discourse.ensure_batch(int(B))

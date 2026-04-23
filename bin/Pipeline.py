@@ -47,6 +47,9 @@ class CachePoint(nn.Module):
         self.last = subspace
         return subspace
 
+    def reverse(self, subspace):
+        return subspace
+
 
 class GrammarMergeGlue(nn.Module):
     """Progressive-bottleneck glue for useGrammar == 'all' mode.
@@ -94,5 +97,50 @@ class GrammarMergeGlue(nn.Module):
         subspace.set_event(expanded)
         self._merge_diff = None
         return subspace
+
+
+class FlattenKWrapper(nn.Module):
+    """Reshape [B, K, N, D] -> [B*K, N, D] for the inner body, then back.
+
+    Lets the body process all K microbatch windows in parallel. The body
+    sees a flat batch dim and operates as if there were no K axis. On
+    return we reshape to [B, K, N, Dout] (Dout may differ from D).
+    Autograd handles the back-view automatically.
+
+    Contract: when ``subspace.k_axis`` is True the input event has shape
+    [B, K, N, D]; we flatten to [B*K, N, D], invoke the body, then
+    restore [B, K, N, Dout] on the way out. When ``k_axis`` is False
+    (non-AR / legacy path) the wrapper is a transparent pass-through.
+    """
+
+    def __init__(self, body):
+        super().__init__()
+        self.body = body
+
+    def forward(self, subspace):
+        # Pass-through for non-microbatch paths (k_axis=False subspaces).
+        if not subspace.k_axis:
+            return self.body(subspace)
+        x = subspace.materialize()
+        assert x.dim() == 4, (
+            f"FlattenKWrapper expects [B,K,N,D], got shape {tuple(x.shape)}"
+        )
+        B, K, N, D = x.shape
+        flat = x.reshape(B * K, N, D)
+        subspace.set_event(flat)
+        subspace.k_axis = False
+        out = self.body(subspace)
+        y = out.materialize()
+        # Body may change N (e.g., butterfly N-halving) and D (e.g., head
+        # projection), but B*K must round-trip — the K axis is what we
+        # restore on the way out.
+        BK, Nout, Dout = y.shape
+        assert BK == B * K, (
+            f"FlattenKWrapper body changed batch dim: "
+            f"in [B*K,N,D]={(B * K, N, D)}, out shape {tuple(y.shape)}"
+        )
+        out.set_event(y.view(B, K, Nout, Dout))
+        out.k_axis = True
+        return out
 
 

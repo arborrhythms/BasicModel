@@ -1,11 +1,12 @@
-"""Word embedding pipeline: FineWeb-EDU -> lex -> parse -> CBOW -> BasicModel.kv
+"""Word embedding pipeline: FineWeb-EDU -> parse -> CBOW -> BasicModel.kv
 
 Training phase that produces a static word embedding artifact. InputSpace
 loads this artifact at startup -- it does not train.
 
 Pipeline stages:
   1. Stream text documents from FineWeb-EDU parquet shards
-  2. Lex + parse_buffer: tokenize words, group into sentences
+  2. parse(text, lex='sentences') then parse(sent, lex='words'):
+     split into sentences, then word tokens
   3. Build (target, context) training examples per sentence
   4. Train CBOW embeddings: predict target from mean of context vectors
   5. Save as WordVectors artifact (.kv, gensim-compatible KeyedVectors)
@@ -28,9 +29,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from typing import List, Tuple, Optional
 
-from util import atomic_torch_save
-
-from parse import parse_buffer, set_sentence_cfg
+from util import atomic_torch_save, parse
 import util
 
 
@@ -532,15 +531,11 @@ class StreamingSBOWTrainer:
 
     def scan_document(self, text):
         """Parse one document and count words (no training)."""
-        pos = 0
-        while pos < len(text):
-            result, next_pos = parse_buffer(text, pos)
-            if next_pos == pos:
-                break
-            pos = next_pos
-            for sent in result['sentences']:
-                for t in sent['tokens']:
-                    self.word_counts[t['text']] += 1
+        for sent_text, _ in parse(text, lex='sentences'):
+            for word, _ in parse(sent_text, lex='words'):
+                if word.isspace():
+                    continue
+                self.word_counts[word] += 1
 
     def build_vocab(self):
         """Promote words that meet min_count and allocate the model."""
@@ -559,16 +554,10 @@ class StreamingSBOWTrainer:
 
     def process_document(self, text):
         """Parse one document, train SBOW on each sentence immediately."""
-        pos = 0
-        while pos < len(text):
-            result, next_pos = parse_buffer(text, pos)
-            if next_pos == pos:
-                break
-            pos = next_pos
-
-            for sent in result['sentences']:
-                words = [t['text'] for t in sent['tokens']]
-                self._train_sentence(words)
+        for sent_text, _ in parse(text, lex='sentences'):
+            words = [w for w, _ in parse(sent_text, lex='words')
+                     if not w.isspace()]
+            self._train_sentence(words)
 
     def _train_sentence(self, words):
         """SBOW via negative sampling: predict each word from leave-one-out centroid."""
@@ -718,8 +707,6 @@ if __name__ == '__main__':
 
     # --- train subcommand ---
     train_p = sub.add_parser("train", help="Train CBOW embeddings from FineWeb-EDU")
-    train_p.add_argument('--config', default='data/sentence.cfg',
-                         help='Sentence grammar config used by parse_buffer')
     train_p.add_argument('--output', default='output/BasicModel.kv')
     train_p.add_argument('--data-dir', default=None)
     train_p.add_argument('--num-shards', type=int, default=1)
@@ -772,9 +759,6 @@ if __name__ == '__main__':
         data_dir = args.data_dir
         if data_dir is None:
             data_dir = str(Path(__file__).resolve().parent.parent / "data" / "fineweb")
-
-        print(f"Config: {args.config}")
-        set_sentence_cfg(args.config)
 
         shard_paths = get_shard_paths(data_dir, num_shards=args.num_shards,
                                       random_select=args.random_shards)

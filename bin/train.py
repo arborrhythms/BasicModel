@@ -151,7 +151,6 @@ def train_local(args):
     elif args.force_embeddings or not os.path.exists(emb_path):
         embed_cmd = [
             python, os.path.join(proj, "bin", "embed.py"), "train",
-            "--config", os.path.join(proj, "data", "sentence.cfg"),
             "--output", emb_path,
         ]
         if args.num_shards is not None:

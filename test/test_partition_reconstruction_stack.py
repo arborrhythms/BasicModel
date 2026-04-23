@@ -97,8 +97,8 @@ def test_reconstruction_stack_records_rule_and_word():
     ws = _make_word_space()
     ws.record_derivation(rule_id=3, word_id=7)
     ws.record_derivation(rule_id=1, word_id=9)
-    assert ws.reconstruction_stack.depth() == 2
-    top = ws.reconstruction_stack.peek()
+    assert ws.reconstruction_stack.depth(0) == 2
+    top = ws.reconstruction_stack.peek(0)
     assert top == (1, 9)
 
 
@@ -108,8 +108,8 @@ def test_reconstruction_stack_roundtrip():
     for rid, wid in entries:
         ws.record_derivation(rule_id=rid, word_id=wid)
     for rid, wid in reversed(entries):
-        assert ws.reconstruction_stack.pop() == (rid, wid)
-    assert ws.reconstruction_stack.depth() == 0
+        assert ws.reconstruction_stack.pop(0) == (rid, wid)
+    assert ws.reconstruction_stack.depth(0) == 0
 
 
 # ---------------------------------------------------------------------------

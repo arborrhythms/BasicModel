@@ -117,24 +117,24 @@ def test_pos_codebook_lookup_deterministic():
 def test_pos_stack_push_pop_roundtrip():
     ws = _make_word_space()
     v = torch.randn(4)
-    ws.pos_stack.push(v)
-    popped = ws.pos_stack.pop()
+    ws.pos_stack.push(0, v)
+    popped = ws.pos_stack.pop(0)
     assert torch.equal(popped, v)
 
 
 def test_pos_stack_depth_matches_push_count():
     ws = _make_word_space()
-    assert ws.pos_stack.depth() == 0
-    ws.pos_stack.push(torch.zeros(4))
-    ws.pos_stack.push(torch.zeros(4))
-    ws.pos_stack.push(torch.zeros(4))
-    assert ws.pos_stack.depth() == 3
+    assert ws.pos_stack.depth(0) == 0
+    ws.pos_stack.push(0, torch.zeros(4))
+    ws.pos_stack.push(0, torch.zeros(4))
+    ws.pos_stack.push(0, torch.zeros(4))
+    assert ws.pos_stack.depth(0) == 3
 
 
 def test_pos_stack_flatten_shape():
-    """flatten() returns [depth * nPoSDim] for rule predictor input."""
+    """flatten(b) returns [depth * nPoSDim] for rule predictor input."""
     ws = _make_word_space()
     for _ in range(5):
-        ws.pos_stack.push(torch.randn(4))
-    flat = ws.pos_stack.flatten()
+        ws.pos_stack.push(0, torch.randn(4))
+    flat = ws.pos_stack.flatten(0)
     assert flat.shape == (5 * 4,)

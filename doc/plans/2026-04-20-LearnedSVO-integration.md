@@ -35,7 +35,7 @@
 
 **Architecture:**
 
-- **Upward grammar** = forward chart compose. Typed rules (`S → S VO`, `VO → V O`) drive pair-selection merges; the per-batch derivation trace records `(rule_id, left, right, merged, merged_category)` tuples. This is Phase B/C of `doc/LearnedSVO.md`.
+- **Upward grammar** = forward chart compose. Typed rules (`S → S VO`, `VO → V O`) drive pair-selection merges; the per-batch derivation trace records `(rule_id, left, right, merged, merged_category)` tuples. This is Phase B/C of the "Design History: Learned SVO Plan" appendix in `doc/Language.md` (formerly `doc/LearnedSVO.md`).
 - **Downward grammar** = generation path on a deep symbolic state. The MVP rule `S → C` is "find the codebook atom that best matches the state, emit it as the head, residual = state − contained(head)." Richer rules (`S → NP VP`, `NP → DET N`) become emission templates once head lookup works.
 - **Two readers of one trace:** Phase D's SVO extraction and the downward generator both walk the same `_derivation_trace`. SVO looks for the outer `S → S VO` firing. The downward generator consumes the **final** composed state plus the category/residual machinery to emit surface tokens.
 - **Legacy coexists:** MEMORY says keep legacy code alongside new code; the chart compose + downward generator are gated behind `<WordSpace.chartCompose>` / `<WordSpace.downwardGeneration>` flags. Default configs keep the old behavior until these flags flip.

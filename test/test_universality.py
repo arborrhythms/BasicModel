@@ -179,7 +179,8 @@ class TestSVOIdentification(unittest.TestCase):
         conf = _get_lift_confidence(self.model, self.grammar)
         if conf < LIFT_CONFIDENCE_THRESHOLD:
             self.skipTest(f"lift confidence {conf:.3f} < {LIFT_CONFIDENCE_THRESHOLD}")
-        svo = self.model.wordSpace.last_svo
+        ws = self.model.wordSpace
+        svo = ws.get_last_svo(0) if ws.svo_valid(0) else None
         if svo is None:
             self.skipTest("ternary lift did not fire")
         s, v, o = svo
@@ -209,7 +210,8 @@ class TestSVOIdentification(unittest.TestCase):
         conf = _get_lift_confidence(self.model, self.grammar)
         if conf < LIFT_CONFIDENCE_THRESHOLD:
             self.skipTest(f"lift confidence {conf:.3f} < {LIFT_CONFIDENCE_THRESHOLD}")
-        svo = self.model.wordSpace.last_svo
+        ws = self.model.wordSpace
+        svo = ws.get_last_svo(0) if ws.svo_valid(0) else None
         if svo is None:
             self.skipTest("ternary lift did not fire")
 
@@ -283,7 +285,8 @@ class TestLuminosityOfKindness(unittest.TestCase):
             self.skipTest(
                 f"lift confidence {conf:.3f} < {LIFT_CONFIDENCE_THRESHOLD} "
                 f"for: {sentence!r}")
-        svo = self.model.wordSpace.last_svo
+        ws = self.model.wordSpace
+        svo = ws.get_last_svo(0) if ws.svo_valid(0) else None
         if svo is None:
             self.skipTest(f"SVO is None despite confidence for: {sentence!r}")
         return svo

@@ -42,6 +42,7 @@
       <numTrials>1</numTrials>
       <numEpochs>3</numEpochs>
       <batchSize>64</batchSize>
+      <numWorkers>0</numWorkers>
       <learningRate>0.001</learningRate>
       <reverseScale>0.5</reverseScale>
       <whatScale>0.7</whatScale>

@@ -48,9 +48,9 @@ from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, Ev
 from Spaces import Basis, Tensor, Codebook, Embedding
 from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
 from Language import WordSpace
-from parse import quick_parser
+from util import parse
 from Pipeline import (
-    CachePoint, GrammarMergeGlue, ReverseAdapter,
+    CachePoint, GrammarMergeGlue, ReverseAdapter, FlattenKWrapper,
 )
 
 
@@ -143,6 +143,12 @@ class BaseModel(nn.Module):
 
         _t = TheXMLConfig.training
         _s = TheXMLConfig.space
+
+        # DataLoader prefetch workers. Pulled here so every entry point
+        # (ModelFactory.run, BaseModel.from_config, tests) shares the
+        # same model.xml-defaulted value. 0 means synchronous in-process
+        # batch assembly.
+        self._num_workers = int(_t("numWorkers"))
 
         if model_type is None:
             model_type = arch["modelType"]
@@ -1470,28 +1476,20 @@ class BasicModel(BaseModel):
         return PerceptualSpace(inputShape, spaceShape, outputShape)
 
     def build_pipelines(self):
-        """Phase 2: assemble the Sequential pipelines for BasicModel.
+        """Phase 2: assemble stem/body/head pipelines for BasicModel.
 
-        BasicModel has a flat structure (no conceptualOrder unrolling),
-        so no glue stages are needed.
-
-        The pipeline starts from perceptualSpace (not inputSpace) because
-        Start() has already called inputSpace.forward() before the
-        pipeline is invoked. self.inputs (the InputSpace subspace output)
-        is passed as the entry point to pipeline_fwd.
+        Stem (inputSpace + perceptualSpace) emits a subspace whose event
+        has shape [B, K, N, D] when k_axis=True (microbatch AR path) or
+        [B, N, D] when k_axis=False (non-AR / inference). Body
+        (conceptualSpace + symbolicSpace + symbol_cache) and head
+        (outputSpace) wrap their stages in FlattenKWrapper, which is a
+        no-op when k_axis=False and folds K into the batch dim when
+        k_axis=True.
         """
         # Cache the subspace flowing out of symbolicSpace so forward()
         # can recover it after pipeline_fwd. Needed because passthrough
         # symbolicSpace doesn't populate its own .subspace.
         self.symbol_cache = CachePoint()
-
-        fwd_modules = [
-            self.perceptualSpace,
-            self.conceptualSpace,
-            self.symbolicSpace,
-            self.symbol_cache,
-            self.outputSpace,
-        ]
 
         # Set per-stage attributes used by the single-arg forward() wrappers.
         self.symbolicSpace.is_last = True
@@ -1499,24 +1497,59 @@ class BasicModel(BaseModel):
         if self.wordSpace is not None:
             self.symbolicSpace.wordSpace = self.wordSpace
 
+        # Stem: inputSpace produces the K-extended subspace (in AR mode);
+        # perceptualSpace's per-window work runs flat via FlattenKWrapper.
+        self.pipeline_stem = nn.Sequential(
+            self.inputSpace,
+            FlattenKWrapper(self.perceptualSpace),
+        )
+
+        # Body: pure transforms wrapped to flatten K.
+        self._body_inner = nn.Sequential(
+            self.conceptualSpace,
+            self.symbolicSpace,
+            self.symbol_cache,
+        )
+        self.pipeline_body = FlattenKWrapper(self._body_inner)
+
+        # Head: output projection wrapped to flatten K.
+        self.pipeline_head = FlattenKWrapper(self.outputSpace)
+
+        self.pipeline_fwd = nn.Sequential(
+            self.pipeline_stem, self.pipeline_body, self.pipeline_head,
+        )
+
         all_spaces = [self.inputSpace, self.perceptualSpace,
                       self.conceptualSpace, self.symbolicSpace, self.outputSpace]
         any_invertible = any(getattr(s, "invertible", False) for s in all_spaces)
 
         if any_invertible:
-            self.pipeline_fwd = nn.Sequential(*fwd_modules)
             self.pipeline_rev = nn.Sequential(
-                *[ReverseAdapter(m) for m in reversed(fwd_modules)]
+                FlattenKWrapper(ReverseAdapter(self.outputSpace)),
+                FlattenKWrapper(nn.Sequential(
+                    ReverseAdapter(self.symbol_cache),
+                    ReverseAdapter(self.symbolicSpace),
+                    ReverseAdapter(self.conceptualSpace),
+                )),
+                FlattenKWrapper(ReverseAdapter(self.perceptualSpace)),
+                ReverseAdapter(self.inputSpace),
             )
             self.pipeline_rt = None
             self.midpoint_cache = None
         else:
             self.midpoint_cache = CachePoint()
-            rev_modules = [ReverseAdapter(m) for m in reversed(fwd_modules)]
             self.pipeline_rt = nn.Sequential(
-                *fwd_modules, self.midpoint_cache, *rev_modules
+                self.pipeline_stem, self.pipeline_body, self.pipeline_head,
+                self.midpoint_cache,
+                FlattenKWrapper(ReverseAdapter(self.outputSpace)),
+                FlattenKWrapper(nn.Sequential(
+                    ReverseAdapter(self.symbol_cache),
+                    ReverseAdapter(self.symbolicSpace),
+                    ReverseAdapter(self.conceptualSpace),
+                )),
+                FlattenKWrapper(ReverseAdapter(self.perceptualSpace)),
+                ReverseAdapter(self.inputSpace),
             )
-            self.pipeline_fwd = nn.Sequential(*fwd_modules)
             self.pipeline_rev = None
 
     def End(self):
@@ -1732,76 +1765,80 @@ class BasicModel(BaseModel):
         return tokens
 
     def forward(self, inputData):
-        """BasicModel forward: single-path while-loop.
+        """Microbatch AR forward: stem -> body -> head straight-line.
 
-        Non-AR: one pipeline call, one prediction.
-        AR:     per-pos pipeline calls until InputSpace emits empty.
+        Stem (inputSpace + perceptualSpace) emits [B, K, N, D] for AR
+        and [B, N, D] for non-AR. The body's FlattenKWrapper folds K
+        into the batch dim so conceptual/symbolic operate on [B*K, N, D]
+        in one shot. Head restores the K axis and produces
+        [B, K, N, predDim] (AR) or [B, N, predDim] (non-AR). The K axis
+        is the AR microbatch -- one prediction per cursor position.
         """
         if isinstance(inputData, torch.Tensor):
             inputData = inputData.to(TheDevice.get())
         self._ar_valid_pos = None
 
         # Keep InputSpace's AR gate in sync with the model's masked_prediction.
-        # Callers that flip masked_prediction after construction rely on this.
         self.inputSpace.masked_prediction = self.masked_prediction
-        # Phase 3: pipeline-carried errors replace the old per-forward
-        # reset. ``runBatch`` drains and clears ``outputSpace.subspace.errors``
-        # after consuming the accumulated terms.
 
-        # AR at training time only; runtime-ARIR inference runs one pass per call.
         is_runtime_arir = (
             self.inputSpace.data is not None
-            and getattr(self.inputSpace.data, '_runtime_mode', None) == 'ARIR'
+            and self.inputSpace.data._runtime_mode == 'ARIR'
         )
         is_ar_mode = (
             self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
             and not is_runtime_arir
         )
 
-        predictions = []
-        last_input_state = None
-        while True:
-            subspace = self.inputSpace.forward(inputData)
-            if hasattr(subspace, 'is_empty') and subspace.is_empty():
-                break
-            self.inputs = subspace
-            result = self.pipeline_fwd(subspace)
-            if result is None or (hasattr(result, 'is_empty') and result.is_empty()):
-                break
-            if self.outputSpace.nonlinear_output:
-                pred = result.materialize(mode="activation")
-            else:
-                pred = result.materialize()
-            if pred is not None:
-                pred = self.normalizer.denormalize(pred, which="output")
-                # Squeeze nOutput=1 singleton only in AR mode so the
-                # downstream torch.stack(dim=1) in runBatch yields
-                # [B, N, D] instead of [B, N, 1, D]. Non-AR keeps the
-                # 3D shape for the loss contract.
-                if is_ar_mode and pred.dim() == 3 and pred.shape[1] == 1:
-                    pred = pred.squeeze(1)
-            predictions.append(pred)
+        result = self.pipeline_fwd(inputData)
+        # Empty/sentinel passthrough: nothing to predict.
+        if result is None or (hasattr(result, 'is_empty') and result.is_empty()):
+            self.inputs = self.inputSpace.subspace
+            return None, None, None, None
 
-            if last_input_state is None:
-                last_input_state = subspace.materialize()
-                if last_input_state is None:
-                    last_input_state = getattr(
-                        self.perceptualSpace, '_embedded_input', None)
+        self.inputs = self.inputSpace.subspace
 
-            if not is_ar_mode:
-                break
+        if self.outputSpace.nonlinear_output:
+            pred = result.materialize(mode="activation")
+        else:
+            pred = result.materialize()
+        if pred is not None:
+            pred = self.normalizer.denormalize(pred, which="output")
 
+        # AR path: head emits [B, K, N, predDim]; runBatch flattens K.
+        # Non-AR path: head emits [B, N, predDim] -- pass through.
         sym_sub = self.symbol_cache.last
         symbols = sym_sub.materialize() if sym_sub is not None else None
 
+        # forwardInput contract for runBatch:
+        #   * AR modes: [B, T, D] embedded input (T == K cursors).
+        #   * Non-AR:   [B, N, D] inputSpace event.
+        # In AR mode the inputSpace.subspace event was flattened to
+        # [B*K, N, D] by the body's FlattenKWrapper; expose the original
+        # embedding instead so the AR loss in runBatch can compare
+        # per-cursor predictions against per-cursor targets.
+        if is_ar_mode:
+            last_input_state = self.inputSpace._ar_embedded
+            if last_input_state is None:
+                last_input_state = self.perceptualSpace._embedded_input
+        else:
+            last_input_state = self.inputSpace.subspace.materialize()
+            if last_input_state is None:
+                last_input_state = self.perceptualSpace._embedded_input
+
+        # Expose the [B, K] valid mask for runBatch.
+        if is_ar_mode and self.inputSpace.subspace.valid_mask_bk is not None:
+            self._ar_valid_pos = self.inputSpace.subspace.valid_mask_bk
+
+        # nWhere bookkeeping: advance positional counter once per cursor
+        # (K times per call) to match legacy serial-AR semantics where each
+        # cursor iteration was a separate forward call.
         if last_input_state is not None:
             batch = last_input_state.shape[0]
-            self.inputSpace.subspace.whenEncoding.increment(batch)
+            K = pred.shape[1] if (is_ar_mode and pred is not None and pred.dim() == 4) else 1
+            self.inputSpace.subspace.whenEncoding.increment(batch * K)
 
-        if is_ar_mode:
-            return last_input_state, symbols, predictions, None
-        outputData = predictions[0] if predictions else None
-        return last_input_state, symbols, outputData, None
+        return last_input_state, symbols, pred, None
 
     def reverse(self, symbols, outputData):
         """Full reverse pass: symbols -> concepts -> percepts -> input."""
@@ -1912,7 +1949,7 @@ class BasicModel(BaseModel):
                 sentences = self._get_sentences(split)
                 if sentences and index < len(sentences):
                     sentence = sentences[index]
-                    words = [t for t, _ in quick_parser(sentence)]
+                    words = [t for t, _ in parse(sentence, lex='words')]
                     if te in ('JOINT'):
                         sbow = self.perceptualSpace.sbow_loss(words)
                     elif te in ('CBOW', 'SBOW', 'BOTH'):
@@ -2062,16 +2099,18 @@ class BasicModel(BaseModel):
         amp_scaler = None
         from contextlib import nullcontext as _nc
         with _nc():
-            # Forward pass. Returns a 4-tuple. For AR modes (ARLM/ARUS/ARIR),
-            # ``predictions`` is a list of per-pos tensors and ``reconstruction``
-            # is the ARIR terminal reverse output (None for ARLM/ARUS). For
-            # non-AR modes, ``predictions`` is a single [B, outDim] tensor and
-            # ``reconstruction`` is None.
+            # Forward pass returns a 4-tuple. AR modes: ``predictions``
+            # is a [B, K, N_window, predDim] tensor (one column per
+            # cursor position) and ``forwardInput`` is the embedded
+            # source [B, T, D]. Non-AR: ``predictions`` is [B, N, predDim]
+            # and ``forwardInput`` is the inputSpace event [B, N, D].
+            # ``reconstruction`` is the ARIR reverse output (None elsewhere).
             forwardInput, symbols, predictions, reconstruction = self.forward(inputTensor)
-            is_ar_mode = isinstance(predictions, list)
-            # Stack predictions list to a single tensor for downstream use.
-            outputDataPred = (torch.stack(predictions, dim=1)
-                              if is_ar_mode else predictions)
+            is_ar_mode = (
+                self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
+                and not arir_mode
+            )
+            outputDataPred = predictions
 
             if arir_mode:
                 # ARIR inference: no output loss, but the forward pass (AR path)
@@ -2106,28 +2145,31 @@ class BasicModel(BaseModel):
                 )
 
             if is_ar_mode:
-                # AR modes: per-pos predictions. Target at pos=t is the
-                # ``what`` content of the token the model predicts given
-                # prior context, taken from the embedded input.
+                # Microbatch AR: ``predictions`` is [B, K, N_window, predDim].
+                # The "predicted next token" at cursor k is the rightmost
+                # slot of window k -- collapse N_window down to that slot
+                # to recover the legacy [B, K, predDim] per-cursor view.
                 #
                 # OutputSpace and InputSpace can have different muxed widths:
                 # InputSpace carries [what + where + when] (e.g. 100+2+2=104),
                 # OutputSpace typically carries only [what] (100). We compare
                 # only the leading ``pred`` dims, treating the where/when of
                 # the target as side info that is not predicted.
-                pred_stack = outputDataPred          # [B, N, predDim]
-                N = pred_stack.shape[1]
-                predDim = pred_stack.shape[-1]
-                target_stack = forwardInput[:, :N, :predDim]  # [B, N, predDim]
-                # Per-row valid-position mask from forward(): rows shorter
-                # than N have padded positions whose targets are NULL/zero
-                # embeddings -- training on those teaches the model to
-                # predict padding. Mask them out before the loss.
+                pred_stack = outputDataPred[:, :, -1, :]  # [B, K, predDim]
+                B_, K, predDim = pred_stack.shape
+                target_stack = forwardInput[:, :K, :predDim]  # [B, K, predDim]
+                # Per-cursor valid mask from forward(): rows shorter than K
+                # have NULL targets at the tail; training on those teaches
+                # the model to predict padding. Mask them out.
                 valid_pos = getattr(self, "_ar_valid_pos", None)
                 if valid_pos is not None:
-                    mask = valid_pos[:, :N].unsqueeze(-1).expand_as(pred_stack)
+                    # valid_pos is [B, K] (window-level validity).
+                    mask = valid_pos[:, :K].unsqueeze(-1).expand_as(pred_stack)
                     pred_stack = pred_stack[mask].view(-1, predDim)
                     target_stack = target_stack[mask].view(-1, predDim)
+                else:
+                    pred_stack = pred_stack.reshape(-1, predDim)
+                    target_stack = target_stack.reshape(-1, predDim)
                 if self.masked_prediction == 'ARUS':
                     lossOut = torch.tensor(0.0, device=TheDevice.get())
                     output_weight = 0.0
@@ -2359,10 +2401,15 @@ class BasicModel(BaseModel):
         # Per-sentence Reset cascade (clears sliding buffers, WordSpace
         # stack, symbolic objective, etc.). Fired after loss registration
         # has consumed symbol_objective_terms. In AR training, InputSpace
-        # raises _end_of_stream when the NULL sentinel is emitted; in
+        # raises _end_of_stream when the NULL sentinel is emitted; under
+        # microbatch AR that flag is now [B] bool, so reduce to scalar
+        # via .all() -- Reset only when every source row hit EOS.  In
         # non-AR, every forward() processes a fresh full input so Reset
         # unconditionally.
-        if (not is_ar_mode) or self.inputSpace._end_of_stream:
+        eos = self.inputSpace._end_of_stream
+        if torch.is_tensor(eos):
+            eos = bool(eos.all().item())
+        if (not is_ar_mode) or eos:
             for space in self.spaces:
                 if hasattr(space, 'Reset'):
                     space.Reset()
@@ -2398,12 +2445,6 @@ class BasicModel(BaseModel):
         ws = self.wordSpace
         if ws is not None and getattr(ws, 'discourse', None) is not None:
             ws.discourse.reset()
-        # Reset the sliding-window AR context buffer at split/epoch
-        # boundaries so validation does not inherit train-time context and
-        # epoch N does not continue from epoch N-1's last sentence. The
-        # buffer still persists across DataLoader yields within this call.
-        if hasattr(self.inputSpace, 'reset_buffer'):
-            self.inputSpace.reset_buffer()
         ctx = torch.no_grad() if not training else nullcontext()
 
         # Inference fast path: skip loss construction and accumulation.
@@ -2442,9 +2483,9 @@ class BasicModel(BaseModel):
 
         # Data splits live on CPU (see Data.toDevice); prepInput/prepOutput
         # move per-batch to device in the main process, so workers just
-        # pickle CPU tensors. XML <numWorkers> sets _num_workers; callers
-        # that bypass the XML config fall back to 2.
-        num_workers = getattr(self, '_num_workers', 2)
+        # pickle CPU tensors. XML <numWorkers> sets _num_workers via
+        # ModelFactory.run; the default lives in data/model.xml.
+        num_workers = self._num_workers
         loader = self.inputSpace.data.data_loader(
             split=split,
             num_streams=batchSize,
@@ -2491,7 +2532,7 @@ class BasicModel(BaseModel):
                         method = 'CBOW' if te == 'CBOW' else 'SBOW'
                         for sentence in inp_items:
                             words = [t for t, _
-                                     in quick_parser(sentence)]
+                                     in parse(sentence, lex='words')]
                             self.perceptualSpace.train_embeddings(
                                 words, method=method)
 
@@ -2879,21 +2920,21 @@ class MentalModel(BaseModel):
     # -- Phase 2: Sequential pipeline ----------------------------------
 
     def build_pipelines(self):
-        """Phase 2: assemble the unrolled Sequential pipelines for MentalModel.
+        """Phase 2: stem/body/head pipelines for MentalModel.
 
-        Pipeline shape:
-            inputSpace -> perceptualSpace ->
-            (conceptualSpaces[t] -> [GrammarMergeGlue(t)?] -> symbolicSpaces[t])×T ->
-            outputSpace
+        Pipeline shape (microbatch AR):
+            stem  : inputSpace -> FlattenK(perceptualSpace)
+            body  : FlattenK( (conceptualSpaces[t] -> [GrammarMergeGlue?]
+                              -> symbolicSpaces[t] -> ss_cache[t])×T
+                              -> symbol_cache )
+            head  : FlattenK(outputSpace)
 
-        Where T = len(self.conceptualSpaces). Each per-stage
-        ConceptualSpace/SymbolicSpace is an independent nn.Module
-        inserted directly into the chain. In butterfly mode the
-        ButterflyStage inside each CS/SS handles N-halving internally,
-        so no cross-stage glue is needed. In grammar mode a
-        GrammarMergeGlue between stages averages neighbors. Otherwise
-        the chain is strictly feed-forward — stage t reads stage t-1's
-        output from the chain, not from a persistent skip source.
+        T = len(self.conceptualSpaces). Each per-stage SymbolicSpace
+        gets its own CachePoint (``self.ss_caches[t]``) inserted
+        immediately after it inside the body. ``forward()`` reads them
+        to rebuild ``symbol_states`` (un-flattened back to [B,K,N,D]).
+        ``self.symbol_cache`` is the terminal cache (after the last
+        SymbolicSpace) — same role as in BasicModel.
         """
         T = len(self.conceptualSpaces)
         use_grammar_merge = (self.useGrammar == "all")
@@ -2909,24 +2950,44 @@ class MentalModel(BaseModel):
         # ``self.symbolicSpaces[-1]``.
         self.symbolicSpace.wordSpace = self.wordSpace
 
+        # Per-stage symbol_states capture lives in CachePoints inside
+        # the body. The terminal one doubles as ``self.symbol_cache``
+        # for the BasicModel-style head/symbols read.
+        self.ss_caches = nn.ModuleList(
+            [CachePoint() for _ in range(T)]
+        )
+        self.symbol_cache = self.ss_caches[T - 1] if T > 0 else CachePoint()
+
         # Determine initial_n per stage for the N-halving GrammarMergeGlue.
         try:
             base_n = int(self.perceptualSpace.subspace.inputShape[0])
         except Exception:
             base_n = int(getattr(self, "nPercepts", 0))
 
-        fwd_modules = [self.inputSpace, self.perceptualSpace]
+        body_modules = []
         for t in range(T):
-            fwd_modules.append(self.conceptualSpaces[t])
+            body_modules.append(self.conceptualSpaces[t])
             if use_grammar_merge:
                 stage_n = base_n // (2 ** t)
-                fwd_modules.append(
+                body_modules.append(
                     GrammarMergeGlue(stage_idx=t, initial_n=stage_n,
                                      is_last=(t == T - 1))
                 )
-            fwd_modules.append(self.symbolicSpaces[t])
+            body_modules.append(self.symbolicSpaces[t])
+            body_modules.append(self.ss_caches[t])
 
-        fwd_modules.append(self.outputSpace)
+        self._body_inner = nn.Sequential(*body_modules)
+
+        # Stem / body / head wrappers — same shape as BasicModel.
+        self.pipeline_stem = nn.Sequential(
+            self.inputSpace,
+            FlattenKWrapper(self.perceptualSpace),
+        )
+        self.pipeline_body = FlattenKWrapper(self._body_inner)
+        self.pipeline_head = FlattenKWrapper(self.outputSpace)
+        self.pipeline_fwd = nn.Sequential(
+            self.pipeline_stem, self.pipeline_body, self.pipeline_head,
+        )
 
         all_spaces = ([self.inputSpace, self.perceptualSpace]
                       + list(self.conceptualSpaces)
@@ -2934,20 +2995,28 @@ class MentalModel(BaseModel):
                       + [self.outputSpace])
         any_invertible = any(getattr(s, "invertible", False) for s in all_spaces)
 
+        # Reverse adapters for each forward module, in reverse order.
+        rev_body_inner = nn.Sequential(
+            *[ReverseAdapter(m) for m in reversed(body_modules)]
+        )
+        rev_body = FlattenKWrapper(rev_body_inner)
+        rev_head = FlattenKWrapper(ReverseAdapter(self.outputSpace))
+        rev_perceptual = FlattenKWrapper(ReverseAdapter(self.perceptualSpace))
+        rev_input = ReverseAdapter(self.inputSpace)
+
         if any_invertible:
-            self.pipeline_fwd = nn.Sequential(*fwd_modules)
             self.pipeline_rev = nn.Sequential(
-                *[ReverseAdapter(m) for m in reversed(fwd_modules)]
+                rev_head, rev_body, rev_perceptual, rev_input,
             )
             self.pipeline_rt = None
             self.midpoint_cache = None
         else:
             self.midpoint_cache = CachePoint()
-            rev_modules = [ReverseAdapter(m) for m in reversed(fwd_modules)]
             self.pipeline_rt = nn.Sequential(
-                *fwd_modules, self.midpoint_cache, *rev_modules
+                self.pipeline_stem, self.pipeline_body, self.pipeline_head,
+                self.midpoint_cache,
+                rev_head, rev_body, rev_perceptual, rev_input,
             )
-            self.pipeline_fwd = nn.Sequential(*fwd_modules)
             self.pipeline_rev = None
 
     # -- Order Partitions (Ramsification) -----------------------------
@@ -3151,45 +3220,29 @@ class MentalModel(BaseModel):
         return self.pipeline_rev(last_forward_result)
 
     def forward(self, inputData):
-        """Unified forward via nn.Sequential.
+        """Microbatch AR forward via stem/body/head pipeline.
 
-        Shape of the Run:
-          Start() cascade (one-shot init; resets InputSpace streaming cursor)
-          Reset() cascade (per-sentence teardown; clears WordSpace stack)
-          while not empty:
-              result = pipeline_fwd(inputData)   # InputSpace streams positions
-              collect prediction
-          if reconstructing:
-              reconstruction = pipeline_rev(last_result)
+        Shape:
+          stem  -> [B, K, N, D] (K = T-N+1 progressive-prefix windows
+                   for AR; K = 1 for non-AR / inference).
+          body  -> per-stage CS/SS chain on [B*K, N, D], with each
+                   SymbolicSpace's output captured into ``ss_caches``.
+          head  -> outputSpace; result event [B, K, N, predDim].
 
-        Termination: InputSpace.forward emits an empty SubSpace ([B, 0, D])
-        when the input is exhausted (non-AR: after one call; AR training:
-        after N_tokens; AR inference: when 0x00 is fed back in).
+        Replaces the legacy while-loop: InputSpace produces all K
+        windows in one call; the body processes them in parallel via
+        FlattenKWrapper. K=1 is the inference (ARIR) and non-AR case.
         """
         if isinstance(inputData, torch.Tensor):
             inputData = inputData.to(TheDevice.get())
 
-        # Keep InputSpace's AR gate in sync with the model's masked_prediction.
-        # Callers that flip masked_prediction after construction rely on this.
         self.inputSpace.masked_prediction = self.masked_prediction
-        # Sequential MentalModel no longer builds a per-row valid-position
-        # mask during forward. Preserve the runBatch contract: None means
-        # "all emitted AR positions are valid".
         self._ar_valid_pos = None
-        # Phase 3: pipeline-carried errors replace the old per-forward
-        # reset. ``runBatch`` drains and clears ``outputSpace.subspace.errors``
-        # after consuming the accumulated terms.
 
-        # Detach the cached subspace events carried over from the prior
-        # forward. The cross-sentence value carryover is intentional, but
-        # the tensor at that slot still points into the prior forward's
-        # autograd graph, which gets freed by its backward(). Detaching
-        # in place keeps the value and breaks the graph. Within-forward
-        # writes in this pass will immediately replace each event with a
-        # live-grad tensor.
-        for sp in (getattr(self, 'perceptualSpace', None),
-                   getattr(self, 'conceptualSpace', None),
-                   getattr(self, 'symbolicSpace', None)):
+        # Detach cached events carried over from prior forward to break
+        # the autograd graph; in-place writes below restore live grads.
+        for sp in (self.perceptualSpace, self.conceptualSpace,
+                   self.symbolicSpace):
             if sp is None or not hasattr(sp, 'subspace'):
                 continue
             ev = getattr(sp.subspace, 'event', None)
@@ -3199,119 +3252,168 @@ class MentalModel(BaseModel):
             if w is not None and torch.is_tensor(w) and w.requires_grad:
                 ev.setW(w.detach())
 
-        # Per-run scratch state used by Finish/loss.
+        # Per-run scratch.
         self.symbol_states = []
         self._nonrams_sym_feedbacks = []
         self._unified_j_iterations = 0
 
-        # Seed the flat-path symbolic feedback state based on batch size.
         B = inputData.shape[0] if isinstance(inputData, torch.Tensor) else 1
         device = (inputData.device if isinstance(inputData, torch.Tensor)
                   else TheDevice.get())
-        if self.wordSpace is not None:
-            self.wordSpace.ensure_batch(B)
+        # WordSpace state cascade is owned by InputSpace.forward, which
+        # calls ensure_microbatch(B, K) for both AR (K=T) and non-AR
+        # (K=1) paths.  No standalone resize needed here.
         self.symbolic_state = self.symbolicSpace.empty_state(batch=B).to(device)
 
-        # Discourse prediction (once per forward, pre-loop):
-        # predicts the next snapshot from prior snapshots so runBatch can
-        # score the priming term.
+        # Discourse priming prediction (pre-pipeline).
         self._predicted_snapshot = None
         self._predicted_confidence = None
         discourse_for_prime = (
             self.wordSpace.discourse
             if self.wordSpace is not None else None)
         if discourse_for_prime is not None:
-            pred, conf = discourse_for_prime.predict()
-            self._predicted_snapshot = pred
-            self._predicted_confidence = conf
+            d_pred, d_conf = discourse_for_prime.predict()
+            self._predicted_snapshot = d_pred
+            self._predicted_confidence = d_conf
 
-        # Identify the SymbolicSpace stage indices in pipeline_fwd so we
-        # can capture per-stage symbol vectors for symbol_states. Each
-        # stage's SymbolicSpace is an independent nn.Module in
-        # self.symbolicSpaces, inserted directly into the pipeline.
-        ss_set = set(id(s) for s in self.symbolicSpaces)
-        ss_module_indices = {
-            i for i, mod in enumerate(self.pipeline_fwd) if id(mod) in ss_set
-        }
+        is_runtime_arir = (
+            self.inputSpace.data is not None
+            and self.inputSpace.data._runtime_mode == 'ARIR'
+        )
+        is_ar_mode = (
+            self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
+            and not is_runtime_arir
+        )
 
-        # While-loop: InputSpace streams positions (stateful cursor);
-        # empty-sentinel terminates.
-        reconstructing = self._should_reconstruct()
-        predictions = []
-        last_forward_result = None
-        while True:
-            cur = inputData
-            captured_states = []
-            for i, mod in enumerate(self.pipeline_fwd):
-                cur = mod(cur)
-                if i in ss_module_indices:
-                    sv = cur.materialize() if hasattr(cur, 'materialize') else None
-                    if sv is not None:
-                        captured_states.append(sv.clone())
-            result = cur
-            if result is None or (hasattr(result, 'is_empty') and result.is_empty()):
-                break
-            self.symbol_states = captured_states
-            # conceptualOrder=0 is stored as 1 pipeline stage for the
-            # pre-seed pass; clamp the reported j-iteration count to
-            # the configured order so that path still reports 0.
-            self._unified_j_iterations = min(
-                self.conceptualOrder, len(captured_states))
-            last_forward_result = result
-            pred = self._extract_prediction_sequential(result)
-            predictions.append(pred)
-            # Non-AR modes run the pipeline once per call; AR modes keep
-            # streaming via InputSpace's cursor until exhaustion / null byte.
-            if self.masked_prediction not in ('ARLM', 'ARUS', 'ARIR'):
-                break
+        # Single-call pipeline. InputSpace produces [B, K, N, D] (or
+        # [B, N, D] for non-AR with k_axis=False). FlattenKWrapper
+        # passes through transparently when k_axis is False.
+        result = self.pipeline_fwd(inputData)
 
+        # Empty-sentinel: input exhausted.
+        if result is None or (hasattr(result, 'is_empty') and result.is_empty()):
+            self.inputs = self.inputSpace.subspace
+            self.percepts = self.perceptualSpace.subspace
+            self.concepts = self.conceptualSpace.subspace
+            self.symbols = self.symbolicSpace.subspace
+            self.outputs = self.outputSpace.subspace
+            return None, None, None, None
+
+        # Discover K from the result subspace (head's FlattenKWrapper
+        # leaves k_axis=True with event [B, K, N, predDim]). The stem
+        # subspace has k_axis=False after the body's FlattenKWrapper
+        # flattens it in place, so it can't be the K source.
+        stem_sub = self.inputSpace.subspace
+        K = None
+        if result.k_axis:
+            result_event = result.materialize()
+            if result_event is not None and result_event.dim() == 4:
+                K = result_event.shape[1]
+        elif (stem_sub.valid_mask_bk is not None
+              and stem_sub.valid_mask_bk.dim() == 2):
+            K = stem_sub.valid_mask_bk.shape[1]
+
+        # Capture symbol_states from per-stage CachePoints. Inside the
+        # body each cached event is [B*K, N, D]; un-flatten back to
+        # [B, K, N, D] when K is set.
+        captured_states = []
+        for cache in self.ss_caches:
+            sub = cache.last
+            if sub is None:
+                continue
+            sv = sub.materialize() if hasattr(sub, 'materialize') else None
+            if sv is None:
+                continue
+            if K is not None and sv.dim() == 3 and sv.shape[0] == B * K:
+                sv = sv.view(B, K, sv.shape[1], sv.shape[2])
+            captured_states.append(sv.clone())
+        self.symbol_states = captured_states
+        self._unified_j_iterations = min(
+            self.conceptualOrder, len(captured_states))
+
+        # Reverse reconstruction (ARIR triggers it).
         reconstruction = None
-        if reconstructing and last_forward_result is not None:
-            reconstruction = self._run_reverse_sequential(last_forward_result)
+        if self._should_reconstruct():
+            reconstruction = self._run_reverse_sequential(result)
 
-        # Symbols tensor in legacy shape: norm-of-symbols expanded to
-        # percept_dim so downstream callers (plots, loss) work.
+        # Predictions tensor: [B, K, N, predDim] microbatch / [B, N, predDim] non-AR.
+        if self.outputSpace.nonlinear_output:
+            pred = result.materialize(mode="activation")
+        else:
+            pred = result.materialize()
+        if pred is not None:
+            pred = self.normalizer.denormalize(pred, which="output")
+
+        # Reshape sym/percept events back to [B, K, ...] for downstream consumers.
         sym_vectors = self.symbolicSpace.subspace.materialize()
+        if (K is not None and sym_vectors is not None
+                and sym_vectors.dim() == 3
+                and sym_vectors.shape[0] == B * K):
+            sym_vectors = sym_vectors.view(
+                B, K, sym_vectors.shape[1], sym_vectors.shape[2])
+
+        percepts_t = self.perceptualSpace.subspace.materialize()
+        if (K is not None and percepts_t is not None
+                and percepts_t.dim() == 3
+                and percepts_t.shape[0] == B * K):
+            percepts_t = percepts_t.view(
+                B, K, percepts_t.shape[1], percepts_t.shape[2])
+
         symbols = sym_vectors
-        if sym_vectors is not None:
-            percepts_t = (self.perceptualSpace.subspace.materialize()
-                          if hasattr(self.perceptualSpace, 'subspace') else None)
-            if percepts_t is not None and percepts_t.ndim >= 3:
-                symbols = sym_vectors.norm(dim=-1).unsqueeze(-1).expand(
-                    -1, -1, percepts_t.shape[-1])
+        if sym_vectors is not None and percepts_t is not None and percepts_t.ndim >= 3:
+            symbols = sym_vectors.norm(dim=-1).unsqueeze(-1).expand(
+                *sym_vectors.shape[:-1], percepts_t.shape[-1])
 
-        # Input state for the return tuple: materialize inputSpace.subspace
-        # (InputSpace already populated it during its first streaming call).
-        input_state = self.inputSpace.subspace.materialize()
-        if input_state is None:
-            input_state = getattr(self.perceptualSpace, '_embedded_input', None)
+        # forwardInput contract for runBatch (mirrors BasicModel.forward):
+        #   * AR modes: [B, T, D] embedded input (T == K cursors).
+        #   * Non-AR:   [B, N, D] inputSpace event.
+        # The body's FlattenKWrapper flattens the stem event to
+        # [B*K, N, D] in place, so we expose the original embedding
+        # instead of materializing the modified subspace.
+        if is_ar_mode:
+            input_state = self.inputSpace._ar_embedded
+            if input_state is None:
+                input_state = self.perceptualSpace._embedded_input
+        else:
+            input_state = self.inputSpace.subspace.materialize()
+            if input_state is None:
+                input_state = self.perceptualSpace._embedded_input
 
-        # Expose per-stage subspaces as model attributes for reverse(),
-        # introspection, and tests that read them after forward().
         self.inputs = self.inputSpace.subspace
         self.percepts = self.perceptualSpace.subspace
         self.concepts = self.conceptualSpace.subspace
         self.symbols = self.symbolicSpace.subspace
         self.outputs = self.outputSpace.subspace
 
-        # Discourse snapshot: stash the final (S, W) pair so runBatch can
-        # compute a next-sentence prediction loss against it.
+        # Per-cursor validity mask for the AR loss in runBatch: [B, K].
+        if is_ar_mode and stem_sub.valid_mask_bk is not None:
+            self._ar_valid_pos = stem_sub.valid_mask_bk
+
+        # Discourse snapshot — last window's symbols match legacy
+        # last-cursor semantics.
         self._current_discourse_s = None
         self._current_discourse_w = None
         discourse = (self.wordSpace.discourse
                      if self.wordSpace is not None else None)
         if discourse is not None:
-            try:
-                s_state = self.symbolicSpace.subspace.materialize()
-            except Exception:
+            if sym_vectors is not None and sym_vectors.dim() == 4:
+                s_state = sym_vectors[:, -1]
+            else:
                 s_state = sym_vectors
             try:
                 w_state = self.wordSpace.read()
             except Exception:
                 w_state = None
+            # WordSpace was ensure_batch'd to B*K in the body; collapse the
+            # K axis to mirror s_state's last-window semantics: [B*K, M, D]
+            # -> [B, K, M, D] -> [B, M, D].
+            if (K is not None and w_state is not None
+                    and w_state.dim() == 3 and w_state.shape[0] == B * K):
+                w_state = w_state.view(
+                    B, K, w_state.shape[1], w_state.shape[2])[:, -1]
             if w_state is None and s_state is not None:
                 w_state = torch.zeros(
-                    discourse.max_depth, discourse.n_dim,
+                    B, discourse.max_depth, discourse.n_dim,
                     device=s_state.device, dtype=s_state.dtype)
             if s_state is not None:
                 self._current_discourse_s = s_state.detach()
@@ -3332,25 +3434,25 @@ class MentalModel(BaseModel):
             self._universality_score = truth_layer.universality(
                 s, v, o, lifting_layer, self.symbolicSpace)
 
-        # Downward head emission (S -> C).
+        # Downward head emission (S -> C). Use last window for K-axis.
         self._predicted_head = None
         try:
             gen_on = bool(TheXMLConfig.get('WordSpace.downwardGeneration'))
         except KeyError:
             gen_on = False
+        sv_for_head = sym_vectors
+        if sv_for_head is not None and sv_for_head.dim() == 4:
+            sv_for_head = sv_for_head[:, -1]
         if (gen_on and self.wordSpace is not None
-                and sym_vectors is not None and sym_vectors.ndim >= 3):
-            final_state = sym_vectors[:, 0, :]
+                and sv_for_head is not None and sv_for_head.ndim >= 3):
+            final_state = sv_for_head[:, 0, :]
             codebook_space = (self.perceptualSpace
                               if self.inputSpace.model_type == "embedding"
                               else self.inputSpace)
-            result = self.wordSpace.reconstruct(final_state, codebook_space)
-            self._predicted_head = result['heads']
+            head_result = self.wordSpace.reconstruct(final_state, codebook_space)
+            self._predicted_head = head_result['heads']
 
-        if self.masked_prediction in ('ARLM', 'ARUS', 'ARIR'):
-            return input_state, symbols, predictions, reconstruction
-        outputData = predictions[0] if predictions else None
-        return input_state, symbols, outputData, reconstruction
+        return input_state, symbols, pred, reconstruction
 
     def reverse(self, symbols, outputData):
         sym_vec = self.symbolicSpace.subspace.materialize()
@@ -3835,10 +3937,6 @@ class ModelFactory:
         num_shards = int(os.environ.get("BASIC_NUM_SHARDS", dat.get("numShards", 1)))
         max_docs = int(os.environ.get("BASIC_MAX_DOCS", dat.get("maxDocs", 10000)))
 
-        # DataLoader prefetch workers: 0 means synchronous in-process
-        # batch assembly (default for small / local runs).
-        _num_workers = int(trn.get("numWorkers", 0))
-
         TheData.load(dataset,
                      num_shards=num_shards,
                      max_docs=max_docs,
@@ -3846,12 +3944,9 @@ class ModelFactory:
                      dat=dat)
 
         m, _ = BaseModel.from_config(config_path, data=TheData)
-        m._num_workers = _num_workers
         TheMessage(f"Device: {TheDevice}")
 
         m = compile(m)
-        # compile() may return a wrapper; preserve the flag there too.
-        m._num_workers = _num_workers
 
         def _t(key, default=None):
             return trn.get(key, default)
@@ -3969,21 +4064,27 @@ if __name__ == "__main__":
 
     TheReport.enabled = args.report
 
-    if args.compare:
-        # Compare mode: run two XML configs and plot per-digit accuracy side by side
-        xml1 = ModelFactory.resolve_xml(args.compare[0])
-        xml2 = ModelFactory.resolve_xml(args.compare[1])
-        TheReport.add_xml(xml1)
-        TheReport.add_xml(xml2)
-        results = ModelFactory.run(xml1) + ModelFactory.run(xml2)
-        if len(results) >= 2:
-            TheReport.plotComparison([(name, rc) for name, rc, _ in results])
-            TheReport.plotCombinedAccuracy([(name, rc) for name, rc, _ in results])
-            TheReport.plotCombinedLoss([m for _, _, m in results])
-    else:
-        # Single run mode
-        xml = ModelFactory.resolve_xml(args.config) if args.config else os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml")
-        TheReport.add_xml(xml)
-        results = ModelFactory.run(xml)
+    try:
+        if args.compare:
+            # Compare mode: run two XML configs and plot per-digit accuracy side by side
+            xml1 = ModelFactory.resolve_xml(args.compare[0])
+            xml2 = ModelFactory.resolve_xml(args.compare[1])
+            TheReport.add_xml(xml1)
+            TheReport.add_xml(xml2)
+            results = ModelFactory.run(xml1) + ModelFactory.run(xml2)
+            if len(results) >= 2:
+                TheReport.plotComparison([(name, rc) for name, rc, _ in results])
+                TheReport.plotCombinedAccuracy([(name, rc) for name, rc, _ in results])
+                TheReport.plotCombinedLoss([m for _, _, m in results])
+        else:
+            # Single run mode
+            xml = ModelFactory.resolve_xml(args.config) if args.config else os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml")
+            TheReport.add_xml(xml)
+            results = ModelFactory.run(xml)
+    finally:
+        import gc
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
     TheReport.write_html()

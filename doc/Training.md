@@ -250,37 +250,27 @@ per-epoch global shuffle is applied. `numWorkers > 0` enables async prefetch.
 For each B-wide batch in AR modes (`ARLM` / `ARUS` / `ARIR`):
 
 1. `MentalModel.Start(inputData)` cascades reset through every Space and
-   Layer (clearing per-sentence scratch) and embeds the input once into
-   `[B, nVec, embeddingSize]`. The sliding-window AR buffer on
-   `InputSpace` is **not** reset -- it persists across forward() calls,
-   giving the model cross-sentence context.
-2. The outer token-consumption loop runs inside `MentalModel.forward()`:
+   Layer (clearing per-sentence scratch).
+2. `InputSpace.forward()` lexes/embeds the input once into `[B, T, D]`,
+   then builds all K progressive-prefix windows in a single
+   `tensor.unfold(1, N, 1)` -- left-padding N zeros so window `k` is
+   `k` zero-pad slots followed by `emb[0..k-1]` right-aligned. The
+   emitted subspace carries `event: [B, K, N, D]` with `k_axis=True`
+   and a `[B, K]` validity mask (NULL = all-zero target embedding).
+   The body consumes the K axis as microbatch (flattened to `B*K`) and
+   the head produces all K predictions in one pass.
 
-   ```
-   for pos in range(N):
-       set_event(inputSpace._ar_buffer)        # pre-slide buffer state
-       for t in range(conceptualOrder):
-           # existing sigma / pi / feedback body; state carries across pos
-       predictions.append(Finish(symbols))     # predict embedded[:, pos, :]
-       inputSpace.slide_and_append(embedded[:, pos, :])
-   ```
-
-   Percept / concept / symbol / `symbolic_state` tensors persist across
-   the outer loop within a single `forward()` call. The sliding buffer
-   persists across `forward()` calls until explicit
-   `InputSpace.reset_buffer()` (e.g. at epoch boundaries).
-
-3. For `ARIR` only, a single terminal `reverse(symbols)` after the pos
-   loop produces a `[B, N, D]` reconstruction.
+3. For `ARIR` only, a single terminal `reverse(symbols)` after the
+   body produces a `[B, N, D]` reconstruction.
 
 4. `runBatch` computes the loss once via `TheError.add`:
-   - `ARLM`: output prediction only (per-pos predictions stacked to `[B, N, D]`).
+   - `ARLM`: output prediction only (K per-row predictions, masked by validity).
    - `ARUS`: no output term (suppressed); no reconstruction.
    - `ARIR`: output prediction + reconstruction, weighted by `reverseScale`.
 
-5. One `backward()` + `optimizer.step()` per DataLoader yield. Compared
-   to the previous N-passes-per-sentence loop, this saves N-1 reverse
-   calls per AR sentence and collapses N optimizer steps into one.
+5. One `backward()` + `optimizer.step()` per DataLoader yield. The
+   single-unfold microbatch path replaces the earlier N-pass cursor
+   loop, collapsing the N forward/reverse calls into one.
 
 6. Embedding training (`trainEmbedding` in `CBOW`/`SBOW`/`BOTH`) runs
    once per batch after the forward/backward cycle.

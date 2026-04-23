@@ -144,16 +144,18 @@ def test_subspace_copy_context_preserves_downstream_writes():
 
 # ---------- Task 4: WordSpace.last_svo and STM-residual ----------
 
-def test_wordspace_last_svo_default_none(model):
+def test_wordspace_last_svo_default_invalid(model):
     ws = model.wordSpace
-    assert ws.last_svo is None
+    # Microbatch refactor (Task 2): WordSpace.last_svo is per-row.
+    # Default state has the valid-mask cleared on every row.
+    assert not ws.svo_valid(0)
 
 
 def test_wordspace_stm_residual_none_when_no_discourse(model):
     ws = model.wordSpace
     # Disable discourse for this test; stm_residual should pass through None.
     ws.discourse = None
-    ws._stm_fired = False
+    ws.arm_stm()
     assert ws.stm_residual() is None
 
 
@@ -173,7 +175,7 @@ def test_wordspace_stm_residual_fires_once_per_sentence(model):
             return torch.ones(4) * float(scale)
 
     ws.discourse = _FakeDiscourse()
-    ws._stm_fired = False
+    ws.arm_stm()
     ws.stm_residual_scale = 0.1
 
     b1 = ws.stm_residual()
@@ -190,14 +192,18 @@ def test_wordspace_stm_residual_fires_once_per_sentence(model):
 
 def test_wordspace_reset_clears_last_svo(model):
     ws = model.wordSpace
-    ws.last_svo = ("S", "V", "O")
+    D = ws.svo_dim
+    ws.set_last_svo(0, torch.zeros(D), torch.zeros(D), torch.zeros(D))
+    assert ws.svo_valid(0)
     ws.Reset()
-    assert ws.last_svo is None
+    assert not ws.svo_valid(0)
 
 
 def test_last_svo_lives_on_wordspace_not_conceptualspace(model):
     """last_svo moved to wordSpace; ConceptualSpace no longer owns it."""
-    assert hasattr(model.wordSpace, "last_svo")
+    # Microbatch refactor (Task 2): per-row API is the contract.
+    assert hasattr(model.wordSpace, "set_last_svo")
+    assert hasattr(model.wordSpace, "svo_valid")
     assert not hasattr(model.conceptualSpace, "_last_svo")
     assert not hasattr(model.conceptualSpace, "last_svo")
 
@@ -244,7 +250,7 @@ def test_pipeline_stages_carry_wordSpace(model):
 
 
 def test_stm_residual_flows_through_conceptualspace(model):
-    """When wordSpace.stm_residual() returns a non-None bias,
+    """When wordSpace.stm_residual_microbatch returns a non-None bias,
     ConceptualSpace.forward stages a biased tensor into its own subspace."""
     ws = model.wordSpace
     cs = model.conceptualSpace
@@ -257,20 +263,25 @@ def test_stm_residual_flows_through_conceptualspace(model):
     upstream.wordSpace = ws
     B, N = 2, 4
     D = int(cs.inputShape[1])
+    # The body sees a flattened [B*K, N, D] event; here K=1 so BK=B=2.
+    # Resize ws._stm_fired to the source batch so the call site derives K=1.
+    ws._stm_fired = torch.zeros(B, dtype=torch.bool, device=ws._stm_fired.device)
     event_in = torch.zeros(B, N, D)
     upstream.set_event(event_in)
 
     # Baseline: no residual. forward() must not mutate upstream.
     ws.discourse = None
-    ws._stm_fired = False
-    ws.stm_residual = lambda: None
+    ws.arm_stm()
+    ws.stm_residual_microbatch = lambda B_arg, K_arg: None
     cs.forward(upstream)
     baseline_event = cs.subspace.event.getW()
 
     # Primed: non-None residual. forward() stages event+bias in cs.subspace.
-    bias = torch.ones(D) * 0.3
-    ws._stm_fired = False
-    ws.stm_residual = lambda: bias
+    # The new microbatch contract returns [B*K, D]; the call site
+    # broadcasts over N via .unsqueeze(1).
+    bias = torch.ones(B, D) * 0.3
+    ws.arm_stm()
+    ws.stm_residual_microbatch = lambda B_arg, K_arg: bias
     upstream.set_event(event_in)  # reset upstream
     cs.forward(upstream)
     primed_event = cs.subspace.event.getW()

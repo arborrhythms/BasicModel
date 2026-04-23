@@ -218,6 +218,66 @@ def buffer(*size, **kwargs):
 
 
 # ---------------------------------------------------------------------------
+# Tokenization
+# ---------------------------------------------------------------------------
+
+_PARSE_WORD_RE     = re.compile(r'[a-zA-Z]+|[0-9]+|[^a-zA-Z0-9\s]+|\s+')
+_PARSE_SENTENCE_RE = re.compile(r'[^.!?]*[.!?]+|[^.!?]+$')
+
+
+def parse(data, lex="words"):
+    """Tokenize *data* at the granularity given by *lex*.
+
+    Modes:
+        "bytes"     -- one token per UTF-8 byte (``chr(byte)``, offset).
+        "words"     -- regex words / punctuation / whitespace runs.
+        "sentences" -- split at [.!?]; trailing non-terminated text
+                       becomes a final token.
+
+    Returns a list of ``(token_text, byte_start)`` tuples in every mode.
+    Byte offsets cover the original string contiguously (words mode) or
+    point to the sentence's first non-whitespace character (sentences mode).
+    """
+    if isinstance(data, bytes):
+        text = data.decode('utf-8', errors='replace')
+    elif isinstance(data, str):
+        text = data
+    else:
+        text = str(data)
+
+    if lex in ("bytes", "byte"):
+        raw = text.encode('utf-8')
+        return [(chr(b), i) for i, b in enumerate(raw)]
+
+    if lex in ("sentences", "sentence"):
+        spans = []
+        for m in _PARSE_SENTENCE_RE.finditer(text):
+            chunk = m.group()
+            stripped = chunk.lstrip()
+            if not stripped:
+                continue
+            leading = len(chunk) - len(stripped)
+            char_start = m.start() + leading
+            byte_start = len(text[:char_start].encode('utf-8'))
+            spans.append((stripped, byte_start))
+        return spans
+
+    if lex in ("words", "word"):
+        spans = []
+        byte_pos = 0
+        for m in _PARSE_WORD_RE.finditer(text):
+            tok = m.group()
+            spans.append((tok, byte_pos))
+            byte_pos += len(tok.encode('utf-8'))
+        return spans
+
+    raise ValueError(
+        f"parse(): unknown lex mode {lex!r}; "
+        f"expected one of 'bytes', 'words', 'sentences'."
+    )
+
+
+# ---------------------------------------------------------------------------
 # Compilation backend management
 # ---------------------------------------------------------------------------
 

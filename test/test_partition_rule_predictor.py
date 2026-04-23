@@ -96,16 +96,16 @@ def test_rule_predictor_output_shape():
     """Predictor emits [nRules]-shaped logits."""
     ws = _make_word_space_with_grammar()
     for _ in range(3):
-        ws.pos_stack.push(torch.randn(4))
-    logits = ws.predict_rule()
+        ws.pos_stack.push(0, torch.randn(4))
+    logits = ws.predict_rule(0)
     assert logits.shape == (ws.n_rules,)
 
 
 def test_rule_predictor_softmax_sums_to_one():
     ws = _make_word_space_with_grammar()
     for _ in range(3):
-        ws.pos_stack.push(torch.randn(4))
-    probs = torch.softmax(ws.predict_rule(), dim=-1)
+        ws.pos_stack.push(0, torch.randn(4))
+    probs = torch.softmax(ws.predict_rule(0), dim=-1)
     assert torch.isclose(probs.sum(), torch.tensor(1.0), atol=1e-5)
 
 
@@ -113,8 +113,8 @@ def test_rule_predictor_hard_inference_argmax():
     ws = _make_word_space_with_grammar()
     ws.training = False  # inference mode
     for _ in range(3):
-        ws.pos_stack.push(torch.randn(4))
-    chosen = ws.predict_rule_hard()
+        ws.pos_stack.push(0, torch.randn(4))
+    chosen = ws.predict_rule_hard(0)
     assert isinstance(chosen, int)
     assert 0 <= chosen < ws.n_rules
 
@@ -126,8 +126,8 @@ def test_rule_predictor_hard_inference_argmax():
 def test_rule_predictor_gradient_flows_through_stack():
     ws = _make_word_space_with_grammar()
     v = torch.randn(4, requires_grad=True)
-    ws.pos_stack.push(v)
-    logits = ws.predict_rule()
+    ws.pos_stack.push(0, v)
+    logits = ws.predict_rule(0)
     loss = logits.sum()
     loss.backward()
     assert v.grad is not None
@@ -137,8 +137,8 @@ def test_rule_predictor_gradient_flows_through_stack():
 def test_rule_predictor_empty_stack_zero_pads():
     """predict_rule with empty pos_stack uses all-zero input; no NaN."""
     ws = _make_word_space_with_grammar()
-    assert ws.pos_stack.depth() == 0
-    logits = ws.predict_rule()
+    assert ws.pos_stack.depth(0) == 0
+    logits = ws.predict_rule(0)
     assert logits.shape == (ws.n_rules,)
     assert not torch.isnan(logits).any()
 
@@ -151,7 +151,7 @@ def test_rule_predictor_overflow_stack_truncates_to_recent():
     max_frames = target_len // pos_dim
     # Push one more than max_frames so the oldest must be dropped.
     for _ in range(max_frames + 2):
-        ws.pos_stack.push(torch.randn(pos_dim))
-    logits = ws.predict_rule()
+        ws.pos_stack.push(0, torch.randn(pos_dim))
+    logits = ws.predict_rule(0)
     assert logits.shape == (ws.n_rules,)
     assert not torch.isnan(logits).any()
