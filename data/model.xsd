@@ -283,6 +283,7 @@
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
       <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
       <xs:element name="chunkBPE" type="xs:boolean" minOccurs="0"/>
       <xs:element name="chunkTargetVocabSize" type="xs:positiveInteger" minOccurs="0"/>
@@ -348,6 +349,7 @@
       <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
       <xs:element name="accumulateTruth" type="unitInterval" minOccurs="0"/>
       <xs:element name="sortNetwork" type="xs:boolean" minOccurs="0"/>

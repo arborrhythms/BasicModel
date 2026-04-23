@@ -57,7 +57,7 @@
     <nVectors>8</nVectors>
     <nInputDim>-1</nInputDim>
     <invertible>true</invertible>
-
+    <nonlinear>true</nonlinear>
   </ConceptualSpace>
 
   <!-- SymbolicSpace: nOutput = ConceptualSpace.nOutput = 6 -->
@@ -66,6 +66,7 @@
     <nDim>10</nDim>
     <nVectors>8</nVectors>
     <nInputDim>-1</nInputDim>
+    <nonlinear>true</nonlinear>
   </SymbolicSpace>
 
   <OutputSpace>

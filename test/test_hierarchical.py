@@ -217,11 +217,11 @@ class TestBackwardCompat(unittest.TestCase):
                 result = model.forward(x)
         self.assertIsNotNone(result)
 
-    def test_symbolicspace_not_hierarchical(self):
-        """SymbolicSpace in non-hierarchical model has no pi_layers list."""
+    def test_symbolicspace_single_instance(self):
+        """Non-butterfly model: MentalModel builds T independent SymbolicSpace
+        instances (T = conceptualOrder) in symbolicSpaces ModuleList."""
         model = _make_model('MentalModel.xml')
-        self.assertFalse(model.symbolicSpace._hierarchical)
-        self.assertIsNone(model.symbolicSpace.pi_layers)
+        self.assertEqual(len(model.symbolicSpaces), model.conceptualOrder)
 
 
 # -- Per-level layer construction -------------------------------------
@@ -229,27 +229,28 @@ class TestBackwardCompat(unittest.TestCase):
 class TestPerLevelLayers(unittest.TestCase):
 
     def test_pair_sigmas_created(self):
-        """Butterfly path builds per-stage pair Sigma layers."""
+        """Butterfly path: T independent ConceptualSpace instances, each
+        carrying a ButterflyStage-wrapped sigma on pair-dim inputs."""
         model = _make_model('RamsifiedModel.xml')
         if not model.useButterflies:
             self.skipTest("Model not butterfly-enabled")
         pair_dim = 2 * model._butterfly_state_dim
-        # ButterflyStage wrappers live directly in sigmas now.
-        stages = model.conceptualSpace.sigmas
-        self.assertEqual(len(stages), model.conceptualOrder)
-        self.assertEqual(stages[0].inner.nInput, pair_dim)
-        self.assertEqual(stages[0].inner.nOutput, pair_dim)
+        self.assertEqual(len(model.conceptualSpaces), model.conceptualOrder)
+        stage0 = model.conceptualSpaces[0].sigma
+        self.assertEqual(stage0.inner.nInput, pair_dim)
+        self.assertEqual(stage0.inner.nOutput, pair_dim)
 
     def test_pair_pi_layers_created(self):
-        """Butterfly path builds per-stage pair Pi heads."""
+        """Butterfly path: T independent SymbolicSpace instances, each
+        carrying a ButterflyStage-wrapped pi on pair-dim inputs."""
         model = _make_model('RamsifiedModel.xml')
         if not model.useButterflies:
             self.skipTest("Model not butterfly-enabled")
         pair_dim = 2 * model._butterfly_state_dim
-        stages = model.symbolicSpace.pi_layers
-        self.assertEqual(len(stages), model.conceptualOrder)
-        self.assertEqual(stages[0].inner.nInput, pair_dim)
-        self.assertEqual(stages[0].inner.nOutput, pair_dim)
+        self.assertEqual(len(model.symbolicSpaces), model.conceptualOrder)
+        stage0 = model.symbolicSpaces[0].layer
+        self.assertEqual(stage0.inner.nInput, pair_dim)
+        self.assertEqual(stage0.inner.nOutput, pair_dim)
 
     def test_symbol_factor_matches_configured_volume(self):
         """Pair head reshaping matches the configured symbol volume exactly."""

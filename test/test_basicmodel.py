@@ -988,9 +988,10 @@ class TestSigmaLayerDeterministic(unittest.TestCase):
 
         x = torch.randn(2, nIn).to(Models.TheDevice.get())
         y_sigma = sigma(x)
-        y_manual = tanh(linear(x))
+        z = torch.atanh(x.clamp(-1 + Layers.epsilon, 1 - Layers.epsilon))
+        y_manual = tanh(linear(z))
         self.assertTrue(torch.allclose(y_sigma, y_manual, atol=1e-6),
-                        f"Deterministic SigmaLayer should match LinearLayer+Tanh")
+                        f"SigmaLayer should match tanh ∘ linear ∘ atanh ∘ clamp")
 
     def test_deterministic_same_train_eval(self):
         nIn, nOut = 8, 4

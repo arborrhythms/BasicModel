@@ -809,7 +809,11 @@ class ColumnUsageTracker:
         return self.frozen_columns
 
 class SigmaLayer(Layer):
-    """Additive (summation) layer: y = tanh(W @ x + b).
+    """Additive (summation) layer.
+
+    With ``nonlinear=True`` (legacy behavior), ``forward`` returns
+    ``tanh(W @ x + b)``. With ``nonlinear=False``, ``forward`` returns the
+    raw linear result. ``reverse`` mirrors the same choice.
 
     When ``invertible=True``, uses InvertibleLinearLayer so ``reverse()``
     is available via the exact LDU inverse.  When ``invertible=False``
@@ -822,7 +826,7 @@ class SigmaLayer(Layer):
     the ergodic interface (set_sigma, observe_sigma, etc.) there.
     """
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
-                 invertible=False, nonlinear=False, stable=False):
+                 invertible=False, nonlinear=True, stable=False):
         super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.ergodic    = ergodic
@@ -842,23 +846,27 @@ class SigmaLayer(Layer):
 
     def forward(self, x):
         if self.nonlinear:
-            x = torch.atanh(x * (1 - epsilon))
+            x = torch.atanh(x.clamp(-1 + epsilon, 1 - epsilon))
         y = self.layer.forward(x)
-        self.activation = torch.tanh(y)
-        return self.activation.clone()
+        if self.nonlinear:
+            y = torch.tanh(y)
+        self.activation = y
+        return y
 
     def reverse(self, y):
-        """Invert tanh then apply W^-^1 then tanh. Requires invertible=True."""
-        self.activation = torch.atanh(y * (1 - epsilon))
-        x = self.layer.reverse(self.activation.clone())
+        """Invert tanh then apply W^-1 then tanh. Requires invertible=True."""
+        if self.nonlinear:
+            y = torch.atanh(y.clamp(-1 + epsilon, 1 - epsilon))
+        x = self.layer.reverse(y)
         if self.nonlinear:
             x = torch.tanh(x)
+        self.activation = x
         return x
 
     @staticmethod
     def test():
         nInput, nOutput = 3, 4
-        layer = SigmaLayer(nInput=nInput, nOutput=nOutput)
+        layer = SigmaLayer(nInput=nInput, nOutput=nOutput, nonlinear=True)
 
         x = torch.randn((2, 5, nInput), device=TheDevice.get())
         layer.set_sigma(0.999)
@@ -873,13 +881,15 @@ class SigmaLayer(Layer):
         print(f"After linear: {y}")
 
         nInput, nOutput = 5, 7
-        layer = SigmaLayer(nInput=nInput, nOutput=nOutput, naive=False, invertible=True)
+        layer = SigmaLayer(nInput=nInput, nOutput=nOutput, naive=False,
+                           invertible=True, nonlinear=True)
         x = torch.randn((2, 5, nInput), device=TheDevice.get())
         layer.set_sigma(0.0)
         y = layer.forward(x)
         y_inv = layer.reverse(y)
         assert torch.norm(x - y_inv) < 0.00001
-        layer = SigmaLayer(nInput=nInput, nOutput=nOutput, naive=True, invertible=True)
+        layer = SigmaLayer(nInput=nInput, nOutput=nOutput, naive=True,
+                           invertible=True, nonlinear=True)
         x = torch.randn((4, 8, nInput), device=TheDevice.get())
         layer.set_sigma(0.0)
         y = layer.forward(x)
@@ -908,12 +918,14 @@ class PiLayer(Layer):
     _eps = 1e-6
 
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
-                 invertible=False, hasBias=True, stable=True, monotonic=False):
+                 invertible=False, hasBias=True, stable=True,
+                 monotonic=False, nonlinear=True):
         super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.stable     = stable
         self.hasBias    = hasBias
         self.monotonic  = monotonic
+        self.nonlinear  = nonlinear
         if invertible:
             if monotonic:
                 self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=hasBias,
@@ -939,7 +951,8 @@ class PiLayer(Layer):
 
     def _to_mult(self, x):
         """Map [-1, 1] -> (0, inf), identity at 0 -> 1."""
-        x = x.clamp(-1 + self._eps, 1 - self._eps)
+        if self.nonlinear:
+            x = x.clamp(-1 + self._eps, 1 - self._eps)
         return (1 + x) / (1 - x)
 
     def _from_mult(self, y):
@@ -958,17 +971,25 @@ class PiLayer(Layer):
         wl = l @ W                                        # [..., nOut]
         b = self.layer._effective_bias()
         wl = wl + b                                       # unconstrained bias
-        return torch.tanh(wl / 2)                         # -> (-1, 1)
+        if self.nonlinear:
+            return torch.tanh(wl / 2)                     # -> (-1, 1)
+        return torch.exp(wl)                              # -> (0, inf)
 
     def reverse(self, y):
         """Recover x from y.  Requires invertible=True."""
         W_inv = self.layer.compute_Winverse_current()
         y = y.to(W_inv.device)
-        m = self._to_mult(y)                              # (0, inf)
-        l = torch.log(m)                                  # (-inf, +inf)
+        if self.nonlinear:
+            m = self._to_mult(y)                          # (0, inf)
+            l = torch.log(m)                              # (-inf, +inf)
+        else:
+            l = torch.log(y)                              # exp-domain inverse
         b = self.layer._effective_bias()
         lx = (l - b) @ W_inv                              # [..., nIn]
-        x = torch.tanh(lx / 2)                            # -> (-1, 1)
+        if self.nonlinear:
+            x = torch.tanh(lx / 2)                        # -> (-1, 1)
+        else:
+            x = self._from_mult(torch.exp(lx))
         if self.layer.ergodic:
             self.resample_noise()
         return x
@@ -976,7 +997,7 @@ class PiLayer(Layer):
     @staticmethod
     def test():
         nBatch, nInput, nOutput = 5, 3, 4
-        layer = PiLayer(nInput=nInput, nOutput=nOutput)
+        layer = PiLayer(nInput=nInput, nOutput=nOutput, nonlinear=True)
         device = next(layer.parameters()).device
         # Inputs in [-1, 1]
         x = torch.rand((nBatch, 6, nInput), device=device) * 2 - 1
@@ -988,7 +1009,7 @@ class PiLayer(Layer):
         print(f"PiLayer forward: input {x.shape} -> output {y.shape}")
 
         def check_roundtrip(desc, **kwargs):
-            kw = dict(nInput=3, nOutput=6, invertible=True)
+            kw = dict(nInput=3, nOutput=6, invertible=True, nonlinear=True)
             kw.update(kwargs)
             layer = PiLayer(**kw)
             device = next(layer.parameters()).device
@@ -1005,7 +1026,8 @@ class PiLayer(Layer):
             print(f"  {desc}: OK")
 
         def check_stability(desc, **kwargs):
-            kw = dict(nInput=3, nOutput=6, invertible=True, stable=True)
+            kw = dict(nInput=3, nOutput=6, invertible=True, stable=True,
+                      nonlinear=True)
             kw.update(kwargs)
             layer = PiLayer(**kw)
             device = next(layer.parameters()).device
@@ -1165,7 +1187,8 @@ class ButterflyStage(Layer):
         B = 4
 
         # Test with SigmaLayer inner
-        sigma = SigmaLayer(2 * D, 2 * D, invertible=True, naive=True)
+        sigma = SigmaLayer(2 * D, 2 * D, invertible=True, naive=True,
+                           nonlinear=True)
         sigma.set_sigma(0.0)
 
         # Non-last stage: should halve N
@@ -1180,7 +1203,8 @@ class ButterflyStage(Layer):
 
         # Last stage: should keep N
         stage_last = ButterflyStage(
-            SigmaLayer(2 * D, 2 * D, invertible=True, naive=True),
+            SigmaLayer(2 * D, 2 * D, invertible=True, naive=True,
+                       nonlinear=True),
             stage_idx=0, initial_n=N, is_last=True)
         stage_last.inner.set_sigma(0.0)
         y_last = stage_last.forward(x)
@@ -1194,7 +1218,8 @@ class ButterflyStage(Layer):
         n = N
         for i in range(3):
             s = ButterflyStage(
-                SigmaLayer(2 * D, 2 * D, invertible=True, naive=True),
+                SigmaLayer(2 * D, 2 * D, invertible=True, naive=True,
+                           nonlinear=True),
                 stage_idx=i, initial_n=N, is_last=(i == 2))
             s.inner.set_sigma(0.0)
             stages.append(s)
@@ -1811,7 +1836,8 @@ class LiftingLayer(Layer):
                 act = self.layer.forward(act)
                 vspace.set_event(act)
                 return vspace
-        mock_ss = _MockSymSpace(PiLayer(D, D, monotonic=True, invertible=True))
+        mock_ss = _MockSymSpace(PiLayer(D, D, monotonic=True,
+                                        invertible=True, nonlinear=True))
         S = torch.randn(B, N, D, device=device)
         V = torch.randn(B, N, D, device=device)
         O = torch.randn(B, N, D, device=device)
@@ -3132,7 +3158,8 @@ class TruthLayer(Layer):
         class _MockSS:
             pass
         mock_ss = _MockSS()
-        mock_ss.layer = PiLayer(N, nSym, monotonic=True, invertible=True)
+        mock_ss.layer = PiLayer(N, nSym, monotonic=True, invertible=True,
+                                nonlinear=True)
         lifting = LiftingLayer(nVerbs=8, nDim=D)
 
         u_score = tl5.universality(S, V, O, lifting, mock_ss)

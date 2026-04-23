@@ -65,6 +65,7 @@
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>false</codebook>
+    <nonlinear>true</nonlinear>
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -77,6 +78,7 @@
     <codebook>true</codebook>
     <useVQVAE>true</useVQVAE>
     <commitmentBeta>0.25</commitmentBeta>
+    <nonlinear>true</nonlinear>
   </SymbolicSpace>
 
   <OutputSpace>

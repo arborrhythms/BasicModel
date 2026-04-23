@@ -26,7 +26,7 @@ class TestPiLayerForward(unittest.TestCase):
 
     def test_3d_input_shape(self):
         nBatch, nInput, nOutput, nSymbols = 5, 3, 4, 6
-        layer = Layers.PiLayer(nInput, nOutput)
+        layer = Layers.PiLayer(nInput, nOutput, nonlinear=True)
         layer.set_sigma(0)
         x = torch.rand(nBatch, nSymbols, nInput).clamp(min=Layers.epsilon).to(TheDevice.get())
         y = layer(x)
@@ -34,14 +34,14 @@ class TestPiLayerForward(unittest.TestCase):
 
     def test_2d_input_shape(self):
         nBatch, nInput, nOutput = 4, 3, 5
-        layer = Layers.PiLayer(nInput, nOutput)
+        layer = Layers.PiLayer(nInput, nOutput, nonlinear=True)
         layer.set_sigma(0)
         x = torch.rand(nBatch, nInput).clamp(min=Layers.epsilon).to(TheDevice.get())
         y = layer(x)
         self.assertEqual(y.shape, (nBatch, nOutput))
 
     def test_gradient_flows(self):
-        layer = Layers.PiLayer(2, 3, ergodic=True)
+        layer = Layers.PiLayer(2, 3, ergodic=True, nonlinear=True)
         with torch.no_grad():
             layer.var.fill_(0.001)
             layer.bias.fill_(0.999)
@@ -58,7 +58,7 @@ class TestSigmaLayerForward(unittest.TestCase):
 
     def test_3d_input_shape(self):
         nBatch, nInput, nOutput, nSymbols = 4, 3, 5, 6
-        layer = Layers.SigmaLayer(nInput, nOutput)
+        layer = Layers.SigmaLayer(nInput, nOutput, nonlinear=True)
         layer.set_sigma(0)
         x = torch.randn(nBatch, nSymbols, nInput).to(TheDevice.get())
         y = layer(x)
@@ -66,7 +66,7 @@ class TestSigmaLayerForward(unittest.TestCase):
 
     def test_output_bounded_by_tanh(self):
         """With saturate=True (default), outputs should be in [-1, 1]."""
-        layer = Layers.SigmaLayer(4, 3)
+        layer = Layers.SigmaLayer(4, 3, nonlinear=True)
         layer.set_sigma(0)
         x = torch.randn(10, 4).to(TheDevice.get()) * 10  # large inputs
         y = layer(x)
@@ -74,7 +74,7 @@ class TestSigmaLayerForward(unittest.TestCase):
         self.assertTrue(torch.all(y <= 1.0))
 
     def test_gradient_flows(self):
-        layer = Layers.SigmaLayer(3, 2)
+        layer = Layers.SigmaLayer(3, 2, nonlinear=True)
         layer.set_sigma(0)
         x = torch.randn(4, 3).to(TheDevice.get()).requires_grad_(True)
         y = layer(x)
@@ -98,10 +98,10 @@ class TestPiSigmaXOR(unittest.TestCase):
         criterion = nn.MSELoss()
         from itertools import chain
         best_loss = float('inf')
-        for seed in (123, 99, 42, 7, 11, 2024, 17):
+        for seed in (3, 123, 99, 42, 7, 11, 2024, 17):
             torch.manual_seed(seed)
-            pi = Layers.PiLayer(2, 3)
-            sigma = Layers.SigmaLayer(3, 1)
+            pi = Layers.PiLayer(2, 4, nonlinear=True)
+            sigma = Layers.SigmaLayer(4, 1, nonlinear=True)
             pi.set_sigma(0)
             sigma.set_sigma(0)
             optimizer = optim.Adam(chain(pi.parameters(), sigma.parameters()), lr=0.001)
@@ -117,6 +117,58 @@ class TestPiSigmaXOR(unittest.TestCase):
 
         self.fail(f"XOR loss should converge below 0.1 on at least one seed, "
                   f"best was {best_loss}")
+
+
+class TestTanhFreePiSigmaXORTestpoint(unittest.TestCase):
+    """Tanh-free Pi exponential features plus linear Sigma solve MM_xor."""
+
+    def test_mm_xor_solves_in_10_epochs_without_tanh(self):
+        from itertools import chain
+
+        X = torch.tensor(
+            [[0, 0], [0, 1], [1, 0], [1, 1]],
+            dtype=torch.float32,
+            device=TheDevice.get(),
+        ) - 0.5
+        Y = torch.tensor(
+            [[0], [1], [1], [0]],
+            dtype=torch.float32,
+            device=TheDevice.get(),
+        )
+
+        torch.manual_seed(0)
+        pi = Layers.PiLayer(2, 8, nonlinear=False)
+        sigma = Layers.SigmaLayer(8, 1, nonlinear=False)
+        pi.set_sigma(0)
+        sigma.set_sigma(0)
+
+        optimizer = optim.LBFGS(
+            chain(pi.parameters(), sigma.parameters()),
+            lr=1.0,
+            max_iter=5,
+            line_search_fn="strong_wolfe",
+        )
+        criterion = nn.MSELoss()
+
+        for _ in range(10):
+            def closure():
+                optimizer.zero_grad()
+                loss = criterion(sigma(pi(X)), Y)
+                loss.backward()
+                return loss
+
+            optimizer.step(closure)
+
+        with torch.no_grad():
+            pred = sigma(pi(X))
+            loss = criterion(pred, Y)
+
+        print(
+            "\n  tanh-free MM_xor loss="
+            f"{loss.item():.8f}, pred={pred.flatten().tolist()}"
+        )
+        self.assertLess(loss.item(), 1e-4)
+        self.assertTrue(torch.allclose(pred, Y, atol=2e-2))
 
 
 class TestLogicalFunctionNet(unittest.TestCase):

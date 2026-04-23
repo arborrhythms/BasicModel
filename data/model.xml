@@ -144,6 +144,7 @@
     <passThrough>false</passThrough>
     <hasAttention>true</hasAttention>
     <invertible>false</invertible>
+    <nonlinear>true</nonlinear>
     <codebook>false</codebook>
     <chunking>lexicon</chunking>
     <chunkBPE>false</chunkBPE>
@@ -188,6 +189,7 @@
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
     <passThrough>false</passThrough>
+    <nonlinear>true</nonlinear>
     <codebook>false</codebook>
     <sortNetwork>false</sortNetwork>
     <sortPasses>0</sortPasses>

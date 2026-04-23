@@ -2728,8 +2728,13 @@ class MentalModel(BaseModel):
         # -- Per-stage arrays: independent ConceptualSpace / SymbolicSpace
         # per stage. The pipeline flows stage-by-stage with no shared
         # per-level views; cross-forward autograd retention vanishes.
-        T = int(n_stages)
+        # conceptualOrder=0 still needs one stage so the pre-seed C->S
+        # pass (test_merged_loop.test_unified_loop_conceptualorder_zero_pre_seed_only)
+        # has a concreteSpace/symbolicSpace to populate. The j-iteration
+        # count reported to runBatch is still the configured value.
+        T = max(1, int(n_stages))
         naive = TheXMLConfig.get("architecture.naive")
+        symbol_nonlinear = TheXMLConfig.space("SymbolicSpace", "nonlinear")
         self.conceptualSpaces = nn.ModuleList()
         self.symbolicSpaces = nn.ModuleList()
         for t in range(T):
@@ -2742,7 +2747,7 @@ class MentalModel(BaseModel):
                 sig = SigmaLayer(
                     pair_dim, pair_dim,
                     naive=naive, ergodic=self.ergodic,
-                    invertible=True)
+                    invertible=True, nonlinear=True)
                 sig.saturate = False
                 cs_layer = ButterflyStage(
                     sig, stage_idx=t, initial_n=state_vectors,
@@ -2750,7 +2755,8 @@ class MentalModel(BaseModel):
                 # SymbolicSpace sees the post-conceptual merged N. Its pi
                 # operates on pairs packed from the already-halved stream and
                 # skips further merge (is_last=True).
-                pi = PiLayer(pair_dim, pair_dim, invertible=True, monotonic=True)
+                pi = PiLayer(pair_dim, pair_dim, invertible=True,
+                             monotonic=True, nonlinear=symbol_nonlinear)
                 ss_layer = ButterflyStage(
                     pi, stage_idx=t, initial_n=state_vectors // 2,
                     is_last=True)
@@ -3246,7 +3252,11 @@ class MentalModel(BaseModel):
             if result is None or (hasattr(result, 'is_empty') and result.is_empty()):
                 break
             self.symbol_states = captured_states
-            self._unified_j_iterations = len(captured_states)
+            # conceptualOrder=0 is stored as 1 pipeline stage for the
+            # pre-seed pass; clamp the reported j-iteration count to
+            # the configured order so that path still reports 0.
+            self._unified_j_iterations = min(
+                self.conceptualOrder, len(captured_states))
             last_forward_result = result
             pred = self._extract_prediction_sequential(result)
             predictions.append(pred)

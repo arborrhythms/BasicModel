@@ -4896,6 +4896,7 @@ class PerceptualSpace(Space):
         ergodic = TheXMLConfig.get("architecture.ergodic")
         hasAttention = TheXMLConfig.space(section, "hasAttention")
         invertible = TheXMLConfig.space(section, "invertible")
+        nonlinear = TheXMLConfig.space(section, "nonlinear")
         naive = TheXMLConfig.get("architecture.naive")
 
         # Stash all attributes BEFORE super().__init__() since _build_what_basis runs inside it
@@ -4903,6 +4904,7 @@ class PerceptualSpace(Space):
         self.ergodic = ergodic
         self.hasAttention = hasAttention
         self.invertible = invertible
+        self.nonlinear = nonlinear
 
         # Stash Embedding-construction inputs (read from config BEFORE super().__init__).
         # Explicit `model_type=` argument wins over architecture.modelType so
@@ -5810,9 +5812,11 @@ class SymbolicSpace(Space):
 
         section = self.config_section
         passThrough = TheXMLConfig.space(section, "passThrough")
+        nonlinear = TheXMLConfig.space(section, "nonlinear")
         super().__init__(inputShape, spaceShape, outputShape, customVQ=True)
         self.conceptualSpace = conceptualSpace
         self.passThrough = passThrough
+        self.nonlinear = nonlinear
         # Symbols carry 4-valued (quaternary) truth in .what via a 2-dim
         # bivector [pos_pole, neg_pole]. Override the inherited content
         # width accordingly so the codebook row = 2 + nWhere + nWhen.
@@ -5829,7 +5833,8 @@ class SymbolicSpace(Space):
         # (butterfly mode builds one per stage in ``MentalModel.create``)
         # pass it in via ``layer=``.
         if layer is None:
-            self.layer = PiLayer(nConceptDim, nSymbolDim, invertible=True, monotonic=True)
+            self.layer = PiLayer(nConceptDim, nSymbolDim, invertible=True,
+                                 monotonic=True, nonlinear=nonlinear)
         else:
             self.layer = layer
 
@@ -6778,7 +6783,8 @@ class OutputSpace(Space):
             # PiLayer activation-mode path for butterfly symbol output
             nIn = inputShape[0]
             nOut = outputShape[0]
-            self._piLayer = PiLayer(nIn, nOut, invertible=True, monotonic=True)
+            self._piLayer = PiLayer(nIn, nOut, invertible=True,
+                                    monotonic=True, nonlinear=True)
             self.layers = nn.ModuleList([self._piLayer])
         else:
             input = self.subspace.getEncodedInputSize()
