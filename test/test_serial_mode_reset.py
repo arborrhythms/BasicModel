@@ -70,11 +70,26 @@ def test_word_space_reset_calls_clear_sentence(model):
 
 
 def test_base_space_reset_cascades_to_layers(model):
-    primer = model.conceptualSpace.sentence_primer
-    primer._fired_this_sentence = True
-    model.conceptualSpace.Reset()
-    assert primer._fired_this_sentence is False, (
-        "Space.Reset() should cascade to its Layers")
+    """Space.Reset() iterates self.layers and calls Reset() on each."""
+    layers = list(model.conceptualSpace.layers)
+    assert layers, "ConceptualSpace should have at least one layer"
+    called = []
+    target = layers[0]
+    orig = getattr(target, "Reset", lambda: None)
+
+    def _probe():
+        called.append(True)
+        orig()
+
+    target.Reset = _probe
+    try:
+        model.conceptualSpace.Reset()
+    finally:
+        if orig is _probe:
+            del target.Reset
+        else:
+            target.Reset = orig
+    assert called, "Space.Reset() should cascade to its Layers"
 
 
 def test_end_of_stream_flag_starts_false(model):

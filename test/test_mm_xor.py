@@ -251,9 +251,10 @@ class TestMMXorConvergence(unittest.TestCase):
                     self.assertTrue(torch.isfinite(result.lossOut))
                     self.assertTrue(torch.isfinite(result.lossIn))
 
-            terms = m.symbolicSpace.symbol_objective_terms()
-            self.assertIn("symbol_residual", terms)
-            self.assertIn("symbol_l1", terms)
+            from Layers import TheError
+            term_names = {t[0] for t in TheError.terms()}
+            self.assertIn("symbol_residual", term_names)
+            self.assertIn("symbol_l1", term_names)
             self.assertEqual(len(totals), 30)
             self.assertTrue(torch.isfinite(torch.stack(totals)).all())
         finally:
@@ -441,11 +442,12 @@ class TestMMXorConvergence(unittest.TestCase):
                         batch_override=(inputTensor, outputTensor),
                     )
                     self.assertIsNotNone(result)
-                    terms = m.symbolicSpace.symbol_objective_terms()
-                    self.assertIn("symbol_commitment", terms,
+                    from Layers import TheError
+                    terms_by_name = {t[0]: t[1] for t in TheError.terms()}
+                    self.assertIn("symbol_commitment", terms_by_name,
                                   "STE path must register symbol_commitment")
                     commit_values.append(
-                        float(terms["symbol_commitment"].detach().item()))
+                        float(terms_by_name["symbol_commitment"].detach().item()))
         finally:
             Models.TheMessage = original_message
 

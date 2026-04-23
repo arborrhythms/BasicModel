@@ -39,7 +39,7 @@ import util as _util
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
 
-from Layers import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
+from Layers import Layer, PiLayer, SigmaLayer, ButterflyStage # Import custom layers from Model.py
 from Layers import LinearLayer, AttentionLayer
 from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import Error, TheError
@@ -50,8 +50,7 @@ from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, Con
 from Language import WordSpace
 from parse import quick_parser
 from Pipeline import (
-    AdditiveFeedbackGlue, ButterflyGlue, CachePoint,
-    GrammarMergeGlue, ReverseAdapter, StageWrapper,
+    CachePoint, GrammarMergeGlue, ReverseAdapter,
 )
 
 
@@ -1440,6 +1439,8 @@ class BasicModel(BaseModel):
             # discourse predictor) via the uniform ``getParameters``
             # path.
             self.spaces.append(self.wordSpace)
+            # Seed the pipeline context (see InputSpace.set_word_space docstring).
+            self.inputSpace.set_word_space(self.wordSpace)
 
         # Phase 1: wire a Normalizer onto every space so spaces can call
         # self.normalizer.{normalize,denormalize} instead of the TheData global.
@@ -1743,11 +1744,9 @@ class BasicModel(BaseModel):
         # Keep InputSpace's AR gate in sync with the model's masked_prediction.
         # Callers that flip masked_prediction after construction rely on this.
         self.inputSpace.masked_prediction = self.masked_prediction
-        # Per-forward reset of accumulated symbol objective terms. Kept
-        # out of Reset() so terms stay visible to callers that read them
-        # after runBatch returns.
-        if hasattr(self, 'symbolicSpace'):
-            self.symbolicSpace.reset_symbol_objective()
+        # Phase 3: pipeline-carried errors replace the old per-forward
+        # reset. ``runBatch`` drains and clears ``outputSpace.subspace.errors``
+        # after consuming the accumulated terms.
 
         # AR at training time only; runtime-ARIR inference runs one pass per call.
         is_runtime_arir = (
@@ -1991,11 +1990,13 @@ class BasicModel(BaseModel):
         n = min(n, target_symbols.shape[1])
         if n <= 0:
             return
-        self.symbolicSpace.accumulate_symbol_objective(
+        terms = self.symbolicSpace._compute_symbol_terms(
             pred_symbols[:, :n, :],
-            target_symbols[:, :n, :],
+            target=target_symbols[:, :n, :],
             residual_scale=residual_scale,
         )
+        self.symbolicSpace._emit_symbol_terms(
+            self.outputSpace.subspace, terms)
 
     def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
                  optimizer=None, batch_override=None):
@@ -2252,20 +2253,19 @@ class BasicModel(BaseModel):
                     weight=self.sentence_predictive_scale,
                     space="DiscourseSpace", category="discourse",
                 )
-            symbol_loss = None
-            if hasattr(self, 'symbolicSpace'):
-                symbol_loss = self.symbolicSpace.symbol_objective_loss()
-                if symbol_loss is not None:
-                    totalLoss = totalLoss + symbol_loss
-                    # Per-term symbol objective registration.  The weights
-                    # are already baked into each term by accumulate_symbol_objective,
-                    # so we register with weight=1.0 and category="symbol".
-                    for term_name, term_value in \
-                            self.symbolicSpace.symbol_objective_terms().items():
-                        TheError.add(
-                            term_name, term_value, weight=1.0,
-                            space="SymbolicSpace", category="symbol",
-                        )
+            # Phase 3: every stage's SymbolicSpace.forward wrote its
+            # auxiliary terms to ``vspace.errors``; ``copy_context`` shares
+            # a single Error instance through the pipeline, so the terminal
+            # OutputSpace subspace now carries every term.
+            if hasattr(self, 'outputSpace'):
+                pipeline_errors = self.outputSpace.subspace.errors
+                aux_total = pipeline_errors.total()
+                if aux_total is not None:
+                    totalLoss = totalLoss + aux_total
+                    for name, tensor, weight, space, category in pipeline_errors.terms():
+                        TheError.add(name, tensor, weight=weight,
+                                     space=space, category=category)
+                pipeline_errors.clear()
 
             # Truth-modulated loss: delegated to WordSpace since the
             # TruthLayer lives there.  WordSpace handles the empty-store
@@ -2700,8 +2700,6 @@ class MentalModel(BaseModel):
         else:
             conceptOutputShape = [nPercepts, concept_dim + obj_concept]
 
-        butterfly_config = None
-
         # -- Butterfly path: pairwise sigma/pi with N-halving --
         if self.useButterflies:
             state_vectors = nPercepts
@@ -2716,52 +2714,100 @@ class MentalModel(BaseModel):
             self._butterfly_state_dim = state_dim
             self._butterfly_symbol_width = symbol_width
             self._butterfly_symbol_factor = state_dim // symbol_width if symbol_width > 0 else 1
-            butterfly_config = {
-                "conceptual_order": n_stages,
-                "state_vectors": state_vectors,
-                "state_dim": state_dim,
-                "symbol_width": symbol_width,
-                "symbol_factor": state_dim // symbol_width if symbol_width > 0 else 1,
-                "ergodic": self.ergodic,
-                "naive": TheXMLConfig.get("architecture.naive"),
-            }
             self._level_shapes_list = self._level_shapes(
                 nPercepts, state_dim, n_stages)
         # -- Grammar path: progressive bottleneck per conceptual order --
         elif self.useGrammar == "all":
+            n_stages = self.conceptualOrder
             self._level_shapes_list = self._level_shapes(
-                nPercepts, percept_dim + obj_percept, self.conceptualOrder)
+                nPercepts, percept_dim + obj_percept, n_stages)
         else:
+            n_stages = self.conceptualOrder
             self._level_shapes_list = None
 
-        self.conceptualSpace = ConceptualSpace(conceptInputShape, spaceShape_concept,
-                                               conceptOutputShape,
-                                               level_shapes=self._level_shapes_list,
-                                               butterfly_config=butterfly_config)
+        # -- Per-stage arrays: independent ConceptualSpace / SymbolicSpace
+        # per stage. The pipeline flows stage-by-stage with no shared
+        # per-level views; cross-forward autograd retention vanishes.
+        T = int(n_stages)
+        naive = TheXMLConfig.get("architecture.naive")
+        self.conceptualSpaces = nn.ModuleList()
+        self.symbolicSpaces = nn.ModuleList()
+        for t in range(T):
+            is_last = (t == T - 1)
+            if self.useButterflies:
+                # Butterfly: ConceptualSpace wraps a SigmaLayer that operates
+                # on packed pairs [B, N_t/2, 2*state_dim]; the ButterflyStage
+                # halves N externally unless is_last.
+                pair_dim = 2 * state_dim
+                sig = SigmaLayer(
+                    pair_dim, pair_dim,
+                    naive=naive, ergodic=self.ergodic,
+                    invertible=True)
+                sig.saturate = False
+                cs_layer = ButterflyStage(
+                    sig, stage_idx=t, initial_n=state_vectors,
+                    is_last=is_last)
+                # SymbolicSpace sees the post-conceptual merged N. Its pi
+                # operates on pairs packed from the already-halved stream and
+                # skips further merge (is_last=True).
+                pi = PiLayer(pair_dim, pair_dim, invertible=True, monotonic=True)
+                ss_layer = ButterflyStage(
+                    pi, stage_idx=t, initial_n=state_vectors // 2,
+                    is_last=True)
+                cs_in = [state_vectors >> t, state_dim]
+                cs_out = cs_in[:] if is_last else [state_vectors >> (t + 1), state_dim]
+                ss_in = cs_out[:]
+                ss_out = cs_out[:]
+            elif self.useGrammar == "all":
+                # Grammar path: each stage halves N (except last). Shapes
+                # follow _level_shapes but the per-stage ConceptualSpace /
+                # SymbolicSpace are plain (no butterfly wrapping).
+                n_t = nPercepts >> t
+                d_t = percept_dim + obj_percept
+                cs_in = [n_t, d_t]
+                cs_out = [n_t, d_t] if is_last else [n_t >> 1, d_t]
+                ss_in = cs_out[:]
+                ss_out = cs_out[:]
+                cs_layer = None
+                ss_layer = None
+            else:
+                # Plain path: all stages share the legacy conceptInputShape /
+                # conceptOutputShape. No N-halving.
+                cs_in = list(conceptInputShape)
+                cs_out = list(conceptOutputShape)
+                ss_in = list(conceptOutputShape)
+                ss_out = list(symbolShape)
+                cs_layer = None
+                ss_layer = None
 
-        self.symbolicSpace = SymbolicSpace(conceptOutputShape, spaceShape_symbol, symbolShape,
-                                           conceptualSpace=self.conceptualSpace,
-                                           level_shapes=self._level_shapes_list,
-                                           butterfly_config=butterfly_config)
+            # Non-codebook spaces require nVectors (spaceShape[0]) ==
+            # nActive (outputShape[0]); resize the per-stage codebook shape
+            # to match the halved N.
+            stage_space_concept = [cs_out[0], spaceShape_concept[1]]
+            stage_space_symbol = [ss_out[0], spaceShape_symbol[1]]
+            cs = ConceptualSpace(cs_in, stage_space_concept, cs_out,
+                                 layer=cs_layer)
+            ss = SymbolicSpace(ss_in, stage_space_symbol, ss_out,
+                               conceptualSpace=cs, layer=ss_layer)
+            # Per-stage flags consumed by build_pipelines / forward.
+            ss.is_last = is_last
+            ss.quantize = True if self.useButterflies else (not is_last)
+            self.conceptualSpaces.append(cs)
+            self.symbolicSpaces.append(ss)
+
+        # Backwards-compat aliases: read-only callers (e.g.
+        # wordSpace.truth_layer = self.symbolicSpace) see the terminal stage.
+        self.conceptualSpace = self.conceptualSpaces[-1]
+        self.symbolicSpace = self.symbolicSpaces[-1]
 
         # No SyntacticSpace -- syntax is handled by Grammar centrally.
         self.syntacticSpace = None
 
         # Output: receives the actual final symbol stream from the pipeline.
-        # Butterfly and grammar paths halve N at every stage except the
-        # last, so the tensor entering OutputSpace has fewer vectors than
-        # ``nSymbols``.
-        if self.useButterflies:
-            n_stages_eff = min(self.conceptualOrder,
-                               int(math.log2(nPercepts)) if nPercepts > 1 else 0)
-            output_n = nPercepts // (2 ** max(0, n_stages_eff - 1))
-        elif self.useGrammar == "all":
-            # GrammarMergeGlue halves N at every stage except the last
-            # (is_last=True is a no-op). T stages => T-1 effective halvings.
-            halvings = max(0, self.conceptualOrder - 1)
-            output_n = max(1, nPercepts // (2 ** halvings))
-        else:
-            output_n = nSymbols
+        # Per-stage ConceptualSpace/SymbolicSpace already encode any
+        # N-halving in their outputShape, so the terminal symbolic stage
+        # dictates what enters OutputSpace.
+        output_n = int(self.symbolicSpaces[-1].outputShape[0])
         outputInputShape = [output_n, symbol_dim + obj_symbol]
         self.outputSpace = OutputSpace(outputInputShape, spaceShape_output, outputShape,
                                        masked_prediction=(masked_prediction != 'NONE'),
@@ -2792,16 +2838,18 @@ class MentalModel(BaseModel):
         # compose has been removed).
         self.conceptualSpace.subspace.basis.monotonic = False
 
-        self.spaces.extend([
-            self.inputSpace,
-            self.perceptualSpace,
-            self.conceptualSpace,
-            self.symbolicSpace,
-            self.outputSpace,
-        ])
+        self.spaces.extend([self.inputSpace, self.perceptualSpace])
+        self.spaces.extend(list(self.conceptualSpaces))
+        self.spaces.extend(list(self.symbolicSpaces))
+        self.spaces.extend([self.outputSpace])
         self.spaces.append(self.wordSpace)
 
         self.inputSpace.outputSpace = self.outputSpace
+        # Seed the pipeline context: InputSpace stamps every outgoing
+        # subspace's ``wordSpace`` with this reference so downstream stages
+        # read ``vspace.wordSpace`` instead of reaching back through a
+        # Model back-channel.
+        self.inputSpace.set_word_space(self.wordSpace)
 
         # Phase 1: wire a Normalizer onto every space so spaces can call
         # self.normalizer.{normalize,denormalize} instead of the TheData global.
@@ -2824,27 +2872,25 @@ class MentalModel(BaseModel):
 
     # -- Phase 2: Sequential pipeline ----------------------------------
 
-    def _glue_class(self):
-        if self.useButterflies:
-            return ButterflyGlue
-        if self.useGrammar == "all":
-            return GrammarMergeGlue
-        return AdditiveFeedbackGlue
-
     def build_pipelines(self):
         """Phase 2: assemble the unrolled Sequential pipelines for MentalModel.
 
         Pipeline shape:
             inputSpace -> perceptualSpace ->
-            (conceptualSpace[t] -> Glue(stage_idx=t) -> symbolicSpace[t])×T ->
+            (conceptualSpaces[t] -> [GrammarMergeGlue(t)?] -> symbolicSpaces[t])×T ->
             outputSpace
 
-        Where T = self.conceptualOrder. Per-stage views from
-        Space.__getitem__ are wrapped in StageWrapper (since the proxy
-        objects aren't nn.Module instances).
+        Where T = len(self.conceptualSpaces). Each per-stage
+        ConceptualSpace/SymbolicSpace is an independent nn.Module
+        inserted directly into the chain. In butterfly mode the
+        ButterflyStage inside each CS/SS handles N-halving internally,
+        so no cross-stage glue is needed. In grammar mode a
+        GrammarMergeGlue between stages averages neighbors. Otherwise
+        the chain is strictly feed-forward — stage t reads stage t-1's
+        output from the chain, not from a persistent skip source.
         """
-        T = int(self.conceptualOrder)
-        Glue = self._glue_class()
+        T = len(self.conceptualSpaces)
+        use_grammar_merge = (self.useGrammar == "all")
 
         # PerceptualSpace quantize: matches legacy's percept_quantize logic.
         # Reversible+invertible configurations skip codebook quantization to
@@ -2852,23 +2898,12 @@ class MentalModel(BaseModel):
         self.perceptualSpace.quantize = not (
             self.reversible and getattr(self.perceptualSpace, "invertible", False))
 
-        # Per-stage SymbolicSpace flags. ``__getitem__`` returns a fresh
-        # ``_SSLevelView`` each call (in hierarchical mode), so flags set
-        # on a transient view are lost. Stash a per-t flag table on the
-        # parent; ``StageWrapper`` reads it when invoking forward.
-        is_last_table = []
-        quantize_table = []
-        for t in range(T):
-            is_last = (t == T - 1)
-            quantize = True if self.useButterflies else (not is_last)
-            is_last_table.append(is_last)
-            quantize_table.append(quantize)
-        self.symbolicSpace._stage_is_last = is_last_table
-        self.symbolicSpace._stage_quantize = quantize_table
-        self.symbolicSpace.wordSpace = self.wordSpace  # rule 3 ownership
+        # WordSpace ownership hangs off the terminal symbolic stage
+        # (Rule 3): ``self.symbolicSpace`` is the alias for
+        # ``self.symbolicSpaces[-1]``.
+        self.symbolicSpace.wordSpace = self.wordSpace
 
-        # Determine initial_n per stage for the N-halving glues.
-        # Butterfly halves N each stage; non-butterfly keeps N fixed.
+        # Determine initial_n per stage for the N-halving GrammarMergeGlue.
         try:
             base_n = int(self.perceptualSpace.subspace.inputShape[0])
         except Exception:
@@ -2876,43 +2911,21 @@ class MentalModel(BaseModel):
 
         fwd_modules = [self.inputSpace, self.perceptualSpace]
         for t in range(T):
-            cs_stage = self.conceptualSpace[t]
-            ss_stage = self.symbolicSpace[t]
-            # Per-stage view may be a non-nn.Module proxy; wrap for Sequential.
-            if not isinstance(cs_stage, nn.Module):
-                cs_stage = StageWrapper(cs_stage)
-            if not isinstance(ss_stage, nn.Module):
-                ss_stage = StageWrapper(ss_stage)
-
-            fwd_modules.append(cs_stage)
-
-            # Cross-stage glue selection:
-            #  - Butterfly mode: the ButterflyStage inside each Conceptual
-            #    and Symbolic stage already handles N-halving internally,
-            #    so we do NOT insert a ButterflyGlue here (that would
-            #    double-halve and drive N to zero).
-            #  - Grammar mode: average-merge between stages.
-            #  - Non-butterfly non-grammar: no glue. The legacy
-            #    AdditiveFeedbackGlue injected the previous-forward's final
-            #    symbol state into stage-0 as a recurrent skip, which
-            #    retained the prior autograd graph and tripped backward()
-            #    on the next iteration. The pipeline is strictly
-            #    feed-forward instead: stage t reads stage t-1's output
-            #    from the chain, not from a persistent skip source.
-            if Glue is ButterflyGlue:
-                pass  # ButterflyStage already handles merge internally
-            elif Glue is GrammarMergeGlue:
+            fwd_modules.append(self.conceptualSpaces[t])
+            if use_grammar_merge:
                 stage_n = base_n // (2 ** t)
                 fwd_modules.append(
-                    Glue(stage_idx=t, initial_n=stage_n, is_last=(t == T - 1))
+                    GrammarMergeGlue(stage_idx=t, initial_n=stage_n,
+                                     is_last=(t == T - 1))
                 )
-
-            fwd_modules.append(ss_stage)
+            fwd_modules.append(self.symbolicSpaces[t])
 
         fwd_modules.append(self.outputSpace)
 
-        all_spaces = [self.inputSpace, self.perceptualSpace,
-                      self.conceptualSpace, self.symbolicSpace, self.outputSpace]
+        all_spaces = ([self.inputSpace, self.perceptualSpace]
+                      + list(self.conceptualSpaces)
+                      + list(self.symbolicSpaces)
+                      + [self.outputSpace])
         any_invertible = any(getattr(s, "invertible", False) for s in all_spaces)
 
         if any_invertible:
@@ -3157,22 +3170,17 @@ class MentalModel(BaseModel):
         # mask during forward. Preserve the runBatch contract: None means
         # "all emitted AR positions are valid".
         self._ar_valid_pos = None
-        # Per-forward reset of accumulated symbol objective terms. Kept
-        # out of Reset() so terms stay visible to callers that read them
-        # after runBatch returns.
-        if hasattr(self, 'symbolicSpace'):
-            self.symbolicSpace.reset_symbol_objective()
+        # Phase 3: pipeline-carried errors replace the old per-forward
+        # reset. ``runBatch`` drains and clears ``outputSpace.subspace.errors``
+        # after consuming the accumulated terms.
 
         # Detach the cached subspace events carried over from the prior
-        # forward. AdditiveFeedbackGlue reads symbolicSpace.subspace.event
-        # as the recurrent feedback source, and the cross-sentence value
-        # carryover is intentional — but the tensor at that slot still
-        # points into the prior forward's autograd graph, which gets
-        # freed by its backward(). Detaching in place keeps the value
-        # and breaks the graph. Within-forward writes in this pass will
-        # immediately replace each event with a live-grad tensor, so
-        # stage-to-stage gradient coupling inside the current forward
-        # is unaffected.
+        # forward. The cross-sentence value carryover is intentional, but
+        # the tensor at that slot still points into the prior forward's
+        # autograd graph, which gets freed by its backward(). Detaching
+        # in place keeps the value and breaks the graph. Within-forward
+        # writes in this pass will immediately replace each event with a
+        # live-grad tensor.
         for sp in (getattr(self, 'perceptualSpace', None),
                    getattr(self, 'conceptualSpace', None),
                    getattr(self, 'symbolicSpace', None)):
@@ -3212,25 +3220,13 @@ class MentalModel(BaseModel):
             self._predicted_confidence = conf
 
         # Identify the SymbolicSpace stage indices in pipeline_fwd so we
-        # can capture per-stage symbol vectors for symbol_states.
-        # Two cases:
-        #   * Non-hierarchical: symbolicSpace[t] returns symbolicSpace itself
-        #     (an nn.Module); inserted directly without StageWrapper. Detect
-        #     by ``mod is self.symbolicSpace``.
-        #   * Hierarchical / butterfly: symbolicSpace[t] returns a
-        #     _SSLevelView whose ``_parent`` is symbolicSpace; wrapped in
-        #     StageWrapper. Detect via ``mod._stage._parent``.
-        ss_module_indices = set()
-        for i, mod in enumerate(self.pipeline_fwd):
-            if mod is self.symbolicSpace:
-                ss_module_indices.add(i)
-                continue
-            stage = getattr(mod, '_stage', None)
-            if stage is None:
-                continue
-            parent = getattr(stage, '_parent', None)
-            if stage is self.symbolicSpace or parent is self.symbolicSpace:
-                ss_module_indices.add(i)
+        # can capture per-stage symbol vectors for symbol_states. Each
+        # stage's SymbolicSpace is an independent nn.Module in
+        # self.symbolicSpaces, inserted directly into the pipeline.
+        ss_set = set(id(s) for s in self.symbolicSpaces)
+        ss_module_indices = {
+            i for i, mod in enumerate(self.pipeline_fwd) if id(mod) in ss_set
+        }
 
         # While-loop: InputSpace streams positions (stateful cursor);
         # empty-sentinel terminates.
@@ -3350,14 +3346,17 @@ class MentalModel(BaseModel):
         sym_vec = self.symbolicSpace.subspace.materialize()
         concepts_state = self.concepts
 
+        T = len(self.symbolicSpaces)
+
         if self.useButterflies:
-            self.symbolicSpace.subspace.set_event(sym_vec)
-            x = self.symbolicSpace[self.conceptualOrder - 1].reverse(
-                self.symbolicSpace.subspace).materialize()
-            for t in reversed(range(self.conceptualOrder)):
-                self.conceptualSpace.subspace.set_event(x)
-                x = self.conceptualSpace[t].reverse(
-                    self.conceptualSpace.subspace).materialize()
+            x = sym_vec
+            for t in reversed(range(T)):
+                self.symbolicSpaces[t].subspace.set_event(x)
+                x = self.symbolicSpaces[t].reverse(
+                    self.symbolicSpaces[t].subspace).materialize()
+                self.conceptualSpaces[t].subspace.set_event(x)
+                x = self.conceptualSpaces[t].reverse(
+                    self.conceptualSpaces[t].subspace).materialize()
             self.perceptualSpace.subspace.set_event(x)
             input_state = self.perceptualSpace.reverse(self.perceptualSpace.subspace)
             self.inputs = self.inputSpace.reverse(input_state)
@@ -3369,11 +3368,11 @@ class MentalModel(BaseModel):
             # Progressive-bottleneck: peel off last pi, then per-level
             # reverse with external unmerge and feedback subtraction.
             self.symbols.set_event(sym_vec)
-            x = self.symbolicSpace[self.conceptualOrder - 1].reverse(
+            x = self.symbolicSpaces[T - 1].reverse(
                 self.symbols).materialize()
-            for t in reversed(range(self.conceptualOrder)):
+            for t in reversed(range(T)):
                 self.symbols.set_event(x)
-                concept_input_state = self.conceptualSpace[t].reverse(self.symbols)
+                concept_input_state = self.conceptualSpaces[t].reverse(self.symbols)
                 x = concept_input_state.materialize()
                 fb = self._sym_feedbacks.pop()
                 if fb is not None:

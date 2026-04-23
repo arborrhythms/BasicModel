@@ -220,10 +220,11 @@ from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
-from Layers import Layer, PiLayer, SigmaLayer, ButterflyStage  # Import custom layers from Model.py
+from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
 from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
-from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegularizer, SmoothingRegularizer, ImpenetrableLayer, SentencePrimingLayer
+from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegularizer, SmoothingRegularizer, ImpenetrableLayer
+from Layers import Error
 from parse import quick_parser
 from collections import namedtuple as _namedtuple
 
@@ -1220,8 +1221,8 @@ class Codebook(Basis):
         self.codebookSize = 0
         self.vq = None
         # Latest commitment loss from the most recent forward/quantize pass.
-        # Consumer sites (SymbolicSpace._symbol_objective_terms,
-        # ConceptualSpace.forward, etc.) read and clear this between steps.
+        # SymbolicSpace.forward reads it and emits "codebook_commit" into
+        # vspace.errors.
         self.last_commit_loss = None
 
     def getW(self):
@@ -2372,9 +2373,39 @@ class SubSpace(nn.Module):
         # activation: [B, N] strength gate -- materialize() = event * activation.
         self._active = None  # [B, N, M] index tensor
         self.batch = 0
+
+        # Pipeline-carried context. These travel with the subspace through
+        # every Space.forward via copy_context(), replacing the old pattern
+        # of cross-stage and cross-forward back-channels on Space instances.
+        #   wordSpace    -- Model's WordSpace reference (stamped by InputSpace)
+        #   errors       -- per-batch auxiliary-loss accumulator; SymbolicSpace
+        #                   writes symbol_commitment / codebook_commit / etc.
+        #                   here and runBatch folds them into TheError.
+        #   serial_cache -- {id(owner_space): tensor} for serial-mode warm cache
+        self.wordSpace = None
+        self.errors = Error()
+        self.serial_cache = {}
+
         payload = self.materialize()
         if isinstance(payload, torch.Tensor) and payload.ndim > 0:
             self.batch = payload.shape[0]
+
+    def copy_context(self, other):
+        """Adopt cross-stage/cross-forward state from ``other``.
+
+        Pipeline invariant: every ``Space.forward`` that returns a subspace
+        other than the incoming ``vspace`` must first ``copy_context(vspace)``
+        so ``wordSpace``, ``errors``, and ``serial_cache`` travel unbroken
+        through the pipeline.  ``errors`` and ``serial_cache`` are carried
+        by reference so later writes (e.g., ``SymbolicSpace.forward`` adding
+        a commitment term) land in the same accumulator that
+        ``OutputSpace`` / ``runBatch`` will read.
+        """
+        if other is None:
+            return
+        self.wordSpace = other.wordSpace
+        self.errors = other.errors
+        self.serial_cache = other.serial_cache
 
     @property
     def basis(self):
@@ -2542,6 +2573,13 @@ class SubSpace(nn.Module):
         """
         if self.event is not None and hasattr(self.event, 'setW'):
             self.event.setW(None)
+
+    def Reset(self):
+        """Per-sentence teardown. Drops the serial-mode warm cache so
+        the next forward starts cold. ``errors`` and ``wordSpace``
+        persist (per-batch, per-sentence respectively; both owned by
+        MentalModel lifecycle, not per-Reset)."""
+        self.serial_cache.clear()
 
     # Legacy alias. New code should use Start() / End() for symmetry
     # with Space.Start() / Space.End() and Layer.Start() / Layer.End().
@@ -3815,7 +3853,7 @@ class Space(nn.Module):
 
         self.reversible   = True
         self.processSymbols = TheXMLConfig.get("architecture.processSymbols")
-        self.codebook     = TheXMLConfig.space(section, "codebook")
+        self._codebook    = TheXMLConfig.space(section, "codebook")
         _nWhere = TheXMLConfig.space(section, "nWhere")
         _nWhen = TheXMLConfig.space(section, "nWhen")
         self.nWhere = _nWhere
@@ -3925,6 +3963,12 @@ class Space(nn.Module):
     def get_vectors(self):
         """Convenience accessor -- delegates to subspace."""
         return self.subspace.get_vectors()
+
+    @property
+    def codebook(self):
+        """Shared learned codebook flag. Reference is immutable (no setter);
+        the Parameter inside it is updated by the optimizer each step."""
+        return self._codebook
 
     @property
     def vocabulary(self):
@@ -4260,6 +4304,12 @@ class InputSpace(Space):
         # (need B and embSize to size it). Reset via ``reset_buffer``.
         # See basicmodel/doc/specs/2026-04-20-streaming-ar-training-loop-design.md
         self._ar_buffer = None
+        # Pipeline-seed: the Model's WordSpace reference. InputSpace is
+        # the only stage that creates subspaces from raw input, so it
+        # stamps this onto every outgoing subspace and downstream stages
+        # propagate via copy_context. Registered by BaseModel.create_from_config
+        # once WordSpace exists.
+        self._model_wordSpace = None
         # End-of-stream sentinel. forward() sets this to True when the
         # NULL byte is detected at the current cursor; runBatch reads it
         # to fire the per-sentence Reset cascade and clears it.
@@ -4305,6 +4355,20 @@ class InputSpace(Space):
                        for s in inputBatch]
             return torch.stack(tensors, dim=0).unsqueeze(1).to(TheDevice.get())
         return inputBatch  # already [B, D, 1] and on device after toDevice()
+
+    def set_word_space(self, ws):
+        """Register the Model's WordSpace so the pipeline carries it downstream.
+
+        ``forward()`` stamps ``self._model_wordSpace`` onto every outgoing
+        subspace so ConceptualSpace/SymbolicSpace stages can read
+        ``vspace.wordSpace`` without reaching back through a Model
+        back-channel.  Empty-return sentinels are stamped too so
+        skip-on-empty logic downstream still carries the reference.
+        """
+        self._model_wordSpace = ws
+        # Pre-stamp our own subspace; regular returns hand it out unchanged.
+        if self.subspace is not None:
+            self.subspace.wordSpace = ws
 
     def reset_buffer(self):
         """Clear the sliding-window AR buffer.
@@ -4549,6 +4613,8 @@ class InputSpace(Space):
             nInputDim=template._nInputDim,
             nOutputDim=template._nOutputDim,
         )
+        # Stamp wordSpace so downstream skip-on-empty logic still sees it.
+        ss.wordSpace = self._model_wordSpace
         return ss
 
     def _lex_and_embed(self, input):
@@ -4611,6 +4677,7 @@ class InputSpace(Space):
     def reverse(self, subspace):
         if hasattr(subspace, "is_empty") and subspace.is_empty():
             return subspace
+        self.subspace.copy_context(subspace)
         vspace = subspace
         if self.model_type == "embedding":
             # Text mode: PerceptualSpace already ran the text reverse and
@@ -4850,10 +4917,10 @@ class PerceptualSpace(Space):
         self.embedding_source = TheData.train_input if TheData.train_input else None
 
         super().__init__(inputShape, spaceShape, outputShape)
-        # Serial-mode cache: full [B, N, D] output of the last forward.
-        # Populated by the cold path when serial_mode=True, consumed by the
-        # slide-and-recompute warm path on subsequent calls. Reset clears it.
-        self._serial_cache = None
+        self._sparsity = SparsityRegularizer(
+            l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
+            enabled=bool(getattr(self, "codebook", False)),
+        )
 
         lexical_basis = self.subspace.what
         if isinstance(lexical_basis, Embedding):
@@ -5151,7 +5218,6 @@ class PerceptualSpace(Space):
         sub = getattr(self, 'subspace', None)
         if sub is not None and getattr(sub, 'event', None) is not None:
             sub.event.setW(None)
-        self._serial_cache = None
 
     def _slot_forward(self, x, quantize=True):
         """Position-local math (codebook + sparsity) on a [B, K, D] slice.
@@ -5165,11 +5231,6 @@ class PerceptualSpace(Space):
         if self.codebook and quantize:
             cb = self.subspace.get_vectors()
             x = cb.forward(x)
-        if not hasattr(self, "_sparsity"):
-            self._sparsity = SparsityRegularizer(
-                l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
-                enabled=bool(getattr(self, "codebook", False)),
-            )
         x = self._sparsity(x)
         return x
 
@@ -5177,24 +5238,26 @@ class PerceptualSpace(Space):
         """Perception: map input vectors to percepts via attention + VQ + chunking."""
         if subspace.is_empty():
             return subspace
+        self.subspace.copy_context(subspace)
         vspace = subspace
         quantize = getattr(self, "quantize", True)
 
         # Serial-mode warm path: upstream has pre-embedded AR buffer, cold
-        # path already populated _serial_cache with the prior full output.
-        # Process only the new last slot, splice into rolled cache. Skips
-        # the lexicon _embed (upstream already embedded) and runs the VQ
-        # codebook on one slot instead of N.
+        # path already populated the subspace serial_cache with the prior
+        # full output. Process only the new last slot, splice into rolled
+        # cache. Skips the lexicon _embed (upstream already embedded) and
+        # runs the VQ codebook on one slot instead of N.
+        cache = self.subspace.serial_cache.get(id(self))
         if (getattr(self, "serial_mode", False)
-                and self._serial_cache is not None
+                and cache is not None
                 and not self.passThrough):
             upstream = vspace.materialize()
             if (upstream is not None and upstream.ndim == 3
-                    and upstream.shape[-1] == self._serial_cache.shape[-1]
-                    and upstream.shape[1] == self._serial_cache.shape[1]):
+                    and upstream.shape[-1] == cache.shape[-1]
+                    and upstream.shape[1] == cache.shape[1]):
                 new_in = upstream[:, -1:, :]
                 new_out = self._slot_forward(new_in, quantize=quantize)
-                rolled = torch.roll(self._serial_cache, shifts=-1, dims=1).clone()
+                rolled = torch.roll(cache, shifts=-1, dims=1).clone()
                 rolled[:, -1, :] = new_out[:, 0, :]
                 self.subspace.set_event(rolled)
                 self.subspace.normalize("percepts", target="event", normalize=True)
@@ -5203,7 +5266,7 @@ class PerceptualSpace(Space):
                 # grad-bearing tensor from the prior (about-to-be-freed)
                 # graph and trip backward-through-graph-twice. The cache
                 # carries values, not gradient linkage.
-                self._serial_cache = rolled.detach().clone()
+                self.subspace.serial_cache[id(self)] = rolled.detach().clone()
                 return self.subspace
 
         # Cold path: full compute.
@@ -5234,11 +5297,6 @@ class PerceptualSpace(Space):
         if self.codebook and quantize:
             cb = self.subspace.get_vectors()
             x = cb.forward(x)
-        if not hasattr(self, "_sparsity"):
-            self._sparsity = SparsityRegularizer(
-                l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
-                enabled=bool(getattr(self, "codebook", False)),
-            )
         x = self._sparsity(x)
         vspace = self.forwardEnd(x, returnVectors=True)
         vspace.normalize("percepts", target="event", normalize=True)
@@ -5250,7 +5308,7 @@ class PerceptualSpace(Space):
         if getattr(self, "serial_mode", False):
             out = vspace.materialize()
             if out is not None:
-                self._serial_cache = out.detach().clone()
+                self.subspace.serial_cache[id(self)] = out.detach().clone()
 
         return vspace
 
@@ -5258,6 +5316,7 @@ class PerceptualSpace(Space):
         """Manifesting: reconstruct input vectors from percepts."""
         if subspace.is_empty():
             return subspace
+        self.subspace.copy_context(subspace)
         vspace = subspace
         if isinstance(self.subspace.what, Embedding):
             self._reverse_text(vspace)
@@ -5463,6 +5522,7 @@ class ModalSpace(Space):
         """Route each modality through its branch PerceptualSpace."""
         if subspace.is_empty():
             return subspace
+        self.subspace.copy_context(subspace)
         vspace = subspace
         if vspace.is_demuxed:
             what_in = vspace.what.getW()
@@ -5502,12 +5562,14 @@ class ModalSpace(Space):
                       whereEncoding=self.subspace.whereEncoding,
                       whenEncoding=self.subspace.whenEncoding)
         out.set_demuxed(what_out, where_out, when_out)
+        out.copy_context(subspace)
         return out
 
     def reverse(self, subspace):
         """Split event into modalities, reverse each branch, rebuild."""
         if subspace.is_empty():
             return subspace
+        self.subspace.copy_context(subspace)
         vspace = subspace
         event = vspace.materialize()
         what_in = event[..., :self.nWhat]
@@ -5541,6 +5603,7 @@ class ModalSpace(Space):
                       whereEncoding=self.subspace.whereEncoding,
                       whenEncoding=self.subspace.whenEncoding)
         out.set_demuxed(what_rev, where_rev, when_rev)
+        out.copy_context(subspace)
         return out
 
     def set_sigma(self, sigma):
@@ -5577,8 +5640,7 @@ class ConceptualSpace(Space):
     name = "Concepts"
     config_section = "ConceptualSpace"
 
-    def __init__(self, inputShape, spaceShape, outputShape, level_shapes=None,
-                 butterfly_config=None):
+    def __init__(self, inputShape, spaceShape, outputShape, layer=None):
         section = self.config_section
         ergodic = TheXMLConfig.get("architecture.ergodic")
         hasAttention = TheXMLConfig.space(section, "hasAttention")
@@ -5589,151 +5651,51 @@ class ConceptualSpace(Space):
         self.nonlinear = nonlinear
         self.ergodic = ergodic
         self.hasAttention = hasAttention
-        # last_svo is a @property backed by _last_svo (set during forward)
         input = self.subspace.getEncodedInputSize()
         output = self.subspace.getEncodedOutputSize()
         if hasAttention:
             self.attention = AttentionLayer(output, output, type="transformer")
 
-        # -- Hierarchical mode: per-level Sigma layers ----------------
-        # Average-merge keeps norms bounded, so tanh saturation is unnecessary
-        # and harmful: cascaded atanh in reverse clamps values outside (-1,1),
-        # destroying sample variance.  Per-level sigmas use saturate=False.
-        if level_shapes is not None and len(level_shapes) >= 1:
-            self._hierarchical = True
-            self._level_shapes = level_shapes
-            self.sigmas = nn.ModuleList()
-            if butterfly_config is not None:
-                # Butterfly variant: SigmaLayer is 2D*2D, wrapped in a
-                # ButterflyStage that permutes, packs, sigma-applies,
-                # unpacks and merges (halves N).
-                pair_dim = 2 * butterfly_config["state_dim"]
-                initial_n = butterfly_config["state_vectors"]
-                n_stages = butterfly_config["conceptual_order"]
-                for t in range(n_stages):
-                    sig = SigmaLayer(
-                        pair_dim, pair_dim,
-                        naive=butterfly_config["naive"],
-                        ergodic=butterfly_config["ergodic"],
-                        invertible=True,
-                    )
-                    sig.saturate = False
-                    stage = ButterflyStage(
-                        sig, stage_idx=t, initial_n=initial_n,
-                        is_last=(t == n_stages - 1))
-                    self.sigmas.append(stage)
+        # When ``layer`` is provided (butterfly mode builds one per stage
+        # in ``MentalModel.create``), use it directly and skip the default
+        # SigmaLayer construction.
+        if layer is not None:
+            self.sigma = layer
+            self.forwardSigma = layer.forward
+            self.reverseSigma = layer.reverse
+            if hasattr(layer, "getParameters"):
+                self.params = layer.getParameters()
             else:
-                for t, (n_t, d_t) in enumerate(level_shapes):
-                    sig = SigmaLayer(d_t, d_t, naive=naive, ergodic=ergodic,
-                                     invertible=invertible)
-                    sig.saturate = False
-                    self.sigmas.append(sig)
-            # Dim projections only meaningful for the grammar path (non-butterfly).
-            # One per level: level 0 projects from percept_dim, others from prior level.
-            self.dim_projections = nn.ModuleList()
-            if butterfly_config is None:
-                percept_dim = inputShape[1]  # pre-merge percept dim
-                for t, (n_t, d_t) in enumerate(level_shapes):
-                    d_in = percept_dim if t == 0 else level_shapes[t - 1][1]
-                    self.dim_projections.append(nn.Linear(d_in, d_t))
-            self.layers = nn.ModuleList(
-                list(self.sigmas) + list(self.dim_projections))
-            self.params = []
-            for s in self.sigmas:
-                # ButterflyStage forwards .getParameters() to the inner sigma
-                # via .parameters(); fall back if the stage doesn't expose it.
-                if hasattr(s, "getParameters"):
-                    self.params.extend(s.getParameters())
-                else:
-                    self.params.extend(list(s.parameters()))
-            # Set forwardSigma/reverseSigma to level-0 for backward compat callers
-            self.forwardSigma = self.sigmas[0].forward
-            self.reverseSigma = self.sigmas[0].reverse
-        else:
-            # -- Original single-layer mode ----------------------------
-            self._hierarchical = False
-            self._level_shapes = None
-            if self.reversible:
-                if invertible:
-                    self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
-                                            invertible=True, nonlinear=nonlinear,
-                                            stable=True)
-                    self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
-                    self.params = self.sigma.getParameters()
-                    self.layers = nn.ModuleList([self.sigma])
-                else:
-                    self.sigma1 = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
-                                             invertible=True, nonlinear=nonlinear,
-                                             stable=True)
-                    self.sigma2 = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
-                                             invertible=True, nonlinear=nonlinear,
-                                             stable=True)
-                    self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
-                    self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
-                    self.layers = nn.ModuleList([self.sigma1, self.sigma2])
-            else:
+                self.params = list(layer.parameters())
+            self.layers = nn.ModuleList([layer])
+        elif self.reversible:
+            if invertible:
                 self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
-                                        nonlinear=nonlinear, stable=True)
-                self.forwardSigma = self.sigma.forward
+                                        invertible=True, nonlinear=nonlinear,
+                                        stable=True)
+                self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
                 self.params = self.sigma.getParameters()
                 self.layers = nn.ModuleList([self.sigma])
-        self._last_svo = None
-
-        # Sentence priming: reads wordSpace.discourse once per sentence
-        # and adds a bias to the concept input. wordSpace_ref is a
-        # callable closure so we do not need wordSpace wired at Space
-        # construction time (the model wires it later).
-        try:
-            priming_scale = float(
-                TheXMLConfig.training("sentencePrimingScale", 0.05) or 0.05)
-        except (KeyError, TypeError):
-            priming_scale = 0.05
-        self.sentence_primer = SentencePrimingLayer(
-            wordSpace_ref=lambda: getattr(self, "wordSpace", None),
-            scale=priming_scale,
-        )
-        self.layers.append(self.sentence_primer)
-
-    def __getitem__(self, t):
-        """Index into conceptual order levels.
-
-        Non-hierarchical: returns self (shared sigma for all t).
-        Hierarchical: returns a _LevelView that routes through sigmas[t].
-        """
-        if not self._hierarchical:
-            return self
-        return self._CSLevelView(self, t)
-
-    class _CSLevelView:
-        """Proxy routing .forward()/.reverse() through a per-level sigma.
-
-        Accepts ``wordSpace`` for signature parity with the non-hierarchical
-        path, but ignores it -- hierarchical sigmas don't invoke compose.
-        """
-        def __init__(self, parent, t):
-            self._parent = parent
-            self._t = t
-            if parent._hierarchical:
-                self._sigma = parent.sigmas[t]
             else:
-                self._sigma = getattr(parent, 'sigma', None)
-            self.subspace = parent.subspace
-
-        def forward(self, subspace):
-            if hasattr(subspace, "is_empty") and subspace.is_empty():
-                return subspace
-            x = subspace.materialize()
-            y = self._sigma.forward(x)
-            self._parent.subspace.set_event(y)
-            return self._parent.subspace
-
-        def reverse(self, subspace):
-            if hasattr(subspace, "is_empty") and subspace.is_empty():
-                return subspace
-            x = subspace.materialize()
-            y = self._sigma.reverse(x)
-            self._parent.subspace.set_event(y)
-            return self._parent.subspace
+                self.sigma1 = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
+                                         invertible=True, nonlinear=nonlinear,
+                                         stable=True)
+                self.sigma2 = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
+                                         invertible=True, nonlinear=nonlinear,
+                                         stable=True)
+                self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
+                self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
+                self.layers = nn.ModuleList([self.sigma1, self.sigma2])
+        else:
+            self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
+                                    nonlinear=nonlinear, stable=True)
+            self.forwardSigma = self.sigma.forward
+            self.params = self.sigma.getParameters()
+            self.layers = nn.ModuleList([self.sigma])
+        self._sparsity = SparsityRegularizer(
+            l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
+            enabled=bool(getattr(self, "codebook", False)),
+        )
 
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
@@ -5761,16 +5723,19 @@ class ConceptualSpace(Space):
         """
         if subspace.is_empty():
             return subspace
+        self.subspace.copy_context(subspace)
         vspace = subspace
-        # Sentence priming bias (once per sentence; primer gates itself).
+        # STM-residual bias (once per sentence; wordSpace gates itself).
         # We must not mutate the upstream subspace (PerceptualSpace owns
-        # it); stage the primed tensor in our own subspace instead.
-        event = vspace.materialize()
-        if event is not None:
-            primed = self.sentence_primer(event)
-            if primed is not event:
-                self.subspace.set_event(primed)
-                vspace = self.subspace
+        # it); stage the biased tensor in our own subspace instead.
+        ws = vspace.wordSpace
+        if ws is not None:
+            bias = ws.stm_residual()
+            if bias is not None:
+                event = vspace.materialize()
+                if event is not None:
+                    self.subspace.set_event(event + bias.view(1, 1, -1))
+                    vspace = self.subspace
         x = self.forwardBegin(vspace, returnVectors=True)
         y = self.forwardSigma(x)
         if self.hasAttention:
@@ -5786,32 +5751,21 @@ class ConceptualSpace(Space):
                 y = self.subspace.get_vectors().forward(y)
         # Shared sparsity regularizer on the concept activations. No-op when
         # l1_lambda defaults to 0; attribute-only so configs opt in.
-        if not hasattr(self, "_sparsity"):
-            self._sparsity = SparsityRegularizer(
-                l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
-                enabled=bool(getattr(self, "codebook", False)),
-            )
         y = self._sparsity(y)
-        # Post S-tier merge: compositional rules live on S only. The
-        # concept space no longer runs its own lift/lower pipeline;
-        # `_last_svo` is retained as None for API compatibility with
-        # callers that still read `ConceptualSpace.last_svo`.
-        self._last_svo = None
+        ws = vspace.wordSpace
+        if ws is not None:
+            ws.last_svo = None
         vspace = self.forwardEnd(y, returnVectors=True)
         vspace.normalize("concepts", target="what")       # range check
         vspace.normalize("concepts", target="where")      # range check
         vspace.normalize("concepts", target="activation")  # range check
         return vspace
 
-    @property
-    def last_svo(self):
-        """Return SVO tuple from last ternary lift, or None."""
-        return self._last_svo
-
     def reverse(self, subspace):
         """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer."""
         if subspace.is_empty():
             return subspace
+        self.subspace.copy_context(subspace)
         vspace = subspace
         y = self.reverseBegin(vspace, returnVectors=True)
         if self.processSymbols:
@@ -5852,7 +5806,7 @@ class SymbolicSpace(Space):
         return torch.zeros(int(batch), nOutput, nDim, device=TheDevice.get())
 
     def __init__(self, inputShape, spaceShape, outputShape, conceptualSpace=None,
-                 level_shapes=None, butterfly_config=None):
+                 layer=None):
 
         section = self.config_section
         passThrough = TheXMLConfig.space(section, "passThrough")
@@ -5871,37 +5825,13 @@ class SymbolicSpace(Space):
         nSymbolDim = outputShape[1]     # symbol_dim + obj (where+when)
         nSymbols = spaceShape[0]
 
-        if level_shapes is not None and len(level_shapes) >= 1:
-            self._hierarchical = True
-            self._level_shapes = level_shapes
-            self.pi_layers = nn.ModuleList()
-            if butterfly_config is not None:
-                pair_dim = 2 * butterfly_config["state_dim"]
-                initial_n = butterfly_config["state_vectors"]
-                n_stages = butterfly_config["conceptual_order"]
-                self._butterfly_symbol_width = butterfly_config["symbol_width"]
-                self._butterfly_symbol_factor = butterfly_config["symbol_factor"]
-                for t in range(n_stages):
-                    pi = PiLayer(pair_dim, pair_dim, invertible=True, monotonic=True)
-                    # Pi operates on sigma's merged output (N already halved).
-                    stage = ButterflyStage(
-                        pi, stage_idx=t, initial_n=initial_n // 2,
-                        is_last=True)  # no merge -- sigma already merged
-                    self.pi_layers.append(stage)
-            else:
-                self._butterfly_symbol_width = None
-                self._butterfly_symbol_factor = None
-                for t, (n_t, d_t) in enumerate(level_shapes):
-                    self.pi_layers.append(
-                        PiLayer(d_t, nSymbolDim, invertible=True, monotonic=True))
-            self.layer = self.pi_layers[0]  # default for non-hierarchical callers
-        else:
-            self._hierarchical = False
-            self.pi_layers = None
-            self._butterfly_symbol_width = None
-            self._butterfly_symbol_factor = None
-        if not self._hierarchical:
+        # Default layer is a PiLayer; callers that need a ButterflyStage
+        # (butterfly mode builds one per stage in ``MentalModel.create``)
+        # pass it in via ``layer=``.
+        if layer is None:
             self.layer = PiLayer(nConceptDim, nSymbolDim, invertible=True, monotonic=True)
+        else:
+            self.layer = layer
 
         # Symbol objective: residual accuracy is primary; L1 remains a
         # secondary compactness pressure on latent activations.
@@ -5944,7 +5874,6 @@ class SymbolicSpace(Space):
         # clipped-cosine parthood. See Layers.ImpenetrableLayer.
         self.impenetrable_overlap = _symbol_cfg("impenetrableOverlap", 0.0)
         self.impenetrable_variance = _symbol_cfg("impenetrableVariance", 0.0)
-        self.reset_symbol_objective()
 
         # Truth accumulation: accumulateTruth is 0..1 (DoT for recorded symbols).
         # Default 0 (off). Server sets to 1 when processing the TruthSet,
@@ -5980,9 +5909,8 @@ class SymbolicSpace(Space):
             n_passes = sort_passes_cfg if sort_passes_cfg > 0 else None
             self.sortNetwork = SortingLayer(nSymbolDim, n_passes=n_passes)
 
-        pi_list = list(self.pi_layers) if self._hierarchical else [self.layer]
         self.layers = nn.ModuleList(
-            pi_list + ([self.sortNetwork] if self.sortNetwork else [])
+            [self.layer] + ([self.sortNetwork] if self.sortNetwork else [])
         )
 
         # Assign fixed where encodings to symbol positions.
@@ -5994,6 +5922,14 @@ class SymbolicSpace(Space):
             self._symbol_where = None
 
         self.params = list(self.parameters())
+        self._sparsity = self._build_sparsity_regularizer(
+            self.l1_lambda, self.codebook)
+        self._smoothing = SmoothingRegularizer(
+            lam=float(self.discontinuity_lambda or 0.0),
+            enabled=bool(self.discontinuity_lambda
+                         and self.discontinuity_lambda > 0.0),
+        )
+        self._impenetrable = self._build_impenetrable_layer()
 
     def _build_object_basis(self):
         """Event is a writable Tensor -- codebook lives on .what."""
@@ -6035,10 +5971,6 @@ class SymbolicSpace(Space):
         wrapper for backward compatibility with call sites in this file
         and in Models.py.
         """
-        if not hasattr(self, "_sparsity"):
-            self._sparsity = self._build_sparsity_regularizer(
-                self.l1_lambda, self.codebook
-            )
         return self._sparsity(x)
 
     def smoothing_penalty(self, x):
@@ -6047,11 +5979,6 @@ class SymbolicSpace(Space):
         Bivector-aware via pair-max collapse; 0 when discontinuityLambda=0
         or when disabled. See Layers.SmoothingRegularizer.
         """
-        if not hasattr(self, "_smoothing"):
-            self._smoothing = SmoothingRegularizer(
-                lam=float(self.discontinuity_lambda or 0.0),
-                enabled=bool(self.discontinuity_lambda and self.discontinuity_lambda > 0.0),
-            )
         return self._smoothing(x)
 
     def resolve(self, subspace):
@@ -6163,8 +6090,6 @@ class SymbolicSpace(Space):
         Returns a scalar tensor. If no codebook has been built yet, or all
         weights are zero, returns a zero scalar on the current device.
         """
-        if not hasattr(self, "_impenetrable"):
-            self._impenetrable = self._build_impenetrable_layer()
         basis = getattr(self.subspace, "basis", None)
         if basis is None:
             return torch.zeros((), device=TheDevice.get())
@@ -6172,16 +6097,6 @@ class SymbolicSpace(Space):
         if W is None or not isinstance(W, torch.Tensor):
             return torch.zeros((), device=TheDevice.get())
         return self._impenetrable(W, basis)
-
-    def reset_symbol_objective(self):
-        self._symbol_objective_terms = {}
-        self._symbol_objective_count = 0
-
-    # Note: symbol_objective_terms are NOT cleared in Reset(). runBatch reads
-    # them after loss computation; callers also read them externally after
-    # runBatch returns. They are cleared at the start of each Model.forward()
-    # instead, so a batch's accumulated terms survive until the next forward
-    # begins.
 
     def _decorrelation_loss(self, residual):
         flat = residual.reshape(-1, residual.shape[-1])
@@ -6292,10 +6207,16 @@ class SymbolicSpace(Space):
         target[:, :n] = weight_content[indices]
         return target.reshape_as(predicted)
 
-    def accumulate_symbol_objective(self, predicted, target=None,
-                                    use_codebook_target=False,
-                                    residual_scale=None):
-        """Accumulate residual-first symbol objective terms for one Pi pass."""
+    def _compute_symbol_terms(self, predicted, target=None,
+                              use_codebook_target=False,
+                              residual_scale=None):
+        """Compute residual-first symbol objective terms for one Pi pass.
+
+        Returns a dict[name -> tensor] with no side effects. The caller
+        writes each term into ``vspace.errors`` via ``errors.add(...)``;
+        ``Error`` sums same-name terms at add time so multiple passes
+        accumulate correctly across a batch.
+        """
         terms = {}
         residual = None
         if target is None and use_codebook_target:
@@ -6322,114 +6243,14 @@ class SymbolicSpace(Space):
             terms["symbol_spectral_flatness"] = (
                 self.spectral_flatness_weight * self._spectral_flatness_loss(residual)
             )
-        if not terms:
-            return
-        for key, value in terms.items():
-            self._symbol_objective_terms[key] = (
-                self._symbol_objective_terms.get(key, value.new_tensor(0.0)) + value
-            )
-        self._symbol_objective_count += 1
+        return terms
 
-    def symbol_objective_terms(self):
-        if not self._symbol_objective_terms:
-            averaged = {}
-        else:
-            count = max(self._symbol_objective_count, 1)
-            averaged = {
-                key: value / count
-                for key, value in self._symbol_objective_terms.items()
-            }
-        # ImpenetrableLayer operates on the codebook itself, not on per-
-        # prediction residuals, so it is computed once per term-collection
-        # rather than accumulated per Pi pass.
-        if (self.impenetrable_overlap > 0.0
-                or self.impenetrable_variance > 0.0):
-            imp = self.impenetrable_loss()
-            if imp is not None and torch.is_tensor(imp) and imp.requires_grad:
-                averaged["symbol_impenetrable"] = imp
-            elif imp is not None and torch.is_tensor(imp) and imp.abs().item() > 0.0:
-                averaged["symbol_impenetrable"] = imp
-        return averaged
-
-    def symbol_objective_loss(self):
-        terms = self.symbol_objective_terms()
-        if not terms:
-            return None
-        return sum(terms.values())
-
-    def __getitem__(self, t):
-        """Index into conceptual order levels.
-
-        Non-hierarchical: returns self (shared PiLayer for all t).
-        Hierarchical: returns a _LevelView that routes through pi_layers[t].
-        """
-        if not self._hierarchical:
-            return self
-        return self._SSLevelView(self, t)
-
-    class _SSLevelView:
-        """Proxy routing .forward()/.reverse() through a per-level PiLayer."""
-        def __init__(self, parent, t):
-            self._parent = parent
-            self._t = t
-            if parent._hierarchical:
-                self._pi = parent.pi_layers[t]
-            else:
-                self._pi = parent.layer
-            self.subspace = parent.subspace
-
-        def forward(self, subspace):
-            if hasattr(subspace, "is_empty") and subspace.is_empty():
-                return subspace
-            # Per-stage flags live on the parent's stage tables (set by
-            # ``MentalModel.build_pipelines``). Fall back to plain attrs
-            # for callers that haven't populated the table.
-            t = self._t
-            il_table = getattr(self._parent, "_stage_is_last", None)
-            qz_table = getattr(self._parent, "_stage_quantize", None)
-            is_last = (il_table[t] if il_table is not None and t < len(il_table)
-                       else getattr(self._parent, "is_last", False))
-            quantize = (qz_table[t] if qz_table is not None and t < len(qz_table)
-                        else getattr(self._parent, "quantize", True))
-            x = subspace.materialize()
-            y = self._pi.forward(x)
-            # Butterfly path: ``_pi`` is a ButterflyStage. Codebook-aware
-            # losses are expensive on full symbol grids (millions of rows
-            # under ARLM), so they run only on the terminal stage.
-            # Grammar / plain-hierarchical path: per-level PiLayer.
-            is_butterfly = isinstance(self._pi, ButterflyStage)
-            if is_butterfly:
-                if is_last:
-                    nearest_target = self._parent._nearest_symbol_target(y)
-                    if (self._parent.use_vqvae and self._parent.codebook
-                            and self._parent.commitment_beta > 0.0
-                            and nearest_target is not None):
-                        target_detached = nearest_target.detach().to(
-                            device=y.device, dtype=y.dtype)
-                        n = min(y.shape[-1], target_detached.shape[-1],
-                                self._parent.nDim)
-                        if n > 0:
-                            commit = self._parent.commitment_beta * F.mse_loss(
-                                y[..., :n], target_detached[..., :n])
-                            prev = self._parent._symbol_objective_terms.get(
-                                "symbol_commitment", y.new_tensor(0.0))
-                            self._parent._symbol_objective_terms["symbol_commitment"] = prev + commit
-                    self._parent.accumulate_symbol_objective(y, target=nearest_target)
-            else:
-                if quantize:
-                    y = self._parent.l1_proximal(y)
-                self._parent.accumulate_symbol_objective(
-                    y, use_codebook_target=quantize)
-            self._parent.subspace.set_event(y)
-            return self._parent.subspace
-
-        def reverse(self, subspace):
-            if hasattr(subspace, "is_empty") and subspace.is_empty():
-                return subspace
-            x = subspace.materialize()
-            y = self._pi.reverse(x)
-            self._parent.subspace.set_event(y)
-            return self._parent.subspace
+    def _emit_symbol_terms(self, vspace, terms):
+        """Write a dict of named symbol-objective terms into ``vspace.errors``."""
+        for name, value in terms.items():
+            vspace.errors.add(
+                name, value, weight=1.0,
+                space="SymbolicSpace", category="symbol")
 
     @property
     def vocabulary(self):
@@ -6661,6 +6482,7 @@ class SymbolicSpace(Space):
         """
         if subspace.is_empty():
             return subspace
+        self.subspace.copy_context(subspace)
         quantize = getattr(self, "quantize", True)
         is_last = getattr(self, "is_last", False)
         wordSpace = getattr(self, "wordSpace", None)
@@ -6756,10 +6578,11 @@ class SymbolicSpace(Space):
                 if n > 0:
                     commit = self.commitment_beta * F.mse_loss(
                         z_e[..., :n], target_detached[..., :n])
-                    prev = self._symbol_objective_terms.get(
-                        "symbol_commitment", commit.new_tensor(0.0))
-                    self._symbol_objective_terms["symbol_commitment"] = prev + commit
-            self.accumulate_symbol_objective(predicted, target)
+                    vspace.errors.add(
+                        "symbol_commitment", commit, weight=1.0,
+                        space="SymbolicSpace", category="symbol")
+            self._emit_symbol_terms(
+                vspace, self._compute_symbol_terms(predicted, target=target))
         elif use_vqvae_nonreversible:
             # Non-reversible VQVAE: forward = hard quantized, backward uses
             # the configured gradient estimator (snap/ste/rotation).
@@ -6778,18 +6601,20 @@ class SymbolicSpace(Space):
             if self.commitment_beta > 0.0 and n > 0:
                 commit = self.commitment_beta * F.mse_loss(
                     z_e[..., :n], quantized_detached[..., :n])
-                prev = self._symbol_objective_terms.get(
-                    "symbol_commitment", commit.new_tensor(0.0))
-                self._symbol_objective_terms["symbol_commitment"] = prev + commit
+                vspace.errors.add(
+                    "symbol_commitment", commit, weight=1.0,
+                    space="SymbolicSpace", category="symbol")
             # Also pick up the codebook-internal commit loss (VQ's own
             # encoder-commitment term). Previously discarded; now threaded
             # into the objective so it actually drives learning.
             cb_commit = getattr(self.subspace.what, "last_commit_loss", None)
             if cb_commit is not None and torch.is_tensor(cb_commit) and cb_commit.requires_grad:
-                prev = self._symbol_objective_terms.get(
-                    "codebook_commit", cb_commit.new_tensor(0.0))
-                self._symbol_objective_terms["codebook_commit"] = prev + cb_commit
-            self.accumulate_symbol_objective(predicted, quantized_detached)
+                vspace.errors.add(
+                    "codebook_commit", cb_commit, weight=1.0,
+                    space="SymbolicSpace", category="symbol")
+            self._emit_symbol_terms(
+                vspace,
+                self._compute_symbol_terms(predicted, target=quantized_detached))
         elif hard_quantize:
             # Task 2.5: quantize the resolved 1-D activation, not the event.
             # set_event() resets activation to the ones-bivector so we must
@@ -6814,15 +6639,30 @@ class SymbolicSpace(Space):
                 if target_1d is not None:
                     # Snap the 1-D activation to the nearest codebook scalar.
                     self.subspace.activation.setW(target_1d.squeeze(-1))
-                    self.accumulate_symbol_objective(predicted_1d, target_1d)
+                    self._emit_symbol_terms(
+                        vspace,
+                        self._compute_symbol_terms(predicted_1d, target=target_1d))
                 else:
-                    self.accumulate_symbol_objective(predicted_1d)
+                    self._emit_symbol_terms(
+                        vspace, self._compute_symbol_terms(predicted_1d))
             else:
-                self.accumulate_symbol_objective(act)
+                self._emit_symbol_terms(
+                    vspace, self._compute_symbol_terms(act))
         else:
-            self.accumulate_symbol_objective(act)
             self.subspace.set_event(act)
             vspace = self.forwardEnd(self.subspace)
+            self._emit_symbol_terms(
+                vspace, self._compute_symbol_terms(act))
+
+        # ImpenetrableLayer: codebook-level regularizer, emitted once per forward.
+        if (self.impenetrable_overlap > 0.0
+                or self.impenetrable_variance > 0.0):
+            imp = self.impenetrable_loss()
+            if (imp is not None and torch.is_tensor(imp)
+                    and (imp.requires_grad or imp.abs().item() > 0.0)):
+                vspace.errors.add(
+                    "symbol_impenetrable", imp, weight=1.0,
+                    space="SymbolicSpace", category="symbol")
 
         vspace.normalize("symbols", target="what")   # range check
         vspace.normalize("symbols", target="where")  # range check
@@ -6835,6 +6675,7 @@ class SymbolicSpace(Space):
         """
         if subspace.is_empty():
             return subspace
+        self.subspace.copy_context(subspace)
         vspace = subspace
         if self.passThrough:
             return vspace
@@ -6956,6 +6797,7 @@ class OutputSpace(Space):
                 self.forwardLinear = LinearLayer(input, output)
                 self.layers = nn.ModuleList([self.forwardLinear])
         self.params = list(self.parameters())
+        self._batch_results = []
     def getTestOutput(self):
         if not self.data.test_output:
             return None
@@ -6971,6 +6813,7 @@ class OutputSpace(Space):
         """Acting: project symbols to task output."""
         if subspace.is_empty():
             return subspace
+        self.subspace.copy_context(subspace)
         vspace = subspace
         if self.nonlinear_output:
             # Activation-mode: PiLayer on symbol activations [B, nSymbols] -> [B, nOutput]
@@ -6990,6 +6833,7 @@ class OutputSpace(Space):
         """Being acted upon: map output back to symbolic space."""
         if subspace.is_empty():
             return subspace
+        self.subspace.copy_context(subspace)
         vspace = subspace
         if self.nonlinear_output:
             # Activation-mode: PiLayer reverse [B, nOutput] -> [B, nSymbols]
@@ -7100,6 +6944,4 @@ class OutputSpace(Space):
         Args:
             result: BatchResult namedtuple from runBatch().
         """
-        if not hasattr(self, '_batch_results'):
-            self._batch_results = []
         self._batch_results.append(result)

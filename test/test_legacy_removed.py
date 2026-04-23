@@ -27,6 +27,14 @@ _FORBIDDEN = (
     ("Spaces._forward_legacy",    lambda: "_forward_legacy"    in _file_text(Spaces)),
     ("Spaces._reverse_legacy",    lambda: "_reverse_legacy"    in _file_text(Spaces)),
     ("Spaces._forward_dispatch",  lambda: "_forward_dispatch"  in _file_text(Spaces)),
+    # Phase 2: hierarchical level-views + additive feedback glue removed.
+    ("Spaces._CSLevelView",         lambda: "_CSLevelView"         in _file_text(Spaces)),
+    ("Spaces._SSLevelView",         lambda: "_SSLevelView"         in _file_text(Spaces)),
+    ("Spaces._symbol_objective_terms", lambda: "_symbol_objective_terms" in _file_text(Spaces)),
+    ("Spaces.symbol_objective_terms",  lambda: "symbol_objective_terms"  in _file_text(Spaces)),
+    ("Spaces.reset_symbol_objective",  lambda: "reset_symbol_objective"  in _file_text(Spaces)),
+    ("Spaces.accumulate_symbol_objective", lambda: "accumulate_symbol_objective" in _file_text(Spaces)),
+    ("Spaces.SentencePrimingLayer",  lambda: "class SentencePrimingLayer" in _file_text(Spaces)),
 )
 
 

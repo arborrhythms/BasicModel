@@ -56,7 +56,8 @@ with torch.no_grad():
         if c_sl is not None:
             result = c_sl.compose(y, self.subspace, Language.TheGrammar)
             y = result[0] if isinstance(result, tuple) else result
-            self._last_svo = None
+            if ws is not None:
+                ws.last_svo = None
             captured['cs_post_compose'] = y.clone()
         vspace = self.forwardEnd(y, returnVectors=True)
         vspace.normalize("concepts", target="what")

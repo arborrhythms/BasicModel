@@ -3338,16 +3338,14 @@ class TestSymbolObjective(unittest.TestCase):
         sym.l1_lambda = 0.1
         sym.decorrelation_weight = 0.0
         sym.spectral_flatness_weight = 0.0
-        sym.reset_symbol_objective()
 
         predicted = torch.tensor(
             [[[1.0, -2.0, 3.0], [0.5, -0.5, 1.5]]],
             requires_grad=True,
         )
         target = torch.zeros_like(predicted)
-        sym.accumulate_symbol_objective(predicted, target)
+        terms = sym._compute_symbol_terms(predicted, target=target)
 
-        terms = sym.symbol_objective_terms()
         self.assertIn("symbol_residual", terms)
         self.assertIn("symbol_l1", terms)
         self.assertTrue(torch.allclose(
@@ -3359,7 +3357,7 @@ class TestSymbolObjective(unittest.TestCase):
             0.1 * predicted.abs().mean(),
         ))
 
-        loss = sym.symbol_objective_loss()
+        loss = sum(terms.values())
         loss.backward()
         self.assertIsNotNone(predicted.grad)
         self.assertGreater(predicted.grad.abs().sum().item(), 0.0)
@@ -3379,15 +3377,13 @@ class TestSymbolObjective(unittest.TestCase):
             [0.0, 0.0, 0.0],
             [1.0, 1.0, 1.0],
         ]))
-        sym.reset_symbol_objective()
 
         predicted = torch.tensor(
             [[[0.9, 1.1, 1.0], [0.1, -0.1, 0.0]]],
             requires_grad=True,
         )
-        sym.accumulate_symbol_objective(predicted, use_codebook_target=True)
+        terms = sym._compute_symbol_terms(predicted, use_codebook_target=True)
 
-        terms = sym.symbol_objective_terms()
         target = torch.tensor([[[1.0, 1.0, 1.0], [0.0, 0.0, 0.0]]])
         self.assertIn("symbol_residual", terms)
         self.assertTrue(torch.allclose(

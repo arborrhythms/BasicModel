@@ -2015,6 +2015,36 @@ class WordSpace(Space):
                     if all(p is not q for q in self.params):
                         self.params.append(p)
 
+        # -- pipeline-carried state ---------------------------------------
+        # last_svo: (subject, verb, object) snapshot from the most recent
+        # chart-compose trace. Written by ConceptualSpace.forward via
+        # ``vspace.wordSpace.last_svo = ...``; read by SyntacticLayer and
+        # truth-store consumers. Cleared by Reset() on sentence boundary.
+        self.last_svo = None
+
+        # STM-residual: fires once per sentence on the first
+        # stm_residual() call; Reset() re-arms the flag.
+        self._stm_fired = False
+        self.stm_residual_scale = float(
+            TheXMLConfig.training("sentencePrimingScale", 0.05) or 0.05)
+
+    def stm_residual(self):
+        """Discourse prediction bias applied once per sentence.
+
+        Reads ``self.discourse.predict()`` and returns
+        ``discourse.prime(predicted, confidence, scale)``, or ``None`` when
+        discourse is unavailable, not yet built, or the bias already fired
+        this sentence.  ``Reset()`` re-arms.
+        """
+        if self._stm_fired:
+            return None
+        self._stm_fired = True
+        disc = self.discourse
+        if disc is None:
+            return None
+        pred, conf = disc.predict()
+        return disc.prime(pred, conf, self.stm_residual_scale)
+
     # -- PoS helpers --------------------------------------------------
     def pos_lookup(self, active_symbols):
         """Return the 4-dim PoS vector for the given active-symbol pattern.
@@ -2346,6 +2376,11 @@ class WordSpace(Space):
         """Per-sentence teardown called by runBatch's Reset cascade."""
         super().Reset()
         self.clear_sentence()
+        # Re-arm the STM residual so the next sentence fires once; drop
+        # the stale SVO so composed-chart readers don't carry it across
+        # sentence boundaries.
+        self._stm_fired = False
+        self.last_svo = None
 
     def get_blocks(self, b=0):
         """Return the parse-tree ledger for batch row `b`."""

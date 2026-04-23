@@ -67,12 +67,13 @@ def test_sequential_builds_pipeline_fwd_and_rev():
 def test_sequential_unrolls_conceptual_order():
     """Pipeline has T (conceptualOrder) conceptual+symbolic stage pairs."""
     model = _model()
-    T = int(model.conceptualOrder)
+    T = len(model.conceptualSpaces)
     modules = list(model.pipeline_fwd)
-    from Pipeline import StageWrapper
-    stage_wrappers = [m for m in modules if isinstance(m, StageWrapper)]
-    assert len(stage_wrappers) == 2 * T, (
-        f"expected 2*T={2*T} StageWrappers, got {len(stage_wrappers)}")
+    from Spaces import ConceptualSpace, SymbolicSpace
+    cs_count = sum(1 for m in modules if isinstance(m, ConceptualSpace))
+    ss_count = sum(1 for m in modules if isinstance(m, SymbolicSpace))
+    assert cs_count == T, f"expected {T} ConceptualSpaces, got {cs_count}"
+    assert ss_count == T, f"expected {T} SymbolicSpaces, got {ss_count}"
 
 
 def test_sequential_reconstruction_produced():

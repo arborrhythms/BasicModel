@@ -3145,52 +3145,6 @@ class TruthLayer(Layer):
         print("TruthLayer tests passed.")
 
 
-class SentencePrimingLayer(Layer):
-    """Sentence priming bias attached to ConceptualSpace.
-
-    On the first forward call of each sentence, reads
-    ``wordSpace.discourse.predict()`` and adds
-    ``prime(predicted, confidence, scale)`` as a bias to the input
-    tensor. Subsequent forward calls within the same sentence pass
-    through unchanged. ``Reset()`` re-arms the predictor for the next
-    sentence.
-    """
-
-    def __init__(self, wordSpace_ref, scale=0.05):
-        super().__init__(0, 0)
-        # wordSpace_ref is a callable so the Layer can resolve the
-        # wordSpace lazily (avoids module-init ordering hazards).
-        self._wordSpace_ref = wordSpace_ref
-        self.scale = float(scale)
-        self._fired_this_sentence = False
-
-    def _discourse(self):
-        ws = self._wordSpace_ref() if callable(self._wordSpace_ref) \
-            else self._wordSpace_ref
-        if ws is None:
-            return None
-        return getattr(ws, "discourse", None)
-
-    def forward(self, x):
-        if self._fired_this_sentence:
-            return x
-        self._fired_this_sentence = True
-        disc = self._discourse()
-        if disc is None:
-            return x
-        pred, conf = disc.predict()
-        bias = disc.prime(pred, conf, self.scale)
-        if bias is None:
-            return x
-        return x + bias.view(1, 1, -1)
-
-    def reverse(self, y):
-        return y
-
-    def Reset(self):
-        self._fired_this_sentence = False
-
-
 class InterSentenceLayer(Layer):
     """Inter-sentence substrate: per-sentence ``[S | W]`` snapshots
     scored by a contrastive dual-force cosine loss.
@@ -4324,6 +4278,30 @@ class Error:
     def reset(self):
         """Clear the per-batch term store.  Preserves history."""
         self._terms.clear()
+
+    def clear(self):
+        """Alias for ``reset``; used by per-subspace transit accumulators.
+
+        When an ``Error`` instance is attached to a ``SubSpace`` as a
+        pipeline-carried auxiliary-loss sink, ``runBatch`` calls
+        ``clear()`` after harvesting its terms into ``TheError`` so the
+        next forward pass starts fresh.
+        """
+        self._terms.clear()
+
+    def terms(self):
+        """Return the current terms as a list of 5-tuples.
+
+        Each tuple is ``(name, tensor, weight, space, category)``.  Same-name
+        contributions have been summed at ``add()`` time, so each unique
+        name appears once.  Used by ``runBatch`` to fold per-subspace
+        accumulators into the module-level ``TheError`` registry while
+        preserving tensor references for autograd.
+        """
+        return [
+            (name, rec["value"], rec["weight"], rec["space"], rec["category"])
+            for name, rec in self._terms.items()
+        ]
 
     def disable(self, category: str):
         """Exclude all terms of this category from ``.total()``."""

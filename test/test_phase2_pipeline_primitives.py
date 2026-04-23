@@ -85,60 +85,7 @@ def test_cache_point_updates_on_each_call():
     assert cp.last is b
 
 
-from Pipeline import ButterflyGlue, GrammarMergeGlue, AdditiveFeedbackGlue  # noqa: E402
-
-
-# Reuse _FakeSymbols from earlier in the file.
-
-class _HoldingSpace:
-    """Simulates a SymbolicSpace whose .subspace holds materialize()-able state."""
-    def __init__(self, t=None):
-        self._t = t
-    def materialize(self):
-        return self._t
-    def is_empty(self):
-        return self._t is None or self._t.numel() == 0
-
-
-# --- ButterflyGlue ---
-
-def test_butterfly_glue_forward_halves_n():
-    x = torch.randn(2, 8, 4)
-    ss = _FakeSymbols(x.clone())
-    g = ButterflyGlue(stage_idx=0, initial_n=8, is_last=False)
-    g.forward(ss)
-    y = ss.materialize()
-    assert y.shape == (2, 4, 4)
-    expected = (x[:, 0::2, :] + x[:, 1::2, :]) / 2
-    assert torch.allclose(y, expected, atol=1e-6)
-
-
-def test_butterfly_glue_roundtrip():
-    x = torch.randn(2, 8, 4)
-    ss = _FakeSymbols(x.clone())
-    g = ButterflyGlue(stage_idx=0, initial_n=8, is_last=False)
-    g.forward(ss)
-    g.reverse(ss)
-    recon = ss.materialize()
-    assert recon.shape == x.shape
-    assert torch.allclose(recon, x, atol=1e-6)
-
-
-def test_butterfly_glue_is_last_identity():
-    x = torch.randn(2, 8, 4)
-    ss = _FakeSymbols(x.clone())
-    g = ButterflyGlue(stage_idx=0, initial_n=8, is_last=True)
-    g.forward(ss)
-    assert torch.equal(ss.materialize(), x)
-    g.reverse(ss)
-    assert torch.equal(ss.materialize(), x)
-
-
-def test_butterfly_glue_empty_passthrough():
-    ss = _FakeSymbols(torch.zeros(0, 0, 0))
-    g = ButterflyGlue(stage_idx=0, initial_n=8, is_last=False)
-    out = g.forward(ss)
-    assert out is ss
+from Pipeline import GrammarMergeGlue  # noqa: E402
 
 
 # --- GrammarMergeGlue ---
@@ -176,53 +123,6 @@ def test_grammar_merge_glue_empty_passthrough():
     g = GrammarMergeGlue(stage_idx=0, initial_n=8, is_last=False)
     out = g.forward(ss)
     assert out is ss
-
-
-# --- AdditiveFeedbackGlue ---
-
-def test_additive_feedback_adds_symbols():
-    percepts = torch.randn(2, 8, 4)
-    symbols = torch.randn(2, 8, 4)
-    percept_ss = _FakeSymbols(percepts.clone())
-    feedback_src = _HoldingSpace(symbols)
-    g = AdditiveFeedbackGlue(stage_idx=0, feedback_source=feedback_src)
-    # forward() returns a self-materializing wrapper carrying ``x + fb``
-    # (see docstring); the incoming subspace is intentionally not mutated.
-    out = g.forward(percept_ss)
-    assert torch.allclose(out.materialize(), percepts + symbols, atol=1e-6)
-    # Confirm the input was left read-only.
-    assert torch.allclose(percept_ss.materialize(), percepts, atol=1e-6)
-
-
-def test_additive_feedback_first_stage_no_feedback():
-    percepts = torch.randn(2, 8, 4)
-    percept_ss = _FakeSymbols(percepts.clone())
-    feedback_src = _HoldingSpace(None)
-    g = AdditiveFeedbackGlue(stage_idx=0, feedback_source=feedback_src)
-    g.forward(percept_ss)
-    assert torch.allclose(percept_ss.materialize(), percepts, atol=1e-6)
-
-
-def test_additive_feedback_empty_percepts_stays_empty():
-    percept_ss = _FakeSymbols(torch.zeros(0, 0, 0))
-    symbols = torch.randn(2, 8, 4)
-    feedback_src = _HoldingSpace(symbols)
-    g = AdditiveFeedbackGlue(stage_idx=0, feedback_source=feedback_src)
-    out = g.forward(percept_ss)
-    assert out is percept_ss
-    assert out.is_empty()
-
-
-def test_additive_feedback_reverse_subtracts():
-    percepts = torch.randn(2, 8, 4)
-    symbols = torch.randn(2, 8, 4)
-    combined = percepts + symbols
-    ss = _FakeSymbols(combined.clone())
-    feedback_src = _HoldingSpace(symbols)
-    g = AdditiveFeedbackGlue(stage_idx=0, feedback_source=feedback_src)
-    g._last_feedback = symbols
-    g.reverse(ss)
-    assert torch.allclose(ss.materialize(), percepts, atol=1e-6)
 
 
 def test_all_spaces_have_single_arg_forward():

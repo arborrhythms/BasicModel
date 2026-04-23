@@ -68,23 +68,25 @@ def test_perceptual_serial_mode_flag_propagates():
 
 
 def test_serial_cache_populated_by_cold_forward():
-    """First serial_mode forward (cold) should populate _serial_cache."""
+    """First serial_mode forward (cold) should populate subspace.serial_cache."""
     m = _build(serial_mode=True)
-    assert m.perceptualSpace._serial_cache is None
+    ps = m.perceptualSpace
+    assert ps.subspace.serial_cache.get(id(ps)) is None
     m.forward(_xor_input())
     # Either cold populated cache, or nothing flowed (would mean the
     # upstream subspace was empty and we never reached the cache write).
-    assert m.perceptualSpace._serial_cache is not None, (
-        "serial_mode cold forward should populate _serial_cache")
+    assert ps.subspace.serial_cache.get(id(ps)) is not None, (
+        "serial_mode cold forward should populate subspace.serial_cache")
 
 
 def test_serial_cache_cleared_by_reset():
-    """Reset() clears _serial_cache so the next forward is cold."""
+    """Reset() clears subspace.serial_cache so the next forward is cold."""
     m = _build(serial_mode=True)
+    ps = m.perceptualSpace
     m.forward(_xor_input())
-    assert m.perceptualSpace._serial_cache is not None
-    m.perceptualSpace.Reset()
-    assert m.perceptualSpace._serial_cache is None
+    assert ps.subspace.serial_cache.get(id(ps)) is not None
+    ps.Reset()
+    assert ps.subspace.serial_cache.get(id(ps)) is None
 
 
 def test_warm_path_skips_slot_forward_embed():
@@ -99,14 +101,19 @@ def test_warm_path_skips_slot_forward_embed():
     # First call: cold. Populate cache with a plausible [B, N, D] tensor.
     import torch as _t
     B, N, D = 2, 4, int(ps.outputShape[1])
-    ps._serial_cache = _t.zeros(B, N, D)
 
     # Craft an upstream subspace whose materialize() matches the cache
-    # shape so the warm path's shape guard accepts it.
+    # shape so the warm path's shape guard accepts it. Seed the cache on
+    # the upstream subspace -- copy_context propagates serial_cache by
+    # reference into ps.subspace at forward() entry.
     from Spaces import SubSpace
+    from Layers import Error
     class _FakeSubspace:
         def __init__(self, t):
             self._t = t
+            self.wordSpace = None
+            self.errors = Error()
+            self.serial_cache = {}
         def is_empty(self):
             return False
         def materialize(self):
@@ -114,6 +121,7 @@ def test_warm_path_skips_slot_forward_embed():
         _demuxed = False
         _active = None
     upstream = _FakeSubspace(_t.randn(B, N, D))
+    upstream.serial_cache[id(ps)] = _t.zeros(B, N, D)
 
     # Count _slot_forward calls and their input shape.
     calls = []

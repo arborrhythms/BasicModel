@@ -1,4 +1,48 @@
 
+# BUG: We are not properly taking account of batch
+*  There should just be per-batch .wordSpace[B] and .error[B]
+pos_stack[B, depth, pos_dim]
+reconstruction_stack[B]
+syntactic last_svo[B]
+sentence priming fired[B]
+discourse recent[B, context, rows, dim]
+discourse prev_centroids[B, history, rows, dim]
+discourse counts[B]
+
+# We should have multiple pipelines
+self.pipeline_stem = nn.Sequential(
+    self.inputSpace,
+    self.perceptualSpace,
+)
+
+self.pipeline_body = nn.Sequential(
+    # conceptual/symbolic stages
+)
+
+self.pipeline_head = nn.Sequential(
+    self.outputSpace,
+)
+
+self.pipeline_fwd = nn.Sequential(
+    self.pipeline_stem,
+    self.pipeline_body,
+    self.pipeline_head,
+)
+
+stem/body/head is better because it turns “one big stateful chain” into meaningful execution regions
+
+# Microbatch AR time
+Once you have teacher-forced windows shaped like:
+
+[B, K, N, D]
+you flatten to:
+
+[B*K, N, D]
+and feed the body/head pipeline. That gives distributed pipelining enough microbatches to overlap.
+
+Please make sure that batched tensor time integrates nicely with our AR algorithm 
+
+
 
 ================================== April 24 ==================================
 
