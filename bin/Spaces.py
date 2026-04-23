@@ -4493,11 +4493,14 @@ class InputSpace(Space):
         if cursor >= self._ar_total:
             return self._empty_like_subspace()
 
-        # NULL-byte sentinel: inspect the raw byte at cursor (the position
-        # about to be emitted) in ``subspace.what``. If every batch row
-        # has a 0x00 there, the sentence is over — emit empty. Text/byte
-        # mode stores byte indices; numeric mode has no raw bytes and
-        # falls through.
+        # NULL sentinel detection. Two complementary signals:
+        #   1. Raw-byte mode: ``subspace.what.getW()[:, cursor] == 0`` means
+        #      the NULL byte is about to be emitted.
+        #   2. Embedded mode: ``_ar_embedded[:, cursor-1, :]`` all zeros means
+        #      the token the AR loop is about to slide in is the NULL
+        #      embedding (ARIR inference feeds predicted tokens back; a
+        #      collapse-to-zero prediction terminates the stream).
+        # Either signal triggers end-of-stream.
         try:
             what_w = self.subspace.what.getW()
             if what_w is not None and what_w.ndim == 2:
@@ -4506,6 +4509,14 @@ class InputSpace(Space):
                     return self._empty_like_subspace()
         except Exception:
             pass
+        if cursor > 0 and self._ar_embedded is not None:
+            try:
+                prev_emb = self._ar_embedded[:, cursor - 1, :]
+                if torch.all(prev_emb == 0):
+                    self._end_of_stream = True
+                    return self._empty_like_subspace()
+            except Exception:
+                pass
 
         embedded = self._ar_embedded
         B = embedded.shape[0]
@@ -5187,9 +5198,12 @@ class PerceptualSpace(Space):
                 rolled[:, -1, :] = new_out[:, 0, :]
                 self.subspace.set_event(rolled)
                 self.subspace.normalize("percepts", target="event", normalize=True)
-                # Cache a separate copy so a downstream in-place mutation of
-                # our subspace.event.W cannot corrupt it.
-                self._serial_cache = rolled.clone()
+                # Cache a detached separate copy. clone() alone preserves
+                # the autograd graph, so next forward would read a
+                # grad-bearing tensor from the prior (about-to-be-freed)
+                # graph and trip backward-through-graph-twice. The cache
+                # carries values, not gradient linkage.
+                self._serial_cache = rolled.detach().clone()
                 return self.subspace
 
         # Cold path: full compute.
@@ -5230,10 +5244,13 @@ class PerceptualSpace(Space):
         vspace.normalize("percepts", target="event", normalize=True)
 
         # Prime the warm-path cache for subsequent serial_mode calls.
+        # Must detach: clone() preserves autograd graph, which would hold
+        # the prior-forward's tensor alive across backward() and trip
+        # backward-through-graph-twice on the next iteration.
         if getattr(self, "serial_mode", False):
             out = vspace.materialize()
             if out is not None:
-                self._serial_cache = out.clone()
+                self._serial_cache = out.detach().clone()
 
         return vspace
 
@@ -6160,10 +6177,11 @@ class SymbolicSpace(Space):
         self._symbol_objective_terms = {}
         self._symbol_objective_count = 0
 
-    def Reset(self):
-        """Per-sentence teardown: clear accumulated symbol objective."""
-        super().Reset()
-        self.reset_symbol_objective()
+    # Note: symbol_objective_terms are NOT cleared in Reset(). runBatch reads
+    # them after loss computation; callers also read them externally after
+    # runBatch returns. They are cleared at the start of each Model.forward()
+    # instead, so a batch's accumulated terms survive until the next forward
+    # begins.
 
     def _decorrelation_loss(self, residual):
         flat = residual.reshape(-1, residual.shape[-1])

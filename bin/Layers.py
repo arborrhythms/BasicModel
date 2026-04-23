@@ -3501,7 +3501,7 @@ class InterSentenceLayer(Layer):
         # [n, n_sentence, n_dim] -> [n, n_symbols, n_dim]
         #                        -> [n, s_dim] -> [1, n, s_dim]
         s_rows = self._recent[:n, :self.n_symbols, :]
-        seq = s_rows.reshape(n, self.s_dim).unsqueeze(0)
+        seq = s_rows.reshape(n, self.s_dim).unsqueeze(0).detach().clone()
         self.predictor.set_mask(self._causal_mask(n, seq.device))
         try:
             out = self.predictor(seq)              # [1, n, s_dim]

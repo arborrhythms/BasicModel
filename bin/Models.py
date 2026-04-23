@@ -1743,6 +1743,11 @@ class BasicModel(BaseModel):
         # Keep InputSpace's AR gate in sync with the model's masked_prediction.
         # Callers that flip masked_prediction after construction rely on this.
         self.inputSpace.masked_prediction = self.masked_prediction
+        # Per-forward reset of accumulated symbol objective terms. Kept
+        # out of Reset() so terms stay visible to callers that read them
+        # after runBatch returns.
+        if hasattr(self, 'symbolicSpace'):
+            self.symbolicSpace.reset_symbol_objective()
 
         # AR at training time only; runtime-ARIR inference runs one pass per call.
         is_runtime_arir = (
@@ -1770,6 +1775,12 @@ class BasicModel(BaseModel):
                 pred = result.materialize()
             if pred is not None:
                 pred = self.normalizer.denormalize(pred, which="output")
+                # Squeeze nOutput=1 singleton only in AR mode so the
+                # downstream torch.stack(dim=1) in runBatch yields
+                # [B, N, D] instead of [B, N, 1, D]. Non-AR keeps the
+                # 3D shape for the loss contract.
+                if is_ar_mode and pred.dim() == 3 and pred.shape[1] == 1:
+                    pred = pred.squeeze(1)
             predictions.append(pred)
 
             if last_input_state is None:
@@ -2061,17 +2072,6 @@ class BasicModel(BaseModel):
             outputDataPred = (torch.stack(predictions, dim=1)
                               if is_ar_mode else predictions)
 
-            # Per-sentence Reset cascade (clears sliding buffers, WordSpace
-            # stack, symbolic objective, etc.). In AR training, InputSpace
-            # raises _end_of_stream when the NULL sentinel is emitted; in
-            # non-AR, every forward() processes a fresh full input so Reset
-            # unconditionally.
-            if (not is_ar_mode) or self.inputSpace._end_of_stream:
-                for space in self.spaces:
-                    if hasattr(space, 'Reset'):
-                        space.Reset()
-                self.inputSpace._end_of_stream = False
-
             if arir_mode:
                 # ARIR inference: no output loss, but the forward pass (AR path)
                 # already produced a terminal reconstruction; pass it through.
@@ -2356,6 +2356,17 @@ class BasicModel(BaseModel):
             inputPred=inputDataPred,
             forwardInput=forwardInput,
         )
+        # Per-sentence Reset cascade (clears sliding buffers, WordSpace
+        # stack, symbolic objective, etc.). Fired after loss registration
+        # has consumed symbol_objective_terms. In AR training, InputSpace
+        # raises _end_of_stream when the NULL sentinel is emitted; in
+        # non-AR, every forward() processes a fresh full input so Reset
+        # unconditionally.
+        if (not is_ar_mode) or self.inputSpace._end_of_stream:
+            for space in self.spaces:
+                if hasattr(space, 'Reset'):
+                    space.Reset()
+            self.inputSpace._end_of_stream = False
         self.End()
         return result, batchNum
 
@@ -2737,12 +2748,18 @@ class MentalModel(BaseModel):
         self.syntacticSpace = None
 
         # Output: receives the actual final symbol stream from the pipeline.
-        # Butterfly path halves N at every stage except the last, so the
-        # tensor entering OutputSpace has fewer vectors than ``nSymbols``.
+        # Butterfly and grammar paths halve N at every stage except the
+        # last, so the tensor entering OutputSpace has fewer vectors than
+        # ``nSymbols``.
         if self.useButterflies:
             n_stages_eff = min(self.conceptualOrder,
                                int(math.log2(nPercepts)) if nPercepts > 1 else 0)
             output_n = nPercepts // (2 ** max(0, n_stages_eff - 1))
+        elif self.useGrammar == "all":
+            # GrammarMergeGlue halves N at every stage except the last
+            # (is_last=True is a no-op). T stages => T-1 effective halvings.
+            halvings = max(0, self.conceptualOrder - 1)
+            output_n = max(1, nPercepts // (2 ** halvings))
         else:
             output_n = nSymbols
         outputInputShape = [output_n, symbol_dim + obj_symbol]
@@ -2875,20 +2892,19 @@ class MentalModel(BaseModel):
             #    so we do NOT insert a ButterflyGlue here (that would
             #    double-halve and drive N to zero).
             #  - Grammar mode: average-merge between stages.
-            #  - Additive feedback mode: combine previous symbols with
-            #    current percepts.
+            #  - Non-butterfly non-grammar: no glue. The legacy
+            #    AdditiveFeedbackGlue injected the previous-forward's final
+            #    symbol state into stage-0 as a recurrent skip, which
+            #    retained the prior autograd graph and tripped backward()
+            #    on the next iteration. The pipeline is strictly
+            #    feed-forward instead: stage t reads stage t-1's output
+            #    from the chain, not from a persistent skip source.
             if Glue is ButterflyGlue:
                 pass  # ButterflyStage already handles merge internally
             elif Glue is GrammarMergeGlue:
                 stage_n = base_n // (2 ** t)
                 fwd_modules.append(
                     Glue(stage_idx=t, initial_n=stage_n, is_last=(t == T - 1))
-                )
-            else:
-                prev = (self.symbolicSpace[t - 1].subspace if t > 0
-                        else self.symbolicSpace[T - 1].subspace)
-                fwd_modules.append(
-                    AdditiveFeedbackGlue(stage_idx=t, feedback_source=prev)
                 )
 
             fwd_modules.append(ss_stage)
@@ -3079,7 +3095,14 @@ class MentalModel(BaseModel):
                 and not is_runtime_arir)
 
     def _extract_prediction_sequential(self, fwd_out):
-        """Materialize OutputSpace's subspace and denormalize to task range."""
+        """Materialize OutputSpace's subspace and denormalize to task range.
+
+        In AR mode (predictions collected into a list that runBatch
+        torch.stacks on dim=1), the nOutput=1 middle axis is squeezed
+        here so stack yields [B, N, D] and not [B, N, 1, D]. Non-AR
+        callers (returning predictions[0] directly) keep the 3D shape
+        so existing loss contracts hold.
+        """
         if fwd_out is None:
             return None
         if self.outputSpace.nonlinear_output:
@@ -3088,7 +3111,11 @@ class MentalModel(BaseModel):
             outputData = fwd_out.materialize()
         if outputData is None:
             return None
-        return self.normalizer.denormalize(outputData, which="output")
+        outputData = self.normalizer.denormalize(outputData, which="output")
+        is_ar = self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
+        if is_ar and outputData.dim() == 3 and outputData.shape[1] == 1:
+            outputData = outputData.squeeze(1)
+        return outputData
 
     def _should_reconstruct(self):
         """True when reverse reconstruction should run after the forward loop.
@@ -3130,6 +3157,33 @@ class MentalModel(BaseModel):
         # mask during forward. Preserve the runBatch contract: None means
         # "all emitted AR positions are valid".
         self._ar_valid_pos = None
+        # Per-forward reset of accumulated symbol objective terms. Kept
+        # out of Reset() so terms stay visible to callers that read them
+        # after runBatch returns.
+        if hasattr(self, 'symbolicSpace'):
+            self.symbolicSpace.reset_symbol_objective()
+
+        # Detach the cached subspace events carried over from the prior
+        # forward. AdditiveFeedbackGlue reads symbolicSpace.subspace.event
+        # as the recurrent feedback source, and the cross-sentence value
+        # carryover is intentional — but the tensor at that slot still
+        # points into the prior forward's autograd graph, which gets
+        # freed by its backward(). Detaching in place keeps the value
+        # and breaks the graph. Within-forward writes in this pass will
+        # immediately replace each event with a live-grad tensor, so
+        # stage-to-stage gradient coupling inside the current forward
+        # is unaffected.
+        for sp in (getattr(self, 'perceptualSpace', None),
+                   getattr(self, 'conceptualSpace', None),
+                   getattr(self, 'symbolicSpace', None)):
+            if sp is None or not hasattr(sp, 'subspace'):
+                continue
+            ev = getattr(sp.subspace, 'event', None)
+            if ev is None or not hasattr(ev, 'getW') or not hasattr(ev, 'setW'):
+                continue
+            w = ev.getW()
+            if w is not None and torch.is_tensor(w) and w.requires_grad:
+                ev.setW(w.detach())
 
         # Per-run scratch state used by Finish/loss.
         self.symbol_states = []

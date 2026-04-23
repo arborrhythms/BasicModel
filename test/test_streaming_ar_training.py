@@ -283,9 +283,10 @@ def test_basicmodel_arlm_runbatch_uses_streaming_predictions():
         os.unlink(tmp.name)
 
 
-def test_mentalmodel_start_resets_and_embeds():
-    """MentalModel.Start(inputData) resets spaces, initializes symbolic_state,
-    and embeds the input via inputSpace.forward()."""
+def test_mentalmodel_forward_populates_inputs_and_symbolic_state():
+    """MentalModel.forward(inputData) initializes self.inputs and
+    self.symbolic_state as a side effect — the post-refactor replacement
+    for the old Start(inputData) entry point."""
     import warnings
 
     import torch
@@ -305,12 +306,10 @@ def test_mentalmodel_start_resets_and_embeds():
     train_input, _ = model.inputSpace.getTrainData()
     x = model.inputSpace.prepInput(train_input[:2])
 
-    # After Start(), self.inputs is non-None and self.symbolic_state is
-    # initialized with the right shape.
     model.eval()
     with torch.no_grad(), warnings.catch_warnings():
         warnings.filterwarnings("ignore")
-        model.Start(x)
+        model.forward(x)
 
     assert getattr(model, 'inputs', None) is not None
     assert getattr(model, 'symbolic_state', None) is not None
