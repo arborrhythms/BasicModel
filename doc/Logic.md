@@ -193,9 +193,9 @@ The DegreeOfTruth in $[-1, 1]$ is baked into the stored vector:
 
 ### TruthLayer (WordSpace.truth_layer)
 
-`TruthLayer` in `Model.py` is instantiated by `WordSpace.__init__`
-alongside the three SyntacticLayers. `SymbolicSpace.forward` reads it via
-`self.wordSpace.truth_layer` and records activations when
+`TruthLayer` in `Layers.py` is instantiated by `WordSpace.__init__`
+alongside the (now unified) `SyntacticLayer`. `SymbolicSpace.forward`
+reads it via `self.wordSpace.truth_layer` and records activations when
 `<accumulateTruth>` is set to a value > 0 (the degree of truth, 0..1):
 
 - **record(activation, degree)** -- store `activation * degree`.

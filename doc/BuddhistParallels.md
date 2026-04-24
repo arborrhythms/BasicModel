@@ -197,7 +197,7 @@ This preserves the tetralemma without logical explosion.
 
 ## Implicit Existence and Svabhava
 
-WikiOracle's [grammar](Grammar.md#the-five-dimensional-sentence) allows sentences without an explicit verb phrase: `S $\rightarrow$ NP`. The bare noun phrase -- "Fire!" -- carries an implicit existential predicate ("exists"). This grammatical default has a philosophical cost.
+WikiOracle's [grammar](Language.md) allows sentences without an explicit verb phrase: `S $\rightarrow$ NP`. The bare noun phrase -- "Fire!" -- carries an implicit existential predicate ("exists"). This grammatical default has a philosophical cost.
 
 Nagarjuna's *Mulamadhyamakakarika* argues that the fundamental error of conceptual thought is the attribution of **svabhava** (inherent existence, own-nature) to phenomena. When we say "fire" without predicating existence explicitly, the noun appears to stand on its own -- as if fire possesses a permanent, independent self. This is precisely the reification that the doctrine of **sunyata** (emptiness) challenges.
 

@@ -93,6 +93,7 @@ omitting them defaults to 0.1.
 | `TruthLoss`          | decimal | `0.0`   | `<training>`     | Additive loss penalty for propositions that contradict the TruthSet. Uses union norm reduction via `Basis.disjunction()`. 0.0 = disabled. |
 | `conceptualOrder`    | int     | `1`     | `<architecture>` | Number of Percept$\rightarrow$Concept$\rightarrow$Symbol iterations. Higher orders use a geometrically partitioned symbolic space. |
 | `useButterflies`     | boolean | `false` | `<architecture>` | Enable pairwise sigma/pi mixing via ButterflyStage (N-halving per conceptual order). Mutually exclusive with `useGrammar`. |
+| `monotonic`          | boolean | `false` | `<architecture>` | When true, invertible SigmaLayers use W>=0 (NonNegativeInvertibleLinearLayer) preserving ordering; false uses unconstrained InvertibleLinearLayer (bitonic response). |
 | `useGrammar`         | boolean | `false` | `<WordSpace>`    | Enable grammar-directed per-level composition (progressive bottleneck). Mutually exclusive with `useButterflies`. |
 
 ```xml
@@ -102,6 +103,7 @@ omitting them defaults to 0.1.
   <UniversalityWeight>0.1</UniversalityWeight>
   <conceptualOrder>1</conceptualOrder>
   <useButterflies>false</useButterflies>
+  <monotonic>false</monotonic>
 </architecture>
 
 <training>
@@ -116,16 +118,20 @@ contradict stored truths, measured by union norm reduction. Both coexist.
 See [Ethics.md](../../doc/Ethics.md) Section Universality and
 [Reasoning.md](./Reasoning.md) Section TruthLoss for details.
 
-The grammar section of `MentalModel.xml` also defines the ternary LIFT
-rule for transitive verbs:
+The grammar section of `MentalModel.xml` declares `lift` as an S-tier
+binary rule:
 
 ```xml
-<C>lift(C, C)</C>      <!-- intransitive -->
-<C>lift(C, C, C)</C>   <!-- transitive SVO -->
+<S>lift(S, S)</S>      <!-- lift is binary; SVO is assembled by
+                            the chart-compose path S -> S VO,
+                            VO -> V O, not a ternary lift -->
 ```
 
-See [Grammar.md](./Grammar.md) Section Lift and [Ethics.md](../../doc/Ethics.md)
-Section Universality for the architectural details.
+Transitive SVO is produced compositionally via the typed chart rules
+(`S -> S VO` / `VO -> V O`) when `<chartCompose>true</chartCompose>`;
+see [Language.md](./Language.md) and
+[Ethics.md](../../doc/Ethics.md) Section Universality for the
+architectural details.
 
 ---
 

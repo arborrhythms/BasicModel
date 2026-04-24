@@ -98,29 +98,30 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
     """MentalModel should expose the grammar configured in MentalModel.xml."""
 
     # Expected canonical rule strings from MentalModel.xml.
-    # 17 legacy function-call rules + 2 typed upward productions
-    # + 1 downward production = 20 total, all on the S dispatch tier.
+    # 7 unary + 10 binary function-call S rules + 2 typed upward
+    # productions (VO=intersection(S,S), S=lift(S,VO)) + 1 downward
+    # production (C=emit_head(S)) = 20 total, all on the S dispatch tier.
     EXPECTED_RULES = [
         "S -> true(S)",
         "S -> false(S)",
+        "S -> not(S)",
         "S -> non(S)",
-        "S -> conjunction(S, S)",
-        "S -> disjunction(S, S)",
         "S -> what(S)",
         "S -> where(S)",
         "S -> when(S)",
+        "S -> conjunction(S, S)",
+        "S -> disjunction(S, S)",
         "S -> query(S, S)",
         "S -> swap(S, S)",
         "S -> equals(S, S)",
-        "S -> not(S)",
         "S -> part(S, S)",
         "S -> intersection(S, S)",
         "S -> union(S, S)",
         "S -> lower(S, S)",
         "S -> lift(S, S)",
-        "S -> S VO",
-        "VO -> V O",
-        "S -> C",
+        "VO -> intersection(S, S)",
+        "S -> lift(S, VO)",
+        "C -> emit_head(S)",
     ]
 
     def setUp(self):

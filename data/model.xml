@@ -116,7 +116,7 @@
     <language>
       <grammar>
         <upward>
-          <S>not(S)</S>
+          <rule>S = not(S)</rule>
         </upward>
       </grammar>
       <interpretation>0.5</interpretation>
@@ -148,9 +148,7 @@
     <nonlinear>true</nonlinear>
     <codebook>false</codebook>
     <chunking>lexicon</chunking>
-    <chunkBPE>false</chunkBPE>
-    <chunkTargetVocabSize>1024</chunkTargetVocabSize>
-    <chunkMinPairFrequency>2</chunkMinPairFrequency>
+    <chunkingFrequency>2</chunkingFrequency>
   </PerceptualSpace>
 
   <ModalSpace>

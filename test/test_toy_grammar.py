@@ -274,13 +274,14 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
 
     def test_total_rule_count(self):
         """MentalModel.xml defines 17 function-call rules + 2 typed upward
-        productions (S -> S VO, VO -> V O) + 1 downward production
-        (S -> C). All 20 rules stay on the S dispatch tier.
+        productions (VO = intersection(S, S), S = lift(S, VO)) + 1
+        downward production (C = emit_head(S)). All 20 rules stay on
+        the S dispatch tier.
         """
         self.assertEqual(len(self.grammar.rules), 20)
 
     def test_s_tier_rules(self):
-        """S-tier: 17 legacy method rules + 3 new typed/downward rules."""
+        """S-tier: 17 legacy method rules + 2 typed upward + 1 downward."""
         s_rules = [(r.method_name, r.arity) for r in self.grammar.rules if r.tier == 'S']
         # Trinity
         self.assertIn(('true', 1), s_rules)
@@ -305,10 +306,13 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         self.assertIn(('union', 2), s_rules)
         self.assertIn(('lower', 2), s_rules)
         self.assertIn(('lift', 2), s_rules)
-        # LearnedSVO typed rules (upward) and downward head emission.
-        self.assertIn(('merge', 2), s_rules)     # S -> S VO
-        # VO -> V O is also method='merge', arity 2 — duplicate tuple.
-        self.assertIn(('emit_head', 1), s_rules)  # S -> C (downward)
+        # LearnedSVO typed rules: VO = intersection(S, S) and
+        # S = lift(S, VO) share method names with legacy rules; verify
+        # by LHS category instead of (method, arity) tuple.
+        lhs_set = {r.lhs for r in self.grammar.rules if r.tier == 'S'}
+        self.assertIn('VO', lhs_set)
+        # Downward head emission.
+        self.assertIn(('emit_head', 1), s_rules)  # C = emit_head(S)
         self.assertEqual(len(s_rules), 20)
 
     def test_c_tier_rules(self):
@@ -343,15 +347,14 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
     def test_all_method_names_are_registered(self):
         """Every rule's method_name maps to Grammar or a SyntacticLayer subclass.
 
-        'merge' and 'emit_head' are dispatch signals for the new typed /
-        downward paths (chart compose, head emission) rather than entries
-        in _RULE_METHODS; they're wired up in later phases of the LearnedSVO
-        plan and are allowlisted here.
+        'emit_head' is the dispatch signal for downward head emission
+        (codebook lookup) rather than an entry in _RULE_METHODS; it's
+        wired up via SyntacticLayer.emit_head and allowlisted here.
         """
         all_known = (
             set(self.model.wordSpace.syntacticLayer._RULE_METHODS.keys())
             | {'swap', 'lift', 'lower', 'non'}
-            | {'merge', 'emit_head'}
+            | {'emit_head'}
         )
         for r in self.grammar.rules:
             if r.method_name is not None:

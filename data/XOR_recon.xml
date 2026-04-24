@@ -14,6 +14,7 @@
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <useLibraryVQ>false</useLibraryVQ>
+    <codebookRetire>false</codebookRetire>
 
     <training>
       <numEpochs>400</numEpochs>

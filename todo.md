@@ -1,3 +1,34 @@
+also, the grammar itself now looks as follows:
+
+
+
+        <upward>
+          <S>true(S)</S>
+          <S>false(S)</S>
+          <S>non(S)</S>
+          <S>conjunction(S, S)</S>
+          <S>disjunction(S, S)</S>
+          <S>what(S)</S>
+          <S>where(S)</S>
+          <S>when(S)</S>
+          <S>query(S, S)</S>
+          <S>swap(S, S)</S>
+          <S>equals(S, S)</S>
+          <S>not(S)</S>
+          <S>part(S, S)</S>
+          <S>intersection(S, S)</S>
+          <S>union(S, S)</S>
+          <S>lower(S, S)</S>
+          <S>lift(S, S)</S>
+
+          <VO> intersection(S, S)->VO      </VO>
+          <S>  lift(S, VO) -> S            </S>
+
+          <S>  S->S VO                     </S>
+          <VO> VO->initersection_inv(S, S) </VO>
+
+
+
 
 
 ================================== April 24 ==================================
@@ -35,11 +66,3 @@ with specifically-characterized information (concrete details)
 * TruthSet scale
   `max_truths=1024` may bottleneck once `extrapolate()` is running. Consider a tiered store (hot/cold) or vector-indexed lookup.
 
-## Future Work: Parsed Training Dataset
-It is desirable to create a small training and testing dataset for the network consisting of statements that are already parsed. This would allow direct comparison between the grammatical derivation produced by traditional English parsers and the deep structure produced by BasicModel's ConceptualSyntacticLayer.
-
-* `bin/parse.py` now holds only tokenization and model-derivation-to-XML helpers; English POS tagging has been removed. A future parsed-training dataset would need an external tagger integrated at data-prep time.
-* Such a dataset would also enable evaluation of head identification accuracy and composition quality.
-
-
-## consider adding Percepts to the front of the Symbols array

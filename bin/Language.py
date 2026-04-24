@@ -123,9 +123,28 @@ class Grammar:
                            for idx, rule in enumerate(self.rules)}
 
     def _fill_rule_list(self, target, rules_dict):
-        # Phase A.2: iterate every nonterminal key; 'S' stays implicitly
-        # first when present so existing rule-id ordering is stable.
-        keys = list(rules_dict.keys())
+        # New syntax: <rule>head = body</rule> — head may be a comma-
+        # separated tuple of categories (for multi-output downward rules
+        # like `S,S = intersection_inv(VO)`). Body is a function call
+        # (`f(A, B)`), bare-symbol sequence (`A B`), or a single category
+        # (`C` / `A`). Rules in this form arrive under the 'rule' key
+        # because that's the XML element name used.
+        rule_entries = rules_dict.get('rule', None)
+        if rule_entries is not None:
+            if isinstance(rule_entries, str):
+                rule_entries = [rule_entries]
+            for entry in rule_entries:
+                if '=' not in entry:
+                    raise ValueError(
+                        f"<rule> requires 'head = body' syntax, got: {entry!r}")
+                lhs_raw, body = entry.split('=', 1)
+                lhs = ','.join(p.strip() for p in lhs_raw.split(',') if p.strip())
+                target.append(self._parse_rule(lhs, body.strip()))
+
+        # Legacy syntax: <S>body</S> with nonterminal as tag. Kept for
+        # backward compat with tests and older XMLs. 'S' stays implicitly
+        # first so existing rule-id ordering is stable.
+        keys = [k for k in rules_dict.keys() if k != 'rule']
         if 'S' in keys:
             keys = ['S'] + [k for k in keys if k != 'S']
         for lhs in keys:
@@ -218,6 +237,26 @@ class Grammar:
     def s_methods(self):
         """Set of method names available on the S (symbolic) tier."""
         return {r.method_name for r in self.rules if r.tier == 'S' and r.method_name}
+
+    @property
+    def categories(self):
+        """Ordered tuple of unique derivation labels across all rules.
+
+        Derived from both ``lhs`` (including comma-split multi-output
+        heads) and ``rhs_symbols``. Used to size the category codebook
+        on ``WordSpace``, so every label has its own learned embedding.
+        """
+        self._ensure_configured()
+        names = set()
+        for rule in self.rules:
+            for cat in str(rule.lhs).split(','):
+                cat = cat.strip()
+                if cat:
+                    names.add(cat)
+            for sym in (rule.rhs_symbols or ()):
+                if sym:
+                    names.add(sym)
+        return tuple(sorted(names))
 
     def _s_rule_ids(self):
         """Return dict of method_name -> rule_id for S-tier operational rules."""
@@ -1178,7 +1217,12 @@ class SyntacticLayer(Layer):
             return
         names = set()
         for rule in grammar.rules:
-            names.add(rule.lhs)
+            # rule.lhs is a string; multi-output rules store it as a
+            # comma-joined tuple ('S,S' for `S,S = intersection_inv(VO)`).
+            for cat in str(rule.lhs).split(','):
+                cat = cat.strip()
+                if cat:
+                    names.add(cat)
             for sym in (rule.rhs_symbols or ()):
                 names.add(sym)
         ordered = ['?'] + sorted(n for n in names if n)
@@ -1331,7 +1375,11 @@ class SyntacticLayer(Layer):
         for gid in composable_global:
             lhs = grammar.rules[gid].lhs
             rhs = grammar.rules[gid].rhs_symbols or ()
-            rule_lhs_ids.append(self._category_index.get(lhs, 0))
+            # Upward rules are single-output; if a multi-output rule
+            # (comma-joined lhs) ever reaches chart compose, tag the
+            # merged slot with the first output category.
+            lhs_cat = lhs.split(',', 1)[0].strip() if ',' in lhs else lhs
+            rule_lhs_ids.append(self._category_index.get(lhs_cat, 0))
             if len(rhs) >= 2:
                 rule_rhs_ids.append(
                     (self._category_index.get(rhs[0], 0),
@@ -1793,8 +1841,12 @@ class SyntacticLayer(Layer):
         self.tau = tau
 
 
-class PoSStack:
-    """Per-row push/pop stack of PoS vectors. List-of-lists backing for B>1.
+class CategoryStack:
+    """Per-row push/pop stack of derivation-state embeddings.
+
+    Holds one learned embedding per category slot pushed during parsing
+    (e.g. S, VO). Consumed by the rule predictor MLP as a flattened
+    window over recent stack frames.
 
     Storage is one Python list per batch row (``self._entries[b]``).
     The spec proposed a ``[B, max_depth, dim]`` tensor backing, but
@@ -1820,10 +1872,10 @@ class PoSStack:
 
     def push(self, b, vec):
         assert vec.shape == (self._dim,), (
-            f"PoSStack dim={self._dim}, got vec shape {tuple(vec.shape)}"
+            f"CategoryStack dim={self._dim}, got vec shape {tuple(vec.shape)}"
         )
         assert len(self._entries[b]) < self._max_depth, (
-            f"PoSStack overflow at row {b}: max_depth={self._max_depth}"
+            f"CategoryStack overflow at row {b}: max_depth={self._max_depth}"
         )
         self._entries[b].append(vec)
 
@@ -1837,6 +1889,11 @@ class PoSStack:
         if not self._entries[b]:
             return torch.zeros(0)
         return torch.cat(self._entries[b], dim=0)
+
+
+# Legacy name; use CategoryStack in new code. Retained so existing
+# imports (`from Language import PoSStack`) in tests keep resolving.
+PoSStack = CategoryStack
 
 
 class ReconstructionStack:
@@ -1995,21 +2052,32 @@ class WordSpace(Space):
             if all(p is not q for q in self.params):
                 self.params.append(p)
 
-        # 6b. PoS codebook -- 64 prototypes x 4 dims, direct addressing.
-        # Not registered in self.layers (no training loop integration yet);
-        # the VectorQuantize backend provides the nn.Module bookkeeping.
-        self.pos_codebook = Codebook()
-        self.pos_codebook.create(
-            nInput=0,       # input-side width unused for direct addressing
-            nVectors=64,    # nPoS
-            nDim=4,         # nPoSDim
+        # 6b. Category codebook -- learned embedding per derivation label.
+        # The first len(TheGrammar.categories) rows are reserved one-per-
+        # label (category_index maps 'S' -> 0, 'VO' -> 1, ... in sorted
+        # order); extra capacity is kept for the legacy pos_lookup path
+        # (nearest-neighbor over activations). Not registered in
+        # self.layers (no training-loop integration yet); the
+        # VectorQuantize backend provides the nn.Module bookkeeping.
+        pos_dim = 4  # embedding width; also the category stack vector dim
+        self.category_codebook = Codebook()
+        self.category_codebook.create(
+            nInput=0,           # input-side width unused for direct addressing
+            nVectors=64,        # kept at 64 for compat with pos_lookup path
+            nDim=pos_dim,
             customVQ=True,
             monotonic=False,
             passThrough=False,
         )
+        self.category_index = {
+            name: idx for idx, name in enumerate(TheGrammar.categories)
+        }
+        self.pos_codebook = self.category_codebook  # legacy alias
 
-        # 6c. PoS stack -- push/pop store for PoS vectors during parsing.
-        self.pos_stack = PoSStack(dim=4)  # matches pos_codebook nDim
+        # 6c. Category stack -- push/pop store for category-embedding
+        # vectors during parsing. One frame per reduction step.
+        self.category_stack = CategoryStack(dim=pos_dim)
+        self.pos_stack = self.category_stack  # legacy alias
 
         # 6c'. Reconstruction stack -- (rule_id, word_id) entries for surface
         # reconstruction. Placeholder until generation-from-meaning is solved.
@@ -2027,7 +2095,7 @@ class WordSpace(Space):
         n_rules = len(TheGrammar.rule_table)
         self.n_rules = n_rules
         max_depth = int(nPercepts)
-        pos_dim = 4  # matches pos_codebook / pos_stack nDim
+        # pos_dim already bound above (category_codebook / category_stack dim).
         rule_in_features = max_depth * pos_dim
         # When nPercepts=0 (minimal test configs with no PerceptualSpace),
         # rule_in_features is 0; nn.Linear(0, 0) would emit a "zero-element
@@ -2165,7 +2233,7 @@ class WordSpace(Space):
         pred, conf = disc.predict()
         return disc.prime(pred, conf, self.stm_residual_scale)
 
-    def stm_residual_microbatch(self, B, K):
+    def stm_residual_microbatch(self, B, K, expected_dim=None):
         """Vectorized STM residual for the microbatch body.
 
         For each source row ``b`` in ``[0, B)``: if ``_stm_fired[b]`` is
@@ -2175,7 +2243,8 @@ class WordSpace(Space):
         contributed is marked fired.
 
         Returns a ``[B*K, concept_dim]`` tensor, or ``None`` when discourse
-        is unavailable or every source row has already fired this sentence.
+        is unavailable, every source row has already fired this sentence,
+        or the priming vector does not live in the caller's basis width.
 
         The call site (ConceptualSpace.forward) broadcasts the result over
         the ``N`` axis via ``bias.unsqueeze(1)``.
@@ -2208,6 +2277,11 @@ class WordSpace(Space):
                 # Mismatched and not broadcastable: keep semantics safe by
                 # skipping the bias rather than mis-broadcasting.
                 return None
+        if expected_dim is not None and int(bias_full.shape[-1]) != int(expected_dim):
+            # Hierarchical/butterfly stages may operate in a packed state
+            # basis that is narrower than the global DiscourseSpace concept
+            # projection. Do not inject a residual across incompatible bases.
+            return None
         # Gate per source row: each source's bias broadcasts to its K
         # windows; sources already fired are masked to zero.
         gate = not_fired.repeat_interleave(int(K)).to(bias_full.device)
@@ -2216,22 +2290,46 @@ class WordSpace(Space):
         self._stm_fired = self._stm_fired | not_fired
         return bias_full
 
-    # -- PoS helpers --------------------------------------------------
-    def pos_lookup(self, active_symbols):
-        """Return the 4-dim PoS vector for the given active-symbol pattern.
+    # -- Category helpers ---------------------------------------------
+    def category_lookup(self, category):
+        """Return the learned codebook embedding for a derivation label.
 
-        Uses nearest-neighbor lookup against the pos_codebook weight matrix
-        (cosine distance) so the result is always deterministic and doesn't
-        require running a full VQ forward pass (which updates codebook state).
+        One entry per label: ``category_index['S'] = 0``,
+        ``category_index['VO'] = 1``, etc. Looks up directly by index —
+        no activation-similarity snap — so this is the canonical path
+        for "embedding for category X" when the label is already known
+        from the grammar.
+
+        Args:
+            category: string category name ('S', 'VO', ...) or int
+                row index into ``category_codebook``.
+
+        Returns:
+            Tensor of shape ``(pos_dim,)`` — the codebook row.
+        """
+        if isinstance(category, str):
+            idx = self.category_index[category]
+        else:
+            idx = int(category)
+        return self.category_codebook.getW()[idx]
+
+    # -- PoS helpers (legacy) -----------------------------------------
+    def pos_lookup(self, active_symbols):
+        """Activation-similarity nearest-neighbor lookup into the codebook.
+
+        Legacy path kept so ``SymbolicSpace.forward`` (and its tests) can
+        map an active-symbol pattern to a codebook row without knowing
+        the grammar category up-front. New code that already has the
+        category name should use ``category_lookup(name)`` instead.
 
         Args:
             active_symbols: 1-D tensor of shape [N], typically resolved
                 activations from SymbolicSpace.resolve().
 
         Returns:
-            Tensor of shape (4,) -- the matching PoS prototype row.
+            Tensor of shape (pos_dim,) -- the matching prototype row.
         """
-        w = self.pos_codebook.getW()  # [64, 4]
+        w = self.category_codebook.getW()  # [nVectors, pos_dim]
         # Project active_symbols to a query vector by taking the weighted
         # mean of codebook rows, then snap to the nearest row.
         # For a pure lookup, we map from symbol-index space to a scalar
@@ -2250,20 +2348,21 @@ class WordSpace(Space):
 
     # -- rule predictor ------------------------------------------------
     def predict_rule(self, b=0):
-        """Emit softmax logits over the rule table from row ``b``'s PoS stack.
+        """Emit softmax logits over the rule table from row ``b``'s category stack.
 
-        Reads ``self.pos_stack.flatten(b)`` as a 1-D tensor of length
-        ``depth * pos_dim``.  Zero-pads up to
+        Reads ``self.category_stack.flatten(b)`` as a 1-D tensor of
+        length ``depth * pos_dim``. Zero-pads up to
         ``self._rule_predictor_in_features`` when the stack is shallower
-        than ``max_depth``; truncates (keeping the most recent frames) when
-        the stack has overflowed, so the head always sees a fixed-width
-        window of the top ``max_depth`` PoS vectors.  Returns a tensor of
-        shape ``(n_rules,)`` suitable for ``torch.softmax`` / CE loss.
+        than ``max_depth``; truncates (keeping the most recent frames)
+        when the stack has overflowed, so the head always sees a fixed-
+        width window of the top ``max_depth`` category embeddings.
+        Returns a tensor of shape ``(n_rules,)`` suitable for
+        ``torch.softmax`` / CE loss.
         """
         assert self.rule_predictor[-1].out_features == len(TheGrammar.rule_table), (
             "Grammar reconfigured after WordSpace construction; rule_predictor stale"
         )
-        flat = self.pos_stack.flatten(b)
+        flat = self.category_stack.flatten(b)
         target_len = self._rule_predictor_in_features
         numel = flat.numel()
         # Pick a device/dtype anchor that follows the rule_predictor, so
@@ -2561,7 +2660,7 @@ class WordSpace(Space):
         """Resize the underlying buffer + per-batch stacks to a new batch size.
 
         ensure_batch is the single fan-out point for every per-row buffer
-        WordSpace owns: the WordSubSpace event, the PoSStack /
+        WordSpace owns: the WordSubSpace event, the CategoryStack /
         ReconstructionStack stacks, and the Task-2 ``last_svo`` /
         ``_stm_fired`` tensors.  Reallocates fresh storage; per-row state
         is zeroed.
@@ -2571,12 +2670,12 @@ class WordSpace(Space):
             # Cascade still runs in case callers grew their own state
             # without going through the WordSpace.batch counter.
             self.subspace.ensure_batch(batch)
-            self.pos_stack.ensure_batch(batch)
+            self.category_stack.ensure_batch(batch)
             self.reconstruction_stack.ensure_batch(batch)
             return
         self.batch = batch
         self.subspace.ensure_batch(batch)
-        self.pos_stack.ensure_batch(batch)
+        self.category_stack.ensure_batch(batch)
         self.reconstruction_stack.ensure_batch(batch)
         # Keep the new buffers on the existing device so .to(device)
         # invariants survive the resize.

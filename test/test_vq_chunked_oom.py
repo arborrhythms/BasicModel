@@ -130,3 +130,49 @@ def test_large_flat_ema_does_not_oom():
     assert indices.shape == (N,)
     # Codebook should have been updated (cluster_size accumulator moved).
     assert vq.cluster_size.sum().item() > V  # ones init = V; EMA pushed it higher
+
+
+def test_dead_code_refresh_replaces_multiple_rows():
+    """Dead-code refresh should replace expired rows via explicit indices."""
+    torch.manual_seed(5)
+    D, V, N = 4, 8, 32
+    vq = _vq(D=D, V=V, train=True)
+    vq.codebook_retire = True
+    vq.threshold_ema_dead_code = 1
+    with torch.no_grad():
+        codebook = torch.full((V, D), 1000.0)
+        codebook[0].zero_()
+        vq.codebook.copy_(codebook)
+        vq.embed_avg.copy_(codebook)
+        vq.cluster_size.zero_()
+        vq.cluster_size[0] = 2.0
+    x = torch.zeros(N, D)
+
+    _quant, _indices, _loss = vq(x)
+    assert vq.cluster_size.shape == (V,)
+    assert torch.allclose(vq.cluster_size[1:], torch.ones(V - 1))
+    assert torch.allclose(vq.codebook[1:], torch.zeros(V - 1, D))
+
+
+def test_codebook_retire_false_disables_expiration():
+    """Default (codebook_retire=False) must skip dead-code replacement even
+    when ``threshold_ema_dead_code`` is positive."""
+    torch.manual_seed(6)
+    D, V, N = 4, 8, 32
+    vq = _vq(D=D, V=V, train=True)
+    assert vq.codebook_retire is False
+    vq.threshold_ema_dead_code = 1
+    with torch.no_grad():
+        codebook = torch.full((V, D), 1000.0)
+        codebook[0].zero_()
+        vq.codebook.copy_(codebook)
+        vq.embed_avg.copy_(codebook)
+        vq.cluster_size.zero_()
+        vq.cluster_size[0] = 2.0
+    x = torch.zeros(N, D)
+
+    _quant, _indices, _loss = vq(x)
+    # Without retirement, expired rows are left to the EMA to drift; they
+    # are not reseeded from the batch and their cluster_size is not pinned
+    # to the threshold.
+    assert torch.allclose(vq.cluster_size[1:], torch.zeros(V - 1))

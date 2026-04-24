@@ -29,7 +29,13 @@ outside of syntax.
 ## Grammar
 
 `TheGrammar` is a singleton `Grammar` instance.  Under `MentalModel.xml`
-it is configured with 17 S-tier rules (IDs 0-16):
+it is configured with **20 rules** total: 17 function-call upward rules
+(IDs 0-16), 2 typed upward productions (IDs 17-18), and 1 downward
+production (ID 19).  All rules are tier `'S'` -- `tier` is retained as a
+routing artifact from the pre-merge era; new typed categories live on
+the `lhs` field.
+
+Function-call upward rules (IDs 0-16, `lhs = 'S'`):
 
 | Rule | Production | Arity | Method |
 |------|-----------|-------|--------|
@@ -51,9 +57,22 @@ it is configured with 17 S-tier rules (IDs 0-16):
 | 15 | $S \to \text{lower}(S,\ S)$ | 2 | `lowerForward` |
 | 16 | $S \to \text{lift}(S,\ S)$ | 2 | `liftForward` |
 
+Typed upward productions (IDs 17-18, bare-symbol form, `method = 'merge'`):
+
+| Rule | Production | lhs | rhs_symbols |
+|------|-----------|-----|-------------|
+| 17 | $S \to S\ VO$ | `'S'`  | `('S', 'VO')` |
+| 18 | $VO \to V\ O$ | `'VO'` | `('V', 'O')`  |
+
+Downward production (ID 19, `method = 'emit_head'`):
+
+| Rule | Production | lhs | rhs_symbols |
+|------|-----------|-----|-------------|
+| 19 | $S \to C$ | `'S'` | `('C',)` |
+
 The dispatch table also knows `chunk` (an invertible max-union used by
 the perceptual pre-pass), but `chunk` is not registered in the default
-S-tier rule list.
+rule list.
 
 ### Accessors
 
@@ -383,8 +402,10 @@ Output: `{rule_logits, rule_probs, predicted_rules, words}`.
 Rule dispatch flows through `SyntacticLayer.project()`.  It looks up
 `(forward_name, reverse_name, is_binary)` in
 `_RULE_METHODS[method_name]` and calls the named `<name>Forward`.
-Inputs are `[B, N]` activations (2D mode) or `[B, N, D]` bivectors
-(3D mode).
+Inputs are `[B, N]` activations (2D mode) or `[B, N, D]` vectors
+(3D mode).  (The "bivector" name is reserved in the code for the
+2-component `[..., :2]` slice of a symbol codebook row, not the full
+`D`-wide vector.)
 
 `reverse_project` is the dual, used during `decompose` to invert the
 registered reversible rules.
@@ -397,7 +418,7 @@ registered reversible rules.
 dispatches on input rank:
 
 - `data.ndim == 2`  -->  `_compose_activation` (2D activation mode)
-- `data.ndim == 3`  -->  `_compose_vector`     (3D bivector mode,
+- `data.ndim == 3`  -->  `_compose_vector`     (3D vector mode,
   with optional pairwise reduction via `_compose_to_target`)
 
 Returns `(composed, svo_or_None)`.  `svo` is a
@@ -505,8 +526,8 @@ rules when a third leaf is available).
 
 ### Leaf ledger (codebook indices)
 
-Before Phase 2 begins, codebook indices of the original leaves are
-snapshotted:
+Before Phase 1 begins, codebook indices of the original leaves are
+snapshotted (so the ledger reflects the pre-`not` input exactly):
 
 $$
 \text{cb\_idx}[b, i] = \arg\max_k\,\bigl(\mathrm{data}[b, i] \cdot \mathrm{cb}[k]^\top\bigr)
@@ -580,7 +601,11 @@ At each depth step:
    `hidden_dim + 2 * feature_dim`; `feature_dim` is a first-class
    `SyntacticLayer.__init__` kwarg so the pair-scorer lines up with the
    actual leaf dim at compose time (not `n_slots`, which tests happen
-   to set equal to `D`).
+   to set equal to `D`).  Note: until `MentalModel` pipes the
+   rule-prediction hidden through, `_compose_vector_chart` passes an
+   all-zero `[B, hidden_dim]` tensor (see `Language.py:1354`); the
+   pair scorer therefore conditions only on `(left, right)` features
+   today.
 2. The rule head emits the usual per-depth softmax over composable
    rules (upward rules only; downward is emit-time, not chart-time).
 3. A **compatibility mask** `compat[B, P, R]` zeroes out `(pair, rule)`

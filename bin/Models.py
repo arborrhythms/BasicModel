@@ -54,6 +54,82 @@ from Pipeline import (
 )
 
 
+# ---------------------------------------------------------------------------
+# TEMPORARY DEBUG: Adam ZeroDivisionError probe.  REMOVE ME once the root
+# cause of the multi_tensor_adam bc=0 failure is understood (see git log
+# entry adding _adam_bug_probe).  Call sites: runBatch optimizer.step paths
+# and rebuild_optimizer.  Removal checklist:
+#   - delete _adam_bug_probe and _ADAM_BUG_PROBE_* globals
+#   - delete the two _adam_bug_probe(...) calls in runBatch
+#   - delete the _adam_rebuild_log calls in BaseModel.rebuild_optimizer and
+#     Spaces.PretrainModel._rebuild_optimizer
+# ---------------------------------------------------------------------------
+_ADAM_BUG_PROBE_WARNED = False
+_ADAM_BUG_PROBE_REBUILDS = 0
+
+def _adam_bug_probe(model, optimizer, batch_num):
+    """Log when Adam is about to step with a step=0 param that has a grad.
+
+    Records optimizer id (so we can correlate with rebuilds), per-param step
+    counts, and emits a one-shot UserWarning so this debug code is impossible
+    to forget about.
+    """
+    global _ADAM_BUG_PROBE_WARNED
+    if not _ADAM_BUG_PROBE_WARNED:
+        warnings.warn(
+            "TEMPORARY: _adam_bug_probe is active in Models.runBatch.  "
+            "Remove it once the multi_tensor_adam bc=0 root cause is "
+            "diagnosed.",
+            UserWarning,
+            stacklevel=2,
+        )
+        _ADAM_BUG_PROBE_WARNED = True
+
+    suspicious = []
+    total_with_grad = 0
+    for g_idx, group in enumerate(optimizer.param_groups):
+        for p_idx, p in enumerate(group["params"]):
+            if p.grad is None:
+                continue
+            total_with_grad += 1
+            st = optimizer.state.get(p, {})
+            step_v = st.get("step")
+            if step_v is None:
+                # Lazy-init will set it to 0; the increment in
+                # _multi_tensor_adam will then bring it to 1.
+                continue
+            if torch.is_tensor(step_v):
+                try:
+                    step_scalar = step_v.item()
+                except Exception as exc:
+                    step_scalar = f"<unreadable: {exc}>"
+            else:
+                step_scalar = step_v
+            if step_scalar == 0:
+                suspicious.append(
+                    f"g={g_idx} p={p_idx} shape={tuple(p.shape)} "
+                    f"step=0 dev={p.device} step_dev="
+                    f"{getattr(step_v, 'device', 'n/a')}"
+                )
+    if suspicious:
+        TheMessage(
+            f"[ADAM-BUG-PROBE] batch={batch_num} opt_id={id(optimizer)} "
+            f"rebuilds_seen={_ADAM_BUG_PROBE_REBUILDS} "
+            f"params_with_grad={total_with_grad} step0_count={len(suspicious)} "
+            f"first={suspicious[0]}"
+        )
+
+
+def _adam_rebuild_log(tag, optimizer):
+    """Increment rebuild counter and log the new optimizer id."""
+    global _ADAM_BUG_PROBE_REBUILDS
+    _ADAM_BUG_PROBE_REBUILDS += 1
+    TheMessage(
+        f"[ADAM-BUG-PROBE] rebuild #{_ADAM_BUG_PROBE_REBUILDS} {tag} "
+        f"opt_id={id(optimizer)}"
+    )
+
+
 class Normalizer:
     """Thin wrapper over TheData's min/max scaling.
 
@@ -337,6 +413,7 @@ class BaseModel(nn.Module):
             return
         lr = self._optimizer.param_groups[0]['lr']
         self._optimizer = self.getOptimizer(lr=lr)
+        _adam_rebuild_log("model", self._optimizer)  # REMOVE ME (Adam bc=0 debug)
 
     def _checkpoint_path(self, suffix=None):
         """Resolve the configured checkpoint path, optionally adding a suffix."""
@@ -2375,6 +2452,7 @@ class BasicModel(BaseModel):
                 self._assert_finite_train_state("after backward")
                 if self.ergodic:
                     self.paramUpdate()
+                _adam_bug_probe(self, optimizer, batchNum)  # REMOVE ME (Adam bc=0 debug)
                 amp_scaler.step(optimizer)
                 amp_scaler.update()
             else:
@@ -2382,6 +2460,7 @@ class BasicModel(BaseModel):
                 self._assert_finite_train_state("after backward")
                 if self.ergodic:
                     self.paramUpdate()
+                _adam_bug_probe(self, optimizer, batchNum)  # REMOVE ME (Adam bc=0 debug)
                 optimizer.step()
             self._assert_finite_train_state("after optimizer.step")
             self._clamp_symbolic_codebook()
@@ -2597,6 +2676,10 @@ class MentalModel(BaseModel):
         # constituency structure.
         self.useButterflies = bool(
             TheXMLConfig.get("architecture.useButterflies", default=False))
+        # Monotonic SigmaLayer weights (W >= 0). Mirrors PiLayer's monotonic
+        # flag; when True, invertible SigmaLayers use NonNegativeInvertibleLinearLayer.
+        self.monotonic = bool(
+            TheXMLConfig.get("architecture.monotonic", default=False))
         try:
             from basicmodel.bin.util import parse_use_grammar
         except ModuleNotFoundError:
@@ -2788,7 +2871,8 @@ class MentalModel(BaseModel):
                 sig = SigmaLayer(
                     pair_dim, pair_dim,
                     naive=naive, ergodic=self.ergodic,
-                    invertible=True, nonlinear=True)
+                    invertible=True, nonlinear=True,
+                    monotonic=self.monotonic)
                 sig.saturate = False
                 cs_layer = ButterflyStage(
                     sig, stage_idx=t, initial_n=state_vectors,
@@ -3100,9 +3184,14 @@ class MentalModel(BaseModel):
     def _butterfly_unmerge(self, x):
         """Exact inverse of average-merge: [B, N/2, D] -> [B, N, D].
 
-        Uses cached difference to recover both original vectors.
+        Uses cached difference to recover both original vectors. When the
+        cached diff is None (is_last GrammarMergeGlue stage, which is a
+        forward-pass-through), this is a no-op to keep the reverse loop
+        count aligned with T without reshaping.
         """
         diff = self._merge_diffs.pop()  # left - right
+        if diff is None:
+            return x
         left = x + diff / 2
         right = x - diff / 2
         B, N_half, D = left.shape
@@ -3255,6 +3344,9 @@ class MentalModel(BaseModel):
         # Per-run scratch.
         self.symbol_states = []
         self._nonrams_sym_feedbacks = []
+        if self.useGrammar == "all":
+            self._sym_feedbacks = []
+            self._merge_diffs = []
         self._unified_j_iterations = 0
 
         B = inputData.shape[0] if isinstance(inputData, torch.Tensor) else 1
@@ -3298,6 +3390,19 @@ class MentalModel(BaseModel):
             self.symbols = self.symbolicSpace.subspace
             self.outputs = self.outputSpace.subspace
             return None, None, None, None
+
+        # Harvest per-stage state the legacy reverse() for useGrammar=="all"
+        # expects. GrammarMergeGlue caches its pairwise diff on forward
+        # (None for is_last stages, which pass through). The pipeline does
+        # not apply per-stage symbol feedback, so _sym_feedbacks is None for
+        # every stage; reverse's `if fb is not None` branch then skips the
+        # subtraction and _butterfly_unmerge handles the None diff as a
+        # no-op, matching the is_last pass-through.
+        if self.useGrammar == "all":
+            for m in self._body_inner:
+                if isinstance(m, GrammarMergeGlue):
+                    self._merge_diffs.append(m._merge_diff)
+                    self._sym_feedbacks.append(None)
 
         # Discover K from the result subspace (head's FlattenKWrapper
         # leaves k_axis=True with event [B, K, N, predDim]). The stem
@@ -3477,19 +3582,24 @@ class MentalModel(BaseModel):
             return input_data, input_latent
 
         if self.useGrammar == "all":
-            # Progressive-bottleneck: peel off last pi, then per-level
-            # reverse with external unmerge and feedback subtraction.
+            # Progressive-bottleneck: invert the pipeline order
+            # (conceptualSpaces[t] -> GrammarMergeGlue[t] -> symbolicSpaces[t])
+            # at each stage, bridging stages with symbolicSpaces[t-1].reverse.
             self.symbols.set_event(sym_vec)
             x = self.symbolicSpaces[T - 1].reverse(
                 self.symbols).materialize()
             for t in reversed(range(T)):
-                self.symbols.set_event(x)
-                concept_input_state = self.conceptualSpaces[t].reverse(self.symbols)
-                x = concept_input_state.materialize()
                 fb = self._sym_feedbacks.pop()
                 if fb is not None:
                     x = x - fb
                 x = self._butterfly_unmerge(x)
+                self.symbols.set_event(x)
+                concept_input_state = self.conceptualSpaces[t].reverse(self.symbols)
+                x = concept_input_state.materialize()
+                if t > 0:
+                    self.symbolicSpaces[t - 1].subspace.set_event(x)
+                    x = self.symbolicSpaces[t - 1].reverse(
+                        self.symbolicSpaces[t - 1].subspace).materialize()
             concept_input_state.set_event(x)
         else:
             # Flat recurrent path: reverse sigma, subtract cached feedback.
@@ -3872,16 +3982,15 @@ class ModelFactory:
         # 4*nInput*inputDim == nOutput*outputDim for reshape) are registered as
         # requirements inside PerceptualSpace._register_requirements(), not here.
 
-        # Warn when PerceptualSpace is neither invertible nor passThrough:
-        # the reverse path uses a matrix pseudoinverse (pinv) which may be
-        # numerically unstable.
-        if not percept_inv and not percept_pt:
+        # Warn only for the legacy naive reverse path. Non-naive inversion
+        # uses the LDU/triangular-solve path and does not use pinv.
+        naive = bool(arch.get("naive", False))
+        if naive and percept_inv and not percept_pt:
             warnings.warn(
-                "PerceptualSpace: invertible=False uses two "
-                "InvertiblePiLayers with separate weights. The reverse path involves "
-                "a matrix pseudoinverse (pinv) which may be numerically unstable. "
-                "Consider setting <invertible>true</invertible> for shared-weight "
-                "inversion, or be aware of potential SVD convergence failures.",
+                "PerceptualSpace: architecture.naive=True materializes dense "
+                "inverse weights on the reverse path. This is slower and less "
+                "memory efficient than the non-naive LDU solve path. Consider "
+                "setting <naive>false</naive> unless debugging the dense path.",
                 stacklevel=2)
 
         if errors:

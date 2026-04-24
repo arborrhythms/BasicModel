@@ -2,13 +2,6 @@ import pytest
 from Spaces import Embedding, PerceptualSpace
 
 
-def test_chunking_mode_raw_returns_bytes():
-    byte_stream = b"Hello, world."
-    units = PerceptualSpace.chunk_static(byte_stream, mode="raw")
-    assert units == [b"H", b"e", b"l", b"l", b"o", b",", b" ",
-                     b"w", b"o", b"r", b"l", b"d", b"."]
-
-
 def test_chunking_mode_lexicon_splits_on_spaces():
     byte_stream = b"the quick fox"
     units = PerceptualSpace.chunk_static(byte_stream, mode="lexicon")
@@ -40,14 +33,6 @@ def test_perceptual_space_exposes_chunking_mode_attribute():
     import inspect
     src = inspect.getsource(PerceptualSpace.__init__)
     assert "self.chunking_mode" in src
-
-
-def test_embedding_token_stream_honors_raw_chunking_mode():
-    emb = Embedding()
-    emb.byte_mode = False
-    emb.chunking_mode = "raw"
-
-    assert emb._token_stream("Az") == [("A", 0), ("z", 1)]
 
 
 def test_embedding_token_stream_honors_bpe_fallback_mode():

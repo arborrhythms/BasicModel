@@ -52,14 +52,13 @@
     <nDim>10</nDim>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
-    <nVectors>8</nVectors>
+    <nVectors>512</nVectors>
     <passThrough>false</passThrough>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>true</codebook>
-    <chunkBPE>true</chunkBPE>
-    <chunkTargetVocabSize>512</chunkTargetVocabSize>
-    <chunkMinPairFrequency>2</chunkMinPairFrequency>
+    <chunking>bpe</chunking>
+    <chunkingFrequency>2</chunkingFrequency>
   </PerceptualSpace>
 
   <ConceptualSpace>

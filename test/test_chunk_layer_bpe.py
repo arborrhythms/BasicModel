@@ -10,8 +10,8 @@ Verifies the new BPE path in ``ChunkLayer``:
      identical input yields identical chunk ids.
   4. ``hard_merge_spans`` + ``compact`` + ``uncompact`` still roundtrips
      exactly in BPE mode (span-stored originals drive reconstruction).
-  5. Loading ``MM_bpe.xml`` propagates ``chunkBPE`` / ``chunkTargetVocabSize``
-     / ``chunkMinPairFrequency`` into a ``ChunkLayer`` instance.
+  5. Loading ``MM_bpe.xml`` propagates ``chunking`` / ``nVectors``
+     / ``chunkingFrequency`` into a ``ChunkLayer`` instance.
 """
 
 import os
@@ -40,7 +40,7 @@ class TestChunkLayerBPE(unittest.TestCase):
     def test_cold_start_vocab_has_bytes(self):
         from Layers import ChunkLayer
         layer = ChunkLayer(nDim=8, bpe=True,
-                           target_vocab_size=1024, min_pair_frequency=2)
+                           n_vectors=1024, chunking_frequency=2)
         self.assertEqual(len(layer.vocab), 256)
         self.assertEqual(len(layer.merges), 0)
         self.assertEqual(layer._next_id, 256)
@@ -49,11 +49,35 @@ class TestChunkLayerBPE(unittest.TestCase):
             self.assertIn((i,), layer.vocab)
             self.assertEqual(layer.vocab[(i,)], i)
 
+    def test_constructor_accepts_new_arg_names(self):
+        """After Task 1, ChunkLayer takes n_vectors / chunking_frequency."""
+        from Layers import ChunkLayer
+        layer = ChunkLayer(nDim=8, bpe=True,
+                           n_vectors=1024, chunking_frequency=2)
+        self.assertEqual(layer.n_vectors, 1024)
+        self.assertEqual(layer.chunking_frequency, 2)
+
+    def test_no_prototype_table(self):
+        """Task 2: ChunkLayer no longer carries the unused 256-prototype table."""
+        from Layers import ChunkLayer
+        layer = ChunkLayer(nDim=8, bpe=True, n_vectors=1024, chunking_frequency=2)
+        self.assertFalse(hasattr(layer, 'split'),
+                         "self.split should be removed")
+        self.assertFalse(hasattr(layer, 'merge'),
+                         "self.merge should be removed (distinct from self.merges)")
+        self.assertFalse(hasattr(layer, 'threshold'),
+                         "self.threshold should be removed")
+        self.assertFalse(hasattr(layer, 'score_pair'))
+        self.assertFalse(hasattr(layer, 'encode'))
+        self.assertFalse(hasattr(layer, 'decode'))
+        self.assertFalse(hasattr(layer, 'should_merge'))
+        self.assertTrue(hasattr(layer, 'merges'))
+
     def test_merges_grow_on_repeating_corpus(self):
         import torch
         from Layers import ChunkLayer
         layer = ChunkLayer(nDim=8, bpe=True,
-                           target_vocab_size=1024, min_pair_frequency=2)
+                           n_vectors=1024, chunking_frequency=2)
         layer.train()
         corpus = ["hello hello world world the the",
                   "the hello world the world hello"]
@@ -83,7 +107,7 @@ class TestChunkLayerBPE(unittest.TestCase):
         import torch
         from Layers import ChunkLayer
         layer = ChunkLayer(nDim=8, bpe=True,
-                           target_vocab_size=1024, min_pair_frequency=2)
+                           n_vectors=1024, chunking_frequency=2)
         layer.train()
         train_batch = _byte_tensor(["abcabcabcabc"])
         for _ in range(5):
@@ -108,7 +132,7 @@ class TestChunkLayerBPE(unittest.TestCase):
         import torch
         from Layers import ChunkLayer
         layer = ChunkLayer(nDim=4, bpe=True,
-                           target_vocab_size=1024, min_pair_frequency=2)
+                           n_vectors=1024, chunking_frequency=2)
         layer.train()
         train_batch = _byte_tensor(["hello hello"])
         for _ in range(3):
@@ -141,7 +165,7 @@ class TestChunkLayerBPE(unittest.TestCase):
     def test_target_vocab_size_bounds_growth(self):
         from Layers import ChunkLayer
         layer = ChunkLayer(nDim=4, bpe=True,
-                           target_vocab_size=260, min_pair_frequency=1)
+                           n_vectors=260, chunking_frequency=1)
         layer.train()
         batch = _byte_tensor(["ababababababababababab"])
         for _ in range(50):
@@ -160,19 +184,19 @@ class TestChunkLayerBPE(unittest.TestCase):
             defaults_path=os.path.join(_PROJECT, "data", "model.xml"),
         )
         cfg = Spaces.TheXMLConfig
-        self.assertTrue(bool(cfg.space("PerceptualSpace", "chunkBPE")),
-                        "MM_bpe.xml must set chunkBPE=true")
-        target = int(cfg.space("PerceptualSpace", "chunkTargetVocabSize"))
-        min_freq = int(cfg.space("PerceptualSpace", "chunkMinPairFrequency"))
+        self.assertEqual(cfg.space("PerceptualSpace", "chunking"), "bpe",
+                         "MM_bpe.xml must set chunking=bpe")
+        n_vec = int(cfg.space("PerceptualSpace", "nVectors"))
+        freq = int(cfg.space("PerceptualSpace", "chunkingFrequency"))
         layer = ChunkLayer(
             nDim=8,
-            bpe=bool(cfg.space("PerceptualSpace", "chunkBPE")),
-            target_vocab_size=target,
-            min_pair_frequency=min_freq,
+            bpe=(cfg.space("PerceptualSpace", "chunking") == "bpe"),
+            n_vectors=n_vec,
+            chunking_frequency=freq,
         )
         self.assertTrue(layer.bpe)
-        self.assertEqual(layer.target_vocab_size, target)
-        self.assertEqual(layer.min_pair_frequency, min_freq)
+        self.assertEqual(layer.n_vectors, n_vec)
+        self.assertEqual(layer.chunking_frequency, freq)
 
 
 if __name__ == "__main__":

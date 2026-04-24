@@ -67,33 +67,50 @@
     <downwardGeneration>false</downwardGeneration>
 
     <language>
+      <!-- Rule syntax: <rule>head = body</rule>.
+           head  : single category ('S') or comma-separated tuple
+                   of output categories ('S,S') for multi-output
+                   downward decomposition rules.
+           body  : function call (f(A, B)) or bare-symbol sequence
+                   (A B). Operator name carries the sense of the
+                   rule; direction is carried by the enclosing
+                   <upward>/<downward> section.
+
+           Upward  = compositional / comprehension — children
+                     reduce to parent (one LHS).
+           Downward = generative / production — parent expands
+                      to children (possibly multi-output LHS). -->
       <grammar>
         <upward>
-          <!-- Legacy function-call rules (unchanged semantics) -->
-          <S>true(S)</S>
-          <S>false(S)</S>
-          <S>non(S)</S>
-          <S>conjunction(S, S)</S>
-          <S>disjunction(S, S)</S>
-          <S>what(S)</S>
-          <S>where(S)</S>
-          <S>when(S)</S>
-          <S>query(S, S)</S>
-          <S>swap(S, S)</S>
-          <S>equals(S, S)</S>
-          <S>not(S)</S>
-          <S>part(S, S)</S>
-          <S>intersection(S, S)</S>
-          <S>union(S, S)</S>
-          <S>lower(S, S)</S>
-          <S>lift(S, S)</S>
-          <!-- Typed productions (LearnedSVO Phase A.4) -->
-          <S>S VO</S>
-          <VO>V O</VO>
+          <!-- Unary rules -->
+          <rule>S  = true(S)</rule>
+          <rule>S  = false(S)</rule>
+          <rule>S  = not(S)</rule>
+          <rule>S  = non(S)</rule>
+          <rule>S  = what(S)</rule>
+          <rule>S  = where(S)</rule>
+          <rule>S  = when(S)</rule>
+          <!-- binary rules -->
+          <rule>S  = conjunction(S, S)</rule>
+          <rule>S  = disjunction(S, S)</rule>
+          <rule>S  = query(S, S)</rule>
+          <rule>S  = swap(S, S)</rule>
+          <rule>S  = equals(S, S)</rule>
+          <rule>S  = part(S, S)</rule>
+          <rule>S  = intersection(S, S)</rule>
+          <rule>S  = union(S, S)</rule>
+          <rule>S  = lower(S, S)</rule>
+          <rule>S  = lift(S, S)</rule>
+          <!-- SVO composition -->
+          <rule>VO = intersection(S, S)</rule>
+          <rule>S  = lift(S, VO)</rule>
         </upward>
         <downward>
-          <!-- MVP: emit the codebook atom closest to the deep state -->
-          <S>C</S>
+          <!-- One-word sentence -->
+          <rule>C = emit_head(S)</rule>
+          <!-- SVO decomposition duals -->
+          <!--rule>S,VO = lift_inv(S)</rule>
+          <rule>S,S  = intersection_inv(VO)</rule-->
         </downward>
       </grammar>
       <interpretation>0.5</interpretation>

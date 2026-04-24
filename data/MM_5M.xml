@@ -3,7 +3,7 @@
   <!-- MM_5M: MentalModel ~5M params with byte input and hierarchical
        progressive bottleneck. 8 levels from 1024x4 to 4x1024 (N*D=4096). -->
   <architecture>
-    <conceptualOrder>4</conceptualOrder>
+    <conceptualOrder>3</conceptualOrder>
     <useButterflies>true</useButterflies>
     <l1Lambda>0.01</l1Lambda>
     <nWhere>2</nWhere>
@@ -29,8 +29,8 @@
     <training>
       <numTrials>1</numTrials>
       <numEpochs>2</numEpochs>
-      <batchSize>8</batchSize>
-      <numWorkers>2</numWorkers>
+      <batchSize>1</batchSize>
+      <numWorkers>0</numWorkers>
       <learningRate>0.0005</learningRate>
       <reverseScale>0.1</reverseScale>
       <maskedPrediction>ARIR</maskedPrediction>
@@ -59,13 +59,13 @@
     <nOutput>1024</nOutput>
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
-    <lexer>word</lexer>
+    <lexer>byte</lexer>
     <codebook>false</codebook>
   </InputSpace>
 
   <PerceptualSpace>
     <nInput>1024</nInput>
-    <nVectors>8192</nVectors>
+    <nVectors>4096</nVectors>
     <nDim>6</nDim>
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
@@ -74,6 +74,8 @@
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
     <codebook>true</codebook>
+    <chunking>bpe</chunking>
+    <chunkingFrequency>2</chunkingFrequency>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: final level shape is 4x1024.

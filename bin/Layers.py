@@ -815,26 +815,36 @@ class SigmaLayer(Layer):
     ``tanh(W @ x + b)``. With ``nonlinear=False``, ``forward`` returns the
     raw linear result. ``reverse`` mirrors the same choice.
 
-    When ``invertible=True``, uses InvertibleLinearLayer so ``reverse()``
-    is available via the exact LDU inverse.  When ``invertible=False``
-    (default), uses a plain LinearLayer.
+    When ``invertible=True``, uses an invertible linear layer so
+    ``reverse()`` is available via the exact LDU inverse.  When
+    ``invertible=False`` (default), uses a plain LinearLayer.
 
     Weight initialization (non-ergodic) is scaled by 1/nInput so that
     the output stays in [-1, 1] at init when input is in [-1, 1].
 
     All ergodic machinery lives in the inner layer; SigmaLayer dispatches
     the ergodic interface (set_sigma, observe_sigma, etc.) there.
+
+    ``monotonic`` selects the weight constraint (only meaningful with
+    ``invertible=True``):
+        monotonic=True:  W >= 0 (NonNegativeInvertibleLinearLayer) -- ordering preserved
+        monotonic=False: W unrestricted (InvertibleLinearLayer)    -- bitonic response
     """
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
-                 invertible=False, nonlinear=True, stable=False):
+                 invertible=False, nonlinear=True, stable=False,
+                 monotonic=False):
         super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.ergodic    = ergodic
         self.nonlinear  = nonlinear
         self.stable     = stable
+        self.monotonic  = monotonic
         self.activation = torch.zeros(1, nOutput, 1)
         if invertible:
-            self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic, stable=stable)
+            if monotonic:
+                self.layer = NonNegativeInvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic, stable=stable)
+            else:
+                self.layer = InvertibleLinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic, stable=stable)
         else:
             self.layer = LinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic)
         self.layers.append(self.layer)
@@ -3770,25 +3780,18 @@ class ChunkLayer(Layer):
     and common whitespace bytes serve as boundary markers.
     """
 
-    def __init__(self, nDim, nChunks=256, bpe=False,
-                 target_vocab_size=1024, min_pair_frequency=2):
+    def __init__(self, nDim, bpe=False,
+                 n_vectors=1024, chunking_frequency=2):
         super().__init__(nDim, nDim)
         self.nDim = nDim
-        self.nChunks = nChunks
-        # Split prototypes: what each chunk decodes to  [nChunks, 2, nDim]
-        self.split = nn.Parameter(torch.randn(nChunks, 2, nDim) * 0.02)
-        # Merge prototypes: the single vector a chunk becomes  [nChunks, nDim]
-        self.merge = nn.Parameter(torch.randn(nChunks, nDim) * 0.02)
-        # Learned threshold -- merge only when score exceeds this
-        self.threshold = nn.Parameter(torch.zeros(1))
         # -- BPE state (active only when ``bpe`` is True) ------------------
         # Cold-start: empty merges table, vocab seeded with 256 single-byte
         # ids so byte_value == chunk_id for the 0..255 range.  This mirrors
         # the Embedding.create() placement of bytes at codebook indices
         # 0..255 (see Spaces.py -- ``byte_value == codebook_index``).
         self.bpe = bool(bpe)
-        self.target_vocab_size = int(target_vocab_size)
-        self.min_pair_frequency = int(min_pair_frequency)
+        self.n_vectors = int(n_vectors)
+        self.chunking_frequency = int(chunking_frequency)
         self.merges = []            # list[tuple[int, int]] in insertion order
         self.vocab = {}             # dict[tuple[int,...], int]
         self.id_to_bytes = {}       # dict[int, tuple[int,...]]
@@ -3798,48 +3801,6 @@ class ChunkLayer(Layer):
             self.id_to_bytes[i] = key
         self._next_id = 256
         self._max_merge_len = 1
-
-    def score_pair(self, v1, v2):
-        """Score a single (v1, v2) pair against all codebook entries.
-
-        Args:
-            v1: [nDim]  -- left element
-            v2: [nDim]  -- right element
-        Returns:
-            best_score: scalar -- cosine similarity of best match
-            best_id:    int    -- codebook index of best match
-        """
-        pair = torch.stack([v1, v2], dim=0)              # [2, nDim]
-        pair_flat = pair.reshape(1, -1)                   # [1, 2*nDim]
-        split_flat = self.split.reshape(self.nChunks, -1) # [K, 2*nDim]
-        sims = F.cosine_similarity(pair_flat, split_flat, dim=-1)  # [K]
-        best_score, best_id = sims.max(dim=0)
-        return best_score, best_id.item()
-
-    def encode(self, v1, v2):
-        """Encode a pair into a single chunk vector.
-
-        Returns:
-            merged: [nDim]     -- the chunk vector
-            chunk_id: int      -- which codebook entry was used
-        """
-        best_score, best_id = self.score_pair(v1, v2)
-        return self.merge[best_id], best_id
-
-    def decode(self, chunk_id):
-        """Decode a codebook entry back to two vectors.
-
-        Args:
-            chunk_id: int -- codebook index
-        Returns:
-            v1: [nDim], v2: [nDim]
-        """
-        return self.split[chunk_id, 0], self.split[chunk_id, 1]
-
-    def should_merge(self, v1, v2):
-        """Entropic gate: merge only if score exceeds threshold."""
-        best_score, best_id = self.score_pair(v1, v2)
-        return best_score > self.threshold, best_id
 
     # -- Boundary detection --------------------------------------------
 
@@ -3929,15 +3890,15 @@ class ChunkLayer(Layer):
         Encodes the batch with the current merge table, counts adjacent
         ``(id_i, id_{i+1})`` pair frequencies across all rows, and
         promotes the top-k pairs whose count meets
-        ``min_pair_frequency`` into new vocab entries.  Returns the
+        ``chunking_frequency`` into new vocab entries.  Returns the
         number of new merges added (0 when none qualify).
 
         Idempotent w.r.t. vocab size: stops once ``len(vocab)`` reaches
-        ``target_vocab_size``.  No-op in legacy (``bpe=False``) mode.
+        ``n_vectors``.  No-op in legacy (``bpe=False``) mode.
         """
         if not self.bpe:
             return 0
-        if len(self.vocab) >= self.target_vocab_size:
+        if len(self.vocab) >= self.n_vectors:
             return 0
         all_chunks, _ = self.forward(byte_indices)
         from collections import Counter
@@ -3949,9 +3910,9 @@ class ChunkLayer(Layer):
             return 0
         added = 0
         for pair, freq in counts.most_common(k_merges):
-            if freq < self.min_pair_frequency:
+            if freq < self.chunking_frequency:
                 break
-            if len(self.vocab) >= self.target_vocab_size:
+            if len(self.vocab) >= self.n_vectors:
                 break
             left_bytes = self.id_to_bytes.get(pair[0])
             right_bytes = self.id_to_bytes.get(pair[1])

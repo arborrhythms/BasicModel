@@ -302,12 +302,22 @@ def main():
         sys.stderr = _Tee(sys.__stderr__, _log_file)
         TheMessage(f"Logging to {log_path}")
 
+    start_time = datetime.datetime.now()
+    print(f"[train] start: {start_time.isoformat(timespec='seconds')}", flush=True)
+
     try:
         if args.host:
             train_remote(args)
         else:
             train_local(args)
     finally:
+        end_time = datetime.datetime.now()
+        elapsed = end_time - start_time
+        print(
+            f"[train] end:   {end_time.isoformat(timespec='seconds')} "
+            f"(elapsed {elapsed})",
+            flush=True,
+        )
         if _log_file:
             sys.stdout = sys.__stdout__
             sys.stderr = sys.__stderr__

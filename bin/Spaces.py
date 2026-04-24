@@ -47,6 +47,7 @@ class VectorQuantize(nn.Module):
         threshold_ema_dead_code=0,
         rotation_trick=False,
         eps=1e-5,
+        codebook_retire=False,
         **kwargs,
     ):
         super().__init__()
@@ -58,6 +59,10 @@ class VectorQuantize(nn.Module):
         self.threshold_ema_dead_code = int(threshold_ema_dead_code)
         self.rotation_trick = bool(rotation_trick)
         self.eps = float(eps)
+        # Gate for the dead-code replacement path. Off by default because
+        # reseeding expired rows with fresh samples can blow up the effective
+        # number of distinct codes on non-stationary data.
+        self.codebook_retire = bool(codebook_retire)
         self.codebook = torch.randn(codebook_size, dim)
         # EMA accumulators used by ``update_ema``. ``cluster_size`` counts
         # how many inputs snap to each code (bootstrapped at 1.0 to match
@@ -98,6 +103,35 @@ class VectorQuantize(nn.Module):
                 self._buffers["cluster_size"] = torch.ones(
                     param.shape[0], device=cs.device, dtype=cs.dtype
                 )
+
+    def _sync_ema_buffers(self):
+        """Repair EMA buffers when they drift from the live codebook shape.
+
+        Training can reassign the codebook Parameter after construction
+        (for example when resizing or reloading weights). The EMA buffers
+        must stay row-aligned with that Parameter or the dead-code refresh
+        path can end up indexing the wrong rows.
+        """
+        codebook = self.codebook
+        V, D = int(codebook.shape[0]), int(codebook.shape[1])
+        cluster_size = self.cluster_size
+        if (
+            cluster_size.ndim != 1
+            or int(cluster_size.shape[0]) != V
+            or cluster_size.device != codebook.device
+        ):
+            dtype = cluster_size.dtype if cluster_size.is_floating_point() else torch.float32
+            self._buffers["cluster_size"] = torch.ones(
+                V, device=codebook.device, dtype=dtype
+            )
+        embed_avg = self.embed_avg
+        if (
+            embed_avg.ndim != 2
+            or tuple(embed_avg.shape) != (V, D)
+            or embed_avg.device != codebook.device
+        ):
+            dtype = embed_avg.dtype if embed_avg.is_floating_point() else codebook.dtype
+            self._buffers["embed_avg"] = codebook.detach().to(dtype=dtype).clone()
 
     @staticmethod
     def _rotate_to(src, tgt):
@@ -200,6 +234,7 @@ class VectorQuantize(nn.Module):
         # ``expire_codes_`` in vector_quantize_pytorch.
         if self.training and not freeze_codebook:
             with torch.no_grad():
+                self._sync_ema_buffers()
                 flat_f = flat.float()
                 # Equivalent to ``one_hot(indices, V).t() @ flat_f`` but
                 # without ever allocating the [N, V] one-hot tensor: at
@@ -229,23 +264,36 @@ class VectorQuantize(nn.Module):
                 new_embed = self.embed_avg / cs_smooth.unsqueeze(-1)
                 if self.use_cosine_sim:
                     new_embed = _vq_F.normalize(new_embed, dim=-1)
-                self.codebook.data.copy_(new_embed.to(self.codebook.dtype))
-                if self.threshold_ema_dead_code > 0:
-                    expired = self.cluster_size < self.threshold_ema_dead_code
-                    if bool(expired.any()):
-                        n_expired = int(expired.sum().item())
+                self.codebook.copy_(new_embed.to(self.codebook.dtype))
+                if self.codebook_retire and self.threshold_ema_dead_code > 0:
+                    expired = (
+                        self.cluster_size < self.threshold_ema_dead_code
+                    ).reshape(-1)
+                    if int(expired.numel()) != V:
+                        raise RuntimeError(
+                            "VectorQuantize EMA state corrupt: "
+                            f"expired mask has {int(expired.numel())} rows "
+                            f"for codebook size {V}"
+                        )
+                    expired_idx = torch.nonzero(
+                        expired, as_tuple=False
+                    ).flatten()
+                    if int(expired_idx.numel()) > 0:
+                        n_expired = int(expired_idx.numel())
                         sample_idx = torch.randint(
                             0, flat.shape[0], (n_expired,), device=flat.device,
                         )
                         sampled = flat[sample_idx].to(self.codebook.dtype)
                         if self.use_cosine_sim:
                             sampled = _vq_F.normalize(sampled, dim=-1)
-                        self.codebook.data[expired] = sampled
+                        self.codebook.index_copy_(0, expired_idx, sampled)
                         thr = float(self.threshold_ema_dead_code)
-                        self.cluster_size[expired] = thr
-                        self.embed_avg[expired] = sampled.to(
-                            self.embed_avg.dtype
-                        ) * thr
+                        self.cluster_size.index_fill_(0, expired_idx, thr)
+                        self.embed_avg.index_copy_(
+                            0,
+                            expired_idx,
+                            sampled.to(self.embed_avg.dtype) * thr,
+                        )
 
         # Gradient estimator for the quantized output: rotation trick when
         # requested and the input carries gradient, otherwise vanilla STE.
@@ -1169,11 +1217,21 @@ class Basis(nn.Module):
         norms = torch.linalg.norm(X, dim=-1)
         return (2.0 * norms.mean(dim=1) - 1.0).clamp(-1.0, 1.0)
 class Tensor(Basis):
-    """Dense tensor payload implementation used for ordinary SubSpace slots."""
+    """Dense tensor payload implementation used for ordinary SubSpace slots.
+
+    ``W`` may hold a permanent ``nn.Parameter`` (weights owned by this basis)
+    OR a plain tensor (a transient activation). To keep the two roles from
+    clobbering each other across lifecycle calls, plain-tensor writes are
+    routed to ``_active_payload`` whenever a Parameter is registered -- the
+    same dual-slot pattern ``Codebook`` uses. Callers should always read via
+    ``getW()`` (which prefers the transient payload when set) rather than
+    touching ``self.W`` directly.
+    """
 
     def __init__(self, nVectors=0, nDim=0, W=None):
         super().__init__()
         self.W = None
+        self._active_payload = None
         self.nVectors = nVectors
         self.nDim = nDim
         if W is not None:
@@ -1182,15 +1240,35 @@ class Tensor(Basis):
             self.W = torch.zeros(nVectors, nDim)
 
     def getW(self):
+        if self._active_payload is not None:
+            return self._active_payload
         return self.W
 
     def setW(self, value):
-        # nn.Module.__setattr__ refuses to replace a registered Parameter
-        # with a plain tensor (torch >=2.11). W flip-flops between the two
-        # across lifecycle calls; clear the slot first so either is legal.
+        """Assign W without ever clobbering a registered Parameter.
+
+        value=None clears only the transient activation when a Parameter is
+        held; otherwise it also clears the plain-tensor W. A Parameter write
+        replaces any existing W (Parameter or plain) and drops the transient.
+        A plain-tensor write lands on ``_active_payload`` when a Parameter is
+        registered, and on ``W`` otherwise.
+        """
+        if value is None:
+            self._active_payload = None
+            if "W" not in self._parameters:
+                self.W = None
+            return
+        if isinstance(value, nn.Parameter):
+            if "W" in self._parameters:
+                del self._parameters["W"]
+            self.W = value
+            self._active_payload = None
+            return
         if "W" in self._parameters:
-            del self._parameters["W"]
+            self._active_payload = value
+            return
         self.W = value
+        self._active_payload = None
 
     def forward(self, x):
         self.setW(x)
@@ -1346,10 +1424,20 @@ class Codebook(Basis):
                 vq_cls = LibraryVectorQuantize
             else:
                 vq_cls = VectorQuantize
-            self.vq = vq_cls(
+            # When ``architecture.codebookRetire`` is false (the default),
+            # dead-code replacement is disabled on both the in-repo class
+            # and the library: retired rows get reseeded with fresh samples,
+            # which on non-stationary data can blow up the effective code
+            # count. Keep the two signals in sync by also zeroing the
+            # threshold so the library path takes the no-op branch.
+            try:
+                retire = bool(TheXMLConfig.get("architecture.codebookRetire", False))
+            except Exception:
+                retire = False
+            vq_kwargs = dict(
                 dim=self.nDim,
                 codebook_size=nVec,
-                threshold_ema_dead_code=1,
+                threshold_ema_dead_code=1 if retire else 0,
                 decay=decay,
                 commitment_weight=1.0,
                 # Rotation-trick STE (arXiv:2410.06424) was reported to
@@ -1359,6 +1447,9 @@ class Codebook(Basis):
                 # estimator -- trains fine, uses a smaller autograd graph.
                 rotation_trick=False,
             )
+            if vq_cls is VectorQuantize:
+                vq_kwargs["codebook_retire"] = retire
+            self.vq = vq_cls(**vq_kwargs)
             # The external library does its own codebook initialization;
             # the in-repo stub uses raw torch.randn so we rescale to [-1, 1]
             # to satisfy downstream range checks on the 'what' field.
@@ -1721,10 +1812,7 @@ class Embedding(Basis):
         if getattr(self, 'lexer_mode', 'word') == 'sentence':
             return parse(self._to_text(text), lex='sentences')
         mode = getattr(self, 'chunking_mode', 'lexicon')
-        if mode in ('raw', 'bpe'):
-            # Both raw and cold-start BPE fall back to per-character
-            # tokenization. The real BPE path runs through ChunkingLayer
-            # once merges have been learned.
+        if mode == 'bpe':
             return self._char_stream(text)
         return parse(self._to_text(text), lex='words')
 
@@ -1828,6 +1916,12 @@ class Embedding(Basis):
             lr=self.pretrain.optimizer.param_groups[0]['lr'],
         )
         # W is managed by wv._vectors; getW() returns live data
+        # REMOVE ME (Adam bc=0 debug): see _adam_bug_probe in Models.py.
+        try:
+            from Models import _adam_rebuild_log
+            _adam_rebuild_log("pretrain", self.pretrain.optimizer)
+        except Exception:
+            pass
 
     def replace(self, new_W):
         new_W = self._coerce_rows(new_W).to(TheDevice.get())
@@ -2624,27 +2718,55 @@ class SubSpace(nn.Module):
         """Return the content Basis (Embedding/Codebook) for codebook operations."""
         return self.what
 
-    def Start(self):
-        """Clear the cached event tensor at the start of a batch.
+    @staticmethod
+    def _clear_runtime_basis(basis):
+        """Release transient per-batch tensors cached on a Basis.
 
-        Counterpart to End(); both drop the underlying tensor data while
-        preserving the Tensor wrapper so later set_event/setW calls that
-        assume it exists continue to work. Called from Space.Start() so
-        state carried across the outer pos loop does not leak into the
-        next DataLoader yield.
+        Relies on each Basis subclass to guard its own permanent state:
+        Codebook preserves its codebook Parameter on setW(None), Embedding
+        makes setW a no-op, and Tensor routes plain-tensor writes through
+        a transient ``_active_payload`` slot when a Parameter is registered
+        (see Tensor.setW). So it is safe to call this on any Basis role
+        without erasing weights.
         """
-        if self.event is not None and hasattr(self.event, 'setW'):
-            self.event.setW(None)
+        if basis is None:
+            return
+        if hasattr(basis, "clearActivation"):
+            basis.clearActivation()
+        if hasattr(basis, "setW"):
+            basis.setW(None)
+
+    def Start(self):
+        """Release all per-batch tensors cached on the SubSpace.
+
+        Clears runtime state on every owned Basis (event, what, where,
+        when, activation) plus the SubSpace-level transient fields
+        (``_active`` index tensor, ``word`` list, ``valid_mask_bk`` mask,
+        ``stem_embedded`` flag). The prior version cleared only ``event``,
+        which leaked the demuxed [B, N, D] tensors on what/where/when and
+        the [B, N, M] ``_active`` tensor until the next forward overwrote
+        them. Called from Space.Start() so state carried across the outer
+        pos loop does not leak into the next DataLoader yield.
+        """
+        for basis in (self.event, self.what, self.where, self.when, self.activation):
+            self._clear_runtime_basis(basis)
+        self._active = None
+        self.word = []
+        self.valid_mask_bk = None
+        self.stem_embedded = False
 
     def End(self):
-        """Clear the cached event tensor at the end of a batch.
+        """Release all per-batch tensors cached on the SubSpace.
 
-        Counterpart to Start(); same semantics (drop the tensor data).
-        Called from Space.End() so cached per-batch state is released
-        before the next batch begins.
+        Counterpart to Start(); same semantics. Called from Space.End() so
+        cached per-batch state is released before the next batch begins.
         """
-        if self.event is not None and hasattr(self.event, 'setW'):
-            self.event.setW(None)
+        for basis in (self.event, self.what, self.where, self.when, self.activation):
+            self._clear_runtime_basis(basis)
+        self._active = None
+        self.word = []
+        self.valid_mask_bk = None
+        self.stem_embedded = False
 
     def Reset(self):
         """Per-sentence teardown. Drops the serial-mode warm cache so
@@ -4907,12 +5029,10 @@ class PerceptualSpace(Space):
     perceptual embeddings, optionally followed by self-attention and VQ
     codebook quantization.
 
-    When ``reversible=True`` and ``invertible=True``, a single layer
-    serves both directions (shared weights).  Without invertibility, two
-    PiLayers with separate weights are used: forward() on
-    one, reverse() on the other.  **Note:** the non-invertible reverse
-    path currently involves a matrix pseudoinverse (``pinv``) which may
-    be numerically unstable; this is not a recommended code path.
+    When ``reversible=True`` and ``invertible=True``, the reverse path
+    uses the configured inverse layer. With ``naive=False`` this uses the
+    LDU/triangular-solve path; the dense naive path exists only for
+    debugging and validation.
 
     ``passThrough=True`` makes this a no-op (identity), useful when the input
     is already in the desired perceptual form.
@@ -4981,27 +5101,27 @@ class PerceptualSpace(Space):
             )
         except KeyError:
             self.chunking_mode = "lexicon"
-        # Propagate to the Embedding so its _token_stream honors the mode.
+        if self.chunking_mode not in ("bpe", "lexicon"):
+            raise ValueError(
+                f"PerceptualSpace.chunking must be bpe|lexicon, "
+                f"got {self.chunking_mode!r}")
         if isinstance(lexical_basis, Embedding):
             lexical_basis.chunking_mode = self.chunking_mode
             lexical_basis.lexer_mode = self.lexer
-        # ChunkLayer BPE configuration. chunkBPE=true enables the learned
-        # BPE merge table on ChunkLayer; otherwise the layer runs in its
-        # legacy whitespace-boundary mode.
         try:
-            self.chunkBPE = bool(TheXMLConfig.space(section, "chunkBPE"))
-        except KeyError:
-            self.chunkBPE = False
-        try:
-            self.chunkTargetVocabSize = int(
-                TheXMLConfig.space(section, "chunkTargetVocabSize") or 1024)
+            self.chunking_frequency = int(
+                TheXMLConfig.space(section, "chunkingFrequency") or 2)
         except (KeyError, TypeError, ValueError):
-            self.chunkTargetVocabSize = 1024
-        try:
-            self.chunkMinPairFrequency = int(
-                TheXMLConfig.space(section, "chunkMinPairFrequency") or 2)
-        except (KeyError, TypeError, ValueError):
-            self.chunkMinPairFrequency = 2
+            self.chunking_frequency = 2
+        if self.chunking_mode == "bpe":
+            if self.nVectors < 256:
+                raise ValueError(
+                    f"PerceptualSpace.chunking='bpe' requires nVectors>=256 "
+                    f"(to seed the byte range); got nVectors={self.nVectors}")
+            if self.model_type != "embedding":
+                raise ValueError(
+                    "PerceptualSpace.chunking='bpe' requires "
+                    "<modelType>embedding</modelType>")
         self._recovered_input = None
         self._embedded_input = None
         if passThrough:
@@ -5011,14 +5131,11 @@ class PerceptualSpace(Space):
         self.subspace._nWordSlots = outputShape[0]
         self.params = []
         self.layers = nn.ModuleList()
-        # ChunkLayer carries the learned BPE merge table; active when
-        # chunkBPE=true or chunking='bpe'. Built lazily in compose() when
-        # dims are known, but eagerly when the config requests BPE.
         self.chunk_layer = ChunkLayer(
             self.nDim,
-            bpe=self.chunkBPE,
-            target_vocab_size=self.chunkTargetVocabSize,
-            min_pair_frequency=self.chunkMinPairFrequency,
+            bpe=(self.chunking_mode == "bpe"),
+            n_vectors=self.nVectors,
+            chunking_frequency=self.chunking_frequency,
         )
 
     def _register_requirements(self):
@@ -5122,23 +5239,17 @@ class PerceptualSpace(Space):
         pass
     @staticmethod
     def chunk_static(stream: bytes, mode: str) -> list:
-        """Three-way chunking switch: raw | bpe | lexicon.
+        """Two-way chunking switch: bpe | lexicon.
 
-        - raw: split into single bytes.
         - lexicon: split on whitespace (word-level).
         - bpe: cold-start BPE (byte-level fallback when no trained merges).
         """
-        if mode == "raw":
-            return [bytes([b]) for b in stream]
         if mode == "lexicon":
             return stream.split()
         if mode == "bpe":
-            # Cold-start BPE: no merges table available here -> fall back to
-            # single bytes. The real BPE path runs through ChunkLayer (see
-            # basicmodel/bin/Layers.py) once merges have been learned.
             return [bytes([b]) for b in stream]
         raise ValueError(
-            f"chunking mode must be raw|bpe|lexicon, got {mode!r}"
+            f"chunking mode must be bpe|lexicon, got {mode!r}"
         )
 
     def _embed(self, upstream_vspace):
@@ -5246,6 +5357,120 @@ class PerceptualSpace(Space):
         self._forward_input = {'tokens': batch_tokens, 'indices': what_indices}
         return self.subspace
 
+    def _embed_bpe(self, upstream_vspace):
+        """BPE chunking path. Decode the upstream byte buffer, BPE-tokenize
+        via ChunkLayer, group sub-tokens by whitespace word-boundary, look up
+        (and insert as OOV) each byte-tuple chunk in the codebook, then
+        MAX-fuse sub-token vectors within each word.  Emit one [nDim] vector
+        per word.
+        """
+        what_buf = upstream_vspace.what.getW()
+        if what_buf is None:
+            raise RuntimeError(
+                "PerceptualSpace._embed_bpe: upstream subspace.what is empty. "
+                "InputSpace.forward must lex into subspace.what.W before "
+                "PerceptualSpace.forward runs.")
+
+        dev = TheDevice.get()
+        batch = what_buf.shape[0]
+        nObj = self.outputShape[0]
+        codebook = self.subspace.what
+        boundary = self.chunk_layer.BOUNDARY_BYTES
+
+        if what_buf.dim() == 3:
+            byte_indices = what_buf[..., 0].long()
+        else:
+            byte_indices = what_buf.long()
+
+        if self.chunk_layer.bpe and self.training:
+            self.chunk_layer.train_step(byte_indices)
+
+        all_chunks, all_spans = self.chunk_layer.forward(byte_indices)
+
+        null_idx = codebook.wv.key_to_index.get("\x00", 0)
+        what_indices = torch.full(
+            (batch, nObj), null_idx, dtype=torch.long, device=dev)
+        word_vectors = torch.zeros(batch, nObj, self.nDim, device=dev)
+        word_active = torch.zeros(batch, nObj, device=dev)
+
+        for b in range(batch):
+            chunks = all_chunks[b]
+            spans = all_spans[b]
+            if not chunks:
+                continue
+            word_idx = 0
+            word_subtokens = []
+            for (chunk_id, (start, end, key)) in zip(chunks, spans):
+                is_boundary = all(bv in boundary for bv in key)
+                if is_boundary:
+                    if word_subtokens and word_idx < nObj:
+                        word_vectors[b, word_idx] = self._max_fuse_subtokens(
+                            word_subtokens, codebook)
+                        what_indices[b, word_idx] = self._chunk_to_codebook_idx(
+                            word_subtokens, codebook)
+                        word_active[b, word_idx] = 1.0
+                        word_idx += 1
+                    word_subtokens = []
+                else:
+                    word_subtokens.append(key)
+            if word_subtokens and word_idx < nObj:
+                word_vectors[b, word_idx] = self._max_fuse_subtokens(
+                    word_subtokens, codebook)
+                what_indices[b, word_idx] = self._chunk_to_codebook_idx(
+                    word_subtokens, codebook)
+                word_active[b, word_idx] = 1.0
+
+        where_raw = upstream_vspace.where.getW()
+        when_raw = upstream_vspace.when.getW()
+        where_indices = (where_raw[:, :nObj].long()
+                         if (self.nWhere > 0 and where_raw is not None)
+                         else (torch.zeros(batch, nObj, dtype=torch.long, device=dev)
+                               if self.nWhere > 0 else None))
+        when_indices = (when_raw[:, :nObj].long()
+                        if (self.nWhen > 0 and when_raw is not None)
+                        else (torch.arange(nObj, device=dev).unsqueeze(0).expand(batch, -1)
+                              if self.nWhen > 0 else None))
+
+        self.subspace.whereEncoding.p = 0
+        self.subspace.set_forward_content(
+            what_indices, where_indices, when_indices,
+            activation=word_active)
+        self.subspace.event.setW(word_vectors)
+        self._embedded_input = word_vectors
+        self._bpe_word_mask = word_active
+        return self.subspace
+
+    def _chunk_key_to_latin1(self, byte_tuple):
+        """Convert a byte-tuple key (e.g., (104, 101)) to its latin-1 string."""
+        return "".join(chr(int(b) & 0xFF) for b in byte_tuple)
+
+    def _chunk_to_codebook_idx(self, word_subtokens, codebook):
+        """Resolve a list of byte-tuple sub-tokens to a codebook index.
+        Inserts OOV keys as needed via Embedding.insert().  Returns the index
+        of the first sub-token (used for bookkeeping; the real word vector
+        comes from MAX fusion)."""
+        keys = [self._chunk_key_to_latin1(bt) for bt in word_subtokens]
+        for key in keys:
+            if (key and key not in codebook.pretrain.key_to_index
+                    and not getattr(codebook, 'byte_mode', False)):
+                codebook.insert(key)
+        return codebook._token_to_index(keys[0]) if keys else 0
+
+    def _max_fuse_subtokens(self, word_subtokens, codebook):
+        """MAX-fuse sub-token vectors into a single [nDim] word vector."""
+        if not word_subtokens:
+            return torch.zeros(self.nDim, device=TheDevice.get())
+        vecs = []
+        for bt in word_subtokens:
+            key = self._chunk_key_to_latin1(bt)
+            if key and key in codebook.pretrain.key_to_index:
+                idx = codebook._token_to_index(key)
+                vecs.append(codebook.wv._vectors[idx])
+        if not vecs:
+            return torch.zeros(self.nDim, device=TheDevice.get())
+        stacked = torch.stack(vecs, dim=0)
+        return stacked.max(dim=0).values
+
     def Reset(self):
         """Clear caches so the next forward() does a full recompute."""
         super().Reset()
@@ -5313,15 +5538,11 @@ class PerceptualSpace(Space):
             mode = self.chunking_mode
             if mode == "lexicon":
                 vspace = self._embed(vspace)
-            elif mode == "cached":
-                raise NotImplementedError(
-                    "PerceptualSpace chunking='cached' not yet wired; use 'lexicon'.")
             elif mode == "bpe":
-                raise NotImplementedError(
-                    "PerceptualSpace chunking='bpe' not yet wired; use 'lexicon'.")
+                vspace = self._embed_bpe(vspace)
             else:
                 raise ValueError(
-                    f"PerceptualSpace chunking must be lexicon|cached|bpe, got {mode!r}")
+                    f"PerceptualSpace chunking must be bpe|lexicon, got {mode!r}")
         if self.passThrough:
             return vspace
         if getattr(vspace, '_demuxed', False) and vspace._active is not None:
@@ -5339,6 +5560,16 @@ class PerceptualSpace(Space):
         x = self._sparsity(x)
         vspace = self.forwardEnd(x, returnVectors=True)
         vspace.normalize("percepts", target="event", normalize=True)
+
+        # In BPE mode, re-apply the word-boundary mask so padding slots
+        # (beyond the actual word count) stay zero after the VQ codebook
+        # quantizes them to the nearest prototype.
+        if self.chunking_mode == "bpe":
+            mask = getattr(self, "_bpe_word_mask", None)
+            if mask is not None:
+                ev = vspace.event.getW()
+                if ev is not None:
+                    vspace.event.setW(ev * mask.unsqueeze(-1))
 
         # Prime the warm-path cache for subsequent serial_mode calls.
         # Must detach: clone() preserves autograd graph, which would hold
@@ -5686,6 +5917,7 @@ class ConceptualSpace(Space):
         invertible = TheXMLConfig.space(section, "invertible")
         nonlinear = TheXMLConfig.space(section, "nonlinear")
         naive = TheXMLConfig.get("architecture.naive")
+        monotonic = bool(TheXMLConfig.get("architecture.monotonic", default=False))
         super().__init__(inputShape, spaceShape, outputShape)
         self.nonlinear = nonlinear
         self.ergodic = ergodic
@@ -5711,17 +5943,17 @@ class ConceptualSpace(Space):
             if invertible:
                 self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
                                         invertible=True, nonlinear=nonlinear,
-                                        stable=True)
+                                        stable=True, monotonic=monotonic)
                 self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
                 self.params = self.sigma.getParameters()
                 self.layers = nn.ModuleList([self.sigma])
             else:
                 self.sigma1 = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
                                          invertible=True, nonlinear=nonlinear,
-                                         stable=True)
+                                         stable=True, monotonic=monotonic)
                 self.sigma2 = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
                                          invertible=True, nonlinear=nonlinear,
-                                         stable=True)
+                                         stable=True, monotonic=monotonic)
                 self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
                 self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
                 self.layers = nn.ModuleList([self.sigma1, self.sigma2])
@@ -5764,29 +5996,25 @@ class ConceptualSpace(Space):
             return subspace
         self.subspace.copy_context(subspace)
         vspace = subspace
-        # STM-residual bias (once per sentence; wordSpace gates itself).
-        # We must not mutate the upstream subspace (PerceptualSpace owns
-        # it); stage the biased tensor in our own subspace instead.
-        ws = vspace.wordSpace
-        if ws is not None:
-            event = vspace.materialize()
-            if event is not None:
-                # Derive (B, K) from wordspace state: ensure_microbatch
-                # keeps _stm_fired at B and ws.batch at B*K.  In legacy
-                # single-row paths B=K=1 trivially.
-                B = int(ws._stm_fired.shape[0])
-                BK_actual = int(event.shape[0])
-                K = max(1, BK_actual // max(1, B))
-                assert B * K == BK_actual, (
-                    f"ConceptualSpace stm gating: event batch={BK_actual} "
-                    f"not a multiple of source-row count B={B}")
-                bias = ws.stm_residual_microbatch(B, K)
-                if bias is not None:
-                    # bias: [B*K, concept_dim]; broadcast over N positions.
-                    self.subspace.set_event(event + bias.unsqueeze(1))
-                    vspace = self.subspace
         x = self.forwardBegin(vspace, returnVectors=True)
         y = self.forwardSigma(x)
+        # STM-residual bias (once per sentence; wordSpace gates itself).
+        # disc.prime() casts into concept_dim, so the bias must be added
+        # to the post-Sigma activation y (shape [B*K, N_out, concept_dim]),
+        # not to the pre-Sigma upstream event (which lives at the percept
+        # basis dim and would shape-mismatch).
+        ws = vspace.wordSpace
+        if ws is not None and y is not None:
+            B = int(ws._stm_fired.shape[0])
+            BK_actual = int(y.shape[0])
+            K = max(1, BK_actual // max(1, B))
+            assert B * K == BK_actual, (
+                f"ConceptualSpace stm gating: y batch={BK_actual} "
+                f"not a multiple of source-row count B={B}")
+            bias = ws.stm_residual_microbatch(B, K, expected_dim=y.shape[-1])
+            if bias is not None:
+                # bias: [B*K, concept_dim]; broadcast over N_out positions.
+                y = y + bias.unsqueeze(1)
         if self.hasAttention:
             y = self.attention.forward(y)
         if self.codebook:
