@@ -957,6 +957,57 @@ class Basis(nn.Module):
             return result
         return Ops.disjunctionReverse(result, y, W, monotonic=monotonic)
 
+    # -- Synthesis / analysis dispatchers (lift / lower) ------------------
+    # Thin wrappers around Ops.lift / Ops.lower that supply the codebook W
+    # for the inverse (codebook-search) paths.  See Ops.lift / Ops.lower
+    # for the mode dispatch and region semantics.
+
+    def lift(self, X1, X2=None, mode='OR', kind='strict', inverse=False,
+             monotonic=False):
+        """Synthesis dispatcher: many → one (∨).
+
+        Forward routes through Ops.lift.  `kind` selects the point body
+        (strict/smooth/radial); see Ops.lift for details.  Inverse with
+        mode='OR' or 'AND' runs codebook-search recovery via self.getW();
+        inverse with mode='NOT' is self-inverse and bypasses W.
+        """
+        if inverse and mode == 'OR':
+            W = self._codebook_or_none("Basis.lift inverse")
+            if W is None:
+                return X1
+            return Ops.disjunctionReverse(X1, X2, W, monotonic=monotonic)
+        if inverse and mode == 'AND':
+            W = self._codebook_or_none("Basis.lift inverse")
+            if W is None:
+                return X1
+            return Ops.conjunctionReverse(X1, X2, W, monotonic=monotonic)
+        return Ops.lift(
+            X1, X2, mode=mode, kind=kind, inverse=inverse, monotonic=monotonic
+        )
+
+    def lower(self, X1, X2=None, mode='AND', kind='strict', inverse=False,
+              monotonic=False):
+        """Analysis dispatcher: one → many (∧).
+
+        Forward routes through Ops.lower.  `kind` selects the point body
+        (strict/smooth/radial); see Ops.lower for details.  Inverse with
+        mode='AND' or 'OR' runs codebook-search recovery via self.getW();
+        inverse with mode='NOT' is self-inverse and bypasses W.
+        """
+        if inverse and mode == 'AND':
+            W = self._codebook_or_none("Basis.lower inverse")
+            if W is None:
+                return X1
+            return Ops.conjunctionReverse(X1, X2, W, monotonic=monotonic)
+        if inverse and mode == 'OR':
+            W = self._codebook_or_none("Basis.lower inverse")
+            if W is None:
+                return X1
+            return Ops.disjunctionReverse(X1, X2, W, monotonic=monotonic)
+        return Ops.lower(
+            X1, X2, mode=mode, kind=kind, inverse=inverse, monotonic=monotonic
+        )
+
     def pos(self, x):
         return Ops.pos(x)
 
@@ -2421,7 +2472,7 @@ class SubSpace(nn.Module):
         """True when this SubSpace has no work to do.
 
         Pipeline modules short-circuit when this returns True (no codebook
-        inserts, no pos_stack pushes, no side effects). Checks shapes
+        inserts, no category_stack pushes, no side effects). Checks shapes
         directly from the underlying Basis tensors to avoid the cost and
         side effects of materialize() (which gates the event by activation
         presence and can trip on transient shape mismatches).
@@ -5812,6 +5863,24 @@ class ConceptualSpace(Space):
     def certainty(self, x):
         return x.T @ x
 
+    def activation_signed(self):
+        """Backward-compat shim: return aP - aN as a signed scalar [B, N].
+
+        Conceptual activations carry the tetralemma bivector [aP, aN] in
+        ``subspace.activation``. Legacy callers that read the activation as
+        a single signed scalar route through this method until they
+        migrate to bivector-aware reads (Step 7 of the lift/lower/bivector
+        refactor). [1, 0] -> +1 (positive evidence), [0, 1] -> -1
+        (negative evidence), [0, 0] and [1, 1] both -> 0 (collapse to
+        signed loses the contradiction/ignorance distinction).
+        """
+        act = self.subspace.get_activation()
+        if act is None:
+            return None
+        if act.ndim == 3 and act.shape[-1] == 2:
+            return act[..., 0] - act[..., 1]
+        return act
+
     def Reset(self):
         """Clear the subspace event so next forward() does a full recompute."""
         super().Reset()
@@ -6376,7 +6445,7 @@ class SymbolicSpace(Space):
     # The new forward path consumes an "incoming subspace" built by
     # ``_build_incoming_subspace`` (a minimal SubSpace whose activation
     # carries the percept-level pos_vector).  It pushes a PoS vector onto
-    # ``wordSpace.pos_stack``, asks the rule predictor for a distribution
+    # ``wordSpace.category_stack``, asks the rule predictor for a distribution
     # over grammar rules, and applies that rule to ``self.subspace.what``.
     #
     # Regular callers flow through the main forward body; dispatch is
@@ -6502,7 +6571,7 @@ class SymbolicSpace(Space):
         Five-step flow per the plan:
           1. Read active (symbol-axis activation) from the incoming subspace.
           2. Look up the PoS vector via ``wordSpace.pos_lookup`` and push
-             onto ``wordSpace.pos_stack``.
+             onto ``wordSpace.category_stack``.
           3. Ask the rule predictor for a softmax distribution over rules.
           4. Pick a rule (argmax for eval, superposed for training) and
              apply it to update ``self.subspace.what``.
@@ -6532,7 +6601,7 @@ class SymbolicSpace(Space):
         # already collapses to row-0 (active=active[0] above). Once the body
         # iterates over B*K rows (Task 9 cutover), thread the row index here.
         pos_vec = wordSpace.pos_lookup(active)
-        wordSpace.pos_stack.push(0, pos_vec)
+        wordSpace.category_stack.push(0, pos_vec)
 
         # Step 3 -- rule distribution.
         rule_logits = wordSpace.predict_rule(0)

@@ -742,6 +742,33 @@ class XMLConfig:
         """Return raw nOutput for a space (0 = sentinel meaning 'same as nInput')."""
         return self.space(space_name, "nOutput")
 
+    def tetralemma_policy(self, space_name):
+        """Return (allow_excluded_middle, allow_contradiction, neither_threshold)
+        for ``space_name``, applying inheritance from the global
+        ``<TetralemmaPolicy>`` block when ``<tetralemmaOverride enabled="false">``.
+
+        Per spec O4 of the lift/lower/bivector design, the conceptual
+        and symbolic layers share a default tetralemma policy unless a
+        per-space override is enabled. ``space_name`` is the XML section
+        tag ("ConceptualSpace", "SymbolicSpace", ...).
+
+        Returns a 3-tuple. Defaults match the global block in
+        ``data/MentalModel.xml`` (Kleene: permit NEITHER, forbid BOTH).
+        """
+        override_node = self.get(
+            f"{space_name}.tetralemmaOverride", default=None)
+        override_enabled = False
+        if isinstance(override_node, dict):
+            override_enabled = (str(override_node.get("enabled", "false"))
+                                .strip().lower() == "true")
+        section = f"{space_name}.TetralemmaPolicy" if override_enabled \
+            else "TetralemmaPolicy"
+        return (
+            int(self.get(f"{section}.allowExcludedMiddle", default=1)),
+            int(self.get(f"{section}.allowContradiction", default=0)),
+            float(self.get(f"{section}.neitherThreshold", default=0.1)),
+        )
+
     def nInput(self, space_name):
         """Return raw nInput for a space (0 = sentinel meaning 'derive from previous space')."""
         return self.space(space_name, "nInput")

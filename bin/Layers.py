@@ -4057,6 +4057,14 @@ class ChunkLayer(Layer):
 #endregion
 
 #region Operations
+
+# Sentinel for the unified lift / lower dispatcher: distinguishes the
+# legacy positional form Ops.lift(left, right) (deprecated; routes to the
+# old elementwise-product body) from the new keyword form
+# Ops.lift(X1, X2, mode='OR', ...).
+_NO_MODE = object()
+
+
 class Ops:
     """Pure operations on activation vectors in [-1, +1].
 
@@ -4181,26 +4189,54 @@ class Ops:
 
     # ---- Binary fuzzy logic ----------------------------------------------
 
+    # ---- RadMin / RadMax (bitonic same-sign magnitude pooling) -----------
+    # Private helpers so kind='radial' on lift / lower can call them
+    # directly without round-tripping through Ops.conjunction /
+    # Ops.disjunction (which themselves now forward back to lift / lower).
+
     @staticmethod
-    def conjunction(x, y, monotonic=False):
-        """Conjunction (intersection). Domain/range [-1, 1]."""
-        if monotonic:
-            return torch.min(x, y)
+    def _radmin(x, y):
+        """Same-sign minimum magnitude (zero collapse).
+        Pre-Step-2 bitonic conjunction body."""
         same_sign = (x * y > 0).float()
         min_mag = torch.min(torch.abs(x), torch.abs(y))
         return same_sign * torch.sign(x) * min_mag
 
     @staticmethod
-    def disjunction(x, y, monotonic=False):
-        """Disjunction (union). Domain/range [-1, 1]."""
-        if monotonic:
-            return torch.max(x, y)
+    def _radmax(x, y):
+        """Same-sign maximum magnitude with zero passthrough.
+        Pre-Step-2 bitonic disjunction body."""
         same_sign = (x * y > 0).float()
         max_mag = torch.max(torch.abs(x), torch.abs(y))
         core = same_sign * torch.sign(x) * max_mag
         x_zero = (x == 0).float()
         y_zero = (y == 0).float()
         return core + x_zero * y + y_zero * x
+
+    @staticmethod
+    def conjunction(x, y, monotonic=False):
+        """Conjunction (intersection). Domain/range [-1, 1].
+
+        Thin forwarder to Ops.lower(mode='AND'):
+            monotonic=True  → kind='strict' (lattice min)
+            monotonic=False → kind='radial' (RadMin same-sign min magnitude)
+        Bit-exact match to the pre-Step-2 body.
+        """
+        kind = 'strict' if monotonic else 'radial'
+        return Ops.lower(x, y, mode='AND', kind=kind)
+
+    @staticmethod
+    def disjunction(x, y, monotonic=False):
+        """Disjunction (union). Domain/range [-1, 1].
+
+        Thin forwarder to Ops.lift(mode='OR'):
+            monotonic=True  → kind='strict' (lattice max)
+            monotonic=False → kind='radial' (RadMax same-sign max magnitude
+                              with zero passthrough)
+        Bit-exact match to the pre-Step-2 body.
+        """
+        kind = 'strict' if monotonic else 'radial'
+        return Ops.lift(x, y, mode='OR', kind=kind)
 
     @staticmethod
     def negation(x, monotonic=False):
@@ -4300,29 +4336,178 @@ class Ops:
         return W[best_i].reshape(result.shape)
 
     # ---- In-space algebra (lift / lower) ---------------------------------
-    # These are the post-PiLayer-removal in-space bodies for the S-tier
-    # ``lift`` / ``lower`` rules. ``lift`` is the elementwise product;
-    # ``lower`` is the arithmetic mean. Both have analytic inverses given
-    # the right operand.
+    # Unified synthesis / analysis dispatchers (Logic.md §8).
+    #     lift  = synthesis = many → one (∨), default mode='OR'
+    #     lower = analysis  = one → many (∧), default mode='AND'
+    # Mode dispatch covers AND / OR / NOT; mode='NOT' is self-inverse.
+    # Region operands are 2-tuples (lower, upper); points auto-promote to
+    # degenerate regions containing the origin when the body is the region
+    # form. The codebook-search inverse routes through Basis (which has
+    # access to the codebook W); a standalone Ops caller can use
+    # Ops.liftReverse / Ops.lowerReverse for the analytic inverse on the
+    # smoothed point body.
 
     @staticmethod
-    def lift(left, right):
-        """In-space lift: elementwise product."""
-        return left * right
+    def _as_region(x):
+        """Promote a point to a degenerate region containing the origin."""
+        if isinstance(x, tuple) and len(x) == 2:
+            return x
+        zero = torch.zeros_like(x)
+        return torch.minimum(x, zero), torch.maximum(x, zero)
+
+    @staticmethod
+    def lift(X1, X2=None, mode=_NO_MODE, kind='strict', inverse=False,
+             monotonic=False):
+        """Synthesis dispatcher: many → one (∨).  Default mode='OR'.
+
+        Forward bodies (point):
+            mode='OR'  kind='strict' (default): torch.max(X1, X2)
+                       kind='smooth': (X1 + X2) / 2  (arithmetic mean)
+                       kind='radial': RadMax — same-sign max magnitude with
+                                      zero passthrough (Ops._radmax body)
+                       region: (min ℓ, max u) with point auto-promotion
+                               (region body unchanged by kind)
+            mode='NOT' Ops.negation(X1, monotonic=monotonic) (self-inverse)
+            mode='AND' routes to Ops.lower(X1, X2, mode='AND', kind=kind)
+                       for symmetry
+
+        Inverse (inverse=True):
+            mode='OR'  codebook-search via Basis (raises here without W)
+            mode='NOT' self-inverse — same as forward
+            mode='AND' routes to Ops.lower(..., inverse=True)
+
+        XXX deprecated alias -- review when convenient.  The legacy
+        positional form Ops.lift(left, right) (no mode kwarg) was the
+        elementwise product.  It now emits a DeprecationWarning and
+        forwards to Ops.lower(left, right, mode='AND', kind='smooth'),
+        which produces the same elementwise product bit-for-bit.
+        """
+        if mode is _NO_MODE:
+            if X2 is not None and not inverse:
+                warnings.warn(
+                    "Ops.lift(left, right) is the *analysis* product; "
+                    "use Ops.lower(x, y, mode='AND') for the synthesis / "
+                    "analysis polarity.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+                return Ops.lower(X1, X2, mode='AND', kind='smooth',
+                                 monotonic=monotonic)
+            mode = 'OR'
+
+        if mode == 'NOT':
+            return Ops.negation(X1, monotonic=monotonic)
+        if mode == 'AND':
+            return Ops.lower(
+                X1, X2, mode='AND', kind=kind, inverse=inverse,
+                monotonic=monotonic,
+            )
+        if mode == 'OR':
+            if inverse:
+                raise NotImplementedError(
+                    "Ops.lift(..., mode='OR', inverse=True) requires a "
+                    "codebook W; use Basis.lift(..., mode='OR', inverse=True) "
+                    "or Ops.disjunctionReverse(result, y, W, ...) directly."
+                )
+            if isinstance(X1, tuple) or isinstance(X2, tuple):
+                l1, u1 = Ops._as_region(X1)
+                l2, u2 = Ops._as_region(X2)
+                return torch.minimum(l1, l2), torch.maximum(u1, u2)
+            if kind == 'strict':
+                return torch.max(X1, X2)
+            if kind == 'smooth':
+                return (X1 + X2) / 2
+            if kind == 'radial':
+                return Ops._radmax(X1, X2)
+            raise ValueError(f"Ops.lift: unknown kind {kind!r}")
+        raise ValueError(f"Ops.lift: unknown mode {mode!r}")
 
     @staticmethod
     def liftReverse(result, right):
-        """Recover first operand from the elementwise product."""
+        """Analytic inverse of the legacy lift body (elementwise product).
+
+        XXX deprecated alias body -- review when convenient.  Pairs with
+        the legacy Ops.lift(left, right) = left * right body that is now
+        delivered through the new Ops.lower(mode='AND').  Recovers X1
+        from result = X1 * right as result / (right + epsilon).
+        """
         return result / (right + epsilon)
 
     @staticmethod
-    def lower(left, right):
-        """In-space lower: arithmetic mean."""
-        return (left + right) / 2
+    def lower(X1, X2=None, mode=_NO_MODE, kind='strict', inverse=False,
+              monotonic=False):
+        """Analysis dispatcher: one → many (∧).  Default mode='AND'.
+
+        Forward bodies (point):
+            mode='AND' kind='strict' (default): torch.min(X1, X2)
+                       kind='smooth': X1 * X2  (elementwise product)
+                       kind='radial': RadMin — same-sign min magnitude with
+                                      zero collapse (Ops._radmin body)
+                       region: (max ℓ, min u) with point auto-promotion
+                               (region body unchanged by kind)
+            mode='NOT' Ops.negation(X1, monotonic=monotonic) (self-inverse)
+            mode='OR'  routes to Ops.lift(X1, X2, mode='OR', kind=kind) for symmetry
+
+        Inverse (inverse=True):
+            mode='AND' codebook-search via Basis (raises here without W)
+            mode='NOT' self-inverse — same as forward
+            mode='OR'  routes to Ops.lift(..., inverse=True)
+
+        XXX deprecated alias -- review when convenient.  The legacy
+        positional form Ops.lower(left, right) (no mode kwarg) was the
+        arithmetic mean.  It now emits a DeprecationWarning and forwards
+        to Ops.lift(left, right, mode='OR', kind='smooth'), which produces
+        the same arithmetic mean bit-for-bit.
+        """
+        if mode is _NO_MODE:
+            if X2 is not None and not inverse:
+                warnings.warn(
+                    "Ops.lower(left, right) is the *synthesis* mean; "
+                    "use Ops.lift(x, y, mode='OR') for the synthesis / "
+                    "analysis polarity.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+                return Ops.lift(X1, X2, mode='OR', kind='smooth',
+                                monotonic=monotonic)
+            mode = 'AND'
+
+        if mode == 'NOT':
+            return Ops.negation(X1, monotonic=monotonic)
+        if mode == 'OR':
+            return Ops.lift(
+                X1, X2, mode='OR', kind=kind, inverse=inverse,
+                monotonic=monotonic,
+            )
+        if mode == 'AND':
+            if inverse:
+                raise NotImplementedError(
+                    "Ops.lower(..., mode='AND', inverse=True) requires a "
+                    "codebook W; use Basis.lower(..., mode='AND', inverse=True) "
+                    "or Ops.conjunctionReverse(result, y, W, ...) directly."
+                )
+            if isinstance(X1, tuple) or isinstance(X2, tuple):
+                l1, u1 = Ops._as_region(X1)
+                l2, u2 = Ops._as_region(X2)
+                return torch.maximum(l1, l2), torch.minimum(u1, u2)
+            if kind == 'strict':
+                return torch.min(X1, X2)
+            if kind == 'smooth':
+                return X1 * X2
+            if kind == 'radial':
+                return Ops._radmin(X1, X2)
+            raise ValueError(f"Ops.lower: unknown kind {kind!r}")
+        raise ValueError(f"Ops.lower: unknown mode {mode!r}")
 
     @staticmethod
     def lowerReverse(result, right):
-        """Recover first operand from the mean."""
+        """Analytic inverse of the legacy lower body (arithmetic mean).
+
+        XXX deprecated alias body -- review when convenient.  Pairs with
+        the legacy Ops.lower(left, right) = (left + right) / 2 body that
+        is now delivered through the new Ops.lift(mode='OR').  Recovers
+        X1 from result = (X1 + right) / 2 as 2 * result - right.
+        """
         return 2 * result - right
 
     # ---- Axis selectors (what / where / when) ----------------------------

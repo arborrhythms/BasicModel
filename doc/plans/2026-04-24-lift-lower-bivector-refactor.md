@@ -3,16 +3,17 @@
 **Date.** 2026-04-24
 **Owner.** Alec
 **Status.** Draft.  Code unchanged; doc preconditions in place
-([Logic.md](../Logic.md) §8, [OpsComparison.md](../OpsComparison.md)
-§7).
+([Logic.md](../Logic.md) §8 conceptual ground; §9 ops realization /
+mapping / divergences — formerly the standalone OpsComparison
+report).
 
 ---
 
 ## Goal
 
 Refactor the level-crossing operations between PerceptualSpace,
-ConceptualSpace, and SymbolicSpace around the **Cantorian lift /
-lower axis**:
+ConceptualSpace, and SymbolicSpace around the **synthesis / analysis
+lift / lower axis**:
 
 - **lift** (going up — many → one) = synthesis = union (∨), realized
   at the layer scale by `SigmaLayer`.
@@ -37,11 +38,11 @@ Three substantive changes follow:
 ## Why now
 
 - The conceptual model in Logic.md §8 is now stable: lift / lower /
-  Cantorian polarity / convexity asymmetry / bivector-lower-for-
+  synthesis / analysis polarity / convexity asymmetry / bivector-lower-for-
   contradiction.
 - The current code arrangement (SymbolicSpace owns the `PiLayer` at
-  `bin/Spaces.py:5945`) is inverted relative to the Cantorian
-  ownership rule.  Building further symbolic features on top of the
+  `bin/Spaces.py:5945`) is inverted relative to the synthesis /
+  analysis ownership rule.  Building further symbolic features on top of the
   inverted arrangement compounds the cleanup.
 - `Ops.lift = ⊙` and `Ops.lower = mean` ([bin/Layers.py:4308–4326](../../bin/Layers.py))
   are correct in body but inverted in label.  Every new caller risks
@@ -132,12 +133,12 @@ files exercising `Ops.lift` / `Ops.lower`.
    ```python
    @staticmethod
    def lift(X1, X2=None, mode='OR', inverse=False):
-       """Cantorian synthesis: many → one (∨).  Default is union/OR."""
+       """Synthesis: many → one (∨).  Default is union/OR."""
        ...
 
    @staticmethod
    def lower(X1, X2=None, mode='AND', inverse=False):
-       """Cantorian analysis: one → many (∧).  Default is intersection/AND."""
+       """Analysis: one → many (∧).  Default is intersection/AND."""
        ...
    ```
 
@@ -173,15 +174,15 @@ files exercising `Ops.lift` / `Ops.lower`.
 
 5. **Deprecation alias.**  Keep the current `Ops.lift(left, right)`
    and `Ops.lower(left, right)` names as thin forwarders that emit a
-   `DeprecationWarning` and dispatch to the inverted Cantorian
-   call:
+   `DeprecationWarning` and dispatch to the inverted synthesis /
+   analysis call:
 
    ```python
    @staticmethod
    def lift(left, right):  # deprecated old signature
        warnings.warn("Ops.lift(left, right) is the *analysis* product; "
-                     "use Ops.lower(x, y, mode='AND') for the Cantorian "
-                     "polarity.  Will be removed in next release.",
+                     "use Ops.lower(x, y, mode='AND') for the synthesis / "
+                     "analysis polarity.  Will be removed in next release.",
                      DeprecationWarning, stacklevel=2)
        return Ops.lower(left, right, mode='AND')  # ← was lift's old body
    ```
@@ -212,7 +213,7 @@ files exercising `Ops.lift` / `Ops.lower`.
 
 **Risk.** Any caller that uses `Ops.lift(x, y)` or `Ops.lower(x, y)`
 with the old (Pi-named) semantics will silently get the new
-(Cantorian) body if the legacy alias dispatch is wrong.  Mitigation:
+(synthesis-flipped) body if the legacy alias dispatch is wrong.  Mitigation:
 the deprecation alias forwards to the body that *matches the old
 behavior*, i.e. legacy `lift(x, y)` → new `lower(x, y, mode='AND')`
 (both elementwise product); legacy `lower(x, y)` → new `lift(x, y,
@@ -439,7 +440,7 @@ apply-rule step, the codebook initialization in
    | Production | Resolves to (`Ops`) | Notes |
    |---|---|---|
    | `S = NP` | `project(NP)` | terminal projection — pass NP up, type-stamp as S |
-   | `S = lift(NP, VP)` | `Ops.lift(NP, VP, mode='OR')` | subject + predicate; Cantorian synthesis |
+   | `S = lift(NP, VP)` | `Ops.lift(NP, VP, mode='OR')` | subject + predicate; synthesis of the many |
    | `S = lift(NP, VO)` | `Ops.lift(NP, VO, mode='OR')` | subject + verb-object; uses `VO` state below |
    | `S = equals(NP, NP)` | `Ops.equal(NP1, NP2)` | copula identification *X is the Y* |
    | `S = equals(NP, AP)` | `Ops.equal(NP, AP)` | predicative attribution *X is red* |
@@ -646,40 +647,66 @@ apply-rule step, the codebook initialization in
    - **Option B (separate codebook).**  Add a second codebook
      `Spaces.ConceptualSpace.category_codebook` of size K_cat.
      Cleaner separation, more parameters, two regularizers.
-   Recommend **A** (Cantorian unity: ADJ-ness *is* a concept), but
+   Recommend **A** (single-codebook unity: ADJ-ness *is* a concept), but
    flag for review during implementation.
 
-4. **Each grammatical state carries `category_vector` and
-   `activation`.**  At parse time, when a production fires:
+4. **Each grammatical state carries `category_vector` (bivector
+   per spec B6) and `activation`.**  At parse time, the dispatcher
+   runs in one of two modes:
 
    ```python
-   def apply_rule(rule, rhs_states):
-       mode, direction = rule.annotation
-       if direction == 'lift':
-           op = Ops.lift
-       else:  # 'lower' or 'relational'
-           op = Ops.lower
+   def apply_rule_single(rule, rhs_states):
+       """Apply a single rule.  Used as a building block by both
+       soft-superposition (training) and hardmax (inference).
+       Q3: ternary+ rules are pre-parsed as nested binary calls,
+       so the runtime body is binary or unary only."""
+       op_name = rule.op
+       op = OPS_DISPATCH[op_name]   # Ops.lift / Ops.lower / Ops.equal / ...
 
-       # Unary case (NOT, PROJECT)
        if len(rhs_states) == 1:
-           result_act = op(rhs_states[0].activation, mode=mode)
-       # Binary case (AND, OR, BIND, PART, EQUAL, HAS)
-       elif len(rhs_states) == 2:
+           result_act = op(rhs_states[0].activation)
+       else:  # binary
            result_act = op(rhs_states[0].activation,
-                           rhs_states[1].activation,
-                           mode=mode)
-       # Ternary (rare — three-arg S productions)
-       else:
-           result_act = _fold_n_ary(op, rhs_states, mode)
+                           rhs_states[1].activation)
 
        lhs_state = State(category=rule.lhs)
-       lhs_state.category_vector = codebook.row(rule.lhs)
-       lhs_state.activation = result_act
-       # Optionally stamp the LHS category onto the activation:
+       lhs_state.category_vector = category_codebook.row(rule.lhs)
        lhs_state.activation = _type_stamp(result_act,
                                           lhs_state.category_vector)
        return lhs_state
+
+   def apply_rules_soft(rule_candidates, rhs_lookup, predictor_input):
+       """Training-time: every candidate rule fires, weighted by
+       the rule predictor's softmax.  Implements R1
+       (rule-level soft superposition).  See spec R1."""
+       weights = softmax(predictor_input @ predictor_W,
+                         dim=-1)               # (R,)
+       lhs_acts = []
+       lhs_cats = []
+       for rule, w in zip(rule_candidates, weights):
+           branch = apply_rule_single(rule, rhs_lookup(rule))
+           lhs_acts.append(w * branch.activation)
+           lhs_cats.append(w * branch.category_vector)
+       lhs_state = State(category=None)        # mixed; see below
+       lhs_state.activation = sum(lhs_acts)
+       lhs_state.category_vector = sum(lhs_cats)
+       return lhs_state
+
+   def apply_rules_hard(rule_candidates, rhs_lookup, predictor_input):
+       """Inference-time: argmax over the rule predictor."""
+       logits = predictor_input @ predictor_W
+       chosen = rule_candidates[logits.argmax()]
+       return apply_rule_single(chosen, rhs_lookup(chosen))
    ```
+
+   The training dispatcher's LHS `category_vector` is the
+   weighted mixture of candidate-rule LHS categories.  When all
+   candidates produce the same LHS category (the common case),
+   this saturates on that category's bivector axis.  When
+   candidates diverge (rare; mostly closed-class auxiliary
+   productions), the mixture is under-saturated and the
+   `tetralemma_balance_penalty` regularizer applies pressure to
+   resolve.
 
    `_type_stamp` is a small operation that biases the activation
    toward the LHS category region — e.g. add a small fraction of
@@ -773,6 +800,12 @@ activations or explicit derivations from them.
 ---
 
 ## Open questions to resolve during implementation
+
+> **Resolutions are committed in
+> [specs/2026-04-24-lift-lower-bivector-design.md](../specs/2026-04-24-lift-lower-bivector-design.md).**
+> All 10 questions below are marked DECIDED with concrete commits;
+> the questions remain here as the source-of-record for what was
+> asked.  Override any resolution by editing the spec.
 
 1. **Hard-pair extraction timing.**  Sparsity + cardinality + anneal
    on `SigmaLayer.weight` and `PiLayer.weight` to produce
@@ -906,9 +939,11 @@ shim exists specifically to make rollback cheap.
 
 - [Logic.md](../Logic.md) §8 *Regions, Witness Sets, and the Slab
   Lattice* — conceptual ground truth for the framing.
-- [OpsComparison.md](../OpsComparison.md) §7 *Recommendations* —
-  links here for the implementation plan; this plan supersedes
-  Recommendations 4–7 of that document.
+- [Logic.md](../Logic.md) §9 *Ops realization: inventory, mapping, and
+  divergences* — runtime mapping from §8's conceptual operations onto
+  the `Ops` static namespace (formerly the standalone OpsComparison
+  report); this plan supersedes the code-redesign recommendations of
+  that report.
 - [Mereology.md](../Mereology.md) — to receive a one-line
   cross-reference back to Logic.md §8 once landed (independent
   doc-only follow-up).

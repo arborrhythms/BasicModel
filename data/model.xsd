@@ -14,10 +14,28 @@
         <xs:element name="SymbolicSpace" type="symbolicSpaceType" minOccurs="0"/>
         <xs:element name="OutputSpace" type="outputSpaceType" minOccurs="0"/>
         <xs:element name="WordSpace" type="wordSpaceType" minOccurs="0"/>
+        <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
         <xs:element name="embeddings" type="embeddingsType" minOccurs="0"/>
       </xs:all>
     </xs:complexType>
   </xs:element>
+
+  <!-- TetralemmaPolicy: shared 4-valued (catuskoti) balance policy
+       inherited by ConceptualSpace and SymbolicSpace unless their
+       <tetralemmaOverride enabled="true"> opts out. -->
+  <xs:complexType name="tetralemmaPolicyType">
+    <xs:all>
+      <xs:element name="allowExcludedMiddle" type="xs:integer" minOccurs="0"/>
+      <xs:element name="allowContradiction" type="xs:integer" minOccurs="0"/>
+      <xs:element name="neitherThreshold" type="nonNegativeFloat" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- Per-space override marker. enabled="true" means the space
+       block defines its own <TetralemmaPolicy>; default inherits. -->
+  <xs:complexType name="tetralemmaOverrideType">
+    <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+  </xs:complexType>
 
   <!-- ═══════════════════════════════════════════════════════════════════
        Architecture (top-level config shared by all model types)
@@ -331,6 +349,8 @@
       <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
       <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
       <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="tetralemmaOverride" type="tetralemmaOverrideType" minOccurs="0"/>
+      <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 
@@ -365,6 +385,8 @@
       <xs:element name="truthMinMagnitude" type="xs:decimal" minOccurs="0"/>
       <xs:element name="truthMinNovelty" type="xs:decimal" minOccurs="0"/>
       <xs:element name="truthMaxInconsistency" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="tetralemmaOverride" type="tetralemmaOverrideType" minOccurs="0"/>
+      <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 

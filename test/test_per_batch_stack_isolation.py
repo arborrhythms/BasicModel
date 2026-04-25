@@ -1,4 +1,4 @@
-"""B>=2 per-row isolation for PoSStack and ReconstructionStack.
+"""B>=2 per-row isolation for CategoryStack and ReconstructionStack.
 
 Task 1 of the microbatch AR refactor (see
 basicmodel/doc/specs/2026-04-22-microbatch-ar-refactor-design.md).
@@ -20,13 +20,13 @@ _BIN = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'bin')
 if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
-from Language import PoSStack, ReconstructionStack
+from Language import CategoryStack, ReconstructionStack
 
 
-# -- PoSStack --------------------------------------------------------------
+# -- CategoryStack --------------------------------------------------------------
 
-def test_pos_stack_b2_isolation():
-    s = PoSStack(dim=4, batch=2, max_depth=8)
+def test_category_stack_b2_isolation():
+    s = CategoryStack(dim=4, batch=2, max_depth=8)
     v0 = torch.tensor([1., 0., 0., 0.])
     v1 = torch.tensor([0., 1., 0., 0.])
     s.push(0, v0)
@@ -40,8 +40,8 @@ def test_pos_stack_b2_isolation():
     assert s.depth(1) == 1  # untouched
 
 
-def test_pos_stack_flatten_per_row():
-    s = PoSStack(dim=4, batch=2, max_depth=8)
+def test_category_stack_flatten_per_row():
+    s = CategoryStack(dim=4, batch=2, max_depth=8)
     s.push(0, torch.zeros(4))
     s.push(0, torch.ones(4))
     s.push(1, torch.full((4,), 2.0))
@@ -54,9 +54,9 @@ def test_pos_stack_flatten_per_row():
     assert torch.equal(f1, torch.full((4,), 2.0))
 
 
-def test_pos_stack_grad_flows_per_row():
+def test_category_stack_grad_flows_per_row():
     """Gradient through flatten(b) must reach the pushed vec for that row."""
-    s = PoSStack(dim=4, batch=2, max_depth=8)
+    s = CategoryStack(dim=4, batch=2, max_depth=8)
     v = torch.randn(4, requires_grad=True)
     s.push(1, v)
     out = s.flatten(1).sum()
@@ -65,8 +65,8 @@ def test_pos_stack_grad_flows_per_row():
     assert torch.any(v.grad != 0)
 
 
-def test_pos_stack_ensure_batch_grows_and_clears():
-    s = PoSStack(dim=4, batch=1, max_depth=8)
+def test_category_stack_ensure_batch_grows_and_clears():
+    s = CategoryStack(dim=4, batch=1, max_depth=8)
     s.push(0, torch.ones(4))
     assert s.depth(0) == 1
     s.ensure_batch(3)

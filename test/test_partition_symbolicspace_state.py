@@ -122,7 +122,7 @@ def test_multiple_forwards_accumulate_until_percepts_exhausted():
     for p in percepts:
         incoming = sym._build_incoming_subspace(pos_vector=p)
         sym.forward(incoming)
-    assert ws.pos_stack.depth(0) == len(percepts)
+    assert ws.category_stack.depth(0) == len(percepts)
 
 
 # ---------------------------------------------------------------------------
@@ -133,14 +133,12 @@ def test_multiple_forwards_accumulate_until_percepts_exhausted():
 # ---------------------------------------------------------------------------
 
 def test_chunk_static_modes_smoke():
-    """Smoke-test the three chunking modes.  Task 7.2 removed the
+    """Smoke-test the supported chunking modes.  Task 7.2 removed the
     grammar-client call from PerceptualSpace.forward; ``chunk_static``
     itself was never in scope, so this is a belt-and-braces sentinel
-    against accidental drift of the three-way switch.
+    against accidental drift of the two-way (bpe | lexicon) switch.
     """
     lex = Spaces.PerceptualSpace.chunk_static(b"the cat sat", mode="lexicon")
     assert lex == [b"the", b"cat", b"sat"]
-    raw = Spaces.PerceptualSpace.chunk_static(b"abc", mode="raw")
-    assert raw == [b"a", b"b", b"c"]
     bpe = Spaces.PerceptualSpace.chunk_static(b"abc", mode="bpe")
     assert bpe == [b"a", b"b", b"c"]

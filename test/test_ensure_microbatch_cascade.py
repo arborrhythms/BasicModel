@@ -50,7 +50,7 @@ def test_inputspace_forward_triggers_ensure_microbatch():
     assert model.wordSpace._last_svo.shape[0] == model.wordSpace.batch
     assert model.wordSpace._svo_valid.shape[0] == model.wordSpace.batch
     assert model.wordSpace.subspace.batch == model.wordSpace.batch
-    assert model.wordSpace.pos_stack._batch == model.wordSpace.batch
+    assert model.wordSpace.category_stack._batch == model.wordSpace.batch
     assert model.wordSpace.reconstruction_stack._batch == model.wordSpace.batch
     # _stm_fired stays at B
     assert model.wordSpace._stm_fired.shape == (B,), (

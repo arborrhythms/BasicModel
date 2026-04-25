@@ -118,21 +118,23 @@ The full mereological suite composes through `part`:
 | Method              | Formula                                        |
 |---------------------|------------------------------------------------|
 | `whole(A, B)`       | `part(B, A)`                                   |
-| `equal(A, B)`       | `part(A, B) · part(B, A)`                      |
-| `overlap(A, B)`     | `0 < equal(A, B) < 1`  (region indicator)      |
-| `underlap(A, B)`    | `equal(A, B) == 0`     (region indicator)      |
-| `boundary(A, B)`    | <code>&#124;part(A, B) − part(B, A)&#124;</code>  (zero under clipped cosine) |
+| `equal(A, B)`       | $\operatorname{part}(A, B) \cdot \operatorname{part}(B, A)$ |
+| `overlap(A, B)`     | $0 < \operatorname{equal}(A, B) < 1$ (region indicator) |
+| `underlap(A, B)`    | $\operatorname{equal}(A, B) = 0$ (region indicator) |
+| `boundary(A, B)`    | $|\operatorname{part}(A, B) - \operatorname{part}(B, A)|$ (zero under clipped cosine) |
 
-`equal(A, B) ∈ [0, 1]` partitions into three disjoint regions:
+$\operatorname{equal}(A, B) \in [0, 1]$ partitions into three disjoint regions:
 
-- `equal = 0` → **underlap** (disjoint)
-- `0 < equal < 1` → **overlap** (strictly partial)
-- `equal = 1` → **identity** (perfect mutual parthood)
+- $\operatorname{equal} = 0$ → **underlap** (disjoint)
+- $0 < \operatorname{equal} < 1$ → **overlap** (strictly partial)
+- $\operatorname{equal} = 1$ → **identity** (perfect mutual parthood)
 
-Under clipped cosine `part(A, B) = part(B, A)` (cosine is symmetric), so
-`equal` reduces to `part²`.  Asymmetric classical subsumption is recovered
-**relationally** via figure/ground: compare `part(A, B)` against
-`part(A, ¬B)`.  This is what makes Boole's contrapositive hold exactly.
+Under clipped cosine $\operatorname{part}(A, B) = \operatorname{part}(B, A)$
+(cosine is symmetric), so
+`equal` reduces to $\operatorname{part}^2$.  Asymmetric classical subsumption is recovered
+**relationally** via figure/ground: compare $\operatorname{part}(A, B)$
+against $\operatorname{part}(A, \neg B)$.  This is what makes Boole's
+contrapositive hold exactly.
 
 See [Mereology.md](Mereology.md) for the full five-relations reference
 and the `ImpenetrableLayer` regularizer that enforces these relations
@@ -621,7 +623,7 @@ The pointwise operations are agnostic of which subspace field supplies
 the vectors.  They consume tensors with values in `[-1, 1]`:
 
 - a **single vector** is a **point**;
-- a **pair of vectors `(ℓ, u)`** is a **region**.
+- a **pair of vectors $(\ell, u)$** is a **region**.
 
 Whatever upstream stage produced the vectors has already chosen the
 basis.  The pointwise ops operate on values; they do not inspect or
@@ -629,7 +631,7 @@ care about the field.
 
 ### Witness sets
 
-A *witness set* `V = {V₁, …, V_n}` is whatever basis the caller has
+A *witness set* $V = \{V_1, \ldots, V_n\}$ is whatever basis the caller has
 already projected onto.  In the current architecture this is most
 often the ConceptualSpace codebook — percepts and symbols project
 onto that basis upstream, and post-projection activations arrive at
@@ -642,18 +644,18 @@ producing stage: it determines which dimensions parthood and region
 containment care about.  But the ops themselves take the basis as a
 given — they read coordinates, not directions.
 
-### The Cantorian axis: lift = synthesis (∨), lower = analysis (∧)
+### The synthesis / analysis axis: lift = $\lor$, lower = $\land$
 
-A set, in Cantor's phrase, is *a many thought of as a one*.  The
-**one** lives at the symbolic layer (a single symbol naming the many);
-the **many** lives at the conceptual layer (the constituents being
-thought of together).  The level-crossing pair is named accordingly:
+A set is *a many thought of as a one*.  The **one** lives at the
+symbolic layer (a single symbol naming the many); the **many** lives
+at the conceptual layer (the constituents being thought of together).
+The level-crossing pair is named accordingly:
 
-- **Lift (C → S, "many → one") is *synthesis* = union (∨).**  Pulling
+- **Lift (C → S, "many → one") is *synthesis* = union ($\lor$).**  Pulling
   many concepts into one symbol takes the join of what is being
   collected and names the collection.  The receiving (symbolic) layer
   asserts the one-ness; that is where synthesis happens.
-- **Lower (S → C, "one → many") is *analysis* = intersection (∧).**
+- **Lower (S → C, "one → many") is *analysis* = intersection ($\land$).**
   Decomposing a symbol into its conceptual constituents factors the
   one into the meet of its components.  The producing (conceptual)
   layer holds the analyzed many; that is where analysis happens.
@@ -664,12 +666,14 @@ This identifies the layer-scale primitives:
   primitive — the layer-scale lift.  Pooling many concept
   contributions into one saturating symbolic commitment is exactly
   the union semantics under śamatha single-pointedness:
-  `SigmaLayer.forward(c) ≈ lift_∨(c₁, …, c_K)` projecting C → S.
+  $\operatorname{SigmaLayer.forward}(c) \approx \operatorname{lift}_{\lor}(c_1, \ldots, c_K)$
+  projecting C → S.
 - **`PiLayer`** (weighted product) is the **analysis** primitive —
   the layer-scale lower.  Factoring one symbol into a product of
   conceptual contributions is the meet: every component must
   contribute for the symbol to factor through.
-  `PiLayer.forward(s) ≈ lower_∧(s) → (c₁, …, c_K)` projecting S → C.
+  $\operatorname{PiLayer.forward}(s) \approx \operatorname{lower}_{\land}(s) \to (c_1, \ldots, c_K)$
+  projecting S → C.
 
 **Ownership.**  Under this framing the synthesis primitive is owned
 by the layer that *receives* the synthesized one (the narrow end of
@@ -693,19 +697,19 @@ The pending refactor is documented in
 **Convexity asymmetry, restated.**  The asymmetry of Logic.md §8
 becomes a property of the level-crossing direction:
 
-- **Lower (analysis, ∧) is exact.**  Intersection of convex regions
+- **Lower (analysis, $\land$) is exact.**  Intersection of convex regions
   is convex; factoring a symbol back into its conceptual
   constituents loses no structure.
-- **Lift (synthesis, ∨) is lossy.**  Union of convex regions is
+- **Lift (synthesis, $\lor$) is lossy.**  Union of convex regions is
   generally non-convex; the symbolic "one" gathers a many whose
   set-union is over-approximated by the convex hull.  The
   synthesized symbol papers over the disjunctive structure of its
   constituents.
 
-So the Cantorian frame and the lattice frame agree: the moment of
-the One (lift, synthesis, ∨) is where the over-approximation lives,
-and the moment of the Many (lower, analysis, ∧) is where exactness
-lives.
+So the synthesis-of-the-many frame and the lattice frame agree: the
+moment of the One (lift, synthesis, $\lor$) is where the over-
+approximation lives, and the moment of the Many (lower, analysis,
+$\land$) is where exactness lives.
 
 ### Bivector lower: preserving contradiction across the level boundary
 
@@ -766,7 +770,7 @@ the unary case).  `mode` selects among the operator trinity:
 `f` is one of two top-level dispatchers:
 
 - **`lift(X1, X2, mode, inverse)`** — synthesis (default `mode='OR'`,
-  the Cantorian polarity).  At the layer scale: pooled SigmaLayer
+  the many-into-one polarity).  At the layer scale: pooled SigmaLayer
   (or its negation-shaped sibling for `mode='NOT'`).  At the point
   scale: max / mean / pole-flip depending on mode and smoothness.
 - **`lower(X1, X2, mode, inverse)`** — analysis (default
@@ -799,7 +803,7 @@ that labels what kind of phrase the state holds.
 The category vector plays two roles at once:
 
 1. **Witness-set selector.**  It picks which dimensions of the
-   bipartite `.what` are relevant for the rule.  ADJ ∩ N is AND
+   bipartite `.what` are relevant for the rule.  $\mathrm{ADJ} \cap \mathrm{N}$ is AND
    restricted to the dimensions where ADJ-category and N-category
    support is concentrated; orthogonal dimensions pass through
    unchanged.
@@ -817,85 +821,107 @@ parts of speech (ADJ vs N) should land as `disjoint` in the
 five-relations classifier; phrase-level categories (NP, VP, etc.)
 should occupy related-but-distinct regions.
 
-**Rule annotations.**  Each grammar production is annotated with
-`(mode, direction)`:
+**Rule form: explicit-op grammar.**  Per the spec
+([specs/2026-04-24-lift-lower-bivector-design.md](specs/2026-04-24-lift-lower-bivector-design.md)
+Step 6), each production's RHS *is* the dispatched call — the op name
+*is* the annotation, replacing the older `(mode, direction)` tuple
+that paired a separate dispatch table with each rule.  Form:
 
-| `mode`  | Forward direction | Semantics |
-|---------|-------------------|-----------|
-| `AND`   | `lower`           | meet — restriction, modification |
-| `OR`    | `lift`            | join — coordination, set union |
-| `NOT`   | `lift` (unary)    | pole flip — sentential / VP negation |
-| `PART`  | `lower`           | mereological assertion — "X is Y" predication |
-| `EQUAL` | `lower`           | mutual parthood — copula identification |
-| `HAS`   | (relational)      | asymmetric possession |
-| `BIND`  | `lower`           | compositional argument-binding (predicate / argument) |
+```
+LHS = op(arg1, arg2[, ...])     # binary or unary
+LHS = arg                       # PROJECT (terminal projection)
+```
 
-The first three reproduce the trinity from the unified signature.
-The next four extend it for grammatical relations the trinity
-doesn't cover — `PART` and `EQUAL` route to the existing mereology
-suite from Section 3 and [Mereology.md](Mereology.md); `HAS` is a
-relational assertion (possession); `BIND` is the generic
-compositional bind that holds together predicate-argument and
-modifier-modificand structures that don't simplify to a pure logical
-operator.
+The op name resolves to a single call against the unified `lift` /
+`lower` dispatcher (or to mereology / relational helpers for
+non-logical relations):
 
-**Rule classification under grammar.cfg.**  Every rule in
-`data/grammar.cfg` falls into one of these patterns:
+| Op name in RHS  | Resolves to                                  | Semantics |
+|-----------------|----------------------------------------------|-----------|
+| `lift`          | `Ops.lift(A, B, mode='OR')`                  | join / synthesis |
+| `lower`         | `Ops.lower(A, B, mode='AND')`                | meet / analysis |
+| `intersection`  | `Ops.lower(A, B, mode='AND')`                | meet — modification |
+| `union`         | `Ops.lift(A, B, mode='OR')`                  | join — coordination |
+| `conjunction`   | `Ops.lower(A, B, mode='AND')`                | propositional $\land$ |
+| `disjunction`   | `Ops.lift(A, B, mode='OR')`                  | propositional $\lor$ |
+| `not`           | `Ops.lift(A, mode='NOT')` (self-inverse)     | pole flip — sentential / VP negation |
+| `equals`        | `Ops.equal(A, B)`                            | mutual parthood — copula identification |
+| `part`          | `Ops.part(A, B)`                             | mereological assertion *X is Y* |
+| `bind`          | `Ops.bind(A, B)` or `Ops.lower(mode='AND')`  | compositional argument-binding (predicate / argument); see spec O6 |
+| `scale`         | `Ops.scale(DEG, AP)` or `Ops.lower(mode='AND')` | degree intensification; see spec O7 / O9 |
+| `query` / `swap`| `Ops.query` / `Ops.swap`                     | new ops (spec O5) — interrogative speech act, argument-position swap |
+| `project(arg)` / single-symbol RHS | identity-with-typing-stamp           | terminal projection |
+
+The first six rows reproduce the trinity from the unified signature
+(AND / OR / NOT).  The remaining rows extend it for grammatical
+relations the trinity doesn't cover: `equals` / `part` route to the
+existing mereology suite from Section 3 and [Mereology.md](Mereology.md);
+`bind` is the generic compositional bind that holds together
+predicate-argument and modifier-modificand structures that don't
+simplify to a pure logical operator.
+
+**Rule classification under grammar.cfg.**  Each rule in
+[`data/grammar.cfg`](../data/grammar.cfg) maps to one of the explicit-op
+patterns above (the shipped file is currently in the bare-symbol-
+sequence form `LHS -> RHS`; migration to the explicit-op form is Step 6
+of the lift / lower refactor):
 
 - **Pure logical (the few S productions):**
-  - `S -> S AND S` → `(AND, lower)` — propositional conjunction.
-  - `S -> S OR S` → `(OR, lift)` — propositional disjunction.
-  - `S -> NOT S` → `(NOT, lift)` — propositional negation.
-  - `VP -> NOT VP` → `(NOT, lift)` — predicate negation.
+  - `S = conjunction(S, S)` — propositional conjunction.
+  - `S = disjunction(S, S)` — propositional disjunction.
+  - `S = not(S)` — propositional negation.
+  - `VP = not(VP)` — predicate negation.
 
   These are the *only* rules that exercise `lift` and `lower` as
   pure logical operators on same-category operands.  The S layer
   has just a handful of these — exactly as the user observed: "we
   will have only several S productions."
 
-- **Modification (`AND` at `lower`):**
-  - `NP -> AP NP`, `NP -> NP PP`           — adjective / PP modifying noun.
-  - `VP -> ADV VP`, `VP -> MP VP`, `VP -> ADJ VP`, `VP -> VP PP` — adverbial / modal / adjunct modification of a verb phrase.
-  - `AP -> ADJ AP`, `AP -> DEG AP`         — adjective stacking, degree.
-  - `MP -> ADV MP`                          — adverb stacking.
-  - `S -> MP S`, `S -> PP S`               — sentential modification.
+- **Modification (`intersection` / `lower(mode='AND')`):**
+  - `NP = intersection(AP, NP)`, `NP = intersection(NP, PP)` — adjective / PP modifying noun.
+  - `VP = intersection(ADV, VP)`, `VP = intersection(MP, VP)`, `VP = intersection(ADJ, VP)`, `VP = intersection(VP, PP)` — adverbial / modal / adjunct modification of a verb phrase.
+  - `AP = intersection(ADJ, AP)`, `AP = scale(DEG, AP)` — adjective stacking, degree.
+  - `MP = intersection(ADV, MP)` — adverb stacking.
+  - `S = intersection(MP, S)`, `S = intersection(PP, S)` — sentential modification.
 
   Each is `lower(modifier_state, head_state, mode='AND')` — the
   modifier's category vector restricts the head's region by the
   intersection of the two slab systems.  Off-category dimensions
   pass through; on-category dimensions tighten.  This is the
-  canonical ADJ ∩ N example, generalized to every modifier rule.
+  canonical $\mathrm{ADJ} \cap \mathrm{N}$ example, generalized to every modifier rule.
 
-- **Coordination (`OR` at `lift`):**
-  - `NP -> NP AND NP`, `NP -> NP OR NP`    — entity-set union.
+- **Coordination (`disjunction` / `lift(mode='OR')`):**
+  - `NP = disjunction(NP, NP)` — entity-set union (covers both surface forms "apples and oranges" and "apples or oranges"; see spec O8 for the AND-vs-OR semantics decision).
 
-  Both surface forms ("apples and oranges" / "apples or oranges")
-  produce a *single* coordinated NP whose conceptual region is the
-  convex hull of the two NPs — Cantorian synthesis of the many into
-  the one.  The propositional AND/OR distinction reasserts when the
-  resulting NP is used as an argument to a predicate (the predicate
-  applies to each conjunct in the AND case, to at least one in the
-  OR case); at the NP level itself, both are `lift(NP1, NP2,
-  mode='OR')`.
+  The coordinated NP carries a *single* conceptual region equal to the
+  convex hull of the two NPs — synthesis of the many into the one.  The
+  propositional AND/OR distinction reasserts when the resulting NP is
+  used as an argument to a predicate (the predicate applies to each
+  conjunct in the AND case, to at least one in the OR case); at the NP
+  level itself both forms reduce to `lift(NP1, NP2, mode='OR')`.
 
 - **Mereological / relational binds:**
-  - `S -> NP DEF NP` → `(EQUAL, lower)` — copula identification: *X is the Y*.
-  - `S -> NP DEF AP` → `(PART,  lower)` — predicative attribution: *X is red*.  The NP's region picks up containment in the AP's region.
-  - `S -> NP HAS NP` → `(HAS,  relational)` — possession: *X has Y*.
-  - `S -> NP VP`   → `(BIND, lower)` — subject-predicate composition.
-  - `VP -> V NP`, `VP -> V PP`, `VP -> V S`, `VP -> V MP`, `VP -> DEF VP` → `(BIND, lower)` — verb + complement.
-  - `PP -> P NP`   → `(BIND, lower)` — preposition + complement.
-  - `S -> DEF NP AP`, `S -> DEF NP NP`, `S -> V NP VP` → existential / imperative variants — `BIND` with rule-specific category-vector typing.
+  - `S = equals(NP, NP)` — copula identification: *X is the Y*.
+  - `S = equals(NP, AP)` — predicative attribution: *X is red*.  The NP's region picks up containment in the AP's region.
+  - `S = part(NP, NP)` — mereological *X is part of Y*.
+  - `S = lift(NP, VP)` — subject-predicate composition (synthesis of subject and predicate).
+  - `VO = intersection(VP, NP)` and downstream `S = lift(NP, VO)` — verb-object composition then sentence synthesis.
+  - `VP = intersection(V, NP)`, `VP = intersection(V, PP)`, `VP = intersection(V, S)`, `VP = intersection(V, MP)`, `VP = intersection(DEF, VP)` — verb + complement (see spec O6 for promotion to `bind`).
+  - `PP = bind(P, NP)` — preposition + complement (asymmetric head-complement; spec O6).
+  - `S = query(NP, AP)`, `S = query(NP, NP)` — interrogative speech act (spec O5).
 
 - **Terminal projection (identity lift to a category):**
-  - `S -> NP`, `NP -> N`, `VP -> V`, `AP -> ADJ`, `AP -> DET`, `MP -> ADV` — assert the LHS state's category vector onto the RHS's activation.  This is `lift(rhs, mode='OR')` with the LHS category vector as the synthesis target — a trivial 1-of-1 pooling that just *types* the activation as the LHS category.
+  - `S = NP`, `NP = N`, `VP = V`, `AP = ADJ`, `AP = DET`, `MP = ADV`, `DEF = IS`, `HAS = POSSESS` — assert the LHS state's category vector onto the RHS's activation.  Equivalent to `project(rhs)` — a trivial 1-of-1 pooling that just *types* the activation as the LHS category.
 
-**Worked example: ADJ ∩ N → NP.**  Parsing "red apple" produces:
+  Negation-of-a-terminal projects through `lift(mode='NOT')`:
+  - `DEF = not(IS)` (auxiliary negation), `HAS = not(POSSESS)` (possessive negation).
+
+**Worked example: $\mathrm{ADJ} \cap \mathrm{N} \to \mathrm{NP}$.**  Parsing "red apple" under the explicit-op rule `NP = intersection(AP, NP)` produces:
 
 ```
-NP_state  = lower( AP_state, N_state, mode='AND' )
-            where  AP_state.activation comes from  ADJ -> "red"
-                   N_state.activation  comes from  N   -> "apple"
+NP_state  = Ops.lower( AP_state, N_state, mode='AND' )
+            where  AP_state.activation comes from  AP = project(ADJ)  with ADJ -> "red"
+                   N_state.activation  comes from  NP = project(N)    with N   -> "apple"
                    AP_state.category_vector  =  cb["AP"]
                    N_state.category_vector   =  cb["N"]
                    NP_state.category_vector  =  cb["NP"]
@@ -921,36 +947,70 @@ category-vector-guided `combine` call, and the category dimensions
 of the codebook are pressed into the structure the grammar
 implies.
 
+**Soft superposition over rules.**  At training time the
+dispatcher does *not* commit to a single rule per decision.  Every
+candidate rule whose LHS / RHS slots match the current state set
+fires, weighted by the rule predictor's softmax distribution
+`[p_1, …, p_R]` over candidates.  Each branch produces a result;
+the LHS state's activation is the weighted sum of the branches.
+For the binary case this is the canonical `(w, 1 − w)`
+propagation; for the R-ary case it is the full softmax mixture.
+At inference the dispatcher takes the argmax (single branch).
+
+The both-branch propagation is what lets the optimizer compare
+branches: the loss flows back through every candidate in
+proportion to its weight, so the rule predictor learns which
+branch was actually right rather than just learning to clean up
+the path it happened to commit to.
+
+**Bivector categories as STE with contradiction sensor.**  Each
+state's category vector is a bivector (per
+[plans/2026-04-24-lift-lower-bivector-refactor.md](plans/2026-04-24-lift-lower-bivector-refactor.md)
+B6) that lives in `WordSpace.category_codebook` separate from the
+content concepts.  The bivector form gives the model a graded
+representation of category commitment that is differentiable
+through training and saturates at inference.  The tetralemma
+`aP * aN` regularizer applies pressure to resolve internal
+contradictions.  Bivector categories supply the *resolution*
+gradient; the both-branch rule propagation supplies the
+*comparison* gradient — together they give the optimizer full
+information about both the path taken and the path not taken.
+
 The implementation is staged in
 [plans/2026-04-24-lift-lower-bivector-refactor.md](plans/2026-04-24-lift-lower-bivector-refactor.md)
-Step 6.
+Step 6, with the rule-superposition discipline formalized in
+[specs/2026-04-24-lift-lower-bivector-design.md](specs/2026-04-24-lift-lower-bivector-design.md)
+R1 and the bivector category form in B6.
 
 ### Region as slab system
 
-A region `R` is a pair of vectors `(ℓ, u)` with `ℓ ≤ u` componentwise.
+A region $R$ is a pair of vectors $(\ell, u)$ with $\ell \le u$ componentwise.
 The region's extension is the axis-aligned slab system
 
-```
-R = { x : ℓ_i ≤ x_i ≤ u_i  for all i }
-```
+$$
+R = \{x : \ell_i \le x_i \le u_i \text{ for all } i\}
+$$
 
 — an axis-aligned bounding hyperrectangle.  When the envelopes
-straddle the origin, `ℓ_i ≤ 0 ≤ u_i` on the relevant axis, encoding
+straddle the origin, $\ell_i \le 0 \le u_i$ on the relevant axis, encoding
 both positive and negative evidence.
 
-A region typically *originates* from a prototype set `{p₁, …, p_K}`
+A region typically *originates* from a prototype set $\{p_1, \ldots, p_K\}$
 (the codebook itself, or any stored subset such as the truth set):
 
-```
-ℓ_i = min_k  p_{k,i}
-u_i = max_k  p_{k,i}
-```
+$$
+\ell_i = \min_k p_{k,i}
+$$
 
-But the ops below take `(ℓ, u)` directly — they don't ask where it
+$$
+u_i = \max_k p_{k,i}
+$$
+
+But the ops below take $(\ell, u)$ directly — they don't ask where it
 came from.  `TruthLayer.fusion` (Section 7 Fusion) is one consumer of
 this convention: it computes the upper envelope `u` elementwise across
 stored truths; `TruthLayer.luminosity` computes a clipped form
-`||relu(min positive_poles)||` of the lower envelope `ℓ`.
+$\|\operatorname{relu}(\min(\text{positive poles}))\|$ of the lower envelope $\ell$.
 
 ### Two definitions of parthood
 
@@ -961,80 +1021,103 @@ reasoning about points or about regions.
 **Per-Whole projection (point-level).**  For a candidate Whole `W` and
 candidate Part `P`, decompose `P` in `W`'s frame:
 
-```
-P = p_∥ · Ŵ  +  P_⊥
-agreement(P, W)    = max(0,  p_∥)
-disagreement(P, W) = max(0, −p_∥)
-```
+$$
+P = p_{\parallel} \cdot \hat{W} + P_{\perp}
+$$
 
-Both are non-negative; `P_⊥` is set aside as W-irrelevant
+$$
+\operatorname{agreement}(P, W) = \max(0, p_{\parallel})
+$$
+
+$$
+\operatorname{disagreement}(P, W) = \max(0, -p_{\parallel})
+$$
+
+Both are non-negative; $P_{\perp}$ is set aside as W-irrelevant
 (uncertainty rather than evidence).  This is basis-free, returns two
 scalars in principle, but is non-transitive (cones don't nest).
 `Ops.part(scalar=True)` (Section 1, Mereology.md) is the *agreement*
-form: clipped cosine `max(0, x·y) / (‖x‖ ‖y‖)` ∈ [0, 1].
+form: clipped cosine $\max(0, x \cdot y) / (\|x\| \|y\|) \in [0, 1]$.
 Disagreement is recoverable as `Ops.part(-x, y, scalar=True)` or
 through `whole`/`copart`/`boundary`.
 
-**Witness-set dominance (region-level).**  Given `V`,
+**Witness-set dominance (region-level).**  Given $V$,
 
-```
-P ≼_V W   iff   P · V_i  ≤  W · V_i   for all V_i ∈ V
-```
+$$
+P \preceq_V W \quad \text{iff} \quad P \cdot V_i \le W \cdot V_i
+\quad \text{for all } V_i \in V
+$$
 
 This is elementwise dominance in the (possibly non-orthogonal,
-overcomplete) frame given by `V`.  A genuine partial order:
+overcomplete) frame given by $V$.  A genuine partial order:
 reflexive, antisymmetric, transitive.  Lifted to regions, it becomes
 *envelope dominance*:
 
-```
-R₁ ⊆_V R₂   iff   ℓ_{R₂}(V_i) ≤ ℓ_{R₁}(V_i)  and  u_{R₁}(V_i) ≤ u_{R₂}(V_i)
-                  for all V_i ∈ V
-```
+$$
+R_1 \subseteq_V R_2 \quad \text{iff} \quad
+\ell_{R_2}(V_i) \le \ell_{R_1}(V_i)
+\text{ and }
+u_{R_1}(V_i) \le u_{R_2}(V_i)
+\quad \text{for all } V_i \in V
+$$
 
 — transitive on regions, recovering the order property that
 point-level cosine parthood does not enforce.
 
 | Property        | Per-Whole projection | Witness-set dominance |
 |-----------------|----------------------|------------------------|
-| Reflexive       | ✓                    | ✓                      |
-| Antisymmetric   | ✗ (collinear collapse) | ✓                    |
-| Transitive      | ✗ (cones don't nest) | ✓                      |
-| Basis-free      | ✓                    | ✗ (V is the basis)    |
-| Two scalars     | ✓ (agreement / disagreement) | derived from envelope deltas |
+| Reflexive       | $\checkmark$         | $\checkmark$           |
+| Antisymmetric   | $\times$ (collinear collapse) | $\checkmark$  |
+| Transitive      | $\times$ (cones don't nest) | $\checkmark$     |
+| Basis-free      | $\checkmark$         | $\times$ ($V$ is the basis) |
+| Two scalars     | $\checkmark$ (agreement / disagreement) | derived from envelope deltas |
 
 Crisp transitivity for the per-Whole form fails because angle
 composition is super-additive in the worst case
-(`cos(α + β) < cos(α) · cos(β)` is not guaranteed) and chains of
+($\cos(\alpha + \beta) < \cos(\alpha) \cdot \cos(\beta)$ is not guaranteed) and chains of
 "mostly part-of" relations can degrade arbitrarily.  Two recoveries:
 
 1. **Witness-set dominance** is structurally transitive — the
-   universal quantifier over `V` carries through composition.
+   universal quantifier over $V$ carries through composition.
 2. **Graded parthood via t-norm composition.**
-   `deg(A ≼ C) ≥ T(deg(A ≼ B), deg(B ≼ C))` for some t-norm `T`.
+   $\deg(A \preceq C) \ge T(\deg(A \preceq B), \deg(B \preceq C))$
+   for some t-norm $T$.
    The product t-norm corresponds to cosine composition under
    small-angle approximation.
 
 ### Intersection (meet) and union (join)
 
-Over a fixed `V`, the slab systems form a distributive lattice:
+Over a fixed $V$, the slab systems form a distributive lattice:
 
-```
-ℓ_{R₁ ⊓ R₂}(V_i) = max(ℓ_{R₁}(V_i), ℓ_{R₂}(V_i))
-u_{R₁ ⊓ R₂}(V_i) = min(u_{R₁}(V_i), u_{R₂}(V_i))      (meet)
+$$
+\ell_{R_1 \sqcap R_2}(V_i) =
+\max(\ell_{R_1}(V_i), \ell_{R_2}(V_i))
+$$
 
-ℓ_{R₁ ⊔ R₂}(V_i) = min(ℓ_{R₁}(V_i), ℓ_{R₂}(V_i))
-u_{R₁ ⊔ R₂}(V_i) = max(u_{R₁}(V_i), u_{R₂}(V_i))      (join)
-```
+$$
+u_{R_1 \sqcap R_2}(V_i) =
+\min(u_{R_1}(V_i), u_{R_2}(V_i)) \quad \text{(meet)}
+$$
+
+$$
+\ell_{R_1 \sqcup R_2}(V_i) =
+\min(\ell_{R_1}(V_i), \ell_{R_2}(V_i))
+$$
+
+$$
+u_{R_1 \sqcup R_2}(V_i) =
+\max(u_{R_1}(V_i), u_{R_2}(V_i)) \quad \text{(join)}
+$$
 
 **Tighter envelope on each side, on each witness, for meet; looser
-envelope, for join.**  Intersection is empty when `ℓ > u` on any
+envelope, for join.**  Intersection is empty when $\ell > u$ on any
 witness.
 
 `Ops.conjunction(monotonic=True)` and
 `Ops.disjunction(monotonic=True)` implement the elementwise min/max on
 single activation vectors — i.e. the meet and join of *one envelope
-slot* (or of two points treated as degenerate slabs with `ℓ = u`).
-The full envelope arithmetic on `(ℓ, u)` *pairs* lives in
+slot* (or of two points treated as degenerate slabs with $\ell = u$).
+The full envelope arithmetic on $(\ell, u)$ *pairs* lives in
 `TruthLayer.luminosity`/`fusion` over the stored truth set.
 
 ### Convexity asymmetry: where disjunction breaks
@@ -1042,19 +1125,24 @@ The full envelope arithmetic on `(ℓ, u)` *pairs* lives in
 Convex sets are closed under intersection but not under union, in any
 dimension above 1.  Concretely:
 
-```
-R_P ∩ R_Q  =   R_P ⊓_V R_Q       (set intersection equals slab meet)
-R_P ∪ R_Q  ⊊  R_P ⊔_V R_Q       (set union strictly contained in join)
-```
+$$
+R_P \cap R_Q = R_P \sqcap_V R_Q
+\quad \text{(set intersection equals slab meet)}
+$$
+
+$$
+R_P \cup R_Q \subsetneq R_P \sqcup_V R_Q
+\quad \text{(set union strictly contained in join)}
+$$
 
 **Conjunction grounds cleanly in the geometric meet.**  Symbolic
-`P ∧ Q` corresponds to slab-system intersection across the level
+$P \land Q$ corresponds to slab-system intersection across the level
 boundary without information loss.
 
 **Disjunction does not ground in the geometric join.**  The slab join
 is the convex hull of the set-union, a strict over-approximation that
 includes "bridge" points satisfying neither `P` nor `Q`.  A faithful
-representation of `P ∨ Q` requires a *set of regions* `{R_P, R_Q}` —
+representation of $P \lor Q$ requires a *set of regions* $\{R_P, R_Q\}$ —
 disjunctive normal form over regions, a multi-region object that lives
 at the symbolic layer.
 
@@ -1066,7 +1154,7 @@ would require structural changes to the symbolic layer.
 
 The same asymmetry appears in topology (intersections of closed sets
 are closed; arbitrary unions need not be), in measure theory
-(σ-algebras require explicit closure under union), and in lattice
+($\sigma$-algebras require explicit closure under union), and in lattice
 theory generally.  It aligns with apoha / exclusion-based accounts in
 Indo-Tibetan epistemology: conjunctive concepts remain within a single
 exclusion-determined region, while disjunctive concepts require a
@@ -1076,12 +1164,12 @@ genuinely higher-order construction over predicates.
 
 | Operation | Inverse | Status in `Ops` |
 |---|---|---|
-| Part `P ≼ W` | Whole `W ≽ P` (converse) | `Ops.whole` (notational converse). Functional inverse `P` from `W` is intrinsically lossy — `P_⊥` is unconstrained. |
+| Part $P \preceq W$ | Whole $W \succeq P$ (converse) | `Ops.whole` (notational converse). Functional inverse `P` from `W` is intrinsically lossy — $P_{\perp}$ is unconstrained. |
 | Whole | Part (converse) | `Ops.part`. Same lossy direction. |
-| Intersection `R₁ ⊓ R₂` | Region subtraction `R₁ \ R₂` | None.  Subtraction is non-unique and generally non-convex; exits the slab formalism.  Closest analogue: `Ops.copart` (vector form `y − x`, point-level only). |
-| Union `R₁ ⊔ R₂` | Region subtraction | None.  Same reasons. |
-| Conjunction `P ∧ Q` | Negation via De Morgan: `¬(¬P ∨ ¬Q)` | `Ops.conjunctionReverse` performs *codebook search*: finds `cb_i` such that `conjunction(cb_i, cb_j) ≈ result`.  This is a *witness recovery*, not a functional inverse. |
-| Disjunction `P ∨ Q` | Negation via De Morgan: `¬(¬P ∧ ¬Q)` | `Ops.disjunctionReverse` — same codebook-search pattern. |
+| Intersection $R_1 \sqcap R_2$ | Region subtraction $R_1 \setminus R_2$ | None.  Subtraction is non-unique and generally non-convex; exits the slab formalism.  Closest analogue: `Ops.copart` (vector form $y - x$, point-level only). |
+| Union $R_1 \sqcup R_2$ | Region subtraction | None.  Same reasons. |
+| Conjunction $P \land Q$ | Negation via De Morgan: $\neg(\neg P \lor \neg Q)$ | `Ops.conjunctionReverse` performs *codebook search*: finds `cb_i` such that $\operatorname{conjunction}(cb_i, cb_j) \approx \operatorname{result}$.  This is a *witness recovery*, not a functional inverse. |
+| Disjunction $P \lor Q$ | Negation via De Morgan: $\neg(\neg P \land \neg Q)$ | `Ops.disjunctionReverse` — same codebook-search pattern. |
 | Negation | Self-inverse | `Ops.negationReverse = Ops.negation`.  Bitonic: sign flip.  Monotonic: paired-index pole flip. |
 
 Both intersection and union are lossy as binary operations and admit
@@ -1097,7 +1185,7 @@ loosens the entire bounding box.  Standard mitigations:
 
 - **Quantile envelopes.**  Replace `min`/`max` with low/high quantiles
   (e.g. 5th/95th percentile projections).
-- **Statistical envelopes.**  Slab width as `k · σ` of the projection
+- **Statistical envelopes.**  Slab width as $k \cdot \sigma$ of the projection
   distribution.
 
 Both preserve lattice structure approximately but trade exact
@@ -1118,24 +1206,24 @@ probabilities).
 
 | Op | Symbol | Geometric counterpart | Exact? | Inverse |
 |---|---|---|---|---|
-| Part | `P ≼ W` | projection scalars / witness dominance | depends on definition | converse (lossy as functional inverse) |
-| Whole | `W ≽ P` | converse of Part | — | Part-of |
-| Intersection | `R₁ ⊓ R₂` | tighter envelope (meet) | ✓ exact | none (lossy); subtraction non-convex |
-| Union | `R₁ ⊔ R₂` | looser envelope (join) | ✗ over-approximates set-union | none (lossy) |
-| Conjunction | `P ∧ Q` | geometric meet | ✓ exact | negation (De Morgan) |
-| Disjunction | `P ∨ Q` | *not* geometric join; multi-region object | — (no single-region representation) | negation (De Morgan) |
+| Part | $P \preceq W$ | projection scalars / witness dominance | depends on definition | converse (lossy as functional inverse) |
+| Whole | $W \succeq P$ | converse of Part | — | Part-of |
+| Intersection | $R_1 \sqcap R_2$ | tighter envelope (meet) | $\checkmark$ exact | none (lossy); subtraction non-convex |
+| Union | $R_1 \sqcup R_2$ | looser envelope (join) | $\times$ over-approximates set-union | none (lossy) |
+| Conjunction | $P \land Q$ | geometric meet | $\checkmark$ exact | negation (De Morgan) |
+| Disjunction | $P \lor Q$ | *not* geometric join; multi-region object | — (no single-region representation) | negation (De Morgan) |
 
 ### Open design questions
 
 1. **Witness set scoping.**  Fixed global `V` (the current implicit
    standard basis) vs per-Whole `V_W`.  Per-Whole witness sets break
-   transitivity along chains unless `V_B ⊆ V_C` whenever `B ≼ C`.  Is
+   transitivity along chains unless $V_B \subseteq V_C$ whenever $B \preceq C$.  Is
    monotone witness growth a reasonable design constraint?
 2. **Magnitude semantics.**  Does parthood-agreement scale with
-   `‖P‖` (containment-style), or only with direction (alignment-
+   $\|P\|$ (containment-style), or only with direction (alignment-
    style)?  Depends on whether vector magnitude encodes
    confidence/salience or semantic content.
-3. **Outlier handling.**  Quantile vs σ-multiple envelopes; which
+3. **Outlier handling.**  Quantile vs $\sigma$-multiple envelopes; which
    preserves lattice structure best in practice?
 4. **Negation / complement at the geometric layer.**  Complement of a
    slab system is non-convex; some bounded "domain of relevance" is
@@ -1143,6 +1231,236 @@ probabilities).
    `Ops.negation(monotonic=True)` operates on the bivector pair, not
    on a region — region complement remains undefined.
 5. **Implication.**  Not yet defined.  Material implication
-   `P → Q ≡ ¬P ∨ Q` would inherit disjunction's multi-region
+   $P \to Q \equiv \neg P \lor Q$ would inherit disjunction's multi-region
    structure.  A geometric counterpart (e.g. region containment as a
    graded truth value) may be more natural.
+
+---
+
+## 9. Ops realization: inventory, mapping, and divergences
+
+Reference material that maps the conceptual operations of §8 onto the
+concrete `Ops` static namespace
+(`class Ops:` at [`bin/Layers.py:4060`](../bin/Layers.py)).  `Basis`
+(in [`bin/Spaces.py`](../bin/Spaces.py)) thinly wraps each `Ops` method
+for the runtime contract used by SubSpace payloads — formulas live in
+`Ops`.
+
+`Ops` is **agnostic of the producing subspace**.  It operates on
+tensors in $[-1, 1]$: a single vector is a *point*; a pair
+$(\ell, u)$ is a *region*.  Whatever upstream stage produced the values has already
+chosen the basis (the witness set).  In particular, `Ops` runs on
+post-projection `subspace.what` of `SymbolicSpace` (bivector after the
+C → S projection has aligned witness directions to the standard basis)
+and on `ConceptualSpace` activation vectors directly when conceptual-
+space operations are needed.  Same primitives in both cases.
+
+### 9.1 Ops inventory
+
+#### Tetralemma constants
+| Method | Returns |
+|---|---|
+| `true()` | `1` |
+| `false()` | `-1` |
+| `unknown()` | `0` |
+
+#### Scalar / elementwise primitives
+| Method | One-line |
+|---|---|
+| `positive(x)` | `relu(x)` — non-negative half. |
+| `negative(x)` | `−relu(−x)` — non-positive half. |
+| `neutral(x)` | `1 − |x|` — distance from a saturated truth. |
+| `sign(v)` | `signum` with `sgn(0) = 1` (not 0). |
+| `saturate(x)` | `clamp(−1, 1)`, NaN → 0. |
+| `threshold(x, t)` | Zero out values with $|x| < t$. |
+| `complement(x)` | `sign(x) − x`. |
+| `convertSensation(x)` | Affine map `2x − 1` ([0, 1] → [−1, 1]). |
+| `minMag / maxMag` | Pick the operand with smaller / larger `|·|`. |
+| `error(x, y)` | $\lVert x - y \rVert_2$. |
+| `isActive(x, t)` | True when $|x| \ge t$. |
+| `isEqual(x, y)` | `torch.equal`. |
+| `isReducer(x, y)` | $\lVert y - x \rVert_1 < \lVert y \rVert_1$ — does $y \to x$ reduce L1 norm. |
+
+#### Tensor primitives
+| Method | One-line |
+|---|---|
+| `pos(x)` | `relu(x)`. |
+| `norm(x)` | Last-dim L2 norm. |
+
+#### Unified synthesis / analysis dispatchers
+Step 1–2 of
+[plans/2026-04-24-lift-lower-bivector-refactor.md](plans/2026-04-24-lift-lower-bivector-refactor.md)
+consolidates all level-crossing logic onto two methods with a single
+shape:
+
+| Method | One-line |
+|---|---|
+| `lift(X1, X2=None, mode='OR', kind='strict', inverse=False, monotonic=False)` | Synthesis (many to one, $\lor$).  `mode='OR'` join, `mode='NOT'` self-inverse pole flip, `mode='AND'` routes to `lower`.  `kind` $\in \{$ `strict` (max), `smooth` (mean), `radial` (RadMax) $\}$.  Region inputs $(\ell, u)$ dispatch to envelope arithmetic; points auto-promote to the degenerate region $(\min(0, x), \max(0, x))$. |
+| `lower(X1, X2=None, mode='AND', kind='strict', inverse=False, monotonic=False)` | Analysis (one to many, $\land$).  `mode='AND'` meet, `mode='NOT'` self-inverse, `mode='OR'` routes to `lift`.  `kind` $\in \{$ `strict` (min), `smooth` (product), `radial` (RadMin) $\}$.  Same region-vs-point dispatch as `lift`. |
+
+Codebook-search inverse (`inverse=True` with `mode='AND'` or `'OR'`) is
+supplied through `Basis.lift` / `Basis.lower`, which provide `W` from
+the owning codebook.  `mode='NOT'` is self-inverse — `inverse=True`
+returns the same value as the forward call.
+
+#### Legacy fuzzy-logic surface (deprecated forwarders, # XXX)
+| Method | One-line |
+|---|---|
+| `conjunction(x, y, monotonic)` | Forwards to `lower(x, y, mode='AND', kind=...)` (`monotonic=True`→`strict`/min; `monotonic=False`→`radial`/RadMin). |
+| `disjunction(x, y, monotonic)` | Forwards to `lift(x, y, mode='OR', kind=...)` (same monotonic→kind mapping). |
+| `negation(x, monotonic)` | Bitonic `−x`; monotonic, even last dim: paired-index pair flip on bivector layout. |
+| `non(x, monotonic, threshold)` | Bitonic: `1 − |clamp(x, −1, 1)|` (triangular residual; `true + false + non = 1`).  Monotonic: `relu(x − threshold)` or `0`. |
+| `negationReverse(x, monotonic)` | Self-inverse — delegates to `negation`. |
+| `conjunctionReverse(result, y, W, monotonic)` | Codebook-search witness recovery: find $cb_i$ with $\mathrm{conjunction}(cb_i, cb_j) \approx \mathrm{result}$ for some $cb_j \in W$. |
+| `disjunctionReverse(result, y, W, monotonic)` | Same pattern for disjunction. |
+| `_binary_op_inverse_impl(...)` | Shared search: forms all `K × K` codebook pairs, picks the L2-closest composed match. |
+
+The legacy positional `Ops.lift(left, right)` and
+`Ops.lower(left, right)` (no-`mode` form) emit a `DeprecationWarning`
+and route through the deprecation aliases preserved per spec Q5
+(`# XXX deprecated alias — review when convenient`).  Both produce the
+old bodies bit-exactly: legacy `lift = X1 * X2` (= `lower(mode='AND', kind='smooth')`),
+legacy `lower = (X1 + X2) / 2` (= `lift(mode='OR', kind='smooth')`).
+The standalone analytic inverses `Ops.liftReverse`
+($\mathrm{result} / (\mathrm{right} + \varepsilon)$) and `Ops.lowerReverse`
+($2 \cdot \mathrm{result} - \mathrm{right}$) pair with the legacy bodies.
+
+#### Axis selectors
+| Method | One-line |
+|---|---|
+| `what(x, nWhat, nWhere, nWhen)` | Keep the leading `nWhat` block; zero the rest. |
+| `where(x, ...)` | Keep `[nWhat : nWhat + nWhere]`; zero the rest. |
+| `when(x, ...)` | Keep `[nWhat + nWhere :]`; zero the rest. |
+
+#### Metric
+| Method | One-line |
+|---|---|
+| `distance(x, y, monotonic, dim)` | Bitonic: angular `(1 − cos) / 2`.  Monotonic: volume-weighted L2 (weights `max(|x|, |y|)` so zero-volume coords don't count). |
+
+#### Mereology — the parthood suite
+| Method | One-line |
+|---|---|
+| `part(x, y, monotonic, scalar)` | **Vector form** (default): $x \cdot (y / \lVert y \rVert)$ elementwise.  **Scalar form**: clipped cosine $\max(0, x \cdot y) / (\lVert x \rVert\, \lVert y \rVert) \in [0, 1]$ with empty-operand contract $(\mathrm{empty}, y) \to 1$, $(x, \mathrm{empty}) \to 0$. |
+| `whole(x, y, ...)` | Vector: $(1 - x) \cdot (y / \lVert y \rVert)$.  Scalar: `part(y, x)` — converse. |
+| `equal(x, y, ...)` | $\mathrm{part}(x, y) \cdot \mathrm{part}(y, x)$ — mutual parthood. |
+| `overlap(x, y, ...)` | Vector: $\min(\mathrm{part}(x,y), \mathrm{part}(y,x))$.  Scalar: $0 < \mathrm{equal} < 1$ (boolean indicator). |
+| `underlap(x, y, ...)` | Vector: $\min(\mathrm{whole}(x,y), \mathrm{whole}(y,x))$.  Scalar: $\mathrm{equal} = 0$. |
+| `boundary(x, y, ...)` | $\lvert \mathrm{part}(x, y) - \mathrm{part}(y, x) \rvert$ — directional asymmetry; zero under symmetric clipped cosine. |
+| `copart(x, y, ...)` | Vector: $y - x$.  Scalar: $1 - \mathrm{part}(x, y)$ clamped. |
+
+### 9.2 Mapping — six conceptual operations to Ops
+
+| # | Conceptual operation | `Ops` realization | Match / Diverge | Notes |
+|---|---|---|---|---|
+| 1 | **Part** (per-Whole projection) | `part(scalar=False)` (vector projection) and `part(scalar=True)` (clipped cosine) | **Match** on per-Whole agreement; partial on the two-scalar contract | Implements $\mathrm{agreement} = \max(0, p_\parallel)$.  Disagreement is recoverable via `part(-x, y, scalar=True)` or via `whole`/`copart`/`boundary`, but not in a single call.  Per-Whole projection is what the model uses for point-level parthood; witness-set dominance is **not** implemented as a separate `Ops` method (see §9.4). |
+| 2 | **Whole** (converse of Part) | `whole(scalar=True)` $\equiv$ `part(y, x)`; vector form $(1 - x) \cdot (y / \lVert y \rVert)$ | **Match** for converse | Vector form $(1 - x) \cdot \hat{y}$ is interpretable as "projection of the complement of `x` along `y`," used in `overlap`/`underlap` composition. |
+| 3 | **Intersection** ($R_1 \sqcap R_2$) | `lower(X1, X2, mode='AND')` — region body $(\max \ell, \min u)$ for $(\ell, u)$ pairs; point body per `kind` | **Match** | The unified signature collapses point and region into one call.  `TruthLayer.luminosity` consumes the $\min u$ half over stored truths. |
+| 4 | **Union** ($R_1 \sqcup R_2$) | `lift(X1, X2, mode='OR')` — region body $(\min \ell, \max u)$; point body per `kind` | **Match on the convex hull**, deliberate over-approximation | Single-region union is the convex-hull / slab-system join; aligns with śamatha single-pointedness.  Multi-region / DNF disjunction is not realized in `Ops` — see G4 below. |
+| 5 | **Conjunction** ($P \land Q$) | Routed through `lower(mode='AND')` | **Match** | Conjunction grounds cleanly in geometric meet (intersection of convex regions is convex).  Symbolic $P \land Q$ is computed by the same `lower` op as geometric intersection — no level-crossing loss. |
+| 6 | **Disjunction** ($P \lor Q$) | Routed through `lift(mode='OR')` | **Diverge** from "faithful set-union", **Match** to deliberate single-region over-approximation | The implementation stays in single-region monotonic form (`max`).  No multi-region / DNF representation exists.  This is a known design choice (śamatha convexity), not a bug. |
+
+**Per-Whole vs witness-set dominance.**  The implementation uses the
+per-Whole projection (clipped cosine `part(scalar=True)`) for
+point-level parthood: returns *agreement* in `[0, 1]`; symmetric under
+the kernel; not transitive as a hard threshold relation.  Asymmetric
+subsumption is recovered relationally via figure / ground (`part(A, B)`
+vs `part(A, ¬B)`); see [Mereology.md](Mereology.md).  Witness-set
+dominance is recovered post-projection: by the time `Ops` runs on
+`subspace.what`, the dominance check is elementwise envelope
+comparison.  No `Ops` method exposes it directly, but the building
+blocks are present (`ImpenetrableLayer._pairwise_parthood` builds the
+full `K × K` parthood matrix; `TruthLayer.fusion` /
+`TruthLayer.luminosity` compute upper / lower envelopes).
+
+### 9.3 Inverse mapping
+
+| # | Conceptual inverse | `Ops` inverse | Match / Diverge | Notes |
+|---|---|---|---|---|
+| 1 | **Part$^{-1}$** = Whole (converse, intrinsically lossy). | `whole(scalar=True) = part(y, x)`. | **Match** for converse direction. | No functional inverse attempted ($P_\perp$ is unrecoverable). |
+| 2 | **Whole$^{-1}$** = Part. | `part(scalar=True)`. | **Match.** | Same lossy direction. |
+| 3 | **Intersection$^{-1}$**: region subtraction $R_1 \setminus R_2$ — non-unique, generally non-convex. | None as a region operation; closest analogue is `Ops.copart(x, y, scalar=False)` $= y - x$ (point-level). | **Gap (intentional).** | No region subtraction would stay in the slab formalism. |
+| 4 | **Union$^{-1}$**: same — non-unique, non-convex. | None. | **Gap (intentional).** | No code currently asks for a union inverse. |
+| 5 | **Conjunction$^{-1}$**: De Morgan via negation. | `lower(..., mode='AND', inverse=True)` (Basis-only, codebook-search) — delegates to `Ops.conjunctionReverse(result, y, W)`. | **Diverge in kind.** | Witness-recovery search, not De Morgan.  Recovers *a* solution $R_2$ given the result; not the symbolic complement. |
+| 6 | **Disjunction$^{-1}$**: De Morgan. | `lift(..., mode='OR', inverse=True)` $\to$ `Ops.disjunctionReverse(result, y, W)`. | **Diverge in kind.** | Same pattern — codebook-search pseudo-inverse. |
+|   | **Negation$^{-1}$** (unary): self-inverse. | `lift`/`lower(..., mode='NOT', inverse=True)` $\equiv$ forward (and `negationReverse` $\equiv$ `negation`). | **Match.** | Bitonic sign flip; monotonic paired-index flip. |
+
+The conceptual doc's lossy-vs-functional category breakdown is honored
+in Ops:
+
+- **Lossy inverses that recover *a* solution**: `lower(mode='AND', inverse=True)`,
+  `lift(mode='OR', inverse=True)` (codebook-search via `Basis`).
+- **Functional inverses for binary meet/join**: correctly absent.
+- **Unary inverses (negation/complement)**: `mode='NOT'` is involutive.
+  No region-level complement is implemented — flagged as undefined for
+  slab systems in §8.
+- **Analytic inverses for the legacy in-space algebra**: `liftReverse` /
+  `lowerReverse` are the only true functional inverses on the
+  `Ops` surface; both pair with the legacy positional bodies (XXX
+  deprecated, paired with the legacy aliases per spec Q5).
+
+### 9.4 Gaps
+
+Operations or inverses the conceptual model expects that are not yet
+in `Ops`.  G1 / G2 are subsumed by the unified `lift` / `lower`
+signature with region inputs; the rest remain open.
+
+| # | Gap | Severity | Comment |
+|---|---|---|---|
+| G1 | Region-level operations on $(\ell, u)$ pairs (closed). | — | **Closed** by Step 1's unified `lift` / `lower` region body. |
+| G2 | Region-form parthood as a named method (closed). | — | **Closed** by the unified signature — `part(R1, R2)` over two regions = envelope dominance. |
+| G3 | **No two-scalar parthood return.**  Conceptual `(agreement, disagreement)` is a pair; `Ops.part(scalar=True)` returns only the agreement. | Low | Disagreement is recoverable via `part(-x, y)`.  Optional `partFrame(x, y) → (agreement, disagreement)` wrapper if a caller asks. |
+| G4 | **No multi-region / DNF disjunction.**  Faithful $P \lor Q$ requires a set of regions. | Medium (architectural) | Implementation stays single-region (`lift(mode='OR')`); convex-hull over-approximation is the deliberate śamatha-convexity choice.  Largely subsumed by the Sigma-as-synthesis framing — each Sigma-pooled symbol is already a $c_a \lor c_b$ proposition; multi-region DNF emerges as a *set* of Sigma-symbols. |
+| G5 | **No region complement / negation.**  Slab-system complement is non-convex. | Low | `mode='NOT'` works on the bivector pair / sign flip, not on a region.  Open by design (§8 *Open design questions* #4). |
+| G6 | **No graded transitive parthood.**  $\mathrm{deg}(A \preceq C) \ge T(\mathrm{deg}(A \preceq B), \mathrm{deg}(B \preceq C))$. | Low | Not present in `Ops`; `TruthLayer.derive` is the closest analogue (pairwise inference with attenuated DoT) and operates at the truth-store level, not as a logic primitive. |
+| G7 | **No quantile / sigma-multiple envelopes.**  Conceptual outlier mitigation. | Low | Hard `min` / `max` everywhere.  Defer until outlier sensitivity bites in measured behavior. |
+
+### 9.5 Divergences (implementation differs from conceptual specification)
+
+`Ops` methods that compute something different from the conceptual
+model.  None rises to a code bug; every divergence traces to a
+documented design commitment.
+
+| # | `Ops` method | Conceptual expectation | What it actually does | Status |
+|---|---|---|---|---|
+| D1 | `lower(mode='AND', kind='strict')` on points | "Intersection of regions" — envelope pair $(\max \ell, \min u)$. | Pointwise $\min(x, y)$ — single-envelope side or point-meet of degenerate slabs. | **Documented** — single-vector min/max is the per-slot envelope arithmetic; the full $(\ell, u)$ pair operation is the region body of the same call.  `TruthLayer.luminosity` / `fusion` consume one envelope side each. |
+| D2 | `lift(mode='OR', kind='strict')` on points | Same pair caveat plus convex-hull over-approximation note. | Pointwise $\max(x, y)$. | **Documented** — deliberate śamatha-convexity choice. |
+| D3 | `lower(mode='AND', inverse=True)` / `lift(mode='OR', inverse=True)` | De Morgan inverse via negation. | Codebook-search witness recovery. | **Documented** — labeled "witness recovery" / "codebook pseudo-inverse," not "inverse."  De Morgan path remains available via explicit `mode='NOT'` composition. |
+| D4 | `Ops.part(scalar=True)` returns one scalar | Per-Whole frame returns *two* scalars (agreement, disagreement). | Returns clipped cosine = agreement only. | **Documented** + optional `partFrame` wrapper (G3). |
+| D5 | `Ops.part` symmetric under clipped cosine | Conceptual model treats parthood as directional. | $\mathrm{part}(A, B) = \mathrm{part}(B, A)$ because $\cos$ is symmetric and norms are sign-invariant. | **Documented** — asymmetric subsumption recovered relationally via figure / ground.  See [Mereology.md](Mereology.md). |
+| D6 | `Ops.boundary` is identically zero | Conceptual asymmetry-of-containment scalar. | Zero under clipped cosine because `part` is symmetric. | **Documented** in code docstring and Mereology.md.  Method retained for bases with asymmetric `part`. |
+| D7 | `Ops.copart(x, y)` $= y - x$ (vector form) | Region subtraction (non-convex, exits slab formalism). | Vector difference — point-level "the part of `y` not accounted for by `x`." | **Documented** — point-level relational helper, not region subtraction. |
+| D8 | `Ops.distance(monotonic=True)` is volume-weighted L2 | Conceptual model is silent on metric in monotonic mode. | Weights each coordinate by $\max(\lvert x \rvert, \lvert y \rvert)$ so zero-volume coords contribute nothing. | **Documented** — additional principled choice; canonical monotonic distance. |
+| D9 | `Ops.non` triangular residual | Conceptual model has no separate "non-affirming negation." | Bitonic: $1 - \lvert \mathrm{clamp}(x) \rvert$ — completes $\mathrm{true} + \mathrm{false} + \mathrm{non} = 1$.  Monotonic: $\mathrm{relu}(x - \mathrm{threshold})$ or $0$. | **Documented** in §3 / §7; `non` extends the conceptual six operations for tetralemma support with no conflict. |
+
+### 9.6 Watch-list checks
+
+Concrete acceptance commitments tracked alongside the Ops surface:
+
+- **Witness set representation.**  `Ops` is agnostic of the witness
+  set; coordinates not directions.  Basis is fixed upstream (most
+  often the ConceptualSpace codebook, post-C → S projection on the
+  bivector `.what`).  No `V` parameter on `Ops` methods because the
+  basis is already chosen.  See §8 *Witness sets*.
+- **Two-scalar parthood.**  `part(scalar=True)` returns one graded
+  `[0, 1]` value (agreement only); no t-norm beyond clipped cosine, no
+  sigmoid.  Disagreement recoverable as `part(-x, y, scalar=True)`.
+  See D4.
+- **Origin-as-uncertainty.**  Honored throughout: `part`'s `max(0, ·)`
+  clip maps negative dot product to zero; `unknown() = 0`; `non`
+  partitions unity around the origin; `TruthLayer`'s bivector layout
+  encodes `(0, 0)` as NEITHER and `(1, 1)` as BOTH.
+- **Convexity / single-pointedness.**  Single-region representation
+  throughout.  Disjunction stays at the geometric layer (`max`); the
+  over-approximation is intentional under śamatha single-pointedness.
+  Gap G4 / divergence D2 — flagged as deliberate.
+- **CWCE interaction.**  `CertaintyWeightedCrossEntropy`
+  ([`bin/Layers.py`](../bin/Layers.py)) penalizes overconfident
+  predictions; `Ops.part` returns a graded scalar in `[0, 1]` and
+  respects origin-as-uncertainty — CWCE consumes it sensibly.  No
+  pre-thresholding to booleans.
+- **Differentiability.**  Hard `min` / `max` are sub-differentiable
+  with sparse gradients (only the extremal codebook row receives
+  gradient in any min/max-bottlenecked path).  The `kind='smooth'`
+  variant (product / mean) is the natural fit for differentiable
+  pooling in `Pi` / `SigmaLayer.forward`; `kind='strict'` is the
+  inference-time / extraction-time form.  See §8 *Differentiability*.

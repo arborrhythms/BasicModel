@@ -48,7 +48,7 @@ MAKE_PDF = pandoc $(PDFOPTS) \
 		--toc --toc-depth=3 \
 		--resource-path=.:doc
 
-.PHONY : all install xor tomatoes ergodic simple run compare test test_all bench doc_pdf clean \
+.PHONY : all install xor tomatoes ergodic simple run compare test test_all bench doc clean \
          train train_micro train_remote train_micro_remote
 
 all : xor
@@ -123,7 +123,7 @@ clean :
 	rm -f BasicModel.pdf
 	rm -rf output/*
 
-doc_pdf : BasicModel.pdf
+doc : BasicModel.pdf
 
 
 TITLE := Basic Model

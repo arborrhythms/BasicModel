@@ -89,41 +89,90 @@ rule list.
 `Grammar.configure()` loads an XML `<grammar>` section (inside
 `<WordSpace><language>`).  The block splits into `<upward>` (parsing /
 chart compose) and `<downward>` (generation from a deep symbolic state).
-Each child element is a nonterminal — `S`, `VO`, `NP`, `VP`, `V`, `O`,
-`C`, ... — and its body is the RHS in one of two forms:
+The loader accepts three RHS forms; the **explicit-op** form is the
+canonical target per
+[plans/2026-04-24-lift-lower-bivector-refactor.md](plans/2026-04-24-lift-lower-bivector-refactor.md)
+Step 6 and
+[specs/2026-04-24-lift-lower-bivector-design.md](specs/2026-04-24-lift-lower-bivector-design.md)
+(its dispatch table maps each op name to a single
+`Ops.lift` / `Ops.lower` / `Ops.equal` / ... call):
 
 ```xml
 <grammar>
   <upward>
-    <!-- Function-call form (legacy S-tier ops). Fixed dispatch name; -->
-    <!-- parsed into rules that still live on ``S``.                  -->
+    <!-- (1) Explicit-op form (canonical per Step 6). The RHS *is* the   -->
+    <!--     dispatched call; LHS may be a comma-separated tuple for     -->
+    <!--     multi-output reverses.                                       -->
+    <rule>S       = lift(NP, VP)</rule>
+    <rule>NP      = intersection(AP, NP)</rule>
+    <rule>S       = not(S)</rule>
+    <rule>S,S     = intersection_inv(VO)</rule>     <!-- multi-output reverse -->
+
+    <!-- (2) Function-call form (legacy S-tier ops). Tag = LHS, body =   -->
+    <!--     op(args). Equivalent to (1) but uses the nonterminal as     -->
+    <!--     the XML element name instead of a generic <rule> wrapper.    -->
     <S>not(S)</S>
     <S>swap(S, S)</S>
-    <S>lift(S, S)</S>
 
-    <!-- Bare-symbol form (typed productions). LHS = element tag;     -->
-    <!-- RHS = whitespace-separated nonterminal / terminal categories. -->
-    <!-- Dispatch method is always ``merge``.                          -->
-    <S>S VO</S>
-    <VO>V O</VO>
+    <!-- (3) Bare-symbol form (transitional). RHS is a whitespace-       -->
+    <!--     separated sequence of nonterminal / terminal categories;    -->
+    <!--     dispatch method is the typed-compose `merge`. The shipped   -->
+    <!--     `data/grammar.cfg` is currently in this form (e.g. `S -> NP -->
+    <!--     VP`); migration to (1) is Step 6 of the lift/lower plan.    -->
+    <S>S VP</S>
+    <NP>AP NP</NP>
   </upward>
   <downward>
-    <!-- One-shot head emission: project the deep state onto a        -->
-    <!-- codebook and emit the best-match atom. Dispatch is           -->
-    <!-- ``emit_head``; no function-call form is accepted.             -->
+    <!-- One-shot head emission: project the deep state onto a          -->
+    <!-- codebook and emit the best-match atom. Dispatch is              -->
+    <!-- `emit_head`; no function-call form is accepted on this path.    -->
     <S>C</S>
   </downward>
 </grammar>
 ```
 
+The op names that may appear in the explicit-op RHS are the dispatch
+keys for the unified
+`Y = f(X1, X2=None, mode=..., kind=..., inverse=False)` signature
+implemented in Step 1–2 of the refactor (see [Logic.md §8](Logic.md)
+*Grammatical dispatch*):
+
+| Op name in RHS                  | Resolves to                                                | Notes                                                              |
+|---------------------------------|------------------------------------------------------------|--------------------------------------------------------------------|
+| `lift(A, B)`                    | `Ops.lift(A, B, mode='OR')`                                | synthesis / disjunction (default `kind='strict'` → max)            |
+| `lower(A, B)`                   | `Ops.lower(A, B, mode='AND')`                              | analysis / conjunction (default `kind='strict'` → min)             |
+| `intersection(A, B)`            | `Ops.lower(A, B, mode='AND')`                              | meet — modification rules (`NP = intersection(AP, NP)`)            |
+| `union(A, B)` / `disjunction`   | `Ops.lift(A, B, mode='OR')`                                | join — coordination                                                |
+| `conjunction(A, B)`             | `Ops.lower(A, B, mode='AND')`                              | propositional $\land$ (alias of `intersection` at S-tier)          |
+| `not(A)`                        | `Ops.lift(A, mode='NOT')`                                  | self-inverse pole flip / sign flip                                 |
+| `equals(A, B)`                  | `Ops.equal(A, B)`                                          | mereological mutual parthood (copula identification)               |
+| `part(A, B)`                    | `Ops.part(A, B)`                                           | mereological assertion *X is Y*                                    |
+| `query(A, B)`                   | `Ops.query(A, B)` (new — spec O5)                          | interrogative speech act                                           |
+| `swap(A, B)`                    | `Ops.swap(A, B)` (new — spec O5)                           | argument-position swap                                             |
+| `bind(A, B)`                    | `Ops.bind(A, B)` (or `Ops.lower(mode='AND')` fallback)     | head-complement composition (PP, V + NP, …); see spec O6           |
+| `scale(DEG, AP)`                | `Ops.scale(DEG, AP)` (or `Ops.lower(mode='AND')` fallback) | degree intensification; see spec O7 / O9                           |
+| `project(A)` / single-symbol    | identity-with-typing-stamp                                 | terminal projection (`NP = project(N)` or `NP = N`); stamps LHS    |
+| `*Reverse(Y)` / `*_inv(Y)`      | `Ops.<op>(Y, inverse=True)` (multi-return)                 | derived at grammar-load time — not authored separately (spec O10)  |
+
 `Grammar.rules_upward` / `Grammar.rules_downward` hold the two rule
 sets; `Grammar.rules` is their union.  Each `RuleDef` namedtuple carries
-`(tier, canonical, arity, method_name, lhs, rhs_symbols)` — the last two
-fields drive the typed-category compatibility mask in the chart compose
-(see below).  Legacy flat `<S>...</S>` directly under `<grammar>`
-(without the upward/downward wrapper) is still accepted by
-`Grammar.configure()` for Python callers, but XMLs shipped in this repo
-use the split form so the XSD can validate them.
+`(tier, canonical, arity, method_name, lhs, rhs_symbols)` — `method_name`
+is the op name from the explicit-op / function-call RHS, or `'merge'`
+for bare-symbol-sequence rules, or `'emit_head'` for the downward
+`S -> C` projection.  The last two fields drive the typed-category
+compatibility mask in the chart compose (see below).  Legacy flat
+`<S>...</S>` directly under `<grammar>` (without the upward/downward
+wrapper) is still accepted by `Grammar.configure()` for Python callers,
+but XMLs shipped in this repo use the split form so the XSD can
+validate them.
+
+Reverse productions (the downward / inverse direction of every Layer-1
+forward production) are *derived mechanically* at grammar-load time —
+not authored as separate rules.  For each forward rule
+`LHS = op(arg1, arg2)` the loader synthesizes `arg1, arg2 = opReverse(LHS)`
+with the multi-return calling convention from
+[specs/2026-04-24-lift-lower-bivector-design.md](specs/2026-04-24-lift-lower-bivector-design.md)
+O10.
 
 ### Thought-Free Mode (Shamatha Speech)
 
@@ -176,36 +225,62 @@ Pure antipodal flip on the bitonic axis.  Self-inverse.
 
 ### Conjunction / disjunction
 
+Both route through the unified `lift` / `lower` dispatcher (Step 1–2 of
+[plans/2026-04-24-lift-lower-bivector-refactor.md](plans/2026-04-24-lift-lower-bivector-refactor.md)).
+At the S tier the explicit-op grammar form `S = conjunction(S, S)`
+resolves to `Ops.lower(S1, S2, mode='AND')` and `S = disjunction(S, S)`
+resolves to `Ops.lift(S1, S2, mode='OR')`:
+
 $$
-\mathrm{conjunction}(\ell, r) = \mathcal{B}.\mathrm{conjunction}(\ell, r)
-                              \ \xrightarrow[\text{fallback}]{}\ \min(\ell, r)
+\mathrm{conjunction}(\ell, r) = \mathcal{B}.\mathrm{lower}(\ell, r,\ \mathrm{mode}{=}\text{'AND'})
+                              \ \xrightarrow[\text{kind='strict'}]{}\ \min(\ell, r)
 $$
 
 $$
-\mathrm{disjunction}(\ell, r) = \mathcal{B}.\mathrm{disjunction}(\ell, r)
-                              \ \xrightarrow[\text{fallback}]{}\ \max(\ell, r)
+\mathrm{disjunction}(\ell, r) = \mathcal{B}.\mathrm{lift}(\ell, r,\ \mathrm{mode}{=}\text{'OR'})
+                              \ \xrightarrow[\text{kind='strict'}]{}\ \max(\ell, r)
 $$
+
+The `kind` parameter selects the forward point body: `'strict'`
+(default — lattice min/max), `'smooth'` (elementwise product / mean,
+the differentiable form used by `Pi`/`SigmaLayer.forward`), or
+`'radial'` (RadMin / RadMax — same-sign min/max magnitude with zero
+passthrough; equivalent to the historical `monotonic=False` body of
+`Basis.conjunction` / `Basis.disjunction`).  The legacy thin-forwarder
+methods `Basis.conjunction(x, y, monotonic=...)` /
+`Basis.disjunction(x, y, monotonic=...)` are preserved as deprecated
+aliases and route through the new dispatcher (`monotonic=True` →
+`kind='strict'`; `monotonic=False` → `kind='radial'`) so existing
+callers see bit-exact output.
 
 Sentence-level fuzzy $\wedge$ and $\vee$ on bitonic activations.  Both
 are lossy at the sentence level (no inverse registered for the S-tier
 usage), though the same primitives at C-tier subspace level retain
-Basis-level inverses.
+Basis-level inverses via `Ops.conjunctionReverse` /
+`Ops.disjunctionReverse` (codebook-search recovery).
 
 ### Intersection / union (mereological)
 
-$$
-\mathrm{intersection}(\ell, r) = \mathcal{B}.\mathrm{conjunction}(\ell, r)
-\qquad
-\mathrm{union}(\ell, r) = \mathcal{B}.\mathrm{disjunction}(\ell, r)
-$$
-
-Inverses are the Basis inverses on $r$:
+`intersection` and `union` are aliases for `conjunction` / `disjunction`
+under the explicit-op grammar form, dispatching the same unified call:
 
 $$
-\mathrm{intersection}^{-1}(y, r) = \mathcal{B}.\mathrm{conjunction\_inverse}(y, r)
+\mathrm{intersection}(\ell, r) = \mathcal{B}.\mathrm{lower}(\ell, r,\ \mathrm{mode}{=}\text{'AND'})
 \qquad
-\mathrm{union}^{-1}(y, r) = \mathcal{B}.\mathrm{disjunction\_inverse}(y, r)
+\mathrm{union}(\ell, r) = \mathcal{B}.\mathrm{lift}(\ell, r,\ \mathrm{mode}{=}\text{'OR'})
 $$
+
+Inverses are the codebook-search recoveries on $r$ (supplied by `Basis`
+which carries the codebook $W$):
+
+$$
+\mathrm{intersection}^{-1}(y, r) = \mathcal{B}.\mathrm{lower}(y, r,\ \mathrm{mode}{=}\text{'AND'},\ \mathrm{inverse}{=}\mathrm{True})
+\qquad
+\mathrm{union}^{-1}(y, r) = \mathcal{B}.\mathrm{lift}(y, r,\ \mathrm{mode}{=}\text{'OR'},\ \mathrm{inverse}{=}\mathrm{True})
+$$
+
+For `mode='NOT'` the inverse is identical to the forward (self-inverse
+pole flip / sign flip).
 
 ### Part (clipped cosine)
 

@@ -137,6 +137,17 @@
     <codebook>false</codebook>
   </PerceptualSpace>
 
+  <!-- TetralemmaPolicy: shared default for the 4-valued (catuskoti)
+       balance of conceptual / symbolic activations.  Per-space override
+       blocks below toggle ``enabled`` to opt out of the inherited
+       policy and define their own; default inheritance keeps the two
+       layers in sync (per spec O4 of the lift/lower/bivector design). -->
+  <TetralemmaPolicy>
+    <allowExcludedMiddle>1</allowExcludedMiddle>
+    <allowContradiction>0</allowContradiction>
+    <neitherThreshold>0.1</neitherThreshold>
+  </TetralemmaPolicy>
+
   <!-- ConceptualSpace: matches percept/symbol row count; state mixing
        happens via iterative Sigma-Pi (not concatenation). -->
   <ConceptualSpace>
@@ -146,6 +157,7 @@
     <hasAttention>true</hasAttention>
     <invertible>true</invertible>
     <codebook>false</codebook>
+    <tetralemmaOverride enabled="false" />
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -154,6 +166,7 @@
     <nVectors>128</nVectors>
     <passThrough>false</passThrough>
     <accumulateTruth>0</accumulateTruth>
+    <tetralemmaOverride enabled="false" />
   </SymbolicSpace>
 
   <OutputSpace>

@@ -225,7 +225,7 @@ tetralemma (*catuskoti*):
 BOTH encodes first-class inconsistency (same position affirmed and
 negated by independent sources/frames); NEITHER encodes unknown
 (neither affirmed nor negated).  Operations obey De Morgan under
-pole-swap negation `¬[aP, aN] = [aN, aP]`:
+pole-swap negation $\neg[aP, aN] = [aN, aP]$:
 
 - Conjunction: `[min(aP, bP), max(aN, bN)]`
 - Disjunction: `[max(aP, bP), min(aN, bN)]`

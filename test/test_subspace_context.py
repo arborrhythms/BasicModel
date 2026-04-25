@@ -272,7 +272,7 @@ def test_stm_residual_flows_through_conceptualspace(model):
     # Baseline: no residual. forward() must not mutate upstream.
     ws.discourse = None
     ws.arm_stm()
-    ws.stm_residual_microbatch = lambda B_arg, K_arg: None
+    ws.stm_residual_microbatch = lambda B_arg, K_arg, expected_dim=None: None
     cs.forward(upstream)
     baseline_event = cs.subspace.event.getW()
 
@@ -281,7 +281,7 @@ def test_stm_residual_flows_through_conceptualspace(model):
     # broadcasts over N via .unsqueeze(1).
     bias = torch.ones(B, D) * 0.3
     ws.arm_stm()
-    ws.stm_residual_microbatch = lambda B_arg, K_arg: bias
+    ws.stm_residual_microbatch = lambda B_arg, K_arg, expected_dim=None: bias
     upstream.set_event(event_in)  # reset upstream
     cs.forward(upstream)
     primed_event = cs.subspace.event.getW()
