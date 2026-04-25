@@ -1,0 +1,56 @@
+<?xml version="1.0" ?>
+<model>
+  <architecture>
+    <conceptualOrder>1</conceptualOrder>
+    <modelType>embedding</modelType>
+    <ergodic>false</ergodic>
+    <weightsPath>xor_3d_weights.ckpt</weightsPath>
+
+    <data>
+      <dataset>xor</dataset>
+    </data>
+
+    <training>
+      <numEpochs>200</numEpochs>
+      <learningRate>0.01</learningRate>
+      <autosave>false</autosave>
+      <autoload>false</autoload>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>2</nOutput>
+    <nDim>10</nDim>
+    <nVectors>2</nVectors>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nOutput>4</nOutput>
+    <nDim>10</nDim>
+    <nVectors>16</nVectors>
+    <codebook>true</codebook>
+    <invertible>false</invertible>
+    <hasAttention>false</hasAttention>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nOutput>4</nOutput>
+    <nDim>10</nDim>
+    <nVectors>16</nVectors>
+    <codebook>true</codebook>
+    <invertible>false</invertible>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nOutput>4</nOutput>
+    <nDim>10</nDim>
+    <nVectors>4</nVectors>
+    <passThrough>true</passThrough>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>1</nDim>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+</model>

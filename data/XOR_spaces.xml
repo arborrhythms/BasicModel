@@ -1,0 +1,68 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- XOR_spaces: whole-sentence XOR with inline data, modelled after XOR_exact.xml.
+       Architecture is perfectly invertible (invertible=true everywhere). -->
+  <architecture>
+    <conceptualOrder>1</conceptualOrder>
+    <modelType>embedding</modelType>
+    <ergodic>false</ergodic>
+    <weightsPath>XOR_spaces.ckpt</weightsPath>
+
+    <data>
+      <dataset>inline</dataset>
+      <input use="train">zero xor zero|zero xor one|one xor zero|one xor one</input>
+      <input use="test">zero xor zero|zero xor one|one xor zero|one xor one</input>
+      <output use="train">0|1|1|0</output>
+      <output use="test">0|1|1|0</output>
+    </data>
+
+    <training>
+      <numEpochs>200</numEpochs>
+      <learningRate>0.01</learningRate>
+      <autosave>false</autosave>
+      <autoload>false</autoload>
+    </training>
+  </architecture>
+
+  <!-- InputSpace: nOutput=6 (5 real tokens + 1 EOS/padding slot). -->
+  <InputSpace>
+    <nOutput>6</nOutput>
+    <nDim>10</nDim>
+    <nVectors>6</nVectors>
+    <nInputDim>-1</nInputDim>
+  </InputSpace>
+
+  <!-- PerceptualSpace: invertible, flattened input. -->
+  <PerceptualSpace>
+    <nOutput>6</nOutput>
+    <nDim>10</nDim>
+    <nVectors>6</nVectors>
+    <nInputDim>-1</nInputDim>
+    <invertible>true</invertible>
+    <hasAttention>false</hasAttention>
+  </PerceptualSpace>
+
+  <!-- ConceptualSpace: nOutput=6, nVectors=6 (non-quantized: nVectors==nOutput). -->
+  <ConceptualSpace>
+    <nOutput>6</nOutput>
+    <nDim>10</nDim>
+    <nVectors>6</nVectors>
+    <nInputDim>-1</nInputDim>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <!-- SymbolicSpace: nOutput = ConceptualSpace.nOutput = 6 -->
+  <SymbolicSpace>
+    <nOutput>6</nOutput>
+    <nDim>10</nDim>
+    <nVectors>6</nVectors>
+    <nInputDim>-1</nInputDim>
+    <passThrough>true</passThrough>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>1</nDim>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+</model>

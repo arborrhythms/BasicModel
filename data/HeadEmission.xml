@@ -1,0 +1,100 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- HeadEmission: inline sentences corpus for the downward S -> C
+       generation MVP. Each sentence's head word is predicted from the
+       final deep symbolic state via WordSpace.reconstruct(). This is the
+       plumbing fixture referenced from test_head_emission.py. -->
+  <architecture>
+    <type>mental</type>
+    <modelType>embedding</modelType>
+    <conceptualOrder>1</conceptualOrder>
+    <useButterflies>false</useButterflies>
+    <!-- Pair-scorer contract: D (effective feature dim) == nInput (n_slots).
+         Setting nWhere/nWhen=0 keeps D = nDim so the SyntacticLayer's
+         pair_scorer linear is shape-compatible with the live tensor
+         during chart compose. -->
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+
+    <data>
+      <dataset>inline</dataset>
+      <input use="train">the teacher helped the student|the cat chased the mouse|the bird sang a song|the child kicked the ball|the farmer fed the dog</input>
+      <input use="test">the teacher helped the student</input>
+      <output use="train">0|0|0|0|0</output>
+      <output use="test">0</output>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>1</numEpochs>
+      <batchSize>4</batchSize>
+      <learningRate>0.001</learningRate>
+      <autoload>false</autoload>
+      <autosave>false</autosave>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>8</nOutput>
+    <nDim>8</nDim>
+    <nVectors>8</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <lexer>word</lexer>
+    <codebook>true</codebook>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>8</nDim>
+    <nVectors>8</nVectors>
+    <passThrough>true</passThrough>
+    <hasAttention>false</hasAttention>
+    <invertible>false</invertible>
+    <codebook>false</codebook>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>8</nDim>
+    <nVectors>8</nVectors>
+    <hasAttention>false</hasAttention>
+    <invertible>true</invertible>
+    <codebook>false</codebook>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nOutput>8</nOutput>
+    <nDim>8</nDim>
+    <nVectors>8</nVectors>
+    <passThrough>false</passThrough>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>8</nDim>
+    <nVectors>1</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <nonlinear>false</nonlinear>
+  </OutputSpace>
+
+  <WordSpace>
+    <useGrammar>none</useGrammar>
+    <chartCompose>true</chartCompose>
+    <downwardGeneration>true</downwardGeneration>
+    <language>
+      <grammar>
+        <upward>
+          <S>S VO</S>
+          <VO>V O</VO>
+        </upward>
+        <downward>
+          <S>C</S>
+        </downward>
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+  </WordSpace>
+
+</model>

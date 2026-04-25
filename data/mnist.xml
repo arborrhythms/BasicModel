@@ -1,0 +1,47 @@
+<?xml version="1.0" ?>
+<model>
+  <architecture>
+    <conceptualOrder>2</conceptualOrder>
+    <modelType>passthrough</modelType>
+    <weightsPath>mnist_weights.ckpt</weightsPath>
+
+    <data>
+      <dataset>mnist</dataset>
+      <classificationMin>0</classificationMin>
+      <classificationMax>9</classificationMax>
+    </data>
+
+    <training>
+      <numEpochs>10</numEpochs>
+      <autosave>true</autosave>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>1</nOutput>
+    <nVectors>1</nVectors>
+  </InputSpace>
+
+  <!-- VQ codebook spaces: nVectors=16 > nOutput=8 — codebook=true. -->
+  <PerceptualSpace>
+    <nOutput>8</nOutput>
+    <nVectors>16</nVectors>
+    <codebook>true</codebook>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nOutput>8</nOutput>
+    <nVectors>16</nVectors>
+    <codebook>true</codebook>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nOutput>8</nOutput>
+    <nVectors>8</nVectors>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+</model>

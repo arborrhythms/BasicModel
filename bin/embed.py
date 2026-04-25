@@ -1,0 +1,780 @@
+"""Word embedding pipeline: FineWeb-EDU -> parse -> CBOW -> BasicModel.kv
+
+Training phase that produces a static word embedding artifact. InputSpace
+loads this artifact at startup -- it does not train.
+
+Pipeline stages:
+  1. Stream text documents from FineWeb-EDU parquet shards
+  2. parse(text, lex='sentences') then parse(sent, lex='words'):
+     split into sentences, then word tokens
+  3. Build (target, context) training examples per sentence
+  4. Train CBOW embeddings: predict target from mean of context vectors
+  5. Save as WordVectors artifact (.kv, gensim-compatible KeyedVectors)
+
+Usage:
+    python bin/embed.py --output output/BasicModel.kv \
+        --num-shards 1 --max-docs 10000 --vector-size 100 --epochs 10
+"""
+
+import os
+import sys
+import argparse
+from collections import Counter
+from pathlib import Path
+
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from typing import List, Tuple, Optional
+
+from util import atomic_torch_save, parse
+import util
+
+
+# ---------------------------------------------------------------------------
+# Word vector store
+# ---------------------------------------------------------------------------
+
+class WordVectors(nn.Module):
+    """Stores word embeddings as a trainable nn.Parameter with word <-> index mappings.
+
+    API-compatible with gensim's KeyedVectors: ``wv.vectors``, ``wv.vector_size``,
+    ``wv[word]``, ``wv.key_to_index``, ``wv.index_to_key``, ``wv.most_similar()``.
+
+    Being an nn.Module, the parameter moves to device via ``.to(device)``
+    and participates in ``state_dict()`` / ``parameters()``.
+    """
+
+    def __init__(self, vectors, index_to_key: List[str],
+                 counts=None, total_count: int = 0):
+        """Create from a (vocab_size, vector_size) array/tensor and word list."""
+        super().__init__()
+        assert len(index_to_key) == vectors.shape[0]
+        if not isinstance(vectors, torch.Tensor):
+            vectors = torch.as_tensor(vectors, dtype=torch.float32)
+        else:
+            vectors = vectors.detach().float()
+        self._vectors = nn.Parameter(vectors, requires_grad=True)
+        self.index_to_key = list(index_to_key)
+        self.key_to_index = {w: i for i, w in enumerate(self.index_to_key)}
+        n = len(self.index_to_key)
+        if counts is not None:
+            self.counts = np.asarray(counts, dtype=np.int64)
+        else:
+            self.counts = np.zeros(n, dtype=np.int64)
+        self.total_count = np.int64(total_count)
+        self._normed: Optional[torch.Tensor] = None
+
+    @property
+    def vectors(self) -> nn.Parameter:
+        """Trainable embedding matrix (vocab_size, vector_size)."""
+        return self._vectors
+
+    @property
+    def vector_size(self) -> int:
+        """Dimensionality of each vector."""
+        return self._vectors.shape[1]
+
+    # -- Factory methods --
+
+    @classmethod
+    def from_vocab(cls, words: List[str], vector_size: int = 20) -> "WordVectors":
+        """Build random unit-normalised embeddings for a vocabulary list."""
+        unique = list(dict.fromkeys(words))  # preserve order, deduplicate
+        vecs = torch.randn(len(unique), vector_size)
+        vecs = F.normalize(vecs, p=2, dim=1)
+        return cls(vecs, unique)
+
+    @classmethod
+    def load_word2vec_format(cls, path: str) -> "WordVectors":
+        """Load vectors from a word2vec text-format file.
+
+        First line: ``<vocab_size> <vector_size>``
+        Subsequent lines: ``<word> <float> <float> ...``
+        """
+        words: List[str] = []
+        vecs: List[List[float]] = []
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            header = f.readline().split()
+            vocab_size, vector_size = int(header[0]), int(header[1])
+            for line in f:
+                parts = line.rstrip().split(" ")
+                if len(parts) != vector_size + 1:
+                    continue  # skip malformed lines
+                words.append(parts[0])
+                vecs.append([float(x) for x in parts[1:]])
+        return cls(torch.tensor(vecs, dtype=torch.float32), words)
+
+    def remove(self, indices):
+        """Remove entries by index, returning the pruned count.
+
+        Shrinks vectors, counts, and vocabulary mappings in-place.
+        """
+        if not indices:
+            return 0
+        removed_set = set(indices)
+        mask = torch.ones(self._vectors.shape[0], dtype=torch.bool)
+        for i in removed_set:
+            mask[i] = False
+        self._vectors = nn.Parameter(self._vectors.data[mask], requires_grad=True)
+        self.counts = np.delete(self.counts, list(indices))
+        new_keys = [w for i, w in enumerate(self.index_to_key) if i not in removed_set]
+        self.index_to_key = new_keys
+        self.key_to_index = {w: i for i, w in enumerate(new_keys)}
+        self._normed = None
+        return len(removed_set)
+
+    # -- Persistence --
+
+    def save(self, path: str, truth_data: dict = None) -> None:
+        """Save vectors, vocabulary, and word frequencies to a .pt file.
+
+        Vectors are L2-normalized before saving so that downstream
+        consumers (InputSpace) receive elements in [-1, 1].
+
+        Args:
+            path: destination file path.
+            truth_data: optional dict with ``"truths"`` tensor and ``"count"``
+                int, persisting LTM alongside the embedding artifact.
+        """
+        vectors = F.normalize(self._vectors.detach(), p=2, dim=1).cpu()
+        payload = {
+            "vectors": vectors,
+            "index_to_key": self.index_to_key,
+            "counts": self.counts,
+            "total_count": int(self.total_count),
+        }
+        if truth_data is not None:
+            payload["truth_data"] = truth_data
+        atomic_torch_save(payload, path)
+
+    @classmethod
+    def load(cls, path: str) -> "WordVectors":
+        """Load from a .pt file saved by ``save()``."""
+        data = torch.load(path, map_location="cpu", weights_only=False)
+        vectors = data["vectors"]
+        if isinstance(vectors, np.ndarray):
+            vectors = torch.as_tensor(vectors, dtype=torch.float32)
+        else:
+            vectors = vectors.float()
+        # Replace NaN vectors with random normalized vectors
+        nan_mask = torch.isnan(vectors).any(dim=1)
+        n_nan = nan_mask.sum().item()
+        if n_nan > 0:
+            dim = vectors.shape[1]
+            replacement = F.normalize(
+                torch.randn(n_nan, dim, device=vectors.device), p=2, dim=1)
+            vectors[nan_mask] = replacement
+            import warnings
+            warnings.warn(f"Replaced {n_nan} NaN embedding vectors in {path}")
+        counts = data.get("counts")
+        total_count = data.get("total_count", 0)
+        wv = cls(vectors, data["index_to_key"],
+                 counts=counts, total_count=total_count)
+        wv.truth_data = data.get("truth_data", None)
+        return wv
+
+    # -- Vector access --
+
+    def __len__(self) -> int:
+        return len(self.index_to_key)
+
+    def __contains__(self, word: str) -> bool:
+        return word in self.key_to_index
+
+    def __getitem__(self, word: str) -> torch.Tensor:
+        """Return the raw (unnormalised) vector for *word*."""
+        return self._vectors[self.key_to_index[word]]
+
+    def get_normed_vectors(self) -> torch.Tensor:
+        """Return all vectors L2-normalised (cached, same device as _vectors)."""
+        if self._normed is None:
+            self._normed = F.normalize(self._vectors.detach(), p=2, dim=1)
+        return self._normed
+
+    # -- Similarity --
+
+    def most_similar(self, positive,
+                     topn: int = 1) -> List[Tuple[str, float]]:
+        """Find the *topn* words closest to *positive* by cosine similarity."""
+        if not isinstance(positive, torch.Tensor):
+            positive = torch.as_tensor(positive, dtype=torch.float32)
+        normed = self.get_normed_vectors()
+        positive = positive.float().flatten().to(normed.device)
+        norm = positive.norm()
+        if norm > 0:
+            positive = positive / norm
+        sims = normed @ positive
+        if topn < len(sims):
+            _, top_idx = sims.topk(topn)
+        else:
+            _, top_idx = sims.sort(descending=True)
+        return [(self.index_to_key[i], float(sims[i].detach())) for i in top_idx]
+
+    def similarity(self, word1: str, word2: str) -> float:
+        """Return cosine similarity between two words."""
+        v1 = self[word1].detach()
+        v2 = self[word2].detach()
+        return float(F.cosine_similarity(v1.unsqueeze(0), v2.unsqueeze(0)))
+
+    # -- Exploration / CLI helpers --
+
+    def neighbors(self, word: str, topn: int = 10) -> List[Tuple[str, float]]:
+        """Return nearest neighbors of *word*, excluding itself."""
+        if word not in self:
+            return []
+        results = self.most_similar(self[word], topn=topn + 1)
+        return [(w, s) for w, s in results if w != word][:topn]
+
+    def random_word(self) -> str:
+        """Return a random word from the vocabulary."""
+        import random
+        return random.choice(self.index_to_key)
+
+    def explore(self, words: List[str], topn: int = 10) -> None:
+        """Interactive exploration: print neighbors and/or similarity.
+
+        - No words: random word + neighbors
+        - One word: neighbors of that word
+        - Two words: similarity + neighbors for each
+        - Three+ words: neighbors for each
+        """
+        if len(words) == 0:
+            word = self.random_word()
+            print(f"Random word: '{word}'\n")
+            words = [word]
+
+        if len(words) == 2 and words[0] in self and words[1] in self:
+            sim = self.similarity(words[0], words[1])
+            print(f"similarity('{words[0]}', '{words[1]}') = {sim:.4f}\n")
+
+        for word in words:
+            if word not in self:
+                print(f"'{word}' not in vocabulary ({len(self)} words)")
+                lower = word.lower()
+                if lower in self:
+                    print(f"  (did you mean '{lower}'?)")
+                print()
+                continue
+            results = self.neighbors(word, topn=topn)
+            print(f"Nearest neighbors of '{word}':")
+            for w, sim in results:
+                print(f"  {w:20s}  {sim:.4f}")
+            print()
+
+
+# FineWeb-EDU streaming -- canonical implementation lives in data.py
+from data import download_shard, get_shard_paths, iter_documents  # noqa: F401
+
+
+# ---------------------------------------------------------------------------
+# Embedding pretrainer (streaming)
+# ---------------------------------------------------------------------------
+
+class PretrainModel:
+    """Stateful embedding pretrainer: optimizer + negative sampling.
+
+    Supports both bulk training (``train``) and incremental single-sentence
+    updates (``train_step``).  Operates directly on the WordVectors'
+    nn.Parameter -- no separate nn.Embedding.
+    """
+
+    def __init__(self, wv: WordVectors, learning_rate=0.01, neg_samples=64):
+        """Initialise from an existing WordVectors.
+
+        Uses negative sampling instead of a full-softmax linear head,
+        keeping MPS/GPU memory proportional to ``neg_samples`` rather
+        than ``vocab_size``.
+        """
+        self.wv = wv
+        self.index_to_key = wv.index_to_key
+        self.key_to_index = wv.key_to_index
+        self.neg_samples = neg_samples
+
+        self.optimizer = optim.Adam(
+            [wv._vectors],
+            lr=learning_rate,
+        )
+
+        # Per-word gradient variance (sigma) -- lazy-initialized in observe_sigma
+        self.sigma = None
+        self.sigma_mean = None
+        self.sigma_step = 0
+        self.sigma_beta = 0.99
+
+    @torch.no_grad()
+    def observe_sigma(self, word_indices):
+        """Track per-word gradient variance via Welford's algorithm.
+
+        Called after backward() and before optimizer.step() so that
+        _vectors.grad is available.  Works regardless of which
+        training method (CBOW, SBOW, etc.) produced the gradients.
+        """
+        grad = self.wv._vectors.grad
+        if grad is None:
+            return
+        device = grad.device
+        vocab_size = self.wv._vectors.shape[0]
+        if self.sigma is None:
+            self.sigma = torch.zeros(vocab_size, device=device)
+            self.sigma_mean = torch.zeros(vocab_size, device=device)
+        elif self.sigma.shape[0] < vocab_size:
+            old = self.sigma.shape[0]
+            self.sigma = nn.functional.pad(self.sigma, (0, vocab_size - old))
+            self.sigma_mean = nn.functional.pad(self.sigma_mean, (0, vocab_size - old))
+        self.sigma_step += 1
+        beta = self.sigma_beta
+        for wi in word_indices:
+            g = grad[wi].pow(2).mean()
+            delta = g - self.sigma_mean[wi]
+            self.sigma_mean[wi] += (1 - beta) * delta
+            self.sigma[wi] = beta * self.sigma[wi] + (1 - beta) * delta * (g - self.sigma_mean[wi])
+
+    # -- single-sentence update ------------------------------------------------
+
+    def _neg_sampling_loss(self, queries, target_idx):
+        """Negative sampling loss: -log sigma(q*w^+) - Sigma log sigma(-q*w_k^-).
+
+        Args:
+            queries: [N, dim] query vectors (context centroids).
+            target_idx: [N] indices of positive (target) words.
+        Returns:
+            Scalar loss.
+        """
+        device = queries.device
+        vocab_size = self.wv._vectors.shape[0]
+        K = min(self.neg_samples, vocab_size - 1)
+
+        pos_vecs = self.wv._vectors[target_idx]                      # [N, dim]
+        pos_scores = (queries * pos_vecs).sum(dim=1)                  # [N]
+
+        neg_idx = torch.randint(0, vocab_size, (queries.shape[0], K),
+                                device=device)                        # [N, K]
+        neg_vecs = self.wv._vectors[neg_idx]                         # [N, K, dim]
+        neg_scores = torch.bmm(neg_vecs,
+                               queries.unsqueeze(2)).squeeze(2)       # [N, K]
+
+        return -F.logsigmoid(pos_scores).mean() - F.logsigmoid(-neg_scores).mean()
+
+    # -- single-sentence update ------------------------------------------------
+
+    def train_step(self, words):
+        """Run one CBOW gradient step on a sentence via negative sampling.
+
+        Returns the mean loss for the sentence, or ``None`` if no usable
+        examples were found.
+        """
+        targets = []
+        contexts = []
+        for i, w in enumerate(words):
+            if w not in self.key_to_index:
+                continue
+            ctx = [words[j] for j in range(len(words))
+                   if j != i and words[j] in self.key_to_index]
+            if not ctx:
+                continue
+            targets.append(self.key_to_index[w])
+            contexts.append([self.key_to_index[c] for c in ctx])
+
+        if not targets:
+            return None
+
+        device = self.wv._vectors.device
+
+        max_ctx = max(len(c) for c in contexts)
+        n = len(targets)
+        ctx_padded = torch.zeros(n, max_ctx, dtype=torch.long, device=device)
+        ctx_mask = torch.zeros(n, max_ctx, device=device)
+        for i, c in enumerate(contexts):
+            ctx_padded[i, :len(c)] = torch.tensor(c, dtype=torch.long, device=device)
+            ctx_mask[i, :len(c)] = 1.0
+        target_tensor = torch.tensor(targets, dtype=torch.long, device=device)
+
+        ctx_embeds = self.wv._vectors[ctx_padded]
+        masked = ctx_embeds * ctx_mask.unsqueeze(-1)
+        ctx_mean = masked.sum(dim=1) / ctx_mask.sum(dim=1, keepdim=True)
+
+        loss = self._neg_sampling_loss(ctx_mean, target_tensor)
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.observe_sigma(targets)
+        self.optimizer.step()
+
+        return loss.item()
+
+    # -- SBOW: sentence bag-of-words update ------------------------------------
+
+    def sbow_step(self, words):
+        """Sentence BOW via negative sampling: predict every word from its
+        leave-one-out centroid.  Returns mean loss, or None if < 2 usable words.
+        """
+        word_indices = [self.key_to_index[w] for w in words
+                        if w in self.key_to_index]
+        if len(word_indices) < 2:
+            return None
+
+        device = self.wv._vectors.device
+        idx = torch.tensor(word_indices, dtype=torch.long, device=device)
+        N = len(word_indices)
+
+        vecs = self.wv._vectors[idx]                     # [N, dim]
+        total = vecs.sum(dim=0)                           # [dim]
+        centroids = (total.unsqueeze(0) - vecs) / (N - 1) # [N, dim]
+
+        loss = self._neg_sampling_loss(centroids, idx)
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.observe_sigma(word_indices)
+        self.optimizer.step()
+
+        return loss.item()
+
+    def sbow_loss(self, words):
+        """Return SBOW loss as a differentiable tensor (no backward, no step).
+
+        For joint optimization: the caller accumulates this loss with the
+        model loss and calls backward() once on the combined scalar.
+
+        Returns a scalar loss tensor, or None if < 2 usable words.
+        """
+        word_indices = [self.key_to_index[w] for w in words
+                        if w in self.key_to_index]
+        if len(word_indices) < 2:
+            return None
+
+        device = self.wv._vectors.device
+        idx = torch.tensor(word_indices, dtype=torch.long, device=device)
+        N = len(word_indices)
+
+        vecs = self.wv._vectors[idx]                     # [N, dim]
+        total = vecs.sum(dim=0)                           # [dim]
+        centroids = (total.unsqueeze(0) - vecs) / (N - 1) # [N, dim]
+
+        return self._neg_sampling_loss(centroids, idx)
+
+    # -- export ----------------------------------------------------------------
+
+
+
+class _CBOWModule(nn.Module):
+    """CBOW forward pass as an nn.Module for torch.compile."""
+
+    def __init__(self, vocab_size, vector_size):
+        super().__init__()
+        self.embeddings = nn.Embedding(vocab_size, vector_size)
+        self.linear = nn.Linear(vector_size, vocab_size)
+
+    def forward(self, ctx_padded, ctx_mask):
+        ctx_embeds = self.embeddings(ctx_padded)
+        masked = ctx_embeds * ctx_mask.unsqueeze(-1)
+        ctx_mean = masked.sum(dim=1) / ctx_mask.sum(dim=1, keepdim=True)
+        return self.linear(ctx_mean)
+
+
+class _SBOWEmbedding(nn.Module):
+    """SBOW embedding: just an embedding table, no linear head."""
+
+    def __init__(self, vocab_size, vector_size):
+        super().__init__()
+        self.embeddings = nn.Embedding(vocab_size, vector_size)
+        # Initialise on the unit sphere
+        with torch.no_grad():
+            nn.init.normal_(self.embeddings.weight)
+            self.embeddings.weight.copy_(
+                torch.nn.functional.normalize(self.embeddings.weight, p=2, dim=1)
+            )
+
+
+class StreamingSBOWTrainer:
+    """Two-pass SBOW trainer: build vocab first, then stream-train per sentence.
+
+    Pass 1: Stream documents to count words and build vocabulary.
+    Pass 2: Stream documents again, train SBOW per sentence -- each word
+            predicted from its leave-one-out centroid via full softmax.
+    The model is allocated once at its final size.  Uses SGD to avoid
+    the 2x memory overhead of Adam's momentum buffers.
+    """
+
+    def __init__(self, vector_size=100, min_count=5, learning_rate=0.001):
+        self.vector_size = vector_size
+        self.min_count = min_count
+        self.learning_rate = learning_rate
+
+        self.word_counts = Counter()
+        self.word_to_idx = {}
+        self.idx_to_word = []
+
+        self.device = util.auto_device()
+        print(f"Training on {self.device}")
+
+        self.model = None
+        self.optimizer = None
+        self.neg_samples = 64
+
+        self.n_examples = 0
+        self._total_loss = 0.0
+        self._loss_count = 0
+
+    @property
+    def vocab_size(self):
+        return len(self.idx_to_word)
+
+    @property
+    def avg_loss(self):
+        return self._total_loss / self._loss_count if self._loss_count else 0.0
+
+    # -- Pass 1: vocabulary building ------------------------------------------
+
+    def scan_document(self, text):
+        """Parse one document and count words (no training)."""
+        for sent_text, _ in parse(text, lex='sentences'):
+            for word, _ in parse(sent_text, lex='words'):
+                if word.isspace():
+                    continue
+                self.word_counts[word] += 1
+
+    def build_vocab(self):
+        """Promote words that meet min_count and allocate the model."""
+        for word, count in self.word_counts.items():
+            if count >= self.min_count:
+                self.word_to_idx[word] = len(self.idx_to_word)
+                self.idx_to_word.append(word)
+        self.model = _SBOWEmbedding(self.vocab_size, self.vector_size).to(self.device)
+        self.model = util.compile(self.model)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=self.learning_rate)
+        self.neg_samples = 64
+        print(f"  Vocab: {len(self.word_counts)} unique words -> "
+              f"{self.vocab_size} after min_count={self.min_count}")
+
+    # -- Pass 2: streaming SBOW training --------------------------------------
+
+    def process_document(self, text):
+        """Parse one document, train SBOW on each sentence immediately."""
+        for sent_text, _ in parse(text, lex='sentences'):
+            words = [w for w, _ in parse(sent_text, lex='words')
+                     if not w.isspace()]
+            self._train_sentence(words)
+
+    def _train_sentence(self, words):
+        """SBOW via negative sampling: predict each word from leave-one-out centroid."""
+        word_indices = [self.word_to_idx[w] for w in words
+                        if w in self.word_to_idx]
+        if len(word_indices) < 2:
+            return
+
+        idx = torch.tensor(word_indices, dtype=torch.long, device=self.device)
+        N = len(word_indices)
+
+        vecs = self.model.embeddings(idx)                       # [N, dim]
+        total = vecs.sum(dim=0)                                 # [dim]
+        centroids = (total.unsqueeze(0) - vecs) / (N - 1)       # [N, dim]
+
+        # Negative sampling instead of full softmax
+        K = min(self.neg_samples, self.vocab_size - 1)
+        pos_vecs = self.model.embeddings(idx)                    # [N, dim]
+        pos_scores = (centroids * pos_vecs).sum(dim=1)           # [N]
+
+        neg_idx = torch.randint(0, self.vocab_size, (N, K),
+                                device=self.device)              # [N, K]
+        neg_vecs = self.model.embeddings(neg_idx)                # [N, K, dim]
+        neg_scores = torch.bmm(neg_vecs,
+                               centroids.unsqueeze(2)).squeeze(2) # [N, K]
+
+        loss = -F.logsigmoid(pos_scores).mean() - F.logsigmoid(-neg_scores).mean()
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        self.n_examples += N
+        self._total_loss += loss.item() * N
+        self._loss_count += N
+
+    def finish(self):
+        """Return trained WordVectors (L2-normalized)."""
+        n = self.vocab_size
+        if n == 0:
+            return WordVectors.from_vocab([], vector_size=self.vector_size)
+        with torch.no_grad():
+            vectors = F.normalize(self.model.embeddings.weight, p=2, dim=1)
+            vectors = vectors.detach().cpu().numpy()
+        return WordVectors(vectors, list(self.idx_to_word))
+
+
+# ---------------------------------------------------------------------------
+# End-to-end pipeline
+# ---------------------------------------------------------------------------
+
+def build_embeddings(shard_paths, output_path, max_docs=10000,
+                     vector_size=100, epochs=10, min_count=5,
+                     batch_size=256):
+    trainer = StreamingSBOWTrainer(
+        vector_size=vector_size,
+        min_count=min_count,
+        learning_rate=0.001,
+    )
+
+    # Pass 1: build vocabulary
+    print(f"Pass 1: scanning vocabulary from {len(shard_paths)} shard(s), "
+          f"max_docs={max_docs}...")
+    count = 0
+    for doc in iter_documents(shard_paths, max_docs=max_docs):
+        trainer.scan_document(doc)
+        count += 1
+        if count % 100 == 0:
+            print(f"  Scanned {count} docs, "
+                  f"unique words={len(trainer.word_counts)}", flush=True)
+    trainer.build_vocab()
+
+    # Pass 2: stream-train SBOW (full softmax, per-sentence)
+    print(f"Pass 2: training {vector_size}-dim SBOW, epochs={epochs}...")
+    for epoch in range(epochs):
+        count = 0
+        trainer._total_loss = 0.0
+        trainer._loss_count = 0
+        for doc in iter_documents(shard_paths, max_docs=max_docs):
+            trainer.process_document(doc)
+            count += 1
+            if count % 100 == 0:
+                print(f"  Epoch {epoch+1}/{epochs}: {count} docs, "
+                      f"examples={trainer.n_examples}, "
+                      f"loss={trainer.avg_loss:.4f}", flush=True)
+        print(f"Epoch {epoch+1}/{epochs} complete, loss={trainer.avg_loss:.4f}",
+              flush=True)
+
+    wv = trainer.finish()
+
+    dirname = os.path.dirname(output_path)
+    if dirname:
+        os.makedirs(dirname, exist_ok=True)
+    wv.save(output_path)
+    print(f"Saved embeddings to {output_path} ({len(wv)} words, {vector_size} dims)")
+    return wv
+
+
+def prune_embeddings(path, min_frequency, output=None):
+    """Remove words from a .kv codebook whose frequency is below min_frequency.
+
+    Words are kept when ``count / total_count >= min_frequency``.
+    If ``total_count`` is zero (no frequency data), no pruning is performed.
+
+    Args:
+        path: path to the .kv file to prune
+        min_frequency: minimum frequency ratio for retention (e.g. 0.00001)
+        output: save path; defaults to overwriting the input file
+    """
+    wv = WordVectors.load(path)
+    total = int(wv.total_count)
+
+    if total == 0:
+        print(f"No frequency data in {path} (total_count=0) -- nothing to prune.")
+        return
+
+    prune_indices = [i for i, word in enumerate(wv.index_to_key)
+                     if wv.counts[i] / total < min_frequency]
+    old_size = len(wv)
+    n_pruned = wv.remove(prune_indices)
+    print(f"Vocabulary: {old_size} -> {len(wv)}  ({n_pruned} pruned below {min_frequency})")
+
+    out_path = output or path
+    wv.save(out_path)
+    print(f"Saved to {out_path}")
+
+
+def _find_embeddings(path=None):
+    """Locate and load a .pt embedding file from standard paths."""
+    candidates = [path] if path else [
+        "output/BasicModel.kv",
+        "output/embeddings/sentence.pt",
+        "data/sentence.pt",
+        "sentence.pt",
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            return WordVectors.load(p)
+    print(f"No embedding file found. Searched: {candidates}", file=sys.stderr)
+    print("Run 'make basic_train' to train embeddings first.", file=sys.stderr)
+    sys.exit(1)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Word embeddings: train or explore")
+    sub = parser.add_subparsers(dest="command")
+
+    # --- train subcommand ---
+    train_p = sub.add_parser("train", help="Train CBOW embeddings from FineWeb-EDU")
+    train_p.add_argument('--output', default='output/BasicModel.kv')
+    train_p.add_argument('--data-dir', default=None)
+    train_p.add_argument('--num-shards', type=int, default=1)
+    train_p.add_argument('--max-docs', type=int, default=10000)
+    train_p.add_argument('--vector-size', type=int, default=100)
+    train_p.add_argument('--epochs', type=int, default=10)
+    train_p.add_argument('--min-count', type=int, default=5)
+    train_p.add_argument('--batch-size', type=int, default=256)
+    train_p.add_argument('--random-shards', action='store_true',
+                         help='Randomly select which shards to download')
+    train_p.add_argument('--compile', default=None,
+                         metavar='BACKEND',
+                         help='Compilation backend: none, inductor, eager, aot_eager. '
+                              'Overrides MODEL_COMPILE env var.')
+
+    # --- prune subcommand ---
+    prune_p = sub.add_parser("prune", help="Remove low-frequency words from a .kv codebook")
+    prune_p.add_argument("filename", help="Path to the .kv file to prune")
+    prune_p.add_argument("--min-frequency", type=float, required=True,
+                         help="Minimum frequency ratio for retention (e.g. 0.00001). "
+                              "Matches <minFrequency> in the XML config.")
+    prune_p.add_argument("--output", "-o", default=None,
+                         help="Output path (default: overwrite input file)")
+
+    # --- explore subcommand ---
+    explore_p = sub.add_parser("explore", help="Explore trained embeddings")
+    explore_p.add_argument("words", nargs="*", help="Word(s) to look up")
+    explore_p.add_argument("--path", "-p", default=None, help="Path to .pt file")
+    explore_p.add_argument("--topn", "-n", type=int, default=10)
+    explore_p.add_argument("--vocab", action="store_true", help="Print vocabulary stats")
+
+    args = parser.parse_args()
+
+    if args.command == "prune":
+        prune_embeddings(args.filename, args.min_frequency, output=args.output)
+
+    elif args.command == "explore":
+        import random
+        wv = _find_embeddings(args.path)
+        if args.vocab:
+            print(f"Vocabulary: {len(wv)} words, {wv.vector_size}-dim vectors")
+            print(f"Sample: {', '.join(random.sample(wv.index_to_key, min(20, len(wv))))}")
+        else:
+            wv.explore(args.words, topn=args.topn)
+
+    elif args.command == "train":
+        if args.compile is not None:
+            util.init_compile_backend(args.compile)
+
+        data_dir = args.data_dir
+        if data_dir is None:
+            data_dir = str(Path(__file__).resolve().parent.parent / "data" / "fineweb")
+
+        shard_paths = get_shard_paths(data_dir, num_shards=args.num_shards,
+                                      random_select=args.random_shards)
+        if not shard_paths:
+            print("No shards available.")
+            sys.exit(1)
+
+        build_embeddings(
+            shard_paths=shard_paths,
+            output_path=args.output,
+            max_docs=args.max_docs,
+            vector_size=args.vector_size,
+            epochs=args.epochs,
+            min_count=args.min_count,
+            batch_size=args.batch_size,
+        )
+
+    else:
+        parser.print_help()

@@ -1,0 +1,55 @@
+<?xml version="1.0" ?>
+<model>
+  <architecture>
+    <conceptualOrder>1</conceptualOrder>
+    <modelType>embedding</modelType>
+    <weightsPath>xor_weights.ckpt</weightsPath>
+
+    <data>
+      <dataset>xor</dataset>
+    </data>
+
+    <training>
+      <numEpochs>200</numEpochs>
+      <learningRate>0.01</learningRate>
+      <autosave>true</autosave>
+    </training>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>2</nOutput>
+    <nDim>1</nDim>
+    <nVectors>2</nVectors>
+  </InputSpace>
+
+  <!-- PerceptualSpace: VQ codebook (nVectors=16 > nOutput=4) — codebook=true. -->
+  <PerceptualSpace>
+    <nOutput>4</nOutput>
+    <nDim>1</nDim>
+    <nVectors>16</nVectors>
+    <codebook>true</codebook>
+    <invertible>false</invertible>
+    <hasAttention>false</hasAttention>
+  </PerceptualSpace>
+
+  <!-- ConceptualSpace: VQ codebook (nVectors=16 > nOutput=3) — codebook=true. -->
+  <ConceptualSpace>
+    <nOutput>3</nOutput>
+    <nDim>1</nDim>
+    <nVectors>16</nVectors>
+    <codebook>true</codebook>
+    <invertible>false</invertible>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nOutput>3</nOutput>
+    <nVectors>3</nVectors>
+    <passThrough>true</passThrough>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>1</nDim>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+</model>

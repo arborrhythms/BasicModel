@@ -1,0 +1,219 @@
+<?xml version="1.0" ?>
+<!--
+  model.xml — canonical defaults for BasicModel.
+
+  Every parameter that create_from_config() reads must appear here.
+  Model-specific XML files (XOR_exact.xml, BasicModel.xml, …) override
+  individual values; anything they omit inherits from this file.
+
+  nInput=0  sentinel: for InputSpace, derive from TheData; for other spaces,
+            derive from the previous space's outputShape[0].
+  nOutput=0 sentinel: same as nInput for this space (passthrough count).
+  nVectors=0 sentinel: same as nOutput (used for non-codebook spaces).
+-->
+<model>
+  <architecture>
+    <modelType>simple</modelType>
+    <reconstruct>symbols</reconstruct>
+    <conceptualOrder>1</conceptualOrder>
+    <useButterflies>false</useButterflies>
+    <processSymbols>false</processSymbols>
+    <ergodic>false</ergodic>
+    <naive>false</naive>
+
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <embeddingPath></embeddingPath>
+    <weightsPath></weightsPath>
+    <maxResponseLength>4096</maxResponseLength>
+
+    <data>
+      <!-- dataset: xor | mnist | tomatoes | text | inline | (omit for inference-only) -->
+      <dataset>xor</dataset>
+      <numShards>1</numShards>
+      <maxDocs>10000</maxDocs>
+      <shardDir></shardDir>
+      <minFrequency>0.0</minFrequency>
+      <classificationMin></classificationMin>
+      <classificationMax></classificationMax>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>3</numEpochs>
+      <batchSize>64</batchSize>
+      <numWorkers>0</numWorkers>
+      <learningRate>0.001</learningRate>
+      <reverseScale>0.5</reverseScale>
+      <whatScale>0.7</whatScale>
+      <whereScale>0.2</whereScale>
+      <whenScale>0.1</whenScale>
+      <negSamples>64</negSamples>
+      <TruthLoss>0.0</TruthLoss>
+
+      <maskedPrediction>NONE</maskedPrediction>
+
+      <!-- Embedding training mode: NONE | CBOW | SBOW | BACKPROP | BOTH | JOINT -->
+      <trainEmbedding>NONE</trainEmbedding>
+      <!-- Embedding loss weight in JOINT mode -->
+      <embeddingScale>0.25</embeddingScale>
+
+      <autoload>true</autoload>
+      <autosave>false</autosave>
+      <!-- Save an in-progress weights/embedding checkpoint every N training
+           optimizer steps. 0 disables periodic checkpoints. -->
+      <checkpointEveryBatches>0</checkpointEveryBatches>
+      <profile>false</profile>
+      <certainty>false</certainty>
+
+      <!-- Inter-sentence contrastive loss (DiscourseSpace).  Off by
+           default.  The loss is a dual-force cosine similarity over
+           the flattened [S|W] snapshot: attractive toward the recent
+           context centroid, repulsive from older centroids.  No
+           learnable parameters. -->
+      <sentencePrediction>false</sentencePrediction>
+      <sentenceContextWindow>12</sentenceContextWindow>
+      <sentenceCentroidHistory>3</sentenceCentroidHistory>
+      <sentenceLambda>1.01</sentenceLambda>
+      <sentencePredictionScale>0.1</sentencePredictionScale>
+      <!-- AR predictive loss: cosine distance between the AR
+           sentence predictor's output and the actual current [S|W]
+           snapshot.  Paired with the contrastive loss as a
+           collapse/expand tension on the snapshot geometry. -->
+      <sentencePredictiveScale>0.1</sentencePredictiveScale>
+      <sentenceContrastiveScale>0.1</sentenceContrastiveScale>
+      <!-- Priming: AR prediction cast into concept_dim and added as
+           a bias to concept_input before the sigma-pi loop.  Scaled
+           by confidence * sentencePrimingScale.  Default small. -->
+      <sentencePrimingScale>0.05</sentencePrimingScale>
+    </training>
+
+    <server>
+      <host>127.0.0.1</host>
+      <port>8001</port>
+      <timeout>120</timeout>
+    </server>
+
+  </architecture>
+
+  <WordSpace>
+    <useGrammar>none</useGrammar>
+
+    <!-- SyntacticLayer MLP hidden size (prev hardcoded 64..256). -->
+    <syntacticHiddenDim>64</syntacticHiddenDim>
+
+    <!-- Truth memory capacity (TruthLayer is owned by WordSpace). -->
+    <truthMaxEntries>1024</truthMaxEntries>
+
+    <!-- Phase B: chart-like pair selection in compose.
+         false = legacy left-associative cascade. -->
+    <chartCompose>false</chartCompose>
+
+    <!-- Phase D: emit a codebook head via WordSpace.reconstruct().
+         false = forward() does not populate ``_predicted_head``. -->
+    <downwardGeneration>false</downwardGeneration>
+
+    <language>
+      <grammar>
+        <upward>
+          <rule>S = not(S)</rule>
+        </upward>
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+  </WordSpace>
+
+
+  <InputSpace>
+    <nInput>0</nInput>
+    <nOutput>0</nOutput>
+    <nDim>1</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
+    <nVectors>0</nVectors>
+    <codebook>false</codebook>
+    <lexer>word</lexer>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nInput>0</nInput>
+    <nOutput>0</nOutput>
+    <nDim>1</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
+    <nVectors>0</nVectors>
+    <passThrough>false</passThrough>
+    <hasAttention>true</hasAttention>
+    <invertible>false</invertible>
+    <nonlinear>true</nonlinear>
+    <codebook>false</codebook>
+    <chunking>lexicon</chunking>
+    <chunkingFrequency>2</chunkingFrequency>
+  </PerceptualSpace>
+
+  <ModalSpace>
+    <nInput>0</nInput>
+    <nOutput>0</nOutput>
+    <nDim>1</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
+    <nVectors>0</nVectors>
+    <passThrough>false</passThrough>
+    <hasAttention>true</hasAttention>
+    <invertible>false</invertible>
+    <codebook>false</codebook>
+    <whatPassThrough>false</whatPassThrough>
+    <wherePassThrough>true</wherePassThrough>
+    <whenPassThrough>true</whenPassThrough>
+  </ModalSpace>
+
+  <ConceptualSpace>
+    <nInput>0</nInput>
+    <nOutput>0</nOutput>
+    <nDim>1</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
+    <nVectors>0</nVectors>
+    <hasAttention>false</hasAttention>
+    <invertible>false</invertible>
+    <nonlinear>true</nonlinear>
+    <codebook>false</codebook>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nInput>0</nInput>
+    <nOutput>0</nOutput>
+    <nDim>1</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
+    <nVectors>0</nVectors>
+    <passThrough>false</passThrough>
+    <nonlinear>true</nonlinear>
+    <codebook>false</codebook>
+    <sortNetwork>false</sortNetwork>
+    <sortPasses>0</sortPasses>
+    <l1Lambda>0.01</l1Lambda>
+    <symbolResidualScale>1.0</symbolResidualScale>
+    <outputSymbolResidualScale>0.0</outputSymbolResidualScale>
+    <commitmentBeta>0.25</commitmentBeta>
+    <useVQVAE>false</useVQVAE>
+    <decorrelationWeight>0.0</decorrelationWeight>
+    <spectralFlatnessWeight>0.0</spectralFlatnessWeight>
+    <truthMinMagnitude>0.3</truthMinMagnitude>
+    <truthMinNovelty>0.5</truthMinNovelty>
+    <truthMaxInconsistency>0.3</truthMaxInconsistency>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nInput>0</nInput>
+    <nOutput>0</nOutput>
+    <nDim>1</nDim>
+    <nInputDim>0</nInputDim>
+    <nOutputDim>0</nOutputDim>
+    <nVectors>0</nVectors>
+    <invertible>false</invertible>
+    <codebook>false</codebook>
+    <nonlinear>false</nonlinear>
+  </OutputSpace>
+
+</model>

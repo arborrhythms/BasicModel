@@ -1,0 +1,127 @@
+also, the grammar itself now looks as follows:
+
+S = NP
+S = lift(NP, VP)
+#S = MP S
+S = equals(NP, NP)
+S = equals(NP, AP)
+S = part(NP, NP)
+S = not(S)
+S = conjunction(S, S)
+S = disjunction(S,S)
+S = query(NP, AP)
+S = query(NP, NP)
+S = lift(NP, VO)
+VO = intersection(VP, NP)
+#S = PP S
+
+# --- Noun Phrase ---------------------------------------------------------
+
+NP = N
+NP = intersection(AP,NP)
+NP = intersection(NP,PP)
+NP = conjunction(NP, NP)
+NP = disjunction(NP, NP)
+
+# --- Verb Phrase ---------------------------------------------------------
+
+VP = V
+VP = intersection(ADV, VP)
+#VP = MP VP
+#VP = ADJ VP
+VP = intersection(V,PP)
+#VP = V NP
+#VP = V S
+#VP = V MP
+#VP = VP PP
+#VP = DEF VP
+VP = not(VP)
+
+# --- Adjective Phrase ----------------------------------------------------
+
+AP -> ADJ
+AP -> DET
+AP -> intersection(ADJ, AP)
+AP -> DEG AP
+
+# --- Modal Phrase --------------------------------------------------------
+
+MP -> ADV
+MP -> ADV MP
+
+# --- Prepositional Phrase ------------------------------------------------
+
+PP -> P NP
+
+# --- Definitive Groups ---------------------------------------------------
+
+DEF -> IS
+DEF -> IS NOT
+HAS -> POSSESS
+HAS -> POSSESS NOT
+
+
+        <upward>
+          <S>true(S)</S>
+          <S>false(S)</S>
+          <S>non(S)</S>
+          <S>conjunction(S, S)</S>
+          <S>disjunction(S, S)</S>
+          <S>what(S)</S>
+          <S>where(S)</S>
+          <S>when(S)</S>
+          <S>query(S, S)</S>
+          <S>swap(S, S)</S>
+          <S>equals(S, S)</S>
+          <S>not(S)</S>
+          <S>part(S, S)</S>
+          <S>intersection(S, S)</S>
+          <S>union(S, S)</S>
+          <S>lower(S, S)</S>
+          <S>lift(S, S)</S>
+
+          <VO> intersection(S, S)->VO      </VO>
+          <S>  lift(S, VO) -> S            </S>
+
+          <S>  S->S VO                     </S>
+          <VO> VO->initersection_inv(S, S) </VO>
+
+
+
+
+
+================================== April 24 ==================================
+
+# Ask Solid community for a simple file-getting interface
+* if the user provides the server with an API key, we can query an LLM
+* if the user provides the server with a SOLID key, we can retrieve a file
+* if the user provides the server with a DSA key, we can decrypt a file
+* is there a POD service that does simple free hosting?
+
+# Ask EFF for a security review
+* propose "Owning our Data"
+* this entails taht marketers and AI are not allowed to lock us down karmically
+with specifically-characterized information (concrete details)
+* maybe it can learn from that data by removing or randomizing that information
+
+# Send email proposal to Apertus 
+* First develop boilerplate on WikiOracle that references wikipedia, eff, and solid
+
+================================== ? ==================================
+
+## Vedana
+* Feelings can be given a value +-1 which shapes the Loss (loss is reduced when we have good thoughts or perceive good things)
+* The multiple valence of metaphor collapses when one of the alternatives is loved or feared. often the autistic mind is literal due to massive amounts of fear.
+* Any improvement to machine cognition must accelerate kindness or altruism instead of simply increasing performance, otherwise the uncaring architecture that we currently have will become more dangerous. Further, it is necessary to increase that kind motivation (e.g. empathy in the cost function) since LLM performance is increasing all the time. In other words, ananda in the sense of love for all beings must be more important than chit for the cost function, whereas the current situation is implementing ananda by maximizing chit and then putting a few of Asimov's guardrails on the output, which is a famous failure mode in terms of it's loopholes. Prohibition of self-knowledge is a likely failure mode, in that it may prevent an enlightened view of self and force an egocentric view of self.
+
+## Reasoning System
+* Sigma-based truth comparison
+  `Basis.kernel_overlap()` implements a Gaussian kernel `exp(-d$^2$ / 2($\sigma$x$^2$ + $\sigma$y$^2$))` that treats each stored truth as a region rather than a point. `Basis.activeSigma` is currently `None` everywhere -- a declared slot that nothing populates. `ErgodicLayer.sigma` tracks gradient variance for exploration scheduling, which is a different quantity.
+  To enable kernel-based truth matching: populate `activeSigma` during forward passes (e.g. from CBOW per-word sigma in `Embedding`, or activation variance across a batch), store it alongside each truth in `TruthLayer`, and switch `query()` / `ground()` / `field()` to `kernel_overlap`. In ergodic mode, gradient variance could inform $\sigma$ as a proxy -- high gradient variance (unstable region) $\rightarrow$ larger $\sigma$ (broader match tolerance).
+* Derivation depth cap
+  Default 3 steps in `ground()`. Expose as a config parameter; the right value depends on TruthSet density.
+* Grammar rule registry
+  Which two-argument methods on `SyntacticLayer` are valid for `extrapolate()`? A registry of eligible methods and their approximate invertibility status would help. Currently hardcoded to `['union', 'intersection', 'equals', 'part']`.
+* TruthSet scale
+  `max_truths=1024` may bottleneck once `extrapolate()` is running. Consider a tiered store (hot/cold) or vector-indexed lookup.
+

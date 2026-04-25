@@ -1,9 +1,11 @@
+flask
 numpy
-torch
+torch>=2.5
 torchviz
 matplotlib
 datasets
 scikit-learn
 pandas
-vector_quantize_pytorch
 torchvision
+pytest
+vector_quantize_pytorch

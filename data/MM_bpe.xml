@@ -1,0 +1,105 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- MM_xor: MentalModel topology on XOR dataset for convergence testing.
+       Based on MM_1B architecture (iterative [Percept,Symbol]->Concept->Symbol)
+       but scaled to XOR-sized dims. -->
+  <architecture>
+    <conceptualOrder>3</conceptualOrder>
+    <useButterflies>false</useButterflies>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <processSymbols>false</processSymbols>
+    <type>mental</type>
+    <ergodic>false</ergodic>
+    <modelType>embedding</modelType>
+    <maskedPrediction>NONE</maskedPrediction>
+    <truthBiasScale>0.1</truthBiasScale>
+    <LuminosityWeight>0.1</LuminosityWeight>
+    <UniversalityWeight>0.1</UniversalityWeight>
+    <weightsPath></weightsPath>
+
+    <data>
+      <dataset>xor</dataset>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>400</numEpochs>
+      <batchSize>64</batchSize>
+      <learningRate>0.01</learningRate>
+      <reverseScale>0.1</reverseScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+      <autosave>false</autosave>
+      <certainty>false</certainty>
+    </training>
+
+  </architecture>
+
+  <InputSpace>
+    <nDim>10</nDim>
+    <nVectors>8</nVectors>
+    <nOutput>32</nOutput>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <lexer>byte</lexer>
+    <codebook>false</codebook>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>10</nDim>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <nVectors>512</nVectors>
+    <passThrough>false</passThrough>
+    <hasAttention>false</hasAttention>
+    <invertible>true</invertible>
+    <codebook>true</codebook>
+    <chunking>bpe</chunking>
+    <chunkingFrequency>2</chunkingFrequency>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>10</nDim>
+    <nVectors>8</nVectors>
+    <hasAttention>false</hasAttention>
+    <invertible>true</invertible>
+    <codebook>false</codebook>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nOutput>8</nOutput>
+    <nDim>10</nDim>
+    <nVectors>8</nVectors>
+    <passThrough>false</passThrough>
+    <l1Lambda>0.01</l1Lambda>
+    <accumulateTruth>0</accumulateTruth>
+    <codebook>true</codebook>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>1</nDim>
+    <nVectors>1</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+  </OutputSpace>
+
+  <WordSpace>
+    <useGrammar>none</useGrammar>
+    <language>
+      <grammar>
+        <S>not(S)</S>
+        <S>intersection(S, S)</S>
+        <S>union(S, S)</S>
+        <S>lower(S, S)</S>
+        <S>lift(S, S)</S>
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+  </WordSpace>
+
+</model>

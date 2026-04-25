@@ -1,0 +1,145 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- MM_5M: MentalModel ~5M params with byte input and hierarchical
+       progressive bottleneck. 8 levels from 1024x4 to 4x1024 (N*D=4096). -->
+  <architecture>
+    <conceptualOrder>3</conceptualOrder>
+    <useButterflies>true</useButterflies>
+    <l1Lambda>0.01</l1Lambda>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
+    <processSymbols>false</processSymbols>
+    <type>mental</type>
+    <ergodic>false</ergodic>
+    <modelType>embedding</modelType>
+    <truthBiasScale>0.1</truthBiasScale>
+    <LuminosityWeight>0.1</LuminosityWeight>
+    <UniversalityWeight>0.1</UniversalityWeight>
+    <maxResponseLength>4096</maxResponseLength>
+    <weightsPath>MM_5M.ckpt</weightsPath>
+    <embeddingPath>MM_5M.kv</embeddingPath>
+
+    <data>
+      <shardDir>data/fineweb</shardDir>
+      <numShards>1</numShards>
+      <maxDocs>10000</maxDocs>
+      <minFrequency>0.00001</minFrequency>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>2</numEpochs>
+      <batchSize>1</batchSize>
+      <numWorkers>0</numWorkers>
+      <learningRate>0.0005</learningRate>
+      <reverseScale>0.1</reverseScale>
+      <maskedPrediction>ARIR</maskedPrediction>
+      <trainEmbedding>ARLM</trainEmbedding>
+      <autoload>false</autoload>
+      <autosave>true</autosave>
+      <sentencePrediction>true</sentencePrediction>
+      <sentenceContextWindow>5</sentenceContextWindow>
+      <sentenceCentroidHistory>3</sentenceCentroidHistory>
+      <sentenceLambda>1.01</sentenceLambda>
+      <sentencePredictionScale>0.1</sentencePredictionScale>
+      <certainty>false</certainty>
+    </training>
+
+    <server>
+      <host>127.0.0.1</host>
+      <port>8003</port>
+      <timeout>120</timeout>
+    </server>
+
+  </architecture>
+
+  <InputSpace>
+    <nDim>6</nDim>
+    <nVectors>1024</nVectors>
+    <nOutput>1024</nOutput>
+    <nWhere>2</nWhere>
+    <nWhen>0</nWhen>
+    <lexer>byte</lexer>
+    <codebook>false</codebook>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nInput>1024</nInput>
+    <nVectors>4096</nVectors>
+    <nDim>6</nDim>
+    <nWhere>2</nWhere>
+    <nWhen>0</nWhen>
+    <nOutput>1024</nOutput>
+    <passThrough>false</passThrough>
+    <hasAttention>false</hasAttention>
+    <invertible>false</invertible>
+    <codebook>true</codebook>
+    <chunking>bpe</chunking>
+    <chunkingFrequency>2</chunkingFrequency>
+  </PerceptualSpace>
+
+  <!-- ConceptualSpace: final level shape is 4x1024.
+       Hierarchical mode computes per-level shapes dynamically via _level_shapes. -->
+  <ConceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>1024</nDim>
+    <nVectors>8</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <hasAttention>false</hasAttention>
+    <invertible>false</invertible>
+    <codebook>true</codebook>
+    <chunking>lexicon</chunking>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nInput>1024</nInput>
+    <nInputDim>8</nInputDim>
+    <nVectors>1024</nVectors>
+    <nDim>6</nDim>
+    <nWhere>2</nWhere>
+    <nWhen>0</nWhen>
+    <nOutput>1024</nOutput>
+
+    <passThrough>false</passThrough>
+    <accumulateTruth>0</accumulateTruth>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>4</nDim>
+    <nVectors>1</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+  </OutputSpace>
+
+
+  <WordSpace>
+    <useGrammar>none</useGrammar>
+
+    <language>
+      <grammar>
+        <S>true(S)</S>
+        <S>false(S)</S>
+        <S>non(S)</S>
+        <S>conjunction(S, S)</S>
+        <S>disjunction(S, S)</S>
+        <S>what(S)</S>
+        <S>where(S)</S>
+        <S>when(S)</S>
+        <S>query(S, S)</S>
+        <S>swap(S, S)</S>
+        <S>equals(S, S)</S>
+        <S>part(S, S)</S>
+        <S>not(S)</S>
+        <S>intersection(S, S)</S>
+        <S>union(S, S)</S>
+        <S>lower(S, S)</S>
+        <S>lift(S, S)</S>
+        <S>lift(S, S, S)</S>
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+  </WordSpace>
+
+</model>

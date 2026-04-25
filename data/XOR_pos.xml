@@ -1,0 +1,67 @@
+<?xml version="1.0" ?>
+<model>
+  <architecture>
+    <conceptualOrder>1</conceptualOrder>
+    <modelType>embedding</modelType>
+    <ergodic>false</ergodic>
+    <weightsPath></weightsPath>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
+
+    <data>
+      <dataset>xor</dataset>
+    </data>
+
+    <training>
+      <numEpochs>200</numEpochs>
+      <learningRate>0.01</learningRate>
+      <autosave>false</autosave>
+      <autoload>false</autoload>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+    </training>
+  </architecture>
+
+  <!-- InputSpace: nOutput=6; objectSize=4, embSize=nDim+objectSize=10+4=14. -->
+  <InputSpace>
+    <nOutput>6</nOutput>
+    <nDim>10</nDim>
+    <nVectors>6</nVectors>
+    <nInputDim>-1</nInputDim>
+  </InputSpace>
+
+  <!-- PerceptualSpace: invertible, flattened input. -->
+  <PerceptualSpace>
+    <nOutput>6</nOutput>
+    <nDim>10</nDim>
+    <nVectors>6</nVectors>
+    <nInputDim>-1</nInputDim>
+    <invertible>true</invertible>
+    <hasAttention>false</hasAttention>
+  </PerceptualSpace>
+
+  <!-- ConceptualSpace: nOutput=6, nVectors=6 (non-quantized: nVectors==nOutput). -->
+  <ConceptualSpace>
+    <nOutput>6</nOutput>
+    <nDim>10</nDim>
+    <nVectors>6</nVectors>
+    <nInputDim>-1</nInputDim>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <!-- SymbolicSpace: nOutput = ConceptualSpace.nOutput = 6 -->
+  <SymbolicSpace>
+    <nOutput>6</nOutput>
+    <nDim>10</nDim>
+    <nVectors>6</nVectors>
+    <nInputDim>-1</nInputDim>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>1</nDim>
+    <nVectors>1</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+  </OutputSpace>
+</model>

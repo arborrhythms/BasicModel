@@ -1,4 +1,14 @@
-.DS_Store
-data/.DS_Store
-__pycache__/*
+bin/__pycache__/*
+test/__init__.py
+test/__pycache__/*
+data/MNIST/
+data/embeddings/
 output/*
+.DS_Store
+*/.DS_Store
+.venv/
+data/fineweb/*
+bin/etc/__pycache__/*
+doc/research/conceptual-spaces-elaborations-and-applications-1st-ed-978-3-030-12799-2978-3-03.pdf
+data/BasicModel.ckpt
+data/BasicModel.kv

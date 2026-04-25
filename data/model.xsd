@@ -1,0 +1,486 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <!-- Root element -->
+  <xs:element name="model">
+    <xs:complexType>
+      <xs:all>
+        <xs:element name="architecture" type="architectureType"/>
+        <xs:element name="mentalModel" type="mentalModelType" minOccurs="0"/>
+        <xs:element name="InputSpace" type="inputSpaceType" minOccurs="0"/>
+        <xs:element name="PerceptualSpace" type="perceptualSpaceType" minOccurs="0"/>
+        <xs:element name="ModalSpace" type="modalSpaceType" minOccurs="0"/>
+        <xs:element name="ConceptualSpace" type="conceptualSpaceType" minOccurs="0"/>
+        <xs:element name="SymbolicSpace" type="symbolicSpaceType" minOccurs="0"/>
+        <xs:element name="OutputSpace" type="outputSpaceType" minOccurs="0"/>
+        <xs:element name="WordSpace" type="wordSpaceType" minOccurs="0"/>
+        <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
+        <xs:element name="embeddings" type="embeddingsType" minOccurs="0"/>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- TetralemmaPolicy: shared 4-valued (catuskoti) balance policy
+       inherited by ConceptualSpace and SymbolicSpace unless their
+       <tetralemmaOverride enabled="true"> opts out. -->
+  <xs:complexType name="tetralemmaPolicyType">
+    <xs:all>
+      <xs:element name="allowExcludedMiddle" type="xs:integer" minOccurs="0"/>
+      <xs:element name="allowContradiction" type="xs:integer" minOccurs="0"/>
+      <xs:element name="neitherThreshold" type="nonNegativeFloat" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- Per-space override marker. enabled="true" means the space
+       block defines its own <TetralemmaPolicy>; default inherits. -->
+  <xs:complexType name="tetralemmaOverrideType">
+    <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Architecture (top-level config shared by all model types)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="architectureType">
+    <xs:all>
+      <xs:element name="modelType" type="modelTypeEnum" minOccurs="0"/>
+      <xs:element name="conceptualOrder" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="processSymbols" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="ergodic" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="naive" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="reconstruct" type="reconstructEnum" minOccurs="0"/>
+      <xs:element name="maskedPrediction" type="maskedPredictionEnum" minOccurs="0"/>
+      <xs:element name="maxResponseLength" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="data" type="dataType" minOccurs="0"/>
+      <xs:element name="training" type="trainingType" minOccurs="0"/>
+      <xs:element name="server" type="serverType" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="embeddingPath" type="xs:string" minOccurs="0"/>
+      <xs:element name="weightsPath" type="xs:string" minOccurs="0"/>
+      <xs:element name="useButterflies" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="monotonic" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="type" type="xs:string" minOccurs="0"/>
+      <xs:element name="truthBiasScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="LuminosityWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="UniversalityWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <!-- Quaternary-corner balance knobs (tetralemma / catuskoti): select
+           which corners of {T, F, N, B} are permitted during training. See
+           basicmodel/doc/BuddhistParallels.md for the 4-valued (quaternary)
+           truth semantics.
+             allowExcludedMiddle:  1  = permit NEITHER (default)
+                                  -1  = forbid NEITHER (classical LEM)
+             allowContradiction:   0  = forbid BOTH (default, non-contradiction)
+                                   1  = permit BOTH (paraconsistent / LP)
+       -->
+      <xs:element name="allowExcludedMiddle" type="xs:integer" minOccurs="0"/>
+      <xs:element name="allowContradiction" type="xs:integer" minOccurs="0"/>
+      <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="discontinuityLambda" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="useSubspaceActivation" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="amp" type="ampModeEnum" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       MentalModel section — present only for MentalModel configs
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="mentalModelType">
+    <xs:all>
+      <xs:element name="grammar" type="grammarType" minOccurs="0"/>
+      <xs:element name="interpretation" type="unitInterval" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Enumerations
+       ═══════════════════════════════════════════════════════════════════ -->
+
+  <xs:simpleType name="modelTypeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="simple"/>
+      <xs:enumeration value="embedding"/>
+      <xs:enumeration value="passthrough"/>
+      <xs:enumeration value="vq"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="maskedPredictionEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="NONE"/>
+      <xs:enumeration value="none"/>
+      <xs:enumeration value="MLM"/>
+      <xs:enumeration value="ARLM"/>
+      <xs:enumeration value="ARUS"/>
+      <xs:enumeration value="RARLM"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ampModeEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="off"/>
+      <xs:enumeration value="fp16"/>
+      <xs:enumeration value="bf16"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="reconstructEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="none"/>
+      <xs:enumeration value="symbols"/>
+      <xs:enumeration value="concepts"/>
+      <xs:enumeration value="output"/>
+      <xs:enumeration value="both"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="trainEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="NONE"/>
+      <xs:enumeration value="CBOW"/>
+      <xs:enumeration value="SBOW"/>
+      <xs:enumeration value="ARLM"/>
+      <xs:enumeration value="BOTH"/>
+      <xs:enumeration value="JOINT"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="datasetEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="xor"/>
+      <xs:enumeration value="mnist"/>
+      <xs:enumeration value="tomatoes"/>
+      <xs:enumeration value="text"/>
+      <xs:enumeration value="inline"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="lexerEnum">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="word"/>
+      <xs:enumeration value="sentence"/>
+      <xs:enumeration value="byte"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="unitInterval">
+    <xs:restriction base="xs:float">
+      <xs:minInclusive value="0.0"/>
+      <xs:maxInclusive value="1.0"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="nonNegativeFloat">
+    <xs:restriction base="xs:float">
+      <xs:minInclusive value="0.0"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="positiveFloat">
+    <xs:restriction base="xs:float">
+      <xs:minExclusive value="0.0"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Data section
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="dataType">
+    <!-- xs:choice allows multiple <input>/<output> elements (inline data mode) -->
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="dataset" type="datasetEnum"/>
+      <xs:element name="numShards" type="xs:positiveInteger"/>
+      <xs:element name="maxDocs" type="xs:positiveInteger"/>
+      <xs:element name="shardDir" type="xs:string"/>
+      <xs:element name="minFrequency" type="nonNegativeFloat"/>
+      <xs:element name="classificationMin" type="xs:string"/>
+      <xs:element name="classificationMax" type="xs:string"/>
+      <xs:element name="input">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="use" type="xs:string"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="output">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="use" type="xs:string"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+    </xs:choice>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Training section
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="trainingType">
+    <xs:all>
+      <xs:element name="numTrials" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="numEpochs" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="batchSize" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- DataLoader prefetch workers. 0 means synchronous in-process
+           batch assembly. -->
+      <xs:element name="numWorkers" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="learningRate" type="positiveFloat" minOccurs="0"/>
+      <xs:element name="reverseScale" type="unitInterval" minOccurs="0"/>
+      <xs:element name="whatScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="whereScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="whenScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="negSamples" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="TruthLoss" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="maskedPrediction" type="maskedPredictionEnum" minOccurs="0"/>
+      <xs:element name="trainEmbedding" type="trainEnum" minOccurs="0"/>
+      <xs:element name="embeddingScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="autoload" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="autosave" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="checkpointEveryBatches" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="profile" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
+      <!-- Inter-sentence contrastive loss (DiscourseSpace):
+           attractive cosine to recent centroid, repulsive cosine
+           from older centroids.  No learnable parameters. -->
+      <xs:element name="sentencePrediction" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="sentenceContextWindow" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="sentenceCentroidHistory" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="sentenceLambda" type="positiveFloat" minOccurs="0"/>
+      <xs:element name="sentencePredictionScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="sentencePredictiveScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="sentenceContrastiveScale" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="sentencePrimingScale" type="nonNegativeFloat" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Server section
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="serverType">
+    <xs:all>
+      <xs:element name="host" type="xs:string" minOccurs="0"/>
+      <xs:element name="port" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="timeout" type="xs:positiveInteger" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Space types
+       ═══════════════════════════════════════════════════════════════════ -->
+
+  <xs:complexType name="inputSpaceType">
+    <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="lexer" type="lexerEnum" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="perceptualSpaceType">
+    <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="chunkingFrequency" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="chunking" minOccurs="0">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="bpe"/>
+            <xs:enumeration value="lexicon"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="modalSpaceType">
+    <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="whatPassThrough" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="wherePassThrough" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="whenPassThrough" type="xs:boolean" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="conceptualSpaceType">
+    <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="hasAttention" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="tetralemmaOverride" type="tetralemmaOverrideType" minOccurs="0"/>
+      <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="symbolicSpaceType">
+    <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="passThrough" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="accumulateTruth" type="unitInterval" minOccurs="0"/>
+      <xs:element name="sortNetwork" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="sortPasses" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="l1Lambda" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="discontinuityLambda" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="symbolResidualScale" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="outputSymbolResidualScale" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="commitmentBeta" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="useVQVAE" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="decorrelationWeight" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="spectralFlatnessWeight" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="impenetrableAntisymmetry" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="impenetrableTransitivity" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="impenetrableVariance" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="truthMinMagnitude" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="truthMinNovelty" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="truthMaxInconsistency" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="tetralemmaOverride" type="tetralemmaOverrideType" minOccurs="0"/>
+      <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="outputSpaceType">
+    <xs:all>
+      <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nDim" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nInputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nOutputDim" type="xs:integer" minOccurs="0"/>
+      <xs:element name="nVectors" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="invertible" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="codebook" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="nonlinear" type="xs:boolean" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       WordSpace section — unified container for grammar infrastructure
+       (SyntacticLayers, TruthLayer). The DiscourseSpace toggle and
+       its training hyperparameters live under <architecture><training>
+       (sentencePrediction / sentenceContextWindow /
+       sentenceCentroidHistory / sentenceLambda /
+       sentencePredictionScale / sentencePredictiveScale /
+       sentenceContrastiveScale / sentencePrimingScale).
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:simpleType name="useGrammarType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="all"/>
+      <xs:enumeration value="thoughtFree"/>
+      <xs:enumeration value="none"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="wordSpaceType">
+    <xs:all>
+      <xs:element name="useGrammar" type="useGrammarType" minOccurs="0"/>
+      <xs:element name="syntacticHiddenDim" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="truthMaxEntries" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="nWhere" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="nWhen" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="chartCompose" type="xs:boolean" minOccurs="0"/>
+      <!-- Downward generation: when true, MentalModel.forward() emits a
+           codebook head via WordSpace.reconstruct() and stashes it on
+           self._predicted_head for downstream (e.g. loss) consumption. -->
+      <xs:element name="downwardGeneration" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="language" type="languageType" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="embeddingsType">
+    <xs:all>
+      <xs:element name="numShards" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="maxDocs" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="vectorSize" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="trainingEpochs" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="minCount" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="artifactPath" type="xs:string" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       Language section (inside <WordSpace>)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <xs:complexType name="languageType">
+    <xs:all>
+      <xs:element name="grammar" type="grammarType" minOccurs="0"/>
+      <xs:element name="interpretation" type="unitInterval" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="grammarType">
+    <!-- <grammar> splits into <upward> (parsing / chart compose) and
+         <downward> (generation from a deep state). Within each section
+         each child element is a nonterminal ('S', 'VO', 'NP', 'VP', 'V',
+         'O', 'C'...) and its content is the RHS in either function-call
+         form ('not(S)' / 'lift(S, S)') or typed bare-symbol form
+         ('V O' / 'S VO' / 'C'). The legacy flat form (nonterminal tags
+         directly under <grammar>) is still accepted by Grammar.configure()
+         for Python callers, but XMLs shipped in this repo should use the
+         split form so the XSD can validate them. -->
+    <xs:all>
+      <xs:element name="upward" type="grammarSectionType" minOccurs="0"/>
+      <xs:element name="downward" type="grammarSectionType" minOccurs="0"/>
+    </xs:all>
+  </xs:complexType>
+
+  <xs:complexType name="grammarSectionType">
+    <xs:sequence>
+      <xs:any processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>

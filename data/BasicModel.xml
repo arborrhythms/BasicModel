@@ -1,0 +1,97 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- BasicModel chatbot: ~80K params, masked-word prediction with reconstruction -->
+  <architecture>
+    <conceptualOrder>1</conceptualOrder>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
+    <processSymbols>false</processSymbols>
+    <ergodic>false</ergodic>
+    <modelType>embedding</modelType>
+    <maxResponseLength>4096</maxResponseLength>
+    <weightsPath>BasicModel.ckpt</weightsPath>
+    <embeddingPath>BasicModel.kv</embeddingPath>
+
+    <data>
+      <shardDir>data/fineweb</shardDir>
+      <numShards>1</numShards>
+      <maxDocs>10000</maxDocs>
+      <minFrequency>0.00001</minFrequency>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>2</numEpochs>
+      <batchSize>128</batchSize>
+      <numWorkers>0</numWorkers>
+      <learningRate>0.001</learningRate>
+      <reverseScale>0.1</reverseScale>
+      <maskedPrediction>ARLM</maskedPrediction>
+      <trainEmbedding>ARLM</trainEmbedding>
+      <autoload>true</autoload>
+      <autosave>true</autosave>
+      <checkpointEveryBatches>500</checkpointEveryBatches>
+      <sentencePrediction>true</sentencePrediction>
+      <sentenceContextWindow>5</sentenceContextWindow>
+      <sentenceCentroidHistory>3</sentenceCentroidHistory>
+      <sentenceLambda>1.01</sentenceLambda>
+      <sentencePredictionScale>0.1</sentencePredictionScale>
+      <certainty>false</certainty>
+    </training>
+
+    <server>
+      <host>127.0.0.1</host>
+      <port>8001</port>
+      <timeout>120</timeout>
+    </server>
+  </architecture>
+
+  <InputSpace>
+    <nOutput>128</nOutput>
+    <nDim>100</nDim>
+    <nVectors>128</nVectors>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
+    <lexer>sentence</lexer>
+    <codebook>true</codebook>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nOutput>128</nOutput>
+    <nDim>100</nDim>
+    <nVectors>128</nVectors>
+    <passThrough>false</passThrough>
+    <hasAttention>true</hasAttention>
+    <invertible>true</invertible>
+    <codebook>false</codebook>
+  </PerceptualSpace>
+
+  <!-- ConceptualSpace: nVectors = 2 * PerceptualSpace.nVectors = 128
+       (invertible doubles sequence length). nActive = 2 * InputSpace.nActive = 256. -->
+  <ConceptualSpace>
+    <nOutput>128</nOutput>
+    <nDim>100</nDim>
+    <nVectors>128</nVectors>
+    <hasAttention>false</hasAttention>
+    <nInputDim>-1</nInputDim>
+    <invertible>true</invertible>
+    <codebook>true</codebook>
+  </ConceptualSpace>
+
+  <!-- SymbolicSpace: passThrough — nActive = nVectors = ConceptualSpace.nActive = 256 -->
+  <SymbolicSpace>
+    <nOutput>128</nOutput>
+    <nDim>100</nDim>
+    <nVectors>128</nVectors>
+    <passThrough>true</passThrough>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>100</nDim>
+    <nVectors>1</nVectors>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
+  </OutputSpace>
+
+</model>

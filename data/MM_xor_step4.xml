@@ -1,0 +1,84 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- Step 4: Step 3 + useButterflies=true, conceptualOrder=3, nVectors=8 (hierarchical butterfly) -->
+  <architecture>
+    <conceptualOrder>3</conceptualOrder>
+    <useButterflies>true</useButterflies>
+    <modelType>embedding</modelType>
+    <ergodic>true</ergodic>
+    <naive>false</naive>
+    <type>mental</type>
+    <nWhere>2</nWhere>
+    <nWhen>0</nWhen>
+    <weightsPath></weightsPath>
+
+    <data>
+      <dataset>xor</dataset>
+    </data>
+
+    <training>
+      <numEpochs>200</numEpochs>
+      <learningRate>0.01</learningRate>
+      <autosave>false</autosave>
+      <autoload>false</autoload>
+      <reverseScale>0.5</reverseScale>
+      <maskedPrediction>NONE</maskedPrediction>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+    </training>
+
+  </architecture>
+
+  <WordSpace>
+    <useGrammar>none</useGrammar>
+    <language>
+      <grammar>
+        <S>not(S)</S>
+        <S>intersection(S, S)</S>
+        <S>union(S, S)</S>
+        <S>lower(S, S)</S>
+        <S>lift(S, S)</S>
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+  </WordSpace>
+
+  <InputSpace>
+    <nOutput>8</nOutput>
+    <nDim>10</nDim>
+    <nVectors>8</nVectors>
+    <nInputDim>-1</nInputDim>
+    <nWhere>2</nWhere>
+    <nWhen>0</nWhen>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>10</nDim>
+    <nVectors>8</nVectors>
+    <nInputDim>-1</nInputDim>
+    <invertible>true</invertible>
+    <hasAttention>false</hasAttention>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nOutput>16</nOutput>
+    <nDim>12</nDim>
+    <nVectors>16</nVectors>
+    <nInputDim>-1</nInputDim>
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nOutput>8</nOutput>
+    <nDim>10</nDim>
+    <nVectors>8</nVectors>
+    <nInputDim>-1</nInputDim>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>1</nDim>
+    <nVectors>1</nVectors>
+  </OutputSpace>
+</model>

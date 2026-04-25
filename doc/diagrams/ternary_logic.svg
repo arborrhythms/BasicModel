@@ -1,0 +1,106 @@
+<svg width='970' height='530' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' >
+  <rect width='970' height='530' fill='#fafafa'/>
+<defs><marker id='arrd' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2c3e50'/></marker></defs>
+<rect x='0' y='0' width='970' height='44' fill='#2c3e50' fill-opacity='1.0' rx='0'/>
+<text x='485' y='29' text-anchor='middle' font-size='18' fill='white' font-weight='bold'>Ternary Logic Operators</text>
+<text x='485' y='66' text-anchor='middle' font-size='13' fill='#626567'>+1 = true     0 = unknown     −1 = false</text>
+<text x='110' y='92' text-anchor='middle' font-size='13' fill='#2c3e50' font-weight='bold'>NOT  ( neg(a) = −a )</text>
+<rect x='40' y='100' width='70' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='75' y='123' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>a</text>
+<rect x='110' y='100' width='70' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='145' y='123' text-anchor='middle' font-size='13' fill='white' font-weight='bold'>¬a</text>
+<rect x='40' y='136' width='70' height='36' fill='#d5f5e3' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='75' y='159' text-anchor='middle' font-size='14' fill='#1a7a38' font-weight='bold'>+1</text>
+<rect x='110' y='136' width='70' height='36' fill='#fadbd8' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='145' y='159' text-anchor='middle' font-size='13' fill='#922b21' font-weight='bold'>−1</text>
+<rect x='40' y='172' width='70' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='75' y='195' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>0</text>
+<rect x='110' y='172' width='70' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='145' y='195' text-anchor='middle' font-size='13' fill='#626567' font-weight='bold'>0</text>
+<rect x='40' y='208' width='70' height='36' fill='#fadbd8' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='75' y='231' text-anchor='middle' font-size='14' fill='#922b21' font-weight='bold'>−1</text>
+<rect x='110' y='208' width='70' height='36' fill='#d5f5e3' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='145' y='231' text-anchor='middle' font-size='13' fill='#1a7a38' font-weight='bold'>+1</text>
+<text x='300' y='92' text-anchor='middle' font-size='13' fill='#2c3e50' font-weight='bold'>NON  ( non(a) = 0 )</text>
+<rect x='230' y='100' width='70' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='265' y='123' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>a</text>
+<rect x='300' y='100' width='70' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='335' y='123' text-anchor='middle' font-size='13' fill='white' font-weight='bold'>non(a)</text>
+<rect x='230' y='136' width='70' height='36' fill='#d5f5e3' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='265' y='159' text-anchor='middle' font-size='14' fill='#1a7a38' font-weight='bold'>+1</text>
+<rect x='300' y='136' width='70' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='335' y='159' text-anchor='middle' font-size='13' fill='#626567' font-weight='bold'>0</text>
+<rect x='230' y='172' width='70' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='265' y='195' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>0</text>
+<rect x='300' y='172' width='70' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='335' y='195' text-anchor='middle' font-size='13' fill='#626567' font-weight='bold'>0</text>
+<rect x='230' y='208' width='70' height='36' fill='#fadbd8' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='265' y='231' text-anchor='middle' font-size='14' fill='#922b21' font-weight='bold'>−1</text>
+<rect x='300' y='208' width='70' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='335' y='231' text-anchor='middle' font-size='13' fill='#626567' font-weight='bold'>0</text>
+<line x1='0' y1='255' x2='970' y2='255' stroke='#ddd' stroke-width='1.5'/>
+<text x='150' y='279' text-anchor='middle' font-size='13' fill='#2c3e50' font-weight='bold'>Intersection  ( agree → min|a,b| )</text>
+<rect x='30' y='287' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='60' y='310' text-anchor='middle' font-size='14' fill='white'>a \ b</text>
+<rect x='90' y='287' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='120' y='310' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>+1</text>
+<rect x='150' y='287' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='180' y='310' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>0</text>
+<rect x='210' y='287' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='240' y='310' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>−1</text>
+<rect x='30' y='323' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='60' y='346' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>+1</text>
+<rect x='90' y='323' width='60' height='36' fill='#d5f5e3' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='120' y='346' text-anchor='middle' font-size='14' fill='#1a7a38' font-weight='bold'>+1</text>
+<rect x='150' y='323' width='60' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='180' y='346' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>0</text>
+<rect x='210' y='323' width='60' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='240' y='346' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>0</text>
+<rect x='30' y='359' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='60' y='382' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>0</text>
+<rect x='90' y='359' width='60' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='120' y='382' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>0</text>
+<rect x='150' y='359' width='60' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='180' y='382' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>0</text>
+<rect x='210' y='359' width='60' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='240' y='382' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>0</text>
+<rect x='30' y='395' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='60' y='418' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>−1</text>
+<rect x='90' y='395' width='60' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='120' y='418' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>0</text>
+<rect x='150' y='395' width='60' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='180' y='418' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>0</text>
+<rect x='210' y='395' width='60' height='36' fill='#fadbd8' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='240' y='418' text-anchor='middle' font-size='14' fill='#922b21' font-weight='bold'>−1</text>
+<text x='450' y='279' text-anchor='middle' font-size='13' fill='#2c3e50' font-weight='bold'>Union  ( agree → max|a,b|; 0 absorbs )</text>
+<rect x='330' y='287' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='360' y='310' text-anchor='middle' font-size='14' fill='white'>a \ b</text>
+<rect x='390' y='287' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='420' y='310' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>+1</text>
+<rect x='450' y='287' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='480' y='310' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>0</text>
+<rect x='510' y='287' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='540' y='310' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>−1</text>
+<rect x='330' y='323' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='360' y='346' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>+1</text>
+<rect x='390' y='323' width='60' height='36' fill='#d5f5e3' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='420' y='346' text-anchor='middle' font-size='14' fill='#1a7a38' font-weight='bold'>+1</text>
+<rect x='450' y='323' width='60' height='36' fill='#d5f5e3' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='480' y='346' text-anchor='middle' font-size='14' fill='#1a7a38' font-weight='bold'>+1</text>
+<rect x='510' y='323' width='60' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='540' y='346' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>0</text>
+<rect x='330' y='359' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='360' y='382' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>0</text>
+<rect x='390' y='359' width='60' height='36' fill='#d5f5e3' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='420' y='382' text-anchor='middle' font-size='14' fill='#1a7a38' font-weight='bold'>+1</text>
+<rect x='450' y='359' width='60' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='480' y='382' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>0</text>
+<rect x='510' y='359' width='60' height='36' fill='#fadbd8' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='540' y='382' text-anchor='middle' font-size='14' fill='#922b21' font-weight='bold'>−1</text>
+<rect x='330' y='395' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='360' y='418' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>−1</text>
+<rect x='390' y='395' width='60' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='420' y='418' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>0</text>
+<rect x='450' y='395' width='60' height='36' fill='#fadbd8' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='480' y='418' text-anchor='middle' font-size='14' fill='#922b21' font-weight='bold'>−1</text>
+<rect x='510' y='395' width='60' height='36' fill='#fadbd8' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='540' y='418' text-anchor='middle' font-size='14' fill='#922b21' font-weight='bold'>−1</text>
+<text x='750' y='279' text-anchor='middle' font-size='13' fill='#2c3e50' font-weight='bold'>PART  ( mereological, range [0, 1] )</text>
+<rect x='630' y='287' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='660' y='310' text-anchor='middle' font-size='14' fill='white'>a \ b</text>
+<rect x='690' y='287' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='720' y='310' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>+1</text>
+<rect x='750' y='287' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='780' y='310' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>0</text>
+<rect x='810' y='287' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='840' y='310' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>−1</text>
+<rect x='630' y='323' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='660' y='346' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>+1</text>
+<rect x='690' y='323' width='60' height='36' fill='#d5f5e3' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='720' y='346' text-anchor='middle' font-size='14' fill='#1a7a38' font-weight='bold'>+1</text>
+<rect x='750' y='323' width='60' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='780' y='346' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>0</text>
+<rect x='810' y='323' width='60' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='840' y='346' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>0</text>
+<rect x='630' y='359' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='660' y='382' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>0</text>
+<rect x='690' y='359' width='60' height='36' fill='#d5f5e3' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='720' y='382' text-anchor='middle' font-size='14' fill='#1a7a38' font-weight='bold'>+1</text>
+<rect x='750' y='359' width='60' height='36' fill='#d5f5e3' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='780' y='382' text-anchor='middle' font-size='14' fill='#1a7a38' font-weight='bold'>+1</text>
+<rect x='810' y='359' width='60' height='36' fill='#d5f5e3' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='840' y='382' text-anchor='middle' font-size='14' fill='#1a7a38' font-weight='bold'>+1</text>
+<rect x='630' y='395' width='60' height='36' fill='#2c3e50' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/>
+<text x='660' y='418' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>−1</text>
+<rect x='690' y='395' width='60' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='720' y='418' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>0</text>
+<rect x='750' y='395' width='60' height='36' fill='#f2f3f4' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='780' y='418' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>0</text>
+<rect x='810' y='395' width='60' height='36' fill='#d5f5e3' fill-opacity='1.0' rx='0' stroke='#ccc' stroke-width='1'/><text x='840' y='418' text-anchor='middle' font-size='14' fill='#1a7a38' font-weight='bold'>+1</text>
+<text x='750' y='487' text-anchor='middle' font-size='11' fill='#626567' font-style='italic'>PART(a,b): 1 when a ⊆ b; 0 is part of everything; opposite signs → 0</text>
+</svg>
