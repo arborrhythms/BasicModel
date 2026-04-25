@@ -767,47 +767,6 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
     # InvertibleLinearLayer -- no constraint needed with symmetric
     # log domain (-inf, +inf).
 
-class MapppingLayer(InvertibleLinearLayer):
-    """Bias-free, stable reversible linear layer for mapping between row/column spaces."""
-    def __init__(self, nInput, nOutput, init='orthogonal'):
-        super().__init__(nInput, nOutput, naive=False, hasBias=False, stable=True)
-class ColumnUsageTracker:
-    """Monitors gradient norms per weight column and freezes low-activity columns.
-
-    Attaches a backward hook to a standard nn.Linear layer.  After
-    ``window`` steps, columns whose average gradient norm falls below
-    ``freezeThreshold`` are permanently frozen (gradients zeroed out).
-    """
-    def __init__(self, linearLayer, freezeThreshold=0.01, window=10):
-        self.linear = linearLayer
-        self.freezeThreshold = freezeThreshold
-        self.window = window
-        self.grad_history = []
-        self.frozen_columns = torch.zeros(linearLayer.weight.shape[1], dtype=torch.bool)
-        self.linear.weight.register_hook(self._save_grad)
-    def _save_grad(self, grad):
-        # grad shape: (out_features, in_features)
-        # Transpose to get per-column: shape (in_features, out_features)
-        grad_columns = grad.t().detach().clone()
-        self.grad_history.append(grad_columns)
-        # Keep fixed window size
-        if len(self.grad_history) > self.window:
-            self.grad_history.pop(0)
-    def freeze(self):
-        if len(self.grad_history) < self.window:
-            return  # not enough history yet
-        # Stack history and compute norm per column
-        stacked = torch.stack(self.grad_history, dim=0)  # (window, in_features, out_features)
-        norms = stacked.norm(dim=-1).mean(dim=0)  # (in_features,)
-        # Freeze columns with low average gradient norm
-        to_freeze = norms < self.freezeThreshold
-        self.frozen_columns |= to_freeze
-        # Zero out gradients of frozen columns
-        with torch.no_grad():
-            self.linear.weight.grad[:, self.frozen_columns] = 0.0
-    def freezeMask(self):
-        return self.frozen_columns
-
 class SigmaLayer(Layer):
     """Additive (summation) layer.
 
@@ -1081,6 +1040,46 @@ class PiLayer(Layer):
         check_stability("stable square nIn=nOut=6", naive=True, hasBias=False, nInput=6, nOutput=6)
         print("PiLayer tests passed.")
 
+class MapppingLayer(InvertibleLinearLayer):
+    """Bias-free, stable reversible linear layer for mapping between row/column spaces."""
+    def __init__(self, nInput, nOutput, init='orthogonal'):
+        super().__init__(nInput, nOutput, naive=False, hasBias=False, stable=True)
+class ColumnUsageTracker:
+    """Monitors gradient norms per weight column and freezes low-activity columns.
+
+    Attaches a backward hook to a standard nn.Linear layer.  After
+    ``window`` steps, columns whose average gradient norm falls below
+    ``freezeThreshold`` are permanently frozen (gradients zeroed out).
+    """
+    def __init__(self, linearLayer, freezeThreshold=0.01, window=10):
+        self.linear = linearLayer
+        self.freezeThreshold = freezeThreshold
+        self.window = window
+        self.grad_history = []
+        self.frozen_columns = torch.zeros(linearLayer.weight.shape[1], dtype=torch.bool)
+        self.linear.weight.register_hook(self._save_grad)
+    def _save_grad(self, grad):
+        # grad shape: (out_features, in_features)
+        # Transpose to get per-column: shape (in_features, out_features)
+        grad_columns = grad.t().detach().clone()
+        self.grad_history.append(grad_columns)
+        # Keep fixed window size
+        if len(self.grad_history) > self.window:
+            self.grad_history.pop(0)
+    def freeze(self):
+        if len(self.grad_history) < self.window:
+            return  # not enough history yet
+        # Stack history and compute norm per column
+        stacked = torch.stack(self.grad_history, dim=0)  # (window, in_features, out_features)
+        norms = stacked.norm(dim=-1).mean(dim=0)  # (in_features,)
+        # Freeze columns with low average gradient norm
+        to_freeze = norms < self.freezeThreshold
+        self.frozen_columns |= to_freeze
+        # Zero out gradients of frozen columns
+        with torch.no_grad():
+            self.linear.weight.grad[:, self.frozen_columns] = 0.0
+    def freezeMask(self):
+        return self.frozen_columns
 class ButterflyStage(Layer):
     """Butterfly wrapper: permute -> pack -> inner layer -> unpack -> merge.
 
@@ -1248,8 +1247,6 @@ class ButterflyStage(Layer):
         assert error < 1e-4, f"Pipeline roundtrip error: {error:.2e}"
 
         print("ButterflyStage tests passed.")
-
-
 class SortingLayer(Layer):
     """NeuralSort: differentiable O(1)-depth sorting (Grover et al. 2019).
 
@@ -1924,7 +1921,6 @@ class LoweringLayer(Layer):
         assert right_g.grad is not None, "no gradient on right"
 
         print("LoweringLayer tests passed.")
-
 class SparsityRegularizer(Layer):
     """Soft-threshold L1 proximal operator.
 
@@ -1950,8 +1946,6 @@ class SparsityRegularizer(Layer):
         return torch.sign(x) * torch.clamp(
             torch.abs(x) - self.l1_lambda, min=0.0
         )
-
-
 class SmoothingRegularizer(Layer):
     """Total-variation penalty on consecutive concepts of a symbol vector.
 
@@ -1988,8 +1982,6 @@ class SmoothingRegularizer(Layer):
             return x.new_tensor(0.0)
         diff = collapsed[..., 1:] - collapsed[..., :-1]
         return self.lam * diff.abs().mean()
-
-
 class ImpenetrableLayer(Layer):
     """Mereological separation regularizer over a symbol codebook.
 
@@ -2131,7 +2123,6 @@ class ImpenetrableLayer(Layer):
             total = total + var_pen
 
         return total
-
 
 class TruthLayer(Layer):
     """Truth store on SymbolicSpace: encoded truth statements scaled by DoT.
@@ -3181,7 +3172,6 @@ class TruthLayer(Layer):
 
         print("TruthLayer tests passed.")
 
-
 class InterSentenceLayer(Layer):
     """Inter-sentence substrate: per-sentence ``[S | W]`` snapshots
     scored by a contrastive dual-force cosine loss.
@@ -3762,8 +3752,6 @@ class InterSentenceLayer(Layer):
         cast_out = self.cast(predicted)
         # Confidence is [B]; broadcast over concept_dim.
         return cast_out * confidence.unsqueeze(-1) * float(scale)
-
-
 class ChunkLayer(Layer):
     """Learned BPE-style codebook for perceptual chunking.
 
@@ -4068,27 +4056,33 @@ class ChunkLayer(Layer):
         return data
 #endregion
 
-#region Activation Functions
-class Activation:
+#region Operations
+class Ops:
+    """Pure operations on activation vectors in [-1, +1].
+
+    Supersedes the legacy ``Activation`` class. Static namespace; ``Basis``
+    (in Spaces.py) delegates its logic, mereology, and metric methods
+    here so each formula has a single source of truth.
+
+    Domain/range conventions:
+        Values live in [-1, +1].
+        monotonic=False (bitonic): sign = direction, magnitude = confidence.
+            +1 = true, 0 = unknown, -1 = false.
+        monotonic=True (unsigned): [0, 1] scale with a tetralemma pair
+            representation for signed ops (negation flips the pair).
+
+    Layout:
+        - Tensor ops (conjunction, disjunction, negation, non, pos, norm,
+          distance, part, whole, equal, overlap, underlap, boundary,
+          copart) expect torch tensors with last-dim semantics.
+        - Scalar/elementwise ops (positive, negative, neutral, sign,
+          saturate, threshold, complement, convertSensation, minMag,
+          maxMag, error, isActive, isEqual, isReducer, true, false,
+          unknown) accept torch tensors or python scalars; non-tensor
+          inputs are coerced via ``torch.as_tensor``.
     """
-    ACTIVATION A set of functions that apply fuzzy logic operations to NN activations.
-    """
 
-    # Constants
-    strictParts = True
-    activationThreshold = 0.01
-
-    @staticmethod
-    def positive(x):
-        return (x > 0) * x
-
-    @staticmethod
-    def negative(x):
-        return (-(x < 0)) * x
-
-    @staticmethod
-    def neutral(x):
-        return 1 - np.abs(x)
+    # ---- Tetralemma constants --------------------------------------------
 
     @staticmethod
     def true():
@@ -4102,149 +4096,403 @@ class Activation:
     def unknown():
         return 0
 
-    # Determine if the concept is active
-    @staticmethod
-    def isActive(x):
-        return np.abs(x) >= Activation.activationThreshold
-
-    # Determine equality
-    @staticmethod
-    def isEqual(x1, x2):
-        return np.all(x1 == x2)
+    # ---- Scalar / elementwise primitives ---------------------------------
 
     @staticmethod
-    def isPart(x1, x2):
-        tf = Activation.sign(x1) * Activation.sign(x2) * (np.minimum(np.abs(x1), np.abs(x2)) / np.abs(x1))
-        # Remove NaN values (from dividing by zero)
-        tf = tf[~np.isnan(tf)]  # equivalent to tf(isnan(tf)) = []
-
-        if len(tf) == 0:
-            tf = 1  # nothing is a part of everything
-        else:
-            tf = np.mean(tf)
-            if Activation.strictParts and np.abs(tf) < 1:
-                tf = 0
-        return tf
+    def positive(x):
+        t = torch.as_tensor(x)
+        return torch.relu(t)
 
     @staticmethod
-    def isWhole(x1, x2):
-        tf = Activation.sign(x1) * Activation.sign(x2) * np.abs(x1) / np.maximum(np.abs(x1), np.abs(x2))
-        # Handle zero values
-        tf[(x1 == 0) & (x2 != 0)] = 0  # zero values in x1 are not wholes
-        # Remove values where both x1 and x2 are zero
-        tf = tf[~((x1 == 0) & (x2 == 0))]  # equivalent to tf(x1==0 & x2==0) = []
-
-        if len(tf) == 0:
-            tf = 1  # nothing is a part of everything
-        else:
-            tf = np.mean(tf)
-            if Activation.strictParts and np.abs(tf) < 1:
-                tf = 0
-        return tf
+    def negative(x):
+        t = torch.as_tensor(x)
+        return -torch.relu(-t)
 
     @staticmethod
-    def isReducer(x1, x2):
-        # x1 reduces x2 if abs(x2-x1) < abs(x2)
-        return np.sum(np.abs(x2 - x1)) < np.sum(np.abs(x2))
+    def neutral(x):
+        return 1 - torch.as_tensor(x).abs()
 
     @staticmethod
-    def part(x1, x2):
-        return (Activation.sign(x1) + Activation.sign(x2)) / 2 * np.minimum(np.abs(x1), np.abs(x2))
+    def sign(v):
+        """Signum with sgn(0) = 1 (not 0)."""
+        t = torch.as_tensor(v).float()
+        y = torch.sign(t)
+        return torch.where(y == 0, torch.ones_like(y), y)
 
-    @staticmethod
-    def whole(x1, x2):
-        y = (Activation.sign(x1) + Activation.sign(x2)) / 2 * np.maximum(np.abs(x1), np.abs(x2))
-        y[Activation.sign(x1) != Activation.sign(x2)] = np.nan
-        return y
-
-    @staticmethod
-    def minMag(x1, x2):
-        if np.abs(x1) <= np.abs(x2):
-            return x1
-        else:
-            return x2
-
-    @staticmethod
-    def maxMag(x1, x2):
-        if np.abs(x1) >= np.abs(x2):
-            return x1
-        else:
-            return x2
-
-    @staticmethod
-    def error(x1, x2):
-        return np.linalg.norm(x1 - x2)
-
-    # signum, where sgn(0) = 1
-    @staticmethod
-    def sign(v1):
-        y = np.sign(v1.astype(float) if hasattr(v1, 'astype') else float(v1))
-        y[y == 0] = 1
-        return y
-
-    @staticmethod
-    def norm(x):
-        return np.linalg.norm(x)
-
-    # saturate to [-1..1]
     @staticmethod
     def saturate(x):
-        if np.isnan(x):
-            return 0
-        else:
-            return min(1, max(-1, x))
+        """Clamp to [-1, +1]. NaN -> 0."""
+        t = torch.as_tensor(x)
+        return torch.nan_to_num(t.clamp(-1.0, 1.0))
 
-    # threshold to one of [-1,0,1]
     @staticmethod
-    def threshold(x):
-        if np.abs(x) < Activation.activationThreshold:
-            return 0
-        else:
-            return x
+    def threshold(x, activationThreshold=0.01):
+        t = torch.as_tensor(x)
+        return torch.where(t.abs() < activationThreshold, torch.zeros_like(t), t)
 
     @staticmethod
     def complement(x):
-        return Activation.sign(x) - x
+        t = torch.as_tensor(x)
+        return Ops.sign(t) - t
 
-    @staticmethod
-    def negation(x):
-        return -x
-
-    # symbolic activation should be in the range -1..1
     @staticmethod
     def convertSensation(x):
-        return 2 * x - 1
+        return 2 * torch.as_tensor(x) - 1
 
     @staticmethod
-    def test():
-        import matplotlib.pyplot as plt
-        def neg(x):
-            # y = 1-x;
+    def minMag(x1, x2):
+        t1, t2 = torch.as_tensor(x1), torch.as_tensor(x2)
+        return torch.where(t1.abs() <= t2.abs(), t1, t2)
+
+    @staticmethod
+    def maxMag(x1, x2):
+        t1, t2 = torch.as_tensor(x1), torch.as_tensor(x2)
+        return torch.where(t1.abs() >= t2.abs(), t1, t2)
+
+    @staticmethod
+    def error(x1, x2):
+        t1, t2 = torch.as_tensor(x1).float(), torch.as_tensor(x2).float()
+        return torch.linalg.norm(t1 - t2)
+
+    @staticmethod
+    def isActive(x, activationThreshold=0.01):
+        return torch.as_tensor(x).abs() >= activationThreshold
+
+    @staticmethod
+    def isEqual(x1, x2):
+        return torch.equal(torch.as_tensor(x1), torch.as_tensor(x2))
+
+    @staticmethod
+    def isReducer(x1, x2):
+        t1, t2 = torch.as_tensor(x1), torch.as_tensor(x2)
+        return ((t2 - t1).abs().sum() < t2.abs().sum()).item()
+
+    # ---- Tensor primitives -----------------------------------------------
+
+    @staticmethod
+    def pos(x):
+        """Positive projection (ReLU). Domain [-1, 1], range [0, 1]."""
+        return torch.relu(x)
+
+    @staticmethod
+    def norm(x):
+        """Last-dim L2 norm."""
+        return torch.norm(x, dim=-1)
+
+    # ---- Binary fuzzy logic ----------------------------------------------
+
+    @staticmethod
+    def conjunction(x, y, monotonic=False):
+        """Conjunction (intersection). Domain/range [-1, 1]."""
+        if monotonic:
+            return torch.min(x, y)
+        same_sign = (x * y > 0).float()
+        min_mag = torch.min(torch.abs(x), torch.abs(y))
+        return same_sign * torch.sign(x) * min_mag
+
+    @staticmethod
+    def disjunction(x, y, monotonic=False):
+        """Disjunction (union). Domain/range [-1, 1]."""
+        if monotonic:
+            return torch.max(x, y)
+        same_sign = (x * y > 0).float()
+        max_mag = torch.max(torch.abs(x), torch.abs(y))
+        core = same_sign * torch.sign(x) * max_mag
+        x_zero = (x == 0).float()
+        y_zero = (y == 0).float()
+        return core + x_zero * y + y_zero * x
+
+    @staticmethod
+    def negation(x, monotonic=False):
+        """Negation.
+        Bitonic: sign flip (-x).
+        Monotonic, last-dim == 2: tetralemma swap on a demuxed [aP, aN] bivector.
+        Monotonic, last-dim == 2K: paired-index pair flip."""
+        if not monotonic:
             return -x
+        n = x.shape[-1]
+        if n == 2:
+            return x.flip(dims=(-1,))
+        if n % 2 == 0:
+            pair = x.reshape(*x.shape[:-1], n // 2, 2)
+            flipped = pair.flip(dims=(-1,))
+            return flipped.reshape(*x.shape)
+        raise ValueError(
+            f"Ops.negation(monotonic=True) requires even last dim; "
+            f"got shape {tuple(x.shape)}"
+        )
 
-        def scale(x):
-            # y = (x+1)/2;
+    @staticmethod
+    def non(x, monotonic=False, threshold=None):
+        """Non-affirming negation -- the 'indeterminate' commitment.
+
+        Bitonic (default): triangular residual 1 - |clamp(x, -1, 1)|.
+            Completes the S-tier trinity partition of unity:
+            true(x) + false(x) + non(x) = 1.
+        Monotonic: ReLU(x - threshold) if threshold given, else 0."""
+        if monotonic:
+            if threshold is not None:
+                return torch.relu(x - threshold)
+            return torch.zeros_like(x)
+        return 1.0 - torch.clamp(x, -1.0, 1.0).abs()
+
+    # ---- Inverse logic operations ----------------------------------------
+    # ``conjunctionReverse`` / ``disjunctionReverse`` need a codebook ``W``
+    # to invert the lossy binary op via search. ``Basis`` supplies this via
+    # ``self.getW()`` when delegating; standalone callers may pass ``W`` of
+    # shape (K, D) directly.
+
+    @staticmethod
+    def negationReverse(x, monotonic=False):
+        """Inverse of negation. Self-inverse in both modes.
+        Bitonic: sign flip. Monotonic: paired-index flip."""
+        return Ops.negation(x, monotonic=monotonic)
+
+    @staticmethod
+    def conjunctionReverse(result, y, W, monotonic=False):
+        """Inverse of conjunction via codebook search.
+
+        Find the codebook vector x such that conjunction(x, cb_j) ~= result
+        for some cb_j, returning the best-matching left operand.
+        Falls back to returning result unchanged if W is None or empty.
+        """
+        return Ops._binary_op_inverse_impl(result, W, Ops.conjunction, monotonic)
+
+    @staticmethod
+    def disjunctionReverse(result, y, W, monotonic=False):
+        """Inverse of disjunction via codebook search.
+
+        Find the codebook vector x such that disjunction(x, cb_j) ~= result
+        for some cb_j, returning the best-matching left operand.
+        Falls back to returning result unchanged if W is None or empty.
+        """
+        return Ops._binary_op_inverse_impl(result, W, Ops.disjunction, monotonic)
+
+    @staticmethod
+    def _binary_op_inverse_impl(result, W, op, monotonic):
+        """Search codebook for pair (cb[i], cb[j]) whose op(cb[i], cb[j]) ~= result.
+
+        Returns cb[i] (the left operand) for each position in result.
+        result shape: (..., D).  W (codebook) shape: (K, D).
+        """
+        if W is None or W.shape[0] == 0:
+            return result
+
+        K, D = W.shape
+        flat = result.reshape(-1, D)
+        N = flat.shape[0]
+
+        cb_i = W.unsqueeze(1).expand(K, K, D)
+        cb_j = W.unsqueeze(0).expand(K, K, D)
+        composed = op(cb_i, cb_j, monotonic=monotonic)
+        composed_flat = composed.reshape(K * K, D)
+
+        chunk_size = max(1, min(N, 2048 // K))
+        best_i = torch.empty(N, dtype=torch.long, device=result.device)
+
+        for start in range(0, N, chunk_size):
+            end = min(start + chunk_size, N)
+            diffs = (flat[start:end].unsqueeze(1) - composed_flat.unsqueeze(0))
+            dists = diffs.pow(2).sum(dim=-1)
+            pair_idx = dists.argmin(dim=-1)
+            best_i[start:end] = pair_idx // K
+
+        return W[best_i].reshape(result.shape)
+
+    # ---- In-space algebra (lift / lower) ---------------------------------
+    # These are the post-PiLayer-removal in-space bodies for the S-tier
+    # ``lift`` / ``lower`` rules. ``lift`` is the elementwise product;
+    # ``lower`` is the arithmetic mean. Both have analytic inverses given
+    # the right operand.
+
+    @staticmethod
+    def lift(left, right):
+        """In-space lift: elementwise product."""
+        return left * right
+
+    @staticmethod
+    def liftReverse(result, right):
+        """Recover first operand from the elementwise product."""
+        return result / (right + epsilon)
+
+    @staticmethod
+    def lower(left, right):
+        """In-space lower: arithmetic mean."""
+        return (left + right) / 2
+
+    @staticmethod
+    def lowerReverse(result, right):
+        """Recover first operand from the mean."""
+        return 2 * result - right
+
+    # ---- Axis selectors (what / where / when) ----------------------------
+    # The C -> S boundary demux puts content in the canonical
+    # [what | where | when] layout; these selectors zero the non-selected
+    # blocks. When ``x.ndim < 3`` the block structure isn't accessible
+    # (compose() in scalar mode), so selectors degenerate to identity.
+
+    @staticmethod
+    def what(x, nWhat, nWhere, nWhen):
+        """Axis selector: keep what-block, zero where/when-blocks."""
+        if x.ndim < 3:
             return x
+        if nWhat is None or (nWhere == 0 and nWhen == 0):
+            return x
+        out = torch.zeros_like(x)
+        out[..., :nWhat] = x[..., :nWhat]
+        return out
 
-        def combine(x1, x2):
-            sgn = (np.sign(x1) + np.sign(x2)) / 2
-            amp = np.multiply(np.abs(x1), np.abs(x2))
-            # y = sgn.*amp;
-            # y = x1.*x2;
-            y = np.mean([x1, x2], axis=0)
-            y = np.sign(x1) * np.sign(x2) * (np.minimum(np.abs(x1), np.abs(x2)) / np.abs(x1))
-            return y
+    @staticmethod
+    def where(x, nWhat, nWhere, nWhen):
+        """Axis selector: keep where-block, zero what/when-blocks."""
+        if x.ndim < 3:
+            return x
+        if nWhat is None or nWhere == 0:
+            return torch.zeros_like(x)
+        out = torch.zeros_like(x)
+        out[..., nWhat:nWhat + nWhere] = x[..., nWhat:nWhat + nWhere]
+        return out
 
-        x = np.arange(0, 2 * np.pi, 0.01)
-        y1 = scale(np.cos(x - np.pi / 6))
-        y2 = scale(np.sin(x))
+    @staticmethod
+    def when(x, nWhat, nWhere, nWhen):
+        """Axis selector: keep when-block, zero what/where-blocks."""
+        if x.ndim < 3:
+            return x
+        if nWhat is None or nWhen == 0:
+            return torch.zeros_like(x)
+        out = torch.zeros_like(x)
+        out[..., nWhat + nWhere:] = x[..., nWhat + nWhere:]
+        return out
 
-        plt.clf()
-        plt.bar(x, y1, color='red', alpha=0.5)
-        #plt.hold(True)  # Note: plt.hold is deprecated in newer matplotlib versions
-        plt.bar(x, y2, color='blue', alpha=0.5)
-        plt.bar(x, combine(y1, y2), color='black', alpha=0.5)
-        plt.show(block=False)
+    # ---- Metric ----------------------------------------------------------
+
+    @staticmethod
+    def distance(x, y, monotonic=False, dim=-1):
+        """Distance in [0, 1]. Bitonic: angular. Monotonic: volume-weighted L2.
+
+        Monotonic distance weights each element by max(|x|, |y|) so that
+        matching zeros contribute nothing -- zero-volume elements have no
+        bearing on parthood."""
+        if monotonic:
+            w = torch.max(x.abs(), y.abs())
+            total_weight = w.sum(dim=dim).clamp(min=epsilon)
+            return (w * (x - y) ** 2).sum(dim=dim) / total_weight
+        return (1 - F.cosine_similarity(x, y, dim=dim)) / 2
+
+    # ---- Mereology -------------------------------------------------------
+    # Parthood is the fundamental mereological operation. Each member of
+    # the suite has a vector form (default) and a scalar form (scalar=True).
+    #
+    # Vector forms (scalar=False):
+    #     part(x, y)     = x * (y / ||y||)                     elementwise
+    #     whole(x, y)    = (1 - x) * (y / ||y||)               elementwise
+    #     equal(x, y)    = part(x, y) * part(y, x)             elementwise
+    #     overlap(x, y)  = min(part(x, y), part(y, x))         elementwise
+    #     underlap(x, y) = min(whole(x, y), whole(y, x))       elementwise
+    #     boundary(x, y) = |part(x, y) - part(y, x)|           elementwise
+    #     copart(x, y)   = y - x                               elementwise
+
+    @staticmethod
+    def part(x, y, monotonic=False, scalar=False):
+        """Part of x under y.
+
+        Vector form (default): x * (y / ||y||) -- elementwise projection
+        of x into y's unit direction. Returns a tensor shaped like x.
+
+        Scalar form (scalar=True): clipped cosine projection in [0, 1].
+            part(x, y) = max(0, x.y) / (||x|| * ||y||)
+        Satisfies Boole's contrapositive: part(x, y) = part(-y, -x).
+        Empty-set conventions:
+            part(empty, y) = 1, part(x, empty) = 0, part(empty, empty) = 1.
+        """
+        ny_raw = Ops.norm(y)
+        ny = ny_raw.clamp(min=epsilon)
+        if not scalar:
+            return x * (y / ny.unsqueeze(-1))
+        nx = Ops.norm(x)
+        dot = (x * y).sum(dim=-1)
+        clipped = torch.clamp(dot, min=0.0)
+        denom = (nx * ny).clamp(min=epsilon)
+        score = (clipped / denom).clamp(0.0, 1.0)
+        empty_x = nx < epsilon
+        empty_y = ny_raw < epsilon
+        ones = torch.ones_like(score)
+        zeros = torch.zeros_like(score)
+        return torch.where(empty_x, ones, torch.where(empty_y, zeros, score))
+
+    @staticmethod
+    def whole(x, y, monotonic=False, scalar=False):
+        """Whole of x under y: complement of x in y's unit direction.
+
+        Vector form: (1 - x) * (y / ||y||).
+        Scalar form: degree to which x contains y, i.e. part(y, x, scalar=True)."""
+        if scalar:
+            return Ops.part(y, x, monotonic=monotonic, scalar=True)
+        ny = Ops.norm(y).clamp(min=epsilon).unsqueeze(-1)
+        return (1.0 - x) * (y / ny)
+
+    @staticmethod
+    def equal(x, y, monotonic=False, scalar=False):
+        """Mutual parthood.
+
+        Vector form: part(x, y) * part(y, x) (elementwise).
+        Scalar form partitions [0, 1]:
+            equal == 0     -> underlap (disjoint)
+            0 < equal < 1  -> overlap  (strictly partial)
+            equal == 1     -> identity (perfect mutual parthood)."""
+        p_xy = Ops.part(x, y, monotonic=monotonic, scalar=scalar)
+        p_yx = Ops.part(y, x, monotonic=monotonic, scalar=scalar)
+        return p_xy * p_yx
+
+    @staticmethod
+    def overlap(x, y, monotonic=False, scalar=False):
+        """Overlap.
+
+        Vector form: elementwise min of part(x, y) and part(y, x).
+        Scalar form: boolean region indicator 0 < equal(..., scalar=True) < 1."""
+        if scalar:
+            e = Ops.equal(x, y, monotonic=monotonic, scalar=True)
+            return (e > 0) & (e < 1)
+        return torch.minimum(
+            Ops.part(x, y, monotonic=monotonic),
+            Ops.part(y, x, monotonic=monotonic),
+        )
+
+    @staticmethod
+    def underlap(x, y, monotonic=False, scalar=False):
+        """Underlap.
+
+        Vector form: elementwise min of whole(x, y) and whole(y, x).
+        Scalar form: boolean region indicator equal(..., scalar=True) == 0."""
+        if scalar:
+            e = Ops.equal(x, y, monotonic=monotonic, scalar=True)
+            return e == 0
+        return torch.minimum(
+            Ops.whole(x, y, monotonic=monotonic),
+            Ops.whole(y, x, monotonic=monotonic),
+        )
+
+    @staticmethod
+    def boundary(x, y, monotonic=False, scalar=False):
+        """Directional asymmetry of parthood.
+
+        Vector form: |part(x, y) - part(y, x)| (elementwise).
+        Scalar form: zero under clipped-cosine (cosine is symmetric)."""
+        m = monotonic
+        return torch.abs(
+            Ops.part(x, y, monotonic=m, scalar=scalar)
+            - Ops.part(y, x, monotonic=m, scalar=scalar)
+        )
+
+    @staticmethod
+    def copart(x, y, monotonic=False, scalar=False):
+        """Copart of x under y: the part of y not accounted for by x.
+
+        Vector form: y - x.
+        Scalar form: 1 - part(x, y, scalar=True), clamped to [0, 1]."""
+        if scalar:
+            return (1.0 - Ops.part(x, y, monotonic=monotonic, scalar=True)).clamp(0.0, 1.0)
+        return y - x
 #endregion
 
 #region Error Functions
@@ -4909,10 +5157,10 @@ class ProbMem(Mem):
         # Iterate over the indices of in1 and in2.
         for r in range(len(in1)):
             for c in range(len(in2)):
-                # Increase or decrease conditional probability based on Activation.
-                if Activation.true(in2[c]) and Activation.true(in1[r]):
+                # Increase or decrease conditional probability based on activation sign.
+                if in2[c] > 0 and in1[r] > 0:
                     self.output[r, c] = ((self.nTrials - 1) / self.nTrials) * self.output[r, c] + (1 / self.nTrials) * 1
-                elif Activation.true(in2[c]) and Activation.false(in1[r]):
+                elif in2[c] > 0 and in1[r] < 0:
                     self.output[r, c] = ((self.nTrials - 1) / self.nTrials) * self.output[r, c] + (1 / self.nTrials) * -1
 # MeanMem subclass: computes a running mean.
 class MeanMem(Mem):
@@ -4971,7 +5219,7 @@ class CorrMem(Mem):
                 # Avoid division by zero.
                 denom = np.sqrt(in1[r]**2 * in2[c]**2)
                 if denom != 0:
-                    val = Activation.saturate(val / denom)
+                    val = Ops.saturate(val / denom)
                 else:
                     val = 0
                 amt = max(abs(in1[r]), abs(in2[c]))

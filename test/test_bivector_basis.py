@@ -54,7 +54,7 @@ class TestBivectorNegation(unittest.TestCase):
         basis = self._basis()
         v = torch.rand(8).clamp(0.0, 1.0)
         direct = basis.negation(v, monotonic=True)
-        via_inv = basis.negation_inverse(v, monotonic=True)
+        via_inv = basis.negationReverse(v, monotonic=True)
         self.assertTrue(torch.allclose(direct, via_inv))
 
     def test_negation_rejects_odd_last_dim(self):

@@ -25,7 +25,7 @@ from embed import WordVectors, PretrainModel
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer, ButterflyStage  # Import custom layers from Model.py
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, ChunkLayer
-from Layers import ColumnUsageTracker, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
+from Layers import ColumnUsageTracker, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
 from Layers import SortingLayer, TruthLayer, LiftingLayer, InterSentenceLayer, SparsityRegularizer, SmoothingRegularizer, ImpenetrableLayer
 from util import parse
 from collections import namedtuple as _namedtuple
@@ -541,7 +541,7 @@ class SyntacticLayer(Layer):
     def notReverse(self, result, subspace, mask=None):
         b = self._basis(subspace)
         if b is not None:
-            out = b.negation_inverse(result, monotonic=self._mono(subspace))
+            out = b.negationReverse(result, monotonic=self._mono(subspace))
         else:
             out = -result
         return self._apply_mask(out, mask, subspace=subspace)
@@ -557,7 +557,7 @@ class SyntacticLayer(Layer):
     def intersectionReverse(self, result, right, subspace, mask=None):
         b = self._basis(subspace)
         if b is not None:
-            out = b.conjunction_inverse(result, right, monotonic=self._mono(subspace))
+            out = b.conjunctionReverse(result, right, monotonic=self._mono(subspace))
         else:
             out = result
         return self._apply_mask(out, mask, subspace=subspace)
@@ -573,7 +573,7 @@ class SyntacticLayer(Layer):
     def unionReverse(self, result, right, subspace, mask=None):
         b = self._basis(subspace)
         if b is not None:
-            out = b.disjunction_inverse(result, right, monotonic=self._mono(subspace))
+            out = b.disjunctionReverse(result, right, monotonic=self._mono(subspace))
         else:
             out = result
         return self._apply_mask(out, mask, subspace=subspace)
@@ -593,7 +593,7 @@ class SyntacticLayer(Layer):
     def chunkReverse(self, result, right, subspace, mask=None):
         b = self._basis(subspace)
         if b is not None:
-            out = b.disjunction_inverse(result, right, monotonic=True)
+            out = b.disjunctionReverse(result, right, monotonic=True)
         else:
             out = result
         return self._apply_mask(out, mask, subspace=subspace)
@@ -696,14 +696,15 @@ class SyntacticLayer(Layer):
         return self._apply_mask(out, mask, subspace=subspace)
 
     def nonForward(self, left, subspace, mask=None):
-        """Triangular residual: 1 - |x|. The 'indeterminate' commitment.
+        """Triangular residual: 1 - |clamp(x, -1, 1)|. The 'indeterminate'
+        commitment.
 
-        Completes the S-tier trinity partition of unity. Replaces the
-        earlier sigmoid/zero response which was incompatible with
-        true + false + non = 1.
+        Completes the S-tier trinity partition of unity:
+        ``true(x) + false(x) + non(x) = 1``. Always uses the bitonic
+        formula -- the partition only holds under bitonic semantics, so
+        the rule is independent of the subspace's monotonic flag.
         """
-        left = torch.clamp(left, -1.0, 1.0)
-        out = 1.0 - left.abs()
+        out = Ops.non(left, monotonic=False)
         return self._apply_mask(out, mask, subspace=subspace)
 
     def conjunctionForward(self, left, right, subspace, mask=None):
@@ -757,35 +758,17 @@ class SyntacticLayer(Layer):
 
     def whatForward(self, left, subspace, mask=None):
         """Axis selector: keep what-block, zero where/when-blocks."""
-        if left.ndim < 3:
-            return self._apply_mask(left, mask, subspace=subspace)  # scalar mode -- no columns
-        nWhat, nWhere, nWhen = self._split_widths(subspace)
-        if nWhat is None or (nWhere == 0 and nWhen == 0):
-            return self._apply_mask(left, mask, subspace=subspace)
-        out = torch.zeros_like(left)
-        out[..., :nWhat] = left[..., :nWhat]
+        out = Ops.what(left, *self._split_widths(subspace))
         return self._apply_mask(out, mask, subspace=subspace)
 
     def whereForward(self, left, subspace, mask=None):
         """Axis selector: keep where-block, zero what/when-blocks."""
-        if left.ndim < 3:
-            return self._apply_mask(left, mask, subspace=subspace)
-        nWhat, nWhere, nWhen = self._split_widths(subspace)
-        if nWhat is None or nWhere == 0:
-            return self._apply_mask(torch.zeros_like(left), mask, subspace=subspace)
-        out = torch.zeros_like(left)
-        out[..., nWhat:nWhat + nWhere] = left[..., nWhat:nWhat + nWhere]
+        out = Ops.where(left, *self._split_widths(subspace))
         return self._apply_mask(out, mask, subspace=subspace)
 
     def whenForward(self, left, subspace, mask=None):
         """Axis selector: keep when-block, zero what/where-blocks."""
-        if left.ndim < 3:
-            return self._apply_mask(left, mask, subspace=subspace)
-        nWhat, nWhere, nWhen = self._split_widths(subspace)
-        if nWhat is None or nWhen == 0:
-            return self._apply_mask(torch.zeros_like(left), mask, subspace=subspace)
-        out = torch.zeros_like(left)
-        out[..., nWhat + nWhere:] = left[..., nWhat + nWhere:]
+        out = Ops.when(left, *self._split_widths(subspace))
         return self._apply_mask(out, mask, subspace=subspace)
 
     # -- forward: predict rules ------------------------------------
@@ -940,23 +923,19 @@ class SyntacticLayer(Layer):
         collapses to the in-space body because the caller already has the
         forwarded operands.
         """
-        out = left * right
-        return self._apply_mask(out, mask, subspace=subspace)
+        return self._apply_mask(Ops.lift(left, right), mask, subspace=subspace)
 
     def liftReverse(self, result, right, subspace, mask=None):
         """Recover first operand from the elementwise product."""
-        out = result / (right + epsilon)
-        return self._apply_mask(out, mask, subspace=subspace)
+        return self._apply_mask(Ops.liftReverse(result, right), mask, subspace=subspace)
 
     def lowerForward(self, left, right, subspace, mask=None):
         """In-space lower: arithmetic mean."""
-        out = (left + right) / 2
-        return self._apply_mask(out, mask, subspace=subspace)
+        return self._apply_mask(Ops.lower(left, right), mask, subspace=subspace)
 
     def lowerReverse(self, result, right, subspace, mask=None):
         """Recover first operand from the mean."""
-        out = 2 * result - right
-        return self._apply_mask(out, mask, subspace=subspace)
+        return self._apply_mask(Ops.lowerReverse(result, right), mask, subspace=subspace)
 
     # -- swap: Sinkhorn-normalised soft permutation ------------------
 
@@ -1890,12 +1869,6 @@ class CategoryStack:
             return torch.zeros(0)
         return torch.cat(self._entries[b], dim=0)
 
-
-# Legacy name; use CategoryStack in new code. Retained so existing
-# imports (`from Language import PoSStack`) in tests keep resolving.
-PoSStack = CategoryStack
-
-
 class ReconstructionStack:
     """Per-row tuple stack of (rule_id, word_id). Tensor-backed for B>1.
 
@@ -1943,7 +1916,6 @@ class ReconstructionStack:
 
     def depth(self, b):
         return int(self._top[b].item())
-
 
 class WordSpace(Space):
     """Service space that owns the word-stream buffer, the SyntacticLayer,
@@ -2072,12 +2044,9 @@ class WordSpace(Space):
         self.category_index = {
             name: idx for idx, name in enumerate(TheGrammar.categories)
         }
-        self.pos_codebook = self.category_codebook  # legacy alias
-
         # 6c. Category stack -- push/pop store for category-embedding
         # vectors during parsing. One frame per reduction step.
         self.category_stack = CategoryStack(dim=pos_dim)
-        self.pos_stack = self.category_stack  # legacy alias
 
         # 6c'. Reconstruction stack -- (rule_id, word_id) entries for surface
         # reconstruction. Placeholder until generation-from-meaning is solved.

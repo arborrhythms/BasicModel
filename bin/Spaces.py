@@ -317,7 +317,7 @@ from embed import WordVectors, PretrainModel
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
-from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
+from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
 from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegularizer, SmoothingRegularizer, ImpenetrableLayer
 from Layers import Error
 from util import parse
@@ -887,7 +887,7 @@ class Basis(nn.Module):
         return snapped
 
     def norm(self, x):
-        return torch.norm(x, dim=-1)
+        return Ops.norm(x)
 
     def normalize(self, x=None):
         target = self.getW() if x is None else x
@@ -904,143 +904,64 @@ class Basis(nn.Module):
         return normalized
 
     # -- Logic operations ---------------------------------------------------
-    # Domain and range: [-1, +1].
-    #
-    # monotonic=False (bitonic): sign = direction, magnitude = confidence.
-    #   +1 = true, 0 = unknown, -1 = false.
-    #   Conjunction/disjunction respect sign agreement.
-    #
-    # monotonic=True (unsigned): linear scale from -1 to +1.
-    #   Plain min/max. not() extracts negative magnitudes as positive (structural negation).
+    # Formulas live in Ops (Layers.py). Basis only owns codebook-search
+    # inverses (which need self.getW()).
 
     def conjunction(self, x, y, monotonic=False):
-        """Conjunction (intersection). Domain/range [-1, 1]."""
-        if monotonic:
-            return torch.min(x, y)
-        same_sign = (x * y > 0).float()
-        min_mag = torch.min(torch.abs(x), torch.abs(y))
-        return same_sign * torch.sign(x) * min_mag
+        return Ops.conjunction(x, y, monotonic=monotonic)
 
     def disjunction(self, x, y, monotonic=False):
-        """Disjunction (union). Domain/range [-1, 1]."""
-        if monotonic:
-            return torch.max(x, y)
-        same_sign = (x * y > 0).float()
-        max_mag = torch.max(torch.abs(x), torch.abs(y))
-        core = same_sign * torch.sign(x) * max_mag
-        x_zero = (x == 0).float()
-        y_zero = (y == 0).float()
-        return core + x_zero * y + y_zero * x
+        return Ops.disjunction(x, y, monotonic=monotonic)
 
     def negation(self, x, monotonic=False):
-        """Negation.
-        Bitonic: sign flip (-x).
-        Monotonic, last-dim == 2: swap (pos, neg) -- the tetralemma flip
-          on a demuxed `.what` bivector [aP, aN] -> [aN, aP].
-        Monotonic, last-dim == 2K (legacy paired-index storage): pair flip.
-        Domain [-1, 1]. Range: bitonic [-1, 1], monotonic [0, 1]."""
-        if not monotonic:
-            return -x
-        n = x.shape[-1]
-        if n == 2:
-            return x.flip(dims=(-1,))
-        if n % 2 == 0:
-            pair = x.reshape(*x.shape[:-1], n // 2, 2)
-            flipped = pair.flip(dims=(-1,))
-            return flipped.reshape(*x.shape)
-        raise ValueError(
-            f"Basis.negation(monotonic=True) requires even last dim; "
-            f"got shape {tuple(x.shape)}"
-        )
+        return Ops.negation(x, monotonic=monotonic)
 
     def non(self, x, monotonic=False, threshold=None):
-        """Non-affirming negation. Bitonic: -> 0. Monotonic: learnable threshold.
-        Domain [-1, 1]. Range [0, 1] (monotonic) or {0} (bitonic)."""
-        if monotonic and threshold is not None:
-            return torch.relu(x - threshold)
-        return torch.zeros_like(x)
+        return Ops.non(x, monotonic=monotonic, threshold=threshold)
 
     # -- Inverse logic operations -----------------------------------------------
 
-    def negation_inverse(self, x, monotonic=False):
+    def _codebook_or_none(self, label):
+        try:
+            return self.getW()
+        except (NotImplementedError, AttributeError):
+            warnings.warn(f"{label}: no codebook available", stacklevel=3)
+            return None
+
+    def negationReverse(self, x, monotonic=False):
         """Inverse of negation. Self-inverse in both modes.
         Bitonic: sign flip. Monotonic: paired-index flip."""
-        return self.negation(x, monotonic=monotonic)
+        return Ops.negationReverse(x, monotonic=monotonic)
 
-    def conjunction_inverse(self, result, y, monotonic=False):
+    def conjunctionReverse(self, result, y, monotonic=False):
         """Inverse of conjunction via codebook search.
 
         Find the codebook vector x such that conjunction(x, cb_j) ~= result
         for some cb_j, returning the best-matching left operand.
         Falls back to returning result unchanged if no codebook is available.
         """
-        return self._binary_op_inverse(result, self.conjunction, monotonic)
+        W = self._codebook_or_none("conjunctionReverse")
+        if W is None:
+            return result
+        return Ops.conjunctionReverse(result, y, W, monotonic=monotonic)
 
-    def disjunction_inverse(self, result, y, monotonic=False):
+    def disjunctionReverse(self, result, y, monotonic=False):
         """Inverse of disjunction via codebook search.
 
         Find the codebook vector x such that disjunction(x, cb_j) ~= result
         for some cb_j, returning the best-matching left operand.
         Falls back to returning result unchanged if no codebook is available.
         """
-        return self._binary_op_inverse(result, self.disjunction, monotonic)
-
-    def _binary_op_inverse(self, result, op, monotonic):
-        """Search codebook for pair (cb[i], cb[j]) whose op(cb[i], cb[j]) ~= result.
-
-        Returns cb[i] (the left operand) for each position in result.
-        result shape: (..., D).  Codebook shape: (K, D).
-        """
-        try:
-            cb = self.getW()  # (K, D)
-        except (NotImplementedError, AttributeError):
-            warnings.warn("_binary_op_inverse: no codebook available", stacklevel=3)
+        W = self._codebook_or_none("disjunctionReverse")
+        if W is None:
             return result
-
-        if cb is None or cb.shape[0] == 0:
-            return result
-
-        K, D = cb.shape
-        flat = result.reshape(-1, D)  # (N, D)
-        N = flat.shape[0]
-
-        # Precompute op(cb[i], cb[j]) for all pairs -> (K, K, D)
-        cb_i = cb.unsqueeze(1).expand(K, K, D)  # (K, K, D)
-        cb_j = cb.unsqueeze(0).expand(K, K, D)  # (K, K, D)
-        composed = op(cb_i, cb_j, monotonic=monotonic)  # (K, K, D)
-        composed_flat = composed.reshape(K * K, D)  # (K*K, D)
-
-        # Find closest composed pair for each position
-        # Use chunked computation to limit memory: process N positions in chunks
-        chunk_size = max(1, min(N, 2048 // K))
-        best_i = torch.empty(N, dtype=torch.long, device=result.device)
-
-        for start in range(0, N, chunk_size):
-            end = min(start + chunk_size, N)
-            # (end-start, 1, D) - (1, K*K, D) -> (end-start, K*K)
-            diffs = (flat[start:end].unsqueeze(1) - composed_flat.unsqueeze(0))
-            dists = diffs.pow(2).sum(dim=-1)  # (chunk, K*K)
-            pair_idx = dists.argmin(dim=-1)   # (chunk,)
-            best_i[start:end] = pair_idx // K  # left operand index
-
-        return cb[best_i].reshape(result.shape)
+        return Ops.disjunctionReverse(result, y, W, monotonic=monotonic)
 
     def pos(self, x):
-        """Positive projection (ReLU). Domain [-1, 1], range [0, 1]."""
-        return torch.relu(x)
+        return Ops.pos(x)
 
     def distance(self, x, y, monotonic=False, dim=-1):
-        """Distance in [0, 1]. Bitonic: angular. Monotonic: volume-weighted L2.
-
-        Monotonic distance weights each element by max(|x|, |y|) so that
-        matching zeros contribute nothing -- zero-volume elements have no
-        bearing on parthood.
-        """
-        if monotonic:
-            w = torch.max(x.abs(), y.abs())
-            total_weight = w.sum(dim=dim).clamp(min=epsilon)
-            return (w * (x - y) ** 2).sum(dim=dim) / total_weight
-        return (1 - F.cosine_similarity(x, y, dim=dim)) / 2
+        return Ops.distance(x, y, monotonic=monotonic, dim=dim)
 
     def codebookDistance(self, x):
         weight = self._prototype_weight(context="codebookDistance")
@@ -1048,130 +969,28 @@ class Basis(nn.Module):
         return x @ vec.T / max(self.nDim, 1)
 
     # -- Mereological operations --------------------------------------------
-    # Parthood is the fundamental mereological operation. Every member of
-    # the suite (whole, equal, overlap, underlap, boundary) has both a
-    # vector form (default) that operates over the concept space and a
-    # scalar form (scalar=True) that reduces to [0, 1] / bool.
-    #
-    # Vector forms (scalar=False):
-    #     part(x, y)     = x * (y / ||y||)                     elementwise
-    #     whole(x, y)    = (1 - x) * (y / ||y||)               elementwise
-    #     equal(x, y)    = part(x, y) * part(y, x)             elementwise
-    #     overlap(x, y)  = min(part(x, y), part(y, x))         elementwise
-    #     underlap(x, y) = min(whole(x, y), whole(y, x))       elementwise
-    #     boundary(x, y) = |part(x, y) - part(y, x)|           elementwise
-    #
-    # Scalar forms (scalar=True): clipped-cosine parthood and the
-    # region-indicator relations derived from it. See each method.
+    # Formulas live in Ops (Layers.py); see Ops docstrings for semantics.
 
     def part(self, x, y, monotonic=False, scalar=False):
-        """Part of x under y.
-
-        Vector form (default, scalar=False):
-            part(x, y) = x * (y / ||y||)   -- elementwise projection of
-            x into y's unit direction. Returns a tensor shaped like x.
-
-        Scalar form (scalar=True): clipped cosine projection in [0, 1].
-            part(x, y) = max(0, x.y) / (||x|| * ||y||)
-        Satisfies Boole's contrapositive: part(x, y) = part(-y, -x).
-        Empty-set conventions:
-            part(empty, y) = 1, part(x, empty) = 0, part(empty, empty) = 1.
-        """
-        ny_raw = self.norm(y)
-        ny = ny_raw.clamp(min=epsilon)
-        if not scalar:
-            return x * (y / ny.unsqueeze(-1))
-        nx = self.norm(x)
-        dot = (x * y).sum(dim=-1)
-        clipped = torch.clamp(dot, min=0.0)
-        denom = (nx * ny).clamp(min=epsilon)
-        score = (clipped / denom).clamp(0.0, 1.0)
-        empty_x = nx < epsilon
-        empty_y = ny_raw < epsilon
-        ones = torch.ones_like(score)
-        zeros = torch.zeros_like(score)
-        return torch.where(empty_x, ones, torch.where(empty_y, zeros, score))
+        return Ops.part(x, y, monotonic=monotonic, scalar=scalar)
 
     def whole(self, x, y, monotonic=False, scalar=False):
-        """Whole(x, y): complement of x in y's unit direction.
-
-        Vector form (default):
-            whole(x, y) = (1 - x) * (y / ||y||)
-        Scalar form: degree to which x contains y, i.e. part(y, x, scalar=True).
-        """
-        if scalar:
-            return self.part(y, x, monotonic=monotonic, scalar=True)
-        ny = self.norm(y).clamp(min=epsilon).unsqueeze(-1)
-        return (1.0 - x) * (y / ny)
+        return Ops.whole(x, y, monotonic=monotonic, scalar=scalar)
 
     def equal(self, x, y, monotonic=False, scalar=False):
-        """Mutual parthood.
-
-        Vector form:  equal(x, y) = part(x, y) * part(y, x)   (elementwise)
-        Scalar form:  equal(x, y) = part(x, y, scalar=True) * part(y, x, scalar=True)
-            partitions [0, 1] into three regions:
-                equal == 0       -> underlap (disjoint)
-                0 < equal < 1    -> overlap  (strictly partial)
-                equal == 1       -> identity (perfect mutual parthood)
-        """
-        p_xy = self.part(x, y, monotonic=monotonic, scalar=scalar)
-        p_yx = self.part(y, x, monotonic=monotonic, scalar=scalar)
-        return p_xy * p_yx
+        return Ops.equal(x, y, monotonic=monotonic, scalar=scalar)
 
     def overlap(self, x, y, monotonic=False, scalar=False):
-        """Overlap.
-
-        Vector form:  elementwise min of part(x, y) and part(y, x) -- the
-            shared-parthood coordinates.
-        Scalar form:  boolean region indicator 0 < equal(..., scalar=True) < 1.
-        """
-        if scalar:
-            e = self.equal(x, y, monotonic=monotonic, scalar=True)
-            return (e > 0) & (e < 1)
-        return torch.minimum(
-            self.part(x, y, monotonic=monotonic),
-            self.part(y, x, monotonic=monotonic),
-        )
+        return Ops.overlap(x, y, monotonic=monotonic, scalar=scalar)
 
     def underlap(self, x, y, monotonic=False, scalar=False):
-        """Underlap.
-
-        Vector form:  elementwise min of whole(x, y) and whole(y, x) -- the
-            shared-wholeness coordinates (mutual complement).
-        Scalar form:  boolean region indicator equal(..., scalar=True) == 0.
-        """
-        if scalar:
-            e = self.equal(x, y, monotonic=monotonic, scalar=True)
-            return e == 0
-        return torch.minimum(
-            self.whole(x, y, monotonic=monotonic),
-            self.whole(y, x, monotonic=monotonic),
-        )
+        return Ops.underlap(x, y, monotonic=monotonic, scalar=scalar)
 
     def boundary(self, x, y, monotonic=False, scalar=False):
-        """Boundary: directional asymmetry of parthood.
-
-        Vector form:  |part(x, y) - part(y, x)|   (elementwise)
-        Scalar form:  |part(x, y, scalar=True) - part(y, x, scalar=True)|
-            Zero under clipped-cosine parthood (cosine is symmetric).
-        """
-        m = monotonic
-        return torch.abs(
-            self.part(x, y, monotonic=m, scalar=scalar)
-            - self.part(y, x, monotonic=m, scalar=scalar)
-        )
+        return Ops.boundary(x, y, monotonic=monotonic, scalar=scalar)
 
     def copart(self, x, y, monotonic=False, scalar=False):
-        """Copart of x under y: the part of y not accounted for by x.
-
-        Vector form (default):
-            copart(x, y) = y - x
-        Scalar form (scalar=True): complement of parthood in [0, 1].
-            copart(x, y) = 1 - part(x, y, scalar=True)
-        """
-        if scalar:
-            return (1.0 - self.part(x, y, monotonic=monotonic, scalar=True)).clamp(0.0, 1.0)
-        return y - x
+        return Ops.copart(x, y, monotonic=monotonic, scalar=scalar)
 
     def active_dense(self):
         w = self.getW()
@@ -2118,7 +1937,14 @@ class Embedding(Basis):
         if codebook is None:
             codebook = self.getW().detach()
         vec = vec.to(TheDevice.get())
-        sims = F.cosine_similarity(vec.unsqueeze(0), codebook, dim=1)
+        # Flatten any leading/spurious unit dims so vec is 1-D [D].
+        vec = vec.reshape(-1)
+        # Compare only over the shared width. The model's output feature
+        # width can be narrower than the codebook width (e.g. content-only
+        # 4 vs codebook 6 with positional dims); we match on the shared
+        # prefix rather than raising on the width mismatch.
+        d = min(vec.shape[0], codebook.shape[1])
+        sims = F.cosine_similarity(vec[:d].unsqueeze(0), codebook[:, :d], dim=1)
         return sims.argmax().item()
 
     def forward(self, input, return_meta=False):
@@ -2325,6 +2151,14 @@ class Embedding(Basis):
 
     def decode_reverse_meta(self, vectors, subspace=None):
         """Recover lexical metadata from restored reverse-path vectors."""
+        # Collapse any spurious singleton dims so vectors ends up 3-D
+        # [B, N, D]. Model output can arrive as [B, N, 1, D] from certain
+        # OutputSpace configurations; the inner unit dim is vestigial.
+        while vectors.ndim > 3 and 1 in vectors.shape[2:-1]:
+            for ax in range(2, vectors.ndim - 1):
+                if vectors.shape[ax] == 1:
+                    vectors = vectors.squeeze(ax)
+                    break
         embSize = vectors.shape[-1]
         positions = None
         times = None

@@ -1,5 +1,64 @@
 also, the grammar itself now looks as follows:
 
+S = NP
+S = lift(NP, VP)
+#S = MP S
+S = equals(NP, NP)
+S = equals(NP, AP)
+S = part(NP, NP)
+S = not(S)
+S = conjunction(S, S)
+S = disjunction(S,S)
+S = query(NP, AP)
+S = query(NP, NP)
+S = lift(NP, VO)
+VO = intersection(VP, NP)
+#S = PP S
+
+# --- Noun Phrase ---------------------------------------------------------
+
+NP = N
+NP = intersection(AP,NP)
+NP = intersection(NP,PP)
+NP = conjunction(NP, NP)
+NP = disjunction(NP, NP)
+
+# --- Verb Phrase ---------------------------------------------------------
+
+VP = V
+VP = intersection(ADV, VP)
+#VP = MP VP
+#VP = ADJ VP
+VP = intersection(V,PP)
+#VP = V NP
+#VP = V S
+#VP = V MP
+#VP = VP PP
+#VP = DEF VP
+VP = not(VP)
+
+# --- Adjective Phrase ----------------------------------------------------
+
+AP -> ADJ
+AP -> DET
+AP -> intersection(ADJ, AP)
+AP -> DEG AP
+
+# --- Modal Phrase --------------------------------------------------------
+
+MP -> ADV
+MP -> ADV MP
+
+# --- Prepositional Phrase ------------------------------------------------
+
+PP -> P NP
+
+# --- Definitive Groups ---------------------------------------------------
+
+DEF -> IS
+DEF -> IS NOT
+HAS -> POSSESS
+HAS -> POSSESS NOT
 
 
         <upward>

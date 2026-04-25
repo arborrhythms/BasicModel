@@ -604,3 +604,545 @@ positional content; see the `truth_loss` call-site in
 - **Associativity:** Does RadMin(RadMin(a, b), c) = RadMin(a, RadMin(b, c)) hold for all combinations?
 - **Duality:** RadMin and RadMax are not classical duals via NOT due to differing treatment of zero (absorbing vs. transparent). What is the formal relationship between them?
 - **Extension to fuzzy domain:** In the continuous fuzzy extension (values in [-1, +1]), what is the behavior of NON? Does it drive toward zero continuously or collapse discretely?
+
+---
+
+## 8. Regions, Witness Sets, and the Slab Lattice
+
+Sections 1 and 3 listed operators on individual vectors.  This section
+lifts them to *regions* — pairs of vectors interpreted as the lower
+and upper envelopes of an axis-aligned slab system — and shows the
+lattice structure that emerges.  It also names the level-crossing
+axis (lift / lower) under which the symbolic and conceptual layers
+exchange information, and locates Pi and Sigma as the layer-scale
+instantiations of that axis.
+
+The pointwise operations are agnostic of which subspace field supplies
+the vectors.  They consume tensors with values in `[-1, 1]`:
+
+- a **single vector** is a **point**;
+- a **pair of vectors `(ℓ, u)`** is a **region**.
+
+Whatever upstream stage produced the vectors has already chosen the
+basis.  The pointwise ops operate on values; they do not inspect or
+care about the field.
+
+### Witness sets
+
+A *witness set* `V = {V₁, …, V_n}` is whatever basis the caller has
+already projected onto.  In the current architecture this is most
+often the ConceptualSpace codebook — percepts and symbols project
+onto that basis upstream, and post-projection activations arrive at
+the ops with witness directions aligned to the standard basis (so
+the per-coordinate variants of all the region operations below
+specialize to plain elementwise min/max).
+
+The choice of witness set is a substantive design commitment of the
+producing stage: it determines which dimensions parthood and region
+containment care about.  But the ops themselves take the basis as a
+given — they read coordinates, not directions.
+
+### The Cantorian axis: lift = synthesis (∨), lower = analysis (∧)
+
+A set, in Cantor's phrase, is *a many thought of as a one*.  The
+**one** lives at the symbolic layer (a single symbol naming the many);
+the **many** lives at the conceptual layer (the constituents being
+thought of together).  The level-crossing pair is named accordingly:
+
+- **Lift (C → S, "many → one") is *synthesis* = union (∨).**  Pulling
+  many concepts into one symbol takes the join of what is being
+  collected and names the collection.  The receiving (symbolic) layer
+  asserts the one-ness; that is where synthesis happens.
+- **Lower (S → C, "one → many") is *analysis* = intersection (∧).**
+  Decomposing a symbol into its conceptual constituents factors the
+  one into the meet of its components.  The producing (conceptual)
+  layer holds the analyzed many; that is where analysis happens.
+
+This identifies the layer-scale primitives:
+
+- **`SigmaLayer`** (weighted sum, max readout) is the **synthesis**
+  primitive — the layer-scale lift.  Pooling many concept
+  contributions into one saturating symbolic commitment is exactly
+  the union semantics under śamatha single-pointedness:
+  `SigmaLayer.forward(c) ≈ lift_∨(c₁, …, c_K)` projecting C → S.
+- **`PiLayer`** (weighted product) is the **analysis** primitive —
+  the layer-scale lower.  Factoring one symbol into a product of
+  conceptual contributions is the meet: every component must
+  contribute for the symbol to factor through.
+  `PiLayer.forward(s) ≈ lower_∧(s) → (c₁, …, c_K)` projecting S → C.
+
+**Ownership.**  Under this framing the synthesis primitive is owned
+by the layer that *receives* the synthesized one (the narrow end of
+the projection); the analysis primitive is owned by the layer that
+*produces* the analyzed many (the wide end).  So:
+
+| Space          | Owns                                |
+|----------------|-------------------------------------|
+| PerceptualSpace | `PiLayer` (analysis down to features) |
+| ConceptualSpace | `SigmaLayer` (synthesis from P), `PiLayer` (analysis down to S) |
+| SymbolicSpace   | `SigmaLayer` (synthesis from C)      |
+
+Each interior layer owns both — a Sigma for synthesis from below, a
+Pi for analysis to below.  The boundary layers own only one.
+
+This ownership pattern is the **inverse** of the current code
+arrangement, where SymbolicSpace constructs the C → S `PiLayer`.
+The pending refactor is documented in
+[plans/2026-04-24-lift-lower-bivector-refactor.md](plans/2026-04-24-lift-lower-bivector-refactor.md).
+
+**Convexity asymmetry, restated.**  The asymmetry of Logic.md §8
+becomes a property of the level-crossing direction:
+
+- **Lower (analysis, ∧) is exact.**  Intersection of convex regions
+  is convex; factoring a symbol back into its conceptual
+  constituents loses no structure.
+- **Lift (synthesis, ∨) is lossy.**  Union of convex regions is
+  generally non-convex; the symbolic "one" gathers a many whose
+  set-union is over-approximated by the convex hull.  The
+  synthesized symbol papers over the disjunctive structure of its
+  constituents.
+
+So the Cantorian frame and the lattice frame agree: the moment of
+the One (lift, synthesis, ∨) is where the over-approximation lives,
+and the moment of the Many (lower, analysis, ∧) is where exactness
+lives.
+
+### Bivector lower: preserving contradiction across the level boundary
+
+The S → C lower is intrinsically lossy (it is the inverse of a lossy
+lift), but the loss does not have to swallow contradiction silently.
+Symbolic activations carry a bipartite `.what` of the form
+`[aP, aN]` — positive and negative evidence on independent dimensions
+— and the four corners of that pair encode the tetralemma:
+
+```
+[1, 0] = TRUE       [0, 0] = NEITHER (no commitment)
+[0, 1] = FALSE      [1, 1] = BOTH    (contradiction)
+```
+
+Collapsing each pair to a signed scalar `aP − aN` makes
+contradiction `[1, 1]` and ignorance `[0, 0]` both map to `0`,
+indistinguishably.  The structural fix is to keep the conceptual
+activation **bivector-shaped**: `ConceptualSpace.subspace.activation`
+becomes `[N, 2]` (N concepts, each a `(pos, neg)` pair), mirroring
+SymbolicSpace's `subspace.what`.  Lowering preserves both poles;
+contradiction stays on dedicated dimensions where downstream code
+can see it.
+
+Two scalars derive from the bivector when a scalar is needed:
+
+- **signed evidence**: `aP − aN` — canonical truth direction.
+- **contradiction mask**: `aP · aN` — high where both poles fire.
+
+Downstream consumers can decide whether the signed scalar is
+meaningful or whether the contradiction mask vetoes it.  The
+existing `tetralemma_balance_penalty` (Layers.py) already gates the
+`[1, 1]` corner as a training-time pressure; under bivector lower it
+becomes a per-concept regularizer rather than a symbol-only one.
+
+This is the same shape `TruthLayer.luminosity` (positive-pole
+conjunction) and `TruthLayer.darkness` (negative-pole conjunction)
+already use — two scalars whose interaction tells you whether the
+truth state is coherent or contradictory.  Bivector lower extends
+that pattern into ConceptualSpace.
+
+### The unified operation signature, refined
+
+Every operation has the same shape:
+
+```
+Y = f(X1, X2=None, mode='AND', inverse=False)
+```
+
+`X1`, `X2` are points or regions (per the rules above; X2 is None for
+the unary case).  `mode` selects among the operator trinity:
+
+| `mode`  | Forward (`inverse=False`) | Inverse (`inverse=True`) |
+|---------|---------------------------|--------------------------|
+| `AND`   | meet — `min` (point), envelope tighten (region), `PiLayer` (layer) | partial inverse — codebook-search witness recovery |
+| `OR`    | join — `max` (point), envelope loosen (region), `SigmaLayer` (layer) | partial inverse — codebook-search witness recovery |
+| `NOT`   | bivector pole flip / sign flip | self-inverse |
+
+`f` is one of two top-level dispatchers:
+
+- **`lift(X1, X2, mode, inverse)`** — synthesis (default `mode='OR'`,
+  the Cantorian polarity).  At the layer scale: pooled SigmaLayer
+  (or its negation-shaped sibling for `mode='NOT'`).  At the point
+  scale: max / mean / pole-flip depending on mode and smoothness.
+- **`lower(X1, X2, mode, inverse)`** — analysis (default
+  `mode='AND'`).  At the layer scale: pooled PiLayer.  At the point
+  scale: min / product / pole-flip.
+
+The four input combinations (point×point, point×region, region×point,
+region×region) collapse to one rule by treating a point as a
+degenerate region containing the origin: the slab system with
+envelopes `(min(0, x), max(0, x))`.  Every op is region-against-
+region with point cases as the degenerate specialization.
+
+### Grammatical dispatch: states, category vectors, rules
+
+The unified signature does not run on its own.  *Grammar rules* are
+the dispatcher: each rule application during parsing fires a typed
+`combine` call whose `mode` and `direction` are fixed by the rule's
+annotation, and whose operand regions are designated by the
+**category vectors** labelling each grammatical state.
+
+**States and category vectors.**  The grammar in
+[`data/grammar.cfg`](../data/grammar.cfg) defines the phrase-level
+nonterminals — **S, NP, VP, AP, MP, PP, DEF, HAS** — and the
+content-word terminals **N, V, ADJ, ADV** plus closed-class
+terminals (IS, POSSESS, NOT, AND, OR, P, DET, DEG).  Each
+nonterminal is a *grammatical state*; each carries a **category
+vector**, a learned bivector prototype in the conceptual codebook
+that labels what kind of phrase the state holds.
+
+The category vector plays two roles at once:
+
+1. **Witness-set selector.**  It picks which dimensions of the
+   bipartite `.what` are relevant for the rule.  ADJ ∩ N is AND
+   restricted to the dimensions where ADJ-category and N-category
+   support is concentrated; orthogonal dimensions pass through
+   unchanged.
+2. **Operand-region designator.**  It identifies the region in the
+   conceptual layer the operand lives in.  An ADJ-tagged percept
+   populates the ADJ region; an N-tagged percept populates the N
+   region; `lower(ADJ_state, N_state, mode='AND')` is the
+   intersection of *those* regions, not of two arbitrary points.
+
+The category vectors live in the conceptual codebook alongside
+content concepts.  ADJ-ness is itself a concept — used reflexively
+as a state label rather than as a content prototype, but subject to
+the same `ImpenetrableLayer` regularization pressures.  Disjoint
+parts of speech (ADJ vs N) should land as `disjoint` in the
+five-relations classifier; phrase-level categories (NP, VP, etc.)
+should occupy related-but-distinct regions.
+
+**Rule annotations.**  Each grammar production is annotated with
+`(mode, direction)`:
+
+| `mode`  | Forward direction | Semantics |
+|---------|-------------------|-----------|
+| `AND`   | `lower`           | meet — restriction, modification |
+| `OR`    | `lift`            | join — coordination, set union |
+| `NOT`   | `lift` (unary)    | pole flip — sentential / VP negation |
+| `PART`  | `lower`           | mereological assertion — "X is Y" predication |
+| `EQUAL` | `lower`           | mutual parthood — copula identification |
+| `HAS`   | (relational)      | asymmetric possession |
+| `BIND`  | `lower`           | compositional argument-binding (predicate / argument) |
+
+The first three reproduce the trinity from the unified signature.
+The next four extend it for grammatical relations the trinity
+doesn't cover — `PART` and `EQUAL` route to the existing mereology
+suite from Section 3 and [Mereology.md](Mereology.md); `HAS` is a
+relational assertion (possession); `BIND` is the generic
+compositional bind that holds together predicate-argument and
+modifier-modificand structures that don't simplify to a pure logical
+operator.
+
+**Rule classification under grammar.cfg.**  Every rule in
+`data/grammar.cfg` falls into one of these patterns:
+
+- **Pure logical (the few S productions):**
+  - `S -> S AND S` → `(AND, lower)` — propositional conjunction.
+  - `S -> S OR S` → `(OR, lift)` — propositional disjunction.
+  - `S -> NOT S` → `(NOT, lift)` — propositional negation.
+  - `VP -> NOT VP` → `(NOT, lift)` — predicate negation.
+
+  These are the *only* rules that exercise `lift` and `lower` as
+  pure logical operators on same-category operands.  The S layer
+  has just a handful of these — exactly as the user observed: "we
+  will have only several S productions."
+
+- **Modification (`AND` at `lower`):**
+  - `NP -> AP NP`, `NP -> NP PP`           — adjective / PP modifying noun.
+  - `VP -> ADV VP`, `VP -> MP VP`, `VP -> ADJ VP`, `VP -> VP PP` — adverbial / modal / adjunct modification of a verb phrase.
+  - `AP -> ADJ AP`, `AP -> DEG AP`         — adjective stacking, degree.
+  - `MP -> ADV MP`                          — adverb stacking.
+  - `S -> MP S`, `S -> PP S`               — sentential modification.
+
+  Each is `lower(modifier_state, head_state, mode='AND')` — the
+  modifier's category vector restricts the head's region by the
+  intersection of the two slab systems.  Off-category dimensions
+  pass through; on-category dimensions tighten.  This is the
+  canonical ADJ ∩ N example, generalized to every modifier rule.
+
+- **Coordination (`OR` at `lift`):**
+  - `NP -> NP AND NP`, `NP -> NP OR NP`    — entity-set union.
+
+  Both surface forms ("apples and oranges" / "apples or oranges")
+  produce a *single* coordinated NP whose conceptual region is the
+  convex hull of the two NPs — Cantorian synthesis of the many into
+  the one.  The propositional AND/OR distinction reasserts when the
+  resulting NP is used as an argument to a predicate (the predicate
+  applies to each conjunct in the AND case, to at least one in the
+  OR case); at the NP level itself, both are `lift(NP1, NP2,
+  mode='OR')`.
+
+- **Mereological / relational binds:**
+  - `S -> NP DEF NP` → `(EQUAL, lower)` — copula identification: *X is the Y*.
+  - `S -> NP DEF AP` → `(PART,  lower)` — predicative attribution: *X is red*.  The NP's region picks up containment in the AP's region.
+  - `S -> NP HAS NP` → `(HAS,  relational)` — possession: *X has Y*.
+  - `S -> NP VP`   → `(BIND, lower)` — subject-predicate composition.
+  - `VP -> V NP`, `VP -> V PP`, `VP -> V S`, `VP -> V MP`, `VP -> DEF VP` → `(BIND, lower)` — verb + complement.
+  - `PP -> P NP`   → `(BIND, lower)` — preposition + complement.
+  - `S -> DEF NP AP`, `S -> DEF NP NP`, `S -> V NP VP` → existential / imperative variants — `BIND` with rule-specific category-vector typing.
+
+- **Terminal projection (identity lift to a category):**
+  - `S -> NP`, `NP -> N`, `VP -> V`, `AP -> ADJ`, `AP -> DET`, `MP -> ADV` — assert the LHS state's category vector onto the RHS's activation.  This is `lift(rhs, mode='OR')` with the LHS category vector as the synthesis target — a trivial 1-of-1 pooling that just *types* the activation as the LHS category.
+
+**Worked example: ADJ ∩ N → NP.**  Parsing "red apple" produces:
+
+```
+NP_state  = lower( AP_state, N_state, mode='AND' )
+            where  AP_state.activation comes from  ADJ -> "red"
+                   N_state.activation  comes from  N   -> "apple"
+                   AP_state.category_vector  =  cb["AP"]
+                   N_state.category_vector   =  cb["N"]
+                   NP_state.category_vector  =  cb["NP"]
+```
+
+The `lower(..., mode='AND')` call performs the bivector meet on the
+ADJ and N regions — tightening the slab on the dimensions where ADJ
+("red") has support, leaving other N-dimensions untouched.  The
+result is stamped with the NP category vector (the LHS).  The S-tier
+parthood relation `part(NP, N)` then holds geometrically — the
+modified NP is part of the unmodified N — because envelope
+dominance is implied by the meet.
+
+**Why this matters for the codebook.**  Without grammatical
+dispatch, the syntactic-category region of the codebook (ADJ, N, V,
+NP, VP, ...) is unsupervised: nothing pushes ADJ-vectors and
+N-vectors to be `disjoint` in the five-relations sense, nothing
+pushes the modification rule's output to land in the NP region.
+The codebook ends up holding an unstructured soft superposition of
+content and category.  Wiring grammar rules into the dispatcher
+provides the missing supervision: every parse step is a
+category-vector-guided `combine` call, and the category dimensions
+of the codebook are pressed into the structure the grammar
+implies.
+
+The implementation is staged in
+[plans/2026-04-24-lift-lower-bivector-refactor.md](plans/2026-04-24-lift-lower-bivector-refactor.md)
+Step 6.
+
+### Region as slab system
+
+A region `R` is a pair of vectors `(ℓ, u)` with `ℓ ≤ u` componentwise.
+The region's extension is the axis-aligned slab system
+
+```
+R = { x : ℓ_i ≤ x_i ≤ u_i  for all i }
+```
+
+— an axis-aligned bounding hyperrectangle.  When the envelopes
+straddle the origin, `ℓ_i ≤ 0 ≤ u_i` on the relevant axis, encoding
+both positive and negative evidence.
+
+A region typically *originates* from a prototype set `{p₁, …, p_K}`
+(the codebook itself, or any stored subset such as the truth set):
+
+```
+ℓ_i = min_k  p_{k,i}
+u_i = max_k  p_{k,i}
+```
+
+But the ops below take `(ℓ, u)` directly — they don't ask where it
+came from.  `TruthLayer.fusion` (Section 7 Fusion) is one consumer of
+this convention: it computes the upper envelope `u` elementwise across
+stored truths; `TruthLayer.luminosity` computes a clipped form
+`||relu(min positive_poles)||` of the lower envelope `ℓ`.
+
+### Two definitions of parthood
+
+The model carries two parthood definitions with different properties.
+Both are used; which one is in scope depends on whether you are
+reasoning about points or about regions.
+
+**Per-Whole projection (point-level).**  For a candidate Whole `W` and
+candidate Part `P`, decompose `P` in `W`'s frame:
+
+```
+P = p_∥ · Ŵ  +  P_⊥
+agreement(P, W)    = max(0,  p_∥)
+disagreement(P, W) = max(0, −p_∥)
+```
+
+Both are non-negative; `P_⊥` is set aside as W-irrelevant
+(uncertainty rather than evidence).  This is basis-free, returns two
+scalars in principle, but is non-transitive (cones don't nest).
+`Ops.part(scalar=True)` (Section 1, Mereology.md) is the *agreement*
+form: clipped cosine `max(0, x·y) / (‖x‖ ‖y‖)` ∈ [0, 1].
+Disagreement is recoverable as `Ops.part(-x, y, scalar=True)` or
+through `whole`/`copart`/`boundary`.
+
+**Witness-set dominance (region-level).**  Given `V`,
+
+```
+P ≼_V W   iff   P · V_i  ≤  W · V_i   for all V_i ∈ V
+```
+
+This is elementwise dominance in the (possibly non-orthogonal,
+overcomplete) frame given by `V`.  A genuine partial order:
+reflexive, antisymmetric, transitive.  Lifted to regions, it becomes
+*envelope dominance*:
+
+```
+R₁ ⊆_V R₂   iff   ℓ_{R₂}(V_i) ≤ ℓ_{R₁}(V_i)  and  u_{R₁}(V_i) ≤ u_{R₂}(V_i)
+                  for all V_i ∈ V
+```
+
+— transitive on regions, recovering the order property that
+point-level cosine parthood does not enforce.
+
+| Property        | Per-Whole projection | Witness-set dominance |
+|-----------------|----------------------|------------------------|
+| Reflexive       | ✓                    | ✓                      |
+| Antisymmetric   | ✗ (collinear collapse) | ✓                    |
+| Transitive      | ✗ (cones don't nest) | ✓                      |
+| Basis-free      | ✓                    | ✗ (V is the basis)    |
+| Two scalars     | ✓ (agreement / disagreement) | derived from envelope deltas |
+
+Crisp transitivity for the per-Whole form fails because angle
+composition is super-additive in the worst case
+(`cos(α + β) < cos(α) · cos(β)` is not guaranteed) and chains of
+"mostly part-of" relations can degrade arbitrarily.  Two recoveries:
+
+1. **Witness-set dominance** is structurally transitive — the
+   universal quantifier over `V` carries through composition.
+2. **Graded parthood via t-norm composition.**
+   `deg(A ≼ C) ≥ T(deg(A ≼ B), deg(B ≼ C))` for some t-norm `T`.
+   The product t-norm corresponds to cosine composition under
+   small-angle approximation.
+
+### Intersection (meet) and union (join)
+
+Over a fixed `V`, the slab systems form a distributive lattice:
+
+```
+ℓ_{R₁ ⊓ R₂}(V_i) = max(ℓ_{R₁}(V_i), ℓ_{R₂}(V_i))
+u_{R₁ ⊓ R₂}(V_i) = min(u_{R₁}(V_i), u_{R₂}(V_i))      (meet)
+
+ℓ_{R₁ ⊔ R₂}(V_i) = min(ℓ_{R₁}(V_i), ℓ_{R₂}(V_i))
+u_{R₁ ⊔ R₂}(V_i) = max(u_{R₁}(V_i), u_{R₂}(V_i))      (join)
+```
+
+**Tighter envelope on each side, on each witness, for meet; looser
+envelope, for join.**  Intersection is empty when `ℓ > u` on any
+witness.
+
+`Ops.conjunction(monotonic=True)` and
+`Ops.disjunction(monotonic=True)` implement the elementwise min/max on
+single activation vectors — i.e. the meet and join of *one envelope
+slot* (or of two points treated as degenerate slabs with `ℓ = u`).
+The full envelope arithmetic on `(ℓ, u)` *pairs* lives in
+`TruthLayer.luminosity`/`fusion` over the stored truth set.
+
+### Convexity asymmetry: where disjunction breaks
+
+Convex sets are closed under intersection but not under union, in any
+dimension above 1.  Concretely:
+
+```
+R_P ∩ R_Q  =   R_P ⊓_V R_Q       (set intersection equals slab meet)
+R_P ∪ R_Q  ⊊  R_P ⊔_V R_Q       (set union strictly contained in join)
+```
+
+**Conjunction grounds cleanly in the geometric meet.**  Symbolic
+`P ∧ Q` corresponds to slab-system intersection across the level
+boundary without information loss.
+
+**Disjunction does not ground in the geometric join.**  The slab join
+is the convex hull of the set-union, a strict over-approximation that
+includes "bridge" points satisfying neither `P` nor `Q`.  A faithful
+representation of `P ∨ Q` requires a *set of regions* `{R_P, R_Q}` —
+disjunctive normal form over regions, a multi-region object that lives
+at the symbolic layer.
+
+The current implementation uses single-region monotonic `max` for
+disjunction, accepting the over-approximation.  For a single-pointed
+(śamatha) representation this is intentional: adding prototypes to a
+category should expand the region to enclose them.  Multi-region DNF
+would require structural changes to the symbolic layer.
+
+The same asymmetry appears in topology (intersections of closed sets
+are closed; arbitrary unions need not be), in measure theory
+(σ-algebras require explicit closure under union), and in lattice
+theory generally.  It aligns with apoha / exclusion-based accounts in
+Indo-Tibetan epistemology: conjunctive concepts remain within a single
+exclusion-determined region, while disjunctive concepts require a
+genuinely higher-order construction over predicates.
+
+### Inverses across the six operations
+
+| Operation | Inverse | Status in `Ops` |
+|---|---|---|
+| Part `P ≼ W` | Whole `W ≽ P` (converse) | `Ops.whole` (notational converse). Functional inverse `P` from `W` is intrinsically lossy — `P_⊥` is unconstrained. |
+| Whole | Part (converse) | `Ops.part`. Same lossy direction. |
+| Intersection `R₁ ⊓ R₂` | Region subtraction `R₁ \ R₂` | None.  Subtraction is non-unique and generally non-convex; exits the slab formalism.  Closest analogue: `Ops.copart` (vector form `y − x`, point-level only). |
+| Union `R₁ ⊔ R₂` | Region subtraction | None.  Same reasons. |
+| Conjunction `P ∧ Q` | Negation via De Morgan: `¬(¬P ∨ ¬Q)` | `Ops.conjunctionReverse` performs *codebook search*: finds `cb_i` such that `conjunction(cb_i, cb_j) ≈ result`.  This is a *witness recovery*, not a functional inverse. |
+| Disjunction `P ∨ Q` | Negation via De Morgan: `¬(¬P ∧ ¬Q)` | `Ops.disjunctionReverse` — same codebook-search pattern. |
+| Negation | Self-inverse | `Ops.negationReverse = Ops.negation`.  Bitonic: sign flip.  Monotonic: paired-index pole flip. |
+
+Both intersection and union are lossy as binary operations and admit
+only partial inverses.  The symbolic Boolean algebra is closed under
+negation; the geometric slab lattice is closed under meet and join
+only.  **Crossing the level boundary is faithful for conjunction,
+lossy for disjunction, and breaks convexity for negation.**
+
+### Outlier sensitivity
+
+Envelopes are determined by *extremal* prototypes — a single outlier
+loosens the entire bounding box.  Standard mitigations:
+
+- **Quantile envelopes.**  Replace `min`/`max` with low/high quantiles
+  (e.g. 5th/95th percentile projections).
+- **Statistical envelopes.**  Slab width as `k · σ` of the projection
+  distribution.
+
+Both preserve lattice structure approximately but trade exact
+containment for outlier robustness.  The current implementation uses
+hard `min`/`max` throughout.
+
+### Differentiability
+
+`min` and `max` are sub-differentiable but produce *sparse* gradients:
+only the extremal prototype receives gradient.  Smoothed alternatives
+(softmin/softmax, log-sum-exp) would distribute gradient across all
+prototypes at the cost of softening the slab boundary.  The current
+implementation does not smooth — it shares the hard min/max primitive
+with the differentiable sorting layer (odd-even bubble sort with swap
+probabilities).
+
+### Summary table
+
+| Op | Symbol | Geometric counterpart | Exact? | Inverse |
+|---|---|---|---|---|
+| Part | `P ≼ W` | projection scalars / witness dominance | depends on definition | converse (lossy as functional inverse) |
+| Whole | `W ≽ P` | converse of Part | — | Part-of |
+| Intersection | `R₁ ⊓ R₂` | tighter envelope (meet) | ✓ exact | none (lossy); subtraction non-convex |
+| Union | `R₁ ⊔ R₂` | looser envelope (join) | ✗ over-approximates set-union | none (lossy) |
+| Conjunction | `P ∧ Q` | geometric meet | ✓ exact | negation (De Morgan) |
+| Disjunction | `P ∨ Q` | *not* geometric join; multi-region object | — (no single-region representation) | negation (De Morgan) |
+
+### Open design questions
+
+1. **Witness set scoping.**  Fixed global `V` (the current implicit
+   standard basis) vs per-Whole `V_W`.  Per-Whole witness sets break
+   transitivity along chains unless `V_B ⊆ V_C` whenever `B ≼ C`.  Is
+   monotone witness growth a reasonable design constraint?
+2. **Magnitude semantics.**  Does parthood-agreement scale with
+   `‖P‖` (containment-style), or only with direction (alignment-
+   style)?  Depends on whether vector magnitude encodes
+   confidence/salience or semantic content.
+3. **Outlier handling.**  Quantile vs σ-multiple envelopes; which
+   preserves lattice structure best in practice?
+4. **Negation / complement at the geometric layer.**  Complement of a
+   slab system is non-convex; some bounded "domain of relevance" is
+   needed to make complement well-defined.  The current
+   `Ops.negation(monotonic=True)` operates on the bivector pair, not
+   on a region — region complement remains undefined.
+5. **Implication.**  Not yet defined.  Material implication
+   `P → Q ≡ ¬P ∨ Q` would inherit disjunction's multi-region
+   structure.  A geometric counterpart (e.g. region containment as a
+   graded truth value) may be more natural.
