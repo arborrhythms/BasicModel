@@ -92,12 +92,15 @@
   <WordSpace>
     <useGrammar>none</useGrammar>
     <language>
+      <start>S</start>
       <grammar>
         <S>not(S)</S>
         <S>intersection(S, S)</S>
         <S>union(S, S)</S>
         <S>lower(S, S)</S>
         <S>lift(S, S)</S>
+        <S>identity(S)</S>
+        <S>absorb(S, S)</S>
       </grammar>
       <interpretation>0.5</interpretation>
     </language>

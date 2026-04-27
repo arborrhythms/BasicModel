@@ -72,6 +72,10 @@
            an inline <grammar> block.  The cfg path is resolved against
            ProjectPaths.PROJECT_DIR (basicmodel/) when not absolute. -->
       <grammarCfg>data/grammar.cfg</grammarCfg>
+      <!-- Start nonterminal for soft-reset detection. The grammar.cfg
+           path uses 'S' as the conventional root; matches the chart
+           compose category-id check in SyntacticLayer.compose. -->
+      <start>S</start>
       <interpretation>0.5</interpretation>
     </language>
   </WordSpace>

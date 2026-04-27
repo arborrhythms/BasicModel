@@ -36,6 +36,23 @@ try:
 except Exception:
     LibraryVectorQuantize = None
 _vq_F = F
+
+
+def _reset_call(reset_fn, batch=None, hard=True):
+    """Call a Reset callable with the per-row signature, falling back
+    to the legacy zero-arg signature when the callee does not accept
+    ``batch`` / ``hard``.
+
+    Used by Space.Reset cascades so older Layer / SubSpace classes that
+    haven't adopted the per-row Reset(batch=b, hard=...) signature keep
+    working unchanged. Falls back to ``reset_fn()`` (legacy semantics)
+    on TypeError; callers see a global wipe instead of a per-row clear,
+    which is a no-op-equivalent superset of the requested action.
+    """
+    try:
+        return reset_fn(batch=batch, hard=hard)
+    except TypeError:
+        return reset_fn()
 class VectorQuantize(nn.Module):
     def __init__(
         self,
@@ -2647,11 +2664,31 @@ class SubSpace(nn.Module):
         self.valid_mask = None
         self.stem_embedded = False
 
-    def Reset(self):
-        """Per-sentence teardown. Drops the serial-mode warm cache so
-        the next forward starts cold. ``errors`` and ``wordSpace``
-        persist (per-batch, per-sentence respectively; both owned by
-        MentalModel lifecycle, not per-Reset)."""
+    def Reset(self, batch=None, hard=True):
+        """Per-document teardown. Drops the serial-mode warm cache so
+        the next forward starts cold.
+
+        ``batch`` (optional int): when set, clear only the slice of
+        per-row state owned by source row ``batch``. ``None`` clears
+        every row (legacy global-Reset semantics).
+
+        ``hard`` (bool, default True): when True this is a document-
+        boundary reset (full state wipe). When False this is a soft
+        reset triggered by a sentence-internal grammar boundary; the
+        SubSpace itself has no per-row sentence state, so soft resets
+        are no-ops here.
+
+        ``errors`` and ``wordSpace`` persist (per-batch, per-document
+        respectively; both owned by MentalModel lifecycle, not per-Reset).
+        Serial cache is per-tick warm state and applies to the whole
+        batch by construction; per-row clears still drop it because the
+        cache rebuilds cheaply on the next tick.
+        """
+        if not hard:
+            return
+        # batch=None and per-row both invalidate the cache: the cache
+        # entries are tensors keyed on owner-space id, not per-row, and
+        # the next forward rebuilds them.
         self.serial_cache.clear()
 
     # Legacy alias. New code should use Start() / End() for symmetry
@@ -3738,6 +3775,31 @@ class WordSubSpace(SubSpace):
             self._top.zero_()
         self._blocks = [[] for _ in range(self.batch)]
 
+    def clear_rows(self, start, end):
+        """Zero rows ``[start, end)`` of the stack and rewind their tops.
+
+        Per-row hard reset entry point (called from
+        ``WordSpace.Reset(batch=b, hard=True)`` once the source row's
+        K-window mapping has been resolved). Out-of-range entries are
+        silently clipped to the current batch size.
+        """
+        s, e = int(start), min(int(end), self.batch)
+        if e <= s:
+            return
+        what_W = self.what.getW() if self.nWhat > 0 else None
+        where_W = self.where.getW() if self.nWhere > 0 else None
+        when_W = self.when.getW() if self.nWhen > 0 else None
+        for W in (what_W, where_W, when_W):
+            if W is not None:
+                W[s:e].zero_()
+        # Invalidate the cached muxed event so materialize() rebuilds.
+        if self.event is not None:
+            self.event.setW(None)
+        if self._top is not None:
+            self._top[s:e] = 0
+        for b in range(s, e):
+            self._blocks[b] = []
+
     # -- push / read -------------------------------------------------
     def _lookup(self, rule_id):
         """Return a ``[nWhat]`` dense vector for a rule_id, or ``None``.
@@ -4227,18 +4289,29 @@ class Space(nn.Module):
         if sub is not None and hasattr(sub, 'Start'):
             sub.Start()
 
-    def Reset(self):
-        """Per-sentence teardown. Cascades to child layers and subspace.
+    def Reset(self, batch=None, hard=True):
+        """Per-document teardown. Cascades to child layers and subspace.
+
+        ``batch`` (optional int): when set, clear only the per-row state
+        for source row ``batch``. ``None`` keeps the legacy global-Reset
+        semantics (clear everything). Layers / subspaces that don't
+        understand the per-row signal silently fall back to a global
+        clear so legacy paths stay correct.
+
+        ``hard`` (bool, default True): True = document boundary; False =
+        sentence-internal soft reset. The base cascade forwards both flags
+        to children; subclasses interpret as needed.
 
         Subclasses override to add their own resets (buffer clears, cursor
-        resets, etc.) and must call super().Reset() first.
+        resets, etc.) and must call super().Reset(batch=batch, hard=hard)
+        first.
         """
         for layer in self.layers:
             if hasattr(layer, 'Reset'):
-                layer.Reset()
+                _reset_call(layer.Reset, batch=batch, hard=hard)
         sub = getattr(self, 'subspace', None)
         if sub is not None and hasattr(sub, 'Reset'):
-            sub.Reset()
+            _reset_call(sub.Reset, batch=batch, hard=hard)
 
     def End(self):
         """Per-batch teardown. Counterpart to Start() at the end of the
@@ -4521,27 +4594,51 @@ class InputSpace(Space):
         self._ar_embedded = None
         self._ar_total = 0
 
-    def Reset(self):
-        """Per-sentence teardown for AR state."""
-        super().Reset()
+    def Reset(self, batch=None, hard=True):
+        """Per-document teardown for AR state.
+
+        ``batch`` (optional int): clear per-row state only for source
+        row ``batch``. ``None`` clears every row. The AR caches stored
+        on InputSpace (``_ar_embedded``, ``_ar_total``,
+        ``_cached_embedding``) are batch-shared rebuildable scratch from
+        the next forward, so per-row clears still drop them — the next
+        forward repopulates from the live input.
+
+        ``hard`` (default True): True is the document boundary; False is
+        a sentence-internal soft reset and is a no-op for InputSpace
+        (no per-sentence state lives here).
+        """
+        super().Reset(batch=batch, hard=hard)
+        if not hard:
+            return
         self._ar_embedded = None
         self._ar_total = 0
         self._cached_embedding = None
-        self._end_of_stream = False
+        # _end_of_stream is a host-side scalar/list under the rolling-cursor
+        # contract (next_tick returns the host-side hard_eos list directly);
+        # reset to False so any straggler diagnostic read sees a clean state.
+        if batch is None:
+            self._end_of_stream = False
+        elif isinstance(self._end_of_stream, list):
+            if 0 <= batch < len(self._end_of_stream):
+                self._end_of_stream[batch] = False
+        elif torch.is_tensor(self._end_of_stream):
+            if 0 <= batch < self._end_of_stream.shape[0]:
+                self._end_of_stream[batch] = False
 
     @property
     def batch_advances_sentence(self):
         """Host-side: does the loader guarantee a sentence boundary this batch?
 
-        SentenceStreamDataset emits one sentence per row per batch, so
-        every AR batch is a fresh sentence boundary by construction.
-        Reading this property never forces a GPU->CPU sync; the
-        previous gate (`_end_of_stream.all().item()`) checked what the
-        host already knew, at the cost of a per-batch pipeline stall.
+        Legacy property kept for backward compat with the predecessor
+        handoff (per-row-AR-no-eos-sync). Under the rolling-cursor
+        design this gate is no longer consulted by the runEpoch outer
+        loop — Reset is dispatched per-row from ``next_tick``'s
+        ``hard_eos`` signal. Returns True so any remaining call site
+        keeps its prior behavior (Reset every batch).
 
-        A future rolling-sentences loader would override this to return
-        a per-row tensor; the runBatch gate would then need to fan out
-        Reset to per-row state. Out of scope for the simple version.
+        A future cleanup PR can delete the property once every reader
+        has migrated to the per-row Reset path.
         """
         return True
 
@@ -5374,9 +5471,18 @@ class PerceptualSpace(Space):
         stacked = torch.stack(vecs, dim=0)
         return stacked.max(dim=0).values
 
-    def Reset(self):
-        """Clear caches so the next forward() does a full recompute."""
-        super().Reset()
+    def Reset(self, batch=None, hard=True):
+        """Clear caches so the next forward() does a full recompute.
+
+        See ``Space.Reset`` for ``batch`` / ``hard`` semantics. The
+        cached event is rebuildable scratch and is dropped on either
+        a per-row or global reset; soft (hard=False) resets are no-ops
+        because PerceptualSpace carries no per-sentence state of its
+        own.
+        """
+        super().Reset(batch=batch, hard=hard)
+        if not hard:
+            return
         sub = getattr(self, 'subspace', None)
         if sub is not None and getattr(sub, 'event', None) is not None:
             sub.event.setW(None)
@@ -5896,9 +6002,14 @@ class ConceptualSpace(Space):
     def certainty(self, x):
         return x.T @ x
 
-    def Reset(self):
-        """Clear the subspace event so next forward() does a full recompute."""
-        super().Reset()
+    def Reset(self, batch=None, hard=True):
+        """Clear the subspace event so next forward() does a full recompute.
+
+        See ``Space.Reset`` for ``batch`` / ``hard`` semantics.
+        """
+        super().Reset(batch=batch, hard=hard)
+        if not hard:
+            return
         sub = getattr(self, 'subspace', None)
         if sub is not None and getattr(sub, 'event', None) is not None:
             sub.event.setW(None)

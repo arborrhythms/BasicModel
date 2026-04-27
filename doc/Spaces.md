@@ -52,9 +52,12 @@ Hard-reset clears: parse stack, `_last_svo`, `_stm_fired`, codebook commit
 accumulator, discourse history, `serial_cache`, `_ar_embedded`,
 `_end_of_stream` for the affected row(s).
 
-Soft-reset clears: parse stack, `_last_svo`, re-arms `_stm_fired`. **Does
-not** touch discourse history or codebook EMA — those are
-document-scoped, not sentence-scoped.
+Soft-reset clears the per-sentence working buffers: the parse stack
+rows owned by the source row, `_last_svo[b]`, the category and
+reconstruction stacks for those rows, and re-arms `_stm_fired[b]` so
+the next sentence's discourse-prediction bias fires once. **Does not**
+touch discourse history (`InterSentenceLayer` ring buffer) or codebook
+EMA — those are document-scoped and form the inter-sentence prior.
 
 Reset is dispatched from the outer doc-streaming loop in `runEpoch`, never
 from inside `runBatch` (which is a pure compute brick — see

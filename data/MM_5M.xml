@@ -30,8 +30,8 @@
     <training>
       <numTrials>1</numTrials>
       <numEpochs>1</numEpochs>
-      <batchSize>64</batchSize>
-      <numWorkers>8</numWorkers>
+      <batchSize>32</batchSize>
+      <numWorkers>4</numWorkers>
       <learningRate>0.0005</learningRate>
       <reverseScale>0.1</reverseScale>
       <maskedPrediction>ARIR</maskedPrediction>
@@ -120,6 +120,11 @@
     <useGrammar>none</useGrammar>
 
     <language>
+      <!-- Start nonterminal: SyntacticLayer.compose marks a soft sentence
+           boundary when row b's parse stack reduces to a single live leaf
+           of this category. Outer doc-streaming loop (runEpoch) drains
+           the per-row signal and dispatches soft_reset(batch=b). -->
+      <start>S</start>
       <grammar>
         <S>true(S)</S>
         <S>false(S)</S>
@@ -139,6 +144,13 @@
         <S>lower(S, S)</S>
         <S>lift(S, S)</S>
         <S>lift(S, S, S)</S>
+        <!-- Sugar absorption: identity passes one operand through;
+             absorb keeps the left operand and discards the right
+             (whitespace / punctuation slot). Predictor learns to fire
+             these on grammatical noise so the rest of the grammar
+             doesn't need to encode it via union/intersection abuse. -->
+        <S>identity(S)</S>
+        <S>absorb(S, S)</S>
       </grammar>
       <interpretation>0.5</interpretation>
     </language>

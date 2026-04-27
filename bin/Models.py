@@ -2431,38 +2431,103 @@ class BasicModel(BaseModel):
             inputPred=inputDataPred,
             forwardInput=forwardInput,
         )
-        # Per-sentence Reset cascade. Under the SentenceStreamDataset
-        # contract (one sentence per row per batch), every AR batch is a
-        # sentence boundary by construction -- the host already knows.
-        # batch_advances_sentence is a host-side property; reading it
-        # never forces a GPU->CPU sync, unlike the prior _end_of_stream
-        # tensor reduction which stalled the pipeline every batch.
-        # MODEL_DEBUG runs a paranoia check that the per-row mask
-        # actually agrees with the loader's expectation.
-        should_reset = (not is_ar_mode) or self.inputSpace.batch_advances_sentence
-        if _util.MODEL_DEBUG and is_ar_mode:
-            eos_t = self.inputSpace._end_of_stream
-            if torch.is_tensor(eos_t):
-                assert bool(eos_t.all().item()), (
-                    "AR contract violated: not all rows reached EOS at "
-                    "batch end -- loader is not one-sentence-per-row")
-        if should_reset:
+        # Pure compute brick: no Reset, no truth-layer compact, no host
+        # sync inside runBatch. The outer doc-streaming loop in runEpoch
+        # (or any per-tick driver) is responsible for:
+        #   * Hard reset (per-row, on document boundary) via
+        #     ``BasicModel.dispatch_per_row_reset(hard_eos_list)``.
+        #   * Soft reset (per-row, on grammar sentence completion) via
+        #     ``wordSpace.drain_sentence_completed()`` →
+        #     ``wordSpace.soft_reset(b)``.
+        #   * ``truth_layer.compact()`` (one host sync per tick, kept
+        #     outside the brick).
+        # See doc/plans/2026-04-26-rolling-cursor-doc-streaming-handoff.md.
+        self.End()
+        return result, batchNum
+
+    def dispatch_per_row_reset(self, hard_eos):
+        """Fire per-row hard Reset on rows whose ``hard_eos[b]`` is True.
+
+        Called by the outer doc-streaming loop after ``runBatch`` returns.
+        ``hard_eos`` is the host-side ``list[bool]`` from
+        ``SentenceStreamDataset.next_tick``; rows with True consumed the
+        last bytes of their current document this tick and need a full
+        per-row state wipe before the next document starts.
+
+        Fast-path: when every row is True (the legacy DataLoader contract,
+        and also the common cursor case where all rows finish a doc on
+        the same tick), collapse to a single global ``space.Reset()`` per
+        space — one call instead of B. That keeps the dispatch overhead
+        at parity with the pre-handoff legacy path while preserving the
+        per-row capability for the partial-eos cursor case.
+
+        Otherwise, cascades ``space.Reset(batch=b, hard=True)`` over
+        every Reset-capable space; spaces that don't accept the per-row
+        signature fall back to a global wipe via ``_reset_call``.
+        """
+        if not hard_eos:
+            return
+        if all(hard_eos):
             for space in self.spaces:
                 if hasattr(space, 'Reset'):
                     space.Reset()
+        else:
+            for b, done in enumerate(hard_eos):
+                if not done:
+                    continue
+                for space in self.spaces:
+                    if hasattr(space, 'Reset'):
+                        try:
+                            space.Reset(batch=b, hard=True)
+                        except TypeError:
+                            space.Reset()
+        # Clear the legacy per-row eos diagnostic. Host-side write only.
+        eos = getattr(self.inputSpace, '_end_of_stream', None)
+        if isinstance(eos, list):
+            for b, done in enumerate(hard_eos):
+                if done and 0 <= b < len(eos):
+                    eos[b] = False
+        elif eos is not False and not torch.is_tensor(eos):
             self.inputSpace._end_of_stream = False
-        # Compact the truth_layer's per-tick pending buffer outside the
-        # forward+backward+step brick. This is the one host sync the
-        # truth-layer path needs; lives here (post-step) so the brick
-        # body itself remains sync-free. Under the rolling-cursor handoff
-        # this call relocates to the outer doc-streaming loop.
+
+    def dispatch_soft_reset(self):
+        """Drain ``wordSpace._sentence_completed`` and fire per-row soft reset.
+
+        Called by the outer doc-streaming loop after ``runBatch`` returns
+        (and *after* ``dispatch_per_row_reset`` so a hard-reset row's soft
+        signal is dropped — hard subsumes soft).
+        """
         ws = getattr(self, 'wordSpace', None)
-        if ws is not None:
-            tl = getattr(ws, 'truth_layer', None)
-            if tl is not None and hasattr(tl, 'compact'):
-                tl.compact(min_trust=0.5)
-        self.End()
-        return result, batchNum
+        if ws is None or not hasattr(ws, 'drain_sentence_completed'):
+            return
+        completed = ws.drain_sentence_completed()
+        for b in completed:
+            ws.soft_reset(batch=b)
+
+    def post_tick_compact(self):
+        """Run post-tick host work: truth-layer compaction.
+
+        Lives outside the compute brick so the brick body remains
+        sync-free. Called once per tick by the outer doc-streaming loop
+        after ``runBatch`` returns.
+        """
+        ws = getattr(self, 'wordSpace', None)
+        if ws is None:
+            return
+        tl = getattr(ws, 'truth_layer', None)
+        if tl is not None and hasattr(tl, 'compact'):
+            tl.compact(min_trust=0.5)
+
+    def _stub_outputs(self, B):
+        """Per-row sentinel outputs for cursor-mode AR ticks.
+
+        AR training is self-supervised on the input bytes; the
+        ``OutputSpace`` only needs a per-row tensor to keep its
+        prepOutput signature stable. Returns a list of B zero scalars
+        (matches the placeholder created by ``Data.processLM`` when
+        labels are absent).
+        """
+        return [torch.zeros(1) for _ in range(int(B))]
 
     def runEpoch(self, optimizer=None, batchSize=10, split="train"):
         """Run one epoch over the dataset (training if optimizer given, eval if None).
@@ -2542,59 +2607,132 @@ class BasicModel(BaseModel):
         # pickle CPU tensors. XML <numWorkers> sets _num_workers via
         # ModelFactory.run; the default lives in data/model.xml.
         num_workers = self._num_workers
-        loader = self.inputSpace.data.data_loader(
-            split=split,
-            num_streams=batchSize,
-            num_workers=num_workers,
-            prefetch_factor=(2 if num_workers > 0 else None),
-            pin_memory=(TheDevice.get().type == "cuda"),
+
+        # Cursor mode: text-input + byte lexer + AR mode opts into the
+        # rolling-cursor loader path, where each row's document is walked
+        # one slab_bytes-wide tick at a time. Hard reset fires per-row
+        # only when the row's cursor crosses a doc boundary
+        # (next_tick → hard_eos[b] = True). For non-cursor modes (numeric
+        # data, non-AR, non-byte) the legacy per-batch path stays in
+        # place; in that case hard_eos = [True] * B every tick to
+        # preserve the old "Reset every batch" semantics.
+        is_ar_mode_outer = (
+            hasattr(self, 'masked_prediction')
+            and self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
         )
+        text_input = (
+            isinstance(self.inputSpace.data.train_input, list)
+            and len(self.inputSpace.data.train_input) > 0
+            and isinstance(self.inputSpace.data.train_input[0], str)
+        )
+        byte_lexer = getattr(self, 'lexer', None) in ('byte', 'bytes')
+        use_cursor = (is_ar_mode_outer and text_input and byte_lexer)
 
-        with ctx:
-            step = 0
-            for inp_items, out_items in loader:
-                B = (inp_items.shape[0] if isinstance(inp_items, torch.Tensor)
-                     else len(inp_items))
-                inputTensor = self.inputSpace.prepInput(inp_items)
-                outputTensor = self.outputSpace.prepOutput(out_items)
+        if use_cursor:
+            # InputSpace.outputShape[0] (= ``nObj``) is the byte-buffer
+            # width the lex emits; the lex reserves one slot for the
+            # empty-word EOS sentinel (see Spaces.py:_lex_batch
+            # ``n_tokens = min(len(stream), nObj - 1)``). Sizing the slab
+            # to nObj - 1 keeps the cursor byte-faithful through the lex
+            # — every byte the cursor emits ends up in a real token.
+            slab_bytes = max(1, int(self.inputSpace.outputShape[0]) - 1)
+            loader = self.inputSpace.data.data_loader(
+                split=split,
+                num_streams=batchSize,
+                num_workers=0,         # cursor drives ticks itself
+                prefetch_factor=None,
+                pin_memory=(TheDevice.get().type == "cuda"),
+                slab_bytes=slab_bytes,
+            )
+            ds = loader.dataset
+            B_eff = ds.num_streams
+            outputTensor = self.outputSpace.prepOutput(
+                self._stub_outputs(B_eff))
+            with ctx:
+                step = 0
+                while not ds.all_done():
+                    slab, hard_eos = ds.next_tick()
+                    inputTensor = slab.to(
+                        device=TheDevice.get(), dtype=torch.int8
+                    ).unsqueeze(1)  # [B, 1, slab_bytes] -- prepInput shape
+                    result, _ = self.runBatch(
+                        train=training, batchNum=step,
+                        batchSize=B_eff, split=split,
+                        optimizer=optimizer,
+                        batch_override=(inputTensor, outputTensor),
+                    )
+                    if result is not None:
+                        record(result)
+                    # Tail dispatch: per-row hard reset, soft reset, then
+                    # the truth-layer compact -- all live outside runBatch
+                    # under the rolling-cursor compute-brick contract.
+                    self.dispatch_per_row_reset(hard_eos)
+                    self.dispatch_soft_reset()
+                    self.post_tick_compact()
+                    step += B_eff
+        else:
+            loader = self.inputSpace.data.data_loader(
+                split=split,
+                num_streams=batchSize,
+                num_workers=num_workers,
+                prefetch_factor=(2 if num_workers > 0 else None),
+                pin_memory=(TheDevice.get().type == "cuda"),
+            )
 
-                # Unified path: AR modes drive their outer pos loop
-                # inside MentalModel.forward() via the sliding-window
-                # buffer on InputSpace; non-AR modes run one pass. See
-                # basicmodel/doc/specs/2026-04-20-streaming-ar-training-loop-design.md
-                result, _ = self.runBatch(
-                    train=training, batchNum=step,
-                    batchSize=B, split=split,
-                    optimizer=optimizer,
-                    batch_override=(inputTensor, outputTensor),
-                )
-                if result is not None:
-                    record(result)
-                # batchNum is the sentence cursor (see runBatch:
-                # ``sentenceIdx = batchNum``).  Each loader iteration
-                # consumes B sentences in parallel, so the cursor
-                # advances by B, not 1.
-                step += B
+            with ctx:
+                step = 0
+                for inp_items, out_items in loader:
+                    B = (inp_items.shape[0]
+                         if isinstance(inp_items, torch.Tensor)
+                         else len(inp_items))
+                    inputTensor = self.inputSpace.prepInput(inp_items)
+                    outputTensor = self.outputSpace.prepOutput(out_items)
 
-                # Per-batch CBOW/SBOW embedding training for text AR
-                # modes, preserved from the old AR branch.
-                text_batch = (isinstance(inp_items, list)
-                              and inp_items
-                              and isinstance(inp_items[0], str))
-                is_ar_mode = (hasattr(self, 'masked_prediction')
-                              and self.masked_prediction
-                              in ('ARLM', 'ARUS', 'ARIR'))
-                if (training and is_ar_mode and text_batch
-                        and getattr(self, 'lexer', None)
-                        not in ('byte', 'bytes')):
-                    te = getattr(self, 'train_embedding', 'NONE')
-                    if te in ('CBOW', 'SBOW', 'BOTH'):
-                        method = 'CBOW' if te == 'CBOW' else 'SBOW'
-                        for sentence in inp_items:
-                            words = [t for t, _
-                                     in parse(sentence, lex='words')]
-                            self.perceptualSpace.train_embeddings(
-                                words, method=method)
+                    # Unified path: AR modes drive their outer pos loop
+                    # inside MentalModel.forward() via the sliding-window
+                    # buffer on InputSpace; non-AR modes run one pass. See
+                    # basicmodel/doc/specs/2026-04-20-streaming-ar-training-loop-design.md
+                    result, _ = self.runBatch(
+                        train=training, batchNum=step,
+                        batchSize=B, split=split,
+                        optimizer=optimizer,
+                        batch_override=(inputTensor, outputTensor),
+                    )
+                    if result is not None:
+                        record(result)
+                    # Legacy contract: every batch is a doc boundary
+                    # (one item per row per tick). Fire per-row hard
+                    # reset for every row, then drain soft_reset signal,
+                    # then compact -- mirrors the per-tick dispatch the
+                    # cursor path does.
+                    self.dispatch_per_row_reset([True] * B)
+                    self.dispatch_soft_reset()
+                    self.post_tick_compact()
+                    # batchNum is the sentence cursor (see runBatch:
+                    # ``sentenceIdx = batchNum``).  Each loader iteration
+                    # consumes B sentences in parallel, so the cursor
+                    # advances by B, not 1.
+                    step += B
+
+                    # Per-batch CBOW/SBOW embedding training for text AR
+                    # modes, preserved from the old AR branch.
+                    text_batch = (isinstance(inp_items, list)
+                                  and inp_items
+                                  and isinstance(inp_items[0], str))
+                    is_ar_mode = (hasattr(self, 'masked_prediction')
+                                  and self.masked_prediction
+                                  in ('ARLM', 'ARUS', 'ARIR'))
+                    if (training and is_ar_mode and text_batch
+                            and getattr(self, 'lexer', None)
+                            not in ('byte', 'bytes')):
+                        te = getattr(self, 'train_embedding', 'NONE')
+                        if te in ('CBOW', 'SBOW', 'BOTH'):
+                            method = 'CBOW' if te == 'CBOW' else 'SBOW'
+                            for sentence in inp_items:
+                                words = [t for t, _
+                                         in parse(sentence, lex='words')]
+                                self.perceptualSpace.train_embeddings(
+                                    words, method=method)
 
         if inputChunks:
             if outputChunks[0].dim() == 0:
@@ -2627,6 +2765,14 @@ class MentalModel(BaseModel):
     perceptual_sbow_loss = BasicModel.perceptual_sbow_loss
     accumulate_output_symbol_residual = BasicModel.accumulate_output_symbol_residual
     infer            = BasicModel.infer
+    # Outer doc-streaming helpers (rolling-cursor handoff). MentalModel
+    # inherits the runBatch/runEpoch class attrs explicitly above, so
+    # the post-tick dispatch / compact helpers must be re-mapped too;
+    # otherwise runEpoch's tail dispatch raises AttributeError.
+    dispatch_per_row_reset = BasicModel.dispatch_per_row_reset
+    dispatch_soft_reset    = BasicModel.dispatch_soft_reset
+    post_tick_compact      = BasicModel.post_tick_compact
+    _stub_outputs          = BasicModel._stub_outputs
 
     def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
                conceptualOrder=1,

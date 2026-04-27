@@ -121,9 +121,17 @@ class SentenceStreamDataset(IterableDataset):
     Designed to be wrapped in ``DataLoader(ds, batch_size=None, ...)`` so
     the dataset self-batches and the DataLoader only provides async
     prefetch.
+
+    Rolling-cursor mode (``slab_bytes`` > 0): per-row byte cursor that
+    walks each document one ``slab_bytes``-byte slab at a time, used by
+    ``next_tick()``. A document longer than one slab is consumed across
+    multiple ticks for the same row; documents are concatenated end-to-end
+    within a row's stream. ``hard_eos[b]`` marks ticks that complete a
+    document (host-side bool, no GPU sync). The legacy ``__iter__`` path
+    is unaffected and stays available for non-cursor callers.
     """
 
-    def __init__(self, inputs, num_streams, outputs=None):
+    def __init__(self, inputs, num_streams, outputs=None, slab_bytes=None):
         n = (inputs.shape[0] if isinstance(inputs, torch.Tensor)
              else len(inputs))
         if n == 0:
@@ -138,6 +146,18 @@ class SentenceStreamDataset(IterableDataset):
         self.outputs = outputs
         self.num_streams = num_streams
         self.stream_length = n // num_streams
+        # Rolling-cursor state: doc_idx[b] is row b's current absolute doc
+        # index in self.inputs; offset[b] is the byte offset within that doc.
+        # Per-row stream window is [b*L, (b+1)*L). slab_bytes=None disables
+        # cursor mode (next_tick raises). Initialized lazily so non-cursor
+        # users (existing __iter__ path) pay nothing.
+        self.slab_bytes = slab_bytes
+        if slab_bytes is not None:
+            if slab_bytes < 1:
+                raise ValueError(f"slab_bytes must be >= 1, got {slab_bytes}")
+            self.doc_idx = [b * self.stream_length for b in range(num_streams)]
+            self.offset = [0] * num_streams
+            self._encoded_cache = {}  # doc_idx -> bytes, populated lazily
 
     def __len__(self):
         return self.stream_length
@@ -168,6 +188,100 @@ class SentenceStreamDataset(IterableDataset):
                 yield inp
             else:
                 yield inp, self._slice(self.outputs, indices)
+
+    # ------------------------------------------------------------------
+    # Rolling-cursor mode
+    # ------------------------------------------------------------------
+
+    def _doc_bytes(self, doc_idx):
+        """Return UTF-8 bytes for ``self.inputs[doc_idx]``, cached.
+
+        Strings are encoded once and cached so repeated tick reads of the
+        same long doc avoid re-encoding. Cache is small in practice
+        because each row holds at most one open doc at a time.
+        """
+        cached = self._encoded_cache.get(doc_idx)
+        if cached is not None:
+            return cached
+        item = self.inputs[doc_idx]
+        if isinstance(item, str):
+            data = item.encode('utf-8')
+        elif isinstance(item, (bytes, bytearray)):
+            data = bytes(item)
+        elif isinstance(item, torch.Tensor):
+            # Treat 1D byte tensors as raw bytes (e.g. pre-tokenized inputs).
+            data = bytes(item.to(torch.uint8).tolist())
+        else:
+            raise TypeError(
+                f"SentenceStreamDataset cursor: unsupported input type "
+                f"{type(item).__name__}; expected str/bytes/Tensor"
+            )
+        self._encoded_cache[doc_idx] = data
+        return data
+
+    def all_done(self):
+        """True iff every row has consumed its assigned doc window."""
+        if self.slab_bytes is None:
+            raise RuntimeError("SentenceStreamDataset: cursor mode disabled")
+        return all(
+            self.doc_idx[b] >= (b + 1) * self.stream_length
+            for b in range(self.num_streams)
+        )
+
+    def next_tick(self):
+        """Read one ``[B, slab_bytes]`` byte slab across all rows.
+
+        Returns ``(slab, hard_eos)`` where:
+          * ``slab`` is a ``[num_streams, slab_bytes]`` ``uint8`` CPU tensor;
+            bytes past the per-row advance are zero (the existing NULL-pad
+            contract).
+          * ``hard_eos`` is a host-side ``list[bool]`` of length
+            ``num_streams``; ``hard_eos[b]`` is True iff the slab consumed
+            the rest of row b's current document (the row will start a
+            fresh document on the next tick).
+
+        Concatenating the per-row populated prefixes across consecutive
+        ticks for a single row reproduces the original document bytes
+        exactly — no data dropped, no spurious gradient on padded tail.
+        """
+        if self.slab_bytes is None:
+            raise RuntimeError("SentenceStreamDataset: cursor mode disabled")
+        slab = torch.zeros(
+            self.num_streams, self.slab_bytes, dtype=torch.uint8)
+        hard_eos = [False] * self.num_streams
+        for b in range(self.num_streams):
+            window_end = (b + 1) * self.stream_length
+            if self.doc_idx[b] >= window_end:
+                # Row exhausted its assigned window; emit pure NULLs.
+                continue
+            doc = self._doc_bytes(self.doc_idx[b])
+            remaining = len(doc) - self.offset[b]
+            advance = min(self.slab_bytes, remaining)
+            if advance > 0:
+                # Copy the slab range into a writable bytearray so
+                # frombuffer doesn't pin the immutable bytes object.
+                buf = bytearray(doc[self.offset[b]:self.offset[b] + advance])
+                slab[b, :advance] = torch.frombuffer(buf, dtype=torch.uint8)
+            self.offset[b] += advance
+            if self.offset[b] >= len(doc):
+                hard_eos[b] = True
+                # Drop the cached encoded bytes for the doc we just finished.
+                self._encoded_cache.pop(self.doc_idx[b], None)
+                self.doc_idx[b] += 1
+                self.offset[b] = 0
+        return slab, hard_eos
+
+    def reset_cursor(self):
+        """Rewind every row's cursor to the start of its assigned window.
+
+        Used to restart an epoch without rebuilding the dataset.
+        """
+        if self.slab_bytes is None:
+            raise RuntimeError("SentenceStreamDataset: cursor mode disabled")
+        self.doc_idx = [
+            b * self.stream_length for b in range(self.num_streams)]
+        self.offset = [0] * self.num_streams
+        self._encoded_cache.clear()
 
 
 # ---------------------------------------------------------------------------
@@ -629,7 +743,8 @@ class Data():
         self.test_input       = TheLanguageModel.tokenize(self.test_input)
 
     def data_loader(self, split, num_streams, num_workers=0,
-                    prefetch_factor=None, pin_memory=False):
+                    prefetch_factor=None, pin_memory=False,
+                    slab_bytes=None):
         """Return a DataLoader over the given split as B contiguous streams.
 
         ``split`` selects one of ``train`` / ``validation`` / ``test``.
@@ -640,6 +755,12 @@ class Data():
         forwarded to ``torch.utils.data.DataLoader``. The dataset self-
         batches (yields ``(inputs, outputs)`` per step), so
         ``batch_size=None`` on the DataLoader.
+
+        ``slab_bytes`` (optional): when set, enables the rolling-cursor
+        path on the returned dataset (see ``SentenceStreamDataset.next_tick``).
+        Callers that drive the cursor directly (``ds.next_tick()``) bypass
+        the DataLoader-yielded batches; ``num_workers`` / ``prefetch_factor``
+        only affect the legacy ``__iter__`` path.
         """
         inputs = getattr(self, f"{split}_input")
         outputs = getattr(self, f"{split}_output", None)
@@ -652,7 +773,8 @@ class Data():
             )
         streams = max(1, min(num_streams, n))
         ds = SentenceStreamDataset(inputs, num_streams=streams,
-                                   outputs=outputs)
+                                   outputs=outputs,
+                                   slab_bytes=slab_bytes)
 
         kwargs = {"batch_size": None, "num_workers": num_workers,
                   "pin_memory": pin_memory}

@@ -96,10 +96,16 @@ When `SyntacticLayer.compose` reduces a row's parse stack to a single node
 of the start category, the layer emits a host-side soft-reset signal for
 that row (`wordSpace._sentence_completed[b] = True`). The outer
 doc-streaming loop drains this signal after each `runBatch` tick and
-dispatches `wordSpace.soft_reset(batch=b)`, which re-arms `_stm_fired[b]`
-and clears `_last_svo[b*K..]` and the parse-stack rows for `b`. Discourse
-history and codebook EMA are *not* cleared by soft reset — they are
-document-scoped and clear only on hard reset (document boundary).
+dispatches `wordSpace.soft_reset(batch=b)`. Soft reset clears every
+per-sentence working buffer for row `b`: the parse stack rows
+(`subspace.clear_rows(b*K, (b+1)*K)`), the category stack rows, the
+reconstruction stack rows, `_last_svo[b]`, and re-arms `_stm_fired[b]`
+so the next sentence fires its own discourse-prediction bias. Discourse
+history (`InterSentenceLayer` ring buffer) and codebook EMA are *not*
+cleared — they are document-scoped and form the inter-sentence prior
+that bridges sentence N to sentence N+1 within the same document.
+Hard reset (document boundary) wipes both per-sentence and discourse
+state.
 
 Without `<start>` declared, soft reset never fires; the cascade falls back
 to hard reset only (per-document). This is the legacy behavior.

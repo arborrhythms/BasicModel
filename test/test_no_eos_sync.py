@@ -56,29 +56,30 @@ def test_batch_advances_sentence_is_python_bool():
 
 
 def test_runBatch_source_does_not_consume_eos_for_control_flow():
-    """The legacy `.all().item()` on _end_of_stream must be gone.
+    """Under the rolling-cursor handoff, the EOS gate is gone entirely.
 
-    Static check on runBatch's source. The new path reads
-    `batch_advances_sentence` (Python value) and only falls back to a
-    .item() on _end_of_stream behind a `MODEL_DEBUG` guard.
+    runBatch is now a pure compute brick: no Reset cascade, no
+    truth_layer.compact, no host sync on _end_of_stream. The Reset
+    decision lives in the outer doc-streaming loop (runEpoch), driven
+    by ``next_tick``'s host-side ``hard_eos`` per-row signal.
+
+    Plan reference: doc/plans/2026-04-26-rolling-cursor-doc-streaming-handoff.md
     """
     from Models import BasicModel
     src = inspect.getsource(BasicModel.runBatch)
-    # The new gate must be present.
-    assert "batch_advances_sentence" in src, (
-        "runBatch must consume the host-side batch_advances_sentence "
-        "property; the legacy tensor reduction has been removed")
-    # Any remaining .item() on _end_of_stream is debug-only; ensure
-    # it sits behind a MODEL_DEBUG guard (the only acceptable place).
+    # Reset cascade must be out of runBatch's source.
+    assert "space.Reset()" not in src, (
+        "runBatch must not call space.Reset() inline -- the rolling-cursor "
+        "handoff relocated the Reset cascade to the outer doc-streaming loop"
+    )
+    # Any remaining .item() on _end_of_stream-related values must be
+    # behind a MODEL_DEBUG guard (the only acceptable place).
     if "_end_of_stream" in src and ".item()" in src:
-        # Locate the .item() and verify a MODEL_DEBUG appears in the
-        # same neighborhood (within ~10 lines before).
         lines = src.split("\n")
         for i, line in enumerate(lines):
             if ".item()" in line and "_end_of_stream" not in line:
                 continue
             if ".item()" in line:
-                # Walk back to find a MODEL_DEBUG guard.
                 guarded = any("MODEL_DEBUG" in lines[j]
                               for j in range(max(0, i - 10), i))
                 assert guarded, (

@@ -74,6 +74,13 @@ class Grammar:
         self._configured = False
         self.interpretation = 0.5
         self.thought_free = False
+        # Start symbol -- name of the nonterminal that marks a complete
+        # derivation. SyntacticLayer.compose tests row b's top-of-stack
+        # category against this name; matches signal a soft sentence
+        # boundary and trigger soft_reset(b) in the outer loop. Configurable
+        # via <start>S</start> in the language XML; falls back to "S"
+        # (the historical default) when unset.
+        self.start_symbol = "S"
 
     # -- Rule catalog --------------------------------------------------
 
@@ -350,6 +357,17 @@ class Grammar:
     def _ensure_configured(self):
         if self._configured:
             return
+        # <start>S</start> in WordSpace.language: the canonical name of
+        # the start nonterminal. Used by SyntacticLayer.compose to detect
+        # sentence completion (top-of-stack category == start_symbol)
+        # and signal soft_reset to the outer doc-streaming loop. Falls
+        # back to "S" (historical default) when unset.
+        try:
+            start_raw = TheXMLConfig.get("WordSpace.language.start")
+            if start_raw is not None:
+                self.start_symbol = str(start_raw).strip() or "S"
+        except (KeyError, AttributeError):
+            pass
         cfg = None
         try:
             candidate = TheXMLConfig.get("WordSpace.language.grammar")
@@ -630,6 +648,10 @@ class SyntacticLayer(Layer):
     # former subclasses (PerceptualSyntacticLayer, ConceptualSyntacticLayer,
     # SymbolicSyntacticLayer) have been collapsed into this class.
     _RULE_METHODS = {
+        # Sugar absorption (identity pass-through and binary left-pass).
+        # Both are S-tier and have no inverse (the sugar is discarded).
+        'identity':     ('identityForward',     None,                  False),
+        'absorb':       ('absorbForward',       None,                  True),
         # C-tier invertible concept ops
         'union':        ('unionForward',        'unionReverse',        True),
         'intersection': ('intersectionForward', 'intersectionReverse', True),
@@ -816,6 +838,26 @@ class SyntacticLayer(Layer):
         else:
             out = result
         return self._apply_mask(out, mask, subspace=subspace)
+
+    # -- Sugar absorption: identity / absorb ----------------------------
+    # `identity(S)` is a unary pass-through: S' = S. The rule predictor
+    # learns to assign it high probability when the position is grammatical
+    # noise (whitespace, punctuation, single-char tokens with low semantic
+    # weight). `absorb(S, S)` is a binary left-pass: returns the left
+    # operand and discards the right. The right operand is the "sugar"
+    # that should be absorbed into the surrounding constituent without
+    # contributing to it. Both rules are in scope of the rolling-cursor
+    # handoff so the grammar has an explicit absorption contract for the
+    # punctuation/whitespace it now sees more of (rolling cursors keep
+    # docs whole instead of truncating at sentence boundaries).
+    def identityForward(self, left, subspace, mask=None):
+        return self._apply_mask(left, mask, subspace=subspace)
+
+    def absorbForward(self, left, right, subspace, mask=None):
+        # Left-pass: return left unchanged; right is sugar that the rule
+        # predictor opted to discard. mask is applied to the surviving
+        # output so per-cell gating still flows through.
+        return self._apply_mask(left, mask, subspace=subspace)
 
     # -- P-tier: chunk (invertible) --------------------------------
 
@@ -1748,7 +1790,61 @@ class SyntacticLayer(Layer):
             self.last_rule_probs = torch.stack(depth_probs, dim=1)
         self.last_composable_rules = composable_global
         self._extract_svo_from_trace(grammar, data)
+        # Soft-reset signal: a per-source-row "this tick's parse derivation
+        # reduced to start_symbol" flag. Only meaningful when the chart has
+        # collapsed every leaf into a single live slot whose category is
+        # the start nonterminal. Aggregated across the K windows of each
+        # source row (any window completing the derivation marks the row
+        # as having seen a sentence boundary this tick) so the outer loop's
+        # soft_reset(batch=b_source) fires at most once per source row per
+        # tick. Host-side only (no GPU sync) — drained by
+        # WordSpace.drain_sentence_completed() after runBatch returns.
+        self._signal_sentence_completed(subspace, alive, category, grammar)
         return live, self.last_svo
+
+    def _signal_sentence_completed(self, subspace, alive, category, grammar):
+        """Mark source rows whose chart compose reduced to start_symbol.
+
+        Looks up ``WordSpace.start_symbol`` via the grammar, scans
+        ``alive`` for rows with exactly one live leaf whose category id
+        matches the start id, and writes True into the per-source-row
+        ``WordSpace._sentence_completed`` slot. Per-source-row mapping
+        ``b_source = b_flat // K`` is recovered from
+        ``wordSpace._row_K()``.
+        """
+        ws = getattr(subspace, 'wordSpace', None)
+        if ws is None:
+            return
+        start_name = getattr(grammar, 'start_symbol', 'S')
+        cat_index = getattr(self, '_category_index', None)
+        if cat_index is None:
+            return
+        start_id = cat_index.get(start_name)
+        if start_id is None:
+            return
+        # alive: [B_flat, N] bool; category: [B_flat, N] long.
+        live_count = alive.long().sum(dim=1)         # [B_flat]
+        # Boolean per row: exactly one live leaf AND its category == start.
+        single_live = (live_count == 1)
+        # Pull the position of the (single) live leaf for those rows.
+        # argmax over the bool mask returns the first True index (which
+        # is the only one when single_live is True).
+        pos = alive.long().argmax(dim=1)             # [B_flat]
+        leaf_cat = category.gather(1, pos.unsqueeze(1)).squeeze(1)  # [B_flat]
+        completed_flat = single_live & (leaf_cat == int(start_id))  # [B_flat]
+        if not bool(completed_flat.any().item()):
+            return
+        K = ws._row_K()
+        completed_list = completed_flat.tolist()
+        sc = getattr(ws, '_sentence_completed', None)
+        if sc is None or len(sc) == 0:
+            return
+        for b_flat, done in enumerate(completed_list):
+            if not done:
+                continue
+            b_source = b_flat // max(1, K)
+            if 0 <= b_source < len(sc):
+                sc[b_source] = True
 
     def _compose_vector(self, data, subspace, grammar, target_count=None):
         """3D path: [B, N, D] vector mode. Phase 1 deterministic not at
@@ -2151,6 +2247,11 @@ class CategoryStack:
             return torch.zeros(0)
         return torch.cat(self._entries[b], dim=0)
 
+    def clear_rows(self, start, end):
+        """Empty rows ``[start, end)``. Used by per-row hard reset."""
+        for b in range(int(start), min(int(end), self._batch)):
+            self._entries[b] = []
+
 class ReconstructionStack:
     """Per-row tuple stack of (rule_id, word_id). Tensor-backed for B>1.
 
@@ -2195,6 +2296,14 @@ class ReconstructionStack:
         idx = int(self._top[b].item())
         return (int(self._entries[b, idx, 0].item()),
                 int(self._entries[b, idx, 1].item()))
+
+    def clear_rows(self, start, end):
+        """Reset rows ``[start, end)`` to empty stacks. Per-row hard reset."""
+        s, e = int(start), min(int(end), self._batch)
+        if e <= s:
+            return
+        self._entries[s:e].zero_()
+        self._top[s:e] = 0
 
     def depth(self, b):
         return int(self._top[b].item())
@@ -2437,6 +2546,14 @@ class WordSpace(Space):
             "_stm_fired", torch.zeros(self.batch, dtype=torch.bool))
         self.stm_residual_scale = float(
             TheXMLConfig.training("sentencePrimingScale", 0.05) or 0.05)
+
+        # Per-source-row sentence-completed signal driven by
+        # SyntacticLayer.compose: True for row b when this tick's parse
+        # derivation reduced to Grammar.start_symbol. Outer doc-streaming
+        # loop drains via drain_sentence_completed() after each runBatch
+        # and dispatches soft_reset(batch=b) for True rows. Host-side
+        # list (no GPU sync); resized to B by ensure_microbatch.
+        self._sentence_completed = [False] * self.batch
 
     # -- per-row last_svo accessors ---------------------------------------
     def set_last_svo(self, b, subj, verb, obj):
@@ -2912,15 +3029,185 @@ class WordSpace(Space):
         """Reset the stack at sentence boundaries."""
         self.subspace.clear()
 
-    def Reset(self):
-        """Per-sentence teardown called by runBatch's Reset cascade."""
-        super().Reset()
-        self.clear_sentence()
-        # Re-arm STM residual on every row so the next sentence fires
-        # once per row; drop the stale per-row SVO so composed-chart
-        # readers don't carry it across sentence boundaries.
-        self.arm_stm()
-        self.clear_last_svo()
+    def Reset(self, batch=None, hard=True):
+        """Per-document teardown called by the outer doc-streaming loop.
+
+        ``batch`` (optional int): clear per-row state only for source
+        row ``batch``. ``None`` clears every row. When ``batch`` is set,
+        the SyntacticLayer per-cell state at rows ``batch*K..(batch+1)*K``
+        is cleared via the underlying stack helpers; the per-source-row
+        ``_stm_fired[batch]`` is re-armed.
+
+        ``hard`` (default True): True is the document boundary (full
+        wipe of stack, SVO, STM, discourse). False is a sentence-internal
+        soft reset — see ``soft_reset(batch=b)`` for the structured entry
+        point. The base ``Reset`` cascades both flags down to the layer
+        chain so child layers can opt in.
+        """
+        super().Reset(batch=batch, hard=hard)
+        if not hard:
+            # Soft reset (sentence boundary): callers should use
+            # soft_reset(batch=b) directly. Treat a soft Reset as a
+            # request to soft_reset every row in batch=None scope so the
+            # cascade stays well-defined for callers that pass hard=False.
+            if batch is None:
+                B = int(self._stm_fired.shape[0])
+                for b in range(B):
+                    self.soft_reset(batch=b)
+            else:
+                self.soft_reset(batch=batch)
+            return
+        if batch is None:
+            self.clear_sentence()
+            # Re-arm STM residual on every row so the next sentence fires
+            # once per row; drop the stale per-row SVO so composed-chart
+            # readers don't carry it across sentence boundaries.
+            self.arm_stm()
+            self.clear_last_svo()
+            self.clear_sentence_completed()
+            return
+        # Per-row hard reset. The body-side parse stack lives at
+        # [B*K, ...] so the row's K cells span indices [batch*K, (batch+1)*K).
+        # Use the existing per-row helpers where they exist; fall back to
+        # a localized clear when not.
+        K = self._row_K()
+        bk_start, bk_end = int(batch) * K, (int(batch) + 1) * K
+        # Stack: clear the K cells owned by this source row.
+        sub = getattr(self, 'subspace', None)
+        if sub is not None and hasattr(sub, 'clear_rows'):
+            sub.clear_rows(bk_start, bk_end)
+        elif sub is not None:
+            # Fallback: full subspace clear keeps semantics safe even if
+            # the per-row helper isn't available; the next forward will
+            # reseed per-row state from the input.
+            sub.clear()
+        if hasattr(self, 'category_stack') and self.category_stack is not None:
+            if hasattr(self.category_stack, 'clear_rows'):
+                self.category_stack.clear_rows(bk_start, bk_end)
+        if (hasattr(self, 'reconstruction_stack')
+                and self.reconstruction_stack is not None):
+            if hasattr(self.reconstruction_stack, 'clear_rows'):
+                self.reconstruction_stack.clear_rows(bk_start, bk_end)
+        # Per-source-row STM / SVO / sentence-complete signal.
+        self.arm_stm(int(batch))
+        self.clear_last_svo(int(batch))
+        self.clear_sentence_completed(int(batch))
+
+    def soft_reset(self, batch=None):
+        """Re-arm sentence-internal state for row ``batch`` (or all rows).
+
+        Soft reset fires when the parse derivation for a row reaches the
+        configured ``Grammar.start_symbol`` — the structural sentence
+        boundary. Clears every per-sentence working buffer so the next
+        sentence starts fresh, while preserving the document-scoped
+        carryover that bridges sentences:
+          * **Cleared**: parse stack, category stack, reconstruction
+            stack, ``_last_svo[batch]``, ``_stm_fired[batch]`` (re-armed);
+            sentence-completed flag.
+          * **Preserved**: ``InterSentenceLayer`` discourse history (the
+            centroid ring buffer + the predictive bias) — this is the
+            inter-sentence prior, accumulating across true sentences
+            within a document.
+          * **Preserved**: codebook EMA, learned weights — those are
+            training-time state, not per-sentence context.
+
+        Differs from a hard reset (``Reset(batch=b, hard=True)``) by
+        leaving discourse history alone; hard reset wipes that too.
+        """
+        if batch is None:
+            self.arm_stm()
+            self.clear_last_svo()
+            self.clear_sentence_completed()
+            # Reset every row's parse-side working state. clear_sentence
+            # zeroes the WordSubSpace stack; the category and
+            # reconstruction stacks fan out to the same row count.
+            self.clear_sentence()
+            if (hasattr(self, 'category_stack')
+                    and self.category_stack is not None
+                    and hasattr(self.category_stack, 'clear_rows')):
+                self.category_stack.clear_rows(0, self.batch)
+            if (hasattr(self, 'reconstruction_stack')
+                    and self.reconstruction_stack is not None
+                    and hasattr(self.reconstruction_stack, 'clear_rows')):
+                self.reconstruction_stack.clear_rows(0, self.batch)
+            return
+        b = int(batch)
+        self.arm_stm(b)
+        self.clear_last_svo(b)
+        self.clear_sentence_completed(b)
+        # Per-row clear over the K cells [b*K, (b+1)*K) that own this
+        # source row in the body's flattened microbatch view.
+        K = self._row_K()
+        bk_start, bk_end = b * K, (b + 1) * K
+        sub = getattr(self, 'subspace', None)
+        if sub is not None and hasattr(sub, 'clear_rows'):
+            sub.clear_rows(bk_start, bk_end)
+        if (hasattr(self, 'category_stack')
+                and self.category_stack is not None
+                and hasattr(self.category_stack, 'clear_rows')):
+            self.category_stack.clear_rows(bk_start, bk_end)
+        if (hasattr(self, 'reconstruction_stack')
+                and self.reconstruction_stack is not None
+                and hasattr(self.reconstruction_stack, 'clear_rows')):
+            self.reconstruction_stack.clear_rows(bk_start, bk_end)
+
+    def _row_K(self):
+        """Per-source-row K (microbatch window count) inferred from state.
+
+        ``_stm_fired`` is sized [B] (per source row); the body-side
+        ``self.batch`` is sized [B*K]. The ratio recovers K. Returns 1
+        when no microbatch has been allocated yet.
+        """
+        try:
+            B = int(self._stm_fired.shape[0])
+        except (AttributeError, IndexError, TypeError):
+            return 1
+        if B <= 0:
+            return 1
+        return max(1, int(self.batch) // B)
+
+    def clear_sentence_completed(self, batch=None):
+        """Clear the sentence-completed signal for row ``batch`` (or all).
+
+        ``_sentence_completed`` is a host-side ``list[bool]`` of length B
+        that ``SyntacticLayer.compose`` appends into when a row's
+        derivation reduces to ``Grammar.start_symbol``. The outer
+        doc-streaming loop drains it after each ``runBatch``.
+        """
+        # Lazy-init so callers (and Reset) work before the first compose
+        # has populated the list.
+        if not hasattr(self, '_sentence_completed') or self._sentence_completed is None:
+            try:
+                B = int(self._stm_fired.shape[0])
+            except (AttributeError, IndexError, TypeError):
+                B = 1
+            self._sentence_completed = [False] * B
+            return
+        if batch is None:
+            for i in range(len(self._sentence_completed)):
+                self._sentence_completed[i] = False
+            return
+        b = int(batch)
+        if 0 <= b < len(self._sentence_completed):
+            self._sentence_completed[b] = False
+
+    def drain_sentence_completed(self):
+        """Return-and-clear the per-row sentence-completed signal.
+
+        Outer loop pattern (post-runBatch):
+          ``for b in wordSpace.drain_sentence_completed(): soft_reset(b)``
+
+        Returns a ``list[int]`` of source-row indices whose derivation
+        completed during the last compose; the underlying buffer is then
+        cleared so the next tick starts from a clean slate.
+        """
+        if not hasattr(self, '_sentence_completed') or self._sentence_completed is None:
+            return []
+        completed = [
+            i for i, v in enumerate(self._sentence_completed) if v]
+        for i in completed:
+            self._sentence_completed[i] = False
+        return completed
 
     def get_blocks(self, b=0):
         """Return the parse-tree ledger for batch row `b`."""
@@ -2973,3 +3260,11 @@ class WordSpace(Space):
             self._stm_fired = torch.zeros(int(B), dtype=torch.bool, device=device)
         if self.discourse is not None and hasattr(self.discourse, 'ensure_batch'):
             self.discourse.ensure_batch(int(B))
+        # _sentence_completed: per-source-row host bool, drained by the
+        # outer doc-streaming loop after each runBatch. Resized in step
+        # with the source-row count B so soft-reset signaling tracks the
+        # current microbatch shape.
+        if (not hasattr(self, '_sentence_completed')
+                or self._sentence_completed is None
+                or len(self._sentence_completed) != int(B)):
+            self._sentence_completed = [False] * int(B)
