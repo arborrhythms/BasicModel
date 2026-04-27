@@ -7,12 +7,15 @@ concept (B1, B5 of the spec).  The four corners encode the catuskoti:
     [1, 0] = TRUE       [0, 0] = NEITHER (no commitment)
     [0, 1] = FALSE      [1, 1] = BOTH    (contradiction)
 
-These tests cover the bivector-distinguishability cases that the
-signed-collapse shim ``ConceptualSpace.activation_signed()`` exposes
-and the routing-correctness cases that fall out of the layout.
+These tests cover bivector-distinguishability and routing-correctness
+cases that fall out of the layout.  The Step 3 signed-collapse shim
+``ConceptualSpace.activation_signed()`` was removed in Step 7; the
+remaining ``TestActivationSignedShimRemoved`` class is the regression
+guard.
 
 See:
 - basicmodel/doc/plans/2026-04-25-step3-bivector-conceptual-handoff.md
+- basicmodel/doc/plans/2026-04-25-step7-activation-signed-shim-removal-handoff.md
 - basicmodel/doc/specs/2026-04-24-lift-lower-bivector-design.md (B1-B7)
 - basicmodel/doc/BuddhistParallels.md (catuskoti mapping)
 """
@@ -166,48 +169,28 @@ class TestSignedCollapseShim(unittest.TestCase):
         torch.testing.assert_close(_signed(act), scalar)
 
 
-class TestConceptualSpaceShim(unittest.TestCase):
-    """``ConceptualSpace.activation_signed()`` end-to-end: derive
-    aP - aN from a populated subspace and confirm the math matches the
-    direct bivector computation."""
+class TestActivationSignedShimRemoved(unittest.TestCase):
+    """Step 7 removed ``ConceptualSpace.activation_signed()``; callers
+    must derive ``aP - aN`` themselves from the bivector storage at
+    ``subspace.activation``.  These tests guard against an accidental
+    re-add of the shim and against new ``activation_signed`` references
+    creeping into ``basicmodel/bin/``."""
 
-    def _build_conceptual_subspace(self):
+    def test_activation_signed_attr_is_gone(self):
         from Spaces import ConceptualSpace
-        # ConceptualSpace.__init__ requires TheXMLConfig — but for the
-        # shim test we only need the bivector pass-through.  Construct a
-        # minimal ConceptualSpace-like holder that exposes
-        # ``self.subspace`` with a populated activation tensor.
-        class _Holder:
-            activation_signed = ConceptualSpace.activation_signed
-            def __init__(self):
-                self.subspace = _make_subspace()
-        return _Holder()
+        self.assertFalse(hasattr(ConceptualSpace, 'activation_signed'),
+                         "activation_signed shim should be removed")
 
-    def test_shim_returns_aP_minus_aN(self):
-        """activation_signed() returns [B, N] = aP - aN."""
-        holder = self._build_conceptual_subspace()
-        bivec = torch.tensor([[[1.0, 0.0],   # TRUE -> +1
-                               [0.0, 1.0],   # FALSE -> -1
-                               [0.0, 0.0],   # NEITHER -> 0
-                               [1.0, 1.0]]]) # BOTH -> 0
-        holder.subspace.set_activation(bivec)
-        signed = holder.activation_signed()
-        torch.testing.assert_close(signed,
-                                   torch.tensor([[1.0, -1.0, 0.0, 0.0]]))
-
-    def test_shim_returns_none_when_activation_unset(self):
-        """activation_signed() returns None for an empty subspace."""
-        holder = self._build_conceptual_subspace()
-        # Force activation to None so the shim's None-guard fires.
-        holder.subspace.activation.setW(None)
-        self.assertIsNone(holder.activation_signed())
-
-    def test_shim_legacy_scalar_round_trip(self):
-        """Legacy scalar path: scalar -> set_activation lift -> shim."""
-        holder = self._build_conceptual_subspace()
-        scalar = torch.tensor([[-0.7, 0.4, 0.0, 0.9]])
-        holder.subspace.set_activation(scalar)
-        torch.testing.assert_close(holder.activation_signed(), scalar)
+    def test_no_shim_references_in_bin(self):
+        import subprocess
+        bin_dir = os.path.join(os.path.dirname(__file__), '..', 'bin')
+        out = subprocess.run(
+            ['grep', '-rn', 'activation_signed', bin_dir],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(out.stdout.strip(), '',
+                         f"unexpected activation_signed references: "
+                         f"{out.stdout}")
 
 
 class TestTetralemmaPolicyConfig(unittest.TestCase):

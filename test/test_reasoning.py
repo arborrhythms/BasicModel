@@ -280,7 +280,7 @@ class TestWriteMask(unittest.TestCase):
         model = _make_model('RamsifiedModel.xml')
 
         truth_layer = model._get_truth_layer()
-        D = model.symbolicSpace.layer.nOutput
+        D = model.symbolicSpace.sigma.nOutput
 
         sentences = ['test sentence one', 'test sentence two']
         outputs = [torch.tensor([0.0]), torch.tensor([1.0])]

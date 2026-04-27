@@ -580,7 +580,7 @@ class TestConceptualSpaceInvertible(unittest.TestCase):
             [nObj, embDim], [nObj, contentDim], [nObj, embDim],
         )
         cspace.eval()
-        cspace.sigma.set_sigma(0)
+        cspace.pi.set_sigma(0)
         # Input in (0,1) -- logit in ConceptualSpace.forward() expects this range
         x = (torch.rand(2, nObj, embDim) * 0.8 + 0.1).to(TheDevice.get())
         with torch.no_grad():

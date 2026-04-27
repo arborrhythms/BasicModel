@@ -1553,7 +1553,7 @@ class Codebook(Basis):
                         w[idx, :] = self.eta * w[idx, :] + (1 - self.eta) * x[b, v, :]
         if topK and 0 < topK < act.shape[-1]:
             act = topk_by_magnitude_per_batch(act, k=topK)
-        self.activation = act
+        self.activation = act.detach() if torch.is_tensor(act) else act
         self.activeSigma = None
         self.setW(x)
         if _vspace is not None:
@@ -1786,12 +1786,6 @@ class Embedding(Basis):
             lr=self.pretrain.optimizer.param_groups[0]['lr'],
         )
         # W is managed by wv._vectors; getW() returns live data
-        # REMOVE ME (Adam bc=0 debug): see _adam_bug_probe in Models.py.
-        try:
-            from Models import _adam_rebuild_log
-            _adam_rebuild_log("pretrain", self.pretrain.optimizer)
-        except Exception:
-            pass
 
     def replace(self, new_W):
         new_W = self._coerce_rows(new_W).to(TheDevice.get())
@@ -2417,10 +2411,10 @@ class SubSpace(nn.Module):
         # Microbatch-AR contract (Task 5 of 2026-04-22 plan).
         # k_axis=True means the event tensor has shape [B, K, N, D]
         # (stem output before the body's FlattenKWrapper folds K into B).
-        # valid_mask_bk: [B, K] bool, True where the window's target
+        # valid_mask: [B, K] bool, True where the window's target
         # token is non-NULL. Built by the stem; consumed by runBatch.
         self.k_axis = False
-        self.valid_mask_bk = None
+        self.valid_mask = None
         # stem_embedded=True signals downstream stages that InputSpace has
         # already performed lex+embed in the microbatch AR path; the body's
         # PerceptualSpace must skip its own _embed (which would clobber the
@@ -2444,7 +2438,7 @@ class SubSpace(nn.Module):
         ``OutputSpace`` / ``runBatch`` will read.
 
         Also propagates the microbatch-AR routing attrs (``k_axis``,
-        ``valid_mask_bk``, ``stem_embedded``).  These are stem-route
+        ``valid_mask``, ``stem_embedded``).  These are stem-route
         contracts that stages downstream of FlattenKWrapper currently do
         not read, but propagation keeps the contract explicit and prevents
         a stale value on a recycled subspace from misrouting the body.
@@ -2455,7 +2449,7 @@ class SubSpace(nn.Module):
         self.errors = other.errors
         self.serial_cache = other.serial_cache
         self.k_axis = other.k_axis
-        self.valid_mask_bk = other.valid_mask_bk
+        self.valid_mask = other.valid_mask
         self.stem_embedded = other.stem_embedded
 
     @property
@@ -2626,7 +2620,7 @@ class SubSpace(nn.Module):
 
         Clears runtime state on every owned Basis (event, what, where,
         when, activation) plus the SubSpace-level transient fields
-        (``_active`` index tensor, ``word`` list, ``valid_mask_bk`` mask,
+        (``_active`` index tensor, ``word`` list, ``valid_mask`` mask,
         ``stem_embedded`` flag). The prior version cleared only ``event``,
         which leaked the demuxed [B, N, D] tensors on what/where/when and
         the [B, N, M] ``_active`` tensor until the next forward overwrote
@@ -2637,7 +2631,7 @@ class SubSpace(nn.Module):
             self._clear_runtime_basis(basis)
         self._active = None
         self.word = []
-        self.valid_mask_bk = None
+        self.valid_mask = None
         self.stem_embedded = False
 
     def End(self):
@@ -2650,7 +2644,7 @@ class SubSpace(nn.Module):
             self._clear_runtime_basis(basis)
         self._active = None
         self.word = []
-        self.valid_mask_bk = None
+        self.valid_mask = None
         self.stem_embedded = False
 
     def Reset(self):
@@ -4535,6 +4529,22 @@ class InputSpace(Space):
         self._cached_embedding = None
         self._end_of_stream = False
 
+    @property
+    def batch_advances_sentence(self):
+        """Host-side: does the loader guarantee a sentence boundary this batch?
+
+        SentenceStreamDataset emits one sentence per row per batch, so
+        every AR batch is a fresh sentence boundary by construction.
+        Reading this property never forces a GPU->CPU sync; the
+        previous gate (`_end_of_stream.all().item()`) checked what the
+        host already knew, at the cost of a per-batch pipeline stall.
+
+        A future rolling-sentences loader would override this to return
+        a per-row tensor; the runBatch gate would then need to fan out
+        Reset to per-row state. Out of scope for the simple version.
+        """
+        return True
+
     # The world presenting itself
     def forward(self, inputData):
         """Single-call stem source for the microbatch AR pipeline.
@@ -4553,7 +4563,7 @@ class InputSpace(Space):
 
         Sets self._end_of_stream as a [B] bool — True for rows whose
         targets are entirely NULL (empty sentence). ``self.subspace``
-        carries valid_mask_bk: [B, K] bool for runBatch.
+        carries valid_mask: [B, K] bool for runBatch.
         """
         if inputData is None:
             return self._empty_like_subspace()
@@ -4625,7 +4635,7 @@ class InputSpace(Space):
         sub = self.subspace
         sub.set_event(windows)
         sub.k_axis = True
-        sub.valid_mask_bk = valid_mask
+        sub.valid_mask = valid_mask
         sub.stem_embedded = True
 
         # Per-row end-of-stream: True for rows with no valid windows.
@@ -5009,6 +5019,14 @@ class PerceptualSpace(Space):
                     "<modelType>embedding</modelType>")
         self._recovered_input = None
         self._embedded_input = None
+
+        # PerceptualSpace owns a SigmaLayer for the P -> sub-percept direction
+        # (Logic.md §8).  Pipeline wiring is deferred per spec §O3 -- the layer
+        # sits dormant until sub-perceptual structure exists.
+        nPerceptDim = outputShape[1]
+        self.sigma = SigmaLayer(nPerceptDim, nPerceptDim, invertible=True,
+                                monotonic=True, nonlinear=True)
+
         if passThrough:
             return
         input = self.subspace.getEncodedInputSize()
@@ -5396,9 +5414,15 @@ class PerceptualSpace(Space):
                 and cache is not None
                 and not self.passThrough):
             upstream = vspace.materialize()
+            # Check shape compatibility on every dim of the rolled cache
+            # (B, N, D).  A short final batch (e.g. last batch of an epoch
+            # with batch_size=2 and 3 docs) yields a different B than the
+            # cached state -- treat that as a cache miss and fall through
+            # to the cold path so we don't trip an assign-shape mismatch.
             if (upstream is not None and upstream.ndim == 3
-                    and upstream.shape[-1] == cache.shape[-1]
-                    and upstream.shape[1] == cache.shape[1]):
+                    and upstream.shape[0] == cache.shape[0]
+                    and upstream.shape[1] == cache.shape[1]
+                    and upstream.shape[-1] == cache.shape[-1]):
                 new_in = upstream[:, -1:, :]
                 new_out = self._slot_forward(new_in, quantize=quantize)
                 rolled = torch.roll(cache, shifts=-1, dims=1).clone()
@@ -5441,6 +5465,15 @@ class PerceptualSpace(Space):
         #     x = self.attention.forward(x)
         if self.codebook and quantize:
             cb = self.subspace.get_vectors()
+            # Per-cell mask: zero out NULL-padded AR cells before the
+            # codebook nearest-neighbor lookup so VQ-EMA does not learn
+            # statistics from padding. valid_mask is None outside AR.
+            vmask = self.subspace.valid_mask
+            if vmask is not None and x.dim() == 3:
+                x = torch.where(
+                    vmask.flatten().view(-1, 1, 1),
+                    x,
+                    torch.zeros_like(x))
             x = cb.forward(x)
         x = self._sparsity(x)
         vspace = self.forwardEnd(x, returnVectors=True)
@@ -5814,11 +5847,11 @@ class ConceptualSpace(Space):
 
         # When ``layer`` is provided (butterfly mode builds one per stage
         # in ``MentalModel.create``), use it directly and skip the default
-        # SigmaLayer construction.
+        # PiLayer construction.
         if layer is not None:
-            self.sigma = layer
-            self.forwardSigma = layer.forward
-            self.reverseSigma = layer.reverse
+            self.pi = layer
+            self.forwardPi = layer.forward
+            self.reversePi = layer.reverse
             if hasattr(layer, "getParameters"):
                 self.params = layer.getParameters()
             else:
@@ -5826,28 +5859,28 @@ class ConceptualSpace(Space):
             self.layers = nn.ModuleList([layer])
         elif self.reversible:
             if invertible:
-                self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
-                                        invertible=True, nonlinear=nonlinear,
-                                        stable=True, monotonic=monotonic)
-                self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
-                self.params = self.sigma.getParameters()
-                self.layers = nn.ModuleList([self.sigma])
+                self.pi = PiLayer(input, output, naive=naive, ergodic=ergodic,
+                                  invertible=True, nonlinear=nonlinear,
+                                  stable=True, monotonic=monotonic)
+                self.forwardPi, self.reversePi = self.pi.forward, self.pi.reverse
+                self.params = self.pi.getParameters()
+                self.layers = nn.ModuleList([self.pi])
             else:
-                self.sigma1 = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
-                                         invertible=True, nonlinear=nonlinear,
-                                         stable=True, monotonic=monotonic)
-                self.sigma2 = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
-                                         invertible=True, nonlinear=nonlinear,
-                                         stable=True, monotonic=monotonic)
-                self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
-                self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
-                self.layers = nn.ModuleList([self.sigma1, self.sigma2])
+                self.pi1 = PiLayer(input, output, naive=naive, ergodic=ergodic,
+                                   invertible=True, nonlinear=nonlinear,
+                                   stable=True, monotonic=monotonic)
+                self.pi2 = PiLayer(input, output, naive=naive, ergodic=ergodic,
+                                   invertible=True, nonlinear=nonlinear,
+                                   stable=True, monotonic=monotonic)
+                self.forwardPi, self.reversePi = self.pi1.forward, self.pi2.reverse
+                self.params = self.pi1.getParameters() + self.pi2.getParameters()
+                self.layers = nn.ModuleList([self.pi1, self.pi2])
         else:
-            self.sigma = SigmaLayer(input, output, naive=naive, ergodic=ergodic,
-                                    nonlinear=nonlinear, stable=True)
-            self.forwardSigma = self.sigma.forward
-            self.params = self.sigma.getParameters()
-            self.layers = nn.ModuleList([self.sigma])
+            self.pi = PiLayer(input, output, naive=naive, ergodic=ergodic,
+                              nonlinear=nonlinear, stable=True, monotonic=monotonic)
+            self.forwardPi = self.pi.forward
+            self.params = self.pi.getParameters()
+            self.layers = nn.ModuleList([self.pi])
         self._sparsity = SparsityRegularizer(
             l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
             enabled=bool(getattr(self, "codebook", False)),
@@ -5863,24 +5896,6 @@ class ConceptualSpace(Space):
     def certainty(self, x):
         return x.T @ x
 
-    def activation_signed(self):
-        """Backward-compat shim: return aP - aN as a signed scalar [B, N].
-
-        Conceptual activations carry the tetralemma bivector [aP, aN] in
-        ``subspace.activation``. Legacy callers that read the activation as
-        a single signed scalar route through this method until they
-        migrate to bivector-aware reads (Step 7 of the lift/lower/bivector
-        refactor). [1, 0] -> +1 (positive evidence), [0, 1] -> -1
-        (negative evidence), [0, 0] and [1, 1] both -> 0 (collapse to
-        signed loses the contradiction/ignorance distinction).
-        """
-        act = self.subspace.get_activation()
-        if act is None:
-            return None
-        if act.ndim == 3 and act.shape[-1] == 2:
-            return act[..., 0] - act[..., 1]
-        return act
-
     def Reset(self):
         """Clear the subspace event so next forward() does a full recompute."""
         super().Reset()
@@ -5889,18 +5904,17 @@ class ConceptualSpace(Space):
             sub.event.setW(None)
 
     def forward(self, subspace):
-        """Knowing: map percepts to concepts via SigmaLayer + optional attention + VQ.
+        """Knowing: map percepts to concepts via PiLayer + optional attention + VQ.
 
-        When nonlinear=True (stable=True on SigmaLayer), the weight matrix
-        is L1-column-normalized so the output stays in [-1, 1] without
-        requiring tanh saturation.
+        When nonlinear=True the multiplicative log-domain transform keeps
+        the output in [-1, 1].
         """
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
         vspace = subspace
         x = self.forwardBegin(vspace, returnVectors=True)
-        y = self.forwardSigma(x)
+        y = self.forwardPi(x)
         # STM-residual bias (once per sentence; wordSpace gates itself).
         # disc.prime() casts into concept_dim, so the bias must be added
         # to the post-Sigma activation y (shape [B*K, N_out, concept_dim]),
@@ -5917,10 +5931,27 @@ class ConceptualSpace(Space):
             bias = ws.stm_residual_microbatch(B, K, expected_dim=y.shape[-1])
             if bias is not None:
                 # bias: [B*K, concept_dim]; broadcast over N_out positions.
+                # Mask invalid (NULL-padded) cells so they don't receive
+                # the discourse bias, which would propagate downstream
+                # as a non-no-op into the codebook and parse stack.
+                vmask = self.subspace.valid_mask
+                if vmask is not None:
+                    bias = torch.where(
+                        vmask.flatten().unsqueeze(-1),
+                        bias,
+                        torch.zeros_like(bias))
                 y = y + bias.unsqueeze(1)
         if self.hasAttention:
             y = self.attention.forward(y)
         if self.codebook:
+            # Per-cell mask: zero NULL-padded cells before VQ codebook
+            # so EMA does not learn from padding.
+            vmask = self.subspace.valid_mask
+            if vmask is not None and y.dim() == 3:
+                y = torch.where(
+                    vmask.flatten().view(-1, 1, 1),
+                    y,
+                    torch.zeros_like(y))
             # Wide-codebook top-K: when nVectors > nOutput, route through the
             # content Codebook with topK=nOutput so the per-codebook-entry
             # activation is pruned to the nOutput strongest survivors.
@@ -5942,7 +5973,7 @@ class ConceptualSpace(Space):
         return vspace
 
     def reverse(self, subspace):
-        """Visualizing: reconstruct percepts from concepts via reverse SigmaLayer."""
+        """Visualizing: reconstruct percepts from concepts via reverse PiLayer."""
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
@@ -5950,8 +5981,8 @@ class ConceptualSpace(Space):
         y = self.reverseBegin(vspace, returnVectors=True)
         if self.processSymbols:
             y = self.dereference(y)
-        y = self.reverseSigma(y)
-        self.concepts = y
+        y = self.reversePi(y)
+        self.concepts = y.detach()
         vspace = self.reverseEnd(y, returnVectors=True)
         vspace.normalize("percepts", target="what")   # range check
         vspace.normalize("percepts", target="where")  # range check
@@ -5991,6 +6022,8 @@ class SymbolicSpace(Space):
         section = self.config_section
         passThrough = TheXMLConfig.space(section, "passThrough")
         nonlinear = TheXMLConfig.space(section, "nonlinear")
+        ergodic = TheXMLConfig.get("architecture.ergodic")
+        naive = TheXMLConfig.get("architecture.naive")
         super().__init__(inputShape, spaceShape, outputShape, customVQ=True)
         self.conceptualSpace = conceptualSpace
         self.passThrough = passThrough
@@ -6007,14 +6040,48 @@ class SymbolicSpace(Space):
         nSymbolDim = outputShape[1]     # symbol_dim + obj (where+when)
         nSymbols = spaceShape[0]
 
-        # Default layer is a PiLayer; callers that need a ButterflyStage
-        # (butterfly mode builds one per stage in ``MentalModel.create``)
-        # pass it in via ``layer=``.
-        if layer is None:
-            self.layer = PiLayer(nConceptDim, nSymbolDim, invertible=True,
-                                 monotonic=True, nonlinear=nonlinear)
+        # C <-> S SigmaLayer (isomorphic to ConceptualSpace.pi's pattern).
+        # Butterfly callers pass a pre-built ButterflyStage in via ``layer=``.
+        # forwardSigma / reverseSigma pointer aliases hide the one-or-two-layer
+        # split when the space is reversible without invertibility.
+        try:
+            invertible = TheXMLConfig.space(section, "invertible")
+        except KeyError:
+            invertible = True
+        try:
+            monotonic = bool(TheXMLConfig.get("architecture.monotonic", default=False))
+        except (KeyError, TypeError, ValueError):
+            monotonic = True
+        if layer is not None:
+            self.sigma = layer
+            self.forwardSigma = layer.forward
+            self.reverseSigma = layer.reverse
+            if hasattr(layer, "getParameters"):
+                self.params = layer.getParameters()
+            else:
+                self.params = list(layer.parameters())
+            self.layers = nn.ModuleList([layer])
+        elif self.reversible:
+            if invertible:
+                self.sigma = SigmaLayer(nConceptDim, nSymbolDim, invertible=True,
+                                        monotonic=monotonic, nonlinear=nonlinear)
+                self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
+                self.params = self.sigma.getParameters()
+                self.layers = nn.ModuleList([self.sigma])
+            else:
+                self.sigma1 = SigmaLayer(nConceptDim, nSymbolDim, invertible=True,
+                                         monotonic=monotonic, nonlinear=nonlinear)
+                self.sigma2 = SigmaLayer(nConceptDim, nSymbolDim, invertible=True,
+                                         monotonic=monotonic, nonlinear=nonlinear)
+                self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
+                self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
+                self.layers = nn.ModuleList([self.sigma1, self.sigma2])
         else:
-            self.layer = layer
+            self.sigma = SigmaLayer(nConceptDim, nSymbolDim, invertible=True,
+                                    monotonic=monotonic, nonlinear=nonlinear)
+            self.forwardSigma = self.sigma.forward
+            self.params = self.sigma.getParameters()
+            self.layers = nn.ModuleList([self.sigma])
 
         # Symbol objective: residual accuracy is primary; L1 remains a
         # secondary compactness pressure on latent activations.
@@ -6092,9 +6159,8 @@ class SymbolicSpace(Space):
             n_passes = sort_passes_cfg if sort_passes_cfg > 0 else None
             self.sortNetwork = SortingLayer(nSymbolDim, n_passes=n_passes)
 
-        self.layers = nn.ModuleList(
-            [self.layer] + ([self.sortNetwork] if self.sortNetwork else [])
-        )
+        if self.sortNetwork is not None:
+            self.layers.append(self.sortNetwork)
 
         # Assign fixed where encodings to symbol positions.
         nPercepts = inputShape[0]
@@ -6683,25 +6749,52 @@ class SymbolicSpace(Space):
             return vspace
         vspace = self.forwardBegin(vspace)
         act = vspace.materialize()                        # [B, N, concept_dim]
-        act = self.layer.forward(act)                     # [B, N, symbol_dim]
+        act = self.forwardSigma(act)                      # [B, N, symbol_dim]
         if quantize:
             act = self.l1_proximal(act)                   # sparsity bias only
+
+        # Per-cell mask: zero NULL-padded AR cells before any state-mutating
+        # downstream consumer (truth layer record, parse-stack push,
+        # codebook quantize). valid_mask is None outside AR.
+        vmask = self.subspace.valid_mask
+        if vmask is not None and act is not None and act.dim() == 3:
+            act = torch.where(
+                vmask.flatten().view(-1, 1, 1),
+                act,
+                torch.zeros_like(act))
 
         if self.accumulateTruth > 0 and wordSpace is not None:
             truth_layer = getattr(wordSpace, 'truth_layer', None)
             if truth_layer is not None:
                 basis = getattr(self.subspace, 'basis', None)
-                for i in range(act.shape[0]):
-                    for j in range(act.shape[1]):
-                        vec = act[i, j]
-                        score = truth_layer.should_store(
-                            vec,
-                            min_magnitude=self._truth_min_magnitude,
-                            min_novelty=self._truth_min_novelty,
-                            max_inconsistency=self._truth_max_inconsistency)
-                        if self.accumulateTruth * score > 0.5:
-                            truth_layer.record(vec, degree=self.accumulateTruth,
-                                               basis=basis)
+                # Vectorized truth staging (no host sync).
+                #
+                # Compute a per-cell trust score from activation magnitude
+                # (Gate 1 of the legacy `should_store`), masked by
+                # `valid_mask` and scaled by `accumulateTruth`. Stage every
+                # cell into the truth_layer's pending buffer with its
+                # trust; the post-brick `truth_layer.compact()` step drops
+                # entries with trust below threshold and promotes survivors
+                # to the persistent store.
+                #
+                # Novelty/consistency gates (Gates 2-3 of legacy
+                # `should_store`) are no longer per-cell; they're handled
+                # at compact-time against the persistent store, or dropped
+                # in favor of the magnitude-based trust + later dedup.
+                BK, N, D = act.shape
+                norms = act.norm(dim=-1)                                  # [B*K, N]
+                mag_score = norms.clamp(max=self._truth_min_magnitude) \
+                            / max(self._truth_min_magnitude, 1e-8)        # [B*K, N]
+                vmask = self.subspace.valid_mask
+                if vmask is not None:
+                    mag_score = mag_score \
+                                * vmask.flatten().unsqueeze(-1).to(mag_score.dtype)
+                trust = mag_score * float(self.accumulateTruth)           # [B*K, N]
+                truth_layer.record_batch(
+                    act.reshape(BK * N, D),
+                    trust.reshape(BK * N),
+                    degree=float(self.accumulateTruth),
+                    basis=basis)
 
         if self._symbol_where is not None:
             B = act.shape[0]
@@ -6875,7 +6968,7 @@ class SymbolicSpace(Space):
             act = wordSpace.reverseSymbols(act, self.subspace)
         if self.sortNetwork is not None:
             act = self.sortNetwork.reverse(act)
-        act = self.layer.reverse(act)                     # [B, N, concept_dim]
+        act = self.reverseSigma(act)                      # [B, N, concept_dim]
         if self.codebook:
             self.subspace.set_event(act)
             result = self.reverseEnd(self.subspace)
@@ -7134,4 +7227,20 @@ class OutputSpace(Space):
         Args:
             result: BatchResult namedtuple from runBatch().
         """
-        self._batch_results.append(result)
+        # Detach every tensor field so we don't pin the autograd graph
+        # of the batch that produced the result.  The list grows across
+        # batches within an epoch -- one retained graph per batch is the
+        # primary memory leak this avoids.
+        def _detach(v):
+            if torch.is_tensor(v):
+                return v.detach()
+            if isinstance(v, (list, tuple)):
+                return type(v)(_detach(x) for x in v)
+            return v
+        if hasattr(result, '_replace'):
+            detached = result._replace(**{
+                f: _detach(getattr(result, f)) for f in result._fields
+            })
+        else:
+            detached = _detach(result)
+        self._batch_results.append(detached)

@@ -88,7 +88,21 @@ rule list.
 
 `Grammar.configure()` loads an XML `<grammar>` section (inside
 `<WordSpace><language>`).  The block splits into `<upward>` (parsing /
-chart compose) and `<downward>` (generation from a deep symbolic state).
+chart compose), `<downward>` (generation from a deep symbolic state),
+and a single `<start>` element naming the start symbol.
+
+The `<start>S</start>` element is the canonical sentence boundary marker.
+When `SyntacticLayer.compose` reduces a row's parse stack to a single node
+of the start category, the layer emits a host-side soft-reset signal for
+that row (`wordSpace._sentence_completed[b] = True`). The outer
+doc-streaming loop drains this signal after each `runBatch` tick and
+dispatches `wordSpace.soft_reset(batch=b)`, which re-arms `_stm_fired[b]`
+and clears `_last_svo[b*K..]` and the parse-stack rows for `b`. Discourse
+history and codebook EMA are *not* cleared by soft reset — they are
+document-scoped and clear only on hard reset (document boundary).
+
+Without `<start>` declared, soft reset never fires; the cascade falls back
+to hard reset only (per-document). This is the legacy behavior.
 The loader accepts three RHS forms; the **explicit-op** form is the
 canonical target per
 [plans/2026-04-24-lift-lower-bivector-refactor.md](plans/2026-04-24-lift-lower-bivector-refactor.md)
@@ -116,9 +130,10 @@ Step 6 and
 
     <!-- (3) Bare-symbol form (transitional). RHS is a whitespace-       -->
     <!--     separated sequence of nonterminal / terminal categories;    -->
-    <!--     dispatch method is the typed-compose `merge`. The shipped   -->
-    <!--     `data/grammar.cfg` is currently in this form (e.g. `S -> NP -->
-    <!--     VP`); migration to (1) is Step 6 of the lift/lower plan.    -->
+    <!--     dispatch method is the typed-compose `merge`.  Step 6 of   -->
+    <!--     the lift/lower plan migrated `data/grammar.cfg` to the     -->
+    <!--     explicit-op form (1); the previous bare-symbol cfg is      -->
+    <!--     preserved at `data/grammar_legacy.cfg` for reference.       -->
     <S>S VP</S>
     <NP>AP NP</NP>
   </upward>
@@ -152,6 +167,8 @@ implemented in Step 1–2 of the refactor (see [Logic.md §8](Logic.md)
 | `bind(A, B)`                    | `Ops.bind(A, B)` (or `Ops.lower(mode='AND')` fallback)     | head-complement composition (PP, V + NP, …); see spec O6           |
 | `scale(DEG, AP)`                | `Ops.scale(DEG, AP)` (or `Ops.lower(mode='AND')` fallback) | degree intensification; see spec O7 / O9                           |
 | `project(A)` / single-symbol    | identity-with-typing-stamp                                 | terminal projection (`NP = project(N)` or `NP = N`); stamps LHS    |
+| `identity(A)`                   | passthrough (returns `A` unchanged)                        | absorb single-position syntactic sugar (whitespace, punct word)    |
+| `absorb(A, B)`                  | left-passthrough (returns `A`, discards `B`)               | absorb adjacent sugar (`B` learned to be punct/whitespace word)    |
 | `*Reverse(Y)` / `*_inv(Y)`      | `Ops.<op>(Y, inverse=True)` (multi-return)                 | derived at grammar-load time — not authored separately (spec O10)  |
 
 `Grammar.rules_upward` / `Grammar.rules_downward` hold the two rule
@@ -174,6 +191,96 @@ with the multi-return calling convention from
 [specs/2026-04-24-lift-lower-bivector-design.md](specs/2026-04-24-lift-lower-bivector-design.md)
 O10.
 
+### Syntactic sugar consumption
+
+Under the byte-level lex routed through BPE chunking, raw text positions
+include plenty of *syntactic sugar* — runs of whitespace, single
+punctuation marks (`,`, `.`, `;`, `:`, `"`, `'`, `(`, `)`), newlines.
+After chunking these become their own word slots that the grammar must
+either reduce away or carry along.
+
+The legacy 17-rule grammar had no explicit absorption rule; the rule
+predictor learned to abuse one of the existing binary ops (typically
+`union(S, S)` or `swap(S, S)`) as a de-facto pass-through whenever one
+operand was sugar. This was a bandaid that mixed semantically distinct
+operations — propositional disjunction and "skip this comma" fired the
+same rule with different probabilities depending on input.
+
+The post-rolling-cursor grammar adds two explicit absorption rules:
+
+- `identity(A)` — unary: returns `A` unchanged. Used when a single
+  position is pure sugar (an isolated comma, a whitespace word) that
+  should not contribute semantic content.
+- `absorb(A, B)` — binary: returns `A`, discards `B`. Used when sugar
+  attaches to a meaningful adjacent token (`"Hello,"` chunked as
+  `[Hello, ,]` reduces via `absorb(Hello, ,)`).
+
+Both rules are pure projections — no computation, no learnable
+parameters in the projection itself. The rule predictor learns *when* to
+fire them via the same softmax-over-rules logic as the semantic rules.
+Initial logits should bias against `absorb` to avoid early-training
+collapse where the parser learns to discard everything past the first
+token; bias decays as the loss demonstrates the rule's actual usefulness.
+
+### `data/grammar.cfg` dispatch (Step 6)
+
+Step 6 of the lift / lower / bivector refactor introduced a text-based
+rule table at `data/grammar.cfg` in the explicit-op form, alongside the
+XML loader.  Format (line-oriented):
+
+```
+# comments start with '#'
+[upward]
+S = NP                        # PROJECT (single-category RHS)
+S = lift(NP, VP)
+NP = intersection(AP, NP)
+S = not(S)
+...
+
+[downward]
+C = emit_head(S)
+
+[layer2]
+# Post-hoc S-ops; not productions, no reverse pair.
+S = true(S)
+S = swap(S, S)
+...
+```
+
+Sections are bracketed (`[upward]` / `[downward]` / `[layer2]`) and
+default to `[upward]` when no header is seen.  Each `LHS = body` rule's
+body is either a function call `op(arg1, arg2)`, a single category
+(PROJECT), or `epsilon`.  Layer-2 rows are tracked separately on
+`Grammar.rules_layer2` and stay out of `Grammar.rules` because they're
+post-hoc transformations, not productions.
+
+Loading is gated via `<WordSpace><language><grammarCfg>` in the XML
+config — when set to a path (resolved against `ProjectPaths.PROJECT_DIR`),
+`Grammar._ensure_configured()` calls `Grammar.load_from_cfg(...)` and
+skips the legacy `<grammar>` block.  When unset, the XML grammar wins
+(legacy path).  Both paths populate `Grammar.reverse_rules` with the
+mechanically-derived Layer-2.5 reverse productions
+`(args_tuple, reverse_op_name, (lhs,))`.
+
+Dispatch itself is unchanged: `SyntacticLayer.project` looks up
+`method_name` in `_RULE_METHODS` and calls the matching `<name>Forward`
+on the layer.  The cfg path supplies the `method_name`; the layer
+methods supply the Basis / mask / subspace context.  For callers that
+want to invoke an op stateless (no Basis context),
+`SyntacticLayer.dispatch_ops(op_name, *args, **kwargs)` resolves the
+op name through `_OPS_METHODS` and calls the bare `Ops` callable
+directly — useful for the explicit-op view from grammar.cfg without
+going through layer plumbing.
+
+The reverse op name follows the convention `<op>Reverse` for everything
+except self-inverse ops (`not`) which keep their forward name; PROJECT
+rules (single-category RHS) emit the explicit `projectReverse` reverse
+name.  Multi-return reverses `Ops.liftReverseAll(Y[, W])` and
+`Ops.lowerReverseAll(Y[, W])` return `(X1, X2)` tuples consistent with
+the parent plan §Step 6 spec; the existing analytic single-arg forms
+`Ops.liftReverse(result, right)` and `Ops.lowerReverse(result, right)`
+are unchanged.
+
 ### Thought-Free Mode (Shamatha Speech)
 
 `Grammar.thought_free` is a boolean flag (default `False`) settable
@@ -184,18 +291,70 @@ redesign.  See [Params.md](Params.md) for the XML configuration.
 
 ---
 
-## Rule Algorithms (LaTeX)
+## Ops Reference
+
+The grammar dispatches each rule to an `Ops.*` callable defined in
+[`bin/Layers.py`](../bin/Layers.py) (class `Ops`).  This section is the
+canonical reference for those callables: their current implementation,
+their position on the layer-anchor map, and their status against the
+target architecture (where every grammar op has a clean grammatical
+interpretation).
+
+### Layer-anchor map
+
+Every grammar op should ultimately be implemented at one of four
+anchor sites, reflecting where its semantics actually live:
+
+| Anchor | Lives at | Description |
+|---|---|---|
+| **Sym** | SymbolicSpace | per-symbol algebra on `subspace.activation` (the bivector `[aP, aN]` and the codebook).  Operations that are intrinsically about symbols. |
+| **SigmaPi** | `ConceptualSpace.pi` $\leftrightarrow$ `SymbolicSpace.sigma` round trip | level-crossing operations.  `lift` runs `forwardSigma`; `lower` runs `reverseSigma`; `intersection` / `union` round-trip through both. |
+| **Per** | PerceptualSpace | percept-side operations (e.g. `chunk`).  Currently outside the grammar dispatcher. |
+| **Def** | WordSpace | *definitional*: introduces a new symbol or asserts a relation in the WordSpace symbol table.  No tensor algebra; it edits the symbolic codebook / mereological relation table. |
+
+The xAI / HI precondition is that **every** op has an explicit
+grammatical interpretation, anchored at one of the four sites.  The
+table below shows the mapping; the per-op subsections that follow
+describe the current implementation and what changes when the op
+migrates to its target anchor.
+
+### Target $\leftrightarrow$ current $\leftrightarrow$ status table
+
+| Op | Target | Current `Ops.*` body | Migration status |
+|---|---|---|---|
+| `true` | Sym | `Ops.positive(x) = relu(x)` | scalar primitive; needs Sym anchor for the "committed yes" half-space |
+| `false` | Sym | `Ops.negative(x) = -relu(-x)` (or `relu(-x)` via `_OPS_METHODS`) | scalar primitive; same as `true` |
+| `non` | Sym | `1 - |clamp(x, -1, 1)|` (bitonic) or `relu(x - threshold)` (monotonic) | scalar primitive; needs Sym anchor |
+| `not` | Sym | `Ops.negation(x)` — bitonic sign flip; monotonic does paired-pole swap on bivector last dim | symbolic-side operation; **proposed: introduce a learnable NOT layer just after SigmaLayer** so Pi/Sigma stay positive-monotonic and `not` emits the negated word in the grammatical derivation |
+| `conjunction` | Sym | `Ops.lower(x, y, mode='AND', kind=...)` (smooth: product; strict: min; radial: RadMin) | already routes through the dispatcher; symbolic-side per-symbol algebra |
+| `disjunction` | Sym | `Ops.lift(x, y, mode='OR', kind=...)` (smooth: mean; strict: max; radial: RadMax) | already routes through the dispatcher; symbolic-side per-symbol algebra |
+| `intersection` | SigmaPi | `Ops.lower(x, y, mode='AND')` (alias for `conjunction` in `_OPS_METHODS`) | currently identical to `conjunction`; **target: round-trip through `ConceptualSpace.pi.reverse → SymbolicSpace.sigma.forward`** so the result is meaningfully a level-crossing intersection of the witness regions, not just an `Ops.*` algebra |
+| `union` | SigmaPi | `Ops.lift(x, y, mode='OR')` (alias for `disjunction`) | same as `intersection` — currently a pure-algebra alias; target is the SigmaPi round-trip form |
+| `lift` | SigmaPi | `Ops.lift(X1, X2, mode, kind, inverse, monotonic)` — pure stateless dispatcher | target: `SymbolicSpace.sigma.forward(...)` (the SigmaLayer body); the cfg dispatcher could route through `sigma.forward(packed, binary=True)` to use the Step-5 STE top-2 selector |
+| `lower` | SigmaPi | `Ops.lower(X1, X2, mode, kind, inverse, monotonic)` — pure stateless dispatcher | target: `ConceptualSpace.pi.forward(...)` (or its `reverse` for the inverse direction) |
+| `equal` | Def | `Ops.equal(x, y) = part(x, y) * part(y, x)` (mutual parthood, vector or scalar) | currently computed as a tensor score; **target: a definitional op that introduces a new symbol into WordSpace asserting $x \equiv y$ as a recorded relation** |
+| `part` | Def | `Ops.part(x, y) = x * (y / ‖y‖)` (vector) or clipped cosine in `[0, 1]` (scalar) | currently a tensor score; **target: a definitional op asserting `part(x, y)` as a stored mereological relation over the WordSpace codebook** |
+| `what` / `where` / `when` | Sym | `Ops.{what,where,when}(x, nWhat, nWhere, nWhen)` — block selector zeroing the other two slots; identity when `x.ndim < 3` | symbolic-side; current impl already at Sym (operates on `subspace.activation`) |
+| `query` | Mereological | `Ops.query` doesn't exist as an `Ops.*` body — handled in `compose()` via norm-drop detection; returns the left operand (preserved accumulator) | target: a mereological query over WordSpace's stored part / equal / overlap relations |
+| `swap` | Sym | Sinkhorn soft-permutation matrix $P$ over 3 slots; $\mathrm{swap}(\ell, r) = (P \cdot [\ell, r, m]^\top)_0$ | symbolic-side; current impl is at Sym (acts on the per-position [where, when, what] slot tuple via a learned permutation) |
+| `chunk` | Per | `Basis.disjunction(`$\ell, r$`, monotonic=True)` $\to \max(\ell, r)$ fallback; runs in the perceptual pre-pass | already at Per (called by `ChunkingLayer`); not currently in the grammar dispatch table |
+
+The remainder of this section is the per-op specification: signature,
+math, current location, and a note on what migrating to the target
+anchor would change.
+
+### Notation
 
 Let $x, \ell, r \in \mathbb{R}^{B \times N}$ (activation mode) or
 $\mathbb{R}^{B \times N \times D}$ (vector mode).  Let $\mathcal{B}$ be
 the subspace basis (e.g. a bitonic `Basis`), which supplies pointwise
 primitives `pos`, `negation`, `conjunction`, `disjunction`, `equal`,
 `part`.  When $\mathcal{B}$ is absent the methods fall back to torch
-elementwise primitives.  `mask` (optional concept-axis `Mask`) gates the
-output by zeroing non-selected dimensions; it is omitted below for
+elementwise primitives.  `mask` (optional concept-axis `Mask`) gates
+the output by zeroing non-selected dimensions; it is omitted below for
 clarity.
 
-### Trinity partition (true / false / non)
+### Ternary operators (true / false / non) — Sym
 
 For $x \in [-1, 1]$ (clamped defensively on entry):
 
@@ -213,7 +372,7 @@ them the "committed yes" and "committed no" halves of a bitonic axis;
 `non` is the triangular indeterminate residual peaked at $x = 0$.  All
 three are lossy (no inverse registered).
 
-### Negation (not)
+### Negation (not) — Sym
 
 $$
 \mathrm{not}(x) = \mathcal{B}.\mathrm{negation}(x) = -x,
@@ -223,7 +382,7 @@ $$
 
 Pure antipodal flip on the bitonic axis.  Self-inverse.
 
-### Conjunction / disjunction
+### Conjunction / disjunction — Sym
 
 Both route through the unified `lift` / `lower` dispatcher (Step 1–2 of
 [plans/2026-04-24-lift-lower-bivector-refactor.md](plans/2026-04-24-lift-lower-bivector-refactor.md)).
@@ -259,7 +418,7 @@ usage), though the same primitives at C-tier subspace level retain
 Basis-level inverses via `Ops.conjunctionReverse` /
 `Ops.disjunctionReverse` (codebook-search recovery).
 
-### Intersection / union (mereological)
+### Intersection / union — SigmaPi (currently aliases `lower`/`lift`)
 
 `intersection` and `union` are aliases for `conjunction` / `disjunction`
 under the explicit-op grammar form, dispatching the same unified call:
@@ -282,7 +441,7 @@ $$
 For `mode='NOT'` the inverse is identical to the forward (self-inverse
 pole flip / sign flip).
 
-### Part (clipped cosine)
+### Part — Def (currently a tensor score)
 
 Parthood score, weighting the right operand by its containment in the
 left:
@@ -297,7 +456,7 @@ The scalar $s \in [0, 1]$ is broadcast to $r$'s rank before
 multiplication.  Empty-operand contract: if $|\ell|$ or $|r|$ is near
 zero, $s = 1$ (the empty set is part of everything).  Lossy.
 
-### Equals (cosine-gated projection)
+### Equal — Def (currently a cosine-gated projection)
 
 $$
 \mathrm{equals}(\ell, r) = \mathcal{B}.\mathrm{equal}(\ell, r,\ \mathrm{scalar}{=}\mathrm{True})
@@ -322,7 +481,7 @@ both operands match the Pi output dim, `equalsForward` first reverse-
 projects operands to concept space and invokes the concept-basis `equal`
 on the bitonic subspace.  Otherwise it uses the local basis.  Lossy.
 
-### Slot selectors (what / where / when)
+### Slot selectors (what / where / when) — Sym
 
 Given per-subspace column widths $(n_{\text{what}}, n_{\text{where}}, n_{\text{when}})$:
 
@@ -355,7 +514,7 @@ block structure is unavailable, so selectors degenerate to identity --
 the axis semantics are carried by the subspace's modality tensors
 rather than the flat activation vector.  Lossy.
 
-### Query (accumulator preservation)
+### Query — Mereological (currently accumulator preservation)
 
 $$
 \mathrm{query}(\ell, r) = \ell
@@ -367,7 +526,7 @@ by `compose()` when it detects norm-drop (see below), not by
 $\mathrm{query}$ returns the preserved accumulator (the left operand).
 Lossy.
 
-### Swap (Sinkhorn soft permutation)
+### Swap (Sinkhorn soft permutation) — Sym
 
 Let $M \in \mathbb{R}^{3 \times 3}$ be a learned logit matrix.  Apply
 $k = 5$ Sinkhorn normalisation iterations to produce a doubly-stochastic
@@ -390,29 +549,59 @@ $$
 i.e.\ the first row of the mixed-slot stack.  The permutation is shared
 across batch / position / dim.  Lossy.
 
-### Lift / lower (in-space algebra)
+### Lift / lower — SigmaPi (mode-dispatch ops)
 
-Post 2026-04-19 the old PiLayer round-trip (forward to S, combine,
-reverse to C) collapses to in-space binary algebra because the caller
-already holds the forwarded operands:
+`Ops.lift` and `Ops.lower` are unified mode-dispatchers.  Default
+modes are `lift` $\to$ `'OR'` (synthesis, $\vee$) and `lower` $\to$ `'AND'` (analysis,
+$\wedge$); each accepts `kind` $\in$ `{'strict', 'smooth', 'radial'}` selecting the
+forward body, and `inverse=True` for the reverse direction.
 
-$$
-\mathrm{lift}(\ell, r) = \ell \odot r,
-\qquad
-\mathrm{lift}^{-1}(y, r) = y \oslash (r + \varepsilon)
-$$
+**Forward bodies (point):**
 
-$$
-\mathrm{lower}(\ell, r) = \tfrac{1}{2}(\ell + r),
-\qquad
-\mathrm{lower}^{-1}(y, r) = 2\,y - r
-$$
+| | `mode='AND'` (`lower`) | `mode='OR'` (`lift`) |
+|---|---|---|
+| `kind='strict'` | $\min(X_1, X_2)$ | $\max(X_1, X_2)$ |
+| `kind='smooth'` | $X_1 \cdot X_2$ (elementwise product) | $(X_1 + X_2) / 2$ (mean) |
+| `kind='radial'` | RadMin (same-sign min magnitude, zero-collapse) | RadMax (same-sign max magnitude, zero-passthrough) |
 
-Both registered with inverses.  The legacy `LiftingLayer` /
-`LoweringLayer` classes still exist in `Layers.py` for `TruthLayer`'s
-universality scoring; they are no longer instantiated per SyntacticLayer.
+**Region forms (operand is a tuple $(\ell, u)$):** `lower(mode='AND')`
+returns $(\max(\ell_1, \ell_2), \min(u_1, u_2))$; `lift(mode='OR')`
+returns $(\min(\ell_1, \ell_2), \max(u_1, u_2))$ — independent of
+`kind`.
 
-### Chunk (invertible max-union; pre-pass)
+**Cross-mode delegation:** `lift(mode='AND')` forwards to
+`lower(mode='AND')` for symmetry; `lower(mode='OR')` forwards to
+`lift(mode='OR')`.  `mode='NOT'` is `Ops.negation(X1, monotonic=...)`
+on either dispatcher (self-inverse).
+
+**Reverse / inverse:**
+
+- `inverse=True, mode='AND' or 'OR'` requires a codebook `W` and
+  raises `NotImplementedError` if unsupplied — callers must use the
+  `Basis.*` flavor, or `Ops.conjunctionReverse(result, y, W)` /
+  `Ops.disjunctionReverse(result, y, W)` directly.
+- `Ops.lowerReverseAll(Y, W, monotonic)` and
+  `Ops.liftReverseAll(Y, W, monotonic)` return the multi-operand pair
+  `(recovered_left, recovered_right)` per the parent plan §Step 6
+  Layer-2.5 grammar convention.
+- The single-operand analytic forms `Ops.liftReverse(result, right)` =
+  $\mathrm{result} / (\mathrm{right} + \varepsilon)$ and
+  `Ops.lowerReverse(result, right)` = $2 \cdot \mathrm{result} -
+  \mathrm{right}$ are preserved as legacy callers' inverse of the old
+  `Ops.lift` $= \odot$ and `Ops.lower = mean` bodies.  They warn-only and
+  are permanent.
+
+**Layer integration.** The cfg-driven grammar dispatch invokes
+`Ops.lift` / `Ops.lower` directly (option (a) per the Step 6.5
+closure: explicit two-operand calls).  The learnable equivalents live
+on `SymbolicSpace.sigma.forward` / `ConceptualSpace.pi.forward` which
+own their own log-domain (Pi) and atanh-domain (Sigma) matmul bodies.
+The bridge between dispatch-time algebra and learnable layers is the
+`binary=True` flag on `PiLayer.forward` / `SigmaLayer.forward` (Step
+5): it pre-applies `Ops.top2_select_ste` to hard-select the top-2
+input operands before the layer body runs.
+
+### Chunk — Per (invertible max-union; pre-pass)
 
 $$
 \mathrm{chunk}(\ell, r) = \mathcal{B}.\mathrm{disjunction}(\ell, r,\ \mathrm{monotonic}{=}\mathrm{True})
@@ -422,7 +611,109 @@ $$
 Monotonic max-union.  Inverse via
 $\mathcal{B}.\mathrm{disjunction\_inverse}(y, r)$.  Not registered in the
 default S-tier rule list; used by `ChunkingLayer` in the perceptual
-pre-pass.
+pre-pass.  This is the only Per-anchored op currently shipping.
+
+### Reverse / inverse ops
+
+These are the analytic and codebook-search inverses paired with the
+forward ops above.  None are dispatched by the cfg grammar directly —
+they are invoked by `Basis.*` methods or by the parent plan's Layer-
+2.5 grammar reverse convention.
+
+| Op | Behavior |
+|---|---|
+| `Ops.negationReverse(x, monotonic)` | self-inverse — calls `Ops.negation(x, monotonic)` again |
+| `Ops.conjunctionReverse(result, y, W, monotonic)` | codebook-search recovery — find $cb_i$ such that $\mathrm{conjunction}(cb_i, cb_j) \approx \mathrm{result}$; returns recovered left operand |
+| `Ops.disjunctionReverse(result, y, W, monotonic)` | dual of `conjunctionReverse`; recovers left operand of disjunction |
+| `Ops.liftReverse(result, right)` | analytic single-operand inverse of the legacy `Ops.lift` $= \odot$ body: $\mathrm{result} / (\mathrm{right} + \varepsilon)$.  Permanent, warn-only. |
+| `Ops.liftReverseAll(Y, W, monotonic)` | multi-return Step-6 form: $(\mathrm{recovered\_left}, Y)$ via codebook search; falls back to $(Y, Y)$ when $W$ is unavailable |
+| `Ops.lowerReverse(result, right)` | analytic inverse of legacy `Ops.lower = mean`: $2 \cdot \mathrm{result} - \mathrm{right}$.  Permanent, warn-only. |
+| `Ops.lowerReverseAll(Y, W, monotonic)` | dual of `liftReverseAll` — multi-return form for the Step 6 grammar reverse pass |
+
+The `_binary_op_inverse_impl(result, W, op, monotonic)` private helper
+backs both `conjunctionReverse` and `disjunctionReverse`.  It searches
+the codebook $W$ for the pair $(cb_i, cb_j)$ whose forward $op$ best
+matches `result`, returning $cb_i$.
+
+### Mereological suite — see [Mereology.md](Mereology.md)
+
+The mereology suite (`part`, `whole`, `equal`, `overlap`, `underlap`,
+`boundary`, `copart`) lives in `Ops.*` but the canonical specification
+of its semantics is [Mereology.md](Mereology.md).  Each member has a
+vector form (default) and a scalar form (`scalar=True`):
+
+| Op | Vector form | Scalar form |
+|---|---|---|
+| `part(x, y)` | $x \cdot (y / \|y\|)$ | clipped cosine $\max(0, x \cdot y) / (\|x\|\|y\|) \in [0, 1]$ |
+| `whole(x, y)` | $(1 - x) \cdot (y / \|y\|)$ | $\mathrm{part}(y, x, \mathrm{scalar}{=}\mathrm{True})$ |
+| `equal(x, y)` | $\mathrm{part}(x, y) \cdot \mathrm{part}(y, x)$ | mutual parthood $\in [0, 1]$ — $0$ disjoint, $\in (0, 1)$ overlap, $1$ identity |
+| `overlap(x, y)` | $\min(\mathrm{part}(x, y), \mathrm{part}(y, x))$ | boolean: $0 < \mathrm{equal}(\ldots) < 1$ |
+| `underlap(x, y)` | $\min(\mathrm{whole}(x, y), \mathrm{whole}(y, x))$ | boolean: $\mathrm{equal}(\ldots) = 0$ |
+| `boundary(x, y)` | $\lvert \mathrm{part}(x, y) - \mathrm{part}(y, x) \rvert$ | always $0$ under the symmetric clipped-cosine score |
+| `copart(x, y)` | $y - x$ | $1 - \mathrm{part}(x, y, \mathrm{scalar}{=}\mathrm{True})$ |
+
+Empty-set conventions (parthood scalar form):
+$\mathrm{part}(\emptyset, y) = 1$,
+$\mathrm{part}(x, \emptyset) = 0$,
+$\mathrm{part}(\emptyset, \emptyset) = 1$.
+
+`part` and `equal` are also surfaced through the grammar dispatch
+table; the rest of the suite is utility-level (called by `Basis.*` and
+the TruthLayer derivation pipeline).  The target architecture moves
+`part` and `equal` from tensor scoring to **Def** anchors that
+introduce a recorded relation in WordSpace; see the table at the top
+of this section.
+
+### Pointwise primitives
+
+These are the small utility ops with no current grammatical role —
+they are called by the layer / loss / encoding code paths and have no
+dispatch entry.  Listed for completeness so the inventory is closed.
+
+**Constants:** `Ops.true() = 1`, `Ops.false() = -1`,
+`Ops.unknown() = 0`.
+
+**Element-wise:**
+
+| Op | Body |
+|---|---|
+| `Ops.positive(x)` | $\mathrm{relu}(x)$ |
+| `Ops.negative(x)` | $-\mathrm{relu}(-x)$ |
+| `Ops.neutral(x)` | $1 - \lvert x \rvert$ |
+| `Ops.pos(x)` | $\mathrm{relu}(x)$ — alias used by the bivector path |
+| `Ops.sign(v)` | signum with $\mathrm{sgn}(0) = 1$ (not $0$) |
+| `Ops.saturate(x)` | $\mathrm{clamp}(x, -1, 1)$, NaN $\to 0$ |
+| `Ops.threshold(x, t)` | zero entries with $\lvert x \rvert < t$ |
+| `Ops.complement(x)` | $\mathrm{sign}(x) - x$ |
+| `Ops.convertSensation(x)` | $2x - 1$ — $[0, 1] \to [-1, 1]$ remap |
+| `Ops.minMag(x_1, x_2)` | $x_i$ with smaller $\lvert x_i \rvert$ |
+| `Ops.maxMag(x_1, x_2)` | $x_i$ with larger $\lvert x_i \rvert$ |
+| `Ops.error(x_1, x_2)` | $\| x_1 - x_2 \|_2$ — scalar L2 |
+| `Ops.norm(x)` | last-dim L2 norm |
+| `Ops.distance(x, y, monotonic, dim)` | $(1 - \cos(x, y)) / 2$ (bitonic) or volume-weighted L2 (monotonic) |
+
+**Predicates (return Boolean):**
+
+| Op | Body |
+|---|---|
+| `Ops.isActive(x, t)` | $\lvert x \rvert \ge t$ |
+| `Ops.isEqual(x_1, x_2)` | `torch.equal` strict equality |
+| `Ops.isReducer(x_1, x_2)` | $\| x_2 - x_1 \|_1 < \| x_2 \|_1$ — scalar Bool |
+
+**Selection (Step-5 STE bridge):** `Ops.top2_select_ste(x, dim=-1)`
+selects the top-2 entries of $x$ by $\lvert x \rvert$, zeroing the
+rest.  Backward is straight-through.  Used by
+`PiLayer.forward(x, binary=True)` and `SigmaLayer.forward(x,
+binary=True)` to specialize the layer body to per-rule binary
+application.
+
+**Private helpers** (referenced by the public ops above):
+`_radmin(x, y)`, `_radmax(x, y)` — the same-sign min / max magnitude
+bodies used by `kind='radial'`; `_binary_op_inverse_impl(result, W,
+op, monotonic)` — the codebook-search backbone for
+`conjunctionReverse` / `disjunctionReverse`; `_as_region(x)` —
+promotes a point to a degenerate region $(\ell, u) = (x, x)$ for the
+region-form bodies.
 
 ---
 

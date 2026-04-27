@@ -18,6 +18,29 @@ warnings.filterwarnings(
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.multiprocessing as _torch_mp
+# DataLoader workers transfer tensors to the main process via shared
+# memory.  PyTorch's default 'file_descriptor' strategy opens one FD per
+# transferred storage; with prefetch_factor > 0 and many batches per
+# epoch, this exhausts the per-process FD limit on Linux (default 1024).
+# 'file_system' uses /tmp shm files instead -- no FD pressure.  See
+# https://pytorch.org/docs/stable/multiprocessing.html#sharing-strategies.
+try:
+    _torch_mp.set_sharing_strategy('file_system')
+except RuntimeError:
+    pass  # already set or unsupported on this platform
+
+# Raise the soft FD limit to the hard ceiling so prefetch_factor /
+# multi-worker DataLoaders do not hit "Too many open files" on Linux
+# defaults (RLIMIT_NOFILE soft=1024).  No-op on platforms without
+# resource (e.g. Windows) or when the soft limit is already saturated.
+try:
+    import resource as _resource
+    _soft, _hard = _resource.getrlimit(_resource.RLIMIT_NOFILE)
+    if _soft < _hard:
+        _resource.setrlimit(_resource.RLIMIT_NOFILE, (_hard, _hard))
+except (ImportError, ValueError, OSError):
+    pass
 import random
 try:
     from torchviz import make_dot
@@ -52,82 +75,6 @@ from util import parse
 from Pipeline import (
     CachePoint, GrammarMergeGlue, ReverseAdapter, FlattenKWrapper,
 )
-
-
-# ---------------------------------------------------------------------------
-# TEMPORARY DEBUG: Adam ZeroDivisionError probe.  REMOVE ME once the root
-# cause of the multi_tensor_adam bc=0 failure is understood (see git log
-# entry adding _adam_bug_probe).  Call sites: runBatch optimizer.step paths
-# and rebuild_optimizer.  Removal checklist:
-#   - delete _adam_bug_probe and _ADAM_BUG_PROBE_* globals
-#   - delete the two _adam_bug_probe(...) calls in runBatch
-#   - delete the _adam_rebuild_log calls in BaseModel.rebuild_optimizer and
-#     Spaces.PretrainModel._rebuild_optimizer
-# ---------------------------------------------------------------------------
-_ADAM_BUG_PROBE_WARNED = False
-_ADAM_BUG_PROBE_REBUILDS = 0
-
-def _adam_bug_probe(model, optimizer, batch_num):
-    """Log when Adam is about to step with a step=0 param that has a grad.
-
-    Records optimizer id (so we can correlate with rebuilds), per-param step
-    counts, and emits a one-shot UserWarning so this debug code is impossible
-    to forget about.
-    """
-    global _ADAM_BUG_PROBE_WARNED
-    if not _ADAM_BUG_PROBE_WARNED:
-        warnings.warn(
-            "TEMPORARY: _adam_bug_probe is active in Models.runBatch.  "
-            "Remove it once the multi_tensor_adam bc=0 root cause is "
-            "diagnosed.",
-            UserWarning,
-            stacklevel=2,
-        )
-        _ADAM_BUG_PROBE_WARNED = True
-
-    suspicious = []
-    total_with_grad = 0
-    for g_idx, group in enumerate(optimizer.param_groups):
-        for p_idx, p in enumerate(group["params"]):
-            if p.grad is None:
-                continue
-            total_with_grad += 1
-            st = optimizer.state.get(p, {})
-            step_v = st.get("step")
-            if step_v is None:
-                # Lazy-init will set it to 0; the increment in
-                # _multi_tensor_adam will then bring it to 1.
-                continue
-            if torch.is_tensor(step_v):
-                try:
-                    step_scalar = step_v.item()
-                except Exception as exc:
-                    step_scalar = f"<unreadable: {exc}>"
-            else:
-                step_scalar = step_v
-            if step_scalar == 0:
-                suspicious.append(
-                    f"g={g_idx} p={p_idx} shape={tuple(p.shape)} "
-                    f"step=0 dev={p.device} step_dev="
-                    f"{getattr(step_v, 'device', 'n/a')}"
-                )
-    if suspicious:
-        TheMessage(
-            f"[ADAM-BUG-PROBE] batch={batch_num} opt_id={id(optimizer)} "
-            f"rebuilds_seen={_ADAM_BUG_PROBE_REBUILDS} "
-            f"params_with_grad={total_with_grad} step0_count={len(suspicious)} "
-            f"first={suspicious[0]}"
-        )
-
-
-def _adam_rebuild_log(tag, optimizer):
-    """Increment rebuild counter and log the new optimizer id."""
-    global _ADAM_BUG_PROBE_REBUILDS
-    _ADAM_BUG_PROBE_REBUILDS += 1
-    TheMessage(
-        f"[ADAM-BUG-PROBE] rebuild #{_ADAM_BUG_PROBE_REBUILDS} {tag} "
-        f"opt_id={id(optimizer)}"
-    )
 
 
 class Normalizer:
@@ -413,7 +360,6 @@ class BaseModel(nn.Module):
             return
         lr = self._optimizer.param_groups[0]['lr']
         self._optimizer = self.getOptimizer(lr=lr)
-        _adam_rebuild_log("model", self._optimizer)  # REMOVE ME (Adam bc=0 debug)
 
     def _checkpoint_path(self, suffix=None):
         """Resolve the configured checkpoint path, optionally adding a suffix."""
@@ -665,6 +611,12 @@ class BaseModel(nn.Module):
         if partitions is not None and len(partitions) > 1:
             query_order = self._activation_order(activation, partitions)
 
+        # Pin the query to the stored truths' device so the cosine
+        # matmul below doesn't trip a cross-device gather. Tests often
+        # construct activations on the default device while the
+        # truth_layer's buffers live on the model's device.
+        activation = activation.to(stored.device)
+
         # Normalize for cosine similarity
         a_norm = F.normalize(activation.unsqueeze(0), dim=-1)  # (1, D)
         s_norm = F.normalize(stored, dim=-1)                    # (n, D)
@@ -769,7 +721,8 @@ class BaseModel(nn.Module):
         rejected = []
 
         ss = getattr(self, 'symbolicSpace', None)
-        pi_layer = ss.layer if ss is not None else None
+        cs = getattr(self, 'conceptualSpace', None)
+        pi_layer = ss.sigma if ss is not None else None
         # Get the actual SubSpace for grammar methods (needs .basis)
         subspace = getattr(ss, 'subspace', None) if ss is not None else None
         # *Forward lives on the S-tier SyntacticLayer, which WordSpace
@@ -1904,8 +1857,8 @@ class BasicModel(BaseModel):
                 last_input_state = self.perceptualSpace._embedded_input
 
         # Expose the [B, K] valid mask for runBatch.
-        if is_ar_mode and self.inputSpace.subspace.valid_mask_bk is not None:
-            self._ar_valid_pos = self.inputSpace.subspace.valid_mask_bk
+        if is_ar_mode and self.inputSpace.subspace.valid_mask is not None:
+            self._ar_valid_pos = self.inputSpace.subspace.valid_mask
 
         # nWhere bookkeeping: advance positional counter once per cursor
         # (K times per call) to match legacy serial-AR semantics where each
@@ -2413,7 +2366,10 @@ class BasicModel(BaseModel):
             # even if the step is aborted by a non-finite detector below.
             TheError.snapshot()
 
-        if not torch.isfinite(totalLoss).all():
+        # Per-batch finite-loss guard is a GPU sync (.all() materializes).
+        # Gate it behind MODEL_DEBUG so production training pays no per-batch
+        # sync; failures still surface via NaN gradients downstream.
+        if _util.MODEL_DEBUG and not torch.isfinite(totalLoss).all():
             def _loss_value(name, value):
                 if value is None:
                     return f"{name}=None"
@@ -2452,7 +2408,6 @@ class BasicModel(BaseModel):
                 self._assert_finite_train_state("after backward")
                 if self.ergodic:
                     self.paramUpdate()
-                _adam_bug_probe(self, optimizer, batchNum)  # REMOVE ME (Adam bc=0 debug)
                 amp_scaler.step(optimizer)
                 amp_scaler.update()
             else:
@@ -2460,7 +2415,6 @@ class BasicModel(BaseModel):
                 self._assert_finite_train_state("after backward")
                 if self.ergodic:
                     self.paramUpdate()
-                _adam_bug_probe(self, optimizer, batchNum)  # REMOVE ME (Adam bc=0 debug)
                 optimizer.step()
             self._assert_finite_train_state("after optimizer.step")
             self._clamp_symbolic_codebook()
@@ -2477,22 +2431,36 @@ class BasicModel(BaseModel):
             inputPred=inputDataPred,
             forwardInput=forwardInput,
         )
-        # Per-sentence Reset cascade (clears sliding buffers, WordSpace
-        # stack, symbolic objective, etc.). Fired after loss registration
-        # has consumed symbol_objective_terms. In AR training, InputSpace
-        # raises _end_of_stream when the NULL sentinel is emitted; under
-        # microbatch AR that flag is now [B] bool, so reduce to scalar
-        # via .all() -- Reset only when every source row hit EOS.  In
-        # non-AR, every forward() processes a fresh full input so Reset
-        # unconditionally.
-        eos = self.inputSpace._end_of_stream
-        if torch.is_tensor(eos):
-            eos = bool(eos.all().item())
-        if (not is_ar_mode) or eos:
+        # Per-sentence Reset cascade. Under the SentenceStreamDataset
+        # contract (one sentence per row per batch), every AR batch is a
+        # sentence boundary by construction -- the host already knows.
+        # batch_advances_sentence is a host-side property; reading it
+        # never forces a GPU->CPU sync, unlike the prior _end_of_stream
+        # tensor reduction which stalled the pipeline every batch.
+        # MODEL_DEBUG runs a paranoia check that the per-row mask
+        # actually agrees with the loader's expectation.
+        should_reset = (not is_ar_mode) or self.inputSpace.batch_advances_sentence
+        if _util.MODEL_DEBUG and is_ar_mode:
+            eos_t = self.inputSpace._end_of_stream
+            if torch.is_tensor(eos_t):
+                assert bool(eos_t.all().item()), (
+                    "AR contract violated: not all rows reached EOS at "
+                    "batch end -- loader is not one-sentence-per-row")
+        if should_reset:
             for space in self.spaces:
                 if hasattr(space, 'Reset'):
                     space.Reset()
             self.inputSpace._end_of_stream = False
+        # Compact the truth_layer's per-tick pending buffer outside the
+        # forward+backward+step brick. This is the one host sync the
+        # truth-layer path needs; lives here (post-step) so the brick
+        # body itself remains sync-free. Under the rolling-cursor handoff
+        # this call relocates to the outer doc-streaming loop.
+        ws = getattr(self, 'wordSpace', None)
+        if ws is not None:
+            tl = getattr(ws, 'truth_layer', None)
+            if tl is not None and hasattr(tl, 'compact'):
+                tl.compact(min_trust=0.5)
         self.End()
         return result, batchNum
 
@@ -2538,7 +2506,10 @@ class BasicModel(BaseModel):
                     )
                     if result is None:
                         break
-                    self.outputSpace.putBatch(result)
+                    # Inference output is consumed at the call site if
+                    # needed; do NOT retain results here -- nothing reads
+                    # outputSpace._batch_results, and the BatchResult
+                    # tuples each carry ~one batch of detached tensors.
             return 0, 0, [], []
 
         allOutput = []
@@ -2551,11 +2522,17 @@ class BasicModel(BaseModel):
         def record(result):
             """Book-keep one runBatch result into the shared accumulators."""
             nonlocal outErr, inErr
-            self.outputSpace.putBatch(result)
+            # Note: do NOT call outputSpace.putBatch(result).  The list it
+            # would append to has no readers, and each BatchResult retains
+            # ~one batch of detached tensors -- a per-batch growth of
+            # ~17 MB measured on MM_5M, accumulating over the epoch.
+            #
+            # Keep losses as 0-dim tensors here; .item() is a GPU sync.
+            # The epoch-end return path materializes scalars exactly once.
             if result.lossOut is not None:
-                outErr = result.lossOut.item()
+                outErr = result.lossOut.detach()
             if result.lossIn is not None:
-                inErr = result.lossIn.item()
+                inErr = result.lossIn.detach()
             outputChunks.append(result.outputPred.clone().detach().squeeze())
             if self.reversible and result.inputPred is not None:
                 inputChunks.append(result.inputPred.clone().detach().squeeze())
@@ -2593,7 +2570,11 @@ class BasicModel(BaseModel):
                 )
                 if result is not None:
                     record(result)
-                step += 1
+                # batchNum is the sentence cursor (see runBatch:
+                # ``sentenceIdx = batchNum``).  Each loader iteration
+                # consumes B sentences in parallel, so the cursor
+                # advances by B, not 1.
+                step += B
 
                 # Per-batch CBOW/SBOW embedding training for text AR
                 # modes, preserved from the old AR branch.
@@ -2626,6 +2607,12 @@ class BasicModel(BaseModel):
             else:
                 allOutput = torch.cat(outputChunks, dim=0)
 
+        # Materialize loss scalars exactly once at epoch end -- avoid
+        # per-batch .item() syncs that drain the GPU pipeline.
+        if torch.is_tensor(outErr):
+            outErr = outErr.item()
+        if torch.is_tensor(inErr):
+            inErr = inErr.item()
         return outErr, inErr, allOutput, allInput
 TheBasicModel = BasicModel()
 
@@ -2864,26 +2851,26 @@ class MentalModel(BaseModel):
         for t in range(T):
             is_last = (t == T - 1)
             if self.useButterflies:
-                # Butterfly: ConceptualSpace wraps a SigmaLayer that operates
+                # Butterfly: ConceptualSpace wraps a PiLayer that operates
                 # on packed pairs [B, N_t/2, 2*state_dim]; the ButterflyStage
                 # halves N externally unless is_last.
                 pair_dim = 2 * state_dim
-                sig = SigmaLayer(
+                pi = PiLayer(
                     pair_dim, pair_dim,
                     naive=naive, ergodic=self.ergodic,
                     invertible=True, nonlinear=True,
                     monotonic=self.monotonic)
-                sig.saturate = False
+                pi.saturate = False
                 cs_layer = ButterflyStage(
-                    sig, stage_idx=t, initial_n=state_vectors,
+                    pi, stage_idx=t, initial_n=state_vectors,
                     is_last=is_last)
-                # SymbolicSpace sees the post-conceptual merged N. Its pi
+                # SymbolicSpace sees the post-conceptual merged N. Its sigma
                 # operates on pairs packed from the already-halved stream and
                 # skips further merge (is_last=True).
-                pi = PiLayer(pair_dim, pair_dim, invertible=True,
-                             monotonic=True, nonlinear=symbol_nonlinear)
+                sig = SigmaLayer(pair_dim, pair_dim, invertible=True,
+                                 monotonic=self.monotonic, nonlinear=symbol_nonlinear)
                 ss_layer = ButterflyStage(
-                    pi, stage_idx=t, initial_n=state_vectors // 2,
+                    sig, stage_idx=t, initial_n=state_vectors // 2,
                     is_last=True)
                 cs_in = [state_vectors >> t, state_dim]
                 cs_out = cs_in[:] if is_last else [state_vectors >> (t + 1), state_dim]
@@ -3414,9 +3401,9 @@ class MentalModel(BaseModel):
             result_event = result.materialize()
             if result_event is not None and result_event.dim() == 4:
                 K = result_event.shape[1]
-        elif (stem_sub.valid_mask_bk is not None
-              and stem_sub.valid_mask_bk.dim() == 2):
-            K = stem_sub.valid_mask_bk.shape[1]
+        elif (stem_sub.valid_mask is not None
+              and stem_sub.valid_mask.dim() == 2):
+            K = stem_sub.valid_mask.shape[1]
 
         # Capture symbol_states from per-stage CachePoints. Inside the
         # body each cached event is [B*K, N, D]; un-flatten back to
@@ -3491,8 +3478,8 @@ class MentalModel(BaseModel):
         self.outputs = self.outputSpace.subspace
 
         # Per-cursor validity mask for the AR loss in runBatch: [B, K].
-        if is_ar_mode and stem_sub.valid_mask_bk is not None:
-            self._ar_valid_pos = stem_sub.valid_mask_bk
+        if is_ar_mode and stem_sub.valid_mask is not None:
+            self._ar_valid_pos = stem_sub.valid_mask
 
         # Discourse snapshot — last window's symbols match legacy
         # last-cursor semantics.
@@ -3666,7 +3653,7 @@ class MentalModel(BaseModel):
         truth_layer = self._get_truth_layer()
         validity_loss = torch.tensor(0.0, device=recon_loss.device)
         if truth_layer is not None and len(truth_layer) > 0:
-            pi_layer = self.symbolicSpace.layer
+            pi_layer = self.symbolicSpace.sigma
             lum_before = truth_layer.luminosity(pi_layer)
             # Check if reconstruction preserves luminosity
             # (temporarily store reconstructed symbols)

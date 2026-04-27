@@ -134,9 +134,9 @@ rejected at load time.
 
 ### Flat (both false)
 
-A single shared SigmaLayer and PiLayer operate on a concatenated
-`[percepts, symbols]` tensor at every conceptual order.  All orders
-share one undifferentiated symbolic space.  Sufficient for
+A single shared PiLayer (P$\leftrightarrow$C) and SigmaLayer (C$\leftrightarrow$S) operate on a
+concatenated `[percepts, symbols]` tensor at every conceptual order.
+All orders share one undifferentiated symbolic space.  Sufficient for
 `conceptualOrder=1`.
 
 At each iteration `t`:
@@ -145,17 +145,19 @@ At each iteration `t`:
    **concatenated** along the vector dimension:
    `concept_input = cat([percepts, sym_feedback], dim=1)`.
 
-2. **Sigma** (ConceptualSpace): A single shared layer transforms the
-   combined input.
+2. **Pi** (`ConceptualSpace.pi`): the single shared PiLayer transforms
+   percepts $\rightarrow$ concepts via `forwardPi`.
 
-3. **Pi** (SymbolicSpace): A single shared PiLayer projects concepts $\rightarrow$
-   symbols.  All orders write to the entire symbol dimension.
+3. **Sigma** (`SymbolicSpace.sigma`): the single shared SigmaLayer
+   projects concepts $\rightarrow$ symbols via `forwardSigma`.  All
+   orders write to the entire symbol dimension.
 
 4. **Feedback**: Symbol activation norms are broadcast back to the
    symbol portion of the input for the next iteration.
 
-5. **Reverse**: `ConceptualSpace.reverse` $\rightarrow$ peel off the symbol
-   portion $\rightarrow$ `SymbolicSpace.reverse`, repeated per order.
+5. **Reverse**: `SymbolicSpace.reverse` (`reverseSigma`)
+   $\rightarrow$ peel off the symbol portion $\rightarrow$
+   `ConceptualSpace.reverse` (`reversePi`), repeated per order.
 
 Key property: **all conceptual orders share one undifferentiated
 symbolic space**.  There is no way to tell, from a symbol vector

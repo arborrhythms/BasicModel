@@ -116,7 +116,7 @@ def test_warm_path_skips_slot_forward_embed():
             self.serial_cache = {}
             # Microbatch-AR routing attrs propagated by copy_context.
             self.k_axis = False
-            self.valid_mask_bk = None
+            self.valid_mask = None
             self.stem_embedded = False
         def is_empty(self):
             return False

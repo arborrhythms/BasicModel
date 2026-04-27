@@ -230,13 +230,13 @@ class TestPerLevelLayers(unittest.TestCase):
 
     def test_pair_sigmas_created(self):
         """Butterfly path: T independent ConceptualSpace instances, each
-        carrying a ButterflyStage-wrapped sigma on pair-dim inputs."""
+        carrying a ButterflyStage-wrapped pi on pair-dim inputs."""
         model = _make_model('RamsifiedModel.xml')
         if not model.useButterflies:
             self.skipTest("Model not butterfly-enabled")
         pair_dim = 2 * model._butterfly_state_dim
         self.assertEqual(len(model.conceptualSpaces), model.conceptualOrder)
-        stage0 = model.conceptualSpaces[0].sigma
+        stage0 = model.conceptualSpaces[0].pi
         self.assertEqual(stage0.inner.nInput, pair_dim)
         self.assertEqual(stage0.inner.nOutput, pair_dim)
 
@@ -248,7 +248,7 @@ class TestPerLevelLayers(unittest.TestCase):
             self.skipTest("Model not butterfly-enabled")
         pair_dim = 2 * model._butterfly_state_dim
         self.assertEqual(len(model.symbolicSpaces), model.conceptualOrder)
-        stage0 = model.symbolicSpaces[0].layer
+        stage0 = model.symbolicSpaces[0].sigma
         self.assertEqual(stage0.inner.nInput, pair_dim)
         self.assertEqual(stage0.inner.nOutput, pair_dim)
 

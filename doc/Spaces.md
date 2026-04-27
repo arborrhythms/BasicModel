@@ -39,6 +39,27 @@ next space, then restores the object structure on the way back.
 the top-level model down through every space and into every child layer, so the
 per-neuron exploration level is kept consistent across the entire pipeline.
 
+**Reset cascade — hard vs. soft.** Every space exposes
+`Reset(batch=None, hard=True)`:
+
+| Call form | Scope | Use |
+|-----------|-------|-----|
+| `space.Reset()` | All rows | Whole-state wipe (e.g. epoch boundary, manual reload) |
+| `space.Reset(batch=b, hard=True)` | Row `b` only | Document boundary, full per-row state wipe |
+| `wordSpace.soft_reset(batch=b)` | Row `b`, sentence-scoped state only | Grammar `<start>` reduction completes |
+
+Hard-reset clears: parse stack, `_last_svo`, `_stm_fired`, codebook commit
+accumulator, discourse history, `serial_cache`, `_ar_embedded`,
+`_end_of_stream` for the affected row(s).
+
+Soft-reset clears: parse stack, `_last_svo`, re-arms `_stm_fired`. **Does
+not** touch discourse history or codebook EMA — those are
+document-scoped, not sentence-scoped.
+
+Reset is dispatched from the outer doc-streaming loop in `runEpoch`, never
+from inside `runBatch` (which is a pure compute brick — see
+[Architecture.md](Architecture.md) "Pipeline as a unit, two-tier reset").
+
 ---
 
 ## Normalization and Ranges
@@ -121,6 +142,21 @@ and the reverse path restores the original range.
 **Invertibility.** InputSpace is always non-invertible in the strict sense; the reverse
 path is a separate reconstruction procedure using the span table, not a matrix inverse.
 
+**Document streaming and `valid_mask`.** Documents longer than `nOutput` bytes are not
+truncated. `TheData` maintains a per-row cursor `(doc_idx[b], offset[b])` and
+`next_tick()` returns a `[B, nOutput]` slab containing the next ≤`nOutput` bytes from
+each row's current document, plus a host-side `[B] list[bool]` `hard_eos` flag set on
+ticks where a row's cursor exhausts the current document. A short fill at document end
+NULL-pads the slab tail; the stem's `valid_mask: [B, K] bool` ([Spaces.py:4622]) flips
+False for the padded positions, and downstream state-mutation propagation (codebook
+EMA, parse-stack push, truth-layer record) skips them. Concatenating per-tick slabs
+across a row's document run reproduces the original bytes byte-exact.
+
+The legacy `_end_of_stream` tensor remains for diagnostic readback only — runBatch no
+longer consumes it for control flow (the in-loop `.all().item()` gate was removed by
+the predecessor handoff and the surrounding Reset block was relocated to the outer
+loop by the rolling-cursor handoff).
+
 ---
 
 ## PerceptualSpace
@@ -175,24 +211,46 @@ separate layers, approximate pseudoinverse in reverse.
 **Role.** Transforms perceptual vectors into abstract concepts via additive linear
 operations. Models conceptual hyperplanes that partition perceptual space.
 
-**Forward operation.**
-```
-y_j = tanh(W x + b)
-```
-The tanh nonlinearity squashes activations to `[-1, +1]`, giving each concept a
-graded membership value.
+**Owned layer.**
 
-**Reverse operation (invertible=True).** A single `SigmaLayer(invertible=True)` shared
-for both directions. Exact inverse via:
-```
-pre_tanh = atanh(y)
-x = W^{-1} * (pre_tanh - b)
-```
-The matrix inverse `W^{-1}` is computed via `InvertibleLinearLayer` (LDU
-factorisation), so no SVD is required and the inverse is exact.
+| Layer                | Direction        | Math                                | Notes                                              |
+|----------------------|------------------|-------------------------------------|----------------------------------------------------|
+| `self.pi` (`PiLayer`) | P $\leftrightarrow$ C            | log-domain multiplicative, monotonic | `forwardPi` (P → C) and `reversePi` (C → P) pointer aliases |
 
-**Reverse operation (invertible=False, reversible=True).** Two separate `SigmaLayer`
-instances -- `sigma1` for forward, `sigma2` for reverse.
+ConceptualSpace owns one PiLayer that handles both directions of the
+P$\leftrightarrow$C boundary via its own self-inverse.  When the space is reversible
+without an invertible layer, two PiLayers (`pi1`, `pi2`) are
+constructed and `forwardPi` / `reversePi` route to them; otherwise a
+single `pi` serves both.
+
+**Binary forward (Step 5).**  `self.pi.forward` accepts a
+`binary=True` flag that hard-selects the top-2 input operands by
+$|x_i|$ (via `Ops.top2_select_ste`) and zeros the rest before the
+log-domain fold.  Zero is the multiplicative identity for Pi's AND so
+unselected operands drop cleanly out of the pool.  Backward is
+straight-through: every input dim retains a learning signal so the
+layer learns to make all candidates sensible, even when they aren't
+currently in the top-2.  Used by grammar dispatch where a binary rule
+combines the two most-active constituents.
+
+**Forward operation (P → C).** PiLayer's log-domain product fold:
+```
+m   = (1 + x) / (1 - x)               # (-1,1) -> (0, inf)
+y   = tanh(W * log(m) / 2 + b)        # back to (-1, 1)
+```
+The `monotonic` flag constrains $W \ge 0$ so the AND fold preserves
+ordering; `nonlinear=True` keeps the output in `[-1, 1]`.
+
+**Reverse operation (invertible=True).** Exact log-domain inverse via
+`InvertibleLinearLayer` (or `NonNegativeInvertibleLinearLayer` when
+`monotonic=True`):
+```
+l   = log((1 + y) / (1 - y))
+x   = tanh(W^{-1} * (l - b) / 2)
+```
+
+**Reverse operation (invertible=False, reversible=True).** Two
+separate `PiLayer` instances -- `pi1` for forward, `pi2` for reverse.
 
 **Key parameters.**
 
@@ -204,7 +262,7 @@ instances -- `sigma1` for forward, `sigma2` for reverse.
 | `hasAttention` | Enable attention |
 | `hasNorm` | Enable layer normalization |
 
-**Layer.** `SigmaLayer` (one or two instances depending on `invertible`).
+**Layer.** `PiLayer` (one or two instances depending on `invertible`).
 
 **Range.** Vectors are tanh-bounded: each element is in `[-1, 1]` (applied by SigmaLayer).
 The boundary between PerceptualSpace and ConceptualSpace uses
@@ -259,6 +317,23 @@ symbols. This is the information bottleneck of the pipeline: rich
 perceptual-conceptual representations are compressed into a sparse presence
 pattern over a codebook of symbol prototypes.
 
+**Owned layer.**
+
+| Layer                       | Direction | Math                              | Notes                                                 |
+|-----------------------------|-----------|-----------------------------------|-------------------------------------------------------|
+| `self.sigma` (`SigmaLayer`) | C $\leftrightarrow$ S     | atanh-domain additive, monotonic  | `forwardSigma` (C → S) and `reverseSigma` (S → C) pointer aliases |
+
+SymbolicSpace owns one SigmaLayer that handles both directions of the
+C$\leftrightarrow$S boundary via its own self-inverse, isomorphic to `ConceptualSpace.pi`.
+When the space is reversible without an invertible layer, two SigmaLayers
+(`sigma1`, `sigma2`) are constructed and `forwardSigma` / `reverseSigma`
+route to them; otherwise a single `sigma` serves both.  The legacy
+`self.layer` PiLayer attribute is gone -- consumers use
+`model.symbolicSpace.sigma` directly.
+
+`self.sigma.forward` accepts the Step-5 `binary=True` flag (see
+ConceptualSpace section).
+
 **Symbols are percepts.** Each symbol represents the presence (`1`) or absence
 (`0`) of a named entity. Since conceptual activations range `[-1, 1]`, the
 mapping between the two domains is `symbol = (activation + 1) / 2`.
@@ -271,7 +346,7 @@ See [Language.md](Language.md) for the full language system design.
 **Forward operation (codebook=True).**
 
 1. Extract concept activation `[B, nConcepts]` from the input subspace.
-2. Map through `PiLayer(nConcepts, nSymbols, invertible=True, monotonic=True)` to `[B, nSymbols]`.
+2. Map through `SigmaLayer(nConcepts, nSymbols, invertible=True, monotonic=True)` to `[B, nSymbols]`.
 3. Store as symbolic presence `[0, 1]` via `set_symbols()`.
 4. Reshape to `[B, nSymbols, 1]` (each symbol is 1-dim) and pass through the
    codebook, which quantizes and produces a one-hot activation over codebook
@@ -280,7 +355,7 @@ See [Language.md](Language.md) for the full language system design.
 The output is a one-hot encoding over the codebook. The codebook provides dense
 vectors for downstream spaces that require `[B, N, D]` tensors.
 
-**Forward operation (codebook=False).** The PiLayer maps the activation
+**Forward operation (codebook=False).** The SigmaLayer maps the activation
 to symbolic presence via `set_symbols()`; vectors pass through from the input
 subspace unchanged.
 

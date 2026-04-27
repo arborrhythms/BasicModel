@@ -190,10 +190,13 @@ class ErgodicLayer(Layer):
         """Update scalar bias and var from sigma (gradient variance)."""
         if not self.ergodic:
             return
-        if self.sigma_step.item() == 0:
+        # One .item() call instead of two -- the value is reused below.
+        # Each .item() is a GPU->CPU sync and runs once per backward step.
+        step = self.sigma_step.item()
+        if step == 0:
             return
         # Bias-corrected sigma estimate
-        s = self.sigma / (1 - self.sigma_beta ** self.sigma_step.item())
+        s = self.sigma / (1 - self.sigma_beta ** step)
         s = s.clamp(min=0)
         self.var.copy_((s / (s + self.sigma_kappa)).clamp(0, 0.95))
         self.bias.copy_((1.0 - self.var).clamp(min=0.05))
@@ -813,13 +816,22 @@ class SigmaLayer(Layer):
     @property
     def var(self):  return self.layer.var
 
-    def forward(self, x):
+    def forward(self, x, binary=False):
+        """Apply the additive OR fold.
+
+        ``binary=True`` selects the top-2 input operands (by |x|) via
+        Ops.top2_select_ste before the atanh entry transform; the rest
+        drop to 0 in additive domain (silent in the OR).  Backward is
+        STE -- gradient flows to every input as if no selection ran.
+        """
+        if binary:
+            x = Ops.top2_select_ste(x)
         if self.nonlinear:
             x = torch.atanh(x.clamp(-1 + epsilon, 1 - epsilon))
         y = self.layer.forward(x)
         if self.nonlinear:
             y = torch.tanh(y)
-        self.activation = y
+        self.activation = y.detach()
         return y
 
     def reverse(self, y):
@@ -829,7 +841,7 @@ class SigmaLayer(Layer):
         x = self.layer.reverse(y)
         if self.nonlinear:
             x = torch.tanh(x)
-        self.activation = x
+        self.activation = x.detach()
         return x
 
     @staticmethod
@@ -930,11 +942,21 @@ class PiLayer(Layer):
 
     # -- forward / reverse --------------------------------------------
 
-    def forward(self, x):
+    def forward(self, x, binary=False):
+        """Apply the log-domain multiplicative AND fold.
+
+        ``binary=True`` selects the top-2 input operands (by |x|) via
+        Ops.top2_select_ste before the entry transform; the rest drop
+        to 0 in raw domain -> 1 (mult-identity) in mult-domain ->
+        factor 1 in the product, i.e. irrelevant to the AND.  Backward
+        is STE -- gradient flows to every input as if no selection ran.
+        """
         if self.layer.ergodic:
             self.resample_noise()
         W = self.layer.compute_W_current()
         x = x.to(W.device)
+        if binary:
+            x = Ops.top2_select_ste(x)
         m = self._to_mult(x)                             # (0, inf)
         l = torch.log(m)                                  # (-inf, +inf) = 2*atanh(x)
         wl = l @ W                                        # [..., nOut]
@@ -1780,8 +1802,8 @@ class LiftingLayer(Layer):
         # 2. Intersect: restrict verb by object (monotonic -> min)
         restricted_syms = torch.min(verb_syms, obj_syms)      # [B, N, symbol_dim]
 
-        # 3. Map restricted symbols back to concept space
-        restricted = ss.layer.reverse(restricted_syms)        # [B, N, D]
+        # 3. Map restricted symbols back to concept space.
+        restricted = ss.reverseSigma(restricted_syms)         # [B, N, D]
 
         # 4. Weight verb by restricted concept norms -> query
         rw = restricted.norm(dim=-1, keepdim=True)            # [B, N, 1]
@@ -2168,6 +2190,23 @@ class TruthLayer(Layer):
         self._sources = []
         self._trusts = []
 
+        # Per-tick pending buffer for record_batch() / compact().
+        # Sized 4x the persistent store so a single tick can stage many
+        # candidates before pruning. compact() filters by trust and
+        # promotes survivors to the persistent buffer; lives outside the
+        # compute brick to keep `forward + backward + step` sync-free.
+        self.register_buffer(
+            '_pending_truths',
+            torch.zeros(max_truths * 4, nDim),
+        )
+        self.register_buffer(
+            '_pending_trust',
+            torch.zeros(max_truths * 4),
+        )
+        # Python int (not a tensor) — host-side cursor; reading / writing
+        # it never touches the GPU. Reset to 0 after each compact().
+        self._pending_count = 0
+
     # -- Record / Query ------------------------------------------------
 
     @torch.no_grad()
@@ -2207,7 +2246,12 @@ class TruthLayer(Layer):
             )
         degree = max(-1.0, min(1.0, degree))
         idx = self.count.item()
-        vec = activation.detach()
+        # Coerce to the persistent buffer's device. Callers (tests,
+        # Models.py) sometimes construct activation tensors on the
+        # default device while the truth_layer's buffers live on the
+        # model's device; without this coercion the contradiction-check
+        # matmul below trips a cross-device gather.
+        vec = activation.detach().to(self.truths.device)
 
         bivector_mode = (
             basis is not None
@@ -2242,6 +2286,97 @@ class TruthLayer(Layer):
                 )
 
         return idx
+
+    @torch.no_grad()
+    def record_batch(self, activations: torch.Tensor, trust: torch.Tensor,
+                     degree: float, basis=None) -> None:
+        """Stage a batch of activations into the per-tick pending buffer.
+
+        Unlike ``record()``, this method makes no per-cell storage decision
+        inside the compute brick. Every entry in ``activations`` is staged
+        with its associated ``trust`` value; ``compact()`` (called outside
+        the brick) drops entries with trust below the threshold and
+        promotes survivors to the persistent ``truths`` buffer.
+
+        Args:
+            activations: ``[N, nDim]`` activations to stage.
+            trust: ``[N]`` per-entry trust scores in ``[0, 1]``. The caller
+                computes these (typically magnitude-based, masked by
+                ``valid_mask`` and scaled by ``accumulateTruth``).
+            degree: scalar in ``[-1, 1]`` -- the DegreeOfTruth applied to
+                every staged activation. Sign flips (negative degree)
+                use the same bivector-aware path as ``record()``.
+            basis: optional Basis with ``negation(monotonic=True)``. When
+                provided and monotonic with even ``nDim``, enables the
+                bivector-storage path for ``degree < 0``.
+
+        No host syncs. The pending buffer's leading dim is bounded by
+        ``4 * max_truths``; overflows are truncated (host-side bounds
+        check on a Python int counter).
+        """
+        if activations.numel() == 0:
+            return
+        n = activations.shape[0]
+        degree = max(-1.0, min(1.0, degree))
+        # Pin to the buffer's device — same coercion as record() so
+        # cross-device callers don't trip the in-place buffer write below.
+        vec = activations.detach().to(self._pending_truths.device)
+
+        bivector_mode = (
+            basis is not None
+            and getattr(basis, 'monotonic', False)
+            and vec.shape[-1] % 2 == 0
+        )
+
+        if bivector_mode and degree < 0:
+            vec = basis.negation(vec, monotonic=True)
+            stored = vec * abs(degree)
+        else:
+            stored = vec * degree
+
+        # Bounds-check via Python int (no GPU sync).
+        cap = self._pending_truths.shape[0] - self._pending_count
+        n_take = min(n, cap)
+        if n_take <= 0:
+            return
+        end = self._pending_count + n_take
+        self._pending_truths[self._pending_count:end] = stored[:n_take]
+        self._pending_trust[self._pending_count:end] = trust[:n_take].detach() \
+            .to(self._pending_trust.device)
+        self._pending_count = end
+
+    @torch.no_grad()
+    def compact(self, min_trust: float = 0.5) -> int:
+        """Promote pending entries with trust >= ``min_trust`` to the
+        persistent store. Resets the pending buffer.
+
+        Intended call site: outer doc-streaming loop, AFTER the compute
+        brick (forward + backward + optimizer.step). Lives outside the
+        brick so the one host sync (``mask.sum().item()``) does not
+        block CUDA-graph capture of the brick body.
+
+        Returns the number of entries actually promoted.
+        """
+        if self._pending_count == 0:
+            return 0
+        pending = self._pending_truths[:self._pending_count]
+        trust = self._pending_trust[:self._pending_count]
+        mask = trust >= min_trust
+        n_keep_t = mask.sum()
+        n_keep = int(n_keep_t.item())  # one sync, outside the brick
+        self._pending_count = 0
+        if n_keep == 0:
+            return 0
+        survivors = pending[mask]
+        cur = int(self.count.item())
+        cap = self.max_truths - cur
+        n_actual = min(n_keep, cap)
+        if n_actual <= 0:
+            return 0
+        self.truths[cur:cur + n_actual] = survivors[:n_actual]
+        self.count += n_actual
+        return n_actual
+
 
     @torch.no_grad()
     def should_store(self, activation: torch.Tensor,
@@ -2600,7 +2735,8 @@ class TruthLayer(Layer):
             Scalar universality score.
         """
         ss = symbolic_space
-        luminosity_before = self.luminosity(ss.layer)
+        pi = ss.sigma
+        luminosity_before = self.luminosity(pi)
 
         # K(X, Y): original action SVO
         result_svo = lifting_layer.forward_transitive_svo(
@@ -2622,7 +2758,7 @@ class TruthLayer(Layer):
         self.record(svo_syms.mean(dim=(0, 1)).detach(), degree=1.0, basis=basis)
         self.record(ovs_syms.mean(dim=(0, 1)).detach(), degree=1.0, basis=basis)
 
-        luminosity_after = self.luminosity(ss.layer)
+        luminosity_after = self.luminosity(pi)
 
         # Restore truth store
         self.count.fill_(saved_count)
@@ -3155,12 +3291,13 @@ class TruthLayer(Layer):
         V = torch.randn(B, N, D)
         O = torch.randn(B, N, D)
 
-        # Mock symbolic space: PiLayer maps [B, N] -> [B, nSym]
+        # Mock symbolic space: expose ``sigma`` attribute (the canonical
+        # surface after the C->S swap to SigmaLayer on SymbolicSpace).
+        _sigma = SigmaLayer(N, nSym, monotonic=True, invertible=True,
+                            nonlinear=True)
         class _MockSS:
-            pass
+            sigma = _sigma
         mock_ss = _MockSS()
-        mock_ss.layer = PiLayer(N, nSym, monotonic=True, invertible=True,
-                                nonlinear=True)
         lifting = LiftingLayer(nVerbs=8, nDim=D)
 
         u_score = tl5.universality(S, V, O, lifting, mock_ss)
@@ -4356,6 +4493,32 @@ class Ops:
         return torch.minimum(x, zero), torch.maximum(x, zero)
 
     @staticmethod
+    def top2_select_ste(x, dim=-1):
+        """Hard top-2-by-magnitude selection with straight-through gradient.
+
+        Forward: keep only the two largest |x| entries along ``dim``;
+        send the rest to 0 (the neutral element for both PiLayer's
+        multiplicative AND fold and SigmaLayer's additive OR fold).
+        Backward: identity through the mask -- gradient flows to every
+        input as if no selection had occurred, so all candidates can
+        learn even when they aren't currently in the top-2.
+
+        Used by PiLayer.forward / SigmaLayer.forward when
+        ``binary=True`` to realize the 2-operand specialization of the
+        N-ary lattice op (binary grammar rules combine exactly two
+        constituents; the long tail of latent candidates drops to the
+        op's identity element).
+        """
+        n = x.shape[dim]
+        if n <= 2:
+            return x
+        _, idx = torch.topk(x.abs(), k=2, dim=dim)
+        mask = torch.zeros_like(x)
+        mask.scatter_(dim, idx, 1.0)
+        x_hard = x * mask
+        return x + (x_hard - x).detach()
+
+    @staticmethod
     def lift(X1, X2=None, mode=_NO_MODE, kind='strict', inverse=False,
              monotonic=False):
         """Synthesis dispatcher: many → one (∨).  Default mode='OR'.
@@ -4376,11 +4539,12 @@ class Ops:
             mode='NOT' self-inverse — same as forward
             mode='AND' routes to Ops.lower(..., inverse=True)
 
-        XXX deprecated alias -- review when convenient.  The legacy
-        positional form Ops.lift(left, right) (no mode kwarg) was the
-        elementwise product.  It now emits a DeprecationWarning and
+        Legacy positional form Ops.lift(left, right) (no mode kwarg) was
+        the elementwise product.  It emits a DeprecationWarning and
         forwards to Ops.lower(left, right, mode='AND', kind='smooth'),
-        which produces the same elementwise product bit-for-bit.
+        which produces the same elementwise product bit-for-bit.  The
+        warning is permanent — the legacy body stays available for
+        callers that have not migrated.
         """
         if mode is _NO_MODE:
             if X2 is not None and not inverse:
@@ -4426,12 +4590,40 @@ class Ops:
     def liftReverse(result, right):
         """Analytic inverse of the legacy lift body (elementwise product).
 
-        XXX deprecated alias body -- review when convenient.  Pairs with
-        the legacy Ops.lift(left, right) = left * right body that is now
-        delivered through the new Ops.lower(mode='AND').  Recovers X1
-        from result = X1 * right as result / (right + epsilon).
+        Pairs with the legacy Ops.lift(left, right) = left * right body
+        that is now delivered through the new Ops.lower(mode='AND').
+        Recovers X1 from result = X1 * right as result / (right +
+        epsilon).  Permanent — see Ops.liftReverseAll for the multi-
+        return Step 6 form.
         """
         return result / (right + epsilon)
+
+    @staticmethod
+    def liftReverseAll(Y, W=None, monotonic=False):
+        """Multi-return reverse for the lift dispatcher (Step 6).
+
+        Pairs with the parent plan's Layer-2.5 grammar convention
+        ``X1, X2 = liftReverse(Y)``.  For mode='OR' (the analysis-of-
+        synthesis direction) the inverse is the codebook-search
+        ``Ops.disjunctionReverse``; with W supplied, returns the pair
+        ``(recovered_left, recovered_right)`` where recovered_right is
+        the search-conditioning operand and recovered_left is the best-
+        matching codebook witness.  Without W, falls back to the legacy
+        analytic single-operand form by returning ``(Y, Y)`` so callers
+        get a tuple of the expected shape; the second slot is the
+        identity placeholder.
+
+        This is the new multi-return convention; the existing 2-arg
+        ``Ops.liftReverse(result, right)`` remains for analytic-inverse
+        callers (it returns a single tensor, not a tuple).  See parent
+        plan §Step 6 lines 577–620 and the Step 6 handoff §Risks
+        ("Multi-return reverse changes call shapes") for the migration
+        path.
+        """
+        if W is None or (hasattr(W, 'shape') and W.shape[0] == 0):
+            return (Y, Y)
+        recovered = Ops.disjunctionReverse(Y, Y, W, monotonic=monotonic)
+        return (recovered, Y)
 
     @staticmethod
     def lower(X1, X2=None, mode=_NO_MODE, kind='strict', inverse=False,
@@ -4453,11 +4645,12 @@ class Ops:
             mode='NOT' self-inverse — same as forward
             mode='OR'  routes to Ops.lift(..., inverse=True)
 
-        XXX deprecated alias -- review when convenient.  The legacy
-        positional form Ops.lower(left, right) (no mode kwarg) was the
-        arithmetic mean.  It now emits a DeprecationWarning and forwards
-        to Ops.lift(left, right, mode='OR', kind='smooth'), which produces
-        the same arithmetic mean bit-for-bit.
+        Legacy positional form Ops.lower(left, right) (no mode kwarg)
+        was the arithmetic mean.  It emits a DeprecationWarning and
+        forwards to Ops.lift(left, right, mode='OR', kind='smooth'),
+        which produces the same arithmetic mean bit-for-bit.  The
+        warning is permanent — the legacy body stays available for
+        callers that have not migrated.
         """
         if mode is _NO_MODE:
             if X2 is not None and not inverse:
@@ -4503,12 +4696,35 @@ class Ops:
     def lowerReverse(result, right):
         """Analytic inverse of the legacy lower body (arithmetic mean).
 
-        XXX deprecated alias body -- review when convenient.  Pairs with
-        the legacy Ops.lower(left, right) = (left + right) / 2 body that
-        is now delivered through the new Ops.lift(mode='OR').  Recovers
-        X1 from result = (X1 + right) / 2 as 2 * result - right.
+        Pairs with the legacy Ops.lower(left, right) = (left + right) / 2
+        body that is now delivered through the new Ops.lift(mode='OR').
+        Recovers X1 from result = (X1 + right) / 2 as 2 * result -
+        right.  Permanent — see Ops.lowerReverseAll for the multi-
+        return Step 6 form.
         """
         return 2 * result - right
+
+    @staticmethod
+    def lowerReverseAll(Y, W=None, monotonic=False):
+        """Multi-return reverse for the lower dispatcher (Step 6).
+
+        Pairs with the parent plan's Layer-2.5 grammar convention
+        ``X1, X2 = lowerReverse(Y)``.  For mode='AND' (the synthesis-of-
+        analysis direction) the inverse is the codebook-search
+        ``Ops.conjunctionReverse``; with W supplied, returns the pair
+        ``(recovered_left, recovered_right)`` where recovered_right is
+        the search-conditioning operand and recovered_left is the best-
+        matching codebook witness.  Without W, falls back to the legacy
+        analytic single-operand form by returning ``(Y, Y)`` so callers
+        get a tuple of the expected shape.
+
+        See ``Ops.liftReverseAll`` for the dual and the parent plan
+        §Step 6 lines 577–620 for the convention.
+        """
+        if W is None or (hasattr(W, 'shape') and W.shape[0] == 0):
+            return (Y, Y)
+        recovered = Ops.conjunctionReverse(Y, Y, W, monotonic=monotonic)
+        return (recovered, Y)
 
     # ---- Axis selectors (what / where / when) ----------------------------
     # The C -> S boundary demux puts content in the canonical

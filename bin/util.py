@@ -528,10 +528,13 @@ class Message():
     """Tiny callable wrapper so legacy code can swap out message sinks later.
 
     Always emits ``\\r\\n`` so output renders correctly both locally and when
-    streamed over SSH with a pseudo-terminal (``ssh -t``).
+    streamed over SSH with a pseudo-terminal (``ssh -t``).  ``flush=True``
+    so progress is visible under shell redirect / nohup / log files (which
+    block-buffer stdout by default and would otherwise hide progress until
+    a 4-8 KB block fills).
     """
     def __call__(self, txt, newline="\r\n"):
-        print(txt, end=newline)
+        print(txt, end=newline, flush=True)
 
 TheMessage = Message()
 

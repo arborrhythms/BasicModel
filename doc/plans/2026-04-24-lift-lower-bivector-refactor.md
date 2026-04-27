@@ -2,10 +2,14 @@
 
 **Date.** 2026-04-24
 **Owner.** Alec
-**Status.** Draft.  Code unchanged; doc preconditions in place
-([Logic.md](../Logic.md) §8 conceptual ground; §9 ops realization /
+**Status.** Complete (2026-04-25).  All seven steps landed; close-out
+note at
+[2026-04-25-lift-lower-bivector-refactor-complete.md](2026-04-25-lift-lower-bivector-refactor-complete.md)
+records final acceptance numerics, per-step handoffs, and intentional
+out-of-scope follow-ups.  Original doc preconditions:
+[Logic.md](../Logic.md) §8 conceptual ground; §9 ops realization /
 mapping / divergences — formerly the standalone OpsComparison
-report).
+report.
 
 ---
 

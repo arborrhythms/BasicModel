@@ -1,0 +1,127 @@
+"""Tests confirming the per-batch EOS sync at runBatch end is gone.
+
+The legacy gate read `inputSpace._end_of_stream` (a [B] bool tensor)
+and called `.all().item()` to decide whether to fire the per-sentence
+Reset cascade. That `.item()` was a per-batch GPU->CPU sync that
+prevented CUDA-graph capture and idled the SMs every step.
+
+The new gate uses `inputSpace.batch_advances_sentence`, a host-side
+@property derived from the SentenceStreamDataset contract (one
+sentence per row per batch, so every AR batch is a sentence
+boundary by construction). No tensor reduction, no host sync.
+
+Plan reference: doc/plans/2026-04-26-per-row-ar-no-eos-sync-handoff.md
+"""
+import sys
+import os
+import inspect
+from pathlib import Path
+
+_project = Path(__file__).resolve().parent.parent
+_wo_root = _project.parent
+sys.path.insert(0, str(_wo_root / "bin"))
+sys.path.insert(0, str(_project / "bin"))
+
+import torch
+import pytest
+
+_CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
+
+
+def _model(masked_prediction='ARLM'):
+    from data import TheData
+    from Models import BaseModel
+    TheData.load("xor")
+    torch.manual_seed(0)
+    model, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
+    model.masked_prediction = masked_prediction
+    model.inputSpace.masked_prediction = masked_prediction
+    return model
+
+
+def test_batch_advances_sentence_is_python_bool():
+    """The replacement gate must be a Python bool, not a tensor.
+
+    A tensor-typed gate would force a GPU->CPU sync to evaluate in a
+    boolean context. Reading the property must never touch the GPU.
+    """
+    model = _model()
+    val = model.inputSpace.batch_advances_sentence
+    assert isinstance(val, bool), (
+        f"batch_advances_sentence must be a Python bool to avoid GPU sync, "
+        f"got {type(val).__name__}")
+    assert val is True, (
+        "Simple SentenceStreamDataset contract: every AR batch is a "
+        "sentence boundary by construction; the property always returns True")
+
+
+def test_runBatch_source_does_not_consume_eos_for_control_flow():
+    """The legacy `.all().item()` on _end_of_stream must be gone.
+
+    Static check on runBatch's source. The new path reads
+    `batch_advances_sentence` (Python value) and only falls back to a
+    .item() on _end_of_stream behind a `MODEL_DEBUG` guard.
+    """
+    from Models import BasicModel
+    src = inspect.getsource(BasicModel.runBatch)
+    # The new gate must be present.
+    assert "batch_advances_sentence" in src, (
+        "runBatch must consume the host-side batch_advances_sentence "
+        "property; the legacy tensor reduction has been removed")
+    # Any remaining .item() on _end_of_stream is debug-only; ensure
+    # it sits behind a MODEL_DEBUG guard (the only acceptable place).
+    if "_end_of_stream" in src and ".item()" in src:
+        # Locate the .item() and verify a MODEL_DEBUG appears in the
+        # same neighborhood (within ~10 lines before).
+        lines = src.split("\n")
+        for i, line in enumerate(lines):
+            if ".item()" in line and "_end_of_stream" not in line:
+                continue
+            if ".item()" in line:
+                # Walk back to find a MODEL_DEBUG guard.
+                guarded = any("MODEL_DEBUG" in lines[j]
+                              for j in range(max(0, i - 10), i))
+                assert guarded, (
+                    f"Found unguarded .item() on _end_of_stream-related "
+                    f"value at line {i}: {line!r}; must be inside a "
+                    f"MODEL_DEBUG branch")
+
+
+def test_reset_fires_even_when_end_of_stream_is_all_false():
+    """Pre-set `_end_of_stream` to all-False; Reset must still fire.
+
+    Under the legacy gate `eos.all().item() == False` would have
+    blocked the Reset cascade. Under the new gate, Reset is gated on
+    the host-side property (always True), so Reset fires regardless.
+    """
+    import util as _util
+    prior = _util.MODEL_DEBUG
+    _util.init_model_debug(False)
+    try:
+        model = _model()
+        reset_count = {"n": 0}
+        originals = []
+        for space in model.spaces:
+            if hasattr(space, 'Reset'):
+                original = space.Reset
+                originals.append((space, original))
+
+                def _spy(_self=space, _orig=original):
+                    reset_count["n"] += 1
+                    return _orig()
+                space.Reset = _spy
+        try:
+            optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+            # Pre-set _end_of_stream to a [B] all-False tensor — the
+            # legacy gate's "no row reached EOS" signal.
+            model.inputSpace._end_of_stream = torch.zeros(2, dtype=torch.bool)
+            model.runEpoch(optimizer=optimizer, batchSize=2, split="train")
+        finally:
+            for space, original in originals:
+                space.Reset = original
+
+        assert reset_count["n"] > 0, (
+            "Reset cascade did not fire under all-False _end_of_stream; "
+            "the new gate should fire it on every AR batch regardless")
+    finally:
+        _util.init_model_debug(prior)

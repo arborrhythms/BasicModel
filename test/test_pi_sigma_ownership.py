@@ -1,0 +1,138 @@
+"""Tests for Pi / Sigma layer ownership.
+
+Post-swap layout (P->C uses Pi, C->S uses Sigma -- swapped from the
+historical assignments; the data flow direction P->C->S forward,
+S->C->P reverse is unchanged):
+
+    PerceptualSpace.sigma  -- SigmaLayer (P -> sub-percept; dormant per spec O3)
+    ConceptualSpace.pi     -- PiLayer (P -> C, with forwardPi/reversePi aliases)
+    SymbolicSpace.sigma    -- SigmaLayer (C -> S, with forwardSigma/reverseSigma aliases)
+
+Each layer round-trips through its own inverse.
+
+See:
+- basicmodel/doc/specs/2026-04-24-lift-lower-bivector-design.md (§B-summary)
+- basicmodel/doc/Logic.md §8 (the level-crossing axis)
+- basicmodel/doc/Spaces.md (ownership tables)
+"""
+
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'bin'))
+
+import unittest
+import warnings
+
+import torch
+
+import Models
+import Language
+from Layers import PiLayer, SigmaLayer
+from util import init_config
+
+_DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
+
+
+def _make_plain_model(config='MentalModel.xml'):
+    """Build a plain-mode (non-butterfly) model so the ownership
+    asserts hit raw PiLayer / SigmaLayer instances rather than the
+    ButterflyStage wrappers used by butterfly configs."""
+    init_config(
+        path=os.path.join(_DATA_DIR, config),
+        defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
+    )
+    Language.TheGrammar._configured = False
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        model, _ = Models.MentalModel.from_config(
+            os.path.join(_DATA_DIR, config))
+    model.eval()
+    return model
+
+
+class TestOwnership(unittest.TestCase):
+    """Each space exposes the documented layer attribute and type."""
+
+    def test_perceptual_sigma(self):
+        model = _make_plain_model()
+        self.assertIsInstance(model.perceptualSpace.sigma, SigmaLayer)
+
+    def test_conceptual_pi(self):
+        model = _make_plain_model()
+        self.assertIsInstance(model.conceptualSpace.pi, PiLayer)
+
+    def test_symbolic_sigma(self):
+        model = _make_plain_model()
+        self.assertIsInstance(model.symbolicSpace.sigma, SigmaLayer)
+
+    def test_conceptual_has_no_sigma(self):
+        model = _make_plain_model()
+        self.assertFalse(hasattr(model.conceptualSpace, 'sigma'),
+                         "ConceptualSpace.sigma is gone after the swap; "
+                         "use conceptualSpace.pi instead.")
+
+    def test_symbolic_has_no_pi(self):
+        model = _make_plain_model()
+        self.assertFalse(hasattr(model.symbolicSpace, 'pi'),
+                         "SymbolicSpace.pi is gone after the swap; "
+                         "use symbolicSpace.sigma instead.")
+
+    def test_perceptual_has_no_pi(self):
+        model = _make_plain_model()
+        self.assertFalse(hasattr(model.perceptualSpace, 'pi'),
+                         "PerceptualSpace.pi is gone after the swap; "
+                         "use perceptualSpace.sigma instead.")
+
+    def test_symbolic_layer_alias_is_gone(self):
+        model = _make_plain_model()
+        self.assertFalse(hasattr(model.symbolicSpace, 'layer'),
+                         "SymbolicSpace.layer (deprecated alias) is gone; "
+                         "use symbolicSpace.sigma directly.")
+
+
+class TestForwardReverseAliases(unittest.TestCase):
+    """The forwardPi/reversePi (Conceptual) and forwardSigma/reverseSigma
+    (Symbolic) pointer aliases hide the one-or-two-layer split."""
+
+    def test_conceptual_has_pointer_aliases(self):
+        model = _make_plain_model()
+        cs = model.conceptualSpace
+        self.assertTrue(callable(cs.forwardPi))
+        self.assertTrue(callable(cs.reversePi))
+
+    def test_symbolic_has_pointer_aliases(self):
+        model = _make_plain_model()
+        ss = model.symbolicSpace
+        self.assertTrue(callable(ss.forwardSigma))
+        self.assertTrue(callable(ss.reverseSigma))
+
+
+class TestPerLayerRoundTrip(unittest.TestCase):
+    """Each layer round-trips through its own inverse."""
+
+    def test_conceptual_pi_round_trip(self):
+        """Pi.reverse(Pi.forward(p)) ~= p on the conceptual space's pi (P->C path)."""
+        model = _make_plain_model()
+        pi = model.conceptualSpace.pi
+        N = 4
+        eps = 1e-3
+        x = torch.randn(1, N, pi.nInput).clamp(-1 + eps, 1 - eps)
+        with torch.no_grad():
+            x_back = pi.reverse(pi.forward(x))
+        torch.testing.assert_close(x, x_back, atol=1e-4, rtol=1e-3)
+
+    def test_symbolic_sigma_round_trip(self):
+        """Sigma.reverse(Sigma.forward(c)) ~= c on the symbolic space's sigma (C->S path)."""
+        model = _make_plain_model()
+        sigma = model.symbolicSpace.sigma
+        N = 4
+        eps = 1e-3
+        c = torch.randn(1, N, sigma.nInput).clamp(-1 + eps, 1 - eps)
+        with torch.no_grad():
+            c_back = sigma.reverse(sigma.forward(c))
+        torch.testing.assert_close(c, c_back, atol=1e-4, rtol=1e-3)
+
+
+if __name__ == "__main__":
+    unittest.main()

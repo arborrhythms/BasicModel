@@ -264,56 +264,67 @@ class TestGrammarInMentalModel(unittest.TestCase):
 
 
 class TestGrammarRulesMatchXML(unittest.TestCase):
-    """Verify Grammar.configure() parses MentalModel.xml rules correctly."""
+    """Verify Grammar parses the configured grammar correctly.
+
+    Step 6 of the lift / lower / bivector refactor flipped
+    ``MentalModel.xml`` from an inline ``<grammar>`` block to
+    ``<grammarCfg>data/grammar.cfg</grammarCfg>``.  These tests now
+    validate structural invariants (every required S-tier op is
+    addressable as a rule; every method_name is dispatchable;
+    Layer-2 ops are merged into the rule table) rather than the
+    exact 20-rule list from the old XML.
+    """
+
+    # S-tier op names guaranteed by data/grammar.cfg's [layer2] section
+    # plus the function-call upward Layer-1 productions.
+    REQUIRED_OPS = {
+        'true':         1,
+        'false':        1,
+        'non':          1,
+        'not':          1,
+        'what':         1,
+        'where':        1,
+        'when':         1,
+        'conjunction':  2,
+        'disjunction':  2,
+        'query':        2,
+        'swap':         2,
+        'equals':       2,
+        'part':         2,
+        'intersection': 2,
+        'union':        2,
+        'lower':        2,
+        'lift':         2,
+    }
 
     def setUp(self):
         torch.manual_seed(42)
         self.model, self.grammar = _make_model()
 
-    # -- Toy rules: what MentalModel.xml defines ----------------------
+    # -- Structural invariants on the configured rule table ----------
 
-    def test_total_rule_count(self):
-        """MentalModel.xml defines 17 function-call rules + 2 typed upward
-        productions (VO = intersection(S, S), S = lift(S, VO)) + 1
-        downward production (C = emit_head(S)). All 20 rules stay on
-        the S dispatch tier.
-        """
-        self.assertEqual(len(self.grammar.rules), 20)
+    def test_total_rule_count_positive(self):
+        """The cfg-loaded grammar contains a non-trivial rule set."""
+        self.assertGreater(len(self.grammar.rules), 0)
 
-    def test_s_tier_rules(self):
-        """S-tier: 17 legacy method rules + 2 typed upward + 1 downward."""
-        s_rules = [(r.method_name, r.arity) for r in self.grammar.rules if r.tier == 'S']
-        # Trinity
-        self.assertIn(('true', 1), s_rules)
-        self.assertIn(('false', 1), s_rules)
-        self.assertIn(('non', 1), s_rules)
-        # Coordination
-        self.assertIn(('conjunction', 2), s_rules)
-        self.assertIn(('disjunction', 2), s_rules)
-        # Demux selectors
-        self.assertIn(('what', 1), s_rules)
-        self.assertIn(('where', 1), s_rules)
-        self.assertIn(('when', 1), s_rules)
-        # Query
-        self.assertIn(('query', 2), s_rules)
-        # Legacy S verbs
-        self.assertIn(('swap', 2), s_rules)
-        self.assertIn(('equals', 2), s_rules)
-        # Formerly C-tier, now S-tier
-        self.assertIn(('not', 1), s_rules)
-        self.assertIn(('part', 2), s_rules)
-        self.assertIn(('intersection', 2), s_rules)
-        self.assertIn(('union', 2), s_rules)
-        self.assertIn(('lower', 2), s_rules)
-        self.assertIn(('lift', 2), s_rules)
-        # LearnedSVO typed rules: VO = intersection(S, S) and
-        # S = lift(S, VO) share method names with legacy rules; verify
-        # by LHS category instead of (method, arity) tuple.
+    def test_required_s_ops_present(self):
+        """Every required S-tier op (method_name, arity) is a rule."""
+        s_rules = {(r.method_name, r.arity)
+                   for r in self.grammar.rules if r.tier == 'S'}
+        for method, arity in self.REQUIRED_OPS.items():
+            self.assertIn((method, arity), s_rules,
+                          f"missing required op ({method!r}, {arity})")
+
+    def test_vo_lhs_present(self):
+        """VO is introduced as an LHS via the verb-object composition rule."""
         lhs_set = {r.lhs for r in self.grammar.rules if r.tier == 'S'}
         self.assertIn('VO', lhs_set)
-        # Downward head emission.
-        self.assertIn(('emit_head', 1), s_rules)  # C = emit_head(S)
-        self.assertEqual(len(s_rules), 20)
+
+    def test_downward_emit_head_present(self):
+        """Downward `C -> emit_head(S)` projection is configured."""
+        s_rules = {(r.method_name, r.arity)
+                   for r in self.grammar.rules if r.tier == 'S'}
+        self.assertIn(('emit_head', 1), s_rules)
 
     def test_c_tier_rules(self):
         """C-tier is empty after the C->S merge."""
@@ -332,8 +343,8 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
         s_ids = self.grammar.symbolic()
         for i in s_ids:
             self.assertEqual(self.grammar.rules[i].tier, 'S')
-        # 17 legacy + 2 typed upward + 1 downward = 20 S-tier rules.
-        self.assertEqual(len(s_ids), 20)
+        # All rules are S-tier post-merge.
+        self.assertEqual(len(s_ids), len(self.grammar.rules))
 
     def test_only_s_tier_remains(self):
         """After the C->S merge and P-tier removal, only S-tier rules exist."""
@@ -347,14 +358,17 @@ class TestGrammarRulesMatchXML(unittest.TestCase):
     def test_all_method_names_are_registered(self):
         """Every rule's method_name maps to Grammar or a SyntacticLayer subclass.
 
-        'emit_head' is the dispatch signal for downward head emission
-        (codebook lookup) rather than an entry in _RULE_METHODS; it's
-        wired up via SyntacticLayer.emit_head and allowlisted here.
+        Allowlisted dispatch signals (not in ``_RULE_METHODS``):
+            'emit_head' — downward head emission via codebook lookup.
+            'merge'     — single-RHS PROJECT form (e.g. `S = NP`) the
+                          Step 6 cfg uses for terminal projection;
+                          the dispatcher falls through (no
+                          ``_RULE_METHODS`` entry needed).
         """
         all_known = (
             set(self.model.wordSpace.syntacticLayer._RULE_METHODS.keys())
             | {'swap', 'lift', 'lower', 'non'}
-            | {'emit_head'}
+            | {'emit_head', 'merge'}
         )
         for r in self.grammar.rules:
             if r.method_name is not None:

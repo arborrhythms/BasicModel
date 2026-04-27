@@ -197,15 +197,25 @@ def test_stm_residual_microbatch_b2_k3_per_source_gating():
     assert ws.stm_fired(1)
 
 
-def test_stm_residual_microbatch_returns_none_when_all_fired():
-    """When every source has already fired, the call returns None and
-    does not mutate state."""
+def test_stm_residual_microbatch_returns_zero_when_all_fired():
+    """When every source has already fired, the bias tensor is all-zero
+    so the caller's `y = y + bias.unsqueeze(1)` is a no-op.
+
+    Updated 2026-04-26 for the masked-brick fix: the legacy contract
+    returned None to short-circuit the caller's add, but that required a
+    `not_fired.any().item()` host sync per tick. The new contract always
+    returns a [B*K, concept_dim] tensor and gates per-row with a tensor
+    multiply -- already-fired rows get zero bias, no host sync.
+    """
     B, K = 3, 2
     ws, D = _make_ws(batch=B * K)
     ws._stm_fired = torch.ones(B, dtype=torch.bool)
     _attach_discourse(ws, n_dim=D, concept_dim=D, batch=B * K)
     bias = ws.stm_residual_microbatch(B, K)
-    assert bias is None
+    assert bias is not None, "post-fix contract: returns a tensor, not None"
+    assert bias.shape == (B * K, D)
+    assert torch.allclose(bias, torch.zeros_like(bias)), (
+        "all-fired rows must produce zero bias so the caller's add is a no-op")
     # Still all fired; no spurious unset.
     assert ws.stm_fired(0) and ws.stm_fired(1) and ws.stm_fired(2)
 

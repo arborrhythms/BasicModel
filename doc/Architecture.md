@@ -25,11 +25,19 @@ totalLoss = (1 - reconRatio) * outputLoss + reconRatio * reconstructionLoss
 | Space | Role | Layer Type | Parameters |
 |-------|------|-----------|------------|
 | **InputSpace** | Lifts raw data into working dimensionality | LiftingLayer | nActive, nDim, nVectors |
-| **PerceptualSpace** | Multiplicative feature extraction | PiLayer | nActive, nDim, nVectors, invertible |
-| **ConceptualSpace** | Additive abstraction | SigmaLayer | nActive, nDim, nVectors, invertible |
-| **SymbolicSpace** | Discrete activation bottleneck | PiLayer (monotonic, invertible) + Codebook | nActive, nVectors, passThrough, codebook |
+| **PerceptualSpace** | Per-percept aggregation | SigmaLayer (`self.sigma`, P -> sub-percept; dormant pending sub-perceptual structure) | nActive, nDim, nVectors, invertible |
+| **ConceptualSpace** | Multiplicative abstraction (P -> C) | PiLayer (`self.pi`, P -> C, with `forwardPi` / `reversePi` pointer aliases hiding the one-or-two-layer split) | nActive, nDim, nVectors, invertible |
+| **SymbolicSpace** | Discrete activation bottleneck (C -> S) + Codebook | SigmaLayer (`self.sigma`, C -> S, with `forwardSigma` / `reverseSigma` pointer aliases) + Codebook | nActive, nVectors, passThrough, codebook |
 | **SyntacticSpace** | Binary derivation tree (CNF grammar) | Grammar + WordEncoding | nActive, nDim, nVectors |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
+
+Each level-crossing space owns one bidirectional layer that handles
+both forward and reverse via its own self-inverse:
+`ConceptualSpace.pi` does P->C forward and C->P reverse;
+`SymbolicSpace.sigma` does C->S forward and S->C reverse.  Pi and
+Sigma have independent weights -- there is no shared layer across the
+boundary.  See [doc/Logic.md §8](Logic.md) and [doc/Spaces.md](Spaces.md)
+for the full framing.
 
 Dimensions (`nDim`) are not passed to Space constructors; each subclass reads its
 content dimensionality from `TheObjectEncoding` (e.g., `TheObjectEncoding.perceptDim`
@@ -146,6 +154,57 @@ See [Params.md](Params.md) for all XML configuration parameters.
 See [Training.md](Training.md) for embedding pretraining, SBOW, masked prediction
 modes, and the `<trainEmbedding>` control.
 
+### Pipeline as a unit, two-tier reset
+
+> *Post the rolling-cursor handoff (`plans/2026-04-26-rolling-cursor-doc-streaming-handoff.md`).*
+
+`runBatch` is a pure compute brick: forward → loss → backward →
+optimizer.step. It does **not** decide when to reset per-row state, does
+**not** consume `_end_of_stream` for control flow, and (after the
+follow-on vectorization PRs) does **not** issue any GPU→host sync.
+
+Reset lives in the outer doc-streaming loop in `runEpoch`:
+
+```
+while not all_streams_done:
+    slab, hard_eos = TheData.next_tick()           # host-side bool list
+    runBatch(slab)                                  # the compute brick
+    soft_eos = wordSpace.drain_sentence_completed()# host-side bool list
+    for b in range(B):
+        if hard_eos[b]:                             # document boundary
+            for space in spaces:
+                space.Reset(batch=b, hard=True)
+        elif soft_eos[b]:                           # grammar derived <start>
+            wordSpace.soft_reset(batch=b)
+```
+
+**Hard reset.** `TheData` walks each row's document one ≤1024-byte slab at
+a time. A row's `hard_eos` flips True the tick its cursor exhausts the
+current document. The full row-state cascade fires for that row only.
+Other rows continue mid-document with state preserved.
+
+**Soft reset.** `SyntacticLayer.compose` detects when a row's parse
+derivation reduces to `<start>` (a new top-level grammar element naming
+the start symbol; see [Language.md](Language.md)). The signal accumulates
+on `wordSpace._sentence_completed: list[bool]` and is drained per-tick.
+A soft reset re-arms `_stm_fired[b]` and clears `_last_svo[b*K..]` and
+the parse-stack rows for `b`, but **preserves discourse history** —
+discourse accumulates across sentences within a document and clears only
+on hard reset.
+
+**No truncation.** A document longer than `slab_bytes` (= 1024 by default)
+spans multiple ticks of its row. Concatenating the per-tick slabs for any
+row reproduces the original document byte-exact. The `valid_mask: [B, K]`
+contract handles partial-fill tails (last slab of a doc shorter than
+`slab_bytes`) via the same NULL-padding semantics already in place.
+
+**Compute-brick contract (target).** No `.item()`, no `.tolist()`, no
+Python conditional on a tensor value, no GPU→host copy inside `runBatch`.
+The handoff itself relocates the in-loop Reset gate but does not yet
+vectorize the residual sync points in `SyntacticLayer.compose` and the
+truth-layer record loop; those land in follow-up PRs and unlock CUDA-graph
+capture of the brick.
+
 ### Three-File Architecture
 
 Model behaviour is partitioned across three independent artifacts:
@@ -177,7 +236,7 @@ generates a derivation tree from the active symbols, stored as word tuples
 **Unified S-tier grammar (2026-04-19 rewrite).** The previous C/P/S
 three-tier partition was collapsed: all compositional operations now live
 on the single S tier over a bivector-shaped SymbolicSubSpace. The 17
-S-tier productions include the trinity partition (`true(S)`, `false(S)`,
+S-tier productions include the ternary operators (`true(S)`, `false(S)`,
 `non(S)`), the what/where/when column selectors, and the mereological
 and logical operators (`not(S)`, `part(S, S)`, `intersection(S, S)`,
 `union(S, S)`, `equals(S, S)`, `conjunction`, `disjunction`, `swap`,

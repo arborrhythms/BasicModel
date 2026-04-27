@@ -49,8 +49,8 @@ def test_inputspace_emits_b_k_n_d_in_ar_mode(model):
     B, K, N, D = event.shape
     assert N == int(inp.outputShape[0]), \
         f"window N={N} must match nActive={inp.outputShape[0]}"
-    assert sub.valid_mask_bk is not None
-    assert sub.valid_mask_bk.shape == (B, K)
+    assert sub.valid_mask is not None
+    assert sub.valid_mask.shape == (B, K)
 
 
 def test_inputspace_inference_k1_degenerate(model):
@@ -95,7 +95,7 @@ def test_subspace_default_k_axis_false():
     from Spaces import SubSpace
     ss = SubSpace([4, 8], [4, 8], nInputDim=8, nOutputDim=8)
     assert ss.k_axis is False
-    assert ss.valid_mask_bk is None
+    assert ss.valid_mask is None
 
 
 def test_inputspace_progressive_prefix_windows(model):

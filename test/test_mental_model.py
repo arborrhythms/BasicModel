@@ -95,34 +95,32 @@ class TestMentalModelForwardReverse(unittest.TestCase):
 
 
 class TestMentalModelGrammarConfiguration(unittest.TestCase):
-    """MentalModel should expose the grammar configured in MentalModel.xml."""
+    """MentalModel should expose the grammar configured by MentalModel.xml.
 
-    # Expected canonical rule strings from MentalModel.xml.
-    # 7 unary + 10 binary function-call S rules + 2 typed upward
-    # productions (VO=intersection(S,S), S=lift(S,VO)) + 1 downward
-    # production (C=emit_head(S)) = 20 total, all on the S dispatch tier.
-    EXPECTED_RULES = [
-        "S -> true(S)",
-        "S -> false(S)",
-        "S -> not(S)",
-        "S -> non(S)",
-        "S -> what(S)",
-        "S -> where(S)",
-        "S -> when(S)",
-        "S -> conjunction(S, S)",
-        "S -> disjunction(S, S)",
-        "S -> query(S, S)",
-        "S -> swap(S, S)",
-        "S -> equals(S, S)",
-        "S -> part(S, S)",
-        "S -> intersection(S, S)",
-        "S -> union(S, S)",
-        "S -> lower(S, S)",
-        "S -> lift(S, S)",
-        "VO -> intersection(S, S)",
-        "S -> lift(S, VO)",
-        "C -> emit_head(S)",
-    ]
+    Step 6 of the lift / lower / bivector refactor flipped the loader
+    from an inline ``<grammar>`` block to ``<grammarCfg>data/grammar.cfg
+    </grammarCfg>`` (explicit-op form).  The cfg ships Layer-1 phrase-
+    structure productions plus Layer-2 post-hoc S-ops; the loader
+    flattens both into ``TheGrammar.rules`` (Layer-2 ops still need a
+    rule_id slot for the predictor / dispatcher).  This test asserts
+    structural shape, not the exact canonical list — the cfg's
+    contents are versioned in ``data/grammar.cfg`` and the literal
+    list would just be a duplicate.
+    """
+
+    # S-tier op names that the cfg's [layer2] section guarantees as
+    # rule.method_name entries (post-hoc S-ops applied to formed
+    # S-states).  These are the dispatchable S-tier ops the existing
+    # rule predictor and tests rely on.
+    REQUIRED_S_OPS = {
+        'true', 'false', 'non', 'not',
+        'what', 'where', 'when',
+        'conjunction', 'disjunction',
+        'intersection', 'union',
+        'lift', 'lower',
+        'equals', 'part',
+        'query', 'swap',
+    }
 
     def setUp(self):
         _reload_config()
@@ -131,14 +129,22 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
         _reload_config()
         model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
 
-        canonicals = [rule.canonical for rule in Language.TheGrammar.rules]
-        self.assertEqual(canonicals, self.EXPECTED_RULES)
-        self.assertEqual(len(Language.TheGrammar.rules), 20)
+        # Step 6: grammar comes from data/grammar.cfg; structural
+        # invariants (the rule predictor sees every dispatchable op)
+        # matter, not the exact rule list.
+        method_names = {rule.method_name
+                        for rule in Language.TheGrammar.rules
+                        if rule.method_name}
+        missing = self.REQUIRED_S_OPS - method_names
+        self.assertEqual(missing, set(),
+                         f"cfg-loaded grammar missing required S-tier "
+                         f"ops: {missing}")
         self.assertEqual(Language.TheGrammar.interpretation, 0.5)
 
         # Post S-tier merge: unified SyntacticLayer owns every rule.
+        n_rules = len(Language.TheGrammar.rules)
         self.assertEqual(model.wordSpace.syntacticLayer.all_rules,
-                         list(range(0, 20)))
+                         list(range(0, n_rules)))
         self.assertIsNone(model.wordSpace.syntacticLayer.transition_rule)
 
 

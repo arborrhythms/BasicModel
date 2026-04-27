@@ -1,94 +1,25 @@
-also, the grammar itself now looks as follows:
 
-S = NP
-S = lift(NP, VP)
-#S = MP S
-S = equals(NP, NP)
-S = equals(NP, AP)
-S = part(NP, NP)
-S = not(S)
-S = conjunction(S, S)
-S = disjunction(S,S)
-S = query(NP, AP)
-S = query(NP, NP)
-S = lift(NP, VO)
-VO = intersection(VP, NP)
-#S = PP S
+Some of the Grammatical operations have been recently integrated with SigmaLayer and PiLayer of the NN. This trend should be continued; for example, the Sigma and Pi layers positive and monotonic, so we need a not() operator that performs negation on the symbol, and emits a word in the grammatical derivation.
 
-# --- Noun Phrase ---------------------------------------------------------
+This can be extended: the necessary precondition of xAI (HI) is that every operation has a (grammatical) interpretation. Several of these implmentations will not happen at the symbolic layer:
 
-NP = N
-NP = intersection(AP,NP)
-NP = intersection(NP,PP)
-NP = conjunction(NP, NP)
-NP = disjunction(NP, NP)
+true/false/non: Sym
+not: Sym (or learnable NOT layer just after Sigma Layer?)
+conjunction/disjunction: Sym
+interspection/union: SigmaPi
+equals: Def (definition: introduction of a new Sym into WordSpace)
+part: Def (definition: asserts a part/whole relation over WordSpace)
+slot (where, when, why): Sym
+query: mereological
+swap: Sym
+lift/lower: SigmaPi
+chunk: Per (not currently in the grammar; similar to Sigma layer)
 
-# --- Verb Phrase ---------------------------------------------------------
-
-VP = V
-VP = intersection(ADV, VP)
-#VP = MP VP
-#VP = ADJ VP
-VP = intersection(V,PP)
-#VP = V NP
-#VP = V S
-#VP = V MP
-#VP = VP PP
-#VP = DEF VP
-VP = not(VP)
-
-# --- Adjective Phrase ----------------------------------------------------
-
-AP -> ADJ
-AP -> DET
-AP -> intersection(ADJ, AP)
-AP -> DEG AP
-
-# --- Modal Phrase --------------------------------------------------------
-
-MP -> ADV
-MP -> ADV MP
-
-# --- Prepositional Phrase ------------------------------------------------
-
-PP -> P NP
-
-# --- Definitive Groups ---------------------------------------------------
-
-DEF -> IS
-DEF -> IS NOT
-HAS -> POSSESS
-HAS -> POSSESS NOT
-
-
-        <upward>
-          <S>true(S)</S>
-          <S>false(S)</S>
-          <S>non(S)</S>
-          <S>conjunction(S, S)</S>
-          <S>disjunction(S, S)</S>
-          <S>what(S)</S>
-          <S>where(S)</S>
-          <S>when(S)</S>
-          <S>query(S, S)</S>
-          <S>swap(S, S)</S>
-          <S>equals(S, S)</S>
-          <S>not(S)</S>
-          <S>part(S, S)</S>
-          <S>intersection(S, S)</S>
-          <S>union(S, S)</S>
-          <S>lower(S, S)</S>
-          <S>lift(S, S)</S>
-
-          <VO> intersection(S, S)->VO      </VO>
-          <S>  lift(S, VO) -> S            </S>
-
-          <S>  S->S VO                     </S>
-          <VO> VO->initersection_inv(S, S) </VO>
-
-
-
-
+where:
+Sym -- implemented at the symbolic layer
+SigmaPi -- implemented by SigmaPi (symbol-conceptual round trip)
+Per -- implemented at the perceptual layer ()
+Def -- equals and part express relations between existing symbols, and will define an explicit mereology over the symbolic codebook  
 
 ================================== April 24 ==================================
 

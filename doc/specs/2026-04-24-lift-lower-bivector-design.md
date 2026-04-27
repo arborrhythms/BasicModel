@@ -855,9 +855,12 @@ class ConceptualSpace(Space):
         ...
 ```
 
-**Backward-compatibility shim.**  `ConceptualSpace.activation_signed()`
-returns `aP − aN` (the legacy single-scalar form) for callers that
-have not migrated.  Removed in plan Step 7.
+**Backward-compatibility shim (removed in Step 7).**
+`ConceptualSpace.activation_signed()` returned `aP − aN` (the legacy
+single-scalar form) during Step 3–6.  Step 7 confirmed zero
+production callers and deleted the method; downstream consumers now
+read `subspace.activation` directly and derive `aP − aN` themselves
+when a signed scalar is needed.
 
 **What changes.**
 - `cs.subspace.activation.shape == (B, N, 2 + nWhere + nWhen)` (was

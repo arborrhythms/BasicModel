@@ -18,7 +18,8 @@
     <maxResponseLength>4096</maxResponseLength>
     <weightsPath>MM_5M.ckpt</weightsPath>
     <embeddingPath>MM_5M.kv</embeddingPath>
-
+    <amp>bf16</amp>
+    
     <data>
       <shardDir>data/fineweb</shardDir>
       <numShards>1</numShards>
@@ -28,9 +29,9 @@
 
     <training>
       <numTrials>1</numTrials>
-      <numEpochs>2</numEpochs>
-      <batchSize>1</batchSize>
-      <numWorkers>0</numWorkers>
+      <numEpochs>1</numEpochs>
+      <batchSize>64</batchSize>
+      <numWorkers>8</numWorkers>
       <learningRate>0.0005</learningRate>
       <reverseScale>0.1</reverseScale>
       <maskedPrediction>ARIR</maskedPrediction>
@@ -54,6 +55,7 @@
   </architecture>
 
   <InputSpace>
+    <nInput>1024</nInput>
     <nDim>6</nDim>
     <nVectors>1024</nVectors>
     <nOutput>1024</nOutput>
@@ -83,7 +85,7 @@
   <ConceptualSpace>
     <nOutput>8</nOutput>
     <nDim>1024</nDim>
-    <nVectors>8</nVectors>
+    <nVectors>512</nVectors> <!-- 8 -->
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <hasAttention>false</hasAttention>
@@ -100,7 +102,7 @@
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
     <nOutput>1024</nOutput>
-
+    <codebook>true</codebook>
     <passThrough>false</passThrough>
     <accumulateTruth>0</accumulateTruth>
   </SymbolicSpace>

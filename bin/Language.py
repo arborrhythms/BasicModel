@@ -66,6 +66,10 @@ class Grammar:
         self.rules = []
         self.rules_upward = []
         self.rules_downward = []
+        # Step 6: Layer-2.5 reverse productions, derived mechanically
+        # from rules_upward at load time.  Each entry is
+        # ``(args_tuple, reverse_op_name, (lhs,))``.
+        self.reverse_rules = []
         self.rule_table = {}
         self._configured = False
         self.interpretation = 0.5
@@ -121,6 +125,10 @@ class Grammar:
         self.rules = list(self.rules_upward) + list(self.rules_downward)
         self.rule_table = {idx: rule.canonical
                            for idx, rule in enumerate(self.rules)}
+        # Step 6 parity: derive Layer-2.5 reverse rules from upward
+        # productions even on the legacy XML path so consumers of
+        # ``self.reverse_rules`` work uniformly across load paths.
+        self.reverse_rules = self._derive_reverse_rules(self.rules_upward)
 
     def _fill_rule_list(self, target, rules_dict):
         # New syntax: <rule>head = body</rule> — head may be a comma-
@@ -199,6 +207,144 @@ class Grammar:
                                 lhs, tuple(parts))
         raise ValueError(f"Cannot parse grammar rule: {lhs} -> {rhs}")
 
+    # -- grammar.cfg loader (Step 6) -----------------------------------
+    #
+    # Step 6 of the lift / lower / bivector refactor introduces a
+    # text-based rule table at ``data/grammar.cfg`` in explicit-op form.
+    # Each production's RHS literally names the Ops method to dispatch
+    # on at rule-application time.  See parent plan §Step 6 lines
+    # 405–620 and ``data/grammar.cfg`` for the format spec.
+    #
+    # Sections are bracketed (``[upward]`` / ``[downward]``) and default
+    # to ``[upward]`` when no header has been seen.  The parser is
+    # line-oriented, comment-prefixed (``#``), with no third-party
+    # dependency.  Reverse productions (Layer 2.5) are derived
+    # mechanically from the upward rules at load time and exposed via
+    # ``self.reverse_rules`` as
+    # ``[(args_tuple, op_name + 'Reverse', (lhs,)), ...]``.
+
+    _CFG_SECTION_UPWARD   = 'upward'
+    _CFG_SECTION_DOWNWARD = 'downward'
+
+    def load_from_cfg(self, path):
+        """Configure rules from a ``data/grammar.cfg``-style file.
+
+        File format (line-oriented):
+            ``# ...``               line comment
+            ``[section]``           section header (upward / downward)
+            ``LHS = body``          rule; body is ``op(args)`` or a single
+                                    category for PROJECT, or ``epsilon``
+            blank lines             ignored
+
+        After loading:
+            ``self.rules_upward``   forward productions and post-hoc S-ops
+            ``self.rules_downward`` downward / generative productions
+            ``self.reverse_rules``  Layer 2.5 reverse productions, derived
+                                    mechanically from rules_upward
+            ``self.rules``          upward + downward
+        """
+        with open(path, 'r') as fh:
+            lines = fh.read().splitlines()
+        sections = self._parse_cfg_lines(lines)
+        self._apply_cfg_sections(sections)
+
+    def _parse_cfg_lines(self, lines):
+        """Group raw cfg lines by section.  Returns a dict
+        ``{section_name: [(lhs, rhs), ...]}``.  Default section is
+        ``upward``; rules appearing before any header land there.
+        """
+        sections = {
+            self._CFG_SECTION_UPWARD:   [],
+            self._CFG_SECTION_DOWNWARD: [],
+        }
+        current = self._CFG_SECTION_UPWARD
+        for raw in lines:
+            # Strip line comments and surrounding whitespace.  Inline
+            # comments (``#`` mid-line) are also stripped — the rule body
+            # never legitimately contains a ``#``.
+            line = raw.split('#', 1)[0].strip()
+            if not line:
+                continue
+            if line.startswith('[') and line.endswith(']'):
+                name = line[1:-1].strip().lower()
+                if name not in sections:
+                    raise ValueError(
+                        f"grammar.cfg: unknown section [{name}]; "
+                        f"expected one of {sorted(sections)}"
+                    )
+                current = name
+                continue
+            if '=' not in line:
+                raise ValueError(
+                    f"grammar.cfg: rule requires 'LHS = body' syntax; "
+                    f"got {line!r}"
+                )
+            lhs_raw, body = line.split('=', 1)
+            lhs = ','.join(p.strip() for p in lhs_raw.split(',') if p.strip())
+            sections[current].append((lhs, body.strip()))
+        return sections
+
+    def _apply_cfg_sections(self, sections):
+        """Populate ``self.rules_*`` from parsed cfg sections and
+        derive the reverse rule table.
+        """
+        self.rules_upward = [
+            self._parse_rule(lhs, body)
+            for lhs, body in sections[self._CFG_SECTION_UPWARD]
+        ]
+        self.rules_downward = [
+            self._parse_rule(lhs, body)
+            for lhs, body in sections[self._CFG_SECTION_DOWNWARD]
+        ]
+        self.rules = list(self.rules_upward) + list(self.rules_downward)
+        self.rule_table = {idx: rule.canonical
+                           for idx, rule in enumerate(self.rules)}
+        self.reverse_rules = self._derive_reverse_rules(self.rules_upward)
+        self._configured = True
+
+    @staticmethod
+    def _derive_reverse_rules(forward_rules):
+        """Mechanically derive Layer-2.5 reverse productions from
+        forward Layer-1 productions.
+
+        Pattern (parent plan §Step 6 lines 562–568):
+            forward:  LHS = op(arg1, arg2)
+            reverse:  arg1, arg2 = opReverse(LHS)
+
+        Returns a list of tuples
+        ``(args_tuple, reverse_op_name, (lhs,))``.
+
+        Self-inverse / exact-inverse ops (``not``, ``project``,
+        ``negation``) get ``opReverse`` = same op name (their forward
+        body is its own inverse).  Everything else gets the
+        ``<op>Reverse`` suffix.
+
+        PROJECT rules surface as ``projectReverse`` for symmetry with
+        the parent plan's Layer 2.5 table.  Two shapes count as
+        PROJECT:
+          * ``method_name is None`` (transition / epsilon / X -> X
+            pass-through);
+          * ``method_name == 'merge'`` with a single RHS slot — the
+            cfg form ``LHS = single_category`` (e.g. ``S = NP``,
+            ``NP = N``) which the existing ``_parse_rule`` classifies
+            as a unary merge but is semantically a typed projection.
+        """
+        SELF_INVERSE = {'not'}
+        reverses = []
+        for rule in forward_rules:
+            op = rule.method_name
+            args = rule.rhs_symbols or ()
+            lhs = rule.lhs
+            is_project = (op is None) or (op == 'merge' and len(args) == 1)
+            if is_project:
+                reverses.append((args, 'projectReverse', (lhs,)))
+                continue
+            if op in SELF_INVERSE:
+                reverses.append((args, op, (lhs,)))
+                continue
+            reverses.append((args, op + 'Reverse', (lhs,)))
+        return reverses
+
     _NOOP_GRAMMAR = {'S': 'not(S)'}
 
     def _ensure_configured(self):
@@ -211,6 +357,27 @@ class Grammar:
                 cfg = candidate
         except (KeyError, AttributeError):
             pass
+        # New (Step 6) path: prefer ``WordSpace.language.grammarCfg`` —
+        # a string path to a ``data/grammar.cfg`` file in explicit-op
+        # form.  Resolved relative to ``ProjectPaths.PROJECT_DIR`` if
+        # not absolute.  Falls through to the XML grammar (legacy path)
+        # when absent or unreadable.
+        cfg_path = None
+        try:
+            cfg_path = TheXMLConfig.get("WordSpace.language.grammarCfg")
+        except (KeyError, AttributeError):
+            pass
+        if cfg_path:
+            resolved = (cfg_path if os.path.isabs(cfg_path)
+                        else os.path.join(ProjectPaths.PROJECT_DIR, cfg_path))
+            if os.path.exists(resolved):
+                self.load_from_cfg(resolved)
+                try:
+                    interp = TheXMLConfig.get("WordSpace.language.interpretation")
+                    self.interpretation = float(interp)
+                except (KeyError, AttributeError, TypeError, ValueError):
+                    pass
+                return
         if cfg is None:
             cfg = self._NOOP_GRAMMAR
         self.configure(cfg)
@@ -487,6 +654,78 @@ class SyntacticLayer(Layer):
         # P-tier invertible merge
         'chunk':        ('chunkForward',        'chunkReverse',        True),
     }
+
+    # Step 6: Direct ``Ops`` dispatch table used by the explicit-op
+    # grammar.cfg path.  Each entry maps a grammar op-name to the bare
+    # ``Ops`` callable the dispatcher invokes when the rule is
+    # interpreted **without** Basis/subspace/mask context (the
+    # "stateless" view).  When grammar.cfg provides the rule and the
+    # caller has no subspace context, ``dispatch_ops`` below routes
+    # through this table; when the caller has subspace context, the
+    # existing ``_RULE_METHODS`` path is preferred (it handles masks
+    # and codebook-search inverses correctly).
+    #
+    # Entries here mirror the parent plan §Step 6 Layer-1 / Layer-2
+    # tables: ``intersection`` / ``union`` route to the unified
+    # ``Ops.lower`` / ``Ops.lift`` mode-dispatchers, ``not`` to
+    # ``Ops.negation``, etc.  Ops with no stateless implementation
+    # (``equals``, ``part``, ``query``, ``swap``, ``what`` / ``where``
+    # / ``when``, ``chunk``) are absent and must go through the
+    # ``_RULE_METHODS`` path.
+    #
+    # Step 5 deferral 3 (binary rule application): the cfg dispatcher
+    # uses option (a) — explicit two-operand calls into the unified
+    # ``Ops.lower`` / ``Ops.lift`` mode-dispatchers — so it stays
+    # bit-equivalent to the legacy ``_RULE_METHODS`` path.  The
+    # alternative (option (b): pack the constituents into a single
+    # N-element tensor and call ``space.sigma.forward(packed, binary=True)``
+    # / ``space.sigma.forward(...)`` to use the Step-5 STE top-2 selector)
+    # is feasible per-rule but trades the explicit binary algebra for
+    # auto-pruning; defer that to a follow-up commit so the Step 6
+    # acceptance sweep stays a clean equivalence check.  Option (c)
+    # (per-rule annotation) becomes practical once a per-rule flag is
+    # added to grammar.cfg; out of scope here.
+    _OPS_METHODS = {
+        'lift':         lambda x, y=None, **kw: Ops.lift(x, y, **kw),
+        'lower':        lambda x, y=None, **kw: Ops.lower(x, y, **kw),
+        'union':        lambda x, y=None, **kw: Ops.lift(x, y, mode='OR',
+                                                         **{k: v for k, v in kw.items()
+                                                            if k != 'mode'}),
+        'intersection': lambda x, y=None, **kw: Ops.lower(x, y, mode='AND',
+                                                          **{k: v for k, v in kw.items()
+                                                             if k != 'mode'}),
+        'not':          lambda x, **kw: Ops.negation(x, **kw),
+        'conjunction':  lambda x, y, **kw: Ops.conjunction(x, y, **kw),
+        'disjunction':  lambda x, y, **kw: Ops.disjunction(x, y, **kw),
+        'non':          lambda x, **kw: Ops.non(x, **kw),
+        'true':         lambda x, **kw: torch.relu(torch.clamp(x, -1.0, 1.0)),
+        'false':        lambda x, **kw: torch.relu(-torch.clamp(x, -1.0, 1.0)),
+        'part':         lambda x, y, **kw: Ops.part(x, y, **kw),
+        'equals':       lambda x, y, **kw: Ops.equal(x, y, **kw),
+    }
+
+    @classmethod
+    def dispatch_ops(cls, op_name, *args, **kwargs):
+        """Resolve a grammar op-name to its bare ``Ops`` callable and
+        invoke it (Step 6 explicit-op grammar dispatch, stateless view).
+
+        Used by callers that have a rule table loaded from
+        ``data/grammar.cfg`` and want to apply the named op without
+        going through layer context (Basis / subspace / mask).  For
+        ops that need codebook context (``equals``, ``part``,
+        ``query``, ``swap``, ``what`` / ``where`` / ``when``, ``chunk``)
+        callers must use ``project()`` instead — those entries are not
+        present in ``_OPS_METHODS`` and a ``KeyError`` here signals
+        that the layer-context dispatch path is required.
+
+        Args:
+            op_name: grammar method name (``'lift'``, ``'lower'``, ...).
+            *args, **kwargs: forwarded to the resolved Ops callable.
+
+        Returns:
+            Whatever the Ops callable returns — typically a tensor.
+        """
+        return cls._OPS_METHODS[op_name](*args, **kwargs)
 
     def project(self, grammar, rule_id, left, right=None, third=None, subspace=None,
                 mask=None):
@@ -923,7 +1162,9 @@ class SyntacticLayer(Layer):
         collapses to the in-space body because the caller already has the
         forwarded operands.
         """
-        return self._apply_mask(Ops.lift(left, right), mask, subspace=subspace)
+        return self._apply_mask(
+            Ops.lower(left, right, mode='AND', kind='smooth'),
+            mask, subspace=subspace)
 
     def liftReverse(self, result, right, subspace, mask=None):
         """Recover first operand from the elementwise product."""
@@ -931,7 +1172,9 @@ class SyntacticLayer(Layer):
 
     def lowerForward(self, left, right, subspace, mask=None):
         """In-space lower: arithmetic mean."""
-        return self._apply_mask(Ops.lower(left, right), mask, subspace=subspace)
+        return self._apply_mask(
+            Ops.lift(left, right, mode='OR', kind='smooth'),
+            mask, subspace=subspace)
 
     def lowerReverse(self, result, right, subspace, mask=None):
         """Recover first operand from the mean."""
@@ -1172,7 +1415,14 @@ class SyntacticLayer(Layer):
     def _live_pairs(self, live, alive):
         """Extract adjacent-pair tensors from live-leaf ordering.
 
-        Returns (pair_tensor [B, P_max, 2, D], list[list[(l, r)]]).
+        Returns (pair_tensor [B, P_max, 2, D], list[list[(l, r)]],
+                 pair_indices [B, P_max, 2] long, pair_alive [B, P_max] bool).
+
+        ``batch_pairs`` (Python list) is kept for consumers that drive
+        per-row ``subspace.add_word()`` calls (which mutate a Python list
+        and so must already cross the host boundary). ``pair_indices`` and
+        ``pair_alive`` are tensor views of the same data, used by callers
+        that can stay on-device — e.g. the category-compat fill.
         """
         B, N, D = live.shape
         # One sync to bring the alive mask to Python; inner scan is free.
@@ -1185,11 +1435,16 @@ class SyntacticLayer(Layer):
             batch_pairs.append(pairs)
             max_P = max(max_P, len(pairs))
         pair_tensor = torch.zeros(B, max_P, 2, D, device=live.device)
+        pair_indices = torch.zeros(B, max_P, 2, dtype=torch.long, device=live.device)
+        pair_alive = torch.zeros(B, max_P, dtype=torch.bool, device=live.device)
         for b, pairs in enumerate(batch_pairs):
             for p, (l, r) in enumerate(pairs):
                 pair_tensor[b, p, 0] = live[b, l]
                 pair_tensor[b, p, 1] = live[b, r]
-        return pair_tensor, batch_pairs
+                pair_indices[b, p, 0] = l
+                pair_indices[b, p, 1] = r
+                pair_alive[b, p] = True
+        return pair_tensor, batch_pairs, pair_indices, pair_alive
 
     def _ensure_category_table(self, grammar):
         if getattr(self, '_category_names', None) is not None:
@@ -1366,9 +1621,22 @@ class SyntacticLayer(Layer):
             else:
                 rule_rhs_ids.append((0, 0))
 
+        # Pre-build per-rule category tensors once (no per-step rebuild).
+        rule_lhs_req = torch.tensor(
+            [r[0] for r in rule_rhs_ids],
+            device=data.device, dtype=torch.long)                  # [R]
+        rule_rhs_req = torch.tensor(
+            [r[1] for r in rule_rhs_ids],
+            device=data.device, dtype=torch.long)                  # [R]
+        no_rhs_mask = torch.tensor(
+            [grammar.rules[g].rhs_symbols is None
+             for g in composable_global],
+            device=data.device, dtype=torch.bool)                  # [R]
+
         depth_probs = []
         for step in range(min(self.max_depth, N - 1)):
-            pair_tensor, pair_positions = self._live_pairs(live, alive)
+            pair_tensor, pair_positions, pair_indices, pair_alive = (
+                self._live_pairs(live, alive))
             if pair_tensor.shape[1] == 0:
                 break
 
@@ -1395,22 +1663,28 @@ class SyntacticLayer(Layer):
             # the pair's category IDs; legacy function-call rules (no
             # rhs_symbols) are always compatible. Category id 0 ("?")
             # is a wildcard -- unseeded leaves match any typed rule.
+            #
+            # Vectorized: pair_indices [B, P, 2] gives (ls, rs) per pair on
+            # device; gather category at those indices; broadcast against
+            # the pre-built rule_{lhs,rhs}_req [R] tensors. No host sync,
+            # no Python triple loop.
             P_here, R_here = pair_tensor.shape[1], len(composable_global)
-            compat = torch.zeros(B, P_here, R_here, device=data.device)
-            # One sync for the whole category tensor; inner lookups are free.
-            category_list = category.tolist()
-            for b in range(B):
-                cat_row = category_list[b]
-                for p, (ls, rs) in enumerate(pair_positions[b]):
-                    cl = cat_row[ls]
-                    cr = cat_row[rs]
-                    for r, (lhs_req, rhs_req) in enumerate(rule_rhs_ids):
-                        rhs_syms = grammar.rules[composable_global[r]].rhs_symbols
-                        if rhs_syms is None:
-                            compat[b, p, r] = 1.0
-                        elif ((cl == 0 or cl == lhs_req)
-                              and (cr == 0 or cr == rhs_req)):
-                            compat[b, p, r] = 1.0
+            ls_idx = pair_indices[:, :, 0]                         # [B, P]
+            rs_idx = pair_indices[:, :, 1]                         # [B, P]
+            cl = category.gather(1, ls_idx)                        # [B, P]
+            cr = category.gather(1, rs_idx)                        # [B, P]
+            cl_e = cl.unsqueeze(-1)                                # [B, P, 1]
+            cr_e = cr.unsqueeze(-1)
+            lhs_match = (cl_e == 0) | (cl_e == rule_lhs_req.view(1, 1, -1))
+            rhs_match = (cr_e == 0) | (cr_e == rule_rhs_req.view(1, 1, -1))
+            typed_compat = lhs_match & rhs_match                   # [B, P, R]
+            compat = (no_rhs_mask.view(1, 1, -1) | typed_compat).to(data.dtype)
+            # Zero out padded (dead) pair slots so they contribute nothing.
+            compat = compat * pair_alive.unsqueeze(-1).to(data.dtype)
+            # Per-step sync (one host roundtrip, not per-cell): break the
+            # depth loop when no pair-rule combo is compatible across the
+            # whole batch. Without this we'd run nan-degenerate iterations
+            # to max_depth. Far cheaper than the prior triple loop.
             if compat.sum() == 0:
                 break
 
@@ -1425,7 +1699,15 @@ class SyntacticLayer(Layer):
                 flat_idx = joint.reshape(B, -1).argmax(dim=-1)
                 pair_idx = flat_idx // R_here
                 rule_idx_local = flat_idx % R_here
-                merged_vec = merged[torch.arange(B), pair_idx, rule_idx_local]
+                # `merged` may live on a different device than the default
+                # (e.g. test_mental_model loads CPU data into a model whose
+                # default device is MPS). Pin all index tensors to merged's
+                # device explicitly so cross-device gather doesn't fire.
+                row_idx = torch.arange(B, device=merged.device)
+                merged_vec = merged[
+                    row_idx,
+                    pair_idx.to(merged.device),
+                    rule_idx_local.to(merged.device)]
 
             # Trace + alive/live update -- always uses argmax for the
             # discrete trace even in training (gradient still flows
@@ -2031,11 +2313,18 @@ class WordSpace(Space):
         # (nearest-neighbor over activations). Not registered in
         # self.layers (no training-loop integration yet); the
         # VectorQuantize backend provides the nn.Module bookkeeping.
+        #
+        # Step 6: capacity is now max(64, len(categories)) so a richer
+        # grammar.cfg (Layer 1 productions add VO, NP, VP, AP, MP, PP,
+        # DEF, HAS plus the closed-class terminals) cannot overflow the
+        # per-label slot reservation.  Legacy XML grammars stay at 64
+        # since their category set is small.
         pos_dim = 4  # embedding width; also the category stack vector dim
+        category_capacity = max(64, len(TheGrammar.categories))
         self.category_codebook = Codebook()
         self.category_codebook.create(
             nInput=0,           # input-side width unused for direct addressing
-            nVectors=64,        # kept at 64 for compat with pos_lookup path
+            nVectors=category_capacity,
             nDim=pos_dim,
             customVQ=True,
             monotonic=False,
@@ -2072,11 +2361,18 @@ class WordSpace(Space):
         # is well-defined. predict_rule pads the flattened stack to the
         # same target_len, so the head stays consistent with the stack.
         self._rule_predictor_in_features = max(1, rule_in_features)
+        # Hidden dim is bottlenecked: the legacy square form
+        # ``Linear(in, in)`` ballooned to ~17M params at in=4096
+        # (~80% of the model).  A 256-wide bottleneck keeps the
+        # capacity-vs-rule-count ratio healthy at the rule-counts
+        # currently in use (a few dozen) while shrinking the layer
+        # ~16x.  Caps at the input width so tiny test configs (where
+        # in_features < 256) don't gain spurious capacity.
+        rule_hidden = min(self._rule_predictor_in_features, 256)
         self.rule_predictor = nn.Sequential(
-            nn.Linear(self._rule_predictor_in_features,
-                      self._rule_predictor_in_features),
+            nn.Linear(self._rule_predictor_in_features, rule_hidden),
             nn.Tanh(),
-            nn.Linear(self._rule_predictor_in_features, max(1, n_rules)),
+            nn.Linear(rule_hidden, max(1, n_rules)),
         )
         for p in self.rule_predictor.parameters():
             if all(p is not q for q in self.params):
@@ -2219,9 +2515,14 @@ class WordSpace(Space):
         the ``N`` axis via ``bias.unsqueeze(1)``.
         """
         BK = int(B) * int(K)
-        not_fired = ~self._stm_fired  # [B] bool
-        if not bool(not_fired.any().item()):
-            return None
+        not_fired = ~self._stm_fired  # [B] bool, no host sync
+        # Removed: `if not bool(not_fired.any().item()): return None` early-out.
+        # The gate at the bottom multiplies the bias by ``not_fired``, so when
+        # every row has already fired the returned tensor is all-zero and the
+        # caller's `y = y + bias.unsqueeze(1)` is a no-op anyway. The early-out
+        # was a per-batch host sync that blocked CUDA-graph capture. We pay
+        # one extra `disc.predict()` call per tick when no rows fire (cheap;
+        # one matmul) in exchange for no GPU->CPU sync.
         disc = self.discourse
         if disc is None:
             return None
@@ -2389,7 +2690,7 @@ class WordSpace(Space):
         1. **Multiplicative modulation** -- penalize irrational and
            unkind propositions by scaling ``total_loss`` by
            ``(1 + lum_w * (1 - lum_norm) + u_w * (1 - u_norm))``,
-           where ``lum_norm = luminosity(symbolic_space.layer).clamp(0, 1)``
+           where ``lum_norm = luminosity(symbolic_space.sigma).clamp(0, 1)``
            and ``u_norm = universality_score.clamp(-1, 1)`` (or 0
            when the caller has no universality score cached yet).
 

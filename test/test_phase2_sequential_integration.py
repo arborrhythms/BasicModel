@@ -134,7 +134,7 @@ def test_basic_model_ar_sequential_path():
 
 
 def test_input_space_null_byte_emits_zero_validity():
-    """All-zero target embeddings produce False entries in valid_mask_bk.
+    """All-zero target embeddings produce False entries in valid_mask.
 
     The legacy per-call slide loop emitted a sentinel empty subspace
     when the just-slid token was null. The microbatch path produces all
@@ -156,6 +156,6 @@ def test_input_space_null_byte_emits_zero_validity():
     inp.subspace.set_event(embedded)
     sub = inp.forward(_xor_input())
     assert sub.k_axis is True
-    assert sub.valid_mask_bk is not None
+    assert sub.valid_mask is not None
     # Position 1's target embedding is all zeros → that window is invalid.
-    assert sub.valid_mask_bk[0, 1].item() is False
+    assert sub.valid_mask[0, 1].item() is False

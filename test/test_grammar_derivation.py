@@ -307,12 +307,16 @@ class TestGrammarProject(_GrammarTestBase):
         grammar_methods = set(self.s_sl._RULE_METHODS.keys())
         # Parametric methods on SyntacticLayer subclasses
         subclass_methods = {'swap', 'lift', 'lower', 'non'}
-        # LearnedSVO dispatch signals: 'emit_head' (downward generation
-        # via codebook lookup). 'merge' is reserved for bare-sequence
-        # rules (e.g. `S -> S VO`) and 'intersection_inv'/'lift_inv' are
-        # aspirational decomposition duals — all absent from the current
-        # function-call grammar.
-        typed_dispatch = {'emit_head'}
+        # LearnedSVO dispatch signals:
+        #   'emit_head' — downward generation via codebook lookup;
+        #   'merge'     — single-RHS PROJECT form (e.g. `S = NP`,
+        #                 `NP = N`) the cfg uses for terminal
+        #                 projection (Step 6 of the lift / lower /
+        #                 bivector refactor).  The dispatcher passes
+        #                 these through unchanged (no _RULE_METHODS
+        #                 entry needed); allowlisted here so they
+        #                 don't fail the registration check.
+        typed_dispatch = {'emit_head', 'merge'}
         all_known = grammar_methods | subclass_methods | typed_dispatch
         self.assertTrue(dispatched.issubset(all_known),
                         f"Unknown methods: {dispatched - all_known}")

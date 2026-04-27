@@ -207,7 +207,13 @@ See [Language.md](Language.md) for the full design.
 | `passThrough` | bool | `false` | Pass concepts through as symbols unchanged. Typically `true` for simple models. |
 | `codebook` | bool | `false` | Enable codebook quantization. When `true`, the forward path produces a one-hot activation over codebook entries. Required for the full symbolic pipeline. |
 
-**Layers:** `PiLayer(nConcepts, nSymbols, invertible=True, monotonic=True)` maps between concept and symbol activation spaces via monotonic multiplicative transform. Codebook provides dense vectors when codebook=true.
+**Layers:** SymbolicSpace owns one
+`SigmaLayer(nConcepts, nSymbols, invertible=True, monotonic=monotonic)`
+at `self.sigma` that bridges the C$\leftrightarrow$S boundary in both directions via
+its own self-inverse (`forwardSigma` / `reverseSigma` pointer aliases
+hide the one-or-two-layer split).  The legacy `SymbolicSpace.layer`
+PiLayer attribute is gone; consumers use `model.symbolicSpace.sigma`
+directly. Codebook provides dense vectors when codebook=true.
 
 ---
 
