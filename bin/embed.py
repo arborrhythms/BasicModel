@@ -972,10 +972,17 @@ def discover_bpe(shard_paths, output_path, *,
                     chunking_frequency=chunking_frequency)
     print(f"Phase A: BPE merge discovery from {len(shard_paths)} shard(s), "
           f"max_docs={max_docs}, target n_vectors={n_vectors}, "
-          f"chunking_frequency={chunking_frequency}")
+          f"chunking_frequency={chunking_frequency}",
+          flush=True)
+    import time as _time
+    t_start = _time.time()
+    t_last = t_start
 
     batch_rows: List[List[int]] = []
     docs_seen = 0
+    last_vocab = cl._next_id
+    last_print_docs = 0
+    PRINT_EVERY = 50  # docs between progress lines
     for doc in iter_documents(shard_paths, max_docs=max_docs):
         row = _doc_to_byte_row(doc, max_seq)
         if not any(row):
@@ -987,12 +994,27 @@ def discover_bpe(shard_paths, output_path, *,
             cl.train_step(tensor, k_merges=k_merges)
             batch_rows = []
             if cl._next_id >= n_vectors:
+                elapsed = _time.time() - t_start
                 print(f"  vocab full ({cl._next_id}/{n_vectors}) at "
-                      f"{docs_seen} docs; stopping.")
+                      f"{docs_seen} docs after {elapsed:.1f}s; stopping.",
+                      flush=True)
                 break
-        if docs_seen % 200 == 0:
-            print(f"  scanned {docs_seen} docs, "
-                  f"vocab={cl._next_id}/{n_vectors}", flush=True)
+        if docs_seen - last_print_docs >= PRINT_EVERY:
+            now = _time.time()
+            elapsed = now - t_start
+            interval = now - t_last
+            d_vocab = cl._next_id - last_vocab
+            docs_per_sec = (docs_seen - last_print_docs) / max(interval, 1e-3)
+            pct = (docs_seen / max_docs * 100.0) if max_docs else 0.0
+            print(f"  [Phase A] {docs_seen}/{max_docs} docs ({pct:.1f}%), "
+                  f"vocab={cl._next_id}/{n_vectors} (+{d_vocab}), "
+                  f"N={cl._total_pairs}, "
+                  f"{docs_per_sec:.1f} docs/s, "
+                  f"elapsed={elapsed:.1f}s",
+                  flush=True)
+            last_print_docs = docs_seen
+            last_vocab = cl._next_id
+            t_last = now
 
     # Flush any remaining partial batch.
     if batch_rows and cl._next_id < n_vectors:
@@ -1151,20 +1173,39 @@ def embed_bpe(shard_paths, artifact_path, *,
                                         max_seq=max_seq)
 
     print(f"Phase B: training {vector_size}-dim SBOW over BPE chunks, "
-          f"epochs={epochs}")
+          f"epochs={epochs}",
+          flush=True)
+    import time as _time
+    t_start = _time.time()
+    PRINT_EVERY = 50
     for epoch in range(epochs):
         count = 0
         trainer._total_loss = 0.0
         trainer._loss_count = 0
+        last_print = 0
+        t_last = _time.time()
         for doc in iter_documents(shard_paths, max_docs=max_docs):
             trainer.process_document(doc)
             count += 1
-            if count % 100 == 0:
-                print(f"  Epoch {epoch+1}/{epochs}: {count} docs, "
+            if count - last_print >= PRINT_EVERY:
+                now = _time.time()
+                elapsed = now - t_start
+                interval = now - t_last
+                docs_per_sec = (count - last_print) / max(interval, 1e-3)
+                pct = (count / max_docs * 100.0) if max_docs else 0.0
+                print(f"  [Phase B] Epoch {epoch+1}/{epochs}, "
+                      f"{count}/{max_docs} docs ({pct:.1f}%), "
                       f"examples={trainer.n_examples}, "
-                      f"loss={trainer.avg_loss:.4f}", flush=True)
+                      f"loss={trainer.avg_loss:.4f}, "
+                      f"{docs_per_sec:.1f} docs/s, "
+                      f"elapsed={elapsed:.1f}s",
+                      flush=True)
+                last_print = count
+                t_last = now
         print(f"Epoch {epoch+1}/{epochs} done, "
-              f"loss={trainer.avg_loss:.4f}", flush=True)
+              f"loss={trainer.avg_loss:.4f}, "
+              f"elapsed={_time.time() - t_start:.1f}s",
+              flush=True)
 
     wv = trainer.finish()
     bpe_section = bpe_section_from_chunk_layer(cl)

@@ -67,7 +67,7 @@
 
   <PerceptualSpace>
     <nInput>1024</nInput>
-    <nVectors>4096</nVectors>
+    <nVectors>8192</nVectors>
     <nDim>6</nDim>
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>

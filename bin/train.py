@@ -40,6 +40,11 @@ def parse_args():
                    help="Cap AR training/eval positions per document for "
                         "quick smoke runs. Full training uses the XML "
                         "InputSpace.nOutput cap when omitted.")
+    p.add_argument("--batches", type=int, default=None, metavar="N",
+                   help="Cap the training pass at N batches and stop "
+                        "(across all epochs combined). Useful for "
+                        "wall-clock-bounded runs: at ~7s/batch on GB10, "
+                        "12000 batches is roughly 24 hours.")
     p.add_argument("--test", nargs="?", const=-1, type=int, default=None,
                    metavar="N",
                    help="Run the baseline + post-train test/validation "
@@ -199,6 +204,8 @@ def train_local(args):
         model_env["BASIC_NUM_EPOCHS"] = str(args.num_epochs)
     if args.max_tokens is not None:
         model_env["BASIC_MAX_TOKENS"] = str(args.max_tokens)
+    if args.batches is not None:
+        model_env["BASIC_MAX_BATCHES"] = str(args.batches)
     # --test gating: env var encodes the request to runTrial in Models.py.
     #   unset             -> skip baseline + post-train test passes
     #   "" (empty string) -> run the test passes uncapped

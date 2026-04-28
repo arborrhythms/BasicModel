@@ -5059,6 +5059,25 @@ class Ops:
         recovered = Ops.conjunctionReverse(Y, Y, W, monotonic=monotonic)
         return (recovered, Y)
 
+    # ---- Sugar absorption (identity / absorb) ----------------------------
+
+    @staticmethod
+    def identity(x):
+        """Unary pass-through. Functional role: the typing-stamp
+        derivation S -> NP (and analogous single-symbol reclassifications)
+        -- the value is preserved while the LHS type replaces the RHS
+        type. Value-lossless; type-lossy. No inverse registered."""
+        return x
+
+    @staticmethod
+    def absorb(left, right):
+        """Binary left-pass: return left, discard right. Used by the
+        grammar to consume syntactic sugar (whitespace, punctuation,
+        low-semantic-weight tokens) into a surrounding constituent
+        without contributing to it. Lossy by contract -- right is
+        unrecoverable. No inverse registered."""
+        return left
+
     # ---- Axis selectors (what / where / when) ----------------------------
     # The C -> S boundary demux puts content in the canonical
     # [what | where | when] layout; these selectors zero the non-selected

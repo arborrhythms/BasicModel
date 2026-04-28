@@ -842,10 +842,9 @@ class SyntacticLayer(Layer):
     # the transition / PROJECT behavior under another name.
 
     def absorbForward(self, left, right, subspace, mask=None):
-        # Left-pass: return left unchanged; right is sugar that the rule
-        # predictor opted to discard. mask is applied to the surviving
-        # output so per-cell gating still flows through.
-        return self._apply_mask(left, mask, subspace=subspace)
+        return self._apply_mask(
+            Ops.absorb(left, right), mask, subspace=subspace,
+        )
 
     # -- S-tier: lossy operations (no inverse) ---------------------
 

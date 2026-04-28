@@ -311,20 +311,11 @@ def auto_compile_backend():
       eager                        -> force torch.compile(backend='eager')
       aot_eager                    -> force torch.compile(backend='aot_eager')
       auto                         -> try inductor -> eager -> aot_eager
-      (empty / unset)              -> "none" (pure-PyTorch eager).
-
-    The default is now ``none`` -- empirically the best training-loop
-    throughput on GB10 (Blackwell, MM_5M.xml). The compiled paths
-    (inductor + max-autotune-no-cudagraphs et al.) recompile every
-    time ChunkLayer mints a new BPE merge, and the per-shape capture
-    cost dominates wall-clock until the codebook is frozen via
-    ``chunking_frequency=0``. Set ``MODEL_COMPILE=auto`` (or a
-    specific backend) once you have a frozen BPE artifact and want
-    to revisit compile.
+      (empty / unset)              -> "auto"
     """
     override = os.environ.get("MODEL_COMPILE", "").strip().lower()
     if not override:
-        return "none"
+        return "auto"
     if override in _COMPILE_OFF:
         return "none"
     if override == "auto":

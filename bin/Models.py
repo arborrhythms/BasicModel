@@ -2913,6 +2913,19 @@ class BasicModel(BaseModel):
         else:
             byte_stub_output = None
 
+        # BASIC_MAX_BATCHES caps the cumulative training-batch count
+        # across all epochs (train.py forwards --batches here).
+        # split=="train" only -- test/validation passes use the
+        # explicit ``max_batches`` arg from --test.
+        global_max = None
+        if training and split == "train":
+            try:
+                _v = os.environ.get("BASIC_MAX_BATCHES", "").strip()
+                global_max = int(_v) if _v else None
+            except ValueError:
+                global_max = None
+            if not hasattr(self, "_train_batches_seen"):
+                self._train_batches_seen = 0
         with ctx:
             step = 0
             batches_run = 0
@@ -2922,6 +2935,14 @@ class BasicModel(BaseModel):
                         f"runEpoch({split}): hit max_batches={max_batches} "
                         f"cap; cursor exiting early ({batches_run} batches "
                         f"processed, ds.all_done={ds.all_done()}).")
+                    break
+                if (global_max is not None
+                        and self._train_batches_seen >= global_max):
+                    TheMessage(
+                        f"runEpoch({split}): hit BASIC_MAX_BATCHES="
+                        f"{global_max} cumulative cap; cursor exiting "
+                        f"early ({batches_run} batches this epoch, "
+                        f"{self._train_batches_seen} total).")
                     break
                 inp_items, out_items, hard_eos = ds.next_tick()
                 if use_byte_cursor:
@@ -2978,6 +2999,8 @@ class BasicModel(BaseModel):
                 self.post_tick_compact()
                 step += B_step
                 batches_run += 1
+                if global_max is not None:
+                    self._train_batches_seen += 1
 
                 # Per-batch CBOW/SBOW embedding training for text AR
                 # modes that don't use the byte cursor (word/sentence

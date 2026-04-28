@@ -579,6 +579,20 @@ block structure is unavailable, so selectors degenerate to identity --
 the axis semantics are carried by the subspace's modality tensors
 rather than the flat activation vector.  Lossy.
 
+### Absorb — Sym
+
+$$\mathrm{absorb}(\ell, r) = \ell$$
+
+Binary left-pass.  The grammar uses it to consume syntactic sugar
+(whitespace, punctuation, low-semantic-weight tokens) into a
+surrounding constituent without contributing to it.  The right
+operand is the sugar that the rule predictor opted to discard;
+it is unrecoverable by contract, hence no inverse is registered.
+Initial logits should bias against `absorb` to avoid early-training
+collapse where the rule predictor over-uses it on real content.
+Implemented as `Ops.absorb` (Sym primitive) with `absorbForward`
+on `SyntacticLayer` adding the per-cell mask gate.  Lossy.
+
 ### Query — Mereological (currently accumulator preservation)
 
 $$
@@ -751,6 +765,8 @@ dispatch entry.  Listed for completeness so the inventory is closed.
 | `Ops.error(x_1, x_2)` | $\| x_1 - x_2 \|_2$ — scalar L2 |
 | `Ops.norm(x)` | last-dim L2 norm |
 | `Ops.distance(x, y, monotonic, dim)` | $(1 - \cos(x, y)) / 2$ (bitonic) or volume-weighted L2 (monotonic) |
+| `Ops.identity(x)` | $x$ — value-preserving pass-through; no longer dispatched (PROJECT / transition supersedes the unary grammar rule) but kept as a Sym primitive for callers that need an explicit no-op |
+| `Ops.absorb(\ell, r)` | $\ell$ — binary left-pass; see [Absorb — Sym](#absorb--sym) for the grammar-dispatch contract |
 
 **Predicates (return Boolean):**
 
