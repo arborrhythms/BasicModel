@@ -7,8 +7,8 @@ representational transformation. Data flows forward from raw input to task outpu
 the reverse pass reconstructs the original input from the symbolic representation.
 
 ```
-Forward:  InputSpace $\rightarrow$ PerceptualSpace $\rightarrow$ ConceptualSpace $\rightarrow$ SymbolicSpace $\rightarrow$ SyntacticSpace $\rightarrow$ OutputSpace
-Reverse:  OutputSpace $\rightarrow$ SyntacticSpace $\rightarrow$ SymbolicSpace $\rightarrow$ ConceptualSpace $\rightarrow$ PerceptualSpace $\rightarrow$ InputSpace
+Forward:  InputSpace -> PerceptualSpace -> ConceptualSpace -> SymbolicSpace -> SyntacticSpace -> OutputSpace
+Reverse:  OutputSpace -> SyntacticSpace -> SymbolicSpace -> ConceptualSpace -> PerceptualSpace -> InputSpace
 ```
 
 ![WikiOracle Space Hierarchy](diagrams/vector_spaces.svg)
@@ -40,7 +40,9 @@ the top-level model down through every space and into every child layer, so the
 per-neuron exploration level is kept consistent across the entire pipeline.
 
 **Reset cascade — hard vs. soft.** Every space exposes
-`Reset(batch=None, hard=True)`:
+`Reset(batch=None, hard=True)`. The `(batch, hard)` signature is now
+**required** — the legacy zero-arg fallback in `_reset_call` was
+removed by the brick-vectorization handoff (§8d).
 
 | Call form | Scope | Use |
 |-----------|-------|-----|
@@ -147,18 +149,34 @@ path is a separate reconstruction procedure using the span table, not a matrix i
 
 **Document streaming and `valid_mask`.** Documents longer than `nOutput` bytes are not
 truncated. `TheData` maintains a per-row cursor `(doc_idx[b], offset[b])` and
-`next_tick()` returns a `[B, nOutput]` slab containing the next ≤`nOutput` bytes from
-each row's current document, plus a host-side `[B] list[bool]` `hard_eos` flag set on
-ticks where a row's cursor exhausts the current document. A short fill at document end
-NULL-pads the slab tail; the stem's `valid_mask: [B, K] bool` ([Spaces.py:4622]) flips
-False for the padded positions, and downstream state-mutation propagation (codebook
-EMA, parse-stack push, truth-layer record) skips them. Concatenating per-tick slabs
-across a row's document run reproduces the original bytes byte-exact.
+`next_tick()` returns `(input, output, hard_eos)` where `input` is a
+`[B, nOutput]` slab containing the next `nOutput` or fewer bytes from each row's current
+document and `hard_eos` is a host-side `[B] list[bool]` flag set on ticks where a
+row's cursor exhausts the current document. A short fill at document end
+NULL-pads the slab tail; the stem's `valid_mask: [B, K] bool` flips False for the
+padded positions, and downstream state-mutation propagation (codebook EMA,
+parse-stack push, truth-layer record) skips them. Concatenating per-tick slabs
+across a row's document run reproduces the original bytes byte-exact. The
+`_lex_batch` truncation that silently dropped overlong inputs was replaced with
+an `assert n_tokens < nObj` in §8g of the brick-vectorization handoff; the cursor
+is responsible for sizing the slab to fit the lex's `nObj - 1` content slots.
 
-The legacy `_end_of_stream` tensor remains for diagnostic readback only — runBatch no
-longer consumes it for control flow (the in-loop `.all().item()` gate was removed by
-the predecessor handoff and the surrounding Reset block was relocated to the outer
-loop by the rolling-cursor handoff).
+**Cursor universal — trial mode for non-AR data.** The brick-vectorization
+handoff §8e unified the data path: `next_tick()` is the single dispatch
+interface for both AR text byte (the rolling-cursor case) and non-AR data
+(numeric, non-byte text). In trial mode (`slab_bytes` not set), each tick
+yields one batch of trials with `hard_eos = [True] * B` -- the data cursor
+aligns with the trial, mirroring the legacy DataLoader contract. The runEpoch
+outer loop drives `ds.next_tick()` directly for both modes; the surrounding
+DataLoader exists only so existing tests can grab `loader.dataset`.
+
+`_end_of_stream` is a host-side `list[bool]` diagnostic only — never
+consulted for control flow — under the brick-vectorization handoff
+§8c. The canonical hard-reset signal is the cursor's `hard_eos` list
+from `next_tick()`. The scalar/tensor variants of `_end_of_stream`
+were removed; the diagnostic list is sized lazily by the AR forward
+path and cleared per-row by `Reset(batch=b, hard=True)`. The legacy
+`InputSpace.batch_advances_sentence` stub property was deleted in §8a.
 
 ---
 
@@ -399,11 +417,13 @@ constraint ensures weights $W \geq 0$, preserving ordering. Exact inverse via th
 internal `InvertibleLinearLayer` (LDU factorisation).
 
 **Hierarchical mode.** When `<useButterflies>true</useButterflies>` or
-`<useGrammar>true</useGrammar>`, SymbolicSpace stores an `nn.ModuleList` of
-per-level PiLayers in `self.pi_layers` (ButterflyStage-wrapped when `useButterflies`
-is active).  The symbol dimension is geometrically partitioned so each order
-writes only to its designated slice.  See [Reasoning.md](Reasoning.md)
-Section Architecture Quadrants.
+`<useGrammar>all</useGrammar>`, SymbolicSpace stores an `nn.ModuleList` of
+per-level PiLayers in `self.pi_layers` (ButterflyStage-wrapped when
+`useButterflies` is active).  The symbol dimension is geometrically
+partitioned so each order writes only to its designated slice.  The
+planned `shamathaSpeech` mode is a narrow DNF-object policy rather than
+the full grammar hierarchy.  See [Reasoning.md](Reasoning.md) Section
+Architecture Modes.
 
 **Invertibility.** Exactly invertible via the PiLayer's reverse path.
 
@@ -434,7 +454,7 @@ about differentiable tree structure.
 2. Reconstruct the symbolic presence vector deterministically from the derivation
    via `set_symbols()`.
 
-The round-trip `forward $\rightarrow$ (delete symbols) $\rightarrow$ reverse` recovers the original
+The round-trip `forward -> (delete symbols) -> reverse` recovers the original
 present positions exactly.
 
 **Key parameters.**

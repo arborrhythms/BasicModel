@@ -69,7 +69,7 @@ Dharmakirti argues that testimonial knowledge involves three components: the *te
 These correspond to the full epistemic pipeline:
 
 ```
-feeling (direct perception) $\rightarrow$ fact (conceptual judgment) $\rightarrow$ operator $\rightarrow$ new fact
+feeling (direct perception) -> fact (conceptual judgment) -> operator -> new fact
 ```
 
 Authorities influence **which providers are trusted**, but logical validity
@@ -197,7 +197,7 @@ This preserves the tetralemma without logical explosion.
 
 ## Implicit Existence and Svabhava
 
-WikiOracle's [grammar](Language.md) allows sentences without an explicit verb phrase: `S $\rightarrow$ NP`. The bare noun phrase -- "Fire!" -- carries an implicit existential predicate ("exists"). This grammatical default has a philosophical cost.
+WikiOracle's [grammar](Language.md) allows sentences without an explicit verb phrase: $S \rightarrow NP$. The bare noun phrase -- "Fire!" -- carries an implicit existential predicate ("exists"). This grammatical default has a philosophical cost.
 
 Nagarjuna's *Mulamadhyamakakarika* argues that the fundamental error of conceptual thought is the attribution of **svabhava** (inherent existence, own-nature) to phenomena. When we say "fire" without predicating existence explicitly, the noun appears to stand on its own -- as if fire possesses a permanent, independent self. This is precisely the reification that the doctrine of **sunyata** (emptiness) challenges.
 
@@ -211,6 +211,29 @@ Nagarjuna's *Mulamadhyamakakarika* argues that the fundamental error of conceptu
 Making the existential predicate explicit -- "fire exists" -- restores what Nagarjuna insists upon: existence is a *relation* (between causes, conditions, and the phenomenon), not an *attribute* (inherent in the noun). The verb "exists" is not redundant; it is the grammatical trace of dependent origination.
 
 The grammar's rule that $VP \to \varepsilon$ if and only if $MP \to \varepsilon$ reinforces this point. When the existential predicate is absent, so is the modal frame. The noun floats free of both process and possibility -- the exact condition Nagarjuna identifies as the root of conceptual grasping (*upadana*).
+
+## Shamatha Speech and Single-Pointedness
+
+Dakpo Tashi Namgyel's requirement for single-pointedness can be modeled
+as a restriction on what counts as one object in speech.  A complete DNF
+can specify all logical commitments about an object, but logical
+completeness is not yet contemplative one-pointedness: the specified
+parts must also remain a single spatiotemporal field.
+
+WikiOracle's Shamatha Speech target therefore adds a contiguity condition
+to the DNF object grammar:
+
+* every conjunction or disjunction may range over all active percepts;
+* the merged parts must have connected `where()` support;
+* the merged parts must have continuous or adjacent `when()` support;
+* disconnected supports are scattered aggregates, not one object.
+
+This differs from serial speech.  Serial mode follows a cursor through
+time.  Shamatha Speech can see the whole current percept field, but it
+only permits logical composition that preserves a single object of
+attention.  The resulting sentence may be awkward DNF English, but it is
+the linguistic trace of one connected object rather than a discursive
+derivation tree.
 
 ## Summary
 

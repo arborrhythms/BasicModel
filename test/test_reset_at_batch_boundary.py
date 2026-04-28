@@ -1,12 +1,15 @@
 """Tests confirming Reset() fires at every AR batch boundary.
 
-Under the new gate, `inputSpace.batch_advances_sentence` is a
-host-side @property that returns True for every AR batch (the
-SentenceStreamDataset contract guarantees one sentence per row per
-batch). The Reset cascade therefore fires unconditionally at every
-AR-batch end.
+The rolling-cursor handoff replaced the per-batch EOS gate with a
+per-row dispatch in the outer doc-streaming loop, driven by the
+cursor's host-side ``hard_eos`` list. Every AR batch in the
+all-rows-finish case (the legacy DataLoader contract and also the
+common cursor case where every row finishes a doc on the same tick)
+fires a single global Reset per space. The brick-vectorization
+handoff §8a then deleted the now-vestigial
+``InputSpace.batch_advances_sentence`` stub property.
 
-Plan reference: doc/plans/2026-04-26-per-row-ar-no-eos-sync-handoff.md §3
+Plan reference: doc/plans/2026-04-27-brick-vectorization-and-legacy-removal-handoff.md
 """
 import sys
 import os
@@ -103,21 +106,21 @@ def test_per_row_state_clears_between_batches():
 
 
 def test_end_of_stream_reset_to_false():
-    """The legacy `_end_of_stream` flag is still cleared at Reset.
+    """The `_end_of_stream` diagnostic is a list[bool] always cleared.
 
-    Even though we no longer branch on it, the runBatch end still
-    sets `_end_of_stream = False` after firing Reset. This keeps
-    the diagnostic in a known state.
+    Under §8c (brick-vectorization handoff) ``_end_of_stream`` is a
+    host-side ``list[bool]`` only — no scalar/tensor variants — and
+    the per-row Reset path / dispatch_per_row_reset clears any True
+    entry whose row has just rolled over. Post-epoch every entry
+    must be False.
     """
     model = _model()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
-    # Pre-set to a non-default value so we observe the reset.
-    model.inputSpace._end_of_stream = torch.ones(2, dtype=torch.bool)
+    # Pre-set to a non-default list[bool] so we observe the reset.
+    model.inputSpace._end_of_stream = [True, True]
     model.runEpoch(optimizer=optimizer, batchSize=2, split="train")
-    # Post-epoch: should be the False scalar from the last Reset.
     final = model.inputSpace._end_of_stream
-    if torch.is_tensor(final):
-        assert not bool(final.any().item()), (
-            f"_end_of_stream tensor not cleared: {final}")
-    else:
-        assert final is False
+    assert isinstance(final, list), (
+        f"_end_of_stream must be list[bool], got {type(final).__name__}")
+    assert not any(final), (
+        f"_end_of_stream not cleared: {final}")

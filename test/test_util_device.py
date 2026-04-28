@@ -128,37 +128,54 @@ class TestCudaSanityChecks(unittest.TestCase):
     @mock.patch("util._patch_inductor_paths")
     @mock.patch("util.torch.compile")
     def test_compile_tries_successive_backends(self, compile_mock, patch_mock):
-        model = object()
+        # The default MODEL_COMPILE is "none" (skip compilation) for the
+        # GB10 training regime; this test exercises the auto-cycling
+        # path explicitly. Pin the mode too so the assertEqual below
+        # doesn't depend on the env-driven default.
+        prior_backend = util.TheCompileBackend
+        prior_mode = util.TheCompileMode
+        util.init_compile_backend("auto")
+        util.init_compile_mode("max-autotune")
+        try:
+            model = object()
 
-        def _compile_side_effect(model_arg, backend=None, mode=None):
-            self.assertEqual(mode, "max-autotune")
-            if backend == "inductor":
-                raise RuntimeError("inductor failed")
-            if backend == "eager":
-                return ("compiled", backend)
-            raise AssertionError(f"Unexpected backend {backend}")
+            def _compile_side_effect(model_arg, backend=None, mode=None):
+                self.assertEqual(mode, "max-autotune")
+                if backend == "inductor":
+                    raise RuntimeError("inductor failed")
+                if backend == "eager":
+                    return ("compiled", backend)
+                raise AssertionError(f"Unexpected backend {backend}")
 
-        compile_mock.side_effect = _compile_side_effect
-        result = util.compile(model, verbose=False)
-        self.assertEqual(result, ("compiled", "eager"))
-        self.assertEqual(
-            [call.kwargs["backend"] for call in compile_mock.call_args_list],
-            ["inductor", "eager"],
-        )
-        patch_mock.assert_called_once()
+            compile_mock.side_effect = _compile_side_effect
+            result = util.compile(model, verbose=False)
+            self.assertEqual(result, ("compiled", "eager"))
+            self.assertEqual(
+                [call.kwargs["backend"] for call in compile_mock.call_args_list],
+                ["inductor", "eager"],
+            )
+            patch_mock.assert_called_once()
+        finally:
+            util.init_compile_backend(prior_backend)
+            util.init_compile_mode(prior_mode)
 
     @mock.patch("util._patch_inductor_paths")
     @mock.patch("util.torch.compile")
     def test_compile_returns_original_model_if_all_backends_fail(self, compile_mock, patch_mock):
-        model = object()
-        compile_mock.side_effect = RuntimeError("all backends failed")
-        result = util.compile(model, verbose=False)
-        self.assertIs(result, model)
-        self.assertEqual(
-            [call.kwargs["backend"] for call in compile_mock.call_args_list],
-            ["inductor", "eager", "aot_eager"],
-        )
-        patch_mock.assert_called_once()
+        prior_backend = util.TheCompileBackend
+        util.init_compile_backend("auto")
+        try:
+            model = object()
+            compile_mock.side_effect = RuntimeError("all backends failed")
+            result = util.compile(model, verbose=False)
+            self.assertIs(result, model)
+            self.assertEqual(
+                [call.kwargs["backend"] for call in compile_mock.call_args_list],
+                ["inductor", "eager", "aot_eager"],
+            )
+            patch_mock.assert_called_once()
+        finally:
+            util.init_compile_backend(prior_backend)
 
 
 if __name__ == "__main__":

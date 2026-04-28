@@ -77,7 +77,7 @@
     <invertible>false</invertible>
     <codebook>true</codebook>
     <chunking>bpe</chunking>
-    <chunkingFrequency>2</chunkingFrequency>
+    <chunkingFrequency>0</chunkingFrequency>
   </PerceptualSpace>
 
   <!-- ConceptualSpace: final level shape is 4x1024.
@@ -144,12 +144,10 @@
         <S>lower(S, S)</S>
         <S>lift(S, S)</S>
         <S>lift(S, S, S)</S>
-        <!-- Sugar absorption: identity passes one operand through;
-             absorb keeps the left operand and discards the right
+        <!-- Sugar absorption: absorb keeps the left operand and discards the right
              (whitespace / punctuation slot). Predictor learns to fire
-             these on grammatical noise so the rest of the grammar
+             it on grammatical noise so the rest of the grammar
              doesn't need to encode it via union/intersection abuse. -->
-        <S>identity(S)</S>
         <S>absorb(S, S)</S>
       </grammar>
       <interpretation>0.5</interpretation>

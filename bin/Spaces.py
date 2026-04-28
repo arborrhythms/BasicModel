@@ -38,21 +38,6 @@ except Exception:
 _vq_F = F
 
 
-def _reset_call(reset_fn, batch=None, hard=True):
-    """Call a Reset callable with the per-row signature, falling back
-    to the legacy zero-arg signature when the callee does not accept
-    ``batch`` / ``hard``.
-
-    Used by Space.Reset cascades so older Layer / SubSpace classes that
-    haven't adopted the per-row Reset(batch=b, hard=...) signature keep
-    working unchanged. Falls back to ``reset_fn()`` (legacy semantics)
-    on TypeError; callers see a global wipe instead of a per-row clear,
-    which is a no-op-equivalent superset of the requested action.
-    """
-    try:
-        return reset_fn(batch=batch, hard=hard)
-    except TypeError:
-        return reset_fn()
 class VectorQuantize(nn.Module):
     def __init__(
         self,
@@ -1551,9 +1536,22 @@ class Codebook(Basis):
             scores = self.distance(input3d, quantized3d[..., :self.nDim])
             if self.alpha:
                 scores = scores + self.alpha * torch.rand_like(scores)
-            batch_idx = torch.arange(
-                batch, device=indices.device).unsqueeze(1).expand_as(indices)
-            act[batch_idx[snap], indices[snap]] = scores[snap]
+            # Boolean-mask scatter (``act[mask_a, mask_b] = scores[mask]``)
+            # has a dynamic index shape that Inductor's CUDAGraph
+            # capture cannot record (warning:
+            # ``skipping cudagraphs due to mutated inputs``). Re-express
+            # as a static-shape ``scatter_reduce_`` over a freshly-
+            # allocated tensor: snap-masked scores get amax-reduced
+            # into act[b, indices[b, t]]; non-snap entries contribute
+            # 0 (no-op against the all-zero init). This preserves the
+            # "best score per codebook entry per batch" semantics --
+            # the same idiom used by ``best_err`` above.
+            masked_scores = torch.where(
+                snap, scores, torch.zeros_like(scores))
+            act = torch.zeros_like(act)
+            act.scatter_reduce_(
+                1, indices, masked_scores, reduce="amax",
+                include_self=True)
             x = x3d.reshape(x.shape)
         else:
             w = self.getW()
@@ -1695,7 +1693,12 @@ class Embedding(Basis):
 
     def _token_stream(self, text):
         if getattr(self, 'byte_mode', False):
-            return parse(self._to_text(text), lex='bytes')
+            # Pass raw bytes / byte tensors directly to parse so
+            # ``lex='bytes'`` produces exactly one token per input byte.
+            # Going via ``_to_text`` (UTF-8 decode-with-replace) and
+            # then through parse's old round-trip would expand the byte
+            # count at invalid-sequence boundaries (cursor slab cuts).
+            return parse(text, lex='bytes')
         if getattr(self, 'lexer_mode', 'word') == 'sentence':
             return parse(self._to_text(text), lex='sentences')
         mode = getattr(self, 'chunking_mode', 'lexicon')
@@ -2107,9 +2110,16 @@ class Embedding(Basis):
         """
         return self.pretrain.sbow_loss(words)
 
-    def save_embeddings(self, path, truth_data=None):
-        """Save current embedding vectors and vocabulary to a .pt file."""
-        self.wv.save(path, truth_data=truth_data)
+    def save_embeddings(self, path, truth_data=None, bpe_section=None):
+        """Save current embedding vectors and vocabulary to a ``.pt``/``.kv``
+        file via the unified vocab-artifact schema (see :mod:`embed`).
+
+        ``bpe_section`` (when supplied) embeds a BPE codebook in the
+        same artifact under ``kind="both"``, so a single file carries
+        the Lexicon and the BPE side-by-side. ``truth_data`` is carried
+        through as a top-level field (legacy LTM passthrough).
+        """
+        self.wv.save(path, truth_data=truth_data, bpe_section=bpe_section)
 
     def reverse_raw(self, y):
         """Return the raw reverse-path vector with all subspaces intact.
@@ -2405,6 +2415,30 @@ class SubSpace(nn.Module):
         self.where  = self._coerce_basis(where, role="where")
         self.when   = self._coerce_basis(when, role="when")
         self.word   = word if word is not None else []  # list of (batch, vector, rule) tuples
+        # Tensor word buffer (Path B from
+        # plans/2026-04-27-brick-vectorization-and-legacy-removal-handoff.md
+        # §"Tensor word buffer (Path B)"). Inside the compute brick the
+        # SyntacticLayer.compose chart writes per-cell entries via the
+        # vector-typed ``add_word`` overload below; the outer doc-streaming
+        # loop then calls ``flush_word_buffer`` once per tick to materialize
+        # ``self.word`` for legacy consumers. The scalar ``add_word`` overload
+        # is preserved for direct callers (tests, ``_compose_activation``).
+        # ``word_records`` layout matches WordEncoding's 7-slot tuple
+        # (batch, vector, order, rule, leaf1, leaf2, leaf3); ``word_count``
+        # is the per-cell depth. Registered as buffers so ``.to(device)``
+        # moves them with the SubSpace; ``register_buffer(persistent=False)``
+        # keeps them out of the state_dict (no checkpoint pollution).
+        self._WORD_ENTRY_WIDTH = 7
+        self._WORD_MAX_DEPTH = 256  # cap per cell; matches reconstruct stack
+        self.register_buffer(
+            'word_records',
+            torch.zeros(0, self._WORD_MAX_DEPTH, self._WORD_ENTRY_WIDTH,
+                        dtype=torch.long),
+            persistent=False)
+        self.register_buffer(
+            'word_count',
+            torch.zeros(0, dtype=torch.long),
+            persistent=False)
         self._demuxed = False
         # active: [B, N, M] per-modality indices into the Basis slots.
         # M = number of modalities (what, where, when).
@@ -2648,6 +2682,12 @@ class SubSpace(nn.Module):
             self._clear_runtime_basis(basis)
         self._active = None
         self.word = []
+        # Drop per-tick word buffer scratch so it can't bleed across
+        # batch boundaries. Records aren't zeroed; word_count gates
+        # which slots are read on flush, and the next ensure_word_buffer
+        # / scatter populates fresh entries.
+        if int(self.word_count.shape[0]) > 0:
+            self.word_count.zero_()
         self.valid_mask = None
         self.stem_embedded = False
 
@@ -2661,6 +2701,12 @@ class SubSpace(nn.Module):
             self._clear_runtime_basis(basis)
         self._active = None
         self.word = []
+        # Drop per-tick word buffer scratch so it can't bleed across
+        # batch boundaries. Records aren't zeroed; word_count gates
+        # which slots are read on flush, and the next ensure_word_buffer
+        # / scatter populates fresh entries.
+        if int(self.word_count.shape[0]) > 0:
+            self.word_count.zero_()
         self.valid_mask = None
         self.stem_embedded = False
 
@@ -3046,9 +3092,149 @@ class SubSpace(nn.Module):
 
     def add_word(self, batch, vector, rule, order=0,
                  leaf1=-1, leaf2=-1, leaf3=-1):
-        """Append a validated word tuple."""
+        """Append one or more word entries.
+
+        Two overloads share this entry point:
+
+        * **Scalar form** -- ``batch``, ``vector``, ``rule`` are ``int``.
+          Appends one validated 7-tuple to ``self.word``. Used by the
+          legacy compose path and direct callers (tests,
+          ``_compose_activation``).
+
+        * **Vector form** -- ``batch`` is a 1-D long tensor of cell
+          indices into the ``[B*K]`` flat row space. ``vector``,
+          ``rule``, ``order``, ``leaf*`` are 1-D long tensors of the same
+          length (or ``int`` broadcast over the active rows). Writes
+          into the per-cell tensor buffers ``word_records`` /
+          ``word_count`` via scatter, with no host sync. The outer
+          doc-streaming loop calls ``flush_word_buffer`` once per tick
+          to materialize the buffer's contents back into ``self.word``
+          for legacy consumers (``decompose``, ``reconstruct``, the SVO
+          walker, derivation-trace tests). See plan §6c.
+
+        The vector form is gated on ``isinstance(batch, torch.Tensor)``;
+        anything else falls through to the scalar form so existing
+        callers keep working unchanged.
+        """
+        if isinstance(batch, torch.Tensor):
+            self._add_word_vec(batch, vector, rule, order=order,
+                               leaf1=leaf1, leaf2=leaf2, leaf3=leaf3)
+            return
         self.word.append(self.wordEncoding.encode(
             batch, vector, rule, order, leaf1, leaf2, leaf3))
+
+    def ensure_word_buffer(self, n_cells):
+        """Resize ``word_records`` / ``word_count`` to hold ``n_cells`` rows.
+
+        Idempotent when already sized correctly. Resizes preserve no
+        prior contents (the buffer is per-tick scratch, cleared by
+        ``clear_word_buffer`` / ``flush_word_buffer``).
+        """
+        n = int(n_cells)
+        if int(self.word_count.shape[0]) == n:
+            return
+        device = self.word_count.device
+        self.word_records = torch.zeros(
+            n, self._WORD_MAX_DEPTH, self._WORD_ENTRY_WIDTH,
+            dtype=torch.long, device=device)
+        self.word_count = torch.zeros(n, dtype=torch.long, device=device)
+
+    def clear_word_buffer(self):
+        """Zero the per-cell depth so the next tick starts fresh.
+
+        Records aren't zeroed because ``word_count`` gates which slots
+        are read at flush time; stale values in unread slots are
+        irrelevant. Called by ``flush_word_buffer`` after materializing
+        the tick's entries; tests can call directly to reset state.
+        """
+        self.word_count.zero_()
+
+    def _add_word_vec(self, b_indices, vec_idxs, rule_ids,
+                      order=0, leaf1=-1, leaf2=-1, leaf3=-1):
+        """Tensor scatter into ``word_records`` -- vector ``add_word`` body.
+
+        ``b_indices`` is the [N_active] long cell-id tensor. The other
+        args may be int (broadcast) or [N_active] long tensors.
+        Writes one entry per active cell at the cell's current depth,
+        then increments ``word_count[b_indices]``.
+        """
+        if int(b_indices.numel()) == 0:
+            return
+        BK = int(self.word_count.shape[0])
+        # Lazy-resize: if a caller dispatches before ensure_word_buffer
+        # ran, size to the largest index referenced. The buffer is small
+        # (entries are int64 7-tuples; cap is max_depth=256 entries per
+        # cell), so growing it here is cheap.
+        max_idx = int(b_indices.max().item())
+        if max_idx >= BK:
+            self.ensure_word_buffer(max_idx + 1)
+        device = self.word_records.device
+        b_idx = b_indices.to(device=device, dtype=torch.long)
+        depths = self.word_count[b_idx]
+        WE = self.wordEncoding
+
+        def _broadcast(val):
+            if isinstance(val, torch.Tensor):
+                return val.to(device=device, dtype=torch.long)
+            return torch.full(
+                (b_idx.shape[0],), int(val), device=device, dtype=torch.long)
+
+        v_idx = _broadcast(vec_idxs)
+        r_idx = _broadcast(rule_ids)
+        o_idx = _broadcast(order)
+        l1    = _broadcast(leaf1)
+        l2    = _broadcast(leaf2)
+        l3    = _broadcast(leaf3)
+
+        # WordEncoding tuple slots: BATCH, VECTOR, ORDER, RULE, LEAF1, LEAF2, LEAF3
+        self.word_records[b_idx, depths, WE.BATCH]  = b_idx
+        self.word_records[b_idx, depths, WE.VECTOR] = v_idx
+        self.word_records[b_idx, depths, WE.ORDER]  = o_idx
+        self.word_records[b_idx, depths, WE.RULE]   = r_idx
+        self.word_records[b_idx, depths, WE.LEAF1]  = l1
+        self.word_records[b_idx, depths, WE.LEAF2]  = l2
+        self.word_records[b_idx, depths, WE.LEAF3]  = l3
+        # In-place increment of the per-cell depth. ``index_add_`` would
+        # also work; direct gather/scatter is fine because each b_idx
+        # appears at most once per call (compose dispatches one entry
+        # per active cell per depth d).
+        self.word_count[b_idx] = depths + 1
+
+    def flush_word_buffer(self):
+        """Materialize the tick's tensor word buffer into ``self.word``.
+
+        One sync per tick (the ``.tolist()`` calls below), called from
+        the outer doc-streaming loop AFTER ``runBatch`` so the brick
+        body itself stays sync-free. Appends entries in cell-major
+        order; downstream consumers (``decompose``, ``reconstruct``,
+        SVO walker) see ``self.word`` populated as before.
+
+        Resets ``word_count`` for the next tick. ``word_records`` slots
+        beyond each cell's depth are unread so stale values are
+        harmless.
+        """
+        if int(self.word_count.shape[0]) == 0:
+            return
+        counts = self.word_count.tolist()
+        if not any(counts):
+            self.word_count.zero_()
+            return
+        records = self.word_records.tolist()
+        WE = self.wordEncoding
+        for bk, depth in enumerate(counts):
+            for d in range(depth):
+                e = records[bk][d]
+                # Validate via wordEncoding.encode so the host-side
+                # tuple matches the legacy add_word output exactly.
+                self.word.append(WE.encode(
+                    int(e[WE.BATCH]),
+                    int(e[WE.VECTOR]),
+                    int(e[WE.RULE]),
+                    int(e[WE.ORDER]),
+                    int(e[WE.LEAF1]),
+                    int(e[WE.LEAF2]),
+                    int(e[WE.LEAF3])))
+        self.word_count.zero_()
 
     # -- Stack-scanning helpers ----------------------------------------
 
@@ -4293,10 +4479,8 @@ class Space(nn.Module):
         """Per-document teardown. Cascades to child layers and subspace.
 
         ``batch`` (optional int): when set, clear only the per-row state
-        for source row ``batch``. ``None`` keeps the legacy global-Reset
-        semantics (clear everything). Layers / subspaces that don't
-        understand the per-row signal silently fall back to a global
-        clear so legacy paths stay correct.
+        for source row ``batch``. ``None`` clears every row (the global-
+        Reset semantics).
 
         ``hard`` (bool, default True): True = document boundary; False =
         sentence-internal soft reset. The base cascade forwards both flags
@@ -4305,13 +4489,17 @@ class Space(nn.Module):
         Subclasses override to add their own resets (buffer clears, cursor
         resets, etc.) and must call super().Reset(batch=batch, hard=hard)
         first.
+
+        Every Reset-capable child must accept the ``(batch, hard)``
+        signature; the legacy zero-arg fallback was removed in §8d of the
+        brick-vectorization handoff.
         """
         for layer in self.layers:
             if hasattr(layer, 'Reset'):
-                _reset_call(layer.Reset, batch=batch, hard=hard)
+                layer.Reset(batch=batch, hard=hard)
         sub = getattr(self, 'subspace', None)
         if sub is not None and hasattr(sub, 'Reset'):
-            _reset_call(sub.Reset, batch=batch, hard=hard)
+            sub.Reset(batch=batch, hard=hard)
 
     def End(self):
         """Per-batch teardown. Counterpart to Start() at the end of the
@@ -4455,12 +4643,15 @@ class InputSpace(Space):
         # propagate via copy_context. Registered by BaseModel.create_from_config
         # once WordSpace exists.
         self._model_wordSpace = None
-        # End-of-stream sentinel. Initialized to False (scalar) before
-        # any forward() call. Microbatch AR forward() promotes it to a
-        # [B] bool where each row is True when that row's targets are
-        # entirely NULL. runBatch reduces via .all() for the per-sentence
-        # Reset cascade, then clears it back to False.
-        self._end_of_stream = False
+        # End-of-stream diagnostic: ``list[bool]`` of per-row "this row
+        # has no valid windows in the current tick" flags. Sized lazily
+        # by the AR forward() path. Under the rolling-cursor handoff
+        # the canonical hard-reset signal is the cursor's host-side
+        # ``hard_eos`` from ``next_tick``; ``_end_of_stream`` is now a
+        # diagnostic only — never consulted for control flow, just
+        # cleared by ``Reset(batch=b, hard=True)`` so external observers
+        # see a clean state.
+        self._end_of_stream = []
         # Raw sentence strings stashed by prepInput for MentalModel.forward()
         # to compute the outer-loop iteration count N without rethreading
         # inp_items through runBatch's call signature.
@@ -4555,22 +4746,45 @@ class InputSpace(Space):
         nObj = self.outputShape[0]
         nWhat = self.subspace.nWhat
 
+        # Byte-mode safety: cap the input to ``nObj`` bytes before the
+        # tokenizer sees it. Cursor mode already sizes the slab to nObj
+        # (one token per byte under byte-mode), so this is a no-op
+        # there. Non-cursor callers (tests via ``stringTensor``) hand in
+        # an ``inputLength``-padded buffer (e.g. 4096 bytes) -- without
+        # the cap the byte tokenizer would emit one token per padded
+        # null and overflow the assert. Constant time, no host sync.
+        if self.byte_mode and input.shape[-1] > nObj:
+            input = input[..., :nObj]
+
         tokens_per_batch = []
         where_idx = torch.zeros(batch, nObj, dtype=torch.long, device=dev)
         when_idx = torch.arange(nObj, device=dev).unsqueeze(0).expand(batch, -1).contiguous()
 
         for b in range(batch):
             stream = vocab._token_stream(input[b])
-            # Reserve one slot for an explicit empty-word EOS sentinel so
-            # every sentence terminates with the null-encoding -- the AR
-            # generative loop reads this as its stop signal.
-            n_tokens = min(len(stream), nObj - 1)
+            # The caller is responsible for sizing the input so the
+            # token stream fits in ``nObj`` slots. Cursor mode sizes
+            # the slab to ``nObj``; non-cursor text inputs are capped
+            # to ``nObj`` bytes above. The §8g brick-vectorization
+            # handoff replaced the legacy silent
+            # ``min(len(stream), nObj - 1)`` truncation with this
+            # assert; tripping it is now a real upstream bug, not a
+            # hidden data drop. The legacy empty-word EOS sentinel
+            # slot was removed -- no reader consumed it as a stop
+            # signal (the codebook's null-idx already padding-marks
+            # short rows; valid_mask handles content boundaries).
+            n_tokens = len(stream)
+            assert n_tokens <= nObj, (
+                f"InputSpace._lex_batch: row {b} produced {n_tokens} tokens "
+                f"but only {nObj} slots are available. Size the input "
+                f"upstream (cursor: slab_bytes=nObj; non-cursor: ensure the "
+                f"lexer's token count is bounded)."
+            )
             row = []
             for i in range(n_tokens):
                 token_text, start = stream[i]
                 row.append(token_text)
                 where_idx[b, i] = start
-            row.append("")  # empty-word EOS sentinel -> null_idx
             tokens_per_batch.append(row)
             if n_tokens > 0:
                 last_text, last_start = stream[n_tokens - 1]
@@ -4614,33 +4828,14 @@ class InputSpace(Space):
         self._ar_embedded = None
         self._ar_total = 0
         self._cached_embedding = None
-        # _end_of_stream is a host-side scalar/list under the rolling-cursor
-        # contract (next_tick returns the host-side hard_eos list directly);
-        # reset to False so any straggler diagnostic read sees a clean state.
+        # _end_of_stream is a host-side ``list[bool]`` under the
+        # rolling-cursor contract (the canonical hard-reset signal is
+        # the cursor's ``hard_eos`` from ``next_tick``). Clear the
+        # row-or-all so external diagnostic readers see a known state.
         if batch is None:
-            self._end_of_stream = False
-        elif isinstance(self._end_of_stream, list):
-            if 0 <= batch < len(self._end_of_stream):
-                self._end_of_stream[batch] = False
-        elif torch.is_tensor(self._end_of_stream):
-            if 0 <= batch < self._end_of_stream.shape[0]:
-                self._end_of_stream[batch] = False
-
-    @property
-    def batch_advances_sentence(self):
-        """Host-side: does the loader guarantee a sentence boundary this batch?
-
-        Legacy property kept for backward compat with the predecessor
-        handoff (per-row-AR-no-eos-sync). Under the rolling-cursor
-        design this gate is no longer consulted by the runEpoch outer
-        loop — Reset is dispatched per-row from ``next_tick``'s
-        ``hard_eos`` signal. Returns True so any remaining call site
-        keeps its prior behavior (Reset every batch).
-
-        A future cleanup PR can delete the property once every reader
-        has migrated to the per-row Reset path.
-        """
-        return True
+            self._end_of_stream = [False] * len(self._end_of_stream)
+        elif 0 <= batch < len(self._end_of_stream):
+            self._end_of_stream[batch] = False
 
     # The world presenting itself
     def forward(self, inputData):
@@ -4658,9 +4853,12 @@ class InputSpace(Space):
             so K=1 and the head produces one prediction per call. The
             ARIR runtime maintains the buffer across calls.
 
-        Sets self._end_of_stream as a [B] bool — True for rows whose
-        targets are entirely NULL (empty sentence). ``self.subspace``
-        carries valid_mask: [B, K] bool for runBatch.
+        ``self.subspace`` carries valid_mask: [B, K] bool for runBatch.
+        ``_end_of_stream`` is sized to ``[False] * B`` here as a host-side
+        diagnostic; the canonical hard-reset signal under the rolling-
+        cursor handoff is ``next_tick``'s ``hard_eos`` list, not anything
+        derived from ``valid_mask`` (which would require a sync-incurring
+        ``.tolist()`` inside the brick body).
         """
         if inputData is None:
             return self._empty_like_subspace()
@@ -4735,8 +4933,12 @@ class InputSpace(Space):
         sub.valid_mask = valid_mask
         sub.stem_embedded = True
 
-        # Per-row end-of-stream: True for rows with no valid windows.
-        self._end_of_stream = ~valid_mask.any(dim=1)  # [B] bool
+        # Size the diagnostic to B, but do not derive its values from
+        # valid_mask: a per-tick ``.tolist()`` here would be a host sync
+        # inside the brick body. Cursor-mode callers overwrite this from
+        # the host-side ``hard_eos`` list immediately after the brick.
+        if len(self._end_of_stream) != B:
+            self._end_of_stream = [False] * B
 
         # Cascade ensure_microbatch(B, K) so the body's per-row state
         # (subspace, stacks, last_svo) is sized to B*K. _stm_fired stays
@@ -5137,6 +5339,39 @@ class PerceptualSpace(Space):
             n_vectors=self.nVectors,
             chunking_frequency=self.chunking_frequency,
         )
+        # Auto-load a previously-saved BPE codebook from the same
+        # ``.kv`` artifact that hosts the Lexicon. The artifact format
+        # (defined in :mod:`embed`) carries Lexicon + BPE side-by-side
+        # under ``kind="both"``; if the file exists and has a BPE section,
+        # loading restores the merge table so subsequent training
+        # avoids the cold-start vocab-growth recompile pressure under
+        # ``torch.compile``. Setting ``chunking_frequency=0`` (the
+        # frozen marker) at the same time prevents further growth so
+        # Inductor's cache stays warm. Failure modes (missing file,
+        # lexicon-only artifact, schema mismatch) downgrade to a
+        # one-line warning -- the layer falls back to its empty
+        # cold-start state.
+        if self.chunk_layer.bpe:
+            embedding_path = TheXMLConfig.get("architecture.embeddingPath", None)
+            if embedding_path and os.path.exists(embedding_path):
+                try:
+                    from embed import inspect_artifact
+                    info = inspect_artifact(embedding_path)
+                    if info.get("has_bpe"):
+                        self.chunk_layer.load(embedding_path)
+                        TheMessage(
+                            f"[PerceptualSpace] Loaded BPE codebook "
+                            f"({info['bpe_size']} entries) from "
+                            f"{embedding_path}")
+                    else:
+                        TheMessage(
+                            f"[PerceptualSpace] No BPE section in "
+                            f"{embedding_path} (kind={info.get('kind')!r}); "
+                            f"starting with the 256-byte cold-start vocab.")
+                except Exception as e:
+                    TheMessage(
+                        f"[PerceptualSpace] BPE auto-load skipped "
+                        f"({type(e).__name__}: {e}); starting cold.")
 
     def _register_requirements(self):
         """Register PerceptualSpace-specific config requirements."""
@@ -5319,14 +5554,23 @@ class PerceptualSpace(Space):
                     model.rebuild_optimizer()
 
         # Index resolution: token text -> codebook index per slot.
+        # Build on CPU as a Python list-of-lists, then materialize the
+        # device tensor in one shot. The previous "torch.full + per-cell
+        # in-place write" pattern triggered the Inductor cudagraphs
+        # warning ``skipping cudagraphs due to mutated inputs`` -- the
+        # captured graph can't include tensor mutations on freshly-
+        # allocated buffers. A single ``torch.tensor(indices_2d)`` call
+        # is graph-friendly (the allocation is part of the graph; no
+        # post-allocation mutation).
         null_idx = codebook.wv.key_to_index.get("\x00", 0)
-        what_indices = torch.full(
-            (batch, nObj), null_idx, dtype=torch.long, device=dev)
+        indices_2d = [[null_idx] * nObj for _ in range(batch)]
         for b, row in enumerate(batch_tokens):
             for n in range(min(len(row), nObj)):
                 text = row[n]
                 if text:
-                    what_indices[b, n] = codebook._token_to_index(text)
+                    indices_2d[b][n] = codebook._token_to_index(text)
+        what_indices = torch.tensor(
+            indices_2d, dtype=torch.long, device=dev)
 
         # where / when come straight from the upstream buffer.
         where_raw = upstream_vspace.where.getW()
@@ -5387,11 +5631,19 @@ class PerceptualSpace(Space):
 
         all_chunks, all_spans = self.chunk_layer.forward(byte_indices)
 
+        # Build per-cell results on CPU (Python lists of ints/floats and
+        # GPU vectors), then materialize the device tensors in one
+        # shot. The previous "torch.full + per-cell in-place write"
+        # pattern triggered Inductor's
+        # ``skipping cudagraphs due to mutated inputs`` warning -- the
+        # captured graph can't include mutations on freshly-allocated
+        # buffers. ``torch.tensor / torch.stack`` allocate fresh
+        # tensors as graph outputs, which is graph-friendly.
         null_idx = codebook.wv.key_to_index.get("\x00", 0)
-        what_indices = torch.full(
-            (batch, nObj), null_idx, dtype=torch.long, device=dev)
-        word_vectors = torch.zeros(batch, nObj, self.nDim, device=dev)
-        word_active = torch.zeros(batch, nObj, device=dev)
+        zero_vec = torch.zeros(self.nDim, device=dev)
+        indices_2d = [[null_idx] * nObj for _ in range(batch)]
+        active_2d = [[0.0] * nObj for _ in range(batch)]
+        vectors_2d = [[zero_vec] * nObj for _ in range(batch)]
 
         for b in range(batch):
             chunks = all_chunks[b]
@@ -5404,21 +5656,32 @@ class PerceptualSpace(Space):
                 is_boundary = all(bv in boundary for bv in key)
                 if is_boundary:
                     if word_subtokens and word_idx < nObj:
-                        word_vectors[b, word_idx] = self._max_fuse_subtokens(
+                        vectors_2d[b][word_idx] = self._max_fuse_subtokens(
                             word_subtokens, codebook)
-                        what_indices[b, word_idx] = self._chunk_to_codebook_idx(
+                        indices_2d[b][word_idx] = self._chunk_to_codebook_idx(
                             word_subtokens, codebook)
-                        word_active[b, word_idx] = 1.0
+                        active_2d[b][word_idx] = 1.0
                         word_idx += 1
                     word_subtokens = []
                 else:
                     word_subtokens.append(key)
             if word_subtokens and word_idx < nObj:
-                word_vectors[b, word_idx] = self._max_fuse_subtokens(
+                vectors_2d[b][word_idx] = self._max_fuse_subtokens(
                     word_subtokens, codebook)
-                what_indices[b, word_idx] = self._chunk_to_codebook_idx(
+                indices_2d[b][word_idx] = self._chunk_to_codebook_idx(
                     word_subtokens, codebook)
-                word_active[b, word_idx] = 1.0
+                active_2d[b][word_idx] = 1.0
+
+        what_indices = torch.tensor(
+            indices_2d, dtype=torch.long, device=dev)
+        word_active = torch.tensor(
+            active_2d, dtype=torch.float32, device=dev)
+        # Stack the per-cell [nDim] vectors into [batch, nObj, nDim]
+        # via two nested torch.stack calls -- both produce fresh
+        # graph-output tensors; no mutation.
+        word_vectors = torch.stack([
+            torch.stack(row) for row in vectors_2d
+        ])
 
         where_raw = upstream_vspace.where.getW()
         when_raw = upstream_vspace.when.getW()
@@ -6246,15 +6509,17 @@ class SymbolicSpace(Space):
         except (KeyError, TypeError, ValueError):
             self.accumulateTruth = 0.0
 
-        # Truth storage criterion thresholds (used by should_store())
-        def _truth_cfg(key, default):
-            try:
-                return float(TheXMLConfig.space(section, key))
-            except (KeyError, TypeError, ValueError):
-                return default
-        self._truth_min_magnitude = _truth_cfg("truthMinMagnitude", 0.3)
-        self._truth_min_novelty = _truth_cfg("truthMinNovelty", 0.5)
-        self._truth_max_inconsistency = _truth_cfg("truthMaxInconsistency", 0.3)
+        # Trust threshold for the per-cell record_batch path: activation
+        # norms ramp from 0 at norm=0 to 1 at norm=truthMinMagnitude. The
+        # legacy ``should_store`` two further gates (novelty/consistency)
+        # were dropped along with that function — under record_batch the
+        # codebook lookup at compact-time naturally dedupes near-zero and
+        # near-duplicate vectors against the existing prototype.
+        try:
+            self._truth_min_magnitude = float(
+                TheXMLConfig.space(section, "truthMinMagnitude"))
+        except (KeyError, TypeError, ValueError):
+            self._truth_min_magnitude = 0.3
 
         # Odd-even sorting network: learns a canonical ordering of symbols.
         try:
@@ -6878,20 +7143,16 @@ class SymbolicSpace(Space):
             truth_layer = getattr(wordSpace, 'truth_layer', None)
             if truth_layer is not None:
                 basis = getattr(self.subspace, 'basis', None)
-                # Vectorized truth staging (no host sync).
-                #
-                # Compute a per-cell trust score from activation magnitude
-                # (Gate 1 of the legacy `should_store`), masked by
-                # `valid_mask` and scaled by `accumulateTruth`. Stage every
-                # cell into the truth_layer's pending buffer with its
-                # trust; the post-brick `truth_layer.compact()` step drops
-                # entries with trust below threshold and promotes survivors
-                # to the persistent store.
-                #
-                # Novelty/consistency gates (Gates 2-3 of legacy
-                # `should_store`) are no longer per-cell; they're handled
-                # at compact-time against the persistent store, or dropped
-                # in favor of the magnitude-based trust + later dedup.
+                # Vectorized truth staging (no host sync). Compute a
+                # per-cell trust score from activation magnitude, mask
+                # by `valid_mask`, scale by `accumulateTruth`. Stage
+                # every cell unconditionally; the post-brick
+                # `truth_layer.compact()` step (one host sync, outside
+                # the brick) drops entries below the trust threshold
+                # and promotes survivors to the persistent store. The
+                # legacy per-cell `should_store` magnitude+novelty+
+                # consistency gate was removed in §6b of the brick-
+                # vectorization handoff.
                 BK, N, D = act.shape
                 norms = act.norm(dim=-1)                                  # [B*K, N]
                 mag_score = norms.clamp(max=self._truth_min_magnitude) \

@@ -44,12 +44,17 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
   <InputSpace>
     <nDim>4</nDim>
     <nVectors>8</nVectors>
-    <nOutput>8</nOutput>
+    <!-- nOutput sized to fit the test's "hello world foo" input
+         (15 chars under the BPE pre-chunking byte stream + 1 EOS
+         slot). Was 8 under the legacy silent-truncation path;
+         raised to 32 when §8g of the brick-vectorization handoff
+         replaced the truncation with an assert. -->
+    <nOutput>32</nOutput>
     <lexer>byte</lexer>
   </InputSpace>
   <PerceptualSpace>
-    <nInput>8</nInput>
-    <nOutput>8</nOutput>
+    <nInput>32</nInput>
+    <nOutput>32</nOutput>
     <nDim>4</nDim>
     <nVectors>{n_vectors}</nVectors>
     <codebook>true</codebook>
@@ -57,13 +62,13 @@ def _write_minimal_bpe_xml(tmpdir, n_vectors=512):
     <chunkingFrequency>2</chunkingFrequency>
   </PerceptualSpace>
   <ConceptualSpace>
-    <nOutput>8</nOutput>
+    <nOutput>32</nOutput>
     <nDim>4</nDim>
     <nVectors>8</nVectors>
     <codebook>true</codebook>
   </ConceptualSpace>
   <SymbolicSpace>
-    <nOutput>8</nOutput>
+    <nOutput>32</nOutput>
     <nDim>4</nDim>
     <nVectors>8</nVectors>
     <codebook>true</codebook>

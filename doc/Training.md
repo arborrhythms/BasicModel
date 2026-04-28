@@ -21,9 +21,9 @@ The output path is read from `<embeddingPath>` in the XML config.
 
 ```
 FineWeb-EDU parquet shards
-    $\rightarrow$ Pass 1: stream documents, lex + parse, count words, build vocabulary
-    $\rightarrow$ Pass 2: stream documents again, train SBOW per sentence, discard examples
-    $\rightarrow$ Save WordVectors to sentence.pt
+    -> Pass 1: stream documents, lex + parse, count words, build vocabulary
+    -> Pass 2: stream documents again, train SBOW per sentence, discard examples
+    -> Save WordVectors to sentence.pt
 ```
 
 ### SBOW (Sentence Bag of Words)
@@ -111,12 +111,12 @@ The trainer uses two passes over the data to avoid dynamic model resizing:
 
 ### Memory Considerations
 
-The dominant memory cost is the linear output head: `vocab_size $\times$ vector_size` parameters
+The dominant memory cost is the linear output head: `vocab_size * vector_size` parameters
 plus optimizer state. With 200K vocabulary and 100 dimensions:
 
 - Embedding: 200K $\times$ 100 $\times$ 4 bytes = ~80MB
 - Linear head: 100 $\times$ 200K $\times$ 4 bytes = ~80MB
-- Adam optimizer: 2$\times$ momentum buffers = ~320MB total
+- Adam optimizer: $2 \times$ momentum buffers = ~320MB total
 
 The full softmax computes `(N, vocab_size)` logits per sentence. For large vocabularies
 this can be expensive. Training runs on CPU by default (`BASICMODEL_DEVICE=cpu`) to

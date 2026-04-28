@@ -69,9 +69,9 @@ class Layer(nn.Module):
     def Start(self):
         """Per-sentence state reset. Cascades to child layers.
 
-        Layers with per-call state (e.g. cached ButterflyStage diffs,
-        accumulating regularizer buffers) override this to clear that
-        state. The default walks self.layers.
+        Layers with per-call state (e.g. cached butterfly merge diffs
+        on Sigma/PiLayer, accumulating regularizer buffers) override
+        this to clear that state. The default walks self.layers.
         """
         for layer in self.layers:
             if hasattr(layer, 'Start'):
@@ -770,8 +770,119 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
     # InvertibleLinearLayer -- no constraint needed with symmetric
     # log domain (-inf, +inf).
 
+# ---------------------------------------------------------------------------
+# Butterfly access pattern
+#
+# A butterfly stage permutes its input on the N axis so XOR-neighbors at
+# bit ``stage_idx`` are adjacent, packs adjacent pairs into pairwise
+# features (D -> 2D), runs a SigmaLayer / PiLayer on the packed
+# features, unpacks (2D -> D), inverse-permutes, and (unless terminal)
+# average-merges adjacent halves so the next stage sees N/2.
+#
+# Originally implemented as a wrapper class (``ButterflyStage``) around
+# a Sigma/Pi inner layer. That added a Python call frame per stage and a
+# fresh ``torch.tensor`` per call for the permutation indices; both are
+# avoidable. Now the access pattern is built into ``SigmaLayer`` and
+# ``PiLayer`` directly: pass ``stage_idx`` / ``n_t`` / ``is_last``
+# at construction and the layer's own ``forward`` / ``reverse`` becomes
+# the butterfly-aware version. Permutation indices are pre-computed
+# once in ``__init__`` and stored as non-persistent buffers, removing
+# the per-call rebuild.
+# ---------------------------------------------------------------------------
+
+def _butterfly_index_lists(n_vectors, stage):
+    """Return ``(perm, inv_perm)`` as Python lists of ints (CPU-side, pure).
+
+    ``perm[i]`` = original index that lands at position ``i`` after
+    permuting to make XOR-neighbors at bit ``stage`` adjacent.
+    ``inv_perm`` is the inverse mapping. Pure; safe to call at module
+    construction time.
+    """
+    if n_vectors <= 1:
+        idx = list(range(n_vectors))
+        return idx, list(idx)
+    span = max(int(math.log2(n_vectors)), 1)
+    bit = stage % span
+    stride = 1 << bit
+    block = stride << 1
+    perm = []
+    for start in range(0, n_vectors, block):
+        for offset in range(stride):
+            perm.append(start + offset)
+            perm.append(start + offset + stride)
+    inv = [0] * n_vectors
+    for i, p in enumerate(perm):
+        inv[p] = i
+    return perm, inv
+
+
+def _init_butterfly_buffers(module, stage_idx, n_t, is_last):
+    """Pre-compute and register the butterfly permutations on ``module``.
+
+    ``n_t`` is the actual per-stage input vector count this layer will
+    see at runtime -- the caller computes it (it is NOT
+    ``initial_n // 2**stage_idx`` in general, because ``is_last``
+    propagation across earlier stages changes the shape entering
+    later ones).
+
+    Sets ``module.butterfly = True`` and records the stage metadata.
+    """
+    perm_list, inv_list = _butterfly_index_lists(n_t, stage_idx)
+    module.register_buffer(
+        "_butterfly_perm",
+        torch.tensor(perm_list, dtype=torch.long),
+        persistent=False)
+    module.register_buffer(
+        "_butterfly_inv_perm",
+        torch.tensor(inv_list, dtype=torch.long),
+        persistent=False)
+    module.butterfly = True
+    module.butterfly_stage_idx = int(stage_idx)
+    module.butterfly_n_t = int(n_t)
+    module.butterfly_is_last = bool(is_last)
+    module._merge_diff = None
+
+
+def _butterfly_pack(x, perm):
+    """``[B, N, D]`` -> ``[B, N/2, 2D]`` via the cached permutation."""
+    B, N, D = x.shape
+    return x.index_select(1, perm).reshape(B, N // 2, 2 * D)
+
+
+def _butterfly_unpack(pair, B, N, D, inv_perm):
+    """``[B, N/2, 2D]`` -> ``[B, N, D]`` via the inverse permutation."""
+    return pair.reshape(B, N, D).index_select(1, inv_perm)
+
+
+def _butterfly_merge(x_out, is_last, module):
+    """Average-merge unless terminal. Caches the diff for inversion."""
+    if is_last:
+        return x_out
+    left = x_out[:, 0::2, :]
+    right = x_out[:, 1::2, :]
+    module._merge_diff = left - right
+    return (left + right) / 2
+
+
+def _butterfly_unmerge(y, is_last, module):
+    """Inverse of ``_butterfly_merge`` using the cached diff."""
+    if is_last:
+        return y
+    diff = module._merge_diff
+    assert diff is not None, (
+        "butterfly reverse called without prior forward (cached diff is None)")
+    left = y + diff / 2
+    right = y - diff / 2
+    B, N_half, D = left.shape
+    out = torch.empty(B, N_half * 2, D, device=y.device, dtype=y.dtype)
+    out[:, 0::2, :] = left
+    out[:, 1::2, :] = right
+    module._merge_diff = None
+    return out
+
+
 class SigmaLayer(Layer):
-    """Additive (summation) layer.
+    """Additive (summation) layer with optional butterfly access pattern.
 
     With ``nonlinear=True`` (legacy behavior), ``forward`` returns
     ``tanh(W @ x + b)``. With ``nonlinear=False``, ``forward`` returns the
@@ -791,10 +902,20 @@ class SigmaLayer(Layer):
     ``invertible=True``):
         monotonic=True:  W >= 0 (NonNegativeInvertibleLinearLayer) -- ordering preserved
         monotonic=False: W unrestricted (InvertibleLinearLayer)    -- bitonic response
+
+    Butterfly mode (when ``stage_idx`` is provided): forward expects
+    ``[B, N_t, D]`` where ``D = nInput // 2``, internally permutes on
+    the N axis, packs adjacent pairs into ``[B, N_t/2, 2D]``, runs the
+    inner linear, unpacks back to ``[B, N_t, D]``, and (unless
+    ``is_last``) average-merges to ``[B, N_t/2, D]``. ``reverse`` is the
+    exact inverse using the cached merge difference. ``nInput`` and
+    ``nOutput`` must be equal in butterfly mode and refer to the
+    *packed* (pair) dimension.
     """
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
                  invertible=False, nonlinear=True, stable=False,
-                 monotonic=False):
+                 monotonic=False,
+                 stage_idx=None, n_t=None, is_last=False):
         super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.ergodic    = ergodic
@@ -810,11 +931,57 @@ class SigmaLayer(Layer):
         else:
             self.layer = LinearLayer(nInput, nOutput, hasBias=True, naive=naive, ergodic=ergodic)
         self.layers.append(self.layer)
+        # Optional butterfly mode: when stage_idx is provided, forward
+        # treats its [B, N_t, D] input as halves of the packed (2D)
+        # features, with D = nInput // 2. ``n_t`` is the actual per-stage
+        # vector count this layer sees at runtime; the caller computes
+        # it (it depends on which earlier stages were is_last and so
+        # cannot be derived from stage_idx alone).
+        self.butterfly = False
+        if stage_idx is not None:
+            assert n_t is not None, (
+                "SigmaLayer butterfly mode requires n_t")
+            assert nInput == nOutput, (
+                f"SigmaLayer butterfly mode requires nInput == nOutput "
+                f"(got {nInput}/{nOutput}); both should be 2*state_dim.")
+            assert nInput % 2 == 0, (
+                f"SigmaLayer butterfly mode requires even nInput "
+                f"(got {nInput})")
+            _init_butterfly_buffers(self, stage_idx, n_t, is_last)
 
     @property
     def bias(self): return self.layer.bias
     @property
     def var(self):  return self.layer.var
+
+    def Start(self):
+        """Per-sentence reset. Clears any cached butterfly merge diff."""
+        if self.butterfly:
+            self._merge_diff = None
+        super().Start()
+
+    # -- Inner Sigma transform on packed features --
+    def _sigma_inner_forward(self, packed, binary=False):
+        """Apply atanh -> linear -> tanh on a packed [..., 2D] tensor."""
+        if binary:
+            packed = Ops.top2_select_ste(packed)
+        if self.nonlinear:
+            packed = torch.atanh(packed.clamp(-1 + epsilon, 1 - epsilon))
+        out = self.layer.forward(packed)
+        if self.nonlinear:
+            out = torch.tanh(out)
+        self.activation = out.detach()
+        return out
+
+    def _sigma_inner_reverse(self, packed):
+        """Apply atanh -> linear.reverse -> tanh on a packed [..., 2D] tensor."""
+        if self.nonlinear:
+            packed = torch.atanh(packed.clamp(-1 + epsilon, 1 - epsilon))
+        out = self.layer.reverse(packed)
+        if self.nonlinear:
+            out = torch.tanh(out)
+        self.activation = out.detach()
+        return out
 
     def forward(self, x, binary=False):
         """Apply the additive OR fold.
@@ -823,7 +990,17 @@ class SigmaLayer(Layer):
         Ops.top2_select_ste before the atanh entry transform; the rest
         drop to 0 in additive domain (silent in the OR).  Backward is
         STE -- gradient flows to every input as if no selection ran.
+
+        In butterfly mode, the input is permuted/packed before the
+        inner transform and unpacked/merged after; see class docstring.
         """
+        if self.butterfly:
+            B, N, D = x.shape
+            packed = _butterfly_pack(x, self._butterfly_perm)
+            packed_out = self._sigma_inner_forward(packed, binary=binary)
+            x_out = _butterfly_unpack(packed_out, B, N, D,
+                                      self._butterfly_inv_perm)
+            return _butterfly_merge(x_out, self.butterfly_is_last, self)
         if binary:
             x = Ops.top2_select_ste(x)
         if self.nonlinear:
@@ -835,7 +1012,19 @@ class SigmaLayer(Layer):
         return y
 
     def reverse(self, y):
-        """Invert tanh then apply W^-1 then tanh. Requires invertible=True."""
+        """Invert tanh then apply W^-1 then tanh. Requires invertible=True.
+
+        In butterfly mode, the cached merge diff is used to unmerge
+        before the inner inverse, and the inverse permutation restores
+        the original ordering after.
+        """
+        if self.butterfly:
+            x_out = _butterfly_unmerge(y, self.butterfly_is_last, self)
+            B, N, D = x_out.shape
+            packed = _butterfly_pack(x_out, self._butterfly_perm)
+            packed_in = self._sigma_inner_reverse(packed)
+            return _butterfly_unpack(packed_in, B, N, D,
+                                     self._butterfly_inv_perm)
         if self.nonlinear:
             y = torch.atanh(y.clamp(-1 + epsilon, 1 - epsilon))
         x = self.layer.reverse(y)
@@ -878,6 +1067,54 @@ class SigmaLayer(Layer):
         y_inv = layer.reverse(y)
         assert torch.norm(x - y_inv) < 0.00001
         print("SigmaLayer tests passed.")
+
+
+class NegationLayer(Layer):
+    """Materialize bivalent or ternary literals for Sigma/Pi logic.
+
+    Canonical DNF keeps negation at the literal level, then builds AND
+    terms over those literals and ORs the terms.  The default bivalent
+    layer is the signed pair:
+
+        forward(x) = [x, -x]
+
+    With ``ternary=True`` the layer inserts the non-affirming residual
+    from the grammar's ternary partition:
+
+        forward(x) = [x, Ops.non(x), -x]
+
+    For crisp signed values {-1, 0, 1}, exactly one ternary channel is
+    positive: affirmation, non-affirming negation, or not-negation.
+    Soft values remain a differentiable relaxation of that partition.
+    """
+
+    def __init__(self, nInput, ternary=False):
+        ternary = bool(ternary)
+        super().__init__(nInput, (3 if ternary else 2) * nInput)
+        self.ternary = ternary
+
+    def forward(self, x):
+        """Return [x, -x] or [x, non(x), -x] along the final axis."""
+        if x.shape[-1] != self.nInput:
+            raise ValueError(
+                f"NegationLayer expected last dim {self.nInput}, "
+                f"got {x.shape[-1]}")
+        if self.ternary:
+            return torch.cat((x, Ops.non(x, monotonic=False), -x), dim=-1)
+        return torch.cat((x, -x), dim=-1)
+
+    def reverse(self, y):
+        """Collapse a literal bank back to signed variable evidence."""
+        if y.shape[-1] != self.nOutput:
+            raise ValueError(
+                f"NegationLayer.reverse expected last dim {self.nOutput}, "
+                f"got {y.shape[-1]}")
+        pos = y[..., :self.nInput]
+        neg_start = 2 * self.nInput if self.ternary else self.nInput
+        neg = y[..., neg_start:neg_start + self.nInput]
+        return 0.5 * (pos - neg)
+
+
 class PiLayer(Layer):
     r"""Multiplicative boundary layer: [-1,1] -> [-1,1].
 
@@ -900,7 +1137,8 @@ class PiLayer(Layer):
 
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
                  invertible=False, hasBias=True, stable=True,
-                 monotonic=False, nonlinear=True):
+                 monotonic=False, nonlinear=True,
+                 stage_idx=None, n_t=None, is_last=False):
         super().__init__(nInput, nOutput)
         self.invertible = invertible
         self.stable     = stable
@@ -919,6 +1157,20 @@ class PiLayer(Layer):
         else:
             self.layer = LinearLayer(nInput, nOutput, hasBias=hasBias)
         self.layers.append(self.layer)
+        # Optional butterfly mode -- see SigmaLayer docstring; identical
+        # construction-time semantics (nInput == nOutput == 2*state_dim,
+        # forward sees [B, n_t, state_dim]).
+        self.butterfly = False
+        if stage_idx is not None:
+            assert n_t is not None, (
+                "PiLayer butterfly mode requires n_t")
+            assert nInput == nOutput, (
+                f"PiLayer butterfly mode requires nInput == nOutput "
+                f"(got {nInput}/{nOutput}); both should be 2*state_dim.")
+            assert nInput % 2 == 0, (
+                f"PiLayer butterfly mode requires even nInput "
+                f"(got {nInput})")
+            _init_butterfly_buffers(self, stage_idx, n_t, is_last)
 
     @property
     def bias(self): return self.layer.bias
@@ -927,6 +1179,12 @@ class PiLayer(Layer):
 
     def resample_noise(self):
         self.layer.resample_noise()
+
+    def Start(self):
+        """Per-sentence reset. Clears any cached butterfly merge diff."""
+        if self.butterfly:
+            self._merge_diff = None
+        super().Start()
 
     # -- Symmetric domain transforms ----------------------------------
 
@@ -942,6 +1200,43 @@ class PiLayer(Layer):
 
     # -- forward / reverse --------------------------------------------
 
+    # -- Inner Pi transform on packed features --
+    def _pi_inner_forward(self, packed, binary=False):
+        """Log-domain multiplicative AND fold on a packed [..., 2D] tensor."""
+        if self.layer.ergodic:
+            self.resample_noise()
+        W = self.layer.compute_W_current()
+        packed = packed.to(W.device)
+        if binary:
+            packed = Ops.top2_select_ste(packed)
+        m = self._to_mult(packed)
+        l = torch.log(m)
+        wl = l @ W
+        b = self.layer._effective_bias()
+        wl = wl + b
+        if self.nonlinear:
+            return torch.tanh(wl / 2)
+        return torch.exp(wl)
+
+    def _pi_inner_reverse(self, packed):
+        """Inverse of the log-domain fold on a packed [..., 2D] tensor."""
+        W_inv = self.layer.compute_Winverse_current()
+        packed = packed.to(W_inv.device)
+        if self.nonlinear:
+            m = self._to_mult(packed)
+            l = torch.log(m)
+        else:
+            l = torch.log(packed)
+        b = self.layer._effective_bias()
+        lx = (l - b) @ W_inv
+        if self.nonlinear:
+            out = torch.tanh(lx / 2)
+        else:
+            out = self._from_mult(torch.exp(lx))
+        if self.layer.ergodic:
+            self.resample_noise()
+        return out
+
     def forward(self, x, binary=False):
         """Apply the log-domain multiplicative AND fold.
 
@@ -950,40 +1245,34 @@ class PiLayer(Layer):
         to 0 in raw domain -> 1 (mult-identity) in mult-domain ->
         factor 1 in the product, i.e. irrelevant to the AND.  Backward
         is STE -- gradient flows to every input as if no selection ran.
+
+        In butterfly mode, the input is permuted/packed before the
+        inner Pi transform and unpacked/merged after; see SigmaLayer
+        docstring for the access pattern (PiLayer mirrors it).
         """
-        if self.layer.ergodic:
-            self.resample_noise()
-        W = self.layer.compute_W_current()
-        x = x.to(W.device)
-        if binary:
-            x = Ops.top2_select_ste(x)
-        m = self._to_mult(x)                             # (0, inf)
-        l = torch.log(m)                                  # (-inf, +inf) = 2*atanh(x)
-        wl = l @ W                                        # [..., nOut]
-        b = self.layer._effective_bias()
-        wl = wl + b                                       # unconstrained bias
-        if self.nonlinear:
-            return torch.tanh(wl / 2)                     # -> (-1, 1)
-        return torch.exp(wl)                              # -> (0, inf)
+        if self.butterfly:
+            B, N, D = x.shape
+            packed = _butterfly_pack(x, self._butterfly_perm)
+            packed_out = self._pi_inner_forward(packed, binary=binary)
+            x_out = _butterfly_unpack(packed_out, B, N, D,
+                                      self._butterfly_inv_perm)
+            return _butterfly_merge(x_out, self.butterfly_is_last, self)
+        return self._pi_inner_forward(x, binary=binary)
 
     def reverse(self, y):
-        """Recover x from y.  Requires invertible=True."""
-        W_inv = self.layer.compute_Winverse_current()
-        y = y.to(W_inv.device)
-        if self.nonlinear:
-            m = self._to_mult(y)                          # (0, inf)
-            l = torch.log(m)                              # (-inf, +inf)
-        else:
-            l = torch.log(y)                              # exp-domain inverse
-        b = self.layer._effective_bias()
-        lx = (l - b) @ W_inv                              # [..., nIn]
-        if self.nonlinear:
-            x = torch.tanh(lx / 2)                        # -> (-1, 1)
-        else:
-            x = self._from_mult(torch.exp(lx))
-        if self.layer.ergodic:
-            self.resample_noise()
-        return x
+        """Recover x from y.  Requires invertible=True.
+
+        In butterfly mode, the cached merge diff is consumed before the
+        inner Pi inverse runs.
+        """
+        if self.butterfly:
+            x_out = _butterfly_unmerge(y, self.butterfly_is_last, self)
+            B, N, D = x_out.shape
+            packed = _butterfly_pack(x_out, self._butterfly_perm)
+            packed_in = self._pi_inner_reverse(packed)
+            return _butterfly_unpack(packed_in, B, N, D,
+                                     self._butterfly_inv_perm)
+        return self._pi_inner_reverse(y)
 
     @staticmethod
     def test():
@@ -1102,173 +1391,83 @@ class ColumnUsageTracker:
             self.linear.weight.grad[:, self.frozen_columns] = 0.0
     def freezeMask(self):
         return self.frozen_columns
-class ButterflyStage(Layer):
-    """Butterfly wrapper: permute -> pack -> inner layer -> unpack -> merge.
+def _test_butterfly_modes():
+    """Verify SigmaLayer / PiLayer butterfly forward->reverse roundtrip and N-halving.
 
-    Wraps a SigmaLayer or PiLayer to implement one stage of a butterfly
-    network with N-halving.  The inner layer sees pairs of adjacent
-    vectors packed into ``[B, N/2, 2D]`` and produces ``[B, N/2, 2D]``.
-    After unpacking back to ``[B, N, D]``, an average-merge halves N
-    to ``[B, N/2, D]``, caching the difference for exact inversion.
-
-    From the Space's perspective, ``ButterflyStage.forward(x)`` is a
-    drop-in replacement for ``SigmaLayer.forward(x)`` -- the butterfly
-    mechanics are an implementation detail of the layer.
-
-    Args:
-        inner: the SigmaLayer or PiLayer to wrap (operates on 2D dims).
-        stage_idx: butterfly stage index (determines permutation pattern).
-        initial_n: vector count at stage 0 (N halves each stage).
-        is_last: if True, skip the merge (output stays [B, N_t, D]).
+    Inputs are bounded to ``[-0.9, 0.9]`` because the inner Sigma/Pi
+    transform clamps to ``[-1+epsilon, 1-epsilon]`` before ``atanh``;
+    out-of-range inputs are lost to the clamp regardless of butterfly
+    mechanics, which would mask correctness bugs in the access pattern.
     """
+    D = 6
+    N = 16
+    B = 4
+    pair_dim = 2 * D
 
-    def __init__(self, inner, stage_idx, initial_n, is_last=False):
-        pair_dim = inner.nInput
-        assert pair_dim % 2 == 0, (
-            f"ButterflyStage inner layer nInput must be even (got {pair_dim})")
-        super().__init__(pair_dim // 2, pair_dim // 2)
-        self.inner = inner
-        self.stage_idx = stage_idx
-        self.initial_n = initial_n
-        self.is_last = is_last
-        self._merge_diff = None
-        self.layers = [inner]
+    def bounded(*shape):
+        return torch.rand(*shape) * 1.8 - 0.9
 
-    @property
-    def n_current(self):
-        """Vector count at this stage's input."""
-        return self.initial_n // (2 ** self.stage_idx)
+    # SigmaLayer butterfly: non-last stage halves N
+    sigma = SigmaLayer(pair_dim, pair_dim, invertible=True, naive=True,
+                       nonlinear=True,
+                       stage_idx=0, n_t=N, is_last=False)
+    sigma.set_sigma(0.0)
+    x = bounded(B, N, D)
+    y = sigma.forward(x)
+    assert y.shape == (B, N // 2, D), f"Sigma butterfly forward: {y.shape}"
+    x_recon = sigma.reverse(y)
+    assert x_recon.shape == (B, N, D), f"Sigma butterfly reverse: {x_recon.shape}"
+    err = (x - x_recon).norm() / x.norm()
+    assert err < 1e-4, f"Sigma butterfly roundtrip error: {err:.2e}"
 
-    @staticmethod
-    def _permutation(n_vectors, stage, device=None):
-        """Permutation that makes XOR-neighbors adjacent for a butterfly stage."""
-        if n_vectors <= 1:
-            return torch.arange(n_vectors, dtype=torch.long, device=device)
-        span = int(math.log2(n_vectors))
-        bit = stage % max(span, 1)
-        stride = 1 << bit
-        block = stride << 1
-        order = []
-        for start in range(0, n_vectors, block):
-            for offset in range(stride):
-                order.append(start + offset)
-                order.append(start + offset + stride)
-        return torch.tensor(order, dtype=torch.long, device=device)
+    # SigmaLayer butterfly: last stage preserves N
+    sigma_last = SigmaLayer(pair_dim, pair_dim, invertible=True, naive=True,
+                            nonlinear=True,
+                            stage_idx=0, n_t=N, is_last=True)
+    sigma_last.set_sigma(0.0)
+    y_last = sigma_last.forward(x)
+    assert y_last.shape == (B, N, D), f"Sigma butterfly last forward: {y_last.shape}"
+    x_recon_last = sigma_last.reverse(y_last)
+    err_last = (x - x_recon_last).norm() / x.norm()
+    assert err_last < 1e-4, f"Sigma butterfly last roundtrip error: {err_last:.2e}"
 
-    @staticmethod
-    def _inverse_permutation(perm):
-        inv = torch.empty_like(perm)
-        inv[perm] = torch.arange(len(perm), device=perm.device)
-        return inv
+    # Multi-stage SigmaLayer butterfly pipeline: N=16 -> 8 -> 4 (last keeps 4)
+    stages = []
+    for i in range(3):
+        # Each stage's n_t depends on whether earlier stages halved.
+        # In this pipeline only the final stage is is_last, so each
+        # earlier stage halves: n_t = N >> i.
+        s = SigmaLayer(pair_dim, pair_dim, invertible=True, naive=True,
+                       nonlinear=True,
+                       stage_idx=i, n_t=N >> i, is_last=(i == 2))
+        s.set_sigma(0.0)
+        stages.append(s)
+    state = bounded(B, N, D)
+    saved = state.clone()
+    for s in stages:
+        state = s.forward(state)
+    assert state.shape == (B, 4, D), f"Pipeline output: {state.shape}"
+    for s in reversed(stages):
+        state = s.reverse(state)
+    assert state.shape == (B, N, D), f"Pipeline reverse: {state.shape}"
+    err = (saved - state).norm() / saved.norm()
+    assert err < 1e-4, f"Pipeline roundtrip error: {err:.2e}"
 
-    def forward(self, x):
-        """[B, N_t, D] -> [B, N_t/2, D] (or [B, N_t, D] if is_last)."""
-        B, N, D = x.shape
-        # 1. Permute: reorder vectors so XOR-neighbors are adjacent
-        perm = self._permutation(N, self.stage_idx, device=x.device)
-        x_perm = x[:, perm, :]
-        # 2. Pack pairs: [B, N, D] -> [B, N/2, 2D]
-        pair_input = x_perm.reshape(B, N // 2, 2 * D)
-        # 3. Inner layer: [B, N/2, 2D] -> [B, N/2, 2D]
-        pair_output = self.inner.forward(pair_input)
-        # 4. Unpack: [B, N/2, 2D] -> [B, N, D]
-        inv_perm = self._inverse_permutation(perm)
-        x_out = pair_output.reshape(B, N, D)[:, inv_perm, :]
-        # 5. Merge: [B, N, D] -> [B, N/2, D] (skip on last stage)
-        if self.is_last:
-            return x_out
-        left = x_out[:, 0::2, :]
-        right = x_out[:, 1::2, :]
-        self._merge_diff = left - right
-        return (left + right) / 2
+    # PiLayer butterfly: roundtrip on a non-last stage
+    pi = PiLayer(pair_dim, pair_dim, invertible=True, naive=True,
+                 nonlinear=True,
+                 stage_idx=0, n_t=N, is_last=False)
+    pi.set_sigma(0.0)
+    x = bounded(B, N, D)
+    y = pi.forward(x)
+    assert y.shape == (B, N // 2, D), f"Pi butterfly forward: {y.shape}"
+    x_recon = pi.reverse(y)
+    err = (x - x_recon).norm() / x.norm()
+    assert err < 1e-3, f"Pi butterfly roundtrip error: {err:.2e}"
 
-    def reverse(self, y):
-        """[B, N_t/2, D] -> [B, N_t, D] (or [B, N_t, D] if is_last)."""
-        # 1. Unmerge: [B, N/2, D] -> [B, N, D]
-        if self.is_last:
-            x_out = y
-        else:
-            diff = self._merge_diff
-            assert diff is not None, "ButterflyStage.reverse called without prior forward"
-            left = y + diff / 2
-            right = y - diff / 2
-            B, N_half, D = left.shape
-            x_out = torch.zeros(B, N_half * 2, D, device=y.device, dtype=y.dtype)
-            x_out[:, 0::2, :] = left
-            x_out[:, 1::2, :] = right
-            self._merge_diff = None
-        B, N, D = x_out.shape
-        # 2. Permute (same permutation as forward)
-        perm = self._permutation(N, self.stage_idx, device=x_out.device)
-        x_perm = x_out[:, perm, :]
-        # 3. Pack: [B, N, D] -> [B, N/2, 2D]
-        pair_output = x_perm.reshape(B, N // 2, 2 * D)
-        # 4. Inner layer reverse: [B, N/2, 2D] -> [B, N/2, 2D]
-        pair_input = self.inner.reverse(pair_output)
-        # 5. Unpack + inverse permute: [B, N/2, 2D] -> [B, N, D]
-        inv_perm = self._inverse_permutation(perm)
-        x_in = pair_input.reshape(B, N, D)[:, inv_perm, :]
-        return x_in
+    print("Butterfly mode tests passed (SigmaLayer + PiLayer).")
 
-    @staticmethod
-    def test():
-        """Verify forward->reverse roundtrip and N-halving."""
-        D = 6
-        N = 16
-        B = 4
 
-        # Test with SigmaLayer inner
-        sigma = SigmaLayer(2 * D, 2 * D, invertible=True, naive=True,
-                           nonlinear=True)
-        sigma.set_sigma(0.0)
-
-        # Non-last stage: should halve N
-        stage = ButterflyStage(sigma, stage_idx=0, initial_n=N, is_last=False)
-        x = torch.randn(B, N, D)
-        y = stage.forward(x)
-        assert y.shape == (B, N // 2, D), f"Expected ({B}, {N//2}, {D}), got {y.shape}"
-        x_recon = stage.reverse(y)
-        assert x_recon.shape == (B, N, D), f"Reverse shape: {x_recon.shape}"
-        error = (x - x_recon).norm() / x.norm()
-        assert error < 1e-4, f"Roundtrip error: {error:.2e}"
-
-        # Last stage: should keep N
-        stage_last = ButterflyStage(
-            SigmaLayer(2 * D, 2 * D, invertible=True, naive=True,
-                       nonlinear=True),
-            stage_idx=0, initial_n=N, is_last=True)
-        stage_last.inner.set_sigma(0.0)
-        y_last = stage_last.forward(x)
-        assert y_last.shape == (B, N, D), f"Last stage shape: {y_last.shape}"
-        x_recon_last = stage_last.reverse(y_last)
-        error_last = (x - x_recon_last).norm() / x.norm()
-        assert error_last < 1e-4, f"Last stage roundtrip error: {error_last:.2e}"
-
-        # Multi-stage pipeline: N=16 -> 8 -> 4 -> 2
-        stages = []
-        n = N
-        for i in range(3):
-            s = ButterflyStage(
-                SigmaLayer(2 * D, 2 * D, invertible=True, naive=True,
-                           nonlinear=True),
-                stage_idx=i, initial_n=N, is_last=(i == 2))
-            s.inner.set_sigma(0.0)
-            stages.append(s)
-
-        x = torch.randn(B, N, D)
-        state = x
-        for s in stages:
-            state = s.forward(state)
-        # After 2 merges + 1 last: N=16->8->4 (last keeps 4)
-        assert state.shape == (B, 4, D), f"Pipeline output: {state.shape}"
-
-        for s in reversed(stages):
-            state = s.reverse(state)
-        assert state.shape == (B, N, D), f"Pipeline reverse: {state.shape}"
-        error = (x - state).norm() / x.norm()
-        assert error < 1e-4, f"Pipeline roundtrip error: {error:.2e}"
-
-        print("ButterflyStage tests passed.")
 class SortingLayer(Layer):
     """NeuralSort: differentiable O(1)-depth sorting (Grover et al. 2019).
 
@@ -2377,57 +2576,6 @@ class TruthLayer(Layer):
         self.count += n_actual
         return n_actual
 
-
-    @torch.no_grad()
-    def should_store(self, activation: torch.Tensor,
-                     min_magnitude: float = 0.3,
-                     min_novelty: float = 0.5,
-                     max_inconsistency: float = 0.3) -> float:
-        """Continuous storage score in [0, 1] for truth gating.
-
-        Returns a score that is multiplied by ``accumulateTruth`` to decide
-        storage: ``store iff accumulateTruth * score > 0.5``.
-
-        At accumulateTruth=1 (truth-set processing), most legitimate
-        activations score >= 0.5 and pass -- preserving legacy behavior.
-        At lower accumulateTruth, the bar rises proportionally.
-
-        Three gates (each contributes a factor in [0, 1]):
-
-        1. **Magnitude** -- activation norm vs *min_magnitude*.
-        2. **Novelty** -- distance from nearest stored truth.
-        3. **Consistency** -- absence of contradictions.
-        """
-        # Gate 1: magnitude -- smooth ramp from 0 at norm=0 to 1 at norm=min_magnitude
-        norm = activation.norm().item()
-        mag_score = min(1.0, norm / max(min_magnitude, 1e-8))
-
-        # Gate 2: novelty -- 1.0 if no close match, drops toward 0 for duplicates
-        n = self.count.item()
-        sims = None
-        if n == 0:
-            nov_score = 1.0
-        else:
-            stored = self.truths[:n]
-            a_norm = F.normalize(activation.unsqueeze(0), dim=-1)
-            s_norm = F.normalize(stored, dim=-1)
-            sims = (a_norm @ s_norm.T).squeeze(0)
-            max_sim = sims.abs().max().item()
-            # novelty = 1 when max_sim=0, drops to 0 when max_sim >= (1 - min_novelty)
-            threshold = 1.0 - min_novelty
-            nov_score = max(0.0, 1.0 - max_sim / max(threshold, 1e-8))
-
-        # Gate 3: consistency -- 1.0 if no contradiction, 0 if strong anti-alignment
-        if n == 0 or sims is None:
-            con_score = 1.0
-        else:
-            min_sim = sims.min().item()
-            if min_sim < -max_inconsistency:
-                con_score = 0.0
-            else:
-                con_score = 1.0
-
-        return mag_score * nov_score * con_score
 
     def query(self, activation: torch.Tensor, threshold: float = 0.9
               ) -> Optional[Tuple[int, float]]:
@@ -3554,6 +3702,7 @@ class InterSentenceLayer(Layer):
             return None
         return self._recent[b, :n].mean(dim=0)
 
+    @torch.compiler.disable
     def snapshot(self, s_tensor, w_tensor, mask=None):
         """Commit a ``[S | W]`` snapshot to history.
 
@@ -3572,6 +3721,15 @@ class InterSentenceLayer(Layer):
         single stored row.  Production sizes the layer to B*K via
         ``ensure_batch`` at ``Models.Start`` (Task 9), making the
         mean-pool path obsolete in the post-cutover world.
+
+        ``@torch.compiler.disable``: paired with ``predict``'s disable
+        for the same reason -- ``snapshot`` slices and writes
+        ``_recent[b, n]`` and ``_recent[b, :-1]`` with dynamic ``n``
+        derived from ``_recent_count[b].item()``. Under torch.compile
+        each distinct ``n`` is a separate specialization. Discourse
+        update is once-per-sentence and off the kernel-launch hot
+        path, so excluding it from the compiled forward is the right
+        cost/benefit trade-off for CUDAGraph-friendly compilation.
         """
         row = self._assemble(s_tensor, w_tensor).detach()
         if row.ndim == 2:
@@ -3735,6 +3893,7 @@ class InterSentenceLayer(Layer):
         m = torch.ones(n, n, dtype=torch.bool, device=device).tril_()
         return m.unsqueeze(0)
 
+    @torch.compiler.disable
     def predict(self, b=None):
         """Run the AR predictor over the recent buffer.
 
@@ -3743,6 +3902,20 @@ class InterSentenceLayer(Layer):
         per-row stacked tensors ``([B, s_dim], [B])`` -- rows whose
         recent buffer is empty get zero predictions/confidences.
         Returns ``(None, None)`` when no row has any context (or when
+
+        ``@torch.compiler.disable``: this method slices
+        ``self._recent[b, :n, ...]`` where ``n = _recent_count[b].item()``
+        grows from 0 to ``context_window`` as the discourse buffer
+        fills, and feeds a TransformerEncoder whose attention mask is
+        ``[n, n]`` -- a different shape per ``n``. Under
+        ``torch.compile`` (esp. ``mode="reduce-overhead"``), each
+        distinct ``n`` would trigger its own Inductor specialization
+        and CUDAGraph capture (~30s-3min compile each), producing the
+        65+ "distinct sizes" warning observed at GB10. The discourse
+        path runs once per sentence (not per AR cursor position) and
+        is not on the kernel-launch hot path, so disabling its compile
+        wrapper costs negligible perf and lets the surrounding model
+        compile cleanly.
         the predictor isn't built).
 
         With explicit ``b``: returns ``([s_dim], scalar)`` for that row,
@@ -3906,7 +4079,8 @@ class ChunkLayer(Layer):
     """
 
     def __init__(self, nDim, bpe=False,
-                 n_vectors=1024, chunking_frequency=2):
+                 n_vectors=1024, chunking_frequency=2,
+                 cold_start_floor=300):
         super().__init__(nDim, nDim)
         self.nDim = nDim
         # -- BPE state (active only when ``bpe`` is True) ------------------
@@ -3916,7 +4090,22 @@ class ChunkLayer(Layer):
         # 0..255 (see Spaces.py -- ``byte_value == codebook_index``).
         self.bpe = bool(bpe)
         self.n_vectors = int(n_vectors)
+        # ``chunking_frequency`` is now a frozen-vs-active gate:
+        #   0 (or negative) -> codebook is held constant for the rest of
+        #                       the run (used when loading a pre-trained
+        #                       artifact -- avoids Inductor recompile
+        #                       churn that vocab growth would trigger).
+        #   >= 1            -> active learning mode. The integer value
+        #                       no longer matters for the threshold;
+        #                       promotion is governed by the two-gate
+        #                       criterion below.
         self.chunking_frequency = int(chunking_frequency)
+        # ``cold_start_floor`` lets the lift gate be skipped while the
+        # vocab is still small (V close to 256). With V=256, V^2=65k,
+        # and the gate would demand count > N/65k, which stalls the
+        # very first merges. Until len(vocab) reaches this floor, we
+        # take argmax unconditionally.
+        self.cold_start_floor = int(cold_start_floor)
         self.merges = []            # list[tuple[int, int]] in insertion order
         self.vocab = {}             # dict[tuple[int,...], int]
         self.id_to_bytes = {}       # dict[int, tuple[int,...]]
@@ -3926,6 +4115,88 @@ class ChunkLayer(Layer):
             self.id_to_bytes[i] = key
         self._next_id = 256
         self._max_merge_len = 1
+        # Cumulative pair- and unigram-counts across batches. The two
+        # gates of the promotion criterion read these directly:
+        #   prior gate:     count(pair) * V^2 > N         (lift > 1)
+        #   posterior gate: count(pair) > min unigram_count over vocab
+        #                                  (only binds when codebook full)
+        # ``_total_pairs`` is the running N (sum of all observed pair
+        # counts). ``_pair_counts`` and ``_unigram_counts`` are
+        # Python Counters keyed by chunk-id tuple / chunk-id.
+        from collections import Counter as _Counter
+        self._pair_counts = _Counter()
+        self._unigram_counts = _Counter()
+        self._total_pairs = 0
+
+    # -- Persistence (unified vocab-artifact schema) -------------------
+    #
+    # ChunkLayer's BPE merge table is per-corpus state -- discovering it
+    # from byte-pair statistics takes many training batches and triggers
+    # Inductor recompiles each time the vocab grows. Saving / loading
+    # via the vocab-artifact schema in :mod:`embed` lets a trained
+    # merge table persist across runs and avoids the cold-start
+    # churn. The artifact format is
+    # shared with ``WordVectors`` so a single ``.kv`` file can carry
+    # both a Lexicon and a BPE codebook side-by-side.
+
+    def save(self, path: str, lexicon_section: dict = None,
+             truth_data: dict = None, metadata: dict = None) -> None:
+        """Save the BPE merge table to ``path`` via the unified format.
+
+        Args:
+            path: destination file path.
+            lexicon_section: optional pre-built Lexicon section from
+                ``embed.lexicon_section_from_word_vectors``;
+                when supplied the artifact carries both the BPE
+                codebook and the Lexicon (kind="both").
+            truth_data: optional LTM snapshot (legacy passthrough).
+            metadata: optional free-form metadata dict.
+        """
+        from embed import save_artifact, bpe_section_from_chunk_layer
+        save_artifact(
+            path,
+            lexicon=lexicon_section,
+            bpe=bpe_section_from_chunk_layer(self),
+            truth_data=truth_data,
+            metadata=metadata,
+        )
+
+    def load(self, path: str) -> "ChunkLayer":
+        """Restore the BPE merge table in place from ``path``.
+
+        Accepts unified-schema artifacts with ``kind`` in
+        ``{"bpe", "both"}``. Loading a Lexicon-only artifact raises;
+        use ``embed.lexicon_to_bpe_seed`` to convert if you
+        want to cold-start BPE from a Lexicon's word list.
+
+        Returns ``self`` so calls can chain (``layer.load(...).forward(...)``).
+        """
+        from embed import load_artifact, KIND_LEXICON
+        payload = load_artifact(path)
+        if payload.get("kind") == KIND_LEXICON:
+            raise ValueError(
+                f"ChunkLayer.load: {path!r} is a Lexicon-only artifact "
+                f"(kind=lexicon); no BPE section to load. Use "
+                f"WordVectors.load instead, or convert via "
+                f"embed.lexicon_to_bpe_seed.")
+        section = payload.get("bpe")
+        if section is None:
+            raise ValueError(
+                f"ChunkLayer.load: {path!r} has no bpe section "
+                f"(kind={payload.get('kind')!r})")
+        self.merges = [tuple(p) for p in section.get("merges", [])]
+        self.vocab = {tuple(k): int(v) for k, v in section["vocab"].items()}
+        self.id_to_bytes = {
+            int(k): tuple(v) for k, v in section["id_to_bytes"].items()}
+        self._next_id = int(section.get(
+            "next_id", max(self.id_to_bytes.keys()) + 1 if self.id_to_bytes else 256))
+        self._max_merge_len = int(section.get("max_merge_len", 1))
+        # Honor n_vectors / chunking_frequency from the artifact if the
+        # caller didn't override at construction.
+        self.n_vectors = int(section.get("n_vectors", self.n_vectors))
+        self.chunking_frequency = int(section.get(
+            "chunking_frequency", self.chunking_frequency))
+        return self
 
     # -- Boundary detection --------------------------------------------
 
@@ -4012,32 +4283,82 @@ class ChunkLayer(Layer):
     def train_step(self, byte_indices, k_merges=1):
         """Learn up to ``k_merges`` new BPE merges from pair frequencies.
 
-        Encodes the batch with the current merge table, counts adjacent
-        ``(id_i, id_{i+1})`` pair frequencies across all rows, and
-        promotes the top-k pairs whose count meets
-        ``chunking_frequency`` into new vocab entries.  Returns the
-        number of new merges added (0 when none qualify).
+        Encodes the batch with the current merge table, accumulates
+        adjacent-pair and unigram counts into the cumulative tallies
+        (``self._pair_counts``, ``self._unigram_counts``,
+        ``self._total_pairs``), then promotes top-k pairs that pass
+        the two-gate criterion. Returns the number of new merges added
+        (0 when none qualify).
+
+        Promotion criterion:
+          1. **Prior gate (lift > 1):** ``count(pair) * V^2 > N``,
+             where ``V = len(self.vocab)`` and ``N = self._total_pairs``.
+             A pair must be more common than uniform-distribution
+             chance over the current alphabet. Skipped while
+             ``V < cold_start_floor`` (early in the run V^2 is so
+             small the gate would stall the first merges).
+          2. **Posterior gate (earns its slot):** when the codebook
+             is full, ``count(pair)`` must exceed the minimum
+             ``self._unigram_counts[c]`` across all current chunk
+             ids. While ``len(self.vocab) < n_vectors`` this gate is
+             vacuous. The first time it fails after the codebook
+             fills, training is converged for the corpus.
 
         Idempotent w.r.t. vocab size: stops once ``len(vocab)`` reaches
-        ``n_vectors``.  No-op in legacy (``bpe=False``) mode.
+        ``n_vectors`` AND no candidate clears Gate 2. No-op in legacy
+        (``bpe=False``) mode.
+
+        ``chunking_frequency <= 0`` is the **frozen** marker -- the
+        merge table is held constant for the rest of the run, no new
+        entries are added regardless of byte-pair statistics. Use this
+        after loading a pre-trained BPE artifact (via ``ChunkLayer.load``)
+        so subsequent training runs don't trigger Inductor recompiles
+        every time a new pair crosses a threshold.
         """
         if not self.bpe:
             return 0
-        if len(self.vocab) >= self.n_vectors:
+        if self.chunking_frequency <= 0:
+            # Frozen: vocab stays as-is for the rest of the run.
             return 0
         all_chunks, _ = self.forward(byte_indices)
+        # Update cumulative tallies from this batch.
         from collections import Counter
-        counts = Counter()
+        batch_counts = Counter()
+        batch_pairs = 0
         for chunks in all_chunks:
+            for c in chunks:
+                self._unigram_counts[c] += 1
             for a, b in zip(chunks, chunks[1:]):
-                counts[(a, b)] += 1
-        if not counts:
+                batch_counts[(a, b)] += 1
+                batch_pairs += 1
+        for pair, freq in batch_counts.items():
+            self._pair_counts[pair] += freq
+        self._total_pairs += batch_pairs
+        if not self._pair_counts:
             return 0
+        # Compute the two-gate threshold.
+        V = len(self.vocab)
+        N = self._total_pairs
+        prior_threshold = (N // (V * V)) if V >= self.cold_start_floor else 0
+        vocab_full = V >= self.n_vectors
+        if vocab_full:
+            min_unigram = min(self._unigram_counts.values()) \
+                if self._unigram_counts else 0
+            posterior_threshold = min_unigram
+        else:
+            posterior_threshold = 0
+        threshold = max(prior_threshold, posterior_threshold)
+        # Promote top-k pairs from cumulative counts that clear both gates.
         added = 0
-        for pair, freq in counts.most_common(k_merges):
-            if freq < self.chunking_frequency:
+        for pair, freq in self._pair_counts.most_common():
+            if added >= k_merges:
                 break
-            if len(self.vocab) >= self.n_vectors:
+            if freq <= threshold:
+                # Best remaining candidate is below threshold ->
+                # nothing else will clear it either; converged.
+                break
+            if vocab_full:
+                # Codebook full and no eviction -- Gate 2 has bound.
                 break
             left_bytes = self.id_to_bytes.get(pair[0])
             right_bytes = self.id_to_bytes.get(pair[1])
@@ -4054,6 +4375,18 @@ class ChunkLayer(Layer):
             if len(new_key) > self._max_merge_len:
                 self._max_merge_len = len(new_key)
             added += 1
+            # Re-evaluate gates after a promotion (V grew by 1; if we
+            # just filled the codebook, Gate 2 now binds).
+            V = len(self.vocab)
+            prior_threshold = (N // (V * V)) if V >= self.cold_start_floor else 0
+            vocab_full = V >= self.n_vectors
+            if vocab_full:
+                min_unigram = min(self._unigram_counts.values()) \
+                    if self._unigram_counts else 0
+                posterior_threshold = min_unigram
+            else:
+                posterior_threshold = 0
+            threshold = max(prior_threshold, posterior_threshold)
         return added
 
     # -- Byte-mode hard merge + compaction -----------------------------

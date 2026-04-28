@@ -5,12 +5,13 @@ and called `.all().item()` to decide whether to fire the per-sentence
 Reset cascade. That `.item()` was a per-batch GPU->CPU sync that
 prevented CUDA-graph capture and idled the SMs every step.
 
-The new gate uses `inputSpace.batch_advances_sentence`, a host-side
-@property derived from the SentenceStreamDataset contract (one
-sentence per row per batch, so every AR batch is a sentence
-boundary by construction). No tensor reduction, no host sync.
+The rolling-cursor handoff dispatched Reset per-row from
+``next_tick``'s ``hard_eos`` signal in the outer loop, removing the
+in-brick gate entirely. The brick-vectorization handoff then deleted
+the ``batch_advances_sentence`` stub property (it had no remaining
+readers); these tests assert that absence.
 
-Plan reference: doc/plans/2026-04-26-per-row-ar-no-eos-sync-handoff.md
+Plan reference: doc/plans/2026-04-27-brick-vectorization-and-legacy-removal-handoff.md
 """
 import sys
 import os
@@ -39,20 +40,23 @@ def _model(masked_prediction='ARLM'):
     return model
 
 
-def test_batch_advances_sentence_is_python_bool():
-    """The replacement gate must be a Python bool, not a tensor.
+def test_batch_advances_sentence_property_removed():
+    """The legacy stub property has been deleted.
 
-    A tensor-typed gate would force a GPU->CPU sync to evaluate in a
-    boolean context. Reading the property must never touch the GPU.
+    The predecessor (per-row-AR-no-eos-sync) handoff introduced
+    ``batch_advances_sentence`` as a host-side gate replacing the
+    tensor-typed ``_end_of_stream.all().item()``. The rolling-cursor
+    handoff then moved Reset to the outer loop and stopped consulting
+    the property. With no remaining readers, the brick-vectorization
+    handoff deletes it outright. This test guards against accidental
+    resurrection.
     """
     model = _model()
-    val = model.inputSpace.batch_advances_sentence
-    assert isinstance(val, bool), (
-        f"batch_advances_sentence must be a Python bool to avoid GPU sync, "
-        f"got {type(val).__name__}")
-    assert val is True, (
-        "Simple SentenceStreamDataset contract: every AR batch is a "
-        "sentence boundary by construction; the property always returns True")
+    assert not hasattr(model.inputSpace, 'batch_advances_sentence'), (
+        "batch_advances_sentence property should be deleted; the per-row "
+        "Reset cascade in the outer doc-streaming loop is the canonical "
+        "gate now (see plans/2026-04-27-brick-vectorization-and-legacy-removal-handoff.md)"
+    )
 
 
 def test_runBatch_source_does_not_consume_eos_for_control_flow():
@@ -92,8 +96,11 @@ def test_reset_fires_even_when_end_of_stream_is_all_false():
     """Pre-set `_end_of_stream` to all-False; Reset must still fire.
 
     Under the legacy gate `eos.all().item() == False` would have
-    blocked the Reset cascade. Under the new gate, Reset is gated on
-    the host-side property (always True), so Reset fires regardless.
+    blocked the Reset cascade. Under the brick-vectorization handoff
+    (§8c), ``_end_of_stream`` is a host-side ``list[bool]`` diagnostic
+    that is no longer consulted for control flow — the cursor's
+    ``hard_eos`` list is the canonical signal. Reset fires regardless
+    of the diagnostic's value.
     """
     import util as _util
     prior = _util.MODEL_DEBUG
@@ -113,9 +120,9 @@ def test_reset_fires_even_when_end_of_stream_is_all_false():
                 space.Reset = _spy
         try:
             optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
-            # Pre-set _end_of_stream to a [B] all-False tensor — the
-            # legacy gate's "no row reached EOS" signal.
-            model.inputSpace._end_of_stream = torch.zeros(2, dtype=torch.bool)
+            # Pre-set _end_of_stream to a list[bool] of all-False —
+            # the legacy gate's "no row reached EOS" signal.
+            model.inputSpace._end_of_stream = [False, False]
             model.runEpoch(optimizer=optimizer, batchSize=2, split="train")
         finally:
             for space, original in originals:

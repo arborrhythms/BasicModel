@@ -229,7 +229,16 @@ def parse(data, lex="words"):
     """Tokenize *data* at the granularity given by *lex*.
 
     Modes:
-        "bytes"     -- one token per UTF-8 byte (``chr(byte)``, offset).
+        "bytes"     -- one token per input byte (``chr(byte)``, offset).
+                       Operates on raw bytes / byte tensors directly so
+                       there is no UTF-8 decode/encode round-trip --
+                       tokenizing N input bytes always returns exactly
+                       N tokens. (The legacy decode-then-encode path
+                       could expand the byte count when the input
+                       contained invalid UTF-8 sequences -- a cursor
+                       slab cut mid-multi-byte produces a U+FFFD
+                       replacement that re-encodes to 3 bytes, so
+                       1023 raw bytes could become 1028 tokens.)
         "words"     -- regex words / punctuation / whitespace runs.
         "sentences" -- split at [.!?]; trailing non-terminated text
                        becomes a final token.
@@ -238,16 +247,25 @@ def parse(data, lex="words"):
     Byte offsets cover the original string contiguously (words mode) or
     point to the sentence's first non-whitespace character (sentences mode).
     """
+    if lex in ("bytes", "byte"):
+        # Direct byte path: avoid str round-trip so the token count
+        # equals the input byte count exactly.
+        if torch.is_tensor(data):
+            raw = bytes(data.to(torch.uint8).flatten().tolist())
+        elif isinstance(data, (bytes, bytearray, memoryview)):
+            raw = bytes(data)
+        elif isinstance(data, str):
+            raw = data.encode('utf-8')
+        else:
+            raw = bytes(data)
+        return [(chr(b), i) for i, b in enumerate(raw)]
+
     if isinstance(data, bytes):
         text = data.decode('utf-8', errors='replace')
     elif isinstance(data, str):
         text = data
     else:
         text = str(data)
-
-    if lex in ("bytes", "byte"):
-        raw = text.encode('utf-8')
-        return [(chr(b), i) for i, b in enumerate(raw)]
 
     if lex in ("sentences", "sentence"):
         spans = []
@@ -292,18 +310,30 @@ def auto_compile_backend():
       inductor                     -> force torch.compile(backend='inductor')
       eager                        -> force torch.compile(backend='eager')
       aot_eager                    -> force torch.compile(backend='aot_eager')
-      (empty / unset)              -> auto: try inductor -> eager -> aot_eager
+      auto                         -> try inductor -> eager -> aot_eager
+      (empty / unset)              -> "none" (pure-PyTorch eager).
+
+    The default is now ``none`` -- empirically the best training-loop
+    throughput on GB10 (Blackwell, MM_5M.xml). The compiled paths
+    (inductor + max-autotune-no-cudagraphs et al.) recompile every
+    time ChunkLayer mints a new BPE merge, and the per-shape capture
+    cost dominates wall-clock until the codebook is frozen via
+    ``chunking_frequency=0``. Set ``MODEL_COMPILE=auto`` (or a
+    specific backend) once you have a frozen BPE artifact and want
+    to revisit compile.
     """
     override = os.environ.get("MODEL_COMPILE", "").strip().lower()
     if not override:
-        return "auto"
+        return "none"
     if override in _COMPILE_OFF:
         return "none"
+    if override == "auto":
+        return "auto"
     if override in _COMPILE_BACKENDS:
         return override
     raise ValueError(
         f"Unknown MODEL_COMPILE value '{override}'. "
-        f"Valid values: none, {', '.join(_COMPILE_BACKENDS)}"
+        f"Valid values: none, auto, {', '.join(_COMPILE_BACKENDS)}"
     )
 
 # The canonical compilation backend for this process.
@@ -314,6 +344,65 @@ def init_compile_backend(backend=None):
     """Override the process-wide compilation backend.  None re-runs auto-detection."""
     global TheCompileBackend
     TheCompileBackend = auto_compile_backend() if backend is None else backend
+
+
+_COMPILE_MODES = (
+    "default",
+    "reduce-overhead",
+    "max-autotune",
+    "max-autotune-no-cudagraphs",
+)
+
+def auto_compile_mode():
+    """Select torch.compile mode from ``MODEL_COMPILE_MODE`` env var.
+
+    Recognised values (case-insensitive):
+      default          -> Inductor kernel fusion only.
+      reduce-overhead  -> Inductor + CUDAGraphs.
+      max-autotune     -> Inductor + CUDAGraphs + autotune.
+      max-autotune-no-cudagraphs
+                       -> autotune without CUDAGraphs.
+      (empty / unset)  -> "max-autotune-no-cudagraphs".
+
+    Default is ``max-autotune-no-cudagraphs`` -- empirical winner on
+    the GB10 bench (basicmodel/bin/bench_compile.py, --test 10
+    --batches 10):
+
+        eager                       19.937s
+        default                     92.051s
+        max-autotune-no-cudagraphs  19.923s   <-- winner
+        reduce-overhead             90.753s
+        max-autotune                53.577s
+
+    The CUDAGraph-bearing modes (`default`, `reduce-overhead`,
+    `max-autotune`) recompile per static shape and pay ~30s-3min
+    capture per shape; with the butterfly x conceptualOrder x
+    forward+backward shape diversity in MM_5M, that capture cost
+    dominates wall-clock and the per-replay launch saving never pays
+    off. The `no-cudagraphs` mode keeps Inductor's kernel fusion +
+    Triton autotuning while sidestepping the per-shape capture, and
+    matches eager throughput on the eval-only test pass while having
+    headroom to beat it on the training pass (where backward-graph
+    fusion has more to optimize).
+    """
+    override = os.environ.get("MODEL_COMPILE_MODE", "").strip().lower()
+    if not override:
+        return "max-autotune-no-cudagraphs"
+    if override in _COMPILE_MODES:
+        return override
+    raise ValueError(
+        f"Unknown MODEL_COMPILE_MODE value '{override}'. "
+        f"Valid values: {', '.join(_COMPILE_MODES)}"
+    )
+
+# The canonical torch.compile mode for this process.
+TheCompileMode = auto_compile_mode()
+
+
+def init_compile_mode(mode=None):
+    """Override the process-wide torch.compile mode. None re-runs env detection."""
+    global TheCompileMode
+    TheCompileMode = auto_compile_mode() if mode is None else mode
 
 
 # ---------------------------------------------------------------------------
@@ -411,10 +500,22 @@ def _patch_inductor_paths():
 def compile(model, verbose=True):
     """Try to torch.compile the model; return the (possibly compiled) model.
 
-    Respects TheCompileBackend (set by MODEL_COMPILE env var):
+    Respects ``TheCompileBackend`` (set by ``MODEL_COMPILE`` env var):
       "none" -> skip compilation entirely.
       "auto" -> try inductor -> eager -> aot_eager, return first success.
       <name> -> try only that backend; fall back to uncompiled on failure.
+
+    Respects ``TheCompileMode`` (set by ``MODEL_COMPILE_MODE`` env var):
+      "default"         -> Inductor kernel fusion only (no CUDAGraphs).
+      "reduce-overhead" -> Inductor + CUDAGraphs; faster runtime, slow compile.
+      "max-autotune"    -> Inductor + CUDAGraphs + autotune; slowest compile.
+
+    Default mode is ``default`` (Inductor fusion, no CUDAGraph capture).
+    Set ``MODEL_COMPILE_MODE=reduce-overhead`` (or ``max-autotune``) to
+    opt into CUDAGraph capture. The CUDAGraph-bearing modes recompile
+    per distinct static shape; for architectures with many shapes
+    (butterfly / N-halving / conceptualOrder), wall-clock can be
+    dominated by per-shape capture. ``default`` skips that entirely.
 
     Patches inductor compile commands first when paths contain spaces.
     """
@@ -435,11 +536,11 @@ def compile(model, verbose=True):
     backends = _COMPILE_BACKENDS if TheCompileBackend == "auto" else (TheCompileBackend,)
     for backend in backends:
         try:
-            compiled = torch.compile(model, mode="max-autotune", backend=backend)
-            _msg(f"Model compiled ({backend})")
+            compiled = torch.compile(model, mode=TheCompileMode, backend=backend)
+            _msg(f"Model compiled ({backend}, mode={TheCompileMode})")
             return compiled
         except Exception as e:
-            _msg(f"Model compile failed ({backend}): {e}")
+            _msg(f"Model compile failed ({backend}, mode={TheCompileMode}): {e}")
 
     _msg("Model compilation failed, running eager")
     return model

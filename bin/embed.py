@@ -14,11 +14,19 @@ Pipeline stages:
 Usage:
     python bin/embed.py --output output/BasicModel.kv \
         --num-shards 1 --max-docs 10000 --vector-size 100 --epochs 10
+
+This module also owns the unified ``.kv``/``.pt`` *vocab-artifact*
+schema used by both ``WordVectors`` (the Lexicon path) and
+``ChunkLayer`` (the BPE path). See ``save_artifact`` / ``load_artifact``
+below; they let a single artifact carry a Lexicon, a BPE codebook, or
+both side-by-side, distinguishable by the top-level ``kind`` field
+(and per-section ``section_kind`` markers).
 """
 
 import os
 import sys
 import argparse
+import datetime
 from collections import Counter
 from pathlib import Path
 
@@ -27,10 +35,241 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from typing import List, Tuple, Optional
+from typing import Any, Dict, Iterable, List, Tuple, Optional
 
 from util import atomic_torch_save, parse
 import util
+
+
+# ---------------------------------------------------------------------------
+# Unified vocab-artifact schema
+#
+# Both ``WordVectors`` (word strings -> learned embedding vectors) and
+# ``ChunkLayer`` (byte-tuple merges -> integer chunk ids) need to save /
+# load a vocabulary so training can resume without rediscovering it from
+# scratch. This module gives both paths one schema:
+#
+#     {
+#         "format_version": 1,
+#         "kind": "lexicon" | "bpe" | "both",
+#         "lexicon": { ... },     # WordVectors section (when present)
+#         "bpe":     { ... },     # ChunkLayer section  (when present)
+#         "truth_data":   {... }, # optional LTM snapshot (legacy field)
+#         "metadata":     {... }, # creation timestamp, source corpus, etc.
+#     }
+#
+# Each section also carries a ``section_kind`` marker so a consumer that
+# was handed a section dict directly can still distinguish it.
+#
+# Backward compatibility: files saved by older ``WordVectors.save`` (no
+# ``format_version`` key) are recognised by ``load_artifact`` and lifted
+# into the unified shape transparently with ``kind="lexicon"``.
+# ---------------------------------------------------------------------------
+
+FORMAT_VERSION = 1
+KIND_LEXICON = "lexicon"
+KIND_BPE = "bpe"
+KIND_BOTH = "both"
+_VALID_KINDS = (KIND_LEXICON, KIND_BPE, KIND_BOTH)
+
+
+def save_artifact(
+    path: str,
+    *,
+    lexicon: Optional[Dict[str, Any]] = None,
+    bpe: Optional[Dict[str, Any]] = None,
+    truth_data: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+) -> None:
+    """Persist a vocabulary artifact in the unified schema.
+
+    At least one of ``lexicon`` or ``bpe`` must be provided; ``kind`` is
+    inferred from which sections are present.
+    """
+    if lexicon is None and bpe is None:
+        raise ValueError(
+            "save_artifact: at least one of lexicon / bpe must be provided")
+    if lexicon is not None and bpe is not None:
+        kind = KIND_BOTH
+    elif lexicon is not None:
+        kind = KIND_LEXICON
+    else:
+        kind = KIND_BPE
+    md = dict(metadata) if metadata else {}
+    md.setdefault("created", datetime.datetime.now().isoformat(timespec="seconds"))
+    payload: Dict[str, Any] = {
+        "format_version": FORMAT_VERSION,
+        "kind": kind,
+        "metadata": md,
+    }
+    if lexicon is not None:
+        payload["lexicon"] = lexicon
+    if bpe is not None:
+        payload["bpe"] = bpe
+    if truth_data is not None:
+        payload["truth_data"] = truth_data
+    atomic_torch_save(payload, path)
+
+
+def load_artifact(path: str) -> Dict[str, Any]:
+    """Load a vocabulary artifact and return the parsed payload.
+
+    Old-format ``WordVectors`` files (no ``format_version`` key) are
+    transparently lifted into the unified schema with ``kind="lexicon"``.
+    """
+    raw = torch.load(path, map_location="cpu", weights_only=False)
+    if not isinstance(raw, dict):
+        raise ValueError(f"load_artifact: {path!r} did not contain a dict")
+    if "format_version" in raw:
+        return raw
+    lexicon_section = {
+        k: raw[k]
+        for k in ("vectors", "index_to_key", "counts", "total_count")
+        if k in raw
+    }
+    if not lexicon_section:
+        raise ValueError(
+            f"load_artifact: {path!r} is neither a unified-schema "
+            f"artifact (no 'format_version') nor a legacy WordVectors "
+            f"payload (no 'vectors' / 'index_to_key' keys)")
+    lexicon_section.setdefault("section_kind", KIND_LEXICON)
+    upgraded: Dict[str, Any] = {
+        "format_version": FORMAT_VERSION,
+        "kind": KIND_LEXICON,
+        "metadata": {"upgraded_from_legacy": True},
+        "lexicon": lexicon_section,
+    }
+    if "truth_data" in raw and raw["truth_data"] is not None:
+        upgraded["truth_data"] = raw["truth_data"]
+    return upgraded
+
+
+def lexicon_section_from_word_vectors(wv) -> Dict[str, Any]:
+    """Build the ``lexicon`` section from a ``WordVectors`` instance.
+
+    Vectors are L2-normalized so downstream consumers (InputSpace) get
+    elements in ``[-1, 1]``. The section carries ``section_kind="lexicon"``
+    so a consumer handed the section dict directly can still distinguish
+    it from a BPE section.
+    """
+    vectors = F.normalize(wv._vectors.detach(), p=2, dim=1).cpu()
+    counts = getattr(wv, "counts", None)
+    if counts is not None:
+        counts = np.asarray(counts, dtype=np.int64)
+    return {
+        "section_kind": KIND_LEXICON,
+        "vectors": vectors,
+        "index_to_key": list(wv.index_to_key),
+        "counts": counts,
+        "total_count": int(getattr(wv, "total_count", 0)),
+    }
+
+
+def bpe_section_from_chunk_layer(chunk_layer) -> Dict[str, Any]:
+    """Build the ``bpe`` section from a ``ChunkLayer`` instance.
+
+    Stores the merge table in insertion order, plus the byte seed and
+    config knobs needed to resume training in the same regime
+    (``n_vectors``, ``chunking_frequency``). The section carries
+    ``section_kind="bpe"``.
+    """
+    return {
+        "section_kind": KIND_BPE,
+        "merges": list(chunk_layer.merges),
+        "vocab": {tuple(k): int(v) for k, v in chunk_layer.vocab.items()},
+        "id_to_bytes": {
+            int(k): tuple(v) for k, v in chunk_layer.id_to_bytes.items()},
+        "next_id": int(chunk_layer._next_id),
+        "max_merge_len": int(chunk_layer._max_merge_len),
+        "n_vectors": int(chunk_layer.n_vectors),
+        "chunking_frequency": int(chunk_layer.chunking_frequency),
+    }
+
+
+def inspect_artifact(path: str) -> Dict[str, Any]:
+    """Quick peek at an artifact: ``kind``, metadata, section sizes.
+
+    No Module instantiation, no NaN repair, no embedding allocation.
+    Useful before deciding which loader to invoke (``WordVectors.load``
+    vs ``ChunkLayer.load``) on an unknown file.
+    """
+    payload = load_artifact(path)
+    lex = payload.get("lexicon") or {}
+    bpe = payload.get("bpe") or {}
+    return {
+        "format_version": payload.get("format_version", FORMAT_VERSION),
+        "kind": payload.get("kind", "unknown"),
+        "metadata": payload.get("metadata", {}),
+        "has_lexicon": bool(lex),
+        "has_bpe": bool(bpe),
+        "lexicon_size": len(lex.get("index_to_key", [])) if lex else 0,
+        "bpe_size": len(bpe.get("vocab", {})) if bpe else 0,
+        "has_truth_data": payload.get("truth_data") is not None,
+    }
+
+
+def bpe_to_lexicon_keys(chunk_layer) -> List[str]:
+    """Map a ChunkLayer's byte-tuple merge entries to string keys.
+
+    Each chunk id maps to its byte-tuple decoded as Latin-1 (1 byte =
+    1 codepoint, lossless round-trip via ``str.encode('latin-1')``).
+    Suitable as a WordVectors ``index_to_key`` for cold-starting a
+    Lexicon from a trained BPE codebook. Vectors are NOT generated --
+    the caller materializes per-key embeddings.
+    """
+    keys: List[str] = []
+    n = (max(chunk_layer.id_to_bytes.keys()) + 1
+         if chunk_layer.id_to_bytes else 0)
+    for i in range(n):
+        bt = chunk_layer.id_to_bytes.get(i)
+        if bt is None:
+            keys.append("")
+        else:
+            keys.append(bytes(bt).decode("latin-1"))
+    return keys
+
+
+def lexicon_to_bpe_seed(words: Iterable[str],
+                        n_vectors: int = 4096) -> Dict[str, Any]:
+    """Best-effort BPE seed from a Lexicon vocab list.
+
+    Each word is registered as a single multi-byte chunk -- the merge
+    order that produced it is *not* recovered (a Lexicon doesn't record
+    that). Useful for skipping BPE cold-start: subsequent training
+    sees Lexicon words as ready-made chunks.
+
+    Returns a ``bpe`` section dict directly consumable by
+    ``ChunkLayer.load``.
+    """
+    vocab: Dict[tuple, int] = {(i,): i for i in range(256)}
+    id_to_bytes: Dict[int, tuple] = {i: (i,) for i in range(256)}
+    next_id = 256
+    max_merge_len = 1
+    merges: List[tuple] = []
+    for w in words:
+        if not isinstance(w, str) or not w:
+            continue
+        if next_id >= n_vectors:
+            break
+        bt = tuple(w.encode("utf-8"))
+        if bt in vocab:
+            continue
+        if len(bt) >= 2:
+            merges.append((bt[0], next_id - 1 if next_id > 256 else bt[1]))
+        vocab[bt] = next_id
+        id_to_bytes[next_id] = bt
+        max_merge_len = max(max_merge_len, len(bt))
+        next_id += 1
+    return {
+        "section_kind": KIND_BPE,
+        "merges": merges,
+        "vocab": {tuple(k): int(v) for k, v in vocab.items()},
+        "id_to_bytes": {int(k): tuple(v) for k, v in id_to_bytes.items()},
+        "next_id": next_id,
+        "max_merge_len": max_merge_len,
+        "n_vectors": int(n_vectors),
+        "chunking_frequency": 2,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -128,33 +367,57 @@ class WordVectors(nn.Module):
 
     # -- Persistence --
 
-    def save(self, path: str, truth_data: dict = None) -> None:
-        """Save vectors, vocabulary, and word frequencies to a .pt file.
+    def save(self, path: str, truth_data: dict = None,
+             bpe_section: dict = None, metadata: dict = None) -> None:
+        """Save vectors, vocabulary, and word frequencies via the unified
+        vocab-artifact format (see ``save_artifact`` in this module).
 
         Vectors are L2-normalized before saving so that downstream
-        consumers (InputSpace) receive elements in [-1, 1].
+        consumers (InputSpace) receive elements in ``[-1, 1]``.
 
         Args:
             path: destination file path.
-            truth_data: optional dict with ``"truths"`` tensor and ``"count"``
-                int, persisting LTM alongside the embedding artifact.
+            truth_data: optional dict with ``"truths"`` tensor and
+                ``"count"`` int, persisting LTM alongside the embedding
+                artifact.
+            bpe_section: optional pre-built BPE section (typically from
+                ``bpe_section_from_chunk_layer``). When provided the
+                saved file carries both the Lexicon and the BPE
+                codebook side-by-side (kind="both") so a single
+                ``.kv`` artifact can serve either path.
+            metadata: optional free-form metadata dict carried through
+                into the artifact's ``metadata`` field.
         """
-        vectors = F.normalize(self._vectors.detach(), p=2, dim=1).cpu()
-        payload = {
-            "vectors": vectors,
-            "index_to_key": self.index_to_key,
-            "counts": self.counts,
-            "total_count": int(self.total_count),
-        }
-        if truth_data is not None:
-            payload["truth_data"] = truth_data
-        atomic_torch_save(payload, path)
+        save_artifact(
+            path,
+            lexicon=lexicon_section_from_word_vectors(self),
+            bpe=bpe_section,
+            truth_data=truth_data,
+            metadata=metadata,
+        )
 
     @classmethod
     def load(cls, path: str) -> "WordVectors":
-        """Load from a .pt file saved by ``save()``."""
-        data = torch.load(path, map_location="cpu", weights_only=False)
-        vectors = data["vectors"]
+        """Load from a ``.pt``/``.kv`` file.
+
+        Accepts both the unified vocab-artifact schema (kind in
+        {lexicon, both}) and legacy ``WordVectors``-only payloads (no
+        ``format_version``); ``load_artifact`` lifts the latter into
+        the unified shape transparently.
+        """
+        payload = load_artifact(path)
+        if payload.get("kind") == KIND_BPE:
+            raise ValueError(
+                f"WordVectors.load: {path!r} is a BPE-only artifact "
+                f"(kind=bpe); no lexicon section to load. Use "
+                f"ChunkLayer.load instead, or convert via "
+                f"bpe_to_lexicon_keys.")
+        section = payload.get("lexicon")
+        if section is None:
+            raise ValueError(
+                f"WordVectors.load: {path!r} has no lexicon section "
+                f"(kind={payload.get('kind')!r})")
+        vectors = section["vectors"]
         if isinstance(vectors, np.ndarray):
             vectors = torch.as_tensor(vectors, dtype=torch.float32)
         else:
@@ -169,11 +432,11 @@ class WordVectors(nn.Module):
             vectors[nan_mask] = replacement
             import warnings
             warnings.warn(f"Replaced {n_nan} NaN embedding vectors in {path}")
-        counts = data.get("counts")
-        total_count = data.get("total_count", 0)
-        wv = cls(vectors, data["index_to_key"],
+        counts = section.get("counts")
+        total_count = section.get("total_count", 0)
+        wv = cls(vectors, section["index_to_key"],
                  counts=counts, total_count=total_count)
-        wv.truth_data = data.get("truth_data", None)
+        wv.truth_data = payload.get("truth_data", None)
         return wv
 
     # -- Vector access --
@@ -656,6 +919,284 @@ def build_embeddings(shard_paths, output_path, max_docs=10000,
     return wv
 
 
+# ---------------------------------------------------------------------------
+# BPE pipeline: discover merges, then distribute vectors over the codebook
+#
+# Producing a "BPE embedding" is two steps. Phase A learns the merge
+# table (the codebook -- a vocabulary of byte-tuples). Phase B learns
+# vectors that distribute those codebook slots in semantic space, by
+# running SBOW on documents re-tokenized through the frozen merge
+# table. The two halves are owned by different modules (``ChunkLayer``
+# holds the merges; the embedding matrix lives downstream), so freezing
+# one while training the other is just ``chunking_frequency=0``.
+#
+# The result is a single ``.kv`` artifact with ``kind="both"`` -- BPE
+# section carries the merge table, Lexicon section carries the
+# chunk-keyed vector matrix.
+# ---------------------------------------------------------------------------
+
+def _doc_to_byte_row(text: str, max_seq: int) -> List[int]:
+    """Encode text as UTF-8 bytes and pad/truncate to ``max_seq`` length.
+
+    The padding sentinel is 0, which ``ChunkLayer.forward`` interprets
+    as end-of-row -- so trailing zeros are safe.
+    """
+    bts = text.encode("utf-8", errors="ignore")[:max_seq]
+    row = list(bts)
+    if len(row) < max_seq:
+        row.extend([0] * (max_seq - len(row)))
+    return row
+
+
+def discover_bpe(shard_paths, output_path, *,
+                 max_docs=10000, n_vectors=4096,
+                 chunking_frequency=2, batch_size=32, max_seq=2048,
+                 k_merges=4):
+    """Phase A: discover BPE merges from a corpus.
+
+    Streams documents, encodes each as UTF-8 bytes, batches into
+    ``[B, max_seq]`` tensors, and feeds them through
+    ``ChunkLayer.train_step`` until either the document budget is
+    exhausted or the codebook reaches ``n_vectors`` entries. Saves the
+    resulting merge table as a ``kind=bpe`` artifact.
+
+    No vectors are learned in this phase -- the codebook is purely a
+    vocabulary. Phase B (``embed_bpe``) handles vector distribution.
+    """
+    from Layers import ChunkLayer
+
+    # ChunkLayer holds the codebook only; the nDim arg is unused here
+    # (the embedding matrix is allocated in Phase B).
+    cl = ChunkLayer(nDim=1, bpe=True,
+                    n_vectors=n_vectors,
+                    chunking_frequency=chunking_frequency)
+    print(f"Phase A: BPE merge discovery from {len(shard_paths)} shard(s), "
+          f"max_docs={max_docs}, target n_vectors={n_vectors}, "
+          f"chunking_frequency={chunking_frequency}")
+
+    batch_rows: List[List[int]] = []
+    docs_seen = 0
+    for doc in iter_documents(shard_paths, max_docs=max_docs):
+        row = _doc_to_byte_row(doc, max_seq)
+        if not any(row):
+            continue
+        batch_rows.append(row)
+        docs_seen += 1
+        if len(batch_rows) >= batch_size:
+            tensor = torch.tensor(batch_rows, dtype=torch.long)
+            cl.train_step(tensor, k_merges=k_merges)
+            batch_rows = []
+            if cl._next_id >= n_vectors:
+                print(f"  vocab full ({cl._next_id}/{n_vectors}) at "
+                      f"{docs_seen} docs; stopping.")
+                break
+        if docs_seen % 200 == 0:
+            print(f"  scanned {docs_seen} docs, "
+                  f"vocab={cl._next_id}/{n_vectors}", flush=True)
+
+    # Flush any remaining partial batch.
+    if batch_rows and cl._next_id < n_vectors:
+        tensor = torch.tensor(batch_rows, dtype=torch.long)
+        cl.train_step(tensor, k_merges=k_merges)
+
+    print(f"Phase A done: {docs_seen} docs scanned, "
+          f"vocab={cl._next_id}, merges={len(cl.merges)}")
+
+    dirname = os.path.dirname(output_path)
+    if dirname:
+        os.makedirs(dirname, exist_ok=True)
+    cl.save(output_path,
+            metadata={"phase": "bpe-discover",
+                      "docs_seen": docs_seen,
+                      "n_vectors_target": n_vectors})
+    print(f"Saved BPE codebook to {output_path} (kind=bpe)")
+    return cl
+
+
+class StreamingChunkSBOWTrainer:
+    """SBOW trainer over BPE chunk-id sequences (Phase B).
+
+    Vocabulary is fixed by the loaded ``ChunkLayer`` codebook -- there
+    is no Pass 1 vocab scan; the embedding matrix is allocated at
+    ``chunk_layer.n_vectors`` immediately and stream-trained per
+    sentence. Each document is tokenized through ``chunk_layer.forward``
+    on demand.
+
+    ``chunk_layer.chunking_frequency`` is forced to 0 on entry so the
+    codebook is held constant throughout this phase -- only the
+    vector matrix shifts.
+    """
+
+    def __init__(self, chunk_layer, *,
+                 vector_size: int = 100,
+                 learning_rate: float = 0.001,
+                 max_seq: int = 2048,
+                 neg_samples: int = 64):
+        self.chunk_layer = chunk_layer
+        self.vector_size = vector_size
+        self.learning_rate = learning_rate
+        self.max_seq = max_seq
+
+        # Freeze the codebook for the duration of Phase B.
+        chunk_layer.chunking_frequency = 0
+
+        self.vocab_size = int(chunk_layer.n_vectors)
+        # Human-readable keys (latin-1 decode of each chunk's byte tuple)
+        # for the saved Lexicon section. Indices align with chunk ids.
+        keys = bpe_to_lexicon_keys(chunk_layer)
+        while len(keys) < self.vocab_size:
+            keys.append("")
+        self.idx_to_key = keys
+
+        self.device = util.auto_device()
+        print(f"Phase B trainer on {self.device}, "
+              f"vocab={self.vocab_size} (chunks)")
+
+        self.model = _SBOWEmbedding(self.vocab_size,
+                                    self.vector_size).to(self.device)
+        self.model = util.compile(self.model)
+        self.optimizer = optim.SGD(self.model.parameters(),
+                                   lr=self.learning_rate)
+        self.neg_samples = int(neg_samples)
+
+        self.n_examples = 0
+        self._total_loss = 0.0
+        self._loss_count = 0
+
+    @property
+    def avg_loss(self):
+        return self._total_loss / self._loss_count if self._loss_count else 0.0
+
+    def _tokenize(self, text: str) -> List[int]:
+        """Encode text as bytes and run through ChunkLayer to get chunk ids."""
+        row = _doc_to_byte_row(text, self.max_seq)
+        tensor = torch.tensor([row], dtype=torch.long)
+        chunks_per_row, _ = self.chunk_layer.forward(tensor)
+        return chunks_per_row[0]
+
+    def process_document(self, text: str) -> None:
+        """Train SBOW per sentence over BPE-tokenized text."""
+        for sent_text, _ in parse(text, lex='sentences'):
+            chunk_ids = self._tokenize(sent_text)
+            if len(chunk_ids) >= 2:
+                self._train_sentence(chunk_ids)
+
+    def _train_sentence(self, chunk_ids: List[int]) -> None:
+        """SBOW via negative sampling: predict each chunk from leave-one-out
+        centroid of its sentence-mates. Mirrors StreamingSBOWTrainer's
+        method, but operates on chunk ids that are already integer
+        indices into the embedding matrix (no string lookup)."""
+        idx = torch.tensor(chunk_ids, dtype=torch.long, device=self.device)
+        N = idx.shape[0]
+        if N < 2:
+            return
+
+        vecs = self.model.embeddings(idx)                       # [N, dim]
+        total = vecs.sum(dim=0)                                 # [dim]
+        centroids = (total.unsqueeze(0) - vecs) / (N - 1)       # [N, dim]
+
+        K = min(self.neg_samples, self.vocab_size - 1)
+        pos_vecs = self.model.embeddings(idx)                   # [N, dim]
+        pos_scores = (centroids * pos_vecs).sum(dim=1)          # [N]
+
+        neg_idx = torch.randint(0, self.vocab_size, (N, K),
+                                device=self.device)             # [N, K]
+        neg_vecs = self.model.embeddings(neg_idx)               # [N, K, dim]
+        neg_scores = torch.bmm(neg_vecs,
+                               centroids.unsqueeze(2)).squeeze(2) # [N, K]
+
+        loss = (-F.logsigmoid(pos_scores).mean()
+                - F.logsigmoid(-neg_scores).mean())
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        self.n_examples += int(N)
+        self._total_loss += float(loss.item()) * int(N)
+        self._loss_count += int(N)
+
+    def finish(self) -> "WordVectors":
+        """Return a chunk-keyed WordVectors (L2-normalized)."""
+        with torch.no_grad():
+            vectors = F.normalize(self.model.embeddings.weight,
+                                  p=2, dim=1)
+            vectors = vectors.detach().cpu()
+        return WordVectors(vectors, list(self.idx_to_key))
+
+
+def embed_bpe(shard_paths, artifact_path, *,
+              output_path=None, max_docs=10000,
+              vector_size=100, epochs=10, max_seq=2048,
+              learning_rate=0.001):
+    """Phase B: train SBOW vectors over a frozen BPE codebook.
+
+    Loads the codebook from ``artifact_path`` (must be ``kind`` in
+    ``{"bpe", "both"}``), forces ``chunking_frequency=0``, and trains
+    a (n_vectors x vector_size) matrix via SBOW on chunk-id sequences.
+    Writes the result to ``output_path`` (defaults to overwriting
+    ``artifact_path``) as ``kind=both`` -- merge table + vectors.
+    """
+    from Layers import ChunkLayer
+    output_path = output_path or artifact_path
+
+    cl = ChunkLayer(nDim=1, bpe=True).load(artifact_path)
+    print(f"Phase B: loaded BPE codebook ({cl._next_id} chunks of "
+          f"{cl.n_vectors} slots) from {artifact_path}; "
+          f"freezing codebook for vector training.")
+
+    trainer = StreamingChunkSBOWTrainer(cl,
+                                        vector_size=vector_size,
+                                        learning_rate=learning_rate,
+                                        max_seq=max_seq)
+
+    print(f"Phase B: training {vector_size}-dim SBOW over BPE chunks, "
+          f"epochs={epochs}")
+    for epoch in range(epochs):
+        count = 0
+        trainer._total_loss = 0.0
+        trainer._loss_count = 0
+        for doc in iter_documents(shard_paths, max_docs=max_docs):
+            trainer.process_document(doc)
+            count += 1
+            if count % 100 == 0:
+                print(f"  Epoch {epoch+1}/{epochs}: {count} docs, "
+                      f"examples={trainer.n_examples}, "
+                      f"loss={trainer.avg_loss:.4f}", flush=True)
+        print(f"Epoch {epoch+1}/{epochs} done, "
+              f"loss={trainer.avg_loss:.4f}", flush=True)
+
+    wv = trainer.finish()
+    bpe_section = bpe_section_from_chunk_layer(cl)
+
+    dirname = os.path.dirname(output_path)
+    if dirname:
+        os.makedirs(dirname, exist_ok=True)
+    wv.save(output_path,
+            bpe_section=bpe_section,
+            metadata={"phase": "bpe-embed",
+                      "vector_size": int(vector_size),
+                      "epochs": int(epochs)})
+    print(f"Saved BPE+vectors to {output_path} (kind=both, "
+          f"{len(wv)} chunks, {vector_size} dims)")
+    return wv
+
+
+def train_bpe(shard_paths, output_path, *,
+              max_docs=10000, n_vectors=4096,
+              chunking_frequency=2, vector_size=100, epochs=10,
+              batch_size=32, max_seq=2048, learning_rate=0.001):
+    """Convenience: Phase A then Phase B in one invocation."""
+    discover_bpe(shard_paths, output_path,
+                 max_docs=max_docs, n_vectors=n_vectors,
+                 chunking_frequency=chunking_frequency,
+                 batch_size=batch_size, max_seq=max_seq)
+    return embed_bpe(shard_paths, output_path,
+                     max_docs=max_docs,
+                     vector_size=vector_size, epochs=epochs,
+                     max_seq=max_seq, learning_rate=learning_rate)
+
+
 def prune_embeddings(path, min_frequency, output=None):
     """Remove words from a .kv codebook whose frequency is below min_frequency.
 
@@ -722,6 +1263,57 @@ if __name__ == '__main__':
                          help='Compilation backend: none, inductor, eager, aot_eager. '
                               'Overrides MODEL_COMPILE env var.')
 
+    # --- BPE subcommands -------------------------------------------------
+    # Phase A: discover merge table from a corpus
+    bpe_disc_p = sub.add_parser(
+        "bpe-discover",
+        help="Phase A: discover BPE merges from a corpus (no vectors).")
+    bpe_disc_p.add_argument('--output', default='output/BasicModel.kv')
+    bpe_disc_p.add_argument('--data-dir', default=None)
+    bpe_disc_p.add_argument('--num-shards', type=int, default=1)
+    bpe_disc_p.add_argument('--max-docs', type=int, default=10000)
+    bpe_disc_p.add_argument('--n-vectors', type=int, default=4096)
+    bpe_disc_p.add_argument('--chunking-frequency', type=int, default=2)
+    bpe_disc_p.add_argument('--batch-size', type=int, default=32)
+    bpe_disc_p.add_argument('--max-seq', type=int, default=2048)
+    bpe_disc_p.add_argument('--k-merges', type=int, default=4,
+                             help='Promotions per train_step batch.')
+    bpe_disc_p.add_argument('--random-shards', action='store_true')
+
+    # Phase B: train vectors over a frozen BPE codebook
+    bpe_emb_p = sub.add_parser(
+        "bpe-embed",
+        help="Phase B: train SBOW vectors over a frozen BPE codebook.")
+    bpe_emb_p.add_argument('--input', required=True,
+                            help='kind=bpe or kind=both artifact to load.')
+    bpe_emb_p.add_argument('--output', default=None,
+                            help='Output path (defaults to --input, overwriting it).')
+    bpe_emb_p.add_argument('--data-dir', default=None)
+    bpe_emb_p.add_argument('--num-shards', type=int, default=1)
+    bpe_emb_p.add_argument('--max-docs', type=int, default=10000)
+    bpe_emb_p.add_argument('--vector-size', type=int, default=100)
+    bpe_emb_p.add_argument('--epochs', type=int, default=10)
+    bpe_emb_p.add_argument('--max-seq', type=int, default=2048)
+    bpe_emb_p.add_argument('--learning-rate', type=float, default=0.001)
+    bpe_emb_p.add_argument('--random-shards', action='store_true')
+
+    # Convenience: A then B in one go
+    bpe_train_p = sub.add_parser(
+        "bpe-train",
+        help="Convenience: Phase A (discover) then Phase B (embed).")
+    bpe_train_p.add_argument('--output', default='output/BasicModel.kv')
+    bpe_train_p.add_argument('--data-dir', default=None)
+    bpe_train_p.add_argument('--num-shards', type=int, default=1)
+    bpe_train_p.add_argument('--max-docs', type=int, default=10000)
+    bpe_train_p.add_argument('--n-vectors', type=int, default=4096)
+    bpe_train_p.add_argument('--chunking-frequency', type=int, default=2)
+    bpe_train_p.add_argument('--vector-size', type=int, default=100)
+    bpe_train_p.add_argument('--epochs', type=int, default=10)
+    bpe_train_p.add_argument('--batch-size', type=int, default=32)
+    bpe_train_p.add_argument('--max-seq', type=int, default=2048)
+    bpe_train_p.add_argument('--learning-rate', type=float, default=0.001)
+    bpe_train_p.add_argument('--random-shards', action='store_true')
+
     # --- prune subcommand ---
     prune_p = sub.add_parser("prune", help="Remove low-frequency words from a .kv codebook")
     prune_p.add_argument("filename", help="Path to the .kv file to prune")
@@ -775,6 +1367,52 @@ if __name__ == '__main__':
             min_count=args.min_count,
             batch_size=args.batch_size,
         )
+
+    elif args.command in ("bpe-discover", "bpe-embed", "bpe-train"):
+        data_dir = args.data_dir
+        if data_dir is None:
+            data_dir = str(Path(__file__).resolve().parent.parent / "data" / "fineweb")
+        shard_paths = get_shard_paths(data_dir, num_shards=args.num_shards,
+                                      random_select=args.random_shards)
+        if not shard_paths:
+            print("No shards available.")
+            sys.exit(1)
+
+        if args.command == "bpe-discover":
+            discover_bpe(
+                shard_paths=shard_paths,
+                output_path=args.output,
+                max_docs=args.max_docs,
+                n_vectors=args.n_vectors,
+                chunking_frequency=args.chunking_frequency,
+                batch_size=args.batch_size,
+                max_seq=args.max_seq,
+                k_merges=args.k_merges,
+            )
+        elif args.command == "bpe-embed":
+            embed_bpe(
+                shard_paths=shard_paths,
+                artifact_path=args.input,
+                output_path=args.output,
+                max_docs=args.max_docs,
+                vector_size=args.vector_size,
+                epochs=args.epochs,
+                max_seq=args.max_seq,
+                learning_rate=args.learning_rate,
+            )
+        else:  # bpe-train
+            train_bpe(
+                shard_paths=shard_paths,
+                output_path=args.output,
+                max_docs=args.max_docs,
+                n_vectors=args.n_vectors,
+                chunking_frequency=args.chunking_frequency,
+                vector_size=args.vector_size,
+                epochs=args.epochs,
+                batch_size=args.batch_size,
+                max_seq=args.max_seq,
+                learning_rate=args.learning_rate,
+            )
 
     else:
         parser.print_help()

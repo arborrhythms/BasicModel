@@ -51,7 +51,7 @@ def _drain_row(ds, row, max_ticks=10000):
     """
     out = bytearray()
     for _ in range(max_ticks):
-        slab, hard_eos = ds.next_tick()
+        slab, _, hard_eos = ds.next_tick()
         # Find the populated prefix length: bytes after the doc's tail
         # are zero-padded NULL. For docs containing 0x00 we'd need a
         # smarter strategy, but the docs we generate don't include NULL
@@ -102,7 +102,7 @@ def test_short_doc_one_tick_eos():
     """A doc shorter than slab_bytes finishes in a single tick with hard_eos."""
     docs = ["hi", "world!"]
     ds = SentenceStreamDataset(docs, num_streams=2, slab_bytes=1024)
-    slab, hard_eos = ds.next_tick()
+    slab, _, hard_eos = ds.next_tick()
     assert hard_eos == [True, True], (
         f"both rows should hit hard_eos in one tick, got {hard_eos}")
     assert bytes(slab[0].tolist()).rstrip(b'\x00') == b"hi"
@@ -119,19 +119,19 @@ def test_long_doc_multi_tick_only_last_is_eos():
 
     # Tick 1: row 0 has 1024 bytes of long_doc, no eos. Row 1 finishes
     # short_doc in one tick (hard_eos=True).
-    slab1, hard_eos1 = ds.next_tick()
+    slab1, _, hard_eos1 = ds.next_tick()
     assert hard_eos1 == [False, True], (
         f"tick 1 hard_eos: expected [False, True], got {hard_eos1}")
     assert (slab1[0] == ord('X')).sum().item() == 1024
 
     # Tick 2: row 0 has another 1024 bytes (still 452 left), no eos.
     # Row 1 is exhausted (no more docs in its window).
-    slab2, hard_eos2 = ds.next_tick()
+    slab2, _, hard_eos2 = ds.next_tick()
     assert hard_eos2[0] is False
     assert (slab2[0] == ord('X')).sum().item() == 1024
 
     # Tick 3: row 0 has the final 452 bytes, hard_eos.
-    slab3, hard_eos3 = ds.next_tick()
+    slab3, _, hard_eos3 = ds.next_tick()
     assert hard_eos3[0] is True
     assert (slab3[0] == ord('X')).sum().item() == 452
     # Trailing positions should be NULL.
@@ -157,19 +157,46 @@ def test_reset_cursor_restarts_from_beginning():
     assert ds.all_done()
     ds.reset_cursor()
     assert not ds.all_done(), "after reset_cursor we should iterate again"
-    slab, hard_eos = ds.next_tick()
+    slab, _, hard_eos = ds.next_tick()
     assert hard_eos == [True, True]
     assert bytes(slab[0].tolist()).rstrip(b'\x00') == b"alpha"
     assert bytes(slab[1].tolist()).rstrip(b'\x00') == b"beta"
 
 
-def test_disabled_cursor_raises():
-    """next_tick / all_done / reset_cursor raise when slab_bytes is None."""
-    import pytest
-    ds = SentenceStreamDataset(["a"], num_streams=1)
-    with pytest.raises(RuntimeError):
-        ds.next_tick()
-    with pytest.raises(RuntimeError):
-        ds.all_done()
-    with pytest.raises(RuntimeError):
-        ds.reset_cursor()
+def test_trial_cursor_yields_one_trial_per_tick():
+    """Trial-mode cursor (slab_bytes=None) yields one batch of trials
+    per tick with hard_eos=[True]*B every tick.
+
+    Brick-vectorization handoff §8e: the cursor is universal -- non-AR
+    data flows through this trial mode rather than the legacy
+    DataLoader iteration. Each trial completes immediately so every
+    row's hard_eos fires every tick (the outer loop runs Reset on
+    every row each tick, matching the pre-handoff DataLoader contract).
+    """
+    docs = ["a", "b", "c", "d"]  # 4 docs, num_streams=2 -> stream_length=2
+    ds = SentenceStreamDataset(docs, num_streams=2)  # no slab_bytes
+    assert not ds.all_done(), "fresh trial cursor must not report done"
+
+    inp1, out1, hard_eos1 = ds.next_tick()
+    assert hard_eos1 == [True, True]
+    assert inp1 == ["a", "c"], f"step 0: row 0='a', row 1='c', got {inp1}"
+    assert out1 is None, "outputs is None -> no output yielded"
+
+    assert not ds.all_done(), "after 1 tick of 2-step stream, not done"
+    inp2, out2, hard_eos2 = ds.next_tick()
+    assert hard_eos2 == [True, True]
+    assert inp2 == ["b", "d"], f"step 1: row 0='b', row 1='d', got {inp2}"
+
+    assert ds.all_done(), "after 2 ticks of 2-step stream, must be done"
+
+
+def test_trial_cursor_reset_rewinds_step():
+    """reset_cursor() in trial mode returns to step 0."""
+    docs = ["x", "y"]
+    ds = SentenceStreamDataset(docs, num_streams=2)
+    inp1, _, _ = ds.next_tick()
+    assert ds.all_done()
+    ds.reset_cursor()
+    assert not ds.all_done(), "after reset_cursor, trial mode iterates again"
+    inp2, _, _ = ds.next_tick()
+    assert inp1 == inp2, f"reset cursor should yield same first batch"

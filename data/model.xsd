@@ -383,8 +383,6 @@
       <xs:element name="impenetrableTransitivity" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="impenetrableVariance" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="truthMinMagnitude" type="xs:decimal" minOccurs="0"/>
-      <xs:element name="truthMinNovelty" type="xs:decimal" minOccurs="0"/>
-      <xs:element name="truthMaxInconsistency" type="xs:decimal" minOccurs="0"/>
       <xs:element name="tetralemmaOverride" type="tetralemmaOverrideType" minOccurs="0"/>
       <xs:element name="TetralemmaPolicy" type="tetralemmaPolicyType" minOccurs="0"/>
     </xs:all>

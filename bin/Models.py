@@ -62,7 +62,7 @@ import util as _util
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
 
-from Layers import Layer, PiLayer, SigmaLayer, ButterflyStage # Import custom layers from Model.py
+from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
 from Layers import LinearLayer, AttentionLayer
 from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import Error, TheError
@@ -913,7 +913,12 @@ class BaseModel(nn.Module):
         """Snapshot current nn.Embedding weights and save the .pt artifact.
 
         Also persists LTM (TruthLayer) data alongside the embeddings so
-        truths travel with the vocabulary and survive architecture changes.
+        truths travel with the vocabulary and survive architecture
+        changes. When PerceptualSpace runs in BPE-chunking mode, the
+        ChunkLayer's merge table is co-saved into the same ``.kv`` file
+        under the artifact's ``bpe`` section -- the resulting ``.kv``
+        carries both Lexicon and BPE under ``kind="both"`` so it serves
+        either path. See :mod:`embed`.
         """
         if path is None:
             path = getattr(self, 'embedding_path', None)
@@ -933,10 +938,34 @@ class BaseModel(nn.Module):
                 "count": n,
             }
 
+        # Co-save the BPE codebook when PerceptualSpace owns one in
+        # BPE mode. The ChunkLayer's merge table lives outside the
+        # nn.Embedding artifact in legacy code; the unified
+        # vocab-artifact format lets us bundle them.
+        bpe_section = None
+        ps = getattr(self, 'perceptualSpace', None)
+        cl = getattr(ps, 'chunk_layer', None) if ps is not None else None
+        if cl is not None and getattr(cl, 'bpe', False):
+            try:
+                from embed import bpe_section_from_chunk_layer
+                bpe_section = bpe_section_from_chunk_layer(cl)
+            except Exception as e:
+                TheMessage(
+                    f"[{self.name}] BPE co-save skipped "
+                    f"({type(e).__name__}: {e}); saving Lexicon only.")
+                bpe_section = None
+
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-        emb.save_embeddings(path, truth_data=truth_data)
-        TheMessage(f"[{self.name}] Embeddings saved to {path}"
-                   + (f" ({n} truths)" if truth_data else ""))
+        emb.save_embeddings(path, truth_data=truth_data,
+                            bpe_section=bpe_section)
+        suffix_parts = []
+        if truth_data:
+            suffix_parts.append(f"{n} truths")
+        if bpe_section is not None:
+            suffix_parts.append(
+                f"BPE {len(bpe_section.get('vocab', {}))} entries")
+        suffix = f" ({', '.join(suffix_parts)})" if suffix_parts else ""
+        TheMessage(f"[{self.name}] Embeddings saved to {path}{suffix}")
 
     @staticmethod
     def print_weights_info(path):
@@ -1885,6 +1914,14 @@ class BasicModel(BaseModel):
         A single persistent optimizer is used across all epochs so Adam's
         momentum and variance estimates accumulate properly.
 
+        ``BASIC_RUN_TEST`` env (set by ``train.py --test [N]``) controls
+        the baseline + post-train test/validation passes:
+
+        * unset: skip both passes (default; avoids the long test-split
+          traversal that can dominate wall-clock at large maxDocs).
+        * empty string: run both passes uncapped.
+        * integer ``N``: run both passes capped at ``N`` batches each.
+
         Returns a list of per-epoch test accuracies.
         """
         trainLosses       = [[],[]]  # [output_losses, reconstruction_losses]
@@ -1894,16 +1931,39 @@ class BasicModel(BaseModel):
         accuracy          = []
         self._optimizer   = self.getOptimizer(lr=lr)
 
+        # Test gating from BASIC_RUN_TEST. Tri-state: None (skip),
+        # 0 (uncapped run), positive int (cap each pass at that many
+        # batches). The empty-string env value maps to uncapped.
+        _test_env = os.environ.get("BASIC_RUN_TEST")
+        if _test_env is None:
+            _test_max_batches = None  # signal: skip the test passes
+            _run_test = False
+        else:
+            try:
+                _n = int(_test_env) if _test_env != "" else 0
+            except ValueError:
+                _n = 0
+            _run_test = True
+            _test_max_batches = _n if _n > 0 else None
+
         # Enable sigma-driven self-annealing for ergodic layers
         self.set_sigma(0.5)
 
-        # Baseline evaluation before any training
-        self.set_sigma(0)
-        outErr, inErr, allOut, lastIn = self.runEpoch(batchSize=batchSize, split="test")
-        self.set_sigma(0.5)
-        testLosses[0].append(outErr)
-        testLosses[1].append(inErr)
-        TheMessage(f"Baseline Test Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
+        # Baseline evaluation before any training (gated on --test).
+        if _run_test:
+            self.set_sigma(0)
+            outErr, inErr, allOut, lastIn = self.runEpoch(
+                batchSize=batchSize, split="test",
+                max_batches=_test_max_batches)
+            self.set_sigma(0.5)
+            testLosses[0].append(outErr)
+            testLosses[1].append(inErr)
+            TheMessage(f"Baseline Test Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
+        else:
+            TheMessage(
+                "Baseline test pass skipped (--test not specified). "
+                "Re-invoke train.py with --test to include baseline + "
+                "post-epoch evaluation.")
 
         for epoch in range(numEpochs):
             TheMessage(f"Epoch [{epoch + 1}/{numEpochs}]")
@@ -1913,8 +1973,18 @@ class BasicModel(BaseModel):
             trainLosses[1].append(inErr)
             TheMessage(f"Train Loss: output={outErr:.4f}, reconstruction={inErr:.4f}")
 
+            if not _run_test:
+                # Per-epoch test pass skipped under --test gating.
+                # Record sentinel zeros so the epoch's accuracy slot is
+                # well-formed; the post-trial summary still reports the
+                # train-side losses.
+                accuracy += [0.0]
+                continue
+
             self.set_sigma(0)  # suppress exploration during eval
-            outErr, inErr, allOut, lastIn = self.runEpoch(batchSize=batchSize, split="test")
+            outErr, inErr, allOut, lastIn = self.runEpoch(
+                batchSize=batchSize, split="test",
+                max_batches=_test_max_batches)
             self.set_sigma(0.5)  # re-enable for next training epoch
             testLosses[0].append(outErr)
             testLosses[1].append(inErr)
@@ -2065,8 +2135,69 @@ class BasicModel(BaseModel):
         self.symbolicSpace._emit_symbol_terms(
             self.outputSpace.subspace, terms)
 
+    def _maybe_compile_brick(self):
+        """One-shot Inductor / Dynamo / TF32 setup on first ``runBatch``.
+
+        The actual ``torch.compile`` call lives in ``util.compile`` (the
+        canonical compile site, called once at model build in
+        ``ModelFactory.run``). This method just configures Dynamo /
+        Inductor knobs that are useful regardless of which mode the
+        canonical site picked, and enables TF32 for fp32 matmuls.
+        Idempotent: only runs on the first invocation.
+        """
+        if getattr(self, '_brick_compile_attempted', False):
+            return
+        self._brick_compile_attempted = True
+        if not torch.cuda.is_available():
+            return
+        try:
+            dev_type = TheDevice.get().type
+        except Exception:
+            dev_type = None
+        if dev_type != "cuda":
+            return
+        try:
+            import torch._dynamo as _dynamo
+            # Bump the cache size limit so warm-up across dtype/shape
+            # variants in the cursor path doesn't recompile.
+            _dynamo.config.cache_size_limit = max(
+                64, int(getattr(_dynamo.config, 'cache_size_limit', 0) or 0))
+            # Allow Dynamo to capture ``int(tensor.item())`` patterns
+            # rather than break the graph at every site.
+            _dynamo.config.capture_scalar_outputs = True
+            # Enable TF32 on Ampere+ / Blackwell tensor cores for fp32
+            # matmuls -- free perf win on TF32-capable CUDA hardware.
+            try:
+                torch.set_float32_matmul_precision('high')
+            except Exception:
+                pass
+            # Raise the CUDAGraph "distinct sizes" warning limit. The
+            # default (8) is conservative for models with butterfly /
+            # N-halving stages, where shapes across stages form an
+            # ``log2(N)`` sequence (each is static per stage). Set to
+            # 128 so the warning only fires on genuinely-pathological
+            # shape variance.
+            try:
+                torch._inductor.config.triton.cudagraph_dynamic_shape_warn_limit = 128
+            except Exception:
+                pass
+            # Skip CUDAGraph capture for graph segments whose Inductor
+            # specialization count crosses the dynamic-shape threshold.
+            # Keeps Inductor fusion / Triton codegen wins while
+            # sidestepping the per-shape CUDAGraph capture cost on
+            # architectures with many distinct static shapes.
+            try:
+                torch._inductor.config.triton.cudagraph_skip_dynamic_graphs = True
+            except Exception:
+                pass
+        except Exception as e:
+            print(
+                f"[BasicModel] §7 dynamo / inductor setup failed: "
+                f"{type(e).__name__}: {e}. Continuing without these "
+                f"hints; util.compile's torch.compile is unaffected.")
+
     def runBatch(self, train=True, batchNum=0, batchSize=10, split="train",
-                 optimizer=None, batch_override=None):
+                 optimizer=None, batch_override=None, progress=None):
         """Run a single batch: forward pass, loss, and (if training) backward + step.
 
         Args:
@@ -2078,11 +2209,21 @@ class BasicModel(BaseModel):
             batch_override: optional ``(inputTensor, outputTensor)`` pair;
                 the primary dispatch path used by the DataLoader streaming
                 path in ``runEpoch``.
+            progress: optional fraction in ``[0.0, 1.0]`` indicating how
+                far through the current split's data the cursor has
+                advanced. When set, the per-batch timing line includes
+                a percentage so long runs report visible progress.
+                ``runEpoch`` populates this from
+                ``SentenceStreamDataset.progress()``; callers that drive
+                ``runBatch`` directly leave it ``None``.
 
         Returns:
             (BatchResult, nextBatchNum) on success, or (None, batchNum) when
             the dataset is exhausted.
         """
+        # First-call hook: try to enable §7 torch.compile reduce-overhead
+        # mode on CUDA targets. Idempotent; safe on non-CUDA hosts.
+        self._maybe_compile_brick()
         sentenceIdx = batchNum  # sentence index before batchNum increments
         if batch_override is not None:
             batch = batch_override
@@ -2106,6 +2247,43 @@ class BasicModel(BaseModel):
         inference_only = not train and split == "runtime"
         arir_mode = (split == "runtime"
                      and getattr(self.inputSpace.data, '_runtime_mode', None) == 'ARIR')
+
+        # Pre-allocate per-batch state OUTSIDE the compiled forward.
+        # ``WordSpace.ensure_microbatch`` allocates ``_stm_fired`` /
+        # ``_last_svo`` / ``_svo_valid`` / ``_recent_count`` etc. on
+        # first call (and on shape changes); when those allocations
+        # happen INSIDE a torch.compile region, CUDAGraph capture
+        # takes ownership of the underlying memory, so the next
+        # replay's allocation overwrites the previous step's state
+        # and the next attribute read raises ``RuntimeError: Error:
+        # accessing tensor output of CUDAGraphs that has been
+        # overwritten by a subsequent run.`` Hoisting the call up
+        # here keeps the resulting tensors Python-owned.
+        #
+        # ``K`` is deterministic for AR training under the cursor
+        # contract: ``slab_bytes = nObj`` (constant), parse(lex='bytes')
+        # produces exactly ``nObj`` tokens (byte-exact post-§8g),
+        # ``_embed`` / ``_embed_bpe`` materialize ``[B, nObj, nDim]``
+        # constants -- so K = T = nObj. For non-AR / numeric trial-
+        # cursor data, K = 1. ARIR inference (where K depends on the
+        # runtime buffer length) keeps the in-forward call: under
+        # inference there's no compile wrapper and the dynamic K is
+        # safe in eager.
+        if not arir_mode and self.wordSpace is not None and not inference_only:
+            ws = self.wordSpace
+            try:
+                if isinstance(inputTensor, torch.Tensor):
+                    B_pre = int(inputTensor.shape[0])
+                else:
+                    B_pre = int(len(inputTensor))
+            except Exception:
+                B_pre = None
+            if B_pre is not None:
+                is_ar_outer = getattr(self, 'masked_prediction', 'NONE') in (
+                    'ARLM', 'ARUS', 'ARIR')
+                K_pre = (int(self.inputSpace.outputShape[0])
+                         if is_ar_outer else 1)
+                ws.ensure_microbatch(B_pre, K_pre)
 
         if train:
             optimizer.zero_grad()
@@ -2135,6 +2313,17 @@ class BasicModel(BaseModel):
             # source [B, T, D]. Non-AR: ``predictions`` is [B, N, predDim]
             # and ``forwardInput`` is the inputSpace event [B, N, D].
             # ``reconstruction`` is the ARIR reverse output (None elsewhere).
+            #
+            # ``cudagraph_mark_step_begin`` (only meaningful under modes
+            # that capture CUDAGraphs -- "reduce-overhead", "max-
+            # autotune") tells the runtime to release the previous
+            # step's CUDAGraph outputs so the memory pool can be reused
+            # for this step. No-op under "default" mode (kernel fusion
+            # only); idempotent on non-CUDA hosts.
+            try:
+                torch.compiler.cudagraph_mark_step_begin()
+            except (AttributeError, RuntimeError):
+                pass
             forwardInput, symbols, predictions, reconstruction = self.forward(inputTensor)
             is_ar_mode = (
                 self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
@@ -2398,7 +2587,28 @@ class BasicModel(BaseModel):
         # __format__ forces a device sync every batch.  The epoch summary
         # still carries per-epoch losses; per-batch loss is available via
         # MODEL_DEBUG if needed.
-        TheMessage(f"batch = {batchNum}")
+        #
+        # Per-batch wall-clock: time.perf_counter() reads the host
+        # monotonic clock (no GPU sync). The first batch (before
+        # ``self._last_batch_time`` is set) prints without a delta --
+        # that "compile + warm-up" tick is heavily front-loaded and
+        # measuring it as "delta from epoch start" would be misleading.
+        # Subsequent batches print ``(Δ=X.XXXs)`` where X is the
+        # wall-clock elapsed since the last batch's report.
+        import time as _time
+        now = _time.perf_counter()
+        last = getattr(self, '_last_batch_time', None)
+        # Optional percent-complete suffix when the cursor populated
+        # ``progress`` (set from ``SentenceStreamDataset.progress()``
+        # in ``runEpoch``). Direct ``runBatch`` callers (tests,
+        # inference) pass progress=None and get the bare timing line.
+        pct = ("" if progress is None
+               else f", {min(progress, 1.0) * 100.0:.2f}%")
+        if last is None:
+            TheMessage(f"batch = {batchNum} (warm-up{pct})")
+        else:
+            TheMessage(f"batch = {batchNum} (Δ={now - last:.3f}s{pct})")
+        self._last_batch_time = now
 
         if train:
             if amp_scaler is not None:
@@ -2462,12 +2672,17 @@ class BasicModel(BaseModel):
         per-row capability for the partial-eos cursor case.
 
         Otherwise, cascades ``space.Reset(batch=b, hard=True)`` over
-        every Reset-capable space; spaces that don't accept the per-row
-        signature fall back to a global wipe via ``_reset_call``.
+        every Reset-capable space. Every Reset accepts the per-row
+        signature now (the §8d legacy zero-arg fallback was removed).
         """
         if not hard_eos:
             return
         if all(hard_eos):
+            # Legacy-parity hot path (L6 in the handoff): a single
+            # global Reset per space when every row finishes a doc on
+            # the same tick (the common DataLoader case). Keeps the
+            # dispatch overhead at parity with the pre-handoff path
+            # while preserving the per-row capability for partial-eos.
             for space in self.spaces:
                 if hasattr(space, 'Reset'):
                     space.Reset()
@@ -2477,18 +2692,16 @@ class BasicModel(BaseModel):
                     continue
                 for space in self.spaces:
                     if hasattr(space, 'Reset'):
-                        try:
-                            space.Reset(batch=b, hard=True)
-                        except TypeError:
-                            space.Reset()
-        # Clear the legacy per-row eos diagnostic. Host-side write only.
-        eos = getattr(self.inputSpace, '_end_of_stream', None)
-        if isinstance(eos, list):
-            for b, done in enumerate(hard_eos):
-                if done and 0 <= b < len(eos):
-                    eos[b] = False
-        elif eos is not False and not torch.is_tensor(eos):
-            self.inputSpace._end_of_stream = False
+                        space.Reset(batch=b, hard=True)
+        # Clear the per-row eos diagnostic. ``_end_of_stream`` is a
+        # host-side ``list[bool]`` post-§8c; resize lazily if the cursor
+        # batch grew beyond the AR forward()'s previous sizing.
+        eos = self.inputSpace._end_of_stream
+        if len(eos) < len(hard_eos):
+            eos.extend([False] * (len(hard_eos) - len(eos)))
+        for b, done in enumerate(hard_eos):
+            if done:
+                eos[b] = False
 
     def dispatch_soft_reset(self):
         """Drain ``wordSpace._sentence_completed`` and fire per-row soft reset.
@@ -2518,6 +2731,27 @@ class BasicModel(BaseModel):
         if tl is not None and hasattr(tl, 'compact'):
             tl.compact(min_trust=0.5)
 
+    def flush_word_buffers(self):
+        """Drain the per-subspace tensor word buffers (§6c Path B).
+
+        The chart compose writes per-cell entries into each subspace's
+        ``word_records`` / ``word_count`` buffers inside the brick;
+        this hook materializes them into the legacy ``subspace.word``
+        Python list once per tick so ``decompose``, ``reconstruct``,
+        the SVO walker, and derivation-trace tests keep working
+        unchanged. One ``.tolist()`` sync per subspace per tick, kept
+        outside the brick.
+        """
+        ws = getattr(self, 'wordSpace', None)
+        for space in self.spaces:
+            sub = getattr(space, 'subspace', None)
+            if sub is None or not hasattr(sub, 'flush_word_buffer'):
+                continue
+            if ws is not None and getattr(ws, 'syntacticLayer', None) is not None:
+                ws.syntacticLayer.flush_word_buffer(sub)
+            else:
+                sub.flush_word_buffer()
+
     def _stub_outputs(self, B):
         """Per-row sentinel outputs for cursor-mode AR ticks.
 
@@ -2529,13 +2763,19 @@ class BasicModel(BaseModel):
         """
         return [torch.zeros(1) for _ in range(int(B))]
 
-    def runEpoch(self, optimizer=None, batchSize=10, split="train"):
+    def runEpoch(self, optimizer=None, batchSize=10, split="train",
+                 max_batches=None):
         """Run one epoch over the dataset (training if optimizer given, eval if None).
 
         Drives batching with a ``SentenceStreamDataset`` DataLoader so every
         split is consumed as ``B = batchSize`` contiguous streams. ``B`` is
         capped at ``len(split)`` by ``data_loader``, so small eval sets
         degrade gracefully.
+
+        ``max_batches`` (optional int): cap the outer cursor loop at this
+        many ``runBatch`` calls. ``None`` (default) walks the full split.
+        Used by ``--test N`` to bound the test-pass cost on large
+        corpora; the bound applies to whichever split this call drives.
 
         In inference mode (split="runtime", no optimizer): skips loss
         construction, output accumulation, progress printing, and CBOW
@@ -2608,14 +2848,19 @@ class BasicModel(BaseModel):
         # ModelFactory.run; the default lives in data/model.xml.
         num_workers = self._num_workers
 
-        # Cursor mode: text-input + byte lexer + AR mode opts into the
-        # rolling-cursor loader path, where each row's document is walked
-        # one slab_bytes-wide tick at a time. Hard reset fires per-row
-        # only when the row's cursor crosses a doc boundary
-        # (next_tick → hard_eos[b] = True). For non-cursor modes (numeric
-        # data, non-AR, non-byte) the legacy per-batch path stays in
-        # place; in that case hard_eos = [True] * B every tick to
-        # preserve the old "Reset every batch" semantics.
+        # Cursor universal (§8e). Two cursor modes share one outer loop:
+        #
+        #   * **Byte cursor** (AR text byte): each row's document is
+        #     walked one ``slab_bytes``-wide tick at a time;
+        #     ``hard_eos[b]`` flips True when row b crosses a doc
+        #     boundary. Sized to ``nObj - 1`` so the lex's reserved
+        #     EOS-sentinel slot stays byte-faithful.
+        #   * **Trial cursor** (numeric / non-AR / non-byte): each tick
+        #     yields one batch of trials with ``hard_eos = [True] * B``.
+        #     The data cursor aligns with the trial: each tick is one
+        #     atomic data unit per row (MNIST image, XOR sample,
+        #     non-AR sentence). Per-row Reset fires for every row each
+        #     tick, mirroring the pre-handoff DataLoader contract.
         is_ar_mode_outer = (
             hasattr(self, 'masked_prediction')
             and self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
@@ -2626,113 +2871,131 @@ class BasicModel(BaseModel):
             and isinstance(self.inputSpace.data.train_input[0], str)
         )
         byte_lexer = getattr(self, 'lexer', None) in ('byte', 'bytes')
-        use_cursor = (is_ar_mode_outer and text_input and byte_lexer)
+        use_byte_cursor = (is_ar_mode_outer and text_input and byte_lexer)
 
-        if use_cursor:
+        if use_byte_cursor:
             # InputSpace.outputShape[0] (= ``nObj``) is the byte-buffer
-            # width the lex emits; the lex reserves one slot for the
-            # empty-word EOS sentinel (see Spaces.py:_lex_batch
-            # ``n_tokens = min(len(stream), nObj - 1)``). Sizing the slab
-            # to nObj - 1 keeps the cursor byte-faithful through the lex
-            # — every byte the cursor emits ends up in a real token.
-            slab_bytes = max(1, int(self.inputSpace.outputShape[0]) - 1)
-            loader = self.inputSpace.data.data_loader(
-                split=split,
-                num_streams=batchSize,
-                num_workers=0,         # cursor drives ticks itself
-                prefetch_factor=None,
-                pin_memory=(TheDevice.get().type == "cuda"),
-                slab_bytes=slab_bytes,
-            )
-            ds = loader.dataset
-            B_eff = ds.num_streams
-            outputTensor = self.outputSpace.prepOutput(
-                self._stub_outputs(B_eff))
-            with ctx:
-                step = 0
-                while not ds.all_done():
-                    slab, hard_eos = ds.next_tick()
-                    inputTensor = slab.to(
-                        device=TheDevice.get(), dtype=torch.int8
-                    ).unsqueeze(1)  # [B, 1, slab_bytes] -- prepInput shape
-                    result, _ = self.runBatch(
-                        train=training, batchNum=step,
-                        batchSize=B_eff, split=split,
-                        optimizer=optimizer,
-                        batch_override=(inputTensor, outputTensor),
-                    )
-                    if result is not None:
-                        record(result)
-                    # Tail dispatch: per-row hard reset, soft reset, then
-                    # the truth-layer compact -- all live outside runBatch
-                    # under the rolling-cursor compute-brick contract.
-                    self.dispatch_per_row_reset(hard_eos)
-                    self.dispatch_soft_reset()
-                    self.post_tick_compact()
-                    step += B_eff
+            # width the lex emits. Under the §8g/§EOS-removal change
+            # the lex no longer reserves a slot for an EOS sentinel
+            # (the slot held a null-embedding indistinguishable from
+            # the codebook's null padding -- no reader consumed it as
+            # a stop signal). Sizing the slab to ``nObj`` keeps the
+            # cursor byte-faithful through the lex: every byte emitted
+            # ends up in a real token, and the assert in
+            # ``InputSpace._lex_batch`` (``n_tokens <= nObj``) holds
+            # exactly under the bytes-mode parse fix that produces one
+            # token per input byte.
+            slab_bytes = max(1, int(self.inputSpace.outputShape[0]))
         else:
-            loader = self.inputSpace.data.data_loader(
-                split=split,
-                num_streams=batchSize,
-                num_workers=num_workers,
-                prefetch_factor=(2 if num_workers > 0 else None),
-                pin_memory=(TheDevice.get().type == "cuda"),
-            )
+            slab_bytes = None           # trial cursor (one tick = one trial)
 
-            with ctx:
-                step = 0
-                for inp_items, out_items in loader:
-                    B = (inp_items.shape[0]
-                         if isinstance(inp_items, torch.Tensor)
-                         else len(inp_items))
+        # The runEpoch outer loop drives ``ds.next_tick()`` directly
+        # for both modes; the surrounding ``DataLoader`` is built only
+        # so existing tests can grab ``loader.dataset``. ``num_workers``
+        # is forced to 0 because the loader is never iterated -- async
+        # workers would prefetch tensors no one consumes.
+        loader = self.inputSpace.data.data_loader(
+            split=split,
+            num_streams=batchSize,
+            num_workers=0,
+            prefetch_factor=None,
+            pin_memory=(TheDevice.get().type == "cuda"),
+            slab_bytes=slab_bytes,
+        )
+        ds = loader.dataset
+        B_eff = ds.num_streams
+
+        # Pre-build the AR stub outputs once for the byte-cursor path
+        # (every tick reuses them; the AR target is the input bytes).
+        if use_byte_cursor:
+            byte_stub_output = self.outputSpace.prepOutput(
+                self._stub_outputs(B_eff))
+        else:
+            byte_stub_output = None
+
+        with ctx:
+            step = 0
+            batches_run = 0
+            while not ds.all_done():
+                if max_batches is not None and batches_run >= max_batches:
+                    TheMessage(
+                        f"runEpoch({split}): hit max_batches={max_batches} "
+                        f"cap; cursor exiting early ({batches_run} batches "
+                        f"processed, ds.all_done={ds.all_done()}).")
+                    break
+                inp_items, out_items, hard_eos = ds.next_tick()
+                if use_byte_cursor:
+                    # Byte slab: convert uint8 -> int8 [B, 1, slab_bytes]
+                    # to match prepInput's expected shape downstream.
+                    inputTensor = inp_items.to(
+                        device=TheDevice.get(), dtype=torch.int8
+                    ).unsqueeze(1)
+                    outputTensor = byte_stub_output
+                    B_step = B_eff
+                else:
+                    # Trial mode: caller supplies raw inputs/outputs;
+                    # prepInput / prepOutput stage them onto device.
+                    B_step = (inp_items.shape[0]
+                              if isinstance(inp_items, torch.Tensor)
+                              else len(inp_items))
                     inputTensor = self.inputSpace.prepInput(inp_items)
                     outputTensor = self.outputSpace.prepOutput(out_items)
 
-                    # Unified path: AR modes drive their outer pos loop
-                    # inside MentalModel.forward() via the sliding-window
-                    # buffer on InputSpace; non-AR modes run one pass. See
-                    # basicmodel/doc/specs/2026-04-20-streaming-ar-training-loop-design.md
-                    result, _ = self.runBatch(
-                        train=training, batchNum=step,
-                        batchSize=B, split=split,
-                        optimizer=optimizer,
-                        batch_override=(inputTensor, outputTensor),
-                    )
-                    if result is not None:
-                        record(result)
-                    # Legacy contract: every batch is a doc boundary
-                    # (one item per row per tick). Fire per-row hard
-                    # reset for every row, then drain soft_reset signal,
-                    # then compact -- mirrors the per-tick dispatch the
-                    # cursor path does.
-                    self.dispatch_per_row_reset([True] * B)
-                    self.dispatch_soft_reset()
-                    self.post_tick_compact()
-                    # batchNum is the sentence cursor (see runBatch:
-                    # ``sentenceIdx = batchNum``).  Each loader iteration
-                    # consumes B sentences in parallel, so the cursor
-                    # advances by B, not 1.
-                    step += B
+                # Unified path: AR modes drive their outer pos loop
+                # inside MentalModel.forward() via the sliding-window
+                # buffer on InputSpace; non-AR modes run one pass. See
+                # basicmodel/doc/specs/2026-04-20-streaming-ar-training-loop-design.md
+                #
+                # ``progress`` (cursor's doc-fraction completed) lets
+                # ``runBatch`` print a percent next to its ``batch =``
+                # line so long runs report visible progress. Cap at the
+                # ``max_batches`` slice when set so a capped pass shows
+                # 100% at its own completion rather than the underlying
+                # cursor's fraction.
+                if max_batches is not None and max_batches > 0:
+                    cap_frac = (batches_run + 1) / float(max_batches)
+                    progress_frac = min(1.0, cap_frac)
+                else:
+                    progress_frac = ds.progress() if hasattr(ds, 'progress') else None
+                result, _ = self.runBatch(
+                    train=training, batchNum=step,
+                    batchSize=B_step, split=split,
+                    optimizer=optimizer,
+                    batch_override=(inputTensor, outputTensor),
+                    progress=progress_frac,
+                )
+                if result is not None:
+                    record(result)
+                # Tail dispatch: word-buffer flush (§6c Path B), per-row
+                # hard reset, soft reset, then the truth-layer compact
+                # -- all live outside runBatch under the rolling-cursor
+                # compute-brick contract. Flush runs first so the
+                # materialized ``subspace.word`` is available to any
+                # post-tick consumer the Reset path might touch.
+                self.flush_word_buffers()
+                self.dispatch_per_row_reset(hard_eos)
+                self.dispatch_soft_reset()
+                self.post_tick_compact()
+                step += B_step
+                batches_run += 1
 
-                    # Per-batch CBOW/SBOW embedding training for text AR
-                    # modes, preserved from the old AR branch.
-                    text_batch = (isinstance(inp_items, list)
-                                  and inp_items
-                                  and isinstance(inp_items[0], str))
-                    is_ar_mode = (hasattr(self, 'masked_prediction')
-                                  and self.masked_prediction
-                                  in ('ARLM', 'ARUS', 'ARIR'))
-                    if (training and is_ar_mode and text_batch
-                            and getattr(self, 'lexer', None)
-                            not in ('byte', 'bytes')):
-                        te = getattr(self, 'train_embedding', 'NONE')
-                        if te in ('CBOW', 'SBOW', 'BOTH'):
-                            method = 'CBOW' if te == 'CBOW' else 'SBOW'
-                            for sentence in inp_items:
-                                words = [t for t, _
-                                         in parse(sentence, lex='words')]
-                                self.perceptualSpace.train_embeddings(
-                                    words, method=method)
+                # Per-batch CBOW/SBOW embedding training for text AR
+                # modes that don't use the byte cursor (word/sentence
+                # lexer). Byte-cursor path has its own embedding update
+                # plumbing inside runBatch.
+                if (training and not use_byte_cursor
+                        and is_ar_mode_outer
+                        and isinstance(inp_items, list)
+                        and inp_items
+                        and isinstance(inp_items[0], str)):
+                    te = getattr(self, 'train_embedding', 'NONE')
+                    if te in ('CBOW', 'SBOW', 'BOTH'):
+                        method = 'CBOW' if te == 'CBOW' else 'SBOW'
+                        for sentence in inp_items:
+                            words = [t for t, _
+                                     in parse(sentence, lex='words')]
+                            self.perceptualSpace.train_embeddings(
+                                words, method=method)
 
         if inputChunks:
             if outputChunks[0].dim() == 0:
@@ -2772,7 +3035,9 @@ class MentalModel(BaseModel):
     dispatch_per_row_reset = BasicModel.dispatch_per_row_reset
     dispatch_soft_reset    = BasicModel.dispatch_soft_reset
     post_tick_compact      = BasicModel.post_tick_compact
+    flush_word_buffers     = BasicModel.flush_word_buffers
     _stub_outputs          = BasicModel._stub_outputs
+    _maybe_compile_brick   = BasicModel._maybe_compile_brick
 
     def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
                conceptualOrder=1,
@@ -2837,7 +3102,7 @@ class MentalModel(BaseModel):
                 "butterfly permutations fight constituency structure")
 
         # Butterfly-path state cache (populated in the useButterflies branch
-        # below).  Named after ButterflyStage.
+        # below). Mirrors the per-stage SigmaLayer/PiLayer butterfly mode.
         self._butterfly_state_vectors = None
         self._butterfly_state_dim = None
         self._butterfly_symbol_width = None
@@ -2997,28 +3262,37 @@ class MentalModel(BaseModel):
         for t in range(T):
             is_last = (t == T - 1)
             if self.useButterflies:
-                # Butterfly: ConceptualSpace wraps a PiLayer that operates
-                # on packed pairs [B, N_t/2, 2*state_dim]; the ButterflyStage
-                # halves N externally unless is_last.
+                # Butterfly: ConceptualSpace's PiLayer operates on packed
+                # pairs [B, N_t/2, 2*state_dim] internally. The butterfly
+                # access pattern (permute / pack / unpack / merge) is
+                # built into PiLayer/SigmaLayer themselves -- pass
+                # stage_idx/initial_n/is_last and the layer's forward
+                # becomes the butterfly-aware version with pre-cached
+                # permutation buffers.
                 pair_dim = 2 * state_dim
-                pi = PiLayer(
+                # Conceptual sees N = state_vectors >> t at its input.
+                # Symbolic sees N = state_vectors >> (t+1) when Conceptual
+                # halved (not is_last), or N = state_vectors >> t when
+                # Conceptual was is_last (no halve).
+                cs_n_t = state_vectors >> t
+                ss_n_t = cs_n_t if is_last else (state_vectors >> (t + 1))
+                cs_layer = PiLayer(
                     pair_dim, pair_dim,
                     naive=naive, ergodic=self.ergodic,
                     invertible=True, nonlinear=True,
-                    monotonic=self.monotonic)
-                pi.saturate = False
-                cs_layer = ButterflyStage(
-                    pi, stage_idx=t, initial_n=state_vectors,
+                    monotonic=self.monotonic,
+                    stage_idx=t, n_t=cs_n_t,
                     is_last=is_last)
-                # SymbolicSpace sees the post-conceptual merged N. Its sigma
-                # operates on pairs packed from the already-halved stream and
-                # skips further merge (is_last=True).
-                sig = SigmaLayer(pair_dim, pair_dim, invertible=True,
-                                 monotonic=self.monotonic, nonlinear=symbol_nonlinear)
-                ss_layer = ButterflyStage(
-                    sig, stage_idx=t, initial_n=state_vectors // 2,
+                cs_layer.saturate = False
+                # SymbolicSpace sees the post-conceptual N. Its sigma
+                # operates on pairs packed from that stream and skips
+                # further merge (is_last=True).
+                ss_layer = SigmaLayer(
+                    pair_dim, pair_dim, invertible=True,
+                    monotonic=self.monotonic, nonlinear=symbol_nonlinear,
+                    stage_idx=t, n_t=ss_n_t,
                     is_last=True)
-                cs_in = [state_vectors >> t, state_dim]
+                cs_in = [cs_n_t, state_dim]
                 cs_out = cs_in[:] if is_last else [state_vectors >> (t + 1), state_dim]
                 ss_in = cs_out[:]
                 ss_out = cs_out[:]

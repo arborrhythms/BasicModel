@@ -20,6 +20,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from util import TheMessage
 
+WEIGHT_PATTERNS = ("*.ckpt", "*.kv")
+
 
 def parse_args():
     p = argparse.ArgumentParser(description="Train BasicModel end-to-end")
@@ -38,6 +40,25 @@ def parse_args():
                    help="Cap AR training/eval positions per document for "
                         "quick smoke runs. Full training uses the XML "
                         "InputSpace.nOutput cap when omitted.")
+    p.add_argument("--test", nargs="?", const=-1, type=int, default=None,
+                   metavar="N",
+                   help="Run the baseline + post-train test/validation "
+                        "passes. Without this flag those passes are "
+                        "skipped (training only) -- avoids the long "
+                        "test-split traversal that can dominate wall-"
+                        "clock at large maxDocs. Pass an integer "
+                        "(e.g. --test 100) to cap each test pass at N "
+                        "batches; --test alone runs the full passes.")
+    p.add_argument("--compile-mode", default=None,
+                   choices=("default", "reduce-overhead", "max-autotune",
+                            "max-autotune-no-cudagraphs"),
+                   help="torch.compile mode (sets MODEL_COMPILE_MODE env). "
+                        "default = Inductor kernel fusion only (no "
+                        "CUDAGraphs); reduce-overhead = Inductor + "
+                        "CUDAGraphs; max-autotune = Inductor + "
+                        "CUDAGraphs + autotune; max-autotune-no-"
+                        "cudagraphs = autotune without CUDAGraphs. "
+                        "Defaults to 'default' (no CUDAGraph capture).")
     p.add_argument("--random-shards", action="store_true",
                    help="Pick random shard indices for variety across runs")
     p.add_argument("--force-embeddings", action="store_true",
@@ -178,6 +199,15 @@ def train_local(args):
         model_env["BASIC_NUM_EPOCHS"] = str(args.num_epochs)
     if args.max_tokens is not None:
         model_env["BASIC_MAX_TOKENS"] = str(args.max_tokens)
+    # --test gating: env var encodes the request to runTrial in Models.py.
+    #   unset             -> skip baseline + post-train test passes
+    #   "" (empty string) -> run the test passes uncapped
+    #   "N" (integer)     -> run the test passes capped at N batches each
+    if args.test is not None:
+        model_env["BASIC_RUN_TEST"] = "" if args.test == -1 else str(args.test)
+    # --compile-mode forwarded to util.compile via MODEL_COMPILE_MODE.
+    if args.compile_mode is not None:
+        model_env["MODEL_COMPILE_MODE"] = args.compile_mode
 
     entry = os.path.join(proj, "bin", "Models.py")
 
@@ -213,7 +243,22 @@ def train_remote(args):
     ssh_opts = f"ssh -i {key}"
     dest = f"{args.user}@{args.host}:{args.remote_dir}/"
 
-    # Rsync
+    # Reconcile weights first so remote training can resume from the newest
+    # checkpoint, regardless of which side produced it.
+    TheMessage(f"\n=== Syncing weights with {args.host} ===")
+    weight_cmd = [
+        "rsync", "-av", "--progress", "--update", "--prune-empty-dirs",
+        "-e", ssh_opts,
+        "--include", "*/",
+    ]
+    for pattern in WEIGHT_PATTERNS:
+        weight_cmd += ["--include", pattern]
+    weight_cmd += ["--exclude", "*"]
+    run(weight_cmd + [f"{proj}/", dest])
+    run(weight_cmd + [dest, f"{proj}/"])
+
+    # Rsync source after weight reconciliation; local source is authoritative
+    # for non-weight files.
     TheMessage(f"\n=== Syncing to {args.host} ===")
     rsync_cmd = [
         "rsync", "-av", "--progress",
@@ -222,8 +267,10 @@ def train_remote(args):
         "--exclude", "__pycache__",
         "--exclude", ".DS_Store",
         "--exclude", "output/",
-        f"{proj}/", dest,
     ]
+    for pattern in WEIGHT_PATTERNS:
+        rsync_cmd += ["--exclude", pattern]
+    rsync_cmd += [f"{proj}/", dest]
     run(rsync_cmd)
 
     # Build remote command
@@ -238,13 +285,21 @@ def train_remote(args):
         remote_args += ["--num-epochs", str(args.num_epochs)]
     if args.max_tokens is not None:
         remote_args += ["--max-tokens", str(args.max_tokens)]
+    if args.test is not None:
+        if args.test == -1:
+            remote_args += ["--test"]
+        else:
+            remote_args += ["--test", str(args.test)]
+    if args.compile_mode is not None:
+        remote_args += ["--compile-mode", args.compile_mode]
     if args.random_shards:
         remote_args += ["--random-shards"]
     if args.profile:
         remote_args += ["--profile"]
     # SSH and run -- forward selected env vars that affect training behaviour
     remote_env_vars = "PYTHONUNBUFFERED=1 PYTHONPATH=bin"
-    for var in ("BASICMODEL_DEVICE", "MODEL_COMPILE"):
+    for var in ("BASICMODEL_DEVICE", "MODEL_COMPILE", "MODEL_COMPILE_MODE",
+                "BASIC_COMPILE_MODE"):
         val = os.environ.get(var)
         if val:
             remote_env_vars = f"{var}={val} {remote_env_vars}"
@@ -261,6 +316,9 @@ def train_remote(args):
         remote_cmd,
     ]
     run(ssh_cmd)
+
+    TheMessage(f"\n=== Pulling generated weights from {args.host} ===")
+    run(weight_cmd + [dest, f"{proj}/"])
 
 
 class _Tee:

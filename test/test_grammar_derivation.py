@@ -320,11 +320,10 @@ class TestGrammarProject(_GrammarTestBase):
         all_known = grammar_methods | subclass_methods | typed_dispatch
         self.assertTrue(dispatched.issubset(all_known),
                         f"Unknown methods: {dispatched - all_known}")
-        # chunk is P-tier; identity / absorb are sugar-absorption rules
-        # added by the rolling-cursor handoff (only fire when the cfg /
-        # XML grammar opts them in). All other methods should appear in
-        # at least one configured rule.
-        excluded = {'chunk', 'identity', 'absorb'}
+        # All grammar-dispatch methods should appear in at least one
+        # configured rule. Perceptual chunking is outside this table, and
+        # unary identity is just transition / PROJECT behavior.
+        excluded = set()
         self.assertTrue(all_known.issubset(dispatched | excluded),
                         f"Untested methods: {all_known - dispatched}")
 

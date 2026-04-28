@@ -57,7 +57,7 @@ Training loop and I/O settings.
 | `autoload` | bool | `true` | Automatically load weights from `weightsPath` on model creation. Set to `false` for fresh training. |
 | `autosave` | bool | `false` | Automatically save weights after training completes. |
 | `checkpointEveryBatches` | int | `0` | Save in-progress weights and embeddings every N optimizer steps. `0` disables periodic checkpoints. Training exceptions also write an `.emergency.ckpt` when `autosave` or periodic checkpoints are enabled. |
-| `negSamples` | int | `64` | Number of negative samples per positive example for CBOW/SBOW training. Controls memory usage: `O(batch $\times$ negSamples $\times$ dim)` vs `O(batch $\times$ vocab)` for full softmax. |
+| `negSamples` | int | `64` | Number of negative samples per positive example for CBOW/SBOW training. Controls memory usage: `O(batch * negSamples * dim)` vs `O(batch * vocab)` for full softmax. |
 
 #### `<trainEmbedding>` -- Embedding Update Modes
 
@@ -94,7 +94,7 @@ omitting them defaults to 0.1.
 | `conceptualOrder`    | int     | `1`     | `<architecture>` | Number of Percept$\rightarrow$Concept$\rightarrow$Symbol iterations. Higher orders use a geometrically partitioned symbolic space. |
 | `useButterflies`     | boolean | `false` | `<architecture>` | Enable pairwise sigma/pi mixing via ButterflyStage (N-halving per conceptual order). Mutually exclusive with `useGrammar`. |
 | `monotonic`          | boolean | `false` | `<architecture>` | When true, invertible SigmaLayers use W>=0 (NonNegativeInvertibleLinearLayer) preserving ordering; false uses unconstrained InvertibleLinearLayer (bitonic response). |
-| `useGrammar`         | boolean | `false` | `<WordSpace>`    | Enable grammar-directed per-level composition (progressive bottleneck). Mutually exclusive with `useButterflies`. |
+| `useGrammar`         | string | `"none"` | `<WordSpace>`    | Grammar mode. Current parser accepts `none`, `all`, and legacy `thoughtFree`; target Shamatha Speech work adds/aliases `shamathaSpeech` for the narrow DNF object grammar. Full grammar mode is mutually exclusive with `useButterflies`. |
 
 ```xml
 <architecture>
@@ -110,6 +110,12 @@ omitting them defaults to 0.1.
   <TruthLoss>0.0</TruthLoss>
 </training>
 ```
+
+Shamatha Speech should not be confused with serial mode.  Serial mode is
+the rolling cursor / next-token runtime path.  Shamatha Speech is a
+grammar policy: it may compose over all active percepts, but every
+logical merge must preserve connected `where()` support and continuous
+`when()` support so the resulting DNF denotes one object.
 
 Luminosity and universality are **multiplicative** -- they scale the total loss by
 `(1 + LuminosityWeight*(1-luminosity) + UniversalityWeight*(1-universality))`.

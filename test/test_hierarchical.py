@@ -230,27 +230,31 @@ class TestPerLevelLayers(unittest.TestCase):
 
     def test_pair_sigmas_created(self):
         """Butterfly path: T independent ConceptualSpace instances, each
-        carrying a ButterflyStage-wrapped pi on pair-dim inputs."""
+        carrying a butterfly-mode PiLayer on pair-dim inputs."""
         model = _make_model('RamsifiedModel.xml')
         if not model.useButterflies:
             self.skipTest("Model not butterfly-enabled")
         pair_dim = 2 * model._butterfly_state_dim
         self.assertEqual(len(model.conceptualSpaces), model.conceptualOrder)
         stage0 = model.conceptualSpaces[0].pi
-        self.assertEqual(stage0.inner.nInput, pair_dim)
-        self.assertEqual(stage0.inner.nOutput, pair_dim)
+        self.assertTrue(getattr(stage0, "butterfly", False),
+                        "ConceptualSpace.pi should be in butterfly mode")
+        self.assertEqual(stage0.nInput, pair_dim)
+        self.assertEqual(stage0.nOutput, pair_dim)
 
     def test_pair_pi_layers_created(self):
         """Butterfly path: T independent SymbolicSpace instances, each
-        carrying a ButterflyStage-wrapped pi on pair-dim inputs."""
+        carrying a butterfly-mode SigmaLayer on pair-dim inputs."""
         model = _make_model('RamsifiedModel.xml')
         if not model.useButterflies:
             self.skipTest("Model not butterfly-enabled")
         pair_dim = 2 * model._butterfly_state_dim
         self.assertEqual(len(model.symbolicSpaces), model.conceptualOrder)
         stage0 = model.symbolicSpaces[0].sigma
-        self.assertEqual(stage0.inner.nInput, pair_dim)
-        self.assertEqual(stage0.inner.nOutput, pair_dim)
+        self.assertTrue(getattr(stage0, "butterfly", False),
+                        "SymbolicSpace.sigma should be in butterfly mode")
+        self.assertEqual(stage0.nInput, pair_dim)
+        self.assertEqual(stage0.nOutput, pair_dim)
 
     def test_symbol_factor_matches_configured_volume(self):
         """Pair head reshaping matches the configured symbol volume exactly."""

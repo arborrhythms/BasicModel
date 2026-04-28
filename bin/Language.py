@@ -23,7 +23,7 @@ from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
-from Layers import Layer, PiLayer, SigmaLayer, ButterflyStage  # Import custom layers from Model.py
+from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, ChunkLayer
 from Layers import ColumnUsageTracker, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
 from Layers import SortingLayer, TruthLayer, LiftingLayer, InterSentenceLayer, SparsityRegularizer, SmoothingRegularizer, ImpenetrableLayer
@@ -458,9 +458,9 @@ TheGrammar = Grammar()
 class SyntacticLayer(Layer):
     """Unified rule-prediction and rule-execution layer for the grammar.
 
-    Post-refactor (2026-04-19) this single class owns every compositional
+    Post-refactor (2026-04-19) this single class owns every grammar
     rule (union, intersection, not, lift, lower, equals, part, true, false,
-    non, conjunction, disjunction, swap, what, where, when, query, chunk).
+    non, conjunction, disjunction, swap, what, where, when, query, absorb).
     The prior per-tier subclasses
     (``PerceptualSyntacticLayer`` / ``ConceptualSyntacticLayer`` /
     ``SymbolicSyntacticLayer``) have been merged into this class.
@@ -638,9 +638,8 @@ class SyntacticLayer(Layer):
 
     # -- Forward/Reverse dispatch ------------------------------------
     #
-    # C-tier ops (invertible): not, intersection, union, lift, lower
-    # S-tier ops (lossy, no inverse): equals, part, true, non, swap
-    # P-tier ops (invertible): chunk
+    # C-tier/SigmaPi ops (invertible): not, intersection, union, lift, lower
+    # S-tier ops (lossy, no inverse): equals, part, true, non, swap, absorb
     #
     # _RULE_METHODS maps rule name -> (forwardName, reverseName|None, binary)
 
@@ -648,9 +647,7 @@ class SyntacticLayer(Layer):
     # former subclasses (PerceptualSyntacticLayer, ConceptualSyntacticLayer,
     # SymbolicSyntacticLayer) have been collapsed into this class.
     _RULE_METHODS = {
-        # Sugar absorption (identity pass-through and binary left-pass).
-        # Both are S-tier and have no inverse (the sugar is discarded).
-        'identity':     ('identityForward',     None,                  False),
+        # Sugar absorption. S-tier and lossy: the right operand is discarded.
         'absorb':       ('absorbForward',       None,                  True),
         # C-tier invertible concept ops
         'union':        ('unionForward',        'unionReverse',        True),
@@ -673,8 +670,6 @@ class SyntacticLayer(Layer):
         'where':        ('whereForward',        None,                  False),
         'when':         ('whenForward',         None,                  False),
         'query':        ('queryForward',        None,                  True),
-        # P-tier invertible merge
-        'chunk':        ('chunkForward',        'chunkReverse',        True),
     }
 
     # Step 6: Direct ``Ops`` dispatch table used by the explicit-op
@@ -691,8 +686,8 @@ class SyntacticLayer(Layer):
     # tables: ``intersection`` / ``union`` route to the unified
     # ``Ops.lower`` / ``Ops.lift`` mode-dispatchers, ``not`` to
     # ``Ops.negation``, etc.  Ops with no stateless implementation
-    # (``equals``, ``part``, ``query``, ``swap``, ``what`` / ``where``
-    # / ``when``, ``chunk``) are absent and must go through the
+    # (``absorb``, ``query``, ``swap``, ``what`` / ``where`` / ``when``)
+    # are absent and must go through the
     # ``_RULE_METHODS`` path.
     #
     # Step 5 deferral 3 (binary rule application): the cfg dispatcher
@@ -734,8 +729,8 @@ class SyntacticLayer(Layer):
         Used by callers that have a rule table loaded from
         ``data/grammar.cfg`` and want to apply the named op without
         going through layer context (Basis / subspace / mask).  For
-        ops that need codebook context (``equals``, ``part``,
-        ``query``, ``swap``, ``what`` / ``where`` / ``when``, ``chunk``)
+        ops that need layer context (``absorb``, ``query``, ``swap``,
+        ``what`` / ``where`` / ``when``)
         callers must use ``project()`` instead — those entries are not
         present in ``_OPS_METHODS`` and a ``KeyError`` here signals
         that the layer-context dispatch path is required.
@@ -839,45 +834,18 @@ class SyntacticLayer(Layer):
             out = result
         return self._apply_mask(out, mask, subspace=subspace)
 
-    # -- Sugar absorption: identity / absorb ----------------------------
-    # `identity(S)` is a unary pass-through: S' = S. The rule predictor
-    # learns to assign it high probability when the position is grammatical
-    # noise (whitespace, punctuation, single-char tokens with low semantic
-    # weight). `absorb(S, S)` is a binary left-pass: returns the left
-    # operand and discards the right. The right operand is the "sugar"
-    # that should be absorbed into the surrounding constituent without
-    # contributing to it. Both rules are in scope of the rolling-cursor
-    # handoff so the grammar has an explicit absorption contract for the
-    # punctuation/whitespace it now sees more of (rolling cursors keep
-    # docs whole instead of truncating at sentence boundaries).
-    def identityForward(self, left, subspace, mask=None):
-        return self._apply_mask(left, mask, subspace=subspace)
+    # -- Sugar absorption -----------------------------------------------
+    # `absorb(S, S)` is a binary left-pass: returns the left operand and
+    # discards the right. The right operand is the "sugar" that should be
+    # absorbed into the surrounding constituent without contributing to it.
+    # Unary `identity(S)` was removed as a grammar rule because it is just
+    # the transition / PROJECT behavior under another name.
 
     def absorbForward(self, left, right, subspace, mask=None):
         # Left-pass: return left unchanged; right is sugar that the rule
         # predictor opted to discard. mask is applied to the surviving
         # output so per-cell gating still flows through.
         return self._apply_mask(left, mask, subspace=subspace)
-
-    # -- P-tier: chunk (invertible) --------------------------------
-
-    def chunkForward(self, left, right, subspace, mask=None):
-        b = self._basis(subspace)
-        if b is not None:
-            out = b.disjunction(left, right, monotonic=True)
-        elif right is None:
-            out = left
-        else:
-            out = torch.max(left, right)
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    def chunkReverse(self, result, right, subspace, mask=None):
-        b = self._basis(subspace)
-        if b is not None:
-            out = b.disjunctionReverse(result, right, monotonic=True)
-        else:
-            out = result
-        return self._apply_mask(out, mask, subspace=subspace)
 
     # -- S-tier: lossy operations (no inverse) ---------------------
 
@@ -1761,7 +1729,18 @@ class SyntacticLayer(Layer):
             # Collect per-batch updates; build an out-of-place live
             # replacement after the loop so autograd sees a fresh tensor
             # node each depth step instead of an in-place mutation chain.
+            #
+            # ``add_word`` calls were per-cell scalar (each appending to
+            # ``subspace.word`` directly) before §6c. The brick-
+            # vectorization handoff redirects them to a per-cell tensor
+            # scatter into ``subspace.word_records`` / ``word_count``;
+            # the chart path flushes those records onto ``subspace.word``
+            # before returning so legacy consumers (``decompose``,
+            # ``reconstruct``, the SVO walker) see the usual word list.
+            # Collect the per-row args here, then dispatch one vector
+            # ``add_word`` call per depth step after the row loop.
             live_mask = torch.zeros(B, N, device=live.device, dtype=live.dtype)
+            aw_b, aw_left, aw_rule, aw_right = [], [], [], []
             for b in range(B):
                 if not pair_positions[b] or best_pair[b] >= len(pair_positions[b]):
                     continue
@@ -1774,10 +1753,20 @@ class SyntacticLayer(Layer):
                 self._derivation_trace[b].append(
                     (int(rule_gid), int(left_slot), int(right_slot),
                      int(left_slot), int(merged_cat)))
-                subspace.add_word(b, int(left_slot), int(rule_gid),
-                                  order=step,
-                                  leaf1=int(left_slot),
-                                  leaf2=int(right_slot))
+                aw_b.append(b)
+                aw_left.append(int(left_slot))
+                aw_rule.append(int(rule_gid))
+                aw_right.append(int(right_slot))
+            if aw_b:
+                dev = data.device
+                subspace.add_word(
+                    torch.tensor(aw_b, device=dev, dtype=torch.long),
+                    torch.tensor(aw_left, device=dev, dtype=torch.long),
+                    torch.tensor(aw_rule, device=dev, dtype=torch.long),
+                    order=step,
+                    leaf1=torch.tensor(aw_left, device=dev, dtype=torch.long),
+                    leaf2=torch.tensor(aw_right, device=dev, dtype=torch.long),
+                )
             # merged_vec [B, D] broadcast to [B, N, D]; mask selects
             # the left_slot position per batch row. live_mask has no
             # grad_fn (zeros_like + mask assignment), so the version
@@ -1800,6 +1789,16 @@ class SyntacticLayer(Layer):
         # tick. Host-side only (no GPU sync) — drained by
         # WordSpace.drain_sentence_completed() after runBatch returns.
         self._signal_sentence_completed(subspace, alive, category, grammar)
+        # Materialize the tick's tensor word buffer onto ``subspace.word``
+        # so consumers that read words directly after compose (tests,
+        # standalone calls) see the chart entries. Under runBatch this
+        # flush happens before the per-tick End() clear, so legacy
+        # consumers in the reverse pass observe the same word list as
+        # the pre-§6c scalar-add_word path. The runEpoch outer loop's
+        # ``flush_word_buffers`` after this remains correct and idempotent
+        # (word_count is already zero post-flush).
+        if hasattr(subspace, 'flush_word_buffer'):
+            subspace.flush_word_buffer()
         return live, self.last_svo
 
     def _signal_sentence_completed(self, subspace, alive, category, grammar):
@@ -2196,6 +2195,28 @@ class SyntacticLayer(Layer):
     def set_tau(self, tau):
         """Anneal the Gumbel-softmax temperature."""
         self.tau = tau
+
+    def flush_word_buffer(self, subspace):
+        """Drain the tick's tensor word buffer into ``subspace.word``.
+
+        Outer-loop hook for the brick-vectorization handoff §6c (Path
+        B). The chart path now materializes before compose returns, so
+        the outer doc-streaming loop's post-brick call is normally
+        idempotent (``word_count`` is already zero). Keeping this wrapper
+        preserves the documented call site for any path that still writes
+        buffered entries via the vector-typed ``subspace.add_word``
+        overload.
+
+        Thin wrapper -- the buffer state lives on the SubSpace so per-
+        subspace word lists stay independent. The method exists on
+        SyntacticLayer to match the call site documented in the plan
+        (``wordSpace.syntacticLayer.flush_word_buffer(subspace)``).
+        """
+        if subspace is None:
+            return
+        flush = getattr(subspace, 'flush_word_buffer', None)
+        if flush is not None:
+            flush()
 
 
 class CategoryStack:

@@ -8,8 +8,8 @@ BasicModel is a bidirectional neural architecture organized as a pipeline of six
 **spaces**, each implementing a distinct representational transformation:
 
 ```
-Forward:  InputSpace $\rightarrow$ PerceptualSpace $\rightarrow$ ConceptualSpace $\rightarrow$ SymbolicSpace $\rightarrow$ SyntacticSpace $\rightarrow$ OutputSpace
-Reverse:  OutputSpace $\rightarrow$ SyntacticSpace $\rightarrow$ SymbolicSpace $\rightarrow$ ConceptualSpace $\rightarrow$ PerceptualSpace $\rightarrow$ InputSpace
+Forward:  InputSpace -> PerceptualSpace -> ConceptualSpace -> SymbolicSpace -> SyntacticSpace -> OutputSpace
+Reverse:  OutputSpace -> SyntacticSpace -> SymbolicSpace -> ConceptualSpace -> PerceptualSpace -> InputSpace
 ```
 
 The forward pass transforms raw input into predictions. The reverse pass
@@ -144,11 +144,13 @@ When `<useButterflies>true</useButterflies>` (and `conceptualOrder > 1`),
 the Sigma-Pi loop switches from a flat concatenation-based cycle to a
 pairwise butterfly architecture with per-level ButterflyStage wrappers
 and a geometrically partitioned symbol dimension.  `<useGrammar>true</useGrammar>`
-(in `<WordSpace>`) selects a grammar-directed progressive-bottleneck
-variant instead.  The two flags are mutually exclusive -- butterfly
-permutations fight constituency structure.  See
-[Reasoning.md](Reasoning.md) Section Architecture Quadrants for the full
-comparison.
+(legacy spelling for `useGrammar="all"` in `<WordSpace>`) selects a
+grammar-directed progressive-bottleneck variant instead.  Full grammar
+mode and butterflies are mutually exclusive -- butterfly permutations
+fight constituency structure.  The planned `shamathaSpeech` mode is a
+narrow DNF-object grammar with contiguity checks, not the full
+constituency path.  See [Reasoning.md](Reasoning.md) Section
+Architecture Modes for the full comparison.
 
 See [Params.md](Params.md) for all XML configuration parameters.
 See [Training.md](Training.md) for embedding pretraining, SBOW, masked prediction
@@ -156,29 +158,38 @@ modes, and the `<trainEmbedding>` control.
 
 ### Pipeline as a unit, two-tier reset
 
-> *Post the rolling-cursor handoff (`plans/2026-04-26-rolling-cursor-doc-streaming-handoff.md`).*
+> *Post the rolling-cursor handoff (`plans/2026-04-26-rolling-cursor-doc-streaming-handoff.md`)
+> and the brick-vectorization handoff
+> (`plans/2026-04-27-brick-vectorization-and-legacy-removal-handoff.md`).*
 
 `runBatch` is a pure compute brick: forward → loss → backward →
 optimizer.step. It does **not** decide when to reset per-row state, does
-**not** consume `_end_of_stream` for control flow, and (after the
-follow-on vectorization PRs) does **not** issue any GPU→host sync.
+**not** consume `_end_of_stream` for control flow, and (after the §6
+vectorization landed) does **not** issue any GPU→host sync inside the
+brick body.
 
-Reset lives in the outer doc-streaming loop in `runEpoch`:
+Reset lives in the outer doc-streaming loop in `runEpoch`. The same
+loop drives both the byte cursor (AR text byte) and the trial cursor
+(non-AR / numeric / non-byte) -- there is no longer a separate
+DataLoader-iteration branch; `next_tick` is the universal dispatch
+(§8e of the brick-vectorization handoff):
 
 ```
-while not all_streams_done:
-    slab, hard_eos = TheData.next_tick()           # host-side bool list
-    runBatch(slab)                                  # the compute brick
-    soft_eos = wordSpace.drain_sentence_completed()# host-side bool list
-    for b in range(B):
-        if hard_eos[b]:                             # document boundary
-            for space in spaces:
-                space.Reset(batch=b, hard=True)
-        elif soft_eos[b]:                           # grammar derived <start>
-            wordSpace.soft_reset(batch=b)
+while not ds.all_done():
+    inp, out, hard_eos = ds.next_tick()              # 3-tuple, host-side
+    runBatch(inp, out)                                # the compute brick
+    flush_word_buffers()                              # §6c materialize subspace.word
+    dispatch_per_row_reset(hard_eos)                  # hard resets
+    dispatch_soft_reset()                             # grammar <start> reductions
+    post_tick_compact()                               # truth_layer.compact
 ```
 
-**Hard reset.** `TheData` walks each row's document one ≤1024-byte slab at
+For AR text byte, `inp` is a byte slab and `hard_eos[b]` flips True
+when row b's cursor exhausts a doc. For non-AR / numeric data the
+cursor aligns with the trial: each tick yields one batch of trials
+with `hard_eos = [True] * B` (every row ends its trial each tick).
+
+**Hard reset.** `TheData` walks each row's document one slab of up to 1024 bytes at
 a time. A row's `hard_eos` flips True the tick its cursor exhausts the
 current document. The full row-state cascade fires for that row only.
 Other rows continue mid-document with state preserved.
@@ -198,12 +209,28 @@ row reproduces the original document byte-exact. The `valid_mask: [B, K]`
 contract handles partial-fill tails (last slab of a doc shorter than
 `slab_bytes`) via the same NULL-padding semantics already in place.
 
-**Compute-brick contract (target).** No `.item()`, no `.tolist()`, no
-Python conditional on a tensor value, no GPU→host copy inside `runBatch`.
-The handoff itself relocates the in-loop Reset gate but does not yet
-vectorize the residual sync points in `SyntacticLayer.compose` and the
-truth-layer record loop; those land in follow-up PRs and unlock CUDA-graph
-capture of the brick.
+**Compute-brick contract.** No `.item()`, no `.tolist()`, no Python
+conditional on a tensor value, no GPU→host copy inside `runBatch`. The
+brick-vectorization handoff (§6) made this true:
+
+- §6a removed `stm_residual_microbatch`'s `.item()` early-out (always
+  call `disc.predict()`; gate the bias on already-fired rows via
+  multiplication).
+- §6b dropped the per-cell `should_store` gate from the truth layer;
+  `record_batch` stages every cell with a trust score, and post-tick
+  `compact()` filters in one host sync outside the brick.
+- §6c adds tensor `word_records` / `word_count` buffers to `SubSpace`
+  so the chart compose can scatter entries inside the brick;
+  `flush_word_buffer` materializes them onto `subspace.word` once per
+  tick from the outer loop. The chart compose dispatches one vector
+  `add_word` call per depth step (replacing the per-row scalar loop).
+
+CUDA-graph capture of the brick (§7 in the same handoff) is the
+remaining piece. Two residual `.tolist()` calls in
+`SyntacticLayer._compose_vector_chart` (`best_pair`, `best_rule_local`)
+plus a few `if compat.sum() == 0: break`-style data-dependent control
+flow points produce graph breaks; the plan defers handling those to
+the GB10-side capture wiring.
 
 ### Three-File Architecture
 
@@ -254,22 +281,31 @@ See [Logic.md](Logic.md) for the parthood formula and suite,
 full grammar, word encoding, and open implementation questions about
 differentiable tree structure and rule operations.
 
+**Shamatha Speech target.** A separate narrow grammar mode is planned for
+one-pointed object speech: form a complete DNF over the active percepts,
+but permit each `conjunction` / `disjunction` only when the operands'
+`where()` supports are connected and their `when()` supports are
+continuous.  This is not serial cursor mode; it may compose over all
+active percepts, then render the resulting object as strict DNF English.
+See [Language.md](Language.md#shamatha-speech-mode) and
+[plans/2026-04-28-shamatha-speech-contiguity-handoff.md](plans/2026-04-28-shamatha-speech-contiguity-handoff.md).
+
 ---
 
 ## Sigma and Pi Layers
 
-Given a weight matrix $( W \in \mathbb{R}^{m \times n})$ and input vector $( x \in \mathbb{R}^n )$, the output vector $( y \in \mathbb{R}^m )$ is computed as:
+Given a weight matrix $W \in \mathbb{R}^{m \times n}$ and input vector $x \in \mathbb{R}^n$, the output vector $y \in \mathbb{R}^m$ is computed as:
 
 For the Sigma layer:
 
- $$y_j = W x + b$$
- $$y_j = b_j + \sum_{i=1}^{n} W_{ji} x_i$$
+$$y_j = W x + b$$
+$$y_j = b_j + \sum_{i=1}^{n} W_{ji} x_i$$
 
 For the Pi layer (code implementation -- log-space linear):
 
- $$s_i = \log\!\frac{1 + x_i}{1 - x_i} = 2\,\mathrm{atanh}(x_i)$$
- $$z_j = \sum_i W_{ji}\, s_i + b_j$$
- $$y_j = \frac{e^{z_j} - 1}{e^{z_j} + 1} = \tanh(z_j / 2)$$
+$$s_i = \log\!\frac{1 + x_i}{1 - x_i} = 2\,\mathrm{atanh}(x_i)$$
+$$z_j = \sum_i W_{ji}\, s_i + b_j$$
+$$y_j = \frac{e^{z_j} - 1}{e^{z_j} + 1} = \tanh(z_j / 2)$$
 
 The forward path maps $[-1,1] \to (0,\infty)$ via `_to_mult`, takes the log,
 applies a linear transform (InvertibleLinearLayer), exponentiates, and maps
@@ -340,19 +376,19 @@ W^{-1} = U^{-1} @ D^{-1} @ L^{-1}
 Each factor is inverted by a triangular solve (`torch.linalg.solve_triangular`). No SVD
 is required, and the inverse is exact as long as all diagonal entries of D are nonzero.
 
-**Parameter count.** nIn$^2$ + rank + nOut$^2$ total parameters. Initialized at L = I, d = 1,
+**Parameter count.** $nIn^2 + \mathrm{rank} + nOut^2$ total parameters. Initialized at L = I, d = 1,
 U = I so that the initial map is the identity.
 
 ### Ergodic Noise Injection (Factor-Level)
 
-Rather than the matrix-level blend `W_eff = b$\cdot$W + t$\cdot$N` (which destroys the LDU
+Rather than the matrix-level blend $W_{\text{eff}} = b \cdot W + t \cdot N$ (which destroys the LDU
 structure and makes the inverse approximate), noise is injected directly into the raw
 parameters of each factor before the triangular structure is extracted:
 
 ```
-L_eff = I + strict_lower(raw_L + t $\cdot$ noise_raw_L)
-U_eff = I + strict_upper(raw_U + t $\cdot$ noise_raw_U)
-d_eff = b $\cdot$ d_effective + t $\cdot$ noise_d
+L_eff = I + strict_lower(raw_L + t * noise_raw_L)
+U_eff = I + strict_upper(raw_U + t * noise_raw_U)
+d_eff = b * d_effective + t * noise_d
 W_eff = L_eff @ D_eff_embed @ U_eff
 ```
 
@@ -366,7 +402,7 @@ When `stable=True`, `_d_effective()` clamps each diagonal entry `d_i` to magnitu
 
 ```
 d_clamped_i = sign(d_i) * clamp(|d_i|, eps, 1)
-d_eff = b $\cdot$ d_clamped + t $\cdot$ noise_d
+d_eff = b * d_clamped + t * noise_d
 ```
 
 This keeps `d_eff` bounded away from zero, preventing `W_eff` from becoming singular.

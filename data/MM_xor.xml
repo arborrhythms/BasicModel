@@ -99,7 +99,6 @@
         <S>union(S, S)</S>
         <S>lower(S, S)</S>
         <S>lift(S, S)</S>
-        <S>identity(S)</S>
         <S>absorb(S, S)</S>
       </grammar>
       <interpretation>0.5</interpretation>

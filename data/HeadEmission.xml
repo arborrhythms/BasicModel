@@ -35,7 +35,14 @@
   </architecture>
 
   <InputSpace>
-    <nOutput>8</nOutput>
+    <!-- nOutput sized to fit the lex's token count for the inline
+         5-word sentences (the word lexer doesn't strip null padding,
+         so a stringTensor-padded input emits one token per
+         contiguous-non-null run, giving up to ~15 tokens before the
+         EOS sentinel). Was 8 under the legacy silent-truncation path;
+         raised to 32 when §8g of the brick-vectorization handoff
+         replaced the truncation with an assert. -->
+    <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>8</nVectors>
     <nWhere>0</nWhere>
@@ -45,7 +52,7 @@
   </InputSpace>
 
   <PerceptualSpace>
-    <nOutput>8</nOutput>
+    <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>8</nVectors>
     <passThrough>true</passThrough>
@@ -55,7 +62,7 @@
   </PerceptualSpace>
 
   <ConceptualSpace>
-    <nOutput>8</nOutput>
+    <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>8</nVectors>
     <hasAttention>false</hasAttention>
@@ -64,7 +71,7 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nOutput>8</nOutput>
+    <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>8</nVectors>
     <passThrough>false</passThrough>

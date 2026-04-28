@@ -122,13 +122,26 @@ class SentenceStreamDataset(IterableDataset):
     the dataset self-batches and the DataLoader only provides async
     prefetch.
 
-    Rolling-cursor mode (``slab_bytes`` > 0): per-row byte cursor that
-    walks each document one ``slab_bytes``-byte slab at a time, used by
-    ``next_tick()``. A document longer than one slab is consumed across
-    multiple ticks for the same row; documents are concatenated end-to-end
-    within a row's stream. ``hard_eos[b]`` marks ticks that complete a
-    document (host-side bool, no GPU sync). The legacy ``__iter__`` path
-    is unaffected and stays available for non-cursor callers.
+    Two cursor modes share the same ``next_tick`` interface:
+
+    * **Byte cursor** (``slab_bytes`` set): per-row byte cursor that
+      walks each document one ``slab_bytes``-byte slab at a time. A
+      document longer than one slab is consumed across multiple ticks
+      for the same row; documents are concatenated end-to-end within a
+      row's stream. ``hard_eos[b]`` marks ticks that complete a
+      document (host-side bool, no GPU sync). Used for AR text byte
+      training (``runEpoch`` cursor branch).
+
+    * **Trial cursor** (``slab_bytes`` is ``None``): each tick yields
+      one batch of ``num_streams`` trials (one per row); the cursor's
+      step counter advances by 1. ``hard_eos = [True] * B`` every tick
+      because each trial completes immediately. Used for non-AR /
+      numeric / non-byte data (MNIST, XOR with labels, tomatoes), per
+      the brick-vectorization handoff §8e ("data cursor aligns with
+      the trial" for non-AR paths).
+
+    The legacy ``__iter__`` path is preserved for callers that hold a
+    ``DataLoader`` directly (existing tests).
     """
 
     def __init__(self, inputs, num_streams, outputs=None, slab_bytes=None):
@@ -146,11 +159,12 @@ class SentenceStreamDataset(IterableDataset):
         self.outputs = outputs
         self.num_streams = num_streams
         self.stream_length = n // num_streams
-        # Rolling-cursor state: doc_idx[b] is row b's current absolute doc
-        # index in self.inputs; offset[b] is the byte offset within that doc.
-        # Per-row stream window is [b*L, (b+1)*L). slab_bytes=None disables
-        # cursor mode (next_tick raises). Initialized lazily so non-cursor
-        # users (existing __iter__ path) pay nothing.
+        # Cursor state. Two regimes share ``next_tick``:
+        #   * Byte cursor (slab_bytes set): per-row (doc_idx, offset)
+        #     walks UTF-8 byte streams. Used by AR text byte training.
+        #   * Trial cursor (slab_bytes=None): one tick = one batch of
+        #     trials. ``_trial_step`` is the timestep cursor; reaches
+        #     ``stream_length`` when the epoch is done.
         self.slab_bytes = slab_bytes
         if slab_bytes is not None:
             if slab_bytes < 1:
@@ -158,6 +172,8 @@ class SentenceStreamDataset(IterableDataset):
             self.doc_idx = [b * self.stream_length for b in range(num_streams)]
             self.offset = [0] * num_streams
             self._encoded_cache = {}  # doc_idx -> bytes, populated lazily
+        else:
+            self._trial_step = 0
 
     def __len__(self):
         return self.stream_length
@@ -171,6 +187,12 @@ class SentenceStreamDataset(IterableDataset):
         return [data[i] for i in indices]
 
     def __iter__(self):
+        # Back-compat path for callers that hold the ``DataLoader``
+        # directly (existing tests, e.g. test_stream_smoke). The
+        # canonical dispatch under the brick-vectorization handoff
+        # §8e is ``next_tick`` (cursor universal); the runEpoch outer
+        # loop never iterates the DataLoader. ``__iter__`` here mirrors
+        # the trial-cursor's per-tick logic, sharded across workers.
         L = self.stream_length
         B = self.num_streams
         # Shard the timestep range across DataLoader workers so num_workers>0
@@ -220,32 +242,49 @@ class SentenceStreamDataset(IterableDataset):
         return data
 
     def all_done(self):
-        """True iff every row has consumed its assigned doc window."""
+        """True iff the cursor has consumed all assigned data.
+
+        Byte-cursor mode: every row has crossed its assigned doc window.
+        Trial-cursor mode: the trial step has reached the stream length.
+        """
         if self.slab_bytes is None:
-            raise RuntimeError("SentenceStreamDataset: cursor mode disabled")
+            return self._trial_step >= self.stream_length
         return all(
             self.doc_idx[b] >= (b + 1) * self.stream_length
             for b in range(self.num_streams)
         )
 
     def next_tick(self):
-        """Read one ``[B, slab_bytes]`` byte slab across all rows.
+        """Read one tick of input across all rows.
 
-        Returns ``(slab, hard_eos)`` where:
-          * ``slab`` is a ``[num_streams, slab_bytes]`` ``uint8`` CPU tensor;
-            bytes past the per-row advance are zero (the existing NULL-pad
-            contract).
-          * ``hard_eos`` is a host-side ``list[bool]`` of length
-            ``num_streams``; ``hard_eos[b]`` is True iff the slab consumed
-            the rest of row b's current document (the row will start a
-            fresh document on the next tick).
+        Returns ``(input, output, hard_eos)`` where:
 
-        Concatenating the per-row populated prefixes across consecutive
-        ticks for a single row reproduces the original document bytes
-        exactly — no data dropped, no spurious gradient on padded tail.
+        * **Byte-cursor mode** (``slab_bytes`` set): ``input`` is a
+          ``[num_streams, slab_bytes]`` ``uint8`` CPU tensor (bytes past
+          the per-row advance are zero -- existing NULL-pad contract);
+          ``output`` is ``None`` (AR is self-supervised on the input
+          bytes); ``hard_eos[b]`` is True iff the slab consumed the rest
+          of row b's current document. Concatenating the per-row
+          populated prefixes across consecutive ticks for a single row
+          reproduces the original document bytes exactly.
+
+        * **Trial-cursor mode** (``slab_bytes`` is ``None``): ``input``
+          and ``output`` are the row b's trial at the current step --
+          one item per row, so a list of length ``num_streams`` (or a
+          stacked tensor when the underlying inputs are tensors).
+          ``hard_eos = [True] * num_streams`` every tick because each
+          trial is its own document.
+
+        The brick-vectorization handoff §8e unified non-AR data flow
+        (numeric / non-byte text) through this trial-cursor mode, so
+        the outer doc-streaming loop in ``runEpoch`` can use one
+        ``next_tick`` interface regardless of the data path.
         """
         if self.slab_bytes is None:
-            raise RuntimeError("SentenceStreamDataset: cursor mode disabled")
+            return self._trial_next_tick()
+        return self._byte_next_tick()
+
+    def _byte_next_tick(self):
         slab = torch.zeros(
             self.num_streams, self.slab_bytes, dtype=torch.uint8)
         hard_eos = [False] * self.num_streams
@@ -269,19 +308,80 @@ class SentenceStreamDataset(IterableDataset):
                 self._encoded_cache.pop(self.doc_idx[b], None)
                 self.doc_idx[b] += 1
                 self.offset[b] = 0
-        return slab, hard_eos
+        # Byte mode: AR is self-supervised, no separate output.
+        return slab, None, hard_eos
+
+    def _trial_next_tick(self):
+        if self._trial_step >= self.stream_length:
+            # Defensive: callers should check all_done() first; emit an
+            # empty batch with all-True hard_eos so the outer loop's
+            # post-tick housekeeping cleans up cleanly.
+            empty_inp = self._slice(self.inputs, [])
+            empty_out = (self._slice(self.outputs, [])
+                         if self.outputs is not None else None)
+            return empty_inp, empty_out, [True] * self.num_streams
+        L = self.stream_length
+        indices = [b * L + self._trial_step for b in range(self.num_streams)]
+        inp = self._slice(self.inputs, indices)
+        out = (self._slice(self.outputs, indices)
+               if self.outputs is not None else None)
+        self._trial_step += 1
+        # Each trial is its own atomic unit -> hard_eos True every row.
+        return inp, out, [True] * self.num_streams
 
     def reset_cursor(self):
-        """Rewind every row's cursor to the start of its assigned window.
+        """Rewind the cursor for a fresh epoch.
 
-        Used to restart an epoch without rebuilding the dataset.
+        Byte-cursor mode: every row's (doc_idx, offset) returns to the
+        start of its assigned window; the byte cache clears.
+
+        Trial-cursor mode: the step counter returns to 0.
         """
         if self.slab_bytes is None:
-            raise RuntimeError("SentenceStreamDataset: cursor mode disabled")
+            self._trial_step = 0
+            return
         self.doc_idx = [
             b * self.stream_length for b in range(self.num_streams)]
         self.offset = [0] * self.num_streams
         self._encoded_cache.clear()
+
+    def progress(self):
+        """Return cursor progress as a fraction in ``[0.0, 1.0]``.
+
+        Byte-cursor mode: average doc-fraction across all streams.
+        Each stream owns ``stream_length`` docs starting at its window
+        offset; ``doc_idx[b] - b * stream_length`` is the count of
+        docs row b has fully consumed. We add a fractional contribution
+        from any in-progress doc using ``offset[b] / len(doc)`` so the
+        report ticks smoothly within a long doc rather than jumping at
+        each doc boundary.
+
+        Trial-cursor mode: ``_trial_step / stream_length`` (each tick
+        is one trial per row).
+
+        ``runEpoch`` calls this once per tick to display
+        ``batch = N (..., X.X%)``. Cheap: the in-progress doc's bytes
+        are already cached by the cursor's last read.
+        """
+        if self.slab_bytes is None:
+            L = self.stream_length
+            if L <= 0:
+                return 1.0
+            return min(1.0, max(0.0, self._trial_step / L))
+        total_docs = self.num_streams * self.stream_length
+        if total_docs <= 0:
+            return 1.0
+        consumed = 0.0
+        for b in range(self.num_streams):
+            row_start = b * self.stream_length
+            consumed += (self.doc_idx[b] - row_start)
+            # Fractional credit for the in-progress doc
+            window_end = (b + 1) * self.stream_length
+            if self.doc_idx[b] < window_end and self.offset[b] > 0:
+                cur_doc = self._encoded_cache.get(self.doc_idx[b])
+                if cur_doc is not None and len(cur_doc) > 0:
+                    consumed += min(1.0, self.offset[b] / len(cur_doc))
+        return min(1.0, max(0.0, consumed / total_docs))
 
 
 # ---------------------------------------------------------------------------

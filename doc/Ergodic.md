@@ -412,9 +412,9 @@ For `InvertibleLinearLayer`, noise is injected directly into the raw parameters 
 LDU factor before the triangular structure is extracted:
 
 ```
-L_eff = I + strict_lower(raw_L + t $\cdot$ noise_raw_L)
-U_eff = I + strict_upper(raw_U + t $\cdot$ noise_raw_U)
-d_eff = b $\cdot$ d_effective + t $\cdot$ noise_d
+L_eff = I + strict_lower(raw_L + t * noise_raw_L)
+U_eff = I + strict_upper(raw_U + t * noise_raw_U)
+d_eff = b * d_effective + t * noise_d
 W_eff = L_eff @ D_eff_embed @ U_eff
 ```
 
@@ -435,7 +435,7 @@ constraint lives:
 
 ```
 d_clamped_i = sign(d_i) * clamp(|d_i|, eps, 1)
-d_eff = b $\cdot$ d_clamped + t $\cdot$ noise_d
+d_eff = b * d_clamped + t * noise_d
 ```
 
 The noise factor `noise_d` is sampled with magnitude in $[\text{eps}, 1]$ and random sign,

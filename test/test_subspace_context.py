@@ -261,7 +261,11 @@ def test_stm_residual_flows_through_conceptualspace(model):
                         nInputDim=cs.nInputDim, nOutputDim=cs.nOutputDim)
     upstream.copy_context(cs.subspace)  # seed serial_cache/errors dicts
     upstream.wordSpace = ws
-    B, N = 2, 4
+    # In butterfly mode, the ConceptualSpace's inner PiLayer has a
+    # pre-cached permutation buffer sized to cs.inputShape[0]; using
+    # any other N would mis-shape the index_select.
+    B = 2
+    N = int(cs.inputShape[0])
     D = int(cs.inputShape[1])
     # The body sees a flattened [B*K, N, D] event; here K=1 so BK=B=2.
     # Resize ws._stm_fired to the source batch so the call site derives K=1.

@@ -118,19 +118,21 @@ symbolic reconstruction objective:
 Grammar weights emerge from gradient descent. Paraphrase-invariance holds
 because semantically similar sentences snap to nearby codebook entries.
 
-## Architecture Quadrants: useButterflies $\times$ useGrammar
+## Architecture Modes: useButterflies $\times$ useGrammar
 
-Two orthogonal flags -- `<useButterflies>` (under `<architecture>`) and
-`<useGrammar>` (under `<WordSpace>`) -- select among three valid
-Sigma-Pi architectures.  Butterflies and grammar are mutually
-exclusive: butterfly permutations fight the constituency structure
-that grammar composition requires, so the (true, true) quadrant is
-rejected at load time.
+Two knobs -- `<useButterflies>` (under `<architecture>`) and
+`<useGrammar>` (under `<WordSpace>`) -- select among the Sigma-Pi
+architectures.  Full grammar mode (`useGrammar="all"`) and butterflies
+are mutually exclusive: butterfly permutations fight the constituency
+structure that grammar composition requires, so that combination is
+rejected at load time.  Shamatha Speech is a target narrow-grammar mode:
+it is not the full constituency grammar and should be wired as a
+DNF-object policy with contiguity checks.
 
-|                          | **useGrammar=false**                | **useGrammar=true**                  |
-|--------------------------|--------------------------------------|--------------------------------------|
-| **useButterflies=false** | Flat shared sigma (default)          | Grammar-directed composition         |
-| **useButterflies=true**  | Pairwise butterfly mixing            | [x] excluded                          |
+|                          | **useGrammar="none"**       | **useGrammar="shamathaSpeech" target** | **useGrammar="all"**          |
+|--------------------------|-----------------------------|----------------------------------------|-------------------------------|
+| **useButterflies=false** | Flat shared sigma (default) | DNF object grammar + contiguity        | Grammar-directed composition  |
+| **useButterflies=true**  | Pairwise butterfly mixing   | TBD shape/policy decision              | [x] excluded                  |
 
 ### Flat (both false)
 
@@ -163,7 +165,7 @@ Key property: **all conceptual orders share one undifferentiated
 symbolic space**.  There is no way to tell, from a symbol vector
 alone, which order produced it.
 
-### Butterfly (useButterflies=true, useGrammar=false)
+### Butterfly (useButterflies=true, useGrammar="none")
 
 ButterflyStage wrappers around per-level Sigma and Pi layers permute
 inputs, pack adjacent pairs, apply the layer, unpack, and merge --
@@ -178,7 +180,7 @@ Analogous to increasing receptive fields in visual cortex
 slot axis -- making this path suitable for tasks like XOR where
 information at different input slots must collide.
 
-### Grammar-directed (useButterflies=false, useGrammar=true)
+### Grammar-directed (useButterflies=false, useGrammar="all")
 
 Progressive-bottleneck path with an external pair-average merge
 (`_butterfly_merge` on the vector axis, caching `left - right` diffs
@@ -222,9 +224,7 @@ original vectors from each averaged pair -- the inverse is exact.
 | `<conceptualOrder>` | `<architecture>` | 1 | Number of Percept->Concept->Symbol iterations |
 | `<useButterflies>` | `<architecture>` | false | Pairwise butterfly mixing with N-halving per conceptual order |
 | `<useGrammar>`     | `<WordSpace>`    | false | Grammar-directed composition with progressive bottleneck |
-| `truthMinMagnitude` | `<SymbolicSpace>` | 0.3 | Minimum activation norm for truth storage |
-| `truthMinNovelty` | `<SymbolicSpace>` | 0.5 | Minimum novelty for truth storage |
-| `truthMaxInconsistency` | `<SymbolicSpace>` | 0.3 | Maximum inconsistency for truth storage |
+| `truthMinMagnitude` | `<SymbolicSpace>` | 0.3 | Activation-norm cap that drives the per-cell trust score in `TruthLayer.record_batch`. The legacy novelty / consistency gates (`truthMinNovelty`, `truthMaxInconsistency`) were removed in §6b of the brick-vectorization handoff -- the codebook nearest-neighbor lookup at compact time naturally dedupes near-zero / near-duplicate vectors. |
 
 ## Contemplative Awareness Methods
 
@@ -240,9 +240,16 @@ not an implementation.
 | `Peaceful()` | One Taste (Emotional Symmetry) | TruthLayer luminosity is uniformly high across all stored propositions; no truth is privileged. |
 | `Done()` | Buddhahood (Non-Meditation / Resonance) | The model is a fixed point of its own forward-reverse cycle; reconstruction loss is zero. |
 
-When `thought_free` mode is active, the grammar already enforces the
-one-pointedness that `Contiguous()` characterizes (see
-[Language.md](Language.md) Section Thought-Free Mode).
+Shamatha Speech is the target grammar mode for `Contiguous()`.  It is a
+complete DNF object grammar plus a spatiotemporal contiguity check: every
+`conjunction` / `disjunction` over object parts must keep the `where()`
+support connected and the `when()` support continuous.  The mode differs
+from serial mode because it may reduce over all active percepts at once;
+it rejects scattered object fields, not multi-percept fields.  The
+legacy `thoughtFree` flag should be treated as an alias / incomplete
+hook, not the final implementation.  See
+[Language.md](Language.md) §Shamatha Speech Mode and
+[plans/2026-04-28-shamatha-speech-contiguity-handoff.md](plans/2026-04-28-shamatha-speech-contiguity-handoff.md).
 
 ## Testing
 

@@ -81,7 +81,7 @@ class TestCfgParse(unittest.TestCase):
         dispatchable op as an addressable rule."""
         method_names = {r.method_name for r in self.g.rules_upward}
         for op in ('true', 'false', 'non', 'what', 'where', 'when',
-                   'conjunction', 'disjunction', 'swap'):
+                   'conjunction', 'disjunction', 'swap', 'absorb'):
             self.assertIn(op, method_names,
                           f"post-hoc S-op {op!r} missing from rules_upward")
 
