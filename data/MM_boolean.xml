@@ -1,0 +1,152 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- MM_boolean: end-to-end test of AND, OR, NOT, NON via a fixed DNF
+       stack at the C-tier. The grammar block lists not/non/intersection/
+       union so ConceptualSpace infers the wiring at construction time
+       (NegationLayer ternary + SigmaLayer AND-fold + PiLayer OR-fold).
+       useGrammar="none" keeps the SyntacticLayer dormant; the DNF stack
+       is fixed.
+
+       Formula encoded in labels: (A and B) or ((not A) and C).
+       Surface forms in inputs: bare ("A"), 'not' prefix ("not A"), and
+       'non-' prefix ("non-A"). The 0 token represents non-entity. -->
+  <architecture>
+    <conceptualOrder>1</conceptualOrder>
+    <useButterflies>false</useButterflies>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <processSymbols>false</processSymbols>
+    <type>mental</type>
+    <ergodic>false</ergodic>
+    <modelType>embedding</modelType>
+    <maskedPrediction>NONE</maskedPrediction>
+    <truthBiasScale>0.0</truthBiasScale>
+    <LuminosityWeight>0.0</LuminosityWeight>
+    <UniversalityWeight>0.0</UniversalityWeight>
+    <monotonic>true</monotonic>
+    <weightsPath></weightsPath>
+
+    <data>
+      <dataset>inline</dataset>
+      <!-- Training and validation deliberately exclude the three test
+           sentences ("A B", "C", "not A") so the test split measures
+           generalization, not memorization. Labels are computed by the
+           formula (A and B) or ((not A) and C) under these conventions:
+             - bare X       => X is asserted true
+             - 'not X'      => X is asserted false (¬X true)
+             - 'non-X'      => X is non-affirming (neither X nor ¬X true)
+             - X absent     => X defaults to false
+             - 0 token      => non-entity, contributes nothing
+           ¬A is true iff A is absent or 'not A' appears (NOT non-A).
+           rule being learned: (A and B) or ((not A) and C)
+      -->
+      <input use="train">A B C|B A|A B 0|0 A B|B A C|not C A B|A 0 B|B 0 A|0 A 0 B|A 0 0 B|B 0 A 0|0 C|C 0|not A C|not A B C|not A 0 C|not B C|non-B C|0 0 C|C 0 0|not A 0 C|not B 0 C|0|0 0|A|B|A 0|0 B|A C|non-A|non-B|non-C|not B|not B A|non-A B|non-B A|not C|non-A C|non-A 0 C|not B 0 A|non-A 0|non-A non-B|not A non-B|0 0 0</input>
+      <output use="train">1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|1|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0</output>
+      <input use="validation">A B 0 C|B 0|0 A|non-A 0 C|not B 0 A|A 0 0|0 0 C|not A B|0 A B 0|not B A 0|not A 0 C|non-B 0 C</input>
+      <output use="validation">1|0|0|0|0|0|1|0|1|0|1|1</output>
+      <input use="test">A B|C|not A</input>
+      <output use="test">1|1|0</output>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>200</numEpochs>
+      <batchSize>16</batchSize>
+      <learningRate>0.01</learningRate>
+      <reverseScale>0.1</reverseScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+      <autosave>false</autosave>
+      <certainty>false</certainty>
+    </training>
+
+  </architecture>
+
+  <InputSpace>
+    <nDim>10</nDim>
+    <nVectors>16</nVectors>
+    <nOutput>16</nOutput>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <lexer>word</lexer>
+    <codebook>false</codebook>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>10</nDim>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <nVectors>8</nVectors>
+    <hasAttention>false</hasAttention>
+    <invertible>true</invertible>
+    <codebook>true</codebook>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>10</nDim>
+    <nVectors>8</nVectors>
+    <hasAttention>false</hasAttention>
+    <invertible>true</invertible>
+    <codebook>false</codebook>
+    <nonlinear>true</nonlinear>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nOutput>8</nOutput>
+    <nDim>10</nDim>
+    <nVectors>8</nVectors>
+    <passThrough>false</passThrough>
+    <l1Lambda>0.01</l1Lambda>
+    <accumulateTruth>0</accumulateTruth>
+    <codebook>true</codebook>
+    <useVQVAE>true</useVQVAE>
+    <commitmentBeta>0.25</commitmentBeta>
+    <nonlinear>true</nonlinear>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>1</nDim>
+    <nVectors>1</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+  </OutputSpace>
+
+  <WordSpace>
+    <useGrammar>none</useGrammar>
+    <!-- Single-non-terminal DNF grammar with outermost negation:
+            S = not(S) | union(C, C) | C
+            C = intersection(C, C) | P
+         Augustinian/shamatha placement: negation operates only on
+         whole propositions, so NOT lives at the S level. Internal
+         "not" and "non" surface forms are absorbed into tokenization
+         (-> abs_X / non_X positive percepts), so C has no negation
+         rule.
+
+         Layer correspondence (gated on rule transition probability):
+            S = not(S)            -> propositional NEG (bivector swap)
+            S = union(C, C)       -> SigmaLayer  (in SymbolicSpace)
+            S = C                 -> passthrough
+            C = intersection(...) -> PiLayer     (in ConceptualSpace)
+            C = P                 -> bare percept
+
+         Application order is documented (NOT outermost, OR above AND);
+         single application per derivation is enforced by the parser's
+         per-rule firing bookkeeping (Grammar.note_rule_fired). -->
+    <language>
+      <start>S</start>
+      <grammar>
+        <S>not(S)</S>
+        <S>union(C, C)</S>
+        <S>C</S>
+        <C>intersection(C, C)</C>
+        <C>P</C>
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+  </WordSpace>
+
+</model>

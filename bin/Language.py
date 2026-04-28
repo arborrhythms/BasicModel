@@ -41,6 +41,51 @@ from Spaces import Basis, Tensor, Codebook, Embedding
 from Spaces import SubSpace, WordSubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
 
 
+def grammar_uses(rule_name):
+    """Return True iff any rule body in the configured grammar invokes
+    ``rule_name`` as a function call.
+
+    Used by ConceptualSpace at construction time to decide which layers
+    to wire (NegationLayer / Pi / Sigma) without an explicit config flag.
+    Reads the parsed XML grammar at WordSpace.language.grammar and the
+    optional grammarCfg path; scans rule bodies (string leaves) for the
+    substring ``rule_name(``. Returns False on any read error or when
+    no grammar is configured.
+    """
+    needle = f"{rule_name}("
+    try:
+        cfg = TheXMLConfig.get("WordSpace.language.grammar")
+    except (KeyError, AttributeError):
+        cfg = None
+
+    def _scan(node):
+        if isinstance(node, str):
+            return needle in node
+        if isinstance(node, dict):
+            return any(_scan(v) for v in node.values())
+        if isinstance(node, (list, tuple)):
+            return any(_scan(v) for v in node)
+        return False
+
+    if cfg is not None and _scan(cfg):
+        return True
+
+    try:
+        cfg_path = TheXMLConfig.get("WordSpace.language.grammarCfg")
+    except (KeyError, AttributeError):
+        cfg_path = None
+    if cfg_path:
+        resolved = (cfg_path if os.path.isabs(cfg_path)
+                    else os.path.join(ProjectPaths.PROJECT_DIR, cfg_path))
+        try:
+            with open(resolved, "r") as fh:
+                if needle in fh.read():
+                    return True
+        except (FileNotFoundError, OSError):
+            pass
+    return False
+
+
 class Grammar:
     """Single-tier (S) grammar rule catalog (post-rewrite, 2026-04-19).
 
@@ -353,6 +398,62 @@ class Grammar:
         return reverses
 
     _NOOP_GRAMMAR = {'S': 'not(S)'}
+
+    # ---- Rule probability gating (Pattern A, body-only) ------------
+    #
+    # In useGrammar="all", each operator rule has a learned firing
+    # probability that gates the corresponding bottom-up layer
+    # (intersection -> Pi, union -> Sigma, not -> propositional NEG).
+    # When useGrammar != "all" (or the SyntacticLayer is dormant), the
+    # probability is the Python float 1.0 — call sites use ``p is 1.0``
+    # as a structural fast path that compiles down to a direct layer
+    # call with no spurious mul-by-1 graph nodes.
+    #
+    # ``_fired_bodies`` enforces single-application per derivation:
+    # once a rule body has fired, ``rule_probability`` returns 0 for
+    # subsequent calls on the same body until ``reset_derivation`` is
+    # invoked. This prevents pathological multi-NOT or multi-OR stacks
+    # without splitting S/C into typed tiers.
+
+    def rule_probability(self, body):
+        """Probability that rule with given ``body`` fires at the
+        current parse step. Returns a Python float in dormant mode so
+        call sites can skip the gate via ``p is 1.0`` or ``p is 0.0``.
+
+        ``body`` is the rule's RHS string as it appears in the XML
+        (e.g. ``"intersection(C, C)"`` or ``"not(S)"``). Bodies are
+        globally unique across the grammar so we don't need the LHS.
+
+        Dormant defaults preserve existing pipeline behavior:
+          - fold operators (intersection, union)  -> 1.0 (always fire)
+          - negation-like ops (not, non)          -> 0.0 (don't fire)
+
+        These defaults match what the bottom-up Pi/Sigma layers do
+        today (always run) and what the previously-absent NEG layer
+        did (nothing). In ``useGrammar="all"`` mode, learned predictors
+        in ``_learned_rule_probs`` override the dormant defaults.
+        """
+        fired = getattr(self, "_fired_bodies", None)
+        if fired is not None and body in fired:
+            return 0.0
+        learned = getattr(self, "_learned_rule_probs", None)
+        if learned is not None and body in learned:
+            return learned[body]
+        if body.startswith("not(") or body.startswith("non("):
+            return 0.0
+        return 1.0
+
+    def note_rule_fired(self, body):
+        """Mark a rule body as having fired in the current derivation."""
+        fired = getattr(self, "_fired_bodies", None)
+        if fired is None:
+            self._fired_bodies = set()
+            fired = self._fired_bodies
+        fired.add(body)
+
+    def reset_derivation(self):
+        """Clear the per-derivation single-application bookkeeping."""
+        self._fired_bodies = set()
 
     def _ensure_configured(self):
         if self._configured:

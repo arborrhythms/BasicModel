@@ -1069,6 +1069,41 @@ class SigmaLayer(Layer):
         print("SigmaLayer tests passed.")
 
 
+class GrammarLayer(Layer):
+    """Base class for layers that implement grammar rule operators.
+
+    A GrammarLayer wraps a tensor kernel as a proper Layer with a
+    known arity, invertibility flag, and canonical rule_name. The
+    Grammar's ``rule_probability`` lookup uses ``rule_name`` to gate
+    the layer's contribution in the bottom-up forward path; the
+    SyntacticLayer dispatches the layer top-down by the same name.
+    Together with parameterized fold layers (PiLayer, SigmaLayer),
+    GrammarLayer subclasses replace the old static-dispatch surface
+    of the ``Ops`` namespace — each grammar-relevant tensor primitive
+    becomes a Layer subclass and the kernels move into ``forward()``.
+
+    ``Ops`` itself is in the process of being demoted to a private
+    math-kernel namespace; new operators should derive from
+    GrammarLayer rather than adding methods to Ops. See module-level
+    docstring for the migration direction.
+
+    Class attributes (override in subclasses):
+        rule_name:   canonical operator name as it appears in grammar
+                     bodies (e.g. "not", "intersection", "union").
+        arity:       1 for unary, 2 for binary.
+        invertible:  True if reverse() recovers the input exactly.
+        lossy:       True if forward() loses information (no exact
+                     reverse possible).
+    """
+    rule_name  = ""
+    arity      = 1
+    invertible = False
+    lossy      = False
+
+    def __init__(self, nInput=0, nOutput=0):
+        super().__init__(nInput, nOutput)
+
+
 class NegationLayer(Layer):
     """Materialize bivalent or ternary literals for Sigma/Pi logic.
 
@@ -1113,6 +1148,183 @@ class NegationLayer(Layer):
         neg_start = 2 * self.nInput if self.ternary else self.nInput
         neg = y[..., neg_start:neg_start + self.nInput]
         return 0.5 * (pos - neg)
+
+
+class NotLayer(GrammarLayer):
+    """Parameter-free propositional negation on the bivalent symbol bivector.
+
+    Implements the grammar rule ``S = not(S)``. Symbol vectors carry
+    a ``[pos_pole, neg_pole]`` bivector in their leading 2 dims;
+    trailing dims hold positional/temporal info. NEG at the
+    propositional level is the bivector swap ``[pos, neg] -> [neg, pos]``;
+    trailing dims pass through. Shape-preserving and self-inverse.
+    """
+    rule_name  = "not"
+    arity      = 1
+    invertible = True
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, x):
+        if x.shape[-1] < 2:
+            raise ValueError(
+                f"NotLayer expected last dim >= 2, got {x.shape[-1]}")
+        bivector = x[..., :2].flip(dims=(-1,))
+        rest     = x[..., 2:]
+        return torch.cat([bivector, rest], dim=-1)
+
+    def reverse(self, y):
+        return self.forward(y)
+
+
+class NonLayer(GrammarLayer):
+    """Parameter-free non-affirming negation (indeterminacy).
+
+    Implements the grammar rule ``C1 = non(P1)`` (when the grammar
+    routes percepts through it) — though under the current
+    privation/shamatha tokenization, ``non-X`` is absorbed into the
+    positive percept ``non_X`` and this layer is not invoked. Kept as
+    a structural slot for grammars that elect to fire NON as a layer
+    operation rather than at the lex.
+
+    Lossy (no exact reverse). Forward kernel is the bitonic
+    triangular residual ``1 - |clamp(x, -1, 1)|`` (matches
+    ``Ops.non(x, monotonic=False)``).
+    """
+    rule_name  = "non"
+    arity      = 1
+    invertible = False
+    lossy      = True
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, x):
+        return 1.0 - torch.clamp(x, -1.0, 1.0).abs()
+
+
+class IntersectionLayer(GrammarLayer):
+    """Grammar-facing wrapper around a parameterized AND-fold (PiLayer).
+
+    Implements ``C = intersection(C, C)``. Marker class — actual
+    weights live in the inner PiLayer; this subclass tags the wrapped
+    layer with arity=2 and rule_name="intersection" so the rule-
+    probability gating dispatches uniformly.
+
+    The wrapper does not yet replace direct PiLayer usage in
+    ConceptualSpace (PiLayer is invoked bottom-up on the [B, N, D]
+    activation tensor, not as a binary operator on two operand
+    streams). Kept as a structural slot that future grammar-driven
+    dispatch can use for rule_name/arity introspection.
+    """
+    rule_name  = "intersection"
+    arity      = 2
+    invertible = True
+
+    def __init__(self, pi_layer):
+        super().__init__(pi_layer.nInput, pi_layer.nOutput)
+        self.pi = pi_layer
+        self.layers.append(pi_layer)
+
+    def forward(self, x):
+        return self.pi(x)
+
+    def reverse(self, y):
+        return self.pi.reverse(y)
+
+
+class UnionLayer(GrammarLayer):
+    """Grammar-facing wrapper around a parameterized OR-fold (SigmaLayer).
+
+    Implements ``S = union(C, C)``. Mirrors IntersectionLayer at the
+    OR-fold tier. Inner SigmaLayer holds the weights; this wrapper
+    annotates rule_name="union" and arity=2.
+    """
+    rule_name  = "union"
+    arity      = 2
+    invertible = True
+
+    def __init__(self, sigma_layer):
+        super().__init__(sigma_layer.nInput, sigma_layer.nOutput)
+        self.sigma = sigma_layer
+        self.layers.append(sigma_layer)
+
+    def forward(self, x):
+        return self.sigma(x)
+
+    def reverse(self, y):
+        return self.sigma.reverse(y)
+
+
+class DNFConceptLayer(Layer):
+    """Wrap NegationLayer plus one or two fold layers into a single layer.
+
+    Forward expands signed concept activations into a literal bank
+    (bivalent ``[x, -x]`` or ternary ``[x, non(x), -x]``) then runs the
+    provided fold layers in sequence:
+
+        forward:  or_fold(and_fold(neg(x)))   if both folds given
+                  fold(neg(x))                if only one fold given
+
+    Reverse undoes the folds in reverse order, then drops the non
+    channel via ``NegationLayer.reverse``. All folds must be invertible
+    for ``reverse`` to work.
+
+    The caller chooses which class for each fold — typically a
+    SigmaLayer for the AND-of-literals fold (intersection) and a
+    PiLayer for the OR-of-terms fold (union), or vice versa depending
+    on the codebase's convention.
+    """
+
+    def __init__(self, nInput, nOutput, ternary=False,
+                 and_fold=None, or_fold=None):
+        super().__init__(nInput, nOutput)
+        self.ternary = bool(ternary)
+        multiplier = 3 if self.ternary else 2
+        folds = [f for f in (and_fold, or_fold) if f is not None]
+        if not folds:
+            raise ValueError(
+                "DNFConceptLayer requires at least one fold layer")
+        expected_in = multiplier * nInput
+        if folds[0].nInput != expected_in:
+            raise ValueError(
+                f"DNF first fold expects nInput {expected_in}, "
+                f"got {folds[0].nInput}")
+        for prev, nxt in zip(folds[:-1], folds[1:]):
+            if nxt.nInput != prev.nOutput:
+                raise ValueError(
+                    f"DNF fold chain mismatch: {prev.nOutput} -> "
+                    f"{nxt.nInput}")
+        if folds[-1].nOutput != nOutput:
+            raise ValueError(
+                f"DNF last fold expects nOutput {nOutput}, "
+                f"got {folds[-1].nOutput}")
+        self.neg = NegationLayer(nInput, ternary=self.ternary)
+        self.and_fold = and_fold
+        self.or_fold = or_fold
+        self.layers.append(self.neg)
+        for f in folds:
+            self.layers.append(f)
+        self._folds = folds
+        self.invertible = all(bool(getattr(f, "invertible", False))
+                              for f in folds)
+        self.monotonic  = all(bool(getattr(f, "monotonic", False))
+                              for f in folds)
+        self.nonlinear  = any(bool(getattr(f, "nonlinear", True))
+                              for f in folds)
+
+    def forward(self, x):
+        out = self.neg(x)
+        for f in self._folds:
+            out = f(out)
+        return out
+
+    def reverse(self, y):
+        out = y
+        for f in reversed(self._folds):
+            out = f.reverse(out)
+        return self.neg.reverse(out)
 
 
 class PiLayer(Layer):
@@ -2142,6 +2354,7 @@ class LoweringLayer(Layer):
         assert right_g.grad is not None, "no gradient on right"
 
         print("LoweringLayer tests passed.")
+        
 class SparsityRegularizer(Layer):
     """Soft-threshold L1 proximal operator.
 
@@ -4536,7 +4749,27 @@ _NO_MODE = object()
 
 
 class Ops:
-    """Pure operations on activation vectors in [-1, +1].
+    """[FROZEN — DEPRECATED FOR GRAMMAR OPS] Pure operations on
+    activation vectors in [-1, +1].
+
+    **Status (2026-04-28):** Ops is frozen. No new methods should be
+    added here. Grammar-relevant operators (``not``, ``non``, ``lift``,
+    ``lower``, ``intersection``, ``union``, ``absorb``, ``swap``,
+    ``equals``, ``part``, ``whole``, ``project``, etc.) belong as
+    ``GrammarLayer`` subclasses with ``rule_name``, ``arity``,
+    ``invertible``, and ``lossy`` fields plus ``forward``/``reverse``
+    methods. The Layer-shaped invocation surface lets the bottom-up
+    forward path (rule-probability gating) and the SyntacticLayer's
+    top-down dispatch use the same Layer instances.
+
+    Existing methods below stay until callers migrate. New operators
+    should derive from GrammarLayer instead. ``GrammarLayer``
+    subclasses are added one at a time as concrete grammars start
+    invoking the corresponding rule — not pre-emptively.
+
+    Tensor utilities (sign, saturate, threshold, distance, what/where/
+    when accessors, minMag/maxMag, ...) that are not grammar operators
+    can stay on Ops indefinitely as a math-kernel namespace.
 
     Supersedes the legacy ``Activation`` class. Static namespace; ``Basis``
     (in Spaces.py) delegates its logic, mereology, and metric methods

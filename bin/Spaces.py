@@ -317,11 +317,20 @@ from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
-from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
+from Layers import Layer, PiLayer, SigmaLayer, NegationLayer, DNFConceptLayer  # Import custom layers from Model.py
+from Layers import GrammarLayer, NotLayer, NonLayer, IntersectionLayer, UnionLayer
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
 from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
 from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegularizer, SmoothingRegularizer, ImpenetrableLayer
 from Layers import Error
+
+
+# Polarity enum used by symbolic codebook entries and Percept-level
+# surface-form recognition. AFFIRM is the default ("foo" -> AFFIRM,
+# "non-foo" -> NON, "not foo" -> NOT).
+POLARITY_AFFIRM = 0
+POLARITY_NON    = 1
+POLARITY_NOT    = 2
 from util import parse
 from collections import namedtuple as _namedtuple
 
@@ -1221,6 +1230,9 @@ class Codebook(Basis):
         # SymbolicSpace.forward reads it and emits "codebook_commit" into
         # vspace.errors.
         self.last_commit_loss = None
+        # Optional per-row polarity tags (POLARITY_AFFIRM/NON/NOT). Allocated
+        # only when create(..., polarity=True) — symbolic codebook opt-in.
+        self.polarity_ids = None
 
     def getW(self):
         # While an activation payload is cached, callers see it; otherwise
@@ -1270,7 +1282,7 @@ class Codebook(Basis):
         return self.nVectors
 
     def create(self, nInput, nVectors, nDim, customVQ=True, monotonic=True,
-               passThrough=False):
+               passThrough=False, polarity=False):
         super().create(
             nInput,
             nVectors,
@@ -1281,9 +1293,32 @@ class Codebook(Basis):
         )
         self.customVQ = customVQ
         self.alpha = 0.0
+        if polarity and self.nVectors > 0:
+            ids = torch.full((self.nVectors,), POLARITY_AFFIRM,
+                             dtype=torch.long)
+            # Plain attribute (not a registered buffer) so the default
+            # ``self.polarity_ids = None`` set in __init__ doesn't conflict.
+            # Polarity tags are metadata, not learnable; state_dict
+            # integration is not required for the current consumers.
+            self.polarity_ids = ids
         if (not self.passThrough) and self.nVectors > 0 and self.getW() is None:
             self.addVectors(self.nVectors)
         return self
+
+    def set_polarity(self, idx, polarity_id):
+        """Tag codebook row ``idx`` with one of POLARITY_AFFIRM/NON/NOT."""
+        if self.polarity_ids is None:
+            raise RuntimeError(
+                "Codebook.set_polarity called on a non-polarity codebook")
+        if polarity_id not in (POLARITY_AFFIRM, POLARITY_NON, POLARITY_NOT):
+            raise ValueError(f"Unknown polarity id: {polarity_id}")
+        self.polarity_ids[int(idx)] = int(polarity_id)
+
+    def get_polarity(self, idx):
+        """Return the polarity id of row ``idx`` (AFFIRM if untagged)."""
+        if self.polarity_ids is None:
+            return POLARITY_AFFIRM
+        return int(self.polarity_ids[int(idx)].item())
 
     def updateWeights(self, embed_sum, cluster_size):
         return torch.ones(self.vq.codebook_size, device=TheDevice.get())
@@ -1998,6 +2033,67 @@ class Embedding(Basis):
             vec = vec + var * torch.randn_like(vec)
         return F.normalize(vec, p=2, dim=0)
 
+    @staticmethod
+    def _apply_polarity(stream):
+        """Collapse 'non-X' and 'not X' surface forms into positive tokens.
+
+        Under the privation/shamatha reading, "not A" and "non-A" are
+        propositional affirmations of A's absence or A's indeterminacy
+        — they are observable states in their own right, not negations
+        of A's percept. So the collapse rewrites the surface forms into
+        *distinct positive tokens* whose codebook entries are learned
+        independently:
+
+            'not foo'  -> ('abs_foo',  off_foo, POLARITY_AFFIRM)
+            'non-foo'  -> ('non_foo',  off_foo, POLARITY_AFFIRM)
+            'foo'       -> ('foo',     off,     POLARITY_AFFIRM)
+
+        Polarity bookkeeping is preserved as POLARITY_AFFIRM uniformly
+        because the percept layer no longer carries sign or polarity —
+        every observable state is a positive percept. Marker tokens
+        ('not', 'non', '-') are consumed.
+        """
+        out = []
+        i = 0
+        n = len(stream)
+        while i < n:
+            text, off = stream[i]
+            t_lower = text.lower()
+            # 'non' '-' WORD -> positive 'non_WORD' token
+            if (t_lower == 'non' and i + 2 < n
+                    and stream[i + 1][0] == '-'
+                    and stream[i + 2][0].strip()
+                    and not stream[i + 2][0].isspace()
+                    and stream[i + 2][0] not in ('-',)):
+                base_text, base_off = stream[i + 2]
+                out.append((f"non_{base_text}", base_off, POLARITY_AFFIRM))
+                i += 3
+                continue
+            # 'not' WS WORD -> positive 'abs_WORD' token
+            if (t_lower == 'not' and i + 2 < n
+                    and stream[i + 1][0].isspace()
+                    and stream[i + 2][0].strip()
+                    and not stream[i + 2][0].isspace()):
+                base_text, base_off = stream[i + 2]
+                out.append((f"abs_{base_text}", base_off, POLARITY_AFFIRM))
+                i += 3
+                continue
+            out.append((text, off, POLARITY_AFFIRM))
+            i += 1
+        return out
+
+    def _polarity_embedding(self, base_vec, polarity):
+        """Identity passthrough.
+
+        Under the privation/shamatha reading, percepts have no sign or
+        polarity transformation: 'A', 'not A', and 'non-A' are three
+        distinct positive percepts (codebook entries 'A', 'abs_A',
+        'non_A' respectively, produced by ``_apply_polarity``). There
+        is no negation to apply at the embedding-lookup boundary — the
+        percept identity already carries the propositional content.
+        """
+        return base_vec
+
     def _nearest_idx(self, vec, codebook=None):
         if codebook is None:
             codebook = self.getW().detach()
@@ -2032,14 +2128,19 @@ class Embedding(Basis):
         span_counts = []
         final_offsets = []
 
-        # Phase 1: Tokenize all batch items and collect OOV words
+        # Phase 1: Tokenize all batch items, collapse polarity surface forms,
+        # and collect OOV base words. The polarity pass converts 2-tuples
+        # to 3-tuples (text, offset, polarity) — 'non-X' becomes
+        # (X, off, POLARITY_NON); 'not X' becomes (X, off, POLARITY_NOT).
+        # Marker tokens ('not', 'non', '-') are consumed.
         all_streams = []
         oov_words = []
         oov_seen = set()
         for b in range(batch):
-            stream = self._token_stream(input[b])
+            raw_stream = self._token_stream(input[b])
+            stream = self._apply_polarity(raw_stream)
             all_streams.append(stream)
-            for token_text, _ in stream:
+            for token_text, _, _ in stream:
                 if (token_text not in self.pretrain.key_to_index
                         and token_text not in oov_seen):
                     oov_words.append(token_text)
@@ -2064,19 +2165,22 @@ class Embedding(Basis):
             stream = all_streams[b]
             n_tokens = min(len(stream), self.nInput)
             tokens = stream[:n_tokens]
-            batch_tokens.append(tokens)
+            # batch_tokens stores 2-tuples for backward compat with
+            # downstream consumers (reconstruct_text, etc.).
+            batch_tokens.append([(t, off) for (t, off, _) in tokens])
             span_counts.append(n_tokens)
             if tokens:
-                last_text, last_start = tokens[-1]
+                last_text, last_start, _ = tokens[-1]
                 final_offsets.append(
                     last_start + len(last_text.encode('utf-8')))
             else:
                 final_offsets.append(0)
-            for i, (token_text, _) in enumerate(tokens):
+            for i, (token_text, _, polarity) in enumerate(tokens):
                 cb_idx = self._token_to_index(token_text)
                 batch_indices[b, i] = cb_idx
-                result[b, i, :] = self._encode_vector(
+                base_vec = self._encode_vector(
                     codebook[cb_idx], token_idx=cb_idx)
+                result[b, i, :] = self._polarity_embedding(base_vec, polarity)
             # Fill remaining positions with NULL embedding (input buffer is null-terminated)
             if null_idx is not None:
                 null_vec = self._encode_vector(codebook[null_idx], token_idx=null_idx)
@@ -6197,6 +6301,55 @@ class ConceptualSpace(Space):
     name = "Concepts"
     config_section = "ConceptualSpace"
 
+    @staticmethod
+    def _grammar_uses(rule_name):
+        """True iff the configured grammar references ``rule_name(`` in any
+        rule body. Read directly from XMLConfig to avoid importing
+        Language (circular). See Language.grammar_uses for the Language-
+        side equivalent."""
+        needle = f"{rule_name}("
+        try:
+            cfg = TheXMLConfig.get("WordSpace.language.grammar")
+        except (KeyError, AttributeError):
+            cfg = None
+
+        def _scan(node):
+            if isinstance(node, str):
+                return needle in node
+            if isinstance(node, dict):
+                return any(_scan(v) for v in node.values())
+            if isinstance(node, (list, tuple)):
+                return any(_scan(v) for v in node)
+            return False
+
+        if cfg is not None and _scan(cfg):
+            return True
+
+        try:
+            cfg_path = TheXMLConfig.get("WordSpace.language.grammarCfg")
+        except (KeyError, AttributeError):
+            cfg_path = None
+        if cfg_path:
+            resolved = (cfg_path if os.path.isabs(cfg_path)
+                        else os.path.join(ProjectPaths.PROJECT_DIR, cfg_path))
+            try:
+                with open(resolved, "r") as fh:
+                    if needle in fh.read():
+                        return True
+            except (FileNotFoundError, OSError):
+                pass
+        return False
+
+    @classmethod
+    def _dnf_wiring_active(cls):
+        """True iff grammar references at least one of not/non/intersection/
+        union AND at least one of (negation, fold) categories — i.e. the
+        DNF wiring would actually do something. Otherwise the existing
+        bare-PiLayer path is preserved."""
+        uses_neg = cls._grammar_uses("not") or cls._grammar_uses("non")
+        uses_fold = cls._grammar_uses("intersection") or cls._grammar_uses("union")
+        return uses_neg and uses_fold
+
     def __init__(self, inputShape, spaceShape, outputShape, layer=None):
         section = self.config_section
         ergodic = TheXMLConfig.get("architecture.ergodic")
@@ -6226,6 +6379,46 @@ class ConceptualSpace(Space):
             else:
                 self.params = list(layer.parameters())
             self.layers = nn.ModuleList([layer])
+        elif self._dnf_wiring_active():
+            # Grammar references at least one of not/non/intersection/union.
+            # Build a NegationLayer + fold-chain wrapper. Configuration:
+            #   not()         -> NegationLayer(ternary=False)
+            #   non()         -> NegationLayer(ternary=True)  (subsumes not)
+            #   intersection() -> SigmaLayer (AND-of-literals)
+            #   union()        -> PiLayer    (OR-of-AND-terms)
+            uses_non = self._grammar_uses("non")
+            uses_int = self._grammar_uses("intersection")
+            uses_uni = self._grammar_uses("union")
+            ternary  = uses_non
+            multiplier = 3 if ternary else 2
+            literal_dim = multiplier * input
+            and_fold = None
+            or_fold  = None
+            if uses_int and uses_uni:
+                and_fold = SigmaLayer(literal_dim, output,
+                                      naive=naive, invertible=True,
+                                      nonlinear=nonlinear, stable=True,
+                                      monotonic=monotonic)
+                or_fold  = PiLayer(output, output,
+                                   naive=naive, invertible=True,
+                                   nonlinear=nonlinear, stable=True,
+                                   monotonic=monotonic)
+            elif uses_int:
+                and_fold = SigmaLayer(literal_dim, output,
+                                      naive=naive, invertible=True,
+                                      nonlinear=nonlinear, stable=True,
+                                      monotonic=monotonic)
+            else:
+                or_fold  = PiLayer(literal_dim, output,
+                                   naive=naive, invertible=True,
+                                   nonlinear=nonlinear, stable=True,
+                                   monotonic=monotonic)
+            wrapper = DNFConceptLayer(input, output, ternary=ternary,
+                                      and_fold=and_fold, or_fold=or_fold)
+            self.pi = wrapper
+            self.forwardPi, self.reversePi = wrapper.forward, wrapper.reverse
+            self.params = wrapper.getParameters()
+            self.layers = nn.ModuleList([wrapper])
         elif self.reversible:
             if invertible:
                 self.pi = PiLayer(input, output, naive=naive, ergodic=ergodic,
@@ -6289,6 +6482,18 @@ class ConceptualSpace(Space):
         vspace = subspace
         x = self.forwardBegin(vspace, returnVectors=True)
         y = self.forwardPi(x)
+        # Rule probability gating (Pattern A) for the intersection rule.
+        # Bottom-up Pi already ran above; mix with the passthrough by
+        # ``p_int = rule_probability("intersection(C, C)")``. Dormant
+        # default is 1.0 so the fast path skips the mixture entirely.
+        ws_for_gate = vspace.wordSpace
+        if ws_for_gate is not None and hasattr(ws_for_gate, "grammar"):
+            p_int = ws_for_gate.grammar.rule_probability("intersection(C, C)")
+            if p_int is not 1.0:
+                if p_int is 0.0:
+                    y = x
+                else:
+                    y = p_int * y + (1.0 - p_int) * x
         # STM-residual bias (once per sentence; wordSpace gates itself).
         # disc.prime() casts into concept_dim, so the bias must be added
         # to the post-Sigma activation y (shape [B*K, N_out, concept_dim]),
@@ -6457,6 +6662,17 @@ class SymbolicSpace(Space):
             self.params = self.sigma.getParameters()
             self.layers = nn.ModuleList([self.sigma])
 
+        # Propositional negation slot: NEG sits AFTER Sigma at the
+        # SymbolicSpace output, gated on ``rule_probability("not(S)")``.
+        # ``NotLayer`` is a parameter-free GrammarLayer subclass
+        # (rule_name="not", arity=1, invertible=True) that flips the
+        # bivalent symbol bivector. Same Layer-shaped interface as
+        # the parameterized fold operators — uniform invocation from
+        # both bottom-up forward gating and top-down SyntacticLayer
+        # dispatch.
+        self.propositional_negation = NotLayer()
+        self.layers.append(self.propositional_negation)
+
         # Symbol objective: residual accuracy is primary; L1 remains a
         # secondary compactness pressure on latent activations.
         def _symbol_cfg(key, default):
@@ -6570,6 +6786,10 @@ class SymbolicSpace(Space):
         positional/temporal template info. Negation operates on the
         leading 2 dims only (see BuddhistParallels.md for the catuskoti
         mapping).
+
+        ``polarity=True`` allocates a per-row tag in
+        ``polarity_ids`` (POLARITY_AFFIRM/NON/NOT) so reconstruction
+        can emit the matching surface form ("foo"/"non-foo"/"not foo").
         """
         basis = Codebook()
         basis.create(
@@ -6579,6 +6799,7 @@ class SymbolicSpace(Space):
             customVQ=self.customVQ,
             passThrough=not self.codebook,
             monotonic=True,
+            polarity=True,
         )
         return basis
 
@@ -7124,8 +7345,27 @@ class SymbolicSpace(Space):
         if self.passThrough:
             return vspace
         vspace = self.forwardBegin(vspace)
-        act = vspace.materialize()                        # [B, N, concept_dim]
-        act = self.forwardSigma(act)                      # [B, N, symbol_dim]
+        act_pre = vspace.materialize()                    # [B, N, concept_dim]
+        act = self.forwardSigma(act_pre)                  # [B, N, symbol_dim]
+        # Rule probability gating (Pattern A). Bottom-up Sigma already
+        # ran above; the gate mixes its output with the passthrough by
+        # ``p_uni = rule_probability("union(C, C)")``. In dormant mode
+        # ``p_uni is 1.0`` so the fast path skips the mixture entirely.
+        if wordSpace is not None and hasattr(wordSpace, "grammar"):
+            p_uni = wordSpace.grammar.rule_probability("union(C, C)")
+            if p_uni is not 1.0:
+                act = p_uni * act + (1.0 - p_uni) * act_pre
+            # Propositional NEG gate (rule: S = not(S)). Dormant default
+            # is 0.0 so the fast path skips. In active grammar mode, a
+            # learned probability mixes the bivector-swapped activation
+            # with the passthrough.
+            p_neg = wordSpace.grammar.rule_probability("not(S)")
+            if p_neg is not 0.0:
+                if p_neg is 1.0:
+                    act = self.propositional_negation(act)
+                else:
+                    act = (p_neg * self.propositional_negation(act)
+                           + (1.0 - p_neg) * act)
         if quantize:
             act = self.l1_proximal(act)                   # sparsity bias only
 
@@ -7535,15 +7775,47 @@ class OutputSpace(Space):
             restored = content
         return restored, emb.decode_reverse_meta(restored, subspace=self.subspace)
 
+    @staticmethod
+    def _format_polarity(base, polarity):
+        """Render a token text with its polarity surface form.
+
+        AFFIRM: passthrough.
+        NON:    'non-' + base.
+        NOT:    'not ' + base (separate token).
+        """
+        if polarity == POLARITY_NON:
+            return f"non-{base}"
+        if polarity == POLARITY_NOT:
+            return f"not {base}"
+        return base
+
     def reconstruct_tokens(self, vectors):
         """Return positioned tokens decoded from symbolic vectors.
 
-        Delegates to the Basis / Embedding reverse() path.
+        Delegates to the Basis / Embedding reverse() path. When the
+        active vocabulary has per-row polarity tags, prepend the
+        matching surface form ("non-"/"not ") to the base text.
         """
         if not self.text_mode:
             raise RuntimeError("reconstruct_tokens() requires text_mode.")
         _, meta = self._reverse_text_vectors(vectors)
-        return meta['tokens']
+        tokens = meta['tokens']
+        polarity_ids = getattr(self._vocabulary, "polarity_ids", None)
+        indices = meta.get('indices') if isinstance(meta, dict) else None
+        if polarity_ids is None or indices is None:
+            return tokens
+        formatted = []
+        for b_idx, batch in enumerate(tokens):
+            row = []
+            for i, (text, off) in enumerate(batch):
+                try:
+                    cb_idx = int(indices[b_idx, i].item())
+                    pol = int(polarity_ids[cb_idx].item())
+                except (IndexError, AttributeError, TypeError):
+                    pol = POLARITY_AFFIRM
+                row.append((self._format_polarity(text, pol), off))
+            formatted.append(row)
+        return formatted
 
     def reconstruct_data(self, vectors):
         """Reconstruct words and positions from symbolic vectors.
