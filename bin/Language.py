@@ -2685,17 +2685,21 @@ class WordSpace(Space):
         # chart-compose trace. Stored as [B, 3, svo_dim] + a [B] bool valid
         # mask so each batch row is independent. Written via set_last_svo;
         # cleared by clear_last_svo (also at Reset on sentence boundary).
-        # Registered as buffers so .to(device) moves them with the module.
+        # persistent=False: runtime scratch state, not learned weights.
+        # Excluding from state_dict avoids load-time shape mismatches when
+        # the live model rebuilds at batch=1 and ensure_batch() resizes later.
         self.register_buffer(
-            "_last_svo", torch.zeros(self.batch, 3, self.svo_dim))
+            "_last_svo", torch.zeros(self.batch, 3, self.svo_dim),
+            persistent=False)
         self.register_buffer(
-            "_svo_valid", torch.zeros(self.batch, dtype=torch.bool))
+            "_svo_valid", torch.zeros(self.batch, dtype=torch.bool),
+            persistent=False)
 
         # STM-residual: fires once per sentence per row on the first
-        # stm_residual(b) call; arm_stm() / Reset() re-arm. Buffer for
-        # device-tracking parity with the SVO state above.
+        # stm_residual(b) call; arm_stm() / Reset() re-arm. Runtime scratch.
         self.register_buffer(
-            "_stm_fired", torch.zeros(self.batch, dtype=torch.bool))
+            "_stm_fired", torch.zeros(self.batch, dtype=torch.bool),
+            persistent=False)
         self.stm_residual_scale = float(
             TheXMLConfig.training("sentencePrimingScale", 0.05) or 0.05)
 

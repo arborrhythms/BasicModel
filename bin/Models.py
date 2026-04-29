@@ -2360,10 +2360,12 @@ class BasicModel(BaseModel):
             if hasattr(space, 'Start'):
                 space.Start()
 
-        # AMP: DEBUG DISABLED
-        amp_scaler = None
-        from contextlib import nullcontext as _nc
-        with _nc():
+        # AMP: torch.autocast wrapper from util.amp_context() honors
+        # MODEL_AMP env var (hydrated from XML <architecture><amp> in
+        # ModelFactory.run). bf16 returns scaler=None; fp16+CUDA returns
+        # the process-wide GradScaler used in the backward path below.
+        amp_cm, amp_scaler = amp_context()
+        with amp_cm:
             # Forward pass returns a 4-tuple. AR modes: ``predictions``
             # is a [B, K, N_window, predDim] tensor (one column per
             # cursor position) and ``forwardInput`` is the embedded
