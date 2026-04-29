@@ -1257,6 +1257,59 @@ class UnionLayer(GrammarLayer):
         return self.sigma.reverse(y)
 
 
+class ContiguousLayer(GrammarLayer):
+    """Convex-hull fusion in symbolic space (Dakpo Tashi Namgyel one-pointedness).
+
+    Takes a set of active concepts and returns their hull -- the smallest
+    concept that contains all of them as parts. Used by the
+    ``Contiguous(S)`` grammar rule to fuse a disjunction into a single
+    object.
+
+    Applied BEFORE NegationLayer in the symbolic pipeline: hull-then-
+    negate is well-defined; negate-then-hull is not. Identity when the
+    input is already a single concept (no fusion needed).
+
+    Forward kernel (Option B, elementwise envelope):
+        forward(x: [B, N, D]) = elementwise per-axis amax over N,
+        broadcast back to [B, N, D] so the rest of the pipeline keeps
+        the original shape. On bivectors ([pos, neg, ...]) this is
+        well-defined: the envelope of [pos, neg] poles preserves both
+        affirmation and negation evidence.
+    """
+    rule_name  = "Contiguous"
+    arity      = 1
+    invertible = False
+    lossy      = True
+
+    def __init__(self, nInput=0, nOutput=None):
+        super().__init__(nInput, nOutput if nOutput is not None else nInput)
+
+    def forward(self, x):
+        """Elementwise hull (per-axis amax) over the concept axis.
+
+        Single concept input is identity; multi-concept input collapses
+        to the per-axis envelope. The envelope is broadcast back across
+        the concept axis so shape is preserved and the downstream
+        NegationLayer sees a stable [B, N, D] tensor.
+        """
+        if x.ndim < 2:
+            return x
+        if x.shape[-2] <= 1:
+            return x
+        hull = x.amax(dim=-2, keepdim=True)
+        return hull.expand_as(x)
+
+    def reverse(self, y):
+        """Hull is lossy in general; reverse passes the input through.
+
+        The fusion is a forward-only intervention; on the reverse pass
+        the broadcast hull is the best identity-shaped recovery -- it
+        carries the same hull on every concept slot, which is the
+        upper-bound recovery available without auxiliary structure.
+        """
+        return y
+
+
 class DNFConceptLayer(Layer):
     """Wrap NegationLayer plus one or two fold layers into a single layer.
 
@@ -2355,7 +2408,7 @@ class LoweringLayer(Layer):
 
         print("LoweringLayer tests passed.")
         
-class SparsityRegularizer(Layer):
+class SparsityRegLayer(Layer):
     """Soft-threshold L1 proximal operator.
 
     Shared by PerceptualSpace, ConceptualSpace, and SymbolicSpace so a
@@ -2380,10 +2433,10 @@ class SparsityRegularizer(Layer):
         return torch.sign(x) * torch.clamp(
             torch.abs(x) - self.l1_lambda, min=0.0
         )
-class SmoothingRegularizer(Layer):
+class SmoothingRegLayer(Layer):
     """Total-variation penalty on consecutive concepts of a symbol vector.
 
-    Complements ``SparsityRegularizer`` by pressuring the symbol vector toward
+    Complements ``SparsityRegLayer`` by pressuring the symbol vector toward
     a piecewise-flat profile in addition to an L1 sparsity norm. Penalises
     ``|S[..., k+1] - S[..., k]|`` and returns a scalar.
 

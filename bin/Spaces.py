@@ -321,7 +321,7 @@ from Layers import Layer, PiLayer, SigmaLayer, NegationLayer, DNFConceptLayer  #
 from Layers import GrammarLayer, NotLayer, NonLayer, IntersectionLayer, UnionLayer
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
 from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
-from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegularizer, SmoothingRegularizer, ImpenetrableLayer
+from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer, ContiguousLayer
 from Layers import Error
 
 
@@ -5368,7 +5368,7 @@ class PerceptualSpace(Space):
         self.embedding_source = TheData.train_input if TheData.train_input else None
 
         super().__init__(inputShape, spaceShape, outputShape)
-        self._sparsity = SparsityRegularizer(
+        self._sparsity = SparsityRegLayer(
             l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
             enabled=bool(getattr(self, "codebook", False)),
         )
@@ -5859,7 +5859,7 @@ class PerceptualSpace(Space):
 
         Used by the serial_mode warm path to process just the new AR slot
         (K=1) instead of re-running over the full [B, N, D] window.
-        Note: VQ-VAE commit losses and SparsityRegularizer accumulations
+        Note: VQ-VAE commit losses and SparsityRegLayer accumulations
         see per-slot samples instead of per-batch; for training-accuracy
         runs, take the cold path.
         """
@@ -6443,7 +6443,7 @@ class ConceptualSpace(Space):
             self.forwardPi = self.pi.forward
             self.params = self.pi.getParameters()
             self.layers = nn.ModuleList([self.pi])
-        self._sparsity = SparsityRegularizer(
+        self._sparsity = SparsityRegLayer(
             l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
             enabled=bool(getattr(self, "codebook", False)),
         )
@@ -6489,8 +6489,8 @@ class ConceptualSpace(Space):
         ws_for_gate = vspace.wordSpace
         if ws_for_gate is not None and hasattr(ws_for_gate, "grammar"):
             p_int = ws_for_gate.grammar.rule_probability("intersection(C, C)")
-            if p_int is not 1.0:
-                if p_int is 0.0:
+            if p_int != 1.0:
+                if p_int == 0.0:
                     y = x
                 else:
                     y = p_int * y + (1.0 - p_int) * x
@@ -6765,12 +6765,18 @@ class SymbolicSpace(Space):
         self.params = list(self.parameters())
         self._sparsity = self._build_sparsity_regularizer(
             self.l1_lambda, self.codebook)
-        self._smoothing = SmoothingRegularizer(
+        self._smoothing = SmoothingRegLayer(
             lam=float(self.discontinuity_lambda or 0.0),
             enabled=bool(self.discontinuity_lambda
                          and self.discontinuity_lambda > 0.0),
         )
         self._impenetrable = self._build_impenetrable_layer()
+        # ContiguousLayer (one-pointedness fusion). Sits in the symbolic
+        # pipeline ahead of NotLayer; gated by the Contiguous(S) grammar
+        # rule firing (TheGrammar.thought_free pins it on). Constructed
+        # unconditionally so the dispatch path doesn't have to test for
+        # its existence.
+        self._contiguous_layer = ContiguousLayer(nSymbolDim, nSymbolDim)
 
     def _build_object_basis(self):
         """Event is a writable Tensor -- codebook lives on .what."""
@@ -6805,7 +6811,7 @@ class SymbolicSpace(Space):
 
     @classmethod
     def _build_sparsity_regularizer(cls, l1_lambda, codebook_enabled):
-        return SparsityRegularizer(
+        return SparsityRegLayer(
             l1_lambda=float(l1_lambda or 0.0),
             enabled=bool(codebook_enabled),
         )
@@ -6813,7 +6819,7 @@ class SymbolicSpace(Space):
     def l1_proximal(self, x):
         """Soft-threshold activations used as a sparsity bias.
 
-        Delegates to the shared SparsityRegularizer. Kept as a thin
+        Delegates to the shared SparsityRegLayer. Kept as a thin
         wrapper for backward compatibility with call sites in this file
         and in Models.py.
         """
@@ -6823,7 +6829,7 @@ class SymbolicSpace(Space):
         """Total-variation penalty along the concept axis of symbol activations.
 
         Bivector-aware via pair-max collapse; 0 when discontinuityLambda=0
-        or when disabled. See Layers.SmoothingRegularizer.
+        or when disabled. See Layers.SmoothingRegLayer.
         """
         return self._smoothing(x)
 
@@ -7353,15 +7359,26 @@ class SymbolicSpace(Space):
         # ``p_uni is 1.0`` so the fast path skips the mixture entirely.
         if wordSpace is not None and hasattr(wordSpace, "grammar"):
             p_uni = wordSpace.grammar.rule_probability("union(C, C)")
-            if p_uni is not 1.0:
+            if p_uni != 1.0:
                 act = p_uni * act + (1.0 - p_uni) * act_pre
+            # Contiguous(S) gate: convex-hull fusion BEFORE propositional
+            # NEG so hull-then-negate semantics hold. Dormant default is
+            # 0.0 (rule absent) so the fast path skips entirely. In
+            # thought_free mode rule_probability pins to 1.0.
+            p_con = wordSpace.grammar.rule_probability("Contiguous(S)")
+            if p_con != 0.0:
+                if p_con == 1.0:
+                    act = self._contiguous_layer(act)
+                else:
+                    act = (p_con * self._contiguous_layer(act)
+                           + (1.0 - p_con) * act)
             # Propositional NEG gate (rule: S = not(S)). Dormant default
             # is 0.0 so the fast path skips. In active grammar mode, a
             # learned probability mixes the bivector-swapped activation
             # with the passthrough.
             p_neg = wordSpace.grammar.rule_probability("not(S)")
-            if p_neg is not 0.0:
-                if p_neg is 1.0:
+            if p_neg != 0.0:
+                if p_neg == 1.0:
                     act = self.propositional_negation(act)
                 else:
                     act = (p_neg * self.propositional_negation(act)

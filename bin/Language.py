@@ -26,7 +26,7 @@ from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, ChunkLayer
 from Layers import ColumnUsageTracker, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
-from Layers import SortingLayer, TruthLayer, LiftingLayer, InterSentenceLayer, SparsityRegularizer, SmoothingRegularizer, ImpenetrableLayer
+from Layers import SortingLayer, TruthLayer, LiftingLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer, ContiguousLayer
 from util import parse
 from collections import namedtuple as _namedtuple
 
@@ -427,6 +427,8 @@ class Grammar:
         Dormant defaults preserve existing pipeline behavior:
           - fold operators (intersection, union)  -> 1.0 (always fire)
           - negation-like ops (not, non)          -> 0.0 (don't fire)
+          - Contiguous(S)                         -> 1.0 if
+            ``thought_free`` else 0.0 (gated by Shamatha mode)
 
         These defaults match what the bottom-up Pi/Sigma layers do
         today (always run) and what the previously-absent NEG layer
@@ -439,6 +441,8 @@ class Grammar:
         learned = getattr(self, "_learned_rule_probs", None)
         if learned is not None and body in learned:
             return learned[body]
+        if body.startswith("Contiguous("):
+            return 1.0 if self.thought_free else 0.0
         if body.startswith("not(") or body.startswith("non("):
             return 0.0
         return 1.0
@@ -771,6 +775,10 @@ class SyntacticLayer(Layer):
         'where':        ('whereForward',        None,                  False),
         'when':         ('whenForward',         None,                  False),
         'query':        ('queryForward',        None,                  True),
+        # Shamatha one-pointedness fusion. Convex-hull projection over
+        # the active concept axis; pinned-high probability when
+        # TheGrammar.thought_free=True (see rule_probability below).
+        'Contiguous':   ('ContiguousForward',   'ContiguousReverse',   False),
     }
 
     # Step 6: Direct ``Ops`` dispatch table used by the explicit-op
@@ -1054,6 +1062,29 @@ class SyntacticLayer(Layer):
         the rule is independent of the subspace's monotonic flag.
         """
         out = Ops.non(left, monotonic=False)
+        return self._apply_mask(out, mask, subspace=subspace)
+
+    def ContiguousForward(self, left, subspace, mask=None):
+        """One-pointedness fusion: convex hull (per-axis amax) over the
+        concept axis, broadcast back across that axis so shape is
+        preserved for downstream NEG / fold layers.
+
+        ContiguousLayer is parameter-free (the kernel is ``amax`` over
+        the concept axis); we construct one transiently per call. The
+        bottom-up SymbolicSpace forward path calls
+        ``SymbolicSpace._contiguous_layer`` directly and does not route
+        through here -- this dispatch method serves the top-down
+        SyntacticLayer.project path used by grammar-driven derivation.
+        """
+        layer = ContiguousLayer(left.shape[-1], left.shape[-1])
+        out = layer.forward(left)
+        return self._apply_mask(out, mask, subspace=subspace)
+
+    def ContiguousReverse(self, result, subspace, mask=None):
+        """Hull is lossy in general; reverse passes through (identity
+        recovery, see ``ContiguousLayer.reverse``)."""
+        layer = ContiguousLayer(result.shape[-1], result.shape[-1])
+        out = layer.reverse(result)
         return self._apply_mask(out, mask, subspace=subspace)
 
     def conjunctionForward(self, left, right, subspace, mask=None):

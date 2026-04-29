@@ -790,29 +790,74 @@ class BaseModel(nn.Module):
 
     # -- Contemplative Awareness Characterizations ---------------------
 
-    def Contiguous(self):
+    def _active_codebook_rows(self):
+        """Indices of currently-active rows in the SymbolicSpace codebook.
+
+        A row counts as active when its L2 norm exceeds the
+        ``truthMinMagnitude`` activity floor configured on
+        SymbolicSpace. Returns a 1-D ``LongTensor`` of indices into the
+        codebook ``W`` matrix.
+        """
+        sym = self.symbolicSpace
+        W = sym.subspace.what.getW()
+        if W is None or W.ndim < 2:
+            return torch.empty(0, dtype=torch.long)
+        norms = W.norm(dim=-1)
+        return (norms > sym._truth_min_magnitude).nonzero(as_tuple=True)[0]
+
+    @staticmethod
+    def _is_one_component(adj):
+        """BFS over a small boolean adjacency matrix; True if the graph is
+        a single connected component. ``adj`` must be square and contain
+        the identity (self-loops) so isolated rows are detected.
+        """
+        K = adj.shape[0]
+        if K == 0:
+            return True
+        visited = torch.zeros(K, dtype=torch.bool, device=adj.device)
+        frontier = torch.zeros(K, dtype=torch.bool, device=adj.device)
+        frontier[0] = True
+        while frontier.any():
+            visited = visited | frontier
+            neighbors = adj[frontier].any(dim=0)
+            frontier = neighbors & ~visited
+        return bool(visited.all().item())
+
+    def Contiguous(self) -> bool:
         """One-Pointedness (Shamatha / Focused Attention).
 
-        Maintaining awareness of a given convex region in 5D Perceptual
-        Space.  Requires stillness: the model holds a single locus of
-        attention without wandering.
+        True iff the currently-active SymbolicSpace codebook rows form a
+        single connected mereological component -- no disjoint islands
+        under ``Basis.part`` parthood (the same metric ImpenetrableLayer
+        uses).
 
-        Characterisation -- ShamathaSpeech mode:
-          * The symbolic grammar is restricted to a single S derivation
-            rule (S -> C), so no Equals, no swap, no compound sentences.
-          * Perceptually, the active region decodes to a *contiguous*
-            subspace -- no disjoint islands of activation.
-          * Symbolically, the active symbols form a contiguous block in
-            the codebook ordering (no gaps).
+        Connectivity test: build a [K, K] adjacency from the
+        ``ImpenetrableLayer._classify`` output -- two rows share an edge
+        iff their pair is anything other than ``disjoint`` (so
+        ``part_ij``, ``part_ji``, ``equal``, and ``overlap`` all count
+        as connected). Self-loops are added so a single active row is
+        trivially one component. BFS reports whether the graph spans
+        every active node.
 
-        Computationally, Contiguous() should verify that the current
-        model state (symbol_states / STM) occupies a single connected,
-        convex region in PerceptualSpace and a contiguous span in
-        SymbolicSpace.  When thought_free mode is active the grammar
-        already enforces one-pointedness; this method characterises the
-        resulting spatial property.
+        Returns True when:
+          - 0 or 1 active rows (degenerate one-pointedness)
+          - All active rows lie in one connected component
         """
-        raise NotImplementedError
+        sym = self.symbolicSpace
+        what = sym.subspace.what
+        codebook = what.getW()
+        if codebook is None:
+            return True
+        active_idx = self._active_codebook_rows()
+        if active_idx.numel() <= 1:
+            return True
+        sub = codebook[active_idx]
+        P = sym._impenetrable._pairwise_parthood(sub, what)
+        relations = sym._impenetrable._classify(P)
+        edges = ~relations["disjoint"]
+        eye = torch.eye(edges.shape[0], device=edges.device, dtype=torch.bool)
+        edges = edges | eye
+        return self._is_one_component(edges)
 
     def Continuous(self):
         """Simplicity (Continuity / Open Awareness).

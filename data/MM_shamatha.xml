@@ -1,14 +1,20 @@
 <?xml version="1.0" ?>
 <model>
-  <!-- MM_xor: MentalModel topology on XOR dataset for convergence testing.
-       Based on MM_1B architecture (iterative [Percept,Symbol]->Concept->Symbol)
-       but scaled to XOR-sized dims. -->
+  <!-- MM_shamatha: Dakpo Tashi Namgyel one-pointedness via convex-hull
+       fusion. Mirrors MM_boolean's DNF stack (NegationLayer + Sigma AND-fold
+       + Pi OR-fold) and adds the `Contiguous(S)` rule that fires
+       ContiguousLayer before NegationLayer when thought_free is on.
+       The four SymbolicSpace regularizer knobs (l1Lambda,
+       discontinuityLambda, impenetrableOverlap, impenetrableVariance)
+       apply regardless of mode. -->
   <architecture>
-    <conceptualOrder>3</conceptualOrder>
-    <useButterflies>true</useButterflies>
+    <!-- conceptualOrder=0 is structurally required by useGrammar="thoughtFree"
+         (Models.py: thoughtFree => no higher-order P/C/S cycles). -->
+    <conceptualOrder>0</conceptualOrder>
+    <useButterflies>false</useButterflies>
     <l1Lambda>0.01</l1Lambda>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
     <processSymbols>false</processSymbols>
     <type>mental</type>
     <ergodic>false</ergodic>
@@ -17,6 +23,7 @@
     <truthBiasScale>0.1</truthBiasScale>
     <LuminosityWeight>0.1</LuminosityWeight>
     <UniversalityWeight>0.1</UniversalityWeight>
+    <monotonic>true</monotonic>
     <weightsPath></weightsPath>
 
     <data>
@@ -38,13 +45,16 @@
   </architecture>
 
   <WordSpace>
-    <useGrammar>none</useGrammar>
+    <useGrammar>thoughtFree</useGrammar>
     <language>
+      <start>S</start>
       <grammar>
-        <S>intersection(S, S)</S>
-        <S>union(S, S)</S>
-        <S>lower(S, S)</S>
-        <S>lift(S, S)</S>
+        <S>Contiguous(S)</S>
+        <S>not(S)</S>
+        <S>union(C, C)</S>
+        <S>C</S>
+        <C>intersection(C, C)</C>
+        <C>P</C>
       </grammar>
       <interpretation>0.5</interpretation>
     </language>
@@ -54,8 +64,8 @@
     <nDim>10</nDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
     <lexer>word</lexer>
     <codebook>true</codebook>
   </InputSpace>
@@ -64,6 +74,8 @@
     <nOutput>8</nOutput>
     <nDim>10</nDim>
     <nVectors>8</nVectors>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
     <passThrough>true</passThrough>
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
@@ -88,14 +100,22 @@
     <nVectors>8</nVectors>
     <passThrough>false</passThrough>
     <accumulateTruth>0</accumulateTruth>
+    <!-- codebook=true is required so the SparsityRegLayer / VQ-VAE
+         path is active; the four regularizer knobs below operate on
+         the codebook tensor. -->
+    <codebook>true</codebook>
+    <l1Lambda>0.01</l1Lambda>
+    <discontinuityLambda>0.01</discontinuityLambda>
+    <impenetrableOverlap>0.1</impenetrableOverlap>
+    <impenetrableVariance>0.01</impenetrableVariance>
   </SymbolicSpace>
 
   <OutputSpace>
     <nOutput>1</nOutput>
     <nDim>1</nDim>
     <nVectors>1</nVectors>
-    <nWhere>0</nWhere>
-    <nWhen>0</nWhen>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
   </OutputSpace>
 
 </model>

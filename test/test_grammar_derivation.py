@@ -323,7 +323,11 @@ class TestGrammarProject(_GrammarTestBase):
         # All grammar-dispatch methods should appear in at least one
         # configured rule. Perceptual chunking is outside this table, and
         # unary identity is just transition / PROJECT behavior.
-        excluded = set()
+        # 'Contiguous' is a Shamatha-mode rule pinned by
+        # ``TheGrammar.thought_free`` (rule_probability override) and
+        # appears only in MM_shamatha.xml's inline grammar, not in the
+        # canonical grammar.cfg loaded by MentalModel.xml.
+        excluded = {'Contiguous'}
         self.assertTrue(all_known.issubset(dispatched | excluded),
                         f"Untested methods: {all_known - dispatched}")
 
