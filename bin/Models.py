@@ -105,7 +105,6 @@ class BaseModel(nn.Module):
     _optimizer     = None
     checkpoint_every_batches = 0
     _training_step_count = 0
-    _autosave_on_exception = False
     # Scale applied to the DiscourseSpace contrastive loss. The
     # inter-sentence DiscourseSpace lives on ``self.wordSpace``
     # (``self.wordSpace.discourse``) rather than directly on the
@@ -312,8 +311,6 @@ class BaseModel(nn.Module):
             _t("checkpointEveryBatches", 0) or 0,
         ))
         self._training_step_count = 0
-        self._autosave_on_exception = bool(_t("autosave", False)) or \
-            self.checkpoint_every_batches > 0
 
         if _t("autoload"):
             wpath = TheXMLConfig.get("architecture.weightsPath")
@@ -401,21 +398,6 @@ class BaseModel(nn.Module):
         if step > 0 and step % interval == 0:
             self.save_training_checkpoint(reason=f"batch {step}")
 
-    def _save_exception_checkpoint(self, exc):
-        if not getattr(self, "_autosave_on_exception", False):
-            return
-        try:
-            path = self.save_training_checkpoint(
-                reason=f"exception: {type(exc).__name__}",
-                suffix="emergency",
-            )
-            TheMessage(f"[{self.name}] Emergency checkpoint saved to {path}")
-        except Exception as save_exc:
-            TheMessage(
-                f"[{self.name}] Emergency checkpoint failed after "
-                f"{type(exc).__name__}: {save_exc}"
-            )
-
     def _assert_finite_train_state(self, what):
         """Fail at the update site when a parameter or gradient goes non-finite.
 
@@ -487,14 +469,10 @@ class BaseModel(nn.Module):
             TheMessage(f"\nTrial [{trial + 1}/{numTrials}]")
             if has_config and (trial > 0 or not already_configured):
                 self.create_from_config(self._config_path, data=self._config_data)
-            try:
-                acc[trial, :] = self.runTrial(
-                    numEpochs=numEpochs, batchSize=batchSize, lr=lr,
-                    profile=profile,
-                )
-            except Exception as exc:
-                self._save_exception_checkpoint(exc)
-                raise
+            acc[trial, :] = self.runTrial(
+                numEpochs=numEpochs, batchSize=batchSize, lr=lr,
+                profile=profile,
+            )
 
         np.savetxt(ProjectPaths.output_path(f"{self.name}.csv"), np.array(acc), delimiter=",")
         return acc
