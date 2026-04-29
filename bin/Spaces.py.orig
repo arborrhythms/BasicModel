@@ -24,7 +24,289 @@ try:
 except ImportError:
     make_dot = None
 from sklearn.decomposition import PCA
+# Minimal in-repo VectorQuantize -- covers the subset of the
+# vector_quantize_pytorch API Codebook uses. Reimplements the three
+# features we care about on the non-library path: EMA codebook updates,
+# dead-code replacement, and the rotation-trick STE (arXiv:2410.06424).
+# Codebook can still opt into the real library via ``use_library_vq=True``;
+# this class exists so the repo behaves equivalently when the external
+# package is absent.
+try:
+    from vector_quantize_pytorch import VectorQuantize as LibraryVectorQuantize
+except Exception:
+    LibraryVectorQuantize = None
+_vq_F = F
 
+
+class VectorQuantize(nn.Module):
+    def __init__(
+        self,
+        dim,
+        codebook_size,
+        commitment_weight=1.0,
+        use_cosine_sim=False,
+        decay=0.8,
+        threshold_ema_dead_code=0,
+        rotation_trick=False,
+        eps=1e-5,
+        codebook_retire=False,
+        **kwargs,
+    ):
+        super().__init__()
+        self.dim = dim
+        self.codebook_size = codebook_size
+        self.commitment_weight = commitment_weight
+        self.use_cosine_sim = use_cosine_sim
+        self.decay = float(decay)
+        self.threshold_ema_dead_code = int(threshold_ema_dead_code)
+        self.rotation_trick = bool(rotation_trick)
+        self.eps = float(eps)
+        # Gate for the dead-code replacement path. Off by default because
+        # reseeding expired rows with fresh samples can blow up the effective
+        # number of distinct codes on non-stationary data.
+        self.codebook_retire = bool(codebook_retire)
+        self.codebook = torch.randn(codebook_size, dim)
+        # EMA accumulators used by ``update_ema``. ``cluster_size`` counts
+        # how many inputs snap to each code (bootstrapped at 1.0 to match
+        # the library default so the first-step smoothed divisor is never
+        # zero). ``embed_avg`` is the running sum of the assigned inputs;
+        # the codebook is rewritten as ``embed_avg / cluster_size`` (with
+        # laplace smoothing) each training step.
+        self.register_buffer("cluster_size", torch.ones(codebook_size))
+        self.register_buffer("embed_avg", self.codebook.data.clone())
+        # Owner-space tag for error messages (set post-construction by the
+        # owning Space via ``_tag_vq_name``).
+        self.name = ""
+        # Per-instance row-chunk override for the cdist/argmax intermediate.
+        # ``None`` => derive from ``_VQ_CHUNK_TARGET_ELEMS`` at forward time.
+        self._vq_chunk_rows = None
+
+    @property
+    def codebook(self):
+        return self._parameters["_codebook"]
+
+    @codebook.setter
+    def codebook(self, value):
+        param = value if isinstance(value, nn.Parameter) else nn.Parameter(value.detach().clone())
+        if "_codebook" in self._parameters:
+            self._parameters["_codebook"] = param
+        else:
+            self.register_parameter("_codebook", param)
+        self.codebook_size = param.shape[0]
+        # Keep EMA buffers consistent when the codebook is reassigned
+        # externally (e.g. the post-init rescale in Codebook.addVectors).
+        # Reset embed_avg to the new values; reshape cluster_size if the
+        # codebook size changed.
+        if "embed_avg" in self._buffers:
+            self._buffers["embed_avg"] = param.data.clone()
+        if "cluster_size" in self._buffers:
+            cs = self._buffers["cluster_size"]
+            if cs.shape[0] != param.shape[0]:
+                self._buffers["cluster_size"] = torch.ones(
+                    param.shape[0], device=cs.device, dtype=cs.dtype
+                )
+
+    def _sync_ema_buffers(self):
+        """Repair EMA buffers when they drift from the live codebook shape.
+
+        Training can reassign the codebook Parameter after construction
+        (for example when resizing or reloading weights). The EMA buffers
+        must stay row-aligned with that Parameter or the dead-code refresh
+        path can end up indexing the wrong rows.
+        """
+        codebook = self.codebook
+        V, D = int(codebook.shape[0]), int(codebook.shape[1])
+        cluster_size = self.cluster_size
+        if (
+            cluster_size.ndim != 1
+            or int(cluster_size.shape[0]) != V
+            or cluster_size.device != codebook.device
+        ):
+            dtype = cluster_size.dtype if cluster_size.is_floating_point() else torch.float32
+            self._buffers["cluster_size"] = torch.ones(
+                V, device=codebook.device, dtype=dtype
+            )
+        embed_avg = self.embed_avg
+        if (
+            embed_avg.ndim != 2
+            or tuple(embed_avg.shape) != (V, D)
+            or embed_avg.device != codebook.device
+        ):
+            dtype = embed_avg.dtype if embed_avg.is_floating_point() else codebook.dtype
+            self._buffers["embed_avg"] = codebook.detach().to(dtype=dtype).clone()
+
+    @staticmethod
+    def _rotate_to(src, tgt):
+        """Rotation-trick STE from arXiv:2410.06424 -- forwards ``tgt`` but
+        rotates the upstream gradient from ``tgt``'s direction back to
+        ``src``'s direction and rescales by ``||tgt|| / ||src||`` so
+        magnitude is preserved. Mirrors ``vector_quantize_pytorch``'s
+        ``rotate_to`` / ``efficient_rotation_trick_transform``.
+        """
+        eps = 1e-8
+        orig_shape = src.shape
+        e = src.reshape(-1, src.shape[-1])
+        q = tgt.reshape(-1, tgt.shape[-1])
+        norm_e = e.norm(dim=-1, keepdim=True).clamp(min=eps)
+        norm_q = q.norm(dim=-1, keepdim=True).clamp(min=eps)
+        e_hat = e / norm_e
+        q_hat = q / norm_q
+        w = e_hat + q_hat
+        w = w / w.norm(dim=-1, keepdim=True).clamp(min=eps)
+        w = w.detach()
+        e_dot_w = (e * w).sum(dim=-1, keepdim=True)
+        e_dot_u = (e * e_hat.detach()).sum(dim=-1, keepdim=True)
+        out = e - 2.0 * e_dot_w * w + 2.0 * e_dot_u * q_hat.detach()
+        scale = (norm_q / norm_e).detach()
+        return (out * scale).reshape(orig_shape)
+
+    # Default byte budget for one VQ distance/similarity tile.  4 GiB
+    # leaves ample headroom on 64 GB unified-memory accelerators (the
+    # AMD Strix Halo target) while keeping the per-tile allocation well
+    # below per-buffer caps on current GPU stacks.  Small VQs (V < 64K)
+    # never trigger chunking on first call.  Override per-instance via
+    # ``vq._vq_chunk_rows``.
+    _VQ_CHUNK_TARGET_BYTES = 4 * (1 << 30)  # 4 GiB
+
+    def forward(self, x, return_all_codes=False, freeze_codebook=False, **kwargs):
+        original_shape = x.shape
+        flat = x.reshape(-1, original_shape[-1])
+        codebook = self.codebook
+        N = flat.shape[0]
+        V = codebook.shape[0]
+        D = codebook.shape[1]
+        gib = (N * V * 4) / (1024 ** 3)  # float32 bytes -> GiB
+
+        # Chunk over rows of `flat`.  The [chunk, V] intermediate
+        # (cdist or matmul) is the dominant allocation; the EMA path
+        # below avoids the [N, V] one_hot entirely via bincount +
+        # index_add_, so chunk size is bounded only by this matrix.
+        chunk = self._vq_chunk_rows
+        if chunk is None:
+            max_pairs = self._VQ_CHUNK_TARGET_BYTES // 4  # float32 bytes
+            chunk = max(1, max_pairs // max(V, 1))
+        chunk = min(chunk, N) if N > 0 else 1
+
+        # ``indices`` is the argmin/argmax of distances; the gather that
+        # follows (codebook[indices]) carries no gradient back through the
+        # selection, so the entire indices computation can run under
+        # ``no_grad`` to skip saving cdist/matmul intermediates for the
+        # backward pass.  EMA update has its own ``no_grad`` block below.
+        try:
+            with torch.no_grad():
+                if self.use_cosine_sim:
+                    cb_cmp = _vq_F.normalize(codebook, dim=-1)
+                    if N <= chunk:
+                        flat_cmp = _vq_F.normalize(flat, dim=-1)
+                        indices = (flat_cmp @ cb_cmp.T).argmax(dim=-1)
+                    else:
+                        parts = []
+                        for s in range(0, N, chunk):
+                            sub_cmp = _vq_F.normalize(flat[s:s+chunk], dim=-1)
+                            parts.append((sub_cmp @ cb_cmp.T).argmax(dim=-1))
+                        indices = torch.cat(parts, dim=0)
+                else:
+                    if N <= chunk:
+                        indices = torch.cdist(flat, codebook).argmin(dim=-1)
+                    else:
+                        parts = []
+                        for s in range(0, N, chunk):
+                            parts.append(
+                                torch.cdist(flat[s:s+chunk], codebook).argmin(dim=-1))
+                        indices = torch.cat(parts, dim=0)
+        except RuntimeError as e:
+            owner = self.name or "<unnamed VQ>"
+            raise RuntimeError(
+                f"VectorQuantize[{owner}]: distance matrix allocation "
+                f"failed even after chunking. flat={tuple(flat.shape)}, "
+                f"codebook={tuple(codebook.shape)}, chunk={chunk}, "
+                f"pairwise matrix = [{N}, {V}] float32 = {gib:.2f} GiB. "
+                f"Reduce {owner}.nVectors, reduce batchSize, or set "
+                f"vq._vq_chunk_rows to a smaller value. Original error: {e}"
+            ) from e
+        quantized_raw = codebook[indices].reshape(original_shape)
+        commit_loss = self.commitment_weight * _vq_F.mse_loss(
+            x, quantized_raw.detach()
+        )
+
+        # EMA codebook update + dead-code replacement. Without these the
+        # codebook gets no gradient (commit_loss detaches the quantized
+        # side and STE is a no-op for the codes) so codes never track the
+        # data distribution. Mirrors ``EuclideanCodebook.update_ema`` and
+        # ``expire_codes_`` in vector_quantize_pytorch.
+        if self.training and not freeze_codebook:
+            with torch.no_grad():
+                self._sync_ema_buffers()
+                flat_f = flat.float()
+                # Equivalent to ``one_hot(indices, V).t() @ flat_f`` but
+                # without ever allocating the [N, V] one-hot tensor: at
+                # body-scale microbatch (N in the millions) that matrix
+                # alone passes the GPU per-buffer cap.
+                cluster_size_batch = torch.bincount(
+                    indices, minlength=V
+                ).to(flat_f.dtype)
+                embed_sum = torch.zeros(
+                    V, D, device=flat_f.device, dtype=flat_f.dtype,
+                )
+                embed_sum.index_add_(0, indices, flat_f)
+                self.cluster_size.mul_(self.decay).add_(
+                    cluster_size_batch.to(self.cluster_size.dtype),
+                    alpha=1.0 - self.decay,
+                )
+                self.embed_avg.mul_(self.decay).add_(
+                    embed_sum.to(self.embed_avg.dtype),
+                    alpha=1.0 - self.decay,
+                )
+                n = self.cluster_size.sum()
+                cs_smooth = (
+                    (self.cluster_size + self.eps)
+                    / (n + V * self.eps)
+                    * n
+                )
+                new_embed = self.embed_avg / cs_smooth.unsqueeze(-1)
+                if self.use_cosine_sim:
+                    new_embed = _vq_F.normalize(new_embed, dim=-1)
+                self.codebook.copy_(new_embed.to(self.codebook.dtype))
+                if self.codebook_retire and self.threshold_ema_dead_code > 0:
+                    expired = (
+                        self.cluster_size < self.threshold_ema_dead_code
+                    ).reshape(-1)
+                    if int(expired.numel()) != V:
+                        raise RuntimeError(
+                            "VectorQuantize EMA state corrupt: "
+                            f"expired mask has {int(expired.numel())} rows "
+                            f"for codebook size {V}"
+                        )
+                    expired_idx = torch.nonzero(
+                        expired, as_tuple=False
+                    ).flatten()
+                    if int(expired_idx.numel()) > 0:
+                        n_expired = int(expired_idx.numel())
+                        sample_idx = torch.randint(
+                            0, flat.shape[0], (n_expired,), device=flat.device,
+                        )
+                        sampled = flat[sample_idx].to(self.codebook.dtype)
+                        if self.use_cosine_sim:
+                            sampled = _vq_F.normalize(sampled, dim=-1)
+                        self.codebook.index_copy_(0, expired_idx, sampled)
+                        thr = float(self.threshold_ema_dead_code)
+                        self.cluster_size.index_fill_(0, expired_idx, thr)
+                        self.embed_avg.index_copy_(
+                            0,
+                            expired_idx,
+                            sampled.to(self.embed_avg.dtype) * thr,
+                        )
+
+        # Gradient estimator for the quantized output: rotation trick when
+        # requested and the input carries gradient, otherwise vanilla STE.
+        if self.rotation_trick and self.training and x.requires_grad:
+            quantized = self._rotate_to(x, quantized_raw)
+        else:
+            quantized = x + (quantized_raw - x).detach()
+        indices = indices.reshape(original_shape[:-1])
+        if return_all_codes:
+            return quantized, indices, commit_loss, quantized.unsqueeze(0)
+        return quantized, indices, commit_loss
 import torch.optim as optim
 from torch.profiler import profile as torch_profile, ProfilerActivity, schedule as profiler_schedule
 from functools import partial
@@ -36,7 +318,6 @@ from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer, NegationLayer, DNFConceptLayer  # Import custom layers from Model.py
-from Layers import VectorQuantize  # moved from Spaces.py (April 2026 perf pass)
 from Layers import GrammarLayer, NotLayer, NonLayer, IntersectionLayer, UnionLayer
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
 from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
@@ -880,20 +1161,7 @@ class Tensor(Basis):
 
 
 class Codebook(Basis):
-    """Prototype basis with vector quantization and reverse snapping support.
-
-    Class-level metric flag ``use_dot_product``: when True the underlying
-    ``VectorQuantize`` instance is built with ``use_cosine_sim=True``, which
-    holds the codebook unit-norm via the EMA path and retrieves nearest
-    code by ``argmax_i (x . c_i)`` (a single matmul). The owning Space
-    sets this on its Codebook instance, e.g. ``ConceptualSpace`` opts in
-    by setting ``use_dot_product=True`` so the input magnitude (belief
-    certainty in [-1, +1]) survives end-to-end. Default False keeps the
-    Euclidean / pattern-codebook semantics for PerceptualSpace and
-    SymbolicSpace. See doc/Spaces.md "Codebook similarity metric".
-    """
-
-    use_dot_product = False
+    """Prototype basis with vector quantization and reverse snapping support."""
 
     class _RotationTrickFn(torch.autograd.Function):
         """Rotation-trick gradient estimator for VQ codebooks.
@@ -943,6 +1211,16 @@ class Codebook(Basis):
         # state_dict.
         self._active_payload = None
         self.customVQ = True
+        # When True, ``addVectors`` instantiates ``vector_quantize_pytorch``'s
+        # VectorQuantize (which does EMA codebook updates and dead-code
+        # replacement). Default False keeps the in-repo snap-only stub.
+        # Read from ``architecture.useLibraryVQ`` so an XML config can flip
+        # it on without editing code.
+        try:
+            cfg_flag = TheXMLConfig.get("architecture.useLibraryVQ", False)
+        except Exception:
+            cfg_flag = False
+        self.use_library_vq = bool(cfg_flag)
         self.snapDistance = 0.1
         self.eta = 0.9
         self.alpha = 0.0
@@ -1046,35 +1324,29 @@ class Codebook(Basis):
         return torch.ones(self.vq.codebook_size, device=TheDevice.get())
 
     def addVectors(self, nVec=1, decay=0.9):
-        """Allocate ``nVec`` prototype entries via the in-repo VectorQuantize."""
+        """Allocate ``nVec`` prototype entries using the configured backend."""
         self.codebookSize = nVec
         if self.customVQ:
+            if self.use_library_vq and LibraryVectorQuantize is not None:
+                vq_cls = LibraryVectorQuantize
+            else:
+                vq_cls = VectorQuantize
             # When ``architecture.codebookRetire`` is false (the default),
-            # dead-code replacement is disabled: retired rows get reseeded
-            # with fresh samples, which on non-stationary data can blow up
-            # the effective code count.
+            # dead-code replacement is disabled on both the in-repo class
+            # and the library: retired rows get reseeded with fresh samples,
+            # which on non-stationary data can blow up the effective code
+            # count. Keep the two signals in sync by also zeroing the
+            # threshold so the library path takes the no-op branch.
             try:
                 retire = bool(TheXMLConfig.get("architecture.codebookRetire", False))
             except Exception:
                 retire = False
-            # Per-Codebook metric choice. ``self.use_dot_product`` is a
-            # class attribute on Codebook (default False) that the owning
-            # Space sets on its instance. ConceptualSpace opts in so its
-            # unit-norm concept directions are retrieved by ``argmax_i
-            # (x . c_i)`` -- a single matmul that preserves the input
-            # magnitude (belief certainty) end-to-end. PerceptualSpace
-            # and SymbolicSpace stay with the Euclidean / pattern-
-            # codebook semantics. See doc/Spaces.md "Codebook similarity
-            # metric".
-            use_dot_product = bool(getattr(self, "use_dot_product", False))
-            self.vq = VectorQuantize(
+            vq_kwargs = dict(
                 dim=self.nDim,
                 codebook_size=nVec,
                 threshold_ema_dead_code=1 if retire else 0,
                 decay=decay,
                 commitment_weight=1.0,
-                use_cosine_sim=use_dot_product,
-                codebook_retire=retire,
                 # Rotation-trick STE (arXiv:2410.06424) was reported to
                 # trigger gradient-accumulation OOMs on HIP/ROCm with
                 # microbatch AR.  Vanilla STE
@@ -1082,20 +1354,17 @@ class Codebook(Basis):
                 # estimator -- trains fine, uses a smaller autograd graph.
                 rotation_trick=False,
             )
-            # Initial codebook scaling. In dot-product mode the codebook
-            # must be unit L2-norm so ``argmax_i (x . c_i)`` matches
-            # ``argmax_i cos(x, c_i)`` (the EMA path keeps it unit-norm
-            # after the first step). In Euclidean / pattern-codebook mode
-            # we rescale to the [-1, 1] hypercube so downstream range
-            # checks on the 'what' field hold.
-            with torch.no_grad():
-                init = self.vq.codebook.detach()
-                if use_dot_product:
-                    init = F.normalize(init, dim=-1)
-                else:
-                    init = init / init.abs().amax(
-                        dim=-1, keepdim=True).clamp(min=1e-8)
-                self.vq.codebook = init
+            if vq_cls is VectorQuantize:
+                vq_kwargs["codebook_retire"] = retire
+            self.vq = vq_cls(**vq_kwargs)
+            # The external library does its own codebook initialization;
+            # the in-repo stub uses raw torch.randn so we rescale to [-1, 1]
+            # to satisfy downstream range checks on the 'what' field.
+            if vq_cls is VectorQuantize:
+                with torch.no_grad():
+                    init = self.vq.codebook.detach()
+                    init = init / init.abs().amax(dim=-1, keepdim=True).clamp(min=1e-8)
+                    self.vq.codebook = init
             self.setW(self.vq.codebook)
         else:
             W = torch.randn([nVec, self.nDim], device=TheDevice.get())
@@ -4082,11 +4351,6 @@ class Space(nn.Module):
 
     def _build_object_basis(self):
         basis = Codebook()
-        # Per-Space metric: Spaces that want unit-norm codebooks for
-        # dot-product retrieval (e.g. ConceptualSpace) override the
-        # ``use_dot_product`` class attribute on the Space. We mirror it
-        # onto the basis instance so Codebook.addVectors picks it up.
-        basis.use_dot_product = bool(getattr(self, "use_dot_product", False))
         basis.create(
             self.inputShape[0],
             self.nVectors,
@@ -4419,7 +4683,6 @@ class InputSpace(Space):
             return None  # owned by PerceptualSpace.subspace.what
         if self.model_type == "vq":
             basis = Codebook()
-            basis.use_dot_product = bool(getattr(self, "use_dot_product", False))
             basis.create(
                 self.inputShape[0],
                 self.nVectors,
@@ -6037,15 +6300,6 @@ class ConceptualSpace(Space):
     """
     name = "Concepts"
     config_section = "ConceptualSpace"
-    # Concepts are unit-norm directions; the input magnitude in [-1, +1]
-    # encodes belief certainty (1 = known true, 0 = unknown, -1 = known
-    # false). Use dot-product retrieval (single matmul, codebook held
-    # unit-norm by EMA) so the certainty signal survives end-to-end.
-    # PerceptualSpace and SymbolicSpace inherit the default False --
-    # their codebooks store patterns whose magnitude carries information
-    # and want the Euclidean / cached-norm matmul path. See
-    # doc/Spaces.md "Codebook similarity metric".
-    use_dot_product = True
 
     @staticmethod
     def _grammar_uses(rule_name):
@@ -6544,7 +6798,6 @@ class SymbolicSpace(Space):
         can emit the matching surface form ("foo"/"non-foo"/"not foo").
         """
         basis = Codebook()
-        basis.use_dot_product = bool(getattr(self, "use_dot_product", False))
         basis.create(
             self.inputShape[0],
             self.nVectors,
