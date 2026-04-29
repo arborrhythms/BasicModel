@@ -813,6 +813,35 @@ class StreamingSBOWTrainer:
         print(f"  Vocab: {len(self.word_counts)} unique words -> "
               f"{self.vocab_size} after min_count={self.min_count}")
 
+    def load_existing(self, wv):
+        """Restore vocab + weights from a previously-saved WordVectors.
+
+        Replaces both passes' setup so a subsequent training run picks
+        up the same word indices, frequency counts, and vector values
+        from where the prior run stopped. Caller has already verified
+        ``wv.vector_size == self.vector_size``.
+        """
+        self.idx_to_word = list(wv.index_to_key)
+        self.word_to_idx = {w: i for i, w in enumerate(self.idx_to_word)}
+        # Restore frequency counts so any future build_vocab() call (e.g.,
+        # mixed-mode resume + new-vocab pass) sees the same min_count
+        # gating as the original training run.
+        if wv.counts is not None:
+            for word, ct in zip(self.idx_to_word, wv.counts.tolist()):
+                self.word_counts[word] = int(ct)
+        self.model = _SBOWEmbedding(self.vocab_size, self.vector_size).to(self.device)
+        with torch.no_grad():
+            saved = wv._vectors.to(self.device)
+            if saved.shape == self.model.embeddings.weight.shape:
+                self.model.embeddings.weight.copy_(saved)
+            else:
+                raise ValueError(
+                    f"Loaded vectors {tuple(saved.shape)} do not match "
+                    f"model {tuple(self.model.embeddings.weight.shape)}")
+        self.model = util.compile(self.model)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=self.learning_rate)
+        self.neg_samples = 64
+
     # -- Pass 2: streaming SBOW training --------------------------------------
 
     def process_document(self, text):
@@ -881,17 +910,43 @@ def build_embeddings(shard_paths, output_path, max_docs=10000,
         learning_rate=0.001,
     )
 
-    # Pass 1: build vocabulary
-    print(f"Pass 1: scanning vocabulary from {len(shard_paths)} shard(s), "
-          f"max_docs={max_docs}...")
-    count = 0
-    for doc in iter_documents(shard_paths, max_docs=max_docs):
-        trainer.scan_document(doc)
-        count += 1
-        if count % 100 == 0:
-            print(f"  Scanned {count} docs, "
-                  f"unique words={len(trainer.word_counts)}", flush=True)
-    trainer.build_vocab()
+    # Resume path: if a saved artifact already lives at output_path,
+    # load its vocab + vectors and skip Pass 1. The training run will
+    # continue from those weights instead of starting from random init,
+    # so successive ``embed.py train`` invocations make cumulative
+    # progress on the same .kv file.
+    resumed = False
+    if os.path.exists(output_path):
+        try:
+            wv = WordVectors.load(output_path)
+        except Exception as exc:
+            print(f"Could not load existing embeddings at {output_path} "
+                  f"({type(exc).__name__}: {exc}); starting from scratch.")
+        else:
+            if wv.vector_size != vector_size:
+                print(f"Existing embeddings at {output_path} have "
+                      f"vector_size={wv.vector_size} but --vector-size="
+                      f"{vector_size}; starting from scratch.")
+            else:
+                trainer.load_existing(wv)
+                resumed = True
+                print(f"Resuming from {output_path}: "
+                      f"{trainer.vocab_size} words, "
+                      f"{vector_size}-dim vectors. "
+                      f"Skipping Pass 1 (vocab already built).")
+
+    if not resumed:
+        # Pass 1: build vocabulary
+        print(f"Pass 1: scanning vocabulary from {len(shard_paths)} shard(s), "
+              f"max_docs={max_docs}...")
+        count = 0
+        for doc in iter_documents(shard_paths, max_docs=max_docs):
+            trainer.scan_document(doc)
+            count += 1
+            if count % 100 == 0:
+                print(f"  Scanned {count} docs, "
+                      f"unique words={len(trainer.word_counts)}", flush=True)
+        trainer.build_vocab()
 
     # Pass 2: stream-train SBOW (full softmax, per-sentence)
     print(f"Pass 2: training {vector_size}-dim SBOW, epochs={epochs}...")
@@ -1171,6 +1226,41 @@ def embed_bpe(shard_paths, artifact_path, *,
                                         vector_size=vector_size,
                                         learning_rate=learning_rate,
                                         max_seq=max_seq)
+
+    # Resume path: if output_path already has Lexicon vectors of the
+    # right shape (kind=both artifact from a prior Phase B run), copy
+    # them into the embedding matrix and continue training from there
+    # instead of restarting from a fresh random init each invocation.
+    if output_path and os.path.exists(output_path):
+        try:
+            existing = WordVectors.load(output_path)
+        except Exception as exc:
+            print(f"Phase B: could not load existing vectors at "
+                  f"{output_path} ({type(exc).__name__}: {exc}); "
+                  f"starting from random init.")
+        else:
+            expected_shape = (trainer.vocab_size, vector_size)
+            if (existing.vector_size == vector_size
+                    and len(existing) == trainer.vocab_size):
+                with torch.no_grad():
+                    saved = existing._vectors.to(trainer.device)
+                    target = trainer.model.embeddings.weight
+                    if saved.shape == target.shape:
+                        target.copy_(saved)
+                        print(f"Phase B: resumed from {output_path} "
+                              f"({len(existing)} chunks, "
+                              f"{vector_size}-dim).")
+                    else:
+                        print(f"Phase B: existing vectors at "
+                              f"{output_path} have shape "
+                              f"{tuple(saved.shape)}, expected "
+                              f"{expected_shape}; starting fresh.")
+            else:
+                print(f"Phase B: existing vectors at {output_path} "
+                      f"don't match (have {len(existing)} x "
+                      f"{existing.vector_size}, expected "
+                      f"{trainer.vocab_size} x {vector_size}); "
+                      f"starting fresh.")
 
     print(f"Phase B: training {vector_size}-dim SBOW over BPE chunks, "
           f"epochs={epochs}",

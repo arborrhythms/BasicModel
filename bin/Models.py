@@ -319,6 +319,18 @@ class BaseModel(nn.Module):
             wpath = TheXMLConfig.get("architecture.weightsPath")
             wpath = self._resolve_artifact_path(wpath)
             self.load_weights(wpath)
+            # The .kv artifact's vocab + word/chunk vectors are already
+            # restored by PerceptualSpace.vocabulary during model build
+            # (see Embedding.create -> _load_embeddings). load_embeddings()
+            # additionally restores the LTM truth-layer rows that the
+            # vocabulary path doesn't touch, so call it here under the
+            # same <autoload> gate. The vocab side is idempotent under
+            # re-load; load_embeddings short-circuits if the file is
+            # absent.
+            epath = TheXMLConfig.get("architecture.embeddingPath")
+            if epath:
+                epath = self._resolve_artifact_path(epath)
+                self.load_embeddings(epath)
         self.max_response_length = arch["maxResponseLength"]
         return cfg
 
@@ -2697,6 +2709,92 @@ class BasicModel(BaseModel):
         #   * ``truth_layer.compact()`` (one host sync per tick, kept
         #     outside the brick).
         # See doc/plans/2026-04-26-rolling-cursor-doc-streaming-handoff.md.
+
+        # Memory-leak diagnostics (perf-notes/08-*). Three independently
+        # gated probes; each is a no-op without its env var.
+        if os.environ.get("BASIC_PROFILE_DIAG"):
+            try:
+                ws_diag = getattr(self, 'wordSpace', None)
+                tl_diag = getattr(ws_diag, 'truth_layer', None) if ws_diag is not None else None
+                if tl_diag is not None and hasattr(tl_diag, 'count'):
+                    tl_count_diag = int(tl_diag.count.item())
+                    tl_pending_diag = int(getattr(tl_diag, '_pending_count', 0))
+                else:
+                    tl_count_diag = 0
+                    tl_pending_diag = 0
+                if torch.cuda.is_available():
+                    cuda_alloc_mb = torch.cuda.memory_allocated() / (1024 * 1024)
+                    cuda_max_mb = torch.cuda.max_memory_allocated() / (1024 * 1024)
+                else:
+                    cuda_alloc_mb = 0.0
+                    cuda_max_mb = 0.0
+                opt_state_numel = 0
+                if optimizer is not None:
+                    for st in optimizer.state.values():
+                        for v in st.values():
+                            if torch.is_tensor(v):
+                                opt_state_numel += v.numel()
+                word_lens_diag = {}
+                for sp in self.spaces:
+                    sub = getattr(sp, 'subspace', None)
+                    if sub is not None and hasattr(sub, 'word'):
+                        word_lens_diag[sp.__class__.__name__] = len(sub.word)
+                pair_counts_diag = {}
+                for sp in self.spaces:
+                    cl = getattr(sp, 'chunkLayer', None) or getattr(sp, 'chunk_layer', None)
+                    if cl is not None:
+                        pair_counts_diag[sp.__class__.__name__] = (
+                            len(getattr(cl, '_pair_counts', {})),
+                            len(getattr(cl, '_unigram_counts', {})),
+                        )
+                TheMessage(
+                    f"[diag] batch={batchNum} tl={tl_count_diag}/{tl_pending_diag} "
+                    f"cuda_alloc_mb={cuda_alloc_mb:.1f} cuda_max_mb={cuda_max_mb:.1f} "
+                    f"opt_state_numel={opt_state_numel} word_lens={word_lens_diag} "
+                    f"chunk_pair_uni={pair_counts_diag}"
+                )
+            except Exception as _diag_exc:
+                TheMessage(f"[diag] batch={batchNum} diag_error={_diag_exc!r}")
+
+        if os.environ.get("BASIC_PROFILE_LEAK") and torch.cuda.is_available():
+            if batchNum >= 96 and not getattr(self, "_leak_recording", False):
+                torch.cuda.memory._record_memory_history(
+                    enabled="all", context="all", stacks="python",
+                    max_entries=400_000)
+                self._leak_recording = True
+                TheMessage(f"[leak] start recording at batch {batchNum}")
+            elif batchNum >= 160 and getattr(self, "_leak_recording", False):
+                _leak_dir = os.path.expanduser("~/WikiOracle/basicmodel/perf-notes")
+                os.makedirs(_leak_dir, exist_ok=True)
+                out = os.path.join(_leak_dir, "08-leak-snapshot.pkl")
+                try:
+                    torch.cuda.memory._dump_snapshot(out)
+                    TheMessage(f"[leak] dumped snapshot to {out} at batch {batchNum}")
+                except Exception as _leak_exc:
+                    TheMessage(f"[leak] dump failed: {_leak_exc!r}")
+                torch.cuda.memory._record_memory_history(enabled=None)
+                self._leak_recording = False
+
+        if os.environ.get("BASIC_PROFILE_TENSORS") and torch.cuda.is_available():
+            import gc as _gc, collections as _coll
+            counts = _coll.Counter()
+            for obj in _gc.get_objects():
+                try:
+                    if isinstance(obj, torch.Tensor) and obj.device.type == "cuda":
+                        counts[(tuple(obj.shape), str(obj.dtype))] += 1
+                except Exception:
+                    continue
+            prev = getattr(self, "_leak_prev_counts", None)
+            if prev is not None:
+                keys = set(counts) | set(prev)
+                deltas = sorted(
+                    ((k, counts.get(k, 0) - prev.get(k, 0)) for k in keys
+                     if counts.get(k, 0) != prev.get(k, 0)),
+                    key=lambda kv: -abs(kv[1]))
+                top = ", ".join(f"{k[0]}/{k[1]}:{d:+d}" for k, d in deltas[:8])
+                TheMessage(f"[tensors] batch={batchNum} top deltas: {top}")
+            self._leak_prev_counts = dict(counts)
+
         self.End()
         return result, batchNum
 
@@ -2883,9 +2981,16 @@ class BasicModel(BaseModel):
                 outErr = result.lossOut.detach()
             if result.lossIn is not None:
                 inErr = result.lossIn.detach()
-            outputChunks.append(result.outputPred.clone().detach().squeeze())
-            if self.reversible and result.inputPred is not None:
-                inputChunks.append(result.inputPred.clone().detach().squeeze())
+            # Only the eval path (split in {test, validation, runtime})
+            # reads ``allOut``/``allIn`` -- the train caller at runTrial
+            # line ~2016 destructures and immediately discards them. So
+            # accumulating per-batch outputPred clones during training was
+            # pure overhead: ~0.5 MB / runBatch on MM_5M, growing across
+            # the entire epoch.
+            if not training:
+                outputChunks.append(result.outputPred.clone().detach().squeeze())
+                if self.reversible and result.inputPred is not None:
+                    inputChunks.append(result.inputPred.clone().detach().squeeze())
 
         # Data splits live on CPU (see Data.toDevice); prepInput/prepOutput
         # move per-batch to device in the main process, so workers just

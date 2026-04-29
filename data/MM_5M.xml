@@ -36,7 +36,7 @@
       <reverseScale>0.1</reverseScale>
       <maskedPrediction>ARIR</maskedPrediction>
       <trainEmbedding>ARLM</trainEmbedding>
-      <autoload>false</autoload>
+      <autoload>true</autoload>
       <autosave>true</autosave>
       <sentencePrediction>true</sentencePrediction>
       <sentenceContextWindow>5</sentenceContextWindow>
