@@ -1186,7 +1186,7 @@ class TestBaseModelFactory(unittest.TestCase):
 
     def test_factory_creates_basic_model(self):
         # nSymbols must equal nConcepts (SymbolicSpace 1:1 mapping constraint),
-        # and nPercepts must be 2*nConcepts (InvertiblePiLayer invertibility).
+        # and nPercepts must be 2*nConcepts (PiLayer invertibility).
         xml = """<model>
   <architecture>
     <type>basic</type>
@@ -2052,9 +2052,8 @@ class TestReconstructionSymbols(unittest.TestCase):
         """After training, all 4 XOR inputs reconstruct to the correct words.
 
         Uses XOR_exact.xml which configures PerceptualSpace with invertible=True
-        and nActive=8 so that the non-naive InvertiblePiLayer path is exercised.
-        The non-naive path uses SVD-based compute_Winverse() for numerically
-        stable inversion (no pinv fallback).
+        and nActive=8 so that the non-naive PiLayer(invertible=True) path is
+        exercised. The non-naive path uses the LDU/triangular-solve inverse.
         """
         import xml.etree.ElementTree as ET
 
@@ -2122,9 +2121,9 @@ class TestReconstructionSymbols(unittest.TestCase):
 class TestXor3dReversePass(unittest.TestCase):
     """XOR model with reshape=false + reversible=true (3D mode).
 
-    InvertiblePiLayer doubles the sequence dimension, so nActive_percept
-    must be 2*nActive_input.  This test verifies the model constructs and
-    runs a forward+reverse pass without shape errors.
+    PiLayer(invertible=True) doubles the sequence dimension, so
+    nActive_percept must be 2*nActive_input.  This test verifies the model
+    constructs and runs a forward+reverse pass without shape errors.
     """
 
     def test_construct_and_forward_reverse(self):

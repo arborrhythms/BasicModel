@@ -51,8 +51,9 @@ Layer selection depends on `<reconstruct>` and `invertible`:
 
 1. **`reconstruct=NONE`**: Use non-invertible layers (`PiLayer`, `SigmaLayer`) for
    the forward pass only. No reverse pipeline is created.
-2. **`reconstruct=<any>` + `invertible`**: A single invertible layer (`InvertiblePiLayer`,
-   `InvertibleSigmaLayer`) serves both directions, sharing weights.
+2. **`reconstruct=<any>` + `invertible`**: A single invertible layer
+   (`PiLayer(invertible=True)`, `SigmaLayer(invertible=True)`) serves both
+   directions, sharing weights.
 3. **`reconstruct=<any>` + not `invertible`**: Two layers with separate weights --
    call `forward()` on one and `reverse()` on the other.  This avoids the
    expressivity limitation where a non-invertible layer's forward pass cannot
@@ -142,7 +143,7 @@ translate between them internally.
 
 When `<useButterflies>true</useButterflies>` (and `conceptualOrder > 1`),
 the Sigma-Pi loop switches from a flat concatenation-based cycle to a
-pairwise butterfly architecture with per-level ButterflyStage wrappers
+pairwise butterfly architecture with per-level butterfly-mode Pi/Sigma layers
 and a geometrically partitioned symbol dimension.  `<useGrammar>true</useGrammar>`
 (legacy spelling for `useGrammar="all"` in `<WordSpace>`) selects a
 grammar-directed progressive-bottleneck variant instead.  Full grammar
@@ -420,7 +421,7 @@ the noise factor is itself always invertible. This ensures that even at full tem
 | `naive` | Forward path | Reverse path |
 |---------|-------------|-------------|
 | `False` (default) | Apply L, D, U sequentially to x; backprop through each factor separately | Triangular solves: $U^{-1}$, $D^{-1}$, $L^{-1}$ applied in sequence |
-| `True` | Materialise `W_eff` as a dense matrix; apply `W_eff @ x` | `pinv(W_eff) @ y` |
+| `True` | Materialise `W_eff` as a dense matrix; apply `W_eff @ x` | Materialise the dense LDU inverse and apply it to `y` |
 
 The `naive=False` path never materialises W_eff as a full matrix, saving memory and
 allowing each factor's gradients to flow independently.

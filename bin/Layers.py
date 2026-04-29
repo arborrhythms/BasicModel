@@ -30,362 +30,6 @@ from util import TheMessage
 #region Layers
 
 
-# Moved from Spaces.py (April 2026 perf pass). Codebook in Spaces.py
-# instantiates this; lifting the class to Layers.py keeps the dependency
-# direction (Layers -> Spaces) clean and lets Layers-only consumers
-# import VQ without pulling in the rest of the Spaces module.
-#
-# Two distance modes:
-#   ``use_cosine_sim=False`` (Euclidean, the default):
-#     ``argmin_i ||x - c_i||^2 = argmax_i (x . c_i - 0.5 ||c_i||^2)``
-#     implemented as one matmul + cached row-norm subtract. ``||c_i||^2``
-#     is held in the ``_b_norms_sq`` buffer and refreshed in the
-#     codebook setter and at the end of each EMA update. Same FLOPs as
-#     ``torch.cdist``'s mm-trick path, but skips the sqrt and the
-#     per-row ``||x||^2`` add (both invariant under argmin over codes).
-#     The codebook lives in the [-1, +1] hypercube; magnitude carries
-#     information (feature intensity) and there is no codebook-level
-#     negation operator, so two patterns differ when their coordinates
-#     differ. Right metric for PerceptualSpace and SymbolicSpace.
-#
-#   ``use_cosine_sim=True`` (dot product, codebook unit-norm):
-#     ``indices = (flat @ codebook.T).argmax(dim=-1)``
-#     The EMA path renormalizes the codebook to unit L2 each step
-#     (see below), so ``a_i`` is unit-norm. For a fixed query ``b``,
-#     ``cos(a_i, b) = (a_i . b) / ||b||`` is monotone in ``a_i . b``
-#     because ``||b|| >= 0`` is constant across i, so ranking by the
-#     raw dot product matches ranking by cosine. The input is NOT
-#     normalized -- in ConceptualSpace the input magnitude in
-#     [-1, +1] encodes belief certainty (1 = known true, 0 = unknown,
-#     -1 = known false) and must be preserved end-to-end.
-#
-# See doc/Spaces.md "Codebook similarity metric" for the full theory.
-class VectorQuantize(nn.Module):
-    def __init__(
-        self,
-        dim,
-        codebook_size,
-        commitment_weight=1.0,
-        use_cosine_sim=False,
-        decay=0.8,
-        threshold_ema_dead_code=0,
-        rotation_trick=False,
-        eps=1e-5,
-        codebook_retire=False,
-        **kwargs,
-    ):
-        super().__init__()
-        self.dim = dim
-        self.codebook_size = codebook_size
-        self.commitment_weight = commitment_weight
-        self.use_cosine_sim = use_cosine_sim
-        self.decay = float(decay)
-        self.threshold_ema_dead_code = int(threshold_ema_dead_code)
-        self.rotation_trick = bool(rotation_trick)
-        self.eps = float(eps)
-        # Gate for the dead-code replacement path. Off by default because
-        # reseeding expired rows with fresh samples can blow up the effective
-        # number of distinct codes on non-stationary data.
-        self.codebook_retire = bool(codebook_retire)
-        self.codebook = torch.randn(codebook_size, dim)
-        # EMA accumulators used by ``update_ema``. ``cluster_size`` counts
-        # how many inputs snap to each code (bootstrapped at 1.0 to match
-        # the library default so the first-step smoothed divisor is never
-        # zero). ``embed_avg`` is the running sum of the assigned inputs;
-        # the codebook is rewritten as ``embed_avg / cluster_size`` (with
-        # laplace smoothing) each training step.
-        self.register_buffer("cluster_size", torch.ones(codebook_size))
-        self.register_buffer("embed_avg", self.codebook.data.clone())
-        # Cached squared L2 norms of each codebook row, refreshed in the
-        # codebook setter and at the end of each EMA update. Used by the
-        # Euclidean retrieval path to do
-        # ``argmin_i ||x - c_i||^2 = argmax_i (x . c_i - 0.5 ||c_i||^2)``
-        # via a single matmul instead of ``torch.cdist``: same FLOPs as
-        # cdist's mm-trick, but skips the sqrt and the per-row ||x||^2 add
-        # (both invariant under argmin over codes).
-        self.register_buffer(
-            "_b_norms_sq",
-            (self.codebook.data ** 2).sum(dim=-1),
-        )
-        # Owner-space tag for error messages (set post-construction by the
-        # owning Space via ``_tag_vq_name``).
-        self.name = ""
-        # Per-instance row-chunk override for the matmul/argmax intermediate.
-        # ``None`` => derive from ``_VQ_CHUNK_TARGET_BYTES`` at forward time.
-        self._vq_chunk_rows = None
-
-    @property
-    def codebook(self):
-        return self._parameters["_codebook"]
-
-    @codebook.setter
-    def codebook(self, value):
-        param = value if isinstance(value, nn.Parameter) else nn.Parameter(value.detach().clone())
-        if "_codebook" in self._parameters:
-            self._parameters["_codebook"] = param
-        else:
-            self.register_parameter("_codebook", param)
-        self.codebook_size = param.shape[0]
-        # Keep EMA buffers consistent when the codebook is reassigned
-        # externally (e.g. the post-init rescale in Codebook.addVectors).
-        # Reset embed_avg to the new values; reshape cluster_size if the
-        # codebook size changed.
-        if "embed_avg" in self._buffers:
-            self._buffers["embed_avg"] = param.data.clone()
-        if "cluster_size" in self._buffers:
-            cs = self._buffers["cluster_size"]
-            if cs.shape[0] != param.shape[0]:
-                self._buffers["cluster_size"] = torch.ones(
-                    param.shape[0], device=cs.device, dtype=cs.dtype
-                )
-        # Refresh the cached ||c_i||^2 buffer so the Euclidean retrieval
-        # path stays consistent with the codebook. Allocate fresh when
-        # the row count changed.
-        if "_b_norms_sq" in self._buffers:
-            self._buffers["_b_norms_sq"] = (param.data ** 2).sum(dim=-1)
-
-    def _sync_ema_buffers(self):
-        """Repair EMA buffers when they drift from the live codebook shape.
-
-        Training can reassign the codebook Parameter after construction
-        (for example when resizing or reloading weights). The EMA buffers
-        must stay row-aligned with that Parameter or the dead-code refresh
-        path can end up indexing the wrong rows.
-        """
-        codebook = self.codebook
-        V, D = int(codebook.shape[0]), int(codebook.shape[1])
-        cluster_size = self.cluster_size
-        if (
-            cluster_size.ndim != 1
-            or int(cluster_size.shape[0]) != V
-            or cluster_size.device != codebook.device
-        ):
-            dtype = cluster_size.dtype if cluster_size.is_floating_point() else torch.float32
-            self._buffers["cluster_size"] = torch.ones(
-                V, device=codebook.device, dtype=dtype
-            )
-        embed_avg = self.embed_avg
-        if (
-            embed_avg.ndim != 2
-            or tuple(embed_avg.shape) != (V, D)
-            or embed_avg.device != codebook.device
-        ):
-            dtype = embed_avg.dtype if embed_avg.is_floating_point() else codebook.dtype
-            self._buffers["embed_avg"] = codebook.detach().to(dtype=dtype).clone()
-        b_norms_sq = self._b_norms_sq
-        if (
-            b_norms_sq.ndim != 1
-            or int(b_norms_sq.shape[0]) != V
-            or b_norms_sq.device != codebook.device
-        ):
-            self._buffers["_b_norms_sq"] = (
-                codebook.detach() ** 2
-            ).sum(dim=-1)
-
-    @staticmethod
-    def _rotate_to(src, tgt):
-        """Rotation-trick STE from arXiv:2410.06424 -- forwards ``tgt`` but
-        rotates the upstream gradient from ``tgt``'s direction back to
-        ``src``'s direction and rescales by ``||tgt|| / ||src||`` so
-        magnitude is preserved. Mirrors ``vector_quantize_pytorch``'s
-        ``rotate_to`` / ``efficient_rotation_trick_transform``.
-        """
-        eps = 1e-8
-        orig_shape = src.shape
-        e = src.reshape(-1, src.shape[-1])
-        q = tgt.reshape(-1, tgt.shape[-1])
-        norm_e = e.norm(dim=-1, keepdim=True).clamp(min=eps)
-        norm_q = q.norm(dim=-1, keepdim=True).clamp(min=eps)
-        e_hat = e / norm_e
-        q_hat = q / norm_q
-        w = e_hat + q_hat
-        w = w / w.norm(dim=-1, keepdim=True).clamp(min=eps)
-        w = w.detach()
-        e_dot_w = (e * w).sum(dim=-1, keepdim=True)
-        e_dot_u = (e * e_hat.detach()).sum(dim=-1, keepdim=True)
-        out = e - 2.0 * e_dot_w * w + 2.0 * e_dot_u * q_hat.detach()
-        scale = (norm_q / norm_e).detach()
-        return (out * scale).reshape(orig_shape)
-
-    # Default byte budget for one VQ distance/similarity tile.  4 GiB
-    # leaves ample headroom on 64 GB unified-memory accelerators (the
-    # AMD Strix Halo target) while keeping the per-tile allocation well
-    # below per-buffer caps on current GPU stacks.  Small VQs (V < 64K)
-    # never trigger chunking on first call.  Override per-instance via
-    # ``vq._vq_chunk_rows``.
-    _VQ_CHUNK_TARGET_BYTES = 4 * (1 << 30)  # 4 GiB
-
-    def forward(self, x, return_all_codes=False, freeze_codebook=False, **kwargs):
-        original_shape = x.shape
-        flat = x.reshape(-1, original_shape[-1])
-        codebook = self.codebook
-        N = flat.shape[0]
-        V = codebook.shape[0]
-        D = codebook.shape[1]
-        gib = (N * V * 4) / (1024 ** 3)  # float32 bytes -> GiB
-
-        # Chunk over rows of `flat`.  The [chunk, V] intermediate
-        # (cdist or matmul) is the dominant allocation; the EMA path
-        # below avoids the [N, V] one_hot entirely via bincount +
-        # index_add_, so chunk size is bounded only by this matrix.
-        chunk = self._vq_chunk_rows
-        if chunk is None:
-            max_pairs = self._VQ_CHUNK_TARGET_BYTES // 4  # float32 bytes
-            chunk = max(1, max_pairs // max(V, 1))
-        chunk = min(chunk, N) if N > 0 else 1
-
-        # ``indices`` is the argmin/argmax of distances; the gather that
-        # follows (codebook[indices]) carries no gradient back through the
-        # selection, so the entire indices computation can run under
-        # ``no_grad`` to skip saving cdist/matmul intermediates for the
-        # backward pass.  EMA update has its own ``no_grad`` block below.
-        try:
-            with torch.no_grad():
-                if self.use_cosine_sim:
-                    # Dot-product mode: codebook is unit-norm (maintained by
-                    # the EMA path below), so ``argmax_i (flat . codebook_i)``
-                    # equals ``argmax_i cos(flat, codebook_i)`` -- the per-row
-                    # ``||flat||`` is a positive constant across i and
-                    # cancels out of the ranking. Skipping the input
-                    # normalization preserves the input magnitude (the
-                    # belief-certainty signal in ConceptualSpace) end-to-end
-                    # and saves an O(N*D) normalize op per chunk.
-                    if N <= chunk:
-                        indices = (flat @ codebook.T).argmax(dim=-1)
-                    else:
-                        parts = []
-                        for s in range(0, N, chunk):
-                            parts.append((flat[s:s+chunk] @ codebook.T).argmax(dim=-1))
-                        indices = torch.cat(parts, dim=0)
-                else:
-                    # Euclidean mode via the matmul / cached-norm trick:
-                    #   ||x - c_i||^2 = ||x||^2 + ||c_i||^2 - 2 (x . c_i)
-                    # ||x||^2 is a constant across i, so it drops from
-                    # argmin. After negation:
-                    #   argmin_i ||x - c_i||^2
-                    #     = argmax_i (x . c_i - 0.5 ||c_i||^2)
-                    # ``self._b_norms_sq`` (refreshed in the codebook
-                    # setter and after every EMA update) is ``[V]``;
-                    # ``flat @ codebook.T`` is ``[chunk, V]``. Same
-                    # FLOPs as cdist's mm-trick path, skips sqrt and
-                    # the per-row ||x||^2 add, and gives Inductor a
-                    # cleaner graph (no autograd plumbing for cdist).
-                    half_b_norms_sq = (0.5 * self._b_norms_sq).to(flat.dtype)
-                    if N <= chunk:
-                        scores = flat @ codebook.T
-                        scores = scores - half_b_norms_sq
-                        indices = scores.argmax(dim=-1)
-                    else:
-                        parts = []
-                        for s in range(0, N, chunk):
-                            scores = flat[s:s+chunk] @ codebook.T
-                            scores = scores - half_b_norms_sq
-                            parts.append(scores.argmax(dim=-1))
-                        indices = torch.cat(parts, dim=0)
-        except RuntimeError as e:
-            owner = self.name or "<unnamed VQ>"
-            raise RuntimeError(
-                f"VectorQuantize[{owner}]: distance matrix allocation "
-                f"failed even after chunking. flat={tuple(flat.shape)}, "
-                f"codebook={tuple(codebook.shape)}, chunk={chunk}, "
-                f"pairwise matrix = [{N}, {V}] float32 = {gib:.2f} GiB. "
-                f"Reduce {owner}.nVectors, reduce batchSize, or set "
-                f"vq._vq_chunk_rows to a smaller value. Original error: {e}"
-            ) from e
-        quantized_raw = codebook[indices].reshape(original_shape)
-        commit_loss = self.commitment_weight * F.mse_loss(
-            x, quantized_raw.detach()
-        )
-
-        # EMA codebook update + dead-code replacement. Without these the
-        # codebook gets no gradient (commit_loss detaches the quantized
-        # side and STE is a no-op for the codes) so codes never track the
-        # data distribution. Mirrors ``EuclideanCodebook.update_ema`` and
-        # ``expire_codes_`` in vector_quantize_pytorch.
-        if self.training and not freeze_codebook:
-            with torch.no_grad():
-                self._sync_ema_buffers()
-                flat_f = flat.float()
-                # Equivalent to ``one_hot(indices, V).t() @ flat_f`` but
-                # without ever allocating the [N, V] one-hot tensor: at
-                # body-scale microbatch (N in the millions) that matrix
-                # alone passes the GPU per-buffer cap.
-                cluster_size_batch = torch.bincount(
-                    indices, minlength=V
-                ).to(flat_f.dtype)
-                embed_sum = torch.zeros(
-                    V, D, device=flat_f.device, dtype=flat_f.dtype,
-                )
-                embed_sum.index_add_(0, indices, flat_f)
-                self.cluster_size.mul_(self.decay).add_(
-                    cluster_size_batch.to(self.cluster_size.dtype),
-                    alpha=1.0 - self.decay,
-                )
-                self.embed_avg.mul_(self.decay).add_(
-                    embed_sum.to(self.embed_avg.dtype),
-                    alpha=1.0 - self.decay,
-                )
-                n = self.cluster_size.sum()
-                cs_smooth = (
-                    (self.cluster_size + self.eps)
-                    / (n + V * self.eps)
-                    * n
-                )
-                new_embed = self.embed_avg / cs_smooth.unsqueeze(-1)
-                if self.use_cosine_sim:
-                    new_embed = F.normalize(new_embed, dim=-1)
-                self.codebook.copy_(new_embed.to(self.codebook.dtype))
-                # Refresh the cached ||c_i||^2 so the Euclidean retrieval
-                # path on the next forward sees the updated codebook. In
-                # cosine mode every row is unit-norm by construction, so
-                # we still write 1.0 here -- harmless for the dot-product
-                # path (which doesn't read this buffer) and keeps the
-                # invariant true if useDotProduct is later toggled off.
-                self._b_norms_sq.copy_(
-                    (self.codebook.detach() ** 2).sum(dim=-1)
-                )
-                if self.codebook_retire and self.threshold_ema_dead_code > 0:
-                    expired = (
-                        self.cluster_size < self.threshold_ema_dead_code
-                    ).reshape(-1)
-                    if int(expired.numel()) != V:
-                        raise RuntimeError(
-                            "VectorQuantize EMA state corrupt: "
-                            f"expired mask has {int(expired.numel())} rows "
-                            f"for codebook size {V}"
-                        )
-                    expired_idx = torch.nonzero(
-                        expired, as_tuple=False
-                    ).flatten()
-                    if int(expired_idx.numel()) > 0:
-                        n_expired = int(expired_idx.numel())
-                        sample_idx = torch.randint(
-                            0, flat.shape[0], (n_expired,), device=flat.device,
-                        )
-                        sampled = flat[sample_idx].to(self.codebook.dtype)
-                        if self.use_cosine_sim:
-                            sampled = F.normalize(sampled, dim=-1)
-                        self.codebook.index_copy_(0, expired_idx, sampled)
-                        thr = float(self.threshold_ema_dead_code)
-                        self.cluster_size.index_fill_(0, expired_idx, thr)
-                        self.embed_avg.index_copy_(
-                            0,
-                            expired_idx,
-                            sampled.to(self.embed_avg.dtype) * thr,
-                        )
-
-        # Gradient estimator for the quantized output: rotation trick when
-        # requested and the input carries gradient, otherwise vanilla STE.
-        if self.rotation_trick and self.training and x.requires_grad:
-            quantized = self._rotate_to(x, quantized_raw)
-        else:
-            quantized = x + (quantized_raw - x).detach()
-        indices = indices.reshape(original_shape[:-1])
-        if return_all_codes:
-            return quantized, indices, commit_loss, quantized.unsqueeze(0)
-        return quantized, indices, commit_loss
-
-
 class Layer(nn.Module):
     """Base class for custom layers with optional symbol/object axis swapping.
 
@@ -707,7 +351,8 @@ class InvertibleLinearLayer(ErgodicLayer):
     _d_effective(), keeping W well-conditioned and invertible.
 
     naive=False (default): sequential triangular solves, no W materialisation.
-    naive=True: materialise W_eff as dense matrix; reverse uses pinv(W_eff).
+    naive=True: materialise W_eff as a dense matrix; reverse materialises the
+    dense LDU inverse.
     """
     def __init__(self, nInput, nOutput, naive=False, ergodic=False,
                  hasBias=True, stable=False):
@@ -985,7 +630,7 @@ class InvertibleLinearLayer(ErgodicLayer):
           the preceding forward() call -- no new resampling is done until after
           the result is computed.
           naive=False: triangular solves (exact, no materialisation).
-          naive=True: materialise W_eff, apply pinv.
+          naive=True: materialise the dense LDU inverse.
           Resamples noise at end so the layer is ready for the next forward().
 
         Non-ergodic (self.ergodic=False):
@@ -1138,106 +783,108 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
 # Originally implemented as a wrapper class (``ButterflyStage``) around
 # a Sigma/Pi inner layer. That added a Python call frame per stage and a
 # fresh ``torch.tensor`` per call for the permutation indices; both are
-# avoidable. Now the access pattern is built into ``SigmaLayer`` and
-# ``PiLayer`` directly: pass ``stage_idx`` / ``n_t`` / ``is_last``
-# at construction and the layer's own ``forward`` / ``reverse`` becomes
-# the butterfly-aware version. Permutation indices are pre-computed
-# once in ``__init__`` and stored as non-persistent buffers, removing
-# the per-call rebuild.
+# avoidable. The access helpers now live in ``ButterflyLayer`` and are
+# inherited by ``SigmaLayer`` and ``PiLayer``: pass ``stage_idx`` /
+# ``n_t`` / ``is_last`` at construction and the layer's own ``forward`` /
+# ``reverse`` becomes the butterfly-aware version. Permutation indices are
+# pre-computed once in ``__init__`` and stored as non-persistent buffers,
+# removing the per-call rebuild.
 # ---------------------------------------------------------------------------
 
-def _butterfly_index_lists(n_vectors, stage):
-    """Return ``(perm, inv_perm)`` as Python lists of ints (CPU-side, pure).
+class ButterflyLayer(Layer):
+    """Base class for layers with the optional butterfly access pattern.
 
-    ``perm[i]`` = original index that lands at position ``i`` after
-    permuting to make XOR-neighbors at bit ``stage`` adjacent.
-    ``inv_perm`` is the inverse mapping. Pure; safe to call at module
-    construction time.
+    SigmaLayer and PiLayer keep their own forward/reverse math. This base
+    only owns the shared permutation buffers, pack/unpack helpers, and the
+    merge-diff cache used by reverse().
     """
-    if n_vectors <= 1:
-        idx = list(range(n_vectors))
-        return idx, list(idx)
-    span = max(int(math.log2(n_vectors)), 1)
-    bit = stage % span
-    stride = 1 << bit
-    block = stride << 1
-    perm = []
-    for start in range(0, n_vectors, block):
-        for offset in range(stride):
-            perm.append(start + offset)
-            perm.append(start + offset + stride)
-    inv = [0] * n_vectors
-    for i, p in enumerate(perm):
-        inv[p] = i
-    return perm, inv
 
+    def __init__(self, nInput, nOutput):
+        super().__init__(nInput, nOutput)
+        self.butterfly = False
+        self.butterfly_stage_idx = None
+        self.butterfly_n_t = None
+        self.butterfly_is_last = False
+        self._merge_diff = None
 
-def _init_butterfly_buffers(module, stage_idx, n_t, is_last):
-    """Pre-compute and register the butterfly permutations on ``module``.
+    @staticmethod
+    def _butterfly_index_lists(n_vectors, stage):
+        """Return ``(perm, inv_perm)`` as Python lists of ints."""
+        if n_vectors <= 1:
+            idx = list(range(n_vectors))
+            return idx, list(idx)
+        span = max(int(math.log2(n_vectors)), 1)
+        bit = stage % span
+        stride = 1 << bit
+        block = stride << 1
+        perm = []
+        for start in range(0, n_vectors, block):
+            for offset in range(stride):
+                perm.append(start + offset)
+                perm.append(start + offset + stride)
+        inv = [0] * n_vectors
+        for i, p in enumerate(perm):
+            inv[p] = i
+        return perm, inv
 
-    ``n_t`` is the actual per-stage input vector count this layer will
-    see at runtime -- the caller computes it (it is NOT
-    ``initial_n // 2**stage_idx`` in general, because ``is_last``
-    propagation across earlier stages changes the shape entering
-    later ones).
+    def _init_butterfly_buffers(self, stage_idx, n_t, is_last):
+        """Pre-compute and register this layer's butterfly permutations."""
+        perm_list, inv_list = self._butterfly_index_lists(n_t, stage_idx)
+        self.register_buffer(
+            "_butterfly_perm",
+            torch.tensor(perm_list, dtype=torch.long),
+            persistent=False)
+        self.register_buffer(
+            "_butterfly_inv_perm",
+            torch.tensor(inv_list, dtype=torch.long),
+            persistent=False)
+        self.butterfly = True
+        self.butterfly_stage_idx = int(stage_idx)
+        self.butterfly_n_t = int(n_t)
+        self.butterfly_is_last = bool(is_last)
+        self._merge_diff = None
 
-    Sets ``module.butterfly = True`` and records the stage metadata.
-    """
-    perm_list, inv_list = _butterfly_index_lists(n_t, stage_idx)
-    module.register_buffer(
-        "_butterfly_perm",
-        torch.tensor(perm_list, dtype=torch.long),
-        persistent=False)
-    module.register_buffer(
-        "_butterfly_inv_perm",
-        torch.tensor(inv_list, dtype=torch.long),
-        persistent=False)
-    module.butterfly = True
-    module.butterfly_stage_idx = int(stage_idx)
-    module.butterfly_n_t = int(n_t)
-    module.butterfly_is_last = bool(is_last)
-    module._merge_diff = None
+    def _butterfly_pack(self, x):
+        """``[B, N, D]`` -> ``[B, N/2, 2D]`` via the cached permutation."""
+        B, N, D = x.shape
+        return x.index_select(1, self._butterfly_perm).reshape(B, N // 2, 2 * D)
 
+    def _butterfly_unpack(self, pair, B, N, D):
+        """``[B, N/2, 2D]`` -> ``[B, N, D]`` via the inverse permutation."""
+        return pair.reshape(B, N, D).index_select(1, self._butterfly_inv_perm)
 
-def _butterfly_pack(x, perm):
-    """``[B, N, D]`` -> ``[B, N/2, 2D]`` via the cached permutation."""
-    B, N, D = x.shape
-    return x.index_select(1, perm).reshape(B, N // 2, 2 * D)
+    def _butterfly_merge(self, x_out):
+        """Average-merge unless terminal. Caches the diff for inversion."""
+        if self.butterfly_is_last:
+            return x_out
+        left = x_out[:, 0::2, :]
+        right = x_out[:, 1::2, :]
+        self._merge_diff = left - right
+        return (left + right) / 2
 
+    def _butterfly_unmerge(self, y):
+        """Inverse of ``_butterfly_merge`` using the cached diff."""
+        if self.butterfly_is_last:
+            return y
+        diff = self._merge_diff
+        assert diff is not None, (
+            "butterfly reverse called without prior forward (cached diff is None)")
+        left = y + diff / 2
+        right = y - diff / 2
+        B, N_half, D = left.shape
+        out = torch.empty(B, N_half * 2, D, device=y.device, dtype=y.dtype)
+        out[:, 0::2, :] = left
+        out[:, 1::2, :] = right
+        self._merge_diff = None
+        return out
 
-def _butterfly_unpack(pair, B, N, D, inv_perm):
-    """``[B, N/2, 2D]`` -> ``[B, N, D]`` via the inverse permutation."""
-    return pair.reshape(B, N, D).index_select(1, inv_perm)
+    def Start(self):
+        """Per-sentence reset. Clears any cached butterfly merge diff."""
+        if self.butterfly:
+            self._merge_diff = None
+        super().Start()
 
-
-def _butterfly_merge(x_out, is_last, module):
-    """Average-merge unless terminal. Caches the diff for inversion."""
-    if is_last:
-        return x_out
-    left = x_out[:, 0::2, :]
-    right = x_out[:, 1::2, :]
-    module._merge_diff = left - right
-    return (left + right) / 2
-
-
-def _butterfly_unmerge(y, is_last, module):
-    """Inverse of ``_butterfly_merge`` using the cached diff."""
-    if is_last:
-        return y
-    diff = module._merge_diff
-    assert diff is not None, (
-        "butterfly reverse called without prior forward (cached diff is None)")
-    left = y + diff / 2
-    right = y - diff / 2
-    B, N_half, D = left.shape
-    out = torch.empty(B, N_half * 2, D, device=y.device, dtype=y.dtype)
-    out[:, 0::2, :] = left
-    out[:, 1::2, :] = right
-    module._merge_diff = None
-    return out
-
-
-class SigmaLayer(Layer):
+class SigmaLayer(ButterflyLayer):
     """Additive (summation) layer with optional butterfly access pattern.
 
     With ``nonlinear=True`` (legacy behavior), ``forward`` returns
@@ -1293,7 +940,6 @@ class SigmaLayer(Layer):
         # vector count this layer sees at runtime; the caller computes
         # it (it depends on which earlier stages were is_last and so
         # cannot be derived from stage_idx alone).
-        self.butterfly = False
         if stage_idx is not None:
             assert n_t is not None, (
                 "SigmaLayer butterfly mode requires n_t")
@@ -1303,18 +949,12 @@ class SigmaLayer(Layer):
             assert nInput % 2 == 0, (
                 f"SigmaLayer butterfly mode requires even nInput "
                 f"(got {nInput})")
-            _init_butterfly_buffers(self, stage_idx, n_t, is_last)
+            self._init_butterfly_buffers(stage_idx, n_t, is_last)
 
     @property
     def bias(self): return self.layer.bias
     @property
     def var(self):  return self.layer.var
-
-    def Start(self):
-        """Per-sentence reset. Clears any cached butterfly merge diff."""
-        if self.butterfly:
-            self._merge_diff = None
-        super().Start()
 
     # -- Inner Sigma transform on packed features --
     def _sigma_inner_forward(self, packed, binary=False):
@@ -1352,11 +992,10 @@ class SigmaLayer(Layer):
         """
         if self.butterfly:
             B, N, D = x.shape
-            packed = _butterfly_pack(x, self._butterfly_perm)
+            packed = self._butterfly_pack(x)
             packed_out = self._sigma_inner_forward(packed, binary=binary)
-            x_out = _butterfly_unpack(packed_out, B, N, D,
-                                      self._butterfly_inv_perm)
-            return _butterfly_merge(x_out, self.butterfly_is_last, self)
+            x_out = self._butterfly_unpack(packed_out, B, N, D)
+            return self._butterfly_merge(x_out)
         if binary:
             x = Ops.top2_select_ste(x)
         if self.nonlinear:
@@ -1375,12 +1014,11 @@ class SigmaLayer(Layer):
         the original ordering after.
         """
         if self.butterfly:
-            x_out = _butterfly_unmerge(y, self.butterfly_is_last, self)
+            x_out = self._butterfly_unmerge(y)
             B, N, D = x_out.shape
-            packed = _butterfly_pack(x_out, self._butterfly_perm)
+            packed = self._butterfly_pack(x_out)
             packed_in = self._sigma_inner_reverse(packed)
-            return _butterfly_unpack(packed_in, B, N, D,
-                                     self._butterfly_inv_perm)
+            return self._butterfly_unpack(packed_in, B, N, D)
         if self.nonlinear:
             y = torch.atanh(y.clamp(-1 + epsilon, 1 - epsilon))
         x = self.layer.reverse(y)
@@ -1424,7 +1062,6 @@ class SigmaLayer(Layer):
         assert torch.norm(x - y_inv) < 0.00001
         print("SigmaLayer tests passed.")
 
-
 class GrammarLayer(Layer):
     """Base class for layers that implement grammar rule operators.
 
@@ -1458,7 +1095,6 @@ class GrammarLayer(Layer):
 
     def __init__(self, nInput=0, nOutput=0):
         super().__init__(nInput, nOutput)
-
 
 class NegationLayer(Layer):
     """Materialize bivalent or ternary literals for Sigma/Pi logic.
@@ -1505,7 +1141,6 @@ class NegationLayer(Layer):
         neg = y[..., neg_start:neg_start + self.nInput]
         return 0.5 * (pos - neg)
 
-
 class NotLayer(GrammarLayer):
     """Parameter-free propositional negation on the bivalent symbol bivector.
 
@@ -1532,7 +1167,6 @@ class NotLayer(GrammarLayer):
 
     def reverse(self, y):
         return self.forward(y)
-
 
 class NonLayer(GrammarLayer):
     """Parameter-free non-affirming negation (indeterminacy).
@@ -1666,77 +1300,7 @@ class ContiguousLayer(GrammarLayer):
         return y
 
 
-class DNFConceptLayer(Layer):
-    """Wrap NegationLayer plus one or two fold layers into a single layer.
-
-    Forward expands signed concept activations into a literal bank
-    (bivalent ``[x, -x]`` or ternary ``[x, non(x), -x]``) then runs the
-    provided fold layers in sequence:
-
-        forward:  or_fold(and_fold(neg(x)))   if both folds given
-                  fold(neg(x))                if only one fold given
-
-    Reverse undoes the folds in reverse order, then drops the non
-    channel via ``NegationLayer.reverse``. All folds must be invertible
-    for ``reverse`` to work.
-
-    The caller chooses which class for each fold — typically a
-    SigmaLayer for the AND-of-literals fold (intersection) and a
-    PiLayer for the OR-of-terms fold (union), or vice versa depending
-    on the codebase's convention.
-    """
-
-    def __init__(self, nInput, nOutput, ternary=False,
-                 and_fold=None, or_fold=None):
-        super().__init__(nInput, nOutput)
-        self.ternary = bool(ternary)
-        multiplier = 3 if self.ternary else 2
-        folds = [f for f in (and_fold, or_fold) if f is not None]
-        if not folds:
-            raise ValueError(
-                "DNFConceptLayer requires at least one fold layer")
-        expected_in = multiplier * nInput
-        if folds[0].nInput != expected_in:
-            raise ValueError(
-                f"DNF first fold expects nInput {expected_in}, "
-                f"got {folds[0].nInput}")
-        for prev, nxt in zip(folds[:-1], folds[1:]):
-            if nxt.nInput != prev.nOutput:
-                raise ValueError(
-                    f"DNF fold chain mismatch: {prev.nOutput} -> "
-                    f"{nxt.nInput}")
-        if folds[-1].nOutput != nOutput:
-            raise ValueError(
-                f"DNF last fold expects nOutput {nOutput}, "
-                f"got {folds[-1].nOutput}")
-        self.neg = NegationLayer(nInput, ternary=self.ternary)
-        self.and_fold = and_fold
-        self.or_fold = or_fold
-        self.layers.append(self.neg)
-        for f in folds:
-            self.layers.append(f)
-        self._folds = folds
-        self.invertible = all(bool(getattr(f, "invertible", False))
-                              for f in folds)
-        self.monotonic  = all(bool(getattr(f, "monotonic", False))
-                              for f in folds)
-        self.nonlinear  = any(bool(getattr(f, "nonlinear", True))
-                              for f in folds)
-
-    def forward(self, x):
-        out = self.neg(x)
-        for f in self._folds:
-            out = f(out)
-        return out
-
-    def reverse(self, y):
-        out = y
-        for f in reversed(self._folds):
-            out = f.reverse(out)
-        return self.neg.reverse(out)
-
-
-class PiLayer(Layer):
+class PiLayer(ButterflyLayer):
     r"""Multiplicative boundary layer: [-1,1] -> [-1,1].
 
     Both modes share the symmetric log-domain embedding (1+x)/(1-x):
@@ -1781,7 +1345,6 @@ class PiLayer(Layer):
         # Optional butterfly mode -- see SigmaLayer docstring; identical
         # construction-time semantics (nInput == nOutput == 2*state_dim,
         # forward sees [B, n_t, state_dim]).
-        self.butterfly = False
         if stage_idx is not None:
             assert n_t is not None, (
                 "PiLayer butterfly mode requires n_t")
@@ -1791,7 +1354,7 @@ class PiLayer(Layer):
             assert nInput % 2 == 0, (
                 f"PiLayer butterfly mode requires even nInput "
                 f"(got {nInput})")
-            _init_butterfly_buffers(self, stage_idx, n_t, is_last)
+            self._init_butterfly_buffers(stage_idx, n_t, is_last)
 
     @property
     def bias(self): return self.layer.bias
@@ -1800,12 +1363,6 @@ class PiLayer(Layer):
 
     def resample_noise(self):
         self.layer.resample_noise()
-
-    def Start(self):
-        """Per-sentence reset. Clears any cached butterfly merge diff."""
-        if self.butterfly:
-            self._merge_diff = None
-        super().Start()
 
     # -- Symmetric domain transforms ----------------------------------
 
@@ -1873,11 +1430,10 @@ class PiLayer(Layer):
         """
         if self.butterfly:
             B, N, D = x.shape
-            packed = _butterfly_pack(x, self._butterfly_perm)
+            packed = self._butterfly_pack(x)
             packed_out = self._pi_inner_forward(packed, binary=binary)
-            x_out = _butterfly_unpack(packed_out, B, N, D,
-                                      self._butterfly_inv_perm)
-            return _butterfly_merge(x_out, self.butterfly_is_last, self)
+            x_out = self._butterfly_unpack(packed_out, B, N, D)
+            return self._butterfly_merge(x_out)
         return self._pi_inner_forward(x, binary=binary)
 
     def reverse(self, y):
@@ -1887,12 +1443,11 @@ class PiLayer(Layer):
         inner Pi inverse runs.
         """
         if self.butterfly:
-            x_out = _butterfly_unmerge(y, self.butterfly_is_last, self)
+            x_out = self._butterfly_unmerge(y)
             B, N, D = x_out.shape
-            packed = _butterfly_pack(x_out, self._butterfly_perm)
+            packed = self._butterfly_pack(x_out)
             packed_in = self._pi_inner_reverse(packed)
-            return _butterfly_unpack(packed_in, B, N, D,
-                                     self._butterfly_inv_perm)
+            return self._butterfly_unpack(packed_in, B, N, D)
         return self._pi_inner_reverse(y)
 
     @staticmethod
@@ -1976,119 +1531,6 @@ class MapppingLayer(InvertibleLinearLayer):
     """Bias-free, stable reversible linear layer for mapping between row/column spaces."""
     def __init__(self, nInput, nOutput, init='orthogonal'):
         super().__init__(nInput, nOutput, naive=False, hasBias=False, stable=True)
-class ColumnUsageTracker:
-    """Monitors gradient norms per weight column and freezes low-activity columns.
-
-    Attaches a backward hook to a standard nn.Linear layer.  After
-    ``window`` steps, columns whose average gradient norm falls below
-    ``freezeThreshold`` are permanently frozen (gradients zeroed out).
-    """
-    def __init__(self, linearLayer, freezeThreshold=0.01, window=10):
-        self.linear = linearLayer
-        self.freezeThreshold = freezeThreshold
-        self.window = window
-        self.grad_history = []
-        self.frozen_columns = torch.zeros(linearLayer.weight.shape[1], dtype=torch.bool)
-        self.linear.weight.register_hook(self._save_grad)
-    def _save_grad(self, grad):
-        # grad shape: (out_features, in_features)
-        # Transpose to get per-column: shape (in_features, out_features)
-        grad_columns = grad.t().detach().clone()
-        self.grad_history.append(grad_columns)
-        # Keep fixed window size
-        if len(self.grad_history) > self.window:
-            self.grad_history.pop(0)
-    def freeze(self):
-        if len(self.grad_history) < self.window:
-            return  # not enough history yet
-        # Stack history and compute norm per column
-        stacked = torch.stack(self.grad_history, dim=0)  # (window, in_features, out_features)
-        norms = stacked.norm(dim=-1).mean(dim=0)  # (in_features,)
-        # Freeze columns with low average gradient norm
-        to_freeze = norms < self.freezeThreshold
-        self.frozen_columns |= to_freeze
-        # Zero out gradients of frozen columns
-        with torch.no_grad():
-            self.linear.weight.grad[:, self.frozen_columns] = 0.0
-    def freezeMask(self):
-        return self.frozen_columns
-def _test_butterfly_modes():
-    """Verify SigmaLayer / PiLayer butterfly forward->reverse roundtrip and N-halving.
-
-    Inputs are bounded to ``[-0.9, 0.9]`` because the inner Sigma/Pi
-    transform clamps to ``[-1+epsilon, 1-epsilon]`` before ``atanh``;
-    out-of-range inputs are lost to the clamp regardless of butterfly
-    mechanics, which would mask correctness bugs in the access pattern.
-    """
-    D = 6
-    N = 16
-    B = 4
-    pair_dim = 2 * D
-
-    def bounded(*shape):
-        return torch.rand(*shape) * 1.8 - 0.9
-
-    # SigmaLayer butterfly: non-last stage halves N
-    sigma = SigmaLayer(pair_dim, pair_dim, invertible=True, naive=True,
-                       nonlinear=True,
-                       stage_idx=0, n_t=N, is_last=False)
-    sigma.set_sigma(0.0)
-    x = bounded(B, N, D)
-    y = sigma.forward(x)
-    assert y.shape == (B, N // 2, D), f"Sigma butterfly forward: {y.shape}"
-    x_recon = sigma.reverse(y)
-    assert x_recon.shape == (B, N, D), f"Sigma butterfly reverse: {x_recon.shape}"
-    err = (x - x_recon).norm() / x.norm()
-    assert err < 1e-4, f"Sigma butterfly roundtrip error: {err:.2e}"
-
-    # SigmaLayer butterfly: last stage preserves N
-    sigma_last = SigmaLayer(pair_dim, pair_dim, invertible=True, naive=True,
-                            nonlinear=True,
-                            stage_idx=0, n_t=N, is_last=True)
-    sigma_last.set_sigma(0.0)
-    y_last = sigma_last.forward(x)
-    assert y_last.shape == (B, N, D), f"Sigma butterfly last forward: {y_last.shape}"
-    x_recon_last = sigma_last.reverse(y_last)
-    err_last = (x - x_recon_last).norm() / x.norm()
-    assert err_last < 1e-4, f"Sigma butterfly last roundtrip error: {err_last:.2e}"
-
-    # Multi-stage SigmaLayer butterfly pipeline: N=16 -> 8 -> 4 (last keeps 4)
-    stages = []
-    for i in range(3):
-        # Each stage's n_t depends on whether earlier stages halved.
-        # In this pipeline only the final stage is is_last, so each
-        # earlier stage halves: n_t = N >> i.
-        s = SigmaLayer(pair_dim, pair_dim, invertible=True, naive=True,
-                       nonlinear=True,
-                       stage_idx=i, n_t=N >> i, is_last=(i == 2))
-        s.set_sigma(0.0)
-        stages.append(s)
-    state = bounded(B, N, D)
-    saved = state.clone()
-    for s in stages:
-        state = s.forward(state)
-    assert state.shape == (B, 4, D), f"Pipeline output: {state.shape}"
-    for s in reversed(stages):
-        state = s.reverse(state)
-    assert state.shape == (B, N, D), f"Pipeline reverse: {state.shape}"
-    err = (saved - state).norm() / saved.norm()
-    assert err < 1e-4, f"Pipeline roundtrip error: {err:.2e}"
-
-    # PiLayer butterfly: roundtrip on a non-last stage
-    pi = PiLayer(pair_dim, pair_dim, invertible=True, naive=True,
-                 nonlinear=True,
-                 stage_idx=0, n_t=N, is_last=False)
-    pi.set_sigma(0.0)
-    x = bounded(B, N, D)
-    y = pi.forward(x)
-    assert y.shape == (B, N // 2, D), f"Pi butterfly forward: {y.shape}"
-    x_recon = pi.reverse(y)
-    err = (x - x_recon).norm() / x.norm()
-    assert err < 1e-3, f"Pi butterfly roundtrip error: {err:.2e}"
-
-    print("Butterfly mode tests passed (SigmaLayer + PiLayer).")
-
-
 class SortingLayer(Layer):
     """NeuralSort: differentiable O(1)-depth sorting (Grover et al. 2019).
 
@@ -4871,6 +4313,17 @@ class ChunkLayer(Layer):
                 f"{tuple(byte_indices.shape)}")
         B, N = byte_indices.shape
         rows = byte_indices.tolist()
+        # Trie-based longest-match: walks the vocab once per match in
+        # O(actual_match_len) instead of the previous nested
+        # ``for L in range(upper, 0, -1): tuple(row[i:i+L]) in vocab``
+        # which paid O(_max_merge_len) tuple constructions and dict
+        # lookups at every position even for short matches. The trie
+        # is built lazily and rebuilt only when ``vocab`` grows
+        # (frozen vocab = built once, then a no-op).
+        self._ensure_trie()
+        trie = self._trie
+        id_to_bytes = self.id_to_bytes
+        vocab = self.vocab
         all_chunks = []
         all_spans = []
         for b in range(B):
@@ -4882,25 +4335,67 @@ class ChunkLayer(Layer):
                 bval = row[i]
                 if bval == 0:
                     break
-                matched_key = None
-                matched_len = 1
-                upper = min(self._max_merge_len, N - i)
-                for L in range(upper, 0, -1):
-                    key = tuple(row[i:i + L])
-                    if key in self.vocab:
-                        matched_key = key
-                        matched_len = L
+                # Descend the trie one byte at a time. Each node is
+                # ``[children_dict, terminal_id_or_None]``; track the
+                # most recent terminal as the running longest match.
+                node = trie
+                matched_id = None
+                matched_len = 0
+                j = i
+                while j < N:
+                    child = node[0].get(row[j])
+                    if child is None:
                         break
-                if matched_key is None:
-                    matched_key = (bval,)
+                    node = child
+                    j += 1
+                    if node[1] is not None:
+                        matched_id = node[1]
+                        matched_len = j - i
+                if matched_id is None:
+                    # 256 single-byte ids are seeded at __init__ so any
+                    # byte 0..255 always has a single-byte match. This
+                    # branch is defensive for unexpected vocab gaps.
+                    matched_id = vocab.get((bval,), bval)
                     matched_len = 1
-                chunk_id = self.vocab[matched_key]
-                chunks.append(chunk_id)
-                spans.append((i, i + matched_len - 1, matched_key))
+                chunks.append(matched_id)
+                # ``id_to_bytes[matched_id]`` is the canonical byte tuple
+                # for this id (kept in sync with ``vocab`` by
+                # ``train_step`` and ``__init__``); the trie walk only
+                # accepts paths that exist in the vocab, so the matched
+                # row slice equals ``id_to_bytes[matched_id]`` and we
+                # avoid re-slicing the row.
+                spans.append((i, i + matched_len - 1, id_to_bytes[matched_id]))
                 i += matched_len
             all_chunks.append(chunks)
             all_spans.append(spans)
         return all_chunks, all_spans
+
+    def _ensure_trie(self):
+        """Build / rebuild the longest-match trie when ``vocab`` changes.
+
+        Each node is ``[children_dict, terminal_id_or_None]``. When
+        ``terminal_id`` is not ``None`` the path from root to this node
+        spells the byte tuple of vocab entry ``terminal_id``. Rebuild
+        triggers off ``len(vocab)`` (vocab only grows under
+        ``train_step``); when ``chunking_frequency == 0`` the vocab is
+        frozen and this is built once then no-op forever after.
+        """
+        cur_size = len(self.vocab)
+        if getattr(self, '_trie_size', -1) == cur_size:
+            return
+        root = [{}, None]
+        for byte_tuple, chunk_id in self.vocab.items():
+            node = root
+            for b in byte_tuple:
+                children = node[0]
+                child = children.get(b)
+                if child is None:
+                    child = [{}, None]
+                    children[b] = child
+                node = child
+            node[1] = chunk_id
+        self._trie = root
+        self._trie_size = cur_size
 
     def train_step(self, byte_indices, k_merges=1):
         """Learn up to ``k_merges`` new BPE merges from pair frequencies.
@@ -6620,6 +6115,359 @@ class CorrMem(Mem):
                 amt = max(abs(in1[r]), abs(in2[c]))
                 self.output[r, c] = ((self.nTrials - amt) / self.nTrials) * self.output[r, c] + (amt / self.nTrials) * val
 #endregion
+
+
+
+# Two distance modes:
+#   ``use_cosine_sim=False`` (Euclidean, the default):
+#     ``argmin_i ||x - c_i||^2 = argmax_i (x . c_i - 0.5 ||c_i||^2)``
+#     implemented as one matmul + cached row-norm subtract. ``||c_i||^2``
+#     is held in the ``_b_norms_sq`` buffer and refreshed in the
+#     codebook setter and at the end of each EMA update. Same FLOPs as
+#     ``torch.cdist``'s mm-trick path, but skips the sqrt and the
+#     per-row ``||x||^2`` add (both invariant under argmin over codes).
+#     The codebook lives in the [-1, +1] hypercube; magnitude carries
+#     information (feature intensity) and there is no codebook-level
+#     negation operator, so two patterns differ when their coordinates
+#     differ. Right metric for PerceptualSpace and SymbolicSpace.
+#
+#   ``use_cosine_sim=True`` (dot product, codebook unit-norm):
+#     ``indices = (flat @ codebook.T).argmax(dim=-1)``
+#     The EMA path renormalizes the codebook to unit L2 each step
+#     (see below), so ``a_i`` is unit-norm. For a fixed query ``b``,
+#     ``cos(a_i, b) = (a_i . b) / ||b||`` is monotone in ``a_i . b``
+#     because ``||b|| >= 0`` is constant across i, so ranking by the
+#     raw dot product matches ranking by cosine. The input is NOT
+#     normalized -- in ConceptualSpace the input magnitude in
+#     [-1, +1] encodes belief certainty (1 = known true, 0 = unknown,
+#     -1 = known false) and must be preserved end-to-end.
+#
+# See doc/Spaces.md "Codebook similarity metric" for the full theory.
+class VectorQuantize(nn.Module):
+    def __init__(
+        self,
+        dim,
+        codebook_size,
+        commitment_weight=1.0,
+        use_cosine_sim=False,
+        decay=0.8,
+        threshold_ema_dead_code=0,
+        rotation_trick=False,
+        eps=1e-5,
+        codebook_retire=False,
+        **kwargs,
+    ):
+        super().__init__()
+        self.dim = dim
+        self.codebook_size = codebook_size
+        self.commitment_weight = commitment_weight
+        self.use_cosine_sim = use_cosine_sim
+        self.decay = float(decay)
+        self.threshold_ema_dead_code = int(threshold_ema_dead_code)
+        self.rotation_trick = bool(rotation_trick)
+        self.eps = float(eps)
+        # Gate for the dead-code replacement path. Off by default because
+        # reseeding expired rows with fresh samples can blow up the effective
+        # number of distinct codes on non-stationary data.
+        self.codebook_retire = bool(codebook_retire)
+        self.codebook = torch.randn(codebook_size, dim)
+        # EMA accumulators used by ``update_ema``. ``cluster_size`` counts
+        # how many inputs snap to each code (bootstrapped at 1.0 to match
+        # the library default so the first-step smoothed divisor is never
+        # zero). ``embed_avg`` is the running sum of the assigned inputs;
+        # the codebook is rewritten as ``embed_avg / cluster_size`` (with
+        # laplace smoothing) each training step.
+        self.register_buffer("cluster_size", torch.ones(codebook_size))
+        self.register_buffer("embed_avg", self.codebook.data.clone())
+        # Cached squared L2 norms of each codebook row, refreshed in the
+        # codebook setter and at the end of each EMA update. Used by the
+        # Euclidean retrieval path to do
+        # ``argmin_i ||x - c_i||^2 = argmax_i (x . c_i - 0.5 ||c_i||^2)``
+        # via a single matmul instead of ``torch.cdist``: same FLOPs as
+        # cdist's mm-trick, but skips the sqrt and the per-row ||x||^2 add
+        # (both invariant under argmin over codes).
+        self.register_buffer(
+            "_b_norms_sq",
+            (self.codebook.data ** 2).sum(dim=-1),
+        )
+        # Owner-space tag for error messages (set post-construction by the
+        # owning Space via ``_tag_vq_name``).
+        self.name = ""
+        # Per-instance row-chunk override for the matmul/argmax intermediate.
+        # ``None`` => derive from ``_VQ_CHUNK_TARGET_BYTES`` at forward time.
+        self._vq_chunk_rows = None
+
+    @property
+    def codebook(self):
+        return self._parameters["_codebook"]
+
+    @codebook.setter
+    def codebook(self, value):
+        param = value if isinstance(value, nn.Parameter) else nn.Parameter(value.detach().clone())
+        if "_codebook" in self._parameters:
+            self._parameters["_codebook"] = param
+        else:
+            self.register_parameter("_codebook", param)
+        self.codebook_size = param.shape[0]
+        # Keep EMA buffers consistent when the codebook is reassigned
+        # externally (e.g. the post-init rescale in Codebook.addVectors).
+        # Reset embed_avg to the new values; reshape cluster_size if the
+        # codebook size changed.
+        if "embed_avg" in self._buffers:
+            self._buffers["embed_avg"] = param.data.clone()
+        if "cluster_size" in self._buffers:
+            cs = self._buffers["cluster_size"]
+            if cs.shape[0] != param.shape[0]:
+                self._buffers["cluster_size"] = torch.ones(
+                    param.shape[0], device=cs.device, dtype=cs.dtype
+                )
+        # Refresh the cached ||c_i||^2 buffer so the Euclidean retrieval
+        # path stays consistent with the codebook. Allocate fresh when
+        # the row count changed.
+        if "_b_norms_sq" in self._buffers:
+            self._buffers["_b_norms_sq"] = (param.data ** 2).sum(dim=-1)
+
+    def _sync_ema_buffers(self):
+        """Repair EMA buffers when they drift from the live codebook shape.
+
+        Training can reassign the codebook Parameter after construction
+        (for example when resizing or reloading weights). The EMA buffers
+        must stay row-aligned with that Parameter or the dead-code refresh
+        path can end up indexing the wrong rows.
+        """
+        codebook = self.codebook
+        V, D = int(codebook.shape[0]), int(codebook.shape[1])
+        cluster_size = self.cluster_size
+        if (
+            cluster_size.ndim != 1
+            or int(cluster_size.shape[0]) != V
+            or cluster_size.device != codebook.device
+        ):
+            dtype = cluster_size.dtype if cluster_size.is_floating_point() else torch.float32
+            self._buffers["cluster_size"] = torch.ones(
+                V, device=codebook.device, dtype=dtype
+            )
+        embed_avg = self.embed_avg
+        if (
+            embed_avg.ndim != 2
+            or tuple(embed_avg.shape) != (V, D)
+            or embed_avg.device != codebook.device
+        ):
+            dtype = embed_avg.dtype if embed_avg.is_floating_point() else codebook.dtype
+            self._buffers["embed_avg"] = codebook.detach().to(dtype=dtype).clone()
+        b_norms_sq = self._b_norms_sq
+        if (
+            b_norms_sq.ndim != 1
+            or int(b_norms_sq.shape[0]) != V
+            or b_norms_sq.device != codebook.device
+        ):
+            self._buffers["_b_norms_sq"] = (
+                codebook.detach() ** 2
+            ).sum(dim=-1)
+
+    @staticmethod
+    def _rotate_to(src, tgt):
+        """Rotation-trick STE from arXiv:2410.06424 -- forwards ``tgt`` but
+        rotates the upstream gradient from ``tgt``'s direction back to
+        ``src``'s direction and rescales by ``||tgt|| / ||src||`` so
+        magnitude is preserved. Mirrors ``vector_quantize_pytorch``'s
+        ``rotate_to`` / ``efficient_rotation_trick_transform``.
+        """
+        eps = 1e-8
+        orig_shape = src.shape
+        e = src.reshape(-1, src.shape[-1])
+        q = tgt.reshape(-1, tgt.shape[-1])
+        norm_e = e.norm(dim=-1, keepdim=True).clamp(min=eps)
+        norm_q = q.norm(dim=-1, keepdim=True).clamp(min=eps)
+        e_hat = e / norm_e
+        q_hat = q / norm_q
+        w = e_hat + q_hat
+        w = w / w.norm(dim=-1, keepdim=True).clamp(min=eps)
+        w = w.detach()
+        e_dot_w = (e * w).sum(dim=-1, keepdim=True)
+        e_dot_u = (e * e_hat.detach()).sum(dim=-1, keepdim=True)
+        out = e - 2.0 * e_dot_w * w + 2.0 * e_dot_u * q_hat.detach()
+        scale = (norm_q / norm_e).detach()
+        return (out * scale).reshape(orig_shape)
+
+    # Default byte budget for one VQ distance/similarity tile.  4 GiB
+    # leaves ample headroom on 64 GB unified-memory accelerators (the
+    # AMD Strix Halo target) while keeping the per-tile allocation well
+    # below per-buffer caps on current GPU stacks.  Small VQs (V < 64K)
+    # never trigger chunking on first call.  Override per-instance via
+    # ``vq._vq_chunk_rows``.
+    _VQ_CHUNK_TARGET_BYTES = 4 * (1 << 30)  # 4 GiB
+
+    def forward(self, x, return_all_codes=False, freeze_codebook=False, **kwargs):
+        original_shape = x.shape
+        flat = x.reshape(-1, original_shape[-1])
+        codebook = self.codebook
+        N = flat.shape[0]
+        V = codebook.shape[0]
+        D = codebook.shape[1]
+        gib = (N * V * 4) / (1024 ** 3)  # float32 bytes -> GiB
+
+        # Chunk over rows of `flat`.  The [chunk, V] intermediate
+        # (cdist or matmul) is the dominant allocation; the EMA path
+        # below avoids the [N, V] one_hot entirely via bincount +
+        # index_add_, so chunk size is bounded only by this matrix.
+        chunk = self._vq_chunk_rows
+        if chunk is None:
+            max_pairs = self._VQ_CHUNK_TARGET_BYTES // 4  # float32 bytes
+            chunk = max(1, max_pairs // max(V, 1))
+        chunk = min(chunk, N) if N > 0 else 1
+
+        # ``indices`` is the argmin/argmax of distances; the gather that
+        # follows (codebook[indices]) carries no gradient back through the
+        # selection, so the entire indices computation can run under
+        # ``no_grad`` to skip saving cdist/matmul intermediates for the
+        # backward pass.  EMA update has its own ``no_grad`` block below.
+        try:
+            with torch.no_grad():
+                if self.use_cosine_sim:
+                    # Dot-product mode: codebook is unit-norm (maintained by
+                    # the EMA path below), so ``argmax_i (flat . codebook_i)``
+                    # equals ``argmax_i cos(flat, codebook_i)`` -- the per-row
+                    # ``||flat||`` is a positive constant across i and
+                    # cancels out of the ranking. Skipping the input
+                    # normalization preserves the input magnitude (the
+                    # belief-certainty signal in ConceptualSpace) end-to-end
+                    # and saves an O(N*D) normalize op per chunk.
+                    if N <= chunk:
+                        indices = (flat @ codebook.T).argmax(dim=-1)
+                    else:
+                        parts = []
+                        for s in range(0, N, chunk):
+                            parts.append((flat[s:s+chunk] @ codebook.T).argmax(dim=-1))
+                        indices = torch.cat(parts, dim=0)
+                else:
+                    # Euclidean mode via the matmul / cached-norm trick:
+                    #   ||x - c_i||^2 = ||x||^2 + ||c_i||^2 - 2 (x . c_i)
+                    # ||x||^2 is a constant across i, so it drops from
+                    # argmin. After negation:
+                    #   argmin_i ||x - c_i||^2
+                    #     = argmax_i (x . c_i - 0.5 ||c_i||^2)
+                    # ``self._b_norms_sq`` (refreshed in the codebook
+                    # setter and after every EMA update) is ``[V]``;
+                    # ``flat @ codebook.T`` is ``[chunk, V]``. Same
+                    # FLOPs as cdist's mm-trick path, skips sqrt and
+                    # the per-row ||x||^2 add, and gives Inductor a
+                    # cleaner graph (no autograd plumbing for cdist).
+                    half_b_norms_sq = (0.5 * self._b_norms_sq).to(flat.dtype)
+                    if N <= chunk:
+                        scores = flat @ codebook.T
+                        scores = scores - half_b_norms_sq
+                        indices = scores.argmax(dim=-1)
+                    else:
+                        parts = []
+                        for s in range(0, N, chunk):
+                            scores = flat[s:s+chunk] @ codebook.T
+                            scores = scores - half_b_norms_sq
+                            parts.append(scores.argmax(dim=-1))
+                        indices = torch.cat(parts, dim=0)
+        except RuntimeError as e:
+            owner = self.name or "<unnamed VQ>"
+            raise RuntimeError(
+                f"VectorQuantize[{owner}]: distance matrix allocation "
+                f"failed even after chunking. flat={tuple(flat.shape)}, "
+                f"codebook={tuple(codebook.shape)}, chunk={chunk}, "
+                f"pairwise matrix = [{N}, {V}] float32 = {gib:.2f} GiB. "
+                f"Reduce {owner}.nVectors, reduce batchSize, or set "
+                f"vq._vq_chunk_rows to a smaller value. Original error: {e}"
+            ) from e
+        quantized_raw = codebook[indices].reshape(original_shape)
+        commit_loss = self.commitment_weight * F.mse_loss(
+            x, quantized_raw.detach()
+        )
+
+        # EMA codebook update + dead-code replacement. Without these the
+        # codebook gets no gradient (commit_loss detaches the quantized
+        # side and STE is a no-op for the codes) so codes never track the
+        # data distribution. Mirrors ``EuclideanCodebook.update_ema`` and
+        # ``expire_codes_`` in vector_quantize_pytorch.
+        if self.training and not freeze_codebook:
+            with torch.no_grad():
+                self._sync_ema_buffers()
+                flat_f = flat.float()
+                # Equivalent to ``one_hot(indices, V).t() @ flat_f`` but
+                # without ever allocating the [N, V] one-hot tensor: at
+                # body-scale microbatch (N in the millions) that matrix
+                # alone passes the GPU per-buffer cap.
+                cluster_size_batch = torch.bincount(
+                    indices, minlength=V
+                ).to(flat_f.dtype)
+                embed_sum = torch.zeros(
+                    V, D, device=flat_f.device, dtype=flat_f.dtype,
+                )
+                embed_sum.index_add_(0, indices, flat_f)
+                self.cluster_size.mul_(self.decay).add_(
+                    cluster_size_batch.to(self.cluster_size.dtype),
+                    alpha=1.0 - self.decay,
+                )
+                self.embed_avg.mul_(self.decay).add_(
+                    embed_sum.to(self.embed_avg.dtype),
+                    alpha=1.0 - self.decay,
+                )
+                n = self.cluster_size.sum()
+                cs_smooth = (
+                    (self.cluster_size + self.eps)
+                    / (n + V * self.eps)
+                    * n
+                )
+                new_embed = self.embed_avg / cs_smooth.unsqueeze(-1)
+                if self.use_cosine_sim:
+                    new_embed = F.normalize(new_embed, dim=-1)
+                self.codebook.copy_(new_embed.to(self.codebook.dtype))
+                # Refresh the cached ||c_i||^2 so the Euclidean retrieval
+                # path on the next forward sees the updated codebook. In
+                # cosine mode every row is unit-norm by construction, so
+                # we still write 1.0 here -- harmless for the dot-product
+                # path (which doesn't read this buffer) and keeps the
+                # invariant true if useDotProduct is later toggled off.
+                self._b_norms_sq.copy_(
+                    (self.codebook.detach() ** 2).sum(dim=-1)
+                )
+                if self.codebook_retire and self.threshold_ema_dead_code > 0:
+                    expired = (
+                        self.cluster_size < self.threshold_ema_dead_code
+                    ).reshape(-1)
+                    if int(expired.numel()) != V:
+                        raise RuntimeError(
+                            "VectorQuantize EMA state corrupt: "
+                            f"expired mask has {int(expired.numel())} rows "
+                            f"for codebook size {V}"
+                        )
+                    expired_idx = torch.nonzero(
+                        expired, as_tuple=False
+                    ).flatten()
+                    if int(expired_idx.numel()) > 0:
+                        n_expired = int(expired_idx.numel())
+                        sample_idx = torch.randint(
+                            0, flat.shape[0], (n_expired,), device=flat.device,
+                        )
+                        sampled = flat[sample_idx].to(self.codebook.dtype)
+                        if self.use_cosine_sim:
+                            sampled = F.normalize(sampled, dim=-1)
+                        self.codebook.index_copy_(0, expired_idx, sampled)
+                        thr = float(self.threshold_ema_dead_code)
+                        self.cluster_size.index_fill_(0, expired_idx, thr)
+                        self.embed_avg.index_copy_(
+                            0,
+                            expired_idx,
+                            sampled.to(self.embed_avg.dtype) * thr,
+                        )
+
+        # Gradient estimator for the quantized output: rotation trick when
+        # requested and the input carries gradient, otherwise vanilla STE.
+        if self.rotation_trick and self.training and x.requires_grad:
+            quantized = self._rotate_to(x, quantized_raw)
+        else:
+            quantized = x + (quantized_raw - x).detach()
+        indices = indices.reshape(original_shape[:-1])
+        if return_all_codes:
+            return quantized, indices, commit_loss, quantized.unsqueeze(0)
+        return quantized, indices, commit_loss
+
 
 def test():
     torch.autograd.set_detect_anomaly(True)

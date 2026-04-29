@@ -64,7 +64,7 @@ from data import Data, TheData
 
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
 from Layers import LinearLayer, AttentionLayer
-from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
+from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import Error, TheError
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
@@ -1055,7 +1055,21 @@ class BaseModel(nn.Module):
         emb = self._get_embedding()
         if emb is None:
             return False
-        wv = WordVectors.load(path)
+        try:
+            wv = WordVectors.load(path)
+        except ValueError as exc:
+            # BPE-only artifact has no lexicon section to import on top
+            # of the live embedding. The Embedding.create() path
+            # already synthesized one stub vector per BPE chunk_id at
+            # construction time (see Embedding._load_embeddings); just
+            # skip the post-construction reload here.
+            if "BPE-only artifact" in str(exc):
+                TheMessage(
+                    f"[{self.name}] BPE-only artifact at {path}; "
+                    f"keeping the lexicon synthesized at construction time."
+                )
+                return False
+            raise
         # Check that the saved embedding dimensionality matches the model.
         expected_dim = emb.wv.vector_size
         if wv.vector_size != expected_dim:
@@ -2669,6 +2683,30 @@ class BasicModel(BaseModel):
             TheMessage(f"batch = {batchNum} (Δ={now - last:.3f}s{pct})")
         self._last_batch_time = now
 
+        # Inductor / Dynamo recompile detector. Per-shape recompiles can
+        # show up as wall-clock variance on otherwise identical batches;
+        # this prints a one-line delta whenever Dynamo records new
+        # frame events (compiles, recompiles, graph breaks). Defensive
+        # try/except: torch._dynamo counters API has changed across
+        # versions, and on MODEL_COMPILE=none there's nothing to count.
+        try:
+            from torch._dynamo.utils import counters as _dyn_counters
+            frames = _dyn_counters.get('frames', {})
+            rc_now = sum(int(v) for v in frames.values())
+            rc_last = getattr(self, '_last_recompile_count', None)
+            if rc_last is None:
+                self._last_recompile_count = rc_now
+            elif rc_now > rc_last:
+                delta = rc_now - rc_last
+                # Show the breakdown (e.g. ok=N, recompile=M) so a
+                # stable steady-state with occasional recompiles is
+                # visible at a glance.
+                detail = ", ".join(f"{k}={v}" for k, v in sorted(frames.items()))
+                TheMessage(f"  [compile] dynamo +{delta} frame events (total {rc_now}; {detail})")
+                self._last_recompile_count = rc_now
+        except Exception:
+            pass
+
         if train:
             if amp_scaler is not None:
                 # fp16 on CUDA: scale grads to avoid underflow, then unscale
@@ -2908,6 +2946,77 @@ class BasicModel(BaseModel):
         """
         return [torch.zeros(1) for _ in range(int(B))]
 
+    class _TickPrefetcher:
+        """Background-thread prefetch over ``ds.next_tick()``.
+
+        A *single* worker thread calls ``ds.next_tick()`` ahead of the
+        consumer and queues the ``(inp_items, out_items, hard_eos)``
+        tuple. The main ``runEpoch`` loop pulls from the queue, hiding
+        the per-tick CPU cost behind GPU compute (which releases the
+        GIL while in CUDA / C++ kernels).
+
+        Single-threaded by design: ``next_tick`` is Python-bound and
+        the GIL serializes Python execution, so additional threads
+        would contend without speedup. The XML ``<numWorkers>`` knob
+        therefore controls *queue depth* (in-flight tick budget),
+        not thread count. Queue depth = ``queue_size``: at most one
+        tick consumed by main + ``queue_size - 1`` buffered ahead.
+
+        ``next_tick`` is safe to call from this worker because it is a
+        pure state machine over ``ds``'s internal cursor: no main-
+        thread feedback, no shared mutable state outside ``ds``.
+        """
+
+        _SENTINEL = object()
+
+        def __init__(self, ds, queue_size):
+            from queue import Queue
+            from threading import Thread, Event
+            self._ds = ds
+            self._queue = Queue(maxsize=max(1, int(queue_size)))
+            self._stop = Event()
+            self._exc = None
+            self._thread = Thread(
+                target=self._produce, name="TickPrefetcher", daemon=True)
+            self._thread.start()
+
+        def _produce(self):
+            try:
+                while not self._stop.is_set() and not self._ds.all_done():
+                    tick = self._ds.next_tick()
+                    while not self._stop.is_set():
+                        try:
+                            self._queue.put(tick, timeout=0.1)
+                            break
+                        except Exception:
+                            continue
+            except BaseException as e:
+                self._exc = e
+            finally:
+                try:
+                    self._queue.put(self._SENTINEL, timeout=1.0)
+                except Exception:
+                    pass
+
+        def next(self):
+            """Return next tick, ``None`` when the dataset is exhausted.
+            Re-raises any exception that the worker hit."""
+            item = self._queue.get()
+            if item is self._SENTINEL:
+                if self._exc is not None:
+                    raise self._exc
+                return None
+            return item
+
+        def close(self):
+            self._stop.set()
+            while not self._queue.empty():
+                try:
+                    self._queue.get_nowait()
+                except Exception:
+                    break
+            self._thread.join(timeout=2.0)
+
     def runEpoch(self, optimizer=None, batchSize=10, split="train",
                  max_batches=None):
         """Run one epoch over the dataset (training if optimizer given, eval if None).
@@ -3043,9 +3152,12 @@ class BasicModel(BaseModel):
 
         # The runEpoch outer loop drives ``ds.next_tick()`` directly
         # for both modes; the surrounding ``DataLoader`` is built only
-        # so existing tests can grab ``loader.dataset``. ``num_workers``
-        # is forced to 0 because the loader is never iterated -- async
-        # workers would prefetch tensors no one consumes.
+        # so existing tests can grab ``loader.dataset``. PyTorch's
+        # ``num_workers`` is forced to 0 because the loader is never
+        # iterated -- async workers would prefetch tensors no one
+        # consumes. Parallel feed is provided by ``_TickPrefetcher``
+        # below (see XML ``<numWorkers>``), which calls ``next_tick``
+        # on a single background thread.
         loader = self.inputSpace.data.data_loader(
             split=split,
             num_streams=batchSize,
@@ -3056,6 +3168,12 @@ class BasicModel(BaseModel):
         )
         ds = loader.dataset
         B_eff = ds.num_streams
+
+        # Async tick prefetch. ``<numWorkers>`` becomes the in-flight
+        # tick budget (1 tick consumed by main + N-1 buffered). 0
+        # preserves the legacy synchronous path.
+        prefetcher = (BasicModel._TickPrefetcher(ds, queue_size=num_workers)
+                      if num_workers > 0 else None)
 
         # Pre-build the AR stub outputs once for the byte-cursor path
         # (every tick reuses them; the AR target is the input bytes).
@@ -3081,7 +3199,7 @@ class BasicModel(BaseModel):
         with ctx:
             step = 0
             batches_run = 0
-            while not ds.all_done():
+            while True:
                 if max_batches is not None and batches_run >= max_batches:
                     TheMessage(
                         f"runEpoch({split}): hit max_batches={max_batches} "
@@ -3096,7 +3214,15 @@ class BasicModel(BaseModel):
                         f"early ({batches_run} batches this epoch, "
                         f"{self._train_batches_seen} total).")
                     break
-                inp_items, out_items, hard_eos = ds.next_tick()
+                if prefetcher is not None:
+                    tick = prefetcher.next()
+                    if tick is None:
+                        break
+                    inp_items, out_items, hard_eos = tick
+                else:
+                    if ds.all_done():
+                        break
+                    inp_items, out_items, hard_eos = ds.next_tick()
                 if use_byte_cursor:
                     # Byte slab: convert uint8 -> int8 [B, 1, slab_bytes]
                     # to match prepInput's expected shape downstream.
@@ -3171,6 +3297,13 @@ class BasicModel(BaseModel):
                                      in parse(sentence, lex='words')]
                             self.perceptualSpace.train_embeddings(
                                 words, method=method)
+
+        # Stop the prefetch worker now that the loop is done. The
+        # thread is daemon=True so an exception unwinding past this
+        # point will not leak a zombie thread; explicit close() lets
+        # us reclaim resources promptly on the normal-exit path.
+        if prefetcher is not None:
+            prefetcher.close()
 
         if inputChunks:
             if outputChunks[0].dim() == 0:
@@ -3439,11 +3572,11 @@ class MentalModel(BaseModel):
             if self.useButterflies:
                 # Butterfly: ConceptualSpace's PiLayer operates on packed
                 # pairs [B, N_t/2, 2*state_dim] internally. The butterfly
-                # access pattern (permute / pack / unpack / merge) is
-                # built into PiLayer/SigmaLayer themselves -- pass
-                # stage_idx/initial_n/is_last and the layer's forward
-                # becomes the butterfly-aware version with pre-cached
-                # permutation buffers.
+                # access pattern (permute / pack / unpack / merge) lives
+                # in ButterflyLayer, inherited by PiLayer/SigmaLayer. Pass
+                # stage_idx/n_t/is_last and the layer's forward becomes
+                # the butterfly-aware version with pre-cached permutation
+                # buffers.
                 pair_dim = 2 * state_dim
                 # Conceptual sees N = state_vectors >> t at its input.
                 # Symbolic sees N = state_vectors >> (t+1) when Conceptual

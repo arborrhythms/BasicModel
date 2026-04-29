@@ -538,9 +538,10 @@ constraint ensures weights $W \geq 0$, preserving ordering. Exact inverse via th
 internal `InvertibleLinearLayer` (LDU factorisation).
 
 **Hierarchical mode.** When `<useButterflies>true</useButterflies>` or
-`<useGrammar>all</useGrammar>`, SymbolicSpace stores an `nn.ModuleList` of
-per-level PiLayers in `self.pi_layers` (ButterflyStage-wrapped when
-`useButterflies` is active).  The symbol dimension is geometrically
+`<useGrammar>all</useGrammar>`, MentalModel stores per-stage
+ConceptualSpace/SymbolicSpace instances in `self.conceptualSpaces` and
+`self.symbolicSpaces`. Butterfly mode passes butterfly-aware Pi/Sigma
+layers into those spaces. The symbol dimension is geometrically
 partitioned so each order writes only to its designated slice.  The
 planned `shamathaSpeech` mode is a narrow DNF-object policy rather than
 the full grammar hierarchy.  See [Reasoning.md](Reasoning.md) Section

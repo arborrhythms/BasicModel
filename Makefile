@@ -31,11 +31,11 @@ PDFOPTS := --pdf-engine=xelatex \
 PDF_CHAPTERS := README.md  doc/Installation.md doc/Architecture.md doc/BasicModel.md doc/Spaces.md doc/Language.md doc/Mereology.md doc/Logic.md doc/Reasoning.md doc/Training.md doc/Ergodic.md doc/MachineMinds.md doc/Params.md
 XML1 ?= data/simple.xml
 XML2 ?= data/ergodic-only.xml
-MODEL ?= data/BasicModel.xml
+MODEL ?= data/MM_5M.xml
 PYTHON := PYTHONPATH=bin $(VENV_PYTHON)
 
 # SSH defaults for ArborMini.local
-TRAIN_HOST ?=
+HOST ?=
 TRAIN_USER ?= arogers
 TRAIN_KEY  ?= ~/.ssh/id_ed25519_arbormini
 TRAIN_DIR  ?= ~/WikiOracle/basicmodel
@@ -67,19 +67,11 @@ run : $(VENV_STAMP)
 	cd bin && PYTHONPATH=. $(VENV_PYTHON_FROM_BIN) Models.py $(XML1)
 
 train : $(VENV_STAMP)
-	$(PYTHON) bin/train.py --model $(MODEL) --data text --log \
-		$(if $(TRAIN_HOST),--host $(TRAIN_HOST) --user $(TRAIN_USER) --key-file $(TRAIN_KEY) --remote-dir $(TRAIN_DIR))
+	$(PYTHON) bin/train.py --model $(MODEL) --data text --log
 
 train_micro : $(VENV_STAMP)
 	$(PYTHON) bin/train.py --model $(MODEL) --data text --log \
-		--max-docs 500 --num-shards 1 --num-epochs 1 --random-shards \
-		$(if $(TRAIN_HOST),--host $(TRAIN_HOST) --user $(TRAIN_USER) --key-file $(TRAIN_KEY) --remote-dir $(TRAIN_DIR))
-
-train_remote :
-	$(MAKE) train TRAIN_HOST=arbormini.local
-
-train_micro_remote :
-	$(MAKE) train_micro TRAIN_HOST=arbormini.local
+		--max-docs 1000000 --num-shards 10 --num-epochs 1 --batches 1440 --random-shards
 
 xor : data/MM_xor.xml
 	$(MAKE) run XML1=$<

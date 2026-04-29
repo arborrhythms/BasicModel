@@ -52,16 +52,16 @@ def chat_http(text, host="127.0.0.1", port=8001):
 # --- In-process client --------------------------------------------------
 
 def _load_model_in_process(config_path, max_length=64):
-    """Load BasicModel from XML config; return a callable `chat(text)`."""
+    """Load the XML-selected model class; return a callable `chat(text)`."""
     # Ensure bin/ is importable when run as a script
     bin_dir = os.path.dirname(os.path.abspath(__file__))
     if bin_dir not in sys.path:
         sys.path.insert(0, bin_dir)
 
-    from Models import BasicModel
+    from Models import BaseModel
     from data import TheData
 
-    cfg = BasicModel.load_config(config_path)
+    cfg = BaseModel.load_config(config_path)
     arch = cfg.get("architecture", {})
     dat = arch.get("data", {})
     dataset = dat.get("dataset")
@@ -73,8 +73,7 @@ def _load_model_in_process(config_path, max_length=64):
             shard_dir=dat.get("shardDir"),
         )
 
-    model = BasicModel()
-    model.create_from_config(config_path, data=TheData)
+    model, _ = BaseModel.from_config(config_path, data=TheData)
     model.eval()
     from util import compile
     model = compile(model)

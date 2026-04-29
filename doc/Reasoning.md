@@ -167,13 +167,13 @@ alone, which order produced it.
 
 ### Butterfly (useButterflies=true, useGrammar="none")
 
-ButterflyStage wrappers around per-level Sigma and Pi layers permute
-inputs, pack adjacent pairs, apply the layer, unpack, and merge --
-halving `N` at each conceptual order while keeping `D` constant.  The
-merge is internal to the ButterflyStage (no external
-`_butterfly_merge`/`_butterfly_unmerge` stack); the reverse path
-inverts each stage exactly.  `<reconstruct>symbols</reconstruct>` is
-required so the full symbol state is available for exact inversion.
+Butterfly-mode Sigma and Pi layers inherit `ButterflyLayer` helpers that
+permute inputs, pack adjacent pairs, apply the layer, unpack, and merge
+-- halving `N` at each conceptual order while keeping `D` constant.  The
+merge is internal to the layer (no external `_butterfly_merge` /
+`_butterfly_unmerge` stack); the reverse path inverts each stage exactly.
+`<reconstruct>symbols</reconstruct>` is required so the full symbol state
+is available for exact inversion.
 
 Analogous to increasing receptive fields in visual cortex
 (V1$\rightarrow$V2$\rightarrow$V4$\rightarrow$IT), the pairwise mixing lets information flow across the

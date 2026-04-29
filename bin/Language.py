@@ -25,7 +25,7 @@ from embed import WordVectors, PretrainModel
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, ChunkLayer
-from Layers import ColumnUsageTracker, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
+from Layers import CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
 from Layers import SortingLayer, TruthLayer, LiftingLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer, ContiguousLayer
 from util import parse
 from collections import namedtuple as _namedtuple
@@ -33,7 +33,7 @@ from collections import namedtuple as _namedtuple
 
 from Layers import Layer, PiLayer, SigmaLayer # Import custom layers from Model.py
 from Layers import LinearLayer, AttentionLayer
-from Layers import ColumnUsageTracker, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
+from Layers import CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import Error, TheError
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding, WordEncoding
@@ -45,8 +45,12 @@ def grammar_uses(rule_name):
     """Return True iff any rule body in the configured grammar invokes
     ``rule_name`` as a function call.
 
-    Used by ConceptualSpace at construction time to decide which layers
-    to wire (NegationLayer / Pi / Sigma) without an explicit config flag.
+    Note: previously consumed by ConceptualSpace's grammar-driven wiring
+    inference (DNF auto-wrap), which has been removed. NegationLayer is
+    no longer auto-wired — wire composite C-tier wrappers explicitly via
+    the ``layer`` kwarg on ConceptualSpace. This helper remains available
+    for runtime grammar inspection.
+
     Reads the parsed XML grammar at WordSpace.language.grammar and the
     optional grammarCfg path; scans rule bodies (string leaves) for the
     substring ``rule_name(``. Returns False on any read error or when

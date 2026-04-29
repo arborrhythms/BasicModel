@@ -179,7 +179,7 @@ class TestInvertibleSigmaLayer(unittest.TestCase):
         y = layer.forward(x)
         x_rec = layer.reverse(y)
         err = _reconstruction_error(x, x_rec)
-        tol = 1e-2 if naive else 1e-3  # pinv less precise than SVD-factored inverse
+        tol = 1e-2 if naive else 1e-3  # dense inverse path is less precise than sequential solves
         self.assertLess(err, tol,
                         f"3d, naive={naive}: err={err:.2e}")
 
@@ -282,7 +282,7 @@ class TestPiLayerLogitRoundtrip(unittest.TestCase):
 
 
 class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
-    """Lock down non-naive InvertiblePiLayer behavior before refactoring.
+    """Lock down non-naive PiLayer(invertible=True) behavior before refactoring.
 
     These tests verify forward/reverse roundtrip across 2D, 3D, bias,
     ergodic, and training scenarios.  PiLayer (log-space) does not
@@ -390,11 +390,11 @@ class TestNonNaiveInvertiblePiLayer(unittest.TestCase):
 # ═══════════════════════════════════════════════════════════════════════════
 
 class TestPairedSigmaTraining(unittest.TestCase):
-    """Paired roundtrip with two InvertibleSigmaLayers (separate weights).
+    """Paired roundtrip with two SigmaLayer(invertible=True) instances.
 
     Demonstrates case 3: reversible without weight-sharing.
     forward() on one layer, reverse() on the other.  The reverse path
-    uses atanh then the SVD-based pseudoinverse of its linear layer.
+    uses atanh then the configured inverse path of its linear layer.
     """
     def test_paired_roundtrip(self):
         torch.manual_seed(42)
@@ -688,7 +688,7 @@ class TestErgodicInvertibleLayers(unittest.TestCase):
         self.assertLess(err, 1e-4, f"Ergodic roundtrip error too large: {err}")
 
     def test_invertible_sigma_ergodic_roundtrip(self):
-        """InvertibleSigmaLayer with ergodic=True should still roundtrip after training.
+        """SigmaLayer(invertible=True) with ergodic=True should still roundtrip after training.
 
         tanh/atanh amplifies noise so tolerance is higher than for PiLayer.
         """

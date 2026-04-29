@@ -29,33 +29,24 @@ def _vq(D=6, V=128, train=True, cosine=False):
 
 
 def test_chunked_indices_match_unchunked_l2():
-    """Tiny chunk must produce identical indices and call cdist >1 times."""
+    """Tiny chunk must produce identical indices to the unchunked path.
+
+    The Euclidean retrieval path uses ``flat @ codebook.T`` (the cached-norm
+    matmul trick), not ``torch.cdist``, so we no longer count cdist calls;
+    parity between ``vq._vq_chunk_rows = N`` (single pass) and a small
+    chunk size is the correctness signal.
+    """
     torch.manual_seed(0)
     D, V, N = 6, 128, 4096
     vq = _vq(D=D, V=V, train=False)
     x = torch.randn(N, D)
 
-    # Reference: no chunking.
     vq._vq_chunk_rows = None
     quant_full, idx_full, _ = vq(x.clone())
 
-    # Forced tiny chunk; spy on cdist call count.
-    calls = {"n": 0}
-    real_cdist = torch.cdist
+    vq._vq_chunk_rows = 256
+    quant_chunk, idx_chunk, _ = vq(x.clone())
 
-    def _spy(a, b, *args, **kw):
-        calls["n"] += 1
-        return real_cdist(a, b, *args, **kw)
-
-    torch.cdist = _spy
-    try:
-        vq._vq_chunk_rows = 256
-        quant_chunk, idx_chunk, _ = vq(x.clone())
-    finally:
-        torch.cdist = real_cdist
-
-    assert calls["n"] == (N + 255) // 256, (
-        f"expected {(N+255)//256} cdist calls, got {calls['n']}")
     assert torch.equal(idx_chunk, idx_full)
     assert torch.allclose(quant_chunk, quant_full)
 
@@ -144,6 +135,11 @@ def test_dead_code_refresh_replaces_multiple_rows():
         codebook[0].zero_()
         vq.codebook.copy_(codebook)
         vq.embed_avg.copy_(codebook)
+        # ``_b_norms_sq`` caches ``||c_i||^2`` for the Euclidean argmax-trick
+        # retrieval path; mutating ``codebook`` in place via ``.copy_`` does
+        # not invoke the Parameter setter that would refresh it, so we must
+        # sync it manually for the test's hand-built codebook.
+        vq._b_norms_sq.copy_((vq.codebook ** 2).sum(dim=-1))
         vq.cluster_size.zero_()
         vq.cluster_size[0] = 2.0
     x = torch.zeros(N, D)
@@ -167,6 +163,9 @@ def test_codebook_retire_false_disables_expiration():
         codebook[0].zero_()
         vq.codebook.copy_(codebook)
         vq.embed_avg.copy_(codebook)
+        # See test_dead_code_refresh_replaces_multiple_rows for why this
+        # manual ``_b_norms_sq`` sync is needed.
+        vq._b_norms_sq.copy_((vq.codebook ** 2).sum(dim=-1))
         vq.cluster_size.zero_()
         vq.cluster_size[0] = 2.0
     x = torch.zeros(N, D)

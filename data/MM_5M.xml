@@ -30,7 +30,7 @@
     <training>
       <numTrials>1</numTrials>
       <numEpochs>1</numEpochs>
-      <batchSize>32</batchSize>
+      <batchSize>128</batchSize>
       <numWorkers>4</numWorkers>
       <learningRate>0.0005</learningRate>
       <reverseScale>0.1</reverseScale>
@@ -67,7 +67,7 @@
 
   <PerceptualSpace>
     <nInput>1024</nInput>
-    <nVectors>8192</nVectors>
+    <nVectors>4096</nVectors>
     <nDim>6</nDim>
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
@@ -126,29 +126,8 @@
            the per-row signal and dispatches soft_reset(batch=b). -->
       <start>S</start>
       <grammar>
-        <S>true(S)</S>
-        <S>false(S)</S>
-        <S>non(S)</S>
-        <S>conjunction(S, S)</S>
-        <S>disjunction(S, S)</S>
-        <S>what(S)</S>
-        <S>where(S)</S>
-        <S>when(S)</S>
-        <S>query(S, S)</S>
-        <S>swap(S, S)</S>
-        <S>equals(S, S)</S>
-        <S>part(S, S)</S>
-        <S>not(S)</S>
-        <S>intersection(S, S)</S>
-        <S>union(S, S)</S>
-        <S>lower(S, S)</S>
-        <S>lift(S, S)</S>
-        <S>lift(S, S, S)</S>
-        <!-- Sugar absorption: absorb keeps the left operand and discards the right
-             (whitespace / punctuation slot). Predictor learns to fire
-             it on grammatical noise so the rest of the grammar
-             doesn't need to encode it via union/intersection abuse. -->
-        <S>absorb(S, S)</S>
+        <S>S = intersection(S, S)</S>
+        <S>S = union(S, S)</S>
       </grammar>
       <interpretation>0.5</interpretation>
     </language>

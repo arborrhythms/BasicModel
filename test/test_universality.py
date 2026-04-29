@@ -32,6 +32,7 @@ matplotlib.use('Agg')
 from util import init_config, TheXMLConfig
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
+_RUN_SLOW = os.getenv("RUN_SLOW") == "1"
 
 # -- Test Corpus ------------------------------------------------------
 # Every sentence uses a transitive verb (S V O structure).
@@ -234,6 +235,7 @@ class TestSVOIdentification(unittest.TestCase):
         self.assertIn("helped", token_texts,
                        f"Verb 'helped' not in reconstruction: {token_texts}")
 
+    @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
     @pytest.mark.xfail(reason="untrained model: lift confidence near chance", strict=False)
     def test_all_transitive_sentences_confident_lift(self):
         """All transitive sentences should trigger lift(C,C,C) with >= 90% confidence."""

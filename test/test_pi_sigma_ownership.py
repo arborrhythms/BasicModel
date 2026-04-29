@@ -36,8 +36,8 @@ _DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
 
 def _make_plain_model(config='MentalModel.xml'):
     """Build a plain-mode (non-butterfly) model so the ownership
-    asserts hit raw PiLayer / SigmaLayer instances rather than the
-    ButterflyStage wrappers used by butterfly configs."""
+    asserts hit the plain PiLayer / SigmaLayer instances rather than the
+    butterfly-aware layers used by butterfly configs."""
     init_config(
         path=os.path.join(_DATA_DIR, config),
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),

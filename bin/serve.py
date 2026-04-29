@@ -105,17 +105,14 @@ def add_security_headers(response):
 # --- Model loading ---
 
 def _load_model(config_path=None):
-    """Load BasicModel with config from BasicModel.xml."""
-    try:
-        from basicmodel.bin.Models import BasicModel
-    except ModuleNotFoundError:
-        from Models import BasicModel
+    """Load the XML-selected model class."""
+    from Models import BaseModel
     from data import TheData
 
     if config_path is None:
         config_path = os.path.join(_PROJECT, "data", "BasicModel.xml")
 
-    cfg = BasicModel.load_config(config_path)
+    cfg = BaseModel.load_config(config_path)
     arch = cfg.get("architecture", {})
     dat = arch.get("data", {})
     dataset = dat.get("dataset")  # None when serving without training data
@@ -125,8 +122,7 @@ def _load_model(config_path=None):
                      max_docs=int(dat.get("maxDocs")),
                      shard_dir=dat.get("shardDir"))
 
-    model = BasicModel()
-    cfg = model.create_from_config(config_path, data=TheData)
+    model, cfg = BaseModel.from_config(config_path, data=TheData)
 
     model.eval()
     from util import compile

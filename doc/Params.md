@@ -92,7 +92,7 @@ omitting them defaults to 0.1.
 | `UniversalityWeight` | decimal | `0.1`   | `<architecture>` | Loss penalty weight for low universality (unkind propositions).    |
 | `TruthLoss`          | decimal | `0.0`   | `<training>`     | Additive loss penalty for propositions that contradict the TruthSet. Uses union norm reduction via `Basis.disjunction()`. 0.0 = disabled. |
 | `conceptualOrder`    | int     | `1`     | `<architecture>` | Number of Percept$\rightarrow$Concept$\rightarrow$Symbol iterations. Higher orders use a geometrically partitioned symbolic space. |
-| `useButterflies`     | boolean | `false` | `<architecture>` | Enable pairwise sigma/pi mixing via ButterflyStage (N-halving per conceptual order). Mutually exclusive with `useGrammar`. |
+| `useButterflies`     | boolean | `false` | `<architecture>` | Enable pairwise sigma/pi mixing via butterfly-mode Pi/Sigma layers (N-halving per conceptual order). Mutually exclusive with `useGrammar`. |
 | `monotonic`          | boolean | `false` | `<architecture>` | When true, invertible SigmaLayers use W>=0 (NonNegativeInvertibleLinearLayer) preserving ordering; false uses unconstrained InvertibleLinearLayer (bitonic response). |
 | `useGrammar`         | string | `"none"` | `<WordSpace>`    | Grammar mode. Current parser accepts `none`, `all`, and legacy `thoughtFree`; target Shamatha Speech work adds/aliases `shamathaSpeech` for the narrow DNF object grammar. Full grammar mode is mutually exclusive with `useButterflies`. |
 
@@ -262,7 +262,7 @@ set via XML directly; they are configured programmatically when constructing the
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `naive` | bool | `False` | `False`: apply L, D, U sequentially via triangular solves -- no W materialisation, backprop through each factor separately. `True`: materialise `W_eff` as a dense matrix and use `pinv(W_eff)` for the reverse pass. The `naive=True` path is slower and uses more memory; it exists for debugging and validation. |
+| `naive` | bool | `False` | `False`: apply L, D, U sequentially via triangular solves -- no W materialisation, backprop through each factor separately. `True`: materialise `W_eff` as a dense matrix and materialise the dense LDU inverse for the reverse pass. The `naive=True` path is slower and uses more memory; it exists for debugging and validation. |
 | `stable` | bool | `False` | Clamps each diagonal entry `d_i` to magnitude `[eps, 1]` with sign preserved in `_d_effective()` before the ergodic blend. Keeps `W_eff` bounded away from singularity. This is the only stability constraint on d; no additional clamp is applied to `d_eff`. |
 | `ergodic` | bool | `False` | Enables factor-level noise injection. When `True`, registers noise buffers `noise_raw_L`, `noise_raw_U`, `noise_d` and zero-initialises the learned parameters. Noise is resampled at the start of each `forward()` and at the end of each `reverse()`. |
 

@@ -353,32 +353,32 @@ def auto_compile_mode():
       max-autotune     -> Inductor + CUDAGraphs + autotune.
       max-autotune-no-cudagraphs
                        -> autotune without CUDAGraphs.
-      (empty / unset)  -> "max-autotune-no-cudagraphs".
+      (empty / unset)  -> "max-autotune".
 
-    Default is ``max-autotune-no-cudagraphs`` -- empirical winner on
-    the GB10 bench (basicmodel/bin/bench_compile.py, --test 10
-    --batches 10):
+    Default is ``max-autotune`` -- empirical winner on the GB10
+    training bench (basicmodel/bin/bench_compile.py, MM_5M.xml,
+    bf16 + trie BPE, training pass, --batches 8 each):
 
-        eager                       19.937s
-        default                     92.051s
-        max-autotune-no-cudagraphs  19.923s   <-- winner
-        reduce-overhead             90.753s
-        max-autotune                53.577s
+        eager                       mean=39.5s   min=22.5s  max=71.0s
+        default                     mean=99.6s   min=24.3s  max=165.0s
+        max-autotune-no-cudagraphs  mean=94.3s   min=24.0s  max=204.7s
+        reduce-overhead             mean=32.4s   min=23.3s  max=59.6s
+        max-autotune                mean=30.9s   min=24.9s  max=42.0s   <-- winner
 
-    The CUDAGraph-bearing modes (`default`, `reduce-overhead`,
-    `max-autotune`) recompile per static shape and pay ~30s-3min
-    capture per shape; with the butterfly x conceptualOrder x
-    forward+backward shape diversity in MM_5M, that capture cost
-    dominates wall-clock and the per-replay launch saving never pays
-    off. The `no-cudagraphs` mode keeps Inductor's kernel fusion +
-    Triton autotuning while sidestepping the per-shape capture, and
-    matches eager throughput on the eval-only test pass while having
-    headroom to beat it on the training pass (where backward-graph
-    fusion has more to optimize).
+    Earlier results from the test-pass bench (forward only, fp32, no
+    trie) had ``max-autotune-no-cudagraphs`` as the winner because
+    CUDAGraph capture of the per-shape diversity was a wall-clock
+    sink. Under training (forward + backward + step) with trie BPE
+    and bf16, the picture inverted: ``max-autotune`` and
+    ``reduce-overhead`` (the CUDAGraph-bearing modes) now beat both
+    the no-cudagraphs autotune and eager, with much smaller tails
+    (max-autotune max=42s vs no-cudagraphs max=204s). Re-bench when
+    architecture changes meaningfully (new spaces, conceptualOrder,
+    butterfly width) since shape diversity drives the trade-off.
     """
     override = os.environ.get("MODEL_COMPILE_MODE", "").strip().lower()
     if not override:
-        return "max-autotune-no-cudagraphs"
+        return "max-autotune"
     if override in _COMPILE_MODES:
         return override
     raise ValueError(
@@ -555,6 +555,7 @@ def compile(model, verbose=True):
 _AMP_MODES = ("off", "fp16", "bf16")
 _AMP_OFF   = frozenset({"", "none", "off", "false", "0", "no"})
 _AMP_WARNED = False
+_AMP_FIRST_LOGGED = False
 
 
 def _read_model_amp():
@@ -575,10 +576,11 @@ TheAmpScaler = None  # lazily constructed on first fp16+cuda call
 
 def init_model_amp(mode=None):
     """Override the process-wide AMP mode.  None re-reads MODEL_AMP."""
-    global MODEL_AMP, TheAmpScaler, _AMP_WARNED
+    global MODEL_AMP, TheAmpScaler, _AMP_WARNED, _AMP_FIRST_LOGGED
     MODEL_AMP = _read_model_amp() if mode is None else mode
     TheAmpScaler = None
     _AMP_WARNED = False
+    _AMP_FIRST_LOGGED = False
 
 
 def amp_context():
@@ -587,24 +589,40 @@ def amp_context():
     The context manager is a fresh instance each call (autocast CMs are
     single-use).  The scaler is a process-wide singleton so optimizer
     step/update bookkeeping stays consistent across batches.
+
+    Prints a one-shot status line on the first call so the operator can
+    confirm at a glance which path engaged (bf16 active / off / MPS
+    fallback). Re-armed by ``init_model_amp``.
     """
-    global TheAmpScaler, _AMP_WARNED
+    global TheAmpScaler, _AMP_WARNED, _AMP_FIRST_LOGGED
     mode = MODEL_AMP
     if mode == "off":
+        if not _AMP_FIRST_LOGGED:
+            print("[AMP] off (fp32, MODEL_AMP unset or =off)")
+            _AMP_FIRST_LOGGED = True
         return nullcontext(), None
     dev = TheDevice.type  # "cpu" | "cuda" | "mps" (ROCm exposes "cuda")
     if dev == "mps":
         if not _AMP_WARNED:
             print(f"MODEL_AMP={mode} unsupported on MPS; running fp32.")
             _AMP_WARNED = True
+        if not _AMP_FIRST_LOGGED:
+            print(f"[AMP] {mode} requested but disabled on MPS -> fp32")
+            _AMP_FIRST_LOGGED = True
         return nullcontext(), None
     if dev == "cpu" and mode == "fp16":
         if not _AMP_WARNED:
             print("MODEL_AMP=fp16 unsupported on CPU; running fp32.")
             _AMP_WARNED = True
+        if not _AMP_FIRST_LOGGED:
+            print("[AMP] fp16 requested but disabled on CPU -> fp32")
+            _AMP_FIRST_LOGGED = True
         return nullcontext(), None
     dtype = torch.float16 if mode == "fp16" else torch.bfloat16
     cm = torch.autocast(device_type=dev, dtype=dtype)
+    if not _AMP_FIRST_LOGGED:
+        print(f"[AMP] {mode} active on {dev} (autocast dtype={dtype})")
+        _AMP_FIRST_LOGGED = True
     if mode == "fp16" and dev == "cuda":
         if TheAmpScaler is None:
             TheAmpScaler = torch.amp.GradScaler("cuda")

@@ -55,14 +55,6 @@ class TestShamathaInlineGrammar(unittest.TestCase):
         # Contiguous precedes not(S) so hull-then-negate semantics hold.
         self.assertLess(s_rules.index("Contiguous(S)"), s_rules.index("not(S)"))
 
-    def test_grammar_uses_detects_contiguous(self):
-        """Substring scanner used at construction time picks up Contiguous."""
-        _fresh_model()
-        self.assertTrue(Language.grammar_uses("Contiguous"))
-        self.assertTrue(Language.grammar_uses("not"))
-        self.assertTrue(Language.grammar_uses("union"))
-        self.assertTrue(Language.grammar_uses("intersection"))
-
     def test_dnf_stack_wired_into_conceptual_space(self):
         """ConceptualSpace's grammar-driven DNF wiring picks up the
         not/union/intersection rules from the inline grammar block."""

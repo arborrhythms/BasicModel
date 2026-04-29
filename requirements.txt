@@ -1,6 +1,7 @@
 flask
 numpy
 torch>=2.5
+typing-extensions
 torchviz
 matplotlib
 datasets

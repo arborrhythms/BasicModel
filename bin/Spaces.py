@@ -35,11 +35,11 @@ from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
-from Layers import Layer, PiLayer, SigmaLayer, NegationLayer, DNFConceptLayer  # Import custom layers from Model.py
+from Layers import Layer, PiLayer, SigmaLayer, NegationLayer  # Import custom layers from Model.py
 from Layers import VectorQuantize  # moved from Spaces.py (April 2026 perf pass)
 from Layers import GrammarLayer, NotLayer, NonLayer, IntersectionLayer, UnionLayer
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
-from Layers import ColumnUsageTracker, LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
+from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
 from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer, ContiguousLayer
 from Layers import Error
 
@@ -1171,12 +1171,11 @@ class Codebook(Basis):
             return e.new_tensor(0.0)
         return beta * F.mse_loss(e[..., :n], q[..., :n].detach())
 
-    # -- Per-entry freezing (Task 3: ColumnUsageTracker analogue) ------
+    # -- Per-entry freezing -------------------------------------------
     # When an entry's sigma (running stdev of gradient norm across a window)
     # falls below ``freeze_threshold``, the entry has converged and we
-    # zero its gradient from here on. Distinct from ColumnUsageTracker:
-    # operates on codebook rows and uses sigma (ergodic measure) rather than
-    # raw grad-norm mean.
+    # zero its gradient from here on. This operates on codebook rows and uses
+    # sigma (ergodic measure) rather than raw grad-norm mean.
     def _ensure_freezing_buffers(self, n):
         if getattr(self, "_grad_norm_history", None) is None:
             self._grad_norm_history = []
@@ -1503,7 +1502,8 @@ class Embedding(Basis):
         ensure every token text has an embedding row.
         """
         if wv is None:
-            wv = self._load_embeddings(embedding_path=embedding_path, nDim=nDim)
+            wv = self._load_embeddings(
+                embedding_path=embedding_path, nDim=nDim, nVectors=nVectors)
         if wv is None:
             # No matching embeddings on disk -- start with \x00 at index 0.
             # This is both the EOS/padding sentinel AND the first real
@@ -1550,21 +1550,25 @@ class Embedding(Basis):
                 self.insert(ch)
 
         # Pre-tokenize source documents for later inspection and optional reuse.
+        # In byte mode the codebook is already fully seeded (all 256 byte values
+        # inserted above) and per-token inserts here are no-ops; downstream code
+        # does not index into doc_spans/doc_sources, so we skip the sweep.
         if source:
             self.doc_spans = []
             self.doc_sources = []
-            n_docs = len(source)
-            for i, doc in enumerate(source):
-                if i % 500 == 0:
-                    print(f"  Building span table: {i}/{n_docs} docs")
-                doc_bytes = doc.encode('utf-8')
-                doc_tensor = torch.frombuffer(bytearray(doc_bytes), dtype=torch.uint8).clone()
-                self.doc_sources.append(doc_tensor)
-                doc_tokens = self._token_stream(doc)
-                self.doc_spans.append(doc_tokens)
-                for token_text, _ in doc_tokens:
-                    if token_text not in self.wv:
-                        self.insert(token_text)
+            if not self.byte_mode:
+                n_docs = len(source)
+                for i, doc in enumerate(source):
+                    if i % 500 == 0:
+                        print(f"  Building span table: {i}/{n_docs} docs")
+                    doc_bytes = doc.encode('utf-8')
+                    doc_tensor = torch.frombuffer(bytearray(doc_bytes), dtype=torch.uint8).clone()
+                    self.doc_sources.append(doc_tensor)
+                    doc_tokens = self._token_stream(doc)
+                    self.doc_spans.append(doc_tokens)
+                    for token_text, _ in doc_tokens:
+                        if token_text not in self.wv:
+                            self.insert(token_text)
 
     def _rebuild_optimizer(self):
         self.pretrain.optimizer = torch.optim.Adam(
@@ -1658,12 +1662,18 @@ class Embedding(Basis):
         # W is managed by wv._vectors; getW() returns live data
 
     @staticmethod
-    def _load_embeddings(embedding_path=None, nDim=None):
+    def _load_embeddings(embedding_path=None, nDim=None, nVectors=None):
         """Load embeddings from a specific path, or return None for dynamic vocab.
 
         Detects file type by extension:
         - .txt: word2vec text format (``<vocab_size> <vector_size>\\n<word> <floats>...``)
         - .pt:  torch-saved WordVectors dict
+        - .kv with ``kind='bpe'``: BPE-only artifact -- the lexicon is
+          synthesized on the fly from the BPE byte-tuple vocab via
+          ``bpe_to_lexicon_keys``. One codebook row per BPE chunk;
+          ``len(BPE vocab)`` is the vocab size. ``nVectors`` (XML
+          config) must match -- a mismatch raises so config drift
+          surfaces immediately.
 
         When *nDim* is given, validates that loaded vector dimension matches.
         Returns None if no path given or file doesn't exist.
@@ -1677,7 +1687,62 @@ class Embedding(Basis):
         if embedding_path.endswith(".txt"):
             wv = WordVectors.load_word2vec_format(embedding_path)
         else:
-            wv = WordVectors.load(embedding_path)
+            try:
+                wv = WordVectors.load(embedding_path)
+            except ValueError as exc:
+                # BPE-only artifact: WordVectors.load refuses, but we
+                # can synthesize a stub WordVectors from the BPE
+                # vocab so the codebook is seeded with one entry per
+                # chunk_id (latin-1 decoded byte-tuple as key) instead
+                # of starting empty and growing via insert() during
+                # training.
+                if "BPE-only artifact" not in str(exc):
+                    raise
+                # Note: ``WordVectors`` is already imported at module
+                # scope; re-importing it locally would mark it a local
+                # in this whole function and break the ``WordVectors.load``
+                # above. Only pull in the helpers that aren't already
+                # in scope.
+                from embed import load_artifact, bpe_to_lexicon_keys
+                payload = load_artifact(embedding_path)
+                bpe = payload.get("bpe") or {}
+                vocab = bpe.get("vocab", {})
+                if not vocab:
+                    return None
+                # Build a synthetic ChunkLayer-shaped object just for
+                # bpe_to_lexicon_keys (it only needs ``id_to_bytes``).
+                class _Shim:
+                    def __init__(self, id_to_bytes):
+                        self.id_to_bytes = id_to_bytes
+                id_to_bytes = {int(v): tuple(int(x) for x in k)
+                               for k, v in vocab.items()}
+                keys = bpe_to_lexicon_keys(_Shim(id_to_bytes))
+                # Drop trailing "" placeholder slots that
+                # bpe_to_lexicon_keys emits for missing ids.
+                while keys and keys[-1] == "":
+                    keys.pop()
+                if not keys:
+                    return None
+                # Vocab size is len(BPE vocab); the XML's ``nVectors``
+                # MUST match. A mismatch is a config error -- raise
+                # rather than silently padding (no reserved slots in
+                # the codebook).
+                if nVectors is not None and int(nVectors) != len(keys):
+                    raise ValueError(
+                        f"BPE-only artifact at {embedding_path} has "
+                        f"{len(keys)} chunks but XML <nVectors>={nVectors}. "
+                        f"Set <nVectors> to {len(keys)} (or retrain BPE "
+                        f"with n_vectors={nVectors}) so the codebook "
+                        f"size matches the BPE vocab.")
+                dim = nDim or 1
+                # Random init normalised to the unit sphere -- standard
+                # codebook seed; training adapts.
+                vectors = F.normalize(
+                    torch.randn(len(keys), dim, device=TheDevice.get()),
+                    p=2, dim=1)
+                wv = WordVectors(vectors, keys)
+                print(f"Synthesized {len(keys)}-entry lexicon from "
+                      f"BPE vocab in {embedding_path}")
 
         if nDim is not None and wv.vector_size != nDim:
             return None
@@ -4688,8 +4753,9 @@ class InputSpace(Space):
         Semantics:
           * Non-AR: K=1 single-window pass-through (subspace event keeps
             its existing [B, N, D] shape; k_axis stays False).
-          * AR training: K = T (one prediction per token via
-            progressive-prefix windows from a pad-N-then-unfold).
+          * AR training: K = T for dense token streams; BPE caps K to
+            the max active word count in the batch after chunking.
+            Windows are progressive-prefix slices from a pad-N-then-unfold.
           * ARIR inference: each call feeds an N-length buffer (T==N),
             so K=1 and the head produces one prediction per call. The
             ARIR runtime maintains the buffer across calls.
@@ -4730,7 +4796,19 @@ class InputSpace(Space):
         if embedded is None and self.model_type == "embedding":
             peer = self._peer_perceptual
             if peer is not None:
-                peer._embed(self.subspace)
+                # Route to the peer's chunking mode rather than always
+                # calling the lexicon path. With ``<chunking>bpe</...>``
+                # the lexicon-style ``_embed`` would tokenize on
+                # whitespace + look up whole-word strings against a
+                # codebook seeded from BPE chunks, hitting OOV on
+                # every word and silently inserting them (codebook
+                # drift). ``_embed_bpe`` does the right thing: BPE
+                # chunk + MAX-fuse using the frozen codebook keyed by
+                # latin-1 byte-tuples.
+                if getattr(peer, 'chunking_mode', None) == "bpe":
+                    peer._embed_bpe(self.subspace)
+                else:
+                    peer._embed(self.subspace)
                 embedded = peer._embedded_input
         self._ar_embedded = embedded
 
@@ -4739,6 +4817,20 @@ class InputSpace(Space):
 
         B, T, D = embedded.shape
         N = int(self.outputShape[0])
+
+        # When peer is in BPE chunking mode, ``peer._bpe_word_mask``
+        # ([B, N], 1.0 where the slot holds a real BPE-fused word
+        # vector and 0.0 in padding) is the source of truth for both
+        # validity AND the per-window event mask. Without it, validity
+        # would fall back to ``embedded.abs().sum > 0``, which is
+        # always True for muxed events (where/when components are
+        # nonzero even at padding positions) and would make every
+        # window look valid.
+        peer = self._peer_perceptual
+        bpe_mask = (getattr(peer, "_bpe_word_mask", None)
+                    if peer is not None
+                    and getattr(peer, "chunking_mode", None) == "bpe"
+                    else None)
 
         if is_runtime_arir:
             # ARIR inference path. Buffer is already the N-length window.
@@ -4751,28 +4843,88 @@ class InputSpace(Space):
             K = windows.shape[1]
             # Inference always "valid"; runtime decides termination via predictions.
             valid_mask = torch.ones(B, K, dtype=torch.bool, device=embedded.device)
+            # Single N-length window per row -- replicate the [B, N]
+            # word mask across the (typically 1) K dimension.
+            bpe_mask_windowed = (bpe_mask.unsqueeze(1).expand(B, K, N).contiguous()
+                                 if bpe_mask is not None else None)
         else:
             # AR training. Pad N zeros on the LEFT to recreate the legacy
             # cursor-based progressive-prefix windows: window k = the
             # buffer state at cursor k (k zero-pad slots followed by
-            # emb[0..k-1] right-aligned). Take first K=T windows so each
-            # window k targets emb[k]; the unused (K=T+1)-th window
-            # would have no ground-truth target.
+            # emb[0..k-1] right-aligned).
             pad = torch.zeros(B, N, D, device=embedded.device, dtype=embedded.dtype)
             padded = torch.cat([pad, embedded], dim=1)  # [B, T+N, D]
             unfolded = padded.unfold(1, N, 1).permute(0, 1, 3, 2).contiguous()
-            # unfolded shape: [B, T+1, N, D] -- take first T windows.
-            K = T
-            windows = unfolded[:, :K, :, :]
-            # Validity mask: target at window k is embedded[:, k, :].
-            # NULL = all-zero embedding (lex pads short sentences this way).
-            valid_mask = (embedded.abs().sum(dim=-1) > 0)  # [B, T] = [B, K]
+            # unfolded shape: [B, T+1, N, D] -- normally we'd take all T
+            # windows, but in BPE mode ``_embed_bpe`` packs active words
+            # at the front of [B, N], so windows k >= max-active-count
+            # carry no real targets and the body's work on them is
+            # entirely zeroed by the mask. Cap K to the max active word
+            # count in the batch to skip them outright.
+            if bpe_mask is not None:
+                # ``int(...)`` forces a host sync (one per batch); the
+                # savings on body work (~T / max_word_count, often
+                # 1024 / ~40 ≈ 25×) far exceed the sync cost.
+                word_counts = bpe_mask.sum(dim=1)  # [B]
+                actual_max = int(word_counts.max().item())
+                # Quantize K to the next power of two ABOVE actual_max
+                # (ceiling, not nearest -- see notes below). Bounded
+                # set for T=1024: {1, 2, 4, 8, 16, 32, 64, 128, 256,
+                # 512, 1024} = 11 distinct K values. Typical English-
+                # text batches land in {32, 64, 128} so the compile
+                # cache fills in a few hundred steps and stays stable
+                # instead of recompiling per data-dependent K.
+                #
+                # Why ceiling not nearest: K MUST satisfy K >=
+                # actual_max, otherwise the windows beyond K cover
+                # active word positions that would never get a
+                # training signal (their predictions are dropped).
+                # Nearest-pow2 of e.g. actual_max=35 is 32, which
+                # truncates 3 words of training data. Ceiling
+                # (35 → 64) wastes ~29 zero-mask slots of compute but
+                # preserves all training signal; the wasted work is
+                # multiplied out by the BPE mask anyway.
+                if actual_max <= 1:
+                    K = 1
+                else:
+                    K = min(T, 1 << (actual_max - 1).bit_length())
+                windows = unfolded[:, :K, :, :]
+                # Apply the SAME left-pad + unfold to the [B, T] word
+                # mask so each window k carries which of its N slots
+                # are real-word vs zero-pad. Trim to the first K.
+                pad_mask = torch.zeros(
+                    B, N, device=bpe_mask.device, dtype=bpe_mask.dtype)
+                padded_mask = torch.cat([pad_mask, bpe_mask], dim=1)  # [B, T+N]
+                unfolded_mask = padded_mask.unfold(1, N, 1)            # [B, T+1, N]
+                bpe_mask_windowed = unfolded_mask[:, :K, :].contiguous()
+                # Per-window validity: window k's target is emb[k];
+                # valid iff that position carried a real word. Trimmed
+                # to first K to align with the K-trimmed windows.
+                valid_mask = bpe_mask[:, :K].bool()
+            else:
+                K = T
+                windows = unfolded[:, :K, :, :]
+                bpe_mask_windowed = None
+                # Legacy fallback: NULL = all-zero embedding (lex pads
+                # short sentences this way). Wrong under muxed events
+                # but preserved for non-BPE codepaths.
+                valid_mask = (embedded.abs().sum(dim=-1) > 0)  # [B, T] = [B, K]
 
         sub = self.subspace
         sub.set_event(windows)
         sub.k_axis = True
         sub.valid_mask = valid_mask
         sub.stem_embedded = True
+
+        # Stash the flattened [B*K, N] BPE mask on peer so
+        # PerceptualSpace.forward can apply it to the post-VQ event
+        # (which has shape [B*K, N, D] after FlattenKWrapper). The
+        # original [B, N] ``peer._bpe_word_mask`` is left in place for
+        # callers that want the unwindowed view.
+        if peer is not None and bpe_mask_windowed is not None:
+            peer._bpe_word_mask_flat = bpe_mask_windowed.reshape(B * K, N)
+        elif peer is not None:
+            peer._bpe_word_mask_flat = None
 
         # Size the diagnostic to B, but do not derive its values from
         # valid_mask: a per-tick ``.tolist()`` here would be a host sync
@@ -5271,9 +5423,15 @@ class PerceptualSpace(Space):
             return None
         basis = Embedding()
         basis.ergodic = self.ergodic
+        # Embedding.create's second arg is *nVectors* = codebook
+        # capacity (one row per lexicon entry), NOT the output sequence
+        # length. Pass ``self.nVectors`` (the XML PerceptualSpace
+        # ``<nVectors>``) so the synth path's
+        # ``len(BPE vocab) == nVectors`` invariant holds and so the
+        # codebook tensor's row count matches the configured capacity.
         basis.create(
             self.inputShape[0],
-            self.outputShape[0],
+            self.nVectors,
             self.nDim,
             embedding_path=self.embedding_path,
             source=self.embedding_source,
@@ -5445,9 +5603,29 @@ class PerceptualSpace(Space):
     def _embed_bpe(self, upstream_vspace):
         """BPE chunking path. Decode the upstream byte buffer, BPE-tokenize
         via ChunkLayer, group sub-tokens by whitespace word-boundary, look up
-        (and insert as OOV) each byte-tuple chunk in the codebook, then
-        MAX-fuse sub-token vectors within each word.  Emit one [nDim] vector
-        per word.
+        each byte-tuple chunk in the codebook, then MAX-fuse sub-token
+        vectors within each word.  Emit one [nDim] vector per word.
+
+        Implementation is **batch-flat**. The previous form built three
+        nested ``[B][nObj]`` Python lists -- one of ints, one of floats,
+        one of ``[nDim]`` GPU tensors -- then materialized them with
+        ``torch.tensor`` and ``torch.stack(torch.stack(...))``. The
+        per-word ``_max_fuse_subtokens`` allocated and stacked a fresh
+        list of vectors for every word (~960 stacks per batch on
+        MM_5M). This form does:
+
+            * ONE Python sweep over all chunks in the batch, collecting
+              per-sub-token codebook indices + a global word-segment id,
+              plus per-word routing tuples ``(b, slot, first-sub-idx)``.
+            * ONE ``vectors[flat_idx]`` gather producing every
+              sub-token vector across the batch in a single op.
+            * ONE ``scatter_reduce_(amax)`` collapsing the gathered
+              vectors into ``[N_words, nDim]`` via segment ids.
+            * ONE fancy-index assignment placing those into
+              ``[B, nObj, nDim]``.
+
+        Net: 2 small H2Ds + 1 gather + 1 reduce + 1 scatter for the
+        whole batch's MAX-fuse, regardless of word/sub-token count.
         """
         what_buf = upstream_vspace.what.getW()
         if what_buf is None:
@@ -5461,6 +5639,8 @@ class PerceptualSpace(Space):
         nObj = self.outputShape[0]
         codebook = self.subspace.what
         boundary = self.chunk_layer.BOUNDARY_BYTES
+        chunk_frozen = (
+            int(getattr(self.chunk_layer, 'chunking_frequency', 0) or 0) <= 0)
 
         if what_buf.dim() == 3:
             byte_indices = what_buf[..., 0].long()
@@ -5470,59 +5650,163 @@ class PerceptualSpace(Space):
         if self.chunk_layer.bpe and self.training:
             self.chunk_layer.train_step(byte_indices)
 
-        all_chunks, all_spans = self.chunk_layer.forward(byte_indices)
+        # ---- Fused trie walk + per-word assembly --------------------
+        # The previous two-pass form built ``all_chunks`` /
+        # ``all_spans`` (Python list-of-lists per row) and then
+        # iterated them again to assemble words. Fused into one walk:
+        # as we descend the trie at each position, we resolve the
+        # matched chunk to its codebook index and either accumulate
+        # it into the current word or flush at a boundary. Saves the
+        # intermediate list-of-lists allocation entirely.
+        self.chunk_layer._ensure_trie()
+        trie = self.chunk_layer._trie
+        id_to_bytes = self.chunk_layer.id_to_bytes
+        vocab = self.chunk_layer.vocab
 
-        # Build per-cell results on CPU (Python lists of ints/floats and
-        # GPU vectors), then materialize the device tensors in one
-        # shot. The previous "torch.full + per-cell in-place write"
-        # pattern triggered Inductor's
-        # ``skipping cudagraphs due to mutated inputs`` warning -- the
-        # captured graph can't include mutations on freshly-allocated
-        # buffers. ``torch.tensor / torch.stack`` allocate fresh
-        # tensors as graph outputs, which is graph-friendly.
         null_idx = codebook.wv.key_to_index.get("\x00", 0)
-        zero_vec = torch.zeros(self.nDim, device=dev)
-        indices_2d = [[null_idx] * nObj for _ in range(batch)]
-        active_2d = [[0.0] * nObj for _ in range(batch)]
-        vectors_2d = [[zero_vec] * nObj for _ in range(batch)]
+        key_to_index = codebook.pretrain.key_to_index
+        token_to_index = codebook._token_to_index
+        chunk_key_to_latin1 = self._chunk_key_to_latin1
+        byte_mode = bool(getattr(codebook, 'byte_mode', False))
+
+        rows = byte_indices.tolist()
+        N_buf = byte_indices.shape[1]
+
+        # Per-sub-token (flat) and per-word (routing) Python lists. Only
+        # ints get appended, no tensors -- the heavy lifting is one
+        # gather later, not many small stacks.
+        flat_subtoken_idx = []   # codebook row idx for each resolved sub-token
+        flat_word_seg     = []   # segment id (running word_id) per ^
+        per_word_first    = []   # first sub-token's codebook idx, per word
+        per_word_b        = []   # batch row, per word
+        per_word_slot     = []   # word slot within row, per word
+        word_id = 0
+
+        def _resolve(byte_tuple):
+            """Sub-token byte tuple → codebook int index, or None.
+
+            Frozen-vocab missing key is a load-mismatch bug → assert.
+            Active mode falls back to ``codebook.insert`` so newly
+            promoted BPE merges don't stall the batch.
+            """
+            latin1 = chunk_key_to_latin1(byte_tuple)
+            if not latin1:
+                return None
+            if latin1 not in key_to_index:
+                if byte_mode:
+                    return None
+                assert not chunk_frozen, (
+                    f"_embed_bpe: key {latin1!r} missing from frozen "
+                    f"codebook.pretrain (chunking_frequency<=0). .kv "
+                    f"load mismatch -- BPE section and lexicon "
+                    f"embeddings disagree.")
+                codebook.insert(latin1)
+            return token_to_index(latin1)
 
         for b in range(batch):
-            chunks = all_chunks[b]
-            spans = all_spans[b]
-            if not chunks:
-                continue
+            row = rows[b]
             word_idx = 0
-            word_subtokens = []
-            for (chunk_id, (start, end, key)) in zip(chunks, spans):
-                is_boundary = all(bv in boundary for bv in key)
+            cur_subs = []   # codebook indices for the in-progress word
+            i = 0
+            while i < N_buf:
+                bval = row[i]
+                if bval == 0:
+                    break
+                # Inline trie walk: descend children byte-by-byte,
+                # tracking the longest match seen.
+                node = trie
+                matched_id = None
+                matched_len = 0
+                j = i
+                while j < N_buf:
+                    child = node[0].get(row[j])
+                    if child is None:
+                        break
+                    node = child
+                    j += 1
+                    if node[1] is not None:
+                        matched_id = node[1]
+                        matched_len = j - i
+                if matched_id is None:
+                    # 256 single-byte ids are always seeded; defensive
+                    # fallback for unexpected vocab gaps.
+                    matched_id = vocab.get((bval,), bval)
+                    matched_len = 1
+                matched_key = id_to_bytes.get(matched_id, (bval,))
+                is_boundary = all(bv in boundary for bv in matched_key)
                 if is_boundary:
-                    if word_subtokens and word_idx < nObj:
-                        vectors_2d[b][word_idx] = self._max_fuse_subtokens(
-                            word_subtokens, codebook)
-                        indices_2d[b][word_idx] = self._chunk_to_codebook_idx(
-                            word_subtokens, codebook)
-                        active_2d[b][word_idx] = 1.0
+                    if cur_subs and word_idx < nObj:
+                        per_word_first.append(cur_subs[0])
+                        per_word_b.append(b)
+                        per_word_slot.append(word_idx)
+                        for cb_idx in cur_subs:
+                            flat_subtoken_idx.append(cb_idx)
+                            flat_word_seg.append(word_id)
+                        word_id += 1
                         word_idx += 1
-                    word_subtokens = []
+                    cur_subs = []
                 else:
-                    word_subtokens.append(key)
-            if word_subtokens and word_idx < nObj:
-                vectors_2d[b][word_idx] = self._max_fuse_subtokens(
-                    word_subtokens, codebook)
-                indices_2d[b][word_idx] = self._chunk_to_codebook_idx(
-                    word_subtokens, codebook)
-                active_2d[b][word_idx] = 1.0
+                    resolved = _resolve(matched_key)
+                    if resolved is not None:
+                        cur_subs.append(resolved)
+                i += matched_len
+            # Trailing word (row ended without a final boundary chunk).
+            if cur_subs and word_idx < nObj:
+                per_word_first.append(cur_subs[0])
+                per_word_b.append(b)
+                per_word_slot.append(word_idx)
+                for cb_idx in cur_subs:
+                    flat_subtoken_idx.append(cb_idx)
+                    flat_word_seg.append(word_id)
+                word_id += 1
 
-        what_indices = torch.tensor(
-            indices_2d, dtype=torch.long, device=dev)
-        word_active = torch.tensor(
-            active_2d, dtype=torch.float32, device=dev)
-        # Stack the per-cell [nDim] vectors into [batch, nObj, nDim]
-        # via two nested torch.stack calls -- both produce fresh
-        # graph-output tensors; no mutation.
-        word_vectors = torch.stack([
-            torch.stack(row) for row in vectors_2d
-        ])
+        # ---- Tensor materialization (no Python list-of-tensors) -----
+        # Output tensors live on whatever device the codebook's
+        # vectors currently sit on; gather + scatter respect that
+        # device naturally. ``vectors`` is the nn.Parameter that
+        # ``.to()`` migrates with the surrounding module.
+        vectors = codebook.wv._vectors
+        target_device = vectors.device
+        nDim = self.nDim
+
+        word_active = torch.zeros(
+            batch, nObj, dtype=torch.float32, device=target_device)
+        what_indices = torch.full(
+            (batch, nObj), null_idx, dtype=torch.long, device=target_device)
+        word_vectors = torch.zeros(
+            batch, nObj, nDim, dtype=vectors.dtype, device=target_device)
+
+        if word_id > 0:
+            # Single H2D for all the routing ints.
+            flat_idx_t = torch.tensor(
+                flat_subtoken_idx, dtype=torch.long, device=target_device)
+            flat_seg_t = torch.tensor(
+                flat_word_seg, dtype=torch.long, device=target_device)
+            per_word_first_t = torch.tensor(
+                per_word_first, dtype=torch.long, device=target_device)
+            per_word_b_t = torch.tensor(
+                per_word_b, dtype=torch.long, device=target_device)
+            per_word_slot_t = torch.tensor(
+                per_word_slot, dtype=torch.long, device=target_device)
+
+            # ONE gather: every sub-token's vector across the batch.
+            gathered = vectors[flat_idx_t]  # [N_subs, nDim]
+
+            # Segmented MAX via scatter_reduce_(amax). Init to -inf so
+            # the first scatter writes the actual sub-token value, and
+            # subsequent scatters within the same segment max with it.
+            per_word_max = torch.full(
+                (word_id, nDim), float('-inf'),
+                dtype=vectors.dtype, device=target_device)
+            per_word_max.scatter_reduce_(
+                0, flat_seg_t.unsqueeze(-1).expand(-1, nDim),
+                gathered, reduce='amax', include_self=True)
+
+            # Place per-word results at (b, slot) coordinates in the
+            # [B, nObj, *] outputs. Empty slots stay zero / null_idx.
+            word_vectors[per_word_b_t, per_word_slot_t] = per_word_max
+            what_indices[per_word_b_t, per_word_slot_t] = per_word_first_t
+            word_active[per_word_b_t, per_word_slot_t] = 1.0
 
         where_raw = upstream_vspace.where.getW()
         when_raw = upstream_vspace.when.getW()
@@ -5539,9 +5823,33 @@ class PerceptualSpace(Space):
         self.subspace.set_forward_content(
             what_indices, where_indices, when_indices,
             activation=word_active)
-        self.subspace.event.setW(word_vectors)
-        self._embedded_input = word_vectors
+
+        # Mux ``word_vectors`` ([B, nObj, nDim]) with the where/when
+        # encodings so the cached event matches the muxed width
+        # ``nDim + nWhere + nWhen`` that ``forwardEnd`` reshapes
+        # against. Setting the event at plain ``nDim`` width caused
+        # ``[B, nObj * nDim] / muxedSize`` to round to a wrong
+        # sequence length (e.g. 1024 * 6 / 8 = 768) and trip a shape
+        # mismatch against the [B, nObj] BPE word mask. ``materialize``
+        # would otherwise gather codebook rows by ``what_indices``,
+        # which gives the *first sub-token's* vector, not the
+        # MAX-fused word vector we computed -- hence we must setW
+        # explicitly here.
+        event_parts = [word_vectors]
+        if self.nWhere > 0 and where_indices is not None:
+            event_parts.append(self.subspace.whereEncoding.encode(where_indices))
+        if self.nWhen > 0 and when_indices is not None:
+            event_parts.append(self.subspace.whenEncoding.encode(when_indices))
+        muxed_event = (torch.cat(event_parts, dim=-1)
+                       if len(event_parts) > 1 else word_vectors)
+        self.subspace.event.setW(muxed_event)
+        self._embedded_input = muxed_event
         self._bpe_word_mask = word_active
+        # Only InputSpace.forward can produce the AR-windowed [B*K, N]
+        # mask. Clear any stale value when _embed_bpe is used directly
+        # (non-AR / inference paths) so PerceptualSpace.forward falls
+        # back to this fresh unwindowed [B, N] mask.
+        self._bpe_word_mask_flat = None
         return self.subspace
 
     def _chunk_key_to_latin1(self, byte_tuple):
@@ -5550,30 +5858,85 @@ class PerceptualSpace(Space):
 
     def _chunk_to_codebook_idx(self, word_subtokens, codebook):
         """Resolve a list of byte-tuple sub-tokens to a codebook index.
-        Inserts OOV keys as needed via Embedding.insert().  Returns the index
-        of the first sub-token (used for bookkeeping; the real word vector
-        comes from MAX fusion)."""
+
+        With a frozen BPE codebook (``chunking_frequency <= 0``) every
+        sub-token's latin-1 key MUST already live in
+        ``codebook.pretrain.key_to_index`` -- the load pass is supposed
+        to populate one entry per BPE chunk. A missing key here means
+        either a load misalignment (the .kv file's BPE section and
+        embeddings disagree) or runtime BPE drift; either way it would
+        silently grow the codebook and is a real bug. Assert loudly so
+        the failure is obvious instead of corrupting the codebook.
+
+        In active-learning mode (``chunking_frequency > 0``) a missing
+        key is expected and we fall back to ``Embedding.insert``.
+
+        Returns the index of the first sub-token (used for bookkeeping;
+        the real word vector comes from MAX fusion).
+        """
         keys = [self._chunk_key_to_latin1(bt) for bt in word_subtokens]
+        chunk_frozen = (
+            int(getattr(self.chunk_layer, 'chunking_frequency', 0) or 0) <= 0)
         for key in keys:
             if (key and key not in codebook.pretrain.key_to_index
                     and not getattr(codebook, 'byte_mode', False)):
+                assert not chunk_frozen, (
+                    f"_chunk_to_codebook_idx: key {key!r} missing from "
+                    f"frozen codebook.pretrain (chunking_frequency<=0). "
+                    f"This indicates a .kv load mismatch -- either the "
+                    f"BPE section and the lexicon embeddings disagree, "
+                    f"or chunking_frequency was set to 0 before all BPE "
+                    f"chunks made it into the lexicon.")
                 codebook.insert(key)
         return codebook._token_to_index(keys[0]) if keys else 0
 
     def _max_fuse_subtokens(self, word_subtokens, codebook):
-        """MAX-fuse sub-token vectors into a single [nDim] word vector."""
+        """MAX-fuse sub-token vectors into a single [nDim] word vector.
+
+        Resolves each sub-token byte-tuple to its codebook row index,
+        gathers all rows in one tensor lookup, and returns the
+        per-dimension maximum. Avoids the previous Python ``vecs = []``
+        + ``torch.stack(vecs)`` + ``stacked.max(dim=0)`` pattern, which
+        allocated one Python list and one stack-temporary per word
+        (~960 words/batch on MM_5M). The single ``vectors[idx_tensor]``
+        gather + ``amax(dim=0)`` keeps the hot path tensor-native and
+        runs on whatever device the codebook lives on (no device
+        coupling to the caller).
+        """
         if not word_subtokens:
-            return torch.zeros(self.nDim, device=TheDevice.get())
-        vecs = []
+            return torch.zeros(self.nDim, device=codebook.wv._vectors.device)
+        # Collect codebook row indices for sub-tokens that resolve.
+        # Under a frozen BPE codebook (``chunking_frequency <= 0``)
+        # every sub-token's latin-1 key MUST already live in
+        # ``codebook.pretrain.key_to_index`` -- a missing key here is
+        # the same .kv load mismatch we assert against in
+        # ``_chunk_to_codebook_idx``. The active-learning branch
+        # (``chunking_frequency > 0``) silently skips unresolved keys
+        # since new chunks may legitimately not be in the lexicon
+        # until the next promotion cycle catches up.
+        indices = []
+        key_to_index = codebook.pretrain.key_to_index
+        token_to_index = codebook._token_to_index
+        chunk_frozen = (
+            int(getattr(self.chunk_layer, 'chunking_frequency', 0) or 0) <= 0)
         for bt in word_subtokens:
             key = self._chunk_key_to_latin1(bt)
-            if key and key in codebook.pretrain.key_to_index:
-                idx = codebook._token_to_index(key)
-                vecs.append(codebook.wv._vectors[idx])
-        if not vecs:
-            return torch.zeros(self.nDim, device=TheDevice.get())
-        stacked = torch.stack(vecs, dim=0)
-        return stacked.max(dim=0).values
+            if not key:
+                continue
+            if key not in key_to_index:
+                assert not chunk_frozen, (
+                    f"_max_fuse_subtokens: key {key!r} missing from "
+                    f"frozen codebook.pretrain (chunking_frequency<=0). "
+                    f"This indicates a .kv load mismatch -- the BPE "
+                    f"section and the lexicon embeddings disagree.")
+                continue
+            indices.append(token_to_index(key))
+        if not indices:
+            return torch.zeros(self.nDim, device=codebook.wv._vectors.device)
+        vectors = codebook.wv._vectors
+        idx_tensor = torch.tensor(
+            indices, dtype=torch.long, device=vectors.device)
+        return vectors[idx_tensor].amax(dim=0)
 
     def Reset(self, batch=None, hard=True):
         """Clear caches so the next forward() does a full recompute.
@@ -5692,12 +6055,35 @@ class PerceptualSpace(Space):
         # In BPE mode, re-apply the word-boundary mask so padding slots
         # (beyond the actual word count) stay zero after the VQ codebook
         # quantizes them to the nearest prototype.
+        #
+        # Mask source-of-truth picking:
+        #   * ``_bpe_word_mask_flat`` ([B*K, N]) is the windowed-and-
+        #     flattened mask installed by InputSpace.forward when peer
+        #     is in BPE mode. Matches the [B*K, N, D] event after
+        #     FlattenKWrapper. Use it whenever it's present.
+        #   * ``_bpe_word_mask`` ([B, N]) is the unwindowed view from
+        #     ``_embed_bpe`` itself. Only correct when there's no AR
+        #     windowing (K=1, B*K==B); used as fallback.
         if self.chunking_mode == "bpe":
-            mask = getattr(self, "_bpe_word_mask", None)
+            mask = getattr(self, "_bpe_word_mask_flat", None)
+            if mask is None:
+                mask = getattr(self, "_bpe_word_mask", None)
             if mask is not None:
                 ev = vspace.event.getW()
                 if ev is not None:
-                    vspace.event.setW(ev * mask.unsqueeze(-1))
+                    # ``ev`` may be [B*K, N, D] (post-FlattenKWrapper),
+                    # [B, N, D] (cached event in non-AR), or
+                    # [B*K*N, D] / [B*N, D] (further flattened by
+                    # forwardEnd). Match shapes to broadcast on the
+                    # trailing axis.
+                    if ev.dim() == 3 and ev.shape[:2] == mask.shape:
+                        vspace.event.setW(ev * mask.unsqueeze(-1))
+                    elif ev.dim() == 2 and ev.shape[0] == mask.numel():
+                        vspace.event.setW(
+                            ev * mask.reshape(-1).unsqueeze(-1))
+                    # else: shape mismatch we don't recognise -- skip
+                    # the masking rather than crash; downstream zero-
+                    # padding tolerance will absorb the unmasked tail.
 
         # Prime the warm-path cache for subsequent serial_mode calls.
         # Must detach: clone() preserves autograd graph, which would hold
@@ -6031,9 +6417,9 @@ class ConceptualSpace(Space):
 
     Supports optional self-attention and VQ codebook quantization.
 
-    When ``invertible=True``, uses a InvertibleSigmaLayer whose inverse is
-    exact.  When ``reversible=True`` without invertibility, a separate
-    SigmaLayer is trained for the reverse direction.
+    When ``invertible=True``, uses ``SigmaLayer(invertible=True)`` whose
+    inverse is exact.  When ``reversible=True`` without invertibility, a
+    separate SigmaLayer is trained for the reverse direction.
     """
     name = "Concepts"
     config_section = "ConceptualSpace"
@@ -6046,55 +6432,6 @@ class ConceptualSpace(Space):
     # and want the Euclidean / cached-norm matmul path. See
     # doc/Spaces.md "Codebook similarity metric".
     use_dot_product = True
-
-    @staticmethod
-    def _grammar_uses(rule_name):
-        """True iff the configured grammar references ``rule_name(`` in any
-        rule body. Read directly from XMLConfig to avoid importing
-        Language (circular). See Language.grammar_uses for the Language-
-        side equivalent."""
-        needle = f"{rule_name}("
-        try:
-            cfg = TheXMLConfig.get("WordSpace.language.grammar")
-        except (KeyError, AttributeError):
-            cfg = None
-
-        def _scan(node):
-            if isinstance(node, str):
-                return needle in node
-            if isinstance(node, dict):
-                return any(_scan(v) for v in node.values())
-            if isinstance(node, (list, tuple)):
-                return any(_scan(v) for v in node)
-            return False
-
-        if cfg is not None and _scan(cfg):
-            return True
-
-        try:
-            cfg_path = TheXMLConfig.get("WordSpace.language.grammarCfg")
-        except (KeyError, AttributeError):
-            cfg_path = None
-        if cfg_path:
-            resolved = (cfg_path if os.path.isabs(cfg_path)
-                        else os.path.join(ProjectPaths.PROJECT_DIR, cfg_path))
-            try:
-                with open(resolved, "r") as fh:
-                    if needle in fh.read():
-                        return True
-            except (FileNotFoundError, OSError):
-                pass
-        return False
-
-    @classmethod
-    def _dnf_wiring_active(cls):
-        """True iff grammar references at least one of not/non/intersection/
-        union AND at least one of (negation, fold) categories — i.e. the
-        DNF wiring would actually do something. Otherwise the existing
-        bare-PiLayer path is preserved."""
-        uses_neg = cls._grammar_uses("not") or cls._grammar_uses("non")
-        uses_fold = cls._grammar_uses("intersection") or cls._grammar_uses("union")
-        return uses_neg and uses_fold
 
     def __init__(self, inputShape, spaceShape, outputShape, layer=None):
         section = self.config_section
@@ -6125,46 +6462,6 @@ class ConceptualSpace(Space):
             else:
                 self.params = list(layer.parameters())
             self.layers = nn.ModuleList([layer])
-        elif self._dnf_wiring_active():
-            # Grammar references at least one of not/non/intersection/union.
-            # Build a NegationLayer + fold-chain wrapper. Configuration:
-            #   not()         -> NegationLayer(ternary=False)
-            #   non()         -> NegationLayer(ternary=True)  (subsumes not)
-            #   intersection() -> SigmaLayer (AND-of-literals)
-            #   union()        -> PiLayer    (OR-of-AND-terms)
-            uses_non = self._grammar_uses("non")
-            uses_int = self._grammar_uses("intersection")
-            uses_uni = self._grammar_uses("union")
-            ternary  = uses_non
-            multiplier = 3 if ternary else 2
-            literal_dim = multiplier * input
-            and_fold = None
-            or_fold  = None
-            if uses_int and uses_uni:
-                and_fold = SigmaLayer(literal_dim, output,
-                                      naive=naive, invertible=True,
-                                      nonlinear=nonlinear, stable=True,
-                                      monotonic=monotonic)
-                or_fold  = PiLayer(output, output,
-                                   naive=naive, invertible=True,
-                                   nonlinear=nonlinear, stable=True,
-                                   monotonic=monotonic)
-            elif uses_int:
-                and_fold = SigmaLayer(literal_dim, output,
-                                      naive=naive, invertible=True,
-                                      nonlinear=nonlinear, stable=True,
-                                      monotonic=monotonic)
-            else:
-                or_fold  = PiLayer(literal_dim, output,
-                                   naive=naive, invertible=True,
-                                   nonlinear=nonlinear, stable=True,
-                                   monotonic=monotonic)
-            wrapper = DNFConceptLayer(input, output, ternary=ternary,
-                                      and_fold=and_fold, or_fold=or_fold)
-            self.pi = wrapper
-            self.forwardPi, self.reversePi = wrapper.forward, wrapper.reverse
-            self.params = wrapper.getParameters()
-            self.layers = nn.ModuleList([wrapper])
         elif self.reversible:
             if invertible:
                 self.pi = PiLayer(input, output, naive=naive, ergodic=ergodic,
@@ -6366,7 +6663,8 @@ class SymbolicSpace(Space):
         nSymbols = spaceShape[0]
 
         # C <-> S SigmaLayer (isomorphic to ConceptualSpace.pi's pattern).
-        # Butterfly callers pass a pre-built ButterflyStage in via ``layer=``.
+        # Butterfly callers pass a pre-built butterfly-mode SigmaLayer via
+        # ``layer=``.
         # forwardSigma / reverseSigma pointer aliases hide the one-or-two-layer
         # split when the space is reversible without invertibility.
         try:

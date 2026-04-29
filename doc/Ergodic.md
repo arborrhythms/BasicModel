@@ -307,7 +307,7 @@ Factored into three components (not separate sub-layers):
 
 Exact inverse via triangular solves: $W^{-1} = U^{-1} \cdot D^{-1} \cdot L^{-1}$. No SVD is required.
 
-When `naive=False` (default), L, D, U are applied sequentially to $x$ --- no full $W$ materialisation. When `naive=True`, $W_{\text{eff}}$ is materialised as a dense matrix and `pinv(W_eff)` is used for the reverse path.
+When `naive=False` (default), L, D, U are applied sequentially to $x$ --- no full $W$ materialisation. When `naive=True`, $W_{\text{eff}}$ is materialised as a dense matrix and the reverse path materialises the dense LDU inverse.
 
 When `ergodic=True`, noise is injected at the factor level (not the matrix level) to preserve exact invertibility at all temperatures:
 
