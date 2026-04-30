@@ -4779,24 +4779,14 @@ class InputSpace(Space):
 
         for b in range(batch):
             stream = vocab._token_stream(input[b])
-            # The caller is responsible for sizing the input so the
-            # token stream fits in ``nObj`` slots. Cursor mode sizes
-            # the slab to ``nObj``; non-cursor text inputs are capped
-            # to ``nObj`` bytes above. The §8g brick-vectorization
-            # handoff replaced the legacy silent
-            # ``min(len(stream), nObj - 1)`` truncation with this
-            # assert; tripping it is now a real upstream bug, not a
-            # hidden data drop. The legacy empty-word EOS sentinel
-            # slot was removed -- no reader consumed it as a stop
-            # signal (the codebook's null-idx already padding-marks
-            # short rows; valid_mask handles content boundaries).
-            n_tokens = len(stream)
-            assert n_tokens <= nObj, (
-                f"InputSpace._lex_batch: row {b} produced {n_tokens} tokens "
-                f"but only {nObj} slots are available. Size the input "
-                f"upstream (cursor: slab_bytes=nObj; non-cursor: ensure the "
-                f"lexer's token count is bounded)."
-            )
+            # Word-mode lexing under the post-2026-04 single-char regex
+            # produces more tokens per byte than the legacy grouped form
+            # (each digit / punct / whitespace is its own token), so a
+            # 4096-byte text slab can yield > nObj=1024 tokens. Truncate
+            # to nObj here -- losing tail content is preferable to
+            # asserting mid-epoch on long documents. Cursor mode still
+            # sizes the slab to nObj exactly, so this is a no-op there.
+            n_tokens = min(len(stream), nObj)
             row = []
             for i in range(n_tokens):
                 token_text, start = stream[i]

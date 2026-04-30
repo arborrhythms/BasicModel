@@ -68,6 +68,19 @@ def parse_args():
                    help="Pick random shard indices for variety across runs")
     p.add_argument("--force-embeddings", action="store_true",
                    help="Retrain embeddings even if they already exist")
+    p.add_argument("--latent-vector-size", type=int, default=None,
+                   help="Phase 1 SBOW training dim. Forwarded to "
+                        "embed.py train. Defaults (in embed.py) to "
+                        "max(64, PerceptualSpace.nDim) -- SBOW trains "
+                        "at the higher latent dim and PCA projects the "
+                        "codebook to nDim for the saved artifact, giving "
+                        "the codebook geometric room during training "
+                        "while keeping the model at its configured nDim.")
+    p.add_argument("--embed-lr", type=float, default=None,
+                   help="Phase 1 SBOW learning rate, forwarded to "
+                        "embed.py train. Default 0.01 (set by embed.py). "
+                        "For manual annealing across runs, decrease this "
+                        "between successive --force-embeddings invocations.")
     p.add_argument("--log", nargs="?", const="auto", default=None,
                    metavar="FILE",
                    help="Capture stdout/stderr to a .log file. "
@@ -205,6 +218,13 @@ def train_local(args):
         # 100, which silently mismatches small-D lexicon configs.
         if cfg.get("vectorSize"):
             embed_cmd += ["--vector-size", str(cfg["vectorSize"])]
+        # Forward latent-vector-size when explicitly set; otherwise
+        # embed.py applies its own default of max(64, vector_size) so
+        # small-D codebooks get the high-dim-then-PCA pipeline by default.
+        if args.latent_vector_size is not None:
+            embed_cmd += ["--latent-vector-size", str(args.latent_vector_size)]
+        if args.embed_lr is not None:
+            embed_cmd += ["--learning-rate", str(args.embed_lr)]
         TheMessage(f"\n=== Phase 1: Training embeddings -> {emb_path} ===")
         run(embed_cmd, cwd=proj, env=env)
     else:

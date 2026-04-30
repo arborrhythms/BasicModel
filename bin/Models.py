@@ -59,7 +59,7 @@ TheMessage = util.TheMessage
 from visualize import Report, TheReport
 from util import ProjectPaths, XMLConfig, compile, TheXMLConfig, init_config, init_compile_backend, amp_context, init_model_amp
 import util as _util
-from embed import WordVectors, PretrainModel
+from embed import WordVectors, PretrainModel, _random_unit_ball
 from data import Data, TheData
 
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
@@ -1071,9 +1071,23 @@ class BaseModel(nn.Module):
         self._restore_vocab(emb, list(wv.index_to_key),
                             counts=wv.counts.tolist(),
                             total_count=int(wv.total_count))
-        # Copy loaded weights into the live parameter
+        # Copy loaded weights into the live parameter. ``_restore_vocab``
+        # may have appended a trailing NULL_PERCEPT slot the saved file
+        # didn't include; copy only the leading rows that match the
+        # saved codebook and leave the appended slot at its random init.
         with torch.no_grad():
-            emb.wv._vectors.data.copy_(wv._vectors.to(emb.wv._vectors.device))
+            saved = wv._vectors.to(emb.wv._vectors.device)
+            n_saved = saved.shape[0]
+            emb.wv._vectors.data[:n_saved].copy_(saved)
+            if emb.wv._vectors.shape[0] > n_saved:
+                # Re-init the appended NULL_PERCEPT slot uniformly on
+                # the torus (matches Embedding.create() defaults).
+                emb.wv._vectors.data[n_saved:].copy_(
+                    _random_unit_ball(
+                        (emb.wv._vectors.shape[0] - n_saved,
+                         emb.wv._vectors.shape[1]),
+                        device=emb.wv._vectors.device,
+                        dtype=emb.wv._vectors.dtype))
         TheMessage(f"[{self.name}] Embeddings loaded from {path}")
 
         # Restore LTM truths if present in the embedding artifact
@@ -1179,8 +1193,24 @@ class BaseModel(nn.Module):
 
     def _restore_vocab(self, emb, saved_vocab,
                        counts=None, total_count=0, pending_counts=None):
-        """Resize Embedding to match saved vocabulary exactly."""
+        """Resize Embedding to match saved vocabulary exactly.
+
+        After resizing, refresh ``emb.null_percept_idx`` (used by IR
+        mode's mask injection) so it points to a valid row of the new
+        codebook. If the saved vocab already contains
+        ``NULL_PERCEPT_KEY`` (a kv that was saved after IR-mode setup),
+        we reuse its index. Otherwise we append a fresh NULL_PERCEPT
+        slot at the tail and grow the codebook by 1, mirroring what
+        ``Embedding.create`` does on a fresh build.
+        """
+        from Spaces import NULL_PERCEPT_KEY
         dim = emb.wv._vectors.shape[1]
+        saved_vocab = list(saved_vocab)
+        had_null = NULL_PERCEPT_KEY in saved_vocab
+        if not had_null:
+            saved_vocab.append(NULL_PERCEPT_KEY)
+            if counts is not None:
+                counts = list(counts) + [0]
         vocab_size = len(saved_vocab)
 
         # Rebuild word mappings (shared between wv and pretrain)
@@ -1195,6 +1225,11 @@ class BaseModel(nn.Module):
         emb.wv.total_count = np.int64(total_count)
         emb._pending_counts = dict(pending_counts) if pending_counts else {}
         emb.wv._normed = None
+
+        # Re-anchor null_percept_idx to the canonical slot in the
+        # restored codebook. The slot was either present in the saved
+        # vocab (reuse its index) or just appended above (last row).
+        emb.null_percept_idx = emb.pretrain.key_to_index[NULL_PERCEPT_KEY]
 
     def _get_sentences(self, split):
         """Return raw sentence strings for a data split.

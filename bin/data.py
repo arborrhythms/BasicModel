@@ -774,15 +774,32 @@ class Data():
         if not docs:
             raise RuntimeError("No documents found in shards.")
 
-        # Split 80/10/10 into train/validation/test
-        n = len(docs)
+        # Split each doc into sentences before assembling training rows.
+        # Each item in the resulting list is one sentence -- the unit the
+        # SentenceStreamDataset feeds per row in trial-cursor mode, and
+        # the unit the word-lexer tokenizes downstream. Sentence-sized
+        # rows fit comfortably in the InputSpace slab (typically 5-30
+        # word tokens vs. ~3000 for a full document under the per-char
+        # whitespace/punct lexer).
+        from util import parse
+        sentences = []
+        for doc in docs:
+            for sent_text, _ in parse(doc, lex='sentences'):
+                if sent_text.strip():
+                    sentences.append(sent_text)
+
+        if not sentences:
+            raise RuntimeError("No sentences found after splitting documents.")
+
+        # Split 80/10/10 into train/validation/test at the sentence level.
+        n = len(sentences)
         n_val = max(1, n // 10)
         n_test = max(1, n // 10)
         n_train = n - n_val - n_test
 
-        train_texts = docs[:n_train]
-        val_texts = docs[n_train:n_train + n_val]
-        test_texts = docs[n_train + n_val:]
+        train_texts = sentences[:n_train]
+        val_texts = sentences[n_train:n_train + n_val]
+        test_texts = sentences[n_train + n_val:]
 
         data = {
             "train":      {"text": train_texts, "label": []},
@@ -790,7 +807,8 @@ class Data():
             "test":       {"text": test_texts,  "label": []},
         }
 
-        print(f"Loaded {n_train} train, {n_val} val, {n_test} test documents")
+        print(f"Loaded {len(docs)} docs -> {n} sentences "
+              f"({n_train} train, {n_val} val, {n_test} test)")
         self.processLM(data)
     def processLM(self, data):
         train_tokens      = data["train"]["text"]

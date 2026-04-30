@@ -39,6 +39,7 @@ from typing import Any, Dict, Iterable, List, Tuple, Optional
 
 from util import atomic_torch_save, parse
 import util
+from Layers import Lexicon
 
 
 # ---------------------------------------------------------------------------
@@ -84,7 +85,14 @@ def _wrap_unit_ball(x: torch.Tensor) -> torch.Tensor:
 
 
 def _wrapped_mse_score(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-    """Torus similarity: ``-mean(wrapped_delta^2)``. Larger is closer."""
+    """Torus similarity: ``-mean(wrapped_delta^2)``. Larger is closer.
+
+    Thin wrapper around :py:meth:`Layers.Lexicon.similarity` for paths
+    that compare differently-sized tensors (the ``min(...)`` width
+    truncation isn't on Lexicon's static API). New call sites should
+    use ``Lexicon.similarity`` directly when ``a`` and ``b`` have
+    matching last-dim widths.
+    """
     d = min(a.shape[-1], b.shape[-1])
     delta = _wrap_unit_ball(a[..., :d] - b[..., :d])
     return -delta.square().mean(dim=-1)
@@ -467,6 +475,10 @@ class WordVectors(nn.Module):
         wv = cls(vectors, section["index_to_key"],
                  counts=counts, total_count=total_count)
         wv.truth_data = payload.get("truth_data", None)
+        # Preserve the artifact's metadata dict so callers can recover
+        # training-time settings (e.g. learning_rate, sigma) and use
+        # them as defaults on resume.
+        wv.metadata = dict(payload.get("metadata") or {})
         return wv
 
     # -- Vector access --
@@ -772,17 +784,17 @@ class _CBOWModule(nn.Module):
 
 
 class _SBOWEmbedding(nn.Module):
-    """SBOW embedding: just an embedding table, no linear head."""
+    """SBOW embedding: just an embedding table, no linear head.
+
+    Uses ``Lexicon`` so weights live on the flat n-torus ``[-1, 1)^D``;
+    init is uniform on the torus and post-step re-projection is
+    available via ``embeddings.normalize()``.
+    """
 
     def __init__(self, vocab_size, vector_size):
         super().__init__()
-        self.embeddings = nn.Embedding(vocab_size, vector_size)
-        with torch.no_grad():
-            self.embeddings.weight.copy_(
-                _random_unit_ball(self.embeddings.weight.shape,
-                                  device=self.embeddings.weight.device,
-                                  dtype=self.embeddings.weight.dtype)
-            )
+        from Layers import Lexicon
+        self.embeddings = Lexicon(vocab_size, vector_size, torus=True)
 
 
 class StreamingSBOWTrainer:
@@ -800,15 +812,12 @@ class StreamingSBOWTrainer:
         self.vector_size = vector_size
         self.min_count = min_count
         self.learning_rate = learning_rate
-        # Inner/outer position-Gaussian SBOW knobs.
+        # Inner Gaussian / random-out-group SBOW knobs.
         # ``sigma`` is the position-distance scale of the inner kernel
-        # (Mikolov-style local window). The outer kernel is its
-        # complement (``1 - exp(-d^2 / 2σ^2)``), peaking at far
-        # positions. Sentences shorter than ``2σ`` produce a near-flat
-        # contrast and are skipped.
+        # (Mikolov-style local window). Sentences shorter than ``2σ``
+        # produce a near-flat inner kernel and are skipped.
         # ``normalize=True`` re-wraps weights into the periodic unit
-        # cell after every optimizer step, the canonical contract for
-        # the flat n-torus codebook (see embed.py:_wrap_unit_ball).
+        # cell after every optimizer step (Lexicon.normalize()).
         self.sigma = float(sigma)
         self.normalize = bool(normalize)
 
@@ -850,18 +859,43 @@ class StreamingSBOWTrainer:
         self.word_counts.update(words)
 
     def build_vocab(self):
-        """Promote words that meet min_count and allocate the model."""
+        """Promote words that meet min_count and allocate the model.
+
+        Reserved slots are always populated first, before any corpus
+        words, regardless of corpus frequency:
+          - index 0: NULL_PERCEPT (IR-mode mask sentinel; consumed by
+            ``BasicModel.create_ir_mask`` to mark predict-here positions)
+          - indices 1..256: single-byte characters ``chr(0)..chr(255)``
+            (byte-level fallback / OOV decomposition)
+
+        These guarantee that IR mode and byte-level fallback always have
+        known-good slots even on tiny corpora. Corpus words (those with
+        count >= ``min_count``) take indices 257+. Words that happen to
+        coincide with reserved entries (e.g., a literal space token in
+        the corpus) reuse the reserved slot rather than getting a
+        duplicate.
+        """
+        from Spaces import NULL_PERCEPT_KEY
+
+        reserved = [NULL_PERCEPT_KEY] + [chr(b) for b in range(256)]
+        for word in reserved:
+            self.word_to_idx[word] = len(self.idx_to_word)
+            self.idx_to_word.append(word)
+
         for word, count in self.word_counts.items():
-            if count >= self.min_count:
+            if count >= self.min_count and word not in self.word_to_idx:
                 self.word_to_idx[word] = len(self.idx_to_word)
                 self.idx_to_word.append(word)
+
         self.model = _SBOWEmbedding(
             self.vocab_size, self.vector_size).to(self.device)
         self.model = util.compile(self.model)
         self.optimizer = optim.SGD(self.model.parameters(), lr=self.learning_rate)
         self.neg_samples = 64
-        print(f"  Vocab: {len(self.word_counts)} unique words -> "
-              f"{self.vocab_size} after min_count={self.min_count}")
+        n_corpus = self.vocab_size - len(reserved)
+        print(f"  Vocab: {len(reserved)} reserved (NULL + 256 bytes) + "
+              f"{n_corpus} corpus = {self.vocab_size} entries "
+              f"(min_count={self.min_count})")
 
     def load_existing(self, wv):
         """Restore vocab + weights from a previously-saved WordVectors.
@@ -870,7 +904,14 @@ class StreamingSBOWTrainer:
         up the same word indices, frequency counts, and vector values
         from where the prior run stopped. Caller has already verified
         ``wv.vector_size == self.vector_size``.
+
+        If the loaded artifact is missing reserved entries (NULL_PERCEPT
+        and the 256 single-byte characters -- old kv files saved before
+        these were guaranteed), they're appended at the tail so existing
+        corpus-word indices remain valid. New kvs always have them at
+        indices 0..256 by ``build_vocab``'s contract.
         """
+        from Spaces import NULL_PERCEPT_KEY
         self.idx_to_word = list(wv.index_to_key)
         self.word_to_idx = {w: i for i, w in enumerate(self.idx_to_word)}
         # Restore frequency counts so any future build_vocab() call (e.g.,
@@ -879,19 +920,41 @@ class StreamingSBOWTrainer:
         if wv.counts is not None:
             for word, ct in zip(self.idx_to_word, wv.counts.tolist()):
                 self.word_counts[word] = int(ct)
+
+        # Backfill any missing reserved entries at the tail. New kvs
+        # have these at the head (build_vocab); legacy kvs may not.
+        reserved = [NULL_PERCEPT_KEY] + [chr(b) for b in range(256)]
+        appended = []
+        for word in reserved:
+            if word not in self.word_to_idx:
+                self.word_to_idx[word] = len(self.idx_to_word)
+                self.idx_to_word.append(word)
+                appended.append(word)
+
         self.model = _SBOWEmbedding(
             self.vocab_size, self.vector_size).to(self.device)
         with torch.no_grad():
             saved = wv._vectors.to(self.device)
-            if saved.shape == self.model.embeddings.weight.shape:
-                self.model.embeddings.weight.copy_(saved)
+            n_saved = saved.shape[0]
+            target = self.model.embeddings.weight
+            if saved.shape == target.shape:
+                target.copy_(saved)
+            elif n_saved < target.shape[0] and saved.shape[1] == target.shape[1]:
+                # Saved file is shorter (didn't include reserved tail).
+                # Copy what's there; leave the appended reserved rows at
+                # their fresh Lexicon torus-uniform init.
+                target[:n_saved].copy_(saved)
             else:
                 raise ValueError(
                     f"Loaded vectors {tuple(saved.shape)} do not match "
-                    f"model {tuple(self.model.embeddings.weight.shape)}")
+                    f"model {tuple(target.shape)}")
         self.model = util.compile(self.model)
         self.optimizer = optim.SGD(self.model.parameters(), lr=self.learning_rate)
         self.neg_samples = 64
+        if appended:
+            print(f"  load_existing: appended {len(appended)} missing "
+                  f"reserved entries at indices "
+                  f"{self.vocab_size - len(appended)}..{self.vocab_size - 1}")
 
     # -- Pass 2: streaming SBOW training --------------------------------------
 
@@ -903,22 +966,31 @@ class StreamingSBOWTrainer:
             self._train_sentence(words)
 
     def _train_sentence(self, words):
-        """Inner/outer Gaussian SBOW.
+        """Pode/antipode SBOW with Gaussian in-group and random out-group.
 
-        For each target position i in the sentence, the pode is a
-        Gaussian-weighted mean of NEAR positions (``w_inner``) and the
-        antipode is a complement-weighted mean of FAR positions
-        (``w_outer = 1 - w_inner``). Both draw from the same sentence
-        so topic content cancels in the pos/neg contrast, leaving the
-        position-conditioned (POS-determined) signal. Within each POS
-        region, distributional semantic similarity is preserved by
-        the pode pull (cf. word2vec). The flat-kernel limit
-        (``sigma → ∞``) collapses pode and antipode equally and
-        produces a zero gradient -- this is by design; pick a finite
-        ``sigma`` (default 5, matching Mikolov's skip-gram window).
+        For each in-sentence position:
+        - **Pode** = inner-Gaussian-weighted mean of nearby in-sentence
+          words (excluding self). Concentrates on local context.
+        - **Antipode** = unique geometric antipode of pode on the torus
+          (``Lexicon.antipode``: per-axis +1 mod 2). The maximum-distance
+          point from pode in any dimension.
+        - **In-group attraction**: every in-sentence word is pulled
+          toward its pode -- distributional collapse driven by corpus
+          co-occurrence.
+        - **Out-group attraction**: K random codebook samples are pulled
+          toward the antipode -- isotropic counter-pressure that
+          prevents codebook collapse without imposing directional bias
+          (random podes across sentences imply uniform random antipodes).
+
+        Both forces are pure attractions, equal power per term.
+        Structured in-group pull collapses meaningfully; random out-group
+        averages to no preferred direction over many sentences. K is
+        spectrally matched to the inner kernel's effective N so the
+        random sample's mean has comparable variance to the in-group
+        sample's mean.
 
         Sentences shorter than ``ceil(2*sigma)`` words yield a
-        degenerate near-flat contrast (pode ≈ antipode); skip them.
+        degenerate near-flat inner kernel; skip them.
         """
         word_indices = [self.word_to_idx[w] for w in words
                         if w in self.word_to_idx]
@@ -929,37 +1001,48 @@ class StreamingSBOWTrainer:
 
         idx = torch.tensor(word_indices, dtype=torch.long, device=self.device)
         vecs = self.model.embeddings(idx)                              # [N, D]
-        D = vecs.shape[-1]
         dev = vecs.device
         dtype = vecs.dtype
 
-        # Position-distance kernels. Both row-normalized; ``inner``
-        # peaks at d=0 (so its diagonal is 1.0 and we zero it
-        # in-place); ``outer = 1 - inner`` already has a zero diagonal
-        # by construction.
+        # Inner Gaussian kernel: peaks at d=0, leave-one-out diagonal,
+        # row-normalized. Outer kernel is not needed -- the antipode
+        # comes from the unique torus per-axis flip of pode.
         pos = torch.arange(N, device=dev, dtype=dtype)
         dist = (pos.unsqueeze(0) - pos.unsqueeze(1)).abs()             # [N, N]
         inner = torch.exp(-(dist ** 2) / (2.0 * sigma * sigma))
-        outer = 1.0 - inner
         inner.fill_diagonal_(0.0)
         inner = inner / inner.sum(dim=1, keepdim=True).clamp(min=1e-8)
-        outer = outer / outer.sum(dim=1, keepdim=True).clamp(min=1e-8)
 
         pode     = inner @ vecs                                        # [N, D]
-        antipode = outer @ vecs                                        # [N, D]
+        antipode = Lexicon.antipode(pode)                              # [N, D]
 
-        pos_scores = _wrapped_mse_score(pode,     vecs)                # [N]
-        neg_scores = _wrapped_mse_score(antipode, vecs)                # [N]
+        # K spectrally matched to inner kernel's effective N so the
+        # random out-group's mean has comparable variance to the
+        # in-group's mean. Single .item() per sentence -- one CPU sync.
+        n_eff_inner = (1.0 / (inner ** 2).sum(dim=1).clamp(min=1e-8)).mean()
+        K = max(1, int(n_eff_inner.round().item()))
 
-        loss = -F.logsigmoid(pos_scores).mean() - F.logsigmoid(-neg_scores).mean()
+        V = self.vocab_size
+        out_idx  = torch.randint(0, V, (N, K), device=dev)             # [N, K]
+        out_vecs = self.model.embeddings(out_idx)                       # [N, K, D]
+
+        # In-group attraction: each in-sentence word pulled toward its pode.
+        in_scores = self.model.embeddings.similarity(pode, vecs)       # [N]
+        # Out-group attraction: each random sample pulled toward antipode.
+        out_scores = self.model.embeddings.similarity(
+            antipode.unsqueeze(1), out_vecs)                            # [N, K]
+
+        # Equal-power pure-attraction: both terms are -logsigmoid(score),
+        # minimized when their similarity is high (target close to anchor).
+        # No push terms.
+        loss = (-F.logsigmoid(in_scores).mean()
+                - F.logsigmoid(out_scores).mean())
 
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
         if self.normalize:
-            with torch.no_grad():
-                self.model.embeddings.weight.copy_(
-                    _wrap_unit_ball(self.model.embeddings.weight))
+            self.model.embeddings.normalize()
 
         self.n_examples += N
         self._total_loss += loss.item() * N
@@ -980,41 +1063,150 @@ class StreamingSBOWTrainer:
 # End-to-end pipeline
 # ---------------------------------------------------------------------------
 
+def project_codebook(wv: "WordVectors", target_dim: int) -> "WordVectors":
+    """PCA-project a codebook from its native dim down to ``target_dim``.
+
+    Used by the latent-training pipeline: SBOW trains at a higher
+    ``latent_vector_size`` for cleaner dynamics (more room on the torus
+    for distinct clusters), then PCA extracts the top ``target_dim``
+    principal components so the saved artifact fits the model's
+    expected ``<nDim>``.
+
+    PCA operates on chart coordinates. This is fine when the codebook
+    is locally clustered -- the regime SBOW reaches with sufficient
+    capacity. If clusters span the wrap boundary on some axis, the
+    naive PCA on that axis will misread a few-percent of the variance,
+    but the principal directions are dominated by content variance, not
+    boundary effects.
+
+    Output is rescaled per-axis to ``[-1, 1)`` and re-wrapped via
+    ``Lexicon.wrap`` so the saved artifact is in canonical torus form.
+    Returns a new :class:`WordVectors` at ``target_dim``; the source is
+    unchanged.
+    """
+    src = wv._vectors.detach().cpu().numpy()
+    src_dim = src.shape[1]
+    if src_dim == target_dim:
+        return wv
+    if src_dim < target_dim:
+        raise ValueError(
+            f"project_codebook: source dim {src_dim} < target {target_dim}; "
+            f"cannot project up.")
+
+    from sklearn.decomposition import PCA
+    print(f"Phase 1.5: PCA-projecting codebook from D={src_dim} to "
+          f"D={target_dim}...", flush=True)
+    pca = PCA(n_components=target_dim, whiten=False)
+    projected = pca.fit_transform(src)
+    var_kept = float(pca.explained_variance_ratio_.sum())
+    print(f"  Variance retained: {var_kept:.3f} "
+          f"({var_kept * 100:.1f}% of D={src_dim} signal)")
+
+    # Rescale per-axis into [-1, 1), then wrap to canonicalize.
+    projected_t = torch.from_numpy(projected).float()
+    mn = projected_t.min(dim=0).values
+    mx = projected_t.max(dim=0).values
+    scale = (mx - mn).clamp(min=1e-8)
+    scaled = 2.0 * (projected_t - mn) / scale - 1.0
+    scaled = Lexicon.wrap(scaled)
+
+    return WordVectors(scaled.numpy(), list(wv.index_to_key))
+
+
+DEFAULT_LEARNING_RATE = 0.01
+
+
 def build_embeddings(shard_paths, output_path, max_docs=10000,
                      vector_size=100, epochs=10, min_count=5,
-                     batch_size=256, sigma=5.0, normalize=True):
+                     batch_size=256, sigma=5.0, normalize=True,
+                     latent_vector_size=None, learning_rate=None):
+    """Train SBOW embeddings, optionally at a higher latent dim with PCA.
+
+    When ``latent_vector_size > vector_size``, SBOW trains in the higher
+    latent dim where the codebook has more geometric room (1M codes on
+    a flat n-torus: density at D=64 is ~1M / 2^64 codes per cell, which
+    is essentially unconstrained, vs ~15.6K codes per cell at D=6).
+    After training, PCA projects to ``vector_size`` for the final
+    artifact. The latent codebook is also saved alongside the projected
+    output (sibling path with ``.latent_d{N}.kv``) so subsequent runs
+    can resume training in latent space.
+
+    Args:
+        latent_vector_size: SBOW training dim. ``None`` means
+            ``max(64, vector_size)`` -- training defaults to D=64 for
+            small target dims and exactly ``vector_size`` for larger
+            ones. Set explicitly to ``vector_size`` to disable
+            latent-then-project.
+    """
+    if latent_vector_size is None:
+        latent_vector_size = max(64, vector_size)
+    if latent_vector_size < vector_size:
+        raise ValueError(
+            f"latent_vector_size ({latent_vector_size}) must be >= "
+            f"vector_size ({vector_size})")
+    use_pca = latent_vector_size != vector_size
+
+    # When projecting, the SBOW trainer's intermediate codebook is saved
+    # to a sibling path so resume picks up the unprojected weights. The
+    # user-facing output_path always carries the final projected artifact.
+    if use_pca:
+        if output_path.endswith(".kv"):
+            latent_path = output_path[:-3] + f".latent_d{latent_vector_size}.kv"
+        else:
+            latent_path = output_path + f".latent_d{latent_vector_size}"
+    else:
+        latent_path = output_path
+
+    # Peek at the existing latent artifact (if any) so we can recover the
+    # learning_rate stamped at the previous run's save. This lets the
+    # user anneal across runs without restating the rate every invocation:
+    # explicit ``--learning-rate`` overrides; otherwise the saved value
+    # carries forward; otherwise the package default takes over.
+    pre_load_wv = None
+    if os.path.exists(latent_path):
+        try:
+            pre_load_wv = WordVectors.load(latent_path)
+        except Exception as exc:
+            print(f"Could not load existing embeddings at {latent_path} "
+                  f"({type(exc).__name__}: {exc}); starting from scratch.")
+
+    if learning_rate is None:
+        if pre_load_wv is not None:
+            saved_lr = (getattr(pre_load_wv, "metadata", {}) or {}).get(
+                "learning_rate")
+            if saved_lr is not None:
+                learning_rate = float(saved_lr)
+                print(f"Using saved learning_rate={learning_rate} "
+                      f"from {latent_path} metadata")
+        if learning_rate is None:
+            learning_rate = DEFAULT_LEARNING_RATE
+
     trainer = StreamingSBOWTrainer(
-        vector_size=vector_size,
+        vector_size=latent_vector_size,
         min_count=min_count,
-        learning_rate=0.001,
+        learning_rate=learning_rate,
         sigma=sigma,
         normalize=normalize,
     )
 
-    # Resume path: if a saved artifact already lives at output_path,
-    # load its vocab + vectors and skip Pass 1. The training run will
-    # continue from those weights instead of starting from random init,
-    # so successive ``embed.py train`` invocations make cumulative
-    # progress on the same .kv file.
+    # Resume path: if the latent artifact loaded successfully and matches
+    # the configured latent_vector_size, replay its weights into the
+    # trainer. Otherwise (dim mismatch or load failure), start fresh.
     resumed = False
-    if os.path.exists(output_path):
-        try:
-            wv = WordVectors.load(output_path)
-        except Exception as exc:
-            print(f"Could not load existing embeddings at {output_path} "
-                  f"({type(exc).__name__}: {exc}); starting from scratch.")
+    if pre_load_wv is not None:
+        if pre_load_wv.vector_size != latent_vector_size:
+            print(f"Existing embeddings at {latent_path} have "
+                  f"vector_size={pre_load_wv.vector_size} but trainer is at "
+                  f"latent_vector_size={latent_vector_size}; "
+                  f"starting from scratch.")
         else:
-            if wv.vector_size != vector_size:
-                print(f"Existing embeddings at {output_path} have "
-                      f"vector_size={wv.vector_size} but --vector-size="
-                      f"{vector_size}; starting from scratch.")
-            else:
-                trainer.load_existing(wv)
-                resumed = True
-                print(f"Resuming from {output_path}: "
-                      f"{trainer.vocab_size} words, "
-                      f"{vector_size}-dim vectors. "
-                      f"Skipping Pass 1 (vocab already built).")
+            trainer.load_existing(pre_load_wv)
+            resumed = True
+            print(f"Resuming from {latent_path}: "
+                  f"{trainer.vocab_size} words, "
+                  f"{latent_vector_size}-dim vectors, "
+                  f"learning_rate={learning_rate}. "
+                  f"Skipping Pass 1 (vocab already built).")
 
     if not resumed:
         # Pass 1: build vocabulary
@@ -1029,8 +1221,9 @@ def build_embeddings(shard_paths, output_path, max_docs=10000,
                       f"unique words={len(trainer.word_counts)}", flush=True)
         trainer.build_vocab()
 
-    # Pass 2: stream-train SBOW (full softmax, per-sentence)
-    print(f"Pass 2: training {vector_size}-dim SBOW, epochs={epochs}...")
+    # Pass 2: stream-train SBOW at the latent dim.
+    print(f"Pass 2: training {latent_vector_size}-dim SBOW, "
+          f"epochs={epochs}{' (will project to D=' + str(vector_size) + ' after)' if use_pca else ''}...")
     for epoch in range(epochs):
         count = 0
         trainer._total_loss = 0.0
@@ -1050,8 +1243,30 @@ def build_embeddings(shard_paths, output_path, max_docs=10000,
     dirname = os.path.dirname(output_path)
     if dirname:
         os.makedirs(dirname, exist_ok=True)
-    wv.save(output_path)
-    print(f"Saved embeddings to {output_path} ({len(wv)} words, {vector_size} dims)")
+
+    # Stamp training-time metadata so subsequent resumes pick up the
+    # same learning_rate / sigma without restating them on the CLI.
+    save_metadata = {
+        "learning_rate": float(learning_rate),
+        "sigma": float(sigma),
+        "latent_vector_size": int(latent_vector_size),
+        "vector_size": int(vector_size),
+        "epochs_run": int(epochs),
+        "n_examples": int(trainer.n_examples),
+    }
+
+    if use_pca:
+        # Save the latent codebook for future resume / analysis.
+        wv.save(latent_path, metadata=dict(save_metadata))
+        print(f"Saved latent codebook to {latent_path} "
+              f"({len(wv)} words, D={latent_vector_size}, "
+              f"learning_rate={learning_rate})")
+        # Project to the user-facing target dim.
+        wv = project_codebook(wv, vector_size)
+
+    wv.save(output_path, metadata=dict(save_metadata))
+    print(f"Saved embeddings to {output_path} ({len(wv)} words, "
+          f"D={vector_size})")
     return wv
 
 
@@ -1255,12 +1470,12 @@ class StreamingChunkSBOWTrainer:
 
         K = min(self.neg_samples, self.vocab_size - 1)
         pos_vecs = self.model.embeddings(idx)                   # [N, dim]
-        pos_scores = _wrapped_mse_score(centroids, pos_vecs)    # [N]
+        pos_scores = self.model.embeddings.similarity(centroids, pos_vecs)    # [N]
 
         neg_idx = torch.randint(0, self.vocab_size, (N, K),
                                 device=self.device)             # [N, K]
         neg_vecs = self.model.embeddings(neg_idx)               # [N, K, dim]
-        neg_scores = _wrapped_mse_score(
+        neg_scores = self.model.embeddings.similarity(
             centroids.unsqueeze(1), neg_vecs)                   # [N, K]
 
         loss = (-F.logsigmoid(pos_scores).mean()
@@ -1269,9 +1484,7 @@ class StreamingChunkSBOWTrainer:
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        with torch.no_grad():
-            self.model.embeddings.weight.copy_(
-                _wrap_unit_ball(self.model.embeddings.weight))
+        self.model.embeddings.normalize()
 
         self.n_examples += int(N)
         self._total_loss += float(loss.item()) * int(N)
@@ -1466,6 +1679,25 @@ if __name__ == '__main__':
     train_p.add_argument('--num-shards', type=int, default=1)
     train_p.add_argument('--max-docs', type=int, default=10000)
     train_p.add_argument('--vector-size', type=int, default=100)
+    train_p.add_argument('--latent-vector-size', type=int, default=None,
+                         help='SBOW training dim. Defaults to '
+                              'max(64, vector-size). When greater than '
+                              'vector-size, SBOW trains at this higher dim '
+                              'for cleaner cluster dynamics on the flat '
+                              'n-torus, then PCA projects the codebook '
+                              'down to vector-size for the saved artifact. '
+                              'Set explicitly to vector-size to disable '
+                              'latent-then-project.')
+    train_p.add_argument('--learning-rate', '--lr', type=float, default=None,
+                         dest='learning_rate',
+                         help='SGD learning rate for SBOW training. '
+                              'When omitted, falls back to the value '
+                              'stamped in the existing .kv metadata '
+                              '(if resuming) or 0.01 (fresh run). For '
+                              'manual annealing, pass a smaller rate on '
+                              'each successive resume; it overrides the '
+                              'saved value and gets persisted for the '
+                              'next run.')
     train_p.add_argument('--epochs', type=int, default=10)
     train_p.add_argument('--min-count', type=int, default=5)
     train_p.add_argument('--batch-size', type=int, default=256)
@@ -1593,6 +1825,8 @@ if __name__ == '__main__':
             batch_size=args.batch_size,
             sigma=args.sigma,
             normalize=args.normalize,
+            latent_vector_size=args.latent_vector_size,
+            learning_rate=args.learning_rate,
         )
 
     elif args.command in ("bpe-discover", "bpe-embed", "bpe-train"):

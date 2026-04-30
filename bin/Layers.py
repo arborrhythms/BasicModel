@@ -27,6 +27,141 @@ epsilon = 1e-7  # to avoid log(0)
 from util import TheXMLConfig, TheDevice
 from util import TheMessage
 
+
+class Lexicon(nn.Embedding):
+    """nn.Embedding with optional flat-n-torus geometry.
+
+    When ``torus=True`` (default), the embedding's weights are constrained
+    to live on the flat n-torus ``T^D = [-1, 1)^D`` -- a homogeneous,
+    edgeless, zero-curvature manifold. Initialization draws uniformly
+    from the canonical cell; the trainer calls ``normalize()`` after
+    each optimizer step to re-project any wrap-boundary drift.
+
+    When ``torus=False`` the class is a thin pass-through over
+    ``nn.Embedding`` -- standard Euclidean weights, no normalization.
+
+    The class also carries the torus geometry primitives as static
+    methods (``wrap``, ``delta``, ``distance_sq``, ``similarity``,
+    ``inner_distance``, ``outer_distance``, ``antipode``, ``random``)
+    so callers can reach for them directly without separate helper
+    functions:
+
+        emb = Lexicon(V, D)
+        with torch.no_grad():
+            emb.normalize()                    # re-wrap after a step
+        score = Lexicon.similarity(a, b)       # SBOW score
+        a_anti = Lexicon.antipode(a)           # per-axis flip
+
+    Geometric facts the methods enforce:
+      - **Translation-invariant**: no preferred point on the torus.
+      - **Metric, not normed**: distance is between pairs; ``|v|`` is
+        not meaningful.
+      - **Per-axis duality**: ``inner_distance + outer_distance == 2``
+        per axis; the inner is the canonical short-way metric.
+      - **Unique antipode**: per-axis +1 (mod 2) shift, well-defined
+        in any dimension.
+
+    Forward is unchanged from ``nn.Embedding`` (index lookup); the
+    wrap is *not* applied inside the forward path because ``normalize``
+    is cheap to call after each optimizer step and avoids a per-read
+    autograd cost.
+    """
+
+    def __init__(self, num_embeddings: int, embedding_dim: int,
+                 *, torus: bool = True, padding_idx=None, **kwargs):
+        super().__init__(num_embeddings, embedding_dim,
+                         padding_idx=padding_idx, **kwargs)
+        self.torus = bool(torus)
+        if self.torus:
+            with torch.no_grad():
+                self.weight.copy_(
+                    Lexicon.random(self.weight.shape,
+                                   device=self.weight.device,
+                                   dtype=self.weight.dtype))
+
+    @torch.no_grad()
+    def normalize(self) -> None:
+        """Re-project weights into the canonical cell ``[-1, 1)^D``.
+
+        No-op when ``torus=False``. Idempotent; calling repeatedly
+        without a parameter update returns the same weights.
+        """
+        if self.torus:
+            self.weight.copy_(Lexicon.wrap(self.weight))
+
+    # -- Torus geometry primitives -------------------------------------------
+    # Static methods so callers can use them without an instance:
+    #     Lexicon.similarity(a, b)
+    # On a non-torus Lexicon these are still callable but only meaningful
+    # if the input tensors are themselves wrap-canonical.
+
+    @staticmethod
+    def wrap(x: torch.Tensor) -> torch.Tensor:
+        """Bring x into the canonical cell ``[-1, 1)^D``. Idempotent.
+
+        Differentiable almost everywhere; gradients flow as if wrap
+        were the identity. Apply after optimizer steps to keep chart
+        coordinates canonical even when a short-path gradient pushed
+        a coordinate over the wrap boundary.
+        """
+        return torch.remainder(x + 1.0, 2.0) - 1.0
+
+    @staticmethod
+    def delta(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """Signed shortest-path displacement from a to b, per axis.
+        Result is in ``[-1, 1)`` per axis. Same shape as broadcast(a, b).
+        Used as the gradient direction for short-path attractors:
+        pulling a toward b moves a in direction ``+delta(a, b)``.
+        """
+        return Lexicon.wrap(b - a)
+
+    @staticmethod
+    def distance_sq(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """Mean squared per-axis wrap distance. Reduces last dim.
+        Range ``[0, 1]``.
+        """
+        return Lexicon.delta(a, b).square().mean(dim=-1)
+
+    @staticmethod
+    def similarity(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """SBOW score: ``-distance_sq``. Larger is closer. Range ``[-1, 0]``.
+        Bounded above by 0 (when a == b) and below by -1 (max wrap
+        distance per axis = 1, mean = 1, negated).
+        """
+        return -Lexicon.distance_sq(a, b)
+
+    @staticmethod
+    def inner_distance(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """Per-axis short-way distance. Range ``[0, 1]`` per axis."""
+        return Lexicon.delta(a, b).abs()
+
+    @staticmethod
+    def outer_distance(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """Per-axis long-way distance. ``inner + outer == 2`` per axis.
+        Range ``[1, 2]`` per axis.
+        """
+        return 2.0 - Lexicon.inner_distance(a, b)
+
+    @staticmethod
+    def antipode(p: torch.Tensor) -> torch.Tensor:
+        """Unique antipodal point on the torus: per-axis ``+1 (mod 2)``.
+
+        Returns the unique point at maximum distance from p
+        (``distance_sq == 1.0``). Well-defined in any dimension.
+        """
+        return Lexicon.wrap(p + 1.0)
+
+    @staticmethod
+    def random(shape, *, device=None, dtype=torch.float32) -> torch.Tensor:
+        """Uniform sample on ``T^D = [-1, 1)^D``.
+
+        The translation-invariant equilibrium of a symmetric random
+        walk on the torus, and the canonical max-entropy initialization
+        for a ``torus=True`` Lexicon.
+        """
+        return torch.empty(shape, device=device, dtype=dtype).uniform_(-1.0, 1.0)
+
+
 #region Layers
 
 

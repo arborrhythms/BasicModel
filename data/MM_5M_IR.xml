@@ -60,10 +60,10 @@
   </architecture>
 
   <InputSpace>
-    <nInput>1024</nInput>
+    <nInput>4096</nInput>
     <nDim>6</nDim>
-    <nVectors>1024</nVectors>
-    <nOutput>1024</nOutput>
+    <nVectors>4096</nVectors>
+    <nOutput>4096</nOutput>
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
     <lexer>word</lexer>
