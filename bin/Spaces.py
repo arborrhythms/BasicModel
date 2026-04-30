@@ -35,7 +35,8 @@ from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
 from embed import (
     WordVectors, PretrainModel,
-    _wrap_unit_ball, _wrapped_mse_score, _random_unit_ball,
+    _wrap_unit_ball, _wrapped_mse_score, _pole_aligned_score,
+    _random_unit_ball,
 )
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer, NegationLayer  # Import custom layers from Model.py

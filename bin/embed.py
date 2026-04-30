@@ -98,6 +98,49 @@ def _wrapped_mse_score(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     return -delta.square().mean(dim=-1)
 
 
+def _pole_aligned_score(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    """Antipode-aware matmul similarity for **bivector-encoded**
+    lookup (NEG ⇔ antipode).
+
+    In the project's bivector / NegationLayer convention, ``-x`` is
+    the antipode of ``x`` (``NotLayer`` swaps the ``[pos, neg]``
+    poles). The closest codebook entry under that convention is the
+    one whose inner product with ``a`` has the largest absolute
+    value -- ``a`` aligns with either the entry's pole or its
+    antipode. The matmul shortcut
+
+        score = (a @ b.T).abs()
+
+    is one matmul + elementwise abs, with no ``[..., V, D]``
+    outer-product intermediate. For unit-norm codebooks it is
+    monotone-equivalent to ``-min(d, d_antipode)`` -- argmax over V
+    picks the same entry as a torus-distance argmin under antipode
+    equivalence.
+
+    **Use only at bivector / symbol-tier lookup sites.** PerceptualSpace
+    and SymbolicSpace token codebooks treat each entry as an
+    independent vector -- ``word`` and ``-word`` are *different*
+    entries, not synonyms. Replacing ``_wrapped_mse_score`` with this
+    helper at those sites collapses distinct words and breaks
+    reconstruction. For lexicon / token lookup keep the broadcast or
+    chunked-broadcast form of ``_wrapped_mse_score``.
+
+    Args:
+        a: shape ``[..., D]`` in [-1, 1), bivector-encoded.
+        b: shape ``[V, D]`` (or any tensor whose last two dims are
+           ``[V, D]``) in [-1, 1). Should be approximately unit-norm
+           for the score magnitude to be meaningful; otherwise the
+           score is biased toward larger-norm entries.
+
+    Returns:
+        ``[..., V]`` similarity scores; larger is closer.
+    """
+    d = min(a.shape[-1], b.shape[-1])
+    a_d = a[..., :d]
+    b_d = b[..., :d]
+    return (a_d @ b_d.transpose(-1, -2)).abs()
+
+
 def _random_unit_ball(shape, *, device=None, dtype=torch.float32) -> torch.Tensor:
     """Uniform random coordinates in the periodic unit cell [-1, 1)."""
     return torch.empty(shape, device=device, dtype=dtype).uniform_(-1.0, 1.0)

@@ -29,137 +29,533 @@ from util import TheMessage
 
 
 class Lexicon(nn.Embedding):
-    """nn.Embedding with optional flat-n-torus geometry.
+    """nn.Embedding on the **projective unit ball** ``B^D / (x ~ -x)``.
 
-    When ``torus=True`` (default), the embedding's weights are constrained
-    to live on the flat n-torus ``T^D = [-1, 1)^D`` -- a homogeneous,
-    edgeless, zero-curvature manifold. Initialization draws uniformly
-    from the canonical cell; the trainer calls ``normalize()`` after
-    each optimizer step to re-project any wrap-boundary drift.
+    Default geometry is the antipodal quotient of the closed unit ball,
+    realized as real projective space ``RP^D``. Each vocabulary row
+    ``w_i`` lives in ``B^D = {x : ||x||_2 <= 1}`` and ``w_i`` and
+    ``-w_i`` are identified -- there is no edge to the embedding space;
+    the boundary sphere wraps onto itself by antipodal identification.
+    This preserves the pode / antipode pair structure SBOW training
+    relies on (a vector and its antipode are the same point) while
+    giving an exact matmul-form lookup.
 
-    When ``torus=False`` the class is a thin pass-through over
-    ``nn.Embedding`` -- standard Euclidean weights, no normalization.
+    Distance:
 
-    The class also carries the torus geometry primitives as static
-    methods (``wrap``, ``delta``, ``distance_sq``, ``similarity``,
-    ``inner_distance``, ``outer_distance``, ``antipode``, ``random``)
-    so callers can reach for them directly without separate helper
-    functions:
+        d_RP^2(a, b) = min(||a - b||^2, ||a + b||^2)
+                     = ||a||^2 + ||b||^2 - 2 |<a, b>|.
 
-        emb = Lexicon(V, D)
-        with torch.no_grad():
-            emb.normalize()                    # re-wrap after a step
-        score = Lexicon.similarity(a, b)       # SBOW score
-        a_anti = Lexicon.antipode(a)           # per-axis flip
+    Lookup score (one matmul + abs + bias subtract):
 
-    Geometric facts the methods enforce:
-      - **Translation-invariant**: no preferred point on the torus.
-      - **Metric, not normed**: distance is between pairs; ``|v|`` is
-        not meaningful.
-      - **Per-axis duality**: ``inner_distance + outer_distance == 2``
-        per axis; the inner is the canonical short-way metric.
-      - **Unique antipode**: per-axis +1 (mod 2) shift, well-defined
-        in any dimension.
+        score(x, w_i) = |<x, w_i>| - 0.5 * ||w_i||^2.
 
-    Forward is unchanged from ``nn.Embedding`` (index lookup); the
-    wrap is *not* applied inside the forward path because ``normalize``
-    is cheap to call after each optimizer step and avoids a per-read
-    autograd cost.
+    Sorting by largest score is exactly equivalent to sorting by smallest
+    projective squared distance for fixed ``x``. See ``doc/Lexicon.md``
+    for the full derivation and SBOW gradient consequences.
+
+    Legacy: ``torus=True`` selects the prior flat-n-torus geometry
+    ``T^D = [-1, 1)^D`` with wrapped-MSE distance. Kept for backward
+    compatibility; the torus primitives (``wrap``, ``delta``,
+    ``distance_sq``, ``similarity``, ``inner_distance``,
+    ``outer_distance``, ``antipode``, ``random``) remain on the class as
+    static methods so call sites that still operate in torus coordinates
+    keep working unchanged.
+
+    Geometry-aware methods that should be called from training and
+    lookup paths (geometry-dispatching where applicable):
+      - ``normalize()`` re-projects weights onto the active manifold
+        (projective unit ball or torus) after an optimizer step.
+      - ``project_unit_ball_()`` clips row norms to ``<= 1``.
+      - ``lookup_index()`` returns the ``(W_index, W_norm2)`` pair the
+        matmul lookup wants.
+      - ``rp_scores`` / ``topk_rp`` compute the projective matmul-form
+        lookup; ``l2_scores`` / ``topk_l2`` compute plain (non-projective)
+        L2 lookup for callers that genuinely want each row treated
+        independently.
+      - ``rp_distance_sq`` / ``rp_similarity`` are the pairwise primitives
+        SBOW negative-sampling can use directly.
     """
 
     def __init__(self, num_embeddings: int, embedding_dim: int,
-                 *, torus: bool = True, padding_idx=None, **kwargs):
+                 *, torus: bool = False, init: str = "uniform_ball",
+                 padding_idx=None, **kwargs):
         super().__init__(num_embeddings, embedding_dim,
                          padding_idx=padding_idx, **kwargs)
+        # ``torus=True`` selects the LEGACY flat-torus geometry; default
+        # is the projective unit ball. Remove this flag and the
+        # ``self.torus`` branch when no in-tree call site requires it.
         self.torus = bool(torus)
         if self.torus:
+            # LEGACY (torus): uniform draw on ``T^D = [-1, 1)^D``.
             with torch.no_grad():
                 self.weight.copy_(
                     Lexicon.random(self.weight.shape,
                                    device=self.weight.device,
                                    dtype=self.weight.dtype))
+        else:
+            self.reset_unit_ball_parameters(init=init)
+
+    # -- Unit-ball geometry --------------------------------------------------
+
+    @torch.no_grad()
+    def reset_unit_ball_parameters(self, init: str = "uniform_ball") -> None:
+        """Initialize weights on the unit ball.
+
+        ``init="uniform_ball"`` (default) draws directions uniformly on
+        the sphere and radii with the volume-correct ``r ~ U(0,1)^(1/D)``
+        so the resulting distribution is uniform on the closed unit ball.
+        ``init="small_normal"`` uses a small-stddev Gaussian projected
+        into the ball -- useful when downstream layers expect tight
+        clusters near the origin at the start of training.
+        """
+        V, D = self.weight.shape
+        if init == "uniform_ball":
+            W = torch.randn_like(self.weight)
+            W = W / W.norm(dim=-1, keepdim=True).clamp_min(1e-12)
+            radius = torch.rand(
+                V, 1,
+                device=self.weight.device,
+                dtype=self.weight.dtype,
+            ).pow(1.0 / max(D, 1))
+            self.weight.copy_(radius * W)
+        elif init == "small_normal":
+            self.weight.normal_(mean=0.0, std=0.02)
+            self.project_unit_ball_()
+        else:
+            raise ValueError(f"unknown init: {init}")
+
+    @staticmethod
+    def project_unit_ball(x: torch.Tensor, eps: float = 1e-12) -> torch.Tensor:
+        """Return ``x`` projected rowwise into the closed unit ball.
+
+        Rows with ``||x|| <= 1`` are unchanged; rows outside are scaled
+        to lie on the unit sphere.
+        """
+        norm = x.norm(dim=-1, keepdim=True).clamp_min(eps)
+        scale = torch.clamp(1.0 / norm, max=1.0)
+        return x * scale
+
+    @torch.no_grad()
+    def project_unit_ball_(self, eps: float = 1e-12) -> None:
+        """In-place rowwise projection of the embedding matrix into the
+        unit ball. Call after ``optimizer.step()``.
+        """
+        norm = self.weight.norm(dim=-1, keepdim=True).clamp_min(eps)
+        scale = torch.clamp(1.0 / norm, max=1.0)
+        self.weight.mul_(scale)
+
+    @torch.no_grad()
+    def lookup_index(self):
+        """Return ``(W_index, W_norm2)`` for unit-ball matmul lookup.
+
+        ``W_norm2`` should be refreshed after every optimizer step that
+        changes the lexicon. The lookup is
+
+            score = x @ W_index.T - 0.5 * W_norm2
+
+        See ``l2_scores`` and ``topk_l2``.
+        """
+        W_index = self.weight.contiguous()
+        W_norm2 = W_index.square().sum(dim=-1).contiguous()
+        return W_index, W_norm2
+
+    @staticmethod
+    def l2_scores(x: torch.Tensor, W_index: torch.Tensor,
+                  W_norm2: torch.Tensor) -> torch.Tensor:
+        """Compute L2-equivalent lookup scores ``x @ W.T - 0.5 * ||W||^2``.
+
+        Args:
+            x: ``[..., D]`` query.
+            W_index: ``[V, D]`` lexicon matrix.
+            W_norm2: ``[V]`` precomputed squared row norms of ``W_index``.
+
+        Returns:
+            ``[..., V]`` similarity scores; larger is closer under L2.
+        """
+        if x.shape[-1] != W_index.shape[-1]:
+            raise ValueError(
+                f"x last dim {x.shape[-1]} must equal "
+                f"W_index dim {W_index.shape[-1]}")
+        return x @ W_index.T - 0.5 * W_norm2
+
+    @staticmethod
+    def topk_l2(x: torch.Tensor, W_index: torch.Tensor,
+                W_norm2: torch.Tensor, k: int):
+        """Exact top-k nearest rows under Euclidean L2 in the unit ball.
+
+        Plain L2 (non-projective): ``w_i`` and ``-w_i`` are treated as
+        distinct points. Use ``topk_rp`` for the projective form where
+        antipodes are identified.
+
+        Returns ``(indices, dist_sq, scores)`` each shape ``(..., k)``.
+        """
+        if k <= 0:
+            raise ValueError("k must be positive")
+        V, D = W_index.shape
+        k = min(k, V)
+        original_shape = x.shape[:-1]
+        x_flat = x.reshape(-1, D)
+
+        x_norm2 = x_flat.square().sum(dim=-1, keepdim=True)
+        scores_all = x_flat @ W_index.T - 0.5 * W_norm2.unsqueeze(0)
+        scores, indices = torch.topk(scores_all, k=k, dim=-1, largest=True)
+
+        selected_w_norm2 = W_norm2[indices]
+        selected_ip = scores + 0.5 * selected_w_norm2
+        dist_sq = x_norm2 + selected_w_norm2 - 2.0 * selected_ip
+
+        out_shape = original_shape + (k,)
+        return (
+            indices.reshape(out_shape),
+            dist_sq.reshape(out_shape),
+            scores.reshape(out_shape),
+        )
+
+    # -- Projective unit-ball geometry (RP^D, default) -----------------------
+    #
+    # Distance:  d_RP^2(a, b) = min(||a-b||^2, ||a+b||^2)
+    #                        = ||a||^2 + ||b||^2 - 2 |<a, b>|
+    # Lookup:    score(x, w_i) = |<x, w_i>| - 0.5 * ||w_i||^2
+    # Pode:      pode(a, b)         = (a + b) / 2
+    # W. pode:   wrapped_pode(a, b) = (a - b) / 2     (mid via the antipode)
+    # The projective distance is twice the smaller of |a - pode| and
+    # |a - wrapped_pode|, which is the user-facing pode/wrapped-pode
+    # framing.
+
+    @staticmethod
+    def rp_distance_sq(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """Projective squared distance ``min(||a-b||^2, ||a+b||^2)``.
+
+        Reduces the last dim. Range ``[0, max(||a||, ||b||)^2 * 4]``;
+        for unit-norm rows bounded above by ``2``.
+        """
+        inner_abs = (a * b).sum(dim=-1).abs()
+        return (a.square().sum(dim=-1) + b.square().sum(dim=-1)
+                - 2.0 * inner_abs)
+
+    @staticmethod
+    def rp_similarity(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """Projective similarity, larger is closer. Negation of
+        ``rp_distance_sq``; bounded above by 0 (when ``a = +/- b`` and
+        ``||a|| == ||b||``).
+        """
+        return -Lexicon.rp_distance_sq(a, b)
+
+    @staticmethod
+    def rp_pode(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """Pode of a pair: midpoint ``(a + b) / 2``.
+
+        Equidistant from ``a`` and ``b`` along the regular Euclidean
+        line segment. The projective distance from ``a`` to ``b`` is
+        ``2 * min(||a - pode||, ||a - wrapped_pode||)``.
+        """
+        return 0.5 * (a + b)
+
+    @staticmethod
+    def rp_wrapped_pode(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """Wrapped pode: midpoint via the antipode of ``b``,
+        ``(a - b) / 2``.
+
+        On the projective unit ball this is the "go through the
+        boundary identification" alternative midpoint. For the
+        SBOW pair-attraction gradient, comparing ``||a - pode||`` and
+        ``||a - wrapped_pode||`` selects which representative of ``b``
+        the pair should converge through.
+        """
+        return 0.5 * (a - b)
+
+    @staticmethod
+    def rp_closer_rep(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+        """Closer of ``b`` and ``-b`` to ``a``, picked per row.
+
+        Returns ``sign(<a, b>) * b``; ties (``<a, b> == 0``) resolve to
+        ``+b``. The "active representative" of ``b`` for projective
+        gradient calculations: positive-pair attraction targets it,
+        negative-pair repulsion pushes ``a`` away from it.
+        """
+        sign = torch.sign((a * b).sum(dim=-1, keepdim=True))
+        sign = torch.where(sign == 0, torch.ones_like(sign), sign)
+        return sign * b
+
+    @staticmethod
+    def rp_scores(x: torch.Tensor, W_index: torch.Tensor,
+                  W_norm2: torch.Tensor) -> torch.Tensor:
+        """Projective lookup scores ``|<x, w>| - 0.5 * ||w||^2``.
+
+        Argmax over V picks the same row as projective-distance
+        argmin. One matmul + elementwise abs + bias subtract.
+        """
+        if x.shape[-1] != W_index.shape[-1]:
+            raise ValueError(
+                f"x last dim {x.shape[-1]} must equal "
+                f"W_index dim {W_index.shape[-1]}")
+        return (x @ W_index.T).abs() - 0.5 * W_norm2
+
+    @staticmethod
+    def topk_rp(x: torch.Tensor, W_index: torch.Tensor,
+                W_norm2: torch.Tensor, k: int):
+        """Exact top-k nearest rows under projective distance on the
+        unit ball.
+
+        Returns ``(indices, dist_sq, scores)`` each shape ``(..., k)``.
+        ``dist_sq`` is the exact projective squared distance
+        ``||x||^2 + ||w||^2 - 2|<x, w>|``.
+        """
+        if k <= 0:
+            raise ValueError("k must be positive")
+        V, D = W_index.shape
+        k = min(k, V)
+        original_shape = x.shape[:-1]
+        x_flat = x.reshape(-1, D)
+
+        x_norm2 = x_flat.square().sum(dim=-1, keepdim=True)
+        inner = x_flat @ W_index.T
+        inner_abs_all = inner.abs()
+        scores_all = inner_abs_all - 0.5 * W_norm2.unsqueeze(0)
+        scores, indices = torch.topk(scores_all, k=k, dim=-1, largest=True)
+
+        selected_w_norm2 = W_norm2[indices]
+        selected_inner_abs = scores + 0.5 * selected_w_norm2
+        dist_sq = x_norm2 + selected_w_norm2 - 2.0 * selected_inner_abs
+
+        out_shape = original_shape + (k,)
+        return (
+            indices.reshape(out_shape),
+            dist_sq.reshape(out_shape),
+            scores.reshape(out_shape),
+        )
+
+    # -- Geometry-dispatching maintenance ------------------------------------
 
     @torch.no_grad()
     def normalize(self) -> None:
-        """Re-project weights into the canonical cell ``[-1, 1)^D``.
+        """Re-project weights onto the active manifold.
 
-        No-op when ``torus=False``. Idempotent; calling repeatedly
-        without a parameter update returns the same weights.
+        Projective unit ball (default): rowwise projection so
+        ``||w_i|| <= 1``. LEGACY torus path: wrap into ``[-1, 1)^D``.
+        Idempotent in both cases.
         """
         if self.torus:
+            # LEGACY (torus): coordinatewise wrap into the canonical cell.
             self.weight.copy_(Lexicon.wrap(self.weight))
+        else:
+            self.project_unit_ball_()
 
-    # -- Torus geometry primitives -------------------------------------------
-    # Static methods so callers can use them without an instance:
-    #     Lexicon.similarity(a, b)
-    # On a non-torus Lexicon these are still callable but only meaningful
-    # if the input tensors are themselves wrap-canonical.
+    # ========================================================================
+    # LEGACY: torus geometry primitives ``T^D = [-1, 1)^D`` with wrapped MSE.
+    # ========================================================================
+    # The block below is the prior default geometry and is preserved only so
+    # call sites that still reach for ``Lexicon.wrap`` / ``Lexicon.delta`` /
+    # ``Lexicon.similarity`` / ``Lexicon.distance_sq`` / ``Lexicon.antipode``
+    # / ``Lexicon.inner_distance`` / ``Lexicon.outer_distance`` /
+    # ``Lexicon.random`` keep working unchanged during the transition to the
+    # projective unit ball. New code MUST use the projective primitives
+    # above (``rp_*``) or the geometry-dispatching ``normalize()``.
+    #
+    # Removal plan: when no in-tree call site references any of these names,
+    # delete this entire block and the ``torus`` branch in ``__init__`` /
+    # ``normalize``. There are no other entry points; the block is
+    # self-contained.
+    # ========================================================================
 
     @staticmethod
     def wrap(x: torch.Tensor) -> torch.Tensor:
-        """Bring x into the canonical cell ``[-1, 1)^D``. Idempotent.
+        """LEGACY (torus). Bring ``x`` into ``[-1, 1)^D``. Idempotent.
 
         Differentiable almost everywhere; gradients flow as if wrap
-        were the identity. Apply after optimizer steps to keep chart
-        coordinates canonical even when a short-path gradient pushed
-        a coordinate over the wrap boundary.
+        were the identity.
         """
         return torch.remainder(x + 1.0, 2.0) - 1.0
 
     @staticmethod
     def delta(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-        """Signed shortest-path displacement from a to b, per axis.
-        Result is in ``[-1, 1)`` per axis. Same shape as broadcast(a, b).
-        Used as the gradient direction for short-path attractors:
-        pulling a toward b moves a in direction ``+delta(a, b)``.
+        """LEGACY (torus). Signed shortest-path per-axis displacement
+        from ``a`` to ``b``; result in ``[-1, 1)``.
         """
         return Lexicon.wrap(b - a)
 
     @staticmethod
     def distance_sq(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-        """Mean squared per-axis wrap distance. Reduces last dim.
-        Range ``[0, 1]``.
+        """LEGACY (torus). Mean squared per-axis wrap distance,
+        reduces the last dim. Range ``[0, 1]``.
         """
         return Lexicon.delta(a, b).square().mean(dim=-1)
 
     @staticmethod
     def similarity(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-        """SBOW score: ``-distance_sq``. Larger is closer. Range ``[-1, 0]``.
-        Bounded above by 0 (when a == b) and below by -1 (max wrap
-        distance per axis = 1, mean = 1, negated).
+        """LEGACY (torus). Wrapped-MSE similarity ``-distance_sq``;
+        range ``[-1, 0]``, larger is closer.
         """
         return -Lexicon.distance_sq(a, b)
 
     @staticmethod
     def inner_distance(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-        """Per-axis short-way distance. Range ``[0, 1]`` per axis."""
+        """LEGACY (torus). Per-axis short-way distance, range ``[0, 1]``."""
         return Lexicon.delta(a, b).abs()
 
     @staticmethod
     def outer_distance(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-        """Per-axis long-way distance. ``inner + outer == 2`` per axis.
-        Range ``[1, 2]`` per axis.
+        """LEGACY (torus). Per-axis long-way distance, range ``[1, 2]``.
+        ``inner + outer == 2`` per axis.
         """
         return 2.0 - Lexicon.inner_distance(a, b)
 
     @staticmethod
     def antipode(p: torch.Tensor) -> torch.Tensor:
-        """Unique antipodal point on the torus: per-axis ``+1 (mod 2)``.
-
-        Returns the unique point at maximum distance from p
-        (``distance_sq == 1.0``). Well-defined in any dimension.
+        """LEGACY (torus). Per-axis ``+1 (mod 2)`` shift; the unique
+        point at maximum torus distance from ``p``.
         """
         return Lexicon.wrap(p + 1.0)
 
     @staticmethod
     def random(shape, *, device=None, dtype=torch.float32) -> torch.Tensor:
-        """Uniform sample on ``T^D = [-1, 1)^D``.
-
-        The translation-invariant equilibrium of a symmetric random
-        walk on the torus, and the canonical max-entropy initialization
-        for a ``torus=True`` Lexicon.
+        """LEGACY (torus). Uniform sample on ``T^D = [-1, 1)^D``.
+        Initialization for a ``torus=True`` Lexicon.
         """
         return torch.empty(shape, device=device, dtype=dtype).uniform_(-1.0, 1.0)
+
+
+@torch.no_grad()
+def topk_rp_chunked(
+    x: torch.Tensor,
+    W_index: torch.Tensor,
+    W_norm2: torch.Tensor,
+    k: int,
+    *,
+    chunk_size: int = 131_072,
+):
+    """Exact chunked top-k nearest lookup under projective L2 in the unit ball.
+
+    Avoids materializing a full ``(B, V)`` score matrix; scores in chunks of
+    ``chunk_size`` lexicon rows and merges per-chunk top-k results. Score
+    is ``|<x, w>| - 0.5 * ||w||^2`` (projective lookup); returned
+    ``dist_sq`` is the exact projective squared distance
+    ``||x||^2 + ||w||^2 - 2 |<x, w>|``.
+
+    Args:
+        x: ``[..., D]`` query.
+        W_index: ``[V, D]`` lexicon matrix.
+        W_norm2: ``[V]`` precomputed squared row norms of ``W_index``.
+        k: number of nearest rows to return.
+        chunk_size: rows of ``W_index`` to score per pass.
+
+    Returns:
+        ``(indices, dist_sq, scores)`` each shape ``(..., k)``.
+    """
+    if k <= 0:
+        raise ValueError("k must be positive")
+    V, D = W_index.shape
+    k = min(k, V)
+    original_shape = x.shape[:-1]
+    x_flat = x.reshape(-1, D)
+
+    best_scores = None
+    best_indices = None
+
+    for start in range(0, V, chunk_size):
+        end = min(start + chunk_size, V)
+        Wc = W_index[start:end]
+        Nc = W_norm2[start:end]
+
+        scores_c = (x_flat @ Wc.T).abs() - 0.5 * Nc.unsqueeze(0)
+
+        local_k = min(k, end - start)
+        scores_k, indices_k = torch.topk(
+            scores_c, k=local_k, dim=-1, largest=True)
+        indices_k = indices_k + start
+
+        if best_scores is None:
+            best_scores = scores_k
+            best_indices = indices_k
+        else:
+            merged_scores = torch.cat([best_scores, scores_k], dim=-1)
+            merged_indices = torch.cat([best_indices, indices_k], dim=-1)
+            best_scores, pos = torch.topk(
+                merged_scores, k=k, dim=-1, largest=True)
+            best_indices = merged_indices.gather(-1, pos)
+
+    x_norm2 = x_flat.square().sum(dim=-1, keepdim=True)
+    Wk_norm2 = W_norm2[best_indices]
+    selected_inner_abs = best_scores + 0.5 * Wk_norm2
+    dist_sq = x_norm2 + Wk_norm2 - 2.0 * selected_inner_abs
+
+    out_shape = original_shape + (k,)
+    return (
+        best_indices.reshape(out_shape),
+        dist_sq.reshape(out_shape),
+        best_scores.reshape(out_shape),
+    )
+
+
+@torch.no_grad()
+def topk_l2_chunked(
+    x: torch.Tensor,
+    W_index: torch.Tensor,
+    W_norm2: torch.Tensor,
+    k: int,
+    *,
+    chunk_size: int = 131_072,
+):
+    """Exact chunked top-k nearest lookup under plain (non-projective)
+    Euclidean L2 in the unit ball.
+
+    Avoids materializing a full ``(B, V)`` score matrix; instead scores
+    in chunks of ``chunk_size`` lexicon rows and merges per-chunk
+    top-k results. The final ``dist_sq`` is exact.
+
+    Args:
+        x: ``[..., D]`` query.
+        W_index: ``[V, D]`` lexicon matrix.
+        W_norm2: ``[V]`` precomputed squared row norms of ``W_index``.
+        k: number of nearest rows to return.
+        chunk_size: rows of ``W_index`` to score per pass.
+
+    Returns:
+        ``(indices, dist_sq, scores)`` each shape ``(..., k)``.
+    """
+    if k <= 0:
+        raise ValueError("k must be positive")
+    V, D = W_index.shape
+    k = min(k, V)
+    original_shape = x.shape[:-1]
+    x_flat = x.reshape(-1, D)
+
+    best_scores = None
+    best_indices = None
+
+    for start in range(0, V, chunk_size):
+        end = min(start + chunk_size, V)
+        Wc = W_index[start:end]
+        Nc = W_norm2[start:end]
+
+        scores_c = x_flat @ Wc.T - 0.5 * Nc.unsqueeze(0)
+
+        local_k = min(k, end - start)
+        scores_k, indices_k = torch.topk(
+            scores_c, k=local_k, dim=-1, largest=True)
+        indices_k = indices_k + start
+
+        if best_scores is None:
+            best_scores = scores_k
+            best_indices = indices_k
+        else:
+            merged_scores = torch.cat([best_scores, scores_k], dim=-1)
+            merged_indices = torch.cat([best_indices, indices_k], dim=-1)
+            best_scores, pos = torch.topk(
+                merged_scores, k=k, dim=-1, largest=True)
+            best_indices = merged_indices.gather(-1, pos)
+
+    x_norm2 = x_flat.square().sum(dim=-1, keepdim=True)
+    Wk_norm2 = W_norm2[best_indices]
+    selected_ip = best_scores + 0.5 * Wk_norm2
+    dist_sq = x_norm2 + Wk_norm2 - 2.0 * selected_ip
+
+    out_shape = original_shape + (k,)
+    return (
+        best_indices.reshape(out_shape),
+        dist_sq.reshape(out_shape),
+        best_scores.reshape(out_shape),
+    )
 
 
 #region Layers
@@ -1162,6 +1558,79 @@ class SigmaLayer(ButterflyLayer):
         self.activation = x.detach()
         return x
 
+    # -- Binary tensor ops (chart parser) -----------------------------
+    #
+    # ``forward(x: [..., D])`` is the unary feature-fold form: it
+    # applies the OR-fold linear transform within a single operand's
+    # feature axis. The chart parser needs the *binary* form: combine
+    # two operand vectors (one per child span) into one parent vector
+    # via the same parameterization. For the OR-fold the natural
+    # binary semantics is the additive (logit-domain) sum -- atanh
+    # the operands, sum across operands, then apply the same linear
+    # + tanh. ``compose`` and ``decompose`` close the loop with a
+    # balanced inverse so the chart can also push parent gradients
+    # back into child cells.
+    def compose(self, left, right):
+        """Binary OR fold: combine two ``[..., D]`` operands into one.
+
+        Args:
+            left, right: ``[..., D]`` in [-1, 1].
+
+        Returns:
+            ``[..., nOutput]`` in [-1, 1].
+
+        Not supported in butterfly mode.
+        """
+        if self.butterfly:
+            raise NotImplementedError(
+                "SigmaLayer.compose not supported in butterfly mode")
+        if self.nonlinear:
+            a_l = torch.atanh(left.clamp(-1 + epsilon, 1 - epsilon))
+            a_r = torch.atanh(right.clamp(-1 + epsilon, 1 - epsilon))
+        else:
+            a_l = left
+            a_r = right
+        a_sum = a_l + a_r
+        out = self.layer.forward(a_sum)
+        if self.nonlinear:
+            out = torch.tanh(out)
+        self.activation = out.detach()
+        return out
+
+    def decompose(self, parent):
+        """Inverse of compose; balanced split.
+
+        Given ``y = tanh((atanh(left) + atanh(right)) @ W + b)`` the
+        reconstruction recovers the pre-transform sum
+        ``s = atanh(left) + atanh(right) = layer.reverse(atanh(y))``
+        and assigns ``left == right == tanh(s/2)``. Round-trip
+        ``compose(*decompose(y)) == y`` when the inner layer is
+        invertible.
+
+        Args:
+            parent: ``[..., nOutput]`` in [-1, 1].
+
+        Returns:
+            ``(left, right)``: each ``[..., nInput]`` in [-1, 1].
+
+        Requires ``invertible=True`` on the inner LinearLayer; not
+        supported in butterfly mode.
+        """
+        if self.butterfly:
+            raise NotImplementedError(
+                "SigmaLayer.decompose not supported in butterfly mode")
+        if self.nonlinear:
+            a_y = torch.atanh(parent.clamp(-1 + epsilon, 1 - epsilon))
+        else:
+            a_y = parent
+        a_sum = self.layer.reverse(a_y)
+        half = a_sum * 0.5
+        if self.nonlinear:
+            op = torch.tanh(half)
+        else:
+            op = half
+        return op, op
+
     @staticmethod
     def test():
         nInput, nOutput = 3, 4
@@ -1230,6 +1699,56 @@ class GrammarLayer(Layer):
 
     def __init__(self, nInput=0, nOutput=0):
         super().__init__(nInput, nOutput)
+
+    # -- Binary tensor op contract for the chart parser --------------
+    #
+    # ``compose(*operands)`` is the arity-aware binary tensor op the
+    # CKY chart driver calls to combine child span vectors into a
+    # parent span vector. ``decompose(parent)`` is the matching inverse
+    # used by the outside pass / reconstruction loss to push gradients
+    # back into child cells.
+    #
+    # Shape contract:
+    #   arity == 1: compose(x: [..., D]) -> [..., D'];
+    #               decompose(y: [..., D']) -> [..., D]
+    #   arity == 2: compose(left: [..., D], right: [..., D]) -> [..., D'];
+    #               decompose(y: [..., D']) -> (left, right)
+    #
+    # The base class provides arity-aware default implementations:
+    # arity-1 layers route through ``forward`` / ``reverse``; arity-2
+    # layers raise NotImplementedError until a subclass plugs in the
+    # binary parameterization. Lossy layers can override decompose
+    # with a pseudo-inverse (e.g. identity).
+    def compose(self, *operands):
+        """Combine child operand(s) into a parent vector.
+
+        Default routes arity-1 through ``forward``. Arity-2 subclasses
+        must override.
+        """
+        if self.arity == 1:
+            if len(operands) != 1:
+                raise ValueError(
+                    f"{type(self).__name__}.compose: arity 1 expects "
+                    f"1 operand, got {len(operands)}")
+            return self.forward(operands[0])
+        raise NotImplementedError(
+            f"{type(self).__name__}.compose: arity-{self.arity} "
+            f"binary tensor op not implemented")
+
+    def decompose(self, parent):
+        """Inverse of ``compose``: split a parent into its operand(s).
+
+        Default routes arity-1 through ``reverse`` when invertible,
+        otherwise returns the parent unchanged (lossy identity
+        recovery). Arity-2 subclasses must override.
+        """
+        if self.arity == 1:
+            if self.invertible:
+                return self.reverse(parent)
+            return parent
+        raise NotImplementedError(
+            f"{type(self).__name__}.decompose: arity-{self.arity} "
+            f"binary tensor op not implemented")
 
 class NegationLayer(Layer):
     """Materialize bivalent or ternary literals for Sigma/Pi logic.
@@ -1332,16 +1851,18 @@ class NonLayer(GrammarLayer):
 class IntersectionLayer(GrammarLayer):
     """Grammar-facing wrapper around a parameterized AND-fold (PiLayer).
 
-    Implements ``C = intersection(C, C)``. Marker class — actual
-    weights live in the inner PiLayer; this subclass tags the wrapped
-    layer with arity=2 and rule_name="intersection" so the rule-
-    probability gating dispatches uniformly.
+    Implements ``C = intersection(C, C)``. Actual weights live in the
+    inner PiLayer; this subclass tags the wrapped layer with arity=2
+    and rule_name="intersection" so the rule-probability gating
+    dispatches uniformly.
 
-    The wrapper does not yet replace direct PiLayer usage in
-    ConceptualSpace (PiLayer is invoked bottom-up on the [B, N, D]
-    activation tensor, not as a binary operator on two operand
-    streams). Kept as a structural slot that future grammar-driven
-    dispatch can use for rule_name/arity introspection.
+    Two surfaces:
+      * ``forward`` / ``reverse`` -- legacy unary feature-fold pass-
+        through to the inner PiLayer. Used by the all-at-once
+        composition path in ConceptualSpace.
+      * ``compose`` / ``decompose`` -- binary tensor op for the CKY
+        chart parser; combines two ``[..., D]`` child spans into one
+        ``[..., D]`` parent span via PiLayer.compose_binary.
     """
     rule_name  = "intersection"
     arity      = 2
@@ -1358,6 +1879,14 @@ class IntersectionLayer(GrammarLayer):
     def reverse(self, y):
         return self.pi.reverse(y)
 
+    def compose(self, left, right):
+        """Binary AND of two ``[..., D]`` child spans -> ``[..., D']``."""
+        return self.pi.compose(left, right)
+
+    def decompose(self, parent):
+        """Balanced split of a parent span back into ``(left, right)``."""
+        return self.pi.decompose(parent)
+
 
 class UnionLayer(GrammarLayer):
     """Grammar-facing wrapper around a parameterized OR-fold (SigmaLayer).
@@ -1365,6 +1894,13 @@ class UnionLayer(GrammarLayer):
     Implements ``S = union(C, C)``. Mirrors IntersectionLayer at the
     OR-fold tier. Inner SigmaLayer holds the weights; this wrapper
     annotates rule_name="union" and arity=2.
+
+    Two surfaces:
+      * ``forward`` / ``reverse`` -- legacy unary feature-fold pass-
+        through to the inner SigmaLayer.
+      * ``compose`` / ``decompose`` -- binary tensor op for the CKY
+        chart parser; combines two ``[..., D]`` child spans into one
+        ``[..., D]`` parent span via SigmaLayer.compose_binary.
     """
     rule_name  = "union"
     arity      = 2
@@ -1380,6 +1916,14 @@ class UnionLayer(GrammarLayer):
 
     def reverse(self, y):
         return self.sigma.reverse(y)
+
+    def compose(self, left, right):
+        """Binary OR of two ``[..., D]`` child spans -> ``[..., D']``."""
+        return self.sigma.compose(left, right)
+
+    def decompose(self, parent):
+        """Balanced split of a parent span back into ``(left, right)``."""
+        return self.sigma.decompose(parent)
 
 
 class ContiguousLayer(GrammarLayer):
@@ -1584,6 +2128,89 @@ class PiLayer(ButterflyLayer):
             packed_in = self._pi_inner_reverse(packed)
             return self._butterfly_unpack(packed_in, B, N, D)
         return self._pi_inner_reverse(y)
+
+    # -- Binary tensor ops (chart parser) -----------------------------
+    #
+    # ``forward(x: [..., D])`` is the unary feature-fold form. The
+    # chart parser needs the *binary* form: combine two operand
+    # vectors (one per child span) into one parent vector via the
+    # same parameterization. For the AND-fold, the natural binary
+    # semantics is multiplication in mult-domain == addition in
+    # log-mult domain: log_mult(left) + log_mult(right) is then
+    # passed through the same W + b + tanh-half pipeline as the
+    # unary form. ``decompose`` closes the loop with a balanced
+    # split so the chart can also push parent gradients back into
+    # child cells.
+    def compose(self, left, right):
+        """Binary AND fold: combine two ``[..., D]`` operands into one.
+
+        Args:
+            left, right: ``[..., D]`` in [-1, 1].
+
+        Returns:
+            ``[..., nOutput]`` in [-1, 1].
+
+        Not supported in butterfly mode.
+        """
+        if self.butterfly:
+            raise NotImplementedError(
+                "PiLayer.compose not supported in butterfly mode")
+        if self.layer.ergodic:
+            self.resample_noise()
+        W = self.layer.compute_W_current()
+        left = left.to(W.device)
+        right = right.to(W.device)
+        if self.nonlinear:
+            l_l = torch.log(self._to_mult(left))
+            l_r = torch.log(self._to_mult(right))
+        else:
+            l_l = torch.log(left)
+            l_r = torch.log(right)
+        l_sum = l_l + l_r
+        wl = l_sum @ W
+        b = self.layer._effective_bias()
+        wl = wl + b
+        if self.nonlinear:
+            return torch.tanh(wl / 2)
+        return torch.exp(wl)
+
+    def decompose(self, parent):
+        """Inverse of compose; balanced split.
+
+        Given ``y = tanh((W @ (log_mult(left) + log_mult(right)) + b)
+        / 2)`` recover the pre-transform sum
+        ``s = log_mult(left) + log_mult(right)`` and assign
+        ``left == right == _from_mult(exp(s/2))``. Round-trip
+        ``compose(*decompose(y)) == y`` when the inner layer is
+        invertible.
+
+        Args:
+            parent: ``[..., nOutput]`` in [-1, 1].
+
+        Returns:
+            ``(left, right)``: each ``[..., nInput]`` in [-1, 1].
+
+        Requires ``invertible=True``; not supported in butterfly mode.
+        """
+        if self.butterfly:
+            raise NotImplementedError(
+                "PiLayer.decompose not supported in butterfly mode")
+        W_inv = self.layer.compute_Winverse_current()
+        parent = parent.to(W_inv.device)
+        if self.nonlinear:
+            log_mult_y = torch.log(self._to_mult(parent))
+        else:
+            log_mult_y = torch.log(parent)
+        b = self.layer._effective_bias()
+        s = (log_mult_y - b) @ W_inv
+        half = s * 0.5
+        if self.nonlinear:
+            op = self._from_mult(torch.exp(half))
+        else:
+            op = torch.exp(half)
+        if self.layer.ergodic:
+            self.resample_noise()
+        return op, op
 
     @staticmethod
     def test():

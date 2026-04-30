@@ -226,6 +226,114 @@ the `[-1, +1]` hypercube.
 
 ---
 
+## Lexicon (Projective Unit Ball)
+
+The **Lexicon** ([`bin/Layers.py`](../bin/Layers.py)) is the vocabulary
+store that backs PerceptualSpace word embeddings and SymbolicSpace
+symbol prototypes. Each row is a vector $w_i$ in the **projective unit
+ball** — the closed ball $B^D = \{x : \|x\|_2 \le 1\}$ with the
+antipodal identification $w \sim -w$, which realizes real projective
+space $\mathbb{RP}^D$. There is no edge to the embedding space; the
+boundary sphere is glued to itself by antipodal identification, so the
+pode / antipode pair structure SBOW training relies on (a vector and
+its antipode are the same point) holds at every $\|w\|$.
+
+### Distance
+
+For $a, b \in B^D$ the projective squared distance is
+
+$$
+d_{\mathbb{RP}}^2(a, b) \;=\; \min\bigl(\|a-b\|_2^2,\; \|a+b\|_2^2\bigr)
+\;=\; \|a\|_2^2 + \|b\|_2^2 - 2\,|\langle a, b\rangle|.
+$$
+
+Equivalently: take the *pode* (midpoint) and the *wrapped pode* (midpoint
+through the antipode of $b$),
+
+$$
+\operatorname{pode}(a, b) = \tfrac{1}{2}(a + b),\qquad
+\operatorname{wpode}(a, b) = \tfrac{1}{2}(a - b),
+$$
+
+and observe that $d_{\mathbb{RP}}(a, b) = 2 \cdot \min\bigl(\|a -
+\operatorname{pode}\|,\ \|a - \operatorname{wpode}\|\bigr)$. The lookup
+just picks whichever representative of $b$ is closer to $a$.
+
+### Matmul-form lookup
+
+For a fixed query $x$, sorting by smallest $d_{\mathbb{RP}}^2$ is exactly
+sorting by largest
+
+$$
+\operatorname{score}(x, w_i) \;=\; |\langle x, w_i\rangle| - \tfrac{1}{2}\|w_i\|_2^2.
+$$
+
+Implementation: cache `W_norm2 = W.square().sum(-1)` once per optimizer
+step, then top-k is `(x @ W.T).abs() - 0.5 * W_norm2` followed by
+`torch.topk` — a dense matmul, an elementwise abs, and a broadcast
+subtract. No $V \cdot D$ outer-product intermediate.
+
+The `Lexicon` API:
+
+```python
+lexicon = Lexicon(V, D)              # default: projective unit ball
+lexicon.project_unit_ball_()         # call after optimizer.step()
+W_index, W_norm2 = lexicon.lookup_index()
+
+# Projective (RP^D) — antipode-aware, default.
+idx, dist_sq, scores = Lexicon.topk_rp(x, W_index, W_norm2, k=32)
+
+# Plain L2 (each row independent) — for sites where w and -w are distinct.
+idx, dist_sq, scores = Lexicon.topk_l2(x, W_index, W_norm2, k=32)
+
+# Pairwise primitives (SBOW / chart parser):
+Lexicon.rp_distance_sq(a, b)
+Lexicon.rp_similarity(a, b)
+Lexicon.rp_pode(a, b)
+Lexicon.rp_wrapped_pode(a, b)
+Lexicon.rp_closer_rep(a, b)          # sign(<a, b>) * b
+```
+
+For $V \gtrsim 10^5$, use `topk_rp_chunked` (or `topk_l2_chunked`) to
+bound the peak score-tensor size by `chunk_size` rows of $W$ instead of
+the full $(B, V)$ matrix.
+
+### SBOW training and the pode/antipode pair
+
+Negative-sampling gradients under projective distance come in two
+regimes by the sign of $\langle a, b\rangle$. When the inner product is
+positive, the gradient is the standard contrastive repulsion along $(a
+- b)$; when it is negative, the gradient pushes through the antipode
+along $(a + b)$ (equivalently, pulls $b$ across the origin). This is the
+projective replacement for the torus's coordinate-wise wrap, and it
+preserves the pair structure SBOW depends on without requiring any of
+the modular arithmetic the torus geometry needed.
+
+After every optimizer step the trainer calls `lexicon.normalize()`,
+which clips row norms so $\|w_i\| \le 1$ stays invariant. `W_norm2`
+should be refreshed any time the weight matrix changes.
+
+### Why this geometry, not the torus
+
+The earlier Lexicon used the flat torus $T^D = [-1, 1)^D$ with wrapped
+MSE distance $d_T^2(x, w) = D^{-1}\|\mathrm{wrap}(w - x)\|_2^2$. That is
+homogeneous and edgeless — geometrically attractive — but exact lookup
+needs coordinatewise wrap and a $V \cdot D$ broadcast subtract that
+becomes the dominant cost at $V = 10^6$ (see the IR-mode profile and
+[`test/bench_codebook_lookup.py`](../test/bench_codebook_lookup.py)).
+The projective unit ball keeps the antipodal pair structure SBOW wants
+*and* lets the lookup compile to a single matmul.
+
+The torus primitives (`Lexicon.wrap`, `Lexicon.delta`,
+`Lexicon.distance_sq`, `Lexicon.similarity`, `Lexicon.inner_distance`,
+`Lexicon.outer_distance`, `Lexicon.antipode`, `Lexicon.random`) and the
+`torus=True` constructor flag remain on the class as **legacy** static
+methods so call sites still operating in torus coordinates keep working
+during the transition. They are clearly marked `LEGACY (torus)` in
+their docstrings; new code must use the `rp_*` primitives.
+
+---
+
 ## InputSpace
 
 **Role.** Receives the raw source buffer from `Data()` and lifts it into the model's
@@ -352,6 +460,30 @@ separate layers, approximate pseudoinverse in reverse.
 
 **Role.** Transforms perceptual vectors into abstract concepts via additive linear
 operations. Models conceptual hyperplanes that partition perceptual space.
+
+**Geometry contrast with the Lexicon.** ConceptualSpace is geometrically
+distinct from the projective-unit-ball Lexicon used by PerceptualSpace
+and SymbolicSpace. Its codebook stores **named directions** (unit-norm
+vectors $c_i \in S^{D-1}$); the *input* magnitude in $[-1, +1]$ encodes
+*belief certainty* with sign, and that magnitude must survive into the
+similarity score. So:
+
+- **Lexicon** ($\mathbb{RP}^D$). Each row is a vocabulary point in
+  $B^D / (x \sim -x)$. Score is $|\langle x, w_i\rangle| -
+  \tfrac{1}{2}\|w_i\|^2$. Antipodal identification is the *defining*
+  invariant — `word` and its antipode collapse to the same lookup
+  result.
+- **ConceptualSpace.** Each codebook row is a unit-norm direction in
+  $S^{D-1}$ (no antipodal identification). Score is $\langle x,
+  c_i\rangle$ — a single matmul with no abs and no norm correction
+  because the codebook is constant-norm. Sign matters: $x \cdot c_i =
+  +1$ affirms concept $i$, $-1$ denies it, $0$ is orthogonal. Cosine
+  similarity would divide out the certainty signal and is therefore
+  *not* used here.
+
+The PiLayer below operates on the input side of this boundary; the
+codebook geometry above governs how concepts are looked up *as*
+named directions.
 
 **Owned layer.**
 
