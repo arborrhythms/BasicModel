@@ -221,7 +221,7 @@ def buffer(*size, **kwargs):
 # Tokenization
 # ---------------------------------------------------------------------------
 
-_PARSE_WORD_RE     = re.compile(r'[a-zA-Z]+|[0-9]+|[^a-zA-Z0-9\s]+|\s+')
+_PARSE_WORD_RE     = re.compile(r'[a-zA-Z]+|[0-9]|[^a-zA-Z0-9\s]|\s')
 _PARSE_SENTENCE_RE = re.compile(r'[^.!?]*[.!?]+|[^.!?]+$')
 
 

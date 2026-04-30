@@ -235,6 +235,7 @@
       <xs:element name="negSamples" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="TruthLoss" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="maskedPrediction" type="maskedPredictionEnum" minOccurs="0"/>
+      <xs:element name="maskRate" type="unitInterval" minOccurs="0"/>
       <xs:element name="trainEmbedding" type="trainEnum" minOccurs="0"/>
       <xs:element name="embeddingScale" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="autoload" type="xs:boolean" minOccurs="0"/>

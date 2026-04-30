@@ -33,7 +33,10 @@ import util
 from util import TheDevice, TheMessage
 from visualize import Report, TheReport
 from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
-from embed import WordVectors, PretrainModel
+from embed import (
+    WordVectors, PretrainModel,
+    _wrap_unit_ball, _wrapped_mse_score, _random_unit_ball,
+)
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer, NegationLayer  # Import custom layers from Model.py
 from Layers import VectorQuantize  # moved from Spaces.py (April 2026 perf pass)
@@ -50,6 +53,12 @@ from Layers import Error
 POLARITY_AFFIRM = 0
 POLARITY_NON    = 1
 POLARITY_NOT    = 2
+
+# Special codebook key for the IR-mode NULL-percept slot. Distinct from
+# byte ``\x00`` (a real prediction target in byte mode); IR mask injection
+# replaces masked positions with this slot so the brick body sees a
+# distinct embedding meaning "predict me" rather than "this was \x00".
+NULL_PERCEPT_KEY = "__NULL_PERCEPT__"
 from util import parse
 from collections import namedtuple as _namedtuple
 
@@ -485,7 +494,24 @@ class EventEncoding(Encoding):
         return torch.cat([content, aux], dim=-1)
 
 class Basis(nn.Module):
-    """Shared runtime contract for SubSpace payloads."""
+    """Shared runtime contract for SubSpace payloads.
+
+    Geometry: each Basis has either *torus* (unit-cell, periodic wrap +
+    wrapped MSE) or *sphere* (L2-normalized + cosine / dot product)
+    geometry. The selection is implicit in ``use_dot_product``:
+
+    * ``use_dot_product=False`` (default for ``Embedding``, ``Codebook``,
+      ``Tensor``) — torus / wrapped MSE. Suits low-D codebooks where
+      Tammes-on-sphere crowding is the bottleneck (the lexicon at
+      V=200K, D=6; SymbolicSpace at V=1024, D=6).
+    * ``use_dot_product=True`` (set explicitly by ``ConceptualSpace``) —
+      sphere / cosine. Suits high-D codebooks where the input magnitude
+      carries information (belief certainty in [-1, +1]).
+
+    See ``unit_ball`` property below; methods that need codebook geometry
+    (``normalize``, ``_snap_content``, ``codebookDistance``, the logical-
+    op reverses) dispatch on it.
+    """
 
     def __init__(self):
         super().__init__()
@@ -500,6 +526,17 @@ class Basis(nn.Module):
         self.monotonic = True
         self.ergodic = False
         self.sigma_kappa = 0.01
+
+    @property
+    def unit_ball(self) -> bool:
+        """True iff this basis uses torus geometry (wrapped MSE).
+
+        Derived from ``use_dot_product`` so the two flags can never
+        disagree. Sphere consumers (ConceptualSpace) set
+        ``use_dot_product=True`` and get ``unit_ball=False``; everyone
+        else inherits the default and gets ``unit_ball=True``.
+        """
+        return not bool(getattr(self, "use_dot_product", False))
 
     def getW(self):
         """Return the current weight tensor. Subclasses must override."""
@@ -606,12 +643,18 @@ class Basis(nn.Module):
         flat = snapped[:, :, :nWhat].reshape(-1, nWhat)
         nonzero = flat.abs().sum(dim=1) >= 1e-8
         if torch.any(nonzero):
-            sims = F.cosine_similarity(
-                flat[nonzero].unsqueeze(1),
-                weight[:, :nWhat].unsqueeze(0),
-                dim=2,
-            )
-            idx = sims.argmax(dim=1)
+            if self.unit_ball:
+                scores = _wrapped_mse_score(
+                    flat[nonzero].unsqueeze(1),
+                    weight[:, :nWhat].unsqueeze(0),
+                )
+            else:
+                scores = F.cosine_similarity(
+                    flat[nonzero].unsqueeze(1),
+                    weight[:, :nWhat].unsqueeze(0),
+                    dim=2,
+                )
+            idx = scores.argmax(dim=1)
             flat[nonzero] = weight[idx, :nWhat]
             snapped[:, :, :nWhat] = flat.reshape(snapped.shape[0], snapped.shape[1], nWhat)
         return snapped
@@ -620,10 +663,25 @@ class Basis(nn.Module):
         return Ops.norm(x)
 
     def normalize(self, x=None):
+        """Project the basis tensor onto its native geometry.
+
+        Torus (``unit_ball=True``): wrap into the periodic unit cell
+        ``[-1, 1)``. Idempotent on already-wrapped values; corrects
+        optimizer drift outside the cell.
+
+        Sphere (``unit_ball=False``): L2-normalize (with optional
+        ``[0, 1]`` clamp under ``monotonic``).
+
+        ``x is None``: in-place normalize of the live W. Otherwise
+        return a normalized copy of ``x``.
+        """
         target = self.getW() if x is None else x
         if target is None:
-            raise RuntimeError(f"{self.__class__.__name__}.normalize() has no tensor to normalize.")
-        if not self.monotonic:
+            raise RuntimeError(
+                f"{self.__class__.__name__}.normalize() has no tensor to normalize.")
+        if self.unit_ball:
+            normalized = _wrap_unit_ball(target)
+        elif not self.monotonic:
             normalized = F.normalize(target, p=2, dim=-1)
         else:
             normalized = torch.clamp(target, 0, 1)
@@ -673,7 +731,8 @@ class Basis(nn.Module):
         W = self._codebook_or_none("conjunctionReverse")
         if W is None:
             return result
-        return Ops.conjunctionReverse(result, y, W, monotonic=monotonic)
+        return Ops.conjunctionReverse(
+            result, y, W, monotonic=monotonic, unit_ball=self.unit_ball)
 
     def disjunctionReverse(self, result, y, monotonic=False):
         """Inverse of disjunction via codebook search.
@@ -685,7 +744,8 @@ class Basis(nn.Module):
         W = self._codebook_or_none("disjunctionReverse")
         if W is None:
             return result
-        return Ops.disjunctionReverse(result, y, W, monotonic=monotonic)
+        return Ops.disjunctionReverse(
+            result, y, W, monotonic=monotonic, unit_ball=self.unit_ball)
 
     # -- Synthesis / analysis dispatchers (lift / lower) ------------------
     # Thin wrappers around Ops.lift / Ops.lower that supply the codebook W
@@ -705,12 +765,14 @@ class Basis(nn.Module):
             W = self._codebook_or_none("Basis.lift inverse")
             if W is None:
                 return X1
-            return Ops.disjunctionReverse(X1, X2, W, monotonic=monotonic)
+            return Ops.disjunctionReverse(
+                X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball)
         if inverse and mode == 'AND':
             W = self._codebook_or_none("Basis.lift inverse")
             if W is None:
                 return X1
-            return Ops.conjunctionReverse(X1, X2, W, monotonic=monotonic)
+            return Ops.conjunctionReverse(
+                X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball)
         return Ops.lift(
             X1, X2, mode=mode, kind=kind, inverse=inverse, monotonic=monotonic
         )
@@ -728,12 +790,14 @@ class Basis(nn.Module):
             W = self._codebook_or_none("Basis.lower inverse")
             if W is None:
                 return X1
-            return Ops.conjunctionReverse(X1, X2, W, monotonic=monotonic)
+            return Ops.conjunctionReverse(
+                X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball)
         if inverse and mode == 'OR':
             W = self._codebook_or_none("Basis.lower inverse")
             if W is None:
                 return X1
-            return Ops.disjunctionReverse(X1, X2, W, monotonic=monotonic)
+            return Ops.disjunctionReverse(
+                X1, X2, W, monotonic=monotonic, unit_ball=self.unit_ball)
         return Ops.lower(
             X1, X2, mode=mode, kind=kind, inverse=inverse, monotonic=monotonic
         )
@@ -745,8 +809,19 @@ class Basis(nn.Module):
         return Ops.distance(x, y, monotonic=monotonic, dim=dim)
 
     def codebookDistance(self, x):
+        """Per-codebook-entry similarity score; larger is closer.
+
+        Torus: ``-mean((x - cb)^2)`` over the wrapped delta — same metric
+        ``_snap_content`` and ``_nearest_idx`` use.
+        Sphere: dot product (cosine when codebook is unit-norm).
+        """
         weight = self._prototype_weight(context="codebookDistance")
         vec = weight[:, :self.nDim].to(TheDevice.get())
+        if self.unit_ball:
+            return _wrapped_mse_score(
+                x[..., :self.nDim].unsqueeze(-2),
+                vec,
+            )
         return x @ vec.T / max(self.nDim, 1)
 
     # -- Mereological operations --------------------------------------------
@@ -1435,17 +1510,42 @@ class Embedding(Basis):
         self.doc_sources = []
 
     def getW(self):
-        """Return live embedding vectors, L2-normalized so elements are in [-1, 1].
+        """Return live embedding vectors wrapped into the periodic unit cell
+        ``[-1, 1)``.
 
-        Returns the nn.Parameter directly (not .data) so gradients flow through.
+        The wrap is applied on every read so any optimizer drift between
+        ``optimizer.step()`` and the next ``normalize()`` call is invisible
+        to consumers (codebook search, logic ops, etc.). Wrapping is
+        differentiable almost everywhere; gradients flow through to
+        ``wv._vectors`` exactly as they would for an identity view.
         """
         if self.wv is not None and self.wv._vectors is not None:
-            return F.normalize(self.wv._vectors, p=2, dim=-1)
+            return _wrap_unit_ball(self.wv._vectors)
         return None
 
     def setW(self, value):
         """Embedding W is managed by wv._vectors -- setW is a no-op."""
         pass
+
+    def normalize(self, x=None):
+        """Wrap into the periodic unit cell ``[-1, 1)``.
+
+        Two modes:
+        * ``x is None``: in-place wrap of ``wv._vectors`` (steady-state
+          cleanup, e.g. after an optimizer step that drifted out of the
+          cell). Returns the wrapped live view via ``getW()``.
+        * ``x is not None``: returns a wrapped copy of ``x`` without
+          touching the parameter.
+        """
+        if x is None:
+            if self.wv is None or self.wv._vectors is None:
+                raise RuntimeError(
+                    f"{self.__class__.__name__}.normalize() has no tensor "
+                    f"to normalize.")
+            with torch.no_grad():
+                self.wv._vectors.copy_(_wrap_unit_ball(self.wv._vectors))
+            return self.getW()
+        return _wrap_unit_ball(x)
 
     @staticmethod
     def _to_text(buf):
@@ -1513,8 +1613,8 @@ class Embedding(Basis):
             # dynamically during forward passes via insert().
             dim = nDim or 20
             print(f"Starting with dynamic {dim}-dim embedding (words added at runtime)")
-            placeholder = torch.randn(1, dim, device=TheDevice.get())
-            placeholder = F.normalize(placeholder, p=2, dim=1)
+            placeholder = _random_unit_ball(
+                (1, dim), device=TheDevice.get())
             wv = WordVectors(placeholder, ["\x00"])
         self.wv = wv
         vocab_size = len(wv)
@@ -1570,6 +1670,19 @@ class Embedding(Basis):
                         if token_text not in self.wv:
                             self.insert(token_text)
 
+        # NULL-percept slot for IR mode (BERT [MASK]-style). Lives at the
+        # tail of the codebook as a learnable parameter; distinct from
+        # any real word/byte/BPE entry so the brick body can tell
+        # "predict me" from "this was character \x00". Idempotent on
+        # reload: if the slot is already in the loaded artifact (e.g.
+        # after IR training), reuse the existing index.
+        if NULL_PERCEPT_KEY in self.pretrain.key_to_index:
+            self.null_percept_idx = int(
+                self.pretrain.key_to_index[NULL_PERCEPT_KEY])
+        else:
+            self.null_percept_idx = len(self.wv)
+            self.insert(NULL_PERCEPT_KEY, vector=None, initial_count=0)
+
     def _rebuild_optimizer(self):
         self.pretrain.optimizer = torch.optim.Adam(
             [self.wv._vectors],
@@ -1596,7 +1709,7 @@ class Embedding(Basis):
         Args:
             word: string to add.
             vector: optional (dim,) or (1, dim) tensor. If None, a random
-                    normalized vector is generated.
+                    vector is generated in the active lexicon geometry.
             initial_count: frequency count for the new word.
 
         Returns:
@@ -1607,9 +1720,9 @@ class Embedding(Basis):
             new_vec = vector.to(TheDevice.get())
             if new_vec.dim() == 1:
                 new_vec = new_vec.unsqueeze(0)
+            new_vec = _wrap_unit_ball(new_vec)
         else:
-            new_vec = torch.randn(1, dim, device=TheDevice.get())
-        new_vec = F.normalize(new_vec, p=2, dim=1)
+            new_vec = _random_unit_ball((1, dim), device=TheDevice.get())
 
         # Extend WordVectors parameter
         with torch.no_grad():
@@ -1735,11 +1848,8 @@ class Embedding(Basis):
                         f"with n_vectors={nVectors}) so the codebook "
                         f"size matches the BPE vocab.")
                 dim = nDim or 1
-                # Random init normalised to the unit sphere -- standard
-                # codebook seed; training adapts.
-                vectors = F.normalize(
-                    torch.randn(len(keys), dim, device=TheDevice.get()),
-                    p=2, dim=1)
+                vectors = _random_unit_ball(
+                    (len(keys), dim), device=TheDevice.get())
                 wv = WordVectors(vectors, keys)
                 print(f"Synthesized {len(keys)}-entry lexicon from "
                       f"BPE vocab in {embedding_path}")
@@ -1820,14 +1930,14 @@ class Embedding(Basis):
         return (s / (s + self.sigma_kappa)).clamp(0, 1)
 
     def _encode_vector(self, vec, token_idx=None):
-        """Pad and normalize one embedding vector, with optional ergodic noise."""
+        """Prepare one embedding vector, with optional ergodic noise."""
         if vec.dim() != 1:
             vec = vec.squeeze()
         vec = vec.clone()
         var = self._ergodic_var(token_idx, TheDevice.get(), vec.dtype)
         if var is not None and torch.any(var > 0):
             vec = vec + var * torch.randn_like(vec)
-        return F.normalize(vec, p=2, dim=0)
+        return _wrap_unit_ball(vec)
 
     @staticmethod
     def _apply_polarity(stream):
@@ -1901,8 +2011,9 @@ class Embedding(Basis):
         # 4 vs codebook 6 with positional dims); we match on the shared
         # prefix rather than raising on the width mismatch.
         d = min(vec.shape[0], codebook.shape[1])
-        sims = F.cosine_similarity(vec[:d].unsqueeze(0), codebook[:, :d], dim=1)
-        return sims.argmax().item()
+        scores = _wrapped_mse_score(
+            vec[:d].unsqueeze(0), codebook[:, :d])
+        return scores.argmax().item()
 
     def forward(self, input, return_meta=False):
         """Tokenize via Lex, look up embedding vectors from codebook.
@@ -5057,7 +5168,8 @@ class InputSpace(Space):
         object_basis.setW(self.input)
         self.subspace.set_event(self.input)
 
-        # Word recovery -- content is already denormalized, codebook is L2-normalized [-1,1]
+        # Word recovery -- content is already denormalized; Embedding.reverse()
+        # snaps under the active lexicon geometry.
         if isinstance(content_basis, Embedding):
             self._recovered_input = content_basis.decode_reverse_meta(
                 self.input, subspace=self.subspace)

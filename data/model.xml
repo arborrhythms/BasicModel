@@ -52,6 +52,10 @@
       <TruthLoss>0.0</TruthLoss>
 
       <maskedPrediction>NONE</maskedPrediction>
+      <!-- IR-mode: per-position Bernoulli probability that a percept is
+           replaced by NULL_PERCEPT for masked reconstruction. Range [0,1];
+           BERT default 0.15. Ignored when maskedPrediction != IR. -->
+      <maskRate>0.15</maskRate>
 
       <!-- Embedding training mode: NONE | CBOW | SBOW | BACKPROP | BOTH | JOINT -->
       <trainEmbedding>NONE</trainEmbedding>

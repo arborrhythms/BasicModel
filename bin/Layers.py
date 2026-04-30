@@ -4892,31 +4892,42 @@ class Ops:
         return Ops.negation(x, monotonic=monotonic)
 
     @staticmethod
-    def conjunctionReverse(result, y, W, monotonic=False):
+    def conjunctionReverse(result, y, W, monotonic=False, unit_ball=False):
         """Inverse of conjunction via codebook search.
 
         Find the codebook vector x such that conjunction(x, cb_j) ~= result
         for some cb_j, returning the best-matching left operand.
         Falls back to returning result unchanged if W is None or empty.
+        ``unit_ball=True`` switches the distance from raw Euclidean to
+        wrapped Euclidean (torus geometry).
         """
-        return Ops._binary_op_inverse_impl(result, W, Ops.conjunction, monotonic)
+        return Ops._binary_op_inverse_impl(
+            result, W, Ops.conjunction, monotonic, unit_ball=unit_ball)
 
     @staticmethod
-    def disjunctionReverse(result, y, W, monotonic=False):
+    def disjunctionReverse(result, y, W, monotonic=False, unit_ball=False):
         """Inverse of disjunction via codebook search.
 
         Find the codebook vector x such that disjunction(x, cb_j) ~= result
         for some cb_j, returning the best-matching left operand.
         Falls back to returning result unchanged if W is None or empty.
+        ``unit_ball=True`` switches the distance from raw Euclidean to
+        wrapped Euclidean (torus geometry).
         """
-        return Ops._binary_op_inverse_impl(result, W, Ops.disjunction, monotonic)
+        return Ops._binary_op_inverse_impl(
+            result, W, Ops.disjunction, monotonic, unit_ball=unit_ball)
 
     @staticmethod
-    def _binary_op_inverse_impl(result, W, op, monotonic):
+    def _binary_op_inverse_impl(result, W, op, monotonic, unit_ball=False):
         """Search codebook for pair (cb[i], cb[j]) whose op(cb[i], cb[j]) ~= result.
 
         Returns cb[i] (the left operand) for each position in result.
         result shape: (..., D).  W (codebook) shape: (K, D).
+
+        Under ``unit_ball=True``, the per-pair distance is computed on
+        the wrapped delta (``(d + 1) mod 2 - 1``) so equally-near
+        codebook entries on either side of the periodic boundary are
+        treated symmetrically.
         """
         if W is None or W.shape[0] == 0:
             return result
@@ -4936,6 +4947,8 @@ class Ops:
         for start in range(0, N, chunk_size):
             end = min(start + chunk_size, N)
             diffs = (flat[start:end].unsqueeze(1) - composed_flat.unsqueeze(0))
+            if unit_ball:
+                diffs = torch.remainder(diffs + 1.0, 2.0) - 1.0
             dists = diffs.pow(2).sum(dim=-1)
             pair_idx = dists.argmin(dim=-1)
             best_i[start:end] = pair_idx // K

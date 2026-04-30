@@ -73,6 +73,28 @@ KIND_BOTH = "both"
 _VALID_KINDS = (KIND_LEXICON, KIND_BPE, KIND_BOTH)
 
 
+def _wrap_unit_ball(x: torch.Tensor) -> torch.Tensor:
+    """Wrap coordinates into the periodic unit cell [-1, 1).
+
+    Idempotent on already-wrapped inputs; on legacy sphere vectors (norm
+    ~= 1, components in [-1, 1]) it is a no-op. Optimizer-drifted values
+    outside the cell get reprojected to their wrapped equivalent.
+    """
+    return torch.remainder(x + 1.0, 2.0) - 1.0
+
+
+def _wrapped_mse_score(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    """Torus similarity: ``-mean(wrapped_delta^2)``. Larger is closer."""
+    d = min(a.shape[-1], b.shape[-1])
+    delta = _wrap_unit_ball(a[..., :d] - b[..., :d])
+    return -delta.square().mean(dim=-1)
+
+
+def _random_unit_ball(shape, *, device=None, dtype=torch.float32) -> torch.Tensor:
+    """Uniform random coordinates in the periodic unit cell [-1, 1)."""
+    return torch.empty(shape, device=device, dtype=dtype).uniform_(-1.0, 1.0)
+
+
 def save_artifact(
     path: str,
     *,
@@ -147,12 +169,12 @@ def load_artifact(path: str) -> Dict[str, Any]:
 def lexicon_section_from_word_vectors(wv) -> Dict[str, Any]:
     """Build the ``lexicon`` section from a ``WordVectors`` instance.
 
-    Vectors are L2-normalized so downstream consumers (InputSpace) get
-    elements in ``[-1, 1]``. The section carries ``section_kind="lexicon"``
-    so a consumer handed the section dict directly can still distinguish
-    it from a BPE section.
+    Vectors are wrapped into the periodic unit cell ``[-1, 1)`` before
+    saving, so artifacts on disk are always in the canonical domain even
+    if the live parameter has drifted between optimizer steps.
     """
-    vectors = F.normalize(wv._vectors.detach(), p=2, dim=1).cpu()
+    raw = wv._vectors.detach()
+    vectors = _wrap_unit_ball(raw).cpu()
     counts = getattr(wv, "counts", None)
     if counts is not None:
         counts = np.asarray(counts, dtype=np.int64)
@@ -288,13 +310,19 @@ class WordVectors(nn.Module):
 
     def __init__(self, vectors, index_to_key: List[str],
                  counts=None, total_count: int = 0):
-        """Create from a (vocab_size, vector_size) array/tensor and word list."""
+        """Create from a (vocab_size, vector_size) array/tensor and word list.
+
+        Coordinates are wrapped into the periodic unit cell ``[-1, 1)`` on
+        construction so callers passing arbitrary tensors (legacy sphere
+        artifacts, fresh randoms, etc.) all land in the canonical domain.
+        """
         super().__init__()
         assert len(index_to_key) == vectors.shape[0]
         if not isinstance(vectors, torch.Tensor):
             vectors = torch.as_tensor(vectors, dtype=torch.float32)
         else:
             vectors = vectors.detach().float()
+        vectors = _wrap_unit_ball(vectors)
         self._vectors = nn.Parameter(vectors, requires_grad=True)
         self.index_to_key = list(index_to_key)
         self.key_to_index = {w: i for i, w in enumerate(self.index_to_key)}
@@ -320,10 +348,9 @@ class WordVectors(nn.Module):
 
     @classmethod
     def from_vocab(cls, words: List[str], vector_size: int = 20) -> "WordVectors":
-        """Build random unit-normalised embeddings for a vocabulary list."""
+        """Build random embeddings for a vocabulary list."""
         unique = list(dict.fromkeys(words))  # preserve order, deduplicate
-        vecs = torch.randn(len(unique), vector_size)
-        vecs = F.normalize(vecs, p=2, dim=1)
+        vecs = _random_unit_ball((len(unique), vector_size))
         return cls(vecs, unique)
 
     @classmethod
@@ -372,8 +399,8 @@ class WordVectors(nn.Module):
         """Save vectors, vocabulary, and word frequencies via the unified
         vocab-artifact format (see ``save_artifact`` in this module).
 
-        Vectors are L2-normalized before saving so that downstream
-        consumers (InputSpace) receive elements in ``[-1, 1]``.
+        Vectors are wrapped into the periodic unit cell ``[-1, 1)`` before
+        saving (see ``lexicon_section_from_word_vectors``).
 
         Args:
             path: destination file path.
@@ -422,16 +449,19 @@ class WordVectors(nn.Module):
             vectors = torch.as_tensor(vectors, dtype=torch.float32)
         else:
             vectors = vectors.float()
-        # Replace NaN vectors with random normalized vectors
+        # Replace NaN vectors with fresh uniform draws in the unit cell.
         nan_mask = torch.isnan(vectors).any(dim=1)
-        n_nan = nan_mask.sum().item()
+        n_nan = int(nan_mask.sum().item())
         if n_nan > 0:
             dim = vectors.shape[1]
-            replacement = F.normalize(
-                torch.randn(n_nan, dim, device=vectors.device), p=2, dim=1)
+            replacement = _random_unit_ball(
+                (n_nan, dim), device=vectors.device, dtype=vectors.dtype)
             vectors[nan_mask] = replacement
             import warnings
             warnings.warn(f"Replaced {n_nan} NaN embedding vectors in {path}")
+        # Legacy sphere artifacts have norm ~= 1 so each component is
+        # already in [-1, 1]; ``WordVectors.__init__`` re-wraps to make
+        # the domain explicit and idempotent.
         counts = section.get("counts")
         total_count = section.get("total_count", 0)
         wv = cls(vectors, section["index_to_key"],
@@ -452,24 +482,20 @@ class WordVectors(nn.Module):
         return self._vectors[self.key_to_index[word]]
 
     def get_normed_vectors(self) -> torch.Tensor:
-        """Return all vectors L2-normalised (cached, same device as _vectors)."""
-        if self._normed is None:
-            self._normed = F.normalize(self._vectors.detach(), p=2, dim=1)
-        return self._normed
+        """Return raw vectors. Kept for API symmetry; values already in
+        ``[-1, 1)`` after every step / save / load."""
+        return self._vectors.detach()
 
     # -- Similarity --
 
     def most_similar(self, positive,
                      topn: int = 1) -> List[Tuple[str, float]]:
-        """Find the *topn* words closest to *positive* by cosine similarity."""
+        """Find the *topn* words closest to *positive* under wrapped MSE."""
         if not isinstance(positive, torch.Tensor):
             positive = torch.as_tensor(positive, dtype=torch.float32)
-        normed = self.get_normed_vectors()
-        positive = positive.float().flatten().to(normed.device)
-        norm = positive.norm()
-        if norm > 0:
-            positive = positive / norm
-        sims = normed @ positive
+        vectors = self.get_normed_vectors()
+        positive = positive.float().flatten().to(vectors.device)
+        sims = _wrapped_mse_score(vectors, positive)
         if topn < len(sims):
             _, top_idx = sims.topk(topn)
         else:
@@ -477,10 +503,10 @@ class WordVectors(nn.Module):
         return [(self.index_to_key[i], float(sims[i].detach())) for i in top_idx]
 
     def similarity(self, word1: str, word2: str) -> float:
-        """Return cosine similarity between two words."""
+        """Return wrapped-MSE similarity (larger is closer)."""
         v1 = self[word1].detach()
         v2 = self[word2].detach()
-        return float(F.cosine_similarity(v1.unsqueeze(0), v2.unsqueeze(0)))
+        return float(_wrapped_mse_score(v1, v2))
 
     # -- Exploration / CLI helpers --
 
@@ -611,15 +637,20 @@ class PretrainModel:
         K = min(self.neg_samples, vocab_size - 1)
 
         pos_vecs = self.wv._vectors[target_idx]                      # [N, dim]
-        pos_scores = (queries * pos_vecs).sum(dim=1)                  # [N]
+        pos_scores = _wrapped_mse_score(queries, pos_vecs)           # [N]
 
         neg_idx = torch.randint(0, vocab_size, (queries.shape[0], K),
                                 device=device)                        # [N, K]
         neg_vecs = self.wv._vectors[neg_idx]                         # [N, K, dim]
-        neg_scores = torch.bmm(neg_vecs,
-                               queries.unsqueeze(2)).squeeze(2)       # [N, K]
+        neg_scores = _wrapped_mse_score(
+            queries.unsqueeze(1), neg_vecs)                          # [N, K]
 
         return -F.logsigmoid(pos_scores).mean() - F.logsigmoid(-neg_scores).mean()
+
+    def _post_step(self):
+        with torch.no_grad():
+            self.wv._vectors.copy_(_wrap_unit_ball(self.wv._vectors))
+        self.wv._normed = None
 
     # -- single-sentence update ------------------------------------------------
 
@@ -665,6 +696,7 @@ class PretrainModel:
         loss.backward()
         self.observe_sigma(targets)
         self.optimizer.step()
+        self._post_step()
 
         return loss.item()
 
@@ -693,6 +725,7 @@ class PretrainModel:
         loss.backward()
         self.observe_sigma(word_indices)
         self.optimizer.step()
+        self._post_step()
 
         return loss.item()
 
@@ -744,11 +777,11 @@ class _SBOWEmbedding(nn.Module):
     def __init__(self, vocab_size, vector_size):
         super().__init__()
         self.embeddings = nn.Embedding(vocab_size, vector_size)
-        # Initialise on the unit sphere
         with torch.no_grad():
-            nn.init.normal_(self.embeddings.weight)
             self.embeddings.weight.copy_(
-                torch.nn.functional.normalize(self.embeddings.weight, p=2, dim=1)
+                _random_unit_ball(self.embeddings.weight.shape,
+                                  device=self.embeddings.weight.device,
+                                  dtype=self.embeddings.weight.dtype)
             )
 
 
@@ -806,7 +839,8 @@ class StreamingSBOWTrainer:
             if count >= self.min_count:
                 self.word_to_idx[word] = len(self.idx_to_word)
                 self.idx_to_word.append(word)
-        self.model = _SBOWEmbedding(self.vocab_size, self.vector_size).to(self.device)
+        self.model = _SBOWEmbedding(
+            self.vocab_size, self.vector_size).to(self.device)
         self.model = util.compile(self.model)
         self.optimizer = optim.SGD(self.model.parameters(), lr=self.learning_rate)
         self.neg_samples = 64
@@ -829,7 +863,8 @@ class StreamingSBOWTrainer:
         if wv.counts is not None:
             for word, ct in zip(self.idx_to_word, wv.counts.tolist()):
                 self.word_counts[word] = int(ct)
-        self.model = _SBOWEmbedding(self.vocab_size, self.vector_size).to(self.device)
+        self.model = _SBOWEmbedding(
+            self.vocab_size, self.vector_size).to(self.device)
         with torch.no_grad():
             saved = wv._vectors.to(self.device)
             if saved.shape == self.model.embeddings.weight.shape:
@@ -868,31 +903,34 @@ class StreamingSBOWTrainer:
         # Negative sampling instead of full softmax
         K = min(self.neg_samples, self.vocab_size - 1)
         pos_vecs = self.model.embeddings(idx)                    # [N, dim]
-        pos_scores = (centroids * pos_vecs).sum(dim=1)           # [N]
+        pos_scores = _wrapped_mse_score(centroids, pos_vecs)     # [N]
 
         neg_idx = torch.randint(0, self.vocab_size, (N, K),
                                 device=self.device)              # [N, K]
         neg_vecs = self.model.embeddings(neg_idx)                # [N, K, dim]
-        neg_scores = torch.bmm(neg_vecs,
-                               centroids.unsqueeze(2)).squeeze(2) # [N, K]
+        neg_scores = _wrapped_mse_score(
+            centroids.unsqueeze(1), neg_vecs)                    # [N, K]
 
         loss = -F.logsigmoid(pos_scores).mean() - F.logsigmoid(-neg_scores).mean()
 
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+        with torch.no_grad():
+            self.model.embeddings.weight.copy_(
+                _wrap_unit_ball(self.model.embeddings.weight))
 
         self.n_examples += N
         self._total_loss += loss.item() * N
         self._loss_count += N
 
     def finish(self):
-        """Return trained WordVectors (L2-normalized)."""
+        """Return trained WordVectors (wrapped into the unit cell)."""
         n = self.vocab_size
         if n == 0:
             return WordVectors.from_vocab([], vector_size=self.vector_size)
         with torch.no_grad():
-            vectors = F.normalize(self.model.embeddings.weight, p=2, dim=1)
+            vectors = _wrap_unit_ball(self.model.embeddings.weight)
             vectors = vectors.detach().cpu().numpy()
         return WordVectors(vectors, list(self.idx_to_word))
 
@@ -1129,8 +1167,8 @@ class StreamingChunkSBOWTrainer:
         print(f"Phase B trainer on {self.device}, "
               f"vocab={self.vocab_size} (chunks)")
 
-        self.model = _SBOWEmbedding(self.vocab_size,
-                                    self.vector_size).to(self.device)
+        self.model = _SBOWEmbedding(
+            self.vocab_size, self.vector_size).to(self.device)
         self.model = util.compile(self.model)
         self.optimizer = optim.SGD(self.model.parameters(),
                                    lr=self.learning_rate)
@@ -1174,13 +1212,13 @@ class StreamingChunkSBOWTrainer:
 
         K = min(self.neg_samples, self.vocab_size - 1)
         pos_vecs = self.model.embeddings(idx)                   # [N, dim]
-        pos_scores = (centroids * pos_vecs).sum(dim=1)          # [N]
+        pos_scores = _wrapped_mse_score(centroids, pos_vecs)    # [N]
 
         neg_idx = torch.randint(0, self.vocab_size, (N, K),
                                 device=self.device)             # [N, K]
         neg_vecs = self.model.embeddings(neg_idx)               # [N, K, dim]
-        neg_scores = torch.bmm(neg_vecs,
-                               centroids.unsqueeze(2)).squeeze(2) # [N, K]
+        neg_scores = _wrapped_mse_score(
+            centroids.unsqueeze(1), neg_vecs)                   # [N, K]
 
         loss = (-F.logsigmoid(pos_scores).mean()
                 - F.logsigmoid(-neg_scores).mean())
@@ -1188,17 +1226,18 @@ class StreamingChunkSBOWTrainer:
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+        with torch.no_grad():
+            self.model.embeddings.weight.copy_(
+                _wrap_unit_ball(self.model.embeddings.weight))
 
         self.n_examples += int(N)
         self._total_loss += float(loss.item()) * int(N)
         self._loss_count += int(N)
 
     def finish(self) -> "WordVectors":
-        """Return a chunk-keyed WordVectors (L2-normalized)."""
+        """Return a chunk-keyed WordVectors (wrapped into the unit cell)."""
         with torch.no_grad():
-            vectors = F.normalize(self.model.embeddings.weight,
-                                  p=2, dim=1)
-            vectors = vectors.detach().cpu()
+            vectors = _wrap_unit_ball(self.model.embeddings.weight).detach().cpu()
         return WordVectors(vectors, list(self.idx_to_key))
 
 

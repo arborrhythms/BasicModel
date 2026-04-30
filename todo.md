@@ -1,4 +1,5 @@
 
+## Grammar
 Some of the Grammatical operations have been recently integrated with SigmaLayer and PiLayer of the NN. This trend should be continued; for example, the Sigma and Pi layers positive and monotonic, so we need a not() operator that performs negation on the symbol, and emits a word in the grammatical derivation.
 
 This can be extended: the necessary precondition of xAI (HI) is that every operation has a (grammatical) interpretation. Several of these implmentations will not happen at the symbolic layer:

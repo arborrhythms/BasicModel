@@ -2286,6 +2286,23 @@ class TestWeightShapeMismatch(unittest.TestCase):
         finally:
             os.unlink(path)
 
+    def test_load_ignores_unexpected_keys_when_all_current_keys_match(self):
+        """Stale alias/module keys must not block loading valid weights."""
+        m1 = self._make_model(100)
+        with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f:
+            path = f.name
+        try:
+            state = {k: v.detach().clone() for k, v in m1.state_dict().items()}
+            state["stale.alias.fc.weight"] = state["fc.weight"].detach().clone()
+            torch.save({"state_dict": state}, path)
+
+            m2 = self._make_model(100)
+            self.assertTrue(m2.load_weights(path))
+            for k in m1.state_dict():
+                torch.testing.assert_close(m1.state_dict()[k], m2.state_dict()[k])
+        finally:
+            os.unlink(path)
+
 
 # ---------------------------------------------------------------------------
 # Training actually updates weights (regression: numEpochs=1 did nothing)
