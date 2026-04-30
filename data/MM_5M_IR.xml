@@ -1,0 +1,141 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- MM_5M_IR: bidirectional masked Input Reconstruction sibling of
+       MM_5M. Same brick-body architecture (8 hierarchical levels,
+       N*D=4096); differs in: prediction mode (IR vs ARIR),
+       tokenization (word/lexicon vs byte+BPE), and lexicon size
+       (200K vs 4096). See doc/specs/2026-04-29-ir-mode-design.md. -->
+  <architecture>
+    <conceptualOrder>3</conceptualOrder>
+    <useButterflies>true</useButterflies>
+    <l1Lambda>0.01</l1Lambda>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
+    <processSymbols>false</processSymbols>
+    <type>mental</type>
+    <ergodic>false</ergodic>
+    <modelType>embedding</modelType>
+    <truthBiasScale>0.1</truthBiasScale>
+    <LuminosityWeight>0.1</LuminosityWeight>
+    <UniversalityWeight>0.1</UniversalityWeight>
+    <maxResponseLength>4096</maxResponseLength>
+    <weightsPath>MM_5M_IR.ckpt</weightsPath>
+    <embeddingPath>MM_5M_IR.kv</embeddingPath>
+    <reconstruct>symbols</reconstruct>
+    <amp>bf16</amp>
+
+    <data>
+      <shardDir>data/fineweb</shardDir>
+      <numShards>1</numShards>
+      <maxDocs>10000</maxDocs>
+      <minFrequency>0.00001</minFrequency>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>1</numEpochs>
+      <batchSize>128</batchSize>
+      <numWorkers>4</numWorkers>
+      <learningRate>0.0005</learningRate>
+      <reverseScale>1.0</reverseScale>
+      <maskedPrediction>IR</maskedPrediction>
+      <maskRate>0.15</maskRate>
+      <trainEmbedding>NONE</trainEmbedding>
+      <autoload>true</autoload>
+      <autosave>true</autosave>
+      <sentencePrediction>true</sentencePrediction>
+      <sentenceContextWindow>5</sentenceContextWindow>
+      <sentenceCentroidHistory>3</sentenceCentroidHistory>
+      <sentenceLambda>1.01</sentenceLambda>
+      <sentencePredictionScale>0.1</sentencePredictionScale>
+      <certainty>false</certainty>
+    </training>
+
+    <server>
+      <host>127.0.0.1</host>
+      <port>8004</port>
+      <timeout>120</timeout>
+    </server>
+
+  </architecture>
+
+  <InputSpace>
+    <nInput>1024</nInput>
+    <nDim>6</nDim>
+    <nVectors>1024</nVectors>
+    <nOutput>1024</nOutput>
+    <nWhere>2</nWhere>
+    <nWhen>0</nWhen>
+    <lexer>word</lexer>
+    <codebook>false</codebook>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nInput>1024</nInput>
+    <nVectors>1000000</nVectors>
+    <nDim>6</nDim>
+    <nWhere>2</nWhere>
+    <nWhen>0</nWhen>
+    <nOutput>1024</nOutput>
+    <passThrough>false</passThrough>
+    <hasAttention>false</hasAttention>
+    <invertible>false</invertible>
+    <codebook>true</codebook>
+    <chunking>lexicon</chunking>
+    <chunkingFrequency>1</chunkingFrequency>
+  </PerceptualSpace>
+
+  <!-- ConceptualSpace: final level shape is 4x1024.
+       Hierarchical mode computes per-level shapes dynamically via _level_shapes. -->
+  <ConceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>1024</nDim>
+    <nVectors>512</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <hasAttention>false</hasAttention>
+    <invertible>false</invertible>
+    <codebook>true</codebook>
+    <chunking>lexicon</chunking>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nInput>1024</nInput>
+    <nInputDim>8</nInputDim>
+    <nVectors>1024</nVectors>
+    <nDim>6</nDim>
+    <nWhere>2</nWhere>
+    <nWhen>0</nWhen>
+    <nOutput>1024</nOutput>
+    <codebook>true</codebook>
+    <passThrough>false</passThrough>
+    <accumulateTruth>0</accumulateTruth>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>4</nDim>
+    <nVectors>1</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+  </OutputSpace>
+
+
+  <WordSpace>
+    <useGrammar>none</useGrammar>
+
+    <language>
+      <!-- Start nonterminal: SyntacticLayer.compose marks a soft sentence
+           boundary when row b's parse stack reduces to a single live leaf
+           of this category. Outer doc-streaming loop (runEpoch) drains
+           the per-row signal and dispatches soft_reset(batch=b). -->
+      <start>S</start>
+      <grammar>
+        <S>S = intersection(S, S)</S>
+        <S>S = union(S, S)</S>
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+  </WordSpace>
+
+</model>

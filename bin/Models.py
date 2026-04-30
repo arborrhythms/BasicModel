@@ -236,6 +236,16 @@ class BaseModel(nn.Module):
         if hasattr(self, 'inputSpace'):
             self.inputSpace.masked_prediction = self.masked_prediction
 
+        # IR-mode mask rate: Bernoulli probability that a position is
+        # replaced by NULL_PERCEPT for masked reconstruction. Set on
+        # every model so create_ir_mask can read it; only IR mode
+        # actually consumes it. Default 0.15 (BERT-style).
+        _mask_rate = _t("maskRate", 0.15)
+        self.mask_rate = float(_mask_rate if _mask_rate is not None else 0.15)
+        if not (0.0 <= self.mask_rate <= 1.0):
+            raise ValueError(
+                f"maskRate must be in [0.0, 1.0], got {self.mask_rate}")
+
         # serial_mode: true when streaming AR is active — enables the
         # slide-and-recompute fast path in PerceptualSpace/ConceptualSpace.
         is_runtime_arir = (
@@ -1135,7 +1145,8 @@ class BaseModel(nn.Module):
         ]
         missing = [k for k in model_state if k not in state]
         unexpected = [k for k in state if k not in model_state]
-        if mismatches or missing or unexpected:
+        fatal_unexpected = unexpected if strict else []
+        if mismatches or missing or fatal_unexpected:
             lines = [f"[{self.name}] Weight file mismatch -- cannot load {path}"]
             if mismatches:
                 lines.append("  Shape mismatches:")
@@ -1145,8 +1156,8 @@ class BaseModel(nn.Module):
                     lines.append(f"    ... and {len(mismatches) - 10} more")
             if missing:
                 lines.append(f"  Keys in model but missing from file: {len(missing)}")
-            if unexpected:
-                lines.append(f"  Keys in file not present in model: {len(unexpected)}")
+            if fatal_unexpected:
+                lines.append(f"  Keys in file not present in model: {len(fatal_unexpected)}")
             lines.append("  The model config likely changed since this checkpoint was saved.")
             lines.append(f"  To fix: correct the model XML to match the saved weights,")
             lines.append(f"          or delete/move {path} to start fresh.")
@@ -1159,6 +1170,10 @@ class BaseModel(nn.Module):
             TheMessage(f"[{self.name}] Warning: cannot load {path}: {e}")
             return False
 
+        if unexpected:
+            TheMessage(
+                f"[{self.name}] Ignored {len(unexpected)} stale checkpoint "
+                f"keys not present in the current model")
         TheMessage(f"[{self.name}] Weights loaded from {path}")
         return True
 
@@ -1784,34 +1799,39 @@ class BasicModel(BaseModel):
         )
 
     def infer(self, text, max_length=None, mode=None):
-        """Autoregressive inference via the standard batch pipeline.
+        """Inference via the standard batch pipeline.
 
-        Two modes:
+        Three modes:
 
         ``AR`` (append-and-rerun): stages seed text, runs forward,
         decodes the output token, appends it to the input via
         ``pushInput()``, and repeats.  Each iteration re-lexes and
         re-embeds the full (growing) input.
 
-        ``ARIR`` (autoregressive input reconstruction, default): TODO --
-        reconstructs a degraded input in-place, reusing the lexing and
-        codebook lookup from the initial forward pass.  See design plan
-        in ``docs/plans/``.
+        ``ARIR`` (autoregressive input reconstruction): reconstructs a
+        degraded input in-place, reusing the lexing and codebook lookup
+        from the initial forward pass.
+
+        ``IR`` (parallel-infill input reconstruction): bidirectional
+        masked-position reconstruction. Lexes the input, embeds it,
+        applies ``mask_rate`` random masking to the embedded substrate
+        (NULL_PERCEPT replacement), runs one forward+reverse pass, and
+        decodes the percept-level reconstruction at masked positions
+        back to words via nearest-neighbor lookup against the lexicon.
+        Returns ``(slot_index, original_token, predicted_token)`` triples.
 
         Stops when: EOF is predicted, ``max_length`` characters have
         been produced, or the InputSpace output buffer is full.
 
         Args:
             text: input string (seed text)
-            max_length: max characters to generate
-            mode: 'AR' for traditional append-and-rerun,
-                  'ARIR' for input reconstruction (default).
-                  Also accepts traditional=True/False for backwards compat
-                  via keyword: ``infer(text, traditional=True)`` is
-                  equivalent to ``infer(text, mode='AR')``.
+            max_length: max characters to generate (AR only)
+            mode: 'AR', 'ARIR', or 'IR'. Defaults to the model's
+                  ``masked_prediction`` setting.
 
         Returns:
-            list of predicted tokens (words or characters)
+            list of predicted tokens (AR / ARIR), or list of
+            (slot_index, original_token, predicted_token) triples (IR).
         """
         if mode is None:
             mode = getattr(self, 'masked_prediction', 'ARIR')
@@ -1819,8 +1839,12 @@ class BasicModel(BaseModel):
         if max_length is None:
             max_length = getattr(self, 'max_response_length', 256)
 
-        if mode not in {'AR', 'ARIR'}:
-            raise ValueError(f"infer: unknown mode '{mode}'. Use 'AR' or 'ARIR'.")
+        if mode not in {'AR', 'ARIR', 'IR'}:
+            raise ValueError(
+                f"infer: unknown mode '{mode}'. Use 'AR', 'ARIR', or 'IR'.")
+
+        if mode == 'IR':
+            return self._infer_ir(text)
 
         tokens = None
         if mode == 'ARIR':
@@ -1872,6 +1896,114 @@ class BasicModel(BaseModel):
                     TheData.pushInput(word)
         return tokens
 
+    def _infer_ir(self, text):
+        """IR-mode parallel-infill inference. See ``infer(mode='IR')``."""
+        if not self.reversible:
+            raise ValueError("infer(mode='IR') requires reversible=True.")
+        self.eval()
+        self.set_sigma(0)
+
+        with torch.no_grad(), TheData.runtime_batch([text]):
+            inputTensor = self.inputSpace.prepInput(list(TheData.train_input))
+            forwardInput, symbols, predictions, _ = self.forward(inputTensor)
+            if forwardInput is None:
+                return []
+            inputDataPred, _ = self.reverse(symbols, predictions)
+
+        mask_pos = self._ir_mask_positions
+        if (mask_pos is None or inputDataPred is None
+                or not bool(mask_pos.any())):
+            return []
+
+        # Lex output for the original tokens at each slot.
+        peer = self._peer_perceptual if hasattr(self, '_peer_perceptual') else None
+        if peer is None:
+            peer = self.perceptualSpace
+        codebook = peer.subspace.what  # Embedding
+        last_meta = getattr(peer, '_forward_input', None) or {}
+        all_tokens = last_meta.get('tokens') or [[]]
+        tokens0 = all_tokens[0] if all_tokens else []
+
+        # Decode: nearest-neighbor on the lexicon, slicing the muxed
+        # event down to the WHAT (lexicon) dim.
+        D = codebook.wv.vector_size
+        K = inputDataPred.shape[1]
+        indices = mask_pos[0, :K].nonzero(as_tuple=False).squeeze(-1).tolist()
+        out = []
+        for idx in indices:
+            orig = tokens0[idx] if idx < len(tokens0) else ''
+            pred_vec = inputDataPred[0, idx, :D].detach().unsqueeze(0)
+            try:
+                neighbors = codebook.wv.most_similar(pred_vec, k=1)
+                pred = neighbors[0][0] if neighbors else ''
+            except Exception:
+                pred = ''
+            out.append((int(idx), str(orig), str(pred)))
+        return out
+
+    def create_ir_mask(self, percept_subspace):
+        """IR mode: replace embeddings at random positions with NULL_PERCEPT.
+
+        Captures the pre-mask embedded event as the loss target and stashes
+        it on ``self`` along with the per-position bool mask so the loss
+        path can compute reconstruction error at masked positions only.
+
+        Mask injection edits only the WHAT slice of the muxed event so the
+        body still has WHERE/WHEN positional info at masked slots.
+        Padding slots (codebook index 0, byte ``\\x00``) are excluded so
+        the model isn't asked to "predict" trailing zeros.
+        """
+        self._ir_mask_positions = None
+        self._ir_pre_mask_input = None
+        if percept_subspace is None:
+            return
+        if hasattr(percept_subspace, 'is_empty') and percept_subspace.is_empty():
+            return
+        event_basis = percept_subspace.event
+        if event_basis is None:
+            return
+        event = event_basis.getW()
+        if event is None or event.dim() != 3:
+            return
+        codebook = percept_subspace.what
+        if not hasattr(codebook, 'null_percept_idx'):
+            return  # numeric mode / non-Embedding codebook
+
+        B, K, D = event.shape
+        dev = event.device
+
+        # Sample mask positions [B, K] bool.
+        rate = float(self.mask_rate)
+        if rate <= 0.0 or rate > 1.0:
+            return
+        mask = torch.bernoulli(
+            torch.full((B, K), rate, device=dev)).bool()
+
+        # Exclude padding slots (codebook index 0 == byte \x00 sentinel).
+        active = getattr(percept_subspace, '_active', None)
+        if (active is not None and active.dim() == 3
+                and active.shape[-1] >= 1):
+            what_idx = active[:, :K, 0].long()
+            if what_idx.shape == mask.shape:
+                mask = mask & (what_idx != 0)
+
+        # Snapshot pre-mask embedded event as the loss target.
+        # Detach so backward through the loss target doesn't double up
+        # on the forward graph (we still get gradient through pred via
+        # the brick body + reverse pipeline).
+        self._ir_pre_mask_input = event.detach().clone()
+        self._ir_mask_positions = mask
+
+        if not bool(mask.any()):
+            return
+
+        null_vec = codebook.getW()[codebook.null_percept_idx]  # [nWhat]
+        nWhat = int(null_vec.shape[-1])
+        # Replace the WHAT slice at masked positions; preserve WHERE/WHEN.
+        new_event = event.clone()
+        new_event[mask, :nWhat] = null_vec.to(new_event.dtype)
+        event_basis.setW(new_event)
+
     def forward(self, inputData):
         """Microbatch AR forward: stem -> body -> head straight-line.
 
@@ -1897,8 +2029,21 @@ class BasicModel(BaseModel):
             self.masked_prediction in ('AR', 'ARUS', 'ARIR')
             and not is_runtime_arir
         )
+        is_ir_mode = (self.masked_prediction == 'IR' and not is_runtime_arir)
 
-        result = self.pipeline_fwd(inputData)
+        if is_ir_mode:
+            # IR splits stem from body so we can inject NULL_PERCEPT at
+            # random embedded positions before the body sees them.
+            stem_out = self.pipeline_stem(inputData)
+            if stem_out is None or (hasattr(stem_out, 'is_empty')
+                                    and stem_out.is_empty()):
+                self.inputs = self.inputSpace.subspace
+                return None, None, None, None
+            self.create_ir_mask(stem_out)
+            body_out = self.pipeline_body(stem_out)
+            result = self.pipeline_head(body_out)
+        else:
+            result = self.pipeline_fwd(inputData)
         # Empty/sentinel passthrough: nothing to predict.
         if result is None or (hasattr(result, 'is_empty') and result.is_empty()):
             self.inputs = self.inputSpace.subspace
@@ -2380,6 +2525,7 @@ class BasicModel(BaseModel):
                 self.masked_prediction in ('AR', 'ARUS', 'ARIR')
                 and not arir_mode
             )
+            is_ir_mode = (self.masked_prediction == 'IR' and not arir_mode)
             outputDataPred = predictions
 
             if arir_mode:
@@ -2453,6 +2599,12 @@ class BasicModel(BaseModel):
                     # AR has no reconstruction term so the output gets full weight.
                     output_weight = ((1 - self.loss.reverse_scale)
                                      if self.masked_prediction == 'ARIR' else 1.0)
+            elif is_ir_mode:
+                # IR: lossOut is suppressed (the head has no role in
+                # masked input reconstruction); kept wired for code-path
+                # symmetry but contributes zero to the total loss.
+                lossOut = torch.tensor(0.0, device=TheDevice.get())
+                output_weight = 0.0
             else:
                 # Non-AR: today's behavior.
                 outputPred = outputDataPred.squeeze()
@@ -2488,6 +2640,45 @@ class BasicModel(BaseModel):
                 else:
                     inputDataPred = None
                     lossIn = None
+            elif is_ir_mode and self.reversible:
+                # IR: full reverse to InputSpace level, then MSE only at
+                # masked positions. The pre-mask target was captured by
+                # create_ir_mask before the body saw the (corrupted)
+                # embedded substrate; mask_positions track which slots
+                # were replaced with NULL_PERCEPT.
+                inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
+                mask_pos = self._ir_mask_positions
+                pre_mask = self._ir_pre_mask_input
+                if (mask_pos is not None and pre_mask is not None
+                        and bool(mask_pos.any())):
+                    # Align the K dim between pred and target. forwardInput
+                    # / inputDataPred live at the InputSpace muxed level
+                    # whose slot count usually matches the percept-level
+                    # mask under word-mode + no-chunking; if they ever
+                    # diverge, clip the trailing slots so the mask still
+                    # applies cleanly.
+                    pred_full = inputDataPred
+                    target_full = forwardInput
+                    K_pred = pred_full.shape[1]
+                    K_mask = mask_pos.shape[1]
+                    K_target = target_full.shape[1]
+                    K = min(K_pred, K_mask, K_target)
+                    pred_full = pred_full[:, :K, :]
+                    target_full = target_full[:, :K, :]
+                    mask_pos = mask_pos[:, :K]
+                    D = min(pred_full.shape[-1], target_full.shape[-1])
+                    pred_at_masked = pred_full[mask_pos][:, :D]
+                    target_at_masked = target_full[mask_pos][:, :D]
+                    lossIn = self.loss.compute(pred_at_masked, target_at_masked)
+                else:
+                    # No masked positions this batch (rare, but possible
+                    # for very short rows). Yield a zero-valued grad.
+                    lossIn = torch.tensor(0.0, device=TheDevice.get())
+                TheError.add(
+                    "reconstruction", lossIn,
+                    weight=1.0,
+                    space="InputSpace", category="reconstruction",
+                )
             elif self.reversible and self.loss.reverse_scale > 0:
                 # Non-AR reversible: today's reverse branch.
                 inputDataPred, inputPred = self.reverse(symbols, outputDataPred)
@@ -2812,6 +3003,12 @@ class BasicModel(BaseModel):
                 top = ", ".join(f"{k[0]}/{k[1]}:{d:+d}" for k, d in deltas[:8])
                 TheMessage(f"[tensors] batch={batchNum} top deltas: {top}")
             self._leak_prev_counts = dict(counts)
+
+        # Clear per-batch IR scratch so the next batch's
+        # create_ir_mask starts from a clean slate (no stale mask /
+        # pre-mask tensor pinned in GPU memory).
+        self._ir_mask_positions = None
+        self._ir_pre_mask_input = None
 
         self.End()
         return result, batchNum
@@ -3314,6 +3511,7 @@ class MentalModel(BaseModel):
     perceptual_sbow_loss = BasicModel.perceptual_sbow_loss
     accumulate_output_symbol_residual = BasicModel.accumulate_output_symbol_residual
     infer            = BasicModel.infer
+    _infer_ir        = BasicModel._infer_ir
     # Outer doc-streaming helpers (rolling-cursor handoff). MentalModel
     # inherits the runBatch/runEpoch class attrs explicitly above, so
     # the post-tick dispatch / compact helpers must be re-mapped too;
@@ -3324,6 +3522,7 @@ class MentalModel(BaseModel):
     flush_word_buffers     = BasicModel.flush_word_buffers
     _stub_outputs          = BasicModel._stub_outputs
     _maybe_compile_brick   = BasicModel._maybe_compile_brick
+    create_ir_mask        = BasicModel.create_ir_mask
 
     def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
                conceptualOrder=1,
@@ -4069,11 +4268,21 @@ class MentalModel(BaseModel):
             self.masked_prediction in ('AR', 'ARUS', 'ARIR')
             and not is_runtime_arir
         )
+        is_ir_mode = (self.masked_prediction == 'IR' and not is_runtime_arir)
 
         # Single-call pipeline. InputSpace produces [B, K, N, D] (or
         # [B, N, D] for non-AR with k_axis=False). FlattenKWrapper
         # passes through transparently when k_axis is False.
-        result = self.pipeline_fwd(inputData)
+        if is_ir_mode:
+            stem_out = self.pipeline_stem(inputData)
+            if (stem_out is not None
+                    and not (hasattr(stem_out, 'is_empty')
+                             and stem_out.is_empty())):
+                self.create_ir_mask(stem_out)
+            body_out = self.pipeline_body(stem_out)
+            result = self.pipeline_head(body_out)
+        else:
+            result = self.pipeline_fwd(inputData)
 
         # Empty-sentinel: input exhausted.
         if result is None or (hasattr(result, 'is_empty') and result.is_empty()):

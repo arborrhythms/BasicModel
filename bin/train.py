@@ -147,6 +147,22 @@ def read_xml_config(xml_path):
         lexer = inp.findtext("lexer")
         if lexer:
             result["lexer"] = lexer
+    # PerceptualSpace.nDim is the lexicon vector size; SBOW must train at
+    # this dim or downstream codebook lookups blow up at load time.
+    perc = root.find(".//PerceptualSpace")
+    if perc is not None:
+        ndim = perc.findtext("nDim")
+        if ndim:
+            try:
+                result["vectorSize"] = int(ndim)
+            except ValueError:
+                pass
+        nvec = perc.findtext("nVectors")
+        if nvec:
+            try:
+                result["nVectors"] = int(nvec)
+            except ValueError:
+                pass
     return result
 
 
@@ -185,6 +201,10 @@ def train_local(args):
             embed_cmd += ["--max-docs", str(args.max_docs)]
         if args.random_shards:
             embed_cmd += ["--random-shards"]
+        # Honor PerceptualSpace.nDim from the XML; embed.py defaults to
+        # 100, which silently mismatches small-D lexicon configs.
+        if cfg.get("vectorSize"):
+            embed_cmd += ["--vector-size", str(cfg["vectorSize"])]
         TheMessage(f"\n=== Phase 1: Training embeddings -> {emb_path} ===")
         run(embed_cmd, cwd=proj, env=env)
     else:

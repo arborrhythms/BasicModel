@@ -795,10 +795,22 @@ class StreamingSBOWTrainer:
     the 2x memory overhead of Adam's momentum buffers.
     """
 
-    def __init__(self, vector_size=100, min_count=5, learning_rate=0.001):
+    def __init__(self, vector_size=100, min_count=5, learning_rate=0.001,
+                 sigma=5.0, normalize=True):
         self.vector_size = vector_size
         self.min_count = min_count
         self.learning_rate = learning_rate
+        # Inner/outer position-Gaussian SBOW knobs.
+        # ``sigma`` is the position-distance scale of the inner kernel
+        # (Mikolov-style local window). The outer kernel is its
+        # complement (``1 - exp(-d^2 / 2σ^2)``), peaking at far
+        # positions. Sentences shorter than ``2σ`` produce a near-flat
+        # contrast and are skipped.
+        # ``normalize=True`` re-wraps weights into the periodic unit
+        # cell after every optimizer step, the canonical contract for
+        # the flat n-torus codebook (see embed.py:_wrap_unit_ball).
+        self.sigma = float(sigma)
+        self.normalize = bool(normalize)
 
         self.word_counts = Counter()
         self.word_to_idx = {}
@@ -826,12 +838,16 @@ class StreamingSBOWTrainer:
     # -- Pass 1: vocabulary building ------------------------------------------
 
     def scan_document(self, text):
-        """Parse one document and count words (no training)."""
-        for sent_text, _ in parse(text, lex='sentences'):
-            for word, _ in parse(sent_text, lex='words'):
-                if word.isspace():
-                    continue
-                self.word_counts[word] += 1
+        """Parse one document and count words (no training).
+
+        Hot path -- avoids the sentence split (boundaries are unused
+        here) and skips ``parse``'s per-token byte-offset work; uses
+        ``Counter.update`` (C-implemented batch increment) instead of
+        a Python increment loop.
+        """
+        from util import _PARSE_WORD_RE
+        words = (w for w in _PARSE_WORD_RE.findall(text) if not w.isspace())
+        self.word_counts.update(words)
 
     def build_vocab(self):
         """Promote words that meet min_count and allocate the model."""
@@ -887,38 +903,63 @@ class StreamingSBOWTrainer:
             self._train_sentence(words)
 
     def _train_sentence(self, words):
-        """SBOW via negative sampling: predict each word from leave-one-out centroid."""
+        """Inner/outer Gaussian SBOW.
+
+        For each target position i in the sentence, the pode is a
+        Gaussian-weighted mean of NEAR positions (``w_inner``) and the
+        antipode is a complement-weighted mean of FAR positions
+        (``w_outer = 1 - w_inner``). Both draw from the same sentence
+        so topic content cancels in the pos/neg contrast, leaving the
+        position-conditioned (POS-determined) signal. Within each POS
+        region, distributional semantic similarity is preserved by
+        the pode pull (cf. word2vec). The flat-kernel limit
+        (``sigma → ∞``) collapses pode and antipode equally and
+        produces a zero gradient -- this is by design; pick a finite
+        ``sigma`` (default 5, matching Mikolov's skip-gram window).
+
+        Sentences shorter than ``ceil(2*sigma)`` words yield a
+        degenerate near-flat contrast (pode ≈ antipode); skip them.
+        """
         word_indices = [self.word_to_idx[w] for w in words
                         if w in self.word_to_idx]
-        if len(word_indices) < 2:
+        N = len(word_indices)
+        sigma = self.sigma
+        if N < max(2, int(2 * sigma)):
             return
 
         idx = torch.tensor(word_indices, dtype=torch.long, device=self.device)
-        N = len(word_indices)
+        vecs = self.model.embeddings(idx)                              # [N, D]
+        D = vecs.shape[-1]
+        dev = vecs.device
+        dtype = vecs.dtype
 
-        vecs = self.model.embeddings(idx)                       # [N, dim]
-        total = vecs.sum(dim=0)                                 # [dim]
-        centroids = (total.unsqueeze(0) - vecs) / (N - 1)       # [N, dim]
+        # Position-distance kernels. Both row-normalized; ``inner``
+        # peaks at d=0 (so its diagonal is 1.0 and we zero it
+        # in-place); ``outer = 1 - inner`` already has a zero diagonal
+        # by construction.
+        pos = torch.arange(N, device=dev, dtype=dtype)
+        dist = (pos.unsqueeze(0) - pos.unsqueeze(1)).abs()             # [N, N]
+        inner = torch.exp(-(dist ** 2) / (2.0 * sigma * sigma))
+        outer = 1.0 - inner
+        inner.fill_diagonal_(0.0)
+        inner = inner / inner.sum(dim=1, keepdim=True).clamp(min=1e-8)
+        outer = outer / outer.sum(dim=1, keepdim=True).clamp(min=1e-8)
 
-        # Negative sampling instead of full softmax
-        K = min(self.neg_samples, self.vocab_size - 1)
-        pos_vecs = self.model.embeddings(idx)                    # [N, dim]
-        pos_scores = _wrapped_mse_score(centroids, pos_vecs)     # [N]
+        pode     = inner @ vecs                                        # [N, D]
+        antipode = outer @ vecs                                        # [N, D]
 
-        neg_idx = torch.randint(0, self.vocab_size, (N, K),
-                                device=self.device)              # [N, K]
-        neg_vecs = self.model.embeddings(neg_idx)                # [N, K, dim]
-        neg_scores = _wrapped_mse_score(
-            centroids.unsqueeze(1), neg_vecs)                    # [N, K]
+        pos_scores = _wrapped_mse_score(pode,     vecs)                # [N]
+        neg_scores = _wrapped_mse_score(antipode, vecs)                # [N]
 
         loss = -F.logsigmoid(pos_scores).mean() - F.logsigmoid(-neg_scores).mean()
 
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        with torch.no_grad():
-            self.model.embeddings.weight.copy_(
-                _wrap_unit_ball(self.model.embeddings.weight))
+        if self.normalize:
+            with torch.no_grad():
+                self.model.embeddings.weight.copy_(
+                    _wrap_unit_ball(self.model.embeddings.weight))
 
         self.n_examples += N
         self._total_loss += loss.item() * N
@@ -941,11 +982,13 @@ class StreamingSBOWTrainer:
 
 def build_embeddings(shard_paths, output_path, max_docs=10000,
                      vector_size=100, epochs=10, min_count=5,
-                     batch_size=256):
+                     batch_size=256, sigma=5.0, normalize=True):
     trainer = StreamingSBOWTrainer(
         vector_size=vector_size,
         min_count=min_count,
         learning_rate=0.001,
+        sigma=sigma,
+        normalize=normalize,
     )
 
     # Resume path: if a saved artifact already lives at output_path,
@@ -1426,6 +1469,18 @@ if __name__ == '__main__':
     train_p.add_argument('--epochs', type=int, default=10)
     train_p.add_argument('--min-count', type=int, default=5)
     train_p.add_argument('--batch-size', type=int, default=256)
+    train_p.add_argument('--sigma', type=float, default=5.0,
+                         help='Inner Gaussian width (position units). '
+                              'The outer kernel is its complement. '
+                              '5.0 matches Mikolov skip-gram window. '
+                              'Larger values blend more topic into the pode.')
+    train_p.add_argument('--no-normalize', dest='normalize',
+                         action='store_false',
+                         help='Skip the per-step torus wrap. Default '
+                              'wraps embeddings into [-1, 1)^D after '
+                              'every optimizer step (canonical for the '
+                              'flat n-torus codebook).')
+    train_p.set_defaults(normalize=True)
     train_p.add_argument('--random-shards', action='store_true',
                          help='Randomly select which shards to download')
     train_p.add_argument('--compile', default=None,
@@ -1536,6 +1591,8 @@ if __name__ == '__main__':
             epochs=args.epochs,
             min_count=args.min_count,
             batch_size=args.batch_size,
+            sigma=args.sigma,
+            normalize=args.normalize,
         )
 
     elif args.command in ("bpe-discover", "bpe-embed", "bpe-train"):
