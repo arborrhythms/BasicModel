@@ -27,8 +27,8 @@ def test_inputspace_forward_triggers_ensure_microbatch():
     TheData.load("xor")
     torch.manual_seed(13)
     model, _ = BaseModel.from_config(config, data=TheData)
-    model.masked_prediction = 'ARLM'
-    model.inputSpace.masked_prediction = 'ARLM'
+    model.masked_prediction = 'AR'
+    model.inputSpace.masked_prediction = 'AR'
     if model.wordSpace is None:
         import pytest
         pytest.skip("Model has no WordSpace; cascade is a no-op")

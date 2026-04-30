@@ -34,7 +34,7 @@ def model():
 def test_inputspace_emits_b_k_n_d_in_ar_mode(model):
     """AR forward emits [B, K, N, D] with k_axis True and a valid mask."""
     inp = model.inputSpace
-    inp.masked_prediction = "ARLM"
+    inp.masked_prediction = "AR"
     inp.Start()
     # Drive a real batch so the lex/embed runs end to end.
     loader = model.inputSpace.data.data_loader(split="train", num_streams=2)
@@ -107,7 +107,7 @@ def test_inputspace_progressive_prefix_windows(model):
     seen yet), and window k>=N is the last N tokens.
     """
     inp = model.inputSpace
-    inp.masked_prediction = "ARLM"
+    inp.masked_prediction = "AR"
     inp.Start()
     loader = inp.data.data_loader(split="train", num_streams=1)
     inp_items, _ = next(iter(loader))

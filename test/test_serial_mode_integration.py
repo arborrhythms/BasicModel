@@ -17,7 +17,7 @@ from Models import BaseModel
 _CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
 
 
-def _build_model(serial_mode, masked_prediction='ARLM'):
+def _build_model(serial_mode, masked_prediction='AR'):
     TheData.load("xor")
     torch.manual_seed(0)
     m, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)

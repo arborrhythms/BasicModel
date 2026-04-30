@@ -4772,7 +4772,7 @@ class InputSpace(Space):
         if hasattr(inputData, "is_empty") and not isinstance(inputData, torch.Tensor) and inputData.is_empty():
             return inputData
 
-        is_ar = self.masked_prediction in ('ARLM', 'ARUS', 'ARIR') if hasattr(self, 'masked_prediction') else False
+        is_ar = self.masked_prediction in ('AR', 'ARUS', 'ARIR') if hasattr(self, 'masked_prediction') else False
         is_runtime_arir = (
             self.data is not None
             and self.data._runtime_mode == 'ARIR'
@@ -7020,7 +7020,7 @@ class SymbolicSpace(Space):
         With d content dims and K codebook entries, each row of the
         distance matrix costs K * 4 bytes.  The budget controls how
         many rows are processed per matmul.  Larger budgets mean fewer
-        sequential chunks -- critical for ARLM batches where N can
+        sequential chunks -- critical for AR batches where N can
         reach hundreds of thousands.
         """
         device = str(TheDevice.get())

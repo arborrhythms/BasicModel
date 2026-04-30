@@ -577,7 +577,7 @@ class Data():
         Args:
             inputs: list of strings for the runtime batch.
             outputs: optional list of output targets.
-            mode: optional inference mode ('ARIR', 'ARLM', or None).
+            mode: optional inference mode ('ARIR', 'AR', or None).
         """
         saved_input = self.train_input
         saved_output = self.train_output
@@ -603,7 +603,7 @@ class Data():
     def pushInput(self, token):
         """Append a token to train_input[0] during inference.
 
-        For text-based ARLM inference, train_input is a list containing
+        For text-based AR inference, train_input is a list containing
         a single string.  Appends the predicted token for autoregressive
         generation.
         """

@@ -3833,7 +3833,7 @@ class TestShiftReduce(unittest.TestCase):
             nWords=nSym, nOutput=nSym,
             perceptPassThrough=True, symbolPassThrough=True)
         Models.TheXMLConfig._data["architecture"]["syntax"] = True
-        Models.TheXMLConfig._data["architecture"]["maskedPrediction"] = "ARLM"
+        Models.TheXMLConfig._data["architecture"]["maskedPrediction"] = "AR"
         Models.TheXMLConfig._data.setdefault("WordSpace", {}).setdefault("language", {})["grammar"] = {
             "S": ["true(S)", "swap(S, S)", "equals(S, S)", "part(S, S)",
                   "non(S)", "not(S)", "intersection(S, S)", "union(S, S)"],

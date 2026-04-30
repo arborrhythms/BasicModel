@@ -12,7 +12,7 @@
     <type>mental</type>
     <ergodic>false</ergodic>
     <modelType>embedding</modelType>
-    <maskedPrediction>ARLM</maskedPrediction>
+    <maskedPrediction>AR</maskedPrediction>
     <maxResponseLength>4096</maxResponseLength>
     <weightsPath>RamsifiedModel.ckpt</weightsPath>
     <embeddingPath>MentalModel.kv</embeddingPath>
@@ -30,7 +30,7 @@
       <batchSize>64</batchSize>
       <learningRate>0.001</learningRate>
       <reverseScale>0.1</reverseScale>
-      <trainEmbedding>ARLM</trainEmbedding>
+      <trainEmbedding>AR</trainEmbedding>
       <autoload>false</autoload>
       <autosave>false</autosave>
       <certainty>false</certainty>

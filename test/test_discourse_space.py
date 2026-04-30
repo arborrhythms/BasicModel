@@ -545,7 +545,7 @@ class TestDiscourseSpaceIntegration(_DiscourseTestBase):
 
     def test_create_wires_discourse_space(self):
         """MentalModel.create() should build and attach WordSpace.discourse
-        when the ARLM/ARUS/RARLM grammar path is active."""
+        when the AR/ARUS/AR grammar path is active."""
         self.model, self.cfg = self._build_model()
         self.assertIsNotNone(self.model.wordSpace)
         self.assertIsNotNone(self.model.wordSpace.discourse)

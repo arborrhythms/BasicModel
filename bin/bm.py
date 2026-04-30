@@ -79,7 +79,7 @@ def _load_model_in_process(config_path, max_length=64):
     model = compile(model)
 
     def chat_inproc(text):
-        tokens = model.infer(text, mode="ARLM", max_length=max_length)
+        tokens = model.infer(text, mode="AR", max_length=max_length)
         return " ".join(tokens) if tokens else ""
 
     return chat_inproc

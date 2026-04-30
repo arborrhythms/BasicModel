@@ -16,7 +16,7 @@ Core model settings. Training and data parameters are in nested sub-elements `<t
 | `reshape` | bool | `false` | Reshape input data for sequence processing. Required for `modelType=lm`. |
 | `conceptualOrder` | int | `1` | Order of conceptual processing. Controls how many higher-order conceptual transforms are applied. |
 | `processSymbols` | bool | `false` | Enable additional symbolic processing steps. |
-| `maskedPrediction` | string | `"NONE"` | Masked prediction mode: `NONE`, `MLM`, `ARLM`, `ARUS`, `RARLM`. See [Training.md](Training.md). |
+| `maskedPrediction` | string | `"NONE"` | Masked prediction mode: `NONE`, `IR`, `AR`, `ARUS`, `ARIR`. See [Training.md](Training.md). |
 | `reconstruct` | string | `"NONE"` | Controls the reverse (reconstruction) pass. `"NONE"` disables reconstruction entirely. `"symbols"` reconstructs from cached output symbols (most common). `"output"` runs `outputSpace.reverse()` only. `"both"` combines reversed output with reconstruction symbols. Any non-`NONE` value enables the full bidirectional training pipeline. |
 | `maxResponseLength` | int | `64` | Maximum number of characters/tokens to generate during inference. Measured in characters for uniformity with `InputSpace.nActive`. Both this value and `InputSpace.nActive` cap generation: truncation occurs when the expanded token sequence (OOV words spelled out as characters) exceeds `nActive`. |
 
@@ -362,7 +362,7 @@ In this configuration:
   <architecture>
     <reconstruct>symbols</reconstruct>
     <modelType>embedding</modelType>
-    <maskedPrediction>ARLM</maskedPrediction>
+    <maskedPrediction>AR</maskedPrediction>
 
     <data>
       <dataset>text</dataset>

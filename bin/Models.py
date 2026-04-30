@@ -242,7 +242,7 @@ class BaseModel(nn.Module):
             data is not None
             and getattr(data, '_runtime_mode', None) == 'ARIR')
         self.serial_mode = (
-            self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
+            self.masked_prediction in ('AR', 'ARUS', 'ARIR')
             or is_runtime_arir
         )
         if hasattr(self, 'perceptualSpace'):
@@ -343,7 +343,7 @@ class BaseModel(nn.Module):
         Dedup by tensor ``data_ptr`` so a parameter owned by multiple
         modules is only optimized once.
 
-        When ``trainEmbedding`` is NONE or ARLM, embedding parameters
+        When ``trainEmbedding`` is NONE or AR, embedding parameters
         are excluded from the optimizer.
         """
         params = []
@@ -353,7 +353,7 @@ class BaseModel(nn.Module):
                 if p.data_ptr() not in seen:
                     seen.add(p.data_ptr())
                     params.append(p)
-        # Exclude embedding params when trainEmbedding is NONE or ARLM
+        # Exclude embedding params when trainEmbedding is NONE or AR
         if not getattr(self, 'optimize_embedding', False):
             exclude = set()
             if hasattr(self, 'perceptualSpace') and isinstance(self.perceptualSpace.vocabulary, Embedding):
@@ -1536,7 +1536,7 @@ class BasicModel(BaseModel):
         # construction, the TruthLayer, and (conditionally) the
         # DiscourseSpace substrate. See plan: "Architectural
         # addition -- WordSpace".
-        if str(masked_prediction).upper() in ('ARLM', 'ARUS', 'RARLM'):
+        if str(masked_prediction).upper() in ('AR', 'ARUS'):
             self.wordSpace = WordSpace(
                 perceptualSpace=self.perceptualSpace,
                 conceptualSpace=self.conceptualSpace,
@@ -1788,7 +1788,7 @@ class BasicModel(BaseModel):
 
         Two modes:
 
-        ``ARLM`` (append-and-rerun): stages seed text, runs forward,
+        ``AR`` (append-and-rerun): stages seed text, runs forward,
         decodes the output token, appends it to the input via
         ``pushInput()``, and repeats.  Each iteration re-lexes and
         re-embeds the full (growing) input.
@@ -1804,11 +1804,11 @@ class BasicModel(BaseModel):
         Args:
             text: input string (seed text)
             max_length: max characters to generate
-            mode: 'ARLM' for traditional append-and-rerun,
+            mode: 'AR' for traditional append-and-rerun,
                   'ARIR' for input reconstruction (default).
                   Also accepts traditional=True/False for backwards compat
                   via keyword: ``infer(text, traditional=True)`` is
-                  equivalent to ``infer(text, mode='ARLM')``.
+                  equivalent to ``infer(text, mode='AR')``.
 
         Returns:
             list of predicted tokens (words or characters)
@@ -1819,8 +1819,8 @@ class BasicModel(BaseModel):
         if max_length is None:
             max_length = getattr(self, 'max_response_length', 256)
 
-        if mode not in {'ARLM', 'ARIR'}:
-            raise ValueError(f"infer: unknown mode '{mode}'. Use 'ARLM' or 'ARIR'.")
+        if mode not in {'AR', 'ARIR'}:
+            raise ValueError(f"infer: unknown mode '{mode}'. Use 'AR' or 'ARIR'.")
 
         tokens = None
         if mode == 'ARIR':
@@ -1835,7 +1835,7 @@ class BasicModel(BaseModel):
                 self.runEpoch(batchSize=1, split="runtime")
 
             tokens = self.inputSpace.get_predicted_tokens()
-        else: # 'ARLM'
+        else: # 'AR'
             self.eval()
             self.set_sigma(0)
             nOutput = self.inputSpace.outputShape[0]
@@ -1894,7 +1894,7 @@ class BasicModel(BaseModel):
             and self.inputSpace.data._runtime_mode == 'ARIR'
         )
         is_ar_mode = (
-            self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
+            self.masked_prediction in ('AR', 'ARUS', 'ARIR')
             and not is_runtime_arir
         )
 
@@ -2286,7 +2286,7 @@ class BasicModel(BaseModel):
         else:
             raise RuntimeError(
                 "runBatch: no batch_override supplied. Callers must pass "
-                "batch_override=(inputTensor, outputTensor) -- ARLM/ARUS "
+                "batch_override=(inputTensor, outputTensor) -- AR/ARUS "
                 "infer() prep via InputSpace.prepInput, training path "
                 "via the DataLoader in runEpoch. ARIR is the only runtime "
                 "mode with a dedicated state machine (arir_step)."
@@ -2329,7 +2329,7 @@ class BasicModel(BaseModel):
                 B_pre = None
             if B_pre is not None:
                 is_ar_outer = getattr(self, 'masked_prediction', 'NONE') in (
-                    'ARLM', 'ARUS', 'ARIR')
+                    'AR', 'ARUS', 'ARIR')
                 K_pre = (int(self.inputSpace.outputShape[0])
                          if is_ar_outer else 1)
                 ws.ensure_microbatch(B_pre, K_pre)
@@ -2377,7 +2377,7 @@ class BasicModel(BaseModel):
                 pass
             forwardInput, symbols, predictions, reconstruction = self.forward(inputTensor)
             is_ar_mode = (
-                self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
+                self.masked_prediction in ('AR', 'ARUS', 'ARIR')
                 and not arir_mode
             )
             outputDataPred = predictions
@@ -2450,7 +2450,7 @@ class BasicModel(BaseModel):
                 else:
                     lossOut = self.loss.output(pred_stack, target_stack)
                     # ARIR blends output with reconstruction via reverse_scale;
-                    # ARLM has no reconstruction term so the output gets full weight.
+                    # AR has no reconstruction term so the output gets full weight.
                     output_weight = ((1 - self.loss.reverse_scale)
                                      if self.masked_prediction == 'ARIR' else 1.0)
             else:
@@ -3102,7 +3102,7 @@ class BasicModel(BaseModel):
         #     tick, mirroring the pre-handoff DataLoader contract.
         is_ar_mode_outer = (
             hasattr(self, 'masked_prediction')
-            and self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
+            and self.masked_prediction in ('AR', 'ARUS', 'ARIR')
         )
         text_input = (
             isinstance(self.inputSpace.data.train_input, list)
@@ -3956,12 +3956,12 @@ class MentalModel(BaseModel):
     # ----- Sequential path helpers -----
 
     def _is_ar_mode(self):
-        """True when the current config is AR (ARLM/ARUS/ARIR at training time)."""
+        """True when the current config is AR (AR/ARUS/ARIR at training time)."""
         is_runtime_arir = (
             self.inputSpace.data is not None
             and getattr(self.inputSpace.data, '_runtime_mode', None) == 'ARIR'
         )
-        return (self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
+        return (self.masked_prediction in ('AR', 'ARUS', 'ARIR')
                 and not is_runtime_arir)
 
     def _extract_prediction_sequential(self, fwd_out):
@@ -3982,7 +3982,7 @@ class MentalModel(BaseModel):
         if outputData is None:
             return None
         outputData = self.normalizer.denormalize(outputData, which="output")
-        is_ar = self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
+        is_ar = self.masked_prediction in ('AR', 'ARUS', 'ARIR')
         if is_ar and outputData.dim() == 3 and outputData.shape[1] == 1:
             outputData = outputData.squeeze(1)
         return outputData
@@ -3991,7 +3991,7 @@ class MentalModel(BaseModel):
         """True when reverse reconstruction should run after the forward loop.
 
         Only ARIR triggers an automatic reverse pass (input reconstruction).
-        Non-AR and ARLM/ARUS callers invoke `model.reverse()` explicitly.
+        Non-AR and AR/ARUS callers invoke `model.reverse()` explicitly.
         """
         return self.masked_prediction == 'ARIR'
 
@@ -4066,7 +4066,7 @@ class MentalModel(BaseModel):
             and self.inputSpace.data._runtime_mode == 'ARIR'
         )
         is_ar_mode = (
-            self.masked_prediction in ('ARLM', 'ARUS', 'ARIR')
+            self.masked_prediction in ('AR', 'ARUS', 'ARIR')
             and not is_runtime_arir
         )
 

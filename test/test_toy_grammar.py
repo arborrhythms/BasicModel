@@ -252,15 +252,15 @@ class TestGrammarInMentalModel(unittest.TestCase):
                 total_words += len(words)
 
         # At minimum the C-tier should record not/non words at active positions
-        # when syntacticLayer is present (ARLM mode).
+        # when syntacticLayer is present (AR mode).
         if self.model.wordSpace.syntacticLayer is not None:
             self.assertGreater(total_words, 0,
                 "No word tuples on any subspace -- Grammar not exercised during forward")
 
     def test_spaces_have_grammar_enabled(self):
-        """MentalModel uses ARLM mode which enables grammar on spaces."""
+        """MentalModel uses AR mode which enables grammar on spaces."""
         self.assertIsNotNone(self.model.wordSpace.syntacticLayer,
-            "ConceptualSpace should have a SyntacticLayer in ARLM mode")
+            "ConceptualSpace should have a SyntacticLayer in AR mode")
 
 
 class TestGrammarRulesMatchXML(unittest.TestCase):

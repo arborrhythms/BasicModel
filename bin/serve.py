@@ -135,7 +135,7 @@ def _load_model(config_path=None):
 _MAX_MSG_LEN = 10_000  # max chars per user message
 _MAX_MESSAGES = 50     # max messages in a request
 
-# HTTP generation budget. ARLM reruns the model per generated token,
+# HTTP generation budget. AR reruns the model per generated token,
 # so a request that uses the XML-wide maxResponseLength (typically
 # thousands of characters) can sit in inference long enough for the
 # urllib client to time out.  Cap server-side: default 64 generated
@@ -213,10 +213,10 @@ def chat_completions():
             TheGrammar.thought_free = True
 
         # Autoregressive inference: extend input text word by word,
-        # bounded by the server's generation budget so slow ARLM runs
+        # bounded by the server's generation budget so slow AR runs
         # cannot sit longer than the HTTP client's read timeout.
         predicted_words = _model.infer(
-            user_msg, mode='ARLM', max_length=gen_budget)
+            user_msg, mode='AR', max_length=gen_budget)
         response_text = " ".join(predicted_words)
 
         response = {
@@ -289,7 +289,7 @@ def main():
     # 30s read timeout.
     logger.info("Warming up inference path...")
     try:
-        _model.infer("warmup", mode='ARLM', max_length=4)
+        _model.infer("warmup", mode='AR', max_length=4)
         logger.info("Warmup complete.")
     except Exception as exc:
         logger.warning("Warmup failed (continuing anyway): %s", exc)

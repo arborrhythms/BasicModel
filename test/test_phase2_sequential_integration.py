@@ -106,7 +106,7 @@ def test_sequential_ar_mode_produces_prediction_tensor():
     [B, N, predDim] tensors; the microbatch refactor replaced that with
     a single emit of all K windows in parallel.
     """
-    model = _model(masked_prediction='ARLM')
+    model = _model(masked_prediction='AR')
     out = model.forward(_xor_input())
     predictions = out[2]
     assert isinstance(predictions, torch.Tensor), (
@@ -116,7 +116,7 @@ def test_sequential_ar_mode_produces_prediction_tensor():
 
 
 def test_basic_model_ar_sequential_path():
-    """BasicModel.forward() with maskedPrediction=ARLM produces per-pos predictions."""
+    """BasicModel.forward() with maskedPrediction=AR produces per-pos predictions."""
     from data import TheData
     from Models import BaseModel, BasicModel
     TheData.load("xor")
@@ -124,7 +124,7 @@ def test_basic_model_ar_sequential_path():
     model, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
     if not isinstance(model, BasicModel):
         pytest.skip("MM_xor.xml resolves to MentalModel; AR test requires BasicModel")
-    model.masked_prediction = 'ARLM'
+    model.masked_prediction = 'AR'
     out = model.forward(_xor_input())
     preds = out[2]
     assert isinstance(preds, torch.Tensor), (
@@ -142,7 +142,7 @@ def test_input_space_null_byte_emits_zero_validity():
     every all-zero target row should map to False.
     """
     import torch as _t
-    model = _model(masked_prediction='ARLM')
+    model = _model(masked_prediction='AR')
     inp = model.inputSpace
     # Stub the embed step so InputSpace.forward runs the unfold/mask path
     # against a tensor we control directly.

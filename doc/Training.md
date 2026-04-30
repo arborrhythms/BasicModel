@@ -136,10 +136,10 @@ The `maskedPrediction` config controls the prediction objective:
 | Mode | Input Masking | Truncation | Target | Description |
 |------|---------------|------------|--------|-------------|
 | `NONE` | None | No | Dataset labels | Standard supervised |
-| `MLM` | Zero word i | No | Embedding of word i | Bidirectional (BERT-style) |
-| `ARLM` | Zero word i | Yes (j > i zeroed) | Embedding of word i | Autoregressive (GPT-style) |
-| `ARUS` | Same as ARLM | Yes | Zero vector | Unsupervised (loss suppressed) |
-| `RARLM` | Zero word i | Reverse (j < pos zeroed) | Embedding of word i | Right-to-left autoregressive |
+| `IR` | Zero word i | No | Embedding of word i | Bidirectional input reconstruction (non-AR sibling of `ARIR`) |
+| `AR` | Zero word i | Yes (j > i zeroed) | Embedding of word i | Autoregressive (GPT-style) |
+| `ARUS` | Same as AR | Yes | Zero vector | Unsupervised (loss suppressed) |
+| `ARIR` | Per-pos | Yes | Embedding + reconstruction | Autoregressive iterative reconstruction |
 
 ### `<trainEmbedding>`: Embedding Update Mode
 
@@ -247,7 +247,7 @@ where row `b` is item `b * L + t`. Each batch row therefore carries its own
 document-order stream, so temporal context is coherent across steps. No
 per-epoch global shuffle is applied. `numWorkers > 0` enables async prefetch.
 
-For each B-wide batch in AR modes (`ARLM` / `ARUS` / `ARIR`):
+For each B-wide batch in AR modes (`AR` / `ARUS` / `ARIR`):
 
 1. `MentalModel.Start(inputData)` cascades reset through every Space and
    Layer (clearing per-sentence scratch).
@@ -264,7 +264,7 @@ For each B-wide batch in AR modes (`ARLM` / `ARUS` / `ARIR`):
    body produces a `[B, N, D]` reconstruction.
 
 4. `runBatch` computes the loss once via `TheError.add`:
-   - `ARLM`: output prediction only (K per-row predictions, masked by validity).
+   - `AR`: output prediction only (K per-row predictions, masked by validity).
    - `ARUS`: no output term (suppressed); no reconstruction.
    - `ARIR`: output prediction + reconstruction, weighted by `reverseScale`.
 
@@ -283,7 +283,7 @@ Mode contract:
 
 | Mode   | Per-pos output | Terminal reverse | Reconstruction loss |
 |--------|----------------|--------------------------------|-----------------|
-| `ARLM` | Yes            | No (ignores `<reconstruct>`)   | Not trained     |
+| `AR` | Yes            | No (ignores `<reconstruct>`)   | Not trained     |
 | `ARUS` | No             | No (ignores `<reconstruct>`)   | Not trained     |
 | `ARIR` | Yes            | Yes                            | Over `[B, N, D]` |
 
@@ -297,7 +297,7 @@ Mode contract:
 | Property | CBOW | SBOW | Masked Prediction (Phase 2) |
 |----------|------|------|----------------------------|
 | Targets per sentence | 1 (pick one word) | N (every word) | N (one per masked position) |
-| Context | Other N-1 words | Leave-one-out centroid of N-1 | All unmasked words (+ future truncation for ARLM/RARLM) |
+| Context | Other N-1 words | Leave-one-out centroid of N-1 | All unmasked words (+ future truncation for AR/AR) |
 | Positive updates | 1 per step | N per step | N per step |
 | Repulsive force | vocab-1 implicit via softmax | N $\times$ (vocab-1) via softmax | Implicit via MSE in embedding space |
 | Signal density | Low (1 gradient per sentence) | High (N gradients per sentence) | High (N gradients per sentence) |

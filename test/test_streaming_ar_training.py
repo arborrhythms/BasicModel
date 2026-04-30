@@ -89,10 +89,10 @@ import pytest
 
 @pytest.mark.skip(reason="Pending serial_mode refactor (2026-04-22)")
 def test_arlm_forward_returns_predictions_list_and_no_reconstruction():
-    """ARLM: forward() returns (input_state, symbols, predictions_list, None).
+    """AR: forward() returns (input_state, symbols, predictions_list, None).
 
     The outer pos loop in MentalModel.forward() emits one prediction per
-    revealed token. ARLM does not reconstruct -- the fourth return value
+    revealed token. AR does not reconstruct -- the fourth return value
     is always None.
     """
     import tempfile
@@ -104,7 +104,7 @@ def test_arlm_forward_returns_predictions_list_and_no_reconstruction():
     import Models
     import Language
 
-    # Build a MentalModel with maskedPrediction=ARLM in the right XML path.
+    # Build a MentalModel with maskedPrediction=AR in the right XML path.
     src = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         "data", "MentalModel.xml")
@@ -117,7 +117,7 @@ def test_arlm_forward_returns_predictions_list_and_no_reconstruction():
     mp = training.find("maskedPrediction")
     if mp is None:
         mp = ET.SubElement(training, "maskedPrediction")
-    mp.text = "ARLM"
+    mp.text = "AR"
 
     tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False)
     tree.write(tmp.name)
@@ -142,24 +142,24 @@ def test_arlm_forward_returns_predictions_list_and_no_reconstruction():
         assert len(out) == 4, f"expected 4-tuple return, got {len(out)}"
         _, _, predictions, reconstruction = out
         assert isinstance(predictions, torch.Tensor), \
-            f"ARLM must return a [B, K, N, predDim] tensor, got {type(predictions)}"
+            f"AR must return a [B, K, N, predDim] tensor, got {type(predictions)}"
         assert predictions.dim() == 4, \
-            f"ARLM predictions must be 4D [B, K, N, predDim], got {tuple(predictions.shape)}"
+            f"AR predictions must be 4D [B, K, N, predDim], got {tuple(predictions.shape)}"
         assert predictions.shape[1] > 0, \
-            "ARLM must emit at least one per-cursor prediction (K > 0)"
+            "AR must emit at least one per-cursor prediction (K > 0)"
         assert reconstruction is None, \
-            "ARLM must not produce a reconstruction"
+            "AR must not produce a reconstruction"
     finally:
         os.unlink(tmp.name)
 
 
 @pytest.mark.skip(reason="Pending serial_mode refactor (2026-04-22); too slow to run pre-refactor")
 def test_arlm_runbatch_trains_without_reverse():
-    """ARLM runBatch runs forward+loss+backward+step without calling reverse().
+    """AR runBatch runs forward+loss+backward+step without calling reverse().
 
     This is the key speedup: the previous per-position mask-and-rerun
     training loop called reverse() N times per sentence. The new
-    streaming loop never calls reverse() under ARLM.
+    streaming loop never calls reverse() under AR.
     """
     import tempfile
     import xml.etree.ElementTree as ET
@@ -182,7 +182,7 @@ def test_arlm_runbatch_trains_without_reverse():
     mp = training.find("maskedPrediction")
     if mp is None:
         mp = ET.SubElement(training, "maskedPrediction")
-    mp.text = "ARLM"
+    mp.text = "AR"
 
     tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False)
     tree.write(tmp.name)
@@ -193,7 +193,7 @@ def test_arlm_runbatch_trains_without_reverse():
         model, _ = Models.MentalModel.from_config(tmp.name)
         opt = model.getOptimizer(lr=0.01)
 
-        # Count reverse() calls to verify ARLM does not invoke it.
+        # Count reverse() calls to verify AR does not invoke it.
         reverse_calls = {'n': 0}
         original_reverse = model.reverse
 
@@ -217,15 +217,15 @@ def test_arlm_runbatch_trains_without_reverse():
 
         assert result is not None, "runBatch should return a BatchResult"
         assert reverse_calls['n'] == 0, \
-            f"ARLM must not call reverse() during training; got {reverse_calls['n']} calls"
+            f"AR must not call reverse() during training; got {reverse_calls['n']} calls"
     finally:
         os.unlink(tmp.name)
 
 
 def test_basicmodel_arlm_runbatch_uses_streaming_predictions():
-    """BasicModel ARLM returns per-token predictions and runBatch consumes them.
+    """BasicModel AR returns per-token predictions and runBatch consumes them.
 
-    Regression for BasicModel.xml: ARLM must not fall through to the
+    Regression for BasicModel.xml: AR must not fall through to the
     non-AR scalar-output MSE path, where text dummy targets have shape [B]
     while predictions have embedding width.
     """
@@ -245,7 +245,7 @@ def test_basicmodel_arlm_runbatch_uses_streaming_predictions():
     root = tree.getroot()
     arch = root.find("architecture")
     training = arch.find("training")
-    training.find("maskedPrediction").text = "ARLM"
+    training.find("maskedPrediction").text = "AR"
     training.find("autoload").text = "false"
     training.find("sentencePrediction").text = "false"
 

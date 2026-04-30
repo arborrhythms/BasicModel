@@ -62,7 +62,7 @@ def test_attention_guard_forces_serial_mode_off():
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         m, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
-        m.masked_prediction = 'ARLM'
+        m.masked_prediction = 'AR'
         m.conceptualSpace.hasAttention = True
         # Re-derive (mirrors create_from_config's guard).
         m.serial_mode = True

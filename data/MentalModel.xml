@@ -15,7 +15,7 @@
     <type>mental</type>
     <ergodic>false</ergodic>
     <modelType>embedding</modelType>
-    <maskedPrediction>ARLM</maskedPrediction>
+    <maskedPrediction>AR</maskedPrediction>
     <truthBiasScale>0.1</truthBiasScale>
     <LuminosityWeight>0.1</LuminosityWeight>
     <UniversalityWeight>0.1</UniversalityWeight>
@@ -36,7 +36,7 @@
       <batchSize>64</batchSize>
       <learningRate>0.001</learningRate>
       <reverseScale>0.1</reverseScale>
-      <trainEmbedding>ARLM</trainEmbedding>
+      <trainEmbedding>AR</trainEmbedding>
       <autoload>false</autoload>
       <autosave>true</autosave>
       <certainty>false</certainty>

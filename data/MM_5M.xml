@@ -35,7 +35,7 @@
       <learningRate>0.0005</learningRate>
       <reverseScale>0.1</reverseScale>
       <maskedPrediction>ARIR</maskedPrediction>
-      <trainEmbedding>ARLM</trainEmbedding>
+      <trainEmbedding>AR</trainEmbedding>
       <autoload>true</autoload>
       <autosave>true</autosave>
       <sentencePrediction>true</sentencePrediction>

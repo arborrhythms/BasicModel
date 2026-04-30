@@ -22,7 +22,7 @@ import torch
 _CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
 
 
-def _model(masked_prediction='ARLM'):
+def _model(masked_prediction='AR'):
     from data import TheData
     from Models import BaseModel
     TheData.load("xor")

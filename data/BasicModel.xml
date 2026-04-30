@@ -26,8 +26,8 @@
       <numWorkers>0</numWorkers>
       <learningRate>0.001</learningRate>
       <reverseScale>0.1</reverseScale>
-      <maskedPrediction>ARLM</maskedPrediction>
-      <trainEmbedding>ARLM</trainEmbedding>
+      <maskedPrediction>AR</maskedPrediction>
+      <trainEmbedding>AR</trainEmbedding>
       <autoload>true</autoload>
       <autosave>true</autosave>
       <checkpointEveryBatches>500</checkpointEveryBatches>

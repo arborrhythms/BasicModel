@@ -32,7 +32,7 @@ def _xor_input():
     ).float().unsqueeze(1)
 
 
-def _model(masked_prediction='ARLM'):
+def _model(masked_prediction='AR'):
     from data import TheData
     from Models import BaseModel
     TheData.load("xor")
