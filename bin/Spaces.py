@@ -518,15 +518,16 @@ class Basis(nn.Module):
         super().__init__()
         # W is NOT stored here -- subclasses own the storage.
         # Tensor/Codebook use register_buffer; Embedding uses wv._vectors.
+        # ``set_sigma`` / ``sigma_kappa`` / ``activeSigma`` previously
+        # lived here; the only live consumer (Embedding._ergodic_var)
+        # owns them directly now (2026-05-02 Basis cleanup).
         self.activation = None
-        self.activeSigma = None
         self.nInput = 0
         self.nVectors = 0
         self.nDim = 0
         self.passThrough = False
         self.monotonic = True
         self.ergodic = False
-        self.sigma_kappa = 0.01
 
     @property
     def unit_ball(self) -> bool:
@@ -578,7 +579,6 @@ class Basis(nn.Module):
 
     def clearActivation(self):
         self.activation = None
-        self.activeSigma = None
 
     def forward(self, x):
         self.setW(x)
@@ -590,12 +590,6 @@ class Basis(nn.Module):
 
     def reverse_raw(self, y):
         return y
-
-    def set_sigma(self, sigma):
-        if sigma == 0:
-            self.sigma_kappa = 1e6
-        else:
-            self.sigma_kappa = 0.01 / sigma
 
     def quantize(self, x):
         raise RuntimeError(f"{self.__class__.__name__} does not support quantize()")
@@ -692,23 +686,13 @@ class Basis(nn.Module):
             return self.getW()
         return normalized
 
-    # -- Logic operations ---------------------------------------------------
-    # Formulas live in Ops (Layers.py). Basis only owns codebook-search
-    # inverses (which need self.getW()).
-
-    def conjunction(self, x, y, monotonic=False):
-        return Ops.conjunction(x, y, monotonic=monotonic)
-
-    def disjunction(self, x, y, monotonic=False):
-        return Ops.disjunction(x, y, monotonic=monotonic)
-
-    def negation(self, x, monotonic=False):
-        return Ops.negation(x, monotonic=monotonic)
-
-    def non(self, x, monotonic=False, threshold=None):
-        return Ops.non(x, monotonic=monotonic, threshold=threshold)
-
     # -- Inverse logic operations -----------------------------------------------
+    # Step 9 of the 2026-05-01 syntactic-layer refactor: forward
+    # logic ops on Basis (`conjunction` / `disjunction` / `negation` /
+    # `non`) were thin pass-throughs to the corresponding `Ops` static
+    # methods; the new GrammarLayer subclasses (LiftLayer, ConjunctionLayer,
+    # etc.) call `Ops` directly. Forward methods removed; codebook-search
+    # `*Reverse` methods stay because they need `self.getW()`.
 
     def _codebook_or_none(self, label):
         try:
@@ -857,41 +841,16 @@ class Basis(nn.Module):
             return self.activation.unsqueeze(-1) * w
         return self.activation.unsqueeze(-1) * w.unsqueeze(0)
 
-    @staticmethod
-    def _pairwise_sq_dists(X, Y):
-        x2 = (X * X).sum(dim=-1, keepdim=True)
-        y2 = (Y * Y).sum(dim=-1).unsqueeze(1)
-        xy = torch.bmm(X, Y.transpose(1, 2))
-        return (x2 + y2 - 2.0 * xy).clamp_min(0.0)
+    # Removed (2026-05-02 Basis cleanup):
+    #   * `_pairwise_sq_dists` / `_expand_sigma` / `kernel_overlap`
+    #     -- only used by `kernel_overlap` itself (no live callers
+    #     in bin/; the duplicate in bin/etc/old.py is the legacy
+    #     Sigma-Pi reference dump).
+    #   * `neg(X) = -X` -- duplicates `Ops.negation.forward` /
+    #     bitonic kernel; callers can use the GrammarLayer surface.
+    #   * `symbolize(X)` -- no live callers anywhere.
 
-    @staticmethod
-    def _expand_sigma(sigma, B, N, device, dtype):
-        if sigma is None:
-            return torch.ones(B, N, device=device, dtype=dtype)
-        if isinstance(sigma, (float, int)):
-            return torch.full((B, N), float(sigma), device=device, dtype=dtype)
-        if sigma.ndim == 1:
-            return sigma.to(device=device, dtype=dtype).unsqueeze(0).expand(B, N)
-        return sigma.to(device=device, dtype=dtype)
 
-    @classmethod
-    def kernel_overlap(cls, X, Y, sigma_x=None, sigma_y=None, eps=1e-8):
-        B, N, _ = X.shape
-        M = Y.shape[1]
-        sx = cls._expand_sigma(sigma_x, B, N, X.device, X.dtype)
-        sy = cls._expand_sigma(sigma_y, B, M, Y.device, Y.dtype)
-        d2 = cls._pairwise_sq_dists(X, Y)
-        denom = 2.0 * (sx.unsqueeze(2).square() + sy.unsqueeze(1).square()) + eps
-        return torch.exp(-d2 / denom)
-
-    @staticmethod
-    def neg(X):
-        return -X
-
-    @staticmethod
-    def symbolize(X, eps=1e-8):
-        norms = torch.linalg.norm(X, dim=-1)
-        return (2.0 * norms.mean(dim=1) - 1.0).clamp(-1.0, 1.0)
 class Tensor(Basis):
     """Dense tensor payload implementation used for ordinary SubSpace slots.
 
@@ -1410,7 +1369,6 @@ class Codebook(Basis):
         if topK and 0 < topK < act.shape[-1]:
             act = topk_by_magnitude_per_batch(act, k=topK)
         self.activation = act.detach() if torch.is_tensor(act) else act
-        self.activeSigma = None
         self.setW(x)
         if _vspace is not None:
             _vspace.set_event(x, compute_activation=False)
@@ -1509,6 +1467,22 @@ class Embedding(Basis):
         self.optimize_embedding = False  # set by ModelFactory from <trainEmbedding>
         object.__setattr__(self, '_model', None)  # back-ref to BasicModel, avoids nn.Module submodule registration
         self.doc_sources = []
+        # Ergodic-noise rate parameter. Read by ``_ergodic_var`` to
+        # gate per-token variance during noisy embedding lookups.
+        # Lifted off Basis (2026-05-02 cleanup): only Embedding
+        # consumes it.
+        self.sigma_kappa = 0.01
+
+    def set_sigma(self, sigma):
+        """Tune the ergodic-noise rate. ``sigma=0`` suppresses
+        exploration (large kappa -> gate clamps to ~0). Called from
+        ``Space.set_sigma`` during the model-wide sigma propagation
+        (eval mode sets sigma=0; train mode sets sigma=0.5).
+        """
+        if sigma == 0:
+            self.sigma_kappa = 1e6
+        else:
+            self.sigma_kappa = 0.01 / sigma
 
     def getW(self):
         """Return live embedding vectors wrapped into the periodic unit cell
@@ -6556,10 +6530,14 @@ class ConceptualSpace(Space):
         # When ``layer`` is provided (butterfly mode builds one per stage
         # in ``MentalModel.create``), use it directly and skip the default
         # PiLayer construction.
+        # Post-2026-05-01 refactor: ``self.pi`` is the canonical forward
+        # PiLayer for every mode. In the asymmetric two-pass ergodic
+        # path, ``self.pi`` aliases ``self.pi1`` (forward direction) and
+        # ``self.pi2`` is preserved as a separate attribute consulted
+        # on the reverse path via ``self._pi_reverse``. Bare
+        # ``forwardPi``/``reversePi`` aliases were removed.
         if layer is not None:
             self.pi = layer
-            self.forwardPi = layer.forward
-            self.reversePi = layer.reverse
             if hasattr(layer, "getParameters"):
                 self.params = layer.getParameters()
             else:
@@ -6570,7 +6548,6 @@ class ConceptualSpace(Space):
                 self.pi = PiLayer(input, output, naive=naive, ergodic=ergodic,
                                   invertible=True, nonlinear=nonlinear,
                                   stable=True, monotonic=monotonic)
-                self.forwardPi, self.reversePi = self.pi.forward, self.pi.reverse
                 self.params = self.pi.getParameters()
                 self.layers = nn.ModuleList([self.pi])
             else:
@@ -6580,19 +6557,30 @@ class ConceptualSpace(Space):
                 self.pi2 = PiLayer(input, output, naive=naive, ergodic=ergodic,
                                    invertible=True, nonlinear=nonlinear,
                                    stable=True, monotonic=monotonic)
-                self.forwardPi, self.reversePi = self.pi1.forward, self.pi2.reverse
+                self.pi = self.pi1  # forward direction canonical alias
                 self.params = self.pi1.getParameters() + self.pi2.getParameters()
                 self.layers = nn.ModuleList([self.pi1, self.pi2])
         else:
             self.pi = PiLayer(input, output, naive=naive, ergodic=ergodic,
                               nonlinear=nonlinear, stable=True, monotonic=monotonic)
-            self.forwardPi = self.pi.forward
             self.params = self.pi.getParameters()
             self.layers = nn.ModuleList([self.pi])
         self._sparsity = SparsityRegLayer(
             l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
             enabled=bool(getattr(self, "codebook", False)),
         )
+
+    def _pi_reverse(self, y):
+        """PiLayer reverse, hiding the two-pass ergodic mode split.
+
+        Single-PiLayer modes call ``self.pi.reverse``. The two-pass
+        ergodic mode (where ``self.pi`` aliases ``self.pi1`` for the
+        forward path) routes the reverse through ``self.pi2`` instead.
+        """
+        pi2 = getattr(self, 'pi2', None)
+        if pi2 is not None:
+            return pi2.reverse(y)
+        return self.pi.reverse(y)
 
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
@@ -6627,19 +6615,27 @@ class ConceptualSpace(Space):
         self.subspace.copy_context(subspace)
         vspace = subspace
         x = self.forwardBegin(vspace, returnVectors=True)
-        y = self.forwardPi(x)
-        # Rule probability gating (Pattern A) for the intersection rule.
-        # Bottom-up Pi already ran above; mix with the passthrough by
-        # ``p_int = rule_probability("intersection(C, C)")``. Dormant
-        # default is 1.0 so the fast path skips the mixture entirely.
-        ws_for_gate = vspace.wordSpace
-        if ws_for_gate is not None and hasattr(ws_for_gate, "grammar"):
-            p_int = ws_for_gate.grammar.rule_probability("intersection(C, C)")
-            if p_int != 1.0:
-                if p_int == 0.0:
-                    y = x
-                else:
-                    y = p_int * y + (1.0 - p_int) * x
+        # Per-space SyntacticLayer dispatch (2026-05-01 refactor §5).
+        # Routes through syntacticLayer when the chart has populated
+        # ``wordSpace.current_rules['C']`` for this forward; otherwise
+        # fires self.pi directly. The chart's grammar choice subsumes
+        # the legacy ``p_int`` rule-probability gate.
+        ws_for_chart = getattr(vspace, 'wordSpace', None)
+        chart_rules = (
+            ws_for_chart.current_rules.get('C')
+            if (ws_for_chart is not None
+                and getattr(ws_for_chart, 'current_rules', None))
+            else None)
+        if chart_rules and getattr(self, 'syntacticLayer', None) is not None:
+            # SpaceSyntacticLayer.forward takes a subspace and operates on
+            # its tier-appropriate field (.event for C). Stage `x` into
+            # vspace so the layer reads the same tensor forwardBegin
+            # produced, then re-extract the post-fold tensor.
+            vspace.set_event(x)
+            self.syntacticLayer.forward(vspace)
+            y = vspace.materialize()
+        else:
+            y = self.pi(x)
         # STM-residual bias (once per sentence; wordSpace gates itself).
         # disc.prime() casts into concept_dim, so the bias must be added
         # to the post-Sigma activation y (shape [B*K, N_out, concept_dim]),
@@ -6706,7 +6702,22 @@ class ConceptualSpace(Space):
         y = self.reverseBegin(vspace, returnVectors=True)
         if self.processSymbols:
             y = self.dereference(y)
-        y = self.reversePi(y)
+        # Per-space SyntacticLayer reverse dispatch (2026-05-01 §5).
+        # Routes through syntacticLayer when generate_rules is
+        # populated; otherwise falls back to the canonical
+        # ``self._pi_reverse`` (handles two-pass ergodic mode).
+        ws_for_chart = getattr(vspace, 'wordSpace', None)
+        gen_rules = (
+            ws_for_chart.generate_rules.get('C')
+            if (ws_for_chart is not None
+                and getattr(ws_for_chart, 'generate_rules', None))
+            else None)
+        if gen_rules and getattr(self, 'syntacticLayer', None) is not None:
+            vspace.set_event(y)
+            self.syntacticLayer.reverse(vspace)
+            y = vspace.materialize()
+        else:
+            y = self._pi_reverse(y)
         self.concepts = y.detach()
         vspace = self.reverseEnd(y, returnVectors=True)
         vspace.normalize("percepts", target="what")   # range check
@@ -6768,8 +6779,9 @@ class SymbolicSpace(Space):
         # C <-> S SigmaLayer (isomorphic to ConceptualSpace.pi's pattern).
         # Butterfly callers pass a pre-built butterfly-mode SigmaLayer via
         # ``layer=``.
-        # forwardSigma / reverseSigma pointer aliases hide the one-or-two-layer
-        # split when the space is reversible without invertibility.
+        # The two-pass ergodic split (sigma1 forward / sigma2 reverse)
+        # is hidden behind ``self.sigma`` (canonical forward alias) +
+        # ``self._sigma_reverse`` (handles sigma2 dispatch).
         try:
             invertible = TheXMLConfig.space(section, "invertible")
         except KeyError:
@@ -6778,10 +6790,12 @@ class SymbolicSpace(Space):
             monotonic = bool(TheXMLConfig.get("architecture.monotonic", default=False))
         except (KeyError, TypeError, ValueError):
             monotonic = True
+        # Post-2026-05-01 refactor: ``self.sigma`` is the canonical
+        # forward SigmaLayer for every mode. Two-pass ergodic mode
+        # aliases ``self.sigma`` to ``self.sigma1``; ``self.sigma2``
+        # stays available for the reverse path via ``self._sigma_reverse``.
         if layer is not None:
             self.sigma = layer
-            self.forwardSigma = layer.forward
-            self.reverseSigma = layer.reverse
             if hasattr(layer, "getParameters"):
                 self.params = layer.getParameters()
             else:
@@ -6791,7 +6805,6 @@ class SymbolicSpace(Space):
             if invertible:
                 self.sigma = SigmaLayer(nConceptDim, nSymbolDim, invertible=True,
                                         monotonic=monotonic, nonlinear=nonlinear)
-                self.forwardSigma, self.reverseSigma = self.sigma.forward, self.sigma.reverse
                 self.params = self.sigma.getParameters()
                 self.layers = nn.ModuleList([self.sigma])
             else:
@@ -6799,13 +6812,12 @@ class SymbolicSpace(Space):
                                          monotonic=monotonic, nonlinear=nonlinear)
                 self.sigma2 = SigmaLayer(nConceptDim, nSymbolDim, invertible=True,
                                          monotonic=monotonic, nonlinear=nonlinear)
-                self.forwardSigma, self.reverseSigma = self.sigma1.forward, self.sigma2.reverse
+                self.sigma = self.sigma1  # forward direction canonical alias
                 self.params = self.sigma1.getParameters() + self.sigma2.getParameters()
                 self.layers = nn.ModuleList([self.sigma1, self.sigma2])
         else:
             self.sigma = SigmaLayer(nConceptDim, nSymbolDim, invertible=True,
                                     monotonic=monotonic, nonlinear=nonlinear)
-            self.forwardSigma = self.sigma.forward
             self.params = self.sigma.getParameters()
             self.layers = nn.ModuleList([self.sigma])
 
@@ -6963,6 +6975,19 @@ class SymbolicSpace(Space):
             l1_lambda=float(l1_lambda or 0.0),
             enabled=bool(codebook_enabled),
         )
+
+    def _sigma_reverse(self, y):
+        """SigmaLayer reverse, hiding the two-pass ergodic mode split.
+
+        Single-SigmaLayer modes call ``self.sigma.reverse``. The two-pass
+        ergodic mode (where ``self.sigma`` aliases ``self.sigma1`` for
+        the forward path) routes the reverse through ``self.sigma2``
+        instead.
+        """
+        sigma2 = getattr(self, 'sigma2', None)
+        if sigma2 is not None:
+            return sigma2.reverse(y)
+        return self.sigma.reverse(y)
 
     def l1_proximal(self, x):
         """Soft-threshold activations used as a sparsity bias.
@@ -7500,37 +7525,27 @@ class SymbolicSpace(Space):
             return vspace
         vspace = self.forwardBegin(vspace)
         act_pre = vspace.materialize()                    # [B, N, concept_dim]
-        act = self.forwardSigma(act_pre)                  # [B, N, symbol_dim]
-        # Rule probability gating (Pattern A). Bottom-up Sigma already
-        # ran above; the gate mixes its output with the passthrough by
-        # ``p_uni = rule_probability("union(C, C)")``. In dormant mode
-        # ``p_uni is 1.0`` so the fast path skips the mixture entirely.
-        if wordSpace is not None and hasattr(wordSpace, "grammar"):
-            p_uni = wordSpace.grammar.rule_probability("union(C, C)")
-            if p_uni != 1.0:
-                act = p_uni * act + (1.0 - p_uni) * act_pre
-            # Contiguous(S) gate: convex-hull fusion BEFORE propositional
-            # NEG so hull-then-negate semantics hold. Dormant default is
-            # 0.0 (rule absent) so the fast path skips entirely. In
-            # thought_free mode rule_probability pins to 1.0.
-            p_con = wordSpace.grammar.rule_probability("Contiguous(S)")
-            if p_con != 0.0:
-                if p_con == 1.0:
-                    act = self._contiguous_layer(act)
-                else:
-                    act = (p_con * self._contiguous_layer(act)
-                           + (1.0 - p_con) * act)
-            # Propositional NEG gate (rule: S = not(S)). Dormant default
-            # is 0.0 so the fast path skips. In active grammar mode, a
-            # learned probability mixes the bivector-swapped activation
-            # with the passthrough.
-            p_neg = wordSpace.grammar.rule_probability("not(S)")
-            if p_neg != 0.0:
-                if p_neg == 1.0:
-                    act = self.propositional_negation(act)
-                else:
-                    act = (p_neg * self.propositional_negation(act)
-                           + (1.0 - p_neg) * act)
+        # Per-space SyntacticLayer dispatch (2026-05-01 refactor §5).
+        # Routes through syntacticLayer when ``wordSpace.current_rules['S']``
+        # is populated; otherwise falls back to a single sigma fold (the
+        # legacy 3-step `p_uni` + `p_con` + `p_neg` cascade was removed
+        # along with the `*Forward`/`*Reverse` dispatch table -- the chart
+        # is the canonical source of multi-step rule selection now).
+        chart_rules_S = (
+            wordSpace.current_rules.get('S')
+            if (wordSpace is not None
+                and getattr(wordSpace, 'current_rules', None))
+            else None)
+        if chart_rules_S and getattr(self, 'syntacticLayer', None) is not None:
+            vspace.set_event(act_pre)
+            row_zero = (chart_rules_S[0]
+                        if chart_rules_S and isinstance(chart_rules_S[0], list)
+                        else chart_rules_S)
+            for _ in row_zero:
+                self.syntacticLayer.forward(vspace)
+            act = vspace.materialize()
+        else:
+            act = self.sigma.forward(act_pre)
         if quantize:
             act = self.l1_proximal(act)                   # sparsity bias only
 
@@ -7745,7 +7760,25 @@ class SymbolicSpace(Space):
             act = wordSpace.reverseSymbols(act, self.subspace)
         if self.sortNetwork is not None:
             act = self.sortNetwork.reverse(act)
-        act = self.reverseSigma(act)                      # [B, N, concept_dim]
+        # Per-space SyntacticLayer reverse dispatch (2026-05-01 §5).
+        # Routes through syntacticLayer when ``generate_rules['S']`` is
+        # populated; otherwise falls back to a single sigma reverse
+        # via ``self._sigma_reverse`` (handles two-pass ergodic mode).
+        gen_rules_S = (
+            wordSpace.generate_rules.get('S')
+            if (wordSpace is not None
+                and getattr(wordSpace, 'generate_rules', None))
+            else None)
+        if gen_rules_S and getattr(self, 'syntacticLayer', None) is not None:
+            vspace.set_event(act)
+            row_zero = (gen_rules_S[0]
+                        if gen_rules_S and isinstance(gen_rules_S[0], list)
+                        else gen_rules_S)
+            for _ in row_zero:
+                self.syntacticLayer.reverse(vspace)
+            act = vspace.materialize()
+        else:
+            act = self._sigma_reverse(act)
         if self.codebook:
             self.subspace.set_event(act)
             result = self.reverseEnd(self.subspace)
@@ -7759,17 +7792,15 @@ class SymbolicSpace(Space):
     def evaluate_truth(self, vspace, wordSpace=None):
         """Top-level: evaluate truth of the full stack -> scalar.
 
-        Reads ``trueForward`` from the S-tier SyntacticLayer owned by
-        WordSpace. Returns a passthrough when no WordSpace is wired
-        (e.g. unit tests constructing a SymbolicSpace in isolation).
+        Post-2026-05-01 refactor: routes through the standalone
+        ``TrueLayer`` GrammarLayer subclass (positive-pole projection).
         """
         act = vspace.materialize(mode="activation")
-        if wordSpace is None:
+        from Layers import GRAMMAR_LAYER_CLASSES
+        true_cls = GRAMMAR_LAYER_CLASSES.get('true')
+        if true_cls is None:
             return act
-        layer = getattr(wordSpace, 'syntacticLayer', None)
-        if layer is None:
-            return act
-        return layer.trueForward(act, self.subspace)
+        return true_cls().forward(act)
 
     @staticmethod
     def test():

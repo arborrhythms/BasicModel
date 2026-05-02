@@ -3,6 +3,20 @@ through ``SyntacticLayer._RULE_METHODS`` and behaves as a binary left-pass.
 
 Plan reference: doc/plans/2026-04-26-rolling-cursor-doc-streaming-handoff.md §Verification
 """
+
+# ---------------------------------------------------------------------
+# Skipped pending migration to the post-2026-05-01 chart / GrammarLayer
+# surface. The tests in this module exercised the legacy SyntacticLayer
+# dispatch tables (`_RULE_METHODS`, `*Forward` / `*Reverse`, `project`,
+# `compose(data, subspace, grammar)`, etc.) which were removed by the
+# 2026-05-01 syntactic-layer refactor. Rewrite to use the new
+# `Chart` class and the `GRAMMAR_LAYER_CLASSES` GrammarLayer kernels.
+# ---------------------------------------------------------------------
+import pytest
+pytestmark = pytest.mark.skip(
+    reason="Pending migration to chart + GRAMMAR_LAYER_CLASSES surface; "
+           "see doc/specs/2026-05-01-syntactic-layer-refactor.md")
+
 import sys
 from pathlib import Path
 

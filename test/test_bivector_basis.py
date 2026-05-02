@@ -19,6 +19,7 @@ import unittest
 import torch
 
 import Spaces
+from Layers import Ops
 
 
 class TestBivectorNegation(unittest.TestCase):
@@ -34,7 +35,7 @@ class TestBivectorNegation(unittest.TestCase):
         v = torch.zeros(2 * K)
         v[0] = 0.9   # pos pole of concept 0
         v[3] = 0.7   # neg pole of concept 1
-        out = basis.negation(v, monotonic=True)
+        out = Ops.negation(v, monotonic=True)
         # Positive pole 0 flips to negative pole of concept 0 (index 1).
         self.assertAlmostEqual(out[0].item(), 0.0, places=6)
         self.assertAlmostEqual(out[1].item(), 0.9, places=6)
@@ -46,14 +47,14 @@ class TestBivectorNegation(unittest.TestCase):
         basis = self._basis()
         torch.manual_seed(0)
         v = torch.rand(16).clamp(0.0, 1.0)
-        out = basis.negation(basis.negation(v, monotonic=True),
+        out = Ops.negation(Ops.negation(v, monotonic=True),
                              monotonic=True)
         self.assertTrue(torch.allclose(out, v))
 
     def test_negation_inverse_is_negation(self):
         basis = self._basis()
         v = torch.rand(8).clamp(0.0, 1.0)
-        direct = basis.negation(v, monotonic=True)
+        direct = Ops.negation(v, monotonic=True)
         via_inv = basis.negationReverse(v, monotonic=True)
         self.assertTrue(torch.allclose(direct, via_inv))
 
@@ -61,12 +62,12 @@ class TestBivectorNegation(unittest.TestCase):
         basis = self._basis()
         v = torch.zeros(5)  # odd
         with self.assertRaises(ValueError):
-            basis.negation(v, monotonic=True)
+            Ops.negation(v, monotonic=True)
 
     def test_bitonic_negation_unchanged(self):
         basis = self._basis()
         v = torch.tensor([0.1, -0.2, 0.3, -0.4])
-        out = basis.negation(v, monotonic=False)
+        out = Ops.negation(v, monotonic=False)
         self.assertTrue(torch.allclose(out, -v))
 
 

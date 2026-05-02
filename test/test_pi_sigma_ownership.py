@@ -5,13 +5,22 @@ historical assignments; the data flow direction P->C->S forward,
 S->C->P reverse is unchanged):
 
     PerceptualSpace.sigma  -- SigmaLayer (P -> sub-percept; dormant per spec O3)
-    ConceptualSpace.pi     -- PiLayer (P -> C, with forwardPi/reversePi aliases)
-    SymbolicSpace.sigma    -- SigmaLayer (C -> S, with forwardSigma/reverseSigma aliases)
+    ConceptualSpace.pi     -- PiLayer (P -> C). Two-pass ergodic mode
+                              aliases ``self.pi`` to ``self.pi1``;
+                              ``self._pi_reverse`` hides the pi2 dispatch.
+    SymbolicSpace.sigma    -- SigmaLayer (C -> S). Same alias pattern;
+                              ``self._sigma_reverse`` hides sigma2.
 
 Each layer round-trips through its own inverse.
 
+The 2026-05-01 syntactic-layer refactor removed the bare
+``forwardPi``/``reversePi``/``forwardSigma``/``reverseSigma`` pointer
+aliases; callers now use ``self.pi.forward`` / ``self._pi_reverse`` /
+``self.sigma.forward`` / ``self._sigma_reverse`` directly.
+
 See:
 - basicmodel/doc/specs/2026-04-24-lift-lower-bivector-design.md (§B-summary)
+- basicmodel/doc/specs/2026-05-01-syntactic-layer-refactor.md (alias removal)
 - basicmodel/doc/Logic.md §8 (the level-crossing axis)
 - basicmodel/doc/Spaces.md (ownership tables)
 """
@@ -92,20 +101,36 @@ class TestOwnership(unittest.TestCase):
 
 
 class TestForwardReverseAliases(unittest.TestCase):
-    """The forwardPi/reversePi (Conceptual) and forwardSigma/reverseSigma
-    (Symbolic) pointer aliases hide the one-or-two-layer split."""
+    """Post-2026-05-01 refactor: the bare ``forwardPi`` / ``reversePi`` /
+    ``forwardSigma`` / ``reverseSigma`` pointer attributes are gone.
+    Callers use ``self.pi.forward`` directly (and ``self._pi_reverse``
+    in two-pass mode); same for sigma.
+    """
 
-    def test_conceptual_has_pointer_aliases(self):
+    def test_aliases_removed(self):
         model = _make_plain_model()
         cs = model.conceptualSpace
-        self.assertTrue(callable(cs.forwardPi))
-        self.assertTrue(callable(cs.reversePi))
+        ss = model.symbolicSpace
+        self.assertFalse(hasattr(cs, 'forwardPi'),
+                         "ConceptualSpace.forwardPi alias removed")
+        self.assertFalse(hasattr(cs, 'reversePi'),
+                         "ConceptualSpace.reversePi alias removed")
+        self.assertFalse(hasattr(ss, 'forwardSigma'),
+                         "SymbolicSpace.forwardSigma alias removed")
+        self.assertFalse(hasattr(ss, 'reverseSigma'),
+                         "SymbolicSpace.reverseSigma alias removed")
 
-    def test_symbolic_has_pointer_aliases(self):
+    def test_conceptual_has_pi_forward(self):
+        model = _make_plain_model()
+        cs = model.conceptualSpace
+        self.assertTrue(callable(cs.pi.forward))
+        self.assertTrue(callable(cs._pi_reverse))
+
+    def test_symbolic_has_sigma_forward(self):
         model = _make_plain_model()
         ss = model.symbolicSpace
-        self.assertTrue(callable(ss.forwardSigma))
-        self.assertTrue(callable(ss.reverseSigma))
+        self.assertTrue(callable(ss.sigma.forward))
+        self.assertTrue(callable(ss._sigma_reverse))
 
 
 class TestPerLayerRoundTrip(unittest.TestCase):

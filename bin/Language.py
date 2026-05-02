@@ -760,6 +760,1488 @@ class Grammar:
 
 TheGrammar = Grammar()
 
+
+# =====================================================================
+# Chart -- soft-superposition CKY parser owned by WordSpace.
+#
+# Spec: doc/specs/2026-05-01-syntactic-layer-refactor.md
+#
+# Owns chart-specific params, runs inside / outside passes, dispatches
+# per-cell rule applications through ``word_space.host_layer(tier,
+# rule_name)`` (when a registry is wired) so the chart's grammar choice
+# directly fires the host space's parametrized fold.
+#
+# Per Q10.3: the Chart reads from ``TheGrammar`` (module-level singleton);
+# there is no per-call grammar parameter and no stored grammar reference.
+#
+# Per Q10.5: ``compose`` / ``generate`` branch on ``self.training``.
+# Training -> soft inside / outside passes (logsumexp / softmax mixing,
+# gradient flows broadly). Eval -> Viterbi argmax IN PLACE OF soft
+# mixing (one committed derivation per row).
+# =====================================================================
+class Chart(nn.Module):
+    """Soft-superposition CKY chart parser. Owned by WordSpace.
+
+    Holds chart parameters, runs inside / outside passes, dispatches
+    per-cell rule applications through ``word_space.host_layer(tier,
+    rule_name)`` to fire the host space's parametrized folds directly.
+    """
+
+    # Norm-drop threshold for the legacy 2D-activation accumulation
+    # path. Kept here for symmetry with the old SyntacticLayer field;
+    # the chart inside/outside passes don't rely on it.
+    _QUERY_NORM_DROP_RATIO = 0.1
+
+    def __init__(self, nInput, nOutput=None, *, max_depth=12,
+                 hidden_dim=256, D_rule=32, chart_tau=None, w_max=8,
+                 unary_max_depth=2, feature_dim=None,
+                 router_kind=None):
+        super().__init__()
+        nOutput = nOutput if nOutput is not None else nInput
+        self.nInput = int(nInput)
+        self.nOutput = int(nOutput)
+        self.max_depth = int(max_depth)
+        self.hidden_dim = int(hidden_dim)
+        self.D_rule = int(D_rule)
+        self.w_max = int(w_max)
+        self.unary_max_depth = int(unary_max_depth)
+        # XML override for chart_tau when caller didn't pin one. Read at
+        # construction time (Q10.3: Chart configures itself from XML once).
+        if chart_tau is None:
+            try:
+                chart_tau = float(TheXMLConfig.get(
+                    "WordSpace.chartTau", 1.0))
+            except Exception:
+                chart_tau = 1.0
+        self.chart_tau = float(chart_tau)
+
+        # Router selection. XML-driven; falls back to "chart" for legacy.
+        if router_kind is None:
+            try:
+                router_kind = str(TheXMLConfig.get(
+                    "WordSpace.routerKind", "chart"))
+            except Exception:
+                router_kind = "chart"
+        if router_kind not in ("chart", "signal"):
+            raise ValueError(
+                f"WordSpace.routerKind must be 'chart' or 'signal', "
+                f"got {router_kind!r}.")
+        self.router_kind = router_kind
+        # Lazy SignalRouter construction; only built when needed.
+        self._signal_router = None
+
+        # Rule prediction network (weight-tied across depths). Mirrors
+        # the legacy SyntacticLayer.forward; renamed predict_rules below.
+        self.input_proj = LinearLayer(self.nInput, self.hidden_dim)
+        self.derivation_layer = LinearLayer(
+            self.hidden_dim, self.hidden_dim)
+        # rule_head is sized to the max grammar rule count; dispatch
+        # filters by tier through the per-space SyntacticLayer.
+        # During Step 1 the head is sized to the configured grammar's
+        # rule count; we rebuild lazily when grammar versions change.
+        n_rules = max(1, len(getattr(TheGrammar, 'rule_table', [])) or 1)
+        self.num_rules = n_rules
+        self.rule_head = LinearLayer(self.hidden_dim, self.num_rules)
+        self.depth_embed = nn.Embedding(self.max_depth, self.hidden_dim)
+        self.activation_fn = nn.GELU()
+
+        # Pair-scorer MLP. Same contract as the legacy version.
+        fd = self.nInput if feature_dim is None else int(feature_dim)
+        self._pair_feature_dim = fd
+        self.pair_scorer = nn.Sequential(
+            nn.Linear(self.hidden_dim + 2 * fd, self.hidden_dim),
+            nn.GELU(),
+            nn.Linear(self.hidden_dim, 1),
+        )
+
+        # Xavier init on linear weights.
+        for layer in (self.input_proj, self.derivation_layer,
+                      self.rule_head):
+            nn.init.xavier_normal_(layer.W)
+        nn.init.normal_(self.depth_embed.weight, std=0.02)
+
+        # Soft-chart machinery (rule-shaped Parameters built lazily).
+        self._soft_chart_built = False
+        self._soft_chart_version = -1
+        self._compat_score_mod = None
+        self._unary_compat_mod = None
+        self._lex_cat_scorer = None
+
+        # Per-call chart state. Reset each compose; pre-init for read
+        # safety on layers whose compose hasn't fired yet.
+        self._chart_score = None
+        self._chart_vec = None
+        self._outside_score = None
+        self._outside_vec = None
+        self._derivation_trace = None
+        self.last_svo = None
+        self.last_rule_probs = None
+        self.last_composable_rules = None
+
+        # Category machinery.
+        self._category_names = None
+        self._category_index = None
+        self._last_category = None
+
+        # Rule executor. When None, the Chart falls back to the
+        # typed-GrammarLayer facade registry for per-rule math (so the
+        # Chart works in isolation). Step 7 wires WordSpace's
+        # host_layer dispatch in here.
+        self._rule_executor = None
+        # Active wordSpace handle for the current compose / generate
+        # call. Set by `compose` / `generate` for the duration of the
+        # call so `_apply_rule_forward` can look up host layers via
+        # the registry.
+        object.__setattr__(self, '_active_word_space', None)
+
+    def _ensure_signal_router(self):
+        """Lazy-build the SignalRouter when router_kind == 'signal'.
+
+        Assigning an nn.Module to an attribute auto-registers it as a
+        submodule, so it is included in parameters() / state_dict().
+        """
+        if self._signal_router is None:
+            from SignalRouter import SignalRouter as _SignalRouter
+            try:
+                temperature = float(TheXMLConfig.get(
+                    "WordSpace.signal.temperature", 1.0))
+            except Exception:
+                temperature = 1.0
+            self._signal_router = _SignalRouter(
+                n_input=self.nInput,
+                n_output=self.nOutput,
+                hidden_dim=self.hidden_dim,
+                feature_dim=self._pair_feature_dim,
+                max_depth=self.max_depth,
+                temperature=temperature,
+            )
+        return self._signal_router
+
+    # ------------------------------------------------------------------
+    # Public API (Q10.3 / Q10.5 surface).
+    # ------------------------------------------------------------------
+    def predict_rules(self, x):
+        """Predict rule distributions and build word tuples.
+
+        Args:
+            x: ``[B, N]`` activation vector (per-position scalar norms).
+
+        Returns dict matching the legacy ``SyntacticLayer.forward``:
+            rule_logits:     ``[B, max_depth, num_rules]``
+            rule_probs:      ``[B, max_depth, num_rules]``
+            predicted_rules: ``[B, max_depth]`` (global rule IDs)
+        """
+        B, N = x.shape
+
+        if self.num_rules == 0:
+            empty_logits = torch.zeros(B, self.max_depth, 0,
+                                       device=x.device, dtype=x.dtype)
+            empty_predicted = torch.zeros(B, self.max_depth,
+                                          device=x.device,
+                                          dtype=torch.long)
+            return {
+                "rule_logits":     empty_logits,
+                "rule_probs":      empty_logits,
+                "predicted_rules": empty_predicted,
+            }
+
+        # Pad / truncate x to the rule predictor's input width so callers
+        # at varying N can reuse one Chart.
+        expected_n = self.input_proj.nInput
+        if N < expected_n:
+            pad = torch.zeros(B, expected_n - N, device=x.device,
+                              dtype=x.dtype)
+            x_in = torch.cat([x, pad], dim=-1)
+        elif N > expected_n:
+            x_in = x[..., :expected_n]
+        else:
+            x_in = x
+
+        h = self.input_proj.forward(x_in)
+        h = self.activation_fn(h)
+        depth_ids = torch.arange(self.max_depth, device=x.device)
+        depth_vecs = self.depth_embed(depth_ids)
+
+        all_logits = []
+        all_probs = []
+        for d in range(self.max_depth):
+            h = h + depth_vecs[d]
+            h = self.derivation_layer.forward(h)
+            h = self.activation_fn(h)
+            logits = self.rule_head.forward(h)
+            if self.training:
+                probs = F.gumbel_softmax(logits, tau=1.0, hard=False)
+            else:
+                probs = F.softmax(logits, dim=-1)
+            all_logits.append(logits)
+            all_probs.append(probs)
+
+        rule_logits = torch.stack(all_logits, dim=1)
+        rule_probs = torch.stack(all_probs, dim=1)
+        predicted = rule_logits.argmax(dim=-1)
+        return {
+            "rule_logits":     rule_logits,
+            "rule_probs":      rule_probs,
+            "predicted_rules": predicted,
+        }
+
+    def compose(self, data, word_space, subspace=None):
+        """Run the inside pass over ``data``; populate per-tier rule
+        selections on ``word_space.current_rules``.
+
+        Args:
+            data: ``[B, N, D]`` token vectors to parse.
+            word_space: WordSpace instance owning this chart. Receives
+                the rule selections and reads ``host_layer(tier, rule)``
+                during dispatch.
+            subspace: optional subspace handle threaded into per-rule
+                math (legacy compatibility).
+
+        Returns:
+            dict[str, list[int]]: per-tier rule-id lists. Side effects:
+            populates ``word_space.current_rules`` and refreshes
+            ``self._chart_score`` / ``self._chart_vec``.
+        """
+        # Stash the wordSpace ref so per-rule dispatch
+        # (`_apply_rule_forward`) can look up host layers via
+        # `word_space.host_layer(tier, rule_name)`. Cleared at end.
+        object.__setattr__(self, '_active_word_space', word_space)
+        try:
+            if self.router_kind == "signal":
+                router = self._ensure_signal_router()
+                rules = router.compose(data, word_space, subspace=subspace)
+                if word_space is not None:
+                    word_space.current_rules = rules
+                return rules
+            if self.training:
+                composed, _svo = self._compose_chart_cky(
+                    data, word_space, subspace)
+            else:
+                composed, _svo = self._compose_chart_cky_viterbi(
+                    data, word_space, subspace)
+            rules = self._collect_rule_selections(word_space)
+            word_space.current_rules = rules
+            self.last_composed = composed
+            return rules
+        finally:
+            object.__setattr__(self, '_active_word_space', None)
+
+    def generate(self, target, word_space, subspace=None):
+        """Run the outside pass + Viterbi backtrace over ``target``;
+        populate ``word_space.generate_rules``.
+
+        Args:
+            target: ``[B, N, D]`` parent vectors to invert.
+            word_space: WordSpace instance.
+            subspace: optional subspace handle.
+
+        Returns:
+            dict[str, list[int]]: per-tier generate-rule-id lists.
+        """
+        object.__setattr__(self, '_active_word_space', word_space)
+        try:
+            if self.router_kind == "signal":
+                router = self._ensure_signal_router()
+                rules = router.generate(target, word_space, subspace=subspace)
+                if word_space is not None:
+                    word_space.generate_rules = rules
+                return rules
+            # The outside pass needs an inside pass result; in the
+            # legacy path the inside pass runs before generate as part
+            # of compose. Generate-only callers (testing reverse paths)
+            # trigger an inside pass here too.
+            if self._chart_score is None or self._chart_vec is None:
+                _ = self.compose(target, word_space, subspace)
+            rules = self._collect_generate_selections(word_space)
+            word_space.generate_rules = rules
+            return rules
+        finally:
+            object.__setattr__(self, '_active_word_space', None)
+
+    # ------------------------------------------------------------------
+    # Rule executor wiring (Step 7 wires this from WordSpace).
+    # ------------------------------------------------------------------
+    def attach_rule_executor(self, executor):
+        """Install the per-rule math callable.
+
+        Signature:
+            executor(method_name, left, right, marker_mask, subspace)
+                -> tensor
+
+        When set, ``_apply_rule_forward`` dispatches through this
+        callable instead of the typed-GrammarLayer facade fallback.
+        """
+        self._rule_executor = executor
+
+    # ------------------------------------------------------------------
+    # Rule-selection emission. The chart fills per-tier lists by walking
+    # its derivation trace; the per-space SyntacticLayer then pops one
+    # rule per forward step. A rule fires at most once per forward
+    # (Q5).
+    # ------------------------------------------------------------------
+    def _collect_rule_selections(self, word_space):
+        """Collect per-tier per-row rule selections from the chart's
+        derivation trace. Returns
+        ``dict[tier_name -> list[list[rule_id]]]`` -- the outer list
+        indexes batch row, the inner list indexes step.
+
+        Suitable for ``word_space.current_rules``. Per-space syntactic
+        layers read row 0 by default; per-row dispatch (firing
+        different rules on different rows) is a follow-on.
+
+        Tier resolution: each grammar rule's authored ``tier`` is
+        consulted when available; otherwise the rule's ``lhs`` category
+        first letter is used as a fallback hint.
+        """
+        per_tier = {}
+        traces = self._derivation_trace
+        if traces is None or not traces:
+            return per_tier
+        n_rows = len(traces)
+        for row_idx, trace in enumerate(traces):
+            trace = trace or []
+            for entry in trace:
+                rule_id = int(entry[0])
+                tier = self._tier_for_rule(rule_id)
+                rows = per_tier.setdefault(tier, [])
+                while len(rows) < n_rows:
+                    rows.append([])
+                rows[row_idx].append(rule_id)
+        # Pad short rows with empty lists so all tiers expose a uniform
+        # n_rows shape (downstream cursor logic indexes by row).
+        for tier, rows in per_tier.items():
+            while len(rows) < n_rows:
+                rows.append([])
+        return per_tier
+
+    def _collect_generate_selections(self, word_space):
+        """Collect per-tier per-row generate-rule selections. Mirror of
+        ``_collect_rule_selections``; reverses each row's trace so
+        downward generation pops the last-applied rule first.
+        """
+        per_tier = {}
+        traces = self._derivation_trace
+        if traces is None or not traces:
+            return per_tier
+        n_rows = len(traces)
+        for row_idx, trace in enumerate(traces):
+            trace = list(trace or [])
+            for entry in reversed(trace):
+                rule_id = int(entry[0])
+                tier = self._tier_for_rule(rule_id)
+                rows = per_tier.setdefault(tier, [])
+                while len(rows) < n_rows:
+                    rows.append([])
+                rows[row_idx].append(rule_id)
+        for tier, rows in per_tier.items():
+            while len(rows) < n_rows:
+                rows.append([])
+        return per_tier
+
+    def _tier_for_rule(self, rule_id):
+        """Map a global rule_id to its host-space tier ('P', 'C', 'S').
+        Falls back to 'C' when the grammar's tier metadata is missing.
+        """
+        try:
+            rule = TheGrammar.rules[rule_id]
+        except (IndexError, AttributeError):
+            return 'C'
+        # Grammar.rule has a `tier` attr in some configs; otherwise
+        # derive from the rule's lhs category name.
+        tier = getattr(rule, 'tier', None)
+        if tier in ('P', 'C', 'S'):
+            return tier
+        lhs = str(getattr(rule, 'lhs', '') or '')
+        first = lhs.split(',', 1)[0].strip()
+        if first.startswith('P'):
+            return 'P'
+        if first.startswith('C'):
+            return 'C'
+        return 'S'
+
+    # ------------------------------------------------------------------
+    # Chart internals: lazy build / category table.
+    # ------------------------------------------------------------------
+    def _category_names_count(self):
+        table = TheGrammar._ensure_packed_table()
+        return len(table['_cat_names'])
+
+    def _ensure_category_table(self):
+        if self._category_names is not None:
+            return
+        names = set()
+        for rule in TheGrammar.rules:
+            for cat in str(rule.lhs).split(','):
+                cat = cat.strip()
+                if cat:
+                    names.add(cat)
+            for sym in (rule.rhs_symbols or ()):
+                names.add(sym)
+        ordered = ['?'] + sorted(n for n in names if n)
+        self._category_names = ordered
+        self._category_index = {n: i for i, n in enumerate(ordered)}
+
+    def _ensure_soft_chart_built(self, D, device):
+        version = getattr(TheGrammar, 'rule_table_version', 0)
+        if (self._soft_chart_built
+                and self._soft_chart_version == version
+                and self._compat_score_mod is not None
+                and self._compat_score_mod.lin1.in_features
+                    == 2 * D + self.D_rule):
+            return
+        # (Re)build the shared modules if D / D_rule changed or first call.
+        rebuild_compat = (
+            self._compat_score_mod is None
+            or self._compat_score_mod.lin1.in_features
+                != 2 * D + self.D_rule)
+        if rebuild_compat:
+            self._compat_score_mod = _CompatScore(
+                D, self.D_rule).to(device)
+            self._unary_compat_mod = _UnaryCompat(
+                D, self.D_rule).to(device)
+        cats = self._category_names_count()
+        if (self._lex_cat_scorer is None
+                or self._lex_cat_scorer.in_features != D
+                or self._lex_cat_scorer.out_features != cats):
+            self._lex_cat_scorer = nn.Linear(D, cats).to(device)
+            nn.init.xavier_normal_(self._lex_cat_scorer.weight)
+            nn.init.zeros_(self._lex_cat_scorer.bias)
+        # Rebuild rule-table-shaped parameters.
+        table = TheGrammar._ensure_packed_table(device=device)
+        R = int(table['lhs'].shape[0])
+        if R > 0:
+            embed = nn.Parameter(torch.randn(
+                R, self.D_rule, device=device) * 0.02)
+        else:
+            embed = nn.Parameter(torch.zeros(
+                0, self.D_rule, device=device))
+        # register_parameter will overwrite an existing same-named param.
+        self.register_parameter('_rule_embed', embed)
+        self.register_parameter(
+            '_rule_bias', nn.Parameter(
+                torch.zeros(R, device=device)))
+        self.register_parameter(
+            '_marker_bias', nn.Parameter(
+                torch.zeros(R, 2, device=device)))
+        self._soft_chart_built = True
+        self._soft_chart_version = version
+
+    # ------------------------------------------------------------------
+    # Per-rule math dispatch.
+    # ------------------------------------------------------------------
+    def _apply_rule_forward(self, method_name, left, right, marker_mask,
+                            subspace=None):
+        """Dispatch rule's forward semantics. Marker operands are zeroed
+        before the rule fires so a sugar operand contributes nothing.
+
+        Dispatch order (Step 7 of the 2026-05-01 refactor):
+          1. host_layer dispatch via the active wordSpace's registry —
+             fires the host space's parametrized GrammarLayer (e.g.
+             PiLayer-backed IntersectionLayer). The rule's authored
+             tier (RuleDef.tier) selects the registry shard.
+          2. external rule_executor (test injection point, optional).
+          3. typed-GrammarLayer facade lookup (parameter-free, used
+             when no host layer exists for this rule — lift, lower,
+             swap, etc., on tiers that don't own a parametrized fold).
+        """
+        keep = (~marker_mask).to(left.dtype)
+        kL = keep[..., 0:1]
+        kR = keep[..., 1:2]
+        l_eff = left * kL
+        r_eff = right * kR
+        # 1. host_layer dispatch.
+        ws = self._active_word_space
+        if ws is not None:
+            tier = self._tier_for_method(method_name)
+            host = ws.host_layer(tier, method_name) if tier else None
+            if host is not None:
+                arity = getattr(host, 'arity', 1)
+                if arity == 2 and hasattr(host, 'compose'):
+                    return host.compose(l_eff, r_eff)
+                return host.forward(l_eff)
+        # 2. external rule_executor.
+        if self._rule_executor is not None:
+            return self._rule_executor(
+                method_name, l_eff, r_eff, marker_mask, subspace)
+        # 3. Direct GrammarLayer class lookup (Step 8: replaces the
+        # retired `_GrammarOpFacade._registry`). Construct a fresh
+        # parameter-free instance each call; the parametrized ops
+        # (swap) only fire via host_layer dispatch with the right
+        # constructor args.
+        try:
+            from Layers import GRAMMAR_LAYER_CLASSES
+        except Exception:
+            return l_eff
+        cls = GRAMMAR_LAYER_CLASSES.get(method_name)
+        if cls is None:
+            return l_eff
+        try:
+            inst = cls()
+        except TypeError:
+            return l_eff
+        try:
+            arity = getattr(inst, 'arity', 1)
+            if arity == 2 and hasattr(inst, 'compose'):
+                return inst.compose(l_eff, r_eff)
+            return inst.forward(l_eff)
+        except Exception:
+            return l_eff
+
+    def _tier_for_method(self, method_name):
+        """Return the host tier ('P' / 'C' / 'S') for ``method_name``
+        by scanning ``TheGrammar.rules`` for a rule whose method_name
+        matches. The first match wins; if a method_name appears at
+        multiple tiers, callers should pick one canonical tier.
+        """
+        if not method_name:
+            return None
+        for rule in TheGrammar.rules:
+            mn = getattr(rule, 'method_name', None)
+            if mn == method_name:
+                t = getattr(rule, 'tier', None)
+                if t in ('P', 'C', 'S'):
+                    return t
+        return None
+
+    # ------------------------------------------------------------------
+    # Inside pass (training: soft; eval: Viterbi). Q10.5.
+    # ------------------------------------------------------------------
+    def _compose_chart_cky(self, data, word_space, subspace=None):
+        """Soft-mode CKY inside pass. Logsumexp / softmax-weighted
+        scatter at every cell. Used during training.
+        """
+        return self._chart_inside(data, word_space, subspace, hard=False)
+
+    def _compose_chart_cky_viterbi(self, data, word_space, subspace=None):
+        """Hard-mode CKY inside pass. Argmax scatter at every cell.
+        Used at eval (Q10.5).
+        """
+        return self._chart_inside(data, word_space, subspace, hard=True)
+
+    def _chart_inside(self, data, word_space, subspace, *, hard):
+        """Unified inside pass; ``hard=True`` switches per-cell scatter
+        from logsumexp/softmax mixing to argmax+gather.
+        """
+        B, N, D = data.shape
+        device = data.device
+        dtype = data.dtype
+
+        gv = getattr(TheGrammar, 'rule_table_version', 0)
+        if gv != self._soft_chart_version:
+            self._category_names = None
+            self._category_index = None
+        self._ensure_category_table()
+        self._ensure_soft_chart_built(D, device)
+
+        table = TheGrammar._ensure_packed_table(device=device)
+        R = int(table['lhs'].shape[0])
+        C = self._category_names_count()
+
+        empty_score = torch.full((B, N + 1, N + 1, C), -1e30,
+                                 device=device, dtype=dtype)
+        empty_vec = torch.zeros((B, N + 1, N + 1, C, D),
+                                device=device, dtype=dtype)
+        if R == 0 or N == 0:
+            self._chart_score = empty_score
+            self._chart_vec = empty_vec
+            self._derivation_trace = [[] for _ in range(B)]
+            return data, None
+
+        arity = table['arity']
+        bin_idx = torch.nonzero(arity == 2, as_tuple=False).squeeze(-1)
+        un_idx = torch.nonzero(arity == 1, as_tuple=False).squeeze(-1)
+        R_bin = int(bin_idx.numel())
+        R_un = int(un_idx.numel())
+
+        rhs_left = table['rhs_left']
+        rhs_right = table['rhs_right']
+        lhs = table['lhs']
+        mmask = table['marker_mask'].to(device=device)
+
+        chart_score = empty_score
+        chart_vec = empty_vec
+
+        # Lexical fill (w=1).
+        lex_logits = self._lex_cat_scorer(data)
+        lex_log_probs = F.log_softmax(lex_logits, dim=-1)
+        i_diag = torch.arange(N, device=device)
+        chart_score = chart_score.clone()
+        chart_vec = chart_vec.clone()
+        chart_score[:, i_diag, i_diag + 1, :] = lex_log_probs
+        chart_vec[:, i_diag, i_diag + 1, :, :] = (
+            data.unsqueeze(2).expand(B, N, C, D))
+
+        bin_global = (table['global_id'][bin_idx].cpu().tolist()
+                      if R_bin > 0 else [])
+        un_global = (table['global_id'][un_idx].cpu().tolist()
+                     if R_un > 0 else [])
+        bin_methods = [TheGrammar.rules[g].method_name for g in bin_global]
+        un_methods = [TheGrammar.rules[g].method_name for g in un_global]
+        if R_bin > 0:
+            rE_bin = self._rule_embed[bin_idx]
+            rB_bin = self._rule_bias[bin_idx]
+            mB_bin = self._marker_bias[bin_idx]
+            mmask_bin = mmask[bin_idx].to(dtype=dtype)
+            mmask_bin_bool = mmask[bin_idx]
+            rl_bin = rhs_left[bin_idx]
+            rr_bin = rhs_right[bin_idx]
+            lhs_bin = lhs[bin_idx]
+        if R_un > 0:
+            rE_un = self._rule_embed[un_idx]
+            rB_un = self._rule_bias[un_idx]
+            rl_un = rhs_left[un_idx]
+            lhs_un = lhs[un_idx]
+
+        NEG_INF = -1e30
+        w_max = min(int(self.w_max), N)
+
+        for w in range(2, w_max + 1):
+            P = N - w + 1
+            if P <= 0 or R_bin == 0:
+                continue
+            i_range = torch.arange(P, device=device)
+            offsets = torch.arange(1, w, device=device)
+            Sp = int(offsets.numel())
+
+            i_idx = i_range.unsqueeze(1).expand(P, Sp)
+            k_idx = i_idx + offsets.unsqueeze(0).expand(P, Sp)
+            j_idx = i_idx + w
+            i_flat = i_idx.reshape(-1)
+            k_flat = k_idx.reshape(-1)
+            j_flat = (i_flat + w)
+            i2 = i_flat.unsqueeze(1).expand(-1, R_bin)
+            k2 = k_flat.unsqueeze(1).expand(-1, R_bin)
+            j2 = j_flat.unsqueeze(1).expand(-1, R_bin)
+            bL = rl_bin.unsqueeze(0).expand(P * Sp, R_bin)
+            bR = rr_bin.unsqueeze(0).expand(P * Sp, R_bin)
+
+            left = chart_vec[:, i2, k2, bL, :]
+            right = chart_vec[:, k2, j2, bR, :]
+            score_left = chart_score[:, i2, k2, bL]
+            score_right = chart_score[:, k2, j2, bR]
+
+            rE = rE_bin.view(1, 1, R_bin, -1).expand(B, P * Sp, R_bin, -1)
+            mm = mmask_bin_bool.view(1, 1, R_bin, 2).expand(
+                B, P * Sp, R_bin, 2)
+
+            merged_per_rule = []
+            for r_local in range(R_bin):
+                l_r = left[:, :, r_local, :]
+                r_r = right[:, :, r_local, :]
+                mm_r = mm[:, :, r_local, :]
+                merged_per_rule.append(self._apply_rule_forward(
+                    bin_methods[r_local], l_r, r_r, mm_r,
+                    subspace=subspace))
+            merged_vec = torch.stack(merged_per_rule, dim=2)
+            compat = self._compat_score_mod(left, right, rE, mm)
+            marker_prior = (mB_bin * mmask_bin).sum(-1)
+
+            cand_score = (score_left + score_right
+                          + rB_bin.view(1, 1, R_bin)
+                          + compat
+                          + marker_prior.view(1, 1, R_bin))
+            cand_score = cand_score.view(B, P, Sp, R_bin)
+            tau = max(float(self.chart_tau), 1e-3)
+            if tau != 1.0:
+                cand_score = cand_score / tau
+            merged_vec = merged_vec.view(B, P, Sp, R_bin, D)
+
+            rule_to_A = F.one_hot(lhs_bin, num_classes=C).to(dtype)
+            log_mask = torch.where(rule_to_A > 0,
+                                   torch.zeros_like(rule_to_A),
+                                   torch.full_like(rule_to_A, NEG_INF))
+            scored_per_A = (cand_score.unsqueeze(-1)
+                            + log_mask.view(1, 1, 1, R_bin, C))
+
+            if hard:
+                # Viterbi: per (B, P, C) take the argmax over (Sp, R_bin)
+                # candidates. Decompose the flat argmax into split / rule
+                # axes, gather merged_vec via advanced indexing, mask
+                # off categories that no rule reaches.
+                flat = scored_per_A.reshape(B, P, Sp * R_bin, C)
+                new_score_w, best_idx = flat.max(dim=2)
+                sp_idx = best_idx // max(R_bin, 1)
+                r_idx = best_idx % max(R_bin, 1)
+                b_ax = torch.arange(B, device=device).view(B, 1, 1)
+                p_ax = torch.arange(P, device=device).view(1, P, 1)
+                new_vec_w = merged_vec[b_ax, p_ax, sp_idx, r_idx]
+                finite = (new_score_w > NEG_INF / 2).unsqueeze(-1)
+                new_vec_w = new_vec_w * finite.to(dtype)
+            else:
+                new_score_w = torch.logsumexp(
+                    scored_per_A.reshape(B, P, Sp * R_bin, C), dim=2)
+                weights = (scored_per_A
+                           - new_score_w.view(B, P, 1, 1, C)).exp()
+                new_vec_w = (weights.unsqueeze(-1)
+                             * merged_vec.unsqueeze(-2)).sum(dim=(2, 3))
+
+            old_score = chart_score[:, i_range, i_range + w, :]
+            old_vec = chart_vec[:, i_range, i_range + w, :, :]
+            if hard:
+                # In Viterbi mode the cell holds whichever side has the
+                # higher score; ties favor the new width-w finding.
+                pick_new = (new_score_w >= old_score)
+                combined_score = torch.where(
+                    pick_new, new_score_w, old_score)
+                combined_vec = torch.where(
+                    pick_new.unsqueeze(-1), new_vec_w, old_vec)
+            else:
+                stacked = torch.stack([old_score, new_score_w], dim=0)
+                combined_score = torch.logsumexp(stacked, dim=0)
+                old_w_n = (old_score - combined_score).exp()
+                new_w_n = (new_score_w - combined_score).exp()
+                combined_vec = (old_w_n.unsqueeze(-1) * old_vec
+                                + new_w_n.unsqueeze(-1) * new_vec_w)
+            chart_score = chart_score.clone()
+            chart_vec = chart_vec.clone()
+            chart_score[:, i_range, i_range + w, :] = combined_score
+            chart_vec[:, i_range, i_range + w, :, :] = combined_vec
+
+            # Bounded unary closure.
+            if R_un > 0:
+                for _ in range(int(self.unary_max_depth)):
+                    bL_un = rl_un.unsqueeze(0).expand(P, R_un)
+                    iP = i_range.unsqueeze(1).expand(P, R_un)
+                    jP = (i_range + w).unsqueeze(1).expand(P, R_un)
+                    child = chart_vec[:, iP, jP, bL_un, :]
+                    child_score = chart_score[:, iP, jP, bL_un]
+
+                    rE_un_b = rE_un.view(1, 1, R_un, -1).expand(
+                        B, P, R_un, -1)
+                    score_inc = (
+                        self._unary_compat_mod(child, rE_un_b)
+                        + rB_un.view(1, 1, R_un))
+                    new_un_score = child_score + score_inc
+                    tau_u = max(float(self.chart_tau), 1e-3)
+                    if tau_u != 1.0:
+                        new_un_score = new_un_score / tau_u
+                    zero_right = torch.zeros_like(child)
+                    mm_un = torch.zeros(
+                        B, P, R_un, 2, dtype=torch.bool, device=device)
+                    new_un_per_rule = []
+                    for r_local in range(R_un):
+                        c_r = child[:, :, r_local, :]
+                        mm_r = mm_un[:, :, r_local, :]
+                        new_un_per_rule.append(self._apply_rule_forward(
+                            un_methods[r_local], c_r,
+                            zero_right[:, :, r_local, :],
+                            mm_r, subspace=subspace))
+                    new_un_vec = torch.stack(new_un_per_rule, dim=2)
+
+                    rule_to_A_un = F.one_hot(
+                        lhs_un, num_classes=C).to(dtype)
+                    log_mask_un = torch.where(
+                        rule_to_A_un > 0,
+                        torch.zeros_like(rule_to_A_un),
+                        torch.full_like(rule_to_A_un, NEG_INF))
+                    scored_un = (new_un_score.unsqueeze(-1)
+                                 + log_mask_un.view(1, 1, R_un, C))
+                    if hard:
+                        new_un_per_A, sel_idx = scored_un.max(dim=2)
+                        b_ax = torch.arange(B, device=device).view(B, 1, 1)
+                        p_ax = torch.arange(P, device=device).view(1, P, 1)
+                        new_un_vec_per_A = new_un_vec[b_ax, p_ax, sel_idx]
+                        finite = (new_un_per_A > NEG_INF / 2).unsqueeze(-1)
+                        new_un_vec_per_A = new_un_vec_per_A * finite.to(dtype)
+                    else:
+                        new_un_per_A = torch.logsumexp(scored_un, dim=2)
+                        weights_un = (
+                            scored_un - new_un_per_A.view(B, P, 1, C)).exp()
+                        new_un_vec_per_A = (weights_un.unsqueeze(-1)
+                                            * new_un_vec.unsqueeze(-2)).sum(
+                                                dim=2)
+
+                    old_score_u = chart_score[:, i_range, i_range + w, :]
+                    old_vec_u = chart_vec[:, i_range, i_range + w, :, :]
+                    if hard:
+                        pick_new = (new_un_per_A >= old_score_u)
+                        combined_u = torch.where(
+                            pick_new, new_un_per_A, old_score_u)
+                        combined_vec_u = torch.where(
+                            pick_new.unsqueeze(-1),
+                            new_un_vec_per_A, old_vec_u)
+                    else:
+                        stacked_u = torch.stack(
+                            [old_score_u, new_un_per_A], dim=0)
+                        combined_u = torch.logsumexp(stacked_u, dim=0)
+                        ow = (old_score_u - combined_u).exp()
+                        nw = (new_un_per_A - combined_u).exp()
+                        combined_vec_u = (
+                            ow.unsqueeze(-1) * old_vec_u
+                            + nw.unsqueeze(-1) * new_un_vec_per_A)
+                    chart_score = chart_score.clone()
+                    chart_vec = chart_vec.clone()
+                    chart_score[:, i_range, i_range + w, :] = combined_u
+                    chart_vec[:, i_range, i_range + w, :, :] = combined_vec_u
+
+        self._chart_score = chart_score
+        self._chart_vec = chart_vec
+
+        # Outside pass mirrors the inside pass's hard / soft mode.
+        outside_score, outside_vec = self._compose_chart_outside(
+            chart_score, chart_vec, B, N, D, dtype, device,
+            bin_idx, R_bin,
+            rl_bin if R_bin > 0 else None,
+            rr_bin if R_bin > 0 else None,
+            lhs_bin if R_bin > 0 else None,
+            mmask_bin_bool if R_bin > 0 else None,
+            rE_bin if R_bin > 0 else None,
+            rB_bin if R_bin > 0 else None,
+            mB_bin if R_bin > 0 else None,
+            mmask_bin if R_bin > 0 else None,
+            bin_methods, NEG_INF, hard=hard)
+        self._outside_score = outside_score
+        self._outside_vec = outside_vec
+
+        start_name = getattr(TheGrammar, 'start_symbol', 'S')
+        cat_idx = self._category_index or {}
+        start_id = cat_idx.get(start_name, None)
+        try:
+            collapse_mode = str(util.TheXMLConfig.get(
+                "WordSpace.chartCollapse", "root")).strip().lower()
+        except Exception:
+            collapse_mode = "root"
+        if start_id is not None and N > 0:
+            root_vec = chart_vec[:, 0, N, start_id, :]
+            if collapse_mode == "broadcast":
+                composed = root_vec.unsqueeze(1).expand(B, N, D).contiguous()
+            else:
+                composed = torch.zeros(B, N, D,
+                                       device=data.device, dtype=data.dtype)
+                composed[:, 0, :] = root_vec
+        else:
+            composed = data
+
+        self._signal_sentence_completed_chart(
+            subspace, chart_score, word_space)
+
+        # Always extract a Viterbi trace; it's the canonical derivation
+        # for both rule-selection collection and (in eval mode) the
+        # legacy SVO walker.
+        self._derivation_trace = self._viterbi_extract(
+            chart_score, chart_vec, B, N)
+
+        return composed, self.last_svo
+
+    # ------------------------------------------------------------------
+    # Outside pass (mirrors hard / soft mode).
+    # ------------------------------------------------------------------
+    def _compose_chart_outside(self, chart_score, chart_vec,
+                               B, N, D, dtype, device,
+                               bin_idx, R_bin, rl_bin, rr_bin, lhs_bin,
+                               mmask_bin_bool, rE_bin, rB_bin, mB_bin,
+                               mmask_bin, bin_methods, NEG_INF, *, hard):
+        C = self._category_names_count()
+
+        outside_score = torch.full((B, N + 1, N + 1, C), NEG_INF,
+                                   device=device, dtype=dtype)
+        outside_vec = torch.zeros((B, N + 1, N + 1, C, D),
+                                  device=device, dtype=dtype)
+        if N == 0 or R_bin == 0:
+            return outside_score, outside_vec
+
+        start_name = getattr(TheGrammar, 'start_symbol', 'S')
+        cat_idx = self._category_index or {}
+        start_id = cat_idx.get(start_name, None)
+        outside_score = outside_score.clone()
+        if start_id is not None:
+            outside_score[:, 0, N, start_id] = 0.0
+
+        tau = max(float(self.chart_tau), 1e-3)
+        marker_prior = (mB_bin * mmask_bin).sum(-1)
+        rB_view = rB_bin.view(1, 1, R_bin)
+        mp_view = marker_prior.view(1, 1, R_bin)
+
+        w_max_local = min(int(self.w_max), N)
+        for w in range(w_max_local, 1, -1):
+            P = N - w + 1
+            if P <= 0:
+                continue
+            i_range = torch.arange(P, device=device)
+            offsets = torch.arange(1, w, device=device)
+            Sp = int(offsets.numel())
+
+            parent_score = outside_score[:, i_range, i_range + w, :]
+            parent_vec = outside_vec[:, i_range, i_range + w, :, :]
+            if not torch.isfinite(parent_score).any() and (
+                    parent_score.max().item() <= NEG_INF / 2):
+                continue
+
+            i_idx = i_range.unsqueeze(1).expand(P, Sp)
+            k_idx = i_idx + offsets.unsqueeze(0).expand(P, Sp)
+            i_flat = i_idx.reshape(-1)
+            k_flat = k_idx.reshape(-1)
+            j_flat = (i_flat + w)
+            i2 = i_flat.unsqueeze(1).expand(-1, R_bin)
+            k2 = k_flat.unsqueeze(1).expand(-1, R_bin)
+            j2 = j_flat.unsqueeze(1).expand(-1, R_bin)
+            bL = rl_bin.unsqueeze(0).expand(P * Sp, R_bin)
+            bR = rr_bin.unsqueeze(0).expand(P * Sp, R_bin)
+
+            left_in_score = chart_score[:, i2, k2, bL]
+            right_in_score = chart_score[:, k2, j2, bR]
+            left_in_vec = chart_vec[:, i2, k2, bL, :]
+            right_in_vec = chart_vec[:, k2, j2, bR, :]
+
+            lhs_index = lhs_bin.view(1, 1, R_bin).expand(B, P, R_bin)
+            parent_score_per_rule = parent_score.gather(-1, lhs_index)
+            parent_vec_per_rule = parent_vec.gather(
+                -2, lhs_index.unsqueeze(-1).expand(B, P, R_bin, D))
+            parent_score_per_rule = parent_score_per_rule.unsqueeze(2).expand(
+                B, P, Sp, R_bin).reshape(B, P * Sp, R_bin)
+            parent_vec_per_rule = parent_vec_per_rule.unsqueeze(2).expand(
+                B, P, Sp, R_bin, D).reshape(B, P * Sp, R_bin, D)
+
+            rE = rE_bin.view(1, 1, R_bin, -1).expand(
+                B, P * Sp, R_bin, -1)
+            mm = mmask_bin_bool.view(1, 1, R_bin, 2).expand(
+                B, P * Sp, R_bin, 2)
+            compat = self._compat_score_mod(
+                left_in_vec, right_in_vec, rE, mm)
+
+            push_left_score = (parent_score_per_rule + right_in_score
+                               + rB_view + compat + mp_view)
+            push_right_score = (parent_score_per_rule + left_in_score
+                                + rB_view + compat + mp_view)
+            if tau != 1.0:
+                push_left_score = push_left_score / tau
+                push_right_score = push_right_score / tau
+
+            outside_score = outside_score.clone()
+            outside_vec = outside_vec.clone()
+            for r in range(R_bin):
+                Br = int(rl_bin[r].item())
+                Cr = int(rr_bin[r].item())
+                old_l_score = outside_score[:, i_flat, k_flat, Br]
+                old_l_vec = outside_vec[:, i_flat, k_flat, Br, :]
+                add_l_score = push_left_score[:, :, r].view(B, P * Sp)
+                add_l_vec = parent_vec_per_rule[:, :, r, :].view(
+                    B, P * Sp, D)
+                if hard:
+                    pick_new = (add_l_score >= old_l_score)
+                    comb_l = torch.where(pick_new, add_l_score, old_l_score)
+                    outside_score[:, i_flat, k_flat, Br] = comb_l
+                    outside_vec[:, i_flat, k_flat, Br, :] = torch.where(
+                        pick_new.unsqueeze(-1), add_l_vec, old_l_vec)
+                else:
+                    stk_l = torch.stack([old_l_score, add_l_score], dim=0)
+                    comb_l = torch.logsumexp(stk_l, dim=0)
+                    w_old_l = (old_l_score - comb_l).exp()
+                    w_new_l = (add_l_score - comb_l).exp()
+                    outside_score[:, i_flat, k_flat, Br] = comb_l
+                    outside_vec[:, i_flat, k_flat, Br, :] = (
+                        w_old_l.unsqueeze(-1) * old_l_vec
+                        + w_new_l.unsqueeze(-1) * add_l_vec)
+                old_r_score = outside_score[:, k_flat, j_flat, Cr]
+                old_r_vec = outside_vec[:, k_flat, j_flat, Cr, :]
+                add_r_score = push_right_score[:, :, r].view(B, P * Sp)
+                add_r_vec = parent_vec_per_rule[:, :, r, :].view(
+                    B, P * Sp, D)
+                if hard:
+                    pick_new = (add_r_score >= old_r_score)
+                    comb_r = torch.where(pick_new, add_r_score, old_r_score)
+                    outside_score[:, k_flat, j_flat, Cr] = comb_r
+                    outside_vec[:, k_flat, j_flat, Cr, :] = torch.where(
+                        pick_new.unsqueeze(-1), add_r_vec, old_r_vec)
+                else:
+                    stk_r = torch.stack([old_r_score, add_r_score], dim=0)
+                    comb_r = torch.logsumexp(stk_r, dim=0)
+                    w_old_r = (old_r_score - comb_r).exp()
+                    w_new_r = (add_r_score - comb_r).exp()
+                    outside_score[:, k_flat, j_flat, Cr] = comb_r
+                    outside_vec[:, k_flat, j_flat, Cr, :] = (
+                        w_old_r.unsqueeze(-1) * old_r_vec
+                        + w_new_r.unsqueeze(-1) * add_r_vec)
+
+        return outside_score, outside_vec
+
+    # ------------------------------------------------------------------
+    # Sentence-completion signaling.
+    # ------------------------------------------------------------------
+    def _signal_sentence_completed_chart(self, subspace, chart_score,
+                                         word_space):
+        ws = word_space if word_space is not None else (
+            getattr(subspace, 'wordSpace', None) if subspace else None)
+        if ws is None:
+            return
+        start_name = getattr(TheGrammar, 'start_symbol', 'S')
+        cat_idx = self._category_index or {}
+        start_id = cat_idx.get(start_name, None)
+        if start_id is None:
+            return
+        Bf, N1, _, _C = chart_score.shape
+        N = N1 - 1
+        if N < 1:
+            return
+        root = chart_score[:, 0, N, :]
+        argmax = root.argmax(dim=-1)
+        completed_flat = (argmax == int(start_id))
+        if not bool(completed_flat.any().item()):
+            return
+        K = ws._row_K() if hasattr(ws, '_row_K') else 1
+        completed_list = completed_flat.tolist()
+        sc = getattr(ws, '_sentence_completed', None)
+        if sc is None or len(sc) == 0:
+            return
+        for b_flat, done in enumerate(completed_list):
+            if not done:
+                continue
+            b_source = b_flat // max(1, K)
+            if 0 <= b_source < len(sc):
+                sc[b_source] = True
+
+    # ------------------------------------------------------------------
+    # Viterbi backtrace (also used by reverse / generate path).
+    # ------------------------------------------------------------------
+    def _viterbi_extract(self, chart_score, chart_vec, B, N):
+        device = chart_score.device
+        table = TheGrammar._ensure_packed_table(device=device)
+        R = int(table['lhs'].numel())
+        if R == 0 or N == 0:
+            return [[] for _ in range(B)]
+        rhs_left = table['rhs_left']
+        rhs_right = table['rhs_right']
+        lhs = table['lhs']
+        arity = table['arity']
+        global_id = table['global_id']
+        marker_mask_full = table['marker_mask'].to(device=device)
+        start_name = getattr(TheGrammar, 'start_symbol', 'S')
+        cat_idx = self._category_index or {}
+        start_id = cat_idx.get(start_name, 0)
+
+        rule_bias_all = self._rule_bias.detach()
+        rule_embed_all = self._rule_embed.detach()
+        marker_bias_all = self._marker_bias.detach()
+
+        traces = [[] for _ in range(B)]
+        for b in range(B):
+            stack = [(0, N, int(start_id))]
+            while stack:
+                i, j, A = stack.pop()
+                if j - i <= 1:
+                    continue
+                if j - i > self.w_max:
+                    continue
+                best = None
+                best_score = -float('inf')
+                for r in range(R):
+                    if int(arity[r].item()) != 2:
+                        continue
+                    if int(lhs[r].item()) != A:
+                        continue
+                    Br = int(rhs_left[r].item())
+                    Cr = int(rhs_right[r].item())
+                    mm_r = marker_mask_full[r]
+                    rE_r = rule_embed_all[r].view(1, -1)
+                    rB_r = float(rule_bias_all[r].item())
+                    mP_r = float(
+                        (marker_bias_all[r]
+                         * mm_r.to(marker_bias_all.dtype)
+                         ).sum().item())
+                    for k in range(i + 1, j):
+                        s_left = chart_score[b, i, k, Br].item()
+                        s_right = chart_score[b, k, j, Cr].item()
+                        l_vec = chart_vec[b, i, k, Br].view(1, -1)
+                        r_vec = chart_vec[b, k, j, Cr].view(1, -1)
+                        compat = float(self._compat_score_mod(
+                            l_vec, r_vec, rE_r, mm_r.view(1, 2)).item())
+                        cand = s_left + s_right + rB_r + compat + mP_r
+                        if cand > best_score:
+                            best_score = cand
+                            best = (r, k, Br, Cr)
+                if best is None:
+                    continue
+                r, k, Br, Cr = best
+                gid = int(global_id[r].item())
+                traces[b].append((gid, i, k, i, A))
+                stack.append((i, k, Br))
+                stack.append((k, j, Cr))
+        return traces
+
+
+# ---------------------------------------------------------------------
+# Chart sub-modules: scoring heads and (deprecated) compose helpers.
+# Kept at module scope rather than nested in Chart so they survive
+# pickling and are reachable by tests by import name.
+# ---------------------------------------------------------------------
+class _CompatScore(nn.Module):
+    """Scores how plausible (left, right, rule) is as a merge.
+
+    Bounded by ``compat_scale * tanh(...)`` so the per-cell softmax
+    over rules cannot saturate to one-hot during training.
+    """
+
+    def __init__(self, D, D_rule, hidden=None, compat_scale=2.0):
+        super().__init__()
+        h = hidden or max(D, 64)
+        self.lin1 = nn.Linear(2 * D + D_rule, h)
+        self.act = nn.GELU()
+        self.lin2 = nn.Linear(h, 1)
+        self.compat_scale = float(compat_scale)
+        nn.init.xavier_normal_(self.lin1.weight)
+        nn.init.xavier_normal_(self.lin2.weight)
+        nn.init.zeros_(self.lin1.bias)
+        nn.init.zeros_(self.lin2.bias)
+
+    def forward(self, left, right, rule_embed, marker_mask):
+        keep = (~marker_mask).to(left.dtype)
+        kL = keep[..., 0:1]
+        kR = keep[..., 1:2]
+        x = torch.cat([left * kL, right * kR, rule_embed], dim=-1)
+        raw = self.lin2(self.act(self.lin1(x))).squeeze(-1)
+        return self.compat_scale * torch.tanh(raw)
+
+
+class _UnaryCompat(nn.Module):
+    """Score for a unary closure step. Bounded the same way as
+    ``_CompatScore``.
+    """
+
+    def __init__(self, D, D_rule, hidden=None, compat_scale=2.0):
+        super().__init__()
+        h = hidden or max(D, 64)
+        self.lin1 = nn.Linear(D + D_rule, h)
+        self.act = nn.GELU()
+        self.lin2 = nn.Linear(h, 1)
+        self.compat_scale = float(compat_scale)
+        nn.init.xavier_normal_(self.lin1.weight)
+        nn.init.xavier_normal_(self.lin2.weight)
+        nn.init.zeros_(self.lin1.bias)
+        nn.init.zeros_(self.lin2.bias)
+
+    def forward(self, child, rule_embed):
+        x = torch.cat([child, rule_embed], dim=-1)
+        raw = self.lin2(self.act(self.lin1(x))).squeeze(-1)
+        return self.compat_scale * torch.tanh(raw)
+
+
+# =====================================================================
+# Per-space SyntacticLayer (2026-05-01 refactor).
+#
+# Spec: doc/specs/2026-05-01-syntactic-layer-refactor.md §4.
+#
+# Each PerceptualSpace / ConceptualSpace / SymbolicSpace owns one of
+# these. Holds the parametrized GrammarLayer instances for its tier's
+# rules and dispatches `forward` / `reverse` based on the rule choice
+# the chart wrote into ``word_space.current_rules`` /
+# ``generate_rules`` (Q4 / Q10.1).
+#
+# Temporarily named ``SpaceSyntacticLayer`` while the legacy module-
+# global ``SyntacticLayer`` is still in use (Q3: keep the name
+# ``SyntacticLayer`` post-refactor; rename happens in Step 9 of the
+# implementation order, when the legacy class is deleted).
+# =====================================================================
+class SpaceSyntacticLayer(Layer):
+    """Per-space dispatcher.
+
+    Construction:
+        SpaceSyntacticLayer(tier='C', word_space=word_space,
+                            host_layers={'intersection': pi_layer})
+
+    Each entry in ``host_layers`` is registered with ``word_space`` at
+    construction. The space's ``forward()`` and ``reverse()`` delegate
+    here; ``forward()`` reads ``word_space.current_rules[tier]``,
+    advances a per-tier cursor, and dispatches to the appropriate
+    layer's ``compose`` (binary) or ``forward`` (unary). ``reverse()``
+    mirrors via ``word_space.generate_rules[tier]`` and ``layer.generate``.
+
+    The cursor resets at the start of each new ``word_space.compose()``
+    / ``word_space.generate()`` call via the generation counters on
+    WordSpace (Q10.1).
+    """
+
+    def __init__(self, tier, word_space, host_layers, default_rule=None):
+        super().__init__(0, 0)
+        self.tier = str(tier)
+        # Stash host_layers in two parallel structures: ModuleList for
+        # nn.Module bookkeeping (so optimizer scans see the parameters)
+        # and a name-keyed dict for O(1) dispatch lookup.
+        layers_list = [layer for layer in host_layers.values()
+                       if layer is not None]
+        self.layers = nn.ModuleList(layers_list)
+        self._by_name = {name: layer for name, layer in host_layers.items()
+                         if layer is not None}
+        self.default_rule = default_rule
+        # Register each host_layer with the wordSpace's host_layer
+        # registry so the chart can dispatch into them.
+        for rule_name, layer in self._by_name.items():
+            word_space.register_host_layer(self.tier, rule_name, layer)
+        self._cursor_compose = 0
+        self._cursor_generate = 0
+        self._cursor_compose_gen = -1
+        self._cursor_generate_gen = -1
+        # Stash the wordSpace as a non-Module attribute to avoid the
+        # circular nn.Module ownership trap (wordSpace owns the chart;
+        # chart's host_layer registry references this layer's children;
+        # this layer references wordSpace).
+        object.__setattr__(self, '_word_space', word_space)
+
+    # -- cursor management ---------------------------------------------
+    def _next_rule_name(self, *, direction):
+        """Pop the next rule name for ``direction`` ('compose' or
+        'generate'). Resets the cursor when wordSpace has bumped its
+        generation counter for this direction.
+
+        Reads ``word_space.current_rules`` / ``generate_rules`` as
+        ``dict[tier, list[list[int]]]`` (per-row, per-step). For now
+        we use row 0 as the canonical sequence; per-row dispatch (where
+        rows fire different rules at the same step) is a follow-on.
+
+        Returns the rule's ``method_name`` (string) or ``None`` /
+        ``self.default_rule`` when no chart rule is available. The
+        method name is the key used in ``self._by_name``.
+        """
+        ws = self._word_space
+        if direction == 'compose':
+            rules = ws.current_rules
+            gen = ws._compose_generation
+            if gen != self._cursor_compose_gen:
+                self._cursor_compose = 0
+                self._cursor_compose_gen = gen
+            cursor = self._cursor_compose
+        else:
+            rules = ws.generate_rules
+            gen = ws._generate_generation
+            if gen != self._cursor_generate_gen:
+                self._cursor_generate = 0
+                self._cursor_generate_gen = gen
+            cursor = self._cursor_generate
+        per_tier = rules.get(self.tier) if rules else None
+        per_step = self._row_zero_rules(per_tier)
+        if cursor < len(per_step):
+            rule_id = per_step[cursor]
+            if direction == 'compose':
+                self._cursor_compose = cursor + 1
+            else:
+                self._cursor_generate = cursor + 1
+            try:
+                method_name = TheGrammar.rules[int(rule_id)].method_name
+            except (IndexError, AttributeError, ValueError, TypeError):
+                method_name = None
+            return method_name or self.default_rule
+        # Fallback: legacy / no-chart configurations supply a default
+        # rule (the per-space "natural" fold, e.g. 'intersection' for C).
+        return self.default_rule
+
+    @staticmethod
+    def _row_zero_rules(per_tier):
+        """Extract row 0's rule sequence from a per-row container.
+
+        Tolerates both legacy ``list[int]`` (flat) and the multi-row
+        ``list[list[int]]`` shape so callers using either contract
+        keep working during the migration window.
+        """
+        if not per_tier:
+            return []
+        # Multi-row: list of lists.
+        if isinstance(per_tier[0], list):
+            return per_tier[0]
+        # Flat list of ints (legacy).
+        return per_tier
+
+    # -- forward / reverse dispatch ------------------------------------
+    #
+    # The per-space dispatch takes a subspace and operates on the
+    # subspace's tier-appropriate field:
+    #   * S tier: the .what content (symbol activations)
+    #   * P / C tier: the .event content (percept / concept activations)
+    #
+    # Rule choices come from word_space.current_rules / generate_rules
+    # (populated by the chart). Cursor advances one step per call.
+    def forward(self, subspace):
+        """Fire one fold step on ``subspace`` per the chart's rule choice.
+
+        Materializes the subspace's tier-appropriate field, applies
+        the chosen rule's GrammarLayer.forward, writes the result back
+        into the same field. Returns the (possibly-mutated) subspace.
+
+        Falls back to ``self.default_rule`` when the chart hasn't
+        written a rule for this tier.
+
+        On the signal-router path the chart has already executed the
+        derivation tensorially (router.compose folded the slab via the
+        op modules and wrote the [B, 1, D] root state back into
+        subspace.event). The legacy per-rule unary fold here would
+        double-apply the op (and crash on truly-binary ops like
+        ConjunctionLayer / DisjunctionLayer that don't expose a unary
+        forward). Skip it.
+        """
+        ws = self._word_space
+        if (ws is not None and getattr(ws, 'chart', None) is not None
+                and getattr(ws.chart, 'router_kind', 'chart') == 'signal'):
+            # Still advance the cursor so reverse() pops in sync.
+            self._next_rule_name(direction='compose')
+            return subspace
+        rule_name = self._next_rule_name(direction='compose')
+        if rule_name is None:
+            return subspace
+        layer = self._by_name.get(rule_name)
+        if layer is None:
+            return subspace
+        # Binary (arity-2) rules are executed inside the chart's compose
+        # via host_layer.compose(left, right). Calling .forward(x) on
+        # them as a unary post-chart fold would crash (no `right` arg).
+        # Only fire unary rules here.
+        if int(getattr(layer, 'arity', 1)) != 1:
+            return subspace
+        x = self._read_subspace(subspace)
+        if x is None:
+            return subspace
+        y = layer.forward(x)
+        self._write_subspace(subspace, y)
+        return subspace
+
+    def reverse(self, subspace):
+        """Inverse of ``forward``: fire one fold-reverse step on the
+        subspace's tier-appropriate field. No-op when the rule isn't
+        invertible.
+
+        Skipped on the signal-router path — the chart's generate()
+        handles inverse routing tensorially.
+        """
+        ws = self._word_space
+        if (ws is not None and getattr(ws, 'chart', None) is not None
+                and getattr(ws.chart, 'router_kind', 'chart') == 'signal'):
+            self._next_rule_name(direction='generate')
+            return subspace
+        rule_name = self._next_rule_name(direction='generate')
+        if rule_name is None:
+            return subspace
+        layer = self._by_name.get(rule_name)
+        if layer is None or not getattr(layer, 'invertible', False):
+            return subspace
+        # Binary rules' inverse is handled by the chart's generate via
+        # host_layer.generate(parent); skip here.
+        if int(getattr(layer, 'arity', 1)) != 1:
+            return subspace
+        y = self._read_subspace(subspace)
+        if y is None:
+            return subspace
+        x = layer.reverse(y)
+        self._write_subspace(subspace, x)
+        return subspace
+
+    # -- subspace I/O per tier ------------------------------------------
+    def _read_subspace(self, subspace):
+        """Read the tier-appropriate tensor from ``subspace``.
+
+        S tier: subspace.what (the symbol content). Codebook / Tensor
+        bases expose ``getW()``; if ``what`` doesn't carry per-position
+        symbol activations, fall back to materialize() so the layer
+        sees the muxed event.
+
+        P / C tier: subspace.materialize() (the muxed event tensor).
+        """
+        if subspace is None:
+            return None
+        if self.tier == 'S':
+            what = getattr(subspace, 'what', None)
+            if what is not None and hasattr(what, 'getW'):
+                try:
+                    w = what.getW()
+                    if torch.is_tensor(w) and w.ndim >= 2:
+                        return w
+                except Exception:
+                    pass
+        if hasattr(subspace, 'materialize'):
+            return subspace.materialize()
+        return getattr(subspace, 'event', None)
+
+    def _write_subspace(self, subspace, tensor):
+        """Write ``tensor`` back into the tier-appropriate field.
+
+        S tier: subspace.what.setW(tensor) when available; otherwise
+        falls through to event so downstream consumers still see the
+        update.
+
+        P / C tier: subspace.set_event(tensor).
+        """
+        if subspace is None or tensor is None:
+            return
+        if self.tier == 'S':
+            what = getattr(subspace, 'what', None)
+            if what is not None and hasattr(what, 'setW'):
+                try:
+                    what.setW(tensor)
+                    return
+                except Exception:
+                    pass
+        if hasattr(subspace, 'set_event'):
+            subspace.set_event(tensor)
+
+
+# =====================================================================
+# Grammar-op class registry for lazy host_layer construction (Q10.4).
+# Maps rule method_name -> GrammarLayer class. Per-space syntactic
+# layers consult this when the grammar references a rule whose host
+# parametrized layer isn't already owned by the space.
+# =====================================================================
+def _grammar_layer_classes():
+    """Return the rule_name -> GrammarLayer class registry.
+
+    Step 8 of the 2026-05-01 refactor: read from the canonical module-
+    level ``GRAMMAR_LAYER_CLASSES`` dict on Layers.py instead of
+    rebuilding it. Returns ``{}`` if Layers.py isn't yet importable
+    (Layers.py imports from Language.py at module load).
+    """
+    try:
+        from Layers import GRAMMAR_LAYER_CLASSES
+    except ImportError:
+        return {}
+    return dict(GRAMMAR_LAYER_CLASSES)
+
+
+def build_space_syntactic_layer(space, word_space, *, tier,
+                                builtin_layers=None,
+                                default_rule=None):
+    """Construct a per-space SpaceSyntacticLayer.
+
+    Args:
+        space: the host Space (PerceptualSpace / ConceptualSpace /
+            SymbolicSpace). The constructed layer is stored on
+            ``space.syntacticLayer`` and registered in the wordSpace's
+            host_layer registry.
+        word_space: the WordSpace coordinator. Owns the host_layer
+            registry and the chart.
+        tier: tier name ('P' / 'C' / 'S') used as the registry key.
+        builtin_layers: dict[rule_name -> GrammarLayer instance] for
+            rules backed by an already-constructed parametrized layer
+            (e.g. {'intersection': space.pi}). These instances are
+            registered as-is so their existing weights participate in
+            training.
+        default_rule: rule name to fall back to when the chart hasn't
+            written a rule choice for this tier (legacy / no-chart
+            configurations). Pass ``None`` to passthrough on missing
+            choice.
+    """
+    builtin_layers = dict(builtin_layers or {})
+    host_layers = dict(builtin_layers)
+    cls_registry = _grammar_layer_classes()
+    for rule in TheGrammar.rules:
+        rule_tier = getattr(rule, 'tier', None)
+        if rule_tier != tier:
+            continue
+        mn = getattr(rule, 'method_name', None)
+        if not mn or mn in host_layers:
+            continue
+        cls = cls_registry.get(mn)
+        if cls is None:
+            continue
+        try:
+            host_layers[mn] = cls()
+        except TypeError:
+            # Some GrammarLayer wrappers (IntersectionLayer / UnionLayer)
+            # require a parametrized inner layer at construction. Without
+            # one, the host space's existing instance should already be
+            # in builtin_layers; if it isn't, skip rather than fail.
+            continue
+    layer = SpaceSyntacticLayer(
+        tier=tier, word_space=word_space,
+        host_layers=host_layers, default_rule=default_rule)
+    space.syntacticLayer = layer
+    return layer
+
+
 class SyntacticLayer(Layer):
     """Unified rule-prediction and rule-execution layer for the grammar.
 
@@ -879,8 +2361,6 @@ class SyntacticLayer(Layer):
         # get gradient updates.
         self._soft_chart_built = False
         self._soft_chart_version = -1
-        self._compose_mod = None
-        self._decompose_mod = None
         self._compat_score_mod = None
         self._unary_compat_mod = None
         self._lex_cat_scorer = None
@@ -1045,2472 +2525,28 @@ class SyntacticLayer(Layer):
             return out
         return out * m.to(device=out.device, dtype=out.dtype)
 
-    # -- Forward/Reverse dispatch ------------------------------------
-    #
-    # C-tier/SigmaPi ops (invertible): not, intersection, union, lift, lower
-    # S-tier ops (lossy, no inverse): equals, part, true, non, swap, absorb
-    #
-    # _RULE_METHODS maps rule name -> (forwardName, reverseName|None, binary)
-
-    # Unified rule table (post-subclass-merge, 2026-04-19). The three
-    # former subclasses (PerceptualSyntacticLayer, ConceptualSyntacticLayer,
-    # SymbolicSyntacticLayer) have been collapsed into this class.
-    _RULE_METHODS = {
-        # Sugar absorption. S-tier and lossy: the right operand is discarded.
-        'absorb':       ('absorbForward',       None,                  True),
-        # C-tier invertible concept ops
-        'union':        ('unionForward',        'unionReverse',        True),
-        'intersection': ('intersectionForward', 'intersectionReverse', True),
-        'not':          ('notForward',          'notReverse',          False),
-        # Lift / lower are now in-space binary algebra (PiLayer round-trip
-        # removed when the three subclasses merged).
-        'lift':         ('liftForward',         'liftReverse',         True),
-        'lower':        ('lowerForward',        'lowerReverse',        True),
-        # S-tier lossy ops
-        'equals':       ('equalsForward',       None,                  True),
-        'part':         ('partForward',         None,                  True),
-        'true':         ('trueForward',         None,                  False),
-        'false':        ('falseForward',        None,                  False),
-        'non':          ('nonForward',          None,                  False),
-        'conjunction':  ('conjunctionForward',  None,                  True),
-        'disjunction':  ('disjunctionForward',  None,                  True),
-        'swap':         ('swapForward',         None,                  True),
-        'what':         ('whatForward',         None,                  False),
-        'where':        ('whereForward',        None,                  False),
-        'when':         ('whenForward',         None,                  False),
-        'query':        ('queryForward',        None,                  True),
-        # Shamatha one-pointedness fusion. Convex-hull projection over
-        # the active concept axis; pinned-high probability when
-        # TheGrammar.thought_free=True (see rule_probability below).
-        'Contiguous':   ('ContiguousForward',   'ContiguousReverse',   False),
-    }
-
-    # Step 6: Direct ``Ops`` dispatch table used by the explicit-op
-    # grammar.cfg path.  Each entry maps a grammar op-name to the bare
-    # ``Ops`` callable the dispatcher invokes when the rule is
-    # interpreted **without** Basis/subspace/mask context (the
-    # "stateless" view).  When grammar.cfg provides the rule and the
-    # caller has no subspace context, ``dispatch_ops`` below routes
-    # through this table; when the caller has subspace context, the
-    # existing ``_RULE_METHODS`` path is preferred (it handles masks
-    # and codebook-search inverses correctly).
-    #
-    # Entries here mirror the parent plan §Step 6 Layer-1 / Layer-2
-    # tables: ``intersection`` / ``union`` route to the unified
-    # ``Ops.lower`` / ``Ops.lift`` mode-dispatchers, ``not`` to
-    # ``Ops.negation``, etc.  Ops with no stateless implementation
-    # (``absorb``, ``query``, ``swap``, ``what`` / ``where`` / ``when``)
-    # are absent and must go through the
-    # ``_RULE_METHODS`` path.
-    #
-    # Step 5 deferral 3 (binary rule application): the cfg dispatcher
-    # uses option (a) — explicit two-operand calls into the unified
-    # ``Ops.lower`` / ``Ops.lift`` mode-dispatchers — so it stays
-    # bit-equivalent to the legacy ``_RULE_METHODS`` path.  The
-    # alternative (option (b): pack the constituents into a single
-    # N-element tensor and call ``space.sigma.forward(packed, binary=True)``
-    # / ``space.sigma.forward(...)`` to use the Step-5 STE top-2 selector)
-    # is feasible per-rule but trades the explicit binary algebra for
-    # auto-pruning; defer that to a follow-up commit so the Step 6
-    # acceptance sweep stays a clean equivalence check.  Option (c)
-    # (per-rule annotation) becomes practical once a per-rule flag is
-    # added to grammar.cfg; out of scope here.
-    _OPS_METHODS = {
-        'lift':         lambda x, y=None, **kw: Ops.lift(x, y, **kw),
-        'lower':        lambda x, y=None, **kw: Ops.lower(x, y, **kw),
-        'union':        lambda x, y=None, **kw: Ops.lift(x, y, mode='OR',
-                                                         **{k: v for k, v in kw.items()
-                                                            if k != 'mode'}),
-        'intersection': lambda x, y=None, **kw: Ops.lower(x, y, mode='AND',
-                                                          **{k: v for k, v in kw.items()
-                                                             if k != 'mode'}),
-        'not':          lambda x, **kw: Ops.negation(x, **kw),
-        'conjunction':  lambda x, y, **kw: Ops.conjunction(x, y, **kw),
-        'disjunction':  lambda x, y, **kw: Ops.disjunction(x, y, **kw),
-        'non':          lambda x, **kw: Ops.non(x, **kw),
-        'true':         lambda x, **kw: torch.relu(torch.clamp(x, -1.0, 1.0)),
-        'false':        lambda x, **kw: torch.relu(-torch.clamp(x, -1.0, 1.0)),
-        'part':         lambda x, y, **kw: Ops.part(x, y, **kw),
-        'equals':       lambda x, y, **kw: Ops.equal(x, y, **kw),
-    }
-
-    @classmethod
-    def dispatch_ops(cls, op_name, *args, **kwargs):
-        """Resolve a grammar op-name to its bare ``Ops`` callable and
-        invoke it (Step 6 explicit-op grammar dispatch, stateless view).
-
-        Used by callers that have a rule table loaded from
-        ``data/grammar.cfg`` and want to apply the named op without
-        going through layer context (Basis / subspace / mask).  For
-        ops that need layer context (``absorb``, ``query``, ``swap``,
-        ``what`` / ``where`` / ``when``)
-        callers must use ``project()`` instead — those entries are not
-        present in ``_OPS_METHODS`` and a ``KeyError`` here signals
-        that the layer-context dispatch path is required.
-
-        Args:
-            op_name: grammar method name (``'lift'``, ``'lower'``, ...).
-            *args, **kwargs: forwarded to the resolved Ops callable.
-
-        Returns:
-            Whatever the Ops callable returns — typically a tensor.
-        """
-        return cls._OPS_METHODS[op_name](*args, **kwargs)
-
-    # Method-name aliases at dispatch time. Grammar XML may name an
-    # op by the layer class that implements it (e.g. ``pi.forward(...)``
-    # for PiLayer's AND-fold) or by the semantic operator name
-    # (``intersection.forward(...)``). Both forms preserve their
-    # authored ``method_name`` on the RuleDef; this dispatch table
-    # translates layer-class names to the semantic names that the
-    # ``_RULE_METHODS`` dispatch table is keyed on.
-    _METHOD_ALIASES = {
-        'pi':    'intersection',
-        'sigma': 'union',
-    }
-
-    def _resolve_method(self, method_name):
-        """Translate layer-name aliases to the semantic op name used
-        as the key in ``_RULE_METHODS``."""
-        if method_name in self._METHOD_ALIASES:
-            return self._METHOD_ALIASES[method_name]
-        return method_name
-
-    def project(self, grammar, rule_id, left, right=None, third=None, subspace=None,
-                mask=None):
-        """Execute a grammar rule forward. Subclasses override for parametric rules.
-
-        ``mask`` (optional concept-axis Mask of shape ``[K]``) is forwarded
-        to the dispatched operator. ``None`` preserves legacy behavior.
-        """
-        method_name = grammar.rules[rule_id].method_name
-        if method_name is None:
-            return left  # transition -- pass through
-        method_name = self._resolve_method(method_name)
-
-        if method_name in self._RULE_METHODS:
-            fn_name, _, binary = self._RULE_METHODS[method_name]
-            fn = getattr(self, fn_name)
-            if binary:
-                if right is not None:
-                    return fn(left, right, subspace, mask=mask)
-                return left
-            return fn(left, subspace, mask=mask)
-
-        return left
-
-    def reverse_project(self, grammar, rule_id, result, right=None, subspace=None,
-                        mask=None):
-        """Execute a grammar rule inverse. Returns best-effort recovery of left operand."""
-        method_name = grammar.rules[rule_id].method_name
-        if method_name is None:
-            return result
-        method_name = self._resolve_method(method_name)
-
-        if method_name in self._RULE_METHODS:
-            _, rev_name, binary = self._RULE_METHODS[method_name]
-            if rev_name is None:
-                return result  # lossy op -- no inverse
-            fn = getattr(self, rev_name)
-            if binary:
-                return fn(result, right, subspace, mask=mask)
-            return fn(result, subspace, mask=mask)
-
-        return result
-
-    # -- C-tier: invertible operations -----------------------------
-
-    def notForward(self, left, subspace, mask=None):
-        b = self._basis(subspace)
-        if b is not None:
-            out = b.negation(left, monotonic=self._mono(subspace))
-        else:
-            out = -left
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    def notReverse(self, result, subspace, mask=None):
-        b = self._basis(subspace)
-        if b is not None:
-            out = b.negationReverse(result, monotonic=self._mono(subspace))
-        else:
-            out = -result
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    def intersectionForward(self, left, right, subspace, mask=None):
-        b = self._basis(subspace)
-        if b is not None:
-            out = b.conjunction(left, right, monotonic=self._mono(subspace))
-        else:
-            out = torch.min(left, right)
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    def intersectionReverse(self, result, right, subspace, mask=None):
-        b = self._basis(subspace)
-        if b is not None:
-            out = b.conjunctionReverse(result, right, monotonic=self._mono(subspace))
-        else:
-            out = result
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    def unionForward(self, left, right, subspace, mask=None):
-        b = self._basis(subspace)
-        if b is not None:
-            out = b.disjunction(left, right, monotonic=self._mono(subspace))
-        else:
-            out = torch.max(left, right)
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    def unionReverse(self, result, right, subspace, mask=None):
-        b = self._basis(subspace)
-        if b is not None:
-            out = b.disjunctionReverse(result, right, monotonic=self._mono(subspace))
-        else:
-            out = result
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    # -- Sugar absorption -----------------------------------------------
-    # `absorb(S, S)` is a binary left-pass: returns the left operand and
-    # discards the right. The right operand is the "sugar" that should be
-    # absorbed into the surrounding constituent without contributing to it.
-    # Unary `identity(S)` was removed as a grammar rule because it is just
-    # the transition / PROJECT behavior under another name.
-
-    def absorbForward(self, left, right, subspace, mask=None):
-        return self._apply_mask(
-            Ops.absorb(left, right), mask, subspace=subspace,
-        )
-
-    # -- S-tier: lossy operations (no inverse) ---------------------
-
-    def equalsForward(self, left, right, subspace, mask=None):
-        """S -> equals(S, S): agreement score via concept-level mutual parthood.
-
-        When called from the S-tier with a wired SymbolicSpace back-reference,
-        reverse-project both operands from S to C via the owning
-        SymbolicSpace's PiLayer, then delegate to the C-tier Basis.equal
-        (mutual parthood, scalar=True) on the bitonic concept subspace.
-        Otherwise fall back to the local subspace basis or elementwise min.
-
-        Under a mask, agreement is computed only on the selected dims.
-        """
-        if mask is not None:
-            m = self._expand_mask(mask, left.shape[-1])
-            m = m.to(device=left.device, dtype=left.dtype)
-            denom = m.sum().clamp(min=1.0)
-            agree = 1.0 - ((left - right).abs() * m).sum(dim=-1) / denom
-            agree = agree.clamp(0.0, 1.0)
-            while agree.ndim < right.ndim:
-                agree = agree.unsqueeze(-1)
-            return self._apply_mask(agree * right, mask, subspace=subspace)
-
-        sym_space = getattr(self, "_symbolic_space", None)
-        concept_space = getattr(sym_space, "conceptualSpace", None) if sym_space else None
-        concept_basis = None
-        if concept_space is not None:
-            c_sub = getattr(concept_space, "subspace", None)
-            concept_basis = getattr(c_sub, "basis", None) if c_sub else None
-        pi = getattr(sym_space, "layer", None) if sym_space else None
-
-        # Reverse-project only when the operand actually looks like a per-symbol
-        # vector (last dim == PiLayer's nOutput). Activations over symbol
-        # indices [B, K] fall through to the local subspace basis.
-        pi_output_dim = getattr(pi, "nOutput", None) if pi is not None else None
-        if (concept_basis is not None
-                and pi is not None
-                and hasattr(pi, "reverse")
-                and pi_output_dim is not None
-                and left.shape[-1] == pi_output_dim
-                and right.shape[-1] == pi_output_dim):
-            left_c = pi.reverse(left)
-            right_c = pi.reverse(right)
-            score = concept_basis.equal(left_c, right_c, monotonic=False, scalar=True)
-            while score.ndim < right.ndim:
-                score = score.unsqueeze(-1)
-            return score * right
-
-        b = self._basis(subspace)
-        if b is not None:
-            score = b.equal(left, right, monotonic=self._mono(subspace), scalar=True)
-            while score.ndim < right.ndim:
-                score = score.unsqueeze(-1)
-            return score * right
-        return torch.min(left, right)
-
-    def partForward(self, left, right, subspace, mask=None):
-        b = self._basis(subspace)
-        if b is not None:
-            score = b.part(left, right, monotonic=self._mono(subspace), scalar=True)
-            while score.ndim < right.ndim:
-                score = score.unsqueeze(-1)
-            out = score * right
-        else:
-            out = torch.min(left, right)
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    # -- S-tier trinity: true / false / non as partition of unity --
-    # For x  in  [-1, 1]:  true(x) + false(x) + non(x) = 1
-    #   true(x)  = max(0, x)     "I commit: yes"
-    #   false(x) = max(0, -x)    "I commit: no"
-    #   non(x)   = 1 - |x|       "I commit: indeterminate"
-    # Inputs are clamped to [-1, 1] defensively so the partition holds
-    # regardless of upstream producer conventions.
-
-    def trueForward(self, left, subspace, mask=None):
-        left = torch.clamp(left, -1.0, 1.0)
-        b = self._basis(subspace)
-        if b is not None:
-            out = b.pos(left)
-        else:
-            out = torch.relu(left)
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    def falseForward(self, left, subspace, mask=None):
-        """Positive rectification of the negation. The 'no' commitment.
-
-        Partitions with trueForward/nonForward: true + false + non = 1.
-        """
-        left = torch.clamp(left, -1.0, 1.0)
-        b = self._basis(subspace)
-        if b is not None:
-            out = b.pos(-left)
-        else:
-            out = torch.relu(-left)
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    def nonForward(self, left, subspace, mask=None):
-        """Triangular residual: 1 - |clamp(x, -1, 1)|. The 'indeterminate'
-        commitment.
-
-        Completes the S-tier trinity partition of unity:
-        ``true(x) + false(x) + non(x) = 1``. Always uses the bitonic
-        formula -- the partition only holds under bitonic semantics, so
-        the rule is independent of the subspace's monotonic flag.
-        """
-        out = Ops.non(left, monotonic=False)
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    def ContiguousForward(self, left, subspace, mask=None):
-        """One-pointedness fusion: convex hull (per-axis amax) over the
-        concept axis, broadcast back across that axis so shape is
-        preserved for downstream NEG / fold layers.
-
-        ContiguousLayer is parameter-free (the kernel is ``amax`` over
-        the concept axis); we construct one transiently per call. The
-        bottom-up SymbolicSpace forward path calls
-        ``SymbolicSpace._contiguous_layer`` directly and does not route
-        through here -- this dispatch method serves the top-down
-        SyntacticLayer.project path used by grammar-driven derivation.
-        """
-        layer = ContiguousLayer(left.shape[-1], left.shape[-1])
-        out = layer.forward(left)
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    def ContiguousReverse(self, result, subspace, mask=None):
-        """Hull is lossy in general; reverse passes through (identity
-        recovery, see ``ContiguousLayer.reverse``)."""
-        layer = ContiguousLayer(result.shape[-1], result.shape[-1])
-        out = layer.reverse(result)
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    def conjunctionForward(self, left, right, subspace, mask=None):
-        """S-tier sentence-level AND. Hadamard conjunction on bitonic activations.
-
-        Distinct from C-tier intersection which composes concepts; this
-        composes propositions. Delegates to Basis.conjunction when available
-        (which respects sign agreement); falls back to torch.minimum.
-        """
-        b = self._basis(subspace)
-        if b is not None:
-            out = b.conjunction(left, right, monotonic=self._mono(subspace))
-        else:
-            out = torch.minimum(left, right)
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    def disjunctionForward(self, left, right, subspace, mask=None):
-        """S-tier sentence-level OR. Hadamard disjunction on bitonic activations.
-
-        Distinct from C-tier union which composes concepts; this composes
-        propositions. Delegates to Basis.disjunction when available
-        (which respects sign agreement); falls back to torch.maximum.
-        """
-        b = self._basis(subspace)
-        if b is not None:
-            out = b.disjunction(left, right, monotonic=self._mono(subspace))
-        else:
-            out = torch.maximum(left, right)
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    # -- Rule #2: S-tier slot selectors (what / where / when) -----
-    # Parameter-free axis projections. Each zeros non-selected column
-    # blocks while preserving shape. The C -> S boundary demux has
-    # already put the content in the canonical [what|where|when]
-    # layout (see SubSpace.demux); these selectors just mask the
-    # non-selected blocks when the activation tensor is vector-shaped.
-    #
-    # When compose() passes [B, N] scalar norms (non-vector mode) the
-    # block structure isn't accessible, so selectors degenerate to
-    # identity -- the grammar's axis semantics still hold because the
-    # selected vs non-selected dimensions are carried by the
-    # subspace's modality tensors rather than the [B, N] activation.
-
-    def _split_widths(self, subspace):
-        if subspace is None:
-            return None, None, None
-        nWhat = getattr(subspace, 'nWhat', None)
-        nWhere = getattr(subspace, 'nWhere', 0)
-        nWhen = getattr(subspace, 'nWhen', 0)
-        return nWhat, nWhere, nWhen
-
-    def whatForward(self, left, subspace, mask=None):
-        """Axis selector: keep what-block, zero where/when-blocks."""
-        out = Ops.what(left, *self._split_widths(subspace))
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    def whereForward(self, left, subspace, mask=None):
-        """Axis selector: keep where-block, zero what/when-blocks."""
-        out = Ops.where(left, *self._split_widths(subspace))
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    def whenForward(self, left, subspace, mask=None):
-        """Axis selector: keep when-block, zero what/where-blocks."""
-        out = Ops.when(left, *self._split_widths(subspace))
-        return self._apply_mask(out, mask, subspace=subspace)
-
-    # -- forward: predict rules ------------------------------------
-
-    def forward(self, x):
-        """Predict rule distributions and build word tuples.
-
-        Args:
-            x: [B, N] activation vector from the space's subspace.
-
-        Returns dict:
-            rule_logits:     [B, max_depth, num_rules]  (local indices)
-            rule_probs:      [B, max_depth, num_rules]
-            predicted_rules: [B, max_depth]             (global rule IDs)
-            words:           list of (batch, vector, rule) tuples
-        """
-        B, N = x.shape
-
-        if self.num_rules == 0:
-            empty_logits = torch.zeros(B, self.max_depth, 0,
-                                       device=x.device, dtype=x.dtype)
-            empty_predicted = torch.zeros(B, self.max_depth,
-                                          device=x.device, dtype=torch.long)
-            return {
-                "rule_logits":     empty_logits,
-                "rule_probs":      empty_logits,
-                "predicted_rules": empty_predicted,
-                "words":           [[] for _ in range(B)],
-            }
-
-        h = self.input_proj.forward(x)
-        h = self.activation_fn(h)
-
-        depth_ids = torch.arange(self.max_depth, device=x.device)
-        depth_vecs = self.depth_embed(depth_ids)
-
-        all_logits = []
-        all_probs  = []
-
-        # Transition bias: (1 - interpretation) * scale on the transition
-        # rule logit. The transition rule (S->C or C->P) is the NOP -- "stop
-        # deriving, pass through." Low interpretation biases toward it.
-        interp = self.grammar.interpretation if self.grammar is not None else 0.5
-        transition_bias = (1.0 - interp) * self.TRANSITION_SCALE
-
-        for d in range(self.max_depth):
-            h = h + depth_vecs[d]
-            h = self.derivation_layer.forward(h)
-            h = self.activation_fn(h)
-            logits = self.rule_head.forward(h)  # [B, num_rules]
-
-            # Bias the transition rule logit. Detach the bias so it
-            # doesn't flow gradients -- interpretation is a hyperparameter,
-            # the grammar shouldn't learn to predict NOP.
-            if self.transition_index is not None and transition_bias > 0:
-                logits = logits.clone()
-                logits[:, self.transition_index] = (
-                    logits[:, self.transition_index].detach() + transition_bias
-                )
-
-            if self.training:
-                probs = F.gumbel_softmax(logits, tau=self.tau, hard=False)
-            else:
-                probs = F.softmax(logits, dim=-1)
-
-            all_logits.append(logits)
-            all_probs.append(probs)
-
-        rule_logits = torch.stack(all_logits, dim=1)
-        rule_probs  = torch.stack(all_probs, dim=1)
-
-        local_predicted = rule_logits.argmax(dim=-1)
-        global_predicted = torch.tensor(
-            [[self.all_rules[local_predicted[b, d].item()]
-              for d in range(self.max_depth)]
-             for b in range(B)],
-            device=x.device, dtype=torch.long
-        )
-
-        active_positions = self._active_positions(x)
-        words = self._generate_derivation(global_predicted, active_positions)
-
-        return {
-            "rule_logits":     rule_logits,
-            "rule_probs":      rule_probs,
-            "predicted_rules": global_predicted,
-            "words":           words,
-        }
-
-    # -- helpers ----------------------------------------------------
-
-    def _active_positions(self, x):
-        """Extract per-batch lists of active (nonzero) positions."""
-        B = x.shape[0]
-        positions = []
-        for b in range(B):
-            active = torch.nonzero(x[b], as_tuple=False).squeeze(-1)
-            positions.append(active.tolist())
-        return positions
-
-    def _generate_derivation(self, predicted_rules, active_positions):
-        """Build word tuples from predicted rules and active positions."""
-        B = predicted_rules.shape[0]
-        all_words = []
-        for b in range(B):
-            rules     = predicted_rules[b].tolist()
-            positions = active_positions[b]
-            n = len(positions)
-            if n == 0:
-                continue
-            if n == 1:
-                terminal = self._find_terminal_rule()
-                all_words.append((b, positions[0], terminal))
-                continue
-            pos_idx = 0
-            for rule_id in rules:
-                if pos_idx >= n - 1:
-                    break
-                arity = self.grammar.arity(rule_id)
-                if arity != 2:
-                    binary = [r for r in self.rules if self.grammar.arity(r) == 2]
-                    rule_id = binary[0] if binary else rule_id
-                all_words.append((b, positions[pos_idx], rule_id))
-                pos_idx += 1
-            terminal = self._find_terminal_rule()
-            all_words.append((b, positions[-1], terminal))
-        return all_words
-
-    def _find_terminal_rule(self):
-        """Find the terminal (arity 0) rule in this layer's rule set."""
-        for r in self.all_rules:
-            if self.grammar.arity(r) == 0:
-                return r
-        if self.transition_rule is not None:
-            return self.transition_rule
-        return self.all_rules[0]
-
-    # -- reverse: deterministic tree-walk --------------------------
-
-    def reverse(self, words, nVectors, batch_size):
-        """Decode derivation to recover the activation vector."""
-        activation = torch.zeros(batch_size, nVectors, device=TheDevice.get())
-        for b, v, r in words:
-            activation[b, v] = 1.0
-        return activation
-
-    # -- lift / lower: in-space algebra (post PiLayer round-trip removal) --
-
-    def liftForward(self, left, right, subspace, mask=None):
-        """In-space lift: elementwise product. Post-merge (2026-04-19)
-        the old PiLayer round-trip (forward to S, multiply, reverse to C)
-        collapses to the in-space body because the caller already has the
-        forwarded operands.
-        """
-        return self._apply_mask(
-            Ops.lower(left, right, mode='AND', kind='smooth'),
-            mask, subspace=subspace)
-
-    def liftReverse(self, result, right, subspace, mask=None):
-        """Recover first operand from the elementwise product."""
-        return self._apply_mask(Ops.liftReverse(result, right), mask, subspace=subspace)
-
-    def lowerForward(self, left, right, subspace, mask=None):
-        """In-space lower: arithmetic mean."""
-        return self._apply_mask(
-            Ops.lift(left, right, mode='OR', kind='smooth'),
-            mask, subspace=subspace)
-
-    def lowerReverse(self, result, right, subspace, mask=None):
-        """Recover first operand from the mean."""
-        return self._apply_mask(Ops.lowerReverse(result, right), mask, subspace=subspace)
-
-    # -- swap: Sinkhorn-normalised soft permutation ------------------
-
-    def init_swap(self, symbol_dim, n_symbol_slots):
-        """Initialize swap and non parameters. Called unconditionally on
-        the unified SyntacticLayer at construction time."""
-        swap_size = max(symbol_dim, n_symbol_slots, 1)
-        self.swap_marker = nn.Parameter(torch.randn(swap_size) * 0.01)
-        self.swap_logits = nn.Parameter(torch.zeros(3, 3))
-        self._swap_sinkhorn_iters = 5
-        self.non_threshold = nn.Parameter(torch.tensor(0.0))
-
-    def init_lifting(self, concept_dim, nVerbs=16):
-        """Instantiate the LiftingLayer used by TruthLayer.universality.
-
-        The codebook holds ``nVerbs`` learned verb matrices ([D, D])
-        that act on concept vectors of dimension ``concept_dim``. The
-        layer is the endpoint for Golden-Rule scoring: ``forward_transitive_svo``
-        routes (subject, verb, object) through the verb codebook so the
-        TruthLayer can measure luminosity change under S/O reversal.
-        Registered as a submodule so its parameters participate in training.
-        """
-        try:
-            configured = int(TheXMLConfig.get("architecture.VerbCodebookSize"))
-            if configured > 0:
-                nVerbs = configured
-        except (KeyError, TypeError, ValueError):
-            pass
-        self.lifting_layer = LiftingLayer(nVerbs=nVerbs, nDim=concept_dim)
-
-    def _swap_soft_perm(self):
-        M = self.swap_logits
-        for _ in range(self._swap_sinkhorn_iters):
-            M = M - M.logsumexp(dim=-1, keepdim=True)
-            M = M - M.logsumexp(dim=-2, keepdim=True)
-        return M.exp()
-
-    def swapForward(self, left, right, subspace=None, mask=None):
-        """Soft permutation via Sinkhorn-normalised logits."""
-        P = self._swap_soft_perm()
-        marker = self.swap_marker.to(left.device)
-        if left.ndim == 3:
-            D = left.shape[-1]
-            m = marker[:D].unsqueeze(0).unsqueeze(0).expand_as(left)
-        elif left.ndim == 2:
-            m = marker[:left.shape[-1]].unsqueeze(0).expand_as(left)
-        else:
-            m = marker
-        if right is None:
-            right = left
-        stack = torch.stack([left, right, m], dim=0)
-        out = torch.einsum('ij,j...->i...', P, stack)
-        return self._apply_mask(out[0], mask, subspace=subspace)
-
-    # -- Rule #3: query (contradiction marker at accumulation point) --
-    # Norm-drop threshold. If a new rule-application result would reduce
-    # the accumulator's norm below this fraction of its current value,
-    # the accumulation point interprets it as symbolic contradiction and
-    # emits a query word + preserves the existing accumulator instead of
-    # absorbing the cancelling contribution.
-    _QUERY_NORM_DROP_RATIO = 0.1
-
-    def queryForward(self, left, right, subspace=None, mask=None):
-        """Query: return the preserved accumulator operand.
-
-        The query marker is pushed onto WordSubSpace at the accumulation
-        point (see `compose()`), not by this forward. When the parse tree
-        is re-evaluated downstream, `queryForward` returns the first
-        operand -- the accumulator state that was preserved when the
-        cancelling contribution arrived.
-        """
-        return self._apply_mask(left, mask, subspace=subspace)
-
-    # -- compose / decompose: unified driver ------------------------
-
-    def compose(self, data, subspace, grammar, target_count=None):
-        """Apply composition to a batch of activations or vectors.
-
-        Handles both 3D ``[B, N, D]`` (vector mode) and 2D ``[B, N]``
-        (activation mode, used by the old S-tier path). In 2D mode the
-        grammar acts on norms; the returned tensor has the same shape.
-
-        When ``target_count`` is supplied (3D only), pairwise reduction
-        drives the active token count down to that value.
-
-        Returns ``(composed, svo_or_None)`` -- ``svo`` is reserved for
-        ternary lift output; currently always ``None``.
-        """
-        subspace.word = []
-        self.last_svo = None
-        self.last_rule_probs = None
-        self.last_composable_rules = None
-        B_guess = data.shape[0] if torch.is_tensor(data) and data.ndim >= 2 else 1
-        self._derivation_trace = [[] for _ in range(B_guess)]
-
-        if data.ndim == 2:
-            composed = self._compose_activation(data, subspace, grammar)
-            return composed, self.last_svo
-
-        return self._compose_vector(data, subspace, grammar, target_count)
-
-    def _compose_activation(self, data, subspace, grammar):
-        """2D path: [B, N] activation mode. Used for S-tier compose on
-        norms and for the 2D-input branch of the unified compose.
-        """
-        B, N = data.shape
-
-        # Guard: skip soft superposition if data dims don't match
-        expected_n = self.input_proj.nInput
-        if N != expected_n or self.num_rules == 0:
-            return data
-
-        out = self.forward(data)
-        rule_probs = out['rule_probs']  # [B, max_depth, num_rules]
-        all_rules = self.all_rules
-
-        active_positions = [subspace.active_positions(b, data) for b in range(B)]
-        max_leaves = max((len(p) for p in active_positions), default=0)
-        if max_leaves == 0:
-            return data
-
-        masks = torch.zeros(B, max_leaves, N, device=data.device)
-        for b in range(B):
-            for i, pos in enumerate(active_positions[b]):
-                if i < max_leaves:
-                    masks[b, i, pos] = 1.0
-        leaf_acts = masks * data.unsqueeze(1)  # [B, L, N]
-
-        composed = leaf_acts[:, 0, :]
-
-        last_rule_per_batch = [-1 for _ in range(B)]
-        query_rid = None
-        for _gid in all_rules:
-            if grammar.rules[_gid].method_name == 'query':
-                query_rid = _gid
-                break
-
-        for d in range(min(self.max_depth, max(max_leaves - 1, 1))):
-            if d + 1 >= max_leaves:
-                break
-            left = composed
-            right = leaf_acts[:, d + 1, :]
-
-            results = []
-            for rule_id in all_rules:
-                a = grammar.arity(rule_id)
-                if a == 2:
-                    result = self.project(grammar, rule_id, left, right,
-                                          subspace=subspace)
-                else:
-                    result = self.project(grammar, rule_id, left,
-                                          subspace=subspace)
-                results.append(result)
-
-            results = torch.stack(results, dim=1)  # [B, num_rules, N]
-            probs_d = rule_probs[:, d, :]          # [B, num_rules]
-
-            # Rule #3: norm-drop detection at the accumulation point
-            candidate = (probs_d.unsqueeze(-1) * results).sum(dim=1)  # [B, N]
-            prev_norm = left.norm(dim=-1)         # [B]
-            cand_norm = candidate.norm(dim=-1)    # [B]
-            drop_threshold = self._QUERY_NORM_DROP_RATIO * prev_norm
-            query_mask = (prev_norm > 1e-6) & (cand_norm < drop_threshold)
-            # One sync per tensor per d-step, not per b-row.
-            query_mask_list = query_mask.tolist()
-            best = probs_d.argmax(dim=-1)
-            best_list = best.tolist()
-            if query_mask.any():
-                mask_exp = query_mask.unsqueeze(-1).expand_as(candidate)
-                composed = torch.where(mask_exp, left, candidate)
-                best_for_push = probs_d.argmax(dim=-1)
-                best_push_list = best_for_push.tolist()
-                word_sub = getattr(self, 'word_subspace', None)
-                for b in range(B):
-                    if not query_mask_list[b]:
-                        continue
-                    left_rid = last_rule_per_batch[b]
-                    right_rid = best_push_list[b]
-                    right_gid = all_rules[right_rid] if right_rid < len(all_rules) else -1
-                    if query_rid is not None and word_sub is not None:
-                        word_sub.push(b, query_rid,
-                                      leaves=(left_rid, right_gid, -1))
-            else:
-                composed = candidate
-
-            for b in range(B):
-                if d < len(active_positions[b]):
-                    best_gid = all_rules[best_list[b]]
-                    subspace.add_word(b, active_positions[b][d], best_gid)
-                    if not query_mask_list[b]:
-                        last_rule_per_batch[b] = best_gid
-
-        return composed
-
-    def _pair_scorer(self, hidden, pairs, alive):
-        """Score adjacent-leaf pairs for chart-like merge.
-
-        hidden [B, H], pairs [B, P, 2, D], alive [B, N] -> logits [B, P].
-        Dead pairs get -inf so softmax routes zero probability to them.
-
-        ``pairs`` can be either (a) full-width [B, N-1, 2, D] (tests pass
-        this; dead pairs are zero-filled) or (b) compacted [B, P_live, 2, D]
-        from ``_live_pairs`` (live-pipeline; P_live = #alive - 1 per batch,
-        padded to the max across batches). The shared mask derives
-        alive-pair count per batch row and masks tail slots as dead.
-
-        Runtime feature dim: chart compose can be invoked with D ranging
-        from the symbol-codebook bivector width (2) to the muxed symbol
-        width (nDim + nWhere + nWhen). The pair-scorer was sized with
-        ``feature_dim`` at construction; if the live tensor arrives with
-        a different D, rebuild the MLP lazily rather than fail in the
-        ``nn.Linear`` shape check.
-        """
-        B, P, _, D = pairs.shape
-        H = hidden.shape[-1]
-        if D != self._pair_feature_dim:
-            self.pair_scorer = nn.Sequential(
-                nn.Linear(H + 2 * D, H),
-                nn.GELU(),
-                nn.Linear(H, 1),
-            ).to(hidden.device)
-            self._pair_feature_dim = D
-        h = hidden.unsqueeze(1).expand(B, P, H)
-        flat = pairs.reshape(B, P, 2 * D)
-        feat = torch.cat([h, flat], dim=-1)
-        logits = self.pair_scorer(feat.reshape(B * P, -1)).reshape(B, P)
-        alive_counts = alive.to(torch.long).sum(dim=1)  # [B]
-        num_pairs = (alive_counts - 1).clamp_min(0)     # [B]
-        idx = torch.arange(P, device=alive.device).unsqueeze(0)
-        pair_alive = idx < num_pairs.unsqueeze(1)       # [B, P]
-        logits = logits.masked_fill(~pair_alive, float('-inf'))
-        return logits
-
-    def _live_pairs(self, live, alive):
-        """Extract adjacent-pair tensors from live-leaf ordering.
-
-        Returns (pair_tensor [B, P_max, 2, D], list[list[(l, r)]],
-                 pair_indices [B, P_max, 2] long, pair_alive [B, P_max] bool).
-
-        ``batch_pairs`` (Python list) is kept for consumers that drive
-        per-row ``subspace.add_word()`` calls (which mutate a Python list
-        and so must already cross the host boundary). ``pair_indices`` and
-        ``pair_alive`` are tensor views of the same data, used by callers
-        that can stay on-device — e.g. the category-compat fill.
-        """
-        B, N, D = live.shape
-        # One sync to bring the alive mask to Python; inner scan is free.
-        alive_list = alive.tolist()
-        batch_pairs = []
-        max_P = 0
-        for b in range(B):
-            positions = [i for i in range(N) if alive_list[b][i]]
-            pairs = list(zip(positions[:-1], positions[1:]))
-            batch_pairs.append(pairs)
-            max_P = max(max_P, len(pairs))
-        pair_tensor = torch.zeros(B, max_P, 2, D, device=live.device)
-        pair_indices = torch.zeros(B, max_P, 2, dtype=torch.long, device=live.device)
-        pair_alive = torch.zeros(B, max_P, dtype=torch.bool, device=live.device)
-        for b, pairs in enumerate(batch_pairs):
-            for p, (l, r) in enumerate(pairs):
-                pair_tensor[b, p, 0] = live[b, l]
-                pair_tensor[b, p, 1] = live[b, r]
-                pair_indices[b, p, 0] = l
-                pair_indices[b, p, 1] = r
-                pair_alive[b, p] = True
-        return pair_tensor, batch_pairs, pair_indices, pair_alive
-
-    def _ensure_category_table(self, grammar):
-        if getattr(self, '_category_names', None) is not None:
-            return
-        names = set()
-        for rule in grammar.rules:
-            # rule.lhs is a string; multi-output rules store it as a
-            # comma-joined tuple ('S,S' for `S,S = intersection_inv(VO)`).
-            for cat in str(rule.lhs).split(','):
-                cat = cat.strip()
-                if cat:
-                    names.add(cat)
-            for sym in (rule.rhs_symbols or ()):
-                names.add(sym)
-        ordered = ['?'] + sorted(n for n in names if n)
-        self._category_names = ordered
-        self._category_index = {n: i for i, n in enumerate(ordered)}
-
-    def _seed_category(self, category):
-        self._last_category = category.clone()
-
-    def _apply_rules_to_pairs(self, pair_tensor, composable_global,
-                              grammar, subspace):
-        """For each (pair, rule) compute the merged vector. Returns
-        merged[B, P, R, D] where R=len(composable_global).
-        """
-        B, P, _, D = pair_tensor.shape
-        R = len(composable_global)
-        merged = torch.zeros(B, P, R, D, device=pair_tensor.device)
-        for p in range(P):
-            left = pair_tensor[:, p, 0, :].unsqueeze(1)
-            right = pair_tensor[:, p, 1, :].unsqueeze(1)
-            for r, gid in enumerate(composable_global):
-                result = self.project(grammar, gid, left, right,
-                                      subspace=subspace)
-                merged[:, p, r] = result.squeeze(1)
-        return merged
-
-    # ---- Soft-superposition chart: shared Compose / Decompose -----
-    #
-    # Delta 2 of the floating-blossom spec. Two shared modules replace
-    # per-rule Compose_r / Decompose_r dispatch:
-    #
-    #   Compose(left, right, rule_embed, marker_mask) -> vec
-    #   Decompose(parent, rule_embed, marker_mask)    -> (left, right)
-    #
-    # marker_mask[..., 0] / [..., 1] are bool: True iff the corresponding
-    # operand is a sugar marker. Marker operands are routed around the
-    # merge: their projection is multiplied by zero so they contribute
-    # nothing to the parent vector. The host rule still gets a learnable
-    # marker prior on the score (added by the caller from
-    # `marker_bias[r, side]`), so marker firing is decision-controlled
-    # but information-empty.
-    #
-    # These modules are nn.Modules; they are instantiated lazily by
-    # `_ensure_soft_chart_built` from the SyntacticLayer's nInput (= D)
-    # and the configured D_rule. Adding a rule to the grammar appends a
-    # row to `_rule_embed` / `_rule_bias` / `_marker_bias` and bumps the
-    # version; the modules themselves never need rebuilding.
-
-    class _SoftCompose(nn.Module):
-        """**Deprecated.** Retained as an importable class so older
-        tests keep loading; the chart's hot path now dispatches through
-        fixed `_RULE_METHODS` semantics (Kim, Dyer & Rush 2019 — see
-        `doc/research/2019-kim-compound-pcfg.md`). Soft mixing happens
-        over rule *probabilities* only, never over a learned compose
-        MLP. This class is no longer wired into `_compose_chart_cky`.
-        """
-        def __init__(self, D, D_rule, hidden=None):
-            super().__init__()
-            h = hidden or max(D, 64)
-            self.left_proj  = nn.Linear(D, h)
-            self.right_proj = nn.Linear(D, h)
-            self.rule_proj  = nn.Linear(D_rule, h)
-            self.activation = nn.GELU()
-            self.out        = nn.Linear(h, D)
-            nn.init.xavier_normal_(self.left_proj.weight)
-            nn.init.xavier_normal_(self.right_proj.weight)
-            nn.init.xavier_normal_(self.rule_proj.weight)
-            nn.init.xavier_normal_(self.out.weight)
-            for b in (self.left_proj.bias, self.right_proj.bias,
-                      self.rule_proj.bias, self.out.bias):
-                nn.init.zeros_(b)
-
-        def forward(self, left, right, rule_embed, marker_mask):
-            keep = (~marker_mask).to(left.dtype)
-            kL = keep[..., 0:1]
-            kR = keep[..., 1:2]
-            l = self.left_proj(left * kL)
-            r = self.right_proj(right * kR)
-            e = self.rule_proj(rule_embed)
-            return self.out(self.activation(l + r + e))
-
-    def _apply_rule_forward(self, method_name, left, right, marker_mask,
-                            subspace=None):
-        """Dispatch to a fixed rule-semantics forward method.
-
-        `method_name` indexes into `_RULE_METHODS`. Marker operands are
-        zeroed *before* the rule forward fires, so a sugar operand
-        contributes nothing to the parent vector regardless of what the
-        rule does with it.
-
-        Returns a tensor with the same leading shape as `left`.
-        """
-        keep = (~marker_mask).to(left.dtype)
-        kL = keep[..., 0:1]
-        kR = keep[..., 1:2]
-        l_eff = left * kL
-        r_eff = right * kR
-        method_name = self._resolve_method(method_name)
-        # Typed-GrammarLayer dispatch (Surface 3, 2026-05-01). Look up
-        # the per-op _GrammarOpFacade subclass and call its forward
-        # with `gated=False` -- the chart already does its own soft
-        # mixing via `_compose_chart_cky`'s logsumexp scatter, so
-        # chart-authority gating would double-gate.
-        try:
-            from Layers import _GrammarOpFacade as _Facade
-        except Exception:
-            _Facade = None
-        if _Facade is not None:
-            facade_cls = _Facade._registry.get(method_name)
-            if facade_cls is not None:
-                facade = facade_cls()
-                if facade.arity == 2:
-                    try:
-                        return facade.forward(l_eff, r_eff, layer=self,
-                                              subspace=subspace, gated=False)
-                    except Exception:
-                        return l_eff
-                try:
-                    return facade.forward(l_eff, layer=self,
-                                          subspace=subspace, gated=False)
-                except Exception:
-                    return l_eff
-        # Legacy fallback: dispatch via _RULE_METHODS string table.
-        meta = self._RULE_METHODS.get(method_name)
-        if meta is None:
-            # 'merge' / 'emit_head' / unknown -- treat as left-pass.
-            return l_eff
-        fwd_name, _, is_binary = meta
-        fn = getattr(self, fwd_name, None)
-        if fn is None:
-            return l_eff
-        try:
-            if is_binary:
-                return fn(l_eff, r_eff, subspace=subspace)
-            return fn(l_eff, subspace=subspace)
-        except Exception:
-            return l_eff
-
-    class _SoftDecompose(nn.Module):
-        def __init__(self, D, D_rule, hidden=None):
-            super().__init__()
-            h = hidden or max(D, 64)
-            self.parent_proj = nn.Linear(D, h)
-            self.rule_proj   = nn.Linear(D_rule, h)
-            self.activation  = nn.GELU()
-            self.left_head   = nn.Linear(h, D)
-            self.right_head  = nn.Linear(h, D)
-            for m in (self.parent_proj, self.rule_proj,
-                      self.left_head, self.right_head):
-                nn.init.xavier_normal_(m.weight)
-                nn.init.zeros_(m.bias)
-
-        def forward(self, parent, rule_embed, marker_mask):
-            # marker_mask is recorded but not used to gate output: the
-            # marker side is regenerated from `parent` alone (its
-            # original content was discarded, so any inverse is
-            # learned). Tests that want exact round-trip exclude marker
-            # sides.
-            del marker_mask
-            h = self.activation(self.parent_proj(parent)
-                                + self.rule_proj(rule_embed))
-            return self.left_head(h), self.right_head(h)
-
-    class _CompatScore(nn.Module):
-        """Scores how plausible (left, right, rule) is as a merge.
-        Returns a scalar log-prob delta added to chart_score.
-
-        **Output is bounded by `compat_scale * tanh(...)`.** Without a
-        bound, the per-cell softmax over rules saturates to one-hot
-        during training (compat learns to produce huge rule-
-        discriminating logits) and the chart degenerates from soft-
-        superposition to effective hard reduction. The bound is the
-        structural fix described in `doc/research/2017-jang-gumbel-
-        softmax.md`. Default scale is 2.0 -- enough to differentiate
-        rules without saturating; can be raised once the chart is
-        wired into a stratified grammar that can absorb sharper
-        commitments.
-        """
-        def __init__(self, D, D_rule, hidden=None, compat_scale=2.0):
-            super().__init__()
-            h = hidden or max(D, 64)
-            self.lin1 = nn.Linear(2 * D + D_rule, h)
-            self.act = nn.GELU()
-            self.lin2 = nn.Linear(h, 1)
-            self.compat_scale = float(compat_scale)
-            nn.init.xavier_normal_(self.lin1.weight)
-            nn.init.xavier_normal_(self.lin2.weight)
-            nn.init.zeros_(self.lin1.bias)
-            nn.init.zeros_(self.lin2.bias)
-
-        def forward(self, left, right, rule_embed, marker_mask):
-            keep = (~marker_mask).to(left.dtype)
-            kL = keep[..., 0:1]
-            kR = keep[..., 1:2]
-            x = torch.cat([left * kL, right * kR, rule_embed], dim=-1)
-            raw = self.lin2(self.act(self.lin1(x))).squeeze(-1)
-            return self.compat_scale * torch.tanh(raw)
-
-    class _UnaryCompat(nn.Module):
-        """Score for a unary closure step: parent[A] -> child[B]. Used
-        inside the bounded unary loop on the just-formed cells.
-
-        Bounded the same way as `_CompatScore` -- see that class for
-        rationale.
-        """
-        def __init__(self, D, D_rule, hidden=None, compat_scale=2.0):
-            super().__init__()
-            h = hidden or max(D, 64)
-            self.lin1 = nn.Linear(D + D_rule, h)
-            self.act = nn.GELU()
-            self.lin2 = nn.Linear(h, 1)
-            self.compat_scale = float(compat_scale)
-            nn.init.xavier_normal_(self.lin1.weight)
-            nn.init.xavier_normal_(self.lin2.weight)
-            nn.init.zeros_(self.lin1.bias)
-            nn.init.zeros_(self.lin2.bias)
-
-        def forward(self, child, rule_embed):
-            x = torch.cat([child, rule_embed], dim=-1)
-            raw = self.lin2(self.act(self.lin1(x))).squeeze(-1)
-            return self.compat_scale * torch.tanh(raw)
-
-    def _ensure_soft_chart_built(self, grammar, D, device):
-        """Lazily build / rebuild the soft-chart parameters and shared
-        modules. Rebuilds rule-table-shaped parameters when the
-        grammar's rule_table_version has changed; the shared modules
-        themselves are kept across rebuilds.
-        """
-        version = getattr(grammar, 'rule_table_version', 0)
-        if (self._soft_chart_built
-                and self._soft_chart_version == version
-                and self._compose_mod is not None
-                and self._compose_mod.out.weight.shape[0] == D):
-            return
-        # (Re)build the shared modules if D / D_rule changed or first call.
-        if self._compose_mod is None or self._compose_mod.out.weight.shape[0] != D:
-            self._compose_mod = self._SoftCompose(D, self.D_rule).to(device)
-            self._decompose_mod = self._SoftDecompose(D, self.D_rule).to(device)
-            self._compat_score_mod = self._CompatScore(D, self.D_rule).to(device)
-            self._unary_compat_mod = self._UnaryCompat(D, self.D_rule).to(device)
-        # Lexical category scorer: vec[i] -> [C] log-prob. Rebuild
-        # whenever the category count changes (grammar mutation) or D
-        # changes. C is not stored on _category_index when rebuilt
-        # below; reset it so the lazy build below sees fresh state.
-        cats = self._category_names_count(grammar)
-        if (self._lex_cat_scorer is None
-                or self._lex_cat_scorer.in_features != D
-                or self._lex_cat_scorer.out_features != cats):
-            self._lex_cat_scorer = nn.Linear(D, cats).to(device)
-            nn.init.xavier_normal_(self._lex_cat_scorer.weight)
-            nn.init.zeros_(self._lex_cat_scorer.bias)
-        # Rebuild rule-table-shaped parameters.
-        table = grammar._ensure_packed_table(device=device)
-        R = int(table['lhs'].shape[0])
-        if R > 0:
-            embed = nn.Parameter(torch.randn(R, self.D_rule, device=device) * 0.02)
-        else:
-            embed = nn.Parameter(torch.zeros(0, self.D_rule, device=device))
-        self.register_parameter('_rule_embed',  embed)
-        self.register_parameter('_rule_bias',   nn.Parameter(torch.zeros(R, device=device)))
-        self.register_parameter('_marker_bias', nn.Parameter(torch.zeros(R, 2, device=device)))
-        self._soft_chart_built = True
-        self._soft_chart_version = version
-
-    def _category_names_count(self, grammar):
-        table = grammar._ensure_packed_table()
-        return len(table['_cat_names'])
-
-    def _extract_svo_from_trace(self, grammar, original_data):
-        """Walk self._derivation_trace → last_svo (subject, verb, object).
-
-        Looks for the outermost `S -> S VO` firing and its matching
-        inner `VO -> V O` firing; subject = arg-0 of outer, verb/object =
-        arg-0/arg-1 of inner. Leaves last_svo None if no batch row has
-        the canonical shape.
-        """
-        if self._derivation_trace is None:
-            return
-        B, N, D = original_data.shape
-        s_list, v_list, o_list = [], [], []
-        any_valid = False
-        zero = torch.zeros(1, D, device=original_data.device)
-        for b in range(B):
-            trace = self._derivation_trace[b]
-            outer = None
-            for entry in reversed(trace):
-                rule_id = entry[0]
-                rule = grammar.rules[rule_id]
-                if rule.lhs == 'S' and rule.rhs_symbols == ('S', 'VO'):
-                    outer = entry
-                    break
-            if outer is None:
-                s_list.append(zero); v_list.append(zero); o_list.append(zero)
-                continue
-            left_slot, right_slot = outer[1], outer[2]
-            vo_entry = None
-            for entry in trace:
-                rule_id = entry[0]
-                rule = grammar.rules[rule_id]
-                if (rule.lhs == 'VO' and rule.rhs_symbols == ('V', 'O')
-                        and entry[3] == right_slot):
-                    vo_entry = entry
-                    break
-            if vo_entry is None:
-                s_list.append(zero); v_list.append(zero); o_list.append(zero)
-                continue
-            s_list.append(original_data[b, left_slot:left_slot + 1])
-            v_list.append(original_data[b, vo_entry[1]:vo_entry[1] + 1])
-            o_list.append(original_data[b, vo_entry[2]:vo_entry[2] + 1])
-            any_valid = True
-        if any_valid:
-            self.last_svo = (
-                torch.stack(s_list, dim=0),
-                torch.stack(v_list, dim=0),
-                torch.stack(o_list, dim=0),
-            )
-
-    def emit_head(self, state, codebook):
-        """Downward `S -> C`: emit the codebook atom that best matches `state`.
-
-        Uses scalar projection onto each unit-normalized atom to measure
-        how much of that atom lives in `state`. Returns:
-
-          best_idx      [B]    -- codebook row index of the best match.
-          contained     [B, D] -- projection * atom_unit (the slice of
-                                  the atom that is actually in `state`).
-          residual      [B, D] -- state - contained.
-
-        One step of "look at the remaining meaning, emit the atom it is
-        most richly part of, subtract its contribution."
-        """
-        W = codebook.getW()
-        W_norm = W / W.norm(dim=-1, keepdim=True).clamp_min(1e-8)
-        scores = state @ W_norm.T
-        scores = scores.clamp_min(0.0)
-        best_idx = scores.argmax(dim=-1)
-        best_atom_unit = W_norm[best_idx]
-        scalar = scores.gather(1, best_idx.unsqueeze(-1))
-        contained = scalar * best_atom_unit
-        residual = state - contained
-        return best_idx, contained, residual
-
-    def _compose_vector_chart(self, data, subspace, grammar):
-        """Phase B chart compose. Differentiable pair + rule selection.
-
-        Populates self._derivation_trace with 5-tuples
-        (rule_id, left_slot, right_slot, merged_slot, merged_category_id).
-        Returns (composed [B, N, D], None). SVO left to Phase D walker.
-        """
-        B, N, D = data.shape
-        live = data.clone()
-        alive = torch.zeros(B, N, dtype=torch.bool, device=data.device)
-        active_positions = [subspace.active_positions(b, data)
-                            for b in range(B)]
-        for b, positions in enumerate(active_positions):
-            for p in positions:
-                alive[b, p] = True
-
-        activation = torch.norm(live, dim=-1) / math.sqrt(D)
-        expected_n = self.input_proj.nInput
-        if N != expected_n or self.num_rules == 0:
-            return live, None
-
-        out = self.forward(activation)
-        rule_probs_per_depth = out['rule_probs']
-        hidden_per_depth = out.get('hidden', None)
-
-        # Upward rules only in chart compose; downward is emit-time.
-        up_rules = [i for i, r in enumerate(grammar.rules)
-                    if r in grammar.rules_upward]
-        composable_global = [gid for gid in up_rules
-                             if grammar.arity(gid) >= 2]
-        if not composable_global:
-            return live, None
-        composable_local = [self.all_rules.index(gid)
-                            for gid in composable_global
-                            if gid in self.all_rules]
-        if not composable_local:
-            return live, None
-        composable_global = [self.all_rules[i] for i in composable_local]
-
-        # Category machinery (Task 7 will populate; Task 5 just keeps space).
-        self._ensure_category_table(grammar)
-        if self._last_category is not None:
-            category = self._last_category.to(data.device).long()
-        else:
-            category = torch.full((B, N), 0, dtype=torch.long,
-                                  device=data.device)
-
-        rule_lhs_ids = []
-        rule_rhs_ids = []
-        for gid in composable_global:
-            lhs = grammar.rules[gid].lhs
-            rhs = grammar.rules[gid].rhs_symbols or ()
-            # Upward rules are single-output; if a multi-output rule
-            # (comma-joined lhs) ever reaches chart compose, tag the
-            # merged slot with the first output category.
-            lhs_cat = lhs.split(',', 1)[0].strip() if ',' in lhs else lhs
-            rule_lhs_ids.append(self._category_index.get(lhs_cat, 0))
-            if len(rhs) >= 2:
-                rule_rhs_ids.append(
-                    (self._category_index.get(rhs[0], 0),
-                     self._category_index.get(rhs[1], 0)))
-            else:
-                rule_rhs_ids.append((0, 0))
-
-        # Pre-build per-rule category tensors once (no per-step rebuild).
-        rule_lhs_req = torch.tensor(
-            [r[0] for r in rule_rhs_ids],
-            device=data.device, dtype=torch.long)                  # [R]
-        rule_rhs_req = torch.tensor(
-            [r[1] for r in rule_rhs_ids],
-            device=data.device, dtype=torch.long)                  # [R]
-        no_rhs_mask = torch.tensor(
-            [grammar.rules[g].rhs_symbols is None
-             for g in composable_global],
-            device=data.device, dtype=torch.bool)                  # [R]
-
-        depth_probs = []
-        for step in range(min(self.max_depth, N - 1)):
-            pair_tensor, pair_positions, pair_indices, pair_alive = (
-                self._live_pairs(live, alive))
-            if pair_tensor.shape[1] == 0:
-                break
-
-            if hidden_per_depth is not None and hidden_per_depth.ndim >= 2:
-                if hidden_per_depth.ndim == 3:
-                    hidden = hidden_per_depth[:, min(step, hidden_per_depth.shape[1] - 1), :]
-                else:
-                    hidden = hidden_per_depth
-            else:
-                hidden = torch.zeros(B, self.hidden_dim, device=data.device)
-
-            pair_logits = self._pair_scorer(hidden, pair_tensor, alive)
-            pair_probs = torch.softmax(pair_logits, dim=-1)
-
-            rule_probs_step = rule_probs_per_depth[:, step, :][:, composable_local]
-            rule_probs_step = rule_probs_step / (
-                rule_probs_step.sum(dim=-1, keepdim=True) + 1e-8)
-            depth_probs.append(rule_probs_step.detach())
-
-            merged = self._apply_rules_to_pairs(
-                pair_tensor, composable_global, grammar, subspace)
-
-            # Compat mask: typed rules require (lhs_req, rhs_req) to match
-            # the pair's category IDs; legacy function-call rules (no
-            # rhs_symbols) are always compatible. Category id 0 ("?")
-            # is a wildcard -- unseeded leaves match any typed rule.
-            #
-            # Vectorized: pair_indices [B, P, 2] gives (ls, rs) per pair on
-            # device; gather category at those indices; broadcast against
-            # the pre-built rule_{lhs,rhs}_req [R] tensors. No host sync,
-            # no Python triple loop.
-            P_here, R_here = pair_tensor.shape[1], len(composable_global)
-            ls_idx = pair_indices[:, :, 0]                         # [B, P]
-            rs_idx = pair_indices[:, :, 1]                         # [B, P]
-            cl = category.gather(1, ls_idx)                        # [B, P]
-            cr = category.gather(1, rs_idx)                        # [B, P]
-            cl_e = cl.unsqueeze(-1)                                # [B, P, 1]
-            cr_e = cr.unsqueeze(-1)
-            lhs_match = (cl_e == 0) | (cl_e == rule_lhs_req.view(1, 1, -1))
-            rhs_match = (cr_e == 0) | (cr_e == rule_rhs_req.view(1, 1, -1))
-            typed_compat = lhs_match & rhs_match                   # [B, P, R]
-            compat = (no_rhs_mask.view(1, 1, -1) | typed_compat).to(data.dtype)
-            # Zero out padded (dead) pair slots so they contribute nothing.
-            compat = compat * pair_alive.unsqueeze(-1).to(data.dtype)
-            # Per-step sync (one host roundtrip, not per-cell): break the
-            # depth loop when no pair-rule combo is compatible across the
-            # whole batch. Without this we'd run nan-degenerate iterations
-            # to max_depth. Far cheaper than the prior triple loop.
-            if compat.sum() == 0:
-                break
-
-            joint = (pair_probs.unsqueeze(-1)
-                     * rule_probs_step.unsqueeze(1)
-                     * compat)
-            joint = joint / joint.sum(dim=(1, 2), keepdim=True).clamp_min(1e-8)
-
-            if self.training:
-                merged_vec = (joint.unsqueeze(-1) * merged).sum(dim=(1, 2))
-            else:
-                flat_idx = joint.reshape(B, -1).argmax(dim=-1)
-                pair_idx = flat_idx // R_here
-                rule_idx_local = flat_idx % R_here
-                # `merged` may live on a different device than the default
-                # (e.g. test_mental_model loads CPU data into a model whose
-                # default device is MPS). Pin all index tensors to merged's
-                # device explicitly so cross-device gather doesn't fire.
-                row_idx = torch.arange(B, device=merged.device)
-                merged_vec = merged[
-                    row_idx,
-                    pair_idx.to(merged.device),
-                    rule_idx_local.to(merged.device)]
-
-            # Trace + alive/live update -- always uses argmax for the
-            # discrete trace even in training (gradient still flows
-            # through merged_vec via the soft mixture).
-            best_flat = joint.reshape(B, -1).argmax(dim=-1)
-            best_pair = (best_flat // R_here).tolist()
-            best_rule_local = (best_flat % R_here).tolist()
-
-            # Collect per-batch updates; build an out-of-place live
-            # replacement after the loop so autograd sees a fresh tensor
-            # node each depth step instead of an in-place mutation chain.
-            #
-            # ``add_word`` calls were per-cell scalar (each appending to
-            # ``subspace.word`` directly) before §6c. The brick-
-            # vectorization handoff redirects them to a per-cell tensor
-            # scatter into ``subspace.word_records`` / ``word_count``;
-            # the chart path flushes those records onto ``subspace.word``
-            # before returning so legacy consumers (``decompose``,
-            # ``reconstruct``, the SVO walker) see the usual word list.
-            # Collect the per-row args here, then dispatch one vector
-            # ``add_word`` call per depth step after the row loop.
-            live_mask = torch.zeros(B, N, device=live.device, dtype=live.dtype)
-            aw_b, aw_left, aw_rule, aw_right = [], [], [], []
-            for b in range(B):
-                if not pair_positions[b] or best_pair[b] >= len(pair_positions[b]):
-                    continue
-                left_slot, right_slot = pair_positions[b][best_pair[b]]
-                rule_gid = composable_global[best_rule_local[b]]
-                merged_cat = rule_lhs_ids[best_rule_local[b]]
-                live_mask[b, left_slot] = 1.0
-                alive[b, right_slot] = False
-                category[b, left_slot] = merged_cat
-                self._derivation_trace[b].append(
-                    (int(rule_gid), int(left_slot), int(right_slot),
-                     int(left_slot), int(merged_cat)))
-                aw_b.append(b)
-                aw_left.append(int(left_slot))
-                aw_rule.append(int(rule_gid))
-                aw_right.append(int(right_slot))
-            if aw_b:
-                dev = data.device
-                subspace.add_word(
-                    torch.tensor(aw_b, device=dev, dtype=torch.long),
-                    torch.tensor(aw_left, device=dev, dtype=torch.long),
-                    torch.tensor(aw_rule, device=dev, dtype=torch.long),
-                    order=step,
-                    leaf1=torch.tensor(aw_left, device=dev, dtype=torch.long),
-                    leaf2=torch.tensor(aw_right, device=dev, dtype=torch.long),
-                )
-            # merged_vec [B, D] broadcast to [B, N, D]; mask selects
-            # the left_slot position per batch row. live_mask has no
-            # grad_fn (zeros_like + mask assignment), so the version
-            # bumps don't propagate into the autograd tape.
-            live_mask = live_mask.unsqueeze(-1)
-            merged_broadcast = merged_vec.unsqueeze(1).expand(-1, N, -1)
-            live = live * (1.0 - live_mask) + merged_broadcast * live_mask
-
-        if depth_probs:
-            self.last_rule_probs = torch.stack(depth_probs, dim=1)
-        self.last_composable_rules = composable_global
-        self._extract_svo_from_trace(grammar, data)
-        # Soft-reset signal: a per-source-row "this tick's parse derivation
-        # reduced to start_symbol" flag. Only meaningful when the chart has
-        # collapsed every leaf into a single live slot whose category is
-        # the start nonterminal. Aggregated across the K windows of each
-        # source row (any window completing the derivation marks the row
-        # as having seen a sentence boundary this tick) so the outer loop's
-        # soft_reset(batch=b_source) fires at most once per source row per
-        # tick. Host-side only (no GPU sync) — drained by
-        # WordSpace.drain_sentence_completed() after runBatch returns.
-        self._signal_sentence_completed(subspace, alive, category, grammar)
-        # Materialize the tick's tensor word buffer onto ``subspace.word``
-        # so consumers that read words directly after compose (tests,
-        # standalone calls) see the chart entries. Under runBatch this
-        # flush happens before the per-tick End() clear, so legacy
-        # consumers in the reverse pass observe the same word list as
-        # the pre-§6c scalar-add_word path. The runEpoch outer loop's
-        # ``flush_word_buffers`` after this remains correct and idempotent
-        # (word_count is already zero post-flush).
-        if hasattr(subspace, 'flush_word_buffer'):
-            subspace.flush_word_buffer()
-        return live, self.last_svo
-
-    # ---- Soft-superposition CKY chart (Delta 3) -----------------------
-    #
-    # Differentiable inside-pass over a bounded-width chart. Produces
-    # `(chart_score [B, N+1, N+1, C], chart_vec [B, N+1, N+1, C, D])`
-    # cached on `self`, plus the legacy-shape tuple `(composed, svo)`
-    # so callers wired to `_compose_vector` see the same return shape.
-    #
-    # Width loop is the only sequential dependency. Per-width work is
-    # vectorized over (i, k, r). Sugar rules don't have rule_table rows
-    # (Delta 1 marker compilation drops them); only productive rules
-    # appear here, possibly carrying per-operand marker flags.
-    def _compose_chart_cky(self, data, subspace, grammar):
-        B, N, D = data.shape
-        device = data.device
-        dtype = data.dtype
-
-        # Grammar mutation invalidates the category cache: drop and rebuild.
-        gv = getattr(grammar, 'rule_table_version', 0)
-        if gv != self._soft_chart_version:
-            self._category_names = None
-            self._category_index = None
-        self._ensure_category_table(grammar)
-        self._ensure_soft_chart_built(grammar, D, device)
-
-        table = grammar._ensure_packed_table(device=device)
-        R = int(table['lhs'].shape[0])
-        C = self._category_names_count(grammar)
-
-        # Cache root reads even on no-op paths so completion / extraction
-        # don't crash on read.
-        empty_score = torch.full((B, N + 1, N + 1, C), -1e30,
-                                 device=device, dtype=dtype)
-        empty_vec   = torch.zeros((B, N + 1, N + 1, C, D),
-                                  device=device, dtype=dtype)
-        if R == 0 or N == 0:
-            self._chart_score = empty_score
-            self._chart_vec   = empty_vec
-            return data, None
-
-        arity = table['arity']
-        bin_idx = torch.nonzero(arity == 2, as_tuple=False).squeeze(-1)
-        un_idx  = torch.nonzero(arity == 1, as_tuple=False).squeeze(-1)
-        R_bin = int(bin_idx.numel())
-        R_un  = int(un_idx.numel())
-
-        rhs_left  = table['rhs_left']
-        rhs_right = table['rhs_right']
-        lhs       = table['lhs']
-        mmask     = table['marker_mask'].to(device=device)
-
-        chart_score = empty_score
-        chart_vec   = empty_vec
-
-        # Lexical fill (w=1).
-        lex_logits = self._lex_cat_scorer(data)            # [B, N, C]
-        lex_log_probs = F.log_softmax(lex_logits, dim=-1)
-        # Place: chart_score[:, i, i+1, :] = lex_log_probs[:, i, :]
-        # Place: chart_vec[:, i, i+1, A, :] = data[:, i, :] (replicated)
-        i_diag = torch.arange(N, device=device)
-        chart_score = chart_score.clone()
-        chart_vec   = chart_vec.clone()
-        chart_score[:, i_diag, i_diag + 1, :] = lex_log_probs
-        chart_vec[:, i_diag, i_diag + 1, :, :] = (
-            data.unsqueeze(2).expand(B, N, C, D))
-
-        # Pre-extract slices once.
-        bin_global = table['global_id'][bin_idx].cpu().tolist() if R_bin > 0 else []
-        un_global  = table['global_id'][un_idx].cpu().tolist()  if R_un  > 0 else []
-        bin_methods = [grammar.rules[g].method_name for g in bin_global]
-        un_methods  = [grammar.rules[g].method_name for g in un_global]
-        if R_bin > 0:
-            rE_bin    = self._rule_embed[bin_idx]
-            rB_bin    = self._rule_bias[bin_idx]
-            mB_bin    = self._marker_bias[bin_idx]
-            mmask_bin = mmask[bin_idx].to(dtype=dtype)
-            mmask_bin_bool = mmask[bin_idx]
-            rl_bin    = rhs_left[bin_idx]
-            rr_bin    = rhs_right[bin_idx]
-            lhs_bin   = lhs[bin_idx]
-        if R_un > 0:
-            rE_un  = self._rule_embed[un_idx]
-            rB_un  = self._rule_bias[un_idx]
-            rl_un  = rhs_left[un_idx]
-            lhs_un = lhs[un_idx]
-
-        NEG_INF = -1e30
-        w_max = min(int(self.w_max), N)
-
-        for w in range(2, w_max + 1):
-            P = N - w + 1
-            if P <= 0 or R_bin == 0:
-                continue
-            i_range = torch.arange(P, device=device)
-            offsets = torch.arange(1, w, device=device)
-            Sp = int(offsets.numel())
-
-            # [P, Sp] index grids.
-            i_idx = i_range.unsqueeze(1).expand(P, Sp)
-            k_idx = i_idx + offsets.unsqueeze(0).expand(P, Sp)
-            j_idx = i_idx + w
-
-            # Flatten (P, Sp) for chart_vec / chart_score gather; broadcast over R_bin.
-            i_flat = i_idx.reshape(-1)
-            k_flat = k_idx.reshape(-1)
-            j_flat = (i_flat + w)
-            i2 = i_flat.unsqueeze(1).expand(-1, R_bin)
-            k2 = k_flat.unsqueeze(1).expand(-1, R_bin)
-            j2 = j_flat.unsqueeze(1).expand(-1, R_bin)
-            bL = rl_bin.unsqueeze(0).expand(P * Sp, R_bin)
-            bR = rr_bin.unsqueeze(0).expand(P * Sp, R_bin)
-
-            # Gather operands (advanced indexing on chart_vec / chart_score).
-            left  = chart_vec[:, i2, k2, bL, :]      # [B, P*Sp, R_bin, D]
-            right = chart_vec[:, k2, j2, bR, :]
-            score_left  = chart_score[:, i2, k2, bL] # [B, P*Sp, R_bin]
-            score_right = chart_score[:, k2, j2, bR]
-
-            rE = rE_bin.view(1, 1, R_bin, -1).expand(B, P * Sp, R_bin, -1)
-            mm = mmask_bin_bool.view(1, 1, R_bin, 2).expand(B, P * Sp, R_bin, 2)
-
-            # Fixed-semantics dispatch (Kim, Dyer & Rush 2019). Each
-            # rule's vector contribution is its `_RULE_METHODS` forward
-            # applied to the operand pair; soft mixing happens over
-            # rule probabilities, not over a learned compose MLP.
-            merged_per_rule = []
-            for r_local in range(R_bin):
-                l_r = left [:, :, r_local, :]
-                r_r = right[:, :, r_local, :]
-                mm_r = mm  [:, :, r_local, :]
-                merged_per_rule.append(self._apply_rule_forward(
-                    bin_methods[r_local], l_r, r_r, mm_r, subspace=subspace))
-            merged_vec = torch.stack(merged_per_rule, dim=2)  # [B, P*Sp, R_bin, D]
-            compat     = self._compat_score_mod(left, right, rE, mm)
-            marker_prior = (mB_bin * mmask_bin).sum(-1)  # [R_bin]
-
-            cand_score = (score_left + score_right
-                          + rB_bin.view(1, 1, R_bin)
-                          + compat
-                          + marker_prior.view(1, 1, R_bin))   # [B, P*Sp, R_bin]
-            cand_score = cand_score.view(B, P, Sp, R_bin)
-            # Temperature-scaled softmax on the rule mixture to keep
-            # the per-cell distribution from saturating to one-hot.
-            tau = max(float(self.chart_tau), 1e-3)
-            if tau != 1.0:
-                cand_score = cand_score / tau
-            merged_vec = merged_vec.view(B, P, Sp, R_bin, D)
-
-            # Scatter via logsumexp into [B, P, C].
-            rule_to_A = F.one_hot(lhs_bin, num_classes=C).to(dtype)  # [R_bin, C]
-            log_mask = torch.where(rule_to_A > 0,
-                                   torch.zeros_like(rule_to_A),
-                                   torch.full_like(rule_to_A, NEG_INF))
-            scored_per_A = (cand_score.unsqueeze(-1)
-                            + log_mask.view(1, 1, 1, R_bin, C))   # [B, P, Sp, R_bin, C]
-
-            # Use a numerically-stable logsumexp over (Sp * R_bin) -> [B, P, C].
-            new_score_w = torch.logsumexp(
-                scored_per_A.reshape(B, P, Sp * R_bin, C), dim=2)
-
-            # Vector aggregation: softmax-weighted over (Sp, R_bin) per A.
-            weights = (scored_per_A - new_score_w.view(B, P, 1, 1, C)).exp()
-            new_vec_w = (weights.unsqueeze(-1)
-                         * merged_vec.unsqueeze(-2)).sum(dim=(2, 3))  # [B, P, C, D]
-
-            # Combine with any prior content at (i, j) (currently lexical
-            # content placed at width 1 — irrelevant for w >= 2 because
-            # those cells are still NEG_INF; but unary closure further
-            # down may re-touch this cell, and a future extension may
-            # have placed prior bin contributions in earlier passes).
-            old_score = chart_score[:, i_range, i_range + w, :]   # [B, P, C]
-            old_vec   = chart_vec  [:, i_range, i_range + w, :, :] # [B, P, C, D]
-            stacked = torch.stack([old_score, new_score_w], dim=0)
-            combined_score = torch.logsumexp(stacked, dim=0)
-            old_w_n = (old_score - combined_score).exp()
-            new_w_n = (new_score_w - combined_score).exp()
-            combined_vec = (old_w_n.unsqueeze(-1) * old_vec
-                            + new_w_n.unsqueeze(-1) * new_vec_w)
-            chart_score = chart_score.clone()
-            chart_vec = chart_vec.clone()
-            chart_score[:, i_range, i_range + w, :] = combined_score
-            chart_vec[:, i_range, i_range + w, :, :] = combined_vec
-
-            # Bounded unary closure on the just-formed cells.
-            if R_un > 0:
-                for _ in range(int(self.unary_max_depth)):
-                    # Read child cell content for every (P, R_un).
-                    bL_un = rl_un.unsqueeze(0).expand(P, R_un)
-                    iP = i_range.unsqueeze(1).expand(P, R_un)
-                    jP = (i_range + w).unsqueeze(1).expand(P, R_un)
-                    child = chart_vec[:, iP, jP, bL_un, :]  # [B, P, R_un, D]
-                    child_score = chart_score[:, iP, jP, bL_un]  # [B, P, R_un]
-
-                    rE_un_b = rE_un.view(1, 1, R_un, -1).expand(B, P, R_un, -1)
-                    score_inc = self._unary_compat_mod(child, rE_un_b) + rB_un.view(1, 1, R_un)
-                    new_un_score = child_score + score_inc                 # [B, P, R_un]
-                    tau_u = max(float(self.chart_tau), 1e-3)
-                    if tau_u != 1.0:
-                        new_un_score = new_un_score / tau_u
-                    zero_right = torch.zeros_like(child)
-                    mm_un = torch.zeros(B, P, R_un, 2, dtype=torch.bool, device=device)
-                    # Fixed-semantics dispatch for unary rules (e.g.
-                    # `not` -> notForward, `non` -> nonForward).
-                    new_un_per_rule = []
-                    for r_local in range(R_un):
-                        c_r = child[:, :, r_local, :]
-                        mm_r = mm_un[:, :, r_local, :]
-                        new_un_per_rule.append(self._apply_rule_forward(
-                            un_methods[r_local], c_r,
-                            zero_right[:, :, r_local, :],
-                            mm_r, subspace=subspace))
-                    new_un_vec = torch.stack(new_un_per_rule, dim=2)  # [B, P, R_un, D]
-
-                    # Scatter into [B, P, C] via lhs_un.
-                    rule_to_A_un = F.one_hot(lhs_un, num_classes=C).to(dtype)  # [R_un, C]
-                    log_mask_un = torch.where(rule_to_A_un > 0,
-                                              torch.zeros_like(rule_to_A_un),
-                                              torch.full_like(rule_to_A_un, NEG_INF))
-                    scored_un = new_un_score.unsqueeze(-1) + log_mask_un.view(1, 1, R_un, C)
-                    new_un_per_A = torch.logsumexp(scored_un, dim=2)             # [B, P, C]
-                    weights_un = (scored_un - new_un_per_A.view(B, P, 1, C)).exp()
-                    new_un_vec_per_A = (weights_un.unsqueeze(-1)
-                                        * new_un_vec.unsqueeze(-2)).sum(dim=2)   # [B, P, C, D]
-
-                    old_score_u = chart_score[:, i_range, i_range + w, :]
-                    old_vec_u   = chart_vec  [:, i_range, i_range + w, :, :]
-                    stacked_u = torch.stack([old_score_u, new_un_per_A], dim=0)
-                    combined_u = torch.logsumexp(stacked_u, dim=0)
-                    ow = (old_score_u - combined_u).exp()
-                    nw = (new_un_per_A - combined_u).exp()
-                    combined_vec_u = (ow.unsqueeze(-1) * old_vec_u
-                                      + nw.unsqueeze(-1) * new_un_vec_per_A)
-                    chart_score = chart_score.clone()
-                    chart_vec = chart_vec.clone()
-                    chart_score[:, i_range, i_range + w, :] = combined_u
-                    chart_vec[:, i_range, i_range + w, :, :] = combined_vec_u
-
-        self._chart_score = chart_score
-        self._chart_vec   = chart_vec
-
-        # ---- Outside pass (DIORA-style; Drozdov et al. 2019, NAACL) --
-        #
-        # The inside pass populated chart_score[B, i, j, A] with the
-        # log-prob mass of derivations rooted at A spanning [i, j).
-        # The outside pass populates outside_score[B, i, j, A] with
-        # the log-prob mass of derivations of the WHOLE sentence in
-        # which (i, j, A) appears as a constituent -- the prefix +
-        # suffix context that leaves a hole at (i, j) filled by A.
-        #
-        # Why we need this: the inside pass alone gives no gradient to
-        # rules whose firings are dominated at their cell by a
-        # competitor; the outside pass distributes "you would have
-        # been useful at higher derivations" gradient back to every
-        # cell proportional to its expected utility in spanning
-        # derivations. This is the missing alternative-derivations
-        # gradient signal that makes a soft-chart parser
-        # genuinely learn a multi-rule grammar (Nangia & Bowman 2018
-        # diagnose the inside-only failure on ListOps; DIORA solves
-        # it via inside-outside).
-        #
-        # outside_vec mirrors outside_score in vector form, marginalizing
-        # the (i, j, A) hole over all the contexts it could plug into.
-        # IR / reconstruction loss should compare outside_vec at masked
-        # positions against ground truth: that aligns the IR objective
-        # with the chart's own marginal-likelihood gradient.
-        outside_score, outside_vec = self._compose_chart_outside(
-            chart_score, chart_vec, grammar, B, N, D, dtype, device,
-            bin_idx, R_bin, rl_bin, rr_bin, lhs_bin,
-            mmask_bin_bool if R_bin > 0 else None,
-            rE_bin if R_bin > 0 else None,
-            rB_bin if R_bin > 0 else None,
-            mB_bin if R_bin > 0 else None,
-            mmask_bin if R_bin > 0 else None,
-            bin_methods, NEG_INF)
-        self._outside_score = outside_score
-        self._outside_vec   = outside_vec
-
-        # Read root cell at start_symbol; produce a [B, N, D] composed
-        # tensor for legacy callers (broadcast the root vec across the
-        # N axis so consumers that index `[:, 0]` see the root meaning).
-        start_name = getattr(grammar, 'start_symbol', 'S')
-        cat_idx = self._category_index or {}
-        start_id = cat_idx.get(start_name, None)
-        # Chart-collapse mode (WordSpace.chartCollapse): how the
-        # chart's single root vector is exposed to downstream layers.
-        #   "root"      -- only output position 0 carries the root
-        #                  vector; positions 1..N-1 are zero. Forces
-        #                  the OutputLayer to read the chart's
-        #                  compositional commitment, not a per-
-        #                  position recombination of copies.
-        #   "broadcast" -- replicate the root across all N positions
-        #                  (legacy behavior; lets downstream
-        #                  nonlinearities recombine the copies).
-        try:
-            collapse_mode = str(util.TheXMLConfig.get(
-                "WordSpace.chartCollapse", "root")).strip().lower()
-        except Exception:
-            collapse_mode = "root"
-        if start_id is not None and N > 0:
-            root_vec = chart_vec[:, 0, N, start_id, :]  # [B, D]
-            if collapse_mode == "broadcast":
-                composed = root_vec.unsqueeze(1).expand(B, N, D).contiguous()
-            else:  # default: "root"
-                composed = torch.zeros(B, N, D,
-                                       device=data.device, dtype=data.dtype)
-                composed[:, 0, :] = root_vec
-        else:
-            composed = data
-
-        # Sentence-completion signal at the root cell. A row is
-        # "completed" when its root score for start_symbol is the
-        # logsumexp-argmax across the C axis at the root cell — i.e.
-        # the start category dominates the root reading.
-        self._signal_sentence_completed_chart(subspace, chart_score, grammar)
-
-        # Viterbi trace at eval time so SVO extraction / word emission
-        # see a path-shaped trace identical to the legacy chart's.
-        if not self.training:
-            self._derivation_trace = self._viterbi_extract(
-                chart_score, chart_vec, grammar, B, N)
-            self._extract_svo_from_trace(grammar, data)
-            if hasattr(subspace, 'flush_word_buffer'):
-                subspace.flush_word_buffer()
-
-        return composed, self.last_svo
-
-    def _compose_chart_outside(self, chart_score, chart_vec, grammar,
-                               B, N, D, dtype, device,
-                               bin_idx, R_bin, rl_bin, rr_bin, lhs_bin,
-                               mmask_bin_bool, rE_bin, rB_bin, mB_bin,
-                               mmask_bin, bin_methods, NEG_INF):
-        """Top-down outside pass mirroring the inside-pass scatter.
-
-        Recursion (log domain):
-
-            outside(i, j, A) = logsumexp_{r: B -> A C, k > j}
-                                 [outside(i, k, B) + inside(j, k, C) + log P(r)]
-                            + logsumexp_{r: B -> C A, k < i}
-                                 [outside(k, j, B) + inside(k, i, C) + log P(r)]
-
-        with outside(0, N, S) = 0 and all other root-width cells -inf.
-
-        outside_vec mirrors the score: at every (i, j, A), it carries
-        the softmax-weighted reconstruction of "what fills the hole"
-        across all parses that could host it. IR / reconstruction loss
-        should compare outside_vec at masked positions to ground truth.
-        """
-        C = self._category_names_count(grammar)
-
-        outside_score = torch.full((B, N + 1, N + 1, C), NEG_INF,
-                                   device=device, dtype=dtype)
-        outside_vec   = torch.zeros((B, N + 1, N + 1, C, D),
-                                    device=device, dtype=dtype)
-        if N == 0 or R_bin == 0:
-            # Nothing to expand outward; outside is empty.
-            return outside_score, outside_vec
-
-        start_name = getattr(grammar, 'start_symbol', 'S')
-        cat_idx = self._category_index or {}
-        start_id = cat_idx.get(start_name, None)
-        outside_score = outside_score.clone()
-        if start_id is not None:
-            outside_score[:, 0, N, start_id] = 0.0
-
-        tau = max(float(self.chart_tau), 1e-3)
-
-        # Precompute per-rule scoring inputs (mirror of inside pass).
-        # Treat marker_prior + rule_bias once per rule; compat is
-        # input-dependent and recomputed inside the loop.
-        if R_bin > 0:
-            marker_prior = (mB_bin * mmask_bin).sum(-1)  # [R_bin]
-            rB_view = rB_bin.view(1, 1, R_bin)
-            mp_view = marker_prior.view(1, 1, R_bin)
-
-        # Top-down width loop: process spans in DECREASING width.
-        # For each parent span (i, j) of width w, push outside score
-        # to the two child spans (i, k, B_r) and (k, j, C_r) for every
-        # binary rule r and every interior split k.
-        w_max_local = min(int(self.w_max), N)
-        for w in range(w_max_local, 1, -1):
-            P = N - w + 1
-            if P <= 0:
-                continue
-            i_range = torch.arange(P, device=device)
-            offsets = torch.arange(1, w, device=device)
-            Sp = int(offsets.numel())
-
-            # Parent (i, j) outside scores at every (P, C):
-            parent_score = outside_score[:, i_range, i_range + w, :]   # [B, P, C]
-            parent_vec   = outside_vec  [:, i_range, i_range + w, :, :] # [B, P, C, D]
-            # Skip if no parent span has finite outside mass.
-            if not torch.isfinite(parent_score).any() and (
-                    parent_score.max().item() <= NEG_INF / 2):
-                continue
-
-            # For each split k inside [i, j), each binary rule r
-            # combines outside(i, j, A_r) with inside(B_r, C_r) at
-            # the two children. We push to children, scattering
-            # outside contributions.
-            i_idx = i_range.unsqueeze(1).expand(P, Sp)
-            k_idx = i_idx + offsets.unsqueeze(0).expand(P, Sp)
-            j_idx = i_idx + w
-            i_flat = i_idx.reshape(-1)
-            k_flat = k_idx.reshape(-1)
-            j_flat = (i_flat + w)
-            i2 = i_flat.unsqueeze(1).expand(-1, R_bin)
-            k2 = k_flat.unsqueeze(1).expand(-1, R_bin)
-            j2 = j_flat.unsqueeze(1).expand(-1, R_bin)
-            bL = rl_bin.unsqueeze(0).expand(P * Sp, R_bin)
-            bR = rr_bin.unsqueeze(0).expand(P * Sp, R_bin)
-
-            # Inside content of the two children.
-            left_in_score  = chart_score[:, i2, k2, bL]    # [B, P*Sp, R_bin]
-            right_in_score = chart_score[:, k2, j2, bR]
-            left_in_vec    = chart_vec[:, i2, k2, bL, :]   # [B, P*Sp, R_bin, D]
-            right_in_vec   = chart_vec[:, k2, j2, bR, :]
-
-            # Parent outside score for the lhs category of each rule.
-            # parent_score: [B, P, C]; flatten by pair index and gather lhs.
-            lhs_index = lhs_bin.view(1, 1, R_bin).expand(B, P, R_bin)
-            parent_score_per_rule = parent_score.gather(
-                -1, lhs_index)                              # [B, P, R_bin]
-            parent_vec_per_rule = parent_vec.gather(
-                -2, lhs_index.unsqueeze(-1).expand(B, P, R_bin, D))  # [B, P, R_bin, D]
-            # Broadcast across Sp.
-            parent_score_per_rule = parent_score_per_rule.unsqueeze(2).expand(
-                B, P, Sp, R_bin).reshape(B, P * Sp, R_bin)
-            parent_vec_per_rule = parent_vec_per_rule.unsqueeze(2).expand(
-                B, P, Sp, R_bin, D).reshape(B, P * Sp, R_bin, D)
-
-            # Compat term (input-dependent per (b, p, k, r)).
-            rE = rE_bin.view(1, 1, R_bin, -1).expand(B, P * Sp, R_bin, -1)
-            mm = mmask_bin_bool.view(1, 1, R_bin, 2).expand(B, P * Sp, R_bin, 2)
-            compat = self._compat_score_mod(left_in_vec, right_in_vec, rE, mm)
-
-            # Push to LEFT child (j, k, B_r): contribution =
-            # parent + right_inside + rB + compat + marker_prior
-            push_left_score = (parent_score_per_rule + right_in_score
-                               + rB_view + compat + mp_view)
-            # Push to RIGHT child (k, j, C_r): contribution =
-            # parent + left_inside + rB + compat + marker_prior
-            push_right_score = (parent_score_per_rule + left_in_score
-                                + rB_view + compat + mp_view)
-            if tau != 1.0:
-                push_left_score  = push_left_score  / tau
-                push_right_score = push_right_score / tau
-
-            # Scatter into outside_score[B, i, k, B_r] and
-            # outside_score[B, k, j, C_r] via logsumexp accumulation.
-            # Implement as gather-current, logaddexp, scatter-write.
-            outside_score = outside_score.clone()
-            outside_vec   = outside_vec.clone()
-            for r in range(R_bin):
-                Br = int(rl_bin[r].item())
-                Cr = int(rr_bin[r].item())
-                # LEFT child cells at (i_flat, k_flat, Br):
-                old_l_score = outside_score[:, i_flat, k_flat, Br]
-                old_l_vec   = outside_vec  [:, i_flat, k_flat, Br, :]
-                add_l_score = push_left_score[:, :, r].view(B, P * Sp)
-                add_l_vec   = parent_vec_per_rule[:, :, r, :].view(B, P * Sp, D)
-                stk_l = torch.stack([old_l_score, add_l_score], dim=0)
-                comb_l = torch.logsumexp(stk_l, dim=0)
-                w_old_l = (old_l_score - comb_l).exp()
-                w_new_l = (add_l_score - comb_l).exp()
-                outside_score[:, i_flat, k_flat, Br] = comb_l
-                outside_vec[:, i_flat, k_flat, Br, :] = (
-                    w_old_l.unsqueeze(-1) * old_l_vec
-                    + w_new_l.unsqueeze(-1) * add_l_vec)
-                # RIGHT child cells at (k_flat, j_flat, Cr):
-                old_r_score = outside_score[:, k_flat, j_flat, Cr]
-                old_r_vec   = outside_vec  [:, k_flat, j_flat, Cr, :]
-                add_r_score = push_right_score[:, :, r].view(B, P * Sp)
-                add_r_vec   = parent_vec_per_rule[:, :, r, :].view(B, P * Sp, D)
-                stk_r = torch.stack([old_r_score, add_r_score], dim=0)
-                comb_r = torch.logsumexp(stk_r, dim=0)
-                w_old_r = (old_r_score - comb_r).exp()
-                w_new_r = (add_r_score - comb_r).exp()
-                outside_score[:, k_flat, j_flat, Cr] = comb_r
-                outside_vec[:, k_flat, j_flat, Cr, :] = (
-                    w_old_r.unsqueeze(-1) * old_r_vec
-                    + w_new_r.unsqueeze(-1) * add_r_vec)
-
-        return outside_score, outside_vec
-
-    def _signal_sentence_completed_chart(self, subspace, chart_score, grammar):
-        """Mark source rows whose root-cell parse reduces to start_symbol.
-
-        Reads chart_score[:, 0, N, start_id] and compares against
-        chart_score[:, 0, N, :].max(dim=-1) — row is completed iff the
-        start-symbol channel dominates the root cell.
-        """
-        ws = getattr(subspace, 'wordSpace', None)
-        if ws is None:
-            return
-        start_name = getattr(grammar, 'start_symbol', 'S')
-        cat_idx = self._category_index or {}
-        start_id = cat_idx.get(start_name, None)
-        if start_id is None:
-            return
-        Bf, N1, _, C = chart_score.shape
-        N = N1 - 1
-        if N < 1:
-            return
-        root = chart_score[:, 0, N, :]            # [B_flat, C]
-        argmax = root.argmax(dim=-1)              # [B_flat]
-        completed_flat = (argmax == int(start_id))
-        if not bool(completed_flat.any().item()):
-            return
-        K = ws._row_K()
-        completed_list = completed_flat.tolist()
-        sc = getattr(ws, '_sentence_completed', None)
-        if sc is None or len(sc) == 0:
-            return
-        for b_flat, done in enumerate(completed_list):
-            if not done:
-                continue
-            b_source = b_flat // max(1, K)
-            if 0 <= b_source < len(sc):
-                sc[b_source] = True
-
-    def _viterbi_extract(self, chart_score, chart_vec, grammar, B, N):
-        """Argmax backtrace from root cell to produce a path-shaped
-        derivation trace compatible with the legacy 5-tuple format
-        ``(rule_id, left_slot, right_slot, merged_slot, merged_cat_id)``.
-
-        Used at eval; training stays soft. The trace is one path per
-        batch row (the argmax derivation), not the full forest.
-
-        Backtrace ranks (rule, k) candidates by the **same**
-        ``cand_score`` the inside pass used to mix them: operand
-        scores plus ``rule_bias`` plus the input-dependent
-        ``compat_score`` plus the marker prior. Ranking by operand
-        scores alone (an earlier draft did this) collapses to first-
-        rule-wins whenever multiple rules share operand categories.
-        """
-        device = chart_score.device
-        table = grammar._ensure_packed_table(device=device)
-        R = int(table['lhs'].numel())
-        if R == 0 or N == 0:
-            return [[] for _ in range(B)]
-        rhs_left = table['rhs_left']
-        rhs_right = table['rhs_right']
-        lhs = table['lhs']
-        arity = table['arity']
-        global_id = table['global_id']
-        marker_mask_full = table['marker_mask'].to(device=device)
-        start_name = getattr(grammar, 'start_symbol', 'S')
-        cat_idx = self._category_index or {}
-        start_id = cat_idx.get(start_name, 0)
-
-        # Pull the chart's learnable scoring components onto the device.
-        rule_bias_all   = self._rule_bias.detach()
-        rule_embed_all  = self._rule_embed.detach()
-        marker_bias_all = self._marker_bias.detach()
-
-        traces = [[] for _ in range(B)]
-
-        for b in range(B):
-            stack = [(0, N, int(start_id))]
-            while stack:
-                i, j, A = stack.pop()
-                if j - i <= 1:
-                    continue
-                if j - i > self.w_max:
-                    continue
-                best = None
-                best_score = -float('inf')
-                for r in range(R):
-                    if int(arity[r].item()) != 2:
-                        continue
-                    if int(lhs[r].item()) != A:
-                        continue
-                    Br = int(rhs_left[r].item())
-                    Cr = int(rhs_right[r].item())
-                    mm_r = marker_mask_full[r]            # [2]
-                    rE_r = rule_embed_all[r].view(1, -1)  # [1, D_rule]
-                    rB_r = float(rule_bias_all[r].item())
-                    mP_r = float((marker_bias_all[r]
-                                  * mm_r.to(marker_bias_all.dtype)
-                                  ).sum().item())
-                    for k in range(i + 1, j):
-                        s_left  = chart_score[b, i, k, Br].item()
-                        s_right = chart_score[b, k, j, Cr].item()
-                        # compat is input-dependent: re-evaluate per (b, i, k, j, r).
-                        l_vec = chart_vec[b, i, k, Br].view(1, -1)
-                        r_vec = chart_vec[b, k, j, Cr].view(1, -1)
-                        compat = float(self._compat_score_mod(
-                            l_vec, r_vec, rE_r,
-                            mm_r.view(1, 2)).item())
-                        cand = s_left + s_right + rB_r + compat + mP_r
-                        if cand > best_score:
-                            best_score = cand
-                            best = (r, k, Br, Cr)
-                if best is None:
-                    continue
-                r, k, Br, Cr = best
-                gid = int(global_id[r].item())
-                traces[b].append((gid, i, k, i, A))
-                stack.append((i, k, Br))
-                stack.append((k, j, Cr))
-        return traces
-
-    def _signal_sentence_completed(self, subspace, alive, category, grammar):
-        """Mark source rows whose chart compose reduced to start_symbol.
-
-        Looks up ``WordSpace.start_symbol`` via the grammar, scans
-        ``alive`` for rows with exactly one live leaf whose category id
-        matches the start id, and writes True into the per-source-row
-        ``WordSpace._sentence_completed`` slot. Per-source-row mapping
-        ``b_source = b_flat // K`` is recovered from
-        ``wordSpace._row_K()``.
-        """
-        ws = getattr(subspace, 'wordSpace', None)
-        if ws is None:
-            return
-        start_name = getattr(grammar, 'start_symbol', 'S')
-        cat_index = getattr(self, '_category_index', None)
-        if cat_index is None:
-            return
-        start_id = cat_index.get(start_name)
-        if start_id is None:
-            return
-        # alive: [B_flat, N] bool; category: [B_flat, N] long.
-        live_count = alive.long().sum(dim=1)         # [B_flat]
-        # Boolean per row: exactly one live leaf AND its category == start.
-        single_live = (live_count == 1)
-        # Pull the position of the (single) live leaf for those rows.
-        # argmax over the bool mask returns the first True index (which
-        # is the only one when single_live is True).
-        pos = alive.long().argmax(dim=1)             # [B_flat]
-        leaf_cat = category.gather(1, pos.unsqueeze(1)).squeeze(1)  # [B_flat]
-        completed_flat = single_live & (leaf_cat == int(start_id))  # [B_flat]
-        if not bool(completed_flat.any().item()):
-            return
-        K = ws._row_K()
-        completed_list = completed_flat.tolist()
-        sc = getattr(ws, '_sentence_completed', None)
-        if sc is None or len(sc) == 0:
-            return
-        for b_flat, done in enumerate(completed_list):
-            if not done:
-                continue
-            b_source = b_flat // max(1, K)
-            if 0 <= b_source < len(sc):
-                sc[b_source] = True
-
-    def _compose_vector(self, data, subspace, grammar, target_count=None):
-        """3D path: [B, N, D] vector mode. Phase 1 deterministic not at
-        top-of-stack, then either ``_compose_to_target`` pairwise reduction
-        or Phase 2 cascading soft-weighted composition with query/norm-drop
-        detection.
-        """
-        s_rules = grammar._s_rule_ids()
-        not_rid = s_rules.get('not')
-
-        # Soft-superposition CKY chart (floating-blossom Delta 3). Takes
-        # precedence over the greedy-chart path when the flag is on.
-        #
-        # Parallel-only: the chart is meaningless on partial surface form
-        # (CKY needs the whole sequence to score a derivation, and the
-        # tip-column incremental cache isn't wired yet -- see spec Delta
-        # 4 last bullet). In serial / AR mode we fall through to the
-        # legacy paths so the per-tick partial state still composes
-        # something usable.
-        try:
-            use_soft_chart = bool(util.TheXMLConfig.get(
-                "WordSpace.softChartCompose", False))
-        except (KeyError, AttributeError, TypeError):
-            use_soft_chart = False
-        ws_serial = bool(getattr(getattr(subspace, 'wordSpace', None),
-                                 'serial_mode', False))
-        if use_soft_chart and target_count is None and not ws_serial:
-            return self._compose_chart_cky(data, subspace, grammar)
-
-        # Phase B dispatch: when chart compose is enabled via
-        # <WordSpace.chartCompose>true</chartCompose>, take the chart
-        # path. target_count reductions stay on the legacy pairwise path.
-        try:
-            use_chart = bool(util.TheXMLConfig.get("WordSpace.chartCompose", False))
-        except (KeyError, AttributeError, TypeError):
-            use_chart = False
-        if use_chart and target_count is None:
-            return self._compose_vector_chart(data, subspace, grammar)
-
-        # Snapshot codebook indices before any modifications (for decompose)
-        basis = getattr(subspace, 'basis', None)
-        cb = basis.getW() if basis is not None else None
-        if cb is not None and data.shape[-1] == cb.shape[-1]:
-            B0, N0, D0 = data.shape
-            # ``cb`` may be 2D [V, D0] or 3D [batch, V, D0]; ``mT`` swaps the
-            # last two dims for matmul in both cases without the ``.T``
-            # deprecation on non-2D tensors.
-            self._leaf_cb_indices = (
-                data.detach().reshape(-1, D0) @ cb.mT
-            ).argmax(dim=-1).reshape(B0, N0)
-        else:
-            self._leaf_cb_indices = None
-
-        # Phase 1: deterministic not at top-of-stack
-        tops = subspace.top_of_stack(data)
-        for b, pos in enumerate(tops):
-            if pos < 0:
-                continue
-            vec = data[b, pos]
-            if not_rid is not None:
-                if vec.mean() < 0:
-                    data = data.clone()
-                    data[b, pos] = self.notForward(
-                        vec.unsqueeze(0).unsqueeze(0),
-                        subspace).squeeze(0).squeeze(0)
-                    subspace.add_word(b, pos, not_rid)
-
-        if target_count is not None:
-            return self._compose_to_target(data, subspace, grammar,
-                                           target_count, s_rules, not_rid)
-
-        # Phase 2: soft-weighted cascading composition
-        B, N, D = data.shape
-
-        expected_n = self.input_proj.nInput
-        if N != expected_n or self.num_rules == 0:
-            return data, self.last_svo
-
-        activation = torch.norm(data, dim=-1) / math.sqrt(D)
-
-        out = self.forward(activation)
-        rule_probs = out['rule_probs']  # [B, max_depth, num_rules]
-
-        # Composable rules: exclude not (already applied in Phase 1)
-        exclude = {'not'}
-        composable_local = []
-        composable_global = []
-        for local_idx, global_id in enumerate(self.all_rules):
-            if grammar.rules[global_id].method_name not in exclude:
-                composable_local.append(local_idx)
-                composable_global.append(global_id)
-
-        if not composable_global:
-            return data, self.last_svo
-
-        has_binary = any(grammar.arity(gid) >= 2 for gid in composable_global)
-        if not has_binary:
-            return data, self.last_svo
-
-        active_positions = [subspace.active_positions(b, data) for b in range(B)]
-        max_leaves = max((len(p) for p in active_positions), default=0)
-        if max_leaves == 0:
-            return data, self.last_svo
-
-        cb_indices = self._leaf_cb_indices
-        t_rid = self.transition_rule if self.transition_rule is not None else composable_global[0]
-        if cb_indices is not None:
-            # One sync for the whole index tensor; inner lookups are free.
-            cb_indices_list = cb_indices.tolist()
-            for b in range(B):
-                cb_row = cb_indices_list[b]
-                for i, pos in enumerate(active_positions[b]):
-                    if i < max_leaves:
-                        subspace.add_word(b, pos, t_rid, order=-1,
-                                          leaf1=cb_row[pos])
-
-        masks = torch.zeros(B, max_leaves, N, device=data.device)
-        for b in range(B):
-            for i, pos in enumerate(active_positions[b]):
-                if i < max_leaves:
-                    masks[b, i, pos] = 1.0
-        leaf_vecs = masks.unsqueeze(-1) * data.unsqueeze(1)  # [B, L, N, D]
-
-        # Positional SVO tap removed 2026-04-20: SVO is now derived from
-        # the chart-compose derivation trace by _extract_svo_from_trace.
-        # Legacy cascade leaves self.last_svo None (set by compose()).
-
-        composed = leaf_vecs[:, 0, :, :]
-        self.last_composable_rules = composable_global
-        depth_probs = []
-
-        # query rid for contradiction marker (if present in grammar)
-        query_rid = None
-        for _gid in self.all_rules:
-            if grammar.rules[_gid].method_name == 'query':
-                query_rid = _gid
-                break
-        last_rule_per_batch = [-1 for _ in range(B)]
-
-        d = 0
-        leaf_idx = 1
-        while d < self.max_depth and leaf_idx < max_leaves:
-            left = composed
-            right = leaf_vecs[:, leaf_idx, :, :]
-            has_third = leaf_idx + 1 < max_leaves
-
-            results = []
-            for global_id in composable_global:
-                a = grammar.arity(global_id)
-                if a == 3 and has_third:
-                    third = leaf_vecs[:, leaf_idx + 1, :, :]
-                    result = self.project(grammar, global_id, left, right,
-                                          third, subspace=subspace)
-                elif a == 2:
-                    result = self.project(grammar, global_id, left, right,
-                                          subspace=subspace)
-                else:
-                    result = self.project(grammar, global_id, left,
-                                          subspace=subspace)
-                results.append(result)
-
-            results = torch.stack(results, dim=1)  # [B, n_composable, N, D]
-
-            probs_d = rule_probs[:, d, :][:, composable_local]
-            probs_d = probs_d / (probs_d.sum(dim=-1, keepdim=True) + 1e-8)
-            depth_probs.append(probs_d.detach())
-
-            best = probs_d.argmax(dim=-1)  # [B]
-
-            # Phase 2 candidate mixture
-            if self.training:
-                probs_bcast = probs_d.unsqueeze(-1).unsqueeze(-1)
-                candidate = (probs_bcast * results).sum(dim=1)  # [B, N, D]
-            else:
-                idx = best.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-                idx = idx.expand(-1, 1, results.shape[2], results.shape[3])
-                candidate = results.gather(1, idx).squeeze(1)   # [B, N, D]
-
-            # Query / norm-drop: detect symbolic contradiction at the
-            # accumulation point and preserve the prior accumulator.
-            # Norm collapses the [N, D] axes to a scalar per batch row.
-            prev_norm = left.reshape(B, -1).norm(dim=-1)
-            cand_norm = candidate.reshape(B, -1).norm(dim=-1)
-            drop_threshold = self._QUERY_NORM_DROP_RATIO * prev_norm
-            query_mask = (prev_norm > 1e-6) & (cand_norm < drop_threshold)
-            # One sync per tensor per d-step, not per b-row.
-            query_mask_list = query_mask.tolist()
-            best_list = best.tolist()
-            if query_mask.any():
-                mask_exp = query_mask.view(B, 1, 1).expand_as(candidate)
-                composed = torch.where(mask_exp, left, candidate)
-                word_sub = getattr(self, 'word_subspace', None)
-                for b in range(B):
-                    if not query_mask_list[b]:
-                        continue
-                    left_rid = last_rule_per_batch[b]
-                    right_gid = composable_global[best_list[b]]
-                    if query_rid is not None and word_sub is not None:
-                        word_sub.push(b, query_rid,
-                                      leaves=(left_rid, right_gid, -1))
-            else:
-                composed = candidate
-
-            # Record argmax rule as word
-            best_global = composable_global[best_list[0]]
-            for b in range(B):
-                if d < len(active_positions[b]):
-                    best_gid_b = composable_global[best_list[b]]
-                    subspace.add_word(
-                        b,
-                        active_positions[b][min(d, len(active_positions[b]) - 1)],
-                        best_gid_b)
-                    if not query_mask_list[b]:
-                        last_rule_per_batch[b] = best_gid_b
-
-            best_arity = grammar.arity(best_global)
-            leaf_idx += (2 if best_arity == 3 and has_third else 1)
-            d += 1
-
-        if depth_probs:
-            self.last_rule_probs = torch.stack(depth_probs, dim=1)
-        return composed, self.last_svo
-
-    def _compose_to_target(self, data, subspace, grammar, target_count,
-                           s_rules, not_rid):
-        """Reduce active tokens to target_count via pairwise grammar reductions."""
-        B, N, D = data.shape
-
-        exclude = {'not'}
-        composable_local = []
-        composable_global = []
-        for local_idx, global_id in enumerate(self.all_rules):
-            if grammar.rules[global_id].method_name in exclude:
-                continue
-            if grammar.arity(global_id) < 2:
-                continue
-            composable_local.append(local_idx)
-            composable_global.append(global_id)
-
-        if not composable_global:
-            return data, self.last_svo
-
-        activation = torch.norm(data, dim=-1) / math.sqrt(D)
-        expected_n = self.input_proj.nInput
-        if N == expected_n and self.num_rules > 0:
-            out = self.forward(activation)
-            rule_probs = out['rule_probs']
-        else:
-            rule_probs = torch.ones(B, self.max_depth, max(len(self.all_rules), 1),
-                                    device=data.device) / max(len(self.all_rules), 1)
-
-        active = [subspace.active_positions(b, data) for b in range(B)]
-
-        cb_indices = self._leaf_cb_indices
-        t_rid = self.transition_rule if self.transition_rule is not None else composable_global[0]
-        if cb_indices is not None:
-            # One sync for the whole index tensor; inner lookups are free.
-            cb_indices_list = cb_indices.tolist()
-            for b in range(B):
-                cb_row = cb_indices_list[b]
-                for pos in active[b]:
-                    subspace.add_word(b, pos, t_rid, order=-1,
-                                      leaf1=cb_row[pos])
-
-        d = 0
-        while d < self.max_depth:
-            max_active = max(len(a) for a in active)
-            if max_active <= target_count:
-                break
-
-            new_data = data.clone()
-            for b in range(B):
-                positions = active[b]
-                new_positions = []
-                i = 0
-                while i < len(positions) - 1 and (len(positions) - i + len(new_positions)) > target_count:
-                    left_pos, right_pos = positions[i], positions[i + 1]
-                    left = data[b:b+1, left_pos:left_pos+1, :]
-                    right = data[b:b+1, right_pos:right_pos+1, :]
-
-                    results = []
-                    for gid in composable_global:
-                        a = grammar.arity(gid)
-                        if a >= 2:
-                            r = self.project(grammar, gid, left, right, subspace=subspace)
-                        else:
-                            r = self.project(grammar, gid, left, subspace=subspace)
-                        results.append(r)
-                    results = torch.stack(results, dim=1)
-
-                    probs_d = rule_probs[b:b+1, min(d, rule_probs.shape[1]-1), :]
-                    probs_d = probs_d[:, composable_local]
-                    probs_d = probs_d / (probs_d.sum(dim=-1, keepdim=True) + 1e-8)
-
-                    best_local = probs_d.argmax(dim=-1)[0].item()
-                    if self.training:
-                        composed = (probs_d.unsqueeze(-1).unsqueeze(-1) * results).sum(dim=1)
-                    else:
-                        composed = results[:, best_local]
-
-                    new_data[b, left_pos] = composed[0, 0]
-                    new_data[b, right_pos] = 0.0
-
-                    best_rid = composable_global[best_local]
-                    subspace.add_word(b, left_pos, best_rid, order=d)
-                    new_positions.append(left_pos)
-                    i += 2
-
-                while i < len(positions):
-                    new_positions.append(positions[i])
-                    i += 1
-                active[b] = new_positions
-
-            data = new_data
-            d += 1
-
-        result = torch.zeros(B, N, D, device=data.device)
-        for b in range(B):
-            for pos in active[b]:
-                result[b, pos] = data[b, pos]
-
-        return result, self.last_svo
-
-    def generate(self, data, subspace, grammar):
-        """Reconstruct pre-compose tensor from the symbolic word record.
-
-        Renamed from ``decompose`` (2026-05-01) to align with the
-        ``<compose>`` / ``<generate>`` grammar XML sections.
-        ``decompose`` is kept as a back-compat alias below.
-
-        Terminal words (order == -1) carry codebook indices of the original
-        leaf vectors.  Reconstruction looks up each leaf from the codebook
-        and places it at its recorded position, producing the exact
-        pre-compose tensor without any cached tensors.  For 2D activation
-        input (or when no codebook is available) the data is returned
-        as-is -- the only surviving rule-word inverses (not, union,
-        intersection, lift, lower) were already absorbed into the leaf
-        representations in compose.
-        """
-        basis = getattr(subspace, 'basis', None)
-        cb = basis.getW() if basis is not None else None
-        if cb is None or data.ndim < 3 or data.shape[-1] != cb.shape[-1]:
-            # No usable codebook -- fall through to the S-tier-style rule
-            # reversal pass (currently a no-op; rules are lossy).
-            words = subspace.get_words()
-            for word in reversed(words):
-                if len(word) < 3:
-                    continue
-                rule_id = word[WordEncoding.RULE]
-                rule = grammar.rules[rule_id]
-                if rule.method_name in ('non', 'union', 'intersection',
-                                        'lift', 'lower'):
-                    pass  # Non-invertible in this degraded path
-                elif rule.method_name is not None:
-                    pass  # Not cleanly invertible
-            return data
-
-        words = subspace.get_words()
-        result = torch.zeros_like(data)
-        for word in words:
-            if word[WordEncoding.ORDER] != -1:
-                continue
-            b = word[WordEncoding.BATCH]
-            pos = word[WordEncoding.VECTOR]
-            cb_idx = word[WordEncoding.LEAF1]
-            if cb_idx >= 0:
-                result[b, pos] = cb[cb_idx]
-        return result
+    # -- Forward/Reverse rule dispatch (REMOVED 2026-05-01) ----------
+    # The legacy `*Forward` / `*Reverse` rule methods, the
+    # `_RULE_METHODS` / `_OPS_METHODS` / `_METHOD_ALIASES` dispatch
+    # tables, and `project` / `reverse_project` / `dispatch_ops` /
+    # `_resolve_method` were removed. Per-rule math now lives on
+    # the `GRAMMAR_LAYER_CLASSES` GrammarLayer subclasses
+    # (Layers.py); the chart's `Chart._apply_rule_forward` and the
+    # per-space `SpaceSyntacticLayer.forward` route through them.
+
+    # -- compose / decompose / chart helpers (REMOVED 2026-05-01) ---
+    # The legacy `compose`, `_compose_vector`, `_compose_to_target`,
+    # `_compose_activation`, `_compose_vector_chart`,
+    # `_compose_chart_cky`, `_compose_chart_outside`,
+    # `_viterbi_extract`, `_signal_sentence_completed*`,
+    # `_pair_scorer`, `_live_pairs`, `_apply_rules_to_pairs`,
+    # `_ensure_soft_chart_built`, `_ensure_category_table`,
+    # `_seed_category`, `_category_names_count`,
+    # `_extract_svo_from_trace`, `emit_head`, `generate`,
+    # `decompose` were all removed. Chart parsing lives on the
+    # `Chart` class (top of this file). The `WordSpace` owns a
+    # `Chart` instance; the chart is wired into the model pipeline
+    # via `Pipeline.ChartCompose` / `ChartGenerate`.
 
     # -- utilities -------------------------------------------------
 
@@ -3736,17 +2772,58 @@ class WordSpace(Space):
         # merge (2026-04-19) there is a single SyntacticLayer that owns
         # every compositional rule and is called from SymbolicSpace.
         self.syntacticLayer = None
+        # 4a. Chart + host-layer registry. Per the 2026-05-01 syntactic-
+        # layer refactor (doc/specs/2026-05-01-syntactic-layer-refactor.md):
+        # WordSpace owns a Chart that runs CKY inside / outside passes
+        # and writes per-(tier, step) rule selections into
+        # ``current_rules`` / ``generate_rules``. Each per-space
+        # SyntacticLayer registers its parametrized layers via
+        # ``register_host_layer``; the chart consults
+        # ``host_layer(tier, rule_name)`` to fire host-owned folds.
+        self._host_layer_registry = {}
+        self.current_rules = {}
+        self.generate_rules = {}
+        # Bumped on each compose / generate. Per-space SyntacticLayers
+        # compare against this to know when to reset their per-tier
+        # cursor (Q10.1).
+        self._compose_generation = 0
+        self._generate_generation = 0
+        chart_hidden = self._resolve_hidden_dim(nSymbols)
+        self.chart = Chart(
+            nInput=nSymbols, nOutput=nSymbols,
+            max_depth=max(nSymbols - 1, 1),
+            hidden_dim=chart_hidden,
+            feature_dim=symbol_dim,
+        )
+        self.layers.append(self.chart)
+        for p in self.chart.parameters():
+            if all(p is not q for q in self.params):
+                self.params.append(p)
         # 5. Build the SyntacticLayer anchored at SymbolicSpace.  The
         # perceptual and conceptual spaces also get a ``wordSpace``
         # back-reference so they can route through the shared buffer,
         # but only the symbolic space's compose() fires the layer.
         if perceptualSpace is not None:
             perceptualSpace.attach_wordSpace(self)
+            self._attach_per_space_syntactic_layer(
+                perceptualSpace, tier='P')
         if conceptualSpace is not None:
             conceptualSpace.attach_wordSpace(self)
+            self._attach_per_space_syntactic_layer(
+                conceptualSpace, tier='C')
         if symbolicSpace is not None:
             self._build_syntactic_layer(
                 symbolicSpace, nSymbols, grammar, symbol_dim)
+            self._attach_per_space_syntactic_layer(
+                symbolicSpace, tier='S')
+
+        # 5b. Signal-router grammar wiring. When `WordSpace.routerKind ==
+        # "signal"`, the chart's CKY paths are bypassed; the SignalRouter
+        # needs explicit op modules attached to its per-tier scorers
+        # before compose() can fire. We wire from the host_layer registry
+        # populated in step 5 above.
+        if self.chart.router_kind == "signal":
+            self._wire_signal_router_grammar_ops()
 
         # 6. TruthLayer -- shared truth store for symbolic activations.
         # Lives on WordSpace so SymbolicSpace doesn't have to carry it
@@ -4143,6 +3220,121 @@ class WordSpace(Space):
         """
         self.reconstruction_stack.push(b, rule_id, word_id)
 
+    # -- chart compose / generate (2026-05-01 refactor) ---------------
+    def compose(self, input_vectors, subspace=None):
+        """Run the chart's inside pass; populate ``self.current_rules``.
+
+        Idempotent within a forward pass: each per-space SyntacticLayer
+        resets its per-tier cursor to 0 and pops one rule per fold step.
+        """
+        self._compose_generation += 1
+        self.current_rules = self.chart.compose(
+            input_vectors, self, subspace=subspace) or {}
+        return self.current_rules
+
+    def generate(self, target_vectors, subspace=None):
+        """Run the chart's outside pass + Viterbi backtrace; populate
+        ``self.generate_rules``.
+        """
+        self._generate_generation += 1
+        self.generate_rules = self.chart.generate(
+            target_vectors, self, subspace=subspace) or {}
+        return self.generate_rules
+
+    def register_host_layer(self, tier, rule_name, layer):
+        """Register ``layer`` as the parametrized GrammarLayer for
+        ``(tier, rule_name)``. The chart's per-cell rule dispatch reads
+        the registry to fire the host space's owned fold.
+
+        Per-space SyntacticLayers call this at construction.
+        """
+        if not rule_name:
+            return
+        self._host_layer_registry[(tier, rule_name)] = layer
+
+    def host_layer(self, tier, rule_name):
+        """Return the registered GrammarLayer for ``(tier, rule_name)``,
+        or ``None``. The chart treats ``None`` as "rule has no host
+        parametrized layer", routing to the generic fallback (Ops /
+        typed-GrammarLayer facade) instead.
+        """
+        return self._host_layer_registry.get((tier, rule_name))
+
+    def _wire_signal_router_grammar_ops(self):
+        """Pull host_layer instances out of the registry and attach them
+        to the signal router, grouped by (tier, arity).
+
+        Walked on WordSpace construction when ``Chart.router_kind ==
+        "signal"``. The chart's ``_ensure_signal_router()`` builds the
+        SignalRouter the first time we ask for it; we then call
+        ``attach_unary_ops`` / ``attach_layer_ops`` per tier with the
+        live grammar's parametrized fold modules.
+
+        Binary GrammarLayers (IntersectionLayer, UnionLayer, ...) expose
+        their pair-wise math via ``.compose(left, right)``; unary ones
+        (NotLayer, NonLayer, ...) via ``.forward(x)``. The signal
+        router's ``BinaryStructuredReductionLayer`` calls ``op(left,
+        right)``, so binary ops get wrapped with
+        ``_BinaryGrammarOpAdapter``.
+        """
+        from SignalRouter import _BinaryGrammarOpAdapter
+
+        router = self.chart._ensure_signal_router()
+
+        # Group: (tier, arity) -> list of (rule_id, layer, rule_name)
+        by_tier_arity = {}
+        for rule_id in range(len(TheGrammar.rules)):
+            rule = TheGrammar.rules[rule_id]
+            tier = rule.tier
+            arity = int(rule.arity)
+            if arity not in (1, 2):
+                continue
+            rule_name = rule.method_name
+            if not rule_name:
+                continue
+            layer = self._host_layer_registry.get((tier, rule_name))
+            if layer is None:
+                # Fallback 1: same rule registered under a different
+                # tier. The grammar may declare a rule at the symbolic
+                # tier whose host_layer was set up at the conceptual
+                # tier (e.g. IntersectionLayer wraps a PiLayer that
+                # ConceptualSpace owns).
+                for (other_tier, other_rule), other_layer in (
+                        self._host_layer_registry.items()):
+                    if other_rule == rule_name:
+                        layer = other_layer
+                        break
+            if layer is None:
+                # Fallback 2: instantiate a fresh module from the
+                # GRAMMAR_LAYER_CLASSES facade. Parametrized wrappers
+                # (IntersectionLayer, UnionLayer) require an inner
+                # pi/sigma layer; skip if we can't construct one.
+                from Layers import GRAMMAR_LAYER_CLASSES
+                cls = GRAMMAR_LAYER_CLASSES.get(rule_name)
+                if cls is None:
+                    continue
+                try:
+                    layer = cls()
+                except TypeError:
+                    continue
+            by_tier_arity.setdefault((tier, arity), []).append(
+                (rule_id, layer, rule_name))
+
+        # Attach per (tier, arity).
+        for (tier, arity), entries in sorted(by_tier_arity.items()):
+            ops = []
+            rule_ids = []
+            for rule_id, layer, _name in entries:
+                if arity == 2:
+                    ops.append(_BinaryGrammarOpAdapter(layer))
+                else:
+                    ops.append(layer)
+                rule_ids.append(rule_id)
+            if arity == 1:
+                router.attach_unary_ops(ops=ops, rule_ids=rule_ids, tier=tier)
+            else:
+                router.attach_layer_ops(ops=ops, rule_ids=rule_ids, tier=tier)
+
     # -- truth-modulated loss -----------------------------------------
     def truth_modulated_loss(self, total_loss, symbolic_space,
                              symbol_acts=None, universality_score=None,
@@ -4273,15 +3465,77 @@ class WordSpace(Space):
             pass
         return min(256, max(64, n_slots * 4))
 
-    def _build_syntactic_layer(self, space, n_slots, grammar, symbol_dim):
-        """Build the unified SyntacticLayer anchored at the symbolic space.
+    def _attach_per_space_syntactic_layer(self, space, *, tier):
+        """Build the per-space SpaceSyntacticLayer for ``space`` (Step 4
+        of doc/specs/2026-05-01-syntactic-layer-refactor.md).
 
-        Post subclass-merge (2026-04-19): ``rules`` comes from
-        ``grammar.symbolic()`` (all compositional rules live on S),
-        ``init_swap`` is always called because every instance now
-        supports the full rule set, and there is a single
-        ``self.syntacticLayer`` attribute instead of three per-tier
-        slots.
+        Gathers the space's already-constructed parametrized layers
+        (PiLayer / SigmaLayer / NotLayer / ContiguousLayer) and passes
+        them into ``build_space_syntactic_layer`` as ``builtin_layers``
+        so their existing weights stay live. Other rules the configured
+        grammar references for this tier get lazy-constructed
+        GrammarLayer wrappers.
+        """
+        builtin_layers = {}
+        # Inner instance probes: use try/except rather than getattr-with-
+        # defaults per the project's no-defensive-getattr stance.
+        if tier == 'P':
+            sigma = getattr(space, 'sigma', None)
+            if sigma is not None:
+                # Wrap PiLayer / SigmaLayer in their grammar-facing
+                # GrammarLayer adapters so the chart's ``layer.compose``
+                # / ``layer.generate`` contract is satisfied.
+                from Layers import UnionLayer
+                builtin_layers['union'] = UnionLayer(sigma)
+            default_rule = 'union'
+        elif tier == 'C':
+            pi = getattr(space, 'pi', None)
+            if pi is not None:
+                from Layers import IntersectionLayer
+                builtin_layers['intersection'] = IntersectionLayer(pi)
+            default_rule = 'intersection'
+        elif tier == 'S':
+            sigma = getattr(space, 'sigma', None)
+            if sigma is not None:
+                from Layers import UnionLayer
+                builtin_layers['union'] = UnionLayer(sigma)
+            negation = getattr(space, 'propositional_negation', None)
+            if negation is not None:
+                builtin_layers['not'] = negation
+            contiguous = getattr(space, '_contiguous_layer', None)
+            if contiguous is not None:
+                builtin_layers['Contiguous'] = contiguous
+            default_rule = 'union'
+        else:
+            default_rule = None
+        layer = build_space_syntactic_layer(
+            space, self, tier=tier,
+            builtin_layers=builtin_layers,
+            default_rule=default_rule)
+        # Register the new layer's parameters with the WordSpace param
+        # list so the optimizer scan sees the lazily-constructed
+        # GrammarLayer instances. The space already owns the built-in
+        # parametrized fold layers (PiLayer / SigmaLayer / NotLayer /
+        # ContiguousLayer) in its own params list, so register only
+        # the *new* lazy-constructed wrappers (their parameters won't
+        # already be in self.params).
+        for p in layer.parameters():
+            if all(p is not q for q in self.params):
+                self.params.append(p)
+        return layer
+
+    def _build_syntactic_layer(self, space, n_slots, grammar, symbol_dim):
+        """Build the legacy SyntacticLayer stub anchored at the symbolic
+        space.
+
+        Post-2026-05-01 refactor: chart parsing lives on ``self.chart``
+        (a ``Chart`` instance); per-rule math lives on
+        ``GRAMMAR_LAYER_CLASSES`` GrammarLayer subclasses; per-space
+        dispatch lives on ``SpaceSyntacticLayer``. This call still
+        constructs a legacy SyntacticLayer because consumers
+        (`Models._universality_score` reads `last_svo` / `lifting_layer`
+        off it) tolerate its presence as a passthrough -- those fields
+        default to ``None`` and the consumers gate on that.
         """
         layer = SyntacticLayer(
             nInput=n_slots, nOutput=n_slots,
@@ -4292,8 +3546,6 @@ class WordSpace(Space):
             grammar=grammar,
             feature_dim=symbol_dim,
         )
-        layer.init_swap(symbol_dim, n_slots)
-        layer.init_lifting(symbol_dim)
         self.attach_codebook_host(space)
         self.attach_layer('syntactic', layer)
         space.attach_wordSpace(self)
@@ -4301,31 +3553,24 @@ class WordSpace(Space):
 
     # -- composition dispatch ----------------------------------------
     def forwardSymbols(self, data, subspace):
-        """Compose via the unified SyntacticLayer.
+        """Demux the muxed symbol tensor into the subspace's modality
+        slots (Rule #2 axis commitment side effect).
 
-        Dispatches to ``self.syntacticLayer.compose(data, subspace, grammar)``.
-        Includes the Rule #2 demux side effect: the muxed [B, N, D] symbol
-        tensor gets split into what/where/when modality slots before
-        compose runs, so slot selectors see axis-separated state.
-        Returns the composed tensor (stripping the SVO slot of the
-        compose tuple so callers keep the pre-merge tensor contract).
+        Post-2026-05-01 refactor: the actual symbolic composition runs
+        on the chart (via ``ChartCompose`` in the pipeline + per-space
+        ``SyntacticLayer.forward`` dispatch). This helper retains the
+        demux side effect that downstream slot selectors depend on.
         """
-        layer = self.syntacticLayer
-        if layer is None:
-            return data
         if data.ndim == 3 and data.shape[-1] == getattr(subspace, 'muxedSize', -1):
             subspace.demux(data)
-        result = layer.compose(data, subspace, TheGrammar)
-        if isinstance(result, tuple):
-            return result[0]
-        return result
+        return data
 
     def reverseSymbols(self, data, subspace):
-        """Reverse-compose via the unified SyntacticLayer."""
-        layer = self.syntacticLayer
-        if layer is None:
-            return data
-        return layer.decompose(data, subspace, TheGrammar)
+        """No-op pass-through: chart-driven generation handles the
+        symbol-side reverse via ``ChartGenerate`` + per-space
+        ``SyntacticLayer.reverse`` dispatch.
+        """
+        return data
 
     def reconstruct(self, state, codebook_space, max_tokens=1):
         """Run the downward grammar on a deep state.

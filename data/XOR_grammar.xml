@@ -124,6 +124,7 @@
     <useGrammar>all</useGrammar>
     <softChartCompose>true</softChartCompose>
     <chartTau>2.0</chartTau>
+    <routerKind>signal</routerKind>
     <language>
       <!-- Tier-scoped grammar. The presence of <grammar> here means
            XOR_grammar.xml takes full ownership of the rule set; no
@@ -133,8 +134,8 @@
         <compose>
           <symbols>
             <rule>S = not.forward(S)</rule>
-            <rule>S = intersection.forward(S, S)</rule>
-            <rule>S = union.forward(S, S)</rule>
+            <rule>S = conjunction.forward(S, S)</rule>
+            <rule>S = disjunction.forward(S, S)</rule>
           </symbols>
         </compose>
       </grammar>

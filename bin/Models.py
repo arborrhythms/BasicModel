@@ -74,6 +74,7 @@ from Language import WordSpace
 from util import parse
 from Pipeline import (
     CachePoint, GrammarMergeGlue, ReverseAdapter, FlattenKWrapper,
+    ChartCompose, ChartGenerate,
 )
 
 
@@ -542,14 +543,18 @@ class BaseModel(nn.Module):
     def isConsistent(self):
         """Analyze the TruthSet for internal consistency.
 
-        Uses Basis.disjunction() to fold all stored truths into a single
-        summary vector. Conflicting +/-  assertions cancel dimensions.
+        Folds all stored truths into a single summary vector via
+        ``Ops.disjunction``. Conflicting +/-  assertions cancel
+        dimensions. (The 2026-05-01 syntactic-layer refactor removed
+        the thin Basis.disjunction wrapper; callers now call the Ops
+        kernel directly.)
 
         Returns:
             dict with keys: consistent (bool), score (float),
             sites (tensor of dim indices below threshold),
             union_vector (tensor).
         """
+        from Layers import Ops
         truth_layer = self._get_truth_layer()
         basis = self._get_basis()
         if truth_layer is None or basis is None:
@@ -566,7 +571,7 @@ class BaseModel(nn.Module):
         # Fold via successive disjunction
         union = stored[0].clone()
         for i in range(1, n):
-            union = basis.disjunction(union, stored[i])
+            union = Ops.disjunction(union, stored[i])
 
         # Consistency score = mean absolute value of result
         score = union.abs().mean().item()
@@ -635,11 +640,14 @@ class BaseModel(nn.Module):
 
         if not basis_indices:
             # Try derivation via TruthLayer.derive() (depth capped).
-            # After ownership transfer, the S-tier SyntacticLayer lives
-            # on WordSpace, not on SymbolicSpace.
-            ws = self.wordSpace
-            sl = getattr(ws, 'syntacticLayer', None) if ws is not None else None
-            part_fn = getattr(sl, 'partForward', None) if sl is not None else None
+            # The 2026-05-01 syntactic-layer refactor replaced
+            # SyntacticLayer.partForward with the standalone PartLayer
+            # GrammarLayer subclass; resolve via GRAMMAR_LAYER_CLASSES.
+            from Layers import GRAMMAR_LAYER_CLASSES
+            part_cls = GRAMMAR_LAYER_CLASSES.get('part')
+            part_inst = part_cls() if part_cls is not None else None
+            part_fn = (lambda left, right, _inst=part_inst, **kw:
+                       _inst.compose(left, right)) if part_inst is not None else None
             max_depth = 3
             for depth in range(max_depth):
                 if part_fn is None:
@@ -723,13 +731,18 @@ class BaseModel(nn.Module):
         ss = getattr(self, 'symbolicSpace', None)
         cs = getattr(self, 'conceptualSpace', None)
         pi_layer = ss.sigma if ss is not None else None
-        # Get the actual SubSpace for grammar methods (needs .basis)
-        subspace = getattr(ss, 'subspace', None) if ss is not None else None
-        # *Forward lives on the S-tier SyntacticLayer, which WordSpace
-        # now owns post-ownership-transfer.
-        ws = self.wordSpace
-        syntactic_layer = (getattr(ws, 'syntacticLayer', None)
-                           if ws is not None else None)
+        # Two-argument grammar ops route through `GRAMMAR_LAYER_CLASSES`
+        # post the 2026-05-01 syntactic-layer refactor (was: legacy
+        # SyntacticLayer.<rule>Forward).
+        from Layers import GRAMMAR_LAYER_CLASSES
+        rule_kernels = {}
+        for rule_name in two_arg_rules:
+            cls = GRAMMAR_LAYER_CLASSES.get(rule_name)
+            if cls is not None:
+                try:
+                    rule_kernels[rule_name] = cls()
+                except TypeError:
+                    pass
 
         for i in indices:
             if stored[i].norm() < 1e-6:
@@ -748,13 +761,15 @@ class BaseModel(nn.Module):
                         continue  # skip cross-order pairs
 
                 for rule_name in two_arg_rules:
-                    method_name = f'{rule_name}Forward'
-                    method = getattr(syntactic_layer, method_name, None)
-                    if method is None:
+                    kernel = rule_kernels.get(rule_name)
+                    if kernel is None:
                         continue
-
-                    candidate = method(stored[i].unsqueeze(0),
-                                       stored[j].unsqueeze(0), subspace)
+                    try:
+                        candidate = kernel.compose(
+                            stored[i].unsqueeze(0),
+                            stored[j].unsqueeze(0))
+                    except Exception:
+                        continue
                     if candidate is None:
                         continue
                     candidate = candidate.squeeze(0)
@@ -1657,9 +1672,15 @@ class BasicModel(BaseModel):
 
         # Stem: inputSpace produces the K-extended subspace (in AR mode);
         # perceptualSpace's per-window work runs flat via FlattenKWrapper.
+        # ChartCompose runs the chart's inside pass on the post-embedding
+        # subspace (originally placed BEFORE perceptualSpace, but text-mode
+        # inputs need perceptualSpace to embed before the chart can
+        # materialize the slab). PerceptualSpace's own forward doesn't
+        # consume current_rules, so the post-embed placement is safe.
         self.pipeline_stem = nn.Sequential(
             self.inputSpace,
             FlattenKWrapper(self.perceptualSpace),
+            ChartCompose(self.wordSpace),
         )
 
         # Body: pure transforms wrapped to flatten K.
@@ -1681,9 +1702,14 @@ class BasicModel(BaseModel):
                       self.conceptualSpace, self.symbolicSpace, self.outputSpace]
         any_invertible = any(getattr(s, "invertible", False) for s in all_spaces)
 
+        # ChartGenerate is the reverse-pipeline mirror of ChartCompose:
+        # runs the chart's outside pass on the symbol-side subspace
+        # before the spaces' reverse passes fire, populating
+        # ``wordSpace.generate_rules``.
         if any_invertible:
             self.pipeline_rev = nn.Sequential(
                 FlattenKWrapper(ReverseAdapter(self.outputSpace)),
+                ChartGenerate(self.wordSpace),
                 FlattenKWrapper(nn.Sequential(
                     ReverseAdapter(self.symbol_cache),
                     ReverseAdapter(self.symbolicSpace),
@@ -1700,6 +1726,7 @@ class BasicModel(BaseModel):
                 self.pipeline_stem, self.pipeline_body, self.pipeline_head,
                 self.midpoint_cache,
                 FlattenKWrapper(ReverseAdapter(self.outputSpace)),
+                ChartGenerate(self.wordSpace),
                 FlattenKWrapper(nn.Sequential(
                     ReverseAdapter(self.symbol_cache),
                     ReverseAdapter(self.symbolicSpace),
@@ -2252,6 +2279,46 @@ class BasicModel(BaseModel):
         TheMessage(f"Final Stats:")
         TheReport.plotLoss(self.name, trainLosses, validationLosses, testLosses)
         self.rCorrect = TheReport.mnistReport(self)
+
+        # Post-training: dump the chart's Viterbi-extracted grammar per
+        # test row so the user can read the discrete derivation the
+        # router committed to. Useful for grammar-from-chart inspection
+        # (XOR_grammar.xml et al.).
+        try:
+            ws = self.wordSpace
+            if (ws is not None and ws.chart is not None
+                    and ws.chart.router_kind == "signal"):
+                rules = ws.current_rules
+                gen_rules = ws.generate_rules
+                from Language import TheGrammar
+                def _decode(rule_id):
+                    rid = int(rule_id)
+                    if 0 <= rid < len(TheGrammar.rules):
+                        rd = TheGrammar.rules[rid]
+                        return f"{rid}:{rd.canonical}"
+                    return f"{rid}:?"
+                TheMessage("=== Chart-extracted grammar (signal/Viterbi) ===")
+                for tier, rows in (rules or {}).items():
+                    TheMessage(f"  compose tier={tier!r}:")
+                    for b, row in enumerate(rows):
+                        decoded = [_decode(rid) for rid in row]
+                        TheMessage(f"    row[{b}] = {decoded}")
+                for tier, rows in (gen_rules or {}).items():
+                    TheMessage(f"  generate tier={tier!r}:")
+                    for b, row in enumerate(rows):
+                        decoded = [_decode(rid) for rid in row]
+                        TheMessage(f"    row[{b}] = {decoded}")
+                router = ws.chart._signal_router
+                if router is not None and getattr(router, '_last_root_state', None) is not None:
+                    rs = router._last_root_state.detach()
+                    TheMessage(f"  S root state shape = {tuple(rs.shape)}")
+                    for b in range(rs.shape[0]):
+                        vec = rs[b, 0].tolist()
+                        TheMessage(f"    row[{b}] root = {[round(v, 4) for v in vec]}")
+        except Exception as _exc:
+            import logging
+            logging.getLogger(__name__).warning(
+                "post-training grammar dump failed: %s", _exc)
 
         # Reconstruction report: run final test pass and show input vs reconstructed
         if self.reversible and self.inputSpace.model_type == "embedding":
@@ -3992,9 +4059,12 @@ class MentalModel(BaseModel):
         self._body_inner = nn.Sequential(*body_modules)
 
         # Stem / body / head wrappers — same shape as BasicModel.
+        # ChartCompose / ChartGenerate run the chart's inside / outside
+        # passes around the body (2026-05-01 syntactic-layer refactor).
         self.pipeline_stem = nn.Sequential(
             self.inputSpace,
             FlattenKWrapper(self.perceptualSpace),
+            ChartCompose(self.wordSpace),
         )
         self.pipeline_body = FlattenKWrapper(self._body_inner)
         self.pipeline_head = FlattenKWrapper(self.outputSpace)
@@ -4019,7 +4089,9 @@ class MentalModel(BaseModel):
 
         if any_invertible:
             self.pipeline_rev = nn.Sequential(
-                rev_head, rev_body, rev_perceptual, rev_input,
+                rev_head,
+                ChartGenerate(self.wordSpace),
+                rev_body, rev_perceptual, rev_input,
             )
             self.pipeline_rt = None
             self.midpoint_cache = None
@@ -4028,7 +4100,9 @@ class MentalModel(BaseModel):
             self.pipeline_rt = nn.Sequential(
                 self.pipeline_stem, self.pipeline_body, self.pipeline_head,
                 self.midpoint_cache,
-                rev_head, rev_body, rev_perceptual, rev_input,
+                rev_head,
+                ChartGenerate(self.wordSpace),
+                rev_body, rev_perceptual, rev_input,
             )
             self.pipeline_rev = None
 

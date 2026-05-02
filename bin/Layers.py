@@ -1904,7 +1904,7 @@ class NegationLayer(Layer):
     With ``ternary=True`` the layer inserts the non-affirming residual
     from the grammar's ternary partition:
 
-        forward(x) = [x, Ops.non(x), -x]
+        forward(x) = [x, Ops._non_kernel(x), -x]
 
     For crisp signed values {-1, 0, 1}, exactly one ternary channel is
     positive: affirmation, non-affirming negation, or not-negation.
@@ -1923,7 +1923,7 @@ class NegationLayer(Layer):
                 f"NegationLayer expected last dim {self.nInput}, "
                 f"got {x.shape[-1]}")
         if self.ternary:
-            return torch.cat((x, Ops.non(x, monotonic=False), -x), dim=-1)
+            return torch.cat((x, Ops._non_kernel(x, monotonic=False), -x), dim=-1)
         return torch.cat((x, -x), dim=-1)
 
     def reverse(self, y):
@@ -1976,7 +1976,7 @@ class NonLayer(GrammarLayer):
 
     Lossy (no exact reverse). Forward kernel is the bitonic
     triangular residual ``1 - |clamp(x, -1, 1)|`` (matches
-    ``Ops.non(x, monotonic=False)``).
+    ``Ops._non_kernel(x, monotonic=False)``).
     """
     rule_name  = "non"
     arity      = 1
@@ -1988,6 +1988,11 @@ class NonLayer(GrammarLayer):
 
     def forward(self, x):
         return 1.0 - torch.clamp(x, -1.0, 1.0).abs()
+
+    def reverse(self, y):
+        # Lossy "indeterminate" projection has no clean inverse;
+        # passthrough.
+        return y
 
 
 class IntersectionLayer(GrammarLayer):
@@ -2148,257 +2153,396 @@ class ContiguousLayer(GrammarLayer):
 # works -- this is an addition, not a replacement. A follow-up can
 # migrate the chart to dispatch through these classes.
 
-class _GrammarOpFacade(GrammarLayer):
-    """Internal helper: delegates forward/reverse/compose/decompose to
-    a method on a SyntacticLayer-shaped ``layer`` argument.
+# =====================================================================
+# Grammar-op GrammarLayer subclasses (Step 8 of the 2026-05-01 syntactic-
+# layer refactor). Each class is a self-contained GrammarLayer with
+# direct Ops-based math. Replaces the prior `_GrammarOpFacade` /
+# SyntacticLayer-dispatch pattern.
+#
+# `_GrammarOpFacade._registry` is retired: the chart now consults
+# `wordSpace.host_layer(tier, rule_name)` first (Step 7) and falls
+# back to a hardcoded class lookup `GRAMMAR_LAYER_CLASSES` declared
+# at module scope below.
+# =====================================================================
+class LiftLayer(GrammarLayer):
+    """``S -> lift(S, S)`` -- in-space lift via Ops._lower_kernel(AND, smooth).
 
-    Subclasses set ``rule_name``, ``arity``, ``invertible``, and
-    ``method_name`` (the SyntacticLayer attribute name to dispatch to).
-    The class is parameter-free (no learnable weights of its own); all
-    weights live on the SyntacticLayer instance the subclass dispatches
-    into, matching the project's "math owned by SyntacticLayer" pattern.
-
-    Class-level ``_registry`` is keyed by ``rule_name`` and populated
-    by ``__init_subclass__``; SyntacticLayer's chart looks up by name
-    to dispatch typed-GrammarLayer-style instead of via the legacy
-    ``_RULE_METHODS`` string table. Multiple facades may share a
-    rule_name (e.g. an internal chart-dispatch facade alongside a
-    public wrapper); the last definition wins.
+    Per the 2026-05-02 Ops-as-Layer-container pass: every binary
+    GrammarLayer exposes ``forward(left, right)`` and
+    ``reverse(parent)`` (the Layer interface) AS WELL AS
+    ``compose`` / ``generate`` (the chart interface). Both surfaces
+    return identical values; one is an alias of the other.
     """
-    rule_name    = ""
-    arity        = 1
-    invertible   = False
-    lossy        = False
-    method_name  = ""
-
-    _registry: dict = {}
-
-    def __init_subclass__(cls, **kw):
-        super().__init_subclass__(**kw)
-        rn = getattr(cls, 'rule_name', '')
-        mn = getattr(cls, 'method_name', '')
-        if rn and mn:
-            _GrammarOpFacade._registry[rn] = cls
+    rule_name  = "lift"
+    arity      = 2
+    invertible = True
 
     def __init__(self):
         super().__init__(0, 0)
 
-    def _resolve(self, layer, suffix):
-        if layer is None or not self.method_name:
-            return None
-        return getattr(layer, self.method_name + suffix, None)
+    def forward(self, left, right):
+        return Ops._lower_kernel(left, right, mode='AND', kind='smooth')
 
-    def forward(self, *args, layer=None, subspace=None, mask=None,
-                gated=True):
-        """Apply the rule's forward semantics.
+    def reverse(self, parent):
+        return parent, parent
 
-        ``gated=True`` (default) wraps with `gated_run` so the chart
-        authority's `should_run_rule(rule_name)` controls firing.
-        ``gated=False`` is the raw dispatch — used by the chart's
-        own `_apply_rule_forward`, which already does its own soft
-        mixing and would double-gate otherwise.
-        """
-        fn = self._resolve(layer, 'Forward')
-        if fn is None:
-            return args[0] if args else None
-        if self.arity == 2:
-            left = args[0]
-            right = args[1] if len(args) > 1 else None
-            if not gated:
-                return fn(left, right, subspace=subspace, mask=mask)
-            return self.gated_run(left, fn, right,
-                                  subspace=subspace, mask=mask)
-        if not gated:
-            return fn(args[0], subspace=subspace, mask=mask)
-        return self.gated_run(args[0], fn, subspace=subspace, mask=mask)
+    def compose(self, left, right):
+        return self.forward(left, right)
 
-    def reverse(self, result, *args, layer=None, subspace=None, mask=None):
-        fn = self._resolve(layer, 'Reverse')
-        if fn is None:
-            return result
-        if self.arity == 2:
-            right = args[0] if args else None
-            return fn(result, right, subspace=subspace, mask=mask)
-        return fn(result, subspace=subspace, mask=mask)
-
-    def compose(self, *operands, layer=None, subspace=None):
-        if self.arity == 1:
-            return self.forward(operands[0], layer=layer, subspace=subspace)
-        return self.forward(operands[0], operands[1],
-                            layer=layer, subspace=subspace)
-
-    def generate(self, parent, layer=None, subspace=None):
-        if self.arity == 1 and self.invertible:
-            return self.reverse(parent, layer=layer, subspace=subspace)
-        if self.arity == 2 and self.invertible:
-            # Binary inverse with one operand recovered; second is
-            # caller-known via right-arg passthrough at the chart.
-            # Pseudo-inverse fallback: return parent as left.
-            return parent, parent
-        return parent
+    def generate(self, parent):
+        return self.reverse(parent)
 
 
-class LiftLayer(_GrammarOpFacade):
-    """``S -> lift(S, S)`` -- in-space lift via Ops.lower(AND, smooth)."""
-    rule_name   = "lift"
-    arity       = 2
-    invertible  = True
-    method_name = "lift"
+class LowerLayer(GrammarLayer):
+    """``S -> lower(S, S)`` -- in-space lower via Ops._lift_kernel(OR, smooth)."""
+    rule_name  = "lower"
+    arity      = 2
+    invertible = True
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        return Ops._lift_kernel(left, right, mode='OR', kind='smooth')
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
 
 
-class LowerLayer(_GrammarOpFacade):
-    """``S -> lower(S, S)`` -- in-space lower via Ops.lift(OR, smooth)."""
-    rule_name   = "lower"
-    arity       = 2
-    invertible  = True
-    method_name = "lower"
-
-
-class ConjunctionLayer(_GrammarOpFacade):
+class ConjunctionLayer(GrammarLayer):
     """``S -> conjunction(S, S)`` -- propositional AND on bivectors."""
-    rule_name   = "conjunction"
-    arity       = 2
-    invertible  = False
-    method_name = "conjunction"
+    rule_name  = "conjunction"
+    arity      = 2
+    invertible = False
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        return Ops._conjunction_kernel(left, right)
+
+    def reverse(self, parent):
+        # Lossy fold; pseudo-inverse returns parent for both children.
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
 
 
-class DisjunctionLayer(_GrammarOpFacade):
+class DisjunctionLayer(GrammarLayer):
     """``S -> disjunction(S, S)`` -- propositional OR on bivectors."""
-    rule_name   = "disjunction"
-    arity       = 2
-    invertible  = False
-    method_name = "disjunction"
+    rule_name  = "disjunction"
+    arity      = 2
+    invertible = False
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        return Ops._disjunction_kernel(left, right)
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
 
 
-class EqualsLayer(_GrammarOpFacade):
+class EqualsLayer(GrammarLayer):
     """``S -> equals(S, S)`` -- mutual-parthood agreement scoring."""
-    rule_name   = "equals"
-    arity       = 2
-    invertible  = False
-    lossy       = True
-    method_name = "equals"
+    rule_name  = "equals"
+    arity      = 2
+    invertible = False
+    lossy      = True
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        score = Ops._equal_kernel(left, right, scalar=True)
+        while score.ndim < right.ndim:
+            score = score.unsqueeze(-1)
+        return score * right
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
 
 
-class PartLayer(_GrammarOpFacade):
+class PartLayer(GrammarLayer):
     """``S -> part(S, S)`` -- mereological part-of."""
-    rule_name   = "part"
-    arity       = 2
-    invertible  = False
-    lossy       = True
-    method_name = "part"
+    rule_name  = "part"
+    arity      = 2
+    invertible = False
+    lossy      = True
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        score = Ops._part_kernel(left, right, scalar=True)
+        while score.ndim < right.ndim:
+            score = score.unsqueeze(-1)
+        return score * right
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
 
 
-class TrueLayer(_GrammarOpFacade):
+class TrueLayer(GrammarLayer):
     """``S -> true(S)`` -- positive-pole projection."""
-    rule_name   = "true"
-    arity       = 1
-    invertible  = False
-    lossy       = True
-    method_name = "true"
+    rule_name  = "true"
+    arity      = 1
+    invertible = False
+    lossy      = True
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, x):
+        return torch.relu(torch.clamp(x, -1.0, 1.0))
+
+    def reverse(self, y):
+        # Lossy projection -- best-effort identity recovery.
+        return y
 
 
-class FalseLayer(_GrammarOpFacade):
+class FalseLayer(GrammarLayer):
     """``S -> false(S)`` -- negative-pole projection."""
-    rule_name   = "false"
-    arity       = 1
-    invertible  = False
-    lossy       = True
-    method_name = "false"
+    rule_name  = "false"
+    arity      = 1
+    invertible = False
+    lossy      = True
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, x):
+        return torch.relu(-torch.clamp(x, -1.0, 1.0))
+
+    def reverse(self, y):
+        return y
 
 
-class SwapLayer(_GrammarOpFacade):
-    """``S -> swap(S, S)`` -- Sinkhorn-normalised soft permutation."""
-    rule_name   = "swap"
-    arity       = 2
-    invertible  = False
-    lossy       = True
-    method_name = "swap"
+class SwapLayer(GrammarLayer):
+    """``S -> swap(S, S)`` -- Sinkhorn-normalised soft permutation.
+
+    Parameters live on this layer (was previously on SyntacticLayer
+    via `init_swap`). Sinkhorn iters and marker-vector size are
+    constructor arguments.
+    """
+    rule_name  = "swap"
+    arity      = 2
+    invertible = False
+    lossy      = True
+
+    def __init__(self, swap_size=1, sinkhorn_iters=5):
+        super().__init__(0, 0)
+        self.swap_size = max(int(swap_size), 1)
+        self._sinkhorn_iters = int(sinkhorn_iters)
+        self.swap_marker = nn.Parameter(
+            torch.randn(self.swap_size) * 0.01)
+        self.swap_logits = nn.Parameter(torch.zeros(3, 3))
+
+    def _soft_perm(self):
+        M = self.swap_logits
+        for _ in range(self._sinkhorn_iters):
+            M = M - M.logsumexp(dim=-1, keepdim=True)
+            M = M - M.logsumexp(dim=-2, keepdim=True)
+        return M.exp()
+
+    def forward(self, left, right):
+        P = self._soft_perm()
+        marker = self.swap_marker.to(left.device)
+        if left.ndim == 3:
+            D = left.shape[-1]
+            m = marker[:D].unsqueeze(0).unsqueeze(0).expand_as(left)
+        elif left.ndim == 2:
+            m = marker[:left.shape[-1]].unsqueeze(0).expand_as(left)
+        else:
+            m = marker
+        if right is None:
+            right = left
+        stack = torch.stack([left, right, m], dim=0)
+        out = torch.einsum('ij,j...->i...', P, stack)
+        return out[0]
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
 
 
-class QueryLayer(_GrammarOpFacade):
-    """``S -> query(S, S)`` -- contradiction-marker accumulator preserve."""
-    rule_name   = "query"
-    arity       = 2
-    invertible  = False
-    method_name = "query"
+class QueryLayer(GrammarLayer):
+    """``S -> query(S, S)`` -- contradiction-marker accumulator preserve.
+
+    Returns the left operand unchanged (the chart's query semantic
+    pushes a marker word elsewhere; the rule's tensor contribution is
+    the accumulator passthrough).
+    """
+    rule_name  = "query"
+    arity      = 2
+    invertible = False
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        return left
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
 
 
-class WhatLayer(_GrammarOpFacade):
-    """``S -> what(S)`` -- content head extraction."""
-    rule_name   = "what"
-    arity       = 1
-    invertible  = False
-    method_name = "what"
+class WhatLayer(GrammarLayer):
+    """``S -> what(S)`` -- content head extraction (slot selector).
+
+    Without subspace context the slot widths default to a 50/25/25
+    what/where/when partition of the trailing axis. Callers that need
+    precise widths should construct via ``WhatLayer(nWhat, nWhere,
+    nWhen)``.
+    """
+    rule_name  = "what"
+    arity      = 1
+    invertible = False
+
+    def __init__(self, nWhat=None, nWhere=None, nWhen=None):
+        super().__init__(0, 0)
+        self.nWhat = nWhat
+        self.nWhere = nWhere
+        self.nWhen = nWhen
+
+    def forward(self, x):
+        return Ops._what_kernel(x, self.nWhat, self.nWhere, self.nWhen)
+
+    def reverse(self, y):
+        # Slot-selector inverse is identity (we can't recover the
+        # other-axis content that was zeroed).
+        return y
 
 
-class WhereLayer(_GrammarOpFacade):
+class WhereLayer(GrammarLayer):
     """``S -> where(S)`` -- positional head extraction."""
-    rule_name   = "where"
-    arity       = 1
-    invertible  = False
-    method_name = "where"
+    rule_name  = "where"
+    arity      = 1
+    invertible = False
+
+    def __init__(self, nWhat=None, nWhere=None, nWhen=None):
+        super().__init__(0, 0)
+        self.nWhat = nWhat
+        self.nWhere = nWhere
+        self.nWhen = nWhen
+
+    def forward(self, x):
+        return Ops._where_kernel(x, self.nWhat, self.nWhere, self.nWhen)
+
+    def reverse(self, y):
+        return y
 
 
-class WhenLayer(_GrammarOpFacade):
+class WhenLayer(GrammarLayer):
     """``S -> when(S)`` -- temporal head extraction."""
-    rule_name   = "when"
-    arity       = 1
-    invertible  = False
-    method_name = "when"
+    rule_name  = "when"
+    arity      = 1
+    invertible = False
+
+    def __init__(self, nWhat=None, nWhere=None, nWhen=None):
+        super().__init__(0, 0)
+        self.nWhat = nWhat
+        self.nWhere = nWhere
+        self.nWhen = nWhen
+
+    def forward(self, x):
+        return Ops._when_kernel(x, self.nWhat, self.nWhere, self.nWhen)
+
+    def reverse(self, y):
+        return y
 
 
-class AbsorbLayer(_GrammarOpFacade):
-    """``S -> absorb(S, S)`` -- sugar absorption (binary left-pass)."""
-    rule_name   = "absorb"
-    arity       = 2
-    invertible  = False
-    lossy       = True
-    method_name = "absorb"
+class AbsorbLayer(GrammarLayer):
+    """``S -> absorb(S, S)`` -- sugar absorption. Binary left-pass:
+    returns the left operand and discards the right.
+    """
+    rule_name  = "absorb"
+    arity      = 2
+    invertible = False
+    lossy      = True
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        return Ops._absorb_kernel(left, right)
+
+    def reverse(self, parent):
+        # Sugar absorption discards the right operand; pseudo-inverse
+        # returns parent as left and a passthrough for right.
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
 
 
-# ---------------------------------------------------------------------
-# Internal chart-dispatch facades for ops whose public class name is
-# already taken (NotLayer / NonLayer / IntersectionLayer / UnionLayer /
-# ContiguousLayer have alternate or differently-parameterized math).
-# These _Op variants delegate to the SyntacticLayer.<op>Forward methods
-# the chart historically dispatched via _RULE_METHODS, preserving
-# byte-identical chart behavior under the typed-GrammarLayer dispatch.
-
-class _NotOpFacade(_GrammarOpFacade):
-    rule_name   = "not"
-    arity       = 1
-    invertible  = True
-    method_name = "not"
-
-
-class _NonOpFacade(_GrammarOpFacade):
-    rule_name   = "non"
-    arity       = 1
-    invertible  = False
-    lossy       = True
-    method_name = "non"
-
-
-class _IntersectionOpFacade(_GrammarOpFacade):
-    rule_name   = "intersection"
-    arity       = 2
-    invertible  = True
-    method_name = "intersection"
-
-
-class _UnionOpFacade(_GrammarOpFacade):
-    rule_name   = "union"
-    arity       = 2
-    invertible  = True
-    method_name = "union"
-
-
-class _ContiguousOpFacade(_GrammarOpFacade):
-    rule_name   = "Contiguous"
-    arity       = 1
-    invertible  = False
-    lossy       = True
-    method_name = "Contiguous"
+# Hardcoded module-level lookup -- replaces the retired
+# `_GrammarOpFacade._registry` (Step 8). Maps rule method_name to a
+# GrammarLayer class that implements the rule's math directly.
+GRAMMAR_LAYER_CLASSES = {
+    'not':          NotLayer,
+    'non':          NonLayer,
+    'intersection': IntersectionLayer,
+    'union':        UnionLayer,
+    'Contiguous':   ContiguousLayer,
+    'lift':         LiftLayer,
+    'lower':        LowerLayer,
+    'conjunction':  ConjunctionLayer,
+    'disjunction':  DisjunctionLayer,
+    'equals':       EqualsLayer,
+    'part':         PartLayer,
+    'true':         TrueLayer,
+    'false':        FalseLayer,
+    'swap':         SwapLayer,
+    'query':        QueryLayer,
+    'what':         WhatLayer,
+    'where':        WhereLayer,
+    'when':         WhenLayer,
+    'absorb':       AbsorbLayer,
+}
 
 
 class PiLayer(ButterflyLayer):
@@ -3257,7 +3401,7 @@ class LiftingLayer(Layer):
         restricted_syms = torch.min(verb_syms, obj_syms)      # [B, N, symbol_dim]
 
         # 3. Map restricted symbols back to concept space.
-        restricted = ss.reverseSigma(restricted_syms)         # [B, N, D]
+        restricted = ss._sigma_reverse(restricted_syms)       # [B, N, D]
 
         # 4. Weight verb by restricted concept norms -> query
         rw = restricted.norm(dim=-1, keepdim=True)            # [B, N, 1]
@@ -3715,7 +3859,7 @@ class TruthLayer(Layer):
         )
 
         if bivector_mode and degree < 0:
-            vec = basis.negation(vec, monotonic=True)
+            vec = Ops._negation_kernel(vec, monotonic=True)
             stored_vec = vec * abs(degree)
         else:
             stored_vec = vec * degree
@@ -3784,7 +3928,7 @@ class TruthLayer(Layer):
         )
 
         if bivector_mode and degree < 0:
-            vec = basis.negation(vec, monotonic=True)
+            vec = Ops._negation_kernel(vec, monotonic=True)
             stored = vec * abs(degree)
         else:
             stored = vec * degree
@@ -4110,7 +4254,7 @@ class TruthLayer(Layer):
         # Fold via bitonic conjunction
         conj = stored[0]
         for i in range(1, n):
-            conj = basis.conjunction(conj, stored[i])
+            conj = Ops._conjunction_kernel(conj, stored[i])
 
         return conj
 
@@ -4182,8 +4326,10 @@ class TruthLayer(Layer):
         *threshold*, a new implied truth is recorded with attenuated DoT.
 
         Args:
-            part_fn: callable(left, right, subspace) -> parthood score tensor.
-                     Typically ``syntacticLayer.partForward``.
+            part_fn: callable(left, right) -> parthood score tensor.
+                     Typically a ``PartLayer().compose`` from
+                     ``GRAMMAR_LAYER_CLASSES['part']`` (post-2026-05-01
+                     refactor; was ``SyntacticLayer.partForward``).
             threshold: minimum parthood score to derive an implication.
             attenuation: DoT scaling to prevent runaway chains.
             basis: optional Basis forwarded to record() for bivector storage.
@@ -4486,7 +4632,7 @@ class TruthLayer(Layer):
         # Fold stored truths into union vector via successive disjunction
         truth_union = stored[0]
         for i in range(1, n):
-            truth_union = basis.disjunction(truth_union, stored[i])
+            truth_union = Ops._disjunction_kernel(truth_union, stored[i])
         union_norm = truth_union.norm()
 
         # For each proposition, compute norm reduction
@@ -4495,7 +4641,7 @@ class TruthLayer(Layer):
 
         penalties = []
         for p in range(propositions.shape[0]):
-            extended = basis.disjunction(truth_union, propositions[p])
+            extended = Ops._disjunction_kernel(truth_union, propositions[p])
             reduction = union_norm - extended.norm()
             penalties.append(torch.relu(reduction))
 
@@ -5838,9 +5984,9 @@ class ChunkLayer(Layer):
 #region Operations
 
 # Sentinel for the unified lift / lower dispatcher: distinguishes the
-# legacy positional form Ops.lift(left, right) (deprecated; routes to the
+# legacy positional form Ops._lift_kernel(left, right) (deprecated; routes to the
 # old elementwise-product body) from the new keyword form
-# Ops.lift(X1, X2, mode='OR', ...).
+# Ops._lift_kernel(X1, X2, mode='OR', ...).
 _NO_MODE = object()
 
 
@@ -6013,32 +6159,32 @@ class Ops:
         return core + x_zero * y + y_zero * x
 
     @staticmethod
-    def conjunction(x, y, monotonic=False):
+    def _conjunction_kernel(x, y, monotonic=False):
         """Conjunction (intersection). Domain/range [-1, 1].
 
-        Thin forwarder to Ops.lower(mode='AND'):
+        Thin forwarder to Ops._lower_kernel(mode='AND'):
             monotonic=True  → kind='strict' (lattice min)
             monotonic=False → kind='radial' (RadMin same-sign min magnitude)
         Bit-exact match to the pre-Step-2 body.
         """
         kind = 'strict' if monotonic else 'radial'
-        return Ops.lower(x, y, mode='AND', kind=kind)
+        return Ops._lower_kernel(x, y, mode='AND', kind=kind)
 
     @staticmethod
-    def disjunction(x, y, monotonic=False):
+    def _disjunction_kernel(x, y, monotonic=False):
         """Disjunction (union). Domain/range [-1, 1].
 
-        Thin forwarder to Ops.lift(mode='OR'):
+        Thin forwarder to Ops._lift_kernel(mode='OR'):
             monotonic=True  → kind='strict' (lattice max)
             monotonic=False → kind='radial' (RadMax same-sign max magnitude
                               with zero passthrough)
         Bit-exact match to the pre-Step-2 body.
         """
         kind = 'strict' if monotonic else 'radial'
-        return Ops.lift(x, y, mode='OR', kind=kind)
+        return Ops._lift_kernel(x, y, mode='OR', kind=kind)
 
     @staticmethod
-    def negation(x, monotonic=False):
+    def _negation_kernel(x, monotonic=False):
         """Negation.
         Bitonic: sign flip (-x).
         Monotonic, last-dim == 2: tetralemma swap on a demuxed [aP, aN] bivector.
@@ -6053,12 +6199,12 @@ class Ops:
             flipped = pair.flip(dims=(-1,))
             return flipped.reshape(*x.shape)
         raise ValueError(
-            f"Ops.negation(monotonic=True) requires even last dim; "
+            f"Ops._negation_kernel(monotonic=True) requires even last dim; "
             f"got shape {tuple(x.shape)}"
         )
 
     @staticmethod
-    def non(x, monotonic=False, threshold=None):
+    def _non_kernel(x, monotonic=False, threshold=None):
         """Non-affirming negation -- the 'indeterminate' commitment.
 
         Bitonic (default): triangular residual 1 - |clamp(x, -1, 1)|.
@@ -6081,7 +6227,7 @@ class Ops:
     def negationReverse(x, monotonic=False):
         """Inverse of negation. Self-inverse in both modes.
         Bitonic: sign flip. Monotonic: paired-index flip."""
-        return Ops.negation(x, monotonic=monotonic)
+        return Ops._negation_kernel(x, monotonic=monotonic)
 
     @staticmethod
     def conjunctionReverse(result, y, W, monotonic=False, unit_ball=False):
@@ -6194,7 +6340,7 @@ class Ops:
         return x + (x_hard - x).detach()
 
     @staticmethod
-    def lift(X1, X2=None, mode=_NO_MODE, kind='strict', inverse=False,
+    def _lift_kernel(X1, X2=None, mode=_NO_MODE, kind='strict', inverse=False,
              monotonic=False):
         """Synthesis dispatcher: many → one (∨).  Default mode='OR'.
 
@@ -6205,18 +6351,18 @@ class Ops:
                                       zero passthrough (Ops._radmax body)
                        region: (min ℓ, max u) with point auto-promotion
                                (region body unchanged by kind)
-            mode='NOT' Ops.negation(X1, monotonic=monotonic) (self-inverse)
-            mode='AND' routes to Ops.lower(X1, X2, mode='AND', kind=kind)
+            mode='NOT' Ops._negation_kernel(X1, monotonic=monotonic) (self-inverse)
+            mode='AND' routes to Ops._lower_kernel(X1, X2, mode='AND', kind=kind)
                        for symmetry
 
         Inverse (inverse=True):
             mode='OR'  codebook-search via Basis (raises here without W)
             mode='NOT' self-inverse — same as forward
-            mode='AND' routes to Ops.lower(..., inverse=True)
+            mode='AND' routes to Ops._lower_kernel(..., inverse=True)
 
-        Legacy positional form Ops.lift(left, right) (no mode kwarg) was
+        Legacy positional form Ops._lift_kernel(left, right) (no mode kwarg) was
         the elementwise product.  It emits a DeprecationWarning and
-        forwards to Ops.lower(left, right, mode='AND', kind='smooth'),
+        forwards to Ops._lower_kernel(left, right, mode='AND', kind='smooth'),
         which produces the same elementwise product bit-for-bit.  The
         warning is permanent — the legacy body stays available for
         callers that have not migrated.
@@ -6224,27 +6370,27 @@ class Ops:
         if mode is _NO_MODE:
             if X2 is not None and not inverse:
                 warnings.warn(
-                    "Ops.lift(left, right) is the *analysis* product; "
-                    "use Ops.lower(x, y, mode='AND') for the synthesis / "
+                    "Ops._lift_kernel(left, right) is the *analysis* product; "
+                    "use Ops._lower_kernel(x, y, mode='AND') for the synthesis / "
                     "analysis polarity.",
                     DeprecationWarning,
                     stacklevel=2,
                 )
-                return Ops.lower(X1, X2, mode='AND', kind='smooth',
+                return Ops._lower_kernel(X1, X2, mode='AND', kind='smooth',
                                  monotonic=monotonic)
             mode = 'OR'
 
         if mode == 'NOT':
-            return Ops.negation(X1, monotonic=monotonic)
+            return Ops._negation_kernel(X1, monotonic=monotonic)
         if mode == 'AND':
-            return Ops.lower(
+            return Ops._lower_kernel(
                 X1, X2, mode='AND', kind=kind, inverse=inverse,
                 monotonic=monotonic,
             )
         if mode == 'OR':
             if inverse:
                 raise NotImplementedError(
-                    "Ops.lift(..., mode='OR', inverse=True) requires a "
+                    "Ops._lift_kernel(..., mode='OR', inverse=True) requires a "
                     "codebook W; use Basis.lift(..., mode='OR', inverse=True) "
                     "or Ops.disjunctionReverse(result, y, W, ...) directly."
                 )
@@ -6265,8 +6411,8 @@ class Ops:
     def liftReverse(result, right):
         """Analytic inverse of the legacy lift body (elementwise product).
 
-        Pairs with the legacy Ops.lift(left, right) = left * right body
-        that is now delivered through the new Ops.lower(mode='AND').
+        Pairs with the legacy Ops._lift_kernel(left, right) = left * right body
+        that is now delivered through the new Ops._lower_kernel(mode='AND').
         Recovers X1 from result = X1 * right as result / (right +
         epsilon).  Permanent — see Ops.liftReverseAll for the multi-
         return Step 6 form.
@@ -6301,7 +6447,7 @@ class Ops:
         return (recovered, Y)
 
     @staticmethod
-    def lower(X1, X2=None, mode=_NO_MODE, kind='strict', inverse=False,
+    def _lower_kernel(X1, X2=None, mode=_NO_MODE, kind='strict', inverse=False,
               monotonic=False):
         """Analysis dispatcher: one → many (∧).  Default mode='AND'.
 
@@ -6312,17 +6458,17 @@ class Ops:
                                       zero collapse (Ops._radmin body)
                        region: (max ℓ, min u) with point auto-promotion
                                (region body unchanged by kind)
-            mode='NOT' Ops.negation(X1, monotonic=monotonic) (self-inverse)
-            mode='OR'  routes to Ops.lift(X1, X2, mode='OR', kind=kind) for symmetry
+            mode='NOT' Ops._negation_kernel(X1, monotonic=monotonic) (self-inverse)
+            mode='OR'  routes to Ops._lift_kernel(X1, X2, mode='OR', kind=kind) for symmetry
 
         Inverse (inverse=True):
             mode='AND' codebook-search via Basis (raises here without W)
             mode='NOT' self-inverse — same as forward
-            mode='OR'  routes to Ops.lift(..., inverse=True)
+            mode='OR'  routes to Ops._lift_kernel(..., inverse=True)
 
-        Legacy positional form Ops.lower(left, right) (no mode kwarg)
+        Legacy positional form Ops._lower_kernel(left, right) (no mode kwarg)
         was the arithmetic mean.  It emits a DeprecationWarning and
-        forwards to Ops.lift(left, right, mode='OR', kind='smooth'),
+        forwards to Ops._lift_kernel(left, right, mode='OR', kind='smooth'),
         which produces the same arithmetic mean bit-for-bit.  The
         warning is permanent — the legacy body stays available for
         callers that have not migrated.
@@ -6330,27 +6476,27 @@ class Ops:
         if mode is _NO_MODE:
             if X2 is not None and not inverse:
                 warnings.warn(
-                    "Ops.lower(left, right) is the *synthesis* mean; "
-                    "use Ops.lift(x, y, mode='OR') for the synthesis / "
+                    "Ops._lower_kernel(left, right) is the *synthesis* mean; "
+                    "use Ops._lift_kernel(x, y, mode='OR') for the synthesis / "
                     "analysis polarity.",
                     DeprecationWarning,
                     stacklevel=2,
                 )
-                return Ops.lift(X1, X2, mode='OR', kind='smooth',
+                return Ops._lift_kernel(X1, X2, mode='OR', kind='smooth',
                                 monotonic=monotonic)
             mode = 'AND'
 
         if mode == 'NOT':
-            return Ops.negation(X1, monotonic=monotonic)
+            return Ops._negation_kernel(X1, monotonic=monotonic)
         if mode == 'OR':
-            return Ops.lift(
+            return Ops._lift_kernel(
                 X1, X2, mode='OR', kind=kind, inverse=inverse,
                 monotonic=monotonic,
             )
         if mode == 'AND':
             if inverse:
                 raise NotImplementedError(
-                    "Ops.lower(..., mode='AND', inverse=True) requires a "
+                    "Ops._lower_kernel(..., mode='AND', inverse=True) requires a "
                     "codebook W; use Basis.lower(..., mode='AND', inverse=True) "
                     "or Ops.conjunctionReverse(result, y, W, ...) directly."
                 )
@@ -6371,8 +6517,8 @@ class Ops:
     def lowerReverse(result, right):
         """Analytic inverse of the legacy lower body (arithmetic mean).
 
-        Pairs with the legacy Ops.lower(left, right) = (left + right) / 2
-        body that is now delivered through the new Ops.lift(mode='OR').
+        Pairs with the legacy Ops._lower_kernel(left, right) = (left + right) / 2
+        body that is now delivered through the new Ops._lift_kernel(mode='OR').
         Recovers X1 from result = (X1 + right) / 2 as 2 * result -
         right.  Permanent — see Ops.lowerReverseAll for the multi-
         return Step 6 form.
@@ -6412,7 +6558,7 @@ class Ops:
         return x
 
     @staticmethod
-    def absorb(left, right):
+    def _absorb_kernel(left, right):
         """Binary left-pass: return left, discard right. Used by the
         grammar to consume syntactic sugar (whitespace, punctuation,
         low-semantic-weight tokens) into a surrounding constituent
@@ -6427,7 +6573,7 @@ class Ops:
     # (compose() in scalar mode), so selectors degenerate to identity.
 
     @staticmethod
-    def what(x, nWhat, nWhere, nWhen):
+    def _what_kernel(x, nWhat, nWhere, nWhen):
         """Axis selector: keep what-block, zero where/when-blocks."""
         if x.ndim < 3:
             return x
@@ -6438,7 +6584,7 @@ class Ops:
         return out
 
     @staticmethod
-    def where(x, nWhat, nWhere, nWhen):
+    def _where_kernel(x, nWhat, nWhere, nWhen):
         """Axis selector: keep where-block, zero what/when-blocks."""
         if x.ndim < 3:
             return x
@@ -6449,7 +6595,7 @@ class Ops:
         return out
 
     @staticmethod
-    def when(x, nWhat, nWhere, nWhen):
+    def _when_kernel(x, nWhat, nWhere, nWhen):
         """Axis selector: keep when-block, zero what/where-blocks."""
         if x.ndim < 3:
             return x
@@ -6488,7 +6634,7 @@ class Ops:
     #     copart(x, y)   = y - x                               elementwise
 
     @staticmethod
-    def part(x, y, monotonic=False, scalar=False):
+    def _part_kernel(x, y, monotonic=False, scalar=False):
         """Part of x under y.
 
         Vector form (default): x * (y / ||y||) -- elementwise projection
@@ -6522,12 +6668,12 @@ class Ops:
         Vector form: (1 - x) * (y / ||y||).
         Scalar form: degree to which x contains y, i.e. part(y, x, scalar=True)."""
         if scalar:
-            return Ops.part(y, x, monotonic=monotonic, scalar=True)
+            return Ops._part_kernel(y, x, monotonic=monotonic, scalar=True)
         ny = Ops.norm(y).clamp(min=epsilon).unsqueeze(-1)
         return (1.0 - x) * (y / ny)
 
     @staticmethod
-    def equal(x, y, monotonic=False, scalar=False):
+    def _equal_kernel(x, y, monotonic=False, scalar=False):
         """Mutual parthood.
 
         Vector form: part(x, y) * part(y, x) (elementwise).
@@ -6535,8 +6681,8 @@ class Ops:
             equal == 0     -> underlap (disjoint)
             0 < equal < 1  -> overlap  (strictly partial)
             equal == 1     -> identity (perfect mutual parthood)."""
-        p_xy = Ops.part(x, y, monotonic=monotonic, scalar=scalar)
-        p_yx = Ops.part(y, x, monotonic=monotonic, scalar=scalar)
+        p_xy = Ops._part_kernel(x, y, monotonic=monotonic, scalar=scalar)
+        p_yx = Ops._part_kernel(y, x, monotonic=monotonic, scalar=scalar)
         return p_xy * p_yx
 
     @staticmethod
@@ -6546,11 +6692,11 @@ class Ops:
         Vector form: elementwise min of part(x, y) and part(y, x).
         Scalar form: boolean region indicator 0 < equal(..., scalar=True) < 1."""
         if scalar:
-            e = Ops.equal(x, y, monotonic=monotonic, scalar=True)
+            e = Ops._equal_kernel(x, y, monotonic=monotonic, scalar=True)
             return (e > 0) & (e < 1)
         return torch.minimum(
-            Ops.part(x, y, monotonic=monotonic),
-            Ops.part(y, x, monotonic=monotonic),
+            Ops._part_kernel(x, y, monotonic=monotonic),
+            Ops._part_kernel(y, x, monotonic=monotonic),
         )
 
     @staticmethod
@@ -6560,7 +6706,7 @@ class Ops:
         Vector form: elementwise min of whole(x, y) and whole(y, x).
         Scalar form: boolean region indicator equal(..., scalar=True) == 0."""
         if scalar:
-            e = Ops.equal(x, y, monotonic=monotonic, scalar=True)
+            e = Ops._equal_kernel(x, y, monotonic=monotonic, scalar=True)
             return e == 0
         return torch.minimum(
             Ops.whole(x, y, monotonic=monotonic),
@@ -6575,8 +6721,8 @@ class Ops:
         Scalar form: zero under clipped-cosine (cosine is symmetric)."""
         m = monotonic
         return torch.abs(
-            Ops.part(x, y, monotonic=m, scalar=scalar)
-            - Ops.part(y, x, monotonic=m, scalar=scalar)
+            Ops._part_kernel(x, y, monotonic=m, scalar=scalar)
+            - Ops._part_kernel(y, x, monotonic=m, scalar=scalar)
         )
 
     @staticmethod
@@ -6586,7 +6732,7 @@ class Ops:
         Vector form: y - x.
         Scalar form: 1 - part(x, y, scalar=True), clamped to [0, 1]."""
         if scalar:
-            return (1.0 - Ops.part(x, y, monotonic=monotonic, scalar=True)).clamp(0.0, 1.0)
+            return (1.0 - Ops._part_kernel(x, y, monotonic=monotonic, scalar=True)).clamp(0.0, 1.0)
         return y - x
 #endregion
 
@@ -7695,6 +7841,102 @@ def main():
         test()
     except ImportError as exc:
         raise SystemExit(str(exc)) from exc
+
+
+# =====================================================================
+# Ops-as-Layer-container (2026-05-02 consolidation pass).
+#
+# Per the user's design intent: Ops should not own grammar operations
+# itself; it should delegate to GrammarLayer instances. Each
+# `Ops.<grammar_op>` is now an `_OpHandle` whose:
+#   * direct call ``Ops.<op>(args, **kwargs)`` routes to the math
+#     kernel (renamed to `Ops._<op>_kernel`) -- preserves backward
+#     compat for callers passing `monotonic=` / `mode=` / `kind=`
+#     flags.
+#   * `.forward(...)` / `.reverse(...)` / `.compose(...)` /
+#     `.generate(...)` route through the corresponding GrammarLayer
+#     subclass (NotLayer, ConjunctionLayer, etc.). These satisfy the
+#     "every Layer has forward and reverse" contract and are the
+#     surfaces SyntacticLayer / Chart use.
+# =====================================================================
+class _OpHandle:
+    """Container that exposes both the legacy kernel signature
+    (callable; takes flags) AND the GrammarLayer interface
+    (forward/reverse/compose/generate)."""
+
+    def __init__(self, kernel, layer):
+        self._kernel = kernel
+        self._layer = layer
+
+    def __call__(self, *args, **kwargs):
+        return self._kernel(*args, **kwargs)
+
+    def forward(self, *args, **kwargs):
+        return self._layer.forward(*args, **kwargs)
+
+    def reverse(self, *args, **kwargs):
+        return self._layer.reverse(*args, **kwargs)
+
+    def compose(self, *args, **kwargs):
+        return self._layer.compose(*args, **kwargs)
+
+    def generate(self, *args, **kwargs):
+        return self._layer.generate(*args, **kwargs)
+
+    @property
+    def rule_name(self):
+        return self._layer.rule_name
+
+    @property
+    def arity(self):
+        return self._layer.arity
+
+    @property
+    def invertible(self):
+        return self._layer.invertible
+
+    @property
+    def lossy(self):
+        return self._layer.lossy
+
+    @property
+    def layer(self):
+        """The wrapped GrammarLayer instance (singleton)."""
+        return self._layer
+
+
+def _bind_ops_singletons():
+    """Bind `Ops.<grammar_op>` to `_OpHandle` instances so the same
+    name resolves either to the legacy kernel (via __call__) or the
+    GrammarLayer surface (via .forward / .reverse / .compose /
+    .generate).
+
+    Called once at module load. Each `_OpHandle`'s kernel is captured
+    BEFORE rebinding, so internal `Ops._<op>_kernel(...)` self-references
+    inside Ops static methods continue to route directly to the kernel.
+    """
+    # Map: legacy op name -> (kernel staticmethod, GrammarLayer subclass).
+    bindings = (
+        ('negation',    Ops._negation_kernel,    NotLayer),
+        ('non',         Ops._non_kernel,         NonLayer),
+        ('conjunction', Ops._conjunction_kernel, ConjunctionLayer),
+        ('disjunction', Ops._disjunction_kernel, DisjunctionLayer),
+        ('absorb',      Ops._absorb_kernel,      AbsorbLayer),
+        ('lift',        Ops._lift_kernel,        LiftLayer),
+        ('lower',       Ops._lower_kernel,       LowerLayer),
+        ('equal',       Ops._equal_kernel,       EqualsLayer),
+        ('part',        Ops._part_kernel,        PartLayer),
+    )
+    for name, kernel, cls in bindings:
+        try:
+            inst = cls()
+        except TypeError:
+            continue
+        setattr(Ops, name, _OpHandle(kernel, inst))
+
+
+_bind_ops_singletons()
+
 
 # Self-test: run the LogicNet smoke test when executed as a script.
 if __name__ == "__main__":

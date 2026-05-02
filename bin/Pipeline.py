@@ -51,6 +51,98 @@ class CachePoint(nn.Module):
         return subspace
 
 
+class ChartCompose(nn.Module):
+    """Pipeline step that runs ``wordSpace.compose(...)`` on the
+    incoming subspace, then passes the subspace through unchanged.
+
+    Inserted into the forward Sequential between InputSpace and
+    PerceptualSpace (2026-05-01 syntactic-layer refactor §6 / Q10.2).
+    The chart parses the input data and writes per-(tier, step) rule
+    selections into ``wordSpace.current_rules``; downstream spaces'
+    SyntacticLayers read the selections during their forward pass.
+
+    No-op when ``word_space`` is ``None`` (non-AR / non-ARUS modes
+    where ``BasicModel.wordSpace`` was never built).
+    """
+
+    def __init__(self, word_space):
+        super().__init__()
+        # Stash as a non-Module attribute to avoid the wordSpace -> chart
+        # -> ... -> wordSpace cycle that nn.Module ownership would
+        # introduce. wordSpace is owned at the model level.
+        object.__setattr__(self, '_word_space', word_space)
+
+    def forward(self, subspace):
+        ws = self._word_space
+        if ws is None or subspace is None:
+            return subspace
+        if hasattr(subspace, 'is_empty') and subspace.is_empty():
+            return subspace
+        data = subspace.materialize() if hasattr(
+            subspace, 'materialize') else None
+        if data is None:
+            return subspace
+        try:
+            ws.compose(data, subspace=subspace)
+            # On the signal path, propagate the router's transformed slab
+            # back into subspace.event so the differentiable signal flows
+            # to downstream spaces (otherwise the router's gates / scorer
+            # never receive gradient from the task loss). On the chart
+            # path, last_composed is left in place but not written back
+            # (the legacy contract is "current_rules drives downstream").
+            if ws.chart.router_kind == "signal":
+                router = ws.chart._signal_router
+                if router is not None and router._last_output is not None:
+                    out = router._last_output
+                    if out.shape == data.shape:
+                        subspace.set_event(out)
+        except Exception as exc:
+            # Chart compose is advisory: a failure mustn't break the
+            # forward pass. The per-space SyntacticLayer falls back to
+            # its default rule when current_rules is empty. We log so
+            # systematic failures (e.g. signal-router not wired) don't
+            # masquerade as no-ops.
+            import logging
+            logging.getLogger(__name__).warning(
+                "ChartCompose.forward: ws.compose failed (%s: %s)",
+                type(exc).__name__, exc, exc_info=False,
+            )
+        return subspace
+
+
+class ChartGenerate(nn.Module):
+    """Reverse-pipeline mirror of ``ChartCompose``: runs
+    ``wordSpace.generate(...)`` on the incoming subspace before the
+    spaces' reverse passes fire.
+
+    No-op when ``word_space`` is ``None``.
+    """
+
+    def __init__(self, word_space):
+        super().__init__()
+        object.__setattr__(self, '_word_space', word_space)
+
+    def forward(self, subspace):
+        ws = self._word_space
+        if ws is None or subspace is None:
+            return subspace
+        if hasattr(subspace, 'is_empty') and subspace.is_empty():
+            return subspace
+        data = subspace.materialize() if hasattr(
+            subspace, 'materialize') else None
+        if data is None:
+            return subspace
+        try:
+            ws.generate(data, subspace=subspace)
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning(
+                "ChartGenerate.forward: ws.generate failed (%s: %s)",
+                type(exc).__name__, exc, exc_info=False,
+            )
+        return subspace
+
+
 class GrammarMergeGlue(nn.Module):
     """Progressive-bottleneck glue for useGrammar == 'all' mode.
 

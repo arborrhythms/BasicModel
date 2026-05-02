@@ -13,6 +13,22 @@ Covers:
   - Add-rule mid-training: bumping `rule_table_version` rebuilds the
     rule-shaped parameters on the next compose
 """
+
+# ---------------------------------------------------------------------
+# Skipped pending migration to the post-2026-05-01 chart surface.
+# These tests construct ``SyntacticLayer`` and call its
+# ``_compose_chart_cky`` -- which the refactor moved to the new
+# ``Chart`` class. Equivalent coverage now lives in
+# ``test/test_chart_wordspace_wiring.py`` (chart-isolation +
+# WordSpace integration); rewriting these to drive the Chart
+# directly is a follow-on. See doc/specs/
+# 2026-05-01-syntactic-layer-refactor.md.
+# ---------------------------------------------------------------------
+import pytest
+pytestmark = pytest.mark.skip(
+    reason="Pending migration to Chart surface (test/test_chart_wordspace_wiring.py); "
+           "see doc/specs/2026-05-01-syntactic-layer-refactor.md")
+
 import sys
 from pathlib import Path
 
@@ -99,26 +115,13 @@ def test_marker_mask_set_on_host_rule():
                 f"(S id={s_id})")
 
 
-def test_marker_operand_does_not_affect_parent_vector():
-    """`Compose(l, r, embed, [F, T])` ≈ `Compose(l, zeros, embed, [F, T])`.
-
-    Marker operands route to zero through Compose's per-operand
-    projection; only the score-side marker prior changes.
-    """
-    from Language import SyntacticLayer
-    D = 8
-    D_rule = 4
-    mod = SyntacticLayer._SoftCompose(D=D, D_rule=D_rule)
-    left = torch.randn(2, 3, D)
-    right = torch.randn(2, 3, D)
-    embed = torch.randn(2, 3, D_rule)
-    mm_right_marker = torch.zeros(2, 3, 2, dtype=torch.bool)
-    mm_right_marker[..., 1] = True
-    out_with_right = mod(left, right, embed, mm_right_marker)
-    out_with_zero  = mod(left, torch.zeros_like(right), embed, mm_right_marker)
-    assert torch.allclose(out_with_right, out_with_zero, atol=1e-6), (
-        "Marker side must contribute zero to the parent vector"
-    )
+# Test `test_marker_operand_does_not_affect_parent_vector` removed by
+# Step 9 of the 2026-05-01 syntactic-layer refactor: it asserted
+# behavior of `SyntacticLayer._SoftCompose`, a deprecated helper that
+# the new Chart's `_apply_rule_forward` no longer needs (rule semantics
+# come from GRAMMAR_LAYER_CLASSES kernels, not a learned compose MLP).
+# Marker handling is now tested via the marker_mask zero-out inside
+# `Chart._apply_rule_forward`.
 
 
 # -------- Inside-pass shape --------
@@ -361,22 +364,12 @@ def test_chart_temperature_softens_rule_mixture():
 
 # -------- Decompose round-trip --------
 
-def test_decompose_runs_and_returns_correct_shapes():
-    """Decompose's exact-inverse property is a learned objective; here
-    we just confirm the module runs and produces the right shapes
-    so future training-time round-trip tests have something to grip."""
-    from Language import SyntacticLayer
-    D, D_rule = 8, 4
-    compose = SyntacticLayer._SoftCompose(D=D, D_rule=D_rule)
-    decompose = SyntacticLayer._SoftDecompose(D=D, D_rule=D_rule)
-    left = torch.randn(2, 3, D)
-    right = torch.randn(2, 3, D)
-    embed = torch.randn(2, 3, D_rule)
-    mm = torch.zeros(2, 3, 2, dtype=torch.bool)
-    parent = compose(left, right, embed, mm)
-    l_rec, r_rec = decompose(parent, embed, mm)
-    assert l_rec.shape == left.shape
-    assert r_rec.shape == right.shape
+# Test `test_decompose_runs_and_returns_correct_shapes` removed by
+# Step 9 of the 2026-05-01 syntactic-layer refactor: it asserted
+# behavior of `SyntacticLayer._SoftDecompose`, a deprecated helper.
+# The new chart's reverse path uses `Chart.generate` + Viterbi
+# backtrace; round-trip exactness is the job of the host layer's
+# `compose` / `generate` pair (e.g. PiLayer.compose / .generate).
 
 
 # -------- Add rule mid-training --------
