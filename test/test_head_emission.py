@@ -43,8 +43,8 @@ class TestHeadEmission(unittest.TestCase):
                 [0.0, 0.0, 1.0, 0.0],
             ]))
         TheGrammar._configured = False
-        TheGrammar.configure({'upward': {'S': ['not(S)']},
-                              'downward': {'S': ['C']}})
+        TheGrammar.configure({'compose': {'S': ['not(S)']},
+                              'generate': {'S': ['C']}})
         g = TheGrammar
         layer = SyntacticLayer(nInput=4, nOutput=4, rules=g.symbolic(),
                                max_depth=2, hidden_dim=16, grammar=g)
@@ -68,8 +68,8 @@ class TestHeadEmission(unittest.TestCase):
             cb.getW().copy_(torch.tensor([[1.0, 0.0, 0.0],
                                           [0.0, 1.0, 0.0]]))
         TheGrammar._configured = False
-        TheGrammar.configure({'upward': {'S': ['not(S)']},
-                              'downward': {'S': ['C']}})
+        TheGrammar.configure({'compose': {'S': ['not(S)']},
+                              'generate': {'S': ['C']}})
         g = TheGrammar
         layer = SyntacticLayer(nInput=3, nOutput=3, rules=g.symbolic(),
                                max_depth=2, hidden_dim=16, grammar=g)

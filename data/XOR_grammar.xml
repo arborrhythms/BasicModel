@@ -1,0 +1,145 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- XOR_grammar: XOR-via-grammar test config. The chart parser
+       (softChartCompose=true) is the candidate grammar discoverer;
+       the parse-side grammar names exactly the three Boolean
+       primitives XOR's DNF requires (not, intersection, union). The
+       chart's recovered (Viterbi-hardened) grammar is then compared
+       to expectation: a working chart should commit to a mix of
+       not + intersection + union; degenerate collapse to a single
+       rule indicates the chart is a passenger and downstream layers
+       are carrying the XOR computation.
+
+       Inherits the always-on Pi/Sigma/Not folds from model.xml's
+       tier-scoped defaults; the rules in <compose> below add the
+       3-rule Boolean grammar at the symbolic tier. -->
+  <architecture>
+    <conceptualOrder>2</conceptualOrder>
+    <!-- conceptualWidth=uniform: every conceptual level keeps the
+         same nVectors width (4+4+4 at order 2). Wide enough at each
+         level to accommodate terminals and their negations
+         (X1, NOT(X1), X2, NOT(X2)) as a tree-of-rules. The chart's
+         single-root sentence-node bottleneck (chartCollapse=root in
+         model.xml) forces the OutputLayer to read the chart's
+         compositional commitment instead of recombining per-
+         position copies via its own nonlinearity. -->
+    <conceptualWidth>uniform</conceptualWidth>
+    <useButterflies>false</useButterflies>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <processSymbols>false</processSymbols>
+    <type>mental</type>
+    <ergodic>false</ergodic>
+    <modelType>embedding</modelType>
+    <maskedPrediction>NONE</maskedPrediction>
+    <truthBiasScale>0.1</truthBiasScale>
+    <LuminosityWeight>0.1</LuminosityWeight>
+    <UniversalityWeight>0.1</UniversalityWeight>
+    <weightsPath></weightsPath>
+
+    <data>
+      <dataset>xor</dataset>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>400</numEpochs>
+      <batchSize>64</batchSize>
+      <learningRate>0.01</learningRate>
+      <reverseScale>0.1</reverseScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+      <autosave>false</autosave>
+      <certainty>false</certainty>
+    </training>
+  </architecture>
+
+  <!-- Capacity reduction (2026-05-01): the previous nDim=10,
+       nVectors=8 setup gave the symbolic / conceptual / perceptual
+       spaces 80 floats of representation each, which is enough to
+       memorize the 4 (input, output) XOR pairs without needing the
+       chart's compositional structure. Reduced to nDim=4, nVectors=2:
+       2 symbol slots × 4 dims = 8 floats per space. With this tight
+       budget the chart's grammar choice has to actually carry the
+       function, exposing whether the inside+outside chart can solve
+       XOR via its rule mixture.
+
+       InputSpace stays at nVectors=8 because the tokenized strings
+       (e.g. "hello world" -> 2 word tokens, padded) need that many
+       slots. The shrink applies downstream of the input. -->
+
+  <InputSpace>
+    <nDim>4</nDim>
+    <nVectors>8</nVectors>
+    <nOutput>8</nOutput>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <lexer>word</lexer>
+    <codebook>true</codebook>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nOutput>4</nOutput>
+    <nDim>4</nDim>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <nVectors>4</nVectors>
+    <passThrough>true</passThrough>
+    <hasAttention>false</hasAttention>
+    <invertible>true</invertible>
+    <codebook>false</codebook>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nOutput>4</nOutput>
+    <nDim>4</nDim>
+    <nVectors>4</nVectors>
+    <hasAttention>false</hasAttention>
+    <invertible>true</invertible>
+    <codebook>false</codebook>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nOutput>4</nOutput>
+    <nDim>4</nDim>
+    <nVectors>4</nVectors>
+    <passThrough>false</passThrough>
+    <l1Lambda>0.01</l1Lambda>
+    <accumulateTruth>0</accumulateTruth>
+    <codebook>true</codebook>
+    <useVQVAE>true</useVQVAE>
+    <commitmentBeta>0.25</commitmentBeta>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>1</nDim>
+    <nVectors>1</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+  </OutputSpace>
+
+  <WordSpace>
+    <useGrammar>all</useGrammar>
+    <softChartCompose>true</softChartCompose>
+    <chartTau>2.0</chartTau>
+    <language>
+      <!-- Tier-scoped grammar. The presence of <grammar> here means
+           XOR_grammar.xml takes full ownership of the rule set; no
+           merging with model.xml defaults. All rules live at the
+           symbolic tier (XOR is a Boolean function over symbols). -->
+      <grammar>
+        <compose>
+          <symbols>
+            <rule>S = not.forward(S)</rule>
+            <rule>S = intersection.forward(S, S)</rule>
+            <rule>S = union.forward(S, S)</rule>
+          </symbols>
+        </compose>
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+  </WordSpace>
+
+</model>

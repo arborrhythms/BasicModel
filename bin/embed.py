@@ -85,7 +85,20 @@ def _wrap_unit_ball(x: torch.Tensor) -> torch.Tensor:
 
 
 def _wrapped_mse_score(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-    """Torus similarity: ``-mean(wrapped_delta^2)``. Larger is closer.
+    """Torus similarity in [-1, 1] -- larger is closer.
+
+    The kernel is ``1 - 2 * mean(wrapped_delta^2)``: identical vectors
+    give 1.0 (MSE = 0); maximally-distant vectors (delta == ±1 on
+    every dim) give -1.0. Argmax over a candidate set is equivalent
+    to argmin over wrapped MSE.
+
+    Historical note: this used to return ``-mean(wrapped_delta^2)``
+    in ``[-1, 0]``; the remap above brings the range to ``[-1, 1]``
+    so the public ``WordVectors.similarity`` reads naturally as a
+    cosine-like similarity (1 = identical, -1 = opposite). All
+    argmax-based call sites (codebook lookup in Spaces.py, nearest-
+    neighbor lookup in WordVectors.most_similar) are unaffected by
+    the monotone affine remap.
 
     Thin wrapper around :py:meth:`Layers.Lexicon.similarity` for paths
     that compare differently-sized tensors (the ``min(...)`` width
@@ -95,33 +108,36 @@ def _wrapped_mse_score(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     """
     d = min(a.shape[-1], b.shape[-1])
     delta = _wrap_unit_ball(a[..., :d] - b[..., :d])
-    return -delta.square().mean(dim=-1)
+    mse = delta.square().mean(dim=-1)
+    return 1.0 - 2.0 * mse
 
 
 def _pole_aligned_score(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-    """Antipode-aware matmul similarity for **bivector-encoded**
-    lookup (NEG ⇔ antipode).
+    """Negation-aware matmul similarity for **bivector-encoded**
+    lookup (NEG <-> negation, where ``-x`` is the bivector pair-swap
+    representative of ``x``).
 
     In the project's bivector / NegationLayer convention, ``-x`` is
-    the antipode of ``x`` (``NotLayer`` swaps the ``[pos, neg]``
-    poles). The closest codebook entry under that convention is the
+    the **negation** of ``x`` (``NotLayer`` swaps the ``[pos, neg]``
+    poles -- this is the structural NEG operator, distinct from the
+    "antipode" used by SBOW for furthest-point repulsion). The
+    closest codebook entry under the NEG-quotient convention is the
     one whose inner product with ``a`` has the largest absolute
-    value -- ``a`` aligns with either the entry's pole or its
-    antipode. The matmul shortcut
+    value -- ``a`` aligns with either the entry's pole or its negation.
+    The matmul shortcut
 
         score = (a @ b.T).abs()
 
     is one matmul + elementwise abs, with no ``[..., V, D]``
     outer-product intermediate. For unit-norm codebooks it is
-    monotone-equivalent to ``-min(d, d_antipode)`` -- argmax over V
-    picks the same entry as a torus-distance argmin under antipode
-    equivalence.
+    monotone-equivalent to projective distance argmin under the
+    ``+/-`` quotient.
 
     **Use only at bivector / symbol-tier lookup sites.** PerceptualSpace
     and SymbolicSpace token codebooks treat each entry as an
     independent vector -- ``word`` and ``-word`` are *different*
-    entries, not synonyms. Replacing ``_wrapped_mse_score`` with this
-    helper at those sites collapses distinct words and breaks
+    entries, not NEG-quotient partners. Replacing ``_wrapped_mse_score``
+    with this helper at those sites collapses distinct words and breaks
     reconstruction. For lexicon / token lookup keep the broadcast or
     chunked-broadcast form of ``_wrapped_mse_score``.
 
@@ -837,7 +853,11 @@ class _SBOWEmbedding(nn.Module):
     def __init__(self, vocab_size, vector_size):
         super().__init__()
         from Layers import Lexicon
-        self.embeddings = Lexicon(vocab_size, vector_size, torus=True)
+        # SBOW pode/antipode pair structure operates on the legacy
+        # torus geometry (``ball=False``). Migrate to ``ball=True``
+        # once the trainer's negative-sampling gradient is reworked for
+        # the projective unit ball; see doc/Spaces.md "SBOW training".
+        self.embeddings = Lexicon(vocab_size, vector_size, ball=False)
 
 
 class StreamingSBOWTrainer:
@@ -924,6 +944,14 @@ class StreamingSBOWTrainer:
         for word in reserved:
             self.word_to_idx[word] = len(self.idx_to_word)
             self.idx_to_word.append(word)
+            # Reserved entries are unconditionally promoted; bump their
+            # word_counts to the min_count threshold so consumers that
+            # check "promoted -> count >= min_count" (e.g. trainer-
+            # invariant tests) see a consistent picture. If the corpus
+            # contained the reserved word naturally, the existing
+            # higher count is preserved.
+            if self.word_counts.get(word, 0) < self.min_count:
+                self.word_counts[word] = self.min_count
 
         for word, count in self.word_counts.items():
             if count >= self.min_count and word not in self.word_to_idx:

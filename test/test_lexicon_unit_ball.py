@@ -17,7 +17,8 @@ Verifies:
   * ``topk_rp_chunked`` agrees with ``topk_rp`` to numerical precision.
   * Plain L2 helpers (``l2_scores`` / ``topk_l2`` / ``topk_l2_chunked``)
     still produce non-projective L2 sorts.
-  * LEGACY torus mode still works when ``torus=True``.
+  * LEGACY torus mode still works when ``ball=False`` (or the
+    deprecated ``torus=True`` alias).
 """
 
 import sys
@@ -184,13 +185,18 @@ class TestProjectivePrimitives(unittest.TestCase):
         d = Lexicon.rp_distance_sq(a, b)
         self.assertTrue(torch.allclose(sim, -d, atol=1e-6))
 
-    def test_rp_distance_zero_at_b_or_minus_b(self):
+    def test_rp_distance_zero_at_b_or_neg_b(self):
+        # The defining property of the NEG quotient: a point and its
+        # negation have projective distance 0 (they are the same point
+        # in RP^D). This is *not* the antipode of a in the SBOW sense
+        # (the antipode is the furthest point, which on RP^D is the
+        # orthogonal hyperplane).
         a = torch.rand(16, 4) * 2 - 1
         a = Lexicon.project_unit_ball(a)
         d_self = Lexicon.rp_distance_sq(a, a)
-        d_anti = Lexicon.rp_distance_sq(a, -a)
+        d_neg = Lexicon.rp_distance_sq(a, -a)
         self.assertTrue(torch.allclose(d_self, torch.zeros(16), atol=1e-6))
-        self.assertTrue(torch.allclose(d_anti, torch.zeros(16), atol=1e-6))
+        self.assertTrue(torch.allclose(d_neg, torch.zeros(16), atol=1e-6))
 
     def test_pode_and_wrapped_pode_midpoints(self):
         a = torch.tensor([0.6, 0.0])
@@ -240,9 +246,11 @@ class TestRpScores(unittest.TestCase):
         idx_rp = d_rp.argmin(dim=-1)
         self.assertTrue(torch.equal(idx_score, idx_rp))
 
-    def test_rp_score_treats_w_and_minus_w_equivalent(self):
-        # The score depends only on |<x, w>|, so flipping the codebook
-        # row should not change the rank.
+    def test_rp_score_treats_w_and_neg_w_equivalent(self):
+        # Defining NEG-quotient property: the score depends only on
+        # |<x, w>|, so flipping the codebook row to its negation does
+        # not change the rank. (Negation, not antipode -- the antipode
+        # of w on RP^D is the orthogonal hyperplane, not -w.)
         torch.manual_seed(0)
         V, D, B = 64, 4, 8
         cb = torch.randn(V, D) * 0.5
@@ -289,21 +297,33 @@ class TestTopkRp(unittest.TestCase):
 
 
 class TestTorusLegacyMode(unittest.TestCase):
-    """``torus=True`` selects the legacy flat-torus geometry. The
-    static torus primitives must still operate correctly so call sites
-    that depend on them keep working."""
+    """``ball=False`` (or the deprecated ``torus=True`` alias) selects
+    the legacy flat-torus geometry. The static torus primitives must
+    still operate correctly so call sites that depend on them keep
+    working."""
 
     def test_torus_init_inside_canonical_cell(self):
         torch.manual_seed(0)
-        emb = Lexicon(256, 6, torus=True)
+        emb = Lexicon(256, 6, ball=False)
+        self.assertFalse(emb.ball)
+        self.assertTrue(emb.torus)               # backward-compat alias
         self.assertTrue(torch.all(emb.weight >= -1.0))
         self.assertTrue(torch.all(emb.weight < 1.0))
 
     def test_torus_normalize_wraps(self):
-        emb = Lexicon(64, 4, torus=True)
+        emb = Lexicon(64, 4, ball=False)
         with torch.no_grad():
             emb.weight.add_(3.0)
         emb.normalize()
+        self.assertTrue(torch.all(emb.weight >= -1.0))
+        self.assertTrue(torch.all(emb.weight < 1.0))
+
+    def test_legacy_torus_kwarg_alias(self):
+        # The legacy ``torus=True`` kwarg still works and is equivalent
+        # to ``ball=False``.
+        emb = Lexicon(64, 4, torus=True)
+        self.assertFalse(emb.ball)
+        self.assertTrue(emb.torus)
         self.assertTrue(torch.all(emb.weight >= -1.0))
         self.assertTrue(torch.all(emb.weight < 1.0))
 

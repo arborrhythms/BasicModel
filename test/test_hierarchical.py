@@ -122,7 +122,7 @@ class TestWordEncoding(unittest.TestCase):
         # ``TheGrammar`` in a minimal-configuration state; force a
         # reconfigure with four upward rules so validation passes.
         Language.TheGrammar._configured = False
-        Language.TheGrammar.configure({'upward': {
+        Language.TheGrammar.configure({'compose': {
             'S': ['not(S)', 'intersection(S, S)',
                   'union(S, S)', 'lower(S, S)']
         }})

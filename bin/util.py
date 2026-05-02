@@ -683,15 +683,32 @@ class XMLConfig:
         self._data = self._parse_xml(path)
         self._sources = [path]
 
+    # Sub-trees that an overlay file *replaces wholesale* rather than
+    # deep-merging. Presence of any of these keys in the overlay
+    # signals that the overlay XML takes full ownership of that
+    # sub-tree -- the defaults' contents are dropped, not merged in.
+    #
+    # Currently a single entry: ``WordSpace.language.grammar``. A model
+    # XML that defines its own <grammar> block fully owns the rule set;
+    # the model.xml defaults' tier-scoped grammar does not leak in.
+    _NON_MERGING_PATHS = (
+        ('WordSpace', 'language', 'grammar'),
+    )
+
     def overlay(self, path):
-        """Deep-merge another XML file on top of current data."""
+        """Deep-merge another XML file on top of current data.
+
+        Sub-trees listed in ``_NON_MERGING_PATHS`` are replaced
+        wholesale when present in the overlay; other keys merge.
+        """
         over = self._parse_xml(path)
         for section in over:
             if section not in self._data:
                 self._data[section] = over[section]
             else:
                 self._data[section] = self._deep_merge(
-                    self._data[section], over[section])
+                    self._data[section], over[section],
+                    path=(section,))
         self._sources.append(path)
 
     def reload(self):
@@ -1020,12 +1037,23 @@ class XMLConfig:
         return str(arch.get("type", "basic") or "basic").strip().lower()
 
     @staticmethod
-    def _deep_merge(base, overlay):
-        """Recursively merge overlay into base (overlay wins on conflicts)."""
+    def _deep_merge(base, overlay, path=()):
+        """Recursively merge overlay into base (overlay wins on conflicts).
+
+        ``path`` tracks the dotted location of the current sub-tree
+        relative to the document root, so the merge can short-circuit
+        to wholesale-replacement at sub-trees registered in
+        ``_NON_MERGING_PATHS``.
+        """
         merged = dict(base)
         for k, v in overlay.items():
+            sub_path = path + (k,)
+            if sub_path in XMLConfig._NON_MERGING_PATHS:
+                # Wholesale replacement: drop the defaults' sub-tree.
+                merged[k] = v
+                continue
             if k in merged and isinstance(merged[k], dict) and isinstance(v, dict):
-                merged[k] = XMLConfig._deep_merge(merged[k], v)
+                merged[k] = XMLConfig._deep_merge(merged[k], v, path=sub_path)
             else:
                 merged[k] = v
         return merged

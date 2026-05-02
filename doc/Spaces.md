@@ -232,11 +232,32 @@ The **Lexicon** ([`bin/Layers.py`](../bin/Layers.py)) is the vocabulary
 store that backs PerceptualSpace word embeddings and SymbolicSpace
 symbol prototypes. Each row is a vector $w_i$ in the **projective unit
 ball** — the closed ball $B^D = \{x : \|x\|_2 \le 1\}$ with the
-antipodal identification $w \sim -w$, which realizes real projective
+**negation identification** $w \sim -w$, which realizes real projective
 space $\mathbb{RP}^D$. There is no edge to the embedding space; the
-boundary sphere is glued to itself by antipodal identification, so the
-pode / antipode pair structure SBOW training relies on (a vector and
-its antipode are the same point) holds at every $\|w\|$.
+boundary sphere is glued to itself by the $\pm$-quotient, and the
+pode / wrapped-pode pair structure SBOW training depends on holds at
+every $\|w\|$.
+
+**Terminology pin** — the project distinguishes three notions that are
+sometimes conflated:
+
+- **Pode** of a pair $(a, b)$: midpoint $(a + b)/2$, the natural
+  attractor for SBOW positive-pair updates.
+- **Wrapped pode**: alternative midpoint reached through the
+  $\pm$-quotient, $(a - b)/2$ — the midpoint via the *negation* of $b$.
+  Used to compute the shorter arc and to pick which representative of
+  $b$ is closer to $a$.
+- **Antipode** of a single point $p$: the furthest point from $p$ in
+  the manifold's topology. SBOW uses the antipode as a *balancing
+  repulsion target* (not as an equivalence partner). On the flat torus
+  the antipode is unique ($\mathrm{wrap}(p + 1)$ per axis); on
+  $\mathbb{RP}^D$ it is **not** unique — the maximum-distance set is the
+  orthogonal hyperplane $\{w : \langle p, w\rangle = 0\}$, a
+  $(D{-}1)$-sphere — and an SBOW negative sample on the projective ball
+  must pick a representative of that set.
+
+So $-w$ is the **negation** of $w$ (the $\pm$-quotient partner), *not*
+the antipode of $w$.
 
 ### Distance
 
@@ -247,8 +268,8 @@ d_{\mathbb{RP}}^2(a, b) \;=\; \min\bigl(\|a-b\|_2^2,\; \|a+b\|_2^2\bigr)
 \;=\; \|a\|_2^2 + \|b\|_2^2 - 2\,|\langle a, b\rangle|.
 $$
 
-Equivalently: take the *pode* (midpoint) and the *wrapped pode* (midpoint
-through the antipode of $b$),
+Equivalently: take the *pode* (midpoint) and the *wrapped pode*
+(midpoint through the negation of $b$),
 
 $$
 \operatorname{pode}(a, b) = \tfrac{1}{2}(a + b),\qquad
@@ -257,7 +278,10 @@ $$
 
 and observe that $d_{\mathbb{RP}}(a, b) = 2 \cdot \min\bigl(\|a -
 \operatorname{pode}\|,\ \|a - \operatorname{wpode}\|\bigr)$. The lookup
-just picks whichever representative of $b$ is closer to $a$.
+just picks whichever representative of $b$ — namely $b$ or $-b$, the
+two negation-quotient reps of the same projective point — is closer to
+$a$. (Note: this *negation* representative is not the antipode of $b$;
+on $\mathbb{RP}^D$ the antipode is the orthogonal hyperplane.)
 
 ### Matmul-form lookup
 
@@ -298,16 +322,36 @@ For $V \gtrsim 10^5$, use `topk_rp_chunked` (or `topk_l2_chunked`) to
 bound the peak score-tensor size by `chunk_size` rows of $W$ instead of
 the full $(B, V)$ matrix.
 
-### SBOW training and the pode/antipode pair
+### SBOW training: pode (attractor) and antipode (repulsion target)
 
-Negative-sampling gradients under projective distance come in two
-regimes by the sign of $\langle a, b\rangle$. When the inner product is
-positive, the gradient is the standard contrastive repulsion along $(a
-- b)$; when it is negative, the gradient pushes through the antipode
-along $(a + b)$ (equivalently, pulls $b$ across the origin). This is the
-projective replacement for the torus's coordinate-wise wrap, and it
-preserves the pair structure SBOW depends on without requiring any of
-the modular arithmetic the torus geometry needed.
+SBOW uses two different notions of "balancing point" for a pair
+$(a, b)$:
+
+- **Pode (attractor).** Positive-pair updates pull $a$ and $b$ toward
+  their midpoint $\operatorname{pode}(a, b) = (a + b)/2$. On the
+  projective ball the gradient picks the closer of $b$ and $-b$
+  (via $\operatorname{wpode}$) so the attraction is along the shorter
+  arc.
+- **Antipode (balancing repulsion target).** Negative-pair updates
+  push the row away from the *furthest* point in the manifold — the
+  antipode. This is what keeps the embedding from collapsing to a
+  single cluster.
+
+On the **flat torus** the antipode of $p$ is unique
+($\mathrm{wrap}(p + 1)$ per axis). On the **projective unit ball** it
+is the $(D{-}1)$-dimensional orthogonal hyperplane $\{w : \langle p,
+w\rangle = 0\}$ — not a unique point — so SBOW must sample a
+representative orthogonal direction when it wants a single repulsion
+target.
+
+The negative-sampling gradient under projective distance has two
+regimes by $\mathrm{sign}\langle a, b\rangle$. When the inner product
+is positive, the gradient is the standard contrastive repulsion along
+$(a - b)$; when it is negative, the gradient pushes $a$ away from $-b$
+along $(a + b)$ — i.e. it operates on the *negation* representative of
+$b$ rather than $b$ itself. This is the projective replacement for the
+torus's coordinate-wise wrap and preserves the pair structure SBOW
+depends on without requiring modular arithmetic.
 
 After every optimizer step the trainer calls `lexicon.normalize()`,
 which clips row norms so $\|w_i\| \le 1$ stays invariant. `W_norm2`

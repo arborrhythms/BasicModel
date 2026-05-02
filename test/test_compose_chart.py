@@ -91,7 +91,7 @@ class TestChartCompose(unittest.TestCase):
         self._enable_chart()
         from Spaces import WordSubSpace
         Language.TheGrammar._configured = False
-        Language.TheGrammar.configure({'upward': {'S': ['S VO'], 'VO': ['V O']}})
+        Language.TheGrammar.configure({'compose': {'S': ['S VO'], 'VO': ['V O']}})
         g = Language.TheGrammar
         B, N, D = 1, 3, 3
         layer = SyntacticLayer(nInput=N, nOutput=N,
@@ -118,7 +118,7 @@ class TestChartCompose(unittest.TestCase):
         self._enable_chart()
         from Spaces import WordSubSpace
         Language.TheGrammar._configured = False
-        Language.TheGrammar.configure({'upward': {'S': ['S VO'], 'VO': ['V O']}})
+        Language.TheGrammar.configure({'compose': {'S': ['S VO'], 'VO': ['V O']}})
         g = Language.TheGrammar
         B, N, D = 1, 3, 3
         layer = SyntacticLayer(nInput=N, nOutput=N,
@@ -182,7 +182,7 @@ class TestChartDecompose(unittest.TestCase):
     def test_decompose_returns_same_shape(self):
         from Spaces import WordSubSpace
         Language.TheGrammar._configured = False
-        Language.TheGrammar.configure({'upward': {'S': ['S VO'], 'VO': ['V O']}})
+        Language.TheGrammar.configure({'compose': {'S': ['S VO'], 'VO': ['V O']}})
         g = Language.TheGrammar
         # pair_scorer contract: D == nInput (Task 4 Step 3 comment).
         B, N, D = 1, 3, 3

@@ -66,15 +66,17 @@ class TestPoleAlignedArgmax(unittest.TestCase):
         self.assertTrue(torch.equal(s_pole.argmax(dim=-1), target))
         self.assertTrue(torch.equal(s_mse.argmax(dim=-1), target))
 
-    def test_pole_aware_treats_antipode_as_same(self):
-        # The antipode of an entry should score identically to the
-        # entry itself -- that is the defining property of the
-        # antipode-quotient lookup.
+    def test_pole_aware_treats_negation_as_same(self):
+        # The negation of an entry should score identically to the
+        # entry itself -- that is the defining property of the NEG-
+        # quotient (pole-aware) lookup. Distinct from the *antipode*
+        # of an entry, which is the furthest point in the manifold
+        # and is unrelated to this collapse.
         D, V = 6, 64
         cb = _unit_norm(torch.randn(V, D))
         s_orig = _pole_aligned_score(cb, cb)             # [V, V]
-        s_anti = _pole_aligned_score(-cb, cb)            # [V, V]
-        self.assertTrue(torch.allclose(s_orig, s_anti, atol=1e-6))
+        s_neg = _pole_aligned_score(-cb, cb)             # [V, V]
+        self.assertTrue(torch.allclose(s_orig, s_neg, atol=1e-6))
 
 
 class TestArgmaxParityForLookupShapes(unittest.TestCase):

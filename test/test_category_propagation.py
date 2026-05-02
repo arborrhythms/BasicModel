@@ -42,7 +42,7 @@ class TestCategoryPropagation(unittest.TestCase):
 
     def test_merging_V_and_O_yields_VO_slot(self):
         layer, sub, g = self._layer(
-            {'upward': {'S': ['S VO'], 'VO': ['V O']}}, N=3)
+            {'compose': {'S': ['S VO'], 'VO': ['V O']}}, N=3)
         layer._ensure_category_table(g)
         cats = torch.tensor([[layer._category_index['S'],
                               layer._category_index['V'],
@@ -56,7 +56,7 @@ class TestCategoryPropagation(unittest.TestCase):
 
     def test_incompatible_categories_block_the_rule(self):
         layer, sub, g = self._layer(
-            {'upward': {'S': ['S VO'], 'VO': ['V O']}}, N=3)
+            {'compose': {'S': ['S VO'], 'VO': ['V O']}}, N=3)
         layer._ensure_category_table(g)
         # Seed all leaves as S: there is no rule (S, S) -> anything typed,
         # and the pair-scorer + compat mask should zero-out every rule.

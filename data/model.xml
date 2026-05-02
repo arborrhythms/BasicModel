@@ -113,15 +113,58 @@
          false = legacy left-associative cascade. -->
     <chartCompose>false</chartCompose>
 
+    <!-- Soft-superposition CKY chart's output behavior:
+           root      = chart returns the single root sentence node;
+                       other output positions are zero. Forces the
+                       OutputLayer to read the chart's compositional
+                       commitment, not a per-position recombination.
+           broadcast = legacy: replicate the root vector across all
+                       N output positions. Lets downstream nonlinear
+                       readouts recombine the copies.
+         Default ``root`` because that's the structurally-correct
+         single-sentence-node bottleneck for a CKY-derived
+         representation. -->
+    <chartCollapse>root</chartCollapse>
+
     <!-- Phase D: emit a codebook head via WordSpace.reconstruct().
          false = forward() does not populate ``_predicted_head``. -->
     <downwardGeneration>false</downwardGeneration>
 
     <language>
       <grammar>
-        <upward>
-          <rule>S = not(S)</rule>
-        </upward>
+        <!-- Tier-scoped grammar: each space (P / C / S) declares the
+             operations it conducts in its parse / generate path. Pi
+             and Sigma are now first-class GrammarLayer subclasses, so
+             the default grammar names them directly; the existing
+             always-on Pi / Sigma folds in PerceptualSpace,
+             ConceptualSpace, and SymbolicSpace are exactly the rules
+             listed here. Each space CAN conduct any of the rules at
+             runtime; the tier tag is an inductive-bias hint, not a
+             hard restriction. -->
+        <compose>
+          <symbols>
+            <rule>S = not.forward(S)</rule>
+            <rule>S = sigma.forward(S, S)</rule>
+          </symbols>
+          <concepts>
+            <rule>S = pi.forward(S, S)</rule>
+          </concepts>
+          <percepts>
+            <rule>S = sigma.forward(S, S)</rule>
+          </percepts>
+        </compose>
+        <generate>
+          <symbols>
+            <rule>S = not.reverse(S)</rule>
+            <rule>S,S = sigma.reverse(S)</rule>
+          </symbols>
+          <concepts>
+            <rule>S,S = pi.reverse(S)</rule>
+          </concepts>
+          <percepts>
+            <rule>S,S = sigma.reverse(S)</rule>
+          </percepts>
+        </generate>
       </grammar>
       <interpretation>0.5</interpretation>
     </language>

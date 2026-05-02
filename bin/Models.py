@@ -3757,12 +3757,14 @@ class MentalModel(BaseModel):
             self._butterfly_symbol_width = symbol_width
             self._butterfly_symbol_factor = state_dim // symbol_width if symbol_width > 0 else 1
             self._level_shapes_list = self._level_shapes(
-                nPercepts, state_dim, n_stages)
+                nPercepts, state_dim, n_stages,
+                width_mode=self._conceptual_width_mode())
         # -- Grammar path: progressive bottleneck per conceptual order --
         elif self.useGrammar == "all":
             n_stages = self.conceptualOrder
             self._level_shapes_list = self._level_shapes(
-                nPercepts, percept_dim + obj_percept, n_stages)
+                nPercepts, percept_dim + obj_percept, n_stages,
+                width_mode=self._conceptual_width_mode())
         else:
             n_stages = self.conceptualOrder
             self._level_shapes_list = None
@@ -4071,21 +4073,54 @@ class MentalModel(BaseModel):
     # -- Hierarchical Epistemic Architecture --------------------------
 
     @staticmethod
-    def _level_shapes(n_vectors, dim, conceptual_order):
-        """Per-level (N_t, D_t) for averaging merge.
-
-        D stays constant; only N halves per level.  Averaging keeps norms
-        bounded so tanh never saturates.  Differences are cached for exact
-        inversion.
-
-            percepts:  (N, D)
-            level 0:   (N/2, D)
-            level 1:   (N/4, D)
-            ...
-            level k:   (N/2^(k+1), D)
-
-        Biological analogue: increasing receptive field (V1->V2->V4->IT).
+    def _conceptual_width_mode():
+        """Read ``architecture.conceptualWidth`` from XML; default
+        ``tapered``. Accepts ``tapered`` (geometric halving per
+        conceptual order, the historical behavior) or ``uniform``
+        (every level keeps the same n_vectors).
         """
+        try:
+            value = TheXMLConfig.get("architecture.conceptualWidth", "tapered")
+            value = str(value).strip().lower() if value is not None else "tapered"
+        except Exception:
+            value = "tapered"
+        if value not in ("tapered", "uniform"):
+            value = "tapered"
+        return value
+
+    @staticmethod
+    def _level_shapes(n_vectors, dim, conceptual_order, width_mode="tapered"):
+        """Per-level (N_t, D_t) shapes across the conceptual-order stack.
+
+        Two width modes (set via XML ``architecture.conceptualWidth``):
+
+        ``tapered`` (default, historical) -- D stays constant; N halves
+            per level. Biological analogue: increasing receptive field
+            (V1->V2->V4->IT). Requires ``n_vectors`` to be divisible by
+            ``2^conceptual_order``.
+
+                percepts:  (N, D)
+                level 0:   (N/2, D)
+                level 1:   (N/4, D)
+                ...
+                level k:   (N/(2^(k+1)), D)
+
+        ``uniform`` -- N stays constant at every level. Useful when the
+            grammar is the only compositional structure (e.g.
+            XOR_grammar) and the per-level geometric reduction would
+            otherwise let downstream layers memorize the task without
+            using the chart's rule choices. Each level keeps the same
+            ``n_vectors`` width:
+
+                percepts:  (N, D)
+                level 0:   (N, D)
+                level 1:   (N, D)
+                ...
+                level k:   (N, D)
+        """
+        if width_mode == "uniform":
+            return [(int(n_vectors), int(dim)) for _ in range(conceptual_order)]
+        # Default: tapered (geometric halving).
         shapes = []
         for t in range(conceptual_order):
             n = n_vectors // (2 ** (t + 1))

@@ -92,13 +92,13 @@
     <downwardGeneration>true</downwardGeneration>
     <language>
       <grammar>
-        <upward>
-          <S>S VO</S>
-          <VO>V O</VO>
-        </upward>
-        <downward>
-          <S>C</S>
-        </downward>
+        <compose>
+          <rule>S = S VO</rule>
+          <rule>VO = V O</rule>
+        </compose>
+        <generate>
+          <rule>S = C</rule>
+        </generate>
       </grammar>
       <interpretation>0.5</interpretation>
     </language>

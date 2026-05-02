@@ -9,7 +9,12 @@ geometry discussion (PerceptualSpace, ConceptualSpace, SymbolicSpace).
 
 The Lexicon ([`bin/Layers.py`](../bin/Layers.py)) is a learnable
 vocabulary embedding on the **projective unit ball** $B^D / (x \sim
--x) \cong \mathbb{RP}^D$. Distance and lookup:
+-x) \cong \mathbb{RP}^D$ — the closed unit ball with the
+**negation identification** $w \sim -w$ (the $\pm$-quotient). Note
+that $-w$ is the *negation* of $w$, not its **antipode**: the antipode
+of a point is the furthest point in the manifold (used by SBOW as a
+repulsion target), and on $\mathbb{RP}^D$ it is the orthogonal
+hyperplane, not a unique point. Distance and lookup:
 
 $$
 d_{\mathbb{RP}}^2(a, b) \;=\; \min(\|a-b\|_2^2,\ \|a+b\|_2^2)

@@ -92,13 +92,24 @@
 
   <WordSpace>
     <useGrammar>all</useGrammar>
+    <softChartCompose>true</softChartCompose>
+    <chartTau>2.0</chartTau>
     <language>
       <grammar>
-        <S>not(S)</S>
-        <S>intersection(S, S)</S>
-        <S>union(S, S)</S>
-        <S>lower(S, S)</S>
-        <S>lift(S, S)</S>
+        <compose>
+          <rule>S = not.forward(S)</rule>
+          <rule>S = intersection.forward(S, S)</rule>
+          <rule>S = union.forward(S, S)</rule>
+          <rule>S = lower.forward(S, S)</rule>
+          <rule>S = lift.forward(S, S)</rule>
+        </compose>
+        <generate>
+          <rule>S = not.reverse(S)</rule>
+          <rule>S,S = intersection.reverse(S)</rule>
+          <rule>S,S = union.reverse(S)</rule>
+          <rule>S,S = lower.reverse(S)</rule>
+          <rule>S,S = lift.reverse(S)</rule>
+        </generate>
       </grammar>
       <interpretation>0.5</interpretation>
     </language>

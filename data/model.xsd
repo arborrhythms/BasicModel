@@ -461,18 +461,28 @@
   </xs:complexType>
 
   <xs:complexType name="grammarType">
-    <!-- <grammar> splits into <upward> (parsing / chart compose) and
-         <downward> (generation from a deep state). Within each section
-         each child element is a nonterminal ('S', 'VO', 'NP', 'VP', 'V',
-         'O', 'C'...) and its content is the RHS in either function-call
-         form ('not(S)' / 'lift(S, S)') or typed bare-symbol form
-         ('V O' / 'S VO' / 'C'). The legacy flat form (nonterminal tags
-         directly under <grammar>) is still accepted by Grammar.configure()
-         for Python callers, but XMLs shipped in this repo should use the
-         split form so the XSD can validate them. -->
+    <!-- <grammar> splits into <parse> (parsing / chart compose, leaves
+         to root) and <generate> (generation from a deep state, root
+         to leaves). Each section contains either <rule> elements
+         directly, or per-tier sub-sections <symbols> / <concepts> /
+         <percepts> each containing <rule> elements. Tier tagging
+         lets each space (PerceptualSpace = percepts, ConceptualSpace
+         = concepts, SymbolicSpace = symbols) read its own subset.
+         A space "can conduct any/all of the operations" -- the
+         tier tag is an inductive-bias hint, not a hard restriction.
+
+         Rule body grammar:
+           parse:    LHS = op.forward(arg, ...)
+           generate: LHS[,LHS] = op.reverse(arg)
+
+         Bare-symbol-sequence rules ('V O' / 'S VO' / 'C') and PROJECT
+         rules ('NP = N') are also accepted for typed structural
+         composition. The legacy section names <upward> / <downward>
+         remain accepted as aliases for back-compat with stale
+         checked-in XMLs but new XMLs should use <parse> / <generate>. -->
     <xs:all>
-      <xs:element name="upward" type="grammarSectionType" minOccurs="0"/>
-      <xs:element name="downward" type="grammarSectionType" minOccurs="0"/>
+      <xs:element name="compose"  type="grammarSectionType" minOccurs="0"/>
+      <xs:element name="generate" type="grammarSectionType" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 

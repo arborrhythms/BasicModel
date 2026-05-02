@@ -31,7 +31,7 @@ class TestSVOFromTrace(unittest.TestCase):
     def test_svo_for_n_v_n(self):
         from Spaces import WordSubSpace
         TheGrammar._configured = False
-        TheGrammar.configure({'upward': {'S': ['S VO'], 'VO': ['V O']}})
+        TheGrammar.configure({'compose': {'S': ['S VO'], 'VO': ['V O']}})
         g = TheGrammar
         # pair_scorer contract: D == nInput.
         B, N, D = 1, 3, 3

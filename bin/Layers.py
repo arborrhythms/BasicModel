@@ -31,14 +31,31 @@ from util import TheMessage
 class Lexicon(nn.Embedding):
     """nn.Embedding on the **projective unit ball** ``B^D / (x ~ -x)``.
 
-    Default geometry is the antipodal quotient of the closed unit ball,
-    realized as real projective space ``RP^D``. Each vocabulary row
-    ``w_i`` lives in ``B^D = {x : ||x||_2 <= 1}`` and ``w_i`` and
-    ``-w_i`` are identified -- there is no edge to the embedding space;
-    the boundary sphere wraps onto itself by antipodal identification.
-    This preserves the pode / antipode pair structure SBOW training
-    relies on (a vector and its antipode are the same point) while
-    giving an exact matmul-form lookup.
+    Default geometry is the **negation quotient** of the closed unit
+    ball, realized as real projective space ``RP^D``. Each vocabulary
+    row ``w_i`` lives in ``B^D = {x : ||x||_2 <= 1}`` and ``w_i`` is
+    identified with its negation ``-w_i`` -- there is no edge to the
+    embedding space; the boundary sphere wraps onto itself by the
+    ``+/-`` quotient. This preserves the pode / wrapped-pode pair
+    structure SBOW training depends on while giving an exact
+    matmul-form lookup.
+
+    Terminology pin (deliberate; see ``doc/Spaces.md``):
+
+      * **Pode** of ``(a, b)``: midpoint ``(a + b)/2``. Attractor for
+        SBOW positive-pair updates.
+      * **Wrapped pode**: midpoint via the negation of ``b``,
+        ``(a - b)/2``. Used to find the shorter arc.
+      * **Antipode** of a single point ``p``: the *furthest* point from
+        ``p`` in the manifold's topology -- SBOW's balancing repulsion
+        target. Unique on the flat torus (``wrap(p + 1)`` per axis);
+        on ``RP^D`` it is the orthogonal hyperplane ``{w : <p, w> =
+        0}``, *not* a unique point.
+
+    So ``-w`` is the **negation** of ``w`` (the quotient partner under
+    ``RP^D``), *not* the antipode of ``w``. The ``rp_closer_rep`` and
+    ``rp_wrapped_pode`` helpers operate on negation representatives;
+    they do not produce antipodes.
 
     Distance:
 
@@ -53,13 +70,14 @@ class Lexicon(nn.Embedding):
     projective squared distance for fixed ``x``. See ``doc/Lexicon.md``
     for the full derivation and SBOW gradient consequences.
 
-    Legacy: ``torus=True`` selects the prior flat-n-torus geometry
-    ``T^D = [-1, 1)^D`` with wrapped-MSE distance. Kept for backward
-    compatibility; the torus primitives (``wrap``, ``delta``,
-    ``distance_sq``, ``similarity``, ``inner_distance``,
-    ``outer_distance``, ``antipode``, ``random``) remain on the class as
-    static methods so call sites that still operate in torus coordinates
-    keep working unchanged.
+    Legacy: ``ball=False`` (or the deprecated ``torus=True`` alias)
+    selects the prior flat-n-torus geometry ``T^D = [-1, 1)^D`` with
+    wrapped-MSE distance. Kept for backward compatibility; the torus
+    primitives (``wrap``, ``delta``, ``distance_sq``, ``similarity``,
+    ``inner_distance``, ``outer_distance``, ``antipode``, ``random``)
+    remain on the class as static methods so call sites that still
+    operate in torus coordinates keep working unchanged. The
+    backward-compat property ``self.torus`` mirrors ``not self.ball``.
 
     Geometry-aware methods that should be called from training and
     lookup paths (geometry-dispatching where applicable):
@@ -77,15 +95,20 @@ class Lexicon(nn.Embedding):
     """
 
     def __init__(self, num_embeddings: int, embedding_dim: int,
-                 *, torus: bool = False, init: str = "uniform_ball",
+                 *, ball: bool = True, torus: Optional[bool] = None,
+                 init: str = "uniform_ball",
                  padding_idx=None, **kwargs):
         super().__init__(num_embeddings, embedding_dim,
                          padding_idx=padding_idx, **kwargs)
-        # ``torus=True`` selects the LEGACY flat-torus geometry; default
-        # is the projective unit ball. Remove this flag and the
-        # ``self.torus`` branch when no in-tree call site requires it.
-        self.torus = bool(torus)
-        if self.torus:
+        # ``ball=True`` (default) selects the projective unit-ball
+        # geometry. ``ball=False`` selects the LEGACY flat-torus
+        # geometry. ``torus=`` is a legacy alias kwarg kept so call
+        # sites that still pass ``torus=True`` keep working; remove it
+        # once no in-tree caller uses it.
+        if torus is not None:
+            ball = not bool(torus)
+        self.ball = bool(ball)
+        if not self.ball:
             # LEGACY (torus): uniform draw on ``T^D = [-1, 1)^D``.
             with torch.no_grad():
                 self.weight.copy_(
@@ -94,6 +117,17 @@ class Lexicon(nn.Embedding):
                                    dtype=self.weight.dtype))
         else:
             self.reset_unit_ball_parameters(init=init)
+
+    # Backward-compat property: ``self.torus`` is the negation of
+    # ``self.ball`` so legacy reads (``if self.torus: ...``) keep
+    # working unchanged. Prefer ``self.ball`` in new code.
+    @property
+    def torus(self) -> bool:
+        return not self.ball
+
+    @torus.setter
+    def torus(self, value: bool) -> None:
+        self.ball = not bool(value)
 
     # -- Unit-ball geometry --------------------------------------------------
 
@@ -216,11 +250,18 @@ class Lexicon(nn.Embedding):
     # Distance:  d_RP^2(a, b) = min(||a-b||^2, ||a+b||^2)
     #                        = ||a||^2 + ||b||^2 - 2 |<a, b>|
     # Lookup:    score(x, w_i) = |<x, w_i>| - 0.5 * ||w_i||^2
-    # Pode:      pode(a, b)         = (a + b) / 2
-    # W. pode:   wrapped_pode(a, b) = (a - b) / 2     (mid via the antipode)
+    # Pode:      pode(a, b)         = (a + b) / 2     (midpoint, attractor)
+    # W. pode:   wrapped_pode(a, b) = (a - b) / 2     (mid via -b, the
+    #                                                  negation rep of b)
     # The projective distance is twice the smaller of |a - pode| and
     # |a - wrapped_pode|, which is the user-facing pode/wrapped-pode
     # framing.
+    #
+    # NOTE: the **antipode** of a single point p is the *furthest* point
+    # from p in the manifold's topology -- SBOW's balancing repulsion
+    # target. Unique on the flat torus (wrap(p + 1) per axis); on RP^D
+    # not a unique point (orthogonal hyperplane). The wrapped pode is
+    # the midpoint via -b, NOT the antipode of the regular pode.
 
     @staticmethod
     def rp_distance_sq(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
@@ -253,14 +294,17 @@ class Lexicon(nn.Embedding):
 
     @staticmethod
     def rp_wrapped_pode(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
-        """Wrapped pode: midpoint via the antipode of ``b``,
+        """Wrapped pode: midpoint via the **negation** of ``b``,
         ``(a - b) / 2``.
 
         On the projective unit ball this is the "go through the
-        boundary identification" alternative midpoint. For the
-        SBOW pair-attraction gradient, comparing ``||a - pode||`` and
-        ``||a - wrapped_pode||`` selects which representative of ``b``
-        the pair should converge through.
+        ``+/-`` quotient" alternative midpoint. For the SBOW pair-
+        attraction gradient, comparing ``||a - pode||`` and
+        ``||a - wrapped_pode||`` selects which negation representative
+        of ``b`` the pair should converge through. (Despite the name,
+        the wrapped pode is *not* the antipode of the regular pode --
+        the antipode is the furthest point in the manifold and on
+        ``RP^D`` is not a unique point.)
         """
         return 0.5 * (a - b)
 
@@ -269,9 +313,12 @@ class Lexicon(nn.Embedding):
         """Closer of ``b`` and ``-b`` to ``a``, picked per row.
 
         Returns ``sign(<a, b>) * b``; ties (``<a, b> == 0``) resolve to
-        ``+b``. The "active representative" of ``b`` for projective
-        gradient calculations: positive-pair attraction targets it,
-        negative-pair repulsion pushes ``a`` away from it.
+        ``+b``. The "active negation representative" of ``b`` for
+        projective gradient calculations: positive-pair attraction
+        targets it, negative-pair repulsion pushes ``a`` away from it.
+        Distinct from the **antipode** (the manifold's furthest point
+        from ``a`` -- on ``RP^D`` an orthogonal hyperplane, not a
+        single point).
         """
         sign = torch.sign((a * b).sum(dim=-1, keepdim=True))
         sign = torch.where(sign == 0, torch.ones_like(sign), sign)
@@ -331,15 +378,15 @@ class Lexicon(nn.Embedding):
     def normalize(self) -> None:
         """Re-project weights onto the active manifold.
 
-        Projective unit ball (default): rowwise projection so
-        ``||w_i|| <= 1``. LEGACY torus path: wrap into ``[-1, 1)^D``.
-        Idempotent in both cases.
+        Ball geometry (``self.ball=True``, default): rowwise projection
+        so ``||w_i|| <= 1``. LEGACY torus geometry (``self.ball=False``):
+        wrap into ``[-1, 1)^D``. Idempotent in both cases.
         """
-        if self.torus:
+        if self.ball:
+            self.project_unit_ball_()
+        else:
             # LEGACY (torus): coordinatewise wrap into the canonical cell.
             self.weight.copy_(Lexicon.wrap(self.weight))
-        else:
-            self.project_unit_ball_()
 
     # ========================================================================
     # LEGACY: torus geometry primitives ``T^D = [-1, 1)^D`` with wrapped MSE.
@@ -1322,12 +1369,179 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
 # removing the per-call rebuild.
 # ---------------------------------------------------------------------------
 
-class ButterflyLayer(Layer):
+class GrammarLayer(Layer):
+    """Base class for layers that implement grammar rule operators.
+
+    A GrammarLayer wraps a tensor kernel as a proper Layer with a
+    known arity, invertibility flag, and canonical rule_name. The
+    Grammar's ``rule_probability`` lookup uses ``rule_name`` to gate
+    the layer's contribution in the bottom-up forward path; the
+    SyntacticLayer dispatches the layer top-down by the same name.
+
+    Note (2026-04-30): ``ButterflyLayer`` (and therefore ``PiLayer`` /
+    ``SigmaLayer``) now inherit from GrammarLayer so the parameterized
+    fold layers ARE Grammar layers, not wrapped by separate
+    IntersectionLayer / UnionLayer adapters. The wrappers remain for
+    back-compat but are no longer the only path to attach a rule_name
+    to a parameterized fold.
+
+    ``Ops`` itself is in the process of being demoted to a private
+    math-kernel namespace; new operators should derive from
+    GrammarLayer rather than adding methods to Ops. See module-level
+    docstring for the migration direction.
+
+    Class attributes (override in subclasses):
+        rule_name:   canonical operator name as it appears in grammar
+                     bodies (e.g. "not", "intersection", "union").
+        arity:       1 for unary, 2 for binary.
+        invertible:  True if reverse() recovers the input exactly.
+        lossy:       True if forward() loses information (no exact
+                     reverse possible).
+    """
+    rule_name  = ""
+    arity      = 1
+    invertible = False
+    lossy      = False
+
+    # Chart authority registration -- Surface-3 wiring (see
+    # doc/research/three-surfaces.md). When a SyntacticLayer registers
+    # itself as the class-level authority, every GrammarLayer instance
+    # constructed afterwards adds itself to the authority's roster, and
+    # its `gated_run(x, fn, *args)` helper consults the authority
+    # before running `fn`. The chart can then gate Pi / Sigma /
+    # Not / etc. via `rule_probability(rule_name)`. Default: no
+    # authority -> layers run unconditionally (backward-compat).
+    _chart_authority = None
+
+    def __init__(self, nInput=0, nOutput=0):
+        super().__init__(nInput, nOutput)
+        # Auto-register with the chart authority (if any). Only
+        # layers that carry a non-empty rule_name participate; the
+        # base GrammarLayer with rule_name="" stays anonymous.
+        if (GrammarLayer._chart_authority is not None
+                and self.rule_name):
+            try:
+                GrammarLayer._chart_authority.register_grammar_layer(self)
+            except AttributeError:
+                # Authority object is not a SyntacticLayer-shaped
+                # registrar; ignore so we don't trip back-compat
+                # construction paths.
+                pass
+
+    @classmethod
+    def set_chart_authority(cls, syntactic_layer):
+        """Install ``syntactic_layer`` as the class-level chart
+        authority. Future GrammarLayer instances will auto-register;
+        existing instances can be registered manually via the
+        authority's ``register_grammar_layer`` method.
+
+        Pass ``None`` to clear the authority (e.g. for tests that
+        want unconditional forward behavior).
+        """
+        cls._chart_authority = syntactic_layer
+
+    def gated_run(self, x, fn, *fn_args, **fn_kwargs):
+        """Soft-gate the layer's forward through the chart authority.
+
+        If no authority is registered, this is a passthrough: returns
+        ``fn(x, *fn_args, **fn_kwargs)``.
+
+        If an authority is registered, queries
+        ``authority.should_run_rule(rule_name)`` -> probability ``p``
+        in [0, 1], then returns the soft mixture
+        ``p * fn(x, ...) + (1 - p) * x`` so gradient flows through
+        both branches. ``p == 1.0`` short-circuits to the un-mixed
+        forward (the structural fast path the existing space-forward
+        code already uses for `union(C, C)` / `Contiguous(S)` /
+        `not(S)` gating).
+        """
+        auth = GrammarLayer._chart_authority
+        if auth is None or not self.rule_name:
+            return fn(x, *fn_args, **fn_kwargs)
+        try:
+            p = float(auth.should_run_rule(self.rule_name))
+        except Exception:
+            return fn(x, *fn_args, **fn_kwargs)
+        if p >= 1.0 - 1e-9:
+            return fn(x, *fn_args, **fn_kwargs)
+        if p <= 1e-9:
+            return x
+        return p * fn(x, *fn_args, **fn_kwargs) + (1.0 - p) * x
+
+    # -- Binary tensor op contract for the chart parser --------------
+    #
+    # ``compose(*operands)`` is the arity-aware binary tensor op the
+    # CKY chart driver calls to combine child span vectors into a
+    # parent span vector. ``decompose(parent)`` is the matching inverse
+    # used by the outside pass / reconstruction loss to push gradients
+    # back into child cells.
+    #
+    # Shape contract:
+    #   arity == 1: compose(x: [..., D]) -> [..., D'];
+    #               decompose(y: [..., D']) -> [..., D]
+    #   arity == 2: compose(left: [..., D], right: [..., D]) -> [..., D'];
+    #               decompose(y: [..., D']) -> (left, right)
+    #
+    # The base class provides arity-aware default implementations:
+    # arity-1 layers route through ``forward`` / ``reverse``; arity-2
+    # layers raise NotImplementedError until a subclass plugs in the
+    # binary parameterization. Lossy layers can override decompose
+    # with a pseudo-inverse (e.g. identity).
+    def compose(self, *operands):
+        """Combine child operand(s) into a parent vector.
+
+        Default routes arity-1 through ``forward``. Arity-2 subclasses
+        must override.
+        """
+        if self.arity == 1:
+            if len(operands) != 1:
+                raise ValueError(
+                    f"{type(self).__name__}.compose: arity 1 expects "
+                    f"1 operand, got {len(operands)}")
+            return self.forward(operands[0])
+        raise NotImplementedError(
+            f"{type(self).__name__}.compose: arity-{self.arity} "
+            f"binary tensor op not implemented")
+
+    def generate(self, parent):
+        """Inverse of ``compose``: split a parent into its operand(s).
+
+        Default routes arity-1 through ``reverse`` when invertible,
+        otherwise returns the parent unchanged (lossy identity
+        recovery). Arity-2 subclasses must override.
+
+        Renamed from ``decompose`` (2026-05-01) to align with the
+        ``<compose>`` / ``<generate>`` grammar XML sections and the
+        chart's parse / generate vocabulary. ``decompose`` is kept
+        as a back-compat alias on every GrammarLayer.
+        """
+        if self.arity == 1:
+            if self.invertible:
+                return self.reverse(parent)
+            return parent
+        raise NotImplementedError(
+            f"{type(self).__name__}.generate: arity-{self.arity} "
+            f"binary tensor op not implemented")
+
+    def decompose(self, *args, **kwargs):
+        """Back-compat alias for ``generate``. Renamed 2026-05-01;
+        existing call sites that invoke ``layer.decompose(...)``
+        keep working unchanged."""
+        return self.generate(*args, **kwargs)
+
+
+class ButterflyLayer(GrammarLayer):
     """Base class for layers with the optional butterfly access pattern.
 
     SigmaLayer and PiLayer keep their own forward/reverse math. This base
     only owns the shared permutation buffers, pack/unpack helpers, and the
     merge-diff cache used by reverse().
+
+    Inherits from ``GrammarLayer`` so subclasses (PiLayer, SigmaLayer)
+    are Grammar layers in their own right -- their ``rule_name`` /
+    ``arity`` / ``invertible`` class attributes hook them into the
+    Grammar's rule-probability gating without needing a separate
+    ``IntersectionLayer`` / ``UnionLayer`` wrapper.
     """
 
     def __init__(self, nInput, nOutput):
@@ -1418,6 +1632,9 @@ class ButterflyLayer(Layer):
 class SigmaLayer(ButterflyLayer):
     """Additive (summation) layer with optional butterfly access pattern.
 
+    Grammar role: implements the OR-fold (``union`` rule). The chart
+    and rule-probability gate find this layer by ``rule_name``.
+
     With ``nonlinear=True`` (legacy behavior), ``forward`` returns
     ``tanh(W @ x + b)``. With ``nonlinear=False``, ``forward`` returns the
     raw linear result. ``reverse`` mirrors the same choice.
@@ -1446,6 +1663,15 @@ class SigmaLayer(ButterflyLayer):
     ``nOutput`` must be equal in butterfly mode and refer to the
     *packed* (pair) dimension.
     """
+    # GrammarLayer metadata: SigmaLayer is the OR-fold. arity=2 binary
+    # tensor op (compose / decompose); also exposes a unary forward /
+    # reverse for the always-on Pi/Sigma feature-fold path.
+    # ``invertible`` and ``lossy`` are governed by the constructor kwarg
+    # `invertible` and overwritten on the instance, so we leave the
+    # class-level defaults from GrammarLayer alone.
+    rule_name  = "union"
+    arity      = 2
+
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
                  invertible=False, nonlinear=True, stable=False,
                  monotonic=False,
@@ -1597,14 +1823,14 @@ class SigmaLayer(ButterflyLayer):
         self.activation = out.detach()
         return out
 
-    def decompose(self, parent):
+    def generate(self, parent):
         """Inverse of compose; balanced split.
 
         Given ``y = tanh((atanh(left) + atanh(right)) @ W + b)`` the
         reconstruction recovers the pre-transform sum
         ``s = atanh(left) + atanh(right) = layer.reverse(atanh(y))``
         and assigns ``left == right == tanh(s/2)``. Round-trip
-        ``compose(*decompose(y)) == y`` when the inner layer is
+        ``compose(*generate(y)) == y`` when the inner layer is
         invertible.
 
         Args:
@@ -1618,7 +1844,7 @@ class SigmaLayer(ButterflyLayer):
         """
         if self.butterfly:
             raise NotImplementedError(
-                "SigmaLayer.decompose not supported in butterfly mode")
+                "SigmaLayer.generate not supported in butterfly mode")
         if self.nonlinear:
             a_y = torch.atanh(parent.clamp(-1 + epsilon, 1 - epsilon))
         else:
@@ -1665,90 +1891,6 @@ class SigmaLayer(ButterflyLayer):
         y_inv = layer.reverse(y)
         assert torch.norm(x - y_inv) < 0.00001
         print("SigmaLayer tests passed.")
-
-class GrammarLayer(Layer):
-    """Base class for layers that implement grammar rule operators.
-
-    A GrammarLayer wraps a tensor kernel as a proper Layer with a
-    known arity, invertibility flag, and canonical rule_name. The
-    Grammar's ``rule_probability`` lookup uses ``rule_name`` to gate
-    the layer's contribution in the bottom-up forward path; the
-    SyntacticLayer dispatches the layer top-down by the same name.
-    Together with parameterized fold layers (PiLayer, SigmaLayer),
-    GrammarLayer subclasses replace the old static-dispatch surface
-    of the ``Ops`` namespace — each grammar-relevant tensor primitive
-    becomes a Layer subclass and the kernels move into ``forward()``.
-
-    ``Ops`` itself is in the process of being demoted to a private
-    math-kernel namespace; new operators should derive from
-    GrammarLayer rather than adding methods to Ops. See module-level
-    docstring for the migration direction.
-
-    Class attributes (override in subclasses):
-        rule_name:   canonical operator name as it appears in grammar
-                     bodies (e.g. "not", "intersection", "union").
-        arity:       1 for unary, 2 for binary.
-        invertible:  True if reverse() recovers the input exactly.
-        lossy:       True if forward() loses information (no exact
-                     reverse possible).
-    """
-    rule_name  = ""
-    arity      = 1
-    invertible = False
-    lossy      = False
-
-    def __init__(self, nInput=0, nOutput=0):
-        super().__init__(nInput, nOutput)
-
-    # -- Binary tensor op contract for the chart parser --------------
-    #
-    # ``compose(*operands)`` is the arity-aware binary tensor op the
-    # CKY chart driver calls to combine child span vectors into a
-    # parent span vector. ``decompose(parent)`` is the matching inverse
-    # used by the outside pass / reconstruction loss to push gradients
-    # back into child cells.
-    #
-    # Shape contract:
-    #   arity == 1: compose(x: [..., D]) -> [..., D'];
-    #               decompose(y: [..., D']) -> [..., D]
-    #   arity == 2: compose(left: [..., D], right: [..., D]) -> [..., D'];
-    #               decompose(y: [..., D']) -> (left, right)
-    #
-    # The base class provides arity-aware default implementations:
-    # arity-1 layers route through ``forward`` / ``reverse``; arity-2
-    # layers raise NotImplementedError until a subclass plugs in the
-    # binary parameterization. Lossy layers can override decompose
-    # with a pseudo-inverse (e.g. identity).
-    def compose(self, *operands):
-        """Combine child operand(s) into a parent vector.
-
-        Default routes arity-1 through ``forward``. Arity-2 subclasses
-        must override.
-        """
-        if self.arity == 1:
-            if len(operands) != 1:
-                raise ValueError(
-                    f"{type(self).__name__}.compose: arity 1 expects "
-                    f"1 operand, got {len(operands)}")
-            return self.forward(operands[0])
-        raise NotImplementedError(
-            f"{type(self).__name__}.compose: arity-{self.arity} "
-            f"binary tensor op not implemented")
-
-    def decompose(self, parent):
-        """Inverse of ``compose``: split a parent into its operand(s).
-
-        Default routes arity-1 through ``reverse`` when invertible,
-        otherwise returns the parent unchanged (lossy identity
-        recovery). Arity-2 subclasses must override.
-        """
-        if self.arity == 1:
-            if self.invertible:
-                return self.reverse(parent)
-            return parent
-        raise NotImplementedError(
-            f"{type(self).__name__}.decompose: arity-{self.arity} "
-            f"binary tensor op not implemented")
 
 class NegationLayer(Layer):
     """Materialize bivalent or ternary literals for Sigma/Pi logic.
@@ -1883,9 +2025,9 @@ class IntersectionLayer(GrammarLayer):
         """Binary AND of two ``[..., D]`` child spans -> ``[..., D']``."""
         return self.pi.compose(left, right)
 
-    def decompose(self, parent):
+    def generate(self, parent):
         """Balanced split of a parent span back into ``(left, right)``."""
-        return self.pi.decompose(parent)
+        return self.pi.generate(parent)
 
 
 class UnionLayer(GrammarLayer):
@@ -1921,9 +2063,9 @@ class UnionLayer(GrammarLayer):
         """Binary OR of two ``[..., D]`` child spans -> ``[..., D']``."""
         return self.sigma.compose(left, right)
 
-    def decompose(self, parent):
+    def generate(self, parent):
         """Balanced split of a parent span back into ``(left, right)``."""
-        return self.sigma.decompose(parent)
+        return self.sigma.generate(parent)
 
 
 class ContiguousLayer(GrammarLayer):
@@ -1979,8 +2121,291 @@ class ContiguousLayer(GrammarLayer):
         return y
 
 
+# ===========================================================================
+# Grammar-op GrammarLayer subclasses (Surface 3 facade, 2026-05-01).
+#
+# Each class below names one grammar operation (`rule_name`) and exposes
+# the canonical GrammarLayer interface (forward / reverse / compose /
+# decompose, plus `gated_run` from the base class). The math kernel
+# delegates to the corresponding `SyntacticLayer.*Forward` /
+# `*Reverse` method so semantics are byte-identical to the existing
+# `_RULE_METHODS` dispatch path. The benefit is uniform surface:
+# `isinstance(x, GrammarLayer)` and `x.rule_name` work for every op,
+# the chart's per-rule per-cell dispatch can route through these
+# subclasses without a separate `_RULE_METHODS` table, and
+# `_chart_authority`'s gating applies uniformly via `gated_run`.
+#
+# The subclasses are stateless wrappers that look up the method by
+# name on a SyntacticLayer instance passed in at call time -- they
+# don't own a SyntacticLayer reference (which would be a circular
+# ownership: SyntacticLayer constructs them via the chart's eager
+# build, and they'd point back at SyntacticLayer). Pattern:
+#
+#     out = LiftLayer().forward(left, right, layer=syntactic_layer,
+#                               subspace=subspace)
+#
+# Existing `_RULE_METHODS` dispatch in SyntacticLayer.project still
+# works -- this is an addition, not a replacement. A follow-up can
+# migrate the chart to dispatch through these classes.
+
+class _GrammarOpFacade(GrammarLayer):
+    """Internal helper: delegates forward/reverse/compose/decompose to
+    a method on a SyntacticLayer-shaped ``layer`` argument.
+
+    Subclasses set ``rule_name``, ``arity``, ``invertible``, and
+    ``method_name`` (the SyntacticLayer attribute name to dispatch to).
+    The class is parameter-free (no learnable weights of its own); all
+    weights live on the SyntacticLayer instance the subclass dispatches
+    into, matching the project's "math owned by SyntacticLayer" pattern.
+
+    Class-level ``_registry`` is keyed by ``rule_name`` and populated
+    by ``__init_subclass__``; SyntacticLayer's chart looks up by name
+    to dispatch typed-GrammarLayer-style instead of via the legacy
+    ``_RULE_METHODS`` string table. Multiple facades may share a
+    rule_name (e.g. an internal chart-dispatch facade alongside a
+    public wrapper); the last definition wins.
+    """
+    rule_name    = ""
+    arity        = 1
+    invertible   = False
+    lossy        = False
+    method_name  = ""
+
+    _registry: dict = {}
+
+    def __init_subclass__(cls, **kw):
+        super().__init_subclass__(**kw)
+        rn = getattr(cls, 'rule_name', '')
+        mn = getattr(cls, 'method_name', '')
+        if rn and mn:
+            _GrammarOpFacade._registry[rn] = cls
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def _resolve(self, layer, suffix):
+        if layer is None or not self.method_name:
+            return None
+        return getattr(layer, self.method_name + suffix, None)
+
+    def forward(self, *args, layer=None, subspace=None, mask=None,
+                gated=True):
+        """Apply the rule's forward semantics.
+
+        ``gated=True`` (default) wraps with `gated_run` so the chart
+        authority's `should_run_rule(rule_name)` controls firing.
+        ``gated=False`` is the raw dispatch — used by the chart's
+        own `_apply_rule_forward`, which already does its own soft
+        mixing and would double-gate otherwise.
+        """
+        fn = self._resolve(layer, 'Forward')
+        if fn is None:
+            return args[0] if args else None
+        if self.arity == 2:
+            left = args[0]
+            right = args[1] if len(args) > 1 else None
+            if not gated:
+                return fn(left, right, subspace=subspace, mask=mask)
+            return self.gated_run(left, fn, right,
+                                  subspace=subspace, mask=mask)
+        if not gated:
+            return fn(args[0], subspace=subspace, mask=mask)
+        return self.gated_run(args[0], fn, subspace=subspace, mask=mask)
+
+    def reverse(self, result, *args, layer=None, subspace=None, mask=None):
+        fn = self._resolve(layer, 'Reverse')
+        if fn is None:
+            return result
+        if self.arity == 2:
+            right = args[0] if args else None
+            return fn(result, right, subspace=subspace, mask=mask)
+        return fn(result, subspace=subspace, mask=mask)
+
+    def compose(self, *operands, layer=None, subspace=None):
+        if self.arity == 1:
+            return self.forward(operands[0], layer=layer, subspace=subspace)
+        return self.forward(operands[0], operands[1],
+                            layer=layer, subspace=subspace)
+
+    def generate(self, parent, layer=None, subspace=None):
+        if self.arity == 1 and self.invertible:
+            return self.reverse(parent, layer=layer, subspace=subspace)
+        if self.arity == 2 and self.invertible:
+            # Binary inverse with one operand recovered; second is
+            # caller-known via right-arg passthrough at the chart.
+            # Pseudo-inverse fallback: return parent as left.
+            return parent, parent
+        return parent
+
+
+class LiftLayer(_GrammarOpFacade):
+    """``S -> lift(S, S)`` -- in-space lift via Ops.lower(AND, smooth)."""
+    rule_name   = "lift"
+    arity       = 2
+    invertible  = True
+    method_name = "lift"
+
+
+class LowerLayer(_GrammarOpFacade):
+    """``S -> lower(S, S)`` -- in-space lower via Ops.lift(OR, smooth)."""
+    rule_name   = "lower"
+    arity       = 2
+    invertible  = True
+    method_name = "lower"
+
+
+class ConjunctionLayer(_GrammarOpFacade):
+    """``S -> conjunction(S, S)`` -- propositional AND on bivectors."""
+    rule_name   = "conjunction"
+    arity       = 2
+    invertible  = False
+    method_name = "conjunction"
+
+
+class DisjunctionLayer(_GrammarOpFacade):
+    """``S -> disjunction(S, S)`` -- propositional OR on bivectors."""
+    rule_name   = "disjunction"
+    arity       = 2
+    invertible  = False
+    method_name = "disjunction"
+
+
+class EqualsLayer(_GrammarOpFacade):
+    """``S -> equals(S, S)`` -- mutual-parthood agreement scoring."""
+    rule_name   = "equals"
+    arity       = 2
+    invertible  = False
+    lossy       = True
+    method_name = "equals"
+
+
+class PartLayer(_GrammarOpFacade):
+    """``S -> part(S, S)`` -- mereological part-of."""
+    rule_name   = "part"
+    arity       = 2
+    invertible  = False
+    lossy       = True
+    method_name = "part"
+
+
+class TrueLayer(_GrammarOpFacade):
+    """``S -> true(S)`` -- positive-pole projection."""
+    rule_name   = "true"
+    arity       = 1
+    invertible  = False
+    lossy       = True
+    method_name = "true"
+
+
+class FalseLayer(_GrammarOpFacade):
+    """``S -> false(S)`` -- negative-pole projection."""
+    rule_name   = "false"
+    arity       = 1
+    invertible  = False
+    lossy       = True
+    method_name = "false"
+
+
+class SwapLayer(_GrammarOpFacade):
+    """``S -> swap(S, S)`` -- Sinkhorn-normalised soft permutation."""
+    rule_name   = "swap"
+    arity       = 2
+    invertible  = False
+    lossy       = True
+    method_name = "swap"
+
+
+class QueryLayer(_GrammarOpFacade):
+    """``S -> query(S, S)`` -- contradiction-marker accumulator preserve."""
+    rule_name   = "query"
+    arity       = 2
+    invertible  = False
+    method_name = "query"
+
+
+class WhatLayer(_GrammarOpFacade):
+    """``S -> what(S)`` -- content head extraction."""
+    rule_name   = "what"
+    arity       = 1
+    invertible  = False
+    method_name = "what"
+
+
+class WhereLayer(_GrammarOpFacade):
+    """``S -> where(S)`` -- positional head extraction."""
+    rule_name   = "where"
+    arity       = 1
+    invertible  = False
+    method_name = "where"
+
+
+class WhenLayer(_GrammarOpFacade):
+    """``S -> when(S)`` -- temporal head extraction."""
+    rule_name   = "when"
+    arity       = 1
+    invertible  = False
+    method_name = "when"
+
+
+class AbsorbLayer(_GrammarOpFacade):
+    """``S -> absorb(S, S)`` -- sugar absorption (binary left-pass)."""
+    rule_name   = "absorb"
+    arity       = 2
+    invertible  = False
+    lossy       = True
+    method_name = "absorb"
+
+
+# ---------------------------------------------------------------------
+# Internal chart-dispatch facades for ops whose public class name is
+# already taken (NotLayer / NonLayer / IntersectionLayer / UnionLayer /
+# ContiguousLayer have alternate or differently-parameterized math).
+# These _Op variants delegate to the SyntacticLayer.<op>Forward methods
+# the chart historically dispatched via _RULE_METHODS, preserving
+# byte-identical chart behavior under the typed-GrammarLayer dispatch.
+
+class _NotOpFacade(_GrammarOpFacade):
+    rule_name   = "not"
+    arity       = 1
+    invertible  = True
+    method_name = "not"
+
+
+class _NonOpFacade(_GrammarOpFacade):
+    rule_name   = "non"
+    arity       = 1
+    invertible  = False
+    lossy       = True
+    method_name = "non"
+
+
+class _IntersectionOpFacade(_GrammarOpFacade):
+    rule_name   = "intersection"
+    arity       = 2
+    invertible  = True
+    method_name = "intersection"
+
+
+class _UnionOpFacade(_GrammarOpFacade):
+    rule_name   = "union"
+    arity       = 2
+    invertible  = True
+    method_name = "union"
+
+
+class _ContiguousOpFacade(_GrammarOpFacade):
+    rule_name   = "Contiguous"
+    arity       = 1
+    invertible  = False
+    lossy       = True
+    method_name = "Contiguous"
+
+
 class PiLayer(ButterflyLayer):
     r"""Multiplicative boundary layer: [-1,1] -> [-1,1].
+
+    Grammar role: implements the AND-fold (``intersection`` rule). The
+    chart and rule-probability gate find this layer by ``rule_name``.
 
     Both modes share the symmetric log-domain embedding (1+x)/(1-x):
 
@@ -1997,6 +2422,11 @@ class PiLayer(ButterflyLayer):
         monotonic=True:  W >= 0 (NonNegativeInvertibleLinearLayer) -- ordering preserved
         monotonic=False: W unrestricted (InvertibleLinearLayer) -- bitonic response
     """
+    # GrammarLayer metadata: PiLayer is the AND-fold. arity=2 binary
+    # tensor op; ``invertible`` is per-instance.
+    rule_name  = "intersection"
+    arity      = 2
+
     _eps = 1e-6
 
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
@@ -2174,14 +2604,14 @@ class PiLayer(ButterflyLayer):
             return torch.tanh(wl / 2)
         return torch.exp(wl)
 
-    def decompose(self, parent):
+    def generate(self, parent):
         """Inverse of compose; balanced split.
 
         Given ``y = tanh((W @ (log_mult(left) + log_mult(right)) + b)
         / 2)`` recover the pre-transform sum
         ``s = log_mult(left) + log_mult(right)`` and assign
         ``left == right == _from_mult(exp(s/2))``. Round-trip
-        ``compose(*decompose(y)) == y`` when the inner layer is
+        ``compose(*generate(y)) == y`` when the inner layer is
         invertible.
 
         Args:
