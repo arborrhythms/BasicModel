@@ -116,9 +116,9 @@ across spaces — it follows the geometry of what each codebook stores.
 
 | Space | Codebook geometry | What is stored | Metric | Retrieval |
 |-------|------------------|---------------|--------|-----------|
-| PerceptualSpace | `[-1, +1]^d` hypercube | Feature *patterns* — magnitude carries intensity, no codebook-level negation | Euclidean L2 | `argmax_i (x · cᵢ − ½·‖cᵢ‖²)` via matmul + cached-norm subtract |
-| SymbolicSpace | `[-1, +1]^d` hypercube (paired bivector slots for tetralemma corners) | Symbol *patterns* — same as percepts; negation lives in the bivector layout, not in vector arithmetic | Euclidean L2 | `argmax_i (x · cᵢ − ½·‖cᵢ‖²)` via matmul + cached-norm subtract |
-| ConceptualSpace | Unit L2-norm directions (concepts are *named directions* in belief space) | Concept *directions*; the *input* magnitude in `[-1, +1]` encodes belief certainty (`+1` known true, `0` unknown, `−1` known false; intermediate magnitudes carry partial belief with sign) | Dot product | `argmax_i (x · cᵢ)` via a single matmul |
+| PerceptualSpace | $[-1, +1]^d$ hypercube | Feature *patterns* — magnitude carries intensity, no codebook-level negation | Euclidean L2 | $\arg\max_i (x \cdot c_i - \tfrac{1}{2}\|c_i\|^2)$ via matmul + cached-norm subtract |
+| SymbolicSpace | $[-1, +1]^d$ hypercube (paired bivector slots for tetralemma corners) | Symbol *patterns* — same as percepts; negation lives in the bivector layout, not in vector arithmetic | Euclidean L2 | $\arg\max_i (x \cdot c_i - \tfrac{1}{2}\|c_i\|^2)$ via matmul + cached-norm subtract |
+| ConceptualSpace | Unit L2-norm directions (concepts are *named directions* in belief space) | Concept *directions*; the *input* magnitude in $[-1, +1]$ encodes belief certainty ($+1$ known true, $0$ unknown, $-1$ known false; intermediate magnitudes carry partial belief with sign) | Dot product | $\arg\max_i (x \cdot c_i)$ via a single matmul |
 
 ### Why Euclidean for Perceptual and Symbolic
 
@@ -134,17 +134,18 @@ not by negating the vector), so the natural metric is Euclidean L2.
 The retrieval is implemented as a matmul + cached-norm subtract, not
 `torch.cdist`. Expanding the squared distance:
 
-```
-‖x − cᵢ‖² = ‖x‖² + ‖cᵢ‖² − 2·(x · cᵢ)
-```
+$$
+\|x - c_i\|^2 = \|x\|^2 + \|c_i\|^2 - 2\,(x \cdot c_i)
+$$
 
-`‖x‖²` is a positive constant across i and drops from the argmin. So:
+$\|x\|^2$ is a positive constant across $i$ and drops from the argmin.
+So:
 
-```
-argmin_i ‖x − cᵢ‖² = argmax_i (x · cᵢ − ½·‖cᵢ‖²)
-```
+$$
+\arg\min_i \|x - c_i\|^2 = \arg\max_i (x \cdot c_i - \tfrac{1}{2}\,\|c_i\|^2)
+$$
 
-`VectorQuantize` keeps `‖cᵢ‖²` in a `[V]` buffer (`_b_norms_sq`,
+`VectorQuantize` keeps $\|c_i\|^2$ in a `[V]` buffer (`_b_norms_sq`,
 refreshed in the codebook setter and at the end of each EMA update),
 and each forward does:
 
@@ -157,7 +158,7 @@ plus one argmax. Same FLOPs as `torch.cdist`'s internal mm-trick path,
 but skips the `sqrt`, the per-row `‖x‖²` add, and the cdist autograd
 plumbing — and gives Inductor a smaller graph to compile.
 
-The naive expansion `((codebook − x)**2).sum(-1)` would be **slower**
+The naive expansion `((codebook - x)**2).sum(-1)` would be **slower**
 because it broadcasts to a full `[N, V, D]` intermediate before reducing
 (GBs of memory at PerceptualSpace's `V = 8192`). Both `cdist`'s
 mm-trick and the cached-norm matmul above avoid that.
@@ -165,16 +166,17 @@ mm-trick and the cached-norm matmul above avoid that.
 ### Why dot product (not Euclidean, not cosine) for Conceptual
 
 ConceptualSpace concepts are *named directions* in belief space. The
-codebook entry `cᵢ` is a unit vector pointing toward concept i. An
-input `x` projected onto `cᵢ` via the dot product gives the *signed
-strength of belief that x affirms concept i*:
+codebook entry $c_i$ is a unit vector pointing toward concept $i$. An
+input $x$ projected onto $c_i$ via the dot product gives the *signed
+strength of belief that $x$ affirms concept $i$*:
 
-- `x · cᵢ = +1` — input fully affirms concept i
-- `x · cᵢ =  0` — input is orthogonal (no information about i)
-- `x · cᵢ = −1` — input fully denies concept i (strong negative)
+- $x \cdot c_i = +1$ — input fully affirms concept $i$
+- $x \cdot c_i =  0$ — input is orthogonal (no information about $i$)
+- $x \cdot c_i = -1$ — input fully denies concept $i$ (strong negative)
 - intermediate values — partial belief, with sign preserved
 
-Nearest concept (most-affirmed) is `argmax_i (x · cᵢ)`. Two consequences:
+Nearest concept (most-affirmed) is $\arg\max_i (x \cdot c_i)$. Two
+consequences:
 
 1. **The codebook must be unit L2-norm.** The `EMA` path in
    `VectorQuantize` (the `use_cosine_sim=True` branch) renormalizes the
@@ -187,11 +189,11 @@ Nearest concept (most-affirmed) is `argmax_i (x · cᵢ)`. Two consequences:
    out — wrong for this space.
 
 For *ranking* the concepts (which is what `argmax` cares about),
-`x · cᵢ` and `cos(x, cᵢ) = (x · cᵢ) / ‖x‖` are monotone-equivalent
-because `‖x‖ ≥ 0` is a positive constant across i and cancels out. So
-omitting the input-side normalization preserves the certainty signal
-*and* costs less — `O(N·D + V·D)` for the matmul (no per-input
-normalize sweep).
+$x \cdot c_i$ and $\cos(x, c_i) = (x \cdot c_i) / \|x\|$ are
+monotone-equivalent because $\|x\| \geq 0$ is a positive constant
+across $i$ and cancels out. So omitting the input-side normalization
+preserves the certainty signal *and* costs less — $O(N \cdot D + V \cdot D)$
+for the matmul (no per-input normalize sweep).
 
 This is why a single matmul suffices for ConceptualSpace retrieval:
 

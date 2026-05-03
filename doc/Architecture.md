@@ -195,10 +195,10 @@ a time. A row's `hard_eos` flips True the tick its cursor exhausts the
 current document. The full row-state cascade fires for that row only.
 Other rows continue mid-document with state preserved.
 
-**Soft reset.** `SyntacticLayer.compose` detects when a row's parse
-derivation reduces to `<start>` (a new top-level grammar element naming
-the start symbol; see [Language.md](Language.md)). The signal accumulates
-on `wordSpace._sentence_completed: list[bool]` and is drained per-tick.
+**Soft reset.** `Chart.compose` detects when a row's parse derivation
+reduces to `<start>` (a new top-level grammar element naming the start
+symbol; see [Language.md](Language.md)). The signal accumulates on
+`wordSpace._sentence_completed: list[bool]` and is drained per-tick.
 A soft reset re-arms `_stm_fired[b]` and clears `_last_svo[b*K..]` and
 the parse-stack rows for `b`, but **preserves discourse history** —
 discourse accumulates across sentences within a document and clears only
@@ -228,10 +228,10 @@ brick-vectorization handoff (§6) made this true:
 
 CUDA-graph capture of the brick (§7 in the same handoff) is the
 remaining piece. Two residual `.tolist()` calls in
-`SyntacticLayer._compose_vector_chart` (`best_pair`, `best_rule_local`)
-plus a few `if compat.sum() == 0: break`-style data-dependent control
-flow points produce graph breaks; the plan defers handling those to
-the GB10-side capture wiring.
+`Chart._chart_inside` (`best_pair`, `best_rule_local`) plus a few
+`if compat.sum() == 0: break`-style data-dependent control flow
+points produce graph breaks; the plan defers handling those to the
+GB10-side capture wiring.
 
 ### Three-File Architecture
 

@@ -2,238 +2,131 @@
 
 ## Overview
 
-The language system runs a single unified **S-tier** grammar over symbol
-activations.  One class, `SyntacticLayer`, owns both rule prediction
-(Gumbel-softmax over rule logits) and rule semantics (the `<name>Forward`
-/ `<name>Reverse` bodies in the `_RULE_METHODS` dispatch table).  After
-the 2026-04-19 merge there is no longer a separate
-`PerceptualSyntacticLayer` / `ConceptualSyntacticLayer` /
-`SymbolicSyntacticLayer` trio -- `WordSpace` instantiates a single
-`syntacticLayer` and SymbolicSpace calls it.
+The language system is a soft-superposition CKY chart parser that runs
+over symbol activations.  Three pieces cooperate:
+
+- `Grammar` (in [`bin/Language.py`](../bin/Language.py)) — singleton
+  rule table loaded from XML or `data/grammar.cfg`.
+- `Chart` (`Language.py`) — owns the chart parameters, runs the inside
+  / outside passes, and dispatches each per-cell rule application
+  through `wordSpace.host_layer(tier, rule_name)`.
+- `GrammarLayer` subclasses (in [`bin/Layers.py`](../bin/Layers.py)) —
+  one class per grammar operator (`not`, `lift`, `lower`,
+  `intersection`, `union`, `conjunction`, `disjunction`, `equals`,
+  `part`, `true`, `false`, `swap`, `query`, `what`, `where`, `when`,
+  `absorb`, `Contiguous`).  Each class exposes `forward()` /
+  `reverse()` (the unary `Layer` interface) and, for binary ops,
+  `compose()` / `generate()` (the chart's binary tensor interface).
 
 ```
 InputSpace  ->  PerceptualSpace  ->  ConceptualSpace  ->  SymbolicSpace  ->  OutputSpace
-                                                     grammar runs here
-                                                     S-tier rules
+                                                          chart runs here
 ```
 
-Prior revisions partitioned rules across three tiers (S, C, P) with
-transitions $S \to C \to P$.  The 2026-04 redesign collapsed C into S
-and removed the P-tier syntactic layer (chunking became a non-syntactic
-pre-pass).  All grammar rules now live on S-tier and execute on symbol
-activations; the perceptual chunking step is handled by `ChunkingLayer`
-outside of syntax.
+The 2026-04-19 merge collapsed the C-tier into S and removed the
+P-tier syntactic layer (chunking became a non-syntactic pre-pass).
+The 2026-05-01 refactor went further: the per-rule `*Forward` /
+`*Reverse` methods on `SyntacticLayer`, the `_RULE_METHODS` /
+`_OPS_METHODS` dispatch tables, and the in-class `compose` /
+`decompose` / `emit_head` machinery were all removed.  Per-rule math
+now lives on `GRAMMAR_LAYER_CLASSES` (Layers.py); the chart's
+`_apply_rule_forward` and the per-space `SpaceSyntacticLayer.forward`
+route through them.
+
+`SyntacticLayer` survives as the rule-prediction front-end and the
+chart authority that gates each parametrized fold via
+`GrammarLayer.gated_run`.  Per-space dispatchers are
+`SpaceSyntacticLayer` instances built by
+`build_space_syntactic_layer`; each holds a tier-specific
+`host_layers` dict keyed by `rule_name`.
 
 ---
 
 ## Grammar
 
-`TheGrammar` is a singleton `Grammar` instance.  Current full configs
-normally load `data/grammar.cfg` through
-`<WordSpace><language><grammarCfg>...`, and that file is the
-authoritative rule table.  The compact inline grammar below is the
-legacy compatibility form: 17 function-call upward rules (IDs 0-16), 2
-typed upward productions (IDs 17-18), and 1 downward production (ID
-19).  All rules are tier `'S'` -- `tier` is retained as a routing
-artifact from the pre-merge era; new typed categories live on the `lhs`
-field.
+`TheGrammar` is a singleton `Grammar` instance.  Production configs
+load `data/grammar.cfg` through `<WordSpace><language><grammarCfg>...`,
+which is the authoritative rule table.  An XML `<grammar>` block
+inside `<WordSpace><language>` is the legacy alternative; both paths
+populate the same `Grammar.rules` list.
 
-Function-call upward rules (IDs 0-16, `lhs = 'S'`):
-
-| Rule | Production | Arity | Method |
-|------|-----------|-------|--------|
-| 0 | $S \to \text{true}(S)$ | 1 | `trueForward` |
-| 1 | $S \to \text{false}(S)$ | 1 | `falseForward` |
-| 2 | $S \to \text{non}(S)$ | 1 | `nonForward` |
-| 3 | $S \to \text{conjunction}(S,\ S)$ | 2 | `conjunctionForward` |
-| 4 | $S \to \text{disjunction}(S,\ S)$ | 2 | `disjunctionForward` |
-| 5 | $S \to \text{what}(S)$ | 1 | `whatForward` |
-| 6 | $S \to \text{where}(S)$ | 1 | `whereForward` |
-| 7 | $S \to \text{when}(S)$ | 1 | `whenForward` |
-| 8 | $S \to \text{query}(S,\ S)$ | 2 | `queryForward` |
-| 9 | $S \to \text{swap}(S,\ S)$ | 2 | `swapForward` |
-| 10 | $S \to \text{equals}(S,\ S)$ | 2 | `equalsForward` |
-| 11 | $S \to \text{not}(S)$ | 1 | `notForward` |
-| 12 | $S \to \text{part}(S,\ S)$ | 2 | `partForward` |
-| 13 | $S \to \text{intersection}(S,\ S)$ | 2 | `intersectionForward` |
-| 14 | $S \to \text{union}(S,\ S)$ | 2 | `unionForward` |
-| 15 | $S \to \text{lower}(S,\ S)$ | 2 | `lowerForward` |
-| 16 | $S \to \text{lift}(S,\ S)$ | 2 | `liftForward` |
-
-Typed upward productions (IDs 17-18, bare-symbol form, `method = 'merge'`):
-
-| Rule | Production | lhs | rhs_symbols |
-|------|-----------|-----|-------------|
-| 17 | $S \to S\ VO$ | `'S'`  | `('S', 'VO')` |
-| 18 | $VO \to V\ O$ | `'VO'` | `('V', 'O')`  |
-
-Downward production (ID 19, `method = 'emit_head'`):
-
-| Rule | Production | lhs | rhs_symbols |
-|------|-----------|-----|-------------|
-| 19 | $S \to C$ | `'S'` | `('C',)` |
-
-The dispatch table no longer exposes a grammar-level `identity` or
-`chunk` rule.  Unary pass-through is PROJECT / transition behavior;
-chunking belongs to the perceptual pre-pass.
+A `RuleDef` namedtuple carries
+`(tier, canonical, arity, method_name, lhs, rhs_symbols)`.
+`method_name` is the op name from the explicit-op / function-call RHS
+(`'lift'`, `'intersection'`, `'not'`, ...), or `'merge'` for
+bare-symbol-sequence rules, or `'emit_head'` for the downward
+`S -> C` projection.
 
 ### Accessors
 
-- `Grammar.symbolic()` - indices of all S-tier rules
-- `Grammar.symbolic_transition()` - `None` (no cross-tier transitions)
-- `Grammar.binary_rules()` - indices of all arity-2 rules
-- `Grammar.rule_by_id(i)` - canonical production string
-- `Grammar.method_name(i)` - dispatch method name (e.g. `'swap'`)
-- `Grammar.arity(i)` - 1 or 2
-- `Grammar.tier(i)` - `'S'`
+- `Grammar.symbolic()` — indices of all S-tier rules
+- `Grammar.symbolic_transition()` — `None` (no cross-tier transitions)
+- `Grammar.binary_rules()` — indices of all arity-2 rules
+- `Grammar.rule_by_id(i)` — canonical production string
+- `Grammar.method_name(i)` — dispatch method name (e.g. `'swap'`)
+- `Grammar.arity(i)` — 1 or 2
+- `Grammar.tier(i)` — `'S'`
 
-### Grammar Configuration
+### Grammar configuration
 
-`Grammar.configure()` loads an XML `<grammar>` section (inside
-`<WordSpace><language>`).  The block splits into `<upward>` (parsing /
-chart compose), `<downward>` (generation from a deep symbolic state),
-and a single `<start>` element naming the start symbol.
+`Grammar.configure()` loads an XML `<grammar>` section.  The block
+splits into `<upward>` (parsing / chart compose), `<downward>`
+(generation from a deep symbolic state), and `<start>` (the start
+symbol).
 
-The `<start>S</start>` element is the canonical sentence boundary marker.
-When `SyntacticLayer.compose` reduces a row's parse stack to a single node
-of the start category, the layer emits a host-side soft-reset signal for
-that row (`wordSpace._sentence_completed[b] = True`). The outer
-doc-streaming loop drains this signal after each `runBatch` tick and
-dispatches `wordSpace.soft_reset(batch=b)`. Soft reset clears every
-per-sentence working buffer for row `b`: the parse stack rows
-(`subspace.clear_rows(b*K, (b+1)*K)`), the category stack rows, the
-reconstruction stack rows, `_last_svo[b]`, and re-arms `_stm_fired[b]`
-so the next sentence fires its own discourse-prediction bias. Discourse
+The `<start>S</start>` element is the canonical sentence boundary
+marker.  When the chart reduces a row's parse to a single node of the
+start category, the layer emits a host-side soft-reset signal for
+that row.  The outer doc-streaming loop drains the signal each tick
+and dispatches `wordSpace.soft_reset(batch=b)`, which clears every
+per-sentence working buffer for row `b` (parse stack, category stack,
+reconstruction stack, `_last_svo[b]`, `_stm_fired[b]`).  Discourse
 history (`InterSentenceLayer` ring buffer) and codebook EMA are *not*
-cleared — they are document-scoped and form the inter-sentence prior
-that bridges sentence N to sentence N+1 within the same document.
-Hard reset (document boundary) wipes both per-sentence and discourse
-state.
+cleared — they are document-scoped.  Hard reset (document boundary)
+wipes both.
 
-Without `<start>` declared, soft reset never fires; the cascade falls back
-to hard reset only (per-document). This is the legacy behavior.
 The loader accepts three RHS forms; the **explicit-op** form is the
-canonical target per
-[plans/2026-04-24-lift-lower-bivector-refactor.md](plans/2026-04-24-lift-lower-bivector-refactor.md)
-Step 6 and
-[specs/2026-04-24-lift-lower-bivector-design.md](specs/2026-04-24-lift-lower-bivector-design.md)
-(its dispatch table maps each op name to a single
-`Ops.lift` / `Ops.lower` / `Ops.equal` / ... call):
+canonical target:
 
 ```xml
 <grammar>
   <upward>
-    <!-- (1) Explicit-op form (canonical per Step 6). The RHS *is* the   -->
-    <!--     dispatched call; LHS may be a comma-separated tuple for     -->
-    <!--     multi-output reverses.                                       -->
+    <!-- (1) Explicit-op form. RHS is the dispatched op call;       -->
+    <!--     LHS may be a comma-separated tuple for multi-output    -->
+    <!--     reverses.                                                -->
     <rule>S       = lift(NP, VP)</rule>
     <rule>NP      = intersection(AP, NP)</rule>
     <rule>S       = not(S)</rule>
     <rule>S,S     = intersection_inv(VO)</rule>     <!-- multi-output reverse -->
 
-    <!-- (2) Function-call form (legacy S-tier ops). Tag = LHS, body =   -->
-    <!--     op(args). Equivalent to (1) but uses the nonterminal as     -->
-    <!--     the XML element name instead of a generic <rule> wrapper.    -->
+    <!-- (2) Function-call form. Tag = LHS, body = op(args).         -->
     <S>not(S)</S>
     <S>swap(S, S)</S>
     <S>absorb(S, S)</S>
 
-    <!-- (3) Bare-symbol form (transitional). RHS is a whitespace-       -->
-    <!--     separated sequence of nonterminal / terminal categories;    -->
-    <!--     dispatch method is the typed-compose `merge`.  Step 6 of   -->
-    <!--     the lift/lower plan migrated `data/grammar.cfg` to the     -->
-    <!--     explicit-op form (1); the previous bare-symbol cfg is      -->
-    <!--     preserved at `data/grammar_legacy.cfg` for reference.       -->
+    <!-- (3) Bare-symbol form (transitional). Dispatches via         -->
+    <!--     method_name='merge'.                                     -->
     <S>S VP</S>
     <NP>AP NP</NP>
   </upward>
   <downward>
-    <!-- One-shot head emission: project the deep state onto a          -->
-    <!-- codebook and emit the best-match atom. Dispatch is              -->
-    <!-- `emit_head`; no function-call form is accepted on this path.    -->
+    <!-- One-shot head emission via method_name='emit_head'.         -->
     <S>C</S>
   </downward>
 </grammar>
 ```
 
-The op names that may appear in the explicit-op RHS are the dispatch
-keys for the unified
-`Y = f(X1, X2=None, mode=..., kind=..., inverse=False)` signature
-implemented in Step 1–2 of the refactor (see [Logic.md §8](Logic.md)
-*Grammatical dispatch*):
+The op names in the explicit-op RHS are dispatch keys into
+`GRAMMAR_LAYER_CLASSES` (Layers.py); `lift`, `lower`, `intersection`,
+`union`, `not`, `non`, `conjunction`, `disjunction`, `equals`, `part`,
+`true`, `false`, `swap`, `query`, `what`, `where`, `when`, `absorb`,
+`Contiguous`.  Reverse productions are *derived mechanically* at
+grammar-load time — for each forward rule `LHS = op(arg1, arg2)` the
+loader synthesizes `arg1, arg2 = opReverse(LHS)` (multi-return).
 
-| Op name in RHS                  | Resolves to                                                | Notes                                                              |
-|---------------------------------|------------------------------------------------------------|--------------------------------------------------------------------|
-| `lift(A, B)`                    | `Ops.lift(A, B, mode='OR')`                                | synthesis / disjunction (default `kind='strict'` → max)            |
-| `lower(A, B)`                   | `Ops.lower(A, B, mode='AND')`                              | analysis / conjunction (default `kind='strict'` → min)             |
-| `intersection(A, B)`            | `Ops.lower(A, B, mode='AND')`                              | meet — modification rules (`NP = intersection(AP, NP)`)            |
-| `union(A, B)` / `disjunction`   | `Ops.lift(A, B, mode='OR')`                                | join — coordination                                                |
-| `conjunction(A, B)`             | `Ops.lower(A, B, mode='AND')`                              | propositional $\land$ (alias of `intersection` at S-tier)          |
-| `not(A)`                        | `Ops.lift(A, mode='NOT')`                                  | self-inverse pole flip / sign flip                                 |
-| `equals(A, B)`                  | `Ops.equal(A, B)`                                          | mereological mutual parthood (copula identification)               |
-| `part(A, B)`                    | `Ops.part(A, B)`                                           | mereological assertion *X is Y*                                    |
-| `query(A, B)`                   | `queryForward(A, B)` today; target is definitional query     | interrogative over stored mereology                                |
-| `swap(A, B)`                    | `swapForward(A, B)`                                         | argument-position swap                                             |
-| `bind(A, B)`                    | `Ops.bind(A, B)` (or `Ops.lower(mode='AND')` fallback)     | head-complement composition (PP, V + NP, …); see spec O6           |
-| `scale(DEG, AP)`                | `Ops.scale(DEG, AP)` (or `Ops.lower(mode='AND')` fallback) | degree intensification; see spec O7 / O9                           |
-| `project(A)` / single-symbol    | typed projection                                            | terminal projection (`NP = project(N)` or `NP = N`); stamps LHS    |
-| `absorb(A, B)`                  | left-passthrough (returns `A`, discards `B`)               | absorb adjacent sugar (`B` learned to be punct/whitespace word)    |
-| `*Reverse(Y)` / `*_inv(Y)`      | `Ops.<op>(Y, inverse=True)` (multi-return)                 | derived at grammar-load time — not authored separately (spec O10)  |
+### `data/grammar.cfg` dispatch
 
-`Grammar.rules_upward` / `Grammar.rules_downward` hold the two rule
-sets; `Grammar.rules` is their union.  Each `RuleDef` namedtuple carries
-`(tier, canonical, arity, method_name, lhs, rhs_symbols)` — `method_name`
-is the op name from the explicit-op / function-call RHS, or `'merge'`
-for bare-symbol-sequence rules, or `'emit_head'` for the downward
-`S -> C` projection.  The last two fields drive the typed-category
-compatibility mask in the chart compose (see below).  Legacy flat
-`<S>...</S>` directly under `<grammar>` (without the upward/downward
-wrapper) is still accepted by `Grammar.configure()` for Python callers,
-but XMLs shipped in this repo use the split form so the XSD can
-validate them.
-
-Reverse productions (the downward / inverse direction of every Layer-1
-forward production) are *derived mechanically* at grammar-load time —
-not authored as separate rules.  For each forward rule
-`LHS = op(arg1, arg2)` the loader synthesizes `arg1, arg2 = opReverse(LHS)`
-with the multi-return calling convention from
-[specs/2026-04-24-lift-lower-bivector-design.md](specs/2026-04-24-lift-lower-bivector-design.md)
-O10.
-
-### Syntactic sugar consumption
-
-Under the byte-level lex routed through BPE chunking, raw text positions
-include plenty of *syntactic sugar* — runs of whitespace, single
-punctuation marks (`,`, `.`, `;`, `:`, `"`, `'`, `(`, `)`), newlines.
-After chunking these become their own word slots that the grammar must
-either reduce away or carry along.
-
-The legacy 17-rule grammar had no explicit absorption rule; the rule
-predictor learned to abuse one of the existing binary ops (typically
-`union(S, S)` or `swap(S, S)`) as a de-facto pass-through whenever one
-operand was sugar. This was a bandaid that mixed semantically distinct
-operations — propositional disjunction and "skip this comma" fired the
-same rule with different probabilities depending on input.
-
-The post-rolling-cursor grammar adds one explicit absorption rule:
-
-- `absorb(A, B)` — binary: returns `A`, discards `B`. Used when sugar
-  attaches to a meaningful adjacent token (`"Hello,"` chunked as
-  `[Hello, ,]` reduces via `absorb(Hello, ,)`).  Unary pass-through is
-  not a separate grammar rule; it is PROJECT / transition behavior.
-
-`absorb` is a pure projection -- no computation, no learnable
-parameters in the projection itself. The rule predictor learns *when* to
-fire it via the same softmax-over-rules logic as the semantic rules.
-Initial logits should bias against `absorb` to avoid early-training
-collapse where the parser learns to discard everything past the first
-token; bias decays as the loss demonstrates the rule's actual usefulness.
-
-### `data/grammar.cfg` dispatch (Step 6)
-
-Step 6 of the lift / lower / bivector refactor introduced a text-based
-rule table at `data/grammar.cfg` in the explicit-op form, alongside the
-XML loader.  Format (line-oriented):
+The text-based rule table is line-oriented:
 
 ```
 # comments start with '#'
@@ -242,7 +135,6 @@ S = NP                        # PROJECT (single-category RHS)
 S = lift(NP, VP)
 NP = intersection(AP, NP)
 S = not(S)
-S = true(S)                   # post-hoc S-op
 S = swap(S, S)
 S = absorb(S, S)
 ...
@@ -251,54 +143,33 @@ S = absorb(S, S)
 C = emit_head(S)
 ```
 
-Sections are bracketed (`[upward]` / `[downward]`) and default to
-`[upward]` when no header is seen.  Each `LHS = body` rule's body is
-either a function call `op(arg1, arg2)`, a single category (PROJECT), or
-`epsilon`.  Post-hoc S ops such as `true`, `swap`, and `absorb` also
-live in `[upward]` so the rule predictor, dispatcher, and derivation
-trace can address them by rule ID.
-
-Loading is gated via `<WordSpace><language><grammarCfg>` in the XML
-config — when set to a path (resolved against `ProjectPaths.PROJECT_DIR`),
+Sections are bracketed (`[upward]` / `[downward]`).  Each `LHS = body`
+rule's body is either a function call `op(arg1, arg2)`, a single
+category (PROJECT), or `epsilon`.  Loading is gated via
+`<WordSpace><language><grammarCfg>` in the XML config — when set,
 `Grammar._ensure_configured()` calls `Grammar.load_from_cfg(...)` and
-skips the legacy `<grammar>` block.  When unset, the XML grammar wins
-(legacy path).  Both paths populate `Grammar.reverse_rules` with the
-mechanically-derived Layer-2.5 reverse productions
-`(args_tuple, reverse_op_name, (lhs,))`.
+skips the legacy `<grammar>` block.
 
-Dispatch itself is unchanged: `SyntacticLayer.project` looks up
-`method_name` in `_RULE_METHODS` and calls the matching `<name>Forward`
-on the layer.  The cfg path supplies the `method_name`; the layer
-methods supply the Basis / mask / subspace context.  For callers that
-want to invoke an op stateless (no Basis context),
-`SyntacticLayer.dispatch_ops(op_name, *args, **kwargs)` resolves the
-op name through `_OPS_METHODS` and calls the bare `Ops` callable
-directly — useful for the explicit-op view from grammar.cfg without
-going through layer plumbing.
+### Syntactic sugar consumption
 
-The reverse op name follows the convention `<op>Reverse` for everything
-except self-inverse ops (`not`) which keep their forward name; PROJECT
-rules (single-category RHS) emit the explicit `projectReverse` reverse
-name.  Multi-return reverses `Ops.liftReverseAll(Y[, W])` and
-`Ops.lowerReverseAll(Y[, W])` return `(X1, X2)` tuples consistent with
-the parent plan §Step 6 spec; the existing analytic single-arg forms
-`Ops.liftReverse(result, right)` and `Ops.lowerReverse(result, right)`
-are unchanged.
+Under the byte-level lex routed through BPE chunking, raw text
+positions include syntactic sugar — runs of whitespace, single
+punctuation marks, newlines.  After chunking these become their own
+word slots that the grammar must reduce away.  The post-rolling-cursor
+grammar adds one explicit absorption rule: `absorb(A, B)` returns `A`
+and discards `B`.  Initial logits should bias against `absorb` to
+avoid early-training collapse where the parser learns to discard
+everything past the first token.
 
-### Shamatha Speech Mode
+### Shamatha speech mode
 
-Shamatha speech is the one-pointed speech mode.  The existing
-`Grammar.thought_free` request flag in `serve.py` is only a legacy hook;
-the target XML mode should make this a first-class configuration, for
-example `useGrammar="shamathaSpeech"` or an equivalent
-`<speechMode>shamathaSpeech</speechMode>` field, with `thoughtFree` kept
-as a compatibility alias.
-
-The mode is not serial mode.  Serial mode constrains the runtime cursor
-to a moving prefix / next-token task.  Shamatha speech may conjoin and
-disjoin over all active percepts in the current object field at once.
-Its constraint is not "one token at a time"; its constraint is that the
-logical object remains single-pointed.
+Shamatha speech is the one-pointed speech mode, configurable via
+`useGrammar="shamathaSpeech"` (with `thoughtFree` kept as a
+compatibility alias).  It is *not* serial mode; serial mode constrains
+the runtime cursor to a moving prefix / next-token task.  Shamatha
+speech may conjoin and disjoin over all active percepts in the
+current object field at once — its constraint is that the logical
+object remains single-pointed.
 
 The narrow grammar is the DNF object grammar:
 
@@ -310,494 +181,857 @@ object   := term ("or" term)*
 sentence := object
 ```
 
-This is intentionally unattractive English, but it is legitimate English
-over a set of objects: a generated sentence can be an explicit DNF such
-as `red and round or not blue and non-moving`.  The surface form is a
-faithful rendering of the object description, not a polished natural
-language paraphrase.
-
 For this grammar to express a single object rather than a scattered
-aggregate, every logical merge must preserve spatiotemporal contiguity:
+aggregate, every logical merge must preserve spatiotemporal
+contiguity: `where(A)` and `where(B)` must overlap, touch, or be
+connected by an allowed adjacency edge before any merge may form a
+larger object; `when(A)` and `when(B)` must overlap or be temporally
+adjacent.  See
+[plans/2026-04-28-shamatha-speech-contiguity-handoff.md](plans/2026-04-28-shamatha-speech-contiguity-handoff.md).
 
-- `where(A)` and `where(B)` must overlap, touch, or be connected by an
-  allowed adjacency edge before `conjunction(A, B)` or
-  `disjunction(A, B)` may form a larger object.
-- `when(A)` and `when(B)` must overlap or be temporally adjacent within
-  the continuity tolerance.
-- The transitive closure of accepted part merges must form one connected
-  component in the `where` adjacency graph and one continuous interval
-  or track in `when`.
-
-Under this reading, DNF supplies logical completeness and contiguity
-supplies objecthood.  Each conjunction is a complete local
-part-description; the disjunction is the admitted fusion / extension of
-those local descriptions.  If the accepted terms are not connected in
-`where` and continuous in `when`, the DNF denotes a class, collection, or
-scattered aggregate, not one object.
-
-The polarity channels should align with `NegationLayer(ternary=True)`:
-
-| Surface | Channel | Meaning |
-|---|---|---|
-| `""` | `x` | affirmation |
-| `non-` | `non(x)` | non-affirming negation / indeterminacy |
-| `not` | `-x` | affirming negation / opposite assertion |
-
-Generation in shamatha speech should therefore consume and emit polarity
-as part of the percept-codebook relation rather than as a free grammar
-production.  See
-[plans/2026-04-28-shamatha-speech-contiguity-handoff.md](plans/2026-04-28-shamatha-speech-contiguity-handoff.md)
-for the implementation plan.
+The polarity surface (`""`, `non-`, `not`) maps to the three channels
+of `NegationLayer(ternary=True)`: affirmation `x`, non-affirming
+negation `non(x)`, and affirming negation `-x`.
 
 ---
 
-## Ops Reference
+## Operator semantics
 
-The grammar dispatches each rule through `SyntacticLayer.project()`.
-Many rows call an `Ops.*` callable from
-[`bin/Layers.py`](../bin/Layers.py); others are structural helpers
-(`absorb`, `swap`, selectors), SigmaPi level-crossing targets, or
-definitional WordSpace operations.  This section is the compact review
-surface for those operators: pseudocode, computation anchor, and current
-implementation status.
-
-### Compact Operator Review
-
-Every grammar op should have one explicit computation anchor:
-
-| Anchor | Computation contract |
-|---|---|
-| **Sym** | Call `Ops.*`, `Basis.*`, or a small `SyntacticLayer` helper on symbolic tensors. |
-| **SigmaPi** | Level crossing.  `lift` targets `SS.forward(CS.forward(...))`; `lower` targets `SS.reverse(CS.reverse(...))`. |
-| **Def** | Definitional WordSpace update over the symbolic codebook / mereological graph.  `part(x, y)` makes `x` a child of whole `y`; `equals(x, y)` records sibling/equivalence; `query` reads that graph. |
-| **Percepts** | Perceptual pre-processing before grammar.  Chunking lives here, not in `_RULE_METHODS`. |
-
-Compact table.  The `Syntactic role` column is the starting point for
-annotating `model.xml` / `grammar.cfg` rules with their POS-level
-reading.
-
-| Op | Syntactic role | Pseudocode | Computed as | Status |
-|---|---|---|---|---|
-| `project(A)` | lexical promotion, e.g. `N -> NP`, `V -> VP` | `return A; category = LHS` | typed projection, not a rule op | implemented by single-symbol RHS / `merge` |
-| `absorb(A, B)` | punctuation / whitespace attachment | `return A` | structural/Sym left-pass | implemented; `identity()` removed |
-| `true(A)` | sentence truth commitment | `relu(clamp(A))` | Sym `Basis.pos` / torch | implemented |
-| `false(A)` | sentence falsehood commitment | `relu(-clamp(A))` | Sym `Basis.pos(-A)` / torch | implemented |
-| `non(A)` | indeterminate sentence commitment | `1 - abs(clamp(A))` | Sym `Ops.non` | implemented |
-| `not(A)` | propositional or predicate negation | `-A` or paired-pole flip | Sym `Ops.negation` | implemented |
-| `conjunction(A, B)` | `NP + AND + NP -> NP`; `S + AND + S -> S` | `lower(A, B, mode='AND')` | symbolic logic using Pi / binary mode target | implemented as Sym `Ops.lower` / `Basis.conjunction` |
-| `disjunction(A, B)` | `NP + OR + NP -> NP`; `S + OR + S -> S` | `lift(A, B, mode='OR')` | symbolic logic using Sigma / binary mode target | implemented as Sym `Ops.lift` / `Basis.disjunction` |
-| `intersection(A, B)` | `ADJ + N -> NP`; `ADV + V -> VP` | `lower(A, B)` | subsymbolic modifier meet, min target | currently Sym alias; route through SigmaPi later |
-| `union(A, B)` | entity-set / predicate-set union | `lift(A, B)` | SigmaPi target | currently Sym alias; route through SigmaPi later |
-| `lift(A, B)` | `NP + VP -> S`; subject plus predicate | `SS.forward(CS.forward(A, B))` | subsymbolic lifting; forward then forward identifies a subset of symbols | current `liftForward` still calls `Ops.lower(..., kind='smooth')` |
-| `lower(A, B)` | `DET + N -> NP` | `SS.reverse(CS.reverse(A, B))` | subsymbolic lowering; reverse then reverse | current `lowerForward` still calls `Ops.lift(..., kind='smooth')` |
-| `part(A, B)` | `NP is part of NP` | `graph.add_child(whole=B, part=A)` | Def | current tensor score; graph update still TODO |
-| `equals(A, B)` | copula equivalence, e.g. `NP is NP` | `graph.add_sibling(A, B)` | Def | current tensor mutual-parthood score; graph update still TODO |
-| `query(A, B)` | interrogative over stored relations | `graph.query(A, B)` | Def | current `queryForward` preserves `A`; codebook query still TODO |
-| `what(A)` | select what/content axis | `A.what_block` | Sym selector | implemented |
-| `where(A)` | select where/place axis | `A.where_block` | Sym selector | implemented |
-| `when(A)` | select when/time axis | `A.when_block` | Sym selector | implemented |
-| `swap(A, B)` | argument-order alternation | `softperm([A, B, marker])[0]` | Sym helper | implemented |
-
-There is intentionally no `identity()` row.  Unary pass-through is
-PROJECT / transition behavior and should not consume rule probability.
-There is also no grammar-level `chunk()` row.  Chunking is a call to the
-perceptual path (`ChunkLayer` / `PerceptualSpace.chunk_static`) before
-symbols reach the grammar.
-
-The remainder of this section gives the current formulas for the
-implemented operators and calls out where a target anchor has not yet
-landed in code.
+Every grammar op has one explicit computation anchor: **Sym** (call a
+GrammarLayer's tensor kernel directly), **SigmaPi** (level-crossing
+fold via `SS.forward(CS.forward(...))` and its inverse), **Def**
+(definitional WordSpace update over the symbolic codebook /
+mereological graph), or **Percepts** (perceptual pre-processing —
+chunking, before the grammar sees symbol slots).
 
 ### Notation
 
 Let $x, \ell, r \in \mathbb{R}^{B \times N}$ (activation mode) or
 $\mathbb{R}^{B \times N \times D}$ (vector mode).  Let $\mathcal{B}$ be
-the subspace basis (e.g. a bitonic `Basis`), which supplies pointwise
-primitives `pos`, `negation`, `conjunction`, `disjunction`, `equal`,
-`part`.  When $\mathcal{B}$ is absent the methods fall back to torch
-elementwise primitives.  `mask` (optional concept-axis `Mask`) gates
-the output by zeroing non-selected dimensions; it is omitted below for
-clarity.
+the subspace basis (a bitonic `Basis` or codebook), supplying
+pointwise primitives `pos`, `negation`, `conjunction`, `disjunction`,
+`equal`, `part`.  When $\mathcal{B}$ is absent the kernels fall back
+to torch elementwise primitives.  An optional concept-axis `mask`
+gates the output by zeroing non-selected dimensions.
 
-### Ternary operators (true / false / non) — Sym
+### Ternary commitment ops (`true` / `false` / `non`)
 
-For $x \in [-1, 1]$ (clamped defensively on entry):
+For $x \in [-1, 1]$ (clamped on entry):
 
 $$
-\begin{aligned}
-\mathrm{true}(x)  &= \mathcal{B}.\mathrm{pos}(x)   = \max(0,\ x) \\
-\mathrm{false}(x) &= \mathcal{B}.\mathrm{pos}(-x)  = \max(0,\ -x) \\
-\mathrm{non}(x)   &= 1 - |x|
-\end{aligned}
+\mathrm{true}(x)  = \max(0,\ x), \qquad
+\mathrm{false}(x) = \max(0,\ -x), \qquad
+\mathrm{non}(x)   = 1 - |x|
 $$
 
-These three operators partition unity: $\mathrm{true} + \mathrm{false}
-+ \mathrm{non} = 1$ pointwise.  The ReLU shape of `true`/`false` makes
+These three partition unity: $\mathrm{true} + \mathrm{false} +
+\mathrm{non} = 1$ pointwise.  The ReLU shape of `true` / `false` makes
 them the "committed yes" and "committed no" halves of a bitonic axis;
-`non` is the triangular indeterminate residual peaked at $x = 0$.  All
-three are lossy (no inverse registered).
+`non` is the triangular indeterminate residual peaked at $x = 0$.
+All three are lossy.
 
-### Negation (not) — Sym
+### Negation (`not`) — Sym
 
-$$
-\mathrm{not}(x) = \mathcal{B}.\mathrm{negation}(x) = -x,
-\qquad
-\mathrm{not}^{-1} = -x
-$$
-
-Pure antipodal flip on the bitonic axis.  Self-inverse.
+`not` is the propositional bivector swap on the leading two dims of a
+symbol vector: $[x_0, x_1, x_{2..}] \to [x_1, x_0, x_{2..}]$.  Pure
+antipodal flip on the bitonic axis; self-inverse.
 
 ### Conjunction / disjunction — Sym
 
-Both route through the unified `lift` / `lower` dispatcher (Step 1–2 of
-[plans/2026-04-24-lift-lower-bivector-refactor.md](plans/2026-04-24-lift-lower-bivector-refactor.md)).
-At the S tier the explicit-op grammar form `S = conjunction(S, S)`
-resolves to `Ops.lower(S1, S2, mode='AND')` and `S = disjunction(S, S)`
-resolves to `Ops.lift(S1, S2, mode='OR')`:
+Both route through the unified `lift` / `lower` dispatcher.  At the S
+tier `S = conjunction(S, S)` resolves to `lower(S1, S2, mode='AND')`
+and `S = disjunction(S, S)` resolves to `lift(S1, S2, mode='OR')`.
 
-$$
-\mathrm{conjunction}(\ell, r) = \mathcal{B}.\mathrm{lower}(\ell, r,\ \mathrm{mode}{=}\text{'AND'})
-                              \ \xrightarrow[\text{kind='strict'}]{}\ \min(\ell, r)
-$$
+The forward kernel selects from three `kind` settings:
+**`'strict'`** uses lattice min / max; **`'smooth'`** uses elementwise
+product (`AND`) or mean (`OR`), the differentiable form used by
+`PiLayer.forward` / `SigmaLayer.forward`; **`'radial'`** uses RadMin /
+RadMax (same-sign min / max magnitude with zero passthrough).
+Sentence-level fuzzy $\wedge$ and $\vee$ are lossy at the S tier; the
+same primitives at C-tier subspace level retain Basis-level inverses
+via codebook-search recovery.
 
-$$
-\mathrm{disjunction}(\ell, r) = \mathcal{B}.\mathrm{lift}(\ell, r,\ \mathrm{mode}{=}\text{'OR'})
-                              \ \xrightarrow[\text{kind='strict'}]{}\ \max(\ell, r)
-$$
+### Intersection / union — SigmaPi
 
-The `kind` parameter selects the forward point body: `'strict'`
-(default — lattice min/max), `'smooth'` (elementwise product / mean,
-the differentiable form used by `Pi`/`SigmaLayer.forward`), or
-`'radial'` (RadMin / RadMax — same-sign min/max magnitude with zero
-passthrough; equivalent to the historical `monotonic=False` body of
-`Basis.conjunction` / `Basis.disjunction`).  The legacy thin-forwarder
-methods `Basis.conjunction(x, y, monotonic=...)` /
-`Basis.disjunction(x, y, monotonic=...)` are preserved as deprecated
-aliases and route through the new dispatcher (`monotonic=True` →
-`kind='strict'`; `monotonic=False` → `kind='radial'`) so existing
-callers see bit-exact output.
+`intersection` and `union` are aliases for `lower(mode='AND')` and
+`lift(mode='OR')` under the explicit-op grammar form.  Inverses are
+codebook-search recoveries on the right operand (supplied by `Basis`
+which carries the codebook $W$).  For `mode='NOT'` the inverse is
+identical to the forward (self-inverse pole flip).
 
-Sentence-level fuzzy $\wedge$ and $\vee$ on bitonic activations.  Both
-are lossy at the sentence level (no inverse registered for the S-tier
-usage), though the same primitives at C-tier subspace level retain
-Basis-level inverses via `Ops.conjunctionReverse` /
-`Ops.disjunctionReverse` (codebook-search recovery).
+### Part / equals — Def (currently tensor scoring)
 
-### Intersection / union — SigmaPi (currently aliases `lower`/`lift`)
+Parthood weights the right operand by its containment in the left:
+$\mathrm{part}(\ell, r) = \frac{\max(0,\ \ell \cdot r)}{|\ell|\,|r|} \cdot r$.
+The scalar score is broadcast to $r$'s rank.  Empty-operand contract:
+if $|\ell|$ or $|r|$ is near zero, the score is 1 (the empty set is
+part of everything).
 
-`intersection` and `union` are aliases for `conjunction` / `disjunction`
-under the explicit-op grammar form, dispatching the same unified call:
+`equals(\ell, r)` is mutual parthood:
+$\mathrm{part}(\ell, r) \cdot \mathrm{part}(r, \ell)$, scalar-reduced
+and broadcast to $r$.  Under a `mask`, equals degenerates to an
+L1-distance agreement score on the selected dims.  Both are lossy.
+The target architecture moves both from tensor scoring to graph
+updates in WordSpace; see [Mereology.md](Mereology.md).
 
-$$
-\mathrm{intersection}(\ell, r) = \mathcal{B}.\mathrm{lower}(\ell, r,\ \mathrm{mode}{=}\text{'AND'})
-\qquad
-\mathrm{union}(\ell, r) = \mathcal{B}.\mathrm{lift}(\ell, r,\ \mathrm{mode}{=}\text{'OR'})
-$$
+### Slot selectors (`what` / `where` / `when`) — Sym
 
-Inverses are the codebook-search recoveries on $r$ (supplied by `Basis`
-which carries the codebook $W$):
-
-$$
-\mathrm{intersection}^{-1}(y, r) = \mathcal{B}.\mathrm{lower}(y, r,\ \mathrm{mode}{=}\text{'AND'},\ \mathrm{inverse}{=}\mathrm{True})
-\qquad
-\mathrm{union}^{-1}(y, r) = \mathcal{B}.\mathrm{lift}(y, r,\ \mathrm{mode}{=}\text{'OR'},\ \mathrm{inverse}{=}\mathrm{True})
-$$
-
-For `mode='NOT'` the inverse is identical to the forward (self-inverse
-pole flip / sign flip).
-
-### Part — Def (currently a tensor score)
-
-Parthood score, weighting the right operand by its containment in the
-left:
-
-$$
-\mathrm{part}(\ell, r) = \mathcal{B}.\mathrm{part}(\ell, r,\ \mathrm{scalar}{=}\mathrm{True})
-\cdot r
-= \frac{\max(0,\ \ell \cdot r)}{|\ell|\,|r|} \cdot r
-$$
-
-The scalar $s \in [0, 1]$ is broadcast to $r$'s rank before
-multiplication.  Empty-operand contract: if $|\ell|$ or $|r|$ is near
-zero, $s = 1$ (the empty set is part of everything).  Lossy.
-
-### Equal — Def (currently a cosine-gated projection)
-
-$$
-\mathrm{equals}(\ell, r) = \mathcal{B}.\mathrm{equal}(\ell, r,\ \mathrm{scalar}{=}\mathrm{True})
-\cdot r
-$$
-
-"Pass $r$ upward only to the degree $\ell$ matches it."  The equal
-score is mutual parthood
-$\mathcal{B}.\mathrm{equal}(\ell, r) = \mathrm{part}(\ell, r)\cdot\mathrm{part}(r, \ell)$,
-scalar-reduced and broadcast to $r$.
-
-Under a `mask`, equals degenerates to an L1-distance agreement score on
-the selected dims:
-
-$$
-\mathrm{equals}^{\mathrm{mask}}(\ell, r)
-= \mathrm{clip}\!\left(1 - \frac{\sum_d m_d\,|\ell_d - r_d|}{\sum_d m_d},\ 0,\ 1\right) \cdot r
-$$
-
-When the owning `SymbolicSpace` supplies a `PiLayer` back-reference and
-both operands match the Pi output dim, `equalsForward` first reverse-
-projects operands to concept space and invokes the concept-basis `equal`
-on the bitonic subspace.  Otherwise it uses the local basis.  Lossy.
-
-### Slot selectors (what / where / when) — Sym
-
-Given per-subspace column widths $(n_{\text{what}}, n_{\text{where}}, n_{\text{when}})$:
-
-$$
-\mathrm{what}(x)[\ldots, i] =
-\begin{cases}
-x[\ldots, i] & 0 \le i < n_{\text{what}} \\
-0 & \text{otherwise}
-\end{cases}
-$$
-
-$$
-\mathrm{where}(x)[\ldots, i] =
-\begin{cases}
-x[\ldots, i] & n_{\text{what}} \le i < n_{\text{what}} + n_{\text{where}} \\
-0 & \text{otherwise}
-\end{cases}
-$$
-
-$$
-\mathrm{when}(x)[\ldots, i] =
-\begin{cases}
-x[\ldots, i] & n_{\text{what}} + n_{\text{where}} \le i \\
-0 & \text{otherwise}
-\end{cases}
-$$
-
-Parameter-free axis projections.  In 2D (`[B, N]`) activation mode the
-block structure is unavailable, so selectors degenerate to identity --
-the axis semantics are carried by the subspace's modality tensors
-rather than the flat activation vector.  Lossy.
+Given per-subspace column widths $(n_{\text{what}}, n_{\text{where}},
+n_{\text{when}})$, each selector returns the input restricted to its
+axis range and zeros elsewhere.  In 2D activation mode the block
+structure is unavailable, so selectors degenerate to identity — the
+axis semantics ride on the subspace's modality tensors.  Lossy.
 
 ### Absorb — Sym
 
-$$\mathrm{absorb}(\ell, r) = \ell$$
+`absorb(\ell, r) = \ell`.  Binary left-pass; the right operand is
+sugar that the rule predictor opted to discard.  Unrecoverable by
+contract.
 
-Binary left-pass.  The grammar uses it to consume syntactic sugar
-(whitespace, punctuation, low-semantic-weight tokens) into a
-surrounding constituent without contributing to it.  The right
-operand is the sugar that the rule predictor opted to discard;
-it is unrecoverable by contract, hence no inverse is registered.
-Initial logits should bias against `absorb` to avoid early-training
-collapse where the rule predictor over-uses it on real content.
-Implemented as `Ops.absorb` (Sym primitive) with `absorbForward`
-on `SyntacticLayer` adding the per-cell mask gate.  Lossy.
+### Query — Mereological
 
-### Query — Mereological (currently accumulator preservation)
-
-$$
-\mathrm{query}(\ell, r) = \ell
-$$
-
-The query marker is pushed onto WordSubSpace at the accumulation point
-by `compose()` when it detects norm-drop (see below), not by
-`queryForward` itself.  When the parse tree is re-evaluated downstream,
-$\mathrm{query}$ returns the preserved accumulator (the left operand).
-Lossy.
+`query(\ell, r) = \ell` (accumulator preservation).  The query
+marker is pushed onto WordSubSpace at the chart's accumulation point
+when a norm-drop fires (see [Composition](#composition) below).
 
 ### Swap (Sinkhorn soft permutation) — Sym
 
-Let $M \in \mathbb{R}^{3 \times 3}$ be a learned logit matrix.  Apply
-$k = 5$ Sinkhorn normalisation iterations to produce a doubly-stochastic
-soft permutation $P$:
-
-$$
-M^{(0)} = M, \qquad
-M^{(t+1)} = M^{(t)} - \mathrm{logsumexp}_{\mathrm{cols}}(M^{(t)}) - \mathrm{logsumexp}_{\mathrm{rows}}(M^{(t)}),
-\qquad
-P = \exp(M^{(k)})
-$$
-
-Given operands $\ell, r$ and a learned broadcast marker $m$, stack and
-contract along the three "slots":
-
-$$
-\mathrm{swap}(\ell, r) = \bigl(P \cdot [\ell,\, r,\, m]^\top\bigr)_0
-$$
-
-i.e.\ the first row of the mixed-slot stack.  The permutation is shared
-across batch / position / dim.  Lossy.
+A learned $3 \times 3$ logit matrix $M$ is normalized via $k=5$
+Sinkhorn iterations to produce a doubly-stochastic soft permutation
+$P$.  Given operands $\ell, r$ and a learned broadcast marker $m$,
+the output is the first row of $P \cdot [\ell, r, m]^\top$.  Lossy.
 
 ### Lift / lower — SigmaPi (mode-dispatch ops)
 
-`Ops.lift` and `Ops.lower` are unified mode-dispatchers.  Default
-modes are `lift` $\to$ `'OR'` (synthesis, $\vee$) and `lower` $\to$ `'AND'` (analysis,
-$\wedge$); each accepts `kind` $\in$ `{'strict', 'smooth', 'radial'}` selecting the
-forward body, and `inverse=True` for the reverse direction.
+`lift` and `lower` are unified mode-dispatchers.  Default modes are
+`lift` $\to$ `'OR'` (synthesis, $\vee$) and `lower` $\to$ `'AND'`
+(analysis, $\wedge$).  The forward bodies follow the table above
+under [conjunction / disjunction](#conjunction--disjunction--sym);
+region-form inputs (tuples $(\ell, u)$) emit the obvious bound
+intervals.
 
-**Forward bodies (point):**
+Cross-mode delegation: `lift(mode='AND')` forwards to
+`lower(mode='AND')`; `lower(mode='OR')` forwards to
+`lift(mode='OR')`.  `mode='NOT'` is `Ops.negation(X1)` on either
+dispatcher.
 
-| | `mode='AND'` (`lower`) | `mode='OR'` (`lift`) |
-|---|---|---|
-| `kind='strict'` | $\min(X_1, X_2)$ | $\max(X_1, X_2)$ |
-| `kind='smooth'` | $X_1 \cdot X_2$ (elementwise product) | $(X_1 + X_2) / 2$ (mean) |
-| `kind='radial'` | RadMin (same-sign min magnitude, zero-collapse) | RadMax (same-sign max magnitude, zero-passthrough) |
+`Ops.lowerReverseAll(Y, W, monotonic)` and `Ops.liftReverseAll(Y, W,
+monotonic)` return the multi-operand pair `(recovered_left,
+recovered_right)`.  The single-operand analytic forms
+$\mathrm{Ops.liftReverse}(\mathrm{result}, \mathrm{right}) = \mathrm{result} / (\mathrm{right} + \varepsilon)$
+and $\mathrm{Ops.lowerReverse}(\mathrm{result}, \mathrm{right}) = 2 \cdot \mathrm{result} - \mathrm{right}$
+are preserved as legacy callers' inverse of the old
+$\mathrm{Ops.lift} = \odot$ and $\mathrm{Ops.lower} = \mathrm{mean}$
+bodies.
 
-**Region forms (operand is a tuple $(\ell, u)$):** `lower(mode='AND')`
-returns $(\max(\ell_1, \ell_2), \min(u_1, u_2))$; `lift(mode='OR')`
-returns $(\min(\ell_1, \ell_2), \max(u_1, u_2))$ — independent of
-`kind`.
+The cfg-driven grammar dispatch invokes `Ops.lift` / `Ops.lower`
+directly.  The learnable equivalents live on
+`SymbolicSpace.sigma.forward` / `ConceptualSpace.pi.forward`, which
+own their own log-domain (Pi) and atanh-domain (Sigma) matmul
+bodies.  The bridge is the `binary=True` flag on
+`PiLayer.forward` / `SigmaLayer.forward`: it pre-applies
+`Ops.top2_select_ste` to hard-select the top-2 input operands
+before the layer body runs.
 
-**Cross-mode delegation:** `lift(mode='AND')` forwards to
-`lower(mode='AND')` for symmetry; `lower(mode='OR')` forwards to
-`lift(mode='OR')`.  `mode='NOT'` is `Ops.negation(X1, monotonic=...)`
-on either dispatcher (self-inverse).
+### Chunking — Percepts
 
-**Reverse / inverse:**
-
-- `inverse=True, mode='AND' or 'OR'` requires a codebook `W` and
-  raises `NotImplementedError` if unsupplied — callers must use the
-  `Basis.*` flavor, or `Ops.conjunctionReverse(result, y, W)` /
-  `Ops.disjunctionReverse(result, y, W)` directly.
-- `Ops.lowerReverseAll(Y, W, monotonic)` and
-  `Ops.liftReverseAll(Y, W, monotonic)` return the multi-operand pair
-  `(recovered_left, recovered_right)` per the parent plan §Step 6
-  Layer-2.5 grammar convention.
-- The single-operand analytic forms `Ops.liftReverse(result, right)` =
-  $\mathrm{result} / (\mathrm{right} + \varepsilon)$ and
-  `Ops.lowerReverse(result, right)` = $2 \cdot \mathrm{result} -
-  \mathrm{right}$ are preserved as legacy callers' inverse of the old
-  `Ops.lift` $= \odot$ and `Ops.lower = mean` bodies.  They warn-only and
-  are permanent.
-
-**Layer integration.** The cfg-driven grammar dispatch invokes
-`Ops.lift` / `Ops.lower` directly (option (a) per the Step 6.5
-closure: explicit two-operand calls).  The learnable equivalents live
-on `SymbolicSpace.sigma.forward` / `ConceptualSpace.pi.forward` which
-own their own log-domain (Pi) and atanh-domain (Sigma) matmul bodies.
-The bridge between dispatch-time algebra and learnable layers is the
-`binary=True` flag on `PiLayer.forward` / `SigmaLayer.forward` (Step
-5): it pre-applies `Ops.top2_select_ste` to hard-select the top-2
-input operands before the layer body runs.
-
-### Chunking — Percepts (outside grammar)
-
-Chunking is not a grammar rule.  It is a perceptual pre-pass implemented
-by `ChunkLayer` / `PerceptualSpace.chunk_static`, before the grammar sees
-symbol slots.  `SyntacticLayer._RULE_METHODS` therefore has no `chunk`
-entry and no `chunkForward` / `chunkReverse` pair.
-
-### Reverse / inverse ops
-
-These are the analytic and codebook-search inverses paired with the
-forward ops above.  None are dispatched by the cfg grammar directly —
-they are invoked by `Basis.*` methods or by the parent plan's Layer-
-2.5 grammar reverse convention.
-
-| Op | Behavior |
-|---|---|
-| `Ops.negationReverse(x, monotonic)` | self-inverse — calls `Ops.negation(x, monotonic)` again |
-| `Ops.conjunctionReverse(result, y, W, monotonic)` | codebook-search recovery — find $cb_i$ such that $\mathrm{conjunction}(cb_i, cb_j) \approx \mathrm{result}$; returns recovered left operand |
-| `Ops.disjunctionReverse(result, y, W, monotonic)` | dual of `conjunctionReverse`; recovers left operand of disjunction |
-| `Ops.liftReverse(result, right)` | analytic single-operand inverse of the legacy `Ops.lift` $= \odot$ body: $\mathrm{result} / (\mathrm{right} + \varepsilon)$.  Permanent, warn-only. |
-| `Ops.liftReverseAll(Y, W, monotonic)` | multi-return Step-6 form: $(\mathrm{recovered\_left}, Y)$ via codebook search; falls back to $(Y, Y)$ when $W$ is unavailable |
-| `Ops.lowerReverse(result, right)` | analytic inverse of legacy `Ops.lower = mean`: $2 \cdot \mathrm{result} - \mathrm{right}$.  Permanent, warn-only. |
-| `Ops.lowerReverseAll(Y, W, monotonic)` | dual of `liftReverseAll` — multi-return form for the Step 6 grammar reverse pass |
-
-The `_binary_op_inverse_impl(result, W, op, monotonic)` private helper
-backs both `conjunctionReverse` and `disjunctionReverse`.  It searches
-the codebook $W$ for the pair $(cb_i, cb_j)$ whose forward $op$ best
-matches `result`, returning $cb_i$.
+Chunking is not a grammar rule.  It is a perceptual pre-pass
+implemented by `ChunkLayer` / `PerceptualSpace.chunk_static`, before
+the grammar sees symbol slots.  No `chunk` entry exists in
+`GRAMMAR_LAYER_CLASSES`.
 
 ### Mereological suite — see [Mereology.md](Mereology.md)
 
 The mereology suite (`part`, `whole`, `equal`, `overlap`, `underlap`,
-`boundary`, `copart`) lives in `Ops.*` but the canonical specification
+`boundary`, `copart`) lives in `Ops.*`; the canonical specification
 of its semantics is [Mereology.md](Mereology.md).  Each member has a
-vector form (default) and a scalar form (`scalar=True`):
-
-| Op | Vector form | Scalar form |
-|---|---|---|
-| `part(x, y)` | $x \cdot (y / \|y\|)$ | clipped cosine $\max(0, x \cdot y) / (\|x\|\|y\|) \in [0, 1]$ |
-| `whole(x, y)` | $(1 - x) \cdot (y / \|y\|)$ | $\mathrm{part}(y, x, \mathrm{scalar}{=}\mathrm{True})$ |
-| `equal(x, y)` | $\mathrm{part}(x, y) \cdot \mathrm{part}(y, x)$ | mutual parthood $\in [0, 1]$ — $0$ disjoint, $\in (0, 1)$ overlap, $1$ identity |
-| `overlap(x, y)` | $\min(\mathrm{part}(x, y), \mathrm{part}(y, x))$ | boolean: $0 < \mathrm{equal}(\ldots) < 1$ |
-| `underlap(x, y)` | $\min(\mathrm{whole}(x, y), \mathrm{whole}(y, x))$ | boolean: $\mathrm{equal}(\ldots) = 0$ |
-| `boundary(x, y)` | $\lvert \mathrm{part}(x, y) - \mathrm{part}(y, x) \rvert$ | always $0$ under the symmetric clipped-cosine score |
-| `copart(x, y)` | $y - x$ | $1 - \mathrm{part}(x, y, \mathrm{scalar}{=}\mathrm{True})$ |
+vector form (default) and a scalar form (`scalar=True`).  `part` and
+`equals` are surfaced through grammar dispatch as `PartLayer` /
+`EqualsLayer`; the rest are utility-level.
 
 Empty-set conventions (parthood scalar form):
 $\mathrm{part}(\emptyset, y) = 1$,
 $\mathrm{part}(x, \emptyset) = 0$,
 $\mathrm{part}(\emptyset, \emptyset) = 1$.
 
-`part` and `equal` are also surfaced through the grammar dispatch
-table; the rest of the suite is utility-level (called by `Basis.*` and
-the TruthLayer derivation pipeline).  The target architecture moves
-`part` and `equal` from tensor scoring to **Def** anchors that
-introduce a recorded relation in WordSpace; see the table at the top
-of this section.
+---
 
-### Pointwise primitives
+## GrammarLayer Implementations
 
-These are the small utility ops with no current grammatical role —
-they are called by the layer / loss / encoding code paths and have no
-dispatch entry.  Listed for completeness so the inventory is closed.
+`GrammarLayer` (in `bin/Layers.py`) is the base class for layers that
+implement grammar rule operators.  Each subclass declares
+`rule_name`, `arity`, `invertible`, and `lossy` as class attributes,
+then overrides `forward()` (and `reverse()` if `invertible`).
+Binary subclasses additionally override `compose(left, right)` and
+`generate(parent)` for the chart's binary tensor interface; the
+defaults route arity-1 layers through `forward` / `reverse` and raise
+on arity-2 unless overridden.
 
-**Constants:** `Ops.true() = 1`, `Ops.false() = -1`,
-`Ops.unknown() = 0`.
+The hardcoded module-level `GRAMMAR_LAYER_CLASSES` dict at the bottom
+of the section maps `rule_name` to subclass.  Per-space dispatchers
+look up rules through this table when the grammar references a rule
+whose host parametrized layer isn't already owned by the space.
 
-**Element-wise:**
+### Base contract
 
-| Op | Body |
-|---|---|
-| `Ops.positive(x)` | $\mathrm{relu}(x)$ |
-| `Ops.negative(x)` | $-\mathrm{relu}(-x)$ |
-| `Ops.neutral(x)` | $1 - \lvert x \rvert$ |
-| `Ops.pos(x)` | $\mathrm{relu}(x)$ — alias used by the bivector path |
-| `Ops.sign(v)` | signum with $\mathrm{sgn}(0) = 1$ (not $0$) |
-| `Ops.saturate(x)` | $\mathrm{clamp}(x, -1, 1)$, NaN $\to 0$ |
-| `Ops.threshold(x, t)` | zero entries with $\lvert x \rvert < t$ |
-| `Ops.complement(x)` | $\mathrm{sign}(x) - x$ |
-| `Ops.convertSensation(x)` | $2x - 1$ — $[0, 1] \to [-1, 1]$ remap |
-| `Ops.minMag(x_1, x_2)` | $x_i$ with smaller $\lvert x_i \rvert$ |
-| `Ops.maxMag(x_1, x_2)` | $x_i$ with larger $\lvert x_i \rvert$ |
-| `Ops.error(x_1, x_2)` | $\| x_1 - x_2 \|_2$ — scalar L2 |
-| `Ops.norm(x)` | last-dim L2 norm |
-| `Ops.distance(x, y, monotonic, dim)` | $(1 - \cos(x, y)) / 2$ (bitonic) or volume-weighted L2 (monotonic) |
-| `Ops.identity(x)` | $x$ — value-preserving pass-through; no longer dispatched (PROJECT / transition supersedes the unary grammar rule) but kept as a Sym primitive for callers that need an explicit no-op |
-| `Ops.absorb(\ell, r)` | $\ell$ — binary left-pass; see [Absorb — Sym](#absorb--sym) for the grammar-dispatch contract |
+```python
+class GrammarLayer(Layer):
+    rule_name  = ""
+    arity      = 1
+    invertible = False
+    lossy      = False
+    _chart_authority = None  # set via set_chart_authority(syntactic_layer)
 
-**Predicates (return Boolean):**
+    def gated_run(self, x, fn, *fn_args, **fn_kwargs):
+        auth = GrammarLayer._chart_authority
+        if auth is None or not self.rule_name:
+            return fn(x, *fn_args, **fn_kwargs)
+        try:
+            p = float(auth.should_run_rule(self.rule_name))
+        except Exception:
+            return fn(x, *fn_args, **fn_kwargs)
+        if p >= 1.0 - 1e-9:
+            return fn(x, *fn_args, **fn_kwargs)
+        if p <= 1e-9:
+            return x
+        return p * fn(x, *fn_args, **fn_kwargs) + (1.0 - p) * x
 
-| Op | Body |
-|---|---|
-| `Ops.isActive(x, t)` | $\lvert x \rvert \ge t$ |
-| `Ops.isEqual(x_1, x_2)` | `torch.equal` strict equality |
-| `Ops.isReducer(x_1, x_2)` | $\| x_2 - x_1 \|_1 < \| x_2 \|_1$ — scalar Bool |
+    def compose(self, *operands):
+        if self.arity == 1:
+            return self.forward(operands[0])
+        raise NotImplementedError
 
-**Selection (Step-5 STE bridge):** `Ops.top2_select_ste(x, dim=-1)`
-selects the top-2 entries of $x$ by $\lvert x \rvert$, zeroing the
-rest.  Backward is straight-through.  Used by
-`PiLayer.forward(x, binary=True)` and `SigmaLayer.forward(x,
-binary=True)` to specialize the layer body to per-rule binary
-application.
+    def generate(self, parent):
+        if self.arity == 1:
+            return self.reverse(parent) if self.invertible else parent
+        raise NotImplementedError
 
-**Private helpers** (referenced by the public ops above):
-`_radmin(x, y)`, `_radmax(x, y)` — the same-sign min / max magnitude
-bodies used by `kind='radial'`; `_binary_op_inverse_impl(result, W,
-op, monotonic)` — the codebook-search backbone for
-`conjunctionReverse` / `disjunctionReverse`; `_as_region(x)` —
-promotes a point to a degenerate region $(\ell, u) = (x, x)$ for the
-region-form bodies.
+    def decompose(self, *args, **kwargs):
+        return self.generate(*args, **kwargs)
+```
+
+### `NotLayer` — `S = not(S)`
+
+```python
+class NotLayer(GrammarLayer):
+    rule_name  = "not"
+    arity      = 1
+    invertible = True
+
+    def forward(self, x):
+        bivector = x[..., :2].flip(dims=(-1,))
+        rest     = x[..., 2:]
+        return torch.cat([bivector, rest], dim=-1)
+
+    def reverse(self, y):
+        return self.forward(y)
+```
+
+### `NonLayer` — `C1 = non(P1)`
+
+```python
+class NonLayer(GrammarLayer):
+    rule_name  = "non"
+    arity      = 1
+    invertible = False
+    lossy      = True
+
+    def forward(self, x):
+        return 1.0 - torch.clamp(x, -1.0, 1.0).abs()
+
+    def reverse(self, y):
+        return y
+```
+
+### `IntersectionLayer` — `C = intersection(C, C)`
+
+Wraps a parametrized AND-fold (`PiLayer`); the unary `forward` /
+`reverse` route through the inner layer for the all-at-once
+composition path, and the binary `compose` / `generate` route through
+`PiLayer.compose` for the chart parser.
+
+```python
+class IntersectionLayer(GrammarLayer):
+    rule_name  = "intersection"
+    arity      = 2
+    invertible = True
+
+    def __init__(self, pi_layer):
+        super().__init__(pi_layer.nInput, pi_layer.nOutput)
+        self.pi = pi_layer
+        self.layers.append(pi_layer)
+
+    def forward(self, x):
+        return self.pi(x)
+
+    def reverse(self, y):
+        return self.pi.reverse(y)
+
+    def compose(self, left, right):
+        return self.pi.compose(left, right)
+
+    def generate(self, parent):
+        return self.pi.generate(parent)
+```
+
+### `UnionLayer` — `S = union(C, C)`
+
+Mirrors `IntersectionLayer` but wraps a `SigmaLayer` (OR-fold).
+
+```python
+class UnionLayer(GrammarLayer):
+    rule_name  = "union"
+    arity      = 2
+    invertible = True
+
+    def __init__(self, sigma_layer):
+        super().__init__(sigma_layer.nInput, sigma_layer.nOutput)
+        self.sigma = sigma_layer
+        self.layers.append(sigma_layer)
+
+    def forward(self, x):
+        return self.sigma(x)
+
+    def reverse(self, y):
+        return self.sigma.reverse(y)
+
+    def compose(self, left, right):
+        return self.sigma.compose(left, right)
+
+    def generate(self, parent):
+        return self.sigma.generate(parent)
+```
+
+### `ContiguousLayer` — `S = Contiguous(S)`
+
+Convex-hull fusion in symbolic space: takes a set of active concepts
+and returns the elementwise envelope (per-axis amax over the concept
+axis), broadcast back across the axis so the rest of the pipeline
+sees the original shape.  Applied *before* `NegationLayer` in the
+symbolic pipeline.
+
+```python
+class ContiguousLayer(GrammarLayer):
+    rule_name  = "Contiguous"
+    arity      = 1
+    invertible = False
+    lossy      = True
+
+    def forward(self, x):
+        if x.ndim < 2:
+            return x
+        if x.shape[-2] <= 1:
+            return x
+        hull = x.amax(dim=-2, keepdim=True)
+        return hull.expand_as(x)
+
+    def reverse(self, y):
+        return y
+```
+
+### `LiftLayer` — `S = lift(S, S)`
+
+In-space lift via `Ops._lower_kernel(AND, smooth)`.  The pseudo-inverse
+returns the parent for both children (lossy fold).
+
+```python
+class LiftLayer(GrammarLayer):
+    rule_name  = "lift"
+    arity      = 2
+    invertible = True
+
+    def forward(self, left, right):
+        return Ops._lower_kernel(left, right, mode='AND', kind='smooth')
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
+```
+
+### `LowerLayer` — `S = lower(S, S)`
+
+In-space lower via `Ops._lift_kernel(OR, smooth)`.
+
+```python
+class LowerLayer(GrammarLayer):
+    rule_name  = "lower"
+    arity      = 2
+    invertible = True
+
+    def forward(self, left, right):
+        return Ops._lift_kernel(left, right, mode='OR', kind='smooth')
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
+```
+
+### `ConjunctionLayer` / `DisjunctionLayer` — `S = conjunction(S, S)` / `S = disjunction(S, S)`
+
+Propositional AND / OR on bivectors.  Lossy.
+
+```python
+class ConjunctionLayer(GrammarLayer):
+    rule_name  = "conjunction"
+    arity      = 2
+    invertible = False
+
+    def forward(self, left, right):
+        return Ops._conjunction_kernel(left, right)
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
+
+
+class DisjunctionLayer(GrammarLayer):
+    rule_name  = "disjunction"
+    arity      = 2
+    invertible = False
+
+    def forward(self, left, right):
+        return Ops._disjunction_kernel(left, right)
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
+```
+
+### `EqualsLayer` / `PartLayer` — mereology
+
+`equals` weights the right operand by mutual parthood; `part` weights
+by directional parthood.  Both broadcast a scalar score back to the
+right operand and are lossy.
+
+```python
+class EqualsLayer(GrammarLayer):
+    rule_name  = "equals"
+    arity      = 2
+    invertible = False
+    lossy      = True
+
+    def forward(self, left, right):
+        score = Ops._equal_kernel(left, right, scalar=True)
+        while score.ndim < right.ndim:
+            score = score.unsqueeze(-1)
+        return score * right
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
+
+
+class PartLayer(GrammarLayer):
+    rule_name  = "part"
+    arity      = 2
+    invertible = False
+    lossy      = True
+
+    def forward(self, left, right):
+        score = Ops._part_kernel(left, right, scalar=True)
+        while score.ndim < right.ndim:
+            score = score.unsqueeze(-1)
+        return score * right
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
+```
+
+### `TrueLayer` / `FalseLayer` — pole projection
+
+```python
+class TrueLayer(GrammarLayer):
+    rule_name  = "true"
+    arity      = 1
+    invertible = False
+    lossy      = True
+
+    def forward(self, x):
+        return torch.relu(torch.clamp(x, -1.0, 1.0))
+
+    def reverse(self, y):
+        return y
+
+
+class FalseLayer(GrammarLayer):
+    rule_name  = "false"
+    arity      = 1
+    invertible = False
+    lossy      = True
+
+    def forward(self, x):
+        return torch.relu(-torch.clamp(x, -1.0, 1.0))
+
+    def reverse(self, y):
+        return y
+```
+
+### `SwapLayer` — `S = swap(S, S)`
+
+Sinkhorn-normalized soft permutation.  The `swap_logits` and
+`swap_marker` parameters live on this layer.
+
+```python
+class SwapLayer(GrammarLayer):
+    rule_name  = "swap"
+    arity      = 2
+    invertible = False
+    lossy      = True
+
+    def __init__(self, swap_size=1, sinkhorn_iters=5):
+        super().__init__(0, 0)
+        self.swap_size = max(int(swap_size), 1)
+        self._sinkhorn_iters = int(sinkhorn_iters)
+        self.swap_marker = nn.Parameter(torch.randn(self.swap_size) * 0.01)
+        self.swap_logits = nn.Parameter(torch.zeros(3, 3))
+
+    def _soft_perm(self):
+        M = self.swap_logits
+        for _ in range(self._sinkhorn_iters):
+            M = M - M.logsumexp(dim=-1, keepdim=True)
+            M = M - M.logsumexp(dim=-2, keepdim=True)
+        return M.exp()
+
+    def forward(self, left, right):
+        P = self._soft_perm()
+        marker = self.swap_marker.to(left.device)
+        if left.ndim == 3:
+            D = left.shape[-1]
+            m = marker[:D].unsqueeze(0).unsqueeze(0).expand_as(left)
+        elif left.ndim == 2:
+            m = marker[:left.shape[-1]].unsqueeze(0).expand_as(left)
+        else:
+            m = marker
+        if right is None:
+            right = left
+        stack = torch.stack([left, right, m], dim=0)
+        out = torch.einsum('ij,j...->i...', P, stack)
+        return out[0]
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
+```
+
+### `QueryLayer` — `S = query(S, S)`
+
+Returns the left operand unchanged (the chart's query semantic
+pushes a marker word elsewhere; the rule's tensor contribution is
+the accumulator passthrough).
+
+```python
+class QueryLayer(GrammarLayer):
+    rule_name  = "query"
+    arity      = 2
+    invertible = False
+
+    def forward(self, left, right):
+        return left
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
+```
+
+### `WhatLayer` / `WhereLayer` / `WhenLayer` — slot selectors
+
+Each takes optional `(nWhat, nWhere, nWhen)` widths at construction
+and delegates the slice to the matching `Ops._<axis>_kernel`.  All
+three are unary, non-invertible (the masked-out axes can't be
+recovered), and route their inverse to identity passthrough.
+
+```python
+class WhatLayer(GrammarLayer):
+    rule_name  = "what"
+    arity      = 1
+    invertible = False
+
+    def __init__(self, nWhat=None, nWhere=None, nWhen=None):
+        super().__init__(0, 0)
+        self.nWhat, self.nWhere, self.nWhen = nWhat, nWhere, nWhen
+
+    def forward(self, x):
+        return Ops._what_kernel(x, self.nWhat, self.nWhere, self.nWhen)
+
+    def reverse(self, y):
+        return y
+
+
+class WhereLayer(GrammarLayer):
+    rule_name  = "where"
+    arity      = 1
+    invertible = False
+
+    def __init__(self, nWhat=None, nWhere=None, nWhen=None):
+        super().__init__(0, 0)
+        self.nWhat, self.nWhere, self.nWhen = nWhat, nWhere, nWhen
+
+    def forward(self, x):
+        return Ops._where_kernel(x, self.nWhat, self.nWhere, self.nWhen)
+
+    def reverse(self, y):
+        return y
+
+
+class WhenLayer(GrammarLayer):
+    rule_name  = "when"
+    arity      = 1
+    invertible = False
+
+    def __init__(self, nWhat=None, nWhere=None, nWhen=None):
+        super().__init__(0, 0)
+        self.nWhat, self.nWhere, self.nWhen = nWhat, nWhere, nWhen
+
+    def forward(self, x):
+        return Ops._when_kernel(x, self.nWhat, self.nWhere, self.nWhen)
+
+    def reverse(self, y):
+        return y
+```
+
+### `AbsorbLayer` — `S = absorb(S, S)`
+
+Sugar absorption: returns the left operand and discards the right.
+
+```python
+class AbsorbLayer(GrammarLayer):
+    rule_name  = "absorb"
+    arity      = 2
+    invertible = False
+    lossy      = True
+
+    def forward(self, left, right):
+        return Ops._absorb_kernel(left, right)
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
+```
+
+### `PiLayer` — parametrized AND fold
+
+`PiLayer` (and `SigmaLayer` below) inherit from `ButterflyLayer`, an
+intermediate base that adds the optional butterfly access pattern
+on top of `GrammarLayer`.  The unary `forward(x)` is the log-domain
+multiplicative AND fold over the feature axis; the binary
+`compose(left, right)` runs the same fold but sums log-mult contri-
+butions across operands instead of within one.
+
+```python
+class PiLayer(ButterflyLayer):
+    rule_name  = "intersection"
+    arity      = 2
+
+    def forward(self, x, binary=False):
+        if self.butterfly:
+            B, N, D = x.shape
+            packed = self._butterfly_pack(x)
+            packed_out = self._pi_inner_forward(packed, binary=binary)
+            x_out = self._butterfly_unpack(packed_out, B, N, D)
+            return self._butterfly_merge(x_out)
+        return self._pi_inner_forward(x, binary=binary)
+
+    def reverse(self, y):
+        if self.butterfly:
+            x_out = self._butterfly_unmerge(y)
+            B, N, D = x_out.shape
+            packed = self._butterfly_pack(x_out)
+            packed_in = self._pi_inner_reverse(packed)
+            return self._butterfly_unpack(packed_in, B, N, D)
+        return self._pi_inner_reverse(y)
+
+    def compose(self, left, right):
+        if self.butterfly:
+            raise NotImplementedError("PiLayer.compose not supported in butterfly mode")
+        if self.layer.ergodic:
+            self.resample_noise()
+        W = self.layer.compute_W_current()
+        left = left.to(W.device); right = right.to(W.device)
+        if self.nonlinear:
+            l_l = torch.log(self._to_mult(left))
+            l_r = torch.log(self._to_mult(right))
+        else:
+            l_l = torch.log(left); l_r = torch.log(right)
+        wl = (l_l + l_r) @ W + self.layer._effective_bias()
+        return torch.tanh(wl / 2) if self.nonlinear else torch.exp(wl)
+
+    def generate(self, parent):
+        if self.butterfly:
+            raise NotImplementedError("PiLayer.generate not supported in butterfly mode")
+        W_inv = self.layer.compute_Winverse_current()
+        parent = parent.to(W_inv.device)
+        log_mult_y = torch.log(self._to_mult(parent)) if self.nonlinear else torch.log(parent)
+        s = (log_mult_y - self.layer._effective_bias()) @ W_inv
+        half = s * 0.5
+        op = self._from_mult(torch.exp(half)) if self.nonlinear else torch.exp(half)
+        if self.layer.ergodic:
+            self.resample_noise()
+        return op, op
+```
+
+`_pi_inner_forward` / `_pi_inner_reverse` are the shared kernels:
+`(1+x)/(1-x)` to mult-domain → log → linear → tanh-half → back to
+$[-1, 1]$.  `binary=True` pre-applies `Ops.top2_select_ste` to
+hard-select the top-2 input operands.
+
+### `SigmaLayer` — parametrized OR fold
+
+```python
+class SigmaLayer(ButterflyLayer):
+    rule_name  = "union"
+    arity      = 2
+
+    def forward(self, x, binary=False):
+        if self.butterfly:
+            B, N, D = x.shape
+            packed = self._butterfly_pack(x)
+            packed_out = self._sigma_inner_forward(packed, binary=binary)
+            x_out = self._butterfly_unpack(packed_out, B, N, D)
+            return self._butterfly_merge(x_out)
+        if binary:
+            x = Ops.top2_select_ste(x)
+        if self.nonlinear:
+            x = torch.atanh(x.clamp(-1 + epsilon, 1 - epsilon))
+        y = self.layer.forward(x)
+        if self.nonlinear:
+            y = torch.tanh(y)
+        self.activation = y.detach()
+        return y
+
+    def reverse(self, y):
+        if self.butterfly:
+            x_out = self._butterfly_unmerge(y)
+            B, N, D = x_out.shape
+            packed = self._butterfly_pack(x_out)
+            packed_in = self._sigma_inner_reverse(packed)
+            return self._butterfly_unpack(packed_in, B, N, D)
+        if self.nonlinear:
+            y = torch.atanh(y.clamp(-1 + epsilon, 1 - epsilon))
+        x = self.layer.reverse(y)
+        if self.nonlinear:
+            x = torch.tanh(x)
+        self.activation = x.detach()
+        return x
+
+    def compose(self, left, right):
+        if self.butterfly:
+            raise NotImplementedError("SigmaLayer.compose not supported in butterfly mode")
+        if self.nonlinear:
+            a_l = torch.atanh(left.clamp(-1 + epsilon, 1 - epsilon))
+            a_r = torch.atanh(right.clamp(-1 + epsilon, 1 - epsilon))
+        else:
+            a_l, a_r = left, right
+        out = self.layer.forward(a_l + a_r)
+        if self.nonlinear:
+            out = torch.tanh(out)
+        self.activation = out.detach()
+        return out
+
+    def generate(self, parent):
+        if self.butterfly:
+            raise NotImplementedError("SigmaLayer.generate not supported in butterfly mode")
+        a_y = (torch.atanh(parent.clamp(-1 + epsilon, 1 - epsilon))
+               if self.nonlinear else parent)
+        a_sum = self.layer.reverse(a_y)
+        half = a_sum * 0.5
+        op = torch.tanh(half) if self.nonlinear else half
+        return op, op
+```
+
+The `OR`-fold is the additive (logit-domain) sum: atanh the operands,
+sum across operands, then apply the same linear + tanh.  `compose` /
+`generate` close the loop with a balanced inverse so the chart can
+push parent gradients back into child cells.
+
+### Class registry
+
+```python
+GRAMMAR_LAYER_CLASSES = {
+    'not':          NotLayer,
+    'non':          NonLayer,
+    'intersection': IntersectionLayer,
+    'union':        UnionLayer,
+    'Contiguous':   ContiguousLayer,
+    'lift':         LiftLayer,
+    'lower':        LowerLayer,
+    'conjunction':  ConjunctionLayer,
+    'disjunction':  DisjunctionLayer,
+    'equals':       EqualsLayer,
+    'part':         PartLayer,
+    'true':         TrueLayer,
+    'false':        FalseLayer,
+    'swap':         SwapLayer,
+    'query':        QueryLayer,
+    'what':         WhatLayer,
+    'where':        WhereLayer,
+    'when':         WhenLayer,
+    'absorb':       AbsorbLayer,
+}
+```
+
+Reverse / inverse ops (`Ops.negationReverse`, `Ops.conjunctionReverse`,
+`Ops.disjunctionReverse`, `Ops.liftReverse`, `Ops.liftReverseAll`,
+`Ops.lowerReverse`, `Ops.lowerReverseAll`) are not in the dispatch
+registry — they are invoked directly by the Step-6 grammar reverse
+convention or by `Basis.*` methods.  The
+`_binary_op_inverse_impl(result, W, op, monotonic)` private helper
+backs both `conjunctionReverse` and `disjunctionReverse` via codebook
+search.
 
 ---
 
-## Rule Prediction (`forward`)
+## Rule prediction
 
-`SyntacticLayer.forward(x)` predicts a rule distribution at each
-derivation depth.  The architecture is weight-tied (recursive) across
-depths with a learned depth embedding.
+`SyntacticLayer.predict_rules(x)` — also exposed on `Chart` after the
+2026-05-01 refactor — predicts a rule distribution at each derivation
+depth.  The architecture is weight-tied (recursive) across depths
+with a learned depth embedding.
 
 Input projection:
 
@@ -811,175 +1045,89 @@ $W_{\text{deriv}}$, $W_{\text{head}}$):
 
 $$
 \begin{aligned}
-h^{(d+1)}  &= \sigma\!\bigl(W_{\text{deriv}}\,(h^{(d)} + e_d) + b_{\text{deriv}}\bigr) \\
-z^{(d)}    &= W_{\text{head}}\,h^{(d+1)} + b_{\text{head}}                \in \mathbb{R}^{B \times K} \\
-z^{(d)}_{t}&\leftarrow \mathrm{stop\_grad}\bigl(z^{(d)}_{t}\bigr) + (1 - \iota)\cdot \tau_{\text{trans}}
+h^{(d+1)} &= \sigma\!\bigl(W_{\text{deriv}}\,(h^{(d)} + e_d) + b_{\text{deriv}}\bigr) \\
+z^{(d)}   &= W_{\text{head}}\,h^{(d+1)} + b_{\text{head}} \in \mathbb{R}^{B \times K} \\
+z^{(d)}_t &\leftarrow \mathrm{stop\_grad}\bigl(z^{(d)}_t\bigr) + (1 - \iota)\cdot \tau_{\text{trans}}
            \quad \text{(transition-bias on rule } t\text{)} \\
-p^{(d)}    &=
-\begin{cases}
-\mathrm{gumbel\_softmax}(z^{(d)}; \tau) & \text{training} \\
-\mathrm{softmax}(z^{(d)})               & \text{eval}
-\end{cases}
+p^{(d)}   &= \begin{cases}
+              \mathrm{gumbel\_softmax}(z^{(d)}; \tau) & \text{training} \\
+              \mathrm{softmax}(z^{(d)})               & \text{eval}
+             \end{cases}
 \end{aligned}
 $$
 
-where $e_d$ is the depth embedding, $\iota = \mathrm{grammar.interpretation}$,
-$t$ is the index of the transition rule (if present), and $\tau$ is the
-Gumbel-softmax temperature (annealed from 1.0 toward 0.1 via `set_tau`).
+where $e_d$ is the depth embedding,
+$\iota = \mathrm{grammar.interpretation}$, $t$ is the index of the
+transition rule (if present), and $\tau$ is the Gumbel-softmax
+temperature (annealed from 1.0 toward 0.1 via `set_tau`).
 
-Output: `{rule_logits, rule_probs, predicted_rules, words}`.
-
-### Differentiable rule selection
-
-- **Training:** `gumbel_softmax(logits, tau)` -- soft one-hot,
-  gradients flow through all candidate rules proportional to probability.
-- **Eval:** `softmax` + `argmax` -- discrete rule selection.
-- **Annealing:** $\tau$ starts at 1.0 (diffuse) and decreases toward
-  0.1 (near-discrete) over training.
+Output: `{rule_logits, rule_probs, predicted_rules}`.  Training uses
+gumbel-softmax (soft one-hot, gradients flow through all candidate
+rules); eval uses softmax + argmax (discrete selection).
 
 ---
 
-## Projection: `project(grammar, rule_id, left, right)`
+## Composition
 
-Rule dispatch flows through `SyntacticLayer.project()`.  It looks up
-`(forward_name, reverse_name, is_binary)` in
-`_RULE_METHODS[method_name]` and calls the named `<name>Forward`.
-Inputs are `[B, N]` activations (2D mode) or `[B, N, D]` vectors
-(3D mode).  (The "bivector" name is reserved in the code for the
-2-component `[..., :2]` slice of a symbol codebook row, not the full
-`D`-wide vector.)
+Chart composition lives on the `Chart` class (`bin/Language.py`).
+`Chart.compose(data, word_space, subspace=None)` runs the inside pass
+over `data` and populates per-tier rule selections on
+`word_space.current_rules`.  `Chart.generate(target, word_space,
+subspace=None)` runs the outside pass + Viterbi backtrace and
+populates `word_space.generate_rules`.
 
-`reverse_project` is the dual, used during `decompose` to invert the
-registered reversible rules.
+The chart router is selected via `<WordSpace><routerKind>` (XML);
+either `'chart'` (the default soft-superposition CKY) or `'signal'`
+(`SignalRouter`, a tensorial alternative).  Both surfaces produce the
+same per-tier rule lists.
 
----
+### Phase 1: deterministic `not` (legacy 2D path)
 
-## Composition: `compose(data, subspace, grammar, target_count=None)`
+Before soft superposition, the legacy 2D-activation path applies a
+single deterministic `not` to the top-of-stack when that vector has a
+negative mean, and pushes a `not` word for that batch row.  This
+strips any leading negation from the accumulator before it mixes
+with siblings.  The 3D chart path skips this step — sign flips go
+through `NotLayer.forward` like every other rule.
 
-`SyntacticLayer.compose()` is the unified two-phase driver.  It
-dispatches on input rank:
+### Phase 2: chart inside pass
 
-- `data.ndim == 2`  -->  `_compose_activation` (2D activation mode)
-- `data.ndim == 3`  -->  `_compose_vector`     (3D vector mode,
-  with optional pairwise reduction via `_compose_to_target`)
-
-Returns `(composed, svo_or_None)`.  `svo` is a
-`(subject, verb, object)` tuple of `[B, 1, D]` tensors when the
-chart-compose path (see below) finds a canonical `S -> S VO` firing
-and its matching `VO -> V O`; otherwise `None`.
-
-### Phase 1: deterministic `not`
-
-Before soft superposition (3D path only), apply a single deterministic
-`not` to the top-of-stack when that vector has a negative mean:
+For each cell $(i, j)$ in the chart and each grammar rule with arity
+matching the cell's shape, the chart computes:
 
 $$
-\text{for each batch } b \text{ with top-of-stack position } p_b:
-\qquad
-\text{if } \overline{\mathrm{data}[b, p_b]} < 0
-\implies \mathrm{data}[b, p_b] \leftarrow \mathrm{not}(\mathrm{data}[b, p_b]),
+\mathrm{score}_{ij}^{\rho} = \mathrm{compat}(\text{lhs}, \text{rhs}_{ij}) \cdot
+                              \mathrm{pair\_score}(i, j) \cdot
+                              \mathrm{rule\_logit}(\rho)
 $$
 
-and a `not` word is pushed for $b$ at position $p_b$.  This strips any
-leading negation from the accumulator before it mixes with siblings.
+then takes the soft mixture (training) or argmax (eval) over all
+firing rules at that cell.  Per-cell rule applications dispatch
+through `wordSpace.host_layer(tier, rule_name)`, which returns the
+GrammarLayer instance owned by the host space.  The chart then calls
+`layer.compose(left, right)` (binary) or `layer.forward(x)` (unary).
 
-### Phase 2: soft-weighted cascading composition
-
-Let $v^{(b)}_i \in \mathbb{R}^D$ be the $i$-th active leaf vector in
-batch $b$, and let
-$L_b = |\{\text{active positions in } b\}|,\ L_{\max} = \max_b L_b$.
-
-Build leaf slabs $v[\cdot, i, \cdot, \cdot]$ of shape
-$[B, L_{\max}, N, D]$ by masking.  Initialize the accumulator:
-
-$$
-a^{(0)} = v[\,\cdot\,,\ 0\,,\,\cdot\,,\,\cdot\,]
-$$
-
-Let $\mathcal{R}^\star$ be the *composable* rule set: the grammar
-S-rules minus `not` (already applied in Phase 1).  Let
-$p^{(d)} \in \Delta^{|\mathcal{R}^\star|}$ be the rule-prediction
-probabilities for depth $d$ renormalised over $\mathcal{R}^\star$.
-
-Iterate depth $d = 0, 1, \ldots$ until $d \ge D_{\max}$ or the next
-leaf index exceeds $L_{\max}$:
-
-$$
-\ell = a^{(d)},
-\qquad
-r = v[\cdot,\,d + 1,\,\cdot,\,\cdot]
-$$
-
-$$
-\text{for each } \rho \in \mathcal{R}^\star:
-\qquad
-u^{(d)}_\rho =
-\begin{cases}
-\rho(\ell, r) & \mathrm{arity}(\rho) = 2 \\
-\rho(\ell)    & \mathrm{arity}(\rho) = 1
-\end{cases}
-$$
-
-Soft candidate (training) vs. argmax candidate (eval):
-
-$$
-c^{(d)} =
-\begin{cases}
-\sum_{\rho} p^{(d)}_\rho\, u^{(d)}_\rho & \text{training} \\
-u^{(d)}_{\rho^\star},\quad \rho^\star = \arg\max p^{(d)} & \text{eval}
-\end{cases}
-$$
+The compatibility mask `compat[B, P, R]` zeroes out `(pair, rule)`
+combinations whose typed LHS / RHS categories don't match the pair's
+slot categories.  Function-call rules (legacy, `rhs_symbols = None`)
+are always compatible.  Category `0` (`'?'`) is a wildcard, so
+unseeded leaves can match any typed rule during warmup.
 
 #### Query / norm-drop detection
 
 Detect symbolic contradiction at the accumulation point by comparing
-the pre- and post-composition Frobenius norms per batch row:
+the pre- and post-composition Frobenius norms per batch row.  Define
+$\nu_\ell = \|\ell\|_F$ and $\nu_c = \|c\|_F$.  When $\nu_\ell >
+10^{-6}$ and $\nu_c < \kappa\,\nu_\ell$ with $\kappa = 0.1$
+(`_QUERY_NORM_DROP_RATIO`), the new accumulator preserves the prior
+state and a `query` word is pushed onto WordSubSpace.  Otherwise the
+chart accepts the candidate.
 
-$$
-\nu_\ell = \left\|\ell\right\|_F,
-\qquad
-\nu_c = \left\|c^{(d)}\right\|_F,
-\qquad
-\mathrm{qmask}_b = \bigl(\nu_{\ell,b} > 10^{-6}\bigr) \wedge
-                   \bigl(\nu_{c,b} < \kappa\,\nu_{\ell,b}\bigr)
-$$
+The argmax rule is recorded as a word at the leaf position;
+`last_rule_per_batch[b]` is updated only when the query mask did
+*not* fire (so `query` preserves the prior rule context).
 
-with $\kappa = 0.1$ (`_QUERY_NORM_DROP_RATIO`).  If $\mathrm{qmask}_b$
-fires, the new accumulator preserves the prior state and a $\mathrm{query}$
-word is pushed onto WordSubSpace with leaves
-$(\mathrm{last\_rule}_b,\ \arg\max_\rho p^{(d)}_b,\ -1)$; otherwise
-accept the candidate:
-
-$$
-a^{(d+1)}_b =
-\begin{cases}
-\ell_b    & \mathrm{qmask}_b = 1 \\
-c^{(d)}_b & \mathrm{qmask}_b = 0
-\end{cases}
-$$
-
-The argmax rule is recorded as a word at the leaf position, and
-`last_rule_per_batch[b]` is updated iff the query mask did **not** fire
-(so `query` preserves the prior rule context).
-
-Advance $d \leftarrow d + 1$ and
-$\text{leaf\_idx} \leftarrow \text{leaf\_idx} + 1$ (or $+2$ for arity-3
-rules when a third leaf is available).
-
-### Leaf ledger (codebook indices)
-
-Before Phase 1 begins, codebook indices of the original leaves are
-snapshotted (so the ledger reflects the pre-`not` input exactly):
-
-$$
-\text{cb\_idx}[b, i] = \arg\max_k\,\bigl(\mathrm{data}[b, i] \cdot \mathrm{cb}[k]^\top\bigr)
-$$
-
-and each active leaf emits a transition word with `order = -1` and
-`leaf1 = cb_idx[b, pos]`.  This ledger is what `decompose` uses to
-reconstruct the pre-compose tensor exactly.
-
-### Tensor word buffer (Path B)
+### Tensor word buffer
 
 Each `SubSpace` carries two registered buffers alongside the legacy
 `self.word: list[tuple]`:
@@ -989,413 +1137,253 @@ self.word_records  # [B*K, max_depth, ENTRY_WIDTH] long, ENTRY_WIDTH=7
 self.word_count    # [B*K] long, current depth per cell
 ```
 
-`add_word(...)` is overloaded:
+`add_word(...)` is overloaded.  The **scalar form**
+(`add_word(int, int, int, ...)`) appends one validated 7-tuple to
+`self.word`; used by direct callers (tests, the legacy compose path).
+The **vector form** (`add_word(LongTensor, ...)`) scatters into
+`word_records` at each cell's current `word_count`, then increments
+`word_count` (no host sync).
 
-- **Scalar form** -- `add_word(int, int, int, ...)`. Appends one
-  validated 7-tuple to `self.word`. Used by direct callers
-  (`_compose_activation`, tests, the legacy compose path).
-- **Vector form** -- `add_word(LongTensor, ...)`. Scatters into
-  `word_records` at each cell's current `word_count`, then
-  increments `word_count`. No host sync.
-
-Inside chart compose the vector form is dispatched once per depth `d`.
-Current Path B materializes before `_compose_vector_chart` returns by
-calling `subspace.flush_word_buffer()` inside the chart path.  That keeps
-direct compose callers, `decompose`, `reconstruct`, the SVO walker, and
+The chart materializes its tensor buffer before `_compose_chart_cky`
+returns, by calling `subspace.flush_word_buffer()` inside the chart
+path.  That keeps direct compose callers, the SVO walker, and
 derivation-trace tests seeing `self.word` immediately populated in
-cell-major order.
+cell-major order.  This is "Path B" hybrid tensor buffering with host
+materialization — not yet the full tensor-only Path A.
 
-The outer doc-streaming loop may still call
-`wordSpace.syntacticLayer.flush_word_buffer(subspace)` after the brick;
-that wrapper forwards to `subspace.flush_word_buffer()` and is
-idempotent because `word_count` is already zero after the in-compose
-flush.  This is still "Path B" from the brick-vectorization handoff:
-hybrid tensor buffering with host materialization.  It is not yet the
-full tensor-only Path A.
+### Chart-derived SVO
 
-### 2D activation path (`_compose_activation`)
-
-The 2D path runs the same depth-wise mixture but on `[B, N]` scalar
-activations:
-
-$$
-a^{(d+1)} = \sum_\rho p^{(d)}_\rho \cdot
-\begin{cases}
-\rho(a^{(d)}, v[\,\cdot\,,\,d+1])    & \mathrm{arity}(\rho) = 2 \\
-\rho(a^{(d)})                         & \mathrm{arity}(\rho) = 1
-\end{cases}
-$$
-
-with the same query/norm-drop logic (norm over the $N$-axis instead of
-the $[N,D]$-plane).  This path is used when the caller forwards norms
-directly (legacy S-tier driver).
-
----
-
-## Pairwise reduction: `_compose_to_target(data, subspace, grammar, target_count)`
-
-When `target_count` is supplied, the 3D path reduces the active-token
-count down to that value via iterated pairwise reductions.  Composable
-rules in this path are the arity-2 rules minus `not`.
-
-At each outer iteration $d$:
-
-1. Count active positions per batch.  Stop if $\max_b |A_b| \le
-   \text{target\_count}$.
-2. For each batch, walk pairs $(p_{2i}, p_{2i+1})$ while reduction
-   would still exceed the target.  For each pair, compute all
-   composable rule outputs, take either the soft mixture (training) or
-   argmax (eval), write the result to the left position, zero the
-   right, and append the left position to the new active list.
-3. Record the chosen rule as a word at `left_pos` with the current
-   outer-iteration order.
-4. Carry forward any leftover unpaired positions.
-
-Finally, extract the non-zero subset of `data` at the surviving
-positions, zero-fill the rest, and return.
-
----
-
-## Chart-like Compose (typed SVO)
-
-Selected by `<WordSpace><chartCompose>true</chartCompose></WordSpace>`.
-The cascade-based `_compose_vector` above builds a strictly left-
-associative tree `(((leaf0, leaf1), leaf2), ...)`; it cannot produce
-`(S, (V, O))` from an `N V N` sentence because step 1 is forced to
-merge `leaf[0]` with `leaf[1]` (an `N V` pair) and no rule in a typed
-grammar fires on that shape.  Chart compose replaces the cascade with
-per-step pair selection, so the model can reduce `V O` first and then
-`S VO` second.
-
-### Pair-scorer + per-step argmax
-
-At each depth step:
-
-1. A pair-scorer MLP takes the current rule-prediction hidden state
-   plus `(left, right)` feature slices and produces a softmax over the
-   `N_alive - 1` adjacent live-leaf pairs.  Input width is
-   `hidden_dim + 2 * feature_dim`; `feature_dim` is a first-class
-   `SyntacticLayer.__init__` kwarg so the pair-scorer lines up with the
-   actual leaf dim at compose time (not `n_slots`, which tests happen
-   to set equal to `D`).  Note: until `MentalModel` pipes the
-   rule-prediction hidden through, `_compose_vector_chart` passes an
-   all-zero `[B, hidden_dim]` tensor; the pair scorer therefore
-   conditions only on `(left, right)` features today.
-2. The rule head emits the usual per-depth softmax over composable
-   rules (upward rules only; downward is emit-time, not chart-time).
-3. A **compatibility mask** `compat[B, P, R]` zeroes out `(pair, rule)`
-   combinations whose typed LHS/RHS categories don't match the pair's
-   slot categories.  Function-call rules (legacy, `rhs_symbols = None`)
-   are always compatible.  Category `0` (`'?'`) is a wildcard, so
-   unseeded leaves can match any typed rule during warmup.
-4. The joint `pair_probs * rule_probs * compat` is renormalised.  In
-   training the merge output is the soft mixture; at eval the argmax
-   pair / rule pick the concrete merge site.
-5. The merged vector replaces the left slot in an out-of-place
-   `torch.where`-style update (inplace mutation on the live tensor
-   would break autograd because `live = data.clone()` carries
-   `grad_fn`).  The right slot is marked dead via the alive mask; the
-   merged slot's category becomes the rule's LHS.
-
-The reduction runs for at most `N - 1` steps, so `N` live leaves
-collapse to one in `N - 1` merges.
-
-### Category tensor + POS seeding
-
-Alongside `data: [B, N, D]`, the chart path carries
-`category: [B, N]` of category IDs (the `Grammar.rules`-derived table
-is stored on `SyntacticLayer._category_names` / `_category_index`,
-with `'?'` at index 0 as the wildcard).  `_seed_category` lets
-upstream code pre-populate slot categories.
-
-If no seed is supplied, every live slot starts as wildcard `?`, keeping
-the compatibility mask permissive.  `_seed_category(category)` stores a
-clone on `SyntacticLayer._last_category`; the next chart compose moves
-that tensor to the active device and uses it as the initial category
-matrix.  Upstream code may call `_seed_category` directly to bias the
-chart toward specific categories when a domain-specific tagger is
-available.
-
-### Derivation trace
-
-`SyntacticLayer._derivation_trace` is a per-batch list (one list per
-row in the batch) of 5-tuples
-`(rule_id, left_slot, right_slot, merged_slot, merged_category)`
-appended on every chart merge.  The trace is the only surface that
-downstream readers (SVO extractor, future reconstruct templates) rely
-on; the `live` tensor is already compacted by the time compose
-returns.
-
-### Grammar-derived SVO
-
-`SyntacticLayer._extract_svo_from_trace` walks each batch row's trace
-after chart compose finishes:
+`Chart._extract_svo_from_trace` walks each batch row's trace after
+chart compose finishes:
 
 1. Find the last `S -> S VO` entry (outermost reduction).
-2. Find the matching `VO -> V O` entry whose `merged_slot` equals
-   the outer rule's right arg.
+2. Find the matching `VO -> V O` entry whose `merged_slot` equals the
+   outer rule's right arg.
 3. Pull `subject` from the outer's left slot, `verb` from the inner's
-   left, `object` from the inner's right.  Each is a `[1, D]` slice of
-   the original pre-compose `data`.
+   left, `object` from the inner's right.
 
-Rows that don't contain the canonical pair of firings get a zero `[1, D]`
-placeholder; if every row in a batch fails, `last_svo` stays `None` so
-`truth_modulated_loss` treats it as "no score".  There is no positional
-fallback — the earlier heuristic that labelled positions `0/1/2` as
-`S/V/O` is gone.  Consumers read `SyntacticLayer.last_svo` exactly as
-before.
+Each is a `[1, D]` slice of the original pre-compose `data`.  Rows
+that don't contain the canonical pair of firings get a zero `[1, D]`
+placeholder; if every row in a batch fails, `last_svo` stays `None`.
 
-## Downward Head Emission (`S -> C`)
+---
 
-Selected by
-`<WordSpace><downwardGeneration>true</downwardGeneration></WordSpace>`.
+## Per-space dispatch (`SpaceSyntacticLayer`)
+
+Each Space (SymbolicSpace, ConceptualSpace, PerceptualSpace) carries a
+`SpaceSyntacticLayer` instance whose `forward()` and `reverse()` fire
+one fold step per call, per the chart's per-tier rule selection.
+Construction lives in `build_space_syntactic_layer`:
+
+- `host_layers`: dict mapping `rule_name` to a `GrammarLayer` instance
+  (parametrized folds like `space.pi` for `'intersection'`,
+  `space.sigma` for `'union'`, plus stateless rules built lazily from
+  `GRAMMAR_LAYER_CLASSES`).
+- Each `host_layer` is registered with the WordSpace via
+  `register_host_layer(tier, rule_name, layer)` so the chart can
+  consult `host_layer(tier, rule_name)` during dispatch.
+
+`SpaceSyntacticLayer.forward(subspace)` reads
+`word_space.current_rules[tier]`, advances a per-tier cursor, and
+dispatches to the chosen layer's `forward()` (only for arity-1 rules
+— binary rules fire inside the chart's `compose` via
+`host_layer.compose(left, right)`).  `reverse()` mirrors via
+`word_space.generate_rules` and `layer.reverse()`.  The cursor resets
+at the start of each new `word_space.compose()` /
+`word_space.generate()` call via the WordSpace generation counters.
+
+When the chart router is `'signal'`, the per-rule unary fold is
+skipped — the SignalRouter has already executed the derivation
+tensorially and written the `[B, 1, D]` root state back into the
+subspace.
+
+### `WordSpace.forwardSymbols` / `reverseSymbols`
+
+These methods used to invoke a private composition pipeline.  After
+the 2026-05-01 refactor they are thin: `forwardSymbols(data,
+subspace)` demuxes the muxed symbol tensor into the subspace's
+modality slots when shapes match (the side-effect downstream slot
+selectors depend on); the actual symbolic composition runs on the
+chart via the `ChartCompose` pipeline stage.  `reverseSymbols` is a
+pass-through; chart-driven generation handles the symbol-side reverse
+via `ChartGenerate` + per-space `SyntacticLayer.reverse` dispatch.
+
+---
+
+## Downward head emission (`S -> C`)
+
+Selected by `<WordSpace><downwardGeneration>true</downwardGeneration>`.
 After the upward parse reduces `N` leaves to a single root vector,
 `MentalModel.forward` takes that root (`sym_vectors[:, 0, :]`) and
 calls `WordSpace.reconstruct(state, inputSpace)`, which runs the
 downward `S -> C` rule as a one-shot projection onto a codebook.
 
-### `SyntacticLayer.emit_head(state, codebook) -> (best_idx, contained, residual)`
-
-Projection-coefficient scoring, not cosine:
+### Projection-coefficient scoring
 
 $$
-W_{\text{norm}} = W / \lVert W\rVert_{2,\text{row-wise}}
+W_{\text{norm}} = W / \lVert W\rVert_{2,\text{row-wise}},
 \qquad
 \text{scores} = \mathrm{clamp}_{\ge 0}(\text{state} \cdot W_{\text{norm}}^\top)
 $$
 
-The per-row argmax is `best_idx`.  Because `state` is *not* L2-
-normalised (only the codebook rows are), the score is "how much of
+The per-row argmax is `best_idx`.  Because `state` is *not*
+L2-normalized (only the codebook rows are), the score is "how much of
 atom $k$ lives in the state" rather than a pure angle.  The resulting
 `contained = scores[:, k] * W_{\text{norm}}[k]` is the slice of the
-atom actually contained in the state; `residual = state - contained` is
-the leftover meaning a future expansion step (NP / VP templates) could
-consume.
+atom actually contained in the state; `residual = state - contained`
+is the leftover meaning a future expansion step (NP / VP templates)
+could consume.
 
 ### `WordSpace.reconstruct(state, codebook_space)`
 
 Any space whose `.subspace.basis` exposes a `getW() -> [V, D]` works.
 `InputSpace` (word embedding) is the intended source — projecting the
-deep state onto word-vectors picks the vocabulary entry that best
-matches the sentence's composed meaning, and `.wv.index_to_key` decodes
-the head index back to a token.  `SymbolicSpace` (internal atom
-codebook) is also valid once a codebook is populated there.  When the
-codebook is unwired (passthrough `Codebook` with `getW() == None`),
-`reconstruct` returns a trivial `heads=[0]*B` so the loss path never
-crashes on a `None` codebook.
+deep state onto word vectors picks the vocabulary entry that best
+matches the sentence's composed meaning, and `.wv.index_to_key`
+decodes the head index back to a token.  `SymbolicSpace` (internal
+atom codebook) is also valid once a codebook is populated there.
+When the codebook is unwired (passthrough `Codebook` with `getW() ==
+None`), `reconstruct` returns a trivial `heads=[0]*B` so the loss
+path never crashes.
 
-Returns `{heads: list[int] (len B), contained: [B, D], residual: [B, D],
-state: [B, D]}`.  `MentalModel.forward` stashes `heads` as
-`self._predicted_head` — a per-batch list of vocabulary indices — so a
-training loss can compare against a supervised head token, and so
-`bin/interact_head.py` (interactive smoke test) can print the decoded
-word after each forward pass.
-
-### Stable hooks already wired
-
-- `SyntacticLayer.last_svo: Optional[Tuple[Tensor, Tensor, Tensor]]`
-- `SyntacticLayer.lifting_layer: LiftingLayer` (created in
-  `init_lifting`, called from `WordSpace._build_syntactic_layer`)
-- `MentalModel.forward` reads both, invokes
-  `truth_layer.universality(s, v, o, lifting_layer, symbolicSpace)`,
-  and stores `self._universality_score`; `truth_modulated_loss`
-  integrates the score into the training loss.
-- `MentalModel._predicted_head: Optional[list[int]]` set by the
-  downward pass above.
-
-The historical design narrative (why chart compose was needed, why a
-cheaper hybrid doesn't work, curriculum plan for training) lives in the
-"Design History: Learned SVO Plan" appendix at the end of this document,
-and the implementation tracker at
-`doc/plans/2026-04-20-LearnedSVO-integration.md`.
+Returns `{heads, contained, residual, state}`.  `MentalModel.forward`
+stashes `heads` as `self._predicted_head` so a training loss can
+compare against a supervised head token, and so `bin/interact_head.py`
+can print the decoded word after each forward pass.
 
 ---
 
-## Decomposition: `decompose(data, subspace, grammar)`
+## Word encoding
 
-Reconstruct the pre-compose tensor from the symbolic word record.
+Each word is a 7-tuple stored in `subspace.word` (the legacy list) and
+mirrored in `subspace.word_records` (the tensor buffer).  Per-cell:
+`(batch, vector, rule, leaf1, leaf2, leaf3, order)` where the
+`leaf*` slots carry codebook indices for terminal words and child
+slot indices for internal nodes.  Terminal words carry `order = -1`
+and a codebook index in `leaf1`; the leaf ledger used by chart
+generation is built from these entries.
 
-- If a codebook is available and shapes match, look up each terminal
-  word (those with `order = -1`) and place `cb[leaf1]` at the recorded
-  position, producing the exact pre-compose tensor.
-- Otherwise, fall through to the degraded rule-reversal pass: walk
-  words in reverse and invert the registered reversible rules
-  (`not`, `intersection`, `union`, `lift`, `lower`).  Lossy rules
-  (`equals`, `part`, `true`, `false`, `non`, `what`/`where`/`when`,
-  `query`, `swap`, `conjunction`, `disjunction`) pass through.
+The list is a derivation tree in pre-order: the first entry is the
+root, and binary rules expand left-first.
 
 ---
 
-## Two-Layer Logic
+## Decomposition
 
-The logic system operates at two levels:
+`Chart.generate(target, word_space, subspace)` reconstructs the
+pre-compose tensor from the symbolic word record by walking the
+chart's outside pass + Viterbi backtrace.  At each step it dispatches
+through `host_layer.generate(parent)` for binary rules or
+`host_layer.reverse(y)` for unary invertible rules.  Lossy rules
+(`equals`, `part`, `true`, `false`, `non`, slot selectors, `query`,
+`swap`, `conjunction`, `disjunction`, `absorb`, `Contiguous`) emit
+their pseudo-inverses (typically the parent passed back unchanged).
 
-### Subsymbolic Layer (Vectors)
+The codebook fast path: if a basis is available and shapes match, the
+generator looks up each terminal word (those with `order = -1`) and
+places `cb[leaf1]` at the recorded position, producing the exact
+pre-compose tensor.
 
-Objects are vector sets $(B, N, D)$ interpreted as RBF / luminosity
-fields.
+---
 
-| Operator | Implementation | Meaning |
-|----------|---------------|---------|
-| union | $\max(l, r)$ | strongest affirmation |
-| intersection | $\min(l, r)$ | shared commitment |
-| negation (not) | $-x$ | antipodal opposition on hypersphere |
-| non | $\alpha x,\ \alpha \in [0,1)$ | contraction toward zero (withdrawal of assertion) |
-| parthood | fuzzy max-coverage $\in [-1,1]$ | signed containment |
+## How syntax is trained
 
-### Symbolization
+The syntax code is end-to-end differentiable: `Chart.predict_rules`
+produces soft `rule_probs`; the chart inside pass uses soft
+superposition over compatible rules; the binary `compose` /
+`generate` paths flow gradients through the parametrized fold weights
+(PiLayer / SigmaLayer / SwapLayer logits).  The deterministic `not`
+phase 1 step in the legacy 2D path is non-differentiable but only
+fires when the top-of-stack mean is negative.
 
-Map vectors -> scalar truth strength:
+`BasicModel.runBatch()` computes three losses: output loss, optional
+reconstruction loss, optional embedding loss.  There is no explicit
+syntax loss, parse-tree loss, or rule-label supervision.  Syntax
+fitness emerges indirectly through the reconstruction loss: rules
+that consistently support successful reconstruction accumulate
+weight, while weaker alternatives diminish.
+
+Under `MentalModel.xml`, syntax is enabled, the chart and per-space
+dispatchers are instantiated, and rules are predicted, fired, and
+recorded.  `MentalModel.forward()` goes through `SigmaLayer` rather
+than invoking the chart pipeline directly; syntax is active as
+computation and analysis but not yet placed on a strong loss path in
+the stock training loop.
+
+---
+
+## Two-Layer logic
+
+The logic system operates at two levels.  The **subsymbolic** layer
+treats objects as vector sets $(B, N, D)$ interpreted as RBF /
+luminosity fields: union is $\max(\ell, r)$ (strongest affirmation);
+intersection is $\min(\ell, r)$ (shared commitment); negation is
+$-x$ (antipodal opposition on the hypersphere); non is $\alpha x$
+with $\alpha \in [0, 1)$ (contraction toward zero); parthood is
+fuzzy max-coverage in $[-1, 1]$ (signed containment).
+
+A **symbolization** map projects vectors to scalar truth strength:
 
 $$
 s(X) = 2 \cdot \mathrm{mean}(\|x_i\|) - 1 \quad \in [-1, 1]
 $$
 
-Interpretation: +1 -> strong presence, 0 -> neutral, -1 -> absence.
+Interpretation: $+1$ → strong presence, $0$ → neutral, $-1$ →
+absence.
 
-### Symbolic Layer (Scalars in [-1,1])
+The **symbolic** layer operates on scalars in $[-1, 1]$: neg is
+$-a$, non is $\alpha a$, union is $\max(a, b)$, intersection is
+$\min(a, b)$, part is $\mathrm{clamp}(b - a, -1, 1)$.
 
-Let $a, b \in [-1,1]$.
-
-| Operator | Formula | Meaning |
-|----------|---------|---------|
-| neg | $-a$ | oppositional negation |
-| non | $\alpha a$ | withdrawal / neutrality |
-| union | $\max(a, b)$ | strongest affirmation |
-| intersection | $\min(a, b)$ | shared commitment |
-| part | $\operatorname{clamp}(b - a, -1, 1)$ | signed containment |
-
-The key insight: subsymbolic = geometry, symbolic = order + polarity,
+The key insight: subsymbolic = geometry; symbolic = order + polarity;
 symbolization = norm projection.
 
 ---
 
-## Word Encoding
+## SymbolicSpace integration
 
-Each word is a 3-tuple `(batch, vector, rule)`:
-
-- **batch** - index into the batch dimension $[0, B)$
-- **vector** - index into the activation vector $[0, N)$
-- **rule** - grammar rule ID from `TheGrammar` $[0, K)$
-
-Words are stored as a Python list of tuples on the SubSpace.  The list
-is a **derivation tree** in pre-order: the first entry is the root, and
-binary rules expand left-first.  Terminal words carry `order = -1` and
-a codebook index in the `leaf1` slot; the leaf ledger used by
-`decompose` is built from these entries.
-
----
-
-## WordSpace and SymbolicSpace wiring
-
-Under `MentalModel.xml`, a single `WordSpace` hosts one
-`syntacticLayer` attribute, built by `_build_syntactic_layer` for the
-SymbolicSpace.  The driver methods are:
-
-- `WordSpace.forwardSymbols(data, subspace)` - runs `compose` on the
-  SymbolicSpace subspace and returns `(composed, svo)`.
-- `WordSpace.reverseSymbols(data, subspace)` - runs `decompose`.
-- `WordSpace.predict_rule()` / `predict_rule_hard()` - stack-oriented
-  shift/reduce helpers.
-
-`SymbolicSpace.forward` calls `WordSpace.forwardSymbols` as part of
-its composition pipeline; the conceptual and perceptual spaces no
-longer run their own syntactic layers.
-
----
-
-## SymbolicSpace
-
-### Forward Path
+### Forward path
 
 1. Extract concept activation $[B, n_{\text{Concepts}}]$.
 2. Map through `PiLayer(monotonic=True, invertible=True)` to
    $[B, n_{\text{Symbols}}]$.
-3. Codebook quantization (when enabled) produces one-hot activation +
-   vectors.
-4. `WordSpace.forwardSymbols(...)` runs the unified `SyntacticLayer`
-   and returns the composed symbolic tensor.
+3. Codebook quantization (when enabled) produces one-hot activation
+   plus vectors.
+4. The chart runs its inside pass over symbol vectors, dispatching
+   per-cell rule applications through
+   `wordSpace.host_layer('S', rule_name)` (which resolves to the
+   SymbolicSpace's `SpaceSyntacticLayer`).
 
-### Reverse Path
+### Reverse path
 
 1. Extract symbol activation $[B, n_{\text{Symbols}}]$.
 2. Exact inverse of the PiLayer recovers $[B, n_{\text{Concepts}}]$.
-3. `WordSpace.reverseSymbols(...)` invokes `decompose` to reconstruct
-   the pre-compose tensor from the word record.
+3. The chart's outside pass reconstructs the pre-compose tensor from
+   the word record via `host_layer('S', rule_name).generate(parent)`.
 
-### Key Properties
+### Key properties
 
-- Symbols are **zero-dimensional** -- pure activation scalars, not
+- Symbols are zero-dimensional — pure activation scalars, not
   vectors.
 - The PiLayer allows $n_{\text{Concepts}} \neq n_{\text{Symbols}}$.
-- `composeSyntax()` runs the unified SyntacticLayer and executes the
-  soft superposition over all active S-tier rules.
+- The chart's per-cell soft superposition over all active S-tier
+  rules replaces the older `composeSyntax()` driver.
 
 ---
 
-## AssociationLayer (EQUALS Implementation)
+## AssociationLayer (EQUALS implementation)
 
-The `AssociationLayer` is a cross-symbol associative memory used by the
-EQUALS rule.  Two modes are available:
-
-- **`type="symmetric"`** -- Hopfield-like: learns projection $A$,
-  computes association scores $A^\top A$, softmax-retrieves the
-  associated pattern.  Associations are symmetric
-  ($A \equiv B \Leftrightarrow B \equiv A$).
-- **`type="hopfield"`** -- Modern Hopfield: separate query/key
-  projections, softmax-gated retrieval.
+The `AssociationLayer` is a cross-symbol associative memory used by
+the EQUALS rule.  Two modes are available.  **`type="symmetric"`**
+is Hopfield-like: it learns projection $A$, computes association
+scores $A^\top A$, and softmax-retrieves the associated pattern;
+associations are symmetric ($A \equiv B \Leftrightarrow B \equiv A$).
+**`type="hopfield"`** is modern Hopfield: separate query / key
+projections and softmax-gated retrieval.
 
 Input and output are both $[B, N]$ activation vectors.  The layer is
 learnable and its parameters are trained end-to-end via the
 reconstruction loss.
-
----
-
-## How Syntax Is Trained
-
-### The Intended Differentiable Mechanism
-
-The syntax code is written to be differentiable:
-
-- `SyntacticLayer.forward()` produces soft `rule_probs`
-- `compose()` uses soft superposition over all candidate rules
-- `_compose_to_target()` is soft in training, argmax in eval
-- The Phase 1 `not` pass is deterministic (non-differentiable) but
-  only fires when the top-of-stack mean is negative
-
-A downstream loss can backpropagate into rule probabilities, rule-
-prediction weights, depth embeddings, and rule-execution parameters
-(e.g. the Sinkhorn logits for `swap`).
-
-### The Actual Losses in `runBatch()`
-
-`BasicModel.runBatch()` computes three losses:
-
-1. output loss
-2. optional reconstruction loss
-3. optional embedding loss
-
-There is no explicit syntax loss, parse-tree loss, or rule-label
-supervision.  Syntax fitness emerges indirectly through the
-reconstruction loss: rules that consistently support successful
-reconstruction accumulate weight, while weaker alternatives diminish.
-
-### Current Integration Status
-
-Under `MentalModel.xml`:
-
-- syntax is enabled and the unified syntactic layer is instantiated
-- syntax rules are predicted, syntax states and word tuples are
-  produced
-- `MentalModel.forward()` goes through `SigmaLayer` rather than
-  invoking the syntax pipeline directly
-- syntax is active as computation and analysis, but not strongly
-  coupled to the task loss
-
-The syntax system is a real, parameterized, differentiable grammar
-module -- configured by XML rule subsets and implemented with a single
-`SyntacticLayer` class -- but not yet placed on a strong loss path in
-the stock `MentalModel.xml` loop.
 
 ---
 
@@ -1404,359 +1392,102 @@ the stock `MentalModel.xml` loop.
 A planned Phase 2 introduces a `RuleNode` structure with slots for
 `(rule_id, method_name, forward_op, reverse_op, arity, args)` and
 enriches `ReconstructionStack` to support variable-fidelity
-reconstruction:
-
-- pos-only
-- grammar + pos
-- grammar + pos + args (full reconstruction information)
-
-This pairs generative rules with their compositional inverses so that
+reconstruction (pos-only; grammar + pos; grammar + pos + args).
+This pairs generative rules with their compositional inverses so
 downstream consumers can pull as much or as little reconstruction
 context as they need from the same word record.
 
 ---
 
-## Design History: Learned SVO Plan
+## Design history: learned SVO plan
 
 This appendix preserves the original design narrative that justified
-moving from a positional SVO tap to grammar-derived SVO roles. The plan
-below was authored before the chart-compose implementation landed;
-Phases A-D have since shipped (see the "Chart-like Compose (typed SVO)"
-section earlier in this document and the tracker at
-`doc/plans/2026-04-20-LearnedSVO-integration.md`). Kept here for
-archaeology and as a reference for any future extension of the same
-approach.
+moving from a positional SVO tap to grammar-derived SVO roles.  The
+plan was authored before the chart-compose implementation landed;
+Phases A–D have since shipped.  Kept here for archaeology and as a
+reference for any future extension of the same approach.
 
-### Learned SVO Role Identification from the Grammar
-
-This section specifies what it would take to drive
-`TruthLayer.universality` from grammar-derived Subject/Verb/Object
-roles rather than the positional heuristic previously in use.
-
-`TruthLayer.universality(subject, verb, object, lifting_layer, symbolic_space)`
-implements the Golden Rule: it scores luminosity change under S/O reversal,
-so `K(X,Y) + K(Y,X)` illuminates more than `K(X,Y)` alone for kind actions.
-The method takes `(S, V, O)` concept tensors as inputs; the question is where
-those three tensors come from.
+`TruthLayer.universality(subject, verb, object, lifting_layer,
+symbolic_space)` implements the Golden Rule: it scores luminosity
+change under S/O reversal, so $K(X, Y) + K(Y, X)$ illuminates more
+than $K(X, Y)$ alone for kind actions.  The method takes
+$(S, V, O)$ concept tensors as inputs; the question was where those
+three tensors come from.
 
 ### Historical starting point (pre-chart)
 
 SVO was produced by a positional tap inside
-`SyntacticLayer._compose_vector` in `bin/Language.py`: the first three active
-leaf positions of a batch row were labelled subject/verb/object when every
-row had at least three active leaves. For the canonical three-token
-transitive corpus in `test/test_universality.py`
-(`"the teacher helped the student"` without determiners) this produced
-the right roles. It was wrong for realistic inputs: determiners shift the
-roles, adjectives insert modifiers, word-order variation breaks it entirely,
-and embedded clauses are invisible.
+`SyntacticLayer._compose_vector`: the first three active leaf
+positions of a batch row were labelled S/V/O when every row had at
+least three active leaves.  For the canonical three-token transitive
+corpus in `test/test_universality.py`, this produced the right roles.
+It was wrong for realistic inputs: determiners shifted the roles,
+adjectives inserted modifiers, word-order variation broke it
+entirely, and embedded clauses were invisible.
 
-The plumbing downstream of `last_svo` was already correct for a learned tap
-to drop into:
+The plumbing downstream of `last_svo` was already correct for a
+learned tap to drop into:
 
-- `SyntacticLayer.last_svo: Optional[Tuple[Tensor, Tensor, Tensor]]`
-- `SyntacticLayer.lifting_layer: LiftingLayer` (instantiated in `init_lifting`,
-  called from `WordSpace._build_syntactic_layer`)
-- `MentalModel.forward` reads both, calls `truth_layer.universality(...)`,
-  and exposes the result via `self._universality_score`
-- `truth_modulated_loss(universality_score=...)` folds the score into the
-  training loss
+- `Chart.last_svo: Optional[Tuple[Tensor, Tensor, Tensor]]`
+- `SyntacticLayer.lifting_layer: LiftingLayer` (instantiated in
+  `init_lifting`, called from `WordSpace._build_syntactic_layer`)
+- `MentalModel.forward` reads both, calls
+  `truth_layer.universality(...)`, and exposes the result via
+  `self._universality_score`
+- `truth_modulated_loss(universality_score=...)` folds the score into
+  the training loss
 
 Only the producer of `last_svo` needed to change.
 
-### Target grammar shape
-
-The binary grammar should be able to express:
-
-    S  -> S VO
-    VO -> V O
-    V  -> v(V)      -- terminal category verb
-    O  -> n(O)      -- terminal category noun
-
-so that a parse of a three-content-word sentence produces a derivation tree
-whose outer rule is `S -> S VO`, and whose `VO` child comes from `VO -> V O`.
-The subject vector is arg-0 of the outer rule; the verb vector is arg-0 of
-the inner rule; the object vector is arg-1 of the inner rule.
-
-Longer inputs extend naturally:
-
-    S   -> NP VP
-    NP  -> DET N | N
-    VP  -> V NP
-    NP' -> DET N | ADJ N | DET ADJ N
-
-and an SVO walker reads (subject = arg-0 of S, verb = head of VP, object =
-head of VP's NP).
-
-### Phase A - Grammar metadata (low risk, ~60 LoC)
-
-#### A.1 Extend `RuleDef`
-
-```python
-RuleDef = namedtuple(
-    'RuleDef',
-    ['tier', 'canonical', 'arity', 'method_name', 'lhs', 'rhs_symbols'],
-)
-```
-
-- `lhs`: nonterminal name this rule reduces to (`'S'`, `'VO'`, `'NP'`, ...).
-- `rhs_symbols`: tuple of nonterminal / terminal category names for each
-  RHS slot (e.g. `('V', 'O')` for `VO -> V O`).
-
-Existing rules default `lhs='S'`, `rhs_symbols=('S', ...)` for backwards
-compatibility with the current single-tier S grammar.
-
-#### A.2 Multi-LHS `configure()`
-
-`Grammar.configure()` hardcodes `for lhs in ('S',)` (see `bin/Language.py`
-around the `configure` method). Replace with iteration over every key in
-the XML `<grammar>` block, so each key becomes a distinct nonterminal
-with its own rule list.
-
-#### A.3 RHS parser changes
-
-`_parse_rule` currently parses function-call syntax (`lift(S, S)`,
-`not(S)`). Add a bare-symbol-sequence form for typed rules:
-
-    <S>S VO</S>           -- rhs_symbols=('S', 'VO'), method='merge'
-    <VO>V O</VO>          -- rhs_symbols=('V', 'O'), method='merge'
-
-Branch on whether the RHS contains `(` / `)`. The function-call form stays
-for existing ops; the bare-symbol form is the new typed form.
-
-#### A.4 XML/XSD schema
-
-`MentalModel.xml` and its XSD must allow non-S nonterminals as child
-elements of `<grammar>`. Add each new nonterminal tag as an optional
-element in the XSD. No migration needed for existing configs because
-`<S>...</S>` stays valid.
-
-### Phase B - Compose restructure (high risk, ~120 LoC)
-
-#### B.1 Problem: left-associative cascade can't produce `(S, (V, O))`
-
-`_compose_vector` in `bin/Language.py` is a strict left-associative cascade:
-
-    composed = leaf[0]
-    for d:
-        composed = rule_d(composed, leaf[d+1])
-
-This bracketing is `(((leaf0, leaf1), leaf2), ...)`. To realise `S -> S VO`
-where `VO` is itself `V O`, we need `(leaf1, leaf2)` to merge first into VO,
-then `(leaf0, VO)` into S. Left-associative cascade cannot express this.
-`_compose_to_target` has the same limitation - it pairs (0,1), (2,3),
-etc. leftmost-first.
-
-#### B.2 Chart-like pair selection
-
-Replace the cascade with per-step pair selection:
-
-- At each composition step the rule head picks, differentiably, WHICH two
-  adjacent leaves to merge plus WHICH rule to apply.
-- A pair-scorer MLP takes the current hidden state plus a pair context
-  `(left, right)` and outputs a softmax over `(N-1)` adjacent pairs.
-- The selected pair is merged; the resulting slot replaces the pair in
-  the live-leaf array. Total steps: `N-1`.
-- Maintain a per-batch live-leaf count and an alive-mask `[B, N_max]`.
-
-#### B.3 Risks
-
-- O(N^2) per depth step at train time (soft pair mixture over pairs x
-  rules) vs O(1) in the current code. Acceptable for short inputs
-  (N <= 16); may need chunking for longer.
-- Hard argmax at eval, soft at train; convergence needs care.
-- `decompose()` needs a matching inverse that reads the pair-selection trace.
-- `subspace.add_word()` currently records a single position per rule firing.
-  Pair-selection records `(pos_left, pos_right)` and a merged-slot position;
-  `WordEncoding.encode(...)` already has `leaf1/leaf2/leaf3` fields for this.
-
-#### B.4 Why a cheaper hybrid doesn't work
-
-One might keep the left-assoc cascade and let the rule head pick rules
-whose LHS is only reachable after the inner merge has happened. For `N V N`:
-
-- Step 1 wants `V N -> VO` (inner first).
-- Step 2 wants `N VO -> S` (outer second).
-
-The left-assoc cascade forces step 1 to merge `leaf[0]` with `leaf[1]`
-(i.e. `N V` first), which is `N V` - not a rule in the target grammar.
-No rule fires, compose stalls. Left-assoc is unsalvageable for standard
-SVO. Phase B is required.
-
-### Phase C - Category tensor alongside activation (~60 LoC)
-
-#### C.1 Per-slot category
-
-Augment the data tensor `[B, N, D]` with a category tensor
-`category: [B, N]` where `category[b, n]` is the nonterminal / terminal
-category ID at that slot (or `-1` for padding). This rides alongside
-activation through compose.
-
-#### C.2 Initialisation from POS
-
-Two options for seeding category at input time:
-
-- **(a) External tagger.** Run an external POS tagger at data-prep time,
-  map tags to our lexical categories (`N`, `V`, `ADJ`, `ADV`, `DET`, ...),
-  store category indices alongside token indices. Clean; requires plumbing
-  through `InputSpace` and pulling a tagger dependency back in.
-- **(b) Codebook-derived POS.** K-means on the `WordVectors` codebook to
-  produce K lexical clusters; at runtime, look up each leaf's cluster as
-  its category. Cheaper, co-trained, no external dependency. Quality
-  depends on embedding geometry.
-
-(b) is now the preferred path — NLTK has been removed from the project.
-
-#### C.3 Rule-compatibility masking
-
-The rule head emits `rule_probs: [B, max_depth, num_rules]`. Extend to a
-compatibility mask:
-
-- For each candidate rule `r`, its `rhs_symbols` specifies the nonterminals
-  the RHS must hold.
-- At each merge step, compute `compat[b, r] = 1` iff the categories of the
-  two candidate children match `r.rhs_symbols`, else `0`.
-- Multiply into `rule_probs`, then renormalise. Incompatible rules drop out.
-- On merge, set the merged slot's category to `r.lhs`.
-
-#### C.4 Gradient / training dynamics
-
-A hard compat mask kills gradient through incompatible rules - semantically
-correct (those rules cannot fire) but brittle early in training if category
-assignment is wrong. Mitigations:
-
-- Small epsilon on incompatible rules early; anneal to zero over training.
-- Gumbel-softmax on the merged-slot category assignment to keep gradients
-  flowing through category propagation; anneal temperature high-to-low.
-- A designated always-compatible fallback rule (for example `absorb`, or
-  wildcard PROJECT behavior) so compose never stalls on unknown pairs.
-
-### Phase D - SVO extraction hook (~30 LoC)
-
-Once C is working, SVO falls out of the derivation trace.
-
-#### D.1 Record the trace
-
-In `_compose_vector`, each rule firing produces a tuple
-`(rule_id, left_slot, right_slot, merged_slot)`. Accumulate per-batch into
-`self._derivation_trace: List[List[Tuple[...]]]` over depth.
-
-#### D.2 Walk the trace to SVO
-
-After compose completes, for each batch row:
-
-1. Find the outermost `S -> S VO` firing (argmax rule at the final step,
-   constrained to `S`-LHS rules).
-2. Read its left arg as subject (slot pointing to an `S`-category leaf or
-   subtree - the canonical S subject is a noun phrase whose head is the
-   subject noun).
-3. Find the `VO -> V O` firing that produced the right arg of step 1.
-4. Read its left arg as verb, its right arg as object.
-
-Each of S/V/O is the concept vector at the respective slot in `data`
-(or the aggregate of the subtree slots if we want phrase heads rather than
-single-word heads).
-
-#### D.3 Batch-level variability
-
-Per-batch traces are natural (rule firings are already per-batch). SVO
-extraction runs per batch and produces a per-batch mask of "has SVO"; rows
-without the canonical shape leave their `last_svo` entry as None. The
-`MentalModel` hook already handles a global `None`; extending to a batch
-mask means `truth_layer.universality(s, v, o, ..., mask=...)` filters out
-rows without valid SVO before computing luminosity deltas.
-
-### Phase E - Training dynamics
-
-#### E.1 Soft-mixture / hard-gate interaction
-
-Phase B's soft pair mixture and Phase C's hard category gate interact:
-- Rule output is a soft mixture over compatible rules.
-- Merge output is a soft mixture over pairs.
-- Merged-slot category is a categorical argmax of rule LHS (hard).
-
-If hard category assignment is wrong, subsequent compat masks are wrong.
-Gumbel-softmax on the category assignment lets gradients backpropagate
-through the "wrong" choice and correct it.
-
-#### E.2 Curriculum
-
-- Start with short canonical inputs (3-content-word SVO, matching the
-  test corpus) where the correct parse is unambiguous.
-- Extend to 5-token `DET N V DET N` once short inputs produce stable SVO.
-- Add modifiers (`ADJ`, `ADV`) and embedded clauses last.
-
-#### E.3 Universality loss weighting
-
-`architecture.UniversalityWeight` currently defaults to 0.1. Once SVO is
-learned rather than heuristic, raise toward 0.3-0.5 - the Golden Rule
-signal is only stable when SVO extraction is reliable, and only then
-should it dominate loss.
-
-### Phase F - Test suite
-
-#### F.1 New unit tests
-
-- `test_ruledef_typed.py`: `RuleDef` stores `lhs` / `rhs_symbols`; grammar
-  exposes them; XML round-trip preserves them.
-- `test_compose_chart.py`: chart-like compose reduces `N` leaves to `1` in
-  `N-1` steps, preserves tensor dims, handles alive-mask.
-- `test_category_propagation.py`: merging `(N, V)` under `VP -> V N` yields
-  a slot with category `VP`; incompatible pairs zero the rule prob.
-
-#### F.2 Update `test/test_universality.py`
-
-`_get_svo_and_luminosity` currently returns `(None, None)` with a comment
-noting that the C-tier ternary-lift path is gone. Once Phase D is in place,
-replace it with a derivation-trace walk that reads SVO from the model and
-passes through `truth_layer.universality(...)`. The `xfail` markers stay:
-untrained models will not score `kind > unkind`.
-
-### Cost estimate
-
-| Phase | LoC | Risk   | Depends on |
-|-------|-----|--------|------------|
-| A: Grammar metadata        | ~60  | low    | -          |
-| B: Chart-like compose      | ~120 | **high** | A        |
-| C: Category tensor         | ~60  | medium | A, B       |
-| D: SVO hook                | ~30  | low    | C          |
-| E: Training dynamics       | tuning | medium | D        |
-| F: Tests                   | ~80  | low    | A, B, C, D |
-| **Total**                  | ~350 |        |            |
-
-Phase B was the load-bearing risk. Allow at least a week for the compose
-restructure; everything else layers cleanly once B is stable.
-
-### Interim: positional tap (the pre-chart stopgap)
-
-Until the learned approach landed, `SyntacticLayer._compose_vector` used a
-positional heuristic: any batch row with at least three active leaves
-labels positions 0/1/2 as subject/verb/object. This fired for the
-`test_universality.py` canonical corpus and silently skipped longer inputs
-(`last_svo` stayed `None`, universality stayed `None`, the loss term
-contributed zero).
-
-Known limits of the positional tap:
-
-- Wrong SVO for five-token sentences with determiners (picks the determiner
-  as "subject").
-- No role fidelity for non-canonical word order.
-- No support for embedded clauses (only the top-level SVO is visible).
-
-All three are addressed by Phases A-D.
-
-### Appendix - hooks that Phase D builds on (already wired)
-
-- `SyntacticLayer.last_svo: Optional[Tuple[Tensor, Tensor, Tensor]]`
-  (set in `compose`, now populated by chart-compose trace extraction).
-- `SyntacticLayer.lifting_layer: LiftingLayer` (created in `init_lifting`,
-  called from `WordSpace._build_syntactic_layer`).
+### Phases summary
+
+The five phases shipped:
+
+- **Phase A — Grammar metadata.** `RuleDef` extended with
+  `(lhs, rhs_symbols)` so each rule declares its typed nonterminal /
+  terminal categories.  `Grammar.configure` iterates over every key
+  in the XML `<grammar>` block; the bare-symbol-sequence form
+  (`<S>S VO</S>`) was added as a typed compose alternative to the
+  function-call form.
+- **Phase B — Chart restructure.** The strict left-associative cascade
+  was unable to produce `(S, (V, O))` from an `N V N` sentence (it
+  forced step 1 to merge `leaf[0]` with `leaf[1]`).  The chart
+  replaces it with per-step pair selection: a pair-scorer MLP picks
+  *which two adjacent leaves* to merge, plus *which rule* to apply.
+- **Phase C — Category tensor.** A `category: [B, N]` tensor rides
+  alongside `data: [B, N, D]`.  At each merge, a compatibility mask
+  zeros out `(pair, rule)` combinations whose typed RHS doesn't
+  match the pair's slot categories.  Category `0` (`'?'`) is a
+  wildcard so unseeded leaves match any typed rule during warmup.
+- **Phase D — SVO extraction.** SVO falls out of the derivation
+  trace.  After compose, find the outermost `S -> S VO` firing,
+  find the matching `VO -> V O`, pull S from the outer's left arg
+  and V / O from the inner's args.  Rows without the canonical pair
+  get zero placeholders.
+- **Phase E — Training dynamics.** Soft pair mixture, soft rule
+  mixture, hard category argmax (with Gumbel-softmax to keep
+  gradients flowing through "wrong" choices); curriculum from
+  three-content-word SVO to longer / modified inputs.
+
+Each phase is implemented in `bin/Language.py` (chart side) and
+`bin/Layers.py` (per-rule layers).  The implementation tracker is
+`doc/plans/2026-04-20-LearnedSVO-integration.md`; the chart-compose
+section above describes the runtime behavior.
+
+### Stable hooks already wired
+
+- `Chart.last_svo: Optional[Tuple[Tensor, Tensor, Tensor]]` — set by
+  `_extract_svo_from_trace` at the end of `_compose_chart_cky` /
+  `_compose_chart_cky_viterbi`.
+- `SyntacticLayer.lifting_layer: LiftingLayer` — created in
+  `init_lifting`, called from `WordSpace._build_syntactic_layer`.
 - `MentalModel.forward` reads both, invokes
   `truth_layer.universality(s, v, o, lifting_layer, symbolicSpace)`,
-  and stores `self._universality_score`.
-- `truth_modulated_loss(universality_score=..., universality_weight=...)`
+  and stores `self._universality_score`; `truth_modulated_loss`
   integrates the score into the training loss.
+- `MentalModel._predicted_head: Optional[list[int]]` — set by the
+  downward head emission described above.
 
-These four interfaces stayed stable when learned SVO replaced positional
-SVO.  The producer changed from the positional `_compose_vector` tap to
-the chart trace walker.
+These four interfaces stayed stable when learned SVO replaced
+positional SVO.  The producer changed from the positional
+`_compose_vector` tap to the chart trace walker.
