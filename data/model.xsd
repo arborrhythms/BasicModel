@@ -79,6 +79,10 @@
       <xs:element name="useSubspaceActivation" type="xs:boolean" minOccurs="0"/>
       <xs:element name="certainty" type="xs:boolean" minOccurs="0"/>
       <xs:element name="amp" type="ampModeEnum" minOccurs="0"/>
+      <!-- Optional: dump POS-labelled syntax tree at end of every
+           MentalModel.forward(); see doc/Language.md "POS side-channel". -->
+      <xs:element name="writeSyntax" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="syntaxOutPath" type="xs:string" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 

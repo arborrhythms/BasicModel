@@ -990,6 +990,30 @@ class Codebook(Basis):
         # Optional per-row polarity tags (POLARITY_AFFIRM/NON/NOT). Allocated
         # only when create(..., polarity=True) — symbolic codebook opt-in.
         self.polarity_ids = None
+        # Optional per-row part-of-speech / category tags. Allocated only
+        # when create(..., category=True). 0 = '?' (wildcard), other
+        # values index into WordSpace.category_index. Used by the chart's
+        # lexical fill to seed pos_lex when an input position resolves
+        # to a tagged codebook atom — see doc/Language.md "POS side-channel".
+        self.category_ids = None
+        # Per-position signed projection cache, populated by ``project``
+        # so ``project_reverse`` can recover the original input
+        # exactly. Shape ``[B, V, N]`` (or ``None`` when project hasn't
+        # been called this forward).
+        self._project_cache = None
+        # Invertible codebook (SVD-factored) state. When
+        # ``self.invertible`` is True, the project forward / reverse
+        # routes use cached SVD factors of ``W = U Σ V^T`` instead of
+        # ever materializing ``W`` in those paths:
+        #   forward:   y = x @ V @ diag(Σ) @ U^T
+        #   reverse:   x = y @ U @ diag(1/Σ) @ V^T
+        # Factors are recomputed lazily by ``_ensure_svd`` when W
+        # changes (``_svd_dirty`` flipped True by ``setW``).
+        self.invertible = False
+        self._svd_U = None        # [N, K]
+        self._svd_S = None        # [K]
+        self._svd_V = None        # [D, K]
+        self._svd_dirty = True
 
     def getW(self):
         # While an activation payload is cached, callers see it; otherwise
@@ -1012,34 +1036,36 @@ class Codebook(Basis):
         ``value=None`` clears only the transient activation; the codebook
         Parameter (if any) is preserved.
         """
+        # Any setW that touches the codebook (Parameter path) or clears
+        # it invalidates the cached SVD factors used by the invertible
+        # project / project_reverse paths. The activation-payload path
+        # leaves the codebook untouched, so the SVD stays valid.
         if value is None:
             self._active_payload = None
             if "W" not in self._parameters:
                 self.W = None
+                self._svd_dirty = True
             return
         if isinstance(value, nn.Parameter):
-            # Register (or re-register) the codebook Parameter. Clear any
-            # stale activation so subsequent getW() returns the codebook.
             if "W" in self._parameters:
                 del self._parameters["W"]
             self.W = value
             self._active_payload = None
+            self._svd_dirty = True
             return
-        # Plain tensor -- an activation. If a codebook is already held,
-        # cache the activation without disturbing the Parameter. If there
-        # is no codebook yet (e.g. non-customVQ init passes a plain
-        # tensor), fall back to the legacy slot so callers still see it.
         if "W" in self._parameters:
             self._active_payload = value
             return
         self.W = value
         self._active_payload = None
+        self._svd_dirty = True
 
     def getSize(self):
         return self.nVectors
 
     def create(self, nInput, nVectors, nDim, customVQ=True, monotonic=True,
-               passThrough=False, polarity=False):
+               passThrough=False, polarity=False, category=False,
+               invertible=False):
         super().create(
             nInput,
             nVectors,
@@ -1050,6 +1076,11 @@ class Codebook(Basis):
         )
         self.customVQ = customVQ
         self.alpha = 0.0
+        # Invertible mode: the project forward / reverse paths use
+        # cached SVD factors of W and never materialize W in those
+        # paths. SVD is lazily refreshed when ``setW`` invalidates it.
+        self.invertible = bool(invertible)
+        self._svd_dirty = True
         if polarity and self.nVectors > 0:
             ids = torch.full((self.nVectors,), POLARITY_AFFIRM,
                              dtype=torch.long)
@@ -1058,6 +1089,10 @@ class Codebook(Basis):
             # Polarity tags are metadata, not learnable; state_dict
             # integration is not required for the current consumers.
             self.polarity_ids = ids
+        if category and self.nVectors > 0:
+            # Same pattern as polarity: per-row long tag, default 0 ('?').
+            self.category_ids = torch.zeros(
+                (self.nVectors,), dtype=torch.long)
         if (not self.passThrough) and self.nVectors > 0 and self.getW() is None:
             self.addVectors(self.nVectors)
         return self
@@ -1076,6 +1111,24 @@ class Codebook(Basis):
         if self.polarity_ids is None:
             return POLARITY_AFFIRM
         return int(self.polarity_ids[int(idx)].item())
+
+    def set_category(self, idx, cat_id):
+        """Tag codebook row ``idx`` with category index ``cat_id``.
+
+        ``cat_id`` is an index into ``WordSpace.category_index``; ``0``
+        means '?' (wildcard / unknown). Raises if the codebook wasn't
+        created with ``category=True``.
+        """
+        if self.category_ids is None:
+            raise RuntimeError(
+                "Codebook.set_category called on a non-category codebook")
+        self.category_ids[int(idx)] = int(cat_id)
+
+    def get_category(self, idx):
+        """Return the category id of row ``idx`` (0 = '?' if untagged)."""
+        if self.category_ids is None:
+            return 0
+        return int(self.category_ids[int(idx)].item())
 
     def updateWeights(self, embed_sum, cluster_size):
         return torch.ones(self.vq.codebook_size, device=TheDevice.get())
@@ -1273,12 +1326,211 @@ class Codebook(Basis):
         self.frozen_entries = already | to_freeze
         return int(new_mask.sum().item())
 
-    def forward(self, input, topK: int = 0):
+    def _ensure_svd(self):
+        """Lazily compute and cache U, Σ, V for ``W = U Σ V^T``.
+
+        Refreshes when ``_svd_dirty`` is True (set by ``setW``).
+        Detached so factors are constants from autograd's perspective —
+        invertible mode is for use cases where the codebook is fixed
+        across the project / project_reverse pair (training the input,
+        not the codebook).
+
+        No-op when the codebook has no W yet.
+        """
+        if not self._svd_dirty:
+            return
+        W_param = self.getW()
+        if W_param is None or self.codebookSize == 0:
+            return
+        with torch.no_grad():
+            U, S, Vh = torch.linalg.svd(W_param, full_matrices=False)
+        # Vh is [K, D]; store V (= Vh.T) for downstream factored matmul.
+        self._svd_U = U.detach()
+        self._svd_S = S.detach()
+        self._svd_V = Vh.transpose(-2, -1).detach()
+        self._svd_dirty = False
+
+    def project(self, input):
+        """Per-concept signed-projection bivector accumulator.
+
+        Forward map ``[B, V, D] -> [B, N, 2]`` where ``V`` is the number
+        of input vectors per batch row, ``D`` is their dimensionality,
+        and ``N`` is the codebook size. For each batch row and each
+        codebook entry, accumulates across V the positive and negative
+        parts of the dot products ``input[v] · W[n]``::
+
+            proj[b, v, n]  = input[b, v] · W[n]            (signed)
+            pos[b, v, n]   = relu(proj[b, v, n])           (>= 0)
+            neg[b, v, n]   = relu(-proj[b, v, n])          (>= 0)
+            out[b, n, 0]   = sum_v pos[b, v, n]            (in-line)
+            out[b, n, 1]   = sum_v neg[b, v, n]            (opposed)
+
+        When ``self.invertible`` is True, the projection runs in
+        SVD-factored form via cached ``(U, Σ, V)`` of ``W``::
+
+            proj = x @ V @ diag(Σ) @ U^T
+
+        without ever materializing ``W`` in the matmul chain.
+        Otherwise computes ``proj = x @ W^T`` directly.
+
+        Caches the per-position signed projection on
+        ``self._project_cache`` (a ``[B, V, N]`` tensor) so
+        ``project_reverse`` can exactly recover the original input
+        (modulo the codebook's row-space projection).
+
+        Args:
+            input: ``[B, V, D]`` (or ``[B, D]``, treated as ``V=1``).
+                When passed a SubSpace, materializes its event tensor.
+
+        Returns:
+            ``[B, N, 2]`` stacked (in-line, opposed) accumulators.
+        """
+        x = input
+        if isinstance(x, SubSpace):
+            x = x.materialize()
+        if x.dim() == 2:
+            x = x.unsqueeze(1)
+        if self.invertible:
+            self._ensure_svd()
+            U, S, V = self._svd_U, self._svd_S, self._svd_V
+            if U is None or S is None or V is None:
+                return None
+            D_min = min(int(x.shape[-1]), int(V.shape[0]))
+            x_d = x[..., :D_min].to(device=V.device, dtype=V.dtype)
+            V_d = V[:D_min, :]                                # [D, K]
+            # x @ V @ diag(Σ) @ U^T   — never materializes W.
+            proj = (x_d @ V_d) * S.unsqueeze(0).unsqueeze(0)  # [B, V, K]
+            proj = proj @ U.transpose(-2, -1)                  # [B, V, N]
+        else:
+            W = self.getW()
+            if W is None or self.codebookSize == 0:
+                return None
+            D_min = min(int(x.shape[-1]), int(W.shape[-1]))
+            x_d = x[..., :D_min].to(device=W.device, dtype=W.dtype)
+            cb = W[:, :D_min]
+            proj = x_d @ cb.T                                  # [B, V, N]
+        self._project_cache = proj
+        pos_acc = torch.relu(proj).sum(dim=1)    # [B, N]
+        neg_acc = torch.relu(-proj).sum(dim=1)   # [B, N]
+        return torch.stack([pos_acc, neg_acc], dim=-1)  # [B, N, 2]
+
+    def project_reverse(self, bivec, V=None, vN_iters=0):
+        """Inverse of ``project``.
+
+        When the per-position cache from a prior ``project`` call is
+        available, recovers the original ``[B, V, D]`` exactly (modulo
+        the codebook's row-space projection — components of the input
+        orthogonal to span(W) are unrecoverable by definition).
+
+        Forward map: ``y = x @ W.T`` with ``x ∈ [B, V, D]``,
+        ``W ∈ [N, D]``.  The exact inverse on the row space of ``W`` is
+        the Moore–Penrose pseudo-inverse:
+
+            x = y @ W @ inv(M),    M = W.T @ W ∈ [D, D]
+
+        Two recovery paths:
+
+        * ``vN_iters == 0`` (default): direct pseudo-inverse via
+          ``torch.linalg.pinv(W.T)``. Exact, single-shot, requires
+          a matrix inverse / SVD under the hood.
+        * ``vN_iters > 0``: Richardson / scaled-von-Neumann iteration.
+          Computes ``b @ inv(M)`` as a truncated series
+
+              x_K = (1/λ) · b · Σ_{k=0..K-1} (I − M/λ)^k
+
+          where ``λ = ‖M‖_F + ε`` is a Frobenius-norm-based scale that
+          guarantees ``‖I − M/λ‖ < 1`` even for overcomplete
+          codebooks. No explicit inverse; pure matmul; differentiable.
+          Bare von Neumann (``λ = 1``) only converges when
+          ``‖I − M‖ < 1`` (near-orthonormal, ``N ≤ D``); the scaling
+          generalizes it to overcomplete codebooks.
+
+        When the cache is absent (round-tripping a stored bivector
+        with no preceding forward), falls back to a lossy single-vector
+        reconstruction:
+
+            signed[b, n] = bivec[b, n, 0] - bivec[b, n, 1]    # [B, N]
+            recovered[b, v, :] = signed @ W / max(V, 1)        # [B, V, D]
+
+        replicating one summary vector across V positions (V defaults
+        to 1).
+
+        Args:
+            bivec: ``[B, N, 2]`` from ``project``.
+            V: number of positions to reconstruct.  If ``None``, uses
+                the cached per-position count when available, else 1.
+            vN_iters: number of von Neumann / Richardson iterations.
+                ``0`` (default) uses ``torch.linalg.pinv``.
+
+        Returns:
+            ``[B, V, D]`` recovered input.
+        """
+        proj_cache = getattr(self, '_project_cache', None)
+        if proj_cache is not None and self.invertible:
+            # SVD-factored exact inverse — never materializes W.
+            #   x = y @ U @ diag(1/Σ) @ V^T
+            self._ensure_svd()
+            U, S, V = self._svd_U, self._svd_S, self._svd_V
+            if U is None or S is None or V is None:
+                return None
+            U_d = U.to(device=proj_cache.device, dtype=proj_cache.dtype)
+            S_inv = (1.0 / S.clamp(min=1e-12)).to(
+                device=proj_cache.device, dtype=proj_cache.dtype)
+            V_d = V.to(device=proj_cache.device, dtype=proj_cache.dtype)
+            # proj_cache @ U: [B, V, K]; * (1/Σ): [B, V, K]; @ V^T: [B, V, D]
+            return ((proj_cache @ U_d) * S_inv.unsqueeze(0).unsqueeze(0)
+                    ) @ V_d.transpose(-2, -1)
+        W = self.getW()
+        if W is None or self.codebookSize == 0:
+            return None
+        if proj_cache is not None:
+            cb = W.to(device=proj_cache.device, dtype=proj_cache.dtype)
+            if int(vN_iters) <= 0:
+                # Exact pseudo-inverse path (non-invertible codebook).
+                Wt_pinv = torch.linalg.pinv(cb.T)        # [N, D]
+                return proj_cache @ Wt_pinv               # [B, V, D]
+            # Iterative scaled-von-Neumann (Richardson) path.
+            D = cb.shape[-1]
+            b = proj_cache @ cb                            # [B, V, D]
+            M = cb.T @ cb                                  # [D, D]
+            # Operator-norm scaling: λ = ‖M‖_2 (largest eigenvalue
+            # of the symmetric PSD M).  E = I − M/λ then has spectral
+            # radius (1 − λ_min/λ_max) < 1, so the series converges
+            # at the optimal Richardson rate.  Falls back to the
+            # Frobenius bound if SVD is unavailable.
+            try:
+                lam = float(torch.linalg.matrix_norm(
+                    M, ord=2).clamp(min=1e-9).item())
+            except Exception:
+                lam = float(M.norm().clamp(min=1e-9).item())
+            I_D = torch.eye(D, device=cb.device, dtype=cb.dtype)
+            E = I_D - M / lam                              # ‖E‖_2 < 1
+            term = b
+            acc = term.clone()
+            for _ in range(int(vN_iters) - 1):
+                term = term @ E
+                acc = acc + term
+            return acc / lam
+        # Fallback: derive signed scalar bivector and replicate.
+        signed = bivec[..., 0] - bivec[..., 1]   # [B, N]
+        v = max(int(V) if V is not None else 1, 1)
+        recovered = (signed @ W) / float(v)      # [B, D]
+        return recovered.unsqueeze(1).expand(-1, v, -1).contiguous()
+
+    def forward(self, input, topK: int = 0, project: bool = False):
         """Codebook forward. When ``topK > 0`` and less than the codebook
         size, ``self.activation`` is pruned to the top-K strongest entries
         per batch row -- realizing the wide-codebook narrow-output pattern
         where nVectors >> nOutput. ``topK=0`` preserves legacy behavior.
+
+        When ``project=True``, dispatches to ``self.project(input)`` and
+        returns the per-concept ``[B, N, 2]`` bivector accumulator
+        instead of the snap behavior. The matching reverse is
+        ``self.reverse(bivec, project=True)`` which routes through
+        ``project_reverse``.
         """
+        if project:
+            return self.project(input)
         _vspace = None
         if isinstance(input, SubSpace):
             _vspace = input
@@ -1375,7 +1627,16 @@ class Codebook(Basis):
             return _vspace
         return x
 
-    def reverse(self, y, **kwargs):
+    def reverse(self, y, project: bool = False, V=None, vN_iters=0, **kwargs):
+        """Codebook reverse. When ``project=True``, dispatches to
+        ``project_reverse`` to invert the per-concept bivector
+        accumulator produced by ``forward(..., project=True)``.
+        ``vN_iters`` selects between the exact pseudo-inverse path
+        (``0``, default) and a scaled-von-Neumann iterative recovery
+        (``> 0``). Otherwise runs the legacy snap-then-write path.
+        """
+        if project:
+            return self.project_reverse(y, V=V, vN_iters=vN_iters)
         if self.passThrough:
             self.setW(y)
             return y
@@ -2425,6 +2686,14 @@ class SubSpace(nn.Module):
             'word_count',
             torch.zeros(0, dtype=torch.long),
             persistent=False)
+        # POS side-channel: parallel buffer recording the merged-cell
+        # POS argmax at each merge. Shape mirrors word_count's leading
+        # dim. 0 = '?' (wildcard / unknown). See doc/Language.md
+        # "POS side-channel".
+        self.register_buffer(
+            'pos_records',
+            torch.zeros(0, self._WORD_MAX_DEPTH, dtype=torch.long),
+            persistent=False)
         self._demuxed = False
         # active: [B, N, M] per-modality indices into the Basis slots.
         # M = number of modalities (what, where, when).
@@ -3077,7 +3346,7 @@ class SubSpace(nn.Module):
         return self.word
 
     def add_word(self, batch, vector, rule, order=0,
-                 leaf1=-1, leaf2=-1, leaf3=-1):
+                 leaf1=-1, leaf2=-1, leaf3=-1, pos=0):
         """Append one or more word entries.
 
         Two overloads share this entry point:
@@ -3085,26 +3354,33 @@ class SubSpace(nn.Module):
         * **Scalar form** -- ``batch``, ``vector``, ``rule`` are ``int``.
           Appends one validated 7-tuple to ``self.word``. Used by the
           legacy compose path and direct callers (tests,
-          ``_compose_activation``).
+          ``_compose_activation``). ``pos`` is recorded into
+          ``pos_records`` mirroring the word slot (no-op for the
+          scalar list).
 
         * **Vector form** -- ``batch`` is a 1-D long tensor of cell
           indices into the ``[B*K]`` flat row space. ``vector``,
-          ``rule``, ``order``, ``leaf*`` are 1-D long tensors of the same
-          length (or ``int`` broadcast over the active rows). Writes
-          into the per-cell tensor buffers ``word_records`` /
-          ``word_count`` via scatter, with no host sync. The outer
-          doc-streaming loop calls ``flush_word_buffer`` once per tick
-          to materialize the buffer's contents back into ``self.word``
-          for legacy consumers (``decompose``, ``reconstruct``, the SVO
-          walker, derivation-trace tests). See plan §6c.
+          ``rule``, ``order``, ``leaf*``, ``pos`` are 1-D long tensors
+          of the same length (or ``int`` broadcast over the active
+          rows). Writes into the per-cell tensor buffers
+          ``word_records`` / ``pos_records`` / ``word_count`` via
+          scatter, with no host sync. The outer doc-streaming loop
+          calls ``flush_word_buffer`` once per tick to materialize the
+          buffer's contents back into ``self.word`` for legacy
+          consumers (``decompose``, ``reconstruct``, the SVO walker,
+          derivation-trace tests). See plan §6c.
 
         The vector form is gated on ``isinstance(batch, torch.Tensor)``;
         anything else falls through to the scalar form so existing
         callers keep working unchanged.
+
+        ``pos`` defaults to 0 ('?', wildcard) to preserve back-compat
+        for callers that don't carry POS.
         """
         if isinstance(batch, torch.Tensor):
             self._add_word_vec(batch, vector, rule, order=order,
-                               leaf1=leaf1, leaf2=leaf2, leaf3=leaf3)
+                               leaf1=leaf1, leaf2=leaf2, leaf3=leaf3,
+                               pos=pos)
             return
         self.word.append(self.wordEncoding.encode(
             batch, vector, rule, order, leaf1, leaf2, leaf3))
@@ -3124,6 +3400,8 @@ class SubSpace(nn.Module):
             n, self._WORD_MAX_DEPTH, self._WORD_ENTRY_WIDTH,
             dtype=torch.long, device=device)
         self.word_count = torch.zeros(n, dtype=torch.long, device=device)
+        self.pos_records = torch.zeros(
+            n, self._WORD_MAX_DEPTH, dtype=torch.long, device=device)
 
     def clear_word_buffer(self):
         """Zero the per-cell depth so the next tick starts fresh.
@@ -3136,7 +3414,7 @@ class SubSpace(nn.Module):
         self.word_count.zero_()
 
     def _add_word_vec(self, b_indices, vec_idxs, rule_ids,
-                      order=0, leaf1=-1, leaf2=-1, leaf3=-1):
+                      order=0, leaf1=-1, leaf2=-1, leaf3=-1, pos=0):
         """Tensor scatter into ``word_records`` -- vector ``add_word`` body.
 
         ``b_indices`` is the [N_active] long cell-id tensor. The other
@@ -3171,6 +3449,7 @@ class SubSpace(nn.Module):
         l1    = _broadcast(leaf1)
         l2    = _broadcast(leaf2)
         l3    = _broadcast(leaf3)
+        p_idx = _broadcast(pos)
 
         # WordEncoding tuple slots: BATCH, VECTOR, ORDER, RULE, LEAF1, LEAF2, LEAF3
         self.word_records[b_idx, depths, WE.BATCH]  = b_idx
@@ -3180,6 +3459,7 @@ class SubSpace(nn.Module):
         self.word_records[b_idx, depths, WE.LEAF1]  = l1
         self.word_records[b_idx, depths, WE.LEAF2]  = l2
         self.word_records[b_idx, depths, WE.LEAF3]  = l3
+        self.pos_records[b_idx, depths] = p_idx
         # In-place increment of the per-cell depth. ``index_add_`` would
         # also work; direct gather/scatter is fine because each b_idx
         # appears at most once per call (compose dispatches one entry
@@ -6615,11 +6895,13 @@ class ConceptualSpace(Space):
         self.subspace.copy_context(subspace)
         vspace = subspace
         x = self.forwardBegin(vspace, returnVectors=True)
-        # Per-space SyntacticLayer dispatch (2026-05-01 refactor §5).
-        # Routes through syntacticLayer when the chart has populated
-        # ``wordSpace.current_rules['C']`` for this forward; otherwise
-        # fires self.pi directly. The chart's grammar choice subsumes
-        # the legacy ``p_int`` rule-probability gate.
+        # Pi is the fixed concept-space lift; runs unconditionally.
+        y = self.pi(x)
+        # SyntacticLayer applies grammar rules on top of the lifted
+        # representation. Binary rules (intersection/union) have
+        # already been applied chart-side; this dispatches any unary
+        # C-tier rule the chart selected. No-op when the chart hasn't
+        # written rule choices for this tier.
         ws_for_chart = getattr(vspace, 'wordSpace', None)
         chart_rules = (
             ws_for_chart.current_rules.get('C')
@@ -6627,15 +6909,9 @@ class ConceptualSpace(Space):
                 and getattr(ws_for_chart, 'current_rules', None))
             else None)
         if chart_rules and getattr(self, 'syntacticLayer', None) is not None:
-            # SpaceSyntacticLayer.forward takes a subspace and operates on
-            # its tier-appropriate field (.event for C). Stage `x` into
-            # vspace so the layer reads the same tensor forwardBegin
-            # produced, then re-extract the post-fold tensor.
-            vspace.set_event(x)
+            vspace.set_event(y)
             self.syntacticLayer.forward(vspace)
             y = vspace.materialize()
-        else:
-            y = self.pi(x)
         # STM-residual bias (once per sentence; wordSpace gates itself).
         # disc.prime() casts into concept_dim, so the bias must be added
         # to the post-Sigma activation y (shape [B*K, N_out, concept_dim]),
@@ -6966,6 +7242,7 @@ class SymbolicSpace(Space):
             passThrough=not self.codebook,
             monotonic=True,
             polarity=True,
+            category=True,
         )
         return basis
 

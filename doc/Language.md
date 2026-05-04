@@ -1168,6 +1168,149 @@ placeholder; if every row in a batch fails, `last_svo` stays `None`.
 
 ---
 
+## POS side-channel
+
+A part-of-speech distribution rides alongside the signal at every
+chart cell.  The trailing axis of the side-channel is `|POS| =
+|Grammar.categories|` — the union of every `lhs` / `rhs_symbol`
+declared by the grammar (e.g. `S`, `VO`, `NP`, `VP`, `V`, `N`,
+`ADJ`, `DET`).  Index 0 is `'?'`, the wildcard.
+
+### Storage tiers
+
+- **Per-atom POS tag** (durable, seed source) lives on the
+  SymbolicSpace codebook as `Codebook.category_ids: Long[V]` (one
+  long index per atom row, default `0` = `'?'`).  Allocated when
+  the codebook is built with `category=True`.  Mirrors the existing
+  `polarity_ids` pattern.  Use `set_category(idx, cat_id)` /
+  `get_category(idx)` to read / write per atom.
+- **Per-call chart POS** is `Chart._chart_pos: [B, N+1, N+1, |POS|]`,
+  the softmax of `Chart._chart_score` along the trailing axis.  Each
+  cell row is a probability simplex.  Cleared at the start of every
+  inside pass.
+- **Durable per-merge POS** lives on `SubSpace.pos_records:
+  Long[B*K, max_depth]`, parallel to `word_records` / `word_count`.
+  Each entry is the merged-cell POS at the depth recorded by the
+  matching `word_records` row.
+
+### Lexical bootstrap
+
+`Chart._apply_codebook_pos_seed` overrides the learned
+`_lex_cat_scorer(data)` log-distribution with a one-hot at the
+codebook-resolved POS for any input position whose nearest atom
+carries a non-wildcard `category_ids` entry and whose dot-product
+similarity exceeds `0.1`.  Untagged or low-confidence positions
+retain `softmax(_lex_cat_scorer(data))`.  Gradients still flow
+through `_lex_cat_scorer` on those positions.
+
+### Mechanism 1 — RHS POS compatibility mask
+
+In `_chart_inside`, before scoring each binary merge candidate, the
+chart gathers the operands' POS distributions
+(`pos_left[..., rule.rhs_left[r]]`, `pos_right[..., rule.rhs_right[r]]`)
+and adds `log(p_left * p_right)` to the rule's candidate score.
+Wildcard rules (`rhs_*[r] == 0`) get an unconditional `1.0`
+multiplier.  For typed rules like `NP = Intersection(ADJ, N)`, this
+makes the rule fire only when the left operand looks like `ADJ` and
+the right looks like `N`; the score for `[N, ADJ]` is exponentially
+suppressed.
+
+### Mechanism 3 — Rule-prediction conditioning
+
+After `_viterbi_extract` runs, `Chart._populate_category_stack`
+walks the trace and pushes each merge's LHS category embedding
+(from `WordSpace.category_codebook.W`) onto
+`WordSpace.category_stack`.  Subsequent calls to
+`WordSpace.predict_rule(b)` then read a parse history of POS
+embeddings via the existing
+`category_stack.flatten(b)` →
+`Linear(max_depth * pos_dim → n_rules)` MLP that was already
+allocated for this purpose.
+
+### Why this trains the network to assign POS to every word
+
+Two reinforcing gradient paths:
+
+1. **Anchored** — codebook atoms with a known category override
+   `_lex_cat_scorer` deterministically.  Their POS distributions
+   propagate up the chart and gate Mechanism 1; reconstruction loss
+   pulls the model's downstream rule choices toward those atoms'
+   stored categories.
+2. **Emergent** — untagged atoms fall back to
+   `softmax(_lex_cat_scorer(data))`.  A wrong POS at a leaf
+   produces a wrong rule firing (RHS mask fails, rule scores
+   drop), bad reconstruction, and a strong gradient back through
+   `_lex_cat_scorer.W` to fix the leaf.
+
+The two combine: tagged atoms anchor a stable POS reference; the
+scorer learns to extend that reference to untagged atoms whose
+context makes the correct POS unambiguous.  Coverage matters —
+tagging the closed-class words (DET, AUX, PREP, CONJ) plus the
+most frequent open-class atoms gives the system a working anchor
+set.
+
+### `<writeSyntax>true</writeSyntax>` — syntax-tree dump
+
+When `<architecture><writeSyntax>true</writeSyntax></architecture>`
+is set in the model XML, `MentalModel.forward()` calls
+`MentalModel.write_syntax_tree(path)` at the end of every forward
+pass.  The output path defaults to `output/syntax.xml` and is
+overridable via
+`<architecture><syntaxOutPath>...</syntaxOutPath></architecture>`.
+
+The dumper walks the chart's `_derivation_trace` and the symbolic
+codebook to emit one `<forward>` XML fragment per call, with one
+`<batch>` per row.  Category names (`cat="..."`), rule canonicals
+(`rule="..."`), and POS tags (`pos="..."`) come straight from the
+live grammar — whatever `Grammar.categories` and `RuleDef.canonical`
+hold at parse time.  For example, given the XOR grammar
+([data/XOR_grammar.xml](../data/XOR_grammar.xml)) which declares
+`S = not(S) | conjunction(S, S) | disjunction(S, S)` over a single
+non-terminal `S`, a parse of the input `1 1` (true $\wedge$ true) under the
+CKY chart would emit something like:
+
+```xml
+<forward tick="42">
+  <batch n="0">
+    <node cat="S" rule="S=conjunction(S,S)" i="0" j="2">
+      <leaf token="1" pos="S" i="0"/>
+      <leaf token="1" pos="S" i="1"/>
+    </node>
+    <rules>1</rules>
+  </batch>
+</forward>
+```
+
+A grammar that adds typed categories (e.g. `NP = intersection(ADJ, N)`)
+would produce richer trees with those category names appearing on
+the `<node>` and `<leaf>` elements; the dumper has no built-in
+category vocabulary of its own.
+
+Each `<node>` carries `cat="<lhs_category>"`,
+`rule="<rule_canonical>"`, and `i`/`j` for the span; each `<leaf>`
+carries `token`, `pos` (resolved through
+`SymbolicSpace.subspace.what.category_ids`, falling back to `'?'`
+when the atom carries no tag), and the input position `i`.  The
+`<rules>` element lists the global rule-id sequence for compact
+diff-based regression.
+
+The file is truncated on the first call within a process and
+appended on subsequent calls so a training run accumulates one
+`<forward>` fragment per forward pass.  Wrap the file in a single
+`<syntaxLog>` root element (or use a streaming XML parser) if a
+single valid XML document is required.  `<writeSyntax>` defaults
+to `false`; the tree-builder is fully bypassed in that case (no
+per-forward overhead).
+
+Note: when the parser's `<routerKind>signal</routerKind>` is
+selected, the SignalRouter bypasses `Chart._chart_inside` and
+no derivation trace is recorded; the dumper emits
+`<noTrace/>` for those rows.  Set `<routerKind>chart</routerKind>`
+(the default) to use the CKY inside pass that populates the
+trace.
+
+---
+
 ## Per-space dispatch (`SpaceSyntacticLayer`)
 
 Each Space (SymbolicSpace, ConceptualSpace, PerceptualSpace) carries a
@@ -1366,8 +1509,9 @@ symbolization = norm projection.
 - Symbols are zero-dimensional — pure activation scalars, not
   vectors.
 - The PiLayer allows $n_{\text{Concepts}} \neq n_{\text{Symbols}}$.
-- The chart's per-cell soft superposition over all active S-tier
-  rules replaces the older `composeSyntax()` driver.
+- The chart's per-cell soft superposition runs over all active
+  S-tier rules; rule firing is gated by LHS / RHS POS compatibility
+  via `chart_pos` (see [POS side-channel](#pos-side-channel)).
 
 ---
 

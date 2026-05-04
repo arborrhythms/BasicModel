@@ -871,6 +871,10 @@ class Chart(nn.Module):
         # safety on layers whose compose hasn't fired yet.
         self._chart_score = None
         self._chart_vec = None
+        # POS side-channel: per-cell probability simplex over the
+        # category axis, populated by _chart_inside. See doc/Language.md
+        # "POS side-channel" for the contract.
+        self._chart_pos = None
         self._outside_score = None
         self._outside_vec = None
         self._derivation_trace = None
@@ -1304,6 +1308,110 @@ class Chart(nn.Module):
         return None
 
     # ------------------------------------------------------------------
+    # POS side-channel helpers.
+    # ------------------------------------------------------------------
+    def _apply_codebook_pos_seed(self, data, lex_log_probs, word_space,
+                                 subspace, B, N, C):
+        """Override the learned lexical scorer with codebook-stored POS
+        tags at positions where a tagged atom is the nearest codebook
+        match.
+
+        Returns a possibly-updated ``lex_log_probs: [B, N, C]`` where
+        positions with a known atom category have a hard one-hot
+        log-distribution and other positions retain
+        ``log_softmax(_lex_cat_scorer(data))``.
+
+        No-op (returns input unchanged) when the symbolic codebook
+        carries no per-atom tags or the input shape doesn't permit
+        atom resolution. Always preserves gradient flow on un-tagged
+        positions through ``_lex_cat_scorer``.
+        """
+        if word_space is None:
+            return lex_log_probs
+        sym_subspace = None
+        try:
+            sym_space = getattr(word_space, 'symbolicSpace', None)
+            if sym_space is not None:
+                sym_subspace = getattr(sym_space, 'subspace', None)
+        except Exception:
+            sym_subspace = None
+        # Subspace handed in directly is the active S-tier subspace.
+        # Prefer it when available so the codebook path tracks the
+        # subspace currently being parsed.
+        candidate = subspace if subspace is not None else sym_subspace
+        if candidate is None:
+            return lex_log_probs
+        what = getattr(candidate, 'what', None)
+        if what is None:
+            return lex_log_probs
+        cat_ids = getattr(what, 'category_ids', None)
+        if cat_ids is None:
+            return lex_log_probs
+        try:
+            W = what.getW()
+        except Exception:
+            return lex_log_probs
+        if W is None or not torch.is_tensor(W) or W.ndim < 2:
+            return lex_log_probs
+        # Resolve each [B, N, D] data row to its nearest codebook
+        # row via dot product, then gather the per-atom category id.
+        # When the dot product is too low (< 0.1), we treat the atom
+        # as not a codebook match and skip the override for that
+        # position. This preserves _lex_cat_scorer gradients on
+        # positions whose data isn't a confident codebook lookup.
+        device = data.device
+        dtype = data.dtype
+        try:
+            W_ = W.to(device=device, dtype=dtype)
+            cat_ids_ = cat_ids.to(device=device, dtype=torch.long)
+        except Exception:
+            return lex_log_probs
+        D_data = int(data.shape[-1])
+        D_cb = int(W_.shape[-1])
+        D_min = min(D_data, D_cb)
+        if D_min <= 0:
+            return lex_log_probs
+        flat = data[..., :D_min].reshape(-1, D_min)
+        cb = W_[:, :D_min]
+        sims = flat @ cb.T  # [B*N, V]
+        best_sim, best_idx = sims.max(dim=-1)  # [B*N]
+        best_cat = cat_ids_.gather(0, best_idx.clamp(min=0,
+                                                    max=cat_ids_.shape[0] - 1))
+        # Mask: position has a tagged atom (cat > 0 == not '?') AND
+        # the dot product is non-trivial (atom is plausibly nearest).
+        thresh = 0.1
+        valid = (best_cat > 0) & (best_sim > thresh)
+        if not bool(valid.any()):
+            return lex_log_probs
+        # Rebuild lex_log_probs with one-hot overrides at valid rows.
+        flat_log = lex_log_probs.reshape(-1, C).clone()
+        cat_clamped = best_cat.clamp(min=0, max=C - 1)
+        NEG = torch.full_like(flat_log, -1e9)
+        rows = torch.arange(flat_log.shape[0], device=device)
+        # Build a one-hot log-distribution for the override rows.
+        override = NEG.clone()
+        override[rows, cat_clamped] = 0.0
+        flat_log = torch.where(
+            valid.unsqueeze(-1).expand_as(flat_log), override, flat_log)
+        return flat_log.reshape(B, N, C)
+
+    def _compute_chart_pos(self):
+        """Convert the chart's log-score tensor to a probability simplex
+        over the category axis.
+
+        Returns ``chart_pos: [B, N+1, N+1, C]`` where each row sums to 1
+        across the trailing axis. Returns None if the chart hasn't run
+        yet.
+        """
+        if self._chart_score is None:
+            return None
+        # softmax over the C axis turns log-scores into a per-cell
+        # POS distribution. Cells with all NEG_INF (unreached cells)
+        # become uniform — harmless for downstream consumers since
+        # those cells aren't used in extraction either way.
+        return F.softmax(self._chart_score, dim=-1)
+
+    # ------------------------------------------------------------------
     # Inside pass (training: soft; eval: Viterbi). Q10.5.
     # ------------------------------------------------------------------
     def _compose_chart_cky(self, data, word_space, subspace=None):
@@ -1362,8 +1470,18 @@ class Chart(nn.Module):
         chart_vec = empty_vec
 
         # Lexical fill (w=1).
+        # POS side-channel — Tier 3 (learned scorer) is the baseline.
         lex_logits = self._lex_cat_scorer(data)
         lex_log_probs = F.log_softmax(lex_logits, dim=-1)
+        # POS side-channel — Tier 1 (codebook lookup): when an input
+        # position resolves to a tagged codebook atom in the symbolic
+        # space's `what` codebook, override the learned scorer with a
+        # one-hot over the atom's stored category. Tier 2 (`pos_lookup`)
+        # is the runtime fallback; here we keep the implementation
+        # focused on the codebook path because it's the durable seed
+        # source per the plan.
+        lex_log_probs = self._apply_codebook_pos_seed(
+            data, lex_log_probs, word_space, subspace, B, N, C)
         i_diag = torch.arange(N, device=device)
         chart_score = chart_score.clone()
         chart_vec = chart_vec.clone()
@@ -1436,10 +1554,42 @@ class Chart(nn.Module):
             compat = self._compat_score_mod(left, right, rE, mm)
             marker_prior = (mB_bin * mmask_bin).sum(-1)
 
+            # POS side-channel — Mechanism 1 (RHS POS compatibility).
+            # Gate (rule, pair) combinations by whether the operand
+            # spans' POS distributions match the rule's typed RHS.
+            # Wildcards (rhs_*[r] == 0) keep score 1.0; tagged
+            # categories produce an exponential penalty when the
+            # operand's POS distribution doesn't agree.
+            #
+            # `pos_left[b, p, c]` is the probability that the left
+            # span has category c, derived from the chart's per-cell
+            # log-score softmaxed over C.
+            pos_chart = F.softmax(chart_score, dim=-1)
+            pos_left_bp = pos_chart[:, i2, k2, :]  # [B, P*Sp, R_bin, C]
+            pos_right_bp = pos_chart[:, k2, j2, :]  # [B, P*Sp, R_bin, C]
+            # Gather along C: select the probability corresponding to
+            # each rule's expected RHS category. Indices are the
+            # rule-broadcast tensors `rl_bin` / `rr_bin`.
+            rl_bp = rl_bin.view(1, 1, R_bin, 1).expand(B, P * Sp, R_bin, 1)
+            rr_bp = rr_bin.view(1, 1, R_bin, 1).expand(B, P * Sp, R_bin, 1)
+            p_l = pos_left_bp.gather(-1, rl_bp).squeeze(-1)
+            p_r = pos_right_bp.gather(-1, rr_bp).squeeze(-1)
+            # Wildcard handling: for rules with rhs_*[r] == 0 ('?'),
+            # the gate is unconditionally 1.0. This preserves
+            # backward-compat with grammars whose rules don't carry
+            # typed RHS yet.
+            wild_l = (rl_bin == 0).view(1, 1, R_bin).expand_as(p_l)
+            wild_r = (rr_bin == 0).view(1, 1, R_bin).expand_as(p_r)
+            p_l = torch.where(wild_l, torch.ones_like(p_l), p_l)
+            p_r = torch.where(wild_r, torch.ones_like(p_r), p_r)
+            rhs_compat = (p_l * p_r).clamp(min=1e-9)
+            rhs_compat_log = torch.log(rhs_compat)
+
             cand_score = (score_left + score_right
                           + rB_bin.view(1, 1, R_bin)
                           + compat
-                          + marker_prior.view(1, 1, R_bin))
+                          + marker_prior.view(1, 1, R_bin)
+                          + rhs_compat_log)
             cand_score = cand_score.view(B, P, Sp, R_bin)
             tau = max(float(self.chart_tau), 1e-3)
             if tau != 1.0:
@@ -1576,6 +1726,10 @@ class Chart(nn.Module):
 
         self._chart_score = chart_score
         self._chart_vec = chart_vec
+        # POS side-channel: per-cell probability simplex over the
+        # category axis. Surfaced for downstream consumers (syntax
+        # tree dumper, debugger, future losses).
+        self._chart_pos = F.softmax(chart_score, dim=-1)
 
         # Outside pass mirrors the inside pass's hard / soft mode.
         outside_score, outside_vec = self._compose_chart_outside(
@@ -1621,7 +1775,65 @@ class Chart(nn.Module):
         self._derivation_trace = self._viterbi_extract(
             chart_score, chart_vec, B, N)
 
+        # POS side-channel — Mechanism 3 (rule-prediction conditioning).
+        # Walk the parsed trace and push each merge's LHS category
+        # embedding onto WordSpace.category_stack so subsequent
+        # WordSpace.predict_rule(b) calls see the parse history.
+        # When no wordSpace / category_stack is wired, this is a no-op.
+        self._populate_category_stack(word_space, B)
+
         return composed, self.last_svo
+
+    def _populate_category_stack(self, word_space, B):
+        """Push the Viterbi trace's LHS category embeddings onto
+        ``word_space.category_stack`` so the rule predictor sees
+        the parse history. Idempotent: clears the stack rows for
+        the active batch range first.
+        """
+        if word_space is None:
+            return
+        cstack = getattr(word_space, 'category_stack', None)
+        if cstack is None:
+            return
+        codebook = getattr(word_space, 'category_codebook', None)
+        if codebook is None:
+            return
+        try:
+            W = codebook.getW()
+        except Exception:
+            return
+        if W is None or not torch.is_tensor(W):
+            return
+        # Reset rows for this batch range; safe under repeated calls.
+        if hasattr(cstack, 'clear_rows'):
+            try:
+                cstack.clear_rows(0, B)
+            except Exception:
+                pass
+        if hasattr(cstack, 'ensure_batch'):
+            try:
+                cstack.ensure_batch(B)
+            except Exception:
+                pass
+        traces = self._derivation_trace
+        if traces is None:
+            return
+        n_cb = int(W.shape[0])
+        for b in range(B):
+            if b >= len(traces):
+                break
+            row = traces[b] or []
+            for entry in row:
+                # entry: (gid, i, k, merged_slot, merged_category)
+                cat_id = int(entry[4]) if len(entry) >= 5 else 0
+                if cat_id < 0 or cat_id >= n_cb:
+                    continue
+                vec = W[cat_id]
+                try:
+                    cstack.push(b, vec.detach())
+                except Exception:
+                    # Stack may overflow on long parses; ignore.
+                    break
 
     # ------------------------------------------------------------------
     # Outside pass (mirrors hard / soft mode).
@@ -1853,7 +2065,11 @@ class Chart(nn.Module):
                     continue
                 r, k, Br, Cr = best
                 gid = int(global_id[r].item())
-                traces[b].append((gid, i, k, i, A))
+                # Trace tuple: (gid, i, k, j, A). j is the parent
+                # span's right edge — recorded so syntax-tree
+                # reconstruction (write_syntax_tree) can recover the
+                # full span without re-walking the stack.
+                traces[b].append((gid, i, k, j, A))
                 stack.append((i, k, Br))
                 stack.append((k, j, Cr))
         return traces

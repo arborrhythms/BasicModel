@@ -3712,6 +3712,18 @@ class MentalModel(BaseModel):
         self.truth_loss_weight = float(TheXMLConfig.training("TruthLoss", default=0.0) or 0.0)
         self.masked_prediction = masked_prediction
 
+        # Syntax tree dump — when <writeSyntax>true</writeSyntax> is
+        # set in the model XML (under <architecture>), MentalModel.forward
+        # writes an XML syntax tree (one per batch row) to syntaxOutPath
+        # at the end of each forward pass. See doc/Language.md
+        # "POS side-channel" for the format.
+        self._write_syntax = bool(TheXMLConfig.get(
+            "architecture.writeSyntax", default=False) or False)
+        self._syntax_out_path = TheXMLConfig.get(
+            "architecture.syntaxOutPath",
+            default="output/syntax.xml") or "output/syntax.xml"
+        self._syntax_truncated = False
+
         self.loss = ModelLoss(
             reverse_scale=reverse_scale,
             what_scale=what_scale,
@@ -4603,7 +4615,177 @@ class MentalModel(BaseModel):
             head_result = self.wordSpace.reconstruct(final_state, codebook_space)
             self._predicted_head = head_result['heads']
 
+        # Optional syntax tree dump (POS-labelled words + chosen
+        # rules). See doc/Language.md "POS side-channel". No-op
+        # when <writeSyntax> is false (default).
+        if getattr(self, '_write_syntax', False):
+            try:
+                self.write_syntax_tree(self._syntax_out_path)
+            except Exception as e:
+                # Tree dump is debug-only; never let it crash forward.
+                import sys
+                print(f"[writeSyntax] error: {e}", file=sys.stderr)
+
         return input_state, symbols, pred, reconstruction
+
+    def write_syntax_tree(self, path):
+        """Append an XML syntax tree per batch row to ``path``.
+
+        Reads the chart's derivation trace
+        (``Chart._derivation_trace``, a list-per-batch of
+        ``(gid, i, k, j, A)`` tuples — rule global id, left edge, split
+        point, right edge, merged-cell category index) and the
+        symbolic codebook's per-atom category tags
+        (``SymbolicSpace.subspace.what.category_ids``).  Decodes input
+        atoms to surface tokens via ``InputSpace.wv.index_to_key``.
+
+        Format (one ``<forward>`` element per call, with a ``<batch>``
+        per row).  Category names (``cat=...``), rule canonicals
+        (``rule=...``), and POS tags (``pos=...``) come straight from
+        the live grammar's ``Grammar.categories`` /
+        ``RuleDef.canonical``; the dumper has no built-in category
+        vocabulary.  Example output for an XOR_grammar parse where the
+        only non-terminal is ``S``::
+
+            <forward tick="42">
+              <batch n="0">
+                <node cat="S" rule="S=conjunction(S,S)" i="0" j="2">
+                  <leaf token="1" pos="S" i="0"/>
+                  <leaf token="1" pos="S" i="1"/>
+                </node>
+                <rules>1</rules>
+              </batch>
+            </forward>
+
+        A grammar declaring richer typed categories (e.g.
+        ``NP = intersection(ADJ, N)``) produces trees with those
+        category names instead.
+
+        The output file is a stream of ``<forward>`` fragments — one
+        per call.  Wrap with a ``<syntaxLog>`` root element (or use a
+        streaming parser) if a single fully-valid XML document is
+        needed.
+
+        Side effects: appends to ``path`` (creating parent dirs as
+        needed). The first call within a process truncates ``path``
+        so old content from prior runs is cleared.
+        """
+        import os
+        import xml.etree.ElementTree as ET
+        wordSpace = getattr(self, 'wordSpace', None)
+        if wordSpace is None:
+            return
+        chart = getattr(wordSpace, 'chart', None)
+        if chart is None:
+            return
+        traces = getattr(chart, '_derivation_trace', None)
+        cat_names = getattr(chart, '_category_names', None) or ['?']
+
+        # Resolve atom_idx -> surface token via InputSpace.wv (word
+        # vectors); fall back to a placeholder when wv isn't wired.
+        index_to_key = None
+        try:
+            wv = getattr(self.inputSpace, 'wv', None)
+            if wv is not None:
+                index_to_key = getattr(wv, 'index_to_key', None)
+        except Exception:
+            index_to_key = None
+
+        def _decode_pos(pos):
+            if (index_to_key is not None
+                    and 0 <= pos < len(index_to_key)):
+                return str(index_to_key[pos])
+            return f"atom_{pos}"
+
+        cat_ids = None
+        try:
+            sym_sub = self.symbolicSpace.subspace
+            what = getattr(sym_sub, 'what', None)
+            cat_ids = getattr(what, 'category_ids', None) if what else None
+        except Exception:
+            cat_ids = None
+
+        def _pos_at(pos):
+            if cat_ids is not None and 0 <= pos < cat_ids.shape[0]:
+                cid = int(cat_ids[pos].item())
+                if 0 <= cid < len(cat_names):
+                    return cat_names[cid]
+            return '?'
+
+        os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
+        mode = 'w' if not getattr(self, '_syntax_truncated', False) else 'a'
+        self._syntax_truncated = True
+
+        try:
+            from Language import TheGrammar
+        except ImportError:
+            TheGrammar = None
+
+        def _entry_str(entry):
+            gid, i, k, j, A = entry
+            try:
+                canon = TheGrammar.rules[gid].canonical if TheGrammar else str(gid)
+            except Exception:
+                canon = str(gid)
+            cat = (cat_names[int(A)] if 0 <= int(A) < len(cat_names)
+                   else '?')
+            return cat, canon
+
+        forward_el = ET.Element(
+            'forward',
+            {'tick': str(getattr(self, '_current_tick', '?'))})
+        if traces is None:
+            ET.SubElement(forward_el, 'noTrace')
+        else:
+            for b, trace in enumerate(traces):
+                batch_el = ET.SubElement(
+                    forward_el, 'batch', {'n': str(b)})
+                if not trace:
+                    ET.SubElement(batch_el, 'noTrace')
+                    continue
+                span_to_entry = {}
+                for entry in trace:
+                    _, i_e, _, j_e, _ = entry
+                    span_to_entry.setdefault((i_e, j_e), entry)
+
+                def _build(span, parent_el):
+                    entry = span_to_entry.get(span)
+                    si, sj = span
+                    if entry is None:
+                        for pos in range(si, sj):
+                            ET.SubElement(parent_el, 'leaf', {
+                                'token': _decode_pos(pos),
+                                'pos': _pos_at(pos),
+                                'i': str(pos),
+                            })
+                        return
+                    cat, canon = _entry_str(entry)
+                    _, _, k_e, _, _ = entry
+                    node_el = ET.SubElement(parent_el, 'node', {
+                        'cat': cat,
+                        'rule': canon,
+                        'i': str(si),
+                        'j': str(sj),
+                    })
+                    _build((si, k_e), node_el)
+                    _build((k_e, sj), node_el)
+
+                root = trace[0]
+                _, root_i, _, root_j, _ = root
+                _build((root_i, root_j), batch_el)
+                rules_el = ET.SubElement(batch_el, 'rules')
+                rules_el.text = ",".join(str(int(e[0])) for e in trace)
+
+        # Pretty-print and write the fragment.
+        try:
+            ET.indent(forward_el, space="  ")
+        except AttributeError:
+            # ET.indent landed in Python 3.9; older versions get
+            # the unindented form.
+            pass
+        with open(path, mode, encoding='utf-8') as fh:
+            fh.write(ET.tostring(forward_el, encoding='unicode'))
+            fh.write("\n")
 
     def reverse(self, symbols, outputData):
         sym_vec = self.symbolicSpace.subspace.materialize()
