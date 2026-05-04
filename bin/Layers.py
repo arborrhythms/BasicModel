@@ -967,10 +967,23 @@ class InvertibleLinearLayer(ErgodicLayer):
 
     def _d_effective(self):
         """Return d clamped to [eps, 1] magnitude with sign preserved when
-        stable=True, else raw self.d.  Stability constraint lives here only."""
+        stable=True, else raw self.d.  Stability constraint lives here only.
+
+        When a caller has stashed a per-call ``_current_gate`` (a ``[rank]``
+        tensor of bounded multipliers, by convention in ``[-1, 1]`` via a
+        tanh reparam owned by the caller -- see LiftLayer / LowerLayer),
+        d is multiplied by it before the stable-clamp so the existing
+        clamp bounds the gated value. With ``gate=None`` (default), this
+        is a no-op and the layer behaves identically to its un-gated
+        baseline.
+        """
+        d = self.d
+        gate = getattr(self, '_current_gate', None)
+        if gate is not None:
+            d = d * gate
         if self.stable:
-            return self.d.sign() * self.d.abs().clamp(epsilon, 1.0)
-        return self.d
+            return d.sign() * d.abs().clamp(epsilon, 1.0)
+        return d
 
     def _D_embed(self):
         """Embed _d_effective() into [nInput, nOutput] rectangular diagonal."""
@@ -1121,7 +1134,7 @@ class InvertibleLinearLayer(ErgodicLayer):
         return self._solve_ldu(y, self._L(), self._d_effective(), self._U())
 
     # --- Forward / Reverse ---
-    def forward(self, x):
+    def forward(self, x, gate=None):
         """Apply the LDU transform with optional ergodic noise injection.
 
         Ergodic (self.ergodic=True):
@@ -1137,21 +1150,31 @@ class InvertibleLinearLayer(ErgodicLayer):
         Non-ergodic (self.ergodic=False):
           naive=True: materialise W = L D U, dense matmul.
           naive=False: sequential triangular solves.
+
+        ``gate``: optional ``[rank]`` tensor multiplied into the diagonal
+        ``d`` before the stable-clamp. Used by rule layers (LiftLayer /
+        LowerLayer) to select a low-rank slice of the operator. With
+        ``gate=None`` (default), behavior is unchanged from the un-gated
+        baseline.
         """
-        if self.ergodic:
-            self.resample_noise()
-        if self.naive:
-            W = self.compute_W_current()
-            orig_shape = x.shape
-            out_shape = list(orig_shape); out_shape[-1] = self.nOutput
-            y = (x.reshape(-1, self.nInput) @ W).reshape(out_shape)
-        else:
+        self._current_gate = gate
+        try:
             if self.ergodic:
-                y = self._apply_ldu(x, self._L_eff(), self._d_eff(), self._U_eff())
+                self.resample_noise()
+            if self.naive:
+                W = self.compute_W_current()
+                orig_shape = x.shape
+                out_shape = list(orig_shape); out_shape[-1] = self.nOutput
+                y = (x.reshape(-1, self.nInput) @ W).reshape(out_shape)
             else:
-                y = self._apply_forward(x)
-        y = self.forwardBias(y)
-        return y
+                if self.ergodic:
+                    y = self._apply_ldu(x, self._L_eff(), self._d_eff(), self._U_eff())
+                else:
+                    y = self._apply_forward(x)
+            y = self.forwardBias(y)
+            return y
+        finally:
+            self._current_gate = None
     def _effective_bias(self):
         """Bias value for external use (e.g. PiLayer logit mode)."""
         if not self.hasBias:
@@ -1200,7 +1223,7 @@ class InvertibleLinearLayer(ErgodicLayer):
             else:
                 y = y - bWeight
         return y
-    def reverse(self, y):
+    def reverse(self, y, gate=None):
         """Invert the LDU transform.
 
         Ergodic (self.ergodic=True):
@@ -1214,21 +1237,32 @@ class InvertibleLinearLayer(ErgodicLayer):
         Non-ergodic (self.ergodic=False):
           naive=True: materialise W_inv = U_inv D_inv L_inv, dense matmul.
           naive=False: sequential triangular solves.
+
+        ``gate``: same gate tensor that was passed to ``forward``. The
+        gate enters via ``_d_effective`` (and the ergodic ``_d_eff``),
+        which in turn drives both ``compute_W_current`` (forward) and
+        ``compute_Winverse_current`` (reverse), so the inverse uses
+        ``1/(d * gate)`` automatically -- no separate gate-aware-reverse
+        code path. With ``gate=None``, behavior is unchanged.
         """
-        y = self.reverseBias(y)
-        if self.naive:
-            W_inv = self.compute_Winverse_current()
-            orig_shape = y.shape
-            out_shape = list(orig_shape); out_shape[-1] = self.nInput
-            result = (y.reshape(-1, self.nOutput) @ W_inv).reshape(out_shape)
-        else:
-            if self.ergodic:
-                result = self._solve_ldu(y, self._L_eff(), self._d_eff(), self._U_eff())
+        self._current_gate = gate
+        try:
+            y = self.reverseBias(y)
+            if self.naive:
+                W_inv = self.compute_Winverse_current()
+                orig_shape = y.shape
+                out_shape = list(orig_shape); out_shape[-1] = self.nInput
+                result = (y.reshape(-1, self.nOutput) @ W_inv).reshape(out_shape)
             else:
-                result = self._solve_reverse(y)
-        if self.ergodic:
-            self.resample_noise()
-        return result
+                if self.ergodic:
+                    result = self._solve_ldu(y, self._L_eff(), self._d_eff(), self._U_eff())
+                else:
+                    result = self._solve_reverse(y)
+            if self.ergodic:
+                self.resample_noise()
+            return result
+        finally:
+            self._current_gate = None
 
     @staticmethod
     def test():
@@ -1318,6 +1352,9 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
     def _d_effective(self):
         """Strictly positive diagonal via softplus."""
         d = nn.functional.softplus(self.d)
+        gate = getattr(self, '_current_gate', None)
+        if gate is not None:
+            d = d * gate
         if self.stable:
             d = d.clamp(epsilon, 1.0)
         return d
@@ -1340,6 +1377,9 @@ class NonNegativeInvertibleLinearLayer(InvertibleLinearLayer):
         d_base = nn.functional.softplus(self.d)
         d = self.bias * d_base + self.var * self.noise_d
         d = nn.functional.softplus(d)  # ensure positive after noise
+        gate = getattr(self, '_current_gate', None)
+        if gate is not None:
+            d = d * gate
         if self.stable:
             d = d.clamp(epsilon, 1.0)
         return d
@@ -1397,11 +1437,26 @@ class GrammarLayer(Layer):
         invertible:  True if reverse() recovers the input exactly.
         lossy:       True if forward() loses information (no exact
                      reverse possible).
+        tier:        which space the operator runs in:
+                       'S' -- symbols (default; most ops live here)
+                       'C' -- concepts (intersection / union)
+                       'P' -- percepts (rare)
+                     Used by the chart and per-space SyntacticLayer
+                     to gate which rules can fire in which space.
+        reads_activation: True iff the op consumes the bivector
+                     activation ``[..., 2]`` from
+                     ``subspace.materialize(mode='activation')``
+                     rather than the muxed event tensor. The
+                     per-space dispatcher consults this flag to
+                     pick the right read source. Default False
+                     (muxed event read via ``materialize()``).
     """
-    rule_name  = ""
-    arity      = 1
-    invertible = False
-    lossy      = False
+    rule_name        = ""
+    arity            = 1
+    invertible       = False
+    lossy            = False
+    tier             = 'S'
+    reads_activation = False
 
     # Chart authority registration -- Surface-3 wiring (see
     # doc/research/three-surfaces.md). When a SyntacticLayer registers
@@ -1439,6 +1494,30 @@ class GrammarLayer(Layer):
         want unconditional forward behavior).
         """
         cls._chart_authority = syntactic_layer
+
+    # -- Sentence / sugar absorption marker -----------------------------
+    #
+    # ``absorb(left, right)`` is a base-class method available on every
+    # GrammarLayer subclass. Forward semantics: return ``left`` -- a
+    # binary left-pass that discards ``right``. The grammar fires it
+    # to consume syntactic sugar (whitespace, punctuation, low-
+    # semantic-weight tokens, sentence boundary markers) into a
+    # surrounding constituent without contributing to it.
+    #
+    # Lossy by contract: the right operand is unrecoverable; the
+    # absorption is a one-way structural marker indicating "a sentence
+    # boundary or sugar token was here, and it has been consumed".
+    # No standalone AbsorbLayer subclass -- the marker semantics live
+    # on the base so any GrammarLayer instance can fire it.
+    def absorb(self, left, right):
+        """Sentence / sugar absorption marker. Returns ``left``.
+
+        Available on every GrammarLayer. Subclasses can override to
+        record richer sentence-boundary side-effects (e.g. write
+        to a buffer, increment a counter); the default is a pure
+        binary left-pass.
+        """
+        return left
 
     def gated_run(self, x, fn, *fn_args, **fn_kwargs):
         """Soft-gate the layer's forward through the chart authority.
@@ -1487,6 +1566,32 @@ class GrammarLayer(Layer):
     # layers raise NotImplementedError until a subclass plugs in the
     # binary parameterization. Lossy layers can override decompose
     # with a pseudo-inverse (e.g. identity).
+    def _check_bivector_shape(self, x):
+        """Validate that ``x`` carries at least the bivector pole pair
+        in its last dim.
+
+        Every grammar op that consumes per-position activations expects
+        a tensor whose trailing dim begins with the ``[pos, neg]``
+        bivector. The materialized event tensor passed in by the
+        dispatcher has shape ``[B, V, nWhat + nWhere + nWhen]`` with
+        the bivector at ``[..., :2]`` (nWhat == 2 by convention);
+        callers that pass a narrower tensor are working on degenerate
+        input (e.g. an empty subspace) and the op cannot proceed.
+
+        Centralised here so subclasses don't each re-implement the
+        check; raises a uniform ``ValueError`` carrying the offending
+        shape and the calling subclass name.
+        """
+        if not torch.is_tensor(x):
+            raise ValueError(
+                f"{type(self).__name__}: expected a Tensor, got "
+                f"{type(x).__name__}")
+        if x.shape[-1] < 2:
+            raise ValueError(
+                f"{type(self).__name__}: expected last dim >= 2 "
+                f"(the .what bivector poles); got shape "
+                f"{tuple(x.shape)}")
+
     def compose(self, *operands):
         """Combine child operand(s) into a parent vector.
 
@@ -1663,14 +1768,16 @@ class SigmaLayer(ButterflyLayer):
     ``nOutput`` must be equal in butterfly mode and refer to the
     *packed* (pair) dimension.
     """
-    # GrammarLayer metadata: SigmaLayer is the OR-fold. arity=2 binary
-    # tensor op (compose / decompose); also exposes a unary forward /
-    # reverse for the always-on Pi/Sigma feature-fold path.
-    # ``invertible`` and ``lossy`` are governed by the constructor kwarg
-    # `invertible` and overwritten on the instance, so we leave the
-    # class-level defaults from GrammarLayer alone.
-    rule_name  = "union"
-    arity      = 2
+    # GrammarLayer metadata: SigmaLayer is the additive (OR-style) unary
+    # fold (``sigma`` rule). The binary surface (compose/decompose) is
+    # retained for two-pass / butterfly internals but is no longer a
+    # chart-dispatch entry point; binary lattice max on concepts lives
+    # in ``UnionLayer``. ``invertible`` and ``lossy`` are governed by
+    # the constructor kwarg `invertible` and overwritten on the
+    # instance, so we leave the class-level defaults from GrammarLayer
+    # alone.
+    rule_name  = "sigma"
+    arity      = 1
 
     def __init__(self, nInput, nOutput, ergodic=False, naive=True,
                  invertible=False, nonlinear=True, stable=False,
@@ -1714,29 +1821,31 @@ class SigmaLayer(ButterflyLayer):
     def var(self):  return self.layer.var
 
     # -- Inner Sigma transform on packed features --
-    def _sigma_inner_forward(self, packed, binary=False):
+    def _sigma_inner_forward(self, packed, binary=False, gate=None):
         """Apply atanh -> linear -> tanh on a packed [..., 2D] tensor."""
         if binary:
             packed = Ops.top2_select_ste(packed)
         if self.nonlinear:
             packed = torch.atanh(packed.clamp(-1 + epsilon, 1 - epsilon))
-        out = self.layer.forward(packed)
+        out = (self.layer.forward(packed, gate=gate) if gate is not None
+               else self.layer.forward(packed))
         if self.nonlinear:
             out = torch.tanh(out)
         self.activation = out.detach()
         return out
 
-    def _sigma_inner_reverse(self, packed):
+    def _sigma_inner_reverse(self, packed, gate=None):
         """Apply atanh -> linear.reverse -> tanh on a packed [..., 2D] tensor."""
         if self.nonlinear:
             packed = torch.atanh(packed.clamp(-1 + epsilon, 1 - epsilon))
-        out = self.layer.reverse(packed)
+        out = (self.layer.reverse(packed, gate=gate) if gate is not None
+               else self.layer.reverse(packed))
         if self.nonlinear:
             out = torch.tanh(out)
         self.activation = out.detach()
         return out
 
-    def forward(self, x, binary=False):
+    def forward(self, x, binary=False, gate=None):
         """Apply the additive OR fold.
 
         ``binary=True`` selects the top-2 input operands (by |x|) via
@@ -1744,27 +1853,37 @@ class SigmaLayer(ButterflyLayer):
         drop to 0 in additive domain (silent in the OR).  Backward is
         STE -- gradient flows to every input as if no selection ran.
 
+        ``gate`` (optional): per-call ``[rank]`` tensor passed through
+        to the inner ``InvertibleLinearLayer`` as a multiplicative gate
+        on its diagonal. Used by rule layers (LiftLayer / LowerLayer)
+        to select a low-rank slice of the operator. The gating lives
+        inside the LDU layer; SigmaLayer just passes it through.
+
         In butterfly mode, the input is permuted/packed before the
         inner transform and unpacked/merged after; see class docstring.
         """
         if self.butterfly:
             B, N, D = x.shape
             packed = self._butterfly_pack(x)
-            packed_out = self._sigma_inner_forward(packed, binary=binary)
+            packed_out = self._sigma_inner_forward(packed, binary=binary, gate=gate)
             x_out = self._butterfly_unpack(packed_out, B, N, D)
             return self._butterfly_merge(x_out)
         if binary:
             x = Ops.top2_select_ste(x)
         if self.nonlinear:
             x = torch.atanh(x.clamp(-1 + epsilon, 1 - epsilon))
-        y = self.layer.forward(x)
+        y = self.layer.forward(x, gate=gate) if gate is not None else self.layer.forward(x)
         if self.nonlinear:
             y = torch.tanh(y)
         self.activation = y.detach()
         return y
 
-    def reverse(self, y):
+    def reverse(self, y, gate=None):
         """Invert tanh then apply W^-1 then tanh. Requires invertible=True.
+
+        ``gate`` (optional): same gate tensor passed to ``forward``;
+        flows through to the inner LDU layer's reverse so the inverse
+        uses ``1/(d * gate)``.
 
         In butterfly mode, the cached merge diff is used to unmerge
         before the inner inverse, and the inverse permutation restores
@@ -1774,11 +1893,11 @@ class SigmaLayer(ButterflyLayer):
             x_out = self._butterfly_unmerge(y)
             B, N, D = x_out.shape
             packed = self._butterfly_pack(x_out)
-            packed_in = self._sigma_inner_reverse(packed)
+            packed_in = self._sigma_inner_reverse(packed, gate=gate)
             return self._butterfly_unpack(packed_in, B, N, D)
         if self.nonlinear:
             y = torch.atanh(y.clamp(-1 + epsilon, 1 - epsilon))
-        x = self.layer.reverse(y)
+        x = self.layer.reverse(y, gate=gate) if gate is not None else self.layer.reverse(y)
         if self.nonlinear:
             x = torch.tanh(x)
         self.activation = x.detach()
@@ -1796,11 +1915,13 @@ class SigmaLayer(ButterflyLayer):
     # + tanh. ``compose`` and ``decompose`` close the loop with a
     # balanced inverse so the chart can also push parent gradients
     # back into child cells.
-    def compose(self, left, right):
+    def compose(self, left, right, gate=None):
         """Binary OR fold: combine two ``[..., D]`` operands into one.
 
         Args:
             left, right: ``[..., D]`` in [-1, 1].
+            gate: optional per-call ``[rank]`` multiplier on the inner
+                LDU's diagonal (used by LiftLayer for low-rank slicing).
 
         Returns:
             ``[..., nOutput]`` in [-1, 1].
@@ -1817,13 +1938,14 @@ class SigmaLayer(ButterflyLayer):
             a_l = left
             a_r = right
         a_sum = a_l + a_r
-        out = self.layer.forward(a_sum)
+        out = (self.layer.forward(a_sum, gate=gate) if gate is not None
+               else self.layer.forward(a_sum))
         if self.nonlinear:
             out = torch.tanh(out)
         self.activation = out.detach()
         return out
 
-    def generate(self, parent):
+    def generate(self, parent, gate=None):
         """Inverse of compose; balanced split.
 
         Given ``y = tanh((atanh(left) + atanh(right)) @ W + b)`` the
@@ -1835,6 +1957,7 @@ class SigmaLayer(ButterflyLayer):
 
         Args:
             parent: ``[..., nOutput]`` in [-1, 1].
+            gate: same gate passed to ``compose``.
 
         Returns:
             ``(left, right)``: each ``[..., nInput]`` in [-1, 1].
@@ -1849,7 +1972,8 @@ class SigmaLayer(ButterflyLayer):
             a_y = torch.atanh(parent.clamp(-1 + epsilon, 1 - epsilon))
         else:
             a_y = parent
-        a_sum = self.layer.reverse(a_y)
+        a_sum = (self.layer.reverse(a_y, gate=gate) if gate is not None
+                 else self.layer.reverse(a_y))
         half = a_sum * 0.5
         if self.nonlinear:
             op = torch.tanh(half)
@@ -1940,190 +2064,172 @@ class NegationLayer(Layer):
 class NotLayer(GrammarLayer):
     """Parameter-free propositional negation on the bivalent symbol bivector.
 
-    Implements the grammar rule ``S = not(S)``. Symbol vectors carry
-    a ``[pos_pole, neg_pole]`` bivector in their leading 2 dims;
-    trailing dims hold positional/temporal info. NEG at the
-    propositional level is the bivector swap ``[pos, neg] -> [neg, pos]``;
-    trailing dims pass through. Shape-preserving and self-inverse.
+    Implements the grammar rule ``S = not(S)``. Operates on the
+    materialized muxed event tensor ``[B, V, nWhat + nWhere + nWhen]``;
+    the ``.what`` bivector ``[pos, neg]`` lives at ``[..., :2]``
+    (nWhat == 2 by convention) and any nWhere / nWhen channels follow.
+    Negation swaps the leading 2 dims of the last axis to ``[neg, pos]``
+    at every ``(B, V)`` position; nWhere / nWhen pass through unchanged.
+
+    Contradictions are preserved: a position with both ``pos`` and
+    ``neg`` high stays contradictory after the swap (new
+    ``pos = old neg`` and new ``neg = old pos`` are still both high).
+    Contrast with bitonic ``-x`` negation, which collapses
+    contradictions onto opposite-sign components.
+
+    The dispatcher hands NotLayer the materialized tensor (with the
+    ``.active`` mask applied) -- never the codebook ``W``. Forward
+    returns the muxed tensor with only the bivector channels swapped;
+    the dispatcher writes back via ``set_event``.
+
+    Shape-preserving and self-inverse.
     """
     rule_name  = "not"
     arity      = 1
     invertible = True
+    tier       = 'S'
 
     def __init__(self):
         super().__init__(0, 0)
 
     def forward(self, x):
-        if x.shape[-1] < 2:
-            raise ValueError(
-                f"NotLayer expected last dim >= 2, got {x.shape[-1]}")
+        self._check_bivector_shape(x)
         bivector = x[..., :2].flip(dims=(-1,))
         rest     = x[..., 2:]
+        if rest.shape[-1] == 0:
+            return bivector
         return torch.cat([bivector, rest], dim=-1)
 
     def reverse(self, y):
         return self.forward(y)
 
 class NonLayer(GrammarLayer):
-    """Parameter-free non-affirming negation (indeterminacy).
+    """Non-affirming negation (indeterminacy) on a bivector.
 
-    Implements the grammar rule ``C1 = non(P1)`` (when the grammar
-    routes percepts through it) — though under the current
-    privation/shamatha tokenization, ``non-X`` is absorbed into the
-    positive percept ``non_X`` and this layer is not invoked. Kept as
-    a structural slot for grammars that elect to fire NON as a layer
-    operation rather than at the lex.
+    For a ``[pos, neg]`` bivector at each axis, ``non`` returns
+    ``[1 - pos, 1 - neg]`` per pole independently. This is the
+    pole-wise complement: a position fully affirmed
+    (``pos = 1, neg = 0``) becomes ``[0, 1]`` (pure negation);
+    indeterminate (``pos = 0, neg = 0``) becomes ``[1, 1]`` (full
+    contradiction); contradictory (``pos = 1, neg = 1``) becomes
+    ``[0, 0]`` (full indeterminacy). The four corners of the
+    tetralemma exchange via this map:
 
-    Lossy (no exact reverse). Forward kernel is the bitonic
-    triangular residual ``1 - |clamp(x, -1, 1)|`` (matches
-    ``Ops._non_kernel(x, monotonic=False)``).
+        affirm    [1,0] <-> [0,1] negate
+        unknown   [0,0] <-> [1,1] contradict
+
+    Self-inverse on each pole independently
+    (``non(non(x)) = 1 - (1 - x) = x``), shape-preserving. Operates
+    on the leading bivector slice ``[..., :2]`` of the muxed event;
+    nWhere / nWhen channels at ``[..., 2:]`` pass through unchanged
+    (same convention as ``NotLayer``).
     """
     rule_name  = "non"
     arity      = 1
-    invertible = False
-    lossy      = True
+    invertible = True
 
     def __init__(self):
         super().__init__(0, 0)
 
     def forward(self, x):
-        return 1.0 - torch.clamp(x, -1.0, 1.0).abs()
+        self._check_bivector_shape(x)
+        bivector = 1.0 - x[..., :2]
+        rest     = x[..., 2:]
+        if rest.shape[-1] == 0:
+            return bivector
+        return torch.cat([bivector, rest], dim=-1)
 
     def reverse(self, y):
-        # Lossy "indeterminate" projection has no clean inverse;
-        # passthrough.
-        return y
+        return self.forward(y)
 
 
 class IntersectionLayer(GrammarLayer):
-    """Grammar-facing wrapper around a parameterized AND-fold (PiLayer).
+    """``L -> intersection(L, L)`` -- per-pole "min toward zero" on
+    a bivector activation tensor.
 
-    Implements ``C = intersection(C, C)``. Actual weights live in the
-    inner PiLayer; this subclass tags the wrapped layer with arity=2
-    and rule_name="intersection" so the rule-probability gating
-    dispatches uniformly.
+    Tiered ``L`` (logical) per the 2026-05-05 directive: the
+    operator is a pure logical (lattice-min) primitive, neither
+    purely conceptual nor purely symbolic. The dispatcher feeds
+    it the bivector activation -- ``[B, V, 2]`` per position,
+    ``[pos, neg]`` poles -- via ``reads_activation = True``. The
+    operands' upstream tier (C vs S codebook activation) is
+    determined by the chart binding, not by this layer.
 
-    Two surfaces:
-      * ``forward`` / ``reverse`` -- legacy unary feature-fold pass-
-        through to the inner PiLayer. Used by the all-at-once
-        composition path in ConceptualSpace.
-      * ``compose`` / ``decompose`` -- binary tensor op for the CKY
-        chart parser; combines two ``[..., D]`` child spans into one
-        ``[..., D]`` parent span via PiLayer.compose_binary.
+    Math via ``Ops.intersection`` (a public alias of
+    ``Ops._conjunction_kernel``):
+        monotonic=False (default) -> RadMin: same-sign min
+            magnitude, zero passthrough. The pole closer to
+            zero wins per channel.
+        monotonic=True            -> strict lattice min.
+
+    Lossy: min collapses dominated operands. ``decompose`` returns
+    ``(parent, parent)`` as the best-effort identity recovery
+    without auxiliary structure.
     """
-    rule_name  = "intersection"
-    arity      = 2
-    invertible = True
+    rule_name        = "intersection"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'L'
+    reads_activation = True
 
-    def __init__(self, pi_layer):
-        super().__init__(pi_layer.nInput, pi_layer.nOutput)
-        self.pi = pi_layer
-        self.layers.append(pi_layer)
+    def __init__(self, monotonic=False):
+        super().__init__(0, 0)
+        self.monotonic = bool(monotonic)
 
-    def forward(self, x):
-        return self.pi(x)
+    def forward(self, left, right):
+        return Ops.intersection(left, right, monotonic=self.monotonic)
 
-    def reverse(self, y):
-        return self.pi.reverse(y)
+    def reverse(self, parent):
+        return parent, parent
 
     def compose(self, left, right):
-        """Binary AND of two ``[..., D]`` child spans -> ``[..., D']``."""
-        return self.pi.compose(left, right)
+        return self.forward(left, right)
 
     def generate(self, parent):
-        """Balanced split of a parent span back into ``(left, right)``."""
-        return self.pi.generate(parent)
+        return self.reverse(parent)
 
 
 class UnionLayer(GrammarLayer):
-    """Grammar-facing wrapper around a parameterized OR-fold (SigmaLayer).
+    """``L -> union(L, L)`` -- per-pole "max toward zero" (max
+    magnitude, away from zero) on a bivector activation tensor.
 
-    Implements ``S = union(C, C)``. Mirrors IntersectionLayer at the
-    OR-fold tier. Inner SigmaLayer holds the weights; this wrapper
-    annotates rule_name="union" and arity=2.
+    Tiered ``L`` (logical) -- counterpart to ``IntersectionLayer``.
+    Same dispatch contract: feeds on bivector activation
+    ``[B, V, 2]`` via the ``reads_activation = True`` flag. The
+    operands' upstream tier is determined by the chart binding,
+    not by this layer.
 
-    Two surfaces:
-      * ``forward`` / ``reverse`` -- legacy unary feature-fold pass-
-        through to the inner SigmaLayer.
-      * ``compose`` / ``decompose`` -- binary tensor op for the CKY
-        chart parser; combines two ``[..., D]`` child spans into one
-        ``[..., D]`` parent span via SigmaLayer.compose_binary.
+    Math via ``Ops.union`` (a public alias of
+    ``Ops._disjunction_kernel``):
+        monotonic=False (default) -> RadMax: same-sign max
+            magnitude with zero passthrough.
+        monotonic=True            -> strict lattice max.
+
+    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
     """
-    rule_name  = "union"
-    arity      = 2
-    invertible = True
+    rule_name        = "union"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'L'
+    reads_activation = True
 
-    def __init__(self, sigma_layer):
-        super().__init__(sigma_layer.nInput, sigma_layer.nOutput)
-        self.sigma = sigma_layer
-        self.layers.append(sigma_layer)
+    def __init__(self, monotonic=False):
+        super().__init__(0, 0)
+        self.monotonic = bool(monotonic)
 
-    def forward(self, x):
-        return self.sigma(x)
+    def forward(self, left, right):
+        return Ops.union(left, right, monotonic=self.monotonic)
 
-    def reverse(self, y):
-        return self.sigma.reverse(y)
+    def reverse(self, parent):
+        return parent, parent
 
     def compose(self, left, right):
-        """Binary OR of two ``[..., D]`` child spans -> ``[..., D']``."""
-        return self.sigma.compose(left, right)
+        return self.forward(left, right)
 
     def generate(self, parent):
-        """Balanced split of a parent span back into ``(left, right)``."""
-        return self.sigma.generate(parent)
-
-
-class ContiguousLayer(GrammarLayer):
-    """Convex-hull fusion in symbolic space (Dakpo Tashi Namgyel one-pointedness).
-
-    Takes a set of active concepts and returns their hull -- the smallest
-    concept that contains all of them as parts. Used by the
-    ``Contiguous(S)`` grammar rule to fuse a disjunction into a single
-    object.
-
-    Applied BEFORE NegationLayer in the symbolic pipeline: hull-then-
-    negate is well-defined; negate-then-hull is not. Identity when the
-    input is already a single concept (no fusion needed).
-
-    Forward kernel (Option B, elementwise envelope):
-        forward(x: [B, N, D]) = elementwise per-axis amax over N,
-        broadcast back to [B, N, D] so the rest of the pipeline keeps
-        the original shape. On bivectors ([pos, neg, ...]) this is
-        well-defined: the envelope of [pos, neg] poles preserves both
-        affirmation and negation evidence.
-    """
-    rule_name  = "Contiguous"
-    arity      = 1
-    invertible = False
-    lossy      = True
-
-    def __init__(self, nInput=0, nOutput=None):
-        super().__init__(nInput, nOutput if nOutput is not None else nInput)
-
-    def forward(self, x):
-        """Elementwise hull (per-axis amax) over the concept axis.
-
-        Single concept input is identity; multi-concept input collapses
-        to the per-axis envelope. The envelope is broadcast back across
-        the concept axis so shape is preserved and the downstream
-        NegationLayer sees a stable [B, N, D] tensor.
-        """
-        if x.ndim < 2:
-            return x
-        if x.shape[-2] <= 1:
-            return x
-        hull = x.amax(dim=-2, keepdim=True)
-        return hull.expand_as(x)
-
-    def reverse(self, y):
-        """Hull is lossy in general; reverse passes the input through.
-
-        The fusion is a forward-only intervention; on the reverse pass
-        the broadcast hull is the best identity-shaped recovery -- it
-        carries the same hull on every concept slot, which is the
-        upper-bound recovery available without auxiliary structure.
-        """
-        return y
+        return self.reverse(parent)
 
 
 # ===========================================================================
@@ -2165,25 +2271,51 @@ class ContiguousLayer(GrammarLayer):
 # at module scope below.
 # =====================================================================
 class LiftLayer(GrammarLayer):
-    """``S -> lift(S, S)`` -- in-space lift via Ops._lower_kernel(AND, smooth).
+    """``S -> lift(S, S)`` -- gated SigmaLayer compose at S-tier.
 
-    Per the 2026-05-02 Ops-as-Layer-container pass: every binary
-    GrammarLayer exposes ``forward(left, right)`` and
-    ``reverse(parent)`` (the Layer interface) AS WELL AS
-    ``compose`` / ``generate`` (the chart interface). Both surfaces
-    return identical values; one is an alias of the other.
+    When constructed with a ``sigma_layer`` reference, lift owns a
+    ``[rank]`` ``raw_gate`` parameter and delegates to
+    ``sigma_layer.compose(left, right, gate=tanh(raw_gate))``. The
+    gate selects a low-rank slice of the SigmaLayer's LDU diagonal
+    (the SVD-style gating lives inside the LDU class -- see
+    ``InvertibleLinearLayer._d_effective``); LiftLayer just owns the
+    parameter and the tanh reparam that bounds it to ``[-1, 1]``.
+
+    Without a sigma_layer reference (parameter-free
+    instantiation, e.g. via ``GRAMMAR_LAYER_CLASSES['lift']()``),
+    falls back to the static lattice-min kernel for back-compat.
+
+    Per-rule one-gate convention: every LiftLayer instance owns its
+    own ``raw_gate``. Init at ``atanh(0.99) ~ 2.65`` so the bounded
+    gate starts near 1 and the layer's behavior matches plain
+    sigma.compose at construction time (default-behavior preservation).
     """
     rule_name  = "lift"
     arity      = 2
     invertible = True
+    tier       = 'S'
 
-    def __init__(self):
+    def __init__(self, sigma_layer=None):
         super().__init__(0, 0)
+        self.sigma = sigma_layer
+        if sigma_layer is not None:
+            rank = sigma_layer.layer.rank
+            # atanh(0.99) ~ 2.6467; tanh(2.6467) ~ 0.99 ~ 1 at init.
+            self.raw_gate = nn.Parameter(torch.full((rank,), 2.6467))
+        else:
+            self.raw_gate = None
+
+    def _gate(self):
+        return torch.tanh(self.raw_gate) if self.raw_gate is not None else None
 
     def forward(self, left, right):
+        if self.sigma is not None:
+            return self.sigma.compose(left, right, gate=self._gate())
         return Ops._lower_kernel(left, right, mode='AND', kind='smooth')
 
     def reverse(self, parent):
+        if self.sigma is not None:
+            return self.sigma.generate(parent, gate=self._gate())
         return parent, parent
 
     def compose(self, left, right):
@@ -2194,18 +2326,38 @@ class LiftLayer(GrammarLayer):
 
 
 class LowerLayer(GrammarLayer):
-    """``S -> lower(S, S)`` -- in-space lower via Ops._lift_kernel(OR, smooth)."""
+    """``S -> lower(S, S)`` -- gated PiLayer compose at S-tier.
+
+    Symmetric to ``LiftLayer`` but with ``pi_layer`` (matexp / log-
+    domain AND-fold) instead of ``sigma_layer``. Owns its own
+    ``raw_gate`` parameter; delegates the actual gate-on-SVD slicing
+    to the inner LDU.
+    """
     rule_name  = "lower"
     arity      = 2
     invertible = True
+    tier       = 'S'
 
-    def __init__(self):
+    def __init__(self, pi_layer=None):
         super().__init__(0, 0)
+        self.pi = pi_layer
+        if pi_layer is not None:
+            rank = pi_layer.layer.rank
+            self.raw_gate = nn.Parameter(torch.full((rank,), 2.6467))
+        else:
+            self.raw_gate = None
+
+    def _gate(self):
+        return torch.tanh(self.raw_gate) if self.raw_gate is not None else None
 
     def forward(self, left, right):
+        if self.pi is not None:
+            return self.pi.compose(left, right, gate=self._gate())
         return Ops._lift_kernel(left, right, mode='OR', kind='smooth')
 
     def reverse(self, parent):
+        if self.pi is not None:
+            return self.pi.generate(parent, gate=self._gate())
         return parent, parent
 
     def compose(self, left, right):
@@ -2216,19 +2368,50 @@ class LowerLayer(GrammarLayer):
 
 
 class ConjunctionLayer(GrammarLayer):
-    """``S -> conjunction(S, S)`` -- propositional AND on bivectors."""
-    rule_name  = "conjunction"
-    arity      = 2
-    invertible = False
+    """``S -> conjunction(S, S)`` -- monotonic min on the
+    post-codebook scalar activation.
+
+    Symbolic-tier conjunction is the AND of two **codebook
+    activation patterns**. Per the 2026-05-05 directive,
+    SymbolicSpace's ``materialize(mode='activation')`` returns
+    the **post-codebook** activation -- a ``[B, V]`` *scalar*
+    strength per prototype (``effective_activation()``: the
+    bivector ``[pos, neg]`` reduced via ``max(pos, neg)`` and
+    gated by modal presence). Conjunction over two such patterns
+    asks "which prototypes are active in *both* operands".
+
+    Because the post-codebook activation is non-negative scalar,
+    the natural composition kernel is the **monotonic** lattice
+    min: ``torch.minimum(x, y)``. RadMin (the bivector kernel)
+    would be wrong here -- there's no negative pole to manage.
+    The class hard-codes ``monotonic=True`` and forwards to
+    ``Ops.intersection`` so the kernel collapses to ``torch.min``
+    via ``_lower_kernel(kind='strict')``.
+
+    Distinct from ``IntersectionLayer`` (L-tier): IntersectionLayer
+    operates on a bivector ``[..., 2]`` activation (concept-tier
+    pre-codebook) and supports both RadMin and lattice-min;
+    ConjunctionLayer operates on a *scalar* ``[B, V]`` post-
+    codebook activation and is strictly monotonic.
+
+    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+    """
+    rule_name        = "conjunction"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = True
 
     def __init__(self):
         super().__init__(0, 0)
 
     def forward(self, left, right):
-        return Ops._conjunction_kernel(left, right)
+        # Post-codebook activation is monotonic-only -- no negative
+        # pole to manage, so RadMin would be wrong.
+        return Ops.intersection(left, right, monotonic=True)
 
     def reverse(self, parent):
-        # Lossy fold; pseudo-inverse returns parent for both children.
         return parent, parent
 
     def compose(self, left, right):
@@ -2239,16 +2422,37 @@ class ConjunctionLayer(GrammarLayer):
 
 
 class DisjunctionLayer(GrammarLayer):
-    """``S -> disjunction(S, S)`` -- propositional OR on bivectors."""
-    rule_name  = "disjunction"
-    arity      = 2
-    invertible = False
+    """``S -> disjunction(S, S)`` -- monotonic max on the
+    post-codebook scalar activation.
+
+    Symbolic-tier disjunction is the OR of two **codebook
+    activation patterns**: ``[B, V]`` post-codebook scalar
+    activation (see ``ConjunctionLayer`` for the activation-
+    semantics rationale). The natural composition kernel is the
+    monotonic lattice max ``torch.maximum(x, y)``; the class
+    hard-codes ``monotonic=True`` and forwards to ``Ops.union``,
+    which collapses to ``torch.max`` via
+    ``_lift_kernel(kind='strict')``.
+
+    Distinct from ``UnionLayer`` (L-tier): UnionLayer operates on
+    a bivector ``[..., 2]`` activation and supports both RadMax
+    and lattice-max; DisjunctionLayer operates on a scalar
+    ``[B, V]`` post-codebook activation and is strictly monotonic.
+
+    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+    """
+    rule_name        = "disjunction"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = True
 
     def __init__(self):
         super().__init__(0, 0)
 
     def forward(self, left, right):
-        return Ops._disjunction_kernel(left, right)
+        return Ops.union(left, right, monotonic=True)
 
     def reverse(self, parent):
         return parent, parent
@@ -2260,21 +2464,251 @@ class DisjunctionLayer(GrammarLayer):
         return self.reverse(parent)
 
 
-class EqualsLayer(GrammarLayer):
-    """``S -> equals(S, S)`` -- mutual-parthood agreement scoring."""
-    rule_name  = "equals"
-    arity      = 2
-    invertible = False
-    lossy      = True
+class MereologicalTree(nn.Module):
+    """Long-term memory: a persistent tree of mereological 'part-of'
+    relations over a codebook of ``V`` prototype symbols.
 
-    def __init__(self):
+    Functions as the model's accumulated explicit knowledge --
+    each ``part(a, b)`` assertion writes one child link, each
+    ``equals(a, b)`` writes two (mutual parthood). The tree is
+    monotone: knowledge accumulates, nothing is unlearned (per
+    the 2026-05-04 design directive). Saved alongside trained
+    weights so a checkpoint captures both the parametric and
+    the symbolic-knowledge state.
+
+    The tree is stored as a ``[V, V]`` accumulator matrix:
+    ``adjacency[child, parent]`` is the count of times a
+    ``part(child, parent)`` relation has been asserted. Multiple
+    assertions of the same link strengthen the count, so the
+    symmetric part of the adjacency carries the equivalence-class
+    structure (from ``equals`` calls) and the asymmetric part
+    carries the proper-part hierarchy.
+
+    Persistence: ``adjacency`` is registered as an ``nn.Module``
+    buffer (not a ``Parameter`` -- discrete knowledge, no
+    gradient flow), so ``model.state_dict()`` and the resulting
+    ``.ckpt`` file capture it automatically. ``torch.save`` /
+    ``torch.load`` round-trip the tree along with the parametric
+    weights.
+
+    TODO (future): support exporting the tree as a parthood
+    relationship in an XML ``<truth>`` dump. For each link
+    ``adjacency[c, p] > 0`` emit ``<part child="c" parent="p"
+    count="N"/>`` (and aggregate equal-pair edges into
+    ``<equals a="..." b="..."/>``). The XML form is human-
+    readable / diff-friendly and lets a model's accumulated
+    explicit knowledge be inspected, audited, edited, or
+    transferred between checkpoints without round-tripping the
+    full tensor state. See ``doc/Truth.md`` once that doc is
+    extended with the dump schema.
+
+    Usage:
+
+        tree = MereologicalTree(V=128)
+        tree.add_part(child_idx=3, parent_idx=7)        # part(3, 7)
+        tree.add_equal(idx_a=5, idx_b=11)               # equals(5, 11)
+        tree.is_part_of(child_idx=3, parent_idx=7)      # True
+        tree.adjacency                                  # [V, V] count
+
+    Vectorised API: ``add_part`` / ``add_equal`` accept ``[B]``
+    long tensors of indices and accumulate one link per batch row.
+    """
+
+    def __init__(self, V, device=None, dtype=torch.float32):
+        super().__init__()
+        self.V = int(V)
+        # Buffer (not Parameter): no gradient flow but persisted in
+        # state_dict / .ckpt alongside the parametric weights.
+        self.register_buffer(
+            'adjacency',
+            torch.zeros(self.V, self.V, dtype=dtype, device=device))
+
+    @staticmethod
+    def _as_long(idx):
+        if torch.is_tensor(idx):
+            return idx.long().reshape(-1)
+        return torch.tensor(idx, dtype=torch.long).reshape(-1)
+
+    def add_part(self, child_idx, parent_idx):
+        """Add ``part(child, parent)`` link(s). ``child_idx`` and
+        ``parent_idx`` may be scalars or ``[B]`` long tensors;
+        broadcast pairs are added in a single ``index_put_``.
+        """
+        child = self._as_long(child_idx)
+        parent = self._as_long(parent_idx)
+        if child.numel() == 0 or parent.numel() == 0:
+            return
+        if child.numel() != parent.numel():
+            child, parent = torch.broadcast_tensors(child, parent)
+            child  = child.reshape(-1).long()
+            parent = parent.reshape(-1).long()
+        # Move indices to adjacency's device.
+        child  = child.to(self.adjacency.device)
+        parent = parent.to(self.adjacency.device)
+        ones = torch.ones_like(child, dtype=self.adjacency.dtype)
+        self.adjacency.index_put_((child, parent), ones, accumulate=True)
+
+    def add_equal(self, idx_a, idx_b):
+        """Add two child links ``part(a, b)`` and ``part(b, a)``,
+        encoding mutual parthood / equality."""
+        self.add_part(idx_a, idx_b)
+        self.add_part(idx_b, idx_a)
+
+    def is_part_of(self, child_idx, parent_idx):
+        """Direct-link query (no transitive closure)."""
+        c = self._as_long(child_idx).to(self.adjacency.device)
+        p = self._as_long(parent_idx).to(self.adjacency.device)
+        return (self.adjacency[c, p] > 0).all().item()
+
+    def parents_of(self, child_idx):
+        """Direct parents of ``child_idx``."""
+        c = int(child_idx)
+        return torch.nonzero(self.adjacency[c] > 0, as_tuple=False).squeeze(-1)
+
+    def children_of(self, parent_idx):
+        """Direct children of ``parent_idx``."""
+        p = int(parent_idx)
+        return torch.nonzero(self.adjacency[:, p] > 0, as_tuple=False).squeeze(-1)
+
+    def transitive_closure(self):
+        """``[V, V]`` boolean reachability matrix with identity:
+        ``tc[i, j] == True`` iff ``i`` is a (transitive) part of ``j``,
+        including the reflexive case ``i == j``.
+
+        Computed via repeated boolean matrix multiplication --
+        ``O(V^3 * log V)`` worst case; fine for typical codebooks
+        (V <= 256). For larger codebooks consider caching the result
+        and invalidating on tree mutation.
+        """
+        V = self.V
+        # Edge presence matrix (any positive count counts as a link).
+        E = self.adjacency > 0
+        # Reachability with identity: start from I, iterate R = I | R @ E
+        # until fixed point. Boolean matmul via float and threshold.
+        I = torch.eye(V, dtype=torch.bool, device=self.adjacency.device)
+        R = I | E
+        for _ in range(V):
+            R_next = R | (R.float() @ E.float() > 0)
+            if torch.equal(R_next, R):
+                break
+            R = R_next
+        return R
+
+    def wholes_of(self, idx):
+        """All things ``idx`` is a (transitive) part of, including
+        ``idx`` itself. Ancestors via the part-of edges plus the
+        reflexive self-membership."""
+        tc = self.transitive_closure()
+        return torch.nonzero(tc[int(idx)], as_tuple=False).squeeze(-1)
+
+    def parts_of_recursive(self, idx):
+        """All things that are (transitively) part of ``idx``,
+        including ``idx`` itself. Descendants via incoming part-of
+        edges plus the reflexive self-membership."""
+        tc = self.transitive_closure()
+        return torch.nonzero(tc[:, int(idx)], as_tuple=False).squeeze(-1)
+
+    def is_part_of_transitive(self, child_idx, parent_idx):
+        """Sufficient (not necessary) test: returns True iff there is
+        an explicit path from ``child_idx`` to ``parent_idx`` through
+        the tree's part-of links. Uses the transitive-closure
+        intersection ``WHOLES(child) ∩ PARTS(parent)``: if the
+        intersection is non-empty, ``child`` is part of ``parent`` by
+        explicit derivation. An empty intersection means "not known
+        to be a part" -- the link may still exist via implicit /
+        un-asserted structure.
+        """
+        tc = self.transitive_closure()
+        wholes = tc[int(child_idx)]                    # [V]
+        parts  = tc[:, int(parent_idx)]                # [V]
+        return bool((wholes & parts).any().item())
+
+    def is_part_of_transitive_batched(self, child_idx, parent_idx):
+        """Vectorised variant of ``is_part_of_transitive`` over
+        ``[B]`` index pairs. Returns a ``[B]`` bool tensor.
+
+        Uses the transitive closure matrix once per call so the
+        per-batch cost is ``O(B * V)`` after the ``O(V^3)`` closure.
+        """
+        c = self._as_long(child_idx).to(self.adjacency.device)
+        p = self._as_long(parent_idx).to(self.adjacency.device)
+        if c.numel() != p.numel():
+            c, p = torch.broadcast_tensors(c, p)
+            c = c.reshape(-1).long()
+            p = p.reshape(-1).long()
+        tc = self.transitive_closure()                  # [V, V] bool
+        wholes = tc[c]                                  # [B, V] -- WHOLES(child)
+        parts  = tc[:, p].T                             # [B, V] -- PARTS(parent)
+        return (wholes & parts).any(dim=-1)             # [B] bool
+
+
+def _argmax_prototype(x):
+    """Per-batch top-1 prototype index from a ``[B, V, D]`` muxed
+    event tensor.
+
+    Computes the L2 norm of the ``.what`` bivector slice
+    ``[..., :2]`` only (not the full muxed event) so the ranking
+    reflects symbol identity / presence, not the nWhere / nWhen
+    positional channels. When the input has last_dim < 2 the full
+    last dim is used (degenerate, single-channel fallback).
+
+    Returns a ``[B]`` long tensor where each entry is the position
+    (codebook prototype index) with the largest ``.what`` L2 norm
+    in that batch row -- the most-active prototype for that
+    operand. Used by ``PartLayer`` / ``EqualsLayer`` / ``QueryLayer``
+    to map continuous activations to discrete codebook indices for
+    mereological-tree bookkeeping.
+    """
+    if not torch.is_tensor(x):
+        return torch.zeros(0, dtype=torch.long)
+    if x.dim() < 2:
+        return torch.zeros(1, dtype=torch.long, device=x.device)
+    # Slice .what bivector when available; else use whole last-dim.
+    what = x[..., :2] if x.shape[-1] >= 2 else x
+    norms = what.norm(dim=-1)            # [B, V]
+    if norms.dim() < 2:
+        norms = norms.unsqueeze(0)
+    return norms.argmax(dim=-1)          # [B]
+
+
+class EqualsLayer(GrammarLayer):
+    """``S -> equals(S, S)`` -- equality assertion via two child
+    links in the mereological tree.
+
+    Each ``equals(A, B)`` call writes two part-of links into the
+    tree owned by ``self.tree``: ``part(A, B)`` (A is part of B)
+    AND ``part(B, A)`` (B is part of A). Mutual parthood encodes
+    equality; the symmetric part of the tree's adjacency matrix
+    carries the equivalence-class structure across the codebook.
+
+    Codebook indices are recovered from each operand by
+    ``argmax`` over the L2 norm of the per-position activation
+    bivector ``[B, V, 2]`` (top-1 per batch row). The forward
+    returns the merged equivalent ``torch.maximum(left, right)``
+    so the chart's CKY consumer sees a single parent vector.
+
+    Tree updates run under ``torch.no_grad()`` -- mereological
+    knowledge is discrete and accumulated, not differentiable.
+
+    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+    """
+    rule_name        = "equals"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = False
+
+    def __init__(self, tree=None):
         super().__init__(0, 0)
+        self.tree = tree
 
     def forward(self, left, right):
-        score = Ops._equal_kernel(left, right, scalar=True)
-        while score.ndim < right.ndim:
-            score = score.unsqueeze(-1)
-        return score * right
+        if self.tree is not None:
+            with torch.no_grad():
+                self.tree.add_equal(_argmax_prototype(left),
+                                    _argmax_prototype(right))
+        return torch.maximum(left, right)
 
     def reverse(self, parent):
         return parent, parent
@@ -2287,20 +2721,44 @@ class EqualsLayer(GrammarLayer):
 
 
 class PartLayer(GrammarLayer):
-    """``S -> part(S, S)`` -- mereological part-of."""
-    rule_name  = "part"
-    arity      = 2
-    invertible = False
-    lossy      = True
+    """``S -> part(S, S)`` -- mereological part-of assertion.
 
-    def __init__(self):
+    Each ``part(A, B)`` call writes one child link into the
+    mereological tree owned by ``self.tree``: ``A`` becomes a
+    direct child of ``B`` (A is part of B). The user's design
+    treats this as the canonical knowledge primitive -- "all
+    knowledge is of the kind ``part(a, b)``" -- so a model's
+    accumulated factual structure lives in
+    ``wordSpace.mereological_tree`` rather than in
+    parameter-space.
+
+    Codebook indices are recovered from each operand by
+    ``argmax`` over the L2 norm of the per-position activation
+    bivector (top-1 per batch row). The forward returns the
+    parent operand ``right`` (the encompassing concept) so the
+    chart's CKY consumer sees a single parent vector.
+
+    Tree updates run under ``torch.no_grad()``.
+
+    Lossy with ``(parent, parent)`` pseudo-inverse on reverse.
+    """
+    rule_name        = "part"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = False
+
+    def __init__(self, tree=None):
         super().__init__(0, 0)
+        self.tree = tree
 
     def forward(self, left, right):
-        score = Ops._part_kernel(left, right, scalar=True)
-        while score.ndim < right.ndim:
-            score = score.unsqueeze(-1)
-        return score * right
+        if self.tree is not None:
+            with torch.no_grad():
+                self.tree.add_part(_argmax_prototype(left),
+                                   _argmax_prototype(right))
+        return right
 
     def reverse(self, parent):
         return parent, parent
@@ -2313,82 +2771,102 @@ class PartLayer(GrammarLayer):
 
 
 class TrueLayer(GrammarLayer):
-    """``S -> true(S)`` -- positive-pole projection."""
-    rule_name  = "true"
-    arity      = 1
-    invertible = False
-    lossy      = True
+    """``S -> true(S)`` -- keep only the pos pole of the bivector
+    activation; zero the neg pole.
+
+    Operates on the materialized symbolic-tier activation
+    ``[B, V, 2]`` (``reads_activation=True``). Returns the same
+    shape with ``neg`` replaced by zero -- the bivector now
+    affirms only what was on the positive pole, with no negative
+    evidence. nWhere / nWhen channels at ``[..., 2:]`` pass
+    through unchanged (same convention as ``NotLayer`` /
+    ``NonLayer``).
+
+    Lossy: the neg pole is destroyed; reverse is a passthrough.
+    """
+    rule_name        = "true"
+    arity            = 1
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = False
 
     def __init__(self):
         super().__init__(0, 0)
 
     def forward(self, x):
-        return torch.relu(torch.clamp(x, -1.0, 1.0))
+        self._check_bivector_shape(x)
+        pos    = x[..., 0:1]
+        zeros  = torch.zeros_like(pos)
+        rest   = x[..., 2:]
+        bivec  = torch.cat([pos, zeros], dim=-1)
+        if rest.shape[-1] == 0:
+            return bivec
+        return torch.cat([bivec, rest], dim=-1)
 
     def reverse(self, y):
-        # Lossy projection -- best-effort identity recovery.
         return y
 
 
 class FalseLayer(GrammarLayer):
-    """``S -> false(S)`` -- negative-pole projection."""
-    rule_name  = "false"
-    arity      = 1
-    invertible = False
-    lossy      = True
+    """``S -> false(S)`` -- keep only the neg pole of the bivector
+    activation; zero the pos pole.
+
+    Mirror of ``TrueLayer``: bivector ``[pos, neg]`` becomes
+    ``[0, neg]``. nWhere / nWhen channels pass through.
+
+    Lossy: the pos pole is destroyed; reverse is a passthrough.
+    """
+    rule_name        = "false"
+    arity            = 1
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = False
 
     def __init__(self):
         super().__init__(0, 0)
 
     def forward(self, x):
-        return torch.relu(-torch.clamp(x, -1.0, 1.0))
+        self._check_bivector_shape(x)
+        neg    = x[..., 1:2]
+        zeros  = torch.zeros_like(neg)
+        rest   = x[..., 2:]
+        bivec  = torch.cat([zeros, neg], dim=-1)
+        if rest.shape[-1] == 0:
+            return bivec
+        return torch.cat([bivec, rest], dim=-1)
 
     def reverse(self, y):
         return y
 
 
 class SwapLayer(GrammarLayer):
-    """``S -> swap(S, S)`` -- Sinkhorn-normalised soft permutation.
+    """``S -> swap(S, S)`` -- swap the left and right arguments.
 
-    Parameters live on this layer (was previously on SyntacticLayer
-    via `init_swap`). Sinkhorn iters and marker-vector size are
-    constructor arguments.
+    Forward returns ``right`` -- the right operand takes the
+    canonical (parent) slot, simulating a left/right argument
+    swap for downstream rules. Lossy (the original left is
+    discarded); reverse is the symmetric ``(parent, parent)``
+    pseudo-inverse.
+
+    Parameter-free; no Sinkhorn / marker machinery (those were
+    retired with the 2026-05-04 operator overhaul -- soft
+    permutation belongs in the chart's CKY pair-selection logic,
+    not in a per-cell GrammarLayer).
     """
-    rule_name  = "swap"
-    arity      = 2
-    invertible = False
-    lossy      = True
+    rule_name        = "swap"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = False
 
-    def __init__(self, swap_size=1, sinkhorn_iters=5):
+    def __init__(self):
         super().__init__(0, 0)
-        self.swap_size = max(int(swap_size), 1)
-        self._sinkhorn_iters = int(sinkhorn_iters)
-        self.swap_marker = nn.Parameter(
-            torch.randn(self.swap_size) * 0.01)
-        self.swap_logits = nn.Parameter(torch.zeros(3, 3))
-
-    def _soft_perm(self):
-        M = self.swap_logits
-        for _ in range(self._sinkhorn_iters):
-            M = M - M.logsumexp(dim=-1, keepdim=True)
-            M = M - M.logsumexp(dim=-2, keepdim=True)
-        return M.exp()
 
     def forward(self, left, right):
-        P = self._soft_perm()
-        marker = self.swap_marker.to(left.device)
-        if left.ndim == 3:
-            D = left.shape[-1]
-            m = marker[:D].unsqueeze(0).unsqueeze(0).expand_as(left)
-        elif left.ndim == 2:
-            m = marker[:left.shape[-1]].unsqueeze(0).expand_as(left)
-        else:
-            m = marker
-        if right is None:
-            right = left
-        stack = torch.stack([left, right, m], dim=0)
-        out = torch.einsum('ij,j...->i...', P, stack)
-        return out[0]
+        return right
 
     def reverse(self, parent):
         return parent, parent
@@ -2401,115 +2879,75 @@ class SwapLayer(GrammarLayer):
 
 
 class QueryLayer(GrammarLayer):
-    """``S -> query(S, S)`` -- contradiction-marker accumulator preserve.
+    """``S -> query(S, S)`` -- mereological-truth query "is A part
+    of B?" answered against the explicit knowledge in the
+    ``MereologicalTree``.
 
-    Returns the left operand unchanged (the chart's query semantic
-    pushes a marker word elsewhere; the rule's tensor contribution is
-    the accumulator passthrough).
+    Algorithm (sufficient but not necessary explicit-truth test):
+
+        WHOLES(A) = the things A is a (transitive) part of (incl A).
+        PARTS(B)  = the things that are a (transitive) part of B (incl B).
+        is_part(A, B) iff WHOLES(A) ∩ PARTS(B) != ∅
+
+    If there exists any object X such that A is part of X and X is
+    part of B, then by mereological transitivity A is part of B
+    -- the answer is "known True" (sufficient). An empty
+    intersection means "not known": the link may still exist via
+    implicit or un-asserted structure, but no explicit derivation
+    is on file (necessary condition is *not* met).
+
+    Codebook indices recovered via top-1 ``argmax`` over per-position
+    L2 norm (same convention as ``PartLayer`` / ``EqualsLayer``).
+    Forward returns a ``[B, V, 2]`` truth bivector broadcast across
+    the V dimension:
+
+        known True  -> [pos=1, neg=0] (affirmation)
+        unknown     -> [pos=0, neg=0] (degenerate -- no extent)
+
+    Without a tree reference (parameter-free instantiation, e.g.
+    via ``cls()`` for chart lazy-build) the layer falls back to a
+    passthrough returning ``left``.
+
+    Tree access runs under ``no_grad`` -- the query is a discrete
+    knowledge lookup, not a differentiable op. Lossy with
+    ``(parent, parent)`` pseudo-inverse on reverse.
     """
-    rule_name  = "query"
-    arity      = 2
-    invertible = False
+    rule_name        = "query"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = False
 
-    def __init__(self):
+    def __init__(self, tree=None):
         super().__init__(0, 0)
+        self.tree = tree
 
     def forward(self, left, right):
-        return left
+        if self.tree is None:
+            return left
+        with torch.no_grad():
+            a_idx = _argmax_prototype(left)            # [B]
+            b_idx = _argmax_prototype(right)           # [B]
+            has_link = self.tree.is_part_of_transitive_batched(
+                a_idx, b_idx)                          # [B] bool
+        # Build truth bivector [B, 2] -> broadcast to right's [B, V, 2].
+        pos = has_link.to(dtype=right.dtype)
+        neg = torch.zeros_like(pos)
+        truth = torch.stack([pos, neg], dim=-1)        # [B, 2]
+        if right.dim() < 3:
+            return truth
+        V = right.shape[1]
+        rest_dim = right.shape[-1] - 2
+        if rest_dim > 0:
+            # Match right's nWhere/nWhen tail by zero-padding so the
+            # caller can still do bivector slicing on [..., :2].
+            tail = torch.zeros(truth.shape[0], rest_dim,
+                               dtype=right.dtype, device=right.device)
+            truth = torch.cat([truth, tail], dim=-1)
+        return truth.unsqueeze(1).expand(-1, V, -1)
 
     def reverse(self, parent):
-        return parent, parent
-
-    def compose(self, left, right):
-        return self.forward(left, right)
-
-    def generate(self, parent):
-        return self.reverse(parent)
-
-
-class WhatLayer(GrammarLayer):
-    """``S -> what(S)`` -- content head extraction (slot selector).
-
-    Without subspace context the slot widths default to a 50/25/25
-    what/where/when partition of the trailing axis. Callers that need
-    precise widths should construct via ``WhatLayer(nWhat, nWhere,
-    nWhen)``.
-    """
-    rule_name  = "what"
-    arity      = 1
-    invertible = False
-
-    def __init__(self, nWhat=None, nWhere=None, nWhen=None):
-        super().__init__(0, 0)
-        self.nWhat = nWhat
-        self.nWhere = nWhere
-        self.nWhen = nWhen
-
-    def forward(self, x):
-        return Ops._what_kernel(x, self.nWhat, self.nWhere, self.nWhen)
-
-    def reverse(self, y):
-        # Slot-selector inverse is identity (we can't recover the
-        # other-axis content that was zeroed).
-        return y
-
-
-class WhereLayer(GrammarLayer):
-    """``S -> where(S)`` -- positional head extraction."""
-    rule_name  = "where"
-    arity      = 1
-    invertible = False
-
-    def __init__(self, nWhat=None, nWhere=None, nWhen=None):
-        super().__init__(0, 0)
-        self.nWhat = nWhat
-        self.nWhere = nWhere
-        self.nWhen = nWhen
-
-    def forward(self, x):
-        return Ops._where_kernel(x, self.nWhat, self.nWhere, self.nWhen)
-
-    def reverse(self, y):
-        return y
-
-
-class WhenLayer(GrammarLayer):
-    """``S -> when(S)`` -- temporal head extraction."""
-    rule_name  = "when"
-    arity      = 1
-    invertible = False
-
-    def __init__(self, nWhat=None, nWhere=None, nWhen=None):
-        super().__init__(0, 0)
-        self.nWhat = nWhat
-        self.nWhere = nWhere
-        self.nWhen = nWhen
-
-    def forward(self, x):
-        return Ops._when_kernel(x, self.nWhat, self.nWhere, self.nWhen)
-
-    def reverse(self, y):
-        return y
-
-
-class AbsorbLayer(GrammarLayer):
-    """``S -> absorb(S, S)`` -- sugar absorption. Binary left-pass:
-    returns the left operand and discards the right.
-    """
-    rule_name  = "absorb"
-    arity      = 2
-    invertible = False
-    lossy      = True
-
-    def __init__(self):
-        super().__init__(0, 0)
-
-    def forward(self, left, right):
-        return Ops._absorb_kernel(left, right)
-
-    def reverse(self, parent):
-        # Sugar absorption discards the right operand; pseudo-inverse
-        # returns parent as left and a passthrough for right.
         return parent, parent
 
     def compose(self, left, right):
@@ -2527,7 +2965,10 @@ GRAMMAR_LAYER_CLASSES = {
     'non':          NonLayer,
     'intersection': IntersectionLayer,
     'union':        UnionLayer,
-    'Contiguous':   ContiguousLayer,
+    # 'Fusion' / 'Contiguous' removed 2026-05-04: the S-tier
+    # max-on-codebook-activation behavior is exactly DisjunctionLayer.
+    # No back-compat alias -- grammars referencing ``Fusion(S, S)`` /
+    # ``Contiguous(S)`` should migrate to ``disjunction(S, S)``.
     'lift':         LiftLayer,
     'lower':        LowerLayer,
     'conjunction':  ConjunctionLayer,
@@ -2538,18 +2979,44 @@ GRAMMAR_LAYER_CLASSES = {
     'false':        FalseLayer,
     'swap':         SwapLayer,
     'query':        QueryLayer,
-    'what':         WhatLayer,
-    'where':        WhereLayer,
-    'when':         WhenLayer,
-    'absorb':       AbsorbLayer,
+    # 'absorb' removed 2026-05-04: the absorb / sentence-marker
+    # behavior is a base-class method on ``GrammarLayer`` itself, so
+    # callers invoke ``layer.absorb(left, right)`` on any GrammarLayer
+    # instance; no dedicated subclass.
 }
+
+
+# Ops whose .reverse / .generate is a continuous monotonic kernel and
+# therefore preserves connectedness of the back-projected fiber. Used
+# by Models.BaseModel.hoc_shape / Contiguous to decide whether a leaf
+# at the bottom of the derivation tree carries trustworthy
+# hyperrectangle geometry.
+#
+#   pi    -- multiplicative log-domain AND-fold; monotonic LDU.
+#   sigma -- additive matmul; monotonic LDU.
+#   lift  -- gated SigmaLayer.compose (per-rule rank gate; same LDU).
+#   lower -- gated PiLayer.compose (per-rule rank gate; same LDU).
+#   not   -- bivector pole swap; bijection (permutation of channels).
+#   non   -- per-pole bivector complement [1-pos, 1-neg]; affine
+#            self-inverse bijection on each pole.
+#
+# All others (intersection / union / conjunction / disjunction / equals
+# / part / Contiguous / true / false / what / where / when / swap /
+# query / absorb) have lossy reverse paths -- the pseudo-inverse
+# `(parent, parent)` or a pole projection -- so a leaf whose path
+# includes any of them carries degraded contiguity information.
+CONTIGUITY_PRESERVING_OPS = frozenset({'pi', 'sigma', 'lift', 'lower', 'not', 'non'})
 
 
 class PiLayer(ButterflyLayer):
     r"""Multiplicative boundary layer: [-1,1] -> [-1,1].
 
-    Grammar role: implements the AND-fold (``intersection`` rule). The
-    chart and rule-probability gate find this layer by ``rule_name``.
+    Grammar role: implements the multiplicative log-domain unary fold
+    (``pi`` rule). The chart and rule-probability gate find this layer
+    by ``rule_name``. The binary surface (``compose``/``generate``) is
+    retained for two-pass / butterfly internals but is no longer a
+    chart-dispatch entry point; binary lattice min on concepts lives in
+    ``IntersectionLayer``.
 
     Both modes share the symmetric log-domain embedding (1+x)/(1-x):
 
@@ -2566,10 +3033,8 @@ class PiLayer(ButterflyLayer):
         monotonic=True:  W >= 0 (NonNegativeInvertibleLinearLayer) -- ordering preserved
         monotonic=False: W unrestricted (InvertibleLinearLayer) -- bitonic response
     """
-    # GrammarLayer metadata: PiLayer is the AND-fold. arity=2 binary
-    # tensor op; ``invertible`` is per-instance.
-    rule_name  = "intersection"
-    arity      = 2
+    rule_name  = "pi"
+    arity      = 1
 
     _eps = 1e-6
 
@@ -2631,44 +3096,7 @@ class PiLayer(ButterflyLayer):
 
     # -- forward / reverse --------------------------------------------
 
-    # -- Inner Pi transform on packed features --
-    def _pi_inner_forward(self, packed, binary=False):
-        """Log-domain multiplicative AND fold on a packed [..., 2D] tensor."""
-        if self.layer.ergodic:
-            self.resample_noise()
-        W = self.layer.compute_W_current()
-        packed = packed.to(W.device)
-        if binary:
-            packed = Ops.top2_select_ste(packed)
-        m = self._to_mult(packed)
-        l = torch.log(m)
-        wl = l @ W
-        b = self.layer._effective_bias()
-        wl = wl + b
-        if self.nonlinear:
-            return torch.tanh(wl / 2)
-        return torch.exp(wl)
-
-    def _pi_inner_reverse(self, packed):
-        """Inverse of the log-domain fold on a packed [..., 2D] tensor."""
-        W_inv = self.layer.compute_Winverse_current()
-        packed = packed.to(W_inv.device)
-        if self.nonlinear:
-            m = self._to_mult(packed)
-            l = torch.log(m)
-        else:
-            l = torch.log(packed)
-        b = self.layer._effective_bias()
-        lx = (l - b) @ W_inv
-        if self.nonlinear:
-            out = torch.tanh(lx / 2)
-        else:
-            out = self._from_mult(torch.exp(lx))
-        if self.layer.ergodic:
-            self.resample_noise()
-        return out
-
-    def forward(self, x, binary=False):
+    def forward(self, x, binary=False, gate=None):
         """Apply the log-domain multiplicative AND fold.
 
         ``binary=True`` selects the top-2 input operands (by |x|) via
@@ -2677,6 +3105,11 @@ class PiLayer(ButterflyLayer):
         factor 1 in the product, i.e. irrelevant to the AND.  Backward
         is STE -- gradient flows to every input as if no selection ran.
 
+        ``gate`` (optional): per-call ``[rank]`` tensor stashed on
+        ``self.layer._current_gate`` so that ``compute_W_current``
+        -> ``_d_effective`` picks it up. Used by rule layers
+        (LiftLayer / LowerLayer) for low-rank operator slicing.
+
         In butterfly mode, the input is permuted/packed before the
         inner Pi transform and unpacked/merged after; see SigmaLayer
         docstring for the access pattern (PiLayer mirrors it).
@@ -2684,13 +3117,40 @@ class PiLayer(ButterflyLayer):
         if self.butterfly:
             B, N, D = x.shape
             packed = self._butterfly_pack(x)
-            packed_out = self._pi_inner_forward(packed, binary=binary)
+        else:
+            packed = x
+
+        # Inline inner-forward: log-domain multiplicative AND fold.
+        self.layer._current_gate = gate
+        try:
+            if self.layer.ergodic:
+                self.resample_noise()
+            W = self.layer.compute_W_current()
+            packed = packed.to(W.device)
+            if binary:
+                packed = Ops.top2_select_ste(packed)
+            m = self._to_mult(packed)
+            l = torch.log(m)
+            wl = l @ W
+            b = self.layer._effective_bias()
+            wl = wl + b
+            if self.nonlinear:
+                packed_out = torch.tanh(wl / 2)
+            else:
+                packed_out = torch.exp(wl)
+        finally:
+            self.layer._current_gate = None
+
+        if self.butterfly:
             x_out = self._butterfly_unpack(packed_out, B, N, D)
             return self._butterfly_merge(x_out)
-        return self._pi_inner_forward(x, binary=binary)
+        return packed_out
 
-    def reverse(self, y):
+    def reverse(self, y, gate=None):
         """Recover x from y.  Requires invertible=True.
+
+        ``gate`` flows through ``compute_Winverse_current`` ->
+        ``_d_effective`` -> ``1/(d * gate)``.
 
         In butterfly mode, the cached merge diff is consumed before the
         inner Pi inverse runs.
@@ -2699,9 +3159,33 @@ class PiLayer(ButterflyLayer):
             x_out = self._butterfly_unmerge(y)
             B, N, D = x_out.shape
             packed = self._butterfly_pack(x_out)
-            packed_in = self._pi_inner_reverse(packed)
-            return self._butterfly_unpack(packed_in, B, N, D)
-        return self._pi_inner_reverse(y)
+        else:
+            packed = y
+
+        # Inline inner-reverse: log-domain multiplicative AND fold inverse.
+        self.layer._current_gate = gate
+        try:
+            W_inv = self.layer.compute_Winverse_current()
+            packed = packed.to(W_inv.device)
+            if self.nonlinear:
+                m = self._to_mult(packed)
+                l = torch.log(m)
+            else:
+                l = torch.log(packed)
+            b = self.layer._effective_bias()
+            lx = (l - b) @ W_inv
+            if self.nonlinear:
+                out = torch.tanh(lx / 2)
+            else:
+                out = self._from_mult(torch.exp(lx))
+            if self.layer.ergodic:
+                self.resample_noise()
+        finally:
+            self.layer._current_gate = None
+
+        if self.butterfly:
+            return self._butterfly_unpack(out, B, N, D)
+        return out
 
     # -- Binary tensor ops (chart parser) -----------------------------
     #
@@ -2715,11 +3199,13 @@ class PiLayer(ButterflyLayer):
     # unary form. ``decompose`` closes the loop with a balanced
     # split so the chart can also push parent gradients back into
     # child cells.
-    def compose(self, left, right):
+    def compose(self, left, right, gate=None):
         """Binary AND fold: combine two ``[..., D]`` operands into one.
 
         Args:
             left, right: ``[..., D]`` in [-1, 1].
+            gate: optional per-call ``[rank]`` multiplier on the inner
+                LDU's diagonal (used by LowerLayer for low-rank slicing).
 
         Returns:
             ``[..., nOutput]`` in [-1, 1].
@@ -2729,26 +3215,30 @@ class PiLayer(ButterflyLayer):
         if self.butterfly:
             raise NotImplementedError(
                 "PiLayer.compose not supported in butterfly mode")
-        if self.layer.ergodic:
-            self.resample_noise()
-        W = self.layer.compute_W_current()
-        left = left.to(W.device)
-        right = right.to(W.device)
-        if self.nonlinear:
-            l_l = torch.log(self._to_mult(left))
-            l_r = torch.log(self._to_mult(right))
-        else:
-            l_l = torch.log(left)
-            l_r = torch.log(right)
-        l_sum = l_l + l_r
-        wl = l_sum @ W
-        b = self.layer._effective_bias()
-        wl = wl + b
-        if self.nonlinear:
-            return torch.tanh(wl / 2)
-        return torch.exp(wl)
+        self.layer._current_gate = gate
+        try:
+            if self.layer.ergodic:
+                self.resample_noise()
+            W = self.layer.compute_W_current()
+            left = left.to(W.device)
+            right = right.to(W.device)
+            if self.nonlinear:
+                l_l = torch.log(self._to_mult(left))
+                l_r = torch.log(self._to_mult(right))
+            else:
+                l_l = torch.log(left)
+                l_r = torch.log(right)
+            l_sum = l_l + l_r
+            wl = l_sum @ W
+            b = self.layer._effective_bias()
+            wl = wl + b
+            if self.nonlinear:
+                return torch.tanh(wl / 2)
+            return torch.exp(wl)
+        finally:
+            self.layer._current_gate = None
 
-    def generate(self, parent):
+    def generate(self, parent, gate=None):
         """Inverse of compose; balanced split.
 
         Given ``y = tanh((W @ (log_mult(left) + log_mult(right)) + b)
@@ -2760,6 +3250,7 @@ class PiLayer(ButterflyLayer):
 
         Args:
             parent: ``[..., nOutput]`` in [-1, 1].
+            gate: same gate passed to ``compose``.
 
         Returns:
             ``(left, right)``: each ``[..., nInput]`` in [-1, 1].
@@ -2769,22 +3260,26 @@ class PiLayer(ButterflyLayer):
         if self.butterfly:
             raise NotImplementedError(
                 "PiLayer.decompose not supported in butterfly mode")
-        W_inv = self.layer.compute_Winverse_current()
-        parent = parent.to(W_inv.device)
-        if self.nonlinear:
-            log_mult_y = torch.log(self._to_mult(parent))
-        else:
-            log_mult_y = torch.log(parent)
-        b = self.layer._effective_bias()
-        s = (log_mult_y - b) @ W_inv
-        half = s * 0.5
-        if self.nonlinear:
-            op = self._from_mult(torch.exp(half))
-        else:
-            op = torch.exp(half)
-        if self.layer.ergodic:
-            self.resample_noise()
-        return op, op
+        self.layer._current_gate = gate
+        try:
+            W_inv = self.layer.compute_Winverse_current()
+            parent = parent.to(W_inv.device)
+            if self.nonlinear:
+                log_mult_y = torch.log(self._to_mult(parent))
+            else:
+                log_mult_y = torch.log(parent)
+            b = self.layer._effective_bias()
+            s = (log_mult_y - b) @ W_inv
+            half = s * 0.5
+            if self.nonlinear:
+                op = self._from_mult(torch.exp(half))
+            else:
+                op = torch.exp(half)
+            if self.layer.ergodic:
+                self.resample_noise()
+            return op, op
+        finally:
+            self.layer._current_gate = None
 
     @staticmethod
     def test():
@@ -6159,6 +6654,144 @@ class Ops:
         return core + x_zero * y + y_zero * x
 
     @staticmethod
+    def corner_overlap(a, b):
+        """Pairwise hyperrectangle-overlap measure on bivector leaves.
+
+        Distinct from ``Ops.overlap`` (mereological parthood-based
+        overlap, defined further down). This kernel implements the
+        "overlapping corner in any dimension" criterion used by the
+        contiguity measure on hoc_shape leaves.
+
+        Args:
+            a, b: ``[..., 2]`` tensors -- each is a ``[pos, neg]``
+                bivector defining the hyperrectangle interval
+                ``[-neg, +pos]`` on its dimension-of-origin.
+
+        Returns:
+            tensor of shape ``a.shape[:-1]`` (the leading batch dims
+            with the bivector dim collapsed). Each entry in
+            ``[-1, +1]``:
+              ``+1`` if the intervals overlap (the bivectors share
+                    at least one common corner -- equivalent to
+                    ``max(-a_neg, -b_neg) <= min(a_pos, b_pos)``).
+              ``-1`` if the intervals are disjoint.
+              ``0``  if either input is degenerate (no extent --
+                    both pos and neg ~ 0), so overlap cannot be
+                    decided.
+
+        Vectorized over arbitrary leading dims; no Python iteration.
+        Inputs are interpreted as a *single bivector pair* (last
+        dim == 2). For higher-D regions the caller stacks bivector
+        leaves along an "axis" dim before calling this kernel
+        (``a.shape == [..., n_axes, 2]``); in that case the
+        any-axis aggregation is the caller's choice (typically
+        ``.amax(dim=-1)`` to mark "overlap in any axis = +1").
+        """
+        if a.shape[-1] != 2 or b.shape[-1] != 2:
+            raise ValueError(
+                f"Ops.corner_overlap: expected last dim == 2 "
+                f"bivector pair, got a={tuple(a.shape)} "
+                f"b={tuple(b.shape)}")
+        eps = 1e-9
+        a_lo = -a[..., 1]
+        a_hi =  a[..., 0]
+        b_lo = -b[..., 1]
+        b_hi =  b[..., 0]
+        a_extent = (a[..., 0].abs() + a[..., 1].abs()) > eps
+        b_extent = (b[..., 0].abs() + b[..., 1].abs()) > eps
+        both_extent = a_extent & b_extent
+
+        lo = torch.maximum(a_lo, b_lo)
+        hi = torch.minimum(a_hi, b_hi)
+        # Touching corners count as overlap (lo <= hi, inclusive).
+        dim_overlap = lo <= hi
+
+        # +1 where both have extent and intervals overlap.
+        # -1 where both have extent and intervals are disjoint.
+        #  0 where either is degenerate.
+        zeros = torch.zeros_like(a_hi)
+        ones  = torch.ones_like(a_hi)
+        result = torch.where(both_extent & dim_overlap,  ones,  zeros)
+        result = torch.where(both_extent & ~dim_overlap, -ones, result)
+        return result
+
+    @staticmethod
+    def epsilon_delta(in_boxes, out_boxes, norm='inf', eps_floor=1e-6):
+        """ε-δ continuity ratios over pairs of bivector hyperrectangles.
+
+        Classical pointwise continuity: ``f`` is continuous at ``x``
+        iff ``∀ε > 0, ∃δ > 0`` such that ``‖x' − x‖ < δ ⇒ ‖f(x') −
+        f(x)‖ < ε``. Adapted to a finite set of leaf hyperrectangles:
+        for each pair ``(R_i, R_j)`` the input-side diameter ``δ_ij``
+        and the output-side diameter ``ε_ij`` of the union of the two
+        boxes give the empirical ratio ``ε_ij / δ_ij``. The map is
+        continuous on the leaf set when this ratio stays bounded.
+
+        Hyperrectangle from a bivector ``[pos, neg]``: per-axis
+        interval ``[-|neg|, +pos]``; box diameter on axis ``d`` is
+        ``pos_d + |neg_d|``. Union of two boxes has per-axis spread
+        ``max(pos_i, pos_j) + max(|neg_i|, |neg_j|)``.
+
+        Args:
+            in_boxes:  ``[K, ..., 2]`` -- K leaf input-side bivectors
+                (the active higher-order symbol's bivector at each
+                leaf's source position).
+            out_boxes: ``[K, ..., 2]`` -- matching output-side
+                bivectors (the back-projected leaf bivector).
+            norm: ``'inf'`` (default; per-axis max -- "did any
+                axis blow up") or ``'l2'`` (Euclidean norm of the
+                per-axis spread vector).
+            eps_floor: clamp on δ to keep the ratio finite when
+                input boxes coincide.
+
+        Returns:
+            ratios: ``[K, K]`` -- per-pair ε / δ. Symmetric. The
+                diagonal carries the per-leaf self-pair ratio
+                (``= 1`` when in and out diameters match, e.g. for
+                an identity map; consumers typically mask the
+                diagonal off when aggregating). Pairs whose δ falls
+                below ``eps_floor`` get ``ε / eps_floor``
+                (clamped); callers should mask them out with the
+                input-extent test instead of trusting the ratio.
+
+        Vectorized over arbitrary leading dims; no Python iteration.
+        """
+        if in_boxes.shape[-1] != 2 or out_boxes.shape[-1] != 2:
+            raise ValueError(
+                f"Ops.epsilon_delta: expected last dim == 2 bivector "
+                f"pair, got in={tuple(in_boxes.shape)} "
+                f"out={tuple(out_boxes.shape)}")
+        if in_boxes.shape[0] != out_boxes.shape[0]:
+            raise ValueError(
+                f"Ops.epsilon_delta: leaf-count mismatch -- "
+                f"in_boxes.shape[0]={in_boxes.shape[0]} vs "
+                f"out_boxes.shape[0]={out_boxes.shape[0]}")
+
+        def pair_diam(boxes):
+            """boxes: [K, ..., 2]. Returns [K, K, ...] pairwise per-
+            axis diameters of the union of each box pair."""
+            pos = boxes[..., 0]
+            neg = boxes[..., 1].abs()
+            pos_max = torch.maximum(pos.unsqueeze(0), pos.unsqueeze(1))
+            neg_max = torch.maximum(neg.unsqueeze(0), neg.unsqueeze(1))
+            return pos_max + neg_max
+
+        in_d  = pair_diam(in_boxes)
+        out_d = pair_diam(out_boxes)
+        if norm == 'inf':
+            delta = in_d.amax(dim=-1)
+            eps   = out_d.amax(dim=-1)
+        elif norm == 'l2':
+            delta = in_d.norm(dim=-1)
+            eps   = out_d.norm(dim=-1)
+        else:
+            raise ValueError(
+                f"Ops.epsilon_delta: unknown norm {norm!r}; "
+                f"expected 'inf' or 'l2'")
+
+        return eps / delta.clamp_min(eps_floor)
+
+    @staticmethod
     def _conjunction_kernel(x, y, monotonic=False):
         """Conjunction (intersection). Domain/range [-1, 1].
 
@@ -6182,6 +6815,41 @@ class Ops:
         """
         kind = 'strict' if monotonic else 'radial'
         return Ops._lift_kernel(x, y, mode='OR', kind=kind)
+
+    @staticmethod
+    def intersection(x, y, monotonic=False):
+        """Set intersection on bivector activations -- the public
+        kernel ``IntersectionLayer`` calls.
+
+        Per-axis, per-pole "min toward zero" on ``x`` and ``y``:
+            monotonic=False (default) -> RadMin: same-sign min
+                magnitude, zero passthrough. The pole closer to
+                zero wins per channel.
+            monotonic=True            -> strict lattice min on each
+                channel.
+
+        Forwards to ``_conjunction_kernel`` so the math is bit-exact
+        with the pre-2026-05-04 IntersectionLayer body. Equivalent
+        to the alias ``Ops._conjunction_kernel(x, y, monotonic=...)``.
+        """
+        return Ops._conjunction_kernel(x, y, monotonic=monotonic)
+
+    @staticmethod
+    def union(x, y, monotonic=False):
+        """Set union on bivector activations -- the public kernel
+        ``UnionLayer`` calls.
+
+        Per-axis, per-pole "max toward zero" (in the sense of
+        max-magnitude, away from zero) on ``x`` and ``y``:
+            monotonic=False (default) -> RadMax: same-sign max
+                magnitude with zero passthrough.
+            monotonic=True            -> strict lattice max on each
+                channel.
+
+        Forwards to ``_disjunction_kernel``; bit-exact with the
+        pre-2026-05-04 UnionLayer body.
+        """
+        return Ops._disjunction_kernel(x, y, monotonic=monotonic)
 
     @staticmethod
     def _negation_kernel(x, monotonic=False):
@@ -6547,63 +7215,11 @@ class Ops:
         recovered = Ops.conjunctionReverse(Y, Y, W, monotonic=monotonic)
         return (recovered, Y)
 
-    # ---- Sugar absorption (identity / absorb) ----------------------------
-
-    @staticmethod
-    def identity(x):
-        """Unary pass-through. Functional role: the typing-stamp
-        derivation S -> NP (and analogous single-symbol reclassifications)
-        -- the value is preserved while the LHS type replaces the RHS
-        type. Value-lossless; type-lossy. No inverse registered."""
-        return x
-
-    @staticmethod
-    def _absorb_kernel(left, right):
-        """Binary left-pass: return left, discard right. Used by the
-        grammar to consume syntactic sugar (whitespace, punctuation,
-        low-semantic-weight tokens) into a surrounding constituent
-        without contributing to it. Lossy by contract -- right is
-        unrecoverable. No inverse registered."""
-        return left
-
     # ---- Axis selectors (what / where / when) ----------------------------
     # The C -> S boundary demux puts content in the canonical
     # [what | where | when] layout; these selectors zero the non-selected
     # blocks. When ``x.ndim < 3`` the block structure isn't accessible
     # (compose() in scalar mode), so selectors degenerate to identity.
-
-    @staticmethod
-    def _what_kernel(x, nWhat, nWhere, nWhen):
-        """Axis selector: keep what-block, zero where/when-blocks."""
-        if x.ndim < 3:
-            return x
-        if nWhat is None or (nWhere == 0 and nWhen == 0):
-            return x
-        out = torch.zeros_like(x)
-        out[..., :nWhat] = x[..., :nWhat]
-        return out
-
-    @staticmethod
-    def _where_kernel(x, nWhat, nWhere, nWhen):
-        """Axis selector: keep where-block, zero what/when-blocks."""
-        if x.ndim < 3:
-            return x
-        if nWhat is None or nWhere == 0:
-            return torch.zeros_like(x)
-        out = torch.zeros_like(x)
-        out[..., nWhat:nWhat + nWhere] = x[..., nWhat:nWhat + nWhere]
-        return out
-
-    @staticmethod
-    def _when_kernel(x, nWhat, nWhere, nWhen):
-        """Axis selector: keep when-block, zero what/where-blocks."""
-        if x.ndim < 3:
-            return x
-        if nWhat is None or nWhen == 0:
-            return torch.zeros_like(x)
-        out = torch.zeros_like(x)
-        out[..., nWhat + nWhere:] = x[..., nWhat + nWhere:]
-        return out
 
     # ---- Metric ----------------------------------------------------------
 
@@ -7916,12 +8532,13 @@ def _bind_ops_singletons():
     inside Ops static methods continue to route directly to the kernel.
     """
     # Map: legacy op name -> (kernel staticmethod, GrammarLayer subclass).
+    # ``absorb`` was retired 2026-05-04 -- the marker lives on
+    # ``GrammarLayer.absorb`` (base class) so no kernel/class binding.
     bindings = (
         ('negation',    Ops._negation_kernel,    NotLayer),
         ('non',         Ops._non_kernel,         NonLayer),
         ('conjunction', Ops._conjunction_kernel, ConjunctionLayer),
         ('disjunction', Ops._disjunction_kernel, DisjunctionLayer),
-        ('absorb',      Ops._absorb_kernel,      AbsorbLayer),
         ('lift',        Ops._lift_kernel,        LiftLayer),
         ('lower',       Ops._lower_kernel,       LowerLayer),
         ('equal',       Ops._equal_kernel,       EqualsLayer),

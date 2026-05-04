@@ -1,16 +1,16 @@
 """Tests for MM_shamatha.xml's inline grammar wiring.
 
-The MM_shamatha.xml grammar block lists Contiguous, not, union, and
-intersection (mirroring MM_boolean's DNF stack plus the new
-``Contiguous(S)`` rule). The presence of those rules in the inline
-grammar dict drives downstream wiring:
+The MM_shamatha.xml grammar block lists ``disjunction(S, S)``,
+``not(S)``, ``union(C, C)``, and ``intersection(C, C)``
+(mirroring MM_boolean's DNF stack plus the post-codebook scalar-
+max fold that replaced the retired ``Contiguous(S)`` 2026-05-04).
+The presence of those rules drives downstream wiring:
 
-  - ConceptualSpace's grammar-driven DNF stack (NegationLayer + Sigma
+  - ConceptualSpace's grammar-driven DNF stack (NotLayer + Sigma
     AND-fold + Pi OR-fold) is wired by ``Language.grammar_uses``.
-  - ``ContiguousLayer`` is constructed eagerly on SymbolicSpace.
-  - ``rule_probability("Contiguous(S)")`` returns 1.0 when
-    thought_free is on, gating the layer in front of NotLayer in the
-    SymbolicSpace forward path.
+  - ``DisjunctionLayer`` is constructed lazily in WordSpace's
+    per-space SyntacticLayer when the grammar references
+    ``disjunction(S, S)``.
 """
 
 import os
@@ -41,47 +41,27 @@ def _fresh_model():
 
 
 class TestShamathaInlineGrammar(unittest.TestCase):
-    def test_grammar_block_parses_contiguous(self):
-        """The inline <grammar> block contains Contiguous(S) ahead of
-        not(S), union(C,C), and intersection(C,C)."""
+    def test_grammar_block_parses_disjunction(self):
+        """The inline <grammar> block contains disjunction(S, S)
+        ahead of not(S), union(C, C), and intersection(C, C)."""
         _fresh_model()
         cfg = TheXMLConfig.get("WordSpace.language.grammar")
-        # The merged dict should contain the user's S/C entries.
         self.assertIn("S", cfg)
         s_rules = cfg["S"]
         if isinstance(s_rules, str):
             s_rules = [s_rules]
-        self.assertIn("Contiguous(S)", s_rules)
-        # Contiguous precedes not(S) so hull-then-negate semantics hold.
-        self.assertLess(s_rules.index("Contiguous(S)"), s_rules.index("not(S)"))
+        self.assertIn("disjunction(S, S)", s_rules)
+        # Disjunction precedes not(S) so hull-then-negate semantics
+        # hold (post-codebook scalar max is the new contiguity fold).
+        self.assertLess(
+            s_rules.index("disjunction(S, S)"), s_rules.index("not(S)"))
 
     def test_dnf_stack_wired_into_conceptual_space(self):
         """ConceptualSpace's grammar-driven DNF wiring picks up the
         not/union/intersection rules from the inline grammar block."""
         m = _fresh_model()
-        # The presence of NegationLayer (or its propositional NEG sibling
-        # NotLayer) on SymbolicSpace is the canonical observable.
-        self.assertIsInstance(m.symbolicSpace.propositional_negation, Layers.NotLayer)
-
-    def test_contiguous_layer_in_pipeline_before_negation(self):
-        """SymbolicSpace's _contiguous_layer is constructed and its
-        gate sits before propositional NEG in the forward path."""
-        m = _fresh_model()
-        sym = m.symbolicSpace
-        self.assertIsInstance(sym._contiguous_layer, Layers.ContiguousLayer)
-        self.assertIsInstance(sym.propositional_negation, Layers.NotLayer)
-
-    def test_contiguous_rule_probability_pinned_in_thought_free(self):
-        """In thought_free mode, rule_probability(Contiguous(S)) is 1.0."""
-        _fresh_model()
-        Language.TheGrammar.thought_free = True
-        try:
-            self.assertEqual(
-                Language.TheGrammar.rule_probability("Contiguous(S)"),
-                1.0,
-            )
-        finally:
-            Language.TheGrammar.thought_free = False
+        self.assertIsInstance(
+            m.symbolicSpace.propositional_negation, Layers.NotLayer)
 
 
 if __name__ == "__main__":

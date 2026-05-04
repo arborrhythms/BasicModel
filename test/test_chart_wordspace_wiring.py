@@ -127,9 +127,14 @@ def test_wordspace_owns_chart_and_registry():
              nOutput=8, masked_prediction='AR')
     assert m.wordSpace is not None
     assert type(m.wordSpace.chart).__name__ == 'Chart'
-    # Registry has at least the SymbolicSpace builtin layers.
+    # Registry has at least the SymbolicSpace builtin layers. Per
+    # 2026-05-03 layer-naming refactor, SigmaLayer is registered under
+    # rule_name "sigma" (the unary multiplicative OR-fold); the binary
+    # min/max ops "intersection" / "union" / "conjunction" /
+    # "disjunction" are separate GrammarLayer subclasses, lazy-built
+    # only when the grammar references them.
     keys = list(m.wordSpace._host_layer_registry.keys())
-    assert ('S', 'union') in keys
+    assert ('S', 'sigma') in keys
     # Each space carries a per-space SyntacticLayer with its tier.
     p_sl = m.perceptualSpace.syntacticLayer
     c_sl = m.conceptualSpace.syntacticLayer
@@ -176,15 +181,21 @@ def test_chartcompose_and_chartgenerate_in_pipeline():
 # --- GrammarLayer registry (Step 8) ---------------------------------
 
 def test_grammar_layer_classes_registry_complete():
-    """The Step 8 `GRAMMAR_LAYER_CLASSES` covers all grammar ops the
-    spec calls out."""
+    """``GRAMMAR_LAYER_CLASSES`` covers every grammar op exposed
+    by the post-2026-05-05 operator set. ``Fusion`` /
+    ``Contiguous`` were retired (duplicates of DisjunctionLayer
+    at S-tier -- migrate to ``disjunction(S, S)``); the prior
+    ``what`` / ``where`` / ``when`` slot-selector classes were
+    retired (subspace partitioning is the dispatcher's
+    responsibility, not a grammar rule). ``absorb`` was retired
+    -- the marker lives on ``GrammarLayer.absorb`` (base method)
+    rather than a dedicated class."""
     from Layers import GRAMMAR_LAYER_CLASSES
     expected = {
-        'not', 'non', 'intersection', 'union', 'Contiguous',
+        'not', 'non', 'intersection', 'union',
         'lift', 'lower', 'conjunction', 'disjunction',
         'equals', 'part', 'true', 'false',
         'swap', 'query',
-        'what', 'where', 'when', 'absorb',
     }
     assert expected.issubset(GRAMMAR_LAYER_CLASSES.keys()), (
         f"missing rules: {expected - set(GRAMMAR_LAYER_CLASSES.keys())}")
@@ -195,17 +206,16 @@ def test_grammar_layer_classes_are_real():
     `forward` (arity 1) or `compose` (arity 2). Step 8 retired the
     facade dispatch; the classes are now self-sufficient.
 
-    Wrapper classes that wrap a parametrized inner layer
-    (IntersectionLayer wraps PiLayer; UnionLayer wraps SigmaLayer)
-    are skipped here; they're exercised end-to-end via WordSpace's
-    builtin-layer registration in test_wordspace_owns_chart_and_registry.
-    SwapLayer requires a swap_size arg.
+    Per 2026-05-05 tier reshuffle, IntersectionLayer and UnionLayer
+    are L-tier (logical) primitives implementing binary lattice
+    min / max on bivector activation; their constructor takes an
+    optional ``monotonic`` kwarg only. ConjunctionLayer /
+    DisjunctionLayer are S-tier counterparts on the post-codebook
+    scalar activation -- always monotonic, no kwargs. SwapLayer
+    still requires a swap_size arg.
     """
     from Layers import GRAMMAR_LAYER_CLASSES
-    skip_constructor = {'intersection', 'union'}  # need inner pi/sigma
     for rule_name, cls in GRAMMAR_LAYER_CLASSES.items():
-        if rule_name in skip_constructor:
-            continue
         try:
             inst = cls()
         except TypeError:

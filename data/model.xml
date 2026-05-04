@@ -132,38 +132,46 @@
 
     <language>
       <grammar>
-        <!-- Tier-scoped grammar: each space (P / C / S) declares the
-             operations it conducts in its parse / generate path. Pi
-             and Sigma are now first-class GrammarLayer subclasses, so
-             the default grammar names them directly; the existing
-             always-on Pi / Sigma folds in PerceptualSpace,
-             ConceptualSpace, and SymbolicSpace are exactly the rules
-             listed here. Each space CAN conduct any of the rules at
-             runtime; the tier tag is an inductive-bias hint, not a
-             hard restriction. -->
+        <!-- Default grammar: trivial unary pi / sigma folds at every
+             tier. PiLayer and SigmaLayer are first-class arity=1
+             GrammarLayer subclasses; their forward(x) is the
+             always-on multiplicative AND-fold (concepts) and OR-fold
+             (percepts / symbols) respectively.
+
+             A grammar containing only these unary rules is the
+             "default-only" case: WordSpace.compose detects it and
+             skips the chart's CKY-style inside pass entirely.
+             Per-space SyntacticLayer dispatch falls through to the
+             tier's default_rule (pi for C, sigma for P / S) which
+             resolves to the PiLayer / SigmaLayer registered at
+             space construction. End-to-end cost matches the legacy
+             y = self.pi(x) call site.
+
+             Configs that need real grammar (constituency / negation /
+             min-max ops) override this entire block via
+             _NON_MERGING_PATHS (util.py); their grammar block fully
+             replaces this one. -->
         <compose>
-          <symbols>
-            <rule>S = not.forward(S)</rule>
-            <rule>S = sigma.forward(S, S)</rule>
-          </symbols>
-          <concepts>
-            <rule>S = pi.forward(S, S)</rule>
-          </concepts>
           <percepts>
-            <rule>S = sigma.forward(S, S)</rule>
+            <rule>P = sigma(P)</rule>
           </percepts>
+          <concepts>
+            <rule>C = pi(C)</rule>
+          </concepts>
+          <symbols>
+            <rule>S = sigma(S)</rule>
+          </symbols>
         </compose>
         <generate>
-          <symbols>
-            <rule>S = not.reverse(S)</rule>
-            <rule>S,S = sigma.reverse(S)</rule>
-          </symbols>
-          <concepts>
-            <rule>S,S = pi.reverse(S)</rule>
-          </concepts>
           <percepts>
-            <rule>S,S = sigma.reverse(S)</rule>
+            <rule>P = sigma.reverse(P)</rule>
           </percepts>
+          <concepts>
+            <rule>C = pi.reverse(C)</rule>
+          </concepts>
+          <symbols>
+            <rule>S = sigma.reverse(S)</rule>
+          </symbols>
         </generate>
       </grammar>
       <interpretation>0.5</interpretation>

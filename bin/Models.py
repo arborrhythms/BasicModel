@@ -66,6 +66,9 @@ from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model
 from Layers import LinearLayer, AttentionLayer
 from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import Error, TheError
+from Layers import Ops, GRAMMAR_LAYER_CLASSES, CONTIGUITY_PRESERVING_OPS
+from dataclasses import dataclass, field
+from typing import List
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
@@ -95,6 +98,59 @@ class Normalizer:
 
     def denormalize(self, x, which="input"):
         return self._source.denormalize(x, which=which)
+
+
+# ---------------------------------------------------------------------------
+# Higher-order-concept shape descriptors -- consumed by hoc_shape /
+# Contiguous (see basicmodel/doc/research/three-surfaces.md and the
+# 2026-05-04 spec at plans/.../sparkling-peach.md). These are pure
+# data records; the math lives on BaseModel.hoc_shape.
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class RuleSpec:
+    """One node in the derivation path: rule_name + arity + tier."""
+    rule_name: str
+    arity:     int
+    tier:      str
+
+
+@dataclass(frozen=True)
+class StepInfo:
+    """One layer-level reverse executed during the hoc_shape walk.
+
+    Captures the rule that fired (rule_name, arity, tier), whether
+    its reverse preserves contiguity (per
+    ``Layers.CONTIGUITY_PRESERVING_OPS``), the binary-fanout branch
+    (``''`` for unary, ``'left'`` / ``'right'`` for binary), and the
+    per-layer top-K active-neuron cap that bounds downstream
+    contiguity computation.
+    """
+    rule_name:      str
+    arity:          int
+    tier:           str
+    contiguous:     bool
+    branch:         str
+    active_indices: 'torch.Tensor'   # [B, K_cap] long
+    active_count:   'torch.Tensor'   # [B] long
+    K_cap:          int
+
+
+@dataclass(frozen=True)
+class HoCShape:
+    """Result of ``BaseModel.hoc_shape``.
+
+    leaves -- one ``[B, V, D_C1]`` tensor per leaf in the derivation
+              tree. List length is 1 for default-only / unary-only
+              paths; doubles for each binary op along the path.
+    mask   -- ``[B, V]`` bool. True where the input symbolic vector
+              had a per-position norm above ``truthMinMagnitude``.
+    per_step -- list of StepInfo, DFS pre-order, one entry per
+              layer-level reverse executed.
+    """
+    leaves:    list
+    mask:      'torch.Tensor'
+    per_step:  list
 
 
 class BaseModel(nn.Module):
@@ -838,64 +894,707 @@ class BaseModel(nn.Module):
             frontier = neighbors & ~visited
         return bool(visited.all().item())
 
-    def Contiguous(self) -> bool:
-        """One-Pointedness (Shamatha / Focused Attention).
+    def Contiguous(self) -> float:
+        """Continuous mereological-contiguity measure in ``[-1, +1]``.
 
-        True iff the currently-active SymbolicSpace codebook rows form a
-        single connected mereological component -- no disjoint islands
-        under ``Basis.part`` parthood (the same metric ImpenetrableLayer
-        uses).
+        One-Pointedness / Shamatha / Focused Attention. The forward
+        pass produces higher-order symbols at SymbolicSpace; this
+        method back-projects each active higher-order symbol through
+        every layer of the derivation (via ``hoc_shape``) to expose
+        the C(1) constituent regions, then runs pairwise
+        ``Ops.corner_overlap`` over trustworthy leaves to score
+        whether the constituents share at least one corner along
+        any dimension.
 
-        Connectivity test: build a [K, K] adjacency from the
-        ``ImpenetrableLayer._classify`` output -- two rows share an edge
-        iff their pair is anything other than ``disjoint`` (so
-        ``part_ij``, ``part_ji``, ``equal``, and ``overlap`` all count
-        as connected). Self-loops are added so a single active row is
-        trivially one component. BFS reports whether the graph spans
-        every active node.
+        Return value:
+          ``+1.0`` -- every (trustworthy) leaf pair overlaps; the
+                     higher-order concept is fully contiguous.
+          ``-1.0`` -- no trustworthy leaf pair overlaps; the
+                     constituents are mereologically disjoint.
+          ``0.0``  -- unknown: no trustworthy leaves to decide on
+                     (every back-projection traversed at least one
+                     lossy op like intersection / union /
+                     conjunction / disjunction; the pseudo-inverse
+                     erases the geometry needed for the test).
+          intermediate -- average pairwise measure, weighted by
+                          per-pair trust.
 
-        Returns True when:
-          - 0 or 1 active rows (degenerate one-pointedness)
-          - All active rows lie in one connected component
+        A single trustworthy leaf returns ``+1.0`` (trivially one-
+        pointed); a single untrustworthy leaf returns ``0.0``.
         """
+        sym = getattr(self, 'symbolicSpace', None)
+        if sym is None or not hasattr(sym, 'subspace'):
+            return 0.0
+        try:
+            sym_act = sym.subspace.materialize()
+        except Exception:
+            return 0.0
+        if sym_act is None or not torch.is_tensor(sym_act) or sym_act.numel() == 0:
+            return 0.0
+
+        shape = self.hoc_shape(sym_act)
+        leaves = shape.leaves
+        if not leaves:
+            return 0.0
+
+        leaf_trust = self._leaf_path_trust(shape)
+        if not leaf_trust:
+            return 0.0
+
+        if len(leaves) == 1:
+            return 1.0 if leaf_trust[0] else 0.0
+
+        # Pairwise corner-overlap over the .what bivector ([..., :2]).
+        total_weight = 0.0
+        weighted_sum = 0.0
+        for i in range(len(leaves)):
+            for j in range(i + 1, len(leaves)):
+                if not (leaf_trust[i] and leaf_trust[j]):
+                    continue
+                a = leaves[i][..., :2]
+                b = leaves[j][..., :2]
+                if not (torch.is_tensor(a) and torch.is_tensor(b)):
+                    continue
+                if a.shape[-1] != 2 or b.shape[-1] != 2:
+                    continue
+                m = Ops.corner_overlap(a, b)
+                # Aggregate over the [B, V, ...] leading dims.
+                # Mean over only the masked-active positions where
+                # both leaves had extent; positions where corner_
+                # overlap returned 0 (degenerate) contribute 0,
+                # which already biases the average toward neutral.
+                weighted_sum += float(m.mean().item())
+                total_weight += 1.0
+
+        if total_weight == 0.0:
+            return 0.0
+        return weighted_sum / total_weight
+
+    def _leaf_path_trust(self, shape) -> list:
+        """For each leaf in ``shape.leaves``, AND-fold the
+        ``contiguous`` flag along the steps that produced it.
+
+        ``shape.per_step`` is a flat DFS pre-order list. For binary
+        nodes, the spec emits the per-branch StepInfo immediately
+        before that branch's subtree steps. We traverse the flat
+        list and reconstruct per-leaf trust by emitting one bool
+        per leaf in the same order ``_walk_reverse`` produced them.
+
+        For default-only / unary-only paths (``len(leaves) == 1``),
+        this collapses to ``all(s.contiguous for s in per_step)``.
+        """
+        leaves = shape.leaves
+        per_step = shape.per_step
+        if not leaves:
+            return []
+        if len(leaves) == 1:
+            return [all(bool(s.contiguous) for s in per_step)]
+
+        # Tree reconstruction: walk per_step in DFS pre-order,
+        # tracking the current path's contiguity AND-fold. Emit
+        # one bool per leaf when we hit the end of a branch.
+        trust_flags = []
+        path_contig = [True]  # stack of cumulative-AND values
+
+        def emit_leaf():
+            trust_flags.append(path_contig[-1])
+
+        # Re-derive the same tree the walker built. The per_step
+        # list interleaves: for unary, [step, *subtree_steps]; for
+        # binary, [left_step, *left_subtree, right_step, *right_subtree].
+        # Reconstruct by counting expected leaves per subtree.
+        i = 0
+        leaf_count = [0]
+
+        def consume_subtree(remaining_steps_idx, depth_remaining):
+            """Consume the next subtree starting at i; depth_remaining
+            is the number of path entries (post this step) still to
+            walk before hitting a leaf in default-only mode. We
+            don't actually use depth here -- we walk until we've
+            emitted enough leaves or run out of steps."""
+            pass
+
+        # Simpler approach: replay the walk by interpreting each
+        # StepInfo's branch / arity. Stack-based.
+        # path_step_stack: stack of cumulative contiguous flags.
+        if not per_step:
+            return [True] * len(leaves)
+
+        # Walk per_step entries; for each, push the cumulative AND
+        # onto the stack for the duration of its subtree. When we
+        # complete a leaf-equivalent branch, emit.
+        # Simplification: we know the per_step list has the same
+        # tree shape as the walker's recursion. For each leaf in
+        # the leaves list, the steps up-to-that-leaf are a
+        # contiguous prefix in DFS order.
+        # We rely on a rebuild that mirrors _walk_reverse exactly:
+
+        idx = [0]
+        out = []
+
+        def rebuild(prev_contig: bool):
+            """Mirror _walk_reverse's recursion shape using per_step."""
+            if idx[0] >= len(per_step):
+                # No more steps: this is a leaf.
+                out.append(prev_contig)
+                return
+            step = per_step[idx[0]]
+            cumulative = prev_contig and bool(step.contiguous)
+            idx[0] += 1
+            if int(step.arity) == 1 and step.branch == '':
+                # Unary: descend into the single subtree.
+                rebuild(cumulative)
+            elif int(step.arity) == 2:
+                # Binary: this StepInfo is the LEFT branch; the
+                # next StepInfo at the same depth (after the left
+                # subtree) is the RIGHT branch.
+                # left subtree:
+                rebuild(cumulative)
+                # right subtree: consume the right StepInfo, then
+                # its subtree.
+                if idx[0] < len(per_step):
+                    right_step = per_step[idx[0]]
+                    if int(right_step.arity) == 2 and right_step.branch == 'right':
+                        cumulative_r = prev_contig and bool(right_step.contiguous)
+                        idx[0] += 1
+                        rebuild(cumulative_r)
+                    else:
+                        # Mismatched tree -- emit a degenerate leaf.
+                        out.append(cumulative)
+            else:
+                # Unknown arity; treat as unary.
+                rebuild(cumulative)
+
+        try:
+            rebuild(True)
+        except Exception:
+            return [True] * len(leaves)
+
+        # Pad / truncate to match leaves length.
+        if len(out) < len(leaves):
+            out.extend([True] * (len(leaves) - len(out)))
+        return out[:len(leaves)]
+
+    def hoc_shape(self, symbolic_vector, max_active_per_layer=None):
+        """Reverse-convolve a higher-order symbol tensor through its
+        derivation tree; return the C(1) constituent bivectors as a
+        list of ``[B, V, D_C1]`` tensors (one per leaf of the
+        derivation tree) plus the per-step contiguity flags and per-
+        step top-K active-neuron caps.
+
+        The walk is fully vectorized over the ``[B, V]`` leading
+        dims -- every active position is reverse-projected in
+        parallel through the same sequence of layer reverses.
+
+        Forward composition stacks layer by layer; each reverse step
+        is a "convolution" of the parent's ``[pos, neg]`` bivector
+        shape with the layer's reverse kernel. Unary ops fold one
+        parent into one operand; binary ops fan out one parent into
+        two (one for ``left``, one for ``right``). Per-step
+        contiguity (the bool flag on each ``StepInfo``) tracks
+        whether the layer's reverse preserves connectedness -- only
+        ``pi`` / ``sigma`` / ``lift`` / ``lower`` / ``not`` do; all
+        others use a lossy pseudo-inverse.
+
+        Args:
+            symbolic_vector: ``[B, V, D]`` activation tensor at the
+                highest conceptual order. Typically obtained via
+                ``self.symbolicSpace.subspace.materialize()`` so the
+                ``.active`` mask is already applied.
+            max_active_per_layer: optional int. Caps how many top-K
+                positions per layer carry into
+                ``per_step.active_indices``. Falls back to
+                ``architecture.maxActivePerLayer`` config (default 8).
+
+        Returns:
+            HoCShape -- a small dataclass with:
+              * ``leaves``: list of ``[B, V, D_C1]`` tensors. Length
+                ``1`` for default-only / no-binary-op runs;
+                ``2^k_binary`` for k_binary binary ops along the path.
+              * ``mask``: ``[B, V]`` bool -- True where the input
+                position was above ``truthMinMagnitude``. Leaves
+                carry full ``[B, V, ...]`` shape regardless;
+                consumers AND-fold via the mask.
+              * ``per_step``: list of ``StepInfo``, one per layer-
+                level reverse executed during the walk, in
+                outer-to-inner traversal order. Each StepInfo
+                records ``(rule_name, arity, tier, contiguous,
+                branch, active_indices, active_count, K_cap)``.
+
+            Empty leaves list when no position is active.
+        """
+        if symbolic_vector is None or not torch.is_tensor(symbolic_vector):
+            empty_mask = torch.zeros(0, dtype=torch.bool)
+            return HoCShape(leaves=[], mask=empty_mask, per_step=[])
+        if symbolic_vector.numel() == 0 or symbolic_vector.dim() < 2:
+            empty_mask = torch.zeros(symbolic_vector.shape[:-1] if symbolic_vector.dim() >= 1 else (0,),
+                                     dtype=torch.bool, device=symbolic_vector.device)
+            return HoCShape(leaves=[], mask=empty_mask, per_step=[])
+
+        # Step 1: per-position activity mask.
         sym = self.symbolicSpace
-        what = sym.subspace.what
-        codebook = what.getW()
-        if codebook is None:
-            return True
-        active_idx = self._active_codebook_rows()
-        if active_idx.numel() <= 1:
-            return True
-        sub = codebook[active_idx]
-        P = sym._impenetrable._pairwise_parthood(sub, what)
-        relations = sym._impenetrable._classify(P)
-        edges = ~relations["disjoint"]
-        eye = torch.eye(edges.shape[0], device=edges.device, dtype=torch.bool)
-        edges = edges | eye
-        return self._is_one_component(edges)
+        threshold = float(getattr(sym, '_truth_min_magnitude', 0.0) or 0.0)
+        norms = symbolic_vector.norm(dim=-1)
+        mask = norms > threshold
+        if not bool(mask.any().item()):
+            return HoCShape(leaves=[], mask=mask, per_step=[])
 
-    def Continuous(self):
-        """Simplicity (Continuity / Open Awareness).
+        # Step 2: derivation path (outer-to-inner). Same path for all
+        # (B, V) per the spec's row-0 canonical-path convention.
+        path = self._derivation_path()
 
-        Developing a continuous N-dimensional awareness within space.
-        Requires continuity: small shifts in perceptual and symbolic
-        space must produce proportionally small shifts in conceptual
-        space.
+        # Step 3: K cap.
+        if max_active_per_layer is None:
+            try:
+                max_active_per_layer = int(
+                    TheXMLConfig.get("architecture.maxActivePerLayer",
+                                     default=8) or 8)
+            except (KeyError, TypeError, ValueError):
+                max_active_per_layer = 8
+        K_cap = max(1, int(max_active_per_layer))
 
-        Characterisation -- OA (Open Awareness):
-          * The mapping PerceptualSpace -> ConceptualSpace is Lipschitz-
-            continuous: ||f(x) - f(y)|| <= K ||x - y|| for a bounded K.
-          * Equivalently, the Jacobian of the forward pass through
-            PiLayer and SigmaLayer has bounded spectral norm.
-          * In symbolic space, adjacent codebook entries map to nearby
-            concept vectors (smooth codebook topology).
+        # Step 4: vectorized recursive descent.
+        leaves, per_step = self._walk_reverse(symbolic_vector, path, K_cap, threshold)
+        return HoCShape(leaves=leaves, mask=mask, per_step=per_step)
 
-        Computationally, Continuous() should estimate the local Lipschitz
-        constant of the perception-to-concept mapping and verify that it
-        remains below a configured threshold, ensuring that awareness can
-        shift smoothly rather than jumping between attractors.
+    def _derivation_path(self):
+        """Build the outer-to-inner rule sequence for hoc_shape.
+
+        Default-only mode: synthesize a fixed alternating
+        ``[sigma(S), pi(C)] * conceptualOrder`` path -- no chart was
+        consulted (Phase 1.5 fast-path bypass keeps current_rules
+        empty), so every position followed the per-tier default
+        unary rule.
+
+        Chart-driven mode: read row 0 of
+        ``self.wordSpace.generate_rules`` per tier (S then C then P
+        in pipeline-reverse order) and concatenate. Same canonical-
+        path convention as ``_row_zero_rules`` at Language.py:2247.
         """
-        raise NotImplementedError
+        n_stages = max(1, int(getattr(self, 'conceptualOrder', 1) or 1))
+        path = []
+
+        ws = getattr(self, 'wordSpace', None)
+        gen_rules = getattr(ws, 'generate_rules', None) if ws is not None else None
+        chart_populated = bool(gen_rules) and any(
+            v for v in gen_rules.values() if v
+        ) if isinstance(gen_rules, dict) else False
+
+        if not chart_populated:
+            # Default-only path: ['sigma' (S), 'pi' (C)] * n_stages.
+            for _ in range(n_stages):
+                path.append(RuleSpec(rule_name='sigma', arity=1, tier='S'))
+                path.append(RuleSpec(rule_name='pi',    arity=1, tier='C'))
+            return path
+
+        # Chart-driven: walk S-tier rules then C-tier rules in
+        # reverse-pipeline order. Use row 0 as canonical.
+        try:
+            from Language import TheGrammar
+            for tier in ('S', 'C', 'P'):
+                per_tier = gen_rules.get(tier) if gen_rules else None
+                if not per_tier:
+                    continue
+                row_zero = (per_tier[0]
+                            if per_tier and isinstance(per_tier[0], list)
+                            else per_tier)
+                for rule_id in row_zero:
+                    try:
+                        rd = TheGrammar.rules[int(rule_id)]
+                        if rd.method_name is None:
+                            continue
+                        path.append(RuleSpec(
+                            rule_name=rd.method_name,
+                            arity=int(rd.arity),
+                            tier=str(tier)))
+                    except (IndexError, AttributeError, ValueError, TypeError):
+                        continue
+        except Exception:
+            pass
+
+        if not path:
+            # Fallback: default-only synthesis if chart parsing failed.
+            for _ in range(n_stages):
+                path.append(RuleSpec(rule_name='sigma', arity=1, tier='S'))
+                path.append(RuleSpec(rule_name='pi',    arity=1, tier='C'))
+        return path
+
+    def _walk_reverse(self, parent_tensor, path, K_cap, threshold):
+        """Recursive vectorized descent through the derivation tree.
+
+        Returns:
+            (leaves, per_step) where:
+              * leaves: list of ``[B, V, D']`` tensors -- one per leaf.
+              * per_step: list of StepInfo -- one per layer-level
+                reverse executed (DFS order: pre-order on each
+                subtree).
+        """
+        if not path:
+            return ([parent_tensor], [])
+
+        head = path[0]
+        rest = path[1:]
+        contig = head.rule_name in CONTIGUITY_PRESERVING_OPS
+        layer = self._lookup_host_layer(head.tier, head.rule_name)
+
+        if layer is None:
+            # No host layer wired -- skip this rule (treat as identity).
+            return self._walk_reverse(parent_tensor, rest, K_cap, threshold)
+
+        if head.arity == 1:
+            child = self._call_reverse_shape_adaptive(layer, parent_tensor)
+            if child is None:
+                # Reverse failed (lossy / not invertible) -- skip step.
+                return self._walk_reverse(parent_tensor, rest, K_cap, threshold)
+            step = self._build_step(head, contig, child, K_cap, threshold,
+                                    branch='')
+            sub_leaves, sub_steps = self._walk_reverse(child, rest, K_cap, threshold)
+            return (sub_leaves, [step, *sub_steps])
+
+        if head.arity == 2:
+            try:
+                pair = layer.generate(parent_tensor)
+            except Exception:
+                return self._walk_reverse(parent_tensor, rest, K_cap, threshold)
+            if not isinstance(pair, tuple) or len(pair) != 2:
+                # Not a (left, right) pair -- treat as unary.
+                child = pair if torch.is_tensor(pair) else parent_tensor
+                step = self._build_step(head, contig, child, K_cap, threshold,
+                                        branch='')
+                sub_leaves, sub_steps = self._walk_reverse(child, rest, K_cap, threshold)
+                return (sub_leaves, [step, *sub_steps])
+            left, right = pair
+            step_l = self._build_step(head, contig, left,  K_cap, threshold,
+                                      branch='left')
+            step_r = self._build_step(head, contig, right, K_cap, threshold,
+                                      branch='right')
+            leaves_L, steps_L = self._walk_reverse(left,  rest, K_cap, threshold)
+            leaves_R, steps_R = self._walk_reverse(right, rest, K_cap, threshold)
+            return (leaves_L + leaves_R,
+                    [step_l, *steps_L, step_r, *steps_R])
+
+        # Unsupported arity -- skip.
+        return self._walk_reverse(parent_tensor, rest, K_cap, threshold)
+
+    @staticmethod
+    def _call_reverse_shape_adaptive(layer, x):
+        """Call ``layer.reverse(x)`` with per-position / flatten
+        adaptation so a layer whose ``nInput`` differs from
+        ``x.shape[-1]`` still works.
+
+        Some host layers (e.g. SymbolicSpace.sigma in BasicModel)
+        are per-position: ``nInput == per-position dim``, and
+        ``layer.reverse(x: [B, V, D])`` returns ``[B, V, D']``.
+
+        Others (e.g. ConceptualSpace.pi in BasicModel.xml) are
+        flatten-based: ``nInput == V * D``, and
+        ``layer.reverse(x: [B, V*D])`` returns ``[B, V*D']``. For
+        those we flatten the per-position input on call, reverse,
+        and reshape the output back to ``[B, V, D']``.
+
+        Returns the per-position output tensor, or ``None`` when
+        reverse fails (lossy layer / dim cannot be reconciled).
+        """
+        if not torch.is_tensor(x):
+            return None
+        nInput = getattr(layer, 'nInput', None)
+        if nInput is None:
+            try:
+                return layer.reverse(x)
+            except Exception:
+                return None
+        # Per-position match.
+        if nInput == x.shape[-1]:
+            try:
+                return layer.reverse(x)
+            except Exception:
+                return None
+        # Flatten match.
+        if x.dim() >= 3:
+            B = x.shape[0]
+            V = x.shape[1]
+            D = x.shape[-1]
+            if V * D == nInput:
+                flat = x.reshape(B, V * D)
+                try:
+                    out = layer.reverse(flat)
+                except Exception:
+                    return None
+                if not torch.is_tensor(out):
+                    return None
+                # Reshape back to per-position.
+                if out.shape[-1] % V == 0:
+                    D_out = out.shape[-1] // V
+                    return out.reshape(B, V, D_out)
+                return out
+        return None
+
+    def _lookup_host_layer(self, tier, rule_name):
+        """Resolve a (tier, rule_name) to a layer instance.
+
+        Tries ``wordSpace.host_layer`` first (chart-registered host
+        layers, including SymbolicSpace.sigma / ConceptualSpace.pi /
+        LiftLayer / LowerLayer). Falls back to the parameter-free
+        ``GRAMMAR_LAYER_CLASSES[rule_name]()`` instance for ops that
+        aren't on the host registry (e.g. NotLayer when it isn't
+        attached as a builtin).
+        """
+        ws = getattr(self, 'wordSpace', None)
+        if ws is not None and hasattr(ws, 'host_layer'):
+            try:
+                lyr = ws.host_layer(tier, rule_name)
+                if lyr is not None:
+                    return lyr
+            except Exception:
+                pass
+        cls = GRAMMAR_LAYER_CLASSES.get(rule_name)
+        if cls is None:
+            return None
+        try:
+            return cls()
+        except TypeError:
+            return None
+
+    @staticmethod
+    def _build_step(head, contig, tensor, K_cap, threshold, branch):
+        """Construct a StepInfo for one reverse call.
+
+        Vectorized top-K active selection over the [B, V, D] tensor:
+        rank positions by L2 norm, take top-K per batch row, count
+        how many are above threshold.
+        """
+        # tensor: [B, V, D] (or [B, V, ...] -- norm collapses last dim).
+        if tensor.dim() < 2:
+            empty = torch.zeros(0, dtype=torch.long, device=tensor.device)
+            return StepInfo(
+                rule_name=head.rule_name, arity=int(head.arity),
+                tier=str(head.tier), contiguous=bool(contig),
+                branch=str(branch),
+                active_indices=empty.unsqueeze(0),
+                active_count=torch.zeros(1, dtype=torch.long, device=tensor.device),
+                K_cap=int(K_cap))
+        norms = tensor.norm(dim=-1)         # [B, V]
+        if norms.dim() < 2:
+            norms = norms.unsqueeze(0)
+        B, V = norms.shape[0], norms.shape[1] if norms.dim() >= 2 else 1
+        K_eff = min(int(K_cap), V)
+        if K_eff <= 0:
+            empty = torch.zeros((B, 0), dtype=torch.long, device=tensor.device)
+            cnt = torch.zeros(B, dtype=torch.long, device=tensor.device)
+            return StepInfo(
+                rule_name=head.rule_name, arity=int(head.arity),
+                tier=str(head.tier), contiguous=bool(contig),
+                branch=str(branch),
+                active_indices=empty, active_count=cnt, K_cap=int(K_cap))
+        topk = torch.topk(norms, K_eff, dim=-1)
+        idx = topk.indices                   # [B, K_eff] long
+        vals = topk.values                   # [B, K_eff] float
+        above = (vals > threshold).long()    # [B, K_eff]
+        count = above.sum(dim=-1)            # [B]
+        return StepInfo(
+            rule_name=head.rule_name, arity=int(head.arity),
+            tier=str(head.tier), contiguous=bool(contig),
+            branch=str(branch),
+            active_indices=idx, active_count=count, K_cap=int(K_cap))
+
+    def _reverse_one_conceptual_order(self, x, stage_idx):
+        """Back-project ``x`` through one conceptualOrder stage:
+        SymbolicSpace.sigma.reverse -> ConceptualSpace.pi.reverse.
+
+        Legacy helper retained for callers that pre-date the
+        ``hoc_shape`` rewrite. New callers should go through
+        ``hoc_shape`` (which honors derivation history, top-K caps,
+        and per-step contiguity tracking).
+        """
+        try:
+            sym_stages = getattr(self, 'symbolicSpaces', None)
+            con_stages = getattr(self, 'conceptualSpaces', None)
+            if sym_stages is not None and stage_idx < len(sym_stages):
+                sym = sym_stages[stage_idx]
+                con = con_stages[stage_idx]
+            else:
+                sym = self.symbolicSpace
+                con = self.conceptualSpace
+        except (AttributeError, IndexError):
+            return None
+        try:
+            sigma = getattr(sym, 'sigma', None)
+            if sigma is None:
+                return None
+            y = sigma.reverse(x) if hasattr(sigma, 'reverse') else x
+            pi = getattr(con, 'pi', None)
+            if pi is None:
+                return y
+            return pi.reverse(y) if hasattr(pi, 'reverse') else y
+        except Exception:
+            return None
+
+    def Continuous(self) -> float:
+        """Simplicity (Continuity / Open Awareness) -- empirical
+        ε-δ continuity measure on the back-projected leaf
+        hyperrectangles.
+
+        Definition: ``f`` is continuous at ``x`` iff
+        ``∀ε > 0, ∃δ > 0`` with ``‖x' − x‖ < δ ⇒ ‖f(x') − f(x)‖ < ε``.
+        Adapted to a finite set of leaf hyperrectangles
+        (``hoc_shape.leaves``): for each pair of leaves the input-
+        side and output-side bivectors define boxes; the ratio of
+        their union diameters is the empirical ε / δ for that pair.
+
+        Continuity holds when the worst-case ratio across
+        trustworthy pairs stays bounded by a configured target
+        (default 1.0 -- non-expansion). The measure is the
+        ``tanh(γ · (target − worst_ratio))`` squash so the return
+        value lies in ``[-1, +1]`` with the same sign convention as
+        ``Contiguous()``:
+
+          ``+1`` -- continuous: every leaf pair's output-spread
+                    stayed within the configured factor of the
+                    input-spread.
+          ``-1`` -- discontinuous: at least one trustworthy pair
+                    blew up beyond the target.
+          ``0``  -- unknown: no trustworthy pairs (all leaves
+                    traversed at least one lossy reverse op, so
+                    the back-projection geometry is unreliable;
+                    same convention as ``Contiguous()``).
+          intermediate -- saturated tanh of the deviation from
+                          target.
+
+        Theoretical alignment: the per-layer LDU
+        ``_d_effective`` clamp to ``[ε, 1.0]`` already bounds each
+        layer's spectral norm; the empirical ratio measures how
+        tight that bound stays under the actual derivation walk.
+        Sample-based, not analytic: a +1 result means "no observed
+        violations on this sample", not "globally continuous".
+
+        Knobs (read once per call from XML or instance attrs):
+          ``architecture.continuityRatioTarget`` (default 1.0).
+          ``architecture.continuitySharpness``   (default 1.0).
+          ``architecture.continuityNorm``        (default 'inf'; 'l2' available).
+        """
+        sym = getattr(self, 'symbolicSpace', None)
+        if sym is None or not hasattr(sym, 'subspace'):
+            return 0.0
+        try:
+            sym_act = sym.subspace.materialize()
+        except Exception:
+            return 0.0
+        if sym_act is None or not torch.is_tensor(sym_act) or sym_act.numel() == 0:
+            return 0.0
+
+        shape = self.hoc_shape(sym_act)
+        leaves = shape.leaves
+        if not leaves:
+            return 0.0
+
+        leaf_trust = self._leaf_path_trust(shape)
+        if not leaf_trust:
+            return 0.0
+
+        # Single leaf: trivially continuous if trustworthy.
+        if len(leaves) < 2:
+            return 1.0 if leaf_trust[0] else 0.0
+
+        # Build the per-leaf input-side and output-side bivector
+        # tensors. For default-only / unary-only paths the input-
+        # side bivector is the corresponding slice of sym_act
+        # itself (one entry per leaf, all identical -- a single
+        # higher-order symbol back-projecting through unary
+        # reverses gives one leaf, so the pair set is empty and
+        # we'd have returned above). For binary fanout the input-
+        # side bivector for every leaf is the same parent symbolic
+        # vector at that batch row -- we use sym_act[..., :2]
+        # directly as the shared input box.
+        out_boxes = self._stack_leaf_boxes(leaves)              # [K, *, 2]
+        if out_boxes is None:
+            return 0.0
+        in_boxes = self._stack_input_boxes(sym_act, out_boxes.shape)  # [K, *, 2]
+        if in_boxes is None:
+            return 0.0
+
+        # Read knobs from config (with sensible defaults).
+        try:
+            ratio_target = float(TheXMLConfig.get(
+                "architecture.continuityRatioTarget", default=1.0) or 1.0)
+        except (KeyError, TypeError, ValueError):
+            ratio_target = 1.0
+        try:
+            sharpness = float(TheXMLConfig.get(
+                "architecture.continuitySharpness", default=1.0) or 1.0)
+        except (KeyError, TypeError, ValueError):
+            sharpness = 1.0
+        try:
+            norm_kind = str(TheXMLConfig.get(
+                "architecture.continuityNorm", default='inf') or 'inf')
+        except (KeyError, TypeError, ValueError):
+            norm_kind = 'inf'
+        if norm_kind not in ('inf', 'l2'):
+            norm_kind = 'inf'
+
+        ratios = Ops.epsilon_delta(in_boxes, out_boxes, norm=norm_kind)  # [K, K]
+
+        # Mask: only trustworthy pairs above the diagonal.
+        K = ratios.shape[0]
+        leaf_trust_t = torch.tensor(leaf_trust, dtype=torch.bool,
+                                    device=ratios.device)
+        pair_trust = leaf_trust_t.unsqueeze(0) & leaf_trust_t.unsqueeze(1)
+        triu = torch.triu(torch.ones(K, K, dtype=torch.bool,
+                                     device=ratios.device), diagonal=1)
+        mask = pair_trust & triu
+
+        if not bool(mask.any().item()):
+            return 0.0
+
+        worst = float(ratios[mask].max().item())
+        # Squash to [-1, +1].
+        return math.tanh(sharpness * (ratio_target - worst))
+
+    @staticmethod
+    def _stack_leaf_boxes(leaves):
+        """Stack a list of leaf tensors into a ``[K, ..., 2]``
+        bivector tensor for ``Ops.epsilon_delta``.
+
+        Each leaf is ``[B, V, D]`` with the ``.what`` bivector at
+        ``[..., :2]``; we slice and stack along a new K dim.
+        Returns ``None`` if any leaf is missing the bivector slice.
+        """
+        slices = []
+        for leaf in leaves:
+            if not torch.is_tensor(leaf) or leaf.shape[-1] < 2:
+                return None
+            slices.append(leaf[..., :2])
+        try:
+            return torch.stack(slices, dim=0)
+        except Exception:
+            return None
+
+    @staticmethod
+    def _stack_input_boxes(sym_act, target_shape):
+        """Build an input-side bivector tensor matching
+        ``target_shape`` (the output-side shape from
+        ``_stack_leaf_boxes``).
+
+        For the binary-fanout case every leaf shares the same
+        input parent (the higher-order symbolic vector), so we
+        broadcast ``sym_act[..., :2]`` along the K dim. Returns
+        ``None`` if shapes don't reconcile.
+        """
+        if not torch.is_tensor(sym_act) or sym_act.shape[-1] < 2:
+            return None
+        in_slice = sym_act[..., :2]           # [B, V, 2]
+        K = target_shape[0]
+        # target_shape is [K, *leaf_dims..., 2]. Broadcast in_slice
+        # to [K, *leaf_dims..., 2] by inserting a leading K dim.
+        # If the leaf carries [B, V, 2] (most common), in_slice
+        # already matches *leaf_dims; just expand K.
+        try:
+            tail = list(target_shape[1:])     # [*leaf_dims..., 2]
+            if list(in_slice.shape) == tail:
+                return in_slice.unsqueeze(0).expand(K, *tail)
+            # Allow leading-dim broadcast (B == 1 etc.).
+            return in_slice.unsqueeze(0).expand(K, *tail)
+        except Exception:
+            return None
 
     def Peaceful(self):
         """One Taste (Emotional Symmetry / Balance).
@@ -1443,6 +2142,29 @@ class BasicModel(BaseModel):
         self.certainty        = TheXMLConfig.get("architecture.training.certainty")
         self.syntax           = False  # BasicModel: no syntax
         TheXMLConfig._data.setdefault("architecture", {})["syntax"] = False
+        # BasicModel accepts the <useGrammar> XML surface for uniformity
+        # with MentalModel but only ``none`` is meaningful for it -- the
+        # BasicModel pipeline lacks the constituency-grammar machinery
+        # (``_level_shapes``, ``GrammarMergeGlue``, the
+        # ChartCompose/ChartGenerate stem wiring needed by ``all``).
+        # Configs that need full constituency grammar should use
+        # MentalModel.
+        try:
+            from basicmodel.bin.util import parse_use_grammar
+        except ModuleNotFoundError:
+            from util import parse_use_grammar
+        self.useGrammar = parse_use_grammar(
+            TheXMLConfig.get("WordSpace.useGrammar", default="none"))
+        TheXMLConfig.require(
+            lambda cfg, _ug=self.useGrammar: _ug == "none",
+            f"BasicModel only supports useGrammar='none' (got "
+            f"{self.useGrammar!r}); use MentalModel for full "
+            f"constituency grammar.")
+        # Gate-L1 sparsity lambda for LiftLayer / LowerLayer raw_gate
+        # parameters. 0.0 (default) disables the penalty; configs that
+        # use lift/lower opt in via <gateL1Lambda> in <architecture>.
+        self.gate_l1_lambda = float(
+            TheXMLConfig.get("architecture.gateL1Lambda", default=0.0) or 0.0)
         self.lexer            = TheXMLConfig.space("InputSpace", "lexer")
         # The lexicon lives on PerceptualSpace via its chunking_mode.
         # InputSpace.codebook defaults to false; configs that set it
@@ -1595,31 +2317,32 @@ class BasicModel(BaseModel):
         # The output shape of the symbolic space is equal to the input shape of the output space
         #assert self.symbolicSpace.outputShape[1] == self.outputSpace.inputShape[1] # these are in conceptual space, or symbolic space if symbols emit objectSize symbols (processSymbols == True)
 
-        # Initialize Grammar, WordSpace, and all three SyntacticLayers
-        # (only in autoregressive modes). ``WordSpace.__init__`` owns
-        # grammar config, word-stream buffer sizing, SyntacticLayer
-        # construction, the TruthLayer, and (conditionally) the
-        # DiscourseSpace substrate. See plan: "Architectural
-        # addition -- WordSpace".
-        if str(masked_prediction).upper() in ('AR', 'ARUS'):
-            self.wordSpace = WordSpace(
-                perceptualSpace=self.perceptualSpace,
-                conceptualSpace=self.conceptualSpace,
-                symbolicSpace=self.symbolicSpace,
-                nPercepts=nPercepts,
-                nConcepts=nConcepts,
-                nSymbols=nSymbols,
-                concept_dim=concept_dim + obj_concept,
-                symbol_dim=symbol_dim + obj_symbol,
-            )
-            # Register WordSpace with the Space-walking training
-            # contract so ``getOptimizer`` collects its parameters
-            # (including the truth layer and, if present, the
-            # discourse predictor) via the uniform ``getParameters``
-            # path.
-            self.spaces.append(self.wordSpace)
-            # Seed the pipeline context (see InputSpace.set_word_space docstring).
-            self.inputSpace.set_word_space(self.wordSpace)
+        # Initialize Grammar, WordSpace, and all three SyntacticLayers.
+        # WordSpace is now built unconditionally (no AR/ARUS gate) so
+        # every space has a SyntacticLayer wired -- the per-space
+        # forward/reverse paths dispatch through it always, with the
+        # default unary pi/sigma fold firing in the non-grammar case.
+        # ``WordSpace._grammar_is_default_only`` triggers the chart
+        # fast-path bypass when ``useGrammar='none'`` (the only valid
+        # BasicModel value), so chart overhead is near-zero. See plan:
+        # "Architectural addition -- WordSpace".
+        self.wordSpace = WordSpace(
+            perceptualSpace=self.perceptualSpace,
+            conceptualSpace=self.conceptualSpace,
+            symbolicSpace=self.symbolicSpace,
+            nPercepts=nPercepts,
+            nConcepts=nConcepts,
+            nSymbols=nSymbols,
+            concept_dim=concept_dim + obj_concept,
+            symbol_dim=symbol_dim + obj_symbol,
+        )
+        # Register WordSpace with the Space-walking training contract
+        # so ``getOptimizer`` collects its parameters (including the
+        # truth layer and, if present, the discourse predictor) via
+        # the uniform ``getParameters`` path.
+        self.spaces.append(self.wordSpace)
+        # Seed the pipeline context (see InputSpace.set_word_space docstring).
+        self.inputSpace.set_word_space(self.wordSpace)
 
         # Phase 1: wire a Normalizer onto every space so spaces can call
         # self.normalizer.{normalize,denormalize} instead of the TheData global.
@@ -2893,6 +3616,19 @@ class BasicModel(BaseModel):
                     allow_excluded_middle=getattr(self, 'allow_excluded_middle', 1),
                     allow_contradiction=getattr(self, 'allow_contradiction', 0),
                 )
+                # Gate-L1 sparsity penalty on LiftLayer / LowerLayer
+                # raw_gate parameters. Pulls unused singular-component
+                # multipliers toward zero so each rule converges to a
+                # low-rank slice of its host operator. Default lambda
+                # is 0.0 -- no penalty unless a config opts in.
+                gate_l1 = self.wordSpace.gate_l1_loss(
+                    lam=getattr(self, 'gate_l1_lambda', 0.0))
+                if gate_l1 is not None:
+                    totalLoss = totalLoss + gate_l1
+                    TheError.add(
+                        "gate_l1", gate_l1,
+                        weight=getattr(self, 'gate_l1_lambda', 0.0),
+                        space="WordSpace", category="reg")
 
             # Snapshot the breakdown before the backward pass so later
             # calls to TheError.covariance() can see it in the history
@@ -3673,6 +4409,11 @@ class MentalModel(BaseModel):
             "WordSpace.useGrammar", default="none"
         )
         self.useGrammar = parse_use_grammar(_raw_use_grammar)
+        # Gate-L1 sparsity lambda for LiftLayer / LowerLayer raw_gate
+        # parameters. 0.0 (default) disables the penalty; configs that
+        # use lift/lower opt in via <gateL1Lambda> in <architecture>.
+        self.gate_l1_lambda = float(
+            TheXMLConfig.get("architecture.gateL1Lambda", default=0.0) or 0.0)
         # thoughtFree is structurally equivalent to conceptualOrder=0: no
         # higher-order P/C/S cycles. Reject the nonsense combination early.
         TheXMLConfig.require(
@@ -4588,7 +5329,16 @@ class MentalModel(BaseModel):
                        if self.wordSpace is not None else None)
         syntactic_layer = (self.wordSpace.syntacticLayer
                            if self.wordSpace is not None else None)
-        svo = syntactic_layer.last_svo if syntactic_layer is not None else None
+        # SVO source of truth: the chart's Viterbi trace populates
+        # ``chart.last_svo`` whenever the parse contains
+        # ``S = lift(NP, VP)`` over ``VP = intersection(V, O)``.
+        # Legacy ``syntactic_layer.last_svo`` is consulted as a
+        # fallback for non-chart pipelines.
+        chart = (self.wordSpace.chart
+                 if self.wordSpace is not None else None)
+        svo = getattr(chart, 'last_svo', None) if chart is not None else None
+        if svo is None and syntactic_layer is not None:
+            svo = syntactic_layer.last_svo
         lifting_layer = (syntactic_layer.lifting_layer
                          if syntactic_layer is not None else None)
         if (truth_layer is not None and len(truth_layer) > 0

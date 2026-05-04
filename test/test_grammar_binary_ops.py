@@ -22,7 +22,6 @@ _project = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_project / "bin"))
 
 from Layers import (
-    ContiguousLayer,
     GrammarLayer,
     IntersectionLayer,
     NonLayer,
@@ -38,29 +37,35 @@ class TestUnaryGrammarLayers(unittest.TestCase):
 
     def test_not_compose_decompose_roundtrip(self):
         layer = NotLayer()
+        # NotLayer operates on the materialized muxed event tensor
+        # [B, V, nWhat + nWhere + nWhen]; the .what bivector [pos, neg]
+        # is at [..., :2] and nWhere / nWhen channels follow. Negation
+        # swaps the bivector pair and passes through the rest.
         x = torch.randn(4, 3, 6)
         y = layer.compose(x)
         self.assertEqual(y.shape, x.shape)
-        # NotLayer is self-inverse: bivector swap of [pos, neg] dims.
+        # Bivector swapped, rest preserved.
+        self.assertTrue(torch.allclose(y[..., :2], x[..., :2].flip(dims=(-1,)), atol=1e-5))
+        self.assertTrue(torch.allclose(y[..., 2:], x[..., 2:], atol=1e-5))
+        # Self-inverse: pos/neg swap applied twice is identity.
         self.assertTrue(torch.allclose(layer.decompose(y), x, atol=1e-5))
 
-    def test_non_compose_runs_decompose_lossy_identity(self):
+    def test_non_compose_decompose_self_inverse(self):
+        """NonLayer: per-pole bivector complement [1-pos, 1-neg].
+        Self-inverse on each pole, where/when channels pass through."""
         layer = NonLayer()
-        x = torch.rand(4, 3, 6) * 2 - 1
+        x = torch.rand(4, 3, 6)        # bivector poles in [0, 1] domain
         y = layer.compose(x)
         self.assertEqual(y.shape, x.shape)
-        # Lossy: decompose returns the parent unchanged (best identity
-        # recovery without auxiliary structure).
-        recovered = layer.decompose(y)
-        self.assertTrue(torch.equal(recovered, y))
+        # Bivector poles complemented at [..., :2]; rest unchanged.
+        self.assertTrue(torch.allclose(y[..., :2], 1.0 - x[..., :2], atol=1e-5))
+        self.assertTrue(torch.allclose(y[..., 2:], x[..., 2:], atol=1e-5))
+        # Self-inverse: non(non(x)) == x.
+        self.assertTrue(torch.allclose(layer.decompose(y), x, atol=1e-5))
 
-    def test_contiguous_compose_decompose_lossy(self):
-        layer = ContiguousLayer(nInput=6)
-        x = torch.rand(4, 3, 6) * 2 - 1
-        y = layer.compose(x)
-        self.assertEqual(y.shape, x.shape)
-        recovered = layer.decompose(y)
-        self.assertTrue(torch.equal(recovered, y))
+    # FusionLayer / ContiguousLayer were retired 2026-05-04. The
+    # operator was a duplicate of DisjunctionLayer at S-tier --
+    # migrate to ``disjunction(S, S)`` (post-codebook scalar max).
 
 
 class TestPiLayerBinary(unittest.TestCase):
@@ -152,66 +157,87 @@ class TestSigmaLayerBinary(unittest.TestCase):
 
 
 class TestIntersectionUnionBinary(unittest.TestCase):
-    """The grammar-facing wrappers delegate compose/decompose to their
-    inner Pi/Sigma layers and preserve shape and invertibility."""
+    """IntersectionLayer / UnionLayer are L-tier (logical) binary
+    lattice min/max on bivector activation. They share kernels
+    with ConjunctionLayer / DisjunctionLayer (S-tier counterparts
+    on post-codebook scalar activation); the L-vs-S distinction is
+    operand domain (bivector vs scalar), not which space holds them.
+    """
 
     def setUp(self):
         torch.manual_seed(0)
 
-    def test_intersection_compose_delegates_and_roundtrips(self):
-        pi = PiLayer(nInput=4, nOutput=4, invertible=True, nonlinear=True)
-        pi.set_sigma(0.0)
-        layer = IntersectionLayer(pi)
+    def test_intersection_layer_is_L_tier(self):
+        layer = IntersectionLayer()
+        self.assertEqual(layer.tier, 'L')
+
+    def test_union_layer_is_L_tier(self):
+        layer = UnionLayer()
+        self.assertEqual(layer.tier, 'L')
+
+    def test_intersection_compose_is_min_kernel(self):
+        from Layers import Ops
+        layer = IntersectionLayer()
         left = torch.rand(2, 5, 4) * 1.6 - 0.8
         right = torch.rand(2, 5, 4) * 1.6 - 0.8
         y = layer.compose(left, right)
-        # Same as direct PiLayer.compose.
-        y_direct = pi.compose(left, right)
-        self.assertTrue(torch.allclose(y, y_direct, atol=1e-6))
+        # L-tier intersection is RadMin (same-sign min magnitude,
+        # zero passthrough) via Ops.intersection.
+        self.assertTrue(torch.allclose(y, Ops.intersection(left, right), atol=1e-6))
+        # Idempotent on the diagonal.
+        diag = layer.compose(left, left)
+        self.assertTrue(torch.allclose(diag, left, atol=1e-6))
 
-        l_rec, r_rec = layer.decompose(y)
-        y_rec = layer.compose(l_rec, r_rec)
-        err = torch.norm(y - y_rec) / torch.norm(y).clamp_min(1e-8)
-        self.assertLess(err.item(), 1e-4)
+    def test_intersection_decompose_pseudo_inverse(self):
+        layer = IntersectionLayer()
+        parent = torch.rand(2, 5, 4) * 1.6 - 0.8
+        l_rec, r_rec = layer.decompose(parent)
+        # Lossy fold: pseudo-inverse returns parent for both children.
+        self.assertTrue(torch.equal(l_rec, parent))
+        self.assertTrue(torch.equal(r_rec, parent))
+        # Recomposing the pseudo-inverse with itself is idempotent.
+        self.assertTrue(torch.allclose(
+            layer.compose(l_rec, r_rec), parent, atol=1e-6))
 
-    def test_union_compose_delegates_and_roundtrips(self):
-        sig = SigmaLayer(nInput=4, nOutput=4, naive=False,
-                         invertible=True, nonlinear=True)
-        sig.set_sigma(0.0)
-        layer = UnionLayer(sig)
+    def test_union_compose_is_max_kernel(self):
+        from Layers import Ops
+        layer = UnionLayer()
         left = torch.rand(2, 5, 4) * 1.6 - 0.8
         right = torch.rand(2, 5, 4) * 1.6 - 0.8
         y = layer.compose(left, right)
-        y_direct = sig.compose(left, right)
-        self.assertTrue(torch.allclose(y, y_direct, atol=1e-6))
+        # L-tier union is RadMax (same-sign max magnitude, zero
+        # passthrough) via Ops.union.
+        self.assertTrue(torch.allclose(y, Ops.union(left, right), atol=1e-6))
+        diag = layer.compose(left, left)
+        self.assertTrue(torch.allclose(diag, left, atol=1e-6))
 
-        l_rec, r_rec = layer.decompose(y)
-        y_rec = layer.compose(l_rec, r_rec)
-        err = torch.norm(y - y_rec) / torch.norm(y).clamp_min(1e-8)
-        self.assertLess(err.item(), 1e-4)
+    def test_union_decompose_pseudo_inverse(self):
+        layer = UnionLayer()
+        parent = torch.rand(2, 5, 4) * 1.6 - 0.8
+        l_rec, r_rec = layer.decompose(parent)
+        self.assertTrue(torch.equal(l_rec, parent))
+        self.assertTrue(torch.equal(r_rec, parent))
 
 
 class TestComposeGradients(unittest.TestCase):
     """Backprop reaches both child operands through compose."""
 
     def test_intersection_grad_flows_to_both_children(self):
-        pi = PiLayer(nInput=4, nOutput=4, invertible=True, nonlinear=True)
-        pi.set_sigma(0.0)
-        layer = IntersectionLayer(pi)
+        layer = IntersectionLayer()
         left = (torch.rand(2, 3, 4) * 1.6 - 0.8).requires_grad_(True)
         right = (torch.rand(2, 3, 4) * 1.6 - 0.8).requires_grad_(True)
         y = layer.compose(left, right)
         y.sum().backward()
         self.assertIsNotNone(left.grad)
         self.assertIsNotNone(right.grad)
+        # Lattice min routes gradient to whichever operand was the
+        # smaller magnitude per cell; both should receive nonzero
+        # gradient on a random batch.
         self.assertGreater(left.grad.abs().sum().item(), 0.0)
         self.assertGreater(right.grad.abs().sum().item(), 0.0)
 
     def test_union_grad_flows_to_both_children(self):
-        sig = SigmaLayer(nInput=4, nOutput=4, naive=False,
-                         invertible=True, nonlinear=True)
-        sig.set_sigma(0.0)
-        layer = UnionLayer(sig)
+        layer = UnionLayer()
         left = (torch.rand(2, 3, 4) * 1.6 - 0.8).requires_grad_(True)
         right = (torch.rand(2, 3, 4) * 1.6 - 0.8).requires_grad_(True)
         y = layer.compose(left, right)

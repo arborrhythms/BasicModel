@@ -44,7 +44,7 @@ from Layers import VectorQuantize  # moved from Spaces.py (April 2026 perf pass)
 from Layers import GrammarLayer, NotLayer, NonLayer, IntersectionLayer, UnionLayer
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, LiftingLayer, LoweringLayer, ChunkLayer
 from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
-from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer, ContiguousLayer
+from Layers import SortingLayer, TruthLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from Layers import Error
 
 
@@ -6894,23 +6894,24 @@ class ConceptualSpace(Space):
             return subspace
         self.subspace.copy_context(subspace)
         vspace = subspace
+        # SyntacticLayer is unconditional: its default rule fires
+        # ``PiLayer.forward(x)`` (the multiplicative log-domain
+        # AND-fold), exact mathematical replacement for the legacy
+        # ``y = self.pi(x)`` call. When the chart populates a
+        # C-tier rule sequence, the dispatcher fires those instead;
+        # in the default-only case (BasicModel-equivalent),
+        # ``WordSpace.compose`` skipped the chart so ``current_rules``
+        # is empty and the cursor falls through to ``default_rule``.
         x = self.forwardBegin(vspace, returnVectors=True)
-        # Pi is the fixed concept-space lift; runs unconditionally.
-        y = self.pi(x)
-        # SyntacticLayer applies grammar rules on top of the lifted
-        # representation. Binary rules (intersection/union) have
-        # already been applied chart-side; this dispatches any unary
-        # C-tier rule the chart selected. No-op when the chart hasn't
-        # written rule choices for this tier.
-        ws_for_chart = getattr(vspace, 'wordSpace', None)
-        chart_rules = (
-            ws_for_chart.current_rules.get('C')
-            if (ws_for_chart is not None
-                and getattr(ws_for_chart, 'current_rules', None))
-            else None)
-        if chart_rules and getattr(self, 'syntacticLayer', None) is not None:
-            vspace.set_event(y)
-            self.syntacticLayer.forward(vspace)
+        if getattr(self, 'syntacticLayer', None) is None:
+            # Standalone-space unit tests construct ConceptualSpace
+            # without a WordSpace; the production path always wires
+            # a SyntacticLayer (Models.py -- BasicModel/MentalModel
+            # both build WordSpace unconditionally now).
+            y = self.pi(x)
+        else:
+            vspace.set_event(x)
+            vspace = self.syntacticLayer.forward(vspace)
             y = vspace.materialize()
         # STM-residual bias (once per sentence; wordSpace gates itself).
         # disc.prime() casts into concept_dim, so the bias must be added
@@ -6975,25 +6976,19 @@ class ConceptualSpace(Space):
             return subspace
         self.subspace.copy_context(subspace)
         vspace = subspace
+        # SyntacticLayer is unconditional: its default rule fires
+        # ``PiLayer.reverse(y)`` (or two-pass ergodic ``_pi_reverse``
+        # via Phase 3 adapter), exact mathematical replacement for
+        # the legacy ``y = self._pi_reverse(y)`` call. When the chart
+        # populates a C-tier generate sequence, the dispatcher fires
+        # those instead.
         y = self.reverseBegin(vspace, returnVectors=True)
-        if self.processSymbols:
-            y = self.dereference(y)
-        # Per-space SyntacticLayer reverse dispatch (2026-05-01 §5).
-        # Routes through syntacticLayer when generate_rules is
-        # populated; otherwise falls back to the canonical
-        # ``self._pi_reverse`` (handles two-pass ergodic mode).
-        ws_for_chart = getattr(vspace, 'wordSpace', None)
-        gen_rules = (
-            ws_for_chart.generate_rules.get('C')
-            if (ws_for_chart is not None
-                and getattr(ws_for_chart, 'generate_rules', None))
-            else None)
-        if gen_rules and getattr(self, 'syntacticLayer', None) is not None:
-            vspace.set_event(y)
-            self.syntacticLayer.reverse(vspace)
-            y = vspace.materialize()
-        else:
+        if getattr(self, 'syntacticLayer', None) is None:
             y = self._pi_reverse(y)
+        else:
+            vspace.set_event(y)
+            vspace = self.syntacticLayer.reverse(vspace)
+            y = vspace.materialize()
         self.concepts = y.detach()
         vspace = self.reverseEnd(y, returnVectors=True)
         vspace.normalize("percepts", target="what")   # range check
@@ -7099,12 +7094,12 @@ class SymbolicSpace(Space):
 
         # Propositional negation slot: NEG sits AFTER Sigma at the
         # SymbolicSpace output, gated on ``rule_probability("not(S)")``.
-        # ``NotLayer`` is a parameter-free GrammarLayer subclass
-        # (rule_name="not", arity=1, invertible=True) that flips the
-        # bivalent symbol bivector. Same Layer-shaped interface as
-        # the parameterized fold operators — uniform invocation from
-        # both bottom-up forward gating and top-down SyntacticLayer
-        # dispatch.
+        # ``NotLayer`` operates on the ``.what`` bivector ``[B, V, 2]``
+        # -- the dispatcher (SpaceSyntacticLayer) reads
+        # ``subspace.what.getW()`` and feeds the bivector tensor in.
+        # Same Layer-shaped interface as the parameterized fold
+        # operators -- uniform invocation from both bottom-up forward
+        # gating and top-down SyntacticLayer dispatch.
         self.propositional_negation = NotLayer()
         self.layers.append(self.propositional_negation)
 
@@ -7206,12 +7201,13 @@ class SymbolicSpace(Space):
                          and self.discontinuity_lambda > 0.0),
         )
         self._impenetrable = self._build_impenetrable_layer()
-        # ContiguousLayer (one-pointedness fusion). Sits in the symbolic
-        # pipeline ahead of NotLayer; gated by the Contiguous(S) grammar
-        # rule firing (TheGrammar.thought_free pins it on). Constructed
-        # unconditionally so the dispatch path doesn't have to test for
-        # its existence.
-        self._contiguous_layer = ContiguousLayer(nSymbolDim, nSymbolDim)
+        # FusionLayer / ContiguousLayer eager construction was retired
+        # 2026-05-04: the operator was a duplicate of DisjunctionLayer
+        # at S-tier (same kernel ``Ops.union`` on the codebook
+        # activation bivector). Grammars that fired ``Fusion(S, S)`` /
+        # ``Contiguous(S)`` should migrate to ``disjunction(S, S)``,
+        # which the chart's lazy-build path resolves via the
+        # ``'disjunction'`` entry in ``GRAMMAR_LAYER_CLASSES``.
 
     def _build_object_basis(self):
         """Event is a writable Tensor -- codebook lives on .what."""
@@ -7802,27 +7798,28 @@ class SymbolicSpace(Space):
             return vspace
         vspace = self.forwardBegin(vspace)
         act_pre = vspace.materialize()                    # [B, N, concept_dim]
-        # Per-space SyntacticLayer dispatch (2026-05-01 refactor §5).
-        # Routes through syntacticLayer when ``wordSpace.current_rules['S']``
-        # is populated; otherwise falls back to a single sigma fold (the
-        # legacy 3-step `p_uni` + `p_con` + `p_neg` cascade was removed
-        # along with the `*Forward`/`*Reverse` dispatch table -- the chart
-        # is the canonical source of multi-step rule selection now).
-        chart_rules_S = (
-            wordSpace.current_rules.get('S')
-            if (wordSpace is not None
-                and getattr(wordSpace, 'current_rules', None))
-            else None)
-        if chart_rules_S and getattr(self, 'syntacticLayer', None) is not None:
-            vspace.set_event(act_pre)
-            row_zero = (chart_rules_S[0]
-                        if chart_rules_S and isinstance(chart_rules_S[0], list)
-                        else chart_rules_S)
-            for _ in row_zero:
-                self.syntacticLayer.forward(vspace)
-            act = vspace.materialize()
-        else:
+        # SyntacticLayer is unconditional: its default rule fires
+        # ``SigmaLayer.forward(act_pre)`` (the additive OR-fold), exact
+        # mathematical replacement for the legacy ``self.sigma.forward``
+        # call. When the chart populates an S-tier rule sequence, fire
+        # one syntactic step per chart-rule entry (preserving the
+        # legacy ``for _ in row_zero`` cardinality). In the
+        # default-only case (BasicModel-equivalent), ``current_rules``
+        # is empty and we fire the default rule once.
+        if getattr(self, 'syntacticLayer', None) is None:
             act = self.sigma.forward(act_pre)
+        else:
+            chart_rules_S = (
+                wordSpace.current_rules.get('S')
+                if (wordSpace is not None
+                    and getattr(wordSpace, 'current_rules', None))
+                else None)
+            row_zero = self.syntacticLayer._row_zero_rules(chart_rules_S)
+            n_steps = max(1, len(row_zero))
+            vspace.set_event(act_pre)
+            for _ in range(n_steps):
+                vspace = self.syntacticLayer.forward(vspace)
+            act = vspace.materialize()
         if quantize:
             act = self.l1_proximal(act)                   # sparsity bias only
 
@@ -8037,25 +8034,27 @@ class SymbolicSpace(Space):
             act = wordSpace.reverseSymbols(act, self.subspace)
         if self.sortNetwork is not None:
             act = self.sortNetwork.reverse(act)
-        # Per-space SyntacticLayer reverse dispatch (2026-05-01 §5).
-        # Routes through syntacticLayer when ``generate_rules['S']`` is
-        # populated; otherwise falls back to a single sigma reverse
-        # via ``self._sigma_reverse`` (handles two-pass ergodic mode).
-        gen_rules_S = (
-            wordSpace.generate_rules.get('S')
-            if (wordSpace is not None
-                and getattr(wordSpace, 'generate_rules', None))
-            else None)
-        if gen_rules_S and getattr(self, 'syntacticLayer', None) is not None:
-            vspace.set_event(act)
-            row_zero = (gen_rules_S[0]
-                        if gen_rules_S and isinstance(gen_rules_S[0], list)
-                        else gen_rules_S)
-            for _ in row_zero:
-                self.syntacticLayer.reverse(vspace)
-            act = vspace.materialize()
-        else:
+        # SyntacticLayer is unconditional: its default rule fires
+        # ``SigmaLayer.reverse(act)`` (or two-pass ergodic
+        # ``_sigma_reverse`` via Phase 3 adapter), exact mathematical
+        # replacement for the legacy ``self._sigma_reverse(act)`` call.
+        # When the chart populates an S-tier generate sequence, fire
+        # one syntactic step per chart-rule entry. Default-only case
+        # fires the default rule once.
+        if getattr(self, 'syntacticLayer', None) is None:
             act = self._sigma_reverse(act)
+        else:
+            gen_rules_S = (
+                wordSpace.generate_rules.get('S')
+                if (wordSpace is not None
+                    and getattr(wordSpace, 'generate_rules', None))
+                else None)
+            row_zero = self.syntacticLayer._row_zero_rules(gen_rules_S)
+            n_steps = max(1, len(row_zero))
+            vspace.set_event(act)
+            for _ in range(n_steps):
+                vspace = self.syntacticLayer.reverse(vspace)
+            act = vspace.materialize()
         if self.codebook:
             self.subspace.set_event(act)
             result = self.reverseEnd(self.subspace)

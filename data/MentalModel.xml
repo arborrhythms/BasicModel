@@ -67,15 +67,149 @@
     <downwardGeneration>false</downwardGeneration>
 
     <language>
-      <!-- Step 6 of the lift / lower / bivector refactor: grammar is
-           loaded from data/grammar.cfg (explicit-op form) instead of
-           an inline <grammar> block.  The cfg path is resolved against
-           ProjectPaths.PROJECT_DIR (basicmodel/) when not absolute. -->
-      <grammarCfg>data/grammar.cfg</grammarCfg>
-      <!-- Start nonterminal for soft-reset detection. The grammar.cfg
-           path uses 'S' as the conventional root; matches the chart
-           compose category-id check in SyntacticLayer.compose. -->
+      <!-- English grammar (2026-05-05 rewrite). Inline XML form;
+           closed-class words (and / or / is / has / is-a / not)
+           act as op markers for conjunction / disjunction / equals
+           / part / not. -->
       <start>S</start>
+      <grammar>
+        <compose>
+          <symbols>
+            <!-- Sentence -->
+            <rule>S = NP</rule>
+            <rule>S = lift(NP, VP)</rule>
+            <rule>S = equals(NP, NP)</rule>      <!-- marker: "is" -->
+            <rule>S = equals(NP, AP)</rule>      <!-- marker: "is" -->
+            <rule>S = part(NP, NP)</rule>        <!-- markers: "has", "is-a" -->
+            <rule>S = not(S)</rule>              <!-- marker: "not" -->
+            <rule>S = conjunction(S, S)</rule>   <!-- marker: "and" -->
+            <rule>S = disjunction(S, S)</rule>   <!-- marker: "or" -->
+            <rule>S = query(NP, AP)</rule>
+            <rule>S = query(NP, NP)</rule>
+
+            <!-- Noun Phrase -->
+            <rule>NP = N</rule>
+            <rule>NP = AP</rule>
+            <rule>NP = conjunction(NP, NP)</rule>  <!-- marker: "and" -->
+            <rule>NP = disjunction(NP, NP)</rule>  <!-- marker: "or" -->
+
+            <!-- Verb Phrase -->
+            <rule>VP = V</rule>
+            <rule>VP = lower(ADV, VP)</rule>
+            <rule>VP = lift(MP, VP)</rule>
+            <rule>VP = lower(ADJ, VP)</rule>
+            <rule>VP = intersection(V, O)</rule>
+
+            <!-- Object -->
+            <rule>O = NP</rule>
+
+            <!-- Adjective Phrase -->
+            <rule>AP = lower(ADJ, NP)</rule>
+            <rule>AP = lower(ADJ, AP)</rule>
+            <rule>AP = lower(DET, NP)</rule>
+
+            <!-- Modal Phrase -->
+            <rule>MP = ADV</rule>
+            <rule>MP = ADV MP</rule>
+
+            <!-- Prepositional Phrase -->
+            <rule>PP = P NP</rule>
+
+            <!-- Post-hoc S-ops (rule-id targets for the runtime
+                 rule predictor; ops already used in derivational
+                 rules above are not re-listed here). -->
+            <rule>S = true(S)</rule>
+            <rule>S = false(S)</rule>
+            <rule>S = non(S)</rule>
+            <rule>S = intersection(S, S)</rule>
+            <rule>S = union(S, S)</rule>
+            <rule>S = swap(S, S)</rule>
+          </symbols>
+        </compose>
+        <generate>
+          <symbols>
+            <!-- Marker categories are *op-bound*, not surface-form-bound:
+                 EQUALS_MARK / PART_MARK / CONJ_MARK / DISJ_MARK /
+                 NOT_MARK / NON_MARK / QUERY_MARK. Each names the op
+                 whose syntactic-sugar slot it fills; the surface form
+                 ("is" / "has" / "and" / "or" / "not" / "non" / "?")
+                 is bound by a separate language-specific lexicon, so
+                 the same grammar productions work for English /
+                 Spanish / etc. without edits. -->
+
+            <!-- PROJECT-reverse: codebook lookup; reverse of S = NP. -->
+            <rule>NP = S</rule>
+
+            <!-- ===== Sentence-level reverses ===== -->
+
+            <!-- S = lift(NP, VP)          (no marker) -->
+            <rule>NP, VP = lift.reverse(S)</rule>
+
+            <!-- S = equals(NP, NP) -->
+            <rule>NP, EQUALS_MARK, NP = equals.reverse(S)</rule>
+
+            <!-- S = equals(NP, AP) -->
+            <rule>NP, EQUALS_MARK, AP = equals.reverse(S)</rule>
+
+            <!-- S = part(NP, NP) -->
+            <rule>NP, PART_MARK, NP = part.reverse(S)</rule>
+
+            <!-- S = not(S)                (unary, self-inverse) -->
+            <rule>NOT_MARK, S = not.reverse(S)</rule>
+
+            <!-- S = non(S)                (unary, self-inverse) -->
+            <rule>NON_MARK, S = non.reverse(S)</rule>
+
+            <!-- S = conjunction(S, S) -->
+            <rule>S, CONJ_MARK, S = conjunction.reverse(S)</rule>
+
+            <!-- S = disjunction(S, S) -->
+            <rule>S, DISJ_MARK, S = disjunction.reverse(S)</rule>
+
+            <!-- Query: QUERY_MARK is sentence-final ("?" in English;
+                 the lexicon may bind it to a different surface form
+                 in other languages). -->
+            <!-- S = query(NP, AP) -->
+            <rule>EQUALS_MARK, NP, AP, QUERY_MARK = query.reverse(S)</rule>
+
+            <!-- S = query(NP, NP) -->
+            <rule>EQUALS_MARK, NP, NP, QUERY_MARK = query.reverse(S)</rule>
+
+            <!-- ===== Noun-Phrase reverses ===== -->
+
+            <!-- NP = conjunction(NP, NP) -->
+            <rule>NP, CONJ_MARK, NP = conjunction.reverse(NP)</rule>
+
+            <!-- NP = disjunction(NP, NP) -->
+            <rule>NP, DISJ_MARK, NP = disjunction.reverse(NP)</rule>
+
+            <!-- ===== Verb-Phrase reverses ===== -->
+
+            <!-- VP = lower(ADV, VP)       (no marker) -->
+            <rule>ADV, VP = lower.reverse(VP)</rule>
+
+            <!-- VP = lift(MP, VP)         (no marker) -->
+            <rule>MP, VP = lift.reverse(VP)</rule>
+
+            <!-- VP = lower(ADJ, VP)       (no marker) -->
+            <rule>ADJ, VP = lower.reverse(VP)</rule>
+
+            <!-- VP = intersection(V, O)   (no marker; positional) -->
+            <rule>V, O = intersection.reverse(VP)</rule>
+
+            <!-- ===== Adjective-Phrase reverses ===== -->
+
+            <!-- AP = lower(ADJ, NP)       (no marker) -->
+            <rule>ADJ, NP = lower.reverse(AP)</rule>
+
+            <!-- AP = lower(ADJ, AP)       (no marker) -->
+            <rule>ADJ, AP = lower.reverse(AP)</rule>
+
+            <!-- AP = lower(DET, NP)       (no marker; determiner-headed) -->
+            <rule>DET, NP = lower.reverse(AP)</rule>
+          </symbols>
+        </generate>
+      </grammar>
       <interpretation>0.5</interpretation>
     </language>
   </WordSpace>

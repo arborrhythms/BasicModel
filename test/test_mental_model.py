@@ -97,24 +97,19 @@ class TestMentalModelForwardReverse(unittest.TestCase):
 class TestMentalModelGrammarConfiguration(unittest.TestCase):
     """MentalModel should expose the grammar configured by MentalModel.xml.
 
-    Step 6 of the lift / lower / bivector refactor flipped the loader
-    from an inline ``<grammar>`` block to ``<grammarCfg>data/grammar.cfg
-    </grammarCfg>`` (explicit-op form).  The cfg ships Layer-1 phrase-
-    structure productions plus Layer-2 post-hoc S-ops; the loader
-    flattens both into ``TheGrammar.rules`` (Layer-2 ops still need a
-    rule_id slot for the predictor / dispatcher).  This test asserts
-    structural shape, not the exact canonical list — the cfg's
-    contents are versioned in ``data/grammar.cfg`` and the literal
-    list would just be a duplicate.
+    The 2026-05-05 grammar rewrite moved the grammar from an external
+    ``data/grammar.cfg`` into an inline ``<grammar>`` block in
+    ``MentalModel.xml``.  This test asserts structural shape (every
+    dispatchable op the rule predictor relies on has a rule_id slot),
+    not the exact canonical list — the rules themselves are
+    versioned in MentalModel.xml.
     """
 
-    # S-tier op names that the cfg's [layer2] section guarantees as
-    # rule.method_name entries (post-hoc S-ops applied to formed
-    # S-states).  These are the dispatchable S-tier ops the existing
-    # rule predictor and tests rely on.
+    # S-tier op names the post-2026-05-05 grammar guarantees as
+    # rule.method_name entries.  Retired 2026-05-04: what, where,
+    # when, absorb, Contiguous, Fusion.
     REQUIRED_S_OPS = {
         'true', 'false', 'non', 'not',
-        'what', 'where', 'when',
         'conjunction', 'disjunction',
         'intersection', 'union',
         'lift', 'lower',

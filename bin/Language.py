@@ -26,7 +26,7 @@ from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
 from Layers import LinearLayer, InvertibleLinearLayer, AttentionLayer, AssociationLayer, MapppingLayer, ChunkLayer
 from Layers import CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon, Ops
-from Layers import SortingLayer, TruthLayer, LiftingLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer, ContiguousLayer
+from Layers import SortingLayer, TruthLayer, LiftingLayer, InterSentenceLayer, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from util import parse
 from collections import namedtuple as _namedtuple
 
@@ -91,14 +91,28 @@ def grammar_uses(rule_name):
 
 
 class Grammar:
-    """Single-tier (S) grammar rule catalog (post-rewrite, 2026-04-19).
+    """Multi-tier grammar rule catalog (P / C / S / L).
 
-    The C (conceptual) tier has been merged into S: all compositional
-    operations (not, part, intersection, union, lift, lower) are now S-tier
-    productions.  The P (perceptual) tier has been removed from the
-    grammar.
+    Tiers tag each rule with the space (or pseudo-space) that
+    dispatches it:
+      - ``P`` (perceptual) -- PerceptualSpace's SyntacticLayer.
+      - ``C`` (conceptual) -- ConceptualSpace's SyntacticLayer.
+        Bivector pre-codebook activation ``[B, V, 2]``.
+      - ``S`` (symbolic)   -- SymbolicSpace's SyntacticLayer.
+        Post-codebook activation: a scalar ``[B, V]`` per
+        prototype. S-tier ops (``conjunction``, ``disjunction``,
+        ``not``, ``lift``, ``lower``, ``part``, ``equals``,
+        ``query``, ``true``, ``false``, ``swap``, ``non``) are
+        monotonic functions on that scalar.
+      - ``L`` (logical)    -- pure logical primitives
+        (``intersection``, ``union``). 2026-05-05 directive: these
+        are lattice min/max on bivector activation; not owned by
+        any single space. The chart binds an L-tier op at whichever
+        space the operands live in (``intersection(C, C)`` binds at
+        C; ``intersection(S, S)`` would bind at S) -- the L tag is
+        layer-side classification, not a routing tier.
 
-    Owns the rule definitions parsed from XML config.  All learnable
+    Owns the rule definitions parsed from XML config. All learnable
     parameters and rule execution live on a single unified
     ``SyntacticLayer`` instance owned by ``WordSpace``.
     """
@@ -163,6 +177,15 @@ class Grammar:
         'percepts': 'P',
         'concepts': 'C',
         'symbols':  'S',
+        # 'L' (logical): tier marker for ops that are pure logical
+        # primitives (lattice min/max on bivector activation), not
+        # owned by any single space. Per the 2026-05-05 directive,
+        # ``intersection`` and ``union`` carry layer.tier='L' as
+        # semantic metadata; the dispatcher still binds them at
+        # whichever space's tier the grammar rule names (e.g.
+        # ``intersection(C, C)`` binds at C, ``intersection(S, S)``
+        # at S) -- the L tag is for classification, not for routing.
+        'logical':  'L',
     }
 
     def configure(self, grammar_dict):
@@ -506,8 +529,6 @@ class Grammar:
         Dormant defaults preserve existing pipeline behavior:
           - fold operators (intersection, union)  -> 1.0 (always fire)
           - negation-like ops (not, non)          -> 0.0 (don't fire)
-          - Contiguous(S)                         -> 1.0 if
-            ``thought_free`` else 0.0 (gated by Shamatha mode)
 
         These defaults match what the bottom-up Pi/Sigma layers do
         today (always run) and what the previously-absent NEG layer
@@ -520,8 +541,6 @@ class Grammar:
         learned = getattr(self, "_learned_rule_probs", None)
         if learned is not None and body in learned:
             return learned[body]
-        if body.startswith("Contiguous("):
-            return 1.0 if self.thought_free else 0.0
         if body.startswith("not(") or body.startswith("non("):
             return 0.0
         return 1.0
@@ -1782,6 +1801,13 @@ class Chart(nn.Module):
         # When no wordSpace / category_stack is wired, this is a no-op.
         self._populate_category_stack(word_space, B)
 
+        # SVO extraction for the universality (Golden Rule) test.
+        # Walks the derivation trace looking for ``S = lift(NP, VP)``
+        # over ``VP = intersection(V, O)`` and stashes the operand
+        # tensors on ``self.last_svo``. ``None`` when the trace
+        # doesn't contain that signature.
+        self.extract_svo()
+
         return composed, self.last_svo
 
     def _populate_category_stack(self, word_space, B):
@@ -2074,6 +2100,98 @@ class Chart(nn.Module):
                 stack.append((k, j, Cr))
         return traces
 
+    # ------------------------------------------------------------------
+    # SVO extraction for the universality (Golden Rule) test.
+    # ------------------------------------------------------------------
+    def extract_svo(self):
+        """Walk the Viterbi trace; find a top-level
+        ``S = lift(NP, VP)`` and the matching
+        ``VP = intersection(V, O)``; populate ``self.last_svo``
+        with the (subject, verb, object) operand tensors.
+
+        Sets ``self.last_svo`` to a 3-tuple ``(subject, verb, obj)``
+        each ``[B, 1, D]``, or ``None`` when no row's derivation
+        contains the SVO signature. Per-row miss is filled with the
+        zero vector so the tensor stays full-shape; callers that
+        need a per-row mask should consult ``self._svo_row_mask``
+        (``[B]`` bool, True iff that row had a valid extraction).
+
+        The 2026-05-05 grammar rewrite makes the object an explicit
+        ``O`` nonterminal projected from ``NP`` (rather than the
+        positional ``V NP`` merge), so the chart's parent rule_id
+        at the VP cell directly identifies which child is the
+        object -- no positional heuristic needed.
+        """
+        traces = self._derivation_trace
+        chart_vec = self._chart_vec
+        cat_idx = self._category_index or {}
+        if traces is None or chart_vec is None or not cat_idx:
+            self.last_svo = None
+            self._svo_row_mask = None
+            return None
+
+        np_id = cat_idx.get('NP')
+        vp_id = cat_idx.get('VP')
+        v_id  = cat_idx.get('V')
+        o_id  = cat_idx.get('O')
+        if None in (np_id, vp_id, v_id, o_id):
+            self.last_svo = None
+            self._svo_row_mask = None
+            return None
+
+        rules = TheGrammar.rules
+
+        def _matches(gid, lhs, method, rhs):
+            try:
+                r = rules[gid]
+            except (IndexError, AttributeError):
+                return False
+            if str(r.lhs).strip() != lhs:
+                return False
+            if r.method_name != method:
+                return False
+            return tuple(r.rhs_symbols or ()) == rhs
+
+        B = chart_vec.shape[0]
+        D = chart_vec.shape[-1]
+        device = chart_vec.device
+        dtype = chart_vec.dtype
+        subj = torch.zeros(B, 1, D, device=device, dtype=dtype)
+        verb = torch.zeros(B, 1, D, device=device, dtype=dtype)
+        obj  = torch.zeros(B, 1, D, device=device, dtype=dtype)
+        row_mask = torch.zeros(B, dtype=torch.bool, device=device)
+
+        for b in range(B):
+            trace = traces[b] or []
+            # Index by (i, j, A) for VP-cell lookup.
+            trace_idx = {(int(e[1]), int(e[3]), int(e[4])): e for e in trace}
+            s_entry = next(
+                (e for e in trace
+                 if _matches(int(e[0]), 'S', 'lift', ('NP', 'VP'))),
+                None)
+            if s_entry is None:
+                continue
+            i, k, j = int(s_entry[1]), int(s_entry[2]), int(s_entry[3])
+            vp_entry = trace_idx.get((k, j, vp_id))
+            if vp_entry is None:
+                continue
+            if not _matches(int(vp_entry[0]), 'VP', 'intersection',
+                            ('V', 'O')):
+                continue
+            m = int(vp_entry[2])
+            subj[b, 0] = chart_vec[b, i, k, np_id]
+            verb[b, 0] = chart_vec[b, k, m, v_id]
+            obj[b,  0] = chart_vec[b, m, j, o_id]
+            row_mask[b] = True
+
+        if not row_mask.any().item():
+            self.last_svo = None
+            self._svo_row_mask = row_mask
+            return None
+        self.last_svo = (subj, verb, obj)
+        self._svo_row_mask = row_mask
+        return self.last_svo
+
 
 # ---------------------------------------------------------------------
 # Chart sub-modules: scoring heads and (deprecated) compose helpers.
@@ -2152,7 +2270,8 @@ class SpaceSyntacticLayer(Layer):
 
     Construction:
         SpaceSyntacticLayer(tier='C', word_space=word_space,
-                            host_layers={'intersection': pi_layer})
+                            host_layers={'pi': pi_layer},
+                            default_rule='pi', host_space=concept_space)
 
     Each entry in ``host_layers`` is registered with ``word_space`` at
     construction. The space's ``forward()`` and ``reverse()`` delegate
@@ -2166,7 +2285,8 @@ class SpaceSyntacticLayer(Layer):
     WordSpace (Q10.1).
     """
 
-    def __init__(self, tier, word_space, host_layers, default_rule=None):
+    def __init__(self, tier, word_space, host_layers, default_rule=None,
+                 host_space=None):
         super().__init__(0, 0)
         self.tier = str(tier)
         # Stash host_layers in two parallel structures: ModuleList for
@@ -2186,11 +2306,18 @@ class SpaceSyntacticLayer(Layer):
         self._cursor_generate = 0
         self._cursor_compose_gen = -1
         self._cursor_generate_gen = -1
-        # Stash the wordSpace as a non-Module attribute to avoid the
-        # circular nn.Module ownership trap (wordSpace owns the chart;
-        # chart's host_layer registry references this layer's children;
-        # this layer references wordSpace).
+        # Stash the wordSpace and host_space as non-Module attributes
+        # to avoid the circular nn.Module ownership trap (wordSpace
+        # owns the chart; chart's host_layer registry references this
+        # layer's children; this layer references wordSpace).
         object.__setattr__(self, '_word_space', word_space)
+        # ``host_space`` is the per-tier Space (Perceptual / Conceptual /
+        # Symbolic) that owns this dispatcher. When the default rule
+        # fires (pi for C; sigma for P/S) and the host space has
+        # ``_pi_reverse`` / ``_sigma_reverse`` (two-pass ergodic mode
+        # routes through ``pi2`` / ``sigma2``), reverse() delegates
+        # there instead of the layer's bare ``reverse``.
+        object.__setattr__(self, '_host_space', host_space)
 
     # -- cursor management ---------------------------------------------
     def _next_rule_name(self, *, direction):
@@ -2300,11 +2427,11 @@ class SpaceSyntacticLayer(Layer):
         # Only fire unary rules here.
         if int(getattr(layer, 'arity', 1)) != 1:
             return subspace
-        x = self._read_subspace(subspace)
+        x = self._read_subspace(subspace, layer=layer)
         if x is None:
             return subspace
         y = layer.forward(x)
-        self._write_subspace(subspace, y)
+        self._write_subspace(subspace, y, layer=layer)
         return subspace
 
     def reverse(self, subspace):
@@ -2330,55 +2457,83 @@ class SpaceSyntacticLayer(Layer):
         # host_layer.generate(parent); skip here.
         if int(getattr(layer, 'arity', 1)) != 1:
             return subspace
-        y = self._read_subspace(subspace)
+        y = self._read_subspace(subspace, layer=layer)
         if y is None:
             return subspace
-        x = layer.reverse(y)
-        self._write_subspace(subspace, x)
+        # Two-pass ergodic adapter: when the default rule (pi/sigma) is
+        # the one firing AND the host space exposes a tier-specific
+        # ``_pi_reverse`` / ``_sigma_reverse`` (which routes through
+        # pi2/sigma2 in two-pass ergodic mode), delegate there. Other
+        # unary rules (not, etc.) keep going through ``layer.reverse``.
+        host = getattr(self, '_host_space', None)
+        if host is not None and rule_name == self.default_rule:
+            if rule_name == 'pi' and hasattr(host, '_pi_reverse'):
+                x = host._pi_reverse(y)
+            elif rule_name == 'sigma' and hasattr(host, '_sigma_reverse'):
+                x = host._sigma_reverse(y)
+            else:
+                x = layer.reverse(y)
+        else:
+            x = layer.reverse(y)
+        self._write_subspace(subspace, x, layer=layer)
         return subspace
 
     # -- subspace I/O per tier ------------------------------------------
-    def _read_subspace(self, subspace):
-        """Read the tier-appropriate tensor from ``subspace``.
+    def _read_subspace(self, subspace, layer=None):
+        """Read the per-position tensor from ``subspace`` for op dispatch.
 
-        S tier: subspace.what (the symbol content). Codebook / Tensor
-        bases expose ``getW()``; if ``what`` doesn't carry per-position
-        symbol activations, fall back to materialize() so the layer
-        sees the muxed event.
+        Routes through ``subspace.materialize()`` so the
+        ``.active`` mask is applied and the op sees the live
+        per-position activation -- never the underlying codebook
+        weights ``W``. ``getW()`` on any ``.what`` / ``.where`` /
+        ``.when`` Basis returns the codebook (a global lookup
+        table); operating on that would mutate the codebook itself
+        instead of the per-position activations the op is meant to
+        transform.
 
-        P / C tier: subspace.materialize() (the muxed event tensor).
+        When ``layer.reads_activation`` is True (e.g.
+        ``IntersectionLayer`` / ``UnionLayer``), the read source
+        switches to ``materialize(mode='activation')`` -- the
+        ``[B, V, 2]`` bivector activation -- because those ops
+        operate on the activation poles, not the muxed event.
+
+        Tier distinction is irrelevant here: every tier's per-
+        position read goes through ``materialize()``. Tier-specific
+        slicing of the muxed event (e.g. operating on the ``.what``
+        bivector only) is the op's responsibility.
         """
         if subspace is None:
             return None
-        if self.tier == 'S':
-            what = getattr(subspace, 'what', None)
-            if what is not None and hasattr(what, 'getW'):
+        # Activation-reading ops (IntersectionLayer / UnionLayer at
+        # C-tier) read the bivector activation directly.
+        if layer is not None and getattr(layer, 'reads_activation', False):
+            if hasattr(subspace, 'materialize'):
                 try:
-                    w = what.getW()
-                    if torch.is_tensor(w) and w.ndim >= 2:
-                        return w
+                    return subspace.materialize(mode='activation')
                 except Exception:
                     pass
         if hasattr(subspace, 'materialize'):
             return subspace.materialize()
         return getattr(subspace, 'event', None)
 
-    def _write_subspace(self, subspace, tensor):
-        """Write ``tensor`` back into the tier-appropriate field.
+    def _write_subspace(self, subspace, tensor, layer=None):
+        """Write the op's output back into ``subspace``.
 
-        S tier: subspace.what.setW(tensor) when available; otherwise
-        falls through to event so downstream consumers still see the
-        update.
+        Default path: ``set_event(tensor)`` writes the muxed event
+        and invalidates the cached materialize.
 
-        P / C tier: subspace.set_event(tensor).
+        Activation-writing path: when ``layer.reads_activation`` is
+        True, the op produced a bivector activation
+        ``[..., 2]`` -- write it via ``set_activation`` so the
+        ``.activation`` Basis is updated and downstream
+        ``materialize(mode='activation')`` reads the new value.
         """
         if subspace is None or tensor is None:
             return
-        if self.tier == 'S':
-            what = getattr(subspace, 'what', None)
-            if what is not None and hasattr(what, 'setW'):
+        if layer is not None and getattr(layer, 'reads_activation', False):
+            if hasattr(subspace, 'set_activation'):
                 try:
-                    what.setW(tensor)
+                    subspace.set_activation(tensor)
                     return
                 except Exception:
                     pass
@@ -2453,7 +2608,8 @@ def build_space_syntactic_layer(space, word_space, *, tier,
             continue
     layer = SpaceSyntacticLayer(
         tier=tier, word_space=word_space,
-        host_layers=host_layers, default_rule=default_rule)
+        host_layers=host_layers, default_rule=default_rule,
+        host_space=space)
     space.syntacticLayer = layer
     return layer
 
@@ -2957,6 +3113,23 @@ class WordSpace(Space):
         TheGrammar._ensure_configured()
         grammar = TheGrammar
 
+        # 1a. Detect the default-only case (every operational rule is
+        # the unary pi / sigma fold registered as the per-tier
+        # default). When true, ``compose`` / ``generate`` skip the
+        # CKY-style inside / outside pass entirely; per-space
+        # SyntacticLayer dispatch falls through to its registered
+        # default rule, which fires PiLayer.forward / SigmaLayer.forward
+        # exactly once per step -- mathematically identical to the
+        # legacy bare ``self.pi(x)`` / ``self.sigma.forward(x)`` call
+        # sites. Implicit non-operational rules (epsilon, X -> X
+        # passthrough whose method_name is None) don't disqualify the
+        # bypass.
+        self._grammar_is_default_only = all(
+            r.method_name is None or (
+                r.method_name in ('pi', 'sigma') and r.arity == 1)
+            for r in grammar.rules
+        )
+
         # 2. Size WordSubSpace from SymbolicSpace's subspace column
         # layout so downstream consumers of wordSpace.read() concat
         # cleanly with peer tensors.
@@ -3442,8 +3615,18 @@ class WordSpace(Space):
 
         Idempotent within a forward pass: each per-space SyntacticLayer
         resets its per-tier cursor to 0 and pops one rule per fold step.
+
+        Fast path: when the grammar is default-only (the unary pi /
+        sigma folds and nothing else), skip the CKY-style inside pass
+        entirely. ``current_rules`` stays empty so per-space
+        SyntacticLayer dispatch falls through to its default_rule,
+        firing ``PiLayer.forward`` / ``SigmaLayer.forward`` once per
+        step. ``_compose_generation`` still bumps so cursor resets fire.
         """
         self._compose_generation += 1
+        if self._grammar_is_default_only:
+            self.current_rules = {}
+            return self.current_rules
         self.current_rules = self.chart.compose(
             input_vectors, self, subspace=subspace) or {}
         return self.current_rules
@@ -3451,11 +3634,41 @@ class WordSpace(Space):
     def generate(self, target_vectors, subspace=None):
         """Run the chart's outside pass + Viterbi backtrace; populate
         ``self.generate_rules``.
+
+        Default-only fast path mirrors ``compose``.
         """
         self._generate_generation += 1
+        if self._grammar_is_default_only:
+            self.generate_rules = {}
+            return self.generate_rules
         self.generate_rules = self.chart.generate(
             target_vectors, self, subspace=subspace) or {}
         return self.generate_rules
+
+    def gate_l1_loss(self, lam=0.0):
+        """L1 penalty on every per-rule ``raw_gate`` Parameter owned by
+        this WordSpace's per-space SyntacticLayers.
+
+        Sums ``tanh(raw_gate).abs().sum()`` across every LiftLayer /
+        LowerLayer instance reachable through ``host_layer`` registry,
+        scaled by ``lam``. Returns ``None`` when ``lam <= 0`` or no
+        gated rules are registered (so the caller can skip the add
+        without burning a tensor). The reparam ensures we penalize
+        the bounded gate, not the unbounded raw param.
+        """
+        lam = float(lam or 0.0)
+        if lam <= 0.0:
+            return None
+        total = None
+        for (_tier, _name), layer in self._host_layer_registry.items():
+            raw = getattr(layer, 'raw_gate', None)
+            if raw is None or not torch.is_tensor(raw):
+                continue
+            term = torch.tanh(raw).abs().sum()
+            total = term if total is None else total + term
+        if total is None:
+            return None
+        return lam * total
 
     def register_host_layer(self, tier, rule_name, layer):
         """Register ``layer`` as the parametrized GrammarLayer for
@@ -3698,30 +3911,97 @@ class WordSpace(Space):
         if tier == 'P':
             sigma = getattr(space, 'sigma', None)
             if sigma is not None:
-                # Wrap PiLayer / SigmaLayer in their grammar-facing
-                # GrammarLayer adapters so the chart's ``layer.compose``
-                # / ``layer.generate`` contract is satisfied.
-                from Layers import UnionLayer
-                builtin_layers['union'] = UnionLayer(sigma)
-            default_rule = 'union'
+                # SigmaLayer is the unary multiplicative OR-fold and is
+                # registered directly under its own rule_name "sigma".
+                # The default rule fires SigmaLayer.forward(x) -- exact
+                # mathematical replacement for the legacy
+                # ``self.sigma.forward(x)`` call site in P-tier spaces.
+                builtin_layers['sigma'] = sigma
+            default_rule = 'sigma'
         elif tier == 'C':
             pi = getattr(space, 'pi', None)
             if pi is not None:
-                from Layers import IntersectionLayer
-                builtin_layers['intersection'] = IntersectionLayer(pi)
-            default_rule = 'intersection'
+                # PiLayer is the unary multiplicative AND-fold and is
+                # registered directly under its own rule_name "pi". The
+                # default rule fires PiLayer.forward(x) -- exact
+                # mathematical replacement for the legacy ``self.pi(x)``
+                # call site in ConceptualSpace.
+                builtin_layers['pi'] = pi
+            default_rule = 'pi'
         elif tier == 'S':
             sigma = getattr(space, 'sigma', None)
             if sigma is not None:
-                from Layers import UnionLayer
-                builtin_layers['union'] = UnionLayer(sigma)
+                builtin_layers['sigma'] = sigma
             negation = getattr(space, 'propositional_negation', None)
             if negation is not None:
                 builtin_layers['not'] = negation
-            contiguous = getattr(space, '_contiguous_layer', None)
-            if contiguous is not None:
-                builtin_layers['Contiguous'] = contiguous
-            default_rule = 'union'
+            # FusionLayer / ContiguousLayer were retired 2026-05-04:
+            # the operator was a duplicate of DisjunctionLayer at
+            # S-tier. Existing XML grammars referencing
+            # ``Fusion(S, S)`` / ``Contiguous(S)`` should migrate to
+            # ``disjunction(S, S)``.
+            default_rule = 'sigma'
+            # Lift / Lower wiring: if the grammar references S-tier
+            # `lift` or `lower` rules, the operators need a sigma /
+            # pi to dispatch their gated SVD slice through. Both
+            # operators live on SymbolicSpace per the 2026-05-04
+            # design (one matrix shared across rules of the same
+            # type; one gate per rule). Lazy-construct
+            # ``space.sigma_S`` / ``space.pi_S`` at symbol_dim only
+            # when actually needed so default configs are unaffected.
+            grammar_S_methods = {
+                r.method_name for r in TheGrammar.rules
+                if r.tier == 'S' and r.method_name is not None}
+            if 'lift' in grammar_S_methods:
+                if not hasattr(space, 'sigma_S') or space.sigma_S is None:
+                    from Layers import SigmaLayer
+                    sym_dim = int(space.outputShape[1])
+                    space.sigma_S = SigmaLayer(
+                        sym_dim, sym_dim,
+                        invertible=True, nonlinear=True, stable=True)
+                    space.layers.append(space.sigma_S)
+                    for p in space.sigma_S.parameters():
+                        if all(p is not q for q in space.params):
+                            space.params.append(p)
+                from Layers import LiftLayer
+                builtin_layers['lift'] = LiftLayer(sigma_layer=space.sigma_S)
+            if 'lower' in grammar_S_methods:
+                if not hasattr(space, 'pi_S') or space.pi_S is None:
+                    from Layers import PiLayer
+                    sym_dim = int(space.outputShape[1])
+                    space.pi_S = PiLayer(
+                        sym_dim, sym_dim,
+                        invertible=True, nonlinear=True, stable=True)
+                    space.layers.append(space.pi_S)
+                    for p in space.pi_S.parameters():
+                        if all(p is not q for q in space.params):
+                            space.params.append(p)
+                from Layers import LowerLayer
+                builtin_layers['lower'] = LowerLayer(pi_layer=space.pi_S)
+            # Mereological-tree wiring: ``part`` / ``equals`` write
+            # child links and ``query`` reads transitively from a
+            # shared ``MereologicalTree`` keyed on the symbol
+            # codebook's V dimension. The tree lives on WordSpace so
+            # multiple rules (and multiple per-space SyntacticLayers)
+            # accumulate into one structure.
+            mereological_methods = {'part', 'equals', 'query'}
+            if grammar_S_methods & mereological_methods:
+                if getattr(self, 'mereological_tree', None) is None:
+                    from Layers import MereologicalTree
+                    nVectors_S = int(space.spaceShape[0])
+                    self.mereological_tree = MereologicalTree(V=nVectors_S)
+                if 'part' in grammar_S_methods:
+                    from Layers import PartLayer
+                    builtin_layers['part'] = PartLayer(
+                        tree=self.mereological_tree)
+                if 'equals' in grammar_S_methods:
+                    from Layers import EqualsLayer
+                    builtin_layers['equals'] = EqualsLayer(
+                        tree=self.mereological_tree)
+                if 'query' in grammar_S_methods:
+                    from Layers import QueryLayer
+                    builtin_layers['query'] = QueryLayer(
+                        tree=self.mereological_tree)
         else:
             default_rule = None
         layer = build_space_syntactic_layer(

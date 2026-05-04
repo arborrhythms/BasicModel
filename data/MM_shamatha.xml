@@ -49,7 +49,11 @@
     <language>
       <start>S</start>
       <grammar>
-        <S>Contiguous(S)</S>
+        <!-- Contiguous(S) was retired 2026-05-04 (duplicate of
+             disjunction at S-tier). Migrated to disjunction(S, S);
+             the post-codebook scalar-max semantics deliver the
+             same hull-style fold the rule used to provide. -->
+        <S>disjunction(S, S)</S>
         <S>not(S)</S>
         <S>union(C, C)</S>
         <S>C</S>

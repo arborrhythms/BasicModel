@@ -11,34 +11,60 @@ over symbol activations.  Three pieces cooperate:
   / outside passes, and dispatches each per-cell rule application
   through `wordSpace.host_layer(tier, rule_name)`.
 - `GrammarLayer` subclasses (in [`bin/Layers.py`](../bin/Layers.py)) —
-  one class per grammar operator (`not`, `lift`, `lower`,
-  `intersection`, `union`, `conjunction`, `disjunction`, `equals`,
-  `part`, `true`, `false`, `swap`, `query`, `what`, `where`, `when`,
-  `absorb`, `Contiguous`).  Each class exposes `forward()` /
-  `reverse()` (the unary `Layer` interface) and, for binary ops,
-  `compose()` / `generate()` (the chart's binary tensor interface).
+  one class per grammar operator (`not`, `non`, `intersection`,
+  `union`, `conjunction`, `disjunction`, `lift`, `lower`, `equals`,
+  `part`, `true`, `false`, `swap`, `query`).  Each class exposes
+  `forward()` / `reverse()` (the unary `Layer` interface) and, for
+  binary ops, `compose()` / `generate()` (the chart's binary tensor
+  interface).
 
 ```
 InputSpace  ->  PerceptualSpace  ->  ConceptualSpace  ->  SymbolicSpace  ->  OutputSpace
                                                           chart runs here
 ```
 
-The 2026-04-19 merge collapsed the C-tier into S and removed the
-P-tier syntactic layer (chunking became a non-syntactic pre-pass).
-The 2026-05-01 refactor went further: the per-rule `*Forward` /
-`*Reverse` methods on `SyntacticLayer`, the `_RULE_METHODS` /
-`_OPS_METHODS` dispatch tables, and the in-class `compose` /
-`decompose` / `emit_head` machinery were all removed.  Per-rule math
-now lives on `GRAMMAR_LAYER_CLASSES` (Layers.py); the chart's
-`_apply_rule_forward` and the per-space `SpaceSyntacticLayer.forward`
-route through them.
+### Tiers (P / C / S / L)
+
+Each rule and each layer carries a tier tag.  The four tiers map to
+distinct activation domains:
+
+| Tier | Owner            | Activation domain                              |
+|------|------------------|-------------------------------------------------|
+| `P`  | PerceptualSpace  | bivector ``[B, V, 2]`` per percept              |
+| `C`  | ConceptualSpace  | bivector ``[B, V, 2]`` pre-codebook             |
+| `S`  | SymbolicSpace    | scalar ``[B, V]`` post-codebook (monotonic)     |
+| `L`  | (logical, none)  | bivector ``[..., 2]`` -- pure lattice primitive |
+
+S-tier ops compose **monotonic** functions over the post-codebook
+scalar activation (``effective_activation()``: bivector poles reduced
+via ``max`` and gated by modal presence).  L-tier ops
+(``intersection``, ``union``) are pure lattice min/max on the bivector
+activation; they aren't owned by any space.  The chart binds an
+L-tier op at whichever space's tier the operands live in
+(``intersection(C, C)`` binds at C; the L tag is layer-side
+classification, not a routing tier).
+
+History: the 2026-04-19 merge collapsed the C-tier into S and removed
+the P-tier syntactic layer (chunking became a non-syntactic pre-pass).
+The 2026-05-01 refactor moved per-rule math out of `SyntacticLayer`
+onto `GRAMMAR_LAYER_CLASSES`.  The 2026-05-04 cleanup retired the
+``Fusion`` / ``Contiguous`` / ``what`` / ``where`` / ``when`` /
+``absorb`` operators (Fusion duplicated DisjunctionLayer; the slot
+selectors were dispatcher concerns; absorb became a base-class
+sentence marker).  The 2026-05-05 directive split lattice-min/max
+into the new ``L`` tier and pinned S-tier conjunction/disjunction to
+the post-codebook scalar activation domain.
 
 `SyntacticLayer` survives as the rule-prediction front-end and the
 chart authority that gates each parametrized fold via
 `GrammarLayer.gated_run`.  Per-space dispatchers are
 `SpaceSyntacticLayer` instances built by
 `build_space_syntactic_layer`; each holds a tier-specific
-`host_layers` dict keyed by `rule_name`.
+`host_layers` dict keyed by `rule_name`.  The dispatcher's
+``_read_subspace`` / ``_write_subspace`` honor each layer's
+``reads_activation`` flag: ``True`` reads/writes the activation
+field (bivector at C-tier, scalar at S-tier), ``False`` reads/writes
+the muxed event tensor.
 
 ---
 
@@ -65,7 +91,7 @@ bare-symbol-sequence rules, or `'emit_head'` for the downward
 - `Grammar.rule_by_id(i)` — canonical production string
 - `Grammar.method_name(i)` — dispatch method name (e.g. `'swap'`)
 - `Grammar.arity(i)` — 1 or 2
-- `Grammar.tier(i)` — `'S'`
+- `Grammar.tier(i)` — `'P'` / `'C'` / `'S'` / `'L'`
 
 ### Grammar configuration
 
@@ -119,10 +145,18 @@ canonical target:
 The op names in the explicit-op RHS are dispatch keys into
 `GRAMMAR_LAYER_CLASSES` (Layers.py); `lift`, `lower`, `intersection`,
 `union`, `not`, `non`, `conjunction`, `disjunction`, `equals`, `part`,
-`true`, `false`, `swap`, `query`, `what`, `where`, `when`, `absorb`,
-`Contiguous`.  Reverse productions are *derived mechanically* at
-grammar-load time — for each forward rule `LHS = op(arg1, arg2)` the
-loader synthesizes `arg1, arg2 = opReverse(LHS)` (multi-return).
+`true`, `false`, `swap`, `query`.  Reverse productions are *derived
+mechanically* at grammar-load time — for each forward rule
+`LHS = op(arg1, arg2)` the loader synthesizes
+`arg1, arg2 = opReverse(LHS)` (multi-return).
+
+Retired ops (do not use in new grammars):
+- `Fusion` / `Contiguous` — duplicate of `disjunction` at S-tier;
+  migrate to `disjunction(S, S)`.
+- `what` / `where` / `when` — slot partitioning is the dispatcher's
+  responsibility, not a grammar rule.
+- `absorb` — sentence-marker behavior moved to
+  `GrammarLayer.absorb(left, right) -> left` on the base class.
 
 ### `data/grammar.cfg` dispatch
 
@@ -236,28 +270,55 @@ All three are lossy.
 symbol vector: $[x_0, x_1, x_{2..}] \to [x_1, x_0, x_{2..}]$.  Pure
 antipodal flip on the bitonic axis; self-inverse.
 
-### Conjunction / disjunction — Sym
+### Conjunction / disjunction — S-tier (post-codebook scalar)
 
-Both route through the unified `lift` / `lower` dispatcher.  At the S
-tier `S = conjunction(S, S)` resolves to `lower(S1, S2, mode='AND')`
-and `S = disjunction(S, S)` resolves to `lift(S1, S2, mode='OR')`.
+`S = conjunction(S, S)` and `S = disjunction(S, S)` operate on the
+**post-codebook scalar activation**: a ``[B, V]`` tensor where ``V``
+indexes prototypes in the symbolic codebook and each entry is the
+non-negative strength of that prototype after the codebook snap.
+Concretely, ``materialize(mode='activation')`` returns
+``effective_activation()`` -- the bivector poles ``[pos, neg]``
+reduced via ``max(pos, neg)`` and gated by modal presence.
 
-The forward kernel selects from three `kind` settings:
-**`'strict'`** uses lattice min / max; **`'smooth'`** uses elementwise
-product (`AND`) or mean (`OR`), the differentiable form used by
-`PiLayer.forward` / `SigmaLayer.forward`; **`'radial'`** uses RadMin /
-RadMax (same-sign min / max magnitude with zero passthrough).
-Sentence-level fuzzy $\wedge$ and $\vee$ are lossy at the S tier; the
-same primitives at C-tier subspace level retain Basis-level inverses
-via codebook-search recovery.
+Because the activation is non-negative scalar, both ops are
+**strictly monotonic** lattice primitives:
 
-### Intersection / union — SigmaPi
+$$
+\mathrm{conjunction}(\ell, r) = \min(\ell, r), \qquad
+\mathrm{disjunction}(\ell, r) = \max(\ell, r)
+$$
 
-`intersection` and `union` are aliases for `lower(mode='AND')` and
-`lift(mode='OR')` under the explicit-op grammar form.  Inverses are
-codebook-search recoveries on the right operand (supplied by `Basis`
-which carries the codebook $W$).  For `mode='NOT'` the inverse is
-identical to the forward (self-inverse pole flip).
+(routed through ``Ops.intersection(..., monotonic=True)`` and
+``Ops.union(..., monotonic=True)``, which collapse to ``torch.min``
+/ ``torch.max`` via ``_lower_kernel(kind='strict')`` /
+``_lift_kernel(kind='strict')``).  Both are lossy with
+``(parent, parent)`` pseudo-inverse on `reverse`.
+
+### Intersection / union — L-tier (lattice on bivectors)
+
+`L = intersection(L, L)` and `L = union(L, L)` are pure logical
+primitives: lattice min/max on a **bivector activation** ``[..., 2]``.
+The L tier means the layer isn't owned by any single space -- the
+chart binds it to whichever space's activation tier the operands
+live in.  In practice the upstream tier is C (where activation is a
+``[B, V, 2]`` bivector pre-codebook); the same kernel works at S
+when the chart sources S-tier bivector activation, but S-tier
+production grammars typically use ``conjunction`` / ``disjunction``
+on the post-codebook scalar instead.
+
+The kernels accept a ``monotonic`` kwarg:
+
+| `monotonic` | kernel                                      |
+|-------------|---------------------------------------------|
+| `False`     | RadMin / RadMax — same-sign min / max       |
+|             | magnitude with zero passthrough             |
+| `True`      | strict lattice min / max (per channel)      |
+
+L-tier ops are lossy: `decompose` returns `(parent, parent)` as the
+pseudo-inverse.  When the upstream Basis carries codebook
+weights, callers can substitute ``Ops.lowerReverseAll(Y, W,
+monotonic)`` / ``Ops.liftReverseAll(Y, W, monotonic)`` for a
+codebook-search recovery instead of the identity pseudo-inverse.
 
 ### Part / equals — Def (currently tensor scoring)
 
@@ -274,19 +335,20 @@ L1-distance agreement score on the selected dims.  Both are lossy.
 The target architecture moves both from tensor scoring to graph
 updates in WordSpace; see [Mereology.md](Mereology.md).
 
-### Slot selectors (`what` / `where` / `when`) — Sym
+### Slot selectors (`what` / `where` / `when`) — RETIRED
 
-Given per-subspace column widths $(n_{\text{what}}, n_{\text{where}},
-n_{\text{when}})$, each selector returns the input restricted to its
-axis range and zeros elsewhere.  In 2D activation mode the block
-structure is unavailable, so selectors degenerate to identity — the
-axis semantics ride on the subspace's modality tensors.  Lossy.
+Retired 2026-05-04: subspace partitioning is the dispatcher's
+responsibility (the modality tensors carry the slot structure
+intrinsically), not a grammar rule.
 
-### Absorb — Sym
+### Absorb — base-class marker
 
 `absorb(\ell, r) = \ell`.  Binary left-pass; the right operand is
-sugar that the rule predictor opted to discard.  Unrecoverable by
-contract.
+sugar that the rule predictor opted to discard.  No longer a
+dedicated layer class -- the marker lives on
+``GrammarLayer.absorb(left, right) -> left`` so any binary subclass
+can flag its right operand as syntactic sugar without adding a
+distinct dispatch entry.
 
 ### Query — Mereological
 
@@ -412,210 +474,153 @@ class GrammarLayer(Layer):
 
 ### `NotLayer` — `S = not(S)`
 
+Tier `S`.  Bivector pole swap on ``[..., :2]`` of the muxed event;
+``[..., 2:]`` (nWhere / nWhen) passes through.  Self-inverse.
+
 ```python
 class NotLayer(GrammarLayer):
-    rule_name  = "not"
-    arity      = 1
-    invertible = True
+    rule_name        = "not"
+    arity            = 1
+    invertible       = True
+    tier             = 'S'
+    reads_activation = False
 
     def forward(self, x):
         bivector = x[..., :2].flip(dims=(-1,))
         rest     = x[..., 2:]
-        return torch.cat([bivector, rest], dim=-1)
+        return torch.cat([bivector, rest], dim=-1) if rest.shape[-1] else bivector
 
     def reverse(self, y):
         return self.forward(y)
 ```
 
-### `NonLayer` — `C1 = non(P1)`
+### `NonLayer` — `S = non(S)`
+
+Tier `S`.  Per-pole bivector complement on ``[..., :2]``:
+``[1 - pos, 1 - neg]``.  Self-inverse on each pole; ``[..., 2:]``
+tail passes through.
 
 ```python
 class NonLayer(GrammarLayer):
     rule_name  = "non"
     arity      = 1
-    invertible = False
-    lossy      = True
+    invertible = True
 
     def forward(self, x):
-        return 1.0 - torch.clamp(x, -1.0, 1.0).abs()
+        bivector = 1.0 - x[..., :2]
+        rest     = x[..., 2:]
+        return torch.cat([bivector, rest], dim=-1) if rest.shape[-1] else bivector
 
     def reverse(self, y):
-        return y
+        return self.forward(y)
 ```
 
-### `IntersectionLayer` — `C = intersection(C, C)`
+### `IntersectionLayer` — L-tier lattice min on bivector activation
 
-Wraps a parametrized AND-fold (`PiLayer`); the unary `forward` /
-`reverse` route through the inner layer for the all-at-once
-composition path, and the binary `compose` / `generate` route through
-`PiLayer.compose` for the chart parser.
+Tier `L`.  Lattice min on a bivector activation ``[..., 2]``.
+``reads_activation = True`` so the dispatcher feeds
+``subspace.materialize(mode='activation')`` rather than the muxed
+event.  ``monotonic`` toggles between RadMin (zero passthrough) and
+strict min.
 
 ```python
 class IntersectionLayer(GrammarLayer):
-    rule_name  = "intersection"
-    arity      = 2
-    invertible = True
+    rule_name        = "intersection"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'L'
+    reads_activation = True
 
-    def __init__(self, pi_layer):
-        super().__init__(pi_layer.nInput, pi_layer.nOutput)
-        self.pi = pi_layer
-        self.layers.append(pi_layer)
+    def __init__(self, monotonic=False):
+        super().__init__(0, 0)
+        self.monotonic = bool(monotonic)
 
-    def forward(self, x):
-        return self.pi(x)
+    def forward(self, left, right):
+        return Ops.intersection(left, right, monotonic=self.monotonic)
 
-    def reverse(self, y):
-        return self.pi.reverse(y)
-
-    def compose(self, left, right):
-        return self.pi.compose(left, right)
-
-    def generate(self, parent):
-        return self.pi.generate(parent)
+    def reverse(self, parent):
+        return parent, parent
 ```
 
-### `UnionLayer` — `S = union(C, C)`
+### `UnionLayer` — L-tier lattice max on bivector activation
 
-Mirrors `IntersectionLayer` but wraps a `SigmaLayer` (OR-fold).
+Tier `L`.  Counterpart to ``IntersectionLayer``: lattice max on a
+bivector activation, RadMax / strict-max toggle.
 
 ```python
 class UnionLayer(GrammarLayer):
-    rule_name  = "union"
-    arity      = 2
-    invertible = True
+    rule_name        = "union"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'L'
+    reads_activation = True
 
-    def __init__(self, sigma_layer):
-        super().__init__(sigma_layer.nInput, sigma_layer.nOutput)
-        self.sigma = sigma_layer
-        self.layers.append(sigma_layer)
-
-    def forward(self, x):
-        return self.sigma(x)
-
-    def reverse(self, y):
-        return self.sigma.reverse(y)
-
-    def compose(self, left, right):
-        return self.sigma.compose(left, right)
-
-    def generate(self, parent):
-        return self.sigma.generate(parent)
-```
-
-### `ContiguousLayer` — `S = Contiguous(S)`
-
-Convex-hull fusion in symbolic space: takes a set of active concepts
-and returns the elementwise envelope (per-axis amax over the concept
-axis), broadcast back across the axis so the rest of the pipeline
-sees the original shape.  Applied *before* `NegationLayer` in the
-symbolic pipeline.
-
-```python
-class ContiguousLayer(GrammarLayer):
-    rule_name  = "Contiguous"
-    arity      = 1
-    invertible = False
-    lossy      = True
-
-    def forward(self, x):
-        if x.ndim < 2:
-            return x
-        if x.shape[-2] <= 1:
-            return x
-        hull = x.amax(dim=-2, keepdim=True)
-        return hull.expand_as(x)
-
-    def reverse(self, y):
-        return y
-```
-
-### `LiftLayer` — `S = lift(S, S)`
-
-In-space lift via `Ops._lower_kernel(AND, smooth)`.  The pseudo-inverse
-returns the parent for both children (lossy fold).
-
-```python
-class LiftLayer(GrammarLayer):
-    rule_name  = "lift"
-    arity      = 2
-    invertible = True
+    def __init__(self, monotonic=False):
+        super().__init__(0, 0)
+        self.monotonic = bool(monotonic)
 
     def forward(self, left, right):
-        return Ops._lower_kernel(left, right, mode='AND', kind='smooth')
+        return Ops.union(left, right, monotonic=self.monotonic)
 
     def reverse(self, parent):
         return parent, parent
-
-    def compose(self, left, right):
-        return self.forward(left, right)
-
-    def generate(self, parent):
-        return self.reverse(parent)
 ```
 
-### `LowerLayer` — `S = lower(S, S)`
+### `ConjunctionLayer` / `DisjunctionLayer` — S-tier monotonic on scalar activation
 
-In-space lower via `Ops._lift_kernel(OR, smooth)`.
-
-```python
-class LowerLayer(GrammarLayer):
-    rule_name  = "lower"
-    arity      = 2
-    invertible = True
-
-    def forward(self, left, right):
-        return Ops._lift_kernel(left, right, mode='OR', kind='smooth')
-
-    def reverse(self, parent):
-        return parent, parent
-
-    def compose(self, left, right):
-        return self.forward(left, right)
-
-    def generate(self, parent):
-        return self.reverse(parent)
-```
-
-### `ConjunctionLayer` / `DisjunctionLayer` — `S = conjunction(S, S)` / `S = disjunction(S, S)`
-
-Propositional AND / OR on bivectors.  Lossy.
+Tier `S`.  Operate on the **post-codebook scalar activation**:
+``[B, V]`` non-negative strength per prototype, returned by
+``effective_activation()`` (bivector reduced via ``max`` and gated
+by modal presence).  Strictly monotonic by construction -- there is
+no negative pole on the scalar, so RadMin / RadMax would be wrong.
 
 ```python
 class ConjunctionLayer(GrammarLayer):
-    rule_name  = "conjunction"
-    arity      = 2
-    invertible = False
+    rule_name        = "conjunction"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = True
 
     def forward(self, left, right):
-        return Ops._conjunction_kernel(left, right)
+        return Ops.intersection(left, right, monotonic=True)
 
     def reverse(self, parent):
         return parent, parent
-
-    def compose(self, left, right):
-        return self.forward(left, right)
-
-    def generate(self, parent):
-        return self.reverse(parent)
 
 
 class DisjunctionLayer(GrammarLayer):
-    rule_name  = "disjunction"
-    arity      = 2
-    invertible = False
+    rule_name        = "disjunction"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = True
 
     def forward(self, left, right):
-        return Ops._disjunction_kernel(left, right)
+        return Ops.union(left, right, monotonic=True)
 
     def reverse(self, parent):
         return parent, parent
-
-    def compose(self, left, right):
-        return self.forward(left, right)
-
-    def generate(self, parent):
-        return self.reverse(parent)
 ```
+
+### `LiftLayer` / `LowerLayer` — S-tier gated SVD slice on muxed event
+
+Tier `S`.  ``LiftLayer`` runs ``sigma.compose`` (an OR fold) gated
+by a per-rule ``raw_gate`` parameter; ``LowerLayer`` runs
+``pi.compose`` (an AND fold).  Both share one matrix per type
+(``space.sigma_S`` / ``space.pi_S``) lazy-constructed when the
+grammar references their rule, with one gate per rule on the SVD
+diagonal.  The reverse uses the analytical LDU inverse of the
+gated matrix (``sigma.generate`` / ``pi.generate``), which is
+exact when the gate is stable.
+
+Both read the muxed event (``reads_activation = False``) since the
+gated SVD slice operates on the full ``[B, V, D]`` symbolic event
+tensor, not just the activation poles.
 
 ### `EqualsLayer` / `PartLayer` — mereology
 
@@ -774,85 +779,15 @@ class QueryLayer(GrammarLayer):
         return self.reverse(parent)
 ```
 
-### `WhatLayer` / `WhereLayer` / `WhenLayer` — slot selectors
+### Retired: `WhatLayer` / `WhereLayer` / `WhenLayer` / `AbsorbLayer`
 
-Each takes optional `(nWhat, nWhere, nWhen)` widths at construction
-and delegates the slice to the matching `Ops._<axis>_kernel`.  All
-three are unary, non-invertible (the masked-out axes can't be
-recovered), and route their inverse to identity passthrough.
-
-```python
-class WhatLayer(GrammarLayer):
-    rule_name  = "what"
-    arity      = 1
-    invertible = False
-
-    def __init__(self, nWhat=None, nWhere=None, nWhen=None):
-        super().__init__(0, 0)
-        self.nWhat, self.nWhere, self.nWhen = nWhat, nWhere, nWhen
-
-    def forward(self, x):
-        return Ops._what_kernel(x, self.nWhat, self.nWhere, self.nWhen)
-
-    def reverse(self, y):
-        return y
-
-
-class WhereLayer(GrammarLayer):
-    rule_name  = "where"
-    arity      = 1
-    invertible = False
-
-    def __init__(self, nWhat=None, nWhere=None, nWhen=None):
-        super().__init__(0, 0)
-        self.nWhat, self.nWhere, self.nWhen = nWhat, nWhere, nWhen
-
-    def forward(self, x):
-        return Ops._where_kernel(x, self.nWhat, self.nWhere, self.nWhen)
-
-    def reverse(self, y):
-        return y
-
-
-class WhenLayer(GrammarLayer):
-    rule_name  = "when"
-    arity      = 1
-    invertible = False
-
-    def __init__(self, nWhat=None, nWhere=None, nWhen=None):
-        super().__init__(0, 0)
-        self.nWhat, self.nWhere, self.nWhen = nWhat, nWhere, nWhen
-
-    def forward(self, x):
-        return Ops._when_kernel(x, self.nWhat, self.nWhere, self.nWhen)
-
-    def reverse(self, y):
-        return y
-```
-
-### `AbsorbLayer` — `S = absorb(S, S)`
-
-Sugar absorption: returns the left operand and discards the right.
-
-```python
-class AbsorbLayer(GrammarLayer):
-    rule_name  = "absorb"
-    arity      = 2
-    invertible = False
-    lossy      = True
-
-    def forward(self, left, right):
-        return Ops._absorb_kernel(left, right)
-
-    def reverse(self, parent):
-        return parent, parent
-
-    def compose(self, left, right):
-        return self.forward(left, right)
-
-    def generate(self, parent):
-        return self.reverse(parent)
-```
+Removed 2026-05-04.  Slot partitioning is now the dispatcher's
+responsibility (the modality tensors carry the slot structure
+intrinsically), so ``what`` / ``where`` / ``when`` are not grammar
+ops.  ``absorb`` became a base-class marker:
+``GrammarLayer.absorb(left, right) -> left`` lets any binary subclass
+flag its right operand as syntactic sugar without a dedicated
+dispatch entry.
 
 ### `PiLayer` — parametrized AND fold
 
@@ -993,29 +928,45 @@ push parent gradients back into child cells.
 
 ```python
 GRAMMAR_LAYER_CLASSES = {
+    # S-tier (post-codebook scalar / muxed event)
     'not':          NotLayer,
     'non':          NonLayer,
-    'intersection': IntersectionLayer,
-    'union':        UnionLayer,
-    'Contiguous':   ContiguousLayer,
-    'lift':         LiftLayer,
-    'lower':        LowerLayer,
     'conjunction':  ConjunctionLayer,
     'disjunction':  DisjunctionLayer,
+    'lift':         LiftLayer,
+    'lower':        LowerLayer,
     'equals':       EqualsLayer,
     'part':         PartLayer,
     'true':         TrueLayer,
     'false':        FalseLayer,
     'swap':         SwapLayer,
     'query':        QueryLayer,
-    'what':         WhatLayer,
-    'where':        WhereLayer,
-    'when':         WhenLayer,
-    'absorb':       AbsorbLayer,
+    # L-tier (logical -- lattice on bivector activation)
+    'intersection': IntersectionLayer,
+    'union':        UnionLayer,
 }
 ```
 
-Reverse / inverse ops (`Ops.negationReverse`, `Ops.conjunctionReverse`,
+### Inverse contract by operator
+
+| Op            | Tier | Reverse                                        |
+|---------------|------|-------------------------------------------------|
+| `not`         | S    | exact (self-inverse pole flip)                 |
+| `non`         | S    | exact (self-inverse: ``non(non(x)) = x``)      |
+| `lift`        | S    | exact LDU inverse via gated ``sigma.generate`` |
+| `lower`       | S    | exact LDU inverse via gated ``pi.generate``    |
+| `conjunction` | S    | pseudo-inverse ``(parent, parent)``            |
+| `disjunction` | S    | pseudo-inverse ``(parent, parent)``            |
+| `intersection`| L    | pseudo-inverse ``(parent, parent)``            |
+| `union`       | L    | pseudo-inverse ``(parent, parent)``            |
+| `equals`      | S    | no defined inverse (mereological write)        |
+| `part`        | S    | no defined inverse (mereological write)        |
+| `query`       | S    | no defined inverse (mereological read)         |
+| `swap`        | S    | pseudo-inverse ``(parent, parent)``            |
+| `true`        | S    | identity passthrough (lossy)                   |
+| `false`       | S    | identity passthrough (lossy)                   |
+
+Reverse / inverse Ops (`Ops.negationReverse`, `Ops.conjunctionReverse`,
 `Ops.disjunctionReverse`, `Ops.liftReverse`, `Ops.liftReverseAll`,
 `Ops.lowerReverse`, `Ops.lowerReverseAll`) are not in the dispatch
 registry — they are invoked directly by the Step-6 grammar reverse
@@ -1418,9 +1369,9 @@ pre-compose tensor from the symbolic word record by walking the
 chart's outside pass + Viterbi backtrace.  At each step it dispatches
 through `host_layer.generate(parent)` for binary rules or
 `host_layer.reverse(y)` for unary invertible rules.  Lossy rules
-(`equals`, `part`, `true`, `false`, `non`, slot selectors, `query`,
-`swap`, `conjunction`, `disjunction`, `absorb`, `Contiguous`) emit
-their pseudo-inverses (typically the parent passed back unchanged).
+(`equals`, `part`, `true`, `false`, `query`, `swap`, `conjunction`,
+`disjunction`, `intersection`, `union`) emit their pseudo-inverses
+(typically the parent passed back unchanged).
 
 The codebook fast path: if a basis is available and shapes match, the
 generator looks up each terminal word (those with `order = -1`) and
