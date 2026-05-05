@@ -20,7 +20,7 @@ from datetime import datetime
 import util
 from util import TheDevice, TheMessage
 from visualize import Report, TheReport
-from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend
+from util import ProjectPaths, compile, TheXMLConfig, init_config, init_compile_backend, autocast_compute_dtype
 from embed import WordVectors, PretrainModel
 from data import Data, TheData
 from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model.py
@@ -120,10 +120,19 @@ class Grammar:
     # lhs:          nonterminal this rule reduces to ('S', 'VO', 'NP', 'VP', ...).
     # rhs_symbols:  typed-form RHS category tuple (e.g. ('V', 'O') for VO -> V O).
     #               None for legacy function-call / epsilon / passthrough rules.
+    # width_min, width_max: per-rule depth-band gates (Step 1 of the
+    # 2026-05-04 perf plan).  When set (defaults: 0 = no minimum,
+    # 0 = no maximum), the chart's _chart_inside skips this rule at
+    # cells whose width falls outside [width_min, width_max].  Saves
+    # per-cell rule-enumeration work for rules that are structurally
+    # impossible at most widths (e.g., S = lift(NP, VP) only fires at
+    # the root span; NP = N only at width 1).
     RuleDef = _namedtuple(
         'RuleDef',
-        ['tier', 'canonical', 'arity', 'method_name', 'lhs', 'rhs_symbols'],
+        ['tier', 'canonical', 'arity', 'method_name', 'lhs', 'rhs_symbols',
+         'width_min', 'width_max'],
     )
+    RuleDef.__new__.__defaults__ = (0, 0)  # width_min=0, width_max=0 default
 
     def __init__(self):
         self.rules = []
@@ -261,17 +270,35 @@ class Grammar:
         # (`f(A, B)`), bare-symbol sequence (`A B`), or a single category
         # (`C` / `A`). Rules in this form arrive under the 'rule' key
         # because that's the XML element name used.
+        # Optional attribute: width="MIN..MAX" gates the rule to cells
+        # whose width falls in [MIN, MAX]. MIN/MAX may be 0 (no bound),
+        # plain integers, or 'N' (means: equals chart's full input N --
+        # signals "root span only" when both ends are 'N'). When the
+        # XML element has attributes the parser delivers it as a dict
+        # with '_' holding the text; bare strings have no width set.
         rule_entries = rules_dict.get('rule', None)
         if rule_entries is not None:
-            if isinstance(rule_entries, str):
+            if isinstance(rule_entries, str) or isinstance(rule_entries, dict):
                 rule_entries = [rule_entries]
             for entry in rule_entries:
-                if '=' not in entry:
+                if isinstance(entry, dict):
+                    text = str(entry.get('_', '')).strip()
+                    width_raw = entry.get('width', None)
+                else:
+                    text = str(entry)
+                    width_raw = None
+                if '=' not in text:
                     raise ValueError(
-                        f"<rule> requires 'head = body' syntax, got: {entry!r}")
-                lhs_raw, body = entry.split('=', 1)
+                        f"<rule> requires 'head = body' syntax, got: {text!r}")
+                lhs_raw, body = text.split('=', 1)
                 lhs = ','.join(p.strip() for p in lhs_raw.split(',') if p.strip())
-                target.append(self._parse_rule(lhs, body.strip(), tier=tier))
+                rule = self._parse_rule(lhs, body.strip(), tier=tier)
+                # Apply width gate if specified.
+                if width_raw is not None:
+                    w_min, w_max = self._parse_width_attr(str(width_raw))
+                    rule = rule._replace(
+                        width_min=int(w_min), width_max=int(w_max))
+                target.append(rule)
 
         # Legacy syntax: <S>body</S> with nonterminal as tag. Kept for
         # backward compat with tests and older XMLs. 'S' stays implicitly
@@ -290,6 +317,39 @@ class Grammar:
     def rule_by_id(self, rule_id):
         """Return the canonical production string for a rule_id (0-based)."""
         return self.rule_table[rule_id]
+
+    @staticmethod
+    def _parse_width_attr(text):
+        """Parse a ``width="MIN..MAX"`` attribute into (min, max) ints.
+
+        Accepted forms:
+          ``"3..5"``     → (3, 5)
+          ``"5"``        → (5, 5)  (single value: exact width)
+          ``"3.."``      → (3, 0)  (no upper bound; 0 means open)
+          ``"..5"``      → (0, 5)  (no lower bound)
+          ``"N..N"``     → (-1, -1) (both equal full chart N; resolved
+                                     to the actual N at runtime; sentinel
+                                     -1 means 'use the live N from data.shape')
+        Anything else falls back to (0, 0) = no gate.
+        """
+        s = str(text).strip()
+        if not s:
+            return (0, 0)
+        if '..' in s:
+            lo_s, hi_s = s.split('..', 1)
+        else:
+            lo_s = hi_s = s
+        def _one(v):
+            v = v.strip()
+            if not v:
+                return 0
+            if v.upper() == 'N':
+                return -1
+            try:
+                return int(v)
+            except ValueError:
+                return 0
+        return (_one(lo_s), _one(hi_s))
 
     def _parse_rule(self, lhs, rhs, tier='S'):
         # `tier` may be 'S' (symbols, default), 'C' (concepts), or
@@ -717,6 +777,7 @@ class Grammar:
 
         # Step 2: build the packed table from productive rules only.
         lhs_l, rl_l, rr_l, ar_l, mm_l, gid_l = [], [], [], [], [], []
+        wmin_l, wmax_l = [], []
         for gid, rule in enumerate(self.rules):
             if rule.method_name in self.SUGAR_METHODS:
                 continue  # marker-compiled away, not a freestanding row
@@ -739,6 +800,8 @@ class Grammar:
             ar_l.append(rule.arity)
             mm_l.append([mm_left, mm_right])
             gid_l.append(gid)
+            wmin_l.append(int(getattr(rule, 'width_min', 0) or 0))
+            wmax_l.append(int(getattr(rule, 'width_max', 0) or 0))
 
         device = device or torch.device('cpu')
         if lhs_l:
@@ -749,6 +812,8 @@ class Grammar:
                 'arity':       torch.tensor(ar_l,  dtype=torch.long, device=device),
                 'marker_mask': torch.tensor(mm_l,  dtype=torch.bool, device=device),
                 'global_id':   torch.tensor(gid_l, dtype=torch.long, device=device),
+                'width_min':   torch.tensor(wmin_l, dtype=torch.long, device=device),
+                'width_max':   torch.tensor(wmax_l, dtype=torch.long, device=device),
             }
         else:
             table = {
@@ -758,6 +823,8 @@ class Grammar:
                 'arity':       torch.empty(0, dtype=torch.long, device=device),
                 'marker_mask': torch.empty((0, 2), dtype=torch.bool, device=device),
                 'global_id':   torch.empty(0, dtype=torch.long, device=device),
+                'width_min':   torch.empty(0, dtype=torch.long, device=device),
+                'width_max':   torch.empty(0, dtype=torch.long, device=device),
             }
         # Stash the category index alongside so SyntacticLayer can read
         # the same view rather than rebuilding it.
@@ -812,7 +879,7 @@ class Chart(nn.Module):
     _QUERY_NORM_DROP_RATIO = 0.1
 
     def __init__(self, nInput, nOutput=None, *, max_depth=12,
-                 hidden_dim=256, D_rule=32, chart_tau=None, w_max=8,
+                 hidden_dim=256, D_rule=32, chart_tau=None, w_max=None,
                  unary_max_depth=2, feature_dim=None,
                  router_kind=None):
         super().__init__()
@@ -822,7 +889,24 @@ class Chart(nn.Module):
         self.max_depth = int(max_depth)
         self.hidden_dim = int(hidden_dim)
         self.D_rule = int(D_rule)
-        self.w_max = int(w_max)
+        # w_max bounds CKY span widths (and Viterbi recursion depth) so
+        # the inside pass is O(B * N * w_max^2 * R) rather than O(B * N^3 * R).
+        # XML override: <WordSpace><wMax>N</wMax></WordSpace>. The default
+        # is 8 (preserves the legacy perf envelope of MM_5M-style configs
+        # where N=1024 byte tokens × full N would be O(B*N^3*R) ≈ 2 GFLOPS
+        # per row). Configs that need to parse full sentences (where the
+        # chart's contribution actually matters) should set <wMax> to N
+        # explicitly. The chart logs a one-time warning when it's asked
+        # to extract a derivation for a span wider than w_max so silent
+        # truncation is visible.
+        if w_max is None:
+            try:
+                w_max_xml = TheXMLConfig.get("WordSpace.wMax", 0)
+                w_max = int(w_max_xml) if int(w_max_xml) > 0 else 8
+            except Exception:
+                w_max = 8
+        self.w_max = int(w_max) if int(w_max) > 0 else 8
+        self._w_max_warned = False
         self.unary_max_depth = int(unary_max_depth)
         # XML override for chart_tau when caller didn't pin one. Read at
         # construction time (Q10.3: Chart configures itself from XML once).
@@ -833,6 +917,31 @@ class Chart(nn.Module):
             except Exception:
                 chart_tau = 1.0
         self.chart_tau = float(chart_tau)
+
+        # Sparse-MoE-style rule gating (Shazeer et al. 2017).
+        #   chartTopK      -- per (cell, split) keep only the top-K rules
+        #                     by (score + Gaussian noise); zero the rest.
+        #                     0 (default) disables; uses all R rules.
+        #   chartNoiseEps  -- Gaussian noise scale on per-rule scores so
+        #                     low-probability rules occasionally enter
+        #                     the top-K and receive gradient.
+        # Tracking for the load-balance loss is owned by Chart and read
+        # by Models.ModelLoss when loadBalanceWeight > 0.
+        try:
+            self.chart_top_k = int(TheXMLConfig.get(
+                "WordSpace.chartTopK", 0) or 0)
+        except Exception:
+            self.chart_top_k = 0
+        try:
+            self.chart_noise_eps = float(TheXMLConfig.get(
+                "WordSpace.chartNoiseEps", 0.0) or 0.0)
+        except Exception:
+            self.chart_noise_eps = 0.0
+        # Load-balance state: per-rule activation count from the most
+        # recent inside pass. Tensor [R_bin] of int counts; rebuilt each
+        # _chart_inside call when chart_top_k > 0. None when sparse
+        # gating is disabled.
+        self._rule_load_count = None
 
         # Router selection. XML-driven; falls back to "chart" for legacy.
         if router_kind is None:
@@ -1372,6 +1481,14 @@ class Chart(nn.Module):
             return lex_log_probs
         if W is None or not torch.is_tensor(W) or W.ndim < 2:
             return lex_log_probs
+        # Lazy-allocate the learned per-atom POS buffer once C is
+        # known. Idempotent for the same C; no-op when the codebook
+        # doesn't support category tagging.
+        try:
+            if hasattr(what, 'ensure_category_logits'):
+                what.ensure_category_logits(C, device=W.device)
+        except Exception:
+            pass
         # Resolve each [B, N, D] data row to its nearest codebook
         # row via dot product, then gather the per-atom category id.
         # When the dot product is too low (< 0.1), we treat the atom
@@ -1396,23 +1513,146 @@ class Chart(nn.Module):
         best_sim, best_idx = sims.max(dim=-1)  # [B*N]
         best_cat = cat_ids_.gather(0, best_idx.clamp(min=0,
                                                     max=cat_ids_.shape[0] - 1))
-        # Mask: position has a tagged atom (cat > 0 == not '?') AND
-        # the dot product is non-trivial (atom is plausibly nearest).
         thresh = 0.1
-        valid = (best_cat > 0) & (best_sim > thresh)
-        if not bool(valid.any()):
-            return lex_log_probs
-        # Rebuild lex_log_probs with one-hot overrides at valid rows.
+        nearest_valid = best_sim > thresh
+        # Stash the (best_idx, mask) so Chart.compose can run an EMA
+        # update on category_logits after the inside pass settles.
+        # Cleared at the next call.
+        try:
+            self._last_seed_atom_idx = best_idx.detach().clone()
+            self._last_seed_atom_valid = nearest_valid.detach().clone()
+        except Exception:
+            self._last_seed_atom_idx = None
+            self._last_seed_atom_valid = None
+
         flat_log = lex_log_probs.reshape(-1, C).clone()
-        cat_clamped = best_cat.clamp(min=0, max=C - 1)
-        NEG = torch.full_like(flat_log, -1e9)
-        rows = torch.arange(flat_log.shape[0], device=device)
-        # Build a one-hot log-distribution for the override rows.
-        override = NEG.clone()
-        override[rows, cat_clamped] = 0.0
-        flat_log = torch.where(
-            valid.unsqueeze(-1).expand_as(flat_log), override, flat_log)
+
+        # Tier 1a: hard one-hot override from durable category_ids
+        # (closed-class function-word seeds set externally; usually
+        # absent in current configs but supported).
+        valid_hard = (best_cat > 0) & nearest_valid
+        if bool(valid_hard.any()):
+            cat_clamped = best_cat.clamp(min=0, max=C - 1)
+            NEG = torch.full_like(flat_log, -1e9)
+            rows = torch.arange(flat_log.shape[0], device=device)
+            override = NEG.clone()
+            override[rows, cat_clamped] = 0.0
+            flat_log = torch.where(
+                valid_hard.unsqueeze(-1).expand_as(flat_log),
+                override, flat_log)
+
+        # Tier 1b: soft prior from learned category_logits[V, C].
+        # Adds the per-atom learned log-distribution to the lex
+        # scorer's log-probs at positions whose nearest codebook
+        # match is confident. This is the "learn POS through parsing"
+        # path: chart updates category_logits via EMA after Viterbi,
+        # next forward sees the prior. No-op until the buffer has
+        # accumulated nontrivial mass (any nonzero entry).
+        cat_logits = getattr(what, 'category_logits', None)
+        if (cat_logits is not None
+                and torch.is_tensor(cat_logits)
+                and cat_logits.shape[1] == C
+                and bool(nearest_valid.any())
+                and bool(cat_logits.abs().sum() > 0)):
+            cl = cat_logits.to(device=device, dtype=flat_log.dtype)
+            # log-softmax so the row is a normalised log-distribution
+            # before we add it as a prior.
+            cl_logp = F.log_softmax(cl, dim=-1)
+            atom_logp = cl_logp.index_select(
+                0, best_idx.clamp(min=0, max=cl.shape[0] - 1))
+            # Soft additive prior on positions with a confident nearest
+            # match; positions without one keep the bare lex scorer.
+            prior_scale = 1.0
+            additive = torch.where(
+                nearest_valid.unsqueeze(-1).expand_as(atom_logp),
+                prior_scale * atom_logp,
+                torch.zeros_like(atom_logp))
+            flat_log = flat_log + additive
+            # Re-normalise so log-probs stay a valid log-distribution.
+            flat_log = F.log_softmax(flat_log, dim=-1)
+
         return flat_log.reshape(B, N, C)
+
+    def _update_codebook_pos_logits_from_chart(
+            self, chart_score, B, N, word_space, subspace):
+        """EMA-update the symbolic codebook's category_logits[V, C]
+        using the chart's per-leaf POS distribution.
+
+        The seed atom indices were stashed by `_apply_codebook_pos_seed`
+        as ``self._last_seed_atom_idx`` (shape [B*N], codebook row of
+        the nearest match per token position) and
+        ``self._last_seed_atom_valid`` (bool [B*N], True iff the dot
+        product passed the confidence threshold). For each valid leaf,
+        we take the chart's per-cell POS softmax at (i, i+1) and EMA
+        it into category_logits[atom_idx].
+
+        No-op when the codebook has no category_logits buffer or when
+        no positions passed the seed threshold. Runs without gradient.
+        """
+        if word_space is None:
+            return
+        sym_space = getattr(word_space, 'symbolicSpace', None)
+        if sym_space is None:
+            return
+        sym_subspace = getattr(sym_space, 'subspace', None)
+        candidate = subspace if subspace is not None else sym_subspace
+        if candidate is None:
+            return
+        what = getattr(candidate, 'what', None)
+        if what is None or not hasattr(what, 'update_category_logits'):
+            return
+        cat_logits = getattr(what, 'category_logits', None)
+        if cat_logits is None:
+            return
+        atom_idx = getattr(self, '_last_seed_atom_idx', None)
+        atom_valid = getattr(self, '_last_seed_atom_valid', None)
+        if (atom_idx is None or atom_valid is None
+                or chart_score is None or N <= 0):
+            return
+        if int(atom_valid.sum().item()) == 0:
+            return
+        # chart_pos at the leaves: [B, N, C], softmax over C.
+        diag = torch.arange(N, device=chart_score.device)
+        leaf_logits = chart_score[:, diag, diag + 1, :]  # [B, N, C]
+        leaf_pos = F.softmax(leaf_logits, dim=-1)
+        flat_pos = leaf_pos.reshape(B * N, -1)
+        # Restrict to seed-valid positions and update those atoms.
+        idx_flat = atom_idx.reshape(-1)
+        valid_flat = atom_valid.reshape(-1).to(torch.bool)
+        if idx_flat.shape[0] != flat_pos.shape[0]:
+            return
+        valid_rows = torch.nonzero(valid_flat, as_tuple=False).squeeze(-1)
+        if valid_rows.numel() == 0:
+            return
+        sel_atoms = idx_flat.index_select(0, valid_rows)
+        sel_pos = flat_pos.index_select(0, valid_rows)
+        what.update_category_logits(sel_atoms, sel_pos, ema=0.05)
+
+    def load_balance_loss(self, weight=1.0):
+        """Coefficient-of-variation² penalty over per-rule activation
+        counts, scaled by ``weight``.  Encourages the noisy top-K
+        gating (Shazeer et al. 2017) to spread mass across rules
+        instead of collapsing onto a few.
+
+        Returns 0.0 (Python float, not tensor) when sparse gating is
+        disabled or no inside pass has run yet.  Tensor when active.
+        Caller adds it to the model's training loss.
+        """
+        load = getattr(self, '_rule_load_count', None)
+        if load is None or load.numel() == 0 or float(weight) <= 0.0:
+            return 0.0
+        load_f = load.to(torch.float32)
+        mean = load_f.mean()
+        if float(mean.item()) <= 0.0:
+            return 0.0
+        cv2 = ((load_f - mean) ** 2).mean() / (mean ** 2 + 1e-8)
+        return cv2 * float(weight)
+
+    def reset_load_count(self):
+        """Clear per-rule activation counts.  Call between batches so
+        the load-balance loss reflects only the current batch's
+        gating distribution."""
+        self._rule_load_count = None
 
     def _compute_chart_pos(self):
         """Convert the chart's log-score tensor to a probability simplex
@@ -1451,7 +1691,12 @@ class Chart(nn.Module):
         """
         B, N, D = data.shape
         device = data.device
-        dtype = data.dtype
+        # Allocate chart buffers in autocast's compute dtype when active,
+        # so in-place writes from autocast-promoted ops (lex_cat_scorer,
+        # rule_embed @ data, etc.) don't trip the dtype-mismatch error
+        # at chart_score[...] = lex_log_probs.  Falls back to data.dtype
+        # when autocast is off.
+        dtype = autocast_compute_dtype(device, fallback=data.dtype)
 
         gv = getattr(TheGrammar, 'rule_table_version', 0)
         if gv != self._soft_chart_version:
@@ -1504,9 +1749,9 @@ class Chart(nn.Module):
         i_diag = torch.arange(N, device=device)
         chart_score = chart_score.clone()
         chart_vec = chart_vec.clone()
-        chart_score[:, i_diag, i_diag + 1, :] = lex_log_probs
+        chart_score[:, i_diag, i_diag + 1, :] = lex_log_probs.to(dtype)
         chart_vec[:, i_diag, i_diag + 1, :, :] = (
-            data.unsqueeze(2).expand(B, N, C, D))
+            data.unsqueeze(2).expand(B, N, C, D).to(dtype))
 
         bin_global = (table['global_id'][bin_idx].cpu().tolist()
                       if R_bin > 0 else [])
@@ -1615,6 +1860,68 @@ class Chart(nn.Module):
                 cand_score = cand_score / tau
             merged_vec = merged_vec.view(B, P, Sp, R_bin, D)
 
+            # Per-rule width gating: zero out rules whose declared
+            # width-band [width_min, width_max] excludes the current
+            # cell width w.  width_min/width_max == 0 mean "no bound";
+            # width_min/width_max == -1 (sentinel from <rule width="N..">)
+            # mean "= live N", resolved against the data's N.
+            wmin_t = table['width_min'][bin_idx]
+            wmax_t = table['width_max'][bin_idx]
+            if int(wmin_t.abs().sum().item()) > 0 or int(wmax_t.abs().sum().item()) > 0:
+                # Resolve -1 sentinels against the live N.
+                wmin_eff = torch.where(wmin_t < 0,
+                    torch.full_like(wmin_t, int(N)), wmin_t)
+                wmax_eff = torch.where(wmax_t < 0,
+                    torch.full_like(wmax_t, int(N)), wmax_t)
+                # 0 means "no bound": replace with sentinels that always pass.
+                wmin_eff = torch.where(wmin_eff == 0,
+                    torch.zeros_like(wmin_eff), wmin_eff)
+                wmax_eff = torch.where(wmax_eff == 0,
+                    torch.full_like(wmax_eff, int(10**9)), wmax_eff)
+                # Mask: True where this rule is allowed at width w.
+                allowed = (wmin_eff <= int(w)) & (int(w) <= wmax_eff)  # [R_bin]
+                if not bool(allowed.all().item()):
+                    block = (~allowed).view(1, 1, 1, R_bin).expand_as(cand_score)
+                    cand_score = cand_score.masked_fill(block, NEG_INF)
+
+            # Noisy top-K rule gating (Shazeer et al. 2017,
+            # "Outrageously Large Neural Networks").  When
+            # chart_top_k > 0, add Gaussian noise to per-rule scores
+            # at each (cell, split) position, then mask all rules
+            # outside the top-K with NEG_INF.  The downstream softmax
+            # / logsumexp paths see only the kept rules (others have
+            # weight 0), which cuts effective per-cell rule-execution
+            # cost from R_bin to chart_top_k while keeping rare-rule
+            # gradients alive via the noise.  Disabled at eval (no
+            # exploration during Viterbi).
+            if (self.chart_top_k > 0
+                    and self.chart_top_k < R_bin
+                    and self.training
+                    and not hard):
+                noisy = cand_score
+                if self.chart_noise_eps > 0.0:
+                    noisy = noisy + torch.randn_like(noisy) * float(
+                        self.chart_noise_eps)
+                # top-K over the rule axis at each (B, P, Sp).
+                _, top_idx = noisy.topk(
+                    int(self.chart_top_k), dim=-1)
+                keep_mask = torch.zeros_like(noisy)
+                keep_mask.scatter_(-1, top_idx, 1.0)
+                cand_score = cand_score.masked_fill(
+                    keep_mask == 0, NEG_INF)
+                # Update per-rule load count (used by load-balance loss).
+                # Sum across all (B, P, Sp) cells -- how many candidate
+                # slots picked each rule. Detached: this is bookkeeping,
+                # not a differentiable signal here.
+                with torch.no_grad():
+                    incr = keep_mask.sum(dim=(0, 1, 2)).long().detach()
+                if (self._rule_load_count is None
+                        or self._rule_load_count.numel() != R_bin):
+                    self._rule_load_count = incr.to(torch.long)
+                else:
+                    self._rule_load_count = (
+                        self._rule_load_count.to(incr.device) + incr)
+
             rule_to_A = F.one_hot(lhs_bin, num_classes=C).to(dtype)
             log_mask = torch.where(rule_to_A > 0,
                                    torch.zeros_like(rule_to_A),
@@ -1663,8 +1970,14 @@ class Chart(nn.Module):
                                 + new_w_n.unsqueeze(-1) * new_vec_w)
             chart_score = chart_score.clone()
             chart_vec = chart_vec.clone()
-            chart_score[:, i_range, i_range + w, :] = combined_score
-            chart_vec[:, i_range, i_range + w, :, :] = combined_vec
+            # Casts: torch.logsumexp may upcast to fp32 even when inputs
+            # are bf16 (autocast bf16 keeps reductions in fp32 for
+            # numerical stability), so the resulting combined_* tensors
+            # may not match chart_*'s dtype. Cast on the scatter.
+            chart_score[:, i_range, i_range + w, :] = combined_score.to(
+                chart_score.dtype)
+            chart_vec[:, i_range, i_range + w, :, :] = combined_vec.to(
+                chart_vec.dtype)
 
             # Bounded unary closure.
             if R_un > 0:
@@ -1740,8 +2053,10 @@ class Chart(nn.Module):
                             + nw.unsqueeze(-1) * new_un_vec_per_A)
                     chart_score = chart_score.clone()
                     chart_vec = chart_vec.clone()
-                    chart_score[:, i_range, i_range + w, :] = combined_u
-                    chart_vec[:, i_range, i_range + w, :, :] = combined_vec_u
+                    chart_score[:, i_range, i_range + w, :] = combined_u.to(
+                        chart_score.dtype)
+                    chart_vec[:, i_range, i_range + w, :, :] = combined_vec_u.to(
+                        chart_vec.dtype)
 
         self._chart_score = chart_score
         self._chart_vec = chart_vec
@@ -1793,6 +2108,26 @@ class Chart(nn.Module):
         # legacy SVO walker.
         self._derivation_trace = self._viterbi_extract(
             chart_score, chart_vec, B, N)
+
+        # POS learning hook: EMA-update the symbolic codebook's
+        # category_logits[V, C] from the chart's per-leaf POS distribution.
+        # Each leaf cell (i, i+1) carries a softmax over C categories;
+        # we attribute that distribution to the codebook atom whose
+        # vector is the nearest match for that leaf's input embedding
+        # (the same `best_idx` computed in _apply_codebook_pos_seed).
+        # Disabled in training mode: the soft-mode chart's per-cell
+        # mixtures are ambiguous; EMA writes only run during eval/Viterbi
+        # so the seed reflects definite parses, matching the user's
+        # "store only definite assertions" rule.
+        try:
+            if (not hard) and self.training:
+                pass  # soft mode in training: don't write seeds.
+            else:
+                self._update_codebook_pos_logits_from_chart(
+                    chart_score, B, N, word_space, subspace)
+        except Exception:
+            # POS learning is advisory; never let it break the forward.
+            pass
 
         # POS side-channel — Mechanism 3 (rule-prediction conditioning).
         # Walk the parsed trace and push each merge's LHS category
@@ -1955,21 +2290,29 @@ class Chart(nn.Module):
                 add_l_score = push_left_score[:, :, r].view(B, P * Sp)
                 add_l_vec = parent_vec_per_rule[:, :, r, :].view(
                     B, P * Sp, D)
+                # Casts on every scatter: logsumexp / arithmetic on bf16
+                # operands often returns fp32 under autocast, so the dst
+                # dtype mismatch trips index_put_. Funnel everything
+                # through outside_*.dtype for safety.
                 if hard:
                     pick_new = (add_l_score >= old_l_score)
                     comb_l = torch.where(pick_new, add_l_score, old_l_score)
-                    outside_score[:, i_flat, k_flat, Br] = comb_l
+                    outside_score[:, i_flat, k_flat, Br] = comb_l.to(
+                        outside_score.dtype)
                     outside_vec[:, i_flat, k_flat, Br, :] = torch.where(
-                        pick_new.unsqueeze(-1), add_l_vec, old_l_vec)
+                        pick_new.unsqueeze(-1), add_l_vec, old_l_vec).to(
+                        outside_vec.dtype)
                 else:
                     stk_l = torch.stack([old_l_score, add_l_score], dim=0)
                     comb_l = torch.logsumexp(stk_l, dim=0)
                     w_old_l = (old_l_score - comb_l).exp()
                     w_new_l = (add_l_score - comb_l).exp()
-                    outside_score[:, i_flat, k_flat, Br] = comb_l
+                    outside_score[:, i_flat, k_flat, Br] = comb_l.to(
+                        outside_score.dtype)
                     outside_vec[:, i_flat, k_flat, Br, :] = (
                         w_old_l.unsqueeze(-1) * old_l_vec
-                        + w_new_l.unsqueeze(-1) * add_l_vec)
+                        + w_new_l.unsqueeze(-1) * add_l_vec).to(
+                        outside_vec.dtype)
                 old_r_score = outside_score[:, k_flat, j_flat, Cr]
                 old_r_vec = outside_vec[:, k_flat, j_flat, Cr, :]
                 add_r_score = push_right_score[:, :, r].view(B, P * Sp)
@@ -1978,18 +2321,22 @@ class Chart(nn.Module):
                 if hard:
                     pick_new = (add_r_score >= old_r_score)
                     comb_r = torch.where(pick_new, add_r_score, old_r_score)
-                    outside_score[:, k_flat, j_flat, Cr] = comb_r
+                    outside_score[:, k_flat, j_flat, Cr] = comb_r.to(
+                        outside_score.dtype)
                     outside_vec[:, k_flat, j_flat, Cr, :] = torch.where(
-                        pick_new.unsqueeze(-1), add_r_vec, old_r_vec)
+                        pick_new.unsqueeze(-1), add_r_vec, old_r_vec).to(
+                        outside_vec.dtype)
                 else:
                     stk_r = torch.stack([old_r_score, add_r_score], dim=0)
                     comb_r = torch.logsumexp(stk_r, dim=0)
                     w_old_r = (old_r_score - comb_r).exp()
                     w_new_r = (add_r_score - comb_r).exp()
-                    outside_score[:, k_flat, j_flat, Cr] = comb_r
+                    outside_score[:, k_flat, j_flat, Cr] = comb_r.to(
+                        outside_score.dtype)
                     outside_vec[:, k_flat, j_flat, Cr, :] = (
                         w_old_r.unsqueeze(-1) * old_r_vec
-                        + w_new_r.unsqueeze(-1) * add_r_vec)
+                        + w_new_r.unsqueeze(-1) * add_r_vec).to(
+                        outside_vec.dtype)
 
         return outside_score, outside_vec
 
@@ -2037,6 +2384,19 @@ class Chart(nn.Module):
         R = int(table['lhs'].numel())
         if R == 0 or N == 0:
             return [[] for _ in range(B)]
+        # One-time warning when the root span exceeds w_max -- this is
+        # the silent-truncation failure mode (chart can't reach the
+        # full-sentence root, returns empty trace, looks like the chart
+        # didn't fire). Set <wMax> in XML to N to fix.
+        if N > self.w_max and not getattr(self, '_w_max_warned', False):
+            import logging
+            logging.getLogger(__name__).warning(
+                "Chart.w_max=%d but input N=%d; root span (0, %d) exceeds "
+                "w_max so derivation traces will be empty. Set "
+                "<WordSpace><wMax>%d</wMax></WordSpace> to fix (cost is "
+                "O(N * w_max^2 * R) per row).",
+                self.w_max, N, N, N)
+            self._w_max_warned = True
         rhs_left = table['rhs_left']
         rhs_right = table['rhs_right']
         lhs = table['lhs']
@@ -2736,7 +3096,15 @@ class SyntacticLayer(Layer):
         self._compat_score_mod = None
         self._unary_compat_mod = None
         self._lex_cat_scorer = None
-        self.w_max = 8
+        # Legacy SyntacticLayer field; the soft-chart Chart instance
+        # has its own w_max read from <WordSpace><wMax>. This stub is
+        # kept for code paths that still reach for self.w_max on the
+        # old syntactic layer.
+        try:
+            _wmax_xml = int(TheXMLConfig.get("WordSpace.wMax", 0) or 0)
+        except Exception:
+            _wmax_xml = 0
+        self.w_max = _wmax_xml if _wmax_xml > 0 else 8
         self.unary_max_depth = 2
         self.D_rule = 32
         # Softmax temperature on the chart's per-cell rule mixture.
@@ -3616,15 +3984,30 @@ class WordSpace(Space):
         Idempotent within a forward pass: each per-space SyntacticLayer
         resets its per-tier cursor to 0 and pops one rule per fold step.
 
-        Fast path: when the grammar is default-only (the unary pi /
-        sigma folds and nothing else), skip the CKY-style inside pass
-        entirely. ``current_rules`` stays empty so per-space
-        SyntacticLayer dispatch falls through to its default_rule,
-        firing ``PiLayer.forward`` / ``SigmaLayer.forward`` once per
-        step. ``_compose_generation`` still bumps so cursor resets fire.
+        Fast paths (no chart inside pass):
+          * ``_grammar_is_default_only`` — every rule is the unary pi /
+            sigma fold registered as the per-tier default.
+          * ``useGrammar='none'`` — per-space SyntacticLayer dispatch
+            ignores ``current_rules`` entirely and falls through to its
+            default_rule, so running the chart is wasted compute.
+            (MM_5M, the legacy MentalModel, etc.)
         """
         self._compose_generation += 1
         if self._grammar_is_default_only:
+            self.current_rules = {}
+            return self.current_rules
+        # useGrammar='none' guard: skip the chart inside pass entirely
+        # because the per-space SyntacticLayers won't read its rules.
+        # Cached on first call to avoid an XMLConfig.get per forward.
+        ug = getattr(self, '_use_grammar_cached', None)
+        if ug is None:
+            try:
+                ug = str(util.TheXMLConfig.get(
+                    "WordSpace.useGrammar", default="none")).lower()
+            except Exception:
+                ug = "none"
+            self._use_grammar_cached = ug
+        if ug == "none":
             self.current_rules = {}
             return self.current_rules
         self.current_rules = self.chart.compose(
@@ -3635,10 +4018,21 @@ class WordSpace(Space):
         """Run the chart's outside pass + Viterbi backtrace; populate
         ``self.generate_rules``.
 
-        Default-only fast path mirrors ``compose``.
+        Default-only and useGrammar='none' fast paths mirror ``compose``.
         """
         self._generate_generation += 1
         if self._grammar_is_default_only:
+            self.generate_rules = {}
+            return self.generate_rules
+        ug = getattr(self, '_use_grammar_cached', None)
+        if ug is None:
+            try:
+                ug = str(util.TheXMLConfig.get(
+                    "WordSpace.useGrammar", default="none")).lower()
+            except Exception:
+                ug = "none"
+            self._use_grammar_cached = ug
+        if ug == "none":
             self.generate_rules = {}
             return self.generate_rules
         self.generate_rules = self.chart.generate(
@@ -3988,8 +4382,22 @@ class WordSpace(Space):
             if grammar_S_methods & mereological_methods:
                 if getattr(self, 'mereological_tree', None) is None:
                     from Layers import MereologicalTree
-                    nVectors_S = int(space.spaceShape[0])
-                    self.mereological_tree = MereologicalTree(V=nVectors_S)
+                    # XML override: <architecture><mereologicalTreeSize>N
+                    # When unset, default to the symbolic codebook's actual
+                    # nVectors (the codebook size, not the per-stage
+                    # spaceShape[0] which gets clobbered by N-halving).
+                    sym_codebook = getattr(
+                        getattr(space, 'subspace', None), 'what', None)
+                    cb_V = int(getattr(sym_codebook, 'nVectors', 0) or 0)
+                    fallback_V = int(space.spaceShape[0])
+                    default_V = cb_V if cb_V > 0 else fallback_V
+                    try:
+                        size_xml = int(util.TheXMLConfig.get(
+                            "architecture.mereologicalTreeSize",
+                            default=default_V) or default_V)
+                    except Exception:
+                        size_xml = default_V
+                    self.mereological_tree = MereologicalTree(V=int(size_xml))
                 if 'part' in grammar_S_methods:
                     from Layers import PartLayer
                     builtin_layers['part'] = PartLayer(

@@ -996,6 +996,16 @@ class Codebook(Basis):
         # lexical fill to seed pos_lex when an input position resolves
         # to a tagged codebook atom — see doc/Language.md "POS side-channel".
         self.category_ids = None
+        # Per-row part-of-speech distribution learned through parsing.
+        # Shape ``[V, C]`` where C = len(WordSpace.category_index).
+        # Float buffer (not Parameter): updated via EMA from the chart's
+        # _chart_pos at the leaves whose nearest codebook match is this
+        # atom; persisted in state_dict alongside category_ids. The seed
+        # path in `_apply_codebook_pos_seed` reads softmax(category_logits)
+        # and uses it as a prior on the lex scorer when the atom is
+        # confidently tagged. Allocated lazily by ``ensure_category_logits``
+        # since C isn't known until the grammar is configured.
+        self.category_logits = None
         # Per-position signed projection cache, populated by ``project``
         # so ``project_reverse`` can recover the original input
         # exactly. Shape ``[B, V, N]`` (or ``None`` when project hasn't
@@ -1129,6 +1139,66 @@ class Codebook(Basis):
         if self.category_ids is None:
             return 0
         return int(self.category_ids[int(idx)].item())
+
+    def ensure_category_logits(self, num_categories, device=None):
+        """Lazily allocate ``category_logits: [V, C]`` once C is known.
+
+        Initial value is zeros (uniform softmax distribution); EMA
+        updates from `Chart.compose` accumulate evidence from the
+        chart's per-leaf POS distribution. Returns the buffer so the
+        caller can write to it directly. Idempotent for the same C.
+        """
+        if self.category_ids is None:
+            return None
+        C = int(num_categories)
+        if C <= 0:
+            return None
+        existing = self.category_logits
+        if (existing is not None
+                and existing.dim() == 2
+                and existing.shape[0] == self.nVectors
+                and existing.shape[1] == C):
+            return existing
+        dev = device if device is not None else (
+            existing.device if existing is not None else TheDevice.get())
+        self.category_logits = torch.zeros(
+            self.nVectors, C, dtype=torch.float32, device=dev)
+        return self.category_logits
+
+    def update_category_logits(self, atom_idx, target_dist, ema=0.05):
+        """EMA-update the per-atom POS logit row toward ``target_dist``.
+
+        ``atom_idx``: scalar or [B] long tensor of codebook rows.
+        ``target_dist``: matching-shape [B, C] float distribution
+            (typically a softmax over chart_pos at a leaf cell).
+        ``ema``: blend factor; new = (1 - ema) * old + ema * target_logit
+            where target_logit = log(target_dist + eps).
+
+        No-op when category_logits hasn't been allocated. Updates run
+        without gradient (this is discrete bookkeeping).
+        """
+        if self.category_logits is None:
+            return
+        if not torch.is_tensor(atom_idx):
+            atom_idx = torch.tensor([int(atom_idx)], dtype=torch.long)
+        else:
+            atom_idx = atom_idx.long().reshape(-1)
+        if not torch.is_tensor(target_dist):
+            return
+        td = target_dist.detach().float()
+        if td.dim() == 1:
+            td = td.unsqueeze(0)
+        if td.shape[0] != atom_idx.shape[0]:
+            return
+        if td.shape[1] != self.category_logits.shape[1]:
+            return
+        with torch.no_grad():
+            atom_idx = atom_idx.to(self.category_logits.device)
+            td = td.to(self.category_logits.device)
+            target_logit = torch.log(td.clamp(min=1e-6))
+            old = self.category_logits.index_select(0, atom_idx)
+            new = (1.0 - float(ema)) * old + float(ema) * target_logit
+            self.category_logits.index_copy_(0, atom_idx, new)
 
     def updateWeights(self, embed_sum, cluster_size):
         return torch.ones(self.vq.codebook_size, device=TheDevice.get())
@@ -2139,6 +2209,23 @@ class Embedding(Basis):
     def embedding_parameters(self):
         """Return embedding parameters for optimizer inclusion."""
         return [self.wv._vectors]
+
+    def use_sparse_grad(self, threshold=8192):
+        """Mark this codebook for sparse-gradient lookup when its
+        vocabulary is large enough that dense Adam moments dominate
+        wall-clock cost.
+
+        Read by ``Subspace._lookup_modality`` to switch the embedding
+        gather to ``F.embedding(..., sparse=True)``; paired with a
+        SparseAdam group in ``BaseModel.getOptimizer``.
+
+        Default threshold: 8192 rows.  Below that the dense path is
+        actually faster (Python overhead of the sparse code path
+        outweighs the moment-update savings).
+        """
+        nV = int(getattr(self, 'nVectors', 0) or 0)
+        self.sparse_grad = bool(nV >= int(threshold))
+        return self.sparse_grad
 
     def parameters_for_optimizer(self):
         return self.embedding_parameters()
@@ -3555,12 +3642,26 @@ class SubSpace(nn.Module):
 
         For Embedding/Codebook: index into codebook rows.
         For WhereEncoding: compute sin/cos from offset indices.
+
+        Sparse-gradient path: when ``basis.sparse_grad`` is True (set by
+        Embedding for the perceptual lexicon when its V is large), use
+        ``F.embedding(..., sparse=True)`` so backprop produces a sparse
+        gradient that touches only the rows we indexed.  Pairs with
+        SparseAdam in BaseModel.getOptimizer to skip the V*D dense
+        moment update on every step.
         """
         codebook = basis.getW()
         if codebook is None:
             return None
         if codebook.ndim == 2:
             # [V, D] codebook -- index with [B, N] -> [B, N, D]
+            if getattr(basis, 'sparse_grad', False):
+                # F.embedding requires the weight to be a Parameter or
+                # at least a leaf tensor; falls back to dense indexing
+                # otherwise.
+                if codebook.requires_grad:
+                    return torch.nn.functional.embedding(
+                        indices.long(), codebook, sparse=True)
             return codebook[indices.long()]
         # Already [B, N, D] (e.g. from set_what on a Tensor basis)
         return codebook
@@ -7282,15 +7383,26 @@ class SymbolicSpace(Space):
     def resolve(self, subspace):
         """Collapse [pos, neg] bivector into 1-D per-symbol activation.
 
-        Writes ``subspace.activation = pos + neg`` (per symbol, scalar sum).
+        Writes ``subspace.activation = pos + neg`` -- the unsigned total
+        signal strength of the symbol.  Matches ``inside()`` /
+        ``outside()`` mereological-extent semantics: a symbol's "extent"
+        is the magnitude of its bivector summed across both poles, so
+        a point is part-of the symbol iff its magnitude does not exceed
+        ``pos + neg``.  Under serial processing (one pole non-zero at a
+        time, the typical model state), the sum is lossless: it equals
+        whichever pole fired.
 
-        Under serial processing exactly one pole is non-zero per step, so
-        resolve is lossless.  Under parallel accumulation the sum represents
-        non-contradiction confidence (total signal strength, unsigned).
+        Note: this is NOT the signed Degree of Truth (``pos - neg``).
+        DoT carries directionality (affirmation vs negation); resolve()
+        intentionally collapses to the unsigned magnitude because the
+        codebook snap and the part-of/inside relations operate on
+        magnitude alone.  Callers that need DoT should compute
+        ``pos - neg`` themselves from the bivector.
 
-        The result is stored directly via ``activation.setW()`` rather than
-        through ``set_activation()`` so that the tensor remains 1-D ``[B, N]``
-        rather than being lifted to the bivector ``[B, N, 2]``.
+        The result is stored directly via ``activation.setW()`` rather
+        than through ``set_activation()`` so that the tensor remains
+        1-D ``[B, N]`` rather than being lifted back to the bivector
+        ``[B, N, 2]``.
 
         Source of the bivector (in priority order):
           1. The muxed event ``subspace.event.getW()`` when it is a [B, N, D]

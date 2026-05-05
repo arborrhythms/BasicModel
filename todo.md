@@ -1,7 +1,18 @@
 
 
-### Generative productions — parent expands to children.
-C = emit_head(S)                       # codebook lookup: emit best-matching atom
+* doc/plans/2026-05-04-bivector-codebook-luminosity-handoff.md
+* Mereological Reasoning
+  Is subject predicate?
+  Represent queries as asking part( x,y )
+  Store the question in LTM explicitly so the answer can be computed
+* Prediction over sentences needs clarification
+* Store explicit parthood on WordSpace when encountering IS of definition: part ( x,y )
+  That should only happen when sentence confidence is high.
+* Add truth
+  Subsymbolic reasoning by finding the parts/wholes
+  Compute degree of truth:
+  Verify any answer given to the user against the Truth
+
 
 ================================== April 24 ==================================
 

@@ -2468,60 +2468,106 @@ class MereologicalTree(nn.Module):
     """Long-term memory: a persistent tree of mereological 'part-of'
     relations over a codebook of ``V`` prototype symbols.
 
-    Functions as the model's accumulated explicit knowledge --
-    each ``part(a, b)`` assertion writes one child link, each
-    ``equals(a, b)`` writes two (mutual parthood). The tree is
-    monotone: knowledge accumulates, nothing is unlearned (per
-    the 2026-05-04 design directive). Saved alongside trained
-    weights so a checkpoint captures both the parametric and
-    the symbolic-knowledge state.
+    Stores **direct** edges only; transitivity is computed on read.
+    This matches the psychological constraint that humans store
+    ``a < b`` and ``b < c`` separately and infer ``a < c`` on demand
+    rather than caching the full closure.
 
-    The tree is stored as a ``[V, V]`` accumulator matrix:
-    ``adjacency[child, parent]`` is the count of times a
-    ``part(child, parent)`` relation has been asserted. Multiple
-    assertions of the same link strengthen the count, so the
-    symmetric part of the adjacency carries the equivalence-class
-    structure (from ``equals`` calls) and the asymmetric part
-    carries the proper-part hierarchy.
+    Storage model (replaces the legacy ``[V, V]`` adjacency):
 
-    Persistence: ``adjacency`` is registered as an ``nn.Module``
-    buffer (not a ``Parameter`` -- discrete knowledge, no
-    gradient flow), so ``model.state_dict()`` and the resulting
-    ``.ckpt`` file capture it automatically. ``torch.save`` /
-    ``torch.load`` round-trip the tree along with the parametric
-    weights.
+      ``parents:        Long[V]``  direct parent per atom; -1 = root.
+      ``start, end:     Long[V]``  contiguous-row interval per atom;
+                                   ``start[A] ≤ row[B] < end[A]`` iff B
+                                   is a stored proper-part of A. Lazy:
+                                   recomputed by ``_resort()`` on the
+                                   first read after any write.
+      ``equality_pairs: Long[K, 2]``  sparse table for mutual parthood
+                                   ``equals(A, B)`` assertions where
+                                   neither side is a stored ancestor of
+                                   the other. K is dynamic, capped at V.
 
-    TODO (future): support exporting the tree as a parthood
-    relationship in an XML ``<truth>`` dump. For each link
-    ``adjacency[c, p] > 0`` emit ``<part child="c" parent="p"
-    count="N"/>`` (and aggregate equal-pair edges into
-    ``<equals a="..." b="..."/>``). The XML form is human-
-    readable / diff-friendly and lets a model's accumulated
-    explicit knowledge be inspected, audited, edited, or
-    transferred between checkpoints without round-tripping the
-    full tensor state. See ``doc/Truth.md`` once that doc is
-    extended with the dump schema.
+    Distinct references with equal referents are kept distinct in the
+    codebook (per user spec): ``equals`` does NOT merge codebook rows.
+
+    Writes are deferred and gated:
+      - ``writes_enabled`` (default False) — top-level kill switch.
+        Set True only when the model has decided the chart's POS /
+        derivation pipeline is reliable enough to commit to long-term
+        memory.
+      - ``confidence_min`` (default 0.5) — per-write threshold. Each
+        ``add_part`` / ``add_equal`` accepts an optional confidence in
+        [0, 1]; below threshold the assertion is dropped.
+      - ``add_*`` enqueues into ``pending_part`` / ``pending_equal``.
+      - ``commit()`` consumes the queues atomically: validates each
+        proposed edge against the existing tree, accepts or rejects,
+        and rebuilds ``(start, end)`` via DFS.
+
+    Persistence: ``parents``, ``start``, ``end`` and the equality
+    table are registered buffers, so ``state_dict()`` round-trips
+    the tree alongside the parametric weights.
 
     Usage:
 
         tree = MereologicalTree(V=128)
-        tree.add_part(child_idx=3, parent_idx=7)        # part(3, 7)
-        tree.add_equal(idx_a=5, idx_b=11)               # equals(5, 11)
-        tree.is_part_of(child_idx=3, parent_idx=7)      # True
-        tree.adjacency                                  # [V, V] count
-
-    Vectorised API: ``add_part`` / ``add_equal`` accept ``[B]``
-    long tensors of indices and accumulate one link per batch row.
+        tree.writes_enabled = True
+        tree.add_part(child_idx=3, parent_idx=7, confidence=0.8)
+        tree.add_equal(idx_a=5, idx_b=11, confidence=0.9)
+        tree.commit()
+        tree.is_part_of(child_idx=3, parent_idx=7)      # True (direct)
+        tree.is_part_of_transitive(child_idx=3,
+                                   parent_idx=ancestor) # walks parents
     """
 
     def __init__(self, V, device=None, dtype=torch.float32):
         super().__init__()
         self.V = int(V)
-        # Buffer (not Parameter): no gradient flow but persisted in
-        # state_dict / .ckpt alongside the parametric weights.
         self.register_buffer(
-            'adjacency',
-            torch.zeros(self.V, self.V, dtype=dtype, device=device))
+            'parents',
+            torch.full((self.V,), -1, dtype=torch.long, device=device))
+        self.register_buffer(
+            'start',
+            torch.arange(self.V, dtype=torch.long, device=device))
+        self.register_buffer(
+            'end',
+            torch.arange(1, self.V + 1, dtype=torch.long, device=device))
+        # Equality pairs as a [K, 2] long tensor; rows are (a, b) with
+        # mutual parthood. Capped at V rows; growing past that is a
+        # signal that the codebook is undersized.
+        self.register_buffer(
+            'equality_pairs',
+            torch.empty(0, 2, dtype=torch.long, device=device))
+        # Pending queues — Python lists (not buffers) since they live
+        # only between writes and commits. Each entry is a 3-tuple
+        # (child_or_a, parent_or_b, confidence_float).
+        self.pending_part = []
+        self.pending_equal = []
+        # Gates.
+        self.writes_enabled = False
+        self.confidence_min = 0.5
+        # Lazy cache validity. Reads bump _resort if dirty.
+        self._intervals_dirty = False
+
+    @property
+    def adjacency(self):
+        """Back-compat: materialise a dense ``[V, V]`` bool adjacency
+        for callers (mostly tests) that still poke at the old field.
+        Direct edges only — transitive callers should use
+        ``transitive_closure()``.
+        """
+        V = self.V
+        adj = torch.zeros(V, V, dtype=torch.float32, device=self.parents.device)
+        valid = (self.parents >= 0).nonzero(as_tuple=False).squeeze(-1)
+        for c in valid.tolist():
+            p = int(self.parents[c].item())
+            if 0 <= p < V:
+                adj[c, p] = 1.0
+        if self.equality_pairs.numel() > 0:
+            for r in range(self.equality_pairs.shape[0]):
+                a, b = int(self.equality_pairs[r, 0]), int(self.equality_pairs[r, 1])
+                if 0 <= a < V and 0 <= b < V:
+                    adj[a, b] = 1.0
+                    adj[b, a] = 1.0
+        return adj
 
     @staticmethod
     def _as_long(idx):
@@ -2529,117 +2575,330 @@ class MereologicalTree(nn.Module):
             return idx.long().reshape(-1)
         return torch.tensor(idx, dtype=torch.long).reshape(-1)
 
-    def add_part(self, child_idx, parent_idx):
-        """Add ``part(child, parent)`` link(s). ``child_idx`` and
-        ``parent_idx`` may be scalars or ``[B]`` long tensors;
-        broadcast pairs are added in a single ``index_put_``.
+    def _check_index(self, x):
+        return 0 <= int(x) < self.V
+
+    def add_part(self, child_idx, parent_idx, confidence=1.0):
+        """Enqueue a ``part(child, parent)`` assertion.
+
+        Gated by ``writes_enabled`` and ``confidence >= confidence_min``.
+        Accepts scalars or 1-D long tensors (broadcast to matching len).
+        Actual structural mutation happens at ``commit()``.
         """
+        if not self.writes_enabled:
+            return
+        if float(confidence) < float(self.confidence_min):
+            return
         child = self._as_long(child_idx)
         parent = self._as_long(parent_idx)
         if child.numel() == 0 or parent.numel() == 0:
             return
         if child.numel() != parent.numel():
             child, parent = torch.broadcast_tensors(child, parent)
-            child  = child.reshape(-1).long()
+            child = child.reshape(-1).long()
             parent = parent.reshape(-1).long()
-        # Move indices to adjacency's device.
-        child  = child.to(self.adjacency.device)
-        parent = parent.to(self.adjacency.device)
-        ones = torch.ones_like(child, dtype=self.adjacency.dtype)
-        self.adjacency.index_put_((child, parent), ones, accumulate=True)
+        for c, p in zip(child.tolist(), parent.tolist()):
+            if not self._check_index(c) or not self._check_index(p):
+                continue
+            if c == p:
+                continue
+            self.pending_part.append((int(c), int(p), float(confidence)))
 
-    def add_equal(self, idx_a, idx_b):
-        """Add two child links ``part(a, b)`` and ``part(b, a)``,
-        encoding mutual parthood / equality."""
-        self.add_part(idx_a, idx_b)
-        self.add_part(idx_b, idx_a)
+    def add_equal(self, idx_a, idx_b, confidence=1.0):
+        """Enqueue an ``equals(a, b)`` mutual-parthood assertion.
+
+        Distinct from a merge: A and B remain distinct codebook rows
+        with distinct embeddings; the equality is recorded in the
+        ``equality_pairs`` table for read-time inclusion in transitive
+        queries.
+        """
+        if not self.writes_enabled:
+            return
+        if float(confidence) < float(self.confidence_min):
+            return
+        a = self._as_long(idx_a)
+        b = self._as_long(idx_b)
+        if a.numel() == 0 or b.numel() == 0:
+            return
+        if a.numel() != b.numel():
+            a, b = torch.broadcast_tensors(a, b)
+            a = a.reshape(-1).long()
+            b = b.reshape(-1).long()
+        for ia, ib in zip(a.tolist(), b.tolist()):
+            if not self._check_index(ia) or not self._check_index(ib):
+                continue
+            if ia == ib:
+                continue
+            self.pending_equal.append((int(ia), int(ib), float(confidence)))
+
+    def commit(self):
+        """Atomically consume the pending queues, validate each edge,
+        and rebuild ``(start, end)`` via DFS.
+
+        Validation rules:
+          - ``add_part(c, p)`` rejected if ``c`` already has a parent
+            OR if accepting it would create a cycle.
+          - ``add_equal(a, b)`` rejected if either side is already a
+            transitive ancestor / descendant of the other (in which
+            case proper-parthood already covers the relation); else
+            appended to ``equality_pairs`` (deduped).
+        """
+        accepted_part = []
+        for c, p, _conf in self.pending_part:
+            if int(self.parents[c].item()) >= 0:
+                continue  # already has a parent — reject (tree, not DAG).
+            if self._would_create_cycle(c, p):
+                continue
+            self.parents[c] = int(p)
+            accepted_part.append((c, p))
+        self.pending_part = []
+
+        accepted_equal = []
+        for a, b, _conf in self.pending_equal:
+            # If proper-parthood already connects them either way, skip.
+            if (self._transitive_walk(a, b)
+                    or self._transitive_walk(b, a)):
+                continue
+            # Dedup vs existing equality_pairs.
+            if self._equality_exists(a, b):
+                continue
+            accepted_equal.append([a, b])
+        if accepted_equal:
+            new_rows = torch.tensor(
+                accepted_equal, dtype=torch.long, device=self.equality_pairs.device)
+            if self.equality_pairs.numel() == 0:
+                self.equality_pairs = new_rows
+            else:
+                self.equality_pairs = torch.cat(
+                    [self.equality_pairs, new_rows], dim=0)
+        self.pending_equal = []
+
+        if accepted_part:
+            self._intervals_dirty = True
+            self._resort()
+
+    def _would_create_cycle(self, c, p):
+        """Return True iff setting parents[c]=p would create a cycle.
+        Walks p's parent chain looking for c."""
+        cur = int(p)
+        depth = 0
+        while cur >= 0 and depth < self.V:
+            if cur == int(c):
+                return True
+            cur = int(self.parents[cur].item())
+            depth += 1
+        return False
+
+    def _transitive_walk(self, child, ancestor):
+        """Walk parents from `child`, return True if we encounter
+        `ancestor`. Bounded by V to prevent infinite loops on a
+        corrupt tree."""
+        cur = int(child)
+        depth = 0
+        while cur >= 0 and depth < self.V:
+            if cur == int(ancestor):
+                return True
+            cur = int(self.parents[cur].item())
+            depth += 1
+        return False
+
+    def _equality_exists(self, a, b):
+        if self.equality_pairs.numel() == 0:
+            return False
+        eq = self.equality_pairs
+        match_ab = ((eq[:, 0] == a) & (eq[:, 1] == b)).any()
+        match_ba = ((eq[:, 0] == b) & (eq[:, 1] == a)).any()
+        return bool((match_ab | match_ba).item())
+
+    def _resort(self):
+        """DFS from each root (parents[i] == -1) to recompute
+        ``(start, end)`` so each subtree occupies a contiguous range
+        of row indices. Codebook rows are NOT permuted — only the
+        interval bookkeeping is recomputed."""
+        if not self._intervals_dirty:
+            return
+        V = self.V
+        # Build child lists.
+        children = [[] for _ in range(V)]
+        roots = []
+        for c in range(V):
+            p = int(self.parents[c].item())
+            if p < 0:
+                roots.append(c)
+            elif 0 <= p < V:
+                children[p].append(c)
+        # DFS, assigning each node a contiguous [start, end) range.
+        # Pre-order assigns start; the matching end is fixed up after
+        # all descendants are visited.
+        new_start = self.start.clone()
+        new_end = self.end.clone()
+        counter = [0]
+
+        def dfs(node):
+            new_start[node] = counter[0]
+            counter[0] += 1
+            for ch in sorted(children[node]):
+                dfs(ch)
+            new_end[node] = counter[0]
+
+        for r in sorted(roots):
+            dfs(r)
+        # Detached / unreachable atoms (shouldn't happen but defend
+        # against a half-built tree): give them singleton intervals.
+        for i in range(V):
+            if int(new_end[i].item()) < int(new_start[i].item()) + 1:
+                new_start[i] = i
+                new_end[i] = i + 1
+        self.start.copy_(new_start)
+        self.end.copy_(new_end)
+        self._intervals_dirty = False
 
     def is_part_of(self, child_idx, parent_idx):
-        """Direct-link query (no transitive closure)."""
-        c = self._as_long(child_idx).to(self.adjacency.device)
-        p = self._as_long(parent_idx).to(self.adjacency.device)
-        return (self.adjacency[c, p] > 0).all().item()
+        """Direct-link query (no transitive walk).
+        True iff ``parents[child] == parent`` OR there's an explicit
+        equality edge between them. Vectorised over [B] inputs."""
+        c = self._as_long(child_idx).to(self.parents.device)
+        p = self._as_long(parent_idx).to(self.parents.device)
+        if c.numel() != p.numel():
+            c, p = torch.broadcast_tensors(c, p)
+        direct = self.parents.index_select(0, c) == p
+        # Equality edges (rare): scalar-or argmax.
+        eq_mask = torch.zeros_like(direct)
+        if self.equality_pairs.numel() > 0:
+            for r in range(self.equality_pairs.shape[0]):
+                a_r = int(self.equality_pairs[r, 0])
+                b_r = int(self.equality_pairs[r, 1])
+                eq_mask = eq_mask | (
+                    ((c == a_r) & (p == b_r)) | ((c == b_r) & (p == a_r)))
+        result = (direct | eq_mask)
+        return bool(result.all().item())
 
     def parents_of(self, child_idx):
-        """Direct parents of ``child_idx``."""
+        """Direct parents of ``child_idx``: at most one tree parent
+        plus any equality-edge counterparts."""
         c = int(child_idx)
-        return torch.nonzero(self.adjacency[c] > 0, as_tuple=False).squeeze(-1)
+        out = []
+        p = int(self.parents[c].item())
+        if p >= 0:
+            out.append(p)
+        if self.equality_pairs.numel() > 0:
+            eq = self.equality_pairs
+            mask = (eq[:, 0] == c)
+            for r in mask.nonzero(as_tuple=False).squeeze(-1).tolist():
+                out.append(int(eq[r, 1].item()))
+            mask = (eq[:, 1] == c)
+            for r in mask.nonzero(as_tuple=False).squeeze(-1).tolist():
+                out.append(int(eq[r, 0].item()))
+        if not out:
+            return torch.empty(0, dtype=torch.long, device=self.parents.device)
+        return torch.tensor(out, dtype=torch.long, device=self.parents.device)
 
     def children_of(self, parent_idx):
         """Direct children of ``parent_idx``."""
         p = int(parent_idx)
-        return torch.nonzero(self.adjacency[:, p] > 0, as_tuple=False).squeeze(-1)
+        kids = (self.parents == p).nonzero(as_tuple=False).squeeze(-1)
+        if self.equality_pairs.numel() > 0:
+            eq = self.equality_pairs
+            extra = []
+            for r in (eq[:, 1] == p).nonzero(as_tuple=False).squeeze(-1).tolist():
+                extra.append(int(eq[r, 0].item()))
+            for r in (eq[:, 0] == p).nonzero(as_tuple=False).squeeze(-1).tolist():
+                extra.append(int(eq[r, 1].item()))
+            if extra:
+                extra_t = torch.tensor(
+                    extra, dtype=torch.long, device=kids.device)
+                kids = torch.cat([kids, extra_t])
+        return kids
 
     def transitive_closure(self):
-        """``[V, V]`` boolean reachability matrix with identity:
-        ``tc[i, j] == True`` iff ``i`` is a (transitive) part of ``j``,
-        including the reflexive case ``i == j``.
-
-        Computed via repeated boolean matrix multiplication --
-        ``O(V^3 * log V)`` worst case; fine for typical codebooks
-        (V <= 256). For larger codebooks consider caching the result
-        and invalidating on tree mutation.
-        """
+        """``[V, V]`` boolean reachability matrix (with identity).
+        Computed on demand by walking the parent chain for each row;
+        not cached — callers should avoid this in hot paths and prefer
+        ``is_part_of_transitive_batched``."""
+        self._resort()
         V = self.V
-        # Edge presence matrix (any positive count counts as a link).
-        E = self.adjacency > 0
-        # Reachability with identity: start from I, iterate R = I | R @ E
-        # until fixed point. Boolean matmul via float and threshold.
-        I = torch.eye(V, dtype=torch.bool, device=self.adjacency.device)
-        R = I | E
-        for _ in range(V):
-            R_next = R | (R.float() @ E.float() > 0)
-            if torch.equal(R_next, R):
-                break
-            R = R_next
+        R = torch.eye(V, dtype=torch.bool, device=self.parents.device)
+        for c in range(V):
+            cur = int(self.parents[c].item())
+            depth = 0
+            while cur >= 0 and depth < V:
+                R[c, cur] = True
+                cur = int(self.parents[cur].item())
+                depth += 1
+        # Fold equality edges symmetrically.
+        if self.equality_pairs.numel() > 0:
+            for r in range(self.equality_pairs.shape[0]):
+                a = int(self.equality_pairs[r, 0])
+                b = int(self.equality_pairs[r, 1])
+                R[a, b] = True
+                R[b, a] = True
         return R
 
     def wholes_of(self, idx):
         """All things ``idx`` is a (transitive) part of, including
-        ``idx`` itself. Ancestors via the part-of edges plus the
-        reflexive self-membership."""
-        tc = self.transitive_closure()
-        return torch.nonzero(tc[int(idx)], as_tuple=False).squeeze(-1)
+        self. Walks the parent chain; cost O(depth)."""
+        out = [int(idx)]
+        cur = int(self.parents[int(idx)].item())
+        depth = 0
+        while cur >= 0 and depth < self.V:
+            out.append(cur)
+            cur = int(self.parents[cur].item())
+            depth += 1
+        return torch.tensor(out, dtype=torch.long, device=self.parents.device)
 
     def parts_of_recursive(self, idx):
-        """All things that are (transitively) part of ``idx``,
-        including ``idx`` itself. Descendants via incoming part-of
-        edges plus the reflexive self-membership."""
-        tc = self.transitive_closure()
-        return torch.nonzero(tc[:, int(idx)], as_tuple=False).squeeze(-1)
+        """All things that are (transitively) part of ``idx``.
+        Uses interval form for an O(V) scan after a (cached) sort."""
+        self._resort()
+        s = int(self.start[int(idx)].item())
+        e = int(self.end[int(idx)].item())
+        # All atoms whose start falls in [s, e) are in the subtree.
+        # Plus the node itself.
+        mask = (self.start >= s) & (self.start < e)
+        out = mask.nonzero(as_tuple=False).squeeze(-1)
+        return out
 
     def is_part_of_transitive(self, child_idx, parent_idx):
-        """Sufficient (not necessary) test: returns True iff there is
-        an explicit path from ``child_idx`` to ``parent_idx`` through
-        the tree's part-of links. Uses the transitive-closure
-        intersection ``WHOLES(child) ∩ PARTS(parent)``: if the
-        intersection is non-empty, ``child`` is part of ``parent`` by
-        explicit derivation. An empty intersection means "not known
-        to be a part" -- the link may still exist via implicit /
-        un-asserted structure.
-        """
-        tc = self.transitive_closure()
-        wholes = tc[int(child_idx)]                    # [V]
-        parts  = tc[:, int(parent_idx)]                # [V]
-        return bool((wholes & parts).any().item())
+        """True iff `child` is reachable from `parent` via the
+        parent chain (or via a single equality edge). Walks at most V
+        steps."""
+        if self._transitive_walk(int(child_idx), int(parent_idx)):
+            return True
+        if self.equality_pairs.numel() > 0:
+            eq = self.equality_pairs
+            c = int(child_idx)
+            p = int(parent_idx)
+            same = ((eq[:, 0] == c) & (eq[:, 1] == p)) | (
+                (eq[:, 0] == p) & (eq[:, 1] == c))
+            return bool(same.any().item())
+        return False
 
     def is_part_of_transitive_batched(self, child_idx, parent_idx):
-        """Vectorised variant of ``is_part_of_transitive`` over
-        ``[B]`` index pairs. Returns a ``[B]`` bool tensor.
+        """Vectorised ``is_part_of_transitive`` over [B] index pairs.
 
-        Uses the transitive closure matrix once per call so the
-        per-batch cost is ``O(B * V)`` after the ``O(V^3)`` closure.
-        """
-        c = self._as_long(child_idx).to(self.adjacency.device)
-        p = self._as_long(parent_idx).to(self.adjacency.device)
+        Uses the interval form: child is in parent's subtree iff
+        ``start[parent] ≤ start[child] < end[parent]``. Plus
+        equality-edge fallback (rare; small loop).
+        Returns [B] bool."""
+        self._resort()
+        c = self._as_long(child_idx).to(self.parents.device)
+        p = self._as_long(parent_idx).to(self.parents.device)
         if c.numel() != p.numel():
             c, p = torch.broadcast_tensors(c, p)
             c = c.reshape(-1).long()
             p = p.reshape(-1).long()
-        tc = self.transitive_closure()                  # [V, V] bool
-        wholes = tc[c]                                  # [B, V] -- WHOLES(child)
-        parts  = tc[:, p].T                             # [B, V] -- PARTS(parent)
-        return (wholes & parts).any(dim=-1)             # [B] bool
+        s_p = self.start.index_select(0, p)
+        e_p = self.end.index_select(0, p)
+        s_c = self.start.index_select(0, c)
+        result = (s_c >= s_p) & (s_c < e_p)
+        # Equality-edge fallback. Rare, so a small Python loop is fine.
+        if self.equality_pairs.numel() > 0:
+            for r in range(self.equality_pairs.shape[0]):
+                a_r = int(self.equality_pairs[r, 0])
+                b_r = int(self.equality_pairs[r, 1])
+                result = result | (
+                    ((c == a_r) & (p == b_r)) | ((c == b_r) & (p == a_r)))
+        return result
 
 
 def _argmax_prototype(x):

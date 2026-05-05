@@ -22,13 +22,10 @@
 
 ## Overview
 
-BasicModel is a parameterized neural architecture with three independent levers:
+BasicModel is a parameterized neural architecture that answers the question "what is the truest thing we can say of this experience?".
 
-- **Ergodic** -- adaptive bias-variance control via a gradient energy sensor (not gradient descent)
-- **Certainty** -- per-neuron certainty tracking; neurons graduate from exploration to exploitation independently
-- **Reversible** -- bidirectional training: forward prediction + backward reconstruction in a single optimizer pass
 
-Model configurations are specified in XML and can be compared side-by-side. See [doc/Architecture.md](doc/Architecture.md) for the full mathematical treatment.
+Model configurations are specified in XML. See [doc/Architecture.md](doc/Architecture.md) for the full mathematical treatment.
 
 ## Files
 

@@ -112,8 +112,16 @@
             <rule>MP = ADV</rule>
             <rule>MP = ADV MP</rule>
 
-            <!-- Prepositional Phrase -->
-            <rule>PP = P NP</rule>
+            <!-- Prepositional Phrase.
+                 PP = lift(P, NP): the preposition transforms its NP
+                 complement from a thing into a relation/location.
+                 (Lift adds the relational axis the preposition
+                 introduces.) Attached via lower onto NP/VP heads,
+                 mirroring the ADJ/ADV modifier patterns. PP trails its
+                 head in English ("cat on the mat", not "on-mat cat"). -->
+            <rule>PP = lift(P, NP)</rule>
+            <rule>NP = lower(NP, PP)</rule>
+            <rule>VP = lower(VP, PP)</rule>
 
             <!-- Post-hoc S-ops (rule-id targets for the runtime
                  rule predictor; ops already used in derivational

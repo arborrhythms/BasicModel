@@ -81,6 +81,45 @@ from Pipeline import (
 )
 
 
+class _MultiOptimizer:
+    """Composite optimizer: forwards step / zero_grad / state_dict to a
+    list of underlying torch.optim.Optimizer instances.
+
+    Used to combine SparseAdam (for the perceptual embedding's sparse-
+    grad parameter) with Adam (for the dense parameters) without
+    requiring callers to know about the split.  Mirrors the subset of
+    torch.optim.Optimizer's API that BaseModel.runBatch and the
+    autosave path actually use.
+    """
+
+    def __init__(self, optimizers):
+        self.optimizers = list(optimizers)
+        # Synthesize a flat param_groups view so callers reading
+        # `optimizer.param_groups[0]['lr']` (e.g. rebuild_optimizer)
+        # see all groups across the underlying optimizers.
+        pg = []
+        for o in self.optimizers:
+            pg.extend(o.param_groups)
+        self.param_groups = pg
+
+    def step(self, closure=None):
+        results = []
+        for o in self.optimizers:
+            results.append(o.step(closure=closure) if closure is not None else o.step())
+        return results
+
+    def zero_grad(self, set_to_none=True):
+        for o in self.optimizers:
+            o.zero_grad(set_to_none=set_to_none)
+
+    def state_dict(self):
+        return {'optimizers': [o.state_dict() for o in self.optimizers]}
+
+    def load_state_dict(self, state):
+        for o, s in zip(self.optimizers, state.get('optimizers', [])):
+            o.load_state_dict(s)
+
+
 class Normalizer:
     """Thin wrapper over TheData's min/max scaling.
 
@@ -420,14 +459,39 @@ class BaseModel(nn.Module):
                 if p.data_ptr() not in seen:
                     seen.add(p.data_ptr())
                     params.append(p)
-        # Exclude embedding params when trainEmbedding is NONE or AR
+        # Identify the perceptual-embedding params and the codebook's
+        # sparse-grad preference so we can route them to SparseAdam.
+        sparse_ptrs = set()
+        embedding_ptrs = set()
+        if hasattr(self, 'perceptualSpace') and isinstance(
+                self.perceptualSpace.vocabulary, Embedding):
+            voc = self.perceptualSpace.vocabulary
+            # Mark large embedding codebooks for sparse-grad lookup;
+            # _lookup_modality reads voc.sparse_grad.
+            try:
+                voc.use_sparse_grad()
+            except Exception:
+                pass
+            sparse_grad = bool(getattr(voc, 'sparse_grad', False))
+            for p in voc.embedding_parameters():
+                embedding_ptrs.add(p.data_ptr())
+                if sparse_grad:
+                    sparse_ptrs.add(p.data_ptr())
+        # Exclude embedding params entirely when trainEmbedding is NONE / AR
         if not getattr(self, 'optimize_embedding', False):
-            exclude = set()
-            if hasattr(self, 'perceptualSpace') and isinstance(self.perceptualSpace.vocabulary, Embedding):
-                for p in self.perceptualSpace.vocabulary.embedding_parameters():
-                    exclude.add(p.data_ptr())
-            if exclude:
-                params = [p for p in params if p.data_ptr() not in exclude]
+            params = [p for p in params if p.data_ptr() not in embedding_ptrs]
+            sparse_ptrs.clear()
+        # Split the remaining params into a SparseAdam group (sparse
+        # grads only) and an Adam group (everything else).  SparseAdam
+        # touches only the rows that received gradients per step --
+        # critical for V=1M-style perceptual codebooks where dense Adam
+        # would update O(V*D) optimizer state on every step.
+        if sparse_ptrs:
+            sparse_params = [p for p in params if p.data_ptr() in sparse_ptrs]
+            dense_params = [p for p in params if p.data_ptr() not in sparse_ptrs]
+            opt_sparse = optim.SparseAdam(sparse_params, lr=lr)
+            opt_dense = optim.Adam(dense_params, lr=lr)
+            return _MultiOptimizer([opt_dense, opt_sparse])
         return optim.Adam(params, lr=lr)
 
     def rebuild_optimizer(self):
@@ -3630,6 +3694,26 @@ class BasicModel(BaseModel):
                         weight=getattr(self, 'gate_l1_lambda', 0.0),
                         space="WordSpace", category="reg")
 
+                # Sparse-MoE load-balance penalty (Shazeer et al. 2017).
+                # Penalises CV² of per-rule activation counts so the
+                # noisy top-K gating doesn't collapse onto 1-2 rules.
+                # Active only when chartTopK > 0 AND loadBalanceWeight > 0.
+                lb_w = getattr(self, 'load_balance_weight', 0.0)
+                if (lb_w > 0.0 and self.wordSpace is not None
+                        and getattr(self.wordSpace, 'chart', None)
+                        is not None):
+                    lb_loss = self.wordSpace.chart.load_balance_loss(
+                        weight=lb_w)
+                    if isinstance(lb_loss, torch.Tensor):
+                        totalLoss = totalLoss + lb_loss
+                        TheError.add(
+                            "load_balance", lb_loss,
+                            weight=lb_w,
+                            space="WordSpace", category="reg")
+                    # Reset between batches so the next batch's count
+                    # reflects only its own gating distribution.
+                    self.wordSpace.chart.reset_load_count()
+
             # Snapshot the breakdown before the backward pass so later
             # calls to TheError.covariance() can see it in the history
             # even if the step is aborted by a non-finite detector below.
@@ -4414,6 +4498,13 @@ class MentalModel(BaseModel):
         # use lift/lower opt in via <gateL1Lambda> in <architecture>.
         self.gate_l1_lambda = float(
             TheXMLConfig.get("architecture.gateL1Lambda", default=0.0) or 0.0)
+        # Sparse-MoE load-balance loss weight (Shazeer et al. 2017).
+        # Penalises CV² of per-rule activation counts so the chart's
+        # noisy top-K gating spreads mass across rules.  No-op unless
+        # both <loadBalanceWeight> > 0 AND <chartTopK> > 0.
+        self.load_balance_weight = float(
+            TheXMLConfig.get(
+                "architecture.loadBalanceWeight", default=0.0) or 0.0)
         # thoughtFree is structurally equivalent to conceptualOrder=0: no
         # higher-order P/C/S cycles. Reject the nonsense combination early.
         TheXMLConfig.require(
@@ -4797,8 +4888,44 @@ class MentalModel(BaseModel):
         except Exception:
             base_n = int(getattr(self, "nPercepts", 0))
 
+        # Per-stage chart re-parse: when enabled, each conceptual stage
+        # gets its own ChartCompose right before the stage's
+        # ConceptualSpace.  Stage 0 inherits the stem's chart output;
+        # stages 1..T-1 re-parse the previous stage's symbolic output
+        # so each level of the constituency hierarchy gets its own
+        # rule-selection pass.  Default off to preserve the
+        # single-parse behaviour of existing configs (XOR_grammar
+        # tests, MM_grammar smoke).  Opt in via XML.
+        try:
+            per_stage_reparse = bool(TheXMLConfig.get(
+                "architecture.perStageChartReparse", default=False))
+        except Exception:
+            per_stage_reparse = False
+        per_stage_reparse = per_stage_reparse and (self.useGrammar == "all")
+        # Auto-disable under ARIR: the K-axis (AR microbatch windows)
+        # multiplies into the chart's per-cell soft-mode tensor
+        # [B*K, P, Sp, R_bin, C, D], which at production sizes
+        # (B=128, K~16, N=1024, wMax=32, R~20) requires hundreds of GB
+        # just for the rule-blend op on Language.py:1951.  ARIR keeps
+        # the single stem-level chart pass (one chart × K microbatches
+        # = K parses) -- per-stage reparse would multiply that by T
+        # again.  IR mode runs one chart per stage with no K axis,
+        # which is the design point.
+        if per_stage_reparse and getattr(self, 'masked_prediction', None) == 'ARIR':
+            import logging
+            logging.getLogger(__name__).warning(
+                "perStageChartReparse=true is auto-disabled under "
+                "maskedPrediction=ARIR (K-axis × T-stage chart cost is "
+                "structurally infeasible at production sizes).  "
+                "Use maskedPrediction=IR if you want per-stage re-parse.")
+            per_stage_reparse = False
+
         body_modules = []
         for t in range(T):
+            if per_stage_reparse and t > 0:
+                # Re-parse the previous stage's symbolic output before
+                # this stage's ConceptualSpace consumes it.
+                body_modules.append(ChartCompose(self.wordSpace))
             body_modules.append(self.conceptualSpaces[t])
             if use_grammar_merge:
                 stage_n = base_n // (2 ** t)
@@ -5433,6 +5560,9 @@ class MentalModel(BaseModel):
 
         # Resolve atom_idx -> surface token via InputSpace.wv (word
         # vectors); fall back to a placeholder when wv isn't wired.
+        # `pos` here is a position within the parsed sentence (0..N-1),
+        # NOT a codebook index — surface-decoding requires looking up
+        # the actual codebook row of the atom at that position.
         index_to_key = None
         try:
             wv = getattr(self.inputSpace, 'wv', None)
@@ -5441,11 +5571,81 @@ class MentalModel(BaseModel):
         except Exception:
             index_to_key = None
 
-        def _decode_pos(pos):
-            if (index_to_key is not None
-                    and 0 <= pos < len(index_to_key)):
-                return str(index_to_key[pos])
-            return f"atom_{pos}"
+        # Per-leaf atom indices: prefer the chart's stashed nearest-match
+        # row from `_apply_codebook_pos_seed`. Shape [B*N], may be None.
+        # Reshape to [B, N] so we can look up by (batch, position).
+        per_leaf_atom = None
+        try:
+            stash = getattr(chart, '_last_seed_atom_idx', None)
+            if stash is not None and traces is not None:
+                B_t = len(traces)
+                if B_t > 0 and stash.numel() % B_t == 0:
+                    N_t = stash.numel() // B_t
+                    per_leaf_atom = stash.reshape(B_t, N_t).cpu()
+        except Exception:
+            per_leaf_atom = None
+
+        # Direct surface-form recovery: re-tokenize the last batch's
+        # input strings (stored on the InputSpace as `_last_input_texts`
+        # if available, otherwise pulled from TheData splits when the
+        # input subspace exposes its byte buffer). Falls through to the
+        # atom-index path when no source text is reachable.
+        per_leaf_text = None
+        try:
+            sym_sub = self.symbolicSpace.subspace
+            in_sub = self.inputSpace.subspace
+            wbuf = getattr(in_sub.what, 'getW', lambda: None)()
+            if wbuf is not None and torch.is_tensor(wbuf) and wbuf.dim() == 3:
+                B_t = wbuf.shape[0]
+                from util import parse as _parse
+                texts_per_batch = []
+                for bi in range(B_t):
+                    # what_buf row is [N, nWhat] of UTF-8 bytes
+                    # (null-terminated). Decode each token slot.
+                    row = wbuf[bi]
+                    toks = []
+                    for sj in range(row.shape[0]):
+                        bs = row[sj].to(torch.uint8).tolist()
+                        # Strip trailing nulls; everything else is the token.
+                        while bs and bs[-1] == 0:
+                            bs.pop()
+                        if bs:
+                            try:
+                                toks.append(bytes(bs).decode('utf-8', errors='replace'))
+                            except Exception:
+                                toks.append(f"slot_{sj}")
+                        else:
+                            toks.append("")
+                    texts_per_batch.append(toks)
+                per_leaf_text = texts_per_batch
+        except Exception:
+            per_leaf_text = None
+
+        def _decode_token(b, pos):
+            if (per_leaf_text is not None and b < len(per_leaf_text)
+                    and pos < len(per_leaf_text[b])
+                    and per_leaf_text[b][pos]):
+                return per_leaf_text[b][pos]
+            atom_idx = None
+            if per_leaf_atom is not None and b < per_leaf_atom.shape[0] \
+                    and pos < per_leaf_atom.shape[1]:
+                atom_idx = int(per_leaf_atom[b, pos].item())
+            if (index_to_key is not None and atom_idx is not None
+                    and 0 <= atom_idx < len(index_to_key)):
+                return str(index_to_key[atom_idx])
+            if atom_idx is not None:
+                return f"atom_{atom_idx}"
+            return f"slot_{pos}"
+
+        # POS lookup: prefer the chart's per-leaf POS distribution
+        # (chart._chart_pos[b, i, i+1, :] argmax) over the stale
+        # codebook category_ids buffer. Fall back to category_ids when
+        # chart_pos isn't available.
+        chart_pos = None
+        try:
+            chart_pos = getattr(chart, '_chart_pos', None)
+        except Exception:
+            chart_pos = None
 
         cat_ids = None
         try:
@@ -5455,7 +5655,19 @@ class MentalModel(BaseModel):
         except Exception:
             cat_ids = None
 
-        def _pos_at(pos):
+        def _pos_at(b, pos):
+            # Prefer chart_pos[b, pos, pos+1, :].argmax() — what the
+            # chart actually believed at this leaf during this parse.
+            if chart_pos is not None:
+                try:
+                    if (b < chart_pos.shape[0]
+                            and pos + 1 < chart_pos.shape[1]):
+                        cid = int(chart_pos[b, pos, pos + 1, :].argmax().item())
+                        if 0 <= cid < len(cat_names):
+                            return cat_names[cid]
+                except Exception:
+                    pass
+            # Fallback: stale codebook tag.
             if cat_ids is not None and 0 <= pos < cat_ids.shape[0]:
                 cid = int(cat_ids[pos].item())
                 if 0 <= cid < len(cat_names):
@@ -5498,14 +5710,14 @@ class MentalModel(BaseModel):
                     _, i_e, _, j_e, _ = entry
                     span_to_entry.setdefault((i_e, j_e), entry)
 
-                def _build(span, parent_el):
+                def _build(span, parent_el, _b=b):
                     entry = span_to_entry.get(span)
                     si, sj = span
                     if entry is None:
                         for pos in range(si, sj):
                             ET.SubElement(parent_el, 'leaf', {
-                                'token': _decode_pos(pos),
-                                'pos': _pos_at(pos),
+                                'token': _decode_token(_b, pos),
+                                'pos': _pos_at(_b, pos),
                                 'i': str(pos),
                             })
                         return

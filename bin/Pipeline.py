@@ -5,8 +5,53 @@ subspace contract. These fit between Spaces in nn.Sequential and
 encapsulate cross-stage machinery (grammar-mode N-halving merge,
 round-trip midpoint cache, reverse-path adapter).
 """
+import logging
+import traceback
 import torch
 import torch.nn as nn
+
+
+# Process-global dedupe set for advisory pipeline-stage exceptions.
+# Key: (exception_type_name, file, line). Value: count.
+# First occurrence logs with full traceback (exc_info=True); subsequent
+# occurrences increment the count silently. A periodic flush every
+# _DEDUPE_FLUSH_EVERY hits emits a one-liner summary so a steady-state
+# failure isn't fully invisible.
+_PIPELINE_EXC_SEEN: dict = {}
+_DEDUPE_FLUSH_EVERY = 1000
+
+
+def _log_advisory_exception(stage: str, exc: BaseException) -> None:
+    """Log an advisory (caught) pipeline-stage exception with traceback
+    on first occurrence and a count on subsequent occurrences.
+
+    A pipeline stage that crashes means the grammar / chart / generation
+    path silently degraded to its fallback. That's a real correctness
+    issue (you're not training what the config says), so we surface
+    it loudly the first time and quietly track repeats.
+    """
+    tb = exc.__traceback__
+    while tb is not None and tb.tb_next is not None:
+        tb = tb.tb_next
+    file = tb.tb_frame.f_code.co_filename if tb else "?"
+    line = tb.tb_lineno if tb else 0
+    key = (type(exc).__name__, file, line)
+    log = logging.getLogger(__name__)
+    seen = _PIPELINE_EXC_SEEN.get(key, 0)
+    _PIPELINE_EXC_SEEN[key] = seen + 1
+    if seen == 0:
+        log.warning(
+            "%s failed (%s: %s) at %s:%d -- "
+            "the chart's contribution is now a no-op. "
+            "Subsequent occurrences of this exact failure will be deduped.",
+            stage, type(exc).__name__, exc, file, line,
+            exc_info=True,
+        )
+    elif (seen + 1) % _DEDUPE_FLUSH_EVERY == 0:
+        log.warning(
+            "%s: %s at %s:%d has now fired %d times.",
+            stage, type(exc).__name__, file, line, seen + 1,
+        )
 
 
 class ReverseAdapter(nn.Module):
@@ -83,7 +128,19 @@ class ChartCompose(nn.Module):
         if data is None:
             return subspace
         try:
-            ws.compose(data, subspace=subspace)
+            # ARIR microbatch path: data may arrive as [B, K, N, D] when
+            # the upstream subspace carries a K-axis. The chart's inside
+            # pass expects [B, N, D]; flatten K into the batch dim before
+            # the call. K-dim restoration isn't needed because the chart
+            # writes side-effects into ws.current_rules (per-row rule
+            # cursors), and the downstream FlattenKWrapper-wrapped body
+            # consumes those cursors at the same B*K row indexing.
+            if data.dim() == 4:
+                B, K, N, D = data.shape
+                flat = data.reshape(B * K, N, D)
+                ws.compose(flat, subspace=subspace)
+            else:
+                ws.compose(data, subspace=subspace)
             # On the signal path, propagate the router's transformed slab
             # back into subspace.event so the differentiable signal flows
             # to downstream spaces (otherwise the router's gates / scorer
@@ -99,14 +156,10 @@ class ChartCompose(nn.Module):
         except Exception as exc:
             # Chart compose is advisory: a failure mustn't break the
             # forward pass. The per-space SyntacticLayer falls back to
-            # its default rule when current_rules is empty. We log so
-            # systematic failures (e.g. signal-router not wired) don't
-            # masquerade as no-ops.
-            import logging
-            logging.getLogger(__name__).warning(
-                "ChartCompose.forward: ws.compose failed (%s: %s)",
-                type(exc).__name__, exc, exc_info=False,
-            )
+            # its default rule when current_rules is empty. First
+            # occurrence is logged with full traceback so the real bug
+            # is debuggable; identical repeats are deduped.
+            _log_advisory_exception("ChartCompose.forward", exc)
         return subspace
 
 
@@ -133,13 +186,15 @@ class ChartGenerate(nn.Module):
         if data is None:
             return subspace
         try:
-            ws.generate(data, subspace=subspace)
+            # Same K-axis flatten as ChartCompose.
+            if data.dim() == 4:
+                B, K, N, D = data.shape
+                flat = data.reshape(B * K, N, D)
+                ws.generate(flat, subspace=subspace)
+            else:
+                ws.generate(data, subspace=subspace)
         except Exception as exc:
-            import logging
-            logging.getLogger(__name__).warning(
-                "ChartGenerate.forward: ws.generate failed (%s: %s)",
-                type(exc).__name__, exc, exc_info=False,
-            )
+            _log_advisory_exception("ChartGenerate.forward", exc)
         return subspace
 
 

@@ -1,0 +1,204 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- LM_5M_IR: chart/grammar-driven sibling of MM_5M_IR.  Mirrors
+       MM_5M_IR's space parameters exactly (word lexer, lexicon
+       chunking, 1M-entry perceptual codebook, hierarchical 8-level
+       ConceptualSpace shape) so the .kv lexicon and .ckpt embeddings
+       are interchangeable with MM_5M_IR.  Differs only in:
+         * useButterflies=false + useGrammar=all (chart-driven
+           constituency replaces N-halving butterflies)
+         * grammar block (full English grammar with PP rules)
+         * chart machinery: per-stage re-parse, noisy top-K=4 gating,
+           load-balance loss, per-rule width gates (Shazeer 2017
+           sparse-MoE pattern adapted to CKY rule selection)
+       Distinct ckpt/kv paths only because we may want to keep the
+       MM_5M_IR training run separate; once the lexicon is shared,
+       you can copy MM_5M_IR.kv → LM_5M_IR.kv as a warm start.
+  -->
+  <architecture>
+    <conceptualOrder>3</conceptualOrder>
+    <useButterflies>false</useButterflies>
+    <l1Lambda>0.01</l1Lambda>
+    <nWhere>2</nWhere>
+    <nWhen>2</nWhen>
+    <processSymbols>false</processSymbols>
+    <type>mental</type>
+    <ergodic>false</ergodic>
+    <modelType>embedding</modelType>
+    <truthBiasScale>0.1</truthBiasScale>
+    <LuminosityWeight>0.1</LuminosityWeight>
+    <UniversalityWeight>0.1</UniversalityWeight>
+    <maxResponseLength>4096</maxResponseLength>
+    <weightsPath>LM_5M_IR.ckpt</weightsPath>
+    <embeddingPath>LM_5M_IR.kv</embeddingPath>
+    <reconstruct>symbols</reconstruct>
+    <amp>bf16</amp>
+
+    <!-- MereologicalTree size matches SymbolicSpace nVectors. -->
+    <mereologicalTreeSize>1024</mereologicalTreeSize>
+
+    <!-- Per-stage chart re-parse (Shazeer-style). -->
+    <perStageChartReparse>true</perStageChartReparse>
+    <loadBalanceWeight>0.01</loadBalanceWeight>
+
+    <data>
+      <shardDir>data/fineweb</shardDir>
+      <numShards>1</numShards>
+      <maxDocs>10000</maxDocs>
+      <minFrequency>0.00001</minFrequency>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>1</numEpochs>
+      <batchSize>128</batchSize>
+      <numWorkers>4</numWorkers>
+      <learningRate>0.0005</learningRate>
+      <reverseScale>1.0</reverseScale>
+      <maskedPrediction>IR</maskedPrediction>
+      <maskRate>0.15</maskRate>
+      <trainEmbedding>NONE</trainEmbedding>
+      <autoload>true</autoload>
+      <autosave>true</autosave>
+      <sentencePrediction>true</sentencePrediction>
+      <sentenceContextWindow>5</sentenceContextWindow>
+      <sentenceCentroidHistory>3</sentenceCentroidHistory>
+      <sentenceLambda>1.01</sentenceLambda>
+      <sentencePredictionScale>0.1</sentencePredictionScale>
+      <certainty>false</certainty>
+    </training>
+
+    <server>
+      <host>127.0.0.1</host>
+      <port>8006</port>
+      <timeout>120</timeout>
+    </server>
+
+  </architecture>
+
+  <!-- All space parameters below are identical to MM_5M_IR.xml so
+       the .kv lexicon and the perceptual / conceptual / symbolic
+       codebooks are share-compatible. -->
+
+  <InputSpace>
+    <nInput>4096</nInput>
+    <nDim>6</nDim>
+    <nVectors>4096</nVectors>
+    <nOutput>4096</nOutput>
+    <nWhere>2</nWhere>
+    <nWhen>0</nWhen>
+    <lexer>word</lexer>
+    <codebook>false</codebook>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nInput>1024</nInput>
+    <nVectors>1000000</nVectors>
+    <nDim>6</nDim>
+    <nWhere>2</nWhere>
+    <nWhen>0</nWhen>
+    <nOutput>1024</nOutput>
+    <passThrough>false</passThrough>
+    <hasAttention>false</hasAttention>
+    <invertible>false</invertible>
+    <codebook>true</codebook>
+    <chunking>lexicon</chunking>
+    <chunkingFrequency>1</chunkingFrequency>
+  </PerceptualSpace>
+
+  <!-- ConceptualSpace: hierarchical-mode shape from MM_5M_IR.
+       Per-level shapes are computed dynamically by _level_shapes
+       based on conceptualOrder and the conceptualWidth mode. -->
+  <ConceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>1024</nDim>
+    <nVectors>512</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <hasAttention>false</hasAttention>
+    <invertible>false</invertible>
+    <codebook>true</codebook>
+    <chunking>lexicon</chunking>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nInput>1024</nInput>
+    <nInputDim>8</nInputDim>
+    <nVectors>1024</nVectors>
+    <nDim>6</nDim>
+    <nWhere>2</nWhere>
+    <nWhen>0</nWhen>
+    <nOutput>1024</nOutput>
+    <codebook>true</codebook>
+    <passThrough>false</passThrough>
+    <accumulateTruth>0</accumulateTruth>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>4</nDim>
+    <nVectors>1</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+  </OutputSpace>
+
+  <WordSpace>
+    <useGrammar>all</useGrammar>
+    <chartCompose>true</chartCompose>
+    <softChartCompose>true</softChartCompose>
+    <chartTau>2.0</chartTau>
+    <wMax>32</wMax>
+    <chartTopK>4</chartTopK>
+    <chartNoiseEps>0.1</chartNoiseEps>
+    <downwardGeneration>false</downwardGeneration>
+    <language>
+      <start>S</start>
+      <grammar>
+        <compose>
+          <symbols>
+            <!-- Sentence (with width gates: width=N..M restricts a rule
+                 to cells of those widths; "1.." = open lower, "3..5" =
+                 fixed range). Sentence-level rules need ≥3 tokens
+                 (subject + verb + object minimum); NP=N and VP=V are
+                 width-1 leaves only. -->
+            <rule width="1..">S = NP</rule>
+            <rule width="3..">S = lift(NP, VP)</rule>
+            <rule width="3..">S = equals(NP, NP)</rule>
+            <rule width="3..">S = equals(NP, AP)</rule>
+            <rule width="3..">S = part(NP, NP)</rule>
+            <rule width="2..">S = not(S)</rule>
+            <rule width="3..">S = conjunction(S, S)</rule>
+            <rule width="3..">S = disjunction(S, S)</rule>
+
+            <!-- Noun Phrase -->
+            <rule width="1..1">NP = N</rule>
+            <rule width="2..">NP = AP</rule>
+            <rule width="3..">NP = conjunction(NP, NP)</rule>
+            <rule width="3..">NP = disjunction(NP, NP)</rule>
+
+            <!-- Verb Phrase -->
+            <rule width="1..1">VP = V</rule>
+            <rule width="2..">VP = intersection(V, O)</rule>
+            <rule width="2..">VP = lower(ADV, VP)</rule>
+            <rule width="2..">VP = lower(ADJ, VP)</rule>
+
+            <!-- Object -->
+            <rule width="1..">O = NP</rule>
+
+            <!-- Adjective Phrase -->
+            <rule width="2..">AP = lower(ADJ, NP)</rule>
+            <rule width="2..">AP = lower(ADJ, AP)</rule>
+            <rule width="2..">AP = lower(DET, NP)</rule>
+
+            <!-- Prepositional Phrase. -->
+            <rule width="2..">PP = lift(P, NP)</rule>
+            <rule width="3..">NP = lower(NP, PP)</rule>
+            <rule width="3..">VP = lower(VP, PP)</rule>
+          </symbols>
+        </compose>
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+  </WordSpace>
+
+</model>

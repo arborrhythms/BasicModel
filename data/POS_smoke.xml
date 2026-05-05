@@ -1,0 +1,167 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- POS_smoke: small inline corpus of basic English sentences for
+       smoke-testing the chart parser's POS tagging and grammar-rule
+       selection.  Built on the HeadEmission.xml shape (inline
+       sentences, modest dims) but with the MentalModel.xml English
+       grammar block so we exercise multiple rule alternatives.
+       writeSyntax=true dumps a parse tree per forward pass to
+       output/syntax_pos_smoke.xml so we can inspect what POS / rule
+       the chart picked. -->
+  <architecture>
+    <type>mental</type>
+    <modelType>embedding</modelType>
+    <conceptualOrder>1</conceptualOrder>
+    <useButterflies>false</useButterflies>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <processSymbols>false</processSymbols>
+    <ergodic>false</ergodic>
+    <maskedPrediction>NONE</maskedPrediction>
+    <truthBiasScale>0.1</truthBiasScale>
+    <LuminosityWeight>0.1</LuminosityWeight>
+    <UniversalityWeight>0.1</UniversalityWeight>
+    <weightsPath></weightsPath>
+
+    <writeSyntax>true</writeSyntax>
+    <syntaxOutPath>output/syntax_pos_smoke.xml</syntaxOutPath>
+    <!-- Match MereologicalTree V to the symbolic codebook nVectors so
+         _argmax_prototype indices are always in range. -->
+    <mereologicalTreeSize>128</mereologicalTreeSize>
+
+    <data>
+      <dataset>inline</dataset>
+      <!-- All sentences are exactly 3 content words (5 lex tokens including
+           spaces).  The chart parser's w_max=8 forces this constraint:
+           sentences longer than 7 tokens never reach the root S category,
+           leaving the derivation trace empty.
+
+           Grammar coverage by sentence pattern:
+              SVO    "cats chase mice"   (S=lift(NP,VP), VP=intersection(V,O))
+              EQUALS "cats are happy"    (S=equals(NP,AP))
+              CONJ   "cats and dogs"     (NP=conjunction(NP,NP))
+              ADJ-N  "big dogs run"      (NP=lower(ADJ,NP) then S=lift) -->
+      <input use="train">cats chase mice|dogs eat bones|birds catch worms|boys kick balls|cats are happy|dogs are big|birds are red|big cats sleep|red birds fly|small dogs bark|cats and dogs|boys and girls|happy cats sing|tall men walk|young girls smile|old dogs sleep</input>
+      <input use="test">cats chase mice|cats are happy|big cats sleep|cats and dogs</input>
+      <output use="train">0|0|0|0|1|1|1|0|0|0|0|0|0|0|0|0</output>
+      <output use="test">0|1|0|0</output>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>80</numEpochs>
+      <batchSize>16</batchSize>
+      <learningRate>0.005</learningRate>
+      <reverseScale>0.1</reverseScale>
+      <trainEmbedding>JOINT</trainEmbedding>
+      <embeddingScale>0.05</embeddingScale>
+      <autoload>false</autoload>
+      <autosave>false</autosave>
+      <certainty>false</certainty>
+    </training>
+  </architecture>
+
+  <WordSpace>
+    <useGrammar>all</useGrammar>
+    <chartCompose>true</chartCompose>
+    <softChartCompose>true</softChartCompose>
+    <chartTau>2.0</chartTau>
+    <!-- Default w_max is now nInput; explicit override here documents
+         that we want the chart to span the full padded sentence. -->
+    <wMax>8</wMax>
+    <downwardGeneration>false</downwardGeneration>
+    <language>
+      <start>S</start>
+      <grammar>
+        <!-- Full grammar restored: equals/part are now safe because
+             the MereologicalTree's writes are disabled by default
+             (writes_enabled=False) and the V-sizing bug is fixed
+             via <mereologicalTreeSize>. -->
+        <compose>
+          <symbols>
+            <!-- Sentence -->
+            <rule>S = NP</rule>
+            <rule>S = lift(NP, VP)</rule>
+            <rule>S = equals(NP, NP)</rule>
+            <rule>S = equals(NP, AP)</rule>
+            <rule>S = part(NP, NP)</rule>
+            <rule>S = not(S)</rule>
+            <rule>S = conjunction(S, S)</rule>
+            <rule>S = disjunction(S, S)</rule>
+
+            <!-- Noun Phrase -->
+            <rule>NP = N</rule>
+            <rule>NP = AP</rule>
+            <rule>NP = conjunction(NP, NP)</rule>
+            <rule>NP = disjunction(NP, NP)</rule>
+
+            <!-- Verb Phrase -->
+            <rule>VP = V</rule>
+            <rule>VP = intersection(V, O)</rule>
+            <rule>VP = lower(ADV, VP)</rule>
+            <rule>VP = lower(ADJ, VP)</rule>
+
+            <!-- Object -->
+            <rule>O = NP</rule>
+
+            <!-- Adjective Phrase -->
+            <rule>AP = lower(ADJ, NP)</rule>
+            <rule>AP = lower(ADJ, AP)</rule>
+            <rule>AP = lower(DET, NP)</rule>
+          </symbols>
+        </compose>
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+  </WordSpace>
+
+  <InputSpace>
+    <nOutput>8</nOutput>
+    <nDim>16</nDim>
+    <nVectors>128</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <lexer>word</lexer>
+    <codebook>true</codebook>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>16</nDim>
+    <nVectors>128</nVectors>
+    <passThrough>true</passThrough>
+    <hasAttention>false</hasAttention>
+    <invertible>false</invertible>
+    <codebook>false</codebook>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nOutput>8</nOutput>
+    <nDim>16</nDim>
+    <nVectors>128</nVectors>
+    <hasAttention>false</hasAttention>
+    <invertible>true</invertible>
+    <codebook>false</codebook>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nOutput>8</nOutput>
+    <nDim>16</nDim>
+    <nVectors>128</nVectors>
+    <passThrough>false</passThrough>
+    <l1Lambda>0.01</l1Lambda>
+    <accumulateTruth>0</accumulateTruth>
+    <codebook>true</codebook>
+    <useVQVAE>true</useVQVAE>
+    <commitmentBeta>0.25</commitmentBeta>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nOutput>1</nOutput>
+    <nDim>1</nDim>
+    <nVectors>1</nVectors>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <nonlinear>false</nonlinear>
+  </OutputSpace>
+</model>

@@ -583,6 +583,46 @@ def init_model_amp(mode=None):
     _AMP_FIRST_LOGGED = False
 
 
+def autocast_compute_dtype(device, fallback=None):
+    """Return the dtype that torch.autocast would coerce ops to for
+    ``device``, or ``fallback`` (default: float32) when autocast is off.
+
+    Use this to allocate intermediate buffers (e.g. CKY chart score /
+    vector tensors) so subsequent in-place writes from autocast-promoted
+    ops don't hit a destination/source dtype mismatch.
+
+    PyTorch's autocast only promotes the *output* of ops it tracks; pre-
+    allocated buffers keep their original dtype, so ``empty_score =
+    torch.full(..., dtype=data.dtype)`` followed by ``empty_score[...] =
+    nn.Linear(data)`` raises when autocast is on (linear emits bf16, the
+    buffer is fp32). This helper picks the right buffer dtype up front.
+    """
+    if fallback is None:
+        fallback = torch.float32
+    try:
+        dev_type = device.type if hasattr(device, 'type') else str(device)
+    except Exception:
+        dev_type = "cpu"
+    # PyTorch 2.4+ unified API.
+    try:
+        if torch.is_autocast_enabled(dev_type):
+            return torch.get_autocast_dtype(dev_type)
+    except (TypeError, AttributeError):
+        pass
+    # Older API split per device.
+    try:
+        if dev_type == "cuda" and torch.is_autocast_enabled():
+            return torch.get_autocast_gpu_dtype()
+    except Exception:
+        pass
+    try:
+        if dev_type == "cpu" and torch.is_autocast_cpu_enabled():
+            return torch.get_autocast_cpu_dtype()
+    except Exception:
+        pass
+    return fallback
+
+
 def amp_context():
     """Return ``(autocast_cm, scaler)`` for the current MODEL_AMP setting.
 
