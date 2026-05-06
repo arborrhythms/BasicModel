@@ -7140,7 +7140,8 @@ class ConceptualSpace(Space):
     # doc/Spaces.md "Codebook similarity metric".
     use_dot_product = True
 
-    def __init__(self, inputShape, spaceShape, outputShape, layer=None):
+    def __init__(self, inputShape, spaceShape, outputShape, layer=None,
+                 subsymbolic_widen_dim=0):
         section = self.config_section
         ergodic = TheXMLConfig.get("architecture.ergodic")
         hasAttention = TheXMLConfig.space(section, "hasAttention")
@@ -7152,7 +7153,25 @@ class ConceptualSpace(Space):
         self.nonlinear = nonlinear
         self.ergodic = ergodic
         self.hasAttention = hasAttention
+        # Subsymbolic widening: when > 0, the input PiLayer's nInput is
+        # ``base_input + subsymbolic_widen_dim``. Forward concatenates
+        # the perceptual event with the right-half (sum of
+        # symbolicSpace.event + subsymbolicSpace.event from the prior
+        # conceptual order, or zeros at sentence start). The PiLayer's
+        # ``x=0 -> multiplicative identity`` property makes a zero
+        # right-half contribute nothing, preserving legacy behaviour
+        # for sentence-start (Phase-1 spec §"Integration, not just
+        # interference").
+        self._right_half_dim = int(subsymbolic_widen_dim or 0)
+        # Sibling references for the combined input. Set by Model
+        # after construction (avoids the circular dependency between
+        # ConceptualSpace and SymbolicSpace/SubsymbolicSpace at
+        # __init__ time).
+        self.symbolicSpace_ref = None
+        self.subsymbolicSpace_ref = None
         input = self.subspace.getEncodedInputSize()
+        if self._right_half_dim > 0:
+            input = input + self._right_half_dim
         output = self.subspace.getEncodedOutputSize()
         if hasAttention:
             self.attention = AttentionLayer(output, output, type="transformer")
@@ -7206,11 +7225,63 @@ class ConceptualSpace(Space):
         Single-PiLayer modes call ``self.pi.reverse``. The two-pass
         ergodic mode (where ``self.pi`` aliases ``self.pi1`` for the
         forward path) routes the reverse through ``self.pi2`` instead.
+
+        When the input PiLayer is widened for the subsymbolic loop,
+        the reverse output carries the right-half re-entrant
+        contribution which is not consumable by upstream
+        PerceptualSpace; slice it off so downstream reverse stages see
+        only the perceptual half.
         """
         pi2 = getattr(self, 'pi2', None)
         if pi2 is not None:
-            return pi2.reverse(y)
-        return self.pi.reverse(y)
+            x = pi2.reverse(y)
+        else:
+            x = self.pi.reverse(y)
+        if self._right_half_dim > 0:
+            x = x[..., :-self._right_half_dim]
+        return x
+
+    def _read_event(self, sib):
+        """Return ``sib.subspace.event`` materialised, or None."""
+        if sib is None:
+            return None
+        sub = getattr(sib, 'subspace', None)
+        if sub is None:
+            return None
+        ev = getattr(sub, 'event', None)
+        if ev is None:
+            return None
+        return ev.getW()
+
+    def _build_combined_input(self, perceptual_event):
+        """Concatenate ``perceptual_event`` with the right-half re-entrant sum.
+
+        Right half = ``symbolicSpace.event + subsymbolicSpace.event`` from
+        the previous conceptual order. At sentence start (events None /
+        not-yet-populated, or shape-mismatched against the current
+        perceptual N) the right half is filled with zeros, which the
+        PiLayer's entry transform maps to multiplicative identity --
+        i.e. order-0 behaviour matches the pre-widening pipeline.
+
+        Spec §"Pass-by-pass dataflow" and §"Sentence boundary".
+        """
+        B = perceptual_event.shape[0]
+        N = perceptual_event.shape[1]
+        D_right = self._right_half_dim
+        device = perceptual_event.device
+        dtype = perceptual_event.dtype
+        right = torch.zeros(B, N, D_right, device=device, dtype=dtype)
+        for sib in (self.symbolicSpace_ref, self.subsymbolicSpace_ref):
+            ev = self._read_event(sib)
+            if ev is None:
+                continue
+            if ev.shape == right.shape:
+                right = right + ev
+            # Else: shape mismatch (e.g. nPercepts != nSymbols at the
+            # combined-input boundary, or first call before sibling
+            # forward has run). Treat as zero -- spec's sentence-start
+            # / sibling-not-yet-active fallback.
+        return torch.cat([perceptual_event, right], dim=-1)
 
     def distance(self, x, y):
         # This is a dot-product distance that assumes the X are normalized.
@@ -7253,6 +7324,15 @@ class ConceptualSpace(Space):
         # ``WordSpace.compose`` skipped the chart so ``current_rules``
         # is empty and the cursor falls through to ``default_rule``.
         x = self.forwardBegin(vspace, returnVectors=True)
+        if self._right_half_dim > 0:
+            # Combined input for the parallel re-entrant loops:
+            # ``conceptual_input = perceptual_event || (symbolic_event +
+            # subsymbolic_event)`` with the right half taken from the
+            # *previous* conceptual order's projections (zeros at
+            # sentence start). The PiLayer's ``x=0 -> identity``
+            # property makes the zero right-half a no-op so order-0
+            # behaviour matches the un-widened pipeline.
+            x = self._build_combined_input(x)
         if getattr(self, 'syntacticLayer', None) is None:
             # Standalone-space unit tests construct ConceptualSpace
             # without a WordSpace; the production path always wires
@@ -7433,6 +7513,11 @@ class SymbolicSpace(Space):
     """
     name = "Symbols"
     config_section = "SymbolicSpace"
+    # Phase-1 mode gating: when set True (by Model in ``parallel``
+    # mode) ``forward`` zeroes the event tensor and skips resolve /
+    # lift / codebook / TruthLayer paths. Default False preserves
+    # legacy behaviour. See `2026-05-05-subsymbolic-knowing-handoff`.
+    held_at_zero = False
 
     def empty_state(self, batch=1):
         """Return a zero tensor shaped like this space's symbolic state.
@@ -8392,6 +8477,21 @@ class SymbolicSpace(Space):
         if subspace.is_empty():
             return subspace
         self.subspace.copy_context(subspace)
+        # Phase-1 ``parallel`` mode gating: when held at zero the
+        # resolve / lift / codebook / TruthLayer paths skip and the
+        # event tensor is filled with zeros. Downstream consumers
+        # read zeros; the elementwise-sum at the next conceptual
+        # order's combined input contributes nothing from this Space.
+        if self.held_at_zero:
+            sample = subspace.materialize()
+            if sample is not None:
+                B = sample.shape[0]
+                N = self.outputShape[0]
+                D = self.subspace.muxedSize
+                zero_event = torch.zeros(B, N, D, device=sample.device,
+                                         dtype=sample.dtype)
+                self.subspace.set_event(zero_event)
+            return self.subspace
         quantize = getattr(self, "quantize", True)
         is_last = getattr(self, "is_last", False)
         wordSpace = getattr(self, "wordSpace", None)
@@ -8694,6 +8794,170 @@ class SymbolicSpace(Space):
     @staticmethod
     def test():
         pass
+
+
+class SubsymbolicSpace(Space):
+    """Imagistic / felt-sense re-entrant Space, parallel to SymbolicSpace.
+
+    Bitonic, codebook-free Space whose only operations are an existing
+    ``SigmaLayer`` (OR-fold / union) followed by an existing ``PiLayer``
+    (AND-fold / conjunction), applied sequentially. No custom layer
+    class is introduced; the Sigma·Pi composition is the entire
+    processing pipeline.
+
+    Architectural role: the subsymbolic loop carries the imagistic /
+    embodied counterpart to the verbal/propositional Symbolic loop.
+    Its event tensor is summed elementwise with ``SymbolicSpace``'s
+    event at the next conceptual order's combined input -- the
+    architectural locus of symbolic↔subsymbolic interference.
+
+    Phase 1 (per ``2026-05-05-subsymbolic-knowing-handoff``) runs the
+    model in exactly one of two mutually exclusive modes via the
+    ``<architecture><mode>grammar|parallel</mode>`` XML knob:
+
+      - ``grammar``: SymbolicSpace active, SubsymbolicSpace's event
+        held at zero (``self.held_at_zero = True``).
+      - ``parallel``: SubsymbolicSpace active, SymbolicSpace's event
+        held at zero.
+
+    Distinct from SymbolicSpace:
+
+      * No codebook on ``.what`` -- continuous bitonic content.
+      * ``accumulateTruth = False`` -- never writes to the LTM
+        TruthLayer (working imagery is transient).
+      * No resolve / lift / codebook snap.
+      * Domain ``[-1, 1]`` bitonic (vs. SymbolicSpace's ``[0, 1]``
+        magnitude bivector).
+
+    Round-trip invertibility: each of ``self.sigma`` and ``self.pi``
+    is constructed ``invertible=True, monotonic=False`` so the LDU
+    inverse path is exact. ``forward`` then ``reverse`` (and vice
+    versa) round-trips to within numerical precision.
+    """
+    name = "Subsymbols"
+    config_section = "SubsymbolicSpace"
+    use_dot_product = False
+
+    def empty_state(self, batch=1):
+        """Return a zero tensor shaped like this space's subsymbolic state.
+
+        Mirrors ``SymbolicSpace.empty_state`` so callers that seed the
+        re-entrant input at sentence start can use the same pattern.
+        """
+        nOutput = int(self.outputShape[0])
+        nDim = int(self.outputShape[1])
+        return torch.zeros(int(batch), nOutput, nDim, device=TheDevice.get())
+
+    def __init__(self, inputShape, spaceShape, outputShape):
+        section = self.config_section
+        ergodic = TheXMLConfig.get("architecture.ergodic")
+        naive = TheXMLConfig.get("architecture.naive")
+        try:
+            nonlinear = TheXMLConfig.space(section, "nonlinear")
+        except KeyError:
+            nonlinear = True
+        super().__init__(inputShape, spaceShape, outputShape, customVQ=False)
+        self.nonlinear = nonlinear
+        # Continuous bitonic content -- no codebook constraint, no
+        # truth accumulation. accumulateTruth is a class-time invariant,
+        # not a config knob: subsymbolic content is transient working
+        # imagery (see plan §2.1, Memory architecture).
+        self.accumulateTruth = 0.0
+
+        nConceptDim = inputShape[1]      # concept_dim + obj_concept (== muxedSize_c)
+        nSubsymbolDim = outputShape[1]   # subsymbol_dim + obj == muxedSize_ss
+
+        # Sigma·Pi composition: the entire processing pipeline.
+        # ``invertible=True, monotonic=False`` so each layer's LDU
+        # inverse provides exact round-trip invertibility, and the
+        # response is bitonic (no codebook ordering constraint).
+        self.sigma = SigmaLayer(nConceptDim, nSubsymbolDim,
+                                invertible=True, monotonic=False,
+                                nonlinear=nonlinear,
+                                naive=naive, ergodic=ergodic)
+        self.pi = PiLayer(nSubsymbolDim, nSubsymbolDim,
+                          invertible=True, monotonic=False,
+                          nonlinear=nonlinear,
+                          naive=naive, ergodic=ergodic, stable=True)
+        self.layers = nn.ModuleList([self.sigma, self.pi])
+        self.params = list(self.parameters())
+
+        # Mode-gating flag, set by Model based on <architecture><mode>:
+        # when True, ``forward`` zeroes its event tensor instead of
+        # running the Sigma·Pi composition (held at multiplicative
+        # identity for the next-order combined input).
+        self.held_at_zero = False
+
+    def _build_object_basis(self):
+        """No codebook on the event -- the event is a writable Tensor."""
+        return None
+
+    def _build_what_basis(self):
+        """No codebook on .what (continuous bitonic content).
+
+        Mirrors ``ConceptualSpace`` (pure-event subspace); the
+        ``.what`` slot stays empty and state lives on ``.event`` via
+        ``set_event``.
+        """
+        return None
+
+    def forward(self, subspace):
+        """Concept → Subsymbol forward via Sigma then Pi composition.
+
+        ``self.sigma(x)`` is the OR-fold (additive log-domain union);
+        ``self.pi(y)`` is the AND-fold (multiplicative log-domain
+        conjunction). Their composition is the entire Subsymbolic
+        bridge -- no custom layer class is introduced.
+
+        When ``self.held_at_zero`` is set (Phase-1 ``grammar`` mode),
+        the event tensor is zeroed and the layers are not run. Zero is
+        the multiplicative identity in the entry transform, so the
+        next-order combined input's right-half contribution from this
+        Space is null.
+        """
+        if subspace.is_empty():
+            return subspace
+        self.subspace.copy_context(subspace)
+        if self.held_at_zero:
+            sample = subspace.materialize()
+            if sample is None:
+                return self.subspace
+            B = sample.shape[0]
+            N = self.outputShape[0]
+            D = self.subspace.muxedSize
+            zero_event = torch.zeros(B, N, D, device=sample.device,
+                                     dtype=sample.dtype)
+            self.subspace.set_event(zero_event)
+            return self.subspace
+        vspace = subspace
+        x = self.forwardBegin(vspace, returnVectors=True)
+        y = self.sigma.forward(x)
+        z = self.pi.forward(y)
+        vspace = self.forwardEnd(z, returnVectors=True)
+        return vspace
+
+    def reverse(self, subspace):
+        """Subsymbol → Concept reverse via Pi.reverse then Sigma.reverse.
+
+        Exact LDU inverse on each layer; the composition round-trips
+        ``forward(reverse(x)) ≈ x`` and ``reverse(forward(x)) ≈ x`` to
+        within numerical precision.
+        """
+        if subspace.is_empty():
+            return subspace
+        self.subspace.copy_context(subspace)
+        vspace = subspace
+        y = self.reverseBegin(vspace, returnVectors=True)
+        z = self.pi.reverse(y)
+        x = self.sigma.reverse(z)
+        vspace = self.reverseEnd(x, returnVectors=True)
+        return vspace
+
+    @staticmethod
+    def test():
+        pass
+
+
 class OutputSpace(Space):
     """Maps symbolic vectors to task targets (classification logits, regression values).
 

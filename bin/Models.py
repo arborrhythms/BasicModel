@@ -72,12 +72,12 @@ from typing import List
 
 from Spaces import ActiveEncoding, WhereEncoding, WhenEncoding, WhatEncoding, EventEncoding
 from Spaces import Basis, Tensor, Codebook, Embedding
-from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, OutputSpace
+from Spaces import SubSpace, Space, InputSpace, PerceptualSpace, ModalSpace, ConceptualSpace, SymbolicSpace, SubsymbolicSpace, OutputSpace
 from Language import WordSpace
 from util import parse
 from Pipeline import (
     CachePoint, GrammarMergeGlue, ReverseAdapter, FlattenKWrapper,
-    ChartCompose, ChartGenerate,
+    ChartCompose, ChartGenerate, SubsymbolicTee,
 )
 
 
@@ -1905,12 +1905,16 @@ class BaseModel(nn.Module):
         # codebook, while the current model expects [2K, D]. Duplicate each
         # row into the positive-pole slot (row 2k), leaving the negative-pole
         # slot (row 2k+1) zero. One-time bridge; no reverse migration.
+        # Skip when the saved tensor is empty (saved.shape[0] == 0):
+        # ``2 * 0 == 0`` makes the doubling test trivially true and the
+        # warning fires for a no-op shape transition.
         for k, saved_v in list(state.items()):
             if k not in model_state:
                 continue
             model_v = model_state[k]
             if (saved_v.dim() == 2 and model_v.dim() == 2
                     and saved_v.shape[1] == model_v.shape[1]
+                    and saved_v.shape[0] > 0
                     and model_v.shape[0] == 2 * saved_v.shape[0]
                     and "symbolicSpace" in k):
                 migrated = torch.zeros_like(model_v)
@@ -2223,6 +2227,21 @@ class BasicModel(BaseModel):
         self.gate_l1_lambda = float(
             TheXMLConfig.get("architecture.gateL1Lambda", default=0.0) or 0.0)
         self.lexer            = TheXMLConfig.space("InputSpace", "lexer")
+        # Subsymbolic loop configuration. When enabled, build
+        # SubsymbolicSpace alongside SymbolicSpace and widen
+        # ConceptualSpace's input PiLayer to read the combined
+        # perceptual || (symbolic + subsymbolic) input. Phase-1
+        # ``mode`` selects which loop is active; the other Space's
+        # event is held at zero.
+        self.subsymbolicEnabled = bool(
+            TheXMLConfig.get("architecture.subsymbolicEnabled",
+                             default=False))
+        raw_mode = TheXMLConfig.get("architecture.mode", default="grammar")
+        self.mode = str(raw_mode).strip().lower() if raw_mode is not None else "grammar"
+        if self.mode not in ("grammar", "parallel"):
+            raise ValueError(
+                f"architecture.mode={raw_mode!r} is invalid; expected "
+                f"'grammar' or 'parallel'.")
         # The lexicon lives on PerceptualSpace via its chunking_mode.
         # InputSpace.codebook defaults to false; configs that set it
         # true opt into the InputSpace lexical path.
@@ -2287,6 +2306,11 @@ class BasicModel(BaseModel):
         concept_dim = _resolve_dim("ConceptualSpace",  percept_dim)
         symbol_dim  = _resolve_dim("SymbolicSpace",    concept_dim)
         output_dim  = _resolve_dim("OutputSpace",      symbol_dim)
+        # SubsymbolicSpace defaults to symbol_dim so its event tensor
+        # matches SymbolicSpace's shape for elementwise summation at
+        # ConceptualSpace input. Spec §"Constraint" requires shared
+        # nDim across the chain when subsymbolic is enabled.
+        subsymbol_dim = _resolve_dim("SubsymbolicSpace", symbol_dim)
 
         # Per-space objectSize: nWhere + nWhen (falls back to architecture, then 0)
         def _obj_size(section):
@@ -2304,6 +2328,7 @@ class BasicModel(BaseModel):
         obj_percept = _obj_size("PerceptualSpace")
         obj_concept = _obj_size("ConceptualSpace")
         obj_symbol  = _obj_size("SymbolicSpace")
+        obj_subsymbol = _obj_size("SubsymbolicSpace")
         obj_output  = _obj_size("OutputSpace")
 
         # Resolve nVectors sentinels (0 -> same as output count for that space)
@@ -2318,7 +2343,32 @@ class BasicModel(BaseModel):
         nvec_percept = _nvec("PerceptualSpace", nPercepts)
         nvec_concept = _nvec("ConceptualSpace", nConcepts)
         nvec_symbol  = _nvec("SymbolicSpace",  nSymbols)
+        # SubsymbolicSpace defaults to symbol's nVectors so the
+        # event tensors share shape; spec requires this for the
+        # elementwise sum at ConceptualSpace input.
+        nvec_subsymbol = _nvec("SubsymbolicSpace", nvec_symbol)
         nvec_output  = _nvec("OutputSpace",    nOutput)
+
+        # Subsymbolic-loop config validators (only when enabled).
+        # Spec §"Constraint: shared nDim, configurable nVectors".
+        if self.subsymbolicEnabled:
+            TheXMLConfig.require(
+                lambda cfg, _p=percept_dim, _c=concept_dim,
+                       _s=symbol_dim, _ss=subsymbol_dim:
+                       _p == _c == _s == _ss,
+                f"subsymbolicEnabled requires shared nDim across "
+                f"PerceptualSpace ({percept_dim}) / ConceptualSpace "
+                f"({concept_dim}) / SymbolicSpace ({symbol_dim}) / "
+                f"SubsymbolicSpace ({subsymbol_dim}); Pi/Sigma bridge "
+                f"shapes must align"
+            )
+            TheXMLConfig.require(
+                lambda cfg, _vs=nvec_symbol, _vss=nvec_subsymbol:
+                       _vs == _vss,
+                f"subsymbolicEnabled requires SymbolicSpace.nVectors "
+                f"({nvec_symbol}) == SubsymbolicSpace.nVectors "
+                f"({nvec_subsymbol}); event tensors are summed elementwise"
+            )
 
         # Build I/O shape tuples: [count, dim + objectSize]
         # Each space's shape includes its own objectSize.
@@ -2326,6 +2376,15 @@ class BasicModel(BaseModel):
         perceptShape = [nPercepts, percept_dim + obj_percept]
         conceptShape = [nConcepts, concept_dim + obj_concept]
         symbolShape  = [nSymbols,  symbol_dim  + obj_symbol]
+        # SubsymbolicSpace shares N (== nvec_subsymbol) and uses its
+        # own per-section nWhere/nWhen (obj_subsymbol). When the
+        # validator's nDim equality holds, subsymbolShape[1] equals
+        # symbolShape[1] iff obj_subsymbol == obj_symbol -- callers
+        # must keep the per-section nWhere/nWhen in sync if they want
+        # the elementwise sum at ConceptualSpace input to be
+        # well-defined (currently enforced by config convention; the
+        # pi widening uses subsymbolShape[1] explicitly).
+        subsymbolShape = [nvec_subsymbol, subsymbol_dim + obj_subsymbol]
         outputShape  = [nOutput,   output_dim  + obj_output]
 
         # Build codebook (space-internal) shape tuples: [nVectors, nDim]
@@ -2334,6 +2393,7 @@ class BasicModel(BaseModel):
         spaceShape_percept = [nvec_percept, percept_dim]
         spaceShape_concept = [nvec_concept, concept_dim]
         spaceShape_symbol  = [nvec_symbol,  symbol_dim]
+        spaceShape_subsymbol = [nvec_subsymbol, subsymbol_dim]
         spaceShape_output  = [nvec_output,  output_dim]
 
         # InputSpace receives raw data (no encoding) as input but produces encoded vectors.
@@ -2355,10 +2415,49 @@ class BasicModel(BaseModel):
                 data.prepare_lm_targets(embedding)
                 # Move new targets to device
                 data.toDevice()
-        self.conceptualSpace = ConceptualSpace(perceptShape, spaceShape_concept, conceptShape)
+        # When subsymbolic is enabled, ConceptualSpace's input PiLayer
+        # is widened so it can read the combined
+        # ``perceptual || (symbolic + subsymbolic)`` input. The
+        # right-half width matches symbolShape[1] (== subsymbolShape[1]
+        # under the shared-shape constraint).
+        widen_dim = symbolShape[1] if self.subsymbolicEnabled else 0
+        self.conceptualSpace = ConceptualSpace(
+            perceptShape, spaceShape_concept, conceptShape,
+            subsymbolic_widen_dim=widen_dim)
         self.symbolicSpace   = SymbolicSpace(conceptShape, spaceShape_symbol, symbolShape,
                                              conceptualSpace=self.conceptualSpace)
-        self.spaces.extend([self.inputSpace, self.perceptualSpace, self.conceptualSpace, self.symbolicSpace])
+        # SubsymbolicSpace: parallel re-entrant Space, codebook-free,
+        # bitonic; runs only when subsymbolicEnabled (Phase 1 spec).
+        if self.subsymbolicEnabled:
+            self.subsymbolicSpace = SubsymbolicSpace(
+                conceptShape, spaceShape_subsymbol, subsymbolShape)
+            # Phase-1 mode gating: hold the inactive Space's event at
+            # zero. ``grammar`` keeps SymbolicSpace active and
+            # SubsymbolicSpace silent; ``parallel`` is the inverse.
+            # Both gates write zeros into ``self.subspace.event`` and
+            # skip resolve/lift/codebook/Pi paths.
+            if self.mode == "grammar":
+                self.subsymbolicSpace.held_at_zero = True
+            elif self.mode == "parallel":
+                self.symbolicSpace.held_at_zero = True
+            # Wire siblings on ConceptualSpace so its forward can
+            # build the combined input from their event tensors.
+            # ``object.__setattr__`` bypasses nn.Module submodule
+            # tracking -- otherwise SymbolicSpace would be registered
+            # as a child of ConceptualSpace AND as a child of the
+            # Model, creating a cycle in the module tree that breaks
+            # ``.to(device)`` and double-counts parameters.
+            object.__setattr__(self.conceptualSpace,
+                               'symbolicSpace_ref', self.symbolicSpace)
+            object.__setattr__(self.conceptualSpace,
+                               'subsymbolicSpace_ref', self.subsymbolicSpace)
+        else:
+            self.subsymbolicSpace = None
+        spaces_to_add = [self.inputSpace, self.perceptualSpace,
+                         self.conceptualSpace, self.symbolicSpace]
+        if self.subsymbolicSpace is not None:
+            spaces_to_add.append(self.subsymbolicSpace)
+        self.spaces.extend(spaces_to_add)
         self.syntacticSpace = None
 
         self.outputSpace     = OutputSpace([nSymbols, symbol_dim + obj_symbol], spaceShape_output, outputShape,
@@ -2464,11 +2563,19 @@ class BasicModel(BaseModel):
         )
 
         # Body: pure transforms wrapped to flatten K.
-        self._body_inner = nn.Sequential(
-            self.conceptualSpace,
-            self.symbolicSpace,
-            self.symbol_cache,
-        )
+        # When subsymbolic is enabled, SubsymbolicTee runs
+        # SubsymbolicSpace as a side effect on the conceptual
+        # subspace (parallel projection), then passes
+        # concept_subspace through unchanged so SymbolicSpace
+        # downstream still sees its expected input. The
+        # subsymbolic event is consumed at the next conceptual
+        # order's combined input (via the widened ConceptualSpace
+        # input PiLayer) -- not within this pass.
+        body_modules = [self.conceptualSpace]
+        if self.subsymbolicSpace is not None:
+            body_modules.append(SubsymbolicTee(self.subsymbolicSpace))
+        body_modules.extend([self.symbolicSpace, self.symbol_cache])
+        self._body_inner = nn.Sequential(*body_modules)
         self.pipeline_body = FlattenKWrapper(self._body_inner)
 
         # Head: output projection wrapped to flatten K.

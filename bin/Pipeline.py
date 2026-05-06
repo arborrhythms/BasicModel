@@ -76,6 +76,39 @@ class ReverseAdapter(nn.Module):
         return target.reverse(subspace)
 
 
+class SubsymbolicTee(nn.Module):
+    """Pipeline step that runs ``subsymbolicSpace`` as a side effect on
+    the conceptual subspace, then passes the subspace through unchanged.
+
+    Inserted between ConceptualSpace and SymbolicSpace in the body
+    pipeline when ``<architecture><subsymbolicEnabled>true``. The
+    SubsymbolicSpace's event tensor is consumed at the *next*
+    conceptual order's combined input, not within the producing
+    order, so its output is not threaded into the downstream
+    sequential -- it lands on ``subsymbolicSpace.subspace.event`` as
+    a side effect and SymbolicSpace continues to receive the
+    original concept_subspace.
+
+    No-op when ``subsymbolicSpace`` is ``None`` (subsymbolicEnabled
+    was false at construction).
+    """
+
+    def __init__(self, subsymbolicSpace):
+        super().__init__()
+        self.subsymbolicSpace = subsymbolicSpace
+
+    def forward(self, subspace):
+        if self.subsymbolicSpace is None or subspace is None:
+            return subspace
+        if hasattr(subspace, 'is_empty') and subspace.is_empty():
+            return subspace
+        self.subsymbolicSpace(subspace)
+        return subspace
+
+    def reverse(self, subspace):
+        return subspace
+
+
 class CachePoint(nn.Module):
     """Identity module that caches whatever subspace passed through last.
 
