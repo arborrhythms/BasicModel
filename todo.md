@@ -1,6 +1,5 @@
 
 
-* doc/plans/2026-05-04-bivector-codebook-luminosity-handoff.md
 * Mereological Reasoning
   Is subject predicate?
   Represent queries as asking part( x,y )

@@ -1,13 +1,15 @@
-"""Tests for SymbolicSpace.resolve() -- Task 2.1 (failing harness).
+"""Tests for SymbolicSpace.resolve() -- Task 2.1.
 
-resolve(subspace) will set subspace.activation to the scalar sum
-``pos + neg`` per symbol, where ``subspace.what[..., 0]`` is the
-positive pole and ``subspace.what[..., 1]`` is the negative pole of the
-4-valued bivector stored per symbol slot.
+resolve(subspace) sets subspace.activation to the scalar **balance of
+evidence** ``pos - neg`` per symbol, where ``subspace.what[..., 0]`` is
+the positive pole (evidence FOR) and ``subspace.what[..., 1]`` is the
+negative pole (evidence AGAINST) of the 4-valued bivector stored per
+symbol slot.  Range is roughly [-1, +1] (signed Degree of Truth):
+positive = affirmation; negative = negation; zero = balanced/unknown.
 
-These tests are intentionally FAILING until Task 2.2 implements resolve().
-The expected failure mode is:
-    AttributeError: 'SymbolicSpace' object has no attribute 'resolve'
+inside() / outside() take the absolute value of this signed DoT when
+treating activation as a magnitude-based extent, so a strongly-negated
+symbol has the same extent as a strongly-affirmed one.
 """
 import os
 import sys
@@ -83,48 +85,49 @@ def _make_symbolic_space(nSymbols=3, symbolDim=4, conceptDim=4):
 # Tests
 # ---------------------------------------------------------------------------
 
-def test_resolve_sums_pos_and_neg():
-    """resolve(subspace) sets subspace.activation = pos + neg per symbol.
+def test_resolve_balances_pos_and_neg():
+    """resolve(subspace) sets subspace.activation = pos - neg per symbol.
 
-    what[..., 0] is the positive pole, what[..., 1] is the negative pole.
-    Activation scalar = pos + neg (total signal strength, unsigned).
+    what[..., 0] is the positive pole (evidence FOR), what[..., 1] is the
+    negative pole (evidence AGAINST).  Activation scalar = pos - neg
+    (signed Degree of Truth: balance of evidence).
     """
     sym = _make_symbolic_space()
 
     # Shape [B=1, N=3, nWhat=2]: (pos_pole, neg_pole) per symbol
-    what = torch.tensor([[[0.5, 0.0],   # symbol 0: pos=0.5, neg=0.0 → 0.5
-                          [0.2, 0.3],   # symbol 1: pos=0.2, neg=0.3 → 0.5
-                          [0.0, 0.7]]]) # symbol 2: pos=0.0, neg=0.7 → 0.7
+    what = torch.tensor([[[0.5, 0.0],   # symbol 0: pos=0.5, neg=0.0 → +0.5
+                          [0.2, 0.3],   # symbol 1: pos=0.2, neg=0.3 → -0.1
+                          [0.0, 0.7]]]) # symbol 2: pos=0.0, neg=0.7 → -0.7
     sym.subspace.what.setW(what)
 
-    # This line fails until Task 2.2 implements resolve():
-    sym.resolve(sym.subspace)  # expected: AttributeError
+    sym.resolve(sym.subspace)
 
-    activation = sym.subspace.activation.getW()
-    expected = torch.tensor([[0.5, 0.5, 0.7]])   # [B=1, N=3]
+    activation = sym.subspace.materialize(mode="activation")
+    expected = torch.tensor([[0.5, -0.1, -0.7]])   # [B=1, N=3]
     assert torch.allclose(activation, expected), (
         f"Expected {expected}, got {activation}"
     )
 
 
 def test_resolve_serial_lossless():
-    """Under serial processing (one pole non-zero at a time), resolve is lossless.
+    """Under serial processing (one pole non-zero at a time), resolve's
+    magnitude is lossless.
 
-    When only one pole fires per slot, pos + neg == the firing pole's value,
-    so no information is lost in the scalar reduction.
+    When only one pole fires per slot, |pos - neg| equals the firing
+    pole's value, so no magnitude information is lost in the scalar
+    reduction.  The sign records which pole fired (pos → +, neg → -).
     """
     sym = _make_symbolic_space()
 
-    what = torch.tensor([[[0.8, 0.0],   # pos-only: 0.8
-                          [0.0, 0.6],   # neg-only: 0.6
-                          [0.9, 0.0]]]) # pos-only: 0.9
+    what = torch.tensor([[[0.8, 0.0],   # pos-only:  +0.8
+                          [0.0, 0.6],   # neg-only:  -0.6
+                          [0.9, 0.0]]]) # pos-only:  +0.9
     sym.subspace.what.setW(what)
 
-    # This line fails until Task 2.2 implements resolve():
-    sym.resolve(sym.subspace)  # expected: AttributeError
+    sym.resolve(sym.subspace)
 
-    activation = sym.subspace.activation.getW()
-    expected = torch.tensor([[0.8, 0.6, 0.9]])
+    activation = sym.subspace.materialize(mode="activation")
+    expected = torch.tensor([[0.8, -0.6, 0.9]])
     assert torch.allclose(activation, expected), (
         f"Expected {expected}, got {activation}"
     )
@@ -233,7 +236,7 @@ def test_symbol_codebook_quantizes_activation_not_what():
 
     sym.quantize = True
     output = sym.forward(sym.subspace)
-    activations = output.activation.getW()
+    activations = output.materialize(mode="activation")
 
     # Assertion 1: activation is 1-D [B, N] after resolve(), not [B, N, 2].
     assert activations.ndim == 2, (

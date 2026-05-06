@@ -2698,15 +2698,100 @@ class Embedding(Basis):
 class SubSpace(nn.Module):
     """Per-space runtime state container.
 
-    Holds the factored representation (what, where, when, activation) along
-    with the encoding objects that describe each factor.  Spaces populate
-    a SubSpace during forward() and will eventually pass it as output.
+    Holds the factored representation (what, where, when, activation, event)
+    along with the encoding objects that describe each factor.  Spaces
+    populate a SubSpace during forward() and will eventually pass it as
+    output.
 
-    ``materialize()`` bridges back to the current dense-tensor API so
-    existing Model.py math continues to work unchanged.
+    -----------------------------------------------------------------------
+    Public read API
+    -----------------------------------------------------------------------
+    Clients of a SubSpace MUST read through ``materialize(mode=...)`` or
+    ``resolve()``.  Reaching past these and calling ``.what.getW()`` /
+    ``.where.getW()`` / etc. directly is wrong because:
+      (a) ``getW()`` returns the underlying weight buffer, which may be
+          a Codebook's learned prototype matrix rather than the
+          per-batch values the caller actually wants;
+      (b) the raw read skips ``.active`` selection, so callers that
+          rely on selection semantics silently see the full slab.
 
-    In v1 this is a plain Python object (not nn.Module) because it holds
-    references rather than learnable parameters.
+    Modes:
+      * ``materialize(mode="what")``       per-batch ``.what`` content,
+                                           gathered/masked by ``.active``.
+      * ``materialize(mode="where")``      per-batch ``.where`` content.
+      * ``materialize(mode="when")``       per-batch ``.when`` content.
+      * ``materialize(mode="event")``      muxed view; calls ``mux()`` to
+                                           pack the three modalities into
+                                           ``.event`` only when ``.event``
+                                           is empty AND the modalities hold
+                                           per-batch (3D) tensors.  Pure-
+                                           event subspaces (ConceptualSpace)
+                                           are a no-op: ``mux()`` skips
+                                           because the modalities are empty.
+      * ``materialize(mode="activation")`` presence-style read: stored
+                                           activation × modal gate, falling
+                                           back through ``activation_presence``
+                                           and ``set_activation_from_event``
+                                           when nothing is stored.  Returns
+                                           a presence reduction (max of
+                                           bivector poles), NOT signed DoT.
+      * ``materialize(mode="active")``     legacy: muxed event × presence
+                                           gate.  The default ``mode``.
+      * ``resolve()``                      derived **signed** Degree of
+                                           Truth = pos - neg from the
+                                           ``.what`` bivector (or from
+                                           ``.event[..., :2]`` for muxed-
+                                           only subspaces).  Distinct from
+                                           ``materialize(mode="activation")``
+                                           which returns the *unsigned*
+                                           presence (max of poles).
+
+    -----------------------------------------------------------------------
+    Public write API
+    -----------------------------------------------------------------------
+    Clients write via the public setters, NOT through ``.what.setW`` etc.:
+      * ``set_what(t)`` / ``set_where(t)`` / ``set_when(t)``
+            per-modality writes; each invalidates the cached ``.event``
+            so the next ``materialize(mode="event")`` re-muxes.
+      * ``set_event(t)``           muxed-event write; populates
+                                   ``.event`` and resets activation to a
+                                   default all-ones presence.
+      * ``set_activation(t)``      activation write; lifts a 1-D / 2-D
+                                   scalar to the bivector layout when
+                                   the active encoding is 2-dim.
+
+    Methods that receive a SubSpace as argument SHOULD only read from
+    it; structural writes belong on ``self.subspace`` (the receiving
+    space's own SubSpace).  This avoids writing a Tensor into a
+    Codebook-backed slot on someone else's subspace -- Codebook
+    parameters do not tolerate arbitrary tensor overwrites.
+
+    -----------------------------------------------------------------------
+    Activation semantics
+    -----------------------------------------------------------------------
+    ``.activation`` is a stored, possibly-quantized, possibly-externally-
+    set per-position field.  It intentionally diverges from a pure
+    derivation of ``.what`` after the codebook snap (which writes the
+    quantized scalar back via ``set_activation``).  Use ``resolve()``
+    when you want the pure ``pos - neg`` derivation; use
+    ``materialize(mode="activation")`` when you want the model's
+    committed activation (post-snap, post-set_activation).
+
+    For SymbolicSpace specifically:
+      * ``.what`` carries the continuous pre-snap bivector
+        ``[pos_pole, neg_pole]`` (shape ``[B, N, 2]``) AND, when
+        ``<codebook>true``, the learned ``[V_sym, 2]`` symbol-prototype
+        matrix on ``.what.W``.
+      * ``.activation`` carries the post-resolve / post-snap scalar
+        (signed when set by SymbolicSpace.resolve()'s direct setW;
+        bivector-lifted when set via ``set_activation``).
+      * They are NOT the same field with the same content.  See the
+        SymbolicSpace class docstring for the full lifecycle.
+
+    Pure-event subspaces (ConceptualSpace) leave ``.what`` / ``.where`` /
+    ``.when`` empty and store everything on ``.event`` via
+    ``set_event(...)``; ``mux()`` correctly no-ops there, and reads
+    should use ``materialize(mode="event")``.
     """
 
     def __init__(self, inputShape, outputShape,
@@ -3294,6 +3379,11 @@ class SubSpace(nn.Module):
             activation_tensor: [B, N, 2] bivector or [B, N] legacy scalar.
         """
         nd = self.activeEncoding.nDim
+        # Accept 1-D [N] (legacy direct-setW callers / squeezed tensors)
+        # by treating it as a single-batch [1, N] under the bivector-lift
+        # path.  Strict shapes ([B, N] / [B, N, nd]) pass through unchanged.
+        if activation_tensor.ndim == 1:
+            activation_tensor = activation_tensor.unsqueeze(0)  # [N] -> [1, N]
         if activation_tensor.ndim == 2:
             if nd == 2:
                 pos = torch.relu(activation_tensor)
@@ -3306,7 +3396,8 @@ class SubSpace(nn.Module):
             )
         else:
             raise AssertionError(
-                f"activation must be [B, N] or [B, N, {nd}], got {activation_tensor.shape}"
+                f"activation must be [N], [B, N], or [B, N, {nd}], "
+                f"got {activation_tensor.shape}"
             )
         self.activation.setW(activation_tensor)
 
@@ -3666,25 +3757,181 @@ class SubSpace(nn.Module):
         # Already [B, N, D] (e.g. from set_what on a Tensor basis)
         return codebook
 
+    def mux(self):
+        """Pack ``.what`` / ``.where`` / ``.when`` into ``.event``.
+
+        Pure-event subspaces (e.g. ConceptualSpace, which uses the
+        SubSpace as an opaque event carrier set via ``set_event()``)
+        leave all three modality slots empty.  In that case mux() is a
+        no-op.
+
+        Conservative behaviour to avoid corrupting upstream-set events:
+
+        - If ``.event`` is already populated AND has 3D (per-batch)
+          shape, return without rewriting.  An upstream stage that
+          called ``set_event(...)`` directly is the source of truth;
+          re-muxing from possibly-stale modality slots would clobber it.
+        - Only pack from modalities whose ``.getW()`` is per-batch
+          (``ndim >= 3``, i.e. ``[B, N, D]``).  Codebook prototypes on
+          ``.what`` are 2D ``[V, D]`` -- those are NOT per-batch
+          content and must not be concatenated as if they were.
+        - Public setter ``set_what`` / ``set_where`` / ``set_when``
+          already invalidates ``.event`` (sets it to None), so the
+          "regenerate when stale" trigger is the caller's
+          responsibility.
+
+        This is the legitimate path for unmuxed-set-up code that
+        populates ``.what`` / ``.where`` / ``.when`` with per-batch
+        tensors and wants a muxed view downstream.
+        """
+        # Already-populated 3D event: respect it, don't re-mux.
+        existing = self.event.getW() if self.event is not None else None
+        if existing is not None and existing.ndim >= 3:
+            return
+
+        what_w  = self.what.getW()  if self.what  is not None else None
+        where_w = self.where.getW() if self.where is not None else None
+        when_w  = self.when.getW()  if self.when  is not None else None
+        if what_w is None and where_w is None and when_w is None:
+            return  # pure-event subspace -- nothing to pack
+
+        # Only include per-batch (3D) modality tensors.  A 2D ``.what``
+        # is a Codebook's ``[V, D]`` prototype matrix -- not muxable.
+        parts = []
+        if (what_w  is not None and what_w.ndim  >= 3
+                and what_w.shape[-1]  > 0):
+            parts.append(what_w)
+        if (where_w is not None and where_w.ndim >= 3
+                and where_w.shape[-1] > 0):
+            parts.append(where_w)
+        if (when_w  is not None and when_w.ndim  >= 3
+                and when_w.shape[-1]  > 0):
+            parts.append(when_w)
+        if not parts:
+            return
+        # All parts must share the leading [B, N] shape.
+        ref_shape = parts[0].shape[:-1]
+        for p in parts[1:]:
+            if p.shape[:-1] != ref_shape:
+                return  # incompatible -- skip rather than corrupt
+        self.event.setW(torch.cat(parts, dim=-1))
+
+    def resolve(self):
+        """Derived **signed Degree of Truth** = pos - neg from the
+        bivector held on ``.what`` (or, for muxed-only subspaces, from
+        ``.event[..., :2]``).  Computed on read; not stored as a
+        separate field.
+
+          * ``pos = .what[..., 0]`` — evidence FOR the symbol's truth
+          * ``neg = .what[..., 1]`` — evidence AGAINST it
+          * ``resolve() = pos - neg`` — balance of evidence in [-1, +1]
+
+        Returns ``[B, N]`` (or ``[N]`` for unbatched legacy).  Applies
+        ``.active`` selection when set; returns the full slab when
+        ``.active is None``.  Returns ``None`` when no bivector source
+        is reachable.
+
+        Public read API for the resolved scalar; replaces the prior
+        ``self.activation.getW()`` access pattern.
+        """
+        what = self.what.getW() if self.what is not None else None
+        bivec = None
+        if what is not None and what.ndim >= 2 and what.shape[-1] >= 2:
+            bivec = what[..., :2]
+        else:
+            ev = self.event.getW() if self.event is not None else None
+            if ev is not None and ev.ndim >= 3 and ev.shape[-1] >= 2:
+                bivec = ev[..., :2]
+        if bivec is None:
+            return None
+        pos = bivec[..., 0]
+        neg = bivec[..., 1]
+        scalar = pos - neg
+        return self._apply_active_selection(scalar)
+
+    def _apply_active_selection(self, src):
+        """Apply ``.active`` mask/index selection to ``src``.  Returns
+        ``src`` unchanged when ``.active`` is None or doesn't apply
+        (wrong shape, mismatched leading dim).
+        """
+        if src is None:
+            return None
+        active = self._active
+        if active is None:
+            return src
+        # Boolean mask along the slot axis.
+        if active.dtype == torch.bool:
+            try:
+                return src[active]
+            except Exception:
+                return src
+        # Index tensor: only apply when shape is 1-D or 2-D and
+        # broadcasts cleanly over the slot axis.
+        if active.ndim == 1 and src.ndim >= 1:
+            try:
+                return src.index_select(-2 if src.ndim >= 2 else 0,
+                                        active.long())
+            except Exception:
+                return src
+        # Higher-rank index forms (e.g. [B, N, M] per-modality indices)
+        # are consumed inside materialize()'s rebuild path; we don't
+        # second-guess them here.
+        return src
+
     def materialize(self, k=None, mode="active"):
-        """Build event from active indices, return event * activation.
+        """Public read API for SubSpace contents.
 
-        Index-based path (set_forward_content): active [B, N, M] holds indices
-        into each modality's Basis. Looks up vectors from .what, .where, .when.
-
-        Legacy path (set_demuxed/set_what): reads vectors from Basis slots directly.
-
-        Muxed path: returns event directly.
+        Modes:
+          * ``"what"`` / ``"where"`` / ``"when"`` -- the named modality
+            slot's tensor, with ``.active`` selection applied.
+          * ``"event"`` -- the muxed view.  Calls ``mux()`` to (re)pack
+            ``.what`` / ``.where`` / ``.when`` into ``.event`` when the
+            modalities are populated; pure-event subspaces are a no-op
+            and the existing ``.event`` is returned.  Selection
+            applied.
+          * ``"activation"`` -- legacy alias; equivalent to
+            ``self.resolve()`` for bivector layouts, falls back to the
+            ``activation_presence`` / ``effective_activation`` path
+            when no bivector source is present.
+          * ``"active"`` (default, legacy) -- ``event * activation_presence``
+            via the index-based or legacy demuxed rebuild path.
+            Preserved for backwards-compat with existing call sites.
 
         Args:
-            k: number of vectors to return. If None, returns all vectors.
-            mode: "active" (default) returns event * activation;
-                  "activation" returns the effective activation [batch, nVectors].
+            k: legacy parameter; unused by the new mode-keyed paths.
+            mode: see above.
 
         Returns:
-            Tensor [batch, k, dim] (mode="active"),
-            or Tensor [batch, nVectors] (mode="activation").
+            Tensor in the requested mode, or None when no source is
+            reachable.
         """
+        # New mode-keyed reads.
+        if mode == "what":
+            w = self.what.getW() if self.what is not None else None
+            return self._apply_active_selection(w)
+        if mode == "where":
+            w = self.where.getW() if self.where is not None else None
+            return self._apply_active_selection(w)
+        if mode == "when":
+            w = self.when.getW() if self.when is not None else None
+            return self._apply_active_selection(w)
+        if mode == "event":
+            # Re-mux from modality slots when they're populated.  The
+            # mux() implementation no-ops on pure-event subspaces, so
+            # ConceptualSpace's set_event-only flow still works.
+            self.mux()
+            e = self.event.getW() if self.event is not None else None
+            return self._apply_active_selection(e)
+        # ``activation`` mode: presence-style read.  Returns the stored
+        # activation reduced to per-position **presence** (max of bivector
+        # poles after modal gating).  Order of preference, mirroring the
+        # historical contract:
+        #   1. effective_activation() -- stored activation × modal gate
+        #   2. activation_presence()  -- raw stored activation, no gate
+        #   3. derived from event (set_activation_from_event then read)
+        # NOT fallthrough to resolve():  resolve() returns signed
+        # pos - neg (Degree of Truth), a different reduction.  Callers
+        # that want signed DoT call subspace.resolve() directly.
         if mode == "activation":
             eff = self.effective_activation()
             if eff is not None:
@@ -5957,7 +6204,7 @@ class PerceptualSpace(Space):
         This method owns all codebook operations. InputSpace never touches
         the codebook.
         """
-        what_buf = upstream_vspace.what.getW()
+        what_buf = upstream_vspace.materialize(mode="what")
         if what_buf is None:
             raise RuntimeError(
                 "PerceptualSpace._embed: upstream subspace.what is empty. "
@@ -6030,8 +6277,8 @@ class PerceptualSpace(Space):
             indices_2d, dtype=torch.long, device=dev)
 
         # where / when come straight from the upstream buffer.
-        where_raw = upstream_vspace.where.getW()
-        when_raw = upstream_vspace.when.getW()
+        where_raw = upstream_vspace.materialize(mode="where")
+        when_raw = upstream_vspace.materialize(mode="when")
         if self.nWhere > 0:
             if where_raw is not None:
                 where_indices = where_raw[:, :nObj].long()
@@ -6085,7 +6332,7 @@ class PerceptualSpace(Space):
         Net: 2 small H2Ds + 1 gather + 1 reduce + 1 scatter for the
         whole batch's MAX-fuse, regardless of word/sub-token count.
         """
-        what_buf = upstream_vspace.what.getW()
+        what_buf = upstream_vspace.materialize(mode="what")
         if what_buf is None:
             raise RuntimeError(
                 "PerceptualSpace._embed_bpe: upstream subspace.what is empty. "
@@ -6266,8 +6513,8 @@ class PerceptualSpace(Space):
             what_indices[per_word_b_t, per_word_slot_t] = per_word_first_t
             word_active[per_word_b_t, per_word_slot_t] = 1.0
 
-        where_raw = upstream_vspace.where.getW()
-        when_raw = upstream_vspace.when.getW()
+        where_raw = upstream_vspace.materialize(mode="where")
+        when_raw = upstream_vspace.materialize(mode="when")
         where_indices = (where_raw[:, :nObj].long()
                          if (self.nWhere > 0 and where_raw is not None)
                          else (torch.zeros(batch, nObj, dtype=torch.long, device=dev)
@@ -6527,7 +6774,7 @@ class PerceptualSpace(Space):
             if mask is None:
                 mask = getattr(self, "_bpe_word_mask", None)
             if mask is not None:
-                ev = vspace.event.getW()
+                ev = vspace.materialize(mode="event")
                 if ev is not None:
                     # ``ev`` may be [B*K, N, D] (post-FlattenKWrapper),
                     # [B, N, D] (cached event in non-AR), or
@@ -6767,9 +7014,11 @@ class ModalSpace(Space):
         self.subspace.copy_context(subspace)
         vspace = subspace
         if vspace.is_demuxed:
-            what_in = vspace.what.getW()
-            where_in = vspace.where.getW() if vspace.where is not None else None
-            when_in = vspace.when.getW() if vspace.when is not None else None
+            what_in = vspace.materialize(mode="what")
+            where_in = (vspace.materialize(mode="where")
+                        if vspace.where is not None else None)
+            when_in = (vspace.materialize(mode="when")
+                       if vspace.when is not None else None)
         else:
             # Fallback: split muxed event into branches
             event = vspace.materialize()
@@ -7099,6 +7348,16 @@ class ConceptualSpace(Space):
     @staticmethod
     def test():
         pass
+
+
+# Default Gaussian region width for SymbolicSpace.area / .luminosity.  Each
+# symbol contributes a normalised area of sigma**2 (clamped to [0, 1]); the
+# pairwise overlap kernel uses the same sigma.  Tunable per-call via the
+# ``sigma`` argument or per-instance via ``self.activeSigma``.  0.1 keeps
+# area small enough that the [0, 1] saturation only kicks in at ~100 truths.
+_DEFAULT_SYMBOL_SIGMA = 0.1
+
+
 class SymbolicSpace(Space):
     """Codebook-backed symbol stack with swap operations.
 
@@ -7109,6 +7368,68 @@ class SymbolicSpace(Space):
 
     S-tier operations (swap) operate on whereEncodings of node children.
     The top-level `true()` evaluates the full stack activation -> scalar.
+
+    -----------------------------------------------------------------------
+    Bivector / codebook / activation lifecycle
+    -----------------------------------------------------------------------
+    SymbolicSpace overrides ``self.subspace.nWhat = 2`` so ``.what`` carries
+    the 4-valued (catuskoti / tetralemma) bivector ``[pos_pole, neg_pole]``
+    per slot.  See doc/BuddhistParallels.md for the semantics.
+
+    With ``<codebook>true``, ``.what`` is a Codebook whose ``.W`` parameter
+    holds ``[V_sym, 2]`` learned symbol-prototype bivectors.  The per-batch
+    bivector content (shape ``[B, N, 2]``) is what the codebook quantizes
+    against; it is stored in the codebook's ``_active_payload`` slot, NOT
+    in ``.W`` itself.
+
+    Forward-pass lifecycle (clients should NOT need to walk this manually
+    -- subspace.materialize / subspace.resolve hide it):
+
+      1. ConceptualSpace's PiLayer produces ``act`` shape ``[B, N, sym_D]``.
+      2. ``self.subspace.set_event(act)`` populates ``.event`` (muxed view)
+         and demuxes the first ``nWhat=2`` columns into ``.what``; activation
+         is reset to default all-ones presence.
+      3. ``self.resolve(self.subspace)`` reads the bivector from ``.event``
+         (preferred) or ``.what`` (fallback), computes ``pos - neg`` (signed
+         Degree of Truth), and stores the [B, N] scalar directly via
+         ``.activation.setW`` (bypassing ``set_activation``'s bivector lift
+         so sign is preserved).
+      4. The codebook snap quantizes the resolved scalar to its nearest
+         symbol-prototype scalar; the result is committed via the public
+         ``set_activation()`` (which lifts the [B, N] scalar back to a
+         bivector for storage when ``activeEncoding.nDim == 2``).
+      5. Downstream readers call ``self.subspace.materialize(mode="activation")``
+         and see the post-snap, presence-reduced value.
+
+    forward(subspace) write contract:
+      Reads the incoming subspace's bivector / activation (set by the
+      ConceptualSpace stage), but writes ALL state mutations to
+      ``self.subspace``, never to the passed-in ``subspace``.  This is
+      because the receiving subspace may carry a Codebook on ``.what``
+      whose learned prototypes must not be overwritten with per-batch
+      tensor data.
+
+    .what / .activation are NOT the same field:
+      * ``.what`` holds the continuous, pre-snap bivector that the
+        codebook is queried against.
+      * ``.activation`` holds the post-resolve / post-snap scalar
+        (presence-reduced or signed depending on which writer last
+        committed to it).  After the codebook snap, the two values
+        intentionally diverge.
+
+    For other spaces' codebook layouts:
+      * PerceptualSpace's ``.what`` holds a BPE / lexicon prototype
+        matrix; activation lives separately.
+      * ConceptualSpace is a pure-event subspace (``.what``, ``.where``,
+        ``.when`` empty); state is on ``.event`` via ``set_event()``.
+
+    Distinct from the WordSpace category codebook:
+      * ``WordSpace.category_codebook``: ``[max(64, |grammar.categories|),
+        4]`` learned embeddings keyed by grammar nonterminal / POS name
+        (S, NP, VP, N, V, ADJ, ...).  Used by the chart's POS scorer.
+      * ``SymbolicSpace.subspace.what.W``: ``[V_sym, 2]`` learned
+        symbol-prototype bivectors.  Used by the codebook snap.
+      Independent codebooks, independent semantics.
     """
     name = "Symbols"
     config_section = "SymbolicSpace"
@@ -7256,6 +7577,11 @@ class SymbolicSpace(Space):
         except (KeyError, TypeError, ValueError):
             self.accumulateTruth = 0.0
 
+        # Per-instance Gaussian region width used by ``area`` / ``luminosity``.
+        # ``None`` means fall back to ``_DEFAULT_SYMBOL_SIGMA``.  Set when
+        # symbols carry a calibrated extent.
+        self.activeSigma = None
+
         # Trust threshold for the per-cell record_batch path: activation
         # norms ramp from 0 at norm=0 to 1 at norm=truthMinMagnitude. The
         # legacy ``should_store`` two further gates (novelty/consistency)
@@ -7383,35 +7709,38 @@ class SymbolicSpace(Space):
     def resolve(self, subspace):
         """Collapse [pos, neg] bivector into 1-D per-symbol activation.
 
-        Writes ``subspace.activation = pos + neg`` -- the unsigned total
-        signal strength of the symbol.  Matches ``inside()`` /
-        ``outside()`` mereological-extent semantics: a symbol's "extent"
-        is the magnitude of its bivector summed across both poles, so
-        a point is part-of the symbol iff its magnitude does not exceed
-        ``pos + neg``.  Under serial processing (one pole non-zero at a
-        time, the typical model state), the sum is lossless: it equals
-        whichever pole fired.
+        Writes ``subspace.activation = pos - neg`` -- the **balance of
+        evidence** for the symbol.  ``pos`` is evidence FOR the symbol's
+        truth, ``neg`` is evidence AGAINST it; the difference is what
+        the symbol actually asserts after both sides cancel.  Range is
+        roughly ``[-1, +1]`` when the bivector is unit-normalised:
 
-        Note: this is NOT the signed Degree of Truth (``pos - neg``).
-        DoT carries directionality (affirmation vs negation); resolve()
-        intentionally collapses to the unsigned magnitude because the
-        codebook snap and the part-of/inside relations operate on
-        magnitude alone.  Callers that need DoT should compute
-        ``pos - neg`` themselves from the bivector.
+          * pos=1, neg=0  →  +1  (full affirmation)
+          * pos=0, neg=1  →  -1  (full negation)
+          * pos=neg       →   0  (balanced / unknown / contradicted)
+          * pos=0.7, neg=0.2 → +0.5 (mostly affirmed; slight counter-evidence)
+
+        This is the signed Degree of Truth that the symbolic codebook
+        snaps against and what the TruthSet stores as the scalar truth
+        of each symbol.  ``inside()`` / ``outside()`` use the absolute
+        value of this when comparing point-magnitude to a symbol's
+        extent.
 
         The result is stored directly via ``activation.setW()`` rather
         than through ``set_activation()`` so that the tensor remains
         1-D ``[B, N]`` rather than being lifted back to the bivector
         ``[B, N, 2]``.
 
-        Source of the bivector (in priority order):
-          1. The muxed event ``subspace.event.getW()`` when it is a [B, N, D]
-             tensor (D >= 2): the first two columns are the [pos, neg] poles.
-             This is the case inside ``forward()`` after ``set_event(act)``
+        Source of the bivector (resolved via ``subspace.materialize()``,
+        which returns the muxed event when populated and falls back to
+        a what-only reconstruction otherwise):
+          1. The muxed event when it is a [B, N, D] tensor (D >= 2):
+             the first two columns are the [pos, neg] poles.  This is
+             the case inside ``forward()`` after ``set_event(act)``
              where ``act`` is the PiLayer output ([B, N, symbol_dim]).
-          2. ``subspace.what.getW()`` when it holds a [B, N, 2] tensor directly
-             (e.g. after ``sym.subspace.what.setW(bivec)`` in unit tests, or
-             when the Codebook weight was manually overwritten).
+          2. A [B, N, 2] what-only tensor (e.g. after
+             ``sym.subspace.what.setW(bivec)`` in unit tests, or when
+             the Codebook weight was manually overwritten).
 
         Args:
             subspace: a SubSpace carrying the bivector in .event or .what.
@@ -7419,29 +7748,176 @@ class SymbolicSpace(Space):
         Returns:
             subspace (for chaining).
         """
-        # Prefer the muxed event: it holds the full [B, N, D] symbol vector
-        # where the first nWhat=2 columns are the [pos, neg] bivector.
+        # SymbolicSpace.resolve is the internal resolution
+        # implementation: it reads the bivector from .event (preferred,
+        # because forward() reaches resolve() right after set_event(act))
+        # or falls back to .what, computes pos - neg, and stores the
+        # signed scalar directly via the activation Basis's setW (NOT
+        # via the public set_activation, which would lift the scalar
+        # back into a non-negative bivector and discard sign).
+        # External clients should call SubSpace.resolve() for a pure
+        # read-side derivation, or subspace.materialize(mode="activation")
+        # which prefers any stored value over the derivation.
         event = subspace.event.getW() if subspace.event is not None else None
         if event is not None and event.ndim == 3 and event.shape[-1] >= 2:
-            bivec = event[..., :2]   # [B, N, 2]
+            bivec = event[..., :2]
         else:
-            # Fall back to what.getW() (used by unit-test direct setW paths).
-            bivec = subspace.what.getW()
+            bivec = (subspace.what.getW()
+                     if subspace.what is not None else None)
             if bivec is None:
                 return subspace
-        # bivec shape: [B, N, 2] where last dim is [pos, neg]
         pos = bivec[..., 0]
         neg = bivec[..., 1]
-        subspace.activation.setW(pos + neg)
+        subspace.activation.setW(pos - neg)
         return subspace
+
+    def area(self, sigma=None) -> float:
+        """Normalised area of a single symbol's Gaussian region.
+
+        A symbol occupies a Gaussian region with width ``sigma``; its
+        normalised area is ``sigma ** 2`` clamped to ``[0, 1]``.  When
+        ``sigma`` is ``None`` falls back to ``self.activeSigma`` (if
+        populated) and finally ``_DEFAULT_SYMBOL_SIGMA``.
+
+        Used as the per-truth area term in :meth:`luminosity`, and as a
+        general-purpose extent measure for any consumer that needs the
+        footprint of a single symbol in the symbolic field.
+
+        Args:
+            sigma: optional override of the Gaussian width.  Scalars and
+                tensors are both accepted; tensors are reduced via mean.
+
+        Returns:
+            Float in ``[0, 1]``.
+        """
+        if sigma is None:
+            sigma = (self.activeSigma if self.activeSigma is not None
+                     else _DEFAULT_SYMBOL_SIGMA)
+        if torch.is_tensor(sigma):
+            sigma = float(sigma.mean().item())
+        return min(float(sigma) ** 2, 1.0)
+
+    def luminosity(self, pi_layer=None, sigma=None,
+                   truth_layer=None) -> torch.Tensor:
+        """Luminosity of the symbolic truth field.
+
+        ::
+
+            luminosity = totalArea - overlapArea * |t_A - t_B|
+
+        where:
+          * ``totalArea`` — ``min(n * area(sigma), 1)``, the saturated sum
+            of per-symbol Gaussian areas.
+          * ``overlapArea`` — mean pairwise Gaussian-kernel overlap between
+            stored truths in symbol-coordinate space (``exp(-d^2 / 4σ^2)``).
+          * ``|t_A - t_B|`` — mean absolute difference in Degree-of-Truth
+            (DoT) between pairs.
+
+        DoT extraction from each stored row:
+          * ``D == 1``  — stored value is the scalar DoT directly.
+          * ``D == 2``  — ``[pos, neg]`` bivector → ``pos - neg``.
+          * ``D == 2K`` — paired-index ``[pos_0, neg_0, ...]`` storage →
+            mean per-concept ``(pos - neg)``.
+          * other       — fall back to ``stored.mean(-1)``.
+
+        Range: ``[-1, 1]``.  High = consistent committed field; low =
+        overlapping contradictory assertions.  See
+        ``doc/plans/2026-05-04-resolve-luminosity-handoff.md`` for the
+        derivation.
+
+        Args:
+            pi_layer: optional PiLayer to project from symbolic to
+                conceptual dim before measuring overlap.
+            sigma: override Gaussian region width (otherwise uses
+                ``self.activeSigma`` or ``_DEFAULT_SYMBOL_SIGMA``).
+            truth_layer: explicit truth store to read.  Defaults to
+                ``self.wordSpace.truth_layer`` (the canonical home; see
+                Language.py wiring).
+
+        Returns:
+            Scalar luminosity tensor on the truths' device, or ``0`` when
+            no truths have been recorded or no truth store is reachable.
+        """
+        if truth_layer is None:
+            ws = getattr(self, 'wordSpace', None)
+            truth_layer = getattr(ws, 'truth_layer', None) if ws is not None else None
+        if truth_layer is None:
+            return torch.tensor(0.0)
+
+        n = int(truth_layer.count.item())
+        if n == 0:
+            return torch.tensor(0.0, device=truth_layer.truths.device)
+
+        stored = truth_layer.truths[:n]                       # (n, D)
+        if pi_layer is not None:
+            stored = pi_layer.reverse(stored)
+
+        D = stored.shape[-1]
+        if D == 1:
+            dot = stored[..., 0]
+        elif D == 2:
+            dot = stored[..., 0] - stored[..., 1]
+        elif D % 2 == 0:
+            pos = stored[..., 0::2]                           # (n, K)
+            neg = stored[..., 1::2]                           # (n, K)
+            dot = (pos - neg).mean(dim=-1)                    # (n,)
+        else:
+            dot = stored.mean(dim=-1)
+        dot = dot.clamp(-1.0, 1.0)
+
+        region_area = self.area(sigma)
+        total_area = min(n * region_area, 1.0)
+
+        if n == 1:
+            return torch.tensor(float(total_area), device=stored.device)
+
+        # Pairwise distance² in stored coordinate space.  O(n²) memory; the
+        # truth store is bounded by ``max_truths`` (default 1024) so this
+        # is a fixed ceiling even for full stores.
+        diff = stored.unsqueeze(1) - stored.unsqueeze(0)      # (n, n, D)
+        d2 = (diff * diff).sum(dim=-1)                        # (n, n)
+
+        sig2 = max(region_area, 1e-12)                        # σ² (= region_area)
+        denom = 4.0 * sig2 + 1e-8                             # 2(σ² + σ²) = 4σ²
+        overlap = torch.exp(-d2 / denom)                      # (n, n) ∈ (0, 1]
+
+        # Pairwise |Δdot|, only counting i < j to avoid double-counting and
+        # the trivial self-overlap on the diagonal.
+        ta = dot.unsqueeze(1)                                 # (n, 1)
+        tb = dot.unsqueeze(0)                                 # (1, n)
+        disagreement = (ta - tb).abs()                        # (n, n) ∈ [0, 2]
+
+        mask = torch.triu(
+            torch.ones(n, n, dtype=torch.bool, device=stored.device),
+            diagonal=1,
+        )
+        pairs = int(mask.sum().item())
+        if pairs == 0:
+            return torch.tensor(float(total_area), device=stored.device)
+
+        mask_f = mask.to(stored.dtype)
+        overlap_area_mean = (overlap * mask_f).sum() / pairs       # ∈ [0, 1]
+        disagreement_mean = (disagreement * mask_f).sum() / pairs  # ∈ [0, 2]
+
+        penalty = (overlap_area_mean * disagreement_mean).item()
+        lum = total_area - penalty
+        return torch.tensor(float(lum), device=stored.device)
 
     def inside(self, point, symbol_idx=None):
         """Is ``point`` within the region defined by a symbol's extent?
 
-        Uses mereological parthood on the Resolve-d activation.  The "extent"
-        of a symbol is its scalar activation (``pos + neg`` from resolve()).
-        A point is inside a symbol's region when its magnitude does not exceed
-        that activation value.
+        Uses mereological parthood on the Resolve-d activation.  The
+        "extent" of a symbol is the absolute value of its scalar
+        activation (``|pos - neg|`` from resolve()).  A point is inside
+        a symbol's region when its magnitude does not exceed that
+        absolute activation value.
+
+        We take ``|activation|`` because resolve() produces the signed
+        Degree of Truth (``pos - neg``), but extent / point-in-region
+        semantics are magnitude-based: a strongly-negated symbol (large
+        negative DoT) has just as much extent as a strongly-affirmed
+        symbol (large positive DoT) -- the sign tells us which side of
+        the assertion was reached, not how far it reached.
 
         Implementation note — Option A (magnitude comparison):
         inside/outside use magnitude comparison — the scalar form of
@@ -7460,7 +7936,11 @@ class SymbolicSpace(Space):
         Returns:
             bool (symbol_idx is int) or float tensor [B, N] (symbol_idx None).
         """
-        activation = self.subspace.activation.getW()  # [B, N]
+        # Public interface: materialize(mode="activation") returns the
+        # subspace's resolved scalar activation.  Direct .activation.getW()
+        # access would expose the underlying weight buffer instead of the
+        # value clients should see.
+        activation = self.subspace.materialize(mode="activation").abs()  # [B, N]
         point_mag = torch.linalg.norm(point.float())  # scalar
 
         if symbol_idx is None:
@@ -7718,15 +8198,20 @@ class SymbolicSpace(Space):
             whenEncoding=self.subspace.whenEncoding,
             whatEncoding=self.subspace.whatEncoding,
         )
-        # Activation: [1, N] so getW() + pos_lookup see a 1-D vector after
+        # Activation: [1, N] so the resolved scalar is a 1-D vector after
         # a .squeeze(0) -- matches WordSpace.pos_lookup which expects [N].
-        incoming.activation.setW(pos_vector.unsqueeze(0))
+        # Public write through set_activation() (which lifts to a bivector
+        # if activeEncoding.nDim == 2) instead of poking .activation.setW.
+        incoming.set_activation(pos_vector.unsqueeze(0))
         # Minimal .what default -- broadcastable into self.subspace.what's
         # shape.  Zero tensor suffices; concrete rule ops pull from
         # self.subspace's state for unary ops, and binary ops reading the
-        # incoming .what get a neutral operand.
+        # incoming .what get a neutral operand.  Public set_what() invalidates
+        # the cached event so a subsequent materialize(mode="event") re-muxes
+        # cleanly.  Safe here because the manufactured ``incoming`` is local
+        # scratch with a Tensor (not Codebook) basis on .what.
         inc_what_shape = (1, n, int(self.subspace.nWhat))
-        incoming.what.setW(torch.zeros(inc_what_shape, dtype=torch.float32))
+        incoming.set_what(torch.zeros(inc_what_shape, dtype=torch.float32))
         incoming._rule_dispatch = True
         return incoming
 
@@ -7812,8 +8297,10 @@ class SymbolicSpace(Space):
                 "SymbolicSpace.forward requires wordSpace for rule dispatch; "
                 "none was provided.")
 
-        # Step 1 -- active symbols (1-D [N]).
-        active_raw = incoming_subspace.activation.getW()
+        # Step 1 -- active symbols (1-D [N]).  Read through the public
+        # materialize(mode="activation") interface; clients shouldn't
+        # touch the underlying weight buffer via .activation.getW().
+        active_raw = incoming_subspace.materialize(mode="activation")
         if active_raw is None:
             raise ValueError(
                 "incoming_subspace.activation is empty; cannot dispatch rule.")
@@ -7843,13 +8330,19 @@ class SymbolicSpace(Space):
 
         new_what = rule_op(self.subspace, incoming_subspace)
         if new_what is not None:
-            current = self.subspace.what.getW()
-            # Shape-align: the legacy subspace what can be [B, N, nWhat]
-            # or [N, nWhat]; rule ops preserve the left operand's shape,
-            # so only update when shapes are compatible.  Add a small
-            # nudge when the op returned an all-zero tensor so the test's
-            # "non-zero after forward" contract holds even for pass-through
-            # dispatchers (e.g. transition rules).
+            # Shape-align: derive the expected what-tensor shape from the
+            # public materialized event (slicing its first nWhat columns)
+            # rather than poking subspace.what.getW() directly.  Rule
+            # ops preserve the left operand's shape, so we only update
+            # when shapes are compatible.  Add a small nudge when the op
+            # returned an all-zero tensor so the test's "non-zero after
+            # forward" contract holds for pass-through dispatchers.
+            muxed = self.subspace.materialize()
+            nwhat = int(self.subspace.nWhat)
+            current = (muxed[..., :nwhat]
+                       if (muxed is not None and muxed.ndim >= 1
+                           and muxed.shape[-1] >= nwhat)
+                       else None)
             if current is not None and torch.is_tensor(new_what):
                 try:
                     new_what = new_what.reshape(current.shape)
@@ -7880,9 +8373,9 @@ class SymbolicSpace(Space):
             # codebook forward (which materialize()s a muxed tensor) would
             # get a None input.  Skip quantization in that case -- the
             # codebook can learn from the updated .what on the next
-            # regular forward pass.
-            ev = (self.subspace.event.getW()
-                  if self.subspace.event is not None else None)
+            # regular forward pass.  Read presence via materialize()
+            # rather than poking subspace.event.getW() directly.
+            ev = self.subspace.materialize()
             if ev is not None:
                 self.subspace.what.forward(self.subspace)
 
@@ -7981,7 +8474,10 @@ class SymbolicSpace(Space):
             if nAct == self._symbol_where.shape[0]:
                 where = self._symbol_where.unsqueeze(0).expand(B, -1, -1)
                 where = where.to(act.device)
-                self.subspace.where.setW(where)
+                # Public set_where() invalidates the cached event so a
+                # subsequent materialize(mode="event") re-muxes correctly,
+                # rather than poking .where.setW directly.
+                self.subspace.set_where(where)
 
         if self.sortNetwork is not None:
             act = self.sortNetwork.forward(act)
@@ -7996,7 +8492,8 @@ class SymbolicSpace(Space):
 
         # Task 2.5 — Resolve [pos, neg] bivector to 1-D per-symbol activation
         # BEFORE the codebook sees it.  resolve() writes
-        # subspace.activation = pos + neg ([B, N]), collapsing the bivector
+        # subspace.activation = pos - neg ([B, N]) — the signed Degree of
+        # Truth (DoT), collapsing the bivector
         # to the scalar signal strength that the codebook quantizes.
         # This must happen after forwardSymbols (if called) so the demuxed
         # what-slot is already populated, and before any quantization branch
@@ -8092,13 +8589,17 @@ class SymbolicSpace(Space):
             # Re-resolve after set_event so activation reflects the quantized
             # bivector stored in subspace.what (which set_event populated).
             self.resolve(self.subspace)
-            act_1d = self.subspace.activation.getW()   # [B, N]
+            # Public read via materialize(mode="activation") rather than
+            # poking .activation.getW() on the raw basis.
+            act_1d = self.subspace.materialize(mode="activation")  # [B, N]
             if act_1d is not None and act_1d.ndim == 2:
                 predicted_1d = act_1d.unsqueeze(-1)    # [B, N, 1]
                 target_1d = self._nearest_symbol_target(predicted_1d)
                 if target_1d is not None:
                     # Snap the 1-D activation to the nearest codebook scalar.
-                    self.subspace.activation.setW(target_1d.squeeze(-1))
+                    # Public write via set_activation() so the bivector
+                    # lift (when activeEncoding.nDim == 2) is centralised.
+                    self.subspace.set_activation(target_1d.squeeze(-1))
                     self._emit_symbol_terms(
                         vspace,
                         self._compute_symbol_terms(predicted_1d, target=target_1d))

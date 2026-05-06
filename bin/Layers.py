@@ -4834,46 +4834,9 @@ class TruthLayer(Layer):
         """
         return v[..., 1::2]
 
-    def luminosity(self, pi_layer=None) -> torch.Tensor:
-        """Compute luminosity: ||relu(min(positive_poles(truths)))||.
-
-        Bivector path (even last dim): luminosity is the L2 norm of the
-        element-wise min across positive poles only. Contradictions land
-        on paired negative-pole indices and cannot dim the positive
-        conjunction under 4-valued (quaternary) truth semantics. See
-        basicmodel/doc/BuddhistParallels.md for the tetralemma mapping.
-
-        Legacy path (odd last dim): element-wise min across all truths,
-        positive-part norm (unchanged).
-
-        High luminosity = coherent, consistent truth set (bright).
-        Low luminosity  = contradictory or sparse truths (dim).
-
-        Args:
-            pi_layer: optional PiLayer to project from symbolic to
-                      conceptual dim before computing the conjunction.
-
-        Returns:
-            Scalar luminosity value >= 0.
-        """
-        n = self.count.item()
-        if n == 0:
-            return torch.tensor(0.0, device=self.truths.device)
-
-        stored = self.truths[:n]                          # (n, D)
-
-        # Project to conceptual space if needed
-        if pi_layer is not None:
-            stored = pi_layer.reverse(stored)
-
-        if stored.shape[-1] % 2 == 0:
-            stored = self._positive_poles(stored)
-
-        # Conjunction: element-wise min across all truths
-        conjunction = stored.min(dim=0).values            # (D/2,) or (D,)
-
-        # Luminosity = norm of the positive part of the conjunction.
-        return torch.relu(conjunction).norm()
+    # ``luminosity`` / ``area`` live on SymbolicSpace (see
+    # SymbolicSpace.luminosity, SymbolicSpace.area) — those are properties
+    # of the symbol field, not the truth store itself.
 
     def darkness(self, pi_layer=None) -> torch.Tensor:
         """Diagnostic: ||relu(min(negative_poles(truths)))||.

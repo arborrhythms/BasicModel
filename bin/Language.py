@@ -3609,6 +3609,23 @@ class WordSpace(Space):
         # DEF, HAS plus the closed-class terminals) cannot overflow the
         # per-label slot reservation.  Legacy XML grammars stay at 64
         # since their category set is small.
+        # Category / part-of-speech codebook.  This is the WordSpace's
+        # ONLY codebook -- distinct from SymbolicSpace's symbol-prototype
+        # codebook on ``SymbolicSpace.subspace.what.W``.
+        #
+        # Stores learned ``pos_dim``-wide embeddings for grammar
+        # nonterminals AND POS terminals (S, NP, VP, AP, MP, PP, N, V,
+        # ADJ, ADV, DET, P, O, '?', plus headroom).  Keyed by name via
+        # ``self.category_index: dict[str, int]``; row ``i`` is the
+        # embedding for category ``ordered_categories[i]``.
+        #
+        # Read by:
+        #   * the chart's per-leaf POS scorer (Language.py: ``_chart_pos``,
+        #     ``_apply_codebook_pos_seed``)
+        #   * the rule predictor's input stack (the parsing-history
+        #     vectors pushed onto ``self.category_stack``)
+        # NOT used for symbol quantization -- that runs against the
+        # symbolic codebook on SymbolicSpace.subspace.what.
         pos_dim = 4  # embedding width; also the category stack vector dim
         category_capacity = max(64, len(TheGrammar.categories))
         self.category_codebook = Codebook()
@@ -4202,7 +4219,8 @@ class WordSpace(Space):
         if self.truth_layer is None or len(self.truth_layer) == 0:
             return total_loss
 
-        lum = self.truth_layer.luminosity(symbolic_space.layer)
+        lum = symbolic_space.luminosity(symbolic_space.layer,
+                                        truth_layer=self.truth_layer)
         lum_norm = lum.clamp(0, 1)
         if universality_score is not None:
             u_norm = universality_score.clamp(-1, 1)

@@ -206,19 +206,23 @@ class TestTruthFusion(unittest.TestCase):
         self.assertGreater(fus[0::2].abs().sum().item(), 0.0)
         self.assertGreater(fus[1::2].abs().sum().item(), 0.0)
 
-    def test_fusion_vs_conjunction_are_orthogonal_metrics(self):
-        """Fusion (max, LUB) and luminosity (min, GLB) answer different questions."""
+    def test_fusion_covers_both_positive_slots(self):
+        """Fusion (max, LUB) preserves every positive slot across truths.
+
+        (The corresponding luminosity assertion moved to
+        ``test_resolve_luminosity.py`` once luminosity migrated from
+        TruthLayer to SymbolicSpace; the area-overlap formula no longer
+        equates non-overlapping disjoint truths with darkness.)
+        """
         tl = _truth_layer()
         K = 4
         t1 = torch.zeros(2 * K); t1[0] = 1.0  # only concept 0 positive
         t2 = torch.zeros(2 * K); t2[2] = 1.0  # only concept 1 positive
         tl.record(t1, degree=1.0)
         tl.record(t2, degree=1.0)
-        # Fusion (LUB) covers both positive slots; luminosity (GLB) is empty.
         fus = tl.fusion()
         self.assertEqual(fus[0].item(), 1.0)
         self.assertEqual(fus[2].item(), 1.0)
-        self.assertAlmostEqual(tl.luminosity().item(), 0.0, places=5)
 
 
 if __name__ == '__main__':

@@ -897,8 +897,13 @@ class BaseModel(nn.Module):
                     if candidate.norm() < 1e-6:
                         continue
 
-                    # Luminosity non-decrease check
-                    lum_before = truth_layer.luminosity(pi_layer)
+                    # Luminosity non-decrease check.  Luminosity now lives
+                    # on SymbolicSpace; without one we skip the check
+                    # (delta=0 → always accept).
+                    if ss is not None:
+                        lum_before = ss.luminosity(pi_layer, truth_layer=truth_layer)
+                    else:
+                        lum_before = torch.tensor(0.0)
                     saved_count = truth_layer.count.item()
 
                     # DoT for derived truth
@@ -908,7 +913,10 @@ class BaseModel(nn.Module):
 
                     direction = F.normalize(candidate.unsqueeze(0), dim=-1).squeeze(0)
                     truth_layer.record(direction, degree, basis=self._get_basis())
-                    lum_after = truth_layer.luminosity(pi_layer)
+                    if ss is not None:
+                        lum_after = ss.luminosity(pi_layer, truth_layer=truth_layer)
+                    else:
+                        lum_after = lum_before
 
                     delta = (lum_after - lum_before).item()
 
@@ -924,21 +932,6 @@ class BaseModel(nn.Module):
         return {'added': added, 'rejected': rejected}
 
     # -- Contemplative Awareness Characterizations ---------------------
-
-    def _active_codebook_rows(self):
-        """Indices of currently-active rows in the SymbolicSpace codebook.
-
-        A row counts as active when its L2 norm exceeds the
-        ``truthMinMagnitude`` activity floor configured on
-        SymbolicSpace. Returns a 1-D ``LongTensor`` of indices into the
-        codebook ``W`` matrix.
-        """
-        sym = self.symbolicSpace
-        W = sym.subspace.what.getW()
-        if W is None or W.ndim < 2:
-            return torch.empty(0, dtype=torch.long)
-        norms = W.norm(dim=-1)
-        return (norms > sym._truth_min_magnitude).nonzero(as_tuple=True)[0]
 
     @staticmethod
     def _is_one_component(adj):
@@ -5857,14 +5850,16 @@ class MentalModel(BaseModel):
         validity_loss = torch.tensor(0.0, device=recon_loss.device)
         if truth_layer is not None and len(truth_layer) > 0:
             pi_layer = self.symbolicSpace.sigma
-            lum_before = truth_layer.luminosity(pi_layer)
+            lum_before = self.symbolicSpace.luminosity(
+                pi_layer, truth_layer=truth_layer)
             # Check if reconstruction preserves luminosity
             # (temporarily store reconstructed symbols)
             saved_count = truth_layer.count.item()
             mean_sym = symbolSum_hat.mean(dim=(0, 1)).detach()
             if mean_sym.norm() > 1e-6:
                 truth_layer.record(mean_sym, degree=1.0, basis=self._get_basis())
-                lum_after = truth_layer.luminosity(pi_layer)
+                lum_after = self.symbolicSpace.luminosity(
+                    pi_layer, truth_layer=truth_layer)
                 validity_loss = torch.relu(lum_before - lum_after)
                 truth_layer.count.fill_(saved_count)
                 truth_layer.truths[saved_count:] = 0
@@ -5928,7 +5923,8 @@ class MentalModel(BaseModel):
                 truth_layer.record(givens.detach(), degree=1.0, basis=basis)
 
             for step in range(max_steps):
-                lum_before = truth_layer.luminosity(pi_layer)
+                lum_before = self.symbolicSpace.luminosity(
+                    pi_layer, truth_layer=truth_layer)
 
                 # Extrapolate new truths
                 result = self.extrapolate(max_new=16,
