@@ -79,7 +79,14 @@ class TestMMXorConvergence(unittest.TestCase):
         assert len(data.train_input) > 0, "XOR data not loaded"
 
     def test_model_is_mental(self):
-        self.assertEqual(self.model.__class__.__name__, "MentalModel")
+        # Post-2026-05-05 merger: MentalModel is an alias for BasicModel,
+        # so the class name is "BasicModel". The semantically meaningful
+        # check is that the per-stage pipeline is built (conceptualSpaces
+        # / symbolicSpaces lists), not the legacy class identity.
+        self.assertTrue(hasattr(self.model, "conceptualSpaces"))
+        self.assertTrue(hasattr(self.model, "symbolicSpaces"))
+        self.assertGreaterEqual(len(self.model.conceptualSpaces), 1)
+        self.assertGreaterEqual(len(self.model.symbolicSpaces), 1)
 
     def test_has_conceptual_symbolic_spaces(self):
         self.assertTrue(hasattr(self.model, 'conceptualSpace'))

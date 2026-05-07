@@ -1910,10 +1910,11 @@ class TestModelTypeVariants(unittest.TestCase):
         self.assertEqual(data.shape[1], 16)
 
     def test_conceptual_order_1(self):
-        """conceptualOrder=2 -- forward only (equal object counts).
+        """conceptualOrder=1 with non-passthrough symbolic -- forward only.
 
-        Higher-order cycles require a non-passthrough symbolic space so that
-        symbolDim > 0 for the second perceptual/conceptual/symbolic spaces.
+        After the 2026-05-05 BasicModel/MentalModel merger, the
+        per-stage path is the only construction path and
+        ``conceptualOrder`` literally drives the per-stage iteration.
         """
         _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=1,
                               wordDim=1, outputDim=1,
@@ -1922,7 +1923,7 @@ class TestModelTypeVariants(unittest.TestCase):
                               flatten=True)
         model = Models.BasicModel()
         model.create(nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
-                     conceptualOrder=2)
+                     conceptualOrder=1)
         x = torch.randn(2, 8, 1).tanh().to(Models.TheDevice.get())
         _, end_state, out, _ = model.forward(x)
         self.assertEqual(out.shape[0], 2)

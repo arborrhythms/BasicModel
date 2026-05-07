@@ -67,6 +67,7 @@ from Layers import LinearLayer, AttentionLayer
 from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import Error, TheError
 from Layers import Ops, GRAMMAR_LAYER_CLASSES, CONTIGUITY_PRESERVING_OPS
+from Mereology import Mereology
 from dataclasses import dataclass, field
 from typing import List
 
@@ -139,61 +140,20 @@ class Normalizer:
         return self._source.denormalize(x, which=which)
 
 
-# ---------------------------------------------------------------------------
-# Higher-order-concept shape descriptors -- consumed by hoc_shape /
-# Contiguous (see basicmodel/doc/research/three-surfaces.md and the
-# 2026-05-04 spec at plans/.../sparkling-peach.md). These are pure
-# data records; the math lives on BaseModel.hoc_shape.
-# ---------------------------------------------------------------------------
-
-@dataclass(frozen=True)
-class RuleSpec:
-    """One node in the derivation path: rule_name + arity + tier."""
-    rule_name: str
-    arity:     int
-    tier:      str
+# Higher-order-concept shape descriptors (RuleSpec / StepInfo / HoCShape)
+# moved to bin/Mereology.py alongside the measure family that consumes
+# them (Contiguous / Continuous / Peaceful / Area / Luminosity).
 
 
-@dataclass(frozen=True)
-class StepInfo:
-    """One layer-level reverse executed during the hoc_shape walk.
+class BaseModel(Mereology, nn.Module):
+    """Shared training, plotting, and persistence infrastructure for all models.
 
-    Captures the rule that fired (rule_name, arity, tier), whether
-    its reverse preserves contiguity (per
-    ``Layers.CONTIGUITY_PRESERVING_OPS``), the binary-fanout branch
-    (``''`` for unary, ``'left'`` / ``'right'`` for binary), and the
-    per-layer top-K active-neuron cap that bounds downstream
-    contiguity computation.
+    Inherits the contemplative-awareness measure family
+    (``Contiguous`` / ``Continuous`` / ``Peaceful`` / ``Area`` /
+    ``Luminosity``) and the back-projection machinery (`hoc_shape`,
+    `_walk_reverse`, `_derivation_path`, `_leaf_path_trust`, etc.)
+    from :class:`Mereology`.  See ``bin/Mereology.py``.
     """
-    rule_name:      str
-    arity:          int
-    tier:           str
-    contiguous:     bool
-    branch:         str
-    active_indices: 'torch.Tensor'   # [B, K_cap] long
-    active_count:   'torch.Tensor'   # [B] long
-    K_cap:          int
-
-
-@dataclass(frozen=True)
-class HoCShape:
-    """Result of ``BaseModel.hoc_shape``.
-
-    leaves -- one ``[B, V, D_C1]`` tensor per leaf in the derivation
-              tree. List length is 1 for default-only / unary-only
-              paths; doubles for each binary op along the path.
-    mask   -- ``[B, V]`` bool. True where the input symbolic vector
-              had a per-position norm above ``truthMinMagnitude``.
-    per_step -- list of StepInfo, DFS pre-order, one entry per
-              layer-level reverse executed.
-    """
-    leaves:    list
-    mask:      'torch.Tensor'
-    per_step:  list
-
-
-class BaseModel(nn.Module):
-    """Shared training, plotting, and persistence infrastructure for all models."""
     name           = "BaseModel"
     spaces         = []
     reversible    = False
@@ -222,6 +182,158 @@ class BaseModel(nn.Module):
         if config_path is None:
             config_path = os.path.join(ProjectPaths.PROJECT_DIR, "model.xml")
         return XMLConfig._parse_xml(config_path)
+
+    @staticmethod
+    def _resolve_dim(section, prev_dim):
+        """Resolve a Space's nDim sentinel: 0 -> inherit ``prev_dim``.
+
+        Shared between BasicModel.create() and MentalModel.create()
+        (and any subclass): both pipelines chain dims through
+        InputSpace -> PerceptualSpace -> ConceptualSpace ->
+        SymbolicSpace -> OutputSpace, and an unset / zero-sentinel
+        nDim means "inherit the upstream Space's content dim".
+        """
+        try:
+            raw = TheXMLConfig.space(section, "nDim")
+        except KeyError:
+            return prev_dim
+        return prev_dim if raw == 0 else raw
+
+    @staticmethod
+    def _obj_size(section):
+        """Per-section objectSize: ``nWhere + nWhen``, defaulting to 0.
+
+        Each Space carries its own positional / temporal encoding
+        widths; the muxed event tensor's last-axis size is
+        ``nDim + nWhere + nWhen``. Missing keys default to 0 so
+        sections that don't declare them inherit the architecture
+        default (also 0).
+        """
+        try:
+            nw = TheXMLConfig.space(section, "nWhere")
+        except KeyError:
+            nw = 0
+        try:
+            nn = TheXMLConfig.space(section, "nWhen")
+        except KeyError:
+            nn = 0
+        return nw + nn
+
+    @staticmethod
+    def _nvec(section, n_out):
+        """Resolve a Space's nVectors sentinel: 0 -> ``n_out``.
+
+        Codebook spaces sample with replacement so nVectors can
+        differ from active count; ``0`` means "use the active count
+        as the codebook size", which is the safe default for
+        non-codebook spaces (where the validator enforces
+        ``nVectors == nActive``).
+        """
+        try:
+            raw = TheXMLConfig.space(section, "nVectors")
+        except KeyError:
+            return n_out
+        return n_out if raw == 0 else raw
+
+    # -- Order Partitions (Ramsification) -----------------------------
+    # Static helpers shared between BasicModel and the per-stage
+    # MentalModel pipeline. Pure-functional except for
+    # ``_conceptual_width_mode`` which reads TheXMLConfig.
+
+    @staticmethod
+    def _order_partitions(symbol_dim, conceptual_order):
+        """Compute geometric-decay partition boundaries for symbolSum.
+
+        Each conceptual order writes only to its designated slice,
+        so the symbolic space becomes self-describing: the position of
+        an activation reveals its conceptual order.
+
+        Partition sizes follow geometric decay -- lower (more fundamental)
+        orders occupy larger slices:
+            order 0: [0,      D//2)       <- 1/2 of symbol_dim
+            order 1: [D//2,   3D//4)      <- 1/4
+            order 2: [3D//4,  7D//8)      <- 1/8
+            ...
+            last order: remainder of D
+        """
+        partitions, start = [], 0
+        for t in range(conceptual_order):
+            if t == conceptual_order - 1:
+                end = symbol_dim
+            else:
+                end = start + max(1, symbol_dim // (2 ** (t + 1)))
+            partitions.append((start, end))
+            start = end
+        return partitions
+
+    @staticmethod
+    def _activation_order(activation, partitions):
+        """Return the order whose partition has the highest energy."""
+        # ``.norm()`` returns zero-dim tensors; stack instead of rewrapping
+        # via ``torch.tensor([...])`` to avoid the "copy-construct from a
+        # tensor" deprecation warning.
+        energies = torch.stack(
+            [activation[s:e].norm() for s, e in partitions])
+        return int(energies.argmax())
+
+    # -- Hierarchical Epistemic Architecture --------------------------
+
+    @staticmethod
+    def _conceptual_width_mode():
+        """Read ``architecture.conceptualWidth`` from XML; default
+        ``tapered``. Accepts ``tapered`` (geometric halving per
+        conceptual order, the historical behavior) or ``uniform``
+        (every level keeps the same n_vectors).
+        """
+        try:
+            value = TheXMLConfig.get("architecture.conceptualWidth", "tapered")
+            value = str(value).strip().lower() if value is not None else "tapered"
+        except Exception:
+            value = "tapered"
+        if value not in ("tapered", "uniform"):
+            value = "tapered"
+        return value
+
+    @staticmethod
+    def _level_shapes(n_vectors, dim, conceptual_order, width_mode="tapered"):
+        """Per-level (N_t, D_t) shapes across the conceptual-order stack.
+
+        Two width modes (set via XML ``architecture.conceptualWidth``):
+
+        ``tapered`` (default, historical) -- D stays constant; N halves
+            per level. Biological analogue: increasing receptive field
+            (V1->V2->V4->IT). Requires ``n_vectors`` to be divisible by
+            ``2^conceptual_order``.
+
+                percepts:  (N, D)
+                level 0:   (N/2, D)
+                level 1:   (N/4, D)
+                ...
+                level k:   (N/(2^(k+1)), D)
+
+        ``uniform`` -- N stays constant at every level. Useful when the
+            grammar is the only compositional structure (e.g.
+            XOR_grammar) and the per-level geometric reduction would
+            otherwise let downstream layers memorize the task without
+            using the chart's rule choices. Each level keeps the same
+            ``n_vectors`` width:
+
+                percepts:  (N, D)
+                level 0:   (N, D)
+                level 1:   (N, D)
+                ...
+                level k:   (N, D)
+        """
+        if width_mode == "uniform":
+            return [(int(n_vectors), int(dim)) for _ in range(conceptual_order)]
+        # Default: tapered (geometric halving).
+        shapes = []
+        for t in range(conceptual_order):
+            n = n_vectors // (2 ** (t + 1))
+            assert n > 0, \
+                f"Level {t}: n_vectors={n_vectors} not divisible by 2^{t+1}"
+            shapes.append((n, dim))
+        return shapes
 
     @staticmethod
     def from_config(config_path=None, model_type=None, data=None):
@@ -897,13 +1009,14 @@ class BaseModel(nn.Module):
                     if candidate.norm() < 1e-6:
                         continue
 
-                    # Luminosity non-decrease check.  Luminosity now lives
-                    # on SymbolicSpace; without one we skip the check
+                    # Luminosity non-decrease check.  Luminosity is the
+                    # mereology-mixin scalar measure on the model itself;
+                    # without a SymbolicSpace we skip the check
                     # (delta=0 → always accept).
                     if ss is not None:
-                        lum_before = ss.luminosity(pi_layer, truth_layer=truth_layer)
+                        lum_before = self.Luminosity(truth_layer=truth_layer)
                     else:
-                        lum_before = torch.tensor(0.0)
+                        lum_before = 0.0
                     saved_count = truth_layer.count.item()
 
                     # DoT for derived truth
@@ -914,11 +1027,11 @@ class BaseModel(nn.Module):
                     direction = F.normalize(candidate.unsqueeze(0), dim=-1).squeeze(0)
                     truth_layer.record(direction, degree, basis=self._get_basis())
                     if ss is not None:
-                        lum_after = ss.luminosity(pi_layer, truth_layer=truth_layer)
+                        lum_after = self.Luminosity(truth_layer=truth_layer)
                     else:
                         lum_after = lum_before
 
-                    delta = (lum_after - lum_before).item()
+                    delta = float(lum_after) - float(lum_before)
 
                     if delta >= 0:
                         # Accept
@@ -951,735 +1064,13 @@ class BaseModel(nn.Module):
             frontier = neighbors & ~visited
         return bool(visited.all().item())
 
-    def Contiguous(self) -> float:
-        """Continuous mereological-contiguity measure in ``[-1, +1]``.
+    # -- Contemplative Awareness Characterizations ---------------------
+    # The measure family (Contiguous / Continuous / Peaceful / Area /
+    # Luminosity) and its hoc_shape back-projection machinery have been
+    # extracted to bin/Mereology.py.  BaseModel inherits from Mereology
+    # (mixin order: Mereology before nn.Module) so the methods remain
+    # callable as model.Contiguous() / etc.
 
-        One-Pointedness / Shamatha / Focused Attention. The forward
-        pass produces higher-order symbols at SymbolicSpace; this
-        method back-projects each active higher-order symbol through
-        every layer of the derivation (via ``hoc_shape``) to expose
-        the C(1) constituent regions, then runs pairwise
-        ``Ops.corner_overlap`` over trustworthy leaves to score
-        whether the constituents share at least one corner along
-        any dimension.
-
-        Return value:
-          ``+1.0`` -- every (trustworthy) leaf pair overlaps; the
-                     higher-order concept is fully contiguous.
-          ``-1.0`` -- no trustworthy leaf pair overlaps; the
-                     constituents are mereologically disjoint.
-          ``0.0``  -- unknown: no trustworthy leaves to decide on
-                     (every back-projection traversed at least one
-                     lossy op like intersection / union /
-                     conjunction / disjunction; the pseudo-inverse
-                     erases the geometry needed for the test).
-          intermediate -- average pairwise measure, weighted by
-                          per-pair trust.
-
-        A single trustworthy leaf returns ``+1.0`` (trivially one-
-        pointed); a single untrustworthy leaf returns ``0.0``.
-        """
-        sym = getattr(self, 'symbolicSpace', None)
-        if sym is None or not hasattr(sym, 'subspace'):
-            return 0.0
-        try:
-            sym_act = sym.subspace.materialize()
-        except Exception:
-            return 0.0
-        if sym_act is None or not torch.is_tensor(sym_act) or sym_act.numel() == 0:
-            return 0.0
-
-        shape = self.hoc_shape(sym_act)
-        leaves = shape.leaves
-        if not leaves:
-            return 0.0
-
-        leaf_trust = self._leaf_path_trust(shape)
-        if not leaf_trust:
-            return 0.0
-
-        if len(leaves) == 1:
-            return 1.0 if leaf_trust[0] else 0.0
-
-        # Pairwise corner-overlap over the .what bivector ([..., :2]).
-        total_weight = 0.0
-        weighted_sum = 0.0
-        for i in range(len(leaves)):
-            for j in range(i + 1, len(leaves)):
-                if not (leaf_trust[i] and leaf_trust[j]):
-                    continue
-                a = leaves[i][..., :2]
-                b = leaves[j][..., :2]
-                if not (torch.is_tensor(a) and torch.is_tensor(b)):
-                    continue
-                if a.shape[-1] != 2 or b.shape[-1] != 2:
-                    continue
-                m = Ops.corner_overlap(a, b)
-                # Aggregate over the [B, V, ...] leading dims.
-                # Mean over only the masked-active positions where
-                # both leaves had extent; positions where corner_
-                # overlap returned 0 (degenerate) contribute 0,
-                # which already biases the average toward neutral.
-                weighted_sum += float(m.mean().item())
-                total_weight += 1.0
-
-        if total_weight == 0.0:
-            return 0.0
-        return weighted_sum / total_weight
-
-    def _leaf_path_trust(self, shape) -> list:
-        """For each leaf in ``shape.leaves``, AND-fold the
-        ``contiguous`` flag along the steps that produced it.
-
-        ``shape.per_step`` is a flat DFS pre-order list. For binary
-        nodes, the spec emits the per-branch StepInfo immediately
-        before that branch's subtree steps. We traverse the flat
-        list and reconstruct per-leaf trust by emitting one bool
-        per leaf in the same order ``_walk_reverse`` produced them.
-
-        For default-only / unary-only paths (``len(leaves) == 1``),
-        this collapses to ``all(s.contiguous for s in per_step)``.
-        """
-        leaves = shape.leaves
-        per_step = shape.per_step
-        if not leaves:
-            return []
-        if len(leaves) == 1:
-            return [all(bool(s.contiguous) for s in per_step)]
-
-        # Tree reconstruction: walk per_step in DFS pre-order,
-        # tracking the current path's contiguity AND-fold. Emit
-        # one bool per leaf when we hit the end of a branch.
-        trust_flags = []
-        path_contig = [True]  # stack of cumulative-AND values
-
-        def emit_leaf():
-            trust_flags.append(path_contig[-1])
-
-        # Re-derive the same tree the walker built. The per_step
-        # list interleaves: for unary, [step, *subtree_steps]; for
-        # binary, [left_step, *left_subtree, right_step, *right_subtree].
-        # Reconstruct by counting expected leaves per subtree.
-        i = 0
-        leaf_count = [0]
-
-        def consume_subtree(remaining_steps_idx, depth_remaining):
-            """Consume the next subtree starting at i; depth_remaining
-            is the number of path entries (post this step) still to
-            walk before hitting a leaf in default-only mode. We
-            don't actually use depth here -- we walk until we've
-            emitted enough leaves or run out of steps."""
-            pass
-
-        # Simpler approach: replay the walk by interpreting each
-        # StepInfo's branch / arity. Stack-based.
-        # path_step_stack: stack of cumulative contiguous flags.
-        if not per_step:
-            return [True] * len(leaves)
-
-        # Walk per_step entries; for each, push the cumulative AND
-        # onto the stack for the duration of its subtree. When we
-        # complete a leaf-equivalent branch, emit.
-        # Simplification: we know the per_step list has the same
-        # tree shape as the walker's recursion. For each leaf in
-        # the leaves list, the steps up-to-that-leaf are a
-        # contiguous prefix in DFS order.
-        # We rely on a rebuild that mirrors _walk_reverse exactly:
-
-        idx = [0]
-        out = []
-
-        def rebuild(prev_contig: bool):
-            """Mirror _walk_reverse's recursion shape using per_step."""
-            if idx[0] >= len(per_step):
-                # No more steps: this is a leaf.
-                out.append(prev_contig)
-                return
-            step = per_step[idx[0]]
-            cumulative = prev_contig and bool(step.contiguous)
-            idx[0] += 1
-            if int(step.arity) == 1 and step.branch == '':
-                # Unary: descend into the single subtree.
-                rebuild(cumulative)
-            elif int(step.arity) == 2:
-                # Binary: this StepInfo is the LEFT branch; the
-                # next StepInfo at the same depth (after the left
-                # subtree) is the RIGHT branch.
-                # left subtree:
-                rebuild(cumulative)
-                # right subtree: consume the right StepInfo, then
-                # its subtree.
-                if idx[0] < len(per_step):
-                    right_step = per_step[idx[0]]
-                    if int(right_step.arity) == 2 and right_step.branch == 'right':
-                        cumulative_r = prev_contig and bool(right_step.contiguous)
-                        idx[0] += 1
-                        rebuild(cumulative_r)
-                    else:
-                        # Mismatched tree -- emit a degenerate leaf.
-                        out.append(cumulative)
-            else:
-                # Unknown arity; treat as unary.
-                rebuild(cumulative)
-
-        try:
-            rebuild(True)
-        except Exception:
-            return [True] * len(leaves)
-
-        # Pad / truncate to match leaves length.
-        if len(out) < len(leaves):
-            out.extend([True] * (len(leaves) - len(out)))
-        return out[:len(leaves)]
-
-    def hoc_shape(self, symbolic_vector, max_active_per_layer=None):
-        """Reverse-convolve a higher-order symbol tensor through its
-        derivation tree; return the C(1) constituent bivectors as a
-        list of ``[B, V, D_C1]`` tensors (one per leaf of the
-        derivation tree) plus the per-step contiguity flags and per-
-        step top-K active-neuron caps.
-
-        The walk is fully vectorized over the ``[B, V]`` leading
-        dims -- every active position is reverse-projected in
-        parallel through the same sequence of layer reverses.
-
-        Forward composition stacks layer by layer; each reverse step
-        is a "convolution" of the parent's ``[pos, neg]`` bivector
-        shape with the layer's reverse kernel. Unary ops fold one
-        parent into one operand; binary ops fan out one parent into
-        two (one for ``left``, one for ``right``). Per-step
-        contiguity (the bool flag on each ``StepInfo``) tracks
-        whether the layer's reverse preserves connectedness -- only
-        ``pi`` / ``sigma`` / ``lift`` / ``lower`` / ``not`` do; all
-        others use a lossy pseudo-inverse.
-
-        Args:
-            symbolic_vector: ``[B, V, D]`` activation tensor at the
-                highest conceptual order. Typically obtained via
-                ``self.symbolicSpace.subspace.materialize()`` so the
-                ``.active`` mask is already applied.
-            max_active_per_layer: optional int. Caps how many top-K
-                positions per layer carry into
-                ``per_step.active_indices``. Falls back to
-                ``architecture.maxActivePerLayer`` config (default 8).
-
-        Returns:
-            HoCShape -- a small dataclass with:
-              * ``leaves``: list of ``[B, V, D_C1]`` tensors. Length
-                ``1`` for default-only / no-binary-op runs;
-                ``2^k_binary`` for k_binary binary ops along the path.
-              * ``mask``: ``[B, V]`` bool -- True where the input
-                position was above ``truthMinMagnitude``. Leaves
-                carry full ``[B, V, ...]`` shape regardless;
-                consumers AND-fold via the mask.
-              * ``per_step``: list of ``StepInfo``, one per layer-
-                level reverse executed during the walk, in
-                outer-to-inner traversal order. Each StepInfo
-                records ``(rule_name, arity, tier, contiguous,
-                branch, active_indices, active_count, K_cap)``.
-
-            Empty leaves list when no position is active.
-        """
-        if symbolic_vector is None or not torch.is_tensor(symbolic_vector):
-            empty_mask = torch.zeros(0, dtype=torch.bool)
-            return HoCShape(leaves=[], mask=empty_mask, per_step=[])
-        if symbolic_vector.numel() == 0 or symbolic_vector.dim() < 2:
-            empty_mask = torch.zeros(symbolic_vector.shape[:-1] if symbolic_vector.dim() >= 1 else (0,),
-                                     dtype=torch.bool, device=symbolic_vector.device)
-            return HoCShape(leaves=[], mask=empty_mask, per_step=[])
-
-        # Step 1: per-position activity mask.
-        sym = self.symbolicSpace
-        threshold = float(getattr(sym, '_truth_min_magnitude', 0.0) or 0.0)
-        norms = symbolic_vector.norm(dim=-1)
-        mask = norms > threshold
-        if not bool(mask.any().item()):
-            return HoCShape(leaves=[], mask=mask, per_step=[])
-
-        # Step 2: derivation path (outer-to-inner). Same path for all
-        # (B, V) per the spec's row-0 canonical-path convention.
-        path = self._derivation_path()
-
-        # Step 3: K cap.
-        if max_active_per_layer is None:
-            try:
-                max_active_per_layer = int(
-                    TheXMLConfig.get("architecture.maxActivePerLayer",
-                                     default=8) or 8)
-            except (KeyError, TypeError, ValueError):
-                max_active_per_layer = 8
-        K_cap = max(1, int(max_active_per_layer))
-
-        # Step 4: vectorized recursive descent.
-        leaves, per_step = self._walk_reverse(symbolic_vector, path, K_cap, threshold)
-        return HoCShape(leaves=leaves, mask=mask, per_step=per_step)
-
-    def _derivation_path(self):
-        """Build the outer-to-inner rule sequence for hoc_shape.
-
-        Default-only mode: synthesize a fixed alternating
-        ``[sigma(S), pi(C)] * conceptualOrder`` path -- no chart was
-        consulted (Phase 1.5 fast-path bypass keeps current_rules
-        empty), so every position followed the per-tier default
-        unary rule.
-
-        Chart-driven mode: read row 0 of
-        ``self.wordSpace.generate_rules`` per tier (S then C then P
-        in pipeline-reverse order) and concatenate. Same canonical-
-        path convention as ``_row_zero_rules`` at Language.py:2247.
-        """
-        n_stages = max(1, int(getattr(self, 'conceptualOrder', 1) or 1))
-        path = []
-
-        ws = getattr(self, 'wordSpace', None)
-        gen_rules = getattr(ws, 'generate_rules', None) if ws is not None else None
-        chart_populated = bool(gen_rules) and any(
-            v for v in gen_rules.values() if v
-        ) if isinstance(gen_rules, dict) else False
-
-        if not chart_populated:
-            # Default-only path: ['sigma' (S), 'pi' (C)] * n_stages.
-            for _ in range(n_stages):
-                path.append(RuleSpec(rule_name='sigma', arity=1, tier='S'))
-                path.append(RuleSpec(rule_name='pi',    arity=1, tier='C'))
-            return path
-
-        # Chart-driven: walk S-tier rules then C-tier rules in
-        # reverse-pipeline order. Use row 0 as canonical.
-        try:
-            from Language import TheGrammar
-            for tier in ('S', 'C', 'P'):
-                per_tier = gen_rules.get(tier) if gen_rules else None
-                if not per_tier:
-                    continue
-                row_zero = (per_tier[0]
-                            if per_tier and isinstance(per_tier[0], list)
-                            else per_tier)
-                for rule_id in row_zero:
-                    try:
-                        rd = TheGrammar.rules[int(rule_id)]
-                        if rd.method_name is None:
-                            continue
-                        path.append(RuleSpec(
-                            rule_name=rd.method_name,
-                            arity=int(rd.arity),
-                            tier=str(tier)))
-                    except (IndexError, AttributeError, ValueError, TypeError):
-                        continue
-        except Exception:
-            pass
-
-        if not path:
-            # Fallback: default-only synthesis if chart parsing failed.
-            for _ in range(n_stages):
-                path.append(RuleSpec(rule_name='sigma', arity=1, tier='S'))
-                path.append(RuleSpec(rule_name='pi',    arity=1, tier='C'))
-        return path
-
-    def _walk_reverse(self, parent_tensor, path, K_cap, threshold):
-        """Recursive vectorized descent through the derivation tree.
-
-        Returns:
-            (leaves, per_step) where:
-              * leaves: list of ``[B, V, D']`` tensors -- one per leaf.
-              * per_step: list of StepInfo -- one per layer-level
-                reverse executed (DFS order: pre-order on each
-                subtree).
-        """
-        if not path:
-            return ([parent_tensor], [])
-
-        head = path[0]
-        rest = path[1:]
-        contig = head.rule_name in CONTIGUITY_PRESERVING_OPS
-        layer = self._lookup_host_layer(head.tier, head.rule_name)
-
-        if layer is None:
-            # No host layer wired -- skip this rule (treat as identity).
-            return self._walk_reverse(parent_tensor, rest, K_cap, threshold)
-
-        if head.arity == 1:
-            child = self._call_reverse_shape_adaptive(layer, parent_tensor)
-            if child is None:
-                # Reverse failed (lossy / not invertible) -- skip step.
-                return self._walk_reverse(parent_tensor, rest, K_cap, threshold)
-            step = self._build_step(head, contig, child, K_cap, threshold,
-                                    branch='')
-            sub_leaves, sub_steps = self._walk_reverse(child, rest, K_cap, threshold)
-            return (sub_leaves, [step, *sub_steps])
-
-        if head.arity == 2:
-            try:
-                pair = layer.generate(parent_tensor)
-            except Exception:
-                return self._walk_reverse(parent_tensor, rest, K_cap, threshold)
-            if not isinstance(pair, tuple) or len(pair) != 2:
-                # Not a (left, right) pair -- treat as unary.
-                child = pair if torch.is_tensor(pair) else parent_tensor
-                step = self._build_step(head, contig, child, K_cap, threshold,
-                                        branch='')
-                sub_leaves, sub_steps = self._walk_reverse(child, rest, K_cap, threshold)
-                return (sub_leaves, [step, *sub_steps])
-            left, right = pair
-            step_l = self._build_step(head, contig, left,  K_cap, threshold,
-                                      branch='left')
-            step_r = self._build_step(head, contig, right, K_cap, threshold,
-                                      branch='right')
-            leaves_L, steps_L = self._walk_reverse(left,  rest, K_cap, threshold)
-            leaves_R, steps_R = self._walk_reverse(right, rest, K_cap, threshold)
-            return (leaves_L + leaves_R,
-                    [step_l, *steps_L, step_r, *steps_R])
-
-        # Unsupported arity -- skip.
-        return self._walk_reverse(parent_tensor, rest, K_cap, threshold)
-
-    @staticmethod
-    def _call_reverse_shape_adaptive(layer, x):
-        """Call ``layer.reverse(x)`` with per-position / flatten
-        adaptation so a layer whose ``nInput`` differs from
-        ``x.shape[-1]`` still works.
-
-        Some host layers (e.g. SymbolicSpace.sigma in BasicModel)
-        are per-position: ``nInput == per-position dim``, and
-        ``layer.reverse(x: [B, V, D])`` returns ``[B, V, D']``.
-
-        Others (e.g. ConceptualSpace.pi in BasicModel.xml) are
-        flatten-based: ``nInput == V * D``, and
-        ``layer.reverse(x: [B, V*D])`` returns ``[B, V*D']``. For
-        those we flatten the per-position input on call, reverse,
-        and reshape the output back to ``[B, V, D']``.
-
-        Returns the per-position output tensor, or ``None`` when
-        reverse fails (lossy layer / dim cannot be reconciled).
-        """
-        if not torch.is_tensor(x):
-            return None
-        nInput = getattr(layer, 'nInput', None)
-        if nInput is None:
-            try:
-                return layer.reverse(x)
-            except Exception:
-                return None
-        # Per-position match.
-        if nInput == x.shape[-1]:
-            try:
-                return layer.reverse(x)
-            except Exception:
-                return None
-        # Flatten match.
-        if x.dim() >= 3:
-            B = x.shape[0]
-            V = x.shape[1]
-            D = x.shape[-1]
-            if V * D == nInput:
-                flat = x.reshape(B, V * D)
-                try:
-                    out = layer.reverse(flat)
-                except Exception:
-                    return None
-                if not torch.is_tensor(out):
-                    return None
-                # Reshape back to per-position.
-                if out.shape[-1] % V == 0:
-                    D_out = out.shape[-1] // V
-                    return out.reshape(B, V, D_out)
-                return out
-        return None
-
-    def _lookup_host_layer(self, tier, rule_name):
-        """Resolve a (tier, rule_name) to a layer instance.
-
-        Tries ``wordSpace.host_layer`` first (chart-registered host
-        layers, including SymbolicSpace.sigma / ConceptualSpace.pi /
-        LiftLayer / LowerLayer). Falls back to the parameter-free
-        ``GRAMMAR_LAYER_CLASSES[rule_name]()`` instance for ops that
-        aren't on the host registry (e.g. NotLayer when it isn't
-        attached as a builtin).
-        """
-        ws = getattr(self, 'wordSpace', None)
-        if ws is not None and hasattr(ws, 'host_layer'):
-            try:
-                lyr = ws.host_layer(tier, rule_name)
-                if lyr is not None:
-                    return lyr
-            except Exception:
-                pass
-        cls = GRAMMAR_LAYER_CLASSES.get(rule_name)
-        if cls is None:
-            return None
-        try:
-            return cls()
-        except TypeError:
-            return None
-
-    @staticmethod
-    def _build_step(head, contig, tensor, K_cap, threshold, branch):
-        """Construct a StepInfo for one reverse call.
-
-        Vectorized top-K active selection over the [B, V, D] tensor:
-        rank positions by L2 norm, take top-K per batch row, count
-        how many are above threshold.
-        """
-        # tensor: [B, V, D] (or [B, V, ...] -- norm collapses last dim).
-        if tensor.dim() < 2:
-            empty = torch.zeros(0, dtype=torch.long, device=tensor.device)
-            return StepInfo(
-                rule_name=head.rule_name, arity=int(head.arity),
-                tier=str(head.tier), contiguous=bool(contig),
-                branch=str(branch),
-                active_indices=empty.unsqueeze(0),
-                active_count=torch.zeros(1, dtype=torch.long, device=tensor.device),
-                K_cap=int(K_cap))
-        norms = tensor.norm(dim=-1)         # [B, V]
-        if norms.dim() < 2:
-            norms = norms.unsqueeze(0)
-        B, V = norms.shape[0], norms.shape[1] if norms.dim() >= 2 else 1
-        K_eff = min(int(K_cap), V)
-        if K_eff <= 0:
-            empty = torch.zeros((B, 0), dtype=torch.long, device=tensor.device)
-            cnt = torch.zeros(B, dtype=torch.long, device=tensor.device)
-            return StepInfo(
-                rule_name=head.rule_name, arity=int(head.arity),
-                tier=str(head.tier), contiguous=bool(contig),
-                branch=str(branch),
-                active_indices=empty, active_count=cnt, K_cap=int(K_cap))
-        topk = torch.topk(norms, K_eff, dim=-1)
-        idx = topk.indices                   # [B, K_eff] long
-        vals = topk.values                   # [B, K_eff] float
-        above = (vals > threshold).long()    # [B, K_eff]
-        count = above.sum(dim=-1)            # [B]
-        return StepInfo(
-            rule_name=head.rule_name, arity=int(head.arity),
-            tier=str(head.tier), contiguous=bool(contig),
-            branch=str(branch),
-            active_indices=idx, active_count=count, K_cap=int(K_cap))
-
-    def _reverse_one_conceptual_order(self, x, stage_idx):
-        """Back-project ``x`` through one conceptualOrder stage:
-        SymbolicSpace.sigma.reverse -> ConceptualSpace.pi.reverse.
-
-        Legacy helper retained for callers that pre-date the
-        ``hoc_shape`` rewrite. New callers should go through
-        ``hoc_shape`` (which honors derivation history, top-K caps,
-        and per-step contiguity tracking).
-        """
-        try:
-            sym_stages = getattr(self, 'symbolicSpaces', None)
-            con_stages = getattr(self, 'conceptualSpaces', None)
-            if sym_stages is not None and stage_idx < len(sym_stages):
-                sym = sym_stages[stage_idx]
-                con = con_stages[stage_idx]
-            else:
-                sym = self.symbolicSpace
-                con = self.conceptualSpace
-        except (AttributeError, IndexError):
-            return None
-        try:
-            sigma = getattr(sym, 'sigma', None)
-            if sigma is None:
-                return None
-            y = sigma.reverse(x) if hasattr(sigma, 'reverse') else x
-            pi = getattr(con, 'pi', None)
-            if pi is None:
-                return y
-            return pi.reverse(y) if hasattr(pi, 'reverse') else y
-        except Exception:
-            return None
-
-    def Continuous(self) -> float:
-        """Simplicity (Continuity / Open Awareness) -- empirical
-        ε-δ continuity measure on the back-projected leaf
-        hyperrectangles.
-
-        Definition: ``f`` is continuous at ``x`` iff
-        ``∀ε > 0, ∃δ > 0`` with ``‖x' − x‖ < δ ⇒ ‖f(x') − f(x)‖ < ε``.
-        Adapted to a finite set of leaf hyperrectangles
-        (``hoc_shape.leaves``): for each pair of leaves the input-
-        side and output-side bivectors define boxes; the ratio of
-        their union diameters is the empirical ε / δ for that pair.
-
-        Continuity holds when the worst-case ratio across
-        trustworthy pairs stays bounded by a configured target
-        (default 1.0 -- non-expansion). The measure is the
-        ``tanh(γ · (target − worst_ratio))`` squash so the return
-        value lies in ``[-1, +1]`` with the same sign convention as
-        ``Contiguous()``:
-
-          ``+1`` -- continuous: every leaf pair's output-spread
-                    stayed within the configured factor of the
-                    input-spread.
-          ``-1`` -- discontinuous: at least one trustworthy pair
-                    blew up beyond the target.
-          ``0``  -- unknown: no trustworthy pairs (all leaves
-                    traversed at least one lossy reverse op, so
-                    the back-projection geometry is unreliable;
-                    same convention as ``Contiguous()``).
-          intermediate -- saturated tanh of the deviation from
-                          target.
-
-        Theoretical alignment: the per-layer LDU
-        ``_d_effective`` clamp to ``[ε, 1.0]`` already bounds each
-        layer's spectral norm; the empirical ratio measures how
-        tight that bound stays under the actual derivation walk.
-        Sample-based, not analytic: a +1 result means "no observed
-        violations on this sample", not "globally continuous".
-
-        Knobs (read once per call from XML or instance attrs):
-          ``architecture.continuityRatioTarget`` (default 1.0).
-          ``architecture.continuitySharpness``   (default 1.0).
-          ``architecture.continuityNorm``        (default 'inf'; 'l2' available).
-        """
-        sym = getattr(self, 'symbolicSpace', None)
-        if sym is None or not hasattr(sym, 'subspace'):
-            return 0.0
-        try:
-            sym_act = sym.subspace.materialize()
-        except Exception:
-            return 0.0
-        if sym_act is None or not torch.is_tensor(sym_act) or sym_act.numel() == 0:
-            return 0.0
-
-        shape = self.hoc_shape(sym_act)
-        leaves = shape.leaves
-        if not leaves:
-            return 0.0
-
-        leaf_trust = self._leaf_path_trust(shape)
-        if not leaf_trust:
-            return 0.0
-
-        # Single leaf: trivially continuous if trustworthy.
-        if len(leaves) < 2:
-            return 1.0 if leaf_trust[0] else 0.0
-
-        # Build the per-leaf input-side and output-side bivector
-        # tensors. For default-only / unary-only paths the input-
-        # side bivector is the corresponding slice of sym_act
-        # itself (one entry per leaf, all identical -- a single
-        # higher-order symbol back-projecting through unary
-        # reverses gives one leaf, so the pair set is empty and
-        # we'd have returned above). For binary fanout the input-
-        # side bivector for every leaf is the same parent symbolic
-        # vector at that batch row -- we use sym_act[..., :2]
-        # directly as the shared input box.
-        out_boxes = self._stack_leaf_boxes(leaves)              # [K, *, 2]
-        if out_boxes is None:
-            return 0.0
-        in_boxes = self._stack_input_boxes(sym_act, out_boxes.shape)  # [K, *, 2]
-        if in_boxes is None:
-            return 0.0
-
-        # Read knobs from config (with sensible defaults).
-        try:
-            ratio_target = float(TheXMLConfig.get(
-                "architecture.continuityRatioTarget", default=1.0) or 1.0)
-        except (KeyError, TypeError, ValueError):
-            ratio_target = 1.0
-        try:
-            sharpness = float(TheXMLConfig.get(
-                "architecture.continuitySharpness", default=1.0) or 1.0)
-        except (KeyError, TypeError, ValueError):
-            sharpness = 1.0
-        try:
-            norm_kind = str(TheXMLConfig.get(
-                "architecture.continuityNorm", default='inf') or 'inf')
-        except (KeyError, TypeError, ValueError):
-            norm_kind = 'inf'
-        if norm_kind not in ('inf', 'l2'):
-            norm_kind = 'inf'
-
-        ratios = Ops.epsilon_delta(in_boxes, out_boxes, norm=norm_kind)  # [K, K]
-
-        # Mask: only trustworthy pairs above the diagonal.
-        K = ratios.shape[0]
-        leaf_trust_t = torch.tensor(leaf_trust, dtype=torch.bool,
-                                    device=ratios.device)
-        pair_trust = leaf_trust_t.unsqueeze(0) & leaf_trust_t.unsqueeze(1)
-        triu = torch.triu(torch.ones(K, K, dtype=torch.bool,
-                                     device=ratios.device), diagonal=1)
-        mask = pair_trust & triu
-
-        if not bool(mask.any().item()):
-            return 0.0
-
-        worst = float(ratios[mask].max().item())
-        # Squash to [-1, +1].
-        return math.tanh(sharpness * (ratio_target - worst))
-
-    @staticmethod
-    def _stack_leaf_boxes(leaves):
-        """Stack a list of leaf tensors into a ``[K, ..., 2]``
-        bivector tensor for ``Ops.epsilon_delta``.
-
-        Each leaf is ``[B, V, D]`` with the ``.what`` bivector at
-        ``[..., :2]``; we slice and stack along a new K dim.
-        Returns ``None`` if any leaf is missing the bivector slice.
-        """
-        slices = []
-        for leaf in leaves:
-            if not torch.is_tensor(leaf) or leaf.shape[-1] < 2:
-                return None
-            slices.append(leaf[..., :2])
-        try:
-            return torch.stack(slices, dim=0)
-        except Exception:
-            return None
-
-    @staticmethod
-    def _stack_input_boxes(sym_act, target_shape):
-        """Build an input-side bivector tensor matching
-        ``target_shape`` (the output-side shape from
-        ``_stack_leaf_boxes``).
-
-        For the binary-fanout case every leaf shares the same
-        input parent (the higher-order symbolic vector), so we
-        broadcast ``sym_act[..., :2]`` along the K dim. Returns
-        ``None`` if shapes don't reconcile.
-        """
-        if not torch.is_tensor(sym_act) or sym_act.shape[-1] < 2:
-            return None
-        in_slice = sym_act[..., :2]           # [B, V, 2]
-        K = target_shape[0]
-        # target_shape is [K, *leaf_dims..., 2]. Broadcast in_slice
-        # to [K, *leaf_dims..., 2] by inserting a leading K dim.
-        # If the leaf carries [B, V, 2] (most common), in_slice
-        # already matches *leaf_dims; just expand K.
-        try:
-            tail = list(target_shape[1:])     # [*leaf_dims..., 2]
-            if list(in_slice.shape) == tail:
-                return in_slice.unsqueeze(0).expand(K, *tail)
-            # Allow leading-dim broadcast (B == 1 etc.).
-            return in_slice.unsqueeze(0).expand(K, *tail)
-        except Exception:
-            return None
-
-    def Peaceful(self):
-        """One Taste (Emotional Symmetry / Balance).
-
-        Letting attachment to feelings within conceptual space be
-        uniformly 1, so that instead of adapting weight space to our
-        thoughts we adapt our feelings equanimously to our sensory space.
-        Requires emotional symmetry.
-
-        Characterisation -- balance dissonance and consonance:
-          * Feelings (vedana / valence annotations) should not be removed
-            -- that is the nihilist's mistake.  Instead they must be
-            *appropriate*: consonant with reality.
-          * Appropriateness manifests when the objects that are loved are
-            either real (grounded in PerceptualSpace with trust > 0) or
-            when the representations are at least 5-dimensional (which
-            limits the dissonance that arises from reification of
-            low-dimensional abstractions).
-          * The loss landscape should be symmetric w.r.t. positive and
-            negative valence -- no bias toward pleasant or unpleasant
-            content in the gradient signal.
-
-        Computationally, Peaceful() should measure the balance between
-        dissonance and consonance across the TruthLayer and verify that
-        the model does not preferentially attend to or avoid any
-        particular valence.
-        """
-        raise NotImplementedError
 
     def Done(self):
         """Buddhahood (Non-Meditation / Resonance).
@@ -2184,16 +1575,25 @@ class BasicModel(BaseModel):
                masked_prediction='NONE'):
         """Build the full space hierarchy from architecture parameters.
 
-        Config-derivable flags (reshape, ergodic, codebook, etc.) are read
-        from TheXMLConfig by each Space constructor.  Only runtime/pipeline
-        params are passed here.
+        Always dispatches to ``_create_per_stage``: per-stage with
+        T=conceptualOrder is the single construction path. At T=1 it
+        reduces to a single ConceptualSpace + SymbolicSpace stage,
+        producing the same observable output as the legacy flat path.
 
         Args:
             nInput/nPercepts/nConcepts/nSymbols/nOutput: object counts per space.
             nWords: object count for the SyntacticSpace.
-            conceptualOrder: number of extra Percept->Concept->Symbol cycles.
+            conceptualOrder: number of [Percept->Concept->Symbol] cycles.
             model_type: "simple", "embedding", "passthrough", or "vq".
         """
+        return self._create_per_stage(
+            nInput, nPercepts, nConcepts, nSymbols, nWords=nWords,
+            nOutput=nOutput, conceptualOrder=conceptualOrder,
+            model_type=model_type, data=data,
+            embedding_path=embedding_path,
+            reverse_scale=reverse_scale, what_scale=what_scale,
+            where_scale=where_scale, when_scale=when_scale,
+            masked_prediction=masked_prediction)
         self.spaces = []  # reset -- prevent stale accumulation from prior create() calls
         self.wordSpace = None  # wired below once the home spaces exist
         TheXMLConfig._requirements.clear()  # clear stale requirements from prior create()/tests
@@ -2226,6 +1626,52 @@ class BasicModel(BaseModel):
         # use lift/lower opt in via <gateL1Lambda> in <architecture>.
         self.gate_l1_lambda = float(
             TheXMLConfig.get("architecture.gateL1Lambda", default=0.0) or 0.0)
+        # Per-stage / butterfly / grammar / truth knobs. Initialized
+        # here with safe defaults (off / zero / no-op) so subclasses
+        # and the merged grammar paths can reference them
+        # unconditionally. MentalModel.create overrides these with
+        # config values when running the per-stage pipeline; keeping
+        # them defined on every BasicModel instance avoids
+        # AttributeError in helpers that the two classes will share
+        # after the merger.
+        self.useButterflies = bool(
+            TheXMLConfig.get("architecture.useButterflies", default=False))
+        self.monotonic = bool(
+            TheXMLConfig.get("architecture.monotonic", default=False))
+        self.load_balance_weight = float(
+            TheXMLConfig.get("architecture.loadBalanceWeight", default=0.0)
+            or 0.0)
+        self.truth_bias_scale = float(
+            TheXMLConfig.get("architecture.truthBiasScale", default=0.0)
+            or 0.0)
+        self.luminosity_weight = float(
+            TheXMLConfig.get("architecture.LuminosityWeight", default=0.0)
+            or 0.0)
+        self.universality_weight = float(
+            TheXMLConfig.get("architecture.UniversalityWeight", default=0.0)
+            or 0.0)
+        self.allow_excluded_middle = int(
+            TheXMLConfig.get("architecture.allowExcludedMiddle", default=1)
+            or 1)
+        self.allow_contradiction = int(
+            TheXMLConfig.get("architecture.allowContradiction", default=0)
+            or 0)
+        self.truth_loss_weight = float(
+            TheXMLConfig.training("TruthLoss", default=0.0) or 0.0)
+        self._write_syntax = bool(
+            TheXMLConfig.get("architecture.writeSyntax", default=False)
+            or False)
+        self._syntax_out_path = (
+            TheXMLConfig.get("architecture.syntaxOutPath",
+                             default="output/syntax.xml")
+            or "output/syntax.xml")
+        self._syntax_truncated = False
+        # Butterfly state cache (populated by MentalModel.create's
+        # butterfly branch; left None on the BasicModel path).
+        self._butterfly_state_vectors = None
+        self._butterfly_state_dim = None
+        self._butterfly_symbol_width = None
+        self._butterfly_symbol_factor = None
         self.lexer            = TheXMLConfig.space("InputSpace", "lexer")
         # Subsymbolic loop configuration. When enabled, build
         # SubsymbolicSpace alongside SymbolicSpace and widen
@@ -2294,60 +1740,35 @@ class BasicModel(BaseModel):
         # Resolve dims, chaining through the pipeline.
         # nDim=0 for a space means "same as the previous space's output dim".
         # InputSpace output dim is its configured nDim (embedding/feature size).
-        def _resolve_dim(section, prev_dim):
-            try:
-                raw = TheXMLConfig.space(section, "nDim")
-            except KeyError:
-                return prev_dim
-            return prev_dim if raw == 0 else raw
-
-        input_dim   = _resolve_dim("InputSpace",    1)
-        percept_dim = _resolve_dim("PerceptualSpace",  input_dim)
-        concept_dim = _resolve_dim("ConceptualSpace",  percept_dim)
-        symbol_dim  = _resolve_dim("SymbolicSpace",    concept_dim)
-        output_dim  = _resolve_dim("OutputSpace",      symbol_dim)
+        # Helpers _resolve_dim / _obj_size / _nvec live on BaseModel
+        # so the same chaining logic is shared with MentalModel.
+        input_dim   = self._resolve_dim("InputSpace",      1)
+        percept_dim = self._resolve_dim("PerceptualSpace", input_dim)
+        concept_dim = self._resolve_dim("ConceptualSpace", percept_dim)
+        symbol_dim  = self._resolve_dim("SymbolicSpace",   concept_dim)
+        output_dim  = self._resolve_dim("OutputSpace",     symbol_dim)
         # SubsymbolicSpace defaults to symbol_dim so its event tensor
         # matches SymbolicSpace's shape for elementwise summation at
         # ConceptualSpace input. Spec §"Constraint" requires shared
         # nDim across the chain when subsymbolic is enabled.
-        subsymbol_dim = _resolve_dim("SubsymbolicSpace", symbol_dim)
+        subsymbol_dim = self._resolve_dim("SubsymbolicSpace", symbol_dim)
 
-        # Per-space objectSize: nWhere + nWhen (falls back to architecture, then 0)
-        def _obj_size(section):
-            try:
-                nw = TheXMLConfig.space(section, "nWhere")
-            except KeyError:
-                nw = 0
-            try:
-                nn = TheXMLConfig.space(section, "nWhen")
-            except KeyError:
-                nn = 0
-            return nw + nn
+        obj_input     = self._obj_size("InputSpace")
+        obj_percept   = self._obj_size("PerceptualSpace")
+        obj_concept   = self._obj_size("ConceptualSpace")
+        obj_symbol    = self._obj_size("SymbolicSpace")
+        obj_subsymbol = self._obj_size("SubsymbolicSpace")
+        obj_output    = self._obj_size("OutputSpace")
 
-        obj_input   = _obj_size("InputSpace")
-        obj_percept = _obj_size("PerceptualSpace")
-        obj_concept = _obj_size("ConceptualSpace")
-        obj_symbol  = _obj_size("SymbolicSpace")
-        obj_subsymbol = _obj_size("SubsymbolicSpace")
-        obj_output  = _obj_size("OutputSpace")
-
-        # Resolve nVectors sentinels (0 -> same as output count for that space)
-        def _nvec(section, n_out):
-            try:
-                raw = TheXMLConfig.space(section, "nVectors")
-            except KeyError:
-                return n_out
-            return n_out if raw == 0 else raw
-
-        nvec_input   = _nvec("InputSpace",    nInput)
-        nvec_percept = _nvec("PerceptualSpace", nPercepts)
-        nvec_concept = _nvec("ConceptualSpace", nConcepts)
-        nvec_symbol  = _nvec("SymbolicSpace",  nSymbols)
+        nvec_input   = self._nvec("InputSpace",       nInput)
+        nvec_percept = self._nvec("PerceptualSpace",  nPercepts)
+        nvec_concept = self._nvec("ConceptualSpace",  nConcepts)
+        nvec_symbol  = self._nvec("SymbolicSpace",    nSymbols)
         # SubsymbolicSpace defaults to symbol's nVectors so the
         # event tensors share shape; spec requires this for the
         # elementwise sum at ConceptualSpace input.
-        nvec_subsymbol = _nvec("SubsymbolicSpace", nvec_symbol)
-        nvec_output  = _nvec("OutputSpace",    nOutput)
+        nvec_subsymbol = self._nvec("SubsymbolicSpace", nvec_symbol)
+        nvec_output    = self._nvec("OutputSpace",      nOutput)
 
         # Subsymbolic-loop config validators (only when enabled).
         # Spec §"Constraint: shared nDim, configurable nVectors".
@@ -2528,16 +1949,12 @@ class BasicModel(BaseModel):
         return PerceptualSpace(inputShape, spaceShape, outputShape)
 
     def build_pipelines(self):
-        """Phase 2: assemble stem/body/head pipelines for BasicModel.
+        """Phase 2: assemble stem/body/head pipelines.
 
-        Stem (inputSpace + perceptualSpace) emits a subspace whose event
-        has shape [B, K, N, D] when k_axis=True (microbatch AR path) or
-        [B, N, D] when k_axis=False (non-AR / inference). Body
-        (conceptualSpace + symbolicSpace + symbol_cache) and head
-        (outputSpace) wrap their stages in FlattenKWrapper, which is a
-        no-op when k_axis=False and folds K into the batch dim when
-        k_axis=True.
+        Always dispatches to ``_build_pipelines_per_stage`` (the
+        single per-stage construction path).
         """
+        return self._build_pipelines_per_stage()
         # Cache the subspace flowing out of symbolicSpace so forward()
         # can recover it after pipeline_fwd. Needed because passthrough
         # symbolicSpace doesn't populate its own .subspace.
@@ -2623,6 +2040,120 @@ class BasicModel(BaseModel):
                 ReverseAdapter(self.inputSpace),
             )
             self.pipeline_rev = None
+
+    # -- Per-stage / butterfly / AR helpers ----------------------------
+    # Shared by BasicModel's flat pipeline and MentalModel's per-stage
+    # path. The butterfly helpers depend on ``self._merge_diffs`` which
+    # is initialized in MentalModel.forward when ``useGrammar=='all'``;
+    # they raise on the BasicModel path because that path never invokes
+    # them.
+
+    def _butterfly_merge(self, x):
+        """Average-merge: [B, N, D] -> [B, N/2, D].
+
+        Averages adjacent vector pairs, keeping D constant and norms bounded.
+        Caches (left - right) differences in self._merge_diffs for exact
+        inversion in the reverse pass.
+        """
+        B, N, D = x.shape
+        assert N % 2 == 0, f"butterfly_merge requires even N, got {N}"
+        left = x[:, 0::2, :]    # [B, N/2, D]
+        right = x[:, 1::2, :]   # [B, N/2, D]
+        self._merge_diffs.append(left - right)
+        return (left + right) / 2
+
+    def _butterfly_unmerge(self, x):
+        """Exact inverse of average-merge: [B, N/2, D] -> [B, N, D].
+
+        Uses cached difference to recover both original vectors. When the
+        cached diff is None (is_last GrammarMergeGlue stage, which is a
+        forward-pass-through), this is a no-op to keep the reverse loop
+        count aligned with T without reshaping.
+        """
+        diff = self._merge_diffs.pop()  # left - right
+        if diff is None:
+            return x
+        left = x + diff / 2
+        right = x - diff / 2
+        B, N_half, D = left.shape
+        # Interleave left and right back to original ordering
+        out = torch.zeros(B, N_half * 2, D, device=x.device)
+        out[:, 0::2, :] = left
+        out[:, 1::2, :] = right
+        return out
+
+    def _bound_concept_input(self, x):
+        """Keep recurrent concept inputs inside ConceptualSpace's logit domain."""
+        if getattr(self.conceptualSpace, "nonlinear", False):
+            return x.clamp(min=-1 + epsilon, max=1 - epsilon)
+        return x
+
+    def _symbol_feedback_from_vectors(self, sym_vectors, n_feedback, feedback_dim):
+        """Project symbolic state back to the percept-shaped feedback tensor."""
+        feedback = sym_vectors
+        if feedback.shape[1] >= n_feedback:
+            feedback = feedback[:, -n_feedback:, :]
+        else:
+            pad = torch.zeros(
+                feedback.shape[0],
+                n_feedback - feedback.shape[1],
+                feedback.shape[2],
+                device=feedback.device,
+                dtype=feedback.dtype,
+            )
+            feedback = torch.cat([feedback, pad], dim=1)
+
+        if feedback.shape[-1] == feedback_dim:
+            return self._bound_concept_input(feedback)
+
+        norms = feedback.norm(dim=-1, keepdim=True)
+        return self._bound_concept_input(norms.expand(-1, -1, feedback_dim))
+
+    def _is_ar_mode(self):
+        """True when the current config is AR (AR/ARUS/ARIR at training time)."""
+        is_runtime_arir = (
+            self.inputSpace.data is not None
+            and getattr(self.inputSpace.data, '_runtime_mode', None) == 'ARIR'
+        )
+        return (self.masked_prediction in ('AR', 'ARUS', 'ARIR')
+                and not is_runtime_arir)
+
+    def _extract_prediction_sequential(self, fwd_out):
+        """Materialize OutputSpace's subspace and denormalize to task range.
+
+        In AR mode (predictions collected into a list that runBatch
+        torch.stacks on dim=1), the nOutput=1 middle axis is squeezed
+        here so stack yields [B, N, D] and not [B, N, 1, D]. Non-AR
+        callers (returning predictions[0] directly) keep the 3D shape
+        so existing loss contracts hold.
+        """
+        if fwd_out is None:
+            return None
+        if self.outputSpace.nonlinear_output:
+            outputData = fwd_out.materialize(mode="activation")
+        else:
+            outputData = fwd_out.materialize()
+        if outputData is None:
+            return None
+        outputData = self.normalizer.denormalize(outputData, which="output")
+        is_ar = self.masked_prediction in ('AR', 'ARUS', 'ARIR')
+        if is_ar and outputData.dim() == 3 and outputData.shape[1] == 1:
+            outputData = outputData.squeeze(1)
+        return outputData
+
+    def _should_reconstruct(self):
+        """True when reverse reconstruction should run after the forward loop.
+
+        Only ARIR triggers an automatic reverse pass (input reconstruction).
+        Non-AR and AR/ARUS callers invoke `model.reverse()` explicitly.
+        """
+        return self.masked_prediction == 'ARIR'
+
+    def _run_reverse_sequential(self, last_forward_result):
+        """Case A reconstruction: run pipeline_rev once after the forward loop."""
+        if self.pipeline_rev is None or last_forward_result is None:
+            return None
+        return self.pipeline_rev(last_forward_result)
 
     def End(self):
         """Per-batch teardown. Cascades End() to every Space.
@@ -2954,15 +2485,12 @@ class BasicModel(BaseModel):
         event_basis.setW(new_event)
 
     def forward(self, inputData):
-        """Microbatch AR forward: stem -> body -> head straight-line.
+        """Microbatch AR forward: stem -> body -> head.
 
-        Stem (inputSpace + perceptualSpace) emits [B, K, N, D] for AR
-        and [B, N, D] for non-AR. The body's FlattenKWrapper folds K
-        into the batch dim so conceptual/symbolic operate on [B*K, N, D]
-        in one shot. Head restores the K axis and produces
-        [B, K, N, predDim] (AR) or [B, N, predDim] (non-AR). The K axis
-        is the AR microbatch -- one prediction per cursor position.
+        Always dispatches to ``_forward_per_stage`` (the single
+        per-stage forward path).
         """
+        return self._forward_per_stage(inputData)
         if isinstance(inputData, torch.Tensor):
             inputData = inputData.to(TheDevice.get())
         self._ar_valid_pos = None
@@ -3043,9 +2571,11 @@ class BasicModel(BaseModel):
         return last_input_state, symbols, pred, None
 
     def reverse(self, symbols, outputData):
-        """Full reverse pass: symbols -> concepts -> percepts -> input."""
-        inputData, input = self.StartReverse(symbols)
-        return inputData, input
+        """Full reverse pass: symbols -> concepts -> percepts -> input.
+
+        Always dispatches to ``_reverse_per_stage``.
+        """
+        return self._reverse_per_stage(symbols, outputData)
 
     def runTrial(self, numEpochs=1, batchSize=10, lr=0.01, profile=None):
         """Main training loop: train for numEpochs, evaluate on test set each epoch.
@@ -3779,6 +3309,7 @@ class BasicModel(BaseModel):
                     truth_loss_weight=getattr(self, 'truth_loss_weight', 0.0),
                     allow_excluded_middle=getattr(self, 'allow_excluded_middle', 1),
                     allow_contradiction=getattr(self, 'allow_contradiction', 0),
+                    model=self,
                 )
                 # Gate-L1 sparsity penalty on LiftLayer / LowerLayer
                 # raw_gate parameters. Pulls unused singular-component
@@ -4520,33 +4051,7 @@ class BasicModel(BaseModel):
         if torch.is_tensor(inErr):
             inErr = inErr.item()
         return outErr, inErr, allOutput, allInput
-TheBasicModel = BasicModel()
-
-class MentalModel(BaseModel):
-    name = "MentalModel"
-
-    BatchResult      = BasicModel.BatchResult
-    runBatch         = BasicModel.runBatch
-    runEpoch         = BasicModel.runEpoch
-    runTrial         = BasicModel.runTrial
-    trainEmbeddings  = BasicModel.trainEmbeddings
-    perceptual_sbow_loss = BasicModel.perceptual_sbow_loss
-    accumulate_output_symbol_residual = BasicModel.accumulate_output_symbol_residual
-    infer            = BasicModel.infer
-    _infer_ir        = BasicModel._infer_ir
-    # Outer doc-streaming helpers (rolling-cursor handoff). MentalModel
-    # inherits the runBatch/runEpoch class attrs explicitly above, so
-    # the post-tick dispatch / compact helpers must be re-mapped too;
-    # otherwise runEpoch's tail dispatch raises AttributeError.
-    dispatch_per_row_reset = BasicModel.dispatch_per_row_reset
-    dispatch_soft_reset    = BasicModel.dispatch_soft_reset
-    post_tick_compact      = BasicModel.post_tick_compact
-    flush_word_buffers     = BasicModel.flush_word_buffers
-    _stub_outputs          = BasicModel._stub_outputs
-    _maybe_compile_brick   = BasicModel._maybe_compile_brick
-    create_ir_mask        = BasicModel.create_ir_mask
-
-    def create(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
+    def _create_per_stage(self, nInput, nPercepts, nConcepts, nSymbols, nWords=16, nOutput=32,
                conceptualOrder=1,
                model_type="simple", data=None, embedding_path=None,
                reverse_scale=0.5,
@@ -4668,56 +4173,71 @@ class MentalModel(BaseModel):
         )
 
         # Resolve dims, chaining through the pipeline (nDim=0 -> same as input dim)
-        def _resolve_dim(section, prev_dim):
-            try:
-                raw = TheXMLConfig.space(section, "nDim")
-            except KeyError:
-                return prev_dim
-            return prev_dim if raw == 0 else raw
+        # Helpers _resolve_dim / _obj_size / _nvec live on BaseModel.
+        input_dim   = self._resolve_dim("InputSpace",      1)
+        percept_dim = self._resolve_dim("PerceptualSpace", input_dim)
+        concept_dim = self._resolve_dim("ConceptualSpace", percept_dim)
+        symbol_dim  = self._resolve_dim("SymbolicSpace",   concept_dim)
+        output_dim  = self._resolve_dim("OutputSpace",     symbol_dim)
 
-        input_dim   = _resolve_dim("InputSpace",       1)
-        percept_dim = _resolve_dim("PerceptualSpace",  input_dim)
-        concept_dim = _resolve_dim("ConceptualSpace",  percept_dim)
-        symbol_dim  = _resolve_dim("SymbolicSpace",    concept_dim)
-        output_dim  = _resolve_dim("OutputSpace",      symbol_dim)
+        obj_input   = self._obj_size("InputSpace")
+        obj_percept = self._obj_size("PerceptualSpace")
+        obj_concept = self._obj_size("ConceptualSpace")
+        obj_symbol  = self._obj_size("SymbolicSpace")
+        obj_subsymbol = self._obj_size("SubsymbolicSpace")
+        obj_output  = self._obj_size("OutputSpace")
 
-        # Per-space objectSize: nWhere + nWhen (falls back to architecture, then 0)
-        def _obj_size(section):
-            try:
-                nw = TheXMLConfig.space(section, "nWhere")
-            except KeyError:
-                nw = 0
-            try:
-                nn = TheXMLConfig.space(section, "nWhen")
-            except KeyError:
-                nn = 0
-            return nw + nn
+        # Subsymbolic loop config (relocated 2026-05-05 from the flat
+        # path): when ``architecture.subsymbolicEnabled``, build a
+        # parallel SubsymbolicSpace and widen the first stage's
+        # ConceptualSpace input PiLayer to read the combined
+        # ``perceptual || (symbolic + subsymbolic)`` event tensor.
+        self.subsymbolicEnabled = bool(
+            TheXMLConfig.get("architecture.subsymbolicEnabled",
+                             default=False))
+        raw_mode = TheXMLConfig.get("architecture.mode", default="grammar")
+        self.mode = (str(raw_mode).strip().lower()
+                     if raw_mode is not None else "grammar")
+        if self.mode not in ("grammar", "parallel"):
+            raise ValueError(
+                f"architecture.mode={raw_mode!r} is invalid; expected "
+                f"'grammar' or 'parallel'.")
+        # SubsymbolicSpace defaults: shared nDim across the chain;
+        # nVectors mirrors SymbolicSpace for elementwise summation.
+        subsymbol_dim = self._resolve_dim("SubsymbolicSpace", symbol_dim)
 
-        obj_input   = _obj_size("InputSpace")
-        obj_percept = _obj_size("PerceptualSpace")
-        obj_concept = _obj_size("ConceptualSpace")
-        obj_symbol  = _obj_size("SymbolicSpace")
-        obj_output  = _obj_size("OutputSpace")
+        nvec_input   = self._nvec("InputSpace",      nInput)
+        nvec_percept = self._nvec("PerceptualSpace", nPercepts)
+        nvec_concept = self._nvec("ConceptualSpace", nConcepts)
+        nvec_symbol  = self._nvec("SymbolicSpace",   nSymbols)
+        nvec_subsymbol = self._nvec("SubsymbolicSpace", nvec_symbol)
+        nvec_output  = self._nvec("OutputSpace",     nOutput)
 
-        # Resolve nVectors sentinels (0 -> same as output count for that space)
-        def _nvec(section, n_out):
-            try:
-                raw = TheXMLConfig.space(section, "nVectors")
-            except KeyError:
-                return n_out
-            return n_out if raw == 0 else raw
-
-        nvec_input   = _nvec("InputSpace",    nInput)
-        nvec_percept = _nvec("PerceptualSpace", nPercepts)
-        nvec_concept = _nvec("ConceptualSpace", nConcepts)
-        nvec_symbol  = _nvec("SymbolicSpace",  nSymbols)
-        nvec_output  = _nvec("OutputSpace",    nOutput)
+        if self.subsymbolicEnabled:
+            TheXMLConfig.require(
+                lambda cfg, _p=percept_dim, _c=concept_dim,
+                       _s=symbol_dim, _ss=subsymbol_dim:
+                       _p == _c == _s == _ss,
+                f"subsymbolicEnabled requires shared nDim across "
+                f"PerceptualSpace ({percept_dim}) / ConceptualSpace "
+                f"({concept_dim}) / SymbolicSpace ({symbol_dim}) / "
+                f"SubsymbolicSpace ({subsymbol_dim}); Pi/Sigma bridge "
+                f"shapes must align"
+            )
+            TheXMLConfig.require(
+                lambda cfg, _vs=nvec_symbol, _vss=nvec_subsymbol:
+                       _vs == _vss,
+                f"subsymbolicEnabled requires SymbolicSpace.nVectors "
+                f"({nvec_symbol}) == SubsymbolicSpace.nVectors "
+                f"({nvec_subsymbol}); event tensors are summed elementwise"
+            )
 
         # Build I/O shape tuples: [count, dim + objectSize]
         inputShape   = [nInput,    input_dim   + obj_input]
         perceptShape = [nPercepts, percept_dim + obj_percept]
         conceptShape = [nConcepts, concept_dim + obj_concept]
         symbolShape  = [nSymbols,  symbol_dim  + obj_symbol]
+        subsymbolShape = [nvec_subsymbol, subsymbol_dim + obj_subsymbol]
         outputShape  = [nOutput,   output_dim  + obj_output]
 
         # Build codebook (space-internal) shape tuples: [nVectors, nDim]
@@ -4725,14 +4245,18 @@ class MentalModel(BaseModel):
         spaceShape_percept = [nvec_percept, percept_dim]
         spaceShape_concept = [nvec_concept, concept_dim]
         spaceShape_symbol  = [nvec_symbol,  symbol_dim]
+        spaceShape_subsymbol = [nvec_subsymbol, subsymbol_dim]
         spaceShape_output  = [nvec_output,  output_dim]
 
         rawInputShape = [nInput, input_dim]
-        self.inputSpace = InputSpace(rawInputShape, spaceShape_input, inputShape,
-                                     model_type=model_type)
+        self.inputSpace = self._make_input_space(
+            rawInputShape, spaceShape_input, inputShape,
+            model_type=model_type)
 
-        # Input -> Percept
-        self.perceptualSpace = PerceptualSpace(inputShape, spaceShape_percept, perceptShape)
+        # Input -> Percept (uses _make_perceptual_space so demuxed
+        # configs route to ModalSpace).
+        self.perceptualSpace = self._make_perceptual_space(
+            inputShape, spaceShape_percept, perceptShape)
         if isinstance(self.perceptualSpace.vocabulary, Embedding):
             object.__setattr__(self.inputSpace, '_peer_perceptual',
                                self.perceptualSpace)
@@ -4751,7 +4275,15 @@ class MentalModel(BaseModel):
             _c_input_volume = conceptInputShape[0] * conceptInputShape[1]
             conceptOutputShape = [_c_input_volume // _c_nOutputDim, _c_nOutputDim]
         else:
-            conceptOutputShape = [nPercepts, concept_dim + obj_concept]
+            # Use nConcepts (not nPercepts) for the conceptual output N
+            # so the per-stage path matches the legacy flat BasicModel
+            # construction at T=1: ConceptualSpace maps
+            # [nPercepts, percept_d] -> [nConcepts, concept_d]. When
+            # nConcepts == nPercepts (the common MentalModel default)
+            # this is a no-op; when they differ (e.g. MNIST-style
+            # 784 -> 20), ConceptualSpace's PiLayer collapses the N
+            # dim via its flatten-and-reshape boundary handling.
+            conceptOutputShape = [nConcepts, concept_dim + obj_concept]
 
         # -- Butterfly path: pairwise sigma/pi with N-halving --
         if self.useButterflies:
@@ -4856,8 +4388,16 @@ class MentalModel(BaseModel):
             # to match the halved N.
             stage_space_concept = [cs_out[0], spaceShape_concept[1]]
             stage_space_symbol = [ss_out[0], spaceShape_symbol[1]]
+            # Subsymbolic widening on stage 0 only: the first
+            # ConceptualSpace reads ``perceptual || (symbolic +
+            # subsymbolic)`` per the subsymbolic plan. Later stages
+            # see the previous stage's symbolic output, so no widen.
+            stage_widen_dim = (subsymbolShape[1]
+                               if (self.subsymbolicEnabled and t == 0)
+                               else 0)
             cs = ConceptualSpace(cs_in, stage_space_concept, cs_out,
-                                 layer=cs_layer)
+                                 layer=cs_layer,
+                                 subsymbolic_widen_dim=stage_widen_dim)
             ss = SymbolicSpace(ss_in, stage_space_symbol, ss_out,
                                conceptualSpace=cs, layer=ss_layer)
             # Per-stage flags consumed by build_pipelines / forward.
@@ -4870,6 +4410,36 @@ class MentalModel(BaseModel):
         # wordSpace.truth_layer = self.symbolicSpace) see the terminal stage.
         self.conceptualSpace = self.conceptualSpaces[-1]
         self.symbolicSpace = self.symbolicSpaces[-1]
+
+        # SubsymbolicSpace: parallel re-entrant Space, codebook-free,
+        # bitonic; runs only when ``subsymbolicEnabled`` (Phase 1
+        # spec). Wired off the *first* stage's ConceptualSpace -- that
+        # is the stage whose input PiLayer is widened to read the
+        # combined ``perceptual || (symbolic + subsymbolic)`` event
+        # tensor. Later stages don't see the right-half (their input
+        # is the previous stage's symbolic output, not perceptual).
+        if self.subsymbolicEnabled:
+            self.subsymbolicSpace = SubsymbolicSpace(
+                conceptShape, spaceShape_subsymbol, subsymbolShape)
+            # Phase-1 mode gating: hold the inactive Space's event at
+            # zero. ``grammar`` keeps SymbolicSpace active and
+            # SubsymbolicSpace silent; ``parallel`` is the inverse.
+            if self.mode == "grammar":
+                self.subsymbolicSpace.held_at_zero = True
+            elif self.mode == "parallel":
+                self.symbolicSpace.held_at_zero = True
+            # Wire siblings on the FIRST stage's ConceptualSpace so
+            # its forward can build the combined input from their
+            # event tensors. ``object.__setattr__`` bypasses
+            # nn.Module submodule tracking to avoid registering the
+            # spaces twice in the module tree.
+            first_cs = self.conceptualSpaces[0]
+            object.__setattr__(first_cs,
+                               'symbolicSpace_ref', self.symbolicSpace)
+            object.__setattr__(first_cs,
+                               'subsymbolicSpace_ref', self.subsymbolicSpace)
+        else:
+            self.subsymbolicSpace = None
 
         # No SyntacticSpace -- syntax is handled by Grammar centrally.
         self.syntacticSpace = None
@@ -4912,6 +4482,8 @@ class MentalModel(BaseModel):
         self.spaces.extend([self.inputSpace, self.perceptualSpace])
         self.spaces.extend(list(self.conceptualSpaces))
         self.spaces.extend(list(self.symbolicSpaces))
+        if self.subsymbolicSpace is not None:
+            self.spaces.append(self.subsymbolicSpace)
         self.spaces.extend([self.outputSpace])
         self.spaces.append(self.wordSpace)
 
@@ -4943,7 +4515,8 @@ class MentalModel(BaseModel):
 
     # -- Phase 2: Sequential pipeline ----------------------------------
 
-    def build_pipelines(self):
+
+    def _build_pipelines_per_stage(self):
         """Phase 2: stem/body/head pipelines for MentalModel.
 
         Pipeline shape (microbatch AR):
@@ -5033,6 +4606,14 @@ class MentalModel(BaseModel):
                     GrammarMergeGlue(stage_idx=t, initial_n=stage_n,
                                      is_last=(t == T - 1))
                 )
+            # SubsymbolicTee: side-effect tap on the conceptual subspace
+            # that runs the SubsymbolicSpace forward and passes the
+            # original concept_subspace through unchanged. Inserted
+            # only on the FIRST stage -- subsequent stages don't see
+            # the perceptual right-half. Phase 1 of the subsymbolic
+            # spec; multi-order subsymbolic emission is Phase 2 work.
+            if t == 0 and self.subsymbolicSpace is not None:
+                body_modules.append(SubsymbolicTee(self.subsymbolicSpace))
             body_modules.append(self.symbolicSpaces[t])
             body_modules.append(self.ss_caches[t])
 
@@ -5086,245 +4667,14 @@ class MentalModel(BaseModel):
             )
             self.pipeline_rev = None
 
-    # -- Order Partitions (Ramsification) -----------------------------
+    # MentalModel.End and MentalModel.Finish were dropped 2026-05-05:
+    # End() was identical to BasicModel.End; Finish() differed only in
+    # skipping the optional plotActivations call, which is gated on
+    # ``self.plot`` (False by default) so inheriting BasicModel.Finish
+    # is a no-op behavior change for the per-stage path.
 
-    @staticmethod
-    def _order_partitions(symbol_dim, conceptual_order):
-        """Compute geometric-decay partition boundaries for symbolSum.
 
-        Each conceptual order writes only to its designated slice,
-        so the symbolic space becomes self-describing: the position of
-        an activation reveals its conceptual order.
-
-        Partition sizes follow geometric decay -- lower (more fundamental)
-        orders occupy larger slices:
-            order 0: [0,      D//2)       <- 1/2 of symbol_dim
-            order 1: [D//2,   3D//4)      <- 1/4
-            order 2: [3D//4,  7D//8)      <- 1/8
-            ...
-            last order: remainder of D
-        """
-        partitions, start = [], 0
-        for t in range(conceptual_order):
-            if t == conceptual_order - 1:
-                end = symbol_dim
-            else:
-                end = start + max(1, symbol_dim // (2 ** (t + 1)))
-            partitions.append((start, end))
-            start = end
-        return partitions
-
-    @staticmethod
-    def _activation_order(activation, partitions):
-        """Return the order whose partition has the highest energy."""
-        # ``.norm()`` returns zero-dim tensors; stack instead of rewrapping
-        # via ``torch.tensor([...])`` to avoid the "copy-construct from a
-        # tensor" deprecation warning.
-        energies = torch.stack(
-            [activation[s:e].norm() for s, e in partitions])
-        return int(energies.argmax())
-
-    # -- Hierarchical Epistemic Architecture --------------------------
-
-    @staticmethod
-    def _conceptual_width_mode():
-        """Read ``architecture.conceptualWidth`` from XML; default
-        ``tapered``. Accepts ``tapered`` (geometric halving per
-        conceptual order, the historical behavior) or ``uniform``
-        (every level keeps the same n_vectors).
-        """
-        try:
-            value = TheXMLConfig.get("architecture.conceptualWidth", "tapered")
-            value = str(value).strip().lower() if value is not None else "tapered"
-        except Exception:
-            value = "tapered"
-        if value not in ("tapered", "uniform"):
-            value = "tapered"
-        return value
-
-    @staticmethod
-    def _level_shapes(n_vectors, dim, conceptual_order, width_mode="tapered"):
-        """Per-level (N_t, D_t) shapes across the conceptual-order stack.
-
-        Two width modes (set via XML ``architecture.conceptualWidth``):
-
-        ``tapered`` (default, historical) -- D stays constant; N halves
-            per level. Biological analogue: increasing receptive field
-            (V1->V2->V4->IT). Requires ``n_vectors`` to be divisible by
-            ``2^conceptual_order``.
-
-                percepts:  (N, D)
-                level 0:   (N/2, D)
-                level 1:   (N/4, D)
-                ...
-                level k:   (N/(2^(k+1)), D)
-
-        ``uniform`` -- N stays constant at every level. Useful when the
-            grammar is the only compositional structure (e.g.
-            XOR_grammar) and the per-level geometric reduction would
-            otherwise let downstream layers memorize the task without
-            using the chart's rule choices. Each level keeps the same
-            ``n_vectors`` width:
-
-                percepts:  (N, D)
-                level 0:   (N, D)
-                level 1:   (N, D)
-                ...
-                level k:   (N, D)
-        """
-        if width_mode == "uniform":
-            return [(int(n_vectors), int(dim)) for _ in range(conceptual_order)]
-        # Default: tapered (geometric halving).
-        shapes = []
-        for t in range(conceptual_order):
-            n = n_vectors // (2 ** (t + 1))
-            assert n > 0, \
-                f"Level {t}: n_vectors={n_vectors} not divisible by 2^{t+1}"
-            shapes.append((n, dim))
-        return shapes
-
-    def _butterfly_merge(self, x):
-        """Average-merge: [B, N, D] -> [B, N/2, D].
-
-        Averages adjacent vector pairs, keeping D constant and norms bounded.
-        Caches (left - right) differences in self._merge_diffs for exact
-        inversion in the reverse pass.
-        """
-        B, N, D = x.shape
-        assert N % 2 == 0, f"butterfly_merge requires even N, got {N}"
-        left = x[:, 0::2, :]    # [B, N/2, D]
-        right = x[:, 1::2, :]   # [B, N/2, D]
-        self._merge_diffs.append(left - right)
-        return (left + right) / 2
-
-    def _butterfly_unmerge(self, x):
-        """Exact inverse of average-merge: [B, N/2, D] -> [B, N, D].
-
-        Uses cached difference to recover both original vectors. When the
-        cached diff is None (is_last GrammarMergeGlue stage, which is a
-        forward-pass-through), this is a no-op to keep the reverse loop
-        count aligned with T without reshaping.
-        """
-        diff = self._merge_diffs.pop()  # left - right
-        if diff is None:
-            return x
-        left = x + diff / 2
-        right = x - diff / 2
-        B, N_half, D = left.shape
-        # Interleave left and right back to original ordering
-        out = torch.zeros(B, N_half * 2, D, device=x.device)
-        out[:, 0::2, :] = left
-        out[:, 1::2, :] = right
-        return out
-
-    def _bound_concept_input(self, x):
-        """Keep recurrent concept inputs inside ConceptualSpace's logit domain."""
-        if getattr(self.conceptualSpace, "nonlinear", False):
-            return x.clamp(min=-1 + epsilon, max=1 - epsilon)
-        return x
-
-    def _symbol_feedback_from_vectors(self, sym_vectors, n_feedback, feedback_dim):
-        """Project symbolic state back to the percept-shaped feedback tensor."""
-        feedback = sym_vectors
-        if feedback.shape[1] >= n_feedback:
-            feedback = feedback[:, -n_feedback:, :]
-        else:
-            pad = torch.zeros(
-                feedback.shape[0],
-                n_feedback - feedback.shape[1],
-                feedback.shape[2],
-                device=feedback.device,
-                dtype=feedback.dtype,
-            )
-            feedback = torch.cat([feedback, pad], dim=1)
-
-        if feedback.shape[-1] == feedback_dim:
-            return self._bound_concept_input(feedback)
-
-        norms = feedback.norm(dim=-1, keepdim=True)
-        return self._bound_concept_input(norms.expand(-1, -1, feedback_dim))
-
-    # -- Helpers -------------------------------------------------------
-
-    def Finish(self, data):
-        """Project through OutputSpace.
-
-        Output-range denormalization happens here (not in OutputSpace.forward)
-        so the space pipeline stays global-data-free.
-        """
-        if isinstance(data, torch.Tensor):
-            self.outputSpace.subspace.set_event(data)
-            data = self.outputSpace.subspace
-        self.outputs = self.outputSpace.forward(data)
-        if self.outputSpace.nonlinear_output:
-            outputData = self.outputs.materialize(mode="activation")
-        else:
-            outputData = self.outputs.materialize()
-        return self.normalizer.denormalize(outputData, which="output")
-
-    def End(self):
-        """Per-batch teardown. Counterpart to Start().
-
-        Cascades End() to every Space so cached per-batch state
-        (subspace event tensors, per-layer scratch) is released before
-        the next batch begins. Called from runBatch after
-        forward + reverse + loss have consumed the cached state.
-        """
-        for space in self.spaces:
-            if hasattr(space, 'End'):
-                space.End()
-
-    # -- Forward / reverse ----------------------------------------------
-
-    # ----- Sequential path helpers -----
-
-    def _is_ar_mode(self):
-        """True when the current config is AR (AR/ARUS/ARIR at training time)."""
-        is_runtime_arir = (
-            self.inputSpace.data is not None
-            and getattr(self.inputSpace.data, '_runtime_mode', None) == 'ARIR'
-        )
-        return (self.masked_prediction in ('AR', 'ARUS', 'ARIR')
-                and not is_runtime_arir)
-
-    def _extract_prediction_sequential(self, fwd_out):
-        """Materialize OutputSpace's subspace and denormalize to task range.
-
-        In AR mode (predictions collected into a list that runBatch
-        torch.stacks on dim=1), the nOutput=1 middle axis is squeezed
-        here so stack yields [B, N, D] and not [B, N, 1, D]. Non-AR
-        callers (returning predictions[0] directly) keep the 3D shape
-        so existing loss contracts hold.
-        """
-        if fwd_out is None:
-            return None
-        if self.outputSpace.nonlinear_output:
-            outputData = fwd_out.materialize(mode="activation")
-        else:
-            outputData = fwd_out.materialize()
-        if outputData is None:
-            return None
-        outputData = self.normalizer.denormalize(outputData, which="output")
-        is_ar = self.masked_prediction in ('AR', 'ARUS', 'ARIR')
-        if is_ar and outputData.dim() == 3 and outputData.shape[1] == 1:
-            outputData = outputData.squeeze(1)
-        return outputData
-
-    def _should_reconstruct(self):
-        """True when reverse reconstruction should run after the forward loop.
-
-        Only ARIR triggers an automatic reverse pass (input reconstruction).
-        Non-AR and AR/ARUS callers invoke `model.reverse()` explicitly.
-        """
-        return self.masked_prediction == 'ARIR'
-
-    def _run_reverse_sequential(self, last_forward_result):
-        """Case A reconstruction: run pipeline_rev once after the forward loop."""
-        if self.pipeline_rev is None or last_forward_result is None:
-            return None
-        return self.pipeline_rev(last_forward_result)
-
-    def forward(self, inputData):
+    def _forward_per_stage(self, inputData):
         """Microbatch AR forward via stem/body/head pipeline.
 
         Shape:
@@ -5476,7 +4826,17 @@ class MentalModel(BaseModel):
             pred = self.normalizer.denormalize(pred, which="output")
 
         # Reshape sym/percept events back to [B, K, ...] for downstream consumers.
-        sym_vectors = self.symbolicSpace.subspace.materialize()
+        # Prefer the symbol_cache's captured subspace (matches the
+        # legacy flat BasicModel path: when SymbolicSpace.passThrough
+        # is true, self.symbolicSpace.subspace is never written, so
+        # the cache's last_seen subspace -- which is the concept
+        # subspace flowing through -- is the right output to read).
+        sym_sub = (self.symbol_cache.last
+                   if self.symbol_cache is not None else None)
+        if sym_sub is not None:
+            sym_vectors = sym_sub.materialize()
+        else:
+            sym_vectors = self.symbolicSpace.subspace.materialize()
         if (K is not None and sym_vectors is not None
                 and sym_vectors.dim() == 3
                 and sym_vectors.shape[0] == B * K):
@@ -5572,7 +4932,7 @@ class MentalModel(BaseModel):
                 and svo is not None and lifting_layer is not None):
             s, v, o = svo
             self._universality_score = truth_layer.universality(
-                s, v, o, lifting_layer, self.symbolicSpace)
+                s, v, o, lifting_layer, self.symbolicSpace, model=self)
 
         # Downward head emission (S -> C). Use last window for K-axis.
         self._predicted_head = None
@@ -5604,6 +4964,72 @@ class MentalModel(BaseModel):
                 print(f"[writeSyntax] error: {e}", file=sys.stderr)
 
         return input_state, symbols, pred, reconstruction
+
+
+    def _reverse_per_stage(self, symbols, outputData):
+        sym_vec = self.symbolicSpace.subspace.materialize()
+        concepts_state = self.concepts
+
+        T = len(self.symbolicSpaces)
+
+        if self.useButterflies:
+            x = sym_vec
+            for t in reversed(range(T)):
+                self.symbolicSpaces[t].subspace.set_event(x)
+                x = self.symbolicSpaces[t].reverse(
+                    self.symbolicSpaces[t].subspace).materialize()
+                self.conceptualSpaces[t].subspace.set_event(x)
+                x = self.conceptualSpaces[t].reverse(
+                    self.conceptualSpaces[t].subspace).materialize()
+            self.perceptualSpace.subspace.set_event(x)
+            input_state = self.perceptualSpace.reverse(self.perceptualSpace.subspace)
+            self.inputs = self.inputSpace.reverse(input_state)
+            input_latent = input_state.materialize()
+            input_data = self.inputs.materialize()
+            return input_data, input_latent
+
+        if self.useGrammar == "all":
+            # Progressive-bottleneck: invert the pipeline order
+            # (conceptualSpaces[t] -> GrammarMergeGlue[t] -> symbolicSpaces[t])
+            # at each stage, bridging stages with symbolicSpaces[t-1].reverse.
+            self.symbols.set_event(sym_vec)
+            x = self.symbolicSpaces[T - 1].reverse(
+                self.symbols).materialize()
+            for t in reversed(range(T)):
+                fb = self._sym_feedbacks.pop()
+                if fb is not None:
+                    x = x - fb
+                x = self._butterfly_unmerge(x)
+                self.symbols.set_event(x)
+                concept_input_state = self.conceptualSpaces[t].reverse(self.symbols)
+                x = concept_input_state.materialize()
+                if t > 0:
+                    self.symbolicSpaces[t - 1].subspace.set_event(x)
+                    x = self.symbolicSpaces[t - 1].reverse(
+                        self.symbolicSpaces[t - 1].subspace).materialize()
+            concept_input_state.set_event(x)
+        else:
+            # Flat recurrent path: reverse sigma, subtract cached feedback.
+            concept_input_state = self.conceptualSpace.reverse(concepts_state)
+            if getattr(self, '_nonrams_sym_feedbacks', None):
+                fb = self._nonrams_sym_feedbacks[-1]
+                if fb is not None:
+                    recovered = concept_input_state.materialize() - fb
+                    concept_input_state.set_event(recovered)
+
+        # -- Shared tail: percept/input reverse --
+        concept_input = concept_input_state.materialize()
+        percepts_portion = concept_input[:, :self.nPercepts, :]
+
+        concept_input_state.set_event(percepts_portion)
+        input_state = self.perceptualSpace.reverse(concept_input_state)
+        self.inputs = self.inputSpace.reverse(input_state)
+        input_latent = input_state.materialize()
+        input_data = self.inputs.materialize()
+        return input_data, input_latent
+
+    # -- Grammar Learning (Phase 2) ------------------------------------
+
 
     def write_syntax_tree(self, path):
         """Append an XML syntax tree per batch row to ``path``.
@@ -5849,69 +5275,6 @@ class MentalModel(BaseModel):
             fh.write(ET.tostring(forward_el, encoding='unicode'))
             fh.write("\n")
 
-    def reverse(self, symbols, outputData):
-        sym_vec = self.symbolicSpace.subspace.materialize()
-        concepts_state = self.concepts
-
-        T = len(self.symbolicSpaces)
-
-        if self.useButterflies:
-            x = sym_vec
-            for t in reversed(range(T)):
-                self.symbolicSpaces[t].subspace.set_event(x)
-                x = self.symbolicSpaces[t].reverse(
-                    self.symbolicSpaces[t].subspace).materialize()
-                self.conceptualSpaces[t].subspace.set_event(x)
-                x = self.conceptualSpaces[t].reverse(
-                    self.conceptualSpaces[t].subspace).materialize()
-            self.perceptualSpace.subspace.set_event(x)
-            input_state = self.perceptualSpace.reverse(self.perceptualSpace.subspace)
-            self.inputs = self.inputSpace.reverse(input_state)
-            input_latent = input_state.materialize()
-            input_data = self.inputs.materialize()
-            return input_data, input_latent
-
-        if self.useGrammar == "all":
-            # Progressive-bottleneck: invert the pipeline order
-            # (conceptualSpaces[t] -> GrammarMergeGlue[t] -> symbolicSpaces[t])
-            # at each stage, bridging stages with symbolicSpaces[t-1].reverse.
-            self.symbols.set_event(sym_vec)
-            x = self.symbolicSpaces[T - 1].reverse(
-                self.symbols).materialize()
-            for t in reversed(range(T)):
-                fb = self._sym_feedbacks.pop()
-                if fb is not None:
-                    x = x - fb
-                x = self._butterfly_unmerge(x)
-                self.symbols.set_event(x)
-                concept_input_state = self.conceptualSpaces[t].reverse(self.symbols)
-                x = concept_input_state.materialize()
-                if t > 0:
-                    self.symbolicSpaces[t - 1].subspace.set_event(x)
-                    x = self.symbolicSpaces[t - 1].reverse(
-                        self.symbolicSpaces[t - 1].subspace).materialize()
-            concept_input_state.set_event(x)
-        else:
-            # Flat recurrent path: reverse sigma, subtract cached feedback.
-            concept_input_state = self.conceptualSpace.reverse(concepts_state)
-            if getattr(self, '_nonrams_sym_feedbacks', None):
-                fb = self._nonrams_sym_feedbacks[-1]
-                if fb is not None:
-                    recovered = concept_input_state.materialize() - fb
-                    concept_input_state.set_event(recovered)
-
-        # -- Shared tail: percept/input reverse --
-        concept_input = concept_input_state.materialize()
-        percepts_portion = concept_input[:, :self.nPercepts, :]
-
-        concept_input_state.set_event(percepts_portion)
-        input_state = self.perceptualSpace.reverse(concept_input_state)
-        self.inputs = self.inputSpace.reverse(input_state)
-        input_latent = input_state.materialize()
-        input_data = self.inputs.materialize()
-        return input_data, input_latent
-
-    # -- Grammar Learning (Phase 2) ------------------------------------
 
     def grammar_learning_step(self, inputTensor, optimizer):
         """Single grammar learning step: symbolic reconstruction loss.
@@ -5956,18 +5319,17 @@ class MentalModel(BaseModel):
         truth_layer = self._get_truth_layer()
         validity_loss = torch.tensor(0.0, device=recon_loss.device)
         if truth_layer is not None and len(truth_layer) > 0:
-            pi_layer = self.symbolicSpace.sigma
-            lum_before = self.symbolicSpace.luminosity(
-                pi_layer, truth_layer=truth_layer)
+            lum_before = float(self.Luminosity(truth_layer=truth_layer))
             # Check if reconstruction preserves luminosity
             # (temporarily store reconstructed symbols)
             saved_count = truth_layer.count.item()
             mean_sym = symbolSum_hat.mean(dim=(0, 1)).detach()
             if mean_sym.norm() > 1e-6:
                 truth_layer.record(mean_sym, degree=1.0, basis=self._get_basis())
-                lum_after = self.symbolicSpace.luminosity(
-                    pi_layer, truth_layer=truth_layer)
-                validity_loss = torch.relu(lum_before - lum_after)
+                lum_after = float(self.Luminosity(truth_layer=truth_layer))
+                validity_loss = torch.tensor(
+                    max(0.0, lum_before - lum_after),
+                    device=recon_loss.device)
                 truth_layer.count.fill_(saved_count)
                 truth_layer.truths[saved_count:] = 0
 
@@ -5989,6 +5351,7 @@ class MentalModel(BaseModel):
     # -- Bidirectional Reasoning Loop (Phase 3) ------------------------
 
     @torch.no_grad()
+
     def reason(self, givens, target=None, direction='forward', max_steps=8):
         """Bidirectional reasoning loop.
 
@@ -6030,8 +5393,7 @@ class MentalModel(BaseModel):
                 truth_layer.record(givens.detach(), degree=1.0, basis=basis)
 
             for step in range(max_steps):
-                lum_before = self.symbolicSpace.luminosity(
-                    pi_layer, truth_layer=truth_layer)
+                lum_before = float(self.Luminosity(truth_layer=truth_layer))
 
                 # Extrapolate new truths
                 result = self.extrapolate(max_new=16,
@@ -6040,7 +5402,7 @@ class MentalModel(BaseModel):
                     'step': step,
                     'added': len(result['added']),
                     'rejected': len(result['rejected']),
-                    'luminosity': lum_before.item(),
+                    'luminosity': lum_before,
                 })
 
                 # Check target if provided
@@ -6086,6 +5448,15 @@ class MentalModel(BaseModel):
 
             return {'proved': False, 'confidence': 0.0,
                     'steps': len(trace), 'trace': trace}
+
+TheBasicModel = BasicModel()
+
+# MentalModel was merged into BasicModel on 2026-05-05. The legacy
+# name remains as a module-level alias so existing imports and XML
+# configs that reference ``MentalModel`` keep working; the per-stage
+# / butterfly / grammar pipeline is selected by ``architecture.type``
+# (mental | basic) in XML, not by class identity.
+MentalModel = BasicModel
 TheMentalModel = MentalModel()
 
 class ModelFactory:

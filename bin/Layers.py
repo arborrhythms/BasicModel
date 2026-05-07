@@ -3137,6 +3137,47 @@ class SwapLayer(GrammarLayer):
         return self.reverse(parent)
 
 
+class CopyLayer(GrammarLayer):
+    """``S -> copy(S, S)`` -- copy the left argument to the parent slot.
+
+    Phase 1b dual of `SwapLayer`: forward returns ``left`` -- the
+    left operand takes the canonical (parent) slot, discarding the
+    right operand.  Lossy (the original right is unrecoverable);
+    reverse is the symmetric ``(parent, parent)`` pseudo-inverse
+    shared with `SwapLayer`.
+
+    Parameter-free.  Like `swap`, the gradient signal that trains
+    `copy` flows through ``Grammar.rule_probability('copy')`` and
+    the chart's CKY pair-selection state — the standard mechanism
+    already differentiable under the prediction loss.
+
+    Naming and arity dual to `swap`:
+        swap.forward(a, b) -> b      copy.forward(a, b) -> a
+        swap.reverse(p)    -> (p, p) copy.reverse(p)    -> (p, p)
+    """
+    rule_name        = "copy"
+    arity            = 2
+    invertible       = False
+    lossy            = True
+    tier             = 'S'
+    reads_activation = False
+
+    def __init__(self):
+        super().__init__(0, 0)
+
+    def forward(self, left, right):
+        return left
+
+    def reverse(self, parent):
+        return parent, parent
+
+    def compose(self, left, right):
+        return self.forward(left, right)
+
+    def generate(self, parent):
+        return self.reverse(parent)
+
+
 class QueryLayer(GrammarLayer):
     """``S -> query(S, S)`` -- mereological-truth query "is A part
     of B?" answered against the explicit knowledge in the
@@ -3237,6 +3278,7 @@ GRAMMAR_LAYER_CLASSES = {
     'true':         TrueLayer,
     'false':        FalseLayer,
     'swap':         SwapLayer,
+    'copy':         CopyLayer,           # Phase 1b: S-tier dual of swap
     'query':        QueryLayer,
     # 'absorb' removed 2026-05-04: the absorb / sentence-marker
     # behavior is a base-class method on ``GrammarLayer`` itself, so
@@ -4499,6 +4541,63 @@ class ImpenetrableLayer(Layer):
 
         return total
 
+
+# Default Gaussian region width for Phase 1b introspective grammar layers.
+# `area` and `luminosity` use this when the slot has no calibrated extent
+# attached.  Matches `Spaces._DEFAULT_SYMBOL_SIGMA`.
+_DEFAULT_SUBSYMBOLIC_SIGMA = 0.1
+
+
+def _gaussian_kernel_overlap(X, Y, sigma_x, sigma_y, eps=1e-8):
+    """Gaussian kernel overlap: ``exp(-d^2 / 2(sigma_x^2 + sigma_y^2))``.
+
+    Reference implementation for the contiguity / overlap kernel reused by
+    `Mereology.Area`, `Mereology.Luminosity`, and the existing
+    `Ops.corner_overlap` / `Ops.epsilon_delta` measures.
+
+    Args:
+        X: ``[N, D]`` left points.
+        Y: ``[M, D]`` right points.
+        sigma_x: scalar or ``[N]`` per-row sigma for X.
+        sigma_y: scalar or ``[M]`` per-row sigma for Y.
+
+    Returns:
+        ``[N, M]`` overlap matrix with values in ``(0, 1]``.
+    """
+    d2 = torch.cdist(X.unsqueeze(0), Y.unsqueeze(0)).squeeze(0) ** 2  # [N, M]
+    if torch.is_tensor(sigma_x):
+        sx = sigma_x
+    else:
+        sx = torch.full((X.shape[0],), float(sigma_x),
+                        device=X.device, dtype=X.dtype)
+    if torch.is_tensor(sigma_y):
+        sy = sigma_y
+    else:
+        sy = torch.full((Y.shape[0],), float(sigma_y),
+                        device=Y.device, dtype=Y.dtype)
+    denom = 2.0 * (sx.unsqueeze(1) ** 2 + sy.unsqueeze(0) ** 2) + eps
+    return torch.exp(-d2 / denom)
+
+
+def ste_answer(q, f):
+    """Straight-through-estimator wrapper for non-differentiable lookups.
+
+    Forward returns ``f`` (the discrete answer); backward routes the
+    gradient through ``q`` (the differentiable query).  Used for
+    Mereonomy / TruthLayer reads on questions so the question-formation
+    path receives gradient.
+
+    Args:
+        q: differentiable query tensor.
+        f: discrete answer tensor (same shape, no grad needed).
+
+    Returns:
+        Tensor that equals ``f`` in the forward pass and routes
+        gradient to ``q`` on backward.
+    """
+    return q + (f - q).detach()
+
+
 class TruthLayer(Layer):
     """Truth store on SymbolicSpace: encoded truth statements scaled by DoT.
 
@@ -4834,9 +4933,11 @@ class TruthLayer(Layer):
         """
         return v[..., 1::2]
 
-    # ``luminosity`` / ``area`` live on SymbolicSpace (see
-    # SymbolicSpace.luminosity, SymbolicSpace.area) — those are properties
-    # of the symbol field, not the truth store itself.
+    # ``luminosity`` / ``area`` are now on the Mereology mixin
+    # (bin/Mereology.py) -- callable as ``model.Luminosity()`` /
+    # ``model.Area()`` on any concrete model.  TruthLayer no longer
+    # carries its own luminosity surface; consumers either go through
+    # the model or call ``Ops.hyperrectangle_volume`` directly.
 
     def darkness(self, pi_layer=None) -> torch.Tensor:
         """Diagnostic: ||relu(min(negative_poles(truths)))||.
@@ -4977,7 +5078,8 @@ class TruthLayer(Layer):
 
     # -- Universality (Golden Rule) ------------------------------------
 
-    def universality(self, subject, verb, obj, lifting_layer, symbolic_space):
+    def universality(self, subject, verb, obj, lifting_layer, symbolic_space,
+                     model=None):
         """Golden rule: measure luminosity change from K(X,Y) + K(Y,X).
 
         1. Compute luminosity_before (baseline truth brightness).
@@ -4995,13 +5097,19 @@ class TruthLayer(Layer):
             obj: [B, N, D] object concepts.
             lifting_layer: LiftingLayer for verb application.
             symbolic_space: SymbolicSpace for projection.
+            model: ``Mereology``-mixed model providing
+                ``Luminosity(truth_layer=...)``.  Required for the
+                measure; when omitted (legacy callers) the method
+                returns ``0.0`` so universality drops out of the
+                training signal cleanly.
 
         Returns:
-            Scalar universality score.
+            Scalar universality score (Python float).
         """
+        if model is None or not hasattr(model, 'Luminosity'):
+            return 0.0
         ss = symbolic_space
-        pi = ss.sigma
-        luminosity_before = self.luminosity(pi)
+        luminosity_before = float(model.Luminosity(truth_layer=self))
 
         # K(X, Y): original action SVO
         result_svo = lifting_layer.forward_transitive_svo(
@@ -5023,7 +5131,7 @@ class TruthLayer(Layer):
         self.record(svo_syms.mean(dim=(0, 1)).detach(), degree=1.0, basis=basis)
         self.record(ovs_syms.mean(dim=(0, 1)).detach(), degree=1.0, basis=basis)
 
-        luminosity_after = self.luminosity(pi)
+        luminosity_after = float(model.Luminosity(truth_layer=self))
 
         # Restore truth store
         self.count.fill_(saved_count)
@@ -5506,24 +5614,10 @@ class TruthLayer(Layer):
         assert len(tl) == 2
 
         # -- Luminosity --------------------------------------------
-        # Luminosity = ||min(truths)|| -- conjunction then norm
-        tl2 = TruthLayer(D, max_truths=64)
-        # All-positive truth -> luminosity is the norm of the min
-        pos = torch.ones(D) * 0.5
-        tl2.record(pos, degree=1.0)
-        lum = tl2.luminosity()
-        assert lum.item() > 0, f"single positive truth should have lum > 0, got {lum}"
-
-        # Adding a contradictory truth (negative) should lower luminosity
-        neg = torch.ones(D) * 0.5
-        tl2.record(neg, degree=-1.0)
-        lum2 = tl2.luminosity()
-        assert lum2 < lum, (
-            f"contradictory truth should lower luminosity: {lum2} >= {lum}")
-
-        # Empty truth layer -> luminosity = 0
-        tl_empty = TruthLayer(D, max_truths=64)
-        assert tl_empty.luminosity().item() == 0.0
+        # Luminosity is now a Mereology measure on the model itself
+        # (see bin/Mereology.py); the standalone TruthLayer.luminosity
+        # surface was removed when SymbolicSpace.luminosity migrated.
+        # The new measure is exercised in test/test_mereology.py.
 
         # -- Consistency -------------------------------------------
         tl3 = TruthLayer(D, max_truths=64)
@@ -5567,11 +5661,14 @@ class TruthLayer(Layer):
         mock_ss = _MockSS()
         lifting = LiftingLayer(nVerbs=8, nDim=D)
 
+        # Universality requires a Mereology-mixed model for the
+        # luminosity measure; without one (this is a unit test that
+        # builds a bare TruthLayer) the method returns 0.0 cleanly.
         u_score = tl5.universality(S, V, O, lifting, mock_ss)
-        assert isinstance(u_score, torch.Tensor), "universality should return tensor"
-        # Score should be finite
-        assert torch.isfinite(u_score), f"universality NaN/Inf: {u_score}"
-        # Truth store should be restored
+        assert u_score == 0.0, (
+            "universality without `model=` should return 0.0; "
+            f"got {u_score}")
+        # Truth store should be untouched on the no-model fast path.
         assert len(tl5) == 1, f"truth store not restored: {len(tl5)}"
 
         print("TruthLayer tests passed.")
@@ -7012,6 +7109,90 @@ class Ops:
                 f"expected 'inf' or 'l2'")
 
         return eps / delta.clamp_min(eps_floor)
+
+    @staticmethod
+    def hyperrectangle_volume(boxes, eps=1e-6):
+        """Per-leaf hyperrectangle volume from `[pos, neg]` corner bivectors.
+
+        Companion to :meth:`Ops.corner_overlap` and
+        :meth:`Ops.epsilon_delta`; same input contract.
+
+        Args:
+            boxes: ``[..., n_axes, 2]`` -- last dim is the bivector
+                pair, the preceding dim is the axis count.  Per axis
+                ``d`` the side length is ``pos_d + |neg_d|`` (matching
+                the box-diameter convention used by
+                ``Ops.epsilon_delta.pair_diam``).  Leading dims are
+                preserved.
+            eps: axes whose side ``< eps`` drop out of the active
+                subspace (the rectangle is effectively
+                lower-dimensional in that channel).
+
+        Returns:
+            ``[...]`` scalar volume per leading-batch element.
+            Volume = product of active-axis sides.  An empty active
+            subspace returns ``0``.
+        """
+        if boxes.shape[-1] != 2:
+            raise ValueError(
+                f"Ops.hyperrectangle_volume: expected last dim == 2 "
+                f"bivector pair, got {tuple(boxes.shape)}")
+        sides = boxes[..., 0] + boxes[..., 1].abs()           # [..., n_axes]
+        active = sides > eps
+        # Replace inactive axes' side with 1 so they are neutral in
+        # the product; volume returns 0 only when *no* axis is active.
+        sides_for_product = torch.where(active, sides,
+                                         torch.ones_like(sides))
+        any_active = active.any(dim=-1)
+        vol = sides_for_product.prod(dim=-1)
+        return torch.where(any_active, vol, torch.zeros_like(vol))
+
+    @staticmethod
+    def hyperrectangle_overlap_volume(a, b, eps=1e-6):
+        """Shared volume of two hyperrectangles in ``[pos, neg]`` form.
+
+        Companion to :meth:`Ops.corner_overlap` (binary corner test) —
+        this op returns the actual shared volume, not just an overlap
+        indicator.
+
+        Per axis ``d`` the boxes' intervals are ``[-|a_neg|, +a_pos]``
+        and ``[-|b_neg|, +b_pos]``.  Shared interval =
+        ``max(-|a_neg|, -|b_neg|)`` to ``min(a_pos, b_pos)``;
+        width = ``max(0, hi - lo)``.  Axes where either box's side
+        ``< eps`` drop out (the rectangle has no extent there).
+        Volume = product over the remaining axes' shared widths.
+
+        Args:
+            a, b: ``[..., n_axes, 2]`` bivector tensors with matching
+                leading dims.
+            eps: axis-active threshold.
+
+        Returns:
+            ``[...]`` shared-volume scalar per leading element.
+        """
+        if a.shape[-1] != 2 or b.shape[-1] != 2:
+            raise ValueError(
+                f"Ops.hyperrectangle_overlap_volume: expected last "
+                f"dim == 2 bivector pair, got a={tuple(a.shape)} "
+                f"b={tuple(b.shape)}")
+        a_lo = -a[..., 1].abs()
+        a_hi =  a[..., 0]
+        b_lo = -b[..., 1].abs()
+        b_hi =  b[..., 0]
+        a_side = a[..., 0] + a[..., 1].abs()
+        b_side = b[..., 0] + b[..., 1].abs()
+        active = (a_side > eps) & (b_side > eps)              # [..., n_axes]
+
+        lo = torch.maximum(a_lo, b_lo)
+        hi = torch.minimum(a_hi, b_hi)
+        width = (hi - lo).clamp(min=0.0)                      # [..., n_axes]
+        # Inactive axes are neutral (side = 1) in the product but
+        # only when at least one axis is active overall.
+        widths_for_product = torch.where(active, width,
+                                          torch.ones_like(width))
+        any_active = active.any(dim=-1)
+        vol = widths_for_product.prod(dim=-1)
+        return torch.where(any_active, vol, torch.zeros_like(vol))
 
     @staticmethod
     def _conjunction_kernel(x, y, monotonic=False):

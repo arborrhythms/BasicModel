@@ -4182,7 +4182,8 @@ class WordSpace(Space):
                              truth_loss_weight=0.0,
                              allow_excluded_middle=1,
                              allow_contradiction=0,
-                             balance_weight=0.1):
+                             balance_weight=0.1,
+                             model=None):
         """Apply the WordSpace-owned TruthLayer modulation to a loss.
 
         The transform has two parts:
@@ -4219,8 +4220,19 @@ class WordSpace(Space):
         if self.truth_layer is None or len(self.truth_layer) == 0:
             return total_loss
 
-        lum = symbolic_space.luminosity(symbolic_space.layer,
-                                        truth_layer=self.truth_layer)
+        # Luminosity is now a Mereology measure on the model itself.
+        # When the caller supplies a `model` reference we delegate to
+        # `model.Luminosity(truth_layer=...)`; otherwise (legacy path
+        # without a model handle) we fall back to a neutral 0.0 score
+        # so the multiplicative modulation degenerates to the
+        # universality-only term -- preserving training stability for
+        # callers that haven't been migrated yet.
+        if model is not None and hasattr(model, 'Luminosity'):
+            lum_val = float(model.Luminosity(truth_layer=self.truth_layer))
+        else:
+            lum_val = 0.0
+        lum = torch.tensor(lum_val, device=total_loss.device,
+                           dtype=total_loss.dtype)
         lum_norm = lum.clamp(0, 1)
         if universality_score is not None:
             u_norm = universality_score.clamp(-1, 1)

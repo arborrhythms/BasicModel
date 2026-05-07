@@ -1253,10 +1253,23 @@ class Codebook(Basis):
                 else:
                     init = init / init.abs().amax(
                         dim=-1, keepdim=True).clamp(min=1e-8)
+                # Defensive clamp: even after the per-row max-abs
+                # rescale above, FP edge cases (e.g. amax exactly
+                # equal to 1.0 + ULP) can leave entries fractionally
+                # outside [-1, 1]. The downstream Space ``normalize``
+                # range check uses a strict 1e-2 tolerance, so we
+                # tighten the codebook to literal [-1, 1] here.
+                init = init.clamp(-1.0, 1.0)
                 self.vq.codebook = init
             self.setW(self.vq.codebook)
         else:
-            W = torch.randn([nVec, self.nDim], device=TheDevice.get())
+            # Clamp the random init to [-1, 1] before per-row
+            # normalization so downstream range checks see strictly
+            # bounded codebook prototypes (the L2 normalize below
+            # could otherwise yield rows whose unit-norm scaling
+            # leaves a single entry slightly above 1 in fp32).
+            W = torch.randn([nVec, self.nDim],
+                            device=TheDevice.get()).clamp(-1.0, 1.0)
             for i in range(nVec):
                 W[i, :] = self.normalize(W[i, :]).squeeze(0)
             self.setW(W)
@@ -2872,6 +2885,12 @@ class SubSpace(nn.Module):
         # active[b, n, m] = index into modality m's Basis for position n.
         # activation: [B, N] strength gate -- materialize() = event * activation.
         self._active = None  # [B, N, M] index tensor
+        # Mereology measure family (Contiguous / Continuous / Peaceful /
+        # Area / Luminosity) writes per-analysis-pass records here on
+        # the conceptualSpace's subspace; other subspaces leave it None.
+        # Format: list[dict] with keys 'step', 'area', 'luminosity',
+        # 'intersection', 'union'.
+        self.knowing = None
         self.batch = 0
 
         # Pipeline-carried context. These travel with the subspace through
@@ -4276,64 +4295,6 @@ class SubSpace(nn.Module):
             self.normalize(kind, target=target, normalize=True, reverse=True)
         elif kind == "output" and is_vector:
             self.put(target, self.normalizer.normalize(x, which="output"))
-
-    # ------------------------------------------------------------------
-    # Luminosity
-    # ------------------------------------------------------------------
-
-    def luminosity(self, x=None, target="what", reduce="batch"):
-        """Measure contrast (signal energy) as MSE against zero.
-
-        For activations in [-1, 1], luminosity ranges [0, 1].
-        A zero vector has luminosity 0 (nothing); a fully saturated
-        vector has luminosity ~1 (everything).
-
-        Args:
-            x: tensor to measure. If None, uses self.select(target).
-            target: encoding target to measure.
-            reduce: "batch" -> mean over objects -> [B] (default),
-                    "vector" -> per-object -> [B, N].
-
-        Returns:
-            Tensor of luminosity values.
-        """
-        if x is None:
-            x = self.select(target)
-        if x is None or x.numel() == 0:
-            return torch.tensor(0.0, device=TheDevice.get())
-        mse = (x ** 2).mean(dim=-1)
-        if reduce == "batch" and mse.ndim > 1:
-            return mse.mean(dim=-1)  # [B]
-        return mse  # [B, N] or scalar
-
-    def luminosity_match(self, x1, x2, target="what", reduce="batch"):
-        """Measure truth: the magnitude of agreement between two signals.
-
-        Agreement at each dimension is the smaller magnitude when signs
-        match (both confirm at least that much).  When signs disagree,
-        agreement is zero -- the representations contradict.
-
-        The MSE of the agreement vector gives the luminosity of truth
-        between the two signals.
-
-        Args:
-            x1, x2: tensors to compare (same shape).
-            target: encoding target (for documentation; tensors are
-                    passed explicitly).
-            reduce: "batch" -> [B], "vector" -> [B, N].
-
-        Returns:
-            Tensor of truth-luminosity values.
-        """
-        agreement = torch.where(
-            x1 * x2 >= 0,
-            torch.min(x1.abs(), x2.abs()),
-            torch.zeros_like(x1),
-        )
-        mse = (agreement ** 2).mean(dim=-1)
-        if reduce == "batch" and mse.ndim > 1:
-            return mse.mean(dim=-1)
-        return mse
 
     # ------------------------------------------------------------------
     # Encoding helpers
@@ -7430,11 +7391,11 @@ class ConceptualSpace(Space):
         pass
 
 
-# Default Gaussian region width for SymbolicSpace.area / .luminosity.  Each
-# symbol contributes a normalised area of sigma**2 (clamped to [0, 1]); the
-# pairwise overlap kernel uses the same sigma.  Tunable per-call via the
-# ``sigma`` argument or per-instance via ``self.activeSigma``.  0.1 keeps
-# area small enough that the [0, 1] saturation only kicks in at ~100 truths.
+# Default Gaussian region width retained for callers that calibrate
+# extents by Gaussian σ. The legacy area / luminosity that consumed it
+# migrated to the Mereology mixin (bin/Mereology.py) with a
+# hyperrectangle-volume formula; this constant remains for
+# backward-compat with any consumer that still keys on it.
 _DEFAULT_SYMBOL_SIGMA = 0.1
 
 
@@ -7774,6 +7735,30 @@ class SymbolicSpace(Space):
             return sigma2.reverse(y)
         return self.sigma.reverse(y)
 
+    def decode_to_concept(self, symbol_state):
+        """Decode a SymbolicSpace event/activation back to its concept-
+        space projection via :meth:`_sigma_reverse`.
+
+        Used by :meth:`Mereology.Luminosity` when stored truths must
+        be folded against a higher-order concept; the truths live in
+        symbol-space and need to be reprojected to conceptual-space
+        first.
+
+        Args:
+            symbol_state: ``[..., D_S]`` tensor whose last dim matches
+                this SymbolicSpace's symbol-side width.  Returns the
+                input unchanged when the reverse is not callable.
+
+        Returns:
+            ``[..., D_C]`` tensor in conceptual coordinates.
+        """
+        if symbol_state is None or not torch.is_tensor(symbol_state):
+            return symbol_state
+        try:
+            return self._sigma_reverse(symbol_state)
+        except Exception:
+            return symbol_state
+
     def l1_proximal(self, x):
         """Soft-threshold activations used as a sparsity bias.
 
@@ -7856,137 +7841,12 @@ class SymbolicSpace(Space):
         subspace.activation.setW(pos - neg)
         return subspace
 
-    def area(self, sigma=None) -> float:
-        """Normalised area of a single symbol's Gaussian region.
-
-        A symbol occupies a Gaussian region with width ``sigma``; its
-        normalised area is ``sigma ** 2`` clamped to ``[0, 1]``.  When
-        ``sigma`` is ``None`` falls back to ``self.activeSigma`` (if
-        populated) and finally ``_DEFAULT_SYMBOL_SIGMA``.
-
-        Used as the per-truth area term in :meth:`luminosity`, and as a
-        general-purpose extent measure for any consumer that needs the
-        footprint of a single symbol in the symbolic field.
-
-        Args:
-            sigma: optional override of the Gaussian width.  Scalars and
-                tensors are both accepted; tensors are reduced via mean.
-
-        Returns:
-            Float in ``[0, 1]``.
-        """
-        if sigma is None:
-            sigma = (self.activeSigma if self.activeSigma is not None
-                     else _DEFAULT_SYMBOL_SIGMA)
-        if torch.is_tensor(sigma):
-            sigma = float(sigma.mean().item())
-        return min(float(sigma) ** 2, 1.0)
-
-    def luminosity(self, pi_layer=None, sigma=None,
-                   truth_layer=None) -> torch.Tensor:
-        """Luminosity of the symbolic truth field.
-
-        ::
-
-            luminosity = totalArea - overlapArea * |t_A - t_B|
-
-        where:
-          * ``totalArea`` — ``min(n * area(sigma), 1)``, the saturated sum
-            of per-symbol Gaussian areas.
-          * ``overlapArea`` — mean pairwise Gaussian-kernel overlap between
-            stored truths in symbol-coordinate space (``exp(-d^2 / 4σ^2)``).
-          * ``|t_A - t_B|`` — mean absolute difference in Degree-of-Truth
-            (DoT) between pairs.
-
-        DoT extraction from each stored row:
-          * ``D == 1``  — stored value is the scalar DoT directly.
-          * ``D == 2``  — ``[pos, neg]`` bivector → ``pos - neg``.
-          * ``D == 2K`` — paired-index ``[pos_0, neg_0, ...]`` storage →
-            mean per-concept ``(pos - neg)``.
-          * other       — fall back to ``stored.mean(-1)``.
-
-        Range: ``[-1, 1]``.  High = consistent committed field; low =
-        overlapping contradictory assertions.  See
-        ``doc/plans/2026-05-04-resolve-luminosity-handoff.md`` for the
-        derivation.
-
-        Args:
-            pi_layer: optional PiLayer to project from symbolic to
-                conceptual dim before measuring overlap.
-            sigma: override Gaussian region width (otherwise uses
-                ``self.activeSigma`` or ``_DEFAULT_SYMBOL_SIGMA``).
-            truth_layer: explicit truth store to read.  Defaults to
-                ``self.wordSpace.truth_layer`` (the canonical home; see
-                Language.py wiring).
-
-        Returns:
-            Scalar luminosity tensor on the truths' device, or ``0`` when
-            no truths have been recorded or no truth store is reachable.
-        """
-        if truth_layer is None:
-            ws = getattr(self, 'wordSpace', None)
-            truth_layer = getattr(ws, 'truth_layer', None) if ws is not None else None
-        if truth_layer is None:
-            return torch.tensor(0.0)
-
-        n = int(truth_layer.count.item())
-        if n == 0:
-            return torch.tensor(0.0, device=truth_layer.truths.device)
-
-        stored = truth_layer.truths[:n]                       # (n, D)
-        if pi_layer is not None:
-            stored = pi_layer.reverse(stored)
-
-        D = stored.shape[-1]
-        if D == 1:
-            dot = stored[..., 0]
-        elif D == 2:
-            dot = stored[..., 0] - stored[..., 1]
-        elif D % 2 == 0:
-            pos = stored[..., 0::2]                           # (n, K)
-            neg = stored[..., 1::2]                           # (n, K)
-            dot = (pos - neg).mean(dim=-1)                    # (n,)
-        else:
-            dot = stored.mean(dim=-1)
-        dot = dot.clamp(-1.0, 1.0)
-
-        region_area = self.area(sigma)
-        total_area = min(n * region_area, 1.0)
-
-        if n == 1:
-            return torch.tensor(float(total_area), device=stored.device)
-
-        # Pairwise distance² in stored coordinate space.  O(n²) memory; the
-        # truth store is bounded by ``max_truths`` (default 1024) so this
-        # is a fixed ceiling even for full stores.
-        diff = stored.unsqueeze(1) - stored.unsqueeze(0)      # (n, n, D)
-        d2 = (diff * diff).sum(dim=-1)                        # (n, n)
-
-        sig2 = max(region_area, 1e-12)                        # σ² (= region_area)
-        denom = 4.0 * sig2 + 1e-8                             # 2(σ² + σ²) = 4σ²
-        overlap = torch.exp(-d2 / denom)                      # (n, n) ∈ (0, 1]
-
-        # Pairwise |Δdot|, only counting i < j to avoid double-counting and
-        # the trivial self-overlap on the diagonal.
-        ta = dot.unsqueeze(1)                                 # (n, 1)
-        tb = dot.unsqueeze(0)                                 # (1, n)
-        disagreement = (ta - tb).abs()                        # (n, n) ∈ [0, 2]
-
-        mask = torch.triu(
-            torch.ones(n, n, dtype=torch.bool, device=stored.device),
-            diagonal=1,
-        )
-        pairs = int(mask.sum().item())
-        if pairs == 0:
-            return torch.tensor(float(total_area), device=stored.device)
-
-        mask_f = mask.to(stored.dtype)
-        overlap_area_mean = (overlap * mask_f).sum() / pairs       # ∈ [0, 1]
-        disagreement_mean = (disagreement * mask_f).sum() / pairs  # ∈ [0, 2]
-
-        penalty = (overlap_area_mean * disagreement_mean).item()
-        lum = total_area - penalty
-        return torch.tensor(float(lum), device=stored.device)
+    # ``area()`` and ``luminosity()`` were removed when the measure
+    # family migrated to the :class:`Mereology` mixin (see
+    # ``bin/Mereology.py``).  Callers should use ``model.Area()`` /
+    # ``model.Luminosity()`` (or invoke the underlying
+    # :func:`Ops.hyperrectangle_volume` /
+    # :func:`Ops.hyperrectangle_overlap_volume` kernels directly).
 
     def inside(self, point, symbol_idx=None):
         """Is ``point`` within the region defined by a symbol's extent?

@@ -1,16 +1,29 @@
 
 
-* Mereological Reasoning
-  Is subject predicate?
-  Represent queries as asking part( x,y )
-  Store the question in LTM explicitly so the answer can be computed
-* Prediction over sentences needs clarification
-* Store explicit parthood on WordSpace when encountering IS of definition: part ( x,y )
-  That should only happen when sentence confidence is high.
-* Add truth
-  Subsymbolic reasoning by finding the parts/wholes
-  Compute degree of truth:
-  Verify any answer given to the user against the Truth
+Mereonomy (per-symbol DoT graph, Phase 1c+ in the older roadmap).
+
+Sentence-buffer / sentence-prediction (Phase 1d).
+
+Replacing the existing Sigma / Pi parameter shapes (the linear maps
+ride over the wider tensors without architectural change; only the
+codebook surface and the snap pipeline are redesigned here).
+
+
+Sentences are sometimes composites of ideas.
+* For example, questions relate two ideas:
+  * Is subject predicate ?
+  * part( x, y ) ?
+* the IS of definition: equals ( x,y )
+  * Store explicit parthood on WordSpace's Mereonomy when encountering a definiton (please rename from MereologicalTree to mereonomy) 
+  * This should only happen when some measure of sentence confidence is high.
+
+Memory of previous sentences requires prediction relating one to the next
+* Store the sentences explicitly 
+* predict from one sentence to the next
+
+* Process truth statements
+  * truth statements should become conceptual bivectors (ideas) and/or meronymic relationships
+  * score the user's query in terms of the change in luminousity() vs the Truth
 
 
 ================================== April 24 ==================================
