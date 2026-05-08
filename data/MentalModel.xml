@@ -74,7 +74,18 @@
       <start>S</start>
       <grammar>
         <compose>
+          <!-- Per the 2026-05-07 rollback: explicit per-tier natural
+               folds (sigma at P / S, pi at C). Previously these were
+               supplied by the SpaceSyntacticLayer's default_rule
+               code-level fallback. -->
+          <percepts>
+            <rule>P = sigma(P)</rule>
+          </percepts>
+          <concepts>
+            <rule>C = pi(C)</rule>
+          </concepts>
           <symbols>
+            <rule>S = sigma(S)</rule>
             <!-- Sentence -->
             <rule>S = NP</rule>
             <rule>S = lift(NP, VP)</rule>

@@ -219,8 +219,61 @@ class WhereEncoding(QuadratureEncoding):
 
     A monotonic counter ``self.p`` assigns each object a unique position
     within a dataset pass; it must be reset between epochs to avoid overflow.
+
+    -----------------------------------------------------------------------
+    Codebook offset registry (post-rollback bivector-activation work)
+    -----------------------------------------------------------------------
+    ``.where`` doubles as a globally-unique key into the per-Space
+    codebook tables. Each codebook reserves a contiguous slice of the
+    where-space at construction; the slice is identified by an integer
+    offset and a fixed size (the codebook's ``nVectors``). All
+    codebooks share the same sinusoidal frequency
+    (``div_term = 2*pi / total_allocated``) so ``(sin, cos)`` decoding
+    is unambiguous across the union of slices.
+
+    The class-level registry is allocator-only -- it tracks how much
+    of the where-space has been claimed and by whom. The frequency
+    actually used at encode time is read from
+    :func:`global_max_val` so newly-registered codebooks can grow the
+    range without breaking existing offsets (the offset is a fixed
+    *count*; only the angular scaling shifts when the total grows).
     """
     p = 0
+
+    # Class-level codebook registry. List of (codebook_id, offset, n_vectors).
+    # Sequential allocation: each new codebook lands at the end of the
+    # current registry. Offsets stay stable across re-registrations of
+    # the same codebook id (idempotent for re-init).
+    _codebook_registry = []
+
+    @classmethod
+    def allocate_codebook_slice(cls, n_vectors):
+        """Reserve ``n_vectors`` contiguous where-space positions for
+        a new codebook. Returns the starting offset.
+
+        Sequential allocation: the new slice's offset is the sum of
+        ``n_vectors`` across all previously registered codebooks. Each
+        call appends a fresh entry; codebooks that go out of scope
+        leave their slice in the registry (the offset stays a stable
+        scalar, just unused). Tests that need a clean slate should
+        call :func:`reset_codebook_registry`.
+        """
+        offset = sum(n for _, n in cls._codebook_registry)
+        cls._codebook_registry.append((offset, int(n_vectors)))
+        return offset
+
+    @classmethod
+    def global_max_val(cls):
+        """Sum of ``n_vectors`` across all registered codebooks. The
+        sinusoidal ``div_term`` reads from this so the frequency
+        always covers the live where-space.
+        """
+        return max(1, sum(n for _, n in cls._codebook_registry))
+
+    @classmethod
+    def reset_codebook_registry(cls):
+        """Clear the registry (test/teardown helper)."""
+        cls._codebook_registry = []
 
     def __init__(self, maxP=0, nWhere=2, nWhen=0):
         if nWhere > 0:
@@ -1075,7 +1128,7 @@ class Codebook(Basis):
 
     def create(self, nInput, nVectors, nDim, customVQ=True, monotonic=True,
                passThrough=False, polarity=False, category=False,
-               invertible=False):
+               invertible=False, STE=False):
         super().create(
             nInput,
             nVectors,
@@ -1091,6 +1144,25 @@ class Codebook(Basis):
         # paths. SVD is lazily refreshed when ``setW`` invalidates it.
         self.invertible = bool(invertible)
         self._svd_dirty = True
+        # STE mode: when True, ``forward`` and ``reverse`` wrap the
+        # codebook snap with the straight-through estimator pattern --
+        # forward returns the hard snapped tensor, backward routes the
+        # encoder's gradient through the input identity. Lets quantized
+        # paths receive a smooth gradient signal without changing the
+        # forward semantics. Default False preserves the legacy
+        # detached-snap gradient behavior.
+        self.STE = bool(STE)
+        # Where-space offset: this codebook owns the where-space slice
+        # ``[where_offset, where_offset + nVectors)``. The slice is
+        # allocated sequentially via ``WhereEncoding.allocate_codebook_slice``
+        # so a global ``.where`` value uniquely identifies both the
+        # owning codebook and the prototype within it. Allocation is
+        # keyed on ``id(self)`` and is idempotent for re-init.
+        if not self.passThrough and self.nVectors > 0:
+            self.where_offset = WhereEncoding.allocate_codebook_slice(
+                self.nVectors)
+        else:
+            self.where_offset = 0
         if polarity and self.nVectors > 0:
             ids = torch.full((self.nVectors,), POLARITY_AFFIRM,
                              dtype=torch.long)
@@ -1204,7 +1276,21 @@ class Codebook(Basis):
         return torch.ones(self.vq.codebook_size, device=TheDevice.get())
 
     def addVectors(self, nVec=1, decay=0.9):
-        """Allocate ``nVec`` prototype entries via the in-repo VectorQuantize."""
+        """Allocate ``nVec`` prototype entries via the in-repo VectorQuantize.
+
+        Per the post-rollback bivector-activation contract, codebook
+        size is fixed at ``self.nVectors`` (the value declared at
+        construction). The ``WhereEncoding`` offset registry assumes
+        this -- the codebook's where-space slice is ``[offset, offset
+        + nVectors)`` and growing past ``nVectors`` would overrun the
+        next codebook's slice. Assert here so violations surface at
+        the call site instead of corrupting a downstream lookup.
+        """
+        assert nVec <= int(self.nVectors), (
+            f"Codebook.addVectors: requested {nVec} > nVectors "
+            f"({self.nVectors}); the where-space slice allocated for "
+            f"this codebook only covers nVectors prototypes."
+        )
         self.codebookSize = nVec
         if self.customVQ:
             # When ``architecture.codebookRetire`` is false (the default),
@@ -1704,6 +1790,14 @@ class Codebook(Basis):
         if topK and 0 < topK < act.shape[-1]:
             act = topk_by_magnitude_per_batch(act, k=topK)
         self.activation = act.detach() if torch.is_tensor(act) else act
+        # STE wrap: when ``self.STE`` is True the forward output is the
+        # hard snap (``x``) but the encoder's gradient flows through
+        # the original input identity. ``input + (x - input).detach()``
+        # equals ``x`` in forward and routes ``d/dinput = identity`` in
+        # backward. Shape-guarded: only wrap when input and snap match.
+        if (self.STE and torch.is_tensor(input) and torch.is_tensor(x)
+                and input.shape == x.shape and input.requires_grad):
+            x = input + (x - input).detach()
         self.setW(x)
         if _vspace is not None:
             _vspace.set_event(x, compute_activation=False)
@@ -1729,6 +1823,15 @@ class Codebook(Basis):
                 f"got shape {list(y.shape)}.")
         content = y.clone() if y.shape[-1] == self.nDim else y[:, :, :self.nDim].clone()
         content = self._snap_content(content, weight=self.getW(), nWhat=self.nDim)
+        # STE wrap on the reverse path: forward equals the snapped
+        # content, backward routes the gradient through the matching
+        # slice of ``y`` so the upstream consumer of the codebook
+        # reverse receives an identity gradient through the snap.
+        if (self.STE and torch.is_tensor(y) and torch.is_tensor(content)
+                and y.shape[-1] >= content.shape[-1]
+                and y.requires_grad):
+            y_slice = y[..., :content.shape[-1]]
+            content = y_slice + (content - y_slice).detach()
         self.setW(content)
         return content
 
@@ -2677,10 +2780,18 @@ class Embedding(Basis):
         """Decode output vector(s) via ``reverse()``.
 
         Args:
-            vector: [batch, 1, embeddingSize] or [batch, embeddingSize]
+            vector: [batch, 1, embeddingSize] or [batch, embeddingSize].
+                ``None`` is tolerated and produces an empty list -- the
+                upstream pipeline can produce a ``None`` outputPred when
+                the model has no trained output head (untrained / probe
+                configs); returning ``[]`` lets the caller render the
+                empty result rather than blowing up on a NoneType.attr
+                lookup.
         Returns:
             List of predicted words (one per batch element).
         """
+        if vector is None:
+            return []
         if vector.dim() == 2:
             vector = vector.unsqueeze(1)
         content = self.reverse(vector)
@@ -7276,14 +7387,14 @@ class ConceptualSpace(Space):
             return subspace
         self.subspace.copy_context(subspace)
         vspace = subspace
-        # SyntacticLayer is unconditional: its default rule fires
-        # ``PiLayer.forward(x)`` (the multiplicative log-domain
-        # AND-fold), exact mathematical replacement for the legacy
-        # ``y = self.pi(x)`` call. When the chart populates a
-        # C-tier rule sequence, the dispatcher fires those instead;
-        # in the default-only case (BasicModel-equivalent),
-        # ``WordSpace.compose`` skipped the chart so ``current_rules``
-        # is empty and the cursor falls through to ``default_rule``.
+        # SyntacticLayer is unconditional: it dispatches whatever the
+        # grammar XML specifies for the C tier (e.g. ``C = pi(C)`` from
+        # model.xml's default grammar) -- exact mathematical replacement
+        # for the legacy ``y = self.pi(x)`` call. Per the 2026-05-07
+        # rollback, ``WordSpace.compose`` populates ``current_rules``
+        # from the grammar XML in default-only / useGrammar='none' fast
+        # paths, so the cursor always finds the configured rule (no
+        # ``default_rule`` code-level fallback).
         x = self.forwardBegin(vspace, returnVectors=True)
         if self._right_half_dim > 0:
             # Combined input for the parallel re-entrant loops:
@@ -7503,12 +7614,14 @@ class SymbolicSpace(Space):
         self.conceptualSpace = conceptualSpace
         self.passThrough = passThrough
         self.nonlinear = nonlinear
-        # Symbols carry 4-valued (quaternary) truth in .what via a 2-dim
-        # bivector [pos_pole, neg_pole]. Override the inherited content
-        # width accordingly so the codebook row = 2 + nWhere + nWhen.
-        # See basicmodel/doc/BuddhistParallels.md for the tetralemma.
-        self.subspace.nWhat = 2
-        self.subspace.muxedSize = 2 + self.subspace.nWhere + self.subspace.nWhen
+        # Post-2026-05-07 rollback: SymbolicSpace inherits the natural
+        # ``nWhat == self.nDim`` and ``muxedSize`` from
+        # ``Space.__init__`` -- no leading [pos, neg] bivector pinned
+        # into the codebook. The per-prototype catuskoti bivector
+        # ``[B, V_S, 2]`` lives on ``subspace.activation`` instead and
+        # is populated by ``Codebook.forward(input, project=True)`` --
+        # the intrinsic snap. See doc/Spaces.md for the post-rollback
+        # geometry and doc/BuddhistParallels.md for the tetralemma.
         # PiLayer maps on the nDim axis: concept_dim+obj -> symbol_dim+obj.
         # nVectors passes through unchanged via batched matmul.
         nConceptDim = inputShape[1]     # concept_dim + obj (where+when)
@@ -7560,14 +7673,14 @@ class SymbolicSpace(Space):
             self.params = self.sigma.getParameters()
             self.layers = nn.ModuleList([self.sigma])
 
-        # Propositional negation slot: NEG sits AFTER Sigma at the
-        # SymbolicSpace output, gated on ``rule_probability("not(S)")``.
-        # ``NotLayer`` operates on the ``.what`` bivector ``[B, V, 2]``
-        # -- the dispatcher (SpaceSyntacticLayer) reads
-        # ``subspace.what.getW()`` and feeds the bivector tensor in.
-        # Same Layer-shaped interface as the parameterized fold
-        # operators -- uniform invocation from both bottom-up forward
-        # gating and top-down SyntacticLayer dispatch.
+        # Propositional negation slot: NEG sits at the SymbolicSpace
+        # output, gated on ``rule_probability("not(S)")``. ``NotLayer``
+        # operates on the per-prototype activation bivector ``[B, V_S, 2]``;
+        # the dispatcher (SpaceSyntacticLayer) reads
+        # ``subspace.activation.getW()`` and feeds the bivector tensor in.
+        # Same Layer-shaped interface as the parameterized fold operators
+        # -- uniform invocation from both bottom-up forward gating and
+        # top-down SyntacticLayer dispatch.
         self.propositional_negation = NotLayer()
         self.layers.append(self.propositional_negation)
 
@@ -7689,13 +7802,20 @@ class SymbolicSpace(Space):
     def _build_what_basis(self):
         """Symbol codebook on .what, monotonic. One row per symbol.
 
-        Row width = 2 + nWhere + nWhen. The leading 2 dims carry the
-        bivector [pos_pole, neg_pole] encoding the 4-valued truth of the
-        symbol (tetralemma: TRUE=[1,0], FALSE=[0,1], BOTH=[1,1],
-        NEITHER=[0,0]). Trailing nWhere+nWhen dims carry per-symbol
-        positional/temporal template info. Negation operates on the
-        leading 2 dims only (see BuddhistParallels.md for the catuskoti
-        mapping).
+        Row width = ``self.nDim`` (post-2026-05-07 rollback). Each row
+        is a free coefficient vector over the conceptual axes -- "how
+        much of concept_i is this symbol?". Where/when ride alongside
+        the encoding on the per-batch muxed event tensor; they don't
+        live inside the codebook itself.
+
+        The per-prototype catuskoti bivector ``[B, V_S, 2]``
+        (tetralemma: TRUE=[1,0], FALSE=[0,1], BOTH=[1,1],
+        NEITHER=[0,0]) lives on ``subspace.activation`` -- populated
+        by ``Codebook.forward(input, project=True)`` (the intrinsic
+        snap), inverted by ``Codebook.reverse(bivec, project=True)``
+        (the cached SVD pseudo-inverse). ``test/test_idempotent_loop.py``
+        exercises that path directly to verify the C↔S round-trip
+        projects onto span(W) and is a fixed point thereafter.
 
         ``polarity=True`` allocates a per-row tag in
         ``polarity_ids`` (POLARITY_AFFIRM/NON/NOT) so reconstruction
@@ -7706,12 +7826,13 @@ class SymbolicSpace(Space):
         basis.create(
             self.inputShape[0],
             self.nVectors,
-            2 + self.nWhere + self.nWhen,
+            self.nDim,
             customVQ=self.customVQ,
             passThrough=not self.codebook,
             monotonic=True,
             polarity=True,
             category=True,
+            STE=True,
         )
         return basis
 
@@ -7834,7 +7955,13 @@ class SymbolicSpace(Space):
         else:
             bivec = (subspace.what.getW()
                      if subspace.what is not None else None)
-            if bivec is None:
+            # Narrow-event fallback (post-2026-05-07 rollback): when
+            # neither the muxed event nor the .what content is at least
+            # 2 columns wide there is no bivector to collapse. This
+            # arises in narrow conceptual-order configs (D_C == 1) and
+            # is a graceful no-op rather than an error.
+            if (bivec is None or not torch.is_tensor(bivec)
+                    or bivec.shape[-1] < 2):
                 return subspace
         pos = bivec[..., 0]
         neg = bivec[..., 1]
@@ -8331,8 +8458,14 @@ class SymbolicSpace(Space):
 
         Dispatches to the rule-application path when the caller marks the
         incoming subspace with ``_rule_dispatch`` (see
-        ``_build_incoming_subspace``); otherwise runs the PiLayer/grammar
-        derivation/codebook pipeline.
+        ``_build_incoming_subspace``); otherwise runs the grammar
+        dispatch followed by the intrinsic snap.
+
+        The intrinsic snap is ``Codebook.forward(input, project=True)``
+        which returns a per-prototype catuskoti bivector. The snap is
+        what calling SymbolicSpace MEANS — naming the closest point in
+        concept space — and runs unconditionally regardless of grammar
+        state.
         """
         if subspace.is_empty():
             return subspace
@@ -8363,14 +8496,13 @@ class SymbolicSpace(Space):
             return vspace
         vspace = self.forwardBegin(vspace)
         act_pre = vspace.materialize()                    # [B, N, concept_dim]
-        # SyntacticLayer is unconditional: its default rule fires
-        # ``SigmaLayer.forward(act_pre)`` (the additive OR-fold), exact
-        # mathematical replacement for the legacy ``self.sigma.forward``
-        # call. When the chart populates an S-tier rule sequence, fire
-        # one syntactic step per chart-rule entry (preserving the
-        # legacy ``for _ in row_zero`` cardinality). In the
-        # default-only case (BasicModel-equivalent), ``current_rules``
-        # is empty and we fire the default rule once.
+        # SyntacticLayer is unconditional: per the grammar XML, the
+        # chart populates ``current_rules`` with one or more rules per
+        # tier (e.g. ``S = sigma(S)`` from model.xml's default
+        # grammar). When no chart rule fires for this tier, the
+        # dispatch is a no-op (post-2026-05-07 rollback removed the
+        # ``default_rule`` code-level fallback — grammar XML is the
+        # sole source of truth).
         if getattr(self, 'syntacticLayer', None) is None:
             act = self.sigma.forward(act_pre)
         else:
@@ -8402,25 +8534,15 @@ class SymbolicSpace(Space):
             truth_layer = getattr(wordSpace, 'truth_layer', None)
             if truth_layer is not None:
                 basis = getattr(self.subspace, 'basis', None)
-                # Vectorized truth staging (no host sync). Compute a
-                # per-cell trust score from activation magnitude, mask
-                # by `valid_mask`, scale by `accumulateTruth`. Stage
-                # every cell unconditionally; the post-brick
-                # `truth_layer.compact()` step (one host sync, outside
-                # the brick) drops entries below the trust threshold
-                # and promotes survivors to the persistent store. The
-                # legacy per-cell `should_store` magnitude+novelty+
-                # consistency gate was removed in §6b of the brick-
-                # vectorization handoff.
                 BK, N, D = act.shape
-                norms = act.norm(dim=-1)                                  # [B*K, N]
+                norms = act.norm(dim=-1)
                 mag_score = norms.clamp(max=self._truth_min_magnitude) \
-                            / max(self._truth_min_magnitude, 1e-8)        # [B*K, N]
+                            / max(self._truth_min_magnitude, 1e-8)
                 vmask = self.subspace.valid_mask
                 if vmask is not None:
                     mag_score = mag_score \
                                 * vmask.flatten().unsqueeze(-1).to(mag_score.dtype)
-                trust = mag_score * float(self.accumulateTruth)           # [B*K, N]
+                trust = mag_score * float(self.accumulateTruth)
                 truth_layer.record_batch(
                     act.reshape(BK * N, D),
                     trust.reshape(BK * N),
@@ -8430,59 +8552,35 @@ class SymbolicSpace(Space):
         if self._symbol_where is not None:
             B = act.shape[0]
             nAct = act.shape[1]
-            # Only apply where if vector count matches stored encodings
             if nAct == self._symbol_where.shape[0]:
                 where = self._symbol_where.unsqueeze(0).expand(B, -1, -1)
                 where = where.to(act.device)
-                # Public set_where() invalidates the cached event so a
-                # subsequent materialize(mode="event") re-muxes correctly,
-                # rather than poking .where.setW directly.
                 self.subspace.set_where(where)
 
         if self.sortNetwork is not None:
             act = self.sortNetwork.forward(act)
 
         if wordSpace is not None:
-            # Rule #2: C -> S axis commitment. The demux side effect
-            # (populating the subspace's what/where/when modality slots
-            # from the muxed [B, N, D] tensor) happens inside
-            # forwardSymbols() so the axis-separated state is live
-            # before any slot selector runs.
             act = wordSpace.forwardSymbols(act, self.subspace)
 
-        # Task 2.5 — Resolve [pos, neg] bivector to 1-D per-symbol activation
-        # BEFORE the codebook sees it.  resolve() writes
-        # subspace.activation = pos - neg ([B, N]) — the signed Degree of
-        # Truth (DoT), collapsing the bivector
-        # to the scalar signal strength that the codebook quantizes.
-        # This must happen after forwardSymbols (if called) so the demuxed
-        # what-slot is already populated, and before any quantization branch
-        # so that the snapped activation is written back correctly.
+        # Resolve [pos, neg] bivector to 1-D per-symbol activation
+        # before the codebook sees it. resolve() writes
+        # subspace.activation = pos - neg.
         self.resolve(self.subspace)
 
-        # VQ-VAE modes (gated on ``self.use_vqvae``):
-        #   reversible model  -> continuous forward + commitment loss only.
-        #       The reverse path requires exact invertibility
-        #       (``pi.reverse(pi.forward(x)) == x``).  A hard-quantized
-        #       forward would break that, so we keep ``act`` continuous
-        #       and rely on commitment loss to pull the encoder toward
-        #       the nearest codebook entry.  The commitment loss alone
-        #       suffices: the encoder already receives gradient through
-        #       the continuous forward, so no STE is needed.
-        #   non-reversible model -> STE forward.  Downstream sees the
-        #       hard codebook pick, backward flows as identity through
-        #       the quantization bottleneck back into the encoder.
-        #   non-VQVAE + codebook + caller opted into quantize ->
-        #       hard-quantize forward: snap the resolved 1-D activation to
-        #       the nearest codebook entry (Task 2.5).  The event (act)
-        #       is stored for downstream layers unchanged; only
-        #       subspace.activation is quantized.
+        # VQ-VAE / hard_quantize / continuous branches preserved from
+        # the pre-rollback forward — these implement the codebook snap
+        # and commitment-loss objectives that drive symbol learning.
+        # The snap behaviour itself (the "name the closest point"
+        # categorization) is the inversion-equivalent of
+        # ``Codebook.forward(input, project=True)`` exposed directly
+        # via ``Codebook.project`` for the new idempotent-loop test
+        # (test/test_idempotent_loop.py).
         use_vqvae_reversible = self.use_vqvae and self.reversible and self.codebook
         use_vqvae_nonreversible = (self.use_vqvae and not self.reversible
                                    and self.codebook)
         hard_quantize = (not self.use_vqvae) and self.codebook and quantize
         if use_vqvae_reversible:
-            # Continuous forward -- event carries z_e so reverse is exact.
             z_e = act
             predicted = z_e.clone()
             self.subspace.set_event(z_e)
@@ -8501,8 +8599,6 @@ class SymbolicSpace(Space):
             self._emit_symbol_terms(
                 vspace, self._compute_symbol_terms(predicted, target=target))
         elif use_vqvae_nonreversible:
-            # Non-reversible VQVAE: forward = hard quantized, backward uses
-            # the configured gradient estimator (snap/ste/rotation).
             z_e = act
             predicted = z_e.clone()
             self.subspace.set_event(z_e)
@@ -8521,9 +8617,6 @@ class SymbolicSpace(Space):
                 vspace.errors.add(
                     "symbol_commitment", commit, weight=1.0,
                     space="SymbolicSpace", category="symbol")
-            # Also pick up the codebook-internal commit loss (VQ's own
-            # encoder-commitment term). Previously discarded; now threaded
-            # into the objective so it actually drives learning.
             cb_commit = getattr(self.subspace.what, "last_commit_loss", None)
             if cb_commit is not None and torch.is_tensor(cb_commit) and cb_commit.requires_grad:
                 vspace.errors.add(
@@ -8533,32 +8626,14 @@ class SymbolicSpace(Space):
                 vspace,
                 self._compute_symbol_terms(predicted, target=quantized_detached))
         elif hard_quantize:
-            # Task 2.5: quantize the resolved 1-D activation, not the event.
-            # set_event() resets activation to the ones-bivector so we must
-            # call resolve() AFTER set_event() to re-write the 1-D scalar.
-            # Steps:
-            #   1. Store the event (symbol vectors) for downstream layers.
-            #   2. resolve() converts the quantized .what bivector → scalar.
-            #   3. Snap the scalar to nearest codebook entry and write back.
-            # The codebook nDim stays at 2 (preserving the VQ-VAE paths);
-            # _nearest_symbol_target clips to n = min(1, 2) = 1, comparing
-            # only the first column of each codebook entry -- Option A/B
-            # compromise: 1-D projection via first column, no nDim rebuild.
             self.subspace.set_event(act)
             vspace = self.forwardEnd(self.subspace)
-            # Re-resolve after set_event so activation reflects the quantized
-            # bivector stored in subspace.what (which set_event populated).
             self.resolve(self.subspace)
-            # Public read via materialize(mode="activation") rather than
-            # poking .activation.getW() on the raw basis.
-            act_1d = self.subspace.materialize(mode="activation")  # [B, N]
+            act_1d = self.subspace.materialize(mode="activation")
             if act_1d is not None and act_1d.ndim == 2:
-                predicted_1d = act_1d.unsqueeze(-1)    # [B, N, 1]
+                predicted_1d = act_1d.unsqueeze(-1)
                 target_1d = self._nearest_symbol_target(predicted_1d)
                 if target_1d is not None:
-                    # Snap the 1-D activation to the nearest codebook scalar.
-                    # Public write via set_activation() so the bivector
-                    # lift (when activeEncoding.nDim == 2) is centralised.
                     self.subspace.set_activation(target_1d.squeeze(-1))
                     self._emit_symbol_terms(
                         vspace,
@@ -8570,12 +8645,37 @@ class SymbolicSpace(Space):
                 self._emit_symbol_terms(
                     vspace, self._compute_symbol_terms(act))
         else:
+            # VQ snap when a codebook is configured but neither VQ-VAE
+            # nor hard-quantize fires (the typical post-rollback,
+            # last-stage path). Same idiom ConceptualSpace.forward
+            # uses: route through ``Codebook.forward(input)`` so the
+            # event coming out is the per-slot vector with codebook
+            # rows substituted in. Wide codebooks (``V_S >
+            # outputShape[0]``) take the ``topK`` pruning branch so
+            # only the top-N strongest prototype activations survive.
+            # The snap is idempotent on already-snapped vectors,
+            # which is what makes the iterative
+            # SymbolicSpace.forward → ConceptualSpace.forward loop
+            # converge once the codebooks are trained.
+            basis = self.subspace.what
+            snap_eligible = (
+                self.codebook
+                and isinstance(basis, Codebook)
+                and not getattr(basis, "passThrough", True))
+            if snap_eligible:
+                if basis.nVectors > self.outputShape[0]:
+                    snapped = basis.forward(act, topK=self.outputShape[0])
+                else:
+                    snapped = basis.forward(act)
+                if (snapped is not None
+                        and torch.is_tensor(snapped)
+                        and snapped.shape == act.shape):
+                    act = snapped
             self.subspace.set_event(act)
             vspace = self.forwardEnd(self.subspace)
             self._emit_symbol_terms(
                 vspace, self._compute_symbol_terms(act))
 
-        # ImpenetrableLayer: codebook-level regularizer, emitted once per forward.
         if (self.impenetrable_overlap > 0.0
                 or self.impenetrable_variance > 0.0):
             imp = self.impenetrable_loss()
@@ -8585,8 +8685,8 @@ class SymbolicSpace(Space):
                     "symbol_impenetrable", imp, weight=1.0,
                     space="SymbolicSpace", category="symbol")
 
-        vspace.normalize("symbols", target="what")   # range check
-        vspace.normalize("symbols", target="where")  # range check
+        vspace.normalize("symbols", target="what")
+        vspace.normalize("symbols", target="where")
         return vspace
 
     def reverse(self, subspace):
@@ -8607,13 +8707,11 @@ class SymbolicSpace(Space):
             act = wordSpace.reverseSymbols(act, self.subspace)
         if self.sortNetwork is not None:
             act = self.sortNetwork.reverse(act)
-        # SyntacticLayer is unconditional: its default rule fires
-        # ``SigmaLayer.reverse(act)`` (or two-pass ergodic
-        # ``_sigma_reverse`` via Phase 3 adapter), exact mathematical
-        # replacement for the legacy ``self._sigma_reverse(act)`` call.
-        # When the chart populates an S-tier generate sequence, fire
-        # one syntactic step per chart-rule entry. Default-only case
-        # fires the default rule once.
+        # SyntacticLayer dispatches whatever the grammar XML specifies
+        # for S-tier reverse (e.g. ``S = sigma.reverse(S)`` from
+        # model.xml). When no chart rule fires, the dispatch is a
+        # no-op (post-2026-05-07 rollback removed the ``default_rule``
+        # code-level fallback).
         if getattr(self, 'syntacticLayer', None) is None:
             act = self._sigma_reverse(act)
         else:
@@ -8634,8 +8732,18 @@ class SymbolicSpace(Space):
         else:
             self.subspace.set_event(act)
             result = self.subspace
-        result.normalize("concepts", target="what", normalize=True)
-        result.normalize("concepts", target="where")  # range check
+        # Range check (no in-place normalisation) on the concept-space
+        # output. The forward path range-checks "symbols" without
+        # applying tanh; the reverse path mirrors that with a range
+        # check on "concepts" so the round-trip stays exact for
+        # in-range values. Pre-2026-05-07 this call passed
+        # ``normalize=True`` and applied ``tanh`` to ``.what``; under
+        # the natural ``nWhat == nDim`` contract that squashed every
+        # column instead of just the leading bivector and broke
+        # round-trip invertibility. Range-check + symmetry is the
+        # right contract.
+        result.normalize("concepts", target="what")
+        result.normalize("concepts", target="where")
         return result
 
     def evaluate_truth(self, vspace, wordSpace=None):

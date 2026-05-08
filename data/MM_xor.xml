@@ -38,9 +38,12 @@
   </architecture>
 
   <InputSpace>
-    <nDim>10</nDim>
+    <nInput>0</nInput>
+    <nInputDim>0</nInputDim>
     <nVectors>8</nVectors>
+    <nDim>10</nDim>
     <nOutput>8</nOutput>
+    <nOutputDim>10</nOutputDim>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <lexer>word</lexer>
@@ -48,20 +51,28 @@
   </InputSpace>
 
   <PerceptualSpace>
-    <nOutput>8</nOutput>
+    <nInput>8</nInput>
+    <nInputDim>10</nInputDim>
+    <nVectors>8</nVectors>
     <nDim>10</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>10</nOutputDim>
+
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
-    <nVectors>8</nVectors>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>true</codebook>
   </PerceptualSpace>
 
   <ConceptualSpace>
-    <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nInput>8</nInput>
+    <nInputDim>10</nInputDim>
     <nVectors>8</nVectors>
+    <nDim>10</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>10</nOutputDim>
+
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>false</codebook>
@@ -69,9 +80,13 @@
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nInput>8</nInput>
+    <nInputDim>10</nInputDim>
     <nVectors>8</nVectors>
+    <nDim>10</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>10</nOutputDim>
+
     <passThrough>false</passThrough>
     <l1Lambda>0.01</l1Lambda>
     <accumulateTruth>0</accumulateTruth>
@@ -82,9 +97,12 @@
   </SymbolicSpace>
 
   <OutputSpace>
-    <nOutput>1</nOutput>
-    <nDim>1</nDim>
+    <nInput>8</nInput>
+    <nInputDim>10</nInputDim>
     <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
   </OutputSpace>
@@ -94,12 +112,21 @@
     <language>
       <start>S</start>
       <grammar>
-        <S>not(S)</S>
-        <S>intersection(S, S)</S>
-        <S>union(S, S)</S>
+        <!-- Per the 2026-05-07 rollback: explicit per-tier natural
+             folds (sigma at P / S, pi at C). Previously these were
+             supplied by the SpaceSyntacticLayer's default_rule
+             code-level fallback. -->
+        <!--
+        <P>sigma(P)</P>
+        <C>pi(C)</C>
+        <S>sigma(S)</S>
         <S>lower(S, S)</S>
         <S>lift(S, S)</S>
         <S>absorb(S, S)</S>
+        -->
+        <S>S = not(S)</S>
+        <S>S = intersection(S, S)</S>
+        <S>S = union(S, S)</S>
       </grammar>
       <interpretation>0.5</interpretation>
     </language>

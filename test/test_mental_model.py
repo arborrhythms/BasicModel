@@ -136,10 +136,17 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
                          f"ops: {missing}")
         self.assertEqual(Language.TheGrammar.interpretation, 0.5)
 
-        # Post S-tier merge: unified SyntacticLayer owns every rule.
-        n_rules = len(Language.TheGrammar.rules)
+        # Post S-tier merge + 2026-05-07 rollback: the unified
+        # SyntacticLayer is constructed with grammar.symbolic() (S-tier
+        # rule ids only). Pre-rollback MentalModel.xml had only S-tier
+        # rules so this matched ``range(0, n_rules)``; the rollback's
+        # Phase 4 Step 6 added explicit ``P = sigma(P)`` and
+        # ``C = pi(C)`` natural-fold rules at P / C tiers, so the
+        # equality below now compares against the S-tier subset.
+        s_tier_ids = [i for i, r in enumerate(Language.TheGrammar.rules)
+                      if r.tier == 'S']
         self.assertEqual(model.wordSpace.syntacticLayer.all_rules,
-                         list(range(0, n_rules)))
+                         s_tier_ids)
         self.assertIsNone(model.wordSpace.syntacticLayer.transition_rule)
 
 

@@ -42,6 +42,11 @@
     <useGrammar>none</useGrammar>
     <language>
       <grammar>
+        <!-- Per the 2026-05-07 rollback: explicit per-tier natural
+             folds (sigma at P / S, pi at C). -->
+        <P>sigma(P)</P>
+        <C>pi(C)</C>
+        <S>sigma(S)</S>
         <S>true(S)</S>
         <S>swap(S, S)</S>
         <S>equals(S, S)</S>

@@ -697,6 +697,13 @@ class Data():
             <output use="train">0|1|1|0</output>
 
         Missing ``use="validation"`` falls back to the test split.
+
+        When the ``<data>`` block has no ``<input>`` children at all
+        (``<dataset>inline</dataset>`` standalone), a deterministic
+        random sentence corpus is synthesized so probe / smoke configs
+        like ``data/idempotent.xml`` can drive the pipeline end-to-end
+        without authoring a payload. The random vocabulary is just
+        ``tok0 ... tok7``; labels are ``0`` / ``1`` alternating.
         """
         def _items(key):
             v = dat.get(key, [])
@@ -731,12 +738,39 @@ class Data():
         test_labels  = _parse_labels(_parse_pipe(_get_split(outputs, "test")))
         val_labels   = _parse_labels(_parse_pipe(_get_split(outputs, "validation"))) or test_labels
 
+        if not (train_texts or test_texts or val_texts):
+            # Standalone <dataset>inline</dataset> with no <input> /
+            # <output> children. Synthesize a deterministic random
+            # corpus so probe configs (idempotent.xml etc.) can drive
+            # the full forward / reverse pipeline.
+            train_texts, train_labels = self._synthetic_inline_split(seed=0,  n=16)
+            val_texts,   val_labels   = self._synthetic_inline_split(seed=1,  n=4)
+            test_texts,  test_labels  = self._synthetic_inline_split(seed=2,  n=4)
+
         data = {
             "train":      {"text": train_texts, "label": train_labels},
             "validation": {"text": val_texts,   "label": val_labels},
             "test":       {"text": test_texts,  "label": test_labels},
         }
         self.processLM(data)
+
+    @staticmethod
+    def _synthetic_inline_split(seed, n, vocab_size=8, sentence_len=4):
+        """Deterministic random sentences + alternating 0/1 labels.
+
+        Used as the auto-fallback when ``<dataset>inline</dataset>``
+        appears without ``<input>`` / ``<output>`` children.
+        """
+        import random
+        rng = random.Random(seed)
+        vocab = [f"tok{i}" for i in range(vocab_size)]
+        texts = []
+        labels = []
+        for i in range(n):
+            sentence = " ".join(rng.choice(vocab) for _ in range(sentence_len))
+            texts.append(sentence)
+            labels.append([float(i % 2)])
+        return texts, labels
     def loadTomatoes(self):
         cache_file = os.path.join(ProjectPaths.DATA_DIR, "rottenTomatoes.data")
 

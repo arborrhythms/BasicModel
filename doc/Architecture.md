@@ -157,6 +157,72 @@ See [Params.md](Params.md) for all XML configuration parameters.
 See [Training.md](Training.md) for embedding pretraining, SBOW, masked prediction
 modes, and the `<trainEmbedding>` control.
 
+### Modes of operation
+
+The architecture has three orthogonal mode dimensions plus a
+subsymbolic-enable flag, set independently in the model XML.
+
+**Butterfly mode** (`<useButterflies>true</useButterflies>`):
+
+  Pairwise sigma/pi with N-halving across `<conceptualOrder>` stages.
+  Each per-stage `ConceptualSpace` / `SymbolicSpace` instance is built
+  with a butterfly-mode SigmaLayer / PiLayer that packs `[B, N, D]` to
+  `[B, N/2, 2*D]` before the inner LDU and unpacks after. Slot count
+  halves per stage; per-slot dim doubles; total per-stage volume
+  preserved. Validated by
+  `nPercepts × state_dim == nSymbols × symbol_width` at
+  `ModelFactory.validate_config`. Used by MM_xor, MM_5M, MM_400M.
+  Without butterflies, every stage shares the same shape and no
+  halving happens (the "plain" / `useGrammar=all` paths).
+  Reference: `bin/Models.py` `_build_staged_pipeline` butterfly
+  branch; `bin/Layers.py` `ButterflyLayer._butterfly_pack` /
+  `_butterfly_unpack` / `_butterfly_merge` / `_butterfly_unmerge`.
+
+**Serial mode** (`BASICMODEL_DEVICE` / runtime flag `serial_mode`):
+
+  A runtime fast path for streaming / autoregressive contexts.
+  `PerceptualSpace` / `ConceptualSpace` may use the slide-and-recompute
+  path where the previous step's per-cell warm cache (kept on
+  `subspace.serial_cache`) is reused for cells that haven't shifted.
+  Independent of butterfly / parallel mode -- gated only by the
+  runtime flag. The cache is keyed on the owner-Space id, cleared on
+  hard `Reset`, rebuilt cheaply on the next forward.
+  Reference: `Space.serial_mode` flag (set by
+  `BaseModel.create_from_config`), `SubSpace.serial_cache` dict, and
+  the `test_serial_mode_*.py` tests.
+
+**Parallel vs Grammar mode**
+(`<architecture><mode>grammar|parallel</mode>`):
+
+  Mutually exclusive Phase-1 modes:
+  - **`grammar` mode**: `SymbolicSpace` is active;
+    `SubsymbolicSpace.held_at_zero = True`. The symbolic re-entrant
+    loop fires; the subsymbolic event tensor is held at zero and
+    contributes nothing to the next conceptual order's combined
+    input.
+  - **`parallel` mode**: `SubsymbolicSpace` is active;
+    `SymbolicSpace.held_at_zero = True`. The subsymbolic / felt-
+    sense re-entrant loop fires; the symbolic event tensor is
+    zeroed.
+
+  Both modes wire a `SubsymbolicSpace` parallel to `SymbolicSpace`;
+  only one is "running" per pass. The other's event tensor is summed
+  elementwise into the next conceptual order's combined input (zeros
+  are identity under the additive sum, so the held-at-zero side
+  contributes nothing). Reference: `held_at_zero` attribute on
+  `SymbolicSpace` and `SubsymbolicSpace`; `BaseModel.__init__`
+  mode-dispatch around the subsymbolic enable check.
+
+**Subsymbolic enabled** (`<subsymbolicEnabled>true</subsymbolicEnabled>`,
+default false):
+
+  Independent of the mode flag — controls whether `SubsymbolicSpace`
+  is *constructed* at all. When false, only `SymbolicSpace` is built;
+  no parallel re-entrant loop; the per-stage ConceptualSpace's
+  PiLayer is not widened. When true, both spaces exist and the mode
+  flag determines which one's event contributes to the next
+  conceptual order.
+
 ### Pipeline as a unit, two-tier reset
 
 > *Post the rolling-cursor handoff (`plans/2026-04-26-rolling-cursor-doc-streaming-handoff.md`)

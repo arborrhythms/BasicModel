@@ -153,16 +153,25 @@
              A grammar containing only these unary rules is the
              "default-only" case: WordSpace.compose detects it and
              skips the chart's CKY-style inside pass entirely.
-             Per-space SyntacticLayer dispatch falls through to the
-             tier's default_rule (pi for C, sigma for P / S) which
-             resolves to the PiLayer / SigmaLayer registered at
-             space construction. End-to-end cost matches the legacy
+
+             Per the 2026-05-07 rollback, the grammar XML is the sole
+             source of truth for which rule fires at each tier. There
+             is no ``default_rule`` code-level fallback. WordSpace
+             populates ``current_rules`` / ``generate_rules`` from the
+             rules listed below in the default-only and
+             useGrammar='none' fast paths so per-space SyntacticLayer
+             dispatch resolves to the PiLayer / SigmaLayer registered
+             at space construction. End-to-end cost matches the legacy
              y = self.pi(x) call site.
 
              Configs that need real grammar (constituency / negation /
              min-max ops) override this entire block via
              _NON_MERGING_PATHS (util.py); their grammar block fully
-             replaces this one. -->
+             replaces this one. Configs that previously relied on the
+             default_rule code-level fallback for sigma / pi at any
+             tier need explicit ``S = sigma(S)``, ``C = pi(C)``,
+             ``P = sigma(P)`` (and matching ``.reverse`` rules)
+             listed; otherwise the per-tier dispatch is a no-op. -->
         <compose>
           <percepts>
             <rule>P = sigma(P)</rule>

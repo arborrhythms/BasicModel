@@ -2631,7 +2631,7 @@ class SpaceSyntacticLayer(Layer):
     Construction:
         SpaceSyntacticLayer(tier='C', word_space=word_space,
                             host_layers={'pi': pi_layer},
-                            default_rule='pi', host_space=concept_space)
+                            host_space=concept_space)
 
     Each entry in ``host_layers`` is registered with ``word_space`` at
     construction. The space's ``forward()`` and ``reverse()`` delegate
@@ -2643,10 +2643,13 @@ class SpaceSyntacticLayer(Layer):
     The cursor resets at the start of each new ``word_space.compose()``
     / ``word_space.generate()`` call via the generation counters on
     WordSpace (Q10.1).
+
+    Per the 2026-05-07 rollback: there is no ``default_rule`` parameter.
+    The grammar XML drives which rules fire — when the chart hasn't
+    populated rules for this tier the dispatch is a no-op.
     """
 
-    def __init__(self, tier, word_space, host_layers, default_rule=None,
-                 host_space=None):
+    def __init__(self, tier, word_space, host_layers, host_space=None):
         super().__init__(0, 0)
         self.tier = str(tier)
         # Stash host_layers in two parallel structures: ModuleList for
@@ -2657,7 +2660,6 @@ class SpaceSyntacticLayer(Layer):
         self.layers = nn.ModuleList(layers_list)
         self._by_name = {name: layer for name, layer in host_layers.items()
                          if layer is not None}
-        self.default_rule = default_rule
         # Register each host_layer with the wordSpace's host_layer
         # registry so the chart can dispatch into them.
         for rule_name, layer in self._by_name.items():
@@ -2672,8 +2674,8 @@ class SpaceSyntacticLayer(Layer):
         # layer's children; this layer references wordSpace).
         object.__setattr__(self, '_word_space', word_space)
         # ``host_space`` is the per-tier Space (Perceptual / Conceptual /
-        # Symbolic) that owns this dispatcher. When the default rule
-        # fires (pi for C; sigma for P/S) and the host space has
+        # Symbolic) that owns this dispatcher. When the chart fires
+        # ``pi`` / ``sigma`` and the host space exposes
         # ``_pi_reverse`` / ``_sigma_reverse`` (two-pass ergodic mode
         # routes through ``pi2`` / ``sigma2``), reverse() delegates
         # there instead of the layer's bare ``reverse``.
@@ -2690,9 +2692,10 @@ class SpaceSyntacticLayer(Layer):
         we use row 0 as the canonical sequence; per-row dispatch (where
         rows fire different rules at the same step) is a follow-on.
 
-        Returns the rule's ``method_name`` (string) or ``None`` /
-        ``self.default_rule`` when no chart rule is available. The
-        method name is the key used in ``self._by_name``.
+        Returns the rule's ``method_name`` (string) or ``None`` when
+        no chart rule is available (no code-level fallback — the grammar
+        XML is the sole source of truth). The method name is the key
+        used in ``self._by_name``.
         """
         ws = self._word_space
         if direction == 'compose':
@@ -2721,10 +2724,11 @@ class SpaceSyntacticLayer(Layer):
                 method_name = TheGrammar.rules[int(rule_id)].method_name
             except (IndexError, AttributeError, ValueError, TypeError):
                 method_name = None
-            return method_name or self.default_rule
-        # Fallback: legacy / no-chart configurations supply a default
-        # rule (the per-space "natural" fold, e.g. 'intersection' for C).
-        return self.default_rule
+            return method_name
+        # No chart rule available -- post-2026-05-07 rollback removed
+        # the ``default_rule`` code-level fallback. The grammar XML is
+        # the sole source of truth; callers handle ``None`` as a no-op.
+        return None
 
     @staticmethod
     def _row_zero_rules(per_tier):
@@ -2758,8 +2762,9 @@ class SpaceSyntacticLayer(Layer):
         the chosen rule's GrammarLayer.forward, writes the result back
         into the same field. Returns the (possibly-mutated) subspace.
 
-        Falls back to ``self.default_rule`` when the chart hasn't
-        written a rule for this tier.
+        Per the 2026-05-07 rollback, when the chart hasn't written a
+        rule for this tier, dispatch is a no-op (no code-level
+        fallback).
 
         On the signal-router path the chart has already executed the
         derivation tensorially (router.compose folded the slab via the
@@ -2820,19 +2825,16 @@ class SpaceSyntacticLayer(Layer):
         y = self._read_subspace(subspace, layer=layer)
         if y is None:
             return subspace
-        # Two-pass ergodic adapter: when the default rule (pi/sigma) is
-        # the one firing AND the host space exposes a tier-specific
-        # ``_pi_reverse`` / ``_sigma_reverse`` (which routes through
-        # pi2/sigma2 in two-pass ergodic mode), delegate there. Other
-        # unary rules (not, etc.) keep going through ``layer.reverse``.
+        # Two-pass ergodic adapter: when ``pi`` / ``sigma`` fires and
+        # the host space exposes a tier-specific ``_pi_reverse`` /
+        # ``_sigma_reverse`` (which routes through pi2/sigma2 in
+        # two-pass ergodic mode), delegate there. Other unary rules
+        # (not, etc.) keep going through ``layer.reverse``.
         host = getattr(self, '_host_space', None)
-        if host is not None and rule_name == self.default_rule:
-            if rule_name == 'pi' and hasattr(host, '_pi_reverse'):
-                x = host._pi_reverse(y)
-            elif rule_name == 'sigma' and hasattr(host, '_sigma_reverse'):
-                x = host._sigma_reverse(y)
-            else:
-                x = layer.reverse(y)
+        if host is not None and rule_name == 'pi' and hasattr(host, '_pi_reverse'):
+            x = host._pi_reverse(y)
+        elif host is not None and rule_name == 'sigma' and hasattr(host, '_sigma_reverse'):
+            x = host._sigma_reverse(y)
         else:
             x = layer.reverse(y)
         self._write_subspace(subspace, x, layer=layer)
@@ -2923,8 +2925,7 @@ def _grammar_layer_classes():
 
 
 def build_space_syntactic_layer(space, word_space, *, tier,
-                                builtin_layers=None,
-                                default_rule=None):
+                                builtin_layers=None):
     """Construct a per-space SpaceSyntacticLayer.
 
     Args:
@@ -2940,10 +2941,9 @@ def build_space_syntactic_layer(space, word_space, *, tier,
             (e.g. {'intersection': space.pi}). These instances are
             registered as-is so their existing weights participate in
             training.
-        default_rule: rule name to fall back to when the chart hasn't
-            written a rule choice for this tier (legacy / no-chart
-            configurations). Pass ``None`` to passthrough on missing
-            choice.
+
+    Per the 2026-05-07 rollback there is no ``default_rule`` parameter;
+    the grammar XML is the sole source of truth for which rule fires.
     """
     builtin_layers = dict(builtin_layers or {})
     host_layers = dict(builtin_layers)
@@ -2968,8 +2968,7 @@ def build_space_syntactic_layer(space, word_space, *, tier,
             continue
     layer = SpaceSyntacticLayer(
         tier=tier, word_space=word_space,
-        host_layers=host_layers, default_rule=default_rule,
-        host_space=space)
+        host_layers=host_layers, host_space=space)
     space.syntacticLayer = layer
     return layer
 
@@ -3538,8 +3537,14 @@ class WordSpace(Space):
         # ``register_host_layer``; the chart consults
         # ``host_layer(tier, rule_name)`` to fire host-owned folds.
         self._host_layer_registry = {}
-        self.current_rules = {}
-        self.generate_rules = {}
+        # Initialize current_rules / generate_rules from the grammar
+        # XML's per-tier natural folds. Per the 2026-05-07 rollback,
+        # the grammar XML is the sole source of truth -- with no
+        # ``default_rule`` code-level fallback the per-stage Spaces'
+        # syntacticLayer dispatch must always have rules to fire.
+        # ``compose`` / ``generate`` overwrite these on call.
+        self.current_rules = self._default_compose_rules()
+        self.generate_rules = self._default_generate_rules()
         # Bumped on each compose / generate. Per-space SyntacticLayers
         # compare against this to know when to reset their per-tier
         # cursor (Q10.1).
@@ -4003,18 +4008,22 @@ class WordSpace(Space):
 
         Fast paths (no chart inside pass):
           * ``_grammar_is_default_only`` — every rule is the unary pi /
-            sigma fold registered as the per-tier default.
+            sigma fold; rule selection is fully determined by the
+            grammar XML so the chart inside pass adds no information.
           * ``useGrammar='none'`` — per-space SyntacticLayer dispatch
-            ignores ``current_rules`` entirely and falls through to its
-            default_rule, so running the chart is wasted compute.
-            (MM_5M, the legacy MentalModel, etc.)
+            still reads ``current_rules``, but the chart inside pass
+            is skipped (MM_5M, the legacy MentalModel, etc.).
+
+        Per the 2026-05-07 rollback both fast paths populate
+        ``current_rules`` from the grammar XML's per-tier forward
+        rules so per-space dispatch always finds a rule (no
+        ``default_rule`` code-level fallback).
         """
         self._compose_generation += 1
         if self._grammar_is_default_only:
-            self.current_rules = {}
+            self.current_rules = self._default_compose_rules()
             return self.current_rules
-        # useGrammar='none' guard: skip the chart inside pass entirely
-        # because the per-space SyntacticLayers won't read its rules.
+        # useGrammar='none' guard: skip the chart inside pass entirely.
         # Cached on first call to avoid an XMLConfig.get per forward.
         ug = getattr(self, '_use_grammar_cached', None)
         if ug is None:
@@ -4025,7 +4034,7 @@ class WordSpace(Space):
                 ug = "none"
             self._use_grammar_cached = ug
         if ug == "none":
-            self.current_rules = {}
+            self.current_rules = self._default_compose_rules()
             return self.current_rules
         self.current_rules = self.chart.compose(
             input_vectors, self, subspace=subspace) or {}
@@ -4039,7 +4048,7 @@ class WordSpace(Space):
         """
         self._generate_generation += 1
         if self._grammar_is_default_only:
-            self.generate_rules = {}
+            self.generate_rules = self._default_generate_rules()
             return self.generate_rules
         ug = getattr(self, '_use_grammar_cached', None)
         if ug is None:
@@ -4050,11 +4059,109 @@ class WordSpace(Space):
                 ug = "none"
             self._use_grammar_cached = ug
         if ug == "none":
-            self.generate_rules = {}
+            self.generate_rules = self._default_generate_rules()
             return self.generate_rules
         self.generate_rules = self.chart.generate(
             target_vectors, self, subspace=subspace) or {}
         return self.generate_rules
+
+    # Method names that count as the per-tier "natural fold". The
+    # default-only / useGrammar='none' fast paths fire only these from
+    # the grammar XML so the per-space dispatch doesn't accidentally
+    # invoke compositional operators (not, intersection, lift, ...)
+    # that were authored for the chart's selection pass and are
+    # disabled under useGrammar='none'. Maps the OLD ``default_rule``
+    # semantics ('pi' for C, 'sigma' for P / S) onto the grammar XML
+    # without re-introducing a code-level fallback: when the grammar
+    # XML lacks ``C = pi(C)`` / ``S = sigma(S)`` / ``P = sigma(P)``
+    # entries the dispatch is correctly a no-op for that tier.
+    _NATURAL_FOLD_METHODS = ('pi', 'sigma')
+
+    # Map a rule's LHS nonterminal to a per-tier letter for dispatch
+    # routing. The legacy flat-format grammar parser tags every rule
+    # ``tier='S'`` regardless of LHS; the canonical's LHS is
+    # authoritative. Restrict to the three Space tiers; non-tier
+    # nonterminals (NP, VP, ...) get filtered out by the caller.
+    _LHS_TIER_MAP = {'P': 'P', 'C': 'C', 'S': 'S'}
+
+    def _default_compose_rules(self):
+        """Per-tier rule IDs for the default-only / useGrammar='none'
+        fast path (forward direction).
+
+        Returns ``dict[tier, list[list[int]]]`` listing each tier's
+        forward natural-fold rule_ids from ``TheGrammar.rules``
+        (``method_name`` in :data:`_NATURAL_FOLD_METHODS`,
+        ``canonical`` not containing ``.reverse``). Cached after
+        first call -- the grammar is fixed at construction time.
+        """
+        cache = getattr(self, '_default_compose_rules_cache', None)
+        if cache is not None:
+            return cache
+        per_tier = {}
+        for i, r in enumerate(TheGrammar.rules):
+            mn = getattr(r, 'method_name', None)
+            if mn not in self._NATURAL_FOLD_METHODS:
+                continue
+            canonical = getattr(r, 'canonical', '') or ''
+            if '.reverse' in canonical:
+                continue
+            # The legacy flat-format parser tags every rule
+            # ``tier='S'``; the canonical's LHS nonterminal is
+            # authoritative for which Space tier should dispatch.
+            tier = self._LHS_TIER_MAP.get(getattr(r, 'lhs', None))
+            if tier is None:
+                continue
+            per_tier.setdefault(tier, []).append([i])
+        merged = {tier: [[rid for row in rows for rid in row]]
+                  for tier, rows in per_tier.items()}
+        self._default_compose_rules_cache = merged
+        return merged
+
+    def _default_generate_rules(self):
+        """Per-tier rule IDs for the default-only / useGrammar='none'
+        fast path (reverse direction).
+
+        Returns ``dict[tier, list[list[int]]]`` listing each tier's
+        reverse natural-fold rule_ids (``method_name`` in
+        :data:`_NATURAL_FOLD_METHODS`, ``canonical`` containing
+        ``.reverse``). The dispatched ``method_name`` is shared with
+        the matching forward rule so ``SpaceSyntacticLayer._by_name``
+        resolves to the same parametrized layer either way.
+
+        Falls back to the per-tier forward rule_ids when no explicit
+        ``.reverse`` rules are listed for that tier. Legacy
+        flat-format grammar blocks (``<S>sigma(S)</S>`` etc., without
+        a ``<generate>`` section) still get the per-tier reverse
+        dispatch because dispatch reads ``method_name`` rather than
+        the canonical string.
+        """
+        cache = getattr(self, '_default_generate_rules_cache', None)
+        if cache is not None:
+            return cache
+        forward_per_tier = {}
+        reverse_per_tier = {}
+        for i, r in enumerate(TheGrammar.rules):
+            mn = getattr(r, 'method_name', None)
+            if mn not in self._NATURAL_FOLD_METHODS:
+                continue
+            tier = self._LHS_TIER_MAP.get(getattr(r, 'lhs', None))
+            if tier is None:
+                continue
+            canonical = getattr(r, 'canonical', '') or ''
+            if '.reverse' in canonical:
+                reverse_per_tier.setdefault(tier, []).append([i])
+            else:
+                forward_per_tier.setdefault(tier, []).append([i])
+        per_tier = {}
+        all_tiers = set(forward_per_tier) | set(reverse_per_tier)
+        for tier in all_tiers:
+            per_tier[tier] = (
+                reverse_per_tier.get(tier)
+                or forward_per_tier.get(tier))
+        merged = {tier: [[rid for row in rows for rid in row]]
+                  for tier, rows in per_tier.items()}
+        self._default_generate_rules_cache = merged
+        return merged
 
     def gate_l1_loss(self, lam=0.0):
         """L1 penalty on every per-rule ``raw_gate`` Parameter owned by
@@ -4336,22 +4443,16 @@ class WordSpace(Space):
             sigma = getattr(space, 'sigma', None)
             if sigma is not None:
                 # SigmaLayer is the unary multiplicative OR-fold and is
-                # registered directly under its own rule_name "sigma".
-                # The default rule fires SigmaLayer.forward(x) -- exact
-                # mathematical replacement for the legacy
-                # ``self.sigma.forward(x)`` call site in P-tier spaces.
+                # registered under rule_name "sigma". Grammar XML's
+                # ``P = sigma(P)`` rule fires SigmaLayer.forward(x).
                 builtin_layers['sigma'] = sigma
-            default_rule = 'sigma'
         elif tier == 'C':
             pi = getattr(space, 'pi', None)
             if pi is not None:
                 # PiLayer is the unary multiplicative AND-fold and is
-                # registered directly under its own rule_name "pi". The
-                # default rule fires PiLayer.forward(x) -- exact
-                # mathematical replacement for the legacy ``self.pi(x)``
-                # call site in ConceptualSpace.
+                # registered under rule_name "pi". Grammar XML's
+                # ``C = pi(C)`` rule fires PiLayer.forward(x).
                 builtin_layers['pi'] = pi
-            default_rule = 'pi'
         elif tier == 'S':
             sigma = getattr(space, 'sigma', None)
             if sigma is not None:
@@ -4364,7 +4465,6 @@ class WordSpace(Space):
             # S-tier. Existing XML grammars referencing
             # ``Fusion(S, S)`` / ``Contiguous(S)`` should migrate to
             # ``disjunction(S, S)``.
-            default_rule = 'sigma'
             # Lift / Lower wiring: if the grammar references S-tier
             # `lift` or `lower` rules, the operators need a sigma /
             # pi to dispatch their gated SVD slice through. Both
@@ -4440,12 +4540,9 @@ class WordSpace(Space):
                     from Layers import QueryLayer
                     builtin_layers['query'] = QueryLayer(
                         tree=self.mereological_tree)
-        else:
-            default_rule = None
         layer = build_space_syntactic_layer(
             space, self, tier=tier,
-            builtin_layers=builtin_layers,
-            default_rule=default_rule)
+            builtin_layers=builtin_layers)
         # Register the new layer's parameters with the WordSpace param
         # list so the optimizer scan sees the lazily-constructed
         # GrammarLayer instances. The space already owns the built-in
@@ -4494,9 +4591,20 @@ class WordSpace(Space):
         on the chart (via ``ChartCompose`` in the pipeline + per-space
         ``SyntacticLayer.forward`` dispatch). This helper retains the
         demux side effect that downstream slot selectors depend on.
+
+        Per the 2026-05-07 rollback, demux is skipped when there are
+        no aux axes to split (nWhere == 0 and nWhen == 0). In that
+        configuration the muxed event IS the .what content; routing
+        it through ``set_what`` would clobber the codebook's transient
+        slot and shadow the prototype Parameter from downstream
+        ``getW()`` consumers (e.g. ``_nearest_symbol_target``).
         """
         if data.ndim == 3 and data.shape[-1] == getattr(subspace, 'muxedSize', -1):
-            subspace.demux(data)
+            has_aux = (
+                getattr(subspace, 'nWhere', 0) > 0
+                or getattr(subspace, 'nWhen', 0) > 0)
+            if has_aux:
+                subspace.demux(data)
         return data
 
     def reverseSymbols(self, data, subspace):

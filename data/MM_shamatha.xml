@@ -52,7 +52,13 @@
         <!-- Contiguous(S) was retired 2026-05-04 (duplicate of
              disjunction at S-tier). Migrated to disjunction(S, S);
              the post-codebook scalar-max semantics deliver the
-             same hull-style fold the rule used to provide. -->
+             same hull-style fold the rule used to provide.
+
+             Per the 2026-05-07 rollback: explicit per-tier natural
+             folds (sigma at P / S, pi at C) listed below. -->
+        <P>sigma(P)</P>
+        <C>pi(C)</C>
+        <S>sigma(S)</S>
         <S>disjunction(S, S)</S>
         <S>not(S)</S>
         <S>union(C, C)</S>

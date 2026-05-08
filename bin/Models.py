@@ -2359,6 +2359,12 @@ class BasicModel(BaseModel):
                         break
 
                     decoded = self.perceptualSpace.vocabulary.predict(result.outputPred)
+                    # Empty `decoded` happens on untrained / probe configs
+                    # where the output head doesn't produce a usable
+                    # prediction (e.g. ``result.outputPred is None`` ->
+                    # ``predict`` returns []). Treat as end-of-stream.
+                    if not decoded:
+                        break
                     word = decoded[0]
 
                     if word is None or word == '' or word == '\x00':
@@ -4263,26 +4269,25 @@ class BasicModel(BaseModel):
 
         conceptInputShape = [nPercepts, percept_dim + obj_percept]
 
-        # Effective conceptOutputShape: if ConceptualSpace specifies
-        # nOutputDim, the forwardEnd reshape changes the output layout.
-        # Use the volume-preserving shape [N', nOutputDim] where
-        # N' = input_volume / nOutputDim (sigma is square/invertible).
+        # ConceptualSpace output shape uses the explicit XML values
+        # ``<nOutput>`` (already resolved to ``nConcepts`` upstream)
+        # and ``<nOutputDim>`` (when supplied) directly. Earlier
+        # versions of this code derived N from a volume-preserving
+        # ``input_volume // nOutputDim`` formula; that's wrong because
+        # the C-tier codebook can re-dimension between input and
+        # output independent of any volume-preservation contract, and
+        # because users who set both ``<nOutput>`` and
+        # ``<nOutputDim>`` already accounted for the reshape they
+        # want. ``nConcepts`` is ``_resolve('ConceptualSpace',
+        # nPercepts)`` -- it returns the XML ``<nOutput>`` when set,
+        # else falls through to ``nPercepts``.
         try:
             _c_nOutputDim = TheXMLConfig.space("ConceptualSpace", "nOutputDim")
         except KeyError:
             _c_nOutputDim = 0
         if _c_nOutputDim > 0:
-            _c_input_volume = conceptInputShape[0] * conceptInputShape[1]
-            conceptOutputShape = [_c_input_volume // _c_nOutputDim, _c_nOutputDim]
+            conceptOutputShape = [nConcepts, _c_nOutputDim]
         else:
-            # Use nConcepts (not nPercepts) for the conceptual output N
-            # so the per-stage path matches the legacy flat BasicModel
-            # construction at T=1: ConceptualSpace maps
-            # [nPercepts, percept_d] -> [nConcepts, concept_d]. When
-            # nConcepts == nPercepts (the common MentalModel default)
-            # this is a no-op; when they differ (e.g. MNIST-style
-            # 784 -> 20), ConceptualSpace's PiLayer collapses the N
-            # dim via its flatten-and-reshape boundary handling.
             conceptOutputShape = [nConcepts, concept_dim + obj_concept]
 
         # -- Butterfly path: pairwise sigma/pi with N-halving --

@@ -700,15 +700,50 @@ most highly active; negative products never activate). Each symbol receives wher
 encoding from PerceptualSpace, making symbols uniform with percepts. Internally stored
 as activation in `[-1, 1]` via the `(x+1)/2` mapping.
 
-**Codebook shape.** The symbol codebook has one row per symbol, full muxed
-width: `SymbolicSpace.subspace.what.getW().shape == (nVectors, 2 + nWhere + nWhen)`
-with `nWhat = 2`.  The leading 2 dims of each row carry the bivector
-`[pos_pole, neg_pole]` encoding the 4-valued (quaternary) truth of the
-symbol via the tetralemma / *catuskoti*: TRUE=[1,0], FALSE=[0,1],
-BOTH=[1,1], NEITHER=[0,0].  Trailing `nWhere + nWhen` dims carry
-per-symbol positional/temporal template info.  `Basis.negation` swaps
-`(pos, neg)` on the leading 2 dims only.  See
-[BuddhistParallels.md](BuddhistParallels.md) for the catuskoti mapping.
+**Codebook shape (post-2026-05-07 rollback).** The symbol codebook has
+one row per symbol at the natural ``nDim`` width:
+``SymbolicSpace.subspace.what.getW().shape == (nVectors, nDim)``, with
+``nWhat == nDim`` (no leading [pos, neg] bivector pinned in the
+codebook). Each row is a free coefficient vector over the conceptual
+axes -- "how much of concept_i is this symbol?" -- so under V_S = V_C
+alignment one row corresponds to one concept. The codebook is *not*
+unit-norm: symbol prototypes are free patterns, retrieved via
+Euclidean L2 (``use_dot_product = False``).
+
+The per-prototype catuskoti bivector ``[B, V_S, 2]`` (TRUE=[1,0],
+FALSE=[0,1], BOTH=[1,1], NEITHER=[0,0]) lives on
+``subspace.activation``, NOT in the codebook. Populated by
+``Codebook.forward(input, project=True)`` -- the **intrinsic snap**:
+
+```
+pos[b, n] = sum_v relu(input[b, v] · W[n])
+neg[b, n] = sum_v relu(-input[b, v] · W[n])
+```
+
+The matching decode ``Codebook.reverse(bivec, project=True)`` is the
+cached SVD pseudo-inverse: ``C → S → C`` round-trip projects the input
+onto span(W) and is a fixed point thereafter (verified by
+``test/test_idempotent_loop.py``). Where/when ride alongside the
+encoding on the per-batch muxed event tensor; they don't live inside
+the codebook itself.
+
+The C↔S boundary as **categorization**: calling
+``SymbolicSpace.forward`` IS the act of *naming* — projecting the
+incoming concept activation onto the named codebook lattice. The snap
+loss IS the categorization: a clean prototype match yields a
+TRUE-corner activation; a noisy near-prototype match degrades the
+TRUE pole; an off-lattice input collapses to NEITHER. The decode is
+not lossless reconstruction — it's projection onto the codebook
+subspace, which is what categorization means architecturally. Grammar
+operators (NOT, AND, OR, lift, lower, …) operate on the bivector
+activation between snap calls; the dialectic loop is
+snap (synthesis) → grammar (logic) → decode (analysis) → next pass.
+
+See [BuddhistParallels.md](BuddhistParallels.md) for the catuskoti
+mapping, [Logic.md](Logic.md) for the bivector operator algebra, and
+[Mereology.md](Mereology.md) for how the conceptual measures
+(Area, Luminosity, Contiguous, Continuous, Peaceful) read concept
+activations directly rather than the symbol codebook.
 
 **Layer.** `PiLayer(nConcepts, nSymbols, invertible=True, monotonic=True)` -- maps
 between activation spaces via monotonic multiplicative transform. The `monotonic=True`

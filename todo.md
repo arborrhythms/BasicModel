@@ -1,13 +1,11 @@
 
+* No space should construct a sigma or pi layer outside of the SyntacticLayer that creates those when specified in the grammar.
+  
+* Wire where into the codebook lookup path (encode offset + prototype_index → sin/cos, decode the inverse)
 
-Mereonomy (per-symbol DoT graph, Phase 1c+ in the older roadmap).
+* Enforce use of Mereonomy (per-symbol DoT graph).
 
-Sentence-buffer / sentence-prediction (Phase 1d).
-
-Replacing the existing Sigma / Pi parameter shapes (the linear maps
-ride over the wider tensors without architectural change; only the
-codebook surface and the snap pipeline are redesigned here).
-
+* Ensure correct sentence-prediction
 
 Sentences are sometimes composites of ideas.
 * For example, questions relate two ideas:

@@ -139,6 +139,16 @@
     <language>
       <start>S</start>
       <grammar>
+        <!-- Per the 2026-05-07 rollback: explicit per-tier natural
+             folds (sigma at P / S, pi at C). Previously these were
+             supplied by the SpaceSyntacticLayer's default_rule
+             code-level fallback; the rollback removed that
+             fallback and made the grammar XML the sole source of
+             truth, so the natural folds must be listed here for
+             dispatch to fire them. -->
+        <P>sigma(P)</P>
+        <C>pi(C)</C>
+        <S>sigma(S)</S>
         <S>not(S)</S>
         <S>union(C, C)</S>
         <S>C</S>

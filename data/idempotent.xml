@@ -1,0 +1,165 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- idempotent: minimal MentalModel for discussing the C-S intrinsic
+       snap "idempotent loop". Sized to the same regime as
+       test/test_idempotent_loop.py (D_C = V_S = 4) so the round trip is
+       easy to reason about by hand.
+
+       The idempotent loop is the round-trip:
+
+         x  =>  Codebook.forward(x, project=True)   =>  bivec [B, V_S, 2]
+         bivec  =>  Codebook.reverse(bivec, project=True)  =>  x'
+
+       Properties:
+         (a) For x in span(W) (codebook row space), x' == x: the round
+             trip is the identity. The bivector reads
+             [pos[n], neg[n]] = [relu(x.W[n]), relu(-x.W[n])]
+             = catuskoti truth corner per prototype.
+         (b) For x with a component orthogonal to span(W), one cycle
+             projects it onto span(W); subsequent cycles are the identity
+             (idempotent thereafter).
+         (c) For x orthogonal to span(W), x' == 0: bivec is the
+             NEITHER corner [0, 0] for every prototype.
+
+       This config exercises that primitive through a full SymbolicSpace
+       (sigma dispatched via the grammar XML, full lifecycle including
+       resolve / set_event / forwardEnd) so the snap can be observed
+       in context, not just on a bare Codebook.
+
+       Sizing rationale:
+         - V_S = V_C = nDim_C = nDim_S = 4: the V_S = V_C alignment
+           (Phase 5 option A) makes per-prototype shape [B, V_S=4, 2]
+           coincide with per-slot shape [B, N=4, 2]; no diagonal /
+           outer-product disambiguation needed.
+         - conceptualOrder = 1, useButterflies = false: a single
+           ConceptualSpace -> SymbolicSpace step with no slot halving,
+           so the round trip is exactly one forward + one reverse.
+         - useVQVAE = false on SymbolicSpace: keeps the focus on the
+           snap (Codebook.forward(project=True)) rather than VQ-VAE
+           commit / residual training signals.
+         - invertible = true on the Sigma / Pi layers and on the
+           codebook: engages the cached-SVD pseudo-inverse
+           (project_reverse) path used by the idempotent test.
+  -->
+  <architecture>
+    <conceptualOrder>1</conceptualOrder>
+    <useButterflies>false</useButterflies>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <processSymbols>false</processSymbols>
+    <type>mental</type>
+    <ergodic>false</ergodic>
+    <modelType>embedding</modelType>
+    <maskedPrediction>NONE</maskedPrediction>
+    <truthBiasScale>0.0</truthBiasScale>
+    <LuminosityWeight>0.0</LuminosityWeight>
+    <UniversalityWeight>0.0</UniversalityWeight>
+    <weightsPath></weightsPath>
+
+    <data>
+      <dataset>inline</dataset>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>0</numEpochs>
+      <batchSize>1</batchSize>
+      <learningRate>0.0</learningRate>
+      <reverseScale>0.0</reverseScale>
+      <trainEmbedding>NONE</trainEmbedding>
+      <autoload>false</autoload>
+      <autosave>false</autosave>
+      <certainty>false</certainty>
+    </training>
+
+  </architecture>
+
+  <InputSpace>
+
+    <nDim>1</nDim>
+    <nVectors>40</nVectors>
+
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <lexer>word</lexer>
+    <codebook>false</codebook>
+  </InputSpace>
+
+  <PerceptualSpace>
+
+    <nInput>10</nInput>
+    <nInputDim>4</nInputDim>
+    <nVectors>10</nVectors>
+    <nDim>4</nDim>
+    <nOutput>10</nOutput>
+    <nOutputDim>4</nOutputDim>
+  
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <hasAttention>false</hasAttention>
+    <invertible>true</invertible>
+    <codebook>false</codebook>
+    <passThrough>true</passThrough>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+
+    <nInput>10</nInput>
+    <nInputDim>4</nInputDim>
+    <nVectors>10</nVectors>
+    <nDim>100</nDim>
+    <nOutput>10</nOutput>
+    <nOutputDim>100</nOutputDim>
+  
+    <hasAttention>false</hasAttention>
+    <invertible>true</invertible>
+    <codebook>true</codebook>
+    <nonlinear>false</nonlinear>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+
+    <nInput>10</nInput>
+    <nInputDim>100</nInputDim>
+    <nVectors>200</nVectors>
+    <nDim>100</nDim>
+    <nOutput>10</nOutput>
+    <nOutputDim>100</nOutputDim>
+
+    <passThrough>false</passThrough>
+    <l1Lambda>0.0</l1Lambda>
+    <accumulateTruth>0</accumulateTruth>
+    <codebook>true</codebook>
+    <invertible>true</invertible>
+    <useVQVAE>false</useVQVAE>
+    <commitmentBeta>0.0</commitmentBeta>
+    <nonlinear>false</nonlinear>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+  </OutputSpace>
+
+  <WordSpace>
+    <useGrammar>none</useGrammar>
+    <language>
+      <start>S</start>
+      <grammar>
+        <!-- Idempotent loop: no sigma / pi rules listed. Per the
+             2026-05-07 rollback the grammar XML is the sole source
+             of truth for which rule fires at each tier; with no
+             rules listed for P / C / S, every per-space
+             SpaceSyntacticLayer dispatch is a no-op and neither
+             sigma nor pi appears in the forward / reverse data
+             flow. The codebook is the only learned object in the
+             C-S loop. -->
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+  </WordSpace>
+
+</model>

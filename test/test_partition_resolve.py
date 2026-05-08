@@ -44,11 +44,13 @@ def _make_symbolic_space(nSymbols=3, symbolDim=4, conceptDim=4):
 
     Uses the same _populate_test_config / TheXMLConfig approach used by the
     rest of basicmodel's unit tests.  No nWhere / nWhen so the muxed layout
-    is [what(=2), ] only.
+    is [what(=nDim), ] only.
 
-    After construction, subspace.nWhat == 2 (the bivector override that
-    SymbolicSpace.__init__ applies) and subspace.what is a Tensor basis
-    whose setW/getW accept any [B, N, 2] tensor.
+    After construction (post-2026-05-07 rollback), subspace.nWhat ==
+    sym.nDim (no leading [pos, neg] bivector pinned in the codebook).
+    subspace.what is a Tensor basis whose setW/getW accept any
+    [B, N, *] tensor; these tests still feed [B, N, 2] bivectors
+    directly because resolve() reads only the leading 2 columns.
     """
     _populate_test_config(
         inputDim=conceptDim,
@@ -74,9 +76,11 @@ def _make_symbolic_space(nSymbols=3, symbolDim=4, conceptDim=4):
     outputShape = [nSymbols, symbolDim]    # SymbolicSpace output
 
     sym = Spaces.SymbolicSpace(inputShape, spaceShape, outputShape)
-    # Invariant: SymbolicSpace.__init__ sets nWhat=2 (bivector)
-    assert sym.subspace.nWhat == 2, (
-        f"Expected subspace.nWhat==2 after SymbolicSpace init, got {sym.subspace.nWhat}"
+    # Post-2026-05-07 rollback invariant: subspace.nWhat == sym.nDim
+    # (the natural width contract; no forced 2 + obj override).
+    assert sym.subspace.nWhat == sym.nDim, (
+        f"Expected subspace.nWhat==sym.nDim ({sym.nDim}) after "
+        f"SymbolicSpace init, got {sym.subspace.nWhat}"
     )
     return sym
 

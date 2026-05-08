@@ -113,12 +113,21 @@ _XOR_EXACT_USES_EMBEDDING = _xml_uses_embedding("XOR_exact.xml")
 
 
 def _emit_warning_summary(caught):
-    """Emit a single summary warning per warning type from a list of caught warnings."""
+    """Emit a single summary warning per warning type from a list of caught warnings.
+
+    Known-noise PyTorch internal deprecation warnings (e.g.
+    ``torch.jit.script_method``, fired by PyTorch's embedding code on
+    import) are filtered out before aggregation — they are not under
+    our control and just clutter clean output.
+    """
     from collections import Counter
+    _NOISE_PATTERNS = ("script_method",)
     counts = Counter()
     for w in caught:
-        # Collapse to warning type prefix
         msg = str(w.message)
+        if any(pat in msg for pat in _NOISE_PATTERNS):
+            continue
+        # Collapse to warning type prefix
         if msg.startswith("Range violation"):
             key = "Range violation"
         elif msg.startswith("PiLayer.reverse"):

@@ -603,22 +603,14 @@ def autocast_compute_dtype(device, fallback=None):
         dev_type = device.type if hasattr(device, 'type') else str(device)
     except Exception:
         dev_type = "cpu"
-    # PyTorch 2.4+ unified API.
+    # PyTorch 2.4+ unified API. Handles all device types ('cpu',
+    # 'cuda', 'mps', etc.) — the older per-device APIs
+    # (``is_autocast_cpu_enabled`` / ``get_autocast_cpu_dtype``) are
+    # deprecated in current PyTorch and have been dropped here.
     try:
         if torch.is_autocast_enabled(dev_type):
             return torch.get_autocast_dtype(dev_type)
     except (TypeError, AttributeError):
-        pass
-    # Older API split per device.
-    try:
-        if dev_type == "cuda" and torch.is_autocast_enabled():
-            return torch.get_autocast_gpu_dtype()
-    except Exception:
-        pass
-    try:
-        if dev_type == "cpu" and torch.is_autocast_cpu_enabled():
-            return torch.get_autocast_cpu_dtype()
-    except Exception:
         pass
     return fallback
 
@@ -890,17 +882,39 @@ class XMLConfig:
 
         Raises ``KeyError`` when the key is absent from both the space
         section and the architecture section -- unless ``default`` is
-        provided, in which case it is returned.
+        provided, in which case it is returned. Raises ``ValueError``
+        when the same scalar key is listed more than once inside a
+        space section (the XML parser folds repeated sibling tags into
+        a list; for scalar config keys that's a dup-by-mistake whose
+        downstream symptom -- ``int + list`` from arithmetic on the
+        list -- is opaque, so we surface a pointed error here instead).
         """
         # Try space-specific section first (top-level)
         if space_name in self._data:
             space = self._data[space_name]
             if isinstance(space, dict) and key in space:
-                return space[key]
+                v = space[key]
+                if isinstance(v, list):
+                    raise ValueError(
+                        f"Config key {key!r} in section {space_name!r} "
+                        f"is duplicated (parsed as {v!r}). Each scalar "
+                        f"config key may appear at most once per space "
+                        f"section. Remove the duplicate <{key}> tag(s) "
+                        f"in the model XML."
+                    )
+                return v
         # Fall back to architecture-level default
         arch = self.section("architecture")
         if key in arch:
-            return arch[key]
+            v = arch[key]
+            if isinstance(v, list):
+                raise ValueError(
+                    f"Config key {key!r} in section 'architecture' "
+                    f"is duplicated (parsed as {v!r}). Each scalar "
+                    f"config key may appear at most once. Remove the "
+                    f"duplicate <{key}> tag(s) in the model XML."
+                )
+            return v
         if default is not XMLConfig._MISSING:
             return default
         raise KeyError(

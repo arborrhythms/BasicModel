@@ -66,12 +66,21 @@ def _load_model_in_process(config_path, max_length=64):
     dat = arch.get("data", {})
     dataset = dat.get("dataset")
     if dataset is not None:
-        TheData.load(
-            dataset,
-            num_shards=int(dat.get("numShards")),
-            max_docs=int(dat.get("maxDocs")),
-            shard_dir=dat.get("shardDir"),
-        )
+        # Inline / xor-style datasets don't carry shard / maxDocs /
+        # shardDir keys; only forward them when the XML supplies them.
+        load_kwargs = {}
+        for src_key, dst_key, cast in (
+                ("numShards", "num_shards", int),
+                ("maxDocs",   "max_docs",   int),
+                ("shardDir",  "shard_dir",  str)):
+            v = dat.get(src_key)
+            if v is None:
+                continue
+            try:
+                load_kwargs[dst_key] = cast(v)
+            except (TypeError, ValueError):
+                pass
+        TheData.load(dataset, **load_kwargs)
 
     model, _ = BaseModel.from_config(config_path, data=TheData)
     model.eval()
