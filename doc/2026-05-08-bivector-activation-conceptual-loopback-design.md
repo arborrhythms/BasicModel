@@ -139,7 +139,7 @@ substrate; no parallel `SubsymbolicSpace` instance is constructed.
 
 Code touchpoints:
 
-- `MentalModel._create_per_stage` ([Models.py:4427](basicmodel/bin/Models.py:4427)) and the flat path
+- `BasicModel._create_per_stage` ([Models.py:4427](basicmodel/bin/Models.py:4427)) and the flat path
   ([Models.py:1852](basicmodel/bin/Models.py:1852)): drop the conditional
   `if self.subsymbolicEnabled`. SubsymbolicSpace is no longer
   constructed; `self.subsymbolicSpace = None` always. Wire the
@@ -157,7 +157,7 @@ Code touchpoints:
 - `SubsymbolicSpace` class itself: **not** removed. It stays in the
   codebase as a configurable variant (a regular Space with
   `<codebook>false</codebook>` and a limited grammar achieves the
-  same role); just not auto-constructed by MentalModel.
+  same role); just not auto-constructed by BasicModel.
 
 Validator changes:
 
@@ -194,7 +194,7 @@ stage_widen_dim = symbolShape[1]   # unconditional after Stage 2
 Wire `symbolicSpace_ref` on every stage's ConceptualSpace. Sketch:
 
 ```python
-# In MentalModel._create_per_stage, after the spaces are constructed:
+# In BasicModel._create_per_stage, after the spaces are constructed:
 for t, cs in enumerate(self.conceptualSpaces):
     if t == 0:
         # Stage 0 cold-starts: no previous symbol, _build_combined_input
@@ -383,7 +383,7 @@ lands.
 ### Stage 2 acceptance — Always-on subsymbolic loopback
 
 - `<subsymbolicEnabled>` and `<mode>` reads gone. SubsymbolicSpace is
-  never auto-constructed by MentalModel.
+  never auto-constructed by BasicModel.
 - `_build_combined_input` always wires the symbolic right-half.
 - Validator asserts `C.nInputDim == P.nOutputDim + S.nOutputDim`.
 - Test suite green.

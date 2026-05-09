@@ -41,7 +41,7 @@ def _train(seed=42, epochs=400):
     arch = cfg.get("architecture", {})
     dat = arch.get("data", {})
     Models.TheData.load("inline", dat=dat)
-    m, _ = Models.MentalModel.from_config(_CONFIG)
+    m, _ = Models.BasicModel.from_config(_CONFIG)
     n_train = len(Models.TheData.train_input)
     optimizer = torch.optim.Adam(m.parameters(), lr=0.01)
     criterion = torch.nn.MSELoss()

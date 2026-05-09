@@ -170,7 +170,7 @@ subsymbolic-enable flag, set independently in the model XML.
   `[B, N/2, 2*D]` before the inner LDU and unpacks after. Slot count
   halves per stage; per-slot dim doubles; total per-stage volume
   preserved. Validated by
-  `nPercepts × state_dim == nSymbols × symbol_width` at
+  `nPercepts $\times$ state_dim == nSymbols $\times$ symbol_width` at
   `ModelFactory.validate_config`. Used by MM_xor, MM_5M, MM_400M.
   Without butterflies, every stage shares the same shape and no
   halving happens (the "plain" / `useGrammar=all` paths).
@@ -191,22 +191,25 @@ subsymbolic-enable flag, set independently in the model XML.
   `BaseModel.create_from_config`), `SubSpace.serial_cache` dict, and
   the `test_serial_mode_*.py` tests.
 
-**Conceptual loopback** (always-on; the `<subsymbolicEnabled>` /
-`<mode>` flags were retired 2026-05-08):
+**Conceptual input sourcing** (per-order switch; the legacy
+loopback concat was retired 2026-05-09):
 
-  Each stage's `ConceptualSpace` reads
-  `[P_event || S_event_{t-1}]` -- the perceptual side concatenated
-  with the previous symbolic emission. Stage 0 cold-starts with a
-  zero right-half (the PiLayer's `x=0 -> identity` property makes
-  this a no-op match against the un-widened pipeline); stages $t \geq 1$
-  consume `symbolicSpaces[t-1].subspace.event`. `PerceptualSpace`
-  serves as the subsymbolic substrate; no parallel `SubsymbolicSpace`
-  is auto-constructed at runtime. The widening fires only when
-  `<bivectorOutput>true</bivectorOutput>` is configured on
-  `ConceptualSpace` and butterfly mode is off, so legacy butterfly
-  configs preserve their pre-widening layer geometry. Reference:
-  `MentalModel._create_per_stage` (per-stage symbolicSpace_ref
-  wiring) and `Spaces.ConceptualSpace._build_combined_input`.
+  Each stage's `ConceptualSpace.forward` reads exactly one input
+  source per stage. Stage $0$ reads `PerceptualSpace.event`
+  directly (full content width). Stages $t \geq 1$ read the active
+  sibling's previous event -- `SymbolicSpace.event` under the
+  default `grammar` mode, `SubsymbolicSpace.event` under
+  `<architecture><mode>parallel</mode>` -- lifted from the
+  bivector handoff $[B, V_S, 2]$ back to concept content
+  $[B, V, \mathrm{concept\_dim}]$ via the C-tier codebook's SVD
+  pseudo-inverse (`Codebook.project\_reverse`). The shift between
+  symbolic and subsymbolic input at higher orders is the
+  architectural locus of attention; both arrive at concept content
+  width matching the perceptual content width that order-$0$
+  expects, so the dim chain is uniform without the legacy concat.
+  References: `Spaces.ConceptualSpace._sourced_input` and
+  `Spaces.ConceptualSpace._get_active_input_sibling`. The
+  legacy `_build_combined_input` is dead code awaiting removal.
 
 ### Pipeline as a unit, two-tier reset
 
@@ -214,10 +217,10 @@ subsymbolic-enable flag, set independently in the model XML.
 > and the brick-vectorization handoff
 > (`plans/2026-04-27-brick-vectorization-and-legacy-removal-handoff.md`).*
 
-`runBatch` is a pure compute brick: forward → loss → backward →
+`runBatch` is a pure compute brick: forward $\to$ loss $\to$ backward $\to$
 optimizer.step. It does **not** decide when to reset per-row state, does
 **not** consume `_end_of_stream` for control flow, and (after the §6
-vectorization landed) does **not** issue any GPU→host sync inside the
+vectorization landed) does **not** issue any GPU$\to$host sync inside the
 brick body.
 
 Reset lives in the outer doc-streaming loop in `runEpoch`. The same
@@ -262,7 +265,7 @@ contract handles partial-fill tails (last slab of a doc shorter than
 `slab_bytes`) via the same NULL-padding semantics already in place.
 
 **Compute-brick contract.** No `.item()`, no `.tolist()`, no Python
-conditional on a tensor value, no GPU→host copy inside `runBatch`. The
+conditional on a tensor value, no GPU$\to$host copy inside `runBatch`. The
 brick-vectorization handoff (§6) made this true:
 
 - §6a removed `stm_residual_microbatch`'s `.item()` early-out (always
@@ -376,7 +379,7 @@ the nonlinear domain transform rather than from literal products.
 
 **Monotonicity of the bivector chain.** When `<bivectorOutput>true</bivectorOutput>`
 is configured on PerceptualSpace, ConceptualSpace, and SymbolicSpace, every
-activation in the P → C → S chain lives on the non-negative paired-index cone
+activation in the P $\to$ C $\to$ S chain lives on the non-negative paired-index cone
 `[0, 1]^{2K}`. The Pi / Sigma layers select
 `NonNegativeInvertibleLinearLayer` (or `NonNegativeLinearLayer` in the
 non-invertible case) under `monotonic=True`, giving entry-wise $W \geq 0$.

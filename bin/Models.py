@@ -187,7 +187,7 @@ class BaseModel(Mereology, nn.Module):
     def _resolve_dim(section, prev_dim):
         """Resolve a Space's nDim sentinel: 0 -> inherit ``prev_dim``.
 
-        Shared between BasicModel.create() and MentalModel.create()
+        Shared between BasicModel.create() and BasicModel.create()
         (and any subclass): both pipelines chain dims through
         InputSpace -> PerceptualSpace -> ConceptualSpace ->
         SymbolicSpace -> OutputSpace, and an unset / zero-sentinel
@@ -237,7 +237,7 @@ class BaseModel(Mereology, nn.Module):
 
     # -- Order Partitions (Ramsification) -----------------------------
     # Static helpers shared between BasicModel and the per-stage
-    # MentalModel pipeline. Pure-functional except for
+    # BasicModel pipeline. Pure-functional except for
     # ``_conceptual_width_mode`` which reads TheXMLConfig.
 
     @staticmethod
@@ -341,10 +341,7 @@ class BaseModel(Mereology, nn.Module):
         if config_path is None:
             config_path = os.path.join(ProjectPaths.PROJECT_DIR, "data", "xor.xml")
         resolved_path = ModelFactory.resolve_xml(config_path)
-        raw_cfg = BaseModel.load_config(resolved_path)
-        model_kind = XMLConfig.infer_model_kind(raw_cfg)
-        model_cls = {"mental": MentalModel}.get(model_kind, BasicModel)
-        model = model_cls()
+        model = BasicModel()
         cfg = model.create_from_config(resolved_path, model_type=model_type, data=data)
         return model, cfg
 
@@ -368,8 +365,7 @@ class BaseModel(Mereology, nn.Module):
         cfg = TheXMLConfig.data
 
         arch = cfg["architecture"]
-        model_family = TheXMLConfig.model_kind
-        ModelFactory.validate_config(cfg, model_family=model_family)
+        ModelFactory.validate_config(cfg)
 
         _t = TheXMLConfig.training
         _s = TheXMLConfig.space
@@ -1430,8 +1426,22 @@ class BaseModel(Mereology, nn.Module):
         """Run a test pass with reverse and report input vs reconstructed text."""
         if hasattr(self, 'masked_prediction') and self.masked_prediction != 'NONE':
             return  # masked prediction has variable batch sizes; skip reconstruction report
+        # Skip when the config is a structural scaffold (no training, no
+        # real test data) so the reverse-pass runEpoch doesn't crash on
+        # mismatched-shape activations. idempotent.xml is the canonical
+        # example -- it exists for unit tests of the C-S round-trip
+        # primitive, not end-to-end CLI runs.
+        try:
+            num_epochs = TheXMLConfig.get(
+                "architecture.training.numEpochs", default=1)
+            if num_epochs is not None and int(num_epochs) == 0:
+                return
+        except (AttributeError, KeyError, TypeError, ValueError):
+            pass
         self.set_sigma(0)  # suppress exploration for evaluation
         test_input, test_output = self.inputSpace.getTestData()
+        if not test_input:
+            return  # no test data -- nothing to reconstruct
         _, _, allOut, _ = self.runEpoch(batchSize=len(test_input), split="test")
 
         if not isinstance(allOut, torch.Tensor) or allOut.numel() == 0:
@@ -1604,12 +1614,12 @@ class BasicModel(BaseModel):
         self.syntax           = False  # BasicModel: no syntax
         TheXMLConfig._data.setdefault("architecture", {})["syntax"] = False
         # BasicModel accepts the <useGrammar> XML surface for uniformity
-        # with MentalModel but only ``none`` is meaningful for it -- the
+        # with BasicModel but only ``none`` is meaningful for it -- the
         # BasicModel pipeline lacks the constituency-grammar machinery
         # (``_level_shapes``, ``GrammarMergeGlue``, the
         # ChartCompose/ChartGenerate stem wiring needed by ``all``).
         # Configs that need full constituency grammar should use
-        # MentalModel.
+        # BasicModel.
         try:
             from basicmodel.bin.util import parse_use_grammar
         except ModuleNotFoundError:
@@ -1619,7 +1629,7 @@ class BasicModel(BaseModel):
         TheXMLConfig.require(
             lambda cfg, _ug=self.useGrammar: _ug == "none",
             f"BasicModel only supports useGrammar='none' (got "
-            f"{self.useGrammar!r}); use MentalModel for full "
+            f"{self.useGrammar!r}); use BasicModel for full "
             f"constituency grammar.")
         # Gate-L1 sparsity lambda for LiftLayer / LowerLayer raw_gate
         # parameters. 0.0 (default) disables the penalty; configs that
@@ -1629,7 +1639,7 @@ class BasicModel(BaseModel):
         # Per-stage / butterfly / grammar / truth knobs. Initialized
         # here with safe defaults (off / zero / no-op) so subclasses
         # and the merged grammar paths can reference them
-        # unconditionally. MentalModel.create overrides these with
+        # unconditionally. BasicModel.create overrides these with
         # config values when running the per-stage pipeline; keeping
         # them defined on every BasicModel instance avoids
         # AttributeError in helpers that the two classes will share
@@ -1666,7 +1676,7 @@ class BasicModel(BaseModel):
                              default="output/syntax.xml")
             or "output/syntax.xml")
         self._syntax_truncated = False
-        # Butterfly state cache (populated by MentalModel.create's
+        # Butterfly state cache (populated by BasicModel.create's
         # butterfly branch; left None on the BasicModel path).
         self._butterfly_state_vectors = None
         self._butterfly_state_dim = None
@@ -1724,7 +1734,7 @@ class BasicModel(BaseModel):
         # nDim=0 for a space means "same as the previous space's output dim".
         # InputSpace output dim is its configured nDim (embedding/feature size).
         # Helpers _resolve_dim / _obj_size / _nvec live on BaseModel
-        # so the same chaining logic is shared with MentalModel.
+        # so the same chaining logic is shared with BasicModel.
         input_dim   = self._resolve_dim("InputSpace",      1)
         percept_dim = self._resolve_dim("PerceptualSpace", input_dim)
         concept_dim = self._resolve_dim("ConceptualSpace", percept_dim)
@@ -1974,9 +1984,9 @@ class BasicModel(BaseModel):
             self.pipeline_rev = None
 
     # -- Per-stage / butterfly / AR helpers ----------------------------
-    # Shared by BasicModel's flat pipeline and MentalModel's per-stage
+    # Shared by BasicModel's flat pipeline and BasicModel's per-stage
     # path. The butterfly helpers depend on ``self._merge_diffs`` which
-    # is initialized in MentalModel.forward when ``useGrammar=='all'``;
+    # is initialized in BasicModel.forward when ``useGrammar=='all'``;
     # they raise on the BasicModel path because that path never invokes
     # them.
 
@@ -3064,11 +3074,19 @@ class BasicModel(BaseModel):
                 output_weight = 0.0
             else:
                 # Non-AR: today's behavior.
-                outputPred = outputDataPred.squeeze()
-                output     = outputTensor.squeeze()
-                lossOut    = self.loss.output(outputPred, output)
-                self.accumulate_output_symbol_residual(outputTensor, outputDataPred)
-                output_weight = 1.0 - self.loss.reverse_scale
+                # Configs with no trained output head (e.g. idempotent.xml's
+                # round-trip-only setup) produce ``outputDataPred=None``.
+                # Treat that as a zero-weight no-op so the test pass can
+                # still run reverse and reconstruction.
+                if outputDataPred is None:
+                    lossOut = torch.tensor(0.0, device=TheDevice.get())
+                    output_weight = 0.0
+                else:
+                    outputPred = outputDataPred.squeeze()
+                    output     = outputTensor.squeeze()
+                    lossOut    = self.loss.output(outputPred, output)
+                    self.accumulate_output_symbol_residual(outputTensor, outputDataPred)
+                    output_weight = 1.0 - self.loss.reverse_scale
 
             TheError.add(
                 "output", lossOut,
@@ -3903,7 +3921,7 @@ class BasicModel(BaseModel):
                     outputTensor = self.outputSpace.prepOutput(out_items)
 
                 # Unified path: AR modes drive their outer pos loop
-                # inside MentalModel.forward() via the sliding-window
+                # inside BasicModel.forward() via the sliding-window
                 # buffer on InputSpace; non-AR modes run one pass. See
                 # basicmodel/doc/specs/2026-04-20-streaming-ar-training-loop-design.md
                 #
@@ -4084,7 +4102,7 @@ class BasicModel(BaseModel):
         self.masked_prediction = masked_prediction
 
         # Syntax tree dump — when <writeSyntax>true</writeSyntax> is
-        # set in the model XML (under <architecture>), MentalModel.forward
+        # set in the model XML (under <architecture>), BasicModel.forward
         # writes an XML syntax tree (one per batch row) to syntaxOutPath
         # at the end of each forward pass. See doc/Language.md
         # "POS side-channel" for the format.
@@ -4295,16 +4313,13 @@ class BasicModel(BaseModel):
             # configs); skip widening there. Legacy non-bivector configs
             # also skip widening so the in==out invertibility constraint
             # on the C PiLayer still holds.
-            try:
-                _bo = bool(TheXMLConfig.space("ConceptualSpace", "bivectorOutput"))
-            except KeyError:
-                _bo = False
-            stage_widen_dim = (symbolShape[1]
-                               if (_bo and not self.useButterflies)
-                               else 0)
+            # Right-half loopback widening retired (see ConceptualSpace
+            # docstring): per-order input sourcing replaces the concat,
+            # so the C-tier PiLayer input width is just nInputDim.
             cs = ConceptualSpace(cs_in, stage_space_concept, cs_out,
                                  layer=cs_layer,
-                                 subsymbolic_widen_dim=stage_widen_dim)
+                                 subsymbolic_widen_dim=0)
+            cs._stage_idx = t
             ss = SymbolicSpace(ss_in, stage_space_symbol, ss_out,
                                conceptualSpace=cs, layer=ss_layer)
             # Per-stage flags consumed by build_pipelines / forward.
@@ -4413,7 +4428,7 @@ class BasicModel(BaseModel):
 
 
     def _build_pipelines_per_stage(self):
-        """Phase 2: stem/body/head pipelines for MentalModel.
+        """Phase 2: stem/body/head pipelines for BasicModel.
 
         Pipeline shape (microbatch AR):
             stem  : inputSpace -> FlattenK(perceptualSpace)
@@ -4555,7 +4570,7 @@ class BasicModel(BaseModel):
             )
             self.pipeline_rev = None
 
-    # MentalModel.End and MentalModel.Finish were dropped 2026-05-05:
+    # BasicModel.End and BasicModel.Finish were dropped 2026-05-05:
     # End() was identical to BasicModel.End; Finish() differed only in
     # skipping the optional plotActivations call, which is gated on
     # ``self.plot`` (False by default) so inheriting BasicModel.Finish
@@ -5322,14 +5337,6 @@ class BasicModel(BaseModel):
 
 TheBasicModel = BasicModel()
 
-# MentalModel was merged into BasicModel on 2026-05-05. The legacy
-# name remains as a module-level alias so existing imports and XML
-# configs that reference ``MentalModel`` keep working; the per-stage
-# / butterfly / grammar pipeline is selected by ``architecture.type``
-# (mental | basic) in XML, not by class identity.
-MentalModel = BasicModel
-TheMentalModel = MentalModel()
-
 class ModelFactory:
     """Create, train, and evaluate models from an XML config file.
 
@@ -5377,7 +5384,7 @@ class ModelFactory:
         raise KeyError(f"Required parameter '{key}' not found in <{space_name}> or <architecture>")
 
     @staticmethod
-    def validate_config(cfg, model_family=None):
+    def validate_config(cfg):
         """Check merged config for known inconsistencies and raise on error.
 
         Called after defaults have been merged so all keys are present.
@@ -5386,8 +5393,6 @@ class ModelFactory:
         gsp = ModelFactory.get_space_param
         arch = cfg.get("architecture", {})
         errors = []
-        if model_family is None:
-            model_family = XMLConfig.infer_model_kind(cfg)
 
         # Attention is incompatible with reshape that changes vector count
         # (attention expects multi-vector 3D, reshape to 1 vector collapses it).
@@ -5423,7 +5428,7 @@ class ModelFactory:
                 "Set <hasAttention>false</hasAttention> in <ConceptualSpace>.")
 
         use_butterflies = bool(arch.get("useButterflies", False))
-        if model_family == "mental" and use_butterflies:
+        if use_butterflies:
             def _resolve_dim(space_name, prev_dim):
                 try:
                     raw = gsp(cfg, space_name, "nDim")
@@ -5512,7 +5517,7 @@ class ModelFactory:
         # errors.append path.  Any remaining requirements registered later
         # (inside Space._register_requirements during __init__) will fire
         # via the second TheXMLConfig.validate() call at the end of
-        # MentalModel.__init__.
+        # BasicModel.__init__.
         TheXMLConfig.validate()
 
     @staticmethod

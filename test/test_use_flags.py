@@ -20,7 +20,7 @@ def _load(cfg_name):
     path = os.path.join(_DATA, cfg_name)
     init_config(path=path, defaults_path=os.path.join(_DATA, "model.xml"))
     Language.TheGrammar._configured = False
-    model, _cfg = Models.MentalModel.from_config(path)
+    model, _cfg = Models.BasicModel.from_config(path)
     model.eval()
     return model
 
@@ -29,7 +29,7 @@ def _load(cfg_name):
 # can't silently flip them.  Configs that cannot instantiate on the current
 # tree are excluded; their loading failures are pre-existing issues
 # (unrelated to the ramsified refactor) and are tracked separately:
-#   - model.xml         -- BasicModel template, not a MentalModel
+#   - model.xml         -- BasicModel template, not a BasicModel
 #   - MM_5M.xml         -- reconstruct=concepts fails validate_config
 #   - MM_shamatha.xml   -- ConceptualSpace nVectors!=nActive
 #   - MM_xor_step4.xml  -- ConceptualSpace nVectors!=nActive

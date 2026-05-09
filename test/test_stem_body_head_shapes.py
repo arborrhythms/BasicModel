@@ -21,7 +21,7 @@ _CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
 
 @pytest.fixture
 def model():
-    """A MentalModel built from MM_xor.xml so InputSpace and PerceptualSpace
+    """A BasicModel built from MM_xor.xml so InputSpace and PerceptualSpace
     are wired with peer references and an actual subspace."""
     from data import TheData
     from Models import BaseModel

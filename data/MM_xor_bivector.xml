@@ -30,7 +30,6 @@
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <processSymbols>false</processSymbols>
-    <type>mental</type>
     <ergodic>false</ergodic>
     <modelType>embedding</modelType>
     <maskedPrediction>NONE</maskedPrediction>
@@ -87,30 +86,27 @@
     <codebook>false</codebook>
     <nonlinear>false</nonlinear>
     <bivectorOutput>true</bivectorOutput>
-    <svdOrthogonalInit>true</svdOrthogonalInit>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nInput>8</nInput>
-    <!-- nInputDim must match PerceptualSpace.nOutputDim (2 under bivector
-         regime). The loopback widening adds SymbolicSpace.nOutputDim (2)
-         on top, giving the C input PiLayer width = 4. See Models.py:1797. -->
     <nInputDim>2</nInputDim>
     <nVectors>8</nVectors>
-    <!-- nDim must equal nInputDim + S.nOutputDim (= 2 + 2 = 4) so the
-         syntactic-layer reverse path's pass-through (which leaves data
-         in codebook dim) followed by the right-half strip lands at the
-         original perceptual input dim. The C-tier output is still the
-         per-prototype catuskoti bivector [B, V_C, 2] regardless of nDim. -->
-    <nDim>4</nDim>
+    <!-- nDim is the codebook prototype content width. Under bivector
+         projection it equals nInputDim so PiLayer can stay a square
+         isomorphism (2x2) and Codebook.project does the dim adaptation
+         to the bivector handoff via per-prototype accumulators. The
+         right-half loopback widening was retired in favour of per-
+         order input sourcing on ConceptualSpace.forward, so nDim no
+         longer needs to absorb S.nOutputDim. -->
+    <nDim>2</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
     <hasAttention>false</hasAttention>
-    <invertible>false</invertible>
+    <invertible>true</invertible>
     <codebook>true</codebook>
     <nonlinear>false</nonlinear>
     <bivectorOutput>true</bivectorOutput>
-    <svdOrthogonalInit>true</svdOrthogonalInit>
   </ConceptualSpace>
 
   <SymbolicSpace>
@@ -127,7 +123,6 @@
     <commitmentBeta>0.0</commitmentBeta>
     <nonlinear>false</nonlinear>
     <bivectorOutput>true</bivectorOutput>
-    <svdOrthogonalInit>true</svdOrthogonalInit>
   </SymbolicSpace>
 
   <OutputSpace>

@@ -125,7 +125,7 @@ class TestBivectorEndToEnd(unittest.TestCase):
 
         torch.manual_seed(0)
         Models.TheData.load("xor")
-        m = Models.MentalModel()
+        m = Models.BasicModel()
         cfg = str(_PROJECT / "data" / "MM_xor_bivector.xml")
         m.create_from_config(cfg, data=Models.TheData)
         m.eval()
@@ -135,8 +135,14 @@ class TestBivectorEndToEnd(unittest.TestCase):
         ss0 = m.symbolicSpaces[0]
         self.assertTrue(cs0._bivector_output)
         self.assertTrue(ss0._bivector_output)
-        self.assertEqual(cs0._right_half_dim, 2,
-                         "C[0] right_half_dim should equal symbol dim")
+        # Loopback concat retired in favour of per-order input sourcing
+        # on ConceptualSpace.forward (order 0 reads PerceptualSpace,
+        # order > 0 reads the active sibling lifted via the C-tier
+        # codebook's SVD pseudo-inverse). Right-half widening is now
+        # always zero.
+        self.assertEqual(cs0._right_half_dim, 0,
+                         "C[0] right_half_dim should be 0 after the "
+                         "loopback retirement")
         # Forward + reverse runs without shape errors.
         with torch.no_grad():
             m.runEpoch(batchSize=2, split="test")

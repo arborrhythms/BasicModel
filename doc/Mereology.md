@@ -114,7 +114,11 @@ and the leading-bivector / paired-index layout caveat.
 codebook.  It classifies each ordered pair of codebook rows $(i, j)$
 into one of the five mereological relations above (using
 `Basis.part` on the rows), and penalizes partial overlap when paired
-with a trust mismatch.
+with a trust mismatch.  This is the learned half of the [Codebook
+Uniqueness Contract](Spaces.md#codebook-uniqueness-contract):
+`.what` content must distinguish every prototype so the parthood
+lattice stays well-formed (the structural `.where`-uniqueness is
+enforced separately by the codebook offset registry).
 
 ### Penalty
 
@@ -172,7 +176,7 @@ XML knobs (under the SymbolicSpace config section):
 
 | Knob                    | Default | Meaning |
 |-------------------------|---------|---------|
-| `overlapWeight`         | 0.1     | Weight of the overlap × trust-diff penalty |
+| `overlapWeight`         | 0.1     | Weight of the overlap $\times$ trust-diff penalty |
 | `varianceFloor`         | 0.01    | Minimum per-dim std; below this triggers the variance penalty |
 | `fullPartThreshold`     | 0.9     | $\tau$: part score above this is "full part" |
 | `disjointThreshold`     | 0.1     | $\epsilon$: part score below this is "disjoint" |

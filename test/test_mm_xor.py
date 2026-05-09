@@ -1,6 +1,6 @@
-"""MM_xor convergence test: MentalModel topology on XOR dataset.
+"""MM_xor convergence test: BasicModel topology on XOR dataset.
 
-Verifies that the MentalModel architecture (iterative [Percept,Symbol]->Concept->Symbol)
+Verifies that the BasicModel architecture (iterative [Percept,Symbol]->Concept->Symbol)
 can learn the XOR function on the toy text dataset within 200 epochs.
 """
 
@@ -26,14 +26,14 @@ _CONFIG = os.path.join(_PROJECT, "data", "MM_xor.xml")
 
 
 def _fresh_model(config_path=_CONFIG):
-    """Create a fresh MentalModel with XOR data loaded."""
+    """Create a fresh BasicModel with XOR data loaded."""
     from util import init_config
     init_config(
         path=config_path,
         defaults_path=os.path.join(_PROJECT, "data", "model.xml"),
     )
     Language.TheGrammar._configured = False
-    m, cfg = Models.MentalModel.from_config(config_path)
+    m, cfg = Models.BasicModel.from_config(config_path)
     Models.TheData.load("xor")
     return m, cfg, Models.TheData
 
@@ -62,7 +62,7 @@ def _butterfly_config(enabled):
 
 
 class TestMMXorConvergence(unittest.TestCase):
-    """MentalModel on XOR should converge to near-zero output loss."""
+    """BasicModel on XOR should converge to near-zero output loss."""
 
     @classmethod
     def setUpClass(cls):
@@ -79,7 +79,7 @@ class TestMMXorConvergence(unittest.TestCase):
         assert len(data.train_input) > 0, "XOR data not loaded"
 
     def test_model_is_mental(self):
-        # Post-2026-05-05 merger: MentalModel is an alias for BasicModel,
+        # Post-2026-05-05 merger: BasicModel is an alias for BasicModel,
         # so the class name is "BasicModel". The semantically meaningful
         # check is that the per-stage pipeline is built (conceptualSpaces
         # / symbolicSpaces lists), not the legacy class identity.
@@ -533,7 +533,7 @@ class TestMMXorConvergence(unittest.TestCase):
                     return  # pass
 
             self.assertLess(best_loss, 0.15,
-                            f"MentalModel XOR should converge below 0.15, best was {best_loss:.4f}")
+                            f"BasicModel XOR should converge below 0.15, best was {best_loss:.4f}")
 
 
 if __name__ == '__main__':

@@ -7,6 +7,8 @@
 
 * Ensure correct sentence-prediction
 
+* Remove all random seeds from the tests, they are a crutch that defends against learning robustness
+
 Sentences are sometimes composites of ideas.
 * For example, questions relate two ideas:
   * Is subject predicate ?
@@ -23,6 +25,8 @@ Memory of previous sentences requires prediction relating one to the next
   * truth statements should become conceptual bivectors (ideas) and/or meronymic relationships
   * score the user's query in terms of the change in luminousity() vs the Truth
 
+* Currently nWhere on percepts is unnecessary, because percepts are dense on input space (the network wiring densely covers the input).
+  If perception is guided by attention, it can roam on input space, in which case the .where is particularly useful.
 
 ================================== April 24 ==================================
 

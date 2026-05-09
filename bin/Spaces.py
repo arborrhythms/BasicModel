@@ -1938,6 +1938,16 @@ class Embedding(Basis):
     ``embed_token()``, reconstruction helpers, and read-only properties.
     """
 
+    # Default upper bound on lexicon size. The lexicon's where-space
+    # slice is reserved at ``create()`` time at width
+    # ``max(nVectors, vocab_size, _LEXICON_DEFAULT_CAPACITY)``.
+    # Sized generously to accommodate ASCII bootstrap (127 entries),
+    # byte-mode bootstrap (256 entries), and a typical text vocabulary
+    # without colliding with the next codebook's where-space slice.
+    # Configs that need a larger lexicon should declare a bigger
+    # ``<nVectors>`` on the owning InputSpace.
+    _LEXICON_DEFAULT_CAPACITY = 65536
+
     def __init__(self):
         super().__init__()
         self.pretrain = None       # PretrainModel, created in create()
@@ -2086,6 +2096,30 @@ class Embedding(Basis):
                        vector_size)
         # W is managed by wv._vectors; getW() returns live data
 
+        # Reserve a unique slice of the global where-axis for this lexicon.
+        # Every prototype across InputSpace + Perceptual/Conceptual/Symbolic
+        # codebooks is a distinct ``location'' in the subjective experience
+        # graph: the slice gives each lexicon entry a globally-unique
+        # ``where_offset + row`` key, on the same axis as the per-Space
+        # Codebooks (see ``Codebook.create`` and
+        # ``WhereEncoding._codebook_registry``).
+        #
+        # Embedding's ``nVectors`` is the *slot count* of the owning
+        # InputSpace, NOT the lexicon's row capacity -- the lexicon grows
+        # dynamically via ``insert()`` past ``nVectors`` (e.g., ASCII
+        # bootstrap inserts 127 char rows even when nVectors=8). To
+        # avoid colliding with the next codebook's where-space slice we
+        # reserve a generous capacity here: ``max(nVectors, vocab_size,
+        # _LEXICON_DEFAULT_CAPACITY)``. Runtime ``insert()`` asserts
+        # against this reserved capacity so growth past the bound fails
+        # loudly. If a deployed lexicon needs more, raise the default
+        # or wire a per-Embedding capacity knob in the XML.
+        reserve = max(int(nVectors) if nVectors else 0,
+                      vocab_size,
+                      Embedding._LEXICON_DEFAULT_CAPACITY)
+        self.lexicon_capacity = reserve
+        self.where_offset = WhereEncoding.allocate_codebook_slice(reserve)
+
         self.pretrain = PretrainModel(wv, learning_rate=learning_rate, neg_samples=neg_samples)
         self.wv = wv  # register as submodule for .to(device) and state_dict
         self.min_frequency = float(min_frequency)
@@ -2169,6 +2203,21 @@ class Embedding(Basis):
         Returns:
             The embedding vector for the new word.
         """
+        # Mirrors ``Codebook.addVectors``: the lexicon's where-space slice
+        # was reserved at ``create()`` time at width
+        # ``self.lexicon_capacity``, so appending a row past that bound
+        # would collide with the next codebook's slice in the global
+        # where-space. Refuse loudly.
+        current_size = len(self.wv.index_to_key)
+        cap = int(getattr(self, "lexicon_capacity",
+                          Embedding._LEXICON_DEFAULT_CAPACITY))
+        assert current_size < cap, (
+            f"Embedding.insert: lexicon is full ({current_size} >= "
+            f"capacity={cap}); the where-space slice allocated for "
+            f"this Embedding only covers ``lexicon_capacity`` prototypes. "
+            f"Raise <nVectors> on the owning Space's XML (or the "
+            f"Embedding._LEXICON_DEFAULT_CAPACITY default) and reload."
+        )
         dim = self.wv.vector_size
         if vector is not None:
             new_vec = vector.to(TheDevice.get())
@@ -3308,7 +3357,7 @@ class SubSpace(nn.Module):
         are no-ops here.
 
         ``errors`` and ``wordSpace`` persist (per-batch, per-document
-        respectively; both owned by MentalModel lifecycle, not per-Reset).
+        respectively; both owned by BasicModel lifecycle, not per-Reset).
         Serial cache is per-tick warm state and applies to the whole
         batch by construction; per-row clears still drop it because the
         cache rebuilds cheaply on the next tick.
@@ -5199,7 +5248,7 @@ class Space(nn.Module):
     def Start(self):
         """One-shot per-run initialization.
 
-        Called from MentalModel.Start() once at the top of model.forward(),
+        Called from BasicModel.Start() once at the top of model.forward(),
         before the pipeline's iteration loop. Subclasses override to
         initialize per-run state (e.g., InputSpace resets its streaming
         cursor and sliding buffer here).
@@ -5387,7 +5436,7 @@ class InputSpace(Space):
         # cleared by ``Reset(batch=b, hard=True)`` so external observers
         # see a clean state.
         self._end_of_stream = []
-        # Raw sentence strings stashed by prepInput for MentalModel.forward()
+        # Raw sentence strings stashed by prepInput for BasicModel.forward()
         # to compute the outer-loop iteration count N without rethreading
         # inp_items through runBatch's call signature.
         self._last_sentences = None
@@ -5415,7 +5464,7 @@ class InputSpace(Space):
         return self.data.test_input, self.data.test_output
     def prepInput(self, inputBatch):
         # Stash raw sentence strings for the AR outer loop in
-        # MentalModel.forward() -- lets it compute N without rewiring
+        # BasicModel.forward() -- lets it compute N without rewiring
         # inp_items through runBatch's call signature.
         if (isinstance(inputBatch, list) and inputBatch
                 and isinstance(inputBatch[0], str)):
@@ -5464,7 +5513,7 @@ class InputSpace(Space):
           where_idx: [B, nObj] long tensor of byte offsets into the source.
           when_idx:  [B, nObj] long tensor of sequential positions.
 
-        Requires self._peer_perceptual to be wired (BasicModel/MentalModel do
+        Requires self._peer_perceptual to be wired (BasicModel/BasicModel do
         this) because the tokenizer (_token_stream) currently lives on the
         peer's vocabulary.
         """
@@ -6065,11 +6114,8 @@ class PerceptualSpace(Space):
                 TheXMLConfig.space(section, "bivectorOutput"))
         except KeyError:
             self._bivector_output = False
-        try:
-            self._svd_orthogonal_init_cfg = bool(
-                TheXMLConfig.space(section, "svdOrthogonalInit"))
-        except KeyError:
-            self._svd_orthogonal_init_cfg = False
+        # Always-on (XML knob retired); see ConceptualSpace for rationale.
+        self._svd_orthogonal_init_cfg = True
 
         # Stash all attributes BEFORE super().__init__() since _build_what_basis runs inside it
         self.ergodic = ergodic
@@ -7311,11 +7357,10 @@ class ConceptualSpace(Space):
             self._bivector_output = bool(TheXMLConfig.space(section, "bivectorOutput"))
         except KeyError:
             self._bivector_output = False
-        try:
-            self._svd_orthogonal_init_cfg = bool(
-                TheXMLConfig.space(section, "svdOrthogonalInit"))
-        except KeyError:
-            self._svd_orthogonal_init_cfg = False
+        # SVD-orthogonalize the codebook at construction so ``project_reverse``
+        # (which scales by 1/Σ) is well-conditioned from t=0. Always on; the
+        # XML <svdOrthogonalInit> knob has been retired.
+        self._svd_orthogonal_init_cfg = True
         super().__init__(inputShape, spaceShape, outputShape)
         self.nonlinear = nonlinear
         self.ergodic = ergodic
@@ -7329,22 +7374,41 @@ class ConceptualSpace(Space):
         # right-half contribute nothing, preserving legacy behaviour
         # for sentence-start (Phase-1 spec §"Integration, not just
         # interference").
-        self._right_half_dim = int(subsymbolic_widen_dim or 0)
-        # Sibling references for the combined input. Set by Model
-        # after construction (avoids the circular dependency between
-        # ConceptualSpace and SymbolicSpace/SubsymbolicSpace at
-        # __init__ time).
+        # Right-half loopback widening retired: ConceptualSpace.forward
+        # now reads exactly one input source per stage (perceptual at
+        # order 0, lifted-symbolic/subsymbolic at order > 0) instead of
+        # concatenating perceptual_event with the previous symbolic+
+        # subsymbolic sum. The concat aliased a wide perceptual content
+        # vector with a 2-wide bivector activation -- semantically
+        # different things glued into one PiLayer input. Per-order
+        # input switching keeps both halves at the same content width.
+        self._right_half_dim = 0
+        # Sibling references retained for the per-order input switch
+        # (`forward` looks up the active sibling under the existing
+        # <architecture><mode>grammar|parallel</mode> flag).
         self.symbolicSpace_ref = None
         self.subsymbolicSpace_ref = None
+        # Stage index: set by the per-stage factory loop. Forward branches
+        # on this -- 0 reads PerceptualSpace.event, > 0 reads the active
+        # sibling's previous event lifted via the C-tier codebook's SVD
+        # pseudo-inverse.
+        self._stage_idx = 0
         input = self.subspace.getEncodedInputSize()
-        if self._right_half_dim > 0:
-            input = input + self._right_half_dim
-        output = self.subspace.getEncodedOutputSize()
+        if self._bivector_output:
+            # Bivector regime: PiLayer stays a square isomorphism inside
+            # conceptual content space. Dim adaptation to the bivector
+            # handoff width happens INSIDE Codebook.project (input
+            # ``[B, V, D] -> [B, N, 2]`` per-prototype accumulator), not
+            # inside Pi. This preserves XOR's discriminative info instead
+            # of squeezing it through a non-square Pi bottleneck.
+            output = input
+        else:
+            output = self.subspace.getEncodedOutputSize()
         if hasAttention:
             self.attention = AttentionLayer(output, output, type="transformer")
 
         # When ``layer`` is provided (butterfly mode builds one per stage
-        # in ``MentalModel.create``), use it directly and skip the default
+        # in ``BasicModel.create``), use it directly and skip the default
         # PiLayer construction.
         # Post-2026-05-01 refactor: ``self.pi`` is the canonical forward
         # PiLayer for every mode. In the asymmetric two-pass ergodic
@@ -7447,6 +7511,54 @@ class ConceptualSpace(Space):
             return None
         return ev.getW()
 
+    def _get_active_input_sibling(self):
+        """Return the sibling whose previous event feeds this stage's input.
+
+        The <architecture><mode>grammar|parallel</mode> selector
+        ([SubsymbolicSpace docstring](Spaces.py:9013)) puts exactly one
+        of {symbolicSpace_ref, subsymbolicSpace_ref} into the active
+        loop. Default (no mode set / `grammar`) selects symbolic.
+        Returns ``None`` when neither sibling is wired (standalone unit
+        tests).
+        """
+        sym = self.symbolicSpace_ref
+        sub = self.subsymbolicSpace_ref
+        try:
+            mode = TheXMLConfig.get("architecture.mode", default="grammar")
+        except Exception:
+            mode = "grammar"
+        mode = str(mode or "grammar").strip().lower()
+        if mode == "parallel" and sub is not None:
+            return sub
+        return sym if sym is not None else sub
+
+    def _sourced_input(self, vspace):
+        """Pick this stage's input per conceptualOrder.
+
+        Order 0 reads PerceptualSpace.event (the upstream ``vspace``
+        passed in by the per-stage forward dispatch). Order > 0 reads
+        the active sibling's previous event; if it arrived in the
+        bivector handoff shape ``[B, V_S, 2]``, lift it back to
+        concept content ``[B, V, concept_dim]`` via
+        ``Codebook.project_reverse`` on this stage's ``.what`` codebook.
+        """
+        if self._stage_idx <= 0:
+            return self.forwardBegin(vspace, returnVectors=True)
+        sib = self._get_active_input_sibling()
+        ev = self._read_event(sib) if sib is not None else None
+        if ev is None:
+            # Sibling not yet populated (sentence start). Fall back to
+            # the upstream vspace so order-0 semantics hold for the
+            # very first forward call of the sequence.
+            return self.forwardBegin(vspace, returnVectors=True)
+        # Bivector handoff: [B, V_S, 2] needs lifting back to concept
+        # content space before PiLayer can consume it. Snap-mode
+        # codebooks (no bivector) deliver content vectors directly.
+        if (isinstance(self.subspace.what, Codebook)
+                and ev.dim() == 3 and ev.shape[-1] == 2):
+            ev = self.subspace.what.reverse(ev, project=True)
+        return ev
+
     def _build_combined_input(self, perceptual_event):
         """Concatenate ``perceptual_event`` with the right-half re-entrant sum.
 
@@ -7517,20 +7629,20 @@ class ConceptualSpace(Space):
         # from the grammar XML in default-only / useGrammar='none' fast
         # paths, so the cursor always finds the configured rule (no
         # ``default_rule`` code-level fallback).
-        x = self.forwardBegin(vspace, returnVectors=True)
-        if self._right_half_dim > 0:
-            # Combined input for the parallel re-entrant loops:
-            # ``conceptual_input = perceptual_event || (symbolic_event +
-            # subsymbolic_event)`` with the right half taken from the
-            # *previous* conceptual order's projections (zeros at
-            # sentence start). The PiLayer's ``x=0 -> identity``
-            # property makes the zero right-half a no-op so order-0
-            # behaviour matches the un-widened pipeline.
-            x = self._build_combined_input(x)
+        # Per-order input source. Order 0 reads PerceptualSpace.event
+        # (today's behavior); higher orders read the active sibling's
+        # previous event (Symbolic under <mode>grammar</mode>,
+        # Subsymbolic under <mode>parallel</mode>) lifted from the
+        # downstream bivector handoff back into concept content via
+        # the C-tier codebook's SVD pseudo-inverse. Replaces the
+        # legacy `_build_combined_input` concat (which aliased a wide
+        # perceptual content vector with a 2-wide bivector activation;
+        # PiLayer treated them uniformly which was semantically wrong).
+        x = self._sourced_input(vspace)
         if getattr(self, 'syntacticLayer', None) is None:
             # Standalone-space unit tests construct ConceptualSpace
             # without a WordSpace; the production path always wires
-            # a SyntacticLayer (Models.py -- BasicModel/MentalModel
+            # a SyntacticLayer (Models.py -- BasicModel/BasicModel
             # both build WordSpace unconditionally now).
             y = self.pi(x)
         else:
@@ -7634,11 +7746,17 @@ class ConceptualSpace(Space):
             vspace.set_event(y)
             vspace = self.syntacticLayer.reverse(vspace)
             y = vspace.materialize()
+            # SyntacticLayer.reverse only fires pi.reverse when its
+            # generate-cursor has a 'pi' rule queued. When the cursor
+            # is exhausted (no rule fires) y stays at the post-lift
+            # codebook-prototype width, but reverseEnd expects the pre-
+            # forwardBegin input width. Run pi.reverse explicitly so
+            # the chain stays well-formed regardless of the syntactic
+            # dispatch outcome.
+            if (y is not None and y.dim() == 3
+                    and y.shape[-1] != self.subspace.getEncodedInputSize()):
+                y = self._pi_reverse(y)
             if self._right_half_dim > 0 and y is not None and y.dim() == 3:
-                # SyntacticLayer.reverse doesn't slice off the
-                # subsymbolic right-half (``_pi_reverse`` does in the
-                # standalone path); strip it here so reverseEnd / the
-                # upstream PerceptualSpace see only the perceptual half.
                 y = y[..., :-self._right_half_dim]
         self.concepts = y.detach()
         vspace = self.reverseEnd(y, returnVectors=True)
@@ -7767,11 +7885,8 @@ class SymbolicSpace(Space):
                 TheXMLConfig.space(section, "bivectorOutput"))
         except KeyError:
             self._bivector_output = False
-        try:
-            self._svd_orthogonal_init_cfg = bool(
-                TheXMLConfig.space(section, "svdOrthogonalInit"))
-        except KeyError:
-            self._svd_orthogonal_init_cfg = False
+        # Always-on (XML knob retired); see ConceptualSpace for rationale.
+        self._svd_orthogonal_init_cfg = True
         super().__init__(inputShape, spaceShape, outputShape, customVQ=True)
         self.conceptualSpace = conceptualSpace
         self.nonlinear = nonlinear

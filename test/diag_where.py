@@ -14,7 +14,7 @@ from data import TheData
 TheDevice.set("cpu")
 TheData.load("xor")
 
-model = Models.MentalModel()
+model = Models.BasicModel()
 model.create_from_config(config_path="data/MM_xor.xml", data=TheData)
 model.eval()
 

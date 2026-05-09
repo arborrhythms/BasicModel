@@ -5,7 +5,6 @@
        final deep symbolic state via WordSpace.reconstruct(). This is the
        plumbing fixture referenced from test_head_emission.py. -->
   <architecture>
-    <type>mental</type>
     <modelType>embedding</modelType>
     <conceptualOrder>1</conceptualOrder>
     <useButterflies>false</useButterflies>

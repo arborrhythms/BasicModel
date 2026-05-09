@@ -76,9 +76,9 @@ def _reload_config():
 
 
 def _make_model():
-    """Create a MentalModel with grammar and truth support."""
+    """Create a BasicModel with grammar and truth support."""
     _reload_config()
-    model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
+    model, cfg = Models.BasicModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
     return model
 
 
@@ -299,7 +299,7 @@ class TestLuminosityOfKindness(unittest.TestCase):
         LearnedSVO path: SVO lives on the unified S-tier
         ``chart.last_svo`` (grammar-derived from the chart-compose
         derivation trace), and the universality score computed during
-        ``MentalModel.forward`` lands on ``model._universality_score``.
+        ``BasicModel.forward`` lands on ``model._universality_score``.
         The xfail-guarded callers tolerate ``(None, None)`` when the
         untrained model's chart compose doesn't pick the canonical
         S -> S VO / VO -> V O path.

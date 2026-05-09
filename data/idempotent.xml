@@ -47,7 +47,6 @@
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <processSymbols>false</processSymbols>
-    <type>mental</type>
     <ergodic>false</ergodic>
     <modelType>embedding</modelType>
     <maskedPrediction>NONE</maskedPrediction>
@@ -102,7 +101,7 @@
   </PerceptualSpace>
 
   <ConceptualSpace>
-
+  
     <nInput>10</nInput>
     <nInputDim>4</nInputDim>
     <nVectors>10</nVectors>
@@ -110,9 +109,11 @@
     <nOutput>10</nOutput>
     <nOutputDim>100</nOutputDim>
   
+
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>true</codebook>
+    <!--bivectorOutput>true</bivectorOutput-->
     <nonlinear>false</nonlinear>
   </ConceptualSpace>
 

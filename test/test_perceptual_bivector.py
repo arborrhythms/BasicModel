@@ -24,13 +24,13 @@ _DEFAULTS = os.path.join(_PROJECT, "data", "model.xml")
 
 
 def _fresh_model():
-    """Build a fresh MentalModel from MM_xor_bivector.xml with XOR data."""
+    """Build a fresh BasicModel from MM_xor_bivector.xml with XOR data."""
     import Models
     import Language
     from util import init_config
     init_config(path=_CONFIG, defaults_path=_DEFAULTS)
     Language.TheGrammar._configured = False
-    m, cfg = Models.MentalModel.from_config(_CONFIG)
+    m, cfg = Models.BasicModel.from_config(_CONFIG)
     Models.TheData.load("xor")
     return m
 
@@ -154,13 +154,17 @@ class TestPipelineRoundTrip(unittest.TestCase):
                         f"Bivector components must be in [0, 1]^2; "
                         f"min observed = {act.min().item()}")
 
-    def test_loopback_widened_input_to_conceptual(self):
-        # ConceptualSpace's PiLayer input width should be P.nOutputDim
-        # (2) + S.nOutputDim (2) = 4 under the loopback widening.
+    def test_loopback_concat_is_retired(self):
+        # The right-half loopback concat (perceptual_event ||
+        # symbolic+subsymbolic prev) was retired in favour of per-order
+        # input sourcing on ConceptualSpace.forward (order 0 reads
+        # PerceptualSpace, order > 0 reads the active sibling lifted
+        # through the C-tier codebook's SVD pseudo-inverse). The
+        # right-half widening is therefore always zero now.
         cs = self.model.conceptualSpace
-        self.assertEqual(cs._right_half_dim, 2,
-                         f"Expected loopback widen=2 (S.nOutputDim), "
-                         f"got {cs._right_half_dim}")
+        self.assertEqual(cs._right_half_dim, 0,
+                         f"Expected right-half widening=0 after the "
+                         f"loopback retirement, got {cs._right_half_dim}")
 
 
 if __name__ == "__main__":

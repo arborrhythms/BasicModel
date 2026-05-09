@@ -1,6 +1,6 @@
-"""Tests for MentalModel with syntax=true.
+"""Tests for BasicModel with syntax=true.
 
-Verifies that MentalModel can:
+Verifies that BasicModel can:
 1. Create from MentalModel.xml and run forward+reverse (passing)
 2. Learn the toy grammar through the full pipeline (xfail -- needs projectConcepts implementations)
 """
@@ -34,15 +34,15 @@ def _reload_config():
     Language.TheGrammar._configured = False
 
 
-class TestMentalModelForwardReverse(unittest.TestCase):
-    """MentalModel with syntax=true runs forward+reverse without error."""
+class TestBasicModelForwardReverse(unittest.TestCase):
+    """BasicModel with syntax=true runs forward+reverse without error."""
 
     def setUp(self):
         _reload_config()
 
     def test_forward_reverse_runs(self):
         _reload_config()
-        model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
+        model, cfg = Models.BasicModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
         sentences = ['the cat sat on the mat', 'a dog chased the ball']
         outputs = [torch.tensor([0.0]), torch.tensor([1.0])]
 
@@ -74,7 +74,7 @@ class TestMentalModelForwardReverse(unittest.TestCase):
     def test_grammar_has_syntactic_layers(self):
         """TheGrammar is initialized and Spaces own SyntacticLayers after init_layers."""
         _reload_config()
-        model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
+        model, cfg = Models.BasicModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
         # Grammar should be initialized
         self.assertTrue(Language.TheGrammar._configured)
         # Post 2026-05-08 SyntacticLayer rename: per-space dispatchers
@@ -95,14 +95,14 @@ class TestMentalModelForwardReverse(unittest.TestCase):
     def test_subspace_words_clearable(self):
         """SubSpace word lists can be cleared on all tiers."""
         _reload_config()
-        model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
+        model, cfg = Models.BasicModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
         # Should not raise
         for space in (model.symbolicSpace, model.conceptualSpace, model.perceptualSpace):
             space.subspace.set_words([])
 
 
-class TestMentalModelGrammarConfiguration(unittest.TestCase):
-    """MentalModel should expose the grammar configured by MentalModel.xml.
+class TestBasicModelGrammarConfiguration(unittest.TestCase):
+    """BasicModel should expose the grammar configured by MentalModel.xml.
 
     The 2026-05-05 grammar rewrite moved the grammar from an external
     ``data/grammar.cfg`` into an inline ``<grammar>`` block in
@@ -129,7 +129,7 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
 
     def test_configured_grammar_matches_xml(self):
         _reload_config()
-        model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
+        model, cfg = Models.BasicModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
 
         # Step 6: grammar comes from data/grammar.cfg; structural
         # invariants (the rule predictor sees every dispatchable op)

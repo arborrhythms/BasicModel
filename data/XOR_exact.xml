@@ -1,9 +1,22 @@
 <?xml version="1.0" ?>
 <model>
+  <!-- XOR_exact: end-to-end XOR with reconstruction.
+
+       Bivector regime starts at ConceptualSpace. PerceptualSpace stays
+       wide (nDim=10, nVectors=1000) so the word codebook can pack 1000
+       prototypes pairwise-distinct, which the reconstruction snap
+       relies on. ConceptualSpace and SymbolicSpace use the continuous
+       SVD-pseudo-inverse projection (no quantize), with the per-order
+       input switch on ConceptualSpace.forward replacing the legacy
+       loopback concat. -->
   <architecture>
     <conceptualOrder>1</conceptualOrder>
+    <useButterflies>false</useButterflies>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <processSymbols>false</processSymbols>
     <modelType>embedding</modelType>
-    <ergodic>true</ergodic>
+    <ergodic>false</ergodic>
     <naive>false</naive>
     <weightsPath></weightsPath>
 
@@ -25,53 +38,88 @@
     </training>
   </architecture>
 
-  <!-- InputSpace: nOutput=6 tokens per sentence (e.g. "hello world" has 3 tokens;
-       nOutput=6 allows headroom for punctuation / longer sentences). -->
+  <!-- InputSpace: text-mode lexer, full content width. -->
   <InputSpace>
-    <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nInput>0</nInput>
+    <nInputDim>0</nInputDim>
     <nVectors>8</nVectors>
-    <nInputDim>-1</nInputDim>
+    <nDim>10</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>10</nOutputDim>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <lexer>word</lexer>
     <codebook>false</codebook>
   </InputSpace>
 
-  <!-- PerceptualSpace: invertible, flattened input. -->
+  <!-- PerceptualSpace: WIDE codebook so 1000 word prototypes have room
+       to sit pairwise-distinct. Stays content-wide on the output
+       (nOutputDim=nDim=10) so reconstruction lookups operate in the
+       full vocabulary space. -->
   <PerceptualSpace>
-    <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nInput>8</nInput>
+    <nInputDim>10</nInputDim>
     <nVectors>1000</nVectors>
-    <nInputDim>-1</nInputDim>
-    <invertible>true</invertible>
+    <nDim>10</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>10</nOutputDim>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
     <hasAttention>false</hasAttention>
+    <invertible>true</invertible>
     <codebook>true</codebook>
     <chunking>lexicon</chunking>
   </PerceptualSpace>
 
-  <!-- ConceptualSpace: nOutput=6, nVectors=6 (non-quantized: nVectors==nOutput). -->
+  <!-- ConceptualSpace: bivector boundary. Forward does Pi then projects
+       onto the codebook to emit per-prototype catuskoti bivector
+       [B, V_C, 2]; reverse uses the cached SVD pseudo-inverse to lift
+       back to [B, V_C, nDim]. -->
   <ConceptualSpace>
-    <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nInput>8</nInput>
+    <nInputDim>10</nInputDim>
     <nVectors>8</nVectors>
-    <nInputDim>-1</nInputDim>
+    <!-- nDim is the codebook prototype content width. Under bivector
+         projection it equals nInputDim so PiLayer can stay a square
+         isomorphism (10x10) and Codebook.project does the 10->2
+         dim adaptation by accumulating per-prototype bivector
+         activations. project_reverse lifts back to nDim-wide content
+         which pi.reverse consumes intact. -->
+    <nDim>10</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>2</nOutputDim>
+    <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <nonlinear>true</nonlinear>
+    <codebook>true</codebook>
+    <bivectorOutput>true</bivectorOutput>
   </ConceptualSpace>
 
-  <!-- SymbolicSpace: nOutput = ConceptualSpace.nOutput = 6 -->
+  <!-- SymbolicSpace: width-2 throughout. Symbols carry the bivector
+       activation arriving from Conceptual; their codebook stores
+       2-wide prototypes (no need to span content space). -->
   <SymbolicSpace>
-    <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nInput>8</nInput>
+    <nInputDim>2</nInputDim>
     <nVectors>8</nVectors>
-    <nInputDim>-1</nInputDim>
-    <nonlinear>true</nonlinear>
+    <nDim>2</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>2</nOutputDim>
+    <l1Lambda>0.0</l1Lambda>
+    <accumulateTruth>0</accumulateTruth>
+    <codebook>true</codebook>
+    <useVQVAE>false</useVQVAE>
+    <commitmentBeta>0.0</commitmentBeta>
+    <bivectorOutput>true</bivectorOutput>
   </SymbolicSpace>
 
   <OutputSpace>
-    <nOutput>1</nOutput>
-    <nDim>1</nDim>
+    <nInput>8</nInput>
+    <nInputDim>2</nInputDim>
     <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
   </OutputSpace>
 </model>

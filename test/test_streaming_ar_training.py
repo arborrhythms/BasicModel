@@ -79,7 +79,7 @@ def test_arir_requires_reconstruct_not_none():
     try:
         Language.TheGrammar._configured = False
         with pytest.raises((ValueError, AssertionError, RuntimeError)):
-            Models.MentalModel.from_config(tmp.name)
+            Models.BasicModel.from_config(tmp.name)
     finally:
         os.unlink(tmp.name)
 
@@ -91,7 +91,7 @@ import pytest
 def test_arlm_forward_returns_predictions_list_and_no_reconstruction():
     """AR: forward() returns (input_state, symbols, predictions_list, None).
 
-    The outer pos loop in MentalModel.forward() emits one prediction per
+    The outer pos loop in BasicModel.forward() emits one prediction per
     revealed token. AR does not reconstruct -- the fourth return value
     is always None.
     """
@@ -104,7 +104,7 @@ def test_arlm_forward_returns_predictions_list_and_no_reconstruction():
     import Models
     import Language
 
-    # Build a MentalModel with maskedPrediction=AR in the right XML path.
+    # Build a BasicModel with maskedPrediction=AR in the right XML path.
     src = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         "data", "MentalModel.xml")
@@ -125,7 +125,7 @@ def test_arlm_forward_returns_predictions_list_and_no_reconstruction():
 
     try:
         Language.TheGrammar._configured = False
-        model, _ = Models.MentalModel.from_config(tmp.name)
+        model, _ = Models.BasicModel.from_config(tmp.name)
 
         sentences = ['the cat sat on the mat']
         outputs = [torch.tensor([0.0])]
@@ -190,7 +190,7 @@ def test_arlm_runbatch_trains_without_reverse():
 
     try:
         Language.TheGrammar._configured = False
-        model, _ = Models.MentalModel.from_config(tmp.name)
+        model, _ = Models.BasicModel.from_config(tmp.name)
         opt = model.getOptimizer(lr=0.01)
 
         # Count reverse() calls to verify AR does not invoke it.
@@ -287,7 +287,7 @@ def test_basicmodel_arlm_runbatch_uses_streaming_predictions():
 
 
 def test_mentalmodel_forward_populates_inputs_and_symbolic_state():
-    """MentalModel.forward(inputData) initializes self.inputs and
+    """BasicModel.forward(inputData) initializes self.inputs and
     self.symbolic_state as a side effect — the post-refactor replacement
     for the old Start(inputData) entry point."""
     import warnings
@@ -297,12 +297,12 @@ def test_mentalmodel_forward_populates_inputs_and_symbolic_state():
     import Models
     import Language
 
-    # Build a minimal MentalModel from MM_xor.xml (small + fast).
+    # Build a minimal BasicModel from MM_xor.xml (small + fast).
     src = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         "data", "MM_xor.xml")
     Language.TheGrammar._configured = False
-    model, _ = Models.MentalModel.from_config(src)
+    model, _ = Models.BasicModel.from_config(src)
 
     # Fabricate a valid input tensor via getTrainData.
     Models.TheData.load("xor")

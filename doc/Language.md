@@ -853,7 +853,7 @@ class PiLayer(ButterflyLayer):
 ```
 
 `_pi_inner_forward` / `_pi_inner_reverse` are the shared kernels:
-`(1+x)/(1-x)` to mult-domain → log → linear → tanh-half → back to
+`(1+x)/(1-x)` to mult-domain $\to$ log $\to$ linear $\to$ tanh-half $\to$ back to
 $[-1, 1]$.  `binary=True` pre-applies `Ops.top2_select_ste` to
 hard-select the top-2 input operands.
 
@@ -1176,8 +1176,8 @@ walks the trace and pushes each merge's LHS category embedding
 `WordSpace.category_stack`.  Subsequent calls to
 `WordSpace.predict_rule(b)` then read a parse history of POS
 embeddings via the existing
-`category_stack.flatten(b)` →
-`Linear(max_depth * pos_dim → n_rules)` MLP that was already
+`category_stack.flatten(b)` $\to$
+`Linear(max_depth * pos_dim $\to$ n_rules)` MLP that was already
 allocated for this purpose.
 
 ### Why this trains the network to assign POS to every word
@@ -1205,8 +1205,8 @@ set.
 ### `<writeSyntax>true</writeSyntax>` — syntax-tree dump
 
 When `<architecture><writeSyntax>true</writeSyntax></architecture>`
-is set in the model XML, `MentalModel.forward()` calls
-`MentalModel.write_syntax_tree(path)` at the end of every forward
+is set in the model XML, `BasicModel.forward()` calls
+`BasicModel.write_syntax_tree(path)` at the end of every forward
 pass.  The output path defaults to `output/syntax.xml` and is
 overridable via
 `<architecture><syntaxOutPath>...</syntaxOutPath></architecture>`.
@@ -1310,7 +1310,7 @@ via `ChartGenerate` + per-space `SyntacticLayer.reverse` dispatch.
 
 Selected by `<WordSpace><downwardGeneration>true</downwardGeneration>`.
 After the upward parse reduces `N` leaves to a single root vector,
-`MentalModel.forward` takes that root (`sym_vectors[:, 0, :]`) and
+`BasicModel.forward` takes that root (`sym_vectors[:, 0, :]`) and
 calls `WordSpace.reconstruct(state, inputSpace)`, which runs the
 downward `S -> C` rule as a one-shot projection onto a codebook.
 
@@ -1342,7 +1342,7 @@ When the codebook is unwired (passthrough `Codebook` with `getW() ==
 None`), `reconstruct` returns a trivial `heads=[0]*B` so the loss
 path never crashes.
 
-Returns `{heads, contained, residual, state}`.  `MentalModel.forward`
+Returns `{heads, contained, residual, state}`.  `BasicModel.forward`
 stashes `heads` as `self._predicted_head` so a training loss can
 compare against a supervised head token, and so `bin/interact_head.py`
 can print the decoded word after each forward pass.
@@ -1401,7 +1401,7 @@ weight, while weaker alternatives diminish.
 
 Under `MentalModel.xml`, syntax is enabled, the chart and per-space
 dispatchers are instantiated, and rules are predicted, fired, and
-recorded.  `MentalModel.forward()` goes through `SigmaLayer` rather
+recorded.  `BasicModel.forward()` goes through `SigmaLayer` rather
 than invoking the chart pipeline directly; syntax is active as
 computation and analysis but not yet placed on a strong loss path in
 the stock training loop.
@@ -1424,7 +1424,7 @@ $$
 s(X) = 2 \cdot \mathrm{mean}(\|x_i\|) - 1 \quad \in [-1, 1]
 $$
 
-Interpretation: $+1$ → strong presence, $0$ → neutral, $-1$ →
+Interpretation: $+1$ $\to$ strong presence, $0$ $\to$ neutral, $-1$ $\to$
 absence.
 
 The **symbolic** layer operates on scalars in $[-1, 1]$: neg is
@@ -1528,7 +1528,7 @@ learned tap to drop into:
 - `Chart.last_svo: Optional[Tuple[Tensor, Tensor, Tensor]]`
 - `SyntacticLayer.lifting_layer: LiftingLayer` (instantiated in
   `init_lifting`, called from `WordSpace._build_syntactic_layer`)
-- `MentalModel.forward` reads both, calls
+- `BasicModel.forward` reads both, calls
   `truth_layer.universality(...)`, and exposes the result via
   `self._universality_score`
 - `truth_modulated_loss(universality_score=...)` folds the score into
@@ -1578,11 +1578,11 @@ section above describes the runtime behavior.
   `_compose_chart_cky_viterbi`.
 - `SyntacticLayer.lifting_layer: LiftingLayer` — created in
   `init_lifting`, called from `WordSpace._build_syntactic_layer`.
-- `MentalModel.forward` reads both, invokes
+- `BasicModel.forward` reads both, invokes
   `truth_layer.universality(s, v, o, lifting_layer, symbolicSpace)`,
   and stores `self._universality_score`; `truth_modulated_loss`
   integrates the score into the training loss.
-- `MentalModel._predicted_head: Optional[list[int]]` — set by the
+- `BasicModel._predicted_head: Optional[list[int]]` — set by the
   downward head emission described above.
 
 These four interfaces stayed stable when learned SVO replaced

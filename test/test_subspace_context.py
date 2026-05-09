@@ -23,7 +23,7 @@ _CONFIG_PATH = str(_project / "data" / "MM_xor.xml")
 
 @pytest.fixture
 def model():
-    """A MentalModel built from MM_xor.xml (has WordSpace + discourse)."""
+    """A BasicModel built from MM_xor.xml (has WordSpace + discourse)."""
     from data import TheData
     from Models import BaseModel
     TheData.load("xor")

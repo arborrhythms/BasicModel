@@ -54,7 +54,7 @@ def _make_plain_model(config='MentalModel.xml'):
     Language.TheGrammar._configured = False
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-        model, _ = Models.MentalModel.from_config(
+        model, _ = Models.BasicModel.from_config(
             os.path.join(_DATA_DIR, config))
     model.eval()
     return model

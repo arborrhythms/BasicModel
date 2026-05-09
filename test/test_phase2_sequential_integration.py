@@ -123,7 +123,7 @@ def test_basic_model_ar_sequential_path():
     torch.manual_seed(0)
     model, _ = BaseModel.from_config(_CONFIG_PATH, data=TheData)
     if not isinstance(model, BasicModel):
-        pytest.skip("MM_xor.xml resolves to MentalModel; AR test requires BasicModel")
+        pytest.skip("MM_xor.xml resolves to BasicModel; AR test requires BasicModel")
     model.masked_prediction = 'AR'
     out = model.forward(_xor_input())
     preds = out[2]

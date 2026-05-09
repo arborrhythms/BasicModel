@@ -26,7 +26,7 @@ activation reveals its conceptual order. Truth methods use
 with the highest energy.
 
 Partition boundaries are precomputed once at model creation via
-`MentalModel._order_partitions(symbol_dim, conceptual_order)`.
+`BasicModel._order_partitions(symbol_dim, conceptual_order)`.
 
 ## Reasoning Methods
 
@@ -92,7 +92,7 @@ luminosity modulation (`totalLoss * (1 + lum_weight * (1 - luminosity))`).
 
 ## Bidirectional Reasoning Loop
 
-`MentalModel.reason(givens, target, direction, max_steps)` implements
+`BasicModel.reason(givens, target, direction, max_steps)` implements
 iterative reasoning in two directions:
 
 **Forward** (givens -> conclusion): Encode givens into the TruthSet,
@@ -106,7 +106,7 @@ Luminosity non-decrease is the validity certificate at each step.
 
 ## Grammar Learning
 
-`MentalModel.grammar_learning_step()` learns grammar weights from a
+`BasicModel.grammar_learning_step()` learns grammar weights from a
 symbolic reconstruction objective:
 
 1. Forward pass produces `symbolSum`

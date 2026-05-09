@@ -799,11 +799,6 @@ class XMLConfig:
         """Raw dict access for backward compatibility."""
         return self._data
 
-    @property
-    def model_kind(self):
-        """Infer the configured model family from the current config data."""
-        return self.infer_model_kind(self._data)
-
     # --- Requirements ---
 
     def require(self, check, description):
@@ -937,7 +932,7 @@ class XMLConfig:
         tag ("ConceptualSpace", "SymbolicSpace", ...).
 
         Returns a 3-tuple. Defaults match the global block in
-        ``data/MentalModel.xml`` (Kleene: permit NEITHER, forbid BOTH).
+        ``data/BasicModel.xml`` (Kleene: permit NEITHER, forbid BOTH).
         """
         override_node = self.get(
             f"{space_name}.tetralemmaOverride", default=None)
@@ -1076,19 +1071,6 @@ class XMLConfig:
                     RuntimeWarning, stacklevel=3)
         except Exception:
             pass
-
-    @staticmethod
-    def infer_model_kind(cfg):
-        """Infer model kind from a parsed config dict.
-
-        Checks for top-level <mentalModel> section. Falls back to the
-        legacy <type> tag in <architecture> for backward compatibility.
-        """
-        has_mental = "mentalModel" in cfg and isinstance(cfg["mentalModel"], dict)
-        if has_mental:
-            return "mental"
-        arch = cfg.get("architecture", {})
-        return str(arch.get("type", "basic") or "basic").strip().lower()
 
     @staticmethod
     def _deep_merge(base, overlay, path=()):

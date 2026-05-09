@@ -1,6 +1,6 @@
 """Tests for the Stage 2 Task 1 unified outer loop.
 
-The unified outer loop lives in ``MentalModel.forward`` and handles the
+The unified outer loop lives in ``BasicModel.forward`` and handles the
 flat (non-butterfly, non-grammar) configuration. Butterfly and
 grammar="all" still use their specialized paths.
 
@@ -35,7 +35,7 @@ def test_symbolicspace_empty_state_shape():
 
 
 def _load_mental_model(conceptualOrder: int = 1):
-    """Build a MentalModel from MentalModel.xml with the requested
+    """Build a BasicModel from MentalModel.xml with the requested
     conceptualOrder, via an XML patch."""
     import xml.etree.ElementTree as ET
     import tempfile
@@ -57,7 +57,7 @@ def _load_mental_model(conceptualOrder: int = 1):
     tmp.close()
 
     torch.manual_seed(0)
-    model, _ = Models.MentalModel.from_config(tmp.name)
+    model, _ = Models.BasicModel.from_config(tmp.name)
     return model, tmp.name
 
 

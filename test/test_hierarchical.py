@@ -28,7 +28,7 @@ def _make_model(config='MentalModel.xml'):
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
     )
     Language.TheGrammar._configured = False
-    model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, config))
+    model, cfg = Models.BasicModel.from_config(os.path.join(_DATA_DIR, config))
     model.eval()
     return model
 
@@ -39,20 +39,20 @@ class TestLevelShapes(unittest.TestCase):
 
     def test_constant_dim(self):
         """D stays constant across all levels (average merge keeps D fixed)."""
-        shapes = Models.MentalModel._level_shapes(1024, 4, 8)
+        shapes = Models.BasicModel._level_shapes(1024, 4, 8)
         for n, d in shapes:
             self.assertEqual(d, 4)
 
     def test_single_order(self):
         """conceptualOrder=1 returns a single post-merge shape."""
-        shapes = Models.MentalModel._level_shapes(64, 8, 1)
+        shapes = Models.BasicModel._level_shapes(64, 8, 1)
         self.assertEqual(len(shapes), 1)
         # Post-merge: 64/2 = 32 vectors, D stays 8
         self.assertEqual(shapes[0], (32, 8))
 
     def test_eight_levels(self):
         """8 levels: N halves each time, D constant."""
-        shapes = Models.MentalModel._level_shapes(1024, 4, 8)
+        shapes = Models.BasicModel._level_shapes(1024, 4, 8)
         self.assertEqual(len(shapes), 8)
         # Level 0: 1024/2=512, D=4
         self.assertEqual(shapes[0], (512, 4))
@@ -65,7 +65,7 @@ class TestLevelShapes(unittest.TestCase):
 
     def test_two_levels(self):
         """Simple 2-level case."""
-        shapes = Models.MentalModel._level_shapes(8, 4, 2)
+        shapes = Models.BasicModel._level_shapes(8, 4, 2)
         # Level 0: 8/2=4, D=4. Level 1: 8/4=2, D=4
         self.assertEqual(shapes, [(4, 4), (2, 4)])
 
@@ -73,11 +73,11 @@ class TestLevelShapes(unittest.TestCase):
 # -- _butterfly_merge / _butterfly_unmerge ----------------------------
 
 class _MergeHelper:
-    """Lightweight stand-in for MentalModel merge/unmerge (instance methods)."""
+    """Lightweight stand-in for BasicModel merge/unmerge (instance methods)."""
     def __init__(self):
         self._merge_diffs = []
-    _butterfly_merge = Models.MentalModel._butterfly_merge
-    _butterfly_unmerge = Models.MentalModel._butterfly_unmerge
+    _butterfly_merge = Models.BasicModel._butterfly_merge
+    _butterfly_unmerge = Models.BasicModel._butterfly_unmerge
 
 
 class TestButterflyMerge(unittest.TestCase):
@@ -218,7 +218,7 @@ class TestBackwardCompat(unittest.TestCase):
         self.assertIsNotNone(result)
 
     def test_symbolicspace_single_instance(self):
-        """Non-butterfly model: MentalModel builds T independent SymbolicSpace
+        """Non-butterfly model: BasicModel builds T independent SymbolicSpace
         instances (T = conceptualOrder) in symbolicSpaces ModuleList."""
         model = _make_model('MentalModel.xml')
         self.assertEqual(len(model.symbolicSpaces), model.conceptualOrder)

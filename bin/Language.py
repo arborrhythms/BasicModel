@@ -3702,7 +3702,7 @@ class WordSpace(Space):
             grammar XML so the chart inside pass adds no information.
           * ``useGrammar='none'`` — per-space SyntacticLayer dispatch
             still reads ``current_rules``, but the chart inside pass
-            is skipped (MM_5M, the legacy MentalModel, etc.).
+            is skipped (MM_5M, the legacy BasicModel, etc.).
 
         Per the 2026-05-07 rollback both fast paths populate
         ``current_rules`` from the grammar XML's per-tier forward

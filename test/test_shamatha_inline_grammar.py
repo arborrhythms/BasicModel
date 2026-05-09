@@ -36,7 +36,7 @@ _DEFAULTS = os.path.join(_PROJECT, "data", "model.xml")
 def _fresh_model():
     init_config(path=_CONFIG, defaults_path=_DEFAULTS)
     Language.TheGrammar._configured = False
-    m, _ = Models.MentalModel.from_config(_CONFIG)
+    m, _ = Models.BasicModel.from_config(_CONFIG)
     return m
 
 

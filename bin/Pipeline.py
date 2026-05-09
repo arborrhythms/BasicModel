@@ -234,7 +234,7 @@ class ChartGenerate(nn.Module):
 class GrammarMergeGlue(nn.Module):
     """Progressive-bottleneck glue for useGrammar == 'all' mode.
 
-    Equivalent to MentalModel._butterfly_merge: average-merge adjacent
+    Equivalent to BasicModel._butterfly_merge: average-merge adjacent
     pairs along the N axis, halving N per stage. Keeps dim constant.
     Caches pairwise differences for exact reverse (not present in the
     legacy inline version, but required for Case A reconstruction).

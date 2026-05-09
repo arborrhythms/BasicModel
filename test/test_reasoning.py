@@ -41,7 +41,7 @@ def _make_model(config='MentalModel.xml'):
         defaults_path=os.path.join(_DATA_DIR, 'model.xml'),
     )
     Language.TheGrammar._configured = False
-    model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, config))
+    model, cfg = Models.BasicModel.from_config(os.path.join(_DATA_DIR, config))
     model.eval()
     return model
 
@@ -54,7 +54,7 @@ class TestOrderPartitions(unittest.TestCase):
         """Partitions must cover [0, symbol_dim) without overlap or gap."""
         for dim in [16, 32, 64, 128, 256]:
             for order in [1, 2, 3, 4, 5]:
-                parts = Models.MentalModel._order_partitions(dim, order)
+                parts = Models.BasicModel._order_partitions(dim, order)
                 self.assertEqual(len(parts), order)
                 # First starts at 0
                 self.assertEqual(parts[0][0], 0)
@@ -69,7 +69,7 @@ class TestOrderPartitions(unittest.TestCase):
 
     def test_geometric_decay(self):
         """Lower orders should have larger slices."""
-        parts = Models.MentalModel._order_partitions(128, 4)
+        parts = Models.BasicModel._order_partitions(128, 4)
         sizes = [e - s for s, e in parts]
         # Order 0 should be largest
         self.assertGreater(sizes[0], sizes[1])
@@ -77,20 +77,20 @@ class TestOrderPartitions(unittest.TestCase):
 
     def test_single_order(self):
         """With conceptualOrder=1, one partition covers everything."""
-        parts = Models.MentalModel._order_partitions(64, 1)
+        parts = Models.BasicModel._order_partitions(64, 1)
         self.assertEqual(parts, [(0, 64)])
 
     def test_activation_order(self):
         """_activation_order returns the order with highest partition energy."""
-        parts = Models.MentalModel._order_partitions(16, 2)
+        parts = Models.BasicModel._order_partitions(16, 2)
         # Energy in first partition
         act1 = torch.zeros(16)
         act1[:8] = 1.0
-        self.assertEqual(Models.MentalModel._activation_order(act1, parts), 0)
+        self.assertEqual(Models.BasicModel._activation_order(act1, parts), 0)
         # Energy in second partition
         act2 = torch.zeros(16)
         act2[8:] = 1.0
-        self.assertEqual(Models.MentalModel._activation_order(act2, parts), 1)
+        self.assertEqual(Models.BasicModel._activation_order(act2, parts), 1)
 
 
 # -- Step 3: isConsistent ----------------------------------------------

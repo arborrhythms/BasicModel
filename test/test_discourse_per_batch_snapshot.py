@@ -320,7 +320,7 @@ def test_reset_clears_all_rows():
 
 def test_b1_layer_accepts_3d_input_via_mean_pool():
     """Production currently builds discourse at B=1 but passes 3D
-    tensors from MentalModel.forward.  Until Task 9 cascades
+    tensors from BasicModel.forward.  Until Task 9 cascades
     ensure_batch(B*K) at Start(), the B=1 fallback must still
     accept 3D input by mean-pooling.  Removing this fallback is
     Task 9's job, not Task 3's.

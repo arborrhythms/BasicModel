@@ -231,6 +231,34 @@ class Report:
         """Run test epoch, compute per-digit accuracy, and plot."""
         if hasattr(model, 'masked_prediction') and model.masked_prediction != 'NONE':
             return torch.zeros(1)  # no classification report for masked prediction
+        # Configs that exercise the model architecturally without a real
+        # dataset (idempotent.xml's C-S round-trip, etc.) have no test
+        # split. Skip the report rather than crashing on an empty or
+        # degenerate forward+reverse run.
+        try:
+            test_input = model.inputSpace.getTestData()[0]
+            if test_input is None:
+                return torch.zeros(1)
+            if isinstance(test_input, torch.Tensor) and test_input.numel() == 0:
+                return torch.zeros(1)
+            if hasattr(test_input, '__len__') and len(test_input) == 0:
+                return torch.zeros(1)
+        except (AttributeError, IndexError, TypeError):
+            pass
+        # Also skip when the model is a structural scaffold (numEpochs=0
+        # configs like idempotent.xml that exist only to wire the C-S
+        # round-trip primitive for unit tests, not to run end-to-end).
+        # Without training the head's reverse path can land on
+        # mismatched-shape activations; the report has nothing
+        # meaningful to compute either way.
+        try:
+            from util import TheXMLConfig
+            num_epochs = TheXMLConfig.get(
+                "architecture.training.numEpochs", default=1)
+            if num_epochs is not None and int(num_epochs) == 0:
+                return torch.zeros(1)
+        except (AttributeError, KeyError, TypeError, ValueError, ImportError):
+            pass
         model.set_sigma(0)  # suppress exploration for evaluation
         _, _, y_pred, last_x_pred = model.runEpoch(split="test")
         if not isinstance(y_pred, torch.Tensor) or y_pred.numel() == 0:

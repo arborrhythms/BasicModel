@@ -41,7 +41,7 @@ _DEFAULTS = os.path.join(_PROJECT, "data", "model.xml")
 
 
 def _fresh_model(config_path=_CONFIG):
-    """Create a fresh MentalModel with MM_boolean inline data loaded."""
+    """Create a fresh BasicModel with MM_boolean inline data loaded."""
     from util import init_config, TheXMLConfig
     init_config(path=config_path, defaults_path=_DEFAULTS)
     Language.TheGrammar._configured = False
@@ -49,12 +49,12 @@ def _fresh_model(config_path=_CONFIG):
     arch = cfg.get("architecture", {})
     dat = arch.get("data", {})
     Models.TheData.load("inline", dat=dat)
-    m, _ = Models.MentalModel.from_config(config_path)
+    m, _ = Models.BasicModel.from_config(config_path)
     return m, cfg, Models.TheData
 
 
 class TestMMBoolean(unittest.TestCase):
-    """End-to-end MentalModel runs of MM_boolean.xml."""
+    """End-to-end BasicModel runs of MM_boolean.xml."""
 
     def test_implicit_classification(self):
         """Train; verify validation MSE under threshold across seeds."""

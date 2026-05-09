@@ -188,7 +188,6 @@ class TestValidateConfig(unittest.TestCase):
     def test_butterfly_requires_latent_symbol_volume_match(self):
         cfg = {
             "architecture": {
-                "type": "mental",
                 "useButterflies": True,
                 "reconstruct": "symbols",
             },
@@ -200,7 +199,7 @@ class TestValidateConfig(unittest.TestCase):
             "OutputSpace": {"nOutput": 1, "nDim": 1},
         }
         with self.assertRaises(ValueError) as ctx:
-            Models.BasicModelFactory.validate_config(cfg, model_family="mental")
+            Models.BasicModelFactory.validate_config(cfg)
         self.assertIn("latent/symbol volume equality", str(ctx.exception))
 
 

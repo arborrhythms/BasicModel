@@ -153,7 +153,7 @@ class _StubConceptualSpace:
 
 class _StubModel(Mereology):
     """Mereology-mixed stand-in for tests that exercise the measure
-    family without the full BasicModel/MentalModel construction.
+    family without the full BasicModel/BasicModel construction.
     """
 
     def __init__(self, event_tensor, n_stages=1, threshold=0.0):

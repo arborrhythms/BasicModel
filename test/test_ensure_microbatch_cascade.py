@@ -5,7 +5,7 @@ microbatch window has its own row inside the body's flattened view.
 _stm_fired stays at B because STM firing is a per-source-row gate
 shared across all K windows. Discourse buffers also stay at B because
 discourse history accumulates across sentences within one source stream
-(MentalModel.forward collapses K to mirror legacy last-cursor semantics
+(BasicModel.forward collapses K to mirror legacy last-cursor semantics
 before handing the snapshot to the discourse layer).
 """
 import os

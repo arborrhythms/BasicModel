@@ -9,7 +9,6 @@
        output/syntax_pos_smoke.xml so we can inspect what POS / rule
        the chart picked. -->
   <architecture>
-    <type>mental</type>
     <modelType>embedding</modelType>
     <conceptualOrder>1</conceptualOrder>
     <useButterflies>false</useButterflies>

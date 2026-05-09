@@ -12,7 +12,7 @@ Covers:
      contrastive loss arithmetic (attractive alone, attractive +
      repulsive), reset, split, gradient flow through the live
      (s, w) arguments.
-  2. BasicModel integration -- that building a MentalModel wires
+  2. BasicModel integration -- that building a BasicModel wires
      DiscourseSpace in, that forward() populates the pending snapshot
      attributes, and that runBatch-equivalent flow pushes snapshots
      into history.
@@ -58,7 +58,7 @@ def _release_allocator_cache():
 
 class _DiscourseTestBase(unittest.TestCase):
     """Shared tearDown mirroring test_grammar_derivation's pattern so
-    MentalModel instances don't accumulate across tests and trip the
+    BasicModel instances don't accumulate across tests and trip the
     MPS 30 GiB limit.
     """
 
@@ -527,7 +527,7 @@ class TestDiscoursePredictor(_DiscourseTestBase):
 
 
 class TestDiscourseSpaceIntegration(_DiscourseTestBase):
-    """Integration tests against a real MentalModel.
+    """Integration tests against a real BasicModel.
 
     Verifies that create() wires DiscourseSpace, that forward()
     populates the pending snapshot attributes, and that the runBatch
@@ -539,12 +539,12 @@ class TestDiscourseSpaceIntegration(_DiscourseTestBase):
 
     def _build_model(self):
         _reload_config()
-        model, cfg = Models.MentalModel.from_config(
+        model, cfg = Models.BasicModel.from_config(
             os.path.join(_DATA_DIR, 'MentalModel.xml'))
         return model, cfg
 
     def test_create_wires_discourse_space(self):
-        """MentalModel.create() should build and attach WordSpace.discourse
+        """BasicModel.create() should build and attach WordSpace.discourse
         when the AR/ARUS/AR grammar path is active."""
         self.model, self.cfg = self._build_model()
         self.assertIsNotNone(self.model.wordSpace)
@@ -622,7 +622,7 @@ class TestDiscourseSpaceIntegration(_DiscourseTestBase):
         self.assertEqual(len(d), 0)
 
     def test_discourse_predictor_wired_when_concept_dim_available(self):
-        """When MentalModel builds WordSpace with a concept_dim, the
+        """When BasicModel builds WordSpace with a concept_dim, the
         discourse layer's predictor/cast should be built -- this is
         what enables the AR priming path."""
         self.model, self.cfg = self._build_model()

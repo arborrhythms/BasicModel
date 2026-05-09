@@ -6,7 +6,6 @@
     <modelType>embedding</modelType>
     <ergodic>true</ergodic>
     <naive>false</naive>
-    <type>mental</type>
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
     <weightsPath></weightsPath>

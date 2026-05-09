@@ -9,7 +9,6 @@
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
     <processSymbols>false</processSymbols>
-    <type>mental</type>
     <ergodic>false</ergodic>
     <modelType>embedding</modelType>
     <truthBiasScale>0.1</truthBiasScale>

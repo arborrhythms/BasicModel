@@ -1198,7 +1198,7 @@ class TestBaseModelFactory(unittest.TestCase):
             path = f.name
         try:
             model, cfg = Models.BaseModel.from_config(path)
-            self.assertIsInstance(model, Models.MentalModel)
+            self.assertIsInstance(model, Models.BasicModel)
             self.assertIs(model.inputSpace.outputSpace, model.outputSpace)
         finally:
             os.unlink(path)
@@ -1885,7 +1885,7 @@ class TestModelTypeVariants(unittest.TestCase):
     def test_conceptual_order_1(self):
         """conceptualOrder=1 with non-passthrough symbolic -- forward only.
 
-        After the 2026-05-05 BasicModel/MentalModel merger, the
+        After the 2026-05-05 BasicModel/BasicModel merger, the
         per-stage path is the only construction path and
         ``conceptualOrder`` literally drives the per-stage iteration.
         """

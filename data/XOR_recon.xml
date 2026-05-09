@@ -1,20 +1,26 @@
 <?xml version="1.0" ?>
 <model>
+  <!-- XOR_recon: XOR with reconstruction symbols (last 5 SymbolicSpace
+       slots reserved for reconstruction targets). Bivector regime:
+       PiLayer stays a square isomorphism inside conceptual content
+       space; Codebook.project does the dim adaptation to the bivector
+       handoff downstream. -->
   <architecture>
     <conceptualOrder>1</conceptualOrder>
+    <useButterflies>false</useButterflies>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <processSymbols>false</processSymbols>
     <modelType>embedding</modelType>
     <ergodic>false</ergodic>
     <naive>false</naive>
     <weightsPath></weightsPath>
+    <useLibraryVQ>false</useLibraryVQ>
+    <codebookRetire>false</codebookRetire>
 
     <data>
       <dataset>xor</dataset>
     </data>
-
-    <nWhere>2</nWhere>
-    <nWhen>2</nWhen>
-    <useLibraryVQ>false</useLibraryVQ>
-    <codebookRetire>false</codebookRetire>
 
     <training>
       <numEpochs>400</numEpochs>
@@ -30,46 +36,57 @@
   </architecture>
 
   <InputSpace>
-    <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nInput>0</nInput>
+    <nInputDim>0</nInputDim>
     <nVectors>3</nVectors>
-    <nInputDim>-1</nInputDim>
+    <nDim>10</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>10</nOutputDim>
     <lexer>word</lexer>
     <codebook>false</codebook>
   </InputSpace>
 
-  <!-- PerceptualSpace: invertible, flattened input. -->
   <PerceptualSpace>
-    <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nInput>8</nInput>
+    <nInputDim>10</nInputDim>
     <nVectors>1000</nVectors>
-    <nInputDim>-1</nInputDim>
-    <invertible>true</invertible>
+    <nDim>10</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>10</nOutputDim>
     <hasAttention>false</hasAttention>
+    <invertible>true</invertible>
     <codebook>true</codebook>
     <chunking>lexicon</chunking>
   </PerceptualSpace>
 
-
-  <!-- ConceptualSpace: nOutput=6, nVectors=6 (non-quantized: nVectors==nOutput). -->
   <ConceptualSpace>
-    <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nInput>8</nInput>
+    <nInputDim>10</nInputDim>
     <nVectors>8</nVectors>
-    <nInputDim>-1</nInputDim>
+    <nDim>10</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>2</nOutputDim>
+    <hasAttention>false</hasAttention>
     <invertible>true</invertible>
+    <codebook>true</codebook>
+    <bivectorOutput>true</bivectorOutput>
   </ConceptualSpace>
 
   <!-- SymbolicSpace: nOutput > OutputSpace.nOutput so recon symbols exist (nRecon=5). -->
   <SymbolicSpace>
-    <nOutput>8</nOutput>
-    <nDim>10</nDim>
+    <nInput>8</nInput>
+    <nInputDim>2</nInputDim>
     <nVectors>8</nVectors>
-    <nInputDim>-1</nInputDim>
+    <nDim>2</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>2</nOutputDim>
+    <codebook>true</codebook>
+    <bivectorOutput>true</bivectorOutput>
   </SymbolicSpace>
 
-  <!-- OutputSpace: nOutput=1 so nReconSymbols = SymbolicSpace.nOutput - 1 = 5 -->
   <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>2</nInputDim>
     <nOutput>1</nOutput>
     <nDim>1</nDim>
     <nVectors>1</nVectors>

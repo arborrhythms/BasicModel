@@ -123,9 +123,9 @@ across spaces — it follows the geometry of what each codebook stores.
 ### Why Euclidean for Perceptual and Symbolic
 
 These codebooks store *what something looks like* (a pattern of feature
-intensities). A vector `0.5·v` carries half as much "of feature v" as
-`1.0·v`, and the right notion of "different code" is *coordinate-wise
-distance*, not direction. Cosine would conflate `0.5·v` with `1.0·v`
+intensities). A vector `0.5$\cdot$v` carries half as much "of feature v" as
+`1.0$\cdot$v`, and the right notion of "different code" is *coordinate-wise
+distance*, not direction. Cosine would conflate `0.5$\cdot$v` with `1.0$\cdot$v`
 because they share a direction — that loses real information. There is
 no codebook-level negation operator on these spaces (negation in
 SymbolicSpace is encoded structurally in paired-index bivector slots,
@@ -153,9 +153,9 @@ and each forward does:
 indices = (flat @ codebook.T - 0.5 * b_norms_sq).argmax(dim=-1)
 ```
 
-That's one matmul (`[N, D] · [D, V]`) plus one broadcast subtract
+That's one matmul (`[N, D] $\cdot$ [D, V]`) plus one broadcast subtract
 plus one argmax. Same FLOPs as `torch.cdist`'s internal mm-trick path,
-but skips the `sqrt`, the per-row `‖x‖²` add, and the cdist autograd
+but skips the `sqrt`, the per-row `$\Vert$x$\Vert$$^2$` add, and the cdist autograd
 plumbing — and gives Inductor a smaller graph to compile.
 
 The naive expansion `((codebook - x)**2).sum(-1)` would be **slower**
@@ -225,6 +225,58 @@ The default codebook initialization (`Codebook.addVectors`) likewise
 branches: dot-product mode L2-normalizes the random init so the EMA
 path starts from a valid unit-norm codebook; pattern mode rescales to
 the `[-1, +1]` hypercube.
+
+---
+
+## Codebook Uniqueness Contract
+
+Every codebook entry — across InputSpace's vocabulary, PerceptualSpace's
+Lexicon, and the ConceptualSpace / SymbolicSpace prototype codebooks
+— must be **unique under both `WhereEncoding` and `WhatEncoding`**. The
+two axes carry independent uniqueness invariants:
+
+**`.where` — globally unique positional key.** Enforced by the
+class-level **codebook offset registry** on `WhereEncoding` ([`Spaces.py:223-276`](../bin/Spaces.py)).
+Each codebook calls `WhereEncoding.allocate_codebook_slice(n_vectors)`
+at construction and receives a contiguous integer offset; all
+codebooks share the same sinusoidal `div_term = 2$\pi$ / total_allocated`,
+so the `(sin, cos)` decode is unambiguous across the union of slices.
+A given codebook entry's `.where` is therefore a globally-unique
+key — InputSpace vocab item *k*, PerceptualSpace prototype *i*,
+ConceptualSpace prototype *j*, and SymbolicSpace prototype *m*
+all live in disjoint `.where` slices.
+
+**`.what` — distinct prototype content within and across codebooks.**
+Two entries with identical `.what` content collapse to the same parthood
+identity (`equal(A, A) = 1`) and become interchangeable under any
+positive Pi / Sigma map — they form a redundant pair the network
+cannot distinguish. The contract is therefore that no two entries (in
+any codebook, or between codebooks) should have identical `.what`
+prototype rows under the WhatEncoding mapping.
+
+Current enforcement:
+
+| Source | Mechanism | Status |
+|---|---|---|
+| SymbolicSpace codebook | `ImpenetrableLayer` overlap penalty + variance floor ([`Layers.py:4402`](../bin/Layers.py)); five-relations classifier pushes pairs toward the **disjoint** corner | Active by default (`impenetrableOverlap`, `impenetrableVariance` config knobs) |
+| ConceptualSpace codebook | Same `ImpenetrableLayer` available; not yet wired by default | Available but opt-in |
+| PerceptualSpace Lexicon | Cosine-margin pode/antipode SBOW training (Lexicon's "projective unit ball" — `x $\sim$ $-$x` antipodal identification deduplicates the sign axis) | Active for trained Lexicons; un-warmed Lexicons rely on random-init separation |
+| InputSpace vocabulary | Shares PerceptualSpace's Lexicon (text mode); raw-data mode requires the data loader to deduplicate at load time | Inherited from Lexicon (text); manual (raw) |
+
+The two axes are dual:
+
+- `.where` uniqueness is **structural** — enforced at construction via
+  the registry, never violated at runtime.
+- `.what` uniqueness is **learned** — encouraged by the
+  `ImpenetrableLayer` regularizer and the Lexicon's antipodal quotient,
+  but a freshly-initialized codebook can have near-duplicate rows
+  before training begins.
+
+Together they guarantee that the parthood lattice the bivector
+activation chain rides on (see [Monotonicity of the lift / lower
+chain](#monotonicity-of-the-lift--lower-chain)) is well-formed: every
+slot has a distinct identity under both the positional key (`.where`)
+and the content prototype (`.what`).
 
 ---
 
@@ -487,8 +539,7 @@ instances -- `pi1` for forward, `pi2` for reverse -- each with independent weigh
 | `invertible` | True: shared invertible layer; False: separate pi1/pi2 |
 | `codebook` | False -> `.what` is a passthrough `Tensor`; True -> `Codebook` |
 | `hasAttention` | Enable attention reweighting |
-| `bivectorOutput` | When `true`, applies the Q2 promotion `(aP, aN) = (max(0, x), max(0, -x))` to the per-slot percept event and writes a `[B, N, 2]` catuskoti bivector to `subspace.activation`. Mirrors the C/S-tier bivector regime, completing the monotonic chain from PerceptualSpace through SymbolicSpace. See spec §B3 / §Q2 in [`specs/2026-04-24-lift-lower-bivector-design.md`](specs/2026-04-24-lift-lower-bivector-design.md). |
-| `svdOrthogonalInit` | Reserved for symmetry with C/S; consulted only when a Codebook is built on `.what`. No-op under the default Embedding lexicon. |
+| `bivectorOutput` | When `true`, applies the Q2 promotion $(a_P, a_N) = (\max(0, x), \max(0, -x))$ to the per-slot percept event and writes a $[B, N, 2]$ catuskoti bivector to `subspace.activation`. Mirrors the C/S-tier bivector regime, completing the monotonic chain from PerceptualSpace through SymbolicSpace. See spec \S B3 / \S Q2 in [`specs/2026-04-24-lift-lower-bivector-design.md`](specs/2026-04-24-lift-lower-bivector-design.md). |
 
 **Layer.** `PiLayer` (one or two instances depending on `invertible`).
 
@@ -543,7 +594,7 @@ named directions.
 
 | Layer                | Direction        | Math                                | Notes                                              |
 |----------------------|------------------|-------------------------------------|----------------------------------------------------|
-| `self.pi` (`PiLayer`) | P $\leftrightarrow$ C            | log-domain multiplicative, monotonic | `forwardPi` (P → C) and `reversePi` (C → P) pointer aliases |
+| `self.pi` (`PiLayer`) | P $\leftrightarrow$ C            | log-domain multiplicative, monotonic | `forwardPi` (P $\to$ C) and `reversePi` (C $\to$ P) pointer aliases |
 
 ConceptualSpace owns one PiLayer that handles both directions of the
 P$\leftrightarrow$C boundary via its own self-inverse.  When the space is reversible
@@ -561,7 +612,7 @@ layer learns to make all candidates sensible, even when they aren't
 currently in the top-2.  Used by grammar dispatch where a binary rule
 combines the two most-active constituents.
 
-**Forward operation (P → C).** PiLayer's log-domain product fold:
+**Forward operation (P $\to$ C).** PiLayer's log-domain product fold:
 ```
 m   = (1 + x) / (1 - x)               # (-1,1) -> (0, inf)
 y   = tanh(W * log(m) / 2 + b)        # back to (-1, 1)
@@ -649,7 +700,7 @@ pattern over a codebook of symbol prototypes.
 
 | Layer                       | Direction | Math                              | Notes                                                 |
 |-----------------------------|-----------|-----------------------------------|-------------------------------------------------------|
-| `self.sigma` (`SigmaLayer`) | C $\leftrightarrow$ S     | atanh-domain additive, monotonic  | `forwardSigma` (C → S) and `reverseSigma` (S → C) pointer aliases |
+| `self.sigma` (`SigmaLayer`) | C $\leftrightarrow$ S     | atanh-domain additive, monotonic  | `forwardSigma` (C $\to$ S) and `reverseSigma` (S $\to$ C) pointer aliases |
 
 SymbolicSpace owns one SigmaLayer that handles both directions of the
 C$\leftrightarrow$S boundary via its own self-inverse, isomorphic to `ConceptualSpace.pi`.
@@ -698,8 +749,7 @@ recovering the concept activation.
 | `nActive` | Total number of symbols (output + reconstruction symbols) |
 | `nVectors` | Codebook size (= nSymbols when codebook=true) |
 | `codebook` | Enable codebook quantization (required for one-hot output) |
-| `bivectorOutput` | Forward returns the per-prototype catuskoti bivector `[B, V_S, 2]` via `Codebook.forward(..., project=True)`; reverse lifts via the cached SVD pseudo-inverse |
-| `svdOrthogonalInit` | SVD-orthogonalize the codebook at construction so the bivector lift is well-conditioned from t=0 |
+| `bivectorOutput` | Forward returns the per-prototype catuskoti bivector $[B, V_S, 2]$ via `Codebook.forward(..., project=True)`; reverse lifts via the cached SVD pseudo-inverse. Codebook SVD-orthogonalization at construction is now always-on (the `<svdOrthogonalInit>` knob was retired 2026-05-09); the bivector lift is well-conditioned from $t=0$. |
 
 **Range.** Symbols are percepts: each symbol represents the presence (`1`) or absence
 (`0`) of a named entity and lives in `[0, 1]`. One symbol is encoded at a time (the
@@ -723,12 +773,12 @@ FALSE=[0,1], BOTH=[1,1], NEITHER=[0,0]) lives on
 ``Codebook.forward(input, project=True)`` -- the **intrinsic snap**:
 
 ```
-pos[b, n] = sum_v relu(input[b, v] · W[n])
-neg[b, n] = sum_v relu(-input[b, v] · W[n])
+pos[b, n] = sum_v relu(input[b, v] $\cdot$ W[n])
+neg[b, n] = sum_v relu(-input[b, v] $\cdot$ W[n])
 ```
 
 The matching decode ``Codebook.reverse(bivec, project=True)`` is the
-cached SVD pseudo-inverse: ``C → S → C`` round-trip projects the input
+cached SVD pseudo-inverse: ``C $\to$ S $\to$ C`` round-trip projects the input
 onto span(W) and is a fixed point thereafter (verified by
 ``test/test_idempotent_loop.py``). Where/when ride alongside the
 encoding on the per-batch muxed event tensor; they don't live inside
@@ -744,7 +794,7 @@ not lossless reconstruction — it's projection onto the codebook
 subspace, which is what categorization means architecturally. Grammar
 operators (NOT, AND, OR, lift, lower, …) operate on the bivector
 activation between snap calls; the dialectic loop is
-snap (synthesis) → grammar (logic) → decode (analysis) → next pass.
+snap (synthesis) $\to$ grammar (logic) $\to$ decode (analysis) $\to$ next pass.
 
 See [BuddhistParallels.md](BuddhistParallels.md) for the catuskoti
 mapping, [Logic.md](Logic.md) for the bivector operator algebra, and
@@ -758,7 +808,7 @@ constraint ensures weights $W \geq 0$, preserving ordering. Exact inverse via th
 internal `InvertibleLinearLayer` (LDU factorisation).
 
 **Hierarchical mode.** When `<useButterflies>true</useButterflies>` or
-`<useGrammar>all</useGrammar>`, MentalModel stores per-stage
+`<useGrammar>all</useGrammar>`, BasicModel stores per-stage
 ConceptualSpace/SymbolicSpace instances in `self.conceptualSpaces` and
 `self.symbolicSpaces`. Butterfly mode passes butterfly-aware Pi/Sigma
 layers into those spaces. The symbol dimension is geometrically
@@ -774,7 +824,7 @@ Architecture Modes.
 ## Monotonicity of the lift / lower chain
 
 Under the bivector regime (`<bivectorOutput>true</bivectorOutput>` on
-all three spaces), the percept → concept → symbol chain is an
+all three spaces), the percept $\to$ concept $\to$ symbol chain is an
 **order-preserving map on a positive cone** -- positive linear maps on
 non-negative paired-index activations preserve the parthood partial
 order all the way through.
@@ -817,7 +867,12 @@ The same-order regularization on each codebook
 ([`ImpenetrableLayer`](../bin/Layers.py) at S; planned at C / P)
 maintains an antichain of same-rank prototypes, so the chain's
 parthood lattice carries cross-order dominance only -- siblings at a
-given `<conceptualOrder>` step remain mutually incomparable.
+given `<conceptualOrder>` step remain mutually incomparable. The
+antichain property is one half of the broader [Codebook Uniqueness
+Contract](#codebook-uniqueness-contract): the `.what` axis must
+distinguish every prototype within and across codebooks for the
+parthood lattice to be well-formed, complementing the structural
+`.where`-uniqueness enforced by the codebook offset registry.
 
 See [Logic.md §Parthood as Projection](Logic.md) for the parthood
 formula and [BuddhistParallels.md](BuddhistParallels.md) for the

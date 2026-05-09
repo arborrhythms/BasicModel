@@ -75,7 +75,7 @@ Interpretation:
 
 `Basis` supports two modes: **monotonic** (plain min/max, used by
 PerceptualSpace, ConceptualSpace, and SymbolicSpace whenever
-`<bivectorOutput>true</bivectorOutput>` is set, so the entire P→C→S
+`<bivectorOutput>true</bivectorOutput>` is set, so the entire P$\to$C$\to$S
 chain operates on the non-negative paired-index cone) and **bitonic**
 (sign-aware, the legacy default).  The monotonic forms are listed
 here; the bitonic forms (RadMin, RadMax) are in Section 7 Radial
@@ -131,9 +131,9 @@ The full mereological suite composes through `part`:
 
 $\operatorname{equal}(A, B) \in [0, 1]$ partitions into three disjoint regions:
 
-- $\operatorname{equal} = 0$ → **underlap** (disjoint)
-- $0 < \operatorname{equal} < 1$ → **overlap** (strictly partial)
-- $\operatorname{equal} = 1$ → **identity** (perfect mutual parthood)
+- $\operatorname{equal} = 0$ $\to$ **underlap** (disjoint)
+- $0 < \operatorname{equal} < 1$ $\to$ **overlap** (strictly partial)
+- $\operatorname{equal} = 1$ $\to$ **identity** (perfect mutual parthood)
 
 Under clipped cosine $\operatorname{part}(A, B) = \operatorname{part}(B, A)$
 (cosine is symmetric), so
@@ -627,12 +627,12 @@ out of this document.  Logic.md is reserved for the 3-valued and
 For the moved material:
 
 - **`Ops.*` reference** (every callable, current implementation,
-  target layer anchor): [Language.md → Ops Reference](Language.md).
+  target layer anchor): [Language.md $\to$ Ops Reference](Language.md).
 - **PiLayer / SigmaLayer ownership and direction** (which space owns
   which layer; `forwardPi` / `reversePi` / `forwardSigma` /
-  `reverseSigma` aliases; the C $\leftrightarrow$ S round trip): [Spaces.md → ConceptualSpace and SymbolicSpace](Spaces.md).
+  `reverseSigma` aliases; the C $\leftrightarrow$ S round trip): [Spaces.md $\to$ ConceptualSpace and SymbolicSpace](Spaces.md).
 - **Mereological suite** (`part`, `whole`, `equal`, `overlap`,
   `underlap`, `boundary`, `copart` — vector and scalar forms,
   empty-set conventions): [Mereology.md](Mereology.md).
 - **Tetralemma bivector layout** (`[aP, aN]` per position;
-  TRUE/FALSE/BOTH/NEITHER corners): [Spaces.md → ConceptualSpace activation carrier](Spaces.md) and [BuddhistParallels.md](BuddhistParallels.md).
+  TRUE/FALSE/BOTH/NEITHER corners): [Spaces.md $\to$ ConceptualSpace activation carrier](Spaces.md) and [BuddhistParallels.md](BuddhistParallels.md).

@@ -149,7 +149,7 @@ def test_all_spaces_have_single_arg_reverse():
 # --- build_pipelines() smoke tests ---
 
 def _make_mm_xor_model():
-    """Helper: load MM_xor config with xor data and return a MentalModel."""
+    """Helper: load MM_xor config with xor data and return a BasicModel."""
     import os
     from data import TheData
     from Models import BaseModel

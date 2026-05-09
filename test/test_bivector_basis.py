@@ -93,7 +93,7 @@ class TestCheckpointMigration(unittest.TestCase):
     """Verifies the bivector migration shim in BaseModel.loadWeights.
 
     We exercise the row-duplication logic directly on a mock state dict
-    rather than standing up a full MentalModel, which keeps the test
+    rather than standing up a full BasicModel, which keeps the test
     narrow to the migration contract.
     """
 

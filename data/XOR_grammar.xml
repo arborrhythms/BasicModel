@@ -28,7 +28,6 @@
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <processSymbols>false</processSymbols>
-    <type>mental</type>
     <ergodic>false</ergodic>
     <modelType>embedding</modelType>
     <maskedPrediction>NONE</maskedPrediction>
@@ -80,29 +79,30 @@
   </InputSpace>
 
   <PerceptualSpace>
-    <nOutput>4</nOutput>
+    <nOutput>6</nOutput>
     <nDim>4</nDim>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
-    <nVectors>4</nVectors>
+    <nVectors>200</nVectors>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
-    <codebook>false</codebook>
+    <codebook>true</codebook>
+    <chunking>lexicon</chunking>
   </PerceptualSpace>
 
   <ConceptualSpace>
-    <nOutput>4</nOutput>
+    <nOutput>6</nOutput>
     <nDim>4</nDim>
-    <nVectors>4</nVectors>
+    <nVectors>6</nVectors>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>false</codebook>
   </ConceptualSpace>
 
   <SymbolicSpace>
-    <nOutput>4</nOutput>
+    <nOutput>6</nOutput>
     <nDim>4</nDim>
-    <nVectors>4</nVectors>
+    <nVectors>6</nVectors>
     <l1Lambda>0.01</l1Lambda>
     <accumulateTruth>0</accumulateTruth>
     <codebook>true</codebook>

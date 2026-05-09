@@ -11,7 +11,6 @@
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <processSymbols>false</processSymbols>
-    <type>mental</type>
     <ergodic>false</ergodic>
     <modelType>embedding</modelType>
     <maskedPrediction>NONE</maskedPrediction>

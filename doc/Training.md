@@ -249,7 +249,7 @@ per-epoch global shuffle is applied. `numWorkers > 0` enables async prefetch.
 
 For each B-wide batch in AR modes (`AR` / `ARUS` / `ARIR`):
 
-1. `MentalModel.Start(inputData)` cascades reset through every Space and
+1. `BasicModel.Start(inputData)` cascades reset through every Space and
    Layer (clearing per-sentence scratch).
 2. `InputSpace.forward()` lexes/embeds the input once into `[B, T, D]`,
    then builds all K progressive-prefix windows in a single
