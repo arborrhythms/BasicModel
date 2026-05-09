@@ -60,7 +60,6 @@
     <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
-    <passThrough>false</passThrough>
     <hasAttention>true</hasAttention>
     <invertible>true</invertible>
     <codebook>false</codebook>
@@ -78,12 +77,11 @@
     <codebook>true</codebook>
   </ConceptualSpace>
 
-  <!-- SymbolicSpace: passThrough — nActive = nVectors = ConceptualSpace.nActive = 256 -->
+  <!-- SymbolicSpace: — nActive = nVectors = ConceptualSpace.nActive = 256 -->
   <SymbolicSpace>
     <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
-    <passThrough>true</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>

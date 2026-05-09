@@ -36,7 +36,7 @@ def test_codebook_forward_topk_prunes_activation():
     torch.manual_seed(0)
     cb = Codebook()
     # Wide codebook: 16 prototypes, small input dim.
-    cb.create(nInput=4, nVectors=16, nDim=3, customVQ=False, passThrough=False)
+    cb.create(nInput=4, nVectors=16, nDim=3, customVQ=False)
     cb.eval()
     # Non-passthrough, non-VQ path goes through the cosine-similarity loop.
     x = torch.randn(2, 4, 3)  # [batch=2, n_tokens=4, nDim=3]
@@ -52,7 +52,7 @@ def test_codebook_forward_topk_zero_preserves_legacy_activation():
     """topK=0 (default) leaves self.activation unchanged from the legacy path."""
     torch.manual_seed(0)
     cb = Codebook()
-    cb.create(nInput=4, nVectors=16, nDim=3, customVQ=False, passThrough=False)
+    cb.create(nInput=4, nVectors=16, nDim=3, customVQ=False)
     cb.eval()
     x = torch.randn(2, 4, 3)
     _ = cb.forward(x)  # no topK kwarg -> legacy behavior
@@ -132,7 +132,7 @@ def test_codebook_commit_loss_basic():
     """commit_loss: MSE with stop-gradient on q, gradient flows to e only."""
     torch.manual_seed(0)
     cb = Codebook()
-    cb.create(nInput=2, nVectors=4, nDim=3, customVQ=False, passThrough=False)
+    cb.create(nInput=2, nVectors=4, nDim=3, customVQ=False)
     e = torch.randn(2, 3, requires_grad=True)
     q = torch.randn(2, 3, requires_grad=True)
     loss = cb.commit_loss(e, q)
@@ -143,11 +143,16 @@ def test_codebook_commit_loss_basic():
     assert q.grad is None or torch.allclose(q.grad, torch.zeros_like(q))
 
 
-def test_codebook_commit_loss_zero_on_passthrough():
+def test_codebook_commit_loss_zero_on_empty_inputs():
+    """commit_loss returns zero when either operand is empty.
+
+    The legacy passThrough short-circuit was retired with Stage 1; the
+    only remaining zero-fallback is the empty-tensor guard.
+    """
     cb = Codebook()
-    cb.create(nInput=2, nVectors=4, nDim=3, customVQ=False, passThrough=True)
-    e = torch.randn(2, 3)
-    q = torch.randn(2, 3)
+    cb.create(nInput=2, nVectors=4, nDim=3, customVQ=False)
+    e = torch.empty(0, 3)
+    q = torch.empty(0, 3)
     assert torch.equal(cb.commit_loss(e, q), torch.tensor(0.0))
 
 
@@ -169,7 +174,7 @@ def _step_grad(cb, per_entry_scale):
 def test_codebook_freezing_stable_entry_gets_frozen():
     torch.manual_seed(0)
     cb = Codebook()
-    cb.create(nInput=2, nVectors=4, nDim=3, customVQ=True, passThrough=False)
+    cb.create(nInput=2, nVectors=4, nDim=3, customVQ=True)
     cb.attach_freeze_hook(threshold=0.01, window=5)
     # Entry 0 has constant low gradient (stable); entry 1 is noisy.
     stable = torch.tensor([0.001, 0.5, 0.5, 0.5])
@@ -185,7 +190,7 @@ def test_codebook_freezing_stable_entry_gets_frozen():
 def test_codebook_freezing_noisy_entry_not_frozen():
     torch.manual_seed(0)
     cb = Codebook()
-    cb.create(nInput=2, nVectors=3, nDim=3, customVQ=True, passThrough=False)
+    cb.create(nInput=2, nVectors=3, nDim=3, customVQ=True)
     cb.attach_freeze_hook(threshold=0.01, window=5)
     for _ in range(6):
         noisy = torch.tensor([1.0 + torch.randn(()).item(),
@@ -200,7 +205,7 @@ def test_codebook_freezing_noisy_entry_not_frozen():
 def test_codebook_freezing_zeros_gradient_of_frozen_entries():
     torch.manual_seed(0)
     cb = Codebook()
-    cb.create(nInput=2, nVectors=3, nDim=3, customVQ=True, passThrough=False)
+    cb.create(nInput=2, nVectors=3, nDim=3, customVQ=True)
     cb.attach_freeze_hook(threshold=0.01, window=3)
     # Feed stable grads so all entries freeze.
     for _ in range(4):

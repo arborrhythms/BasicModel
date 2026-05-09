@@ -27,17 +27,6 @@
     <weightsPath></weightsPath>
     <maxResponseLength>4096</maxResponseLength>
 
-    <!-- Subsymbolic loop control.
-         subsymbolicEnabled: when true, build SubsymbolicSpace and widen
-           ConceptualSpace's input PiLayer to read the combined
-           perceptual || (symbolic + subsymbolic) input. Default false
-           preserves pre-2026-05-05 single-loop behaviour.
-         mode: Phase-1 mutual exclusivity.
-           grammar  : SymbolicSpace active; SubsymbolicSpace event held at zero.
-           parallel : SubsymbolicSpace active; SymbolicSpace event held at zero.
-         Phase-2 (deferred): both loops active simultaneously. -->
-    <subsymbolicEnabled>false</subsymbolicEnabled>
-    <mode>grammar</mode>
 
     <data>
       <!-- dataset: xor | mnist | tomatoes | text | inline | (omit for inference-only) -->
@@ -218,7 +207,6 @@
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
-    <passThrough>false</passThrough>
     <hasAttention>true</hasAttention>
     <invertible>false</invertible>
     <nonlinear>true</nonlinear>
@@ -234,13 +222,9 @@
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
-    <passThrough>false</passThrough>
     <hasAttention>true</hasAttention>
     <invertible>false</invertible>
     <codebook>false</codebook>
-    <whatPassThrough>false</whatPassThrough>
-    <wherePassThrough>true</wherePassThrough>
-    <whenPassThrough>true</whenPassThrough>
   </ModalSpace>
 
   <ConceptualSpace>
@@ -263,7 +247,6 @@
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
-    <passThrough>false</passThrough>
     <nonlinear>true</nonlinear>
     <codebook>false</codebook>
     <sortNetwork>false</sortNetwork>
@@ -277,23 +260,6 @@
     <spectralFlatnessWeight>0.0</spectralFlatnessWeight>
     <truthMinMagnitude>0.3</truthMinMagnitude>
   </SymbolicSpace>
-
-  <SubsymbolicSpace>
-    <!-- Bitonic, codebook-free re-entrant Space, parallel to
-         SymbolicSpace. Event width and codebook size must match
-         SymbolicSpace (validated at config time when
-         architecture.subsymbolicEnabled is true): nDim shared across
-         the chain, nVectors equal between Symbolic/Subsymbolic for
-         elementwise summation. -->
-    <nInput>0</nInput>
-    <nOutput>0</nOutput>
-    <nDim>1</nDim>
-    <nInputDim>0</nInputDim>
-    <nOutputDim>0</nOutputDim>
-    <nVectors>0</nVectors>
-    <nonlinear>true</nonlinear>
-    <codebook>false</codebook>
-  </SubsymbolicSpace>
 
   <OutputSpace>
     <nInput>0</nInput>

@@ -172,7 +172,7 @@ Transforms lifted input into perceptual features via Pi layers (multiplicative i
 | `nVectors` | int | `0` | Codebook size (total vectors in the space). When > 0, enables vector quantization with topk selection of `nActive` from `nVectors`. |
 | `invertible` | bool | `false` | Use a single invertible Pi layer instead of separate forward/reverse layers. When `true`, one `PiLayer(invertible=True)` handles both directions via `InvertibleLinearLayer` internally. When `false`, separate `pi1` (forward) and `pi2` (reverse) layers are created. |
 | `hasAttention` | bool | `true` | Enable attention mechanism in this space. |
-| `passThrough` | bool | `false` | Skip perceptual processing entirely; pass input through unchanged. |
+| `codebook` | bool | `false` | When `true`, the `.what` slot is a learnable `Codebook`; when `false`, it is a passthrough `Tensor` (identity, no quantization). |
 
 **Layers:** Pi layers -- multiplicative: `y_j = b_j * prod_i(1 + W_ji * x_i)`. See Architecture.md.
 
@@ -210,8 +210,9 @@ See [Language.md](Language.md) for the full design.
 | `nActive` | int | *required* | Number of active symbols. When reconstruction symbols are enabled, `nOutputSymbols = OutputSpace.nActive` are fed to output, and the rest carry reconstruction information. |
 | `nDim` | int | `1` | Dimensionality of each symbol (typically 1 -- symbols are scalar activations). |
 | `nVectors` | int | = `nActive` | Codebook size. When `codebook=true`, equals the number of symbol prototypes. |
-| `passThrough` | bool | `false` | Pass concepts through as symbols unchanged. Typically `true` for simple models. |
 | `codebook` | bool | `false` | Enable codebook quantization. When `true`, the forward path produces a one-hot activation over codebook entries. Required for the full symbolic pipeline. |
+| `bivectorOutput` | bool | `false` | When `true`, forward returns the per-prototype catuskoti bivector `[B, V_S, 2]` via `Codebook.forward(..., project=True)` and reverse lifts via the cached SVD pseudo-inverse. Mirrors the C-tier CSBP regime. |
+| `svdOrthogonalInit` | bool | `false` | SVD-orthogonalize the codebook at construction so the bivector lift is well-conditioned from t=0 (sets all singular values to 1). |
 
 **Layers:** SymbolicSpace owns one
 `SigmaLayer(nConcepts, nSymbols, invertible=True, monotonic=monotonic)`
@@ -336,7 +337,7 @@ HTTP server settings (used by `serve.py`).
 
   <SymbolicSpace>
     <nActive>3</nActive>
-    <passThrough>true</passThrough>
+    <codebook>false</codebook>
   </SymbolicSpace>
 
   <OutputSpace>

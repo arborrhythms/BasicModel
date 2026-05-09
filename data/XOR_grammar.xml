@@ -85,7 +85,6 @@
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <nVectors>4</nVectors>
-    <passThrough>true</passThrough>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>false</codebook>
@@ -104,7 +103,6 @@
     <nOutput>4</nOutput>
     <nDim>4</nDim>
     <nVectors>4</nVectors>
-    <passThrough>false</passThrough>
     <l1Lambda>0.01</l1Lambda>
     <accumulateTruth>0</accumulateTruth>
     <codebook>true</codebook>

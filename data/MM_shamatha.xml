@@ -86,7 +86,6 @@
     <nVectors>8</nVectors>
     <nWhere>2</nWhere>
     <nWhen>2</nWhen>
-    <passThrough>true</passThrough>
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
     <codebook>false</codebook>
@@ -108,7 +107,6 @@
     <nOutput>8</nOutput>
     <nDim>10</nDim>
     <nVectors>8</nVectors>
-    <passThrough>false</passThrough>
     <accumulateTruth>0</accumulateTruth>
     <!-- codebook=true is required so the SparsityRegLayer / VQ-VAE
          path is active; the four regularizer knobs below operate on

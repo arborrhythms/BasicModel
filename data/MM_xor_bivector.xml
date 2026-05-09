@@ -1,0 +1,134 @@
+<?xml version="1.0" ?>
+<model>
+  <!-- MM_xor_bivector: ConceptualSpace + SymbolicSpace bivector regime
+       on the XOR dataset. Exercises Stage 4-6 of the
+       2026-05-08-bivector-activation spec end-to-end:
+         - ConceptualSpace.bivectorOutput=true: forward returns
+           [B, V_C, 2]; reverse lifts via cached SVD pseudo-inverse.
+         - SymbolicSpace.bivectorOutput=true: same shape on its
+           output, mirror of the C-tier.
+         - svdOrthogonalInit=true on both codebooks so the lift is
+           well-conditioned from t=0.
+         - useButterflies=false: butterfly schedule is incompatible
+           with the [P||S] widening (Note A in the spec).
+         - conceptualOrder=1: single C-S step, no per-stage halving. -->
+  <architecture>
+    <conceptualOrder>1</conceptualOrder>
+    <useButterflies>false</useButterflies>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <processSymbols>false</processSymbols>
+    <type>mental</type>
+    <ergodic>false</ergodic>
+    <modelType>embedding</modelType>
+    <maskedPrediction>NONE</maskedPrediction>
+    <truthBiasScale>0.0</truthBiasScale>
+    <LuminosityWeight>0.0</LuminosityWeight>
+    <UniversalityWeight>0.0</UniversalityWeight>
+    <weightsPath></weightsPath>
+
+    <data>
+      <dataset>xor</dataset>
+    </data>
+
+    <training>
+      <numTrials>1</numTrials>
+      <numEpochs>1</numEpochs>
+      <batchSize>4</batchSize>
+      <learningRate>0.0</learningRate>
+      <reverseScale>0.0</reverseScale>
+      <trainEmbedding>NONE</trainEmbedding>
+      <autoload>false</autoload>
+      <autosave>false</autosave>
+      <certainty>false</certainty>
+    </training>
+
+  </architecture>
+
+  <InputSpace>
+    <nInput>0</nInput>
+    <nInputDim>0</nInputDim>
+    <nVectors>8</nVectors>
+    <nDim>4</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>4</nOutputDim>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <lexer>word</lexer>
+    <codebook>false</codebook>
+  </InputSpace>
+
+  <PerceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>4</nInputDim>
+    <nVectors>8</nVectors>
+    <nDim>4</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>4</nOutputDim>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+    <hasAttention>false</hasAttention>
+    <invertible>true</invertible>
+    <codebook>false</codebook>
+  </PerceptualSpace>
+
+  <ConceptualSpace>
+    <nInput>8</nInput>
+    <nInputDim>4</nInputDim>
+    <nVectors>8</nVectors>
+    <!-- nDim is the codebook prototype width; the C-tier output is the
+         per-prototype catuskoti bivector [B, V_C, 2], so nOutputDim is 2
+         regardless of nDim. -->
+    <nDim>6</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>2</nOutputDim>
+    <hasAttention>false</hasAttention>
+    <invertible>false</invertible>
+    <codebook>true</codebook>
+    <nonlinear>false</nonlinear>
+    <bivectorOutput>true</bivectorOutput>
+    <svdOrthogonalInit>true</svdOrthogonalInit>
+  </ConceptualSpace>
+
+  <SymbolicSpace>
+    <nInput>8</nInput>
+    <nInputDim>2</nInputDim>
+    <nVectors>8</nVectors>
+    <nDim>2</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>2</nOutputDim>
+    <l1Lambda>0.0</l1Lambda>
+    <accumulateTruth>0</accumulateTruth>
+    <codebook>true</codebook>
+    <useVQVAE>false</useVQVAE>
+    <commitmentBeta>0.0</commitmentBeta>
+    <nonlinear>false</nonlinear>
+    <bivectorOutput>true</bivectorOutput>
+    <svdOrthogonalInit>true</svdOrthogonalInit>
+  </SymbolicSpace>
+
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>2</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+    <nWhere>0</nWhere>
+    <nWhen>0</nWhen>
+  </OutputSpace>
+
+  <WordSpace>
+    <useGrammar>none</useGrammar>
+    <language>
+      <start>S</start>
+      <grammar>
+        <S>S = not(S)</S>
+        <S>S = intersection(S, S)</S>
+        <S>S = union(S, S)</S>
+      </grammar>
+      <interpretation>0.5</interpretation>
+    </language>
+  </WordSpace>
+
+</model>

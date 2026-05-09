@@ -77,7 +77,6 @@
     <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
-    <passThrough>true</passThrough>
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
     <codebook>false</codebook>
@@ -96,7 +95,6 @@
     <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
-    <passThrough>false</passThrough>
     <accumulateTruth>0</accumulateTruth>
   </SymbolicSpace>
 

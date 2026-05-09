@@ -44,7 +44,6 @@
   <SymbolicSpace>
     <nOutput>3</nOutput>
     <nVectors>3</nVectors>
-    <passThrough>true</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>

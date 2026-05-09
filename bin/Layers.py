@@ -4419,7 +4419,7 @@ class ImpenetrableLayer(Layer):
       overlap:   both partial (neither > τ nor < ε)
 
     Trust source: ``basis.vq.cluster_size`` EMA when a VectorQuantize is
-    present; falls back to row norms when VQ is off (e.g., passThrough).
+    present; falls back to row norms when VQ is off.
 
     A separate variance floor guards against row-collapse (all rows
     converging to a single point).

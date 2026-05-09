@@ -149,13 +149,13 @@ def _populate_test_config(*,
                           reconstruct="NONE", flatten=False, ergodic=False,
                           naive=False, processSymbols=False,
                           useSubspaceActivation=False,
-                          perceptPassThrough=False, symbolPassThrough=False,
                           perceptHasAttention=True, conceptHasAttention=False,
                           invertible=False, codebook=False,
                           perceptCodebook=None, conceptCodebook=None,
                           certainty=False,
                           demuxed=False,
-                          lexer="word"):
+                          lexer="word",
+                          **_legacy):
     """Populate TheXMLConfig._data -- test equivalent of XML loading.
 
     Space constructors read nDim/nVectors from TheXMLConfig.  In production,
@@ -175,7 +175,7 @@ def _populate_test_config(*,
     _cq = conceptCodebook if conceptCodebook is not None else codebook
     _objectSize = nWhere + nWhen
     _nObjects = nInput + nPercepts + nConcepts + nSymbols + nWords + nOutput
-    _symbol_dim = conceptDim if symbolPassThrough else symbolDim
+    _symbol_dim = symbolDim
     # Deep-merge test overrides onto model.xml defaults so that keys like
     # 'syntax', etc. are always present.
     _nInputDim = -1 if flatten else 0
@@ -211,7 +211,6 @@ def _populate_test_config(*,
             "nVectors": nPercepts,
             "nInputDim": _nInputDim,
             "codebook": _pq,
-            "passThrough": perceptPassThrough,
             "hasAttention": perceptHasAttention,
             "invertible": invertible,
         },
@@ -229,8 +228,7 @@ def _populate_test_config(*,
             "nDim": _symbol_dim,
             "nVectors": nSymbols,
             "nInputDim": _nInputDim,
-            "passThrough": symbolPassThrough,
-            "codebook": not symbolPassThrough,
+            "codebook": True,
         },
         "OutputSpace": {
             "nActive": nOutput,
@@ -246,13 +244,9 @@ def _populate_test_config(*,
             "nDim": perceptDim,
             "nVectors": nPercepts,
             "nInputDim": _nInputDim,
-            "passThrough": False,
             "hasAttention": perceptHasAttention,
             "invertible": invertible,
             "codebook": _pq,
-            "whatPassThrough": False,
-            "wherePassThrough": True,
-            "whenPassThrough": True,
         },
     }
     for section, vals in _overrides.items():
@@ -814,7 +808,7 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
 
 
 class TestSimpleModel(unittest.TestCase):
-    """BasicModel (simple path) uses unified Space hierarchy with passThrough SymbolicSpace."""
+    """BasicModel (simple path) uses unified Space hierarchy."""
 
     def test_simple_model_ergodic_shapes(self):
         _populate_test_config(
@@ -859,14 +853,7 @@ class TestSimpleModel(unittest.TestCase):
 
 
 class TestCodebookVariants(unittest.TestCase):
-    """Lock down codebook vs non-codebook Codebook behavior."""
-
-    def test_no_codebook_passthrough(self):
-        vs = Models.Codebook()
-        vs.create(4, 4, 1, passThrough=True)
-        x = torch.randn(2, 4, 1).to(Models.TheDevice.get())
-        y = vs.forward(x)
-        self.assertTrue(torch.equal(x, y))
+    """Lock down Codebook behavior."""
 
     def test_codebook_shape(self):
         _populate_test_config(nInput=4, nPercepts=4, nConcepts=4, nSymbols=4,
@@ -884,7 +871,7 @@ class TestBasisContract(unittest.TestCase):
     def test_tensor_identity_materialization(self):
         payload = torch.randn(2, 3, 4, device=Models.TheDevice.get())
         basis = Models.Tensor()
-        basis.create(3, 3, 4, passThrough=True)
+        basis.create(3, 3, 4)
         out = basis.forward(payload)
         self.assertIs(out, payload)
         self.assertIs(basis.getW(), payload)
@@ -893,7 +880,7 @@ class TestBasisContract(unittest.TestCase):
 
     def test_invalid_geometry_requires_2d_prototype_matrix(self):
         basis = Models.Tensor(W=torch.randn(2, 3, 4, device=Models.TheDevice.get()))
-        basis.create(3, 3, 4, passThrough=True)
+        basis.create(3, 3, 4)
         with self.assertRaises(RuntimeError):
             basis.codebookDistance(torch.randn(2, 4, device=Models.TheDevice.get()))
 
@@ -1031,40 +1018,19 @@ class TestSpaceBasisConstruction(unittest.TestCase):
         _populate_test_config(inputDim=3, nInput=4, codebook=True)
         s = Models.Space([4, 3], [4, 3], [4, 3])
         self.assertIsInstance(s.get_vectors(), Models.Codebook)
-        self.assertFalse(s.get_vectors().passThrough)
 
-    def test_no_codebook_creates_passthrough_codebook(self):
+    def test_no_codebook_creates_tensor_basis(self):
         _populate_test_config(inputDim=3, nInput=4, codebook=False)
         s = Models.Space([4, 3], [4, 3], [4, 3])
-        self.assertIsInstance(s.get_vectors(), Models.Codebook)
-        self.assertTrue(s.get_vectors().passThrough)
+        # With codebook=False, Space._build_object_basis returns a
+        # Tensor (identity) basis instead of a Codebook in passThrough
+        # mode -- the passThrough flag was retired with Stage 1.
+        self.assertIsInstance(s.get_vectors(), Models.Tensor)
 
-    def test_forward_subspace_round_trip_keeps_runtime_state(self):
-        _populate_test_config(
-            inputDim=3, perceptDim=3,
-            nInput=4, nPercepts=4,
-            codebook=False, perceptPassThrough=True,
-            nWhere=0, nWhen=0, flatten=False,
-        )
-        inp = Models.InputSpace([4, 3], [4, 3], [4, 3], model_type="simple")
-        per = Models.PerceptualSpace([4, 3], [4, 3], [4, 3])
-        x = torch.randn(2, 4, 3).to(Models.TheDevice.get())
-
-        inp.forward(x)
-        input_state = inp.subspace
-        self.assertIsInstance(input_state, Models.SubSpace)
-        # event holds the (possibly normalized) tensor after forward
-        input_event = input_state.event.getW()
-        self.assertIsNotNone(input_event)
-        self.assertEqual(list(input_event.shape), [2, 4, 3])
-
-        percept_state = per.forward(input_state)
-        self.assertIsInstance(percept_state, Models.SubSpace)
-        self.assertTrue(torch.equal(percept_state.event.getW(), input_event))
-
-        reversed_state = per.reverse(percept_state)
-        self.assertIsInstance(reversed_state, Models.SubSpace)
-        self.assertTrue(torch.equal(reversed_state.event.getW(), input_event))
+    # ``test_forward_subspace_round_trip_keeps_runtime_state`` was
+    # removed in Stage 1: it tested the legacy ``perceptPassThrough``
+    # identity short-circuit which is gone.  Round-trip invertibility
+    # is covered by ``test_invertibility.TestPerceptualSpaceInvertible``.
 
 
 class TestConceptualSpaceErgodic(unittest.TestCase):
@@ -1255,12 +1221,10 @@ class TestDataTextStorage(unittest.TestCase):
 
 
 
-class TestSymbolDimZeroPassthrough(unittest.TestCase):
-    """symbolDim must be 0 when symbolic space is passthrough."""
+class TestSymbolDimZero(unittest.TestCase):
+    """symbolDim=0 produces a zero-width symbolic encoding."""
 
-    def test_passthrough_symbolic_space_has_zero_symbol_dim(self):
-        """When symbolPassThrough=True, symbolDim should be 0 and
-        embedding size should not be inflated by a symbol dimension."""
+    def test_symbolic_space_zero_dim_produces_zero_encoding(self):
         _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0,
                               outputDim=1, nWhere=0, nWhen=0)
         self.assertEqual(Models.TheXMLConfig.space("SymbolicSpace", "nDim"), 0)
@@ -2772,145 +2736,6 @@ class TestGrammar(unittest.TestCase):
         self.assertIsNone(g.symbolic_transition())
 
 
-@unittest.skip(
-    "Pending migration to chart + GRAMMAR_LAYER_CLASSES surface "
-    "(2026-05-01 syntactic-layer refactor removed SyntacticLayer.project "
-    "and init_swap; rewrite to drive GrammarLayer subclasses directly).")
-class TestGrammarOperations(unittest.TestCase):
-    """Tests for S-tier boolean propositions and operators via Grammar.project()."""
-
-    def _make_grammar(self):
-        g = Language.Grammar()
-        g.configure({
-            "S": ["true(S)", "swap(S, S)", "equals(S, S)",
-                  "not(S)", "part(S, S)"],
-        })
-        # Register a monotonic basis so methods dispatch through Basis logic
-        self._ss = Models.SubSpace(inputShape=[8, 4], outputShape=[8, 4])
-        basis = Models.Codebook()
-        basis.create(8, 8, 4, monotonic=True)
-        self._ss.what = basis
-        # Create S-tier SyntacticLayer with swap parameters
-        self._s_sl = Language.SyntacticLayer(
-            nInput=4, nOutput=4,
-            rules=g.symbolic(),
-            transition_rule=g.symbolic_transition(),
-            max_depth=3, hidden_dim=16, grammar=g,
-        )
-        self._s_sl.init_swap(4, 4)
-        return g
-
-    def _find_rule(self, g, name):
-        """Return rule index for a given method name."""
-        for i, r in enumerate(g.rules):
-            if r.method_name == name:
-                return i
-        raise KeyError(f"No rule with method_name={name!r}")
-
-    def test_true_positive_projection(self):
-        """true(S) applies ReLU -- positive values pass, negatives zeroed."""
-        g = self._make_grammar()
-        rid = self._find_rule(g, 'true')
-        x = torch.tensor([[0.8, -0.3, 0.5, -1.0]])
-        result = self._s_sl.project(g, rid, x, subspace=self._ss)
-        expected = torch.tensor([[0.8, 0.0, 0.5, 0.0]])
-        self.assertTrue(torch.allclose(result, expected))
-
-    def test_equals_identical_vectors(self):
-        """equals(S, S) on identical vectors returns high score * right."""
-        g = self._make_grammar()
-        rid = self._find_rule(g, 'equals')
-        x = torch.tensor([[0.5, 0.8, 0.3, 0.9]])
-        result = self._s_sl.project(g, rid, x, x.clone(), subspace=self._ss)
-        # Identical vectors -> equals score ~= 1.0 -> result ~= right
-        self.assertTrue(torch.allclose(result, x, atol=1e-5))
-
-    def test_equals_orthogonal_is_zero(self):
-        """equals(S, S) on orthogonal vectors returns zero -- no shared content."""
-        g = self._make_grammar()
-        rid = self._find_rule(g, 'equals')
-        x = torch.tensor([[1.0, 0.0, 0.0, 0.0]])
-        y = torch.tensor([[0.0, 0.0, 0.0, 1.0]])
-        result = self._s_sl.project(g, rid, x, y, subspace=self._ss)
-        self.assertTrue(torch.allclose(result, torch.zeros_like(result), atol=1e-5))
-
-    def test_part_subset_scores_high(self):
-        """part(C, C) where x is contained in y scores high."""
-        g = self._make_grammar()
-        rid = self._find_rule(g, 'part')
-        x = torch.tensor([[0.3, 0.2, 0.0, 0.0]])
-        y = torch.tensor([[0.5, 0.8, 0.4, 0.6]])
-        result = self._s_sl.project(g, rid,x, y, subspace=self._ss)
-        # x <= y element-wise -> part score high -> result ~= y * score
-        self.assertTrue(result.norm() > 0.1)
-
-    def test_part_not_subset_scores_low(self):
-        """part(C, C) where x exceeds y in some dims scores lower."""
-        g = self._make_grammar()
-        rid = self._find_rule(g, 'part')
-        x = torch.tensor([[0.9, 0.9, 0.9, 0.9]])
-        y = torch.tensor([[0.1, 0.1, 0.1, 0.1]])
-        result_big_in_small = self._s_sl.project(g, rid,x, y, subspace=self._ss)
-        result_small_in_big = self._s_sl.project(g, rid,y, x, subspace=self._ss)
-        # x is NOT part of y, but y IS part of x
-        self.assertGreater(result_small_in_big.norm().item(),
-                           result_big_in_small.norm().item())
-
-    def test_swap_is_learnable_permutation(self):
-        """swap(S, S) applies soft permutation -- output differs from inputs."""
-        g = self._make_grammar()
-        rid = self._find_rule(g, 'swap')
-        left = torch.tensor([[0.8, 0.5, 0.3, 0.1]])
-        right = torch.tensor([[0.1, 0.3, 0.5, 0.8]])
-        result = self._s_sl.project(g, rid, left, right)
-        self.assertEqual(result.shape, left.shape)
-        # Result should be a mixture -- not identical to either input
-        self.assertFalse(torch.equal(result, left))
-        self.assertFalse(torch.equal(result, right))
-
-    def test_swap_preserves_gradient(self):
-        """swap(S, S) permits gradient flow through soft permutation."""
-        g = self._make_grammar()
-        rid = self._find_rule(g, 'swap')
-        left = torch.randn(1, 4, requires_grad=True)
-        right = torch.randn(1, 4, requires_grad=True)
-        result = self._s_sl.project(g, rid, left, right)
-        result.sum().backward()
-        self.assertIsNotNone(left.grad)
-        self.assertTrue((left.grad.abs() > 0).any())
-
-    def test_equals_symmetry(self):
-        """equals(x, y) and equals(y, x) should produce same score."""
-        g = self._make_grammar()
-        rid = self._find_rule(g, 'equals')
-        x = torch.tensor([[0.6, 0.2, 0.8, 0.4]])
-        y = torch.tensor([[0.3, 0.7, 0.1, 0.9]])
-        # equals returns score * right, so check the score (norm ratio)
-        r_xy = self._s_sl.project(g, rid, x, y, subspace=self._ss)
-        r_yx = self._s_sl.project(g, rid, y, x, subspace=self._ss)
-        # Scores should be equal (mutual parthood is symmetric)
-        score_xy = r_xy.norm() / y.norm()
-        score_yx = r_yx.norm() / x.norm()
-        self.assertTrue(torch.allclose(score_xy, score_yx, atol=1e-5))
-
-    def test_part_zero_volume_ignored(self):
-        """Empty-set conventions for the scalar clipped-cosine parthood."""
-        b = Spaces.Basis()
-        # Orthogonal: dot = 0 -> clipped = 0 -> part = 0
-        x = torch.tensor([1.0, 0.0, 0.0, 0.0])
-        y = torch.tensor([0.0, 0.0, 0.0, 1.0])
-        self.assertAlmostEqual(b.part(x, y, scalar=True).item(), 0.0, places=5)
-        # Parallel same direction: part = 1
-        x2 = torch.tensor([0.3, 0.2, 0.0, 0.0])
-        y2 = torch.tensor([0.6, 0.4, 0.0, 0.0])
-        self.assertAlmostEqual(b.part(x2, y2, scalar=True).item(), 1.0, places=5)
-        # Empty set is part of everything
-        z = torch.zeros(4)
-        self.assertAlmostEqual(b.part(z, x, scalar=True).item(), 1.0, places=5)
-        # Non-empty is not part of empty
-        self.assertAlmostEqual(b.part(x, z, scalar=True).item(), 0.0, places=5)
-
-
 class TestBasisMereology(unittest.TestCase):
     """Scalar form (scalar=True) of the mereological suite: clipped-cosine
     parthood and the region indicators derived from it."""
@@ -3160,72 +2985,6 @@ class TestBasisMereologyVector(unittest.TestCase):
         x = torch.tensor([1.0, 0.0])
         y = torch.tensor([0.0, 1.0])
         self.assertAlmostEqual(b.copart(x, y, scalar=True).item(), 1.0, places=5)
-
-
-@unittest.skip(
-    "Pending migration: 2026-05-01 refactor removed SyntacticLayer.init_swap.")
-class TestMaskAsActiveFilter(unittest.TestCase):
-    """MASK applied with a position-axis alignment zeros ``_active`` rows.
-
-    When the mask length matches ``out.shape[-2]`` (the position axis)
-    and a ``subspace`` is supplied, ``_apply_mask`` multiplies the
-    subspace's ``_active`` tensor by the mask instead of doing an
-    element-wise multiply on ``out``. This is the MASK-as-filter
-    interpretation: masked positions are suppressed downstream via
-    ``SubSpace.materialize()``'s active-gate.
-    """
-
-    class _StubSubspace:
-        def __init__(self, B, N, M):
-            self._active = torch.ones(B, N, M)
-
-    def _layer(self):
-        g = Language.Grammar()
-        g.configure({"S": ["not(S)", "union(S, S)"]})
-        layer = Language.SyntacticLayer(
-            nInput=4, nOutput=4,
-            rules=[],
-            transition_rule=None,
-            max_depth=2, hidden_dim=8, grammar=g,
-        )
-        layer.init_swap(4, 4)
-        return layer
-
-    def test_position_axis_mask_zeros_active_row(self):
-        layer = self._layer()
-        stub = self._StubSubspace(B=1, N=3, M=2)
-        out = torch.randn(1, 3, 4)
-        mask = torch.tensor([1.0, 0.0, 1.0])
-        ret = layer._apply_mask(out, mask, subspace=stub)
-        # Position 1 is zeroed on _active; positions 0 and 2 unchanged.
-        self.assertTrue(torch.all(stub._active[:, 0, :] == 1.0))
-        self.assertTrue(torch.all(stub._active[:, 1, :] == 0.0))
-        self.assertTrue(torch.all(stub._active[:, 2, :] == 1.0))
-        # out is returned unchanged on the position-axis path.
-        self.assertTrue(torch.allclose(ret, out))
-
-    def test_feature_axis_mask_still_multiplies_out(self):
-        """When mask aligns with the feature axis (out.shape[-1]), it
-        multiplies ``out`` element-wise and leaves ``_active`` alone."""
-        layer = self._layer()
-        stub = self._StubSubspace(B=1, N=3, M=2)
-        out = torch.ones(1, 3, 4)
-        mask = torch.tensor([1.0, 0.0, 1.0, 0.0])  # shape[-1] == 4
-        ret = layer._apply_mask(out, mask, subspace=stub)
-        expected = torch.tensor([[[1.0, 0.0, 1.0, 0.0]] * 3])
-        self.assertTrue(torch.allclose(ret, expected))
-        # _active is untouched on the feature-axis path.
-        self.assertTrue(torch.all(stub._active == 1.0))
-
-    def test_no_subspace_falls_back_to_feature_axis(self):
-        """Without a subspace, a mask matching the feature axis still
-        multiplies ``out``."""
-        layer = self._layer()
-        out = torch.ones(1, 3, 4)
-        mask = torch.tensor([1.0, 0.0, 1.0, 1.0])
-        ret = layer._apply_mask(out, mask, subspace=None)
-        expected = torch.tensor([[[1.0, 0.0, 1.0, 1.0]] * 3])
-        self.assertTrue(torch.allclose(ret, expected))
 
 
 class TestWordEncoding(unittest.TestCase):
@@ -3547,12 +3306,10 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
         model.forward(x)
 
         # Check that activations are stored on spaces that compute them.
-        # InputSpace (entry point) and passthrough spaces don't set activation --
-        # they forward the upstream SubSpace unchanged.
+        # InputSpace (entry point) doesn't set activation --
+        # it forwards the upstream SubSpace unchanged.
         for space in model.spaces:
             if isinstance(space, Models.InputSpace):
-                continue
-            if getattr(space, 'passThrough', False):
                 continue
             activation = space.subspace.get_activation()
             self.assertIsNotNone(activation,
@@ -3690,249 +3447,6 @@ class TestBasicModelDemuxed(unittest.TestCase):
         self.assertIsInstance(model.perceptualSpace, Models.ModalSpace)
 
 
-@unittest.skip(
-    "Pending migration: 2026-05-01 refactor moved SyntacticLayer rule "
-    "execution to GrammarLayer subclasses + Chart class.")
-class TestSyntacticLayer(unittest.TestCase):
-    """Tests for SyntacticLayer -- per-space grammar with executable rules."""
-
-    def _dev(self):
-        return Models.TheDevice.get()
-
-    def _make_grammar(self):
-        """Create a Grammar with the full MentalModel.xml rules."""
-        import os
-        from util import init_config, ProjectPaths
-        init_config(
-            path=os.path.join(ProjectPaths.DATA_DIR, 'MentalModel.xml'),
-            defaults_path=os.path.join(ProjectPaths.DATA_DIR, 'model.xml'),
-        )
-        g = Language.Grammar()
-        g._ensure_configured()
-        return g
-
-    def _make_symbolic_layer(self, nInput=8, max_depth=7, hidden_dim=16):
-        g = self._make_grammar()
-        return Language.SyntacticLayer(
-            nInput=nInput, nOutput=nInput,
-            rules=g.symbolic(),
-            transition_rule=g.symbolic_transition(),
-            max_depth=max_depth,
-            hidden_dim=hidden_dim,
-            grammar=g,
-        ), g
-
-    def _make_conceptual_layer(self, nInput=8, max_depth=7, hidden_dim=16):
-        g = self._make_grammar()
-        return Language.SyntacticLayer(
-            nInput=nInput, nOutput=nInput,
-            rules=[],
-            transition_rule=None,
-            max_depth=max_depth,
-            hidden_dim=hidden_dim,
-            grammar=g,
-        ), g
-
-    def _make_perceptual_layer(self, nInput=8, max_depth=7, hidden_dim=16):
-        g = self._make_grammar()
-        return Language.SyntacticLayer(
-            nInput=nInput, nOutput=nInput,
-            rules=[],
-            transition_rule=None,
-            max_depth=max_depth,
-            hidden_dim=hidden_dim,
-            grammar=g,
-        ), g
-
-    # -- Shape tests -----------------------------------------------
-
-    def test_symbolic_forward_shapes(self):
-        layer, g = self._make_symbolic_layer()
-        x = torch.randn(4, 8).to(self._dev())
-        out = layer.forward(x)
-        n_sym_rules = len(g.symbolic())  # includes transition
-        self.assertEqual(out["rule_logits"].shape, (4, 7, n_sym_rules))
-        self.assertEqual(out["rule_probs"].shape, (4, 7, n_sym_rules))
-        self.assertEqual(out["predicted_rules"].shape, (4, 7))
-        self.assertNotIn("composed_activation", out)
-
-    def test_conceptual_forward_shapes(self):
-        layer, g = self._make_conceptual_layer()
-        x = torch.randn(2, 8).to(self._dev())
-        out = layer.forward(x)
-        # C-tier has no rules after C->S merge; forward returns empty rule axis.
-        self.assertEqual(out["rule_logits"].shape, (2, 7, 0))
-        self.assertNotIn("composed_activation", out)
-
-    def test_perceptual_forward_shapes(self):
-        layer, g = self._make_perceptual_layer()
-        x = torch.randn(2, 8).to(self._dev())
-        out = layer.forward(x)
-        # P-tier has no rules; forward returns empty rule axis.
-        self.assertEqual(out["rule_logits"].shape, (2, 7, 0))
-
-    # -- Space projection operation tests -------------------------
-
-    def test_symbolic_and_is_min(self):
-        """AND (Gödel t-norm): min(left, right)."""
-        left  = torch.tensor([[0.8, 0.5, 1.0]])
-        right = torch.tensor([[0.6, 1.0, 0.0]])
-        result = torch.min(left, right)
-        expected = torch.tensor([[0.6, 0.5, 0.0]])
-        self.assertTrue(torch.allclose(result, expected))
-
-    def test_symbolic_or_is_max(self):
-        """OR (Gödel t-conorm): max(left, right)."""
-        left  = torch.tensor([[0.2, 0.9]])
-        right = torch.tensor([[0.7, 0.3]])
-        result = torch.max(left, right)
-        expected = torch.tensor([[0.7, 0.9]])
-        self.assertTrue(torch.allclose(result, expected))
-
-    def test_symbolic_not_is_complement(self):
-        """NOT: 1.0 - left."""
-        left = torch.tensor([[0.3, 0.8]])
-        result = 1.0 - left
-        expected = torch.tensor([[0.7, 0.2]])
-        self.assertTrue(torch.allclose(result, expected))
-
-    def test_conceptual_union_on_vectors(self):
-        """UNION: max(left, right) on [B, N, D] vectors."""
-        left  = torch.tensor([[[0.2, 0.5], [0.9, 0.1]]])
-        right = torch.tensor([[[0.7, 0.3], [0.3, 0.8]]])
-        result = torch.max(left, right)
-        expected = torch.tensor([[[0.7, 0.5], [0.9, 0.8]]])
-        self.assertTrue(torch.allclose(result, expected))
-
-    def test_conceptual_intersection_on_vectors(self):
-        """INTERSECTION: min(left, right) on [B, N, D] vectors."""
-        left  = torch.tensor([[[0.5, 0.9], [0.7, 0.2]]])
-        right = torch.tensor([[[0.3, 0.8], [0.9, 0.1]]])
-        result = torch.min(left, right)
-        expected = torch.tensor([[[0.3, 0.8], [0.7, 0.1]]])
-        self.assertTrue(torch.allclose(result, expected))
-
-    # -- Gradient flow (rule prediction) ----------------------------
-
-    def test_gradient_flows_through_rule_prediction(self):
-        layer, g = self._make_symbolic_layer()
-        layer.train()
-        x = torch.randn(2, 8, requires_grad=True, device=self._dev())
-        out = layer.forward(x)
-        loss = out["rule_logits"].pow(2).sum()
-        loss.backward()
-        self.assertIsNotNone(x.grad)
-        self.assertTrue((x.grad.abs() > 0).any())
-
-    # -- Eval mode --------��-----------------------------���----------
-
-    def test_eval_uses_softmax(self):
-        layer, g = self._make_symbolic_layer()
-        layer.eval()
-        x = torch.randn(2, 8).to(self._dev())
-        out = layer.forward(x)
-        sums = out["rule_probs"].sum(dim=-1)
-        self.assertTrue(torch.allclose(sums, torch.ones_like(sums), atol=1e-5))
-
-    # -- Reverse -------------��-------------------------------------
-
-    def test_reverse_recovers_positions(self):
-        layer, g = self._make_symbolic_layer()
-        # Use a valid rule_id from the grammar
-        swap_rid = [r for r in g.symbolic() if g.rules[r].method_name == 'swap'][0]
-        words = [(0, 2, swap_rid), (0, 5, swap_rid), (0, 7, swap_rid)]
-        activation = layer.reverse(words, nVectors=8, batch_size=1)
-        self.assertEqual(activation.shape, (1, 8))
-        self.assertEqual(activation[0, 2].item(), 1.0)
-        self.assertEqual(activation[0, 5].item(), 1.0)
-        self.assertEqual(activation[0, 7].item(), 1.0)
-        self.assertEqual(activation[0, 0].item(), 0.0)
-
-    # -- Utilities -------------------------------------------------
-
-    def test_set_tau(self):
-        layer, g = self._make_symbolic_layer()
-        layer.set_tau(0.5)
-        self.assertEqual(layer.tau, 0.5)
-
-
-@unittest.skip(
-    "Pending migration: shift/reduce semantics now run via Chart + "
-    "SpaceSyntacticLayer (2026-05-01 refactor).")
-class TestShiftReduce(unittest.TestCase):
-    """Tests for Grammar shift/reduce (TheGrammar.write / resetStack)."""
-
-    def _init_grammar(self, nSym=8, nDim=4):
-        """Initialize TheGrammar with an S-tier layer for S/R testing.
-
-        Returns (grammar, s_sl) -- Grammar plus unified SyntacticLayer.
-        After the C->S merge, only S-tier carries rules.
-        """
-        _populate_test_config(
-            inputDim=nDim, perceptDim=nDim, conceptDim=nDim, symbolDim=1,
-            wordDim=1,
-            nInput=nSym, nPercepts=nSym, nConcepts=nSym, nSymbols=nSym,
-            nWords=nSym, nOutput=nSym,
-            perceptPassThrough=True, symbolPassThrough=True)
-        Models.TheXMLConfig._data["architecture"]["syntax"] = True
-        Models.TheXMLConfig._data["architecture"]["maskedPrediction"] = "AR"
-        Models.TheXMLConfig._data.setdefault("WordSpace", {}).setdefault("language", {})["grammar"] = {
-            "S": ["true(S)", "swap(S, S)", "equals(S, S)", "part(S, S)",
-                  "non(S)", "not(S)", "intersection(S, S)", "union(S, S)"],
-        }
-        Language.TheGrammar._configured = False
-        Language.TheGrammar._ensure_configured()
-        s_sl = Language.SyntacticLayer(
-            nInput=nSym, nOutput=nSym,
-            rules=Language.TheGrammar.symbolic(),
-            transition_rule=Language.TheGrammar.symbolic_transition(),
-            max_depth=max(nSym - 1, 1),
-            hidden_dim=min(256, max(64, nSym * 4)),
-            grammar=Language.TheGrammar,
-        )
-        s_sl.init_swap(nSym, nSym)
-        return Language.TheGrammar, s_sl
-
-    def test_write_symbolic_shift(self):
-        """SyntacticLayer.compose() applies rules at top-of-stack."""
-        grammar, s_sl = self._init_grammar()
-        ss = Models.SubSpace(inputShape=[8, 1], outputShape=[8, 1])
-        act = torch.zeros(1, 8, device=Models.TheDevice.get())
-        act[0, 3] = 1.0  # one active position
-        composed, _ = s_sl.compose(act, ss, grammar)
-        self.assertEqual(composed.shape, (1, 8))
-
-    def test_write_symbolic_stack_grows(self):
-        """Applying grammar to two active positions records words."""
-        grammar, s_sl = self._init_grammar()
-        ss = Models.SubSpace(inputShape=[8, 1], outputShape=[8, 1])
-        act = torch.zeros(1, 8, device=Models.TheDevice.get())
-        act[0, 2] = 1.0
-        act[0, 5] = 1.0  # two active positions
-        composed, _ = s_sl.compose(act, ss, grammar)
-        self.assertEqual(composed.shape, (1, 8))
-
-    def test_resetStack_symbolic(self):
-        """SubSpace.set_words([]) clears the word list."""
-        grammar, s_sl = self._init_grammar()
-        ss = Models.SubSpace(inputShape=[8, 1], outputShape=[8, 1])
-        ss.word = [(0, 1, 2), (0, 3, 4)]
-        ss.set_words([])
-        self.assertEqual(len(ss.get_words()), 0)
-
-    # -- SyntacticLayer.decompose() tests -------------------------
-
-    def test_read_symbolic(self):
-        """SymbolicSyntacticLayer.decompose() undoes grammar operations on activation."""
-        grammar, s_sl = self._init_grammar()
-        ss = Models.SubSpace(inputShape=[8, 1], outputShape=[8, 1])
-        # Record a word, then reverse
-        swap_rid = [r for r in grammar.symbolic() if grammar.rules[r].method_name == 'swap'][0]
-        ss.add_word(0, 3, swap_rid)
-        act = torch.zeros(1, 8, device=Models.TheDevice.get())
-        act[0, 3] = 1.0
-        result = s_sl.decompose(act, ss, grammar)
-        self.assertEqual(result.shape, (1, 8))
 
 
 if __name__ == "__main__":

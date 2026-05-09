@@ -72,7 +72,6 @@
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
     <nOutput>1024</nOutput>
-    <passThrough>false</passThrough>
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
     <codebook>true</codebook>
@@ -103,7 +102,6 @@
     <nWhen>0</nWhen>
     <nOutput>1024</nOutput>
     <codebook>true</codebook>
-    <passThrough>false</passThrough>
     <accumulateTruth>0</accumulateTruth>
   </SymbolicSpace>
 
@@ -128,7 +126,7 @@
       <grammar>
         <!-- Per the 2026-05-07 rollback: explicit per-tier natural
              folds (sigma at P / S, pi at C). Previously these were
-             supplied by the SpaceSyntacticLayer's default_rule
+             supplied by the SyntacticLayer's default_rule
              code-level fallback. -->
         <P>P = sigma(P)</P>
         <C>C = pi(C)</C>

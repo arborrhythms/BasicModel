@@ -118,7 +118,7 @@ class TestCreateFromConfig(unittest.TestCase):
   <InputSpace><nOutput>2</nOutput><nDim>1</nDim></InputSpace>
   <PerceptualSpace>
     <nOutput>4</nOutput><nDim>1</nDim>
-    <passThrough>true</passThrough>
+    
     <hasAttention>false</hasAttention>
   </PerceptualSpace>
   <ConceptualSpace>
@@ -127,7 +127,7 @@ class TestCreateFromConfig(unittest.TestCase):
   </ConceptualSpace>
   <SymbolicSpace>
     <nOutput>3</nOutput><nDim>1</nDim><nVectors>3</nVectors>
-    <passThrough>true</passThrough>
+    
   </SymbolicSpace>
   <OutputSpace><nOutput>1</nOutput><nDim>1</nDim></OutputSpace>
 </model>""")
@@ -151,9 +151,9 @@ class TestValidateConfig(unittest.TestCase):
         cfg = {
             "architecture": {},
             "PerceptualSpace": {"hasAttention": True, "invertible": False,
-                                "passThrough": False, "nActive": 4, "nDim": 1, "flatten": True},
+                                "nActive": 4, "nDim": 1, "flatten": True},
+            "SymbolicSpace": {},
             "ConceptualSpace": {"hasAttention": False, "flatten": False},
-            "SymbolicSpace": {"passThrough": False},
         }
         with self.assertRaises(ValueError) as ctx:
             Models.BasicModelFactory.validate_config(cfg)
@@ -163,9 +163,9 @@ class TestValidateConfig(unittest.TestCase):
         cfg = {
             "architecture": {},
             "PerceptualSpace": {"hasAttention": False, "invertible": False,
-                                "passThrough": False, "nActive": 4, "nDim": 1, "flatten": True},
+                                "nActive": 4, "nDim": 1, "flatten": True},
+            "SymbolicSpace": {},
             "ConceptualSpace": {"hasAttention": False, "flatten": False},
-            "SymbolicSpace": {"passThrough": False},
         }
         # Should not raise
         Models.BasicModelFactory.validate_config(cfg)
@@ -177,9 +177,9 @@ class TestValidateConfig(unittest.TestCase):
                 "training": {"maskedPrediction": "ARIR"},
             },
             "PerceptualSpace": {"hasAttention": False, "invertible": False,
-                                "passThrough": False, "nActive": 4, "nDim": 1, "flatten": False},
+                                "nActive": 4, "nDim": 1, "flatten": False},
+            "SymbolicSpace": {"nOutput": 5, "nDim": 4},
             "ConceptualSpace": {"hasAttention": False, "flatten": False},
-            "SymbolicSpace": {"passThrough": False},
         }
         with self.assertRaises(ValueError) as ctx:
             Models.BasicModelFactory.validate_config(cfg)
@@ -194,9 +194,9 @@ class TestValidateConfig(unittest.TestCase):
             },
             "InputSpace": {"nOutput": 8, "nDim": 4},
             "PerceptualSpace": {"nOutput": 8, "nDim": 4, "hasAttention": False,
-                                "invertible": False, "passThrough": True},
+                                "invertible": True},
+            "SymbolicSpace": {"nOutput": 5, "nDim": 4},
             "ConceptualSpace": {"nOutput": 8, "nDim": 4, "hasAttention": False},
-            "SymbolicSpace": {"nOutput": 5, "nDim": 4, "passThrough": False},
             "OutputSpace": {"nOutput": 1, "nDim": 1},
         }
         with self.assertRaises(ValueError) as ctx:

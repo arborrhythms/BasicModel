@@ -78,7 +78,7 @@ from Language import WordSpace
 from util import parse
 from Pipeline import (
     CachePoint, GrammarMergeGlue, ReverseAdapter, FlattenKWrapper,
-    ChartCompose, ChartGenerate, SubsymbolicTee,
+    ChartCompose, ChartGenerate,
 )
 
 
@@ -1673,29 +1673,12 @@ class BasicModel(BaseModel):
         self._butterfly_symbol_width = None
         self._butterfly_symbol_factor = None
         self.lexer            = TheXMLConfig.space("InputSpace", "lexer")
-        # Subsymbolic loop configuration. When enabled, build
-        # SubsymbolicSpace alongside SymbolicSpace and widen
-        # ConceptualSpace's input PiLayer to read the combined
-        # perceptual || (symbolic + subsymbolic) input. Phase-1
-        # ``mode`` selects which loop is active; the other Space's
-        # event is held at zero.
-        self.subsymbolicEnabled = bool(
-            TheXMLConfig.get("architecture.subsymbolicEnabled",
-                             default=False))
-        raw_mode = TheXMLConfig.get("architecture.mode", default="grammar")
-        self.mode = str(raw_mode).strip().lower() if raw_mode is not None else "grammar"
-        if self.mode not in ("grammar", "parallel"):
-            raise ValueError(
-                f"architecture.mode={raw_mode!r} is invalid; expected "
-                f"'grammar' or 'parallel'.")
         # The lexicon lives on PerceptualSpace via its chunking_mode.
         # InputSpace.codebook defaults to false; configs that set it
         # true opt into the InputSpace lexical path.
         self.codebook         = TheXMLConfig.space("InputSpace", "codebook", default=False)
         self.perceptCodebook  = TheXMLConfig.space("PerceptualSpace", "codebook")
         self.conceptCodebook  = TheXMLConfig.space("ConceptualSpace", "codebook")
-        self.perceptPassThrough = TheXMLConfig.space("PerceptualSpace", "passThrough")
-        self.symbolPassThrough  = TheXMLConfig.space("SymbolicSpace", "passThrough")
         self.invertible       = TheXMLConfig.space("PerceptualSpace", "invertible")
         self.perceptHasAttention = TheXMLConfig.space("PerceptualSpace", "hasAttention")
         self.conceptHasAttention = TheXMLConfig.space("ConceptualSpace", "hasAttention")
@@ -1747,49 +1730,26 @@ class BasicModel(BaseModel):
         concept_dim = self._resolve_dim("ConceptualSpace", percept_dim)
         symbol_dim  = self._resolve_dim("SymbolicSpace",   concept_dim)
         output_dim  = self._resolve_dim("OutputSpace",     symbol_dim)
-        # SubsymbolicSpace defaults to symbol_dim so its event tensor
-        # matches SymbolicSpace's shape for elementwise summation at
-        # ConceptualSpace input. Spec §"Constraint" requires shared
-        # nDim across the chain when subsymbolic is enabled.
-        subsymbol_dim = self._resolve_dim("SubsymbolicSpace", symbol_dim)
 
         obj_input     = self._obj_size("InputSpace")
         obj_percept   = self._obj_size("PerceptualSpace")
         obj_concept   = self._obj_size("ConceptualSpace")
         obj_symbol    = self._obj_size("SymbolicSpace")
-        obj_subsymbol = self._obj_size("SubsymbolicSpace")
         obj_output    = self._obj_size("OutputSpace")
 
         nvec_input   = self._nvec("InputSpace",       nInput)
         nvec_percept = self._nvec("PerceptualSpace",  nPercepts)
         nvec_concept = self._nvec("ConceptualSpace",  nConcepts)
         nvec_symbol  = self._nvec("SymbolicSpace",    nSymbols)
-        # SubsymbolicSpace defaults to symbol's nVectors so the
-        # event tensors share shape; spec requires this for the
-        # elementwise sum at ConceptualSpace input.
-        nvec_subsymbol = self._nvec("SubsymbolicSpace", nvec_symbol)
         nvec_output    = self._nvec("OutputSpace",      nOutput)
 
-        # Subsymbolic-loop config validators (only when enabled).
-        # Spec §"Constraint: shared nDim, configurable nVectors".
-        if self.subsymbolicEnabled:
-            TheXMLConfig.require(
-                lambda cfg, _p=percept_dim, _c=concept_dim,
-                       _s=symbol_dim, _ss=subsymbol_dim:
-                       _p == _c == _s == _ss,
-                f"subsymbolicEnabled requires shared nDim across "
-                f"PerceptualSpace ({percept_dim}) / ConceptualSpace "
-                f"({concept_dim}) / SymbolicSpace ({symbol_dim}) / "
-                f"SubsymbolicSpace ({subsymbol_dim}); Pi/Sigma bridge "
-                f"shapes must align"
-            )
-            TheXMLConfig.require(
-                lambda cfg, _vs=nvec_symbol, _vss=nvec_subsymbol:
-                       _vs == _vss,
-                f"subsymbolicEnabled requires SymbolicSpace.nVectors "
-                f"({nvec_symbol}) == SubsymbolicSpace.nVectors "
-                f"({nvec_subsymbol}); event tensors are summed elementwise"
-            )
+        # Stage 2: the loopback is always wired -- ConceptualSpace's
+        # input PiLayer is widened by ``symbolShape[1]`` (the symbolic
+        # side's encoded width) at construction time, so the C input
+        # naturally accepts ``[P_event || S_event_{t-1}]`` regardless
+        # of the XML's nInputDim. No separate validator is required;
+        # invertibility constraints are still enforced by each Space's
+        # ``_register_requirements``.
 
         # Build I/O shape tuples: [count, dim + objectSize]
         # Each space's shape includes its own objectSize.
@@ -1797,15 +1757,6 @@ class BasicModel(BaseModel):
         perceptShape = [nPercepts, percept_dim + obj_percept]
         conceptShape = [nConcepts, concept_dim + obj_concept]
         symbolShape  = [nSymbols,  symbol_dim  + obj_symbol]
-        # SubsymbolicSpace shares N (== nvec_subsymbol) and uses its
-        # own per-section nWhere/nWhen (obj_subsymbol). When the
-        # validator's nDim equality holds, subsymbolShape[1] equals
-        # symbolShape[1] iff obj_subsymbol == obj_symbol -- callers
-        # must keep the per-section nWhere/nWhen in sync if they want
-        # the elementwise sum at ConceptualSpace input to be
-        # well-defined (currently enforced by config convention; the
-        # pi widening uses subsymbolShape[1] explicitly).
-        subsymbolShape = [nvec_subsymbol, subsymbol_dim + obj_subsymbol]
         outputShape  = [nOutput,   output_dim  + obj_output]
 
         # Build codebook (space-internal) shape tuples: [nVectors, nDim]
@@ -1814,7 +1765,6 @@ class BasicModel(BaseModel):
         spaceShape_percept = [nvec_percept, percept_dim]
         spaceShape_concept = [nvec_concept, concept_dim]
         spaceShape_symbol  = [nvec_symbol,  symbol_dim]
-        spaceShape_subsymbol = [nvec_subsymbol, subsymbol_dim]
         spaceShape_output  = [nvec_output,  output_dim]
 
         # InputSpace receives raw data (no encoding) as input but produces encoded vectors.
@@ -1836,48 +1786,40 @@ class BasicModel(BaseModel):
                 data.prepare_lm_targets(embedding)
                 # Move new targets to device
                 data.toDevice()
-        # When subsymbolic is enabled, ConceptualSpace's input PiLayer
-        # is widened so it can read the combined
-        # ``perceptual || (symbolic + subsymbolic)`` input. The
-        # right-half width matches symbolShape[1] (== subsymbolShape[1]
-        # under the shared-shape constraint).
-        widen_dim = symbolShape[1] if self.subsymbolicEnabled else 0
+        # ConceptualSpace's input PiLayer is widened to read the
+        # combined ``[P_event || S_event_{t-1}]`` loopback input when
+        # the bivector regime is configured -- the C-tier output
+        # collapses to a [V, 2] bivector, so the [P||S] -> bivector
+        # PiLayer doesn't need to satisfy the legacy invertibility
+        # in==out constraint. Legacy configs (no <bivectorOutput>) keep
+        # the un-widened layer geometry; their loopback right-half is
+        # treated as a no-op.
+        try:
+            bivector_output = bool(
+                TheXMLConfig.space("ConceptualSpace", "bivectorOutput"))
+        except KeyError:
+            bivector_output = False
+        widen_dim = symbolShape[1] if bivector_output else 0
         self.conceptualSpace = ConceptualSpace(
             perceptShape, spaceShape_concept, conceptShape,
             subsymbolic_widen_dim=widen_dim)
         self.symbolicSpace   = SymbolicSpace(conceptShape, spaceShape_symbol, symbolShape,
                                              conceptualSpace=self.conceptualSpace)
-        # SubsymbolicSpace: parallel re-entrant Space, codebook-free,
-        # bitonic; runs only when subsymbolicEnabled (Phase 1 spec).
-        if self.subsymbolicEnabled:
-            self.subsymbolicSpace = SubsymbolicSpace(
-                conceptShape, spaceShape_subsymbol, subsymbolShape)
-            # Phase-1 mode gating: hold the inactive Space's event at
-            # zero. ``grammar`` keeps SymbolicSpace active and
-            # SubsymbolicSpace silent; ``parallel`` is the inverse.
-            # Both gates write zeros into ``self.subspace.event`` and
-            # skip resolve/lift/codebook/Pi paths.
-            if self.mode == "grammar":
-                self.subsymbolicSpace.held_at_zero = True
-            elif self.mode == "parallel":
-                self.symbolicSpace.held_at_zero = True
-            # Wire siblings on ConceptualSpace so its forward can
-            # build the combined input from their event tensors.
-            # ``object.__setattr__`` bypasses nn.Module submodule
-            # tracking -- otherwise SymbolicSpace would be registered
-            # as a child of ConceptualSpace AND as a child of the
-            # Model, creating a cycle in the module tree that breaks
-            # ``.to(device)`` and double-counts parameters.
-            object.__setattr__(self.conceptualSpace,
-                               'symbolicSpace_ref', self.symbolicSpace)
-            object.__setattr__(self.conceptualSpace,
-                               'subsymbolicSpace_ref', self.subsymbolicSpace)
-        else:
-            self.subsymbolicSpace = None
+        # SubsymbolicSpace is no longer auto-constructed; the
+        # PerceptualSpace serves as the subsymbolic substrate. The
+        # symbolic loopback is wired unconditionally on every stage.
+        # ``object.__setattr__`` bypasses nn.Module submodule tracking
+        # -- otherwise SymbolicSpace would be registered as a child of
+        # ConceptualSpace AND as a child of the Model, creating a cycle
+        # in the module tree that breaks ``.to(device)`` and
+        # double-counts parameters.
+        self.subsymbolicSpace = None
+        object.__setattr__(self.conceptualSpace,
+                           'symbolicSpace_ref', self.symbolicSpace)
+        object.__setattr__(self.conceptualSpace,
+                           'subsymbolicSpace_ref', None)
         spaces_to_add = [self.inputSpace, self.perceptualSpace,
                          self.conceptualSpace, self.symbolicSpace]
-        if self.subsymbolicSpace is not None:
-            spaces_to_add.append(self.subsymbolicSpace)
         self.spaces.extend(spaces_to_add)
         self.syntacticSpace = None
 
@@ -1980,18 +1922,8 @@ class BasicModel(BaseModel):
         )
 
         # Body: pure transforms wrapped to flatten K.
-        # When subsymbolic is enabled, SubsymbolicTee runs
-        # SubsymbolicSpace as a side effect on the conceptual
-        # subspace (parallel projection), then passes
-        # concept_subspace through unchanged so SymbolicSpace
-        # downstream still sees its expected input. The
-        # subsymbolic event is consumed at the next conceptual
-        # order's combined input (via the widened ConceptualSpace
-        # input PiLayer) -- not within this pass.
-        body_modules = [self.conceptualSpace]
-        if self.subsymbolicSpace is not None:
-            body_modules.append(SubsymbolicTee(self.subsymbolicSpace))
-        body_modules.extend([self.symbolicSpace, self.symbol_cache])
+        body_modules = [self.conceptualSpace,
+                        self.symbolicSpace, self.symbol_cache]
         self._body_inner = nn.Sequential(*body_modules)
         self.pipeline_body = FlattenKWrapper(self._body_inner)
 
@@ -3659,15 +3591,11 @@ class BasicModel(BaseModel):
         unchanged. One ``.tolist()`` sync per subspace per tick, kept
         outside the brick.
         """
-        ws = getattr(self, 'wordSpace', None)
         for space in self.spaces:
             sub = getattr(space, 'subspace', None)
             if sub is None or not hasattr(sub, 'flush_word_buffer'):
                 continue
-            if ws is not None and getattr(ws, 'syntacticLayer', None) is not None:
-                ws.syntacticLayer.flush_word_buffer(sub)
-            else:
-                sub.flush_word_buffer()
+            sub.flush_word_buffer()
 
     def _stub_outputs(self, B):
         """Per-row sentinel outputs for cursor-mode AR ticks.
@@ -4190,60 +4118,23 @@ class BasicModel(BaseModel):
         obj_percept = self._obj_size("PerceptualSpace")
         obj_concept = self._obj_size("ConceptualSpace")
         obj_symbol  = self._obj_size("SymbolicSpace")
-        obj_subsymbol = self._obj_size("SubsymbolicSpace")
         obj_output  = self._obj_size("OutputSpace")
-
-        # Subsymbolic loop config (relocated 2026-05-05 from the flat
-        # path): when ``architecture.subsymbolicEnabled``, build a
-        # parallel SubsymbolicSpace and widen the first stage's
-        # ConceptualSpace input PiLayer to read the combined
-        # ``perceptual || (symbolic + subsymbolic)`` event tensor.
-        self.subsymbolicEnabled = bool(
-            TheXMLConfig.get("architecture.subsymbolicEnabled",
-                             default=False))
-        raw_mode = TheXMLConfig.get("architecture.mode", default="grammar")
-        self.mode = (str(raw_mode).strip().lower()
-                     if raw_mode is not None else "grammar")
-        if self.mode not in ("grammar", "parallel"):
-            raise ValueError(
-                f"architecture.mode={raw_mode!r} is invalid; expected "
-                f"'grammar' or 'parallel'.")
-        # SubsymbolicSpace defaults: shared nDim across the chain;
-        # nVectors mirrors SymbolicSpace for elementwise summation.
-        subsymbol_dim = self._resolve_dim("SubsymbolicSpace", symbol_dim)
 
         nvec_input   = self._nvec("InputSpace",      nInput)
         nvec_percept = self._nvec("PerceptualSpace", nPercepts)
         nvec_concept = self._nvec("ConceptualSpace", nConcepts)
         nvec_symbol  = self._nvec("SymbolicSpace",   nSymbols)
-        nvec_subsymbol = self._nvec("SubsymbolicSpace", nvec_symbol)
         nvec_output  = self._nvec("OutputSpace",     nOutput)
 
-        if self.subsymbolicEnabled:
-            TheXMLConfig.require(
-                lambda cfg, _p=percept_dim, _c=concept_dim,
-                       _s=symbol_dim, _ss=subsymbol_dim:
-                       _p == _c == _s == _ss,
-                f"subsymbolicEnabled requires shared nDim across "
-                f"PerceptualSpace ({percept_dim}) / ConceptualSpace "
-                f"({concept_dim}) / SymbolicSpace ({symbol_dim}) / "
-                f"SubsymbolicSpace ({subsymbol_dim}); Pi/Sigma bridge "
-                f"shapes must align"
-            )
-            TheXMLConfig.require(
-                lambda cfg, _vs=nvec_symbol, _vss=nvec_subsymbol:
-                       _vs == _vss,
-                f"subsymbolicEnabled requires SymbolicSpace.nVectors "
-                f"({nvec_symbol}) == SubsymbolicSpace.nVectors "
-                f"({nvec_subsymbol}); event tensors are summed elementwise"
-            )
+        # Stage 2: the loopback is always wired -- ConceptualSpace's
+        # per-stage input PiLayer is widened by ``symbolShape[1]`` at
+        # construction time. No separate XML validator required.
 
         # Build I/O shape tuples: [count, dim + objectSize]
         inputShape   = [nInput,    input_dim   + obj_input]
         perceptShape = [nPercepts, percept_dim + obj_percept]
         conceptShape = [nConcepts, concept_dim + obj_concept]
         symbolShape  = [nSymbols,  symbol_dim  + obj_symbol]
-        subsymbolShape = [nvec_subsymbol, subsymbol_dim + obj_subsymbol]
         outputShape  = [nOutput,   output_dim  + obj_output]
 
         # Build codebook (space-internal) shape tuples: [nVectors, nDim]
@@ -4251,7 +4142,6 @@ class BasicModel(BaseModel):
         spaceShape_percept = [nvec_percept, percept_dim]
         spaceShape_concept = [nvec_concept, concept_dim]
         spaceShape_symbol  = [nvec_symbol,  symbol_dim]
-        spaceShape_subsymbol = [nvec_subsymbol, subsymbol_dim]
         spaceShape_output  = [nvec_output,  output_dim]
 
         rawInputShape = [nInput, input_dim]
@@ -4397,8 +4287,20 @@ class BasicModel(BaseModel):
             # ConceptualSpace reads ``perceptual || (symbolic +
             # subsymbolic)`` per the subsymbolic plan. Later stages
             # see the previous stage's symbolic output, so no widen.
-            stage_widen_dim = (subsymbolShape[1]
-                               if (self.subsymbolicEnabled and t == 0)
+            # Stage 3: every stage's ConceptualSpace is widened so its
+            # input PiLayer reads ``[P_event || S_event_{t-1}]`` when
+            # the bivector regime is configured. Butterfly mode shares
+            # a pre-built layer whose dim was set by the butterfly
+            # schedule (Note A in the spec keeps butterflies for legacy
+            # configs); skip widening there. Legacy non-bivector configs
+            # also skip widening so the in==out invertibility constraint
+            # on the C PiLayer still holds.
+            try:
+                _bo = bool(TheXMLConfig.space("ConceptualSpace", "bivectorOutput"))
+            except KeyError:
+                _bo = False
+            stage_widen_dim = (symbolShape[1]
+                               if (_bo and not self.useButterflies)
                                else 0)
             cs = ConceptualSpace(cs_in, stage_space_concept, cs_out,
                                  layer=cs_layer,
@@ -4416,35 +4318,24 @@ class BasicModel(BaseModel):
         self.conceptualSpace = self.conceptualSpaces[-1]
         self.symbolicSpace = self.symbolicSpaces[-1]
 
-        # SubsymbolicSpace: parallel re-entrant Space, codebook-free,
-        # bitonic; runs only when ``subsymbolicEnabled`` (Phase 1
-        # spec). Wired off the *first* stage's ConceptualSpace -- that
-        # is the stage whose input PiLayer is widened to read the
-        # combined ``perceptual || (symbolic + subsymbolic)`` event
-        # tensor. Later stages don't see the right-half (their input
-        # is the previous stage's symbolic output, not perceptual).
-        if self.subsymbolicEnabled:
-            self.subsymbolicSpace = SubsymbolicSpace(
-                conceptShape, spaceShape_subsymbol, subsymbolShape)
-            # Phase-1 mode gating: hold the inactive Space's event at
-            # zero. ``grammar`` keeps SymbolicSpace active and
-            # SubsymbolicSpace silent; ``parallel`` is the inverse.
-            if self.mode == "grammar":
-                self.subsymbolicSpace.held_at_zero = True
-            elif self.mode == "parallel":
-                self.symbolicSpace.held_at_zero = True
-            # Wire siblings on the FIRST stage's ConceptualSpace so
-            # its forward can build the combined input from their
-            # event tensors. ``object.__setattr__`` bypasses
-            # nn.Module submodule tracking to avoid registering the
-            # spaces twice in the module tree.
-            first_cs = self.conceptualSpaces[0]
-            object.__setattr__(first_cs,
-                               'symbolicSpace_ref', self.symbolicSpace)
-            object.__setattr__(first_cs,
-                               'subsymbolicSpace_ref', self.subsymbolicSpace)
-        else:
-            self.subsymbolicSpace = None
+        # SubsymbolicSpace is no longer auto-constructed; the
+        # PerceptualSpace serves as the subsymbolic substrate.
+        self.subsymbolicSpace = None
+
+        # Wire ``symbolicSpace_ref`` on every stage's ConceptualSpace so
+        # ``_build_combined_input`` can pull the previous stage's
+        # symbolic event into the right half. Stage 0 cold-starts with
+        # the same-stage SymbolicSpace (its event is None at first
+        # call, treated as zero); stages t>=1 read stage t-1's
+        # SymbolicSpace. ``object.__setattr__`` bypasses nn.Module
+        # submodule tracking so the SymbolicSpace isn't registered as
+        # a child of multiple parents in the module tree (would break
+        # ``.to(device)`` and double-count parameters).
+        for t, cs in enumerate(self.conceptualSpaces):
+            ref = (self.symbolicSpaces[0] if t == 0
+                   else self.symbolicSpaces[t - 1])
+            object.__setattr__(cs, 'symbolicSpace_ref', ref)
+            object.__setattr__(cs, 'subsymbolicSpace_ref', None)
 
         # No SyntacticSpace -- syntax is handled by Grammar centrally.
         self.syntacticSpace = None
@@ -4611,14 +4502,6 @@ class BasicModel(BaseModel):
                     GrammarMergeGlue(stage_idx=t, initial_n=stage_n,
                                      is_last=(t == T - 1))
                 )
-            # SubsymbolicTee: side-effect tap on the conceptual subspace
-            # that runs the SubsymbolicSpace forward and passes the
-            # original concept_subspace through unchanged. Inserted
-            # only on the FIRST stage -- subsequent stages don't see
-            # the perceptual right-half. Phase 1 of the subsymbolic
-            # spec; multi-order subsymbolic emission is Phase 2 work.
-            if t == 0 and self.subsymbolicSpace is not None:
-                body_modules.append(SubsymbolicTee(self.subsymbolicSpace))
             body_modules.append(self.symbolicSpaces[t])
             body_modules.append(self.ss_caches[t])
 
@@ -4831,11 +4714,9 @@ class BasicModel(BaseModel):
             pred = self.normalizer.denormalize(pred, which="output")
 
         # Reshape sym/percept events back to [B, K, ...] for downstream consumers.
-        # Prefer the symbol_cache's captured subspace (matches the
-        # legacy flat BasicModel path: when SymbolicSpace.passThrough
-        # is true, self.symbolicSpace.subspace is never written, so
-        # the cache's last_seen subspace -- which is the concept
-        # subspace flowing through -- is the right output to read).
+        # Prefer the symbol_cache's captured subspace when present so the
+        # cache's last_seen flow is the canonical read path; fall back to
+        # the SymbolicSpace's own subspace otherwise.
         sym_sub = (self.symbol_cache.last
                    if self.symbol_cache is not None else None)
         if sym_sub is not None:
@@ -4915,29 +4796,14 @@ class BasicModel(BaseModel):
                 self._current_discourse_s = s_state.detach()
                 self._current_discourse_w = w_state.detach()
 
-        # Universality (Golden Rule) score.
+        # Universality (Golden Rule) score. SVO source of truth is the
+        # chart's Viterbi trace -- ``chart.last_svo`` is populated when
+        # the parse contains ``S = lift(NP, VP)`` over
+        # ``VP = intersection(V, O)``. The legacy SyntacticLayer
+        # ``lifting_layer`` slot was always None and the universality
+        # call always short-circuited; both were retired together with
+        # the legacy class.
         self._universality_score = None
-        truth_layer = (self.wordSpace.truth_layer
-                       if self.wordSpace is not None else None)
-        syntactic_layer = (self.wordSpace.syntacticLayer
-                           if self.wordSpace is not None else None)
-        # SVO source of truth: the chart's Viterbi trace populates
-        # ``chart.last_svo`` whenever the parse contains
-        # ``S = lift(NP, VP)`` over ``VP = intersection(V, O)``.
-        # Legacy ``syntactic_layer.last_svo`` is consulted as a
-        # fallback for non-chart pipelines.
-        chart = (self.wordSpace.chart
-                 if self.wordSpace is not None else None)
-        svo = getattr(chart, 'last_svo', None) if chart is not None else None
-        if svo is None and syntactic_layer is not None:
-            svo = syntactic_layer.last_svo
-        lifting_layer = (syntactic_layer.lifting_layer
-                         if syntactic_layer is not None else None)
-        if (truth_layer is not None and len(truth_layer) > 0
-                and svo is not None and lifting_layer is not None):
-            s, v, o = svo
-            self._universality_score = truth_layer.universality(
-                s, v, o, lifting_layer, self.symbolicSpace, model=self)
 
         # Downward head emission (S -> C). Use last window for K-axis.
         self._predicted_head = None
@@ -5621,40 +5487,14 @@ class ModelFactory:
                     f"Fix: set PerceptualSpace.nOutput to 2^k (e.g. 512, 1024, 2048)."
                 )
 
-        # SymbolicSpace passThrough requires shape consistency with ConceptualSpace
-        sym_pt = gsp(cfg, "SymbolicSpace", "passThrough")
-        if sym_pt:
-            symDim = gsp(cfg, "SymbolicSpace", "nDim")
-            conDim = gsp(cfg, "ConceptualSpace", "nDim")
-            if symDim != 0 and symDim != conDim:
-                errors.append(
-                    f"SymbolicSpace passThrough=True requires symbolDim == conceptDim "
-                    f"(got symbolDim={symDim}, conceptDim={conDim}). "
-                    f"Set <nDim>{conDim}</nDim> in <SymbolicSpace> or use <nDim>0</nDim>.")
-
-            # passThrough emits one symbol per active ConceptualSpace output slot,
-            # so nVectors must equal ConceptualSpace.nOutput (0 = sentinel, skip check).
-            sym_nvec = gsp(cfg, "SymbolicSpace", "nVectors")
-            con_nout = gsp(cfg, "ConceptualSpace", "nOutput")
-            if sym_nvec != 0 and con_nout != 0 and sym_nvec != con_nout:
-                errors.append(
-                    f"SymbolicSpace passThrough=True requires nVectors == ConceptualSpace.nOutput "
-                    f"(got SymbolicSpace.nVectors={sym_nvec}, ConceptualSpace.nOutput={con_nout}). "
-                    f"Set <nVectors>{con_nout}</nVectors> in <SymbolicSpace> or use <nVectors>0</nVectors>.")
-            # nOutput == nVectors for passThrough is enforced by _register_requirements().
-
         # Invertible PerceptualSpace shape constraints are registered inside
         # PerceptualSpace._register_requirements() (not here) to keep them self-contained.
         percept_inv = gsp(cfg, "PerceptualSpace", "invertible")
-        percept_pt = gsp(cfg, "PerceptualSpace", "passThrough")
-        # Note: invertible PerceptualSpace shape constraints (nOutput == 2*nInput or
-        # 4*nInput*inputDim == nOutput*outputDim for reshape) are registered as
-        # requirements inside PerceptualSpace._register_requirements(), not here.
 
         # Warn only for the legacy naive reverse path. Non-naive inversion
         # uses the LDU/triangular-solve path and does not use pinv.
         naive = bool(arch.get("naive", False))
-        if naive and percept_inv and not percept_pt:
+        if naive and percept_inv:
             warnings.warn(
                 "PerceptualSpace: architecture.naive=True materializes dense "
                 "inverse weights on the reverse path. This is slower and less "

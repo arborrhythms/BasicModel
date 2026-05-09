@@ -578,7 +578,6 @@ class Basis(nn.Module):
         self.nInput = 0
         self.nVectors = 0
         self.nDim = 0
-        self.passThrough = False
         self.monotonic = True
         self.ergodic = False
 
@@ -601,13 +600,11 @@ class Basis(nn.Module):
         """Set the weight tensor. Subclasses must override."""
         raise NotImplementedError(f"{self.__class__.__name__} must implement setW()")
 
-    def create(self, nInput, nVectors, nDim, customVQ=True, monotonic=True,
-               passThrough=False):
+    def create(self, nInput, nVectors, nDim, customVQ=True, monotonic=True):
         self.nInput = nInput
         self.nVectors = nVectors
         self.nDim = nDim or 0
         self.monotonic = monotonic
-        self.passThrough = passThrough
         return self
 
     @property
@@ -688,7 +685,12 @@ class Basis(nn.Module):
         weight = self._prototype_weight(weight, context="reverse")
         nWhat = self.nDim if nWhat is None else nWhat
         snapped = content.clone()
-        flat = snapped[:, :, :nWhat].reshape(-1, nWhat)
+        # ``flat`` must be its own buffer; ``snapped[..., :nWhat].reshape``
+        # can return a view, and the later ``snapped[..., :nWhat] = ...``
+        # write-back then aliases the destination, which torch rejects on
+        # MPS (and on some CPU paths) with "input and written-to tensor
+        # refer to a single memory location".
+        flat = snapped[:, :, :nWhat].reshape(-1, nWhat).clone()
         nonzero = flat.abs().sum(dim=1) >= 1e-8
         if torch.any(nonzero):
             if self.unit_ball:
@@ -1127,15 +1129,14 @@ class Codebook(Basis):
         return self.nVectors
 
     def create(self, nInput, nVectors, nDim, customVQ=True, monotonic=True,
-               passThrough=False, polarity=False, category=False,
-               invertible=False, STE=False):
+               polarity=False, category=False,
+               invertible=False, STE=False, svdOrthogonal=False):
         super().create(
             nInput,
             nVectors,
             nDim,
             customVQ=customVQ,
             monotonic=monotonic,
-            passThrough=passThrough,
         )
         self.customVQ = customVQ
         self.alpha = 0.0
@@ -1144,6 +1145,13 @@ class Codebook(Basis):
         # paths. SVD is lazily refreshed when ``setW`` invalidates it.
         self.invertible = bool(invertible)
         self._svd_dirty = True
+        # Stash the SVD-orthogonal-init request; applied below after the
+        # initial W is allocated by ``addVectors``. With a random
+        # codebook, ``project_reverse`` (which scales by 1/S) can blow
+        # up small singular values; replacing W with its nearest
+        # orthonormal matrix pegs all singular values at 1 so the
+        # bivector lift is well-conditioned from the first forward call.
+        self._svd_orthogonal_init = bool(svdOrthogonal)
         # STE mode: when True, ``forward`` and ``reverse`` wrap the
         # codebook snap with the straight-through estimator pattern --
         # forward returns the hard snapped tensor, backward routes the
@@ -1158,7 +1166,7 @@ class Codebook(Basis):
         # so a global ``.where`` value uniquely identifies both the
         # owning codebook and the prototype within it. Allocation is
         # keyed on ``id(self)`` and is idempotent for re-init.
-        if not self.passThrough and self.nVectors > 0:
+        if self.nVectors > 0:
             self.where_offset = WhereEncoding.allocate_codebook_slice(
                 self.nVectors)
         else:
@@ -1166,18 +1174,37 @@ class Codebook(Basis):
         if polarity and self.nVectors > 0:
             ids = torch.full((self.nVectors,), POLARITY_AFFIRM,
                              dtype=torch.long)
-            # Plain attribute (not a registered buffer) so the default
-            # ``self.polarity_ids = None`` set in __init__ doesn't conflict.
-            # Polarity tags are metadata, not learnable; state_dict
-            # integration is not required for the current consumers.
             self.polarity_ids = ids
         if category and self.nVectors > 0:
-            # Same pattern as polarity: per-row long tag, default 0 ('?').
             self.category_ids = torch.zeros(
                 (self.nVectors,), dtype=torch.long)
-        if (not self.passThrough) and self.nVectors > 0 and self.getW() is None:
+        if self.nVectors > 0 and self.getW() is None:
             self.addVectors(self.nVectors)
+        if self._svd_orthogonal_init and self.nVectors > 0:
+            self.svdOrthogonalize()
         return self
+
+    def svdOrthogonalize(self):
+        """Replace ``W`` with its nearest orthonormal matrix.
+
+        ``W <- U @ Vh`` where ``U, S, Vh = svd(W)``. All singular values
+        of the result are 1, so ``project_reverse`` (which uses ``1/S``
+        in the SVD-factored exact-inverse path) is well-conditioned
+        from the first forward call. Subsequent EMA / training updates
+        deform W from this orthonormal start; values stay bounded as
+        long as training itself is stable.
+        """
+        W = self.getW()
+        if W is None or self.codebookSize == 0:
+            return
+        with torch.no_grad():
+            U, _, Vh = torch.linalg.svd(W, full_matrices=False)
+            W_ortho = U @ Vh
+            if isinstance(self.W, nn.Parameter):
+                self.W.data.copy_(W_ortho)
+            else:
+                self.setW(W_ortho)
+        self._svd_dirty = True
 
     def set_polarity(self, idx, polarity_id):
         """Tag codebook row ``idx`` with one of POLARITY_AFFIRM/NON/NOT."""
@@ -1362,10 +1389,6 @@ class Codebook(Basis):
         return self.getW()
 
     def quantize(self, x):
-        if self.passThrough:
-            zero = torch.tensor(0.0, device=x.device, dtype=x.dtype)
-            self.last_commit_loss = zero
-            return x, None, zero
         if self.customVQ:
             quantized, indices, commit_loss = self.vq(
                 x,
@@ -1414,14 +1437,13 @@ class Codebook(Basis):
         """Commitment loss (the encoder side of the VQ-VAE objective).
 
         Returns ``commitment_weight * MSE(e, sg[q])`` where the quantized
-        codes are detached so the gradient flows only into ``e``. If the
-        codebook is in ``passThrough`` mode or hasn't been initialized,
-        returns a zero scalar on ``e``'s device/dtype.
+        codes are detached so the gradient flows only into ``e``. Returns
+        a zero scalar on ``e``'s device/dtype when either input is empty.
         """
         beta = 1.0
         if self.customVQ and self.vq is not None:
             beta = float(getattr(self.vq, "commitment_weight", 1.0))
-        if self.passThrough or e.numel() == 0 or q.numel() == 0:
+        if e.numel() == 0 or q.numel() == 0:
             return e.new_tensor(0.0)
         n = min(e.shape[-1], q.shape[-1])
         if n <= 0:
@@ -1634,7 +1656,27 @@ class Codebook(Basis):
         Returns:
             ``[B, V, D]`` recovered input.
         """
+        # Stage 4 contract: when the bivector lift is being used as the
+        # paired reverse for an immediately-preceding ``project=True``
+        # forward, ``self._project_cache`` MUST be populated. A None
+        # cache here means an intervening forward ran without
+        # project=True and clobbered the per-position state, or the
+        # caller invoked reverse before any forward -- both of which
+        # silently fall through to the lossy summary path. Surface that
+        # mismatch loudly so it's caught at the call site instead of
+        # quietly producing a wrong reconstruction.
         proj_cache = getattr(self, '_project_cache', None)
+        if proj_cache is None:
+            warnings.warn(
+                f"Codebook.project_reverse: no _project_cache found on "
+                f"this codebook (bivec.shape={list(bivec.shape) if torch.is_tensor(bivec) else bivec!r}). "
+                f"Falling back to the lossy summary reconstruction; "
+                f"the round-trip will not be exact. If this is the "
+                f"matching reverse for a project=True forward, ensure "
+                f"no intervening forward(project=False) cleared the "
+                f"cache.",
+                stacklevel=2,
+            )
         if proj_cache is not None and self.invertible:
             # SVD-factored exact inverse — never materializes W.
             #   x = y @ U @ diag(1/Σ) @ V^T
@@ -1704,13 +1746,6 @@ class Codebook(Basis):
         if isinstance(input, SubSpace):
             _vspace = input
             input = _vspace.materialize()
-
-        if self.passThrough:
-            self.setW(input)
-            if _vspace is not None:
-                _vspace.set_event(input)
-                return _vspace
-            return input
 
         w = self.getW()
         if w is None or self.codebookSize == 0:
@@ -1814,9 +1849,6 @@ class Codebook(Basis):
         """
         if project:
             return self.project_reverse(y, V=V, vN_iters=vN_iters)
-        if self.passThrough:
-            self.setW(y)
-            return y
         if y.shape[-1] < self.nDim:
             raise RuntimeError(
                 f"Codebook.reverse() expected at least {self.nDim} content dims, "
@@ -2007,7 +2039,7 @@ class Embedding(Basis):
         """Tokenize a batch (strings or byte tensors) into token text lists."""
         return [[text for text, _ in self._token_stream(item)] for item in data]
 
-    def create(self, nInput=None, nVectors=None, nDim=None, passThrough=True,
+    def create(self, nInput=None, nVectors=None, nDim=None,
                wv=None, embedding_path=None, source=None, learning_rate=0.001,
                min_frequency=0.0, neg_samples=64, byte_mode=False):
         """Initialise from WordVectors or load from embedding_path.
@@ -2051,7 +2083,7 @@ class Embedding(Basis):
                 f"but config requires nDim={nDim}. Check embeddings file or XML config.")
 
         super().create(nInput or max(1, vocab_size), nVectors or max(1, vocab_size),
-                       vector_size, passThrough=passThrough)
+                       vector_size)
         # W is managed by wv._vectors; getW() returns live data
 
         self.pretrain = PretrainModel(wv, learning_rate=learning_rate, neg_samples=neg_samples)
@@ -2658,15 +2690,12 @@ class Embedding(Basis):
         position/time metadata should call ``decode_reverse_meta()`` after
         reattaching aux fields.
         """
-        if self.passThrough:
-            content = y
-        else:
-            if y.shape[-1] < self.embedding_dim:
-                raise RuntimeError(
-                    f"Embedding.reverse() expected at least {self.embedding_dim} "
-                    f"content dims, got shape {list(y.shape)}.")
-            content = y.clone() if y.shape[-1] == self.embedding_dim else y[:, :, :self.embedding_dim].clone()
-            content = self._snap_content(content, weight=self.getW(), nWhat=self.embedding_dim)
+        if y.shape[-1] < self.embedding_dim:
+            raise RuntimeError(
+                f"Embedding.reverse() expected at least {self.embedding_dim} "
+                f"content dims, got shape {list(y.shape)}.")
+        content = y.clone() if y.shape[-1] == self.embedding_dim else y[:, :, :self.embedding_dim].clone()
+        content = self._snap_content(content, weight=self.getW(), nWhat=self.embedding_dim)
         if return_meta:
             return content, self.decode_reverse_meta(content, subspace=subspace)
         return content
@@ -3166,30 +3195,27 @@ class SubSpace(nn.Module):
                 self.inputShape[0],
                 self.outputShape[0],
                 self.activeEncoding.nDim,
-                passThrough=True,
             )
         elif role == "event":
             basis.create(
                 self.inputShape[0],
                 self.outputShape[0],
                 self.muxedSize,
-                passThrough=True,
             )
         elif role == "what":
             basis.create(
                 self.outputShape[0],
                 self.outputShape[0],
                 self.nWhat,
-                passThrough=True,
             )
         elif role == "where":
-            basis.create(self.outputShape[0], self.outputShape[0], self.nWhere, passThrough=True)
+            basis.create(self.outputShape[0], self.outputShape[0], self.nWhere)
         elif role == "when":
-            basis.create(self.outputShape[0], self.outputShape[0], self.nWhen, passThrough=True)
+            basis.create(self.outputShape[0], self.outputShape[0], self.nWhen)
         else:
             last_dim = value.shape[-1] if value.ndim > 1 else 1
             n_vectors = value.shape[-1] if value.ndim == 1 else value.shape[-2]
-            basis.create(n_vectors, n_vectors, last_dim, passThrough=True)
+            basis.create(n_vectors, n_vectors, last_dim)
         basis.setW(value)
         return basis
 
@@ -4310,6 +4336,19 @@ class SubSpace(nn.Module):
                 return
             # Range check -- vectors are always [-1, 1]; symbol activations are [0, 1]
             is_vector = target in ("what", "where", "when", "event")
+            if kind == "bivector":
+                # Bivector regime (CSBP): values are sums of relu projections,
+                # bounded only by ``V_in * max(|input|*|W|)``. Assert non-
+                # negativity; no upper bound.
+                xmin = xd.min().item()
+                if xmin < -1e-2:
+                    msg = (f"Range violation: kind='bivector', target={target!r} "
+                           f"min {xmin:.6f} below 0 (bivector requires non-negative).")
+                    if strict:
+                        assert False, msg
+                    else:
+                        warnings.warn(msg)
+                return
             if kind == "symbols" and not is_vector:
                 lo, hi = 0, 1
             else:
@@ -4932,6 +4971,13 @@ class Space(nn.Module):
         object.__setattr__(self, 'wordSpace', wordSpace)
 
     def _build_object_basis(self):
+        if not self.codebook:
+            # No codebook configured: build a passthrough Tensor sized to
+            # the muxed event width. Tensor.forward / .reverse are the
+            # identity, so callers see no quantization.
+            basis = Tensor(nVectors=self.nVectors, nDim=self.muxedSize)
+            basis.ergodic = getattr(self, "ergodic", False)
+            return basis
         basis = Codebook()
         # Per-Space metric: Spaces that want unit-norm codebooks for
         # dot-product retrieval (e.g. ConceptualSpace) override the
@@ -4943,7 +4989,6 @@ class Space(nn.Module):
             self.nVectors,
             self.muxedSize,  # Codebook processes full event vectors
             customVQ=self.customVQ,
-            passThrough=not self.codebook,
         )
         basis.ergodic = getattr(self, "ergodic", False)
         return basis
@@ -5276,7 +5321,6 @@ class InputSpace(Space):
                 self.nVectors,
                 self.nDim,
                 customVQ=self.customVQ,
-                passThrough=False,
             )
             return basis
         if self.model_type in ("passthrough", "simple"):
@@ -5285,7 +5329,6 @@ class InputSpace(Space):
                 self.inputShape[0],
                 self.outputShape[0],
                 self.nDim,
-                passThrough=True,
             )
             return basis
         raise RuntimeError("Unexpected model_type")
@@ -5997,9 +6040,6 @@ class PerceptualSpace(Space):
     uses the configured inverse layer. With ``naive=False`` this uses the
     LDU/triangular-solve path; the dense naive path exists only for
     debugging and validation.
-
-    ``passThrough=True`` makes this a no-op (identity), useful when the input
-    is already in the desired perceptual form.
     """
     name = "Percepts"
     config_section = "PerceptualSpace"
@@ -6007,7 +6047,6 @@ class PerceptualSpace(Space):
     def __init__(self, inputShape, spaceShape, outputShape, model_type=None):
 
         section = self.config_section
-        passThrough = TheXMLConfig.space(section, "passThrough")
         ergodic = TheXMLConfig.get("architecture.ergodic")
         hasAttention = TheXMLConfig.space(section, "hasAttention")
         invertible = TheXMLConfig.space(section, "invertible")
@@ -6015,7 +6054,6 @@ class PerceptualSpace(Space):
         naive = TheXMLConfig.get("architecture.naive")
 
         # Stash all attributes BEFORE super().__init__() since _build_what_basis runs inside it
-        self.passThrough = passThrough
         self.ergodic = ergodic
         self.hasAttention = hasAttention
         self.invertible = invertible
@@ -6096,8 +6134,6 @@ class PerceptualSpace(Space):
         self.sigma = SigmaLayer(nPerceptDim, nPerceptDim, invertible=True,
                                 monotonic=True, nonlinear=True)
 
-        if passThrough:
-            return
         input = self.subspace.getEncodedInputSize()
         self.attention = AttentionLayer(input, input, type="transformer")
         self.subspace._nWordSlots = outputShape[0]
@@ -6145,11 +6181,6 @@ class PerceptualSpace(Space):
 
     def _register_requirements(self):
         """Register PerceptualSpace-specific config requirements."""
-        # passThrough spaces are identity mappings -- shape constraints don't apply.
-        passThrough = TheXMLConfig.space(self.config_section, "passThrough")
-        if passThrough:
-            return
-
         nV = self.nVectors
         nA = self.outputShape[0]   # nOutput
         nI = self.inputShape[0]    # nInput
@@ -6761,8 +6792,7 @@ class PerceptualSpace(Space):
         # runs the VQ codebook on one slot instead of N.
         cache = self.subspace.serial_cache.get(id(self))
         if (getattr(self, "serial_mode", False)
-                and cache is not None
-                and not self.passThrough):
+                and cache is not None):
             upstream = vspace.materialize()
             # Check shape compatibility on every dim of the rolled cache
             # (B, N, D).  A short final batch (e.g. last batch of an epoch
@@ -6802,8 +6832,6 @@ class PerceptualSpace(Space):
             else:
                 raise ValueError(
                     f"PerceptualSpace chunking must be bpe|lexicon, got {mode!r}")
-        if self.passThrough:
-            return vspace
         if getattr(vspace, '_demuxed', False) and vspace._active is not None:
             self.subspace._byte_indices = vspace._active[:, :, 0].long()
         x = self.forwardBegin(vspace, returnVectors=True)
@@ -6881,8 +6909,6 @@ class PerceptualSpace(Space):
         vspace = subspace
         if isinstance(self.subspace.what, Embedding):
             self._reverse_text(vspace)
-            return vspace
-        if self.passThrough:
             return vspace
         if self.invertible:
             vspace.normalize("percepts", target="event",
@@ -7002,13 +7028,10 @@ class PerceptualSpace(Space):
 class ModalSpace(Space):
     """Composite space routing what/where/when through independent PerceptualSpaces.
 
-    Default: what branch is processed (PiLayer), where/when branches are passthrough.
-    When nWhere=nWhen=0, degenerates to a single PerceptualSpace on the full embedding.
-
-    Per-branch passthrough flags are read from <ModalSpace> config:
-        whatPassThrough  (default False)
-        wherePassThrough (default True)
-        whenPassThrough  (default True)
+    When nWhere=nWhen=0, degenerates to a single PerceptualSpace on the full
+    embedding.  Per-branch passthrough flags were retired together with
+    ``Space.passThrough`` — every branch now runs its full PerceptualSpace
+    transform.
     """
     name = "Percepts"
     config_section = "ModalSpace"
@@ -7017,55 +7040,28 @@ class ModalSpace(Space):
         section = self.config_section
         super().__init__(inputShape, spaceShape, outputShape)
 
-        # Per-branch passthrough defaults
-        try:
-            whatPT = TheXMLConfig.space(section, "whatPassThrough")
-        except KeyError:
-            whatPT = False
-        try:
-            wherePT = TheXMLConfig.space(section, "wherePassThrough")
-        except KeyError:
-            wherePT = True
-        try:
-            whenPT = TheXMLConfig.space(section, "whenPassThrough")
-        except KeyError:
-            whenPT = True
-
         # Derive branch shapes (symmetric -- subtract off the modality you don't need)
         whatDim = self.muxedSize - self.nWhere - self.nWhen
         whatInputShape = [inputShape[0], whatDim]
         whatOutputShape = [outputShape[0], whatDim]
         whatSpaceShape = [spaceShape[0], spaceShape[1]]
 
-        # Build what branch -- override passThrough in config temporarily
-        saved_pt = TheXMLConfig._data.get("PerceptualSpace", {}).get("passThrough")
-        TheXMLConfig._data.setdefault("PerceptualSpace", {})["passThrough"] = whatPT
         self.whatSpace = PerceptualSpace(whatInputShape, whatSpaceShape, whatOutputShape)
-        TheXMLConfig._data["PerceptualSpace"]["passThrough"] = saved_pt
 
-        # Build where branch (if nWhere > 0)
         if self.nWhere > 0:
             whereShape = [inputShape[0], self.nWhere]
             whereSpaceShape = [spaceShape[0], self.nWhere]
-            saved_pt = TheXMLConfig._data.get("PerceptualSpace", {}).get("passThrough")
-            TheXMLConfig._data["PerceptualSpace"]["passThrough"] = wherePT
             self.whereSpace = PerceptualSpace(whereShape, whereSpaceShape, whereShape)
-            TheXMLConfig._data["PerceptualSpace"]["passThrough"] = saved_pt
         else:
             self.whereSpace = None
 
-        # Build when branch (if nWhen > 0)
         if self.nWhen > 0:
             whenShape = [inputShape[0], self.nWhen]
             whenSpaceShape = [spaceShape[0], self.nWhen]
-            saved_pt = TheXMLConfig._data.get("PerceptualSpace", {}).get("passThrough")
-            TheXMLConfig._data["PerceptualSpace"]["passThrough"] = whenPT
             self.whenSpace = PerceptualSpace(whenShape, whenSpaceShape, whenShape)
-            TheXMLConfig._data["PerceptualSpace"]["passThrough"] = saved_pt
         else:
             self.whenSpace = None
 
-        # Collect parameters and layers from all branches
         self.params = list(self.whatSpace.getParameters())
         self.layers = nn.ModuleList([self.whatSpace])
         if self.whereSpace is not None:
@@ -7221,6 +7217,23 @@ class ConceptualSpace(Space):
         nonlinear = TheXMLConfig.space(section, "nonlinear")
         naive = TheXMLConfig.get("architecture.naive")
         monotonic = bool(TheXMLConfig.get("architecture.monotonic", default=False))
+        # Bivector regime flags — read before super().__init__ since the
+        # what-basis builder runs inside it. ``bivectorOutput`` swaps the
+        # legacy VQ snap on the C-tier output for the per-prototype
+        # catuskoti bivector ``[B, V_C, 2]`` produced by
+        # ``Codebook.forward(..., project=True)``.
+        # ``svdOrthogonalInit`` SVD-orthogonalizes the codebook at
+        # construction so ``project_reverse`` (which scales by 1/Σ) is
+        # well-conditioned from the very first forward call.
+        try:
+            self._bivector_output = bool(TheXMLConfig.space(section, "bivectorOutput"))
+        except KeyError:
+            self._bivector_output = False
+        try:
+            self._svd_orthogonal_init_cfg = bool(
+                TheXMLConfig.space(section, "svdOrthogonalInit"))
+        except KeyError:
+            self._svd_orthogonal_init_cfg = False
         super().__init__(inputShape, spaceShape, outputShape)
         self.nonlinear = nonlinear
         self.ergodic = ergodic
@@ -7290,6 +7303,33 @@ class ConceptualSpace(Space):
             l1_lambda=float(getattr(self, "l1_lambda", 0.0) or 0.0),
             enabled=bool(getattr(self, "codebook", False)),
         )
+
+    def _build_what_basis(self):
+        """Bivector regime: build a Codebook on ``.what`` so
+        ``forward(input, project=True)`` returns the per-prototype
+        catuskoti bivector ``[B, V_C, 2]`` and ``reverse(bivec,
+        project=True)`` lifts it back to ``[B, V, D_C]`` via the cached
+        SVD pseudo-inverse.
+
+        Legacy regime: returns None — the ``.event`` Codebook built by
+        ``_build_object_basis`` handles the legacy VQ snap behaviour.
+        """
+        if not getattr(self, "_bivector_output", False):
+            return None
+        if not self.codebook:
+            return Tensor(nVectors=self.nVectors, nDim=self.nDim)
+        basis = Codebook()
+        basis.use_dot_product = bool(getattr(self, "use_dot_product", False))
+        basis.create(
+            self.inputShape[0],
+            self.nVectors,
+            self.nDim,
+            customVQ=self.customVQ,
+            invertible=True,
+            STE=True,
+            svdOrthogonal=self._svd_orthogonal_init_cfg,
+        )
+        return basis
 
     def _pi_reverse(self, y):
         """PiLayer reverse, hiding the two-pass ergodic mode split.
@@ -7452,11 +7492,19 @@ class ConceptualSpace(Space):
                     vmask.flatten().view(-1, 1, 1),
                     y,
                     torch.zeros_like(y))
-            # Wide-codebook top-K: when nVectors > nOutput, route through the
-            # content Codebook with topK=nOutput so the per-codebook-entry
-            # activation is pruned to the nOutput strongest survivors.
-            if (isinstance(self.subspace.what, Codebook)
+            if (self._bivector_output
+                    and isinstance(self.subspace.what, Codebook)):
+                # Bivector regime: replace the legacy snap with the
+                # per-prototype catuskoti bivector projection. ``y`` becomes
+                # ``[B, V_C, 2]``. The matching reverse routes through
+                # ``project_reverse`` (cached SVD pseudo-inverse).
+                y = self.subspace.what.forward(y, project=True)
+            elif (isinstance(self.subspace.what, Codebook)
                     and self.nVectors > self.outputShape[0]):
+                # Wide-codebook top-K: when nVectors > nOutput, route through
+                # the content Codebook with topK=nOutput so the per-codebook-
+                # entry activation is pruned to the nOutput strongest
+                # survivors.
                 y = self.subspace.what.forward(y, topK=self.outputShape[0])
             else:
                 y = self.subspace.get_vectors().forward(y)
@@ -7467,9 +7515,15 @@ class ConceptualSpace(Space):
         if ws is not None:
             ws.clear_last_svo()
         vspace = self.forwardEnd(y, returnVectors=True)
-        vspace.normalize("concepts", target="what")       # range check
-        vspace.normalize("concepts", target="where")      # range check
-        vspace.normalize("concepts", target="activation")  # range check
+        if self._bivector_output:
+            # Under CSBP the C-tier output is a non-negative bivector;
+            # the legacy ``concepts`` range check (-1..1 on what) does not
+            # apply. The bivector kind asserts non-negativity instead.
+            vspace.normalize("bivector", target="event")
+        else:
+            vspace.normalize("concepts", target="what")       # range check
+            vspace.normalize("concepts", target="where")      # range check
+            vspace.normalize("concepts", target="activation")  # range check
         return vspace
 
     def reverse(self, subspace):
@@ -7485,12 +7539,25 @@ class ConceptualSpace(Space):
         # populates a C-tier generate sequence, the dispatcher fires
         # those instead.
         y = self.reverseBegin(vspace, returnVectors=True)
+        if (self._bivector_output
+                and isinstance(self.subspace.what, Codebook)):
+            # CSBP reverse lift: bivec ``[B, V_C, 2]`` -> ``[B, V, D_C]``
+            # via the cached SVD pseudo-inverse on the codebook. Runs
+            # before pi.reverse so the upstream PiLayer sees the natural
+            # ``[B, V, nDim]`` shape it produced on forward.
+            y = self.subspace.what.reverse(y, project=True)
         if getattr(self, 'syntacticLayer', None) is None:
             y = self._pi_reverse(y)
         else:
             vspace.set_event(y)
             vspace = self.syntacticLayer.reverse(vspace)
             y = vspace.materialize()
+            if self._right_half_dim > 0 and y is not None and y.dim() == 3:
+                # SyntacticLayer.reverse doesn't slice off the
+                # subsymbolic right-half (``_pi_reverse`` does in the
+                # standalone path); strip it here so reverseEnd / the
+                # upstream PerceptualSpace see only the perceptual half.
+                y = y[..., :-self._right_half_dim]
         self.concepts = y.detach()
         vspace = self.reverseEnd(y, returnVectors=True)
         vspace.normalize("percepts", target="what")   # range check
@@ -7606,13 +7673,25 @@ class SymbolicSpace(Space):
                  layer=None):
 
         section = self.config_section
-        passThrough = TheXMLConfig.space(section, "passThrough")
         nonlinear = TheXMLConfig.space(section, "nonlinear")
         ergodic = TheXMLConfig.get("architecture.ergodic")
         naive = TheXMLConfig.get("architecture.naive")
+        # Bivector regime flag: mirror of ConceptualSpace.bivectorOutput.
+        # When True, ``forward`` produces ``[B, V_S, 2]`` via
+        # ``Codebook.forward(..., project=True)`` and ``reverse`` lifts
+        # via the cached SVD pseudo-inverse, matching the C-tier shape.
+        try:
+            self._bivector_output = bool(
+                TheXMLConfig.space(section, "bivectorOutput"))
+        except KeyError:
+            self._bivector_output = False
+        try:
+            self._svd_orthogonal_init_cfg = bool(
+                TheXMLConfig.space(section, "svdOrthogonalInit"))
+        except KeyError:
+            self._svd_orthogonal_init_cfg = False
         super().__init__(inputShape, spaceShape, outputShape, customVQ=True)
         self.conceptualSpace = conceptualSpace
-        self.passThrough = passThrough
         self.nonlinear = nonlinear
         # Post-2026-05-07 rollback: SymbolicSpace inherits the natural
         # ``nWhat == self.nDim`` and ``muxedSize`` from
@@ -7676,7 +7755,7 @@ class SymbolicSpace(Space):
         # Propositional negation slot: NEG sits at the SymbolicSpace
         # output, gated on ``rule_probability("not(S)")``. ``NotLayer``
         # operates on the per-prototype activation bivector ``[B, V_S, 2]``;
-        # the dispatcher (SpaceSyntacticLayer) reads
+        # the dispatcher (SyntacticLayer) reads
         # ``subspace.activation.getW()`` and feeds the bivector tensor in.
         # Same Layer-shaped interface as the parameterized fold operators
         # -- uniform invocation from both bottom-up forward gating and
@@ -7821,6 +7900,8 @@ class SymbolicSpace(Space):
         ``polarity_ids`` (POLARITY_AFFIRM/NON/NOT) so reconstruction
         can emit the matching surface form ("foo"/"non-foo"/"not foo").
         """
+        if not self.codebook:
+            return Tensor(nVectors=self.nVectors, nDim=self.nDim)
         basis = Codebook()
         basis.use_dot_product = bool(getattr(self, "use_dot_product", False))
         basis.create(
@@ -7828,11 +7909,12 @@ class SymbolicSpace(Space):
             self.nVectors,
             self.nDim,
             customVQ=self.customVQ,
-            passThrough=not self.codebook,
             monotonic=True,
             polarity=True,
             category=True,
             STE=True,
+            invertible=getattr(self, "_bivector_output", False),
+            svdOrthogonal=getattr(self, "_svd_orthogonal_init_cfg", False),
         )
         return basis
 
@@ -8130,7 +8212,7 @@ class SymbolicSpace(Space):
         if not self.codebook:
             return None
         basis = getattr(self.subspace, "what", None)
-        if basis is None or getattr(basis, "passThrough", False):
+        if basis is None or not isinstance(basis, Codebook):
             return None
         weight = basis.getW() if hasattr(basis, "getW") else None
         if weight is None or weight.numel() == 0:
@@ -8362,8 +8444,6 @@ class SymbolicSpace(Space):
           5. Resolve the bivector and (optionally) quantize through the
              symbol codebook.
         """
-        if self.passThrough:
-            return incoming_subspace
         if wordSpace is None:
             raise ValueError(
                 "SymbolicSpace.forward requires wordSpace for rule dispatch; "
@@ -8492,8 +8572,6 @@ class SymbolicSpace(Space):
             return self._forward_with_rule_dispatch(
                 subspace, wordSpace=wordSpace, quantize=quantize)
         vspace = subspace
-        if self.passThrough:
-            return vspace
         vspace = self.forwardBegin(vspace)
         act_pre = vspace.materialize()                    # [B, N, concept_dim]
         # SyntacticLayer is unconditional: per the grammar XML, the
@@ -8567,6 +8645,30 @@ class SymbolicSpace(Space):
         # before the codebook sees it. resolve() writes
         # subspace.activation = pos - neg.
         self.resolve(self.subspace)
+
+        # Bivector regime: replace the VQ-VAE / hard-quantize / VQ
+        # branches with the per-prototype catuskoti bivector projection.
+        # ``Codebook.forward(act, project=True)`` returns ``[B, V_S, 2]``
+        # via the cached SVD pseudo-inverse of W. The result lives on
+        # ``subspace.event`` so downstream consumers (OutputSpace,
+        # _compute_symbol_terms) read it via ``materialize()``.
+        if (getattr(self, "_bivector_output", False)
+                and isinstance(self.subspace.what, Codebook)):
+            bivec = self.subspace.what.forward(act, project=True)
+            self.subspace.set_event(bivec, compute_activation=False)
+            vspace = self.forwardEnd(self.subspace)
+            self._emit_symbol_terms(
+                vspace, self._compute_symbol_terms(bivec))
+            if (self.impenetrable_overlap > 0.0
+                    or self.impenetrable_variance > 0.0):
+                imp = self.impenetrable_loss()
+                if (imp is not None and torch.is_tensor(imp)
+                        and (imp.requires_grad or imp.abs().item() > 0.0)):
+                    vspace.errors.add(
+                        "symbol_impenetrable", imp, weight=1.0,
+                        space="SymbolicSpace", category="symbol")
+            vspace.normalize("bivector", target="event")
+            return vspace
 
         # VQ-VAE / hard_quantize / continuous branches preserved from
         # the pre-rollback forward — these implement the codebook snap
@@ -8660,8 +8762,7 @@ class SymbolicSpace(Space):
             basis = self.subspace.what
             snap_eligible = (
                 self.codebook
-                and isinstance(basis, Codebook)
-                and not getattr(basis, "passThrough", True))
+                and isinstance(basis, Codebook))
             if snap_eligible:
                 if basis.nVectors > self.outputShape[0]:
                     snapped = basis.forward(act, topK=self.outputShape[0])
@@ -8698,11 +8799,16 @@ class SymbolicSpace(Space):
             return subspace
         self.subspace.copy_context(subspace)
         vspace = subspace
-        if self.passThrough:
-            return vspace
         wordSpace = getattr(self, "wordSpace", None)
         vspace = self.reverseBegin(vspace)
         act = vspace.materialize()                        # [B, N, symbol_dim]
+        if (getattr(self, "_bivector_output", False)
+                and isinstance(self.subspace.what, Codebook)
+                and act is not None and act.dim() == 3 and act.shape[-1] == 2):
+            # Bivector regime: lift ``[B, V_S, 2]`` back to ``[B, V, D_S]``
+            # via the cached SVD pseudo-inverse, then continue with the
+            # standard reverse (sigma / sortNetwork / forwardEnd).
+            act = self.subspace.what.reverse(act, project=True)
         if wordSpace is not None:
             act = wordSpace.reverseSymbols(act, self.subspace)
         if self.sortNetwork is not None:
@@ -8957,7 +9063,6 @@ class OutputSpace(Space):
             self.inputShape[0],
             self.outputShape[0],
             self.muxedSize,  # full event width
-            passThrough=True,
         )
         return basis
 

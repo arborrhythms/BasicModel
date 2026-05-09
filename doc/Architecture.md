@@ -27,7 +27,7 @@ totalLoss = (1 - reconRatio) * outputLoss + reconRatio * reconstructionLoss
 | **InputSpace** | Lifts raw data into working dimensionality | LiftingLayer | nActive, nDim, nVectors |
 | **PerceptualSpace** | Per-percept aggregation | SigmaLayer (`self.sigma`, P -> sub-percept; dormant pending sub-perceptual structure) | nActive, nDim, nVectors, invertible |
 | **ConceptualSpace** | Multiplicative abstraction (P -> C) | PiLayer (`self.pi`, P -> C, with `forwardPi` / `reversePi` pointer aliases hiding the one-or-two-layer split) | nActive, nDim, nVectors, invertible |
-| **SymbolicSpace** | Discrete activation bottleneck (C -> S) + Codebook | SigmaLayer (`self.sigma`, C -> S, with `forwardSigma` / `reverseSigma` pointer aliases) + Codebook | nActive, nVectors, passThrough, codebook |
+| **SymbolicSpace** | Discrete activation bottleneck (C -> S) + Codebook | SigmaLayer (`self.sigma`, C -> S, with `forwardSigma` / `reverseSigma` pointer aliases) + Codebook | nActive, nVectors, codebook, bivectorOutput |
 | **SyntacticSpace** | Binary derivation tree (CNF grammar) | Grammar + WordEncoding | nActive, nDim, nVectors |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
@@ -191,37 +191,22 @@ subsymbolic-enable flag, set independently in the model XML.
   `BaseModel.create_from_config`), `SubSpace.serial_cache` dict, and
   the `test_serial_mode_*.py` tests.
 
-**Parallel vs Grammar mode**
-(`<architecture><mode>grammar|parallel</mode>`):
+**Conceptual loopback** (always-on; the `<subsymbolicEnabled>` /
+`<mode>` flags were retired 2026-05-08):
 
-  Mutually exclusive Phase-1 modes:
-  - **`grammar` mode**: `SymbolicSpace` is active;
-    `SubsymbolicSpace.held_at_zero = True`. The symbolic re-entrant
-    loop fires; the subsymbolic event tensor is held at zero and
-    contributes nothing to the next conceptual order's combined
-    input.
-  - **`parallel` mode**: `SubsymbolicSpace` is active;
-    `SymbolicSpace.held_at_zero = True`. The subsymbolic / felt-
-    sense re-entrant loop fires; the symbolic event tensor is
-    zeroed.
-
-  Both modes wire a `SubsymbolicSpace` parallel to `SymbolicSpace`;
-  only one is "running" per pass. The other's event tensor is summed
-  elementwise into the next conceptual order's combined input (zeros
-  are identity under the additive sum, so the held-at-zero side
-  contributes nothing). Reference: `held_at_zero` attribute on
-  `SymbolicSpace` and `SubsymbolicSpace`; `BaseModel.__init__`
-  mode-dispatch around the subsymbolic enable check.
-
-**Subsymbolic enabled** (`<subsymbolicEnabled>true</subsymbolicEnabled>`,
-default false):
-
-  Independent of the mode flag — controls whether `SubsymbolicSpace`
-  is *constructed* at all. When false, only `SymbolicSpace` is built;
-  no parallel re-entrant loop; the per-stage ConceptualSpace's
-  PiLayer is not widened. When true, both spaces exist and the mode
-  flag determines which one's event contributes to the next
-  conceptual order.
+  Each stage's `ConceptualSpace` reads
+  `[P_event || S_event_{t-1}]` -- the perceptual side concatenated
+  with the previous symbolic emission. Stage 0 cold-starts with a
+  zero right-half (the PiLayer's `x=0 -> identity` property makes
+  this a no-op match against the un-widened pipeline); stages $t \geq 1$
+  consume `symbolicSpaces[t-1].subspace.event`. `PerceptualSpace`
+  serves as the subsymbolic substrate; no parallel `SubsymbolicSpace`
+  is auto-constructed at runtime. The widening fires only when
+  `<bivectorOutput>true</bivectorOutput>` is configured on
+  `ConceptualSpace` and butterfly mode is off, so legacy butterfly
+  configs preserve their pre-widening layer geometry. Reference:
+  `MentalModel._create_per_stage` (per-stage symbolicSpace_ref
+  wiring) and `Spaces.ConceptualSpace._build_combined_input`.
 
 ### Pipeline as a unit, two-tier reset
 

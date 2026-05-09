@@ -36,7 +36,7 @@ def _make_codebook(D_C=4, V_S=4, invertible=True):
     """Build a unit-norm codebook for clean reasoning."""
     cb = Codebook()
     cb.create(nInput=V_S, nVectors=V_S, nDim=D_C,
-              customVQ=False, passThrough=False,
+              customVQ=False,
               monotonic=True, invertible=invertible)
     cb.setW(torch.eye(V_S, D_C))
     return cb

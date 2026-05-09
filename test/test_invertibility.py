@@ -477,9 +477,9 @@ def _clamp_subspace(vspace, lo=1e-7, hi=1.0):
 
 def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
                            reconstruct="FULL", flatten=True, ergodic=False,
-                           passThrough=False, hasAttention=True,
+                           hasAttention=True,
                            invertible=False,
-                           symbolPassThrough=False):
+                           **_legacy):
     """Configure TheXMLConfig for isolated Space tests.
 
     Overlays test-specific values on top of model.xml defaults so that
@@ -504,9 +504,8 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
             "embeddingPath": None, "data": {}, "training": {},
         },
         "InputSpace":      {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": False, "codebook": False, "lexer": "word"},
-        "PerceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "codebook": False, "passThrough": passThrough, "hasAttention": hasAttention, "invertible": invertible},
+        "PerceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "codebook": False, "hasAttention": hasAttention, "invertible": invertible},
         "ConceptualSpace": {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "codebook": False, "hasAttention": False, "invertible": invertible},
-        "SymbolicSpace":   {"nDim": contentDim, "nVectors": nObj, "nActive": nObj, "flatten": flatten, "passThrough": symbolPassThrough, "codebook": False},
         "OutputSpace":     {"nDim": outputDim,  "nVectors": nObj, "nActive": nObj, "nWhere": 0, "nWhen": 0, "flatten": True, "codebook": False, "invertible": False},
     }
     for section, vals in overrides.items():
@@ -516,23 +515,10 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nObj=3,
             Models.TheXMLConfig._data[section] = vals
 
 
-class TestPerceptualSpacePassthrough(unittest.TestCase):
-    """PerceptualSpace with passThrough=True is exact identity."""
-    def _check(self, objSize):
-        _setup_object_encoding(objSize=objSize, passThrough=True)
-        nObj, contentDim = 3, 6
-        embDim = contentDim + objSize
-        torch.manual_seed(42)
-        pspace = Models.PerceptualSpace(
-            [nObj, embDim], [nObj, contentDim], [nObj, embDim],
-        )
-        pspace.eval()
-        x = torch.randn(2, nObj, embDim).to(TheDevice.get())
-        with torch.no_grad():
-            y = pspace.forward(_wrap_tensor(pspace, x))
-            x_rec = _unwrap(pspace.reverse(y))
-        err = _reconstruction_error(x, x_rec)
-        self.assertLess(err, 1e-6, f"objSize={objSize}: err={err:.2e}")
+# TestPerceptualSpacePassthrough was removed in Stage 1: passThrough was
+# deleted from Space, so PerceptualSpace no longer has an identity mode.
+# The Tensor-basis path replaces the legacy passthrough Codebook for
+# `<codebook>false</codebook>`, but the surrounding PiLayer still applies.
 
     def test_objsize_0(self):  self._check(0)
     def test_objsize_4(self):  self._check(4)
@@ -619,26 +605,7 @@ class TestConceptualSpacePairedSigma(unittest.TestCase):
     def test_objsize_4(self):  self._check(4)
 
 
-class TestSymbolicSpacePassthrough(unittest.TestCase):
-    def _check(self, objSize):
-        _setup_object_encoding(objSize=objSize, reconstruct="FULL", flatten=True,
-                               symbolPassThrough=True)
-        nObj, contentDim = 3, 6
-        embDim = contentDim + objSize
-        torch.manual_seed(42)
-        sspace = Models.SymbolicSpace(
-            [nObj, embDim], [nObj, contentDim], [nObj, embDim],
-        )
-        sspace.eval()
-        x = torch.randn(2, nObj, embDim).to(TheDevice.get())
-        with torch.no_grad():
-            y = sspace.forward(_wrap_tensor(sspace, x))
-            x_rec = _unwrap(sspace.reverse(y))
-        err = _reconstruction_error(x, x_rec)
-        self.assertLess(err, 1e-6, f"objSize={objSize}: err={err:.2e}")
-
-    def test_objsize_0(self):  self._check(0)
-    def test_objsize_4(self):  self._check(4)
+# TestSymbolicSpacePassthrough was removed in Stage 1 along with passThrough.
 
 
 class TestOutputSpaceReversePass(unittest.TestCase):

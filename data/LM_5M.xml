@@ -129,7 +129,6 @@
     <nWhere>2</nWhere>
     <nWhen>0</nWhen>
     <nOutput>1024</nOutput>
-    <passThrough>false</passThrough>
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
     <codebook>true</codebook>
@@ -162,7 +161,6 @@
     <nWhen>0</nWhen>
     <nOutput>1024</nOutput>
     <codebook>true</codebook>
-    <passThrough>false</passThrough>
     <accumulateTruth>0</accumulateTruth>
   </SymbolicSpace>
 

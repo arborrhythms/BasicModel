@@ -24,9 +24,9 @@
 
     <training>
       <numTrials>1</numTrials>
-      <numEpochs>200</numEpochs>
+      <numEpochs>400</numEpochs>
       <batchSize>64</batchSize>
-      <learningRate>0.01</learningRate>
+      <learningRate>0.005</learningRate>
       <reverseScale>0.1</reverseScale>
       <trainEmbedding>JOINT</trainEmbedding>
       <embeddingScale>0.05</embeddingScale>
@@ -87,7 +87,6 @@
     <nOutput>8</nOutput>
     <nOutputDim>10</nOutputDim>
 
-    <passThrough>false</passThrough>
     <l1Lambda>0.01</l1Lambda>
     <accumulateTruth>0</accumulateTruth>
     <codebook>true</codebook>
@@ -114,7 +113,7 @@
       <grammar>
         <!-- Per the 2026-05-07 rollback: explicit per-tier natural
              folds (sigma at P / S, pi at C). Previously these were
-             supplied by the SpaceSyntacticLayer's default_rule
+             supplied by the SyntacticLayer's default_rule
              code-level fallback. -->
         <!--
         <P>sigma(P)</P>

@@ -24,7 +24,6 @@
     <nOutput>784</nOutput>
     <nDim>1</nDim>
     <nVectors>784</nVectors>
-    <passThrough>true</passThrough>
   </PerceptualSpace>
 
   <ConceptualSpace>
@@ -37,7 +36,6 @@
     <nOutput>20</nOutput>
     <nDim>0</nDim>
     <nVectors>20</nVectors>
-    <passThrough>true</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>

@@ -56,7 +56,7 @@ class TestNullPerceptSlot(unittest.TestCase):
         emb = Embedding()
         # Construct without an embedding file so the create() path uses the
         # dynamic-vocab fallback (puts \x00 at index 0, then ASCII 1..126).
-        emb.create(nInput=8, nVectors=8, nDim=4, passThrough=True,
+        emb.create(nInput=8, nVectors=8, nDim=4,
                    embedding_path=None)
         return emb
 

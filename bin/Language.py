@@ -1025,6 +1025,37 @@ class Chart(nn.Module):
         # call so `_apply_rule_forward` can look up host layers via
         # the registry.
         object.__setattr__(self, '_active_word_space', None)
+        # Grammar reference for chart-authority rule gating. Populated
+        # by ``WordSpace.__init__`` after the chart is built. The
+        # ``register_grammar_layer`` / ``should_run_rule`` pair below
+        # services GrammarLayer.gated_run via the
+        # ``GrammarLayer._chart_authority`` slot.
+        self.grammar = None
+        self._registered_grammar_layers = []
+
+    def register_grammar_layer(self, layer):
+        """Add a GrammarLayer instance to this chart's roster.
+        Idempotent on repeated registration."""
+        if layer not in self._registered_grammar_layers:
+            self._registered_grammar_layers.append(layer)
+
+    def should_run_rule(self, rule_name):
+        """Return the firing probability for ``rule_name`` per the
+        grammar's ``rule_probability`` lookup.
+
+        Synthesizes a body string matching ``Grammar.rule_probability``
+        prefix-checks (``"<name>("``) so dormant defaults (e.g.
+        ``not(...) -> 0.0``) still apply. Used by
+        ``GrammarLayer.gated_run`` to gate parameterized folds. Returns
+        1.0 when no grammar is wired.
+        """
+        if self.grammar is None or not rule_name:
+            return 1.0
+        body = f"{rule_name}(S)"
+        try:
+            return float(self.grammar.rule_probability(body))
+        except Exception:
+            return 1.0
 
     def _ensure_signal_router(self):
         """Lazy-build the SignalRouter when router_kind == 'signal'.
@@ -2610,7 +2641,8 @@ class _UnaryCompat(nn.Module):
 
 
 # =====================================================================
-# Per-space SyntacticLayer (2026-05-01 refactor).
+# Per-space SyntacticLayer (2026-05-01 refactor; legacy class retired
+# 2026-05-08).
 #
 # Spec: doc/specs/2026-05-01-syntactic-layer-refactor.md §4.
 #
@@ -2619,17 +2651,12 @@ class _UnaryCompat(nn.Module):
 # rules and dispatches `forward` / `reverse` based on the rule choice
 # the chart wrote into ``word_space.current_rules`` /
 # ``generate_rules`` (Q4 / Q10.1).
-#
-# Temporarily named ``SpaceSyntacticLayer`` while the legacy module-
-# global ``SyntacticLayer`` is still in use (Q3: keep the name
-# ``SyntacticLayer`` post-refactor; rename happens in Step 9 of the
-# implementation order, when the legacy class is deleted).
 # =====================================================================
-class SpaceSyntacticLayer(Layer):
+class SyntacticLayer(Layer):
     """Per-space dispatcher.
 
     Construction:
-        SpaceSyntacticLayer(tier='C', word_space=word_space,
+        SyntacticLayer(tier='C', word_space=word_space,
                             host_layers={'pi': pi_layer},
                             host_space=concept_space)
 
@@ -2926,7 +2953,7 @@ def _grammar_layer_classes():
 
 def build_space_syntactic_layer(space, word_space, *, tier,
                                 builtin_layers=None):
-    """Construct a per-space SpaceSyntacticLayer.
+    """Construct a per-space SyntacticLayer.
 
     Args:
         space: the host Space (PerceptualSpace / ConceptualSpace /
@@ -2966,358 +2993,12 @@ def build_space_syntactic_layer(space, word_space, *, tier,
             # one, the host space's existing instance should already be
             # in builtin_layers; if it isn't, skip rather than fail.
             continue
-    layer = SpaceSyntacticLayer(
+    layer = SyntacticLayer(
         tier=tier, word_space=word_space,
         host_layers=host_layers, host_space=space)
     space.syntacticLayer = layer
     return layer
 
-
-class SyntacticLayer(Layer):
-    """Unified rule-prediction and rule-execution layer for the grammar.
-
-    Post-refactor (2026-04-19) this single class owns every grammar
-    rule (union, intersection, not, lift, lower, equals, part, true, false,
-    non, conjunction, disjunction, swap, what, where, when, query, absorb).
-    The prior per-tier subclasses
-    (``PerceptualSyntacticLayer`` / ``ConceptualSyntacticLayer`` /
-    ``SymbolicSyntacticLayer``) have been merged into this class.
-
-    Uses a weight-tied recursive architecture with depth embeddings for
-    rule prediction and dispatches rule bodies through ``_RULE_METHODS``.
-
-    Args:
-        nInput:    activation width (number of symbol/concept/percept slots).
-        nOutput:   same as nInput.
-        rules:     list of global Grammar rule IDs this layer handles
-                   (e.g. [1,2,3,4,5] for the symbolic space).
-        transition_rule: optional global rule ID for the transition rule
-                   (e.g. 6 for S->C).  Included in prediction but signals
-                   hand-off to the next space.
-        max_depth: maximum derivation depth.
-        hidden_dim: width of the shared derivation hidden state.
-        grammar:   Grammar instance.
-        tau:       Gumbel-softmax temperature.
-    """
-
-    # Transition bias scale: (1 - interpretation) * TRANSITION_SCALE is added
-    # to the transition rule's logit. The transition rule (S->C or C->P) acts
-    # as NOP -- "stop deriving this tier, pass through."
-    # Low interpretation -> transition dominates -> no reductions (episodic).
-    # High interpretation -> grammar rules fire -> composition (semantic).
-    TRANSITION_SCALE = 10.0
-
-    def __init__(self, nInput, nOutput, rules, transition_rule=None,
-                 max_depth=12, hidden_dim=256, grammar=None, tau=1.0,
-                 feature_dim=None):
-        super().__init__(nInput, nOutput)
-        # Store grammar as non-Module attribute to avoid circular nn.Module
-        # reference (Grammar owns SyntacticLayers, SyntacticLayers reference
-        # Grammar). Using object.__setattr__ bypasses nn.Module.__setattr__
-        # which would register it as a submodule.
-        if grammar is None:
-            grammar = Grammar()
-        object.__setattr__(self, 'grammar', grammar)
-        self.rules           = list(rules)
-        self.transition_rule = transition_rule
-        # Build the full set of rule IDs this layer predicts over
-        self.all_rules = list(rules)
-        if transition_rule is not None and transition_rule not in self.all_rules:
-            self.all_rules.append(transition_rule)
-        self.num_rules  = len(self.all_rules)
-        # Map from local index -> global rule ID
-        self.rule_index = {rid: i for i, rid in enumerate(self.all_rules)}
-        # Local index of the transition rule (for interpretation bias)
-        self.transition_index = (self.rule_index.get(transition_rule)
-                                 if transition_rule is not None else None)
-        self.max_depth  = max_depth
-        self.hidden_dim = hidden_dim
-        self.tau        = tau
-
-        # Rule prediction network (weight-tied across depths)
-        self.input_proj       = LinearLayer(nInput, hidden_dim)
-        self.derivation_layer = LinearLayer(hidden_dim, hidden_dim)
-        self.rule_head        = LinearLayer(hidden_dim, self.num_rules)
-        self.depth_embed      = nn.Embedding(max_depth, hidden_dim)
-        self.activation_fn    = nn.GELU()
-
-        # Phase B: pair-scorer MLP. Scores adjacent live-leaf pairs to
-        # pick a merge site under the chart compose path. ``feature_dim``
-        # is the last-axis width D of leaf vectors at compose time (falls
-        # back to nInput when callers don't distinguish -- unit tests do
-        # set ``D == nInput``, but real pipelines have D = symbol_dim
-        # which is independent of n_slots). ``hidden_dim`` is the width
-        # of the rule-prediction hidden state that conditions the score.
-        fd = nInput if feature_dim is None else feature_dim
-        self._pair_feature_dim = fd
-        self.pair_scorer = nn.Sequential(
-            nn.Linear(hidden_dim + 2 * fd, hidden_dim),
-            nn.GELU(),
-            nn.Linear(hidden_dim, 1),
-        )
-
-        # Xavier initialization so logits start in a numerically stable range.
-        # LinearLayer defaults to torch.randn which gives std=1.0; for large
-        # dims this produces huge activations that saturate softmax/gumbel.
-        for layer in [self.input_proj, self.derivation_layer, self.rule_head]:
-            nn.init.xavier_normal_(layer.W)
-        nn.init.normal_(self.depth_embed.weight, std=0.02)
-
-        # Register child layers for ergodic dispatch. pair_scorer is
-        # kept off this list because it's an nn.Sequential without the
-        # LinearLayer set_sigma/W contract the ergodic loop expects.
-        self.layers = [self.input_proj, self.derivation_layer, self.rule_head]
-
-        # Per-compose caches. compose() resets these each call; pre-init
-        # here so read sites (e.g. MentalModel universality hook) can read
-        # safely on layers whose compose hasn't fired.
-        self.last_svo = None
-        self.last_rule_probs = None
-        self.last_composable_rules = None
-        # Soft-chart machinery (Delta 2). Lazily built on first
-        # _compose_chart_cky call; cached version comes from
-        # `Grammar.rule_table_version`. Note: rule-shaped Parameters
-        # (_rule_embed / _rule_bias / _marker_bias) are NOT pre-set
-        # here -- nn.Module's register_parameter rejects names that
-        # already exist as plain attributes. Read sites should use
-        # `getattr(self, '_rule_embed', None)`.
-        #
-        # When `WordSpace.softChartCompose` is true in the loaded XML
-        # config, eagerly build the soft chart at construction time so
-        # the parameters are visible to the optimizer's parameter scan
-        # (which runs before the first forward pass). Without this,
-        # the lazy-build path registers _rule_bias / _rule_embed /
-        # _marker_bias only on first compose, after the optimizer has
-        # already collected parameters -- the chart params then never
-        # get gradient updates.
-        self._soft_chart_built = False
-        self._soft_chart_version = -1
-        self._compat_score_mod = None
-        self._unary_compat_mod = None
-        self._lex_cat_scorer = None
-        # Legacy SyntacticLayer field; the soft-chart Chart instance
-        # has its own w_max read from <WordSpace><wMax>. This stub is
-        # kept for code paths that still reach for self.w_max on the
-        # old syntactic layer.
-        try:
-            _wmax_xml = int(TheXMLConfig.get("WordSpace.wMax", 0) or 0)
-        except Exception:
-            _wmax_xml = 0
-        self.w_max = _wmax_xml if _wmax_xml > 0 else 8
-        self.unary_max_depth = 2
-        self.D_rule = 32
-        # Softmax temperature on the chart's per-cell rule mixture.
-        # τ = 1.0 reproduces standard softmax. Larger τ keeps the
-        # mixture softer (multiple rules contribute meaningfully);
-        # smaller τ sharpens toward one-hot. Setting τ ≥ 2.0 early in
-        # training and annealing toward 1.0 prevents the saturation
-        # observed when `compat_score` learns to produce large rule-
-        # discriminating logits. See doc/research/2017-jang-gumbel-
-        # softmax.md. Configurable via WordSpace.chartTau in the XML.
-        try:
-            from util import TheXMLConfig as _TheXMLConfig
-            self.chart_tau = float(_TheXMLConfig.get("WordSpace.chartTau", 1.0))
-        except Exception:
-            self.chart_tau = 1.0
-        # Surface-3 wiring (see doc/research/three-surfaces.md): roster
-        # of GrammarLayer instances that have registered themselves
-        # with this SyntacticLayer as their gate authority.
-        self._registered_grammar_layers = []
-        try:
-            from util import TheXMLConfig as _TheXMLConfig
-            _eager_chart = bool(_TheXMLConfig.get(
-                "WordSpace.softChartCompose", False))
-        except Exception:
-            _eager_chart = False
-        if _eager_chart and grammar is not None:
-            try:
-                grammar._ensure_configured()
-                D_eager = (feature_dim if feature_dim is not None
-                           else nInput)
-                self._ensure_soft_chart_built(
-                    grammar, int(D_eager),
-                    torch.device('cpu'))
-            except Exception:
-                # If grammar isn't yet configured at this point, fall
-                # back to lazy build. The optimizer-gradient gap
-                # warning belongs to the caller.
-                pass
-        # LiftingLayer is instantiated by init_lifting() from
-        # WordSpace._build_syntactic_layer. Pre-init so universality
-        # read sites can test for None without a missing-attr trap.
-        self.lifting_layer = None
-        # Per-batch list of (rule_id, left, right, merged_slot,
-        # merged_category) tuples appended by chart compose. Reset at
-        # compose start; consumed by SVO extraction and downward head
-        # emission.
-        self._derivation_trace = None
-        # Category machinery (Phase C). Populated lazily on first chart
-        # compose; tests may seed categories directly via _seed_category.
-        self._category_names = None
-        self._category_index = None
-        self._last_category = None
-        # Install ourselves as the class-level chart authority for
-        # GrammarLayer at the very end of __init__ (after every other
-        # attribute is set), so any GrammarLayer that auto-registers
-        # via this authority sees a fully-constructed SyntacticLayer.
-        # With the default model.xml grammar (pi / sigma / not in
-        # their natural tiers), rule_probability for those ops returns
-        # 1.0 (or the dormant default) so `gated_run` shortcuts to
-        # passthrough -- the registration is a true no-op until a
-        # call site decides to consult `should_run_rule`.
-        try:
-            from Layers import GrammarLayer as _GrammarLayer
-            _GrammarLayer.set_chart_authority(self)
-        except Exception:
-            pass
-
-    def register_grammar_layer(self, layer):
-        """Add a GrammarLayer instance to this authority's roster.
-        Idempotent on repeated registration."""
-        if layer not in self._registered_grammar_layers:
-            self._registered_grammar_layers.append(layer)
-
-    def should_run_rule(self, rule_name):
-        """Return the firing probability for ``rule_name`` per the
-        grammar's `rule_probability` lookup.
-
-        Synthesizes a `body` string matching the convention of
-        `Grammar.rule_probability` so dormant defaults like
-        ``not(...) -> 0.0`` and ``Contiguous(...) -> thought_free``
-        still apply. Used by `GrammarLayer.gated_run` to gate
-        parameterized folds. Returns 1.0 when no grammar is wired.
-        """
-        if self.grammar is None or not rule_name:
-            return 1.0
-        # Construct a body that the rule_probability prefix-checks
-        # will recognize. Arity is unknown here, so use the unary form
-        # with a single placeholder; rule_probability's startswith()
-        # checks only inspect "<name>(", which matches.
-        body = f"{rule_name}(S)"
-        try:
-            return float(self.grammar.rule_probability(body))
-        except Exception:
-            return 1.0
-
-    # -- Basis-delegated rule execution ----------------------------
-
-    def _basis(self, subspace):
-        """Return the Basis from a SubSpace (or None)."""
-        return subspace.basis if subspace is not None else None
-
-    def _mono(self, subspace):
-        """True if this subspace uses monotonic logic."""
-        b = self._basis(subspace)
-        return b is None or b.monotonic
-
-    @staticmethod
-    def _expand_mask(mask, feature_dim):
-        """Expand a concept-axis mask ``[K]`` to a storage mask ``[feature_dim]``.
-
-        When ``feature_dim == 2 * K`` the input is interpreted as bivector
-        storage and the mask is repeated so paired poles ``(2k, 2k+1)`` stay
-        co-masked. When ``feature_dim == K`` the mask is used as-is.
-        Returns a tensor on the caller's device/dtype.
-        """
-        if mask is None:
-            return None
-        if not torch.is_tensor(mask):
-            mask = torch.as_tensor(mask, dtype=torch.float32)
-        mask = mask.to(dtype=torch.float32)
-        K = mask.shape[-1]
-        if feature_dim == 2 * K:
-            return mask.repeat_interleave(2)
-        if feature_dim == K:
-            return mask
-        # Fallback: if neither matches, broadcast / truncate conservatively.
-        if feature_dim < K:
-            return mask[:feature_dim]
-        return torch.cat([mask, mask.new_zeros(feature_dim - K)], dim=-1)
-
-    def _apply_mask(self, out, mask, subspace=None):
-        """Apply a mask either along the feature axis (default) or the
-        position axis (when ``subspace`` is provided and ``mask`` aligns
-        with ``out.shape[-2]``).
-
-        Feature-axis path: element-wise multiply along the last dim.
-        Position-axis path: zero the corresponding rows on
-        ``subspace._active`` so ``SubSpace.materialize()`` gating propagates
-        the mask downstream. Returns ``out`` unchanged in this case.
-        No-op when ``mask is None``.
-        """
-        if mask is None or not torch.is_tensor(out):
-            return out
-        if (subspace is not None
-                and torch.is_tensor(mask)
-                and out.ndim >= 2
-                and mask.shape[-1] == out.shape[-2]
-                and getattr(subspace, "_active", None) is not None):
-            active = subspace._active
-            # mask aligns with the N (position) axis of _active = [..., N, M].
-            # Append a singleton trailing dim for M; broadcasting handles
-            # any leading batch dims automatically.
-            m = mask.to(device=active.device, dtype=active.dtype).unsqueeze(-1)
-            subspace._active = active * m
-            return out
-        m = self._expand_mask(mask, out.shape[-1])
-        if m is None:
-            return out
-        return out * m.to(device=out.device, dtype=out.dtype)
-
-    # -- Forward/Reverse rule dispatch (REMOVED 2026-05-01) ----------
-    # The legacy `*Forward` / `*Reverse` rule methods, the
-    # `_RULE_METHODS` / `_OPS_METHODS` / `_METHOD_ALIASES` dispatch
-    # tables, and `project` / `reverse_project` / `dispatch_ops` /
-    # `_resolve_method` were removed. Per-rule math now lives on
-    # the `GRAMMAR_LAYER_CLASSES` GrammarLayer subclasses
-    # (Layers.py); the chart's `Chart._apply_rule_forward` and the
-    # per-space `SpaceSyntacticLayer.forward` route through them.
-
-    # -- compose / decompose / chart helpers (REMOVED 2026-05-01) ---
-    # The legacy `compose`, `_compose_vector`, `_compose_to_target`,
-    # `_compose_activation`, `_compose_vector_chart`,
-    # `_compose_chart_cky`, `_compose_chart_outside`,
-    # `_viterbi_extract`, `_signal_sentence_completed*`,
-    # `_pair_scorer`, `_live_pairs`, `_apply_rules_to_pairs`,
-    # `_ensure_soft_chart_built`, `_ensure_category_table`,
-    # `_seed_category`, `_category_names_count`,
-    # `_extract_svo_from_trace`, `emit_head`, `generate`,
-    # `decompose` were all removed. Chart parsing lives on the
-    # `Chart` class (top of this file). The `WordSpace` owns a
-    # `Chart` instance; the chart is wired into the model pipeline
-    # via `Pipeline.ChartCompose` / `ChartGenerate`.
-
-    # -- utilities -------------------------------------------------
-
-    def decompose(self, *args, **kwargs):
-        """Back-compat alias for ``generate``. Renamed 2026-05-01."""
-        return self.generate(*args, **kwargs)
-
-    def set_tau(self, tau):
-        """Anneal the Gumbel-softmax temperature."""
-        self.tau = tau
-
-    def flush_word_buffer(self, subspace):
-        """Drain the tick's tensor word buffer into ``subspace.word``.
-
-        Outer-loop hook for the brick-vectorization handoff §6c (Path
-        B). The chart path now materializes before compose returns, so
-        the outer doc-streaming loop's post-brick call is normally
-        idempotent (``word_count`` is already zero). Keeping this wrapper
-        preserves the documented call site for any path that still writes
-        buffered entries via the vector-typed ``subspace.add_word``
-        overload.
-
-        Thin wrapper -- the buffer state lives on the SubSpace so per-
-        subspace word lists stay independent. The method exists on
-        SyntacticLayer to match the call site documented in the plan
-        (``wordSpace.syntacticLayer.flush_word_buffer(subspace)``).
-        """
-        if subspace is None:
-            return
-        flush = getattr(subspace, 'flush_word_buffer', None)
-        if flush is not None:
-            flush()
 
 
 class CategoryStack:
@@ -3524,10 +3205,9 @@ class WordSpace(Space):
         self.outputShape = [0, muxed]
         self.spaceShape  = [0, muxed]
 
-        # 4. Unified SyntacticLayer slot (filled below). Post subclass-
-        # merge (2026-04-19) there is a single SyntacticLayer that owns
-        # every compositional rule and is called from SymbolicSpace.
-        self.syntacticLayer = None
+        # 4. Per-space SyntacticLayer dispatch lives on each space
+        # (``space.syntacticLayer``); WordSpace itself no longer owns a
+        # central SyntacticLayer instance.
         # 4a. Chart + host-layer registry. Per the 2026-05-01 syntactic-
         # layer refactor (doc/specs/2026-05-01-syntactic-layer-refactor.md):
         # WordSpace owns a Chart that runs CKY inside / outside passes
@@ -3561,10 +3241,22 @@ class WordSpace(Space):
         for p in self.chart.parameters():
             if all(p is not q for q in self.params):
                 self.params.append(p)
-        # 5. Build the SyntacticLayer anchored at SymbolicSpace.  The
-        # perceptual and conceptual spaces also get a ``wordSpace``
-        # back-reference so they can route through the shared buffer,
-        # but only the symbolic space's compose() fires the layer.
+        # 4b. Hand the chart the grammar reference and install it as the
+        # GrammarLayer chart authority. The chart's
+        # ``register_grammar_layer`` / ``should_run_rule`` pair services
+        # GrammarLayer.gated_run; the prior single-instance
+        # SyntacticLayer that held this responsibility was retired.
+        self.chart.grammar = grammar
+        try:
+            from Layers import GrammarLayer as _GrammarLayer
+            _GrammarLayer.set_chart_authority(self.chart)
+        except Exception:
+            pass
+
+        # 5. Per-space SyntacticLayer attachment. The perceptual
+        # and conceptual spaces also get a ``wordSpace`` back-reference
+        # so they can route through the shared buffer, but only the
+        # symbolic space's compose() fires the chart.
         if perceptualSpace is not None:
             perceptualSpace.attach_wordSpace(self)
             self._attach_per_space_syntactic_layer(
@@ -3574,8 +3266,7 @@ class WordSpace(Space):
             self._attach_per_space_syntactic_layer(
                 conceptualSpace, tier='C')
         if symbolicSpace is not None:
-            self._build_syntactic_layer(
-                symbolicSpace, nSymbols, grammar, symbol_dim)
+            symbolicSpace.attach_wordSpace(self)
             self._attach_per_space_syntactic_layer(
                 symbolicSpace, tier='S')
 
@@ -3640,7 +3331,6 @@ class WordSpace(Space):
             nDim=pos_dim,
             customVQ=True,
             monotonic=False,
-            passThrough=False,
         )
         self.category_index = {
             name: idx for idx, name in enumerate(TheGrammar.categories)
@@ -4125,7 +3815,7 @@ class WordSpace(Space):
         reverse natural-fold rule_ids (``method_name`` in
         :data:`_NATURAL_FOLD_METHODS`, ``canonical`` containing
         ``.reverse``). The dispatched ``method_name`` is shared with
-        the matching forward rule so ``SpaceSyntacticLayer._by_name``
+        the matching forward rule so ``SyntacticLayer._by_name``
         resolves to the same parametrized layer either way.
 
         Falls back to the per-tier forward rule_ids when no explicit
@@ -4392,29 +4082,6 @@ class WordSpace(Space):
         """
         self.subspace.attach_codebook_host(host)
 
-    def attach_layer(self, kind, layer):
-        """Register a pre-built SyntacticLayer as this WordSpace's
-        ``syntacticLayer``.
-
-        The ``kind`` argument is retained for backward compatibility
-        with external callers but is no longer meaningful; every
-        invocation targets the single unified layer.  Sets
-        ``layer.word_subspace`` as a back-reference so compose() can
-        push onto the shared buffer, appends the layer to
-        ``self.layers`` for ``Space.paramUpdate`` delegation, and
-        merges its parameters into ``self.params`` for the curated
-        ``Space.getParameters`` walk.
-        """
-        if layer is None:
-            return
-        self.syntacticLayer = layer
-        layer.word_subspace = self.subspace
-        if layer not in self.layers:
-            self.layers.append(layer)
-        for p in layer.parameters():
-            if all(p is not q for q in self.params):
-                self.params.append(p)
-
     # -- private factory helper: build + wire the SyntacticLayer -----
     def _resolve_hidden_dim(self, n_slots):
         try:
@@ -4426,7 +4093,7 @@ class WordSpace(Space):
         return min(256, max(64, n_slots * 4))
 
     def _attach_per_space_syntactic_layer(self, space, *, tier):
-        """Build the per-space SpaceSyntacticLayer for ``space`` (Step 4
+        """Build the per-space SyntacticLayer for ``space`` (Step 4
         of doc/specs/2026-05-01-syntactic-layer-refactor.md).
 
         Gathers the space's already-constructed parametrized layers
@@ -4555,33 +4222,6 @@ class WordSpace(Space):
                 self.params.append(p)
         return layer
 
-    def _build_syntactic_layer(self, space, n_slots, grammar, symbol_dim):
-        """Build the legacy SyntacticLayer stub anchored at the symbolic
-        space.
-
-        Post-2026-05-01 refactor: chart parsing lives on ``self.chart``
-        (a ``Chart`` instance); per-rule math lives on
-        ``GRAMMAR_LAYER_CLASSES`` GrammarLayer subclasses; per-space
-        dispatch lives on ``SpaceSyntacticLayer``. This call still
-        constructs a legacy SyntacticLayer because consumers
-        (`Models._universality_score` reads `last_svo` / `lifting_layer`
-        off it) tolerate its presence as a passthrough -- those fields
-        default to ``None`` and the consumers gate on that.
-        """
-        layer = SyntacticLayer(
-            nInput=n_slots, nOutput=n_slots,
-            rules=grammar.symbolic(),
-            transition_rule=grammar.symbolic_transition(),
-            max_depth=max(n_slots - 1, 1),
-            hidden_dim=self._resolve_hidden_dim(n_slots),
-            grammar=grammar,
-            feature_dim=symbol_dim,
-        )
-        self.attach_codebook_host(space)
-        self.attach_layer('syntactic', layer)
-        space.attach_wordSpace(self)
-        return layer
-
     # -- composition dispatch ----------------------------------------
     def forwardSymbols(self, data, subspace):
         """Demux the muxed symbol tensor into the subspace's modality
@@ -4615,46 +4255,14 @@ class WordSpace(Space):
         return data
 
     def reconstruct(self, state, codebook_space, max_tokens=1):
-        """Run the downward grammar on a deep state.
-
-        MVP: emit_head on ``S -> C`` exactly once, returning the head atom
-        index and the residual. ``max_tokens > 1`` is reserved for later
-        expansion (e.g. NP VP templates that consume the residual).
-
-        ``codebook_space`` is any space whose ``subspace.basis`` exposes a
-        ``getW() -> [V, D]`` codebook (SymbolicSpace for internal atoms,
-        InputSpace for word-vocab heads that can be decoded back to text).
-
-        Returns a dict:
-          'heads':      list[int] of length 1
-          'contained':  [B, D] tensor -- atom contribution
-          'residual':   [B, D] tensor -- leftover meaning after emission
-          'state':      [B, D] tensor -- original input state (echo)
+        """Downward-generation MVP. The ``emit_head`` kernel lived on
+        the legacy ``SyntacticLayer`` class (retired 2026-05-08); the
+        Chart-based generation surface that replaces it doesn't yet
+        expose a one-shot head emission. Until it does, this method
+        returns the empty-emission stub callers (``Models._predicted_head``)
+        already gate on.
         """
-        layer = self.syntacticLayer
-        if layer is None or state is None:
-            return {'heads': [], 'residual': state, 'state': state}
-        cb = codebook_space.subspace.basis
-        # No codebook wired (e.g. a passthrough/non-VQ SymbolicSpace):
-        # emit a trivial "closest-head" = 0 for every batch row so
-        # callers (MentalModel._predicted_head) get a well-formed list
-        # instead of crashing on cb.getW() == None. The residual equals
-        # the input state (no atom subtracted).
-        if cb is None or getattr(cb, 'getW', lambda: None)() is None:
-            B = state.shape[0]
-            return {
-                'heads': [0] * B,
-                'contained': torch.zeros_like(state),
-                'residual': state,
-                'state': state,
-            }
-        idx, contained, residual = layer.emit_head(state, cb)
-        return {
-            'heads': idx.tolist(),
-            'contained': contained,
-            'residual': residual,
-            'state': state,
-        }
+        return {'heads': [], 'residual': state, 'state': state}
 
     # -- buffer access + lifecycle ------------------------------------
     def read(self):

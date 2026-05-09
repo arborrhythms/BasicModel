@@ -99,7 +99,6 @@
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>false</codebook>
-    <passThrough>true</passThrough>
   </PerceptualSpace>
 
   <ConceptualSpace>
@@ -126,7 +125,6 @@
     <nOutput>10</nOutput>
     <nOutputDim>100</nOutputDim>
 
-    <passThrough>false</passThrough>
     <l1Lambda>0.0</l1Lambda>
     <accumulateTruth>0</accumulateTruth>
     <codebook>true</codebook>
@@ -153,7 +151,7 @@
              2026-05-07 rollback the grammar XML is the sole source
              of truth for which rule fires at each tier; with no
              rules listed for P / C / S, every per-space
-             SpaceSyntacticLayer dispatch is a no-op and neither
+             SyntacticLayer dispatch is a no-op and neither
              sigma nor pi appears in the forward / reverse data
              flow. The codebook is the only learned object in the
              C-S loop. -->

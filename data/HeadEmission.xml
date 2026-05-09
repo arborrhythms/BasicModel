@@ -55,7 +55,6 @@
     <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>8</nVectors>
-    <passThrough>true</passThrough>
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
     <codebook>false</codebook>
@@ -74,7 +73,6 @@
     <nOutput>32</nOutput>
     <nDim>8</nDim>
     <nVectors>8</nVectors>
-    <passThrough>false</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>

@@ -77,8 +77,15 @@ class TestMentalModelForwardReverse(unittest.TestCase):
         model, cfg = Models.MentalModel.from_config(os.path.join(_DATA_DIR, 'MentalModel.xml'))
         # Grammar should be initialized
         self.assertTrue(Language.TheGrammar._configured)
-        # Post S-tier merge: a single unified SyntacticLayer on WordSpace.
-        self.assertIsNotNone(model.wordSpace.syntacticLayer)
+        # Post 2026-05-08 SyntacticLayer rename: per-space dispatchers
+        # live on the home spaces (P / C / S each own a SyntacticLayer);
+        # the legacy WordSpace-level SyntacticLayer was retired.
+        for space in (model.perceptualSpace,
+                      model.conceptualSpace,
+                      model.symbolicSpace):
+            self.assertIsNotNone(getattr(space, 'syntacticLayer', None),
+                                 f"{space.name} missing per-space "
+                                 f"SyntacticLayer")
         # After the C->S merge, all method rules live on S-tier.
         self.assertIn('equals', Language.TheGrammar.s_methods)
         self.assertIn('part', Language.TheGrammar.s_methods)
@@ -136,18 +143,14 @@ class TestMentalModelGrammarConfiguration(unittest.TestCase):
                          f"ops: {missing}")
         self.assertEqual(Language.TheGrammar.interpretation, 0.5)
 
-        # Post S-tier merge + 2026-05-07 rollback: the unified
-        # SyntacticLayer is constructed with grammar.symbolic() (S-tier
-        # rule ids only). Pre-rollback MentalModel.xml had only S-tier
-        # rules so this matched ``range(0, n_rules)``; the rollback's
-        # Phase 4 Step 6 added explicit ``P = sigma(P)`` and
-        # ``C = pi(C)`` natural-fold rules at P / C tiers, so the
-        # equality below now compares against the S-tier subset.
-        s_tier_ids = [i for i, r in enumerate(Language.TheGrammar.rules)
-                      if r.tier == 'S']
-        self.assertEqual(model.wordSpace.syntacticLayer.all_rules,
-                         s_tier_ids)
-        self.assertIsNone(model.wordSpace.syntacticLayer.transition_rule)
+        # Post 2026-05-08 SyntacticLayer rename: the legacy WordSpace
+        # ``syntacticLayer`` (which held ``all_rules`` / ``transition_rule``)
+        # was retired. Rule selection now flows through ``WordSpace.chart``
+        # which sees every grammar rule directly via ``self.chart.grammar``;
+        # the per-tier subsets are read on demand from
+        # ``Grammar.symbolic()`` / ``perceptual()`` / ``conceptual()``.
+        self.assertIs(model.wordSpace.chart.grammar, Language.TheGrammar)
+        self.assertIsNone(Language.TheGrammar.symbolic_transition())
 
 
 if __name__ == '__main__':

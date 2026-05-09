@@ -34,7 +34,6 @@
   <PerceptualSpace>
     <nOutput>32</nOutput>
     <nDim>1</nDim>
-    <passThrough>false</passThrough>
     <nVectors>0</nVectors>
     <invertible>false</invertible>
     <codebook>false</codebook>
@@ -52,7 +51,6 @@
     <nOutput>256</nOutput>
     <nDim>0</nDim>
     <nVectors>256</nVectors>
-    <passThrough>false</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>

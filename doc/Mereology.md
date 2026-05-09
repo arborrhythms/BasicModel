@@ -153,8 +153,8 @@ $$
                          {\sum_j \mathrm{cluster\_size}[j]}
 $$
 
-When VQ is absent or `passThrough`, trust falls back to
-$\|cb[i]\| / \max_j \|cb[j]\|$.
+When VQ is absent (e.g. the basis is a `Tensor` rather than a
+`Codebook`), trust falls back to $\|cb[i]\| / \max_j \|cb[j]\|$.
 
 ### Diagnostics
 

@@ -89,54 +89,16 @@ pseudo-inverse).
 
 ## Implementation outline
 
-The work decomposes into seven gateable stages. Stages 1–3 trim the
-codebase to the cognitive subset before the architectural changes
-land, so the bivector + loopback work in stages 4–7 navigates fewer
-codepaths.
+The work decomposes into six gateable stages. Stages 1–2 trim the
+codebase to a smaller subset before the architectural changes land,
+so the bivector + loopback work in stages 3–6 navigates fewer
+codepaths. Butterflies are deliberately *not* removed in this spec
+iteration (see Note A); the bivector configs simply set
+`useButterflies=false`. The butterfly path stays available for
+legacy configs (MM_5M, MM_400M, etc.) and gets retired in a
+follow-up.
 
-### Stage 1 — Remove `useButterflies=true` codepath
-
-The bivector regime can't satisfy the butterfly volume-equality
-constraint (`nPercepts × state_dim == nSymbols × symbol_width` at
-`ModelFactory.validate_config`) once the C-tier output narrows to
-`D=2`. Butterflies are also load-bearing for none of the cognitive
-properties this rollback targets — they're a compute-layout
-optimization. Remove them.
-
-Code touchpoints:
-
-- `_create_per_stage` butterfly branch ([Models.py:4329-4364](basicmodel/bin/Models.py:4329)) —
-  drop the entire `if self.useButterflies` block.
-- `_level_shapes` callers and the `_butterfly_state_*` /
-  `_butterfly_symbol_factor` instance fields.
-- `ButterflyLayer` class in [Layers.py](basicmodel/bin/Layers.py)
-  (`_butterfly_pack` / `_butterfly_unpack` / `_butterfly_merge` /
-  `_butterfly_unmerge`).
-- `PiLayer` / `SigmaLayer` constructor branches that switch on
-  `stage_idx` / `n_t` / `is_last` for butterfly-mode pack/unpack.
-- `validate_config`'s butterfly volume-equality requirement
-  registration in [Models.py](basicmodel/bin/Models.py).
-- All `<useButterflies>` reads. Drop the XML element from the
-  schema.
-
-XML migrations:
-
-- `MM_xor.xml`, `MM_5M.xml`, `MM_400M.xml`, `MM_xor_step4.xml`, and
-  any other config that sets `<useButterflies>true</useButterflies>`
-  needs the flag removed and the model architecture re-validated.
-  `MM_xor` will need a non-butterfly substitute (e.g.,
-  `conceptualOrder=1` or non-butterfly `conceptualOrder>1`).
-
-Acceptance:
-
-- The butterfly branch in `_create_per_stage` is dead code (and
-  removed). `useButterflies=true` is rejected at validation with a
-  clear "no longer supported, see spec X" error.
-- `test/test_basicmodel.py` and `test/test_mm_xor.py` stay green
-  (after MM_xor's butterflies are flipped off and shapes are
-  reconciled).
-
-### Stage 2 — Remove `passThrough=true` codepath
+### Stage 1 — Remove `passThrough=true` codepath
 
 `passThrough` is a "skip the layer's transform" shortcut used by
 test configs and minimal probes. With the cognitive architecture
@@ -168,9 +130,9 @@ Acceptance:
   removed from XML schema.
 - Test suite stays green after migration.
 
-### Stage 3 — Make subsymbolic-loopback always-on
+### Stage 2 — Make subsymbolic-loopback always-on
 
-After stages 1–2, the only remaining gating around the conceptual
+After stage 1, the only remaining gating around the conceptual
 loopback is `<subsymbolicEnabled>`. Drop the flag and make the
 loopback unconditional. PerceptualSpace serves as the subsymbolic
 substrate; no parallel `SubsymbolicSpace` instance is constructed.
@@ -218,23 +180,39 @@ Acceptance:
   P.nOutputDim + S.nOutputDim.
 - Test suite green.
 
-### Stage 4 — Per-stage widening
+### Stage 3 — Per-stage widening
 
-After Stage 3 the loopback is always wired, but only stage 0's
+After Stage 2 the loopback is always wired, but only stage 0's
 ConceptualSpace is widened (legacy: `stage_widen_dim = ... if t == 0
 else 0`). Under "every stage sees [P || S_{t-1}]", widen every
 stage:
 
 ```python
-stage_widen_dim = symbolShape[1]   # unconditional after Stage 3
+stage_widen_dim = symbolShape[1]   # unconditional after Stage 2
 ```
 
-Wire `symbolicSpace_ref` on every stage's ConceptualSpace. The
-reference points at the SymbolicSpace whose *previous* iteration's
-event we want to read; for shared-instance per-stage configs that's
-`self.symbolicSpace`. For per-stage `symbolicSpaces[t]` arrays, each
-stage references the previous: `t == 0` → zeros (cold start), `t >
-0` → `symbolicSpaces[t-1]`.
+Wire `symbolicSpace_ref` on every stage's ConceptualSpace. Sketch:
+
+```python
+# In MentalModel._create_per_stage, after the spaces are constructed:
+for t, cs in enumerate(self.conceptualSpaces):
+    if t == 0:
+        # Stage 0 cold-starts: no previous symbol, _build_combined_input
+        # zero-fills the right half. Set the ref to the same-stage
+        # SymbolicSpace -- on the first call its event is None / pre-
+        # forward, which _build_combined_input treats as zero anyway.
+        ref = self.symbolicSpaces[0]
+    else:
+        # Subsequent stages read the previous stage's symbolic event.
+        ref = self.symbolicSpaces[t - 1]
+    object.__setattr__(cs, 'symbolicSpace_ref', ref)
+    object.__setattr__(cs, 'subsymbolicSpace_ref', None)
+```
+
+`object.__setattr__` is required to bypass `nn.Module` submodule
+registration -- otherwise the cross-reference would put SymbolicSpace
+into multiple parents in the module tree (breaks `.to(device)`,
+double-counts parameters).
 
 Acceptance:
 
@@ -242,7 +220,7 @@ Acceptance:
   forwards through both stages without shape errors. Each stage's
   C reads `[P || S_{t-1}]`.
 
-### Stage 5 — ConceptualSpace Bivector Projection (CSBP)
+### Stage 4 — ConceptualSpace Bivector Projection (CSBP)
 
 Wire `Codebook.forward(input, project=True)` into the C-tier forward
 and `Codebook.reverse(bivec, project=True)` into the reverse.
@@ -301,13 +279,39 @@ if self.codebook:
 `Codebook.project` stores `self._project_cache` on the instance.
 `Codebook.project_reverse` reads it. The contract is **one forward
 followed by one reverse on the same codebook instance**, with no
-intervening forward call that would overwrite the cache. Stage 3
+intervening forward call that would overwrite the cache. Stage 4
 makes this contract load-bearing; we should add a brief assertion in
 `project_reverse` that the cache is non-None and emit a clear
 diagnostic if not.
 
 The cache is per-instance, so per-stage ConceptualSpaces each have
 their own `_project_cache` -- no cross-stage interference.
+
+#### Codebook initialization (resolves Risk 1)
+
+`project_reverse` uses `1/S` (inverse singular values of W). With a
+random codebook, small S blow up the lift. The chosen mitigation is
+**SVD-orthogonalize the codebook at construction**: in
+`Codebook.addVectors` (or its caller for ConceptualSpace), after the
+random init, run an SVD on `W` and replace it with `U @ V.T` (the
+nearest orthonormal matrix to the random init). This pegs all
+singular values at 1, so `1/S` is identity-ish and the lift is well-
+conditioned from the first forward call. EMA / training updates then
+deform the codebook from this orthonormal start; values stay
+bounded as long as training itself is stable.
+
+Implementation:
+
+```python
+# After the random init in Codebook.addVectors / vq.codebook init:
+with torch.no_grad():
+    U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+    W.copy_(U @ Vh)   # nearest orthonormal -- all singular values 1
+self._svd_dirty = True
+```
+
+This is gated on a flag (e.g., `<svdOrthogonalInit>true</svdOrthogonalInit>`
+on ConceptualSpace) so legacy configs aren't disturbed.
 
 #### Range check semantics
 
@@ -325,18 +329,18 @@ not in [-1, 1]. Two options:
 Recommendation: option 2. Add a `kind="bivector"` to the normalize
 contract with `lo=0, hi=None` so the check is non-negativity only.
 
-### Stage 6 — Symbolic side mirror
+### Stage 5 — Symbolic side mirror
 
 SymbolicSpace's forward / reverse should symmetrically use the
 project=True path so its output is also `[B, V_S, 2]`. Same swaps as
-Stage 5 but in `SymbolicSpace.forward` and `SymbolicSpace.reverse`.
+Stage 4 but in `SymbolicSpace.forward` and `SymbolicSpace.reverse`.
 The legacy VQ snap branches (use_vqvae_reversible /
 use_vqvae_nonreversible / hard_quantize) are vestigial under the
 bivector regime; they stay in the codebase for now (legacy XMLs that
 still want VQ-VAE training) but are not exercised by MM_xor under
 this design.
 
-### Stage 7 — Downstream consumer sweep
+### Stage 6 — Downstream consumer sweep
 
 After C and S both emit bivectors, sweep downstream consumers for
 the `[B, V, 2]` shape:
@@ -370,23 +374,13 @@ addressed as the corresponding stage lands:
 Each stage should leave the test suite green before the next stage
 lands.
 
-### Stage 1 acceptance — Remove butterflies
-
-- The butterfly branch in `_create_per_stage` is gone. `ButterflyLayer`
-  removed.
-- Configs that previously set `<useButterflies>true</useButterflies>`
-  are migrated or archived. `MM_xor.xml` runs with butterflies off
-  (likely `conceptualOrder=1` until Stage 4 lands the multi-stage
-  non-butterfly path properly).
-- `test/test_basicmodel.py` and `test/test_mm_xor.py` stay green.
-
-### Stage 2 acceptance — Remove passThrough
+### Stage 1 acceptance — Remove passThrough
 
 - `passThrough` reads gone. `<passThrough>` removed from XML schema.
 - Configs that used it are migrated.
 - Test suite green.
 
-### Stage 3 acceptance — Always-on subsymbolic loopback
+### Stage 2 acceptance — Always-on subsymbolic loopback
 
 - `<subsymbolicEnabled>` and `<mode>` reads gone. SubsymbolicSpace is
   never auto-constructed by MentalModel.
@@ -394,29 +388,29 @@ lands.
 - Validator asserts `C.nInputDim == P.nOutputDim + S.nOutputDim`.
 - Test suite green.
 
-### Stage 4 acceptance — Per-stage widening
+### Stage 3 acceptance — Per-stage widening
 
 - A 2-stage MM_xor variant (`conceptualOrder=2`, no butterflies)
   forwards through both stages without shape errors. Each stage's
   C reads `[P || S_{t-1}]`.
 
-### Stage 5 acceptance — CSBP
+### Stage 4 acceptance — CSBP
 
 - ConceptualSpace.forward returns `[B, V, 2]` on a probe call.
 - ConceptualSpace.reverse with the matching SVD cache returns
   `[B, V, D]`.
-- Round-trip MSE on the C-tier alone (no SymbolicSpace involvement)
-  is < 1e-3 for in-span inputs (analogous to test_idempotent_loop,
-  but on the live ConceptualSpace from MM_xor).
+- SVD-orthogonal init keeps the round-trip MSE on the C-tier alone
+  (no SymbolicSpace involvement) under 1e-3 for in-span inputs from
+  the very first forward call (no training warm-up needed).
 
-### Stage 6 acceptance — Symbolic mirror
+### Stage 5 acceptance — Symbolic mirror
 
 - SymbolicSpace.forward returns `[B, V_S, 2]` bivector.
 - The C → S → C round-trip MSE is bounded by the codebook span
-  losses on each side; documented threshold (likely ≤ 5e-2 with
-  random init, decreasing with training).
+  losses on each side; documented threshold (≤ 5e-2 from a fresh
+  SVD-orthogonal init, decreasing with training).
 
-### Stage 7 acceptance — Downstream consumer sweep
+### Stage 6 acceptance — Downstream consumer sweep
 
 - `test_mm_xor.py::test_forward_reverse_reconstructs_input_state`
   passes under the bivector regime (threshold may need to relax
@@ -427,12 +421,13 @@ lands.
 
 ## Risks and open questions
 
-1. **Untrained-codebook amplification.** `project_reverse` uses
-   `1/S` (inverse singular values). With a random codebook, small
-   S blow up the lift. Pre-CSBP testing needs a strategy: either
-   warmstart the codebook with an SVD-orthogonalized init, clamp
-   the lift output, or accept that the round-trip MSE is high
-   pre-training and the convergence test relaxes its threshold.
+1. **Untrained-codebook amplification → SVD-orthogonal init.**
+   `project_reverse` uses `1/S` (inverse singular values). With a
+   random codebook, small S blow up the lift. **Resolved**: Stage 4
+   SVD-orthogonalizes the codebook at construction
+   (`W ← U @ V.T` so all singular values = 1). Gated on a flag
+   (`<svdOrthogonalInit>true</svdOrthogonalInit>` on
+   ConceptualSpace) so legacy configs are unaffected.
 
 2. **per-prototype vs per-slot shape.** `[B, V_S, 2]` with
    `V_S != V_in` requires diagonal or outer-product
@@ -445,38 +440,89 @@ lands.
    the projection onto span(W), not a discrete substitution; the
    commit loss as written may not have the right gradient
    structure. May need to rederive or remove for the bivector
-   regime.
+   regime. Decision deferred to Stage 5.
 
 4. **Discourse / TruthLayer interactions.** TruthLayer accumulates
    per-symbol activations. Under the bivector regime its
    `record_batch` sees `[B, V_S, 2]` instead of `[B, V_S, D_S]`;
    need to verify the trust-score computation still makes sense
-   on bivector poles.
+   on bivector poles. Surfaces in Stage 6 (downstream sweep).
 
-5. **VQ-VAE legacy configs.** MM_5M, MM_400M, etc. use the legacy
-   VQ-VAE snap with `useVQVAE=true`. They're orthogonal to MM_xor
-   under this spec but the cleanup pass removes the
-   `useButterflies=true` path that some of them depend on. Need
-   a migration plan or archival decision for those configs.
+## Note A — Butterflies stay (deferred)
 
-## Files to revert before this spec begins
+This spec deliberately does *not* remove the `useButterflies=true`
+codepath. Original draft had a Stage 1 that removed butterflies
+because the bivector regime can't satisfy the volume-equality check
+(`nPercepts × state_dim == nSymbols × symbol_width`). That's still
+true, but rather than trim now, we leave butterflies in place for
+legacy configs (MM_5M, MM_400M, MM_xor's pre-bivector flavor) and
+simply set `<useButterflies>false</useButterflies>` on the bivector
+configs. Butterfly removal is a follow-up spec iteration once the
+bivector path is stable.
 
-To get to a clean baseline before the spec work starts, revert the
-in-progress edits in MM_xor.xml back to a state that passes all
-tests. Specifically:
+Practical implication: don't touch `_create_per_stage`'s butterfly
+branch, `ButterflyLayer`, or the `validate_config` volume-equality
+check. They keep working for `useButterflies=true` configs;
+bivector configs avoid them by setting the flag false.
 
-- `<conceptualOrder>3</conceptualOrder>` (was 1)
-- `<useButterflies>true</useButterflies>` (was false)
-- Remove `<subsymbolicEnabled>` and `<mode>` lines.
-- PerceptualSpace `nDim=10`, `nOutputDim=10` (was 4).
-- ConceptualSpace `nInputDim=10`, `nDim=10`, `nOutputDim=10` (was 6
-  / 6 / 2). `codebook=false` (was true).
-- SymbolicSpace `nInputDim=10`, `nDim=10`, `nOutputDim=10` (was 2 /
-  2 / 2).
-- OutputSpace `nInputDim=10` (was 2).
+## Current state at handoff
 
-After revert, run the full test suite to confirm green, then tag
-the release. The spec work resumes in a separate conversation.
+The codebase already has the following changes from the rollback
+session that are *not* in `git log` of the next conversation's
+starting point but *are* in the working tree (the next
+implementer needs to know they exist before treating them as
+out-of-scope):
+
+- **`Codebook.STE=False` flag** added to `Codebook.create`. When
+  True, `forward` and `reverse` wrap the snap with
+  `input + (snapped - input).detach()` so the encoder gets gradient
+  identity through the snap. `SymbolicSpace._build_what_basis`
+  passes `STE=True`. CSBP (Stage 4) replaces the snap with the
+  bivector projection, so the STE wrap will need to be either
+  retained for the bivector-output case or discarded; that decision
+  is part of Stage 4's work.
+- **`WhereEncoding._codebook_registry`** + `allocate_codebook_slice`
+  + `Codebook.where_offset` + `addVectors` size assert — sequential
+  per-codebook offset allocation in the global where-space. Used
+  for the planned codebook-key story (`.where` as a global lookup
+  index) but not yet wired into the lookup path.
+- **`Models._create_per_stage` `conceptOutputShape`** uses explicit
+  `<nOutput>` / `<nOutputDim>` instead of the broken volume formula.
+  This is what made `is_empty()` stop short-circuiting on
+  `inputShape[0]==0`. Don't revert.
+- **`XMLConfig.space()`** raises `ValueError` on duplicate scalar
+  config tags (e.g., two `<nVectors>` in one space).
+- **`bin/bm.py`** is defensive about missing `numShards` /
+  `maxDocs` / `shardDir` in `<data>` blocks. `Embedding.predict(None)`
+  returns `[]`. `Models.infer` treats empty decoded as
+  end-of-stream.
+- **`TheData.loadInline`** synthesizes deterministic random
+  sentences when `<dataset>inline</dataset>` has no `<input>` /
+  `<output>` children. Used by `idempotent.xml`.
+- **`test/test_partition_resolve.py`** assertions migrated to
+  `nWhat == sym.nDim`.
+- **`test/test_mental_model.py::test_configured_grammar_matches_xml`**
+  assertion migrated to compare against the S-tier rule subset
+  (`grammar.symbolic()`) since MentalModel.xml now has explicit
+  P / C tier rules from Phase 4 Step 6.
+
+### MM_xor.xml status
+
+`MM_xor.xml` has been reverted to the pre-bivector-experiment
+shape (`conceptualOrder=3`, `useButterflies=true`, all spaces at
+`nDim=10` / `nOutputDim=10`, no `<subsymbolicEnabled>`, no
+`<mode>`, ConceptualSpace `<codebook>false</codebook>`,
+SymbolicSpace `<codebook>true</codebook>` `<useVQVAE>true</useVQVAE>`).
+The grammar block has the explicit per-tier folds added in Phase 4
+Step 6. Test suite is green at this baseline.
+
+### idempotent.xml status
+
+`idempotent.xml` is in the `passThrough=true` / `nDim=100` regime
+from the discussion. It still uses `<passThrough>true</passThrough>`
+on PerceptualSpace, which Stage 1 of this spec removes. Migration
+required (rewrite as `<codebook>false</codebook>` perceptual or
+delete the file).
 
 ## References
 

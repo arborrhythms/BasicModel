@@ -169,7 +169,6 @@ class TestLexiconOwnership(unittest.TestCase):
         b = Basis()
         b.nDim = 2
         b.nVectors = 2
-        b.passThrough = False
         weight = torch.tensor([[-0.90, 0.0], [0.20, 0.0]])
         snapped = b._snap_content(
             torch.tensor([[[0.95, 0.0]]]),
@@ -190,7 +189,6 @@ class TestLexiconOwnership(unittest.TestCase):
         b.use_dot_product = True
         b.nDim = 2
         b.nVectors = 2
-        b.passThrough = False
         weight = torch.tensor([[-0.90, 0.0], [0.20, 0.0]])
         snapped = b._snap_content(
             torch.tensor([[[0.95, 0.0]]]),

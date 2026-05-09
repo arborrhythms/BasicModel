@@ -478,8 +478,6 @@ factorisation) for exact inversion.
 **Reverse operation (invertible=False, reversible=True).** Two separate `PiLayer`
 instances -- `pi1` for forward, `pi2` for reverse -- each with independent weights.
 
-**passThrough=True.** Identity: input passes through unchanged, no Pi computation.
-
 **Key parameters.**
 
 | Parameter | Description |
@@ -487,7 +485,7 @@ instances -- `pi1` for forward, `pi2` for reverse -- each with independent weigh
 | `nActive` | Number of active perceptual vectors |
 | `nVectors` | Codebook size; enables VQ when > nActive |
 | `invertible` | True: shared invertible layer; False: separate pi1/pi2 |
-| `passThrough` | Skip perceptual processing entirely |
+| `codebook` | False -> `.what` is a passthrough `Tensor`; True -> `Codebook` |
 | `hasAttention` | Enable attention reweighting |
 
 **Layer.** `PiLayer` (one or two instances depending on `invertible`).
@@ -683,16 +681,15 @@ subspace unchanged.
 PiLayer's exact inverse maps `[B, nSymbols]` back to `[B, nConcepts]`,
 recovering the concept activation.
 
-**passThrough=True.** Concept vectors and activation pass through unchanged.
-
 **Key parameters.**
 
 | Parameter | Description |
 |-----------|-------------|
 | `nActive` | Total number of symbols (output + reconstruction symbols) |
 | `nVectors` | Codebook size (= nSymbols when codebook=true) |
-| `passThrough` | Skip symbolic processing entirely |
 | `codebook` | Enable codebook quantization (required for one-hot output) |
+| `bivectorOutput` | Forward returns the per-prototype catuskoti bivector `[B, V_S, 2]` via `Codebook.forward(..., project=True)`; reverse lifts via the cached SVD pseudo-inverse |
+| `svdOrthogonalInit` | SVD-orthogonalize the codebook at construction so the bivector lift is well-conditioned from t=0 |
 
 **Range.** Symbols are percepts: each symbol represents the presence (`1`) or absence
 (`0`) of a named entity and lives in `[0, 1]`. One symbol is encoded at a time (the
@@ -727,7 +724,7 @@ onto span(W) and is a fixed point thereafter (verified by
 encoding on the per-batch muxed event tensor; they don't live inside
 the codebook itself.
 
-The C↔S boundary as **categorization**: calling
+The C $\leftrightarrow$ S boundary as **categorization**: calling
 ``SymbolicSpace.forward`` IS the act of *naming* — projecting the
 incoming concept activation onto the named codebook lattice. The snap
 loss IS the categorization: a clean prototype match yields a

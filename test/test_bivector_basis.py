@@ -26,7 +26,7 @@ class TestBivectorNegation(unittest.TestCase):
 
     def _basis(self):
         b = Spaces.Codebook()
-        b.create(nInput=1, nVectors=8, nDim=4, monotonic=True, passThrough=True)
+        b.create(nInput=1, nVectors=8, nDim=4, monotonic=True)
         return b
 
     def test_negation_is_paired_index_flip(self):
@@ -77,7 +77,7 @@ class TestCodebookClamp(unittest.TestCase):
         """A synthetic update out of [0,1] gets clamped back."""
         basis = Spaces.Codebook()
         basis.create(nInput=1, nVectors=4, nDim=3, monotonic=True,
-                     passThrough=False)
+                     )
         # Codebook was materialized; grab W and perturb it.
         W = basis.W
         self.assertIsNotNone(W)

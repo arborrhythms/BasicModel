@@ -24,7 +24,7 @@ from Layers import ImpenetrableLayer
 
 def _basis(K=8, D=4):
     b = Spaces.Codebook()
-    b.create(nInput=1, nVectors=K, nDim=D, monotonic=True, passThrough=True)
+    b.create(nInput=1, nVectors=K, nDim=D, monotonic=True)
     return b
 
 
@@ -35,6 +35,12 @@ class _FakeVQ:
 
 
 def _attach_vq(basis, cluster_size):
+    # Codebook.create installs a real ``VectorQuantize`` nn.Module on
+    # ``basis.vq`` (passThrough was retired in Stage 1). Drop the
+    # registered submodule first so the plain-attribute ``_FakeVQ`` lands
+    # without nn.Module's ``_modules`` slot rejecting a non-Module.
+    if "vq" in basis._modules:
+        del basis._modules["vq"]
     basis.vq = _FakeVQ(cluster_size)
     return basis
 

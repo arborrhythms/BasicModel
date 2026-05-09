@@ -57,7 +57,6 @@
     <nDim>10</nDim>
     <nVectors>6</nVectors>
     <nInputDim>-1</nInputDim>
-    <passThrough>true</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>

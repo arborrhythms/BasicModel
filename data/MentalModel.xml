@@ -76,7 +76,7 @@
         <compose>
           <!-- Per the 2026-05-07 rollback: explicit per-tier natural
                folds (sigma at P / S, pi at C). Previously these were
-               supplied by the SpaceSyntacticLayer's default_rule
+               supplied by the SyntacticLayer's default_rule
                code-level fallback. -->
           <percepts>
             <rule>P = sigma(P)</rule>
@@ -247,7 +247,6 @@
     <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
-    <passThrough>true</passThrough>
     <hasAttention>false</hasAttention>
     <invertible>false</invertible>
     <codebook>false</codebook>
@@ -280,7 +279,6 @@
     <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
-    <passThrough>false</passThrough>
     <accumulateTruth>0</accumulateTruth>
     <tetralemmaOverride enabled="false" />
   </SymbolicSpace>

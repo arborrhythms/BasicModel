@@ -55,12 +55,14 @@ sentence marker).  The 2026-05-05 directive split lattice-min/max
 into the new ``L`` tier and pinned S-tier conjunction/disjunction to
 the post-codebook scalar activation domain.
 
-`SyntacticLayer` survives as the rule-prediction front-end and the
-chart authority that gates each parametrized fold via
-`GrammarLayer.gated_run`.  Per-space dispatchers are
-`SpaceSyntacticLayer` instances built by
+Per-space dispatchers are `SyntacticLayer` instances built by
 `build_space_syntactic_layer`; each holds a tier-specific
-`host_layers` dict keyed by `rule_name`.  The dispatcher's
+`host_layers` dict keyed by `rule_name`.  The chart authority role
+(rule-firing probability gating via `GrammarLayer.gated_run`) lives
+on `Chart` itself — `WordSpace.__init__` installs the chart as
+`GrammarLayer._chart_authority` and hands it the `Grammar` reference;
+the legacy module-global `SyntacticLayer` that previously held this
+responsibility was retired 2026-05-08.  The dispatcher's
 ``_read_subspace`` / ``_write_subspace`` honor each layer's
 ``reads_activation`` flag: ``True`` reads/writes the activation
 field (bivector at C-tier, scalar at S-tier), ``False`` reads/writes
@@ -270,7 +272,7 @@ All three are lossy.
 symbol vector: $[x_0, x_1, x_{2..}] \to [x_1, x_0, x_{2..}]$.  Pure
 antipodal flip on the bitonic axis; self-inverse.
 
-### Conjunction / disjunction — S-tier (post-codebook scalar)
+### Conjunction / disjunction — S-tier (post-codebook scalar) {#conjunction--disjunction--sym}
 
 `S = conjunction(S, S)` and `S = disjunction(S, S)` operate on the
 **post-codebook scalar activation**: a ``[B, V]`` tensor where ``V``
@@ -1262,10 +1264,10 @@ trace.
 
 ---
 
-## Per-space dispatch (`SpaceSyntacticLayer`)
+## Per-space dispatch (`SyntacticLayer`)
 
 Each Space (SymbolicSpace, ConceptualSpace, PerceptualSpace) carries a
-`SpaceSyntacticLayer` instance whose `forward()` and `reverse()` fire
+`SyntacticLayer` instance whose `forward()` and `reverse()` fire
 one fold step per call, per the chart's per-tier rule selection.
 Construction lives in `build_space_syntactic_layer`:
 
@@ -1277,7 +1279,7 @@ Construction lives in `build_space_syntactic_layer`:
   `register_host_layer(tier, rule_name, layer)` so the chart can
   consult `host_layer(tier, rule_name)` during dispatch.
 
-`SpaceSyntacticLayer.forward(subspace)` reads
+`SyntacticLayer.forward(subspace)` reads
 `word_space.current_rules[tier]`, advances a per-tier cursor, and
 dispatches to the chosen layer's `forward()` (only for arity-1 rules
 — binary rules fire inside the chart's `compose` via
@@ -1446,7 +1448,7 @@ symbolization = norm projection.
 4. The chart runs its inside pass over symbol vectors, dispatching
    per-cell rule applications through
    `wordSpace.host_layer('S', rule_name)` (which resolves to the
-   SymbolicSpace's `SpaceSyntacticLayer`).
+   SymbolicSpace's `SyntacticLayer`).
 
 ### Reverse path
 

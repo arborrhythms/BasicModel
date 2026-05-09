@@ -62,7 +62,6 @@
     <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
-    <passThrough>false</passThrough>
     <hasAttention>true</hasAttention>
     <invertible>true</invertible>
     <codebook>false</codebook>
@@ -82,7 +81,6 @@
     <nOutput>128</nOutput>
     <nDim>100</nDim>
     <nVectors>128</nVectors>
-    <passThrough>true</passThrough>
   </SymbolicSpace>
 
   <OutputSpace>

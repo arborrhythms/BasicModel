@@ -117,7 +117,7 @@ def _find_ternary_lift_rule(grammar):
 def _get_lift_confidence(model, grammar):
     """Return max lift(C,C,C) probability across composition depths.
 
-    After forward(), ConceptualSyntacticLayer caches:
+    After forward(), the Chart caches:
       - last_composable_rules: list of global rule IDs
       - last_rule_probs: [B, depths, n_composable] renormalized probs
 
@@ -125,9 +125,9 @@ def _get_lift_confidence(model, grammar):
     averaged over the batch.  Returns 0.0 if composition didn't run or
     if the ternary lift rule is not among the composable rules.
     """
-    sl = model.wordSpace.syntacticLayer
-    probs = sl.last_rule_probs          # [B, depths, n_composable] or None
-    rules = sl.last_composable_rules    # list of global rule IDs or None
+    chart = model.wordSpace.chart
+    probs = chart.last_rule_probs          # [B, depths, n_composable] or None
+    rules = chart.last_composable_rules    # list of global rule IDs or None
     if probs is None or rules is None:
         return 0.0
 
@@ -297,16 +297,17 @@ class TestLuminosityOfKindness(unittest.TestCase):
         """Run forward, extract confident SVO, compute universality score.
 
         LearnedSVO path: SVO lives on the unified S-tier
-        ``syntacticLayer.last_svo`` (grammar-derived from the
-        chart-compose derivation trace), and the universality score
-        computed during ``MentalModel.forward`` lands on
-        ``model._universality_score``. The xfail-guarded callers
-        tolerate ``(None, None)`` when the untrained model's chart
-        compose doesn't pick the canonical S -> S VO / VO -> V O path.
+        ``chart.last_svo`` (grammar-derived from the chart-compose
+        derivation trace), and the universality score computed during
+        ``MentalModel.forward`` lands on ``model._universality_score``.
+        The xfail-guarded callers tolerate ``(None, None)`` when the
+        untrained model's chart compose doesn't pick the canonical
+        S -> S VO / VO -> V O path.
         """
         _run_forward(self.model, [sentence])
-        sl = self.model.wordSpace.syntacticLayer if self.model.wordSpace else None
-        svo = sl.last_svo if sl is not None else None
+        chart = (self.model.wordSpace.chart
+                 if self.model.wordSpace is not None else None)
+        svo = chart.last_svo if chart is not None else None
         score = getattr(self.model, '_universality_score', None)
         return svo, score
 

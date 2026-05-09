@@ -98,7 +98,6 @@
     <nOutput>8</nOutput>
     <nDim>10</nDim>
     <nVectors>8</nVectors>
-    <passThrough>false</passThrough>
     <l1Lambda>0.01</l1Lambda>
     <accumulateTruth>0</accumulateTruth>
     <codebook>true</codebook>
@@ -141,7 +140,7 @@
       <grammar>
         <!-- Per the 2026-05-07 rollback: explicit per-tier natural
              folds (sigma at P / S, pi at C). Previously these were
-             supplied by the SpaceSyntacticLayer's default_rule
+             supplied by the SyntacticLayer's default_rule
              code-level fallback; the rollback removed that
              fallback and made the grammar XML the sole source of
              truth, so the natural folds must be listed here for
