@@ -201,3 +201,20 @@ XML knobs (under the SymbolicSpace config section):
 - **Trust via VQ EMA.**  Codebook usage frequency is already tracked
   for VQ commit loss; reusing it as trust avoids a second bookkeeping
   path.
+
+- **Parthood is preserved by Pi / Sigma.**  Under
+  `<bivectorOutput>true</bivectorOutput>` on PerceptualSpace,
+  ConceptualSpace, and SymbolicSpace, every activation in the chain
+  lives on the non-negative paired-index cone $[0, 1]^{2K}$ and the
+  Pi / Sigma layers are restricted to entry-wise $W \geq 0$ via
+  `NonNegativeInvertibleLinearLayer` (or `NonNegativeLinearLayer`).
+  Positive matrices are exactly the monotone operators on a positive
+  cone: $a \leq b$ componentwise $\Rightarrow Wa \leq Wb$
+  componentwise.  Componentwise $\leq$ on the cone *is* the parthood
+  partial order, so each lift / lower in the chain preserves
+  parthood pole-by-pole — a whole always contains its parts after
+  Pi / Sigma.  The bivector layout keeps the contradiction corner
+  $[1, 1]$ distinct from the ignorance corner $[0, 0]$ under the
+  positive matmul, which a single bitonic axis would collapse.  See
+  [Spaces.md "Monotonicity of the lift / lower
+  chain"](Spaces.md#monotonicity-of-the-lift--lower-chain).

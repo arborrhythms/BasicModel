@@ -93,7 +93,7 @@ omitting them defaults to 0.1.
 | `TruthLoss`          | decimal | `0.0`   | `<training>`     | Additive loss penalty for propositions that contradict the TruthSet. Uses union norm reduction via `Basis.disjunction()`. 0.0 = disabled. |
 | `conceptualOrder`    | int     | `1`     | `<architecture>` | Number of Percept$\rightarrow$Concept$\rightarrow$Symbol iterations. Higher orders use a geometrically partitioned symbolic space. |
 | `useButterflies`     | boolean | `false` | `<architecture>` | Enable pairwise sigma/pi mixing via butterfly-mode Pi/Sigma layers (N-halving per conceptual order). Mutually exclusive with `useGrammar`. |
-| `monotonic`          | boolean | `false` | `<architecture>` | When true, invertible SigmaLayers use W>=0 (NonNegativeInvertibleLinearLayer) preserving ordering; false uses unconstrained InvertibleLinearLayer (bitonic response). |
+| `monotonic`          | boolean | `false` | `<architecture>` | When true, invertible SigmaLayers / PiLayers use W>=0 (NonNegativeInvertibleLinearLayer) preserving the parthood partial order on the non-negative bivector cone; false uses unconstrained InvertibleLinearLayer (bitonic response). Pair with `<bivectorOutput>true</bivectorOutput>` on Perceptual / Conceptual / Symbolic spaces to make the entire P→C→S chain order-preserving pole-by-pole. See [Architecture.md "Sigma and Pi Layers"](Architecture.md#sigma-and-pi-layers) and [Spaces.md "Monotonicity of the lift / lower chain"](Spaces.md#monotonicity-of-the-lift--lower-chain). |
 | `useGrammar`         | string | `"none"` | `<WordSpace>`    | Grammar mode. Current parser accepts `none`, `all`, and legacy `thoughtFree`; target Shamatha Speech work adds/aliases `shamathaSpeech` for the narrow DNF object grammar. Full grammar mode is mutually exclusive with `useButterflies`. |
 
 ```xml
@@ -173,6 +173,8 @@ Transforms lifted input into perceptual features via Pi layers (multiplicative i
 | `invertible` | bool | `false` | Use a single invertible Pi layer instead of separate forward/reverse layers. When `true`, one `PiLayer(invertible=True)` handles both directions via `InvertibleLinearLayer` internally. When `false`, separate `pi1` (forward) and `pi2` (reverse) layers are created. |
 | `hasAttention` | bool | `true` | Enable attention mechanism in this space. |
 | `codebook` | bool | `false` | When `true`, the `.what` slot is a learnable `Codebook`; when `false`, it is a passthrough `Tensor` (identity, no quantization). |
+| `bivectorOutput` | bool | `false` | When `true`, applies the Q2 promotion `(aP, aN) = (max(0, x), max(0, -x))` to the per-slot percept event and writes a `[B, N, 2]` catuskoti bivector to `subspace.activation`. Completes the monotonic chain by joining PerceptualSpace to the C/S-tier bivector regime. Spec §B3 / §Q2 in `specs/2026-04-24-lift-lower-bivector-design.md`. |
+| `svdOrthogonalInit` | bool | `false` | Reserved for symmetry with C/S; consulted only when a `Codebook` is built on `.what`. No-op under the default Embedding lexicon. |
 
 **Layers:** Pi layers -- multiplicative: `y_j = b_j * prod_i(1 + W_ji * x_i)`. See Architecture.md.
 

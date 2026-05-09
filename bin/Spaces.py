@@ -6052,6 +6052,24 @@ class PerceptualSpace(Space):
         invertible = TheXMLConfig.space(section, "invertible")
         nonlinear = TheXMLConfig.space(section, "nonlinear")
         naive = TheXMLConfig.get("architecture.naive")
+        # Bivector regime flags (spec B3, doc/specs/2026-04-24-lift-lower-
+        # bivector-design.md §B3). When ``bivectorOutput`` is true, the
+        # per-slot percept activation is the catuskoti bivector
+        # ``[aP, aN] = (max(0, x), max(0, -x))`` (Q2 promotion, spec
+        # line 1405). ``svdOrthogonalInit`` is reserved for symmetry with
+        # ConceptualSpace / SymbolicSpace; it is consulted only when a
+        # Codebook is built on ``.what`` (codebook=true mode), not on the
+        # default Embedding lexicon.
+        try:
+            self._bivector_output = bool(
+                TheXMLConfig.space(section, "bivectorOutput"))
+        except KeyError:
+            self._bivector_output = False
+        try:
+            self._svd_orthogonal_init_cfg = bool(
+                TheXMLConfig.space(section, "svdOrthogonalInit"))
+        except KeyError:
+            self._svd_orthogonal_init_cfg = False
 
         # Stash all attributes BEFORE super().__init__() since _build_what_basis runs inside it
         self.ergodic = ergodic
@@ -6762,6 +6780,46 @@ class PerceptualSpace(Space):
         if sub is not None and getattr(sub, 'event', None) is not None:
             sub.event.setW(None)
 
+    def _q2_promote_activation(self, event):
+        """Q2 bitonic-to-bivector promotion (spec §Q2, line 1405).
+
+        Reduces the per-slot percept event to a signed scalar via signed-
+        sum across the content dim, then splits onto the non-negative
+        paired-index axes ``(aP, aN) = (max(0, x), max(0, -x))``.
+
+        Args:
+            event: ``[B, N, D_P]`` per-slot percept content.
+
+        Returns:
+            ``[B, N, 2]`` bivector activation, monotonic in ``[0, 1]^2``.
+        """
+        x = event.sum(dim=-1)
+        aP = torch.relu(x)
+        aN = torch.relu(-x)
+        return torch.stack([aP, aN], dim=-1)
+
+    def _q2_lower_activation(self, bivec, content_dim):
+        """Inverse of `_q2_promote_activation`: bivector -> per-slot
+        signed scalar -> broadcast to per-slot content vector.
+
+        The forward Q2 promotion is many-to-one over the content dim
+        (signed sum collapses ``D_P`` features to one scalar), so the
+        reverse cannot recover the per-feature pattern. We broadcast the
+        recovered scalar uniformly across the content dim; downstream
+        ``reverseEnd`` / ``InvertibleLinearLayer.reverse`` handles any
+        further structure recovery.
+
+        Args:
+            bivec: ``[B, N, 2]`` bivector activation.
+            content_dim: target ``D_P`` for the output event.
+
+        Returns:
+            ``[B, N, D_P]`` event tensor with the recovered scalar
+            broadcast across the content axis.
+        """
+        x = bivec[..., 0] - bivec[..., 1]
+        return x.unsqueeze(-1).expand(-1, -1, content_dim).contiguous()
+
     def _slot_forward(self, x, quantize=True):
         """Position-local math (codebook + sparsity) on a [B, K, D] slice.
 
@@ -6899,6 +6957,17 @@ class PerceptualSpace(Space):
             if out is not None:
                 self.subspace.serial_cache[id(self)] = out.detach().clone()
 
+        if self._bivector_output:
+            # Q2 promotion: replace the legacy per-slot scalar activation
+            # with the catuskoti bivector ``[B, N, 2]``. Downstream
+            # ConceptualSpace consumes this as the left half of the
+            # widened ``[P_event || S_event]`` PiLayer input (gated on
+            # ConceptualSpace.bivectorOutput at Models.py:1797-1820).
+            event = vspace.materialize(mode="event")
+            if event is not None and event.dim() == 3:
+                bivec = self._q2_promote_activation(event)
+                vspace.activation.setW(bivec)
+
         return vspace
 
     def reverse(self, subspace):
@@ -6907,12 +6976,25 @@ class PerceptualSpace(Space):
             return subspace
         self.subspace.copy_context(subspace)
         vspace = subspace
+        # NOTE: When ``self.subspace.what`` is an Embedding (text mode),
+        # `_reverse_text` returns earlier and bypasses the bivector
+        # lowering below. Mixing text-mode lexicon with bivectorOutput=true
+        # is outside the current B3 scope; revisit when text-mode bivector
+        # is needed.
         if isinstance(self.subspace.what, Embedding):
             self._reverse_text(vspace)
             return vspace
         if self.invertible:
             vspace.normalize("percepts", target="event",
                              normalize=True, reverse=True)
+        if self._bivector_output:
+            # Lower the bivector activation back to a per-slot signed
+            # scalar broadcast across the percept input dim, so the
+            # downstream invertible reverse sees the pre-Q2 layout.
+            bivec = vspace.activation.getW()
+            if bivec is not None and bivec.dim() == 3 and bivec.shape[-1] == 2:
+                event = self._q2_lower_activation(bivec, self.inputShape[1])
+                vspace.event.setW(event)
         y = self.reverseBegin(vspace, returnVectors=True)
         vspace = self.reverseEnd(y, returnVectors=True)
         vspace.normalize("input", target="what", normalize=True)

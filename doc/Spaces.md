@@ -487,6 +487,8 @@ instances -- `pi1` for forward, `pi2` for reverse -- each with independent weigh
 | `invertible` | True: shared invertible layer; False: separate pi1/pi2 |
 | `codebook` | False -> `.what` is a passthrough `Tensor`; True -> `Codebook` |
 | `hasAttention` | Enable attention reweighting |
+| `bivectorOutput` | When `true`, applies the Q2 promotion `(aP, aN) = (max(0, x), max(0, -x))` to the per-slot percept event and writes a `[B, N, 2]` catuskoti bivector to `subspace.activation`. Mirrors the C/S-tier bivector regime, completing the monotonic chain from PerceptualSpace through SymbolicSpace. See spec §B3 / §Q2 in [`specs/2026-04-24-lift-lower-bivector-design.md`](specs/2026-04-24-lift-lower-bivector-design.md). |
+| `svdOrthogonalInit` | Reserved for symmetry with C/S; consulted only when a Codebook is built on `.what`. No-op under the default Embedding lexicon. |
 
 **Layer.** `PiLayer` (one or two instances depending on `invertible`).
 
@@ -494,6 +496,14 @@ instances -- `pi1` for forward, `pi2` for reverse -- each with independent weigh
 is centered at the origin for geometric symmetry, though it has no negation operator --
 percepts represent feature magnitudes with sign indicating direction. Activation is
 `[-1, 1]`. Tanh is applied to enforce the range.
+
+Under `bivectorOutput=true` the *per-slot scalar activation* is replaced by a
+non-negative paired-index pair $[aP, aN] \in [0, 1]^2$. The signed-sum reduction
+`x = sum_d event[..., d]` is split via `aP = max(0, x); aN = max(0, -x)` --
+the canonical bitonic-to-bivector map (spec §Q2). Reverse recovers the per-slot
+scalar `aP - aN` and broadcasts uniformly across the input dim; per-feature
+detail within a slot is intentionally lossy (the prototype-content channel is
+the C tier).
 
 **Invertibility.** `invertible=True`: shared layer, exact inverse. `invertible=False`:
 separate layers, approximate pseudoinverse in reverse.
@@ -758,6 +768,60 @@ the full grammar hierarchy.  See [Reasoning.md](Reasoning.md) Section
 Architecture Modes.
 
 **Invertibility.** Exactly invertible via the PiLayer's reverse path.
+
+---
+
+## Monotonicity of the lift / lower chain
+
+Under the bivector regime (`<bivectorOutput>true</bivectorOutput>` on
+all three spaces), the percept → concept → symbol chain is an
+**order-preserving map on a positive cone** -- positive linear maps on
+non-negative paired-index activations preserve the parthood partial
+order all the way through.
+
+The triple that makes this work:
+
+1. **Activations live on the positive cone** `[0, 1]^{2K}` (paired-index
+   bivector). PerceptualSpace's Q2 promotion `(aP, aN) = (max(0, x),
+   max(0, -x))` (spec §Q2) is the bitonic-to-bivector entry point;
+   from there every space writes only non-negative `[aP, aN]` pairs.
+   The componentwise partial order $\leq$ on this cone *is* the parthood
+   order: $s_1 \leq s_2$ componentwise $\Leftrightarrow$ "every pole of evidence in `s1`
+   is dominated by the same pole in `s2`" $\Leftrightarrow$ `s1` is part of `s2`.
+
+2. **The Pi / Sigma maps are restricted to $W \geq 0$** entry-wise
+   (`monotonic=True` selects [`NonNegativeInvertibleLinearLayer`](../bin/Layers.py)
+   under invertibility, [`NonNegativeLinearLayer`](../bin/Layers.py)
+   otherwise). Positive matrices are precisely the monotone operators
+   on the positive cone:
+   $$
+   a \leq b \text{ componentwise} \Longrightarrow Wa \leq Wb \text{ componentwise}
+   $$
+
+3. **Therefore Pi / Sigma preserve parthood pole-by-pole.** Lifting a
+   set of percepts into a concept (positive linear combination via
+   ConceptualSpace's PiLayer) can only *increase* the bivector
+   pole-by-pole, matching the parthood semantics: a whole contains
+   its parts. Lowering does the same in the other direction.
+
+The bivector layout is what keeps the contradiction corner `[1, 1]`
+distinct from the ignorance corner `[0, 0]` under positive matmul --
+a bitonic `[-1, 1]` scalar would let `aP - aN` cancel under
+summation, collapsing both to zero (the [§B2 forbidden
+collapse](specs/2026-04-24-lift-lower-bivector-design.md)). Splitting
+the two poles onto independent non-negative axes is what lets the
+positive matmul be both order-preserving *and*
+contradiction-preserving.
+
+The same-order regularization on each codebook
+([`ImpenetrableLayer`](../bin/Layers.py) at S; planned at C / P)
+maintains an antichain of same-rank prototypes, so the chain's
+parthood lattice carries cross-order dominance only -- siblings at a
+given `<conceptualOrder>` step remain mutually incomparable.
+
+See [Logic.md §Parthood as Projection](Logic.md) for the parthood
+formula and [BuddhistParallels.md](BuddhistParallels.md) for the
+catuskoti / tetralemma mapping the bivector encodes.
 
 ---
 

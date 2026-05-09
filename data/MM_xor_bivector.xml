@@ -1,8 +1,11 @@
 <?xml version="1.0" ?>
 <model>
-  <!-- MM_xor_bivector: ConceptualSpace + SymbolicSpace bivector regime
-       on the XOR dataset. Exercises Stage 4-6 of the
-       2026-05-08-bivector-activation spec end-to-end:
+  <!-- MM_xor_bivector: PerceptualSpace + ConceptualSpace + SymbolicSpace
+       bivector regime on the XOR dataset. Exercises spec §B3 (Perceptual)
+       alongside Stage 4-6 of the 2026-05-08 conceptual-loopback design:
+         - PerceptualSpace.bivectorOutput=true: forward applies Q2
+           promotion (max(0, x), max(0, -x)) per slot; activation
+           shape becomes [B, N, 2].
          - ConceptualSpace.bivectorOutput=true: forward returns
            [B, V_C, 2]; reverse lifts via cached SVD pseudo-inverse.
          - SymbolicSpace.bivectorOutput=true: same shape on its
@@ -11,9 +14,18 @@
            well-conditioned from t=0.
          - useButterflies=false: butterfly schedule is incompatible
            with the [P||S] widening (Note A in the spec).
-         - conceptualOrder=1: single C-S step, no per-stage halving. -->
+         - conceptualOrder=1: single C-S step, no per-stage halving.
+         - subsymbolicEnabled marker (documentation-only; loopback is
+           unconditional under bivector regime). -->
   <architecture>
     <conceptualOrder>1</conceptualOrder>
+    <!-- Documentation marker: the symbolic loopback (P_event || S_event
+         concat into ConceptualSpace's PiLayer) is unconditional under
+         the bivector regime per
+         doc/2026-05-08-bivector-activation-conceptual-loopback-design.md
+         Stage 2. The actual gate is <ConceptualSpace><bivectorOutput>;
+         no code reads this flag. -->
+    <subsymbolicEnabled>true</subsymbolicEnabled>
     <useButterflies>false</useButterflies>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
@@ -62,24 +74,35 @@
     <nInput>8</nInput>
     <nInputDim>4</nInputDim>
     <nVectors>8</nVectors>
-    <nDim>4</nDim>
+    <!-- nDim is the codebook prototype width; the P-tier output is the
+         per-slot catuskoti bivector [B, N, 2], so nOutputDim is 2
+         regardless of nDim. Mirrors the ConceptualSpace block below. -->
+    <nDim>2</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>4</nOutputDim>
+    <nOutputDim>2</nOutputDim>
     <nWhere>0</nWhere>
     <nWhen>0</nWhen>
     <hasAttention>false</hasAttention>
     <invertible>true</invertible>
     <codebook>false</codebook>
+    <nonlinear>false</nonlinear>
+    <bivectorOutput>true</bivectorOutput>
+    <svdOrthogonalInit>true</svdOrthogonalInit>
   </PerceptualSpace>
 
   <ConceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>4</nInputDim>
+    <!-- nInputDim must match PerceptualSpace.nOutputDim (2 under bivector
+         regime). The loopback widening adds SymbolicSpace.nOutputDim (2)
+         on top, giving the C input PiLayer width = 4. See Models.py:1797. -->
+    <nInputDim>2</nInputDim>
     <nVectors>8</nVectors>
-    <!-- nDim is the codebook prototype width; the C-tier output is the
-         per-prototype catuskoti bivector [B, V_C, 2], so nOutputDim is 2
-         regardless of nDim. -->
-    <nDim>6</nDim>
+    <!-- nDim must equal nInputDim + S.nOutputDim (= 2 + 2 = 4) so the
+         syntactic-layer reverse path's pass-through (which leaves data
+         in codebook dim) followed by the right-half strip lands at the
+         original perceptual input dim. The C-tier output is still the
+         per-prototype catuskoti bivector [B, V_C, 2] regardless of nDim. -->
+    <nDim>4</nDim>
     <nOutput>8</nOutput>
     <nOutputDim>2</nOutputDim>
     <hasAttention>false</hasAttention>

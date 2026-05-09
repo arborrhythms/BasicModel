@@ -74,9 +74,15 @@ Interpretation:
 ## 3. Symbolic Layer (Scalars in [-1,1])
 
 `Basis` supports two modes: **monotonic** (plain min/max, used by
-SymbolicSpace where `monotonic=True`) and **bitonic** (sign-aware,
-the default).  The monotonic forms are listed here; the bitonic forms
-(RadMin, RadMax) are in Section 7 Radial Operators.
+PerceptualSpace, ConceptualSpace, and SymbolicSpace whenever
+`<bivectorOutput>true</bivectorOutput>` is set, so the entire P→C→S
+chain operates on the non-negative paired-index cone) and **bitonic**
+(sign-aware, the legacy default).  The monotonic forms are listed
+here; the bitonic forms (RadMin, RadMax) are in Section 7 Radial
+Operators. See [Spaces.md "Monotonicity of the lift / lower
+chain"](Spaces.md#monotonicity-of-the-lift--lower-chain) for why
+the chain stays order-preserving end-to-end under the bivector +
+$W \geq 0$ regime.
 
 Let $a, b \in [-1,1]$.
 

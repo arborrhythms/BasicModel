@@ -25,8 +25,8 @@ totalLoss = (1 - reconRatio) * outputLoss + reconRatio * reconstructionLoss
 | Space | Role | Layer Type | Parameters |
 |-------|------|-----------|------------|
 | **InputSpace** | Lifts raw data into working dimensionality | LiftingLayer | nActive, nDim, nVectors |
-| **PerceptualSpace** | Per-percept aggregation | SigmaLayer (`self.sigma`, P -> sub-percept; dormant pending sub-perceptual structure) | nActive, nDim, nVectors, invertible |
-| **ConceptualSpace** | Multiplicative abstraction (P -> C) | PiLayer (`self.pi`, P -> C, with `forwardPi` / `reversePi` pointer aliases hiding the one-or-two-layer split) | nActive, nDim, nVectors, invertible |
+| **PerceptualSpace** | Per-percept aggregation | SigmaLayer (`self.sigma`, P -> sub-percept; dormant pending sub-perceptual structure) | nActive, nDim, nVectors, invertible, bivectorOutput |
+| **ConceptualSpace** | Multiplicative abstraction (P -> C) | PiLayer (`self.pi`, P -> C, with `forwardPi` / `reversePi` pointer aliases hiding the one-or-two-layer split) | nActive, nDim, nVectors, invertible, bivectorOutput |
 | **SymbolicSpace** | Discrete activation bottleneck (C -> S) + Codebook | SigmaLayer (`self.sigma`, C -> S, with `forwardSigma` / `reverseSigma` pointer aliases) + Codebook | nActive, nVectors, codebook, bivectorOutput |
 | **SyntacticSpace** | Binary derivation tree (CNF grammar) | Grammar + WordEncoding | nActive, nDim, nVectors |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
@@ -373,6 +373,23 @@ performs a standard linear operation there, and returns via tanh.  The atanh
 transform stretches values near $\pm 1$ toward infinity, making the layer
 sensitive to strong activations -- the multiplicative structure emerges from
 the nonlinear domain transform rather than from literal products.
+
+**Monotonicity of the bivector chain.** When `<bivectorOutput>true</bivectorOutput>`
+is configured on PerceptualSpace, ConceptualSpace, and SymbolicSpace, every
+activation in the P → C → S chain lives on the non-negative paired-index cone
+`[0, 1]^{2K}`. The Pi / Sigma layers select
+`NonNegativeInvertibleLinearLayer` (or `NonNegativeLinearLayer` in the
+non-invertible case) under `monotonic=True`, giving entry-wise $W \geq 0$.
+A positive matrix is the canonical monotone operator on the positive cone:
+$a \leq b$ componentwise $\Rightarrow Wa \leq Wb$ componentwise. The
+componentwise order on the cone *is* the parthood partial order, so every
+lift / lower in the chain is order-preserving pole-by-pole. PerceptualSpace
+joins the chain via the Q2 promotion `(aP, aN) = (\max(0, x), \max(0, -x))`
+at its activation boundary (spec §Q2 / §B3). The bivector layout keeps
+the contradiction corner `[1, 1]` distinct from the ignorance corner
+`[0, 0]` under positive matmul -- a single bitonic axis would let
+$aP - aN$ cancel under summation, collapsing both to zero. See
+[Spaces.md "Monotonicity of the lift / lower chain"](Spaces.md#monotonicity-of-the-lift--lower-chain).
 
 ---
 
